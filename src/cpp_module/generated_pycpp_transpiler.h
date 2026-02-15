@@ -33,8 +33,8 @@ public:
 
         std::vector<std::string> body;
         std::vector<std::string> main_body;
-        std::unordered_map<int, bool> dataclass_next;
         std::vector<std::string> import_includes;
+        bool pending_dataclass = false;
 
         for (std::size_t i = 0; i < lines.size(); ++i) {
             std::string t = trim(lines[i]);
@@ -42,7 +42,7 @@ public:
                 continue;
             }
             if (t == "@dataclass") {
-                dataclass_next[static_cast<int>(i) + 1] = true;
+                pending_dataclass = true;
                 continue;
             }
             collect_import_include(t, import_includes);
@@ -62,6 +62,12 @@ public:
                     ++i;
                 }
                 continue;
+            }
+            if (pending_dataclass && starts_with(t, "class ")) {
+                body.push_back("@dataclass");
+                pending_dataclass = false;
+            } else if (!starts_with(t, "class ")) {
+                pending_dataclass = false;
             }
             body.push_back(lines[i]);
         }
@@ -106,9 +112,23 @@ public:
     }
 
 private:
+    enum class BlockKind {
+        Generic,
+        Class,
+        Function,
+    };
+
     struct Block {
         int py_indent;
         std::string close_token;
+        BlockKind kind = BlockKind::Generic;
+        std::string class_name;
+        bool class_is_dataclass = false;
+    };
+
+    struct ClassAnalysis {
+        std::vector<std::string> field_lines;
+        std::vector<std::string> dataclass_ctor_lines;
     };
 
     std::vector<std::string> class_names_;
@@ -147,6 +167,49 @@ private:
         std::string part;
         while (std::getline(ss, part, delim)) {
             out.push_back(trim(part));
+        }
+        return out;
+    }
+
+    static std::vector<std::string> split_top_level(const std::string& s, char delim) {
+        std::vector<std::string> out;
+        std::string cur;
+        int depth = 0;
+        bool in_str = false;
+        char quote = 0;
+        for (char ch : s) {
+            if (in_str) {
+                cur.push_back(ch);
+                if (ch == quote) {
+                    in_str = false;
+                }
+                continue;
+            }
+            if (ch == '"' || ch == '\'') {
+                in_str = true;
+                quote = ch;
+                cur.push_back(ch);
+                continue;
+            }
+            if (ch == '(' || ch == '[' || ch == '{') {
+                ++depth;
+                cur.push_back(ch);
+                continue;
+            }
+            if (ch == ')' || ch == ']' || ch == '}') {
+                --depth;
+                cur.push_back(ch);
+                continue;
+            }
+            if (ch == delim && depth == 0) {
+                out.push_back(trim(cur));
+                cur.clear();
+                continue;
+            }
+            cur.push_back(ch);
+        }
+        if (!trim(cur).empty()) {
+            out.push_back(trim(cur));
         }
         return out;
     }
@@ -202,7 +265,21 @@ private:
         e = std::regex_replace(e, std::regex(R"(\bnot\b)"), "!");
         e = std::regex_replace(e, std::regex(R"(\band\b)"), "&&");
         e = std::regex_replace(e, std::regex(R"(\bor\b)"), "||");
+        e = std::regex_replace(
+            e,
+            std::regex(R"(\b([A-Za-z_][A-Za-z0-9_]*)\s+in\s+([A-Za-z_][A-Za-z0-9_]*)\b)"),
+            "py_in($1, $2)");
         e = std::regex_replace(e, std::regex(R"(\bself\.)"), "this->");
+
+        {
+            std::smatch im;
+            static const std::regex re_ifexpr(R"(^(.+)\s+if\s+(.+)\s+else\s+(.+)$)");
+            if (std::regex_match(e, im, re_ifexpr)) {
+                return "(" + convert_expr(trim(im[2].str())) + " ? " +
+                    convert_expr(trim(im[1].str())) + " : " +
+                    convert_expr(trim(im[3].str())) + ")";
+            }
+        }
 
         // constructor call of known class -> RcHandle adopt rc_new
         for (const auto& c : class_names_) {
@@ -211,6 +288,23 @@ private:
             std::smatch m;
             if (std::regex_match(e, m, cre)) {
                 return "pycs::gc::RcHandle<" + c + ">::adopt(pycs::gc::rc_new<" + c + ">(" + trim(m[1].str()) + "))";
+            }
+        }
+
+        auto lp = e.find('(');
+        if (lp != std::string::npos && e.back() == ')') {
+            std::string callee = trim(e.substr(0, lp));
+            std::string args = e.substr(lp + 1, e.size() - lp - 2);
+            if (!callee.empty() &&
+                std::regex_match(callee, std::regex(R"(^[A-Za-z_][A-Za-z0-9_:\->\.]*$)"))) {
+                auto parts = split_top_level(args, ',');
+                std::vector<std::string> mapped;
+                for (const auto& p : parts) {
+                    if (!trim(p).empty()) {
+                        mapped.push_back(convert_expr(p));
+                    }
+                }
+                e = callee + "(" + join(mapped, ", ") + ")";
             }
         }
 
@@ -257,6 +351,88 @@ private:
                 out = "\"\"";
             }
             return "(" + out + ")";
+        }
+
+        {
+            std::smatch cm;
+            static const std::regex re_comp(R"(^\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)\]$)");
+            if (std::regex_match(e, cm, re_comp)) {
+                const std::string expr_var = cm[1].str();
+                const std::string iter_var = cm[2].str();
+                const std::string iter = trim(cm[3].str());
+                if (expr_var == iter_var) {
+                    return convert_expr(iter);
+                }
+            }
+        }
+
+        if (starts_with(e, "[") && e.size() >= 2 && e.back() == ']') {
+            std::string inner = trim(e.substr(1, e.size() - 2));
+            if (inner.empty()) {
+                return "vector<int>{}";
+            }
+            auto items = split_top_level(inner, ',');
+            std::vector<std::string> mapped;
+            std::string elem_type;
+            for (const auto& item : items) {
+                mapped.push_back(convert_expr(item));
+                const std::string t = infer_literal_type(item);
+                if (!t.empty()) {
+                    if (elem_type.empty()) elem_type = t;
+                    else if (elem_type != t) elem_type = "int";
+                }
+            }
+            if (elem_type.empty()) elem_type = "int";
+            return "vector<" + elem_type + ">{ " + join(mapped, ", ") + " }";
+        }
+
+        if (starts_with(e, "{") && e.size() >= 2 && e.back() == '}' && e.find(':') != std::string::npos) {
+            std::string inner = trim(e.substr(1, e.size() - 2));
+            if (!inner.empty()) {
+                auto items = split_top_level(inner, ',');
+                std::vector<std::string> mapped;
+                for (const auto& item : items) {
+                    auto kv = split_top_level(item, ':');
+                    if (kv.size() == 2) {
+                        mapped.push_back("{ " + convert_expr(kv[0]) + ", " + convert_expr(kv[1]) + " }");
+                    }
+                }
+                if (!mapped.empty()) {
+                    return "{ " + join(mapped, ", ") + " }";
+                }
+            }
+        }
+
+        if (starts_with(e, "{") && e.size() >= 2 && e.back() == '}' && e.find(':') == std::string::npos) {
+            std::string inner = trim(e.substr(1, e.size() - 2));
+            if (inner.empty()) {
+                return "unordered_set<int>{}";
+            }
+            auto items = split_top_level(inner, ',');
+            std::vector<std::string> mapped;
+            std::string elem_type;
+            for (const auto& item : items) {
+                mapped.push_back(convert_expr(item));
+                const std::string t = infer_literal_type(item);
+                if (!t.empty()) {
+                    if (elem_type.empty()) elem_type = t;
+                    else if (elem_type != t) elem_type = "int";
+                }
+            }
+            if (elem_type.empty()) elem_type = "int";
+            return "unordered_set<" + elem_type + ">{ " + join(mapped, ", ") + " }";
+        }
+
+        if (starts_with(e, "(") && e.size() >= 2 && e.back() == ')') {
+            std::string inner = trim(e.substr(1, e.size() - 2));
+            auto parts = split_top_level(inner, ',');
+            if (parts.size() > 1) {
+                std::vector<std::string> mapped;
+                for (const auto& p : parts) {
+                    mapped.push_back(convert_expr(p));
+                }
+                return "std::make_tuple(" + join(mapped, ", ") + ")";
+            }
         }
 
         return e;
@@ -336,6 +512,193 @@ private:
         out.push_back("}");
     }
 
+    static std::string infer_literal_type(const std::string& expr) {
+        const std::string v = trim(expr);
+        if (v.empty()) return "";
+        if (v == "True" || v == "False" || v == "true" || v == "false") return "bool";
+        if ((v.front() == '"' && v.back() == '"') || (v.front() == '\'' && v.back() == '\'')) return "string";
+        if (std::regex_match(v, std::regex(R"(^-?[0-9]+$)"))) return "int";
+        if (std::regex_match(v, std::regex(R"(^-?[0-9]+\.[0-9]+$)"))) return "double";
+        return "";
+    }
+
+    std::unordered_map<std::string, std::string> parse_typed_params(const std::string& args) const {
+        std::unordered_map<std::string, std::string> out;
+        auto parts = split_top_level(args, ',');
+        for (const auto& part : parts) {
+            if (part.empty() || part == "self") continue;
+            auto colon = part.find(':');
+            if (colon == std::string::npos) continue;
+            std::string name = trim(part.substr(0, colon));
+            std::string rhs = trim(part.substr(colon + 1));
+            auto eq = rhs.find('=');
+            if (eq != std::string::npos) {
+                rhs = trim(rhs.substr(0, eq));
+            }
+            if (!name.empty() && !rhs.empty()) {
+                out[name] = map_annotation(rhs);
+            }
+        }
+        return out;
+    }
+
+    ClassAnalysis analyze_class(
+        const std::vector<std::string>& lines,
+        std::size_t class_line,
+        int class_indent,
+        bool is_dataclass) const {
+        ClassAnalysis res;
+        std::unordered_map<std::string, std::string> instance_fields;
+        std::unordered_map<std::string, std::string> dataclass_defaults;
+        std::vector<std::string> dataclass_order;
+        bool has_init = false;
+
+        static const std::regex re_def(R"(^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*->\s*([^:]+):$)");
+        static const std::regex re_ann_assign(R"(^([A-Za-z_][A-Za-z0-9_\.]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$)");
+        static const std::regex re_assign(R"(^(.+?)\s*=\s*(.+)$)");
+
+        std::size_t end = class_line + 1;
+        while (end < lines.size()) {
+            const std::string t = trim(lines[end]);
+            if (!t.empty() && indent_of(lines[end]) <= class_indent - 1) {
+                break;
+            }
+            ++end;
+        }
+
+        for (std::size_t i = class_line + 1; i < end; ++i) {
+            const std::string t = trim(lines[i]);
+            if (t.empty() || starts_with(t, "#")) continue;
+            const int ind = indent_of(lines[i]);
+            std::smatch m;
+
+            if (ind == class_indent && std::regex_match(t, m, re_ann_assign)) {
+                const std::string lhs = trim(m[1].str());
+                const std::string typ = map_annotation(m[2].str());
+                const bool has_val = m[3].matched;
+                const std::string rhs = has_val ? convert_expr(m[3].str()) : "";
+                if (lhs.find('.') != std::string::npos) {
+                    continue;
+                }
+                if (is_dataclass) {
+                    dataclass_order.push_back(lhs);
+                    instance_fields[lhs] = typ;
+                    if (has_val) {
+                        dataclass_defaults[lhs] = rhs;
+                    }
+                } else {
+                    res.field_lines.push_back(
+                        indent(class_indent) + "inline static " + typ + " " + lhs + (has_val ? (" = " + rhs) : "") + ";");
+                }
+                continue;
+            }
+
+            if (!is_dataclass && ind == class_indent && std::regex_match(t, m, re_assign)) {
+                const std::string lhs = trim(m[1].str());
+                if (lhs.find('.') != std::string::npos) continue;
+                const std::string rhs = convert_expr(m[2].str());
+                res.field_lines.push_back(indent(class_indent) + "inline static auto " + lhs + " = " + rhs + ";");
+                continue;
+            }
+
+            if (ind == class_indent && std::regex_match(t, m, re_def) && m[1].str() == "__init__") {
+                has_init = true;
+                const auto param_types = parse_typed_params(trim(m[2].str()));
+                std::size_t j = i + 1;
+                while (j < end) {
+                    const std::string bt = trim(lines[j]);
+                    if (!bt.empty() && indent_of(lines[j]) <= class_indent) {
+                        break;
+                    }
+                    std::smatch bm;
+                    if (std::regex_match(bt, bm, re_ann_assign)) {
+                        std::string lhs = trim(bm[1].str());
+                        if (starts_with(lhs, "self.")) {
+                            std::string name = lhs.substr(5);
+                            instance_fields[name] = map_annotation(bm[2].str());
+                        }
+                    } else if (std::regex_match(bt, bm, re_assign)) {
+                        std::string lhs = trim(bm[1].str());
+                        std::string rhs = trim(bm[2].str());
+                        if (starts_with(lhs, "self.")) {
+                            std::string name = lhs.substr(5);
+                            if (!instance_fields.count(name)) {
+                                std::string typ;
+                                auto lit = infer_literal_type(rhs);
+                                if (!lit.empty()) {
+                                    typ = lit;
+                                } else if (param_types.count(rhs)) {
+                                    typ = param_types.at(rhs);
+                                } else {
+                                    typ = "int";
+                                }
+                                instance_fields[name] = typ;
+                            }
+                        }
+                    }
+                    ++j;
+                }
+            }
+        }
+
+        for (const auto& kv : instance_fields) {
+            if (is_dataclass) {
+                auto it = std::find(dataclass_order.begin(), dataclass_order.end(), kv.first);
+                if (it == dataclass_order.end()) {
+                    dataclass_order.push_back(kv.first);
+                }
+            }
+            if (!is_dataclass || std::find(dataclass_order.begin(), dataclass_order.end(), kv.first) == dataclass_order.end()) {
+                res.field_lines.push_back(indent(class_indent) + kv.second + " " + kv.first + ";");
+            }
+        }
+
+        if (is_dataclass) {
+            for (const auto& name : dataclass_order) {
+                const std::string typ = instance_fields.count(name) ? instance_fields.at(name) : "int";
+                auto d = dataclass_defaults.find(name);
+                if (d == dataclass_defaults.end()) {
+                    res.field_lines.push_back(indent(class_indent) + typ + " " + name + ";");
+                } else {
+                    res.field_lines.push_back(indent(class_indent) + typ + " " + name + " = " + d->second + ";");
+                }
+            }
+            if (!has_init && !dataclass_order.empty()) {
+                std::vector<std::string> params;
+                res.dataclass_ctor_lines.push_back(indent(class_indent) + trim(lines[class_line]).substr(6));
+                // replace trailing ':' and base part from class header
+                if (!res.dataclass_ctor_lines.empty()) {
+                    // no-op placeholder, constructor signature is appended below
+                }
+                res.dataclass_ctor_lines.clear();
+                std::string class_header = trim(lines[class_line]);
+                std::smatch mc;
+                std::string class_name;
+                static const std::regex re_class(R"(^class\s+([A-Za-z_][A-Za-z0-9_]*).*$)");
+                if (std::regex_match(class_header, mc, re_class)) {
+                    class_name = mc[1].str();
+                }
+                for (const auto& name : dataclass_order) {
+                    const std::string typ = instance_fields.count(name) ? instance_fields.at(name) : "int";
+                    auto d = dataclass_defaults.find(name);
+                    if (d == dataclass_defaults.end()) {
+                        params.push_back(typ + " " + name);
+                    } else {
+                        params.push_back(typ + " " + name + " = " + d->second);
+                    }
+                }
+                res.dataclass_ctor_lines.push_back(indent(class_indent) + class_name + "(" + join(params, ", ") + ")");
+                res.dataclass_ctor_lines.push_back(indent(class_indent) + "{");
+                for (const auto& name : dataclass_order) {
+                    res.dataclass_ctor_lines.push_back(indent(class_indent + 1) + "this->" + name + " = " + name + ";");
+                }
+                res.dataclass_ctor_lines.push_back(indent(class_indent) + "}");
+            }
+        }
+
+        return res;
+    }
+
     bool convert_block(
         const std::vector<std::string>& lines,
         int base_indent,
@@ -346,14 +709,28 @@ private:
         std::string* err) {
         std::vector<Block> stack;
         std::unordered_map<std::string, bool> declared;
-        std::vector<std::pair<std::string, std::string>> dataclass_fields;
-        bool has_ctor = false;
+        bool pending_dataclass = false;
+
+        if (in_class) {
+            stack.push_back({base_indent, "", BlockKind::Class, class_name, class_is_dataclass});
+        }
 
         auto close_until = [&](int ind) {
             while (!stack.empty() && ind < stack.back().py_indent) {
-                out.push_back(indent(stack.back().py_indent - 1) + stack.back().close_token);
+                if (!stack.back().close_token.empty()) {
+                    out.push_back(indent(stack.back().py_indent - 1) + stack.back().close_token);
+                }
                 stack.pop_back();
             }
+        };
+
+        auto current_class = [&](int ind) -> const Block* {
+            for (auto it = stack.rbegin(); it != stack.rend(); ++it) {
+                if (it->kind == BlockKind::Class && ind >= it->py_indent) {
+                    return &(*it);
+                }
+            }
+            return nullptr;
         };
 
         static const std::regex re_class(R"(^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?:$)");
@@ -373,6 +750,10 @@ private:
             if (t.empty() || starts_with(t, "#")) {
                 continue;
             }
+            if (t == "@dataclass") {
+                pending_dataclass = true;
+                continue;
+            }
             if (starts_with(t, "import ") || starts_with(t, "from ")) {
                 continue;
             }
@@ -388,13 +769,22 @@ private:
             if (std::regex_match(t, m, re_class)) {
                 const std::string c = m[1].str();
                 std::string base = "pycs::gc::PyObj";
+                const bool is_dataclass = pending_dataclass;
+                pending_dataclass = false;
                 if (m[2].matched) {
                     base = m[2].str();
                 }
                 out.push_back(indent(ind) + "class " + c + " : public " + base);
                 out.push_back(indent(ind) + "{");
                 out.push_back(indent(ind) + "public:");
-                stack.push_back({ind + 1, "};"});
+                const auto cls = analyze_class(lines, i, ind + 1, is_dataclass);
+                for (const auto& line : cls.field_lines) {
+                    out.push_back(line);
+                }
+                for (const auto& line : cls.dataclass_ctor_lines) {
+                    out.push_back(line);
+                }
+                stack.push_back({ind + 1, "};", BlockKind::Class, c, is_dataclass});
                 continue;
             }
 
@@ -402,10 +792,12 @@ private:
                 std::string fn = m[1].str();
                 std::string args = trim(m[2].str());
                 std::string ret = map_annotation(m[3].str());
+                const Block* cls = current_class(ind);
+                const bool method_def = cls != nullptr && ind == cls->py_indent;
 
                 std::vector<std::string> parts;
                 if (!args.empty()) {
-                    parts = split(args, ',');
+                    parts = split_top_level(args, ',');
                 }
                 std::vector<std::string> cargs;
                 for (std::size_t ai = 0; ai < parts.size(); ++ai) {
@@ -418,19 +810,29 @@ private:
                         cargs.push_back("auto " + trim(p));
                     } else {
                         std::string name = trim(p.substr(0, pos));
-                        std::string typ = map_annotation(p.substr(pos + 1));
-                        cargs.push_back(typ + " " + name);
+                        std::string typ_raw = trim(p.substr(pos + 1));
+                        auto eq = typ_raw.find('=');
+                        std::string def;
+                        if (eq != std::string::npos) {
+                            def = trim(typ_raw.substr(eq + 1));
+                            typ_raw = trim(typ_raw.substr(0, eq));
+                        }
+                        std::string typ = map_annotation(typ_raw);
+                        if (!def.empty()) {
+                            cargs.push_back(typ + " " + name + " = " + convert_expr(def));
+                        } else {
+                            cargs.push_back(typ + " " + name);
+                        }
                     }
                 }
 
-                if (in_class && fn == "__init__") {
-                    out.push_back(indent(ind) + class_name + "(" + join(cargs, ", ") + ")");
-                    has_ctor = true;
+                if (method_def && fn == "__init__") {
+                    out.push_back(indent(ind) + cls->class_name + "(" + join(cargs, ", ") + ")");
                 } else {
                     out.push_back(indent(ind) + ret + " " + fn + "(" + join(cargs, ", ") + ")");
                 }
                 out.push_back(indent(ind) + "{");
-                stack.push_back({ind + 1, "}"});
+                stack.push_back({ind + 1, "}", BlockKind::Function, "", false});
                 continue;
             }
 
@@ -534,14 +936,15 @@ private:
                 const std::string typ = map_annotation(m[2].str());
                 const bool has_val = m[3].matched;
                 const std::string rhs = has_val ? convert_expr(m[3].str()) : "";
+                const Block* cls = current_class(ind);
 
-                if (starts_with(lhs, "self.")) {
-                    out.push_back(indent(ind) + convert_expr(lhs) + " = " + rhs + ";");
+                if (cls != nullptr && ind == cls->py_indent) {
+                    // class-level fields are emitted from analyze_class()
                     continue;
                 }
 
-                if (in_class && ind == base_indent) {
-                    out.push_back(indent(ind) + "inline static " + typ + " " + lhs + (has_val ? (" = " + rhs) : "") + ";");
+                if (starts_with(lhs, "self.")) {
+                    out.push_back(indent(ind) + convert_expr(lhs) + " = " + rhs + ";");
                     continue;
                 }
 
@@ -552,22 +955,44 @@ private:
 
             if (std::regex_match(t, m, re_assign)) {
                 std::string lhs = trim(m[1].str());
-                std::string rhs = convert_expr(m[2].str());
+                std::string rhs_src = trim(m[2].str());
+                std::string rhs = convert_expr(rhs_src);
+                const Block* cls = current_class(ind);
+
+                if (cls != nullptr && ind == cls->py_indent && lhs.find("self.") != 0) {
+                    // class-level fields are emitted from analyze_class()
+                    continue;
+                }
 
                 if (lhs.find(',') != std::string::npos) {
-                    auto parts = split(lhs, ',');
+                    auto parts = split_top_level(lhs, ',');
+                    auto rhs_parts = split_top_level(rhs_src, ',');
+                    if (rhs_parts.size() > 1) {
+                        std::vector<std::string> mapped_rhs;
+                        for (const auto& p : rhs_parts) {
+                            mapped_rhs.push_back(convert_expr(p));
+                        }
+                        rhs = "std::make_tuple(" + join(mapped_rhs, ", ") + ")";
+                    }
                     out.push_back(indent(ind) + "auto _tmp_tuple = " + rhs + ";");
                     for (std::size_t ti = 0; ti < parts.size(); ++ti) {
-                        out.push_back(indent(ind) + trim(parts[ti]) + " = std::get<" + std::to_string(ti) + ">(_tmp_tuple);");
+                        const std::string name = trim(parts[ti]);
+                        if (!declared[name]) {
+                            out.push_back(indent(ind) + "auto " + name + " = std::get<" + std::to_string(ti) + ">(_tmp_tuple);");
+                            declared[name] = true;
+                        } else {
+                            out.push_back(indent(ind) + name + " = std::get<" + std::to_string(ti) + ">(_tmp_tuple);");
+                        }
                     }
                     continue;
                 }
 
-                if (!declared[lhs] && !starts_with(lhs, "this->") && lhs.find("->") == std::string::npos && lhs.find("::") == std::string::npos) {
-                    out.push_back(indent(ind) + "auto " + convert_expr(lhs) + " = " + rhs + ";");
+                const std::string lhs_cpp = convert_expr(lhs);
+                if (!declared[lhs] && !starts_with(lhs_cpp, "this->") && lhs_cpp.find("->") == std::string::npos && lhs_cpp.find("::") == std::string::npos) {
+                    out.push_back(indent(ind) + "auto " + lhs_cpp + " = " + rhs + ";");
                     declared[lhs] = true;
                 } else {
-                    out.push_back(indent(ind) + convert_expr(lhs) + " = " + rhs + ";");
+                    out.push_back(indent(ind) + lhs_cpp + " = " + rhs + ";");
                 }
                 continue;
             }
