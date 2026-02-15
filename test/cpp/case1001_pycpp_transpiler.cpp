@@ -1,4 +1,5 @@
-#include "gc.h"
+#include "cpp_module/gc.h"
+#include "cpp_module/py_runtime_modules.h"
 #include <any>
 #include <filesystem>
 #include <iostream>
@@ -109,7 +110,7 @@ public:
         vector<string> function_defs = {};
         vector<string> class_defs = {};
         vector<ast->stmt> top_level_body = {};
-        unordered_set<string> include_lines = {"#include <iostream>", "#include <string>", "#include <vector>", "#include <unordered_map>", "#include <unordered_set>", "#include <tuple>", "#include <sstream>", "#include <stdexcept>", "#include \"gc.h\""};
+        unordered_set<string> include_lines = {"#include <iostream>", "#include <string>", "#include <vector>", "#include <unordered_map>", "#include <unordered_set>", "#include <tuple>", "#include <sstream>", "#include <stdexcept>", "#include \"cpp_module/gc.h\"", "#include \"cpp_module/py_runtime_modules.h\""};
         this->class_names = /* comprehension */ {};
         for (const auto& stmt : module->body)
         {

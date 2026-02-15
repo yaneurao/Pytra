@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-#include "../src/gc.h"
+#include "../src/cpp_module/gc.h"
 
 namespace gc = pycs::gc;
 

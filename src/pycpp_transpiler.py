@@ -46,7 +46,8 @@ class CppTranspiler:
             "#include <tuple>",
             "#include <sstream>",
             "#include <stdexcept>",
-            '#include "gc.h"',
+            '#include "cpp_module/gc.h"',
+            '#include "cpp_module/py_runtime_modules.h"',
         }
         self.class_names = {
             stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)

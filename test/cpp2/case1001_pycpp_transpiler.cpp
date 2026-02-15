@@ -1,5 +1,6 @@
 #include "cpp_module/gc.h"
 #include "cpp_module/py_runtime_modules.h"
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -67,18 +68,14 @@ void py_print(const T& first, const Rest&... rest)
     std::cout << std::endl;
 }
 
-class Multiplier : public pycs::gc::PyObj
-{
-public:
-    int mul(int x, int y)
-    {
-        return (x * y);
-    }
-};
-
 int main()
 {
-    pycs::gc::RcHandle<Multiplier> m = pycs::gc::RcHandle<Multiplier>::adopt(pycs::gc::rc_new<Multiplier>());
-    py_print(m->mul(6, 7));
+    Path root = Path(__file__)->resolve()->parents[2];
+    sys->path->insert(0, str(root));
+    Path src_file = ((root / "src") / "pycpp_transpiler.py");
+    Path out_file = (((root / "test") / "cpp") / "case1001_pycpp_transpiler.cpp");
+    out_file->parent->mkdir(true, true);
+    transpile(str(src_file), str(out_file));
+    py_print("ok");
     return 0;
 }

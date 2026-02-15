@@ -1,4 +1,5 @@
-#include "gc.h"
+#include "cpp_module/gc.h"
+#include "cpp_module/py_runtime_modules.h"
 #include <any>
 #include <filesystem>
 #include <iostream>

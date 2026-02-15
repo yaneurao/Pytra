@@ -2,7 +2,7 @@
 // 読み手が責務を把握しやすいように、日本語コメントを追記しています。
 // 変更時は、スレッド安全性と参照カウント整合性を必ず確認してください。
 
-#include "gc.h"
+#include "cpp_module/gc.h"
 
 namespace pycs::gc {
 
