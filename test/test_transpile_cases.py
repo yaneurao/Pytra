@@ -13,7 +13,7 @@ CS_DIR = ROOT / "test" / "cs"
 class TranspileGoldenTest(unittest.TestCase):
     def test_cases_match_expected_cs(self) -> None:
         py_cases = sorted(PY_DIR.glob("case*.py"))
-        self.assertGreaterEqual(len(py_cases), 16, "Expected at least 16 Python test cases")
+        self.assertEqual(len(py_cases), 100, "Expected exactly 100 Python test cases")
 
         for py_case in py_cases:
             with self.subTest(case=py_case.name):

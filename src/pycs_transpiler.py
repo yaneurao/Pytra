@@ -31,12 +31,15 @@ class CSharpTranspiler:
         function_defs: List[str] = []
         class_defs: List[str] = []
         top_level_body: List[ast.stmt] = []
+        using_lines: Set[str] = {"using System;"}
         self.class_names = {
             stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)
         }
 
         for stmt in module.body:
-            if isinstance(stmt, ast.FunctionDef):
+            if isinstance(stmt, (ast.Import, ast.ImportFrom)):
+                using_lines = using_lines.union(self._using_lines_from_import(stmt))
+            elif isinstance(stmt, ast.FunctionDef):
                 function_defs.append(self.transpile_function(stmt))
             elif isinstance(stmt, ast.ClassDef):
                 class_defs.append(self.transpile_class(stmt))
@@ -52,12 +55,8 @@ class CSharpTranspiler:
 
         main_method = self.transpile_main(main_stmts)
 
-        parts = [
-            "using System;",
-            "",
-            "public static class Program",
-            "{",
-        ]
+        parts = sorted(using_lines)
+        parts.extend(["", "public static class Program", "{"])
 
         for fn in function_defs:
             parts.extend(self._indent_block(fn.splitlines()))
@@ -72,6 +71,43 @@ class CSharpTranspiler:
         parts.append("")
         return "\n".join(parts)
 
+    def _using_lines_from_import(self, stmt: ast.stmt) -> Set[str]:
+        lines: Set[str] = set()
+        if isinstance(stmt, ast.Import):
+            for alias in stmt.names:
+                module_name = self._map_python_module(alias.name)
+                if alias.asname:
+                    lines.add(f"using {alias.asname} = {module_name};")
+                else:
+                    lines.add(f"using {module_name};")
+            return lines
+
+        if isinstance(stmt, ast.ImportFrom):
+            if stmt.level != 0:
+                return lines
+            if stmt.module:
+                module_name = self._map_python_module(stmt.module)
+                lines.add(f"using {module_name};")
+                for alias in stmt.names:
+                    if alias.name == "*":
+                        continue
+                    full_name = f"{module_name}.{alias.name}"
+                    if alias.asname:
+                        lines.add(f"using {alias.asname} = {full_name};")
+            return lines
+
+        return lines
+
+    def _map_python_module(self, module_name: str) -> str:
+        mapping = {
+            "math": "System",
+            "pathlib": "System.IO",
+            "typing": "System.Collections.Generic",
+            "collections": "System.Collections.Generic",
+            "itertools": "System.Linq",
+        }
+        return mapping.get(module_name, module_name)
+
     def transpile_class(self, cls: ast.ClassDef) -> str:
         if len(cls.bases) > 1:
             raise TranspileError(f"Class '{cls.name}' multiple inheritance is not supported")
@@ -82,7 +118,9 @@ class CSharpTranspiler:
                 raise TranspileError(f"Class '{cls.name}' base class must be a simple name")
             base = f" : {cls.bases[0].id}"
 
+        is_dataclass = self._is_dataclass_class(cls)
         static_fields: List[str] = []
+        dataclass_fields: List[tuple[str, str, str | None]] = []
         static_field_names: Set[str] = set()
         methods: List[ast.FunctionDef] = []
 
@@ -90,9 +128,12 @@ class CSharpTranspiler:
             if isinstance(stmt, ast.FunctionDef):
                 methods.append(stmt)
             elif isinstance(stmt, ast.AnnAssign):
-                field_line, field_name = self._transpile_class_static_field(stmt)
-                static_fields.append(field_line)
-                static_field_names.add(field_name)
+                if is_dataclass:
+                    dataclass_fields.append(self._transpile_dataclass_field(stmt))
+                else:
+                    field_line, field_name = self._transpile_class_static_field(stmt)
+                    static_fields.append(field_line)
+                    static_field_names.add(field_name)
             elif isinstance(stmt, ast.Assign):
                 field_line, field_name = self._transpile_class_static_assign(stmt)
                 static_fields.append(field_line)
@@ -105,13 +146,32 @@ class CSharpTranspiler:
                 )
 
         instance_fields = self._collect_instance_fields(cls, static_field_names)
+        has_init = any(method.name == "__init__" for method in methods)
 
         lines = [f"public class {cls.name}{base}", "{"]
         for static_field in static_fields:
             lines.extend(self._indent_block([static_field]))
+        for field_type, field_name, default_value in dataclass_fields:
+            if default_value is None:
+                lines.extend(self._indent_block([f"public {field_type} {field_name};"]))
+            else:
+                lines.extend(self._indent_block([f"public {field_type} {field_name} = {default_value};"]))
         for _, field_type, field_name in instance_fields:
             lines.extend(self._indent_block([f"public {field_type} {field_name};"]))
-        if static_fields or instance_fields:
+        if is_dataclass and dataclass_fields and not has_init:
+            ctor_params: List[str] = []
+            ctor_body: List[str] = []
+            for field_type, field_name, default_value in dataclass_fields:
+                if default_value is None:
+                    ctor_params.append(f"{field_type} {field_name}")
+                else:
+                    ctor_params.append(f"{field_type} {field_name} = {default_value}")
+                ctor_body.append(f"this.{field_name} = {field_name};")
+            lines.extend(self._indent_block([f"public {cls.name}({', '.join(ctor_params)})"]))
+            lines.extend(self._indent_block(["{"]))
+            lines.extend(self._indent_block(self._indent_block(ctor_body)))
+            lines.extend(self._indent_block(["}"]))
+        if static_fields or dataclass_fields or instance_fields:
             lines.extend(self._indent_block([""]))
 
         prev_class_name = self.current_class_name
@@ -137,6 +197,15 @@ class CSharpTranspiler:
         if stmt.value is None:
             return f"public static {field_type} {field_name};", field_name
         return f"public static {field_type} {field_name} = {self.transpile_expr(stmt.value)};", field_name
+
+    def _transpile_dataclass_field(self, stmt: ast.AnnAssign) -> tuple[str, str, str | None]:
+        if not isinstance(stmt.target, ast.Name):
+            raise TranspileError("Dataclass field declaration must be a simple name")
+        field_type = self._map_annotation(stmt.annotation)
+        field_name = stmt.target.id
+        if stmt.value is None:
+            return field_type, field_name, None
+        return field_type, field_name, self.transpile_expr(stmt.value)
 
     def _transpile_class_static_assign(self, stmt: ast.Assign) -> tuple[str, str]:
         if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
@@ -554,6 +623,14 @@ class CSharpTranspiler:
             return f"{base}<{', '.join(args)}>"
 
         raise TranspileError(f"Unsupported type annotation: {ast.unparse(annotation)}")
+
+    def _is_dataclass_class(self, cls: ast.ClassDef) -> bool:
+        for decorator in cls.decorator_list:
+            if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
+                return True
+            if isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass":
+                return True
+        return False
 
     def _is_main_guard(self, stmt: ast.stmt) -> bool:
         if not isinstance(stmt, ast.If):

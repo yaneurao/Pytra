@@ -15,10 +15,12 @@ python pycs.py test/py/case11_fib.py test/cs/case11_fib.cs
 - Pythonのコードは、型アノテーション必須とします。
 - Pythonのintは、そのままC#のintに変換されるものとします。
 - Pythonのastモジュールを用いてASTを取得し、C#に1対1になるべく近い形で書き出します。
+- `import` / `from ... import ...` は C# の `using` に変換します（`as` は `using` エイリアスに変換）。
 - x : int = 1 のように変数の型をひとたびint型と決めたら、そのあと別の型であるstr型の値の代入はできないものとします。
 - class は単一継承をサポートし、`self` は C# の `this` として変換します。
 - Python の class 本体で宣言したメンバーは C# の `static` メンバーとして変換します。
 - `__init__` 内で `self.xxx` に代入したメンバーは C# のインスタンスメンバー（非`static`）として変換します。
+- `@dataclass` を付けた class は、型注釈付きフィールドをインスタンスメンバーとして変換し、必要なコンストラクタを自動生成します。
 
 ## フォルダ構成
 
@@ -63,6 +65,7 @@ python pycs.py test/py/case11_fib.py test/cs/case11_fib.cs
 - 入力Pythonコードは型アノテーション必須です（関数引数・戻り値・必要な変数宣言）。
 - 未対応の構文を使うとトランスパイル時にエラーになります。
 - テスト用サンプルは `test/py/caseXX_*.py` と `test/cs/caseXX_*.cs` の対応で管理します。
+- 現在のサンプル数は `case01` から `case100` までの100件です。
 - 変換後の `.cs` は `test/cs/` に出力します。既存ケースを更新した場合は、対応する `test/cs/` も更新してください。
 
 ### サンプルプログラム解説
