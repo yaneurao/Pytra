@@ -11,29 +11,50 @@ from typing import List, Set
 
 
 class TranspileError(Exception):
+    """トランスパイル時の仕様違反・未対応構文を通知する例外。"""
+
     pass
 
 
 @dataclass
 class Scope:
+    """変換中スコープで宣言済みの変数名を保持する。"""
+
     declared: Set[str]
 
 
 class CppTranspiler:
+    """Python AST を C++ ソースコードへ変換する本体クラス。"""
+
     INDENT = "    "
 
     def __init__(self) -> None:
+        """変換時に使う内部状態を初期化する。"""
         self.class_names: Set[str] = set()
         self.current_class_name: str | None = None
         self.current_static_fields: Set[str] = set()
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
+        """1ファイルを読み込み、C++へ変換して出力する。
+
+        Args:
+            input_path: 変換元 Python ファイルのパス。
+            output_path: 変換後 C++ ファイルの出力先パス。
+        """
         source = input_path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(input_path))
         cpp = self.transpile_module(tree)
         output_path.write_text(cpp, encoding="utf-8")
 
     def transpile_module(self, module: ast.Module) -> str:
+        """モジュールASTをC++コード文字列へ変換する。
+
+        Args:
+            module: Python AST の Module ノード。
+
+        Returns:
+            変換後の C++ ソースコード全文。
+        """
         function_defs: List[str] = []
         class_defs: List[str] = []
         top_level_body: List[ast.stmt] = []
@@ -93,6 +114,7 @@ class CppTranspiler:
         return "\n".join(parts)
 
     def _helper_functions(self) -> List[str]:
+        """生成コード先頭へ埋め込む補助関数群を返す。"""
         return [
             "template <typename T>",
             "string py_to_string(const T& value)",
@@ -151,6 +173,14 @@ class CppTranspiler:
         ]
 
     def _includes_from_import(self, stmt: ast.stmt) -> Set[str]:
+        """import文から必要な C++ include を推定する。
+
+        Args:
+            stmt: ast.Import または ast.ImportFrom ノード。
+
+        Returns:
+            追加すべき include 行の集合。
+        """
         includes: Set[str] = set()
         modules: List[str] = []
         if isinstance(stmt, ast.Import):
@@ -170,6 +200,14 @@ class CppTranspiler:
         return includes
 
     def transpile_class(self, cls: ast.ClassDef) -> str:
+        """Python class を C++ class 定義へ変換する。
+
+        Args:
+            cls: 変換対象の ClassDef ノード。
+
+        Returns:
+            C++ class 定義文字列。
+        """
         if len(cls.bases) > 1:
             raise TranspileError(f"Class '{cls.name}' multiple inheritance is not supported")
 
@@ -250,6 +288,14 @@ class CppTranspiler:
         return "\n".join(lines)
 
     def _transpile_class_static_field(self, stmt: ast.AnnAssign) -> tuple[str, str]:
+        """class本体の型付きメンバー宣言を static メンバーへ変換する。
+
+        Args:
+            stmt: クラス本体の AnnAssign ノード。
+
+        Returns:
+            (C++宣言行, フィールド名)
+        """
         if not isinstance(stmt.target, ast.Name):
             raise TranspileError("Class field declaration must be a simple name")
 
@@ -260,6 +306,14 @@ class CppTranspiler:
         return f"inline static {field_type} {field_name} = {self.transpile_expr(stmt.value)};", field_name
 
     def _transpile_dataclass_field(self, stmt: ast.AnnAssign) -> tuple[str, str, str | None]:
+        """dataclass フィールド宣言を C++ メンバー情報へ変換する。
+
+        Args:
+            stmt: dataclass 内の AnnAssign ノード。
+
+        Returns:
+            (型名, フィールド名, 既定値文字列 or None)
+        """
         if not isinstance(stmt.target, ast.Name):
             raise TranspileError("Dataclass field declaration must be a simple name")
         field_type = self._map_annotation(stmt.annotation)
@@ -269,6 +323,14 @@ class CppTranspiler:
         return field_type, field_name, self.transpile_expr(stmt.value)
 
     def _transpile_class_static_assign(self, stmt: ast.Assign) -> tuple[str, str]:
+        """class本体の代入を static メンバー定義へ変換する。
+
+        Args:
+            stmt: クラス本体の Assign ノード。
+
+        Returns:
+            (C++宣言行, フィールド名)
+        """
         if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
             raise TranspileError("Class static assignment must be a simple name assignment")
         field_name = stmt.targets[0].id
@@ -278,6 +340,15 @@ class CppTranspiler:
     def _collect_instance_fields(
         self, cls: ast.ClassDef, static_field_names: Set[str]
     ) -> List[tuple[str, str, str]]:
+        """__init__ からインスタンスフィールド候補を抽出する。
+
+        Args:
+            cls: 解析対象クラス。
+            static_field_names: static 扱い済みフィールド名の集合。
+
+        Returns:
+            (クラス名, 型名, フィールド名) の一覧。
+        """
         fields: List[tuple[str, str, str]] = []
         seen: Set[str] = set()
 
@@ -325,6 +396,12 @@ class CppTranspiler:
         return fields
 
     def _infer_type(self, expr: ast.expr, arg_types: dict[str, str]) -> str | None:
+        """式から C++ 型を推定する。
+
+        Args:
+            expr: 推定対象の式ノード。
+            arg_types: 引数名 -> 型名の対応表。
+        """
         if isinstance(expr, ast.Name):
             return arg_types.get(expr.id)
         if isinstance(expr, ast.Constant):
@@ -335,6 +412,7 @@ class CppTranspiler:
         return None
 
     def _infer_expr_cpp_type(self, expr: ast.expr) -> str | None:
+        """リテラル式から C++ 基本型を推定する。"""
         if isinstance(expr, ast.Constant):
             if isinstance(expr.value, bool):
                 return "bool"
@@ -348,6 +426,12 @@ class CppTranspiler:
         return None
 
     def transpile_function(self, fn: ast.FunctionDef, in_class: bool = False) -> str:
+        """関数/メソッド定義を C++ の関数定義へ変換する。
+
+        Args:
+            fn: 変換対象の FunctionDef ノード。
+            in_class: クラス内メソッドかどうか。
+        """
         is_constructor = in_class and fn.name == "__init__"
 
         if fn.returns is None:
@@ -384,6 +468,7 @@ class CppTranspiler:
         return "\n".join(lines)
 
     def transpile_main(self, body: List[ast.stmt]) -> str:
+        """トップレベル文を C++ の main 関数へ変換する。"""
         lines = ["int main()", "{"]
         body_lines = self.transpile_statements(body, Scope(declared=set()))
         lines.extend(self._indent_block(body_lines))
@@ -392,6 +477,7 @@ class CppTranspiler:
         return "\n".join(lines)
 
     def transpile_statements(self, stmts: List[ast.stmt], scope: Scope) -> List[str]:
+        """文ノード列を C++ 文へ変換するディスパッチャ。"""
         lines: List[str] = []
 
         for stmt in stmts:
@@ -429,6 +515,7 @@ class CppTranspiler:
         return lines
 
     def _transpile_ann_assign(self, stmt: ast.AnnAssign, scope: Scope) -> List[str]:
+        """型注釈付き代入文を C++ 宣言/代入へ変換する。"""
         if isinstance(stmt.target, ast.Attribute):
             if isinstance(stmt.target.value, ast.Name) and stmt.target.value.id == "self":
                 if stmt.value is None:
@@ -450,6 +537,7 @@ class CppTranspiler:
         return [line]
 
     def _transpile_assign(self, stmt: ast.Assign, scope: Scope) -> List[str]:
+        """通常の代入文を C++ 代入へ変換する。"""
         if len(stmt.targets) != 1:
             return [f"// unsupported assignment: {ast.unparse(stmt)}"]
         if isinstance(stmt.targets[0], ast.Tuple):
@@ -480,6 +568,7 @@ class CppTranspiler:
         return [f"{name} = {self.transpile_expr(stmt.value)};"]
 
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
+        """for 文を range-for 形式へ変換する。"""
         tuple_target = None
         target_name = ""
         if isinstance(stmt.target, ast.Name):
@@ -508,6 +597,7 @@ class CppTranspiler:
         return lines
 
     def _transpile_try(self, stmt: ast.Try, scope: Scope) -> List[str]:
+        """try 文を C++ try/catch へ変換する。"""
         lines = ["try", "{"]
         lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))))
         lines.append("}")
@@ -543,6 +633,7 @@ class CppTranspiler:
         return lines
 
     def _transpile_raise(self, stmt: ast.Raise) -> List[str]:
+        """raise 文を std::runtime_error の throw へ変換する。"""
         if stmt.exc is None:
             return ["throw;"]
         if (
@@ -555,6 +646,7 @@ class CppTranspiler:
         return [f"throw std::runtime_error(py_to_string({self.transpile_expr(stmt.exc)}));"]
 
     def _transpile_if(self, stmt: ast.If, scope: Scope) -> List[str]:
+        """if 文を C++ if/else へ変換する。"""
         lines = [f"if ({self.transpile_expr(stmt.test)})", "{"]
         then_lines = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
         lines.extend(self._indent_block(then_lines))
@@ -570,6 +662,7 @@ class CppTranspiler:
         return lines
 
     def transpile_expr(self, expr: ast.expr) -> str:
+        """式ノードを C++ 式文字列へ変換する。"""
         if isinstance(expr, ast.Name):
             if expr.id == "self":
                 return "this"
@@ -636,6 +729,7 @@ class CppTranspiler:
         raise TranspileError(f"Unsupported expression: {type(expr).__name__}")
 
     def _transpile_call(self, call: ast.Call) -> str:
+        """関数呼び出し式を C++ 呼び出し式へ変換する。"""
         args_list = [self.transpile_expr(arg) for arg in call.args]
         for kw in call.keywords:
             if kw.arg is None:
@@ -659,6 +753,7 @@ class CppTranspiler:
         raise TranspileError("Only direct function calls are supported")
 
     def _map_annotation(self, annotation: ast.expr) -> str:
+        """Python 型注釈を C++ 型名へ変換する。"""
         if isinstance(annotation, ast.Constant) and annotation.value is None:
             return "void"
         if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
@@ -712,6 +807,7 @@ class CppTranspiler:
         raise TranspileError(f"Unsupported type annotation: {ast.unparse(annotation)}")
 
     def _is_main_guard(self, stmt: ast.stmt) -> bool:
+        """if __name__ == \"__main__\" かを判定する。"""
         if not isinstance(stmt, ast.If):
             return False
         test = stmt.test
@@ -729,6 +825,7 @@ class CppTranspiler:
         )
 
     def _constant(self, value: object) -> str:
+        """Python リテラル値を C++ リテラル表現へ変換する。"""
         if isinstance(value, bool):
             return "true" if value else "false"
         if value is None:
@@ -739,6 +836,7 @@ class CppTranspiler:
         return repr(value)
 
     def _binop(self, op: ast.operator) -> str:
+        """二項演算子ノードを C++ 演算子文字列へ変換する。"""
         mapping = {
             ast.Add: "+",
             ast.Sub: "-",
@@ -753,6 +851,7 @@ class CppTranspiler:
         raise TranspileError(f"Unsupported binary operator: {type(op).__name__}")
 
     def _unaryop(self, op: ast.unaryop) -> str:
+        """単項演算子ノードを C++ 演算子文字列へ変換する。"""
         mapping = {
             ast.UAdd: "+",
             ast.USub: "-",
@@ -764,6 +863,7 @@ class CppTranspiler:
         raise TranspileError(f"Unsupported unary operator: {type(op).__name__}")
 
     def _cmpop(self, op: ast.cmpop) -> str:
+        """比較演算子ノードを C++ 演算子文字列へ変換する。"""
         mapping = {
             ast.Eq: "==",
             ast.NotEq: "!=",
@@ -778,6 +878,7 @@ class CppTranspiler:
         raise TranspileError(f"Unsupported comparison operator: {type(op).__name__}")
 
     def _transpile_compare(self, left_expr: ast.expr, op: ast.cmpop, right_expr: ast.expr) -> str:
+        """比較式ノードを C++ 比較式へ変換する。"""
         left = self.transpile_expr(left_expr)
         right = self.transpile_expr(right_expr)
         if isinstance(op, ast.In):
@@ -791,6 +892,7 @@ class CppTranspiler:
         return f"({left} {self._cmpop(op)} {right})"
 
     def _boolop(self, op: ast.boolop) -> str:
+        """論理演算子ノードを C++ 論理演算子へ変換する。"""
         if isinstance(op, ast.And):
             return "&&"
         if isinstance(op, ast.Or):
@@ -798,6 +900,7 @@ class CppTranspiler:
         raise TranspileError(f"Unsupported boolean operator: {type(op).__name__}")
 
     def _transpile_joined_str(self, expr: ast.JoinedStr) -> str:
+        """f-string を文字列連結式へ変換する。"""
         parts: List[str] = []
         for value in expr.values:
             if isinstance(value, ast.Constant) and isinstance(value.value, str):
@@ -811,6 +914,7 @@ class CppTranspiler:
         return "(" + " + ".join(parts) + ")"
 
     def _is_dataclass_class(self, cls: ast.ClassDef) -> bool:
+        """クラスに @dataclass デコレータが付いているかを判定する。"""
         for decorator in cls.decorator_list:
             if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
                 return True
@@ -819,10 +923,17 @@ class CppTranspiler:
         return False
 
     def _indent_block(self, lines: List[str]) -> List[str]:
+        """複数行にインデントを付与して返す。"""
         return [f"{self.INDENT}{line}" if line else "" for line in lines]
 
 
 def transpile(input_file: str, output_file: str) -> None:
+    """外部から使う簡易API。
+
+    Args:
+        input_file: 入力 Python ファイルパス。
+        output_file: 出力 C++ ファイルパス。
+    """
     transpiler = CppTranspiler()
     transpiler.transpile_file(Path(input_file), Path(output_file))
 

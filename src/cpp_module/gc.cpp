@@ -11,6 +11,8 @@ void PyObj::rc_release_refs() {
 }
 
 void incref(PyObj* obj) noexcept {
+    // obj:
+    //   参照カウントを増やす対象オブジェクト。nullptr は無視する。
     if (obj == nullptr) {
         return;
     }
@@ -18,6 +20,8 @@ void incref(PyObj* obj) noexcept {
 }
 
 void decref(PyObj* obj) noexcept {
+    // obj:
+    //   参照カウントを減らす対象オブジェクト。0到達時に破棄する。
     if (obj == nullptr) {
         return;
     }

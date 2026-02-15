@@ -13,8 +13,12 @@
 
 namespace pycs::gc {
 
-// RC管理対象の基底クラス。
-// すべての参照型オブジェクトはこの型を継承する。
+/**
+ * @brief RC（参照カウント）管理対象の基底クラスです。
+ *
+ * すべての参照型オブジェクトはこの型を継承し、ref_count を通じて
+ * 生存期間を管理します。
+ */
 class PyObj {
 public:
     explicit PyObj(uint32_t type_id = 0) : ref_count_(1), type_id_(type_id) {}
@@ -31,7 +35,11 @@ public:
         return type_id_;
     }
 
-    // 参照を持つ派生クラスは、このフックで子要素にdecrefを行う。
+    /**
+     * @brief 破棄直前に子参照を解放するためのフックです。
+     *
+     * 参照型メンバーを持つ派生クラスは、この関数で decref を実行します。
+     */
     virtual void rc_release_refs();
 
 private:
@@ -45,6 +53,14 @@ private:
 void incref(PyObj* obj) noexcept;
 void decref(PyObj* obj) noexcept;
 
+/**
+ * @brief RC管理オブジェクトを生成します。
+ *
+ * @tparam T 生成するクラス（PyObj 継承必須）
+ * @tparam Args コンストラクタ引数型
+ * @param args T のコンストラクタへ渡す引数
+ * @return T* 生成したオブジェクト（初期 ref_count=1）
+ */
 template <class T, class... Args>
 T* rc_new(Args&&... args) {
     static_assert(std::is_base_of_v<PyObj, T>, "T must derive from PyObj");
@@ -63,7 +79,10 @@ public:
         }
     }
 
-    // rc_new直後の「ref=1をそのまま所有したい」場合に使う。
+    /**
+     * @brief rc_new 直後の裸ポインタをそのまま所有するファクトリです。
+     * @param ptr 所有開始するポインタ（追加 incref しない）
+     */
     static RcHandle<T> adopt(T* ptr) {
         RcHandle<T> h;
         h.ptr_ = ptr;
@@ -107,7 +126,12 @@ public:
         }
     }
 
-    // 代入規則: 新値を先にincrefし、旧値をあとでdecrefする。
+    /**
+     * @brief 保持対象を差し替えます。
+     *
+     * @param ptr 新たに保持するポインタ
+     * @param add_ref true の場合、差し替え前に incref します
+     */
     void reset(T* ptr = nullptr, bool add_ref = true) {
         if (ptr != nullptr && add_ref) {
             incref(ptr);
