@@ -5,3 +5,5 @@ __pycache__/
 .venv/
 .pytest_cache/
 .DS_Store
+
+/test/test_gc
