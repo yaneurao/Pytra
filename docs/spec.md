@@ -15,6 +15,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
   - `pycs_transpiler.py`: Python -> C# 変換器
   - `pycpp_transpiler.py`: Python -> C++ 変換器
   - `cpp_module/`: C++ 側ランタイム補助モジュール
+  - `py_module/`: Python 側の自作ライブラリ配置先
 - `test/`
   - `py/`: 入力 Python サンプル
   - `cs/`: C# 期待結果
@@ -68,6 +69,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 - `import pathlib` -> `#include "cpp_module/pathlib.h"`
 - `import time` / `from time import ...` -> `#include "cpp_module/time.h"`
 - `from dataclasses import dataclass` -> `#include "cpp_module/dataclasses.h"`
+- `from py_module import png_helper` / `import png_helper` -> `#include "cpp_module/png.h"`
 - GC は常時 `#include "cpp_module/gc.h"` を利用
 
 補助モジュール実装:
@@ -108,8 +110,10 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 - 実用サンプルは `sample/py/` に配置します。
 - C++ 変換結果は `sample/cpp/` に配置します。
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します。
+- Python から import する自作ライブラリは `src/py_module/` に配置します（`sample/py/` には置きません）。
+- 例: `from py_module import png_helper`, `from py_module.gif_helper import save_gif`
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は **PNG 形式**で出力します（PPMは使用しません）。
-- Python 側の画像保存は `png_helper.write_rgb_png(...)` を使用し、C++ 側は `src/cpp_module/png.h/.cpp` を利用します。
+- Python 側の画像保存は `py_module.png_helper.write_rgb_png(...)` を使用し、C++ 側は `src/cpp_module/png.h/.cpp` を利用します。
 - `sample/py/01_mandelbrot.py` はマンデルブロ集合画像を生成し、Python 実行時と C++ 実行時の画像一致（ハッシュ一致）を確認可能なサンプルです。
 
 ## 7. ユニットテスト実行方法
@@ -142,3 +146,4 @@ python -m unittest discover -s test -p "test_*.py" -v
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
 - エラー発生時、CLI エントリポイント（例: `pycs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。
 - `test/obj/` と `test/cpp2/` は検証用生成物のため Git 管理外です。
+- `src/py_module/` のライブラリを利用してサンプルを直接実行する場合は、必要に応じて `PYTHONPATH=src` を付与して実行します。

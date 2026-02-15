@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from gif_helper import save_gif
+from py_module.gif_helper import save_gif
 
 
 def color_palette() -> bytes:

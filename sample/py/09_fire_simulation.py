@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from gif_helper import save_gif
+from py_module.gif_helper import save_gif
 
 
 def fire_palette() -> bytes:

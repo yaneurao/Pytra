@@ -2,7 +2,7 @@
 # 将来のトランスパイルを意識して、構文はなるべく素直に書いています。
 
 from time import perf_counter
-import png_helper
+from py_module import png_helper
 
 
 def escape_count(cx: float, cy: float, max_iter: int) -> int:

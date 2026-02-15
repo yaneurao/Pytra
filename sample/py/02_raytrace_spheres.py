@@ -2,7 +2,7 @@
 # トランスパイル互換のため、依存モジュールは最小限（timeのみ）にしています。
 
 import math
-import png_helper
+from py_module import png_helper
 from time import perf_counter
 
 

@@ -132,12 +132,15 @@ class CppTranspiler:
         """
         includes: Set[str] = set()
         modules: List[str] = []
+        from_import_names: List[str] = []
         if isinstance(stmt, ast.Import):
             for alias in stmt.names:
                 modules.append(alias.name)
         elif isinstance(stmt, ast.ImportFrom):
             if stmt.module:
                 modules.append(stmt.module)
+            for alias in stmt.names:
+                from_import_names.append(alias.name)
 
         for mod in modules:
             if mod == "math":
@@ -150,6 +153,9 @@ class CppTranspiler:
                 includes.add('#include "cpp_module/pathlib.h"')
             elif mod == "png_helper":
                 includes.add('#include "cpp_module/png.h"')
+            elif mod == "py_module":
+                if "png_helper" in from_import_names:
+                    includes.add('#include "cpp_module/png.h"')
             elif mod == "typing":
                 includes.add("#include <any>")
             elif mod == "dataclasses":

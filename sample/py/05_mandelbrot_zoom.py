@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from gif_helper import grayscale_palette, save_gif
+from py_module.gif_helper import grayscale_palette, save_gif
 
 
 def render_frame(width: int, height: int, center_x: float, center_y: float, scale: float, max_iter: int) -> bytes:
