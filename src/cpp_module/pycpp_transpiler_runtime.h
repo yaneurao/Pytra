@@ -1,5 +1,5 @@
-#ifndef PYCS_CPP_MODULE_GENERATED_PYCPP_TRANSPILER_H
-#define PYCS_CPP_MODULE_GENERATED_PYCPP_TRANSPILER_H
+#ifndef PYCS_CPP_MODULE_PYCPP_TRANSPILER_RUNTIME_H
+#define PYCS_CPP_MODULE_PYCPP_TRANSPILER_RUNTIME_H
 
 #include <algorithm>
 #include <filesystem>
@@ -13,7 +13,7 @@
 
 namespace pycs::cpp_module {
 
-class GeneratedPyCppTranspiler {
+class PyCppTranspilerRuntime {
 public:
     // input_path の Python ファイルを C++ に変換して output_path へ書き出す。
     bool transpile_file(const std::string& input_path, const std::string& output_path, std::string* err) {
@@ -1081,4 +1081,4 @@ private:
 
 }  // namespace pycs::cpp_module
 
-#endif  // PYCS_CPP_MODULE_GENERATED_PYCPP_TRANSPILER_H
+#endif  // PYCS_CPP_MODULE_PYCPP_TRANSPILER_RUNTIME_H

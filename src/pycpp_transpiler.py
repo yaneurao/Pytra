@@ -56,7 +56,7 @@ class CppTranspiler:
         Pythonランタイムへ依存せずに C++ 側だけで変換を行う。
         """
         lines = [
-            '#include "cpp_module/generated_pycpp_transpiler.h"',
+            '#include "cpp_module/pycpp_transpiler_runtime.h"',
             "#include <iostream>",
             "#include <string>",
             "",
@@ -66,7 +66,7 @@ class CppTranspiler:
             '        std::cerr << "usage: pycpp_transpiler_self <input.py> <output.cpp>" << std::endl;',
             "        return 1;",
             "    }",
-            "    pycs::cpp_module::GeneratedPyCppTranspiler t;",
+            "    pycs::cpp_module::PyCppTranspilerRuntime t;",
             "    std::string err;",
             "    if (!t.transpile_file(std::string(argv[1]), std::string(argv[2]), &err)) {",
             "        std::cerr << \"self-host transpile failed for input: \" << argv[1] << \" error=\" << err << std::endl;",
