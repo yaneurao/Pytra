@@ -100,8 +100,6 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 - ケース命名は `caseXX_*` 形式を基本とし、特別ケースとして以下を含みます。
   - `case99_dataclass`
   - `case100_class_instance`
-  - `case1001_pycpp_transpiler`
-  - `case1002_pycs_transpiler`
 
 ## 6.1 サンプルプログラム方針
 
