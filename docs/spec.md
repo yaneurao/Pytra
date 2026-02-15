@@ -51,11 +51,13 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
 - 生成コードは `src/cpp_module/` のランタイム補助実装を利用します。
+- `py_to_string` などの補助関数は生成 `.cpp` に直書きせず、`cpp_module/py_runtime_modules.h` 側を利用します。
 - class は `pycs::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
 - class member は `inline static` メンバーとして生成します。
 - `__init__` 内 `self.xxx` 代入はインスタンスメンバーとして生成します。
 - `@dataclass` はフィールド定義とコンストラクタ生成を行います。
 - `raise` / `try` / `except` をサポートし、例外は `std::runtime_error` 等を利用して表現します。
+- `while` 文をサポートします。
 
 ### 5.1 import と `cpp_module` 対応
 
@@ -63,6 +65,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 
 - `import ast` -> `#include "cpp_module/ast.h"`
 - `import pathlib` -> `#include "cpp_module/pathlib.h"`
+- `import time` / `from time import ...` -> `#include "cpp_module/time.h"`
 - `from dataclasses import dataclass` -> `#include "cpp_module/dataclasses.h"`
 - GC は常時 `#include "cpp_module/gc.h"` を利用
 
@@ -70,14 +73,24 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 
 - `src/cpp_module/ast.h`, `src/cpp_module/ast.cpp`
 - `src/cpp_module/pathlib.h`, `src/cpp_module/pathlib.cpp`
+- `src/cpp_module/time.h`, `src/cpp_module/time.cpp`
 - `src/cpp_module/dataclasses.h`, `src/cpp_module/dataclasses.cpp`
 - `src/cpp_module/gc.h`, `src/cpp_module/gc.cpp`
+- `src/cpp_module/sys.h`, `src/cpp_module/sys.cpp`
 - `src/cpp_module/py_runtime_modules.h`
 
 注意:
 
 - `pycpp_transpiler_runtime.h` は廃止済みであり、使用しません。
 - `import ast` を含むコードの C++ 変換では、`cpp_module/ast` 実装を前提に動作します。
+- 制約: Python 側で `import` / `from ... import ...` するモジュールは、原則として `src/cpp_module/` に対応する `*.h` / `*.cpp` 実装を用意する必要があります。
+- 制約: 生成 C++ 側で使う補助関数（`py_to_string`, `py_in`, `py_print`, `py_write` など）は `cpp_module/py_runtime_modules.h` に集約し、生成 `.cpp` へ重複定義しません。
+
+### 5.2 関数引数の受け渡し方針
+
+- コピーコストが高い型（`string`, `vector<...>`, `unordered_map<...>`, `unordered_set<...>`, `tuple<...>`）は、関数内で直接変更されない場合に `const T&` で受けます。
+- 引数の直接変更が検出された場合は値渡し（または非 const）を維持します。
+- 直接変更判定は、代入・拡張代入・`del`・破壊的メソッド呼び出し（`append`, `extend`, `insert`, `pop` など）を対象に行います。
 
 ## 6. テストケース方針
 
@@ -89,6 +102,13 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
   - `case100_class_instance`
   - `case1001_pycpp_transpiler`
   - `case1002_pycs_transpiler`
+
+## 6.1 サンプルプログラム方針
+
+- 実用サンプルは `sample/py/` に配置します。
+- C++ 変換結果は `sample/cpp/` に配置します。
+- バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します。
+- `sample/py/01_mandelbrot.py` はマンデルブロ集合画像を生成し、Python 実行時と C++ 実行時の画像一致（ハッシュ一致）を確認可能なサンプルです。
 
 ## 7. ユニットテスト実行方法
 

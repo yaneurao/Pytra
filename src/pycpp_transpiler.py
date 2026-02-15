@@ -62,6 +62,8 @@ class CppTranspiler:
         include_lines: Set[str] = {
             "#include <algorithm>",
             "#include <any>",
+            "#include <fstream>",
+            "#include <ios>",
             "#include <iostream>",
             "#include <string>",
             "#include <vector>",
@@ -106,8 +108,6 @@ class CppTranspiler:
         parts.append("using namespace std;")
         parts.append("using namespace pycs::gc;")
         parts.append("")
-        parts.extend(self._helper_functions())
-        parts.append("")
 
         for cls in class_defs:
             parts.extend(cls.splitlines())
@@ -120,209 +120,6 @@ class CppTranspiler:
         parts.extend(main_func.splitlines())
         parts.append("")
         return "\n".join(parts)
-
-    def _helper_functions(self) -> List[str]:
-        """生成コード先頭へ埋め込む補助関数群を返す。"""
-        return [
-            "template <typename T>",
-            "string py_to_string(const T& value)",
-            "{",
-            "    std::ostringstream oss;",
-            "    oss << value;",
-            "    return oss.str();",
-            "}",
-            "",
-            "template <typename T>",
-            "string py_to_string(const pycs::cpp_module::ast::PyPtr<T>&)",
-            "{",
-            "    return \"<node>\";",
-            "}",
-            "",
-            "inline string py_to_string(const pycs::cpp_module::Path& value)",
-            "{",
-            "    return pycs::cpp_module::str(value);",
-            "}",
-            "",
-            "inline string py_to_string(const std::any& value)",
-            "{",
-            "    if (const auto* v = std::any_cast<bool>(&value)) {",
-            "        return *v ? \"True\" : \"False\";",
-            "    }",
-            "    if (const auto* v = std::any_cast<int>(&value)) {",
-            "        return py_to_string(*v);",
-            "    }",
-            "    if (const auto* v = std::any_cast<double>(&value)) {",
-            "        return py_to_string(*v);",
-            "    }",
-            "    if (const auto* v = std::any_cast<string>(&value)) {",
-            "        return *v;",
-            "    }",
-            "    return \"<any>\";",
-            "}",
-            "",
-            "template <typename T>",
-            "bool py_in(const T& key, const unordered_set<T>& s)",
-            "{",
-            "    return s.find(key) != s.end();",
-            "}",
-            "",
-            "template <typename K, typename V>",
-            "bool py_in(const K& key, const unordered_map<K, V>& m)",
-            "{",
-            "    return m.find(key) != m.end();",
-            "}",
-            "",
-            "template <typename T>",
-            "bool py_in(const T& key, const vector<T>& v)",
-            "{",
-            "    for (const auto& item : v) {",
-            "        if (item == key) {",
-            "            return true;",
-            "        }",
-            "    }",
-            "    return false;",
-            "}",
-            "",
-            "inline void py_print()",
-            "{",
-            "    std::cout << std::endl;",
-            "}",
-            "",
-            "template <typename T>",
-            "void py_print_one(const T& value)",
-            "{",
-            "    std::cout << value;",
-            "}",
-            "",
-            "inline void py_print_one(bool value)",
-            "{",
-            "    std::cout << (value ? \"True\" : \"False\");",
-            "}",
-            "",
-            "template <typename T, typename... Rest>",
-            "void py_print(const T& first, const Rest&... rest)",
-            "{",
-            "    py_print_one(first);",
-            "    ((std::cout << \" \", py_print_one(rest)), ...);",
-            "    std::cout << std::endl;",
-            "}",
-            "",
-            "template <typename T, typename U>",
-            "std::shared_ptr<T> py_cast(const pycs::cpp_module::ast::PyPtr<U>& value)",
-            "{",
-            "    return std::dynamic_pointer_cast<T>(static_cast<std::shared_ptr<U>>(value));",
-            "}",
-            "",
-            "template <typename T>",
-            "std::shared_ptr<T> py_cast(const std::any& value)",
-            "{",
-            "    if (const auto* p = std::any_cast<T>(&value)) {",
-            "        return std::make_shared<T>(*p);",
-            "    }",
-            "    return nullptr;",
-            "}",
-            "",
-            "template <typename T, typename U>",
-            "std::shared_ptr<T> py_cast(const U& value)",
-            "{",
-            "    if constexpr (requires { value.template cast<T>(); }) {",
-            "        return value.template cast<T>();",
-            "    }",
-            "    return std::dynamic_pointer_cast<T>(value);",
-            "}",
-            "",
-            "template <typename T, typename U>",
-            "bool py_isinstance(const U& value)",
-            "{",
-            "    return py_cast<T>(value) != nullptr;",
-            "}",
-            "",
-            "template <typename U, typename... Ts>",
-            "bool py_isinstance_any(const U& value)",
-            "{",
-            "    return (py_isinstance<Ts>(value) || ...);",
-            "}",
-            "",
-            "template <typename T>",
-            "size_t py_len(const T& value)",
-            "{",
-            "    return value.size();",
-            "}",
-            "",
-            "template <typename T>",
-            "vector<T> py_sorted(const unordered_set<T>& s)",
-            "{",
-            "    vector<T> out(s.begin(), s.end());",
-            "    std::sort(out.begin(), out.end());",
-            "    return out;",
-            "}",
-            "",
-            "template <typename T>",
-            "vector<T> py_sorted(const vector<T>& v)",
-            "{",
-            "    vector<T> out = v;",
-            "    std::sort(out.begin(), out.end());",
-            "    return out;",
-            "}",
-            "",
-            "template <typename T>",
-            "unordered_set<T> py_set_union(const unordered_set<T>& a, const unordered_set<T>& b)",
-            "{",
-            "    unordered_set<T> out = a;",
-            "    out.insert(b.begin(), b.end());",
-            "    return out;",
-            "}",
-            "",
-            "inline vector<string> py_splitlines(const string& s)",
-            "{",
-            "    vector<string> out;",
-            "    std::stringstream ss(s);",
-            "    string line;",
-            "    while (std::getline(ss, line)) {",
-            "        out.push_back(line);",
-            "    }",
-            "    return out;",
-            "}",
-            "",
-            "template <typename T>",
-            "string py_join(const string& sep, const vector<T>& parts)",
-            "{",
-            "    std::ostringstream oss;",
-            "    for (size_t i = 0; i < parts.size(); ++i) {",
-            "        if (i > 0) {",
-            "            oss << sep;",
-            "        }",
-            "        oss << parts[i];",
-            "    }",
-            "    return oss.str();",
-            "}",
-            "",
-            "inline string py_replace(const string& s, const string& from, const string& to)",
-            "{",
-            "    if (from.empty()) {",
-            "        return s;",
-            "    }",
-            "    string out = s;",
-            "    size_t pos = 0;",
-            "    while ((pos = out.find(from, pos)) != string::npos) {",
-            "        out.replace(pos, from.size(), to);",
-            "        pos += to.size();",
-            "    }",
-            "    return out;",
-            "}",
-            "",
-            "template <typename A, typename B>",
-            "vector<tuple<A, B>> py_zip(const vector<A>& a, const vector<B>& b)",
-            "{",
-            "    vector<tuple<A, B>> out;",
-            "    const size_t n = std::min(a.size(), b.size());",
-            "    out.reserve(n);",
-            "    for (size_t i = 0; i < n; ++i) {",
-            "        out.push_back(std::make_tuple(a[i], b[i]));",
-            "    }",
-            "    return out;",
-            "}",
-        ]
 
     def _includes_from_import(self, stmt: ast.stmt) -> Set[str]:
         """import文から必要な C++ include を推定する。
@@ -347,6 +144,8 @@ class CppTranspiler:
                 includes.add("#include <cmath>")
             elif mod == "ast":
                 includes.add('#include "cpp_module/ast.h"')
+            elif mod == "time":
+                includes.add('#include "cpp_module/time.h"')
             elif mod == "pathlib":
                 includes.add('#include "cpp_module/pathlib.h"')
             elif mod == "typing":
@@ -618,7 +417,11 @@ class CppTranspiler:
                 declared.add("self")
                 idx = idx + 1
                 continue
-            params.append(f"{self._map_annotation(arg.annotation)} {arg.arg}")
+            mapped = self._map_annotation(arg.annotation)
+            if self._should_pass_by_const_ref(mapped) and not self._is_param_mutated(fn, arg.arg):
+                params.append(f"const {mapped}& {arg.arg}")
+            else:
+                params.append(f"{mapped} {arg.arg}")
             declared.add(arg.arg)
             idx = idx + 1
 
@@ -637,6 +440,92 @@ class CppTranspiler:
         lines.extend(self._indent_block(body_lines))
         lines.append("}")
         return "\n".join(lines)
+
+    def _should_pass_by_const_ref(self, cpp_type: str) -> bool:
+        """コピーコストが高い型を const 参照渡しにするか判定する。"""
+        if cpp_type == "string":
+            return True
+        heavy_prefixes = ("vector<", "unordered_set<", "unordered_map<", "tuple<")
+        for prefix in heavy_prefixes:
+            if cpp_type.startswith(prefix):
+                return True
+        return False
+
+    def _is_param_mutated(self, fn: ast.FunctionDef, param_name: str) -> bool:
+        """関数内で引数が直接変更されるかを判定する。"""
+        mutating_methods = {
+            "append",
+            "extend",
+            "clear",
+            "insert",
+            "pop",
+            "remove",
+            "sort",
+            "reverse",
+            "update",
+            "add",
+            "discard",
+            "setdefault",
+        }
+
+        for node in ast.walk(fn):
+            if isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if self._is_write_target_of_param(t, param_name):
+                        return True
+            elif isinstance(node, ast.AnnAssign):
+                if self._is_write_target_of_param(node.target, param_name):
+                    return True
+            elif isinstance(node, ast.AugAssign):
+                if self._is_write_target_of_param(node.target, param_name):
+                    return True
+            elif isinstance(node, ast.Delete):
+                for t in node.targets:
+                    if self._is_write_target_of_param(t, param_name):
+                        return True
+            elif isinstance(node, ast.For):
+                if self._contains_name(node.target, param_name):
+                    return True
+            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                if isinstance(node.func.value, ast.Name) and node.func.value.id == param_name:
+                    if node.func.attr in mutating_methods:
+                        return True
+        return False
+
+    def _is_write_target_of_param(self, target: ast.expr, param_name: str) -> bool:
+        """代入先が引数自身またはその要素/属性かを判定する。"""
+        if isinstance(target, ast.Name):
+            return target.id == param_name
+        if isinstance(target, ast.Attribute):
+            return self._root_name(target) == param_name
+        if isinstance(target, ast.Subscript):
+            return self._root_name(target.value) == param_name
+        if isinstance(target, (ast.Tuple, ast.List)):
+            for elt in target.elts:
+                if self._is_write_target_of_param(elt, param_name):
+                    return True
+        return False
+
+    def _root_name(self, expr: ast.expr) -> str:
+        """属性/添字式の最も根の Name を返す。"""
+        cur = expr
+        while True:
+            if isinstance(cur, ast.Name):
+                return cur.id
+            if isinstance(cur, ast.Attribute):
+                cur = cur.value
+                continue
+            if isinstance(cur, ast.Subscript):
+                cur = cur.value
+                continue
+            return ""
+
+    def _contains_name(self, expr: ast.expr, name: str) -> bool:
+        """式に指定名が含まれるかを判定する。"""
+        for node in ast.walk(expr):
+            if isinstance(node, ast.Name) and node.id == name:
+                return True
+        return False
 
     def transpile_main(self, body: List[ast.stmt]) -> str:
         """トップレベル文を C++ の main 関数へ変換する。"""
@@ -677,6 +566,8 @@ class CppTranspiler:
                 lines.extend(self._transpile_if(stmt, scope))
             elif isinstance(stmt, ast.For):
                 lines.extend(self._transpile_for(stmt, scope))
+            elif isinstance(stmt, ast.While):
+                lines.extend(self._transpile_while(stmt, scope))
             elif isinstance(stmt, ast.Try):
                 lines.extend(self._transpile_try(stmt, scope))
             elif isinstance(stmt, ast.Raise):
@@ -787,6 +678,17 @@ class CppTranspiler:
             lines.extend(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared))))
         return lines
 
+    def _transpile_while(self, stmt: ast.While, scope: Scope) -> List[str]:
+        """while 文を C++ while 文へ変換する。"""
+        lines: List[str] = [f"while ({self.transpile_expr(stmt.test)})", "{"]
+        body_lines = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
+        lines.extend(self._indent_block(body_lines))
+        lines.append("}")
+        if len(stmt.orelse) > 0:
+            lines.append("// while-else is not directly supported; else body emitted below")
+            lines.extend(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared))))
+        return lines
+
     def _transpile_try(self, stmt: ast.Try, scope: Scope) -> List[str]:
         """try 文を C++ try/catch へ変換する。"""
         lines: List[str] = ["try", "{"]
@@ -892,6 +794,8 @@ class CppTranspiler:
         if isinstance(expr, ast.Attribute):
             if isinstance(expr.value, ast.Name) and expr.value.id == "ast":
                 return f"pycs::cpp_module::ast::{expr.attr}"
+            if isinstance(expr.value, ast.Name) and expr.value.id == "time":
+                return f"pycs::cpp_module::{expr.attr}"
             if (
                 isinstance(expr.value, ast.Name)
                 and expr.value.id == "self"
@@ -957,6 +861,10 @@ class CppTranspiler:
             return self._transpile_joined_str(expr)
         if isinstance(expr, (ast.ListComp, ast.SetComp, ast.GeneratorExp)):
             return "/* comprehension */ {}"
+        try:
+            return self._raw_expr_to_cpp(expr.as_text())
+        except Exception:
+            pass
 
         raise TranspileError("Unsupported expression")
 
@@ -992,6 +900,20 @@ class CppTranspiler:
             if len(call.args) == 1:
                 return f"py_to_string({args_list[0]})"
             return "\"\""
+        if isinstance(call.func, ast.Name) and call.func.id == "open":
+            if len(args_list) >= 2:
+                if isinstance(call.args[1], ast.Constant) and isinstance(call.args[1].value, str):
+                    mode = call.args[1].value
+                    if "b" in mode:
+                        return f"std::make_shared<std::ofstream>({args_list[0]}, std::ios::binary)"
+                return f"std::make_shared<std::ofstream>({args_list[0]})"
+            return "std::make_shared<std::ofstream>()"
+        if isinstance(call.func, ast.Name) and call.func.id == "bytearray":
+            return "string()"
+        if isinstance(call.func, ast.Name) and call.func.id == "chr":
+            if len(args_list) == 1:
+                return f"string(1, static_cast<char>({args_list[0]}))"
+            return '""'
         if isinstance(call.func, ast.Name) and call.func.id == "isinstance":
             if len(call.args) == 2:
                 obj = self.transpile_expr(call.args[0])
@@ -1023,7 +945,7 @@ class CppTranspiler:
             if method == "append" and len(args_list) == 1:
                 return f"{obj}.push_back({args_list[0]})"
             if method == "extend" and len(args_list) == 1:
-                return f"{obj}.insert({obj}.end(), {args_list[0]}.begin(), {args_list[0]}.end())"
+                return f"py_extend({obj}, {args_list[0]})"
             if method == "add" and len(args_list) == 1:
                 return f"{obj}.insert({args_list[0]})"
             if method == "union" and len(args_list) == 1:
@@ -1034,6 +956,12 @@ class CppTranspiler:
                 return f"py_join({obj}, {args_list[0]})"
             if method == "replace" and len(args_list) == 2:
                 return f"py_replace({obj}, {args_list[0]}, {args_list[1]})"
+            if method == "write" and len(args_list) == 1:
+                return f"py_write(*{obj}, {args_list[0]})"
+            if method == "close" and len(args_list) == 0:
+                return f"{obj}->close()"
+            if method == "encode":
+                return obj
             return f"{self.transpile_expr(call.func)}({args})"
 
         raise TranspileError("Only direct function calls are supported")
@@ -1056,6 +984,10 @@ class CppTranspiler:
             if annotation.id == "float":
                 return "double"
             if annotation.id == "str":
+                return "string"
+            if annotation.id == "bytearray":
+                return "string"
+            if annotation.id == "bytes":
                 return "string"
             if annotation.id == "bool":
                 return "bool"
@@ -1130,7 +1062,7 @@ class CppTranspiler:
                 args = [self._map_annotation(annotation.slice)]
             return f"{base}<{', '.join(args)}>"
 
-        raise TranspileError("Unsupported type annotation")
+        return "auto"
 
     def _is_main_guard(self, stmt: ast.stmt) -> bool:
         """if __name__ == \"__main__\" かを判定する。"""
@@ -1138,7 +1070,10 @@ class CppTranspiler:
             return False
         test = stmt.test
         if not isinstance(test, ast.Compare):
-            return False
+            try:
+                return test.as_text() == '__name__ == "__main__"'
+            except Exception:
+                return False
         if len(test.ops) != 1 or len(test.comparators) != 1:
             return False
         if not isinstance(test.ops[0], ast.Eq):
@@ -1150,6 +1085,23 @@ class CppTranspiler:
         if not isinstance(test.comparators[0], ast.Constant):
             return False
         return self.transpile_expr(test.comparators[0]) == '"__main__"'
+
+    def _raw_expr_to_cpp(self, text: str) -> str:
+        """RawExpr の文字列を最小限 C++ 表記に正規化する。"""
+        if text == "True":
+            return "true"
+        if text == "False":
+            return "false"
+        if text == "None":
+            return "nullptr"
+        return (
+            text.replace("(True)", "(true)")
+            .replace("(False)", "(false)")
+            .replace("(None)", "(nullptr)")
+            .replace(" True", " true")
+            .replace(" False", " false")
+            .replace(" None", " nullptr")
+        )
 
     def _constant(self, value: object) -> str:
         """Python リテラル値を C++ リテラル表現へ変換する。"""

@@ -1,0 +1,15 @@
+// このファイルは Python の `time` モジュール互換実装の本体です。
+
+#include <chrono>
+
+#include "cpp_module/time.h"
+
+namespace pycs::cpp_module {
+
+double perf_counter() {
+    using Clock = std::chrono::steady_clock;
+    using Seconds = std::chrono::duration<double>;
+    return Seconds(Clock::now().time_since_epoch()).count();
+}
+
+}  // namespace pycs::cpp_module
