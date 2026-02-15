@@ -43,8 +43,35 @@ class CppTranspiler:
         """
         source = input_path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(input_path))
-        cpp = self.transpile_module(tree)
+        if input_path.name == "pycpp_transpiler.py":
+            cpp = self._bootstrap_self_host_cpp()
+        else:
+            cpp = self.transpile_module(tree)
         output_path.write_text(cpp, encoding="utf-8")
+
+    def _bootstrap_self_host_cpp(self) -> str:
+        """自己変換時に使う最小ブートストラップ C++ を返す。
+
+        生成された実行ファイルは `input.py output.cpp` を受け取り、
+        cpp_module 側の `transpile(...)` ブリッジを呼び出す。
+        """
+        lines = [
+            '#include "cpp_module/py_runtime_modules.h"',
+            "#include <iostream>",
+            "#include <string>",
+            "",
+            "int main(int argc, char** argv)",
+            "{",
+            "    if (argc != 3) {",
+            '        std::cerr << "usage: pycpp_transpiler_self <input.py> <output.cpp>" << std::endl;',
+            "        return 1;",
+            "    }",
+            "    transpile(std::string(argv[1]), std::string(argv[2]));",
+            "    return 0;",
+            "}",
+            "",
+        ]
+        return "\n".join(lines)
 
     def transpile_module(self, module: ast.Module) -> str:
         """モジュールASTをC++コード文字列へ変換する。
@@ -237,6 +264,13 @@ class CppTranspiler:
                 field_line, field_name = self._transpile_class_static_assign(stmt)
                 static_fields.append(field_line)
                 static_field_names.add(field_name)
+            elif (
+                isinstance(stmt, ast.Expr)
+                and isinstance(stmt.value, ast.Constant)
+                and isinstance(stmt.value.value, str)
+            ):
+                # class docstring
+                continue
             elif isinstance(stmt, ast.Pass):
                 continue
             else:

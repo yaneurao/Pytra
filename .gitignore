@@ -8,3 +8,4 @@ __pycache__/
 
 /test/test_gc
 /test/obj/
+/test/cpp2/
