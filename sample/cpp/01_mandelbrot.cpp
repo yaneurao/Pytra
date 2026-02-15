@@ -1,4 +1,5 @@
 #include "cpp_module/gc.h"
+#include "cpp_module/png.h"
 #include "cpp_module/py_runtime_modules.h"
 #include "cpp_module/time.h"
 #include <algorithm>
@@ -89,24 +90,15 @@ string render_mandelbrot(int width, int height, int max_iter, double x_min, doub
     return pixels;
 }
 
-void write_ppm(const string& path, int width, int height, const string& pixels)
-{
-    string header = (((("P6\n" + py_to_string(width)) + " ") + py_to_string(height)) + "\n255\n");
-    auto f = std::make_shared<std::ofstream>(path, std::ios::binary);
-    py_write(*f, header);
-    py_write(*f, pixels);
-    f->close();
-}
-
 void run_mandelbrot()
 {
     int width = 800;
     int height = 600;
     int max_iter = 400;
-    string out_path = "sample/out/mandelbrot_01.ppm";
+    string out_path = "sample/out/mandelbrot_01.png";
     double start = perf_counter();
     string pixels = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);
-    write_ppm(out_path, width, height, pixels);
+    pycs::cpp_module::png::write_rgb_png(out_path, width, height, pixels);
     double elapsed = (perf_counter() - start);
     py_print("output:", out_path);
     py_print("size:", width, "x", height);

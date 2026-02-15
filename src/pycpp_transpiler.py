@@ -141,13 +141,15 @@ class CppTranspiler:
 
         for mod in modules:
             if mod == "math":
-                includes.add("#include <cmath>")
+                includes.add('#include "cpp_module/math.h"')
             elif mod == "ast":
                 includes.add('#include "cpp_module/ast.h"')
             elif mod == "time":
                 includes.add('#include "cpp_module/time.h"')
             elif mod == "pathlib":
                 includes.add('#include "cpp_module/pathlib.h"')
+            elif mod == "png_helper":
+                includes.add('#include "cpp_module/png.h"')
             elif mod == "typing":
                 includes.add("#include <any>")
             elif mod == "dataclasses":
@@ -794,8 +796,12 @@ class CppTranspiler:
         if isinstance(expr, ast.Attribute):
             if isinstance(expr.value, ast.Name) and expr.value.id == "ast":
                 return f"pycs::cpp_module::ast::{expr.attr}"
+            if isinstance(expr.value, ast.Name) and expr.value.id == "math":
+                return f"pycs::cpp_module::math::{expr.attr}"
             if isinstance(expr.value, ast.Name) and expr.value.id == "time":
                 return f"pycs::cpp_module::{expr.attr}"
+            if isinstance(expr.value, ast.Name) and expr.value.id == "png_helper":
+                return f"pycs::cpp_module::png::{expr.attr}"
             if (
                 isinstance(expr.value, ast.Name)
                 and expr.value.id == "self"

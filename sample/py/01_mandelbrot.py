@@ -1,7 +1,8 @@
-# 01: マンデルブロ集合を PPM 画像として出力するサンプルです。
+# 01: マンデルブロ集合を PNG 画像として出力するサンプルです。
 # 将来のトランスパイルを意識して、構文はなるべく素直に書いています。
 
 from time import perf_counter
+import png_helper
 
 
 def escape_count(cx: float, cy: float, max_iter: int) -> int:
@@ -75,20 +76,11 @@ def render_mandelbrot(
     return pixels
 
 
-def write_ppm(path: str, width: int, height: int, pixels: bytearray) -> None:
-    """P6(バイナリ)形式の PPM ファイルを書き出す。"""
-    header: bytes = ("P6\n" + str(width) + " " + str(height) + "\n255\n").encode("ascii")
-    f = open(path, "wb")
-    f.write(header)
-    f.write(pixels)
-    f.close()
-
-
 def run_mandelbrot() -> None:
     width: int = 800
     height: int = 600
     max_iter: int = 400
-    out_path: str = "sample/out/mandelbrot_01.ppm"
+    out_path: str = "sample/out/mandelbrot_01.png"
 
     start: float = perf_counter()
 
@@ -101,7 +93,7 @@ def run_mandelbrot() -> None:
         -1.2,
         1.2,
     )
-    write_ppm(out_path, width, height, pixels)
+    png_helper.write_rgb_png(out_path, width, height, pixels)
 
     elapsed: float = perf_counter() - start
     print("output:", out_path)

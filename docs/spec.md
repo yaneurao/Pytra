@@ -64,6 +64,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 `pycpp_transpiler.py` は import 文に応じて include を生成します。主な対応は次の通りです。
 
 - `import ast` -> `#include "cpp_module/ast.h"`
+- `import math` -> `#include "cpp_module/math.h"`
 - `import pathlib` -> `#include "cpp_module/pathlib.h"`
 - `import time` / `from time import ...` -> `#include "cpp_module/time.h"`
 - `from dataclasses import dataclass` -> `#include "cpp_module/dataclasses.h"`
@@ -72,6 +73,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 補助モジュール実装:
 
 - `src/cpp_module/ast.h`, `src/cpp_module/ast.cpp`
+- `src/cpp_module/math.h`, `src/cpp_module/math.cpp`
 - `src/cpp_module/pathlib.h`, `src/cpp_module/pathlib.cpp`
 - `src/cpp_module/time.h`, `src/cpp_module/time.cpp`
 - `src/cpp_module/dataclasses.h`, `src/cpp_module/dataclasses.cpp`
@@ -106,6 +108,8 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 - 実用サンプルは `sample/py/` に配置します。
 - C++ 変換結果は `sample/cpp/` に配置します。
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します。
+- 画像出力サンプル（`sample/py/01`, `02`, `03`）は **PNG 形式**で出力します（PPMは使用しません）。
+- Python 側の画像保存は `png_helper.write_rgb_png(...)` を使用し、C++ 側は `src/cpp_module/png.h/.cpp` を利用します。
 - `sample/py/01_mandelbrot.py` はマンデルブロ集合画像を生成し、Python 実行時と C++ 実行時の画像一致（ハッシュ一致）を確認可能なサンプルです。
 
 ## 7. ユニットテスト実行方法
