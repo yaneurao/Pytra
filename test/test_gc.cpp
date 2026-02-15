@@ -1,3 +1,7 @@
+// このファイルは `test/test_gc.cpp` のテスト/実装コードです。
+// 読み手が責務を把握しやすいように、日本語コメントを追記しています。
+// 変更時は、スレッド安全性と参照カウント整合性を必ず確認してください。
+
 #include <atomic>
 #include <cassert>
 #include <iostream>
@@ -8,6 +12,7 @@
 
 namespace gc = pycs::gc;
 
+// 単純な参照対象オブジェクト。デストラクト回数を検証しやすくする。
 struct TestLeaf : public gc::PyObj {
     static std::atomic<int> destroyed;
 
@@ -29,6 +34,7 @@ struct TestPair : public gc::PyObj {
 
     ~TestPair() override { destroyed.fetch_add(1, std::memory_order_relaxed); }
 
+    // 親オブジェクトが破棄される際に、子参照をdecrefして連鎖解放する。
     void rc_release_refs() override {
         gc::decref(left);
         gc::decref(right);
@@ -100,6 +106,7 @@ void test_multithread_atomic_rc() {
     std::vector<std::thread> threads;
     threads.reserve(kThreads);
 
+    // 複数スレッドで同じオブジェクトをincref/decrefし、原子性を確認する。
     for (int t = 0; t < kThreads; ++t) {
         threads.emplace_back([shared]() {
             for (int i = 0; i < kIters; ++i) {

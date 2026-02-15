@@ -1,3 +1,7 @@
+# このファイルは `src/pycs_transpiler.py` のテスト/実装コードです。
+# 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
+# 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
+
 import ast
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,12 +26,14 @@ class CSharpTranspiler:
         self.current_static_fields: Set[str] = set()
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
+        # 1ファイル単位の変換入口。AST化してからC#文字列へ変換する。
         source = input_path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(input_path))
         csharp = self.transpile_module(tree)
         output_path.write_text(csharp, encoding="utf-8")
 
     def transpile_module(self, module: ast.Module) -> str:
+        # モジュール直下を「using / 関数 / クラス / メイン処理」に分離して出力する。
         function_defs: List[str] = []
         class_defs: List[str] = []
         top_level_body: List[ast.stmt] = []
@@ -109,6 +115,8 @@ class CSharpTranspiler:
         return mapping.get(module_name, module_name)
 
     def transpile_class(self, cls: ast.ClassDef) -> str:
+        # class定義をC#のclassに変換する。
+        # dataclassの場合は、型注釈フィールドをインスタンスフィールドとして扱う。
         if len(cls.bases) > 1:
             raise TranspileError(f"Class '{cls.name}' multiple inheritance is not supported")
 
@@ -287,6 +295,7 @@ class CSharpTranspiler:
         return None
 
     def transpile_function(self, fn: ast.FunctionDef, in_class: bool = False) -> str:
+        # 関数定義を変換する。クラス内の __init__ はC#コンストラクタへ置き換える。
         is_constructor = in_class and fn.name == "__init__"
 
         if fn.returns is None:
@@ -331,6 +340,7 @@ class CSharpTranspiler:
         return "\n".join(lines)
 
     def transpile_statements(self, stmts: List[ast.stmt], scope: Scope) -> List[str]:
+        # 文単位の変換ディスパッチ。未対応ノードは明示的に例外化する。
         lines: List[str] = []
 
         for stmt in stmts:
@@ -499,6 +509,7 @@ class CSharpTranspiler:
         return lines
 
     def transpile_expr(self, expr: ast.expr) -> str:
+        # 式ノードをC#式へ変換する。
         if isinstance(expr, ast.Name):
             if expr.id == "self":
                 return "this"
@@ -578,6 +589,7 @@ class CSharpTranspiler:
         raise TranspileError("Only direct function calls are supported")
 
     def _map_annotation(self, annotation: ast.expr) -> str:
+        # Python側型注釈をC#の型名にマッピングする。
         if isinstance(annotation, ast.Constant) and annotation.value is None:
             return "void"
         if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):

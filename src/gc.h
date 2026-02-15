@@ -1,3 +1,7 @@
+// このファイルは `src/gc.h` のテスト/実装コードです。
+// 読み手が責務を把握しやすいように、日本語コメントを追記しています。
+// 変更時は、スレッド安全性と参照カウント整合性を必ず確認してください。
+
 #ifndef PYCS_GC_H
 #define PYCS_GC_H
 
@@ -9,6 +13,8 @@
 
 namespace pycs::gc {
 
+// RC管理対象の基底クラス。
+// すべての参照型オブジェクトはこの型を継承する。
 class PyObj {
 public:
     explicit PyObj(uint32_t type_id = 0) : ref_count_(1), type_id_(type_id) {}
@@ -25,6 +31,7 @@ public:
         return type_id_;
     }
 
+    // 参照を持つ派生クラスは、このフックで子要素にdecrefを行う。
     virtual void rc_release_refs();
 
 private:
@@ -56,6 +63,7 @@ public:
         }
     }
 
+    // rc_new直後の「ref=1をそのまま所有したい」場合に使う。
     static RcHandle<T> adopt(T* ptr) {
         RcHandle<T> h;
         h.ptr_ = ptr;
@@ -99,6 +107,7 @@ public:
         }
     }
 
+    // 代入規則: 新値を先にincrefし、旧値をあとでdecrefする。
     void reset(T* ptr = nullptr, bool add_ref = true) {
         if (ptr != nullptr && add_ref) {
             incref(ptr);

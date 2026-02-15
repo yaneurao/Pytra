@@ -1,3 +1,7 @@
+# このファイルは `test/test_self_transpile.py` のテスト/実装コードです。
+# 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
+# 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
+
 import subprocess
 import tempfile
 import unittest
@@ -11,6 +15,7 @@ SELF_SRC = ROOT / "src" / "pycs_transpiler.py"
 
 class SelfTranspileTest(unittest.TestCase):
     def test_can_transpile_transpiler_source(self) -> None:
+        # トランスパイラ自身のソースを入力にしても変換が完走できることを検証する。
         with tempfile.TemporaryDirectory() as tmpdir:
             out_cs = Path(tmpdir) / "self_pycs_transpiler.cs"
             run = subprocess.run(
