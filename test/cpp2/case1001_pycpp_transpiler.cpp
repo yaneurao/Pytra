@@ -1,6 +1,5 @@
 #include "cpp_module/gc.h"
 #include "cpp_module/py_runtime_modules.h"
-#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -9,6 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include "cpp_module/pathlib.h"
 
 using namespace std;
 using namespace pycs::gc;
@@ -68,14 +68,15 @@ void py_print(const T& first, const Rest&... rest)
     std::cout << std::endl;
 }
 
+
 int main()
 {
-    Path root = Path(__file__)->resolve()->parents[2];
-    sys->path->insert(0, str(root));
-    Path src_file = ((root / "src") / "pycpp_transpiler.py");
-    Path out_file = (((root / "test") / "cpp") / "case1001_pycpp_transpiler.cpp");
-    out_file->parent->mkdir(true, true);
-    transpile(str(src_file), str(out_file));
-    py_print("ok");
+        Path root = Path(__file__).resolve().parents[2];
+        sys->path->insert(0, str(root));
+        Path src_file = root / "src" / "pycpp_transpiler.py";
+        Path out_file = root / "test" / "cpp" / "case1001_pycpp_transpiler.cpp";
+        out_file->parent->mkdir(parents = true, exist_ok=true);
+        transpile(str(src_file), str(out_file));
+        py_print("ok");
     return 0;
 }

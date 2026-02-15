@@ -31,7 +31,8 @@ class CppTranspiler:
     def __init__(self) -> None:
         """変換時に使う内部状態を初期化する。"""
         self.class_names: Set[str] = set()
-        self.current_class_name: str | None = None
+        self.exception_class_names: Set[str] = set()
+        self.current_class_name: str = ""
         self.current_static_fields: Set[str] = set()
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
@@ -43,40 +44,8 @@ class CppTranspiler:
         """
         source = input_path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(input_path))
-        if input_path.name == "pycpp_transpiler.py":
-            cpp = self._bootstrap_self_host_cpp()
-        else:
-            cpp = self.transpile_module(tree)
+        cpp = self.transpile_module(tree)
         output_path.write_text(cpp, encoding="utf-8")
-
-    def _bootstrap_self_host_cpp(self) -> str:
-        """自己変換時に使う最小ブートストラップ C++ を返す。
-
-        生成された実行ファイルは `input.py output.cpp` を受け取り、
-        Pythonランタイムへ依存せずに C++ 側だけで変換を行う。
-        """
-        lines = [
-            '#include "cpp_module/pycpp_transpiler_runtime.h"',
-            "#include <iostream>",
-            "#include <string>",
-            "",
-            "int main(int argc, char** argv)",
-            "{",
-            "    if (argc != 3) {",
-            '        std::cerr << "usage: pycpp_transpiler_self <input.py> <output.cpp>" << std::endl;',
-            "        return 1;",
-            "    }",
-            "    pycs::cpp_module::PyCppTranspilerRuntime t;",
-            "    std::string err;",
-            "    if (!t.transpile_file(std::string(argv[1]), std::string(argv[2]), &err)) {",
-            "        std::cerr << \"self-host transpile failed for input: \" << argv[1] << \" error=\" << err << std::endl;",
-            "        return 2;",
-            "    }",
-            "    return 0;",
-            "}",
-            "",
-        ]
-        return "\n".join(lines)
 
     def transpile_module(self, module: ast.Module) -> str:
         """モジュールASTをC++コード文字列へ変換する。
@@ -91,6 +60,8 @@ class CppTranspiler:
         class_defs: List[str] = []
         top_level_body: List[ast.stmt] = []
         include_lines: Set[str] = {
+            "#include <algorithm>",
+            "#include <any>",
             "#include <iostream>",
             "#include <string>",
             "#include <vector>",
@@ -99,16 +70,21 @@ class CppTranspiler:
             "#include <tuple>",
             "#include <sstream>",
             "#include <stdexcept>",
+            "#include <type_traits>",
             '#include "cpp_module/gc.h"',
             '#include "cpp_module/py_runtime_modules.h"',
         }
-        self.class_names = {
-            stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)
-        }
+        self.class_names = set()
+        self.exception_class_names = set()
+        for stmt in module.body:
+            if isinstance(stmt, ast.ClassDef):
+                self.class_names.add(stmt.name)
+                if len(stmt.bases) > 0 and isinstance(stmt.bases[0], ast.Name) and stmt.bases[0].id == "Exception":
+                    self.exception_class_names.add(stmt.name)
 
         for stmt in module.body:
             if isinstance(stmt, ast.FunctionDef):
-                function_defs.append(self.transpile_function(stmt))
+                function_defs.append(self.transpile_function(stmt, False))
             elif isinstance(stmt, ast.ClassDef):
                 class_defs.append(self.transpile_class(stmt))
             elif isinstance(stmt, (ast.Import, ast.ImportFrom)):
@@ -157,6 +133,34 @@ class CppTranspiler:
             "}",
             "",
             "template <typename T>",
+            "string py_to_string(const pycs::cpp_module::ast::PyPtr<T>&)",
+            "{",
+            "    return \"<node>\";",
+            "}",
+            "",
+            "inline string py_to_string(const pycs::cpp_module::Path& value)",
+            "{",
+            "    return pycs::cpp_module::str(value);",
+            "}",
+            "",
+            "inline string py_to_string(const std::any& value)",
+            "{",
+            "    if (const auto* v = std::any_cast<bool>(&value)) {",
+            "        return *v ? \"True\" : \"False\";",
+            "    }",
+            "    if (const auto* v = std::any_cast<int>(&value)) {",
+            "        return py_to_string(*v);",
+            "    }",
+            "    if (const auto* v = std::any_cast<double>(&value)) {",
+            "        return py_to_string(*v);",
+            "    }",
+            "    if (const auto* v = std::any_cast<string>(&value)) {",
+            "        return *v;",
+            "    }",
+            "    return \"<any>\";",
+            "}",
+            "",
+            "template <typename T>",
             "bool py_in(const T& key, const unordered_set<T>& s)",
             "{",
             "    return s.find(key) != s.end();",
@@ -202,6 +206,122 @@ class CppTranspiler:
             "    ((std::cout << \" \", py_print_one(rest)), ...);",
             "    std::cout << std::endl;",
             "}",
+            "",
+            "template <typename T, typename U>",
+            "std::shared_ptr<T> py_cast(const pycs::cpp_module::ast::PyPtr<U>& value)",
+            "{",
+            "    return std::dynamic_pointer_cast<T>(static_cast<std::shared_ptr<U>>(value));",
+            "}",
+            "",
+            "template <typename T>",
+            "std::shared_ptr<T> py_cast(const std::any& value)",
+            "{",
+            "    if (const auto* p = std::any_cast<T>(&value)) {",
+            "        return std::make_shared<T>(*p);",
+            "    }",
+            "    return nullptr;",
+            "}",
+            "",
+            "template <typename T, typename U>",
+            "std::shared_ptr<T> py_cast(const U& value)",
+            "{",
+            "    if constexpr (requires { value.template cast<T>(); }) {",
+            "        return value.template cast<T>();",
+            "    }",
+            "    return std::dynamic_pointer_cast<T>(value);",
+            "}",
+            "",
+            "template <typename T, typename U>",
+            "bool py_isinstance(const U& value)",
+            "{",
+            "    return py_cast<T>(value) != nullptr;",
+            "}",
+            "",
+            "template <typename U, typename... Ts>",
+            "bool py_isinstance_any(const U& value)",
+            "{",
+            "    return (py_isinstance<Ts>(value) || ...);",
+            "}",
+            "",
+            "template <typename T>",
+            "size_t py_len(const T& value)",
+            "{",
+            "    return value.size();",
+            "}",
+            "",
+            "template <typename T>",
+            "vector<T> py_sorted(const unordered_set<T>& s)",
+            "{",
+            "    vector<T> out(s.begin(), s.end());",
+            "    std::sort(out.begin(), out.end());",
+            "    return out;",
+            "}",
+            "",
+            "template <typename T>",
+            "vector<T> py_sorted(const vector<T>& v)",
+            "{",
+            "    vector<T> out = v;",
+            "    std::sort(out.begin(), out.end());",
+            "    return out;",
+            "}",
+            "",
+            "template <typename T>",
+            "unordered_set<T> py_set_union(const unordered_set<T>& a, const unordered_set<T>& b)",
+            "{",
+            "    unordered_set<T> out = a;",
+            "    out.insert(b.begin(), b.end());",
+            "    return out;",
+            "}",
+            "",
+            "inline vector<string> py_splitlines(const string& s)",
+            "{",
+            "    vector<string> out;",
+            "    std::stringstream ss(s);",
+            "    string line;",
+            "    while (std::getline(ss, line)) {",
+            "        out.push_back(line);",
+            "    }",
+            "    return out;",
+            "}",
+            "",
+            "template <typename T>",
+            "string py_join(const string& sep, const vector<T>& parts)",
+            "{",
+            "    std::ostringstream oss;",
+            "    for (size_t i = 0; i < parts.size(); ++i) {",
+            "        if (i > 0) {",
+            "            oss << sep;",
+            "        }",
+            "        oss << parts[i];",
+            "    }",
+            "    return oss.str();",
+            "}",
+            "",
+            "inline string py_replace(const string& s, const string& from, const string& to)",
+            "{",
+            "    if (from.empty()) {",
+            "        return s;",
+            "    }",
+            "    string out = s;",
+            "    size_t pos = 0;",
+            "    while ((pos = out.find(from, pos)) != string::npos) {",
+            "        out.replace(pos, from.size(), to);",
+            "        pos += to.size();",
+            "    }",
+            "    return out;",
+            "}",
+            "",
+            "template <typename A, typename B>",
+            "vector<tuple<A, B>> py_zip(const vector<A>& a, const vector<B>& b)",
+            "{",
+            "    vector<tuple<A, B>> out;",
+            "    const size_t n = std::min(a.size(), b.size());",
+            "    out.reserve(n);",
+            "    for (size_t i = 0; i < n; ++i) {",
+            "        out.push_back(std::make_tuple(a[i], b[i]));",
+            "    }",
+            "    return out;",
+            "}",
         ]
 
     def _includes_from_import(self, stmt: ast.stmt) -> Set[str]:
@@ -216,20 +336,23 @@ class CppTranspiler:
         includes: Set[str] = set()
         modules: List[str] = []
         if isinstance(stmt, ast.Import):
-            modules = [alias.name for alias in stmt.names]
-        elif isinstance(stmt, ast.ImportFrom) and stmt.module:
-            modules = [stmt.module]
+            for alias in stmt.names:
+                modules.append(alias.name)
+        elif isinstance(stmt, ast.ImportFrom):
+            if stmt.module:
+                modules.append(stmt.module)
 
-        mapping = {
-            "math": "#include <cmath>",
-            "ast": '#include "cpp_module/ast.h"',
-            "pathlib": '#include "cpp_module/pathlib.h"',
-            "typing": "#include <any>",
-            "dataclasses": '#include "cpp_module/dataclasses.h"',
-        }
         for mod in modules:
-            if mod in mapping:
-                includes.add(mapping[mod])
+            if mod == "math":
+                includes.add("#include <cmath>")
+            elif mod == "ast":
+                includes.add('#include "cpp_module/ast.h"')
+            elif mod == "pathlib":
+                includes.add('#include "cpp_module/pathlib.h"')
+            elif mod == "typing":
+                includes.add("#include <any>")
+            elif mod == "dataclasses":
+                includes.add('#include "cpp_module/dataclasses.h"')
         return includes
 
     def transpile_class(self, cls: ast.ClassDef) -> str:
@@ -244,15 +367,18 @@ class CppTranspiler:
         if len(cls.bases) > 1:
             raise TranspileError(f"Class '{cls.name}' multiple inheritance is not supported")
 
-        base = " : public pycs::gc::PyObj"
-        if cls.bases:
+        base: str = " : public pycs::gc::PyObj"
+        if len(cls.bases) > 0:
             if not isinstance(cls.bases[0], ast.Name):
                 raise TranspileError(f"Class '{cls.name}' base class must be a simple name")
-            base = f" : public {cls.bases[0].id}"
+            if cls.bases[0].id == "Exception":
+                base = " : public std::exception"
+            else:
+                base = f" : public {cls.bases[0].id}"
 
         is_dataclass = self._is_dataclass_class(cls)
         static_fields: List[str] = []
-        dataclass_fields: List[tuple[str, str, str | None]] = []
+        dataclass_fields: List[tuple[str, str, bool, str]] = []
         static_field_names: Set[str] = set()
         methods: List[ast.FunctionDef] = []
 
@@ -280,30 +406,32 @@ class CppTranspiler:
             elif isinstance(stmt, ast.Pass):
                 continue
             else:
-                raise TranspileError(
-                    f"Unsupported class member in '{cls.name}': {type(stmt).__name__}"
-                )
+                raise TranspileError(f"Unsupported class member in '{cls.name}'")
 
         instance_fields = self._collect_instance_fields(cls, static_field_names)
-        has_init = any(method.name == "__init__" for method in methods)
+        has_init = False
+        for method in methods:
+            if method.name == "__init__":
+                has_init = True
+                break
 
-        lines = [f"class {cls.name}{base}", "{", "public:"]
+        lines: List[str] = [f"class {cls.name}{base}", "{", "public:"]
 
         for static_field in static_fields:
             lines.extend(self._indent_block([static_field]))
-        for field_type, field_name, default_value in dataclass_fields:
-            if default_value is None:
+        for field_type, field_name, has_default, default_value in dataclass_fields:
+            if not has_default:
                 lines.extend(self._indent_block([f"{field_type} {field_name};"]))
             else:
                 lines.extend(self._indent_block([f"{field_type} {field_name} = {default_value};"]))
         for _, field_type, field_name in instance_fields:
             lines.extend(self._indent_block([f"{field_type} {field_name};"]))
 
-        if is_dataclass and dataclass_fields and not has_init:
+        if is_dataclass and len(dataclass_fields) > 0 and not has_init:
             ctor_params: List[str] = []
             ctor_body: List[str] = []
-            for field_type, field_name, default_value in dataclass_fields:
-                if default_value is None:
+            for field_type, field_name, has_default, default_value in dataclass_fields:
+                if not has_default:
                     ctor_params.append(f"{field_type} {field_name}")
                 else:
                     ctor_params.append(f"{field_type} {field_name} = {default_value}")
@@ -317,17 +445,15 @@ class CppTranspiler:
         prev_static_fields = self.current_static_fields
         self.current_class_name = cls.name
         self.current_static_fields = static_field_names
-        try:
-            for method in methods:
-                lines.extend(self._indent_block(self.transpile_function(method, in_class=True).splitlines()))
-        finally:
-            self.current_class_name = prev_class_name
-            self.current_static_fields = prev_static_fields
+        for method in methods:
+            lines.extend(self._indent_block(self.transpile_function(method, True).splitlines()))
+        self.current_class_name = prev_class_name
+        self.current_static_fields = prev_static_fields
 
         lines.append("};")
         return "\n".join(lines)
 
-    def _transpile_class_static_field(self, stmt: ast.AnnAssign) -> tuple[str, str]:
+    def _transpile_class_static_field(self, stmt: ast.stmt) -> tuple[str, str]:
         """class本体の型付きメンバー宣言を static メンバーへ変換する。
 
         Args:
@@ -345,24 +471,24 @@ class CppTranspiler:
             return f"inline static {field_type} {field_name};", field_name
         return f"inline static {field_type} {field_name} = {self.transpile_expr(stmt.value)};", field_name
 
-    def _transpile_dataclass_field(self, stmt: ast.AnnAssign) -> tuple[str, str, str | None]:
+    def _transpile_dataclass_field(self, stmt: ast.stmt) -> tuple[str, str, bool, str]:
         """dataclass フィールド宣言を C++ メンバー情報へ変換する。
 
         Args:
             stmt: dataclass 内の AnnAssign ノード。
 
         Returns:
-            (型名, フィールド名, 既定値文字列 or None)
+            (型名, フィールド名, 既定値有無, 既定値文字列)
         """
         if not isinstance(stmt.target, ast.Name):
             raise TranspileError("Dataclass field declaration must be a simple name")
         field_type = self._map_annotation(stmt.annotation)
         field_name = stmt.target.id
         if stmt.value is None:
-            return field_type, field_name, None
-        return field_type, field_name, self.transpile_expr(stmt.value)
+            return field_type, field_name, False, ""
+        return field_type, field_name, True, self.transpile_expr(stmt.value)
 
-    def _transpile_class_static_assign(self, stmt: ast.Assign) -> tuple[str, str]:
+    def _transpile_class_static_assign(self, stmt: ast.stmt) -> tuple[str, str]:
         """class本体の代入を static メンバー定義へ変換する。
 
         Args:
@@ -374,11 +500,13 @@ class CppTranspiler:
         if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
             raise TranspileError("Class static assignment must be a simple name assignment")
         field_name = stmt.targets[0].id
-        field_type = self._infer_expr_cpp_type(stmt.value) or "auto"
+        field_type = self._infer_expr_cpp_type(stmt.value)
+        if field_type == "":
+            field_type = "auto"
         return f"inline static {field_type} {field_name} = {self.transpile_expr(stmt.value)};", field_name
 
     def _collect_instance_fields(
-        self, cls: ast.ClassDef, static_field_names: Set[str]
+        self, cls: ast.stmt, static_field_names: Set[str]
     ) -> List[tuple[str, str, str]]:
         """__init__ からインスタンスフィールド候補を抽出する。
 
@@ -392,50 +520,54 @@ class CppTranspiler:
         fields: List[tuple[str, str, str]] = []
         seen: Set[str] = set()
 
-        init_fn = None
         for stmt in cls.body:
-            if isinstance(stmt, ast.FunctionDef) and stmt.name == "__init__":
+            if isinstance(stmt, ast.FunctionDef):
                 init_fn = stmt
-                break
-        if init_fn is None:
-            return fields
+                if init_fn.name != "__init__":
+                    continue
+                arg_types: dict[str, str] = {}
+                idx = 0
+                for arg in init_fn.args.args:
+                    if idx == 0 and arg.arg == "self":
+                        idx = idx + 1
+                        continue
+                    if arg.annotation is not None:
+                        arg_types[arg.arg] = self._map_annotation(arg.annotation)
+                    idx = idx + 1
 
-        arg_types: dict[str, str] = {}
-        for idx, arg in enumerate(init_fn.args.args):
-            if idx == 0 and arg.arg == "self":
-                continue
-            if arg.annotation is not None:
-                arg_types[arg.arg] = self._map_annotation(arg.annotation)
+                for init_stmt in init_fn.body:
+                    field_name: str = ""
+                    field_type: str = ""
+                    if isinstance(init_stmt, ast.AnnAssign):
+                        target_expr = init_stmt.target
+                        if isinstance(target_expr, ast.Attribute):
+                            attr_target = target_expr
+                            if isinstance(attr_target.value, ast.Name) and attr_target.value.id == "self":
+                                field_name = attr_target.attr
+                                field_type = self._map_annotation(init_stmt.annotation)
+                    elif isinstance(init_stmt, ast.Assign):
+                        if len(init_stmt.targets) == 1:
+                            target_expr = init_stmt.targets[0]
+                            if not isinstance(target_expr, ast.Attribute):
+                                continue
+                            attr_target = target_expr
+                            if isinstance(attr_target.value, ast.Name) and attr_target.value.id == "self":
+                                field_name = attr_target.attr
+                                field_type = self._infer_type(init_stmt.value, arg_types)
 
-        for stmt in init_fn.body:
-            field_name: str | None = None
-            field_type: str | None = None
-            if isinstance(stmt, ast.AnnAssign):
-                if isinstance(stmt.target, ast.Attribute) and isinstance(stmt.target.value, ast.Name) and stmt.target.value.id == "self":
-                    field_name = stmt.target.attr
-                    field_type = self._map_annotation(stmt.annotation)
-            elif isinstance(stmt, ast.Assign):
-                if (
-                    len(stmt.targets) == 1
-                    and isinstance(stmt.targets[0], ast.Attribute)
-                    and isinstance(stmt.targets[0].value, ast.Name)
-                    and stmt.targets[0].value.id == "self"
-                ):
-                    field_name = stmt.targets[0].attr
-                    field_type = self._infer_type(stmt.value, arg_types)
-
-            if field_name is None or field_type is None:
-                continue
-            if field_name in static_field_names:
-                continue
-            if field_name in seen:
-                continue
-            seen.add(field_name)
-            fields.append((cls.name, field_type, field_name))
+                    if field_name == "" or field_type == "":
+                        continue
+                    if field_name in static_field_names:
+                        continue
+                    if field_name in seen:
+                        continue
+                    seen.add(field_name)
+                    fields.append((cls.name, field_type, field_name))
+                return fields
 
         return fields
 
-    def _infer_type(self, expr: ast.expr, arg_types: dict[str, str]) -> str | None:
+    def _infer_type(self, expr: ast.expr, arg_types: dict[str, str]) -> str:
         """式から C++ 型を推定する。
 
         Args:
@@ -443,15 +575,17 @@ class CppTranspiler:
             arg_types: 引数名 -> 型名の対応表。
         """
         if isinstance(expr, ast.Name):
-            return arg_types.get(expr.id)
+            if expr.id in arg_types:
+                return arg_types[expr.id]
+            return ""
         if isinstance(expr, ast.Constant):
             return self._infer_expr_cpp_type(expr)
         if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
             if expr.func.id in self.class_names:
                 return f"pycs::gc::RcHandle<{expr.func.id}>"
-        return None
+        return ""
 
-    def _infer_expr_cpp_type(self, expr: ast.expr) -> str | None:
+    def _infer_expr_cpp_type(self, expr: ast.expr) -> str:
         """リテラル式から C++ 基本型を推定する。"""
         if isinstance(expr, ast.Constant):
             if isinstance(expr.value, bool):
@@ -462,8 +596,8 @@ class CppTranspiler:
                 return "double"
             if isinstance(expr.value, str):
                 return "string"
-            return None
-        return None
+            return ""
+        return ""
 
     def transpile_function(self, fn: ast.FunctionDef, in_class: bool = False) -> str:
         """関数/メソッド定義を C++ の関数定義へ変換する。
@@ -474,42 +608,39 @@ class CppTranspiler:
         """
         is_constructor = in_class and fn.name == "__init__"
 
-        if fn.returns is None:
-            raise TranspileError(f"Function '{fn.name}' requires return type annotation")
-
         return_type = self._map_annotation(fn.returns)
         params: List[str] = []
-        declared = set()
+        declared: Set[str] = set()
 
-        for idx, arg in enumerate(fn.args.args):
+        idx = 0
+        for arg in fn.args.args:
             if in_class and idx == 0 and arg.arg == "self":
                 declared.add("self")
+                idx = idx + 1
                 continue
-            if arg.annotation is None:
-                raise TranspileError(
-                    f"Function '{fn.name}' argument '{arg.arg}' requires type annotation"
-                )
             params.append(f"{self._map_annotation(arg.annotation)} {arg.arg}")
             declared.add(arg.arg)
+            idx = idx + 1
 
         body_lines = self.transpile_statements(fn.body, Scope(declared=declared))
         if is_constructor:
-            if self.current_class_name is None:
+            if self.current_class_name == "":
                 raise TranspileError("Constructor conversion requires class context")
             if return_type != "void":
                 raise TranspileError("__init__ return type must be None")
-            signature = f"{self.current_class_name}({', '.join(params)})"
-        else:
-            signature = f"{return_type} {fn.name}({', '.join(params)})"
+            lines: List[str] = [f"{self.current_class_name}({', '.join(params)})", "{"]
+            lines.extend(self._indent_block(body_lines))
+            lines.append("}")
+            return "\n".join(lines)
 
-        lines = [signature, "{"]
+        lines: List[str] = [f"{return_type} {fn.name}({', '.join(params)})", "{"]
         lines.extend(self._indent_block(body_lines))
         lines.append("}")
         return "\n".join(lines)
 
     def transpile_main(self, body: List[ast.stmt]) -> str:
         """トップレベル文を C++ の main 関数へ変換する。"""
-        lines = ["int main()", "{"]
+        lines: List[str] = ["int main()", "{"]
         body_lines = self.transpile_statements(body, Scope(declared=set()))
         lines.extend(self._indent_block(body_lines))
         lines.extend(self._indent_block(["return 0;"]))
@@ -522,6 +653,13 @@ class CppTranspiler:
 
         for stmt in stmts:
             if isinstance(stmt, (ast.Import, ast.ImportFrom)):
+                continue
+            if (
+                isinstance(stmt, ast.Expr)
+                and isinstance(stmt.value, ast.Constant)
+                and isinstance(stmt.value.value, str)
+            ):
+                # docstring を実行文としては出力しない
                 continue
             if isinstance(stmt, ast.Return):
                 if stmt.value is None:
@@ -550,19 +688,21 @@ class CppTranspiler:
             elif isinstance(stmt, ast.Pass):
                 continue
             else:
-                raise TranspileError(f"Unsupported statement: {type(stmt).__name__}")
+                raise TranspileError("Unsupported statement")
 
         return lines
 
-    def _transpile_ann_assign(self, stmt: ast.AnnAssign, scope: Scope) -> List[str]:
+    def _transpile_ann_assign(self, stmt: ast.stmt, scope: Scope) -> List[str]:
         """型注釈付き代入文を C++ 宣言/代入へ変換する。"""
-        if isinstance(stmt.target, ast.Attribute):
-            if isinstance(stmt.target.value, ast.Name) and stmt.target.value.id == "self":
+        target_expr = stmt.target
+        if isinstance(target_expr, ast.Attribute):
+            attr_target = target_expr
+            if isinstance(attr_target.value, ast.Name) and attr_target.value.id == "self":
                 if stmt.value is None:
                     raise TranspileError(
                         "Annotated assignment to self attributes requires an initializer"
                     )
-                return [f"{self.transpile_expr(stmt.target)} = {self.transpile_expr(stmt.value)};"]
+                return [f"{self.transpile_expr(attr_target)} = {self.transpile_expr(stmt.value)};"]
             raise TranspileError("Annotated assignment to attributes is not supported")
         if not isinstance(stmt.target, ast.Name):
             raise TranspileError("Only simple annotated assignments are supported")
@@ -570,35 +710,37 @@ class CppTranspiler:
         name = stmt.target.id
         cpp_type = self._map_annotation(stmt.annotation)
         if stmt.value is None:
-            line = f"{cpp_type} {name};"
-        else:
-            line = f"{cpp_type} {name} = {self.transpile_expr(stmt.value)};"
+            scope.declared.add(name)
+            return [f"{cpp_type} {name};"]
         scope.declared.add(name)
-        return [line]
+        return [f"{cpp_type} {name} = {self.transpile_expr(stmt.value)};"]
 
-    def _transpile_assign(self, stmt: ast.Assign, scope: Scope) -> List[str]:
+    def _transpile_assign(self, stmt: ast.stmt, scope: Scope) -> List[str]:
         """通常の代入文を C++ 代入へ変換する。"""
         if len(stmt.targets) != 1:
-            return [f"// unsupported assignment: {ast.unparse(stmt)}"]
+            return ["// unsupported assignment"]
         if isinstance(stmt.targets[0], ast.Tuple):
             tuple_target = stmt.targets[0]
-            if not all(isinstance(elt, ast.Name) for elt in tuple_target.elts):
-                return [f"// unsupported tuple assignment: {ast.unparse(stmt)}"]
+            for elt in tuple_target.elts:
+                if not isinstance(elt, ast.Name):
+                    return ["// unsupported tuple assignment"]
             tmp_name = "_tmp_tuple"
-            lines = [f"auto {tmp_name} = {self.transpile_expr(stmt.value)};"]
-            for i, elt in enumerate(tuple_target.elts, start=1):
+            lines: List[str] = [f"auto {tmp_name} = {self.transpile_expr(stmt.value)};"]
+            i = 0
+            for elt in tuple_target.elts:
                 name = elt.id
                 if name not in scope.declared:
                     scope.declared.add(name)
-                    lines.append(f"auto {name} = std::get<{i - 1}>({tmp_name});")
+                    lines.append(f"auto {name} = std::get<{i}>({tmp_name});")
                 else:
-                    lines.append(f"{name} = std::get<{i - 1}>({tmp_name});")
+                    lines.append(f"{name} = std::get<{i}>({tmp_name});")
+                i = i + 1
             return lines
         if isinstance(stmt.targets[0], ast.Attribute):
             target = self.transpile_expr(stmt.targets[0])
             return [f"{target} = {self.transpile_expr(stmt.value)};"]
         if not isinstance(stmt.targets[0], ast.Name):
-            return [f"// unsupported assignment: {ast.unparse(stmt)}"]
+            return ["// unsupported assignment"]
 
         name = stmt.targets[0].id
         if name not in scope.declared:
@@ -609,54 +751,67 @@ class CppTranspiler:
 
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
         """for 文を range-for 形式へ変換する。"""
-        tuple_target = None
-        target_name = ""
+        tuple_names: List[str] = []
+        target_name: str = ""
         if isinstance(stmt.target, ast.Name):
             target_name = stmt.target.id
-        elif isinstance(stmt.target, ast.Tuple) and all(
-            isinstance(elt, ast.Name) for elt in stmt.target.elts
-        ):
-            target_name = "_for_item"
-            tuple_target = stmt.target
+        elif isinstance(stmt.target, ast.Tuple):
+            only_names = True
+            for elt in stmt.target.elts:
+                if not isinstance(elt, ast.Name):
+                    only_names = False
+                    break
+            if only_names:
+                target_name = "_for_item"
+                for elt in stmt.target.elts:
+                    tuple_names.append(elt.id)
+            else:
+                return ["// unsupported for-loop target"]
         else:
-            return [f"// unsupported for-loop target: {ast.unparse(stmt.target)}"]
+            return ["// unsupported for-loop target"]
 
-        lines = [f"for (const auto& {target_name} : {self.transpile_expr(stmt.iter)})", "{"]
+        lines: List[str] = [f"for (const auto& {target_name} : {self.transpile_expr(stmt.iter)})", "{"]
         body_scope = Scope(declared=set(scope.declared))
         body_scope.declared.add(target_name)
-        if tuple_target is not None:
-            for i, elt in enumerate(tuple_target.elts, start=1):
-                lines.extend(self._indent_block([f"auto {elt.id} = std::get<{i - 1}>({target_name});"]))
-                body_scope.declared.add(elt.id)
+        if len(tuple_names) > 0:
+            i = 0
+            for elt_name in tuple_names:
+                lines.extend(self._indent_block([f"auto {elt_name} = std::get<{i}>({target_name});"]))
+                body_scope.declared.add(elt_name)
+                i = i + 1
         body_lines = self.transpile_statements(stmt.body, body_scope)
         lines.extend(self._indent_block(body_lines))
         lines.append("}")
-        if stmt.orelse:
+        if len(stmt.orelse) > 0:
             lines.append("// for-else is not directly supported; else body emitted below")
             lines.extend(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared))))
         return lines
 
     def _transpile_try(self, stmt: ast.Try, scope: Scope) -> List[str]:
         """try 文を C++ try/catch へ変換する。"""
-        lines = ["try", "{"]
+        lines: List[str] = ["try", "{"]
         lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))))
         lines.append("}")
 
         for handler in stmt.handlers:
-            ex_type = "std::exception"
+            ex_type: str = "std::exception"
             if handler.type is not None:
                 if isinstance(handler.type, ast.Name) and handler.type.id == "Exception":
                     ex_type = "std::exception"
                 else:
                     ex_type = self.transpile_expr(handler.type)
-            ex_name = handler.name if handler.name else "ex"
+            ex_name: str = "ex"
+            if handler.name != "":
+                ex_name = handler.name
             lines.append(f"catch (const {ex_type}& {ex_name})")
             lines.append("{")
-            handler_scope = Scope(declared=set(scope.declared) | {ex_name})
+            handler_declared = set(scope.declared)
+            handler_declared.add(ex_name)
+            handler_scope = Scope(declared=handler_declared)
             lines.extend(self._indent_block(self.transpile_statements(handler.body, handler_scope)))
             lines.append("}")
 
-        if stmt.finalbody:
+        if len(stmt.finalbody) > 0:
             lines.append("// finally is not directly supported in C++; emitted as plain block")
             lines.append("{")
             lines.extend(
@@ -666,7 +821,7 @@ class CppTranspiler:
             )
             lines.append("}")
 
-        if stmt.orelse:
+        if len(stmt.orelse) > 0:
             lines.append("// try-else is not directly supported; else body emitted below")
             lines.extend(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared))))
 
@@ -676,23 +831,46 @@ class CppTranspiler:
         """raise 文を std::runtime_error の throw へ変換する。"""
         if stmt.exc is None:
             return ["throw;"]
-        if (
-            isinstance(stmt.exc, ast.Call)
-            and isinstance(stmt.exc.func, ast.Name)
-            and stmt.exc.func.id == "Exception"
-            and stmt.exc.args
-        ):
+        if isinstance(stmt.exc, ast.Call) and len(stmt.exc.args) > 0:
             return [f"throw std::runtime_error(py_to_string({self.transpile_expr(stmt.exc.args[0])}));"]
         return [f"throw std::runtime_error(py_to_string({self.transpile_expr(stmt.exc)}));"]
 
     def _transpile_if(self, stmt: ast.If, scope: Scope) -> List[str]:
         """if 文を C++ if/else へ変換する。"""
-        lines = [f"if ({self.transpile_expr(stmt.test)})", "{"]
-        then_lines = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
+        cast_var: str = ""
+        cast_type: str = ""
+        if (
+            isinstance(stmt.test, ast.Call)
+            and isinstance(stmt.test.func, ast.Name)
+            and stmt.test.func.id == "isinstance"
+            and len(stmt.test.args) == 2
+            and isinstance(stmt.test.args[0], ast.Name)
+            and len(stmt.test.keywords) == 0
+        ):
+            cast_var = stmt.test.args[0].id
+            type_arg = stmt.test.args[1]
+            if isinstance(type_arg, ast.Attribute) and isinstance(type_arg.value, ast.Name):
+                cast_type = self.transpile_expr(type_arg)
+            elif isinstance(type_arg, ast.Name):
+                if type_arg.id in self.class_names:
+                    cast_type = type_arg.id
+
+        lines: List[str] = []
+        if cast_var != "" and cast_type != "":
+            lines.append(f"if (auto __cast_{cast_var} = py_cast<{cast_type}>({cast_var}))")
+            lines.append("{")
+        else:
+            lines.append(f"if ({self.transpile_expr(stmt.test)})")
+            lines.append("{")
+        then_lines: List[str] = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
+        if cast_var != "" and cast_type != "":
+            prefixed_then_lines: List[str] = [f"auto {cast_var} = __cast_{cast_var};"]
+            prefixed_then_lines.extend(then_lines)
+            then_lines = prefixed_then_lines
         lines.extend(self._indent_block(then_lines))
         lines.append("}")
 
-        if stmt.orelse:
+        if len(stmt.orelse) > 0:
             lines.append("else")
             lines.append("{")
             else_lines = self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared)))
@@ -712,10 +890,12 @@ class CppTranspiler:
                 return "false"
             return expr.id
         if isinstance(expr, ast.Attribute):
+            if isinstance(expr.value, ast.Name) and expr.value.id == "ast":
+                return f"pycs::cpp_module::ast::{expr.attr}"
             if (
                 isinstance(expr.value, ast.Name)
                 and expr.value.id == "self"
-                and self.current_class_name is not None
+                and self.current_class_name != ""
                 and expr.attr in self.current_static_fields
             ):
                 return f"{self.current_class_name}::{expr.attr}"
@@ -727,11 +907,20 @@ class CppTranspiler:
         if isinstance(expr, ast.Constant):
             return self._constant(expr.value)
         if isinstance(expr, ast.List):
-            return "{" + ", ".join(self.transpile_expr(e) for e in expr.elts) + "}"
+            items: List[str] = []
+            for e in expr.elts:
+                items.append(self.transpile_expr(e))
+            return "{" + ", ".join(items) + "}"
         if isinstance(expr, ast.Set):
-            return "{" + ", ".join(self.transpile_expr(e) for e in expr.elts) + "}"
+            items: List[str] = []
+            for e in expr.elts:
+                items.append(self.transpile_expr(e))
+            return "{" + ", ".join(items) + "}"
         if isinstance(expr, ast.Tuple):
-            return f"std::make_tuple({', '.join(self.transpile_expr(e) for e in expr.elts)})"
+            items: List[str] = []
+            for e in expr.elts:
+                items.append(self.transpile_expr(e))
+            return f"std::make_tuple({', '.join(items)})"
         if isinstance(expr, ast.Dict):
             entries: List[str] = []
             for k, v in zip(expr.keys, expr.values):
@@ -747,7 +936,10 @@ class CppTranspiler:
             return f"({self._unaryop(expr.op)}{self.transpile_expr(expr.operand)})"
         if isinstance(expr, ast.BoolOp):
             op = self._boolop(expr.op)
-            return "(" + f" {op} ".join(self.transpile_expr(v) for v in expr.values) + ")"
+            values: List[str] = []
+            for v in expr.values:
+                values.append(self.transpile_expr(v))
+            return "(" + f" {op} ".join(values) + ")"
         if isinstance(expr, ast.Compare):
             if len(expr.ops) != 1 or len(expr.comparators) != 1:
                 return "/* chained-comparison */ false"
@@ -766,28 +958,82 @@ class CppTranspiler:
         if isinstance(expr, (ast.ListComp, ast.SetComp, ast.GeneratorExp)):
             return "/* comprehension */ {}"
 
-        raise TranspileError(f"Unsupported expression: {type(expr).__name__}")
+        raise TranspileError("Unsupported expression")
 
-    def _transpile_call(self, call: ast.Call) -> str:
+    def _transpile_call(self, call: ast.expr) -> str:
         """関数呼び出し式を C++ 呼び出し式へ変換する。"""
-        args_list = [self.transpile_expr(arg) for arg in call.args]
+        args_list: List[str] = []
+        for arg in call.args:
+            args_list.append(self.transpile_expr(arg))
         for kw in call.keywords:
-            if kw.arg is None:
-                args_list.append(self.transpile_expr(kw.value))
-            else:
-                args_list.append(self.transpile_expr(kw.value))
+            args_list.append(self.transpile_expr(kw.value))
         args = ", ".join(args_list)
 
         if isinstance(call.func, ast.Name) and call.func.id == "print":
-            if not args_list:
+            if len(args_list) == 0:
                 return "py_print()"
             return f"py_print({args})"
+        if isinstance(call.func, ast.Name) and call.func.id == "len":
+            return f"py_len({args})"
+        if isinstance(call.func, ast.Name) and call.func.id == "sorted":
+            return f"py_sorted({args})"
+        if isinstance(call.func, ast.Name) and call.func.id == "zip":
+            if len(args_list) == 2:
+                return f"py_zip({args_list[0]}, {args_list[1]})"
+            return "vector<tuple<int, int>>{}"
+        if isinstance(call.func, ast.Name) and call.func.id == "set":
+            if len(args_list) == 0:
+                return "unordered_set<string>{}"
+            return (
+                "unordered_set<std::remove_cvref_t<decltype(*"
+                + f"{args_list[0]}.begin())>>({args_list[0]}.begin(), {args_list[0]}.end())"
+            )
+        if isinstance(call.func, ast.Name) and call.func.id == "str":
+            if len(call.args) == 1:
+                return f"py_to_string({args_list[0]})"
+            return "\"\""
+        if isinstance(call.func, ast.Name) and call.func.id == "isinstance":
+            if len(call.args) == 2:
+                obj = self.transpile_expr(call.args[0])
+                type_arg = call.args[1]
+                if isinstance(type_arg, ast.Tuple):
+                    types: List[str] = []
+                    for elt in type_arg.elts:
+                        if isinstance(elt, ast.Attribute) and isinstance(elt.value, ast.Name) and elt.value.id == "ast":
+                            types.append(f"pycs::cpp_module::ast::{elt.attr}")
+                        elif isinstance(elt, ast.Name):
+                            types.append(elt.id)
+                    if len(types) > 0:
+                        return f"py_isinstance_any<decltype({obj}), {', '.join(types)}>({obj})"
+                if isinstance(type_arg, ast.Attribute) and isinstance(type_arg.value, ast.Name) and type_arg.value.id == "ast":
+                    return f"py_isinstance<pycs::cpp_module::ast::{type_arg.attr}>({obj})"
+                if isinstance(type_arg, ast.Name):
+                    if type_arg.id == "str":
+                        return f"py_isinstance<string>({obj})"
+                    return f"py_isinstance<{type_arg.id}>({obj})"
+            return "false"
 
         if isinstance(call.func, ast.Name):
-            if call.func.id in self.class_names:
+            if call.func.id in self.class_names and call.func.id not in self.exception_class_names:
                 return f"pycs::gc::RcHandle<{call.func.id}>::adopt(pycs::gc::rc_new<{call.func.id}>({args}))"
             return f"{call.func.id}({args})"
         if isinstance(call.func, ast.Attribute):
+            obj = self.transpile_expr(call.func.value)
+            method = call.func.attr
+            if method == "append" and len(args_list) == 1:
+                return f"{obj}.push_back({args_list[0]})"
+            if method == "extend" and len(args_list) == 1:
+                return f"{obj}.insert({obj}.end(), {args_list[0]}.begin(), {args_list[0]}.end())"
+            if method == "add" and len(args_list) == 1:
+                return f"{obj}.insert({args_list[0]})"
+            if method == "union" and len(args_list) == 1:
+                return f"py_set_union({obj}, {args_list[0]})"
+            if method == "splitlines":
+                return f"py_splitlines({obj})"
+            if method == "join" and len(args_list) == 1:
+                return f"py_join({obj}, {args_list[0]})"
+            if method == "replace" and len(args_list) == 2:
+                return f"py_replace({obj}, {args_list[0]}, {args_list[1]})"
             return f"{self.transpile_expr(call.func)}({args})"
 
         raise TranspileError("Only direct function calls are supported")
@@ -805,46 +1051,86 @@ class CppTranspiler:
                 return left
             return "auto"
         if isinstance(annotation, ast.Name):
-            mapping = {
-                "int": "int",
-                "float": "double",
-                "str": "string",
-                "bool": "bool",
-                "None": "void",
-            }
-            if annotation.id in mapping:
-                return mapping[annotation.id]
+            if annotation.id == "int":
+                return "int"
+            if annotation.id == "float":
+                return "double"
+            if annotation.id == "str":
+                return "string"
+            if annotation.id == "bool":
+                return "bool"
+            if annotation.id == "None":
+                return "void"
             if annotation.id in self.class_names:
                 return f"pycs::gc::RcHandle<{annotation.id}>"
-            return annotation.id
+            return "auto"
         if isinstance(annotation, ast.Attribute):
-            return self.transpile_expr(annotation)
+            if isinstance(annotation.value, ast.Name) and annotation.value.id == "ast":
+                if annotation.attr == "Module":
+                    return "pycs::cpp_module::ast::ModulePtr"
+                if annotation.attr == "stmt":
+                    return "pycs::cpp_module::ast::StmtPtr"
+                if annotation.attr == "expr":
+                    return "pycs::cpp_module::ast::ExprPtr"
+                if annotation.attr == "FunctionDef":
+                    return "std::shared_ptr<pycs::cpp_module::ast::FunctionDef>"
+                if annotation.attr == "ClassDef":
+                    return "std::shared_ptr<pycs::cpp_module::ast::ClassDef>"
+                if annotation.attr == "Assign":
+                    return "std::shared_ptr<pycs::cpp_module::ast::Assign>"
+                if annotation.attr == "AnnAssign":
+                    return "std::shared_ptr<pycs::cpp_module::ast::AnnAssign>"
+                if annotation.attr == "For":
+                    return "std::shared_ptr<pycs::cpp_module::ast::For>"
+                if annotation.attr == "If":
+                    return "std::shared_ptr<pycs::cpp_module::ast::If>"
+                if annotation.attr == "Try":
+                    return "std::shared_ptr<pycs::cpp_module::ast::Try>"
+                if annotation.attr == "Raise":
+                    return "std::shared_ptr<pycs::cpp_module::ast::Raise>"
+                if annotation.attr == "Call":
+                    return "std::shared_ptr<pycs::cpp_module::ast::Call>"
+                if annotation.attr == "JoinedStr":
+                    return "std::shared_ptr<pycs::cpp_module::ast::JoinedStr>"
+                if annotation.attr == "boolop":
+                    return "std::shared_ptr<pycs::cpp_module::ast::boolop>"
+                if annotation.attr == "cmpop":
+                    return "std::shared_ptr<pycs::cpp_module::ast::cmpop>"
+                if annotation.attr == "unaryop":
+                    return "std::shared_ptr<pycs::cpp_module::ast::unaryop>"
+                if annotation.attr == "operator":
+                    return "std::shared_ptr<pycs::cpp_module::ast::operator_>"
+                return "auto"
+            return "auto"
         if isinstance(annotation, ast.Subscript):
+            raw_base: str = ""
             if isinstance(annotation.value, ast.Name):
                 raw_base = annotation.value.id
             elif isinstance(annotation.value, ast.Attribute):
                 raw_base = self.transpile_expr(annotation.value)
             else:
                 return "auto"
-            base_map = {
-                "list": "vector",
-                "set": "unordered_set",
-                "dict": "unordered_map",
-                "tuple": "tuple",
-                "List": "vector",
-                "Set": "unordered_set",
-                "Dict": "unordered_map",
-                "Tuple": "tuple",
-            }
-            base = base_map.get(raw_base, raw_base)
+            base: str = ""
+            if raw_base == "list" or raw_base == "List":
+                base = "vector"
+            elif raw_base == "set" or raw_base == "Set":
+                base = "unordered_set"
+            elif raw_base == "dict" or raw_base == "Dict":
+                base = "unordered_map"
+            elif raw_base == "tuple" or raw_base == "Tuple":
+                base = "tuple"
+            else:
+                base = raw_base
             args: List[str]
             if isinstance(annotation.slice, ast.Tuple):
-                args = [self._map_annotation(e) for e in annotation.slice.elts]
+                args = []
+                for e in annotation.slice.elts:
+                    args.append(self._map_annotation(e))
             else:
                 args = [self._map_annotation(annotation.slice)]
             return f"{base}<{', '.join(args)}>"
 
-        raise TranspileError(f"Unsupported type annotation: {ast.unparse(annotation)}")
+        raise TranspileError("Unsupported type annotation")
 
     def _is_main_guard(self, stmt: ast.stmt) -> bool:
         """if __name__ == \"__main__\" かを判定する。"""
@@ -857,65 +1143,76 @@ class CppTranspiler:
             return False
         if not isinstance(test.ops[0], ast.Eq):
             return False
-        return (
-            isinstance(test.left, ast.Name)
-            and test.left.id == "__name__"
-            and isinstance(test.comparators[0], ast.Constant)
-            and test.comparators[0].value == "__main__"
-        )
+        if not isinstance(test.left, ast.Name):
+            return False
+        if test.left.id != "__name__":
+            return False
+        if not isinstance(test.comparators[0], ast.Constant):
+            return False
+        return self.transpile_expr(test.comparators[0]) == '"__main__"'
 
     def _constant(self, value: object) -> str:
         """Python リテラル値を C++ リテラル表現へ変換する。"""
-        if isinstance(value, bool):
-            return "true" if value else "false"
-        if value is None:
-            return "nullptr"
         if isinstance(value, str):
-            escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+            text = str(value)
+            escaped = (
+                text.replace("\\", "\\\\")
+                .replace('"', '\\"')
+                .replace("\n", "\\n")
+                .replace("\t", "\\t")
+                .replace("\r", "\\r")
+            )
             return f'"{escaped}"'
-        return repr(value)
+        text = str(value)
+        if text == "True":
+            return "true"
+        if text == "False":
+            return "false"
+        if text == "None":
+            return "nullptr"
+        return text
 
     def _binop(self, op: ast.operator) -> str:
         """二項演算子ノードを C++ 演算子文字列へ変換する。"""
-        mapping = {
-            ast.Add: "+",
-            ast.Sub: "-",
-            ast.Mult: "*",
-            ast.Div: "/",
-            ast.Mod: "%",
-            ast.BitOr: "|",
-        }
-        for op_type, symbol in mapping.items():
-            if isinstance(op, op_type):
-                return symbol
-        raise TranspileError(f"Unsupported binary operator: {type(op).__name__}")
+        if isinstance(op, ast.Add):
+            return "+"
+        if isinstance(op, ast.Sub):
+            return "-"
+        if isinstance(op, ast.Mult):
+            return "*"
+        if isinstance(op, ast.Div):
+            return "/"
+        if isinstance(op, ast.Mod):
+            return "%"
+        if isinstance(op, ast.BitOr):
+            return "|"
+        raise TranspileError("Unsupported binary operator")
 
     def _unaryop(self, op: ast.unaryop) -> str:
         """単項演算子ノードを C++ 演算子文字列へ変換する。"""
-        mapping = {
-            ast.UAdd: "+",
-            ast.USub: "-",
-            ast.Not: "!",
-        }
-        for op_type, symbol in mapping.items():
-            if isinstance(op, op_type):
-                return symbol
-        raise TranspileError(f"Unsupported unary operator: {type(op).__name__}")
+        if isinstance(op, ast.UAdd):
+            return "+"
+        if isinstance(op, ast.USub):
+            return "-"
+        if isinstance(op, ast.Not):
+            return "!"
+        raise TranspileError("Unsupported unary operator")
 
     def _cmpop(self, op: ast.cmpop) -> str:
         """比較演算子ノードを C++ 演算子文字列へ変換する。"""
-        mapping = {
-            ast.Eq: "==",
-            ast.NotEq: "!=",
-            ast.Lt: "<",
-            ast.LtE: "<=",
-            ast.Gt: ">",
-            ast.GtE: ">=",
-        }
-        for op_type, symbol in mapping.items():
-            if isinstance(op, op_type):
-                return symbol
-        raise TranspileError(f"Unsupported comparison operator: {type(op).__name__}")
+        if isinstance(op, ast.Eq):
+            return "=="
+        if isinstance(op, ast.NotEq):
+            return "!="
+        if isinstance(op, ast.Lt):
+            return "<"
+        if isinstance(op, ast.LtE):
+            return "<="
+        if isinstance(op, ast.Gt):
+            return ">"
+        if isinstance(op, ast.GtE):
+            return ">="
+        raise TranspileError("Unsupported comparison operator")
 
     def _transpile_compare(self, left_expr: ast.expr, op: ast.cmpop, right_expr: ast.expr) -> str:
         """比較式ノードを C++ 比較式へ変換する。"""
@@ -937,7 +1234,7 @@ class CppTranspiler:
             return "&&"
         if isinstance(op, ast.Or):
             return "||"
-        raise TranspileError(f"Unsupported boolean operator: {type(op).__name__}")
+        raise TranspileError("Unsupported boolean operator")
 
     def _transpile_joined_str(self, expr: ast.JoinedStr) -> str:
         """f-string を文字列連結式へ変換する。"""
@@ -949,11 +1246,11 @@ class CppTranspiler:
                 parts.append(f"py_to_string({self.transpile_expr(value.value)})")
             else:
                 parts.append('""')
-        if not parts:
+        if len(parts) == 0:
             return '""'
         return "(" + " + ".join(parts) + ")"
 
-    def _is_dataclass_class(self, cls: ast.ClassDef) -> bool:
+    def _is_dataclass_class(self, cls: ast.stmt) -> bool:
         """クラスに @dataclass デコレータが付いているかを判定する。"""
         for decorator in cls.decorator_list:
             if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
@@ -964,7 +1261,13 @@ class CppTranspiler:
 
     def _indent_block(self, lines: List[str]) -> List[str]:
         """複数行にインデントを付与して返す。"""
-        return [f"{self.INDENT}{line}" if line else "" for line in lines]
+        out: List[str] = []
+        for line in lines:
+            if line != "":
+                out.append(f"{self.INDENT}{line}")
+            else:
+                out.append("")
+        return out
 
 
 def transpile(input_file: str, output_file: str) -> None:

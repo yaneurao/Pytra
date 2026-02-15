@@ -205,13 +205,13 @@ private:
         auto node = std::make_shared<Import>();
         const std::string rest = trim(lines_[pos_].text.substr(7));
         for (const auto& part : split_top_level(rest, ',')) {
-            ImportAlias a;
+            auto a = std::make_shared<ImportAlias>();
             const auto as_pos = part.find(" as ");
             if (as_pos == std::string::npos) {
-                a.name = trim(part);
+                a->name = trim(part);
             } else {
-                a.name = trim(part.substr(0, as_pos));
-                a.asname = trim(part.substr(as_pos + 4));
+                a->name = trim(part.substr(0, as_pos));
+                a->asname = trim(part.substr(as_pos + 4));
             }
             node->names.push_back(std::move(a));
         }
@@ -228,13 +228,13 @@ private:
         auto node = std::make_shared<ImportFrom>();
         node->module = trim(m[1].str());
         for (const auto& part : split_top_level(trim(m[2].str()), ',')) {
-            ImportAlias a;
+            auto a = std::make_shared<ImportAlias>();
             const auto as_pos = part.find(" as ");
             if (as_pos == std::string::npos) {
-                a.name = trim(part);
+                a->name = trim(part);
             } else {
-                a.name = trim(part.substr(0, as_pos));
-                a.asname = trim(part.substr(as_pos + 4));
+                a->name = trim(part.substr(0, as_pos));
+                a->asname = trim(part.substr(as_pos + 4));
             }
             node->names.push_back(std::move(a));
         }
@@ -261,20 +261,20 @@ private:
         return node;
     }
 
-    Arg parse_arg(const std::string& text) {
-        Arg a;
+    std::shared_ptr<arg> parse_arg(const std::string& text) {
+        auto a = std::make_shared<arg>();
         std::string t = trim(text);
         auto eq = t.find('=');
         if (eq != std::string::npos) {
-            a.default_value = trim(t.substr(eq + 1));
             t = trim(t.substr(0, eq));
         }
         auto col = t.find(':');
         if (col == std::string::npos) {
-            a.arg = trim(t);
+            a->arg = trim(t);
+            a->annotation = nullptr;
         } else {
-            a.arg = trim(t.substr(0, col));
-            a.annotation = trim(t.substr(col + 1));
+            a->arg = trim(t.substr(0, col));
+            a->annotation = raw_expr(trim(t.substr(col + 1)));
         }
         return a;
     }
@@ -289,13 +289,14 @@ private:
 
         auto node = std::make_shared<FunctionDef>();
         node->name = trim(m[1].str());
-        node->returns = trim(m[3].str());
+        node->returns = raw_expr(trim(m[3].str()));
+        node->args = std::make_shared<arguments>();
         node->decorators = decorators;
 
         const std::string args = trim(m[2].str());
         if (!args.empty()) {
             for (const auto& p : split_top_level(args, ',')) {
-                node->args.push_back(parse_arg(p));
+                node->args->args.push_back(parse_arg(p));
             }
         }
 
@@ -378,11 +379,15 @@ private:
             }
             std::smatch m;
             if (std::regex_match(li.text, m, re_except)) {
-                ExceptHandler h;
-                if (m[1].matched) h.type = m[1].str();
-                if (m[2].matched) h.name = m[2].str();
+                auto h = std::make_shared<ExceptHandler>();
+                if (m[1].matched) {
+                    h->type = raw_expr(m[1].str());
+                } else {
+                    h->type = nullptr;
+                }
+                if (m[2].matched) h->name = m[2].str();
                 ++pos_;
-                h.body = parse_block(base_indent + 1);
+                h->body = parse_block(base_indent + 1);
                 node->handlers.push_back(std::move(h));
                 continue;
             }
@@ -400,6 +405,8 @@ private:
         const std::string t = lines_[pos_].text;
         if (t.size() > 6) {
             node->value = raw_expr(trim(t.substr(6)));
+        } else {
+            node->value = nullptr;
         }
         ++pos_;
         return node;
@@ -410,6 +417,8 @@ private:
         const std::string t = lines_[pos_].text;
         if (t.size() > 5) {
             node->exc = raw_expr(trim(t.substr(5)));
+        } else {
+            node->exc = nullptr;
         }
         ++pos_;
         return node;

@@ -1,92 +1,122 @@
-# 概要
+# 仕様書
 
-- PythonからC#へのトランスパイラを作ってください。
+## 1. 目的
 
-## トランスパイラの使い方
+PyCs は、型注釈付き Python コードを次の言語へ変換するトランスパイラ群です。
 
-例 : `case11_fib.py` を `case11_fib.cs` に変換する場合。
+- Python -> C# (`src/pycs_transpiler.py`)
+- Python -> C++ (`src/pycpp_transpiler.py`)
 
-```
-python pycs.py test/py/case11_fib.py test/cs/case11_fib.cs
-```
+本仕様書は、現時点の実装に基づく対応範囲・テスト方法・運用上の注意点を定義します。
 
-## 言語仕様
+## 2. リポジトリ構成
 
-- Pythonのコードは、型アノテーション必須とします。
-- Pythonのintは、そのままC#のintに変換されるものとします。
-- Pythonのastモジュールを用いてASTを取得し、C#に1対1になるべく近い形で書き出します。
-- `import` / `from ... import ...` は C# の `using` に変換します（`as` は `using` エイリアスに変換）。
-- x : int = 1 のように変数の型をひとたびint型と決めたら、そのあと別の型であるstr型の値の代入はできないものとします。
-- class は単一継承をサポートし、`self` は C# の `this` として変換します。
-- Python の class 本体で宣言したメンバーは C# の `static` メンバーとして変換します。
-- `__init__` 内で `self.xxx` に代入したメンバーは C# のインスタンスメンバー（非`static`）として変換します。
-- `@dataclass` を付けた class は、型注釈付きフィールドをインスタンスメンバーとして変換し、必要なコンストラクタを自動生成します。
+- `src/`
+  - `pycs_transpiler.py`: Python -> C# 変換器
+  - `pycpp_transpiler.py`: Python -> C++ 変換器
+  - `cpp_module/`: C++ 側ランタイム補助モジュール
+- `test/`
+  - `py/`: 入力 Python サンプル
+  - `cs/`: C# 期待結果
+  - `cpp/`: C++ 期待結果
+  - `cpp2/`: セルフホスティング検証時の出力先（`.gitignore` 対象）
+  - `obj/`: C++ コンパイル生成物（`.gitignore` 対象）
+- `docs/`
+  - `spec.md`: 本仕様
+  - `gc.md`: 参照カウント GC の仕様
 
-## フォルダ構成
+## 3. Python 入力仕様
 
-- ソースコードのフォルダ : src/
-- テスト用のコードフォルダ : test/
-- ドキュメントフォルダ : docs/
+- 入力 Python は、基本的に型注釈付きコードを前提とします。
+- `class` は単一継承をサポートします。
+- `self.xxx` に対する `__init__` 内代入はインスタンスメンバーとして扱います。
+- class 本体で宣言されたメンバーは class member（C# では `static`、C++ では `inline static`）として扱います。
+- `@dataclass` を付けた class は dataclass として扱い、フィールドとコンストラクタを生成します。
+- `import` / `from ... import ...` をサポートします。
 
-## 単体テスト
+## 4. C# 変換仕様（`pycs_transpiler.py`）
 
-- 単体テストとして、`test/py/` 配下のサンプルPythonコードを C# に変換し、`test/cs/` の期待コードと一致することを確認してください。
-- フィボナッチは `case11_fib` としてサンプルに含めます。
+- Python AST を解析し、`Program` クラスを持つ C# コードを生成します。
+- `import` / `from ... import ...` は `using` へ変換します。
+- 主な型対応:
+  - `int -> int`
+  - `float -> double`
+  - `str -> string`
+  - `bool -> bool`
+  - `None -> void`（戻り値注釈時）
+- class member は `public static` に変換します。
+- `__init__` で初期化される `self` 属性はインスタンスメンバーとして生成します。
 
-### 単体テストの実行方法
+## 5. C++ 変換仕様（`pycpp_transpiler.py`）
 
-- プロジェクトルート (`PyCs/`) で以下を実行します。
+- Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
+- 生成コードは `src/cpp_module/` のランタイム補助実装を利用します。
+- class は `pycs::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
+- class member は `inline static` メンバーとして生成します。
+- `__init__` 内 `self.xxx` 代入はインスタンスメンバーとして生成します。
+- `@dataclass` はフィールド定義とコンストラクタ生成を行います。
+- `raise` / `try` / `except` をサポートし、例外は `std::runtime_error` 等を利用して表現します。
+
+### 5.1 import と `cpp_module` 対応
+
+`pycpp_transpiler.py` は import 文に応じて include を生成します。主な対応は次の通りです。
+
+- `import ast` -> `#include "cpp_module/ast.h"`
+- `import pathlib` -> `#include "cpp_module/pathlib.h"`
+- `from dataclasses import dataclass` -> `#include "cpp_module/dataclasses.h"`
+- GC は常時 `#include "cpp_module/gc.h"` を利用
+
+補助モジュール実装:
+
+- `src/cpp_module/ast.h`, `src/cpp_module/ast.cpp`
+- `src/cpp_module/pathlib.h`, `src/cpp_module/pathlib.cpp`
+- `src/cpp_module/dataclasses.h`, `src/cpp_module/dataclasses.cpp`
+- `src/cpp_module/gc.h`, `src/cpp_module/gc.cpp`
+- `src/cpp_module/py_runtime_modules.h`
+
+注意:
+
+- `pycpp_transpiler_runtime.h` は廃止済みであり、使用しません。
+- `import ast` を含むコードの C++ 変換では、`cpp_module/ast` 実装を前提に動作します。
+
+## 6. テストケース方針
+
+- 入力 Python は `test/py/` に配置します。
+- C# 期待結果は `test/cs/` に配置します。
+- C++ 期待結果は `test/cpp/` に配置します。
+- ケース命名は `caseXX_*` 形式を基本とし、特別ケースとして以下を含みます。
+  - `case99_dataclass`
+  - `case100_class_instance`
+  - `case1001_pycpp_transpiler`
+  - `case1002_pycs_transpiler`
+
+## 7. ユニットテスト実行方法
+
+プロジェクトルート (`PyCs/`) で実行します。
 
 ```bash
 python -m unittest discover -s test -p "test_*.py" -v
 ```
 
-- 期待する結果
-  - `test_transpile_cases.py` が `ok` になり、各 `caseXX` の変換結果が期待する C# コードと一致します。
+想定内容:
 
-### トランスパイラの使い方（補足）
+- `test/test_transpile_cases.py`
+  - `test/py/case*.py` (100件) を C# へ変換し、`test/cs/` と比較
+- `test/test_self_transpile.py`
+  - `src/pycs_transpiler.py` 自身の C# 変換が完走することを確認
 
-- 変換コマンド
+## 8. C++ 変換結果の検証手順
 
-```bash
-python pycs.py <input.py> <output.cs>
-```
+必要に応じて次を実行します。
 
-- 例
+1. Python 版トランスパイラで `test/py` を `test/cpp` へ変換
+2. 生成 C++ を `test/obj/` にコンパイル
+3. 実行結果を Python 実行結果と比較
+4. セルフホスティング検証時は、自己変換したトランスパイラ実行ファイルで `test/py` -> `test/cpp2` を生成
+5. `test/cpp` と `test/cpp2` の一致を確認
 
-```bash
-python pycs.py test/py/case11_fib.py test/cs/case11_fib.cs
-```
+## 9. 注意点
 
-- エラー時は標準エラー出力に `error: ...` 形式で理由を表示し、終了コードは `1` になります。
-
-### テスト時の注意点
-
-- 入力Pythonコードは型アノテーション必須です（関数引数・戻り値・必要な変数宣言）。
-- 未対応の構文を使うとトランスパイル時にエラーになります。
-- テスト用サンプルは `test/py/caseXX_*.py` と `test/cs/caseXX_*.cs` の対応で管理します。
-- 現在のサンプル数は `case01` から `case100` までの100件です。
-- 変換後の `.cs` は `test/cs/` に出力します。既存ケースを更新した場合は、対応する `test/cs/` も更新してください。
-
-### サンプルプログラム解説
-
-- `case01_add`: 整数の加算関数と `print` の基本ケース。
-- `case02_sub_mul`: 減算と乗算、かっこ付き式の変換確認。
-- `case03_if_else`: `if/else` と単項マイナス演算の確認。
-- `case04_assign`: 型付き変数宣言 (`AnnAssign`) と再代入 (`Assign`) の確認。
-- `case05_compare`: 比較演算子 `>=` と `bool` 戻り値の確認。
-- `case06_string`: 文字列連結 (`str + str`) の基本ケース。
-- `case07_float`: `float -> double` 変換と除算の確認。
-- `case08_nested_call`: 関数呼び出しのネスト変換確認。
-- `case09_top_level`: トップレベル変数宣言と `Main` からの利用確認。
-- `case10_not`: 論理否定 (`not`) の変換確認。
-- `case11_fib`: 再帰関数（フィボナッチ）の変換確認ケース。
-- `case12_string_ops`: 文字列プレフィックス付与と複数回の連結を行う文字列操作ケース。
-- `case13_class`: クラス定義、インスタンス生成、インスタンスメソッド呼び出しを行うケース。
-- `case14_inheritance`: 親クラスの継承と、子クラスメソッド内から継承メソッドを呼び出すケース。
-- `case15_class_member`: class 本体のメンバー（`static` 変換）の宣言・更新・参照を行うケース。
-- `case16_instance_member`: `__init__` で初期化するインスタンスメンバー（非`static`）の宣言・参照を行うケース。
-
-## 制約
-
-- トランスパイラ本体は、Pythonで書くこと。
+- 未対応構文はトランスパイル時に `TranspileError` で失敗します。
+- エラー発生時、CLI エントリポイント（例: `pycs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。
+- `test/obj/` と `test/cpp2/` は検証用生成物のため Git 管理外です。
