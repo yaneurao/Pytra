@@ -53,10 +53,10 @@ class CppTranspiler:
         """自己変換時に使う最小ブートストラップ C++ を返す。
 
         生成された実行ファイルは `input.py output.cpp` を受け取り、
-        Pythonランタイムへ依存せずに C++ 側だけで変換（コピー）を行う。
+        Pythonランタイムへ依存せずに C++ 側だけで変換を行う。
         """
         lines = [
-            '#include "cpp_module/native_pycpp_transpiler.h"',
+            '#include "cpp_module/generated_pycpp_transpiler.h"',
             "#include <iostream>",
             "#include <string>",
             "",
@@ -66,7 +66,7 @@ class CppTranspiler:
             '        std::cerr << "usage: pycpp_transpiler_self <input.py> <output.cpp>" << std::endl;',
             "        return 1;",
             "    }",
-            "    pycs::cpp_module::NativePyCppTranspiler t;",
+            "    pycs::cpp_module::GeneratedPyCppTranspiler t;",
             "    std::string err;",
             "    if (!t.transpile_file(std::string(argv[1]), std::string(argv[2]), &err)) {",
             "        std::cerr << \"self-host transpile failed for input: \" << argv[1] << \" error=\" << err << std::endl;",
