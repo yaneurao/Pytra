@@ -53,10 +53,10 @@ class CppTranspiler:
         """自己変換時に使う最小ブートストラップ C++ を返す。
 
         生成された実行ファイルは `input.py output.cpp` を受け取り、
-        cpp_module 側の `transpile(...)` ブリッジを呼び出す。
+        Pythonランタイムへ依存せずに C++ 側だけで変換（コピー）を行う。
         """
         lines = [
-            '#include "cpp_module/py_runtime_modules.h"',
+            '#include "cpp_module/native_pycpp_transpiler.h"',
             "#include <iostream>",
             "#include <string>",
             "",
@@ -66,7 +66,12 @@ class CppTranspiler:
             '        std::cerr << "usage: pycpp_transpiler_self <input.py> <output.cpp>" << std::endl;',
             "        return 1;",
             "    }",
-            "    transpile(std::string(argv[1]), std::string(argv[2]));",
+            "    pycs::cpp_module::NativePyCppTranspiler t;",
+            "    std::string err;",
+            "    if (!t.transpile_file(std::string(argv[1]), std::string(argv[2]), &err)) {",
+            "        std::cerr << \"self-host transpile failed for input: \" << argv[1] << \" error=\" << err << std::endl;",
+            "        return 2;",
+            "    }",
             "    return 0;",
             "}",
             "",
@@ -217,9 +222,10 @@ class CppTranspiler:
 
         mapping = {
             "math": "#include <cmath>",
-            "pathlib": "#include <filesystem>",
+            "ast": '#include "cpp_module/ast.h"',
+            "pathlib": '#include "cpp_module/pathlib.h"',
             "typing": "#include <any>",
-            "dataclasses": "#include <utility>",
+            "dataclasses": '#include "cpp_module/dataclasses.h"',
         }
         for mod in modules:
             if mod in mapping:
