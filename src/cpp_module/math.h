@@ -1,0 +1,18 @@
+// このファイルは Python の `math` モジュール互換の最小実装です。
+// 現時点ではトランスパイラが利用する `sqrt` を提供します。
+
+#ifndef PYCS_CPP_MODULE_MATH_H
+#define PYCS_CPP_MODULE_MATH_H
+
+namespace pycs::cpp_module::math {
+
+/**
+ * @brief 平方根を返します（Python の `math.sqrt` 相当）。
+ * @param x 非負の実数値。
+ * @return x の平方根。
+ */
+double sqrt(double x);
+
+}  // namespace pycs::cpp_module::math
+
+#endif  // PYCS_CPP_MODULE_MATH_H
