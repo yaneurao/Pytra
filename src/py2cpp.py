@@ -1,4 +1,4 @@
-# このファイルは `src/pycpp_transpiler.py` の実装コードです。
+# このファイルは `src/py2cpp.py` の実装コードです。
 # Python AST から C++ コードを生成するためのトランスパイラ本体を定義します。
 # 変更時は既存仕様との整合性と、生成コードのコンパイル可否を確認してください。
 
@@ -640,6 +640,9 @@ class CppTranspiler:
                 i = i + 1
             return lines
         if isinstance(stmt.targets[0], ast.Attribute):
+            target = self.transpile_expr(stmt.targets[0])
+            return [f"{target} = {self.transpile_expr(stmt.value)};"]
+        if isinstance(stmt.targets[0], ast.Subscript):
             target = self.transpile_expr(stmt.targets[0])
             return [f"{target} = {self.transpile_expr(stmt.value)};"]
         if not isinstance(stmt.targets[0], ast.Name):

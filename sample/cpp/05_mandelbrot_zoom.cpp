@@ -46,7 +46,7 @@ string render_frame(int width, int height, double center_x, double center_y, dou
                 zx = ((zx2 - zy2) + cx);
                 i = (i + 1);
             }
-            // unsupported assignment
+            frame[idx] = int(((255.0 * i) / max_iter));
             idx = (idx + 1);
             x = (x + 1);
         }
@@ -63,7 +63,7 @@ void run_05_mandelbrot_zoom()
     auto max_iter = 110;
     auto center_x = (-0.743643887037151);
     auto center_y = 0.13182590420533;
-    auto base_scale = (3.2 / width);
+    auto base_scale = (3.2 / (width * 1.0));
     auto zoom_per_frame = 0.93;
     auto out_path = "sample/out/05_mandelbrot_zoom.gif";
     auto start = perf_counter();

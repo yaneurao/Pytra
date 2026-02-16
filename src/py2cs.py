@@ -1,10 +1,12 @@
-# このファイルは `src/pycs_transpiler.py` のテスト/実装コードです。
+# このファイルは `src/py2cs.py` のテスト/実装コードです。
 # 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 import ast
+import argparse
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import List, Set
 
 
@@ -24,6 +26,7 @@ class CSharpTranspiler:
         self.class_names: Set[str] = set()
         self.current_class_name: str | None = None
         self.current_static_fields: Set[str] = set()
+        self.typing_aliases: dict[str, str] = {}
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
         # 1ファイル単位の変換入口。AST化してからC#文字列へ変換する。
@@ -38,6 +41,7 @@ class CSharpTranspiler:
         class_defs: List[str] = []
         top_level_body: List[ast.stmt] = []
         using_lines: Set[str] = {"using System;", "using System.Collections.Generic;", "using System.IO;"}
+        self.typing_aliases = {}
         self.class_names = {
             stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)
         }
@@ -81,7 +85,7 @@ class CSharpTranspiler:
         lines: Set[str] = set()
         if isinstance(stmt, ast.Import):
             for alias in stmt.names:
-                if alias.name in {"py_module", "time"}:
+                if alias.name in {"py_module", "time", "typing", "dataclasses"}:
                     continue
                 module_name = self._map_python_module(alias.name)
                 if alias.asname:
@@ -94,7 +98,14 @@ class CSharpTranspiler:
             if stmt.level != 0:
                 return lines
             if stmt.module:
-                if stmt.module in {"py_module", "time"}:
+                if stmt.module in {"py_module", "time", "dataclasses"}:
+                    return lines
+                if stmt.module == "typing":
+                    for alias in stmt.names:
+                        if alias.name == "*":
+                            continue
+                        alias_name = alias.asname if alias.asname else alias.name
+                        self.typing_aliases[alias_name] = self._typing_name_to_builtin(alias.name)
                     return lines
                 module_name = self._map_python_module(stmt.module)
                 lines.add(f"using {module_name};")
@@ -118,6 +129,16 @@ class CSharpTranspiler:
             "itertools": "System.Linq",
         }
         return mapping.get(module_name, module_name)
+
+    def _typing_name_to_builtin(self, typing_name: str) -> str:
+        mapping = {
+            "List": "list",
+            "Dict": "dict",
+            "Set": "set",
+            "Tuple": "tuple",
+            "Optional": "optional",
+        }
+        return mapping.get(typing_name, typing_name)
 
     def transpile_class(self, cls: ast.ClassDef) -> str:
         # class定義をC#のclassに変換する。
@@ -287,6 +308,16 @@ class CSharpTranspiler:
         return None
 
     def _infer_expr_csharp_type(self, expr: ast.expr) -> str | None:
+        def merge_types(types: List[str]) -> str:
+            if not types:
+                return "object"
+            first = types[0]
+            if all(t == first for t in types):
+                return first
+            if all(t in {"int", "double"} for t in types):
+                return "double"
+            return "object"
+
         if isinstance(expr, ast.Constant):
             if isinstance(expr.value, bool):
                 return "bool"
@@ -297,6 +328,29 @@ class CSharpTranspiler:
             if isinstance(expr.value, str):
                 return "string"
             return None
+        if isinstance(expr, ast.List):
+            item_types: List[str] = []
+            for elt in expr.elts:
+                elt_type = self._infer_expr_csharp_type(elt)
+                item_types.append(elt_type if elt_type is not None else "object")
+            return f"List<{merge_types(item_types)}>"
+        if isinstance(expr, ast.Set):
+            item_types: List[str] = []
+            for elt in expr.elts:
+                elt_type = self._infer_expr_csharp_type(elt)
+                item_types.append(elt_type if elt_type is not None else "object")
+            return f"HashSet<{merge_types(item_types)}>"
+        if isinstance(expr, ast.Dict):
+            key_types: List[str] = []
+            val_types: List[str] = []
+            for key, val in zip(expr.keys, expr.values):
+                if key is None:
+                    continue
+                key_type = self._infer_expr_csharp_type(key)
+                val_type = self._infer_expr_csharp_type(val)
+                key_types.append(key_type if key_type is not None else "object")
+                val_types.append(val_type if val_type is not None else "object")
+            return f"Dictionary<{merge_types(key_types)}, {merge_types(val_types)}>"
         return None
 
     def transpile_function(self, fn: ast.FunctionDef, in_class: bool = False) -> str:
@@ -510,6 +564,22 @@ class CSharpTranspiler:
     def _transpile_raise(self, stmt: ast.Raise) -> List[str]:
         if stmt.exc is None:
             return ["throw;"]
+        if isinstance(stmt.exc, ast.Call):
+            if isinstance(stmt.exc.func, ast.Name):
+                ex_type = stmt.exc.func.id
+            elif isinstance(stmt.exc.func, ast.Attribute):
+                ex_type = stmt.exc.func.attr
+            else:
+                ex_type = "Exception"
+            args = ", ".join(self.transpile_expr(arg) for arg in stmt.exc.args)
+            if ex_type in {"Exception", "ValueError", "RuntimeError"}:
+                return [f"throw new Exception({args});"]
+            return [f"throw new {ex_type}({args});"]
+        if isinstance(stmt.exc, ast.Name):
+            ex_type = stmt.exc.id
+            if ex_type in {"Exception", "ValueError", "RuntimeError"}:
+                return ["throw new Exception();"]
+            return [f"throw new {ex_type}();"]
         return [f"throw new Exception({self.transpile_expr(stmt.exc)});"]
 
     def _transpile_if(self, stmt: ast.If, scope: Scope) -> List[str]:
@@ -545,9 +615,13 @@ class CSharpTranspiler:
         if isinstance(expr, ast.Constant):
             return self._constant(expr.value)
         if isinstance(expr, ast.List):
-            return f"new List<object> {{ {', '.join(self.transpile_expr(e) for e in expr.elts)} }}"
+            inferred_type = self._infer_expr_csharp_type(expr)
+            list_type = inferred_type if inferred_type and inferred_type.startswith("List<") else "List<object>"
+            return f"new {list_type} {{ {', '.join(self.transpile_expr(e) for e in expr.elts)} }}"
         if isinstance(expr, ast.Set):
-            return f"new HashSet<object> {{ {', '.join(self.transpile_expr(e) for e in expr.elts)} }}"
+            inferred_type = self._infer_expr_csharp_type(expr)
+            set_type = inferred_type if inferred_type and inferred_type.startswith("HashSet<") else "HashSet<object>"
+            return f"new {set_type} {{ {', '.join(self.transpile_expr(e) for e in expr.elts)} }}"
         if isinstance(expr, ast.Tuple):
             return f"Tuple.Create({', '.join(self.transpile_expr(e) for e in expr.elts)})"
         if isinstance(expr, ast.Dict):
@@ -556,7 +630,9 @@ class CSharpTranspiler:
                 if k is None:
                     continue
                 entries.append(f"{{ {self.transpile_expr(k)}, {self.transpile_expr(v)} }}")
-            return f"new Dictionary<object, object> {{ {', '.join(entries)} }}"
+            inferred_type = self._infer_expr_csharp_type(expr)
+            dict_type = inferred_type if inferred_type and inferred_type.startswith("Dictionary<") else "Dictionary<object, object>"
+            return f"new {dict_type} {{ {', '.join(entries)} }}"
         if isinstance(expr, ast.BinOp):
             left = self.transpile_expr(expr.left)
             right = self.transpile_expr(expr.right)
@@ -596,9 +672,9 @@ class CSharpTranspiler:
         args = ", ".join(args_list)
 
         if isinstance(call.func, ast.Name) and call.func.id == "print":
-            return f"PyCs.CsModule.py_runtime.print({args})"
+            return f"Pytra.CsModule.py_runtime.print({args})"
         if isinstance(call.func, ast.Name) and call.func.id == "perf_counter":
-            return "PyCs.CsModule.time.perf_counter()"
+            return "Pytra.CsModule.time.perf_counter()"
         if isinstance(call.func, ast.Name) and call.func.id == "bytearray":
             return "new List<byte>()"
         if isinstance(call.func, ast.Name) and call.func.id == "int":
@@ -624,7 +700,7 @@ class CSharpTranspiler:
                 and call.func.value.id == "png_helper"
                 and call.func.attr == "write_rgb_png"
             ):
-                return f"PyCs.CsModule.png_helper.write_rgb_png({args})"
+                return f"Pytra.CsModule.png_helper.write_rgb_png({args})"
             if call.func.attr == "append" and len(args_list) == 1:
                 return f"{self.transpile_expr(call.func.value)}.Add((byte)({args_list[0]}))"
             return f"{self.transpile_expr(call.func)}({args})"
@@ -644,6 +720,7 @@ class CSharpTranspiler:
                 return left
             return "object"
         if isinstance(annotation, ast.Name):
+            mapped_name = self.typing_aliases.get(annotation.id, annotation.id)
             mapping = {
                 "int": "int",
                 "float": "double",
@@ -652,15 +729,20 @@ class CSharpTranspiler:
                 "bytes": "List<byte>",
                 "bool": "bool",
                 "None": "void",
+                "list": "List<object>",
+                "set": "HashSet<object>",
+                "dict": "Dictionary<object, object>",
+                "tuple": "Tuple<object>",
+                "object": "object",
             }
-            if annotation.id in mapping:
-                return mapping[annotation.id]
-            return annotation.id
+            if mapped_name in mapping:
+                return mapping[mapped_name]
+            return mapped_name
         if isinstance(annotation, ast.Attribute):
             return self.transpile_expr(annotation)
         if isinstance(annotation, ast.Subscript):
             if isinstance(annotation.value, ast.Name):
-                raw_base = annotation.value.id
+                raw_base = self.typing_aliases.get(annotation.value.id, annotation.value.id)
             elif isinstance(annotation.value, ast.Attribute):
                 raw_base = self.transpile_expr(annotation.value)
             else:
@@ -759,9 +841,9 @@ class CSharpTranspiler:
         left = self.transpile_expr(left_expr)
         right = self.transpile_expr(right_expr)
         if isinstance(op, ast.In):
-            return f"{right}.Contains({left})"
+            return f"Pytra.CsModule.py_runtime.py_in({left}, {right})"
         if isinstance(op, ast.NotIn):
-            return f"!{right}.Contains({left})"
+            return f"!Pytra.CsModule.py_runtime.py_in({left}, {right})"
         if isinstance(op, ast.Is):
             return f"object.ReferenceEquals({left}, {right})"
         if isinstance(op, ast.IsNot):
@@ -795,4 +877,24 @@ def transpile(input_file: str, output_file: str) -> None:
     transpiler.transpile_file(Path(input_file), Path(output_file))
 
 
+def main() -> int:
+    # C#向けトランスパイラのCLIエントリポイント。
+    parser = argparse.ArgumentParser(description="Transpile typed Python code to C#")
+    parser.add_argument("input", help="Path to input Python file")
+    parser.add_argument("output", help="Path to output C# file")
+    args = parser.parse_args()
+
+    try:
+        transpile(args.input, args.output)
+    except (OSError, SyntaxError, TranspileError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    return 0
+
+
 __all__ = ["TranspileError", "CSharpTranspiler", "transpile"]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

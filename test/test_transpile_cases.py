@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PYCS = ROOT / "pycs.py"
+PY2CS = ROOT / "src" / "py2cs.py"
 PY_DIR = ROOT / "test" / "py"
 CS_DIR = ROOT / "test" / "cs"
 
@@ -36,7 +36,7 @@ class TranspileGoldenTest(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as tmpdir:
                     generated_cs = Path(tmpdir) / f"{py_case.stem}.cs"
                     run = subprocess.run(
-                        ["python", str(PYCS), str(py_case), str(generated_cs)],
+                        ["python", str(PY2CS), str(py_case), str(generated_cs)],
                         cwd=ROOT,
                         capture_output=True,
                         text=True,

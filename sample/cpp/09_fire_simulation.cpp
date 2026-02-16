@@ -86,7 +86,7 @@ void run_09_fire_simulation()
         while ((x < w))
         {
             auto val = (170 + (((x * 13) + (t * 17)) % 86));
-            // unsupported assignment
+            heat[(h - 1)][x] = val;
             x = (x + 1);
         }
         auto y = 1;
@@ -102,7 +102,7 @@ void run_09_fire_simulation()
                 auto v = ((((a + b) + c) + d) / 4);
                 auto cool = (1 + (((x + y) + t) % 3));
                 auto nv = (v - cool);
-                // unsupported assignment
+                heat[(y - 1)][x] = ((nv > 0) ? nv : 0);
                 x = (x + 1);
             }
             y = (y + 1);
@@ -115,7 +115,7 @@ void run_09_fire_simulation()
             auto xx = 0;
             while ((xx < w))
             {
-                // unsupported assignment
+                frame[i] = heat[yy][xx];
                 i = (i + 1);
                 xx = (xx + 1);
             }

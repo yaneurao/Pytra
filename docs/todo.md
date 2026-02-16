@@ -12,3 +12,13 @@
 - [ ] `math` モジュール互換を拡張する（`sin`, `cos`, `exp`, `pi` 以外も含め網羅）。
 - [ ] `gif` 出力ランタイム（`save_gif`, パレット関数）を `py_module` / `cpp_module` 対応で正式仕様化し、テストを追加する。
 - [ ] 連鎖比較（例: `0 <= x < n`）を AST から正しく展開して変換する。
+
+## サンプル作成時に判明した追加TODO（05〜14対応）
+
+- [ ] `int / int` を含む `/` 演算で、Python互換の実数除算を保証する型昇格ルールを導入する。
+- [ ] `list` など空コンテナ初期化（`x = []`, `x = {}`）の型推論を強化し、`auto x = {}` の誤生成を防止する。
+- [ ] `bytes` / `bytearray` 系 API の変換規則を整理し、`extend(tuple)` のような利用も含めて互換を高める。
+- [ ] `def main()` がある入力でのエントリポイント衝突を避けるルール（自動リネームなど）を実装する。
+- [ ] list comprehension / nested list comprehension をサポートする（現状は手書きループへ書き換えが必要）。
+- [ ] 添字代入（`a[i] = v`, `a[i][j] = v`）を含む代入系の回帰テストを追加し、`// unsupported assignment` 混入を検知する。
+- [ ] `list.pop()` / `list.pop(index)` / `append` / `extend` など主要メソッド変換の互換テストを拡充する。

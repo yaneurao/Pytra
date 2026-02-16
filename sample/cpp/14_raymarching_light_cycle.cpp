@@ -86,19 +86,19 @@ void run_14_raymarching_light_cycle()
     while ((t < frames_n))
     {
         auto frame = string(static_cast<size_t>((w * h)), '\0');
-        auto a = (((t / frames_n) * pycs::cpp_module::math::pi) * 2.0);
+        auto a = ((((t * 1.0) / frames_n) * pycs::cpp_module::math::pi) * 2.0);
         auto light_x = (0.75 * pycs::cpp_module::math::cos(a));
         auto light_y = (0.55 * pycs::cpp_module::math::sin((a * 1.2)));
         auto i = 0;
         auto y = 0;
         while ((y < h))
         {
-            auto py = (((y / (h - 1)) * 2.0) - 1.0);
+            auto py = ((((y * 1.0) / (h - 1)) * 2.0) - 1.0);
             auto x = 0;
             while ((x < w))
             {
-                auto px = (((x / (w - 1)) * 2.0) - 1.0);
-                // unsupported assignment
+                auto px = ((((x * 1.0) / (w - 1)) * 2.0) - 1.0);
+                frame[i] = scene(px, py, light_x, light_y);
                 i = (i + 1);
                 x = (x + 1);
             }

@@ -51,7 +51,7 @@ void run_10_plasma_effect()
                 {
                     c = 255;
                 }
-                // unsupported assignment
+                frame[i] = c;
                 i = (i + 1);
                 x = (x + 1);
             }

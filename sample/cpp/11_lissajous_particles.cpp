@@ -78,7 +78,7 @@ void run_11_lissajous_particles()
                             }
                             if ((v > frame[idx]))
                             {
-                                // unsupported assignment
+                                frame[idx] = v;
                             }
                         }
                     }

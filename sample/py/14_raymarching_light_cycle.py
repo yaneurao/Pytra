@@ -62,17 +62,17 @@ def run_14_raymarching_light_cycle() -> None:
     t = 0
     while t < frames_n:
         frame = bytearray(w * h)
-        a = (t / frames_n) * math.pi * 2.0
+        a = ((t * 1.0) / frames_n) * math.pi * 2.0
         light_x = 0.75 * math.cos(a)
         light_y = 0.55 * math.sin(a * 1.2)
 
         i = 0
         y = 0
         while y < h:
-            py = (y / (h - 1)) * 2.0 - 1.0
+            py = ((y * 1.0) / (h - 1)) * 2.0 - 1.0
             x = 0
             while x < w:
-                px = (x / (w - 1)) * 2.0 - 1.0
+                px = ((x * 1.0) / (w - 1)) * 2.0 - 1.0
                 frame[i] = scene(px, py, light_x, light_y)
                 i += 1
                 x += 1

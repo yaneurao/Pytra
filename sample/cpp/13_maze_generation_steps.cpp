@@ -38,7 +38,7 @@ string capture(const vector<vector<int>>& grid, int w, int h, int scale)
                 auto xx = 0;
                 while ((xx < scale))
                 {
-                    // unsupported assignment
+                    frame[(base + xx)] = v;
                     xx = (xx + 1);
                 }
                 yy = (yy + 1);
@@ -72,13 +72,14 @@ void run_13_maze_generation_steps()
         gy = (gy + 1);
     }
     vector<tuple<int, int>> stack = {std::make_tuple(1, 1)};
-    // unsupported assignment
+    grid[1][1] = 0;
     vector<tuple<int, int>> dirs = {std::make_tuple(2, 0), std::make_tuple((-2), 0), std::make_tuple(0, 2), std::make_tuple(0, (-2))};
     vector<string> frames = {};
     auto step = 0;
     while ((py_len(stack) > 0))
     {
-        auto _tmp_tuple = stack[(-1)];
+        auto last_index = (py_len(stack) - 1);
+        auto _tmp_tuple = stack[last_index];
         auto x = std::get<0>(_tmp_tuple);
         auto y = std::get<1>(_tmp_tuple);
         vector<tuple<int, int, int, int>> candidates = {};
@@ -129,8 +130,8 @@ void run_13_maze_generation_steps()
             auto ny = std::get<1>(_tmp_tuple);
             auto wx = std::get<2>(_tmp_tuple);
             auto wy = std::get<3>(_tmp_tuple);
-            // unsupported assignment
-            // unsupported assignment
+            grid[wy][wx] = 0;
+            grid[ny][nx] = 0;
             stack.push_back(std::make_tuple(nx, ny));
         }
         if (((step % 25) == 0))

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace PyCs.CsModule
+namespace Pytra.CsModule
 {
     // Python の time モジュール相当（必要最小限）。
     public static class time

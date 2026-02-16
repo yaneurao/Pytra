@@ -2,18 +2,18 @@
 
 ## 1. 目的
 
-PyCs は、型注釈付き Python コードを次の言語へ変換するトランスパイラ群です。
+Pytra は、型注釈付き Python コードを次の言語へ変換するトランスパイラ群です。
 
-- Python -> C# (`src/pycs_transpiler.py`)
-- Python -> C++ (`src/pycpp_transpiler.py`)
+- Python -> C# (`src/py2cs.py`)
+- Python -> C++ (`src/py2cpp.py`)
 
 本仕様書は、現時点の実装に基づく対応範囲・テスト方法・運用上の注意点を定義します。
 
 ## 2. リポジトリ構成
 
 - `src/`
-  - `pycs_transpiler.py`: Python -> C# 変換器
-  - `pycpp_transpiler.py`: Python -> C++ 変換器
+  - `py2cs.py`: Python -> C# 変換器
+  - `py2cpp.py`: Python -> C++ 変換器
   - `cpp_module/`: C++ 側ランタイム補助モジュール
   - `py_module/`: Python 側の自作ライブラリ配置先
 - `test/`
@@ -35,7 +35,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 - `@dataclass` を付けた class は dataclass として扱い、フィールドとコンストラクタを生成します。
 - `import` / `from ... import ...` をサポートします。
 
-## 4. C# 変換仕様（`pycs_transpiler.py`）
+## 4. C# 変換仕様（`py2cs.py`）
 
 - Python AST を解析し、`Program` クラスを持つ C# コードを生成します。
 - `import` / `from ... import ...` は `using` へ変換します。
@@ -48,7 +48,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 - class member は `public static` に変換します。
 - `__init__` で初期化される `self` 属性はインスタンスメンバーとして生成します。
 
-## 5. C++ 変換仕様（`pycpp_transpiler.py`）
+## 5. C++ 変換仕様（`py2cpp.py`）
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
 - 生成コードは `src/cpp_module/` のランタイム補助実装を利用します。
@@ -62,7 +62,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 
 ### 5.1 import と `cpp_module` 対応
 
-`pycpp_transpiler.py` は import 文に応じて include を生成します。主な対応は次の通りです。
+`py2cpp.py` は import 文に応じて include を生成します。主な対応は次の通りです。
 
 - `import ast` -> `#include "cpp_module/ast.h"`
 - `import math` -> `#include "cpp_module/math.h"`
@@ -101,6 +101,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 - 入力 Python は `test/py/` に配置します。
 - C# 期待結果は `test/cs/` に配置します。
 - C++ 期待結果は `test/cpp/` に配置します。
+- 変換器都合で `test/py/` の入力ケースを変更してはなりません。変換失敗時は、まずトランスパイラ実装（`src/py2cs.py`, `src/py2cpp.py`）側を修正します。
 - ケース命名は `caseXX_*` 形式を基本とし、特別ケースとして以下を含みます。
   - `case99_dataclass`
   - `case100_class_instance`
@@ -118,7 +119,7 @@ PyCs は、型注釈付き Python コードを次の言語へ変換するトラ�
 
 ## 7. ユニットテスト実行方法
 
-プロジェクトルート (`PyCs/`) で実行します。
+プロジェクトルート (`Pytra/`) で実行します。
 
 ```bash
 python -m unittest discover -s test -p "test_*.py" -v
@@ -129,7 +130,7 @@ python -m unittest discover -s test -p "test_*.py" -v
 - `test/test_transpile_cases.py`
   - `test/py/case*.py` (100件) を C# へ変換し、`test/cs/` と比較
 - `test/test_self_transpile.py`
-  - `src/pycs_transpiler.py` 自身の C# 変換が完走することを確認
+  - `src/py2cs.py` 自身の C# 変換が完走することを確認
 
 ## 8. C++ 変換結果の検証手順
 
@@ -144,6 +145,6 @@ python -m unittest discover -s test -p "test_*.py" -v
 ## 9. 注意点
 
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
-- エラー発生時、CLI エントリポイント（例: `pycs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。
+- エラー発生時、CLI エントリポイント（`src/py2cs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。
 - `test/obj/` と `test/cpp2/` は検証用生成物のため Git 管理外です。
 - `src/py_module/` のライブラリを利用してサンプルを直接実行する場合は、必要に応じて `PYTHONPATH=src` を付与して実行します。

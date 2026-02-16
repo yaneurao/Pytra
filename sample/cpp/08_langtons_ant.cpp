@@ -29,7 +29,7 @@ string capture(const vector<vector<int>>& grid, int w, int h)
         auto x = 0;
         while ((x < w))
         {
-            // unsupported assignment
+            frame[i] = (grid[y][x] ? 255 : 0);
             i = (i + 1);
             x = (x + 1);
         }
@@ -70,12 +70,12 @@ void run_08_langtons_ant()
         if ((grid[y][x] == 0))
         {
             d = ((d + 1) % 4);
-            // unsupported assignment
+            grid[y][x] = 1;
         }
         else
         {
             d = ((d + 3) % 4);
-            // unsupported assignment
+            grid[y][x] = 0;
         }
         if ((d == 0))
         {

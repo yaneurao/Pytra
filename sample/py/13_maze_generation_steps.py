@@ -54,7 +54,8 @@ def run_13_maze_generation_steps() -> None:
     step = 0
 
     while len(stack) > 0:
-        x, y = stack[-1]
+        last_index = len(stack) - 1
+        x, y = stack[last_index]
         candidates: list[tuple[int, int, int, int]] = []
         k = 0
         while k < 4:

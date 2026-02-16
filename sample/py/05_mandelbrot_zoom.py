@@ -27,7 +27,7 @@ def render_frame(width: int, height: int, center_x: float, center_y: float, scal
                 zy = 2.0 * zx * zy + cy
                 zx = zx2 - zy2 + cx
                 i += 1
-            frame[idx] = int(255 * i / max_iter)
+            frame[idx] = int((255.0 * i) / max_iter)
             idx += 1
             x += 1
         y += 1
@@ -41,7 +41,7 @@ def run_05_mandelbrot_zoom() -> None:
     max_iter = 110
     center_x = -0.743643887037151
     center_y = 0.13182590420533
-    base_scale = 3.2 / width
+    base_scale = 3.2 / (width * 1.0)
     zoom_per_frame = 0.93
     out_path = "sample/out/05_mandelbrot_zoom.gif"
 

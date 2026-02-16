@@ -26,11 +26,11 @@ string render_frame(int width, int height, double cr, double ci, int max_iter)
     auto idx = 0;
     while ((y < height))
     {
-        auto zy0 = ((-1.2) + (2.4 * (y / (height - 1))));
+        auto zy0 = ((-1.2) + (2.4 * ((y * 1.0) / (height - 1))));
         auto x = 0;
         while ((x < width))
         {
-            auto zx = ((-1.8) + (3.6 * (x / (width - 1))));
+            auto zx = ((-1.8) + (3.6 * ((x * 1.0) / (width - 1))));
             auto zy = zy0;
             auto i = 0;
             while ((i < max_iter))
@@ -45,7 +45,7 @@ string render_frame(int width, int height, double cr, double ci, int max_iter)
                 zx = ((zx2 - zy2) + cr);
                 i = (i + 1);
             }
-            // unsupported assignment
+            frame[idx] = int(((255.0 * i) / max_iter));
             idx = (idx + 1);
             x = (x + 1);
         }
@@ -66,7 +66,7 @@ void run_06_julia_parameter_sweep()
     auto i = 0;
     while ((i < frames_n))
     {
-        auto t = (i / frames_n);
+        auto t = ((i * 1.0) / frames_n);
         auto cr = ((-0.8) + (0.32 * t));
         auto ci = (0.156 + (0.22 * (0.5 - t)));
         frames.push_back(render_frame(width, height, cr, ci, max_iter));

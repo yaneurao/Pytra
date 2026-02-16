@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace PyCs.CsModule
+namespace Pytra.CsModule
 {
     // Python の png_helper.write_rgb_png 相当実装。
     public static class png_helper

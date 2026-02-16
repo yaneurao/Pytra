@@ -81,14 +81,14 @@ public static class Program
         int height = 600;
         int max_iter = 400;
         string out_path = "sample/out/mandelbrot_01.png";
-        double start = PyCs.CsModule.time.perf_counter();
+        double start = Pytra.CsModule.time.perf_counter();
         List<byte> pixels = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);
-        PyCs.CsModule.png_helper.write_rgb_png(out_path, width, height, pixels);
-        double elapsed = (PyCs.CsModule.time.perf_counter() - start);
-        PyCs.CsModule.py_runtime.print("output:", out_path);
-        PyCs.CsModule.py_runtime.print("size:", width, "x", height);
-        PyCs.CsModule.py_runtime.print("max_iter:", max_iter);
-        PyCs.CsModule.py_runtime.print("elapsed_sec:", elapsed);
+        Pytra.CsModule.png_helper.write_rgb_png(out_path, width, height, pixels);
+        double elapsed = (Pytra.CsModule.time.perf_counter() - start);
+        Pytra.CsModule.py_runtime.print("output:", out_path);
+        Pytra.CsModule.py_runtime.print("size:", width, "x", height);
+        Pytra.CsModule.py_runtime.print("max_iter:", max_iter);
+        Pytra.CsModule.py_runtime.print("elapsed_sec:", elapsed);
     }
 
     public static void Main(string[] args)

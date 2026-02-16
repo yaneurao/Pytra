@@ -1,6 +1,7 @@
 using System;
+using System.Collections;
 
-namespace PyCs.CsModule
+namespace Pytra.CsModule
 {
     // Python の print 相当を提供する最小ランタイム。
     public static class py_runtime
@@ -13,6 +14,41 @@ namespace PyCs.CsModule
                 return;
             }
             Console.WriteLine(string.Join(" ", args));
+        }
+
+        // Python の `x in y` に相当する最小判定ヘルパ。
+        public static bool py_in(object needle, object haystack)
+        {
+            if (haystack == null)
+            {
+                return false;
+            }
+
+            string text = haystack as string;
+            if (text != null)
+            {
+                return text.Contains(Convert.ToString(needle));
+            }
+
+            IDictionary dict = haystack as IDictionary;
+            if (dict != null)
+            {
+                return dict.Contains(needle);
+            }
+
+            IEnumerable enumerable = haystack as IEnumerable;
+            if (enumerable != null)
+            {
+                foreach (object item in enumerable)
+                {
+                    if (Equals(item, needle))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }

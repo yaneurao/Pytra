@@ -10,14 +10,14 @@ from py_module.gif_helper import grayscale_palette, save_gif
 def render(values: list[int], w: int, h: int) -> bytes:
     frame = bytearray(w * h)
     n = len(values)
-    bar_w = w / n
+    bar_w = (w * 1.0) / n
     i = 0
     while i < n:
         x0 = int(i * bar_w)
         x1 = int((i + 1) * bar_w)
         if x1 <= x0:
             x1 = x0 + 1
-        bh = int((values[i] / n) * h)
+        bh = int(((values[i] * 1.0) / n) * h)
         y = h - bh
         while y < h:
             x = x0
@@ -51,7 +51,9 @@ def run_12_sort_visualizer() -> None:
         swapped = False
         while j < n - i - 1:
             if values[j] > values[j + 1]:
-                values[j], values[j + 1] = values[j + 1], values[j]
+                tmp = values[j]
+                values[j] = values[j + 1]
+                values[j + 1] = tmp
                 swapped = True
             if op % 8 == 0:
                 frames.append(render(values, w, h))

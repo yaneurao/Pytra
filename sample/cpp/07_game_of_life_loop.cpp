@@ -89,7 +89,7 @@ string render(const vector<vector<int>>& grid, int w, int h, int cell)
                 auto xx = 0;
                 while ((xx < cell))
                 {
-                    // unsupported assignment
+                    frame[(base + xx)] = v;
                     xx = (xx + 1);
                 }
                 yy = (yy + 1);

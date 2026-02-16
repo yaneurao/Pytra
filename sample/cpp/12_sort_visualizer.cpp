@@ -23,7 +23,7 @@ string render(const vector<int>& values, int w, int h)
 {
     auto frame = string(static_cast<size_t>((w * h)), '\0');
     auto n = py_len(values);
-    auto bar_w = (w / n);
+    auto bar_w = ((w * 1.0) / n);
     auto i = 0;
     while ((i < n))
     {
@@ -33,14 +33,14 @@ string render(const vector<int>& values, int w, int h)
         {
             x1 = (x0 + 1);
         }
-        auto bh = int(((values[i] / n) * h));
+        auto bh = int((((values[i] * 1.0) / n) * h));
         auto y = (h - bh);
         while ((y < h))
         {
             auto x = x0;
             while ((x < x1))
             {
-                // unsupported assignment
+                frame[((y * w) + x)] = 255;
                 x = (x + 1);
             }
             y = (y + 1);
@@ -75,7 +75,9 @@ void run_12_sort_visualizer()
         {
             if ((values[j] > values[(j + 1)]))
             {
-                // unsupported tuple assignment
+                auto tmp = values[j];
+                values[j] = values[(j + 1)];
+                values[(j + 1)] = tmp;
                 swapped = true;
             }
             if (((op % 8) == 0))

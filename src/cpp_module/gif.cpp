@@ -6,7 +6,6 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace pycs::cpp_module::gif {
@@ -24,18 +23,10 @@ std::string lzw_encode(const std::string& data, int min_code_size) {
 
     const int clear_code = 1 << min_code_size;
     const int end_code = clear_code + 1;
-
-    std::unordered_map<std::string, int> dict;
-    dict.reserve(5000);
-    for (int i = 0; i < clear_code; ++i) {
-        dict[std::string(1, static_cast<char>(i))] = i;
-    }
-
-    int next_code = end_code + 1;
     int code_size = min_code_size + 1;
 
     std::string out;
-    out.reserve(data.size());
+    out.reserve(data.size() + data.size() / 2);
 
     std::uint32_t bit_buffer = 0;
     int bit_count = 0;
@@ -50,42 +41,16 @@ std::string lzw_encode(const std::string& data, int min_code_size) {
         }
     };
 
+    auto reset_table = [&]() { code_size = min_code_size + 1; };
+
     emit(clear_code);
+    reset_table();
 
-    std::string s(1, data[0]);
-    for (std::size_t i = 1; i < data.size(); ++i) {
-        const char c = data[i];
-        std::string sc = s;
-        sc.push_back(c);
-
-        auto it = dict.find(sc);
-        if (it != dict.end()) {
-            s = sc;
-            continue;
-        }
-
-        emit(dict[s]);
-
-        if (next_code < 4096) {
-            dict.emplace(sc, next_code);
-            ++next_code;
-            if (next_code == (1 << code_size) && code_size < 12) {
-                ++code_size;
-            }
-        } else {
-            emit(clear_code);
-            dict.clear();
-            for (int j = 0; j < clear_code; ++j) {
-                dict[std::string(1, static_cast<char>(j))] = j;
-            }
-            next_code = end_code + 1;
-            code_size = min_code_size + 1;
-        }
-
-        s = std::string(1, c);
+    for (unsigned char c : data) {
+        emit(static_cast<int>(c));
+        emit(clear_code);
+        reset_table();
     }
-
-    emit(dict[s]);
     emit(end_code);
 
     if (bit_count > 0) {

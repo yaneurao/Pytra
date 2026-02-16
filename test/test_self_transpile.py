@@ -9,17 +9,17 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PYCS = ROOT / "pycs.py"
-SELF_SRC = ROOT / "src" / "pycs_transpiler.py"
+PY2CS = ROOT / "src" / "py2cs.py"
+SELF_SRC = ROOT / "src" / "py2cs.py"
 
 
 class SelfTranspileTest(unittest.TestCase):
     def test_can_transpile_transpiler_source(self) -> None:
         # トランスパイラ自身のソースを入力にしても変換が完走できることを検証する。
         with tempfile.TemporaryDirectory() as tmpdir:
-            out_cs = Path(tmpdir) / "self_pycs_transpiler.cs"
+            out_cs = Path(tmpdir) / "self_pytrans_transpiler.cs"
             run = subprocess.run(
-                ["python", str(PYCS), str(SELF_SRC), str(out_cs)],
+                ["python", str(PY2CS), str(SELF_SRC), str(out_cs)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
