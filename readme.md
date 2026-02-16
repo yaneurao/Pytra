@@ -35,7 +35,7 @@ JavaScriptのコードにも変換できるので、Pythonでブラウザゲー�
 
 ## 実行速度の比較
 
-サンプルコード(Pythonで書かれている)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒）
+Pythonで書かれた[サンプルコード](docs/sample-code.md)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒）
 
 |No.|内容|Python| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
@@ -1983,8 +1983,6 @@ fn main() {
 }
 ```
 </details>
-
-💡 元のソースコード、変換されたソースコード、計測条件等については、[docs/time-comparison.md](docs/time-comparison.md) をご覧ください。
 
 ## 使い方について
 
