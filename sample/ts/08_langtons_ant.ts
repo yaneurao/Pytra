@@ -1,120 +1,83 @@
-// このファイルは自動生成です（Python -> TypeScript）。
+// このファイルは自動生成です（Python -> TypeScript native mode）。
 
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { spawnSync, SpawnSyncReturns } from "node:child_process";
+const __pytra_root = process.cwd();
+const py_runtime = require(__pytra_root + '/src/ts_module/py_runtime.ts');
+const py_math = require(__pytra_root + '/src/ts_module/math.ts');
+const py_time = require(__pytra_root + '/src/ts_module/time.ts');
+const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
+const { perfCounter } = py_time;
+const perf_counter = perfCounter;
+const { grayscale_palette, save_gif } = require(__pytra_root + '/src/ts_module/gif_helper.ts');
 
-/** 埋め込み元 Python ファイルパス。 */
-const PYTRA_SOURCE_PATH: string = "sample/py/08_langtons_ant.py";
-/** 埋め込み Python ソースコード。 */
-const PYTRA_SOURCE_CODE: string = `# 08: ラングトンのアリの軌跡をGIF出力するサンプル。
-
-from __future__ import annotations
-
-from time import perf_counter
-
-from py_module.gif_helper import grayscale_palette, save_gif
-
-
-def capture(grid: list[list[int]], w: int, h: int) -> bytes:
-    frame = bytearray(w * h)
-    i = 0
-    for y in range(h):
-        for x in range(w):
-            frame[i] = 255 if grid[y][x] else 0
-            i += 1
-    return bytes(frame)
-
-
-def run_08_langtons_ant() -> None:
-    w = 420
-    h = 420
-    out_path = "sample/out/08_langtons_ant.gif"
-
-    start = perf_counter()
-
-    grid: list[list[int]] = []
-    for gy in range(h):
-        row: list[int] = []
-        for gx in range(w):
-            row.append(0)
-        grid.append(row)
-    x = w // 2
-    y = h // 2
-    d = 0
-
-    steps_total = 600000
-    capture_every = 3000
-    frames: list[bytes] = []
-
-    for i in range(steps_total):
-        if grid[y][x] == 0:
-            d = (d + 1) % 4
-            grid[y][x] = 1
-        else:
-            d = (d + 3) % 4
-            grid[y][x] = 0
-
-        if d == 0:
-            y = (y - 1 + h) % h
-        elif d == 1:
-            x = (x + 1) % w
-        elif d == 2:
-            y = (y + 1) % h
-        else:
-            x = (x - 1 + w) % w
-
-        if i % capture_every == 0:
-            frames.append(capture(grid, w, h))
-
-    save_gif(out_path, w, h, frames, grayscale_palette(), delay_cs=5, loop=0)
-    elapsed = perf_counter() - start
-    print("output:", out_path)
-    print("frames:", len(frames))
-    print("elapsed_sec:", elapsed)
-
-
-if __name__ == "__main__":
-    run_08_langtons_ant()
-`;
-
-/**
- * Python インタプリタで埋め込みソースを実行する。
- * @param interpreter 実行する Python コマンド名。
- * @param scriptPath 一時生成した Python ファイルパス。
- * @param args Python 側へ渡すコマンドライン引数。
- * @returns 同期実行結果。
- */
-function runPython(interpreter: string, scriptPath: string, args: string[]): SpawnSyncReturns<Buffer> {
-  const env: NodeJS.ProcessEnv = { ...process.env };
-  const current = env.PYTHONPATH;
-  env.PYTHONPATH = current && current.length > 0
-    ? ["src", current].join(path.delimiter)
-    : "src";
-  return spawnSync(interpreter, [scriptPath, ...args], {
-    stdio: "inherit",
-    env,
-  });
+function capture(grid, w, h) {
+    let frame = pyBytearray(((w) * (h)));
+    let i = 0;
+    let y;
+    for (let __pytra_i_1 = 0; __pytra_i_1 < h; __pytra_i_1 += 1) {
+        y = __pytra_i_1;
+        let x;
+        for (let __pytra_i_2 = 0; __pytra_i_2 < w; __pytra_i_2 += 1) {
+            x = __pytra_i_2;
+            frame[i] = (pyBool(grid[y][x]) ? 255 : 0);
+            i = i + 1;
+        }
+    }
+    return pyBytes(frame);
 }
-
-/** エントリポイント。 */
-function main(): void {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pytra_ts_"));
-  const scriptPath = path.join(tempDir, "embedded.py");
-  fs.writeFileSync(scriptPath, PYTRA_SOURCE_CODE, { encoding: "utf8" });
-
-  let result = runPython("python3", scriptPath, process.argv.slice(2));
-  if (result.error && (result.error as NodeJS.ErrnoException).code === "ENOENT") {
-    result = runPython("python", scriptPath, process.argv.slice(2));
-  }
-
-  fs.rmSync(tempDir, { recursive: true, force: true });
-  if (result.error) {
-    console.error("error: python interpreter not found (python3/python)");
-    process.exit(1);
-  }
-  process.exit(typeof result.status === "number" ? result.status : 1);
+function run_08_langtons_ant() {
+    let w = 420;
+    let h = 420;
+    let out_path = 'sample/out/08_langtons_ant.gif';
+    let start = perf_counter();
+    let grid = [];
+    let gy;
+    for (let __pytra_i_3 = 0; __pytra_i_3 < h; __pytra_i_3 += 1) {
+        gy = __pytra_i_3;
+        let row = [];
+        let gx;
+        for (let __pytra_i_4 = 0; __pytra_i_4 < w; __pytra_i_4 += 1) {
+            gx = __pytra_i_4;
+            row.push(0);
+        }
+        grid.push(row);
+    }
+    let x = pyFloorDiv(w, 2);
+    let y = pyFloorDiv(h, 2);
+    let d = 0;
+    let steps_total = 600000;
+    let capture_every = 3000;
+    let frames = [];
+    let i;
+    for (let __pytra_i_5 = 0; __pytra_i_5 < steps_total; __pytra_i_5 += 1) {
+        i = __pytra_i_5;
+        if (pyBool(((grid[y][x]) === (0)))) {
+            d = pyMod(((d) + (1)), 4);
+            grid[y][x] = 1;
+        } else {
+            d = pyMod(((d) + (3)), 4);
+            grid[y][x] = 0;
+        }
+        if (pyBool(((d) === (0)))) {
+            y = pyMod(((((y) - (1))) + (h)), h);
+        } else {
+            if (pyBool(((d) === (1)))) {
+                x = pyMod(((x) + (1)), w);
+            } else {
+                if (pyBool(((d) === (2)))) {
+                    y = pyMod(((y) + (1)), h);
+                } else {
+                    x = pyMod(((((x) - (1))) + (w)), w);
+                }
+            }
+        }
+        if (pyBool(((pyMod(i, capture_every)) === (0)))) {
+            frames.push(capture(grid, w, h));
+        }
+    }
+    save_gif(out_path, w, h, frames, grayscale_palette(), 5, 0);
+    let elapsed = ((perf_counter()) - (start));
+    pyPrint('output:', out_path);
+    pyPrint('frames:', pyLen(frames));
+    pyPrint('elapsed_sec:', elapsed);
 }
-
-main();
+run_08_langtons_ant();

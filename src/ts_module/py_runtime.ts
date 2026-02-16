@@ -37,7 +37,10 @@ export function pyLen(value: string | unknown[] | Map<unknown, unknown> | Set<un
   if (typeof value === "string" || Array.isArray(value)) {
     return value.length;
   }
-  return value.size;
+  if (value instanceof Map || value instanceof Set) {
+    return value.size;
+  }
+  return Object.keys(value as Record<string, unknown>).length;
 }
 
 /** Python の bool 相当。 */
@@ -109,6 +112,9 @@ export function pyIn(item: unknown, container: string | unknown[] | Set<unknown>
   if (container instanceof Set || container instanceof Map) {
     return container.has(item);
   }
+  if (typeof container === "object" && container !== null) {
+    return Object.prototype.hasOwnProperty.call(container as object, String(item));
+  }
   return false;
 }
 
@@ -138,4 +144,27 @@ export function pyOrd(ch: string): number {
 /** Python の chr 相当。 */
 export function pyChr(code: number): string {
   return String.fromCodePoint(code);
+}
+
+/** Python の bytearray 相当。 */
+export function pyBytearray(size = 0): number[] {
+  if (size < 0) {
+    throw new Error("negative count");
+  }
+  return new Array<number>(size).fill(0);
+}
+
+/** Python の bytes 相当。 */
+export function pyBytes(value: ArrayLike<number>): number[] {
+  return Array.from(value);
+}
+
+/** Python の str.isdigit 相当。 */
+export function pyIsDigit(value: unknown): boolean {
+  return typeof value === "string" && value.length > 0 && /^[0-9]+$/.test(value);
+}
+
+/** Python の str.isalpha 相当。 */
+export function pyIsAlpha(value: unknown): boolean {
+  return typeof value === "string" && value.length > 0 && /^[A-Za-z]+$/.test(value);
 }

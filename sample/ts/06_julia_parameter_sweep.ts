@@ -1,136 +1,93 @@
-// このファイルは自動生成です（Python -> TypeScript）。
+// このファイルは自動生成です（Python -> TypeScript native mode）。
 
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { spawnSync, SpawnSyncReturns } from "node:child_process";
+const __pytra_root = process.cwd();
+const py_runtime = require(__pytra_root + '/src/ts_module/py_runtime.ts');
+const py_math = require(__pytra_root + '/src/ts_module/math.ts');
+const py_time = require(__pytra_root + '/src/ts_module/time.ts');
+const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
+const { perfCounter } = py_time;
+const math = require(__pytra_root + '/src/ts_module/math.ts');
+const perf_counter = perfCounter;
+const { save_gif } = require(__pytra_root + '/src/ts_module/gif_helper.ts');
 
-/** 埋め込み元 Python ファイルパス。 */
-const PYTRA_SOURCE_PATH: string = "sample/py/06_julia_parameter_sweep.py";
-/** 埋め込み Python ソースコード。 */
-const PYTRA_SOURCE_CODE: string = `# 06: ジュリア集合のパラメータを回してGIF出力するサンプル。
-
-from __future__ import annotations
-
-import math
-from time import perf_counter
-
-from py_module.gif_helper import save_gif
-
-
-def julia_palette() -> bytes:
-    # 先頭色は集合内部用に黒固定、残りは高彩度グラデーションを作る。
-    palette = bytearray(256 * 3)
-    palette[0] = 0
-    palette[1] = 0
-    palette[2] = 0
-    for i in range(1, 256):
-        t = (i - 1) / 254.0
-        r = int(255.0 * (9.0 * (1.0 - t) * t * t * t))
-        g = int(255.0 * (15.0 * (1.0 - t) * (1.0 - t) * t * t))
-        b = int(255.0 * (8.5 * (1.0 - t) * (1.0 - t) * (1.0 - t) * t))
-        palette[i * 3 + 0] = r
-        palette[i * 3 + 1] = g
-        palette[i * 3 + 2] = b
-    return bytes(palette)
-
-
-def render_frame(width: int, height: int, cr: float, ci: float, max_iter: int, phase: int) -> bytes:
-    frame = bytearray(width * height)
-    idx = 0
-    for y in range(height):
-        zy0 = -1.2 + 2.4 * (y / (height - 1))
-        for x in range(width):
-            zx = -1.8 + 3.6 * (x / (width - 1))
-            zy = zy0
-            i = 0
-            while i < max_iter:
-                zx2 = zx * zx
-                zy2 = zy * zy
-                if zx2 + zy2 > 4.0:
-                    break
-                zy = 2.0 * zx * zy + ci
-                zx = zx2 - zy2 + cr
-                i += 1
-            if i >= max_iter:
-                frame[idx] = 0
-            else:
-                # フレーム位相を少し加えて色が滑らかに流れるようにする。
-                color_index = 1 + (((i * 224) // max_iter + phase) % 255)
-                frame[idx] = color_index
-            idx += 1
-    return bytes(frame)
-
-
-def run_06_julia_parameter_sweep() -> None:
-    width = 320
-    height = 240
-    frames_n = 72
-    max_iter = 180
-    out_path = "sample/out/06_julia_parameter_sweep.gif"
-
-    start = perf_counter()
-    frames: list[bytes] = []
-    # 既知の見栄えが良い近傍を楕円軌道で巡回し、単調な白飛びを抑える。
-    center_cr = -0.745
-    center_ci = 0.186
-    radius_cr = 0.12
-    radius_ci = 0.10
-    for i in range(frames_n):
-        t = i / frames_n
-        angle = 2.0 * math.pi * t
-        cr = center_cr + radius_cr * math.cos(angle)
-        ci = center_ci + radius_ci * math.sin(angle)
-        phase = (i * 5) % 255
-        frames.append(render_frame(width, height, cr, ci, max_iter, phase))
-
-    save_gif(out_path, width, height, frames, julia_palette(), delay_cs=8, loop=0)
-    elapsed = perf_counter() - start
-    print("output:", out_path)
-    print("frames:", frames_n)
-    print("elapsed_sec:", elapsed)
-
-
-if __name__ == "__main__":
-    run_06_julia_parameter_sweep()
-`;
-
-/**
- * Python インタプリタで埋め込みソースを実行する。
- * @param interpreter 実行する Python コマンド名。
- * @param scriptPath 一時生成した Python ファイルパス。
- * @param args Python 側へ渡すコマンドライン引数。
- * @returns 同期実行結果。
- */
-function runPython(interpreter: string, scriptPath: string, args: string[]): SpawnSyncReturns<Buffer> {
-  const env: NodeJS.ProcessEnv = { ...process.env };
-  const current = env.PYTHONPATH;
-  env.PYTHONPATH = current && current.length > 0
-    ? ["src", current].join(path.delimiter)
-    : "src";
-  return spawnSync(interpreter, [scriptPath, ...args], {
-    stdio: "inherit",
-    env,
-  });
+function julia_palette() {
+    let palette = pyBytearray(((256) * (3)));
+    palette[0] = 0;
+    palette[1] = 0;
+    palette[2] = 0;
+    let i;
+    for (let __pytra_i_1 = 1; __pytra_i_1 < 256; __pytra_i_1 += 1) {
+        i = __pytra_i_1;
+        let t = ((((i) - (1))) / (254.0));
+        let r = Math.trunc(Number(((255.0) * (((((((((9.0) * (((1.0) - (t))))) * (t))) * (t))) * (t))))));
+        let g = Math.trunc(Number(((255.0) * (((((((((15.0) * (((1.0) - (t))))) * (((1.0) - (t))))) * (t))) * (t))))));
+        let b = Math.trunc(Number(((255.0) * (((((((((8.5) * (((1.0) - (t))))) * (((1.0) - (t))))) * (((1.0) - (t))))) * (t))))));
+        palette[((((i) * (3))) + (0))] = r;
+        palette[((((i) * (3))) + (1))] = g;
+        palette[((((i) * (3))) + (2))] = b;
+    }
+    return pyBytes(palette);
 }
-
-/** エントリポイント。 */
-function main(): void {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pytra_ts_"));
-  const scriptPath = path.join(tempDir, "embedded.py");
-  fs.writeFileSync(scriptPath, PYTRA_SOURCE_CODE, { encoding: "utf8" });
-
-  let result = runPython("python3", scriptPath, process.argv.slice(2));
-  if (result.error && (result.error as NodeJS.ErrnoException).code === "ENOENT") {
-    result = runPython("python", scriptPath, process.argv.slice(2));
-  }
-
-  fs.rmSync(tempDir, { recursive: true, force: true });
-  if (result.error) {
-    console.error("error: python interpreter not found (python3/python)");
-    process.exit(1);
-  }
-  process.exit(typeof result.status === "number" ? result.status : 1);
+function render_frame(width, height, cr, ci, max_iter, phase) {
+    let frame = pyBytearray(((width) * (height)));
+    let idx = 0;
+    let y;
+    for (let __pytra_i_2 = 0; __pytra_i_2 < height; __pytra_i_2 += 1) {
+        y = __pytra_i_2;
+        let zy0 = (((-(1.2))) + (((2.4) * (((y) / (((height) - (1))))))));
+        let x;
+        for (let __pytra_i_3 = 0; __pytra_i_3 < width; __pytra_i_3 += 1) {
+            x = __pytra_i_3;
+            let zx = (((-(1.8))) + (((3.6) * (((x) / (((width) - (1))))))));
+            let zy = zy0;
+            let i = 0;
+            while (pyBool(((i) < (max_iter)))) {
+                let zx2 = ((zx) * (zx));
+                let zy2 = ((zy) * (zy));
+                if (pyBool(((((zx2) + (zy2))) > (4.0)))) {
+                    break;
+                }
+                zy = ((((((2.0) * (zx))) * (zy))) + (ci));
+                zx = ((((zx2) - (zy2))) + (cr));
+                i = i + 1;
+            }
+            if (pyBool(((i) >= (max_iter)))) {
+                frame[idx] = 0;
+            } else {
+                let color_index = ((1) + (pyMod(((pyFloorDiv(((i) * (224)), max_iter)) + (phase)), 255)));
+                frame[idx] = color_index;
+            }
+            idx = idx + 1;
+        }
+    }
+    return pyBytes(frame);
 }
-
-main();
+function run_06_julia_parameter_sweep() {
+    let width = 320;
+    let height = 240;
+    let frames_n = 72;
+    let max_iter = 180;
+    let out_path = 'sample/out/06_julia_parameter_sweep.gif';
+    let start = perf_counter();
+    let frames = [];
+    let center_cr = (-(0.745));
+    let center_ci = 0.186;
+    let radius_cr = 0.12;
+    let radius_ci = 0.1;
+    let i;
+    for (let __pytra_i_4 = 0; __pytra_i_4 < frames_n; __pytra_i_4 += 1) {
+        i = __pytra_i_4;
+        let t = ((i) / (frames_n));
+        let angle = ((((2.0) * (math.pi))) * (t));
+        let cr = ((center_cr) + (((radius_cr) * (math.cos(angle)))));
+        let ci = ((center_ci) + (((radius_ci) * (math.sin(angle)))));
+        let phase = pyMod(((i) * (5)), 255);
+        frames.push(render_frame(width, height, cr, ci, max_iter, phase));
+    }
+    save_gif(out_path, width, height, frames, julia_palette(), 8, 0);
+    let elapsed = ((perf_counter()) - (start));
+    pyPrint('output:', out_path);
+    pyPrint('frames:', frames_n);
+    pyPrint('elapsed_sec:', elapsed);
+}
+run_06_julia_parameter_sweep();

@@ -1,110 +1,67 @@
-// このファイルは自動生成です（Python -> TypeScript）。
+// このファイルは自動生成です（Python -> TypeScript native mode）。
 
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { spawnSync, SpawnSyncReturns } from "node:child_process";
+const __pytra_root = process.cwd();
+const py_runtime = require(__pytra_root + '/src/ts_module/py_runtime.ts');
+const py_math = require(__pytra_root + '/src/ts_module/math.ts');
+const py_time = require(__pytra_root + '/src/ts_module/time.ts');
+const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
+const { perfCounter } = py_time;
+const perf_counter = perfCounter;
+const { grayscale_palette, save_gif } = require(__pytra_root + '/src/ts_module/gif_helper.ts');
 
-/** 埋め込み元 Python ファイルパス。 */
-const PYTRA_SOURCE_PATH: string = "sample/py/05_mandelbrot_zoom.py";
-/** 埋め込み Python ソースコード。 */
-const PYTRA_SOURCE_CODE: string = `# 05: マンデルブロ集合ズームをアニメーションGIFとして出力するサンプル。
-
-from __future__ import annotations
-
-from time import perf_counter
-
-from py_module.gif_helper import grayscale_palette, save_gif
-
-
-def render_frame(width: int, height: int, center_x: float, center_y: float, scale: float, max_iter: int) -> bytes:
-    frame = bytearray(width * height)
-    idx = 0
-    for y in range(height):
-        cy = center_y + (y - height * 0.5) * scale
-        for x in range(width):
-            cx = center_x + (x - width * 0.5) * scale
-            zx = 0.0
-            zy = 0.0
-            i = 0
-            while i < max_iter:
-                zx2 = zx * zx
-                zy2 = zy * zy
-                if zx2 + zy2 > 4.0:
-                    break
-                zy = 2.0 * zx * zy + cy
-                zx = zx2 - zy2 + cx
-                i += 1
-            frame[idx] = int((255.0 * i) / max_iter)
-            idx += 1
-    return bytes(frame)
-
-
-def run_05_mandelbrot_zoom() -> None:
-    width = 320
-    height = 240
-    frame_count = 48
-    max_iter = 110
-    center_x = -0.743643887037151
-    center_y = 0.13182590420533
-    base_scale = 3.2 / width
-    zoom_per_frame = 0.93
-    out_path = "sample/out/05_mandelbrot_zoom.gif"
-
-    start = perf_counter()
-    frames: list[bytes] = []
-    scale = base_scale
-    for _ in range(frame_count):
-        frames.append(render_frame(width, height, center_x, center_y, scale, max_iter))
-        scale *= zoom_per_frame
-
-    save_gif(out_path, width, height, frames, grayscale_palette(), delay_cs=5, loop=0)
-    elapsed = perf_counter() - start
-    print("output:", out_path)
-    print("frames:", frame_count)
-    print("elapsed_sec:", elapsed)
-
-
-if __name__ == "__main__":
-    run_05_mandelbrot_zoom()
-`;
-
-/**
- * Python インタプリタで埋め込みソースを実行する。
- * @param interpreter 実行する Python コマンド名。
- * @param scriptPath 一時生成した Python ファイルパス。
- * @param args Python 側へ渡すコマンドライン引数。
- * @returns 同期実行結果。
- */
-function runPython(interpreter: string, scriptPath: string, args: string[]): SpawnSyncReturns<Buffer> {
-  const env: NodeJS.ProcessEnv = { ...process.env };
-  const current = env.PYTHONPATH;
-  env.PYTHONPATH = current && current.length > 0
-    ? ["src", current].join(path.delimiter)
-    : "src";
-  return spawnSync(interpreter, [scriptPath, ...args], {
-    stdio: "inherit",
-    env,
-  });
+function render_frame(width, height, center_x, center_y, scale, max_iter) {
+    let frame = pyBytearray(((width) * (height)));
+    let idx = 0;
+    let y;
+    for (let __pytra_i_1 = 0; __pytra_i_1 < height; __pytra_i_1 += 1) {
+        y = __pytra_i_1;
+        let cy = ((center_y) + (((((y) - (((height) * (0.5))))) * (scale))));
+        let x;
+        for (let __pytra_i_2 = 0; __pytra_i_2 < width; __pytra_i_2 += 1) {
+            x = __pytra_i_2;
+            let cx = ((center_x) + (((((x) - (((width) * (0.5))))) * (scale))));
+            let zx = 0.0;
+            let zy = 0.0;
+            let i = 0;
+            while (pyBool(((i) < (max_iter)))) {
+                let zx2 = ((zx) * (zx));
+                let zy2 = ((zy) * (zy));
+                if (pyBool(((((zx2) + (zy2))) > (4.0)))) {
+                    break;
+                }
+                zy = ((((((2.0) * (zx))) * (zy))) + (cy));
+                zx = ((((zx2) - (zy2))) + (cx));
+                i = i + 1;
+            }
+            frame[idx] = Math.trunc(Number(((((255.0) * (i))) / (max_iter))));
+            idx = idx + 1;
+        }
+    }
+    return pyBytes(frame);
 }
-
-/** エントリポイント。 */
-function main(): void {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pytra_ts_"));
-  const scriptPath = path.join(tempDir, "embedded.py");
-  fs.writeFileSync(scriptPath, PYTRA_SOURCE_CODE, { encoding: "utf8" });
-
-  let result = runPython("python3", scriptPath, process.argv.slice(2));
-  if (result.error && (result.error as NodeJS.ErrnoException).code === "ENOENT") {
-    result = runPython("python", scriptPath, process.argv.slice(2));
-  }
-
-  fs.rmSync(tempDir, { recursive: true, force: true });
-  if (result.error) {
-    console.error("error: python interpreter not found (python3/python)");
-    process.exit(1);
-  }
-  process.exit(typeof result.status === "number" ? result.status : 1);
+function run_05_mandelbrot_zoom() {
+    let width = 320;
+    let height = 240;
+    let frame_count = 48;
+    let max_iter = 110;
+    let center_x = (-(0.743643887037151));
+    let center_y = 0.13182590420533;
+    let base_scale = ((3.2) / (width));
+    let zoom_per_frame = 0.93;
+    let out_path = 'sample/out/05_mandelbrot_zoom.gif';
+    let start = perf_counter();
+    let frames = [];
+    let scale = base_scale;
+    let _;
+    for (let __pytra_i_3 = 0; __pytra_i_3 < frame_count; __pytra_i_3 += 1) {
+        _ = __pytra_i_3;
+        frames.push(render_frame(width, height, center_x, center_y, scale, max_iter));
+        scale = scale * zoom_per_frame;
+    }
+    save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0);
+    let elapsed = ((perf_counter()) - (start));
+    pyPrint('output:', out_path);
+    pyPrint('frames:', frame_count);
+    pyPrint('elapsed_sec:', elapsed);
 }
-
-main();
+run_05_mandelbrot_zoom();

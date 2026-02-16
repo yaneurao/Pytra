@@ -40,6 +40,9 @@ function pyLen(value) {
   if (value instanceof Map || value instanceof Set) {
     return value.size;
   }
+  if (typeof value === "object") {
+    return Object.keys(value).length;
+  }
   throw new Error("len() unsupported type");
 }
 
@@ -115,6 +118,9 @@ function pyIn(item, container) {
   if (container instanceof Map) {
     return container.has(item);
   }
+  if (typeof container === "object" && container !== null) {
+    return Object.prototype.hasOwnProperty.call(container, String(item));
+  }
   throw new Error("in operation unsupported type");
 }
 
@@ -146,6 +152,32 @@ function pyChr(code) {
   return String.fromCodePoint(code);
 }
 
+/** Python の bytearray 相当。 */
+function pyBytearray(size = 0) {
+  if (size < 0) {
+    throw new Error("negative count");
+  }
+  return new Array(size).fill(0);
+}
+
+/** Python の bytes 相当（配列コピー）。 */
+function pyBytes(value) {
+  if (Array.isArray(value)) {
+    return value.slice();
+  }
+  return Array.from(value);
+}
+
+/** Python の str.isdigit 相当。 */
+function pyIsDigit(value) {
+  return typeof value === "string" && value.length > 0 && /^[0-9]+$/.test(value);
+}
+
+/** Python の str.isalpha 相当。 */
+function pyIsAlpha(value) {
+  return typeof value === "string" && value.length > 0 && /^[A-Za-z]+$/.test(value);
+}
+
 module.exports = {
   pyToString,
   pyPrint,
@@ -158,4 +190,8 @@ module.exports = {
   pySlice,
   pyOrd,
   pyChr,
+  pyBytearray,
+  pyBytes,
+  pyIsDigit,
+  pyIsAlpha,
 };

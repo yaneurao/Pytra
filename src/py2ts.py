@@ -8,26 +8,19 @@ from pathlib import Path
 import sys
 
 try:
-    from common.node_embedded_python_transpiler import (
-        NodeEmbeddedPythonTranspiler,
-        NodeEmbeddedTranspileConfig,
-    )
+    from common.js_ts_native_transpiler import JsTsConfig, JsTsNativeTranspiler
 except ModuleNotFoundError:
-    from src.common.node_embedded_python_transpiler import (
-        NodeEmbeddedPythonTranspiler,
-        NodeEmbeddedTranspileConfig,
-    )
+    from src.common.js_ts_native_transpiler import JsTsConfig, JsTsNativeTranspiler
 
 
 def transpile(input_path: str, output_path: str) -> None:
-    """入力 Python ファイルを TypeScript へ変換する。"""
     in_path = Path(input_path)
     out_path = Path(output_path)
-    transpiler = NodeEmbeddedPythonTranspiler(
-        NodeEmbeddedTranspileConfig(
+    transpiler = JsTsNativeTranspiler(
+        JsTsConfig(
             language_name="TypeScript",
-            file_header="// このファイルは自動生成です（Python -> TypeScript）。",
-            use_typescript=True,
+            file_header="// このファイルは自動生成です（Python -> TypeScript native mode）。",
+            runtime_ext="ts",
         )
     )
     code = transpiler.transpile_path(in_path)
@@ -36,7 +29,6 @@ def transpile(input_path: str, output_path: str) -> None:
 
 
 def main() -> int:
-    """CLI エントリポイント。"""
     parser = argparse.ArgumentParser(description="Transpile Python subset to TypeScript")
     parser.add_argument("input", help="Input Python file")
     parser.add_argument("output", help="Output TypeScript file")

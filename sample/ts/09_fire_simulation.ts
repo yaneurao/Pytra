@@ -1,132 +1,103 @@
-// このファイルは自動生成です（Python -> TypeScript）。
+// このファイルは自動生成です（Python -> TypeScript native mode）。
 
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { spawnSync, SpawnSyncReturns } from "node:child_process";
+const __pytra_root = process.cwd();
+const py_runtime = require(__pytra_root + '/src/ts_module/py_runtime.ts');
+const py_math = require(__pytra_root + '/src/ts_module/math.ts');
+const py_time = require(__pytra_root + '/src/ts_module/time.ts');
+const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
+const { perfCounter } = py_time;
+const perf_counter = perfCounter;
+const { save_gif } = require(__pytra_root + '/src/ts_module/gif_helper.ts');
 
-/** 埋め込み元 Python ファイルパス。 */
-const PYTRA_SOURCE_PATH: string = "sample/py/09_fire_simulation.py";
-/** 埋め込み Python ソースコード。 */
-const PYTRA_SOURCE_CODE: string = `# 09: 簡易ファイアエフェクトをGIF出力するサンプル。
-
-from __future__ import annotations
-
-from time import perf_counter
-
-from py_module.gif_helper import save_gif
-
-
-def fire_palette() -> bytes:
-    p = bytearray()
-    for i in range(256):
-        r = 0
-        g = 0
-        b = 0
-        if i < 85:
-            r = i * 3
-            g = 0
-            b = 0
-        elif i < 170:
-            r = 255
-            g = (i - 85) * 3
-            b = 0
-        else:
-            r = 255
-            g = 255
-            b = (i - 170) * 3
-        p.append(r)
-        p.append(g)
-        p.append(b)
-    return bytes(p)
-
-
-def run_09_fire_simulation() -> None:
-    w = 380
-    h = 260
-    steps = 420
-    out_path = "sample/out/09_fire_simulation.gif"
-
-    start = perf_counter()
-    heat: list[list[int]] = []
-    for _ in range(h):
-        row: list[int] = []
-        for _ in range(w):
-            row.append(0)
-        heat.append(row)
-    frames: list[bytes] = []
-
-    for t in range(steps):
-        for x in range(w):
-            val = 170 + ((x * 13 + t * 17) % 86)
-            heat[h - 1][x] = val
-
-        for y in range(1, h):
-            for x in range(w):
-                a = heat[y][x]
-                b = heat[y][(x - 1 + w) % w]
-                c = heat[y][(x + 1) % w]
-                d = heat[(y + 1) % h][x]
-                v = (a + b + c + d) // 4
-                cool = 1 + ((x + y + t) % 3)
-                nv = v - cool
-                heat[y - 1][x] = nv if nv > 0 else 0
-
-        frame = bytearray(w * h)
-        i = 0
-        for yy in range(h):
-            for xx in range(w):
-                frame[i] = heat[yy][xx]
-                i += 1
-        frames.append(bytes(frame))
-
-    save_gif(out_path, w, h, frames, fire_palette(), delay_cs=4, loop=0)
-    elapsed = perf_counter() - start
-    print("output:", out_path)
-    print("frames:", steps)
-    print("elapsed_sec:", elapsed)
-
-
-if __name__ == "__main__":
-    run_09_fire_simulation()
-`;
-
-/**
- * Python インタプリタで埋め込みソースを実行する。
- * @param interpreter 実行する Python コマンド名。
- * @param scriptPath 一時生成した Python ファイルパス。
- * @param args Python 側へ渡すコマンドライン引数。
- * @returns 同期実行結果。
- */
-function runPython(interpreter: string, scriptPath: string, args: string[]): SpawnSyncReturns<Buffer> {
-  const env: NodeJS.ProcessEnv = { ...process.env };
-  const current = env.PYTHONPATH;
-  env.PYTHONPATH = current && current.length > 0
-    ? ["src", current].join(path.delimiter)
-    : "src";
-  return spawnSync(interpreter, [scriptPath, ...args], {
-    stdio: "inherit",
-    env,
-  });
+function fire_palette() {
+    let p = pyBytearray();
+    let i;
+    for (let __pytra_i_1 = 0; __pytra_i_1 < 256; __pytra_i_1 += 1) {
+        i = __pytra_i_1;
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        if (pyBool(((i) < (85)))) {
+            r = ((i) * (3));
+            g = 0;
+            b = 0;
+        } else {
+            if (pyBool(((i) < (170)))) {
+                r = 255;
+                g = ((((i) - (85))) * (3));
+                b = 0;
+            } else {
+                r = 255;
+                g = 255;
+                b = ((((i) - (170))) * (3));
+            }
+        }
+        p.push(r);
+        p.push(g);
+        p.push(b);
+    }
+    return pyBytes(p);
 }
-
-/** エントリポイント。 */
-function main(): void {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pytra_ts_"));
-  const scriptPath = path.join(tempDir, "embedded.py");
-  fs.writeFileSync(scriptPath, PYTRA_SOURCE_CODE, { encoding: "utf8" });
-
-  let result = runPython("python3", scriptPath, process.argv.slice(2));
-  if (result.error && (result.error as NodeJS.ErrnoException).code === "ENOENT") {
-    result = runPython("python", scriptPath, process.argv.slice(2));
-  }
-
-  fs.rmSync(tempDir, { recursive: true, force: true });
-  if (result.error) {
-    console.error("error: python interpreter not found (python3/python)");
-    process.exit(1);
-  }
-  process.exit(typeof result.status === "number" ? result.status : 1);
+function run_09_fire_simulation() {
+    let w = 380;
+    let h = 260;
+    let steps = 420;
+    let out_path = 'sample/out/09_fire_simulation.gif';
+    let start = perf_counter();
+    let heat = [];
+    let _;
+    for (let __pytra_i_2 = 0; __pytra_i_2 < h; __pytra_i_2 += 1) {
+        _ = __pytra_i_2;
+        let row = [];
+        for (let __pytra_i_3 = 0; __pytra_i_3 < w; __pytra_i_3 += 1) {
+            _ = __pytra_i_3;
+            row.push(0);
+        }
+        heat.push(row);
+    }
+    let frames = [];
+    let t;
+    for (let __pytra_i_4 = 0; __pytra_i_4 < steps; __pytra_i_4 += 1) {
+        t = __pytra_i_4;
+        let x;
+        for (let __pytra_i_5 = 0; __pytra_i_5 < w; __pytra_i_5 += 1) {
+            x = __pytra_i_5;
+            let val = ((170) + (pyMod(((((x) * (13))) + (((t) * (17)))), 86)));
+            heat[((h) - (1))][x] = val;
+        }
+        let y;
+        for (let __pytra_i_6 = 1; __pytra_i_6 < h; __pytra_i_6 += 1) {
+            y = __pytra_i_6;
+            for (let __pytra_i_7 = 0; __pytra_i_7 < w; __pytra_i_7 += 1) {
+                x = __pytra_i_7;
+                let a = heat[y][x];
+                let b = heat[y][pyMod(((((x) - (1))) + (w)), w)];
+                let c = heat[y][pyMod(((x) + (1)), w)];
+                let d = heat[pyMod(((y) + (1)), h)][x];
+                let v = pyFloorDiv(((((((a) + (b))) + (c))) + (d)), 4);
+                let cool = ((1) + (pyMod(((((x) + (y))) + (t)), 3)));
+                let nv = ((v) - (cool));
+                heat[((y) - (1))][x] = (pyBool(((nv) > (0))) ? nv : 0);
+            }
+        }
+        let frame = pyBytearray(((w) * (h)));
+        let i = 0;
+        let yy;
+        for (let __pytra_i_8 = 0; __pytra_i_8 < h; __pytra_i_8 += 1) {
+            yy = __pytra_i_8;
+            let xx;
+            for (let __pytra_i_9 = 0; __pytra_i_9 < w; __pytra_i_9 += 1) {
+                xx = __pytra_i_9;
+                frame[i] = heat[yy][xx];
+                i = i + 1;
+            }
+        }
+        frames.push(pyBytes(frame));
+    }
+    save_gif(out_path, w, h, frames, fire_palette(), 4, 0);
+    let elapsed = ((perf_counter()) - (start));
+    pyPrint('output:', out_path);
+    pyPrint('frames:', steps);
+    pyPrint('elapsed_sec:', elapsed);
 }
-
-main();
+run_09_fire_simulation();

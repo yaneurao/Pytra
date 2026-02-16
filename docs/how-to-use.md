@@ -127,7 +127,7 @@ npx tsx test/ts/case28_iterable.ts
 - `sample/py/` を Python のまま実行する場合は、`py_module` を解決するため `PYTHONPATH=src` を付けて実行してください（例: `PYTHONPATH=src python3 sample/py/01_mandelbrot.py`）。
 - 生成された C++/C# は「読みやすさ」より「変換の忠実性」を優先しています。
 - 現在の `py2rs.py` は最小実装で、Python スクリプトを Rust 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
-- 現在の `py2js.py` / `py2ts.py` も埋め込み Python 実行モードです。生成 JS/TS は Node.js 上で Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
+- 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出しません。
 
 
 ## 言語的制約
