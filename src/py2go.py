@@ -8,9 +8,9 @@ from pathlib import Path
 import sys
 
 try:
-    from common.embedded_python_transpiler import EmbeddedTranspileConfig, EmbeddedPythonTranspiler
+    from common.go_java_native_transpiler import GoJavaConfig, GoJavaNativeTranspiler
 except ModuleNotFoundError:
-    from src.common.embedded_python_transpiler import EmbeddedTranspileConfig, EmbeddedPythonTranspiler
+    from src.common.go_java_native_transpiler import GoJavaConfig, GoJavaNativeTranspiler
 
 
 def transpile(input_path: str, output_path: str) -> None:
@@ -18,13 +18,13 @@ def transpile(input_path: str, output_path: str) -> None:
     in_path = Path(input_path)
     out_path = Path(output_path)
     this_dir = Path(__file__).resolve().parent
-    transpiler = EmbeddedPythonTranspiler(
-        EmbeddedTranspileConfig(
+    transpiler = GoJavaNativeTranspiler(
+        GoJavaConfig(
             language_name="Go",
-            file_header="// このファイルは自動生成です（Python -> Go embedded mode）。",
             target="go",
+            file_header="// このファイルは自動生成です（Python -> Go native mode）。",
             runtime_template_path=this_dir / "go_module" / "py_runtime.go",
-        )
+        ),
     )
     code = transpiler.transpile_path(in_path, out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)

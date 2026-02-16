@@ -215,7 +215,10 @@ python -m unittest discover -s test -p "test_*.py" -v
   - 実装とドキュメントの内容が不一致にならないことを、変更完了条件に含めます。
 - 現在の `py2rs.py` は最小実装です。生成 Rust は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出さず、Node.js ランタイムのみで実行します。
-- 現在の `py2go.py` / `py2java.py` は最小実装です。生成 Go/Java は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
+- 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
+- Go/Java の現状制約:
+  - `test/py` のケース群はネイティブ変換・実行一致を確認済みです。
+  - `sample/py` の一部（`math` / `png_helper` / `gif_helper` 依存が強いケース）は未対応機能が残っています。
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
 - エラー発生時、CLI エントリポイント（`src/py2cs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。
 - `test/obj/` と `test/cpp2/` は検証用生成物のため Git 管理外です。

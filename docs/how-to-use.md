@@ -165,7 +165,8 @@ java -cp test/java case28_iterable
 - 生成された C++/C# は「読みやすさ」より「変換の忠実性」を優先しています。
 - 現在の `py2rs.py` は最小実装で、Python スクリプトを Rust 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出しません。
-- 現在の `py2go.py` / `py2java.py` は最小実装で、Python スクリプトを Go/Java 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
+- 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
+- 現時点では `sample/py` の一部で使っている `math` / `png_helper` / `gif_helper` 系 API の Go/Java ネイティブ対応が未完了です。
 
 
 ## 言語的制約
