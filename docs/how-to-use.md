@@ -9,8 +9,8 @@
 | Python | Rust | [src/py2rs.py](../src/py2rs.py) |
 | Python | JavaScript | [src/py2js.py](../src/py2js.py) |
 | Python | TypeScript | [src/py2ts.py](../src/py2ts.py) |
-| Python | Go | 🚧 予定 |
-| Python | Java | 🚧 予定 |
+| Python | Go | [src/py2go.py](../src/py2go.py) |
+| Python | Java | [src/py2java.py](../src/py2java.py) |
 | Python | Swift | 🚧 予定 |
 | Python | Kotlin | 🚧 予定 |
 
@@ -77,7 +77,31 @@ python src/py2ts.py <input.py> <output.ts>
 python src/py2ts.py test/py/case28_iterable.py test/ts/case28_iterable.ts
 ```
 
-### 6. 変換後コードの実行例
+### 6. Python から Go へ変換
+
+```bash
+python src/py2go.py <input.py> <output.go>
+```
+
+例:
+
+```bash
+python src/py2go.py test/py/case28_iterable.py test/go/case28_iterable.go
+```
+
+### 7. Python から Java へ変換
+
+```bash
+python src/py2java.py <input.py> <output.java>
+```
+
+例:
+
+```bash
+python src/py2java.py test/py/case28_iterable.py test/java/case28_iterable.java
+```
+
+### 8. 変換後コードの実行例
 
 #### C++
 
@@ -118,7 +142,20 @@ node test/js/case28_iterable.js
 npx tsx test/ts/case28_iterable.ts
 ```
 
-### 7. 注意点
+#### Go
+
+```bash
+go run test/go/case28_iterable.go
+```
+
+#### Java
+
+```bash
+javac test/java/case28_iterable.java
+java -cp test/java case28_iterable
+```
+
+### 9. 注意点
 
 - 対象は Python のサブセットです。一般的な Python コードすべてが変換できるわけではありません。
 - 変数には、型注釈が必要です。（ただし一部は推論可能）。
@@ -128,6 +165,7 @@ npx tsx test/ts/case28_iterable.ts
 - 生成された C++/C# は「読みやすさ」より「変換の忠実性」を優先しています。
 - 現在の `py2rs.py` は最小実装で、Python スクリプトを Rust 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出しません。
+- 現在の `py2go.py` / `py2java.py` は最小実装で、Python スクリプトを Go/Java 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
 
 
 ## 言語的制約

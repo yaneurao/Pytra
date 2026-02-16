@@ -1,0 +1,84 @@
+// このファイルは自動生成です（Python -> Go embedded mode）。
+
+// Python 埋め込み実行向けの Go ランタイム補助。
+// 生成された Go コードから呼び出し、Python ソースを一時ファイルに展開して実行する。
+
+package main
+
+import (
+	"encoding/base64"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+)
+
+// pytraRunEmbeddedPython は、Base64 で埋め込まれた Python ソースを実行する。
+//
+// Args:
+//   sourceBase64: 埋め込み Python ソースコード（Base64 文字列）。
+//   args: Python スクリプトへ渡す引数。
+//
+// Returns:
+//   Python プロセスの終了コード。異常時は 1 を返す。
+func pytraRunEmbeddedPython(sourceBase64 string, args []string) int {
+	sourceBytes, decodeErr := base64.StdEncoding.DecodeString(sourceBase64)
+	if decodeErr != nil {
+		fmt.Fprintln(os.Stderr, "error: failed to decode embedded python source")
+		return 1
+	}
+
+	tempDir, mkErr := os.MkdirTemp("", "pytra_go_")
+	if mkErr != nil {
+		fmt.Fprintln(os.Stderr, "error: failed to create temp directory")
+		return 1
+	}
+	defer os.RemoveAll(tempDir)
+
+	scriptPath := filepath.Join(tempDir, "embedded.py")
+	if writeErr := os.WriteFile(scriptPath, sourceBytes, 0o600); writeErr != nil {
+		fmt.Fprintln(os.Stderr, "error: failed to write temp python script")
+		return 1
+	}
+
+	pythonPath := "src"
+	if current, ok := os.LookupEnv("PYTHONPATH"); ok && current != "" {
+		pythonPath = pythonPath + string(os.PathListSeparator) + current
+	}
+
+	run := func(interpreter string) (int, error) {
+		cmd := exec.Command(interpreter, append([]string{scriptPath}, args...)...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		env := os.Environ()
+		env = append(env, "PYTHONPATH="+pythonPath)
+		cmd.Env = env
+		err := cmd.Run()
+		if err == nil {
+			return 0, nil
+		}
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return exitErr.ExitCode(), nil
+		}
+		return 0, err
+	}
+
+	if code, err := run("python3"); err == nil {
+		return code
+	}
+	if code, err := run("python"); err == nil {
+		return code
+	}
+
+	fmt.Fprintln(os.Stderr, "error: python interpreter not found (python3/python)")
+	return 1
+}
+
+// 埋め込み Python ソース（Base64）。
+const pytraEmbeddedSourceBase64 = "IyAwNzogR2FtZSBvZiBMaWZlIOOBrumAsuWMluOCkkdJRuWHuuWKm+OBmeOCi+OCteODs+ODl+ODq+OAggoKZnJvbSBfX2Z1dHVyZV9fIGltcG9ydCBhbm5vdGF0aW9ucwoKZnJvbSB0aW1lIGltcG9ydCBwZXJmX2NvdW50ZXIKCmZyb20gcHlfbW9kdWxlLmdpZl9oZWxwZXIgaW1wb3J0IGdyYXlzY2FsZV9wYWxldHRlLCBzYXZlX2dpZgoKCmRlZiBuZXh0X3N0YXRlKGdyaWQ6IGxpc3RbbGlzdFtpbnRdXSwgdzogaW50LCBoOiBpbnQpIC0+IGxpc3RbbGlzdFtpbnRdXToKICAgIG54dDogbGlzdFtsaXN0W2ludF1dID0gW10KICAgIGZvciB5IGluIHJhbmdlKGgpOgogICAgICAgIHJvdzogbGlzdFtpbnRdID0gW10KICAgICAgICBmb3IgeCBpbiByYW5nZSh3KToKICAgICAgICAgICAgY250ID0gMAogICAgICAgICAgICBmb3IgZHkgaW4gcmFuZ2UoLTEsIDIpOgogICAgICAgICAgICAgICAgZm9yIGR4IGluIHJhbmdlKC0xLCAyKToKICAgICAgICAgICAgICAgICAgICBpZiBkeCAhPSAwIG9yIGR5ICE9IDA6CiAgICAgICAgICAgICAgICAgICAgICAgIG54ID0gKHggKyBkeCArIHcpICUgdwogICAgICAgICAgICAgICAgICAgICAgICBueSA9ICh5ICsgZHkgKyBoKSAlIGgKICAgICAgICAgICAgICAgICAgICAgICAgY250ICs9IGdyaWRbbnldW254XQogICAgICAgICAgICBhbGl2ZSA9IGdyaWRbeV1beF0KICAgICAgICAgICAgaWYgYWxpdmUgPT0gMSBhbmQgKGNudCA9PSAyIG9yIGNudCA9PSAzKToKICAgICAgICAgICAgICAgIHJvdy5hcHBlbmQoMSkKICAgICAgICAgICAgZWxpZiBhbGl2ZSA9PSAwIGFuZCBjbnQgPT0gMzoKICAgICAgICAgICAgICAgIHJvdy5hcHBlbmQoMSkKICAgICAgICAgICAgZWxzZToKICAgICAgICAgICAgICAgIHJvdy5hcHBlbmQoMCkKICAgICAgICBueHQuYXBwZW5kKHJvdykKICAgIHJldHVybiBueHQKCgpkZWYgcmVuZGVyKGdyaWQ6IGxpc3RbbGlzdFtpbnRdXSwgdzogaW50LCBoOiBpbnQsIGNlbGw6IGludCkgLT4gYnl0ZXM6CiAgICB3aWR0aCA9IHcgKiBjZWxsCiAgICBoZWlnaHQgPSBoICogY2VsbAogICAgZnJhbWUgPSBieXRlYXJyYXkod2lkdGggKiBoZWlnaHQpCiAgICBmb3IgeSBpbiByYW5nZShoKToKICAgICAgICBmb3IgeCBpbiByYW5nZSh3KToKICAgICAgICAgICAgdiA9IDI1NSBpZiBncmlkW3ldW3hdIGVsc2UgMAogICAgICAgICAgICBmb3IgeXkgaW4gcmFuZ2UoY2VsbCk6CiAgICAgICAgICAgICAgICBiYXNlID0gKHkgKiBjZWxsICsgeXkpICogd2lkdGggKyB4ICogY2VsbAogICAgICAgICAgICAgICAgZm9yIHh4IGluIHJhbmdlKGNlbGwpOgogICAgICAgICAgICAgICAgICAgIGZyYW1lW2Jhc2UgKyB4eF0gPSB2CiAgICByZXR1cm4gYnl0ZXMoZnJhbWUpCgoKZGVmIHJ1bl8wN19nYW1lX29mX2xpZmVfbG9vcCgpIC0+IE5vbmU6CiAgICB3ID0gMTQ0CiAgICBoID0gMTA4CiAgICBjZWxsID0gNAogICAgc3RlcHMgPSAyMTAKICAgIG91dF9wYXRoID0gInNhbXBsZS9vdXQvMDdfZ2FtZV9vZl9saWZlX2xvb3AuZ2lmIgoKICAgIHN0YXJ0ID0gcGVyZl9jb3VudGVyKCkKICAgIGdyaWQ6IGxpc3RbbGlzdFtpbnRdXSA9IFtdCiAgICBmb3IgXyBpbiByYW5nZShoKToKICAgICAgICByb3c6IGxpc3RbaW50XSA9IFtdCiAgICAgICAgZm9yIF8gaW4gcmFuZ2Uodyk6CiAgICAgICAgICAgIHJvdy5hcHBlbmQoMCkKICAgICAgICBncmlkLmFwcGVuZChyb3cpCgogICAgIyDnlo7jgarjg47jgqTjgrrjgpLmlbfjgYTjgabjgIHlhajkvZPjgYzml6nmnJ/jgavlm7rlrprljJbjgZfjgavjgY/jgYTlnJ/lj7DjgpLkvZzjgovjgIIKICAgICMg5aSn44GN44Gq5pW05pWw44Oq44OG44Op44Or44KS5L2/44KP44Gq44GE5byP44Gr44GX44Gm44CB5ZCE44OI44Op44Oz44K544OR44Kk44Op44Gn5ZCM5LiA44Gr5omx44GI44KL44KI44GG44Gr44GZ44KL44CCCiAgICBmb3IgeSBpbiByYW5nZShoKToKICAgICAgICBmb3IgeCBpbiByYW5nZSh3KToKICAgICAgICAgICAgbm9pc2UgPSAoeCAqIDM3ICsgeSAqIDczICsgKHggKiB5KSAlIDE5ICsgKHggKyB5KSAlIDExKSAlIDk3CiAgICAgICAgICAgIGlmIG5vaXNlIDwgMzoKICAgICAgICAgICAgICAgIGdyaWRbeV1beF0gPSAxCgogICAgIyDku6PooajnmoTjgarplbflr7/lkb3jg5Hjgr/jg7zjg7PjgpLopIfmlbDphY3nva7jgZnjgovjgIIKICAgIGdsaWRlciA9IFsKICAgICAgICBbMCwgMSwgMF0sCiAgICAgICAgWzAsIDAsIDFdLAogICAgICAgIFsxLCAxLCAxXSwKICAgIF0KICAgIHJfcGVudG9taW5vID0gWwogICAgICAgIFswLCAxLCAxXSwKICAgICAgICBbMSwgMSwgMF0sCiAgICAgICAgWzAsIDEsIDBdLAogICAgXQogICAgbHdzcyA9IFsKICAgICAgICBbMCwgMSwgMSwgMSwgMV0sCiAgICAgICAgWzEsIDAsIDAsIDAsIDFdLAogICAgICAgIFswLCAwLCAwLCAwLCAxXSwKICAgICAgICBbMSwgMCwgMCwgMSwgMF0sCiAgICBdCgogICAgZm9yIGd5IGluIHJhbmdlKDgsIGggLSA4LCAxOCk6CiAgICAgICAgZm9yIGd4IGluIHJhbmdlKDgsIHcgLSA4LCAyMik6CiAgICAgICAgICAgIGtpbmQgPSAoZ3ggKiA3ICsgZ3kgKiAxMSkgJSAzCiAgICAgICAgICAgIGlmIGtpbmQgPT0gMDoKICAgICAgICAgICAgICAgIHBoID0gbGVuKGdsaWRlcikKICAgICAgICAgICAgICAgIGZvciBweSBpbiByYW5nZShwaCk6CiAgICAgICAgICAgICAgICAgICAgcHcgPSBsZW4oZ2xpZGVyW3B5XSkKICAgICAgICAgICAgICAgICAgICBmb3IgcHggaW4gcmFuZ2UocHcpOgogICAgICAgICAgICAgICAgICAgICAgICBpZiBnbGlkZXJbcHldW3B4XSA9PSAxOgogICAgICAgICAgICAgICAgICAgICAgICAgICAgZ3JpZFsoZ3kgKyBweSkgJSBoXVsoZ3ggKyBweCkgJSB3XSA9IDEKICAgICAgICAgICAgZWxpZiBraW5kID09IDE6CiAgICAgICAgICAgICAgICBwaCA9IGxlbihyX3BlbnRvbWlubykKICAgICAgICAgICAgICAgIGZvciBweSBpbiByYW5nZShwaCk6CiAgICAgICAgICAgICAgICAgICAgcHcgPSBsZW4ocl9wZW50b21pbm9bcHldKQogICAgICAgICAgICAgICAgICAgIGZvciBweCBpbiByYW5nZShwdyk6CiAgICAgICAgICAgICAgICAgICAgICAgIGlmIHJfcGVudG9taW5vW3B5XVtweF0gPT0gMToKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGdyaWRbKGd5ICsgcHkpICUgaF1bKGd4ICsgcHgpICUgd10gPSAxCiAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICBwaCA9IGxlbihsd3NzKQogICAgICAgICAgICAgICAgZm9yIHB5IGluIHJhbmdlKHBoKToKICAgICAgICAgICAgICAgICAgICBwdyA9IGxlbihsd3NzW3B5XSkKICAgICAgICAgICAgICAgICAgICBmb3IgcHggaW4gcmFuZ2UocHcpOgogICAgICAgICAgICAgICAgICAgICAgICBpZiBsd3NzW3B5XVtweF0gPT0gMToKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGdyaWRbKGd5ICsgcHkpICUgaF1bKGd4ICsgcHgpICUgd10gPSAxCgogICAgZnJhbWVzOiBsaXN0W2J5dGVzXSA9IFtdCiAgICBmb3IgXyBpbiByYW5nZShzdGVwcyk6CiAgICAgICAgZnJhbWVzLmFwcGVuZChyZW5kZXIoZ3JpZCwgdywgaCwgY2VsbCkpCiAgICAgICAgZ3JpZCA9IG5leHRfc3RhdGUoZ3JpZCwgdywgaCkKCiAgICBzYXZlX2dpZihvdXRfcGF0aCwgdyAqIGNlbGwsIGggKiBjZWxsLCBmcmFtZXMsIGdyYXlzY2FsZV9wYWxldHRlKCksIGRlbGF5X2NzPTQsIGxvb3A9MCkKICAgIGVsYXBzZWQgPSBwZXJmX2NvdW50ZXIoKSAtIHN0YXJ0CiAgICBwcmludCgib3V0cHV0OiIsIG91dF9wYXRoKQogICAgcHJpbnQoImZyYW1lczoiLCBzdGVwcykKICAgIHByaW50KCJlbGFwc2VkX3NlYzoiLCBlbGFwc2VkKQoKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBydW5fMDdfZ2FtZV9vZl9saWZlX2xvb3AoKQo="
+
+// main は埋め込み Python を実行するエントリポイント。
+func main() {
+	os.Exit(pytraRunEmbeddedPython(pytraEmbeddedSourceBase64, os.Args[1:]))
+}
