@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <any>
+#include <cctype>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -401,6 +402,30 @@ inline std::string py_replace(const std::string& s, const std::string& from, con
         pos += to.size();
     }
     return out;
+}
+
+inline bool py_isdigit(const std::string& s) {
+    if (s.empty()) {
+        return false;
+    }
+    for (unsigned char c : s) {
+        if (!std::isdigit(c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+inline bool py_isalpha(const std::string& s) {
+    if (s.empty()) {
+        return false;
+    }
+    for (unsigned char c : s) {
+        if (!std::isalpha(c)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 template <typename A, typename B>

@@ -1187,6 +1187,10 @@ class CppTranspiler:
                 return f"py_join({obj}, {args_list[0]})"
             if method == "replace" and len(args_list) == 2:
                 return f"py_replace({obj}, {args_list[0]}, {args_list[1]})"
+            if method == "isdigit" and len(args_list) == 0:
+                return f"py_isdigit({obj})"
+            if method == "isalpha" and len(args_list) == 0:
+                return f"py_isalpha({obj})"
             if method == "write" and len(args_list) == 1:
                 return f"py_write(*{obj}, {args_list[0]})"
             if method == "close" and len(args_list) == 0:

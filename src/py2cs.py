@@ -898,6 +898,10 @@ class CSharpTranspiler:
                         "Pytra.CsModule.py_runtime.py_pop("
                         f"{self.transpile_expr(call.func.value)}, {args_list[0]})"
                     )
+            if call.func.attr == "isdigit" and len(args_list) == 0:
+                return f"Pytra.CsModule.py_runtime.py_isdigit({self.transpile_expr(call.func.value)})"
+            if call.func.attr == "isalpha" and len(args_list) == 0:
+                return f"Pytra.CsModule.py_runtime.py_isalpha({self.transpile_expr(call.func.value)})"
             return f"{self.transpile_expr(call.func)}({args})"
 
         raise TranspileError("Only direct function calls are supported")

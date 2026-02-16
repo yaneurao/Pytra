@@ -198,6 +198,38 @@ namespace Pytra.CsModule
             return true;
         }
 
+        public static bool py_isdigit(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return false;
+            }
+            foreach (char ch in value)
+            {
+                if (!char.IsDigit(ch))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static bool py_isalpha(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return false;
+            }
+            foreach (char ch in value)
+            {
+                if (!char.IsLetter(ch))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public static void print(params object[] args)
         {
             if (args == null || args.Length == 0)
