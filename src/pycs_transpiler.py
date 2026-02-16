@@ -37,7 +37,7 @@ class CSharpTranspiler:
         function_defs: List[str] = []
         class_defs: List[str] = []
         top_level_body: List[ast.stmt] = []
-        using_lines: Set[str] = {"using System;"}
+        using_lines: Set[str] = {"using System;", "using System.Collections.Generic;", "using System.IO;"}
         self.class_names = {
             stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)
         }
@@ -81,6 +81,8 @@ class CSharpTranspiler:
         lines: Set[str] = set()
         if isinstance(stmt, ast.Import):
             for alias in stmt.names:
+                if alias.name in {"py_module", "time"}:
+                    continue
                 module_name = self._map_python_module(alias.name)
                 if alias.asname:
                     lines.add(f"using {alias.asname} = {module_name};")
@@ -92,6 +94,8 @@ class CSharpTranspiler:
             if stmt.level != 0:
                 return lines
             if stmt.module:
+                if stmt.module in {"py_module", "time"}:
+                    return lines
                 module_name = self._map_python_module(stmt.module)
                 lines.add(f"using {module_name};")
                 for alias in stmt.names:
@@ -107,6 +111,7 @@ class CSharpTranspiler:
     def _map_python_module(self, module_name: str) -> str:
         mapping = {
             "math": "System",
+            "time": "System",
             "pathlib": "System.IO",
             "typing": "System.Collections.Generic",
             "collections": "System.Collections.Generic",
@@ -353,6 +358,8 @@ class CSharpTranspiler:
                 else:
                     lines.append(f"return {self.transpile_expr(stmt.value)};")
             elif isinstance(stmt, ast.Expr):
+                if isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str):
+                    continue
                 lines.append(f"{self.transpile_expr(stmt.value)};")
             elif isinstance(stmt, ast.AnnAssign):
                 lines.extend(self._transpile_ann_assign(stmt, scope))
@@ -362,6 +369,8 @@ class CSharpTranspiler:
                 lines.extend(self._transpile_if(stmt, scope))
             elif isinstance(stmt, ast.For):
                 lines.extend(self._transpile_for(stmt, scope))
+            elif isinstance(stmt, ast.While):
+                lines.extend(self._transpile_while(stmt, scope))
             elif isinstance(stmt, ast.Try):
                 lines.extend(self._transpile_try(stmt, scope))
             elif isinstance(stmt, ast.Raise):
@@ -453,6 +462,16 @@ class CSharpTranspiler:
         lines.append("}")
         if stmt.orelse:
             lines.append("// for-else is not directly supported; else body emitted below")
+            lines.extend(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared))))
+        return lines
+
+    def _transpile_while(self, stmt: ast.While, scope: Scope) -> List[str]:
+        lines = [f"while ({self.transpile_expr(stmt.test)})", "{"]
+        body_lines = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
+        lines.extend(self._indent_block(body_lines))
+        lines.append("}")
+        if stmt.orelse:
+            lines.append("// while-else is not directly supported; else body emitted below")
             lines.extend(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared))))
         return lines
 
@@ -577,13 +596,37 @@ class CSharpTranspiler:
         args = ", ".join(args_list)
 
         if isinstance(call.func, ast.Name) and call.func.id == "print":
-            return f"Console.WriteLine({args})"
+            return f"PyCs.CsModule.py_runtime.print({args})"
+        if isinstance(call.func, ast.Name) and call.func.id == "perf_counter":
+            return "PyCs.CsModule.time.perf_counter()"
+        if isinstance(call.func, ast.Name) and call.func.id == "bytearray":
+            return "new List<byte>()"
+        if isinstance(call.func, ast.Name) and call.func.id == "int":
+            if len(args_list) == 1:
+                return f"(int)({args_list[0]})"
+            return "0"
+        if isinstance(call.func, ast.Name) and call.func.id == "float":
+            if len(args_list) == 1:
+                return f"(double)({args_list[0]})"
+            return "0.0"
+        if isinstance(call.func, ast.Name) and call.func.id == "str":
+            if len(args_list) == 1:
+                return f"Convert.ToString({args_list[0]})"
+            return "\"\""
 
         if isinstance(call.func, ast.Name):
             if call.func.id in self.class_names:
                 return f"new {call.func.id}({args})"
             return f"{call.func.id}({args})"
         if isinstance(call.func, ast.Attribute):
+            if (
+                isinstance(call.func.value, ast.Name)
+                and call.func.value.id == "png_helper"
+                and call.func.attr == "write_rgb_png"
+            ):
+                return f"PyCs.CsModule.png_helper.write_rgb_png({args})"
+            if call.func.attr == "append" and len(args_list) == 1:
+                return f"{self.transpile_expr(call.func.value)}.Add((byte)({args_list[0]}))"
             return f"{self.transpile_expr(call.func)}({args})"
 
         raise TranspileError("Only direct function calls are supported")
@@ -605,6 +648,8 @@ class CSharpTranspiler:
                 "int": "int",
                 "float": "double",
                 "str": "string",
+                "bytearray": "List<byte>",
+                "bytes": "List<byte>",
                 "bool": "bool",
                 "None": "void",
             }
