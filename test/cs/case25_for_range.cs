@@ -7,11 +7,11 @@ public static class Program
     public static int sum_range_29(int n)
     {
         int total = 0;
-        var __range_start_i = 0;
-        var __range_stop_i = n;
-        var __range_step_i = 1;
-        if (__range_step_i == 0) throw new Exception("range() arg 3 must not be zero");
-        for (var i = __range_start_i; (__range_step_i > 0) ? (i < __range_stop_i) : (i > __range_stop_i); i += __range_step_i)
+        var __pytra_range_start_1 = 0;
+        var __pytra_range_stop_2 = n;
+        var __pytra_range_step_3 = 1;
+        if (__pytra_range_step_3 == 0) throw new Exception("range() arg 3 must not be zero");
+        for (var i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
         {
             total = (total + i);
         }

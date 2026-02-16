@@ -8,8 +8,11 @@ public static class Program
     {
         double x = 0.0;
         double y = 0.0;
-        int i = 0;
-        while ((i < max_iter))
+        var __pytra_range_start_1 = 0;
+        var __pytra_range_stop_2 = max_iter;
+        var __pytra_range_step_3 = 1;
+        if (__pytra_range_step_3 == 0) throw new Exception("range() arg 3 must not be zero");
+        for (var i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
         {
             double x2 = (x * x);
             double y2 = (y * y);
@@ -19,7 +22,6 @@ public static class Program
             }
             y = (((2.0 * x) * y) + cy);
             x = ((x2 - y2) + cx);
-            i = (i + 1);
         }
         return max_iter;
     }
@@ -30,7 +32,7 @@ public static class Program
         {
             return Tuple.Create(0, 0, 0);
         }
-        double t = ((iter_count * 1.0) / (max_iter * 1.0));
+        double t = (iter_count / max_iter);
         int r = (int)((255.0 * (t * t)));
         int g = (int)((255.0 * t));
         int b = (int)((255.0 * (1.0 - t)));
@@ -40,14 +42,20 @@ public static class Program
     public static List<byte> render_mandelbrot(int width, int height, int max_iter, double x_min, double x_max, double y_min, double y_max)
     {
         List<byte> pixels = new List<byte>();
-        int y = 0;
-        while ((y < height))
+        var __pytra_range_start_4 = 0;
+        var __pytra_range_stop_5 = height;
+        var __pytra_range_step_6 = 1;
+        if (__pytra_range_step_6 == 0) throw new Exception("range() arg 3 must not be zero");
+        for (var y = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (y < __pytra_range_stop_5) : (y > __pytra_range_stop_5); y += __pytra_range_step_6)
         {
-            double py = (y_min + ((y_max - y_min) * ((y * 1.0) / ((height - 1) * 1.0))));
-            int x = 0;
-            while ((x < width))
+            double py = (y_min + ((y_max - y_min) * (y / (height - 1))));
+            var __pytra_range_start_7 = 0;
+            var __pytra_range_stop_8 = width;
+            var __pytra_range_step_9 = 1;
+            if (__pytra_range_step_9 == 0) throw new Exception("range() arg 3 must not be zero");
+            for (var x = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (x < __pytra_range_stop_8) : (x > __pytra_range_stop_8); x += __pytra_range_step_9)
             {
-                double px = (x_min + ((x_max - x_min) * ((x * 1.0) / ((width - 1) * 1.0))));
+                double px = (x_min + ((x_max - x_min) * (x / (width - 1))));
                 int it = escape_count(px, py, max_iter);
                 int r;
                 int g;
@@ -60,7 +68,7 @@ public static class Program
                 }
                 else
                 {
-                    double t = ((it * 1.0) / (max_iter * 1.0));
+                    double t = (it / max_iter);
                     r = (int)((255.0 * (t * t)));
                     g = (int)((255.0 * t));
                     b = (int)((255.0 * (1.0 - t)));
@@ -68,9 +76,7 @@ public static class Program
                 pixels.Add((byte)(r));
                 pixels.Add((byte)(g));
                 pixels.Add((byte)(b));
-                x = (x + 1);
             }
-            y = (y + 1);
         }
         return pixels;
     }

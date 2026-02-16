@@ -1,7 +1,5 @@
-// このファイルは `test/cs/case08_nested_call.cs` の変換結果（C#サンプル）です。
-// Python入力との対応関係を追いやすくするため、日本語コメントを付与しています。
-// 仕様変更時は、対応する Python 側ケースと合わせて更新してください。
-
+using System.Collections.Generic;
+using System.IO;
 using System;
 
 public static class Program
@@ -18,6 +16,6 @@ public static class Program
 
     public static void Main(string[] args)
     {
-        Console.WriteLine(twice(10));
+        Pytra.CsModule.py_runtime.print(twice(10));
     }
 }
