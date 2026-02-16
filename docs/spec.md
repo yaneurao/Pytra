@@ -6,6 +6,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 
 - Python -> C# (`src/py2cs.py`)
 - Python -> C++ (`src/py2cpp.py`)
+- Python -> Rust (`src/py2rs.py`)
 
 本仕様書は、現時点の実装に基づく対応範囲・テスト方法・運用上の注意点を定義します。
 
@@ -14,6 +15,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - `src/`
   - `py2cs.py`: Python -> C# 変換器
   - `py2cpp.py`: Python -> C++ 変換器
+  - `py2rs.py`: Python -> Rust 変換器
   - `cpp_module/`: C++ 側ランタイム補助モジュール
   - `cs_module/`: C# 側ランタイム補助モジュール
   - `py_module/`: Python 側の自作ライブラリ配置先
@@ -21,6 +23,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `py/`: 入力 Python サンプル
   - `cs/`: C# 期待結果
   - `cpp/`: C++ 期待結果
+  - `rs/`: Rust 変換結果
   - `cpp2/`: セルフホスティング検証時の出力先（`.gitignore` 対象）
   - `obj/`: C++ コンパイル生成物（`.gitignore` 対象）
 - `docs/`
@@ -32,6 +35,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `py/`: 実用寄り Python サンプル（入力）
   - `cpp/`: `sample/py` を C++ へ変換した出力
   - `cs/`: `sample/py` を C# へ変換した出力
+  - `rs/`: `sample/py` を Rust へ変換した出力
   - `out/`: サンプル実行時の生成物（PNG / GIF）
   - `obj/`: サンプル実行用のコンパイル生成物
 
@@ -109,6 +113,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - 入力 Python は `test/py/` に配置します。
 - C# 期待結果は `test/cs/` に配置します。
 - C++ 期待結果は `test/cpp/` に配置します。
+- Rust 変換結果は `test/rs/` に配置します。
 - 変換器都合で `test/py/` の入力ケースを変更してはなりません。変換失敗時は、まずトランスパイラ実装（`src/py2cs.py`, `src/py2cpp.py`）側を修正します。
 - ケース命名は `caseXX_*` 形式を基本とします。
 
@@ -117,6 +122,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - 実用サンプルは `sample/py/` に配置します。
 - C++ 変換結果は `sample/cpp/` に配置します。
 - C# 変換結果は `sample/cs/` に配置します。
+- Rust 変換結果は `sample/rs/` に配置します。
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します。
 - `sample/obj/` と `sample/out/` は生成物ディレクトリであり、Git 管理外（`.gitignore`）を前提とします。
 - Python から import する自作ライブラリは `src/py_module/` に配置します（`sample/py/` には置きません）。
@@ -155,6 +161,7 @@ python -m unittest discover -s test -p "test_*.py" -v
 
 ## 9. 注意点
 
+- 現在の `py2rs.py` は最小実装です。生成 Rust は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
 - エラー発生時、CLI エントリポイント（`src/py2cs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。
 - `test/obj/` と `test/cpp2/` は検証用生成物のため Git 管理外です。

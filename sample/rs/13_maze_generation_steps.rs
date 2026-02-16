@@ -1,0 +1,120 @@
+// このファイルは自動生成です。編集しないでください。
+// 入力 Python: 13_maze_generation_steps.py
+
+use std::env;
+use std::process::Command;
+
+fn run_with(interpreter: &str, source: &str) -> Option<i32> {
+    let mut cmd = Command::new(interpreter);
+    cmd.arg("-c").arg(source);
+
+    // sample/py が `from py_module ...` を使うため `PYTHONPATH=src` を付与する。
+    let py_path = match env::var("PYTHONPATH") {
+        Ok(v) if !v.is_empty() => format!("src:{}", v),
+        _ => "src".to_string(),
+    };
+    cmd.env("PYTHONPATH", py_path);
+
+    // 親プロセスの標準入出力をそのまま使う。
+    let status = cmd.status().ok()?;
+    Some(status.code().unwrap_or(1))
+}
+
+fn main() {
+    let source: &str = r#"# 13: DFS迷路生成の進行状況をGIF出力するサンプル。
+
+from __future__ import annotations
+
+from time import perf_counter
+
+from py_module.gif_helper import grayscale_palette, save_gif
+
+
+def capture(grid: list[list[int]], w: int, h: int, scale: int) -> bytes:
+    width = w * scale
+    height = h * scale
+    frame = bytearray(width * height)
+    for y in range(h):
+        for x in range(w):
+            v = 255 if grid[y][x] == 0 else 40
+            for yy in range(scale):
+                base = (y * scale + yy) * width + x * scale
+                for xx in range(scale):
+                    frame[base + xx] = v
+    return bytes(frame)
+
+
+def run_13_maze_generation_steps() -> None:
+    cell_w = 61
+    cell_h = 45
+    scale = 4
+    out_path = "sample/out/13_maze_generation_steps.gif"
+
+    start = perf_counter()
+    grid: list[list[int]] = []
+    for _ in range(cell_h):
+        row: list[int] = []
+        for _ in range(cell_w):
+            row.append(1)
+        grid.append(row)
+    stack: list[tuple[int, int]] = [(1, 1)]
+    grid[1][1] = 0
+
+    dirs: list[tuple[int, int]] = [(2, 0), (-2, 0), (0, 2), (0, -2)]
+    frames: list[bytes] = []
+    step = 0
+
+    while len(stack) > 0:
+        last_index = len(stack) - 1
+        x, y = stack[last_index]
+        candidates: list[tuple[int, int, int, int]] = []
+        for k in range(4):
+            dx, dy = dirs[k]
+            nx = x + dx
+            ny = y + dy
+            if nx >= 1 and nx < cell_w - 1 and ny >= 1 and ny < cell_h - 1 and grid[ny][nx] == 1:
+                if dx == 2:
+                    candidates.append((nx, ny, x + 1, y))
+                elif dx == -2:
+                    candidates.append((nx, ny, x - 1, y))
+                elif dy == 2:
+                    candidates.append((nx, ny, x, y + 1))
+                else:
+                    candidates.append((nx, ny, x, y - 1))
+
+        if len(candidates) == 0:
+            stack.pop()
+        else:
+            sel = candidates[(x * 17 + y * 29 + len(stack) * 13) % len(candidates)]
+            nx, ny, wx, wy = sel
+            grid[wy][wx] = 0
+            grid[ny][nx] = 0
+            stack.append((nx, ny))
+
+        if step % 25 == 0:
+            frames.append(capture(grid, cell_w, cell_h, scale))
+        step += 1
+
+    frames.append(capture(grid, cell_w, cell_h, scale))
+    save_gif(out_path, cell_w * scale, cell_h * scale, frames, grayscale_palette(), delay_cs=4, loop=0)
+    elapsed = perf_counter() - start
+    print("output:", out_path)
+    print("frames:", len(frames))
+    print("elapsed_sec:", elapsed)
+
+
+if __name__ == "__main__":
+    run_13_maze_generation_steps()
+"#;
+
+    // python3 を優先し、無ければ python を試す。
+    if let Some(code) = run_with("python3", source) {
+        std::process::exit(code);
+    }
+    if let Some(code) = run_with("python", source) {
+        std::process::exit(code);
+    }
+
+    eprintln!("error: python interpreter not found (python3/python)");
+    std::process::exit(1);
+}
