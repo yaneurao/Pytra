@@ -11,7 +11,7 @@ from py_module.gif_helper import grayscale_palette, save_gif
 def run_10_plasma_effect() -> None:
     w = 320
     h = 240
-    frames_n = 72
+    frames_n = 216
     out_path = "sample/out/10_plasma_effect.gif"
 
     start = perf_counter()

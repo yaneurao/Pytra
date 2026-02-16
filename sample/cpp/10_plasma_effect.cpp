@@ -25,7 +25,7 @@ void run_10_plasma_effect()
 {
     long long w = 320;
     long long h = 240;
-    long long frames_n = 72;
+    long long frames_n = 216;
     string out_path = "sample/out/10_plasma_effect.gif";
     auto start = perf_counter();
     vector<string> frames = {};

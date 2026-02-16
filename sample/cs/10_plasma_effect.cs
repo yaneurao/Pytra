@@ -8,7 +8,7 @@ public static class Program
     {
         long w = 320L;
         long h = 240L;
-        long frames_n = 72L;
+        long frames_n = 216L;
         string out_path = "sample/out/10_plasma_effect.gif";
         var start = Pytra.CsModule.time.perf_counter();
         List<List<byte>> frames = new List<List<byte>> {  };
@@ -35,7 +35,7 @@ public static class Program
                     var dx = (x - 160L);
                     var dy = (y - 120L);
                     var v = (((Math.Sin(((x + (t * 2.0)) * 0.045)) + Math.Sin(((y - (t * 1.2)) * 0.05))) + Math.Sin((((x + y) + (t * 1.7)) * 0.03))) + Math.Sin(((Math.Sqrt(((dx * dx) + (dy * dy))) * 0.07) - (t * 0.18))));
-                    var c = (long)(((v + 4.0) * (255.0 / 8.0)));
+                    var c = (long)(((v + 4.0) * ((double)(255.0) / (double)(8.0))));
                     if (Pytra.CsModule.py_runtime.py_bool((c < 0L)))
                     {
                         c = 0L;
