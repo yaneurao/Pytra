@@ -5,6 +5,8 @@
 
 use std::env;
 use std::hash::Hash;
+use std::fs;
+use std::io::Write;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{collections::HashMap, collections::HashSet};
@@ -82,6 +84,90 @@ impl PyStringify for &str {
     fn py_stringify(&self) -> String {
         (*self).to_string()
     }
+}
+
+pub trait PyBool {
+    fn py_bool(&self) -> bool;
+}
+
+impl PyBool for bool {
+    fn py_bool(&self) -> bool {
+        *self
+    }
+}
+impl PyBool for i64 {
+    fn py_bool(&self) -> bool {
+        *self != 0
+    }
+}
+impl PyBool for i32 {
+    fn py_bool(&self) -> bool {
+        *self != 0
+    }
+}
+impl PyBool for i16 {
+    fn py_bool(&self) -> bool {
+        *self != 0
+    }
+}
+impl PyBool for i8 {
+    fn py_bool(&self) -> bool {
+        *self != 0
+    }
+}
+impl PyBool for u64 {
+    fn py_bool(&self) -> bool {
+        *self != 0
+    }
+}
+impl PyBool for u32 {
+    fn py_bool(&self) -> bool {
+        *self != 0
+    }
+}
+impl PyBool for u16 {
+    fn py_bool(&self) -> bool {
+        *self != 0
+    }
+}
+impl PyBool for u8 {
+    fn py_bool(&self) -> bool {
+        *self != 0
+    }
+}
+impl PyBool for f64 {
+    fn py_bool(&self) -> bool {
+        *self != 0.0
+    }
+}
+impl PyBool for f32 {
+    fn py_bool(&self) -> bool {
+        *self != 0.0
+    }
+}
+impl PyBool for String {
+    fn py_bool(&self) -> bool {
+        !self.is_empty()
+    }
+}
+impl<T> PyBool for Vec<T> {
+    fn py_bool(&self) -> bool {
+        !self.is_empty()
+    }
+}
+impl<K, V> PyBool for HashMap<K, V> {
+    fn py_bool(&self) -> bool {
+        !self.is_empty()
+    }
+}
+impl<T> PyBool for HashSet<T> {
+    fn py_bool(&self) -> bool {
+        !self.is_empty()
+    }
+}
+
+pub fn py_bool<T: PyBool>(v: &T) -> bool {
+    v.py_bool()
 }
 
 pub fn py_print<T: PyStringify>(v: T) {
@@ -200,6 +286,179 @@ impl PySlice for String {
 
 pub fn py_slice<T: PySlice>(value: &T, start: Option<i64>, end: Option<i64>) -> T::Output {
     value.py_slice(start, end)
+}
+
+pub fn math_sin(v: f64) -> f64 {
+    v.sin()
+}
+
+pub fn math_cos(v: f64) -> f64 {
+    v.cos()
+}
+
+pub fn math_sqrt(v: f64) -> f64 {
+    v.sqrt()
+}
+
+pub fn math_exp(v: f64) -> f64 {
+    v.exp()
+}
+
+pub fn py_grayscale_palette() -> Vec<u8> {
+    let mut p = Vec::<u8>::with_capacity(256 * 3);
+    let mut i: u16 = 0;
+    while i < 256 {
+        let v = i as u8;
+        p.push(v);
+        p.push(v);
+        p.push(v);
+        i += 1;
+    }
+    p
+}
+
+fn gif_lzw_encode(data: &[u8], min_code_size: u8) -> Vec<u8> {
+    if data.is_empty() {
+        return Vec::new();
+    }
+    let clear_code: u16 = 1u16 << min_code_size;
+    let end_code: u16 = clear_code + 1;
+    let code_size: u8 = min_code_size + 1;
+    let mut out = Vec::<u8>::new();
+    let mut bit_buffer: u32 = 0;
+    let mut bit_count: u8 = 0;
+
+    let emit = |code: u16, out: &mut Vec<u8>, bit_buffer: &mut u32, bit_count: &mut u8| {
+        *bit_buffer |= (code as u32) << (*bit_count as u32);
+        *bit_count += code_size;
+        while *bit_count >= 8 {
+            out.push((*bit_buffer & 0xFF) as u8);
+            *bit_buffer >>= 8;
+            *bit_count -= 8;
+        }
+    };
+
+    emit(clear_code, &mut out, &mut bit_buffer, &mut bit_count);
+    for &v in data {
+        emit(v as u16, &mut out, &mut bit_buffer, &mut bit_count);
+        emit(clear_code, &mut out, &mut bit_buffer, &mut bit_count);
+    }
+    emit(end_code, &mut out, &mut bit_buffer, &mut bit_count);
+
+    if bit_count > 0 {
+        out.push((bit_buffer & 0xFF) as u8);
+    }
+    out
+}
+
+pub fn py_save_gif(
+    path: &str,
+    width: i64,
+    height: i64,
+    frames: &Vec<Vec<u8>>,
+    palette: &Vec<u8>,
+    delay_cs: i64,
+    loop_count: i64,
+) {
+    if palette.len() != 256 * 3 {
+        panic!("palette must be 256*3 bytes");
+    }
+    let w = width as usize;
+    let h = height as usize;
+    for fr in frames.iter() {
+        if fr.len() != w * h {
+            panic!("frame size mismatch");
+        }
+    }
+
+    let mut out = Vec::<u8>::new();
+    out.extend_from_slice(b"GIF89a");
+    out.extend_from_slice(&(width as u16).to_le_bytes());
+    out.extend_from_slice(&(height as u16).to_le_bytes());
+    out.push(0xF7);
+    out.push(0);
+    out.push(0);
+    out.extend_from_slice(palette);
+
+    out.extend_from_slice(b"\x21\xFF\x0BNETSCAPE2.0\x03\x01");
+    out.extend_from_slice(&(loop_count as u16).to_le_bytes());
+    out.push(0);
+
+    for fr in frames.iter() {
+        out.extend_from_slice(b"\x21\xF9\x04\x00");
+        out.extend_from_slice(&(delay_cs as u16).to_le_bytes());
+        out.extend_from_slice(b"\x00\x00");
+
+        out.push(0x2C);
+        out.extend_from_slice(&(0u16).to_le_bytes());
+        out.extend_from_slice(&(0u16).to_le_bytes());
+        out.extend_from_slice(&(width as u16).to_le_bytes());
+        out.extend_from_slice(&(height as u16).to_le_bytes());
+        out.push(0);
+
+        out.push(8);
+        let compressed = gif_lzw_encode(fr, 8);
+        let mut pos = 0usize;
+        while pos < compressed.len() {
+            let remain = compressed.len() - pos;
+            let chunk_len = if remain > 255 { 255 } else { remain };
+            out.push(chunk_len as u8);
+            out.extend_from_slice(&compressed[pos..(pos + chunk_len)]);
+            pos += chunk_len;
+        }
+        out.push(0);
+    }
+
+    out.push(0x3B);
+    let parent = std::path::Path::new(path).parent();
+    if let Some(dir) = parent {
+        let _ = fs::create_dir_all(dir);
+    }
+    let mut f = fs::File::create(path).expect("create gif file failed");
+    f.write_all(&out).expect("write gif file failed");
+}
+
+pub fn py_write_rgb_png(path: &str, width: i64, height: i64, pixels: &[u8]) {
+    // PNG は Rust 標準ライブラリだけでの実装コストが高いため、既存 Python helper を利用する。
+    let tmp = env::temp_dir().join(format!(
+        "pytra_png_pixels_{}_{}.bin",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    fs::write(&tmp, pixels).expect("write temp png pixels failed");
+
+    let script = r#"
+import os, sys
+from py_module import png_helper
+p = sys.argv[1]
+out_path = sys.argv[2]
+w = int(sys.argv[3]); h = int(sys.argv[4])
+with open(p, "rb") as f:
+    raw = f.read()
+png_helper.write_rgb_png(out_path, w, h, raw)
+"#;
+
+    let py_path = match env::var("PYTHONPATH") {
+        Ok(v) if !v.is_empty() => format!("src:{}", v),
+        _ => "src".to_string(),
+    };
+    let status = Command::new("python3")
+        .arg("-c")
+        .arg(script)
+        .arg(tmp.to_string_lossy().to_string())
+        .arg(path)
+        .arg(width.to_string())
+        .arg(height.to_string())
+        .env("PYTHONPATH", py_path)
+        .status()
+        .expect("python3 execution failed");
+    let _ = fs::remove_file(&tmp);
+    if !status.success() {
+        panic!("py_write_rgb_png failed");
+    }
 }
 
 pub fn perf_counter() -> f64 {

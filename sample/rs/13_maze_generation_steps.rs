@@ -1,95 +1,100 @@
-// fallback: unsupported annotation: Subscript(value=Name(id='list', ctx=Load()), slice=Subscript(value=Name(id='list', ctx=Load()), slice=Name(id='int', ctx=Load()), ctx=Load()), ctx=Load())
-// このファイルは自動生成です。編集しないでください。
-// 入力 Python: 13_maze_generation_steps.py
-
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+
+// このファイルは自動生成です（native Rust mode）。
+
+fn capture(grid: Vec<Vec<i64>>, w: i64, h: i64, scale: i64) -> Vec<u8> {
+    let mut width = ((w) * (scale));
+    let mut height = ((h) * (scale));
+    let mut frame = vec![0u8; (((width) * (height))) as usize];
+    for y in (0)..(h) {
+        for x in (0)..(w) {
+            let mut v = (if py_bool(&(((((grid)[y as usize])[x as usize]) == (0)))) { 255 } else { 40 });
+            for yy in (0)..(scale) {
+                let mut base = ((((((((y) * (scale))) + (yy))) * (width))) + (((x) * (scale))));
+                for xx in (0)..(scale) {
+                    (frame)[((base) + (xx)) as usize] = (v) as u8;
+                }
+            }
+        }
+    }
+    return (frame).clone();
+}
+
+fn run_13_maze_generation_steps() -> () {
+    let mut cell_w = 61;
+    let mut cell_h = 45;
+    let mut scale = 4;
+    let mut out_path = "sample/out/13_maze_generation_steps.gif".to_string();
+    let mut start = perf_counter();
+    let mut grid: Vec<Vec<i64>> = vec![];
+    for _ in (0)..(cell_h) {
+        let mut row: Vec<i64> = vec![];
+        for _ in (0)..(cell_w) {
+            row.push(1);
+        }
+        grid.push(row);
+    }
+    let mut stack: Vec<(i64, i64)> = vec![(1, 1)];
+    ((grid)[1 as usize])[1 as usize] = 0;
+    let mut dirs: Vec<(i64, i64)> = vec![(2, 0), ((-2), 0), (0, 2), (0, (-2))];
+    let mut frames: Vec<Vec<u8>> = vec![];
+    let mut step = 0;
+    while py_bool(&((((py_len(&stack) as i64)) > (0)))) {
+        let mut last_index = (((py_len(&stack) as i64)) - (1));
+        let __pytra_tuple_rhs_1 = (stack)[last_index as usize];
+        let mut x = __pytra_tuple_rhs_1.0;
+        let mut y = __pytra_tuple_rhs_1.1;
+        let mut candidates: Vec<(i64, i64, i64, i64)> = vec![];
+        for k in (0)..(4) {
+            let __pytra_tuple_rhs_2 = (dirs)[k as usize];
+            let mut dx = __pytra_tuple_rhs_2.0;
+            let mut dy = __pytra_tuple_rhs_2.1;
+            let mut nx = ((x) + (dx));
+            let mut ny = ((y) + (dy));
+            if py_bool(&((((nx) >= (1)) && ((nx) < (((cell_w) - (1)))) && ((ny) >= (1)) && ((ny) < (((cell_h) - (1)))) && ((((grid)[ny as usize])[nx as usize]) == (1))))) {
+                if py_bool(&(((dx) == (2)))) {
+                    candidates.push((nx, ny, ((x) + (1)), y));
+                } else {
+                    if py_bool(&(((dx) == ((-2))))) {
+                        candidates.push((nx, ny, ((x) - (1)), y));
+                    } else {
+                        if py_bool(&(((dy) == (2)))) {
+                            candidates.push((nx, ny, x, ((y) + (1))));
+                        } else {
+                            candidates.push((nx, ny, x, ((y) - (1))));
+                        }
+                    }
+                }
+            }
+        }
+        if py_bool(&((((py_len(&candidates) as i64)) == (0)))) {
+            stack.pop().unwrap();
+        } else {
+            let mut sel = (candidates)[((((((((x) * (17))) + (((y) * (29))))) + ((((py_len(&stack) as i64)) * (13))))) % ((py_len(&candidates) as i64))) as usize];
+            let __pytra_tuple_rhs_3 = sel;
+            let mut nx = __pytra_tuple_rhs_3.0;
+            let mut ny = __pytra_tuple_rhs_3.1;
+            let mut wx = __pytra_tuple_rhs_3.2;
+            let mut wy = __pytra_tuple_rhs_3.3;
+            ((grid)[wy as usize])[wx as usize] = 0;
+            ((grid)[ny as usize])[nx as usize] = 0;
+            stack.push((nx, ny));
+        }
+        if py_bool(&(((((step) % (25))) == (0)))) {
+            frames.push(capture((grid).clone(), cell_w, cell_h, scale));
+        }
+        step = step + 1;
+    }
+    frames.push(capture((grid).clone(), cell_w, cell_h, scale));
+    py_save_gif(&(out_path), ((cell_w) * (scale)), ((cell_h) * (scale)), &(frames), &(py_grayscale_palette()), 4, 0);
+    let mut elapsed = ((perf_counter()) - (start));
+    println!("{} {}", "output:".to_string(), out_path);
+    println!("{} {}", "frames:".to_string(), (py_len(&frames) as i64));
+    println!("{} {}", "elapsed_sec:".to_string(), elapsed);
+}
 
 fn main() {
-    let source: &str = r#"# 13: DFS迷路生成の進行状況をGIF出力するサンプル。
-
-from __future__ import annotations
-
-from time import perf_counter
-
-from py_module.gif_helper import grayscale_palette, save_gif
-
-
-def capture(grid: list[list[int]], w: int, h: int, scale: int) -> bytes:
-    width = w * scale
-    height = h * scale
-    frame = bytearray(width * height)
-    for y in range(h):
-        for x in range(w):
-            v = 255 if grid[y][x] == 0 else 40
-            for yy in range(scale):
-                base = (y * scale + yy) * width + x * scale
-                for xx in range(scale):
-                    frame[base + xx] = v
-    return bytes(frame)
-
-
-def run_13_maze_generation_steps() -> None:
-    cell_w = 61
-    cell_h = 45
-    scale = 4
-    out_path = "sample/out/13_maze_generation_steps.gif"
-
-    start = perf_counter()
-    grid: list[list[int]] = []
-    for _ in range(cell_h):
-        row: list[int] = []
-        for _ in range(cell_w):
-            row.append(1)
-        grid.append(row)
-    stack: list[tuple[int, int]] = [(1, 1)]
-    grid[1][1] = 0
-
-    dirs: list[tuple[int, int]] = [(2, 0), (-2, 0), (0, 2), (0, -2)]
-    frames: list[bytes] = []
-    step = 0
-
-    while len(stack) > 0:
-        last_index = len(stack) - 1
-        x, y = stack[last_index]
-        candidates: list[tuple[int, int, int, int]] = []
-        for k in range(4):
-            dx, dy = dirs[k]
-            nx = x + dx
-            ny = y + dy
-            if nx >= 1 and nx < cell_w - 1 and ny >= 1 and ny < cell_h - 1 and grid[ny][nx] == 1:
-                if dx == 2:
-                    candidates.append((nx, ny, x + 1, y))
-                elif dx == -2:
-                    candidates.append((nx, ny, x - 1, y))
-                elif dy == 2:
-                    candidates.append((nx, ny, x, y + 1))
-                else:
-                    candidates.append((nx, ny, x, y - 1))
-
-        if len(candidates) == 0:
-            stack.pop()
-        else:
-            sel = candidates[(x * 17 + y * 29 + len(stack) * 13) % len(candidates)]
-            nx, ny, wx, wy = sel
-            grid[wy][wx] = 0
-            grid[ny][nx] = 0
-            stack.append((nx, ny))
-
-        if step % 25 == 0:
-            frames.append(capture(grid, cell_w, cell_h, scale))
-        step += 1
-
-    frames.append(capture(grid, cell_w, cell_h, scale))
-    save_gif(out_path, cell_w * scale, cell_h * scale, frames, grayscale_palette(), delay_cs=4, loop=0)
-    elapsed = perf_counter() - start
-    print("output:", out_path)
-    print("frames:", len(frames))
-    print("elapsed_sec:", elapsed)
-
-
-if __name__ == "__main__":
-    run_13_maze_generation_steps()
-"#;
-    std::process::exit(py_runtime::run_embedded_python(source));
+    run_13_maze_generation_steps();
 }

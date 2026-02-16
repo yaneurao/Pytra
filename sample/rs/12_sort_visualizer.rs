@@ -1,74 +1,67 @@
-// fallback: unsupported annotation: Subscript(value=Name(id='list', ctx=Load()), slice=Name(id='int', ctx=Load()), ctx=Load())
-// このファイルは自動生成です。編集しないでください。
-// 入力 Python: 12_sort_visualizer.py
-
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+
+// このファイルは自動生成です（native Rust mode）。
+
+fn render(values: Vec<i64>, w: i64, h: i64) -> Vec<u8> {
+    let mut frame = vec![0u8; (((w) * (h))) as usize];
+    let mut n = (py_len(&values) as i64);
+    let mut bar_w = ((( w ) as f64) / (( n ) as f64));
+    for i in (0)..(n) {
+        let mut x0 = (((((( i ) as f64) * (( bar_w ) as f64)))) as i64);
+        let mut x1 = (((((( ((i) + (1)) ) as f64) * (( bar_w ) as f64)))) as i64);
+        if py_bool(&(((x1) <= (x0)))) {
+            x1 = ((x0) + (1));
+        }
+        let mut bh = (((((( ((( (values)[i as usize] ) as f64) / (( n ) as f64)) ) as f64) * (( h ) as f64)))) as i64);
+        let mut y = ((h) - (bh));
+        for y in (y)..(h) {
+            for x in (x0)..(x1) {
+                (frame)[((((y) * (w))) + (x)) as usize] = (255) as u8;
+            }
+        }
+    }
+    return (frame).clone();
+}
+
+fn run_12_sort_visualizer() -> () {
+    let mut w = 320;
+    let mut h = 180;
+    let mut n = 72;
+    let mut out_path = "sample/out/12_sort_visualizer.gif".to_string();
+    let mut start = perf_counter();
+    let mut values: Vec<i64> = vec![];
+    for i in (0)..(n) {
+        values.push(((((((i) * (37))) + (19))) % (n)));
+    }
+    let mut frames: Vec<Vec<u8>> = vec![render((values).clone(), w, h)];
+    let mut op = 0;
+    for i in (0)..(n) {
+        let mut swapped = false;
+        for j in (0)..(((((n) - (i))) - (1))) {
+            if py_bool(&((((values)[j as usize]) > ((values)[((j) + (1)) as usize])))) {
+                let mut tmp = (values)[j as usize];
+                (values)[j as usize] = (values)[((j) + (1)) as usize];
+                (values)[((j) + (1)) as usize] = tmp;
+                swapped = true;
+            }
+            if py_bool(&(((((op) % (8))) == (0)))) {
+                frames.push(render((values).clone(), w, h));
+            }
+            op = op + 1;
+        }
+        if py_bool(&((!swapped))) {
+            break;
+        }
+    }
+    py_save_gif(&(out_path), w, h, &(frames), &(py_grayscale_palette()), 3, 0);
+    let mut elapsed = ((perf_counter()) - (start));
+    println!("{} {}", "output:".to_string(), out_path);
+    println!("{} {}", "frames:".to_string(), (py_len(&frames) as i64));
+    println!("{} {}", "elapsed_sec:".to_string(), elapsed);
+}
 
 fn main() {
-    let source: &str = r#"# 12: バブルソートの途中状態をGIF出力するサンプル。
-
-from __future__ import annotations
-
-from time import perf_counter
-
-from py_module.gif_helper import grayscale_palette, save_gif
-
-
-def render(values: list[int], w: int, h: int) -> bytes:
-    frame = bytearray(w * h)
-    n = len(values)
-    bar_w = w / n
-    for i in range(n):
-        x0 = int(i * bar_w)
-        x1 = int((i + 1) * bar_w)
-        if x1 <= x0:
-            x1 = x0 + 1
-        bh = int(((values[i] / n) * h))
-        y = h - bh
-        for y in range(y, h):
-            for x in range(x0, x1):
-                frame[y * w + x] = 255
-    return bytes(frame)
-
-
-def run_12_sort_visualizer() -> None:
-    w = 320
-    h = 180
-    n = 72
-    out_path = "sample/out/12_sort_visualizer.gif"
-
-    start = perf_counter()
-    values: list[int] = []
-    for i in range(n):
-        values.append((i * 37 + 19) % n)
-
-    frames: list[bytes] = [render(values, w, h)]
-
-    op = 0
-    for i in range(n):
-        swapped = False
-        for j in range(n - i - 1):
-            if values[j] > values[j + 1]:
-                tmp = values[j]
-                values[j] = values[j + 1]
-                values[j + 1] = tmp
-                swapped = True
-            if op % 8 == 0:
-                frames.append(render(values, w, h))
-            op += 1
-        if not swapped:
-            break
-
-    save_gif(out_path, w, h, frames, grayscale_palette(), delay_cs=3, loop=0)
-    elapsed = perf_counter() - start
-    print("output:", out_path)
-    print("frames:", len(frames))
-    print("elapsed_sec:", elapsed)
-
-
-if __name__ == "__main__":
-    run_12_sort_visualizer()
-"#;
-    std::process::exit(py_runtime::run_embedded_python(source));
+    run_12_sort_visualizer();
 }

@@ -1,110 +1,78 @@
-// fallback: function has unsupported annotation in native Rust mode: escape_count
-// このファイルは自動生成です。編集しないでください。
-// 入力 Python: 01_mandelbrot.py
-
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+
+// このファイルは自動生成です（native Rust mode）。
+
+fn escape_count(cx: f64, cy: f64, max_iter: i64) -> i64 {
+    let mut x: f64 = 0.0;
+    let mut y: f64 = 0.0;
+    for i in (0)..(max_iter) {
+        let mut x2: f64 = ((x) * (x));
+        let mut y2: f64 = ((y) * (y));
+        if py_bool(&(((((x2) + (y2))) > (4.0)))) {
+            return i;
+        }
+        y = ((((((2.0) * (x))) * (y))) + (cy));
+        x = ((((x2) - (y2))) + (cx));
+    }
+    return max_iter;
+}
+
+fn color_map(iter_count: i64, max_iter: i64) -> (i64, i64, i64) {
+    if py_bool(&(((iter_count) >= (max_iter)))) {
+        return (0, 0, 0);
+    }
+    let mut t: f64 = ((( iter_count ) as f64) / (( max_iter ) as f64));
+    let mut r: i64 = ((((255.0) * (((t) * (t))))) as i64);
+    let mut g: i64 = ((((255.0) * (t))) as i64);
+    let mut b: i64 = ((((255.0) * (((1.0) - (t))))) as i64);
+    return (r, g, b);
+}
+
+fn render_mandelbrot(width: i64, height: i64, max_iter: i64, x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> Vec<u8> {
+    let mut pixels: Vec<u8> = Vec::<u8>::new();
+    for y in (0)..(height) {
+        let mut py: f64 = ((y_min) + (((((y_max) - (y_min))) * (((( y ) as f64) / (( ((height) - (1)) ) as f64))))));
+        for x in (0)..(width) {
+            let mut px: f64 = ((x_min) + (((((x_max) - (x_min))) * (((( x ) as f64) / (( ((width) - (1)) ) as f64))))));
+            let mut it: i64 = escape_count(px, py, max_iter);
+            let mut r: i64;
+            let mut g: i64;
+            let mut b: i64;
+            if py_bool(&(((it) >= (max_iter)))) {
+                r = 0;
+                g = 0;
+                b = 0;
+            } else {
+                let mut t: f64 = ((( it ) as f64) / (( max_iter ) as f64));
+                r = ((((255.0) * (((t) * (t))))) as i64);
+                g = ((((255.0) * (t))) as i64);
+                b = ((((255.0) * (((1.0) - (t))))) as i64);
+            }
+            pixels.push((r) as u8);
+            pixels.push((g) as u8);
+            pixels.push((b) as u8);
+        }
+    }
+    return pixels;
+}
+
+fn run_mandelbrot() -> () {
+    let mut width: i64 = 800;
+    let mut height: i64 = 600;
+    let mut max_iter: i64 = 400;
+    let mut out_path: String = "sample/out/mandelbrot_01.png".to_string();
+    let mut start: f64 = perf_counter();
+    let mut pixels: Vec<u8> = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);
+    py_write_rgb_png(&(out_path), width, height, &(pixels));
+    let mut elapsed: f64 = ((perf_counter()) - (start));
+    println!("{} {}", "output:".to_string(), out_path);
+    println!("{} {} {} {}", "size:".to_string(), width, "x".to_string(), height);
+    println!("{} {}", "max_iter:".to_string(), max_iter);
+    println!("{} {}", "elapsed_sec:".to_string(), elapsed);
+}
 
 fn main() {
-    let source: &str = r#"# 01: マンデルブロ集合を PNG 画像として出力するサンプルです。
-# 将来のトランスパイルを意識して、構文はなるべく素直に書いています。
-
-from time import perf_counter
-from py_module import png_helper
-
-
-def escape_count(cx: float, cy: float, max_iter: int) -> int:
-    """1点 (cx, cy) の発散までの反復回数を返す。"""
-    x: float = 0.0
-    y: float = 0.0
-    for i in range(max_iter):
-        x2: float = x * x
-        y2: float = y * y
-        if x2 + y2 > 4.0:
-            return i
-        y = 2.0 * x * y + cy
-        x = x2 - y2 + cx
-    return max_iter
-
-
-def color_map(iter_count: int, max_iter: int) -> tuple[int, int, int]:
-    """反復回数を RGB に変換する。"""
-    if iter_count >= max_iter:
-        return (0, 0, 0)
-
-    # 簡単なグラデーション（青系 -> 黄系）
-    t: float = iter_count / max_iter
-    r: int = int(255.0 * (t * t))
-    g: int = int(255.0 * t)
-    b: int = int(255.0 * (1.0 - t))
-    return (r, g, b)
-
-
-def render_mandelbrot(
-    width: int,
-    height: int,
-    max_iter: int,
-    x_min: float,
-    x_max: float,
-    y_min: float,
-    y_max: float,
-) -> bytearray:
-    """マンデルブロ画像の RGB バイト列を生成する。"""
-    pixels: bytearray = bytearray()
-
-    for y in range(height):
-        py: float = y_min + (y_max - y_min) * (y / (height - 1))
-
-        for x in range(width):
-            px: float = x_min + (x_max - x_min) * (x / (width - 1))
-            it: int = escape_count(px, py, max_iter)
-            r: int
-            g: int
-            b: int
-            if it >= max_iter:
-                r = 0
-                g = 0
-                b = 0
-            else:
-                t: float = it / max_iter
-                r = int(255.0 * (t * t))
-                g = int(255.0 * t)
-                b = int(255.0 * (1.0 - t))
-            pixels.append(r)
-            pixels.append(g)
-            pixels.append(b)
-
-    return pixels
-
-
-def run_mandelbrot() -> None:
-    width: int = 800
-    height: int = 600
-    max_iter: int = 400
-    out_path: str = "sample/out/mandelbrot_01.png"
-
-    start: float = perf_counter()
-
-    pixels: bytearray = render_mandelbrot(
-        width,
-        height,
-        max_iter,
-        -2.2,
-        1.0,
-        -1.2,
-        1.2,
-    )
-    png_helper.write_rgb_png(out_path, width, height, pixels)
-
-    elapsed: float = perf_counter() - start
-    print("output:", out_path)
-    print("size:", width, "x", height)
-    print("max_iter:", max_iter)
-    print("elapsed_sec:", elapsed)
-
-
-if __name__ == "__main__":
-    run_mandelbrot()
-"#;
-    std::process::exit(py_runtime::run_embedded_python(source));
+    run_mandelbrot();
 }
