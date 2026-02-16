@@ -27,7 +27,7 @@ def render(values: list[int], w: int, h: int) -> bytes:
 def run_12_sort_visualizer() -> None:
     w = 320
     h = 180
-    n = 72
+    n = 124
     out_path = "sample/out/12_sort_visualizer.gif"
 
     start = perf_counter()

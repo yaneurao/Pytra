@@ -13,14 +13,14 @@ public static class Program
         if (__pytra_range_step_3 == 0) throw new Exception("range() arg 3 must not be zero");
         for (var y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
         {
-            double zy0 = ((-1.2) + (2.4 * (y / (height - 1L))));
+            double zy0 = ((-1.2) + (2.4 * ((double)(y) / (double)((height - 1L)))));
             var __pytra_range_start_4 = 0;
             var __pytra_range_stop_5 = width;
             var __pytra_range_step_6 = 1;
             if (__pytra_range_step_6 == 0) throw new Exception("range() arg 3 must not be zero");
             for (var x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
             {
-                double zx = ((-1.8) + (3.6 * (x / (width - 1L))));
+                double zx = ((-1.8) + (3.6 * ((double)(x) / (double)((width - 1L)))));
                 double zy = zy0;
                 long i = 0L;
                 while (Pytra.CsModule.py_runtime.py_bool((i < max_iter)))
@@ -46,7 +46,7 @@ public static class Program
                 }
                 else
                 {
-                    double t = (i / max_iter);
+                    double t = ((double)(i) / (double)(max_iter));
                     r = (long)((255.0 * (0.2 + (0.8 * t))));
                     g = (long)((255.0 * (0.1 + (0.9 * (t * t)))));
                     b = (long)((255.0 * (1.0 - t)));
@@ -61,9 +61,9 @@ public static class Program
 
     public static void run_julia()
     {
-        long width = 1280L;
-        long height = 720L;
-        long max_iter = 520L;
+        long width = 3840L;
+        long height = 2160L;
+        long max_iter = 20000L;
         string out_path = "sample/out/julia_03.png";
         double start = Pytra.CsModule.time.perf_counter();
         List<byte> pixels = render_julia(width, height, max_iter, (-0.8), 0.156);

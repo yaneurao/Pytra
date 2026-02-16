@@ -44,8 +44,8 @@ void run_11_lissajous_particles()
 {
     long long w = 320;
     long long h = 240;
-    long long frames_n = 80;
-    long long particles = 24;
+    long long frames_n = 360;
+    long long particles = 48;
     string out_path = "sample/out/11_lissajous_particles.gif";
     auto start = perf_counter();
     vector<string> frames = {};

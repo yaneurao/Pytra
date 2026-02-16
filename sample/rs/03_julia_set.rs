@@ -1,6 +1,6 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
@@ -44,9 +44,9 @@ fn render_julia(mut width: i64, mut height: i64, mut max_iter: i64, mut cx: f64,
 }
 
 fn run_julia() -> () {
-    let mut width: i64 = 1280;
-    let mut height: i64 = 720;
-    let mut max_iter: i64 = 520;
+    let mut width: i64 = 3840;
+    let mut height: i64 = 2160;
+    let mut max_iter: i64 = 20000;
     let mut out_path: String = "sample/out/julia_03.png".to_string();
     let mut start: f64 = perf_counter();
     let mut pixels: Vec<u8> = render_julia(width, height, max_iter, (-0.8), 0.156);

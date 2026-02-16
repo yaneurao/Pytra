@@ -8,7 +8,7 @@ public static class Program
     {
         var frame = Pytra.CsModule.py_runtime.py_bytearray((w * h));
         var n = Pytra.CsModule.py_runtime.py_len(values);
-        var bar_w = (w / n);
+        var bar_w = ((double)(w) / (double)(n));
         var __pytra_range_start_1 = 0;
         var __pytra_range_stop_2 = n;
         var __pytra_range_step_3 = 1;
@@ -21,7 +21,7 @@ public static class Program
             {
                 x1 = (x0 + 1L);
             }
-            var bh = (long)(((Pytra.CsModule.py_runtime.py_get(values, i) / n) * h));
+            var bh = (long)((((double)(Pytra.CsModule.py_runtime.py_get(values, i)) / (double)(n)) * h));
             var y = (h - bh);
             var __pytra_range_start_4 = y;
             var __pytra_range_stop_5 = h;
@@ -46,7 +46,7 @@ public static class Program
     {
         long w = 320L;
         long h = 180L;
-        long n = 72L;
+        long n = 124L;
         string out_path = "sample/out/12_sort_visualizer.gif";
         var start = Pytra.CsModule.time.perf_counter();
         List<long> values = new List<long> {  };

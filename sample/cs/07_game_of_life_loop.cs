@@ -104,10 +104,10 @@ public static class Program
 
     public static void run_07_game_of_life_loop()
     {
-        long w = 96L;
-        long h = 72L;
-        long cell = 3L;
-        long steps = 70L;
+        long w = 144L;
+        long h = 108L;
+        long cell = 4L;
+        long steps = 210L;
         string out_path = "sample/out/07_game_of_life_loop.gif";
         var start = Pytra.CsModule.time.perf_counter();
         List<List<long>> grid = new List<List<long>> {  };

@@ -45,10 +45,10 @@ def render(grid: list[list[int]], w: int, h: int, cell: int) -> bytes:
 
 
 def run_07_game_of_life_loop() -> None:
-    w = 96
-    h = 72
-    cell = 3
-    steps = 70
+    w = 144
+    h = 108
+    cell = 4
+    steps = 210
     out_path = "sample/out/07_game_of_life_loop.gif"
 
     start = perf_counter()

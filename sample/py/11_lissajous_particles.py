@@ -23,8 +23,8 @@ def color_palette() -> bytes:
 def run_11_lissajous_particles() -> None:
     w = 320
     h = 240
-    frames_n = 80
-    particles = 24
+    frames_n = 360
+    particles = 48
     out_path = "sample/out/11_lissajous_particles.gif"
 
     start = perf_counter()

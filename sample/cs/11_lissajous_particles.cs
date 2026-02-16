@@ -27,8 +27,8 @@ public static class Program
     {
         long w = 320L;
         long h = 240L;
-        long frames_n = 80L;
-        long particles = 24L;
+        long frames_n = 360L;
+        long particles = 48L;
         string out_path = "sample/out/11_lissajous_particles.gif";
         var start = Pytra.CsModule.time.perf_counter();
         List<List<byte>> frames = new List<List<byte>> {  };

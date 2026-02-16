@@ -62,7 +62,7 @@ void run_12_sort_visualizer()
 {
     long long w = 320;
     long long h = 180;
-    long long n = 72;
+    long long n = 124;
     string out_path = "sample/out/12_sort_visualizer.gif";
     auto start = perf_counter();
     vector<long long> values = {};

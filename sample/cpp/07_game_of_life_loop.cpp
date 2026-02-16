@@ -120,10 +120,10 @@ string render(const vector<vector<long long>>& grid, long long w, long long h, l
 
 void run_07_game_of_life_loop()
 {
-    long long w = 96;
-    long long h = 72;
-    long long cell = 3;
-    long long steps = 70;
+    long long w = 144;
+    long long h = 108;
+    long long cell = 4;
+    long long steps = 210;
     string out_path = "sample/out/07_game_of_life_loop.gif";
     auto start = perf_counter();
     vector<vector<long long>> grid = {};

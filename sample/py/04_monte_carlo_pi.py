@@ -29,7 +29,7 @@ def run_pi_trial(total_samples: int, seed: int) -> float:
 
 
 def run_monte_carlo_pi() -> None:
-    samples: int = 18000000
+    samples: int = 54000000
     seed: int = 123456789
 
     start: float = perf_counter()
