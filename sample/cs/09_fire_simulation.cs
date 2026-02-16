@@ -46,9 +46,9 @@ public static class Program
 
     public static void run_09_fire_simulation()
     {
-        long w = 220L;
-        long h = 140L;
-        long steps = 110L;
+        long w = 380L;
+        long h = 260L;
+        long steps = 420L;
         string out_path = "sample/out/09_fire_simulation.gif";
         var start = Pytra.CsModule.time.perf_counter();
         List<List<long>> heat = new List<List<long>> {  };
