@@ -768,6 +768,8 @@ class CSharpTranspiler:
         if isinstance(expr, ast.BinOp):
             left = self.transpile_expr(expr.left)
             right = self.transpile_expr(expr.right)
+            if isinstance(expr.op, ast.Div):
+                return f"((double)({left}) / (double)({right}))"
             if isinstance(expr.op, ast.FloorDiv):
                 return f"(long)Math.Floor(({left}) / (double)({right}))"
             return f"({left} {self._binop(expr.op)} {right})"

@@ -47,7 +47,7 @@ public static class Program
         var lx = (x - light_x);
         var ly = (y - light_y);
         var l = Math.Sqrt(((lx * lx) + (ly * ly)));
-        var lit = (1.0 / (1.0 + ((3.5 * l) * l)));
+        var lit = ((double)(1.0) / (double)((1.0 + ((3.5 * l) * l))));
         var v = (long)((((255.0 * blob) * lit) * 5.0));
         if (Pytra.CsModule.py_runtime.py_bool((v < 0L)))
         {
@@ -75,7 +75,7 @@ public static class Program
         for (var t = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (t < __pytra_range_stop_5) : (t > __pytra_range_stop_5); t += __pytra_range_step_6)
         {
             var frame = Pytra.CsModule.py_runtime.py_bytearray((w * h));
-            var a = (((t / frames_n) * Math.PI) * 2.0);
+            var a = ((((double)(t) / (double)(frames_n)) * Math.PI) * 2.0);
             var light_x = (0.75 * Math.Cos(a));
             var light_y = (0.55 * Math.Sin((a * 1.2)));
             long i = 0L;
@@ -85,14 +85,14 @@ public static class Program
             if (__pytra_range_step_9 == 0) throw new Exception("range() arg 3 must not be zero");
             for (var y = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (y < __pytra_range_stop_8) : (y > __pytra_range_stop_8); y += __pytra_range_step_9)
             {
-                var py = (((y / (h - 1L)) * 2.0) - 1.0);
+                var py = ((((double)(y) / (double)((h - 1L))) * 2.0) - 1.0);
                 var __pytra_range_start_10 = 0;
                 var __pytra_range_stop_11 = w;
                 var __pytra_range_step_12 = 1;
                 if (__pytra_range_step_12 == 0) throw new Exception("range() arg 3 must not be zero");
                 for (var x = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (x < __pytra_range_stop_11) : (x > __pytra_range_stop_11); x += __pytra_range_step_12)
                 {
-                    var px = (((x / (w - 1L)) * 2.0) - 1.0);
+                    var px = ((((double)(x) / (double)((w - 1L))) * 2.0) - 1.0);
                     Pytra.CsModule.py_runtime.py_set(frame, i, scene(px, py, light_x, light_y));
                     i = (i + 1L);
                 }
