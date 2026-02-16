@@ -8,7 +8,7 @@ from time import perf_counter
 from py_module.gif_helper import grayscale_palette, save_gif
 
 
-def main() -> None:
+def run_10_plasma_effect() -> None:
     w = 320
     h = 240
     frames_n = 72
@@ -25,11 +25,13 @@ def main() -> None:
         while y < h:
             x = 0
             while x < w:
+                dx = x - 160
+                dy = y - 120
                 v = (
                     math.sin((x + t * 2.0) * 0.045)
                     + math.sin((y - t * 1.2) * 0.05)
                     + math.sin((x + y + t * 1.7) * 0.03)
-                    + math.sin(math.sqrt((x - 160) ** 2 + (y - 120) ** 2) * 0.07 - t * 0.18)
+                    + math.sin(math.sqrt(dx * dx + dy * dy) * 0.07 - t * 0.18)
                 )
                 c = int((v + 4.0) * (255.0 / 8.0))
                 if c < 0:
@@ -51,4 +53,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_10_plasma_effect()

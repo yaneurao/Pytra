@@ -15,12 +15,14 @@ def color_palette() -> bytes:
         r = i
         g = (i * 3) % 256
         b = 255 - i
-        p.extend((r, g, b))
+        p.append(r)
+        p.append(g)
+        p.append(b)
         i += 1
     return bytes(p)
 
 
-def main() -> None:
+def run_11_lissajous_particles() -> None:
     w = 320
     h = 240
     frames_n = 80
@@ -47,7 +49,7 @@ def main() -> None:
                 while dx <= 2:
                     xx = x + dx
                     yy = y + dy
-                    if 0 <= xx < w and 0 <= yy < h:
+                    if xx >= 0 and xx < w and yy >= 0 and yy < h:
                         d2 = dx * dx + dy * dy
                         if d2 <= 4:
                             idx = yy * w + xx
@@ -72,4 +74,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_11_lissajous_particles()

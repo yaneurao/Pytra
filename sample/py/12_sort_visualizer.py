@@ -29,14 +29,14 @@ def render(values: list[int], w: int, h: int) -> bytes:
     return bytes(frame)
 
 
-def main() -> None:
+def run_12_sort_visualizer() -> None:
     w = 320
     h = 180
     n = 72
     out_path = "sample/out/12_sort_visualizer.gif"
 
     start = perf_counter()
-    values = []
+    values: list[int] = []
     i = 0
     while i < n:
         values.append((i * 37 + 19) % n)
@@ -69,4 +69,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_12_sort_visualizer()

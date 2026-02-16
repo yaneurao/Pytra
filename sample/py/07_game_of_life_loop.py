@@ -60,7 +60,7 @@ def render(grid: list[list[int]], w: int, h: int, cell: int) -> bytes:
     return bytes(frame)
 
 
-def main() -> None:
+def run_07_game_of_life_loop() -> None:
     w = 96
     h = 72
     cell = 3
@@ -94,4 +94,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_07_game_of_life_loop()

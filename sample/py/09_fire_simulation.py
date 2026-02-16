@@ -11,6 +11,9 @@ def fire_palette() -> bytes:
     p = bytearray()
     i = 0
     while i < 256:
+        r = 0
+        g = 0
+        b = 0
         if i < 85:
             r = i * 3
             g = 0
@@ -23,19 +26,30 @@ def fire_palette() -> bytes:
             r = 255
             g = 255
             b = (i - 170) * 3
-        p.extend((r, g, b))
+        p.append(r)
+        p.append(g)
+        p.append(b)
         i += 1
     return bytes(p)
 
 
-def main() -> None:
+def run_09_fire_simulation() -> None:
     w = 220
     h = 140
     steps = 110
     out_path = "sample/out/09_fire_simulation.gif"
 
     start = perf_counter()
-    heat = [[0 for _ in range(w)] for _ in range(h)]
+    heat: list[list[int]] = []
+    gy = 0
+    while gy < h:
+        row: list[int] = []
+        gx = 0
+        while gx < w:
+            row.append(0)
+            gx += 1
+        heat.append(row)
+        gy += 1
     frames: list[bytes] = []
 
     t = 0
@@ -82,4 +96,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_09_fire_simulation()

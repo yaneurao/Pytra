@@ -33,7 +33,7 @@ def render_frame(width: int, height: int, cr: float, ci: float, max_iter: int) -
     return bytes(frame)
 
 
-def main() -> None:
+def run_06_julia_parameter_sweep() -> None:
     width = 320
     height = 240
     frames_n = 50
@@ -58,4 +58,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_06_julia_parameter_sweep()

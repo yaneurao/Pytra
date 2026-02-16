@@ -29,18 +29,27 @@ def capture(grid: list[list[int]], w: int, h: int, scale: int) -> bytes:
     return bytes(frame)
 
 
-def main() -> None:
+def run_13_maze_generation_steps() -> None:
     cell_w = 61
     cell_h = 45
     scale = 4
     out_path = "sample/out/13_maze_generation_steps.gif"
 
     start = perf_counter()
-    grid = [[1 for _ in range(cell_w)] for _ in range(cell_h)]
+    grid: list[list[int]] = []
+    gy = 0
+    while gy < cell_h:
+        row: list[int] = []
+        gx = 0
+        while gx < cell_w:
+            row.append(1)
+            gx += 1
+        grid.append(row)
+        gy += 1
     stack: list[tuple[int, int]] = [(1, 1)]
     grid[1][1] = 0
 
-    dirs = [(2, 0), (-2, 0), (0, 2), (0, -2)]
+    dirs: list[tuple[int, int]] = [(2, 0), (-2, 0), (0, 2), (0, -2)]
     frames: list[bytes] = []
     step = 0
 
@@ -52,8 +61,15 @@ def main() -> None:
             dx, dy = dirs[k]
             nx = x + dx
             ny = y + dy
-            if 1 <= nx < cell_w - 1 and 1 <= ny < cell_h - 1 and grid[ny][nx] == 1:
-                candidates.append((nx, ny, x + dx // 2, y + dy // 2))
+            if nx >= 1 and nx < cell_w - 1 and ny >= 1 and ny < cell_h - 1 and grid[ny][nx] == 1:
+                if dx == 2:
+                    candidates.append((nx, ny, x + 1, y))
+                elif dx == -2:
+                    candidates.append((nx, ny, x - 1, y))
+                elif dy == 2:
+                    candidates.append((nx, ny, x, y + 1))
+                else:
+                    candidates.append((nx, ny, x, y - 1))
             k += 1
 
         if len(candidates) == 0:
@@ -78,4 +94,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_13_maze_generation_steps()

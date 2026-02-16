@@ -1,0 +1,27 @@
+// Python の py_module.gif_helper に対応する GIF 書き出し補助です。
+
+#ifndef PYCS_CPP_MODULE_GIF_H
+#define PYCS_CPP_MODULE_GIF_H
+
+#include <string>
+#include <vector>
+
+namespace pycs::cpp_module::gif {
+
+// 0..255 のグレースケールパレット (256*3 bytes) を返します。
+std::string grayscale_palette();
+
+// インデックスカラーフレーム列を GIF89a アニメーションとして保存します。
+void save_gif(
+    const std::string& path,
+    int width,
+    int height,
+    const std::vector<std::string>& frames,
+    const std::string& palette,
+    int delay_cs = 4,
+    int loop = 0
+);
+
+}  // namespace pycs::cpp_module::gif
+
+#endif  // PYCS_CPP_MODULE_GIF_H

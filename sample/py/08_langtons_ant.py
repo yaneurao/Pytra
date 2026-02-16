@@ -21,14 +21,23 @@ def capture(grid: list[list[int]], w: int, h: int) -> bytes:
     return bytes(frame)
 
 
-def main() -> None:
+def run_08_langtons_ant() -> None:
     w = 240
     h = 240
     out_path = "sample/out/08_langtons_ant.gif"
 
     start = perf_counter()
 
-    grid = [[0 for _ in range(w)] for _ in range(h)]
+    grid: list[list[int]] = []
+    gy = 0
+    while gy < h:
+        row: list[int] = []
+        gx = 0
+        while gx < w:
+            row.append(0)
+            gx += 1
+        grid.append(row)
+        gy += 1
     x = w // 2
     y = h // 2
     d = 0
@@ -67,4 +76,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_08_langtons_ant()

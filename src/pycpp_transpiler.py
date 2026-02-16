@@ -156,6 +156,8 @@ class CppTranspiler:
             elif mod == "py_module":
                 if "png_helper" in from_import_names:
                     includes.add('#include "cpp_module/png.h"')
+            elif mod == "py_module.gif_helper":
+                includes.add('#include "cpp_module/gif.h"')
             elif mod == "typing":
                 includes.add("#include <any>")
             elif mod == "dataclasses":
@@ -570,6 +572,8 @@ class CppTranspiler:
                 lines.extend(self._transpile_ann_assign(stmt, scope))
             elif isinstance(stmt, ast.Assign):
                 lines.extend(self._transpile_assign(stmt, scope))
+            elif isinstance(stmt, ast.AugAssign):
+                lines.extend(self._transpile_aug_assign(stmt))
             elif isinstance(stmt, ast.If):
                 lines.extend(self._transpile_if(stmt, scope))
             elif isinstance(stmt, ast.For):
@@ -647,6 +651,13 @@ class CppTranspiler:
             return [f"auto {name} = {self.transpile_expr(stmt.value)};"]
 
         return [f"{name} = {self.transpile_expr(stmt.value)};"]
+
+    def _transpile_aug_assign(self, stmt: ast.AugAssign) -> List[str]:
+        """拡張代入文を C++ の通常代入へ展開する。"""
+        target = self.transpile_expr(stmt.target)
+        op = self._binop(stmt.op)
+        value = self.transpile_expr(stmt.value)
+        return [f"{target} = ({target} {op} {value});"]
 
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
         """for 文を range-for 形式へ変換する。"""
@@ -921,7 +932,19 @@ class CppTranspiler:
                 return f"std::make_shared<std::ofstream>({args_list[0]})"
             return "std::make_shared<std::ofstream>()"
         if isinstance(call.func, ast.Name) and call.func.id == "bytearray":
+            if len(args_list) == 0:
+                return "string()"
+            if len(args_list) == 1:
+                return f"string(static_cast<size_t>({args_list[0]}), '\\0')"
             return "string()"
+        if isinstance(call.func, ast.Name) and call.func.id == "bytes":
+            if len(args_list) == 1:
+                return args_list[0]
+            return "string()"
+        if isinstance(call.func, ast.Name) and call.func.id == "save_gif":
+            return f"pycs::cpp_module::gif::save_gif({args})"
+        if isinstance(call.func, ast.Name) and call.func.id == "grayscale_palette":
+            return f"pycs::cpp_module::gif::grayscale_palette({args})"
         if isinstance(call.func, ast.Name) and call.func.id == "chr":
             if len(args_list) == 1:
                 return f"string(1, static_cast<char>({args_list[0]}))"
@@ -956,6 +979,8 @@ class CppTranspiler:
             method = call.func.attr
             if method == "append" and len(args_list) == 1:
                 return f"{obj}.push_back({args_list[0]})"
+            if method == "pop" and len(args_list) == 0:
+                return f"{obj}.pop_back()"
             if method == "extend" and len(args_list) == 1:
                 return f"py_extend({obj}, {args_list[0]})"
             if method == "add" and len(args_list) == 1:
@@ -1145,6 +1170,8 @@ class CppTranspiler:
         if isinstance(op, ast.Mult):
             return "*"
         if isinstance(op, ast.Div):
+            return "/"
+        if isinstance(op, ast.FloorDiv):
             return "/"
         if isinstance(op, ast.Mod):
             return "%"

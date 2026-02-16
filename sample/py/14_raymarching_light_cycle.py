@@ -21,14 +21,20 @@ def palette() -> bytes:
         b = int(30 + i * 1.0)
         if b > 255:
             b = 255
-        p.extend((r, g, b))
+        p.append(r)
+        p.append(g)
+        p.append(b)
         i += 1
     return bytes(p)
 
 
 def scene(x: float, y: float, light_x: float, light_y: float) -> int:
-    r1 = math.sqrt((x + 0.45) ** 2 + (y + 0.2) ** 2)
-    r2 = math.sqrt((x - 0.35) ** 2 + (y - 0.15) ** 2)
+    x1 = x + 0.45
+    y1 = y + 0.2
+    x2 = x - 0.35
+    y2 = y - 0.15
+    r1 = math.sqrt(x1 * x1 + y1 * y1)
+    r2 = math.sqrt(x2 * x2 + y2 * y2)
     blob = math.exp(-7.0 * r1 * r1) + math.exp(-8.0 * r2 * r2)
 
     lx = x - light_x
@@ -44,7 +50,7 @@ def scene(x: float, y: float, light_x: float, light_y: float) -> int:
     return v
 
 
-def main() -> None:
+def run_14_raymarching_light_cycle() -> None:
     w = 320
     h = 240
     frames_n = 84
@@ -83,4 +89,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_14_raymarching_light_cycle()

@@ -34,7 +34,7 @@ def render_frame(width: int, height: int, center_x: float, center_y: float, scal
     return bytes(frame)
 
 
-def main() -> None:
+def run_05_mandelbrot_zoom() -> None:
     width = 320
     height = 240
     frame_count = 48
@@ -48,9 +48,10 @@ def main() -> None:
     start = perf_counter()
     frames: list[bytes] = []
     i = 0
+    scale = base_scale
     while i < frame_count:
-        scale = base_scale * (zoom_per_frame**i)
         frames.append(render_frame(width, height, center_x, center_y, scale, max_iter))
+        scale = scale * zoom_per_frame
         i += 1
 
     save_gif(out_path, width, height, frames, grayscale_palette(), delay_cs=5, loop=0)
@@ -61,4 +62,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_05_mandelbrot_zoom()

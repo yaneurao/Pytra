@@ -12,6 +12,10 @@ namespace pycs::cpp_module::math {
  * @return x の平方根。
  */
 double sqrt(double x);
+double sin(double x);
+double cos(double x);
+double exp(double x);
+extern const double pi;
 
 }  // namespace pycs::cpp_module::math
 
