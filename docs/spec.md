@@ -9,6 +9,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - Python -> Rust (`src/py2rs.py`)
 - Python -> JavaScript (`src/py2js.py`)
 - Python -> TypeScript (`src/py2ts.py`)
+- Python -> Go (`src/py2go.py`)
+- Python -> Java (`src/py2java.py`)
 
 本仕様書は、現時点の実装に基づく対応範囲・テスト方法・運用上の注意点を定義します。
 
@@ -20,6 +22,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `py2rs.py`: Python -> Rust 変換器
   - `py2js.py`: Python -> JavaScript 変換器
   - `py2ts.py`: Python -> TypeScript 変換器
+  - `py2go.py`: Python -> Go 変換器
+  - `py2java.py`: Python -> Java 変換器
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `common/`: 複数言語トランスパイラで共有する基底実装・共通ユーティリティ
     - `base_transpiler.py`: `TranspileError` と共通基底クラス
@@ -29,6 +33,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `cs_module/`: C# 側ランタイム補助モジュール
   - `js_module/`: JavaScript 側ランタイム補助モジュール
   - `ts_module/`: TypeScript 側ランタイム補助モジュール
+  - `go_module/`: Go 側ランタイム補助モジュール
+  - `java_module/`: Java 側ランタイム補助モジュール
   - `py_module/`: Python 側の自作ライブラリ配置先
 - `test/`
   - `py/`: 入力 Python サンプル
@@ -37,6 +43,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `rs/`: Rust 変換結果
   - `js/`: JavaScript 変換結果
   - `ts/`: TypeScript 変換結果
+  - `go/`: Go 変換結果
+  - `java/`: Java 変換結果
   - `cpp2/`: セルフホスティング検証時の出力先（`.gitignore` 対象）
   - `obj/`: C++ コンパイル生成物（`.gitignore` 対象）
 - `docs/`
@@ -51,6 +59,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `rs/`: `sample/py` を Rust へ変換した出力
   - `js/`: `sample/py` を JavaScript へ変換した出力
   - `ts/`: `sample/py` を TypeScript へ変換した出力
+  - `go/`: `sample/py` を Go へ変換した出力
+  - `java/`: `sample/py` を Java へ変換した出力
   - `out/`: サンプル実行時の生成物（PNG / GIF）
   - `obj/`: サンプル実行用のコンパイル生成物
 
@@ -133,6 +143,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - Rust 変換結果は `test/rs/` に配置します。
 - JavaScript 変換結果は `test/js/` に配置します。
 - TypeScript 変換結果は `test/ts/` に配置します。
+- Go 変換結果は `test/go/` に配置します。
+- Java 変換結果は `test/java/` に配置します。
 - 変換器都合で `test/py/` の入力ケースを変更してはなりません。変換失敗時は、まずトランスパイラ実装（`src/py2cs.py`, `src/py2cpp.py`）側を修正します。
 - ケース命名は `caseXX_*` 形式を基本とします。
 
@@ -142,6 +154,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - C++ 変換結果は `sample/cpp/` に配置します。
 - C# 変換結果は `sample/cs/` に配置します。
 - Rust 変換結果は `sample/rs/` に配置します。
+- Go 変換結果は `sample/go/` に配置します。
+- Java 変換結果は `sample/java/` に配置します。
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します。
 - `sample/obj/` と `sample/out/` は生成物ディレクトリであり、Git 管理外（`.gitignore`）を前提とします。
 - Python から import する自作ライブラリは `src/py_module/` に配置します（`sample/py/` には置きません）。
@@ -201,6 +215,7 @@ python -m unittest discover -s test -p "test_*.py" -v
   - 実装とドキュメントの内容が不一致にならないことを、変更完了条件に含めます。
 - 現在の `py2rs.py` は最小実装です。生成 Rust は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出さず、Node.js ランタイムのみで実行します。
+- 現在の `py2go.py` / `py2java.py` は最小実装です。生成 Go/Java は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
 - エラー発生時、CLI エントリポイント（`src/py2cs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。
 - `test/obj/` と `test/cpp2/` は検証用生成物のため Git 管理外です。
