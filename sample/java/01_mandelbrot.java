@@ -761,9 +761,13 @@ class pytra_01_mandelbrot {
     static Object escape_count(Object cx, Object cy, Object max_iter) {
         Object x = 0.0;
         Object y = 0.0;
+        int __pytra_range_start_1 = PyRuntime.pyToInt(0);
+        int __pytra_range_stop_2 = PyRuntime.pyToInt(max_iter);
+        int __pytra_range_step_3 = PyRuntime.pyToInt(1);
+        if (__pytra_range_step_3 == 0) { throw new RuntimeException("range() step must not be zero"); }
         Object i = null;
-        for (Object __pytra_it_1 : PyRuntime.pyRange(PyRuntime.pyToInt(0), PyRuntime.pyToInt(max_iter), PyRuntime.pyToInt(1))) {
-            i = __pytra_it_1;
+        for (int __pytra_i_4 = __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3) {
+            i = __pytra_i_4;
             Object x2 = PyRuntime.pyMul(x, x);
             Object y2 = PyRuntime.pyMul(y, y);
             if (PyRuntime.pyBool(PyRuntime.pyGt(PyRuntime.pyAdd(x2, y2), 4.0))) {
@@ -786,13 +790,21 @@ class pytra_01_mandelbrot {
     }
     static Object render_mandelbrot(Object width, Object height, Object max_iter, Object x_min, Object x_max, Object y_min, Object y_max) {
         Object pixels = PyRuntime.pyBytearray(null);
+        int __pytra_range_start_5 = PyRuntime.pyToInt(0);
+        int __pytra_range_stop_6 = PyRuntime.pyToInt(height);
+        int __pytra_range_step_7 = PyRuntime.pyToInt(1);
+        if (__pytra_range_step_7 == 0) { throw new RuntimeException("range() step must not be zero"); }
         Object y = null;
-        for (Object __pytra_it_2 : PyRuntime.pyRange(PyRuntime.pyToInt(0), PyRuntime.pyToInt(height), PyRuntime.pyToInt(1))) {
-            y = __pytra_it_2;
+        for (int __pytra_i_8 = __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7) {
+            y = __pytra_i_8;
             Object py = PyRuntime.pyAdd(y_min, PyRuntime.pyMul(PyRuntime.pySub(y_max, y_min), PyRuntime.pyDiv(y, PyRuntime.pySub(height, 1))));
+            int __pytra_range_start_9 = PyRuntime.pyToInt(0);
+            int __pytra_range_stop_10 = PyRuntime.pyToInt(width);
+            int __pytra_range_step_11 = PyRuntime.pyToInt(1);
+            if (__pytra_range_step_11 == 0) { throw new RuntimeException("range() step must not be zero"); }
             Object x = null;
-            for (Object __pytra_it_3 : PyRuntime.pyRange(PyRuntime.pyToInt(0), PyRuntime.pyToInt(width), PyRuntime.pyToInt(1))) {
-                x = __pytra_it_3;
+            for (int __pytra_i_12 = __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11) {
+                x = __pytra_i_12;
                 Object px = PyRuntime.pyAdd(x_min, PyRuntime.pyMul(PyRuntime.pySub(x_max, x_min), PyRuntime.pyDiv(x, PyRuntime.pySub(width, 1))));
                 Object it = escape_count(px, py, max_iter);
                 Object r = null;

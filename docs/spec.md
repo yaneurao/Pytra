@@ -60,7 +60,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - `docs/`
   - `spec.md`: 本仕様
   - `how-to-use.md`: 使い方（CLI / コンパイル手順）
-  - `time-comparison.md`: 実行時間比較の測定条件
+  - `sample-code.md`: サンプルコードと変換コードの対応表
   - `gc.md`: 参照カウント GC の仕様
 - `sample/`
   - `py/`: 実用寄り Python サンプル（入力）
@@ -223,7 +223,7 @@ python -m unittest discover -s test -p "test_*.py" -v
   - ただし、履歴の可読性を保つため、コミットは論理単位で分割し、コミットメッセージは変更意図が分かる内容にします。
 - ドキュメント同期ルール:
   - `README.md` はユーザー向けの一次情報として扱います。機能追加・仕様変更・手順変更時は、必要に応じて `README.md` を更新します。
-  - `README.md` からリンクされるドキュメント（`docs/how-to-use.md`, `docs/time-comparison.md`, `docs/spec.md` など）も整合性を確認し、必要なら同時に更新します。
+  - `README.md` からリンクされるドキュメント（`docs/how-to-use.md`, `docs/sample-code.md`, `docs/spec.md` など）も整合性を確認し、必要なら同時に更新します。
   - 実装とドキュメントの内容が不一致にならないことを、変更完了条件に含めます。
 - 現在の `py2rs.py` は最小実装です。生成 Rust は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出さず、Node.js ランタイムのみで実行します。
