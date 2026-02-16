@@ -20,9 +20,9 @@ public static class Program
         for (var __pytra_unused_4 = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (__pytra_unused_4 < __pytra_range_stop_2) : (__pytra_unused_4 > __pytra_range_stop_2); __pytra_unused_4 += __pytra_range_step_3)
         {
             state = lcg_next(state);
-            double x = (state / 4294967296.0);
+            double x = ((double)(state) / (double)(4294967296.0));
             state = lcg_next(state);
-            double y = (state / 4294967296.0);
+            double y = ((double)(state) / (double)(4294967296.0));
             double dx = (x - 0.5);
             double dy = (y - 0.5);
             if (Pytra.CsModule.py_runtime.py_bool((((dx * dx) + (dy * dy)) <= 0.25)))
@@ -30,12 +30,12 @@ public static class Program
                 inside = (inside + 1L);
             }
         }
-        return ((4.0 * inside) / total_samples);
+        return ((double)((4.0 * inside)) / (double)(total_samples));
     }
 
     public static void run_monte_carlo_pi()
     {
-        long samples = 18000000L;
+        long samples = 54000000L;
         long seed = 123456789L;
         double start = Pytra.CsModule.time.perf_counter();
         double pi_est = run_pi_trial(samples, seed);

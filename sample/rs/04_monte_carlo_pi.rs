@@ -1,6 +1,6 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
@@ -26,7 +26,7 @@ fn run_pi_trial(mut total_samples: i64, mut seed: i64) -> f64 {
 }
 
 fn run_monte_carlo_pi() -> () {
-    let mut samples: i64 = 18000000;
+    let mut samples: i64 = 54000000;
     let mut seed: i64 = 123456789;
     let mut start: f64 = perf_counter();
     let mut pi_est: f64 = run_pi_trial(samples, seed);

@@ -77,9 +77,9 @@ string render_julia(long long width, long long height, long long max_iter, doubl
 
 void run_julia()
 {
-    long long width = 1280;
-    long long height = 720;
-    long long max_iter = 520;
+    long long width = 3840;
+    long long height = 2160;
+    long long max_iter = 20000;
     string out_path = "sample/out/julia_03.png";
     double start = perf_counter();
     string pixels = render_julia(width, height, max_iter, (-0.8), 0.156);

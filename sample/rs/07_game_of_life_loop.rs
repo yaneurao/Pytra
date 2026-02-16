@@ -1,6 +1,6 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
@@ -54,10 +54,10 @@ fn render(mut grid: Vec<Vec<i64>>, mut w: i64, mut h: i64, mut cell: i64) -> Vec
 }
 
 fn run_07_game_of_life_loop() -> () {
-    let mut w = 96;
-    let mut h = 72;
-    let mut cell = 3;
-    let mut steps = 70;
+    let mut w = 144;
+    let mut h = 108;
+    let mut cell = 4;
+    let mut steps = 210;
     let mut out_path = "sample/out/07_game_of_life_loop.gif".to_string();
     let mut start = perf_counter();
     let mut grid: Vec<Vec<i64>> = vec![];

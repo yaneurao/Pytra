@@ -46,9 +46,9 @@ def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -
 
 
 def run_julia() -> None:
-    width: int = 1280
-    height: int = 720
-    max_iter: int = 520
+    width: int = 3840
+    height: int = 2160
+    max_iter: int = 20000
     out_path: str = "sample/out/julia_03.png"
 
     start: float = perf_counter()

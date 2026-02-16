@@ -50,7 +50,7 @@ double run_pi_trial(long long total_samples, long long seed)
 
 void run_monte_carlo_pi()
 {
-    long long samples = 18000000LL;
+    long long samples = 54000000LL;
     long long seed = 123456789LL;
     double start = perf_counter();
     double pi_est = run_pi_trial(samples, seed);
