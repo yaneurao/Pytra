@@ -4,7 +4,7 @@ use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_count
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn next_state(mut grid: Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<Vec<i64>> {
+fn next_state(grid: &Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<Vec<i64>> {
     let mut nxt: Vec<Vec<i64>> = vec![];
     for y in (0)..(h) {
         let mut row: Vec<i64> = vec![];
@@ -35,7 +35,7 @@ fn next_state(mut grid: Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<Vec<i64>> 
     return nxt;
 }
 
-fn render(mut grid: Vec<Vec<i64>>, mut w: i64, mut h: i64, mut cell: i64) -> Vec<u8> {
+fn render(grid: &Vec<Vec<i64>>, mut w: i64, mut h: i64, mut cell: i64) -> Vec<u8> {
     let mut width = ((w) * (cell));
     let mut height = ((h) * (cell));
     let mut frame = vec![0u8; (((width) * (height))) as usize];
@@ -70,8 +70,8 @@ fn run_07_game_of_life_loop() -> () {
     }
     let mut frames: Vec<Vec<u8>> = vec![];
     for _ in (0)..(steps) {
-        frames.push(render((grid).clone(), w, h, cell));
-        grid = next_state((grid).clone(), w, h);
+        frames.push(render(&(grid), w, h, cell));
+        grid = next_state(&(grid), w, h);
     }
     py_save_gif(&(out_path), ((w) * (cell)), ((h) * (cell)), &(frames), &(py_grayscale_palette()), 4, 0);
     let mut elapsed = ((perf_counter()) - (start));

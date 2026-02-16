@@ -4,7 +4,7 @@ use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_count
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn capture(mut grid: Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<u8> {
+fn capture(grid: &Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<u8> {
     let mut frame = vec![0u8; (((w) * (h))) as usize];
     let mut i = 0;
     for y in (0)..(h) {
@@ -57,13 +57,13 @@ fn run_08_langtons_ant() -> () {
             }
         }
         if py_bool(&(((((i) % (capture_every))) == (0)))) {
-            frames.push(capture((grid).clone(), w, h));
+            frames.push(capture(&(grid), w, h));
         }
     }
     py_save_gif(&(out_path), w, h, &(frames), &(py_grayscale_palette()), 5, 0);
     let mut elapsed = ((perf_counter()) - (start));
     println!("{} {}", "output:".to_string(), out_path);
-    println!("{} {}", "frames:".to_string(), (py_len(&frames) as i64));
+    println!("{} {}", "frames:".to_string(), (py_len(&(frames)) as i64));
     println!("{} {}", "elapsed_sec:".to_string(), elapsed);
 }
 

@@ -4,9 +4,9 @@ use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_count
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn render(mut values: Vec<i64>, mut w: i64, mut h: i64) -> Vec<u8> {
+fn render(values: &Vec<i64>, mut w: i64, mut h: i64) -> Vec<u8> {
     let mut frame = vec![0u8; (((w) * (h))) as usize];
-    let mut n = (py_len(&values) as i64);
+    let mut n = (py_len(values) as i64);
     let mut bar_w = ((( w ) as f64) / (( n ) as f64));
     for i in (0)..(n) {
         let mut x0 = (((((( i ) as f64) * (( bar_w ) as f64)))) as i64);
@@ -35,7 +35,7 @@ fn run_12_sort_visualizer() -> () {
     for i in (0)..(n) {
         values.push(((((((i) * (37))) + (19))) % (n)));
     }
-    let mut frames: Vec<Vec<u8>> = vec![render((values).clone(), w, h)];
+    let mut frames: Vec<Vec<u8>> = vec![render(&(values), w, h)];
     let mut op = 0;
     for i in (0)..(n) {
         let mut swapped = false;
@@ -47,7 +47,7 @@ fn run_12_sort_visualizer() -> () {
                 swapped = true;
             }
             if py_bool(&(((((op) % (8))) == (0)))) {
-                frames.push(render((values).clone(), w, h));
+                frames.push(render(&(values), w, h));
             }
             op = op + 1;
         }
@@ -58,7 +58,7 @@ fn run_12_sort_visualizer() -> () {
     py_save_gif(&(out_path), w, h, &(frames), &(py_grayscale_palette()), 3, 0);
     let mut elapsed = ((perf_counter()) - (start));
     println!("{} {}", "output:".to_string(), out_path);
-    println!("{} {}", "frames:".to_string(), (py_len(&frames) as i64));
+    println!("{} {}", "frames:".to_string(), (py_len(&(frames)) as i64));
     println!("{} {}", "elapsed_sec:".to_string(), elapsed);
 }
 

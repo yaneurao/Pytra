@@ -1,6 +1,6 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
@@ -130,7 +130,7 @@ impl Parser {
 
     fn add_expr(&mut self, mut node: ExprNode) -> i64 {
         self.expr_nodes.push(node);
-        return (((py_len(&self.expr_nodes) as i64)) - (1));
+        return (((py_len(&(self.expr_nodes)) as i64)) - (1));
     }
 
     fn parse_program(&mut self) -> Vec<StmtNode> {
@@ -216,7 +216,7 @@ impl Parser {
             let mut token_num: Token = ((self.tokens)[((self.pos) - (1)) as usize]).clone();
             let mut parsed_value: i64 = 0;
             let mut idx: i64 = 0;
-            while py_bool(&(((idx) < ((py_len(&token_num.text) as i64))))) {
+            while py_bool(&(((idx) < ((py_len(&(token_num.text)) as i64))))) {
                 let mut ch: String = py_slice(&(token_num.text), Some(idx), Some(((idx) + (1))));
                 parsed_value = ((((((parsed_value) * (10))) + (((ch).chars().next().unwrap() as i64)))) - ((("0".to_string()).chars().next().unwrap() as i64)));
                 idx = idx + 1;
@@ -237,13 +237,13 @@ impl Parser {
     }
 }
 
-fn tokenize(mut lines: Vec<String>) -> Vec<Token> {
+fn tokenize(lines: &Vec<String>) -> Vec<Token> {
     let mut tokens: Vec<Token> = vec![];
     let mut line_index: i64 = 0;
-    while py_bool(&(((line_index) < ((py_len(&lines) as i64))))) {
+    while py_bool(&(((line_index) < ((py_len(lines) as i64))))) {
         let mut source: String = ((lines)[line_index as usize]).clone();
         let mut i: i64 = 0;
-        let mut n: i64 = (py_len(&source) as i64);
+        let mut n: i64 = (py_len(&(source)) as i64);
         while py_bool(&(((i) < (n)))) {
             let mut ch: String = py_slice(&(source), Some(i), Some(((i) + (1))));
             if py_bool(&(((ch) == (" ".to_string())))) {
@@ -316,30 +316,31 @@ fn tokenize(mut lines: Vec<String>) -> Vec<Token> {
         tokens.push(Token::new(("NEWLINE".to_string()).clone(), ("".to_string()).clone(), n));
         line_index = line_index + 1;
     }
-    tokens.push(Token::new(("EOF".to_string()).clone(), ("".to_string()).clone(), (py_len(&lines) as i64)));
+    tokens.push(Token::new(("EOF".to_string()).clone(), ("".to_string()).clone(), (py_len(lines) as i64)));
     return tokens;
 }
 
-fn eval_expr(mut expr_index: i64, mut expr_nodes: Vec<ExprNode>, mut env: std::collections::HashMap<String, i64>) -> i64 {
+fn eval_expr(mut expr_index: i64, expr_nodes: &Vec<ExprNode>, env: &mut std::collections::HashMap<String, i64>) -> i64 {
     if py_bool(&(false)) {
-        env.insert("__dummy__".to_string(), 0);
+        let __pytra_insert_val_1 = 0;
+        env.insert("__dummy__".to_string(), __pytra_insert_val_1);
     }
     let mut node: ExprNode = ((expr_nodes)[expr_index as usize]).clone();
     if py_bool(&(((node.kind) == ("lit".to_string())))) {
         return node.value;
     }
     if py_bool(&(((node.kind) == ("var".to_string())))) {
-        if py_bool(&((!py_in(&(env), &(node.name))))) {
+        if py_bool(&((!py_in(env, &(node.name))))) {
             panic!("{}", format!("{}{}", "undefined variable: ".to_string(), node.name));
         }
         return (env)[&(node.name)];
     }
     if py_bool(&(((node.kind) == ("neg".to_string())))) {
-        return (-eval_expr(node.left, (expr_nodes).clone(), (env).clone()));
+        return (-eval_expr(node.left, expr_nodes, &mut *env));
     }
     if py_bool(&(((node.kind) == ("bin".to_string())))) {
-        let mut lhs: i64 = eval_expr(node.left, (expr_nodes).clone(), (env).clone());
-        let mut rhs: i64 = eval_expr(node.right, (expr_nodes).clone(), (env).clone());
+        let mut lhs: i64 = eval_expr(node.left, expr_nodes, &mut *env);
+        let mut rhs: i64 = eval_expr(node.right, expr_nodes, &mut *env);
         if py_bool(&(((node.op) == ("+".to_string())))) {
             return ((lhs) + (rhs));
         }
@@ -360,23 +361,25 @@ fn eval_expr(mut expr_index: i64, mut expr_nodes: Vec<ExprNode>, mut env: std::c
     panic!("{}", format!("{}{}", "unknown node kind: ".to_string(), node.kind));
 }
 
-fn execute(mut stmts: Vec<StmtNode>, mut expr_nodes: Vec<ExprNode>, mut trace: bool) -> i64 {
+fn execute(stmts: &Vec<StmtNode>, expr_nodes: &Vec<ExprNode>, mut trace: bool) -> i64 {
     let mut env: std::collections::HashMap<String, i64> = std::collections::HashMap::from([]);
     let mut checksum: i64 = 0;
     let mut printed: i64 = 0;
     for stmt in (stmts).clone() {
         if py_bool(&(((stmt.kind) == ("let".to_string())))) {
-            env.insert(stmt.name, eval_expr(stmt.expr_index, (expr_nodes).clone(), (env).clone()));
+            let __pytra_insert_val_2 = eval_expr(stmt.expr_index, expr_nodes, &mut env);
+            env.insert(stmt.name, __pytra_insert_val_2);
             continue;
         }
         if py_bool(&(((stmt.kind) == ("assign".to_string())))) {
             if py_bool(&((!py_in(&(env), &(stmt.name))))) {
                 panic!("{}", format!("{}{}", "assign to undefined variable: ".to_string(), stmt.name));
             }
-            env.insert(stmt.name, eval_expr(stmt.expr_index, (expr_nodes).clone(), (env).clone()));
+            let __pytra_insert_val_3 = eval_expr(stmt.expr_index, expr_nodes, &mut env);
+            env.insert(stmt.name, __pytra_insert_val_3);
             continue;
         }
-        let mut value: i64 = eval_expr(stmt.expr_index, (expr_nodes).clone(), (env).clone());
+        let mut value: i64 = eval_expr(stmt.expr_index, expr_nodes, &mut env);
         if py_bool(&(trace)) {
             py_print(value);
         }
@@ -419,24 +422,24 @@ fn run_demo() -> () {
     demo_lines.push("a = (a + b) * 2".to_string());
     demo_lines.push("print a".to_string());
     demo_lines.push("print a / b".to_string());
-    let mut tokens: Vec<Token> = tokenize((demo_lines).clone());
+    let mut tokens: Vec<Token> = tokenize(&(demo_lines));
     let mut parser: Parser = Parser::new((tokens).clone());
     let mut stmts: Vec<StmtNode> = parser.parse_program();
-    let mut checksum: i64 = execute((stmts).clone(), (parser.expr_nodes).clone(), true);
+    let mut checksum: i64 = execute(&(stmts), &(parser.expr_nodes), true);
     println!("{} {}", "demo_checksum:".to_string(), checksum);
 }
 
 fn run_benchmark() -> () {
     let mut source_lines: Vec<String> = build_benchmark_source(32, 120000);
     let mut start: f64 = perf_counter();
-    let mut tokens: Vec<Token> = tokenize((source_lines).clone());
+    let mut tokens: Vec<Token> = tokenize(&(source_lines));
     let mut parser: Parser = Parser::new((tokens).clone());
     let mut stmts: Vec<StmtNode> = parser.parse_program();
-    let mut checksum: i64 = execute((stmts).clone(), (parser.expr_nodes).clone(), false);
+    let mut checksum: i64 = execute(&(stmts), &(parser.expr_nodes), false);
     let mut elapsed: f64 = ((perf_counter()) - (start));
-    println!("{} {}", "token_count:".to_string(), (py_len(&tokens) as i64));
-    println!("{} {}", "expr_count:".to_string(), (py_len(&parser.expr_nodes) as i64));
-    println!("{} {}", "stmt_count:".to_string(), (py_len(&stmts) as i64));
+    println!("{} {}", "token_count:".to_string(), (py_len(&(tokens)) as i64));
+    println!("{} {}", "expr_count:".to_string(), (py_len(&(parser.expr_nodes)) as i64));
+    println!("{} {}", "stmt_count:".to_string(), (py_len(&(stmts)) as i64));
     println!("{} {}", "checksum:".to_string(), checksum);
     println!("{} {}", "elapsed_sec:".to_string(), elapsed);
 }

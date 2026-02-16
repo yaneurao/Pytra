@@ -4,7 +4,7 @@ use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_count
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn capture(mut grid: Vec<Vec<i64>>, mut w: i64, mut h: i64, mut scale: i64) -> Vec<u8> {
+fn capture(grid: &Vec<Vec<i64>>, mut w: i64, mut h: i64, mut scale: i64) -> Vec<u8> {
     let mut width = ((w) * (scale));
     let mut height = ((h) * (scale));
     let mut frame = vec![0u8; (((width) * (height))) as usize];
@@ -42,8 +42,8 @@ fn run_13_maze_generation_steps() -> () {
     let mut dirs: Vec<(i64, i64)> = vec![(2, 0), ((-2), 0), (0, 2), (0, (-2))];
     let mut frames: Vec<Vec<u8>> = vec![];
     let mut step = 0;
-    while py_bool(&((((py_len(&stack) as i64)) > (0)))) {
-        let mut last_index = (((py_len(&stack) as i64)) - (1));
+    while py_bool(&((((py_len(&(stack)) as i64)) > (0)))) {
+        let mut last_index = (((py_len(&(stack)) as i64)) - (1));
         let __pytra_tuple_rhs_1 = ((stack)[last_index as usize]).clone();
         let mut x = __pytra_tuple_rhs_1.0;
         let mut y = __pytra_tuple_rhs_1.1;
@@ -70,10 +70,10 @@ fn run_13_maze_generation_steps() -> () {
                 }
             }
         }
-        if py_bool(&((((py_len(&candidates) as i64)) == (0)))) {
+        if py_bool(&((((py_len(&(candidates)) as i64)) == (0)))) {
             stack.pop().unwrap();
         } else {
-            let mut sel = ((candidates)[((((((((x) * (17))) + (((y) * (29))))) + ((((py_len(&stack) as i64)) * (13))))) % ((py_len(&candidates) as i64))) as usize]).clone();
+            let mut sel = ((candidates)[((((((((x) * (17))) + (((y) * (29))))) + ((((py_len(&(stack)) as i64)) * (13))))) % ((py_len(&(candidates)) as i64))) as usize]).clone();
             let __pytra_tuple_rhs_3 = sel;
             let mut nx = __pytra_tuple_rhs_3.0;
             let mut ny = __pytra_tuple_rhs_3.1;
@@ -84,15 +84,15 @@ fn run_13_maze_generation_steps() -> () {
             stack.push((nx, ny));
         }
         if py_bool(&(((((step) % (capture_every))) == (0)))) {
-            frames.push(capture((grid).clone(), cell_w, cell_h, scale));
+            frames.push(capture(&(grid), cell_w, cell_h, scale));
         }
         step = step + 1;
     }
-    frames.push(capture((grid).clone(), cell_w, cell_h, scale));
+    frames.push(capture(&(grid), cell_w, cell_h, scale));
     py_save_gif(&(out_path), ((cell_w) * (scale)), ((cell_h) * (scale)), &(frames), &(py_grayscale_palette()), 4, 0);
     let mut elapsed = ((perf_counter()) - (start));
     println!("{} {}", "output:".to_string(), out_path);
-    println!("{} {}", "frames:".to_string(), (py_len(&frames) as i64));
+    println!("{} {}", "frames:".to_string(), (py_len(&(frames)) as i64));
     println!("{} {}", "elapsed_sec:".to_string(), elapsed);
 }
 
