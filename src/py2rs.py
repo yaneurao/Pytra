@@ -26,19 +26,32 @@ class RustTranspiler(BaseTranspiler):
         super().__init__(temp_prefix="__pytra")
         # 関数スコープごとの簡易型環境（Name -> Rust型）を保持する。
         self.type_env_stack: list[dict[str, str]] = []
+        # モジュール内クラス名集合。コンストラクタ呼び出し判定に使う。
+        self.class_names: set[str] = set()
+        # モジュール内クラス定義。継承時のメソッド解決に使う。
+        self.class_defs: dict[str, ast.ClassDef] = {}
+        # クラス変換中のコンテキスト名。
+        self.current_class_name: str | None = None
+        # self 参照をどの変数名へ展開するか（メソッド: self / コンストラクタ生成中: self_obj）。
+        self.self_alias_stack: list[str] = ["self"]
 
     def transpile_module(self, module: ast.Module) -> str:
         """モジュール全体を Rust ソースへ変換する。"""
         function_defs: list[str] = []
+        class_defs: list[str] = []
         main_stmts: list[ast.stmt] = []
         has_user_main = False
+
+        self.class_names = {stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)}
+        self.class_defs = {stmt.name: stmt for stmt in module.body if isinstance(stmt, ast.ClassDef)}
 
         for stmt in module.body:
             if isinstance(stmt, (ast.Import, ast.ImportFrom)):
                 # Rust native モードでは import は無視。必要なら embed 側に倒す。
                 continue
             if isinstance(stmt, ast.ClassDef):
-                raise TranspileError("class is not supported in native Rust mode")
+                class_defs.append(self.transpile_class(stmt))
+                continue
             if isinstance(stmt, ast.FunctionDef):
                 if stmt.name == "main":
                     has_user_main = True
@@ -56,6 +69,9 @@ class RustTranspiler(BaseTranspiler):
                 "",
             ]
         )
+        for cls in class_defs:
+            parts.append(cls)
+            parts.append("")
         for fn in function_defs:
             parts.append(fn)
             parts.append("")
@@ -67,6 +83,189 @@ class RustTranspiler(BaseTranspiler):
             parts.append("}")
             parts.append("")
         return "\n".join(parts)
+
+    def transpile_class(self, cls: ast.ClassDef) -> str:
+        """Python class を Rust の `struct + impl` へ変換する。"""
+        base_methods: list[ast.FunctionDef] = []
+        if len(cls.bases) > 1:
+            raise TranspileError("multiple inheritance is not supported")
+        if len(cls.bases) == 1:
+            if not isinstance(cls.bases[0], ast.Name):
+                raise TranspileError("base class must be a simple name")
+            base_name = cls.bases[0].id
+            if base_name not in self.class_defs:
+                raise TranspileError(f"base class '{base_name}' is not found in module")
+            base_cls = self.class_defs[base_name]
+            for node in base_cls.body:
+                if isinstance(node, ast.FunctionDef) and node.name != "__init__":
+                    base_methods.append(node)
+
+        field_types: dict[str, str] = {}
+        field_defaults: dict[str, str] = {}
+        methods: list[ast.FunctionDef] = []
+        init_method: ast.FunctionDef | None = None
+        is_dataclass = any(
+            (isinstance(d, ast.Name) and d.id == "dataclass")
+            or (isinstance(d, ast.Attribute) and d.attr == "dataclass")
+            for d in cls.decorator_list
+        )
+
+        for stmt in cls.body:
+            if isinstance(stmt, ast.FunctionDef):
+                if stmt.name == "__init__":
+                    init_method = stmt
+                else:
+                    methods.append(stmt)
+            elif isinstance(stmt, ast.AnnAssign):
+                if not isinstance(stmt.target, ast.Name):
+                    raise TranspileError("class field declaration target must be name")
+                name = stmt.target.id
+                field_types[name] = self._map_annotation(stmt.annotation)
+                if stmt.value is not None:
+                    field_defaults[name] = self.transpile_expr(stmt.value)
+            elif isinstance(stmt, ast.Assign):
+                if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
+                    raise TranspileError("class static assignment must be a simple name assignment")
+                name = stmt.targets[0].id
+                if name not in field_types:
+                    inferred = self._expr_type(stmt.value)
+                    field_types[name] = inferred if inferred is not None else "i64"
+                field_defaults[name] = self.transpile_expr(stmt.value)
+            elif isinstance(stmt, ast.Pass):
+                continue
+            else:
+                raise TranspileError(f"unsupported class member: {type(stmt).__name__}")
+
+        if init_method is not None:
+            for stmt in init_method.body:
+                if isinstance(stmt, ast.Assign):
+                    if len(stmt.targets) == 1 and isinstance(stmt.targets[0], ast.Attribute):
+                        attr = stmt.targets[0]
+                        if isinstance(attr.value, ast.Name) and attr.value.id == "self":
+                            name = attr.attr
+                            if name not in field_types:
+                                inferred = self._expr_type(stmt.value)
+                                field_types[name] = inferred if inferred is not None else "i64"
+                if isinstance(stmt, ast.AnnAssign):
+                    if isinstance(stmt.target, ast.Attribute):
+                        attr = stmt.target
+                        if isinstance(attr.value, ast.Name) and attr.value.id == "self":
+                            field_types[attr.attr] = self._map_annotation(stmt.annotation)
+
+        for name, ty in list(field_types.items()):
+            if name not in field_defaults:
+                field_defaults[name] = self._default_value_for_type(ty)
+
+        struct_lines = [f"struct {cls.name} {{"] + [f"    {name}: {field_types[name]}," for name in field_types] + ["}"]
+
+        impl_lines: list[str] = [f"impl {cls.name} {{"]
+        ctor_lines = self._transpile_class_constructor(cls.name, field_types, field_defaults, init_method, is_dataclass)
+        impl_lines.extend(self._indent_block(ctor_lines))
+        own_method_names = {m.name for m in methods}
+        inherited_methods = [m for m in base_methods if m.name not in own_method_names]
+        for method in methods + inherited_methods:
+            impl_lines.append("")
+            impl_lines.extend(self._indent_block(self._transpile_method(method).splitlines()))
+        impl_lines.append("}")
+        return "\n".join(struct_lines + [""] + impl_lines)
+
+    def _transpile_class_constructor(
+        self,
+        class_name: str,
+        field_types: dict[str, str],
+        field_defaults: dict[str, str],
+        init_method: ast.FunctionDef | None,
+        is_dataclass: bool,
+    ) -> list[str]:
+        """クラス用コンストラクタ `new(...)` を生成する。"""
+        params: list[str] = []
+        init_lines: list[str] = []
+        declared = set()
+        type_env: dict[str, str] = {}
+        if init_method is not None:
+            for arg in init_method.args.args[1:]:
+                if arg.annotation is None:
+                    raise TranspileError(f"constructor arg '{arg.arg}' requires annotation")
+                ty = self._map_annotation(arg.annotation)
+                params.append(f"{arg.arg}: {ty}")
+                declared.add(arg.arg)
+                type_env[arg.arg] = ty
+        elif is_dataclass:
+            # dataclass はデフォルト値なしフィールドのみ引数化する。
+            for name, ty in field_types.items():
+                has_default = name in field_defaults and field_defaults[name] != self._default_value_for_type(ty)
+                if has_default:
+                    continue
+                params.append(f"{name}: {ty}")
+                declared.add(name)
+                type_env[name] = ty
+
+        init_lines.append("let mut self_obj = Self {")
+        for name in field_types:
+            init_lines.append(f"    {name}: {field_defaults[name]},")
+        init_lines.append("};")
+
+        self.type_env_stack.append(type_env)
+        prev_class = self.current_class_name
+        self.current_class_name = class_name
+        self.self_alias_stack.append("self_obj")
+        try:
+            if init_method is not None:
+                init_lines.extend(self.transpile_statements(init_method.body, Scope(declared=set(declared))))
+            elif is_dataclass:
+                for name in field_types:
+                    if name in declared:
+                        init_lines.append(f"self_obj.{name} = {name};")
+            init_lines.append("self_obj")
+        finally:
+            self.current_class_name = prev_class
+            self.type_env_stack.pop()
+            self.self_alias_stack.pop()
+        return [f"fn new({', '.join(params)}) -> Self {{"] + self._indent_block(init_lines) + ["}"]
+
+    def _transpile_method(self, fn: ast.FunctionDef) -> str:
+        """クラスメソッドを Rust `impl` メソッドへ変換する。"""
+        if len(fn.args.args) == 0 or fn.args.args[0].arg != "self":
+            raise TranspileError("method must have self as first argument")
+        mutates_self = self._method_mutates_self(fn)
+        self_param = "&mut self" if mutates_self else "&self"
+        params: list[str] = [self_param]
+        declared = {"self"}
+        type_env: dict[str, str] = {}
+        for arg in fn.args.args[1:]:
+            if arg.annotation is None:
+                raise TranspileError(f"method '{fn.name}' arg '{arg.arg}' requires annotation")
+            ty = self._map_annotation(arg.annotation)
+            params.append(f"{arg.arg}: {ty}")
+            declared.add(arg.arg)
+            type_env[arg.arg] = ty
+        ret = "()" if fn.returns is None else self._map_annotation(fn.returns)
+        self.type_env_stack.append(type_env)
+        self.self_alias_stack.append("self")
+        try:
+            body = self.transpile_statements(fn.body, Scope(declared=declared))
+        finally:
+            self.self_alias_stack.pop()
+            self.type_env_stack.pop()
+        lines = [f"fn {fn.name}({', '.join(params)}) -> {ret} {{"] + self._indent_block(body) + ["}"]
+        return "\n".join(lines)
+
+    def _method_mutates_self(self, fn: ast.FunctionDef) -> bool:
+        """メソッドが `self.<field>` を更新するかを判定する。"""
+        for node in ast.walk(fn):
+            if isinstance(node, ast.Assign):
+                for tgt in node.targets:
+                    if isinstance(tgt, ast.Attribute) and isinstance(tgt.value, ast.Name) and tgt.value.id == "self":
+                        return True
+            if isinstance(node, ast.AnnAssign):
+                tgt = node.target
+                if isinstance(tgt, ast.Attribute) and isinstance(tgt.value, ast.Name) and tgt.value.id == "self":
+                    return True
+            if isinstance(node, ast.AugAssign):
+                tgt = node.target
+                if isinstance(tgt, ast.Attribute) and isinstance(tgt.value, ast.Name) and tgt.value.id == "self":
+                    return True
+        return False
 
     def transpile_function(self, fn: ast.FunctionDef) -> str:
         """関数定義を Rust の `fn` へ変換する。"""
@@ -108,17 +307,25 @@ class RustTranspiler(BaseTranspiler):
                 out.append(f"{self.transpile_expr(stmt.value)};")
                 continue
             if isinstance(stmt, ast.AnnAssign):
-                if not isinstance(stmt.target, ast.Name):
-                    raise TranspileError("annotated assignment target must be name")
-                name = stmt.target.id
-                rty = self._map_annotation(stmt.annotation)
-                if stmt.value is None:
-                    out.append(f"let mut {name}: {rty};")
+                if isinstance(stmt.target, ast.Attribute):
+                    attr = stmt.target
+                    if not (isinstance(attr.value, ast.Name) and attr.value.id == "self"):
+                        raise TranspileError("annotated assignment target must be name or self attribute")
+                    value = self._default_value_for_type(self._map_annotation(stmt.annotation)) if stmt.value is None else self.transpile_expr(stmt.value)
+                    self_alias = self.self_alias_stack[-1]
+                    out.append(f"{self_alias}.{attr.attr} = {value};")
                 else:
-                    out.append(f"let mut {name}: {rty} = {self.transpile_expr(stmt.value)};")
-                scope.declared.add(name)
-                if len(self.type_env_stack) > 0:
-                    self.type_env_stack[-1][name] = rty
+                    if not isinstance(stmt.target, ast.Name):
+                        raise TranspileError("annotated assignment target must be name")
+                    name = stmt.target.id
+                    rty = self._map_annotation(stmt.annotation)
+                    if stmt.value is None:
+                        out.append(f"let mut {name}: {rty};")
+                    else:
+                        out.append(f"let mut {name}: {rty} = {self.transpile_expr(stmt.value)};")
+                    scope.declared.add(name)
+                    if len(self.type_env_stack) > 0:
+                        self.type_env_stack[-1][name] = rty
                 continue
             if isinstance(stmt, ast.Assign):
                 if len(stmt.targets) != 1:
@@ -144,6 +351,13 @@ class RustTranspiler(BaseTranspiler):
                             scope.declared.add(name)
                     continue
                 if not isinstance(target, ast.Name):
+                    if isinstance(target, ast.Attribute):
+                        if isinstance(target.value, ast.Name) and target.value.id == "self":
+                            self_alias = self.self_alias_stack[-1]
+                            out.append(f"{self_alias}.{target.attr} = {self.transpile_expr(stmt.value)};")
+                            continue
+                        out.append(f"{self.transpile_expr(target)} = {self.transpile_expr(stmt.value)};")
+                        continue
                     raise TranspileError("only simple assignment is supported")
                 name = target.id
                 val = self.transpile_expr(stmt.value)
@@ -154,10 +368,15 @@ class RustTranspiler(BaseTranspiler):
                     scope.declared.add(name)
                 continue
             if isinstance(stmt, ast.AugAssign):
-                if not isinstance(stmt.target, ast.Name):
-                    raise TranspileError("augassign target must be name")
                 op = self._binop(stmt.op)
-                out.append(f"{stmt.target.id} = {stmt.target.id} {op} {self.transpile_expr(stmt.value)};")
+                if isinstance(stmt.target, ast.Name):
+                    out.append(f"{stmt.target.id} = {stmt.target.id} {op} {self.transpile_expr(stmt.value)};")
+                    continue
+                if isinstance(stmt.target, ast.Attribute):
+                    target_expr = self.transpile_expr(stmt.target)
+                    out.append(f"{target_expr} = {target_expr} {op} {self.transpile_expr(stmt.value)};")
+                    continue
+                raise TranspileError("augassign target must be name or attribute")
                 continue
             if isinstance(stmt, ast.If):
                 out.extend(self._transpile_if(stmt, scope))
@@ -171,6 +390,9 @@ class RustTranspiler(BaseTranspiler):
                 continue
             if isinstance(stmt, ast.For):
                 out.extend(self._transpile_for(stmt, scope))
+                continue
+            if isinstance(stmt, ast.Try):
+                out.extend(self._transpile_try(stmt, scope))
                 continue
             if isinstance(stmt, ast.Break):
                 out.append("break;")
@@ -228,6 +450,47 @@ class RustTranspiler(BaseTranspiler):
             raise TranspileError("for-else is not supported")
         return lines
 
+    def _transpile_try(self, stmt: ast.Try, scope: Scope) -> list[str]:
+        """限定パターンの try/except/finally を Rust 条件分岐へ変換する。"""
+        # 現状は case19 相当の典型パターンを native 対応する。
+        # try:
+        #   if cond: raise Exception(...)
+        #   return ok
+        # except Exception as ex:
+        #   return ng
+        # finally: pass
+        if len(stmt.handlers) != 1:
+            raise TranspileError("only single except handler is supported")
+        if stmt.orelse:
+            raise TranspileError("try-else is not supported")
+        if any(not isinstance(s, ast.Pass) for s in stmt.finalbody):
+            raise TranspileError("finally with statements is not supported")
+
+        handler = stmt.handlers[0]
+        if handler.type is not None and not (
+            isinstance(handler.type, ast.Name) and handler.type.id == "Exception"
+        ):
+            raise TranspileError("only except Exception is supported")
+
+        if len(stmt.body) != 2:
+            raise TranspileError("unsupported try body pattern")
+        first, second = stmt.body[0], stmt.body[1]
+        if not isinstance(first, ast.If):
+            raise TranspileError("unsupported try body pattern")
+        if first.orelse:
+            raise TranspileError("unsupported try-if else block")
+        if len(first.body) != 1 or not isinstance(first.body[0], ast.Raise):
+            raise TranspileError("unsupported raise pattern")
+        if not isinstance(second, ast.Return) or second.value is None:
+            raise TranspileError("try success path must end with return value")
+        if len(handler.body) != 1 or not isinstance(handler.body[0], ast.Return) or handler.body[0].value is None:
+            raise TranspileError("except path must end with return value")
+
+        cond = self.transpile_expr(first.test)
+        ok_expr = self.transpile_expr(second.value)
+        ng_expr = self.transpile_expr(handler.body[0].value)
+        return [f"if {cond} {{", f"{self.INDENT}return {ng_expr};", "} else {", f"{self.INDENT}return {ok_expr};", "}"]
+
     def transpile_expr(self, expr: ast.expr) -> str:
         """式ノードを Rust 式文字列へ変換する。"""
         if isinstance(expr, ast.Name):
@@ -236,6 +499,11 @@ class RustTranspiler(BaseTranspiler):
             if expr.id == "False":
                 return "false"
             return expr.id
+        if isinstance(expr, ast.Attribute):
+            if isinstance(expr.value, ast.Name) and expr.value.id == "self":
+                self_alias = self.self_alias_stack[-1]
+                return f"{self_alias}.{expr.attr}"
+            return f"{self.transpile_expr(expr.value)}.{expr.attr}"
         if isinstance(expr, ast.Constant):
             if isinstance(expr.value, bool):
                 return "true" if expr.value else "false"
@@ -303,6 +571,8 @@ class RustTranspiler(BaseTranspiler):
         args = [self.transpile_expr(a) for a in call.args]
         if isinstance(call.func, ast.Name):
             fn = call.func.id
+            if fn in self.class_names:
+                return f"{fn}::new({', '.join(args)})"
             if fn == "print":
                 if len(args) == 0:
                     return 'println!("")'
@@ -324,6 +594,10 @@ class RustTranspiler(BaseTranspiler):
             if fn == "range":
                 raise TranspileError("range() should be used only in for")
             return f"{fn}({', '.join(args)})"
+        if isinstance(call.func, ast.Attribute):
+            obj = self.transpile_expr(call.func.value)
+            method = call.func.attr
+            return f"{obj}.{method}({', '.join(args)})"
         raise TranspileError("only direct calls are supported")
 
     def _map_annotation(self, ann: ast.expr) -> str:
@@ -488,6 +762,8 @@ class RustTranspiler(BaseTranspiler):
             if len(self.type_env_stack) == 0:
                 return None
             return self.type_env_stack[-1].get(expr.id)
+        if isinstance(expr, ast.Attribute):
+            return None
         if isinstance(expr, ast.JoinedStr):
             return "String"
         if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Add):
@@ -496,9 +772,33 @@ class RustTranspiler(BaseTranspiler):
             if lt == "String" or rt == "String":
                 return "String"
         if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
+            if expr.func.id in self.class_names:
+                return expr.func.id
             if expr.func.id == "str":
                 return "String"
         return None
+
+    def _default_value_for_type(self, rust_type: str) -> str:
+        """Rust 型名からデフォルト値式を返す。"""
+        if rust_type == "String":
+            return "String::new()"
+        if rust_type.startswith("Vec<"):
+            return "Vec::new()"
+        if rust_type.startswith("std::collections::HashMap<"):
+            return "std::collections::HashMap::new()"
+        if rust_type.startswith("std::collections::HashSet<"):
+            return "std::collections::HashSet::new()"
+        if rust_type == "bool":
+            return "false"
+        if rust_type in {"f64", "f32"}:
+            return "0.0"
+        if rust_type == "()":
+            return "()"
+        if rust_type.startswith("i") or rust_type.startswith("u"):
+            return "0"
+        if rust_type in self.class_names:
+            return f"{rust_type}::new()"
+        return "Default::default()"
 
 def _rust_raw_string_literal(text: str) -> str:
     """任意テキストを Rust の raw string literal へ変換する。"""

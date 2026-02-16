@@ -1,28 +1,17 @@
-// fallback: unsupported statement: Try
-// このファイルは自動生成です。編集しないでください。
-// 入力 Python: case19_try_raise.py
-
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
+use py_runtime::{perf_counter, py_in, py_len, py_print, py_slice};
+
+// このファイルは自動生成です（native Rust mode）。
+
+fn maybe_fail_19(flag: bool) -> i64 {
+    if flag {
+        return 20;
+    } else {
+        return 10;
+    }
+}
 
 fn main() {
-    let source: &str = r#"# このファイルは `test/py/case19_try_raise.py` のテスト/実装コードです。
-# 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
-# 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
-
-def maybe_fail_19(flag: bool) -> int:
-    try:
-        if flag:
-            raise Exception("fail-19")
-        return 10
-    except Exception as ex:
-        return 20
-    finally:
-        pass
-
-
-if __name__ == "__main__":
-    print(maybe_fail_19(True))
-"#;
-    std::process::exit(py_runtime::run_embedded_python(source));
+    py_print(maybe_fail_19(true));
 }
