@@ -32,9 +32,9 @@ def fire_palette() -> bytes:
 
 
 def run_09_fire_simulation() -> None:
-    w = 220
-    h = 140
-    steps = 110
+    w = 380
+    h = 260
+    steps = 420
     out_path = "sample/out/09_fire_simulation.gif"
 
     start = perf_counter()

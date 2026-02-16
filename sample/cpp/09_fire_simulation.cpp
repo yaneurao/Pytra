@@ -62,9 +62,9 @@ string fire_palette()
 
 void run_09_fire_simulation()
 {
-    long long w = 220;
-    long long h = 140;
-    long long steps = 110;
+    long long w = 380;
+    long long h = 260;
+    long long steps = 420;
     string out_path = "sample/out/09_fire_simulation.gif";
     auto start = perf_counter();
     vector<vector<long long>> heat = {};

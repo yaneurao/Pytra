@@ -32,7 +32,7 @@ public static class Program
         {
             return Tuple.Create(0L, 0L, 0L);
         }
-        double t = (iter_count / max_iter);
+        double t = ((double)(iter_count) / (double)(max_iter));
         long r = (long)((255.0 * (t * t)));
         long g = (long)((255.0 * t));
         long b = (long)((255.0 * (1.0 - t)));
@@ -48,14 +48,14 @@ public static class Program
         if (__pytra_range_step_6 == 0) throw new Exception("range() arg 3 must not be zero");
         for (var y = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (y < __pytra_range_stop_5) : (y > __pytra_range_stop_5); y += __pytra_range_step_6)
         {
-            double py = (y_min + ((y_max - y_min) * (y / (height - 1L))));
+            double py = (y_min + ((y_max - y_min) * ((double)(y) / (double)((height - 1L)))));
             var __pytra_range_start_7 = 0;
             var __pytra_range_stop_8 = width;
             var __pytra_range_step_9 = 1;
             if (__pytra_range_step_9 == 0) throw new Exception("range() arg 3 must not be zero");
             for (var x = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (x < __pytra_range_stop_8) : (x > __pytra_range_stop_8); x += __pytra_range_step_9)
             {
-                double px = (x_min + ((x_max - x_min) * (x / (width - 1L))));
+                double px = (x_min + ((x_max - x_min) * ((double)(x) / (double)((width - 1L)))));
                 long it = escape_count(px, py, max_iter);
                 long r;
                 long g;
@@ -68,7 +68,7 @@ public static class Program
                 }
                 else
                 {
-                    double t = (it / max_iter);
+                    double t = ((double)(it) / (double)(max_iter));
                     r = (long)((255.0 * (t * t)));
                     g = (long)((255.0 * t));
                     b = (long)((255.0 * (1.0 - t)));
@@ -83,9 +83,9 @@ public static class Program
 
     public static void run_mandelbrot()
     {
-        long width = 800L;
-        long height = 600L;
-        long max_iter = 400L;
+        long width = 1600L;
+        long height = 1200L;
+        long max_iter = 1000L;
         string out_path = "sample/out/mandelbrot_01.png";
         double start = Pytra.CsModule.time.perf_counter();
         List<byte> pixels = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);

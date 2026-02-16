@@ -99,9 +99,9 @@ string render_mandelbrot(long long width, long long height, long long max_iter, 
 
 void run_mandelbrot()
 {
-    long long width = 800;
-    long long height = 600;
-    long long max_iter = 400;
+    long long width = 1600;
+    long long height = 1200;
+    long long max_iter = 1000;
     string out_path = "sample/out/mandelbrot_01.png";
     double start = perf_counter();
     string pixels = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);
