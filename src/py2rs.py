@@ -19,10 +19,16 @@ except ModuleNotFoundError:
 
 
 class RustTranspiler(BaseTranspiler):
+    """Python AST を Rust コードへ変換するトランスパイラ本体。"""
+
     def __init__(self) -> None:
+        """変換器の内部状態を初期化する。"""
         super().__init__(temp_prefix="__pytra")
+        # 関数スコープごとの簡易型環境（Name -> Rust型）を保持する。
+        self.type_env_stack: list[dict[str, str]] = []
 
     def transpile_module(self, module: ast.Module) -> str:
+        """モジュール全体を Rust ソースへ変換する。"""
         function_defs: list[str] = []
         main_stmts: list[ast.stmt] = []
         has_user_main = False
@@ -63,22 +69,29 @@ class RustTranspiler(BaseTranspiler):
         return "\n".join(parts)
 
     def transpile_function(self, fn: ast.FunctionDef) -> str:
-        if self._contains_unsupported_native_annotation(fn):
-            raise TranspileError(f"function has unsupported annotation in native Rust mode: {fn.name}")
+        """関数定義を Rust の `fn` へ変換する。"""
         params: list[str] = []
         declared = set()
+        type_env: dict[str, str] = {}
         for arg in fn.args.args:
             if arg.annotation is None:
                 raise TranspileError(f"function '{fn.name}' arg '{arg.arg}' requires annotation")
-            params.append(f"{arg.arg}: {self._map_annotation(arg.annotation)}")
+            rust_type = self._map_annotation(arg.annotation)
+            params.append(f"{arg.arg}: {rust_type}")
             declared.add(arg.arg)
+            type_env[arg.arg] = rust_type
 
         ret = "()" if fn.returns is None else self._map_annotation(fn.returns)
-        body = self.transpile_statements(fn.body, Scope(declared=declared))
-        lines = [f"fn {fn.name}({', '.join(params)}) -> {ret} {{"] + self._indent_block(body) + ["}"]
-        return "\n".join(lines)
+        self.type_env_stack.append(type_env)
+        try:
+            body = self.transpile_statements(fn.body, Scope(declared=declared))
+            lines = [f"fn {fn.name}({', '.join(params)}) -> {ret} {{"] + self._indent_block(body) + ["}"]
+            return "\n".join(lines)
+        finally:
+            self.type_env_stack.pop()
 
     def transpile_statements(self, stmts: list[ast.stmt], scope: Scope) -> list[str]:
+        """文ノード列を Rust 文列へ変換する。"""
         out: list[str] = []
         for stmt in stmts:
             if isinstance(stmt, ast.Pass):
@@ -99,18 +112,40 @@ class RustTranspiler(BaseTranspiler):
                     raise TranspileError("annotated assignment target must be name")
                 name = stmt.target.id
                 rty = self._map_annotation(stmt.annotation)
-                if rty in {"String", "f64", "f32"}:
-                    raise TranspileError(f"{rty} variable is not supported in native Rust mode")
                 if stmt.value is None:
                     out.append(f"let mut {name}: {rty};")
                 else:
                     out.append(f"let mut {name}: {rty} = {self.transpile_expr(stmt.value)};")
                 scope.declared.add(name)
+                if len(self.type_env_stack) > 0:
+                    self.type_env_stack[-1][name] = rty
                 continue
             if isinstance(stmt, ast.Assign):
-                if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
+                if len(stmt.targets) != 1:
+                    raise TranspileError("only single assignment target is supported")
+                target = stmt.targets[0]
+                if isinstance(target, ast.Tuple):
+                    if not isinstance(stmt.value, ast.Tuple) or len(target.elts) != len(stmt.value.elts):
+                        raise TranspileError("tuple assignment requires tuple value with same arity")
+                    temp_names: list[str] = []
+                    for i, src in enumerate(stmt.value.elts):
+                        temp_name = self._new_temp(f"tuple_{i}")
+                        temp_names.append(temp_name)
+                        out.append(f"let {temp_name} = {self.transpile_expr(src)};")
+                    for i, dst in enumerate(target.elts):
+                        if not isinstance(dst, ast.Name):
+                            raise TranspileError("tuple assignment target must contain only names")
+                        name = dst.id
+                        val = temp_names[i]
+                        if name in scope.declared:
+                            out.append(f"{name} = {val};")
+                        else:
+                            out.append(f"let mut {name} = {val};")
+                            scope.declared.add(name)
+                    continue
+                if not isinstance(target, ast.Name):
                     raise TranspileError("only simple assignment is supported")
-                name = stmt.targets[0].id
+                name = target.id
                 val = self.transpile_expr(stmt.value)
                 if name in scope.declared:
                     out.append(f"{name} = {val};")
@@ -147,6 +182,7 @@ class RustTranspiler(BaseTranspiler):
         return out
 
     def _transpile_if(self, stmt: ast.If, scope: Scope) -> list[str]:
+        """if/else 文を Rust の `if` 構文へ変換する。"""
         lines: list[str] = [f"if {self.transpile_expr(stmt.test)} {{"]
         lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))))
         if stmt.orelse:
@@ -156,12 +192,20 @@ class RustTranspiler(BaseTranspiler):
         return lines
 
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> list[str]:
+        """for 文を `range` または iterable ループへ変換する。"""
         if not isinstance(stmt.target, ast.Name):
             raise TranspileError("for target must be name")
         name = stmt.target.id
         rng = self._parse_range_args(stmt.iter, argc_error="range arg count > 3 is not supported")
         if rng is None:
-            raise TranspileError("only for-in-range is supported in native Rust mode")
+            lines = [f"for {name} in ({self.transpile_expr(stmt.iter)}).clone() {{"]
+            body_scope = Scope(declared=set(scope.declared))
+            body_scope.declared.add(name)
+            lines.extend(self._indent_block(self.transpile_statements(stmt.body, body_scope)))
+            lines.append("}")
+            if stmt.orelse:
+                raise TranspileError("for-else is not supported")
+            return lines
         start, stop, step = rng
         lines: list[str] = []
         if step == "1":
@@ -185,6 +229,7 @@ class RustTranspiler(BaseTranspiler):
         return lines
 
     def transpile_expr(self, expr: ast.expr) -> str:
+        """式ノードを Rust 式文字列へ変換する。"""
         if isinstance(expr, ast.Name):
             if expr.id == "True":
                 return "true"
@@ -206,6 +251,11 @@ class RustTranspiler(BaseTranspiler):
         if isinstance(expr, ast.BinOp):
             l = self.transpile_expr(expr.left)
             r = self.transpile_expr(expr.right)
+            if isinstance(expr.op, ast.Add):
+                lt = self._expr_type(expr.left)
+                rt = self._expr_type(expr.right)
+                if lt == "String" or rt == "String":
+                    return f"format!(\"{{}}{{}}\", {l}, {r})"
             if isinstance(expr.op, ast.FloorDiv):
                 return f"(({l}) / ({r}))"
             return f"(({l}) {self._binop(expr.op)} ({r}))"
@@ -215,18 +265,39 @@ class RustTranspiler(BaseTranspiler):
             op = "&&" if isinstance(expr.op, ast.And) else "||"
             return "(" + f" {op} ".join(self.transpile_expr(v) for v in expr.values) + ")"
         if isinstance(expr, ast.Compare):
-            if len(expr.ops) != 1 or len(expr.comparators) != 1:
-                raise TranspileError("chained comparison is not supported")
-            l = self.transpile_expr(expr.left)
-            r = self.transpile_expr(expr.comparators[0])
-            return f"(({l}) {self._cmpop(expr.ops[0])} ({r}))"
+            return self._transpile_compare(expr)
         if isinstance(expr, ast.Call):
             return self._transpile_call(expr)
         if isinstance(expr, ast.IfExp):
             return f"(if {self.transpile_expr(expr.test)} {{ {self.transpile_expr(expr.body)} }} else {{ {self.transpile_expr(expr.orelse)} }})"
+        if isinstance(expr, ast.JoinedStr):
+            return self._transpile_joined_str(expr)
+        if isinstance(expr, ast.List):
+            values = ", ".join(self.transpile_expr(v) for v in expr.elts)
+            return f"vec![{values}]"
+        if isinstance(expr, ast.Dict):
+            if any(k is None for k in expr.keys):
+                raise TranspileError("dict unpacking is not supported")
+            pairs: list[str] = []
+            for k, v in zip(expr.keys, expr.values):
+                key_expr = self.transpile_expr(k)  # type: ignore[arg-type]
+                val_expr = self.transpile_expr(v)
+                pairs.append(f"({key_expr}, {val_expr})")
+            return f"std::collections::HashMap::from([{', '.join(pairs)}])"
+        if isinstance(expr, ast.Subscript):
+            value_expr = self.transpile_expr(expr.value)
+            if isinstance(expr.slice, ast.Slice):
+                start_expr = "None" if expr.slice.lower is None else f"Some({self.transpile_expr(expr.slice.lower)})"
+                end_expr = "None" if expr.slice.upper is None else f"Some({self.transpile_expr(expr.slice.upper)})"
+                return f"py_slice(&({value_expr}), {start_expr}, {end_expr})"
+            index_expr = self.transpile_expr(expr.slice)
+            return f"({value_expr})[{index_expr} as usize]"
+        if isinstance(expr, ast.ListComp):
+            return self._transpile_list_comp(expr)
         raise TranspileError(f"unsupported expression: {type(expr).__name__}")
 
     def _transpile_call(self, call: ast.Call) -> str:
+        """関数呼び出し式を Rust へ変換する。"""
         if call.keywords:
             raise TranspileError("keyword args are not supported")
         args = [self.transpile_expr(a) for a in call.args]
@@ -241,7 +312,7 @@ class RustTranspiler(BaseTranspiler):
                 fmt = " ".join(["{}"] * len(args))
                 return f'println!("{fmt}", {", ".join(args)})'
             if fn == "len" and len(args) == 1:
-                return f"({args[0]}.len() as i64)"
+                return f"(py_len(&{args[0]}) as i64)"
             if fn == "int" and len(args) == 1:
                 return f"(({args[0]}) as i64)"
             if fn == "float" and len(args) == 1:
@@ -256,6 +327,7 @@ class RustTranspiler(BaseTranspiler):
         raise TranspileError("only direct calls are supported")
 
     def _map_annotation(self, ann: ast.expr) -> str:
+        """Python 型注釈を Rust 型へ変換する。"""
         if isinstance(ann, ast.Name):
             mapping = {
                 "int": "i64",
@@ -276,6 +348,22 @@ class RustTranspiler(BaseTranspiler):
             if ann.id in mapping:
                 return mapping[ann.id]
             return ann.id
+        if isinstance(ann, ast.Subscript):
+            if isinstance(ann.value, ast.Name):
+                base = ann.value.id
+            else:
+                raise TranspileError(f"unsupported annotation: {ast.dump(ann)}")
+            if base in {"list", "List"}:
+                return f"Vec<{self._map_annotation(ann.slice)}>"
+            if base in {"set", "Set"}:
+                return f"std::collections::HashSet<{self._map_annotation(ann.slice)}>"
+            if base in {"dict", "Dict"}:
+                if not isinstance(ann.slice, ast.Tuple) or len(ann.slice.elts) != 2:
+                    raise TranspileError("dict annotation requires two type parameters")
+                kt = self._map_annotation(ann.slice.elts[0])
+                vt = self._map_annotation(ann.slice.elts[1])
+                return f"std::collections::HashMap<{kt}, {vt}>"
+            raise TranspileError(f"unsupported generic annotation base: {base}")
         if isinstance(ann, ast.Constant) and ann.value is None:
             return "()"
         raise TranspileError(f"unsupported annotation: {ast.dump(ann)}")
@@ -314,6 +402,7 @@ class RustTranspiler(BaseTranspiler):
         raise TranspileError(f"unsupported compare op: {type(op).__name__}")
 
     def _unaryop(self, op: ast.unaryop) -> str:
+        """単項演算子ノードを Rust 演算子へ変換する。"""
         if isinstance(op, ast.USub):
             return "-"
         if isinstance(op, ast.UAdd):
@@ -322,16 +411,8 @@ class RustTranspiler(BaseTranspiler):
             return "!"
         raise TranspileError(f"unsupported unary op: {type(op).__name__}")
 
-    def _contains_unsupported_native_annotation(self, fn: ast.FunctionDef) -> bool:
-        unsupported = {"str", "float", "float32"}
-        for arg in fn.args.args:
-            if isinstance(arg.annotation, ast.Name) and arg.annotation.id in unsupported:
-                return True
-        if isinstance(fn.returns, ast.Name) and fn.returns.id in unsupported:
-            return True
-        return False
-
     def _escape_str(self, value: str) -> str:
+        """Python 文字列リテラルを Rust 文字列式へエスケープして変換する。"""
         esc = (
             value.replace("\\", "\\\\")
             .replace('"', '\\"')
@@ -340,6 +421,84 @@ class RustTranspiler(BaseTranspiler):
             .replace("\t", "\\t")
         )
         return f"\"{esc}\".to_string()"
+
+    def _transpile_joined_str(self, expr: ast.JoinedStr) -> str:
+        """f-string を Rust の format! 呼び出しへ変換する。"""
+        format_parts: list[str] = []
+        arg_parts: list[str] = []
+        for value in expr.values:
+            if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                format_parts.append(value.value.replace("{", "{{").replace("}", "}}"))
+                continue
+            if isinstance(value, ast.FormattedValue):
+                format_parts.append("{}")
+                arg_parts.append(self.transpile_expr(value.value))
+                continue
+            raise TranspileError("unsupported f-string part")
+        fmt = "".join(format_parts).replace('"', '\\"')
+        if len(arg_parts) == 0:
+            return f"\"{fmt}\".to_string()"
+        return f"format!(\"{fmt}\", {', '.join(arg_parts)})"
+
+    def _transpile_compare(self, expr: ast.Compare) -> str:
+        """比較式を Rust 式へ変換する。"""
+        if len(expr.ops) != 1 or len(expr.comparators) != 1:
+            raise TranspileError("chained comparison is not supported")
+        l = self.transpile_expr(expr.left)
+        r = self.transpile_expr(expr.comparators[0])
+        op = expr.ops[0]
+        if isinstance(op, ast.In):
+            return f"py_in(&({r}), &({l}))"
+        if isinstance(op, ast.NotIn):
+            return f"!py_in(&({r}), &({l}))"
+        return f"(({l}) {self._cmpop(op)} ({r}))"
+
+    def _transpile_list_comp(self, expr: ast.ListComp) -> str:
+        """単純な list comprehension を Rust ブロック式へ変換する。"""
+        if len(expr.generators) != 1:
+            raise TranspileError("only single-generator list comprehension is supported")
+        gen = expr.generators[0]
+        if gen.is_async:
+            raise TranspileError("async comprehension is not supported")
+        if not isinstance(gen.target, ast.Name):
+            raise TranspileError("list comprehension target must be name")
+        loop_name = gen.target.id
+        iter_expr = self.transpile_expr(gen.iter)
+        out_name = self._new_temp("listcomp")
+        lines: list[str] = [f"let mut {out_name} = Vec::new();", f"for {loop_name} in ({iter_expr}).clone() {{"]
+        for cond in gen.ifs:
+            lines.append(f"{self.INDENT}if !({self.transpile_expr(cond)}) {{ continue; }}")
+        lines.append(f"{self.INDENT}{out_name}.push({self.transpile_expr(expr.elt)});")
+        lines.append("}")
+        lines.append(out_name)
+        return "{ " + " ".join(lines) + " }"
+
+    def _expr_type(self, expr: ast.expr) -> str | None:
+        """式の推定 Rust 型を返す（不明なら None）。"""
+        if isinstance(expr, ast.Constant):
+            if isinstance(expr.value, str):
+                return "String"
+            if isinstance(expr.value, bool):
+                return "bool"
+            if isinstance(expr.value, int):
+                return "i64"
+            if isinstance(expr.value, float):
+                return "f64"
+        if isinstance(expr, ast.Name):
+            if len(self.type_env_stack) == 0:
+                return None
+            return self.type_env_stack[-1].get(expr.id)
+        if isinstance(expr, ast.JoinedStr):
+            return "String"
+        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Add):
+            lt = self._expr_type(expr.left)
+            rt = self._expr_type(expr.right)
+            if lt == "String" or rt == "String":
+                return "String"
+        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
+            if expr.func.id == "str":
+                return "String"
+        return None
 
 def _rust_raw_string_literal(text: str) -> str:
     """任意テキストを Rust の raw string literal へ変換する。"""
@@ -394,7 +553,7 @@ def transpile_file_native(input_path: Path, output_path: Path) -> None:
     rust = (
         f'#[path = "{runtime_rel}"]\n'
         "mod py_runtime;\n"
-        "use py_runtime::{perf_counter, py_print};\n\n"
+        "use py_runtime::{perf_counter, py_in, py_len, py_print, py_slice};\n\n"
         + rust_body
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)

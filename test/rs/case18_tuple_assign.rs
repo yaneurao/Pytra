@@ -1,24 +1,19 @@
-// fallback: only simple assignment is supported
-// このファイルは自動生成です。編集しないでください。
-// 入力 Python: case18_tuple_assign.py
-
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
+use py_runtime::{perf_counter, py_in, py_len, py_print, py_slice};
+
+// このファイルは自動生成です（native Rust mode）。
+
+fn swap_sum_18(a: i64, b: i64) -> i64 {
+    let mut x: i64 = a;
+    let mut y: i64 = b;
+    let __pytra_tuple_0_1 = y;
+    let __pytra_tuple_1_2 = x;
+    x = __pytra_tuple_0_1;
+    y = __pytra_tuple_1_2;
+    return ((x) + (y));
+}
 
 fn main() {
-    let source: &str = r#"# このファイルは `test/py/case18_tuple_assign.py` のテスト/実装コードです。
-# 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
-# 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
-
-def swap_sum_18(a: int, b: int) -> int:
-    x: int = a
-    y: int = b
-    x, y = y, x
-    return x + y
-
-
-if __name__ == "__main__":
-    print(swap_sum_18(10, 20))
-"#;
-    std::process::exit(py_runtime::run_embedded_python(source));
+    py_print(swap_sum_18(10, 20));
 }

@@ -1,23 +1,15 @@
-// fallback: function has unsupported annotation in native Rust mode: decorate
-// このファイルは自動生成です。編集しないでください。
-// 入力 Python: case12_string_ops.py
-
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
+use py_runtime::{perf_counter, py_in, py_len, py_print, py_slice};
+
+// このファイルは自動生成です（native Rust mode）。
+
+fn decorate(name: String) -> String {
+    let mut prefix: String = "[USER] ".to_string();
+    let mut message: String = format!("{}{}", prefix, name);
+    return format!("{}{}", message, "!".to_string());
+}
 
 fn main() {
-    let source: &str = r#"# このファイルは `test/py/case12_string_ops.py` のテスト/実装コードです。
-# 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
-# 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
-
-def decorate(name: str) -> str:
-    prefix: str = "[USER] "
-    message: str = prefix + name
-    return message + "!"
-
-
-if __name__ == "__main__":
-    print(decorate("Alice"))
-"#;
-    std::process::exit(py_runtime::run_embedded_python(source));
+    py_print(decorate("Alice".to_string()));
 }

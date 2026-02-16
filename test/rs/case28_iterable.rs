@@ -1,22 +1,14 @@
-// fallback: unsupported annotation: Subscript(value=Name(id='list', ctx=Load()), slice=Name(id='int', ctx=Load()), ctx=Load())
-// このファイルは自動生成です。編集しないでください。
-// 入力 Python: case28_iterable.py
-
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
+use py_runtime::{perf_counter, py_in, py_len, py_print, py_slice};
 
-fn main() {
-    let source: &str = r#"
-def main():
+// このファイルは自動生成です（native Rust mode）。
 
-    l : list[int] = [1, 2, 3]
-    sum = 0
-    for v in l:
-        sum += v
-    print(sum)
-
-if __name__ == "__main__":
-    main()
-"#;
-    std::process::exit(py_runtime::run_embedded_python(source));
+fn main() -> () {
+    let mut l: Vec<i64> = vec![1, 2, 3];
+    let mut sum = 0;
+    for v in (l).clone() {
+        sum = sum + v;
+    }
+    py_print(sum);
 }

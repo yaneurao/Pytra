@@ -1,25 +1,18 @@
-// fallback: function has unsupported annotation in native Rust mode: has_key_23
-// このファイルは自動生成です。編集しないでください。
-// 入力 Python: case21_dict_in.py
-
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
+use py_runtime::{perf_counter, py_in, py_len, py_print, py_slice};
+
+// このファイルは自動生成です（native Rust mode）。
+
+fn has_key_23(k: String) -> bool {
+    let mut d: std::collections::HashMap<String, i64> = std::collections::HashMap::from([("a".to_string(), 1), ("b".to_string(), 2)]);
+    if py_in(&(d), &(k)) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 fn main() {
-    let source: &str = r#"# このファイルは `test/py/case21_dict_in.py` のテスト/実装コードです。
-# 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
-# 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
-
-def has_key_23(k: str) -> bool:
-    d: dict[str, int] = {"a": 1, "b": 2}
-    if k in d:
-        return True
-    else:
-        return False
-
-
-if __name__ == "__main__":
-    print(has_key_23("a"))
-"#;
-    std::process::exit(py_runtime::run_embedded_python(source));
+    py_print(has_key_23("a".to_string()));
 }

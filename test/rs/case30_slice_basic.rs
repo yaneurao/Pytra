@@ -1,27 +1,15 @@
-// fallback: unsupported annotation: Subscript(value=Name(id='list', ctx=Load()), slice=Name(id='int', ctx=Load()), ctx=Load())
-// このファイルは自動生成です。編集しないでください。
-// 入力 Python: case30_slice_basic.py
-
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
+use py_runtime::{perf_counter, py_in, py_len, py_print, py_slice};
 
-fn main() {
-    let source: &str = r#"# case30: スライス構文 a[b:c] の基本テスト（stepなし）。
+// このファイルは自動生成です（native Rust mode）。
 
-def main() -> None:
-    nums: list[int] = [10, 20, 30, 40, 50]
-    text: str = "abcdef"
-
-    mid_nums: list[int] = nums[1:4]
-    mid_text: str = text[2:5]
-
-    print(mid_nums[0])
-    print(mid_nums[2])
-    print(mid_text)
-
-
-if __name__ == "__main__":
-    main()
-"#;
-    std::process::exit(py_runtime::run_embedded_python(source));
+fn main() -> () {
+    let mut nums: Vec<i64> = vec![10, 20, 30, 40, 50];
+    let mut text: String = "abcdef".to_string();
+    let mut mid_nums: Vec<i64> = py_slice(&(nums), Some(1), Some(4));
+    let mut mid_text: String = py_slice(&(text), Some(2), Some(5));
+    py_print((mid_nums)[0 as usize]);
+    py_print((mid_nums)[2 as usize]);
+    py_print(mid_text);
 }

@@ -4,8 +4,10 @@
 // - embed モード向けの Python 実行ヘルパ
 
 use std::env;
+use std::hash::Hash;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::{collections::HashMap, collections::HashSet};
 
 pub trait PyStringify {
     fn py_stringify(&self) -> String;
@@ -86,6 +88,120 @@ pub fn py_print<T: PyStringify>(v: T) {
     println!("{}", v.py_stringify());
 }
 
+pub trait PyContains<K> {
+    fn py_contains(&self, key: &K) -> bool;
+}
+
+impl<T: PartialEq> PyContains<T> for Vec<T> {
+    fn py_contains(&self, key: &T) -> bool {
+        self.contains(key)
+    }
+}
+
+impl<T: Eq + Hash> PyContains<T> for HashSet<T> {
+    fn py_contains(&self, key: &T) -> bool {
+        self.contains(key)
+    }
+}
+
+impl<K: Eq + Hash, V> PyContains<K> for HashMap<K, V> {
+    fn py_contains(&self, key: &K) -> bool {
+        self.contains_key(key)
+    }
+}
+
+pub fn py_in<C, K>(container: &C, key: &K) -> bool
+where
+    C: PyContains<K>,
+{
+    container.py_contains(key)
+}
+
+pub trait PyLen {
+    fn py_len(&self) -> usize;
+}
+
+impl<T> PyLen for Vec<T> {
+    fn py_len(&self) -> usize {
+        self.len()
+    }
+}
+
+impl<K, V> PyLen for HashMap<K, V> {
+    fn py_len(&self) -> usize {
+        self.len()
+    }
+}
+
+impl<T> PyLen for HashSet<T> {
+    fn py_len(&self) -> usize {
+        self.len()
+    }
+}
+
+impl PyLen for String {
+    fn py_len(&self) -> usize {
+        self.chars().count()
+    }
+}
+
+pub fn py_len<T: PyLen>(value: &T) -> usize {
+    value.py_len()
+}
+
+pub trait PySlice {
+    type Output;
+    fn py_slice(&self, start: Option<i64>, end: Option<i64>) -> Self::Output;
+}
+
+fn normalize_slice_range(len: i64, start: Option<i64>, end: Option<i64>) -> (usize, usize) {
+    let mut s = start.unwrap_or(0);
+    let mut e = end.unwrap_or(len);
+    if s < 0 {
+        s += len;
+    }
+    if e < 0 {
+        e += len;
+    }
+    if s < 0 {
+        s = 0;
+    }
+    if e < 0 {
+        e = 0;
+    }
+    if s > len {
+        s = len;
+    }
+    if e > len {
+        e = len;
+    }
+    if e < s {
+        e = s;
+    }
+    (s as usize, e as usize)
+}
+
+impl<T: Clone> PySlice for Vec<T> {
+    type Output = Vec<T>;
+    fn py_slice(&self, start: Option<i64>, end: Option<i64>) -> Self::Output {
+        let (s, e) = normalize_slice_range(self.len() as i64, start, end);
+        self[s..e].to_vec()
+    }
+}
+
+impl PySlice for String {
+    type Output = String;
+    fn py_slice(&self, start: Option<i64>, end: Option<i64>) -> Self::Output {
+        let chars: Vec<char> = self.chars().collect();
+        let (s, e) = normalize_slice_range(chars.len() as i64, start, end);
+        chars[s..e].iter().collect()
+    }
+}
+
+pub fn py_slice<T: PySlice>(value: &T, start: Option<i64>, end: Option<i64>) -> T::Output {
+    value.py_slice(start, end)
+}
+
 pub fn perf_counter() -> f64 {
     let d = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
     d.as_secs_f64()
@@ -117,4 +233,3 @@ pub fn run_embedded_python(source: &str) -> i32 {
     eprintln!("error: python interpreter not found (python3/python)");
     1
 }
-
