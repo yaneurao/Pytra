@@ -1,34 +1,21 @@
-// このファイルは自動生成です（native Rust mode）。
+// fallback: function has unsupported annotation in native Rust mode: half
+// このファイルは自動生成です。編集しないでください。
+// 入力 Python: case07_float.py
 
-trait PyStringify {
-    fn py_stringify(&self) -> String;
-}
-impl PyStringify for bool {
-    fn py_stringify(&self) -> String {
-        if *self { "True".to_string() } else { "False".to_string() }
-    }
-}
-impl PyStringify for i64 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for i32 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for i16 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for i8 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for u64 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for u32 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for u16 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for u8 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for f64 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for f32 { fn py_stringify(&self) -> String { format!("{}", self) } }
-impl PyStringify for String { fn py_stringify(&self) -> String { self.clone() } }
-impl PyStringify for &str { fn py_stringify(&self) -> String { (*self).to_string() } }
-
-fn py_print<T: PyStringify>(v: T) {
-    println!("{}", v.py_stringify());
-}
-
-fn half(x: f64) -> f64 {
-    return ((x) / (2.0));
-}
+#[path = "../../src/rs_module/py_runtime.rs"]
+mod py_runtime;
 
 fn main() {
-    py_print(half(5.0));
+    let source: &str = r#"# このファイルは `test/py/case07_float.py` のテスト/実装コードです。
+# 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
+# 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
+
+def half(x: float) -> float:
+    return x / 2.0
+
+
+if __name__ == "__main__":
+    print(half(5.0))
+"#;
+    std::process::exit(py_runtime::run_embedded_python(source));
 }

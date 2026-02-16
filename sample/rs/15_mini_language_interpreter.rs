@@ -2,24 +2,8 @@
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: 15_mini_language_interpreter.py
 
-use std::env;
-use std::process::Command;
-
-fn run_with(interpreter: &str, source: &str) -> Option<i32> {
-    let mut cmd = Command::new(interpreter);
-    cmd.arg("-c").arg(source);
-
-    // sample/py が `from py_module ...` を使うため `PYTHONPATH=src` を付与する。
-    let py_path = match env::var("PYTHONPATH") {
-        Ok(v) if !v.is_empty() => format!("src:{}", v),
-        _ => "src".to_string(),
-    };
-    cmd.env("PYTHONPATH", py_path);
-
-    // 親プロセスの標準入出力をそのまま使う。
-    let status = cmd.status().ok()?;
-    Some(status.code().unwrap_or(1))
-}
+#[path = "../../src/rs_module/py_runtime.rs"]
+mod py_runtime;
 
 fn main() {
     let source: &str = r#"from dataclasses import dataclass
@@ -384,15 +368,5 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 "#;
-
-    // python3 を優先し、無ければ python を試す。
-    if let Some(code) = run_with("python3", source) {
-        std::process::exit(code);
-    }
-    if let Some(code) = run_with("python", source) {
-        std::process::exit(code);
-    }
-
-    eprintln!("error: python interpreter not found (python3/python)");
-    std::process::exit(1);
+    std::process::exit(py_runtime::run_embedded_python(source));
 }

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import os
 from pathlib import Path
 import sys
 
@@ -47,37 +48,6 @@ class RustTranspiler:
         parts.extend(
             [
                 "// このファイルは自動生成です（native Rust mode）。",
-                "use std::time::{SystemTime, UNIX_EPOCH};",
-                "",
-                "trait PyStringify {",
-                f"{self.INDENT}fn py_stringify(&self) -> String;",
-                "}",
-                "impl PyStringify for bool {",
-                f"{self.INDENT}fn py_stringify(&self) -> String {{",
-                f"{self.INDENT * 2}if *self {{ \"True\".to_string() }} else {{ \"False\".to_string() }}",
-                f"{self.INDENT}}}",
-                "}",
-                "impl PyStringify for i64 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for i32 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for i16 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for i8 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for u64 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for u32 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for u16 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for u8 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for f64 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for f32 { fn py_stringify(&self) -> String { format!(\"{}\", self) } }",
-                "impl PyStringify for String { fn py_stringify(&self) -> String { self.clone() } }",
-                "impl PyStringify for &str { fn py_stringify(&self) -> String { (*self).to_string() } }",
-                "",
-                "fn py_print<T: PyStringify>(v: T) {",
-                f"{self.INDENT}println!(\"{{}}\", v.py_stringify());",
-                "}",
-                "",
-                "fn perf_counter() -> f64 {",
-                f"{self.INDENT}let d = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();",
-                f"{self.INDENT}d.as_secs_f64()",
-                "}",
                 "",
             ]
         )
@@ -408,46 +378,27 @@ def _rust_raw_string_literal(text: str) -> str:
     return f'"{escaped}"'
 
 
+def _runtime_path_literal(output_path: Path) -> str:
+    runtime_path = (Path(__file__).resolve().parent / "rs_module" / "py_runtime.rs").resolve()
+    rel = os.path.relpath(runtime_path, output_path.parent.resolve())
+    return rel.replace("\\", "/")
+
+
 def transpile_file_embed(input_path: Path, output_path: Path) -> None:
     source = input_path.read_text(encoding="utf-8")
     source_literal = _rust_raw_string_literal(source)
     input_name = input_path.name
+    runtime_rel = _runtime_path_literal(output_path)
 
     rust = f"""// このファイルは自動生成です。編集しないでください。
 // 入力 Python: {input_name}
 
-use std::env;
-use std::process::Command;
-
-fn run_with(interpreter: &str, source: &str) -> Option<i32> {{
-    let mut cmd = Command::new(interpreter);
-    cmd.arg("-c").arg(source);
-
-    // sample/py が `from py_module ...` を使うため `PYTHONPATH=src` を付与する。
-    let py_path = match env::var("PYTHONPATH") {{
-        Ok(v) if !v.is_empty() => format!("src:{{}}", v),
-        _ => "src".to_string(),
-    }};
-    cmd.env("PYTHONPATH", py_path);
-
-    // 親プロセスの標準入出力をそのまま使う。
-    let status = cmd.status().ok()?;
-    Some(status.code().unwrap_or(1))
-}}
+#[path = "{runtime_rel}"]
+mod py_runtime;
 
 fn main() {{
     let source: &str = {source_literal};
-
-    // python3 を優先し、無ければ python を試す。
-    if let Some(code) = run_with("python3", source) {{
-        std::process::exit(code);
-    }}
-    if let Some(code) = run_with("python", source) {{
-        std::process::exit(code);
-    }}
-
-    eprintln!("error: python interpreter not found (python3/python)");
-    std::process::exit(1);
+    std::process::exit(py_runtime::run_embedded_python(source));
 }}
 """
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -457,7 +408,14 @@ fn main() {{
 def transpile_file_native(input_path: Path, output_path: Path) -> None:
     source = input_path.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(input_path))
-    rust = RustTranspiler().transpile_module(tree)
+    runtime_rel = _runtime_path_literal(output_path)
+    rust_body = RustTranspiler().transpile_module(tree)
+    rust = (
+        f'#[path = "{runtime_rel}"]\n'
+        "mod py_runtime;\n"
+        "use py_runtime::{perf_counter, py_print};\n\n"
+        + rust_body
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(rust, encoding="utf-8")
 
