@@ -54,10 +54,10 @@ fn run_09_fire_simulation() -> () {
         }
         for y in (1)..(h) {
             for x in (0)..(w) {
-                let mut a = (((heat)[y as usize]).clone())[x as usize];
-                let mut b = (((heat)[y as usize]).clone())[((((((x) - (1))) + (w))) % (w)) as usize];
-                let mut c = (((heat)[y as usize]).clone())[((((x) + (1))) % (w)) as usize];
-                let mut d = (((heat)[((((y) + (1))) % (h)) as usize]).clone())[x as usize];
+                let mut a = ((heat)[y as usize])[x as usize];
+                let mut b = ((heat)[y as usize])[((((((x) - (1))) + (w))) % (w)) as usize];
+                let mut c = ((heat)[y as usize])[((((x) + (1))) % (w)) as usize];
+                let mut d = ((heat)[((((y) + (1))) % (h)) as usize])[x as usize];
                 let mut v = ((((((((a) + (b))) + (c))) + (d))) / (4));
                 let mut cool = ((1) + (((((((x) + (y))) + (t))) % (3))));
                 let mut nv = ((v) - (cool));
@@ -68,7 +68,7 @@ fn run_09_fire_simulation() -> () {
         let mut i = 0;
         for yy in (0)..(h) {
             for xx in (0)..(w) {
-                (frame)[i as usize] = ((((heat)[yy as usize]).clone())[xx as usize]) as u8;
+                (frame)[i as usize] = (((heat)[yy as usize])[xx as usize]) as u8;
                 i = i + 1;
             }
         }

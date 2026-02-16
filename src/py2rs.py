@@ -43,6 +43,12 @@ class RustTranspiler(BaseTranspiler):
         self.self_alias_stack: list[str] = ["self"]
         # クラスごとのフィールド型情報。
         self.class_field_types: dict[str, dict[str, str]] = {}
+        # 関数名 -> 引数型リスト（注釈から取得）。
+        self.function_param_types: dict[str, list[str]] = {}
+        # 関数名 -> 引数借用モード（"value" | "ref" | "ref_mut"）。
+        self.function_param_modes: dict[str, list[str]] = {}
+        # 現在変換中の関数における引数借用モード（Name -> mode）。
+        self.param_borrow_mode_stack: list[dict[str, str]] = []
 
     def _ident(self, name: str) -> str:
         """Rust 予約語と衝突する識別子を raw identifier 化する。"""
@@ -59,6 +65,7 @@ class RustTranspiler(BaseTranspiler):
 
         self.class_names = {stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)}
         self.class_defs = {stmt.name: stmt for stmt in module.body if isinstance(stmt, ast.ClassDef)}
+        self._collect_function_signatures(module)
 
         for stmt in module.body:
             if isinstance(stmt, (ast.Import, ast.ImportFrom)):
@@ -98,6 +105,85 @@ class RustTranspiler(BaseTranspiler):
             parts.append("}")
             parts.append("")
         return "\n".join(parts)
+
+    def _collect_function_signatures(self, module: ast.Module) -> None:
+        """モジュール内関数の引数型と借用モードを事前収集する。"""
+        self.function_param_types = {}
+        self.function_param_modes = {}
+        for stmt in module.body:
+            if not isinstance(stmt, ast.FunctionDef):
+                continue
+            types: list[str] = []
+            for arg in stmt.args.args:
+                if arg.annotation is None:
+                    raise TranspileError(f"function '{stmt.name}' arg '{arg.arg}' requires annotation")
+                types.append(self._map_annotation(arg.annotation))
+            self.function_param_types[stmt.name] = types
+            self.function_param_modes[stmt.name] = self._infer_function_param_modes(stmt, types)
+
+    def _infer_function_param_modes(self, fn: ast.FunctionDef, param_types: list[str]) -> list[str]:
+        """関数引数ごとの借用モードを推論する。"""
+        param_names = [arg.arg for arg in fn.args.args]
+        rebound_names: set[str] = set()
+        container_mut_names: set[str] = set()
+
+        def mark_rebound_target(target: ast.expr) -> None:
+            if isinstance(target, ast.Name) and target.id in param_names:
+                rebound_names.add(target.id)
+                return
+            if isinstance(target, ast.Tuple):
+                for elt in target.elts:
+                    mark_rebound_target(elt)
+
+        def mark_container_mut_target(target: ast.expr) -> None:
+            if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name) and target.value.id in param_names:
+                container_mut_names.add(target.value.id)
+            if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) and target.value.id in param_names:
+                container_mut_names.add(target.value.id)
+
+        for node in ast.walk(fn):
+            if isinstance(node, ast.Assign):
+                for tgt in node.targets:
+                    mark_rebound_target(tgt)
+                    mark_container_mut_target(tgt)
+            elif isinstance(node, ast.AnnAssign):
+                mark_rebound_target(node.target)
+                mark_container_mut_target(node.target)
+            elif isinstance(node, ast.AugAssign):
+                mark_rebound_target(node.target)
+                mark_container_mut_target(node.target)
+            elif isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                    base_name = node.func.value.id
+                    if base_name in param_names and node.func.attr in {
+                        "append", "pop", "insert", "clear", "remove", "update", "extend", "sort", "reverse",
+                        "add", "discard", "setdefault",
+                    }:
+                        container_mut_names.add(base_name)
+
+        modes: list[str] = []
+        for i, name in enumerate(param_names):
+            ty = param_types[i]
+            if not self._is_heap_like_type(ty):
+                modes.append("value")
+                continue
+            if name in rebound_names:
+                modes.append("value")
+                continue
+            if name in container_mut_names:
+                modes.append("ref_mut")
+                continue
+            modes.append("ref")
+        return modes
+
+    def _is_heap_like_type(self, rust_type: str) -> bool:
+        """所有権コストの高い型かを判定する。"""
+        return (
+            rust_type == "String"
+            or rust_type.startswith("Vec<")
+            or rust_type.startswith("std::collections::HashMap<")
+            or rust_type.startswith("std::collections::HashSet<")
+        )
 
     def transpile_class(self, cls: ast.ClassDef) -> str:
         """Python class を Rust の `struct + impl` へ変換する。"""
@@ -292,21 +378,32 @@ class RustTranspiler(BaseTranspiler):
         params: list[str] = []
         declared = set()
         type_env: dict[str, str] = {}
-        for arg in fn.args.args:
+        param_modes = self.function_param_modes.get(fn.name, [])
+        borrow_mode_env: dict[str, str] = {}
+        for i, arg in enumerate(fn.args.args):
             if arg.annotation is None:
                 raise TranspileError(f"function '{fn.name}' arg '{arg.arg}' requires annotation")
             rust_type = self._map_annotation(arg.annotation)
-            params.append(f"mut {self._ident(arg.arg)}: {rust_type}")
+            mode = param_modes[i] if i < len(param_modes) else "value"
+            borrow_mode_env[arg.arg] = mode
+            if mode == "ref":
+                params.append(f"{self._ident(arg.arg)}: &{rust_type}")
+            elif mode == "ref_mut":
+                params.append(f"{self._ident(arg.arg)}: &mut {rust_type}")
+            else:
+                params.append(f"mut {self._ident(arg.arg)}: {rust_type}")
             declared.add(arg.arg)
             type_env[arg.arg] = rust_type
 
         ret = "()" if fn.returns is None else self._map_annotation(fn.returns)
         self.type_env_stack.append(type_env)
+        self.param_borrow_mode_stack.append(borrow_mode_env)
         try:
             body = self.transpile_statements(fn.body, Scope(declared=declared))
             lines = [f"fn {self._ident(fn.name)}({', '.join(params)}) -> {ret} {{"] + self._indent_block(body) + ["}"]
             return "\n".join(lines)
         finally:
+            self.param_borrow_mode_stack.pop()
             self.type_env_stack.pop()
 
     def transpile_statements(self, stmts: list[ast.stmt], scope: Scope) -> list[str]:
@@ -398,7 +495,9 @@ class RustTranspiler(BaseTranspiler):
                         if self._is_hashmap_subscript_target(target):
                             base_expr = self.transpile_expr(target.value)
                             key_expr = self.transpile_expr(target.slice)
-                            out.append(f"{base_expr}.insert({key_expr}, {rhs});")
+                            temp_rhs = self._new_temp("insert_val")
+                            out.append(f"let {temp_rhs} = {rhs};")
+                            out.append(f"{base_expr}.insert({key_expr}, {temp_rhs});")
                         elif self._is_u8_subscript_target(target):
                             target_expr = self._transpile_subscript_lvalue(target)
                             out.append(f"{target_expr} = ({rhs}) as u8;")
@@ -685,12 +784,22 @@ class RustTranspiler(BaseTranspiler):
             if base_ty is not None and base_ty.startswith("std::collections::HashMap<"):
                 read_expr = f"({value_expr})[&({index_expr})]"
                 val_ty = self._expr_type(expr)
-                if isinstance(expr.ctx, ast.Load) and val_ty is not None and not self._is_copy_type(val_ty):
+                if (
+                    isinstance(expr.ctx, ast.Load)
+                    and val_ty is not None
+                    and not self._is_copy_type(val_ty)
+                    and not self._is_borrow_friendly_container_type(val_ty)
+                ):
                     return f"({read_expr}).clone()"
                 return read_expr
             read_expr = f"({value_expr})[{index_expr} as usize]"
             val_ty = self._expr_type(expr)
-            if isinstance(expr.ctx, ast.Load) and val_ty is not None and not self._is_copy_type(val_ty):
+            if (
+                isinstance(expr.ctx, ast.Load)
+                and val_ty is not None
+                and not self._is_copy_type(val_ty)
+                and not self._is_borrow_friendly_container_type(val_ty)
+            ):
                 return f"({read_expr}).clone()"
             return read_expr
         if isinstance(expr, ast.ListComp):
@@ -727,7 +836,7 @@ class RustTranspiler(BaseTranspiler):
                 fmt = " ".join(["{}"] * len(args))
                 return f'println!("{fmt}", {", ".join(args)})'
             if fn == "len" and len(args) == 1:
-                return f"(py_len(&{args[0]}) as i64)"
+                return f"(py_len({self._borrow_shared_expr(arg_nodes[0], args[0])}) as i64)"
             if fn == "int" and len(args) == 1:
                 return f"(({args[0]}) as i64)"
             if fn == "float" and len(args) == 1:
@@ -752,7 +861,14 @@ class RustTranspiler(BaseTranspiler):
                 return "perf_counter()"
             if fn == "range":
                 raise TranspileError("range() should be used only in for")
-            call_args = [self._prepare_call_arg(node, arg) for node, arg in zip(arg_nodes, args)]
+            if fn in self.function_param_modes:
+                modes = self.function_param_modes.get(fn, [])
+                call_args = [
+                    self._prepare_user_function_call_arg(node, arg, modes[i] if i < len(modes) else "value")
+                    for i, (node, arg) in enumerate(zip(arg_nodes, args))
+                ]
+            else:
+                call_args = [self._prepare_call_arg(node, arg) for node, arg in zip(arg_nodes, args)]
             return f"{self._ident(fn)}({', '.join(call_args)})"
         if isinstance(call.func, ast.Attribute):
             if isinstance(call.func.value, ast.Name) and call.func.value.id == "math":
@@ -789,9 +905,57 @@ class RustTranspiler(BaseTranspiler):
         ty = self._expr_type(node)
         if ty is None:
             return rendered
-        if ty == "String" or ty.startswith("Vec<") or ty.startswith("std::collections::HashMap<") or ty.startswith("std::collections::HashSet<"):
+        if self._is_heap_like_type(ty):
             return f"({rendered}).clone()"
         return rendered
+
+    def _current_param_borrow_mode(self, name: str) -> str | None:
+        """現在の関数コンテキストで、引数名の借用モードを返す。"""
+        if len(self.param_borrow_mode_stack) == 0:
+            return None
+        return self.param_borrow_mode_stack[-1].get(name)
+
+    def _borrow_shared_expr(self, node: ast.expr, rendered: str) -> str:
+        """読み取り用途の参照式を作る（既に参照なら二重参照を避ける）。"""
+        if isinstance(node, ast.Name):
+            mode = self._current_param_borrow_mode(node.id)
+            if mode == "ref" or mode == "ref_mut":
+                return self._ident(node.id)
+        return f"&({rendered})"
+
+    def _prepare_user_function_call_arg(self, node: ast.expr, rendered: str, mode: str) -> str:
+        """ユーザー関数呼び出し向けに、推論済み借用モードへ引数式を整形する。"""
+        if mode == "value":
+            return self._prepare_call_arg(node, rendered)
+
+        if mode == "ref":
+            if isinstance(node, ast.Name):
+                current_mode = self._current_param_borrow_mode(node.id)
+                if current_mode == "ref":
+                    return self._ident(node.id)
+                if current_mode == "ref_mut":
+                    return f"&*{self._ident(node.id)}"
+                return f"&({self._ident(node.id)})"
+            return f"&({rendered})"
+
+        if mode == "ref_mut":
+            if isinstance(node, ast.Name):
+                current_mode = self._current_param_borrow_mode(node.id)
+                if current_mode == "ref_mut":
+                    return f"&mut *{self._ident(node.id)}"
+                if current_mode == "value" or current_mode is None:
+                    return f"&mut {self._ident(node.id)}"
+                raise TranspileError(f"cannot pass shared reference '{node.id}' as mutable reference")
+            if isinstance(node, ast.Attribute):
+                if isinstance(node.value, ast.Name) and node.value.id == "self":
+                    self_alias = self.self_alias_stack[-1]
+                    return f"&mut {self_alias}.{node.attr}"
+                return f"&mut ({self.transpile_expr(node)})"
+            if isinstance(node, ast.Subscript):
+                return f"&mut {self._transpile_subscript_lvalue(node)}"
+            raise TranspileError("mutable reference argument must be a mutable lvalue")
+
+        raise TranspileError(f"unknown argument borrow mode: {mode}")
 
     def _map_annotation(self, ann: ast.expr) -> str:
         """Python 型注釈を Rust 型へ変換する。"""
@@ -927,9 +1091,9 @@ class RustTranspiler(BaseTranspiler):
         rt = self._expr_type(expr.comparators[0])
         op = expr.ops[0]
         if isinstance(op, ast.In):
-            return f"py_in(&({r}), &({l}))"
+            return f"py_in({self._borrow_shared_expr(expr.comparators[0], r)}, {self._borrow_shared_expr(expr.left, l)})"
         if isinstance(op, ast.NotIn):
-            return f"!py_in(&({r}), &({l}))"
+            return f"!py_in({self._borrow_shared_expr(expr.comparators[0], r)}, {self._borrow_shared_expr(expr.left, l)})"
         numeric = {"i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8", "f64", "f32"}
         if lt in numeric and rt in numeric and lt != rt:
             return f"(((( {l} ) as f64) {self._cmpop(op)} (( {r} ) as f64)))"
@@ -1067,6 +1231,14 @@ class RustTranspiler(BaseTranspiler):
     def _is_copy_type(self, rust_type: str) -> bool:
         """Rust の Copy 扱いにできるプリミティブ型かを返す。"""
         return rust_type in {"bool", "i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8", "f64", "f32", "()"}
+
+    def _is_borrow_friendly_container_type(self, rust_type: str) -> bool:
+        """添字アクセスで clone せず借用を維持してよいコンテナ型かを返す。"""
+        return (
+            rust_type.startswith("Vec<")
+            or rust_type.startswith("std::collections::HashMap<")
+            or rust_type.startswith("std::collections::HashSet<")
+        )
 
     def _transpile_subscript_lvalue(self, sub: ast.Subscript) -> str:
         """添字代入左辺を clone なしで Rust の可変参照式へ変換する。"""
