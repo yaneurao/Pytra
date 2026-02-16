@@ -10,11 +10,11 @@ def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -
 
     y: int = 0
     while y < height:
-        zy0: float = -1.2 + 2.4 * ((y * 1.0) / ((height - 1) * 1.0))
+        zy0: float = -1.2 + 2.4 * (y / (height - 1))
 
         x: int = 0
         while x < width:
-            zx: float = -1.8 + 3.6 * ((x * 1.0) / ((width - 1) * 1.0))
+            zx: float = -1.8 + 3.6 * (x / (width - 1))
             zy: float = zy0
 
             i: int = 0
@@ -25,7 +25,7 @@ def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -
                     break
                 zy = 2.0 * zx * zy + cy
                 zx = zx2 - zy2 + cx
-                i = i + 1
+                i += 1
 
             r: int = 0
             g: int = 0
@@ -35,7 +35,7 @@ def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -
                 g = 0
                 b = 0
             else:
-                t: float = (i * 1.0) / (max_iter * 1.0)
+                t: float = i / max_iter
                 r = int(255.0 * (0.2 + 0.8 * t))
                 g = int(255.0 * (0.1 + 0.9 * (t * t)))
                 b = int(255.0 * (1.0 - t))
@@ -43,9 +43,9 @@ def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -
             pixels.append(r)
             pixels.append(g)
             pixels.append(b)
-            x = x + 1
+            x += 1
 
-        y = y + 1
+        y += 1
 
     return pixels
 

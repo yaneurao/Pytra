@@ -6,7 +6,7 @@ class Counter56:
     total: int = 0
 
     def add(self, x: int) -> int:
-        self.total = self.total + x
+        self.total += x
         return self.total
 
 

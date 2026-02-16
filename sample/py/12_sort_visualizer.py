@@ -10,14 +10,14 @@ from py_module.gif_helper import grayscale_palette, save_gif
 def render(values: list[int], w: int, h: int) -> bytes:
     frame = bytearray(w * h)
     n = len(values)
-    bar_w = (w * 1.0) / n
+    bar_w = w / n
     i = 0
     while i < n:
         x0 = int(i * bar_w)
         x1 = int((i + 1) * bar_w)
         if x1 <= x0:
             x1 = x0 + 1
-        bh = int(((values[i] * 1.0) / n) * h)
+        bh = int(((values[i] / n) * h))
         y = h - bh
         while y < h:
             x = x0

@@ -16,19 +16,19 @@ def run_pi_trial(total_samples: int, seed: int) -> float:
     i: int = 0
     while i < total_samples:
         state = lcg_next(state)
-        x: float = (state * 1.0) / 4294967296.0
+        x: float = state / 4294967296.0
 
         state = lcg_next(state)
-        y: float = (state * 1.0) / 4294967296.0
+        y: float = state / 4294967296.0
 
         dx: float = x - 0.5
         dy: float = y - 0.5
         if dx * dx + dy * dy <= 0.25:
-            inside = inside + 1
+            inside += 1
 
-        i = i + 1
+        i += 1
 
-    return 4.0 * (inside * 1.0) / (total_samples * 1.0)
+    return 4.0 * inside / total_samples
 
 
 def run_monte_carlo_pi() -> None:

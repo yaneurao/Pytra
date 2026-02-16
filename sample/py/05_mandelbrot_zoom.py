@@ -41,7 +41,7 @@ def run_05_mandelbrot_zoom() -> None:
     max_iter = 110
     center_x = -0.743643887037151
     center_y = 0.13182590420533
-    base_scale = 3.2 / (width * 1.0)
+    base_scale = 3.2 / width
     zoom_per_frame = 0.93
     out_path = "sample/out/05_mandelbrot_zoom.gif"
 
@@ -51,7 +51,7 @@ def run_05_mandelbrot_zoom() -> None:
     scale = base_scale
     while i < frame_count:
         frames.append(render_frame(width, height, center_x, center_y, scale, max_iter))
-        scale = scale * zoom_per_frame
+        scale *= zoom_per_frame
         i += 1
 
     save_gif(out_path, width, height, frames, grayscale_palette(), delay_cs=5, loop=0)

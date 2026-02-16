@@ -17,7 +17,7 @@ def escape_count(cx: float, cy: float, max_iter: int) -> int:
             return i
         y = 2.0 * x * y + cy
         x = x2 - y2 + cx
-        i = i + 1
+        i += 1
     return max_iter
 
 
@@ -27,7 +27,7 @@ def color_map(iter_count: int, max_iter: int) -> tuple[int, int, int]:
         return (0, 0, 0)
 
     # 簡単なグラデーション（青系 -> 黄系）
-    t: float = (iter_count * 1.0) / (max_iter * 1.0)
+    t: float = iter_count / max_iter
     r: int = int(255.0 * (t * t))
     g: int = int(255.0 * t)
     b: int = int(255.0 * (1.0 - t))
@@ -48,11 +48,11 @@ def render_mandelbrot(
 
     y: int = 0
     while y < height:
-        py: float = y_min + (y_max - y_min) * ((y * 1.0) / ((height - 1) * 1.0))
+        py: float = y_min + (y_max - y_min) * (y / (height - 1))
 
         x: int = 0
         while x < width:
-            px: float = x_min + (x_max - x_min) * ((x * 1.0) / ((width - 1) * 1.0))
+            px: float = x_min + (x_max - x_min) * (x / (width - 1))
             it: int = escape_count(px, py, max_iter)
             r: int
             g: int
@@ -62,16 +62,16 @@ def render_mandelbrot(
                 g = 0
                 b = 0
             else:
-                t: float = (it * 1.0) / (max_iter * 1.0)
+                t: float = it / max_iter
                 r = int(255.0 * (t * t))
                 g = int(255.0 * t)
                 b = int(255.0 * (1.0 - t))
             pixels.append(r)
             pixels.append(g)
             pixels.append(b)
-            x = x + 1
+            x += 1
 
-        y = y + 1
+        y += 1
 
     return pixels
 

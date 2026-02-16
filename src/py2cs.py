@@ -419,6 +419,8 @@ class CSharpTranspiler:
                 lines.extend(self._transpile_ann_assign(stmt, scope))
             elif isinstance(stmt, ast.Assign):
                 lines.extend(self._transpile_assign(stmt, scope))
+            elif isinstance(stmt, ast.AugAssign):
+                lines.extend(self._transpile_aug_assign(stmt))
             elif isinstance(stmt, ast.If):
                 lines.extend(self._transpile_if(stmt, scope))
             elif isinstance(stmt, ast.For):
@@ -490,6 +492,15 @@ class CSharpTranspiler:
             return [f"var {name} = {self.transpile_expr(stmt.value)};"]
 
         return [f"{name} = {self.transpile_expr(stmt.value)};"]
+
+    def _transpile_aug_assign(self, stmt: ast.AugAssign) -> List[str]:
+        target = self.transpile_expr(stmt.target)
+        value = self.transpile_expr(stmt.value)
+        if isinstance(stmt.op, ast.Pow):
+            return [f"{target} = Math.Pow({target}, {value});"]
+        if isinstance(stmt.op, ast.FloorDiv):
+            return [f"{target} = ({target} / {value});"]
+        return [f"{target} = ({target} {self._binop(stmt.op)} {value});"]
 
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
         tuple_target = None
@@ -804,8 +815,13 @@ class CSharpTranspiler:
             ast.Sub: "-",
             ast.Mult: "*",
             ast.Div: "/",
+            ast.FloorDiv: "/",
             ast.Mod: "%",
             ast.BitOr: "|",
+            ast.BitAnd: "&",
+            ast.BitXor: "^",
+            ast.LShift: "<<",
+            ast.RShift: ">>",
         }
         for op_type, symbol in mapping.items():
             if isinstance(op, op_type):

@@ -54,20 +54,20 @@ def render(width: int, height: int) -> bytearray:
 
     y: int = 0
     while y < height:
-        sy: float = (1.0 - 2.0 * ((y * 1.0) / ((height - 1) * 1.0)))
+        sy: float = (1.0 - 2.0 * (y / (height - 1)))
 
         x: int = 0
         while x < width:
-            sx: float = (2.0 * ((x * 1.0) / ((width - 1) * 1.0)) - 1.0)
-            sx = sx * ((width * 1.0) / (height * 1.0))
+            sx: float = (2.0 * (x / (width - 1)) - 1.0)
+            sx *= (width / height)
 
             dx: float = sx
             dy: float = sy
             dz: float = 1.0
             inv_len: float = 1.0 / math.sqrt(dx * dx + dy * dy + dz * dz)
-            dx = dx * inv_len
-            dy = dy * inv_len
-            dz = dz * inv_len
+            dx *= inv_len
+            dy *= inv_len
+            dz *= inv_len
 
             t_min: float = 1.0e30
             hit_id: int = -1
@@ -152,9 +152,9 @@ def render(width: int, height: int) -> bytearray:
             pixels.append(r)
             pixels.append(g)
             pixels.append(b)
-            x = x + 1
+            x += 1
 
-        y = y + 1
+        y += 1
 
     return pixels
 

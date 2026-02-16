@@ -7,7 +7,7 @@ class Box30:
         self.seed = seed
 
     def next(self) -> int:
-        self.seed = self.seed + 1
+        self.seed += 1
         return self.seed
 
 

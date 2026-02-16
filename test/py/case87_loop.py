@@ -6,9 +6,9 @@ def calc_87(values: list[int]) -> int:
     total: int = 0
     for v in values:
         if v % 2 == 0:
-            total = total + v
+            total += v
         else:
-            total = total + (v * 2)
+            total += (v * 2)
     return total
 
 

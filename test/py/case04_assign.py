@@ -4,7 +4,7 @@
 
 def square_plus_one(n: int) -> int:
     result: int = n * n
-    result = result + 1
+    result += 1
     return result
 
 
