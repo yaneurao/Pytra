@@ -15,6 +15,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `py2cs.py`: Python -> C# 変換器
   - `py2cpp.py`: Python -> C++ 変換器
   - `cpp_module/`: C++ 側ランタイム補助モジュール
+  - `cs_module/`: C# 側ランタイム補助モジュール
   - `py_module/`: Python 側の自作ライブラリ配置先
 - `test/`
   - `py/`: 入力 Python サンプル
@@ -24,7 +25,15 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `obj/`: C++ コンパイル生成物（`.gitignore` 対象）
 - `docs/`
   - `spec.md`: 本仕様
+  - `how-to-use.md`: 使い方（CLI / コンパイル手順）
+  - `time-comparison.md`: 実行時間比較の測定条件
   - `gc.md`: 参照カウント GC の仕様
+- `sample/`
+  - `py/`: 実用寄り Python サンプル（入力）
+  - `cpp/`: `sample/py` を C++ へ変換した出力
+  - `cs/`: `sample/py` を C# へ変換した出力
+  - `out/`: サンプル実行時の生成物（PNG / GIF）
+  - `obj/`: サンプル実行用のコンパイル生成物
 
 ## 3. Python 入力仕様
 
@@ -85,7 +94,6 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 
 注意:
 
-- `pycpp_transpiler_runtime.h` は廃止済みであり、使用しません。
 - `import ast` を含むコードの C++ 変換では、`cpp_module/ast` 実装を前提に動作します。
 - 制約: Python 側で `import` / `from ... import ...` するモジュールは、原則として `src/cpp_module/` に対応する `*.h` / `*.cpp` 実装を用意する必要があります。
 - 制約: 生成 C++ 側で使う補助関数（`py_to_string`, `py_in`, `py_print`, `py_write` など）は `cpp_module/py_runtime_modules.h` に集約し、生成 `.cpp` へ重複定義しません。
@@ -102,20 +110,23 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - C# 期待結果は `test/cs/` に配置します。
 - C++ 期待結果は `test/cpp/` に配置します。
 - 変換器都合で `test/py/` の入力ケースを変更してはなりません。変換失敗時は、まずトランスパイラ実装（`src/py2cs.py`, `src/py2cpp.py`）側を修正します。
-- ケース命名は `caseXX_*` 形式を基本とし、特別ケースとして以下を含みます。
-  - `case99_dataclass`
-  - `case100_class_instance`
+- ケース命名は `caseXX_*` 形式を基本とします。
 
 ## 6.1 サンプルプログラム方針
 
 - 実用サンプルは `sample/py/` に配置します。
 - C++ 変換結果は `sample/cpp/` に配置します。
+- C# 変換結果は `sample/cs/` に配置します。
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します。
+- `sample/obj/` と `sample/out/` は生成物ディレクトリであり、Git 管理外（`.gitignore`）を前提とします。
 - Python から import する自作ライブラリは `src/py_module/` に配置します（`sample/py/` には置きません）。
 - 例: `from py_module import png_helper`, `from py_module.gif_helper import save_gif`
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は **PNG 形式**で出力します（PPMは使用しません）。
+- GIF サンプルは `sample/out/*.gif` に出力します。
 - Python 側の画像保存は `py_module.png_helper.write_rgb_png(...)` を使用し、C++ 側は `src/cpp_module/png.h/.cpp` を利用します。
+- `sample/py` の連番（`01_...`, `02_...`）は README の実行時間比較表と対応づけるため、原則として欠番なしで管理します。
 - `sample/py/01_mandelbrot.py` はマンデルブロ集合画像を生成し、Python 実行時と C++ 実行時の画像一致（ハッシュ一致）を確認可能なサンプルです。
+- 画像一致検証は、同名出力を言語別に退避してハッシュ（例: `sha256sum`）比較で行います。
 
 ## 7. ユニットテスト実行方法
 
@@ -147,4 +158,5 @@ python -m unittest discover -s test -p "test_*.py" -v
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
 - エラー発生時、CLI エントリポイント（`src/py2cs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。
 - `test/obj/` と `test/cpp2/` は検証用生成物のため Git 管理外です。
+- `sample/obj/` と `sample/out/` も同様に検証・出力用生成物のため Git 管理外です。
 - `src/py_module/` のライブラリを利用してサンプルを直接実行する場合は、必要に応じて `PYTHONPATH=src` を付与して実行します。

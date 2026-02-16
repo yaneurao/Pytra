@@ -230,6 +230,15 @@ namespace Pytra.CsModule
             return true;
         }
 
+        public static long py_ord(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length != 1)
+            {
+                throw new ArgumentException("ord() expected a character");
+            }
+            return value[0];
+        }
+
         public static void print(params object[] args)
         {
             if (args == null || args.Length == 0)

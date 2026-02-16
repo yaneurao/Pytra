@@ -213,28 +213,7 @@ class Parser:
             idx: int = 0
             while idx < len(token_num.text):
                 ch: str = token_num.text[idx:idx + 1]
-                if ch == "0":
-                    parsed_value = parsed_value * 10 + 0
-                elif ch == "1":
-                    parsed_value = parsed_value * 10 + 1
-                elif ch == "2":
-                    parsed_value = parsed_value * 10 + 2
-                elif ch == "3":
-                    parsed_value = parsed_value * 10 + 3
-                elif ch == "4":
-                    parsed_value = parsed_value * 10 + 4
-                elif ch == "5":
-                    parsed_value = parsed_value * 10 + 5
-                elif ch == "6":
-                    parsed_value = parsed_value * 10 + 6
-                elif ch == "7":
-                    parsed_value = parsed_value * 10 + 7
-                elif ch == "8":
-                    parsed_value = parsed_value * 10 + 8
-                elif ch == "9":
-                    parsed_value = parsed_value * 10 + 9
-                else:
-                    raise RuntimeError("invalid decimal digit: " + ch)
+                parsed_value = parsed_value * 10 + ord(ch) - ord("0")
                 idx += 1
             return self.add_expr(ExprNode("lit", parsed_value, "", "", -1, -1))
 

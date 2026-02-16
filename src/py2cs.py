@@ -853,6 +853,10 @@ class CSharpTranspiler:
             if len(args_list) == 1:
                 return f"Convert.ToString({args_list[0]})"
             return "\"\""
+        if isinstance(call.func, ast.Name) and call.func.id == "ord":
+            if len(args_list) == 1:
+                return f"Pytra.CsModule.py_runtime.py_ord({args_list[0]})"
+            return "0L"
 
         if isinstance(call.func, ast.Name):
             if call.func.id == "save_gif":

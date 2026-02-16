@@ -51,3 +51,14 @@
 - [ ] 整数除算 `//` と剰余 `%` の負数挙動を Python と完全一致させる（C++/C# の演算差をランタイム吸収）。
 - [ ] 行連結文字列（`\n` を含む長いソース文字列）からのトークナイズが C++/C# 生成で壊れないよう文字列エスケープ処理を強化する。
 - [ ] 変換器都合で入力 Python を書き換えなくて済むよう、`sample/py/15` で行った回避実装をトランスパイラ側へ吸収する。
+
+## sample/py の簡潔化候補（Python組み込み活用）
+
+- [ ] `sample/py/15_mini_language_interpreter.py`: 手動の数値文字列パースを `int(token_num.text)` に置き換える。
+- [ ] `sample/py/14_raymarching_light_cycle.py`: `if x > 255: x = 255` 系を `min(255, x)` に統一する（`r`, `g`, `b`, `v`）。
+- [ ] `sample/py/11_lissajous_particles.py`: `if v < 0: v = 0` を `max(0, v)` に置き換える。
+- [ ] `sample/py/09_fire_simulation.py`: 二重ループ初期化を `[[0] * w for _ in range(h)]` に置き換える。
+- [ ] `sample/py/13_maze_generation_steps.py`: `grid` 初期化を `[[1] * cell_w for _ in range(cell_h)]` に置き換える。
+- [ ] `sample/py/13_maze_generation_steps.py`: `while len(stack) > 0` を `while stack` に置き換える。
+- [ ] `sample/py/13_maze_generation_steps.py`: `stack[-1]` を使って末尾要素アクセスを簡潔化する。
+- [ ] `sample/py/12_sort_visualizer.py`: 一時変数スワップをタプル代入（`a, b = b, a`）へ置き換える。

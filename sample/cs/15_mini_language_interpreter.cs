@@ -467,77 +467,7 @@ public static class Program
                 while (Pytra.CsModule.py_runtime.py_bool((idx < Pytra.CsModule.py_runtime.py_len(token_num.text))))
                 {
                     string ch = Pytra.CsModule.py_runtime.py_slice(token_num.text, (long?)(idx), (long?)((idx + 1L)));
-                    if (Pytra.CsModule.py_runtime.py_bool((ch == "0")))
-                    {
-                        parsed_value = ((parsed_value * 10L) + 0L);
-                    }
-                    else
-                    {
-                        if (Pytra.CsModule.py_runtime.py_bool((ch == "1")))
-                        {
-                            parsed_value = ((parsed_value * 10L) + 1L);
-                        }
-                        else
-                        {
-                            if (Pytra.CsModule.py_runtime.py_bool((ch == "2")))
-                            {
-                                parsed_value = ((parsed_value * 10L) + 2L);
-                            }
-                            else
-                            {
-                                if (Pytra.CsModule.py_runtime.py_bool((ch == "3")))
-                                {
-                                    parsed_value = ((parsed_value * 10L) + 3L);
-                                }
-                                else
-                                {
-                                    if (Pytra.CsModule.py_runtime.py_bool((ch == "4")))
-                                    {
-                                        parsed_value = ((parsed_value * 10L) + 4L);
-                                    }
-                                    else
-                                    {
-                                        if (Pytra.CsModule.py_runtime.py_bool((ch == "5")))
-                                        {
-                                            parsed_value = ((parsed_value * 10L) + 5L);
-                                        }
-                                        else
-                                        {
-                                            if (Pytra.CsModule.py_runtime.py_bool((ch == "6")))
-                                            {
-                                                parsed_value = ((parsed_value * 10L) + 6L);
-                                            }
-                                            else
-                                            {
-                                                if (Pytra.CsModule.py_runtime.py_bool((ch == "7")))
-                                                {
-                                                    parsed_value = ((parsed_value * 10L) + 7L);
-                                                }
-                                                else
-                                                {
-                                                    if (Pytra.CsModule.py_runtime.py_bool((ch == "8")))
-                                                    {
-                                                        parsed_value = ((parsed_value * 10L) + 8L);
-                                                    }
-                                                    else
-                                                    {
-                                                        if (Pytra.CsModule.py_runtime.py_bool((ch == "9")))
-                                                        {
-                                                            parsed_value = ((parsed_value * 10L) + 9L);
-                                                        }
-                                                        else
-                                                        {
-                                                            throw new Exception(("invalid decimal digit: " + ch));
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    parsed_value = (((parsed_value * 10L) + Pytra.CsModule.py_runtime.py_ord(ch)) - Pytra.CsModule.py_runtime.py_ord("0"));
                     idx = (idx + 1L);
                 }
                 return this.add_expr(new ExprNode("lit", parsed_value, "", "", (-1L), (-1L)));

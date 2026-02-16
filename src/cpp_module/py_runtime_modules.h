@@ -428,6 +428,13 @@ inline bool py_isalpha(const std::string& s) {
     return true;
 }
 
+inline long long py_ord(const std::string& s) {
+    if (s.size() != 1) {
+        throw std::runtime_error("ord() expected a character");
+    }
+    return static_cast<unsigned char>(s[0]);
+}
+
 template <typename A, typename B>
 std::vector<std::tuple<A, B>> py_zip(const std::vector<A>& a, const std::vector<B>& b) {
     std::vector<std::tuple<A, B>> out;

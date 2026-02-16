@@ -1138,6 +1138,10 @@ class CppTranspiler:
             if len(args_list) == 1:
                 return f"string(1, static_cast<char>({args_list[0]}))"
             return '""'
+        if isinstance(call.func, ast.Name) and call.func.id == "ord":
+            if len(args_list) == 1:
+                return f"py_ord({args_list[0]})"
+            return "0"
         if isinstance(call.func, ast.Name) and call.func.id == "isinstance":
             if len(call.args) == 2:
                 obj = self.transpile_expr(call.args[0])

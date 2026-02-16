@@ -218,77 +218,7 @@ public:
             while ((idx < py_len(token_num->text)))
             {
                 string ch = py_slice(token_num->text, true, idx, true, (idx + 1));
-                if ((ch == "0"))
-                {
-                    parsed_value = ((parsed_value * 10) + 0);
-                }
-                else
-                {
-                    if ((ch == "1"))
-                    {
-                        parsed_value = ((parsed_value * 10) + 1);
-                    }
-                    else
-                    {
-                        if ((ch == "2"))
-                        {
-                            parsed_value = ((parsed_value * 10) + 2);
-                        }
-                        else
-                        {
-                            if ((ch == "3"))
-                            {
-                                parsed_value = ((parsed_value * 10) + 3);
-                            }
-                            else
-                            {
-                                if ((ch == "4"))
-                                {
-                                    parsed_value = ((parsed_value * 10) + 4);
-                                }
-                                else
-                                {
-                                    if ((ch == "5"))
-                                    {
-                                        parsed_value = ((parsed_value * 10) + 5);
-                                    }
-                                    else
-                                    {
-                                        if ((ch == "6"))
-                                        {
-                                            parsed_value = ((parsed_value * 10) + 6);
-                                        }
-                                        else
-                                        {
-                                            if ((ch == "7"))
-                                            {
-                                                parsed_value = ((parsed_value * 10) + 7);
-                                            }
-                                            else
-                                            {
-                                                if ((ch == "8"))
-                                                {
-                                                    parsed_value = ((parsed_value * 10) + 8);
-                                                }
-                                                else
-                                                {
-                                                    if ((ch == "9"))
-                                                    {
-                                                        parsed_value = ((parsed_value * 10) + 9);
-                                                    }
-                                                    else
-                                                    {
-                                                        throw std::runtime_error(py_to_string(("invalid decimal digit: " + ch)));
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                parsed_value = (((parsed_value * 10) + py_ord(ch)) - py_ord("0"));
                 idx = (idx + 1);
             }
             return this->add_expr(pycs::gc::RcHandle<ExprNode>::adopt(pycs::gc::rc_new<ExprNode>("lit", parsed_value, "", "", (-1), (-1))));
