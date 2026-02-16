@@ -11,3 +11,6 @@ __pycache__/
 /test/cpp2/
 /sample/obj/
 /sample/out/
+
+/test/java/*.class
+/sample/java/*.class
