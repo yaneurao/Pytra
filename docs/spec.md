@@ -1,5 +1,7 @@
 # 仕様書
 
+このドキュメントは、Codexのための仕様書。
+
 ## 1. 目的
 
 Pytra は、型注釈付き Python コードを次の言語へ変換するトランスパイラ群です。
@@ -45,8 +47,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - `test/`
   - `py/`: 入力 Python サンプル
   - `cs/`: C# 期待結果
+  - `rs/`: Rust 期待結果
   - `cpp/`: C++ 期待結果
-  - `rs/`: Rust 変換結果
   - `js/`: JavaScript 変換結果
   - `ts/`: TypeScript 変換結果
   - `go/`: Go 変換結果
@@ -63,8 +65,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - `sample/`
   - `py/`: 実用寄り Python サンプル（入力）
   - `cpp/`: `sample/py` を C++ へ変換した出力
-  - `cs/`: `sample/py` を C# へ変換した出力
   - `rs/`: `sample/py` を Rust へ変換した出力
+  - `cs/`: `sample/py` を C# へ変換した出力
   - `js/`: `sample/py` を JavaScript へ変換した出力
   - `ts/`: `sample/py` を TypeScript へ変換した出力
   - `go/`: `sample/py` を Go へ変換した出力
