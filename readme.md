@@ -81,6 +81,7 @@ mono test/obj/case28_iterable.exe
 - 対象は Python のサブセットです。一般的な Python コードすべてが変換できるわけではありません。
 - 変数には、型注釈が必要です。（ただし一部は推論可能）。
 - Python で `import` するモジュールは、対応するランタイム実装が `src/cpp_module/` または `src/cs_module/` に必要です。
+- `sample/py/` を Python のまま実行する場合は、`py_module` を解決するため `PYTHONPATH=src` を付けて実行してください（例: `PYTHONPATH=src python3 sample/py/01_mandelbrot.py`）。
 - 生成された C++/C# は「読みやすさ」より「変換の忠実性」を優先しています。
 
 
@@ -102,6 +103,12 @@ mono test/obj/case28_iterable.exe
 
 実行に数秒を要する数十行程度のサンプルコードを別の言語に変換して、その実行時間を比較するためのもの。
 
+Python 版サンプルの実行例:
+
+```bash
+PYTHONPATH=src python3 sample/py/01_mandelbrot.py
+```
+
 - [sample/py](sample/py) : サンプルコード Pythonで書かれた14個のファイル。
 - [sample/cpp](sample/cpp) : サンプルコードをC++のコードに変換したもの。
 - [sample/cs](sample/cs) : サンプルコードをC#のコードに変換したもの。
@@ -110,11 +117,29 @@ mono test/obj/case28_iterable.exe
 
 ## 実行速度の比較
 
-サンプルコードの実行時間。
+サンプルコードの実行時間（単位: 秒）。
+
+測定条件:
+- Python: `PYTHONPATH=src python3 sample/py/<file>.py`
+- C++: `g++ -std=c++20 -O2 -I src ...` でビルドした実行ファイル
+- C#: `mcs ...` + `mono ...`
 
 |ファイル名|内容| Python(元のコード) | C++に変換後 | C#に変換後 | JSに変換後 | Rustに変換後 |
-|-|-|-|-|-|-|-|
-|01_mandelbrot|マンデルブロ集合をPNG出力| 1000[ms] | 300[ms] | 400[ms] | 🚧 | 🚧|
+|-|-|-:|-:|-:|-|-|
+|01_mandelbrot|マンデルブロ集合（PNG）|1.689|0.089|0.078|🚧|🚧|
+|02_raytrace_spheres|球の簡易レイトレーサ（PNG）|0.414|0.030|0.121|🚧|🚧|
+|03_julia_set|ジュリア集合（PNG）|1.380|0.087|0.141|🚧|🚧|
+|04_monte_carlo_pi|モンテカルロ法で円周率近似|3.657|0.052|0.200|🚧|🚧|
+|05_mandelbrot_zoom|マンデルブロズーム（GIF）|13.802|0.525|2.694|🚧|🚧|
+|06_julia_parameter_sweep|ジュリア集合パラメータ掃引（GIF）|5.724|0.234|0.190|🚧|🚧|
+|07_game_of_life_loop|ライフゲーム（GIF）|1.290|0.067|0.314|🚧|🚧|
+|08_langtons_ant|ラングトンのアリ（GIF）|0.744|0.050|0.234|🚧|🚧|
+|09_fire_simulation|炎シミュレーション（GIF）|1.088|0.054|0.522|🚧|🚧|
+|10_plasma_effect|プラズマエフェクト（GIF）|2.419|0.221|0.769|🚧|🚧|
+|11_lissajous_particles|リサージュ粒子（GIF）|1.118|0.081|0.163|🚧|🚧|
+|12_sort_visualizer|ソート可視化（GIF）|3.471|0.233|0.465|🚧|🚧|
+|13_maze_generation_steps|迷路生成ステップ（GIF）|0.521|0.033|0.113|🚧|🚧|
+|14_raymarching_light_cycle|簡易レイマーチング（GIF）|2.666|0.152|0.467|🚧|🚧|
 
 ## 言語的制約
 
@@ -185,4 +210,3 @@ mono test/obj/case28_iterable.exe
 ## ライセンス
 
 MIT License
-
