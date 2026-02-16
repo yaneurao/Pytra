@@ -45,8 +45,8 @@ string capture(const vector<vector<long long>>& grid, long long w, long long h)
 
 void run_08_langtons_ant()
 {
-    long long w = 240;
-    long long h = 240;
+    long long w = 420;
+    long long h = 420;
     string out_path = "sample/out/08_langtons_ant.gif";
     auto start = perf_counter();
     vector<vector<long long>> grid = {};
@@ -70,7 +70,7 @@ void run_08_langtons_ant()
     long long x = py_floordiv(w, 2);
     long long y = py_floordiv(h, 2);
     long long d = 0;
-    long long steps_total = 180000;
+    long long steps_total = 600000;
     long long capture_every = 3000;
     vector<string> frames = {};
     auto __pytra_range_start_13 = 0;

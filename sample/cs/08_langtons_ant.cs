@@ -29,8 +29,8 @@ public static class Program
 
     public static void run_08_langtons_ant()
     {
-        long w = 240L;
-        long h = 240L;
+        long w = 420L;
+        long h = 420L;
         string out_path = "sample/out/08_langtons_ant.gif";
         var start = Pytra.CsModule.time.perf_counter();
         List<List<long>> grid = new List<List<long>> {  };
@@ -54,7 +54,7 @@ public static class Program
         var x = (long)Math.Floor((w) / (double)(2L));
         var y = (long)Math.Floor((h) / (double)(2L));
         long d = 0L;
-        long steps_total = 180000L;
+        long steps_total = 600000L;
         long capture_every = 3000L;
         List<List<byte>> frames = new List<List<byte>> {  };
         var __pytra_range_start_13 = 0;

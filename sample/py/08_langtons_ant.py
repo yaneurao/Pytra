@@ -18,8 +18,8 @@ def capture(grid: list[list[int]], w: int, h: int) -> bytes:
 
 
 def run_08_langtons_ant() -> None:
-    w = 240
-    h = 240
+    w = 420
+    h = 420
     out_path = "sample/out/08_langtons_ant.gif"
 
     start = perf_counter()
@@ -34,7 +34,7 @@ def run_08_langtons_ant() -> None:
     y = h // 2
     d = 0
 
-    steps_total = 180000
+    steps_total = 600000
     capture_every = 3000
     frames: list[bytes] = []
 

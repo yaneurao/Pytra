@@ -1,6 +1,6 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
@@ -37,7 +37,7 @@ fn hit_sphere(mut ox: f64, mut oy: f64, mut oz: f64, mut dx: f64, mut dy: f64, m
     return (-1.0);
 }
 
-fn render(mut width: i64, mut height: i64) -> Vec<u8> {
+fn render(mut width: i64, mut height: i64, mut aa: i64) -> Vec<u8> {
     let mut pixels: Vec<u8> = Vec::<u8>::new();
     let mut ox: f64 = 0.0;
     let mut oy: f64 = 0.0;
@@ -46,110 +46,123 @@ fn render(mut width: i64, mut height: i64) -> Vec<u8> {
     let mut ly: f64 = 0.8;
     let mut lz: f64 = (-0.45);
     for y in (0)..(height) {
-        let mut sy: f64 = ((1.0) - (((2.0) * (((( y ) as f64) / (( ((height) - (1)) ) as f64))))));
         for x in (0)..(width) {
-            let mut sx: f64 = ((((2.0) * (((( x ) as f64) / (( ((width) - (1)) ) as f64))))) - (1.0));
-            sx = sx * ((( width ) as f64) / (( height ) as f64));
-            let mut dx: f64 = sx;
-            let mut dy: f64 = sy;
-            let mut dz: f64 = 1.0;
-            let mut inv_len: f64 = ((( 1.0 ) as f64) / (( math_sqrt(((((((((dx) * (dx))) + (((dy) * (dy))))) + (((dz) * (dz))))) as f64)) ) as f64));
-            dx = dx * inv_len;
-            dy = dy * inv_len;
-            dz = dz * inv_len;
-            let mut t_min: f64 = 1e+30;
-            let mut hit_id: i64 = (-1);
-            let mut t: f64 = hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8);
-            if py_bool(&((((t) > (0.0)) && ((t) < (t_min))))) {
-                t_min = t;
-                hit_id = 0;
-            }
-            t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95);
-            if py_bool(&((((t) > (0.0)) && ((t) < (t_min))))) {
-                t_min = t;
-                hit_id = 1;
-            }
-            t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, (-1001.0), 3.0, 1000.0);
-            if py_bool(&((((t) > (0.0)) && ((t) < (t_min))))) {
-                t_min = t;
-                hit_id = 2;
-            }
-            let mut r: i64 = 0;
-            let mut g: i64 = 0;
-            let mut b: i64 = 0;
-            if py_bool(&(((hit_id) >= (0)))) {
-                let mut px: f64 = ((ox) + (((dx) * (t_min))));
-                let mut py: f64 = ((oy) + (((dy) * (t_min))));
-                let mut pz: f64 = ((oz) + (((dz) * (t_min))));
-                let mut nx: f64 = 0.0;
-                let mut ny: f64 = 0.0;
-                let mut nz: f64 = 0.0;
-                if py_bool(&(((hit_id) == (0)))) {
-                    nx = ((( ((px) + (0.8)) ) as f64) / (( 0.8 ) as f64));
-                    ny = ((( ((py) + (0.2)) ) as f64) / (( 0.8 ) as f64));
-                    nz = ((( ((pz) - (2.2)) ) as f64) / (( 0.8 ) as f64));
-                } else {
-                    if py_bool(&(((hit_id) == (1)))) {
-                        nx = ((( ((px) - (0.9)) ) as f64) / (( 0.95 ) as f64));
-                        ny = ((( ((py) - (0.1)) ) as f64) / (( 0.95 ) as f64));
-                        nz = ((( ((pz) - (2.9)) ) as f64) / (( 0.95 ) as f64));
-                    } else {
-                        nx = 0.0;
-                        ny = 1.0;
-                        nz = 0.0;
+            let mut ar: i64 = 0;
+            let mut ag: i64 = 0;
+            let mut ab: i64 = 0;
+            for ay in (0)..(aa) {
+                for ax in (0)..(aa) {
+                    let mut fy = ((( (((( y ) as f64) + (( ((( (((( ay ) as f64) + (( 0.5 ) as f64))) ) as f64) / (( aa ) as f64)) ) as f64))) ) as f64) / (( ((height) - (1)) ) as f64));
+                    let mut fx = ((( (((( x ) as f64) + (( ((( (((( ax ) as f64) + (( 0.5 ) as f64))) ) as f64) / (( aa ) as f64)) ) as f64))) ) as f64) / (( ((width) - (1)) ) as f64));
+                    let mut sy: f64 = ((1.0) - (((2.0) * (fy))));
+                    let mut sx: f64 = ((((((2.0) * (fx))) - (1.0))) * (((( width ) as f64) / (( height ) as f64))));
+                    let mut dx: f64 = sx;
+                    let mut dy: f64 = sy;
+                    let mut dz: f64 = 1.0;
+                    let mut inv_len: f64 = ((( 1.0 ) as f64) / (( math_sqrt(((((((((dx) * (dx))) + (((dy) * (dy))))) + (((dz) * (dz))))) as f64)) ) as f64));
+                    dx = dx * inv_len;
+                    dy = dy * inv_len;
+                    dz = dz * inv_len;
+                    let mut t_min: f64 = 1e+30;
+                    let mut hit_id: i64 = (-1);
+                    let mut t: f64 = hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8);
+                    if py_bool(&((((t) > (0.0)) && ((t) < (t_min))))) {
+                        t_min = t;
+                        hit_id = 0;
                     }
-                }
-                let mut diff: f64 = ((((((nx) * ((-lx)))) + (((ny) * ((-ly)))))) + (((nz) * ((-lz)))));
-                diff = clamp01(diff);
-                let mut base_r: f64 = 0.0;
-                let mut base_g: f64 = 0.0;
-                let mut base_b: f64 = 0.0;
-                if py_bool(&(((hit_id) == (0)))) {
-                    base_r = 0.95;
-                    base_g = 0.35;
-                    base_b = 0.25;
-                } else {
-                    if py_bool(&(((hit_id) == (1)))) {
-                        base_r = 0.25;
-                        base_g = 0.55;
-                        base_b = 0.95;
-                    } else {
-                        let mut checker: i64 = ((((((((px) + (50.0))) * (0.8))) as i64)) + (((((((pz) + (50.0))) * (0.8))) as i64)));
-                        if py_bool(&(((((checker) % (2))) == (0)))) {
-                            base_r = 0.85;
-                            base_g = 0.85;
-                            base_b = 0.85;
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95);
+                    if py_bool(&((((t) > (0.0)) && ((t) < (t_min))))) {
+                        t_min = t;
+                        hit_id = 1;
+                    }
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, (-1001.0), 3.0, 1000.0);
+                    if py_bool(&((((t) > (0.0)) && ((t) < (t_min))))) {
+                        t_min = t;
+                        hit_id = 2;
+                    }
+                    let mut r: i64 = 0;
+                    let mut g: i64 = 0;
+                    let mut b: i64 = 0;
+                    if py_bool(&(((hit_id) >= (0)))) {
+                        let mut px: f64 = ((ox) + (((dx) * (t_min))));
+                        let mut py: f64 = ((oy) + (((dy) * (t_min))));
+                        let mut pz: f64 = ((oz) + (((dz) * (t_min))));
+                        let mut nx: f64 = 0.0;
+                        let mut ny: f64 = 0.0;
+                        let mut nz: f64 = 0.0;
+                        if py_bool(&(((hit_id) == (0)))) {
+                            nx = ((( ((px) + (0.8)) ) as f64) / (( 0.8 ) as f64));
+                            ny = ((( ((py) + (0.2)) ) as f64) / (( 0.8 ) as f64));
+                            nz = ((( ((pz) - (2.2)) ) as f64) / (( 0.8 ) as f64));
                         } else {
-                            base_r = 0.2;
-                            base_g = 0.2;
-                            base_b = 0.2;
+                            if py_bool(&(((hit_id) == (1)))) {
+                                nx = ((( ((px) - (0.9)) ) as f64) / (( 0.95 ) as f64));
+                                ny = ((( ((py) - (0.1)) ) as f64) / (( 0.95 ) as f64));
+                                nz = ((( ((pz) - (2.9)) ) as f64) / (( 0.95 ) as f64));
+                            } else {
+                                nx = 0.0;
+                                ny = 1.0;
+                                nz = 0.0;
+                            }
                         }
+                        let mut diff: f64 = ((((((nx) * ((-lx)))) + (((ny) * ((-ly)))))) + (((nz) * ((-lz)))));
+                        diff = clamp01(diff);
+                        let mut base_r: f64 = 0.0;
+                        let mut base_g: f64 = 0.0;
+                        let mut base_b: f64 = 0.0;
+                        if py_bool(&(((hit_id) == (0)))) {
+                            base_r = 0.95;
+                            base_g = 0.35;
+                            base_b = 0.25;
+                        } else {
+                            if py_bool(&(((hit_id) == (1)))) {
+                                base_r = 0.25;
+                                base_g = 0.55;
+                                base_b = 0.95;
+                            } else {
+                                let mut checker: i64 = ((((((((px) + (50.0))) * (0.8))) as i64)) + (((((((pz) + (50.0))) * (0.8))) as i64)));
+                                if py_bool(&(((((checker) % (2))) == (0)))) {
+                                    base_r = 0.85;
+                                    base_g = 0.85;
+                                    base_b = 0.85;
+                                } else {
+                                    base_r = 0.2;
+                                    base_g = 0.2;
+                                    base_b = 0.2;
+                                }
+                            }
+                        }
+                        let mut shade: f64 = ((0.12) + (((0.88) * (diff))));
+                        r = ((((255.0) * (clamp01(((base_r) * (shade)))))) as i64);
+                        g = ((((255.0) * (clamp01(((base_g) * (shade)))))) as i64);
+                        b = ((((255.0) * (clamp01(((base_b) * (shade)))))) as i64);
+                    } else {
+                        let mut tsky: f64 = ((0.5) * (((dy) + (1.0))));
+                        r = ((((255.0) * (((0.65) + (((0.2) * (tsky))))))) as i64);
+                        g = ((((255.0) * (((0.75) + (((0.18) * (tsky))))))) as i64);
+                        b = ((((255.0) * (((0.9) + (((0.08) * (tsky))))))) as i64);
                     }
+                    ar = ar + r;
+                    ag = ag + g;
+                    ab = ab + b;
                 }
-                let mut shade: f64 = ((0.12) + (((0.88) * (diff))));
-                r = ((((255.0) * (clamp01(((base_r) * (shade)))))) as i64);
-                g = ((((255.0) * (clamp01(((base_g) * (shade)))))) as i64);
-                b = ((((255.0) * (clamp01(((base_b) * (shade)))))) as i64);
-            } else {
-                let mut tsky: f64 = ((0.5) * (((dy) + (1.0))));
-                r = ((((255.0) * (((0.65) + (((0.2) * (tsky))))))) as i64);
-                g = ((((255.0) * (((0.75) + (((0.18) * (tsky))))))) as i64);
-                b = ((((255.0) * (((0.9) + (((0.08) * (tsky))))))) as i64);
             }
-            pixels.push((r) as u8);
-            pixels.push((g) as u8);
-            pixels.push((b) as u8);
+            let mut samples = ((aa) * (aa));
+            pixels.push((((ar) / (samples))) as u8);
+            pixels.push((((ag) / (samples))) as u8);
+            pixels.push((((ab) / (samples))) as u8);
         }
     }
     return pixels;
 }
 
 fn run_raytrace() -> () {
-    let mut width: i64 = 960;
-    let mut height: i64 = 540;
+    let mut width: i64 = 1600;
+    let mut height: i64 = 900;
+    let mut aa: i64 = 2;
     let mut out_path: String = "sample/out/raytrace_02.png".to_string();
     let mut start: f64 = perf_counter();
-    let mut pixels: Vec<u8> = render(width, height);
+    let mut pixels: Vec<u8> = render(width, height, aa);
     py_write_rgb_png(&(out_path), width, height, &(pixels));
     let mut elapsed: f64 = ((perf_counter()) - (start));
     println!("{} {}", "output:".to_string(), out_path);
