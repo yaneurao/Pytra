@@ -22,3 +22,19 @@
 - [x] list comprehension / nested list comprehension をサポートする（現状は手書きループへ書き換えが必要）。
 - [x] 添字代入（`a[i] = v`, `a[i][j] = v`）を含む代入系の回帰テストを追加し、`// unsupported assignment` 混入を検知する。
 - [x] `list.pop()` / `list.pop(index)` / `append` / `extend` など主要メソッド変換の互換テストを拡充する。
+
+## sample/py 実行一致で追加対応が必要な項目
+
+### py2cs.py 側
+
+- [x] `import math` / `math.sqrt` などモジュール経由呼び出しを C# 側で正しく解決する（`math` 名未解決エラーを解消する）。
+- [x] `from __future__ import annotations` を C# 変換時に無視する（`using __future__` を生成しない）。
+- [x] Python 変数名が C# 予約語（例: `base`）と衝突した場合の自動リネーム規則を実装する。
+- [x] `for ... in range(...)` 変換時の一時変数名衝突を防ぐ（ネスト時に `__range_*` が重複しないようにする）。
+- [x] `for ... in range(...)` 変換時のループ変数再宣言衝突を防ぐ（既存ローカルと同名を再宣言しない）。
+- [x] 大きな整数リテラル（例: `4294967296`）を含む代入で型変換エラーが出ないようにする（`int` / `long` の扱いを調整する）。
+
+### py2cpp.py 側
+
+- [x] `sample/py/04_monte_carlo_pi.py` の実行結果不一致を解消する（`pi_estimate` が Python と一致するようにする）。
+- [x] `for ... in range(...)` 変換時の一時変数名衝突を防ぐ（`sample/py/12_sort_visualizer.py` のコンパイル失敗を解消する）。

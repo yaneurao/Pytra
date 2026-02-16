@@ -21,12 +21,67 @@ class Scope:
 
 class CSharpTranspiler:
     INDENT = "    "
+    INT32_MIN = -(2**31)
+    INT32_MAX = 2**31 - 1
+    RESERVED_WORDS = {
+        "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char",
+        "checked", "class", "const", "continue", "decimal", "default", "delegate",
+        "do", "double", "else", "enum", "event", "explicit", "extern", "false",
+        "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit",
+        "in", "int", "interface", "internal", "is", "lock", "long", "namespace",
+        "new", "null", "object", "operator", "out", "override", "params", "private",
+        "protected", "public", "readonly", "ref", "return", "sbyte", "sealed",
+        "short", "sizeof", "stackalloc", "static", "string", "struct", "switch",
+        "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked",
+        "unsafe", "ushort", "using", "virtual", "void", "volatile", "while",
+    }
 
     def __init__(self) -> None:
         self.class_names: Set[str] = set()
         self.current_class_name: str | None = None
         self.current_static_fields: Set[str] = set()
         self.typing_aliases: dict[str, str] = {}
+        self.wide_int_functions: Set[str] = set()
+        self.temp_counter: int = 0
+        self.force_long_int: bool = False
+
+    def _ident(self, name: str) -> str:
+        if name in self.RESERVED_WORDS:
+            return f"@{name}"
+        return name
+
+    def _new_temp(self, base: str) -> str:
+        self.temp_counter += 1
+        return f"__pytra_{base}_{self.temp_counter}"
+
+    def _requires_wide_int(self, fn: ast.FunctionDef) -> bool:
+        for node in ast.walk(fn):
+            if isinstance(node, ast.Constant) and isinstance(node.value, int):
+                if node.value < self.INT32_MIN or node.value > self.INT32_MAX:
+                    return True
+        return False
+
+    def _called_function_names(self, fn: ast.FunctionDef) -> Set[str]:
+        called: Set[str] = set()
+        for node in ast.walk(fn):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                called.add(node.func.id)
+        return called
+
+    def _compute_wide_int_functions(self, funcs: List[ast.FunctionDef]) -> Set[str]:
+        func_names = {fn.name for fn in funcs}
+        direct = {fn.name for fn in funcs if self._requires_wide_int(fn)}
+        changed = True
+        while changed:
+            changed = False
+            for fn in funcs:
+                if fn.name in direct:
+                    continue
+                called = self._called_function_names(fn)
+                if any(name in direct for name in called if name in func_names):
+                    direct.add(fn.name)
+                    changed = True
+        return direct
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
         # 1ファイル単位の変換入口。AST化してからC#文字列へ変換する。
@@ -45,6 +100,10 @@ class CSharpTranspiler:
         self.class_names = {
             stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)
         }
+        module_functions = [
+            stmt for stmt in module.body if isinstance(stmt, ast.FunctionDef)
+        ]
+        self.wide_int_functions = self._compute_wide_int_functions(module_functions)
 
         for stmt in module.body:
             if isinstance(stmt, (ast.Import, ast.ImportFrom)):
@@ -85,7 +144,7 @@ class CSharpTranspiler:
         lines: Set[str] = set()
         if isinstance(stmt, ast.Import):
             for alias in stmt.names:
-                if alias.name in {"py_module", "time", "typing", "dataclasses"}:
+                if alias.name in {"py_module", "time", "typing", "dataclasses", "__future__"}:
                     continue
                 module_name = self._map_python_module(alias.name)
                 if alias.asname:
@@ -98,7 +157,7 @@ class CSharpTranspiler:
             if stmt.level != 0:
                 return lines
             if stmt.module:
-                if stmt.module in {"py_module", "time", "dataclasses"}:
+                if stmt.module in {"py_module", "time", "dataclasses", "__future__"}:
                     return lines
                 if stmt.module == "typing":
                     for alias in stmt.names:
@@ -322,6 +381,8 @@ class CSharpTranspiler:
             if isinstance(expr.value, bool):
                 return "bool"
             if isinstance(expr.value, int):
+                if expr.value < self.INT32_MIN or expr.value > self.INT32_MAX:
+                    return "long"
                 return "int"
             if isinstance(expr.value, float):
                 return "double"
@@ -360,36 +421,41 @@ class CSharpTranspiler:
         if fn.returns is None:
             raise TranspileError(f"Function '{fn.name}' requires return type annotation")
 
-        return_type = self._map_annotation(fn.returns)
-        params: List[str] = []
-        declared = set()
+        prev_force_long_int = self.force_long_int
+        self.force_long_int = fn.name in self.wide_int_functions or self._requires_wide_int(fn)
+        try:
+            return_type = self._map_annotation(fn.returns)
+            params: List[str] = []
+            declared = set()
 
-        for idx, arg in enumerate(fn.args.args):
-            if in_class and idx == 0 and arg.arg == "self":
-                declared.add("self")
-                continue
-            if arg.annotation is None:
-                raise TranspileError(
-                    f"Function '{fn.name}' argument '{arg.arg}' requires type annotation"
-                )
-            params.append(f"{self._map_annotation(arg.annotation)} {arg.arg}")
-            declared.add(arg.arg)
+            for idx, arg in enumerate(fn.args.args):
+                if in_class and idx == 0 and arg.arg == "self":
+                    declared.add("self")
+                    continue
+                if arg.annotation is None:
+                    raise TranspileError(
+                        f"Function '{fn.name}' argument '{arg.arg}' requires type annotation"
+                    )
+                params.append(f"{self._map_annotation(arg.annotation)} {self._ident(arg.arg)}")
+                declared.add(arg.arg)
 
-        body_lines = self.transpile_statements(fn.body, Scope(declared=declared))
-        if is_constructor:
-            if self.current_class_name is None:
-                raise TranspileError("Constructor conversion requires class context")
-            if return_type != "void":
-                raise TranspileError("__init__ return type must be None")
-            signature = f"public {self.current_class_name}({', '.join(params)})"
-        else:
-            modifier = "public" if in_class else "public static"
-            signature = f"{modifier} {return_type} {fn.name}({', '.join(params)})"
+            body_lines = self.transpile_statements(fn.body, Scope(declared=declared))
+            if is_constructor:
+                if self.current_class_name is None:
+                    raise TranspileError("Constructor conversion requires class context")
+                if return_type != "void":
+                    raise TranspileError("__init__ return type must be None")
+                signature = f"public {self._ident(self.current_class_name)}({', '.join(params)})"
+            else:
+                modifier = "public" if in_class else "public static"
+                signature = f"{modifier} {return_type} {self._ident(fn.name)}({', '.join(params)})"
 
-        lines = [signature, "{"]
-        lines.extend(self._indent_block(body_lines))
-        lines.append("}")
-        return "\n".join(lines)
+            lines = [signature, "{"]
+            lines.extend(self._indent_block(body_lines))
+            lines.append("}")
+            return "\n".join(lines)
+        finally:
+            self.force_long_int = prev_force_long_int
 
     def transpile_main(self, body: List[ast.stmt]) -> str:
         lines = ["public static void Main(string[] args)", "{"]
@@ -457,9 +523,9 @@ class CSharpTranspiler:
         name = stmt.target.id
         csharp_type = self._map_annotation(stmt.annotation)
         if stmt.value is None:
-            line = f"{csharp_type} {name};"
+            line = f"{csharp_type} {self._ident(name)};"
         else:
-            line = f"{csharp_type} {name} = {self.transpile_expr(stmt.value)};"
+            line = f"{csharp_type} {self._ident(name)} = {self.transpile_expr(stmt.value)};"
         scope.declared.add(name)
         return [line]
 
@@ -470,15 +536,15 @@ class CSharpTranspiler:
             tuple_target = stmt.targets[0]
             if not all(isinstance(elt, ast.Name) for elt in tuple_target.elts):
                 return [f"// unsupported tuple assignment: {ast.unparse(stmt)}"]
-            tmp_name = "_tmp_tuple"
+            tmp_name = self._new_temp("tuple")
             lines = [f"var {tmp_name} = {self.transpile_expr(stmt.value)};"]
             for i, elt in enumerate(tuple_target.elts, start=1):
                 name = elt.id
                 if name not in scope.declared:
                     scope.declared.add(name)
-                    lines.append(f"var {name} = {tmp_name}.Item{i};")
+                    lines.append(f"var {self._ident(name)} = {tmp_name}.Item{i};")
                 else:
-                    lines.append(f"{name} = {tmp_name}.Item{i};")
+                    lines.append(f"{self._ident(name)} = {tmp_name}.Item{i};")
             return lines
         if isinstance(stmt.targets[0], ast.Attribute):
             target = self.transpile_expr(stmt.targets[0])
@@ -489,9 +555,9 @@ class CSharpTranspiler:
         name = stmt.targets[0].id
         if name not in scope.declared:
             scope.declared.add(name)
-            return [f"var {name} = {self.transpile_expr(stmt.value)};"]
+            return [f"var {self._ident(name)} = {self.transpile_expr(stmt.value)};"]
 
-        return [f"{name} = {self.transpile_expr(stmt.value)};"]
+        return [f"{self._ident(name)} = {self.transpile_expr(stmt.value)};"]
 
     def _transpile_aug_assign(self, stmt: ast.AugAssign) -> List[str]:
         target = self.transpile_expr(stmt.target)
@@ -501,6 +567,27 @@ class CSharpTranspiler:
         if isinstance(stmt.op, ast.FloorDiv):
             return [f"{target} = ({target} / {value});"]
         return [f"{target} = ({target} {self._binop(stmt.op)} {value});"]
+
+    def _parse_range_args(self, iter_expr: ast.expr) -> tuple[str, str, str] | None:
+        if not (
+            isinstance(iter_expr, ast.Call)
+            and isinstance(iter_expr.func, ast.Name)
+            and iter_expr.func.id == "range"
+            and len(iter_expr.keywords) == 0
+        ):
+            return None
+        argc = len(iter_expr.args)
+        if argc == 1:
+            return "0", self.transpile_expr(iter_expr.args[0]), "1"
+        if argc == 2:
+            return self.transpile_expr(iter_expr.args[0]), self.transpile_expr(iter_expr.args[1]), "1"
+        if argc == 3:
+            return (
+                self.transpile_expr(iter_expr.args[0]),
+                self.transpile_expr(iter_expr.args[1]),
+                self.transpile_expr(iter_expr.args[2]),
+            )
+        raise TranspileError("range() with more than 3 arguments is not supported")
 
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
         tuple_target = None
@@ -515,12 +602,39 @@ class CSharpTranspiler:
         else:
             return [f"// unsupported for-loop target: {ast.unparse(stmt.target)}"]
 
-        lines = [f"foreach (var {target_name} in {self.transpile_expr(stmt.iter)})", "{"]
+        range_args = self._parse_range_args(stmt.iter)
+        lines: List[str] = []
         body_scope = Scope(declared=set(scope.declared))
-        body_scope.declared.add(target_name)
+
+        if range_args is not None and tuple_target is None:
+            start_expr, stop_expr, step_expr = range_args
+            start_var = self._new_temp("range_start")
+            stop_var = self._new_temp("range_stop")
+            step_var = self._new_temp("range_step")
+            out_target = self._ident(target_name)
+            lines.append(f"var {start_var} = {start_expr};")
+            lines.append(f"var {stop_var} = {stop_expr};")
+            lines.append(f"var {step_var} = {step_expr};")
+            lines.append(f"if ({step_var} == 0) throw new Exception(\"range() arg 3 must not be zero\");")
+            if target_name in scope.declared:
+                init_part = f"{out_target} = {start_var}"
+            else:
+                init_part = f"var {out_target} = {start_var}"
+                body_scope.declared.add(target_name)
+            lines.append(
+                f"for ({init_part}; "
+                f"({step_var} > 0) ? ({out_target} < {stop_var}) : ({out_target} > {stop_var}); "
+                f"{out_target} += {step_var})"
+            )
+            lines.append("{")
+        else:
+            out_target = self._ident(target_name)
+            lines.extend([f"foreach (var {out_target} in {self.transpile_expr(stmt.iter)})", "{"])
+            body_scope.declared.add(target_name)
+
         if tuple_target is not None:
             for i, elt in enumerate(tuple_target.elts, start=1):
-                lines.extend(self._indent_block([f"var {elt.id} = {target_name}.Item{i};"]))
+                lines.extend(self._indent_block([f"var {self._ident(elt.id)} = {out_target}.Item{i};"]))
                 body_scope.declared.add(elt.id)
         body_lines = self.transpile_statements(stmt.body, body_scope)
         lines.extend(self._indent_block(body_lines))
@@ -613,16 +727,21 @@ class CSharpTranspiler:
         if isinstance(expr, ast.Name):
             if expr.id == "self":
                 return "this"
-            return expr.id
+            return self._ident(expr.id)
         if isinstance(expr, ast.Attribute):
+            if isinstance(expr.value, ast.Name) and expr.value.id == "math":
+                if expr.attr == "pi":
+                    return "Math.PI"
+                if expr.attr == "e":
+                    return "Math.E"
             if (
                 isinstance(expr.value, ast.Name)
                 and expr.value.id == "self"
                 and self.current_class_name is not None
                 and expr.attr in self.current_static_fields
             ):
-                return f"{self.current_class_name}.{expr.attr}"
-            return f"{self.transpile_expr(expr.value)}.{expr.attr}"
+                return f"{self._ident(self.current_class_name)}.{self._ident(expr.attr)}"
+            return f"{self.transpile_expr(expr.value)}.{self._ident(expr.attr)}"
         if isinstance(expr, ast.Constant):
             return self._constant(expr.value)
         if isinstance(expr, ast.List):
@@ -647,6 +766,8 @@ class CSharpTranspiler:
         if isinstance(expr, ast.BinOp):
             left = self.transpile_expr(expr.left)
             right = self.transpile_expr(expr.right)
+            if isinstance(expr.op, ast.FloorDiv):
+                return f"(long)Math.Floor(({left}) / (double)({right}))"
             return f"({left} {self._binop(expr.op)} {right})"
         if isinstance(expr, ast.UnaryOp):
             return f"({self._unaryop(expr.op)}{self.transpile_expr(expr.operand)})"
@@ -690,7 +811,8 @@ class CSharpTranspiler:
             return "new List<byte>()"
         if isinstance(call.func, ast.Name) and call.func.id == "int":
             if len(args_list) == 1:
-                return f"(int)({args_list[0]})"
+                cast_type = "long" if self.force_long_int else "int"
+                return f"({cast_type})({args_list[0]})"
             return "0"
         if isinstance(call.func, ast.Name) and call.func.id == "float":
             if len(args_list) == 1:
@@ -703,9 +825,25 @@ class CSharpTranspiler:
 
         if isinstance(call.func, ast.Name):
             if call.func.id in self.class_names:
-                return f"new {call.func.id}({args})"
-            return f"{call.func.id}({args})"
+                return f"new {self._ident(call.func.id)}({args})"
+            return f"{self._ident(call.func.id)}({args})"
         if isinstance(call.func, ast.Attribute):
+            if isinstance(call.func.value, ast.Name) and call.func.value.id == "math":
+                math_map = {
+                    "sqrt": "Sqrt",
+                    "sin": "Sin",
+                    "cos": "Cos",
+                    "tan": "Tan",
+                    "exp": "Exp",
+                    "log": "Log",
+                    "log10": "Log10",
+                    "floor": "Floor",
+                    "ceil": "Ceiling",
+                    "fabs": "Abs",
+                    "pow": "Pow",
+                }
+                mapped = math_map.get(call.func.attr, call.func.attr)
+                return f"Math.{mapped}({args})"
             if (
                 isinstance(call.func.value, ast.Name)
                 and call.func.value.id == "png_helper"
@@ -733,7 +871,7 @@ class CSharpTranspiler:
         if isinstance(annotation, ast.Name):
             mapped_name = self.typing_aliases.get(annotation.id, annotation.id)
             mapping = {
-                "int": "int",
+                "int": "long" if self.force_long_int else "int",
                 "float": "double",
                 "str": "string",
                 "bytearray": "List<byte>",
@@ -804,6 +942,10 @@ class CSharpTranspiler:
             return "true" if value else "false"
         if value is None:
             return "null"
+        if isinstance(value, int):
+            if value < self.INT32_MIN or value > self.INT32_MAX:
+                return f"{value}L"
+            return str(value)
         if isinstance(value, str):
             escaped = value.replace("\\", "\\\\").replace('"', '\\"')
             return f'"{escaped}"'

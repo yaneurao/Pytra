@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 
+import argparse
 import ast
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import List, Set
 
 
@@ -27,6 +29,8 @@ class CppTranspiler:
     """Python AST を C++ ソースコードへ変換する本体クラス。"""
 
     INDENT = "    "
+    INT32_MIN = -(2**31)
+    INT32_MAX = 2**31 - 1
 
     def __init__(self) -> None:
         """変換時に使う内部状態を初期化する。"""
@@ -35,6 +39,42 @@ class CppTranspiler:
         self.current_class_name: str = ""
         self.current_static_fields: Set[str] = set()
         self.global_function_renames: dict[str, str] = {}
+        self.wide_int_functions: Set[str] = set()
+        self.force_long_int: bool = False
+        self.temp_counter: int = 0
+
+    def _new_temp(self, base: str) -> str:
+        self.temp_counter += 1
+        return f"__pytra_{base}_{self.temp_counter}"
+
+    def _requires_wide_int(self, fn: ast.FunctionDef) -> bool:
+        for node in ast.walk(fn):
+            if isinstance(node, ast.Constant) and isinstance(node.value, int):
+                if node.value < self.INT32_MIN or node.value > self.INT32_MAX:
+                    return True
+        return False
+
+    def _called_function_names(self, fn: ast.FunctionDef) -> Set[str]:
+        called: Set[str] = set()
+        for node in ast.walk(fn):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                called.add(node.func.id)
+        return called
+
+    def _compute_wide_int_functions(self, funcs: List[ast.FunctionDef]) -> Set[str]:
+        func_names = {fn.name for fn in funcs}
+        wide = {fn.name for fn in funcs if self._requires_wide_int(fn)}
+        changed = True
+        while changed:
+            changed = False
+            for fn in funcs:
+                if fn.name in wide:
+                    continue
+                called = self._called_function_names(fn)
+                if any(name in wide for name in called if name in func_names):
+                    wide.add(fn.name)
+                    changed = True
+        return wide
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
         """1ファイルを読み込み、C++へ変換して出力する。
@@ -91,6 +131,10 @@ class CppTranspiler:
         )
         if has_top_level_main:
             self.global_function_renames["main"] = "py_main"
+        module_functions = [
+            stmt for stmt in module.body if isinstance(stmt, ast.FunctionDef)
+        ]
+        self.wide_int_functions = self._compute_wide_int_functions(module_functions)
 
         for stmt in module.body:
             if isinstance(stmt, ast.FunctionDef):
@@ -419,6 +463,8 @@ class CppTranspiler:
             if isinstance(expr.value, bool):
                 return "bool"
             if isinstance(expr.value, int):
+                if self.force_long_int or expr.value < self.INT32_MIN or expr.value > self.INT32_MAX:
+                    return "long long"
                 return "int"
             if isinstance(expr.value, float):
                 return "double"
@@ -468,7 +514,7 @@ class CppTranspiler:
             if expr.func.id in {"len"}:
                 return "size_t"
             if expr.func.id in {"int"}:
-                return "int"
+                return "long long" if self.force_long_int else "int"
             if expr.func.id in {"float"}:
                 return "double"
             if expr.func.id in {"str"}:
@@ -485,43 +531,47 @@ class CppTranspiler:
             in_class: クラス内メソッドかどうか。
         """
         is_constructor = in_class and fn.name == "__init__"
+        prev_force_long_int = self.force_long_int
+        self.force_long_int = fn.name in self.wide_int_functions or self._requires_wide_int(fn)
+        try:
+            return_type = self._map_annotation(fn.returns)
+            params: List[str] = []
+            declared: Set[str] = set()
 
-        return_type = self._map_annotation(fn.returns)
-        params: List[str] = []
-        declared: Set[str] = set()
-
-        idx = 0
-        for arg in fn.args.args:
-            if in_class and idx == 0 and arg.arg == "self":
-                declared.add("self")
+            idx = 0
+            for arg in fn.args.args:
+                if in_class and idx == 0 and arg.arg == "self":
+                    declared.add("self")
+                    idx = idx + 1
+                    continue
+                mapped = self._map_annotation(arg.annotation)
+                if self._should_pass_by_const_ref(mapped) and not self._is_param_mutated(fn, arg.arg):
+                    params.append(f"const {mapped}& {arg.arg}")
+                else:
+                    params.append(f"{mapped} {arg.arg}")
+                declared.add(arg.arg)
                 idx = idx + 1
-                continue
-            mapped = self._map_annotation(arg.annotation)
-            if self._should_pass_by_const_ref(mapped) and not self._is_param_mutated(fn, arg.arg):
-                params.append(f"const {mapped}& {arg.arg}")
-            else:
-                params.append(f"{mapped} {arg.arg}")
-            declared.add(arg.arg)
-            idx = idx + 1
 
-        body_lines = self.transpile_statements(fn.body, Scope(declared=declared))
-        if is_constructor:
-            if self.current_class_name == "":
-                raise TranspileError("Constructor conversion requires class context")
-            if return_type != "void":
-                raise TranspileError("__init__ return type must be None")
-            lines: List[str] = [f"{self.current_class_name}({', '.join(params)})", "{"]
+            body_lines = self.transpile_statements(fn.body, Scope(declared=declared))
+            if is_constructor:
+                if self.current_class_name == "":
+                    raise TranspileError("Constructor conversion requires class context")
+                if return_type != "void":
+                    raise TranspileError("__init__ return type must be None")
+                lines: List[str] = [f"{self.current_class_name}({', '.join(params)})", "{"]
+                lines.extend(self._indent_block(body_lines))
+                lines.append("}")
+                return "\n".join(lines)
+
+            fn_name = fn.name
+            if not in_class and fn_name in self.global_function_renames:
+                fn_name = self.global_function_renames[fn_name]
+            lines: List[str] = [f"{return_type} {fn_name}({', '.join(params)})", "{"]
             lines.extend(self._indent_block(body_lines))
             lines.append("}")
             return "\n".join(lines)
-
-        fn_name = fn.name
-        if not in_class and fn_name in self.global_function_renames:
-            fn_name = self.global_function_renames[fn_name]
-        lines: List[str] = [f"{return_type} {fn_name}({', '.join(params)})", "{"]
-        lines.extend(self._indent_block(body_lines))
-        lines.append("}")
-        return "\n".join(lines)
+        finally:
+            self.force_long_int = prev_force_long_int
 
     def _should_pass_by_const_ref(self, cpp_type: str) -> bool:
         """コピーコストが高い型を const 参照渡しにするか判定する。"""
@@ -699,7 +749,7 @@ class CppTranspiler:
             for elt in tuple_target.elts:
                 if not isinstance(elt, ast.Name):
                     return ["// unsupported tuple assignment"]
-            tmp_name = "_tmp_tuple"
+            tmp_name = self._new_temp("tuple")
             lines: List[str] = [f"auto {tmp_name} = {self.transpile_expr(stmt.value)};"]
             i = 0
             for elt in tuple_target.elts:
@@ -743,6 +793,27 @@ class CppTranspiler:
         op = self._binop(stmt.op)
         return [f"{target} = ({target} {op} {value});"]
 
+    def _parse_range_args(self, iter_expr: ast.expr) -> tuple[str, str, str] | None:
+        if not (
+            isinstance(iter_expr, ast.Call)
+            and isinstance(iter_expr.func, ast.Name)
+            and iter_expr.func.id == "range"
+            and len(iter_expr.keywords) == 0
+        ):
+            return None
+        argc = len(iter_expr.args)
+        if argc == 1:
+            return "0", self.transpile_expr(iter_expr.args[0]), "1"
+        if argc == 2:
+            return self.transpile_expr(iter_expr.args[0]), self.transpile_expr(iter_expr.args[1]), "1"
+        if argc == 3:
+            return (
+                self.transpile_expr(iter_expr.args[0]),
+                self.transpile_expr(iter_expr.args[1]),
+                self.transpile_expr(iter_expr.args[2]),
+            )
+        raise TranspileError("range() with more than 3 arguments is not supported")
+
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
         """for 文を range-for 形式へ変換する。"""
         tuple_names: List[str] = []
@@ -764,9 +835,33 @@ class CppTranspiler:
         else:
             return ["// unsupported for-loop target"]
 
-        lines: List[str] = [f"for (const auto& {target_name} : {self.transpile_expr(stmt.iter)})", "{"]
+        lines: List[str] = []
         body_scope = Scope(declared=set(scope.declared))
-        body_scope.declared.add(target_name)
+        range_args = self._parse_range_args(stmt.iter)
+        if range_args is not None and len(tuple_names) == 0:
+            start_expr, stop_expr, step_expr = range_args
+            start_var = self._new_temp("range_start")
+            stop_var = self._new_temp("range_stop")
+            step_var = self._new_temp("range_step")
+            lines.append(f"auto {start_var} = {start_expr};")
+            lines.append(f"auto {stop_var} = {stop_expr};")
+            lines.append(f"auto {step_var} = {step_expr};")
+            lines.append(f"if ({step_var} == 0) throw std::runtime_error(\"range() arg 3 must not be zero\");")
+            if target_name in scope.declared:
+                init_part = f"{target_name} = {start_var}"
+            else:
+                init_part = f"auto {target_name} = {start_var}"
+                body_scope.declared.add(target_name)
+            lines.append(
+                f"for ({init_part}; "
+                f"({step_var} > 0) ? ({target_name} < {stop_var}) : ({target_name} > {stop_var}); "
+                f"{target_name} += {step_var})"
+            )
+            lines.append("{")
+        else:
+            lines.extend([f"for (const auto& {target_name} : {self.transpile_expr(stmt.iter)})", "{"])
+            body_scope.declared.add(target_name)
+
         if len(tuple_names) > 0:
             i = 0
             for elt_name in tuple_names:
@@ -1019,7 +1114,8 @@ class CppTranspiler:
             return "\"\""
         if isinstance(call.func, ast.Name) and call.func.id == "int":
             if len(call.args) == 1:
-                return f"static_cast<int>({args_list[0]})"
+                cast_t = "long long" if self.force_long_int else "int"
+                return f"static_cast<{cast_t}>({args_list[0]})"
             return "0"
         if isinstance(call.func, ast.Name) and call.func.id == "float":
             if len(call.args) == 1:
@@ -1128,7 +1224,7 @@ class CppTranspiler:
             return "auto"
         if isinstance(annotation, ast.Name):
             if annotation.id == "int":
-                return "int"
+                return "long long" if self.force_long_int else "int"
             if annotation.id == "float":
                 return "double"
             if annotation.id == "str":
@@ -1270,6 +1366,9 @@ class CppTranspiler:
             return "false"
         if text == "None":
             return "nullptr"
+        if isinstance(value, int):
+            if self.force_long_int or value < self.INT32_MIN or value > self.INT32_MAX:
+                return f"{value}LL"
         return text
 
     def _binop(self, op: ast.operator) -> str:
@@ -1481,3 +1580,20 @@ def transpile(input_file: str, output_file: str) -> None:
 
 
 __all__ = ["TranspileError", "CppTranspiler", "transpile"]
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Transpile typed Python code to C++")
+    parser.add_argument("input", help="Path to input Python file")
+    parser.add_argument("output", help="Path to output C++ file")
+    args = parser.parse_args()
+    try:
+        transpile(args.input, args.output)
+    except (OSError, SyntaxError, TranspileError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
