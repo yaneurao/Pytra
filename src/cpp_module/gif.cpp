@@ -5,100 +5,65 @@
 #include <cstdint>
 #include <fstream>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
 namespace pycs::cpp_module::gif {
 namespace {
 
-void append_u16_le(std::string& out, std::uint16_t v) {
-    out.push_back(static_cast<char>(v & 0xFF));
-    out.push_back(static_cast<char>((v >> 8) & 0xFF));
+void append_u16_le(std::vector<std::uint8_t>& out, std::uint16_t v) {
+    out.push_back(static_cast<std::uint8_t>(v & 0xFF));
+    out.push_back(static_cast<std::uint8_t>((v >> 8) & 0xFF));
 }
 
-std::string lzw_encode(const std::string& data, int min_code_size) {
+void append_bytes(std::vector<std::uint8_t>& out, const std::uint8_t* data, std::size_t len) {
+    out.insert(out.end(), data, data + len);
+}
+
+void emit_code(
+    std::vector<std::uint8_t>& out,
+    std::uint32_t& bit_buffer,
+    int& bit_count,
+    int code_size,
+    int code
+) {
+    bit_buffer |= (static_cast<std::uint32_t>(code) << bit_count);
+    bit_count += code_size;
+    while (bit_count >= 8) {
+        out.push_back(static_cast<std::uint8_t>(bit_buffer & 0xFF));
+        bit_buffer >>= 8;
+        bit_count -= 8;
+    }
+}
+
+std::vector<std::uint8_t> lzw_encode(const std::vector<std::uint8_t>& data, int min_code_size) {
     if (data.empty()) {
-        return std::string();
+        return {};
     }
 
     const int clear_code = 1 << min_code_size;
     const int end_code = clear_code + 1;
     int code_size = min_code_size + 1;
 
-    std::string out;
-    out.reserve(data.size() + data.size() / 2);
+    std::vector<std::uint8_t> out;
+    // 現実装は各ピクセルごとに clear code を挟むため、出力量は入力より大きくなる。
+    // 十分な容量を先に確保し、LTO 環境での再確保由来警告とオーバーヘッドを避ける。
+    out.reserve(data.size() * 3 + 16);
 
     std::uint32_t bit_buffer = 0;
     int bit_count = 0;
 
-    auto emit = [&](int code) {
-        bit_buffer |= (static_cast<std::uint32_t>(code) << bit_count);
-        bit_count += code_size;
-        while (bit_count >= 8) {
-            out.push_back(static_cast<char>(bit_buffer & 0xFF));
-            bit_buffer >>= 8;
-            bit_count -= 8;
-        }
-    };
-
-    auto reset_table = [&]() { code_size = min_code_size + 1; };
-
-    emit(clear_code);
-    reset_table();
-
-    for (unsigned char c : data) {
-        emit(static_cast<int>(c));
-        emit(clear_code);
-        reset_table();
-    }
-    emit(end_code);
-
-    if (bit_count > 0) {
-        out.push_back(static_cast<char>(bit_buffer & 0xFF));
-    }
-
-    return out;
-}
-
-std::string lzw_encode(const std::vector<std::uint8_t>& data, int min_code_size) {
-    if (data.empty()) {
-        return std::string();
-    }
-
-    const int clear_code = 1 << min_code_size;
-    const int end_code = clear_code + 1;
-    int code_size = min_code_size + 1;
-
-    std::string out;
-    out.reserve(data.size() + data.size() / 2);
-
-    std::uint32_t bit_buffer = 0;
-    int bit_count = 0;
-
-    auto emit = [&](int code) {
-        bit_buffer |= (static_cast<std::uint32_t>(code) << bit_count);
-        bit_count += code_size;
-        while (bit_count >= 8) {
-            out.push_back(static_cast<char>(bit_buffer & 0xFF));
-            bit_buffer >>= 8;
-            bit_count -= 8;
-        }
-    };
-
-    auto reset_table = [&]() { code_size = min_code_size + 1; };
-
-    emit(clear_code);
-    reset_table();
+    emit_code(out, bit_buffer, bit_count, code_size, clear_code);
+    code_size = min_code_size + 1;
 
     for (std::uint8_t c : data) {
-        emit(static_cast<int>(c));
-        emit(clear_code);
-        reset_table();
+        emit_code(out, bit_buffer, bit_count, code_size, static_cast<int>(c));
+        emit_code(out, bit_buffer, bit_count, code_size, clear_code);
+        code_size = min_code_size + 1;
     }
-    emit(end_code);
+    emit_code(out, bit_buffer, bit_count, code_size, end_code);
 
     if (bit_count > 0) {
-        out.push_back(static_cast<char>(bit_buffer & 0xFF));
+        out.push_back(static_cast<std::uint8_t>(bit_buffer & 0xFF));
     }
 
     return out;
@@ -141,61 +106,61 @@ void save_gif(
         }
     }
 
-    std::string out;
+    std::vector<std::uint8_t> out;
     out.reserve(static_cast<std::size_t>(1024) + frames.size() * frame_bytes / 2);
 
-    out.append("GIF89a", 6);
+    append_bytes(out, reinterpret_cast<const std::uint8_t*>("GIF89a"), 6);
     append_u16_le(out, static_cast<std::uint16_t>(width));
     append_u16_le(out, static_cast<std::uint16_t>(height));
-    out.push_back(static_cast<char>(0xF7));
-    out.push_back(static_cast<char>(0));
-    out.push_back(static_cast<char>(0));
-    out.append(reinterpret_cast<const char*>(palette.data()), static_cast<std::size_t>(palette.size()));
+    out.push_back(static_cast<std::uint8_t>(0xF7));
+    out.push_back(static_cast<std::uint8_t>(0));
+    out.push_back(static_cast<std::uint8_t>(0));
+    append_bytes(out, palette.data(), palette.size());
 
-    out.push_back(static_cast<char>(0x21));
-    out.push_back(static_cast<char>(0xFF));
-    out.push_back(static_cast<char>(0x0B));
-    out.append("NETSCAPE2.0", 11);
-    out.push_back(static_cast<char>(0x03));
-    out.push_back(static_cast<char>(0x01));
+    out.push_back(static_cast<std::uint8_t>(0x21));
+    out.push_back(static_cast<std::uint8_t>(0xFF));
+    out.push_back(static_cast<std::uint8_t>(0x0B));
+    append_bytes(out, reinterpret_cast<const std::uint8_t*>("NETSCAPE2.0"), 11);
+    out.push_back(static_cast<std::uint8_t>(0x03));
+    out.push_back(static_cast<std::uint8_t>(0x01));
     append_u16_le(out, static_cast<std::uint16_t>(loop));
-    out.push_back(static_cast<char>(0x00));
+    out.push_back(static_cast<std::uint8_t>(0x00));
 
     for (const auto& fr : frames) {
-        out.push_back(static_cast<char>(0x21));
-        out.push_back(static_cast<char>(0xF9));
-        out.push_back(static_cast<char>(0x04));
-        out.push_back(static_cast<char>(0x00));
+        out.push_back(static_cast<std::uint8_t>(0x21));
+        out.push_back(static_cast<std::uint8_t>(0xF9));
+        out.push_back(static_cast<std::uint8_t>(0x04));
+        out.push_back(static_cast<std::uint8_t>(0x00));
         append_u16_le(out, static_cast<std::uint16_t>(delay_cs));
-        out.push_back(static_cast<char>(0x00));
-        out.push_back(static_cast<char>(0x00));
+        out.push_back(static_cast<std::uint8_t>(0x00));
+        out.push_back(static_cast<std::uint8_t>(0x00));
 
-        out.push_back(static_cast<char>(0x2C));
+        out.push_back(static_cast<std::uint8_t>(0x2C));
         append_u16_le(out, static_cast<std::uint16_t>(0));
         append_u16_le(out, static_cast<std::uint16_t>(0));
         append_u16_le(out, static_cast<std::uint16_t>(width));
         append_u16_le(out, static_cast<std::uint16_t>(height));
-        out.push_back(static_cast<char>(0x00));
+        out.push_back(static_cast<std::uint8_t>(0x00));
 
-        out.push_back(static_cast<char>(0x08));
-        const std::string compressed = lzw_encode(fr, 8);
+        out.push_back(static_cast<std::uint8_t>(0x08));
+        const std::vector<std::uint8_t> compressed = lzw_encode(fr, 8);
         std::size_t pos = 0;
         while (pos < compressed.size()) {
             const std::size_t len = (compressed.size() - pos > 255) ? 255 : (compressed.size() - pos);
-            out.push_back(static_cast<char>(len));
-            out.append(compressed, pos, len);
+            out.push_back(static_cast<std::uint8_t>(len));
+            append_bytes(out, compressed.data() + pos, len);
             pos += len;
         }
-        out.push_back(static_cast<char>(0x00));
+        out.push_back(static_cast<std::uint8_t>(0x00));
     }
 
-    out.push_back(static_cast<char>(0x3B));
+    out.push_back(static_cast<std::uint8_t>(0x3B));
 
     std::ofstream ofs(path, std::ios::binary);
     if (!ofs) {
         throw std::runtime_error("gif: failed to open output file");
     }
-    ofs.write(out.data(), static_cast<std::streamsize>(out.size()));
+    ofs.write(reinterpret_cast<const char*>(out.data()), static_cast<std::streamsize>(out.size()));
 }
 
 }  // namespace pycs::cpp_module::gif

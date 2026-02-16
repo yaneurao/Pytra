@@ -58,7 +58,7 @@ python src/py2rs.py test/py/case28_iterable.py test/rs/case28_iterable.rs
 #### C++
 
 ```bash
-g++ -std=c++20 -O3 -I src test/cpp/case28_iterable.cpp \
+g++ -std=c++20 -O3 -ffast-math -flto -I src test/cpp/case28_iterable.cpp \
   src/cpp_module/png.cpp src/cpp_module/gif.cpp src/cpp_module/math.cpp \
   src/cpp_module/time.cpp src/cpp_module/pathlib.cpp src/cpp_module/dataclasses.cpp \
   src/cpp_module/ast.cpp src/cpp_module/gc.cpp \
