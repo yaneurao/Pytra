@@ -60,13 +60,57 @@ std::string lzw_encode(const std::string& data, int min_code_size) {
     return out;
 }
 
+std::string lzw_encode(const std::vector<std::uint8_t>& data, int min_code_size) {
+    if (data.empty()) {
+        return std::string();
+    }
+
+    const int clear_code = 1 << min_code_size;
+    const int end_code = clear_code + 1;
+    int code_size = min_code_size + 1;
+
+    std::string out;
+    out.reserve(data.size() + data.size() / 2);
+
+    std::uint32_t bit_buffer = 0;
+    int bit_count = 0;
+
+    auto emit = [&](int code) {
+        bit_buffer |= (static_cast<std::uint32_t>(code) << bit_count);
+        bit_count += code_size;
+        while (bit_count >= 8) {
+            out.push_back(static_cast<char>(bit_buffer & 0xFF));
+            bit_buffer >>= 8;
+            bit_count -= 8;
+        }
+    };
+
+    auto reset_table = [&]() { code_size = min_code_size + 1; };
+
+    emit(clear_code);
+    reset_table();
+
+    for (std::uint8_t c : data) {
+        emit(static_cast<int>(c));
+        emit(clear_code);
+        reset_table();
+    }
+    emit(end_code);
+
+    if (bit_count > 0) {
+        out.push_back(static_cast<char>(bit_buffer & 0xFF));
+    }
+
+    return out;
+}
+
 }  // namespace
 
-std::string grayscale_palette() {
-    std::string p;
+std::vector<std::uint8_t> grayscale_palette() {
+    std::vector<std::uint8_t> p;
     p.reserve(256 * 3);
     for (int i = 0; i < 256; ++i) {
-        const char v = static_cast<char>(i);
+        const auto v = static_cast<std::uint8_t>(i);
         p.push_back(v);
         p.push_back(v);
         p.push_back(v);
@@ -78,8 +122,8 @@ void save_gif(
     const std::string& path,
     int width,
     int height,
-    const std::vector<std::string>& frames,
-    const std::string& palette,
+    const std::vector<std::vector<std::uint8_t>>& frames,
+    const std::vector<std::uint8_t>& palette,
     int delay_cs,
     int loop
 ) {
@@ -106,7 +150,7 @@ void save_gif(
     out.push_back(static_cast<char>(0xF7));
     out.push_back(static_cast<char>(0));
     out.push_back(static_cast<char>(0));
-    out.append(palette);
+    out.append(reinterpret_cast<const char*>(palette.data()), static_cast<std::size_t>(palette.size()));
 
     out.push_back(static_cast<char>(0x21));
     out.push_back(static_cast<char>(0xFF));

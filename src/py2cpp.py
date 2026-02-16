@@ -477,7 +477,7 @@ class CppTranspiler(BaseTranspiler):
             if expr.func.id in {"str"}:
                 return "string"
             if expr.func.id in {"bytearray", "bytes"}:
-                return "string"
+                return "vector<uint8_t>"
         return ""
 
     def transpile_function(self, fn: ast.FunctionDef, in_class: bool = False) -> str:
@@ -1182,9 +1182,9 @@ class CppTranspiler(BaseTranspiler):
             if annotation.id in CPP_PRIMITIVE_TYPES:
                 return CPP_PRIMITIVE_TYPES[annotation.id]
             if annotation.id == "bytearray":
-                return "string"
+                return "vector<uint8_t>"
             if annotation.id == "bytes":
-                return "string"
+                return "vector<uint8_t>"
             if annotation.id in self.class_names:
                 return f"pycs::gc::RcHandle<{annotation.id}>"
             return "auto"

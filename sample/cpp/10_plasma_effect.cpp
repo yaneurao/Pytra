@@ -28,14 +28,14 @@ void run_10_plasma_effect()
     long long frames_n = 216;
     string out_path = "sample/out/10_plasma_effect.gif";
     auto start = perf_counter();
-    vector<string> frames = {};
+    vector<vector<uint8_t>> frames = {};
     auto __pytra_range_start_1 = 0;
     auto __pytra_range_stop_2 = frames_n;
     auto __pytra_range_step_3 = 1;
     if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
     for (auto t = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (t < __pytra_range_stop_2) : (t > __pytra_range_stop_2); t += __pytra_range_step_3)
     {
-        string frame = py_bytearray((w * h));
+        vector<uint8_t> frame = py_bytearray((w * h));
         long long i = 0;
         auto __pytra_range_start_4 = 0;
         auto __pytra_range_stop_5 = h;

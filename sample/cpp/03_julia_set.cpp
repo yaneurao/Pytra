@@ -20,9 +20,9 @@
 using namespace std;
 using namespace pycs::gc;
 
-string render_julia(long long width, long long height, long long max_iter, double cx, double cy)
+vector<uint8_t> render_julia(long long width, long long height, long long max_iter, double cx, double cy)
 {
-    string pixels = py_bytearray();
+    vector<uint8_t> pixels = py_bytearray();
     auto __pytra_range_start_1 = 0;
     auto __pytra_range_stop_2 = height;
     auto __pytra_range_step_3 = 1;
@@ -82,7 +82,7 @@ void run_julia()
     long long max_iter = 20000;
     string out_path = "sample/out/julia_03.png";
     double start = perf_counter();
-    string pixels = render_julia(width, height, max_iter, (-0.8), 0.156);
+    vector<uint8_t> pixels = render_julia(width, height, max_iter, (-0.8), 0.156);
     pycs::cpp_module::png::write_rgb_png(out_path, width, height, pixels);
     double elapsed = (perf_counter() - start);
     py_print("output:", out_path);

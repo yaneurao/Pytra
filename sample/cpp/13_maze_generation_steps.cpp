@@ -20,11 +20,11 @@
 using namespace std;
 using namespace pycs::gc;
 
-string capture(const vector<vector<long long>>& grid, long long w, long long h, long long scale)
+vector<uint8_t> capture(const vector<vector<long long>>& grid, long long w, long long h, long long scale)
 {
     auto width = (w * scale);
     auto height = (h * scale);
-    string frame = py_bytearray((width * height));
+    vector<uint8_t> frame = py_bytearray((width * height));
     auto __pytra_range_start_1 = 0;
     auto __pytra_range_stop_2 = h;
     auto __pytra_range_step_3 = 1;
@@ -88,7 +88,7 @@ void run_13_maze_generation_steps()
     vector<tuple<long long, long long>> stack = {std::make_tuple(1, 1)};
     grid[1][1] = 0;
     vector<tuple<long long, long long>> dirs = {std::make_tuple(2, 0), std::make_tuple((-2), 0), std::make_tuple(0, 2), std::make_tuple(0, (-2))};
-    vector<string> frames = {};
+    vector<vector<uint8_t>> frames = {};
     long long step = 0;
     while ((py_len(stack) > 0))
     {

@@ -21,9 +21,9 @@
 using namespace std;
 using namespace pycs::gc;
 
-string palette()
+vector<uint8_t> palette()
 {
-    string p = py_bytearray();
+    vector<uint8_t> p = py_bytearray();
     auto __pytra_range_start_1 = 0;
     auto __pytra_range_stop_2 = 256;
     auto __pytra_range_step_3 = 1;
@@ -84,14 +84,14 @@ void run_14_raymarching_light_cycle()
     long long frames_n = 84;
     string out_path = "sample/out/14_raymarching_light_cycle.gif";
     auto start = perf_counter();
-    vector<string> frames = {};
+    vector<vector<uint8_t>> frames = {};
     auto __pytra_range_start_4 = 0;
     auto __pytra_range_stop_5 = frames_n;
     auto __pytra_range_step_6 = 1;
     if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
     for (auto t = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (t < __pytra_range_stop_5) : (t > __pytra_range_stop_5); t += __pytra_range_step_6)
     {
-        string frame = py_bytearray((w * h));
+        vector<uint8_t> frame = py_bytearray((w * h));
         double a = ((py_div(t, frames_n) * pycs::cpp_module::math::pi) * 2.0);
         double light_x = (0.75 * pycs::cpp_module::math::cos(a));
         double light_y = (0.55 * pycs::cpp_module::math::sin((a * 1.2)));

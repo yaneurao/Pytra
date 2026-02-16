@@ -55,9 +55,9 @@ tuple<long long, long long, long long> color_map(long long iter_count, long long
     return std::make_tuple(r, g, b);
 }
 
-string render_mandelbrot(long long width, long long height, long long max_iter, double x_min, double x_max, double y_min, double y_max)
+vector<uint8_t> render_mandelbrot(long long width, long long height, long long max_iter, double x_min, double x_max, double y_min, double y_max)
 {
-    string pixels = py_bytearray();
+    vector<uint8_t> pixels = py_bytearray();
     auto __pytra_range_start_4 = 0;
     auto __pytra_range_stop_5 = height;
     auto __pytra_range_step_6 = 1;
@@ -104,7 +104,7 @@ void run_mandelbrot()
     long long max_iter = 1000;
     string out_path = "sample/out/mandelbrot_01.png";
     double start = perf_counter();
-    string pixels = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);
+    vector<uint8_t> pixels = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);
     pycs::cpp_module::png::write_rgb_png(out_path, width, height, pixels);
     double elapsed = (perf_counter() - start);
     py_print("output:", out_path);

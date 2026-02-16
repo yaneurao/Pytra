@@ -61,9 +61,9 @@ double hit_sphere(double ox, double oy, double oz, double dx, double dy, double 
     return (-1.0);
 }
 
-string render(long long width, long long height, long long aa)
+vector<uint8_t> render(long long width, long long height, long long aa)
 {
-    string pixels = py_bytearray();
+    vector<uint8_t> pixels = py_bytearray();
     double ox = 0.0;
     double oy = 0.0;
     double oz = (-3.0);
@@ -229,7 +229,7 @@ void run_raytrace()
     long long aa = 2;
     string out_path = "sample/out/raytrace_02.png";
     double start = perf_counter();
-    string pixels = render(width, height, aa);
+    vector<uint8_t> pixels = render(width, height, aa);
     pycs::cpp_module::png::write_rgb_png(out_path, width, height, pixels);
     double elapsed = (perf_counter() - start);
     py_print("output:", out_path);

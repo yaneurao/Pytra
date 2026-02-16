@@ -82,7 +82,7 @@ std::string zlib_store(const std::string& raw) {
 
 }  // namespace
 
-void write_rgb_png(const std::string& path, int width, int height, const std::string& pixels) {
+void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels) {
     if (width <= 0 || height <= 0) {
         throw std::runtime_error("png: width/height must be positive");
     }
@@ -96,7 +96,10 @@ void write_rgb_png(const std::string& path, int width, int height, const std::st
     raw.reserve(static_cast<std::size_t>(height) * static_cast<std::size_t>(row_bytes + 1));
     for (int y = 0; y < height; ++y) {
         raw.push_back(static_cast<char>(0));  // filter type 0
-        raw.append(pixels, static_cast<std::size_t>(y) * static_cast<std::size_t>(row_bytes), static_cast<std::size_t>(row_bytes));
+        const std::size_t row_start = static_cast<std::size_t>(y) * static_cast<std::size_t>(row_bytes);
+        for (int i = 0; i < row_bytes; ++i) {
+            raw.push_back(static_cast<char>(pixels[row_start + static_cast<std::size_t>(i)]));
+        }
     }
 
     std::string ihdr;

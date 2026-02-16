@@ -20,9 +20,9 @@
 using namespace std;
 using namespace pycs::gc;
 
-string render(const vector<long long>& values, long long w, long long h)
+vector<uint8_t> render(const vector<long long>& values, long long w, long long h)
 {
-    string frame = py_bytearray((w * h));
+    vector<uint8_t> frame = py_bytearray((w * h));
     size_t n = py_len(values);
     double bar_w = py_div(w, n);
     auto __pytra_range_start_1 = 0;
@@ -74,7 +74,7 @@ void run_12_sort_visualizer()
     {
         values.push_back((((i * 37) + 19) % n));
     }
-    vector<string> frames = {render(values, w, h)};
+    vector<vector<uint8_t>> frames = {render(values, w, h)};
     long long op = 0;
     auto __pytra_range_start_13 = 0;
     auto __pytra_range_stop_14 = n;
