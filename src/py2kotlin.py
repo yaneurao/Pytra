@@ -8,9 +8,9 @@ from pathlib import Path
 import sys
 
 try:
-    from common.embedded_python_transpiler import EmbeddedPythonTranspiler, EmbeddedTranspileConfig
+    from common.swift_kotlin_node_transpiler import SwiftKotlinNodeConfig, SwiftKotlinNodeTranspiler
 except ModuleNotFoundError:
-    from src.common.embedded_python_transpiler import EmbeddedPythonTranspiler, EmbeddedTranspileConfig
+    from src.common.swift_kotlin_node_transpiler import SwiftKotlinNodeConfig, SwiftKotlinNodeTranspiler
 
 
 def transpile(input_path: str, output_path: str) -> None:
@@ -18,11 +18,11 @@ def transpile(input_path: str, output_path: str) -> None:
     in_path = Path(input_path)
     out_path = Path(output_path)
     this_dir = Path(__file__).resolve().parent
-    transpiler = EmbeddedPythonTranspiler(
-        EmbeddedTranspileConfig(
+    transpiler = SwiftKotlinNodeTranspiler(
+        SwiftKotlinNodeConfig(
             language_name="Kotlin",
-            file_header="// このファイルは自動生成です（Python -> Kotlin embedded mode）。",
-            target="kotlin",
+            file_header="// このファイルは自動生成です（Python -> Kotlin node-backed mode）。",
+            target="kotlin",  # Kotlin コードを生成し、実行時は Node.js で処理する。
             runtime_template_path=this_dir / "kotlin_module" / "py_runtime.kt",
         )
     )

@@ -1,6 +1,6 @@
-// このファイルは自動生成です（Python -> Kotlin embedded mode）。
+// このファイルは自動生成です（Python -> Kotlin node-backed mode）。
 
-// Kotlin 埋め込み実行向け Python ランタイム補助。
+// Kotlin 実行向け Node.js ランタイム補助。
 
 import java.io.File
 import java.nio.file.Files
@@ -9,41 +9,41 @@ import java.util.Base64
 import java.util.UUID
 
 /**
- * Base64 で埋め込まれた Python ソースコードを一時ファイルに展開し、python3 で実行する。
+ * Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
  */
 object PyRuntime {
     /**
-     * @param sourceBase64 Python ソースコードの Base64 文字列。
-     * @param args Python スクリプトへ渡す引数配列。
-     * @return python プロセスの終了コード。失敗時は 1 を返す。
+     * @param sourceBase64 JavaScript ソースコードの Base64 文字列。
+     * @param args JavaScript 側へ渡す引数配列。
+     * @return node プロセスの終了コード。失敗時は 1 を返す。
      */
     @JvmStatic
-    fun runEmbeddedPython(sourceBase64: String, args: Array<String>): Int {
+    fun runEmbeddedNode(sourceBase64: String, args: Array<String>): Int {
         val sourceBytes: ByteArray = try {
             Base64.getDecoder().decode(sourceBase64)
         } catch (ex: IllegalArgumentException) {
-            System.err.println("error: failed to decode embedded Python source")
+            System.err.println("error: failed to decode embedded JavaScript source")
             return 1
         }
 
         val tempFile: Path = try {
-            val name = "pytra_embedded_${UUID.randomUUID()}.py"
+            val name = "pytra_embedded_${UUID.randomUUID()}.js"
             val p = File(System.getProperty("java.io.tmpdir"), name).toPath()
             Files.write(p, sourceBytes)
             p
         } catch (ex: Exception) {
-            System.err.println("error: failed to write temporary Python file: ${ex.message}")
+            System.err.println("error: failed to write temporary JavaScript file: ${ex.message}")
             return 1
         }
 
-        val command = mutableListOf("python3", tempFile.toString())
+        val command = mutableListOf("node", tempFile.toString())
         command.addAll(args)
         val process: Process = try {
             ProcessBuilder(command)
                 .inheritIO()
                 .start()
         } catch (ex: Exception) {
-            System.err.println("error: failed to launch python3: ${ex.message}")
+            System.err.println("error: failed to launch node: ${ex.message}")
             try {
                 Files.deleteIfExists(tempFile)
             } catch (_: Exception) {
@@ -62,13 +62,13 @@ object PyRuntime {
 
 class case07_float {
     companion object {
-        // 埋め込み Python ソース（Base64）。
-        private const val PYTRA_EMBEDDED_SOURCE_BASE64: String = "IyDjgZPjga7jg5XjgqHjgqTjg6vjga8gYHRlc3QvcHkvY2FzZTA3X2Zsb2F0LnB5YCDjga7jg4bjgrnjg4gv5a6f6KOF44Kz44O844OJ44Gn44GZ44CCCiMg5b255Ymy44GM5YiG44GL44KK44KE44GZ44GE44KI44GG44Gr44CB6Kqt44G/5omL5ZCR44GR44Gu6Kqs5piO44Kz44Oh44Oz44OI44KS5LuY5LiO44GX44Gm44GE44G+44GZ44CCCiMg5aSJ5pu05pmC44Gv44CB5pei5a2Y5LuV5qeY44Go44Gu5pW05ZCI5oCn44Go44OG44K544OI57WQ5p6c44KS5b+F44Ga56K66KqN44GX44Gm44GP44Gg44GV44GE44CCCgpkZWYgaGFsZih4OiBmbG9hdCkgLT4gZmxvYXQ6CiAgICByZXR1cm4geCAvIDIuMAoKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBwcmludChoYWxmKDUuMCkpCg=="
+        // 埋め込み JavaScript ソース（Base64）。
+        private const val PYTRA_EMBEDDED_JS_BASE64: String = "Ly8gZ2VuZXJhdGVkIGludGVybmFsIEphdmFTY3JpcHQKCmNvbnN0IF9fcHl0cmFfcm9vdCA9IHByb2Nlc3MuY3dkKCk7CmNvbnN0IHB5X3J1bnRpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9weV9ydW50aW1lLmpzJyk7CmNvbnN0IHB5X21hdGggPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9tYXRoLmpzJyk7CmNvbnN0IHB5X3RpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS90aW1lLmpzJyk7CmNvbnN0IHsgcHlQcmludCwgcHlMZW4sIHB5Qm9vbCwgcHlSYW5nZSwgcHlGbG9vckRpdiwgcHlNb2QsIHB5SW4sIHB5U2xpY2UsIHB5T3JkLCBweUNociwgcHlCeXRlYXJyYXksIHB5Qnl0ZXMsIHB5SXNEaWdpdCwgcHlJc0FscGhhIH0gPSBweV9ydW50aW1lOwpjb25zdCB7IHBlcmZDb3VudGVyIH0gPSBweV90aW1lOwoKZnVuY3Rpb24gaGFsZih4KSB7CiAgICByZXR1cm4gKCh4KSAvICgyLjApKTsKfQpweVByaW50KGhhbGYoNS4wKSk7Cg=="
 
-        // main は埋め込み Python を実行するエントリポイント。
+        // エントリポイント。
         @JvmStatic
         fun main(args: Array<String>) {
-            val code: Int = PyRuntime.runEmbeddedPython(PYTRA_EMBEDDED_SOURCE_BASE64, args)
+            val code = PyRuntime.runEmbeddedNode(PYTRA_EMBEDDED_JS_BASE64, args)
             kotlin.system.exitProcess(code)
         }
     }

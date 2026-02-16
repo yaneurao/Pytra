@@ -1,35 +1,35 @@
-// このファイルは自動生成です（Python -> Swift embedded mode）。
+// このファイルは自動生成です（Python -> Swift node-backed mode）。
 
-// Swift 埋め込み実行向け Python ランタイム補助。
+// Swift 実行向け Node.js ランタイム補助。
 
 import Foundation
 
-/// Base64 で埋め込まれた Python ソースコードを一時ファイルに展開し、python3 で実行する。
+/// Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
 /// - Parameters:
-///   - sourceBase64: Python ソースコードの Base64 文字列。
-///   - args: Python スクリプトへ渡す引数配列。
+///   - sourceBase64: JavaScript ソースコードの Base64 文字列。
+///   - args: JavaScript 側へ渡す引数配列。
 /// - Returns:
-///   python プロセスの終了コード。失敗時は 1 を返す。
-func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
+///   node プロセスの終了コード。失敗時は 1 を返す。
+func pytraRunEmbeddedNode(_ sourceBase64: String, _ args: [String]) -> Int32 {
     guard let sourceData = Data(base64Encoded: sourceBase64) else {
-        fputs("error: failed to decode embedded Python source\n", stderr)
+        fputs("error: failed to decode embedded JavaScript source\n", stderr)
         return 1
     }
 
     let tmpDir = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-    let fileName = "pytra_embedded_\(UUID().uuidString).py"
+    let fileName = "pytra_embedded_\(UUID().uuidString).js"
     let scriptURL = tmpDir.appendingPathComponent(fileName)
 
     do {
         try sourceData.write(to: scriptURL)
     } catch {
-        fputs("error: failed to write temporary Python file: \(error)\n", stderr)
+        fputs("error: failed to write temporary JavaScript file: \(error)\n", stderr)
         return 1
     }
 
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    process.arguments = ["python3", scriptURL.path] + args
+    process.arguments = ["node", scriptURL.path] + args
     process.environment = ProcessInfo.processInfo.environment
     process.standardInput = FileHandle.standardInput
     process.standardOutput = FileHandle.standardOutput
@@ -39,7 +39,7 @@ func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
         try process.run()
         process.waitUntilExit()
     } catch {
-        fputs("error: failed to launch python3: \(error)\n", stderr)
+        fputs("error: failed to launch node: \(error)\n", stderr)
         try? FileManager.default.removeItem(at: scriptURL)
         return 1
     }
@@ -48,8 +48,8 @@ func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
     return process.terminationStatus
 }
 
-// 埋め込み Python ソース（Base64）。
-let pytraEmbeddedSourceBase64 = "IyDjgZPjga7jg5XjgqHjgqTjg6vjga8gYHRlc3QvcHkvY2FzZTEzX2NsYXNzLnB5YCDjga7jg4bjgrnjg4gv5a6f6KOF44Kz44O844OJ44Gn44GZ44CCCiMg5b255Ymy44GM5YiG44GL44KK44KE44GZ44GE44KI44GG44Gr44CB6Kqt44G/5omL5ZCR44GR44Gu6Kqs5piO44Kz44Oh44Oz44OI44KS5LuY5LiO44GX44Gm44GE44G+44GZ44CCCiMg5aSJ5pu05pmC44Gv44CB5pei5a2Y5LuV5qeY44Go44Gu5pW05ZCI5oCn44Go44OG44K544OI57WQ5p6c44KS5b+F44Ga56K66KqN44GX44Gm44GP44Gg44GV44GE44CCCgpjbGFzcyBNdWx0aXBsaWVyOgogICAgZGVmIG11bChzZWxmLCB4OiBpbnQsIHk6IGludCkgLT4gaW50OgogICAgICAgIHJldHVybiB4ICogeQoKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBtOiBNdWx0aXBsaWVyID0gTXVsdGlwbGllcigpCiAgICBwcmludChtLm11bCg2LCA3KSkK"
+// 埋め込み JavaScript ソース（Base64）。
+let pytraEmbeddedJsBase64 = "Ly8gZ2VuZXJhdGVkIGludGVybmFsIEphdmFTY3JpcHQKCmNvbnN0IF9fcHl0cmFfcm9vdCA9IHByb2Nlc3MuY3dkKCk7CmNvbnN0IHB5X3J1bnRpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9weV9ydW50aW1lLmpzJyk7CmNvbnN0IHB5X21hdGggPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9tYXRoLmpzJyk7CmNvbnN0IHB5X3RpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS90aW1lLmpzJyk7CmNvbnN0IHsgcHlQcmludCwgcHlMZW4sIHB5Qm9vbCwgcHlSYW5nZSwgcHlGbG9vckRpdiwgcHlNb2QsIHB5SW4sIHB5U2xpY2UsIHB5T3JkLCBweUNociwgcHlCeXRlYXJyYXksIHB5Qnl0ZXMsIHB5SXNEaWdpdCwgcHlJc0FscGhhIH0gPSBweV9ydW50aW1lOwpjb25zdCB7IHBlcmZDb3VudGVyIH0gPSBweV90aW1lOwoKY2xhc3MgTXVsdGlwbGllciB7CiAgICBjb25zdHJ1Y3RvcigpIHt9CgogICAgbXVsKHgsIHkpIHsKICAgICAgICByZXR1cm4gKCh4KSAqICh5KSk7CiAgICB9Cn0KbGV0IG0gPSBuZXcgTXVsdGlwbGllcigpOwpweVByaW50KG0ubXVsKDYsIDcpKTsK"
 let pytraArgs = Array(CommandLine.arguments.dropFirst())
-let pytraCode = pytraRunEmbeddedPython(pytraEmbeddedSourceBase64, pytraArgs)
+let pytraCode = pytraRunEmbeddedNode(pytraEmbeddedJsBase64, pytraArgs)
 Foundation.exit(pytraCode)

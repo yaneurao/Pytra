@@ -1,4 +1,4 @@
-// Kotlin 埋め込み実行向け Python ランタイム補助。
+// Kotlin 実行向け Node.js ランタイム補助。
 
 import java.io.File
 import java.nio.file.Files
@@ -7,47 +7,41 @@ import java.util.Base64
 import java.util.UUID
 
 /**
- * Base64 で埋め込まれた Python ソースコードを一時ファイルに展開し、python3 で実行する。
+ * Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
  */
 object PyRuntime {
     /**
-     * @param sourceBase64 Python ソースコードの Base64 文字列。
-     * @param args Python スクリプトへ渡す引数配列。
-     * @return python プロセスの終了コード。失敗時は 1 を返す。
+     * @param sourceBase64 JavaScript ソースコードの Base64 文字列。
+     * @param args JavaScript 側へ渡す引数配列。
+     * @return node プロセスの終了コード。失敗時は 1 を返す。
      */
     @JvmStatic
-    fun runEmbeddedPython(sourceBase64: String, args: Array<String>): Int {
+    fun runEmbeddedNode(sourceBase64: String, args: Array<String>): Int {
         val sourceBytes: ByteArray = try {
             Base64.getDecoder().decode(sourceBase64)
         } catch (ex: IllegalArgumentException) {
-            System.err.println("error: failed to decode embedded Python source")
+            System.err.println("error: failed to decode embedded JavaScript source")
             return 1
         }
 
         val tempFile: Path = try {
-            val name = "pytra_embedded_${UUID.randomUUID()}.py"
+            val name = "pytra_embedded_${UUID.randomUUID()}.js"
             val p = File(System.getProperty("java.io.tmpdir"), name).toPath()
             Files.write(p, sourceBytes)
             p
         } catch (ex: Exception) {
-            System.err.println("error: failed to write temporary Python file: ${ex.message}")
+            System.err.println("error: failed to write temporary JavaScript file: ${ex.message}")
             return 1
         }
 
-        val command = mutableListOf("python3", tempFile.toString())
+        val command = mutableListOf("node", tempFile.toString())
         command.addAll(args)
-        // Python 製補助モジュールを import できるよう、src を PYTHONPATH に追加する。
-        val env = mutableMapOf<String, String>()
-        env.putAll(System.getenv())
-        val currentPyPath = env["PYTHONPATH"]
-        env["PYTHONPATH"] = if (currentPyPath.isNullOrEmpty()) "src" else "src:$currentPyPath"
         val process: Process = try {
             ProcessBuilder(command)
-                .apply { environment().putAll(env) }
                 .inheritIO()
                 .start()
         } catch (ex: Exception) {
-            System.err.println("error: failed to launch python3: ${ex.message}")
+            System.err.println("error: failed to launch node: ${ex.message}")
             try {
                 Files.deleteIfExists(tempFile)
             } catch (_: Exception) {
@@ -63,3 +57,4 @@ object PyRuntime {
         return code
     }
 }
+

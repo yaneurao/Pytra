@@ -183,7 +183,7 @@ java -cp test/obj/case28_iterable_kotlin.jar pytra_case28_iterable
 - 現在の `py2rs.py` は最小実装で、Python スクリプトを Rust 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出しません。
 - 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
-- 現在の `py2swift.py` / `py2kotlin.py` は埋め込み実行モードです。生成 Swift/Kotlin は `python3` を呼び出します。
+- 現在の `py2swift.py` / `py2kotlin.py` は Node バックエンド実行モードです。生成 Swift/Kotlin は `node` を呼び出し、`python3` は呼び出しません。
 - 現時点では `sample/py` の一部で使っている `math` / `png_helper` / `gif_helper` 系 API の Go/Java ネイティブ対応が未完了です。
 
 

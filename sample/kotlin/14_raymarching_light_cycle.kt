@@ -1,6 +1,6 @@
-// このファイルは自動生成です（Python -> Kotlin embedded mode）。
+// このファイルは自動生成です（Python -> Kotlin node-backed mode）。
 
-// Kotlin 埋め込み実行向け Python ランタイム補助。
+// Kotlin 実行向け Node.js ランタイム補助。
 
 import java.io.File
 import java.nio.file.Files
@@ -9,47 +9,41 @@ import java.util.Base64
 import java.util.UUID
 
 /**
- * Base64 で埋め込まれた Python ソースコードを一時ファイルに展開し、python3 で実行する。
+ * Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
  */
 object PyRuntime {
     /**
-     * @param sourceBase64 Python ソースコードの Base64 文字列。
-     * @param args Python スクリプトへ渡す引数配列。
-     * @return python プロセスの終了コード。失敗時は 1 を返す。
+     * @param sourceBase64 JavaScript ソースコードの Base64 文字列。
+     * @param args JavaScript 側へ渡す引数配列。
+     * @return node プロセスの終了コード。失敗時は 1 を返す。
      */
     @JvmStatic
-    fun runEmbeddedPython(sourceBase64: String, args: Array<String>): Int {
+    fun runEmbeddedNode(sourceBase64: String, args: Array<String>): Int {
         val sourceBytes: ByteArray = try {
             Base64.getDecoder().decode(sourceBase64)
         } catch (ex: IllegalArgumentException) {
-            System.err.println("error: failed to decode embedded Python source")
+            System.err.println("error: failed to decode embedded JavaScript source")
             return 1
         }
 
         val tempFile: Path = try {
-            val name = "pytra_embedded_${UUID.randomUUID()}.py"
+            val name = "pytra_embedded_${UUID.randomUUID()}.js"
             val p = File(System.getProperty("java.io.tmpdir"), name).toPath()
             Files.write(p, sourceBytes)
             p
         } catch (ex: Exception) {
-            System.err.println("error: failed to write temporary Python file: ${ex.message}")
+            System.err.println("error: failed to write temporary JavaScript file: ${ex.message}")
             return 1
         }
 
-        val command = mutableListOf("python3", tempFile.toString())
+        val command = mutableListOf("node", tempFile.toString())
         command.addAll(args)
-        // Python 製補助モジュールを import できるよう、src を PYTHONPATH に追加する。
-        val env = mutableMapOf<String, String>()
-        env.putAll(System.getenv())
-        val currentPyPath = env["PYTHONPATH"]
-        env["PYTHONPATH"] = if (currentPyPath.isNullOrEmpty()) "src" else "src:$currentPyPath"
         val process: Process = try {
             ProcessBuilder(command)
-                .apply { environment().putAll(env) }
                 .inheritIO()
                 .start()
         } catch (ex: Exception) {
-            System.err.println("error: failed to launch python3: ${ex.message}")
+            System.err.println("error: failed to launch node: ${ex.message}")
             try {
                 Files.deleteIfExists(tempFile)
             } catch (_: Exception) {
@@ -68,13 +62,13 @@ object PyRuntime {
 
 class pytra_14_raymarching_light_cycle {
     companion object {
-        // 埋め込み Python ソース（Base64）。
-        private const val PYTRA_EMBEDDED_SOURCE_BASE64: String = "IyAxNDog57Ch5piT44Os44Kk44Oe44O844OB6aKo44Gu5YWJ5rqQ56e75YuV44K344O844Oz44KSR0lG5Ye65Yqb44GZ44KL44K144Oz44OX44Or44CCCgpmcm9tIF9fZnV0dXJlX18gaW1wb3J0IGFubm90YXRpb25zCgppbXBvcnQgbWF0aApmcm9tIHRpbWUgaW1wb3J0IHBlcmZfY291bnRlcgoKZnJvbSBweV9tb2R1bGUuZ2lmX2hlbHBlciBpbXBvcnQgc2F2ZV9naWYKCgpkZWYgcGFsZXR0ZSgpIC0+IGJ5dGVzOgogICAgcCA9IGJ5dGVhcnJheSgpCiAgICBmb3IgaSBpbiByYW5nZSgyNTYpOgogICAgICAgIHIgPSBpbnQoMjAgKyBpICogMC45KQogICAgICAgIGlmIHIgPiAyNTU6CiAgICAgICAgICAgIHIgPSAyNTUKICAgICAgICBnID0gaW50KDEwICsgaSAqIDAuNykKICAgICAgICBpZiBnID4gMjU1OgogICAgICAgICAgICBnID0gMjU1CiAgICAgICAgYiA9IGludCgzMCArIGkpCiAgICAgICAgaWYgYiA+IDI1NToKICAgICAgICAgICAgYiA9IDI1NQogICAgICAgIHAuYXBwZW5kKHIpCiAgICAgICAgcC5hcHBlbmQoZykKICAgICAgICBwLmFwcGVuZChiKQogICAgcmV0dXJuIGJ5dGVzKHApCgoKZGVmIHNjZW5lKHg6IGZsb2F0LCB5OiBmbG9hdCwgbGlnaHRfeDogZmxvYXQsIGxpZ2h0X3k6IGZsb2F0KSAtPiBpbnQ6CiAgICB4MSA9IHggKyAwLjQ1CiAgICB5MSA9IHkgKyAwLjIKICAgIHgyID0geCAtIDAuMzUKICAgIHkyID0geSAtIDAuMTUKICAgIHIxID0gbWF0aC5zcXJ0KHgxICogeDEgKyB5MSAqIHkxKQogICAgcjIgPSBtYXRoLnNxcnQoeDIgKiB4MiArIHkyICogeTIpCiAgICBibG9iID0gbWF0aC5leHAoLTcuMCAqIHIxICogcjEpICsgbWF0aC5leHAoLTguMCAqIHIyICogcjIpCgogICAgbHggPSB4IC0gbGlnaHRfeAogICAgbHkgPSB5IC0gbGlnaHRfeQogICAgbCA9IG1hdGguc3FydChseCAqIGx4ICsgbHkgKiBseSkKICAgIGxpdCA9IDEuMCAvICgxLjAgKyAzLjUgKiBsICogbCkKCiAgICB2ID0gaW50KDI1NS4wICogYmxvYiAqIGxpdCAqIDUuMCkKICAgIGlmIHYgPCAwOgogICAgICAgIHJldHVybiAwCiAgICBpZiB2ID4gMjU1OgogICAgICAgIHJldHVybiAyNTUKICAgIHJldHVybiB2CgoKZGVmIHJ1bl8xNF9yYXltYXJjaGluZ19saWdodF9jeWNsZSgpIC0+IE5vbmU6CiAgICB3ID0gMzIwCiAgICBoID0gMjQwCiAgICBmcmFtZXNfbiA9IDg0CiAgICBvdXRfcGF0aCA9ICJzYW1wbGUvb3V0LzE0X3JheW1hcmNoaW5nX2xpZ2h0X2N5Y2xlLmdpZiIKCiAgICBzdGFydCA9IHBlcmZfY291bnRlcigpCiAgICBmcmFtZXM6IGxpc3RbYnl0ZXNdID0gW10KCiAgICBmb3IgdCBpbiByYW5nZShmcmFtZXNfbik6CiAgICAgICAgZnJhbWUgPSBieXRlYXJyYXkodyAqIGgpCiAgICAgICAgYSA9ICh0IC8gZnJhbWVzX24pICogbWF0aC5waSAqIDIuMAogICAgICAgIGxpZ2h0X3ggPSAwLjc1ICogbWF0aC5jb3MoYSkKICAgICAgICBsaWdodF95ID0gMC41NSAqIG1hdGguc2luKGEgKiAxLjIpCgogICAgICAgIGkgPSAwCiAgICAgICAgZm9yIHkgaW4gcmFuZ2UoaCk6CiAgICAgICAgICAgIHB5ID0gKHkgLyAoaCAtIDEpKSAqIDIuMCAtIDEuMAogICAgICAgICAgICBmb3IgeCBpbiByYW5nZSh3KToKICAgICAgICAgICAgICAgIHB4ID0gKHggLyAodyAtIDEpKSAqIDIuMCAtIDEuMAogICAgICAgICAgICAgICAgZnJhbWVbaV0gPSBzY2VuZShweCwgcHksIGxpZ2h0X3gsIGxpZ2h0X3kpCiAgICAgICAgICAgICAgICBpICs9IDEKCiAgICAgICAgZnJhbWVzLmFwcGVuZChieXRlcyhmcmFtZSkpCgogICAgc2F2ZV9naWYob3V0X3BhdGgsIHcsIGgsIGZyYW1lcywgcGFsZXR0ZSgpLCBkZWxheV9jcz0zLCBsb29wPTApCiAgICBlbGFwc2VkID0gcGVyZl9jb3VudGVyKCkgLSBzdGFydAogICAgcHJpbnQoIm91dHB1dDoiLCBvdXRfcGF0aCkKICAgIHByaW50KCJmcmFtZXM6IiwgZnJhbWVzX24pCiAgICBwcmludCgiZWxhcHNlZF9zZWM6IiwgZWxhcHNlZCkKCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgcnVuXzE0X3JheW1hcmNoaW5nX2xpZ2h0X2N5Y2xlKCkK"
+        // 埋め込み JavaScript ソース（Base64）。
+        private const val PYTRA_EMBEDDED_JS_BASE64: String = "Ly8gZ2VuZXJhdGVkIGludGVybmFsIEphdmFTY3JpcHQKCmNvbnN0IF9fcHl0cmFfcm9vdCA9IHByb2Nlc3MuY3dkKCk7CmNvbnN0IHB5X3J1bnRpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9weV9ydW50aW1lLmpzJyk7CmNvbnN0IHB5X21hdGggPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9tYXRoLmpzJyk7CmNvbnN0IHB5X3RpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS90aW1lLmpzJyk7CmNvbnN0IHsgcHlQcmludCwgcHlMZW4sIHB5Qm9vbCwgcHlSYW5nZSwgcHlGbG9vckRpdiwgcHlNb2QsIHB5SW4sIHB5U2xpY2UsIHB5T3JkLCBweUNociwgcHlCeXRlYXJyYXksIHB5Qnl0ZXMsIHB5SXNEaWdpdCwgcHlJc0FscGhhIH0gPSBweV9ydW50aW1lOwpjb25zdCB7IHBlcmZDb3VudGVyIH0gPSBweV90aW1lOwpjb25zdCBtYXRoID0gcmVxdWlyZShfX3B5dHJhX3Jvb3QgKyAnL3NyYy9qc19tb2R1bGUvbWF0aC5qcycpOwpjb25zdCBwZXJmX2NvdW50ZXIgPSBwZXJmQ291bnRlcjsKY29uc3QgeyBzYXZlX2dpZiB9ID0gcmVxdWlyZShfX3B5dHJhX3Jvb3QgKyAnL3NyYy9qc19tb2R1bGUvZ2lmX2hlbHBlci5qcycpOwoKZnVuY3Rpb24gcGFsZXR0ZSgpIHsKICAgIGxldCBwID0gcHlCeXRlYXJyYXkoKTsKICAgIGxldCBpOwogICAgZm9yIChsZXQgX19weXRyYV9pXzEgPSAwOyBfX3B5dHJhX2lfMSA8IDI1NjsgX19weXRyYV9pXzEgKz0gMSkgewogICAgICAgIGkgPSBfX3B5dHJhX2lfMTsKICAgICAgICBsZXQgciA9IE1hdGgudHJ1bmMoTnVtYmVyKCgoMjApICsgKCgoaSkgKiAoMC45KSkpKSkpOwogICAgICAgIGlmIChweUJvb2woKChyKSA+ICgyNTUpKSkpIHsKICAgICAgICAgICAgciA9IDI1NTsKICAgICAgICB9CiAgICAgICAgbGV0IGcgPSBNYXRoLnRydW5jKE51bWJlcigoKDEwKSArICgoKGkpICogKDAuNykpKSkpKTsKICAgICAgICBpZiAocHlCb29sKCgoZykgPiAoMjU1KSkpKSB7CiAgICAgICAgICAgIGcgPSAyNTU7CiAgICAgICAgfQogICAgICAgIGxldCBiID0gTWF0aC50cnVuYyhOdW1iZXIoKCgzMCkgKyAoaSkpKSk7CiAgICAgICAgaWYgKHB5Qm9vbCgoKGIpID4gKDI1NSkpKSkgewogICAgICAgICAgICBiID0gMjU1OwogICAgICAgIH0KICAgICAgICBwLnB1c2gocik7CiAgICAgICAgcC5wdXNoKGcpOwogICAgICAgIHAucHVzaChiKTsKICAgIH0KICAgIHJldHVybiBweUJ5dGVzKHApOwp9CmZ1bmN0aW9uIHNjZW5lKHgsIHksIGxpZ2h0X3gsIGxpZ2h0X3kpIHsKICAgIGxldCB4MSA9ICgoeCkgKyAoMC40NSkpOwogICAgbGV0IHkxID0gKCh5KSArICgwLjIpKTsKICAgIGxldCB4MiA9ICgoeCkgLSAoMC4zNSkpOwogICAgbGV0IHkyID0gKCh5KSAtICgwLjE1KSk7CiAgICBsZXQgcjEgPSBtYXRoLnNxcnQoKCgoKHgxKSAqICh4MSkpKSArICgoKHkxKSAqICh5MSkpKSkpOwogICAgbGV0IHIyID0gbWF0aC5zcXJ0KCgoKCh4MikgKiAoeDIpKSkgKyAoKCh5MikgKiAoeTIpKSkpKTsKICAgIGxldCBibG9iID0gKChtYXRoLmV4cCgoKCgoKC0oNy4wKSkpICogKHIxKSkpICogKHIxKSkpKSArIChtYXRoLmV4cCgoKCgoKC0oOC4wKSkpICogKHIyKSkpICogKHIyKSkpKSk7CiAgICBsZXQgbHggPSAoKHgpIC0gKGxpZ2h0X3gpKTsKICAgIGxldCBseSA9ICgoeSkgLSAobGlnaHRfeSkpOwogICAgbGV0IGwgPSBtYXRoLnNxcnQoKCgoKGx4KSAqIChseCkpKSArICgoKGx5KSAqIChseSkpKSkpOwogICAgbGV0IGxpdCA9ICgoMS4wKSAvICgoKDEuMCkgKyAoKCgoKDMuNSkgKiAobCkpKSAqIChsKSkpKSkpOwogICAgbGV0IHYgPSBNYXRoLnRydW5jKE51bWJlcigoKCgoKCgyNTUuMCkgKiAoYmxvYikpKSAqIChsaXQpKSkgKiAoNS4wKSkpKTsKICAgIGlmIChweUJvb2woKCh2KSA8ICgwKSkpKSB7CiAgICAgICAgcmV0dXJuIDA7CiAgICB9CiAgICBpZiAocHlCb29sKCgodikgPiAoMjU1KSkpKSB7CiAgICAgICAgcmV0dXJuIDI1NTsKICAgIH0KICAgIHJldHVybiB2Owp9CmZ1bmN0aW9uIHJ1bl8xNF9yYXltYXJjaGluZ19saWdodF9jeWNsZSgpIHsKICAgIGxldCB3ID0gMzIwOwogICAgbGV0IGggPSAyNDA7CiAgICBsZXQgZnJhbWVzX24gPSA4NDsKICAgIGxldCBvdXRfcGF0aCA9ICdzYW1wbGUvb3V0LzE0X3JheW1hcmNoaW5nX2xpZ2h0X2N5Y2xlLmdpZic7CiAgICBsZXQgc3RhcnQgPSBwZXJmX2NvdW50ZXIoKTsKICAgIGxldCBmcmFtZXMgPSBbXTsKICAgIGxldCB0OwogICAgZm9yIChsZXQgX19weXRyYV9pXzIgPSAwOyBfX3B5dHJhX2lfMiA8IGZyYW1lc19uOyBfX3B5dHJhX2lfMiArPSAxKSB7CiAgICAgICAgdCA9IF9fcHl0cmFfaV8yOwogICAgICAgIGxldCBmcmFtZSA9IHB5Qnl0ZWFycmF5KCgodykgKiAoaCkpKTsKICAgICAgICBsZXQgYSA9ICgoKCgoKHQpIC8gKGZyYW1lc19uKSkpICogKG1hdGgucGkpKSkgKiAoMi4wKSk7CiAgICAgICAgbGV0IGxpZ2h0X3ggPSAoKDAuNzUpICogKG1hdGguY29zKGEpKSk7CiAgICAgICAgbGV0IGxpZ2h0X3kgPSAoKDAuNTUpICogKG1hdGguc2luKCgoYSkgKiAoMS4yKSkpKSk7CiAgICAgICAgbGV0IGkgPSAwOwogICAgICAgIGxldCB5OwogICAgICAgIGZvciAobGV0IF9fcHl0cmFfaV8zID0gMDsgX19weXRyYV9pXzMgPCBoOyBfX3B5dHJhX2lfMyArPSAxKSB7CiAgICAgICAgICAgIHkgPSBfX3B5dHJhX2lfMzsKICAgICAgICAgICAgbGV0IHB5ID0gKCgoKCgoeSkgLyAoKChoKSAtICgxKSkpKSkgKiAoMi4wKSkpIC0gKDEuMCkpOwogICAgICAgICAgICBsZXQgeDsKICAgICAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzQgPSAwOyBfX3B5dHJhX2lfNCA8IHc7IF9fcHl0cmFfaV80ICs9IDEpIHsKICAgICAgICAgICAgICAgIHggPSBfX3B5dHJhX2lfNDsKICAgICAgICAgICAgICAgIGxldCBweCA9ICgoKCgoKHgpIC8gKCgodykgLSAoMSkpKSkpICogKDIuMCkpKSAtICgxLjApKTsKICAgICAgICAgICAgICAgIGZyYW1lW2ldID0gc2NlbmUocHgsIHB5LCBsaWdodF94LCBsaWdodF95KTsKICAgICAgICAgICAgICAgIGkgPSBpICsgMTsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgICAgICBmcmFtZXMucHVzaChweUJ5dGVzKGZyYW1lKSk7CiAgICB9CiAgICBzYXZlX2dpZihvdXRfcGF0aCwgdywgaCwgZnJhbWVzLCBwYWxldHRlKCksIDMsIDApOwogICAgbGV0IGVsYXBzZWQgPSAoKHBlcmZfY291bnRlcigpKSAtIChzdGFydCkpOwogICAgcHlQcmludCgnb3V0cHV0OicsIG91dF9wYXRoKTsKICAgIHB5UHJpbnQoJ2ZyYW1lczonLCBmcmFtZXNfbik7CiAgICBweVByaW50KCdlbGFwc2VkX3NlYzonLCBlbGFwc2VkKTsKfQpydW5fMTRfcmF5bWFyY2hpbmdfbGlnaHRfY3ljbGUoKTsK"
 
-        // main は埋め込み Python を実行するエントリポイント。
+        // エントリポイント。
         @JvmStatic
         fun main(args: Array<String>) {
-            val code: Int = PyRuntime.runEmbeddedPython(PYTRA_EMBEDDED_SOURCE_BASE64, args)
+            val code = PyRuntime.runEmbeddedNode(PYTRA_EMBEDDED_JS_BASE64, args)
             kotlin.system.exitProcess(code)
         }
     }

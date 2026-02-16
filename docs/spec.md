@@ -228,7 +228,7 @@ python -m unittest discover -s test -p "test_*.py" -v
 - 現在の `py2rs.py` は最小実装です。生成 Rust は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出さず、Node.js ランタイムのみで実行します。
 - 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
-- 現在の `py2swift.py` / `py2kotlin.py` は埋め込み実行モードです。生成 Swift/Kotlin は埋め込み Base64 文字列を復元して `python3` を起動します。
+- 現在の `py2swift.py` / `py2kotlin.py` は Node バックエンド実行モードです。生成 Swift/Kotlin は埋め込み Base64 文字列を復元して `node` を起動し、Python インタプリタは呼び出しません。
 - Go/Java の現状制約:
   - `test/py` のケース群はネイティブ変換・実行一致を確認済みです。
   - `sample/py` の一部（`math` / `png_helper` / `gif_helper` 依存が強いケース）は未対応機能が残っています。

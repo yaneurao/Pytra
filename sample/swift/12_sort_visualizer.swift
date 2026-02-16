@@ -1,43 +1,36 @@
-// このファイルは自動生成です（Python -> Swift embedded mode）。
+// このファイルは自動生成です（Python -> Swift node-backed mode）。
 
-// Swift 埋め込み実行向け Python ランタイム補助。
+// Swift 実行向け Node.js ランタイム補助。
 
 import Foundation
 
-/// Base64 で埋め込まれた Python ソースコードを一時ファイルに展開し、python3 で実行する。
+/// Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
 /// - Parameters:
-///   - sourceBase64: Python ソースコードの Base64 文字列。
-///   - args: Python スクリプトへ渡す引数配列。
+///   - sourceBase64: JavaScript ソースコードの Base64 文字列。
+///   - args: JavaScript 側へ渡す引数配列。
 /// - Returns:
-///   python プロセスの終了コード。失敗時は 1 を返す。
-func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
+///   node プロセスの終了コード。失敗時は 1 を返す。
+func pytraRunEmbeddedNode(_ sourceBase64: String, _ args: [String]) -> Int32 {
     guard let sourceData = Data(base64Encoded: sourceBase64) else {
-        fputs("error: failed to decode embedded Python source\n", stderr)
+        fputs("error: failed to decode embedded JavaScript source\n", stderr)
         return 1
     }
 
     let tmpDir = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-    let fileName = "pytra_embedded_\(UUID().uuidString).py"
+    let fileName = "pytra_embedded_\(UUID().uuidString).js"
     let scriptURL = tmpDir.appendingPathComponent(fileName)
 
     do {
         try sourceData.write(to: scriptURL)
     } catch {
-        fputs("error: failed to write temporary Python file: \(error)\n", stderr)
+        fputs("error: failed to write temporary JavaScript file: \(error)\n", stderr)
         return 1
     }
 
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    process.arguments = ["python3", scriptURL.path] + args
-    var env = ProcessInfo.processInfo.environment
-    // Python 製補助モジュールを import できるよう、src を PYTHONPATH に追加する。
-    if let current = env["PYTHONPATH"], !current.isEmpty {
-        env["PYTHONPATH"] = "src:\(current)"
-    } else {
-        env["PYTHONPATH"] = "src"
-    }
-    process.environment = env
+    process.arguments = ["node", scriptURL.path] + args
+    process.environment = ProcessInfo.processInfo.environment
     process.standardInput = FileHandle.standardInput
     process.standardOutput = FileHandle.standardOutput
     process.standardError = FileHandle.standardError
@@ -46,7 +39,7 @@ func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
         try process.run()
         process.waitUntilExit()
     } catch {
-        fputs("error: failed to launch python3: \(error)\n", stderr)
+        fputs("error: failed to launch node: \(error)\n", stderr)
         try? FileManager.default.removeItem(at: scriptURL)
         return 1
     }
@@ -55,8 +48,8 @@ func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
     return process.terminationStatus
 }
 
-// 埋め込み Python ソース（Base64）。
-let pytraEmbeddedSourceBase64 = "IyAxMjog44OQ44OW44Or44K944O844OI44Gu6YCU5Lit54q25oWL44KSR0lG5Ye65Yqb44GZ44KL44K144Oz44OX44Or44CCCgpmcm9tIF9fZnV0dXJlX18gaW1wb3J0IGFubm90YXRpb25zCgpmcm9tIHRpbWUgaW1wb3J0IHBlcmZfY291bnRlcgoKZnJvbSBweV9tb2R1bGUuZ2lmX2hlbHBlciBpbXBvcnQgZ3JheXNjYWxlX3BhbGV0dGUsIHNhdmVfZ2lmCgoKZGVmIHJlbmRlcih2YWx1ZXM6IGxpc3RbaW50XSwgdzogaW50LCBoOiBpbnQpIC0+IGJ5dGVzOgogICAgZnJhbWUgPSBieXRlYXJyYXkodyAqIGgpCiAgICBuID0gbGVuKHZhbHVlcykKICAgIGJhcl93ID0gdyAvIG4KICAgIGZvciBpIGluIHJhbmdlKG4pOgogICAgICAgIHgwID0gaW50KGkgKiBiYXJfdykKICAgICAgICB4MSA9IGludCgoaSArIDEpICogYmFyX3cpCiAgICAgICAgaWYgeDEgPD0geDA6CiAgICAgICAgICAgIHgxID0geDAgKyAxCiAgICAgICAgYmggPSBpbnQoKCh2YWx1ZXNbaV0gLyBuKSAqIGgpKQogICAgICAgIHkgPSBoIC0gYmgKICAgICAgICBmb3IgeSBpbiByYW5nZSh5LCBoKToKICAgICAgICAgICAgZm9yIHggaW4gcmFuZ2UoeDAsIHgxKToKICAgICAgICAgICAgICAgIGZyYW1lW3kgKiB3ICsgeF0gPSAyNTUKICAgIHJldHVybiBieXRlcyhmcmFtZSkKCgpkZWYgcnVuXzEyX3NvcnRfdmlzdWFsaXplcigpIC0+IE5vbmU6CiAgICB3ID0gMzIwCiAgICBoID0gMTgwCiAgICBuID0gMTI0CiAgICBvdXRfcGF0aCA9ICJzYW1wbGUvb3V0LzEyX3NvcnRfdmlzdWFsaXplci5naWYiCgogICAgc3RhcnQgPSBwZXJmX2NvdW50ZXIoKQogICAgdmFsdWVzOiBsaXN0W2ludF0gPSBbXQogICAgZm9yIGkgaW4gcmFuZ2Uobik6CiAgICAgICAgdmFsdWVzLmFwcGVuZCgoaSAqIDM3ICsgMTkpICUgbikKCiAgICBmcmFtZXM6IGxpc3RbYnl0ZXNdID0gW3JlbmRlcih2YWx1ZXMsIHcsIGgpXQoKICAgIG9wID0gMAogICAgZm9yIGkgaW4gcmFuZ2Uobik6CiAgICAgICAgc3dhcHBlZCA9IEZhbHNlCiAgICAgICAgZm9yIGogaW4gcmFuZ2UobiAtIGkgLSAxKToKICAgICAgICAgICAgaWYgdmFsdWVzW2pdID4gdmFsdWVzW2ogKyAxXToKICAgICAgICAgICAgICAgIHRtcCA9IHZhbHVlc1tqXQogICAgICAgICAgICAgICAgdmFsdWVzW2pdID0gdmFsdWVzW2ogKyAxXQogICAgICAgICAgICAgICAgdmFsdWVzW2ogKyAxXSA9IHRtcAogICAgICAgICAgICAgICAgc3dhcHBlZCA9IFRydWUKICAgICAgICAgICAgaWYgb3AgJSA4ID09IDA6CiAgICAgICAgICAgICAgICBmcmFtZXMuYXBwZW5kKHJlbmRlcih2YWx1ZXMsIHcsIGgpKQogICAgICAgICAgICBvcCArPSAxCiAgICAgICAgaWYgbm90IHN3YXBwZWQ6CiAgICAgICAgICAgIGJyZWFrCgogICAgc2F2ZV9naWYob3V0X3BhdGgsIHcsIGgsIGZyYW1lcywgZ3JheXNjYWxlX3BhbGV0dGUoKSwgZGVsYXlfY3M9MywgbG9vcD0wKQogICAgZWxhcHNlZCA9IHBlcmZfY291bnRlcigpIC0gc3RhcnQKICAgIHByaW50KCJvdXRwdXQ6Iiwgb3V0X3BhdGgpCiAgICBwcmludCgiZnJhbWVzOiIsIGxlbihmcmFtZXMpKQogICAgcHJpbnQoImVsYXBzZWRfc2VjOiIsIGVsYXBzZWQpCgoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIHJ1bl8xMl9zb3J0X3Zpc3VhbGl6ZXIoKQo="
+// 埋め込み JavaScript ソース（Base64）。
+let pytraEmbeddedJsBase64 = "Ly8gZ2VuZXJhdGVkIGludGVybmFsIEphdmFTY3JpcHQKCmNvbnN0IF9fcHl0cmFfcm9vdCA9IHByb2Nlc3MuY3dkKCk7CmNvbnN0IHB5X3J1bnRpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9weV9ydW50aW1lLmpzJyk7CmNvbnN0IHB5X21hdGggPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9tYXRoLmpzJyk7CmNvbnN0IHB5X3RpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS90aW1lLmpzJyk7CmNvbnN0IHsgcHlQcmludCwgcHlMZW4sIHB5Qm9vbCwgcHlSYW5nZSwgcHlGbG9vckRpdiwgcHlNb2QsIHB5SW4sIHB5U2xpY2UsIHB5T3JkLCBweUNociwgcHlCeXRlYXJyYXksIHB5Qnl0ZXMsIHB5SXNEaWdpdCwgcHlJc0FscGhhIH0gPSBweV9ydW50aW1lOwpjb25zdCB7IHBlcmZDb3VudGVyIH0gPSBweV90aW1lOwpjb25zdCBwZXJmX2NvdW50ZXIgPSBwZXJmQ291bnRlcjsKY29uc3QgeyBncmF5c2NhbGVfcGFsZXR0ZSwgc2F2ZV9naWYgfSA9IHJlcXVpcmUoX19weXRyYV9yb290ICsgJy9zcmMvanNfbW9kdWxlL2dpZl9oZWxwZXIuanMnKTsKCmZ1bmN0aW9uIHJlbmRlcih2YWx1ZXMsIHcsIGgpIHsKICAgIGxldCBmcmFtZSA9IHB5Qnl0ZWFycmF5KCgodykgKiAoaCkpKTsKICAgIGxldCBuID0gcHlMZW4odmFsdWVzKTsKICAgIGxldCBiYXJfdyA9ICgodykgLyAobikpOwogICAgbGV0IGk7CiAgICBmb3IgKGxldCBfX3B5dHJhX2lfMSA9IDA7IF9fcHl0cmFfaV8xIDwgbjsgX19weXRyYV9pXzEgKz0gMSkgewogICAgICAgIGkgPSBfX3B5dHJhX2lfMTsKICAgICAgICBsZXQgeDAgPSBNYXRoLnRydW5jKE51bWJlcigoKGkpICogKGJhcl93KSkpKTsKICAgICAgICBsZXQgeDEgPSBNYXRoLnRydW5jKE51bWJlcigoKCgoaSkgKyAoMSkpKSAqIChiYXJfdykpKSk7CiAgICAgICAgaWYgKHB5Qm9vbCgoKHgxKSA8PSAoeDApKSkpIHsKICAgICAgICAgICAgeDEgPSAoKHgwKSArICgxKSk7CiAgICAgICAgfQogICAgICAgIGxldCBiaCA9IE1hdGgudHJ1bmMoTnVtYmVyKCgoKCh2YWx1ZXNbaV0pIC8gKG4pKSkgKiAoaCkpKSk7CiAgICAgICAgbGV0IHkgPSAoKGgpIC0gKGJoKSk7CiAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzIgPSB5OyBfX3B5dHJhX2lfMiA8IGg7IF9fcHl0cmFfaV8yICs9IDEpIHsKICAgICAgICAgICAgeSA9IF9fcHl0cmFfaV8yOwogICAgICAgICAgICBsZXQgeDsKICAgICAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzMgPSB4MDsgX19weXRyYV9pXzMgPCB4MTsgX19weXRyYV9pXzMgKz0gMSkgewogICAgICAgICAgICAgICAgeCA9IF9fcHl0cmFfaV8zOwogICAgICAgICAgICAgICAgZnJhbWVbKCgoKHkpICogKHcpKSkgKyAoeCkpXSA9IDI1NTsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KICAgIHJldHVybiBweUJ5dGVzKGZyYW1lKTsKfQpmdW5jdGlvbiBydW5fMTJfc29ydF92aXN1YWxpemVyKCkgewogICAgbGV0IHcgPSAzMjA7CiAgICBsZXQgaCA9IDE4MDsKICAgIGxldCBuID0gMTI0OwogICAgbGV0IG91dF9wYXRoID0gJ3NhbXBsZS9vdXQvMTJfc29ydF92aXN1YWxpemVyLmdpZic7CiAgICBsZXQgc3RhcnQgPSBwZXJmX2NvdW50ZXIoKTsKICAgIGxldCB2YWx1ZXMgPSBbXTsKICAgIGxldCBpOwogICAgZm9yIChsZXQgX19weXRyYV9pXzQgPSAwOyBfX3B5dHJhX2lfNCA8IG47IF9fcHl0cmFfaV80ICs9IDEpIHsKICAgICAgICBpID0gX19weXRyYV9pXzQ7CiAgICAgICAgdmFsdWVzLnB1c2gocHlNb2QoKCgoKGkpICogKDM3KSkpICsgKDE5KSksIG4pKTsKICAgIH0KICAgIGxldCBmcmFtZXMgPSBbcmVuZGVyKHZhbHVlcywgdywgaCldOwogICAgbGV0IG9wID0gMDsKICAgIGZvciAobGV0IF9fcHl0cmFfaV81ID0gMDsgX19weXRyYV9pXzUgPCBuOyBfX3B5dHJhX2lfNSArPSAxKSB7CiAgICAgICAgaSA9IF9fcHl0cmFfaV81OwogICAgICAgIGxldCBzd2FwcGVkID0gZmFsc2U7CiAgICAgICAgbGV0IGo7CiAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzYgPSAwOyBfX3B5dHJhX2lfNiA8ICgoKChuKSAtIChpKSkpIC0gKDEpKTsgX19weXRyYV9pXzYgKz0gMSkgewogICAgICAgICAgICBqID0gX19weXRyYV9pXzY7CiAgICAgICAgICAgIGlmIChweUJvb2woKCh2YWx1ZXNbal0pID4gKHZhbHVlc1soKGopICsgKDEpKV0pKSkpIHsKICAgICAgICAgICAgICAgIGxldCB0bXAgPSB2YWx1ZXNbal07CiAgICAgICAgICAgICAgICB2YWx1ZXNbal0gPSB2YWx1ZXNbKChqKSArICgxKSldOwogICAgICAgICAgICAgICAgdmFsdWVzWygoaikgKyAoMSkpXSA9IHRtcDsKICAgICAgICAgICAgICAgIHN3YXBwZWQgPSB0cnVlOwogICAgICAgICAgICB9CiAgICAgICAgICAgIGlmIChweUJvb2woKChweU1vZChvcCwgOCkpID09PSAoMCkpKSkgewogICAgICAgICAgICAgICAgZnJhbWVzLnB1c2gocmVuZGVyKHZhbHVlcywgdywgaCkpOwogICAgICAgICAgICB9CiAgICAgICAgICAgIG9wID0gb3AgKyAxOwogICAgICAgIH0KICAgICAgICBpZiAocHlCb29sKCghcHlCb29sKHN3YXBwZWQpKSkpIHsKICAgICAgICAgICAgYnJlYWs7CiAgICAgICAgfQogICAgfQogICAgc2F2ZV9naWYob3V0X3BhdGgsIHcsIGgsIGZyYW1lcywgZ3JheXNjYWxlX3BhbGV0dGUoKSwgMywgMCk7CiAgICBsZXQgZWxhcHNlZCA9ICgocGVyZl9jb3VudGVyKCkpIC0gKHN0YXJ0KSk7CiAgICBweVByaW50KCdvdXRwdXQ6Jywgb3V0X3BhdGgpOwogICAgcHlQcmludCgnZnJhbWVzOicsIHB5TGVuKGZyYW1lcykpOwogICAgcHlQcmludCgnZWxhcHNlZF9zZWM6JywgZWxhcHNlZCk7Cn0KcnVuXzEyX3NvcnRfdmlzdWFsaXplcigpOwo="
 let pytraArgs = Array(CommandLine.arguments.dropFirst())
-let pytraCode = pytraRunEmbeddedPython(pytraEmbeddedSourceBase64, pytraArgs)
+let pytraCode = pytraRunEmbeddedNode(pytraEmbeddedJsBase64, pytraArgs)
 Foundation.exit(pytraCode)
