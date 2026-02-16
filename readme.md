@@ -1,15 +1,11 @@
 # Pytraとは何？
 
-Pytraは、Pythonのサブセットで書かれたプログラムを他の様々な言語に変換するためのトランスパイラ群です。
+Pytraは、Pythonのサブセットで書かれたプログラムを様々な言語に変換するためのトランスパイラ群です。
 
-現状サポートしている変換先の言語は、
-- C++
-- C#
-- 🚧 JavaScript
-- 🚧 Rust
-です。
+現在は Python から C++/C# への変換に対応しており、JavaScript/TypeScript/Rust/Go/Java/Swift/Kotlin は対応予定です。
 
 ⚠ まだ開発途上にあり、実用にほど遠いかもしれません。サンプルコードなどを確認してから自己責任において、ご利用ください。
+⚠ Pythonで書いたプログラムを丸ごと移植できることは期待しないでください。「Pythonで書いたコアコードが上手く変換されたらラッキーだな」ぐらいの温度感でお使いください。
 
 ## 開発動機
 
@@ -21,110 +17,18 @@ Pytraは、Pythonのサブセットで書かれたプログラムを他の様々
 
 JavaScriptのコードにも変換できるので、Pythonでブラウザゲームの開発もできます。
 
-## トランスパイラ本体
+## 使い方について
 
-- Python → C++ : [src/py2cpp.py](src/py2cpp.py)
-- Python → C# : [src/py2cs.py](src/py2cs.py)
-- Python → JavaScript : 🚧[src/py2js.py](src/py2js.py)
-- Python → Rust : 🚧[src/py2rs.py](src/py2rs.py)
+実際の使い方については [docs/how-to-use.md](docs/how-to-use.md) をご覧ください。
 
-## トランスパイラの使い方
-
-### 1. Python から C++ へ変換
-
-```bash
-python src/py2cpp.py <input.py> <output.cpp>
-```
-
-例:
-
-```bash
-python src/py2cpp.py test/py/case28_iterable.py test/cpp/case28_iterable.cpp
-```
-
-### 2. Python から C# へ変換
-
-```bash
-python src/py2cs.py <input.py> <output.cs>
-```
-
-例:
-
-```bash
-python src/py2cs.py test/py/case28_iterable.py test/cs/case28_iterable.cs
-```
-
-### 3. 変換後コードの実行例
-
-#### C++
-
-```bash
-g++ -std=c++20 -O2 -I src test/cpp/case28_iterable.cpp \
-  src/cpp_module/png.cpp src/cpp_module/gif.cpp src/cpp_module/math.cpp \
-  src/cpp_module/time.cpp src/cpp_module/pathlib.cpp src/cpp_module/dataclasses.cpp \
-  src/cpp_module/ast.cpp src/cpp_module/gc.cpp \
-  -o test/obj/case28_iterable.out
-./test/obj/case28_iterable.out
-```
-
-#### C#
-
-```bash
-mcs -out:test/obj/case28_iterable.exe \
-  test/cs/case28_iterable.cs \
-  src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs
-mono test/obj/case28_iterable.exe
-```
-
-### 4. 注意点
-
-- 対象は Python のサブセットです。一般的な Python コードすべてが変換できるわけではありません。
-- 変数には、型注釈が必要です。（ただし一部は推論可能）。
-- Python で `import` するモジュールは、対応するランタイム実装が `src/cpp_module/` または `src/cs_module/` に必要です。
-- `sample/py/` を Python のまま実行する場合は、`py_module` を解決するため `PYTHONPATH=src` を付けて実行してください（例: `PYTHONPATH=src python3 sample/py/01_mandelbrot.py`）。
-- 生成された C++/C# は「読みやすさ」より「変換の忠実性」を優先しています。
-
-
-## 変換例
-
-どのようなコードに変換されるのかは、以下のフォルダのファイルをご覧ください。
-
-### テストコード
-
-10行程度の簡単なコードがどう変換されるか確認するためのもの。
-
-- [test/py](test/py) : テストコード。(Pythonで書かれたファイル。)
-- [test/cpp](test/cpp) : テストコードをC++のコードに変換したもの。
-- [test/cs](test/cs) : テストコードをC#のコードに変換したもの。
-- [test/js](test/js) : 🚧テストコードをJavaScriptのコードに変換したもの。
-- [test/rs](test/rs) : 🚧テストコードをRustのコードに変換したもの。
-
-### サンプルコード
-
-実行に数秒を要する数十行程度のサンプルコードを別の言語に変換して、その実行時間を比較するためのもの。
-
-Python 版サンプルの実行例:
-
-```bash
-PYTHONPATH=src python3 sample/py/01_mandelbrot.py
-```
-
-- [sample/py](sample/py) : サンプルコード Pythonで書かれた14個のファイル。
-- [sample/cpp](sample/cpp) : サンプルコードをC++のコードに変換したもの。
-- [sample/cs](sample/cs) : サンプルコードをC#のコードに変換したもの。
-- [sample/js](sample/js) : 🚧サンプルコードをJavaScriptのコードに変換したもの。
-- [sample/rs](sample/rs) : 🚧サンプルコードをRustのコードに変換したもの。
 
 ## 実行速度の比較
 
-サンプルコードの実行時間（単位: 秒）。
+サンプルコード(Pythonで書かれている)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒）
 
-測定条件:
-- Python: `PYTHONPATH=src python3 sample/py/<file>.py`
-- C++: `g++ -std=c++20 -O2 -I src ...` でビルドした実行ファイル
-- C#: `mcs ...` + `mono ...`
+💡 元のソースコード、変換されたソースコード、計測条件等については、[docs/time-comparison.md](docs/time-comparison.md) をご覧ください。
 
-|ファイル名|内容| Python(元のコード) | C++に変換後 | C#に変換後 | JSに変換後 | Rustに変換後 |
+|ファイル名|内容|Python| C++ | C# | JS | Rust |
 |-|-|-:|-:|-:|-|-|
 |01_mandelbrot|マンデルブロ集合（PNG）|1.689|0.089|0.078|🚧|🚧|
 |02_raytrace_spheres|球の簡易レイトレーサ（PNG）|0.414|0.030|0.121|🚧|🚧|
@@ -140,21 +44,7 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 |12_sort_visualizer|ソート可視化（GIF）|3.471|0.233|0.465|🚧|🚧|
 |13_maze_generation_steps|迷路生成ステップ（GIF）|0.521|0.033|0.113|🚧|🚧|
 |14_raymarching_light_cycle|簡易レイマーチング（GIF）|2.666|0.152|0.467|🚧|🚧|
-
-## 言語的制約
-
-- Pythonのsubset言語です。(通常のPythonのコードとして実行できます。)
-- 型を明示する必要があります。
-- ただし、以下のようなケースは暗黙の型推論を行います。
-  - x = 1 のように右辺が整数リテラルの時は、左辺は int 型である。
-  - x が int型だと、わかっているときの y = x (右辺の型は明らかにintなので左辺は型推論によりint)
-
-型名について
-- intは、64-bit 符号付き整数型です。
-- int8,uint8,int16,uint16,int32,uint32,int64,uint64はそれが使えるplatformでは、それを使うようにします。(C++だとint8はint8_tに変換されます。)
-- floatは、Pythonの仕様に基づき、64-bit 浮動小数点数です。(C++だとdoubleになります。)
-- float32 という型名にすると 32-bit 浮動小数点数とみなして変換されます。(C++だとfloatになります。)
-
+|15_mini_language_interpreter|ミニ言語インタプリタ |2.729|0.792|1.168|🚧|🚧|
 
 ## 実装済みの言語機能
 
@@ -186,15 +76,17 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 - `py_module.png_helper` : PNG画像出力ヘルパ
 - `py_module.gif_helper` : GIF画像出力ヘルパ
 
-## 未実装項目
+## 開発中
 
-- JavaScript / Rust 向けトランスパイラ本体の本格実装
-- 標準ライブラリ網羅対応（`import` 可能モジュールの拡充）
-- 回帰テストのさらなる拡充（網羅率向上）
-- 例外処理・型推論の高度化
+- C++, C#以外の言語へのトランスパイラ本体
 - a[b:c] 以外のスライス構文
 
-対応予定なし
+## 未実装項目
+
+- 標準ライブラリ網羅対応（`import` 可能モジュールの拡充）
+- 例外処理・型推論の高度化
+
+## 対応予定なし
 
 - Python 構文の完全互換（現状はサブセット）
 - 動的なimport
