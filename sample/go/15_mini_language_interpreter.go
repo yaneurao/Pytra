@@ -1,84 +1,1170 @@
-// このファイルは自動生成です（Python -> Go embedded mode）。
+// このファイルは自動生成です（Python -> Go native mode）。
 
-// Python 埋め込み実行向けの Go ランタイム補助。
-// 生成された Go コードから呼び出し、Python ソースを一時ファイルに展開して実行する。
+// Go ネイティブ変換向け Python 互換ランタイム補助。
 
 package main
 
 import (
-	"encoding/base64"
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
+    "bytes"
+    "compress/zlib"
+    "fmt"
+    "hash/crc32"
+    "math"
+    "os"
+    "strconv"
+    "strings"
+    "time"
 )
 
-// pytraRunEmbeddedPython は、Base64 で埋め込まれた Python ソースを実行する。
-//
-// Args:
-//   sourceBase64: 埋め込み Python ソースコード（Base64 文字列）。
-//   args: Python スクリプトへ渡す引数。
-//
-// Returns:
-//   Python プロセスの終了コード。異常時は 1 を返す。
-func pytraRunEmbeddedPython(sourceBase64 string, args []string) int {
-	sourceBytes, decodeErr := base64.StdEncoding.DecodeString(sourceBase64)
-	if decodeErr != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to decode embedded python source")
-		return 1
-	}
-
-	tempDir, mkErr := os.MkdirTemp("", "pytra_go_")
-	if mkErr != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to create temp directory")
-		return 1
-	}
-	defer os.RemoveAll(tempDir)
-
-	scriptPath := filepath.Join(tempDir, "embedded.py")
-	if writeErr := os.WriteFile(scriptPath, sourceBytes, 0o600); writeErr != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to write temp python script")
-		return 1
-	}
-
-	pythonPath := "src"
-	if current, ok := os.LookupEnv("PYTHONPATH"); ok && current != "" {
-		pythonPath = pythonPath + string(os.PathListSeparator) + current
-	}
-
-	run := func(interpreter string) (int, error) {
-		cmd := exec.Command(interpreter, append([]string{scriptPath}, args...)...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		env := os.Environ()
-		env = append(env, "PYTHONPATH="+pythonPath)
-		cmd.Env = env
-		err := cmd.Run()
-		if err == nil {
-			return 0, nil
-		}
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return exitErr.ExitCode(), nil
-		}
-		return 0, err
-	}
-
-	if code, err := run("python3"); err == nil {
-		return code
-	}
-	if code, err := run("python"); err == nil {
-		return code
-	}
-
-	fmt.Fprintln(os.Stderr, "error: python interpreter not found (python3/python)")
-	return 1
+func pyToString(v any) string {
+    switch x := v.(type) {
+    case nil:
+        return "None"
+    case bool:
+        if x {
+            return "True"
+        }
+        return "False"
+    case string:
+        return x
+    case int:
+        return strconv.Itoa(x)
+    case int64:
+        return strconv.FormatInt(x, 10)
+    case float64:
+        return strconv.FormatFloat(x, 'f', -1, 64)
+    case []any:
+        parts := make([]string, 0, len(x))
+        for _, it := range x {
+            parts = append(parts, pyToString(it))
+        }
+        return "[" + strings.Join(parts, ", ") + "]"
+    case map[any]any:
+        parts := make([]string, 0, len(x))
+        for k, v := range x {
+            parts = append(parts, pyToString(k)+": "+pyToString(v))
+        }
+        return "{" + strings.Join(parts, ", ") + "}"
+    default:
+        return fmt.Sprint(x)
+    }
 }
 
-// 埋め込み Python ソース（Base64）。
-const pytraEmbeddedSourceBase64 = "ZnJvbSBkYXRhY2xhc3NlcyBpbXBvcnQgZGF0YWNsYXNzCmZyb20gdGltZSBpbXBvcnQgcGVyZl9jb3VudGVyCgoKIyDlrZflj6Xop6PmnpDnlKjjg4jjg7zjgq/jg7PjgIIKQGRhdGFjbGFzcwpjbGFzcyBUb2tlbjoKICAgIGtpbmQ6IHN0cgogICAgdGV4dDogc3RyCiAgICBwb3M6IGludAoKCiMg5byP44OO44O844OJ44CCa2luZCDjgaflrp/kvZPjgpLorZjliKXjgZnjgovjgIIKQGRhdGFjbGFzcwpjbGFzcyBFeHByTm9kZToKICAgIGtpbmQ6IHN0ciAgICAgICAgIyAibGl0IiB8ICJ2YXIiIHwgImJpbiIgfCAibmVnIgogICAgdmFsdWU6IGludCAgICAgICAjIGxpdCDjga7lgKQKICAgIG5hbWU6IHN0ciAgICAgICAgIyB2YXIg44Gu5ZCN5YmNCiAgICBvcDogc3RyICAgICAgICAgICMgYmluIOOBrua8lOeul+WtkAogICAgbGVmdDogaW50ICAgICAgICAjIOWtkOODjuODvOODiSBpbmRleAogICAgcmlnaHQ6IGludCAgICAgICAjIOWtkOODjuODvOODiSBpbmRleAoKCiMg5paH44OO44O844OJ44CCa2luZCDjgaflrp/kvZPjgpLorZjliKXjgZnjgovjgIIKQGRhdGFjbGFzcwpjbGFzcyBTdG10Tm9kZToKICAgIGtpbmQ6IHN0ciAgICAgICAgIyAibGV0IiB8ICJhc3NpZ24iIHwgInByaW50IgogICAgbmFtZTogc3RyICAgICAgICAjIOWkieaVsOWQje+8iHByaW50IOOBp+OBr+acquS9v+eUqO+8iQogICAgZXhwcl9pbmRleDogaW50ICAjIOW8j+ODjuODvOODiSBpbmRleAoKZGVmIHRva2VuaXplKGxpbmVzOiBsaXN0W3N0cl0pIC0+IGxpc3RbVG9rZW5dOgogICAgdG9rZW5zOiBsaXN0W1Rva2VuXSA9IFtdCiAgICBsaW5lX2luZGV4OiBpbnQgPSAwCiAgICB3aGlsZSBsaW5lX2luZGV4IDwgbGVuKGxpbmVzKToKICAgICAgICBzb3VyY2U6IHN0ciA9IGxpbmVzW2xpbmVfaW5kZXhdCiAgICAgICAgaTogaW50ID0gMAogICAgICAgIG46IGludCA9IGxlbihzb3VyY2UpCiAgICAgICAgd2hpbGUgaSA8IG46CiAgICAgICAgICAgIGNoOiBzdHIgPSBzb3VyY2VbaTppICsgMV0KCiAgICAgICAgICAgIGlmIGNoID09ICIgIjoKICAgICAgICAgICAgICAgIGkgKz0gMQogICAgICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgICAgIGlmIGNoID09ICIrIjoKICAgICAgICAgICAgICAgIHRva2Vucy5hcHBlbmQoVG9rZW4oIlBMVVMiLCBjaCwgaSkpCiAgICAgICAgICAgICAgICBpICs9IDEKICAgICAgICAgICAgICAgIGNvbnRpbnVlCgogICAgICAgICAgICBpZiBjaCA9PSAiLSI6CiAgICAgICAgICAgICAgICB0b2tlbnMuYXBwZW5kKFRva2VuKCJNSU5VUyIsIGNoLCBpKSkKICAgICAgICAgICAgICAgIGkgKz0gMQogICAgICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgICAgIGlmIGNoID09ICIqIjoKICAgICAgICAgICAgICAgIHRva2Vucy5hcHBlbmQoVG9rZW4oIlNUQVIiLCBjaCwgaSkpCiAgICAgICAgICAgICAgICBpICs9IDEKICAgICAgICAgICAgICAgIGNvbnRpbnVlCgogICAgICAgICAgICBpZiBjaCA9PSAiLyI6CiAgICAgICAgICAgICAgICB0b2tlbnMuYXBwZW5kKFRva2VuKCJTTEFTSCIsIGNoLCBpKSkKICAgICAgICAgICAgICAgIGkgKz0gMQogICAgICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgICAgIGlmIGNoID09ICIoIjoKICAgICAgICAgICAgICAgIHRva2Vucy5hcHBlbmQoVG9rZW4oIkxQQVJFTiIsIGNoLCBpKSkKICAgICAgICAgICAgICAgIGkgKz0gMQogICAgICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgICAgIGlmIGNoID09ICIpIjoKICAgICAgICAgICAgICAgIHRva2Vucy5hcHBlbmQoVG9rZW4oIlJQQVJFTiIsIGNoLCBpKSkKICAgICAgICAgICAgICAgIGkgKz0gMQogICAgICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgICAgIGlmIGNoID09ICI9IjoKICAgICAgICAgICAgICAgIHRva2Vucy5hcHBlbmQoVG9rZW4oIkVRVUFMIiwgY2gsIGkpKQogICAgICAgICAgICAgICAgaSArPSAxCiAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgaWYgY2guaXNkaWdpdCgpOgogICAgICAgICAgICAgICAgc3RhcnQ6IGludCA9IGkKICAgICAgICAgICAgICAgIHdoaWxlIGkgPCBuIGFuZCBzb3VyY2VbaTppICsgMV0uaXNkaWdpdCgpOgogICAgICAgICAgICAgICAgICAgIGkgKz0gMQogICAgICAgICAgICAgICAgdGV4dDogc3RyID0gc291cmNlW3N0YXJ0OmldCiAgICAgICAgICAgICAgICB0b2tlbnMuYXBwZW5kKFRva2VuKCJOVU1CRVIiLCB0ZXh0LCBzdGFydCkpCiAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgaWYgY2guaXNhbHBoYSgpIG9yIGNoID09ICJfIjoKICAgICAgICAgICAgICAgIHN0YXJ0ID0gaQogICAgICAgICAgICAgICAgd2hpbGUgaSA8IG4gYW5kICgoc291cmNlW2k6aSArIDFdLmlzYWxwaGEoKSBvciBzb3VyY2VbaTppICsgMV0gPT0gIl8iKSBvciBzb3VyY2VbaTppICsgMV0uaXNkaWdpdCgpKToKICAgICAgICAgICAgICAgICAgICBpICs9IDEKICAgICAgICAgICAgICAgIHRleHQgPSBzb3VyY2Vbc3RhcnQ6aV0KICAgICAgICAgICAgICAgIGlmIHRleHQgPT0gImxldCI6CiAgICAgICAgICAgICAgICAgICAgdG9rZW5zLmFwcGVuZChUb2tlbigiTEVUIiwgdGV4dCwgc3RhcnQpKQogICAgICAgICAgICAgICAgZWxpZiB0ZXh0ID09ICJwcmludCI6CiAgICAgICAgICAgICAgICAgICAgdG9rZW5zLmFwcGVuZChUb2tlbigiUFJJTlQiLCB0ZXh0LCBzdGFydCkpCiAgICAgICAgICAgICAgICBlbHNlOgogICAgICAgICAgICAgICAgICAgIHRva2Vucy5hcHBlbmQoVG9rZW4oIklERU5UIiwgdGV4dCwgc3RhcnQpKQogICAgICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigidG9rZW5pemUgZXJyb3IgYXQgbGluZT0iICsgc3RyKGxpbmVfaW5kZXgpICsgIiBwb3M9IiArIHN0cihpKSArICIgY2g9IiArIGNoKQoKICAgICAgICB0b2tlbnMuYXBwZW5kKFRva2VuKCJORVdMSU5FIiwgIiIsIG4pKQogICAgICAgIGxpbmVfaW5kZXggKz0gMQoKICAgIHRva2Vucy5hcHBlbmQoVG9rZW4oIkVPRiIsICIiLCBsZW4obGluZXMpKSkKICAgIHJldHVybiB0b2tlbnMKCgpjbGFzcyBQYXJzZXI6CiAgICBkZWYgbmV3X2V4cHJfbm9kZXMoc2VsZikgLT4gbGlzdFtFeHByTm9kZV06CiAgICAgICAgbm9kZXM6IGxpc3RbRXhwck5vZGVdID0gW10KICAgICAgICByZXR1cm4gbm9kZXMKCiAgICBkZWYgX19pbml0X18oc2VsZiwgdG9rZW5zOiBsaXN0W1Rva2VuXSkgLT4gTm9uZToKICAgICAgICBzZWxmLnRva2VuczogbGlzdFtUb2tlbl0gPSB0b2tlbnMKICAgICAgICBzZWxmLnBvczogaW50ID0gMAogICAgICAgIHNlbGYuZXhwcl9ub2RlczogbGlzdFtFeHByTm9kZV0gPSBzZWxmLm5ld19leHByX25vZGVzKCkKCiAgICBkZWYgcGVla19raW5kKHNlbGYpIC0+IHN0cjoKICAgICAgICByZXR1cm4gc2VsZi50b2tlbnNbc2VsZi5wb3NdLmtpbmQKCiAgICBkZWYgbWF0Y2goc2VsZiwga2luZDogc3RyKSAtPiBib29sOgogICAgICAgIGlmIHNlbGYucGVla19raW5kKCkgPT0ga2luZDoKICAgICAgICAgICAgc2VsZi5wb3MgKz0gMQogICAgICAgICAgICByZXR1cm4gVHJ1ZQogICAgICAgIHJldHVybiBGYWxzZQoKICAgIGRlZiBleHBlY3Qoc2VsZiwga2luZDogc3RyKSAtPiBUb2tlbjoKICAgICAgICBpZiBzZWxmLnBlZWtfa2luZCgpICE9IGtpbmQ6CiAgICAgICAgICAgIHQ6IFRva2VuID0gc2VsZi50b2tlbnNbc2VsZi5wb3NdCiAgICAgICAgICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigicGFyc2UgZXJyb3IgYXQgcG9zPSIgKyBzdHIodC5wb3MpICsgIiwgZXhwZWN0ZWQ9IiArIGtpbmQgKyAiLCBnb3Q9IiArIHQua2luZCkKICAgICAgICB0b2tlbjogVG9rZW4gPSBzZWxmLnRva2Vuc1tzZWxmLnBvc10KICAgICAgICBzZWxmLnBvcyArPSAxCiAgICAgICAgcmV0dXJuIHRva2VuCgogICAgZGVmIHNraXBfbmV3bGluZXMoc2VsZikgLT4gTm9uZToKICAgICAgICB3aGlsZSBzZWxmLm1hdGNoKCJORVdMSU5FIik6CiAgICAgICAgICAgIHBhc3MKCiAgICBkZWYgYWRkX2V4cHIoc2VsZiwgbm9kZTogRXhwck5vZGUpIC0+IGludDoKICAgICAgICBzZWxmLmV4cHJfbm9kZXMuYXBwZW5kKG5vZGUpCiAgICAgICAgcmV0dXJuIGxlbihzZWxmLmV4cHJfbm9kZXMpIC0gMQoKICAgIGRlZiBwYXJzZV9wcm9ncmFtKHNlbGYpIC0+IGxpc3RbU3RtdE5vZGVdOgogICAgICAgIHN0bXRzOiBsaXN0W1N0bXROb2RlXSA9IFtdCiAgICAgICAgc2VsZi5za2lwX25ld2xpbmVzKCkKICAgICAgICB3aGlsZSBzZWxmLnBlZWtfa2luZCgpICE9ICJFT0YiOgogICAgICAgICAgICBzdG10OiBTdG10Tm9kZSA9IHNlbGYucGFyc2Vfc3RtdCgpCiAgICAgICAgICAgIHN0bXRzLmFwcGVuZChzdG10KQogICAgICAgICAgICBzZWxmLnNraXBfbmV3bGluZXMoKQogICAgICAgIHJldHVybiBzdG10cwoKICAgIGRlZiBwYXJzZV9zdG10KHNlbGYpIC0+IFN0bXROb2RlOgogICAgICAgIGlmIHNlbGYubWF0Y2goIkxFVCIpOgogICAgICAgICAgICBsZXRfbmFtZTogc3RyID0gc2VsZi5leHBlY3QoIklERU5UIikudGV4dAogICAgICAgICAgICBzZWxmLmV4cGVjdCgiRVFVQUwiKQogICAgICAgICAgICBsZXRfZXhwcl9pbmRleDogaW50ID0gc2VsZi5wYXJzZV9leHByKCkKICAgICAgICAgICAgcmV0dXJuIFN0bXROb2RlKCJsZXQiLCBsZXRfbmFtZSwgbGV0X2V4cHJfaW5kZXgpCgogICAgICAgIGlmIHNlbGYubWF0Y2goIlBSSU5UIik6CiAgICAgICAgICAgIHByaW50X2V4cHJfaW5kZXg6IGludCA9IHNlbGYucGFyc2VfZXhwcigpCiAgICAgICAgICAgIHJldHVybiBTdG10Tm9kZSgicHJpbnQiLCAiIiwgcHJpbnRfZXhwcl9pbmRleCkKCiAgICAgICAgYXNzaWduX25hbWU6IHN0ciA9IHNlbGYuZXhwZWN0KCJJREVOVCIpLnRleHQKICAgICAgICBzZWxmLmV4cGVjdCgiRVFVQUwiKQogICAgICAgIGFzc2lnbl9leHByX2luZGV4OiBpbnQgPSBzZWxmLnBhcnNlX2V4cHIoKQogICAgICAgIHJldHVybiBTdG10Tm9kZSgiYXNzaWduIiwgYXNzaWduX25hbWUsIGFzc2lnbl9leHByX2luZGV4KQoKICAgIGRlZiBwYXJzZV9leHByKHNlbGYpIC0+IGludDoKICAgICAgICByZXR1cm4gc2VsZi5wYXJzZV9hZGQoKQoKICAgIGRlZiBwYXJzZV9hZGQoc2VsZikgLT4gaW50OgogICAgICAgIGxlZnQ6IGludCA9IHNlbGYucGFyc2VfbXVsKCkKICAgICAgICBkb25lOiBib29sID0gRmFsc2UKICAgICAgICB3aGlsZSBub3QgZG9uZToKICAgICAgICAgICAgaWYgc2VsZi5tYXRjaCgiUExVUyIpOgogICAgICAgICAgICAgICAgcmlnaHQ6IGludCA9IHNlbGYucGFyc2VfbXVsKCkKICAgICAgICAgICAgICAgIGxlZnQgPSBzZWxmLmFkZF9leHByKEV4cHJOb2RlKCJiaW4iLCAwLCAiIiwgIisiLCBsZWZ0LCByaWdodCkpCiAgICAgICAgICAgICAgICBjb250aW51ZQogICAgICAgICAgICBpZiBzZWxmLm1hdGNoKCJNSU5VUyIpOgogICAgICAgICAgICAgICAgcmlnaHQgPSBzZWxmLnBhcnNlX211bCgpCiAgICAgICAgICAgICAgICBsZWZ0ID0gc2VsZi5hZGRfZXhwcihFeHByTm9kZSgiYmluIiwgMCwgIiIsICItIiwgbGVmdCwgcmlnaHQpKQogICAgICAgICAgICAgICAgY29udGludWUKICAgICAgICAgICAgZG9uZSA9IFRydWUKICAgICAgICByZXR1cm4gbGVmdAoKICAgIGRlZiBwYXJzZV9tdWwoc2VsZikgLT4gaW50OgogICAgICAgIGxlZnQ6IGludCA9IHNlbGYucGFyc2VfdW5hcnkoKQogICAgICAgIGRvbmU6IGJvb2wgPSBGYWxzZQogICAgICAgIHdoaWxlIG5vdCBkb25lOgogICAgICAgICAgICBpZiBzZWxmLm1hdGNoKCJTVEFSIik6CiAgICAgICAgICAgICAgICByaWdodDogaW50ID0gc2VsZi5wYXJzZV91bmFyeSgpCiAgICAgICAgICAgICAgICBsZWZ0ID0gc2VsZi5hZGRfZXhwcihFeHByTm9kZSgiYmluIiwgMCwgIiIsICIqIiwgbGVmdCwgcmlnaHQpKQogICAgICAgICAgICAgICAgY29udGludWUKICAgICAgICAgICAgaWYgc2VsZi5tYXRjaCgiU0xBU0giKToKICAgICAgICAgICAgICAgIHJpZ2h0ID0gc2VsZi5wYXJzZV91bmFyeSgpCiAgICAgICAgICAgICAgICBsZWZ0ID0gc2VsZi5hZGRfZXhwcihFeHByTm9kZSgiYmluIiwgMCwgIiIsICIvIiwgbGVmdCwgcmlnaHQpKQogICAgICAgICAgICAgICAgY29udGludWUKICAgICAgICAgICAgZG9uZSA9IFRydWUKICAgICAgICByZXR1cm4gbGVmdAoKICAgIGRlZiBwYXJzZV91bmFyeShzZWxmKSAtPiBpbnQ6CiAgICAgICAgaWYgc2VsZi5tYXRjaCgiTUlOVVMiKToKICAgICAgICAgICAgY2hpbGQ6IGludCA9IHNlbGYucGFyc2VfdW5hcnkoKQogICAgICAgICAgICByZXR1cm4gc2VsZi5hZGRfZXhwcihFeHByTm9kZSgibmVnIiwgMCwgIiIsICIiLCBjaGlsZCwgLTEpKQogICAgICAgIHJldHVybiBzZWxmLnBhcnNlX3ByaW1hcnkoKQoKICAgIGRlZiBwYXJzZV9wcmltYXJ5KHNlbGYpIC0+IGludDoKICAgICAgICBpZiBzZWxmLm1hdGNoKCJOVU1CRVIiKToKICAgICAgICAgICAgdG9rZW5fbnVtOiBUb2tlbiA9IHNlbGYudG9rZW5zW3NlbGYucG9zIC0gMV0KICAgICAgICAgICAgcGFyc2VkX3ZhbHVlOiBpbnQgPSAwCiAgICAgICAgICAgIGlkeDogaW50ID0gMAogICAgICAgICAgICB3aGlsZSBpZHggPCBsZW4odG9rZW5fbnVtLnRleHQpOgogICAgICAgICAgICAgICAgY2g6IHN0ciA9IHRva2VuX251bS50ZXh0W2lkeDppZHggKyAxXQogICAgICAgICAgICAgICAgcGFyc2VkX3ZhbHVlID0gcGFyc2VkX3ZhbHVlICogMTAgKyBvcmQoY2gpIC0gb3JkKCIwIikKICAgICAgICAgICAgICAgIGlkeCArPSAxCiAgICAgICAgICAgIHJldHVybiBzZWxmLmFkZF9leHByKEV4cHJOb2RlKCJsaXQiLCBwYXJzZWRfdmFsdWUsICIiLCAiIiwgLTEsIC0xKSkKCiAgICAgICAgaWYgc2VsZi5tYXRjaCgiSURFTlQiKToKICAgICAgICAgICAgdG9rZW5faWRlbnQ6IFRva2VuID0gc2VsZi50b2tlbnNbc2VsZi5wb3MgLSAxXQogICAgICAgICAgICByZXR1cm4gc2VsZi5hZGRfZXhwcihFeHByTm9kZSgidmFyIiwgMCwgdG9rZW5faWRlbnQudGV4dCwgIiIsIC0xLCAtMSkpCgogICAgICAgIGlmIHNlbGYubWF0Y2goIkxQQVJFTiIpOgogICAgICAgICAgICBleHByX2luZGV4OiBpbnQgPSBzZWxmLnBhcnNlX2V4cHIoKQogICAgICAgICAgICBzZWxmLmV4cGVjdCgiUlBBUkVOIikKICAgICAgICAgICAgcmV0dXJuIGV4cHJfaW5kZXgKCiAgICAgICAgdCA9IHNlbGYudG9rZW5zW3NlbGYucG9zXQogICAgICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigicHJpbWFyeSBwYXJzZSBlcnJvciBhdCBwb3M9IiArIHN0cih0LnBvcykgKyAiIGdvdD0iICsgdC5raW5kKQoKCmRlZiBldmFsX2V4cHIoZXhwcl9pbmRleDogaW50LCBleHByX25vZGVzOiBsaXN0W0V4cHJOb2RlXSwgZW52OiBkaWN0W3N0ciwgaW50XSkgLT4gaW50OgogICAgIyBDKyvlgbTjgacgZW52IOOBjCBjb25zdCDmibHjgYTjgavjgarjgovjga7jgpLpgb/jgZHjgovjgZ/jgoHjga7jg4Djg5/jg7zmm7jjgY3ovrzjgb/jgIIKICAgIGlmIEZhbHNlOgogICAgICAgIGVudlsiX19kdW1teV9fIl0gPSAwCgogICAgbm9kZTogRXhwck5vZGUgPSBleHByX25vZGVzW2V4cHJfaW5kZXhdCgogICAgaWYgbm9kZS5raW5kID09ICJsaXQiOgogICAgICAgIHJldHVybiBub2RlLnZhbHVlCgogICAgaWYgbm9kZS5raW5kID09ICJ2YXIiOgogICAgICAgIGlmIG5vdCAobm9kZS5uYW1lIGluIGVudik6CiAgICAgICAgICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigidW5kZWZpbmVkIHZhcmlhYmxlOiAiICsgbm9kZS5uYW1lKQogICAgICAgIHJldHVybiBlbnZbbm9kZS5uYW1lXQoKICAgIGlmIG5vZGUua2luZCA9PSAibmVnIjoKICAgICAgICByZXR1cm4gLWV2YWxfZXhwcihub2RlLmxlZnQsIGV4cHJfbm9kZXMsIGVudikKCiAgICBpZiBub2RlLmtpbmQgPT0gImJpbiI6CiAgICAgICAgbGhzOiBpbnQgPSBldmFsX2V4cHIobm9kZS5sZWZ0LCBleHByX25vZGVzLCBlbnYpCiAgICAgICAgcmhzOiBpbnQgPSBldmFsX2V4cHIobm9kZS5yaWdodCwgZXhwcl9ub2RlcywgZW52KQogICAgICAgIGlmIG5vZGUub3AgPT0gIisiOgogICAgICAgICAgICByZXR1cm4gbGhzICsgcmhzCiAgICAgICAgaWYgbm9kZS5vcCA9PSAiLSI6CiAgICAgICAgICAgIHJldHVybiBsaHMgLSByaHMKICAgICAgICBpZiBub2RlLm9wID09ICIqIjoKICAgICAgICAgICAgcmV0dXJuIGxocyAqIHJocwogICAgICAgIGlmIG5vZGUub3AgPT0gIi8iOgogICAgICAgICAgICBpZiByaHMgPT0gMDoKICAgICAgICAgICAgICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigiZGl2aXNpb24gYnkgemVybyIpCiAgICAgICAgICAgICMg44Of44OL6KiA6Kqe44Gn44Gv5pW05pWw6Zmk566X44KS5o6h55So44GZ44KL44CCCiAgICAgICAgICAgIHJldHVybiBsaHMgLy8gcmhzCiAgICAgICAgcmFpc2UgUnVudGltZUVycm9yKCJ1bmtub3duIG9wZXJhdG9yOiAiICsgbm9kZS5vcCkKCiAgICByYWlzZSBSdW50aW1lRXJyb3IoInVua25vd24gbm9kZSBraW5kOiAiICsgbm9kZS5raW5kKQoKCmRlZiBleGVjdXRlKHN0bXRzOiBsaXN0W1N0bXROb2RlXSwgZXhwcl9ub2RlczogbGlzdFtFeHByTm9kZV0sIHRyYWNlOiBib29sKSAtPiBpbnQ6CiAgICBlbnY6IGRpY3Rbc3RyLCBpbnRdID0ge30KICAgIGNoZWNrc3VtOiBpbnQgPSAwCiAgICBwcmludGVkOiBpbnQgPSAwCgogICAgZm9yIHN0bXQgaW4gc3RtdHM6CiAgICAgICAgaWYgc3RtdC5raW5kID09ICJsZXQiOgogICAgICAgICAgICBlbnZbc3RtdC5uYW1lXSA9IGV2YWxfZXhwcihzdG10LmV4cHJfaW5kZXgsIGV4cHJfbm9kZXMsIGVudikKICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgaWYgc3RtdC5raW5kID09ICJhc3NpZ24iOgogICAgICAgICAgICBpZiBub3QgKHN0bXQubmFtZSBpbiBlbnYpOgogICAgICAgICAgICAgICAgcmFpc2UgUnVudGltZUVycm9yKCJhc3NpZ24gdG8gdW5kZWZpbmVkIHZhcmlhYmxlOiAiICsgc3RtdC5uYW1lKQogICAgICAgICAgICBlbnZbc3RtdC5uYW1lXSA9IGV2YWxfZXhwcihzdG10LmV4cHJfaW5kZXgsIGV4cHJfbm9kZXMsIGVudikKICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgdmFsdWU6IGludCA9IGV2YWxfZXhwcihzdG10LmV4cHJfaW5kZXgsIGV4cHJfbm9kZXMsIGVudikKICAgICAgICBpZiB0cmFjZToKICAgICAgICAgICAgcHJpbnQodmFsdWUpCiAgICAgICAgbm9ybTogaW50ID0gdmFsdWUgJSAxMDAwMDAwMDA3CiAgICAgICAgaWYgbm9ybSA8IDA6CiAgICAgICAgICAgIG5vcm0gKz0gMTAwMDAwMDAwNwogICAgICAgIGNoZWNrc3VtID0gKGNoZWNrc3VtICogMTMxICsgbm9ybSkgJSAxMDAwMDAwMDA3CiAgICAgICAgcHJpbnRlZCArPSAxCgogICAgaWYgdHJhY2U6CiAgICAgICAgcHJpbnQoInByaW50ZWQ6IiwgcHJpbnRlZCkKICAgIHJldHVybiBjaGVja3N1bQoKCmRlZiBidWlsZF9iZW5jaG1hcmtfc291cmNlKHZhcl9jb3VudDogaW50LCBsb29wczogaW50KSAtPiBsaXN0W3N0cl06CiAgICBsaW5lczogbGlzdFtzdHJdID0gW10KCiAgICAjIOWIneacn+WkieaVsOOCkuWuo+iogOOAggogICAgZm9yIGkgaW4gcmFuZ2UodmFyX2NvdW50KToKICAgICAgICBsaW5lcy5hcHBlbmQoImxldCB2IiArIHN0cihpKSArICIgPSAiICsgc3RyKGkgKyAxKSkKCiAgICAjIOeul+ihk+W8j+OCkuWkp+mHj+OBq+ipleS+oeOBleOBm+OCi+OAggogICAgZm9yIGkgaW4gcmFuZ2UobG9vcHMpOgogICAgICAgIHg6IGludCA9IGkgJSB2YXJfY291bnQKICAgICAgICB5OiBpbnQgPSAoaSArIDMpICUgdmFyX2NvdW50CiAgICAgICAgYzE6IGludCA9IChpICUgNykgKyAxCiAgICAgICAgYzI6IGludCA9IChpICUgMTEpICsgMgogICAgICAgIGxpbmVzLmFwcGVuZCgKICAgICAgICAgICAgInYiICsgc3RyKHgpICsgIiA9ICh2IiArIHN0cih4KSArICIgKiAiICsgc3RyKGMxKSArICIgKyB2IiArIHN0cih5KSArICIgKyAxMDAwMCkgLyAiICsgc3RyKGMyKQogICAgICAgICkKICAgICAgICBpZiBpICUgOTcgPT0gMDoKICAgICAgICAgICAgbGluZXMuYXBwZW5kKCJwcmludCB2IiArIHN0cih4KSkKCiAgICAjIOacgOe1guWApOOCkuOBvuOBqOOCgeOBpuWHuuWKm+OAggogICAgbGluZXMuYXBwZW5kKCJwcmludCAodjAgKyB2MSArIHYyICsgdjMpIikKICAgIHJldHVybiBsaW5lcwoKCmRlZiBydW5fZGVtbygpIC0+IE5vbmU6CiAgICBkZW1vX2xpbmVzOiBsaXN0W3N0cl0gPSBbXQogICAgZGVtb19saW5lcy5hcHBlbmQoImxldCBhID0gMTAiKQogICAgZGVtb19saW5lcy5hcHBlbmQoImxldCBiID0gMyIpCiAgICBkZW1vX2xpbmVzLmFwcGVuZCgiYSA9IChhICsgYikgKiAyIikKICAgIGRlbW9fbGluZXMuYXBwZW5kKCJwcmludCBhIikKICAgIGRlbW9fbGluZXMuYXBwZW5kKCJwcmludCBhIC8gYiIpCgogICAgdG9rZW5zOiBsaXN0W1Rva2VuXSA9IHRva2VuaXplKGRlbW9fbGluZXMpCiAgICBwYXJzZXI6IFBhcnNlciA9IFBhcnNlcih0b2tlbnMpCiAgICBzdG10czogbGlzdFtTdG10Tm9kZV0gPSBwYXJzZXIucGFyc2VfcHJvZ3JhbSgpCiAgICBjaGVja3N1bTogaW50ID0gZXhlY3V0ZShzdG10cywgcGFyc2VyLmV4cHJfbm9kZXMsIFRydWUpCiAgICBwcmludCgiZGVtb19jaGVja3N1bToiLCBjaGVja3N1bSkKCgpkZWYgcnVuX2JlbmNobWFyaygpIC0+IE5vbmU6CiAgICBzb3VyY2VfbGluZXM6IGxpc3Rbc3RyXSA9IGJ1aWxkX2JlbmNobWFya19zb3VyY2UoMzIsIDEyMDAwMCkKICAgIHN0YXJ0OiBmbG9hdCA9IHBlcmZfY291bnRlcigpCiAgICB0b2tlbnM6IGxpc3RbVG9rZW5dID0gdG9rZW5pemUoc291cmNlX2xpbmVzKQogICAgcGFyc2VyOiBQYXJzZXIgPSBQYXJzZXIodG9rZW5zKQogICAgc3RtdHM6IGxpc3RbU3RtdE5vZGVdID0gcGFyc2VyLnBhcnNlX3Byb2dyYW0oKQogICAgY2hlY2tzdW06IGludCA9IGV4ZWN1dGUoc3RtdHMsIHBhcnNlci5leHByX25vZGVzLCBGYWxzZSkKICAgIGVsYXBzZWQ6IGZsb2F0ID0gcGVyZl9jb3VudGVyKCkgLSBzdGFydAoKICAgIHByaW50KCJ0b2tlbl9jb3VudDoiLCBsZW4odG9rZW5zKSkKICAgIHByaW50KCJleHByX2NvdW50OiIsIGxlbihwYXJzZXIuZXhwcl9ub2RlcykpCiAgICBwcmludCgic3RtdF9jb3VudDoiLCBsZW4oc3RtdHMpKQogICAgcHJpbnQoImNoZWNrc3VtOiIsIGNoZWNrc3VtKQogICAgcHJpbnQoImVsYXBzZWRfc2VjOiIsIGVsYXBzZWQpCgoKZGVmIG1haW4oKSAtPiBOb25lOgogICAgcnVuX2RlbW8oKQogICAgcnVuX2JlbmNobWFyaygpCgoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIG1haW4oKQo="
+func pyPrint(args ...any) {
+    parts := make([]string, 0, len(args))
+    for _, a := range args {
+        parts = append(parts, pyToString(a))
+    }
+    fmt.Println(strings.Join(parts, " "))
+}
 
-// main は埋め込み Python を実行するエントリポイント。
+func pyBool(v any) bool {
+    switch x := v.(type) {
+    case nil:
+        return false
+    case bool:
+        return x
+    case int:
+        return x != 0
+    case int64:
+        return x != 0
+    case float64:
+        return x != 0.0
+    case string:
+        return x != ""
+    case []any:
+        return len(x) > 0
+    case []byte:
+        return len(x) > 0
+    case map[any]any:
+        return len(x) > 0
+    default:
+        return true
+    }
+}
+
+func pyLen(v any) int {
+    switch x := v.(type) {
+    case string:
+        return len([]rune(x))
+    case []any:
+        return len(x)
+    case []byte:
+        return len(x)
+    case map[any]any:
+        return len(x)
+    default:
+        panic("len() unsupported type")
+    }
+}
+
+func pyRange(start, stop, step int) []any {
+    if step == 0 {
+        panic("range() step must not be zero")
+    }
+    out := []any{}
+    if step > 0 {
+        for i := start; i < stop; i += step {
+            out = append(out, i)
+        }
+    } else {
+        for i := start; i > stop; i += step {
+            out = append(out, i)
+        }
+    }
+    return out
+}
+
+func pyToFloat(v any) float64 {
+    switch x := v.(type) {
+    case int:
+        return float64(x)
+    case int64:
+        return float64(x)
+    case float64:
+        return x
+    case bool:
+        if x {
+            return 1.0
+        }
+        return 0.0
+    default:
+        panic("cannot convert to float")
+    }
+}
+
+func pyToInt(v any) int {
+    switch x := v.(type) {
+    case int:
+        return x
+    case int64:
+        return int(x)
+    case float64:
+        return int(math.Trunc(x))
+    case bool:
+        if x {
+            return 1
+        }
+        return 0
+    default:
+        panic("cannot convert to int")
+    }
+}
+
+func pyAdd(a, b any) any {
+    if sa, ok := a.(string); ok {
+        return sa + pyToString(b)
+    }
+    if sb, ok := b.(string); ok {
+        return pyToString(a) + sb
+    }
+    _, aInt := a.(int)
+    _, bInt := b.(int)
+    if aInt && bInt {
+        return pyToInt(a) + pyToInt(b)
+    }
+    return pyToFloat(a) + pyToFloat(b)
+}
+func pySub(a, b any) any {
+    _, aInt := a.(int)
+    _, bInt := b.(int)
+    if aInt && bInt {
+        return pyToInt(a) - pyToInt(b)
+    }
+    return pyToFloat(a) - pyToFloat(b)
+}
+func pyMul(a, b any) any {
+    _, aInt := a.(int)
+    _, bInt := b.(int)
+    if aInt && bInt {
+        return pyToInt(a) * pyToInt(b)
+    }
+    return pyToFloat(a) * pyToFloat(b)
+}
+func pyDiv(a, b any) any { return pyToFloat(a) / pyToFloat(b) }
+func pyFloorDiv(a, b any) any { return int(math.Floor(pyToFloat(a) / pyToFloat(b))) }
+func pyMod(a, b any) any {
+    ai := pyToInt(a)
+    bi := pyToInt(b)
+    r := ai % bi
+    if r != 0 && ((r > 0) != (bi > 0)) {
+        r += bi
+    }
+    return r
+}
+func pyMin(values ...any) any {
+    if len(values) == 0 {
+        panic("min() arg is empty")
+    }
+    out := values[0]
+    for i := 1; i < len(values); i++ {
+        a := out
+        b := values[i]
+        if _, ok := a.(int); ok {
+            if _, ok2 := b.(int); ok2 {
+                ai := pyToInt(a)
+                bi := pyToInt(b)
+                if bi < ai {
+                    out = bi
+                }
+                continue
+            }
+        }
+        af := pyToFloat(a)
+        bf := pyToFloat(b)
+        if bf < af {
+            out = bf
+        }
+    }
+    return out
+}
+func pyMax(values ...any) any {
+    if len(values) == 0 {
+        panic("max() arg is empty")
+    }
+    out := values[0]
+    for i := 1; i < len(values); i++ {
+        a := out
+        b := values[i]
+        if _, ok := a.(int); ok {
+            if _, ok2 := b.(int); ok2 {
+                ai := pyToInt(a)
+                bi := pyToInt(b)
+                if bi > ai {
+                    out = bi
+                }
+                continue
+            }
+        }
+        af := pyToFloat(a)
+        bf := pyToFloat(b)
+        if bf > af {
+            out = bf
+        }
+    }
+    return out
+}
+func pyLShift(a, b any) any { return pyToInt(a) << uint(pyToInt(b)) }
+func pyRShift(a, b any) any { return pyToInt(a) >> uint(pyToInt(b)) }
+func pyBitAnd(a, b any) any { return pyToInt(a) & pyToInt(b) }
+func pyBitOr(a, b any) any  { return pyToInt(a) | pyToInt(b) }
+func pyBitXor(a, b any) any { return pyToInt(a) ^ pyToInt(b) }
+func pyNeg(a any) any {
+    if _, ok := a.(int); ok {
+        return -pyToInt(a)
+    }
+    return -pyToFloat(a)
+}
+
+func pyEq(a, b any) bool { return pyToString(a) == pyToString(b) }
+func pyNe(a, b any) bool { return !pyEq(a, b) }
+func pyLt(a, b any) bool { return pyToFloat(a) < pyToFloat(b) }
+func pyLe(a, b any) bool { return pyToFloat(a) <= pyToFloat(b) }
+func pyGt(a, b any) bool { return pyToFloat(a) > pyToFloat(b) }
+func pyGe(a, b any) bool { return pyToFloat(a) >= pyToFloat(b) }
+
+func pyIn(item, container any) bool {
+    switch c := container.(type) {
+    case string:
+        return strings.Contains(c, pyToString(item))
+    case []any:
+        for _, v := range c {
+            if pyEq(v, item) {
+                return true
+            }
+        }
+        return false
+    case map[any]any:
+        _, ok := c[item]
+        return ok
+    default:
+        return false
+    }
+}
+
+func pyIter(value any) []any {
+    switch v := value.(type) {
+    case []any:
+        return v
+    case []byte:
+        out := make([]any, 0, len(v))
+        for _, b := range v {
+            out = append(out, int(b))
+        }
+        return out
+    case string:
+        out := []any{}
+        for _, ch := range []rune(v) {
+            out = append(out, string(ch))
+        }
+        return out
+    case map[any]any:
+        out := []any{}
+        for k := range v {
+            out = append(out, k)
+        }
+        return out
+    default:
+        panic("iter unsupported")
+    }
+}
+
+func pyTernary(cond bool, a any, b any) any {
+    if cond {
+        return a
+    }
+    return b
+}
+
+func pyListFromIter(value any) any {
+    it := pyIter(value)
+    out := make([]any, len(it))
+    copy(out, it)
+    return out
+}
+
+func pySlice(value any, start any, end any) any {
+    s := 0
+    e := 0
+    switch v := value.(type) {
+    case string:
+        r := []rune(v)
+        n := len(r)
+        if start == nil {
+            s = 0
+        } else {
+            s = pyToInt(start)
+            if s < 0 {
+                s += n
+            }
+            if s < 0 {
+                s = 0
+            }
+            if s > n {
+                s = n
+            }
+        }
+        if end == nil {
+            e = n
+        } else {
+            e = pyToInt(end)
+            if e < 0 {
+                e += n
+            }
+            if e < 0 {
+                e = 0
+            }
+            if e > n {
+                e = n
+            }
+        }
+        if s > e {
+            s = e
+        }
+        return string(r[s:e])
+    case []any:
+        n := len(v)
+        if start == nil {
+            s = 0
+        } else {
+            s = pyToInt(start)
+            if s < 0 {
+                s += n
+            }
+            if s < 0 {
+                s = 0
+            }
+            if s > n {
+                s = n
+            }
+        }
+        if end == nil {
+            e = n
+        } else {
+            e = pyToInt(end)
+            if e < 0 {
+                e += n
+            }
+            if e < 0 {
+                e = 0
+            }
+            if e > n {
+                e = n
+            }
+        }
+        if s > e {
+            s = e
+        }
+        out := make([]any, e-s)
+        copy(out, v[s:e])
+        return out
+    default:
+        panic("slice unsupported")
+    }
+}
+
+func pyGet(value any, key any) any {
+    switch v := value.(type) {
+    case []any:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return v[i]
+    case map[any]any:
+        return v[key]
+    case string:
+        r := []rune(v)
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(r)
+        }
+        return string(r[i])
+    default:
+        panic("subscript unsupported")
+    }
+}
+
+func pySet(value any, key any, newValue any) {
+    switch v := value.(type) {
+    case []any:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = newValue
+    case map[any]any:
+        v[key] = newValue
+    default:
+        panic("setitem unsupported")
+    }
+}
+
+func pyPop(lst *any, idx any) any {
+    arr := (*lst).([]any)
+    n := len(arr)
+    i := n - 1
+    if idx != nil {
+        i = pyToInt(idx)
+        if i < 0 {
+            i += n
+        }
+    }
+    val := arr[i]
+    arr = append(arr[:i], arr[i+1:]...)
+    *lst = arr
+    return val
+}
+
+func pyPopAt(container any, key any, idx any) any {
+    lst := pyGet(container, key)
+    val := pyPop(&lst, idx)
+    pySet(container, key, lst)
+    return val
+}
+
+func pyOrd(v any) any {
+    s := pyToString(v)
+    r := []rune(s)
+    return int(r[0])
+}
+
+func pyChr(v any) any { return string(rune(pyToInt(v))) }
+
+func pyBytearray(size any) any {
+    if size == nil {
+        return []any{}
+    }
+    n := pyToInt(size)
+    out := make([]any, n)
+    for i := 0; i < n; i++ {
+        out[i] = 0
+    }
+    return out
+}
+
+func pyBytes(v any) any { return v }
+
+func pyIsDigit(v any) bool {
+    s := pyToString(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if ch < '0' || ch > '9' {
+            return false
+        }
+    }
+    return true
+}
+
+func pyIsAlpha(v any) bool {
+    s := pyToString(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+            return false
+        }
+    }
+    return true
+}
+
+func pyTryCatch(body func() any, handler func(any) any, finalizer func()) (ret any) {
+    defer finalizer()
+    defer func() {
+        if r := recover(); r != nil {
+            ret = handler(r)
+        }
+    }()
+    ret = body()
+    return
+}
+
+// -------- time/math helper --------
+
+func pyPerfCounter() any {
+    return float64(time.Now().UnixNano()) / 1_000_000_000.0
+}
+
+func pyMathSqrt(v any) any { return math.Sqrt(pyToFloat(v)) }
+func pyMathSin(v any) any  { return math.Sin(pyToFloat(v)) }
+func pyMathCos(v any) any  { return math.Cos(pyToFloat(v)) }
+func pyMathExp(v any) any  { return math.Exp(pyToFloat(v)) }
+func pyMathFloor(v any) any { return float64(math.Floor(pyToFloat(v))) }
+func pyMathPi() any        { return math.Pi }
+
+// -------- png/gif helper --------
+
+func pyToBytes(v any) []byte {
+    switch x := v.(type) {
+    case []byte:
+        out := make([]byte, len(x))
+        copy(out, x)
+        return out
+    case []any:
+        out := make([]byte, len(x))
+        for i, e := range x {
+            out[i] = byte(pyToInt(e))
+        }
+        return out
+    case string:
+        return []byte(x)
+    default:
+        panic("cannot convert to bytes")
+    }
+}
+
+func pyChunk(chunkType []byte, data []byte) []byte {
+    var out bytes.Buffer
+    n := uint32(len(data))
+    out.Write([]byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)})
+    out.Write(chunkType)
+    out.Write(data)
+    crc := crc32.ChecksumIEEE(append(append([]byte{}, chunkType...), data...))
+    out.Write([]byte{byte(crc >> 24), byte(crc >> 16), byte(crc >> 8), byte(crc)})
+    return out.Bytes()
+}
+
+func pyWriteRGBPNG(path any, width any, height any, pixels any) {
+    w := pyToInt(width)
+    h := pyToInt(height)
+    raw := pyToBytes(pixels)
+    expected := w * h * 3
+    if len(raw) != expected {
+        panic("pixels length mismatch")
+    }
+
+    scan := make([]byte, 0, h*(1+w*3))
+    rowBytes := w * 3
+    for y := 0; y < h; y++ {
+        scan = append(scan, 0)
+        start := y * rowBytes
+        end := start + rowBytes
+        scan = append(scan, raw[start:end]...)
+    }
+
+    var zbuf bytes.Buffer
+    zw, _ := zlib.NewWriterLevel(&zbuf, 6)
+    _, _ = zw.Write(scan)
+    _ = zw.Close()
+    idat := zbuf.Bytes()
+
+    ihdr := []byte{
+        byte(uint32(w) >> 24), byte(uint32(w) >> 16), byte(uint32(w) >> 8), byte(uint32(w)),
+        byte(uint32(h) >> 24), byte(uint32(h) >> 16), byte(uint32(h) >> 8), byte(uint32(h)),
+        8, 2, 0, 0, 0,
+    }
+
+    var png bytes.Buffer
+    png.Write([]byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'})
+    png.Write(pyChunk([]byte("IHDR"), ihdr))
+    png.Write(pyChunk([]byte("IDAT"), idat))
+    png.Write(pyChunk([]byte("IEND"), []byte{}))
+
+    _ = os.WriteFile(pyToString(path), png.Bytes(), 0o644)
+}
+
+func pyLzwEncode(data []byte, minCodeSize int) []byte {
+    if len(data) == 0 {
+        return []byte{}
+    }
+    clearCode := 1 << minCodeSize
+    endCode := clearCode + 1
+    codeSize := minCodeSize + 1
+    out := []byte{}
+    bitBuffer := 0
+    bitCount := 0
+
+    emit := func(code int) {
+        bitBuffer |= (code << bitCount)
+        bitCount += codeSize
+        for bitCount >= 8 {
+            out = append(out, byte(bitBuffer&0xff))
+            bitBuffer >>= 8
+            bitCount -= 8
+        }
+    }
+
+    emit(clearCode)
+    for _, v := range data {
+        emit(int(v))
+        emit(clearCode)
+    }
+    emit(endCode)
+    if bitCount > 0 {
+        out = append(out, byte(bitBuffer&0xff))
+    }
+    return out
+}
+
+func pyGrayscalePalette() any {
+    p := make([]byte, 0, 256*3)
+    for i := 0; i < 256; i++ {
+        p = append(p, byte(i), byte(i), byte(i))
+    }
+    return p
+}
+
+func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS any, loop any) {
+    w := pyToInt(width)
+    h := pyToInt(height)
+    frameBytes := w * h
+    pal := pyToBytes(palette)
+    if len(pal) != 256*3 {
+        panic("palette must be 256*3 bytes")
+    }
+    dcs := pyToInt(delayCS)
+    lp := pyToInt(loop)
+
+    frs := pyIter(frames)
+    out := []byte{}
+    out = append(out, []byte("GIF89a")...)
+    out = append(out, byte(w), byte(w>>8), byte(h), byte(h>>8))
+    out = append(out, 0xF7, 0, 0)
+    out = append(out, pal...)
+
+    out = append(out, 0x21, 0xFF, 0x0B)
+    out = append(out, []byte("NETSCAPE2.0")...)
+    out = append(out, 0x03, 0x01, byte(lp), byte(lp>>8), 0x00)
+
+    for _, frAny := range frs {
+        fr := pyToBytes(frAny)
+        if len(fr) != frameBytes {
+            panic("frame size mismatch")
+        }
+        out = append(out, 0x21, 0xF9, 0x04, 0x00, byte(dcs), byte(dcs>>8), 0x00, 0x00)
+        out = append(out, 0x2C, 0, 0, 0, 0, byte(w), byte(w>>8), byte(h), byte(h>>8), 0x00)
+        out = append(out, 0x08)
+        compressed := pyLzwEncode(fr, 8)
+        pos := 0
+        for pos < len(compressed) {
+            ln := len(compressed) - pos
+            if ln > 255 {
+                ln = 255
+            }
+            out = append(out, byte(ln))
+            out = append(out, compressed[pos:pos+ln]...)
+            pos += ln
+        }
+        out = append(out, 0x00)
+    }
+    out = append(out, 0x3B)
+    _ = os.WriteFile(pyToString(path), out, 0o644)
+}
+
+var __cls_Token = map[any]any{}
+func NewToken(__args ...any) map[any]any {
+    self := map[any]any{"__class": "Token"}
+    var kind any = nil
+    if len(__args) > 0 { kind = __args[0] }
+    self["kind"] = kind
+    var text any = nil
+    if len(__args) > 1 { text = __args[1] }
+    self["text"] = text
+    var pos any = nil
+    if len(__args) > 2 { pos = __args[2] }
+    self["pos"] = pos
+    return self
+}
+
+var __cls_ExprNode = map[any]any{}
+func NewExprNode(__args ...any) map[any]any {
+    self := map[any]any{"__class": "ExprNode"}
+    var kind any = nil
+    if len(__args) > 0 { kind = __args[0] }
+    self["kind"] = kind
+    var value any = nil
+    if len(__args) > 1 { value = __args[1] }
+    self["value"] = value
+    var name any = nil
+    if len(__args) > 2 { name = __args[2] }
+    self["name"] = name
+    var op any = nil
+    if len(__args) > 3 { op = __args[3] }
+    self["op"] = op
+    var left any = nil
+    if len(__args) > 4 { left = __args[4] }
+    self["left"] = left
+    var right any = nil
+    if len(__args) > 5 { right = __args[5] }
+    self["right"] = right
+    return self
+}
+
+var __cls_StmtNode = map[any]any{}
+func NewStmtNode(__args ...any) map[any]any {
+    self := map[any]any{"__class": "StmtNode"}
+    var kind any = nil
+    if len(__args) > 0 { kind = __args[0] }
+    self["kind"] = kind
+    var name any = nil
+    if len(__args) > 1 { name = __args[1] }
+    self["name"] = name
+    var expr_index any = nil
+    if len(__args) > 2 { expr_index = __args[2] }
+    self["expr_index"] = expr_index
+    return self
+}
+
+var __cls_Parser = map[any]any{}
+func NewParser(tokens any) map[any]any {
+    self := map[any]any{"__class": "Parser"}
+    pySet(self, "tokens", tokens)
+    pySet(self, "pos", 0)
+    pySet(self, "expr_nodes", Parser_new_expr_nodes(self))
+    return self
+}
+func Parser_new_expr_nodes(self map[any]any) any {
+    var nodes any = []any{}
+    _ = nodes
+    return nodes
+}
+func Parser_peek_kind(self map[any]any) any {
+    return pyGet(pyGet(pyGet(self, "tokens"), pyGet(self, "pos")), "kind")
+}
+func Parser_match(self map[any]any, kind any) any {
+    if (pyBool(pyEq(Parser_peek_kind(self), kind))) {
+        pySet(self, "pos", pyAdd(pyGet(self, "pos"), 1))
+        return true
+    }
+    return false
+}
+func Parser_expect(self map[any]any, kind any) any {
+    if (pyBool(pyNe(Parser_peek_kind(self), kind))) {
+        var t any = pyGet(pyGet(self, "tokens"), pyGet(self, "pos"))
+        _ = t
+        panic(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd("parse error at pos=", pyToString(pyGet(t, "pos"))), ", expected="), kind), ", got="), pyGet(t, "kind")))
+    }
+    var token any = pyGet(pyGet(self, "tokens"), pyGet(self, "pos"))
+    _ = token
+    pySet(self, "pos", pyAdd(pyGet(self, "pos"), 1))
+    return token
+}
+func Parser_skip_newlines(self map[any]any) any {
+    for pyBool(Parser_match(self, "NEWLINE")) {
+    }
+    return nil
+}
+func Parser_add_expr(self map[any]any, node any) any {
+    pySet(self, "expr_nodes", append(pyGet(self, "expr_nodes").([]any), node))
+    return pySub(pyLen(pyGet(self, "expr_nodes")), 1)
+}
+func Parser_parse_program(self map[any]any) any {
+    var stmts any = []any{}
+    _ = stmts
+    Parser_skip_newlines(self)
+    for pyBool(pyNe(Parser_peek_kind(self), "EOF")) {
+        var stmt any = Parser_parse_stmt(self)
+        _ = stmt
+        stmts = append(stmts.([]any), stmt)
+        Parser_skip_newlines(self)
+    }
+    return stmts
+}
+func Parser_parse_stmt(self map[any]any) any {
+    if (pyBool(Parser_match(self, "LET"))) {
+        var let_name any = pyGet(Parser_expect(self, "IDENT"), "text")
+        _ = let_name
+        Parser_expect(self, "EQUAL")
+        var let_expr_index any = Parser_parse_expr(self)
+        _ = let_expr_index
+        return NewStmtNode("let", let_name, let_expr_index)
+    }
+    if (pyBool(Parser_match(self, "PRINT"))) {
+        var print_expr_index any = Parser_parse_expr(self)
+        _ = print_expr_index
+        return NewStmtNode("print", "", print_expr_index)
+    }
+    var assign_name any = pyGet(Parser_expect(self, "IDENT"), "text")
+    _ = assign_name
+    Parser_expect(self, "EQUAL")
+    var assign_expr_index any = Parser_parse_expr(self)
+    _ = assign_expr_index
+    return NewStmtNode("assign", assign_name, assign_expr_index)
+}
+func Parser_parse_expr(self map[any]any) any {
+    return Parser_parse_add(self)
+}
+func Parser_parse_add(self map[any]any) any {
+    var left any = Parser_parse_mul(self)
+    _ = left
+    var done any = false
+    _ = done
+    for pyBool((!pyBool(done))) {
+        if (pyBool(Parser_match(self, "PLUS"))) {
+            var right any = Parser_parse_mul(self)
+            _ = right
+            left = Parser_add_expr(self, NewExprNode("bin", 0, "", "+", left, right))
+            continue
+        }
+        if (pyBool(Parser_match(self, "MINUS"))) {
+            var right any = Parser_parse_mul(self)
+            _ = right
+            left = Parser_add_expr(self, NewExprNode("bin", 0, "", "-", left, right))
+            continue
+        }
+        done = true
+    }
+    return left
+}
+func Parser_parse_mul(self map[any]any) any {
+    var left any = Parser_parse_unary(self)
+    _ = left
+    var done any = false
+    _ = done
+    for pyBool((!pyBool(done))) {
+        if (pyBool(Parser_match(self, "STAR"))) {
+            var right any = Parser_parse_unary(self)
+            _ = right
+            left = Parser_add_expr(self, NewExprNode("bin", 0, "", "*", left, right))
+            continue
+        }
+        if (pyBool(Parser_match(self, "SLASH"))) {
+            var right any = Parser_parse_unary(self)
+            _ = right
+            left = Parser_add_expr(self, NewExprNode("bin", 0, "", "/", left, right))
+            continue
+        }
+        done = true
+    }
+    return left
+}
+func Parser_parse_unary(self map[any]any) any {
+    if (pyBool(Parser_match(self, "MINUS"))) {
+        var child any = Parser_parse_unary(self)
+        _ = child
+        return Parser_add_expr(self, NewExprNode("neg", 0, "", "", child, pyNeg(1)))
+    }
+    return Parser_parse_primary(self)
+}
+func Parser_parse_primary(self map[any]any) any {
+    if (pyBool(Parser_match(self, "NUMBER"))) {
+        var token_num any = pyGet(pyGet(self, "tokens"), pySub(pyGet(self, "pos"), 1))
+        _ = token_num
+        var parsed_value any = 0
+        _ = parsed_value
+        var idx any = 0
+        _ = idx
+        for pyBool(pyLt(idx, pyLen(pyGet(token_num, "text")))) {
+            var ch any = pySlice(pyGet(token_num, "text"), idx, pyAdd(idx, 1))
+            _ = ch
+            parsed_value = pySub(pyAdd(pyMul(parsed_value, 10), pyOrd(ch)), pyOrd("0"))
+            idx = pyAdd(idx, 1)
+        }
+        return Parser_add_expr(self, NewExprNode("lit", parsed_value, "", "", pyNeg(1), pyNeg(1)))
+    }
+    if (pyBool(Parser_match(self, "IDENT"))) {
+        var token_ident any = pyGet(pyGet(self, "tokens"), pySub(pyGet(self, "pos"), 1))
+        _ = token_ident
+        return Parser_add_expr(self, NewExprNode("var", 0, pyGet(token_ident, "text"), "", pyNeg(1), pyNeg(1)))
+    }
+    if (pyBool(Parser_match(self, "LPAREN"))) {
+        var expr_index any = Parser_parse_expr(self)
+        _ = expr_index
+        Parser_expect(self, "RPAREN")
+        return expr_index
+    }
+    var t any = pyGet(pyGet(self, "tokens"), pyGet(self, "pos"))
+    _ = t
+    panic(pyAdd(pyAdd(pyAdd("primary parse error at pos=", pyToString(pyGet(t, "pos"))), " got="), pyGet(t, "kind")))
+}
+
+func tokenize(lines any) any {
+    var tokens any = []any{}
+    _ = tokens
+    var line_index any = 0
+    _ = line_index
+    for pyBool(pyLt(line_index, pyLen(lines))) {
+        var source any = pyGet(lines, line_index)
+        _ = source
+        var i any = 0
+        _ = i
+        var n any = pyLen(source)
+        _ = n
+        for pyBool(pyLt(i, n)) {
+            var ch any = pySlice(source, i, pyAdd(i, 1))
+            _ = ch
+            if (pyBool(pyEq(ch, " "))) {
+                i = pyAdd(i, 1)
+                continue
+            }
+            if (pyBool(pyEq(ch, "+"))) {
+                tokens = append(tokens.([]any), NewToken("PLUS", ch, i))
+                i = pyAdd(i, 1)
+                continue
+            }
+            if (pyBool(pyEq(ch, "-"))) {
+                tokens = append(tokens.([]any), NewToken("MINUS", ch, i))
+                i = pyAdd(i, 1)
+                continue
+            }
+            if (pyBool(pyEq(ch, "*"))) {
+                tokens = append(tokens.([]any), NewToken("STAR", ch, i))
+                i = pyAdd(i, 1)
+                continue
+            }
+            if (pyBool(pyEq(ch, "/"))) {
+                tokens = append(tokens.([]any), NewToken("SLASH", ch, i))
+                i = pyAdd(i, 1)
+                continue
+            }
+            if (pyBool(pyEq(ch, "("))) {
+                tokens = append(tokens.([]any), NewToken("LPAREN", ch, i))
+                i = pyAdd(i, 1)
+                continue
+            }
+            if (pyBool(pyEq(ch, ")"))) {
+                tokens = append(tokens.([]any), NewToken("RPAREN", ch, i))
+                i = pyAdd(i, 1)
+                continue
+            }
+            if (pyBool(pyEq(ch, "="))) {
+                tokens = append(tokens.([]any), NewToken("EQUAL", ch, i))
+                i = pyAdd(i, 1)
+                continue
+            }
+            if (pyBool(pyIsDigit(ch))) {
+                var start any = i
+                _ = start
+                for pyBool((pyBool(pyLt(i, n)) && pyBool(pyIsDigit(pySlice(source, i, pyAdd(i, 1)))))) {
+                    i = pyAdd(i, 1)
+                }
+                var text any = pySlice(source, start, i)
+                _ = text
+                tokens = append(tokens.([]any), NewToken("NUMBER", text, start))
+                continue
+            }
+            if (pyBool((pyBool(pyIsAlpha(ch)) || pyBool(pyEq(ch, "_"))))) {
+                var start any = i
+                _ = start
+                for pyBool((pyBool(pyLt(i, n)) && pyBool((pyBool((pyBool(pyIsAlpha(pySlice(source, i, pyAdd(i, 1)))) || pyBool(pyEq(pySlice(source, i, pyAdd(i, 1)), "_")))) || pyBool(pyIsDigit(pySlice(source, i, pyAdd(i, 1)))))))) {
+                    i = pyAdd(i, 1)
+                }
+                var text any = pySlice(source, start, i)
+                _ = text
+                if (pyBool(pyEq(text, "let"))) {
+                    tokens = append(tokens.([]any), NewToken("LET", text, start))
+                } else {
+                    if (pyBool(pyEq(text, "print"))) {
+                        tokens = append(tokens.([]any), NewToken("PRINT", text, start))
+                    } else {
+                        tokens = append(tokens.([]any), NewToken("IDENT", text, start))
+                    }
+                }
+                continue
+            }
+            panic(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd("tokenize error at line=", pyToString(line_index)), " pos="), pyToString(i)), " ch="), ch))
+        }
+        tokens = append(tokens.([]any), NewToken("NEWLINE", "", n))
+        line_index = pyAdd(line_index, 1)
+    }
+    tokens = append(tokens.([]any), NewToken("EOF", "", pyLen(lines)))
+    return tokens
+}
+
+func eval_expr(expr_index any, expr_nodes any, env any) any {
+    if (pyBool(false)) {
+        pySet(env, "__dummy__", 0)
+    }
+    var node any = pyGet(expr_nodes, expr_index)
+    _ = node
+    if (pyBool(pyEq(pyGet(node, "kind"), "lit"))) {
+        return pyGet(node, "value")
+    }
+    if (pyBool(pyEq(pyGet(node, "kind"), "var"))) {
+        if (pyBool((!pyBool(pyIn(pyGet(node, "name"), env))))) {
+            panic(pyAdd("undefined variable: ", pyGet(node, "name")))
+        }
+        return pyGet(env, pyGet(node, "name"))
+    }
+    if (pyBool(pyEq(pyGet(node, "kind"), "neg"))) {
+        return pyNeg(eval_expr(pyGet(node, "left"), expr_nodes, env))
+    }
+    if (pyBool(pyEq(pyGet(node, "kind"), "bin"))) {
+        var lhs any = eval_expr(pyGet(node, "left"), expr_nodes, env)
+        _ = lhs
+        var rhs any = eval_expr(pyGet(node, "right"), expr_nodes, env)
+        _ = rhs
+        if (pyBool(pyEq(pyGet(node, "op"), "+"))) {
+            return pyAdd(lhs, rhs)
+        }
+        if (pyBool(pyEq(pyGet(node, "op"), "-"))) {
+            return pySub(lhs, rhs)
+        }
+        if (pyBool(pyEq(pyGet(node, "op"), "*"))) {
+            return pyMul(lhs, rhs)
+        }
+        if (pyBool(pyEq(pyGet(node, "op"), "/"))) {
+            if (pyBool(pyEq(rhs, 0))) {
+                panic("division by zero")
+            }
+            return pyFloorDiv(lhs, rhs)
+        }
+        panic(pyAdd("unknown operator: ", pyGet(node, "op")))
+    }
+    panic(pyAdd("unknown node kind: ", pyGet(node, "kind")))
+}
+
+func execute(stmts any, expr_nodes any, trace any) any {
+    var env any = map[any]any{}
+    _ = env
+    var checksum any = 0
+    _ = checksum
+    var printed any = 0
+    _ = printed
+    var stmt any = nil
+    _ = stmt
+    for _, __pytra_it_1 := range pyIter(stmts) {
+        stmt = __pytra_it_1
+        if (pyBool(pyEq(pyGet(stmt, "kind"), "let"))) {
+            pySet(env, pyGet(stmt, "name"), eval_expr(pyGet(stmt, "expr_index"), expr_nodes, env))
+            continue
+        }
+        if (pyBool(pyEq(pyGet(stmt, "kind"), "assign"))) {
+            if (pyBool((!pyBool(pyIn(pyGet(stmt, "name"), env))))) {
+                panic(pyAdd("assign to undefined variable: ", pyGet(stmt, "name")))
+            }
+            pySet(env, pyGet(stmt, "name"), eval_expr(pyGet(stmt, "expr_index"), expr_nodes, env))
+            continue
+        }
+        var value any = eval_expr(pyGet(stmt, "expr_index"), expr_nodes, env)
+        _ = value
+        if (pyBool(trace)) {
+            pyPrint(value)
+        }
+        var norm any = pyMod(value, 1000000007)
+        _ = norm
+        if (pyBool(pyLt(norm, 0))) {
+            norm = pyAdd(norm, 1000000007)
+        }
+        checksum = pyMod(pyAdd(pyMul(checksum, 131), norm), 1000000007)
+        printed = pyAdd(printed, 1)
+    }
+    if (pyBool(trace)) {
+        pyPrint("printed:", printed)
+    }
+    return checksum
+}
+
+func build_benchmark_source(var_count any, loops any) any {
+    var lines any = []any{}
+    _ = lines
+    var i any = nil
+    _ = i
+    for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(var_count), pyToInt(1)) {
+        i = __pytra_it_2
+        lines = append(lines.([]any), pyAdd(pyAdd(pyAdd("let v", pyToString(i)), " = "), pyToString(pyAdd(i, 1))))
+    }
+    for _, __pytra_it_3 := range pyRange(pyToInt(0), pyToInt(loops), pyToInt(1)) {
+        i = __pytra_it_3
+        var x any = pyMod(i, var_count)
+        _ = x
+        var y any = pyMod(pyAdd(i, 3), var_count)
+        _ = y
+        var c1 any = pyAdd(pyMod(i, 7), 1)
+        _ = c1
+        var c2 any = pyAdd(pyMod(i, 11), 2)
+        _ = c2
+        lines = append(lines.([]any), pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd("v", pyToString(x)), " = (v"), pyToString(x)), " * "), pyToString(c1)), " + v"), pyToString(y)), " + 10000) / "), pyToString(c2)))
+        if (pyBool(pyEq(pyMod(i, 97), 0))) {
+            lines = append(lines.([]any), pyAdd("print v", pyToString(x)))
+        }
+    }
+    lines = append(lines.([]any), "print (v0 + v1 + v2 + v3)")
+    return lines
+}
+
+func run_demo() any {
+    var demo_lines any = []any{}
+    _ = demo_lines
+    demo_lines = append(demo_lines.([]any), "let a = 10")
+    demo_lines = append(demo_lines.([]any), "let b = 3")
+    demo_lines = append(demo_lines.([]any), "a = (a + b) * 2")
+    demo_lines = append(demo_lines.([]any), "print a")
+    demo_lines = append(demo_lines.([]any), "print a / b")
+    var tokens any = tokenize(demo_lines)
+    _ = tokens
+    var parser any = NewParser(tokens)
+    _ = parser
+    var stmts any = Parser_parse_program(parser.(map[any]any))
+    _ = stmts
+    var checksum any = execute(stmts, pyGet(parser, "expr_nodes"), true)
+    _ = checksum
+    pyPrint("demo_checksum:", checksum)
+    return nil
+}
+
+func run_benchmark() any {
+    var source_lines any = build_benchmark_source(32, 120000)
+    _ = source_lines
+    var start any = pyPerfCounter()
+    _ = start
+    var tokens any = tokenize(source_lines)
+    _ = tokens
+    var parser any = NewParser(tokens)
+    _ = parser
+    var stmts any = Parser_parse_program(parser.(map[any]any))
+    _ = stmts
+    var checksum any = execute(stmts, pyGet(parser, "expr_nodes"), false)
+    _ = checksum
+    var elapsed any = pySub(pyPerfCounter(), start)
+    _ = elapsed
+    pyPrint("token_count:", pyLen(tokens))
+    pyPrint("expr_count:", pyLen(pyGet(parser, "expr_nodes")))
+    pyPrint("stmt_count:", pyLen(stmts))
+    pyPrint("checksum:", checksum)
+    pyPrint("elapsed_sec:", elapsed)
+    return nil
+}
+
+func py_main() any {
+    run_demo()
+    run_benchmark()
+    return nil
+}
+
 func main() {
-	os.Exit(pytraRunEmbeddedPython(pytraEmbeddedSourceBase64, os.Args[1:]))
+    py_main()
 }

@@ -1,84 +1,916 @@
-// このファイルは自動生成です（Python -> Go embedded mode）。
+// このファイルは自動生成です（Python -> Go native mode）。
 
-// Python 埋め込み実行向けの Go ランタイム補助。
-// 生成された Go コードから呼び出し、Python ソースを一時ファイルに展開して実行する。
+// Go ネイティブ変換向け Python 互換ランタイム補助。
 
 package main
 
 import (
-	"encoding/base64"
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
+    "bytes"
+    "compress/zlib"
+    "fmt"
+    "hash/crc32"
+    "math"
+    "os"
+    "strconv"
+    "strings"
+    "time"
 )
 
-// pytraRunEmbeddedPython は、Base64 で埋め込まれた Python ソースを実行する。
-//
-// Args:
-//   sourceBase64: 埋め込み Python ソースコード（Base64 文字列）。
-//   args: Python スクリプトへ渡す引数。
-//
-// Returns:
-//   Python プロセスの終了コード。異常時は 1 を返す。
-func pytraRunEmbeddedPython(sourceBase64 string, args []string) int {
-	sourceBytes, decodeErr := base64.StdEncoding.DecodeString(sourceBase64)
-	if decodeErr != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to decode embedded python source")
-		return 1
-	}
-
-	tempDir, mkErr := os.MkdirTemp("", "pytra_go_")
-	if mkErr != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to create temp directory")
-		return 1
-	}
-	defer os.RemoveAll(tempDir)
-
-	scriptPath := filepath.Join(tempDir, "embedded.py")
-	if writeErr := os.WriteFile(scriptPath, sourceBytes, 0o600); writeErr != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to write temp python script")
-		return 1
-	}
-
-	pythonPath := "src"
-	if current, ok := os.LookupEnv("PYTHONPATH"); ok && current != "" {
-		pythonPath = pythonPath + string(os.PathListSeparator) + current
-	}
-
-	run := func(interpreter string) (int, error) {
-		cmd := exec.Command(interpreter, append([]string{scriptPath}, args...)...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		env := os.Environ()
-		env = append(env, "PYTHONPATH="+pythonPath)
-		cmd.Env = env
-		err := cmd.Run()
-		if err == nil {
-			return 0, nil
-		}
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return exitErr.ExitCode(), nil
-		}
-		return 0, err
-	}
-
-	if code, err := run("python3"); err == nil {
-		return code
-	}
-	if code, err := run("python"); err == nil {
-		return code
-	}
-
-	fmt.Fprintln(os.Stderr, "error: python interpreter not found (python3/python)")
-	return 1
+func pyToString(v any) string {
+    switch x := v.(type) {
+    case nil:
+        return "None"
+    case bool:
+        if x {
+            return "True"
+        }
+        return "False"
+    case string:
+        return x
+    case int:
+        return strconv.Itoa(x)
+    case int64:
+        return strconv.FormatInt(x, 10)
+    case float64:
+        return strconv.FormatFloat(x, 'f', -1, 64)
+    case []any:
+        parts := make([]string, 0, len(x))
+        for _, it := range x {
+            parts = append(parts, pyToString(it))
+        }
+        return "[" + strings.Join(parts, ", ") + "]"
+    case map[any]any:
+        parts := make([]string, 0, len(x))
+        for k, v := range x {
+            parts = append(parts, pyToString(k)+": "+pyToString(v))
+        }
+        return "{" + strings.Join(parts, ", ") + "}"
+    default:
+        return fmt.Sprint(x)
+    }
 }
 
-// 埋め込み Python ソース（Base64）。
-const pytraEmbeddedSourceBase64 = "IyAwNzogR2FtZSBvZiBMaWZlIOOBrumAsuWMluOCkkdJRuWHuuWKm+OBmeOCi+OCteODs+ODl+ODq+OAggoKZnJvbSBfX2Z1dHVyZV9fIGltcG9ydCBhbm5vdGF0aW9ucwoKZnJvbSB0aW1lIGltcG9ydCBwZXJmX2NvdW50ZXIKCmZyb20gcHlfbW9kdWxlLmdpZl9oZWxwZXIgaW1wb3J0IGdyYXlzY2FsZV9wYWxldHRlLCBzYXZlX2dpZgoKCmRlZiBuZXh0X3N0YXRlKGdyaWQ6IGxpc3RbbGlzdFtpbnRdXSwgdzogaW50LCBoOiBpbnQpIC0+IGxpc3RbbGlzdFtpbnRdXToKICAgIG54dDogbGlzdFtsaXN0W2ludF1dID0gW10KICAgIGZvciB5IGluIHJhbmdlKGgpOgogICAgICAgIHJvdzogbGlzdFtpbnRdID0gW10KICAgICAgICBmb3IgeCBpbiByYW5nZSh3KToKICAgICAgICAgICAgY250ID0gMAogICAgICAgICAgICBmb3IgZHkgaW4gcmFuZ2UoLTEsIDIpOgogICAgICAgICAgICAgICAgZm9yIGR4IGluIHJhbmdlKC0xLCAyKToKICAgICAgICAgICAgICAgICAgICBpZiBkeCAhPSAwIG9yIGR5ICE9IDA6CiAgICAgICAgICAgICAgICAgICAgICAgIG54ID0gKHggKyBkeCArIHcpICUgdwogICAgICAgICAgICAgICAgICAgICAgICBueSA9ICh5ICsgZHkgKyBoKSAlIGgKICAgICAgICAgICAgICAgICAgICAgICAgY250ICs9IGdyaWRbbnldW254XQogICAgICAgICAgICBhbGl2ZSA9IGdyaWRbeV1beF0KICAgICAgICAgICAgaWYgYWxpdmUgPT0gMSBhbmQgKGNudCA9PSAyIG9yIGNudCA9PSAzKToKICAgICAgICAgICAgICAgIHJvdy5hcHBlbmQoMSkKICAgICAgICAgICAgZWxpZiBhbGl2ZSA9PSAwIGFuZCBjbnQgPT0gMzoKICAgICAgICAgICAgICAgIHJvdy5hcHBlbmQoMSkKICAgICAgICAgICAgZWxzZToKICAgICAgICAgICAgICAgIHJvdy5hcHBlbmQoMCkKICAgICAgICBueHQuYXBwZW5kKHJvdykKICAgIHJldHVybiBueHQKCgpkZWYgcmVuZGVyKGdyaWQ6IGxpc3RbbGlzdFtpbnRdXSwgdzogaW50LCBoOiBpbnQsIGNlbGw6IGludCkgLT4gYnl0ZXM6CiAgICB3aWR0aCA9IHcgKiBjZWxsCiAgICBoZWlnaHQgPSBoICogY2VsbAogICAgZnJhbWUgPSBieXRlYXJyYXkod2lkdGggKiBoZWlnaHQpCiAgICBmb3IgeSBpbiByYW5nZShoKToKICAgICAgICBmb3IgeCBpbiByYW5nZSh3KToKICAgICAgICAgICAgdiA9IDI1NSBpZiBncmlkW3ldW3hdIGVsc2UgMAogICAgICAgICAgICBmb3IgeXkgaW4gcmFuZ2UoY2VsbCk6CiAgICAgICAgICAgICAgICBiYXNlID0gKHkgKiBjZWxsICsgeXkpICogd2lkdGggKyB4ICogY2VsbAogICAgICAgICAgICAgICAgZm9yIHh4IGluIHJhbmdlKGNlbGwpOgogICAgICAgICAgICAgICAgICAgIGZyYW1lW2Jhc2UgKyB4eF0gPSB2CiAgICByZXR1cm4gYnl0ZXMoZnJhbWUpCgoKZGVmIHJ1bl8wN19nYW1lX29mX2xpZmVfbG9vcCgpIC0+IE5vbmU6CiAgICB3ID0gMTQ0CiAgICBoID0gMTA4CiAgICBjZWxsID0gNAogICAgc3RlcHMgPSAyMTAKICAgIG91dF9wYXRoID0gInNhbXBsZS9vdXQvMDdfZ2FtZV9vZl9saWZlX2xvb3AuZ2lmIgoKICAgIHN0YXJ0ID0gcGVyZl9jb3VudGVyKCkKICAgIGdyaWQ6IGxpc3RbbGlzdFtpbnRdXSA9IFtdCiAgICBmb3IgXyBpbiByYW5nZShoKToKICAgICAgICByb3c6IGxpc3RbaW50XSA9IFtdCiAgICAgICAgZm9yIF8gaW4gcmFuZ2Uodyk6CiAgICAgICAgICAgIHJvdy5hcHBlbmQoMCkKICAgICAgICBncmlkLmFwcGVuZChyb3cpCgogICAgIyDnlo7jgarjg47jgqTjgrrjgpLmlbfjgYTjgabjgIHlhajkvZPjgYzml6nmnJ/jgavlm7rlrprljJbjgZfjgavjgY/jgYTlnJ/lj7DjgpLkvZzjgovjgIIKICAgICMg5aSn44GN44Gq5pW05pWw44Oq44OG44Op44Or44KS5L2/44KP44Gq44GE5byP44Gr44GX44Gm44CB5ZCE44OI44Op44Oz44K544OR44Kk44Op44Gn5ZCM5LiA44Gr5omx44GI44KL44KI44GG44Gr44GZ44KL44CCCiAgICBmb3IgeSBpbiByYW5nZShoKToKICAgICAgICBmb3IgeCBpbiByYW5nZSh3KToKICAgICAgICAgICAgbm9pc2UgPSAoeCAqIDM3ICsgeSAqIDczICsgKHggKiB5KSAlIDE5ICsgKHggKyB5KSAlIDExKSAlIDk3CiAgICAgICAgICAgIGlmIG5vaXNlIDwgMzoKICAgICAgICAgICAgICAgIGdyaWRbeV1beF0gPSAxCgogICAgIyDku6PooajnmoTjgarplbflr7/lkb3jg5Hjgr/jg7zjg7PjgpLopIfmlbDphY3nva7jgZnjgovjgIIKICAgIGdsaWRlciA9IFsKICAgICAgICBbMCwgMSwgMF0sCiAgICAgICAgWzAsIDAsIDFdLAogICAgICAgIFsxLCAxLCAxXSwKICAgIF0KICAgIHJfcGVudG9taW5vID0gWwogICAgICAgIFswLCAxLCAxXSwKICAgICAgICBbMSwgMSwgMF0sCiAgICAgICAgWzAsIDEsIDBdLAogICAgXQogICAgbHdzcyA9IFsKICAgICAgICBbMCwgMSwgMSwgMSwgMV0sCiAgICAgICAgWzEsIDAsIDAsIDAsIDFdLAogICAgICAgIFswLCAwLCAwLCAwLCAxXSwKICAgICAgICBbMSwgMCwgMCwgMSwgMF0sCiAgICBdCgogICAgZm9yIGd5IGluIHJhbmdlKDgsIGggLSA4LCAxOCk6CiAgICAgICAgZm9yIGd4IGluIHJhbmdlKDgsIHcgLSA4LCAyMik6CiAgICAgICAgICAgIGtpbmQgPSAoZ3ggKiA3ICsgZ3kgKiAxMSkgJSAzCiAgICAgICAgICAgIGlmIGtpbmQgPT0gMDoKICAgICAgICAgICAgICAgIHBoID0gbGVuKGdsaWRlcikKICAgICAgICAgICAgICAgIGZvciBweSBpbiByYW5nZShwaCk6CiAgICAgICAgICAgICAgICAgICAgcHcgPSBsZW4oZ2xpZGVyW3B5XSkKICAgICAgICAgICAgICAgICAgICBmb3IgcHggaW4gcmFuZ2UocHcpOgogICAgICAgICAgICAgICAgICAgICAgICBpZiBnbGlkZXJbcHldW3B4XSA9PSAxOgogICAgICAgICAgICAgICAgICAgICAgICAgICAgZ3JpZFsoZ3kgKyBweSkgJSBoXVsoZ3ggKyBweCkgJSB3XSA9IDEKICAgICAgICAgICAgZWxpZiBraW5kID09IDE6CiAgICAgICAgICAgICAgICBwaCA9IGxlbihyX3BlbnRvbWlubykKICAgICAgICAgICAgICAgIGZvciBweSBpbiByYW5nZShwaCk6CiAgICAgICAgICAgICAgICAgICAgcHcgPSBsZW4ocl9wZW50b21pbm9bcHldKQogICAgICAgICAgICAgICAgICAgIGZvciBweCBpbiByYW5nZShwdyk6CiAgICAgICAgICAgICAgICAgICAgICAgIGlmIHJfcGVudG9taW5vW3B5XVtweF0gPT0gMToKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGdyaWRbKGd5ICsgcHkpICUgaF1bKGd4ICsgcHgpICUgd10gPSAxCiAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICBwaCA9IGxlbihsd3NzKQogICAgICAgICAgICAgICAgZm9yIHB5IGluIHJhbmdlKHBoKToKICAgICAgICAgICAgICAgICAgICBwdyA9IGxlbihsd3NzW3B5XSkKICAgICAgICAgICAgICAgICAgICBmb3IgcHggaW4gcmFuZ2UocHcpOgogICAgICAgICAgICAgICAgICAgICAgICBpZiBsd3NzW3B5XVtweF0gPT0gMToKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGdyaWRbKGd5ICsgcHkpICUgaF1bKGd4ICsgcHgpICUgd10gPSAxCgogICAgZnJhbWVzOiBsaXN0W2J5dGVzXSA9IFtdCiAgICBmb3IgXyBpbiByYW5nZShzdGVwcyk6CiAgICAgICAgZnJhbWVzLmFwcGVuZChyZW5kZXIoZ3JpZCwgdywgaCwgY2VsbCkpCiAgICAgICAgZ3JpZCA9IG5leHRfc3RhdGUoZ3JpZCwgdywgaCkKCiAgICBzYXZlX2dpZihvdXRfcGF0aCwgdyAqIGNlbGwsIGggKiBjZWxsLCBmcmFtZXMsIGdyYXlzY2FsZV9wYWxldHRlKCksIGRlbGF5X2NzPTQsIGxvb3A9MCkKICAgIGVsYXBzZWQgPSBwZXJmX2NvdW50ZXIoKSAtIHN0YXJ0CiAgICBwcmludCgib3V0cHV0OiIsIG91dF9wYXRoKQogICAgcHJpbnQoImZyYW1lczoiLCBzdGVwcykKICAgIHByaW50KCJlbGFwc2VkX3NlYzoiLCBlbGFwc2VkKQoKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBydW5fMDdfZ2FtZV9vZl9saWZlX2xvb3AoKQo="
+func pyPrint(args ...any) {
+    parts := make([]string, 0, len(args))
+    for _, a := range args {
+        parts = append(parts, pyToString(a))
+    }
+    fmt.Println(strings.Join(parts, " "))
+}
 
-// main は埋め込み Python を実行するエントリポイント。
+func pyBool(v any) bool {
+    switch x := v.(type) {
+    case nil:
+        return false
+    case bool:
+        return x
+    case int:
+        return x != 0
+    case int64:
+        return x != 0
+    case float64:
+        return x != 0.0
+    case string:
+        return x != ""
+    case []any:
+        return len(x) > 0
+    case []byte:
+        return len(x) > 0
+    case map[any]any:
+        return len(x) > 0
+    default:
+        return true
+    }
+}
+
+func pyLen(v any) int {
+    switch x := v.(type) {
+    case string:
+        return len([]rune(x))
+    case []any:
+        return len(x)
+    case []byte:
+        return len(x)
+    case map[any]any:
+        return len(x)
+    default:
+        panic("len() unsupported type")
+    }
+}
+
+func pyRange(start, stop, step int) []any {
+    if step == 0 {
+        panic("range() step must not be zero")
+    }
+    out := []any{}
+    if step > 0 {
+        for i := start; i < stop; i += step {
+            out = append(out, i)
+        }
+    } else {
+        for i := start; i > stop; i += step {
+            out = append(out, i)
+        }
+    }
+    return out
+}
+
+func pyToFloat(v any) float64 {
+    switch x := v.(type) {
+    case int:
+        return float64(x)
+    case int64:
+        return float64(x)
+    case float64:
+        return x
+    case bool:
+        if x {
+            return 1.0
+        }
+        return 0.0
+    default:
+        panic("cannot convert to float")
+    }
+}
+
+func pyToInt(v any) int {
+    switch x := v.(type) {
+    case int:
+        return x
+    case int64:
+        return int(x)
+    case float64:
+        return int(math.Trunc(x))
+    case bool:
+        if x {
+            return 1
+        }
+        return 0
+    default:
+        panic("cannot convert to int")
+    }
+}
+
+func pyAdd(a, b any) any {
+    if sa, ok := a.(string); ok {
+        return sa + pyToString(b)
+    }
+    if sb, ok := b.(string); ok {
+        return pyToString(a) + sb
+    }
+    _, aInt := a.(int)
+    _, bInt := b.(int)
+    if aInt && bInt {
+        return pyToInt(a) + pyToInt(b)
+    }
+    return pyToFloat(a) + pyToFloat(b)
+}
+func pySub(a, b any) any {
+    _, aInt := a.(int)
+    _, bInt := b.(int)
+    if aInt && bInt {
+        return pyToInt(a) - pyToInt(b)
+    }
+    return pyToFloat(a) - pyToFloat(b)
+}
+func pyMul(a, b any) any {
+    _, aInt := a.(int)
+    _, bInt := b.(int)
+    if aInt && bInt {
+        return pyToInt(a) * pyToInt(b)
+    }
+    return pyToFloat(a) * pyToFloat(b)
+}
+func pyDiv(a, b any) any { return pyToFloat(a) / pyToFloat(b) }
+func pyFloorDiv(a, b any) any { return int(math.Floor(pyToFloat(a) / pyToFloat(b))) }
+func pyMod(a, b any) any {
+    ai := pyToInt(a)
+    bi := pyToInt(b)
+    r := ai % bi
+    if r != 0 && ((r > 0) != (bi > 0)) {
+        r += bi
+    }
+    return r
+}
+func pyMin(values ...any) any {
+    if len(values) == 0 {
+        panic("min() arg is empty")
+    }
+    out := values[0]
+    for i := 1; i < len(values); i++ {
+        a := out
+        b := values[i]
+        if _, ok := a.(int); ok {
+            if _, ok2 := b.(int); ok2 {
+                ai := pyToInt(a)
+                bi := pyToInt(b)
+                if bi < ai {
+                    out = bi
+                }
+                continue
+            }
+        }
+        af := pyToFloat(a)
+        bf := pyToFloat(b)
+        if bf < af {
+            out = bf
+        }
+    }
+    return out
+}
+func pyMax(values ...any) any {
+    if len(values) == 0 {
+        panic("max() arg is empty")
+    }
+    out := values[0]
+    for i := 1; i < len(values); i++ {
+        a := out
+        b := values[i]
+        if _, ok := a.(int); ok {
+            if _, ok2 := b.(int); ok2 {
+                ai := pyToInt(a)
+                bi := pyToInt(b)
+                if bi > ai {
+                    out = bi
+                }
+                continue
+            }
+        }
+        af := pyToFloat(a)
+        bf := pyToFloat(b)
+        if bf > af {
+            out = bf
+        }
+    }
+    return out
+}
+func pyLShift(a, b any) any { return pyToInt(a) << uint(pyToInt(b)) }
+func pyRShift(a, b any) any { return pyToInt(a) >> uint(pyToInt(b)) }
+func pyBitAnd(a, b any) any { return pyToInt(a) & pyToInt(b) }
+func pyBitOr(a, b any) any  { return pyToInt(a) | pyToInt(b) }
+func pyBitXor(a, b any) any { return pyToInt(a) ^ pyToInt(b) }
+func pyNeg(a any) any {
+    if _, ok := a.(int); ok {
+        return -pyToInt(a)
+    }
+    return -pyToFloat(a)
+}
+
+func pyEq(a, b any) bool { return pyToString(a) == pyToString(b) }
+func pyNe(a, b any) bool { return !pyEq(a, b) }
+func pyLt(a, b any) bool { return pyToFloat(a) < pyToFloat(b) }
+func pyLe(a, b any) bool { return pyToFloat(a) <= pyToFloat(b) }
+func pyGt(a, b any) bool { return pyToFloat(a) > pyToFloat(b) }
+func pyGe(a, b any) bool { return pyToFloat(a) >= pyToFloat(b) }
+
+func pyIn(item, container any) bool {
+    switch c := container.(type) {
+    case string:
+        return strings.Contains(c, pyToString(item))
+    case []any:
+        for _, v := range c {
+            if pyEq(v, item) {
+                return true
+            }
+        }
+        return false
+    case map[any]any:
+        _, ok := c[item]
+        return ok
+    default:
+        return false
+    }
+}
+
+func pyIter(value any) []any {
+    switch v := value.(type) {
+    case []any:
+        return v
+    case []byte:
+        out := make([]any, 0, len(v))
+        for _, b := range v {
+            out = append(out, int(b))
+        }
+        return out
+    case string:
+        out := []any{}
+        for _, ch := range []rune(v) {
+            out = append(out, string(ch))
+        }
+        return out
+    case map[any]any:
+        out := []any{}
+        for k := range v {
+            out = append(out, k)
+        }
+        return out
+    default:
+        panic("iter unsupported")
+    }
+}
+
+func pyTernary(cond bool, a any, b any) any {
+    if cond {
+        return a
+    }
+    return b
+}
+
+func pyListFromIter(value any) any {
+    it := pyIter(value)
+    out := make([]any, len(it))
+    copy(out, it)
+    return out
+}
+
+func pySlice(value any, start any, end any) any {
+    s := 0
+    e := 0
+    switch v := value.(type) {
+    case string:
+        r := []rune(v)
+        n := len(r)
+        if start == nil {
+            s = 0
+        } else {
+            s = pyToInt(start)
+            if s < 0 {
+                s += n
+            }
+            if s < 0 {
+                s = 0
+            }
+            if s > n {
+                s = n
+            }
+        }
+        if end == nil {
+            e = n
+        } else {
+            e = pyToInt(end)
+            if e < 0 {
+                e += n
+            }
+            if e < 0 {
+                e = 0
+            }
+            if e > n {
+                e = n
+            }
+        }
+        if s > e {
+            s = e
+        }
+        return string(r[s:e])
+    case []any:
+        n := len(v)
+        if start == nil {
+            s = 0
+        } else {
+            s = pyToInt(start)
+            if s < 0 {
+                s += n
+            }
+            if s < 0 {
+                s = 0
+            }
+            if s > n {
+                s = n
+            }
+        }
+        if end == nil {
+            e = n
+        } else {
+            e = pyToInt(end)
+            if e < 0 {
+                e += n
+            }
+            if e < 0 {
+                e = 0
+            }
+            if e > n {
+                e = n
+            }
+        }
+        if s > e {
+            s = e
+        }
+        out := make([]any, e-s)
+        copy(out, v[s:e])
+        return out
+    default:
+        panic("slice unsupported")
+    }
+}
+
+func pyGet(value any, key any) any {
+    switch v := value.(type) {
+    case []any:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return v[i]
+    case map[any]any:
+        return v[key]
+    case string:
+        r := []rune(v)
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(r)
+        }
+        return string(r[i])
+    default:
+        panic("subscript unsupported")
+    }
+}
+
+func pySet(value any, key any, newValue any) {
+    switch v := value.(type) {
+    case []any:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = newValue
+    case map[any]any:
+        v[key] = newValue
+    default:
+        panic("setitem unsupported")
+    }
+}
+
+func pyPop(lst *any, idx any) any {
+    arr := (*lst).([]any)
+    n := len(arr)
+    i := n - 1
+    if idx != nil {
+        i = pyToInt(idx)
+        if i < 0 {
+            i += n
+        }
+    }
+    val := arr[i]
+    arr = append(arr[:i], arr[i+1:]...)
+    *lst = arr
+    return val
+}
+
+func pyPopAt(container any, key any, idx any) any {
+    lst := pyGet(container, key)
+    val := pyPop(&lst, idx)
+    pySet(container, key, lst)
+    return val
+}
+
+func pyOrd(v any) any {
+    s := pyToString(v)
+    r := []rune(s)
+    return int(r[0])
+}
+
+func pyChr(v any) any { return string(rune(pyToInt(v))) }
+
+func pyBytearray(size any) any {
+    if size == nil {
+        return []any{}
+    }
+    n := pyToInt(size)
+    out := make([]any, n)
+    for i := 0; i < n; i++ {
+        out[i] = 0
+    }
+    return out
+}
+
+func pyBytes(v any) any { return v }
+
+func pyIsDigit(v any) bool {
+    s := pyToString(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if ch < '0' || ch > '9' {
+            return false
+        }
+    }
+    return true
+}
+
+func pyIsAlpha(v any) bool {
+    s := pyToString(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+            return false
+        }
+    }
+    return true
+}
+
+func pyTryCatch(body func() any, handler func(any) any, finalizer func()) (ret any) {
+    defer finalizer()
+    defer func() {
+        if r := recover(); r != nil {
+            ret = handler(r)
+        }
+    }()
+    ret = body()
+    return
+}
+
+// -------- time/math helper --------
+
+func pyPerfCounter() any {
+    return float64(time.Now().UnixNano()) / 1_000_000_000.0
+}
+
+func pyMathSqrt(v any) any { return math.Sqrt(pyToFloat(v)) }
+func pyMathSin(v any) any  { return math.Sin(pyToFloat(v)) }
+func pyMathCos(v any) any  { return math.Cos(pyToFloat(v)) }
+func pyMathExp(v any) any  { return math.Exp(pyToFloat(v)) }
+func pyMathFloor(v any) any { return float64(math.Floor(pyToFloat(v))) }
+func pyMathPi() any        { return math.Pi }
+
+// -------- png/gif helper --------
+
+func pyToBytes(v any) []byte {
+    switch x := v.(type) {
+    case []byte:
+        out := make([]byte, len(x))
+        copy(out, x)
+        return out
+    case []any:
+        out := make([]byte, len(x))
+        for i, e := range x {
+            out[i] = byte(pyToInt(e))
+        }
+        return out
+    case string:
+        return []byte(x)
+    default:
+        panic("cannot convert to bytes")
+    }
+}
+
+func pyChunk(chunkType []byte, data []byte) []byte {
+    var out bytes.Buffer
+    n := uint32(len(data))
+    out.Write([]byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)})
+    out.Write(chunkType)
+    out.Write(data)
+    crc := crc32.ChecksumIEEE(append(append([]byte{}, chunkType...), data...))
+    out.Write([]byte{byte(crc >> 24), byte(crc >> 16), byte(crc >> 8), byte(crc)})
+    return out.Bytes()
+}
+
+func pyWriteRGBPNG(path any, width any, height any, pixels any) {
+    w := pyToInt(width)
+    h := pyToInt(height)
+    raw := pyToBytes(pixels)
+    expected := w * h * 3
+    if len(raw) != expected {
+        panic("pixels length mismatch")
+    }
+
+    scan := make([]byte, 0, h*(1+w*3))
+    rowBytes := w * 3
+    for y := 0; y < h; y++ {
+        scan = append(scan, 0)
+        start := y * rowBytes
+        end := start + rowBytes
+        scan = append(scan, raw[start:end]...)
+    }
+
+    var zbuf bytes.Buffer
+    zw, _ := zlib.NewWriterLevel(&zbuf, 6)
+    _, _ = zw.Write(scan)
+    _ = zw.Close()
+    idat := zbuf.Bytes()
+
+    ihdr := []byte{
+        byte(uint32(w) >> 24), byte(uint32(w) >> 16), byte(uint32(w) >> 8), byte(uint32(w)),
+        byte(uint32(h) >> 24), byte(uint32(h) >> 16), byte(uint32(h) >> 8), byte(uint32(h)),
+        8, 2, 0, 0, 0,
+    }
+
+    var png bytes.Buffer
+    png.Write([]byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'})
+    png.Write(pyChunk([]byte("IHDR"), ihdr))
+    png.Write(pyChunk([]byte("IDAT"), idat))
+    png.Write(pyChunk([]byte("IEND"), []byte{}))
+
+    _ = os.WriteFile(pyToString(path), png.Bytes(), 0o644)
+}
+
+func pyLzwEncode(data []byte, minCodeSize int) []byte {
+    if len(data) == 0 {
+        return []byte{}
+    }
+    clearCode := 1 << minCodeSize
+    endCode := clearCode + 1
+    codeSize := minCodeSize + 1
+    out := []byte{}
+    bitBuffer := 0
+    bitCount := 0
+
+    emit := func(code int) {
+        bitBuffer |= (code << bitCount)
+        bitCount += codeSize
+        for bitCount >= 8 {
+            out = append(out, byte(bitBuffer&0xff))
+            bitBuffer >>= 8
+            bitCount -= 8
+        }
+    }
+
+    emit(clearCode)
+    for _, v := range data {
+        emit(int(v))
+        emit(clearCode)
+    }
+    emit(endCode)
+    if bitCount > 0 {
+        out = append(out, byte(bitBuffer&0xff))
+    }
+    return out
+}
+
+func pyGrayscalePalette() any {
+    p := make([]byte, 0, 256*3)
+    for i := 0; i < 256; i++ {
+        p = append(p, byte(i), byte(i), byte(i))
+    }
+    return p
+}
+
+func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS any, loop any) {
+    w := pyToInt(width)
+    h := pyToInt(height)
+    frameBytes := w * h
+    pal := pyToBytes(palette)
+    if len(pal) != 256*3 {
+        panic("palette must be 256*3 bytes")
+    }
+    dcs := pyToInt(delayCS)
+    lp := pyToInt(loop)
+
+    frs := pyIter(frames)
+    out := []byte{}
+    out = append(out, []byte("GIF89a")...)
+    out = append(out, byte(w), byte(w>>8), byte(h), byte(h>>8))
+    out = append(out, 0xF7, 0, 0)
+    out = append(out, pal...)
+
+    out = append(out, 0x21, 0xFF, 0x0B)
+    out = append(out, []byte("NETSCAPE2.0")...)
+    out = append(out, 0x03, 0x01, byte(lp), byte(lp>>8), 0x00)
+
+    for _, frAny := range frs {
+        fr := pyToBytes(frAny)
+        if len(fr) != frameBytes {
+            panic("frame size mismatch")
+        }
+        out = append(out, 0x21, 0xF9, 0x04, 0x00, byte(dcs), byte(dcs>>8), 0x00, 0x00)
+        out = append(out, 0x2C, 0, 0, 0, 0, byte(w), byte(w>>8), byte(h), byte(h>>8), 0x00)
+        out = append(out, 0x08)
+        compressed := pyLzwEncode(fr, 8)
+        pos := 0
+        for pos < len(compressed) {
+            ln := len(compressed) - pos
+            if ln > 255 {
+                ln = 255
+            }
+            out = append(out, byte(ln))
+            out = append(out, compressed[pos:pos+ln]...)
+            pos += ln
+        }
+        out = append(out, 0x00)
+    }
+    out = append(out, 0x3B)
+    _ = os.WriteFile(pyToString(path), out, 0o644)
+}
+
+func next_state(grid any, w any, h any) any {
+    var nxt any = []any{}
+    _ = nxt
+    var y any = nil
+    _ = y
+    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
+        y = __pytra_it_1
+        var row any = []any{}
+        _ = row
+        var x any = nil
+        _ = x
+        for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
+            x = __pytra_it_2
+            var cnt any = 0
+            _ = cnt
+            var dy any = nil
+            _ = dy
+            for _, __pytra_it_3 := range pyRange(pyToInt(pyNeg(1)), pyToInt(2), pyToInt(1)) {
+                dy = __pytra_it_3
+                var dx any = nil
+                _ = dx
+                for _, __pytra_it_4 := range pyRange(pyToInt(pyNeg(1)), pyToInt(2), pyToInt(1)) {
+                    dx = __pytra_it_4
+                    if (pyBool((pyBool(pyNe(dx, 0)) || pyBool(pyNe(dy, 0))))) {
+                        var nx any = pyMod(pyAdd(pyAdd(x, dx), w), w)
+                        _ = nx
+                        var ny any = pyMod(pyAdd(pyAdd(y, dy), h), h)
+                        _ = ny
+                        cnt = pyAdd(cnt, pyGet(pyGet(grid, ny), nx))
+                    }
+                }
+            }
+            var alive any = pyGet(pyGet(grid, y), x)
+            _ = alive
+            if (pyBool((pyBool(pyEq(alive, 1)) && pyBool((pyBool(pyEq(cnt, 2)) || pyBool(pyEq(cnt, 3))))))) {
+                row = append(row.([]any), 1)
+            } else {
+                if (pyBool((pyBool(pyEq(alive, 0)) && pyBool(pyEq(cnt, 3))))) {
+                    row = append(row.([]any), 1)
+                } else {
+                    row = append(row.([]any), 0)
+                }
+            }
+        }
+        nxt = append(nxt.([]any), row)
+    }
+    return nxt
+}
+
+func render(grid any, w any, h any, cell any) any {
+    var width any = pyMul(w, cell)
+    _ = width
+    var height any = pyMul(h, cell)
+    _ = height
+    var frame any = pyBytearray(pyMul(width, height))
+    _ = frame
+    var y any = nil
+    _ = y
+    for _, __pytra_it_5 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
+        y = __pytra_it_5
+        var x any = nil
+        _ = x
+        for _, __pytra_it_6 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
+            x = __pytra_it_6
+            var v any = pyTernary(pyBool(pyGet(pyGet(grid, y), x)), 255, 0)
+            _ = v
+            var yy any = nil
+            _ = yy
+            for _, __pytra_it_7 := range pyRange(pyToInt(0), pyToInt(cell), pyToInt(1)) {
+                yy = __pytra_it_7
+                var base any = pyAdd(pyMul(pyAdd(pyMul(y, cell), yy), width), pyMul(x, cell))
+                _ = base
+                var xx any = nil
+                _ = xx
+                for _, __pytra_it_8 := range pyRange(pyToInt(0), pyToInt(cell), pyToInt(1)) {
+                    xx = __pytra_it_8
+                    pySet(frame, pyAdd(base, xx), v)
+                }
+            }
+        }
+    }
+    return pyBytes(frame)
+}
+
+func run_07_game_of_life_loop() any {
+    var w any = 144
+    _ = w
+    var h any = 108
+    _ = h
+    var cell any = 4
+    _ = cell
+    var steps any = 210
+    _ = steps
+    var out_path any = "sample/out/07_game_of_life_loop.gif"
+    _ = out_path
+    var start any = pyPerfCounter()
+    _ = start
+    var grid any = []any{}
+    _ = grid
+    var __pytra_discard any = nil
+    _ = __pytra_discard
+    for _, __pytra_it_9 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
+        __pytra_discard = __pytra_it_9
+        var row any = []any{}
+        _ = row
+        for _, __pytra_it_10 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
+            __pytra_discard = __pytra_it_10
+            row = append(row.([]any), 0)
+        }
+        grid = append(grid.([]any), row)
+    }
+    var y any = nil
+    _ = y
+    for _, __pytra_it_11 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
+        y = __pytra_it_11
+        var x any = nil
+        _ = x
+        for _, __pytra_it_12 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
+            x = __pytra_it_12
+            var noise any = pyMod(pyAdd(pyAdd(pyAdd(pyMul(x, 37), pyMul(y, 73)), pyMod(pyMul(x, y), 19)), pyMod(pyAdd(x, y), 11)), 97)
+            _ = noise
+            if (pyBool(pyLt(noise, 3))) {
+                pySet(pyGet(grid, y), x, 1)
+            }
+        }
+    }
+    var glider any = []any{[]any{0, 1, 0}, []any{0, 0, 1}, []any{1, 1, 1}}
+    _ = glider
+    var r_pentomino any = []any{[]any{0, 1, 1}, []any{1, 1, 0}, []any{0, 1, 0}}
+    _ = r_pentomino
+    var lwss any = []any{[]any{0, 1, 1, 1, 1}, []any{1, 0, 0, 0, 1}, []any{0, 0, 0, 0, 1}, []any{1, 0, 0, 1, 0}}
+    _ = lwss
+    var gy any = nil
+    _ = gy
+    for _, __pytra_it_13 := range pyRange(pyToInt(8), pyToInt(pySub(h, 8)), pyToInt(18)) {
+        gy = __pytra_it_13
+        var gx any = nil
+        _ = gx
+        for _, __pytra_it_14 := range pyRange(pyToInt(8), pyToInt(pySub(w, 8)), pyToInt(22)) {
+            gx = __pytra_it_14
+            var kind any = pyMod(pyAdd(pyMul(gx, 7), pyMul(gy, 11)), 3)
+            _ = kind
+            if (pyBool(pyEq(kind, 0))) {
+                var ph any = pyLen(glider)
+                _ = ph
+                var py any = nil
+                _ = py
+                for _, __pytra_it_15 := range pyRange(pyToInt(0), pyToInt(ph), pyToInt(1)) {
+                    py = __pytra_it_15
+                    var pw any = pyLen(pyGet(glider, py))
+                    _ = pw
+                    var px any = nil
+                    _ = px
+                    for _, __pytra_it_16 := range pyRange(pyToInt(0), pyToInt(pw), pyToInt(1)) {
+                        px = __pytra_it_16
+                        if (pyBool(pyEq(pyGet(pyGet(glider, py), px), 1))) {
+                            pySet(pyGet(grid, pyMod(pyAdd(gy, py), h)), pyMod(pyAdd(gx, px), w), 1)
+                        }
+                    }
+                }
+            } else {
+                if (pyBool(pyEq(kind, 1))) {
+                    var ph any = pyLen(r_pentomino)
+                    _ = ph
+                    var py any = nil
+                    _ = py
+                    for _, __pytra_it_17 := range pyRange(pyToInt(0), pyToInt(ph), pyToInt(1)) {
+                        py = __pytra_it_17
+                        var pw any = pyLen(pyGet(r_pentomino, py))
+                        _ = pw
+                        var px any = nil
+                        _ = px
+                        for _, __pytra_it_18 := range pyRange(pyToInt(0), pyToInt(pw), pyToInt(1)) {
+                            px = __pytra_it_18
+                            if (pyBool(pyEq(pyGet(pyGet(r_pentomino, py), px), 1))) {
+                                pySet(pyGet(grid, pyMod(pyAdd(gy, py), h)), pyMod(pyAdd(gx, px), w), 1)
+                            }
+                        }
+                    }
+                } else {
+                    var ph any = pyLen(lwss)
+                    _ = ph
+                    var py any = nil
+                    _ = py
+                    for _, __pytra_it_19 := range pyRange(pyToInt(0), pyToInt(ph), pyToInt(1)) {
+                        py = __pytra_it_19
+                        var pw any = pyLen(pyGet(lwss, py))
+                        _ = pw
+                        var px any = nil
+                        _ = px
+                        for _, __pytra_it_20 := range pyRange(pyToInt(0), pyToInt(pw), pyToInt(1)) {
+                            px = __pytra_it_20
+                            if (pyBool(pyEq(pyGet(pyGet(lwss, py), px), 1))) {
+                                pySet(pyGet(grid, pyMod(pyAdd(gy, py), h)), pyMod(pyAdd(gx, px), w), 1)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    var frames any = []any{}
+    _ = frames
+    for _, __pytra_it_21 := range pyRange(pyToInt(0), pyToInt(steps), pyToInt(1)) {
+        __pytra_discard = __pytra_it_21
+        frames = append(frames.([]any), render(grid, w, h, cell))
+        grid = next_state(grid, w, h)
+    }
+    pySaveGIF(out_path, pyMul(w, cell), pyMul(h, cell), frames, pyGrayscalePalette(), 4, 0)
+    var elapsed any = pySub(pyPerfCounter(), start)
+    _ = elapsed
+    pyPrint("output:", out_path)
+    pyPrint("frames:", steps)
+    pyPrint("elapsed_sec:", elapsed)
+    return nil
+}
+
 func main() {
-	os.Exit(pytraRunEmbeddedPython(pytraEmbeddedSourceBase64, os.Args[1:]))
+    run_07_game_of_life_loop()
 }
