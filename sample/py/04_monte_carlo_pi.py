@@ -13,8 +13,7 @@ def run_pi_trial(total_samples: int, seed: int) -> float:
     inside: int = 0
     state: int = seed
 
-    i: int = 0
-    while i < total_samples:
+    for _ in range(total_samples):
         state = lcg_next(state)
         x: float = state / 4294967296.0
 
@@ -25,8 +24,6 @@ def run_pi_trial(total_samples: int, seed: int) -> float:
         dy: float = y - 0.5
         if dx * dx + dy * dy <= 0.25:
             inside += 1
-
-        i += 1
 
     return 4.0 * inside / total_samples
 

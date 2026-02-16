@@ -10,8 +10,7 @@ from py_module.gif_helper import save_gif
 
 def palette() -> bytes:
     p = bytearray()
-    i = 0
-    while i < 256:
+    for i in range(256):
         r = int(20 + i * 0.9)
         if r > 255:
             r = 255
@@ -24,7 +23,6 @@ def palette() -> bytes:
         p.append(r)
         p.append(g)
         p.append(b)
-        i += 1
     return bytes(p)
 
 
@@ -59,27 +57,21 @@ def run_14_raymarching_light_cycle() -> None:
     start = perf_counter()
     frames: list[bytes] = []
 
-    t = 0
-    while t < frames_n:
+    for t in range(frames_n):
         frame = bytearray(w * h)
         a = (t / frames_n) * math.pi * 2.0
         light_x = 0.75 * math.cos(a)
         light_y = 0.55 * math.sin(a * 1.2)
 
         i = 0
-        y = 0
-        while y < h:
+        for y in range(h):
             py = (y / (h - 1)) * 2.0 - 1.0
-            x = 0
-            while x < w:
+            for x in range(w):
                 px = (x / (w - 1)) * 2.0 - 1.0
                 frame[i] = scene(px, py, light_x, light_y)
                 i += 1
-                x += 1
-            y += 1
 
         frames.append(bytes(frame))
-        t += 1
 
     save_gif(out_path, w, h, frames, palette(), delay_cs=3, loop=0)
     elapsed = perf_counter() - start

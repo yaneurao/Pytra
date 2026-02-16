@@ -9,12 +9,10 @@ from py_module.gif_helper import grayscale_palette, save_gif
 
 def render_frame(width: int, height: int, cr: float, ci: float, max_iter: int) -> bytes:
     frame = bytearray(width * height)
-    y = 0
     idx = 0
-    while y < height:
+    for y in range(height):
         zy0 = -1.2 + 2.4 * (y / (height - 1))
-        x = 0
-        while x < width:
+        for x in range(width):
             zx = -1.8 + 3.6 * (x / (width - 1))
             zy = zy0
             i = 0
@@ -28,8 +26,6 @@ def render_frame(width: int, height: int, cr: float, ci: float, max_iter: int) -
                 i += 1
             frame[idx] = int((255.0 * i) / max_iter)
             idx += 1
-            x += 1
-        y += 1
     return bytes(frame)
 
 
@@ -42,13 +38,11 @@ def run_06_julia_parameter_sweep() -> None:
 
     start = perf_counter()
     frames: list[bytes] = []
-    i = 0
-    while i < frames_n:
+    for i in range(frames_n):
         t = i / frames_n
         cr = -0.8 + 0.32 * t
         ci = 0.156 + 0.22 * (0.5 - t)
         frames.append(render_frame(width, height, cr, ci, max_iter))
-        i += 1
 
     save_gif(out_path, width, height, frames, grayscale_palette(), delay_cs=4, loop=0)
     elapsed = perf_counter() - start

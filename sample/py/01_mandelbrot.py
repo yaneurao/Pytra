@@ -9,15 +9,13 @@ def escape_count(cx: float, cy: float, max_iter: int) -> int:
     """1点 (cx, cy) の発散までの反復回数を返す。"""
     x: float = 0.0
     y: float = 0.0
-    i: int = 0
-    while i < max_iter:
+    for i in range(max_iter):
         x2: float = x * x
         y2: float = y * y
         if x2 + y2 > 4.0:
             return i
         y = 2.0 * x * y + cy
         x = x2 - y2 + cx
-        i += 1
     return max_iter
 
 
@@ -46,12 +44,10 @@ def render_mandelbrot(
     """マンデルブロ画像の RGB バイト列を生成する。"""
     pixels: bytearray = bytearray()
 
-    y: int = 0
-    while y < height:
+    for y in range(height):
         py: float = y_min + (y_max - y_min) * (y / (height - 1))
 
-        x: int = 0
-        while x < width:
+        for x in range(width):
             px: float = x_min + (x_max - x_min) * (x / (width - 1))
             it: int = escape_count(px, py, max_iter)
             r: int
@@ -69,9 +65,6 @@ def render_mandelbrot(
             pixels.append(r)
             pixels.append(g)
             pixels.append(b)
-            x += 1
-
-        y += 1
 
     return pixels
 

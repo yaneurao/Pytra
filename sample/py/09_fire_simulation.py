@@ -9,8 +9,7 @@ from py_module.gif_helper import save_gif
 
 def fire_palette() -> bytes:
     p = bytearray()
-    i = 0
-    while i < 256:
+    for i in range(256):
         r = 0
         g = 0
         b = 0
@@ -29,7 +28,6 @@ def fire_palette() -> bytes:
         p.append(r)
         p.append(g)
         p.append(b)
-        i += 1
     return bytes(p)
 
 
@@ -41,29 +39,20 @@ def run_09_fire_simulation() -> None:
 
     start = perf_counter()
     heat: list[list[int]] = []
-    gy = 0
-    while gy < h:
+    for _ in range(h):
         row: list[int] = []
-        gx = 0
-        while gx < w:
+        for _ in range(w):
             row.append(0)
-            gx += 1
         heat.append(row)
-        gy += 1
     frames: list[bytes] = []
 
-    t = 0
-    while t < steps:
-        x = 0
-        while x < w:
+    for t in range(steps):
+        for x in range(w):
             val = 170 + ((x * 13 + t * 17) % 86)
             heat[h - 1][x] = val
-            x += 1
 
-        y = 1
-        while y < h:
-            x = 0
-            while x < w:
+        for y in range(1, h):
+            for x in range(w):
                 a = heat[y][x]
                 b = heat[y][(x - 1 + w) % w]
                 c = heat[y][(x + 1) % w]
@@ -72,21 +61,14 @@ def run_09_fire_simulation() -> None:
                 cool = 1 + ((x + y + t) % 3)
                 nv = v - cool
                 heat[y - 1][x] = nv if nv > 0 else 0
-                x += 1
-            y += 1
 
         frame = bytearray(w * h)
         i = 0
-        yy = 0
-        while yy < h:
-            xx = 0
-            while xx < w:
+        for yy in range(h):
+            for xx in range(w):
                 frame[i] = heat[yy][xx]
                 i += 1
-                xx += 1
-            yy += 1
         frames.append(bytes(frame))
-        t += 1
 
     save_gif(out_path, w, h, frames, fire_palette(), delay_cs=4, loop=0)
     elapsed = perf_counter() - start

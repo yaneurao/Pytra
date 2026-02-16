@@ -52,12 +52,10 @@ def render(width: int, height: int) -> bytearray:
     ly: float = 0.8
     lz: float = -0.45
 
-    y: int = 0
-    while y < height:
+    for y in range(height):
         sy: float = (1.0 - 2.0 * (y / (height - 1)))
 
-        x: int = 0
-        while x < width:
+        for x in range(width):
             sx: float = (2.0 * (x / (width - 1)) - 1.0)
             sx *= (width / height)
 
@@ -152,9 +150,6 @@ def render(width: int, height: int) -> bytearray:
             pixels.append(r)
             pixels.append(g)
             pixels.append(b)
-            x += 1
-
-        y += 1
 
     return pixels
 

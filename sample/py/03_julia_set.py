@@ -8,12 +8,10 @@ from py_module import png_helper
 def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -> bytearray:
     pixels: bytearray = bytearray()
 
-    y: int = 0
-    while y < height:
+    for y in range(height):
         zy0: float = -1.2 + 2.4 * (y / (height - 1))
 
-        x: int = 0
-        while x < width:
+        for x in range(width):
             zx: float = -1.8 + 3.6 * (x / (width - 1))
             zy: float = zy0
 
@@ -43,9 +41,6 @@ def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -
             pixels.append(r)
             pixels.append(g)
             pixels.append(b)
-            x += 1
-
-        y += 1
 
     return pixels
 

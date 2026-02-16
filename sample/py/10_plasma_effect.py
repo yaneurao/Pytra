@@ -17,14 +17,11 @@ def run_10_plasma_effect() -> None:
     start = perf_counter()
     frames: list[bytes] = []
 
-    t = 0
-    while t < frames_n:
+    for t in range(frames_n):
         frame = bytearray(w * h)
         i = 0
-        y = 0
-        while y < h:
-            x = 0
-            while x < w:
+        for y in range(h):
+            for x in range(w):
                 dx = x - 160
                 dy = y - 120
                 v = (
@@ -40,10 +37,7 @@ def run_10_plasma_effect() -> None:
                     c = 255
                 frame[i] = c
                 i += 1
-                x += 1
-            y += 1
         frames.append(bytes(frame))
-        t += 1
 
     save_gif(out_path, w, h, frames, grayscale_palette(), delay_cs=3, loop=0)
     elapsed = perf_counter() - start

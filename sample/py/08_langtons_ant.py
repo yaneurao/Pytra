@@ -10,14 +10,10 @@ from py_module.gif_helper import grayscale_palette, save_gif
 def capture(grid: list[list[int]], w: int, h: int) -> bytes:
     frame = bytearray(w * h)
     i = 0
-    y = 0
-    while y < h:
-        x = 0
-        while x < w:
+    for y in range(h):
+        for x in range(w):
             frame[i] = 255 if grid[y][x] else 0
             i += 1
-            x += 1
-        y += 1
     return bytes(frame)
 
 
@@ -29,15 +25,11 @@ def run_08_langtons_ant() -> None:
     start = perf_counter()
 
     grid: list[list[int]] = []
-    gy = 0
-    while gy < h:
+    for gy in range(h):
         row: list[int] = []
-        gx = 0
-        while gx < w:
+        for gx in range(w):
             row.append(0)
-            gx += 1
         grid.append(row)
-        gy += 1
     x = w // 2
     y = h // 2
     d = 0
@@ -46,8 +38,7 @@ def run_08_langtons_ant() -> None:
     capture_every = 3000
     frames: list[bytes] = []
 
-    i = 0
-    while i < steps_total:
+    for i in range(steps_total):
         if grid[y][x] == 0:
             d = (d + 1) % 4
             grid[y][x] = 1
@@ -66,7 +57,6 @@ def run_08_langtons_ant() -> None:
 
         if i % capture_every == 0:
             frames.append(capture(grid, w, h))
-        i += 1
 
     save_gif(out_path, w, h, frames, grayscale_palette(), delay_cs=5, loop=0)
     elapsed = perf_counter() - start

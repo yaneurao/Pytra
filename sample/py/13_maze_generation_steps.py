@@ -11,21 +11,13 @@ def capture(grid: list[list[int]], w: int, h: int, scale: int) -> bytes:
     width = w * scale
     height = h * scale
     frame = bytearray(width * height)
-    y = 0
-    while y < h:
-        x = 0
-        while x < w:
+    for y in range(h):
+        for x in range(w):
             v = 255 if grid[y][x] == 0 else 40
-            yy = 0
-            while yy < scale:
+            for yy in range(scale):
                 base = (y * scale + yy) * width + x * scale
-                xx = 0
-                while xx < scale:
+                for xx in range(scale):
                     frame[base + xx] = v
-                    xx += 1
-                yy += 1
-            x += 1
-        y += 1
     return bytes(frame)
 
 
@@ -37,15 +29,11 @@ def run_13_maze_generation_steps() -> None:
 
     start = perf_counter()
     grid: list[list[int]] = []
-    gy = 0
-    while gy < cell_h:
+    for _ in range(cell_h):
         row: list[int] = []
-        gx = 0
-        while gx < cell_w:
+        for _ in range(cell_w):
             row.append(1)
-            gx += 1
         grid.append(row)
-        gy += 1
     stack: list[tuple[int, int]] = [(1, 1)]
     grid[1][1] = 0
 
@@ -57,8 +45,7 @@ def run_13_maze_generation_steps() -> None:
         last_index = len(stack) - 1
         x, y = stack[last_index]
         candidates: list[tuple[int, int, int, int]] = []
-        k = 0
-        while k < 4:
+        for k in range(4):
             dx, dy = dirs[k]
             nx = x + dx
             ny = y + dy
@@ -71,7 +58,6 @@ def run_13_maze_generation_steps() -> None:
                     candidates.append((nx, ny, x, y + 1))
                 else:
                     candidates.append((nx, ny, x, y - 1))
-            k += 1
 
         if len(candidates) == 0:
             stack.pop()
