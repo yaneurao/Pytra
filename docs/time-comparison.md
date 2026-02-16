@@ -5,6 +5,8 @@
 - [sample/py](../sample/py): Pythonで書かれたサンプル（15本）
 - [sample/cpp](../sample/cpp): C++へ変換したサンプル
 - [sample/cs](../sample/cs): C#へ変換したサンプル
+- [sample/js](../sample/js): JavaScriptへ変換したサンプル
+- [sample/ts](../sample/ts): TypeScriptへ変換したサンプル
 
 ## 計測条件について
 

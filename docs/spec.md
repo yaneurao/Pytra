@@ -7,6 +7,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - Python -> C# (`src/py2cs.py`)
 - Python -> C++ (`src/py2cpp.py`)
 - Python -> Rust (`src/py2rs.py`)
+- Python -> JavaScript (`src/py2js.py`)
+- Python -> TypeScript (`src/py2ts.py`)
 
 本仕様書は、現時点の実装に基づく対応範囲・テスト方法・運用上の注意点を定義します。
 
@@ -16,9 +18,12 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `py2cs.py`: Python -> C# 変換器
   - `py2cpp.py`: Python -> C++ 変換器
   - `py2rs.py`: Python -> Rust 変換器
+  - `py2js.py`: Python -> JavaScript 変換器
+  - `py2ts.py`: Python -> TypeScript 変換器
   - `common/`: 複数言語トランスパイラで共有する基底実装・共通ユーティリティ
     - `base_transpiler.py`: `TranspileError` と共通基底クラス
     - `transpile_shared.py`: AST 解析補助（スコープ、main guard 判定など）
+    - `node_embedded_python_transpiler.py`: JS/TS 向け埋め込み Python 実行コード生成
   - `cs_type_mappings.py`: C# 専用の型マップ
   - `cpp_type_mappings.py`: C++ 専用の型マップ
   - `cpp_module/`: C++ 側ランタイム補助モジュール
@@ -29,6 +34,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `cs/`: C# 期待結果
   - `cpp/`: C++ 期待結果
   - `rs/`: Rust 変換結果
+  - `js/`: JavaScript 変換結果
+  - `ts/`: TypeScript 変換結果
   - `cpp2/`: セルフホスティング検証時の出力先（`.gitignore` 対象）
   - `obj/`: C++ コンパイル生成物（`.gitignore` 対象）
 - `docs/`
@@ -41,6 +48,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `cpp/`: `sample/py` を C++ へ変換した出力
   - `cs/`: `sample/py` を C# へ変換した出力
   - `rs/`: `sample/py` を Rust へ変換した出力
+  - `js/`: `sample/py` を JavaScript へ変換した出力
+  - `ts/`: `sample/py` を TypeScript へ変換した出力
   - `out/`: サンプル実行時の生成物（PNG / GIF）
   - `obj/`: サンプル実行用のコンパイル生成物
 
@@ -119,6 +128,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - C# 期待結果は `test/cs/` に配置します。
 - C++ 期待結果は `test/cpp/` に配置します。
 - Rust 変換結果は `test/rs/` に配置します。
+- JavaScript 変換結果は `test/js/` に配置します。
+- TypeScript 変換結果は `test/ts/` に配置します。
 - 変換器都合で `test/py/` の入力ケースを変更してはなりません。変換失敗時は、まずトランスパイラ実装（`src/py2cs.py`, `src/py2cpp.py`）側を修正します。
 - ケース命名は `caseXX_*` 形式を基本とします。
 
@@ -186,6 +197,7 @@ python -m unittest discover -s test -p "test_*.py" -v
   - `README.md` からリンクされるドキュメント（`docs/how-to-use.md`, `docs/time-comparison.md`, `docs/spec.md` など）も整合性を確認し、必要なら同時に更新します。
   - 実装とドキュメントの内容が不一致にならないことを、変更完了条件に含めます。
 - 現在の `py2rs.py` は最小実装です。生成 Rust は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
+- 現在の `py2js.py` / `py2ts.py` は埋め込み Python 実行モードです。生成 JS/TS は Node.js 上で Python ソースを実行します（`python3` 優先、`python` フォールバック）。
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
 - エラー発生時、CLI エントリポイント（`src/py2cs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。
 - `test/obj/` と `test/cpp2/` は検証用生成物のため Git 管理外です。

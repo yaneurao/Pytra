@@ -7,8 +7,8 @@
 | Python | C++ | [src/py2cpp.py](../src/py2cpp.py) |
 | Python | C# | [src/py2cs.py](../src/py2cs.py) |
 | Python | Rust | [src/py2rs.py](../src/py2rs.py) |
-| Python | JavaScript | 🚧 予定 |
-| Python | TypeScript | 🚧 予定 |
+| Python | JavaScript | [src/py2js.py](../src/py2js.py) |
+| Python | TypeScript | [src/py2ts.py](../src/py2ts.py) |
 | Python | Go | 🚧 予定 |
 | Python | Java | 🚧 予定 |
 | Python | Swift | 🚧 予定 |
@@ -53,7 +53,31 @@ python src/py2rs.py <input.py> <output.rs>
 python src/py2rs.py test/py/case28_iterable.py test/rs/case28_iterable.rs
 ```
 
-### 4. 変換後コードの実行例
+### 4. Python から JavaScript へ変換
+
+```bash
+python src/py2js.py <input.py> <output.js>
+```
+
+例:
+
+```bash
+python src/py2js.py test/py/case28_iterable.py test/js/case28_iterable.js
+```
+
+### 5. Python から TypeScript へ変換
+
+```bash
+python src/py2ts.py <input.py> <output.ts>
+```
+
+例:
+
+```bash
+python src/py2ts.py test/py/case28_iterable.py test/ts/case28_iterable.ts
+```
+
+### 6. 変換後コードの実行例
 
 #### C++
 
@@ -82,7 +106,19 @@ rustc -O test/rs/case28_iterable.rs -o test/obj/case28_iterable_rs.out
 ./test/obj/case28_iterable_rs.out
 ```
 
-### 5. 注意点
+#### JavaScript
+
+```bash
+node test/js/case28_iterable.js
+```
+
+#### TypeScript
+
+```bash
+npx tsx test/ts/case28_iterable.ts
+```
+
+### 7. 注意点
 
 - 対象は Python のサブセットです。一般的な Python コードすべてが変換できるわけではありません。
 - 変数には、型注釈が必要です。（ただし一部は推論可能）。
@@ -90,6 +126,7 @@ rustc -O test/rs/case28_iterable.rs -o test/obj/case28_iterable_rs.out
 - `sample/py/` を Python のまま実行する場合は、`py_module` を解決するため `PYTHONPATH=src` を付けて実行してください（例: `PYTHONPATH=src python3 sample/py/01_mandelbrot.py`）。
 - 生成された C++/C# は「読みやすさ」より「変換の忠実性」を優先しています。
 - 現在の `py2rs.py` は最小実装で、Python スクリプトを Rust 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
+- 現在の `py2js.py` / `py2ts.py` も埋め込み Python 実行モードです。生成 JS/TS は Node.js 上で Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
 
 
 ## 言語的制約

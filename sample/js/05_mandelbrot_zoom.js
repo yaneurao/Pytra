@@ -1,0 +1,108 @@
+// このファイルは自動生成です（Python -> JavaScript）。
+
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
+
+/** 埋め込み元 Python ファイルパス。 */
+const PYTRA_SOURCE_PATH = "sample/py/05_mandelbrot_zoom.py";
+/** 埋め込み Python ソースコード。 */
+const PYTRA_SOURCE_CODE = `# 05: マンデルブロ集合ズームをアニメーションGIFとして出力するサンプル。
+
+from __future__ import annotations
+
+from time import perf_counter
+
+from py_module.gif_helper import grayscale_palette, save_gif
+
+
+def render_frame(width: int, height: int, center_x: float, center_y: float, scale: float, max_iter: int) -> bytes:
+    frame = bytearray(width * height)
+    idx = 0
+    for y in range(height):
+        cy = center_y + (y - height * 0.5) * scale
+        for x in range(width):
+            cx = center_x + (x - width * 0.5) * scale
+            zx = 0.0
+            zy = 0.0
+            i = 0
+            while i < max_iter:
+                zx2 = zx * zx
+                zy2 = zy * zy
+                if zx2 + zy2 > 4.0:
+                    break
+                zy = 2.0 * zx * zy + cy
+                zx = zx2 - zy2 + cx
+                i += 1
+            frame[idx] = int((255.0 * i) / max_iter)
+            idx += 1
+    return bytes(frame)
+
+
+def run_05_mandelbrot_zoom() -> None:
+    width = 320
+    height = 240
+    frame_count = 48
+    max_iter = 110
+    center_x = -0.743643887037151
+    center_y = 0.13182590420533
+    base_scale = 3.2 / width
+    zoom_per_frame = 0.93
+    out_path = "sample/out/05_mandelbrot_zoom.gif"
+
+    start = perf_counter()
+    frames: list[bytes] = []
+    scale = base_scale
+    for _ in range(frame_count):
+        frames.append(render_frame(width, height, center_x, center_y, scale, max_iter))
+        scale *= zoom_per_frame
+
+    save_gif(out_path, width, height, frames, grayscale_palette(), delay_cs=5, loop=0)
+    elapsed = perf_counter() - start
+    print("output:", out_path)
+    print("frames:", frame_count)
+    print("elapsed_sec:", elapsed)
+
+
+if __name__ == "__main__":
+    run_05_mandelbrot_zoom()
+`;
+
+/**
+ * Python インタプリタで埋め込みソースを実行する。
+ * @param { interpreter: string, scriptPath: string, args: string[] } params 実行パラメータ。
+ * @returns { status: number|null, error?: Error } 実行結果。
+ */
+function runPython(params) {
+  const env = { ...process.env };
+  const current = env.PYTHONPATH;
+  env.PYTHONPATH = current && current.length > 0
+    ? ["src", current].join(path.delimiter)
+    : "src";
+  return spawnSync(params.interpreter, [params.scriptPath, ...params.args], {
+    stdio: "inherit",
+    env,
+  });
+}
+
+/** エントリポイント。 */
+function main() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pytra_js_"));
+  const scriptPath = path.join(tempDir, "embedded.py");
+  fs.writeFileSync(scriptPath, PYTRA_SOURCE_CODE, { encoding: "utf8" });
+
+  let result = runPython({ interpreter: "python3", scriptPath, args: process.argv.slice(2) });
+  if (result.error && result.error.code === "ENOENT") {
+    result = runPython({ interpreter: "python", scriptPath, args: process.argv.slice(2) });
+  }
+
+  fs.rmSync(tempDir, { recursive: true, force: true });
+  if (result.error) {
+    console.error("error: python interpreter not found (python3/python)");
+    process.exit(1);
+  }
+  process.exit(typeof result.status === "number" ? result.status : 1);
+}
+
+main();

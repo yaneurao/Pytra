@@ -2,7 +2,8 @@
 
 Pytraは、Pythonのサブセットで書かれたプログラムを様々な言語に変換するためのトランスパイラ群です。
 
-現在は Python から C++/C#/Rust への変換に対応しており、JavaScript/TypeScript/Go/Java/Swift/Kotlin は対応予定です。
+現在は Python から C++/C#/Rust/JavaScript/TypeScript への変換に対応しており、Go/Java/Swift/Kotlin は対応予定です。
+JavaScript / TypeScript 変換は、現時点では「埋め込み Python 実行モード」です（Node.js 上で Python ソースを実行）。
 
 ⚠ まだ開発途上にあり、実用にほど遠いかもしれません。サンプルコードなどを確認してから自己責任において、ご利用ください。
 
