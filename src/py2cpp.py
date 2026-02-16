@@ -6,10 +6,20 @@ from __future__ import annotations
 
 import argparse
 import ast
-from dataclasses import dataclass
 from pathlib import Path
 import sys
 from typing import List, Set
+
+from common.transpile_shared import (
+    INT32_MAX,
+    INT32_MIN,
+    Scope,
+    TempNameFactory,
+    compute_wide_int_functions,
+    is_main_guard,
+    requires_wide_int,
+)
+from common.type_mappings import CPP_PRIMITIVE_TYPES
 
 
 class TranspileError(Exception):
@@ -18,20 +28,10 @@ class TranspileError(Exception):
     pass
 
 
-@dataclass
-class Scope:
-    """変換中スコープで宣言済みの変数名を保持する。"""
-
-    declared: Set[str]
-
-
 class CppTranspiler:
     """Python AST を C++ ソースコードへ変換する本体クラス。"""
 
     INDENT = "    "
-    INT32_MIN = -(2**31)
-    INT32_MAX = 2**31 - 1
-
     def __init__(self) -> None:
         """変換時に使う内部状態を初期化する。"""
         self.class_names: Set[str] = set()
@@ -41,40 +41,16 @@ class CppTranspiler:
         self.global_function_renames: dict[str, str] = {}
         self.wide_int_functions: Set[str] = set()
         self.force_long_int: bool = False
-        self.temp_counter: int = 0
+        self.temp_names = TempNameFactory(prefix="__pytra")
 
     def _new_temp(self, base: str) -> str:
-        self.temp_counter += 1
-        return f"__pytra_{base}_{self.temp_counter}"
+        return self.temp_names.new(base)
 
     def _requires_wide_int(self, fn: ast.FunctionDef) -> bool:
-        for node in ast.walk(fn):
-            if isinstance(node, ast.Constant) and isinstance(node.value, int):
-                if node.value < self.INT32_MIN or node.value > self.INT32_MAX:
-                    return True
-        return False
-
-    def _called_function_names(self, fn: ast.FunctionDef) -> Set[str]:
-        called: Set[str] = set()
-        for node in ast.walk(fn):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-                called.add(node.func.id)
-        return called
+        return requires_wide_int(fn, int_min=INT32_MIN, int_max=INT32_MAX)
 
     def _compute_wide_int_functions(self, funcs: List[ast.FunctionDef]) -> Set[str]:
-        func_names = {fn.name for fn in funcs}
-        wide = {fn.name for fn in funcs if self._requires_wide_int(fn)}
-        changed = True
-        while changed:
-            changed = False
-            for fn in funcs:
-                if fn.name in wide:
-                    continue
-                called = self._called_function_names(fn)
-                if any(name in wide for name in called if name in func_names):
-                    wide.add(fn.name)
-                    changed = True
-        return wide
+        return compute_wide_int_functions(funcs, int_min=INT32_MIN, int_max=INT32_MAX)
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
         """1ファイルを読み込み、C++へ変換して出力する。
@@ -103,6 +79,7 @@ class CppTranspiler:
         include_lines: Set[str] = {
             "#include <algorithm>",
             "#include <any>",
+            "#include <cstdint>",
             "#include <fstream>",
             "#include <ios>",
             "#include <iostream>",
@@ -454,7 +431,7 @@ class CppTranspiler:
             first = types[0]
             if all(t == first for t in types):
                 return first
-            number_types = {"int", "double"}
+            number_types = {"int", "long long", "double"}
             if all(t in number_types for t in types):
                 return "double"
             return fallback
@@ -463,9 +440,7 @@ class CppTranspiler:
             if isinstance(expr.value, bool):
                 return "bool"
             if isinstance(expr.value, int):
-                if self.force_long_int or expr.value < self.INT32_MIN or expr.value > self.INT32_MAX:
-                    return "long long"
-                return "int"
+                return "long long"
             if isinstance(expr.value, float):
                 return "double"
             if isinstance(expr.value, str):
@@ -477,7 +452,7 @@ class CppTranspiler:
                 t = self._infer_expr_cpp_type(item)
                 if t != "":
                     item_types.append(t)
-            inner = merge_types(item_types, "int")
+            inner = merge_types(item_types, "long long")
             return f"vector<{inner}>"
         if isinstance(expr, ast.Set):
             item_types = []
@@ -485,7 +460,7 @@ class CppTranspiler:
                 t = self._infer_expr_cpp_type(item)
                 if t != "":
                     item_types.append(t)
-            inner = merge_types(item_types, "int")
+            inner = merge_types(item_types, "long long")
             return f"unordered_set<{inner}>"
         if isinstance(expr, ast.Dict):
             key_types: List[str] = []
@@ -500,7 +475,7 @@ class CppTranspiler:
                 if vt != "":
                     value_types.append(vt)
             key_type = merge_types(key_types, "string")
-            val_type = merge_types(value_types, "int")
+            val_type = merge_types(value_types, "long long")
             return f"unordered_map<{key_type}, {val_type}>"
         if isinstance(expr, ast.BinOp):
             if isinstance(expr.op, (ast.Div, ast.Pow)):
@@ -514,7 +489,7 @@ class CppTranspiler:
             if expr.func.id in {"len"}:
                 return "size_t"
             if expr.func.id in {"int"}:
-                return "long long" if self.force_long_int else "int"
+                return "long long"
             if expr.func.id in {"float"}:
                 return "double"
             if expr.func.id in {"str"}:
@@ -1114,8 +1089,7 @@ class CppTranspiler:
             return "\"\""
         if isinstance(call.func, ast.Name) and call.func.id == "int":
             if len(call.args) == 1:
-                cast_t = "long long" if self.force_long_int else "int"
-                return f"static_cast<{cast_t}>({args_list[0]})"
+                return f"static_cast<long long>({args_list[0]})"
             return "0"
         if isinstance(call.func, ast.Name) and call.func.id == "float":
             if len(call.args) == 1:
@@ -1223,20 +1197,12 @@ class CppTranspiler:
                 return left
             return "auto"
         if isinstance(annotation, ast.Name):
-            if annotation.id == "int":
-                return "long long" if self.force_long_int else "int"
-            if annotation.id == "float":
-                return "double"
-            if annotation.id == "str":
-                return "string"
+            if annotation.id in CPP_PRIMITIVE_TYPES:
+                return CPP_PRIMITIVE_TYPES[annotation.id]
             if annotation.id == "bytearray":
                 return "string"
             if annotation.id == "bytes":
                 return "string"
-            if annotation.id == "bool":
-                return "bool"
-            if annotation.id == "None":
-                return "void"
             if annotation.id in self.class_names:
                 return f"pycs::gc::RcHandle<{annotation.id}>"
             return "auto"
@@ -1310,6 +1276,8 @@ class CppTranspiler:
 
     def _is_main_guard(self, stmt: ast.stmt) -> bool:
         """if __name__ == \"__main__\" かを判定する。"""
+        if is_main_guard(stmt):
+            return True
         if not isinstance(stmt, ast.If):
             return False
         test = stmt.test
@@ -1318,17 +1286,7 @@ class CppTranspiler:
                 return test.as_text() == '__name__ == "__main__"'
             except Exception:
                 return False
-        if len(test.ops) != 1 or len(test.comparators) != 1:
-            return False
-        if not isinstance(test.ops[0], ast.Eq):
-            return False
-        if not isinstance(test.left, ast.Name):
-            return False
-        if test.left.id != "__name__":
-            return False
-        if not isinstance(test.comparators[0], ast.Constant):
-            return False
-        return self.transpile_expr(test.comparators[0]) == '"__main__"'
+        return False
 
     def _raw_expr_to_cpp(self, text: str) -> str:
         """RawExpr の文字列を最小限 C++ 表記に正規化する。"""
@@ -1367,7 +1325,7 @@ class CppTranspiler:
         if text == "None":
             return "nullptr"
         if isinstance(value, int):
-            if self.force_long_int or value < self.INT32_MIN or value > self.INT32_MAX:
+            if self.force_long_int or value < INT32_MIN or value > INT32_MAX:
                 return f"{value}LL"
         return text
 

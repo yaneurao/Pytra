@@ -4,25 +4,28 @@
 
 import ast
 import argparse
-from dataclasses import dataclass
 from pathlib import Path
 import sys
 from typing import List, Set
+
+from common.transpile_shared import (
+    INT32_MAX,
+    INT32_MIN,
+    Scope,
+    TempNameFactory,
+    compute_wide_int_functions,
+    is_main_guard,
+    requires_wide_int,
+)
+from common.type_mappings import CS_PRIMITIVE_TYPES
 
 
 class TranspileError(Exception):
     pass
 
 
-@dataclass
-class Scope:
-    declared: Set[str]
-
-
 class CSharpTranspiler:
     INDENT = "    "
-    INT32_MIN = -(2**31)
-    INT32_MAX = 2**31 - 1
     RESERVED_WORDS = {
         "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char",
         "checked", "class", "const", "continue", "decimal", "default", "delegate",
@@ -42,7 +45,7 @@ class CSharpTranspiler:
         self.current_static_fields: Set[str] = set()
         self.typing_aliases: dict[str, str] = {}
         self.wide_int_functions: Set[str] = set()
-        self.temp_counter: int = 0
+        self.temp_names = TempNameFactory(prefix="__pytra")
         self.force_long_int: bool = False
 
     def _ident(self, name: str) -> str:
@@ -51,37 +54,13 @@ class CSharpTranspiler:
         return name
 
     def _new_temp(self, base: str) -> str:
-        self.temp_counter += 1
-        return f"__pytra_{base}_{self.temp_counter}"
+        return self.temp_names.new(base)
 
     def _requires_wide_int(self, fn: ast.FunctionDef) -> bool:
-        for node in ast.walk(fn):
-            if isinstance(node, ast.Constant) and isinstance(node.value, int):
-                if node.value < self.INT32_MIN or node.value > self.INT32_MAX:
-                    return True
-        return False
-
-    def _called_function_names(self, fn: ast.FunctionDef) -> Set[str]:
-        called: Set[str] = set()
-        for node in ast.walk(fn):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-                called.add(node.func.id)
-        return called
+        return requires_wide_int(fn, int_min=INT32_MIN, int_max=INT32_MAX)
 
     def _compute_wide_int_functions(self, funcs: List[ast.FunctionDef]) -> Set[str]:
-        func_names = {fn.name for fn in funcs}
-        direct = {fn.name for fn in funcs if self._requires_wide_int(fn)}
-        changed = True
-        while changed:
-            changed = False
-            for fn in funcs:
-                if fn.name in direct:
-                    continue
-                called = self._called_function_names(fn)
-                if any(name in direct for name in called if name in func_names):
-                    direct.add(fn.name)
-                    changed = True
-        return direct
+        return compute_wide_int_functions(funcs, int_min=INT32_MIN, int_max=INT32_MAX)
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
         # 1ファイル単位の変換入口。AST化してからC#文字列へ変換する。
@@ -381,9 +360,7 @@ class CSharpTranspiler:
             if isinstance(expr.value, bool):
                 return "bool"
             if isinstance(expr.value, int):
-                if expr.value < self.INT32_MIN or expr.value > self.INT32_MAX:
-                    return "long"
-                return "int"
+                return "long"
             if isinstance(expr.value, float):
                 return "double"
             if isinstance(expr.value, str):
@@ -418,13 +395,10 @@ class CSharpTranspiler:
         # 関数定義を変換する。クラス内の __init__ はC#コンストラクタへ置き換える。
         is_constructor = in_class and fn.name == "__init__"
 
-        if fn.returns is None:
-            raise TranspileError(f"Function '{fn.name}' requires return type annotation")
-
         prev_force_long_int = self.force_long_int
         self.force_long_int = fn.name in self.wide_int_functions or self._requires_wide_int(fn)
         try:
-            return_type = self._map_annotation(fn.returns)
+            return_type = "void" if fn.returns is None else self._map_annotation(fn.returns)
             params: List[str] = []
             declared = set()
 
@@ -555,6 +529,9 @@ class CSharpTranspiler:
         name = stmt.targets[0].id
         if name not in scope.declared:
             scope.declared.add(name)
+            inferred_type = self._infer_expr_csharp_type(stmt.value)
+            if inferred_type is not None:
+                return [f"{inferred_type} {self._ident(name)} = {self.transpile_expr(stmt.value)};"]
             return [f"var {self._ident(name)} = {self.transpile_expr(stmt.value)};"]
 
         return [f"{self._ident(name)} = {self.transpile_expr(stmt.value)};"]
@@ -811,8 +788,7 @@ class CSharpTranspiler:
             return "new List<byte>()"
         if isinstance(call.func, ast.Name) and call.func.id == "int":
             if len(args_list) == 1:
-                cast_type = "long" if self.force_long_int else "int"
-                return f"({cast_type})({args_list[0]})"
+                return f"(long)({args_list[0]})"
             return "0"
         if isinstance(call.func, ast.Name) and call.func.id == "float":
             if len(args_list) == 1:
@@ -871,18 +847,13 @@ class CSharpTranspiler:
         if isinstance(annotation, ast.Name):
             mapped_name = self.typing_aliases.get(annotation.id, annotation.id)
             mapping = {
-                "int": "long" if self.force_long_int else "int",
-                "float": "double",
-                "str": "string",
+                **CS_PRIMITIVE_TYPES,
                 "bytearray": "List<byte>",
                 "bytes": "List<byte>",
-                "bool": "bool",
-                "None": "void",
                 "list": "List<object>",
                 "set": "HashSet<object>",
                 "dict": "Dictionary<object, object>",
                 "tuple": "Tuple<object>",
-                "object": "object",
             }
             if mapped_name in mapping:
                 return mapping[mapped_name]
@@ -921,21 +892,7 @@ class CSharpTranspiler:
         return False
 
     def _is_main_guard(self, stmt: ast.stmt) -> bool:
-        if not isinstance(stmt, ast.If):
-            return False
-        test = stmt.test
-        if not isinstance(test, ast.Compare):
-            return False
-        if len(test.ops) != 1 or len(test.comparators) != 1:
-            return False
-        if not isinstance(test.ops[0], ast.Eq):
-            return False
-        return (
-            isinstance(test.left, ast.Name)
-            and test.left.id == "__name__"
-            and isinstance(test.comparators[0], ast.Constant)
-            and test.comparators[0].value == "__main__"
-        )
+        return is_main_guard(stmt)
 
     def _constant(self, value: object) -> str:
         if isinstance(value, bool):
@@ -943,7 +900,7 @@ class CSharpTranspiler:
         if value is None:
             return "null"
         if isinstance(value, int):
-            if value < self.INT32_MIN or value > self.INT32_MAX:
+            if value < INT32_MIN or value > INT32_MAX:
                 return f"{value}L"
             return str(value)
         if isinstance(value, str):
