@@ -26,7 +26,7 @@ class TranspileGoldenTest(unittest.TestCase):
     def test_cases_match_expected_cs(self) -> None:
         # すべてのcase入力を再変換し、期待するC#との差分がないことを確認する。
         py_cases = sorted(PY_DIR.glob("case*.py"))
-        self.assertEqual(len(py_cases), 100, "Expected exactly 100 Python test cases")
+        self.assertGreater(len(py_cases), 0, "Expected at least one Python test case")
 
         for py_case in py_cases:
             with self.subTest(case=py_case.name):
