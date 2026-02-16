@@ -28,6 +28,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `cpp_type_mappings.py`: C++ 専用の型マップ
   - `cpp_module/`: C++ 側ランタイム補助モジュール
   - `cs_module/`: C# 側ランタイム補助モジュール
+  - `js_module/`: JavaScript 側ランタイム補助モジュール
+  - `ts_module/`: TypeScript 側ランタイム補助モジュール
   - `py_module/`: Python 側の自作ライブラリ配置先
 - `test/`
   - `py/`: 入力 Python サンプル
@@ -114,7 +116,9 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 
 - `import ast` を含むコードの C++ 変換では、`cpp_module/ast` 実装を前提に動作します。
 - 制約: Python 側で `import` / `from ... import ...` するモジュールは、原則として `src/cpp_module/` に対応する `*.h` / `*.cpp` 実装を用意する必要があります。
+- 制約: JavaScript / TypeScript 向けのネイティブ変換で `import` / `from ... import ...` を扱う場合は、原則として `src/js_module/` / `src/ts_module/` に対応実装を用意する必要があります。
 - 制約: 生成 C++ 側で使う補助関数（`py_to_string`, `py_in`, `py_print`, `py_write` など）は `cpp_module/py_runtime.h` に集約し、生成 `.cpp` へ重複定義しません。
+- 制約: 生成 JavaScript / TypeScript 側で使う補助関数（`len`, `print`, `range` 相当など）は `js_module/py_runtime.js` / `ts_module/py_runtime.ts` に集約し、生成コードへ重複定義しません。
 
 ### 5.2 関数引数の受け渡し方針
 

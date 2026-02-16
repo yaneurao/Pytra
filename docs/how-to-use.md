@@ -123,6 +123,7 @@ npx tsx test/ts/case28_iterable.ts
 - 対象は Python のサブセットです。一般的な Python コードすべてが変換できるわけではありません。
 - 変数には、型注釈が必要です。（ただし一部は推論可能）。
 - Python で `import` するモジュールは、対応するランタイム実装が `src/cpp_module/` または `src/cs_module/` に必要です。
+- JavaScript / TypeScript のネイティブ変換で `import` を扱う場合は、対応するランタイム実装を `src/js_module/` / `src/ts_module/` に用意します（例: `py_runtime`, `time`, `math`）。
 - `sample/py/` を Python のまま実行する場合は、`py_module` を解決するため `PYTHONPATH=src` を付けて実行してください（例: `PYTHONPATH=src python3 sample/py/01_mandelbrot.py`）。
 - 生成された C++/C# は「読みやすさ」より「変換の忠実性」を優先しています。
 - 現在の `py2rs.py` は最小実装で、Python スクリプトを Rust 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
