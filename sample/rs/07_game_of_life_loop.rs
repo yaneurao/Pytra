@@ -15,11 +15,11 @@ fn next_state(grid: &Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<Vec<i64>> {
                     if py_bool(&((((dx) != (0)) || ((dy) != (0))))) {
                         let mut nx = ((((((x) + (dx))) + (w))) % (w));
                         let mut ny = ((((((y) + (dy))) + (h))) % (h));
-                        cnt = cnt + (((grid)[ny as usize]).clone())[nx as usize];
+                        cnt = cnt + ((grid)[ny as usize])[nx as usize];
                     }
                 }
             }
-            let mut alive = (((grid)[y as usize]).clone())[x as usize];
+            let mut alive = ((grid)[y as usize])[x as usize];
             if py_bool(&((((alive) == (1)) && (((cnt) == (2)) || ((cnt) == (3)))))) {
                 row.push(1);
             } else {
@@ -41,7 +41,7 @@ fn render(grid: &Vec<Vec<i64>>, mut w: i64, mut h: i64, mut cell: i64) -> Vec<u8
     let mut frame = vec![0u8; (((width) * (height))) as usize];
     for y in (0)..(h) {
         for x in (0)..(w) {
-            let mut v = (if py_bool(&((((grid)[y as usize]).clone())[x as usize])) { 255 } else { 0 });
+            let mut v = (if py_bool(&(((grid)[y as usize])[x as usize])) { 255 } else { 0 });
             for yy in (0)..(cell) {
                 let mut base = ((((((((y) * (cell))) + (yy))) * (width))) + (((x) * (cell))));
                 for xx in (0)..(cell) {

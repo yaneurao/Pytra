@@ -9,7 +9,7 @@ fn capture(grid: &Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<u8> {
     let mut i = 0;
     for y in (0)..(h) {
         for x in (0)..(w) {
-            (frame)[i as usize] = ((if py_bool(&((((grid)[y as usize]).clone())[x as usize])) { 255 } else { 0 })) as u8;
+            (frame)[i as usize] = ((if py_bool(&(((grid)[y as usize])[x as usize])) { 255 } else { 0 })) as u8;
             i = i + 1;
         }
     }
@@ -36,7 +36,7 @@ fn run_08_langtons_ant() -> () {
     let mut capture_every = 3000;
     let mut frames: Vec<Vec<u8>> = vec![];
     for i in (0)..(steps_total) {
-        if py_bool(&((((((grid)[y as usize]).clone())[x as usize]) == (0)))) {
+        if py_bool(&(((((grid)[y as usize])[x as usize]) == (0)))) {
             d = ((((d) + (1))) % (4));
             ((grid)[y as usize])[x as usize] = 1;
         } else {

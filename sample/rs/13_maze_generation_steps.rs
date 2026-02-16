@@ -10,7 +10,7 @@ fn capture(grid: &Vec<Vec<i64>>, mut w: i64, mut h: i64, mut scale: i64) -> Vec<
     let mut frame = vec![0u8; (((width) * (height))) as usize];
     for y in (0)..(h) {
         for x in (0)..(w) {
-            let mut v = (if py_bool(&((((((grid)[y as usize]).clone())[x as usize]) == (0)))) { 255 } else { 40 });
+            let mut v = (if py_bool(&(((((grid)[y as usize])[x as usize]) == (0)))) { 255 } else { 40 });
             for yy in (0)..(scale) {
                 let mut base = ((((((((y) * (scale))) + (yy))) * (width))) + (((x) * (scale))));
                 for xx in (0)..(scale) {
@@ -54,7 +54,7 @@ fn run_13_maze_generation_steps() -> () {
             let mut dy = __pytra_tuple_rhs_2.1;
             let mut nx = ((x) + (dx));
             let mut ny = ((y) + (dy));
-            if py_bool(&((((nx) >= (1)) && ((nx) < (((cell_w) - (1)))) && ((ny) >= (1)) && ((ny) < (((cell_h) - (1)))) && (((((grid)[ny as usize]).clone())[nx as usize]) == (1))))) {
+            if py_bool(&((((nx) >= (1)) && ((nx) < (((cell_w) - (1)))) && ((ny) >= (1)) && ((ny) < (((cell_h) - (1)))) && ((((grid)[ny as usize])[nx as usize]) == (1))))) {
                 if py_bool(&(((dx) == (2)))) {
                     candidates.push((nx, ny, ((x) + (1)), y));
                 } else {
