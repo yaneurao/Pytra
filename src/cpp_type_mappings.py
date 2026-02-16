@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 CPP_PRIMITIVE_TYPES = {
+    # Python 標準の int は C++ では long long へ寄せる（実装方針）。
     "int": "long long",
     "int8": "int8_t",
     "uint8": "uint8_t",

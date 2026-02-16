@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 CS_PRIMITIVE_TYPES = {
+    # Python 標準の int は C# では long として扱う（既存実装方針）。
     "int": "long",
     "int8": "sbyte",
     "uint8": "byte",
