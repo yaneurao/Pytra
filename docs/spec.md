@@ -65,7 +65,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
 - 生成コードは `src/cpp_module/` のランタイム補助実装を利用します。
-- `py_to_string` などの補助関数は生成 `.cpp` に直書きせず、`cpp_module/py_runtime_modules.h` 側を利用します。
+- `py_to_string` などの補助関数は生成 `.cpp` に直書きせず、`cpp_module/py_runtime.h` 側を利用します。
 - class は `pycs::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
 - class member は `inline static` メンバーとして生成します。
 - `__init__` 内 `self.xxx` 代入はインスタンスメンバーとして生成します。
@@ -94,13 +94,13 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - `src/cpp_module/dataclasses.h`, `src/cpp_module/dataclasses.cpp`
 - `src/cpp_module/gc.h`, `src/cpp_module/gc.cpp`
 - `src/cpp_module/sys.h`, `src/cpp_module/sys.cpp`
-- `src/cpp_module/py_runtime_modules.h`
+- `src/cpp_module/py_runtime.h`
 
 注意:
 
 - `import ast` を含むコードの C++ 変換では、`cpp_module/ast` 実装を前提に動作します。
 - 制約: Python 側で `import` / `from ... import ...` するモジュールは、原則として `src/cpp_module/` に対応する `*.h` / `*.cpp` 実装を用意する必要があります。
-- 制約: 生成 C++ 側で使う補助関数（`py_to_string`, `py_in`, `py_print`, `py_write` など）は `cpp_module/py_runtime_modules.h` に集約し、生成 `.cpp` へ重複定義しません。
+- 制約: 生成 C++ 側で使う補助関数（`py_to_string`, `py_in`, `py_print`, `py_write` など）は `cpp_module/py_runtime.h` に集約し、生成 `.cpp` へ重複定義しません。
 
 ### 5.2 関数引数の受け渡し方針
 

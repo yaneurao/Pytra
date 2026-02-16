@@ -92,7 +92,7 @@ class CppTranspiler:
             "#include <stdexcept>",
             "#include <type_traits>",
             '#include "cpp_module/gc.h"',
-            '#include "cpp_module/py_runtime_modules.h"',
+            '#include "cpp_module/py_runtime.h"',
         }
         self.class_names = set()
         self.exception_class_names = set()

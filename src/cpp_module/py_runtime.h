@@ -1,8 +1,8 @@
 // このファイルは Python 由来の補助モジュールの共通公開ヘッダです。
 // 各モジュールの実体は専用ファイル（例: sys.h / sys.cpp）へ分離します。
 
-#ifndef PYCS_CPP_MODULE_PY_RUNTIME_MODULES_H
-#define PYCS_CPP_MODULE_PY_RUNTIME_MODULES_H
+#ifndef PYCS_CPP_MODULE_PY_RUNTIME_H
+#define PYCS_CPP_MODULE_PY_RUNTIME_H
 
 #include <algorithm>
 #include <any>
@@ -446,4 +446,4 @@ std::vector<std::tuple<A, B>> py_zip(const std::vector<A>& a, const std::vector<
     return out;
 }
 
-#endif  // PYCS_CPP_MODULE_PY_RUNTIME_MODULES_H
+#endif  // PYCS_CPP_MODULE_PY_RUNTIME_H
