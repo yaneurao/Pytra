@@ -20,12 +20,11 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `py2rs.py`: Python -> Rust 変換器
   - `py2js.py`: Python -> JavaScript 変換器
   - `py2ts.py`: Python -> TypeScript 変換器
+  - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `common/`: 複数言語トランスパイラで共有する基底実装・共通ユーティリティ
     - `base_transpiler.py`: `TranspileError` と共通基底クラス
     - `transpile_shared.py`: AST 解析補助（スコープ、main guard 判定など）
     - `js_ts_native_transpiler.py`: JS/TS 向けネイティブコード生成
-  - `cs_type_mappings.py`: C# 専用の型マップ
-  - `cpp_type_mappings.py`: C++ 専用の型マップ
   - `cpp_module/`: C++ 側ランタイム補助モジュール
   - `cs_module/`: C# 側ランタイム補助モジュール
   - `js_module/`: JavaScript 側ランタイム補助モジュール
@@ -188,7 +187,7 @@ python -m unittest discover -s test -p "test_*.py" -v
 - 共通化ルール:
   - `src/common/` には、言語非依存で再利用される処理のみを配置します（例: `TranspileError`, 共通基底クラス、AST 補助）。
   - 言語固有の仕様（型マッピング、キーワード予約語、ランタイム名など）は `src/common/` に置きません。
-  - 例: 型マップは `src/cpp_type_mappings.py` / `src/cs_type_mappings.py` のように言語別モジュールへ配置します。
+  - 言語固有の小規模設定（例: 型マップ）は各トランスパイラ本体（`py2*.py`）へ内蔵し、`src/` 直下へ補助ファイルを増やしません。
   - 新規ターゲット言語（JavaScript / Rust など）追加時は、まず `src/common/` の共通実装を利用し、差分のみ言語別実装へ追加します。
 - コメント記述ルール:
   - class 名・関数名・メンバー変数名には、必ず用途が分かる日本語コメント（説明）を付与します。

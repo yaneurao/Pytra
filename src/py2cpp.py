@@ -13,11 +13,29 @@ from typing import List, Set
 try:
     from common.base_transpiler import BaseTranspiler, TranspileError
     from common.transpile_shared import INT32_MAX, INT32_MIN, Scope
-    from cpp_type_mappings import CPP_PRIMITIVE_TYPES
 except ModuleNotFoundError:
     from src.common.base_transpiler import BaseTranspiler, TranspileError
     from src.common.transpile_shared import INT32_MAX, INT32_MIN, Scope
-    from src.cpp_type_mappings import CPP_PRIMITIVE_TYPES
+
+
+# Python 基本型名から C++ 基本型名への変換テーブル。
+CPP_PRIMITIVE_TYPES = {
+    # Python 標準の int は C++ では long long へ寄せる（実装方針）。
+    "int": "long long",
+    "int8": "int8_t",
+    "uint8": "uint8_t",
+    "int16": "int16_t",
+    "uint16": "uint16_t",
+    "int32": "int32_t",
+    "uint32": "uint32_t",
+    "int64": "int64_t",
+    "uint64": "uint64_t",
+    "float": "double",
+    "float32": "float",
+    "str": "string",
+    "bool": "bool",
+    "None": "void",
+}
 
 
 class CppTranspiler(BaseTranspiler):

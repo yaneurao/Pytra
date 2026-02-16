@@ -11,11 +11,30 @@ from typing import List, Set
 try:
     from common.base_transpiler import BaseTranspiler, TranspileError
     from common.transpile_shared import Scope
-    from cs_type_mappings import CS_PRIMITIVE_TYPES
 except ModuleNotFoundError:
     from src.common.base_transpiler import BaseTranspiler, TranspileError
     from src.common.transpile_shared import Scope
-    from src.cs_type_mappings import CS_PRIMITIVE_TYPES
+
+
+# Python 基本型名から C# 基本型名への変換テーブル。
+CS_PRIMITIVE_TYPES = {
+    # Python 標準の int は C# では long として扱う（既存実装方針）。
+    "int": "long",
+    "int8": "sbyte",
+    "uint8": "byte",
+    "int16": "short",
+    "uint16": "ushort",
+    "int32": "int",
+    "uint32": "uint",
+    "int64": "long",
+    "uint64": "ulong",
+    "float": "double",
+    "float32": "float",
+    "str": "string",
+    "bool": "bool",
+    "None": "void",
+    "object": "object",
+}
 
 
 class CSharpTranspiler(BaseTranspiler):
