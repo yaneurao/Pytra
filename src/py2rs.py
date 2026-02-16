@@ -738,6 +738,10 @@ class RustTranspiler(BaseTranspiler):
                 return args[0]
             if fn == "ord" and len(args) == 1:
                 return f"(({args[0]}).chars().next().unwrap() as i64)"
+            if fn == "max" and len(args) == 2:
+                return f"(if ({args[0]}) > ({args[1]}) {{ {args[0]} }} else {{ {args[1]} }})"
+            if fn == "min" and len(args) == 2:
+                return f"(if ({args[0]}) < ({args[1]}) {{ {args[0]} }} else {{ {args[1]} }})"
             if fn == "save_gif":
                 if len(args) != 7:
                     raise TranspileError("save_gif requires 7 arguments")
@@ -1131,7 +1135,7 @@ def transpile_file_native(input_path: Path, output_path: Path) -> None:
     rust = (
         f'#[path = "{runtime_rel}"]\n'
         "mod py_runtime;\n"
-        "use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};\n\n"
+        "use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};\n\n"
         + rust_body
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)

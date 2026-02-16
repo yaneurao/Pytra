@@ -550,6 +550,10 @@ class CSharpTranspiler(BaseTranspiler):
             return [f"{target} = Math.Pow({target}, {value});"]
         if isinstance(stmt.op, ast.FloorDiv):
             return [f"{target} = ({target} / {value});"]
+        if isinstance(stmt.op, ast.LShift):
+            return [f"{target} = ({target} << (int)({value}));"]
+        if isinstance(stmt.op, ast.RShift):
+            return [f"{target} = ({target} >> (int)({value}));"]
         return [f"{target} = ({target} {self._binop(stmt.op)} {value});"]
 
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
@@ -735,6 +739,10 @@ class CSharpTranspiler(BaseTranspiler):
                 return f"((double)({left}) / (double)({right}))"
             if isinstance(expr.op, ast.FloorDiv):
                 return f"(long)Math.Floor(({left}) / (double)({right}))"
+            if isinstance(expr.op, ast.LShift):
+                return f"({left} << (int)({right}))"
+            if isinstance(expr.op, ast.RShift):
+                return f"({left} >> (int)({right}))"
             return f"({left} {self._binop(expr.op)} {right})"
         if isinstance(expr, ast.UnaryOp):
             return f"({self._unaryop(expr.op)}{self.transpile_expr(expr.operand)})"
@@ -820,6 +828,14 @@ class CSharpTranspiler(BaseTranspiler):
             if len(args_list) == 1:
                 return f"Pytra.CsModule.py_runtime.py_ord({args_list[0]})"
             return "0L"
+        if isinstance(call.func, ast.Name) and call.func.id == "max":
+            if len(args_list) == 2:
+                return f"(({args_list[0]}) > ({args_list[1]}) ? ({args_list[0]}) : ({args_list[1]}))"
+            return "0"
+        if isinstance(call.func, ast.Name) and call.func.id == "min":
+            if len(args_list) == 2:
+                return f"(({args_list[0]}) < ({args_list[1]}) ? ({args_list[0]}) : ({args_list[1]}))"
+            return "0"
 
         if isinstance(call.func, ast.Name):
             if call.func.id == "save_gif":

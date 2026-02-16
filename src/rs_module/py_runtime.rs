@@ -318,6 +318,10 @@ pub fn math_exp(v: f64) -> f64 {
     v.exp()
 }
 
+pub fn math_floor(v: f64) -> f64 {
+    v.floor()
+}
+
 pub fn py_grayscale_palette() -> Vec<u8> {
     let mut p = Vec::<u8>::with_capacity(256 * 3);
     let mut i: u16 = 0;
