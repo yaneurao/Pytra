@@ -1,3 +1,5 @@
+// このファイルは自動生成です（Python -> Kotlin embedded mode）。
+
 // Kotlin 埋め込み実行向け Python ランタイム補助。
 
 import java.io.File
@@ -61,5 +63,19 @@ object PyRuntime {
         } catch (_: Exception) {
         }
         return code
+    }
+}
+
+class pytra_04_monte_carlo_pi {
+    companion object {
+        // 埋め込み Python ソース（Base64）。
+        private const val PYTRA_EMBEDDED_SOURCE_BASE64: String = "IyAxMDog44Oi44Oz44OG44Kr44Or44Ot5rOV44Gn5YaG5ZGo546H44KS5o6o5a6a44GZ44KL44K144Oz44OX44Or44Gn44GZ44CCCiMgaW1wb3J0IHJhbmRvbSDjgpLkvb/jgo/jgZrjgIFMQ0cg44KS6Ieq5YmN5a6f6KOF44GX44Gm44OI44Op44Oz44K544OR44Kk44Or5LqS5o+b5oCn44KS6auY44KB44Gm44GE44G+44GZ44CCCgpmcm9tIHRpbWUgaW1wb3J0IHBlcmZfY291bnRlcgoKCmRlZiBsY2dfbmV4dChzdGF0ZTogaW50KSAtPiBpbnQ6CiAgICAjIDMyYml0IExDRwogICAgcmV0dXJuICgxNjY0NTI1ICogc3RhdGUgKyAxMDEzOTA0MjIzKSAlIDQyOTQ5NjcyOTYKCgpkZWYgcnVuX3BpX3RyaWFsKHRvdGFsX3NhbXBsZXM6IGludCwgc2VlZDogaW50KSAtPiBmbG9hdDoKICAgIGluc2lkZTogaW50ID0gMAogICAgc3RhdGU6IGludCA9IHNlZWQKCiAgICBmb3IgXyBpbiByYW5nZSh0b3RhbF9zYW1wbGVzKToKICAgICAgICBzdGF0ZSA9IGxjZ19uZXh0KHN0YXRlKQogICAgICAgIHg6IGZsb2F0ID0gc3RhdGUgLyA0Mjk0OTY3Mjk2LjAKCiAgICAgICAgc3RhdGUgPSBsY2dfbmV4dChzdGF0ZSkKICAgICAgICB5OiBmbG9hdCA9IHN0YXRlIC8gNDI5NDk2NzI5Ni4wCgogICAgICAgIGR4OiBmbG9hdCA9IHggLSAwLjUKICAgICAgICBkeTogZmxvYXQgPSB5IC0gMC41CiAgICAgICAgaWYgZHggKiBkeCArIGR5ICogZHkgPD0gMC4yNToKICAgICAgICAgICAgaW5zaWRlICs9IDEKCiAgICByZXR1cm4gNC4wICogaW5zaWRlIC8gdG90YWxfc2FtcGxlcwoKCmRlZiBydW5fbW9udGVfY2FybG9fcGkoKSAtPiBOb25lOgogICAgc2FtcGxlczogaW50ID0gNTQwMDAwMDAKICAgIHNlZWQ6IGludCA9IDEyMzQ1Njc4OQoKICAgIHN0YXJ0OiBmbG9hdCA9IHBlcmZfY291bnRlcigpCiAgICBwaV9lc3Q6IGZsb2F0ID0gcnVuX3BpX3RyaWFsKHNhbXBsZXMsIHNlZWQpCiAgICBlbGFwc2VkOiBmbG9hdCA9IHBlcmZfY291bnRlcigpIC0gc3RhcnQKCiAgICBwcmludCgic2FtcGxlczoiLCBzYW1wbGVzKQogICAgcHJpbnQoInBpX2VzdGltYXRlOiIsIHBpX2VzdCkKICAgIHByaW50KCJlbGFwc2VkX3NlYzoiLCBlbGFwc2VkKQoKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBydW5fbW9udGVfY2FybG9fcGkoKQo="
+
+        // main は埋め込み Python を実行するエントリポイント。
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val code: Int = PyRuntime.runEmbeddedPython(PYTRA_EMBEDDED_SOURCE_BASE64, args)
+            kotlin.system.exitProcess(code)
+        }
     }
 }

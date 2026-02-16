@@ -1,3 +1,5 @@
+// このファイルは自動生成です（Python -> Swift embedded mode）。
+
 // Swift 埋め込み実行向け Python ランタイム補助。
 
 import Foundation
@@ -28,14 +30,7 @@ func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = ["python3", scriptURL.path] + args
-    var env = ProcessInfo.processInfo.environment
-    // Python 製補助モジュールを import できるよう、src を PYTHONPATH に追加する。
-    if let current = env["PYTHONPATH"], !current.isEmpty {
-        env["PYTHONPATH"] = "src:\(current)"
-    } else {
-        env["PYTHONPATH"] = "src"
-    }
-    process.environment = env
+    process.environment = ProcessInfo.processInfo.environment
     process.standardInput = FileHandle.standardInput
     process.standardOutput = FileHandle.standardOutput
     process.standardError = FileHandle.standardError
@@ -52,3 +47,9 @@ func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
     try? FileManager.default.removeItem(at: scriptURL)
     return process.terminationStatus
 }
+
+// 埋め込み Python ソース（Base64）。
+let pytraEmbeddedSourceBase64 = "IyDjgZPjga7jg5XjgqHjgqTjg6vjga8gYHRlc3QvcHkvY2FzZTI3X2NsYXNzX2luc3RhbmNlLnB5YCDjga7jg4bjgrnjg4gv5a6f6KOF44Kz44O844OJ44Gn44GZ44CCCiMg5b255Ymy44GM5YiG44GL44KK44KE44GZ44GE44KI44GG44Gr44CB6Kqt44G/5omL5ZCR44GR44Gu6Kqs5piO44Kz44Oh44Oz44OI44KS5LuY5LiO44GX44Gm44GE44G+44GZ44CCCiMg5aSJ5pu05pmC44Gv44CB5pei5a2Y5LuV5qeY44Go44Gu5pW05ZCI5oCn44Go44OG44K544OI57WQ5p6c44KS5b+F44Ga56K66KqN44GX44Gm44GP44Gg44GV44GE44CCCgpjbGFzcyBCb3gxMDA6CiAgICBkZWYgX19pbml0X18oc2VsZiwgc2VlZDogaW50KSAtPiBOb25lOgogICAgICAgIHNlbGYuc2VlZCA9IHNlZWQKCiAgICBkZWYgbmV4dChzZWxmKSAtPiBpbnQ6CiAgICAgICAgc2VsZi5zZWVkICs9IDEKICAgICAgICByZXR1cm4gc2VsZi5zZWVkCgoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIGI6IEJveDEwMCA9IEJveDEwMCgzKQogICAgcHJpbnQoYi5uZXh0KCkpCg=="
+let pytraArgs = Array(CommandLine.arguments.dropFirst())
+let pytraCode = pytraRunEmbeddedPython(pytraEmbeddedSourceBase64, pytraArgs)
+Foundation.exit(pytraCode)

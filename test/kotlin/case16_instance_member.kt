@@ -1,3 +1,5 @@
+// このファイルは自動生成です（Python -> Kotlin embedded mode）。
+
 // Kotlin 埋め込み実行向け Python ランタイム補助。
 
 import java.io.File
@@ -36,14 +38,8 @@ object PyRuntime {
 
         val command = mutableListOf("python3", tempFile.toString())
         command.addAll(args)
-        // Python 製補助モジュールを import できるよう、src を PYTHONPATH に追加する。
-        val env = mutableMapOf<String, String>()
-        env.putAll(System.getenv())
-        val currentPyPath = env["PYTHONPATH"]
-        env["PYTHONPATH"] = if (currentPyPath.isNullOrEmpty()) "src" else "src:$currentPyPath"
         val process: Process = try {
             ProcessBuilder(command)
-                .apply { environment().putAll(env) }
                 .inheritIO()
                 .start()
         } catch (ex: Exception) {
@@ -61,5 +57,19 @@ object PyRuntime {
         } catch (_: Exception) {
         }
         return code
+    }
+}
+
+class case16_instance_member {
+    companion object {
+        // 埋め込み Python ソース（Base64）。
+        private const val PYTRA_EMBEDDED_SOURCE_BASE64: String = "IyDjgZPjga7jg5XjgqHjgqTjg6vjga8gYHRlc3QvcHkvY2FzZTE2X2luc3RhbmNlX21lbWJlci5weWAg44Gu44OG44K544OIL+Wun+ijheOCs+ODvOODieOBp+OBmeOAggojIOW9ueWJsuOBjOWIhuOBi+OCiuOChOOBmeOBhOOCiOOBhuOBq+OAgeiqreOBv+aJi+WQkeOBkeOBruiqrOaYjuOCs+ODoeODs+ODiOOCkuS7mOS4juOBl+OBpuOBhOOBvuOBmeOAggojIOWkieabtOaZguOBr+OAgeaXouWtmOS7leanmOOBqOOBruaVtOWQiOaAp+OBqOODhuOCueODiOe1kOaenOOCkuW/heOBmueiuuiqjeOBl+OBpuOBj+OBoOOBleOBhOOAggoKY2xhc3MgUG9pbnQ6CiAgICBkZWYgX19pbml0X18oc2VsZiwgeDogaW50LCB5OiBpbnQpIC0+IE5vbmU6CiAgICAgICAgc2VsZi54ID0geAogICAgICAgIHNlbGYueTogaW50ID0geQoKICAgIGRlZiB0b3RhbChzZWxmKSAtPiBpbnQ6CiAgICAgICAgcmV0dXJuIHNlbGYueCArIHNlbGYueQoKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBwOiBQb2ludCA9IFBvaW50KDIsIDUpCiAgICBwcmludChwLnRvdGFsKCkpCg=="
+
+        // main は埋め込み Python を実行するエントリポイント。
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val code: Int = PyRuntime.runEmbeddedPython(PYTRA_EMBEDDED_SOURCE_BASE64, args)
+            kotlin.system.exitProcess(code)
+        }
     }
 }

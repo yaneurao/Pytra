@@ -1,3 +1,5 @@
+// このファイルは自動生成です（Python -> Kotlin embedded mode）。
+
 // Kotlin 埋め込み実行向け Python ランタイム補助。
 
 import java.io.File
@@ -36,14 +38,8 @@ object PyRuntime {
 
         val command = mutableListOf("python3", tempFile.toString())
         command.addAll(args)
-        // Python 製補助モジュールを import できるよう、src を PYTHONPATH に追加する。
-        val env = mutableMapOf<String, String>()
-        env.putAll(System.getenv())
-        val currentPyPath = env["PYTHONPATH"]
-        env["PYTHONPATH"] = if (currentPyPath.isNullOrEmpty()) "src" else "src:$currentPyPath"
         val process: Process = try {
             ProcessBuilder(command)
-                .apply { environment().putAll(env) }
                 .inheritIO()
                 .start()
         } catch (ex: Exception) {
@@ -61,5 +57,19 @@ object PyRuntime {
         } catch (_: Exception) {
         }
         return code
+    }
+}
+
+class case30_slice_basic {
+    companion object {
+        // 埋め込み Python ソース（Base64）。
+        private const val PYTRA_EMBEDDED_SOURCE_BASE64: String = "IyBjYXNlMzA6IOOCueODqeOCpOOCueani+aWhyBhW2I6Y10g44Gu5Z+65pys44OG44K544OI77yIc3RlcOOBquOBl++8ieOAggoKZGVmIG1haW4oKSAtPiBOb25lOgogICAgbnVtczogbGlzdFtpbnRdID0gWzEwLCAyMCwgMzAsIDQwLCA1MF0KICAgIHRleHQ6IHN0ciA9ICJhYmNkZWYiCgogICAgbWlkX251bXM6IGxpc3RbaW50XSA9IG51bXNbMTo0XQogICAgbWlkX3RleHQ6IHN0ciA9IHRleHRbMjo1XQoKICAgIHByaW50KG1pZF9udW1zWzBdKQogICAgcHJpbnQobWlkX251bXNbMl0pCiAgICBwcmludChtaWRfdGV4dCkKCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgbWFpbigpCg=="
+
+        // main は埋め込み Python を実行するエントリポイント。
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val code: Int = PyRuntime.runEmbeddedPython(PYTRA_EMBEDDED_SOURCE_BASE64, args)
+            kotlin.system.exitProcess(code)
+        }
     }
 }

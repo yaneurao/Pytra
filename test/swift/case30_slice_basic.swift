@@ -1,3 +1,5 @@
+// このファイルは自動生成です（Python -> Swift embedded mode）。
+
 // Swift 埋め込み実行向け Python ランタイム補助。
 
 import Foundation
@@ -28,14 +30,7 @@ func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = ["python3", scriptURL.path] + args
-    var env = ProcessInfo.processInfo.environment
-    // Python 製補助モジュールを import できるよう、src を PYTHONPATH に追加する。
-    if let current = env["PYTHONPATH"], !current.isEmpty {
-        env["PYTHONPATH"] = "src:\(current)"
-    } else {
-        env["PYTHONPATH"] = "src"
-    }
-    process.environment = env
+    process.environment = ProcessInfo.processInfo.environment
     process.standardInput = FileHandle.standardInput
     process.standardOutput = FileHandle.standardOutput
     process.standardError = FileHandle.standardError
@@ -52,3 +47,9 @@ func pytraRunEmbeddedPython(_ sourceBase64: String, _ args: [String]) -> Int32 {
     try? FileManager.default.removeItem(at: scriptURL)
     return process.terminationStatus
 }
+
+// 埋め込み Python ソース（Base64）。
+let pytraEmbeddedSourceBase64 = "IyBjYXNlMzA6IOOCueODqeOCpOOCueani+aWhyBhW2I6Y10g44Gu5Z+65pys44OG44K544OI77yIc3RlcOOBquOBl++8ieOAggoKZGVmIG1haW4oKSAtPiBOb25lOgogICAgbnVtczogbGlzdFtpbnRdID0gWzEwLCAyMCwgMzAsIDQwLCA1MF0KICAgIHRleHQ6IHN0ciA9ICJhYmNkZWYiCgogICAgbWlkX251bXM6IGxpc3RbaW50XSA9IG51bXNbMTo0XQogICAgbWlkX3RleHQ6IHN0ciA9IHRleHRbMjo1XQoKICAgIHByaW50KG1pZF9udW1zWzBdKQogICAgcHJpbnQobWlkX251bXNbMl0pCiAgICBwcmludChtaWRfdGV4dCkKCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgbWFpbigpCg=="
+let pytraArgs = Array(CommandLine.arguments.dropFirst())
+let pytraCode = pytraRunEmbeddedPython(pytraEmbeddedSourceBase64, pytraArgs)
+Foundation.exit(pytraCode)
