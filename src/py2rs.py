@@ -10,18 +10,17 @@ import os
 from pathlib import Path
 import sys
 
-from common.transpile_shared import Scope, TempNameFactory, is_main_guard
+try:
+    from common.base_transpiler import BaseTranspiler, TranspileError
+    from common.transpile_shared import Scope
+except ModuleNotFoundError:
+    from src.common.base_transpiler import BaseTranspiler, TranspileError
+    from src.common.transpile_shared import Scope
 
 
-class TranspileError(Exception):
-    pass
-
-
-class RustTranspiler:
-    INDENT = "    "
-
+class RustTranspiler(BaseTranspiler):
     def __init__(self) -> None:
-        self.temp_names = TempNameFactory(prefix="__pytra")
+        super().__init__(temp_prefix="__pytra")
 
     def transpile_module(self, module: ast.Module) -> str:
         function_defs: list[str] = []
@@ -39,7 +38,7 @@ class RustTranspiler:
                     has_user_main = True
                 function_defs.append(self.transpile_function(stmt))
                 continue
-            if is_main_guard(stmt):
+            if self._is_main_guard(stmt):
                 main_stmts.extend(stmt.body)
                 continue
             main_stmts.append(stmt)
@@ -156,25 +155,11 @@ class RustTranspiler:
         lines.append("}")
         return lines
 
-    def _parse_range(self, expr: ast.expr) -> tuple[str, str, str] | None:
-        if not isinstance(expr, ast.Call) or not isinstance(expr.func, ast.Name) or expr.func.id != "range":
-            return None
-        if expr.keywords:
-            raise TranspileError("range with keyword args is not supported")
-        argc = len(expr.args)
-        if argc == 1:
-            return "0", self.transpile_expr(expr.args[0]), "1"
-        if argc == 2:
-            return self.transpile_expr(expr.args[0]), self.transpile_expr(expr.args[1]), "1"
-        if argc == 3:
-            return self.transpile_expr(expr.args[0]), self.transpile_expr(expr.args[1]), self.transpile_expr(expr.args[2])
-        raise TranspileError("range arg count > 3 is not supported")
-
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> list[str]:
         if not isinstance(stmt.target, ast.Name):
             raise TranspileError("for target must be name")
         name = stmt.target.id
-        rng = self._parse_range(stmt.iter)
+        rng = self._parse_range_args(stmt.iter, argc_error="range arg count > 3 is not supported")
         if rng is None:
             raise TranspileError("only for-in-range is supported in native Rust mode")
         start, stop, step = rng
@@ -186,7 +171,7 @@ class RustTranspiler:
             lines.extend(self._indent_block(self.transpile_statements(stmt.body, body_scope)))
             lines.append("}")
         else:
-            i_name = self.temp_names.new("i")
+            i_name = self._new_temp("i")
             lines.append(f"let mut {i_name} = {start};")
             lines.append(f"while (({step}) > 0 && {i_name} < ({stop})) || (({step}) < 0 && {i_name} > ({stop})) {{")
             lines.append(f"{self.INDENT}let {name} = {i_name};")
@@ -355,10 +340,6 @@ class RustTranspiler:
             .replace("\t", "\\t")
         )
         return f"\"{esc}\".to_string()"
-
-    def _indent_block(self, lines: list[str]) -> list[str]:
-        return [self.INDENT + line if line else "" for line in lines]
-
 
 def _rust_raw_string_literal(text: str) -> str:
     """任意テキストを Rust の raw string literal へ変換する。"""

@@ -16,6 +16,11 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `py2cs.py`: Python -> C# 変換器
   - `py2cpp.py`: Python -> C++ 変換器
   - `py2rs.py`: Python -> Rust 変換器
+  - `common/`: 複数言語トランスパイラで共有する基底実装・共通ユーティリティ
+    - `base_transpiler.py`: `TranspileError` と共通基底クラス
+    - `transpile_shared.py`: AST 解析補助（スコープ、main guard 判定など）
+  - `cs_type_mappings.py`: C# 専用の型マップ
+  - `cpp_type_mappings.py`: C++ 専用の型マップ
   - `cpp_module/`: C++ 側ランタイム補助モジュール
   - `cs_module/`: C# 側ランタイム補助モジュール
   - `py_module/`: Python 側の自作ライブラリ配置先
@@ -161,6 +166,11 @@ python -m unittest discover -s test -p "test_*.py" -v
 
 ## 9. 注意点
 
+- 共通化ルール:
+  - `src/common/` には、言語非依存で再利用される処理のみを配置します（例: `TranspileError`, 共通基底クラス、AST 補助）。
+  - 言語固有の仕様（型マッピング、キーワード予約語、ランタイム名など）は `src/common/` に置きません。
+  - 例: 型マップは `src/cpp_type_mappings.py` / `src/cs_type_mappings.py` のように言語別モジュールへ配置します。
+  - 新規ターゲット言語（JavaScript / Rust など）追加時は、まず `src/common/` の共通実装を利用し、差分のみ言語別実装へ追加します。
 - 現在の `py2rs.py` は最小実装です。生成 Rust は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
 - エラー発生時、CLI エントリポイント（`src/py2cs.py`）は `error: ...` を標準エラーへ出力し、終了コード `1` を返します。

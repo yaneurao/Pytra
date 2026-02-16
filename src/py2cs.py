@@ -8,24 +8,17 @@ from pathlib import Path
 import sys
 from typing import List, Set
 
-from common.transpile_shared import (
-    INT32_MAX,
-    INT32_MIN,
-    Scope,
-    TempNameFactory,
-    compute_wide_int_functions,
-    is_main_guard,
-    requires_wide_int,
-)
-from common.type_mappings import CS_PRIMITIVE_TYPES
+try:
+    from common.base_transpiler import BaseTranspiler, TranspileError
+    from common.transpile_shared import Scope
+    from cs_type_mappings import CS_PRIMITIVE_TYPES
+except ModuleNotFoundError:
+    from src.common.base_transpiler import BaseTranspiler, TranspileError
+    from src.common.transpile_shared import Scope
+    from src.cs_type_mappings import CS_PRIMITIVE_TYPES
 
 
-class TranspileError(Exception):
-    pass
-
-
-class CSharpTranspiler:
-    INDENT = "    "
+class CSharpTranspiler(BaseTranspiler):
     RESERVED_WORDS = {
         "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char",
         "checked", "class", "const", "continue", "decimal", "default", "delegate",
@@ -40,27 +33,18 @@ class CSharpTranspiler:
     }
 
     def __init__(self) -> None:
+        super().__init__(temp_prefix="__pytra")
         self.class_names: Set[str] = set()
         self.current_class_name: str | None = None
         self.current_static_fields: Set[str] = set()
         self.typing_aliases: dict[str, str] = {}
         self.wide_int_functions: Set[str] = set()
-        self.temp_names = TempNameFactory(prefix="__pytra")
         self.force_long_int: bool = False
 
     def _ident(self, name: str) -> str:
         if name in self.RESERVED_WORDS:
             return f"@{name}"
         return name
-
-    def _new_temp(self, base: str) -> str:
-        return self.temp_names.new(base)
-
-    def _requires_wide_int(self, fn: ast.FunctionDef) -> bool:
-        return requires_wide_int(fn, int_min=INT32_MIN, int_max=INT32_MAX)
-
-    def _compute_wide_int_functions(self, funcs: List[ast.FunctionDef]) -> Set[str]:
-        return compute_wide_int_functions(funcs, int_min=INT32_MIN, int_max=INT32_MAX)
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
         # 1ファイル単位の変換入口。AST化してからC#文字列へ変換する。
@@ -568,27 +552,6 @@ class CSharpTranspiler:
             return [f"{target} = ({target} / {value});"]
         return [f"{target} = ({target} {self._binop(stmt.op)} {value});"]
 
-    def _parse_range_args(self, iter_expr: ast.expr) -> tuple[str, str, str] | None:
-        if not (
-            isinstance(iter_expr, ast.Call)
-            and isinstance(iter_expr.func, ast.Name)
-            and iter_expr.func.id == "range"
-            and len(iter_expr.keywords) == 0
-        ):
-            return None
-        argc = len(iter_expr.args)
-        if argc == 1:
-            return "0", self.transpile_expr(iter_expr.args[0]), "1"
-        if argc == 2:
-            return self.transpile_expr(iter_expr.args[0]), self.transpile_expr(iter_expr.args[1]), "1"
-        if argc == 3:
-            return (
-                self.transpile_expr(iter_expr.args[0]),
-                self.transpile_expr(iter_expr.args[1]),
-                self.transpile_expr(iter_expr.args[2]),
-            )
-        raise TranspileError("range() with more than 3 arguments is not supported")
-
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
         tuple_target = None
         target_name = ""
@@ -969,9 +932,6 @@ class CSharpTranspiler:
                 return True
         return False
 
-    def _is_main_guard(self, stmt: ast.stmt) -> bool:
-        return is_main_guard(stmt)
-
     def _constant(self, value: object) -> str:
         if isinstance(value, bool):
             return "true" if value else "false"
@@ -1058,10 +1018,6 @@ class CSharpTranspiler:
             else:
                 parts.append("{/*unsupported*/}")
         return '$"' + "".join(parts).replace('"', '\\"') + '"'
-
-    def _indent_block(self, lines: List[str]) -> List[str]:
-        return [f"{self.INDENT}{line}" if line else "" for line in lines]
-
 
 def transpile(input_file: str, output_file: str) -> None:
     transpiler = CSharpTranspiler()
