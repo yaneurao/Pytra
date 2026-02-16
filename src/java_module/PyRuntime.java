@@ -1,10 +1,16 @@
 // Java ネイティブ変換向け Python 互換ランタイム補助。
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.zip.CRC32;
+import java.util.zip.Deflater;
 
 final class PyRuntime {
     private PyRuntime() {
@@ -77,6 +83,9 @@ final class PyRuntime {
         if (v instanceof List<?> list) {
             return list.size();
         }
+        if (v instanceof byte[] bytes) {
+            return bytes.length;
+        }
         if (v instanceof Map<?, ?> map) {
             return map.size();
         }
@@ -124,7 +133,8 @@ final class PyRuntime {
             return (int) i.longValue();
         }
         if (v instanceof Double d) {
-            return (int) Math.floor(d);
+            // Python の int() は小数部切り捨て（0方向）なので Java のキャストで合わせる。
+            return (int) d.doubleValue();
         }
         if (v instanceof Boolean b) {
             return b ? 1 : 0;
@@ -132,26 +142,45 @@ final class PyRuntime {
         throw new RuntimeException("cannot convert to int");
     }
 
+    static long pyToLong(Object v) {
+        if (v instanceof Integer i) {
+            return i.longValue();
+        }
+        if (v instanceof Long i) {
+            return i.longValue();
+        }
+        if (v instanceof Double d) {
+            return (long) d.doubleValue();
+        }
+        if (v instanceof Boolean b) {
+            return b ? 1L : 0L;
+        }
+        throw new RuntimeException("cannot convert to long");
+    }
+
     static Object pyAdd(Object a, Object b) {
         if (a instanceof String || b instanceof String) {
             return pyToString(a) + pyToString(b);
         }
-        if (a instanceof Integer && b instanceof Integer) {
-            return pyToInt(a) + pyToInt(b);
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            return pyToLong(a) + pyToLong(b);
         }
         return pyToFloat(a) + pyToFloat(b);
     }
 
     static Object pySub(Object a, Object b) {
-        if (a instanceof Integer && b instanceof Integer) {
-            return pyToInt(a) - pyToInt(b);
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            return pyToLong(a) - pyToLong(b);
         }
         return pyToFloat(a) - pyToFloat(b);
     }
 
     static Object pyMul(Object a, Object b) {
-        if (a instanceof Integer && b instanceof Integer) {
-            return pyToInt(a) * pyToInt(b);
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            return pyToLong(a) * pyToLong(b);
         }
         return pyToFloat(a) * pyToFloat(b);
     }
@@ -161,22 +190,107 @@ final class PyRuntime {
     }
 
     static Object pyFloorDiv(Object a, Object b) {
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            long ai = pyToLong(a);
+            long bi = pyToLong(b);
+            long q = ai / bi;
+            long r = ai % bi;
+            if (r != 0 && ((r > 0) != (bi > 0))) {
+                q -= 1;
+            }
+            return q;
+        }
         return (int) Math.floor(pyToFloat(a) / pyToFloat(b));
     }
 
     static Object pyMod(Object a, Object b) {
-        int ai = pyToInt(a);
-        int bi = pyToInt(b);
-        int r = ai % bi;
-        if (r != 0 && ((r > 0) != (bi > 0))) {
-            r += bi;
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            long ai = pyToLong(a);
+            long bi = pyToLong(b);
+            long r = ai % bi;
+            if (r != 0 && ((r > 0) != (bi > 0))) {
+                r += bi;
+            }
+            return r;
         }
-        return r;
+        throw new RuntimeException("mod unsupported type");
+    }
+
+    static Object pyMin(Object... values) {
+        if (values.length == 0) {
+            throw new RuntimeException("min() arg is empty");
+        }
+        Object out = values[0];
+        for (int i = 1; i < values.length; i++) {
+            Object a = out;
+            Object b = values[i];
+            if (a instanceof Long || b instanceof Long) {
+                if (pyToLong(b) < pyToLong(a)) {
+                    out = b;
+                }
+                continue;
+            }
+            if (a instanceof Integer && b instanceof Integer) {
+                if (pyToInt(b) < pyToInt(a)) {
+                    out = b;
+                }
+            } else if (pyToFloat(b) < pyToFloat(a)) {
+                out = b;
+            }
+        }
+        return out;
+    }
+
+    static Object pyMax(Object... values) {
+        if (values.length == 0) {
+            throw new RuntimeException("max() arg is empty");
+        }
+        Object out = values[0];
+        for (int i = 1; i < values.length; i++) {
+            Object a = out;
+            Object b = values[i];
+            if (a instanceof Long || b instanceof Long) {
+                if (pyToLong(b) > pyToLong(a)) {
+                    out = b;
+                }
+                continue;
+            }
+            if (a instanceof Integer && b instanceof Integer) {
+                if (pyToInt(b) > pyToInt(a)) {
+                    out = b;
+                }
+            } else if (pyToFloat(b) > pyToFloat(a)) {
+                out = b;
+            }
+        }
+        return out;
+    }
+
+    static Object pyLShift(Object a, Object b) {
+        return pyToInt(a) << pyToInt(b);
+    }
+
+    static Object pyRShift(Object a, Object b) {
+        return pyToInt(a) >> pyToInt(b);
+    }
+
+    static Object pyBitAnd(Object a, Object b) {
+        return pyToInt(a) & pyToInt(b);
+    }
+
+    static Object pyBitOr(Object a, Object b) {
+        return pyToInt(a) | pyToInt(b);
+    }
+
+    static Object pyBitXor(Object a, Object b) {
+        return pyToInt(a) ^ pyToInt(b);
     }
 
     static Object pyNeg(Object a) {
-        if (a instanceof Integer) {
-            return -pyToInt(a);
+        if (a instanceof Integer || a instanceof Long || a instanceof Boolean) {
+            return -pyToLong(a);
         }
         return -pyToFloat(a);
     }
@@ -227,6 +341,13 @@ final class PyRuntime {
         if (value instanceof List<?> list) {
             return new ArrayList<>((List<Object>) list);
         }
+        if (value instanceof byte[] arr) {
+            List<Object> out = new ArrayList<>();
+            for (byte b : arr) {
+                out.add((int) (b & 0xff));
+            }
+            return out;
+        }
         if (value instanceof String s) {
             List<Object> out = new ArrayList<>();
             for (int i = 0; i < s.length(); i++) {
@@ -253,26 +374,40 @@ final class PyRuntime {
             int n = s.length();
             int st = (start == null) ? 0 : pyToInt(start);
             int ed = (end == null) ? n : pyToInt(end);
-            if (st < 0) st += n;
-            if (ed < 0) ed += n;
-            if (st < 0) st = 0;
-            if (ed < 0) ed = 0;
-            if (st > n) st = n;
-            if (ed > n) ed = n;
-            if (st > ed) st = ed;
+            if (st < 0)
+                st += n;
+            if (ed < 0)
+                ed += n;
+            if (st < 0)
+                st = 0;
+            if (ed < 0)
+                ed = 0;
+            if (st > n)
+                st = n;
+            if (ed > n)
+                ed = n;
+            if (st > ed)
+                st = ed;
             return s.substring(st, ed);
         }
         if (value instanceof List<?> list) {
             int n = list.size();
             int st = (start == null) ? 0 : pyToInt(start);
             int ed = (end == null) ? n : pyToInt(end);
-            if (st < 0) st += n;
-            if (ed < 0) ed += n;
-            if (st < 0) st = 0;
-            if (ed < 0) ed = 0;
-            if (st > n) st = n;
-            if (ed > n) ed = n;
-            if (st > ed) st = ed;
+            if (st < 0)
+                st += n;
+            if (ed < 0)
+                ed += n;
+            if (st < 0)
+                st = 0;
+            if (ed < 0)
+                ed = 0;
+            if (st > n)
+                st = n;
+            if (ed > n)
+                ed = n;
+            if (st > ed)
+                st = ed;
             return new ArrayList<>(list.subList(st, ed));
         }
         throw new RuntimeException("slice unsupported");
@@ -281,7 +416,8 @@ final class PyRuntime {
     static Object pyGet(Object value, Object key) {
         if (value instanceof List<?> list) {
             int i = pyToInt(key);
-            if (i < 0) i += list.size();
+            if (i < 0)
+                i += list.size();
             return list.get(i);
         }
         if (value instanceof Map<?, ?> map) {
@@ -289,7 +425,8 @@ final class PyRuntime {
         }
         if (value instanceof String s) {
             int i = pyToInt(key);
-            if (i < 0) i += s.length();
+            if (i < 0)
+                i += s.length();
             return String.valueOf(s.charAt(i));
         }
         throw new RuntimeException("subscript unsupported");
@@ -299,7 +436,8 @@ final class PyRuntime {
         if (value instanceof List<?> list) {
             int i = pyToInt(key);
             List<Object> l = (List<Object>) list;
-            if (i < 0) i += l.size();
+            if (i < 0)
+                i += l.size();
             l.set(i, newValue);
             return;
         }
@@ -314,7 +452,8 @@ final class PyRuntime {
         if (value instanceof List<?> list) {
             List<Object> l = (List<Object>) list;
             int i = (idx == null) ? (l.size() - 1) : pyToInt(idx);
-            if (i < 0) i += l.size();
+            if (i < 0)
+                i += l.size();
             Object out = l.get(i);
             l.remove(i);
             return out;
@@ -386,5 +525,232 @@ final class PyRuntime {
             out.put(kv[i], kv[i + 1]);
         }
         return out;
+    }
+
+    // --- time/math ---
+
+    static Object pyPerfCounter() {
+        return System.nanoTime() / 1_000_000_000.0;
+    }
+
+    static Object pyMathSqrt(Object v) {
+        return Math.sqrt(pyToFloat(v));
+    }
+
+    static Object pyMathSin(Object v) {
+        return Math.sin(pyToFloat(v));
+    }
+
+    static Object pyMathCos(Object v) {
+        return Math.cos(pyToFloat(v));
+    }
+
+    static Object pyMathExp(Object v) {
+        return Math.exp(pyToFloat(v));
+    }
+
+    static Object pyMathFloor(Object v) {
+        return Math.floor(pyToFloat(v));
+    }
+
+    static Object pyMathPi() {
+        return Math.PI;
+    }
+
+    // --- png/gif ---
+
+    static byte[] pyToBytes(Object v) {
+        if (v instanceof byte[] b) {
+            return b;
+        }
+        if (v instanceof List<?> list) {
+            byte[] out = new byte[list.size()];
+            for (int i = 0; i < list.size(); i++) {
+                out[i] = (byte) pyToInt(list.get(i));
+            }
+            return out;
+        }
+        if (v instanceof String s) {
+            return s.getBytes(StandardCharsets.UTF_8);
+        }
+        throw new RuntimeException("cannot convert to bytes");
+    }
+
+    static byte[] pyChunk(String chunkType, byte[] data) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            int n = data.length;
+            out.write((n >>> 24) & 0xff);
+            out.write((n >>> 16) & 0xff);
+            out.write((n >>> 8) & 0xff);
+            out.write(n & 0xff);
+            byte[] typeBytes = chunkType.getBytes(StandardCharsets.US_ASCII);
+            out.write(typeBytes);
+            out.write(data);
+            CRC32 crc = new CRC32();
+            crc.update(typeBytes);
+            crc.update(data);
+            long c = crc.getValue();
+            out.write((int) ((c >>> 24) & 0xff));
+            out.write((int) ((c >>> 16) & 0xff));
+            out.write((int) ((c >>> 8) & 0xff));
+            out.write((int) (c & 0xff));
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static void pyWriteRGBPNG(Object path, Object width, Object height, Object pixels) {
+        int w = pyToInt(width);
+        int h = pyToInt(height);
+        byte[] raw = pyToBytes(pixels);
+        int expected = w * h * 3;
+        if (raw.length != expected) {
+            throw new RuntimeException("pixels length mismatch");
+        }
+
+        byte[] scan = new byte[h * (1 + w * 3)];
+        int rowBytes = w * 3;
+        int pos = 0;
+        for (int y = 0; y < h; y++) {
+            scan[pos++] = 0;
+            int start = y * rowBytes;
+            System.arraycopy(raw, start, scan, pos, rowBytes);
+            pos += rowBytes;
+        }
+
+        Deflater deflater = new Deflater(6);
+        deflater.setInput(scan);
+        deflater.finish();
+        byte[] buf = new byte[8192];
+        ByteArrayOutputStream zOut = new ByteArrayOutputStream();
+        while (!deflater.finished()) {
+            int n = deflater.deflate(buf);
+            zOut.write(buf, 0, n);
+        }
+        byte[] idat = zOut.toByteArray();
+
+        byte[] ihdr = new byte[] {
+                (byte) (w >>> 24), (byte) (w >>> 16), (byte) (w >>> 8), (byte) w,
+                (byte) (h >>> 24), (byte) (h >>> 16), (byte) (h >>> 8), (byte) h,
+                8, 2, 0, 0, 0
+        };
+
+        try (FileOutputStream fos = new FileOutputStream(pyToString(path))) {
+            fos.write(new byte[] { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' });
+            fos.write(pyChunk("IHDR", ihdr));
+            fos.write(pyChunk("IDAT", idat));
+            fos.write(pyChunk("IEND", new byte[0]));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static byte[] pyLzwEncode(byte[] data, int minCodeSize) {
+        if (data.length == 0) {
+            return new byte[0];
+        }
+        int clearCode = 1 << minCodeSize;
+        int endCode = clearCode + 1;
+        int codeSize = minCodeSize + 1;
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int bitBuffer = 0;
+        int bitCount = 0;
+        int[] codes = new int[data.length * 2 + 2];
+        int k = 0;
+        codes[k++] = clearCode;
+        for (byte b : data) {
+            codes[k++] = b & 0xff;
+            codes[k++] = clearCode;
+        }
+        codes[k++] = endCode;
+        for (int i = 0; i < k; i++) {
+            int code = codes[i];
+            bitBuffer |= (code << bitCount);
+            bitCount += codeSize;
+            while (bitCount >= 8) {
+                out.write(bitBuffer & 0xff);
+                bitBuffer >>>= 8;
+                bitCount -= 8;
+            }
+        }
+        if (bitCount > 0) {
+            out.write(bitBuffer & 0xff);
+        }
+        return out.toByteArray();
+    }
+
+    static Object pyGrayscalePalette() {
+        byte[] p = new byte[256 * 3];
+        for (int i = 0; i < 256; i++) {
+            p[i * 3] = (byte) i;
+            p[i * 3 + 1] = (byte) i;
+            p[i * 3 + 2] = (byte) i;
+        }
+        return p;
+    }
+
+    static void pySaveGif(Object path, Object width, Object height, Object frames, Object palette, Object delayCs, Object loop) {
+        int w = pyToInt(width);
+        int h = pyToInt(height);
+        int frameBytes = w * h;
+        byte[] pal = pyToBytes(palette);
+        if (pal.length != 256 * 3) {
+            throw new RuntimeException("palette must be 256*3 bytes");
+        }
+        int dcs = pyToInt(delayCs);
+        int lp = pyToInt(loop);
+
+        List<Object> frs = pyIter(frames);
+
+        try (FileOutputStream fos = new FileOutputStream(pyToString(path))) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            out.write("GIF89a".getBytes(StandardCharsets.US_ASCII));
+            out.write(w & 0xff);
+            out.write((w >>> 8) & 0xff);
+            out.write(h & 0xff);
+            out.write((h >>> 8) & 0xff);
+            out.write(0xF7);
+            out.write(0);
+            out.write(0);
+            out.write(pal);
+            out.write(new byte[] { 0x21, (byte) 0xFF, 0x0B });
+            out.write("NETSCAPE2.0".getBytes(StandardCharsets.US_ASCII));
+            out.write(new byte[] { 0x03, 0x01, (byte) (lp & 0xff), (byte) ((lp >>> 8) & 0xff), 0x00 });
+
+            for (Object frAny : frs) {
+                byte[] fr = pyToBytes(frAny);
+                if (fr.length != frameBytes) {
+                    throw new RuntimeException("frame size mismatch");
+                }
+                out.write(new byte[] { 0x21, (byte) 0xF9, 0x04, 0x00, (byte) (dcs & 0xff), (byte) ((dcs >>> 8) & 0xff), 0x00, 0x00 });
+                out.write(0x2C);
+                out.write(0);
+                out.write(0);
+                out.write(0);
+                out.write(0);
+                out.write(w & 0xff);
+                out.write((w >>> 8) & 0xff);
+                out.write(h & 0xff);
+                out.write((h >>> 8) & 0xff);
+                out.write(0x00);
+                out.write(0x08);
+                byte[] compressed = pyLzwEncode(fr, 8);
+                int pos = 0;
+                while (pos < compressed.length) {
+                    int len = Math.min(255, compressed.length - pos);
+                    out.write(len);
+                    out.write(compressed, pos, len);
+                    pos += len;
+                }
+                out.write(0x00);
+            }
+            out.write(0x3B);
+            fos.write(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

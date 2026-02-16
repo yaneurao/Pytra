@@ -1,84 +1,1188 @@
-// このファイルは自動生成です（Python -> Go embedded mode）。
+// このファイルは自動生成です（Python -> Go native mode）。
 
-// Python 埋め込み実行向けの Go ランタイム補助。
-// 生成された Go コードから呼び出し、Python ソースを一時ファイルに展開して実行する。
+// Go ネイティブ変換向け Python 互換ランタイム補助。
 
 package main
 
 import (
-	"encoding/base64"
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
+    "bytes"
+    "compress/zlib"
+    "fmt"
+    "hash/crc32"
+    "math"
+    "os"
+    "strconv"
+    "strings"
+    "time"
 )
 
-// pytraRunEmbeddedPython は、Base64 で埋め込まれた Python ソースを実行する。
-//
-// Args:
-//   sourceBase64: 埋め込み Python ソースコード（Base64 文字列）。
-//   args: Python スクリプトへ渡す引数。
-//
-// Returns:
-//   Python プロセスの終了コード。異常時は 1 を返す。
-func pytraRunEmbeddedPython(sourceBase64 string, args []string) int {
-	sourceBytes, decodeErr := base64.StdEncoding.DecodeString(sourceBase64)
-	if decodeErr != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to decode embedded python source")
-		return 1
-	}
-
-	tempDir, mkErr := os.MkdirTemp("", "pytra_go_")
-	if mkErr != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to create temp directory")
-		return 1
-	}
-	defer os.RemoveAll(tempDir)
-
-	scriptPath := filepath.Join(tempDir, "embedded.py")
-	if writeErr := os.WriteFile(scriptPath, sourceBytes, 0o600); writeErr != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to write temp python script")
-		return 1
-	}
-
-	pythonPath := "src"
-	if current, ok := os.LookupEnv("PYTHONPATH"); ok && current != "" {
-		pythonPath = pythonPath + string(os.PathListSeparator) + current
-	}
-
-	run := func(interpreter string) (int, error) {
-		cmd := exec.Command(interpreter, append([]string{scriptPath}, args...)...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		env := os.Environ()
-		env = append(env, "PYTHONPATH="+pythonPath)
-		cmd.Env = env
-		err := cmd.Run()
-		if err == nil {
-			return 0, nil
-		}
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return exitErr.ExitCode(), nil
-		}
-		return 0, err
-	}
-
-	if code, err := run("python3"); err == nil {
-		return code
-	}
-	if code, err := run("python"); err == nil {
-		return code
-	}
-
-	fmt.Fprintln(os.Stderr, "error: python interpreter not found (python3/python)")
-	return 1
+func pyToString(v any) string {
+    switch x := v.(type) {
+    case nil:
+        return "None"
+    case bool:
+        if x {
+            return "True"
+        }
+        return "False"
+    case string:
+        return x
+    case int:
+        return strconv.Itoa(x)
+    case int64:
+        return strconv.FormatInt(x, 10)
+    case float64:
+        return strconv.FormatFloat(x, 'f', -1, 64)
+    case []any:
+        parts := make([]string, 0, len(x))
+        for _, it := range x {
+            parts = append(parts, pyToString(it))
+        }
+        return "[" + strings.Join(parts, ", ") + "]"
+    case map[any]any:
+        parts := make([]string, 0, len(x))
+        for k, v := range x {
+            parts = append(parts, pyToString(k)+": "+pyToString(v))
+        }
+        return "{" + strings.Join(parts, ", ") + "}"
+    default:
+        return fmt.Sprint(x)
+    }
 }
 
-// 埋め込み Python ソース（Base64）。
-const pytraEmbeddedSourceBase64 = "IyAxNjog44Ks44Op44K55b2r5Yi744Gu44Kr44Kq44K55Zue6Lui44KS44Os44Kk44OI44Os44O844K344Oz44Kw44Gn5o+P44GN44CBR0lG5Ye65Yqb44GZ44KL44K144Oz44OX44Or44CCCgpmcm9tIF9fZnV0dXJlX18gaW1wb3J0IGFubm90YXRpb25zCgppbXBvcnQgbWF0aApmcm9tIHRpbWUgaW1wb3J0IHBlcmZfY291bnRlcgoKZnJvbSBweV9tb2R1bGUuZ2lmX2hlbHBlciBpbXBvcnQgc2F2ZV9naWYKCgpkZWYgY2xhbXAwMSh2OiBmbG9hdCkgLT4gZmxvYXQ6CiAgICBpZiB2IDwgMC4wOgogICAgICAgIHJldHVybiAwLjAKICAgIGlmIHYgPiAxLjA6CiAgICAgICAgcmV0dXJuIDEuMAogICAgcmV0dXJuIHYKCgpkZWYgZG90KGF4OiBmbG9hdCwgYXk6IGZsb2F0LCBhejogZmxvYXQsIGJ4OiBmbG9hdCwgYnk6IGZsb2F0LCBiejogZmxvYXQpIC0+IGZsb2F0OgogICAgcmV0dXJuIGF4ICogYnggKyBheSAqIGJ5ICsgYXogKiBiegoKCmRlZiBsZW5ndGgoeDogZmxvYXQsIHk6IGZsb2F0LCB6OiBmbG9hdCkgLT4gZmxvYXQ6CiAgICByZXR1cm4gbWF0aC5zcXJ0KHggKiB4ICsgeSAqIHkgKyB6ICogeikKCgpkZWYgbm9ybWFsaXplKHg6IGZsb2F0LCB5OiBmbG9hdCwgejogZmxvYXQpIC0+IHR1cGxlW2Zsb2F0LCBmbG9hdCwgZmxvYXRdOgogICAgbCA9IGxlbmd0aCh4LCB5LCB6KQogICAgaWYgbCA8IDFlLTk6CiAgICAgICAgcmV0dXJuIDAuMCwgMC4wLCAwLjAKICAgIHJldHVybiB4IC8gbCwgeSAvIGwsIHogLyBsCgoKZGVmIHJlZmxlY3QoaXg6IGZsb2F0LCBpeTogZmxvYXQsIGl6OiBmbG9hdCwgbng6IGZsb2F0LCBueTogZmxvYXQsIG56OiBmbG9hdCkgLT4gdHVwbGVbZmxvYXQsIGZsb2F0LCBmbG9hdF06CiAgICBkID0gZG90KGl4LCBpeSwgaXosIG54LCBueSwgbnopICogMi4wCiAgICByZXR1cm4gaXggLSBkICogbngsIGl5IC0gZCAqIG55LCBpeiAtIGQgKiBuegoKCmRlZiByZWZyYWN0KGl4OiBmbG9hdCwgaXk6IGZsb2F0LCBpejogZmxvYXQsIG54OiBmbG9hdCwgbnk6IGZsb2F0LCBuejogZmxvYXQsIGV0YTogZmxvYXQpIC0+IHR1cGxlW2Zsb2F0LCBmbG9hdCwgZmxvYXRdOgogICAgIyBJT1Ig55Sx5p2l44Gu57Ch5piT5bGI5oqY44CC5YWo5Y+N5bCE5pmC44Gv5Y+N5bCE5pa55ZCR44KS6L+U44GZ44CCCiAgICBjb3NpID0gLWRvdChpeCwgaXksIGl6LCBueCwgbnksIG56KQogICAgc2ludDIgPSBldGEgKiBldGEgKiAoMS4wIC0gY29zaSAqIGNvc2kpCiAgICBpZiBzaW50MiA+IDEuMDoKICAgICAgICByZXR1cm4gcmVmbGVjdChpeCwgaXksIGl6LCBueCwgbnksIG56KQogICAgY29zdCA9IG1hdGguc3FydCgxLjAgLSBzaW50MikKICAgIGsgPSBldGEgKiBjb3NpIC0gY29zdAogICAgcmV0dXJuIGV0YSAqIGl4ICsgayAqIG54LCBldGEgKiBpeSArIGsgKiBueSwgZXRhICogaXogKyBrICogbnoKCgpkZWYgc2NobGljayhjb3NfdGhldGE6IGZsb2F0LCBmMDogZmxvYXQpIC0+IGZsb2F0OgogICAgbSA9IDEuMCAtIGNvc190aGV0YQogICAgcmV0dXJuIGYwICsgKDEuMCAtIGYwKSAqIChtICogbSAqIG0gKiBtICogbSkKCgpkZWYgc2t5X2NvbG9yKGR4OiBmbG9hdCwgZHk6IGZsb2F0LCBkejogZmxvYXQsIHRwaGFzZTogZmxvYXQpIC0+IHR1cGxlW2Zsb2F0LCBmbG9hdCwgZmxvYXRdOgogICAgIyDkuIrnqbrjgrDjg6njg4fjg7zjgrfjg6fjg7MgKyDjg43jgqrjg7PluK8KICAgIHQgPSAwLjUgKiAoZHkgKyAxLjApCiAgICByID0gMC4wNiArIDAuMjAgKiB0CiAgICBnID0gMC4xMCArIDAuMjUgKiB0CiAgICBiID0gMC4xNiArIDAuNDUgKiB0CiAgICBiYW5kID0gMC41ICsgMC41ICogbWF0aC5zaW4oOC4wICogZHggKyA2LjAgKiBkeiArIHRwaGFzZSkKICAgIHIgKz0gMC4wOCAqIGJhbmQKICAgIGcgKz0gMC4wNSAqIGJhbmQKICAgIGIgKz0gMC4xMiAqIGJhbmQKICAgIHJldHVybiBjbGFtcDAxKHIpLCBjbGFtcDAxKGcpLCBjbGFtcDAxKGIpCgoKZGVmIHNwaGVyZV9pbnRlcnNlY3QoCiAgICBveDogZmxvYXQsCiAgICBveTogZmxvYXQsCiAgICBvejogZmxvYXQsCiAgICBkeDogZmxvYXQsCiAgICBkeTogZmxvYXQsCiAgICBkejogZmxvYXQsCiAgICBjeDogZmxvYXQsCiAgICBjeTogZmxvYXQsCiAgICBjejogZmxvYXQsCiAgICByYWRpdXM6IGZsb2F0LAopIC0+IGZsb2F0OgogICAgbHggPSBveCAtIGN4CiAgICBseSA9IG95IC0gY3kKICAgIGx6ID0gb3ogLSBjegogICAgYiA9IGx4ICogZHggKyBseSAqIGR5ICsgbHogKiBkegogICAgYyA9IGx4ICogbHggKyBseSAqIGx5ICsgbHogKiBseiAtIHJhZGl1cyAqIHJhZGl1cwogICAgaCA9IGIgKiBiIC0gYwogICAgaWYgaCA8IDAuMDoKICAgICAgICByZXR1cm4gLTEuMAogICAgcyA9IG1hdGguc3FydChoKQogICAgdDAgPSAtYiAtIHMKICAgIGlmIHQwID4gMWUtNDoKICAgICAgICByZXR1cm4gdDAKICAgIHQxID0gLWIgKyBzCiAgICBpZiB0MSA+IDFlLTQ6CiAgICAgICAgcmV0dXJuIHQxCiAgICByZXR1cm4gLTEuMAoKCmRlZiBwYWxldHRlXzMzMigpIC0+IGJ5dGVzOgogICAgIyAzLTMtMiDph4/lrZDljJbjg5Hjg6zjg4Pjg4jjgILph4/lrZDljJblh6bnkIbjgYzou73jgY/jgIHjg4jjg6njg7Pjgrnjg5HjgqTjg6vlvozjgoLpq5jpgJ/jgIIKICAgIHAgPSBieXRlYXJyYXkoMjU2ICogMykKICAgIGZvciBpIGluIHJhbmdlKDI1Nik6CiAgICAgICAgciA9IChpID4+IDUpICYgNwogICAgICAgIGcgPSAoaSA+PiAyKSAmIDcKICAgICAgICBiID0gaSAmIDMKICAgICAgICBwW2kgKiAzICsgMF0gPSBpbnQoKDI1NSAqIHIpIC8gNykKICAgICAgICBwW2kgKiAzICsgMV0gPSBpbnQoKDI1NSAqIGcpIC8gNykKICAgICAgICBwW2kgKiAzICsgMl0gPSBpbnQoKDI1NSAqIGIpIC8gMykKICAgIHJldHVybiBieXRlcyhwKQoKCmRlZiBxdWFudGl6ZV8zMzIocjogZmxvYXQsIGc6IGZsb2F0LCBiOiBmbG9hdCkgLT4gaW50OgogICAgcnIgPSBpbnQoY2xhbXAwMShyKSAqIDI1NS4wKQogICAgZ2cgPSBpbnQoY2xhbXAwMShnKSAqIDI1NS4wKQogICAgYmIgPSBpbnQoY2xhbXAwMShiKSAqIDI1NS4wKQogICAgcmV0dXJuICgocnIgPj4gNSkgPDwgNSkgKyAoKGdnID4+IDUpIDw8IDIpICsgKGJiID4+IDYpCgoKZGVmIHJlbmRlcl9mcmFtZSh3aWR0aDogaW50LCBoZWlnaHQ6IGludCwgZnJhbWVfaWQ6IGludCwgZnJhbWVzX246IGludCkgLT4gYnl0ZXM6CiAgICB0ID0gZnJhbWVfaWQgLyBmcmFtZXNfbgogICAgdHBoYXNlID0gMi4wICogbWF0aC5waSAqIHQKCiAgICAjIOOCq+ODoeODqeOBr+OChuOBo+OBj+OCiuWRqOWbngogICAgY2FtX3IgPSAzLjAKICAgIGNhbV94ID0gY2FtX3IgKiBtYXRoLmNvcyh0cGhhc2UgKiAwLjkpCiAgICBjYW1feSA9IDEuMSArIDAuMjUgKiBtYXRoLnNpbih0cGhhc2UgKiAwLjYpCiAgICBjYW1feiA9IGNhbV9yICogbWF0aC5zaW4odHBoYXNlICogMC45KQogICAgbG9va194ID0gMC4wCiAgICBsb29rX3kgPSAwLjM1CiAgICBsb29rX3ogPSAwLjAKCiAgICBmd2RfeCwgZndkX3ksIGZ3ZF96ID0gbm9ybWFsaXplKGxvb2tfeCAtIGNhbV94LCBsb29rX3kgLSBjYW1feSwgbG9va196IC0gY2FtX3opCiAgICByaWdodF94LCByaWdodF95LCByaWdodF96ID0gbm9ybWFsaXplKGZ3ZF96LCAwLjAsIC1md2RfeCkKICAgIHVwX3gsIHVwX3ksIHVwX3ogPSBub3JtYWxpemUoCiAgICAgICAgcmlnaHRfeSAqIGZ3ZF96IC0gcmlnaHRfeiAqIGZ3ZF95LAogICAgICAgIHJpZ2h0X3ogKiBmd2RfeCAtIHJpZ2h0X3ggKiBmd2RfeiwKICAgICAgICByaWdodF94ICogZndkX3kgLSByaWdodF95ICogZndkX3gsCiAgICApCgogICAgIyDli5XjgY/jgqzjg6njgrnlvavliLvvvIgz55CD77yJ44Go55m65YWJ55CDCiAgICBzMHggPSAwLjkgKiBtYXRoLmNvcygxLjMgKiB0cGhhc2UpCiAgICBzMHkgPSAwLjE1ICsgMC4zNSAqIG1hdGguc2luKDEuNyAqIHRwaGFzZSkKICAgIHMweiA9IDAuOSAqIG1hdGguc2luKDEuMyAqIHRwaGFzZSkKICAgIHMxeCA9IDEuMiAqIG1hdGguY29zKDEuMyAqIHRwaGFzZSArIDIuMDk0KQogICAgczF5ID0gMC4xMCArIDAuNDAgKiBtYXRoLnNpbigxLjEgKiB0cGhhc2UgKyAwLjgpCiAgICBzMXogPSAxLjIgKiBtYXRoLnNpbigxLjMgKiB0cGhhc2UgKyAyLjA5NCkKICAgIHMyeCA9IDEuMCAqIG1hdGguY29zKDEuMyAqIHRwaGFzZSArIDQuMTg4KQogICAgczJ5ID0gMC4yMCArIDAuMzAgKiBtYXRoLnNpbigxLjUgKiB0cGhhc2UgKyAxLjkpCiAgICBzMnogPSAxLjAgKiBtYXRoLnNpbigxLjMgKiB0cGhhc2UgKyA0LjE4OCkKICAgIGxyID0gMC4zNQogICAgbHggPSAyLjQgKiBtYXRoLmNvcyh0cGhhc2UgKiAxLjgpCiAgICBseSA9IDEuOCArIDAuOCAqIG1hdGguc2luKHRwaGFzZSAqIDEuMikKICAgIGx6ID0gMi40ICogbWF0aC5zaW4odHBoYXNlICogMS44KQoKICAgIGZyYW1lID0gYnl0ZWFycmF5KHdpZHRoICogaGVpZ2h0KQogICAgYXNwZWN0ID0gd2lkdGggLyBoZWlnaHQKICAgIGZvdiA9IDEuMjUKCiAgICBpID0gMAogICAgZm9yIHB5IGluIHJhbmdlKGhlaWdodCk6CiAgICAgICAgc3kgPSAxLjAgLSAoMi4wICogKHB5ICsgMC41KSAvIGhlaWdodCkKICAgICAgICBmb3IgcHggaW4gcmFuZ2Uod2lkdGgpOgogICAgICAgICAgICBzeCA9ICgyLjAgKiAocHggKyAwLjUpIC8gd2lkdGggLSAxLjApICogYXNwZWN0CiAgICAgICAgICAgIHJ4ID0gZndkX3ggKyBmb3YgKiAoc3ggKiByaWdodF94ICsgc3kgKiB1cF94KQogICAgICAgICAgICByeSA9IGZ3ZF95ICsgZm92ICogKHN4ICogcmlnaHRfeSArIHN5ICogdXBfeSkKICAgICAgICAgICAgcnogPSBmd2RfeiArIGZvdiAqIChzeCAqIHJpZ2h0X3ogKyBzeSAqIHVwX3opCiAgICAgICAgICAgIGR4LCBkeSwgZHogPSBub3JtYWxpemUocngsIHJ5LCByeikKCiAgICAgICAgICAgICMg5pyA55+t44OS44OD44OI44KS5o6i57SiCiAgICAgICAgICAgIGJlc3RfdCA9IDFlOQogICAgICAgICAgICBoaXRfa2luZCA9IDAgICMgMDpza3ksIDE6Zmxvb3IsIDIvMy80OmdsYXNzIHNwaGVyZQogICAgICAgICAgICByID0gMC4wCiAgICAgICAgICAgIGcgPSAwLjAKICAgICAgICAgICAgYiA9IDAuMAoKICAgICAgICAgICAgIyDluorlubPpnaIgeT0tMS4yCiAgICAgICAgICAgIGlmIGR5IDwgLTFlLTY6CiAgICAgICAgICAgICAgICB0ZiA9ICgtMS4yIC0gY2FtX3kpIC8gZHkKICAgICAgICAgICAgICAgIGlmIHRmID4gMWUtNCBhbmQgdGYgPCBiZXN0X3Q6CiAgICAgICAgICAgICAgICAgICAgYmVzdF90ID0gdGYKICAgICAgICAgICAgICAgICAgICBoaXRfa2luZCA9IDEKCiAgICAgICAgICAgIHQwID0gc3BoZXJlX2ludGVyc2VjdChjYW1feCwgY2FtX3ksIGNhbV96LCBkeCwgZHksIGR6LCBzMHgsIHMweSwgczB6LCAwLjY1KQogICAgICAgICAgICBpZiB0MCA+IDAuMCBhbmQgdDAgPCBiZXN0X3Q6CiAgICAgICAgICAgICAgICBiZXN0X3QgPSB0MAogICAgICAgICAgICAgICAgaGl0X2tpbmQgPSAyCiAgICAgICAgICAgIHQxID0gc3BoZXJlX2ludGVyc2VjdChjYW1feCwgY2FtX3ksIGNhbV96LCBkeCwgZHksIGR6LCBzMXgsIHMxeSwgczF6LCAwLjcyKQogICAgICAgICAgICBpZiB0MSA+IDAuMCBhbmQgdDEgPCBiZXN0X3Q6CiAgICAgICAgICAgICAgICBiZXN0X3QgPSB0MQogICAgICAgICAgICAgICAgaGl0X2tpbmQgPSAzCiAgICAgICAgICAgIHQyID0gc3BoZXJlX2ludGVyc2VjdChjYW1feCwgY2FtX3ksIGNhbV96LCBkeCwgZHksIGR6LCBzMngsIHMyeSwgczJ6LCAwLjU4KQogICAgICAgICAgICBpZiB0MiA+IDAuMCBhbmQgdDIgPCBiZXN0X3Q6CiAgICAgICAgICAgICAgICBiZXN0X3QgPSB0MgogICAgICAgICAgICAgICAgaGl0X2tpbmQgPSA0CgogICAgICAgICAgICBpZiBoaXRfa2luZCA9PSAwOgogICAgICAgICAgICAgICAgciwgZywgYiA9IHNreV9jb2xvcihkeCwgZHksIGR6LCB0cGhhc2UpCiAgICAgICAgICAgIGVsaWYgaGl0X2tpbmQgPT0gMToKICAgICAgICAgICAgICAgIGh4ID0gY2FtX3ggKyBiZXN0X3QgKiBkeAogICAgICAgICAgICAgICAgaHogPSBjYW1feiArIGJlc3RfdCAqIGR6CiAgICAgICAgICAgICAgICBjeCA9IGludChtYXRoLmZsb29yKGh4ICogMi4wKSkKICAgICAgICAgICAgICAgIGN6ID0gaW50KG1hdGguZmxvb3IoaHogKiAyLjApKQogICAgICAgICAgICAgICAgY2hlY2tlciA9IDAgaWYgKGN4ICsgY3opICUgMiA9PSAwIGVsc2UgMQogICAgICAgICAgICAgICAgYmFzZV9yID0gMC4xMCBpZiBjaGVja2VyID09IDAgZWxzZSAwLjA0CiAgICAgICAgICAgICAgICBiYXNlX2cgPSAwLjExIGlmIGNoZWNrZXIgPT0gMCBlbHNlIDAuMDUKICAgICAgICAgICAgICAgIGJhc2VfYiA9IDAuMTMgaWYgY2hlY2tlciA9PSAwIGVsc2UgMC4wOAogICAgICAgICAgICAgICAgIyDnmbrlhYnnkIPjga7lr4TkuI4KICAgICAgICAgICAgICAgIGx4diA9IGx4IC0gaHgKICAgICAgICAgICAgICAgIGx5diA9IGx5IC0gKC0xLjIpCiAgICAgICAgICAgICAgICBsenYgPSBseiAtIGh6CiAgICAgICAgICAgICAgICBsZHgsIGxkeSwgbGR6ID0gbm9ybWFsaXplKGx4diwgbHl2LCBsenYpCiAgICAgICAgICAgICAgICBuZG90bCA9IG1heChsZHksIDAuMCkKICAgICAgICAgICAgICAgIGxkaXN0MiA9IGx4diAqIGx4diArIGx5diAqIGx5diArIGx6diAqIGx6dgogICAgICAgICAgICAgICAgZ2xvdyA9IDguMCAvICgxLjAgKyBsZGlzdDIpCiAgICAgICAgICAgICAgICByID0gYmFzZV9yICsgMC44ICogZ2xvdyArIDAuMjAgKiBuZG90bAogICAgICAgICAgICAgICAgZyA9IGJhc2VfZyArIDAuNSAqIGdsb3cgKyAwLjE4ICogbmRvdGwKICAgICAgICAgICAgICAgIGIgPSBiYXNlX2IgKyAxLjAgKiBnbG93ICsgMC4yNCAqIG5kb3RsCiAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICBjeCA9IDAuMAogICAgICAgICAgICAgICAgY3kgPSAwLjAKICAgICAgICAgICAgICAgIGN6ID0gMC4wCiAgICAgICAgICAgICAgICByYWQgPSAxLjAKICAgICAgICAgICAgICAgIGlmIGhpdF9raW5kID09IDI6CiAgICAgICAgICAgICAgICAgICAgY3ggPSBzMHgKICAgICAgICAgICAgICAgICAgICBjeSA9IHMweQogICAgICAgICAgICAgICAgICAgIGN6ID0gczB6CiAgICAgICAgICAgICAgICAgICAgcmFkID0gMC42NQogICAgICAgICAgICAgICAgZWxpZiBoaXRfa2luZCA9PSAzOgogICAgICAgICAgICAgICAgICAgIGN4ID0gczF4CiAgICAgICAgICAgICAgICAgICAgY3kgPSBzMXkKICAgICAgICAgICAgICAgICAgICBjeiA9IHMxegogICAgICAgICAgICAgICAgICAgIHJhZCA9IDAuNzIKICAgICAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICAgICAgY3ggPSBzMngKICAgICAgICAgICAgICAgICAgICBjeSA9IHMyeQogICAgICAgICAgICAgICAgICAgIGN6ID0gczJ6CiAgICAgICAgICAgICAgICAgICAgcmFkID0gMC41OAogICAgICAgICAgICAgICAgaHggPSBjYW1feCArIGJlc3RfdCAqIGR4CiAgICAgICAgICAgICAgICBoeSA9IGNhbV95ICsgYmVzdF90ICogZHkKICAgICAgICAgICAgICAgIGh6ID0gY2FtX3ogKyBiZXN0X3QgKiBkegogICAgICAgICAgICAgICAgbngsIG55LCBueiA9IG5vcm1hbGl6ZSgoaHggLSBjeCkgLyByYWQsIChoeSAtIGN5KSAvIHJhZCwgKGh6IC0gY3opIC8gcmFkKQoKICAgICAgICAgICAgICAgICMg57Ch5piT44Ks44Op44K544K344Kn44O844OH44Kj44Oz44Kw77yI5Y+N5bCEK+WxiOaKmCvlhYnmupDjg4/jgqTjg6njgqTjg4jvvIkKICAgICAgICAgICAgICAgIHJkeCwgcmR5LCByZHogPSByZWZsZWN0KGR4LCBkeSwgZHosIG54LCBueSwgbnopCiAgICAgICAgICAgICAgICB0ZHgsIHRkeSwgdGR6ID0gcmVmcmFjdChkeCwgZHksIGR6LCBueCwgbnksIG56LCAxLjAgLyAxLjQ1KQogICAgICAgICAgICAgICAgc3IsIHNnLCBzYiA9IHNreV9jb2xvcihyZHgsIHJkeSwgcmR6LCB0cGhhc2UpCiAgICAgICAgICAgICAgICB0ciwgdGcsIHRiID0gc2t5X2NvbG9yKHRkeCwgdGR5LCB0ZHosIHRwaGFzZSArIDAuOCkKICAgICAgICAgICAgICAgIGNvc2kgPSBtYXgoLShkeCAqIG54ICsgZHkgKiBueSArIGR6ICogbnopLCAwLjApCiAgICAgICAgICAgICAgICBmciA9IHNjaGxpY2soY29zaSwgMC4wNCkKICAgICAgICAgICAgICAgIHIgPSB0ciAqICgxLjAgLSBmcikgKyBzciAqIGZyCiAgICAgICAgICAgICAgICBnID0gdGcgKiAoMS4wIC0gZnIpICsgc2cgKiBmcgogICAgICAgICAgICAgICAgYiA9IHRiICogKDEuMCAtIGZyKSArIHNiICogZnIKCiAgICAgICAgICAgICAgICBseHYgPSBseCAtIGh4CiAgICAgICAgICAgICAgICBseXYgPSBseSAtIGh5CiAgICAgICAgICAgICAgICBsenYgPSBseiAtIGh6CiAgICAgICAgICAgICAgICBsZHgsIGxkeSwgbGR6ID0gbm9ybWFsaXplKGx4diwgbHl2LCBsenYpCiAgICAgICAgICAgICAgICBuZG90bCA9IG1heChueCAqIGxkeCArIG55ICogbGR5ICsgbnogKiBsZHosIDAuMCkKICAgICAgICAgICAgICAgIGh2eCwgaHZ5LCBodnogPSBub3JtYWxpemUobGR4IC0gZHgsIGxkeSAtIGR5LCBsZHogLSBkeikKICAgICAgICAgICAgICAgIG5kb3RoID0gbWF4KG54ICogaHZ4ICsgbnkgKiBodnkgKyBueiAqIGh2eiwgMC4wKQogICAgICAgICAgICAgICAgc3BlYyA9IG5kb3RoICogbmRvdGgKICAgICAgICAgICAgICAgIHNwZWMgPSBzcGVjICogc3BlYwogICAgICAgICAgICAgICAgc3BlYyA9IHNwZWMgKiBzcGVjCiAgICAgICAgICAgICAgICBzcGVjID0gc3BlYyAqIHNwZWMKICAgICAgICAgICAgICAgIGdsb3cgPSAxMC4wIC8gKDEuMCArIGx4diAqIGx4diArIGx5diAqIGx5diArIGx6diAqIGx6dikKICAgICAgICAgICAgICAgIHIgKz0gMC4yMCAqIG5kb3RsICsgMC44MCAqIHNwZWMgKyAwLjQ1ICogZ2xvdwogICAgICAgICAgICAgICAgZyArPSAwLjE4ICogbmRvdGwgKyAwLjYwICogc3BlYyArIDAuMzUgKiBnbG93CiAgICAgICAgICAgICAgICBiICs9IDAuMjYgKiBuZG90bCArIDEuMDAgKiBzcGVjICsgMC42NSAqIGdsb3cKCiAgICAgICAgICAgICAgICAjIOeQg+OBlOOBqOOBq+WDheOBi+OBquiJsuWRs+W3rgogICAgICAgICAgICAgICAgaWYgaGl0X2tpbmQgPT0gMjoKICAgICAgICAgICAgICAgICAgICByICo9IDAuOTUKICAgICAgICAgICAgICAgICAgICBnICo9IDEuMDUKICAgICAgICAgICAgICAgICAgICBiICo9IDEuMTAKICAgICAgICAgICAgICAgIGVsaWYgaGl0X2tpbmQgPT0gMzoKICAgICAgICAgICAgICAgICAgICByICo9IDEuMDgKICAgICAgICAgICAgICAgICAgICBnICo9IDAuOTgKICAgICAgICAgICAgICAgICAgICBiICo9IDEuMDQKICAgICAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICAgICAgciAqPSAxLjAyCiAgICAgICAgICAgICAgICAgICAgZyAqPSAxLjEwCiAgICAgICAgICAgICAgICAgICAgYiAqPSAwLjk1CgogICAgICAgICAgICAjIOOChOOChOW8t+OCgeOBruODiOODvOODs+ODnuODg+ODlwogICAgICAgICAgICByID0gbWF0aC5zcXJ0KGNsYW1wMDEocikpCiAgICAgICAgICAgIGcgPSBtYXRoLnNxcnQoY2xhbXAwMShnKSkKICAgICAgICAgICAgYiA9IG1hdGguc3FydChjbGFtcDAxKGIpKQogICAgICAgICAgICBmcmFtZVtpXSA9IHF1YW50aXplXzMzMihyLCBnLCBiKQogICAgICAgICAgICBpICs9IDEKCiAgICByZXR1cm4gYnl0ZXMoZnJhbWUpCgoKZGVmIHJ1bl8xNl9nbGFzc19zY3VscHR1cmVfY2hhb3MoKSAtPiBOb25lOgogICAgd2lkdGggPSAzMjAKICAgIGhlaWdodCA9IDI0MAogICAgZnJhbWVzX24gPSA3MgogICAgb3V0X3BhdGggPSAic2FtcGxlL291dC8xNl9nbGFzc19zY3VscHR1cmVfY2hhb3MuZ2lmIgoKICAgIHN0YXJ0ID0gcGVyZl9jb3VudGVyKCkKICAgIGZyYW1lczogbGlzdFtieXRlc10gPSBbXQogICAgZm9yIGkgaW4gcmFuZ2UoZnJhbWVzX24pOgogICAgICAgIGZyYW1lcy5hcHBlbmQocmVuZGVyX2ZyYW1lKHdpZHRoLCBoZWlnaHQsIGksIGZyYW1lc19uKSkKCiAgICBzYXZlX2dpZihvdXRfcGF0aCwgd2lkdGgsIGhlaWdodCwgZnJhbWVzLCBwYWxldHRlXzMzMigpLCBkZWxheV9jcz02LCBsb29wPTApCiAgICBlbGFwc2VkID0gcGVyZl9jb3VudGVyKCkgLSBzdGFydAogICAgcHJpbnQoIm91dHB1dDoiLCBvdXRfcGF0aCkKICAgIHByaW50KCJmcmFtZXM6IiwgZnJhbWVzX24pCiAgICBwcmludCgiZWxhcHNlZF9zZWM6IiwgZWxhcHNlZCkKCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgcnVuXzE2X2dsYXNzX3NjdWxwdHVyZV9jaGFvcygpCg=="
+func pyPrint(args ...any) {
+    parts := make([]string, 0, len(args))
+    for _, a := range args {
+        parts = append(parts, pyToString(a))
+    }
+    fmt.Println(strings.Join(parts, " "))
+}
 
-// main は埋め込み Python を実行するエントリポイント。
+func pyBool(v any) bool {
+    switch x := v.(type) {
+    case nil:
+        return false
+    case bool:
+        return x
+    case int:
+        return x != 0
+    case int64:
+        return x != 0
+    case float64:
+        return x != 0.0
+    case string:
+        return x != ""
+    case []any:
+        return len(x) > 0
+    case []byte:
+        return len(x) > 0
+    case map[any]any:
+        return len(x) > 0
+    default:
+        return true
+    }
+}
+
+func pyLen(v any) int {
+    switch x := v.(type) {
+    case string:
+        return len([]rune(x))
+    case []any:
+        return len(x)
+    case []byte:
+        return len(x)
+    case map[any]any:
+        return len(x)
+    default:
+        panic("len() unsupported type")
+    }
+}
+
+func pyRange(start, stop, step int) []any {
+    if step == 0 {
+        panic("range() step must not be zero")
+    }
+    out := []any{}
+    if step > 0 {
+        for i := start; i < stop; i += step {
+            out = append(out, i)
+        }
+    } else {
+        for i := start; i > stop; i += step {
+            out = append(out, i)
+        }
+    }
+    return out
+}
+
+func pyToFloat(v any) float64 {
+    switch x := v.(type) {
+    case int:
+        return float64(x)
+    case int64:
+        return float64(x)
+    case float64:
+        return x
+    case bool:
+        if x {
+            return 1.0
+        }
+        return 0.0
+    default:
+        panic("cannot convert to float")
+    }
+}
+
+func pyToInt(v any) int {
+    switch x := v.(type) {
+    case int:
+        return x
+    case int64:
+        return int(x)
+    case float64:
+        return int(math.Trunc(x))
+    case bool:
+        if x {
+            return 1
+        }
+        return 0
+    default:
+        panic("cannot convert to int")
+    }
+}
+
+func pyAdd(a, b any) any {
+    if sa, ok := a.(string); ok {
+        return sa + pyToString(b)
+    }
+    if sb, ok := b.(string); ok {
+        return pyToString(a) + sb
+    }
+    _, aInt := a.(int)
+    _, bInt := b.(int)
+    if aInt && bInt {
+        return pyToInt(a) + pyToInt(b)
+    }
+    return pyToFloat(a) + pyToFloat(b)
+}
+func pySub(a, b any) any {
+    _, aInt := a.(int)
+    _, bInt := b.(int)
+    if aInt && bInt {
+        return pyToInt(a) - pyToInt(b)
+    }
+    return pyToFloat(a) - pyToFloat(b)
+}
+func pyMul(a, b any) any {
+    _, aInt := a.(int)
+    _, bInt := b.(int)
+    if aInt && bInt {
+        return pyToInt(a) * pyToInt(b)
+    }
+    return pyToFloat(a) * pyToFloat(b)
+}
+func pyDiv(a, b any) any { return pyToFloat(a) / pyToFloat(b) }
+func pyFloorDiv(a, b any) any { return int(math.Floor(pyToFloat(a) / pyToFloat(b))) }
+func pyMod(a, b any) any {
+    ai := pyToInt(a)
+    bi := pyToInt(b)
+    r := ai % bi
+    if r != 0 && ((r > 0) != (bi > 0)) {
+        r += bi
+    }
+    return r
+}
+func pyMin(values ...any) any {
+    if len(values) == 0 {
+        panic("min() arg is empty")
+    }
+    out := values[0]
+    for i := 1; i < len(values); i++ {
+        a := out
+        b := values[i]
+        if _, ok := a.(int); ok {
+            if _, ok2 := b.(int); ok2 {
+                ai := pyToInt(a)
+                bi := pyToInt(b)
+                if bi < ai {
+                    out = bi
+                }
+                continue
+            }
+        }
+        af := pyToFloat(a)
+        bf := pyToFloat(b)
+        if bf < af {
+            out = bf
+        }
+    }
+    return out
+}
+func pyMax(values ...any) any {
+    if len(values) == 0 {
+        panic("max() arg is empty")
+    }
+    out := values[0]
+    for i := 1; i < len(values); i++ {
+        a := out
+        b := values[i]
+        if _, ok := a.(int); ok {
+            if _, ok2 := b.(int); ok2 {
+                ai := pyToInt(a)
+                bi := pyToInt(b)
+                if bi > ai {
+                    out = bi
+                }
+                continue
+            }
+        }
+        af := pyToFloat(a)
+        bf := pyToFloat(b)
+        if bf > af {
+            out = bf
+        }
+    }
+    return out
+}
+func pyLShift(a, b any) any { return pyToInt(a) << uint(pyToInt(b)) }
+func pyRShift(a, b any) any { return pyToInt(a) >> uint(pyToInt(b)) }
+func pyBitAnd(a, b any) any { return pyToInt(a) & pyToInt(b) }
+func pyBitOr(a, b any) any  { return pyToInt(a) | pyToInt(b) }
+func pyBitXor(a, b any) any { return pyToInt(a) ^ pyToInt(b) }
+func pyNeg(a any) any {
+    if _, ok := a.(int); ok {
+        return -pyToInt(a)
+    }
+    return -pyToFloat(a)
+}
+
+func pyEq(a, b any) bool { return pyToString(a) == pyToString(b) }
+func pyNe(a, b any) bool { return !pyEq(a, b) }
+func pyLt(a, b any) bool { return pyToFloat(a) < pyToFloat(b) }
+func pyLe(a, b any) bool { return pyToFloat(a) <= pyToFloat(b) }
+func pyGt(a, b any) bool { return pyToFloat(a) > pyToFloat(b) }
+func pyGe(a, b any) bool { return pyToFloat(a) >= pyToFloat(b) }
+
+func pyIn(item, container any) bool {
+    switch c := container.(type) {
+    case string:
+        return strings.Contains(c, pyToString(item))
+    case []any:
+        for _, v := range c {
+            if pyEq(v, item) {
+                return true
+            }
+        }
+        return false
+    case map[any]any:
+        _, ok := c[item]
+        return ok
+    default:
+        return false
+    }
+}
+
+func pyIter(value any) []any {
+    switch v := value.(type) {
+    case []any:
+        return v
+    case []byte:
+        out := make([]any, 0, len(v))
+        for _, b := range v {
+            out = append(out, int(b))
+        }
+        return out
+    case string:
+        out := []any{}
+        for _, ch := range []rune(v) {
+            out = append(out, string(ch))
+        }
+        return out
+    case map[any]any:
+        out := []any{}
+        for k := range v {
+            out = append(out, k)
+        }
+        return out
+    default:
+        panic("iter unsupported")
+    }
+}
+
+func pyTernary(cond bool, a any, b any) any {
+    if cond {
+        return a
+    }
+    return b
+}
+
+func pyListFromIter(value any) any {
+    it := pyIter(value)
+    out := make([]any, len(it))
+    copy(out, it)
+    return out
+}
+
+func pySlice(value any, start any, end any) any {
+    s := 0
+    e := 0
+    switch v := value.(type) {
+    case string:
+        r := []rune(v)
+        n := len(r)
+        if start == nil {
+            s = 0
+        } else {
+            s = pyToInt(start)
+            if s < 0 {
+                s += n
+            }
+            if s < 0 {
+                s = 0
+            }
+            if s > n {
+                s = n
+            }
+        }
+        if end == nil {
+            e = n
+        } else {
+            e = pyToInt(end)
+            if e < 0 {
+                e += n
+            }
+            if e < 0 {
+                e = 0
+            }
+            if e > n {
+                e = n
+            }
+        }
+        if s > e {
+            s = e
+        }
+        return string(r[s:e])
+    case []any:
+        n := len(v)
+        if start == nil {
+            s = 0
+        } else {
+            s = pyToInt(start)
+            if s < 0 {
+                s += n
+            }
+            if s < 0 {
+                s = 0
+            }
+            if s > n {
+                s = n
+            }
+        }
+        if end == nil {
+            e = n
+        } else {
+            e = pyToInt(end)
+            if e < 0 {
+                e += n
+            }
+            if e < 0 {
+                e = 0
+            }
+            if e > n {
+                e = n
+            }
+        }
+        if s > e {
+            s = e
+        }
+        out := make([]any, e-s)
+        copy(out, v[s:e])
+        return out
+    default:
+        panic("slice unsupported")
+    }
+}
+
+func pyGet(value any, key any) any {
+    switch v := value.(type) {
+    case []any:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return v[i]
+    case map[any]any:
+        return v[key]
+    case string:
+        r := []rune(v)
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(r)
+        }
+        return string(r[i])
+    default:
+        panic("subscript unsupported")
+    }
+}
+
+func pySet(value any, key any, newValue any) {
+    switch v := value.(type) {
+    case []any:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = newValue
+    case map[any]any:
+        v[key] = newValue
+    default:
+        panic("setitem unsupported")
+    }
+}
+
+func pyPop(lst *any, idx any) any {
+    arr := (*lst).([]any)
+    n := len(arr)
+    i := n - 1
+    if idx != nil {
+        i = pyToInt(idx)
+        if i < 0 {
+            i += n
+        }
+    }
+    val := arr[i]
+    arr = append(arr[:i], arr[i+1:]...)
+    *lst = arr
+    return val
+}
+
+func pyPopAt(container any, key any, idx any) any {
+    lst := pyGet(container, key)
+    val := pyPop(&lst, idx)
+    pySet(container, key, lst)
+    return val
+}
+
+func pyOrd(v any) any {
+    s := pyToString(v)
+    r := []rune(s)
+    return int(r[0])
+}
+
+func pyChr(v any) any { return string(rune(pyToInt(v))) }
+
+func pyBytearray(size any) any {
+    if size == nil {
+        return []any{}
+    }
+    n := pyToInt(size)
+    out := make([]any, n)
+    for i := 0; i < n; i++ {
+        out[i] = 0
+    }
+    return out
+}
+
+func pyBytes(v any) any { return v }
+
+func pyIsDigit(v any) bool {
+    s := pyToString(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if ch < '0' || ch > '9' {
+            return false
+        }
+    }
+    return true
+}
+
+func pyIsAlpha(v any) bool {
+    s := pyToString(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+            return false
+        }
+    }
+    return true
+}
+
+func pyTryCatch(body func() any, handler func(any) any, finalizer func()) (ret any) {
+    defer finalizer()
+    defer func() {
+        if r := recover(); r != nil {
+            ret = handler(r)
+        }
+    }()
+    ret = body()
+    return
+}
+
+// -------- time/math helper --------
+
+func pyPerfCounter() any {
+    return float64(time.Now().UnixNano()) / 1_000_000_000.0
+}
+
+func pyMathSqrt(v any) any { return math.Sqrt(pyToFloat(v)) }
+func pyMathSin(v any) any  { return math.Sin(pyToFloat(v)) }
+func pyMathCos(v any) any  { return math.Cos(pyToFloat(v)) }
+func pyMathExp(v any) any  { return math.Exp(pyToFloat(v)) }
+func pyMathFloor(v any) any { return float64(math.Floor(pyToFloat(v))) }
+func pyMathPi() any        { return math.Pi }
+
+// -------- png/gif helper --------
+
+func pyToBytes(v any) []byte {
+    switch x := v.(type) {
+    case []byte:
+        out := make([]byte, len(x))
+        copy(out, x)
+        return out
+    case []any:
+        out := make([]byte, len(x))
+        for i, e := range x {
+            out[i] = byte(pyToInt(e))
+        }
+        return out
+    case string:
+        return []byte(x)
+    default:
+        panic("cannot convert to bytes")
+    }
+}
+
+func pyChunk(chunkType []byte, data []byte) []byte {
+    var out bytes.Buffer
+    n := uint32(len(data))
+    out.Write([]byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)})
+    out.Write(chunkType)
+    out.Write(data)
+    crc := crc32.ChecksumIEEE(append(append([]byte{}, chunkType...), data...))
+    out.Write([]byte{byte(crc >> 24), byte(crc >> 16), byte(crc >> 8), byte(crc)})
+    return out.Bytes()
+}
+
+func pyWriteRGBPNG(path any, width any, height any, pixels any) {
+    w := pyToInt(width)
+    h := pyToInt(height)
+    raw := pyToBytes(pixels)
+    expected := w * h * 3
+    if len(raw) != expected {
+        panic("pixels length mismatch")
+    }
+
+    scan := make([]byte, 0, h*(1+w*3))
+    rowBytes := w * 3
+    for y := 0; y < h; y++ {
+        scan = append(scan, 0)
+        start := y * rowBytes
+        end := start + rowBytes
+        scan = append(scan, raw[start:end]...)
+    }
+
+    var zbuf bytes.Buffer
+    zw, _ := zlib.NewWriterLevel(&zbuf, 6)
+    _, _ = zw.Write(scan)
+    _ = zw.Close()
+    idat := zbuf.Bytes()
+
+    ihdr := []byte{
+        byte(uint32(w) >> 24), byte(uint32(w) >> 16), byte(uint32(w) >> 8), byte(uint32(w)),
+        byte(uint32(h) >> 24), byte(uint32(h) >> 16), byte(uint32(h) >> 8), byte(uint32(h)),
+        8, 2, 0, 0, 0,
+    }
+
+    var png bytes.Buffer
+    png.Write([]byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'})
+    png.Write(pyChunk([]byte("IHDR"), ihdr))
+    png.Write(pyChunk([]byte("IDAT"), idat))
+    png.Write(pyChunk([]byte("IEND"), []byte{}))
+
+    _ = os.WriteFile(pyToString(path), png.Bytes(), 0o644)
+}
+
+func pyLzwEncode(data []byte, minCodeSize int) []byte {
+    if len(data) == 0 {
+        return []byte{}
+    }
+    clearCode := 1 << minCodeSize
+    endCode := clearCode + 1
+    codeSize := minCodeSize + 1
+    out := []byte{}
+    bitBuffer := 0
+    bitCount := 0
+
+    emit := func(code int) {
+        bitBuffer |= (code << bitCount)
+        bitCount += codeSize
+        for bitCount >= 8 {
+            out = append(out, byte(bitBuffer&0xff))
+            bitBuffer >>= 8
+            bitCount -= 8
+        }
+    }
+
+    emit(clearCode)
+    for _, v := range data {
+        emit(int(v))
+        emit(clearCode)
+    }
+    emit(endCode)
+    if bitCount > 0 {
+        out = append(out, byte(bitBuffer&0xff))
+    }
+    return out
+}
+
+func pyGrayscalePalette() any {
+    p := make([]byte, 0, 256*3)
+    for i := 0; i < 256; i++ {
+        p = append(p, byte(i), byte(i), byte(i))
+    }
+    return p
+}
+
+func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS any, loop any) {
+    w := pyToInt(width)
+    h := pyToInt(height)
+    frameBytes := w * h
+    pal := pyToBytes(palette)
+    if len(pal) != 256*3 {
+        panic("palette must be 256*3 bytes")
+    }
+    dcs := pyToInt(delayCS)
+    lp := pyToInt(loop)
+
+    frs := pyIter(frames)
+    out := []byte{}
+    out = append(out, []byte("GIF89a")...)
+    out = append(out, byte(w), byte(w>>8), byte(h), byte(h>>8))
+    out = append(out, 0xF7, 0, 0)
+    out = append(out, pal...)
+
+    out = append(out, 0x21, 0xFF, 0x0B)
+    out = append(out, []byte("NETSCAPE2.0")...)
+    out = append(out, 0x03, 0x01, byte(lp), byte(lp>>8), 0x00)
+
+    for _, frAny := range frs {
+        fr := pyToBytes(frAny)
+        if len(fr) != frameBytes {
+            panic("frame size mismatch")
+        }
+        out = append(out, 0x21, 0xF9, 0x04, 0x00, byte(dcs), byte(dcs>>8), 0x00, 0x00)
+        out = append(out, 0x2C, 0, 0, 0, 0, byte(w), byte(w>>8), byte(h), byte(h>>8), 0x00)
+        out = append(out, 0x08)
+        compressed := pyLzwEncode(fr, 8)
+        pos := 0
+        for pos < len(compressed) {
+            ln := len(compressed) - pos
+            if ln > 255 {
+                ln = 255
+            }
+            out = append(out, byte(ln))
+            out = append(out, compressed[pos:pos+ln]...)
+            pos += ln
+        }
+        out = append(out, 0x00)
+    }
+    out = append(out, 0x3B)
+    _ = os.WriteFile(pyToString(path), out, 0o644)
+}
+
+func clamp01(v any) any {
+    if (pyBool(pyLt(v, 0.0))) {
+        return 0.0
+    }
+    if (pyBool(pyGt(v, 1.0))) {
+        return 1.0
+    }
+    return v
+}
+
+func dot(ax any, ay any, az any, bx any, by any, bz any) any {
+    return pyAdd(pyAdd(pyMul(ax, bx), pyMul(ay, by)), pyMul(az, bz))
+}
+
+func length(x any, y any, z any) any {
+    return pyMathSqrt(pyAdd(pyAdd(pyMul(x, x), pyMul(y, y)), pyMul(z, z)))
+}
+
+func normalize(x any, y any, z any) any {
+    var l any = length(x, y, z)
+    _ = l
+    if (pyBool(pyLt(l, 1e-09))) {
+        return []any{0.0, 0.0, 0.0}
+    }
+    return []any{pyDiv(x, l), pyDiv(y, l), pyDiv(z, l)}
+}
+
+func reflect(ix any, iy any, iz any, nx any, ny any, nz any) any {
+    var d any = pyMul(dot(ix, iy, iz, nx, ny, nz), 2.0)
+    _ = d
+    return []any{pySub(ix, pyMul(d, nx)), pySub(iy, pyMul(d, ny)), pySub(iz, pyMul(d, nz))}
+}
+
+func refract(ix any, iy any, iz any, nx any, ny any, nz any, eta any) any {
+    var cosi any = pyNeg(dot(ix, iy, iz, nx, ny, nz))
+    _ = cosi
+    var sint2 any = pyMul(pyMul(eta, eta), pySub(1.0, pyMul(cosi, cosi)))
+    _ = sint2
+    if (pyBool(pyGt(sint2, 1.0))) {
+        return reflect(ix, iy, iz, nx, ny, nz)
+    }
+    var cost any = pyMathSqrt(pySub(1.0, sint2))
+    _ = cost
+    var k any = pySub(pyMul(eta, cosi), cost)
+    _ = k
+    return []any{pyAdd(pyMul(eta, ix), pyMul(k, nx)), pyAdd(pyMul(eta, iy), pyMul(k, ny)), pyAdd(pyMul(eta, iz), pyMul(k, nz))}
+}
+
+func schlick(cos_theta any, f0 any) any {
+    var m any = pySub(1.0, cos_theta)
+    _ = m
+    return pyAdd(f0, pyMul(pySub(1.0, f0), pyMul(pyMul(pyMul(pyMul(m, m), m), m), m)))
+}
+
+func sky_color(dx any, dy any, dz any, tphase any) any {
+    var t any = pyMul(0.5, pyAdd(dy, 1.0))
+    _ = t
+    var r any = pyAdd(0.06, pyMul(0.2, t))
+    _ = r
+    var g any = pyAdd(0.1, pyMul(0.25, t))
+    _ = g
+    var b any = pyAdd(0.16, pyMul(0.45, t))
+    _ = b
+    var band any = pyAdd(0.5, pyMul(0.5, pyMathSin(pyAdd(pyAdd(pyMul(8.0, dx), pyMul(6.0, dz)), tphase))))
+    _ = band
+    r = pyAdd(r, pyMul(0.08, band))
+    g = pyAdd(g, pyMul(0.05, band))
+    b = pyAdd(b, pyMul(0.12, band))
+    return []any{clamp01(r), clamp01(g), clamp01(b)}
+}
+
+func sphere_intersect(ox any, oy any, oz any, dx any, dy any, dz any, cx any, cy any, cz any, radius any) any {
+    var lx any = pySub(ox, cx)
+    _ = lx
+    var ly any = pySub(oy, cy)
+    _ = ly
+    var lz any = pySub(oz, cz)
+    _ = lz
+    var b any = pyAdd(pyAdd(pyMul(lx, dx), pyMul(ly, dy)), pyMul(lz, dz))
+    _ = b
+    var c any = pySub(pyAdd(pyAdd(pyMul(lx, lx), pyMul(ly, ly)), pyMul(lz, lz)), pyMul(radius, radius))
+    _ = c
+    var h any = pySub(pyMul(b, b), c)
+    _ = h
+    if (pyBool(pyLt(h, 0.0))) {
+        return pyNeg(1.0)
+    }
+    var s any = pyMathSqrt(h)
+    _ = s
+    var t0 any = pySub(pyNeg(b), s)
+    _ = t0
+    if (pyBool(pyGt(t0, 0.0001))) {
+        return t0
+    }
+    var t1 any = pyAdd(pyNeg(b), s)
+    _ = t1
+    if (pyBool(pyGt(t1, 0.0001))) {
+        return t1
+    }
+    return pyNeg(1.0)
+}
+
+func palette_332() any {
+    var p any = pyBytearray(pyMul(256, 3))
+    _ = p
+    var i any = nil
+    _ = i
+    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(256), pyToInt(1)) {
+        i = __pytra_it_1
+        var r any = pyBitAnd(pyRShift(i, 5), 7)
+        _ = r
+        var g any = pyBitAnd(pyRShift(i, 2), 7)
+        _ = g
+        var b any = pyBitAnd(i, 3)
+        _ = b
+        pySet(p, pyAdd(pyMul(i, 3), 0), pyToInt(pyDiv(pyMul(255, r), 7)))
+        pySet(p, pyAdd(pyMul(i, 3), 1), pyToInt(pyDiv(pyMul(255, g), 7)))
+        pySet(p, pyAdd(pyMul(i, 3), 2), pyToInt(pyDiv(pyMul(255, b), 3)))
+    }
+    return pyBytes(p)
+}
+
+func quantize_332(r any, g any, b any) any {
+    var rr any = pyToInt(pyMul(clamp01(r), 255.0))
+    _ = rr
+    var gg any = pyToInt(pyMul(clamp01(g), 255.0))
+    _ = gg
+    var bb any = pyToInt(pyMul(clamp01(b), 255.0))
+    _ = bb
+    return pyAdd(pyAdd(pyLShift(pyRShift(rr, 5), 5), pyLShift(pyRShift(gg, 5), 2)), pyRShift(bb, 6))
+}
+
+func render_frame(width any, height any, frame_id any, frames_n any) any {
+    var t any = pyDiv(frame_id, frames_n)
+    _ = t
+    var tphase any = pyMul(pyMul(2.0, pyMathPi()), t)
+    _ = tphase
+    var cam_r any = 3.0
+    _ = cam_r
+    var cam_x any = pyMul(cam_r, pyMathCos(pyMul(tphase, 0.9)))
+    _ = cam_x
+    var cam_y any = pyAdd(1.1, pyMul(0.25, pyMathSin(pyMul(tphase, 0.6))))
+    _ = cam_y
+    var cam_z any = pyMul(cam_r, pyMathSin(pyMul(tphase, 0.9)))
+    _ = cam_z
+    var look_x any = 0.0
+    _ = look_x
+    var look_y any = 0.35
+    _ = look_y
+    var look_z any = 0.0
+    _ = look_z
+    var __pytra_tuple_2 any = normalize(pySub(look_x, cam_x), pySub(look_y, cam_y), pySub(look_z, cam_z))
+    _ = __pytra_tuple_2
+    var fwd_x any = pyGet(__pytra_tuple_2, 0)
+    _ = fwd_x
+    var fwd_y any = pyGet(__pytra_tuple_2, 1)
+    _ = fwd_y
+    var fwd_z any = pyGet(__pytra_tuple_2, 2)
+    _ = fwd_z
+    var __pytra_tuple_3 any = normalize(fwd_z, 0.0, pyNeg(fwd_x))
+    _ = __pytra_tuple_3
+    var right_x any = pyGet(__pytra_tuple_3, 0)
+    _ = right_x
+    var right_y any = pyGet(__pytra_tuple_3, 1)
+    _ = right_y
+    var right_z any = pyGet(__pytra_tuple_3, 2)
+    _ = right_z
+    var __pytra_tuple_4 any = normalize(pySub(pyMul(right_y, fwd_z), pyMul(right_z, fwd_y)), pySub(pyMul(right_z, fwd_x), pyMul(right_x, fwd_z)), pySub(pyMul(right_x, fwd_y), pyMul(right_y, fwd_x)))
+    _ = __pytra_tuple_4
+    var up_x any = pyGet(__pytra_tuple_4, 0)
+    _ = up_x
+    var up_y any = pyGet(__pytra_tuple_4, 1)
+    _ = up_y
+    var up_z any = pyGet(__pytra_tuple_4, 2)
+    _ = up_z
+    var s0x any = pyMul(0.9, pyMathCos(pyMul(1.3, tphase)))
+    _ = s0x
+    var s0y any = pyAdd(0.15, pyMul(0.35, pyMathSin(pyMul(1.7, tphase))))
+    _ = s0y
+    var s0z any = pyMul(0.9, pyMathSin(pyMul(1.3, tphase)))
+    _ = s0z
+    var s1x any = pyMul(1.2, pyMathCos(pyAdd(pyMul(1.3, tphase), 2.094)))
+    _ = s1x
+    var s1y any = pyAdd(0.1, pyMul(0.4, pyMathSin(pyAdd(pyMul(1.1, tphase), 0.8))))
+    _ = s1y
+    var s1z any = pyMul(1.2, pyMathSin(pyAdd(pyMul(1.3, tphase), 2.094)))
+    _ = s1z
+    var s2x any = pyMul(1.0, pyMathCos(pyAdd(pyMul(1.3, tphase), 4.188)))
+    _ = s2x
+    var s2y any = pyAdd(0.2, pyMul(0.3, pyMathSin(pyAdd(pyMul(1.5, tphase), 1.9))))
+    _ = s2y
+    var s2z any = pyMul(1.0, pyMathSin(pyAdd(pyMul(1.3, tphase), 4.188)))
+    _ = s2z
+    var lr any = 0.35
+    _ = lr
+    var lx any = pyMul(2.4, pyMathCos(pyMul(tphase, 1.8)))
+    _ = lx
+    var ly any = pyAdd(1.8, pyMul(0.8, pyMathSin(pyMul(tphase, 1.2))))
+    _ = ly
+    var lz any = pyMul(2.4, pyMathSin(pyMul(tphase, 1.8)))
+    _ = lz
+    var frame any = pyBytearray(pyMul(width, height))
+    _ = frame
+    var aspect any = pyDiv(width, height)
+    _ = aspect
+    var fov any = 1.25
+    _ = fov
+    var i any = 0
+    _ = i
+    var py any = nil
+    _ = py
+    for _, __pytra_it_5 := range pyRange(pyToInt(0), pyToInt(height), pyToInt(1)) {
+        py = __pytra_it_5
+        var sy any = pySub(1.0, pyDiv(pyMul(2.0, pyAdd(py, 0.5)), height))
+        _ = sy
+        var px any = nil
+        _ = px
+        for _, __pytra_it_6 := range pyRange(pyToInt(0), pyToInt(width), pyToInt(1)) {
+            px = __pytra_it_6
+            var sx any = pyMul(pySub(pyDiv(pyMul(2.0, pyAdd(px, 0.5)), width), 1.0), aspect)
+            _ = sx
+            var rx any = pyAdd(fwd_x, pyMul(fov, pyAdd(pyMul(sx, right_x), pyMul(sy, up_x))))
+            _ = rx
+            var ry any = pyAdd(fwd_y, pyMul(fov, pyAdd(pyMul(sx, right_y), pyMul(sy, up_y))))
+            _ = ry
+            var rz any = pyAdd(fwd_z, pyMul(fov, pyAdd(pyMul(sx, right_z), pyMul(sy, up_z))))
+            _ = rz
+            var __pytra_tuple_7 any = normalize(rx, ry, rz)
+            _ = __pytra_tuple_7
+            var dx any = pyGet(__pytra_tuple_7, 0)
+            _ = dx
+            var dy any = pyGet(__pytra_tuple_7, 1)
+            _ = dy
+            var dz any = pyGet(__pytra_tuple_7, 2)
+            _ = dz
+            var best_t any = 1000000000.0
+            _ = best_t
+            var hit_kind any = 0
+            _ = hit_kind
+            var r any = 0.0
+            _ = r
+            var g any = 0.0
+            _ = g
+            var b any = 0.0
+            _ = b
+            if (pyBool(pyLt(dy, pyNeg(1e-06)))) {
+                var tf any = pyDiv(pySub(pyNeg(1.2), cam_y), dy)
+                _ = tf
+                if (pyBool((pyBool(pyGt(tf, 0.0001)) && pyBool(pyLt(tf, best_t))))) {
+                    best_t = tf
+                    hit_kind = 1
+                }
+            }
+            var t0 any = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65)
+            _ = t0
+            if (pyBool((pyBool(pyGt(t0, 0.0)) && pyBool(pyLt(t0, best_t))))) {
+                best_t = t0
+                hit_kind = 2
+            }
+            var t1 any = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72)
+            _ = t1
+            if (pyBool((pyBool(pyGt(t1, 0.0)) && pyBool(pyLt(t1, best_t))))) {
+                best_t = t1
+                hit_kind = 3
+            }
+            var t2 any = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58)
+            _ = t2
+            if (pyBool((pyBool(pyGt(t2, 0.0)) && pyBool(pyLt(t2, best_t))))) {
+                best_t = t2
+                hit_kind = 4
+            }
+            if (pyBool(pyEq(hit_kind, 0))) {
+                var __pytra_tuple_8 any = sky_color(dx, dy, dz, tphase)
+                _ = __pytra_tuple_8
+                r = pyGet(__pytra_tuple_8, 0)
+                g = pyGet(__pytra_tuple_8, 1)
+                b = pyGet(__pytra_tuple_8, 2)
+            } else {
+                if (pyBool(pyEq(hit_kind, 1))) {
+                    var hx any = pyAdd(cam_x, pyMul(best_t, dx))
+                    _ = hx
+                    var hz any = pyAdd(cam_z, pyMul(best_t, dz))
+                    _ = hz
+                    var cx any = pyToInt(pyMathFloor(pyMul(hx, 2.0)))
+                    _ = cx
+                    var cz any = pyToInt(pyMathFloor(pyMul(hz, 2.0)))
+                    _ = cz
+                    var checker any = pyTernary(pyBool(pyEq(pyMod(pyAdd(cx, cz), 2), 0)), 0, 1)
+                    _ = checker
+                    var base_r any = pyTernary(pyBool(pyEq(checker, 0)), 0.1, 0.04)
+                    _ = base_r
+                    var base_g any = pyTernary(pyBool(pyEq(checker, 0)), 0.11, 0.05)
+                    _ = base_g
+                    var base_b any = pyTernary(pyBool(pyEq(checker, 0)), 0.13, 0.08)
+                    _ = base_b
+                    var lxv any = pySub(lx, hx)
+                    _ = lxv
+                    var lyv any = pySub(ly, pyNeg(1.2))
+                    _ = lyv
+                    var lzv any = pySub(lz, hz)
+                    _ = lzv
+                    var __pytra_tuple_9 any = normalize(lxv, lyv, lzv)
+                    _ = __pytra_tuple_9
+                    var ldx any = pyGet(__pytra_tuple_9, 0)
+                    _ = ldx
+                    var ldy any = pyGet(__pytra_tuple_9, 1)
+                    _ = ldy
+                    var ldz any = pyGet(__pytra_tuple_9, 2)
+                    _ = ldz
+                    var ndotl any = pyMax(ldy, 0.0)
+                    _ = ndotl
+                    var ldist2 any = pyAdd(pyAdd(pyMul(lxv, lxv), pyMul(lyv, lyv)), pyMul(lzv, lzv))
+                    _ = ldist2
+                    var glow any = pyDiv(8.0, pyAdd(1.0, ldist2))
+                    _ = glow
+                    r = pyAdd(pyAdd(base_r, pyMul(0.8, glow)), pyMul(0.2, ndotl))
+                    g = pyAdd(pyAdd(base_g, pyMul(0.5, glow)), pyMul(0.18, ndotl))
+                    b = pyAdd(pyAdd(base_b, pyMul(1.0, glow)), pyMul(0.24, ndotl))
+                } else {
+                    var cx any = 0.0
+                    _ = cx
+                    var cy any = 0.0
+                    _ = cy
+                    var cz any = 0.0
+                    _ = cz
+                    var rad any = 1.0
+                    _ = rad
+                    if (pyBool(pyEq(hit_kind, 2))) {
+                        cx = s0x
+                        cy = s0y
+                        cz = s0z
+                        rad = 0.65
+                    } else {
+                        if (pyBool(pyEq(hit_kind, 3))) {
+                            cx = s1x
+                            cy = s1y
+                            cz = s1z
+                            rad = 0.72
+                        } else {
+                            cx = s2x
+                            cy = s2y
+                            cz = s2z
+                            rad = 0.58
+                        }
+                    }
+                    var hx any = pyAdd(cam_x, pyMul(best_t, dx))
+                    _ = hx
+                    var hy any = pyAdd(cam_y, pyMul(best_t, dy))
+                    _ = hy
+                    var hz any = pyAdd(cam_z, pyMul(best_t, dz))
+                    _ = hz
+                    var __pytra_tuple_10 any = normalize(pyDiv(pySub(hx, cx), rad), pyDiv(pySub(hy, cy), rad), pyDiv(pySub(hz, cz), rad))
+                    _ = __pytra_tuple_10
+                    var nx any = pyGet(__pytra_tuple_10, 0)
+                    _ = nx
+                    var ny any = pyGet(__pytra_tuple_10, 1)
+                    _ = ny
+                    var nz any = pyGet(__pytra_tuple_10, 2)
+                    _ = nz
+                    var __pytra_tuple_11 any = reflect(dx, dy, dz, nx, ny, nz)
+                    _ = __pytra_tuple_11
+                    var rdx any = pyGet(__pytra_tuple_11, 0)
+                    _ = rdx
+                    var rdy any = pyGet(__pytra_tuple_11, 1)
+                    _ = rdy
+                    var rdz any = pyGet(__pytra_tuple_11, 2)
+                    _ = rdz
+                    var __pytra_tuple_12 any = refract(dx, dy, dz, nx, ny, nz, pyDiv(1.0, 1.45))
+                    _ = __pytra_tuple_12
+                    var tdx any = pyGet(__pytra_tuple_12, 0)
+                    _ = tdx
+                    var tdy any = pyGet(__pytra_tuple_12, 1)
+                    _ = tdy
+                    var tdz any = pyGet(__pytra_tuple_12, 2)
+                    _ = tdz
+                    var __pytra_tuple_13 any = sky_color(rdx, rdy, rdz, tphase)
+                    _ = __pytra_tuple_13
+                    var sr any = pyGet(__pytra_tuple_13, 0)
+                    _ = sr
+                    var sg any = pyGet(__pytra_tuple_13, 1)
+                    _ = sg
+                    var sb any = pyGet(__pytra_tuple_13, 2)
+                    _ = sb
+                    var __pytra_tuple_14 any = sky_color(tdx, tdy, tdz, pyAdd(tphase, 0.8))
+                    _ = __pytra_tuple_14
+                    var tr any = pyGet(__pytra_tuple_14, 0)
+                    _ = tr
+                    var tg any = pyGet(__pytra_tuple_14, 1)
+                    _ = tg
+                    var tb any = pyGet(__pytra_tuple_14, 2)
+                    _ = tb
+                    var cosi any = pyMax(pyNeg(pyAdd(pyAdd(pyMul(dx, nx), pyMul(dy, ny)), pyMul(dz, nz))), 0.0)
+                    _ = cosi
+                    var fr any = schlick(cosi, 0.04)
+                    _ = fr
+                    r = pyAdd(pyMul(tr, pySub(1.0, fr)), pyMul(sr, fr))
+                    g = pyAdd(pyMul(tg, pySub(1.0, fr)), pyMul(sg, fr))
+                    b = pyAdd(pyMul(tb, pySub(1.0, fr)), pyMul(sb, fr))
+                    var lxv any = pySub(lx, hx)
+                    _ = lxv
+                    var lyv any = pySub(ly, hy)
+                    _ = lyv
+                    var lzv any = pySub(lz, hz)
+                    _ = lzv
+                    var __pytra_tuple_15 any = normalize(lxv, lyv, lzv)
+                    _ = __pytra_tuple_15
+                    var ldx any = pyGet(__pytra_tuple_15, 0)
+                    _ = ldx
+                    var ldy any = pyGet(__pytra_tuple_15, 1)
+                    _ = ldy
+                    var ldz any = pyGet(__pytra_tuple_15, 2)
+                    _ = ldz
+                    var ndotl any = pyMax(pyAdd(pyAdd(pyMul(nx, ldx), pyMul(ny, ldy)), pyMul(nz, ldz)), 0.0)
+                    _ = ndotl
+                    var __pytra_tuple_16 any = normalize(pySub(ldx, dx), pySub(ldy, dy), pySub(ldz, dz))
+                    _ = __pytra_tuple_16
+                    var hvx any = pyGet(__pytra_tuple_16, 0)
+                    _ = hvx
+                    var hvy any = pyGet(__pytra_tuple_16, 1)
+                    _ = hvy
+                    var hvz any = pyGet(__pytra_tuple_16, 2)
+                    _ = hvz
+                    var ndoth any = pyMax(pyAdd(pyAdd(pyMul(nx, hvx), pyMul(ny, hvy)), pyMul(nz, hvz)), 0.0)
+                    _ = ndoth
+                    var spec any = pyMul(ndoth, ndoth)
+                    _ = spec
+                    spec = pyMul(spec, spec)
+                    spec = pyMul(spec, spec)
+                    spec = pyMul(spec, spec)
+                    var glow any = pyDiv(10.0, pyAdd(pyAdd(pyAdd(1.0, pyMul(lxv, lxv)), pyMul(lyv, lyv)), pyMul(lzv, lzv)))
+                    _ = glow
+                    r = pyAdd(r, pyAdd(pyAdd(pyMul(0.2, ndotl), pyMul(0.8, spec)), pyMul(0.45, glow)))
+                    g = pyAdd(g, pyAdd(pyAdd(pyMul(0.18, ndotl), pyMul(0.6, spec)), pyMul(0.35, glow)))
+                    b = pyAdd(b, pyAdd(pyAdd(pyMul(0.26, ndotl), pyMul(1.0, spec)), pyMul(0.65, glow)))
+                    if (pyBool(pyEq(hit_kind, 2))) {
+                        r = pyMul(r, 0.95)
+                        g = pyMul(g, 1.05)
+                        b = pyMul(b, 1.1)
+                    } else {
+                        if (pyBool(pyEq(hit_kind, 3))) {
+                            r = pyMul(r, 1.08)
+                            g = pyMul(g, 0.98)
+                            b = pyMul(b, 1.04)
+                        } else {
+                            r = pyMul(r, 1.02)
+                            g = pyMul(g, 1.1)
+                            b = pyMul(b, 0.95)
+                        }
+                    }
+                }
+            }
+            r = pyMathSqrt(clamp01(r))
+            g = pyMathSqrt(clamp01(g))
+            b = pyMathSqrt(clamp01(b))
+            pySet(frame, i, quantize_332(r, g, b))
+            i = pyAdd(i, 1)
+        }
+    }
+    return pyBytes(frame)
+}
+
+func run_16_glass_sculpture_chaos() any {
+    var width any = 320
+    _ = width
+    var height any = 240
+    _ = height
+    var frames_n any = 72
+    _ = frames_n
+    var out_path any = "sample/out/16_glass_sculpture_chaos.gif"
+    _ = out_path
+    var start any = pyPerfCounter()
+    _ = start
+    var frames any = []any{}
+    _ = frames
+    var i any = nil
+    _ = i
+    for _, __pytra_it_17 := range pyRange(pyToInt(0), pyToInt(frames_n), pyToInt(1)) {
+        i = __pytra_it_17
+        frames = append(frames.([]any), render_frame(width, height, i, frames_n))
+    }
+    pySaveGIF(out_path, width, height, frames, palette_332(), 6, 0)
+    var elapsed any = pySub(pyPerfCounter(), start)
+    _ = elapsed
+    pyPrint("output:", out_path)
+    pyPrint("frames:", frames_n)
+    pyPrint("elapsed_sec:", elapsed)
+    return nil
+}
+
 func main() {
-	os.Exit(pytraRunEmbeddedPython(pytraEmbeddedSourceBase64, os.Args[1:]))
+    run_16_glass_sculpture_chaos()
 }
