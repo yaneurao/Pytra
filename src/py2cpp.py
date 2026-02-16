@@ -34,6 +34,7 @@ class CppTranspiler:
         self.exception_class_names: Set[str] = set()
         self.current_class_name: str = ""
         self.current_static_fields: Set[str] = set()
+        self.global_function_renames: dict[str, str] = {}
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
         """1ファイルを読み込み、C++へ変換して出力する。
@@ -84,6 +85,13 @@ class CppTranspiler:
                 if len(stmt.bases) > 0 and isinstance(stmt.bases[0], ast.Name) and stmt.bases[0].id == "Exception":
                     self.exception_class_names.add(stmt.name)
 
+        self.global_function_renames = {}
+        has_top_level_main = any(
+            isinstance(stmt, ast.FunctionDef) and stmt.name == "main" for stmt in module.body
+        )
+        if has_top_level_main:
+            self.global_function_renames["main"] = "py_main"
+
         for stmt in module.body:
             if isinstance(stmt, ast.FunctionDef):
                 function_defs.append(self.transpile_function(stmt, False))
@@ -101,7 +109,7 @@ class CppTranspiler:
             else:
                 main_stmts.append(stmt)
 
-        main_func = self.transpile_main(main_stmts)
+        main_func = self.transpile_main(main_stmts, "main")
 
         parts = sorted(include_lines)
         parts.append("")
@@ -396,6 +404,17 @@ class CppTranspiler:
 
     def _infer_expr_cpp_type(self, expr: ast.expr) -> str:
         """リテラル式から C++ 基本型を推定する。"""
+        def merge_types(types: List[str], fallback: str = "auto") -> str:
+            if len(types) == 0:
+                return fallback
+            first = types[0]
+            if all(t == first for t in types):
+                return first
+            number_types = {"int", "double"}
+            if all(t in number_types for t in types):
+                return "double"
+            return fallback
+
         if isinstance(expr, ast.Constant):
             if isinstance(expr.value, bool):
                 return "bool"
@@ -406,6 +425,56 @@ class CppTranspiler:
             if isinstance(expr.value, str):
                 return "string"
             return ""
+        if isinstance(expr, ast.List):
+            item_types: List[str] = []
+            for item in expr.elts:
+                t = self._infer_expr_cpp_type(item)
+                if t != "":
+                    item_types.append(t)
+            inner = merge_types(item_types, "int")
+            return f"vector<{inner}>"
+        if isinstance(expr, ast.Set):
+            item_types = []
+            for item in expr.elts:
+                t = self._infer_expr_cpp_type(item)
+                if t != "":
+                    item_types.append(t)
+            inner = merge_types(item_types, "int")
+            return f"unordered_set<{inner}>"
+        if isinstance(expr, ast.Dict):
+            key_types: List[str] = []
+            value_types: List[str] = []
+            for key, value in zip(expr.keys, expr.values):
+                if key is None:
+                    continue
+                kt = self._infer_expr_cpp_type(key)
+                vt = self._infer_expr_cpp_type(value)
+                if kt != "":
+                    key_types.append(kt)
+                if vt != "":
+                    value_types.append(vt)
+            key_type = merge_types(key_types, "string")
+            val_type = merge_types(value_types, "int")
+            return f"unordered_map<{key_type}, {val_type}>"
+        if isinstance(expr, ast.BinOp):
+            if isinstance(expr.op, (ast.Div, ast.Pow)):
+                return "double"
+            lt = self._infer_expr_cpp_type(expr.left)
+            rt = self._infer_expr_cpp_type(expr.right)
+            return merge_types([t for t in (lt, rt) if t != ""], "auto")
+        if isinstance(expr, ast.UnaryOp):
+            return self._infer_expr_cpp_type(expr.operand)
+        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
+            if expr.func.id in {"len"}:
+                return "size_t"
+            if expr.func.id in {"int"}:
+                return "int"
+            if expr.func.id in {"float"}:
+                return "double"
+            if expr.func.id in {"str"}:
+                return "string"
+            if expr.func.id in {"bytearray", "bytes"}:
+                return "string"
         return ""
 
     def transpile_function(self, fn: ast.FunctionDef, in_class: bool = False) -> str:
@@ -446,7 +515,10 @@ class CppTranspiler:
             lines.append("}")
             return "\n".join(lines)
 
-        lines: List[str] = [f"{return_type} {fn.name}({', '.join(params)})", "{"]
+        fn_name = fn.name
+        if not in_class and fn_name in self.global_function_renames:
+            fn_name = self.global_function_renames[fn_name]
+        lines: List[str] = [f"{return_type} {fn_name}({', '.join(params)})", "{"]
         lines.extend(self._indent_block(body_lines))
         lines.append("}")
         return "\n".join(lines)
@@ -537,9 +609,9 @@ class CppTranspiler:
                 return True
         return False
 
-    def transpile_main(self, body: List[ast.stmt]) -> str:
+    def transpile_main(self, body: List[ast.stmt], entry_name: str = "main") -> str:
         """トップレベル文を C++ の main 関数へ変換する。"""
-        lines: List[str] = ["int main()", "{"]
+        lines: List[str] = [f"int {entry_name}()", "{"]
         body_lines = self.transpile_statements(body, Scope(declared=set()))
         lines.extend(self._indent_block(body_lines))
         lines.extend(self._indent_block(["return 0;"]))
@@ -651,6 +723,9 @@ class CppTranspiler:
         name = stmt.targets[0].id
         if name not in scope.declared:
             scope.declared.add(name)
+            inferred = self._infer_expr_cpp_type(stmt.value)
+            if inferred != "" and inferred != "auto":
+                return [f"{inferred} {name} = {self.transpile_expr(stmt.value)};"]
             return [f"auto {name} = {self.transpile_expr(stmt.value)};"]
 
         return [f"{name} = {self.transpile_expr(stmt.value)};"]
@@ -658,8 +733,14 @@ class CppTranspiler:
     def _transpile_aug_assign(self, stmt: ast.AugAssign) -> List[str]:
         """拡張代入文を C++ の通常代入へ展開する。"""
         target = self.transpile_expr(stmt.target)
-        op = self._binop(stmt.op)
         value = self.transpile_expr(stmt.value)
+        if isinstance(stmt.op, ast.Pow):
+            return [f"{target} = py_pow({target}, {value});"]
+        if isinstance(stmt.op, ast.Div):
+            return [f"{target} = py_div({target}, {value});"]
+        if isinstance(stmt.op, ast.FloorDiv):
+            return [f"{target} = py_floordiv({target}, {value});"]
+        op = self._binop(stmt.op)
         return [f"{target} = ({target} {op} {value});"]
 
     def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
@@ -861,6 +942,12 @@ class CppTranspiler:
         if isinstance(expr, ast.BinOp):
             left = self.transpile_expr(expr.left)
             right = self.transpile_expr(expr.right)
+            if isinstance(expr.op, ast.Pow):
+                return f"py_pow({left}, {right})"
+            if isinstance(expr.op, ast.Div):
+                return f"py_div({left}, {right})"
+            if isinstance(expr.op, ast.FloorDiv):
+                return f"py_floordiv({left}, {right})"
             return f"({left} {self._binop(expr.op)} {right})"
         if isinstance(expr, ast.UnaryOp):
             return f"({self._unaryop(expr.op)}{self.transpile_expr(expr.operand)})"
@@ -871,9 +958,9 @@ class CppTranspiler:
                 values.append(self.transpile_expr(v))
             return "(" + f" {op} ".join(values) + ")"
         if isinstance(expr, ast.Compare):
-            if len(expr.ops) != 1 or len(expr.comparators) != 1:
-                return "/* chained-comparison */ false"
-            return self._transpile_compare(expr.left, expr.ops[0], expr.comparators[0])
+            if len(expr.ops) == 1 and len(expr.comparators) == 1:
+                return self._transpile_compare(expr.left, expr.ops[0], expr.comparators[0])
+            return self._transpile_chained_compare(expr)
         if isinstance(expr, ast.Call):
             return self._transpile_call(expr)
         if isinstance(expr, ast.Subscript):
@@ -885,8 +972,12 @@ class CppTranspiler:
             )
         if isinstance(expr, ast.JoinedStr):
             return self._transpile_joined_str(expr)
-        if isinstance(expr, (ast.ListComp, ast.SetComp, ast.GeneratorExp)):
-            return "/* comprehension */ {}"
+        if isinstance(expr, ast.ListComp):
+            return self._transpile_list_comp(expr)
+        if isinstance(expr, ast.SetComp):
+            return self._transpile_set_comp(expr)
+        if isinstance(expr, ast.GeneratorExp):
+            return self._transpile_gen_comp(expr)
         try:
             return self._raw_expr_to_cpp(expr.as_text())
         except Exception:
@@ -926,6 +1017,18 @@ class CppTranspiler:
             if len(call.args) == 1:
                 return f"py_to_string({args_list[0]})"
             return "\"\""
+        if isinstance(call.func, ast.Name) and call.func.id == "int":
+            if len(call.args) == 1:
+                return f"static_cast<int>({args_list[0]})"
+            return "0"
+        if isinstance(call.func, ast.Name) and call.func.id == "float":
+            if len(call.args) == 1:
+                return f"static_cast<double>({args_list[0]})"
+            return "0.0"
+        if isinstance(call.func, ast.Name) and call.func.id == "pow":
+            if len(args_list) == 2:
+                return f"py_pow({args_list[0]}, {args_list[1]})"
+            return "0.0"
         if isinstance(call.func, ast.Name) and call.func.id == "open":
             if len(args_list) >= 2:
                 if isinstance(call.args[1], ast.Constant) and isinstance(call.args[1].value, str):
@@ -936,14 +1039,14 @@ class CppTranspiler:
             return "std::make_shared<std::ofstream>()"
         if isinstance(call.func, ast.Name) and call.func.id == "bytearray":
             if len(args_list) == 0:
-                return "string()"
+                return "py_bytearray()"
             if len(args_list) == 1:
-                return f"string(static_cast<size_t>({args_list[0]}), '\\0')"
-            return "string()"
+                return f"py_bytearray({args_list[0]})"
+            return "py_bytearray()"
         if isinstance(call.func, ast.Name) and call.func.id == "bytes":
             if len(args_list) == 1:
-                return args_list[0]
-            return "string()"
+                return f"py_bytes({args_list[0]})"
+            return "py_bytes()"
         if isinstance(call.func, ast.Name) and call.func.id == "save_gif":
             return f"pycs::cpp_module::gif::save_gif({args})"
         if isinstance(call.func, ast.Name) and call.func.id == "grayscale_palette":
@@ -974,6 +1077,9 @@ class CppTranspiler:
             return "false"
 
         if isinstance(call.func, ast.Name):
+            if call.func.id in self.global_function_renames:
+                mapped_name = self.global_function_renames[call.func.id]
+                return f"{mapped_name}({args})"
             if call.func.id in self.class_names and call.func.id not in self.exception_class_names:
                 return f"pycs::gc::RcHandle<{call.func.id}>::adopt(pycs::gc::rc_new<{call.func.id}>({args}))"
             return f"{call.func.id}({args})"
@@ -983,7 +1089,9 @@ class CppTranspiler:
             if method == "append" and len(args_list) == 1:
                 return f"{obj}.push_back({args_list[0]})"
             if method == "pop" and len(args_list) == 0:
-                return f"{obj}.pop_back()"
+                return f"py_pop({obj})"
+            if method == "pop" and len(args_list) == 1:
+                return f"py_pop({obj}, {args_list[0]})"
             if method == "extend" and len(args_list) == 1:
                 return f"py_extend({obj}, {args_list[0]})"
             if method == "add" and len(args_list) == 1:
@@ -1178,8 +1286,18 @@ class CppTranspiler:
             return "/"
         if isinstance(op, ast.Mod):
             return "%"
+        if isinstance(op, ast.Pow):
+            return "**"
         if isinstance(op, ast.BitOr):
             return "|"
+        if isinstance(op, ast.BitAnd):
+            return "&"
+        if isinstance(op, ast.BitXor):
+            return "^"
+        if isinstance(op, ast.LShift):
+            return "<<"
+        if isinstance(op, ast.RShift):
+            return ">>"
         raise TranspileError("Unsupported binary operator")
 
     def _unaryop(self, op: ast.unaryop) -> str:
@@ -1221,6 +1339,93 @@ class CppTranspiler:
         if isinstance(op, ast.IsNot):
             return f"({left} != {right})"
         return f"({left} {self._cmpop(op)} {right})"
+
+    def _transpile_chained_compare(self, expr: ast.Compare) -> str:
+        """連鎖比較を pairwise 比較の AND に展開する。"""
+        items: List[str] = []
+        left_node = expr.left
+        for i, op in enumerate(expr.ops):
+            right_node = expr.comparators[i]
+            items.append(self._transpile_compare(left_node, op, right_node))
+            left_node = right_node
+        if len(items) == 0:
+            return "true"
+        return "(" + " && ".join(items) + ")"
+
+    def _transpile_comprehension_body(
+        self,
+        generators: List[ast.comprehension],
+        body_line: str,
+        index: int = 0,
+        temp_idx: int = 0,
+    ) -> List[str]:
+        """comprehension の for/if を入れ子の C++ for/if へ変換する。"""
+        if index >= len(generators):
+            return [body_line]
+
+        gen = generators[index]
+        iter_expr = self.transpile_expr(gen.iter)
+        lines: List[str] = []
+        loop_var = f"__pytra_item_{temp_idx}"
+        target_lines: List[str] = []
+
+        if isinstance(gen.target, ast.Name):
+            loop_var = gen.target.id
+        elif isinstance(gen.target, ast.Tuple):
+            tuple_names: List[str] = []
+            only_name_targets = True
+            for elt in gen.target.elts:
+                if isinstance(elt, ast.Name):
+                    tuple_names.append(elt.id)
+                else:
+                    only_name_targets = False
+                    break
+            if not only_name_targets:
+                raise TranspileError("Unsupported comprehension target")
+            for i, name in enumerate(tuple_names):
+                target_lines.append(f"auto {name} = std::get<{i}>({loop_var});")
+        else:
+            raise TranspileError("Unsupported comprehension target")
+
+        lines.append(f"for (const auto& {loop_var} : {iter_expr})")
+        lines.append("{")
+        body: List[str] = []
+        body.extend(target_lines)
+        for if_cond in gen.ifs:
+            body.append(f"if (!({self.transpile_expr(if_cond)})) continue;")
+        body.extend(self._transpile_comprehension_body(generators, body_line, index + 1, temp_idx + 1))
+        lines.extend(self._indent_block(body))
+        lines.append("}")
+        return lines
+
+    def _transpile_list_comp(self, expr: ast.ListComp) -> str:
+        """list comprehension を即時ラムダで vector 生成へ変換する。"""
+        elt_expr = self.transpile_expr(expr.elt)
+        elt_type = self._infer_expr_cpp_type(expr.elt)
+        if elt_type == "":
+            elt_type = "auto"
+        out_type = f"vector<{elt_type}>" if elt_type != "auto" else "vector<int>"
+
+        lines: List[str] = [f"{out_type} __pytra_out;"]
+        lines.extend(self._transpile_comprehension_body(expr.generators, f"__pytra_out.push_back({elt_expr});"))
+        lines.append("return __pytra_out;")
+        return "([&]() { " + " ".join(lines) + " })()"
+
+    def _transpile_set_comp(self, expr: ast.SetComp) -> str:
+        """set comprehension を即時ラムダで unordered_set 生成へ変換する。"""
+        elt_expr = self.transpile_expr(expr.elt)
+        elt_type = self._infer_expr_cpp_type(expr.elt)
+        if elt_type == "":
+            elt_type = "int"
+        lines: List[str] = [f"unordered_set<{elt_type}> __pytra_out;"]
+        lines.extend(self._transpile_comprehension_body(expr.generators, f"__pytra_out.insert({elt_expr});"))
+        lines.append("return __pytra_out;")
+        return "([&]() { " + " ".join(lines) + " })()"
+
+    def _transpile_gen_comp(self, expr: ast.GeneratorExp) -> str:
+        """generator expression は list として展開して返す。"""
+        pseudo_list = ast.ListComp(elt=expr.elt, generators=expr.generators)
+        return self._transpile_list_comp(pseudo_list)
 
     def _boolop(self, op: ast.boolop) -> str:
         """論理演算子ノードを C++ 論理演算子へ変換する。"""

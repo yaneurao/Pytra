@@ -6,13 +6,17 @@
 
 #include <algorithm>
 #include <any>
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -96,6 +100,69 @@ void py_extend(std::vector<T>& dst, std::initializer_list<T> src) {
     dst.insert(dst.end(), src.begin(), src.end());
 }
 
+inline void py_extend(std::string& dst, const std::string& src) {
+    dst.append(src);
+}
+
+template <typename T>
+void py_extend(std::string& dst, const std::vector<T>& src) {
+    for (const auto& item : src) {
+        dst.push_back(static_cast<char>(item));
+    }
+}
+
+template <typename T>
+T py_pop(std::vector<T>& v) {
+    if (v.empty()) {
+        throw std::out_of_range("pop from empty list");
+    }
+    T value = v.back();
+    v.pop_back();
+    return value;
+}
+
+template <typename T>
+T py_pop(std::vector<T>& v, int index) {
+    if (v.empty()) {
+        throw std::out_of_range("pop from empty list");
+    }
+    int pos = index;
+    if (pos < 0) {
+        pos += static_cast<int>(v.size());
+    }
+    if (pos < 0 || pos >= static_cast<int>(v.size())) {
+        throw std::out_of_range("pop index out of range");
+    }
+    T value = v[static_cast<std::size_t>(pos)];
+    v.erase(v.begin() + pos);
+    return value;
+}
+
+inline int py_pop(std::string& s) {
+    if (s.empty()) {
+        throw std::out_of_range("pop from empty bytearray");
+    }
+    const unsigned char ch = static_cast<unsigned char>(s.back());
+    s.pop_back();
+    return static_cast<int>(ch);
+}
+
+inline int py_pop(std::string& s, int index) {
+    if (s.empty()) {
+        throw std::out_of_range("pop from empty bytearray");
+    }
+    int pos = index;
+    if (pos < 0) {
+        pos += static_cast<int>(s.size());
+    }
+    if (pos < 0 || pos >= static_cast<int>(s.size())) {
+        throw std::out_of_range("pop index out of range");
+    }
+    const unsigned char ch = static_cast<unsigned char>(s[static_cast<std::size_t>(pos)]);
+    s.erase(static_cast<std::size_t>(pos), 1);
+    return static_cast<int>(ch);
+}
+
 inline void py_print_one(bool value) {
     std::cout << (value ? "True" : "False");
 }
@@ -138,6 +205,34 @@ std::shared_ptr<T> py_cast(const U& value) {
     return std::dynamic_pointer_cast<T>(value);
 }
 
+template <typename A, typename B>
+inline auto py_div(A lhs, B rhs) -> double {
+    return static_cast<double>(lhs) / static_cast<double>(rhs);
+}
+
+template <typename A, typename B>
+inline auto py_floordiv(A lhs, B rhs) {
+    using Ret = std::common_type_t<A, B>;
+    if constexpr (std::is_integral_v<A> && std::is_integral_v<B>) {
+        if (rhs == 0) {
+            throw std::runtime_error("division by zero");
+        }
+        Ret q = static_cast<Ret>(lhs / rhs);
+        Ret r = static_cast<Ret>(lhs % rhs);
+        if (r != 0 && ((r > 0) != (rhs > 0))) {
+            q -= 1;
+        }
+        return q;
+    } else {
+        return std::floor(static_cast<double>(lhs) / static_cast<double>(rhs));
+    }
+}
+
+template <typename A, typename B>
+inline auto py_pow(A lhs, B rhs) {
+    return std::pow(static_cast<double>(lhs), static_cast<double>(rhs));
+}
+
 template <typename T, typename U>
 bool py_isinstance(const U& value) {
     return py_cast<T>(value) != nullptr;
@@ -151,6 +246,52 @@ bool py_isinstance_any(const U& value) {
 template <typename T>
 std::size_t py_len(const T& value) {
     return value.size();
+}
+
+inline std::string py_bytearray() {
+    return std::string();
+}
+
+inline std::string py_bytearray(int n) {
+    if (n < 0) {
+        throw std::runtime_error("negative count");
+    }
+    return std::string(static_cast<std::size_t>(n), '\0');
+}
+
+inline std::string py_bytes(const std::string& s) {
+    return s;
+}
+
+inline std::string py_bytes() {
+    return std::string();
+}
+
+inline std::string py_bytes(int n) {
+    if (n < 0) {
+        throw std::runtime_error("negative count");
+    }
+    return std::string(static_cast<std::size_t>(n), '\0');
+}
+
+template <typename T>
+std::string py_bytes(const std::vector<T>& v) {
+    std::string out;
+    out.reserve(v.size());
+    for (const auto& item : v) {
+        out.push_back(static_cast<char>(item));
+    }
+    return out;
+}
+
+template <typename T>
+std::string py_bytes(std::initializer_list<T> v) {
+    std::string out;
+    out.reserve(v.size());
+    for (const auto& item : v) {
+        out.push_back(static_cast<char>(item));
+    }
+    return out;
 }
 
 template <typename T>
