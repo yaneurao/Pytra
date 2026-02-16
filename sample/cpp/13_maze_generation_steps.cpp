@@ -4,6 +4,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -19,76 +20,91 @@
 using namespace std;
 using namespace pycs::gc;
 
-string capture(const vector<vector<int>>& grid, int w, int h, int scale)
+string capture(const vector<vector<long long>>& grid, long long w, long long h, long long scale)
 {
     auto width = (w * scale);
     auto height = (h * scale);
-    auto frame = string(static_cast<size_t>((width * height)), '\0');
-    auto y = 0;
-    while ((y < h))
+    string frame = py_bytearray((width * height));
+    auto __pytra_range_start_1 = 0;
+    auto __pytra_range_stop_2 = h;
+    auto __pytra_range_step_3 = 1;
+    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
     {
-        auto x = 0;
-        while ((x < w))
+        auto __pytra_range_start_4 = 0;
+        auto __pytra_range_stop_5 = w;
+        auto __pytra_range_step_6 = 1;
+        if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
         {
             auto v = ((grid[y][x] == 0) ? 255 : 40);
-            auto yy = 0;
-            while ((yy < scale))
+            auto __pytra_range_start_7 = 0;
+            auto __pytra_range_stop_8 = scale;
+            auto __pytra_range_step_9 = 1;
+            if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+            for (auto yy = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (yy < __pytra_range_stop_8) : (yy > __pytra_range_stop_8); yy += __pytra_range_step_9)
             {
                 auto base = ((((y * scale) + yy) * width) + (x * scale));
-                auto xx = 0;
-                while ((xx < scale))
+                auto __pytra_range_start_10 = 0;
+                auto __pytra_range_stop_11 = scale;
+                auto __pytra_range_step_12 = 1;
+                if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                for (auto xx = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (xx < __pytra_range_stop_11) : (xx > __pytra_range_stop_11); xx += __pytra_range_step_12)
                 {
                     frame[(base + xx)] = v;
-                    xx = (xx + 1);
                 }
-                yy = (yy + 1);
             }
-            x = (x + 1);
         }
-        y = (y + 1);
     }
-    return frame;
+    return py_bytes(frame);
 }
 
 void run_13_maze_generation_steps()
 {
-    auto cell_w = 61;
-    auto cell_h = 45;
-    auto scale = 4;
-    auto out_path = "sample/out/13_maze_generation_steps.gif";
+    long long cell_w = 61;
+    long long cell_h = 45;
+    long long scale = 4;
+    string out_path = "sample/out/13_maze_generation_steps.gif";
     auto start = perf_counter();
-    vector<vector<int>> grid = {};
-    auto gy = 0;
-    while ((gy < cell_h))
+    vector<vector<long long>> grid = {};
+    auto __pytra_range_start_13 = 0;
+    auto __pytra_range_stop_14 = cell_h;
+    auto __pytra_range_step_15 = 1;
+    if (__pytra_range_step_15 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto _ = __pytra_range_start_13; (__pytra_range_step_15 > 0) ? (_ < __pytra_range_stop_14) : (_ > __pytra_range_stop_14); _ += __pytra_range_step_15)
     {
-        vector<int> row = {};
-        auto gx = 0;
-        while ((gx < cell_w))
+        vector<long long> row = {};
+        auto __pytra_range_start_16 = 0;
+        auto __pytra_range_stop_17 = cell_w;
+        auto __pytra_range_step_18 = 1;
+        if (__pytra_range_step_18 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto _ = __pytra_range_start_16; (__pytra_range_step_18 > 0) ? (_ < __pytra_range_stop_17) : (_ > __pytra_range_stop_17); _ += __pytra_range_step_18)
         {
             row.push_back(1);
-            gx = (gx + 1);
         }
         grid.push_back(row);
-        gy = (gy + 1);
     }
-    vector<tuple<int, int>> stack = {std::make_tuple(1, 1)};
+    vector<tuple<long long, long long>> stack = {std::make_tuple(1, 1)};
     grid[1][1] = 0;
-    vector<tuple<int, int>> dirs = {std::make_tuple(2, 0), std::make_tuple((-2), 0), std::make_tuple(0, 2), std::make_tuple(0, (-2))};
+    vector<tuple<long long, long long>> dirs = {std::make_tuple(2, 0), std::make_tuple((-2), 0), std::make_tuple(0, 2), std::make_tuple(0, (-2))};
     vector<string> frames = {};
-    auto step = 0;
+    long long step = 0;
     while ((py_len(stack) > 0))
     {
         auto last_index = (py_len(stack) - 1);
-        auto _tmp_tuple = stack[last_index];
-        auto x = std::get<0>(_tmp_tuple);
-        auto y = std::get<1>(_tmp_tuple);
-        vector<tuple<int, int, int, int>> candidates = {};
-        auto k = 0;
-        while ((k < 4))
+        auto __pytra_tuple_19 = stack[last_index];
+        auto x = std::get<0>(__pytra_tuple_19);
+        auto y = std::get<1>(__pytra_tuple_19);
+        vector<tuple<long long, long long, long long, long long>> candidates = {};
+        auto __pytra_range_start_20 = 0;
+        auto __pytra_range_stop_21 = 4;
+        auto __pytra_range_step_22 = 1;
+        if (__pytra_range_step_22 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto k = __pytra_range_start_20; (__pytra_range_step_22 > 0) ? (k < __pytra_range_stop_21) : (k > __pytra_range_stop_21); k += __pytra_range_step_22)
         {
-            auto _tmp_tuple = dirs[k];
-            auto dx = std::get<0>(_tmp_tuple);
-            auto dy = std::get<1>(_tmp_tuple);
+            auto __pytra_tuple_23 = dirs[k];
+            auto dx = std::get<0>(__pytra_tuple_23);
+            auto dy = std::get<1>(__pytra_tuple_23);
             auto nx = (x + dx);
             auto ny = (y + dy);
             if (((nx >= 1) && (nx < (cell_w - 1)) && (ny >= 1) && (ny < (cell_h - 1)) && (grid[ny][nx] == 1)))
@@ -116,20 +132,19 @@ void run_13_maze_generation_steps()
                     }
                 }
             }
-            k = (k + 1);
         }
         if ((py_len(candidates) == 0))
         {
-            stack.pop_back();
+            py_pop(stack);
         }
         else
         {
             auto sel = candidates[((((x * 17) + (y * 29)) + (py_len(stack) * 13)) % py_len(candidates))];
-            auto _tmp_tuple = sel;
-            auto nx = std::get<0>(_tmp_tuple);
-            auto ny = std::get<1>(_tmp_tuple);
-            auto wx = std::get<2>(_tmp_tuple);
-            auto wy = std::get<3>(_tmp_tuple);
+            auto __pytra_tuple_24 = sel;
+            auto nx = std::get<0>(__pytra_tuple_24);
+            auto ny = std::get<1>(__pytra_tuple_24);
+            auto wx = std::get<2>(__pytra_tuple_24);
+            auto wy = std::get<3>(__pytra_tuple_24);
             grid[wy][wx] = 0;
             grid[ny][nx] = 0;
             stack.push_back(std::make_tuple(nx, ny));

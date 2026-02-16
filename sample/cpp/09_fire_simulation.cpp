@@ -4,6 +4,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -21,13 +22,16 @@ using namespace pycs::gc;
 
 string fire_palette()
 {
-    auto p = string();
-    auto i = 0;
-    while ((i < 256))
+    string p = py_bytearray();
+    auto __pytra_range_start_1 = 0;
+    auto __pytra_range_stop_2 = 256;
+    auto __pytra_range_step_3 = 1;
+    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
     {
-        auto r = 0;
-        auto g = 0;
-        auto b = 0;
+        long long r = 0;
+        long long g = 0;
+        long long b = 0;
         if ((i < 85))
         {
             r = (i * 3);
@@ -52,77 +56,92 @@ string fire_palette()
         p.push_back(r);
         p.push_back(g);
         p.push_back(b);
-        i = (i + 1);
     }
-    return p;
+    return py_bytes(p);
 }
 
 void run_09_fire_simulation()
 {
-    auto w = 220;
-    auto h = 140;
-    auto steps = 110;
-    auto out_path = "sample/out/09_fire_simulation.gif";
+    long long w = 220;
+    long long h = 140;
+    long long steps = 110;
+    string out_path = "sample/out/09_fire_simulation.gif";
     auto start = perf_counter();
-    vector<vector<int>> heat = {};
-    auto gy = 0;
-    while ((gy < h))
+    vector<vector<long long>> heat = {};
+    auto __pytra_range_start_4 = 0;
+    auto __pytra_range_stop_5 = h;
+    auto __pytra_range_step_6 = 1;
+    if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto _ = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (_ < __pytra_range_stop_5) : (_ > __pytra_range_stop_5); _ += __pytra_range_step_6)
     {
-        vector<int> row = {};
-        auto gx = 0;
-        while ((gx < w))
+        vector<long long> row = {};
+        auto __pytra_range_start_7 = 0;
+        auto __pytra_range_stop_8 = w;
+        auto __pytra_range_step_9 = 1;
+        if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto _ = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (_ < __pytra_range_stop_8) : (_ > __pytra_range_stop_8); _ += __pytra_range_step_9)
         {
             row.push_back(0);
-            gx = (gx + 1);
         }
         heat.push_back(row);
-        gy = (gy + 1);
     }
     vector<string> frames = {};
-    auto t = 0;
-    while ((t < steps))
+    auto __pytra_range_start_10 = 0;
+    auto __pytra_range_stop_11 = steps;
+    auto __pytra_range_step_12 = 1;
+    if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto t = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (t < __pytra_range_stop_11) : (t > __pytra_range_stop_11); t += __pytra_range_step_12)
     {
-        auto x = 0;
-        while ((x < w))
+        auto __pytra_range_start_13 = 0;
+        auto __pytra_range_stop_14 = w;
+        auto __pytra_range_step_15 = 1;
+        if (__pytra_range_step_15 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_13; (__pytra_range_step_15 > 0) ? (x < __pytra_range_stop_14) : (x > __pytra_range_stop_14); x += __pytra_range_step_15)
         {
-            auto val = (170 + (((x * 13) + (t * 17)) % 86));
+            long long val = (170 + (((x * 13) + (t * 17)) % 86));
             heat[(h - 1)][x] = val;
-            x = (x + 1);
         }
-        auto y = 1;
-        while ((y < h))
+        auto __pytra_range_start_16 = 1;
+        auto __pytra_range_stop_17 = h;
+        auto __pytra_range_step_18 = 1;
+        if (__pytra_range_step_18 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto y = __pytra_range_start_16; (__pytra_range_step_18 > 0) ? (y < __pytra_range_stop_17) : (y > __pytra_range_stop_17); y += __pytra_range_step_18)
         {
-            x = 0;
-            while ((x < w))
+            auto __pytra_range_start_19 = 0;
+            auto __pytra_range_stop_20 = w;
+            auto __pytra_range_step_21 = 1;
+            if (__pytra_range_step_21 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+            for (auto x = __pytra_range_start_19; (__pytra_range_step_21 > 0) ? (x < __pytra_range_stop_20) : (x > __pytra_range_stop_20); x += __pytra_range_step_21)
             {
                 auto a = heat[y][x];
                 auto b = heat[y][(((x - 1) + w) % w)];
                 auto c = heat[y][((x + 1) % w)];
                 auto d = heat[((y + 1) % h)][x];
-                auto v = ((((a + b) + c) + d) / 4);
+                auto v = py_floordiv((((a + b) + c) + d), 4);
                 auto cool = (1 + (((x + y) + t) % 3));
                 auto nv = (v - cool);
                 heat[(y - 1)][x] = ((nv > 0) ? nv : 0);
-                x = (x + 1);
             }
-            y = (y + 1);
         }
-        auto frame = string(static_cast<size_t>((w * h)), '\0');
-        auto i = 0;
-        auto yy = 0;
-        while ((yy < h))
+        string frame = py_bytearray((w * h));
+        long long i = 0;
+        auto __pytra_range_start_22 = 0;
+        auto __pytra_range_stop_23 = h;
+        auto __pytra_range_step_24 = 1;
+        if (__pytra_range_step_24 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto yy = __pytra_range_start_22; (__pytra_range_step_24 > 0) ? (yy < __pytra_range_stop_23) : (yy > __pytra_range_stop_23); yy += __pytra_range_step_24)
         {
-            auto xx = 0;
-            while ((xx < w))
+            auto __pytra_range_start_25 = 0;
+            auto __pytra_range_stop_26 = w;
+            auto __pytra_range_step_27 = 1;
+            if (__pytra_range_step_27 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+            for (auto xx = __pytra_range_start_25; (__pytra_range_step_27 > 0) ? (xx < __pytra_range_stop_26) : (xx > __pytra_range_stop_26); xx += __pytra_range_step_27)
             {
                 frame[i] = heat[yy][xx];
                 i = (i + 1);
-                xx = (xx + 1);
             }
-            yy = (yy + 1);
         }
-        frames.push_back(frame);
-        t = (t + 1);
+        frames.push_back(py_bytes(frame));
     }
     pycs::cpp_module::gif::save_gif(out_path, w, h, frames, fire_palette(), 4, 0);
     auto elapsed = (perf_counter() - start);

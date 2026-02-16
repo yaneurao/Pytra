@@ -1,74 +1,73 @@
 using System.Collections.Generic;
 using System.IO;
 using System;
-using py_module.gif_helper;
 
 public static class Program
 {
-    public static List<List<int>> next_state(List<List<int>> grid, int w, int h)
+    public static List<List<long>> next_state(List<List<long>> grid, long w, long h)
     {
-        List<List<int>> nxt = new List<object> {  };
+        List<List<long>> nxt = new List<List<long>> {  };
         var __pytra_range_start_1 = 0;
         var __pytra_range_stop_2 = h;
         var __pytra_range_step_3 = 1;
         if (__pytra_range_step_3 == 0) throw new Exception("range() arg 3 must not be zero");
         for (var y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
         {
-            List<int> row = new List<object> {  };
+            List<long> row = new List<long> {  };
             var __pytra_range_start_4 = 0;
             var __pytra_range_stop_5 = w;
             var __pytra_range_step_6 = 1;
             if (__pytra_range_step_6 == 0) throw new Exception("range() arg 3 must not be zero");
             for (var x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
             {
-                var cnt = 0;
-                var __pytra_range_start_7 = (-1);
-                var __pytra_range_stop_8 = 2;
+                long cnt = 0L;
+                var __pytra_range_start_7 = (-1L);
+                var __pytra_range_stop_8 = 2L;
                 var __pytra_range_step_9 = 1;
                 if (__pytra_range_step_9 == 0) throw new Exception("range() arg 3 must not be zero");
                 for (var dy = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (dy < __pytra_range_stop_8) : (dy > __pytra_range_stop_8); dy += __pytra_range_step_9)
                 {
-                    var __pytra_range_start_10 = (-1);
-                    var __pytra_range_stop_11 = 2;
+                    var __pytra_range_start_10 = (-1L);
+                    var __pytra_range_stop_11 = 2L;
                     var __pytra_range_step_12 = 1;
                     if (__pytra_range_step_12 == 0) throw new Exception("range() arg 3 must not be zero");
                     for (var dx = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (dx < __pytra_range_stop_11) : (dx > __pytra_range_stop_11); dx += __pytra_range_step_12)
                     {
-                        if (((dx != 0) || (dy != 0)))
+                        if (Pytra.CsModule.py_runtime.py_bool(((dx != 0L) || (dy != 0L))))
                         {
                             var nx = (((x + dx) + w) % w);
                             var ny = (((y + dy) + h) % h);
-                            cnt = (cnt + grid[ny][nx]);
+                            cnt = (cnt + Pytra.CsModule.py_runtime.py_get(Pytra.CsModule.py_runtime.py_get(grid, ny), nx));
                         }
                     }
                 }
-                var alive = grid[y][x];
-                if (((alive == 1) && ((cnt == 2) || (cnt == 3))))
+                var alive = Pytra.CsModule.py_runtime.py_get(Pytra.CsModule.py_runtime.py_get(grid, y), x);
+                if (Pytra.CsModule.py_runtime.py_bool(((alive == 1L) && ((cnt == 2L) || (cnt == 3L)))))
                 {
-                    row.Add((byte)(1));
+                    Pytra.CsModule.py_runtime.py_append(row, 1L);
                 }
                 else
                 {
-                    if (((alive == 0) && (cnt == 3)))
+                    if (Pytra.CsModule.py_runtime.py_bool(((alive == 0L) && (cnt == 3L))))
                     {
-                        row.Add((byte)(1));
+                        Pytra.CsModule.py_runtime.py_append(row, 1L);
                     }
                     else
                     {
-                        row.Add((byte)(0));
+                        Pytra.CsModule.py_runtime.py_append(row, 0L);
                     }
                 }
             }
-            nxt.Add((byte)(row));
+            Pytra.CsModule.py_runtime.py_append(nxt, row);
         }
         return nxt;
     }
 
-    public static List<byte> render(List<List<int>> grid, int w, int h, int cell)
+    public static List<byte> render(List<List<long>> grid, long w, long h, long cell)
     {
         var width = (w * cell);
         var height = (h * cell);
-        var frame = new List<byte>();
+        var frame = Pytra.CsModule.py_runtime.py_bytearray((width * height));
         var __pytra_range_start_13 = 0;
         var __pytra_range_stop_14 = h;
         var __pytra_range_step_15 = 1;
@@ -81,7 +80,7 @@ public static class Program
             if (__pytra_range_step_18 == 0) throw new Exception("range() arg 3 must not be zero");
             for (var x = __pytra_range_start_16; (__pytra_range_step_18 > 0) ? (x < __pytra_range_stop_17) : (x > __pytra_range_stop_17); x += __pytra_range_step_18)
             {
-                var v = (grid[y][x] ? 255 : 0);
+                var v = (Pytra.CsModule.py_runtime.py_bool(Pytra.CsModule.py_runtime.py_get(Pytra.CsModule.py_runtime.py_get(grid, y), x)) ? 255L : 0L);
                 var __pytra_range_start_19 = 0;
                 var __pytra_range_stop_20 = cell;
                 var __pytra_range_step_21 = 1;
@@ -95,51 +94,51 @@ public static class Program
                     if (__pytra_range_step_24 == 0) throw new Exception("range() arg 3 must not be zero");
                     for (var xx = __pytra_range_start_22; (__pytra_range_step_24 > 0) ? (xx < __pytra_range_stop_23) : (xx > __pytra_range_stop_23); xx += __pytra_range_step_24)
                     {
-                        // unsupported assignment: frame[base + xx] = v
+                        Pytra.CsModule.py_runtime.py_set(frame, (@base + xx), v);
                     }
                 }
             }
         }
-        return bytes(frame);
+        return Pytra.CsModule.py_runtime.py_bytes(frame);
     }
 
     public static void run_07_game_of_life_loop()
     {
-        var w = 96;
-        var h = 72;
-        var cell = 3;
-        var steps = 70;
-        var out_path = "sample/out/07_game_of_life_loop.gif";
+        long w = 96L;
+        long h = 72L;
+        long cell = 3L;
+        long steps = 70L;
+        string out_path = "sample/out/07_game_of_life_loop.gif";
         var start = Pytra.CsModule.time.perf_counter();
-        List<List<int>> grid = new List<object> {  };
+        List<List<long>> grid = new List<List<long>> {  };
         var __pytra_range_start_25 = 0;
         var __pytra_range_stop_26 = h;
         var __pytra_range_step_27 = 1;
         if (__pytra_range_step_27 == 0) throw new Exception("range() arg 3 must not be zero");
         for (var y = __pytra_range_start_25; (__pytra_range_step_27 > 0) ? (y < __pytra_range_stop_26) : (y > __pytra_range_stop_26); y += __pytra_range_step_27)
         {
-            List<int> row = new List<object> {  };
+            List<long> row = new List<long> {  };
             var __pytra_range_start_28 = 0;
             var __pytra_range_stop_29 = w;
             var __pytra_range_step_30 = 1;
             if (__pytra_range_step_30 == 0) throw new Exception("range() arg 3 must not be zero");
             for (var x = __pytra_range_start_28; (__pytra_range_step_30 > 0) ? (x < __pytra_range_stop_29) : (x > __pytra_range_stop_29); x += __pytra_range_step_30)
             {
-                row.Add((byte)(((((((x * 17) + (y * 31)) + 13) % 11) < 3) ? 1 : 0)));
+                Pytra.CsModule.py_runtime.py_append(row, (Pytra.CsModule.py_runtime.py_bool((((((x * 17L) + (y * 31L)) + 13L) % 11L) < 3L)) ? 1L : 0L));
             }
-            grid.Add((byte)(row));
+            Pytra.CsModule.py_runtime.py_append(grid, row);
         }
-        List<List<byte>> frames = new List<object> {  };
+        List<List<byte>> frames = new List<List<byte>> {  };
         var __pytra_range_start_31 = 0;
         var __pytra_range_stop_32 = steps;
         var __pytra_range_step_33 = 1;
         if (__pytra_range_step_33 == 0) throw new Exception("range() arg 3 must not be zero");
-        for (var _ = __pytra_range_start_31; (__pytra_range_step_33 > 0) ? (_ < __pytra_range_stop_32) : (_ > __pytra_range_stop_32); _ += __pytra_range_step_33)
+        for (var __pytra_unused_34 = __pytra_range_start_31; (__pytra_range_step_33 > 0) ? (__pytra_unused_34 < __pytra_range_stop_32) : (__pytra_unused_34 > __pytra_range_stop_32); __pytra_unused_34 += __pytra_range_step_33)
         {
-            frames.Add((byte)(render(grid, w, h, cell)));
+            Pytra.CsModule.py_runtime.py_append(frames, render(grid, w, h, cell));
             grid = next_state(grid, w, h);
         }
-        save_gif(out_path, (w * cell), (h * cell), frames, grayscale_palette(), delay_cs: 4, loop: 0);
+        Pytra.CsModule.gif_helper.save_gif(out_path, (w * cell), (h * cell), frames, Pytra.CsModule.gif_helper.grayscale_palette(), delay_cs: 4L, loop: 0L);
         var elapsed = (Pytra.CsModule.time.perf_counter() - start);
         Pytra.CsModule.py_runtime.print("output:", out_path);
         Pytra.CsModule.py_runtime.print("frames:", steps);

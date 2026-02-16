@@ -26,6 +26,7 @@ JavaScriptのコードにも変換できるので、Pythonでブラウザゲー�
 - Python → C++ : [src/py2cpp.py](src/py2cpp.py)
 - Python → C# : [src/py2cs.py](src/py2cs.py)
 - Python → JavaScript : 🚧[src/py2js.py](src/py2js.py)
+- Python → Rust : 🚧[src/py2rs.py](src/py2rs.py)
 
 ## トランスパイラの使い方
 
@@ -95,6 +96,7 @@ mono test/obj/case28_iterable.exe
 - [test/cpp](test/cpp) : テストコードをC++のコードに変換したもの。
 - [test/cs](test/cs) : テストコードをC#のコードに変換したもの。
 - [test/js](test/js) : 🚧テストコードをJavaScriptのコードに変換したもの。
+- [test/rs](test/rs) : 🚧テストコードをRustのコードに変換したもの。
 
 ### サンプルコード
 
@@ -104,6 +106,7 @@ mono test/obj/case28_iterable.exe
 - [sample/cpp](sample/cpp) : サンプルコードをC++のコードに変換したもの。
 - [sample/cs](sample/cs) : サンプルコードをC#のコードに変換したもの。
 - [sample/js](sample/js) : 🚧サンプルコードをJavaScriptのコードに変換したもの。
+- [sample/rs](sample/rs) : 🚧サンプルコードをRustのコードに変換したもの。
 
 ## 実行速度の比較
 
@@ -144,6 +147,7 @@ mono test/obj/case28_iterable.exe
 - list/set comprehension の主要ケース
 - `if __name__ == "__main__":` ガードの認識
 - 型マッピング（`int`, `int8..uint64`, `float`, `float32`, `str`, `bool`, `None`）
+- a[b:c] 形式のスライス構文
 
 ### module
 
@@ -160,13 +164,18 @@ mono test/obj/case28_iterable.exe
 ## 未実装項目
 
 - JavaScript / Rust 向けトランスパイラ本体の本格実装
-- Python 構文の完全互換（現状はサブセット）
 - 標準ライブラリ網羅対応（`import` 可能モジュールの拡充）
-- 動的なimport、動的型付け(これ)
-- 例外処理・型推論の高度化（より複雑なケースの対応）
-- 生成コード品質の最適化（可読性・サイズ・高速化）
 - 回帰テストのさらなる拡充（網羅率向上）
-- スライス構文の完全対応（現状は `a[b:c]` のみ対応、`a[:c]`, `a[b:]`, `a[:]`, `a[b:c:d]`, 負step, スライス代入は未対応）
+- 例外処理・型推論の高度化
+- a[b:c] 以外のスライス構文
+
+対応予定なし
+
+- Python 構文の完全互換（現状はサブセット）
+- 動的なimport
+- 動的な型付け
+- 弱参照, 循環参照 非対応
+- スライスオブジェクト
 
 
 ## 開発について
@@ -175,4 +184,5 @@ mono test/obj/case28_iterable.exe
 
 ## ライセンス
 
-MIT Licenseとします。
+MIT License
+

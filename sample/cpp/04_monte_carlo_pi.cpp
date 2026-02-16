@@ -3,6 +3,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>

@@ -4,6 +4,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -19,53 +20,64 @@
 using namespace std;
 using namespace pycs::gc;
 
-string capture(const vector<vector<int>>& grid, int w, int h)
+string capture(const vector<vector<long long>>& grid, long long w, long long h)
 {
-    auto frame = string(static_cast<size_t>((w * h)), '\0');
-    auto i = 0;
-    auto y = 0;
-    while ((y < h))
+    string frame = py_bytearray((w * h));
+    long long i = 0;
+    auto __pytra_range_start_1 = 0;
+    auto __pytra_range_stop_2 = h;
+    auto __pytra_range_step_3 = 1;
+    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
     {
-        auto x = 0;
-        while ((x < w))
+        auto __pytra_range_start_4 = 0;
+        auto __pytra_range_stop_5 = w;
+        auto __pytra_range_step_6 = 1;
+        if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
         {
             frame[i] = (grid[y][x] ? 255 : 0);
             i = (i + 1);
-            x = (x + 1);
         }
-        y = (y + 1);
     }
-    return frame;
+    return py_bytes(frame);
 }
 
 void run_08_langtons_ant()
 {
-    auto w = 240;
-    auto h = 240;
-    auto out_path = "sample/out/08_langtons_ant.gif";
+    long long w = 240;
+    long long h = 240;
+    string out_path = "sample/out/08_langtons_ant.gif";
     auto start = perf_counter();
-    vector<vector<int>> grid = {};
-    auto gy = 0;
-    while ((gy < h))
+    vector<vector<long long>> grid = {};
+    auto __pytra_range_start_7 = 0;
+    auto __pytra_range_stop_8 = h;
+    auto __pytra_range_step_9 = 1;
+    if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto gy = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (gy < __pytra_range_stop_8) : (gy > __pytra_range_stop_8); gy += __pytra_range_step_9)
     {
-        vector<int> row = {};
-        auto gx = 0;
-        while ((gx < w))
+        vector<long long> row = {};
+        auto __pytra_range_start_10 = 0;
+        auto __pytra_range_stop_11 = w;
+        auto __pytra_range_step_12 = 1;
+        if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto gx = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (gx < __pytra_range_stop_11) : (gx > __pytra_range_stop_11); gx += __pytra_range_step_12)
         {
             row.push_back(0);
-            gx = (gx + 1);
         }
         grid.push_back(row);
-        gy = (gy + 1);
     }
-    auto x = (w / 2);
-    auto y = (h / 2);
-    auto d = 0;
-    auto steps_total = 180000;
-    auto capture_every = 3000;
+    long long x = py_floordiv(w, 2);
+    long long y = py_floordiv(h, 2);
+    long long d = 0;
+    long long steps_total = 180000;
+    long long capture_every = 3000;
     vector<string> frames = {};
-    auto i = 0;
-    while ((i < steps_total))
+    auto __pytra_range_start_13 = 0;
+    auto __pytra_range_stop_14 = steps_total;
+    auto __pytra_range_step_15 = 1;
+    if (__pytra_range_step_15 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto i = __pytra_range_start_13; (__pytra_range_step_15 > 0) ? (i < __pytra_range_stop_14) : (i > __pytra_range_stop_14); i += __pytra_range_step_15)
     {
         if ((grid[y][x] == 0))
         {
@@ -103,7 +115,6 @@ void run_08_langtons_ant()
         {
             frames.push_back(capture(grid, w, h));
         }
-        i = (i + 1);
     }
     pycs::cpp_module::gif::save_gif(out_path, w, h, frames, pycs::cpp_module::gif::grayscale_palette(), 5, 0);
     auto elapsed = (perf_counter() - start);

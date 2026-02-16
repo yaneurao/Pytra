@@ -4,6 +4,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -19,19 +20,25 @@
 using namespace std;
 using namespace pycs::gc;
 
-string render_julia(int width, int height, int max_iter, double cx, double cy)
+string render_julia(long long width, long long height, long long max_iter, double cx, double cy)
 {
-    string pixels = string();
-    int y = 0;
-    while ((y < height))
+    string pixels = py_bytearray();
+    auto __pytra_range_start_1 = 0;
+    auto __pytra_range_stop_2 = height;
+    auto __pytra_range_step_3 = 1;
+    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
     {
-        double zy0 = ((-1.2) + (2.4 * ((y * 1.0) / ((height - 1) * 1.0))));
-        int x = 0;
-        while ((x < width))
+        double zy0 = ((-1.2) + (2.4 * py_div(y, (height - 1))));
+        auto __pytra_range_start_4 = 0;
+        auto __pytra_range_stop_5 = width;
+        auto __pytra_range_step_6 = 1;
+        if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
         {
-            double zx = ((-1.8) + (3.6 * ((x * 1.0) / ((width - 1) * 1.0))));
+            double zx = ((-1.8) + (3.6 * py_div(x, (width - 1))));
             double zy = zy0;
-            int i = 0;
+            long long i = 0;
             while ((i < max_iter))
             {
                 double zx2 = (zx * zx);
@@ -44,9 +51,9 @@ string render_julia(int width, int height, int max_iter, double cx, double cy)
                 zx = ((zx2 - zy2) + cx);
                 i = (i + 1);
             }
-            int r = 0;
-            int g = 0;
-            int b = 0;
+            long long r = 0;
+            long long g = 0;
+            long long b = 0;
             if ((i >= max_iter))
             {
                 r = 0;
@@ -55,26 +62,24 @@ string render_julia(int width, int height, int max_iter, double cx, double cy)
             }
             else
             {
-                double t = ((i * 1.0) / (max_iter * 1.0));
-                r = int((255.0 * (0.2 + (0.8 * t))));
-                g = int((255.0 * (0.1 + (0.9 * (t * t)))));
-                b = int((255.0 * (1.0 - t)));
+                double t = py_div(i, max_iter);
+                r = static_cast<long long>((255.0 * (0.2 + (0.8 * t))));
+                g = static_cast<long long>((255.0 * (0.1 + (0.9 * (t * t)))));
+                b = static_cast<long long>((255.0 * (1.0 - t)));
             }
             pixels.push_back(r);
             pixels.push_back(g);
             pixels.push_back(b);
-            x = (x + 1);
         }
-        y = (y + 1);
     }
     return pixels;
 }
 
 void run_julia()
 {
-    int width = 1280;
-    int height = 720;
-    int max_iter = 520;
+    long long width = 1280;
+    long long height = 720;
+    long long max_iter = 520;
     string out_path = "sample/out/julia_03.png";
     double start = perf_counter();
     string pixels = render_julia(width, height, max_iter, (-0.8), 0.156);

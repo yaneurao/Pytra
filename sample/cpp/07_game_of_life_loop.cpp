@@ -4,6 +4,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -19,22 +20,34 @@
 using namespace std;
 using namespace pycs::gc;
 
-vector<vector<int>> next_state(const vector<vector<int>>& grid, int w, int h)
+vector<vector<long long>> next_state(const vector<vector<long long>>& grid, long long w, long long h)
 {
-    vector<vector<int>> nxt = {};
-    auto y = 0;
-    while ((y < h))
+    vector<vector<long long>> nxt = {};
+    auto __pytra_range_start_1 = 0;
+    auto __pytra_range_stop_2 = h;
+    auto __pytra_range_step_3 = 1;
+    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
     {
-        vector<int> row = {};
-        auto x = 0;
-        while ((x < w))
+        vector<long long> row = {};
+        auto __pytra_range_start_4 = 0;
+        auto __pytra_range_stop_5 = w;
+        auto __pytra_range_step_6 = 1;
+        if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
         {
-            auto cnt = 0;
-            auto dy = (-1);
-            while ((dy <= 1))
+            long long cnt = 0;
+            auto __pytra_range_start_7 = (-1);
+            auto __pytra_range_stop_8 = 2;
+            auto __pytra_range_step_9 = 1;
+            if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+            for (auto dy = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (dy < __pytra_range_stop_8) : (dy > __pytra_range_stop_8); dy += __pytra_range_step_9)
             {
-                auto dx = (-1);
-                while ((dx <= 1))
+                auto __pytra_range_start_10 = (-1);
+                auto __pytra_range_stop_11 = 2;
+                auto __pytra_range_step_12 = 1;
+                if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                for (auto dx = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (dx < __pytra_range_stop_11) : (dx > __pytra_range_stop_11); dx += __pytra_range_step_12)
                 {
                     if (((dx != 0) || (dy != 0)))
                     {
@@ -42,9 +55,7 @@ vector<vector<int>> next_state(const vector<vector<int>>& grid, int w, int h)
                         auto ny = (((y + dy) + h) % h);
                         cnt = (cnt + grid[ny][nx]);
                     }
-                    dx = (dx + 1);
                 }
-                dy = (dy + 1);
             }
             auto alive = grid[y][x];
             if (((alive == 1) && ((cnt == 2) || (cnt == 3))))
@@ -62,74 +73,86 @@ vector<vector<int>> next_state(const vector<vector<int>>& grid, int w, int h)
                     row.push_back(0);
                 }
             }
-            x = (x + 1);
         }
         nxt.push_back(row);
-        y = (y + 1);
     }
     return nxt;
 }
 
-string render(const vector<vector<int>>& grid, int w, int h, int cell)
+string render(const vector<vector<long long>>& grid, long long w, long long h, long long cell)
 {
     auto width = (w * cell);
     auto height = (h * cell);
-    auto frame = string(static_cast<size_t>((width * height)), '\0');
-    auto y = 0;
-    while ((y < h))
+    string frame = py_bytearray((width * height));
+    auto __pytra_range_start_13 = 0;
+    auto __pytra_range_stop_14 = h;
+    auto __pytra_range_step_15 = 1;
+    if (__pytra_range_step_15 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto y = __pytra_range_start_13; (__pytra_range_step_15 > 0) ? (y < __pytra_range_stop_14) : (y > __pytra_range_stop_14); y += __pytra_range_step_15)
     {
-        auto x = 0;
-        while ((x < w))
+        auto __pytra_range_start_16 = 0;
+        auto __pytra_range_stop_17 = w;
+        auto __pytra_range_step_18 = 1;
+        if (__pytra_range_step_18 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_16; (__pytra_range_step_18 > 0) ? (x < __pytra_range_stop_17) : (x > __pytra_range_stop_17); x += __pytra_range_step_18)
         {
             auto v = (grid[y][x] ? 255 : 0);
-            auto yy = 0;
-            while ((yy < cell))
+            auto __pytra_range_start_19 = 0;
+            auto __pytra_range_stop_20 = cell;
+            auto __pytra_range_step_21 = 1;
+            if (__pytra_range_step_21 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+            for (auto yy = __pytra_range_start_19; (__pytra_range_step_21 > 0) ? (yy < __pytra_range_stop_20) : (yy > __pytra_range_stop_20); yy += __pytra_range_step_21)
             {
                 auto base = ((((y * cell) + yy) * width) + (x * cell));
-                auto xx = 0;
-                while ((xx < cell))
+                auto __pytra_range_start_22 = 0;
+                auto __pytra_range_stop_23 = cell;
+                auto __pytra_range_step_24 = 1;
+                if (__pytra_range_step_24 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                for (auto xx = __pytra_range_start_22; (__pytra_range_step_24 > 0) ? (xx < __pytra_range_stop_23) : (xx > __pytra_range_stop_23); xx += __pytra_range_step_24)
                 {
                     frame[(base + xx)] = v;
-                    xx = (xx + 1);
                 }
-                yy = (yy + 1);
             }
-            x = (x + 1);
         }
-        y = (y + 1);
     }
-    return frame;
+    return py_bytes(frame);
 }
 
 void run_07_game_of_life_loop()
 {
-    auto w = 96;
-    auto h = 72;
-    auto cell = 3;
-    auto steps = 70;
-    auto out_path = "sample/out/07_game_of_life_loop.gif";
+    long long w = 96;
+    long long h = 72;
+    long long cell = 3;
+    long long steps = 70;
+    string out_path = "sample/out/07_game_of_life_loop.gif";
     auto start = perf_counter();
-    vector<vector<int>> grid = {};
-    auto y = 0;
-    while ((y < h))
+    vector<vector<long long>> grid = {};
+    auto __pytra_range_start_25 = 0;
+    auto __pytra_range_stop_26 = h;
+    auto __pytra_range_step_27 = 1;
+    if (__pytra_range_step_27 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto y = __pytra_range_start_25; (__pytra_range_step_27 > 0) ? (y < __pytra_range_stop_26) : (y > __pytra_range_stop_26); y += __pytra_range_step_27)
     {
-        vector<int> row = {};
-        auto x = 0;
-        while ((x < w))
+        vector<long long> row = {};
+        auto __pytra_range_start_28 = 0;
+        auto __pytra_range_stop_29 = w;
+        auto __pytra_range_step_30 = 1;
+        if (__pytra_range_step_30 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_28; (__pytra_range_step_30 > 0) ? (x < __pytra_range_stop_29) : (x > __pytra_range_stop_29); x += __pytra_range_step_30)
         {
             row.push_back(((((((x * 17) + (y * 31)) + 13) % 11) < 3) ? 1 : 0));
-            x = (x + 1);
         }
         grid.push_back(row);
-        y = (y + 1);
     }
     vector<string> frames = {};
-    auto i = 0;
-    while ((i < steps))
+    auto __pytra_range_start_31 = 0;
+    auto __pytra_range_stop_32 = steps;
+    auto __pytra_range_step_33 = 1;
+    if (__pytra_range_step_33 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto _ = __pytra_range_start_31; (__pytra_range_step_33 > 0) ? (_ < __pytra_range_stop_32) : (_ > __pytra_range_stop_32); _ += __pytra_range_step_33)
     {
         frames.push_back(render(grid, w, h, cell));
         grid = next_state(grid, w, h);
-        i = (i + 1);
     }
     pycs::cpp_module::gif::save_gif(out_path, (w * cell), (h * cell), frames, pycs::cpp_module::gif::grayscale_palette(), 4, 0);
     auto elapsed = (perf_counter() - start);

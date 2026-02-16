@@ -1,14 +1,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System;
-using py_module.gif_helper;
 
 public static class Program
 {
-    public static List<byte> capture(List<List<int>> grid, int w, int h)
+    public static List<byte> capture(List<List<long>> grid, long w, long h)
     {
-        var frame = new List<byte>();
-        var i = 0;
+        var frame = Pytra.CsModule.py_runtime.py_bytearray((w * h));
+        long i = 0L;
         var __pytra_range_start_1 = 0;
         var __pytra_range_stop_2 = h;
         var __pytra_range_step_3 = 1;
@@ -21,90 +20,90 @@ public static class Program
             if (__pytra_range_step_6 == 0) throw new Exception("range() arg 3 must not be zero");
             for (var x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
             {
-                // unsupported assignment: frame[i] = 255 if grid[y][x] else 0
-                i = (i + 1);
+                Pytra.CsModule.py_runtime.py_set(frame, i, (Pytra.CsModule.py_runtime.py_bool(Pytra.CsModule.py_runtime.py_get(Pytra.CsModule.py_runtime.py_get(grid, y), x)) ? 255L : 0L));
+                i = (i + 1L);
             }
         }
-        return bytes(frame);
+        return Pytra.CsModule.py_runtime.py_bytes(frame);
     }
 
     public static void run_08_langtons_ant()
     {
-        var w = 240;
-        var h = 240;
-        var out_path = "sample/out/08_langtons_ant.gif";
+        long w = 240L;
+        long h = 240L;
+        string out_path = "sample/out/08_langtons_ant.gif";
         var start = Pytra.CsModule.time.perf_counter();
-        List<List<int>> grid = new List<object> {  };
+        List<List<long>> grid = new List<List<long>> {  };
         var __pytra_range_start_7 = 0;
         var __pytra_range_stop_8 = h;
         var __pytra_range_step_9 = 1;
         if (__pytra_range_step_9 == 0) throw new Exception("range() arg 3 must not be zero");
         for (var gy = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (gy < __pytra_range_stop_8) : (gy > __pytra_range_stop_8); gy += __pytra_range_step_9)
         {
-            List<int> row = new List<object> {  };
+            List<long> row = new List<long> {  };
             var __pytra_range_start_10 = 0;
             var __pytra_range_stop_11 = w;
             var __pytra_range_step_12 = 1;
             if (__pytra_range_step_12 == 0) throw new Exception("range() arg 3 must not be zero");
             for (var gx = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (gx < __pytra_range_stop_11) : (gx > __pytra_range_stop_11); gx += __pytra_range_step_12)
             {
-                row.Add((byte)(0));
+                Pytra.CsModule.py_runtime.py_append(row, 0L);
             }
-            grid.Add((byte)(row));
+            Pytra.CsModule.py_runtime.py_append(grid, row);
         }
-        var x = (long)Math.Floor((w) / (double)(2));
-        var y = (long)Math.Floor((h) / (double)(2));
-        var d = 0;
-        var steps_total = 180000;
-        var capture_every = 3000;
-        List<List<byte>> frames = new List<object> {  };
+        var x = (long)Math.Floor((w) / (double)(2L));
+        var y = (long)Math.Floor((h) / (double)(2L));
+        long d = 0L;
+        long steps_total = 180000L;
+        long capture_every = 3000L;
+        List<List<byte>> frames = new List<List<byte>> {  };
         var __pytra_range_start_13 = 0;
         var __pytra_range_stop_14 = steps_total;
         var __pytra_range_step_15 = 1;
         if (__pytra_range_step_15 == 0) throw new Exception("range() arg 3 must not be zero");
         for (var i = __pytra_range_start_13; (__pytra_range_step_15 > 0) ? (i < __pytra_range_stop_14) : (i > __pytra_range_stop_14); i += __pytra_range_step_15)
         {
-            if ((grid[y][x] == 0))
+            if (Pytra.CsModule.py_runtime.py_bool((Pytra.CsModule.py_runtime.py_get(Pytra.CsModule.py_runtime.py_get(grid, y), x) == 0L)))
             {
-                d = ((d + 1) % 4);
-                // unsupported assignment: grid[y][x] = 1
+                d = ((d + 1L) % 4L);
+                Pytra.CsModule.py_runtime.py_set(Pytra.CsModule.py_runtime.py_get(grid, y), x, 1L);
             }
             else
             {
-                d = ((d + 3) % 4);
-                // unsupported assignment: grid[y][x] = 0
+                d = ((d + 3L) % 4L);
+                Pytra.CsModule.py_runtime.py_set(Pytra.CsModule.py_runtime.py_get(grid, y), x, 0L);
             }
-            if ((d == 0))
+            if (Pytra.CsModule.py_runtime.py_bool((d == 0L)))
             {
-                y = (((y - 1) + h) % h);
+                y = (((y - 1L) + h) % h);
             }
             else
             {
-                if ((d == 1))
+                if (Pytra.CsModule.py_runtime.py_bool((d == 1L)))
                 {
-                    x = ((x + 1) % w);
+                    x = ((x + 1L) % w);
                 }
                 else
                 {
-                    if ((d == 2))
+                    if (Pytra.CsModule.py_runtime.py_bool((d == 2L)))
                     {
-                        y = ((y + 1) % h);
+                        y = ((y + 1L) % h);
                     }
                     else
                     {
-                        x = (((x - 1) + w) % w);
+                        x = (((x - 1L) + w) % w);
                     }
                 }
             }
-            if (((i % capture_every) == 0))
+            if (Pytra.CsModule.py_runtime.py_bool(((i % capture_every) == 0L)))
             {
-                frames.Add((byte)(capture(grid, w, h)));
+                Pytra.CsModule.py_runtime.py_append(frames, capture(grid, w, h));
             }
         }
-        save_gif(out_path, w, h, frames, grayscale_palette(), delay_cs: 5, loop: 0);
+        Pytra.CsModule.gif_helper.save_gif(out_path, w, h, frames, Pytra.CsModule.gif_helper.grayscale_palette(), delay_cs: 5L, loop: 0L);
         var elapsed = (Pytra.CsModule.time.perf_counter() - start);
         Pytra.CsModule.py_runtime.print("output:", out_path);
-        Pytra.CsModule.py_runtime.print("frames:", len(frames));
+        Pytra.CsModule.py_runtime.print("frames:", Pytra.CsModule.py_runtime.py_len(frames));
         Pytra.CsModule.py_runtime.print("elapsed_sec:", elapsed);
     }
 

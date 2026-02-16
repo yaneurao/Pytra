@@ -7,6 +7,11 @@ namespace Pytra.CsModule
     // Python の png_helper.write_rgb_png 相当実装。
     public static class png_helper
     {
+        public static void write_rgb_png(string path, long width, long height, List<byte> pixels)
+        {
+            write_rgb_png(path, checked((int)width), checked((int)height), pixels);
+        }
+
         public static void write_rgb_png(string path, int width, int height, List<byte> pixels)
         {
             if (width <= 0 || height <= 0)

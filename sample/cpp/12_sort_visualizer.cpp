@@ -4,6 +4,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -19,7 +20,7 @@
 using namespace std;
 using namespace pycs::gc;
 
-string render(const vector<int>& values, int w, int h)
+string render(const vector<long long>& values, long long w, long long h)
 {
     string frame = py_bytearray((w * h));
     size_t n = py_len(values);
@@ -30,13 +31,13 @@ string render(const vector<int>& values, int w, int h)
     if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
     for (auto i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
     {
-        int x0 = static_cast<int>((i * bar_w));
-        int x1 = static_cast<int>(((i + 1) * bar_w));
+        long long x0 = static_cast<long long>((i * bar_w));
+        long long x1 = static_cast<long long>(((i + 1) * bar_w));
         if ((x1 <= x0))
         {
             x1 = (x0 + 1);
         }
-        int bh = static_cast<int>((py_div(values[i], n) * h));
+        long long bh = static_cast<long long>((py_div(values[i], n) * h));
         auto y = (h - bh);
         auto __pytra_range_start_4 = y;
         auto __pytra_range_stop_5 = h;
@@ -59,12 +60,12 @@ string render(const vector<int>& values, int w, int h)
 
 void run_12_sort_visualizer()
 {
-    int w = 320;
-    int h = 180;
-    int n = 72;
+    long long w = 320;
+    long long h = 180;
+    long long n = 72;
     string out_path = "sample/out/12_sort_visualizer.gif";
     auto start = perf_counter();
-    vector<int> values = {};
+    vector<long long> values = {};
     auto __pytra_range_start_10 = 0;
     auto __pytra_range_stop_11 = n;
     auto __pytra_range_step_12 = 1;
@@ -74,7 +75,7 @@ void run_12_sort_visualizer()
         values.push_back((((i * 37) + 19) % n));
     }
     vector<string> frames = {render(values, w, h)};
-    int op = 0;
+    long long op = 0;
     auto __pytra_range_start_13 = 0;
     auto __pytra_range_stop_14 = n;
     auto __pytra_range_step_15 = 1;

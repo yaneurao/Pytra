@@ -125,6 +125,8 @@ class CSharpTranspiler:
             for alias in stmt.names:
                 if alias.name in {"py_module", "time", "typing", "dataclasses", "__future__"}:
                     continue
+                if alias.name.startswith("py_module."):
+                    continue
                 module_name = self._map_python_module(alias.name)
                 if alias.asname:
                     lines.add(f"using {alias.asname} = {module_name};")
@@ -137,6 +139,8 @@ class CSharpTranspiler:
                 return lines
             if stmt.module:
                 if stmt.module in {"py_module", "time", "dataclasses", "__future__"}:
+                    return lines
+                if stmt.module.startswith("py_module."):
                     return lines
                 if stmt.module == "typing":
                     for alias in stmt.names:
@@ -499,7 +503,16 @@ class CSharpTranspiler:
         if stmt.value is None:
             line = f"{csharp_type} {self._ident(name)};"
         else:
-            line = f"{csharp_type} {self._ident(name)} = {self.transpile_expr(stmt.value)};"
+            if isinstance(stmt.value, ast.List) and csharp_type.startswith("List<"):
+                values = ", ".join(self.transpile_expr(e) for e in stmt.value.elts)
+                line = f"{csharp_type} {self._ident(name)} = new {csharp_type} {{ {values} }};"
+            elif isinstance(stmt.value, ast.Dict) and csharp_type.startswith("Dictionary<"):
+                line = f"{csharp_type} {self._ident(name)} = new {csharp_type}();"
+            elif isinstance(stmt.value, ast.Set) and csharp_type.startswith("HashSet<"):
+                values = ", ".join(self.transpile_expr(e) for e in stmt.value.elts)
+                line = f"{csharp_type} {self._ident(name)} = new {csharp_type} {{ {values} }};"
+            else:
+                line = f"{csharp_type} {self._ident(name)} = {self.transpile_expr(stmt.value)};"
         scope.declared.add(name)
         return [line]
 
@@ -523,6 +536,16 @@ class CSharpTranspiler:
         if isinstance(stmt.targets[0], ast.Attribute):
             target = self.transpile_expr(stmt.targets[0])
             return [f"{target} = {self.transpile_expr(stmt.value)};"]
+        if isinstance(stmt.targets[0], ast.Subscript):
+            target = stmt.targets[0]
+            if isinstance(target.slice, ast.Slice):
+                return [f"// unsupported slice assignment: {ast.unparse(stmt)}"]
+            return [
+                "Pytra.CsModule.py_runtime.py_set("
+                f"{self.transpile_expr(target.value)}, "
+                f"{self.transpile_expr(target.slice)}, "
+                f"{self.transpile_expr(stmt.value)});"
+            ]
         if not isinstance(stmt.targets[0], ast.Name):
             return [f"// unsupported assignment: {ast.unparse(stmt)}"]
 
@@ -588,16 +611,17 @@ class CSharpTranspiler:
             start_var = self._new_temp("range_start")
             stop_var = self._new_temp("range_stop")
             step_var = self._new_temp("range_step")
-            out_target = self._ident(target_name)
+            loop_target_name = target_name if target_name != "_" else self._new_temp("unused")
+            out_target = self._ident(loop_target_name)
             lines.append(f"var {start_var} = {start_expr};")
             lines.append(f"var {stop_var} = {stop_expr};")
             lines.append(f"var {step_var} = {step_expr};")
             lines.append(f"if ({step_var} == 0) throw new Exception(\"range() arg 3 must not be zero\");")
-            if target_name in scope.declared:
+            if target_name != "_" and target_name in scope.declared:
                 init_part = f"{out_target} = {start_var}"
             else:
                 init_part = f"var {out_target} = {start_var}"
-                body_scope.declared.add(target_name)
+                body_scope.declared.add(loop_target_name)
             lines.append(
                 f"for ({init_part}; "
                 f"({step_var} > 0) ? ({out_target} < {stop_var}) : ({out_target} > {stop_var}); "
@@ -605,9 +629,10 @@ class CSharpTranspiler:
             )
             lines.append("{")
         else:
-            out_target = self._ident(target_name)
+            loop_target_name = target_name if target_name != "_" else self._new_temp("unused")
+            out_target = self._ident(loop_target_name)
             lines.extend([f"foreach (var {out_target} in {self.transpile_expr(stmt.iter)})", "{"])
-            body_scope.declared.add(target_name)
+            body_scope.declared.add(loop_target_name)
 
         if tuple_target is not None:
             for i, elt in enumerate(tuple_target.elts, start=1):
@@ -622,7 +647,7 @@ class CSharpTranspiler:
         return lines
 
     def _transpile_while(self, stmt: ast.While, scope: Scope) -> List[str]:
-        lines = [f"while ({self.transpile_expr(stmt.test)})", "{"]
+        lines = [f"while (Pytra.CsModule.py_runtime.py_bool({self.transpile_expr(stmt.test)}))", "{"]
         body_lines = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
         lines.extend(self._indent_block(body_lines))
         lines.append("}")
@@ -685,7 +710,7 @@ class CSharpTranspiler:
         return [f"throw new Exception({self.transpile_expr(stmt.exc)});"]
 
     def _transpile_if(self, stmt: ast.If, scope: Scope) -> List[str]:
-        lines = [f"if ({self.transpile_expr(stmt.test)})", "{"]
+        lines = [f"if (Pytra.CsModule.py_runtime.py_bool({self.transpile_expr(stmt.test)}))", "{"]
         then_lines = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
         lines.extend(self._indent_block(then_lines))
         lines.append("}")
@@ -769,10 +794,13 @@ class CSharpTranspiler:
                     f"Pytra.CsModule.py_runtime.py_slice("
                     f"{self.transpile_expr(expr.value)}, {start_expr}, {stop_expr})"
                 )
-            return f"{self.transpile_expr(expr.value)}[{self.transpile_expr(expr.slice)}]"
+            return (
+                "Pytra.CsModule.py_runtime.py_get("
+                f"{self.transpile_expr(expr.value)}, {self.transpile_expr(expr.slice)})"
+            )
         if isinstance(expr, ast.IfExp):
             return (
-                f"({self.transpile_expr(expr.test)} ? {self.transpile_expr(expr.body)} : "
+                f"(Pytra.CsModule.py_runtime.py_bool({self.transpile_expr(expr.test)}) ? {self.transpile_expr(expr.body)} : "
                 f"{self.transpile_expr(expr.orelse)})"
             )
         if isinstance(expr, ast.JoinedStr):
@@ -793,9 +821,23 @@ class CSharpTranspiler:
 
         if isinstance(call.func, ast.Name) and call.func.id == "print":
             return f"Pytra.CsModule.py_runtime.print({args})"
+        if isinstance(call.func, ast.Name) and call.func.id == "len":
+            if len(args_list) == 1:
+                return f"Pytra.CsModule.py_runtime.py_len({args_list[0]})"
+            return "0L"
         if isinstance(call.func, ast.Name) and call.func.id == "perf_counter":
             return "Pytra.CsModule.time.perf_counter()"
         if isinstance(call.func, ast.Name) and call.func.id == "bytearray":
+            if len(args_list) == 0:
+                return "new List<byte>()"
+            if len(args_list) == 1:
+                return f"Pytra.CsModule.py_runtime.py_bytearray({args_list[0]})"
+            return "new List<byte>()"
+        if isinstance(call.func, ast.Name) and call.func.id == "bytes":
+            if len(args_list) == 0:
+                return "new List<byte>()"
+            if len(args_list) == 1:
+                return f"Pytra.CsModule.py_runtime.py_bytes({args_list[0]})"
             return "new List<byte>()"
         if isinstance(call.func, ast.Name) and call.func.id == "int":
             if len(args_list) == 1:
@@ -811,6 +853,10 @@ class CSharpTranspiler:
             return "\"\""
 
         if isinstance(call.func, ast.Name):
+            if call.func.id == "save_gif":
+                return f"Pytra.CsModule.gif_helper.save_gif({args})"
+            if call.func.id == "grayscale_palette":
+                return "Pytra.CsModule.gif_helper.grayscale_palette()"
             if call.func.id in self.class_names:
                 return f"new {self._ident(call.func.id)}({args})"
             return f"{self._ident(call.func.id)}({args})"
@@ -838,7 +884,18 @@ class CSharpTranspiler:
             ):
                 return f"Pytra.CsModule.png_helper.write_rgb_png({args})"
             if call.func.attr == "append" and len(args_list) == 1:
-                return f"{self.transpile_expr(call.func.value)}.Add((byte)({args_list[0]}))"
+                return (
+                    "Pytra.CsModule.py_runtime.py_append("
+                    f"{self.transpile_expr(call.func.value)}, {args_list[0]})"
+                )
+            if call.func.attr == "pop":
+                if len(args_list) == 0:
+                    return f"Pytra.CsModule.py_runtime.py_pop({self.transpile_expr(call.func.value)})"
+                if len(args_list) == 1:
+                    return (
+                        "Pytra.CsModule.py_runtime.py_pop("
+                        f"{self.transpile_expr(call.func.value)}, {args_list[0]})"
+                    )
             return f"{self.transpile_expr(call.func)}({args})"
 
         raise TranspileError("Only direct function calls are supported")
@@ -911,9 +968,7 @@ class CSharpTranspiler:
         if value is None:
             return "null"
         if isinstance(value, int):
-            if value < INT32_MIN or value > INT32_MAX:
-                return f"{value}L"
-            return str(value)
+            return f"{value}L"
         if isinstance(value, str):
             escaped = value.replace("\\", "\\\\").replace('"', '\\"')
             return f'"{escaped}"'

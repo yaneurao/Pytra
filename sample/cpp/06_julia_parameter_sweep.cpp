@@ -4,6 +4,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -19,20 +20,26 @@
 using namespace std;
 using namespace pycs::gc;
 
-string render_frame(int width, int height, double cr, double ci, int max_iter)
+string render_frame(long long width, long long height, double cr, double ci, long long max_iter)
 {
-    auto frame = string(static_cast<size_t>((width * height)), '\0');
-    auto y = 0;
-    auto idx = 0;
-    while ((y < height))
+    string frame = py_bytearray((width * height));
+    long long idx = 0;
+    auto __pytra_range_start_1 = 0;
+    auto __pytra_range_stop_2 = height;
+    auto __pytra_range_step_3 = 1;
+    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
     {
-        auto zy0 = ((-1.2) + (2.4 * ((y * 1.0) / (height - 1))));
-        auto x = 0;
-        while ((x < width))
+        double zy0 = ((-1.2) + (2.4 * py_div(y, (height - 1))));
+        auto __pytra_range_start_4 = 0;
+        auto __pytra_range_stop_5 = width;
+        auto __pytra_range_step_6 = 1;
+        if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
         {
-            auto zx = ((-1.8) + (3.6 * ((x * 1.0) / (width - 1))));
+            double zx = ((-1.8) + (3.6 * py_div(x, (width - 1))));
             auto zy = zy0;
-            auto i = 0;
+            long long i = 0;
             while ((i < max_iter))
             {
                 auto zx2 = (zx * zx);
@@ -45,32 +52,32 @@ string render_frame(int width, int height, double cr, double ci, int max_iter)
                 zx = ((zx2 - zy2) + cr);
                 i = (i + 1);
             }
-            frame[idx] = int(((255.0 * i) / max_iter));
+            frame[idx] = static_cast<long long>(py_div((255.0 * i), max_iter));
             idx = (idx + 1);
-            x = (x + 1);
         }
-        y = (y + 1);
     }
-    return frame;
+    return py_bytes(frame);
 }
 
 void run_06_julia_parameter_sweep()
 {
-    auto width = 320;
-    auto height = 240;
-    auto frames_n = 50;
-    auto max_iter = 120;
-    auto out_path = "sample/out/06_julia_parameter_sweep.gif";
+    long long width = 320;
+    long long height = 240;
+    long long frames_n = 50;
+    long long max_iter = 120;
+    string out_path = "sample/out/06_julia_parameter_sweep.gif";
     auto start = perf_counter();
     vector<string> frames = {};
-    auto i = 0;
-    while ((i < frames_n))
+    auto __pytra_range_start_7 = 0;
+    auto __pytra_range_stop_8 = frames_n;
+    auto __pytra_range_step_9 = 1;
+    if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto i = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (i < __pytra_range_stop_8) : (i > __pytra_range_stop_8); i += __pytra_range_step_9)
     {
-        auto t = ((i * 1.0) / frames_n);
-        auto cr = ((-0.8) + (0.32 * t));
-        auto ci = (0.156 + (0.22 * (0.5 - t)));
+        double t = py_div(i, frames_n);
+        double cr = ((-0.8) + (0.32 * t));
+        double ci = (0.156 + (0.22 * (0.5 - t)));
         frames.push_back(render_frame(width, height, cr, ci, max_iter));
-        i = (i + 1);
     }
     pycs::cpp_module::gif::save_gif(out_path, width, height, frames, pycs::cpp_module::gif::grayscale_palette(), 4, 0);
     auto elapsed = (perf_counter() - start);

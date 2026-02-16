@@ -5,6 +5,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -22,21 +23,24 @@ using namespace pycs::gc;
 
 string palette()
 {
-    auto p = string();
-    auto i = 0;
-    while ((i < 256))
+    string p = py_bytearray();
+    auto __pytra_range_start_1 = 0;
+    auto __pytra_range_stop_2 = 256;
+    auto __pytra_range_step_3 = 1;
+    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
     {
-        auto r = int((20 + (i * 0.9)));
+        long long r = static_cast<long long>((20 + (i * 0.9)));
         if ((r > 255))
         {
             r = 255;
         }
-        auto g = int((10 + (i * 0.7)));
+        long long g = static_cast<long long>((10 + (i * 0.7)));
         if ((g > 255))
         {
             g = 255;
         }
-        auto b = int((30 + (i * 1.0)));
+        long long b = static_cast<long long>((30 + i));
         if ((b > 255))
         {
             b = 255;
@@ -44,25 +48,24 @@ string palette()
         p.push_back(r);
         p.push_back(g);
         p.push_back(b);
-        i = (i + 1);
     }
-    return p;
+    return py_bytes(p);
 }
 
-int scene(double x, double y, double light_x, double light_y)
+long long scene(double x, double y, double light_x, double light_y)
 {
-    auto x1 = (x + 0.45);
-    auto y1 = (y + 0.2);
-    auto x2 = (x - 0.35);
-    auto y2 = (y - 0.15);
+    double x1 = (x + 0.45);
+    double y1 = (y + 0.2);
+    double x2 = (x - 0.35);
+    double y2 = (y - 0.15);
     auto r1 = pycs::cpp_module::math::sqrt(((x1 * x1) + (y1 * y1)));
     auto r2 = pycs::cpp_module::math::sqrt(((x2 * x2) + (y2 * y2)));
     auto blob = (pycs::cpp_module::math::exp((((-7.0) * r1) * r1)) + pycs::cpp_module::math::exp((((-8.0) * r2) * r2)));
     auto lx = (x - light_x);
     auto ly = (y - light_y);
     auto l = pycs::cpp_module::math::sqrt(((lx * lx) + (ly * ly)));
-    auto lit = (1.0 / (1.0 + ((3.5 * l) * l)));
-    auto v = int((((255.0 * blob) * lit) * 5.0));
+    double lit = py_div(1.0, (1.0 + ((3.5 * l) * l)));
+    long long v = static_cast<long long>((((255.0 * blob) * lit) * 5.0));
     if ((v < 0))
     {
         return 0;
@@ -76,36 +79,42 @@ int scene(double x, double y, double light_x, double light_y)
 
 void run_14_raymarching_light_cycle()
 {
-    auto w = 320;
-    auto h = 240;
-    auto frames_n = 84;
-    auto out_path = "sample/out/14_raymarching_light_cycle.gif";
+    long long w = 320;
+    long long h = 240;
+    long long frames_n = 84;
+    string out_path = "sample/out/14_raymarching_light_cycle.gif";
     auto start = perf_counter();
     vector<string> frames = {};
-    auto t = 0;
-    while ((t < frames_n))
+    auto __pytra_range_start_4 = 0;
+    auto __pytra_range_stop_5 = frames_n;
+    auto __pytra_range_step_6 = 1;
+    if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto t = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (t < __pytra_range_stop_5) : (t > __pytra_range_stop_5); t += __pytra_range_step_6)
     {
-        auto frame = string(static_cast<size_t>((w * h)), '\0');
-        auto a = ((((t * 1.0) / frames_n) * pycs::cpp_module::math::pi) * 2.0);
-        auto light_x = (0.75 * pycs::cpp_module::math::cos(a));
-        auto light_y = (0.55 * pycs::cpp_module::math::sin((a * 1.2)));
-        auto i = 0;
-        auto y = 0;
-        while ((y < h))
+        string frame = py_bytearray((w * h));
+        double a = ((py_div(t, frames_n) * pycs::cpp_module::math::pi) * 2.0);
+        double light_x = (0.75 * pycs::cpp_module::math::cos(a));
+        double light_y = (0.55 * pycs::cpp_module::math::sin((a * 1.2)));
+        long long i = 0;
+        auto __pytra_range_start_7 = 0;
+        auto __pytra_range_stop_8 = h;
+        auto __pytra_range_step_9 = 1;
+        if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto y = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (y < __pytra_range_stop_8) : (y > __pytra_range_stop_8); y += __pytra_range_step_9)
         {
-            auto py = ((((y * 1.0) / (h - 1)) * 2.0) - 1.0);
-            auto x = 0;
-            while ((x < w))
+            double py = ((py_div(y, (h - 1)) * 2.0) - 1.0);
+            auto __pytra_range_start_10 = 0;
+            auto __pytra_range_stop_11 = w;
+            auto __pytra_range_step_12 = 1;
+            if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+            for (auto x = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (x < __pytra_range_stop_11) : (x > __pytra_range_stop_11); x += __pytra_range_step_12)
             {
-                auto px = ((((x * 1.0) / (w - 1)) * 2.0) - 1.0);
+                double px = ((py_div(x, (w - 1)) * 2.0) - 1.0);
                 frame[i] = scene(px, py, light_x, light_y);
                 i = (i + 1);
-                x = (x + 1);
             }
-            y = (y + 1);
         }
-        frames.push_back(frame);
-        t = (t + 1);
+        frames.push_back(py_bytes(frame));
     }
     pycs::cpp_module::gif::save_gif(out_path, w, h, frames, palette(), 3, 0);
     auto elapsed = (perf_counter() - start);

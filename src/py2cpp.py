@@ -822,7 +822,7 @@ class CppTranspiler:
             lines.append(f"auto {stop_var} = {stop_expr};")
             lines.append(f"auto {step_var} = {step_expr};")
             lines.append(f"if ({step_var} == 0) throw std::runtime_error(\"range() arg 3 must not be zero\");")
-            if target_name in scope.declared:
+            if target_name != "_" and target_name in scope.declared:
                 init_part = f"{target_name} = {start_var}"
             else:
                 init_part = f"auto {target_name} = {start_var}"

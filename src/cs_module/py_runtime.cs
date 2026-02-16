@@ -25,6 +25,20 @@ namespace Pytra.CsModule
             return (int)v;
         }
 
+        private static int NormalizeIndex(long index, int length)
+        {
+            long v = index;
+            if (v < 0)
+            {
+                v += length;
+            }
+            if (v < 0 || v >= length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+            return (int)v;
+        }
+
         public static List<T> py_slice<T>(List<T> source, long? start, long? stop)
         {
             if (source == null)
@@ -55,6 +69,133 @@ namespace Pytra.CsModule
                 return string.Empty;
             }
             return source.Substring(s, e - s);
+        }
+
+        public static List<byte> py_bytearray(object countLike)
+        {
+            int n = Convert.ToInt32(countLike);
+            if (n < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(countLike));
+            }
+            var outv = new List<byte>(n);
+            for (int i = 0; i < n; i++)
+            {
+                outv.Add(0);
+            }
+            return outv;
+        }
+
+        public static List<byte> py_bytes(List<byte> source)
+        {
+            return new List<byte>(source);
+        }
+
+        public static T py_get<T>(List<T> source, object indexLike)
+        {
+            int idx = NormalizeIndex(Convert.ToInt64(indexLike), source.Count);
+            return source[idx];
+        }
+
+        public static char py_get(string source, object indexLike)
+        {
+            int idx = NormalizeIndex(Convert.ToInt64(indexLike), source.Length);
+            return source[idx];
+        }
+
+        public static V py_get<K, V>(Dictionary<K, V> source, K key)
+        {
+            return source[key];
+        }
+
+        public static void py_set<T>(List<T> source, object indexLike, object value)
+        {
+            int idx = NormalizeIndex(Convert.ToInt64(indexLike), source.Count);
+            if (typeof(T) == typeof(byte))
+            {
+                source[idx] = (T)(object)Convert.ToByte(value);
+                return;
+            }
+            source[idx] = (T)value;
+        }
+
+        public static void py_set<K, V>(Dictionary<K, V> source, K key, V value)
+        {
+            source[key] = value;
+        }
+
+        public static void py_append<T>(List<T> source, object value)
+        {
+            if (typeof(T) == typeof(byte))
+            {
+                byte b = Convert.ToByte(value);
+                source.Add((T)(object)b);
+                return;
+            }
+            source.Add((T)value);
+        }
+
+        public static T py_pop<T>(List<T> source)
+        {
+            if (source.Count == 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(source));
+            }
+            int last = source.Count - 1;
+            T value = source[last];
+            source.RemoveAt(last);
+            return value;
+        }
+
+        public static T py_pop<T>(List<T> source, object indexLike)
+        {
+            int idx = NormalizeIndex(Convert.ToInt64(indexLike), source.Count);
+            T value = source[idx];
+            source.RemoveAt(idx);
+            return value;
+        }
+
+        public static long py_len<T>(List<T> source)
+        {
+            return source.Count;
+        }
+
+        public static long py_len(string source)
+        {
+            return source.Length;
+        }
+
+        public static bool py_bool(object value)
+        {
+            if (value == null)
+            {
+                return false;
+            }
+            if (value is bool b)
+            {
+                return b;
+            }
+            if (value is long l)
+            {
+                return l != 0;
+            }
+            if (value is int i)
+            {
+                return i != 0;
+            }
+            if (value is double d)
+            {
+                return d != 0.0;
+            }
+            if (value is string s)
+            {
+                return s.Length != 0;
+            }
+            if (value is ICollection c)
+            {
+                return c.Count != 0;
+            }
+            return true;
         }
 
         public static void print(params object[] args)

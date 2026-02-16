@@ -5,6 +5,7 @@
 #include "cpp_module/time.h"
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -22,46 +23,60 @@ using namespace pycs::gc;
 
 string color_palette()
 {
-    auto p = string();
-    auto i = 0;
-    while ((i < 256))
+    string p = py_bytearray();
+    auto __pytra_range_start_1 = 0;
+    auto __pytra_range_stop_2 = 256;
+    auto __pytra_range_step_3 = 1;
+    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
     {
         auto r = i;
-        auto g = ((i * 3) % 256);
-        auto b = (255 - i);
+        long long g = ((i * 3) % 256);
+        long long b = (255 - i);
         p.push_back(r);
         p.push_back(g);
         p.push_back(b);
-        i = (i + 1);
     }
-    return p;
+    return py_bytes(p);
 }
 
 void run_11_lissajous_particles()
 {
-    auto w = 320;
-    auto h = 240;
-    auto frames_n = 80;
-    auto particles = 24;
-    auto out_path = "sample/out/11_lissajous_particles.gif";
+    long long w = 320;
+    long long h = 240;
+    long long frames_n = 80;
+    long long particles = 24;
+    string out_path = "sample/out/11_lissajous_particles.gif";
     auto start = perf_counter();
     vector<string> frames = {};
-    auto t = 0;
-    while ((t < frames_n))
+    auto __pytra_range_start_4 = 0;
+    auto __pytra_range_stop_5 = frames_n;
+    auto __pytra_range_step_6 = 1;
+    if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto t = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (t < __pytra_range_stop_5) : (t > __pytra_range_stop_5); t += __pytra_range_step_6)
     {
-        auto frame = string(static_cast<size_t>((w * h)), '\0');
-        auto p = 0;
-        while ((p < particles))
+        string frame = py_bytearray((w * h));
+        auto __pytra_range_start_7 = 0;
+        auto __pytra_range_stop_8 = particles;
+        auto __pytra_range_step_9 = 1;
+        if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto p = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (p < __pytra_range_stop_8) : (p > __pytra_range_stop_8); p += __pytra_range_step_9)
         {
-            auto phase = (p * 0.261799);
-            auto x = int(((w * 0.5) + ((w * 0.38) * pycs::cpp_module::math::sin(((0.11 * t) + (phase * 2.0))))));
-            auto y = int(((h * 0.5) + ((h * 0.38) * pycs::cpp_module::math::sin(((0.17 * t) + (phase * 3.0))))));
-            auto color = (30 + ((p * 9) % 220));
-            auto dy = (-2);
-            while ((dy <= 2))
+            double phase = (p * 0.261799);
+            long long x = static_cast<long long>(((w * 0.5) + ((w * 0.38) * pycs::cpp_module::math::sin(((0.11 * t) + (phase * 2.0))))));
+            long long y = static_cast<long long>(((h * 0.5) + ((h * 0.38) * pycs::cpp_module::math::sin(((0.17 * t) + (phase * 3.0))))));
+            long long color = (30 + ((p * 9) % 220));
+            auto __pytra_range_start_10 = (-2);
+            auto __pytra_range_stop_11 = 3;
+            auto __pytra_range_step_12 = 1;
+            if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+            for (auto dy = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (dy < __pytra_range_stop_11) : (dy > __pytra_range_stop_11); dy += __pytra_range_step_12)
             {
-                auto dx = (-2);
-                while ((dx <= 2))
+                auto __pytra_range_start_13 = (-2);
+                auto __pytra_range_stop_14 = 3;
+                auto __pytra_range_step_15 = 1;
+                if (__pytra_range_step_15 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                for (auto dx = __pytra_range_start_13; (__pytra_range_step_15 > 0) ? (dx < __pytra_range_stop_14) : (dx > __pytra_range_stop_14); dx += __pytra_range_step_15)
                 {
                     auto xx = (x + dx);
                     auto yy = (y + dy);
@@ -71,7 +86,7 @@ void run_11_lissajous_particles()
                         if ((d2 <= 4))
                         {
                             auto idx = ((yy * w) + xx);
-                            auto v = (color - (d2 * 20));
+                            long long v = (color - (d2 * 20));
                             if ((v < 0))
                             {
                                 v = 0;
@@ -82,14 +97,10 @@ void run_11_lissajous_particles()
                             }
                         }
                     }
-                    dx = (dx + 1);
                 }
-                dy = (dy + 1);
             }
-            p = (p + 1);
         }
-        frames.push_back(frame);
-        t = (t + 1);
+        frames.push_back(py_bytes(frame));
     }
     pycs::cpp_module::gif::save_gif(out_path, w, h, frames, color_palette(), 3, 0);
     auto elapsed = (perf_counter() - start);
