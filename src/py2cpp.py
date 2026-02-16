@@ -1034,6 +1034,19 @@ class CppTranspiler:
         if isinstance(expr, ast.Call):
             return self._transpile_call(expr)
         if isinstance(expr, ast.Subscript):
+            if isinstance(expr.slice, ast.Slice):
+                if expr.slice.step is not None:
+                    raise TranspileError("Slice step is not supported yet")
+                if expr.slice.lower is None or expr.slice.upper is None:
+                    raise TranspileError("Only slice form a[b:c] is supported")
+                has_start = "true"
+                start_expr = self.transpile_expr(expr.slice.lower)
+                has_stop = "true"
+                stop_expr = self.transpile_expr(expr.slice.upper)
+                return (
+                    f"py_slice({self.transpile_expr(expr.value)}, "
+                    f"{has_start}, {start_expr}, {has_stop}, {stop_expr})"
+                )
             return f"{self.transpile_expr(expr.value)}[{self.transpile_expr(expr.slice)}]"
         if isinstance(expr, ast.IfExp):
             return (

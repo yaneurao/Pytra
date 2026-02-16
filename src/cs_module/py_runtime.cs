@@ -1,11 +1,62 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Pytra.CsModule
 {
     // Python の print 相当を提供する最小ランタイム。
     public static class py_runtime
     {
+        private static int NormalizeSliceIndex(long index, int length)
+        {
+            long v = index;
+            if (v < 0)
+            {
+                v += length;
+            }
+            if (v < 0)
+            {
+                return 0;
+            }
+            if (v > length)
+            {
+                return length;
+            }
+            return (int)v;
+        }
+
+        public static List<T> py_slice<T>(List<T> source, long? start, long? stop)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            int length = source.Count;
+            int s = start.HasValue ? NormalizeSliceIndex(start.Value, length) : 0;
+            int e = stop.HasValue ? NormalizeSliceIndex(stop.Value, length) : length;
+            if (e < s)
+            {
+                return new List<T>();
+            }
+            return source.GetRange(s, e - s);
+        }
+
+        public static string py_slice(string source, long? start, long? stop)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            int length = source.Length;
+            int s = start.HasValue ? NormalizeSliceIndex(start.Value, length) : 0;
+            int e = stop.HasValue ? NormalizeSliceIndex(stop.Value, length) : length;
+            if (e < s)
+            {
+                return string.Empty;
+            }
+            return source.Substring(s, e - s);
+        }
+
         public static void print(params object[] args)
         {
             if (args == null || args.Length == 0)

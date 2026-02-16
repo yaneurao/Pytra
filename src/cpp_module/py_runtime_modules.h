@@ -248,6 +248,59 @@ std::size_t py_len(const T& value) {
     return value.size();
 }
 
+inline long long py_norm_slice_index(long long idx, long long length) {
+    long long v = idx;
+    if (v < 0) {
+        v += length;
+    }
+    if (v < 0) {
+        return 0;
+    }
+    if (v > length) {
+        return length;
+    }
+    return v;
+}
+
+template <typename T>
+std::vector<T> py_slice(
+    const std::vector<T>& source,
+    bool has_start,
+    long long start,
+    bool has_stop,
+    long long stop
+) {
+    const long long length = static_cast<long long>(source.size());
+    const long long s = has_start ? py_norm_slice_index(start, length) : 0;
+    const long long e = has_stop ? py_norm_slice_index(stop, length) : length;
+    if (e <= s) {
+        return {};
+    }
+    return std::vector<T>(
+        source.begin() + static_cast<std::size_t>(s),
+        source.begin() + static_cast<std::size_t>(e)
+    );
+}
+
+inline std::string py_slice(
+    const std::string& source,
+    bool has_start,
+    long long start,
+    bool has_stop,
+    long long stop
+) {
+    const long long length = static_cast<long long>(source.size());
+    const long long s = has_start ? py_norm_slice_index(start, length) : 0;
+    const long long e = has_stop ? py_norm_slice_index(stop, length) : length;
+    if (e <= s) {
+        return std::string();
+    }
+    return source.substr(
+        static_cast<std::size_t>(s),
+        static_cast<std::size_t>(e - s)
+    );
+}
+
 inline std::string py_bytearray() {
     return std::string();
 }

@@ -758,6 +758,17 @@ class CSharpTranspiler:
         if isinstance(expr, ast.Call):
             return self._transpile_call(expr)
         if isinstance(expr, ast.Subscript):
+            if isinstance(expr.slice, ast.Slice):
+                if expr.slice.step is not None:
+                    raise TranspileError("Slice step is not supported yet")
+                if expr.slice.lower is None or expr.slice.upper is None:
+                    raise TranspileError("Only slice form a[b:c] is supported")
+                start_expr = f"(long?)({self.transpile_expr(expr.slice.lower)})"
+                stop_expr = f"(long?)({self.transpile_expr(expr.slice.upper)})"
+                return (
+                    f"Pytra.CsModule.py_runtime.py_slice("
+                    f"{self.transpile_expr(expr.value)}, {start_expr}, {stop_expr})"
+                )
             return f"{self.transpile_expr(expr.value)}[{self.transpile_expr(expr.slice)}]"
         if isinstance(expr, ast.IfExp):
             return (
