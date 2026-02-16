@@ -25,6 +25,7 @@ class Scope:
 
     declared: set[str]
     class_types: dict[str, str]
+    value_types: dict[str, str]
 
 
 class GoJavaNativeTranspiler(BaseTranspiler):
@@ -40,6 +41,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         self.class_instance_fields: dict[str, set[str]] = {}
         self.class_is_dataclass: dict[str, bool] = {}
         self.class_dataclass_fields: dict[str, list[tuple[str, str | None]]] = {}
+        self.function_arg_types: dict[str, list[str | None]] = {}
         self.current_class: str | None = None
         self.scope_stack: list[Scope] = []
         self.function_renames: dict[str, str] = {}
@@ -57,6 +59,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
 
     def transpile_module(self, module: ast.Module, output_path: Path) -> str:
         self._collect_class_info(module)
+        self._collect_function_info(module)
         lines: list[str] = []
         defs: list[str] = []
 
@@ -158,6 +161,15 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             self.class_instance_fields[stmt.name] = instance_fields
             self.class_dataclass_fields[stmt.name] = dataclass_fields
 
+    def _collect_function_info(self, module: ast.Module) -> None:
+        self.function_arg_types = {}
+        for stmt in module.body:
+            if isinstance(stmt, ast.FunctionDef):
+                types: list[str | None] = []
+                for a in stmt.args.args:
+                    types.append(self._annotation_tag(a.annotation))
+                self.function_arg_types[stmt.name] = types
+
     def _resolve_method_owner(self, class_name: str, method: str) -> str | None:
         cur: str | None = class_name
         while cur is not None:
@@ -213,7 +225,14 @@ class GoJavaNativeTranspiler(BaseTranspiler):
     def _emit_ctor(self, class_name: str, base: str | None, args: list[str], init_fn: ast.FunctionDef | None) -> list[str]:
         lines: list[str] = []
         is_dc = self.class_is_dataclass.get(class_name, False)
-        arg_decl = self._args_decl(args)
+        arg_types: dict[str, str] = {}
+        if self.is_go and init_fn is not None:
+            raw_args = init_fn.args.args[1:] if init_fn.args.args and init_fn.args.args[0].arg == "self" else init_fn.args.args
+            for a in raw_args:
+                t = self._annotation_tag(a.annotation)
+                if t is not None:
+                    arg_types[a.arg] = t
+        arg_decl = self._args_decl(args, arg_types=arg_types)
         if is_dc:
             arg_decl = "__args ...any" if self.is_go else "Object... __args"
         if self.is_go:
@@ -224,7 +243,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                 lines.append(f"{self.INDENT}self[\"__class\"] = \"{class_name}\"")
             else:
                 lines.append(f"{self.INDENT}self := map[any]any{{\"__class\": \"{class_name}\"}}")
-            scope = Scope(declared=set(args) | {"self"}, class_types={})
+            scope = Scope(declared=set(args) | {"self"}, class_types={}, value_types=dict(arg_types))
             if init_fn is not None:
                 prev = self.current_class
                 self.current_class = class_name
@@ -250,7 +269,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                 lines.append(f"{self.INDENT}self.put(\"__class\", \"{class_name}\");")
             else:
                 lines.append(f"{self.INDENT}Map<Object, Object> self = PyRuntime.pyDict(\"__class\", \"{class_name}\");")
-            scope = Scope(declared=set(args) | {"self"}, class_types={})
+            scope = Scope(declared=set(args) | {"self"}, class_types={}, value_types={})
             if init_fn is not None:
                 prev = self.current_class
                 self.current_class = class_name
@@ -273,12 +292,19 @@ class GoJavaNativeTranspiler(BaseTranspiler):
     def _emit_method(self, class_name: str, fn: ast.FunctionDef) -> list[str]:
         args = [a.arg for a in fn.args.args[1:]] if fn.args.args and fn.args.args[0].arg == "self" else [a.arg for a in fn.args.args]
         lines: list[str] = []
-        arg_decl = self._args_decl(["self"] + args, self_map_first=True)
+        arg_types: dict[str, str] = {}
+        if self.is_go:
+            raw_args = fn.args.args[1:] if fn.args.args and fn.args.args[0].arg == "self" else fn.args.args
+            for a in raw_args:
+                t = self._annotation_tag(a.annotation)
+                if t is not None:
+                    arg_types[a.arg] = t
+        arg_decl = self._args_decl(["self"] + args, self_map_first=True, arg_types=arg_types)
         if self.is_go:
             lines.append(f"func {class_name}_{fn.name}({arg_decl}) any {{")
         else:
             lines.append(f"static Object {class_name}_{fn.name}({arg_decl}) {{")
-        scope = Scope(declared=set(["self"] + args), class_types={})
+        scope = Scope(declared=set(["self"] + args), class_types={}, value_types=dict(arg_types))
         prev = self.current_class
         self.current_class = class_name
         body = self.transpile_statements(fn.body, scope)
@@ -295,14 +321,20 @@ class GoJavaNativeTranspiler(BaseTranspiler):
 
     def _transpile_function(self, fn: ast.FunctionDef) -> list[str]:
         args = [a.arg for a in fn.args.args]
-        arg_decl = self._args_decl(args)
+        arg_types: dict[str, str] = {}
+        if self.is_go:
+            for a in fn.args.args:
+                t = self._annotation_tag(a.annotation)
+                if t is not None:
+                    arg_types[a.arg] = t
+        arg_decl = self._args_decl(args, arg_types=arg_types)
         lines: list[str] = []
         fn_name = self.function_renames.get(fn.name, fn.name)
         if self.is_go:
             lines.append(f"func {fn_name}({arg_decl}) any {{")
         else:
             lines.append(f"static Object {fn_name}({arg_decl}) {{")
-        scope = Scope(declared=set(args), class_types={})
+        scope = Scope(declared=set(args), class_types={}, value_types=dict(arg_types))
         body = self.transpile_statements(fn.body, scope)
         for line in body:
             lines.append(f"{self.INDENT}{line}")
@@ -315,7 +347,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         return lines
 
     def _transpile_main_go(self, stmts: list[ast.stmt]) -> list[str]:
-        scope = Scope(declared=set(), class_types={})
+        scope = Scope(declared=set(), class_types={}, value_types={})
         body = self.transpile_statements(stmts, scope)
         lines: list[str] = []
         lines.append("func main() {")
@@ -325,7 +357,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         return lines
 
     def _transpile_main_java(self, stmts: list[ast.stmt]) -> list[str]:
-        scope = Scope(declared=set(), class_types={})
+        scope = Scope(declared=set(), class_types={}, value_types={})
         body = self.transpile_statements(stmts, scope)
         lines = ["public static void main(String[] args) {"]
         lines.extend(self._indent_block(body))
@@ -359,6 +391,10 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             if isinstance(stmt, ast.ClassDef):
                 continue
             if isinstance(stmt, ast.AnnAssign):
+                if isinstance(stmt.target, ast.Name):
+                    ann = self._annotation_tag(stmt.annotation)
+                    if ann is not None:
+                        scope.value_types[self._safe_name(stmt.target.id)] = ann
                 out.extend(self._transpile_assign_like(stmt.target, stmt.value, scope))
                 if isinstance(stmt.target, ast.Name) and isinstance(stmt.annotation, ast.Name):
                     if stmt.annotation.id in self.class_names:
@@ -397,11 +433,12 @@ class GoJavaNativeTranspiler(BaseTranspiler):
 
     def _transpile_assign_like(self, target: ast.expr, value: ast.expr | None, scope: Scope) -> list[str]:
         rhs = ("nil" if self.is_go else "null") if value is None else self.transpile_expr(value)
+        rhs_go_type = self._expr_go_type(value) if (self.is_go and value is not None) else None
         out: list[str] = []
 
         if isinstance(target, ast.Tuple):
             tmp = self._new_temp("tuple")
-            out.extend(self._declare_or_assign(tmp, rhs, scope))
+            out.extend(self._declare_or_assign(tmp, rhs, scope, rhs_go_type=rhs_go_type))
             for i, elt in enumerate(target.elts):
                 if not isinstance(elt, ast.Name):
                     raise TranspileError("tuple assignment target must be names")
@@ -409,7 +446,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             return out
 
         if isinstance(target, ast.Name):
-            out.extend(self._declare_or_assign(target.id, rhs, scope))
+            out.extend(self._declare_or_assign(target.id, rhs, scope, rhs_go_type=rhs_go_type))
             if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in self.class_names:
                 scope.class_types[target.id] = value.func.id
             return out
@@ -435,6 +472,36 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         out: list[str] = []
         if isinstance(stmt.target, ast.Name):
             name = stmt.target.id
+            if self.is_go:
+                safe = self._safe_name(name)
+                lhs_t = scope.value_types.get(safe)
+                rhs_t = self._expr_go_type(stmt.value)
+                if lhs_t == "int":
+                    if isinstance(stmt.op, ast.Add):
+                        out.extend(self._declare_or_assign(name, f"({safe} + {self._as_go_int(stmt.value, rhs_t)})", scope, force_assign=True, rhs_go_type="int"))
+                        return out
+                    if isinstance(stmt.op, ast.Sub):
+                        out.extend(self._declare_or_assign(name, f"({safe} - {self._as_go_int(stmt.value, rhs_t)})", scope, force_assign=True, rhs_go_type="int"))
+                        return out
+                    if isinstance(stmt.op, ast.Mult):
+                        out.extend(self._declare_or_assign(name, f"({safe} * {self._as_go_int(stmt.value, rhs_t)})", scope, force_assign=True, rhs_go_type="int"))
+                        return out
+                    if isinstance(stmt.op, ast.FloorDiv):
+                        out.extend(self._declare_or_assign(name, f"({safe} / {self._as_go_int(stmt.value, rhs_t)})", scope, force_assign=True, rhs_go_type="int"))
+                        return out
+                if lhs_t == "float64":
+                    if isinstance(stmt.op, ast.Add):
+                        out.extend(self._declare_or_assign(name, f"({safe} + {self._as_go_float(stmt.value, rhs_t)})", scope, force_assign=True, rhs_go_type="float64"))
+                        return out
+                    if isinstance(stmt.op, ast.Sub):
+                        out.extend(self._declare_or_assign(name, f"({safe} - {self._as_go_float(stmt.value, rhs_t)})", scope, force_assign=True, rhs_go_type="float64"))
+                        return out
+                    if isinstance(stmt.op, ast.Mult):
+                        out.extend(self._declare_or_assign(name, f"({safe} * {self._as_go_float(stmt.value, rhs_t)})", scope, force_assign=True, rhs_go_type="float64"))
+                        return out
+                    if isinstance(stmt.op, ast.Div):
+                        out.extend(self._declare_or_assign(name, f"({safe} / {self._as_go_float(stmt.value, rhs_t)})", scope, force_assign=True, rhs_go_type="float64"))
+                        return out
             out.extend(self._declare_or_assign(name, f"{op}({name}, {rhs})", scope, force_assign=True))
             return out
         if isinstance(stmt.target, ast.Attribute):
@@ -455,17 +522,17 @@ class GoJavaNativeTranspiler(BaseTranspiler):
     def _transpile_if(self, stmt: ast.If, scope: Scope) -> list[str]:
         cond = self._py_bool(self.transpile_expr(stmt.test))
         lines = [f"if ({cond}) {{"]
-        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types)))))
+        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))))
         if stmt.orelse:
             lines.append("} else {")
-            lines.extend(self._indent_block(self.transpile_statements(stmt.orelse, Scope(set(scope.declared), dict(scope.class_types)))))
+            lines.extend(self._indent_block(self.transpile_statements(stmt.orelse, Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))))
         lines.append("}")
         return lines
 
     def _transpile_while(self, stmt: ast.While, scope: Scope) -> list[str]:
         cond = self._py_bool(self.transpile_expr(stmt.test))
         lines = [f"for {cond} {{" if self.is_go else f"while ({cond}) {{"]
-        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types)))))
+        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))))
         lines.append("}")
         return lines
 
@@ -476,17 +543,37 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         target_safe = self._safe_name(target)
 
         rng = self._parse_range_args(stmt.iter)
-        iter_expr: str
         if rng is not None:
             start, stop, step = rng
+            s0 = self._new_temp("range_start")
+            s1 = self._new_temp("range_stop")
+            s2 = self._new_temp("range_step")
+            i0 = self._new_temp("i")
+            lines: list[str] = []
             if self.is_go:
-                iter_expr = f"pyRange(pyToInt({start}), pyToInt({stop}), pyToInt({step}))"
+                lines.append(self._stmt(f"{s0} := pyToInt({start})"))
+                lines.append(self._stmt(f"{s1} := pyToInt({stop})"))
+                lines.append(self._stmt(f"{s2} := pyToInt({step})"))
+                lines.append(f"if {s2} == 0 {{ panic(\"range() step must not be zero\") }}")
+                if target_safe not in scope.declared:
+                    lines.extend(self._declare_or_assign(target, "0", scope, rhs_go_type="int"))
+                lines.append(f"for {i0} := {s0}; ({s2} > 0 && {i0} < {s1}) || ({s2} < 0 && {i0} > {s1}); {i0} += {s2} {{")
+                lines.extend(self._indent_block([self._stmt(f"{target_safe} = {i0}")]))
             else:
-                iter_expr = f"PyRuntime.pyRange(PyRuntime.pyToInt({start}), PyRuntime.pyToInt({stop}), PyRuntime.pyToInt({step}))"
-        else:
-            src = self.transpile_expr(stmt.iter)
-            iter_expr = f"pyIter({src})" if self.is_go else f"PyRuntime.pyIter({src})"
+                lines.append(self._stmt(f"int {s0} = PyRuntime.pyToInt({start})"))
+                lines.append(self._stmt(f"int {s1} = PyRuntime.pyToInt({stop})"))
+                lines.append(self._stmt(f"int {s2} = PyRuntime.pyToInt({step})"))
+                lines.append(f"if ({s2} == 0) {{ throw new RuntimeException(\"range() step must not be zero\"); }}")
+                if target_safe not in scope.declared:
+                    lines.extend(self._declare_or_assign(target, "null", scope))
+                lines.append(f"for (int {i0} = {s0}; ({s2} > 0 && {i0} < {s1}) || ({s2} < 0 && {i0} > {s1}); {i0} += {s2}) {{")
+                lines.extend(self._indent_block([self._stmt(f"{target_safe} = {i0}")]))
+            lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))))
+            lines.append("}")
+            return lines
 
+        src = self.transpile_expr(stmt.iter)
+        iter_expr = f"pyIter({src})" if self.is_go else f"PyRuntime.pyIter({src})"
         it = self._new_temp("it")
         lines: list[str] = []
         if self.is_go:
@@ -499,7 +586,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                 lines.extend(self._declare_or_assign(target, "null", scope))
             lines.append(f"for (Object {it} : {iter_expr}) {{")
             lines.extend(self._indent_block([self._stmt(f"{target_safe} = {it}")]))
-        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types)))))
+        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))))
         lines.append("}")
         return lines
 
@@ -510,35 +597,35 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             has_ret = self._stmt_guarantees_return(stmt.body) or any(self._stmt_guarantees_return(h.body) for h in stmt.handlers)
             tmp = self._new_temp("tryret")
             lines = [f"var {tmp} any = pyTryCatch(func() any {{"]
-            lines.extend([f"{self.INDENT}{l}" for l in self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types)))])
+            lines.extend([f"{self.INDENT}{l}" for l in self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))])
             lines.append(f"{self.INDENT}return nil")
             lines.append("}, func(ex any) any {")
             if stmt.handlers:
                 h = stmt.handlers[0]
                 ex_name = h.name or "ex"
                 if ex_name != "ex":
-                    lines.extend([f"{self.INDENT}{l}" for l in self._declare_or_assign(ex_name, "ex", Scope(set(scope.declared), dict(scope.class_types)))])
-                lines.extend([f"{self.INDENT}{l}" for l in self.transpile_statements(h.body, Scope(set(scope.declared) | {ex_name}, dict(scope.class_types)))])
+                    lines.extend([f"{self.INDENT}{l}" for l in self._declare_or_assign(ex_name, "ex", Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))])
+                lines.extend([f"{self.INDENT}{l}" for l in self.transpile_statements(h.body, Scope(set(scope.declared) | {ex_name}, dict(scope.class_types), dict(scope.value_types)))])
             lines.append(f"{self.INDENT}return nil")
             lines.append("}, func() {")
-            lines.extend([f"{self.INDENT}{l}" for l in self.transpile_statements(stmt.finalbody, Scope(set(scope.declared), dict(scope.class_types)))])
+            lines.extend([f"{self.INDENT}{l}" for l in self.transpile_statements(stmt.finalbody, Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))])
             lines.append("})")
             if has_ret:
                 lines.append(self._stmt(f"return {tmp}"))
             return lines
 
         lines = ["try {"]
-        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types)))))
+        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))))
         lines.append("}")
         if stmt.handlers:
             h = stmt.handlers[0]
             ex_name = h.name or "ex"
             lines.append(f"catch (RuntimeException {ex_name}) {{")
-            lines.extend(self._indent_block(self.transpile_statements(h.body, Scope(set(scope.declared)|{ex_name}, dict(scope.class_types)))))
+            lines.extend(self._indent_block(self.transpile_statements(h.body, Scope(set(scope.declared)|{ex_name}, dict(scope.class_types), dict(scope.value_types)))))
             lines.append("}")
         if stmt.finalbody:
             lines.append("finally {")
-            lines.extend(self._indent_block(self.transpile_statements(stmt.finalbody, Scope(set(scope.declared), dict(scope.class_types)))))
+            lines.extend(self._indent_block(self.transpile_statements(stmt.finalbody, Scope(set(scope.declared), dict(scope.class_types), dict(scope.value_types)))))
             lines.append("}")
         return lines
 
@@ -580,6 +667,41 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             return f"pyGet({base}, {self._string_literal(expr.attr)})" if self.is_go else f"PyRuntime.pyGet({base}, {self._string_literal(expr.attr)})"
 
         if isinstance(expr, ast.BinOp):
+            if self.is_go:
+                t = self._expr_go_type(expr)
+                if t in {"int", "float64"}:
+                    lt = self._expr_go_type(expr.left)
+                    rt = self._expr_go_type(expr.right)
+                    if t == "float64":
+                        l = self._as_go_float(expr.left, lt)
+                        r = self._as_go_float(expr.right, rt)
+                    else:
+                        l = self._as_go_int(expr.left, lt)
+                        r = self._as_go_int(expr.right, rt)
+                    if isinstance(expr.op, ast.Add):
+                        return f"({l} + {r})"
+                    if isinstance(expr.op, ast.Sub):
+                        return f"({l} - {r})"
+                    if isinstance(expr.op, ast.Mult):
+                        return f"({l} * {r})"
+                    if isinstance(expr.op, ast.Div):
+                        return f"({l} / {r})"
+                    if isinstance(expr.op, ast.Mod):
+                        return f"({l} % {r})"
+                    if isinstance(expr.op, ast.FloorDiv):
+                        if t == "int":
+                            return f"({l} / {r})"
+                        return f"math.Floor({l} / {r})"
+                    if isinstance(expr.op, ast.LShift):
+                        return f"({l} << uint({r}))"
+                    if isinstance(expr.op, ast.RShift):
+                        return f"({l} >> uint({r}))"
+                    if isinstance(expr.op, ast.BitAnd):
+                        return f"({l} & {r})"
+                    if isinstance(expr.op, ast.BitOr):
+                        return f"({l} | {r})"
+                    if isinstance(expr.op, ast.BitXor):
+                        return f"({l} ^ {r})"
             l = self.transpile_expr(expr.left)
             r = self.transpile_expr(expr.right)
             return f"{self._binop_helper(expr.op)}({l}, {r})"
@@ -588,6 +710,12 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             if isinstance(expr.op, ast.Not):
                 return f"(!{self._py_bool(self.transpile_expr(expr.operand))})"
             if isinstance(expr.op, ast.USub):
+                if self.is_go:
+                    ot = self._expr_go_type(expr.operand)
+                    if ot == "int":
+                        return f"(-{self._as_go_int(expr.operand, ot)})"
+                    if ot == "float64":
+                        return f"(-{self._as_go_float(expr.operand, ot)})"
                 f = "pyNeg" if self.is_go else "PyRuntime.pyNeg"
                 return f"{f}({self.transpile_expr(expr.operand)})"
             raise TranspileError("unsupported unary op")
@@ -600,6 +728,25 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         if isinstance(expr, ast.Compare):
             if len(expr.ops) != 1 or len(expr.comparators) != 1:
                 raise TranspileError("chained compare unsupported")
+            if self.is_go:
+                lt = self._expr_go_type(expr.left)
+                rt = self._expr_go_type(expr.comparators[0])
+                if lt in {"int", "float64"} and rt in {"int", "float64"}:
+                    l = self._as_go_float(expr.left, lt) if ("float64" in {lt, rt}) else self._as_go_int(expr.left, lt)
+                    r = self._as_go_float(expr.comparators[0], rt) if ("float64" in {lt, rt}) else self._as_go_int(expr.comparators[0], rt)
+                    op = expr.ops[0]
+                    if isinstance(op, ast.Eq):
+                        return f"({l} == {r})"
+                    if isinstance(op, ast.NotEq):
+                        return f"({l} != {r})"
+                    if isinstance(op, ast.Lt):
+                        return f"({l} < {r})"
+                    if isinstance(op, ast.LtE):
+                        return f"({l} <= {r})"
+                    if isinstance(op, ast.Gt):
+                        return f"({l} > {r})"
+                    if isinstance(op, ast.GtE):
+                        return f"({l} >= {r})"
             l = self.transpile_expr(expr.left)
             r = self.transpile_expr(expr.comparators[0])
             op = expr.ops[0]
@@ -680,7 +827,8 @@ class GoJavaNativeTranspiler(BaseTranspiler):
     def _transpile_call(self, expr: ast.Call) -> str:
         if any(kw.arg is None for kw in expr.keywords):
             raise TranspileError("**kwargs is not supported")
-        args = [self.transpile_expr(a) for a in list(expr.args) + [kw.value for kw in expr.keywords]]
+        arg_nodes = list(expr.args) + [kw.value for kw in expr.keywords]
+        args = [self.transpile_expr(a) for a in arg_nodes]
 
         if isinstance(expr.func, ast.Name):
             fn = expr.func.id
@@ -719,6 +867,15 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                 arg = args[0] if args else self._string_literal("RuntimeError")
                 return arg
             fn_name = self.function_renames.get(fn, fn)
+            if self.is_go:
+                arg_types = self.function_arg_types.get(fn)
+                if arg_types:
+                    coerced: list[str] = []
+                    for i, a in enumerate(args):
+                        dst_t = arg_types[i] if i < len(arg_types) else None
+                        src_t = self._expr_go_type(arg_nodes[i]) if i < len(arg_nodes) else None
+                        coerced.append(self._coerce_go_arg(a, src_t, dst_t))
+                    args = coerced
             return f"{fn_name}({', '.join(args)})"
 
         if isinstance(expr.func, ast.Attribute):
@@ -748,15 +905,15 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                 mod = expr.func.value.id
                 if mod == "math":
                     if method == "sqrt":
-                        return f"{'pyMathSqrt' if self.is_go else 'PyRuntime.pyMathSqrt'}({', '.join(args)})"
+                        return f"math.Sqrt(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathSqrt({', '.join(args)})"
                     if method == "sin":
-                        return f"{'pyMathSin' if self.is_go else 'PyRuntime.pyMathSin'}({', '.join(args)})"
+                        return f"math.Sin(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathSin({', '.join(args)})"
                     if method == "cos":
-                        return f"{'pyMathCos' if self.is_go else 'PyRuntime.pyMathCos'}({', '.join(args)})"
+                        return f"math.Cos(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathCos({', '.join(args)})"
                     if method == "exp":
-                        return f"{'pyMathExp' if self.is_go else 'PyRuntime.pyMathExp'}({', '.join(args)})"
+                        return f"math.Exp(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathExp({', '.join(args)})"
                     if method == "floor":
-                        return f"{'pyMathFloor' if self.is_go else 'PyRuntime.pyMathFloor'}({', '.join(args)})"
+                        return f"math.Floor(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathFloor({', '.join(args)})"
                 if mod == "png_helper" and method == "write_rgb_png":
                     return f"{'pyWriteRGBPNG' if self.is_go else 'PyRuntime.pyWriteRGBPNG'}({', '.join(args)})"
                 if mod == "gif_helper":
@@ -770,13 +927,13 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                         owner = self.transpile_expr(expr.func.value.value)
                         key = self._string_literal(expr.func.value.attr)
                         cur = f"pyGet({owner}, {key})"
-                        return f"pySet({owner}, {key}, append({cur}.([]any), {args[0]}))"
+                        return f"pySet({owner}, {key}, pyAppend({cur}, {args[0]}))"
                     if isinstance(expr.func.value, ast.Subscript) and not isinstance(expr.func.value.slice, ast.Slice):
                         owner = self.transpile_expr(expr.func.value.value)
                         key = self.transpile_expr(expr.func.value.slice)
                         cur = f"pyGet({owner}, {key})"
-                        return f"pySet({owner}, {key}, append({cur}.([]any), {args[0]}))"
-                    return f"{obj} = append({obj}.([]any), {args[0]})"
+                        return f"pySet({owner}, {key}, pyAppend({cur}, {args[0]}))"
+                    return f"{obj} = pyAppend({obj}, {args[0]})"
                 return f"((java.util.List<Object>){obj}).add({args[0]})"
             if method == "pop":
                 idx = args[0] if args else ("nil" if self.is_go else "null")
@@ -818,17 +975,27 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         base = self.transpile_expr(target.value)
         return f"pySet({base}, {self._string_literal(target.attr)}, {rhs})" if self.is_go else f"PyRuntime.pySet({base}, {self._string_literal(target.attr)}, {rhs})"
 
-    def _declare_or_assign(self, name: str, rhs: str, scope: Scope, force_assign: bool = False) -> list[str]:
+    def _declare_or_assign(self, name: str, rhs: str, scope: Scope, force_assign: bool = False, rhs_go_type: str | None = None) -> list[str]:
         safe = self._safe_name(name)
+        go_t = scope.value_types.get(safe) if self.is_go else None
+        if self.is_go and go_t is None and rhs_go_type in {"int", "float64", "bool", "string"} and (not force_assign) and safe not in scope.declared:
+            go_t = rhs_go_type
+            scope.value_types[safe] = go_t
+        rhs_go = rhs
+        if self.is_go and go_t is not None:
+            rhs_go = self._coerce_go_value(rhs, go_t, rhs_go_type)
         if force_assign or safe in scope.declared:
-            return [self._stmt(f"{safe} = {rhs}")]
+            return [self._stmt(f"{safe} = {rhs_go}")]
         scope.declared.add(safe)
         if self.is_go:
+            if go_t is not None:
+                return [self._stmt(f"var {safe} {go_t} = {rhs_go}"), self._stmt(f"_ = {safe}")]
             return [self._stmt(f"var {safe} any = {rhs}"), self._stmt(f"_ = {safe}")]
         return [self._stmt(f"Object {safe} = {rhs}")]
 
-    def _args_decl(self, args: list[str], self_map_first: bool = False) -> str:
+    def _args_decl(self, args: list[str], self_map_first: bool = False, arg_types: dict[str, str] | None = None) -> str:
         decls: list[str] = []
+        arg_types = arg_types or {}
         for i, a in enumerate(args):
             an = self._safe_name(a)
             if self_map_first and i == 0:
@@ -838,7 +1005,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                     decls.append(f"Map<Object, Object> {an}")
             else:
                 if self.is_go:
-                    decls.append(f"{an} any")
+                    decls.append(f"{an} {arg_types.get(a, 'any')}")
                 else:
                     decls.append(f"Object {an}")
         return ", ".join(decls)
@@ -916,6 +1083,125 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         if name == "_":
             return "__pytra_discard"
         return name
+
+    def _annotation_tag(self, ann: ast.expr | None) -> str | None:
+        if ann is None:
+            return None
+        if isinstance(ann, ast.Name):
+            if ann.id == "int":
+                return "int"
+            if ann.id == "float":
+                return "float64"
+            if ann.id == "bool":
+                return "bool"
+            if ann.id == "str":
+                return "string"
+        return None
+
+    def _coerce_go_value(self, rhs: str, go_type: str, rhs_go_type: str | None = None) -> str:
+        if rhs_go_type == go_type:
+            return rhs
+        if rhs == "nil":
+            if go_type == "int":
+                return "0"
+            if go_type == "float64":
+                return "0.0"
+            if go_type == "bool":
+                return "false"
+            if go_type == "string":
+                return '""'
+        if go_type == "int":
+            return f"pyToInt({rhs})"
+        if go_type == "float64":
+            return f"pyToFloat({rhs})"
+        if go_type == "bool":
+            return f"pyBool({rhs})"
+        if go_type == "string":
+            return f"pyToString({rhs})"
+        return rhs
+
+    def _coerce_go_arg(self, code: str, src_t: str | None, dst_t: str | None) -> str:
+        if dst_t is None:
+            return code
+        if src_t == dst_t:
+            return code
+        if dst_t == "int":
+            return f"pyToInt({code})"
+        if dst_t == "float64":
+            if src_t == "int":
+                return f"float64({code})"
+            return f"pyToFloat({code})"
+        if dst_t == "bool":
+            return f"pyBool({code})"
+        if dst_t == "string":
+            return f"pyToString({code})"
+        return code
+
+    def _expr_go_type(self, expr: ast.expr | None) -> str | None:
+        if expr is None:
+            return None
+        if isinstance(expr, ast.Constant):
+            if isinstance(expr.value, bool):
+                return "bool"
+            if isinstance(expr.value, int):
+                return "int"
+            if isinstance(expr.value, float):
+                return "float64"
+            if isinstance(expr.value, str):
+                return "string"
+            return None
+        if isinstance(expr, ast.Name):
+            nm = self._safe_name(expr.id)
+            for sc in reversed(self.scope_stack):
+                t = sc.value_types.get(nm)
+                if t is not None:
+                    return t
+            return None
+        if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.USub):
+            return self._expr_go_type(expr.operand)
+        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
+            if expr.func.id == "int":
+                return "int"
+            if expr.func.id == "float":
+                return "float64"
+            if expr.func.id == "str":
+                return "string"
+            if expr.func.id == "bool":
+                return "bool"
+        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute):
+            if isinstance(expr.func.value, ast.Name):
+                if expr.func.value.id == "math" and expr.func.attr in {"sqrt", "sin", "cos", "exp", "floor"}:
+                    return "float64"
+                if expr.func.value.id == "time" and expr.func.attr == "perf_counter":
+                    return "float64"
+        if isinstance(expr, ast.BinOp):
+            lt = self._expr_go_type(expr.left)
+            rt = self._expr_go_type(expr.right)
+            if lt not in {"int", "float64"} or rt not in {"int", "float64"}:
+                return None
+            if isinstance(expr.op, ast.Div):
+                return "float64"
+            if isinstance(expr.op, ast.FloorDiv):
+                return "int" if lt == "int" and rt == "int" else "float64"
+            if isinstance(expr.op, (ast.Mod, ast.LShift, ast.RShift, ast.BitAnd, ast.BitOr, ast.BitXor)):
+                return "int" if lt == "int" and rt == "int" else None
+            if isinstance(expr.op, (ast.Add, ast.Sub, ast.Mult)):
+                return "float64" if "float64" in {lt, rt} else "int"
+        return None
+
+    def _as_go_int(self, expr: ast.expr, expr_t: str | None) -> str:
+        code = self.transpile_expr(expr)
+        if expr_t == "int":
+            return code
+        return f"pyToInt({code})"
+
+    def _as_go_float(self, expr: ast.expr, expr_t: str | None) -> str:
+        code = self.transpile_expr(expr)
+        if expr_t == "float64":
+            return code
+        if expr_t == "int":
+            return f"float64({code})"
+        return f"pyToFloat({code})"
 
     def _stmt_guarantees_return(self, body: list[ast.stmt]) -> bool:
         """ブロックが必ず return するかを簡易判定する。"""

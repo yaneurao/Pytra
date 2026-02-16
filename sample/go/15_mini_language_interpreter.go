@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -764,14 +784,14 @@ func Parser_new_expr_nodes(self map[any]any) any {
 func Parser_peek_kind(self map[any]any) any {
     return pyGet(pyGet(pyGet(self, "tokens"), pyGet(self, "pos")), "kind")
 }
-func Parser_match(self map[any]any, kind any) any {
+func Parser_match(self map[any]any, kind string) any {
     if (pyBool(pyEq(Parser_peek_kind(self), kind))) {
         pySet(self, "pos", pyAdd(pyGet(self, "pos"), 1))
         return true
     }
     return false
 }
-func Parser_expect(self map[any]any, kind any) any {
+func Parser_expect(self map[any]any, kind string) any {
     if (pyBool(pyNe(Parser_peek_kind(self), kind))) {
         var t any = pyGet(pyGet(self, "tokens"), pyGet(self, "pos"))
         _ = t
@@ -788,7 +808,7 @@ func Parser_skip_newlines(self map[any]any) any {
     return nil
 }
 func Parser_add_expr(self map[any]any, node any) any {
-    pySet(self, "expr_nodes", append(pyGet(self, "expr_nodes").([]any), node))
+    pySet(self, "expr_nodes", pyAppend(pyGet(self, "expr_nodes"), node))
     return pySub(pyLen(pyGet(self, "expr_nodes")), 1)
 }
 func Parser_parse_program(self map[any]any) any {
@@ -798,29 +818,29 @@ func Parser_parse_program(self map[any]any) any {
     for pyBool(pyNe(Parser_peek_kind(self), "EOF")) {
         var stmt any = Parser_parse_stmt(self)
         _ = stmt
-        stmts = append(stmts.([]any), stmt)
+        stmts = pyAppend(stmts, stmt)
         Parser_skip_newlines(self)
     }
     return stmts
 }
 func Parser_parse_stmt(self map[any]any) any {
     if (pyBool(Parser_match(self, "LET"))) {
-        var let_name any = pyGet(Parser_expect(self, "IDENT"), "text")
+        var let_name string = pyToString(pyGet(Parser_expect(self, "IDENT"), "text"))
         _ = let_name
         Parser_expect(self, "EQUAL")
-        var let_expr_index any = Parser_parse_expr(self)
+        var let_expr_index int = pyToInt(Parser_parse_expr(self))
         _ = let_expr_index
         return NewStmtNode("let", let_name, let_expr_index)
     }
     if (pyBool(Parser_match(self, "PRINT"))) {
-        var print_expr_index any = Parser_parse_expr(self)
+        var print_expr_index int = pyToInt(Parser_parse_expr(self))
         _ = print_expr_index
         return NewStmtNode("print", "", print_expr_index)
     }
-    var assign_name any = pyGet(Parser_expect(self, "IDENT"), "text")
+    var assign_name string = pyToString(pyGet(Parser_expect(self, "IDENT"), "text"))
     _ = assign_name
     Parser_expect(self, "EQUAL")
-    var assign_expr_index any = Parser_parse_expr(self)
+    var assign_expr_index int = pyToInt(Parser_parse_expr(self))
     _ = assign_expr_index
     return NewStmtNode("assign", assign_name, assign_expr_index)
 }
@@ -828,21 +848,21 @@ func Parser_parse_expr(self map[any]any) any {
     return Parser_parse_add(self)
 }
 func Parser_parse_add(self map[any]any) any {
-    var left any = Parser_parse_mul(self)
+    var left int = pyToInt(Parser_parse_mul(self))
     _ = left
-    var done any = false
+    var done bool = false
     _ = done
     for pyBool((!pyBool(done))) {
         if (pyBool(Parser_match(self, "PLUS"))) {
-            var right any = Parser_parse_mul(self)
+            var right int = pyToInt(Parser_parse_mul(self))
             _ = right
-            left = Parser_add_expr(self, NewExprNode("bin", 0, "", "+", left, right))
+            left = pyToInt(Parser_add_expr(self, NewExprNode("bin", 0, "", "+", left, right)))
             continue
         }
         if (pyBool(Parser_match(self, "MINUS"))) {
             var right any = Parser_parse_mul(self)
             _ = right
-            left = Parser_add_expr(self, NewExprNode("bin", 0, "", "-", left, right))
+            left = pyToInt(Parser_add_expr(self, NewExprNode("bin", 0, "", "-", left, right)))
             continue
         }
         done = true
@@ -850,21 +870,21 @@ func Parser_parse_add(self map[any]any) any {
     return left
 }
 func Parser_parse_mul(self map[any]any) any {
-    var left any = Parser_parse_unary(self)
+    var left int = pyToInt(Parser_parse_unary(self))
     _ = left
-    var done any = false
+    var done bool = false
     _ = done
     for pyBool((!pyBool(done))) {
         if (pyBool(Parser_match(self, "STAR"))) {
-            var right any = Parser_parse_unary(self)
+            var right int = pyToInt(Parser_parse_unary(self))
             _ = right
-            left = Parser_add_expr(self, NewExprNode("bin", 0, "", "*", left, right))
+            left = pyToInt(Parser_add_expr(self, NewExprNode("bin", 0, "", "*", left, right)))
             continue
         }
         if (pyBool(Parser_match(self, "SLASH"))) {
             var right any = Parser_parse_unary(self)
             _ = right
-            left = Parser_add_expr(self, NewExprNode("bin", 0, "", "/", left, right))
+            left = pyToInt(Parser_add_expr(self, NewExprNode("bin", 0, "", "/", left, right)))
             continue
         }
         done = true
@@ -873,9 +893,9 @@ func Parser_parse_mul(self map[any]any) any {
 }
 func Parser_parse_unary(self map[any]any) any {
     if (pyBool(Parser_match(self, "MINUS"))) {
-        var child any = Parser_parse_unary(self)
+        var child int = pyToInt(Parser_parse_unary(self))
         _ = child
-        return Parser_add_expr(self, NewExprNode("neg", 0, "", "", child, pyNeg(1)))
+        return Parser_add_expr(self, NewExprNode("neg", 0, "", "", child, (-1)))
     }
     return Parser_parse_primary(self)
 }
@@ -883,25 +903,25 @@ func Parser_parse_primary(self map[any]any) any {
     if (pyBool(Parser_match(self, "NUMBER"))) {
         var token_num any = pyGet(pyGet(self, "tokens"), pySub(pyGet(self, "pos"), 1))
         _ = token_num
-        var parsed_value any = 0
+        var parsed_value int = 0
         _ = parsed_value
-        var idx any = 0
+        var idx int = 0
         _ = idx
         for pyBool(pyLt(idx, pyLen(pyGet(token_num, "text")))) {
-            var ch any = pySlice(pyGet(token_num, "text"), idx, pyAdd(idx, 1))
+            var ch string = pyToString(pySlice(pyGet(token_num, "text"), idx, (idx + 1)))
             _ = ch
-            parsed_value = pySub(pyAdd(pyMul(parsed_value, 10), pyOrd(ch)), pyOrd("0"))
-            idx = pyAdd(idx, 1)
+            parsed_value = pyToInt(pySub(pyAdd((parsed_value * 10), pyOrd(ch)), pyOrd("0")))
+            idx = (idx + 1)
         }
-        return Parser_add_expr(self, NewExprNode("lit", parsed_value, "", "", pyNeg(1), pyNeg(1)))
+        return Parser_add_expr(self, NewExprNode("lit", parsed_value, "", "", (-1), (-1)))
     }
     if (pyBool(Parser_match(self, "IDENT"))) {
         var token_ident any = pyGet(pyGet(self, "tokens"), pySub(pyGet(self, "pos"), 1))
         _ = token_ident
-        return Parser_add_expr(self, NewExprNode("var", 0, pyGet(token_ident, "text"), "", pyNeg(1), pyNeg(1)))
+        return Parser_add_expr(self, NewExprNode("var", 0, pyGet(token_ident, "text"), "", (-1), (-1)))
     }
     if (pyBool(Parser_match(self, "LPAREN"))) {
-        var expr_index any = Parser_parse_expr(self)
+        var expr_index int = pyToInt(Parser_parse_expr(self))
         _ = expr_index
         Parser_expect(self, "RPAREN")
         return expr_index
@@ -914,97 +934,97 @@ func Parser_parse_primary(self map[any]any) any {
 func tokenize(lines any) any {
     var tokens any = []any{}
     _ = tokens
-    var line_index any = 0
+    var line_index int = 0
     _ = line_index
     for pyBool(pyLt(line_index, pyLen(lines))) {
-        var source any = pyGet(lines, line_index)
+        var source string = pyToString(pyGet(lines, line_index))
         _ = source
-        var i any = 0
+        var i int = 0
         _ = i
-        var n any = pyLen(source)
+        var n int = pyToInt(pyLen(source))
         _ = n
-        for pyBool(pyLt(i, n)) {
-            var ch any = pySlice(source, i, pyAdd(i, 1))
+        for pyBool((i < n)) {
+            var ch string = pyToString(pySlice(source, i, (i + 1)))
             _ = ch
             if (pyBool(pyEq(ch, " "))) {
-                i = pyAdd(i, 1)
+                i = (i + 1)
                 continue
             }
             if (pyBool(pyEq(ch, "+"))) {
-                tokens = append(tokens.([]any), NewToken("PLUS", ch, i))
-                i = pyAdd(i, 1)
+                tokens = pyAppend(tokens, NewToken("PLUS", ch, i))
+                i = (i + 1)
                 continue
             }
             if (pyBool(pyEq(ch, "-"))) {
-                tokens = append(tokens.([]any), NewToken("MINUS", ch, i))
-                i = pyAdd(i, 1)
+                tokens = pyAppend(tokens, NewToken("MINUS", ch, i))
+                i = (i + 1)
                 continue
             }
             if (pyBool(pyEq(ch, "*"))) {
-                tokens = append(tokens.([]any), NewToken("STAR", ch, i))
-                i = pyAdd(i, 1)
+                tokens = pyAppend(tokens, NewToken("STAR", ch, i))
+                i = (i + 1)
                 continue
             }
             if (pyBool(pyEq(ch, "/"))) {
-                tokens = append(tokens.([]any), NewToken("SLASH", ch, i))
-                i = pyAdd(i, 1)
+                tokens = pyAppend(tokens, NewToken("SLASH", ch, i))
+                i = (i + 1)
                 continue
             }
             if (pyBool(pyEq(ch, "("))) {
-                tokens = append(tokens.([]any), NewToken("LPAREN", ch, i))
-                i = pyAdd(i, 1)
+                tokens = pyAppend(tokens, NewToken("LPAREN", ch, i))
+                i = (i + 1)
                 continue
             }
             if (pyBool(pyEq(ch, ")"))) {
-                tokens = append(tokens.([]any), NewToken("RPAREN", ch, i))
-                i = pyAdd(i, 1)
+                tokens = pyAppend(tokens, NewToken("RPAREN", ch, i))
+                i = (i + 1)
                 continue
             }
             if (pyBool(pyEq(ch, "="))) {
-                tokens = append(tokens.([]any), NewToken("EQUAL", ch, i))
-                i = pyAdd(i, 1)
+                tokens = pyAppend(tokens, NewToken("EQUAL", ch, i))
+                i = (i + 1)
                 continue
             }
             if (pyBool(pyIsDigit(ch))) {
-                var start any = i
+                var start int = i
                 _ = start
-                for pyBool((pyBool(pyLt(i, n)) && pyBool(pyIsDigit(pySlice(source, i, pyAdd(i, 1)))))) {
-                    i = pyAdd(i, 1)
+                for pyBool((pyBool((i < n)) && pyBool(pyIsDigit(pySlice(source, i, (i + 1)))))) {
+                    i = (i + 1)
                 }
-                var text any = pySlice(source, start, i)
+                var text string = pyToString(pySlice(source, start, i))
                 _ = text
-                tokens = append(tokens.([]any), NewToken("NUMBER", text, start))
+                tokens = pyAppend(tokens, NewToken("NUMBER", text, start))
                 continue
             }
             if (pyBool((pyBool(pyIsAlpha(ch)) || pyBool(pyEq(ch, "_"))))) {
-                var start any = i
+                var start int = i
                 _ = start
-                for pyBool((pyBool(pyLt(i, n)) && pyBool((pyBool((pyBool(pyIsAlpha(pySlice(source, i, pyAdd(i, 1)))) || pyBool(pyEq(pySlice(source, i, pyAdd(i, 1)), "_")))) || pyBool(pyIsDigit(pySlice(source, i, pyAdd(i, 1)))))))) {
-                    i = pyAdd(i, 1)
+                for pyBool((pyBool((i < n)) && pyBool((pyBool((pyBool(pyIsAlpha(pySlice(source, i, (i + 1)))) || pyBool(pyEq(pySlice(source, i, (i + 1)), "_")))) || pyBool(pyIsDigit(pySlice(source, i, (i + 1)))))))) {
+                    i = (i + 1)
                 }
                 var text any = pySlice(source, start, i)
                 _ = text
                 if (pyBool(pyEq(text, "let"))) {
-                    tokens = append(tokens.([]any), NewToken("LET", text, start))
+                    tokens = pyAppend(tokens, NewToken("LET", text, start))
                 } else {
                     if (pyBool(pyEq(text, "print"))) {
-                        tokens = append(tokens.([]any), NewToken("PRINT", text, start))
+                        tokens = pyAppend(tokens, NewToken("PRINT", text, start))
                     } else {
-                        tokens = append(tokens.([]any), NewToken("IDENT", text, start))
+                        tokens = pyAppend(tokens, NewToken("IDENT", text, start))
                     }
                 }
                 continue
             }
             panic(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd("tokenize error at line=", pyToString(line_index)), " pos="), pyToString(i)), " ch="), ch))
         }
-        tokens = append(tokens.([]any), NewToken("NEWLINE", "", n))
-        line_index = pyAdd(line_index, 1)
+        tokens = pyAppend(tokens, NewToken("NEWLINE", "", n))
+        line_index = (line_index + 1)
     }
-    tokens = append(tokens.([]any), NewToken("EOF", "", pyLen(lines)))
+    tokens = pyAppend(tokens, NewToken("EOF", "", pyLen(lines)))
     return tokens
 }
 
-func eval_expr(expr_index any, expr_nodes any, env any) any {
+func eval_expr(expr_index int, expr_nodes any, env any) any {
     if (pyBool(false)) {
         pySet(env, "__dummy__", 0)
     }
@@ -1020,67 +1040,67 @@ func eval_expr(expr_index any, expr_nodes any, env any) any {
         return pyGet(env, pyGet(node, "name"))
     }
     if (pyBool(pyEq(pyGet(node, "kind"), "neg"))) {
-        return pyNeg(eval_expr(pyGet(node, "left"), expr_nodes, env))
+        return pyNeg(eval_expr(pyToInt(pyGet(node, "left")), expr_nodes, env))
     }
     if (pyBool(pyEq(pyGet(node, "kind"), "bin"))) {
-        var lhs any = eval_expr(pyGet(node, "left"), expr_nodes, env)
+        var lhs int = pyToInt(eval_expr(pyToInt(pyGet(node, "left")), expr_nodes, env))
         _ = lhs
-        var rhs any = eval_expr(pyGet(node, "right"), expr_nodes, env)
+        var rhs int = pyToInt(eval_expr(pyToInt(pyGet(node, "right")), expr_nodes, env))
         _ = rhs
         if (pyBool(pyEq(pyGet(node, "op"), "+"))) {
-            return pyAdd(lhs, rhs)
+            return (lhs + rhs)
         }
         if (pyBool(pyEq(pyGet(node, "op"), "-"))) {
-            return pySub(lhs, rhs)
+            return (lhs - rhs)
         }
         if (pyBool(pyEq(pyGet(node, "op"), "*"))) {
-            return pyMul(lhs, rhs)
+            return (lhs * rhs)
         }
         if (pyBool(pyEq(pyGet(node, "op"), "/"))) {
-            if (pyBool(pyEq(rhs, 0))) {
+            if (pyBool((rhs == 0))) {
                 panic("division by zero")
             }
-            return pyFloorDiv(lhs, rhs)
+            return (lhs / rhs)
         }
         panic(pyAdd("unknown operator: ", pyGet(node, "op")))
     }
     panic(pyAdd("unknown node kind: ", pyGet(node, "kind")))
 }
 
-func execute(stmts any, expr_nodes any, trace any) any {
+func execute(stmts any, expr_nodes any, trace bool) any {
     var env any = map[any]any{}
     _ = env
-    var checksum any = 0
+    var checksum int = 0
     _ = checksum
-    var printed any = 0
+    var printed int = 0
     _ = printed
     var stmt any = nil
     _ = stmt
     for _, __pytra_it_1 := range pyIter(stmts) {
         stmt = __pytra_it_1
         if (pyBool(pyEq(pyGet(stmt, "kind"), "let"))) {
-            pySet(env, pyGet(stmt, "name"), eval_expr(pyGet(stmt, "expr_index"), expr_nodes, env))
+            pySet(env, pyGet(stmt, "name"), eval_expr(pyToInt(pyGet(stmt, "expr_index")), expr_nodes, env))
             continue
         }
         if (pyBool(pyEq(pyGet(stmt, "kind"), "assign"))) {
             if (pyBool((!pyBool(pyIn(pyGet(stmt, "name"), env))))) {
                 panic(pyAdd("assign to undefined variable: ", pyGet(stmt, "name")))
             }
-            pySet(env, pyGet(stmt, "name"), eval_expr(pyGet(stmt, "expr_index"), expr_nodes, env))
+            pySet(env, pyGet(stmt, "name"), eval_expr(pyToInt(pyGet(stmt, "expr_index")), expr_nodes, env))
             continue
         }
-        var value any = eval_expr(pyGet(stmt, "expr_index"), expr_nodes, env)
+        var value int = pyToInt(eval_expr(pyToInt(pyGet(stmt, "expr_index")), expr_nodes, env))
         _ = value
         if (pyBool(trace)) {
             pyPrint(value)
         }
-        var norm any = pyMod(value, 1000000007)
+        var norm int = (value % 1000000007)
         _ = norm
-        if (pyBool(pyLt(norm, 0))) {
-            norm = pyAdd(norm, 1000000007)
+        if (pyBool((norm < 0))) {
+            norm = (norm + 1000000007)
         }
-        checksum = pyMod(pyAdd(pyMul(checksum, 131), norm), 1000000007)
-        printed = pyAdd(printed, 1)
+        checksum = (((checksum * 131) + norm) % 1000000007)
+        printed = (printed + 1)
     }
     if (pyBool(trace)) {
         pyPrint("printed:", printed)
@@ -1088,49 +1108,57 @@ func execute(stmts any, expr_nodes any, trace any) any {
     return checksum
 }
 
-func build_benchmark_source(var_count any, loops any) any {
+func build_benchmark_source(var_count int, loops int) any {
     var lines any = []any{}
     _ = lines
-    var i any = nil
+    __pytra_range_start_2 := pyToInt(0)
+    __pytra_range_stop_3 := pyToInt(var_count)
+    __pytra_range_step_4 := pyToInt(1)
+    if __pytra_range_step_4 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(var_count), pyToInt(1)) {
-        i = __pytra_it_2
-        lines = append(lines.([]any), pyAdd(pyAdd(pyAdd("let v", pyToString(i)), " = "), pyToString(pyAdd(i, 1))))
+    for __pytra_i_5 := __pytra_range_start_2; (__pytra_range_step_4 > 0 && __pytra_i_5 < __pytra_range_stop_3) || (__pytra_range_step_4 < 0 && __pytra_i_5 > __pytra_range_stop_3); __pytra_i_5 += __pytra_range_step_4 {
+        i = __pytra_i_5
+        lines = pyAppend(lines, pyAdd(pyAdd(pyAdd("let v", pyToString(i)), " = "), pyToString((i + 1))))
     }
-    for _, __pytra_it_3 := range pyRange(pyToInt(0), pyToInt(loops), pyToInt(1)) {
-        i = __pytra_it_3
-        var x any = pyMod(i, var_count)
+    __pytra_range_start_6 := pyToInt(0)
+    __pytra_range_stop_7 := pyToInt(loops)
+    __pytra_range_step_8 := pyToInt(1)
+    if __pytra_range_step_8 == 0 { panic("range() step must not be zero") }
+    for __pytra_i_9 := __pytra_range_start_6; (__pytra_range_step_8 > 0 && __pytra_i_9 < __pytra_range_stop_7) || (__pytra_range_step_8 < 0 && __pytra_i_9 > __pytra_range_stop_7); __pytra_i_9 += __pytra_range_step_8 {
+        i = __pytra_i_9
+        var x int = (i % var_count)
         _ = x
-        var y any = pyMod(pyAdd(i, 3), var_count)
+        var y int = ((i + 3) % var_count)
         _ = y
-        var c1 any = pyAdd(pyMod(i, 7), 1)
+        var c1 int = ((i % 7) + 1)
         _ = c1
-        var c2 any = pyAdd(pyMod(i, 11), 2)
+        var c2 int = ((i % 11) + 2)
         _ = c2
-        lines = append(lines.([]any), pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd("v", pyToString(x)), " = (v"), pyToString(x)), " * "), pyToString(c1)), " + v"), pyToString(y)), " + 10000) / "), pyToString(c2)))
-        if (pyBool(pyEq(pyMod(i, 97), 0))) {
-            lines = append(lines.([]any), pyAdd("print v", pyToString(x)))
+        lines = pyAppend(lines, pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd(pyAdd("v", pyToString(x)), " = (v"), pyToString(x)), " * "), pyToString(c1)), " + v"), pyToString(y)), " + 10000) / "), pyToString(c2)))
+        if (pyBool(((i % 97) == 0))) {
+            lines = pyAppend(lines, pyAdd("print v", pyToString(x)))
         }
     }
-    lines = append(lines.([]any), "print (v0 + v1 + v2 + v3)")
+    lines = pyAppend(lines, "print (v0 + v1 + v2 + v3)")
     return lines
 }
 
 func run_demo() any {
     var demo_lines any = []any{}
     _ = demo_lines
-    demo_lines = append(demo_lines.([]any), "let a = 10")
-    demo_lines = append(demo_lines.([]any), "let b = 3")
-    demo_lines = append(demo_lines.([]any), "a = (a + b) * 2")
-    demo_lines = append(demo_lines.([]any), "print a")
-    demo_lines = append(demo_lines.([]any), "print a / b")
+    demo_lines = pyAppend(demo_lines, "let a = 10")
+    demo_lines = pyAppend(demo_lines, "let b = 3")
+    demo_lines = pyAppend(demo_lines, "a = (a + b) * 2")
+    demo_lines = pyAppend(demo_lines, "print a")
+    demo_lines = pyAppend(demo_lines, "print a / b")
     var tokens any = tokenize(demo_lines)
     _ = tokens
     var parser any = NewParser(tokens)
     _ = parser
     var stmts any = Parser_parse_program(parser.(map[any]any))
     _ = stmts
-    var checksum any = execute(stmts, pyGet(parser, "expr_nodes"), true)
+    var checksum int = pyToInt(execute(stmts, pyGet(parser, "expr_nodes"), true))
     _ = checksum
     pyPrint("demo_checksum:", checksum)
     return nil
@@ -1139,7 +1167,7 @@ func run_demo() any {
 func run_benchmark() any {
     var source_lines any = build_benchmark_source(32, 120000)
     _ = source_lines
-    var start any = pyPerfCounter()
+    var start float64 = pyToFloat(pyPerfCounter())
     _ = start
     var tokens any = tokenize(source_lines)
     _ = tokens
@@ -1147,9 +1175,9 @@ func run_benchmark() any {
     _ = parser
     var stmts any = Parser_parse_program(parser.(map[any]any))
     _ = stmts
-    var checksum any = execute(stmts, pyGet(parser, "expr_nodes"), false)
+    var checksum int = pyToInt(execute(stmts, pyGet(parser, "expr_nodes"), false))
     _ = checksum
-    var elapsed any = pySub(pyPerfCounter(), start)
+    var elapsed float64 = pyToFloat(pySub(pyPerfCounter(), start))
     _ = elapsed
     pyPrint("token_count:", pyLen(tokens))
     pyPrint("expr_count:", pyLen(pyGet(parser, "expr_nodes")))

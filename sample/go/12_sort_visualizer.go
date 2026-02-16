@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -694,35 +714,47 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     _ = os.WriteFile(pyToString(path), out, 0o644)
 }
 
-func render(values any, w any, h any) any {
-    var frame any = pyBytearray(pyMul(w, h))
+func render(values any, w int, h int) any {
+    var frame any = pyBytearray((w * h))
     _ = frame
     var n any = pyLen(values)
     _ = n
     var bar_w any = pyDiv(w, n)
     _ = bar_w
-    var i any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(n)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(n), pyToInt(1)) {
-        i = __pytra_it_1
-        var x0 any = pyToInt(pyMul(i, bar_w))
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        i = __pytra_i_4
+        var x0 int = pyToInt(pyMul(i, bar_w))
         _ = x0
-        var x1 any = pyToInt(pyMul(pyAdd(i, 1), bar_w))
+        var x1 int = pyToInt(pyMul((i + 1), bar_w))
         _ = x1
-        if (pyBool(pyLe(x1, x0))) {
-            x1 = pyAdd(x0, 1)
+        if (pyBool((x1 <= x0))) {
+            x1 = (x0 + 1)
         }
-        var bh any = pyToInt(pyMul(pyDiv(pyGet(values, i), n), h))
+        var bh int = pyToInt(pyMul(pyDiv(pyGet(values, i), n), h))
         _ = bh
-        var y any = pySub(h, bh)
+        var y int = (h - bh)
         _ = y
-        for _, __pytra_it_2 := range pyRange(pyToInt(y), pyToInt(h), pyToInt(1)) {
-            y = __pytra_it_2
-            var x any = nil
+        __pytra_range_start_5 := pyToInt(y)
+        __pytra_range_stop_6 := pyToInt(h)
+        __pytra_range_step_7 := pyToInt(1)
+        if __pytra_range_step_7 == 0 { panic("range() step must not be zero") }
+        for __pytra_i_8 := __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7 {
+            y = __pytra_i_8
+            __pytra_range_start_9 := pyToInt(x0)
+            __pytra_range_stop_10 := pyToInt(x1)
+            __pytra_range_step_11 := pyToInt(1)
+            if __pytra_range_step_11 == 0 { panic("range() step must not be zero") }
+            var x int = 0
             _ = x
-            for _, __pytra_it_3 := range pyRange(pyToInt(x0), pyToInt(x1), pyToInt(1)) {
-                x = __pytra_it_3
-                pySet(frame, pyAdd(pyMul(y, w), x), 255)
+            for __pytra_i_12 := __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11 {
+                x = __pytra_i_12
+                pySet(frame, ((y * w) + x), 255)
             }
         }
     }
@@ -730,47 +762,59 @@ func render(values any, w any, h any) any {
 }
 
 func run_12_sort_visualizer() any {
-    var w any = 320
+    var w int = 320
     _ = w
-    var h any = 180
+    var h int = 180
     _ = h
-    var n any = 124
+    var n int = 124
     _ = n
-    var out_path any = "sample/out/12_sort_visualizer.gif"
+    var out_path string = "sample/out/12_sort_visualizer.gif"
     _ = out_path
     var start any = pyPerfCounter()
     _ = start
     var values any = []any{}
     _ = values
-    var i any = nil
+    __pytra_range_start_13 := pyToInt(0)
+    __pytra_range_stop_14 := pyToInt(n)
+    __pytra_range_step_15 := pyToInt(1)
+    if __pytra_range_step_15 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_4 := range pyRange(pyToInt(0), pyToInt(n), pyToInt(1)) {
-        i = __pytra_it_4
-        values = append(values.([]any), pyMod(pyAdd(pyMul(i, 37), 19), n))
+    for __pytra_i_16 := __pytra_range_start_13; (__pytra_range_step_15 > 0 && __pytra_i_16 < __pytra_range_stop_14) || (__pytra_range_step_15 < 0 && __pytra_i_16 > __pytra_range_stop_14); __pytra_i_16 += __pytra_range_step_15 {
+        i = __pytra_i_16
+        values = pyAppend(values, (((i * 37) + 19) % n))
     }
     var frames any = []any{render(values, w, h)}
     _ = frames
-    var op any = 0
+    var op int = 0
     _ = op
-    for _, __pytra_it_5 := range pyRange(pyToInt(0), pyToInt(n), pyToInt(1)) {
-        i = __pytra_it_5
-        var swapped any = false
+    __pytra_range_start_17 := pyToInt(0)
+    __pytra_range_stop_18 := pyToInt(n)
+    __pytra_range_step_19 := pyToInt(1)
+    if __pytra_range_step_19 == 0 { panic("range() step must not be zero") }
+    for __pytra_i_20 := __pytra_range_start_17; (__pytra_range_step_19 > 0 && __pytra_i_20 < __pytra_range_stop_18) || (__pytra_range_step_19 < 0 && __pytra_i_20 > __pytra_range_stop_18); __pytra_i_20 += __pytra_range_step_19 {
+        i = __pytra_i_20
+        var swapped bool = false
         _ = swapped
-        var j any = nil
+        __pytra_range_start_21 := pyToInt(0)
+        __pytra_range_stop_22 := pyToInt(((n - i) - 1))
+        __pytra_range_step_23 := pyToInt(1)
+        if __pytra_range_step_23 == 0 { panic("range() step must not be zero") }
+        var j int = 0
         _ = j
-        for _, __pytra_it_6 := range pyRange(pyToInt(0), pyToInt(pySub(pySub(n, i), 1)), pyToInt(1)) {
-            j = __pytra_it_6
-            if (pyBool(pyGt(pyGet(values, j), pyGet(values, pyAdd(j, 1))))) {
+        for __pytra_i_24 := __pytra_range_start_21; (__pytra_range_step_23 > 0 && __pytra_i_24 < __pytra_range_stop_22) || (__pytra_range_step_23 < 0 && __pytra_i_24 > __pytra_range_stop_22); __pytra_i_24 += __pytra_range_step_23 {
+            j = __pytra_i_24
+            if (pyBool(pyGt(pyGet(values, j), pyGet(values, (j + 1))))) {
                 var tmp any = pyGet(values, j)
                 _ = tmp
-                pySet(values, j, pyGet(values, pyAdd(j, 1)))
-                pySet(values, pyAdd(j, 1), tmp)
+                pySet(values, j, pyGet(values, (j + 1)))
+                pySet(values, (j + 1), tmp)
                 swapped = true
             }
-            if (pyBool(pyEq(pyMod(op, 8), 0))) {
-                frames = append(frames.([]any), render(values, w, h))
+            if (pyBool(((op % 8) == 0))) {
+                frames = pyAppend(frames, render(values, w, h))
             }
-            op = pyAdd(op, 1)
+            op = (op + 1)
         }
         if (pyBool((!pyBool(swapped)))) {
             break

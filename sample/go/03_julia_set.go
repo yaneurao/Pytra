@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -694,77 +714,85 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     _ = os.WriteFile(pyToString(path), out, 0o644)
 }
 
-func render_julia(width any, height any, max_iter any, cx any, cy any) any {
+func render_julia(width int, height int, max_iter int, cx float64, cy float64) any {
     var pixels any = pyBytearray(nil)
     _ = pixels
-    var y any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(height)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var y int = 0
     _ = y
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(height), pyToInt(1)) {
-        y = __pytra_it_1
-        var zy0 any = pyAdd(pyNeg(1.2), pyMul(2.4, pyDiv(y, pySub(height, 1))))
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        y = __pytra_i_4
+        var zy0 float64 = ((-1.2) + (2.4 * (float64(y) / float64((height - 1)))))
         _ = zy0
-        var x any = nil
+        __pytra_range_start_5 := pyToInt(0)
+        __pytra_range_stop_6 := pyToInt(width)
+        __pytra_range_step_7 := pyToInt(1)
+        if __pytra_range_step_7 == 0 { panic("range() step must not be zero") }
+        var x int = 0
         _ = x
-        for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(width), pyToInt(1)) {
-            x = __pytra_it_2
-            var zx any = pyAdd(pyNeg(1.8), pyMul(3.6, pyDiv(x, pySub(width, 1))))
+        for __pytra_i_8 := __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7 {
+            x = __pytra_i_8
+            var zx float64 = ((-1.8) + (3.6 * (float64(x) / float64((width - 1)))))
             _ = zx
-            var zy any = zy0
+            var zy float64 = zy0
             _ = zy
-            var i any = 0
+            var i int = 0
             _ = i
-            for pyBool(pyLt(i, max_iter)) {
-                var zx2 any = pyMul(zx, zx)
+            for pyBool((i < max_iter)) {
+                var zx2 float64 = (zx * zx)
                 _ = zx2
-                var zy2 any = pyMul(zy, zy)
+                var zy2 float64 = (zy * zy)
                 _ = zy2
-                if (pyBool(pyGt(pyAdd(zx2, zy2), 4.0))) {
+                if (pyBool(((zx2 + zy2) > 4.0))) {
                     break
                 }
-                zy = pyAdd(pyMul(pyMul(2.0, zx), zy), cy)
-                zx = pyAdd(pySub(zx2, zy2), cx)
-                i = pyAdd(i, 1)
+                zy = (((2.0 * zx) * zy) + cy)
+                zx = ((zx2 - zy2) + cx)
+                i = (i + 1)
             }
-            var r any = 0
+            var r int = 0
             _ = r
-            var g any = 0
+            var g int = 0
             _ = g
-            var b any = 0
+            var b int = 0
             _ = b
-            if (pyBool(pyGe(i, max_iter))) {
+            if (pyBool((i >= max_iter))) {
                 r = 0
                 g = 0
                 b = 0
             } else {
-                var t any = pyDiv(i, max_iter)
+                var t float64 = (float64(i) / float64(max_iter))
                 _ = t
-                r = pyToInt(pyMul(255.0, pyAdd(0.2, pyMul(0.8, t))))
-                g = pyToInt(pyMul(255.0, pyAdd(0.1, pyMul(0.9, pyMul(t, t)))))
-                b = pyToInt(pyMul(255.0, pySub(1.0, t)))
+                r = pyToInt((255.0 * (0.2 + (0.8 * t))))
+                g = pyToInt((255.0 * (0.1 + (0.9 * (t * t)))))
+                b = pyToInt((255.0 * (1.0 - t)))
             }
-            pixels = append(pixels.([]any), r)
-            pixels = append(pixels.([]any), g)
-            pixels = append(pixels.([]any), b)
+            pixels = pyAppend(pixels, r)
+            pixels = pyAppend(pixels, g)
+            pixels = pyAppend(pixels, b)
         }
     }
     return pixels
 }
 
 func run_julia() any {
-    var width any = 3840
+    var width int = 3840
     _ = width
-    var height any = 2160
+    var height int = 2160
     _ = height
-    var max_iter any = 20000
+    var max_iter int = 20000
     _ = max_iter
-    var out_path any = "sample/out/julia_03.png"
+    var out_path string = "sample/out/julia_03.png"
     _ = out_path
-    var start any = pyPerfCounter()
+    var start float64 = pyToFloat(pyPerfCounter())
     _ = start
-    var pixels any = render_julia(width, height, max_iter, pyNeg(0.8), 0.156)
+    var pixels any = render_julia(width, height, max_iter, (-0.8), 0.156)
     _ = pixels
     pyWriteRGBPNG(out_path, width, height, pixels)
-    var elapsed any = pySub(pyPerfCounter(), start)
+    var elapsed float64 = pyToFloat(pySub(pyPerfCounter(), start))
     _ = elapsed
     pyPrint("output:", out_path)
     pyPrint("size:", width, "x", height)

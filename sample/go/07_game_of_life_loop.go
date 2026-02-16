@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -694,83 +714,115 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     _ = os.WriteFile(pyToString(path), out, 0o644)
 }
 
-func next_state(grid any, w any, h any) any {
+func next_state(grid any, w int, h int) any {
     var nxt any = []any{}
     _ = nxt
-    var y any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(h)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var y int = 0
     _ = y
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
-        y = __pytra_it_1
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        y = __pytra_i_4
         var row any = []any{}
         _ = row
-        var x any = nil
+        __pytra_range_start_5 := pyToInt(0)
+        __pytra_range_stop_6 := pyToInt(w)
+        __pytra_range_step_7 := pyToInt(1)
+        if __pytra_range_step_7 == 0 { panic("range() step must not be zero") }
+        var x int = 0
         _ = x
-        for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
-            x = __pytra_it_2
-            var cnt any = 0
+        for __pytra_i_8 := __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7 {
+            x = __pytra_i_8
+            var cnt int = 0
             _ = cnt
-            var dy any = nil
+            __pytra_range_start_9 := pyToInt((-1))
+            __pytra_range_stop_10 := pyToInt(2)
+            __pytra_range_step_11 := pyToInt(1)
+            if __pytra_range_step_11 == 0 { panic("range() step must not be zero") }
+            var dy int = 0
             _ = dy
-            for _, __pytra_it_3 := range pyRange(pyToInt(pyNeg(1)), pyToInt(2), pyToInt(1)) {
-                dy = __pytra_it_3
-                var dx any = nil
+            for __pytra_i_12 := __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11 {
+                dy = __pytra_i_12
+                __pytra_range_start_13 := pyToInt((-1))
+                __pytra_range_stop_14 := pyToInt(2)
+                __pytra_range_step_15 := pyToInt(1)
+                if __pytra_range_step_15 == 0 { panic("range() step must not be zero") }
+                var dx int = 0
                 _ = dx
-                for _, __pytra_it_4 := range pyRange(pyToInt(pyNeg(1)), pyToInt(2), pyToInt(1)) {
-                    dx = __pytra_it_4
-                    if (pyBool((pyBool(pyNe(dx, 0)) || pyBool(pyNe(dy, 0))))) {
-                        var nx any = pyMod(pyAdd(pyAdd(x, dx), w), w)
+                for __pytra_i_16 := __pytra_range_start_13; (__pytra_range_step_15 > 0 && __pytra_i_16 < __pytra_range_stop_14) || (__pytra_range_step_15 < 0 && __pytra_i_16 > __pytra_range_stop_14); __pytra_i_16 += __pytra_range_step_15 {
+                    dx = __pytra_i_16
+                    if (pyBool((pyBool((dx != 0)) || pyBool((dy != 0))))) {
+                        var nx int = (((x + dx) + w) % w)
                         _ = nx
-                        var ny any = pyMod(pyAdd(pyAdd(y, dy), h), h)
+                        var ny int = (((y + dy) + h) % h)
                         _ = ny
-                        cnt = pyAdd(cnt, pyGet(pyGet(grid, ny), nx))
+                        cnt = (cnt + pyToInt(pyGet(pyGet(grid, ny), nx)))
                     }
                 }
             }
             var alive any = pyGet(pyGet(grid, y), x)
             _ = alive
-            if (pyBool((pyBool(pyEq(alive, 1)) && pyBool((pyBool(pyEq(cnt, 2)) || pyBool(pyEq(cnt, 3))))))) {
-                row = append(row.([]any), 1)
+            if (pyBool((pyBool(pyEq(alive, 1)) && pyBool((pyBool((cnt == 2)) || pyBool((cnt == 3))))))) {
+                row = pyAppend(row, 1)
             } else {
-                if (pyBool((pyBool(pyEq(alive, 0)) && pyBool(pyEq(cnt, 3))))) {
-                    row = append(row.([]any), 1)
+                if (pyBool((pyBool(pyEq(alive, 0)) && pyBool((cnt == 3))))) {
+                    row = pyAppend(row, 1)
                 } else {
-                    row = append(row.([]any), 0)
+                    row = pyAppend(row, 0)
                 }
             }
         }
-        nxt = append(nxt.([]any), row)
+        nxt = pyAppend(nxt, row)
     }
     return nxt
 }
 
-func render(grid any, w any, h any, cell any) any {
-    var width any = pyMul(w, cell)
+func render(grid any, w int, h int, cell int) any {
+    var width int = (w * cell)
     _ = width
-    var height any = pyMul(h, cell)
+    var height int = (h * cell)
     _ = height
-    var frame any = pyBytearray(pyMul(width, height))
+    var frame any = pyBytearray((width * height))
     _ = frame
-    var y any = nil
+    __pytra_range_start_17 := pyToInt(0)
+    __pytra_range_stop_18 := pyToInt(h)
+    __pytra_range_step_19 := pyToInt(1)
+    if __pytra_range_step_19 == 0 { panic("range() step must not be zero") }
+    var y int = 0
     _ = y
-    for _, __pytra_it_5 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
-        y = __pytra_it_5
-        var x any = nil
+    for __pytra_i_20 := __pytra_range_start_17; (__pytra_range_step_19 > 0 && __pytra_i_20 < __pytra_range_stop_18) || (__pytra_range_step_19 < 0 && __pytra_i_20 > __pytra_range_stop_18); __pytra_i_20 += __pytra_range_step_19 {
+        y = __pytra_i_20
+        __pytra_range_start_21 := pyToInt(0)
+        __pytra_range_stop_22 := pyToInt(w)
+        __pytra_range_step_23 := pyToInt(1)
+        if __pytra_range_step_23 == 0 { panic("range() step must not be zero") }
+        var x int = 0
         _ = x
-        for _, __pytra_it_6 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
-            x = __pytra_it_6
+        for __pytra_i_24 := __pytra_range_start_21; (__pytra_range_step_23 > 0 && __pytra_i_24 < __pytra_range_stop_22) || (__pytra_range_step_23 < 0 && __pytra_i_24 > __pytra_range_stop_22); __pytra_i_24 += __pytra_range_step_23 {
+            x = __pytra_i_24
             var v any = pyTernary(pyBool(pyGet(pyGet(grid, y), x)), 255, 0)
             _ = v
-            var yy any = nil
+            __pytra_range_start_25 := pyToInt(0)
+            __pytra_range_stop_26 := pyToInt(cell)
+            __pytra_range_step_27 := pyToInt(1)
+            if __pytra_range_step_27 == 0 { panic("range() step must not be zero") }
+            var yy int = 0
             _ = yy
-            for _, __pytra_it_7 := range pyRange(pyToInt(0), pyToInt(cell), pyToInt(1)) {
-                yy = __pytra_it_7
-                var base any = pyAdd(pyMul(pyAdd(pyMul(y, cell), yy), width), pyMul(x, cell))
+            for __pytra_i_28 := __pytra_range_start_25; (__pytra_range_step_27 > 0 && __pytra_i_28 < __pytra_range_stop_26) || (__pytra_range_step_27 < 0 && __pytra_i_28 > __pytra_range_stop_26); __pytra_i_28 += __pytra_range_step_27 {
+                yy = __pytra_i_28
+                var base int = ((((y * cell) + yy) * width) + (x * cell))
                 _ = base
-                var xx any = nil
+                __pytra_range_start_29 := pyToInt(0)
+                __pytra_range_stop_30 := pyToInt(cell)
+                __pytra_range_step_31 := pyToInt(1)
+                if __pytra_range_step_31 == 0 { panic("range() step must not be zero") }
+                var xx int = 0
                 _ = xx
-                for _, __pytra_it_8 := range pyRange(pyToInt(0), pyToInt(cell), pyToInt(1)) {
-                    xx = __pytra_it_8
-                    pySet(frame, pyAdd(base, xx), v)
+                for __pytra_i_32 := __pytra_range_start_29; (__pytra_range_step_31 > 0 && __pytra_i_32 < __pytra_range_stop_30) || (__pytra_range_step_31 < 0 && __pytra_i_32 > __pytra_range_stop_30); __pytra_i_32 += __pytra_range_step_31 {
+                    xx = __pytra_i_32
+                    pySet(frame, (base + xx), v)
                 }
             }
         }
@@ -779,43 +831,59 @@ func render(grid any, w any, h any, cell any) any {
 }
 
 func run_07_game_of_life_loop() any {
-    var w any = 144
+    var w int = 144
     _ = w
-    var h any = 108
+    var h int = 108
     _ = h
-    var cell any = 4
+    var cell int = 4
     _ = cell
-    var steps any = 210
+    var steps int = 210
     _ = steps
-    var out_path any = "sample/out/07_game_of_life_loop.gif"
+    var out_path string = "sample/out/07_game_of_life_loop.gif"
     _ = out_path
     var start any = pyPerfCounter()
     _ = start
     var grid any = []any{}
     _ = grid
-    var __pytra_discard any = nil
+    __pytra_range_start_33 := pyToInt(0)
+    __pytra_range_stop_34 := pyToInt(h)
+    __pytra_range_step_35 := pyToInt(1)
+    if __pytra_range_step_35 == 0 { panic("range() step must not be zero") }
+    var __pytra_discard int = 0
     _ = __pytra_discard
-    for _, __pytra_it_9 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
-        __pytra_discard = __pytra_it_9
+    for __pytra_i_36 := __pytra_range_start_33; (__pytra_range_step_35 > 0 && __pytra_i_36 < __pytra_range_stop_34) || (__pytra_range_step_35 < 0 && __pytra_i_36 > __pytra_range_stop_34); __pytra_i_36 += __pytra_range_step_35 {
+        __pytra_discard = __pytra_i_36
         var row any = []any{}
         _ = row
-        for _, __pytra_it_10 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
-            __pytra_discard = __pytra_it_10
-            row = append(row.([]any), 0)
+        __pytra_range_start_37 := pyToInt(0)
+        __pytra_range_stop_38 := pyToInt(w)
+        __pytra_range_step_39 := pyToInt(1)
+        if __pytra_range_step_39 == 0 { panic("range() step must not be zero") }
+        for __pytra_i_40 := __pytra_range_start_37; (__pytra_range_step_39 > 0 && __pytra_i_40 < __pytra_range_stop_38) || (__pytra_range_step_39 < 0 && __pytra_i_40 > __pytra_range_stop_38); __pytra_i_40 += __pytra_range_step_39 {
+            __pytra_discard = __pytra_i_40
+            row = pyAppend(row, 0)
         }
-        grid = append(grid.([]any), row)
+        grid = pyAppend(grid, row)
     }
-    var y any = nil
+    __pytra_range_start_41 := pyToInt(0)
+    __pytra_range_stop_42 := pyToInt(h)
+    __pytra_range_step_43 := pyToInt(1)
+    if __pytra_range_step_43 == 0 { panic("range() step must not be zero") }
+    var y int = 0
     _ = y
-    for _, __pytra_it_11 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
-        y = __pytra_it_11
-        var x any = nil
+    for __pytra_i_44 := __pytra_range_start_41; (__pytra_range_step_43 > 0 && __pytra_i_44 < __pytra_range_stop_42) || (__pytra_range_step_43 < 0 && __pytra_i_44 > __pytra_range_stop_42); __pytra_i_44 += __pytra_range_step_43 {
+        y = __pytra_i_44
+        __pytra_range_start_45 := pyToInt(0)
+        __pytra_range_stop_46 := pyToInt(w)
+        __pytra_range_step_47 := pyToInt(1)
+        if __pytra_range_step_47 == 0 { panic("range() step must not be zero") }
+        var x int = 0
         _ = x
-        for _, __pytra_it_12 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
-            x = __pytra_it_12
-            var noise any = pyMod(pyAdd(pyAdd(pyAdd(pyMul(x, 37), pyMul(y, 73)), pyMod(pyMul(x, y), 19)), pyMod(pyAdd(x, y), 11)), 97)
+        for __pytra_i_48 := __pytra_range_start_45; (__pytra_range_step_47 > 0 && __pytra_i_48 < __pytra_range_stop_46) || (__pytra_range_step_47 < 0 && __pytra_i_48 > __pytra_range_stop_46); __pytra_i_48 += __pytra_range_step_47 {
+            x = __pytra_i_48
+            var noise int = (((((x * 37) + (y * 73)) + ((x * y) % 19)) + ((x + y) % 11)) % 97)
             _ = noise
-            if (pyBool(pyLt(noise, 3))) {
+            if (pyBool((noise < 3))) {
                 pySet(pyGet(grid, y), x, 1)
             }
         }
@@ -826,68 +894,100 @@ func run_07_game_of_life_loop() any {
     _ = r_pentomino
     var lwss any = []any{[]any{0, 1, 1, 1, 1}, []any{1, 0, 0, 0, 1}, []any{0, 0, 0, 0, 1}, []any{1, 0, 0, 1, 0}}
     _ = lwss
-    var gy any = nil
+    __pytra_range_start_49 := pyToInt(8)
+    __pytra_range_stop_50 := pyToInt((h - 8))
+    __pytra_range_step_51 := pyToInt(18)
+    if __pytra_range_step_51 == 0 { panic("range() step must not be zero") }
+    var gy int = 0
     _ = gy
-    for _, __pytra_it_13 := range pyRange(pyToInt(8), pyToInt(pySub(h, 8)), pyToInt(18)) {
-        gy = __pytra_it_13
-        var gx any = nil
+    for __pytra_i_52 := __pytra_range_start_49; (__pytra_range_step_51 > 0 && __pytra_i_52 < __pytra_range_stop_50) || (__pytra_range_step_51 < 0 && __pytra_i_52 > __pytra_range_stop_50); __pytra_i_52 += __pytra_range_step_51 {
+        gy = __pytra_i_52
+        __pytra_range_start_53 := pyToInt(8)
+        __pytra_range_stop_54 := pyToInt((w - 8))
+        __pytra_range_step_55 := pyToInt(22)
+        if __pytra_range_step_55 == 0 { panic("range() step must not be zero") }
+        var gx int = 0
         _ = gx
-        for _, __pytra_it_14 := range pyRange(pyToInt(8), pyToInt(pySub(w, 8)), pyToInt(22)) {
-            gx = __pytra_it_14
-            var kind any = pyMod(pyAdd(pyMul(gx, 7), pyMul(gy, 11)), 3)
+        for __pytra_i_56 := __pytra_range_start_53; (__pytra_range_step_55 > 0 && __pytra_i_56 < __pytra_range_stop_54) || (__pytra_range_step_55 < 0 && __pytra_i_56 > __pytra_range_stop_54); __pytra_i_56 += __pytra_range_step_55 {
+            gx = __pytra_i_56
+            var kind int = (((gx * 7) + (gy * 11)) % 3)
             _ = kind
-            if (pyBool(pyEq(kind, 0))) {
+            if (pyBool((kind == 0))) {
                 var ph any = pyLen(glider)
                 _ = ph
-                var py any = nil
+                __pytra_range_start_57 := pyToInt(0)
+                __pytra_range_stop_58 := pyToInt(ph)
+                __pytra_range_step_59 := pyToInt(1)
+                if __pytra_range_step_59 == 0 { panic("range() step must not be zero") }
+                var py int = 0
                 _ = py
-                for _, __pytra_it_15 := range pyRange(pyToInt(0), pyToInt(ph), pyToInt(1)) {
-                    py = __pytra_it_15
+                for __pytra_i_60 := __pytra_range_start_57; (__pytra_range_step_59 > 0 && __pytra_i_60 < __pytra_range_stop_58) || (__pytra_range_step_59 < 0 && __pytra_i_60 > __pytra_range_stop_58); __pytra_i_60 += __pytra_range_step_59 {
+                    py = __pytra_i_60
                     var pw any = pyLen(pyGet(glider, py))
                     _ = pw
-                    var px any = nil
+                    __pytra_range_start_61 := pyToInt(0)
+                    __pytra_range_stop_62 := pyToInt(pw)
+                    __pytra_range_step_63 := pyToInt(1)
+                    if __pytra_range_step_63 == 0 { panic("range() step must not be zero") }
+                    var px int = 0
                     _ = px
-                    for _, __pytra_it_16 := range pyRange(pyToInt(0), pyToInt(pw), pyToInt(1)) {
-                        px = __pytra_it_16
+                    for __pytra_i_64 := __pytra_range_start_61; (__pytra_range_step_63 > 0 && __pytra_i_64 < __pytra_range_stop_62) || (__pytra_range_step_63 < 0 && __pytra_i_64 > __pytra_range_stop_62); __pytra_i_64 += __pytra_range_step_63 {
+                        px = __pytra_i_64
                         if (pyBool(pyEq(pyGet(pyGet(glider, py), px), 1))) {
-                            pySet(pyGet(grid, pyMod(pyAdd(gy, py), h)), pyMod(pyAdd(gx, px), w), 1)
+                            pySet(pyGet(grid, ((gy + py) % h)), ((gx + px) % w), 1)
                         }
                     }
                 }
             } else {
-                if (pyBool(pyEq(kind, 1))) {
+                if (pyBool((kind == 1))) {
                     var ph any = pyLen(r_pentomino)
                     _ = ph
-                    var py any = nil
+                    __pytra_range_start_65 := pyToInt(0)
+                    __pytra_range_stop_66 := pyToInt(ph)
+                    __pytra_range_step_67 := pyToInt(1)
+                    if __pytra_range_step_67 == 0 { panic("range() step must not be zero") }
+                    var py int = 0
                     _ = py
-                    for _, __pytra_it_17 := range pyRange(pyToInt(0), pyToInt(ph), pyToInt(1)) {
-                        py = __pytra_it_17
+                    for __pytra_i_68 := __pytra_range_start_65; (__pytra_range_step_67 > 0 && __pytra_i_68 < __pytra_range_stop_66) || (__pytra_range_step_67 < 0 && __pytra_i_68 > __pytra_range_stop_66); __pytra_i_68 += __pytra_range_step_67 {
+                        py = __pytra_i_68
                         var pw any = pyLen(pyGet(r_pentomino, py))
                         _ = pw
-                        var px any = nil
+                        __pytra_range_start_69 := pyToInt(0)
+                        __pytra_range_stop_70 := pyToInt(pw)
+                        __pytra_range_step_71 := pyToInt(1)
+                        if __pytra_range_step_71 == 0 { panic("range() step must not be zero") }
+                        var px int = 0
                         _ = px
-                        for _, __pytra_it_18 := range pyRange(pyToInt(0), pyToInt(pw), pyToInt(1)) {
-                            px = __pytra_it_18
+                        for __pytra_i_72 := __pytra_range_start_69; (__pytra_range_step_71 > 0 && __pytra_i_72 < __pytra_range_stop_70) || (__pytra_range_step_71 < 0 && __pytra_i_72 > __pytra_range_stop_70); __pytra_i_72 += __pytra_range_step_71 {
+                            px = __pytra_i_72
                             if (pyBool(pyEq(pyGet(pyGet(r_pentomino, py), px), 1))) {
-                                pySet(pyGet(grid, pyMod(pyAdd(gy, py), h)), pyMod(pyAdd(gx, px), w), 1)
+                                pySet(pyGet(grid, ((gy + py) % h)), ((gx + px) % w), 1)
                             }
                         }
                     }
                 } else {
                     var ph any = pyLen(lwss)
                     _ = ph
-                    var py any = nil
+                    __pytra_range_start_73 := pyToInt(0)
+                    __pytra_range_stop_74 := pyToInt(ph)
+                    __pytra_range_step_75 := pyToInt(1)
+                    if __pytra_range_step_75 == 0 { panic("range() step must not be zero") }
+                    var py int = 0
                     _ = py
-                    for _, __pytra_it_19 := range pyRange(pyToInt(0), pyToInt(ph), pyToInt(1)) {
-                        py = __pytra_it_19
+                    for __pytra_i_76 := __pytra_range_start_73; (__pytra_range_step_75 > 0 && __pytra_i_76 < __pytra_range_stop_74) || (__pytra_range_step_75 < 0 && __pytra_i_76 > __pytra_range_stop_74); __pytra_i_76 += __pytra_range_step_75 {
+                        py = __pytra_i_76
                         var pw any = pyLen(pyGet(lwss, py))
                         _ = pw
-                        var px any = nil
+                        __pytra_range_start_77 := pyToInt(0)
+                        __pytra_range_stop_78 := pyToInt(pw)
+                        __pytra_range_step_79 := pyToInt(1)
+                        if __pytra_range_step_79 == 0 { panic("range() step must not be zero") }
+                        var px int = 0
                         _ = px
-                        for _, __pytra_it_20 := range pyRange(pyToInt(0), pyToInt(pw), pyToInt(1)) {
-                            px = __pytra_it_20
+                        for __pytra_i_80 := __pytra_range_start_77; (__pytra_range_step_79 > 0 && __pytra_i_80 < __pytra_range_stop_78) || (__pytra_range_step_79 < 0 && __pytra_i_80 > __pytra_range_stop_78); __pytra_i_80 += __pytra_range_step_79 {
+                            px = __pytra_i_80
                             if (pyBool(pyEq(pyGet(pyGet(lwss, py), px), 1))) {
-                                pySet(pyGet(grid, pyMod(pyAdd(gy, py), h)), pyMod(pyAdd(gx, px), w), 1)
+                                pySet(pyGet(grid, ((gy + py) % h)), ((gx + px) % w), 1)
                             }
                         }
                     }
@@ -897,12 +997,16 @@ func run_07_game_of_life_loop() any {
     }
     var frames any = []any{}
     _ = frames
-    for _, __pytra_it_21 := range pyRange(pyToInt(0), pyToInt(steps), pyToInt(1)) {
-        __pytra_discard = __pytra_it_21
-        frames = append(frames.([]any), render(grid, w, h, cell))
+    __pytra_range_start_81 := pyToInt(0)
+    __pytra_range_stop_82 := pyToInt(steps)
+    __pytra_range_step_83 := pyToInt(1)
+    if __pytra_range_step_83 == 0 { panic("range() step must not be zero") }
+    for __pytra_i_84 := __pytra_range_start_81; (__pytra_range_step_83 > 0 && __pytra_i_84 < __pytra_range_stop_82) || (__pytra_range_step_83 < 0 && __pytra_i_84 > __pytra_range_stop_82); __pytra_i_84 += __pytra_range_step_83 {
+        __pytra_discard = __pytra_i_84
+        frames = pyAppend(frames, render(grid, w, h, cell))
         grid = next_state(grid, w, h)
     }
-    pySaveGIF(out_path, pyMul(w, cell), pyMul(h, cell), frames, pyGrayscalePalette(), 4, 0)
+    pySaveGIF(out_path, (w * cell), (h * cell), frames, pyGrayscalePalette(), 4, 0)
     var elapsed any = pySub(pyPerfCounter(), start)
     _ = elapsed
     pyPrint("output:", out_path)

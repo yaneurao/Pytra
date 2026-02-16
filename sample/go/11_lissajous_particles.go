@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -697,77 +717,97 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
 func color_palette() any {
     var p any = pyBytearray(nil)
     _ = p
-    var i any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(256)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(256), pyToInt(1)) {
-        i = __pytra_it_1
-        var r any = i
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        i = __pytra_i_4
+        var r int = i
         _ = r
-        var g any = pyMod(pyMul(i, 3), 256)
+        var g int = ((i * 3) % 256)
         _ = g
-        var b any = pySub(255, i)
+        var b int = (255 - i)
         _ = b
-        p = append(p.([]any), r)
-        p = append(p.([]any), g)
-        p = append(p.([]any), b)
+        p = pyAppend(p, r)
+        p = pyAppend(p, g)
+        p = pyAppend(p, b)
     }
     return pyBytes(p)
 }
 
 func run_11_lissajous_particles() any {
-    var w any = 320
+    var w int = 320
     _ = w
-    var h any = 240
+    var h int = 240
     _ = h
-    var frames_n any = 360
+    var frames_n int = 360
     _ = frames_n
-    var particles any = 48
+    var particles int = 48
     _ = particles
-    var out_path any = "sample/out/11_lissajous_particles.gif"
+    var out_path string = "sample/out/11_lissajous_particles.gif"
     _ = out_path
     var start any = pyPerfCounter()
     _ = start
     var frames any = []any{}
     _ = frames
-    var t any = nil
+    __pytra_range_start_5 := pyToInt(0)
+    __pytra_range_stop_6 := pyToInt(frames_n)
+    __pytra_range_step_7 := pyToInt(1)
+    if __pytra_range_step_7 == 0 { panic("range() step must not be zero") }
+    var t int = 0
     _ = t
-    for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(frames_n), pyToInt(1)) {
-        t = __pytra_it_2
-        var frame any = pyBytearray(pyMul(w, h))
+    for __pytra_i_8 := __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7 {
+        t = __pytra_i_8
+        var frame any = pyBytearray((w * h))
         _ = frame
-        var p any = nil
+        __pytra_range_start_9 := pyToInt(0)
+        __pytra_range_stop_10 := pyToInt(particles)
+        __pytra_range_step_11 := pyToInt(1)
+        if __pytra_range_step_11 == 0 { panic("range() step must not be zero") }
+        var p int = 0
         _ = p
-        for _, __pytra_it_3 := range pyRange(pyToInt(0), pyToInt(particles), pyToInt(1)) {
-            p = __pytra_it_3
-            var phase any = pyMul(p, 0.261799)
+        for __pytra_i_12 := __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11 {
+            p = __pytra_i_12
+            var phase float64 = (float64(p) * 0.261799)
             _ = phase
-            var x any = pyToInt(pyAdd(pyMul(w, 0.5), pyMul(pyMul(w, 0.38), pyMathSin(pyAdd(pyMul(0.11, t), pyMul(phase, 2.0))))))
+            var x int = pyToInt(((float64(w) * 0.5) + ((float64(w) * 0.38) * math.Sin(pyToFloat(((0.11 * float64(t)) + (phase * 2.0)))))))
             _ = x
-            var y any = pyToInt(pyAdd(pyMul(h, 0.5), pyMul(pyMul(h, 0.38), pyMathSin(pyAdd(pyMul(0.17, t), pyMul(phase, 3.0))))))
+            var y int = pyToInt(((float64(h) * 0.5) + ((float64(h) * 0.38) * math.Sin(pyToFloat(((0.17 * float64(t)) + (phase * 3.0)))))))
             _ = y
-            var color any = pyAdd(30, pyMod(pyMul(p, 9), 220))
+            var color int = (30 + ((p * 9) % 220))
             _ = color
-            var dy any = nil
+            __pytra_range_start_13 := pyToInt((-2))
+            __pytra_range_stop_14 := pyToInt(3)
+            __pytra_range_step_15 := pyToInt(1)
+            if __pytra_range_step_15 == 0 { panic("range() step must not be zero") }
+            var dy int = 0
             _ = dy
-            for _, __pytra_it_4 := range pyRange(pyToInt(pyNeg(2)), pyToInt(3), pyToInt(1)) {
-                dy = __pytra_it_4
-                var dx any = nil
+            for __pytra_i_16 := __pytra_range_start_13; (__pytra_range_step_15 > 0 && __pytra_i_16 < __pytra_range_stop_14) || (__pytra_range_step_15 < 0 && __pytra_i_16 > __pytra_range_stop_14); __pytra_i_16 += __pytra_range_step_15 {
+                dy = __pytra_i_16
+                __pytra_range_start_17 := pyToInt((-2))
+                __pytra_range_stop_18 := pyToInt(3)
+                __pytra_range_step_19 := pyToInt(1)
+                if __pytra_range_step_19 == 0 { panic("range() step must not be zero") }
+                var dx int = 0
                 _ = dx
-                for _, __pytra_it_5 := range pyRange(pyToInt(pyNeg(2)), pyToInt(3), pyToInt(1)) {
-                    dx = __pytra_it_5
-                    var xx any = pyAdd(x, dx)
+                for __pytra_i_20 := __pytra_range_start_17; (__pytra_range_step_19 > 0 && __pytra_i_20 < __pytra_range_stop_18) || (__pytra_range_step_19 < 0 && __pytra_i_20 > __pytra_range_stop_18); __pytra_i_20 += __pytra_range_step_19 {
+                    dx = __pytra_i_20
+                    var xx int = (x + dx)
                     _ = xx
-                    var yy any = pyAdd(y, dy)
+                    var yy int = (y + dy)
                     _ = yy
-                    if (pyBool((pyBool(pyGe(xx, 0)) && pyBool(pyLt(xx, w)) && pyBool(pyGe(yy, 0)) && pyBool(pyLt(yy, h))))) {
-                        var d2 any = pyAdd(pyMul(dx, dx), pyMul(dy, dy))
+                    if (pyBool((pyBool((xx >= 0)) && pyBool((xx < w)) && pyBool((yy >= 0)) && pyBool((yy < h))))) {
+                        var d2 int = ((dx * dx) + (dy * dy))
                         _ = d2
-                        if (pyBool(pyLe(d2, 4))) {
-                            var idx any = pyAdd(pyMul(yy, w), xx)
+                        if (pyBool((d2 <= 4))) {
+                            var idx int = ((yy * w) + xx)
                             _ = idx
-                            var v any = pySub(color, pyMul(d2, 20))
+                            var v int = (color - (d2 * 20))
                             _ = v
-                            if (pyBool(pyLt(v, 0))) {
+                            if (pyBool((v < 0))) {
                                 v = 0
                             }
                             if (pyBool(pyGt(v, pyGet(frame, idx)))) {
@@ -778,7 +818,7 @@ func run_11_lissajous_particles() any {
                 }
             }
         }
-        frames = append(frames.([]any), pyBytes(frame))
+        frames = pyAppend(frames, pyBytes(frame))
     }
     pySaveGIF(out_path, w, h, frames, color_palette(), 3, 0)
     var elapsed any = pySub(pyPerfCounter(), start)

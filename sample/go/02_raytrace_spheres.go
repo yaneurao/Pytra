@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -694,181 +714,197 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     _ = os.WriteFile(pyToString(path), out, 0o644)
 }
 
-func clamp01(v any) any {
-    if (pyBool(pyLt(v, 0.0))) {
+func clamp01(v float64) any {
+    if (pyBool((v < 0.0))) {
         return 0.0
     }
-    if (pyBool(pyGt(v, 1.0))) {
+    if (pyBool((v > 1.0))) {
         return 1.0
     }
     return v
 }
 
-func hit_sphere(ox any, oy any, oz any, dx any, dy any, dz any, cx any, cy any, cz any, r any) any {
-    var lx any = pySub(ox, cx)
+func hit_sphere(ox float64, oy float64, oz float64, dx float64, dy float64, dz float64, cx float64, cy float64, cz float64, r float64) any {
+    var lx float64 = (ox - cx)
     _ = lx
-    var ly any = pySub(oy, cy)
+    var ly float64 = (oy - cy)
     _ = ly
-    var lz any = pySub(oz, cz)
+    var lz float64 = (oz - cz)
     _ = lz
-    var a any = pyAdd(pyAdd(pyMul(dx, dx), pyMul(dy, dy)), pyMul(dz, dz))
+    var a float64 = (((dx * dx) + (dy * dy)) + (dz * dz))
     _ = a
-    var b any = pyMul(2.0, pyAdd(pyAdd(pyMul(lx, dx), pyMul(ly, dy)), pyMul(lz, dz)))
+    var b float64 = (2.0 * (((lx * dx) + (ly * dy)) + (lz * dz)))
     _ = b
-    var c any = pySub(pyAdd(pyAdd(pyMul(lx, lx), pyMul(ly, ly)), pyMul(lz, lz)), pyMul(r, r))
+    var c float64 = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (r * r))
     _ = c
-    var d any = pySub(pyMul(b, b), pyMul(pyMul(4.0, a), c))
+    var d float64 = ((b * b) - ((4.0 * a) * c))
     _ = d
-    if (pyBool(pyLt(d, 0.0))) {
-        return pyNeg(1.0)
+    if (pyBool((d < 0.0))) {
+        return (-1.0)
     }
-    var sd any = pyMathSqrt(d)
+    var sd float64 = math.Sqrt(pyToFloat(d))
     _ = sd
-    var t0 any = pyDiv(pySub(pyNeg(b), sd), pyMul(2.0, a))
+    var t0 float64 = (((-b) - sd) / (2.0 * a))
     _ = t0
-    var t1 any = pyDiv(pyAdd(pyNeg(b), sd), pyMul(2.0, a))
+    var t1 float64 = (((-b) + sd) / (2.0 * a))
     _ = t1
-    if (pyBool(pyGt(t0, 0.001))) {
+    if (pyBool((t0 > 0.001))) {
         return t0
     }
-    if (pyBool(pyGt(t1, 0.001))) {
+    if (pyBool((t1 > 0.001))) {
         return t1
     }
-    return pyNeg(1.0)
+    return (-1.0)
 }
 
-func render(width any, height any, aa any) any {
+func render(width int, height int, aa int) any {
     var pixels any = pyBytearray(nil)
     _ = pixels
-    var ox any = 0.0
+    var ox float64 = 0.0
     _ = ox
-    var oy any = 0.0
+    var oy float64 = 0.0
     _ = oy
-    var oz any = pyNeg(3.0)
+    var oz float64 = (-3.0)
     _ = oz
-    var lx any = pyNeg(0.4)
+    var lx float64 = (-0.4)
     _ = lx
-    var ly any = 0.8
+    var ly float64 = 0.8
     _ = ly
-    var lz any = pyNeg(0.45)
+    var lz float64 = (-0.45)
     _ = lz
-    var y any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(height)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var y int = 0
     _ = y
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(height), pyToInt(1)) {
-        y = __pytra_it_1
-        var x any = nil
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        y = __pytra_i_4
+        __pytra_range_start_5 := pyToInt(0)
+        __pytra_range_stop_6 := pyToInt(width)
+        __pytra_range_step_7 := pyToInt(1)
+        if __pytra_range_step_7 == 0 { panic("range() step must not be zero") }
+        var x int = 0
         _ = x
-        for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(width), pyToInt(1)) {
-            x = __pytra_it_2
-            var ar any = 0
+        for __pytra_i_8 := __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7 {
+            x = __pytra_i_8
+            var ar int = 0
             _ = ar
-            var ag any = 0
+            var ag int = 0
             _ = ag
-            var ab any = 0
+            var ab int = 0
             _ = ab
-            var ay any = nil
+            __pytra_range_start_9 := pyToInt(0)
+            __pytra_range_stop_10 := pyToInt(aa)
+            __pytra_range_step_11 := pyToInt(1)
+            if __pytra_range_step_11 == 0 { panic("range() step must not be zero") }
+            var ay int = 0
             _ = ay
-            for _, __pytra_it_3 := range pyRange(pyToInt(0), pyToInt(aa), pyToInt(1)) {
-                ay = __pytra_it_3
-                var ax any = nil
+            for __pytra_i_12 := __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11 {
+                ay = __pytra_i_12
+                __pytra_range_start_13 := pyToInt(0)
+                __pytra_range_stop_14 := pyToInt(aa)
+                __pytra_range_step_15 := pyToInt(1)
+                if __pytra_range_step_15 == 0 { panic("range() step must not be zero") }
+                var ax int = 0
                 _ = ax
-                for _, __pytra_it_4 := range pyRange(pyToInt(0), pyToInt(aa), pyToInt(1)) {
-                    ax = __pytra_it_4
-                    var fy any = pyDiv(pyAdd(y, pyDiv(pyAdd(ay, 0.5), aa)), pySub(height, 1))
+                for __pytra_i_16 := __pytra_range_start_13; (__pytra_range_step_15 > 0 && __pytra_i_16 < __pytra_range_stop_14) || (__pytra_range_step_15 < 0 && __pytra_i_16 > __pytra_range_stop_14); __pytra_i_16 += __pytra_range_step_15 {
+                    ax = __pytra_i_16
+                    var fy float64 = ((float64(y) + ((float64(ay) + 0.5) / float64(aa))) / float64((height - 1)))
                     _ = fy
-                    var fx any = pyDiv(pyAdd(x, pyDiv(pyAdd(ax, 0.5), aa)), pySub(width, 1))
+                    var fx float64 = ((float64(x) + ((float64(ax) + 0.5) / float64(aa))) / float64((width - 1)))
                     _ = fx
-                    var sy any = pySub(1.0, pyMul(2.0, fy))
+                    var sy float64 = (1.0 - (2.0 * fy))
                     _ = sy
-                    var sx any = pyMul(pySub(pyMul(2.0, fx), 1.0), pyDiv(width, height))
+                    var sx float64 = (((2.0 * fx) - 1.0) * (float64(width) / float64(height)))
                     _ = sx
-                    var dx any = sx
+                    var dx float64 = sx
                     _ = dx
-                    var dy any = sy
+                    var dy float64 = sy
                     _ = dy
-                    var dz any = 1.0
+                    var dz float64 = 1.0
                     _ = dz
-                    var inv_len any = pyDiv(1.0, pyMathSqrt(pyAdd(pyAdd(pyMul(dx, dx), pyMul(dy, dy)), pyMul(dz, dz))))
+                    var inv_len float64 = (1.0 / math.Sqrt(pyToFloat((((dx * dx) + (dy * dy)) + (dz * dz)))))
                     _ = inv_len
-                    dx = pyMul(dx, inv_len)
-                    dy = pyMul(dy, inv_len)
-                    dz = pyMul(dz, inv_len)
-                    var t_min any = 1e+30
+                    dx = (dx * inv_len)
+                    dy = (dy * inv_len)
+                    dz = (dz * inv_len)
+                    var t_min float64 = 1e+30
                     _ = t_min
-                    var hit_id any = pyNeg(1)
+                    var hit_id int = (-1)
                     _ = hit_id
-                    var t any = hit_sphere(ox, oy, oz, dx, dy, dz, pyNeg(0.8), pyNeg(0.2), 2.2, 0.8)
+                    var t float64 = pyToFloat(hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8))
                     _ = t
-                    if (pyBool((pyBool(pyGt(t, 0.0)) && pyBool(pyLt(t, t_min))))) {
+                    if (pyBool((pyBool((t > 0.0)) && pyBool((t < t_min))))) {
                         t_min = t
                         hit_id = 0
                     }
-                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95)
-                    if (pyBool((pyBool(pyGt(t, 0.0)) && pyBool(pyLt(t, t_min))))) {
+                    t = pyToFloat(hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95))
+                    if (pyBool((pyBool((t > 0.0)) && pyBool((t < t_min))))) {
                         t_min = t
                         hit_id = 1
                     }
-                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, pyNeg(1001.0), 3.0, 1000.0)
-                    if (pyBool((pyBool(pyGt(t, 0.0)) && pyBool(pyLt(t, t_min))))) {
+                    t = pyToFloat(hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, (-1001.0), 3.0, 1000.0))
+                    if (pyBool((pyBool((t > 0.0)) && pyBool((t < t_min))))) {
                         t_min = t
                         hit_id = 2
                     }
-                    var r any = 0
+                    var r int = 0
                     _ = r
-                    var g any = 0
+                    var g int = 0
                     _ = g
-                    var b any = 0
+                    var b int = 0
                     _ = b
-                    if (pyBool(pyGe(hit_id, 0))) {
-                        var px any = pyAdd(ox, pyMul(dx, t_min))
+                    if (pyBool((hit_id >= 0))) {
+                        var px float64 = (ox + (dx * t_min))
                         _ = px
-                        var py any = pyAdd(oy, pyMul(dy, t_min))
+                        var py float64 = (oy + (dy * t_min))
                         _ = py
-                        var pz any = pyAdd(oz, pyMul(dz, t_min))
+                        var pz float64 = (oz + (dz * t_min))
                         _ = pz
-                        var nx any = 0.0
+                        var nx float64 = 0.0
                         _ = nx
-                        var ny any = 0.0
+                        var ny float64 = 0.0
                         _ = ny
-                        var nz any = 0.0
+                        var nz float64 = 0.0
                         _ = nz
-                        if (pyBool(pyEq(hit_id, 0))) {
-                            nx = pyDiv(pyAdd(px, 0.8), 0.8)
-                            ny = pyDiv(pyAdd(py, 0.2), 0.8)
-                            nz = pyDiv(pySub(pz, 2.2), 0.8)
+                        if (pyBool((hit_id == 0))) {
+                            nx = ((px + 0.8) / 0.8)
+                            ny = ((py + 0.2) / 0.8)
+                            nz = ((pz - 2.2) / 0.8)
                         } else {
-                            if (pyBool(pyEq(hit_id, 1))) {
-                                nx = pyDiv(pySub(px, 0.9), 0.95)
-                                ny = pyDiv(pySub(py, 0.1), 0.95)
-                                nz = pyDiv(pySub(pz, 2.9), 0.95)
+                            if (pyBool((hit_id == 1))) {
+                                nx = ((px - 0.9) / 0.95)
+                                ny = ((py - 0.1) / 0.95)
+                                nz = ((pz - 2.9) / 0.95)
                             } else {
                                 nx = 0.0
                                 ny = 1.0
                                 nz = 0.0
                             }
                         }
-                        var diff any = pyAdd(pyAdd(pyMul(nx, pyNeg(lx)), pyMul(ny, pyNeg(ly))), pyMul(nz, pyNeg(lz)))
+                        var diff float64 = (((nx * (-lx)) + (ny * (-ly))) + (nz * (-lz)))
                         _ = diff
-                        diff = clamp01(diff)
-                        var base_r any = 0.0
+                        diff = pyToFloat(clamp01(diff))
+                        var base_r float64 = 0.0
                         _ = base_r
-                        var base_g any = 0.0
+                        var base_g float64 = 0.0
                         _ = base_g
-                        var base_b any = 0.0
+                        var base_b float64 = 0.0
                         _ = base_b
-                        if (pyBool(pyEq(hit_id, 0))) {
+                        if (pyBool((hit_id == 0))) {
                             base_r = 0.95
                             base_g = 0.35
                             base_b = 0.25
                         } else {
-                            if (pyBool(pyEq(hit_id, 1))) {
+                            if (pyBool((hit_id == 1))) {
                                 base_r = 0.25
                                 base_g = 0.55
                                 base_b = 0.95
                             } else {
-                                var checker any = pyAdd(pyToInt(pyMul(pyAdd(px, 50.0), 0.8)), pyToInt(pyMul(pyAdd(pz, 50.0), 0.8)))
+                                var checker int = (pyToInt(((px + 50.0) * 0.8)) + pyToInt(((pz + 50.0) * 0.8)))
                                 _ = checker
-                                if (pyBool(pyEq(pyMod(checker, 2), 0))) {
+                                if (pyBool(((checker % 2) == 0))) {
                                     base_r = 0.85
                                     base_g = 0.85
                                     base_b = 0.85
@@ -879,48 +915,48 @@ func render(width any, height any, aa any) any {
                                 }
                             }
                         }
-                        var shade any = pyAdd(0.12, pyMul(0.88, diff))
+                        var shade float64 = (0.12 + (0.88 * diff))
                         _ = shade
-                        r = pyToInt(pyMul(255.0, clamp01(pyMul(base_r, shade))))
-                        g = pyToInt(pyMul(255.0, clamp01(pyMul(base_g, shade))))
-                        b = pyToInt(pyMul(255.0, clamp01(pyMul(base_b, shade))))
+                        r = pyToInt(pyMul(255.0, clamp01((base_r * shade))))
+                        g = pyToInt(pyMul(255.0, clamp01((base_g * shade))))
+                        b = pyToInt(pyMul(255.0, clamp01((base_b * shade))))
                     } else {
-                        var tsky any = pyMul(0.5, pyAdd(dy, 1.0))
+                        var tsky float64 = (0.5 * (dy + 1.0))
                         _ = tsky
-                        r = pyToInt(pyMul(255.0, pyAdd(0.65, pyMul(0.2, tsky))))
-                        g = pyToInt(pyMul(255.0, pyAdd(0.75, pyMul(0.18, tsky))))
-                        b = pyToInt(pyMul(255.0, pyAdd(0.9, pyMul(0.08, tsky))))
+                        r = pyToInt((255.0 * (0.65 + (0.2 * tsky))))
+                        g = pyToInt((255.0 * (0.75 + (0.18 * tsky))))
+                        b = pyToInt((255.0 * (0.9 + (0.08 * tsky))))
                     }
-                    ar = pyAdd(ar, r)
-                    ag = pyAdd(ag, g)
-                    ab = pyAdd(ab, b)
+                    ar = (ar + r)
+                    ag = (ag + g)
+                    ab = (ab + b)
                 }
             }
-            var samples any = pyMul(aa, aa)
+            var samples int = (aa * aa)
             _ = samples
-            pixels = append(pixels.([]any), pyFloorDiv(ar, samples))
-            pixels = append(pixels.([]any), pyFloorDiv(ag, samples))
-            pixels = append(pixels.([]any), pyFloorDiv(ab, samples))
+            pixels = pyAppend(pixels, (ar / samples))
+            pixels = pyAppend(pixels, (ag / samples))
+            pixels = pyAppend(pixels, (ab / samples))
         }
     }
     return pixels
 }
 
 func run_raytrace() any {
-    var width any = 1600
+    var width int = 1600
     _ = width
-    var height any = 900
+    var height int = 900
     _ = height
-    var aa any = 2
+    var aa int = 2
     _ = aa
-    var out_path any = "sample/out/raytrace_02.png"
+    var out_path string = "sample/out/raytrace_02.png"
     _ = out_path
-    var start any = pyPerfCounter()
+    var start float64 = pyToFloat(pyPerfCounter())
     _ = start
     var pixels any = render(width, height, aa)
     _ = pixels
     pyWriteRGBPNG(out_path, width, height, pixels)
-    var elapsed any = pySub(pyPerfCounter(), start)
+    var elapsed float64 = pyToFloat(pySub(pyPerfCounter(), start))
     _ = elapsed
     pyPrint("output:", out_path)
     pyPrint("size:", width, "x", height)

@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -694,25 +714,25 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     _ = os.WriteFile(pyToString(path), out, 0o644)
 }
 
-func clamp01(v any) any {
-    if (pyBool(pyLt(v, 0.0))) {
+func clamp01(v float64) any {
+    if (pyBool((v < 0.0))) {
         return 0.0
     }
-    if (pyBool(pyGt(v, 1.0))) {
+    if (pyBool((v > 1.0))) {
         return 1.0
     }
     return v
 }
 
-func dot(ax any, ay any, az any, bx any, by any, bz any) any {
-    return pyAdd(pyAdd(pyMul(ax, bx), pyMul(ay, by)), pyMul(az, bz))
+func dot(ax float64, ay float64, az float64, bx float64, by float64, bz float64) any {
+    return (((ax * bx) + (ay * by)) + (az * bz))
 }
 
-func length(x any, y any, z any) any {
-    return pyMathSqrt(pyAdd(pyAdd(pyMul(x, x), pyMul(y, y)), pyMul(z, z)))
+func length(x float64, y float64, z float64) any {
+    return math.Sqrt(pyToFloat((((x * x) + (y * y)) + (z * z))))
 }
 
-func normalize(x any, y any, z any) any {
+func normalize(x float64, y float64, z float64) any {
     var l any = length(x, y, z)
     _ = l
     if (pyBool(pyLt(l, 1e-09))) {
@@ -721,199 +741,211 @@ func normalize(x any, y any, z any) any {
     return []any{pyDiv(x, l), pyDiv(y, l), pyDiv(z, l)}
 }
 
-func reflect(ix any, iy any, iz any, nx any, ny any, nz any) any {
+func reflect(ix float64, iy float64, iz float64, nx float64, ny float64, nz float64) any {
     var d any = pyMul(dot(ix, iy, iz, nx, ny, nz), 2.0)
     _ = d
     return []any{pySub(ix, pyMul(d, nx)), pySub(iy, pyMul(d, ny)), pySub(iz, pyMul(d, nz))}
 }
 
-func refract(ix any, iy any, iz any, nx any, ny any, nz any, eta any) any {
+func refract(ix float64, iy float64, iz float64, nx float64, ny float64, nz float64, eta float64) any {
     var cosi any = pyNeg(dot(ix, iy, iz, nx, ny, nz))
     _ = cosi
-    var sint2 any = pyMul(pyMul(eta, eta), pySub(1.0, pyMul(cosi, cosi)))
+    var sint2 any = pyMul((eta * eta), pySub(1.0, pyMul(cosi, cosi)))
     _ = sint2
     if (pyBool(pyGt(sint2, 1.0))) {
         return reflect(ix, iy, iz, nx, ny, nz)
     }
-    var cost any = pyMathSqrt(pySub(1.0, sint2))
+    var cost float64 = math.Sqrt(pyToFloat(pySub(1.0, sint2)))
     _ = cost
     var k any = pySub(pyMul(eta, cosi), cost)
     _ = k
-    return []any{pyAdd(pyMul(eta, ix), pyMul(k, nx)), pyAdd(pyMul(eta, iy), pyMul(k, ny)), pyAdd(pyMul(eta, iz), pyMul(k, nz))}
+    return []any{pyAdd((eta * ix), pyMul(k, nx)), pyAdd((eta * iy), pyMul(k, ny)), pyAdd((eta * iz), pyMul(k, nz))}
 }
 
-func schlick(cos_theta any, f0 any) any {
-    var m any = pySub(1.0, cos_theta)
+func schlick(cos_theta float64, f0 float64) any {
+    var m float64 = (1.0 - cos_theta)
     _ = m
-    return pyAdd(f0, pyMul(pySub(1.0, f0), pyMul(pyMul(pyMul(pyMul(m, m), m), m), m)))
+    return (f0 + ((1.0 - f0) * ((((m * m) * m) * m) * m)))
 }
 
-func sky_color(dx any, dy any, dz any, tphase any) any {
-    var t any = pyMul(0.5, pyAdd(dy, 1.0))
+func sky_color(dx float64, dy float64, dz float64, tphase float64) any {
+    var t float64 = (0.5 * (dy + 1.0))
     _ = t
-    var r any = pyAdd(0.06, pyMul(0.2, t))
+    var r float64 = (0.06 + (0.2 * t))
     _ = r
-    var g any = pyAdd(0.1, pyMul(0.25, t))
+    var g float64 = (0.1 + (0.25 * t))
     _ = g
-    var b any = pyAdd(0.16, pyMul(0.45, t))
+    var b float64 = (0.16 + (0.45 * t))
     _ = b
-    var band any = pyAdd(0.5, pyMul(0.5, pyMathSin(pyAdd(pyAdd(pyMul(8.0, dx), pyMul(6.0, dz)), tphase))))
+    var band float64 = (0.5 + (0.5 * math.Sin(pyToFloat((((8.0 * dx) + (6.0 * dz)) + tphase)))))
     _ = band
-    r = pyAdd(r, pyMul(0.08, band))
-    g = pyAdd(g, pyMul(0.05, band))
-    b = pyAdd(b, pyMul(0.12, band))
+    r = (r + (0.08 * band))
+    g = (g + (0.05 * band))
+    b = (b + (0.12 * band))
     return []any{clamp01(r), clamp01(g), clamp01(b)}
 }
 
-func sphere_intersect(ox any, oy any, oz any, dx any, dy any, dz any, cx any, cy any, cz any, radius any) any {
-    var lx any = pySub(ox, cx)
+func sphere_intersect(ox float64, oy float64, oz float64, dx float64, dy float64, dz float64, cx float64, cy float64, cz float64, radius float64) any {
+    var lx float64 = (ox - cx)
     _ = lx
-    var ly any = pySub(oy, cy)
+    var ly float64 = (oy - cy)
     _ = ly
-    var lz any = pySub(oz, cz)
+    var lz float64 = (oz - cz)
     _ = lz
-    var b any = pyAdd(pyAdd(pyMul(lx, dx), pyMul(ly, dy)), pyMul(lz, dz))
+    var b float64 = (((lx * dx) + (ly * dy)) + (lz * dz))
     _ = b
-    var c any = pySub(pyAdd(pyAdd(pyMul(lx, lx), pyMul(ly, ly)), pyMul(lz, lz)), pyMul(radius, radius))
+    var c float64 = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (radius * radius))
     _ = c
-    var h any = pySub(pyMul(b, b), c)
+    var h float64 = ((b * b) - c)
     _ = h
-    if (pyBool(pyLt(h, 0.0))) {
-        return pyNeg(1.0)
+    if (pyBool((h < 0.0))) {
+        return (-1.0)
     }
-    var s any = pyMathSqrt(h)
+    var s float64 = math.Sqrt(pyToFloat(h))
     _ = s
-    var t0 any = pySub(pyNeg(b), s)
+    var t0 float64 = ((-b) - s)
     _ = t0
-    if (pyBool(pyGt(t0, 0.0001))) {
+    if (pyBool((t0 > 0.0001))) {
         return t0
     }
-    var t1 any = pyAdd(pyNeg(b), s)
+    var t1 float64 = ((-b) + s)
     _ = t1
-    if (pyBool(pyGt(t1, 0.0001))) {
+    if (pyBool((t1 > 0.0001))) {
         return t1
     }
-    return pyNeg(1.0)
+    return (-1.0)
 }
 
 func palette_332() any {
-    var p any = pyBytearray(pyMul(256, 3))
+    var p any = pyBytearray((256 * 3))
     _ = p
-    var i any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(256)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(256), pyToInt(1)) {
-        i = __pytra_it_1
-        var r any = pyBitAnd(pyRShift(i, 5), 7)
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        i = __pytra_i_4
+        var r int = ((i >> uint(5)) & 7)
         _ = r
-        var g any = pyBitAnd(pyRShift(i, 2), 7)
+        var g int = ((i >> uint(2)) & 7)
         _ = g
-        var b any = pyBitAnd(i, 3)
+        var b int = (i & 3)
         _ = b
-        pySet(p, pyAdd(pyMul(i, 3), 0), pyToInt(pyDiv(pyMul(255, r), 7)))
-        pySet(p, pyAdd(pyMul(i, 3), 1), pyToInt(pyDiv(pyMul(255, g), 7)))
-        pySet(p, pyAdd(pyMul(i, 3), 2), pyToInt(pyDiv(pyMul(255, b), 3)))
+        pySet(p, ((i * 3) + 0), pyToInt((float64((255 * r)) / float64(7))))
+        pySet(p, ((i * 3) + 1), pyToInt((float64((255 * g)) / float64(7))))
+        pySet(p, ((i * 3) + 2), pyToInt((float64((255 * b)) / float64(3))))
     }
     return pyBytes(p)
 }
 
-func quantize_332(r any, g any, b any) any {
-    var rr any = pyToInt(pyMul(clamp01(r), 255.0))
+func quantize_332(r float64, g float64, b float64) any {
+    var rr int = pyToInt(pyMul(clamp01(r), 255.0))
     _ = rr
-    var gg any = pyToInt(pyMul(clamp01(g), 255.0))
+    var gg int = pyToInt(pyMul(clamp01(g), 255.0))
     _ = gg
-    var bb any = pyToInt(pyMul(clamp01(b), 255.0))
+    var bb int = pyToInt(pyMul(clamp01(b), 255.0))
     _ = bb
-    return pyAdd(pyAdd(pyLShift(pyRShift(rr, 5), 5), pyLShift(pyRShift(gg, 5), 2)), pyRShift(bb, 6))
+    return ((((rr >> uint(5)) << uint(5)) + ((gg >> uint(5)) << uint(2))) + (bb >> uint(6)))
 }
 
-func render_frame(width any, height any, frame_id any, frames_n any) any {
-    var t any = pyDiv(frame_id, frames_n)
+func render_frame(width int, height int, frame_id int, frames_n int) any {
+    var t float64 = (float64(frame_id) / float64(frames_n))
     _ = t
     var tphase any = pyMul(pyMul(2.0, pyMathPi()), t)
     _ = tphase
-    var cam_r any = 3.0
+    var cam_r float64 = 3.0
     _ = cam_r
-    var cam_x any = pyMul(cam_r, pyMathCos(pyMul(tphase, 0.9)))
+    var cam_x float64 = (cam_r * math.Cos(pyToFloat(pyMul(tphase, 0.9))))
     _ = cam_x
-    var cam_y any = pyAdd(1.1, pyMul(0.25, pyMathSin(pyMul(tphase, 0.6))))
+    var cam_y float64 = (1.1 + (0.25 * math.Sin(pyToFloat(pyMul(tphase, 0.6)))))
     _ = cam_y
-    var cam_z any = pyMul(cam_r, pyMathSin(pyMul(tphase, 0.9)))
+    var cam_z float64 = (cam_r * math.Sin(pyToFloat(pyMul(tphase, 0.9))))
     _ = cam_z
-    var look_x any = 0.0
+    var look_x float64 = 0.0
     _ = look_x
-    var look_y any = 0.35
+    var look_y float64 = 0.35
     _ = look_y
-    var look_z any = 0.0
+    var look_z float64 = 0.0
     _ = look_z
-    var __pytra_tuple_2 any = normalize(pySub(look_x, cam_x), pySub(look_y, cam_y), pySub(look_z, cam_z))
-    _ = __pytra_tuple_2
-    var fwd_x any = pyGet(__pytra_tuple_2, 0)
+    var __pytra_tuple_5 any = normalize((look_x - cam_x), (look_y - cam_y), (look_z - cam_z))
+    _ = __pytra_tuple_5
+    var fwd_x any = pyGet(__pytra_tuple_5, 0)
     _ = fwd_x
-    var fwd_y any = pyGet(__pytra_tuple_2, 1)
+    var fwd_y any = pyGet(__pytra_tuple_5, 1)
     _ = fwd_y
-    var fwd_z any = pyGet(__pytra_tuple_2, 2)
+    var fwd_z any = pyGet(__pytra_tuple_5, 2)
     _ = fwd_z
-    var __pytra_tuple_3 any = normalize(fwd_z, 0.0, pyNeg(fwd_x))
-    _ = __pytra_tuple_3
-    var right_x any = pyGet(__pytra_tuple_3, 0)
+    var __pytra_tuple_6 any = normalize(pyToFloat(fwd_z), 0.0, pyToFloat(pyNeg(fwd_x)))
+    _ = __pytra_tuple_6
+    var right_x any = pyGet(__pytra_tuple_6, 0)
     _ = right_x
-    var right_y any = pyGet(__pytra_tuple_3, 1)
+    var right_y any = pyGet(__pytra_tuple_6, 1)
     _ = right_y
-    var right_z any = pyGet(__pytra_tuple_3, 2)
+    var right_z any = pyGet(__pytra_tuple_6, 2)
     _ = right_z
-    var __pytra_tuple_4 any = normalize(pySub(pyMul(right_y, fwd_z), pyMul(right_z, fwd_y)), pySub(pyMul(right_z, fwd_x), pyMul(right_x, fwd_z)), pySub(pyMul(right_x, fwd_y), pyMul(right_y, fwd_x)))
-    _ = __pytra_tuple_4
-    var up_x any = pyGet(__pytra_tuple_4, 0)
+    var __pytra_tuple_7 any = normalize(pyToFloat(pySub(pyMul(right_y, fwd_z), pyMul(right_z, fwd_y))), pyToFloat(pySub(pyMul(right_z, fwd_x), pyMul(right_x, fwd_z))), pyToFloat(pySub(pyMul(right_x, fwd_y), pyMul(right_y, fwd_x))))
+    _ = __pytra_tuple_7
+    var up_x any = pyGet(__pytra_tuple_7, 0)
     _ = up_x
-    var up_y any = pyGet(__pytra_tuple_4, 1)
+    var up_y any = pyGet(__pytra_tuple_7, 1)
     _ = up_y
-    var up_z any = pyGet(__pytra_tuple_4, 2)
+    var up_z any = pyGet(__pytra_tuple_7, 2)
     _ = up_z
-    var s0x any = pyMul(0.9, pyMathCos(pyMul(1.3, tphase)))
+    var s0x float64 = (0.9 * math.Cos(pyToFloat(pyMul(1.3, tphase))))
     _ = s0x
-    var s0y any = pyAdd(0.15, pyMul(0.35, pyMathSin(pyMul(1.7, tphase))))
+    var s0y float64 = (0.15 + (0.35 * math.Sin(pyToFloat(pyMul(1.7, tphase)))))
     _ = s0y
-    var s0z any = pyMul(0.9, pyMathSin(pyMul(1.3, tphase)))
+    var s0z float64 = (0.9 * math.Sin(pyToFloat(pyMul(1.3, tphase))))
     _ = s0z
-    var s1x any = pyMul(1.2, pyMathCos(pyAdd(pyMul(1.3, tphase), 2.094)))
+    var s1x float64 = (1.2 * math.Cos(pyToFloat(pyAdd(pyMul(1.3, tphase), 2.094))))
     _ = s1x
-    var s1y any = pyAdd(0.1, pyMul(0.4, pyMathSin(pyAdd(pyMul(1.1, tphase), 0.8))))
+    var s1y float64 = (0.1 + (0.4 * math.Sin(pyToFloat(pyAdd(pyMul(1.1, tphase), 0.8)))))
     _ = s1y
-    var s1z any = pyMul(1.2, pyMathSin(pyAdd(pyMul(1.3, tphase), 2.094)))
+    var s1z float64 = (1.2 * math.Sin(pyToFloat(pyAdd(pyMul(1.3, tphase), 2.094))))
     _ = s1z
-    var s2x any = pyMul(1.0, pyMathCos(pyAdd(pyMul(1.3, tphase), 4.188)))
+    var s2x float64 = (1.0 * math.Cos(pyToFloat(pyAdd(pyMul(1.3, tphase), 4.188))))
     _ = s2x
-    var s2y any = pyAdd(0.2, pyMul(0.3, pyMathSin(pyAdd(pyMul(1.5, tphase), 1.9))))
+    var s2y float64 = (0.2 + (0.3 * math.Sin(pyToFloat(pyAdd(pyMul(1.5, tphase), 1.9)))))
     _ = s2y
-    var s2z any = pyMul(1.0, pyMathSin(pyAdd(pyMul(1.3, tphase), 4.188)))
+    var s2z float64 = (1.0 * math.Sin(pyToFloat(pyAdd(pyMul(1.3, tphase), 4.188))))
     _ = s2z
-    var lr any = 0.35
+    var lr float64 = 0.35
     _ = lr
-    var lx any = pyMul(2.4, pyMathCos(pyMul(tphase, 1.8)))
+    var lx float64 = (2.4 * math.Cos(pyToFloat(pyMul(tphase, 1.8))))
     _ = lx
-    var ly any = pyAdd(1.8, pyMul(0.8, pyMathSin(pyMul(tphase, 1.2))))
+    var ly float64 = (1.8 + (0.8 * math.Sin(pyToFloat(pyMul(tphase, 1.2)))))
     _ = ly
-    var lz any = pyMul(2.4, pyMathSin(pyMul(tphase, 1.8)))
+    var lz float64 = (2.4 * math.Sin(pyToFloat(pyMul(tphase, 1.8))))
     _ = lz
-    var frame any = pyBytearray(pyMul(width, height))
+    var frame any = pyBytearray((width * height))
     _ = frame
-    var aspect any = pyDiv(width, height)
+    var aspect float64 = (float64(width) / float64(height))
     _ = aspect
-    var fov any = 1.25
+    var fov float64 = 1.25
     _ = fov
-    var i any = 0
+    var i int = 0
     _ = i
-    var py any = nil
+    __pytra_range_start_8 := pyToInt(0)
+    __pytra_range_stop_9 := pyToInt(height)
+    __pytra_range_step_10 := pyToInt(1)
+    if __pytra_range_step_10 == 0 { panic("range() step must not be zero") }
+    var py int = 0
     _ = py
-    for _, __pytra_it_5 := range pyRange(pyToInt(0), pyToInt(height), pyToInt(1)) {
-        py = __pytra_it_5
-        var sy any = pySub(1.0, pyDiv(pyMul(2.0, pyAdd(py, 0.5)), height))
+    for __pytra_i_11 := __pytra_range_start_8; (__pytra_range_step_10 > 0 && __pytra_i_11 < __pytra_range_stop_9) || (__pytra_range_step_10 < 0 && __pytra_i_11 > __pytra_range_stop_9); __pytra_i_11 += __pytra_range_step_10 {
+        py = __pytra_i_11
+        var sy float64 = (1.0 - ((2.0 * (float64(py) + 0.5)) / float64(height)))
         _ = sy
-        var px any = nil
+        __pytra_range_start_12 := pyToInt(0)
+        __pytra_range_stop_13 := pyToInt(width)
+        __pytra_range_step_14 := pyToInt(1)
+        if __pytra_range_step_14 == 0 { panic("range() step must not be zero") }
+        var px int = 0
         _ = px
-        for _, __pytra_it_6 := range pyRange(pyToInt(0), pyToInt(width), pyToInt(1)) {
-            px = __pytra_it_6
-            var sx any = pyMul(pySub(pyDiv(pyMul(2.0, pyAdd(px, 0.5)), width), 1.0), aspect)
+        for __pytra_i_15 := __pytra_range_start_12; (__pytra_range_step_14 > 0 && __pytra_i_15 < __pytra_range_stop_13) || (__pytra_range_step_14 < 0 && __pytra_i_15 > __pytra_range_stop_13); __pytra_i_15 += __pytra_range_step_14 {
+            px = __pytra_i_15
+            var sx float64 = ((((2.0 * (float64(px) + 0.5)) / float64(width)) - 1.0) * aspect)
             _ = sx
             var rx any = pyAdd(fwd_x, pyMul(fov, pyAdd(pyMul(sx, right_x), pyMul(sy, up_x))))
             _ = rx
@@ -921,67 +953,67 @@ func render_frame(width any, height any, frame_id any, frames_n any) any {
             _ = ry
             var rz any = pyAdd(fwd_z, pyMul(fov, pyAdd(pyMul(sx, right_z), pyMul(sy, up_z))))
             _ = rz
-            var __pytra_tuple_7 any = normalize(rx, ry, rz)
-            _ = __pytra_tuple_7
-            var dx any = pyGet(__pytra_tuple_7, 0)
+            var __pytra_tuple_16 any = normalize(pyToFloat(rx), pyToFloat(ry), pyToFloat(rz))
+            _ = __pytra_tuple_16
+            var dx any = pyGet(__pytra_tuple_16, 0)
             _ = dx
-            var dy any = pyGet(__pytra_tuple_7, 1)
+            var dy any = pyGet(__pytra_tuple_16, 1)
             _ = dy
-            var dz any = pyGet(__pytra_tuple_7, 2)
+            var dz any = pyGet(__pytra_tuple_16, 2)
             _ = dz
-            var best_t any = 1000000000.0
+            var best_t float64 = 1000000000.0
             _ = best_t
-            var hit_kind any = 0
+            var hit_kind int = 0
             _ = hit_kind
-            var r any = 0.0
+            var r float64 = 0.0
             _ = r
-            var g any = 0.0
+            var g float64 = 0.0
             _ = g
-            var b any = 0.0
+            var b float64 = 0.0
             _ = b
-            if (pyBool(pyLt(dy, pyNeg(1e-06)))) {
-                var tf any = pyDiv(pySub(pyNeg(1.2), cam_y), dy)
+            if (pyBool(pyLt(dy, (-1e-06)))) {
+                var tf any = pyDiv(((-1.2) - cam_y), dy)
                 _ = tf
                 if (pyBool((pyBool(pyGt(tf, 0.0001)) && pyBool(pyLt(tf, best_t))))) {
-                    best_t = tf
+                    best_t = pyToFloat(tf)
                     hit_kind = 1
                 }
             }
-            var t0 any = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65)
+            var t0 any = sphere_intersect(cam_x, cam_y, cam_z, pyToFloat(dx), pyToFloat(dy), pyToFloat(dz), s0x, s0y, s0z, 0.65)
             _ = t0
             if (pyBool((pyBool(pyGt(t0, 0.0)) && pyBool(pyLt(t0, best_t))))) {
-                best_t = t0
+                best_t = pyToFloat(t0)
                 hit_kind = 2
             }
-            var t1 any = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72)
+            var t1 any = sphere_intersect(cam_x, cam_y, cam_z, pyToFloat(dx), pyToFloat(dy), pyToFloat(dz), s1x, s1y, s1z, 0.72)
             _ = t1
             if (pyBool((pyBool(pyGt(t1, 0.0)) && pyBool(pyLt(t1, best_t))))) {
-                best_t = t1
+                best_t = pyToFloat(t1)
                 hit_kind = 3
             }
-            var t2 any = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58)
+            var t2 any = sphere_intersect(cam_x, cam_y, cam_z, pyToFloat(dx), pyToFloat(dy), pyToFloat(dz), s2x, s2y, s2z, 0.58)
             _ = t2
             if (pyBool((pyBool(pyGt(t2, 0.0)) && pyBool(pyLt(t2, best_t))))) {
-                best_t = t2
+                best_t = pyToFloat(t2)
                 hit_kind = 4
             }
-            if (pyBool(pyEq(hit_kind, 0))) {
-                var __pytra_tuple_8 any = sky_color(dx, dy, dz, tphase)
-                _ = __pytra_tuple_8
-                r = pyGet(__pytra_tuple_8, 0)
-                g = pyGet(__pytra_tuple_8, 1)
-                b = pyGet(__pytra_tuple_8, 2)
+            if (pyBool((hit_kind == 0))) {
+                var __pytra_tuple_17 any = sky_color(pyToFloat(dx), pyToFloat(dy), pyToFloat(dz), pyToFloat(tphase))
+                _ = __pytra_tuple_17
+                r = pyToFloat(pyGet(__pytra_tuple_17, 0))
+                g = pyToFloat(pyGet(__pytra_tuple_17, 1))
+                b = pyToFloat(pyGet(__pytra_tuple_17, 2))
             } else {
-                if (pyBool(pyEq(hit_kind, 1))) {
+                if (pyBool((hit_kind == 1))) {
                     var hx any = pyAdd(cam_x, pyMul(best_t, dx))
                     _ = hx
                     var hz any = pyAdd(cam_z, pyMul(best_t, dz))
                     _ = hz
-                    var cx any = pyToInt(pyMathFloor(pyMul(hx, 2.0)))
+                    var cx int = pyToInt(math.Floor(pyToFloat(pyMul(hx, 2.0))))
                     _ = cx
-                    var cz any = pyToInt(pyMathFloor(pyMul(hz, 2.0)))
+                    var cz int = pyToInt(math.Floor(pyToFloat(pyMul(hz, 2.0))))
                     _ = cz
-                    var checker any = pyTernary(pyBool(pyEq(pyMod(pyAdd(cx, cz), 2), 0)), 0, 1)
+                    var checker any = pyTernary(pyBool((((cx + cz) % 2) == 0)), 0, 1)
                     _ = checker
                     var base_r any = pyTernary(pyBool(pyEq(checker, 0)), 0.1, 0.04)
                     _ = base_r
@@ -991,43 +1023,43 @@ func render_frame(width any, height any, frame_id any, frames_n any) any {
                     _ = base_b
                     var lxv any = pySub(lx, hx)
                     _ = lxv
-                    var lyv any = pySub(ly, pyNeg(1.2))
+                    var lyv float64 = (ly - (-1.2))
                     _ = lyv
                     var lzv any = pySub(lz, hz)
                     _ = lzv
-                    var __pytra_tuple_9 any = normalize(lxv, lyv, lzv)
-                    _ = __pytra_tuple_9
-                    var ldx any = pyGet(__pytra_tuple_9, 0)
+                    var __pytra_tuple_18 any = normalize(pyToFloat(lxv), lyv, pyToFloat(lzv))
+                    _ = __pytra_tuple_18
+                    var ldx any = pyGet(__pytra_tuple_18, 0)
                     _ = ldx
-                    var ldy any = pyGet(__pytra_tuple_9, 1)
+                    var ldy any = pyGet(__pytra_tuple_18, 1)
                     _ = ldy
-                    var ldz any = pyGet(__pytra_tuple_9, 2)
+                    var ldz any = pyGet(__pytra_tuple_18, 2)
                     _ = ldz
                     var ndotl any = pyMax(ldy, 0.0)
                     _ = ndotl
-                    var ldist2 any = pyAdd(pyAdd(pyMul(lxv, lxv), pyMul(lyv, lyv)), pyMul(lzv, lzv))
+                    var ldist2 any = pyAdd(pyAdd(pyMul(lxv, lxv), (lyv * lyv)), pyMul(lzv, lzv))
                     _ = ldist2
                     var glow any = pyDiv(8.0, pyAdd(1.0, ldist2))
                     _ = glow
-                    r = pyAdd(pyAdd(base_r, pyMul(0.8, glow)), pyMul(0.2, ndotl))
-                    g = pyAdd(pyAdd(base_g, pyMul(0.5, glow)), pyMul(0.18, ndotl))
-                    b = pyAdd(pyAdd(base_b, pyMul(1.0, glow)), pyMul(0.24, ndotl))
+                    r = pyToFloat(pyAdd(pyAdd(base_r, pyMul(0.8, glow)), pyMul(0.2, ndotl)))
+                    g = pyToFloat(pyAdd(pyAdd(base_g, pyMul(0.5, glow)), pyMul(0.18, ndotl)))
+                    b = pyToFloat(pyAdd(pyAdd(base_b, pyMul(1.0, glow)), pyMul(0.24, ndotl)))
                 } else {
-                    var cx any = 0.0
+                    var cx float64 = 0.0
                     _ = cx
-                    var cy any = 0.0
+                    var cy float64 = 0.0
                     _ = cy
-                    var cz any = 0.0
+                    var cz float64 = 0.0
                     _ = cz
-                    var rad any = 1.0
+                    var rad float64 = 1.0
                     _ = rad
-                    if (pyBool(pyEq(hit_kind, 2))) {
+                    if (pyBool((hit_kind == 2))) {
                         cx = s0x
                         cy = s0y
                         cz = s0z
                         rad = 0.65
                     } else {
-                        if (pyBool(pyEq(hit_kind, 3))) {
+                        if (pyBool((hit_kind == 3))) {
                             cx = s1x
                             cy = s1y
                             cz = s1z
@@ -1045,76 +1077,76 @@ func render_frame(width any, height any, frame_id any, frames_n any) any {
                     _ = hy
                     var hz any = pyAdd(cam_z, pyMul(best_t, dz))
                     _ = hz
-                    var __pytra_tuple_10 any = normalize(pyDiv(pySub(hx, cx), rad), pyDiv(pySub(hy, cy), rad), pyDiv(pySub(hz, cz), rad))
-                    _ = __pytra_tuple_10
-                    var nx any = pyGet(__pytra_tuple_10, 0)
+                    var __pytra_tuple_19 any = normalize(pyToFloat(pyDiv(pySub(hx, cx), rad)), pyToFloat(pyDiv(pySub(hy, cy), rad)), pyToFloat(pyDiv(pySub(hz, cz), rad)))
+                    _ = __pytra_tuple_19
+                    var nx any = pyGet(__pytra_tuple_19, 0)
                     _ = nx
-                    var ny any = pyGet(__pytra_tuple_10, 1)
+                    var ny any = pyGet(__pytra_tuple_19, 1)
                     _ = ny
-                    var nz any = pyGet(__pytra_tuple_10, 2)
+                    var nz any = pyGet(__pytra_tuple_19, 2)
                     _ = nz
-                    var __pytra_tuple_11 any = reflect(dx, dy, dz, nx, ny, nz)
-                    _ = __pytra_tuple_11
-                    var rdx any = pyGet(__pytra_tuple_11, 0)
+                    var __pytra_tuple_20 any = reflect(pyToFloat(dx), pyToFloat(dy), pyToFloat(dz), pyToFloat(nx), pyToFloat(ny), pyToFloat(nz))
+                    _ = __pytra_tuple_20
+                    var rdx any = pyGet(__pytra_tuple_20, 0)
                     _ = rdx
-                    var rdy any = pyGet(__pytra_tuple_11, 1)
+                    var rdy any = pyGet(__pytra_tuple_20, 1)
                     _ = rdy
-                    var rdz any = pyGet(__pytra_tuple_11, 2)
+                    var rdz any = pyGet(__pytra_tuple_20, 2)
                     _ = rdz
-                    var __pytra_tuple_12 any = refract(dx, dy, dz, nx, ny, nz, pyDiv(1.0, 1.45))
-                    _ = __pytra_tuple_12
-                    var tdx any = pyGet(__pytra_tuple_12, 0)
+                    var __pytra_tuple_21 any = refract(pyToFloat(dx), pyToFloat(dy), pyToFloat(dz), pyToFloat(nx), pyToFloat(ny), pyToFloat(nz), (1.0 / 1.45))
+                    _ = __pytra_tuple_21
+                    var tdx any = pyGet(__pytra_tuple_21, 0)
                     _ = tdx
-                    var tdy any = pyGet(__pytra_tuple_12, 1)
+                    var tdy any = pyGet(__pytra_tuple_21, 1)
                     _ = tdy
-                    var tdz any = pyGet(__pytra_tuple_12, 2)
+                    var tdz any = pyGet(__pytra_tuple_21, 2)
                     _ = tdz
-                    var __pytra_tuple_13 any = sky_color(rdx, rdy, rdz, tphase)
-                    _ = __pytra_tuple_13
-                    var sr any = pyGet(__pytra_tuple_13, 0)
+                    var __pytra_tuple_22 any = sky_color(pyToFloat(rdx), pyToFloat(rdy), pyToFloat(rdz), pyToFloat(tphase))
+                    _ = __pytra_tuple_22
+                    var sr any = pyGet(__pytra_tuple_22, 0)
                     _ = sr
-                    var sg any = pyGet(__pytra_tuple_13, 1)
+                    var sg any = pyGet(__pytra_tuple_22, 1)
                     _ = sg
-                    var sb any = pyGet(__pytra_tuple_13, 2)
+                    var sb any = pyGet(__pytra_tuple_22, 2)
                     _ = sb
-                    var __pytra_tuple_14 any = sky_color(tdx, tdy, tdz, pyAdd(tphase, 0.8))
-                    _ = __pytra_tuple_14
-                    var tr any = pyGet(__pytra_tuple_14, 0)
+                    var __pytra_tuple_23 any = sky_color(pyToFloat(tdx), pyToFloat(tdy), pyToFloat(tdz), pyToFloat(pyAdd(tphase, 0.8)))
+                    _ = __pytra_tuple_23
+                    var tr any = pyGet(__pytra_tuple_23, 0)
                     _ = tr
-                    var tg any = pyGet(__pytra_tuple_14, 1)
+                    var tg any = pyGet(__pytra_tuple_23, 1)
                     _ = tg
-                    var tb any = pyGet(__pytra_tuple_14, 2)
+                    var tb any = pyGet(__pytra_tuple_23, 2)
                     _ = tb
                     var cosi any = pyMax(pyNeg(pyAdd(pyAdd(pyMul(dx, nx), pyMul(dy, ny)), pyMul(dz, nz))), 0.0)
                     _ = cosi
-                    var fr any = schlick(cosi, 0.04)
+                    var fr any = schlick(pyToFloat(cosi), 0.04)
                     _ = fr
-                    r = pyAdd(pyMul(tr, pySub(1.0, fr)), pyMul(sr, fr))
-                    g = pyAdd(pyMul(tg, pySub(1.0, fr)), pyMul(sg, fr))
-                    b = pyAdd(pyMul(tb, pySub(1.0, fr)), pyMul(sb, fr))
+                    r = pyToFloat(pyAdd(pyMul(tr, pySub(1.0, fr)), pyMul(sr, fr)))
+                    g = pyToFloat(pyAdd(pyMul(tg, pySub(1.0, fr)), pyMul(sg, fr)))
+                    b = pyToFloat(pyAdd(pyMul(tb, pySub(1.0, fr)), pyMul(sb, fr)))
                     var lxv any = pySub(lx, hx)
                     _ = lxv
                     var lyv any = pySub(ly, hy)
                     _ = lyv
                     var lzv any = pySub(lz, hz)
                     _ = lzv
-                    var __pytra_tuple_15 any = normalize(lxv, lyv, lzv)
-                    _ = __pytra_tuple_15
-                    var ldx any = pyGet(__pytra_tuple_15, 0)
+                    var __pytra_tuple_24 any = normalize(pyToFloat(lxv), pyToFloat(lyv), pyToFloat(lzv))
+                    _ = __pytra_tuple_24
+                    var ldx any = pyGet(__pytra_tuple_24, 0)
                     _ = ldx
-                    var ldy any = pyGet(__pytra_tuple_15, 1)
+                    var ldy any = pyGet(__pytra_tuple_24, 1)
                     _ = ldy
-                    var ldz any = pyGet(__pytra_tuple_15, 2)
+                    var ldz any = pyGet(__pytra_tuple_24, 2)
                     _ = ldz
                     var ndotl any = pyMax(pyAdd(pyAdd(pyMul(nx, ldx), pyMul(ny, ldy)), pyMul(nz, ldz)), 0.0)
                     _ = ndotl
-                    var __pytra_tuple_16 any = normalize(pySub(ldx, dx), pySub(ldy, dy), pySub(ldz, dz))
-                    _ = __pytra_tuple_16
-                    var hvx any = pyGet(__pytra_tuple_16, 0)
+                    var __pytra_tuple_25 any = normalize(pyToFloat(pySub(ldx, dx)), pyToFloat(pySub(ldy, dy)), pyToFloat(pySub(ldz, dz)))
+                    _ = __pytra_tuple_25
+                    var hvx any = pyGet(__pytra_tuple_25, 0)
                     _ = hvx
-                    var hvy any = pyGet(__pytra_tuple_16, 1)
+                    var hvy any = pyGet(__pytra_tuple_25, 1)
                     _ = hvy
-                    var hvz any = pyGet(__pytra_tuple_16, 2)
+                    var hvz any = pyGet(__pytra_tuple_25, 2)
                     _ = hvz
                     var ndoth any = pyMax(pyAdd(pyAdd(pyMul(nx, hvx), pyMul(ny, hvy)), pyMul(nz, hvz)), 0.0)
                     _ = ndoth
@@ -1125,54 +1157,58 @@ func render_frame(width any, height any, frame_id any, frames_n any) any {
                     spec = pyMul(spec, spec)
                     var glow any = pyDiv(10.0, pyAdd(pyAdd(pyAdd(1.0, pyMul(lxv, lxv)), pyMul(lyv, lyv)), pyMul(lzv, lzv)))
                     _ = glow
-                    r = pyAdd(r, pyAdd(pyAdd(pyMul(0.2, ndotl), pyMul(0.8, spec)), pyMul(0.45, glow)))
-                    g = pyAdd(g, pyAdd(pyAdd(pyMul(0.18, ndotl), pyMul(0.6, spec)), pyMul(0.35, glow)))
-                    b = pyAdd(b, pyAdd(pyAdd(pyMul(0.26, ndotl), pyMul(1.0, spec)), pyMul(0.65, glow)))
-                    if (pyBool(pyEq(hit_kind, 2))) {
-                        r = pyMul(r, 0.95)
-                        g = pyMul(g, 1.05)
-                        b = pyMul(b, 1.1)
+                    r = (r + pyToFloat(pyAdd(pyAdd(pyMul(0.2, ndotl), pyMul(0.8, spec)), pyMul(0.45, glow))))
+                    g = (g + pyToFloat(pyAdd(pyAdd(pyMul(0.18, ndotl), pyMul(0.6, spec)), pyMul(0.35, glow))))
+                    b = (b + pyToFloat(pyAdd(pyAdd(pyMul(0.26, ndotl), pyMul(1.0, spec)), pyMul(0.65, glow))))
+                    if (pyBool((hit_kind == 2))) {
+                        r = (r * 0.95)
+                        g = (g * 1.05)
+                        b = (b * 1.1)
                     } else {
-                        if (pyBool(pyEq(hit_kind, 3))) {
-                            r = pyMul(r, 1.08)
-                            g = pyMul(g, 0.98)
-                            b = pyMul(b, 1.04)
+                        if (pyBool((hit_kind == 3))) {
+                            r = (r * 1.08)
+                            g = (g * 0.98)
+                            b = (b * 1.04)
                         } else {
-                            r = pyMul(r, 1.02)
-                            g = pyMul(g, 1.1)
-                            b = pyMul(b, 0.95)
+                            r = (r * 1.02)
+                            g = (g * 1.1)
+                            b = (b * 0.95)
                         }
                     }
                 }
             }
-            r = pyMathSqrt(clamp01(r))
-            g = pyMathSqrt(clamp01(g))
-            b = pyMathSqrt(clamp01(b))
+            r = math.Sqrt(pyToFloat(clamp01(r)))
+            g = math.Sqrt(pyToFloat(clamp01(g)))
+            b = math.Sqrt(pyToFloat(clamp01(b)))
             pySet(frame, i, quantize_332(r, g, b))
-            i = pyAdd(i, 1)
+            i = (i + 1)
         }
     }
     return pyBytes(frame)
 }
 
 func run_16_glass_sculpture_chaos() any {
-    var width any = 320
+    var width int = 320
     _ = width
-    var height any = 240
+    var height int = 240
     _ = height
-    var frames_n any = 72
+    var frames_n int = 72
     _ = frames_n
-    var out_path any = "sample/out/16_glass_sculpture_chaos.gif"
+    var out_path string = "sample/out/16_glass_sculpture_chaos.gif"
     _ = out_path
     var start any = pyPerfCounter()
     _ = start
     var frames any = []any{}
     _ = frames
-    var i any = nil
+    __pytra_range_start_26 := pyToInt(0)
+    __pytra_range_stop_27 := pyToInt(frames_n)
+    __pytra_range_step_28 := pyToInt(1)
+    if __pytra_range_step_28 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_17 := range pyRange(pyToInt(0), pyToInt(frames_n), pyToInt(1)) {
-        i = __pytra_it_17
-        frames = append(frames.([]any), render_frame(width, height, i, frames_n))
+    for __pytra_i_29 := __pytra_range_start_26; (__pytra_range_step_28 > 0 && __pytra_i_29 < __pytra_range_stop_27) || (__pytra_range_step_28 < 0 && __pytra_i_29 > __pytra_range_stop_27); __pytra_i_29 += __pytra_range_step_28 {
+        i = __pytra_i_29
+        frames = pyAppend(frames, render_frame(width, height, i, frames_n))
     }
     pySaveGIF(out_path, width, height, frames, palette_332(), 6, 0)
     var elapsed any = pySub(pyPerfCounter(), start)

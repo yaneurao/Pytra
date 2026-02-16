@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -695,114 +715,130 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
 }
 
 func julia_palette() any {
-    var palette any = pyBytearray(pyMul(256, 3))
+    var palette any = pyBytearray((256 * 3))
     _ = palette
     pySet(palette, 0, 0)
     pySet(palette, 1, 0)
     pySet(palette, 2, 0)
-    var i any = nil
+    __pytra_range_start_1 := pyToInt(1)
+    __pytra_range_stop_2 := pyToInt(256)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_1 := range pyRange(pyToInt(1), pyToInt(256), pyToInt(1)) {
-        i = __pytra_it_1
-        var t any = pyDiv(pySub(i, 1), 254.0)
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        i = __pytra_i_4
+        var t float64 = (float64((i - 1)) / 254.0)
         _ = t
-        var r any = pyToInt(pyMul(255.0, pyMul(pyMul(pyMul(pyMul(9.0, pySub(1.0, t)), t), t), t)))
+        var r int = pyToInt((255.0 * ((((9.0 * (1.0 - t)) * t) * t) * t)))
         _ = r
-        var g any = pyToInt(pyMul(255.0, pyMul(pyMul(pyMul(pyMul(15.0, pySub(1.0, t)), pySub(1.0, t)), t), t)))
+        var g int = pyToInt((255.0 * ((((15.0 * (1.0 - t)) * (1.0 - t)) * t) * t)))
         _ = g
-        var b any = pyToInt(pyMul(255.0, pyMul(pyMul(pyMul(pyMul(8.5, pySub(1.0, t)), pySub(1.0, t)), pySub(1.0, t)), t)))
+        var b int = pyToInt((255.0 * ((((8.5 * (1.0 - t)) * (1.0 - t)) * (1.0 - t)) * t)))
         _ = b
-        pySet(palette, pyAdd(pyMul(i, 3), 0), r)
-        pySet(palette, pyAdd(pyMul(i, 3), 1), g)
-        pySet(palette, pyAdd(pyMul(i, 3), 2), b)
+        pySet(palette, ((i * 3) + 0), r)
+        pySet(palette, ((i * 3) + 1), g)
+        pySet(palette, ((i * 3) + 2), b)
     }
     return pyBytes(palette)
 }
 
-func render_frame(width any, height any, cr any, ci any, max_iter any, phase any) any {
-    var frame any = pyBytearray(pyMul(width, height))
+func render_frame(width int, height int, cr float64, ci float64, max_iter int, phase int) any {
+    var frame any = pyBytearray((width * height))
     _ = frame
-    var idx any = 0
+    var idx int = 0
     _ = idx
-    var y any = nil
+    __pytra_range_start_5 := pyToInt(0)
+    __pytra_range_stop_6 := pyToInt(height)
+    __pytra_range_step_7 := pyToInt(1)
+    if __pytra_range_step_7 == 0 { panic("range() step must not be zero") }
+    var y int = 0
     _ = y
-    for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(height), pyToInt(1)) {
-        y = __pytra_it_2
-        var zy0 any = pyAdd(pyNeg(1.2), pyMul(2.4, pyDiv(y, pySub(height, 1))))
+    for __pytra_i_8 := __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7 {
+        y = __pytra_i_8
+        var zy0 float64 = ((-1.2) + (2.4 * (float64(y) / float64((height - 1)))))
         _ = zy0
-        var x any = nil
+        __pytra_range_start_9 := pyToInt(0)
+        __pytra_range_stop_10 := pyToInt(width)
+        __pytra_range_step_11 := pyToInt(1)
+        if __pytra_range_step_11 == 0 { panic("range() step must not be zero") }
+        var x int = 0
         _ = x
-        for _, __pytra_it_3 := range pyRange(pyToInt(0), pyToInt(width), pyToInt(1)) {
-            x = __pytra_it_3
-            var zx any = pyAdd(pyNeg(1.8), pyMul(3.6, pyDiv(x, pySub(width, 1))))
+        for __pytra_i_12 := __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11 {
+            x = __pytra_i_12
+            var zx float64 = ((-1.8) + (3.6 * (float64(x) / float64((width - 1)))))
             _ = zx
-            var zy any = zy0
+            var zy float64 = zy0
             _ = zy
-            var i any = 0
+            var i int = 0
             _ = i
-            for pyBool(pyLt(i, max_iter)) {
-                var zx2 any = pyMul(zx, zx)
+            for pyBool((i < max_iter)) {
+                var zx2 float64 = (zx * zx)
                 _ = zx2
-                var zy2 any = pyMul(zy, zy)
+                var zy2 float64 = (zy * zy)
                 _ = zy2
-                if (pyBool(pyGt(pyAdd(zx2, zy2), 4.0))) {
+                if (pyBool(((zx2 + zy2) > 4.0))) {
                     break
                 }
-                zy = pyAdd(pyMul(pyMul(2.0, zx), zy), ci)
-                zx = pyAdd(pySub(zx2, zy2), cr)
-                i = pyAdd(i, 1)
+                zy = (((2.0 * zx) * zy) + ci)
+                zx = ((zx2 - zy2) + cr)
+                i = (i + 1)
             }
-            if (pyBool(pyGe(i, max_iter))) {
+            if (pyBool((i >= max_iter))) {
                 pySet(frame, idx, 0)
             } else {
-                var color_index any = pyAdd(1, pyMod(pyAdd(pyFloorDiv(pyMul(i, 224), max_iter), phase), 255))
+                var color_index int = (1 + ((((i * 224) / max_iter) + phase) % 255))
                 _ = color_index
                 pySet(frame, idx, color_index)
             }
-            idx = pyAdd(idx, 1)
+            idx = (idx + 1)
         }
     }
     return pyBytes(frame)
 }
 
 func run_06_julia_parameter_sweep() any {
-    var width any = 320
+    var width int = 320
     _ = width
-    var height any = 240
+    var height int = 240
     _ = height
-    var frames_n any = 72
+    var frames_n int = 72
     _ = frames_n
-    var max_iter any = 180
+    var max_iter int = 180
     _ = max_iter
-    var out_path any = "sample/out/06_julia_parameter_sweep.gif"
+    var out_path string = "sample/out/06_julia_parameter_sweep.gif"
     _ = out_path
     var start any = pyPerfCounter()
     _ = start
     var frames any = []any{}
     _ = frames
-    var center_cr any = pyNeg(0.745)
+    var center_cr float64 = (-0.745)
     _ = center_cr
-    var center_ci any = 0.186
+    var center_ci float64 = 0.186
     _ = center_ci
-    var radius_cr any = 0.12
+    var radius_cr float64 = 0.12
     _ = radius_cr
-    var radius_ci any = 0.1
+    var radius_ci float64 = 0.1
     _ = radius_ci
-    var i any = nil
+    __pytra_range_start_13 := pyToInt(0)
+    __pytra_range_stop_14 := pyToInt(frames_n)
+    __pytra_range_step_15 := pyToInt(1)
+    if __pytra_range_step_15 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_4 := range pyRange(pyToInt(0), pyToInt(frames_n), pyToInt(1)) {
-        i = __pytra_it_4
-        var t any = pyDiv(i, frames_n)
+    for __pytra_i_16 := __pytra_range_start_13; (__pytra_range_step_15 > 0 && __pytra_i_16 < __pytra_range_stop_14) || (__pytra_range_step_15 < 0 && __pytra_i_16 > __pytra_range_stop_14); __pytra_i_16 += __pytra_range_step_15 {
+        i = __pytra_i_16
+        var t float64 = (float64(i) / float64(frames_n))
         _ = t
         var angle any = pyMul(pyMul(2.0, pyMathPi()), t)
         _ = angle
-        var cr any = pyAdd(center_cr, pyMul(radius_cr, pyMathCos(angle)))
+        var cr float64 = (center_cr + (radius_cr * math.Cos(pyToFloat(angle))))
         _ = cr
-        var ci any = pyAdd(center_ci, pyMul(radius_ci, pyMathSin(angle)))
+        var ci float64 = (center_ci + (radius_ci * math.Sin(pyToFloat(angle))))
         _ = ci
-        var phase any = pyMod(pyMul(i, 5), 255)
+        var phase int = ((i * 5) % 255)
         _ = phase
-        frames = append(frames.([]any), render_frame(width, height, cr, ci, max_iter, phase))
+        frames = pyAppend(frames, render_frame(width, height, cr, ci, max_iter, phase))
     }
     pySaveGIF(out_path, width, height, frames, julia_palette(), 8, 0)
     var elapsed any = pySub(pyPerfCounter(), start)

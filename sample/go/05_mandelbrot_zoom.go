@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -694,79 +714,91 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     _ = os.WriteFile(pyToString(path), out, 0o644)
 }
 
-func render_frame(width any, height any, center_x any, center_y any, scale any, max_iter any) any {
-    var frame any = pyBytearray(pyMul(width, height))
+func render_frame(width int, height int, center_x float64, center_y float64, scale float64, max_iter int) any {
+    var frame any = pyBytearray((width * height))
     _ = frame
-    var idx any = 0
+    var idx int = 0
     _ = idx
-    var y any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(height)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var y int = 0
     _ = y
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(height), pyToInt(1)) {
-        y = __pytra_it_1
-        var cy any = pyAdd(center_y, pyMul(pySub(y, pyMul(height, 0.5)), scale))
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        y = __pytra_i_4
+        var cy float64 = (center_y + ((float64(y) - (float64(height) * 0.5)) * scale))
         _ = cy
-        var x any = nil
+        __pytra_range_start_5 := pyToInt(0)
+        __pytra_range_stop_6 := pyToInt(width)
+        __pytra_range_step_7 := pyToInt(1)
+        if __pytra_range_step_7 == 0 { panic("range() step must not be zero") }
+        var x int = 0
         _ = x
-        for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(width), pyToInt(1)) {
-            x = __pytra_it_2
-            var cx any = pyAdd(center_x, pyMul(pySub(x, pyMul(width, 0.5)), scale))
+        for __pytra_i_8 := __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7 {
+            x = __pytra_i_8
+            var cx float64 = (center_x + ((float64(x) - (float64(width) * 0.5)) * scale))
             _ = cx
-            var zx any = 0.0
+            var zx float64 = 0.0
             _ = zx
-            var zy any = 0.0
+            var zy float64 = 0.0
             _ = zy
-            var i any = 0
+            var i int = 0
             _ = i
-            for pyBool(pyLt(i, max_iter)) {
-                var zx2 any = pyMul(zx, zx)
+            for pyBool((i < max_iter)) {
+                var zx2 float64 = (zx * zx)
                 _ = zx2
-                var zy2 any = pyMul(zy, zy)
+                var zy2 float64 = (zy * zy)
                 _ = zy2
-                if (pyBool(pyGt(pyAdd(zx2, zy2), 4.0))) {
+                if (pyBool(((zx2 + zy2) > 4.0))) {
                     break
                 }
-                zy = pyAdd(pyMul(pyMul(2.0, zx), zy), cy)
-                zx = pyAdd(pySub(zx2, zy2), cx)
-                i = pyAdd(i, 1)
+                zy = (((2.0 * zx) * zy) + cy)
+                zx = ((zx2 - zy2) + cx)
+                i = (i + 1)
             }
-            pySet(frame, idx, pyToInt(pyDiv(pyMul(255.0, i), max_iter)))
-            idx = pyAdd(idx, 1)
+            pySet(frame, idx, pyToInt(((255.0 * float64(i)) / float64(max_iter))))
+            idx = (idx + 1)
         }
     }
     return pyBytes(frame)
 }
 
 func run_05_mandelbrot_zoom() any {
-    var width any = 320
+    var width int = 320
     _ = width
-    var height any = 240
+    var height int = 240
     _ = height
-    var frame_count any = 48
+    var frame_count int = 48
     _ = frame_count
-    var max_iter any = 110
+    var max_iter int = 110
     _ = max_iter
-    var center_x any = pyNeg(0.743643887037151)
+    var center_x float64 = (-0.743643887037151)
     _ = center_x
-    var center_y any = 0.13182590420533
+    var center_y float64 = 0.13182590420533
     _ = center_y
-    var base_scale any = pyDiv(3.2, width)
+    var base_scale float64 = (3.2 / float64(width))
     _ = base_scale
-    var zoom_per_frame any = 0.93
+    var zoom_per_frame float64 = 0.93
     _ = zoom_per_frame
-    var out_path any = "sample/out/05_mandelbrot_zoom.gif"
+    var out_path string = "sample/out/05_mandelbrot_zoom.gif"
     _ = out_path
     var start any = pyPerfCounter()
     _ = start
     var frames any = []any{}
     _ = frames
-    var scale any = base_scale
+    var scale float64 = base_scale
     _ = scale
-    var __pytra_discard any = nil
+    __pytra_range_start_9 := pyToInt(0)
+    __pytra_range_stop_10 := pyToInt(frame_count)
+    __pytra_range_step_11 := pyToInt(1)
+    if __pytra_range_step_11 == 0 { panic("range() step must not be zero") }
+    var __pytra_discard int = 0
     _ = __pytra_discard
-    for _, __pytra_it_3 := range pyRange(pyToInt(0), pyToInt(frame_count), pyToInt(1)) {
-        __pytra_discard = __pytra_it_3
-        frames = append(frames.([]any), render_frame(width, height, center_x, center_y, scale, max_iter))
-        scale = pyMul(scale, zoom_per_frame)
+    for __pytra_i_12 := __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11 {
+        __pytra_discard = __pytra_i_12
+        frames = pyAppend(frames, render_frame(width, height, center_x, center_y, scale, max_iter))
+        scale = (scale * zoom_per_frame)
     }
     pySaveGIF(out_path, width, height, frames, pyGrayscalePalette(), 5, 0)
     var elapsed any = pySub(pyPerfCounter(), start)

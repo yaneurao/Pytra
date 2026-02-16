@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -694,89 +714,109 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     _ = os.WriteFile(pyToString(path), out, 0o644)
 }
 
-func capture(grid any, w any, h any) any {
-    var frame any = pyBytearray(pyMul(w, h))
+func capture(grid any, w int, h int) any {
+    var frame any = pyBytearray((w * h))
     _ = frame
-    var i any = 0
+    var i int = 0
     _ = i
-    var y any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(h)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var y int = 0
     _ = y
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
-        y = __pytra_it_1
-        var x any = nil
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        y = __pytra_i_4
+        __pytra_range_start_5 := pyToInt(0)
+        __pytra_range_stop_6 := pyToInt(w)
+        __pytra_range_step_7 := pyToInt(1)
+        if __pytra_range_step_7 == 0 { panic("range() step must not be zero") }
+        var x int = 0
         _ = x
-        for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
-            x = __pytra_it_2
+        for __pytra_i_8 := __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7 {
+            x = __pytra_i_8
             pySet(frame, i, pyTernary(pyBool(pyGet(pyGet(grid, y), x)), 255, 0))
-            i = pyAdd(i, 1)
+            i = (i + 1)
         }
     }
     return pyBytes(frame)
 }
 
 func run_08_langtons_ant() any {
-    var w any = 420
+    var w int = 420
     _ = w
-    var h any = 420
+    var h int = 420
     _ = h
-    var out_path any = "sample/out/08_langtons_ant.gif"
+    var out_path string = "sample/out/08_langtons_ant.gif"
     _ = out_path
     var start any = pyPerfCounter()
     _ = start
     var grid any = []any{}
     _ = grid
-    var gy any = nil
+    __pytra_range_start_9 := pyToInt(0)
+    __pytra_range_stop_10 := pyToInt(h)
+    __pytra_range_step_11 := pyToInt(1)
+    if __pytra_range_step_11 == 0 { panic("range() step must not be zero") }
+    var gy int = 0
     _ = gy
-    for _, __pytra_it_3 := range pyRange(pyToInt(0), pyToInt(h), pyToInt(1)) {
-        gy = __pytra_it_3
+    for __pytra_i_12 := __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11 {
+        gy = __pytra_i_12
         var row any = []any{}
         _ = row
-        var gx any = nil
+        __pytra_range_start_13 := pyToInt(0)
+        __pytra_range_stop_14 := pyToInt(w)
+        __pytra_range_step_15 := pyToInt(1)
+        if __pytra_range_step_15 == 0 { panic("range() step must not be zero") }
+        var gx int = 0
         _ = gx
-        for _, __pytra_it_4 := range pyRange(pyToInt(0), pyToInt(w), pyToInt(1)) {
-            gx = __pytra_it_4
-            row = append(row.([]any), 0)
+        for __pytra_i_16 := __pytra_range_start_13; (__pytra_range_step_15 > 0 && __pytra_i_16 < __pytra_range_stop_14) || (__pytra_range_step_15 < 0 && __pytra_i_16 > __pytra_range_stop_14); __pytra_i_16 += __pytra_range_step_15 {
+            gx = __pytra_i_16
+            row = pyAppend(row, 0)
         }
-        grid = append(grid.([]any), row)
+        grid = pyAppend(grid, row)
     }
-    var x any = pyFloorDiv(w, 2)
+    var x int = (w / 2)
     _ = x
-    var y any = pyFloorDiv(h, 2)
+    var y int = (h / 2)
     _ = y
-    var d any = 0
+    var d int = 0
     _ = d
-    var steps_total any = 600000
+    var steps_total int = 600000
     _ = steps_total
-    var capture_every any = 3000
+    var capture_every int = 3000
     _ = capture_every
     var frames any = []any{}
     _ = frames
-    var i any = nil
+    __pytra_range_start_17 := pyToInt(0)
+    __pytra_range_stop_18 := pyToInt(steps_total)
+    __pytra_range_step_19 := pyToInt(1)
+    if __pytra_range_step_19 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_5 := range pyRange(pyToInt(0), pyToInt(steps_total), pyToInt(1)) {
-        i = __pytra_it_5
+    for __pytra_i_20 := __pytra_range_start_17; (__pytra_range_step_19 > 0 && __pytra_i_20 < __pytra_range_stop_18) || (__pytra_range_step_19 < 0 && __pytra_i_20 > __pytra_range_stop_18); __pytra_i_20 += __pytra_range_step_19 {
+        i = __pytra_i_20
         if (pyBool(pyEq(pyGet(pyGet(grid, y), x), 0))) {
-            d = pyMod(pyAdd(d, 1), 4)
+            d = ((d + 1) % 4)
             pySet(pyGet(grid, y), x, 1)
         } else {
-            d = pyMod(pyAdd(d, 3), 4)
+            d = ((d + 3) % 4)
             pySet(pyGet(grid, y), x, 0)
         }
-        if (pyBool(pyEq(d, 0))) {
-            y = pyMod(pyAdd(pySub(y, 1), h), h)
+        if (pyBool((d == 0))) {
+            y = (((y - 1) + h) % h)
         } else {
-            if (pyBool(pyEq(d, 1))) {
-                x = pyMod(pyAdd(x, 1), w)
+            if (pyBool((d == 1))) {
+                x = ((x + 1) % w)
             } else {
-                if (pyBool(pyEq(d, 2))) {
-                    y = pyMod(pyAdd(y, 1), h)
+                if (pyBool((d == 2))) {
+                    y = ((y + 1) % h)
                 } else {
-                    x = pyMod(pyAdd(pySub(x, 1), w), w)
+                    x = (((x - 1) + w) % w)
                 }
             }
         }
-        if (pyBool(pyEq(pyMod(i, capture_every), 0))) {
-            frames = append(frames.([]any), capture(grid, w, h))
+        if (pyBool(((i % capture_every) == 0))) {
+            frames = pyAppend(frames, capture(grid, w, h))
         }
     }
     pySaveGIF(out_path, w, h, frames, pyGrayscalePalette(), 5, 0)

@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -694,46 +714,50 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     _ = os.WriteFile(pyToString(path), out, 0o644)
 }
 
-func lcg_next(state any) any {
-    return pyMod(pyAdd(pyMul(1664525, state), 1013904223), 4294967296)
+func lcg_next(state int) any {
+    return (((1664525 * state) + 1013904223) % 4294967296)
 }
 
-func run_pi_trial(total_samples any, seed any) any {
-    var inside any = 0
+func run_pi_trial(total_samples int, seed int) any {
+    var inside int = 0
     _ = inside
-    var state any = seed
+    var state int = seed
     _ = state
-    var __pytra_discard any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(total_samples)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var __pytra_discard int = 0
     _ = __pytra_discard
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(total_samples), pyToInt(1)) {
-        __pytra_discard = __pytra_it_1
-        state = lcg_next(state)
-        var x any = pyDiv(state, 4294967296.0)
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        __pytra_discard = __pytra_i_4
+        state = pyToInt(lcg_next(state))
+        var x float64 = (float64(state) / 4294967296.0)
         _ = x
-        state = lcg_next(state)
-        var y any = pyDiv(state, 4294967296.0)
+        state = pyToInt(lcg_next(state))
+        var y float64 = (float64(state) / 4294967296.0)
         _ = y
-        var dx any = pySub(x, 0.5)
+        var dx float64 = (x - 0.5)
         _ = dx
-        var dy any = pySub(y, 0.5)
+        var dy float64 = (y - 0.5)
         _ = dy
-        if (pyBool(pyLe(pyAdd(pyMul(dx, dx), pyMul(dy, dy)), 0.25))) {
-            inside = pyAdd(inside, 1)
+        if (pyBool((((dx * dx) + (dy * dy)) <= 0.25))) {
+            inside = (inside + 1)
         }
     }
-    return pyDiv(pyMul(4.0, inside), total_samples)
+    return ((4.0 * float64(inside)) / float64(total_samples))
 }
 
 func run_monte_carlo_pi() any {
-    var samples any = 54000000
+    var samples int = 54000000
     _ = samples
-    var seed any = 123456789
+    var seed int = 123456789
     _ = seed
-    var start any = pyPerfCounter()
+    var start float64 = pyToFloat(pyPerfCounter())
     _ = start
-    var pi_est any = run_pi_trial(samples, seed)
+    var pi_est float64 = pyToFloat(run_pi_trial(samples, seed))
     _ = pi_est
-    var elapsed any = pySub(pyPerfCounter(), start)
+    var elapsed float64 = pyToFloat(pySub(pyPerfCounter(), start))
     _ = elapsed
     pyPrint("samples:", samples)
     pyPrint("pi_estimate:", pi_est)

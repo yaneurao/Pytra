@@ -411,6 +411,12 @@ func pyGet(value any, key any) any {
             i += len(v)
         }
         return v[i]
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        return int(v[i])
     case map[any]any:
         return v[key]
     case string:
@@ -433,6 +439,12 @@ func pySet(value any, key any, newValue any) {
             i += len(v)
         }
         v[i] = newValue
+    case []byte:
+        i := pyToInt(key)
+        if i < 0 {
+            i += len(v)
+        }
+        v[i] = byte(pyToInt(newValue))
     case map[any]any:
         v[key] = newValue
     default:
@@ -473,17 +485,25 @@ func pyChr(v any) any { return string(rune(pyToInt(v))) }
 
 func pyBytearray(size any) any {
     if size == nil {
-        return []any{}
+        return []byte{}
     }
     n := pyToInt(size)
-    out := make([]any, n)
-    for i := 0; i < n; i++ {
-        out[i] = 0
-    }
+    out := make([]byte, n)
     return out
 }
 
 func pyBytes(v any) any { return v }
+
+func pyAppend(seq any, value any) any {
+    switch s := seq.(type) {
+    case []any:
+        return append(s, value)
+    case []byte:
+        return append(s, byte(pyToInt(value)))
+    default:
+        panic("append unsupported type")
+    }
+}
 
 func pyIsDigit(v any) bool {
     s := pyToString(v)
@@ -694,100 +714,112 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     _ = os.WriteFile(pyToString(path), out, 0o644)
 }
 
-func escape_count(cx any, cy any, max_iter any) any {
-    var x any = 0.0
+func escape_count(cx float64, cy float64, max_iter int) any {
+    var x float64 = 0.0
     _ = x
-    var y any = 0.0
+    var y float64 = 0.0
     _ = y
-    var i any = nil
+    __pytra_range_start_1 := pyToInt(0)
+    __pytra_range_stop_2 := pyToInt(max_iter)
+    __pytra_range_step_3 := pyToInt(1)
+    if __pytra_range_step_3 == 0 { panic("range() step must not be zero") }
+    var i int = 0
     _ = i
-    for _, __pytra_it_1 := range pyRange(pyToInt(0), pyToInt(max_iter), pyToInt(1)) {
-        i = __pytra_it_1
-        var x2 any = pyMul(x, x)
+    for __pytra_i_4 := __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3 {
+        i = __pytra_i_4
+        var x2 float64 = (x * x)
         _ = x2
-        var y2 any = pyMul(y, y)
+        var y2 float64 = (y * y)
         _ = y2
-        if (pyBool(pyGt(pyAdd(x2, y2), 4.0))) {
+        if (pyBool(((x2 + y2) > 4.0))) {
             return i
         }
-        y = pyAdd(pyMul(pyMul(2.0, x), y), cy)
-        x = pyAdd(pySub(x2, y2), cx)
+        y = (((2.0 * x) * y) + cy)
+        x = ((x2 - y2) + cx)
     }
     return max_iter
 }
 
-func color_map(iter_count any, max_iter any) any {
-    if (pyBool(pyGe(iter_count, max_iter))) {
+func color_map(iter_count int, max_iter int) any {
+    if (pyBool((iter_count >= max_iter))) {
         return []any{0, 0, 0}
     }
-    var t any = pyDiv(iter_count, max_iter)
+    var t float64 = (float64(iter_count) / float64(max_iter))
     _ = t
-    var r any = pyToInt(pyMul(255.0, pyMul(t, t)))
+    var r int = pyToInt((255.0 * (t * t)))
     _ = r
-    var g any = pyToInt(pyMul(255.0, t))
+    var g int = pyToInt((255.0 * t))
     _ = g
-    var b any = pyToInt(pyMul(255.0, pySub(1.0, t)))
+    var b int = pyToInt((255.0 * (1.0 - t)))
     _ = b
     return []any{r, g, b}
 }
 
-func render_mandelbrot(width any, height any, max_iter any, x_min any, x_max any, y_min any, y_max any) any {
+func render_mandelbrot(width int, height int, max_iter int, x_min float64, x_max float64, y_min float64, y_max float64) any {
     var pixels any = pyBytearray(nil)
     _ = pixels
-    var y any = nil
+    __pytra_range_start_5 := pyToInt(0)
+    __pytra_range_stop_6 := pyToInt(height)
+    __pytra_range_step_7 := pyToInt(1)
+    if __pytra_range_step_7 == 0 { panic("range() step must not be zero") }
+    var y int = 0
     _ = y
-    for _, __pytra_it_2 := range pyRange(pyToInt(0), pyToInt(height), pyToInt(1)) {
-        y = __pytra_it_2
-        var py any = pyAdd(y_min, pyMul(pySub(y_max, y_min), pyDiv(y, pySub(height, 1))))
+    for __pytra_i_8 := __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7 {
+        y = __pytra_i_8
+        var py float64 = (y_min + ((y_max - y_min) * (float64(y) / float64((height - 1)))))
         _ = py
-        var x any = nil
+        __pytra_range_start_9 := pyToInt(0)
+        __pytra_range_stop_10 := pyToInt(width)
+        __pytra_range_step_11 := pyToInt(1)
+        if __pytra_range_step_11 == 0 { panic("range() step must not be zero") }
+        var x int = 0
         _ = x
-        for _, __pytra_it_3 := range pyRange(pyToInt(0), pyToInt(width), pyToInt(1)) {
-            x = __pytra_it_3
-            var px any = pyAdd(x_min, pyMul(pySub(x_max, x_min), pyDiv(x, pySub(width, 1))))
+        for __pytra_i_12 := __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11 {
+            x = __pytra_i_12
+            var px float64 = (x_min + ((x_max - x_min) * (float64(x) / float64((width - 1)))))
             _ = px
-            var it any = escape_count(px, py, max_iter)
+            var it int = pyToInt(escape_count(px, py, max_iter))
             _ = it
-            var r any = nil
+            var r int = 0
             _ = r
-            var g any = nil
+            var g int = 0
             _ = g
-            var b any = nil
+            var b int = 0
             _ = b
-            if (pyBool(pyGe(it, max_iter))) {
+            if (pyBool((it >= max_iter))) {
                 r = 0
                 g = 0
                 b = 0
             } else {
-                var t any = pyDiv(it, max_iter)
+                var t float64 = (float64(it) / float64(max_iter))
                 _ = t
-                r = pyToInt(pyMul(255.0, pyMul(t, t)))
-                g = pyToInt(pyMul(255.0, t))
-                b = pyToInt(pyMul(255.0, pySub(1.0, t)))
+                r = pyToInt((255.0 * (t * t)))
+                g = pyToInt((255.0 * t))
+                b = pyToInt((255.0 * (1.0 - t)))
             }
-            pixels = append(pixels.([]any), r)
-            pixels = append(pixels.([]any), g)
-            pixels = append(pixels.([]any), b)
+            pixels = pyAppend(pixels, r)
+            pixels = pyAppend(pixels, g)
+            pixels = pyAppend(pixels, b)
         }
     }
     return pixels
 }
 
 func run_mandelbrot() any {
-    var width any = 1600
+    var width int = 1600
     _ = width
-    var height any = 1200
+    var height int = 1200
     _ = height
-    var max_iter any = 1000
+    var max_iter int = 1000
     _ = max_iter
-    var out_path any = "sample/out/mandelbrot_01.png"
+    var out_path string = "sample/out/mandelbrot_01.png"
     _ = out_path
-    var start any = pyPerfCounter()
+    var start float64 = pyToFloat(pyPerfCounter())
     _ = start
-    var pixels any = render_mandelbrot(width, height, max_iter, pyNeg(2.2), 1.0, pyNeg(1.2), 1.2)
+    var pixels any = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2)
     _ = pixels
     pyWriteRGBPNG(out_path, width, height, pixels)
-    var elapsed any = pySub(pyPerfCounter(), start)
+    var elapsed float64 = pyToFloat(pySub(pyPerfCounter(), start))
     _ = elapsed
     pyPrint("output:", out_path)
     pyPrint("size:", width, "x", height)
