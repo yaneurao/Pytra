@@ -5,14 +5,14 @@
 | 変換元 | 変換先 | 実装 |
 | - | - | - |
 | Python | C++ | [src/py2cpp.py](../src/py2cpp.py) |
-| Python | C# | [src/py2cs.py](../src/py2cs.py) |
 | Python | Rust | [src/py2rs.py](../src/py2rs.py) |
+| Python | C# | [src/py2cs.py](../src/py2cs.py) |
 | Python | JavaScript | [src/py2js.py](../src/py2js.py) |
 | Python | TypeScript | [src/py2ts.py](../src/py2ts.py) |
 | Python | Go | [src/py2go.py](../src/py2go.py) |
 | Python | Java | [src/py2java.py](../src/py2java.py) |
-| Python | Swift | 🚧 予定 |
-| Python | Kotlin | 🚧 予定 |
+| Python | Swift | [src/py2swift.py](../src/py2swift.py) |
+| Python | Kotlin | [src/py2kotlin.py](../src/py2kotlin.py) |
 
 
 ## トランスパイラの使い方
@@ -29,19 +29,7 @@ python src/py2cpp.py <input.py> <output.cpp>
 python src/py2cpp.py test/py/case28_iterable.py test/cpp/case28_iterable.cpp
 ```
 
-### 2. Python から C# へ変換
-
-```bash
-python src/py2cs.py <input.py> <output.cs>
-```
-
-例:
-
-```bash
-python src/py2cs.py test/py/case28_iterable.py test/cs/case28_iterable.cs
-```
-
-### 3. Python から Rust へ変換
+### 2. Python から Rust へ変換
 
 ```bash
 python src/py2rs.py <input.py> <output.rs>
@@ -51,6 +39,18 @@ python src/py2rs.py <input.py> <output.rs>
 
 ```bash
 python src/py2rs.py test/py/case28_iterable.py test/rs/case28_iterable.rs
+```
+
+### 3. Python から C# へ変換
+
+```bash
+python src/py2cs.py <input.py> <output.cs>
+```
+
+例:
+
+```bash
+python src/py2cs.py test/py/case28_iterable.py test/cs/case28_iterable.cs
 ```
 
 ### 4. Python から JavaScript へ変換
@@ -155,6 +155,23 @@ javac test/java/case28_iterable.java
 java -cp test/java case28_iterable
 ```
 
+#### Swift
+
+```bash
+python src/py2swift.py test/py/case28_iterable.py test/swift/case28_iterable.swift
+swiftc test/swift/case28_iterable.swift -o test/obj/case28_iterable_swift.out
+./test/obj/case28_iterable_swift.out
+```
+
+#### Kotlin
+
+```bash
+python src/py2kotlin.py test/py/case28_iterable.py test/kotlin/case28_iterable.kt
+kotlinc test/kotlin/case28_iterable.kt -include-runtime -d test/obj/case28_iterable_kotlin.jar
+# 生成クラス名を直接指定して実行
+java -cp test/obj/case28_iterable_kotlin.jar pytra_case28_iterable
+```
+
 ### 9. 注意点
 
 - 対象は Python のサブセットです。一般的な Python コードすべてが変換できるわけではありません。
@@ -166,6 +183,7 @@ java -cp test/java case28_iterable
 - 現在の `py2rs.py` は最小実装で、Python スクリプトを Rust 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出しません。
 - 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
+- 現在の `py2swift.py` / `py2kotlin.py` は埋め込み実行モードです。生成 Swift/Kotlin は `python3` を呼び出します。
 - 現時点では `sample/py` の一部で使っている `math` / `png_helper` / `gif_helper` 系 API の Go/Java ネイティブ対応が未完了です。
 
 

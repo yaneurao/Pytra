@@ -1,4 +1,4 @@
-"""Go / Java 向け埋め込み Python トランスパイラ共通実装。"""
+"""Go / Java / Swift / Kotlin 向け埋め込み Python トランスパイラ共通実装。"""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ class EmbeddedTranspileConfig:
     Attributes:
         language_name: 生成対象言語名（表示用）。
         file_header: 生成ファイル先頭に入れる説明コメント。
-        target: 生成ターゲット（"go" または "java"）。
+        target: 生成ターゲット（"go" / "java" / "swift" / "kotlin"）。
         runtime_template_path: 利用するランタイムテンプレートファイルパス。
     """
 
@@ -26,7 +26,7 @@ class EmbeddedTranspileConfig:
 
 
 class EmbeddedPythonTranspiler:
-    """Python ソースを Go / Java の埋め込み実行コードへ変換する共通トランスパイラ。"""
+    """Python ソースを埋め込み実行コードへ変換する共通トランスパイラ。"""
 
     def __init__(self, config: EmbeddedTranspileConfig) -> None:
         """トランスパイラを初期化する。
@@ -53,6 +53,10 @@ class EmbeddedPythonTranspiler:
             return self._render_go(runtime_template, encoded)
         if self.config.target == "java":
             return self._render_java(runtime_template, encoded, output_path)
+        if self.config.target == "swift":
+            return self._render_swift(runtime_template, encoded, output_path)
+        if self.config.target == "kotlin":
+            return self._render_kotlin(runtime_template, encoded, output_path)
         raise ValueError(f"unsupported target: {self.config.target}")
 
     def _render_go(self, runtime_template: str, encoded: str) -> str:
@@ -83,6 +87,40 @@ class EmbeddedPythonTranspiler:
             "    public static void main(String[] args) {\n"
             "        int code = PyRuntime.runEmbeddedPython(PYTRA_EMBEDDED_SOURCE_BASE64, args);\n"
             "        System.exit(code);\n"
+            "    }\n"
+            "}\n"
+        )
+
+    def _render_swift(self, runtime_template: str, encoded: str, output_path: Path) -> str:
+        """Swift 出力を組み立てる。"""
+        runtime = runtime_template.rstrip()
+        return (
+            f"{self.config.file_header}\n\n"
+            f"{runtime}\n\n"
+            "// 埋め込み Python ソース（Base64）。\n"
+            f"let pytraEmbeddedSourceBase64 = \"{encoded}\"\n"
+            "let pytraArgs = Array(CommandLine.arguments.dropFirst())\n"
+            "let pytraCode = pytraRunEmbeddedPython(pytraEmbeddedSourceBase64, pytraArgs)\n"
+            "Foundation.exit(pytraCode)\n"
+        )
+
+    def _render_kotlin(self, runtime_template: str, encoded: str, output_path: Path) -> str:
+        """Kotlin 出力を組み立てる。"""
+        runtime = runtime_template.rstrip()
+        main_class_name = self._java_class_name_from_output(output_path)
+        return (
+            f"{self.config.file_header}\n\n"
+            f"{runtime}\n\n"
+            f"class {main_class_name} {{\n"
+            "    companion object {\n"
+            "        // 埋め込み Python ソース（Base64）。\n"
+            f"        private const val PYTRA_EMBEDDED_SOURCE_BASE64: String = \"{encoded}\"\n\n"
+            "        // main は埋め込み Python を実行するエントリポイント。\n"
+            "        @JvmStatic\n"
+            "        fun main(args: Array<String>) {\n"
+            "            val code: Int = PyRuntime.runEmbeddedPython(PYTRA_EMBEDDED_SOURCE_BASE64, args)\n"
+            "            kotlin.system.exitProcess(code)\n"
+            "        }\n"
             "    }\n"
             "}\n"
         )

@@ -11,6 +11,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - Python -> TypeScript (`src/py2ts.py`)
 - Python -> Go (`src/py2go.py`)
 - Python -> Java (`src/py2java.py`)
+- Python -> Swift (`src/py2swift.py`)
+- Python -> Kotlin (`src/py2kotlin.py`)
 
 本仕様書は、現時点の実装に基づく対応範囲・テスト方法・運用上の注意点を定義します。
 
@@ -24,6 +26,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `py2ts.py`: Python -> TypeScript 変換器
   - `py2go.py`: Python -> Go 変換器
   - `py2java.py`: Python -> Java 変換器
+  - `py2swift.py`: Python -> Swift 変換器
+  - `py2kotlin.py`: Python -> Kotlin 変換器
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `common/`: 複数言語トランスパイラで共有する基底実装・共通ユーティリティ
     - `base_transpiler.py`: `TranspileError` と共通基底クラス
@@ -35,6 +39,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `ts_module/`: TypeScript 側ランタイム補助モジュール
   - `go_module/`: Go 側ランタイム補助モジュール
   - `java_module/`: Java 側ランタイム補助モジュール
+  - `swift_module/`: Swift 側ランタイム補助モジュール
+  - `kotlin_module/`: Kotlin 側ランタイム補助モジュール
   - `py_module/`: Python 側の自作ライブラリ配置先
 - `test/`
   - `py/`: 入力 Python サンプル
@@ -45,6 +51,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `ts/`: TypeScript 変換結果
   - `go/`: Go 変換結果
   - `java/`: Java 変換結果
+  - `swift/`: Swift 変換結果
+  - `kotlin/`: Kotlin 変換結果
   - `cpp2/`: セルフホスティング検証時の出力先（`.gitignore` 対象）
   - `obj/`: C++ コンパイル生成物（`.gitignore` 対象）
 - `docs/`
@@ -61,6 +69,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `ts/`: `sample/py` を TypeScript へ変換した出力
   - `go/`: `sample/py` を Go へ変換した出力
   - `java/`: `sample/py` を Java へ変換した出力
+  - `swift/`: `sample/py` を Swift へ変換した出力
+  - `kotlin/`: `sample/py` を Kotlin へ変換した出力
   - `out/`: サンプル実行時の生成物（PNG / GIF）
   - `obj/`: サンプル実行用のコンパイル生成物
 
@@ -216,6 +226,7 @@ python -m unittest discover -s test -p "test_*.py" -v
 - 現在の `py2rs.py` は最小実装です。生成 Rust は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出さず、Node.js ランタイムのみで実行します。
 - 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
+- 現在の `py2swift.py` / `py2kotlin.py` は埋め込み実行モードです。生成 Swift/Kotlin は埋め込み Base64 文字列を復元して `python3` を起動します。
 - Go/Java の現状制約:
   - `test/py` のケース群はネイティブ変換・実行一致を確認済みです。
   - `sample/py` の一部（`math` / `png_helper` / `gif_helper` 依存が強いケース）は未対応機能が残っています。
