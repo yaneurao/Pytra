@@ -10,5 +10,5 @@
 
 計測条件:
 - Python: `PYTHONPATH=src python3 sample/py/<file>.py`
-- C++: `g++ -std=c++20 -O2 -I src ...` でビルドした実行ファイル
+- C++: `g++ -std=c++20 -O3 -I src ...` でビルドした実行ファイル
 - C#: `mcs ...` + `mono ...`

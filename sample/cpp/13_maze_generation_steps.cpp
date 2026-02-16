@@ -61,9 +61,10 @@ string capture(const vector<vector<long long>>& grid, long long w, long long h, 
 
 void run_13_maze_generation_steps()
 {
-    long long cell_w = 61;
-    long long cell_h = 45;
-    long long scale = 4;
+    long long cell_w = 89;
+    long long cell_h = 67;
+    long long scale = 5;
+    long long capture_every = 20;
     string out_path = "sample/out/13_maze_generation_steps.gif";
     auto start = perf_counter();
     vector<vector<long long>> grid = {};
@@ -149,7 +150,7 @@ void run_13_maze_generation_steps()
             grid[ny][nx] = 0;
             stack.push_back(std::make_tuple(nx, ny));
         }
-        if (((step % 25) == 0))
+        if (((step % capture_every) == 0))
         {
             frames.push_back(capture(grid, cell_w, cell_h, scale));
         }

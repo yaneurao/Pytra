@@ -25,24 +25,24 @@ JavaScriptのコードにも変換できるので、Pythonでブラウザゲー�
 
 💡 元のソースコード、変換されたソースコード、計測条件等については、[docs/time-comparison.md](docs/time-comparison.md) をご覧ください。
 
-|ファイル名|内容|Python| C++ | C# | Rust | JS | TypeScript |
+|ファイル名|内容|Python| C++ | Rust | C# | JS | TypeScript |
 |-|-|-:|-:|-:|-|-|-|
-|01_mandelbrot|マンデルブロ集合（PNG）|1.689|0.089|0.078|0.124|🚧|🚧|
-|02_raytrace_spheres|球の簡易レイトレーサ（PNG）|0.414|0.030|0.121|0.054|🚧|🚧|
-|03_julia_set|ジュリア集合（PNG）|1.380|0.087|0.141|0.110|🚧|🚧|
-|04_monte_carlo_pi|モンテカルロ法で円周率近似|3.657|0.052|0.200|0.066|🚧|🚧|
-|05_mandelbrot_zoom|マンデルブロズーム（GIF）|13.802|0.525|2.694|0.529|🚧|🚧|
-|06_julia_parameter_sweep|ジュリア集合パラメータ掃引（GIF）|9.825|0.383|1.929|0.385|🚧|🚧|
-|07_game_of_life_loop|ライフゲーム（GIF）|1.290|0.067|0.314|0.109|🚧|🚧|
-|08_langtons_ant|ラングトンのアリ（GIF）|0.744|0.050|0.234|0.145|🚧|🚧|
-|09_fire_simulation|炎シミュレーション（GIF）|1.088|0.054|0.522|0.435|🚧|🚧|
-|10_plasma_effect|プラズマエフェクト（GIF）|2.419|0.221|0.769|0.184|🚧|🚧|
-|11_lissajous_particles|リサージュ粒子（GIF）|1.118|0.081|0.163|0.076|🚧|🚧|
-|12_sort_visualizer|ソート可視化（GIF）|3.471|0.233|0.465|0.220|🚧|🚧|
-|13_maze_generation_steps|迷路生成ステップ（GIF）|0.521|0.033|0.113|0.037|🚧|🚧|
-|14_raymarching_light_cycle|簡易レイマーチング（GIF）|2.666|0.152|0.467|0.152|🚧|🚧|
-|15_mini_language_interpreter|ミニ言語インタプリタ |2.207|0.577|1.035|🚧|🚧|🚧|
-|16_glass_sculpture_chaos|ガラス彫刻のカオス回転（GIF）|7.114|0.250|1.289|0.233|🚧|🚧|
+|01_mandelbrot|マンデルブロ集合（PNG）|1.689|0.089|0.124|0.078|🚧|🚧|
+|02_raytrace_spheres|球の簡易レイトレーサ（PNG）|0.414|0.030|0.054|0.121|🚧|🚧|
+|03_julia_set|ジュリア集合（PNG）|1.380|0.087|0.110|0.141|🚧|🚧|
+|04_monte_carlo_pi|モンテカルロ法で円周率近似|3.657|0.052|0.066|0.200|🚧|🚧|
+|05_mandelbrot_zoom|マンデルブロズーム（GIF）|13.802|0.525|0.529|2.694|🚧|🚧|
+|06_julia_parameter_sweep|ジュリア集合パラメータ掃引（GIF）|9.825|0.383|0.385|1.929|🚧|🚧|
+|07_game_of_life_loop|ライフゲーム（GIF）|1.290|0.067|0.109|0.314|🚧|🚧|
+|08_langtons_ant|ラングトンのアリ（GIF）|0.744|0.050|0.145|0.234|🚧|🚧|
+|09_fire_simulation|炎シミュレーション（GIF）|1.088|0.054|0.435|0.522|🚧|🚧|
+|10_plasma_effect|プラズマエフェクト（GIF）|2.419|0.221|0.184|0.769|🚧|🚧|
+|11_lissajous_particles|リサージュ粒子（GIF）|1.118|0.081|0.076|0.163|🚧|🚧|
+|12_sort_visualizer|ソート可視化（GIF）|3.471|0.233|0.220|0.465|🚧|🚧|
+|13_maze_generation_steps|迷路生成ステップ（GIF）|4.716|0.302|0.273|0.946|🚧|🚧|
+|14_raymarching_light_cycle|簡易レイマーチング（GIF）|2.666|0.152|0.152|0.467|🚧|🚧|
+|15_mini_language_interpreter|ミニ言語インタプリタ |2.207|0.577|🚧|1.035|🚧|🚧|
+|16_glass_sculpture_chaos|ガラス彫刻のカオス回転（GIF）|7.114|0.250|0.233|1.289|🚧|🚧|
 
 ![06_julia_parameter_sweep](images/06_julia_parameter_sweep.gif)
 
@@ -1980,8 +1980,10 @@ fn main() {
 ## 実装済みの言語機能
 
 - 変数代入（通常代入、型注釈付き代入、拡張代入の主要ケース）
-- 算術演算（`+ - * / // % **` の主要ケース）
+- 算術・ビット演算（`+ - * / // % ** & | ^ << >>` の主要ケース）
 - 比較演算（`== != < <= > >= in not in is is not` の主要ケース）
+- 論理演算（`and or not`）
+- 単項演算（`+x -x ~x`）
 - 条件分岐（`if / elif / else`）
 - ループ（`while`、`for in <iterable>`、`for in range(...)`）
 - 例外（`try/except/finally`、`raise` の主要ケース）
@@ -1998,7 +2000,17 @@ fn main() {
 
 ## 実装済みの組み込み関数
 
-かきかけ
+- `print`
+- `len`
+- `range`（主に `for ... in range(...)`）
+- `int`
+- `float`
+- `str`
+- `ord`
+- `bytes`
+- `bytearray`
+- `min`
+- `max`
 
 ## 対応module
 

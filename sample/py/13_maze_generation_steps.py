@@ -22,9 +22,11 @@ def capture(grid: list[list[int]], w: int, h: int, scale: int) -> bytes:
 
 
 def run_13_maze_generation_steps() -> None:
-    cell_w = 61
-    cell_h = 45
-    scale = 4
+    # 実行時間を十分に確保するため、迷路サイズと描画解像度を上げる。
+    cell_w = 89
+    cell_h = 67
+    scale = 5
+    capture_every = 20
     out_path = "sample/out/13_maze_generation_steps.gif"
 
     start = perf_counter()
@@ -68,7 +70,7 @@ def run_13_maze_generation_steps() -> None:
             grid[ny][nx] = 0
             stack.append((nx, ny))
 
-        if step % 25 == 0:
+        if step % capture_every == 0:
             frames.append(capture(grid, cell_w, cell_h, scale))
         step += 1
 

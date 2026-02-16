@@ -45,9 +45,10 @@ public static class Program
 
     public static void run_13_maze_generation_steps()
     {
-        long cell_w = 61L;
-        long cell_h = 45L;
-        long scale = 4L;
+        long cell_w = 89L;
+        long cell_h = 67L;
+        long scale = 5L;
+        long capture_every = 20L;
         string out_path = "sample/out/13_maze_generation_steps.gif";
         var start = Pytra.CsModule.time.perf_counter();
         List<List<long>> grid = new List<List<long>> {  };
@@ -133,7 +134,7 @@ public static class Program
                 Pytra.CsModule.py_runtime.py_set(Pytra.CsModule.py_runtime.py_get(grid, ny), nx, 0L);
                 Pytra.CsModule.py_runtime.py_append(stack, Tuple.Create(nx, ny));
             }
-            if (Pytra.CsModule.py_runtime.py_bool(((step % 25L) == 0L)))
+            if (Pytra.CsModule.py_runtime.py_bool(((step % capture_every) == 0L)))
             {
                 Pytra.CsModule.py_runtime.py_append(frames, capture(grid, cell_w, cell_h, scale));
             }
