@@ -61,12 +61,67 @@ fn run_07_game_of_life_loop() -> () {
     let mut out_path = "sample/out/07_game_of_life_loop.gif".to_string();
     let mut start = perf_counter();
     let mut grid: Vec<Vec<i64>> = vec![];
-    for y in (0)..(h) {
+    for _ in (0)..(h) {
         let mut row: Vec<i64> = vec![];
-        for x in (0)..(w) {
-            row.push((if py_bool(&(((((((((((x) * (17))) + (((y) * (31))))) + (13))) % (11))) < (3)))) { 1 } else { 0 }));
+        for _ in (0)..(w) {
+            row.push(0);
         }
         grid.push(row);
+    }
+    for y in (0)..(h) {
+        for x in (0)..(w) {
+            let mut noise = ((((((((((x) * (37))) + (((y) * (73))))) + (((((x) * (y))) % (19))))) + (((((x) + (y))) % (11))))) % (97));
+            if py_bool(&(((noise) < (3)))) {
+                ((grid)[y as usize])[x as usize] = 1;
+            }
+        }
+    }
+    let mut glider = vec![vec![0, 1, 0], vec![0, 0, 1], vec![1, 1, 1]];
+    let mut r_pentomino = vec![vec![0, 1, 1], vec![1, 1, 0], vec![0, 1, 0]];
+    let mut lwss = vec![vec![0, 1, 1, 1, 1], vec![1, 0, 0, 0, 1], vec![0, 0, 0, 0, 1], vec![1, 0, 0, 1, 0]];
+    let mut __pytra_i_1 = 8;
+    while ((18) > 0 && __pytra_i_1 < (((h) - (8)))) || ((18) < 0 && __pytra_i_1 > (((h) - (8)))) {
+        let gy = __pytra_i_1;
+        let mut __pytra_i_2 = 8;
+        while ((22) > 0 && __pytra_i_2 < (((w) - (8)))) || ((22) < 0 && __pytra_i_2 > (((w) - (8)))) {
+            let gx = __pytra_i_2;
+            let mut kind = ((((((gx) * (7))) + (((gy) * (11))))) % (3));
+            if py_bool(&(((kind) == (0)))) {
+                let mut ph = (py_len(&(glider)) as i64);
+                for py in (0)..(ph) {
+                    let mut pw = (py_len(&((glider)[py as usize])) as i64);
+                    for px in (0)..(pw) {
+                        if py_bool(&(((((glider)[py as usize])[px as usize]) == (1)))) {
+                            ((grid)[((((gy) + (py))) % (h)) as usize])[((((gx) + (px))) % (w)) as usize] = 1;
+                        }
+                    }
+                }
+            } else {
+                if py_bool(&(((kind) == (1)))) {
+                    let mut ph = (py_len(&(r_pentomino)) as i64);
+                    for py in (0)..(ph) {
+                        let mut pw = (py_len(&((r_pentomino)[py as usize])) as i64);
+                        for px in (0)..(pw) {
+                            if py_bool(&(((((r_pentomino)[py as usize])[px as usize]) == (1)))) {
+                                ((grid)[((((gy) + (py))) % (h)) as usize])[((((gx) + (px))) % (w)) as usize] = 1;
+                            }
+                        }
+                    }
+                } else {
+                    let mut ph = (py_len(&(lwss)) as i64);
+                    for py in (0)..(ph) {
+                        let mut pw = (py_len(&((lwss)[py as usize])) as i64);
+                        for px in (0)..(pw) {
+                            if py_bool(&(((((lwss)[py as usize])[px as usize]) == (1)))) {
+                                ((grid)[((((gy) + (py))) % (h)) as usize])[((((gx) + (px))) % (w)) as usize] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+            __pytra_i_2 += (22);
+        }
+        __pytra_i_1 += (18);
     }
     let mut frames: Vec<Vec<u8>> = vec![];
     for _ in (0)..(steps) {

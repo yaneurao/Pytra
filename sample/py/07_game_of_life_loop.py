@@ -53,11 +53,62 @@ def run_07_game_of_life_loop() -> None:
 
     start = perf_counter()
     grid: list[list[int]] = []
-    for y in range(h):
+    for _ in range(h):
         row: list[int] = []
-        for x in range(w):
-            row.append(1 if ((x * 17 + y * 31 + 13) % 11) < 3 else 0)
+        for _ in range(w):
+            row.append(0)
         grid.append(row)
+
+    # 疎なノイズを敷いて、全体が早期に固定化しにくい土台を作る。
+    # 大きな整数リテラルを使わない式にして、各トランスパイラで同一に扱えるようにする。
+    for y in range(h):
+        for x in range(w):
+            noise = (x * 37 + y * 73 + (x * y) % 19 + (x + y) % 11) % 97
+            if noise < 3:
+                grid[y][x] = 1
+
+    # 代表的な長寿命パターンを複数配置する。
+    glider = [
+        [0, 1, 0],
+        [0, 0, 1],
+        [1, 1, 1],
+    ]
+    r_pentomino = [
+        [0, 1, 1],
+        [1, 1, 0],
+        [0, 1, 0],
+    ]
+    lwss = [
+        [0, 1, 1, 1, 1],
+        [1, 0, 0, 0, 1],
+        [0, 0, 0, 0, 1],
+        [1, 0, 0, 1, 0],
+    ]
+
+    for gy in range(8, h - 8, 18):
+        for gx in range(8, w - 8, 22):
+            kind = (gx * 7 + gy * 11) % 3
+            if kind == 0:
+                ph = len(glider)
+                for py in range(ph):
+                    pw = len(glider[py])
+                    for px in range(pw):
+                        if glider[py][px] == 1:
+                            grid[(gy + py) % h][(gx + px) % w] = 1
+            elif kind == 1:
+                ph = len(r_pentomino)
+                for py in range(ph):
+                    pw = len(r_pentomino[py])
+                    for px in range(pw):
+                        if r_pentomino[py][px] == 1:
+                            grid[(gy + py) % h][(gx + px) % w] = 1
+            else:
+                ph = len(lwss)
+                for py in range(ph):
+                    pw = len(lwss[py])
+                    for px in range(pw):
+                        if lwss[py][px] == 1:
+                            grid[(gy + py) % h][(gx + px) % w] = 1
 
     frames: list[bytes] = []
     for _ in range(steps):

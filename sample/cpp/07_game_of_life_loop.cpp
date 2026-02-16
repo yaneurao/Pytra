@@ -131,25 +131,134 @@ void run_07_game_of_life_loop()
     auto __pytra_range_stop_26 = h;
     auto __pytra_range_step_27 = 1;
     if (__pytra_range_step_27 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto y = __pytra_range_start_25; (__pytra_range_step_27 > 0) ? (y < __pytra_range_stop_26) : (y > __pytra_range_stop_26); y += __pytra_range_step_27)
+    for (auto _ = __pytra_range_start_25; (__pytra_range_step_27 > 0) ? (_ < __pytra_range_stop_26) : (_ > __pytra_range_stop_26); _ += __pytra_range_step_27)
     {
         vector<long long> row = {};
         auto __pytra_range_start_28 = 0;
         auto __pytra_range_stop_29 = w;
         auto __pytra_range_step_30 = 1;
         if (__pytra_range_step_30 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-        for (auto x = __pytra_range_start_28; (__pytra_range_step_30 > 0) ? (x < __pytra_range_stop_29) : (x > __pytra_range_stop_29); x += __pytra_range_step_30)
+        for (auto _ = __pytra_range_start_28; (__pytra_range_step_30 > 0) ? (_ < __pytra_range_stop_29) : (_ > __pytra_range_stop_29); _ += __pytra_range_step_30)
         {
-            row.push_back(((((((x * 17) + (y * 31)) + 13) % 11) < 3) ? 1 : 0));
+            row.push_back(0);
         }
         grid.push_back(row);
     }
-    vector<vector<uint8_t>> frames = {};
     auto __pytra_range_start_31 = 0;
-    auto __pytra_range_stop_32 = steps;
+    auto __pytra_range_stop_32 = h;
     auto __pytra_range_step_33 = 1;
     if (__pytra_range_step_33 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto _ = __pytra_range_start_31; (__pytra_range_step_33 > 0) ? (_ < __pytra_range_stop_32) : (_ > __pytra_range_stop_32); _ += __pytra_range_step_33)
+    for (auto y = __pytra_range_start_31; (__pytra_range_step_33 > 0) ? (y < __pytra_range_stop_32) : (y > __pytra_range_stop_32); y += __pytra_range_step_33)
+    {
+        auto __pytra_range_start_34 = 0;
+        auto __pytra_range_stop_35 = w;
+        auto __pytra_range_step_36 = 1;
+        if (__pytra_range_step_36 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_34; (__pytra_range_step_36 > 0) ? (x < __pytra_range_stop_35) : (x > __pytra_range_stop_35); x += __pytra_range_step_36)
+        {
+            auto noise = (((((x * 37) + (y * 73)) + ((x * y) % 19)) + ((x + y) % 11)) % 97);
+            if ((noise < 3))
+            {
+                grid[y][x] = 1;
+            }
+        }
+    }
+    vector<vector<long long>> glider = {{0, 1, 0}, {0, 0, 1}, {1, 1, 1}};
+    vector<vector<long long>> r_pentomino = {{0, 1, 1}, {1, 1, 0}, {0, 1, 0}};
+    vector<vector<long long>> lwss = {{0, 1, 1, 1, 1}, {1, 0, 0, 0, 1}, {0, 0, 0, 0, 1}, {1, 0, 0, 1, 0}};
+    auto __pytra_range_start_37 = 8;
+    auto __pytra_range_stop_38 = (h - 8);
+    auto __pytra_range_step_39 = 18;
+    if (__pytra_range_step_39 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto gy = __pytra_range_start_37; (__pytra_range_step_39 > 0) ? (gy < __pytra_range_stop_38) : (gy > __pytra_range_stop_38); gy += __pytra_range_step_39)
+    {
+        auto __pytra_range_start_40 = 8;
+        auto __pytra_range_stop_41 = (w - 8);
+        auto __pytra_range_step_42 = 22;
+        if (__pytra_range_step_42 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto gx = __pytra_range_start_40; (__pytra_range_step_42 > 0) ? (gx < __pytra_range_stop_41) : (gx > __pytra_range_stop_41); gx += __pytra_range_step_42)
+        {
+            long long kind = (((gx * 7) + (gy * 11)) % 3);
+            if ((kind == 0))
+            {
+                size_t ph = py_len(glider);
+                auto __pytra_range_start_43 = 0;
+                auto __pytra_range_stop_44 = ph;
+                auto __pytra_range_step_45 = 1;
+                if (__pytra_range_step_45 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                for (auto py = __pytra_range_start_43; (__pytra_range_step_45 > 0) ? (py < __pytra_range_stop_44) : (py > __pytra_range_stop_44); py += __pytra_range_step_45)
+                {
+                    size_t pw = py_len(glider[py]);
+                    auto __pytra_range_start_46 = 0;
+                    auto __pytra_range_stop_47 = pw;
+                    auto __pytra_range_step_48 = 1;
+                    if (__pytra_range_step_48 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                    for (auto px = __pytra_range_start_46; (__pytra_range_step_48 > 0) ? (px < __pytra_range_stop_47) : (px > __pytra_range_stop_47); px += __pytra_range_step_48)
+                    {
+                        if ((glider[py][px] == 1))
+                        {
+                            grid[((gy + py) % h)][((gx + px) % w)] = 1;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if ((kind == 1))
+                {
+                    size_t ph = py_len(r_pentomino);
+                    auto __pytra_range_start_49 = 0;
+                    auto __pytra_range_stop_50 = ph;
+                    auto __pytra_range_step_51 = 1;
+                    if (__pytra_range_step_51 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                    for (auto py = __pytra_range_start_49; (__pytra_range_step_51 > 0) ? (py < __pytra_range_stop_50) : (py > __pytra_range_stop_50); py += __pytra_range_step_51)
+                    {
+                        size_t pw = py_len(r_pentomino[py]);
+                        auto __pytra_range_start_52 = 0;
+                        auto __pytra_range_stop_53 = pw;
+                        auto __pytra_range_step_54 = 1;
+                        if (__pytra_range_step_54 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                        for (auto px = __pytra_range_start_52; (__pytra_range_step_54 > 0) ? (px < __pytra_range_stop_53) : (px > __pytra_range_stop_53); px += __pytra_range_step_54)
+                        {
+                            if ((r_pentomino[py][px] == 1))
+                            {
+                                grid[((gy + py) % h)][((gx + px) % w)] = 1;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    size_t ph = py_len(lwss);
+                    auto __pytra_range_start_55 = 0;
+                    auto __pytra_range_stop_56 = ph;
+                    auto __pytra_range_step_57 = 1;
+                    if (__pytra_range_step_57 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                    for (auto py = __pytra_range_start_55; (__pytra_range_step_57 > 0) ? (py < __pytra_range_stop_56) : (py > __pytra_range_stop_56); py += __pytra_range_step_57)
+                    {
+                        size_t pw = py_len(lwss[py]);
+                        auto __pytra_range_start_58 = 0;
+                        auto __pytra_range_stop_59 = pw;
+                        auto __pytra_range_step_60 = 1;
+                        if (__pytra_range_step_60 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+                        for (auto px = __pytra_range_start_58; (__pytra_range_step_60 > 0) ? (px < __pytra_range_stop_59) : (px > __pytra_range_stop_59); px += __pytra_range_step_60)
+                        {
+                            if ((lwss[py][px] == 1))
+                            {
+                                grid[((gy + py) % h)][((gx + px) % w)] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    vector<vector<uint8_t>> frames = {};
+    auto __pytra_range_start_61 = 0;
+    auto __pytra_range_stop_62 = steps;
+    auto __pytra_range_step_63 = 1;
+    if (__pytra_range_step_63 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+    for (auto _ = __pytra_range_start_61; (__pytra_range_step_63 > 0) ? (_ < __pytra_range_stop_62) : (_ > __pytra_range_stop_62); _ += __pytra_range_step_63)
     {
         frames.push_back(render(grid, w, h, cell));
         grid = next_state(grid, w, h);
