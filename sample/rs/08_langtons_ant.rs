@@ -1,15 +1,15 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn capture(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<u8> {
+fn capture(mut grid: Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<u8> {
     let mut frame = vec![0u8; (((w) * (h))) as usize];
     let mut i = 0;
     for y in (0)..(h) {
         for x in (0)..(w) {
-            (frame)[i as usize] = ((if py_bool(&(((grid)[y as usize])[x as usize])) { 255 } else { 0 })) as u8;
+            (frame)[i as usize] = ((if py_bool(&((((grid)[y as usize]).clone())[x as usize])) { 255 } else { 0 })) as u8;
             i = i + 1;
         }
     }
@@ -36,7 +36,7 @@ fn run_08_langtons_ant() -> () {
     let mut capture_every = 3000;
     let mut frames: Vec<Vec<u8>> = vec![];
     for i in (0)..(steps_total) {
-        if py_bool(&(((((grid)[y as usize])[x as usize]) == (0)))) {
+        if py_bool(&((((((grid)[y as usize]).clone())[x as usize]) == (0)))) {
             d = ((((d) + (1))) % (4));
             ((grid)[y as usize])[x as usize] = 1;
         } else {

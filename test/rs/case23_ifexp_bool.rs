@@ -1,11 +1,11 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{perf_counter, py_in, py_len, py_print, py_slice};
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn pick_25(a: i64, b: i64, flag: bool) -> i64 {
-    let mut c: i64 = (if (flag && ((a) > (b))) { a } else { b });
+fn pick_25(mut a: i64, mut b: i64, mut flag: bool) -> i64 {
+    let mut c: i64 = (if py_bool(&((flag && ((a) > (b))))) { a } else { b });
     return c;
 }
 

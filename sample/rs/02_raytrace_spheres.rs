@@ -1,10 +1,10 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn clamp01(v: f64) -> f64 {
+fn clamp01(mut v: f64) -> f64 {
     if py_bool(&(((v) < (0.0)))) {
         return 0.0;
     }
@@ -14,7 +14,7 @@ fn clamp01(v: f64) -> f64 {
     return v;
 }
 
-fn hit_sphere(ox: f64, oy: f64, oz: f64, dx: f64, dy: f64, dz: f64, cx: f64, cy: f64, cz: f64, r: f64) -> f64 {
+fn hit_sphere(mut ox: f64, mut oy: f64, mut oz: f64, mut dx: f64, mut dy: f64, mut dz: f64, mut cx: f64, mut cy: f64, mut cz: f64, mut r: f64) -> f64 {
     let mut lx: f64 = ((ox) - (cx));
     let mut ly: f64 = ((oy) - (cy));
     let mut lz: f64 = ((oz) - (cz));
@@ -37,7 +37,7 @@ fn hit_sphere(ox: f64, oy: f64, oz: f64, dx: f64, dy: f64, dz: f64, cx: f64, cy:
     return (-1.0);
 }
 
-fn render(width: i64, height: i64) -> Vec<u8> {
+fn render(mut width: i64, mut height: i64) -> Vec<u8> {
     let mut pixels: Vec<u8> = Vec::<u8>::new();
     let mut ox: f64 = 0.0;
     let mut oy: f64 = 0.0;

@@ -1,10 +1,10 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn render_julia(width: i64, height: i64, max_iter: i64, cx: f64, cy: f64) -> Vec<u8> {
+fn render_julia(mut width: i64, mut height: i64, mut max_iter: i64, mut cx: f64, mut cy: f64) -> Vec<u8> {
     let mut pixels: Vec<u8> = Vec::<u8>::new();
     for y in (0)..(height) {
         let mut zy0: f64 = (((-1.2)) + (((2.4) * (((( y ) as f64) / (( ((height) - (1)) ) as f64))))));

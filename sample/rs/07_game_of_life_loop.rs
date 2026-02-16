@@ -1,10 +1,10 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn next_state(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
+fn next_state(mut grid: Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<Vec<i64>> {
     let mut nxt: Vec<Vec<i64>> = vec![];
     for y in (0)..(h) {
         let mut row: Vec<i64> = vec![];
@@ -15,11 +15,11 @@ fn next_state(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
                     if py_bool(&((((dx) != (0)) || ((dy) != (0))))) {
                         let mut nx = ((((((x) + (dx))) + (w))) % (w));
                         let mut ny = ((((((y) + (dy))) + (h))) % (h));
-                        cnt = cnt + ((grid)[ny as usize])[nx as usize];
+                        cnt = cnt + (((grid)[ny as usize]).clone())[nx as usize];
                     }
                 }
             }
-            let mut alive = ((grid)[y as usize])[x as usize];
+            let mut alive = (((grid)[y as usize]).clone())[x as usize];
             if py_bool(&((((alive) == (1)) && (((cnt) == (2)) || ((cnt) == (3)))))) {
                 row.push(1);
             } else {
@@ -35,13 +35,13 @@ fn next_state(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
     return nxt;
 }
 
-fn render(grid: Vec<Vec<i64>>, w: i64, h: i64, cell: i64) -> Vec<u8> {
+fn render(mut grid: Vec<Vec<i64>>, mut w: i64, mut h: i64, mut cell: i64) -> Vec<u8> {
     let mut width = ((w) * (cell));
     let mut height = ((h) * (cell));
     let mut frame = vec![0u8; (((width) * (height))) as usize];
     for y in (0)..(h) {
         for x in (0)..(w) {
-            let mut v = (if py_bool(&(((grid)[y as usize])[x as usize])) { 255 } else { 0 });
+            let mut v = (if py_bool(&((((grid)[y as usize]).clone())[x as usize])) { 255 } else { 0 });
             for yy in (0)..(cell) {
                 let mut base = ((((((((y) * (cell))) + (yy))) * (width))) + (((x) * (cell))));
                 for xx in (0)..(cell) {

@@ -170,6 +170,20 @@ pub fn py_bool<T: PyBool>(v: &T) -> bool {
     v.py_bool()
 }
 
+pub fn py_isdigit(v: &str) -> bool {
+    if v.is_empty() {
+        return false;
+    }
+    v.chars().all(|c| c.is_ascii_digit())
+}
+
+pub fn py_isalpha(v: &str) -> bool {
+    if v.is_empty() {
+        return false;
+    }
+    v.chars().all(|c| c.is_ascii_alphabetic())
+}
+
 pub fn py_print<T: PyStringify>(v: T) {
     println!("{}", v.py_stringify());
 }

@@ -179,9 +179,14 @@ class RustTranspiler(BaseTranspiler):
         impl_lines.extend(self._indent_block(ctor_lines))
         own_method_names = {m.name for m in methods}
         inherited_methods = [m for m in base_methods if m.name not in own_method_names]
-        for method in methods + inherited_methods:
-            impl_lines.append("")
-            impl_lines.extend(self._indent_block(self._transpile_method(method).splitlines()))
+        prev_class = self.current_class_name
+        self.current_class_name = cls.name
+        try:
+            for method in methods + inherited_methods:
+                impl_lines.append("")
+                impl_lines.extend(self._indent_block(self._transpile_method(method).splitlines()))
+        finally:
+            self.current_class_name = prev_class
         impl_lines.append("}")
         return "\n".join(struct_lines + [""] + impl_lines)
 
@@ -243,8 +248,7 @@ class RustTranspiler(BaseTranspiler):
         """クラスメソッドを Rust `impl` メソッドへ変換する。"""
         if len(fn.args.args) == 0 or fn.args.args[0].arg != "self":
             raise TranspileError("method must have self as first argument")
-        mutates_self = self._method_mutates_self(fn)
-        self_param = "&mut self" if mutates_self else "&self"
+        self_param = "&mut self"
         params: list[str] = [self_param]
         declared = {"self"}
         type_env: dict[str, str] = {}
@@ -252,7 +256,7 @@ class RustTranspiler(BaseTranspiler):
             if arg.annotation is None:
                 raise TranspileError(f"method '{fn.name}' arg '{arg.arg}' requires annotation")
             ty = self._map_annotation(arg.annotation)
-            params.append(f"{self._ident(arg.arg)}: {ty}")
+            params.append(f"mut {self._ident(arg.arg)}: {ty}")
             declared.add(arg.arg)
             type_env[arg.arg] = ty
         ret = "()" if fn.returns is None else self._map_annotation(fn.returns)
@@ -292,7 +296,7 @@ class RustTranspiler(BaseTranspiler):
             if arg.annotation is None:
                 raise TranspileError(f"function '{fn.name}' arg '{arg.arg}' requires annotation")
             rust_type = self._map_annotation(arg.annotation)
-            params.append(f"{self._ident(arg.arg)}: {rust_type}")
+            params.append(f"mut {self._ident(arg.arg)}: {rust_type}")
             declared.add(arg.arg)
             type_env[arg.arg] = rust_type
 
@@ -390,11 +394,16 @@ class RustTranspiler(BaseTranspiler):
                         out.append(f"{self.transpile_expr(target)} = {self.transpile_expr(stmt.value)};")
                         continue
                     if isinstance(target, ast.Subscript):
-                        target_expr = self.transpile_expr(target)
                         rhs = self.transpile_expr(stmt.value)
-                        if self._is_u8_subscript_target(target):
+                        if self._is_hashmap_subscript_target(target):
+                            base_expr = self.transpile_expr(target.value)
+                            key_expr = self.transpile_expr(target.slice)
+                            out.append(f"{base_expr}.insert({key_expr}, {rhs});")
+                        elif self._is_u8_subscript_target(target):
+                            target_expr = self._transpile_subscript_lvalue(target)
                             out.append(f"{target_expr} = ({rhs}) as u8;")
                         else:
+                            target_expr = self._transpile_subscript_lvalue(target)
                             out.append(f"{target_expr} = {rhs};")
                         continue
                     raise TranspileError("only simple assignment is supported")
@@ -421,7 +430,7 @@ class RustTranspiler(BaseTranspiler):
                     out.append(f"{target_expr} = {target_expr} {op} {self.transpile_expr(stmt.value)};")
                     continue
                 if isinstance(stmt.target, ast.Subscript):
-                    target_expr = self.transpile_expr(stmt.target)
+                    target_expr = self._transpile_subscript_lvalue(stmt.target)
                     rhs = self.transpile_expr(stmt.value)
                     if self._is_u8_subscript_target(stmt.target):
                         out.append(f"{target_expr} = ({target_expr} {op} {rhs}) as u8;")
@@ -672,7 +681,18 @@ class RustTranspiler(BaseTranspiler):
                 end_expr = "None" if expr.slice.upper is None else f"Some({self.transpile_expr(expr.slice.upper)})"
                 return f"py_slice(&({value_expr}), {start_expr}, {end_expr})"
             index_expr = self.transpile_expr(expr.slice)
-            return f"({value_expr})[{index_expr} as usize]"
+            base_ty = self._expr_type(expr.value)
+            if base_ty is not None and base_ty.startswith("std::collections::HashMap<"):
+                read_expr = f"({value_expr})[&({index_expr})]"
+                val_ty = self._expr_type(expr)
+                if isinstance(expr.ctx, ast.Load) and val_ty is not None and not self._is_copy_type(val_ty):
+                    return f"({read_expr}).clone()"
+                return read_expr
+            read_expr = f"({value_expr})[{index_expr} as usize]"
+            val_ty = self._expr_type(expr)
+            if isinstance(expr.ctx, ast.Load) and val_ty is not None and not self._is_copy_type(val_ty):
+                return f"({read_expr}).clone()"
+            return read_expr
         if isinstance(expr, ast.ListComp):
             return self._transpile_list_comp(expr)
         raise TranspileError(f"unsupported expression: {type(expr).__name__}")
@@ -686,7 +706,8 @@ class RustTranspiler(BaseTranspiler):
         if isinstance(call.func, ast.Name):
             fn = call.func.id
             if fn in self.class_names:
-                return f"{fn}::new({', '.join(args)})"
+                call_args = [self._prepare_call_arg(node, arg) for node, arg in zip(arg_nodes, args)]
+                return f"{fn}::new({', '.join(call_args)})"
             if fn == "bytearray":
                 if len(args) == 0:
                     return "Vec::<u8>::new()"
@@ -713,6 +734,8 @@ class RustTranspiler(BaseTranspiler):
                 return f"(({args[0]}) as f64)"
             if fn == "str" and len(args) == 1:
                 return f"format!(\"{{}}\", {args[0]})"
+            if fn == "RuntimeError" and len(args) == 1:
+                return args[0]
             if fn == "ord" and len(args) == 1:
                 return f"(({args[0]}).chars().next().unwrap() as i64)"
             if fn == "save_gif":
@@ -750,6 +773,10 @@ class RustTranspiler(BaseTranspiler):
                 return f"{obj}.push({val})"
             if method == "pop" and len(args) == 0:
                 return f"{obj}.pop().unwrap()"
+            if method == "isdigit" and len(args) == 0:
+                return f"py_isdigit(&({obj}))"
+            if method == "isalpha" and len(args) == 0:
+                return f"py_isalpha(&({obj}))"
             return f"{obj}.{self._ident(method)}({', '.join(args)})"
         raise TranspileError("only direct calls are supported")
 
@@ -940,6 +967,12 @@ class RustTranspiler(BaseTranspiler):
                 return None
             return self.type_env_stack[-1].get(expr.id)
         if isinstance(expr, ast.Attribute):
+            if isinstance(expr.value, ast.Name) and expr.value.id == "self":
+                return self._field_type_of_current_class(expr.attr)
+            if isinstance(expr.value, ast.Name) and len(self.type_env_stack) > 0:
+                base_ty = self.type_env_stack[-1].get(expr.value.id)
+                if base_ty is not None:
+                    return self.class_field_types.get(base_ty, {}).get(expr.attr)
             return None
         if isinstance(expr, ast.Subscript):
             base_ty = self._expr_type(expr.value)
@@ -1019,6 +1052,32 @@ class RustTranspiler(BaseTranspiler):
         ty = self._expr_type(base)
         return ty == "Vec<u8>"
 
+    def _is_hashmap_subscript_target(self, sub: ast.Subscript) -> bool:
+        """添字代入先が HashMap かを推定する。"""
+        base = sub.value
+        while isinstance(base, ast.Subscript):
+            base = base.value
+        ty = self._expr_type(base)
+        return ty is not None and ty.startswith("std::collections::HashMap<")
+
+    def _is_copy_type(self, rust_type: str) -> bool:
+        """Rust の Copy 扱いにできるプリミティブ型かを返す。"""
+        return rust_type in {"bool", "i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8", "f64", "f32", "()"}
+
+    def _transpile_subscript_lvalue(self, sub: ast.Subscript) -> str:
+        """添字代入左辺を clone なしで Rust の可変参照式へ変換する。"""
+        if isinstance(sub.slice, ast.Slice):
+            raise TranspileError("slice assignment is not supported")
+        index_expr = self.transpile_expr(sub.slice)
+        if isinstance(sub.value, ast.Subscript):
+            value_expr = self._transpile_subscript_lvalue(sub.value)
+        else:
+            value_expr = self.transpile_expr(sub.value)
+        base_ty = self._expr_type(sub.value)
+        if base_ty is not None and base_ty.startswith("std::collections::HashMap<"):
+            return f"({value_expr})[&({index_expr})]"
+        return f"({value_expr})[{index_expr} as usize]"
+
 def _rust_raw_string_literal(text: str) -> str:
     """任意テキストを Rust の raw string literal へ変換する。"""
     for n in range(1, 32):
@@ -1072,7 +1131,7 @@ def transpile_file_native(input_path: Path, output_path: Path) -> None:
     rust = (
         f'#[path = "{runtime_rel}"]\n'
         "mod py_runtime;\n"
-        "use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};\n\n"
+        "use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};\n\n"
         + rust_body
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,10 +1,10 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
-fn escape_count(cx: f64, cy: f64, max_iter: i64) -> i64 {
+fn escape_count(mut cx: f64, mut cy: f64, mut max_iter: i64) -> i64 {
     let mut x: f64 = 0.0;
     let mut y: f64 = 0.0;
     for i in (0)..(max_iter) {
@@ -19,7 +19,7 @@ fn escape_count(cx: f64, cy: f64, max_iter: i64) -> i64 {
     return max_iter;
 }
 
-fn color_map(iter_count: i64, max_iter: i64) -> (i64, i64, i64) {
+fn color_map(mut iter_count: i64, mut max_iter: i64) -> (i64, i64, i64) {
     if py_bool(&(((iter_count) >= (max_iter)))) {
         return (0, 0, 0);
     }
@@ -30,7 +30,7 @@ fn color_map(iter_count: i64, max_iter: i64) -> (i64, i64, i64) {
     return (r, g, b);
 }
 
-fn render_mandelbrot(width: i64, height: i64, max_iter: i64, x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> Vec<u8> {
+fn render_mandelbrot(mut width: i64, mut height: i64, mut max_iter: i64, mut x_min: f64, mut x_max: f64, mut y_min: f64, mut y_max: f64) -> Vec<u8> {
     let mut pixels: Vec<u8> = Vec::<u8>::new();
     for y in (0)..(height) {
         let mut py: f64 = ((y_min) + (((((y_max) - (y_min))) * (((( y ) as f64) / (( ((height) - (1)) ) as f64))))));

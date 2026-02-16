@@ -1,6 +1,6 @@
 #[path = "../../src/rs_module/py_runtime.rs"]
 mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use py_runtime::{math_cos, math_exp, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
 
 // このファイルは自動生成です（native Rust mode）。
 
@@ -26,7 +26,7 @@ fn palette() -> Vec<u8> {
     return (p).clone();
 }
 
-fn scene(x: f64, y: f64, light_x: f64, light_y: f64) -> i64 {
+fn scene(mut x: f64, mut y: f64, mut light_x: f64, mut light_y: f64) -> i64 {
     let mut x1 = ((x) + (0.45));
     let mut y1 = ((y) + (0.2));
     let mut x2 = ((x) - (0.35));
