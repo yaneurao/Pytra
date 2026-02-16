@@ -1,3 +1,4 @@
+// fallback: unsupported annotation: Subscript(value=Name(id='list', ctx=Load()), slice=Name(id='bytes', ctx=Load()), ctx=Load())
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: 10_plasma_effect.py
 

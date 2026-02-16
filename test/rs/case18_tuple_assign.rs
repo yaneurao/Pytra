@@ -1,3 +1,4 @@
+// fallback: only simple assignment is supported
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: case18_tuple_assign.py
 

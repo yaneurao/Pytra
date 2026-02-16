@@ -1,3 +1,4 @@
+// fallback: class is not supported in native Rust mode
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: case27_class_instance.py
 

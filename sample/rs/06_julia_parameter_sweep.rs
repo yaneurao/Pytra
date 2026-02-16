@@ -1,3 +1,4 @@
+// fallback: function has unsupported annotation in native Rust mode: render_frame
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: 06_julia_parameter_sweep.py
 

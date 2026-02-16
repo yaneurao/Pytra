@@ -1,3 +1,4 @@
+// fallback: string annotation is not supported in native Rust mode: has_key_23
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: case21_dict_in.py
 

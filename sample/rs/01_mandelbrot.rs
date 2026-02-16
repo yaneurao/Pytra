@@ -1,3 +1,4 @@
+// fallback: function has unsupported annotation in native Rust mode: escape_count
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: 01_mandelbrot.py
 

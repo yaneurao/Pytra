@@ -1,3 +1,4 @@
+// fallback: only direct calls are supported
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: 09_fire_simulation.py
 

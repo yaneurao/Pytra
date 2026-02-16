@@ -1,3 +1,4 @@
+// fallback: unsupported statement: Try
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: case19_try_raise.py
 

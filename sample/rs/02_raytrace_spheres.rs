@@ -1,3 +1,4 @@
+// fallback: function has unsupported annotation in native Rust mode: clamp01
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: 02_raytrace_spheres.py
 

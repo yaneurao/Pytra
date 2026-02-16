@@ -1,3 +1,4 @@
+// fallback: string annotation is not supported in native Rust mode: greet
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: case06_string.py
 

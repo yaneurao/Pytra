@@ -1,3 +1,4 @@
+// fallback: unsupported annotation: Subscript(value=Name(id='list', ctx=Load()), slice=Name(id='int', ctx=Load()), ctx=Load())
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: case22_comprehension.py
 

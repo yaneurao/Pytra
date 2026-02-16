@@ -1,3 +1,4 @@
+// fallback: unsupported annotation: Subscript(value=Name(id='list', ctx=Load()), slice=Subscript(value=Name(id='list', ctx=Load()), slice=Name(id='int', ctx=Load()), ctx=Load()), ctx=Load())
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: 13_maze_generation_steps.py
 

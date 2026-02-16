@@ -1,3 +1,4 @@
+// fallback: function has unsupported annotation in native Rust mode: render_julia
 // このファイルは自動生成です。編集しないでください。
 // 入力 Python: 03_julia_set.py
 
