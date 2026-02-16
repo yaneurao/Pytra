@@ -4,7 +4,9 @@
 #ifndef PYCS_CPP_MODULE_PNG_H
 #define PYCS_CPP_MODULE_PNG_H
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace pycs::cpp_module::png {
 
@@ -15,7 +17,7 @@ namespace pycs::cpp_module::png {
  * @param height 画像高さ（pixel）。
  * @param pixels 長さ width*height*3 の RGB バイト列。
  */
-void write_rgb_png(const std::string& path, int width, int height, const std::string& pixels);
+void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels);
 
 }  // namespace pycs::cpp_module::png
 

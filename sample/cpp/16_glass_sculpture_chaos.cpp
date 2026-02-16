@@ -118,9 +118,9 @@ double sphere_intersect(double ox, double oy, double oz, double dx, double dy, d
     return (-1.0);
 }
 
-string palette_332()
+vector<uint8_t> palette_332()
 {
-    string p = py_bytearray((256 * 3));
+    vector<uint8_t> p = py_bytearray((256 * 3));
     auto __pytra_range_start_1 = 0;
     auto __pytra_range_stop_2 = 256;
     auto __pytra_range_step_3 = 1;
@@ -145,7 +145,7 @@ long long quantize_332(double r, double g, double b)
     return ((((rr >> 5) << 5) + ((gg >> 5) << 2)) + (bb >> 6));
 }
 
-string render_frame(long long width, long long height, long long frame_id, long long frames_n)
+vector<uint8_t> render_frame(long long width, long long height, long long frame_id, long long frames_n)
 {
     double t = py_div(frame_id, frames_n);
     double tphase = ((2.0 * pycs::cpp_module::math::pi) * t);
@@ -181,7 +181,7 @@ string render_frame(long long width, long long height, long long frame_id, long 
     double lx = (2.4 * pycs::cpp_module::math::cos((tphase * 1.8)));
     double ly = (1.8 + (0.8 * pycs::cpp_module::math::sin((tphase * 1.2))));
     double lz = (2.4 * pycs::cpp_module::math::sin((tphase * 1.8)));
-    string frame = py_bytearray((width * height));
+    vector<uint8_t> frame = py_bytearray((width * height));
     double aspect = py_div(width, height);
     double fov = 1.25;
     long long i = 0;
@@ -390,7 +390,7 @@ void run_16_glass_sculpture_chaos()
     long long frames_n = 72;
     string out_path = "sample/out/16_glass_sculpture_chaos.gif";
     auto start = perf_counter();
-    vector<string> frames = {};
+    vector<vector<uint8_t>> frames = {};
     auto __pytra_range_start_23 = 0;
     auto __pytra_range_stop_24 = frames_n;
     auto __pytra_range_step_25 = 1;

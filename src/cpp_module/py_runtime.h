@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <any>
 #include <cctype>
+#include <cstdint>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -44,6 +45,10 @@ std::string py_to_string(const pycs::cpp_module::ast::PyPtr<T>&) {
 
 inline std::string py_to_string(const pycs::cpp_module::Path& value) {
     return pycs::cpp_module::str(value);
+}
+
+inline std::string py_to_string(const std::vector<std::uint8_t>& value) {
+    return std::string(value.begin(), value.end());
 }
 
 inline std::string py_to_string(const std::any& value) {
@@ -179,6 +184,10 @@ inline void py_write(std::ofstream& fs, const std::string& data) {
     fs.write(data.data(), static_cast<std::streamsize>(data.size()));
 }
 
+inline void py_write(std::ofstream& fs, const std::vector<std::uint8_t>& data) {
+    fs.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
+}
+
 template <typename T>
 inline void py_write(std::ofstream& fs, const T& data) {
     auto s = py_to_string(data);
@@ -302,48 +311,52 @@ inline std::string py_slice(
     );
 }
 
-inline std::string py_bytearray() {
-    return std::string();
+inline std::vector<std::uint8_t> py_bytearray() {
+    return std::vector<std::uint8_t>();
 }
 
-inline std::string py_bytearray(int n) {
+inline std::vector<std::uint8_t> py_bytearray(int n) {
     if (n < 0) {
         throw std::runtime_error("negative count");
     }
-    return std::string(static_cast<std::size_t>(n), '\0');
+    return std::vector<std::uint8_t>(static_cast<std::size_t>(n), 0);
 }
 
-inline std::string py_bytes(const std::string& s) {
-    return s;
+inline std::vector<std::uint8_t> py_bytes(const std::string& s) {
+    return std::vector<std::uint8_t>(s.begin(), s.end());
 }
 
-inline std::string py_bytes() {
-    return std::string();
+inline std::vector<std::uint8_t> py_bytes(const std::vector<std::uint8_t>& v) {
+    return v;
 }
 
-inline std::string py_bytes(int n) {
+inline std::vector<std::uint8_t> py_bytes() {
+    return std::vector<std::uint8_t>();
+}
+
+inline std::vector<std::uint8_t> py_bytes(int n) {
     if (n < 0) {
         throw std::runtime_error("negative count");
     }
-    return std::string(static_cast<std::size_t>(n), '\0');
+    return std::vector<std::uint8_t>(static_cast<std::size_t>(n), 0);
 }
 
 template <typename T>
-std::string py_bytes(const std::vector<T>& v) {
-    std::string out;
+std::vector<std::uint8_t> py_bytes(const std::vector<T>& v) {
+    std::vector<std::uint8_t> out;
     out.reserve(v.size());
     for (const auto& item : v) {
-        out.push_back(static_cast<char>(item));
+        out.push_back(static_cast<std::uint8_t>(item));
     }
     return out;
 }
 
 template <typename T>
-std::string py_bytes(std::initializer_list<T> v) {
-    std::string out;
+std::vector<std::uint8_t> py_bytes(std::initializer_list<T> v) {
+    std::vector<std::uint8_t> out;
     out.reserve(v.size());
     for (const auto& item : v) {
-        out.push_back(static_cast<char>(item));
+        out.push_back(static_cast<std::uint8_t>(item));
     }
     return out;
 }

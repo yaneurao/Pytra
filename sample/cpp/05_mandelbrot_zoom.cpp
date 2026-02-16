@@ -20,9 +20,9 @@
 using namespace std;
 using namespace pycs::gc;
 
-string render_frame(long long width, long long height, double center_x, double center_y, double scale, long long max_iter)
+vector<uint8_t> render_frame(long long width, long long height, double center_x, double center_y, double scale, long long max_iter)
 {
-    string frame = py_bytearray((width * height));
+    vector<uint8_t> frame = py_bytearray((width * height));
     long long idx = 0;
     auto __pytra_range_start_1 = 0;
     auto __pytra_range_stop_2 = height;
@@ -72,7 +72,7 @@ void run_05_mandelbrot_zoom()
     double zoom_per_frame = 0.93;
     string out_path = "sample/out/05_mandelbrot_zoom.gif";
     auto start = perf_counter();
-    vector<string> frames = {};
+    vector<vector<uint8_t>> frames = {};
     auto scale = base_scale;
     auto __pytra_range_start_7 = 0;
     auto __pytra_range_stop_8 = frame_count;

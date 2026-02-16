@@ -21,9 +21,9 @@
 using namespace std;
 using namespace pycs::gc;
 
-string julia_palette()
+vector<uint8_t> julia_palette()
 {
-    string palette = py_bytearray((256 * 3));
+    vector<uint8_t> palette = py_bytearray((256 * 3));
     palette[0] = 0;
     palette[1] = 0;
     palette[2] = 0;
@@ -44,9 +44,9 @@ string julia_palette()
     return py_bytes(palette);
 }
 
-string render_frame(long long width, long long height, double cr, double ci, long long max_iter, long long phase)
+vector<uint8_t> render_frame(long long width, long long height, double cr, double ci, long long max_iter, long long phase)
 {
-    string frame = py_bytearray((width * height));
+    vector<uint8_t> frame = py_bytearray((width * height));
     long long idx = 0;
     auto __pytra_range_start_4 = 0;
     auto __pytra_range_stop_5 = height;
@@ -99,7 +99,7 @@ void run_06_julia_parameter_sweep()
     long long max_iter = 180;
     string out_path = "sample/out/06_julia_parameter_sweep.gif";
     auto start = perf_counter();
-    vector<string> frames = {};
+    vector<vector<uint8_t>> frames = {};
     double center_cr = (-0.745);
     double center_ci = 0.186;
     double radius_cr = 0.12;

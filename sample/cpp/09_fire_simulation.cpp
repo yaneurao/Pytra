@@ -20,9 +20,9 @@
 using namespace std;
 using namespace pycs::gc;
 
-string fire_palette()
+vector<uint8_t> fire_palette()
 {
-    string p = py_bytearray();
+    vector<uint8_t> p = py_bytearray();
     auto __pytra_range_start_1 = 0;
     auto __pytra_range_stop_2 = 256;
     auto __pytra_range_step_3 = 1;
@@ -85,7 +85,7 @@ void run_09_fire_simulation()
         }
         heat.push_back(row);
     }
-    vector<string> frames = {};
+    vector<vector<uint8_t>> frames = {};
     auto __pytra_range_start_10 = 0;
     auto __pytra_range_stop_11 = steps;
     auto __pytra_range_step_12 = 1;
@@ -123,7 +123,7 @@ void run_09_fire_simulation()
                 heat[(y - 1)][x] = ((nv > 0) ? nv : 0);
             }
         }
-        string frame = py_bytearray((w * h));
+        vector<uint8_t> frame = py_bytearray((w * h));
         long long i = 0;
         auto __pytra_range_start_22 = 0;
         auto __pytra_range_stop_23 = h;

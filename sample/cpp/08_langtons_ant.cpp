@@ -20,9 +20,9 @@
 using namespace std;
 using namespace pycs::gc;
 
-string capture(const vector<vector<long long>>& grid, long long w, long long h)
+vector<uint8_t> capture(const vector<vector<long long>>& grid, long long w, long long h)
 {
-    string frame = py_bytearray((w * h));
+    vector<uint8_t> frame = py_bytearray((w * h));
     long long i = 0;
     auto __pytra_range_start_1 = 0;
     auto __pytra_range_stop_2 = h;
@@ -72,7 +72,7 @@ void run_08_langtons_ant()
     long long d = 0;
     long long steps_total = 600000;
     long long capture_every = 3000;
-    vector<string> frames = {};
+    vector<vector<uint8_t>> frames = {};
     auto __pytra_range_start_13 = 0;
     auto __pytra_range_stop_14 = steps_total;
     auto __pytra_range_step_15 = 1;

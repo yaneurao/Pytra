@@ -79,11 +79,11 @@ vector<vector<long long>> next_state(const vector<vector<long long>>& grid, long
     return nxt;
 }
 
-string render(const vector<vector<long long>>& grid, long long w, long long h, long long cell)
+vector<uint8_t> render(const vector<vector<long long>>& grid, long long w, long long h, long long cell)
 {
     auto width = (w * cell);
     auto height = (h * cell);
-    string frame = py_bytearray((width * height));
+    vector<uint8_t> frame = py_bytearray((width * height));
     auto __pytra_range_start_13 = 0;
     auto __pytra_range_stop_14 = h;
     auto __pytra_range_step_15 = 1;
@@ -144,7 +144,7 @@ void run_07_game_of_life_loop()
         }
         grid.push_back(row);
     }
-    vector<string> frames = {};
+    vector<vector<uint8_t>> frames = {};
     auto __pytra_range_start_31 = 0;
     auto __pytra_range_stop_32 = steps;
     auto __pytra_range_step_33 = 1;
