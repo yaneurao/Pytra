@@ -149,16 +149,16 @@ impl Parser {
             let mut let_name: String = self.expect("IDENT".to_string()).text;
             self.expect("EQUAL".to_string());
             let mut let_expr_index: i64 = self.parse_expr();
-            return StmtNode::new(("let".to_string()).clone(), (let_name).clone(), let_expr_index);
+            return StmtNode::new("let".to_string(), (let_name).clone(), let_expr_index);
         }
         if py_bool(&(self.r#match("PRINT".to_string()))) {
             let mut print_expr_index: i64 = self.parse_expr();
-            return StmtNode::new(("print".to_string()).clone(), ("".to_string()).clone(), print_expr_index);
+            return StmtNode::new("print".to_string(), "".to_string(), print_expr_index);
         }
         let mut assign_name: String = self.expect("IDENT".to_string()).text;
         self.expect("EQUAL".to_string());
         let mut assign_expr_index: i64 = self.parse_expr();
-        return StmtNode::new(("assign".to_string()).clone(), (assign_name).clone(), assign_expr_index);
+        return StmtNode::new("assign".to_string(), (assign_name).clone(), assign_expr_index);
     }
 
     fn parse_expr(&mut self) -> i64 {
@@ -171,12 +171,12 @@ impl Parser {
         while py_bool(&((!done))) {
             if py_bool(&(self.r#match("PLUS".to_string()))) {
                 let mut right: i64 = self.parse_mul();
-                left = self.add_expr(ExprNode::new(("bin".to_string()).clone(), 0, ("".to_string()).clone(), ("+".to_string()).clone(), left, right));
+                left = self.add_expr(ExprNode::new("bin".to_string(), 0, "".to_string(), "+".to_string(), left, right));
                 continue;
             }
             if py_bool(&(self.r#match("MINUS".to_string()))) {
                 let mut right = self.parse_mul();
-                left = self.add_expr(ExprNode::new(("bin".to_string()).clone(), 0, ("".to_string()).clone(), ("-".to_string()).clone(), left, right));
+                left = self.add_expr(ExprNode::new("bin".to_string(), 0, "".to_string(), "-".to_string(), left, right));
                 continue;
             }
             done = true;
@@ -190,12 +190,12 @@ impl Parser {
         while py_bool(&((!done))) {
             if py_bool(&(self.r#match("STAR".to_string()))) {
                 let mut right: i64 = self.parse_unary();
-                left = self.add_expr(ExprNode::new(("bin".to_string()).clone(), 0, ("".to_string()).clone(), ("*".to_string()).clone(), left, right));
+                left = self.add_expr(ExprNode::new("bin".to_string(), 0, "".to_string(), "*".to_string(), left, right));
                 continue;
             }
             if py_bool(&(self.r#match("SLASH".to_string()))) {
                 let mut right = self.parse_unary();
-                left = self.add_expr(ExprNode::new(("bin".to_string()).clone(), 0, ("".to_string()).clone(), ("/".to_string()).clone(), left, right));
+                left = self.add_expr(ExprNode::new("bin".to_string(), 0, "".to_string(), "/".to_string(), left, right));
                 continue;
             }
             done = true;
@@ -206,7 +206,7 @@ impl Parser {
     fn parse_unary(&mut self) -> i64 {
         if py_bool(&(self.r#match("MINUS".to_string()))) {
             let mut child: i64 = self.parse_unary();
-            return self.add_expr(ExprNode::new(("neg".to_string()).clone(), 0, ("".to_string()).clone(), ("".to_string()).clone(), child, (-1)));
+            return self.add_expr(ExprNode::new("neg".to_string(), 0, "".to_string(), "".to_string(), child, (-1)));
         }
         return self.parse_primary();
     }
@@ -221,11 +221,11 @@ impl Parser {
                 parsed_value = ((((((parsed_value) * (10))) + (((ch).chars().next().unwrap() as i64)))) - ((("0".to_string()).chars().next().unwrap() as i64)));
                 idx = idx + 1;
             }
-            return self.add_expr(ExprNode::new(("lit".to_string()).clone(), parsed_value, ("".to_string()).clone(), ("".to_string()).clone(), (-1), (-1)));
+            return self.add_expr(ExprNode::new("lit".to_string(), parsed_value, "".to_string(), "".to_string(), (-1), (-1)));
         }
         if py_bool(&(self.r#match("IDENT".to_string()))) {
             let mut token_ident: Token = ((self.tokens)[((self.pos) - (1)) as usize]).clone();
-            return self.add_expr(ExprNode::new(("var".to_string()).clone(), 0, (token_ident.text).clone(), ("".to_string()).clone(), (-1), (-1)));
+            return self.add_expr(ExprNode::new("var".to_string(), 0, (token_ident.text).clone(), "".to_string(), (-1), (-1)));
         }
         if py_bool(&(self.r#match("LPAREN".to_string()))) {
             let mut expr_index: i64 = self.parse_expr();
@@ -251,37 +251,37 @@ fn tokenize(lines: &Vec<String>) -> Vec<Token> {
                 continue;
             }
             if py_bool(&(((ch) == ("+".to_string())))) {
-                tokens.push(Token::new(("PLUS".to_string()).clone(), (ch).clone(), i));
+                tokens.push(Token::new("PLUS".to_string(), (ch).clone(), i));
                 i = i + 1;
                 continue;
             }
             if py_bool(&(((ch) == ("-".to_string())))) {
-                tokens.push(Token::new(("MINUS".to_string()).clone(), (ch).clone(), i));
+                tokens.push(Token::new("MINUS".to_string(), (ch).clone(), i));
                 i = i + 1;
                 continue;
             }
             if py_bool(&(((ch) == ("*".to_string())))) {
-                tokens.push(Token::new(("STAR".to_string()).clone(), (ch).clone(), i));
+                tokens.push(Token::new("STAR".to_string(), (ch).clone(), i));
                 i = i + 1;
                 continue;
             }
             if py_bool(&(((ch) == ("/".to_string())))) {
-                tokens.push(Token::new(("SLASH".to_string()).clone(), (ch).clone(), i));
+                tokens.push(Token::new("SLASH".to_string(), (ch).clone(), i));
                 i = i + 1;
                 continue;
             }
             if py_bool(&(((ch) == ("(".to_string())))) {
-                tokens.push(Token::new(("LPAREN".to_string()).clone(), (ch).clone(), i));
+                tokens.push(Token::new("LPAREN".to_string(), (ch).clone(), i));
                 i = i + 1;
                 continue;
             }
             if py_bool(&(((ch) == (")".to_string())))) {
-                tokens.push(Token::new(("RPAREN".to_string()).clone(), (ch).clone(), i));
+                tokens.push(Token::new("RPAREN".to_string(), (ch).clone(), i));
                 i = i + 1;
                 continue;
             }
             if py_bool(&(((ch) == ("=".to_string())))) {
-                tokens.push(Token::new(("EQUAL".to_string()).clone(), (ch).clone(), i));
+                tokens.push(Token::new("EQUAL".to_string(), (ch).clone(), i));
                 i = i + 1;
                 continue;
             }
@@ -291,7 +291,7 @@ fn tokenize(lines: &Vec<String>) -> Vec<Token> {
                     i = i + 1;
                 }
                 let mut text: String = py_slice(&(source), Some(start), Some(i));
-                tokens.push(Token::new(("NUMBER".to_string()).clone(), (text).clone(), start));
+                tokens.push(Token::new("NUMBER".to_string(), (text).clone(), start));
                 continue;
             }
             if py_bool(&((py_isalpha(&(ch)) || ((ch) == ("_".to_string()))))) {
@@ -301,22 +301,22 @@ fn tokenize(lines: &Vec<String>) -> Vec<Token> {
                 }
                 let mut text = py_slice(&(source), Some(start), Some(i));
                 if py_bool(&(((text) == ("let".to_string())))) {
-                    tokens.push(Token::new(("LET".to_string()).clone(), (text).clone(), start));
+                    tokens.push(Token::new("LET".to_string(), (text).clone(), start));
                 } else {
                     if py_bool(&(((text) == ("print".to_string())))) {
-                        tokens.push(Token::new(("PRINT".to_string()).clone(), (text).clone(), start));
+                        tokens.push(Token::new("PRINT".to_string(), (text).clone(), start));
                     } else {
-                        tokens.push(Token::new(("IDENT".to_string()).clone(), (text).clone(), start));
+                        tokens.push(Token::new("IDENT".to_string(), (text).clone(), start));
                     }
                 }
                 continue;
             }
             panic!("{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", "tokenize error at line=".to_string(), format!("{}", line_index)), " pos=".to_string()), format!("{}", i)), " ch=".to_string()), ch));
         }
-        tokens.push(Token::new(("NEWLINE".to_string()).clone(), ("".to_string()).clone(), n));
+        tokens.push(Token::new("NEWLINE".to_string(), "".to_string(), n));
         line_index = line_index + 1;
     }
-    tokens.push(Token::new(("EOF".to_string()).clone(), ("".to_string()).clone(), (py_len(lines) as i64)));
+    tokens.push(Token::new("EOF".to_string(), "".to_string(), (py_len(lines) as i64)));
     return tokens;
 }
 

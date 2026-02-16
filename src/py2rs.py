@@ -905,9 +905,20 @@ class RustTranspiler(BaseTranspiler):
         ty = self._expr_type(node)
         if ty is None:
             return rendered
-        if self._is_heap_like_type(ty):
+        if self._is_heap_like_type(ty) and self._needs_clone_for_call_arg(node):
             return f"({rendered}).clone()"
         return rendered
+
+    def _needs_clone_for_call_arg(self, node: ast.expr) -> bool:
+        """関数呼び出し引数が clone 必須かを返す。
+
+        既に一時オブジェクトとして生成される式（文字列リテラル、f-string、関数戻り値など）は
+        所有権をそのまま渡せるため clone しない。
+        """
+        if isinstance(node, (ast.Constant, ast.JoinedStr, ast.BinOp, ast.Call, ast.List, ast.Tuple, ast.Dict, ast.ListComp)):
+            return False
+        # 変数参照や属性参照、添字参照は既存値の再利用が多いため clone を維持する。
+        return True
 
     def _current_param_borrow_mode(self, name: str) -> str | None:
         """現在の関数コンテキストで、引数名の借用モードを返す。"""

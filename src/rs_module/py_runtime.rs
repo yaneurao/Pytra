@@ -241,6 +241,11 @@ impl<T> PyLen for HashSet<T> {
 
 impl PyLen for String {
     fn py_len(&self) -> usize {
+        // ASCII 前提のコードでは byte 長と文字数が一致するため O(1)。
+        // 非 ASCII を含む場合だけ従来どおり chars() へフォールバックする。
+        if self.is_ascii() {
+            return self.len();
+        }
         self.chars().count()
     }
 }
@@ -292,6 +297,14 @@ impl<T: Clone> PySlice for Vec<T> {
 impl PySlice for String {
     type Output = String;
     fn py_slice(&self, start: Option<i64>, end: Option<i64>) -> Self::Output {
+        // ASCII の場合は byte 境界でそのまま切り出せる。
+        if self.is_ascii() {
+            let bytes = self.as_bytes();
+            let (s, e) = normalize_slice_range(bytes.len() as i64, start, end);
+            return String::from_utf8(bytes[s..e].to_vec()).expect("ascii slice must be valid utf-8");
+        }
+
+        // 非 ASCII は文字境界を維持するため従来実装を使う。
         let chars: Vec<char> = self.chars().collect();
         let (s, e) = normalize_slice_range(chars.len() as i64, start, end);
         chars[s..e].iter().collect()
