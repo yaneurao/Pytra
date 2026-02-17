@@ -66,12 +66,16 @@ def run_06_julia_parameter_sweep() -> None:
     center_ci = 0.186
     radius_cr = 0.12
     radius_ci = 0.10
+    # GitHub上のサムネイルで暗く見えないよう、開始位置と色位相にオフセットを入れる。
+    # 赤みが強い色域から始まるように調整する。
+    start_offset = 20
+    phase_offset = 180
     for i in range(frames_n):
-        t = i / frames_n
+        t = ((i + start_offset) % frames_n) / frames_n
         angle = 2.0 * math.pi * t
         cr = center_cr + radius_cr * math.cos(angle)
         ci = center_ci + radius_ci * math.sin(angle)
-        phase = (i * 5) % 255
+        phase = (phase_offset + i * 5) % 255
         frames.append(render_frame(width, height, cr, ci, max_iter, phase))
 
     save_gif(out_path, width, height, frames, julia_palette(), delay_cs=8, loop=0)

@@ -104,17 +104,19 @@ void run_06_julia_parameter_sweep()
     double center_ci = 0.186;
     double radius_cr = 0.12;
     double radius_ci = 0.1;
+    long long start_offset = 20;
+    long long phase_offset = 180;
     auto __pytra_range_start_10 = 0;
     auto __pytra_range_stop_11 = frames_n;
     auto __pytra_range_step_12 = 1;
     if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
     for (auto i = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (i < __pytra_range_stop_11) : (i > __pytra_range_stop_11); i += __pytra_range_step_12)
     {
-        double t = py_div(i, frames_n);
+        double t = py_div(((i + start_offset) % frames_n), frames_n);
         double angle = ((2.0 * pycs::cpp_module::math::pi) * t);
         auto cr = (center_cr + (radius_cr * pycs::cpp_module::math::cos(angle)));
         auto ci = (center_ci + (radius_ci * pycs::cpp_module::math::sin(angle)));
-        long long phase = ((i * 5) % 255);
+        long long phase = ((phase_offset + (i * 5)) % 255);
         frames.push_back(render_frame(width, height, cr, ci, max_iter, phase));
     }
     pycs::cpp_module::gif::save_gif(out_path, width, height, frames, julia_palette(), 8, 0);

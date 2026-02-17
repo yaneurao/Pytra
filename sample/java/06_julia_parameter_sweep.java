@@ -763,9 +763,13 @@ class pytra_06_julia_parameter_sweep {
         PyRuntime.pySet(palette, 0, 0);
         PyRuntime.pySet(palette, 1, 0);
         PyRuntime.pySet(palette, 2, 0);
+        int __pytra_range_start_1 = PyRuntime.pyToInt(1);
+        int __pytra_range_stop_2 = PyRuntime.pyToInt(256);
+        int __pytra_range_step_3 = PyRuntime.pyToInt(1);
+        if (__pytra_range_step_3 == 0) { throw new RuntimeException("range() step must not be zero"); }
         Object i = null;
-        for (Object __pytra_it_1 : PyRuntime.pyRange(PyRuntime.pyToInt(1), PyRuntime.pyToInt(256), PyRuntime.pyToInt(1))) {
-            i = __pytra_it_1;
+        for (int __pytra_i_4 = __pytra_range_start_1; (__pytra_range_step_3 > 0 && __pytra_i_4 < __pytra_range_stop_2) || (__pytra_range_step_3 < 0 && __pytra_i_4 > __pytra_range_stop_2); __pytra_i_4 += __pytra_range_step_3) {
+            i = __pytra_i_4;
             Object t = PyRuntime.pyDiv(PyRuntime.pySub(i, 1), 254.0);
             Object r = PyRuntime.pyToInt(PyRuntime.pyMul(255.0, PyRuntime.pyMul(PyRuntime.pyMul(PyRuntime.pyMul(PyRuntime.pyMul(9.0, PyRuntime.pySub(1.0, t)), t), t), t)));
             Object g = PyRuntime.pyToInt(PyRuntime.pyMul(255.0, PyRuntime.pyMul(PyRuntime.pyMul(PyRuntime.pyMul(PyRuntime.pyMul(15.0, PyRuntime.pySub(1.0, t)), PyRuntime.pySub(1.0, t)), t), t)));
@@ -779,13 +783,21 @@ class pytra_06_julia_parameter_sweep {
     static Object render_frame(Object width, Object height, Object cr, Object ci, Object max_iter, Object phase) {
         Object frame = PyRuntime.pyBytearray(PyRuntime.pyMul(width, height));
         Object idx = 0;
+        int __pytra_range_start_5 = PyRuntime.pyToInt(0);
+        int __pytra_range_stop_6 = PyRuntime.pyToInt(height);
+        int __pytra_range_step_7 = PyRuntime.pyToInt(1);
+        if (__pytra_range_step_7 == 0) { throw new RuntimeException("range() step must not be zero"); }
         Object y = null;
-        for (Object __pytra_it_2 : PyRuntime.pyRange(PyRuntime.pyToInt(0), PyRuntime.pyToInt(height), PyRuntime.pyToInt(1))) {
-            y = __pytra_it_2;
+        for (int __pytra_i_8 = __pytra_range_start_5; (__pytra_range_step_7 > 0 && __pytra_i_8 < __pytra_range_stop_6) || (__pytra_range_step_7 < 0 && __pytra_i_8 > __pytra_range_stop_6); __pytra_i_8 += __pytra_range_step_7) {
+            y = __pytra_i_8;
             Object zy0 = PyRuntime.pyAdd(PyRuntime.pyNeg(1.2), PyRuntime.pyMul(2.4, PyRuntime.pyDiv(y, PyRuntime.pySub(height, 1))));
+            int __pytra_range_start_9 = PyRuntime.pyToInt(0);
+            int __pytra_range_stop_10 = PyRuntime.pyToInt(width);
+            int __pytra_range_step_11 = PyRuntime.pyToInt(1);
+            if (__pytra_range_step_11 == 0) { throw new RuntimeException("range() step must not be zero"); }
             Object x = null;
-            for (Object __pytra_it_3 : PyRuntime.pyRange(PyRuntime.pyToInt(0), PyRuntime.pyToInt(width), PyRuntime.pyToInt(1))) {
-                x = __pytra_it_3;
+            for (int __pytra_i_12 = __pytra_range_start_9; (__pytra_range_step_11 > 0 && __pytra_i_12 < __pytra_range_stop_10) || (__pytra_range_step_11 < 0 && __pytra_i_12 > __pytra_range_stop_10); __pytra_i_12 += __pytra_range_step_11) {
+                x = __pytra_i_12;
                 Object zx = PyRuntime.pyAdd(PyRuntime.pyNeg(1.8), PyRuntime.pyMul(3.6, PyRuntime.pyDiv(x, PyRuntime.pySub(width, 1))));
                 Object zy = zy0;
                 Object i = 0;
@@ -822,14 +834,20 @@ class pytra_06_julia_parameter_sweep {
         Object center_ci = 0.186;
         Object radius_cr = 0.12;
         Object radius_ci = 0.1;
+        Object start_offset = 20;
+        Object phase_offset = 180;
+        int __pytra_range_start_13 = PyRuntime.pyToInt(0);
+        int __pytra_range_stop_14 = PyRuntime.pyToInt(frames_n);
+        int __pytra_range_step_15 = PyRuntime.pyToInt(1);
+        if (__pytra_range_step_15 == 0) { throw new RuntimeException("range() step must not be zero"); }
         Object i = null;
-        for (Object __pytra_it_4 : PyRuntime.pyRange(PyRuntime.pyToInt(0), PyRuntime.pyToInt(frames_n), PyRuntime.pyToInt(1))) {
-            i = __pytra_it_4;
-            Object t = PyRuntime.pyDiv(i, frames_n);
+        for (int __pytra_i_16 = __pytra_range_start_13; (__pytra_range_step_15 > 0 && __pytra_i_16 < __pytra_range_stop_14) || (__pytra_range_step_15 < 0 && __pytra_i_16 > __pytra_range_stop_14); __pytra_i_16 += __pytra_range_step_15) {
+            i = __pytra_i_16;
+            Object t = PyRuntime.pyDiv(PyRuntime.pyMod(PyRuntime.pyAdd(i, start_offset), frames_n), frames_n);
             Object angle = PyRuntime.pyMul(PyRuntime.pyMul(2.0, PyRuntime.pyMathPi()), t);
             Object cr = PyRuntime.pyAdd(center_cr, PyRuntime.pyMul(radius_cr, PyRuntime.pyMathCos(angle)));
             Object ci = PyRuntime.pyAdd(center_ci, PyRuntime.pyMul(radius_ci, PyRuntime.pyMathSin(angle)));
-            Object phase = PyRuntime.pyMod(PyRuntime.pyMul(i, 5), 255);
+            Object phase = PyRuntime.pyMod(PyRuntime.pyAdd(phase_offset, PyRuntime.pyMul(i, 5)), 255);
             ((java.util.List<Object>)frames).add(render_frame(width, height, cr, ci, max_iter, phase));
         }
         PyRuntime.pySaveGif(out_path, width, height, frames, julia_palette(), 8, 0);

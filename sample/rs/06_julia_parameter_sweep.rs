@@ -64,12 +64,14 @@ fn run_06_julia_parameter_sweep() -> () {
     let mut center_ci = 0.186;
     let mut radius_cr = 0.12;
     let mut radius_ci = 0.1;
+    let mut start_offset = 20;
+    let mut phase_offset = 180;
     for i in (0)..(frames_n) {
-        let mut t = ((( i ) as f64) / (( frames_n ) as f64));
+        let mut t = ((( ((((i) + (start_offset))) % (frames_n)) ) as f64) / (( frames_n ) as f64));
         let mut angle = ((((2.0) * (std::f64::consts::PI))) * (t));
         let mut cr = ((center_cr) + (((radius_cr) * (math_cos(((angle) as f64))))));
         let mut ci = ((center_ci) + (((radius_ci) * (math_sin(((angle) as f64))))));
-        let mut phase = ((((i) * (5))) % (255));
+        let mut phase = ((((phase_offset) + (((i) * (5))))) % (255));
         frames.push(render_frame(width, height, cr, ci, max_iter, phase));
     }
     py_save_gif(&(out_path), width, height, &(frames), &(julia_palette()), 8, 0);

@@ -820,6 +820,10 @@ func run_06_julia_parameter_sweep() any {
     _ = radius_cr
     var radius_ci float64 = 0.1
     _ = radius_ci
+    var start_offset int = 20
+    _ = start_offset
+    var phase_offset int = 180
+    _ = phase_offset
     __pytra_range_start_13 := pyToInt(0)
     __pytra_range_stop_14 := pyToInt(frames_n)
     __pytra_range_step_15 := pyToInt(1)
@@ -828,7 +832,7 @@ func run_06_julia_parameter_sweep() any {
     _ = i
     for __pytra_i_16 := __pytra_range_start_13; (__pytra_range_step_15 > 0 && __pytra_i_16 < __pytra_range_stop_14) || (__pytra_range_step_15 < 0 && __pytra_i_16 > __pytra_range_stop_14); __pytra_i_16 += __pytra_range_step_15 {
         i = __pytra_i_16
-        var t float64 = (float64(i) / float64(frames_n))
+        var t float64 = (float64(((i + start_offset) % frames_n)) / float64(frames_n))
         _ = t
         var angle any = pyMul(pyMul(2.0, pyMathPi()), t)
         _ = angle
@@ -836,7 +840,7 @@ func run_06_julia_parameter_sweep() any {
         _ = cr
         var ci float64 = (center_ci + (radius_ci * math.Sin(pyToFloat(angle))))
         _ = ci
-        var phase int = ((i * 5) % 255)
+        var phase int = ((phase_offset + (i * 5)) % 255)
         _ = phase
         frames = pyAppend(frames, render_frame(width, height, cr, ci, max_iter, phase))
     }

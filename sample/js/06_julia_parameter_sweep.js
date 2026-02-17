@@ -74,14 +74,16 @@ function run_06_julia_parameter_sweep() {
     let center_ci = 0.186;
     let radius_cr = 0.12;
     let radius_ci = 0.1;
+    let start_offset = 20;
+    let phase_offset = 180;
     let i;
     for (let __pytra_i_4 = 0; __pytra_i_4 < frames_n; __pytra_i_4 += 1) {
         i = __pytra_i_4;
-        let t = ((i) / (frames_n));
+        let t = ((pyMod(((i) + (start_offset)), frames_n)) / (frames_n));
         let angle = ((((2.0) * (math.pi))) * (t));
         let cr = ((center_cr) + (((radius_cr) * (math.cos(angle)))));
         let ci = ((center_ci) + (((radius_ci) * (math.sin(angle)))));
-        let phase = pyMod(((i) * (5)), 255);
+        let phase = pyMod(((phase_offset) + (((i) * (5)))), 255);
         frames.push(render_frame(width, height, cr, ci, max_iter, phase));
     }
     save_gif(out_path, width, height, frames, julia_palette(), 8, 0);

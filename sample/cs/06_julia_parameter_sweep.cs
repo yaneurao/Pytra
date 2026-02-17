@@ -87,17 +87,19 @@ public static class Program
         double center_ci = 0.186;
         double radius_cr = 0.12;
         double radius_ci = 0.1;
+        long start_offset = 20L;
+        long phase_offset = 180L;
         var __pytra_range_start_10 = 0;
         var __pytra_range_stop_11 = frames_n;
         var __pytra_range_step_12 = 1;
         if (__pytra_range_step_12 == 0) throw new Exception("range() arg 3 must not be zero");
         for (var i = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (i < __pytra_range_stop_11) : (i > __pytra_range_stop_11); i += __pytra_range_step_12)
         {
-            var t = ((double)(i) / (double)(frames_n));
+            var t = ((double)(((i + start_offset) % frames_n)) / (double)(frames_n));
             var angle = ((2.0 * Math.PI) * t);
             var cr = (center_cr + (radius_cr * Math.Cos(angle)));
             var ci = (center_ci + (radius_ci * Math.Sin(angle)));
-            var phase = ((i * 5L) % 255L);
+            var phase = ((phase_offset + (i * 5L)) % 255L);
             Pytra.CsModule.py_runtime.py_append(frames, render_frame(width, height, cr, ci, max_iter, phase));
         }
         Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, julia_palette(), delay_cs: 8L, loop: 0L);
