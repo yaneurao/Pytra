@@ -1,3 +1,5 @@
+
+
 #include "cpp_module/py_runtime.h"
 
 void __pytra_main() {
@@ -5,6 +7,7 @@ void __pytra_main() {
     int64 sum = 0;
     for (int64 v : l)
         sum += v;
+    
     py_print(sum);
 }
 

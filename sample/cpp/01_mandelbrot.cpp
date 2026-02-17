@@ -5,12 +5,10 @@
 int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
     float64 x2;
     float64 y2;
-    float64 y;
-    float64 x;
     
     /* 1点 (cx, cy) の発散までの反復回数を返す。 */
-    x = 0.0;
-    y = 0.0;
+    float64 x = 0.0;
+    float64 y = 0.0;
     for (int64 i = 0; i < max_iter; ++i) {
         x2 = x * x;
         y2 = y * y;
@@ -81,7 +79,7 @@ void run_mandelbrot() {
     float64 start = perf_counter();
     
     list<uint8> pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
-    write_rgb_png(out_path, width, height, pixels);
+    png_helper::write_rgb_png(out_path, width, height, pixels);
     
     float64 elapsed = perf_counter() - start;
     py_print("output:", out_path);

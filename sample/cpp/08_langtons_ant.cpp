@@ -17,9 +17,6 @@ list<uint8> capture(list<list<int64>> grid, int64 w, int64 h) {
 
 void run_08_langtons_ant() {
     list<int64> row;
-    int64 d;
-    int64 y;
-    int64 x;
     
     int64 w = 420;
     int64 h = 420;
@@ -34,9 +31,9 @@ void run_08_langtons_ant() {
             row.push_back(0);
         grid.push_back(row);
     }
-    x = py_floordiv(w, 2);
-    y = py_floordiv(h, 2);
-    d = 0;
+    int64 x = py_floordiv(w, 2);
+    int64 y = py_floordiv(h, 2);
+    int64 d = 0;
     
     int64 steps_total = 600000;
     int64 capture_every = 3000;

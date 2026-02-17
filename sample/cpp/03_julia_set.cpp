@@ -65,7 +65,7 @@ void run_julia() {
     
     float64 start = perf_counter();
     list<uint8> pixels = render_julia(width, height, max_iter, -0.8, 0.156);
-    write_rgb_png(out_path, width, height, pixels);
+    png_helper::write_rgb_png(out_path, width, height, pixels);
     float64 elapsed = perf_counter() - start;
     
     py_print("output:", out_path);

@@ -1,19 +1,9 @@
 #!/usr/bin/env python3
-"""Python source -> EAST converter.
-
-This script converts Python AST into a language-neutral EAST JSON document.
-It focuses on Phase 1 requirements in docs/spec-east.md:
- - syntax normalization (`if __name__ == "__main__"` extraction, symbol rename)
- - type resolution (annotation + inference)
- - readonly analysis for function args
- - explicit cast metadata for mixed numeric binops
- - error contract with kind/source_span/hint
-"""
+"""Python source -> EAST converter (self-hosted parser only)."""
 
 from __future__ import annotations
 
 import argparse
-import ast
 import json
 import re
 from dataclasses import dataclass
@@ -54,1283 +44,9 @@ class EastBuildError(Exception):
         }
 
 
-def span_of(node: ast.AST | None) -> dict[str, int | None]:
-    """Return stable source span dict for AST node or null-span for None."""
-    if node is None:
-        return {"lineno": None, "col": None, "end_lineno": None, "end_col": None}
-    return {
-        "lineno": getattr(node, "lineno", None),
-        "col": getattr(node, "col_offset", None),
-        "end_lineno": getattr(node, "end_lineno", None),
-        "end_col": getattr(node, "end_col_offset", None),
-    }
-
-
-def is_main_guard(stmt: ast.stmt) -> bool:
-    """Check whether stmt is `if __name__ == "__main__":`."""
-    if not isinstance(stmt, ast.If):
-        return False
-    test = stmt.test
-    if not isinstance(test, ast.Compare):
-        return False
-    if len(test.ops) != 1 or len(test.comparators) != 1:
-        return False
-    if not isinstance(test.ops[0], ast.Eq):
-        return False
-    left = test.left
-    right = test.comparators[0]
-    return (
-        isinstance(left, ast.Name)
-        and left.id == "__name__"
-        and isinstance(right, ast.Constant)
-        and right.value == "__main__"
-    )
-
-
-def annotation_to_type(ann: ast.expr | None) -> str | None:
-    """Normalize Python annotation AST into EAST type string."""
-    if ann is None:
-        return None
-    if isinstance(ann, ast.Name):
-        if ann.id == "int":
-            return "int64"
-        if ann.id in INT_TYPES:
-            return ann.id
-        if ann.id in FLOAT_TYPES:
-            return ann.id
-        if ann.id == "float":
-            return "float64"
-        if ann.id in {"bytes", "bytearray"}:
-            return "list[uint8]"
-        if ann.id in {"bool", "str", "Path"}:
-            return ann.id
-        if ann.id in {"None", "NoneType"}:
-            return "None"
-        return ann.id
-    if isinstance(ann, ast.Constant) and ann.value is None:
-        return "None"
-    if isinstance(ann, ast.Subscript):
-        base = annotation_to_type(ann.value)
-        if base is None:
-            return None
-        if isinstance(ann.slice, ast.Tuple):
-            args = [annotation_to_type(x) or "?" for x in ann.slice.elts]
-            return f"{base}[{','.join(args)}]"
-        arg = annotation_to_type(ann.slice) or "?"
-        return f"{base}[{arg}]"
-    if isinstance(ann, ast.Attribute):
-        if isinstance(ann.value, ast.Name) and ann.value.id == "pathlib" and ann.attr == "Path":
-            return "Path"
-        return ann.attr
-    return None
-
-
-class ArgUsageAnalyzer(ast.NodeVisitor):
-    """Conservative readonly/mutable classifier for function args."""
-
-    MUTATING_METHODS = {
-        "append",
-        "extend",
-        "insert",
-        "pop",
-        "clear",
-        "remove",
-        "discard",
-        "add",
-        "update",
-        "sort",
-        "reverse",
-        "write",
-        "write_text",
-        "mkdir",
-    }
-    PURE_BUILTINS = {"len", "print", "int", "float", "str", "bool", "range", "min", "max", "ord", "chr"}
-
-    def __init__(self, arg_names: set[str]) -> None:
-        """Initialize analyzer for one function scope."""
-        self.arg_names = set(arg_names)
-        self.mutable: set[str] = set()
-
-    def _mark_if_arg(self, node: ast.expr) -> None:
-        """Mark name as mutable if expression directly references an arg."""
-        if isinstance(node, ast.Name) and node.id in self.arg_names:
-            self.mutable.add(node.id)
-
-    def visit_Assign(self, node: ast.Assign) -> Any:
-        """Assignment to arg/arg-substructure means mutable usage."""
-        for t in node.targets:
-            self._mark_mutation_target(t)
-        self.generic_visit(node.value)
-
-    def visit_AugAssign(self, node: ast.AugAssign) -> Any:
-        """Augmented assignment mutates arg targets."""
-        self._mark_mutation_target(node.target)
-        self.generic_visit(node.value)
-
-    def visit_AnnAssign(self, node: ast.AnnAssign) -> Any:
-        """Annotated assignment mutates arg targets too."""
-        self._mark_mutation_target(node.target)
-        if node.value is not None:
-            self.generic_visit(node.value)
-
-    def visit_Call(self, node: ast.Call) -> Any:
-        """Method calls on args are mutable when method is in mutating set."""
-        if isinstance(node.func, ast.Attribute):
-            owner = node.func.value
-            if isinstance(owner, ast.Name) and owner.id in self.arg_names and node.func.attr in self.MUTATING_METHODS:
-                self.mutable.add(owner.id)
-        elif isinstance(node.func, ast.Name):
-            fn = node.func.id
-            if fn not in self.PURE_BUILTINS:
-                for arg in node.args:
-                    if isinstance(arg, ast.Name) and arg.id in self.arg_names:
-                        self.mutable.add(arg.id)
-        self.generic_visit(node)
-
-    def _mark_mutation_target(self, target: ast.expr) -> None:
-        """Mark mutation when target writes arg itself/field/item."""
-        if isinstance(target, ast.Name) and target.id in self.arg_names:
-            self.mutable.add(target.id)
-            return
-        if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) and target.value.id in self.arg_names:
-            self.mutable.add(target.value.id)
-            return
-        if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name) and target.value.id in self.arg_names:
-            self.mutable.add(target.value.id)
-            return
-
-
-class EastBuilder:
-    """Build EAST JSON from Python AST with type and normalization passes."""
-
-    RESERVED = {"main", "py_main", "__pytra_main"}
-
-    def __init__(self, source: str, filename: str) -> None:
-        """Prepare parser state, type env stacks, and precompute tables."""
-        self.source = source
-        self.filename = filename
-        self.module = ast.parse(source, filename=filename)
-        self.type_env_stack: list[dict[str, str]] = []
-        self.arg_usage_stack: list[dict[str, str]] = []
-        self.renamed_symbols: dict[str, str] = {}
-        self._scope_defined: set[str] = set()
-        self.function_return_types: dict[str, str] = {}
-        self.class_names: set[str] = set()
-        self.class_method_return_types: dict[str, dict[str, str]] = {}
-        self.class_field_types: dict[str, dict[str, str]] = {}
-        self.class_base: dict[str, str | None] = {}
-        self.current_class_stack: list[str] = []
-
-    def build(self) -> dict[str, Any]:
-        """Build module-level EAST document."""
-        body: list[dict[str, Any]] = []
-        main_body: list[dict[str, Any]] = []
-        self._precompute_module_renames(self.module)
-        self.type_env_stack.append({})
-
-        for stmt in self.module.body:
-            if is_main_guard(stmt):
-                for inner in stmt.body:
-                    main_body.append(self._stmt(inner))
-                continue
-            body.append(self._stmt(stmt))
-
-        self.type_env_stack.pop()
-        return {
-            "kind": "Module",
-            "source_path": self.filename,
-            "source_span": span_of(self.module),
-            "body": body,
-            "main_guard_body": main_body,
-            "renamed_symbols": dict(self.renamed_symbols),
-        }
-
-    def _precompute_module_renames(self, module: ast.Module) -> None:
-        """Collect rename/type/class metadata before node conversion."""
-        counts: dict[str, int] = {}
-        for stmt in module.body:
-            if isinstance(stmt, (ast.FunctionDef, ast.ClassDef)):
-                counts[stmt.name] = counts.get(stmt.name, 0) + 1
-            if isinstance(stmt, ast.FunctionDef):
-                ret = annotation_to_type(stmt.returns) if stmt.returns is not None else "None"
-                if ret is not None:
-                    self.function_return_types[stmt.name] = ret
-            if isinstance(stmt, ast.ClassDef):
-                self.class_names.add(stmt.name)
-                base_name: str | None = None
-                if len(stmt.bases) >= 1 and isinstance(stmt.bases[0], ast.Name):
-                    base_name = stmt.bases[0].id
-                self.class_base[stmt.name] = base_name
-                methods: dict[str, str] = {}
-                fields: dict[str, str] = {}
-                for n in stmt.body:
-                    if isinstance(n, ast.FunctionDef):
-                        r = annotation_to_type(n.returns) if n.returns is not None else "None"
-                        if r is not None:
-                            methods[n.name] = r
-                        if n.name == "__init__":
-                            arg_map: dict[str, str] = {}
-                            for a in n.args.args:
-                                t = annotation_to_type(a.annotation)
-                                if t is not None:
-                                    arg_map[a.arg] = t
-                            for st in n.body:
-                                if isinstance(st, ast.Assign):
-                                    for tgt in st.targets:
-                                        if (
-                                            isinstance(tgt, ast.Attribute)
-                                            and isinstance(tgt.value, ast.Name)
-                                            and tgt.value.id == "self"
-                                        ):
-                                            if isinstance(st.value, ast.Name) and st.value.id in arg_map:
-                                                fields[tgt.attr] = arg_map[st.value.id]
-                                if isinstance(st, ast.AnnAssign):
-                                    if (
-                                        isinstance(st.target, ast.Attribute)
-                                        and isinstance(st.target.value, ast.Name)
-                                        and st.target.value.id == "self"
-                                    ):
-                                        ft = annotation_to_type(st.annotation)
-                                        if ft is not None:
-                                            fields[st.target.attr] = ft
-                    if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name):
-                        ft = annotation_to_type(n.annotation)
-                        if ft is not None:
-                            fields[n.target.id] = ft
-                self.class_method_return_types[stmt.name] = methods
-                self.class_field_types[stmt.name] = fields
-        for name, count in counts.items():
-            if count > 1 or name in self.RESERVED:
-                self.renamed_symbols[name] = f"__pytra_{name}"
-
-    def _stmt(self, stmt: ast.stmt) -> dict[str, Any]:
-        """Convert one Python statement node into EAST statement node."""
-        if isinstance(stmt, ast.FunctionDef):
-            return self._function(stmt)
-        if isinstance(stmt, ast.ClassDef):
-            self.current_class_stack.append(stmt.name)
-            is_dataclass = False
-            for dec in stmt.decorator_list:
-                if isinstance(dec, ast.Name) and dec.id == "dataclass":
-                    is_dataclass = True
-                if isinstance(dec, ast.Attribute) and dec.attr == "dataclass":
-                    is_dataclass = True
-            out = {
-                "kind": "ClassDef",
-                "name": self._renamed(stmt.name),
-                "original_name": stmt.name,
-                "base": self.class_base.get(stmt.name),
-                "field_types": self.class_field_types.get(stmt.name, {}),
-                "dataclass": is_dataclass,
-                "source_span": span_of(stmt),
-                "body": [self._stmt(s) for s in stmt.body],
-            }
-            self.current_class_stack.pop()
-            return out
-        if isinstance(stmt, ast.Return):
-            return {
-                "kind": "Return",
-                "source_span": span_of(stmt),
-                "value": self._expr(stmt.value) if stmt.value is not None else None,
-            }
-        if isinstance(stmt, ast.Assign):
-            if len(stmt.targets) != 1:
-                raise self._error("unsupported_syntax", "only single-target assignment is supported", stmt, "Split assignment into one target per statement.")
-            target = stmt.targets[0]
-            if (
-                isinstance(target, ast.Tuple)
-                and isinstance(stmt.value, ast.Tuple)
-                and len(target.elts) == 2
-                and len(stmt.value.elts) == 2
-                and isinstance(target.elts[0], ast.Name)
-                and isinstance(target.elts[1], ast.Name)
-                and isinstance(stmt.value.elts[0], ast.Name)
-                and isinstance(stmt.value.elts[1], ast.Name)
-                and target.elts[0].id == stmt.value.elts[1].id
-                and target.elts[1].id == stmt.value.elts[0].id
-            ):
-                return {
-                    "kind": "Swap",
-                    "source_span": span_of(stmt),
-                    "left": self._expr(target.elts[0]),
-                    "right": self._expr(target.elts[1]),
-                }
-            value = self._expr(stmt.value)
-            declare = False
-            decl_type: str | None = None
-            if isinstance(target, ast.Name):
-                declare = target.id not in self.type_env_stack[-1]
-                decl_type = value["resolved_type"]
-                self._bind_name_type(target.id, value["resolved_type"], stmt)
-            elif isinstance(target, ast.Tuple):
-                tuple_elem_types = self._tuple_element_types(value["resolved_type"])
-                if tuple_elem_types is not None and len(tuple_elem_types) == len(target.elts):
-                    for idx, elt in enumerate(target.elts):
-                        if isinstance(elt, ast.Name):
-                            self._bind_name_type(elt.id, tuple_elem_types[idx], stmt)
-            return {
-                "kind": "Assign",
-                "source_span": span_of(stmt),
-                "target": self._expr(target),
-                "value": value,
-                "declare": declare,
-                "decl_type": decl_type,
-            }
-        if isinstance(stmt, ast.AugAssign):
-            target_expr = self._expr(stmt.target)
-            value_expr = self._expr(stmt.value)
-            if isinstance(stmt.target, ast.Name):
-                current = self._lookup_name_type(stmt.target.id)
-                rhs_t = value_expr["resolved_type"]
-                if current is not None and self._is_numeric_type(current) and self._is_numeric_type(rhs_t):
-                    self._bind_name_type(stmt.target.id, self._promote_numeric_type(current, rhs_t), stmt)
-            return {
-                "kind": "AugAssign",
-                "source_span": span_of(stmt),
-                "target": target_expr,
-                "op": type(stmt.op).__name__,
-                "value": value_expr,
-                "declare": False,
-                "decl_type": None,
-            }
-        if isinstance(stmt, ast.AnnAssign):
-            if isinstance(stmt.target, ast.Attribute):
-                ann_ty = annotation_to_type(stmt.annotation)
-                if ann_ty is None:
-                    raise self._error("unsupported_syntax", "unsupported type annotation", stmt.annotation, "Use supported Python-style annotations.")
-                value = self._expr_with_expected_type(stmt.value, ann_ty) if stmt.value is not None else None
-                if value is not None and not self._types_compatible(ann_ty, value["resolved_type"]):
-                    raise self._error(
-                        "semantic_conflict",
-                        f"annotated type '{ann_ty}' conflicts with value type '{value['resolved_type']}'",
-                        stmt,
-                        "Align annotation and assigned value type.",
-                    )
-                return {
-                    "kind": "AnnAssign",
-                    "source_span": span_of(stmt),
-                    "target": self._expr(stmt.target),
-                    "annotation": ann_ty,
-                    "value": value,
-                }
-            if not isinstance(stmt.target, ast.Name):
-                raise self._error("unsupported_syntax", "annotated assignment target must be Name/Attribute", stmt, "Use simple variable annotation.")
-            ann_ty = annotation_to_type(stmt.annotation)
-            if ann_ty is None:
-                raise self._error("unsupported_syntax", "unsupported type annotation", stmt.annotation, "Use supported Python-style annotations.")
-            value = self._expr_with_expected_type(stmt.value, ann_ty) if stmt.value is not None else None
-            declare = stmt.target.id not in self.type_env_stack[-1] if len(self.type_env_stack) > 0 else True
-            if value is not None and not self._types_compatible(ann_ty, value["resolved_type"]):
-                raise self._error(
-                    "semantic_conflict",
-                    f"annotated type '{ann_ty}' conflicts with value type '{value['resolved_type']}'",
-                    stmt,
-                    "Align annotation and assigned value type.",
-                )
-            self._bind_name_type(stmt.target.id, ann_ty, stmt)
-            return {
-                "kind": "AnnAssign",
-                "source_span": span_of(stmt),
-                "target": self._expr(stmt.target),
-                "annotation": ann_ty,
-                "value": value,
-                "declare": declare,
-                "decl_type": ann_ty,
-            }
-        if isinstance(stmt, ast.Expr):
-            return {"kind": "Expr", "source_span": span_of(stmt), "value": self._expr(stmt.value)}
-        if isinstance(stmt, ast.If):
-            return {
-                "kind": "If",
-                "source_span": span_of(stmt),
-                "test": self._expr(stmt.test),
-                "body": [self._stmt(s) for s in stmt.body],
-                "orelse": [self._stmt(s) for s in stmt.orelse],
-            }
-        if isinstance(stmt, ast.For):
-            rng = self._parse_range_iter(stmt.iter)
-            if rng is not None:
-                start_node, stop_node, step_node = rng
-                range_mode = self._range_mode_from_step(step_node, stmt)
-                if isinstance(stmt.target, ast.Name):
-                    self._bind_name_type(stmt.target.id, "int64", stmt)
-                return {
-                    "kind": "ForRange",
-                    "source_span": span_of(stmt),
-                    "target": self._expr(stmt.target),
-                    "target_type": "int64",
-                    "start": self._expr(start_node),
-                    "stop": self._expr(stop_node),
-                    "step": self._expr(step_node),
-                    "range_mode": range_mode,
-                    "body": [self._stmt(s) for s in stmt.body],
-                    "orelse": [self._stmt(s) for s in stmt.orelse],
-                }
-            if isinstance(stmt.target, ast.Name):
-                it_type, _ = self._resolve_expr_type(stmt.iter)
-                bind_t = self._iter_element_type(it_type)
-                if bind_t is not None:
-                    self._bind_name_type(stmt.target.id, bind_t, stmt)
-            return {
-                "kind": "For",
-                "source_span": span_of(stmt),
-                "target": self._expr(stmt.target),
-                "target_type": self._lookup_name_type(stmt.target.id) if isinstance(stmt.target, ast.Name) else None,
-                "iter": self._expr(stmt.iter),
-                "body": [self._stmt(s) for s in stmt.body],
-                "orelse": [self._stmt(s) for s in stmt.orelse],
-            }
-        if isinstance(stmt, ast.While):
-            return {
-                "kind": "While",
-                "source_span": span_of(stmt),
-                "test": self._expr(stmt.test),
-                "body": [self._stmt(s) for s in stmt.body],
-                "orelse": [self._stmt(s) for s in stmt.orelse],
-            }
-        if isinstance(stmt, ast.Try):
-            return {
-                "kind": "Try",
-                "source_span": span_of(stmt),
-                "body": [self._stmt(s) for s in stmt.body],
-                "handlers": [self._except_handler(h) for h in stmt.handlers],
-                "orelse": [self._stmt(s) for s in stmt.orelse],
-                "finalbody": [self._stmt(s) for s in stmt.finalbody],
-            }
-        if isinstance(stmt, ast.Raise):
-            return {
-                "kind": "Raise",
-                "source_span": span_of(stmt),
-                "exc": self._expr(stmt.exc) if stmt.exc is not None else None,
-            }
-        if isinstance(stmt, ast.Import):
-            for a in stmt.names:
-                bind_name = a.asname or a.name.split(".")[0]
-                self._bind_name_type(bind_name, "module", stmt)
-            return {
-                "kind": "Import",
-                "source_span": span_of(stmt),
-                "names": [{"name": a.name, "asname": a.asname} for a in stmt.names],
-            }
-        if isinstance(stmt, ast.ImportFrom):
-            for a in stmt.names:
-                bind_name = a.asname or a.name
-                if stmt.module == "time" and a.name == "perf_counter":
-                    self._bind_name_type(bind_name, "callable[float64]", stmt)
-                elif stmt.module == "math":
-                    self._bind_name_type(bind_name, "callable[float64]", stmt)
-                else:
-                    self._bind_name_type(bind_name, "unknown", stmt)
-            return {
-                "kind": "ImportFrom",
-                "source_span": span_of(stmt),
-                "module": stmt.module,
-                "level": stmt.level,
-                "names": [{"name": a.name, "asname": a.asname} for a in stmt.names],
-            }
-        if isinstance(stmt, ast.Pass):
-            return {"kind": "Pass", "source_span": span_of(stmt)}
-        if isinstance(stmt, ast.Break):
-            return {"kind": "Break", "source_span": span_of(stmt)}
-        if isinstance(stmt, ast.Continue):
-            return {"kind": "Continue", "source_span": span_of(stmt)}
-        raise self._error("unsupported_syntax", f"unsupported statement: {type(stmt).__name__}", stmt, "Rewrite to supported subset.")
-
-    def _except_handler(self, h: ast.ExceptHandler) -> dict[str, Any]:
-        """Convert `except` clause into EAST handler node."""
-        return {
-            "kind": "ExceptHandler",
-            "source_span": span_of(h),
-            "type": self._expr(h.type) if h.type is not None else None,
-            "name": h.name,
-            "body": [self._stmt(s) for s in h.body],
-        }
-
-    def _function(self, fn: ast.FunctionDef) -> dict[str, Any]:
-        """Convert function definition with arg usage + scoped typing."""
-        fn_name = self._renamed(fn.name)
-        arg_types: dict[str, str] = {}
-        in_class = len(self.current_class_stack) > 0
-        cur_cls = self.current_class_stack[-1] if in_class else None
-        for idx, arg in enumerate(fn.args.args):
-            ann = annotation_to_type(arg.annotation)
-            if ann is None:
-                if in_class and idx == 0 and arg.arg == "self" and cur_cls is not None:
-                    ann = cur_cls
-                else:
-                    raise self._error(
-                        "inference_failure",
-                        f"function argument '{arg.arg}' requires type annotation or inferable type",
-                        arg,
-                        "Add a type annotation to the argument.",
-                    )
-            arg_types[arg.arg] = ann
-        ret_ty = annotation_to_type(fn.returns) if fn.returns is not None else "None"
-        if ret_ty is None:
-            raise self._error("unsupported_syntax", "unsupported return annotation", fn.returns, "Use supported return annotation.")
-
-        analyzer = ArgUsageAnalyzer(set(arg_types.keys()))
-        for st in fn.body:
-            analyzer.visit(st)
-        arg_usage = {name: ("mutable" if name in analyzer.mutable else "readonly") for name in arg_types}
-
-        self.type_env_stack.append(dict(arg_types))
-        self.arg_usage_stack.append(arg_usage)
-        body = [self._stmt(s) for s in fn.body]
-        self.arg_usage_stack.pop()
-        self.type_env_stack.pop()
-        return {
-            "kind": "FunctionDef",
-            "name": fn_name,
-            "original_name": fn.name,
-            "source_span": span_of(fn),
-            "arg_types": arg_types,
-            "return_type": ret_ty,
-            "arg_usage": arg_usage,
-            "renamed_symbols": {k: v for k, v in self.renamed_symbols.items() if k == fn.name},
-            "body": body,
-        }
-
-    def _expr(self, expr: ast.expr) -> dict[str, Any]:
-        """Convert expression and attach resolved type/cast/borrow metadata."""
-        resolved_type, casts = self._resolve_expr_type(expr)
-        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name) and expr.func.id == "range":
-            parsed = self._parse_range_iter(expr)
-            assert parsed is not None  # _parse_range_iter handles range() contract checks
-            start_node, stop_node, step_node = parsed
-            return {
-                "kind": "RangeExpr",
-                "source_span": span_of(expr),
-                "resolved_type": resolved_type,
-                "borrow_kind": self._borrow_kind(expr),
-                "casts": casts,
-                "repr": ast.unparse(expr) if hasattr(ast, "unparse") else None,
-                "start": self._expr_maybe(start_node),
-                "stop": self._expr_maybe(stop_node),
-                "step": self._expr_maybe(step_node),
-                "range_mode": self._range_mode_from_step(step_node, expr),
-            }
-        out = {
-            "kind": type(expr).__name__,
-            "source_span": span_of(expr),
-            "resolved_type": resolved_type,
-            "borrow_kind": self._borrow_kind(expr),
-            "casts": casts,
-            "repr": ast.unparse(expr) if hasattr(ast, "unparse") else None,
-        }
-        out.update(self._expr_children(expr))
-        return out
-
-    def _expr_with_expected_type(self, expr: ast.expr, expected_type: str) -> dict[str, Any]:
-        """Allow annotated empty container literals to reuse annotation type."""
-        if self._is_annotated_empty_container(expr, expected_type):
-            out = {
-                "kind": type(expr).__name__,
-                "source_span": span_of(expr),
-                "resolved_type": expected_type,
-                "borrow_kind": self._borrow_kind(expr),
-                "casts": [],
-                "repr": ast.unparse(expr) if hasattr(ast, "unparse") else None,
-            }
-            out.update(self._expr_children(expr))
-            return out
-        return self._expr(expr)
-
-    def _expr_maybe(self, expr: ast.expr) -> dict[str, Any]:
-        """Best-effort child serializer: keep structure even if strict typing fails."""
-        try:
-            return self._expr(expr)
-        except EastBuildError:
-            out: dict[str, Any] = {
-                "kind": type(expr).__name__,
-                "source_span": span_of(expr),
-                "resolved_type": "unknown",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": ast.unparse(expr) if hasattr(ast, "unparse") else None,
-            }
-            if isinstance(expr, ast.Name):
-                out["id"] = expr.id
-            if isinstance(expr, ast.Constant):
-                out["value"] = expr.value
-            return out
-
-    def _expr_children(self, expr: ast.expr) -> dict[str, Any]:
-        """Attach structured child nodes so literals/args keep explicit types in EAST."""
-        if isinstance(expr, ast.Name):
-            return {"id": expr.id}
-        if isinstance(expr, ast.Constant):
-            return {"value": expr.value}
-        if isinstance(expr, ast.Attribute):
-            return {"value": self._expr_maybe(expr.value), "attr": expr.attr}
-        if isinstance(expr, ast.Call):
-            payload = {
-                "func": self._expr_maybe(expr.func),
-                "args": [self._expr_maybe(a) for a in expr.args],
-                "keywords": [
-                    {"arg": kw.arg, "value": self._expr_maybe(kw.value)}
-                    for kw in expr.keywords
-                ],
-            }
-            lower = self._lower_call_info(expr)
-            if lower is not None:
-                payload.update(lower)
-            return payload
-        if isinstance(expr, ast.BinOp):
-            return {
-                "left": self._expr_maybe(expr.left),
-                "op": type(expr.op).__name__,
-                "right": self._expr_maybe(expr.right),
-            }
-        if isinstance(expr, ast.UnaryOp):
-            return {"op": type(expr.op).__name__, "operand": self._expr_maybe(expr.operand)}
-        if isinstance(expr, ast.BoolOp):
-            return {"op": type(expr.op).__name__, "values": [self._expr_maybe(v) for v in expr.values]}
-        if isinstance(expr, ast.Compare):
-            payload = {
-                "left": self._expr_maybe(expr.left),
-                "ops": [type(o).__name__ for o in expr.ops],
-                "comparators": [self._expr_maybe(c) for c in expr.comparators],
-            }
-            if len(expr.ops) == 1 and len(expr.comparators) == 1:
-                if isinstance(expr.ops[0], ast.In):
-                    payload.update(
-                        {
-                            "lowered_kind": "Contains",
-                            "container": self._expr_maybe(expr.comparators[0]),
-                            "key": self._expr_maybe(expr.left),
-                            "negated": False,
-                        }
-                    )
-                if isinstance(expr.ops[0], ast.NotIn):
-                    payload.update(
-                        {
-                            "lowered_kind": "Contains",
-                            "container": self._expr_maybe(expr.comparators[0]),
-                            "key": self._expr_maybe(expr.left),
-                            "negated": True,
-                        }
-                    )
-            return payload
-        if isinstance(expr, ast.IfExp):
-            return {
-                "test": self._expr_maybe(expr.test),
-                "body": self._expr_maybe(expr.body),
-                "orelse": self._expr_maybe(expr.orelse),
-            }
-        if isinstance(expr, ast.List):
-            return {"elements": [self._expr_maybe(e) for e in expr.elts]}
-        if isinstance(expr, ast.Tuple):
-            return {"elements": [self._expr_maybe(e) for e in expr.elts]}
-        if isinstance(expr, ast.Set):
-            return {"elements": [self._expr_maybe(e) for e in expr.elts]}
-        if isinstance(expr, ast.Dict):
-            entries = []
-            for k, v in zip(expr.keys, expr.values):
-                entries.append(
-                    {
-                        "key": self._expr_maybe(k) if k is not None else None,
-                        "value": self._expr_maybe(v),
-                    }
-                )
-            return {"entries": entries}
-        if isinstance(expr, ast.Subscript):
-            payload: dict[str, Any] = {"value": self._expr_maybe(expr.value)}
-            if isinstance(expr.slice, ast.Slice):
-                payload["slice"] = {
-                    "kind": "Slice",
-                    "lower": self._expr_maybe(expr.slice.lower) if expr.slice.lower is not None else None,
-                    "upper": self._expr_maybe(expr.slice.upper) if expr.slice.upper is not None else None,
-                    "step": self._expr_maybe(expr.slice.step) if expr.slice.step is not None else None,
-                }
-                payload["lowered_kind"] = "SliceExpr"
-                payload["lower"] = payload["slice"]["lower"]
-                payload["upper"] = payload["slice"]["upper"]
-                payload["step"] = payload["slice"]["step"]
-            else:
-                payload["slice"] = self._expr_maybe(expr.slice)
-            return payload
-        if isinstance(expr, ast.JoinedStr):
-            values: list[dict[str, Any]] = []
-            concat_parts: list[dict[str, Any]] = []
-            for part in expr.values:
-                if isinstance(part, ast.Constant):
-                    node = {"kind": "Constant", "value": part.value}
-                    values.append(node)
-                    concat_parts.append({"kind": "literal", "value": part.value})
-                elif isinstance(part, ast.FormattedValue):
-                    inner = self._expr_maybe(part.value)
-                    values.append({"kind": "FormattedValue", "value": inner})
-                    concat_parts.append({"kind": "expr", "value": inner})
-            return {"values": values, "lowered_kind": "Concat", "concat_parts": concat_parts}
-        if isinstance(expr, ast.ListComp):
-            gens = []
-            for g in expr.generators:
-                gens.append(
-                    {
-                        "target": self._expr_maybe(g.target),  # type: ignore[arg-type]
-                        "iter": self._expr_maybe(g.iter),
-                        "ifs": [self._expr_maybe(c) for c in g.ifs],
-                        "is_async": bool(g.is_async),
-                    }
-                )
-            payload = {"elt": self._expr_maybe(expr.elt), "generators": gens}
-            if len(expr.generators) == 1:
-                payload["lowered_kind"] = "ListCompSimple"
-            return payload
-        return {}
-
-    def _lower_call_info(self, expr: ast.Call) -> dict[str, Any] | None:
-        """Annotate call nodes with language-neutral lowered builtin mapping."""
-        if isinstance(expr.func, ast.Name):
-            fn = expr.func.id
-            runtime = {
-                "print": "py_print",
-                "len": "py_len",
-                "str": "py_to_string",
-                "int": "static_cast",
-                "float": "static_cast",
-                "bool": "static_cast",
-                "bytes": "list[uint8]",
-                "bytearray": "list[uint8]",
-                "write_rgb_png": "write_rgb_png",
-                "save_gif": "save_gif",
-                "grayscale_palette": "grayscale_palette",
-                "min": "py_min",
-                "max": "py_max",
-                "perf_counter": "perf_counter",
-                "Path": "Path",
-                "Exception": "std::runtime_error",
-                "RuntimeError": "std::runtime_error",
-            }.get(fn)
-            if runtime is not None:
-                return {"lowered_kind": "BuiltinCall", "builtin_name": fn, "runtime_call": runtime}
-            return None
-        if isinstance(expr.func, ast.Attribute):
-            owner = expr.func.value
-            attr = expr.func.attr
-            if isinstance(owner, ast.Name) and owner.id == "math":
-                runtime = {
-                    "sqrt": "pycs::cpp_module::math::sqrt",
-                    "sin": "pycs::cpp_module::math::sin",
-                    "cos": "pycs::cpp_module::math::cos",
-                    "tan": "pycs::cpp_module::math::tan",
-                    "exp": "pycs::cpp_module::math::exp",
-                    "log": "pycs::cpp_module::math::log",
-                    "log10": "pycs::cpp_module::math::log10",
-                    "fabs": "pycs::cpp_module::math::fabs",
-                    "floor": "pycs::cpp_module::math::floor",
-                    "ceil": "pycs::cpp_module::math::ceil",
-                    "pow": "pycs::cpp_module::math::pow",
-                }.get(attr)
-                if runtime is not None:
-                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"math.{attr}", "runtime_call": runtime}
-            if isinstance(owner, ast.Name) and owner.id == "png_helper" and attr == "write_rgb_png":
-                return {"lowered_kind": "BuiltinCall", "builtin_name": "png_helper.write_rgb_png", "runtime_call": "write_rgb_png"}
-            if isinstance(owner, ast.Name) and owner.id == "gif_helper":
-                runtime = {
-                    "save_gif": "save_gif",
-                    "grayscale_palette": "grayscale_palette",
-                }.get(attr)
-                if runtime is not None:
-                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"gif_helper.{attr}", "runtime_call": runtime}
-            try:
-                owner_t, _ = self._resolve_expr_type(owner)
-            except EastBuildError:
-                owner_t = "unknown"
-            if owner_t == "Path":
-                runtime = {
-                    "mkdir": "std::filesystem::create_directories",
-                    "exists": "std::filesystem::exists",
-                    "write_text": "py_write_text",
-                    "read_text": "py_read_text",
-                    "resolve": "identity",
-                    "parent": "path_parent",
-                    "name": "path_name",
-                    "stem": "path_stem",
-                }.get(attr)
-                if runtime is not None:
-                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"Path.{attr}", "runtime_call": runtime}
-            if owner_t == "str":
-                runtime = {
-                    "isdigit": "py_isdigit",
-                    "isalpha": "py_isalpha",
-                }.get(attr)
-                if runtime is not None:
-                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"str.{attr}", "runtime_call": runtime}
-            if owner_t.startswith("list["):
-                runtime = {
-                    "append": "list.append",
-                    "extend": "list.extend",
-                    "pop": "list.pop",
-                    "clear": "list.clear",
-                    "reverse": "list.reverse",
-                    "sort": "list.sort",
-                }.get(attr)
-                if runtime is not None:
-                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"list.{attr}", "runtime_call": runtime}
-            if owner_t.startswith("set["):
-                runtime = {
-                    "add": "set.add",
-                    "discard": "set.discard",
-                    "remove": "set.remove",
-                    "clear": "set.clear",
-                }.get(attr)
-                if runtime is not None:
-                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"set.{attr}", "runtime_call": runtime}
-        return None
-
-    def _resolve_expr_type(self, expr: ast.expr) -> tuple[str, list[dict[str, Any]]]:
-        """Infer expression type and required numeric cast annotations."""
-        if isinstance(expr, ast.Name):
-            if expr.id in {"True", "False"}:
-                return "bool", []
-            if expr.id == "None":
-                return "None", []
-            if expr.id in {"Exception", "RuntimeError"}:
-                return "Exception", []
-            t = self._lookup_name_type(expr.id)
-            if t is None:
-                raise self._error(
-                    "inference_failure",
-                    f"type of name '{expr.id}' is unknown",
-                    expr,
-                    "Add an annotation or assign a concrete typed value before use.",
-                )
-            return t, []
-        if isinstance(expr, ast.Constant):
-            if isinstance(expr.value, bool):
-                return "bool", []
-            if isinstance(expr.value, int):
-                return "int64", []
-            if isinstance(expr.value, float):
-                return "float64", []
-            if isinstance(expr.value, str):
-                return "str", []
-            if expr.value is None:
-                return "None", []
-            raise self._error("unsupported_syntax", f"unsupported constant type: {type(expr.value).__name__}", expr, "Use supported literal.")
-        if isinstance(expr, ast.List):
-            if len(expr.elts) == 0:
-                raise self._error("inference_failure", "empty list type is ambiguous", expr, "Annotate variable type, e.g. x: list[int] = [].")
-            elem_types = [self._resolve_expr_type(e)[0] for e in expr.elts]
-            t = self._unify_types(elem_types, expr)
-            return f"list[{t}]", []
-        if isinstance(expr, ast.Set):
-            if len(expr.elts) == 0:
-                raise self._error("inference_failure", "empty set type is ambiguous", expr, "Annotate variable type, e.g. x: set[str] = set().")
-            elem_types = [self._resolve_expr_type(e)[0] for e in expr.elts]
-            t = self._unify_types(elem_types, expr)
-            return f"set[{t}]", []
-        if isinstance(expr, ast.Tuple):
-            item_types = [self._resolve_expr_type(e)[0] for e in expr.elts]
-            return f"tuple[{','.join(item_types)}]", []
-        if isinstance(expr, ast.Dict):
-            if len(expr.keys) == 0:
-                raise self._error("inference_failure", "empty dict type is ambiguous", expr, "Annotate variable type, e.g. x: dict[str,int] = {}.")
-            key_types = [self._resolve_expr_type(k)[0] for k in expr.keys if k is not None]
-            val_types = [self._resolve_expr_type(v)[0] for v in expr.values]
-            kt = self._unify_types(key_types, expr)
-            vt = self._unify_types(val_types, expr)
-            return f"dict[{kt},{vt}]", []
-        if isinstance(expr, ast.BinOp):
-            lt, _ = self._resolve_expr_type(expr.left)
-            rt, _ = self._resolve_expr_type(expr.right)
-            casts: list[dict[str, Any]] = []
-            if isinstance(expr.op, ast.Div):
-                if lt == "Path":
-                    return "Path", []
-                if self._is_numeric_type(lt) and self._is_numeric_type(rt):
-                    out_t = self._promote_numeric_type(lt, rt, for_division=True)
-                    if lt != out_t:
-                        casts.append({"on": "left", "from": lt, "to": out_t, "reason": "numeric_promotion"})
-                    if rt != out_t:
-                        casts.append({"on": "right", "from": rt, "to": out_t, "reason": "numeric_promotion"})
-                    return out_t, casts
-            if isinstance(expr.op, (ast.Add, ast.Sub, ast.Mult, ast.Mod, ast.FloorDiv)):
-                if lt == "str" and rt == "str" and isinstance(expr.op, ast.Add):
-                    return "str", []
-                if isinstance(expr.op, ast.Add):
-                    if (lt == "str" and rt == "unknown") or (rt == "str" and lt == "unknown"):
-                        return "str", []
-                if isinstance(expr.op, ast.Mult):
-                    if lt == "str" and self._is_int_type(rt):
-                        return "str", []
-                    if rt == "str" and self._is_int_type(lt):
-                        return "str", []
-                    if lt.startswith("list[") and lt.endswith("]") and self._is_int_type(rt):
-                        return lt, []
-                    if rt.startswith("list[") and rt.endswith("]") and self._is_int_type(lt):
-                        return rt, []
-                if self._is_numeric_type(lt) and self._is_numeric_type(rt):
-                    if lt != rt:
-                        out_t = self._promote_numeric_type(lt, rt)
-                        if self._is_int_type(lt):
-                            casts.append({"on": "left", "from": lt, "to": out_t, "reason": "numeric_promotion"})
-                        if lt in FLOAT_TYPES and lt != out_t:
-                            casts.append({"on": "left", "from": lt, "to": out_t, "reason": "numeric_promotion"})
-                        if self._is_int_type(rt):
-                            casts.append({"on": "right", "from": rt, "to": out_t, "reason": "numeric_promotion"})
-                        if rt in FLOAT_TYPES and rt != out_t:
-                            casts.append({"on": "right", "from": rt, "to": out_t, "reason": "numeric_promotion"})
-                        return out_t, casts
-                    return lt, []
-            if isinstance(expr.op, (ast.BitAnd, ast.BitOr, ast.BitXor, ast.LShift, ast.RShift)):
-                if self._is_int_type(lt) and self._is_int_type(rt):
-                    if lt == rt:
-                        return lt, []
-                    has_signed = lt.startswith("int") or rt.startswith("int")
-                    return ("int64" if has_signed else "uint64"), []
-            raise self._error("inference_failure", f"cannot infer binop type: {lt} op {rt}", expr, "Add explicit cast or simplify expression.")
-        if isinstance(expr, ast.UnaryOp):
-            t, _ = self._resolve_expr_type(expr.operand)
-            if isinstance(expr.op, ast.Not):
-                return "bool", []
-            if isinstance(expr.op, ast.USub) and self._is_numeric_type(t):
-                return t, []
-            raise self._error("inference_failure", f"cannot infer unary op type for {t}", expr, "Use explicit cast.")
-        if isinstance(expr, ast.BoolOp):
-            return "bool", []
-        if isinstance(expr, ast.Compare):
-            return "bool", []
-        if isinstance(expr, ast.IfExp):
-            bt, _ = self._resolve_expr_type(expr.body)
-            ot, _ = self._resolve_expr_type(expr.orelse)
-            if bt == ot:
-                return bt, []
-            if self._is_numeric_type(bt) and self._is_numeric_type(ot):
-                out_t = self._promote_numeric_type(bt, ot)
-                casts: list[dict[str, Any]] = []
-                if bt != out_t:
-                    casts.append({"on": "body", "from": bt, "to": out_t, "reason": "ifexp_numeric_promotion"})
-                if ot != out_t:
-                    casts.append({"on": "orelse", "from": ot, "to": out_t, "reason": "ifexp_numeric_promotion"})
-                return out_t, casts
-            raise self._error("inference_failure", f"if-expression branch types mismatch: {bt} vs {ot}", expr, "Align both branches to same type.")
-        if isinstance(expr, ast.Attribute):
-            bt, _ = self._resolve_expr_type(expr.value)
-            if isinstance(expr.value, ast.Name) and expr.value.id == "self" and bt in self.class_names:
-                fty = self._lookup_field_type(bt, expr.attr)
-                if fty is not None:
-                    return fty, []
-            if bt == "Path":
-                if expr.attr == "parent":
-                    return "Path", []
-                if expr.attr in {"name", "stem"}:
-                    return "str", []
-            if isinstance(expr.value, ast.Name) and expr.value.id == "math" and expr.attr in {
-                "pi",
-                "e",
-            }:
-                return "float64", []
-            # user-class/member unknown type is kept as dynamic marker
-            return "unknown", []
-        if isinstance(expr, ast.Subscript):
-            bt, _ = self._resolve_expr_type(expr.value)
-            if isinstance(expr.slice, ast.Slice):
-                if bt.startswith("list[") and bt.endswith("]"):
-                    return bt, []
-                if bt == "str":
-                    return "str", []
-                return "unknown", []
-            if bt.startswith("list[") and bt.endswith("]"):
-                return bt[5:-1], []
-            if bt.startswith("dict[") and bt.endswith("]"):
-                inside = bt[5:-1]
-                parts = inside.split(",", 1)
-                return parts[1] if len(parts) == 2 else "unknown", []
-            if bt.startswith("tuple[") and bt.endswith("]"):
-                return "unknown", []
-            if bt == "str":
-                return "str", []
-            return "unknown", []
-        if isinstance(expr, ast.Call):
-            return self._resolve_call_type(expr)
-        if isinstance(expr, ast.ListComp):
-            if len(expr.generators) != 1:
-                raise self._error("unsupported_syntax", "only single-generator list comprehension is supported", expr, "Use one generator in list comprehension.")
-            gen = expr.generators[0]
-            if not isinstance(gen.target, ast.Name):
-                raise self._error("unsupported_syntax", "list comprehension target must be Name", gen.target, "Use simple name as comprehension target.")
-            iter_t, _ = self._resolve_expr_type(gen.iter)
-            target_t = self._iter_element_type(iter_t)
-            if target_t is None:
-                raise self._error("inference_failure", f"cannot infer comprehension target type from '{iter_t}'", gen.iter, "Add explicit annotation to iterable.")
-            self.type_env_stack.append(dict(self.type_env_stack[-1] if self.type_env_stack else {}))
-            self.type_env_stack[-1][gen.target.id] = target_t
-            for cond in gen.ifs:
-                self._resolve_expr_type(cond)
-            et, _ = self._resolve_expr_type(expr.elt)
-            self.type_env_stack.pop()
-            return f"list[{et}]", []
-        if isinstance(expr, ast.JoinedStr):
-            return "str", []
-        raise self._error("unsupported_syntax", f"unsupported expression: {type(expr).__name__}", expr, "Rewrite expression to supported subset.")
-
-    def _resolve_call_type(self, expr: ast.Call) -> tuple[str, list[dict[str, Any]]]:
-        """Infer return type of call expressions from known symbols/types."""
-        if isinstance(expr.func, ast.Name):
-            fn = expr.func.id
-            if fn == "perf_counter":
-                return "float64", []
-            if fn == "int":
-                return "int64", []
-            if fn == "float":
-                return "float64", []
-            if fn == "bytearray":
-                return "list[uint8]", []
-            if fn == "bytes":
-                return "list[uint8]", []
-            if fn in {"bool", "str"}:
-                return fn, []
-            if fn == "len":
-                return "int64", []
-            if fn == "range":
-                return "list[int64]", []
-            if fn == "grayscale_palette":
-                return "list[uint8]", []
-            if fn == "Path":
-                return "Path", []
-            if fn in {"min", "max"}:
-                if len(expr.args) == 0:
-                    raise self._error("inference_failure", f"{fn} requires at least one argument", expr, f"Pass at least one argument to {fn}().")
-                ts = [self._resolve_expr_type(a)[0] for a in expr.args]
-                return self._unify_types(ts, expr), []
-            if fn == "round":
-                return "float64", []
-            if fn in {"print", "write_rgb_png", "save_gif"}:
-                return "None", []
-            if fn in {"Exception", "RuntimeError"}:
-                return "Exception", []
-            if fn in self.class_names:
-                return fn, []
-            known_ret = self.function_return_types.get(fn)
-            if known_ret is not None:
-                return known_ret, []
-            raise self._error("inference_failure", f"cannot infer return type of call '{fn}(...)'", expr, "Add return annotation and EAST resolver support.")
-        if isinstance(expr.func, ast.Attribute):
-            owner_t, _ = self._resolve_expr_type(expr.func.value)
-            m = expr.func.attr
-            if isinstance(expr.func.value, ast.Name) and expr.func.value.id == "pathlib" and m == "Path":
-                return "Path", []
-            if owner_t == "Path":
-                if m in {"resolve", "parent"}:
-                    return "Path", []
-                if m in {"name", "stem", "read_text"}:
-                    return "str", []
-                if m == "exists":
-                    return "bool", []
-                if m in {"write_text", "mkdir"}:
-                    return "None", []
-            if isinstance(expr.func.value, ast.Name) and expr.func.value.id == "math":
-                if m in {"sqrt", "sin", "cos", "tan", "exp", "log", "log10", "fabs", "floor", "ceil", "pow"}:
-                    return "float64", []
-            if isinstance(expr.func.value, ast.Name):
-                owner_name = expr.func.value.id
-                owner_t = self._lookup_name_type(owner_name)
-                if owner_t in self.class_names:
-                    r = self._lookup_method_return_type(owner_t, m)
-                    if r is not None:
-                        return r, []
-            # container methods
-            if m in {"append", "extend", "insert", "clear", "sort", "reverse", "update", "add"}:
-                return "None", []
-            if m == "pop":
-                return "unknown", []
-            if m in {"isdigit", "isalpha", "exists"}:
-                return "bool", []
-            return "unknown", []
-        raise self._error("inference_failure", "cannot infer call expression type", expr, "Add annotation or extend EAST resolver.")
-
-    def _borrow_kind(self, expr: ast.expr) -> BorrowKind:
-        """Map expression usage to value/readonly_ref/mutable_ref marker."""
-        if isinstance(expr, ast.Name) and len(self.arg_usage_stack) > 0:
-            usage = self.arg_usage_stack[-1].get(expr.id)
-            if usage == "readonly":
-                return "readonly_ref"
-            if usage == "mutable":
-                return "mutable_ref"
-        return "value"
-
-    def _lookup_name_type(self, name: str) -> str | None:
-        """Lookup name type from innermost to outer scope."""
-        for env in reversed(self.type_env_stack):
-            if name in env:
-                return env[name]
-        return None
-
-    def _bind_name_type(self, name: str, new_type: str, node: ast.AST) -> None:
-        """Bind inferred type to current scope with conflict detection."""
-        if len(self.type_env_stack) == 0:
-            return
-        env = self.type_env_stack[-1]
-        prev = env.get(name)
-        if prev is not None and not self._types_compatible(prev, new_type):
-            raise self._error(
-                "semantic_conflict",
-                f"type conflict on '{name}': '{prev}' vs '{new_type}'",
-                node,
-                "Use explicit cast or split variable into different names.",
-            )
-        env[name] = new_type
-
-    def _types_compatible(self, t1: str, t2: str) -> bool:
-        """Return whether two types can coexist for same symbol."""
-        if t1 == t2:
-            return True
-        if "unknown" in {t1, t2}:
-            return True
-        return self._is_numeric_type(t1) and self._is_numeric_type(t2)
-
-    def _unify_types(self, types: list[str], node: ast.AST) -> str:
-        """Unify multiple candidate types into one deterministic type."""
-        uniq = sorted(set(types))
-        if len(uniq) == 1:
-            return uniq[0]
-        if all(self._is_int_type(t) for t in uniq):
-            has_signed = any(t.startswith("int") for t in uniq)
-            return "int64" if has_signed else "uint64"
-        if all(self._is_numeric_type(t) for t in uniq):
-            out = uniq[0]
-            for t in uniq[1:]:
-                out = self._promote_numeric_type(out, t)
-            return out
-        raise self._error("inference_failure", f"ambiguous types: {uniq}", node, "Add explicit annotation/cast to make the type unique.")
-
-    def _iter_element_type(self, iterable_type: str) -> str | None:
-        """Extract element type from iterable-like EAST type."""
-        if iterable_type.startswith("list[") and iterable_type.endswith("]"):
-            return iterable_type[5:-1]
-        if iterable_type.startswith("set[") and iterable_type.endswith("]"):
-            return iterable_type[4:-1]
-        if iterable_type.startswith("tuple[") and iterable_type.endswith("]"):
-            inside = iterable_type[6:-1]
-            if inside == "":
-                return None
-            first = inside.split(",", 1)[0]
-            return first
-        if iterable_type == "str":
-            return "str"
-        if iterable_type == "unknown":
-            return "unknown"
-        return None
-
-    def _is_int_type(self, t: str) -> bool:
-        """Check integer scalar type."""
-        return t in INT_TYPES
-
-    def _is_numeric_type(self, t: str) -> bool:
-        """Check numeric scalar type (int/float families)."""
-        return self._is_int_type(t) or t in FLOAT_TYPES
-
-    def _promote_numeric_type(self, t1: str, t2: str, *, for_division: bool = False) -> str:
-        """Apply EAST numeric promotion rules."""
-        if for_division:
-            return "float64"
-        if t1 == t2:
-            return t1
-        if "float64" in {t1, t2}:
-            return "float64"
-        if "float32" in {t1, t2}:
-            return "float32"
-        if self._is_int_type(t1) and self._is_int_type(t2):
-            has_signed = t1.startswith("int") or t2.startswith("int")
-            return "int64" if has_signed else "uint64"
-        return "float64"
-
-    def _is_annotated_empty_container(self, expr: ast.expr, expected_type: str) -> bool:
-        """Allow empty literal only when annotation gives concrete container type."""
-        if isinstance(expr, ast.List):
-            return len(expr.elts) == 0 and expected_type.startswith("list[") and expected_type.endswith("]")
-        if isinstance(expr, ast.Set):
-            return len(expr.elts) == 0 and expected_type.startswith("set[") and expected_type.endswith("]")
-        if isinstance(expr, ast.Dict):
-            return len(expr.keys) == 0 and expected_type.startswith("dict[") and expected_type.endswith("]")
-        return False
-
-    def _tuple_element_types(self, tuple_type: str) -> list[str] | None:
-        """Parse `tuple[...]` type string into per-element type list."""
-        if not (tuple_type.startswith("tuple[") and tuple_type.endswith("]")):
-            return None
-        inside = tuple_type[6:-1]
-        if inside == "":
-            return []
-        parts: list[str] = []
-        depth = 0
-        start = 0
-        for i, ch in enumerate(inside):
-            if ch == "[":
-                depth += 1
-            elif ch == "]":
-                depth -= 1
-            elif ch == "," and depth == 0:
-                parts.append(inside[start:i].strip())
-                start = i + 1
-        parts.append(inside[start:].strip())
-        return [p for p in parts if p]
-
-    def _lookup_method_return_type(self, class_name: str, method: str) -> str | None:
-        """Resolve method return type following class inheritance chain."""
-        cur: str | None = class_name
-        while cur is not None:
-            methods = self.class_method_return_types.get(cur, {})
-            if method in methods:
-                return methods[method]
-            cur = self.class_base.get(cur)
-        return None
-
-    def _lookup_field_type(self, class_name: str, field: str) -> str | None:
-        """Resolve field type following class inheritance chain."""
-        cur: str | None = class_name
-        while cur is not None:
-            fields = self.class_field_types.get(cur, {})
-            if field in fields:
-                return fields[field]
-            cur = self.class_base.get(cur)
-        return None
-
-    def _parse_range_iter(self, expr: ast.expr) -> tuple[ast.expr, ast.expr, ast.expr] | None:
-        """Parse `range(...)` call into normalized `(start, stop, step)`."""
-        if not (isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name) and expr.func.id == "range"):
-            return None
-        if expr.keywords:
-            raise self._error("unsupported_syntax", "range() with keyword args is not supported", expr, "Use positional range arguments.")
-        argc = len(expr.args)
-        if argc == 1:
-            return ast.Constant(value=0), expr.args[0], ast.Constant(value=1)
-        if argc == 2:
-            return expr.args[0], expr.args[1], ast.Constant(value=1)
-        if argc == 3:
-            return expr.args[0], expr.args[1], expr.args[2]
-        raise self._error("unsupported_syntax", "range() accepts 1..3 positional args", expr, "Use range(stop), range(start, stop), or range(start, stop, step).")
-
-    def _range_mode_from_step(self, step_node: ast.expr, node_for_error: ast.AST) -> str:
-        """Return range mode: 'ascending' | 'descending' | 'dynamic'."""
-        if isinstance(step_node, ast.Constant) and isinstance(step_node.value, int):
-            if step_node.value == 0:
-                raise self._error("semantic_conflict", "range() step must not be zero", node_for_error, "Use non-zero step in range().")
-            return "ascending" if step_node.value > 0 else "descending"
-        if isinstance(step_node, ast.UnaryOp) and isinstance(step_node.op, ast.USub):
-            if isinstance(step_node.operand, ast.Constant) and isinstance(step_node.operand.value, int):
-                val = -step_node.operand.value
-                if val == 0:
-                    raise self._error("semantic_conflict", "range() step must not be zero", node_for_error, "Use non-zero step in range().")
-                return "ascending" if val > 0 else "descending"
-        return "dynamic"
-
-    def _renamed(self, name: str) -> str:
-        """Return renamed symbol when collision/reserved-name rewrite exists."""
-        return self.renamed_symbols.get(name, name)
-
-    def _error(self, kind: str, message: str, node: ast.AST | None, hint: str) -> EastBuildError:
-        """Construct EAST error payload object with normalized source span."""
-        return EastBuildError(kind=kind, message=message, source_span=span_of(node), hint=hint)
-
-
 def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:
-    """Convert Python source string to EAST document."""
-    return EastBuilder(source=source, filename=filename).build()
-
+    """Backward-compatible alias; self-hosted parser only."""
+    return convert_source_to_east_self_hosted(source, filename)
 
 def _sh_span(line: int, col: int, end_col: int) -> dict[str, int]:
     return {"lineno": line, "col": col, "end_lineno": line, "end_col": end_col}
@@ -1375,13 +91,28 @@ def _sh_ann_to_type(ann: str) -> str:
 def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
     out: list[tuple[str, int]] = []
     depth = 0
+    in_str: str | None = None
+    esc = False
     start = 0
     i = 0
     while i < len(arg_text):
         ch = arg_text[i]
-        if ch == "(":
+        if in_str is not None:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == in_str:
+                in_str = None
+            i += 1
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            i += 1
+            continue
+        if ch in {"(", "[", "{"}:
             depth += 1
-        elif ch == ")":
+        elif ch in {")", "]", "}"}:
             depth -= 1
         elif ch == "," and depth == 0:
             part = arg_text[start:i]
@@ -1460,6 +191,24 @@ class _ShExprParser:
                 out.append({"k": "NAME", "v": text[i:j], "s": i, "e": j})
                 i = j
                 continue
+            if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
+                q3 = text[i : i + 3]
+                j = i + 3
+                while j + 2 < len(text):
+                    if text[j : j + 3] == q3:
+                        j += 3
+                        break
+                    j += 1
+                if j > len(text) or text[j - 3 : j] != q3:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message="unterminated triple-quoted string literal in self_hosted parser",
+                        source_span=_sh_span(self.line_no, self.col_base + i, self.col_base + len(text)),
+                        hint="Close triple-quoted string with matching quote.",
+                    )
+                out.append({"k": "STR", "v": text[i:j], "s": i, "e": j})
+                i = j
+                continue
             if ch in {"'", '"'}:
                 q = ch
                 j = i + 1
@@ -1481,7 +230,7 @@ class _ShExprParser:
                 out.append({"k": "STR", "v": text[i:j], "s": i, "e": j})
                 i = j
                 continue
-            if i + 1 < len(text) and text[i : i + 2] in {"<=", ">=", "==", "!="}:
+            if i + 1 < len(text) and text[i : i + 2] in {"<=", ">=", "==", "!=", "//", "<<", ">>"}:
                 out.append({"k": text[i : i + 2], "v": text[i : i + 2], "s": i, "e": i + 2})
                 i += 2
                 continue
@@ -1489,7 +238,7 @@ class _ShExprParser:
                 out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
                 i += 1
                 continue
-            if ch in {"+", "-", "*", "/", "%", "(", ")", ",", ".", "[", "]", ":", "=", "{", "}"}:
+            if ch in {"+", "-", "*", "/", "%", "&", "|", "^", "(", ")", ",", ".", "[", "]", ":", "=", "{", "}"}:
                 out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
                 i += 1
                 continue
@@ -1497,7 +246,7 @@ class _ShExprParser:
                 kind="unsupported_syntax",
                 message=f"unsupported token '{ch}' in self_hosted parser",
                 source_span=_sh_span(self.line_no, self.col_base + i, self.col_base + i + 1),
-                hint="Extend tokenizer for this syntax or use parser_backend=python_ast.",
+                hint="Extend tokenizer for this syntax.",
             )
         out.append({"k": "EOF", "v": "", "s": len(text), "e": len(text)})
         return out
@@ -1590,7 +339,7 @@ class _ShExprParser:
         return self._parse_compare()
 
     def _parse_compare(self) -> dict[str, Any]:
-        node = self._parse_addsub()
+        node = self._parse_bitor()
         cmp_map = {"<": "Lt", "<=": "LtE", ">": "Gt", ">=": "GtE", "==": "Eq", "!=": "NotEq"}
         ops: list[str] = []
         comparators: list[dict[str, Any]] = []
@@ -1598,12 +347,12 @@ class _ShExprParser:
             if self._cur()["k"] in cmp_map:
                 tok = self._eat()
                 ops.append(cmp_map[tok["k"]])
-                comparators.append(self._parse_addsub())
+                comparators.append(self._parse_bitor())
                 continue
             if self._cur()["k"] == "NAME" and self._cur()["v"] == "in":
                 self._eat("NAME")
                 ops.append("In")
-                comparators.append(self._parse_addsub())
+                comparators.append(self._parse_bitor())
                 continue
             if self._cur()["k"] == "NAME" and self._cur()["v"] == "not":
                 pos = self.pos
@@ -1611,7 +360,7 @@ class _ShExprParser:
                 if self._cur()["k"] == "NAME" and self._cur()["v"] == "in":
                     self._eat("NAME")
                     ops.append("NotIn")
-                    comparators.append(self._parse_addsub())
+                    comparators.append(self._parse_bitor())
                     continue
                 self.pos = pos
             break
@@ -1631,6 +380,38 @@ class _ShExprParser:
             "comparators": comparators,
         }
 
+    def _parse_bitor(self) -> dict[str, Any]:
+        node = self._parse_bitxor()
+        while self._cur()["k"] == "|":
+            op_tok = self._eat()
+            right = self._parse_bitxor()
+            node = self._make_bin(node, op_tok["k"], right)
+        return node
+
+    def _parse_bitxor(self) -> dict[str, Any]:
+        node = self._parse_bitand()
+        while self._cur()["k"] == "^":
+            op_tok = self._eat()
+            right = self._parse_bitand()
+            node = self._make_bin(node, op_tok["k"], right)
+        return node
+
+    def _parse_bitand(self) -> dict[str, Any]:
+        node = self._parse_shift()
+        while self._cur()["k"] == "&":
+            op_tok = self._eat()
+            right = self._parse_shift()
+            node = self._make_bin(node, op_tok["k"], right)
+        return node
+
+    def _parse_shift(self) -> dict[str, Any]:
+        node = self._parse_addsub()
+        while self._cur()["k"] in {"<<", ">>"}:
+            op_tok = self._eat()
+            right = self._parse_addsub()
+            node = self._make_bin(node, op_tok["k"], right)
+        return node
+
     def _parse_addsub(self) -> dict[str, Any]:
         node = self._parse_muldiv()
         while self._cur()["k"] in {"+", "-"}:
@@ -1641,7 +422,7 @@ class _ShExprParser:
 
     def _parse_muldiv(self) -> dict[str, Any]:
         node = self._parse_unary()
-        while self._cur()["k"] in {"*", "/", "%"}:
+        while self._cur()["k"] in {"*", "/", "//", "%"}:
             op_tok = self._eat()
             right = self._parse_unary()
             node = self._make_bin(node, op_tok["k"], right)
@@ -1723,6 +504,8 @@ class _ShExprParser:
                             args.append(self._parse_or())
                         if self._cur()["k"] == ",":
                             self._eat(",")
+                            if self._cur()["k"] == ")":
+                                break
                             continue
                         break
                 rtok = self._eat(")")
@@ -1849,7 +632,19 @@ class _ShExprParser:
             return node
 
     def _make_bin(self, left: dict[str, Any], op_sym: str, right: dict[str, Any]) -> dict[str, Any]:
-        op_map = {"+": "Add", "-": "Sub", "*": "Mult", "/": "Div", "%": "Mod"}
+        op_map = {
+            "+": "Add",
+            "-": "Sub",
+            "*": "Mult",
+            "/": "Div",
+            "//": "FloorDiv",
+            "%": "Mod",
+            "&": "BitAnd",
+            "|": "BitOr",
+            "^": "BitXor",
+            "<<": "LShift",
+            ">>": "RShift",
+        }
         lt = str(left.get("resolved_type", "unknown"))
         rt = str(right.get("resolved_type", "unknown"))
         casts: list[dict[str, Any]] = []
@@ -1862,6 +657,8 @@ class _ShExprParser:
                     casts.append({"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
                 if rt == "int64":
                     casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+        elif op_sym == "//":
+            out_t = "int64" if lt in {"int64", "unknown"} and rt in {"int64", "unknown"} else "float64"
         elif lt == rt and lt in {"int64", "float64"}:
             out_t = lt
         elif lt in {"int64", "float64"} and rt in {"int64", "float64"}:
@@ -1870,6 +667,8 @@ class _ShExprParser:
                 casts.append({"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
             if rt == "int64":
                 casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+        elif op_sym in {"&", "|", "^", "<<", ">>"} and lt == "int64" and rt == "int64":
+            out_t = "int64"
         else:
             out_t = "unknown"
 
@@ -1948,19 +747,158 @@ class _ShExprParser:
             }
         if tok["k"] == "(":
             l = self._eat("(")
-            inner = self._parse_or()
+            if self._cur()["k"] == ")":
+                r = self._eat(")")
+                return {
+                    "kind": "Tuple",
+                    "source_span": self._node_span(l["s"], r["e"]),
+                    "resolved_type": "tuple[]",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": self._src_slice(l["s"], r["e"]),
+                    "elements": [],
+                }
+            first = self._parse_or()
+            if self._cur()["k"] == ",":
+                elements = [first]
+                while self._cur()["k"] == ",":
+                    self._eat(",")
+                    if self._cur()["k"] == ")":
+                        break
+                    elements.append(self._parse_or())
+                r = self._eat(")")
+                elem_types = [str(e.get("resolved_type", "unknown")) for e in elements]
+                return {
+                    "kind": "Tuple",
+                    "source_span": self._node_span(l["s"], r["e"]),
+                    "resolved_type": f"tuple[{','.join(elem_types)}]",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": self._src_slice(l["s"], r["e"]),
+                    "elements": elements,
+                }
             r = self._eat(")")
-            inner["source_span"] = self._node_span(l["s"], r["e"])
-            inner["repr"] = self._src_slice(l["s"], r["e"])
-            return inner
+            first["source_span"] = self._node_span(l["s"], r["e"])
+            first["repr"] = self._src_slice(l["s"], r["e"])
+            return first
         if tok["k"] == "[":
             l = self._eat("[")
             elements: list[dict[str, Any]] = []
             if self._cur()["k"] != "]":
+                first = self._parse_or()
+                # list comprehension: [elt for x in iter if cond]
+                if self._cur()["k"] == "NAME" and self._cur()["v"] == "for":
+                    self._eat("NAME")
+                    tgt_tok = self._eat("NAME")
+                    in_tok = self._eat("NAME")
+                    if in_tok["v"] != "in":
+                        raise EastBuildError(
+                            kind="unsupported_syntax",
+                            message="expected 'in' in list comprehension",
+                            source_span=self._node_span(in_tok["s"], in_tok["e"]),
+                            hint="Use `[x for x in iterable]` syntax.",
+                        )
+                    iter_expr = self._parse_or()
+                    if (
+                        isinstance(iter_expr, dict)
+                        and iter_expr.get("kind") == "Call"
+                        and isinstance(iter_expr.get("func"), dict)
+                        and iter_expr.get("func", {}).get("kind") == "Name"
+                        and iter_expr.get("func", {}).get("id") == "range"
+                    ):
+                        rargs = list(iter_expr.get("args", []))
+                        if len(rargs) == 1:
+                            start_node = {
+                                "kind": "Constant",
+                                "source_span": self._node_span(tgt_tok["s"], tgt_tok["s"]),
+                                "resolved_type": "int64",
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": "0",
+                                "value": 0,
+                            }
+                            stop_node = rargs[0]
+                            step_node = {
+                                "kind": "Constant",
+                                "source_span": self._node_span(tgt_tok["s"], tgt_tok["s"]),
+                                "resolved_type": "int64",
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": "1",
+                                "value": 1,
+                            }
+                        elif len(rargs) == 2:
+                            start_node = rargs[0]
+                            stop_node = rargs[1]
+                            step_node = {
+                                "kind": "Constant",
+                                "source_span": self._node_span(tgt_tok["s"], tgt_tok["s"]),
+                                "resolved_type": "int64",
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": "1",
+                                "value": 1,
+                            }
+                        else:
+                            start_node = rargs[0]
+                            stop_node = rargs[1]
+                            step_node = rargs[2]
+                        step_const = step_node.get("value") if isinstance(step_node, dict) else None
+                        mode = "dynamic"
+                        if step_const == 1:
+                            mode = "ascending"
+                        elif step_const == -1:
+                            mode = "descending"
+                        iter_expr = {
+                            "kind": "RangeExpr",
+                            "source_span": iter_expr.get("source_span"),
+                            "resolved_type": "range",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": iter_expr.get("repr", "range(...)"),
+                            "start": start_node,
+                            "stop": stop_node,
+                            "step": step_node,
+                            "range_mode": mode,
+                        }
+                    ifs: list[dict[str, Any]] = []
+                    while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
+                        self._eat("NAME")
+                        ifs.append(self._parse_or())
+                    r = self._eat("]")
+                    tgt_name = str(tgt_tok["v"])
+                    return {
+                        "kind": "ListComp",
+                        "source_span": self._node_span(l["s"], r["e"]),
+                        "resolved_type": f"list[{str(first.get('resolved_type', 'unknown'))}]",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": self._src_slice(l["s"], r["e"]),
+                        "elt": first,
+                        "generators": [
+                            {
+                                "target": {
+                                    "kind": "Name",
+                                    "source_span": self._node_span(tgt_tok["s"], tgt_tok["e"]),
+                                    "resolved_type": "unknown",
+                                    "borrow_kind": "value",
+                                    "casts": [],
+                                    "repr": tgt_name,
+                                    "id": tgt_name,
+                                },
+                                "iter": iter_expr,
+                                "ifs": ifs,
+                            }
+                        ],
+                    }
+
+                elements.append(first)
                 while True:
-                    elements.append(self._parse_addsub())
                     if self._cur()["k"] == ",":
                         self._eat(",")
+                        if self._cur()["k"] == "]":
+                            break
+                        elements.append(self._parse_or())
                         continue
                     break
             r = self._eat("]")
@@ -1975,6 +913,63 @@ class _ShExprParser:
                 "kind": "List",
                 "source_span": self._node_span(l["s"], r["e"]),
                 "resolved_type": f"list[{et}]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": self._src_slice(l["s"], r["e"]),
+                "elements": elements,
+            }
+        if tok["k"] == "{":
+            l = self._eat("{")
+            if self._cur()["k"] == "}":
+                r = self._eat("}")
+                return {
+                    "kind": "Dict",
+                    "source_span": self._node_span(l["s"], r["e"]),
+                    "resolved_type": "dict[unknown,unknown]",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": self._src_slice(l["s"], r["e"]),
+                    "keys": [],
+                    "values": [],
+                }
+            first = self._parse_or()
+            if self._cur()["k"] == ":":
+                keys = [first]
+                vals: list[dict[str, Any]] = []
+                self._eat(":")
+                vals.append(self._parse_or())
+                while self._cur()["k"] == ",":
+                    self._eat(",")
+                    if self._cur()["k"] == "}":
+                        break
+                    keys.append(self._parse_or())
+                    self._eat(":")
+                    vals.append(self._parse_or())
+                r = self._eat("}")
+                kt = str(keys[0].get("resolved_type", "unknown")) if len(keys) > 0 else "unknown"
+                vt = str(vals[0].get("resolved_type", "unknown")) if len(vals) > 0 else "unknown"
+                return {
+                    "kind": "Dict",
+                    "source_span": self._node_span(l["s"], r["e"]),
+                    "resolved_type": f"dict[{kt},{vt}]",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": self._src_slice(l["s"], r["e"]),
+                    "keys": keys,
+                    "values": vals,
+                }
+            elements = [first]
+            while self._cur()["k"] == ",":
+                self._eat(",")
+                if self._cur()["k"] == "}":
+                    break
+                elements.append(self._parse_or())
+            r = self._eat("}")
+            et = str(elements[0].get("resolved_type", "unknown")) if len(elements) > 0 else "unknown"
+            return {
+                "kind": "Set",
+                "source_span": self._node_span(l["s"], r["e"]),
+                "resolved_type": f"set[{et}]",
                 "borrow_kind": "value",
                 "casts": [],
                 "repr": self._src_slice(l["s"], r["e"]),
@@ -2430,6 +1425,56 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         )
 
     def parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
+        def bracket_delta(txt: str) -> int:
+            depth = 0
+            in_str: str | None = None
+            esc = False
+            i = 0
+            while i < len(txt):
+                ch = txt[i]
+                if in_str is not None:
+                    if esc:
+                        esc = False
+                    elif ch == "\\":
+                        esc = True
+                    elif ch == in_str:
+                        if i + 2 < len(txt) and txt[i : i + 3] == in_str * 3:
+                            i += 2
+                        else:
+                            in_str = None
+                    i += 1
+                    continue
+                if i + 2 < len(txt) and txt[i : i + 3] in {"'''", '"""'}:
+                    in_str = txt[i]
+                    i += 3
+                    continue
+                if ch in {"'", '"'}:
+                    in_str = ch
+                    i += 1
+                    continue
+                if ch == "#":
+                    break
+                if ch in {"(", "[", "{"}:
+                    depth += 1
+                elif ch in {")", "]", "}"}:
+                    depth -= 1
+                i += 1
+            return depth
+
+        merged_lines: list[tuple[int, str]] = []
+        k = 0
+        while k < len(body_lines):
+            ln_no, ln_txt = body_lines[k]
+            acc = ln_txt
+            d = bracket_delta(ln_txt)
+            while d > 0 and k + 1 < len(body_lines):
+                k += 1
+                acc += " " + body_lines[k][1].strip()
+                d += bracket_delta(body_lines[k][1])
+            merged_lines.append((ln_no, acc))
+            k += 1
+        body_lines = merged_lines
+
         stmts: list[dict[str, Any]] = []
 
         def collect_indented_block(start: int, parent_indent: int) -> tuple[list[tuple[int, str]], int]:
@@ -2447,13 +1492,129 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 j += 1
             return out, j
 
+        def split_top_level_assign(text: str) -> tuple[str, str] | None:
+            depth = 0
+            in_str: str | None = None
+            esc = False
+            i = 0
+            while i < len(text):
+                ch = text[i]
+                if in_str is not None:
+                    if esc:
+                        esc = False
+                    elif ch == "\\":
+                        esc = True
+                    elif ch == in_str:
+                        if i + 2 < len(text) and text[i : i + 3] == in_str * 3:
+                            i += 2
+                        else:
+                            in_str = None
+                    i += 1
+                    continue
+                if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
+                    in_str = text[i]
+                    i += 3
+                    continue
+                if ch in {"'", '"'}:
+                    in_str = ch
+                    i += 1
+                    continue
+                if ch == "#":
+                    break
+                if ch in {"(", "[", "{"}:
+                    depth += 1
+                    i += 1
+                    continue
+                if ch in {")", "]", "}"}:
+                    depth -= 1
+                    i += 1
+                    continue
+                if ch == "=" and depth == 0:
+                    prev = text[i - 1] if i - 1 >= 0 else ""
+                    nxt = text[i + 1] if i + 1 < len(text) else ""
+                    if prev in {"!", "<", ">", "="} or nxt == "=":
+                        i += 1
+                        continue
+                    lhs = text[:i].strip()
+                    rhs = text[i + 1 :].strip()
+                    if lhs != "" and rhs != "":
+                        return lhs, rhs
+                    return None
+                i += 1
+            return None
+
+        def strip_inline_comment(text: str) -> str:
+            in_str: str | None = None
+            esc = False
+            for i, ch in enumerate(text):
+                if in_str is not None:
+                    if esc:
+                        esc = False
+                    elif ch == "\\":
+                        esc = True
+                    elif ch == in_str:
+                        in_str = None
+                    continue
+                if ch in {"'", '"'}:
+                    in_str = ch
+                    continue
+                if ch == "#":
+                    return text[:i].rstrip()
+            return text
+
         i = 0
         while i < len(body_lines):
             ln_no, ln_txt = body_lines[i]
             indent = len(ln_txt) - len(ln_txt.lstrip(" "))
-            s = ln_txt.strip()
+            s = strip_inline_comment(ln_txt.strip())
+
+            if s == "" or s.startswith("#"):
+                i += 1
+                continue
 
             if s.startswith("if ") and s.endswith(":"):
+                def parse_if_tail(start_idx: int, parent_indent: int) -> tuple[list[dict[str, Any]], int]:
+                    if start_idx >= len(body_lines):
+                        return [], start_idx
+                    t_no, t_ln = body_lines[start_idx]
+                    t_indent = len(t_ln) - len(t_ln.lstrip(" "))
+                    t_s = t_ln.strip()
+                    if t_indent != parent_indent:
+                        return [], start_idx
+                    if t_s == "else:":
+                        else_block, k2 = collect_indented_block(start_idx + 1, parent_indent)
+                        if len(else_block) == 0:
+                            raise EastBuildError(
+                                kind="unsupported_syntax",
+                                message=f"else body is missing in '{scope_label}'",
+                                source_span=_sh_span(t_no, 0, len(t_ln)),
+                                hint="Add indented else-body.",
+                            )
+                        return parse_stmt_block(else_block, name_types=dict(name_types), scope_label=scope_label), k2
+                    if t_s.startswith("elif ") and t_s.endswith(":"):
+                        cond_txt2 = t_s[len("elif ") : -1].strip()
+                        cond_col2 = t_ln.find(cond_txt2)
+                        cond_expr2 = parse_expr(cond_txt2, ln_no=t_no, col=cond_col2, name_types=dict(name_types))
+                        elif_block, k2 = collect_indented_block(start_idx + 1, parent_indent)
+                        if len(elif_block) == 0:
+                            raise EastBuildError(
+                                kind="unsupported_syntax",
+                                message=f"elif body is missing in '{scope_label}'",
+                                source_span=_sh_span(t_no, 0, len(t_ln)),
+                                hint="Add indented elif-body.",
+                            )
+                        nested_orelse, k3 = parse_if_tail(k2, parent_indent)
+                        return [
+                            {
+                                "kind": "If",
+                                "source_span": _sh_span(t_no, t_ln.find("elif "), len(t_ln)),
+                                "test": cond_expr2,
+                                "body": parse_stmt_block(elif_block, name_types=dict(name_types), scope_label=scope_label),
+                                "orelse": nested_orelse,
+                            }
+                        ], k3
+                    return [], start_idx
+
                 cond_txt = s[len("if ") : -1].strip()
                 cond_col = ln_txt.find(cond_txt)
                 cond_expr = parse_expr(cond_txt, ln_no=ln_no, col=cond_col, name_types=dict(name_types))
@@ -2465,21 +1626,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_span=_sh_span(ln_no, 0, len(ln_txt)),
                         hint="Add indented if-body.",
                     )
-                else_stmt_list: list[dict[str, Any]] = []
-                if j < len(body_lines):
-                    e_no, e_ln = body_lines[j]
-                    e_indent = len(e_ln) - len(e_ln.lstrip(" "))
-                    if e_indent == indent and e_ln.strip() == "else:":
-                        else_block, k = collect_indented_block(j + 1, indent)
-                        if len(else_block) == 0:
-                            raise EastBuildError(
-                                kind="unsupported_syntax",
-                                message=f"else body is missing in '{scope_label}'",
-                                source_span=_sh_span(e_no, 0, len(e_ln)),
-                                hint="Add indented else-body.",
-                            )
-                        else_stmt_list = parse_stmt_block(else_block, name_types=dict(name_types), scope_label=scope_label)
-                        j = k
+                else_stmt_list, j = parse_if_tail(j, indent)
                 stmts.append(
                     {
                         "kind": "If",
@@ -2623,6 +1770,30 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 i = j
                 continue
 
+            if s.startswith("while ") and s.endswith(":"):
+                cond_txt = s[len("while ") : -1].strip()
+                cond_col = ln_txt.find(cond_txt)
+                cond_expr = parse_expr(cond_txt, ln_no=ln_no, col=cond_col, name_types=dict(name_types))
+                body_block, j = collect_indented_block(i + 1, indent)
+                if len(body_block) == 0:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"while body is missing in '{scope_label}'",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Add indented while-body.",
+                    )
+                stmts.append(
+                    {
+                        "kind": "While",
+                        "source_span": _sh_span(ln_no, 0, len(ln_txt)),
+                        "test": cond_expr,
+                        "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                        "orelse": [],
+                    }
+                )
+                i = j
+                continue
+
             if s == "try:":
                 try_body, j = collect_indented_block(i + 1, indent)
                 if len(try_body) == 0:
@@ -2709,6 +1880,28 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         "kind": "Return",
                         "source_span": _sh_span(ln_no, rcol, len(ln_txt)),
                         "value": parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                    }
+                )
+                i += 1
+                continue
+
+            m_ann_decl = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*(.+)$", s)
+            if m_ann_decl is not None and "=" not in s:
+                target_txt = m_ann_decl.group(1)
+                ann = _sh_ann_to_type(m_ann_decl.group(2))
+                target_col = ln_txt.find(target_txt)
+                target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                    name_types[str(target_expr.get("id", ""))] = ann
+                stmts.append(
+                    {
+                        "kind": "AnnAssign",
+                        "source_span": _sh_span(ln_no, target_col, len(ln_txt)),
+                        "target": target_expr,
+                        "annotation": ann,
+                        "value": None,
+                        "declare": True,
+                        "decl_type": ann,
                     }
                 )
                 i += 1
@@ -2852,10 +2045,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 i += 1
                 continue
 
-            m_asg = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*=\s*(.+)$", s)
-            if m_asg is not None:
-                target_txt = m_asg.group(1)
-                expr_txt = m_asg.group(2).strip()
+            asg_split = split_top_level_assign(s)
+            if asg_split is not None:
+                target_txt, expr_txt = asg_split
                 expr_col = ln_txt.find(expr_txt)
                 target_col = ln_txt.find(target_txt)
                 target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
@@ -2919,13 +2111,29 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = j
             continue
 
-        sig = parse_def_sig(i, ln)
+        sig_line = ln
+        sig_end_line = i
+        if s.startswith("def ") and not s.endswith(":"):
+            j = i + 1
+            merged = s
+            while j <= len(lines):
+                part = lines[j - 1].strip()
+                if part == "":
+                    j += 1
+                    continue
+                merged += part
+                sig_end_line = j
+                if part.endswith(":"):
+                    break
+                j += 1
+            sig_line = merged
+        sig = parse_def_sig(i, sig_line)
         if sig is not None:
             fn_name = str(sig["name"])
             fn_ret = str(sig["ret"])
             arg_types = dict(sig["arg_types"])
             block: list[tuple[int, str]] = []
-            j = i + 1
+            j = sig_end_line + 1
             while j <= len(lines):
                 bl = lines[j - 1]
                 if bl.strip() == "":
@@ -2939,7 +2147,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 raise EastBuildError(
                     kind="unsupported_syntax",
                     message=f"self_hosted parser requires non-empty function body '{fn_name}'",
-                    source_span=_sh_span(i, 0, len(ln)),
+                    source_span=_sh_span(i, 0, len(sig_line)),
                     hint="Add return or assignment statements in function body.",
                 )
             stmts = parse_stmt_block(block, name_types=dict(arg_types), scope_label=fn_name)
@@ -3005,7 +2213,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             k = 0
             while k < len(block):
                 ln_no, ln_txt = block[k]
-                s2 = ln_txt.strip()
+                s2 = re.sub(r"\s+#.*$", "", ln_txt).strip()
                 bind = len(ln_txt) - len(ln_txt.lstrip(" "))
                 if bind == cls_indent + 4:
                     m_field = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", s2)
@@ -3199,20 +2407,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     }
 
 
-def convert_source_to_east_with_backend(source: str, filename: str, parser_backend: str = "python_ast") -> dict[str, Any]:
-    if parser_backend == "python_ast":
-        return convert_source_to_east(source, filename)
-    if parser_backend == "self_hosted":
-        return convert_source_to_east_self_hosted(source, filename)
-    raise EastBuildError(
-        kind="unsupported_syntax",
-        message=f"unknown parser backend: {parser_backend}",
-        source_span={"lineno": None, "col": None, "end_lineno": None, "end_col": None},
-        hint="Use parser_backend in {python_ast, self_hosted}.",
-    )
+def convert_source_to_east_with_backend(source: str, filename: str, parser_backend: str = "self_hosted") -> dict[str, Any]:
+    if parser_backend != "self_hosted":
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message=f"unknown parser backend: {parser_backend}",
+            source_span={"lineno": None, "col": None, "end_lineno": None, "end_col": None},
+            hint="Use parser_backend=self_hosted.",
+        )
+    return convert_source_to_east_self_hosted(source, filename)
 
 
-def convert_path(input_path: Path, parser_backend: str = "python_ast") -> dict[str, Any]:
+def convert_path(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """Read Python file and convert to EAST document."""
     source = input_path.read_text(encoding="utf-8")
     return convert_source_to_east_with_backend(source, str(input_path), parser_backend=parser_backend)
@@ -3522,7 +2728,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("-o", "--output", help="Output EAST JSON path")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON")
     parser.add_argument("--human-output", help="Output human-readable C++-style EAST path")
-    parser.add_argument("--parser-backend", choices=["python_ast", "self_hosted"], default="python_ast", help="Parser backend")
+    parser.add_argument("--parser-backend", choices=["self_hosted"], default="self_hosted", help="Parser backend")
     args = parser.parse_args(argv)
 
     input_path = Path(args.input)

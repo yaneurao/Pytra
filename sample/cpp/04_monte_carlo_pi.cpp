@@ -4,11 +4,10 @@
 int64 run_integer_grid_checksum(int64 width, int64 height, int64 seed) {
     int64 row_sum;
     int64 v;
-    int64 acc;
     
     int64 mod_main = 2147483647;
     int64 mod_out = 1000000007;
-    acc = seed % mod_out;
+    int64 acc = seed % mod_out;
     
     for (int64 y = 0; y < height; ++y) {
         row_sum = 0;

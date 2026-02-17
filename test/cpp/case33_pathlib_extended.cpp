@@ -1,6 +1,5 @@
 #include "cpp_module/py_runtime.h"
 
-
 void __pytra_main() {
     Path root = Path("test/obj/pathlib_case32");
     root.mkdir(true, true);

@@ -181,6 +181,15 @@ static inline const T& py_at(const list<T>& v, int64 idx) {
     return v[static_cast<std::size_t>(idx)];
 }
 
+template <class K, class V>
+static inline const V& py_dict_get(const dict<K, V>& d, const K& key) {
+    auto it = d.find(key);
+    if (it == d.end()) {
+        throw std::out_of_range("dict key not found");
+    }
+    return it->second;
+}
+
 static inline str py_at(const str& v, int64 idx) {
     if (idx < 0) idx += static_cast<int64>(v.size());
     if (idx < 0 || idx >= static_cast<int64>(v.size())) {
@@ -249,8 +258,15 @@ static inline auto py_make_scope_exit(F&& fn) {
     return py_scope_exit<F>(std::forward<F>(fn));
 }
 
+namespace png_helper {
 static inline void write_rgb_png(const str& path, int64 width, int64 height, const list<uint8>& pixels) {
     pycs::cpp_module::png::write_rgb_png(path, static_cast<int>(width), static_cast<int>(height), pixels);
+}
+}  // namespace png_helper
+
+// Backward compatibility for previously generated C++.
+static inline void write_rgb_png(const str& path, int64 width, int64 height, const list<uint8>& pixels) {
+    png_helper::write_rgb_png(path, width, height, pixels);
 }
 
 static inline list<uint8> grayscale_palette() {

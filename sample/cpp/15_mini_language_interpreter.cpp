@@ -230,11 +230,9 @@ struct Parser {
     }
     int64 parse_add() {
         int64 right;
-        int64 left;
-        bool done;
         
-        left = this->parse_mul();
-        done = false;
+        int64 left = this->parse_mul();
+        bool done = false;
         while (!(done)) {
             if (this->match("PLUS")) {
                 right = this->parse_mul();
@@ -252,11 +250,9 @@ struct Parser {
     }
     int64 parse_mul() {
         int64 right;
-        int64 left;
-        bool done;
         
-        left = this->parse_unary();
-        done = false;
+        int64 left = this->parse_unary();
+        bool done = false;
         while (!(done)) {
             if (this->match("STAR")) {
                 right = this->parse_unary();
@@ -347,10 +343,9 @@ int64 eval_expr(int64 expr_index, list<ExprNode>& expr_nodes, dict<str, int64>& 
 int64 execute(list<StmtNode> stmts, list<ExprNode> expr_nodes, bool trace) {
     int64 value;
     int64 norm;
-    int64 checksum;
     
     dict<str, int64> env = dict<str, int64>{};
-    checksum = 0;
+    int64 checksum = 0;
     int64 printed = 0;
     
     for (StmtNode stmt : stmts) {

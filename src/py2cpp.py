@@ -199,6 +199,7 @@ class CppEmitter:
                     base = stmt.get("base")
                     self.class_base[cls_name] = str(base) if isinstance(base, str) else None
 
+        self.emit_module_leading_trivia()
         self.emit(CPP_HEADER.rstrip("\n"))
         self.emit()
 
@@ -216,6 +217,26 @@ class CppEmitter:
         self.emit("}")
         self.emit()
         return "\n".join(self.lines)
+
+    def emit_module_leading_trivia(self) -> None:
+        trivia = self.doc.get("module_leading_trivia")
+        if not isinstance(trivia, list):
+            return
+        for item in trivia:
+            if not isinstance(item, dict):
+                continue
+            k = item.get("kind")
+            if k == "comment":
+                text = item.get("text")
+                if isinstance(text, str):
+                    self.emit("// " + text)
+            elif k == "blank":
+                count_raw = item.get("count", 1)
+                count = count_raw if isinstance(count_raw, int) and count_raw > 0 else 1
+                for _ in range(count):
+                    self.emit()
+        if len(trivia) > 0:
+            self.emit()
 
     def current_scope(self) -> set[str]:
         return self.scope_stack[-1]
@@ -331,6 +352,11 @@ class CppEmitter:
         if len(args) == 1:
             return args[0]
         t = self.cpp_type(out_type or "auto")
+        if t == "auto":
+            call = f"py_{fn}({args[0]}, {args[1]})"
+            for a in args[2:]:
+                call = f"py_{fn}({call}, {a})"
+            return call
         casted = [f"static_cast<{t}>({a})" for a in args]
         call = f"std::{fn}<{t}>({casted[0]}, {casted[1]})"
         for a in casted[2:]:
@@ -339,11 +365,12 @@ class CppEmitter:
 
     def _collect_local_decls(self, stmts: list[dict[str, Any]]) -> dict[str, str]:
         out: dict[str, str] = {}
-        loop_counts: dict[str, tuple[int, str]] = {}
         inline_declared: set[str] = set()
 
         def add_name(name: str, typ: str | None) -> None:
             if name == "":
+                return
+            if name in inline_declared:
                 return
             if name not in out:
                 out[name] = typ if isinstance(typ, str) and typ != "" else "auto"
@@ -353,7 +380,7 @@ class CppEmitter:
             if kind == "Assign":
                 target = st.get("target")
                 value = st.get("value")
-                if bool(st.get("declare_init")) or (bool(st.get("declare", True)) and not in_control and isinstance(target, dict) and target.get("kind") == "Name"):
+                if (bool(st.get("declare_init")) and not in_control) or (bool(st.get("declare", True)) and not in_control and isinstance(target, dict) and target.get("kind") == "Name"):
                     # Keep declaration+initialization at assignment site.
                     # This assignment must not be hoisted into pre-declarations.
                     if isinstance(target, dict) and target.get("kind") == "Name":
@@ -388,21 +415,6 @@ class CppEmitter:
                     n = str(target.get("id", ""))
                     if n not in inline_declared:
                         add_name(n, st.get("decl_type") or self.get_expr_type(target))
-            elif kind == "ForRange":
-                target = st.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    n = str(target.get("id", ""))
-                    t = st.get("target_type") or self.get_expr_type(target) or "int64"
-                    cnt, _old_t = loop_counts.get(n, (0, t))
-                    loop_counts[n] = (cnt + 1, t)
-            elif kind == "For":
-                target = st.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    n = str(target.get("id", ""))
-                    t = st.get("target_type") or self.get_expr_type(target) or "auto"
-                    cnt, _old_t = loop_counts.get(n, (0, t))
-                    loop_counts[n] = (cnt + 1, t)
-
             child_in_control = in_control or kind in {"If", "For", "ForRange", "While", "Try"}
             for k in ("body", "orelse", "finalbody"):
                 for child in st.get(k, []):
@@ -416,9 +428,6 @@ class CppEmitter:
 
         for s in stmts:
             walk(s, in_control=False)
-        for n, (cnt, t) in loop_counts.items():
-            if cnt > 1:
-                add_name(n, t)
         return out
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
@@ -461,13 +470,25 @@ class CppEmitter:
             t = self.cpp_type(stmt.get("annotation"))
             target = self.render_expr(stmt.get("target"))
             val = stmt.get("value")
+            rendered_val = self.render_expr(val) if val is not None else None
+            if isinstance(val, dict) and t != "auto":
+                vkind = val.get("kind")
+                if vkind == "List" and len(val.get("elements", [])) == 0:
+                    rendered_val = f"{t}{{}}"
+                elif vkind == "Dict" and len(val.get("entries", [])) == 0:
+                    rendered_val = f"{t}{{}}"
+                elif vkind == "Set" and len(val.get("elements", [])) == 0:
+                    rendered_val = f"{t}{{}}"
+                elif vkind == "ListComp" and isinstance(rendered_val, str):
+                    rendered_val = rendered_val.replace("-> auto", f"-> {t}", 1).replace("auto __out", f"{t} __out", 1)
+                    rendered_val = rendered_val.replace("-> list<auto>", f"-> {t}", 1).replace("list<auto> __out", f"{t} __out", 1)
             declare = bool(stmt.get("declare", True))
             already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
             if target.startswith("this->"):
                 if val is None:
                     self.emit(f"{target};")
                 else:
-                    self.emit(f"{target} = {self.render_expr(val)};")
+                    self.emit(f"{target} = {rendered_val};")
                 return
             if val is None:
                 if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
@@ -478,14 +499,14 @@ class CppEmitter:
                 if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
                     self.current_scope().add(target)
                 if declare and not already_declared:
-                    self.emit(f"{t} {target} = {self.render_expr(val)};")
+                    self.emit(f"{t} {target} = {rendered_val};")
                 else:
-                    self.emit(f"{target} = {self.render_expr(val)};")
+                    self.emit(f"{target} = {rendered_val};")
             return
         if kind == "AugAssign":
             op = AUG_OPS.get(stmt.get("op"), "+=")
             target_expr = stmt.get("target")
-            target = self.render_expr(target_expr)
+            target = self.render_lvalue(target_expr)
             declare = bool(stmt.get("declare", False))
             if declare and self.is_plain_name_expr(target_expr) and target not in self.current_scope():
                 t = self.cpp_type(stmt.get("decl_type") or self.get_expr_type(target_expr))
@@ -513,23 +534,31 @@ class CppEmitter:
             if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
                 self.emit(f"if ({self.render_cond(stmt.get('test'))})")
                 self.indent += 1
+                self.scope_stack.append(set())
                 self.emit_stmt(body_stmts[0])
+                self.scope_stack.pop()
                 self.indent -= 1
                 if len(else_stmts) > 0:
                     self.emit("else")
                     self.indent += 1
+                    self.scope_stack.append(set())
                     self.emit_stmt(else_stmts[0])
+                    self.scope_stack.pop()
                     self.indent -= 1
                 return
 
             self.emit(f"if ({self.render_cond(stmt.get('test'))}) {{")
             self.indent += 1
+            self.scope_stack.append(set())
             self.emit_stmt_list(body_stmts)
+            self.scope_stack.pop()
             self.indent -= 1
             if len(else_stmts) > 0:
                 self.emit("} else {")
                 self.indent += 1
+                self.scope_stack.append(set())
                 self.emit_stmt_list(else_stmts)
+                self.scope_stack.pop()
                 self.indent -= 1
                 self.emit("}")
             else:
@@ -538,7 +567,9 @@ class CppEmitter:
         if kind == "While":
             self.emit(f"while ({self.render_cond(stmt.get('test'))}) {{")
             self.indent += 1
+            self.scope_stack.append(set())
             self.emit_stmt_list(list(stmt.get("body", [])))
+            self.scope_stack.pop()
             self.indent -= 1
             self.emit("}")
             return
@@ -622,7 +653,7 @@ class CppEmitter:
                         continue
                 self.emit(f"{lhs} = std::get<{i}>({tmp});")
             return
-        texpr = self.render_expr(target)
+        texpr = self.render_lvalue(target)
         if self.is_plain_name_expr(target) and not self.is_declared(texpr):
             dtype = self.cpp_type(stmt.get("decl_type") or self.get_expr_type(target) or self.get_expr_type(value))
             self.current_scope().add(texpr)
@@ -632,6 +663,36 @@ class CppEmitter:
 
     def is_plain_name_expr(self, expr: dict[str, Any] | None) -> bool:
         return isinstance(expr, dict) and expr.get("kind") == "Name"
+
+    def render_lvalue(self, expr: dict[str, Any] | None) -> str:
+        if not isinstance(expr, dict):
+            return self.render_expr(expr)
+        if expr.get("kind") != "Subscript":
+            return self.render_expr(expr)
+        val_expr = expr.get("value")
+        val = self.render_expr(val_expr)
+        val_ty = self.get_expr_type(val_expr) or ""
+        sl = expr.get("slice")
+        idx = self.render_expr(sl)
+        if val_ty.startswith("dict["):
+            return f"{val}[{idx}]"
+        if val_ty.startswith("list["):
+            if self.negative_index_mode == "off":
+                return f"{val}[{idx}]"
+            if self.negative_index_mode == "const_only":
+                is_neg_const = False
+                if isinstance(sl, dict) and sl.get("kind") == "Constant":
+                    v = sl.get("value")
+                    is_neg_const = isinstance(v, int) and v < 0
+                elif isinstance(sl, dict) and sl.get("kind") == "UnaryOp" and sl.get("op") == "USub":
+                    opd = sl.get("operand")
+                    if isinstance(opd, dict) and opd.get("kind") == "Constant" and isinstance(opd.get("value"), int):
+                        is_neg_const = True
+                if is_neg_const:
+                    return f"py_at({val}, {idx})"
+                return f"{val}[{idx}]"
+            return f"py_at({val}, {idx})"
+        return f"{val}[{idx}]"
 
     def emit_for_range(self, stmt: dict[str, Any]) -> None:
         tgt = self.render_expr(stmt.get("target"))
@@ -654,21 +715,21 @@ class CppEmitter:
             inc = f"--{tgt}"
         else:
             inc = f"{tgt} += {step}"
-        if self.is_declared(tgt):
-            hdr = f"for ({tgt} = {start}; {cond}; {inc})"
-        else:
-            hdr = f"for ({tgt_ty} {tgt} = {start}; {cond}; {inc})"
-            self.current_scope().add(tgt)
+        hdr = f"for ({tgt_ty} {tgt} = {start}; {cond}; {inc})"
         if omit_braces:
             self.emit(hdr)
             self.indent += 1
+            self.scope_stack.append({tgt})
             self.emit_stmt(body_stmts[0])
+            self.scope_stack.pop()
             self.indent -= 1
             return
 
         self.emit(hdr + " {")
         self.indent += 1
+        self.scope_stack.append({tgt})
         self.emit_stmt_list(body_stmts)
+        self.scope_stack.pop()
         self.indent -= 1
         self.emit("}")
 
@@ -728,6 +789,8 @@ class CppEmitter:
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
             if by_ref and usage == "mutable":
                 params.append(f"{ct}& {n}")
+            elif by_ref:
+                params.append(f"const {ct}& {n}")
             else:
                 params.append(f"{ct} {n}")
             fn_scope.add(n)
@@ -918,7 +981,7 @@ class CppEmitter:
                 if runtime_call == "perf_counter":
                     return "perf_counter()"
                 if runtime_call == "write_rgb_png":
-                    return f"write_rgb_png({', '.join(args)})"
+                    return f"png_helper::write_rgb_png({', '.join(args)})"
                 if runtime_call == "grayscale_palette":
                     return "grayscale_palette()"
                 if runtime_call == "save_gif":
@@ -1024,6 +1087,8 @@ class CppEmitter:
                     return f"py_print({', '.join(args)})"
                 if raw == "len" and len(args) == 1:
                     return f"py_len({args[0]})"
+                if raw in {"bytes", "bytearray"}:
+                    return f"list<uint8>({', '.join(args)})" if len(args) >= 1 else "list<uint8>{}"
                 if raw == "str" and len(args) == 1:
                     src_expr = (expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None
                     return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
@@ -1071,6 +1136,8 @@ class CppEmitter:
                     }
                     if attr in math_map:
                         return f"{math_map[attr]}({', '.join(args)})"
+                if owner_expr == "png_helper" and attr == "write_rgb_png":
+                    return f"png_helper::write_rgb_png({', '.join(args)})"
                 if owner_t == "Path":
                     if attr == "mkdir":
                         parents = kw.get("parents", "false")
@@ -1115,6 +1182,19 @@ class CppEmitter:
                     if attr in {"discard", "remove"}:
                         a0 = args[0] if len(args) >= 1 else "/* missing */"
                         return f"{owner_expr}.erase({a0})"
+                    if attr == "clear":
+                        return f"{owner_expr}.clear()"
+                if owner_t == "unknown":
+                    if attr == "append":
+                        a0 = args[0] if len(args) >= 1 else "/* missing */"
+                        return f"{owner_expr}.push_back({a0})"
+                    if attr == "extend":
+                        a0 = args[0] if len(args) >= 1 else "{}"
+                        return f"{owner_expr}.insert({owner_expr}.end(), {a0}.begin(), {a0}.end())"
+                    if attr == "pop":
+                        if len(args) == 0:
+                            return f"py_pop({owner_expr})"
+                        return f"py_pop({owner_expr}, {args[0]})"
                     if attr == "clear":
                         return f"{owner_expr}.clear()"
             return f"{fn_name}({', '.join(args)})"
@@ -1301,6 +1381,8 @@ class CppEmitter:
                 up = self.render_expr(sl.get("upper")) if sl.get("upper") is not None else f"py_len({val})"
                 return f"py_slice({val}, {lo}, {up})"
             idx = self.render_expr(sl)
+            if val_ty.startswith("dict["):
+                return f"py_dict_get({val}, {idx})"
             if val_ty.startswith("list[") or val_ty == "str":
                 if self.negative_index_mode == "off":
                     return f"{val}[{idx}]"
@@ -1466,7 +1548,7 @@ class CppEmitter:
         return out
 
 
-def load_east(input_path: Path, *, parser_backend: str = "python_ast") -> dict[str, Any]:
+def load_east(input_path: Path) -> dict[str, Any]:
     if input_path.suffix == ".json":
         payload = json.loads(input_path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
@@ -1480,10 +1562,36 @@ def load_east(input_path: Path, *, parser_backend: str = "python_ast") -> dict[s
         raise RuntimeError("Invalid EAST JSON structure")
 
     try:
-        east = convert_path(input_path, parser_backend=parser_backend)
+        source_text = input_path.read_text(encoding="utf-8")
+        east = convert_path(input_path)
     except (SyntaxError, EastBuildError) as exc:
         raise RuntimeError(f"EAST conversion failed: {exc}") from exc
+    if isinstance(east, dict):
+        east["module_leading_trivia"] = extract_module_leading_trivia(source_text)
     return east
+
+
+def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    blank_count = 0
+    for raw in source.splitlines():
+        s = raw.strip()
+        if s == "":
+            blank_count += 1
+            continue
+        if s.startswith("#"):
+            if blank_count > 0:
+                out.append({"kind": "blank", "count": blank_count})
+                blank_count = 0
+            text = s[1:]
+            if text.startswith(" "):
+                text = text[1:]
+            out.append({"kind": "comment", "text": text})
+            continue
+        break
+    if blank_count > 0:
+        out.append({"kind": "blank", "count": blank_count})
+    return out
 
 
 def transpile_to_cpp(east_module: dict[str, Any], *, negative_index_mode: str = "const_only") -> str:
@@ -1494,7 +1602,6 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Transpile Python/EAST to C++ via EAST")
     ap.add_argument("input", help="Input .py or EAST .json")
     ap.add_argument("-o", "--output", help="Output .cpp path")
-    ap.add_argument("--parser-backend", choices=["python_ast", "self_hosted"], default="python_ast", help="Parser backend for .py input")
     ap.add_argument(
         "--negative-index-mode",
         choices=["always", "const_only", "off"],
@@ -1509,7 +1616,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        east_module = load_east(input_path, parser_backend=args.parser_backend)
+        east_module = load_east(input_path)
         cpp = transpile_to_cpp(east_module, negative_index_mode=args.negative_index_mode)
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)

@@ -65,7 +65,6 @@ void run_07_game_of_life_loop() {
     int64 kind;
     int64 ph;
     int64 pw;
-    list<list<int64>> grid;
     int64 _;
     int64 py;
     int64 px;
@@ -77,7 +76,7 @@ void run_07_game_of_life_loop() {
     str out_path = "sample/out/07_game_of_life_loop.gif";
     
     float64 start = perf_counter();
-    grid = list<list<int64>>{};
+    list<list<int64>> grid = list<list<int64>>{};
     for (_ = 0; _ < h; ++_) {
         row = list<int64>{};
         for (_ = 0; _ < w; ++_)

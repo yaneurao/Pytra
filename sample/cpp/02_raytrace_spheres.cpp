@@ -1,3 +1,7 @@
+// 02: 球のみのミニレイトレーサを実行し、PNG画像を出力するサンプルです。
+// トランスパイル互換のため、依存モジュールは最小限（timeのみ）にしています。
+
+
 #include "cpp_module/py_runtime.h"
 
 
@@ -217,7 +221,7 @@ void run_raytrace() {
     
     float64 start = perf_counter();
     list<uint8> pixels = render(width, height, aa);
-    write_rgb_png(out_path, width, height, pixels);
+    png_helper::write_rgb_png(out_path, width, height, pixels);
     float64 elapsed = perf_counter() - start;
     
     py_print("output:", out_path);
