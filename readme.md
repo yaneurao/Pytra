@@ -6,27 +6,25 @@ Pytra は、Pythonのサブセットで書かれたプログラムを様々な�
 
 Python から C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin への変換に対応しています。
 
-変換元のソースコードは、Pythonのサブセットなので普通のPython環境で実行でき、入力補助なども普通に機能する状態でプログラミングができます。
+変換元は Python のサブセットなので、元コードは通常の Python 環境でも実行できます。  
+そのため、普段どおりの開発体験（補完やデバッグを含む）で実装しながら、必要に応じて各言語へ変換できます。
 
-また、このトランスパイラ自体、Pythonで書かれており、非常にカスタマイズ性が良いです。
+トランスパイラ本体も Python で実装しており、拡張・改造しやすい構成です。
 
-そして、このトランスパイラのソースコード自体を本トランスパイラで別の言語に変換することもできます。このため、トランスパイラをC++に変換して高速に実行することもできます。
+さらに、トランスパイラ自身のソースコードも本トランスパイラで他言語へ変換できます。  
+例えば C++ へ変換して実行し、変換処理を高速化するといった使い方も可能です。
 
 
 ## 開発動機
 
-マルチプラットフォーム対応のゲームを作ろうと思うと、現在は、Unityが現実解です。UnityではC#で書く必要があります。私はサーバーサイドは、Pythonで書きたかったのですが、ブラウザ側もあるなら、そこはJavaScriptで書く必要があります。
+マルチプラットフォーム開発では、用途ごとに言語が分かれがちです。  
+例えば、クライアントは C# や JavaScript、サーバーは Python、モバイルは Kotlin/Swift という構成が現実的に発生します。
 
-業務用アプリだとiOSはKotlin、AndroidはSwiftということも珍しくはありません。
-この場合、サーバーサイドをJava、ブラウザ側をJavaScriptと、4つの言語を行き来することになる方もいらっしゃるでしょう。
+この状況では、同じロジックを複数言語で繰り返し実装・保守することになり、コストと不整合のリスクが大きくなります。
 
-こうなってくると同じロジックを何度も異なる言語で実装しなければなりません。
+「コアロジックを Python で書き、必要な言語へ変換できれば効率が上がる」という考えから、Pytra を開発しました。
 
-「これはさすがにおかしいのでは？」と思ったのが本トランスパイラの開発のきっかけです。
-
-また、素のPythonだと遅すぎてサーバーサイドで大量のリクエストを捌くのには向かないです。ここが少しでも速くなればと思い、開発しました。
-
-JavaScriptのコードにも変換できるので、Pythonでブラウザゲームの開発もできます。
+また、素の Python だけでは性能が足りない場面もあるため、C++ や Rust などへ変換して高速化できることも重視しています。
 
 ⚠ まだ開発途上にあり、実用にほど遠いかもしれません。サンプルコードなどを確認してから自己責任において、ご利用ください。
 
@@ -153,6 +151,9 @@ if __name__ == "__main__":
     run_06_julia_parameter_sweep()
 ```
 </details>
+
+<details>
+<summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin）: 06_julia_parameter_sweep</summary>
 
 <details>
 <summary>C++への変換例 : 06_julia_parameter_sweep.cpp</summary>
@@ -2603,6 +2604,8 @@ class pytra_06_julia_parameter_sweep {
 ```
 </details>
 
+</details>
+
 <br/>
 
 ![16_glass_sculpture_chaos](images/16_glass_sculpture_chaos.gif)
@@ -2925,6 +2928,9 @@ if __name__ == "__main__":
     run_16_glass_sculpture_chaos()
 ```
 </details>
+
+<details>
+<summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin）: 16_glass_sculpture_chaos</summary>
 
 <details>
 <summary>C++への変換例 : 16_glass_sculpture_chaos.cpp</summary>
@@ -7231,6 +7237,8 @@ class pytra_16_glass_sculpture_chaos {
     }
 }
 ```
+</details>
+
 </details>
 
 ## 補足説明
