@@ -67,6 +67,6 @@
 - [ ] GIF の `sample/12_sort_visualizer` / `sample/16_glass_sculpture_chaos` のフレーム画素差を解消する。
 - [ ] `render()` 内の float→int 変換境界（bar幅/補間/正規化）の評価順を Python と一致させる。
 - [ ] フレームデータ（LZW 展開後）が全フレーム一致することを確認する。
-- [ ] 画像一致検証を自動化する。
-- [ ] `sample/py` 全件について、`stdout` 比較に加えて PNG raw / GIF フレーム一致を検証するスクリプトを追加する。
+- [x] 画像一致検証を自動化する。
+- [x] `sample/py` 全件について、`stdout` 比較に加えて PNG raw / GIF フレーム一致を検証するスクリプトを追加する。
 - [ ] 差分時は「最初の不一致座標・チャネル・元式」を出力できるようにする。
