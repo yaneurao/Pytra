@@ -1,0 +1,689 @@
+#!/usr/bin/env python3
+"""Python source -> EAST converter.
+
+This script converts Python AST into a language-neutral EAST JSON document.
+It focuses on Phase 1 requirements in docs/spec-east.md:
+ - syntax normalization (`if __name__ == "__main__"` extraction, symbol rename)
+ - type resolution (annotation + inference)
+ - readonly analysis for function args
+ - explicit cast metadata for mixed numeric binops
+ - error contract with kind/source_span/hint
+"""
+
+from __future__ import annotations
+
+import argparse
+import ast
+import json
+from dataclasses import dataclass
+from pathlib import Path
+import sys
+from typing import Any
+
+
+BorrowKind = str  # "value" | "readonly_ref" | "mutable_ref" | "move"
+
+
+@dataclass
+class EastBuildError(Exception):
+    """EAST generation error with contract fields."""
+
+    kind: str
+    message: str
+    source_span: dict[str, int | None]
+    hint: str
+
+    def to_payload(self) -> dict[str, Any]:
+        return {
+            "kind": self.kind,
+            "message": self.message,
+            "source_span": self.source_span,
+            "hint": self.hint,
+        }
+
+
+def span_of(node: ast.AST | None) -> dict[str, int | None]:
+    if node is None:
+        return {"lineno": None, "col": None, "end_lineno": None, "end_col": None}
+    return {
+        "lineno": getattr(node, "lineno", None),
+        "col": getattr(node, "col_offset", None),
+        "end_lineno": getattr(node, "end_lineno", None),
+        "end_col": getattr(node, "end_col_offset", None),
+    }
+
+
+def is_main_guard(stmt: ast.stmt) -> bool:
+    if not isinstance(stmt, ast.If):
+        return False
+    test = stmt.test
+    if not isinstance(test, ast.Compare):
+        return False
+    if len(test.ops) != 1 or len(test.comparators) != 1:
+        return False
+    if not isinstance(test.ops[0], ast.Eq):
+        return False
+    left = test.left
+    right = test.comparators[0]
+    return (
+        isinstance(left, ast.Name)
+        and left.id == "__name__"
+        and isinstance(right, ast.Constant)
+        and right.value == "__main__"
+    )
+
+
+def annotation_to_type(ann: ast.expr | None) -> str | None:
+    if ann is None:
+        return None
+    if isinstance(ann, ast.Name):
+        if ann.id in {"int", "float", "bool", "str", "bytes", "bytearray", "Path"}:
+            return ann.id
+        if ann.id in {"None", "NoneType"}:
+            return "None"
+        return ann.id
+    if isinstance(ann, ast.Constant) and ann.value is None:
+        return "None"
+    if isinstance(ann, ast.Subscript):
+        base = annotation_to_type(ann.value)
+        if base is None:
+            return None
+        if isinstance(ann.slice, ast.Tuple):
+            args = [annotation_to_type(x) or "?" for x in ann.slice.elts]
+            return f"{base}[{','.join(args)}]"
+        arg = annotation_to_type(ann.slice) or "?"
+        return f"{base}[{arg}]"
+    if isinstance(ann, ast.Attribute):
+        if isinstance(ann.value, ast.Name) and ann.value.id == "pathlib" and ann.attr == "Path":
+            return "Path"
+        return ann.attr
+    return None
+
+
+class ArgUsageAnalyzer(ast.NodeVisitor):
+    """Conservative readonly/mutable classifier for function args."""
+
+    MUTATING_METHODS = {
+        "append",
+        "extend",
+        "insert",
+        "pop",
+        "clear",
+        "remove",
+        "discard",
+        "add",
+        "update",
+        "sort",
+        "reverse",
+        "write",
+        "write_text",
+        "mkdir",
+    }
+    PURE_BUILTINS = {"len", "print", "int", "float", "str", "bool", "range", "min", "max", "ord", "chr"}
+
+    def __init__(self, arg_names: set[str]) -> None:
+        self.arg_names = set(arg_names)
+        self.mutable: set[str] = set()
+
+    def _mark_if_arg(self, node: ast.expr) -> None:
+        if isinstance(node, ast.Name) and node.id in self.arg_names:
+            self.mutable.add(node.id)
+
+    def visit_Assign(self, node: ast.Assign) -> Any:
+        for t in node.targets:
+            self._mark_mutation_target(t)
+        self.generic_visit(node.value)
+
+    def visit_AugAssign(self, node: ast.AugAssign) -> Any:
+        self._mark_mutation_target(node.target)
+        self.generic_visit(node.value)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> Any:
+        self._mark_mutation_target(node.target)
+        if node.value is not None:
+            self.generic_visit(node.value)
+
+    def visit_Call(self, node: ast.Call) -> Any:
+        if isinstance(node.func, ast.Attribute):
+            owner = node.func.value
+            if isinstance(owner, ast.Name) and owner.id in self.arg_names and node.func.attr in self.MUTATING_METHODS:
+                self.mutable.add(owner.id)
+        elif isinstance(node.func, ast.Name):
+            fn = node.func.id
+            if fn not in self.PURE_BUILTINS:
+                for arg in node.args:
+                    if isinstance(arg, ast.Name) and arg.id in self.arg_names:
+                        self.mutable.add(arg.id)
+        self.generic_visit(node)
+
+    def _mark_mutation_target(self, target: ast.expr) -> None:
+        if isinstance(target, ast.Name) and target.id in self.arg_names:
+            self.mutable.add(target.id)
+            return
+        if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) and target.value.id in self.arg_names:
+            self.mutable.add(target.value.id)
+            return
+        if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name) and target.value.id in self.arg_names:
+            self.mutable.add(target.value.id)
+            return
+
+
+class EastBuilder:
+    RESERVED = {"main", "py_main", "__pytra_main"}
+
+    def __init__(self, source: str, filename: str) -> None:
+        self.source = source
+        self.filename = filename
+        self.module = ast.parse(source, filename=filename)
+        self.type_env_stack: list[dict[str, str]] = []
+        self.arg_usage_stack: list[dict[str, str]] = []
+        self.renamed_symbols: dict[str, str] = {}
+        self._scope_defined: set[str] = set()
+        self.function_return_types: dict[str, str] = {}
+
+    def build(self) -> dict[str, Any]:
+        body: list[dict[str, Any]] = []
+        main_body: list[dict[str, Any]] = []
+        self._precompute_module_renames(self.module)
+        self.type_env_stack.append({})
+
+        for stmt in self.module.body:
+            if is_main_guard(stmt):
+                for inner in stmt.body:
+                    main_body.append(self._stmt(inner))
+                continue
+            body.append(self._stmt(stmt))
+
+        self.type_env_stack.pop()
+        return {
+            "kind": "Module",
+            "source_path": self.filename,
+            "source_span": span_of(self.module),
+            "body": body,
+            "main_guard_body": main_body,
+            "renamed_symbols": dict(self.renamed_symbols),
+        }
+
+    def _precompute_module_renames(self, module: ast.Module) -> None:
+        counts: dict[str, int] = {}
+        for stmt in module.body:
+            if isinstance(stmt, (ast.FunctionDef, ast.ClassDef)):
+                counts[stmt.name] = counts.get(stmt.name, 0) + 1
+            if isinstance(stmt, ast.FunctionDef):
+                ret = annotation_to_type(stmt.returns) if stmt.returns is not None else "None"
+                if ret is not None:
+                    self.function_return_types[stmt.name] = ret
+        for name, count in counts.items():
+            if count > 1 or name in self.RESERVED:
+                self.renamed_symbols[name] = f"__pytra_{name}"
+
+    def _stmt(self, stmt: ast.stmt) -> dict[str, Any]:
+        if isinstance(stmt, ast.FunctionDef):
+            return self._function(stmt)
+        if isinstance(stmt, ast.ClassDef):
+            return {
+                "kind": "ClassDef",
+                "name": self._renamed(stmt.name),
+                "original_name": stmt.name,
+                "source_span": span_of(stmt),
+                "body": [self._stmt(s) for s in stmt.body],
+            }
+        if isinstance(stmt, ast.Return):
+            return {
+                "kind": "Return",
+                "source_span": span_of(stmt),
+                "value": self._expr(stmt.value) if stmt.value is not None else None,
+            }
+        if isinstance(stmt, ast.Assign):
+            if len(stmt.targets) != 1:
+                raise self._error("unsupported_syntax", "only single-target assignment is supported", stmt, "Split assignment into one target per statement.")
+            target = stmt.targets[0]
+            value = self._expr(stmt.value)
+            if isinstance(target, ast.Name):
+                self._bind_name_type(target.id, value["resolved_type"], stmt)
+            return {
+                "kind": "Assign",
+                "source_span": span_of(stmt),
+                "target": self._expr(target),
+                "value": value,
+            }
+        if isinstance(stmt, ast.AnnAssign):
+            if not isinstance(stmt.target, ast.Name):
+                raise self._error("unsupported_syntax", "annotated assignment target must be Name", stmt, "Use simple variable annotation.")
+            ann_ty = annotation_to_type(stmt.annotation)
+            if ann_ty is None:
+                raise self._error("unsupported_syntax", "unsupported type annotation", stmt.annotation, "Use supported Python-style annotations.")
+            value = self._expr(stmt.value) if stmt.value is not None else None
+            if value is not None and not self._types_compatible(ann_ty, value["resolved_type"]):
+                raise self._error(
+                    "semantic_conflict",
+                    f"annotated type '{ann_ty}' conflicts with value type '{value['resolved_type']}'",
+                    stmt,
+                    "Align annotation and assigned value type.",
+                )
+            self._bind_name_type(stmt.target.id, ann_ty, stmt)
+            return {
+                "kind": "AnnAssign",
+                "source_span": span_of(stmt),
+                "target": self._expr(stmt.target),
+                "annotation": ann_ty,
+                "value": value,
+            }
+        if isinstance(stmt, ast.Expr):
+            return {"kind": "Expr", "source_span": span_of(stmt), "value": self._expr(stmt.value)}
+        if isinstance(stmt, ast.If):
+            return {
+                "kind": "If",
+                "source_span": span_of(stmt),
+                "test": self._expr(stmt.test),
+                "body": [self._stmt(s) for s in stmt.body],
+                "orelse": [self._stmt(s) for s in stmt.orelse],
+            }
+        if isinstance(stmt, ast.For):
+            return {
+                "kind": "For",
+                "source_span": span_of(stmt),
+                "target": self._expr(stmt.target),
+                "iter": self._expr(stmt.iter),
+                "body": [self._stmt(s) for s in stmt.body],
+                "orelse": [self._stmt(s) for s in stmt.orelse],
+            }
+        if isinstance(stmt, ast.While):
+            return {
+                "kind": "While",
+                "source_span": span_of(stmt),
+                "test": self._expr(stmt.test),
+                "body": [self._stmt(s) for s in stmt.body],
+                "orelse": [self._stmt(s) for s in stmt.orelse],
+            }
+        if isinstance(stmt, ast.Try):
+            return {
+                "kind": "Try",
+                "source_span": span_of(stmt),
+                "body": [self._stmt(s) for s in stmt.body],
+                "handlers": [self._except_handler(h) for h in stmt.handlers],
+                "orelse": [self._stmt(s) for s in stmt.orelse],
+                "finalbody": [self._stmt(s) for s in stmt.finalbody],
+            }
+        if isinstance(stmt, ast.Raise):
+            return {
+                "kind": "Raise",
+                "source_span": span_of(stmt),
+                "exc": self._expr(stmt.exc) if stmt.exc is not None else None,
+            }
+        if isinstance(stmt, ast.Import):
+            return {
+                "kind": "Import",
+                "source_span": span_of(stmt),
+                "names": [{"name": a.name, "asname": a.asname} for a in stmt.names],
+            }
+        if isinstance(stmt, ast.ImportFrom):
+            return {
+                "kind": "ImportFrom",
+                "source_span": span_of(stmt),
+                "module": stmt.module,
+                "level": stmt.level,
+                "names": [{"name": a.name, "asname": a.asname} for a in stmt.names],
+            }
+        if isinstance(stmt, ast.Pass):
+            return {"kind": "Pass", "source_span": span_of(stmt)}
+        if isinstance(stmt, ast.Break):
+            return {"kind": "Break", "source_span": span_of(stmt)}
+        if isinstance(stmt, ast.Continue):
+            return {"kind": "Continue", "source_span": span_of(stmt)}
+        raise self._error("unsupported_syntax", f"unsupported statement: {type(stmt).__name__}", stmt, "Rewrite to supported subset.")
+
+    def _except_handler(self, h: ast.ExceptHandler) -> dict[str, Any]:
+        return {
+            "kind": "ExceptHandler",
+            "source_span": span_of(h),
+            "type": self._expr(h.type) if h.type is not None else None,
+            "name": h.name,
+            "body": [self._stmt(s) for s in h.body],
+        }
+
+    def _function(self, fn: ast.FunctionDef) -> dict[str, Any]:
+        fn_name = self._renamed(fn.name)
+        arg_types: dict[str, str] = {}
+        for arg in fn.args.args:
+            ann = annotation_to_type(arg.annotation)
+            if ann is None:
+                raise self._error(
+                    "inference_failure",
+                    f"function argument '{arg.arg}' requires type annotation or inferable type",
+                    arg,
+                    "Add a type annotation to the argument.",
+                )
+            arg_types[arg.arg] = ann
+        ret_ty = annotation_to_type(fn.returns) if fn.returns is not None else "None"
+        if ret_ty is None:
+            raise self._error("unsupported_syntax", "unsupported return annotation", fn.returns, "Use supported return annotation.")
+
+        analyzer = ArgUsageAnalyzer(set(arg_types.keys()))
+        for st in fn.body:
+            analyzer.visit(st)
+        arg_usage = {name: ("mutable" if name in analyzer.mutable else "readonly") for name in arg_types}
+
+        self.type_env_stack.append(dict(arg_types))
+        self.arg_usage_stack.append(arg_usage)
+        body = [self._stmt(s) for s in fn.body]
+        self.arg_usage_stack.pop()
+        self.type_env_stack.pop()
+        return {
+            "kind": "FunctionDef",
+            "name": fn_name,
+            "original_name": fn.name,
+            "source_span": span_of(fn),
+            "arg_types": arg_types,
+            "return_type": ret_ty,
+            "arg_usage": arg_usage,
+            "renamed_symbols": {k: v for k, v in self.renamed_symbols.items() if k == fn.name},
+            "body": body,
+        }
+
+    def _expr(self, expr: ast.expr) -> dict[str, Any]:
+        resolved_type, casts = self._resolve_expr_type(expr)
+        return {
+            "kind": type(expr).__name__,
+            "source_span": span_of(expr),
+            "resolved_type": resolved_type,
+            "borrow_kind": self._borrow_kind(expr),
+            "casts": casts,
+            "repr": ast.unparse(expr) if hasattr(ast, "unparse") else None,
+        }
+
+    def _resolve_expr_type(self, expr: ast.expr) -> tuple[str, list[dict[str, Any]]]:
+        if isinstance(expr, ast.Name):
+            if expr.id in {"True", "False"}:
+                return "bool", []
+            if expr.id == "None":
+                return "None", []
+            t = self._lookup_name_type(expr.id)
+            if t is None:
+                raise self._error(
+                    "inference_failure",
+                    f"type of name '{expr.id}' is unknown",
+                    expr,
+                    "Add an annotation or assign a concrete typed value before use.",
+                )
+            return t, []
+        if isinstance(expr, ast.Constant):
+            if isinstance(expr.value, bool):
+                return "bool", []
+            if isinstance(expr.value, int):
+                return "int", []
+            if isinstance(expr.value, float):
+                return "float", []
+            if isinstance(expr.value, str):
+                return "str", []
+            if expr.value is None:
+                return "None", []
+            raise self._error("unsupported_syntax", f"unsupported constant type: {type(expr.value).__name__}", expr, "Use supported literal.")
+        if isinstance(expr, ast.List):
+            if len(expr.elts) == 0:
+                raise self._error("inference_failure", "empty list type is ambiguous", expr, "Annotate variable type, e.g. x: list[int] = [].")
+            elem_types = [self._resolve_expr_type(e)[0] for e in expr.elts]
+            t = self._unify_types(elem_types, expr)
+            return f"list[{t}]", []
+        if isinstance(expr, ast.Set):
+            if len(expr.elts) == 0:
+                raise self._error("inference_failure", "empty set type is ambiguous", expr, "Annotate variable type, e.g. x: set[str] = set().")
+            elem_types = [self._resolve_expr_type(e)[0] for e in expr.elts]
+            t = self._unify_types(elem_types, expr)
+            return f"set[{t}]", []
+        if isinstance(expr, ast.Tuple):
+            item_types = [self._resolve_expr_type(e)[0] for e in expr.elts]
+            return f"tuple[{','.join(item_types)}]", []
+        if isinstance(expr, ast.Dict):
+            if len(expr.keys) == 0:
+                raise self._error("inference_failure", "empty dict type is ambiguous", expr, "Annotate variable type, e.g. x: dict[str,int] = {}.")
+            key_types = [self._resolve_expr_type(k)[0] for k in expr.keys if k is not None]
+            val_types = [self._resolve_expr_type(v)[0] for v in expr.values]
+            kt = self._unify_types(key_types, expr)
+            vt = self._unify_types(val_types, expr)
+            return f"dict[{kt},{vt}]", []
+        if isinstance(expr, ast.BinOp):
+            lt, _ = self._resolve_expr_type(expr.left)
+            rt, _ = self._resolve_expr_type(expr.right)
+            casts: list[dict[str, Any]] = []
+            if isinstance(expr.op, ast.Div):
+                if lt == "Path":
+                    return "Path", []
+                if lt in {"int", "float"} and rt in {"int", "float"}:
+                    if lt == "int":
+                        casts.append({"on": "left", "from": "int", "to": "float", "reason": "numeric_promotion"})
+                    if rt == "int":
+                        casts.append({"on": "right", "from": "int", "to": "float", "reason": "numeric_promotion"})
+                    return "float", casts
+            if isinstance(expr.op, (ast.Add, ast.Sub, ast.Mult, ast.Mod, ast.FloorDiv)):
+                if lt == "str" and rt == "str" and isinstance(expr.op, ast.Add):
+                    return "str", []
+                if lt in {"int", "float"} and rt in {"int", "float"}:
+                    if lt != rt:
+                        if lt == "int":
+                            casts.append({"on": "left", "from": "int", "to": "float", "reason": "numeric_promotion"})
+                        if rt == "int":
+                            casts.append({"on": "right", "from": "int", "to": "float", "reason": "numeric_promotion"})
+                        return "float", casts
+                    return lt, []
+            raise self._error("inference_failure", f"cannot infer binop type: {lt} op {rt}", expr, "Add explicit cast or simplify expression.")
+        if isinstance(expr, ast.UnaryOp):
+            t, _ = self._resolve_expr_type(expr.operand)
+            if isinstance(expr.op, ast.Not):
+                return "bool", []
+            if isinstance(expr.op, ast.USub) and t in {"int", "float"}:
+                return t, []
+            raise self._error("inference_failure", f"cannot infer unary op type for {t}", expr, "Use explicit cast.")
+        if isinstance(expr, ast.BoolOp):
+            return "bool", []
+        if isinstance(expr, ast.Compare):
+            return "bool", []
+        if isinstance(expr, ast.IfExp):
+            bt, _ = self._resolve_expr_type(expr.body)
+            ot, _ = self._resolve_expr_type(expr.orelse)
+            if bt == ot:
+                return bt, []
+            if {bt, ot} == {"int", "float"}:
+                return "float", [
+                    {"on": "body", "from": bt, "to": "float", "reason": "ifexp_numeric_promotion"},
+                    {"on": "orelse", "from": ot, "to": "float", "reason": "ifexp_numeric_promotion"},
+                ]
+            raise self._error("inference_failure", f"if-expression branch types mismatch: {bt} vs {ot}", expr, "Align both branches to same type.")
+        if isinstance(expr, ast.Attribute):
+            bt, _ = self._resolve_expr_type(expr.value)
+            if bt == "Path":
+                if expr.attr == "parent":
+                    return "Path", []
+                if expr.attr in {"name", "stem"}:
+                    return "str", []
+            if isinstance(expr.value, ast.Name) and expr.value.id == "math" and expr.attr in {
+                "pi",
+                "e",
+            }:
+                return "float", []
+            # user-class/member unknown type is kept as dynamic marker
+            return "unknown", []
+        if isinstance(expr, ast.Subscript):
+            bt, _ = self._resolve_expr_type(expr.value)
+            if bt.startswith("list[") and bt.endswith("]"):
+                return bt[5:-1], []
+            if bt.startswith("dict[") and bt.endswith("]"):
+                inside = bt[5:-1]
+                parts = inside.split(",", 1)
+                return parts[1] if len(parts) == 2 else "unknown", []
+            if bt.startswith("tuple[") and bt.endswith("]"):
+                return "unknown", []
+            if bt == "str":
+                return "str", []
+            return "unknown", []
+        if isinstance(expr, ast.Call):
+            return self._resolve_call_type(expr)
+        if isinstance(expr, ast.JoinedStr):
+            return "str", []
+        raise self._error("unsupported_syntax", f"unsupported expression: {type(expr).__name__}", expr, "Rewrite expression to supported subset.")
+
+    def _resolve_call_type(self, expr: ast.Call) -> tuple[str, list[dict[str, Any]]]:
+        if isinstance(expr.func, ast.Name):
+            fn = expr.func.id
+            if fn in {"int", "float", "bool", "str", "bytes", "bytearray"}:
+                return fn, []
+            if fn == "len":
+                return "int", []
+            if fn == "Path":
+                return "Path", []
+            if fn in {"min", "max"}:
+                if len(expr.args) == 0:
+                    raise self._error("inference_failure", f"{fn} requires at least one argument", expr, f"Pass at least one argument to {fn}().")
+                ts = [self._resolve_expr_type(a)[0] for a in expr.args]
+                return self._unify_types(ts, expr), []
+            if fn == "round":
+                return "float", []
+            if fn in {"print", "write_rgb_png", "save_gif"}:
+                return "None", []
+            known_ret = self.function_return_types.get(fn)
+            if known_ret is not None:
+                return known_ret, []
+            raise self._error("inference_failure", f"cannot infer return type of call '{fn}(...)'", expr, "Add return annotation and EAST resolver support.")
+        if isinstance(expr.func, ast.Attribute):
+            owner_t, _ = self._resolve_expr_type(expr.func.value)
+            m = expr.func.attr
+            if isinstance(expr.func.value, ast.Name) and expr.func.value.id == "pathlib" and m == "Path":
+                return "Path", []
+            if owner_t == "Path":
+                if m in {"resolve", "parent"}:
+                    return "Path", []
+                if m in {"name", "stem", "read_text"}:
+                    return "str", []
+                if m == "exists":
+                    return "bool", []
+                if m in {"write_text", "mkdir"}:
+                    return "None", []
+            if isinstance(expr.func.value, ast.Name) and expr.func.value.id == "math":
+                if m in {"sqrt", "sin", "cos", "tan", "exp", "log", "log10", "fabs", "floor", "ceil", "pow"}:
+                    return "float", []
+            # container methods
+            if m in {"append", "extend", "insert", "clear", "sort", "reverse", "update", "add"}:
+                return "None", []
+            if m == "pop":
+                return "unknown", []
+            if m in {"isdigit", "isalpha", "exists"}:
+                return "bool", []
+        raise self._error("inference_failure", "cannot infer call expression type", expr, "Add annotation or extend EAST resolver.")
+
+    def _borrow_kind(self, expr: ast.expr) -> BorrowKind:
+        if isinstance(expr, ast.Name) and len(self.arg_usage_stack) > 0:
+            usage = self.arg_usage_stack[-1].get(expr.id)
+            if usage == "readonly":
+                return "readonly_ref"
+            if usage == "mutable":
+                return "mutable_ref"
+        return "value"
+
+    def _lookup_name_type(self, name: str) -> str | None:
+        for env in reversed(self.type_env_stack):
+            if name in env:
+                return env[name]
+        return None
+
+    def _bind_name_type(self, name: str, new_type: str, node: ast.AST) -> None:
+        if len(self.type_env_stack) == 0:
+            return
+        env = self.type_env_stack[-1]
+        prev = env.get(name)
+        if prev is not None and not self._types_compatible(prev, new_type):
+            raise self._error(
+                "semantic_conflict",
+                f"type conflict on '{name}': '{prev}' vs '{new_type}'",
+                node,
+                "Use explicit cast or split variable into different names.",
+            )
+        env[name] = new_type
+
+    def _types_compatible(self, t1: str, t2: str) -> bool:
+        if t1 == t2:
+            return True
+        return {t1, t2} == {"int", "float"}
+
+    def _unify_types(self, types: list[str], node: ast.AST) -> str:
+        uniq = sorted(set(types))
+        if len(uniq) == 1:
+            return uniq[0]
+        if set(uniq) == {"int", "float"}:
+            return "float"
+        raise self._error("inference_failure", f"ambiguous types: {uniq}", node, "Add explicit annotation/cast to make the type unique.")
+
+    def _renamed(self, name: str) -> str:
+        return self.renamed_symbols.get(name, name)
+
+    def _error(self, kind: str, message: str, node: ast.AST | None, hint: str) -> EastBuildError:
+        return EastBuildError(kind=kind, message=message, source_span=span_of(node), hint=hint)
+
+
+def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:
+    return EastBuilder(source=source, filename=filename).build()
+
+
+def convert_path(input_path: Path) -> dict[str, Any]:
+    source = input_path.read_text(encoding="utf-8")
+    return convert_source_to_east(source, str(input_path))
+
+
+def _dump_json(obj: dict[str, Any], *, pretty: bool) -> str:
+    if pretty:
+        return json.dumps(obj, ensure_ascii=False, indent=2)
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Convert Python source into EAST JSON")
+    parser.add_argument("input", help="Input Python file")
+    parser.add_argument("-o", "--output", help="Output EAST JSON path")
+    parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON")
+    args = parser.parse_args(argv)
+
+    input_path = Path(args.input)
+    if not input_path.exists():
+        print(f"error: input file not found: {input_path}", file=sys.stderr)
+        return 1
+
+    try:
+        east = convert_path(input_path)
+    except SyntaxError as exc:
+        err = {
+            "kind": "unsupported_syntax",
+            "message": str(exc),
+            "source_span": {
+                "lineno": exc.lineno,
+                "col": exc.offset,
+                "end_lineno": exc.end_lineno,
+                "end_col": exc.end_offset,
+            },
+            "hint": "Fix Python syntax errors before EAST conversion.",
+        }
+        out = {"ok": False, "error": err}
+        payload = _dump_json(out, pretty=True)
+        if args.output:
+            Path(args.output).write_text(payload + "\n", encoding="utf-8")
+        else:
+            print(payload)
+        return 1
+    except EastBuildError as exc:
+        out = {"ok": False, "error": exc.to_payload()}
+        payload = _dump_json(out, pretty=True)
+        if args.output:
+            Path(args.output).write_text(payload + "\n", encoding="utf-8")
+        else:
+            print(payload)
+        return 1
+
+    out = {"ok": True, "east": east}
+    payload = _dump_json(out, pretty=args.pretty)
+    if args.output:
+        Path(args.output).write_text(payload + "\n", encoding="utf-8")
+    else:
+        print(payload)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
