@@ -8,7 +8,7 @@ def calc_17(values: list[int]) -> int:
         if v % 2 == 0:
             total += v
         else:
-            total += (v * 2)
+            total += v * 2
     return total
 
 

@@ -2,8 +2,8 @@
 
 `docs/spec.md` は仕様全体の入口ページです。詳細は次の3ファイルに分割しています。
 
-- ユーザー向け仕様: [`docs/spec-user.md`](./spec-user.md)
-- 開発者向け仕様: [`docs/spec-dev.md`](./spec-dev.md)
+- 利用仕様: [`docs/spec-user.md`](./spec-user.md)
+- 実装仕様: [`docs/spec-dev.md`](./spec-dev.md)
 - Codex 向け運用仕様: [`docs/spec-codex.md`](./spec-codex.md)
 
 ## 読み分け方

@@ -142,19 +142,9 @@ static inline auto py_floordiv(A lhs, B rhs) {
     }
 }
 
-template <class A, class B>
-static inline auto py_mod(A lhs, B rhs) {
-    using R = std::common_type_t<A, B>;
-    if constexpr (std::is_integral_v<A> && std::is_integral_v<B>) {
-        if (rhs == 0) throw std::runtime_error("integer modulo by zero");
-        R r = static_cast<R>(lhs % rhs);
-        if (r != 0 && ((r > 0) != (rhs > 0))) r += static_cast<R>(rhs);
-        return r;
-    } else {
-        float64 x = std::fmod(static_cast<float64>(lhs), static_cast<float64>(rhs));
-        if (x != 0.0 && ((x > 0.0) != (static_cast<float64>(rhs) > 0.0))) x += static_cast<float64>(rhs);
-        return x;
-    }
+template <class T>
+static inline void py_swap(T& a, T& b) {
+    std::swap(a, b);
 }
 
 static inline void write_rgb_png(const str& path, int64 width, int64 height, const list<uint8>& pixels) {
