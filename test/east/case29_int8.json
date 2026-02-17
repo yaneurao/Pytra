@@ -1,0 +1,119 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case29_int8.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "__pytra_main",
+        "original_name": "main",
+        "source_span": {
+          "lineno": 2,
+          "col": 0,
+          "end_lineno": 5,
+          "end_col": 16
+        },
+        "arg_types": {},
+        "return_type": "None",
+        "arg_usage": {},
+        "renamed_symbols": {
+          "main": "__pytra_main"
+        },
+        "body": [
+          {
+            "kind": "AnnAssign",
+            "source_span": {
+              "lineno": 4,
+              "col": 4,
+              "end_lineno": 4,
+              "end_col": 16
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 4,
+                "col": 4,
+                "end_lineno": 4,
+                "end_col": 5
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "i"
+            },
+            "annotation": "int",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 4,
+                "col": 15,
+                "end_lineno": 4,
+                "end_col": 16
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "1"
+            }
+          },
+          {
+            "kind": "Expr",
+            "source_span": {
+              "lineno": 5,
+              "col": 4,
+              "end_lineno": 5,
+              "end_col": 16
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 5,
+                "col": 4,
+                "end_lineno": 5,
+                "end_col": 16
+              },
+              "resolved_type": "None",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "print(i * 2)"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 8,
+          "col": 4,
+          "end_lineno": 8,
+          "end_col": 10
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 8,
+            "end_col": 10
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "main()"
+        }
+      }
+    ],
+    "renamed_symbols": {
+      "main": "__pytra_main"
+    }
+  }
+}

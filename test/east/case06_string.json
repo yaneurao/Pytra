@@ -1,0 +1,83 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case06_string.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "greet",
+        "original_name": "greet",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 6,
+          "end_col": 27
+        },
+        "arg_types": {
+          "name": "str"
+        },
+        "return_type": "str",
+        "arg_usage": {
+          "name": "readonly"
+        },
+        "renamed_symbols": {},
+        "body": [
+          {
+            "kind": "Return",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 27
+            },
+            "value": {
+              "kind": "BinOp",
+              "source_span": {
+                "lineno": 6,
+                "col": 11,
+                "end_lineno": 6,
+                "end_col": 27
+              },
+              "resolved_type": "str",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "'Hello, ' + name"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 10,
+          "col": 4,
+          "end_lineno": 10,
+          "end_col": 25
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 10,
+            "col": 4,
+            "end_lineno": 10,
+            "end_col": 25
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(greet('Codex'))"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}

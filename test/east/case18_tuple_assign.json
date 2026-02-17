@@ -1,0 +1,192 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case18_tuple_assign.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "swap_sum_18",
+        "original_name": "swap_sum_18",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 9,
+          "end_col": 16
+        },
+        "arg_types": {
+          "a": "int",
+          "b": "int"
+        },
+        "return_type": "int",
+        "arg_usage": {
+          "a": "readonly",
+          "b": "readonly"
+        },
+        "renamed_symbols": {},
+        "body": [
+          {
+            "kind": "AnnAssign",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 14
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 4,
+                "end_lineno": 6,
+                "end_col": 5
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "x"
+            },
+            "annotation": "int",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 13,
+                "end_lineno": 6,
+                "end_col": 14
+              },
+              "resolved_type": "int",
+              "borrow_kind": "readonly_ref",
+              "casts": [],
+              "repr": "a"
+            }
+          },
+          {
+            "kind": "AnnAssign",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 14
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 4,
+                "end_lineno": 7,
+                "end_col": 5
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "y"
+            },
+            "annotation": "int",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 13,
+                "end_lineno": 7,
+                "end_col": 14
+              },
+              "resolved_type": "int",
+              "borrow_kind": "readonly_ref",
+              "casts": [],
+              "repr": "b"
+            }
+          },
+          {
+            "kind": "Assign",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 15
+            },
+            "target": {
+              "kind": "Tuple",
+              "source_span": {
+                "lineno": 8,
+                "col": 4,
+                "end_lineno": 8,
+                "end_col": 8
+              },
+              "resolved_type": "tuple[int,int]",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "(x, y)"
+            },
+            "value": {
+              "kind": "Tuple",
+              "source_span": {
+                "lineno": 8,
+                "col": 11,
+                "end_lineno": 8,
+                "end_col": 15
+              },
+              "resolved_type": "tuple[int,int]",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "(y, x)"
+            }
+          },
+          {
+            "kind": "Return",
+            "source_span": {
+              "lineno": 9,
+              "col": 4,
+              "end_lineno": 9,
+              "end_col": 16
+            },
+            "value": {
+              "kind": "BinOp",
+              "source_span": {
+                "lineno": 9,
+                "col": 11,
+                "end_lineno": 9,
+                "end_col": 16
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "x + y"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 13,
+          "col": 4,
+          "end_lineno": 13,
+          "end_col": 30
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 13,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 30
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(swap_sum_18(10, 20))"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}

@@ -1,0 +1,228 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case16_instance_member.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "ClassDef",
+        "name": "Point",
+        "original_name": "Point",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 11,
+          "end_col": 30
+        },
+        "body": [
+          {
+            "kind": "FunctionDef",
+            "name": "__init__",
+            "original_name": "__init__",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 23
+            },
+            "arg_types": {
+              "self": "Point",
+              "x": "int",
+              "y": "int"
+            },
+            "return_type": "None",
+            "arg_usage": {
+              "self": "mutable",
+              "x": "readonly",
+              "y": "readonly"
+            },
+            "renamed_symbols": {},
+            "body": [
+              {
+                "kind": "Assign",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 8,
+                  "end_lineno": 7,
+                  "end_col": 18
+                },
+                "target": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 7,
+                    "col": 8,
+                    "end_lineno": 7,
+                    "end_col": 14
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "self.x"
+                },
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 7,
+                    "col": 17,
+                    "end_lineno": 7,
+                    "end_col": 18
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "readonly_ref",
+                  "casts": [],
+                  "repr": "x"
+                }
+              },
+              {
+                "kind": "AnnAssign",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 8,
+                  "end_lineno": 8,
+                  "end_col": 23
+                },
+                "target": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 8,
+                    "end_lineno": 8,
+                    "end_col": 14
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "self.y"
+                },
+                "annotation": "int",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 22,
+                    "end_lineno": 8,
+                    "end_col": 23
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "readonly_ref",
+                  "casts": [],
+                  "repr": "y"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "FunctionDef",
+            "name": "total",
+            "original_name": "total",
+            "source_span": {
+              "lineno": 10,
+              "col": 4,
+              "end_lineno": 11,
+              "end_col": 30
+            },
+            "arg_types": {
+              "self": "Point"
+            },
+            "return_type": "int",
+            "arg_usage": {
+              "self": "readonly"
+            },
+            "renamed_symbols": {},
+            "body": [
+              {
+                "kind": "Return",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 8,
+                  "end_lineno": 11,
+                  "end_col": 30
+                },
+                "value": {
+                  "kind": "BinOp",
+                  "source_span": {
+                    "lineno": 11,
+                    "col": 15,
+                    "end_lineno": 11,
+                    "end_col": 30
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "self.x + self.y"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "AnnAssign",
+        "source_span": {
+          "lineno": 15,
+          "col": 4,
+          "end_lineno": 15,
+          "end_col": 26
+        },
+        "target": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 15,
+            "end_col": 5
+          },
+          "resolved_type": "Point",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "p"
+        },
+        "annotation": "Point",
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 15,
+            "col": 15,
+            "end_lineno": 15,
+            "end_col": 26
+          },
+          "resolved_type": "Point",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "Point(2, 5)"
+        }
+      },
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 16,
+          "col": 4,
+          "end_lineno": 16,
+          "end_col": 20
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 16,
+            "col": 4,
+            "end_lineno": 16,
+            "end_col": 20
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(p.total())"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}

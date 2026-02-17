@@ -1,0 +1,228 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case28_iterable.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "__pytra_main",
+        "original_name": "main",
+        "source_span": {
+          "lineno": 2,
+          "col": 0,
+          "end_lineno": 8,
+          "end_col": 14
+        },
+        "arg_types": {},
+        "return_type": "None",
+        "arg_usage": {},
+        "renamed_symbols": {
+          "main": "__pytra_main"
+        },
+        "body": [
+          {
+            "kind": "AnnAssign",
+            "source_span": {
+              "lineno": 4,
+              "col": 4,
+              "end_lineno": 4,
+              "end_col": 29
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 4,
+                "col": 4,
+                "end_lineno": 4,
+                "end_col": 5
+              },
+              "resolved_type": "list[int]",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "l"
+            },
+            "annotation": "list[int]",
+            "value": {
+              "kind": "List",
+              "source_span": {
+                "lineno": 4,
+                "col": 20,
+                "end_lineno": 4,
+                "end_col": 29
+              },
+              "resolved_type": "list[int]",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "[1, 2, 3]"
+            }
+          },
+          {
+            "kind": "Assign",
+            "source_span": {
+              "lineno": 5,
+              "col": 4,
+              "end_lineno": 5,
+              "end_col": 11
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 5,
+                "col": 4,
+                "end_lineno": 5,
+                "end_col": 7
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "sum"
+            },
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 5,
+                "col": 10,
+                "end_lineno": 5,
+                "end_col": 11
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "0"
+            }
+          },
+          {
+            "kind": "For",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 16
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 8,
+                "end_lineno": 6,
+                "end_col": 9
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "v"
+            },
+            "iter": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 13,
+                "end_lineno": 6,
+                "end_col": 14
+              },
+              "resolved_type": "list[int]",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "l"
+            },
+            "body": [
+              {
+                "kind": "AugAssign",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 8,
+                  "end_lineno": 7,
+                  "end_col": 16
+                },
+                "target": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 7,
+                    "col": 8,
+                    "end_lineno": 7,
+                    "end_col": 11
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "sum"
+                },
+                "op": "Add",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 7,
+                    "col": 15,
+                    "end_lineno": 7,
+                    "end_col": 16
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "v"
+                }
+              }
+            ],
+            "orelse": []
+          },
+          {
+            "kind": "Expr",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 14
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 8,
+                "col": 4,
+                "end_lineno": 8,
+                "end_col": 14
+              },
+              "resolved_type": "None",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "print(sum)"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 11,
+          "col": 4,
+          "end_lineno": 11,
+          "end_col": 10
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 11,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 10
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "main()"
+        }
+      }
+    ],
+    "renamed_symbols": {
+      "main": "__pytra_main"
+    }
+  }
+}

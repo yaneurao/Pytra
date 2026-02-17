@@ -1,0 +1,126 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case08_nested_call.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "inc",
+        "original_name": "inc",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 6,
+          "end_col": 16
+        },
+        "arg_types": {
+          "x": "int"
+        },
+        "return_type": "int",
+        "arg_usage": {
+          "x": "readonly"
+        },
+        "renamed_symbols": {},
+        "body": [
+          {
+            "kind": "Return",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 16
+            },
+            "value": {
+              "kind": "BinOp",
+              "source_span": {
+                "lineno": 6,
+                "col": 11,
+                "end_lineno": 6,
+                "end_col": 16
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "x + 1"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "FunctionDef",
+        "name": "twice",
+        "original_name": "twice",
+        "source_span": {
+          "lineno": 9,
+          "col": 0,
+          "end_lineno": 10,
+          "end_col": 22
+        },
+        "arg_types": {
+          "x": "int"
+        },
+        "return_type": "int",
+        "arg_usage": {
+          "x": "mutable"
+        },
+        "renamed_symbols": {},
+        "body": [
+          {
+            "kind": "Return",
+            "source_span": {
+              "lineno": 10,
+              "col": 4,
+              "end_lineno": 10,
+              "end_col": 22
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 10,
+                "col": 11,
+                "end_lineno": 10,
+                "end_col": 22
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "inc(inc(x))"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 14,
+          "col": 4,
+          "end_lineno": 14,
+          "end_col": 20
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 20
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(twice(10))"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}

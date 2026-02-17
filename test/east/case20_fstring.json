@@ -1,0 +1,85 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case20_fstring.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "make_msg_22",
+        "original_name": "make_msg_22",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 6,
+          "end_col": 31
+        },
+        "arg_types": {
+          "name": "str",
+          "count": "int"
+        },
+        "return_type": "str",
+        "arg_usage": {
+          "name": "readonly",
+          "count": "readonly"
+        },
+        "renamed_symbols": {},
+        "body": [
+          {
+            "kind": "Return",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 31
+            },
+            "value": {
+              "kind": "JoinedStr",
+              "source_span": {
+                "lineno": 6,
+                "col": 11,
+                "end_lineno": 6,
+                "end_col": 31
+              },
+              "resolved_type": "str",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "f'{name}:22:{count}'"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 10,
+          "col": 4,
+          "end_lineno": 10,
+          "end_col": 33
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 10,
+            "col": 4,
+            "end_lineno": 10,
+            "end_col": 33
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(make_msg_22('user', 7))"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}

@@ -1,0 +1,206 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case24_class_static.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "ClassDef",
+        "name": "Counter26",
+        "original_name": "Counter26",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 10,
+          "end_col": 25
+        },
+        "body": [
+          {
+            "kind": "AnnAssign",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 18
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 4,
+                "end_lineno": 6,
+                "end_col": 9
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "total"
+            },
+            "annotation": "int",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 6,
+                "col": 17,
+                "end_lineno": 6,
+                "end_col": 18
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "0"
+            }
+          },
+          {
+            "kind": "FunctionDef",
+            "name": "add",
+            "original_name": "add",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 10,
+              "end_col": 25
+            },
+            "arg_types": {
+              "self": "Counter26",
+              "x": "int"
+            },
+            "return_type": "int",
+            "arg_usage": {
+              "self": "mutable",
+              "x": "readonly"
+            },
+            "renamed_symbols": {},
+            "body": [
+              {
+                "kind": "AugAssign",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 8,
+                  "end_lineno": 9,
+                  "end_col": 23
+                },
+                "target": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 8,
+                    "end_lineno": 9,
+                    "end_col": 18
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "self.total"
+                },
+                "op": "Add",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 22,
+                    "end_lineno": 9,
+                    "end_col": 23
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "readonly_ref",
+                  "casts": [],
+                  "repr": "x"
+                }
+              },
+              {
+                "kind": "Return",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 8,
+                  "end_lineno": 10,
+                  "end_col": 25
+                },
+                "value": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 15,
+                    "end_lineno": 10,
+                    "end_col": 25
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "self.total"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "AnnAssign",
+        "source_span": {
+          "lineno": 14,
+          "col": 4,
+          "end_lineno": 14,
+          "end_col": 30
+        },
+        "target": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 5
+          },
+          "resolved_type": "Counter26",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "c"
+        },
+        "annotation": "Counter26",
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 14,
+            "col": 19,
+            "end_lineno": 14,
+            "end_col": 30
+          },
+          "resolved_type": "Counter26",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "Counter26()"
+        }
+      },
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 15,
+          "col": 4,
+          "end_lineno": 15,
+          "end_col": 19
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 15,
+            "end_col": 19
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(c.add(5))"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}

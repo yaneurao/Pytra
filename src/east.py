@@ -77,6 +77,12 @@ def annotation_to_type(ann: ast.expr | None) -> str | None:
     if ann is None:
         return None
     if isinstance(ann, ast.Name):
+        int_aliases = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        float_aliases = {"float32", "float64"}
+        if ann.id in int_aliases:
+            return "int"
+        if ann.id in float_aliases:
+            return "float"
         if ann.id in {"int", "float", "bool", "str", "bytes", "bytearray", "Path"}:
             return ann.id
         if ann.id in {"None", "NoneType"}:
@@ -180,6 +186,11 @@ class EastBuilder:
         self.renamed_symbols: dict[str, str] = {}
         self._scope_defined: set[str] = set()
         self.function_return_types: dict[str, str] = {}
+        self.class_names: set[str] = set()
+        self.class_method_return_types: dict[str, dict[str, str]] = {}
+        self.class_field_types: dict[str, dict[str, str]] = {}
+        self.class_base: dict[str, str | None] = {}
+        self.current_class_stack: list[str] = []
 
     def build(self) -> dict[str, Any]:
         body: list[dict[str, Any]] = []
@@ -213,6 +224,50 @@ class EastBuilder:
                 ret = annotation_to_type(stmt.returns) if stmt.returns is not None else "None"
                 if ret is not None:
                     self.function_return_types[stmt.name] = ret
+            if isinstance(stmt, ast.ClassDef):
+                self.class_names.add(stmt.name)
+                base_name: str | None = None
+                if len(stmt.bases) >= 1 and isinstance(stmt.bases[0], ast.Name):
+                    base_name = stmt.bases[0].id
+                self.class_base[stmt.name] = base_name
+                methods: dict[str, str] = {}
+                fields: dict[str, str] = {}
+                for n in stmt.body:
+                    if isinstance(n, ast.FunctionDef):
+                        r = annotation_to_type(n.returns) if n.returns is not None else "None"
+                        if r is not None:
+                            methods[n.name] = r
+                        if n.name == "__init__":
+                            arg_map: dict[str, str] = {}
+                            for a in n.args.args:
+                                t = annotation_to_type(a.annotation)
+                                if t is not None:
+                                    arg_map[a.arg] = t
+                            for st in n.body:
+                                if isinstance(st, ast.Assign):
+                                    for tgt in st.targets:
+                                        if (
+                                            isinstance(tgt, ast.Attribute)
+                                            and isinstance(tgt.value, ast.Name)
+                                            and tgt.value.id == "self"
+                                        ):
+                                            if isinstance(st.value, ast.Name) and st.value.id in arg_map:
+                                                fields[tgt.attr] = arg_map[st.value.id]
+                                if isinstance(st, ast.AnnAssign):
+                                    if (
+                                        isinstance(st.target, ast.Attribute)
+                                        and isinstance(st.target.value, ast.Name)
+                                        and st.target.value.id == "self"
+                                    ):
+                                        ft = annotation_to_type(st.annotation)
+                                        if ft is not None:
+                                            fields[st.target.attr] = ft
+                    if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name):
+                        ft = annotation_to_type(n.annotation)
+                        if ft is not None:
+                            fields[n.target.id] = ft
+                self.class_method_return_types[stmt.name] = methods
+                self.class_field_types[stmt.name] = fields
         for name, count in counts.items():
             if count > 1 or name in self.RESERVED:
                 self.renamed_symbols[name] = f"__pytra_{name}"
@@ -221,13 +276,16 @@ class EastBuilder:
         if isinstance(stmt, ast.FunctionDef):
             return self._function(stmt)
         if isinstance(stmt, ast.ClassDef):
-            return {
+            self.current_class_stack.append(stmt.name)
+            out = {
                 "kind": "ClassDef",
                 "name": self._renamed(stmt.name),
                 "original_name": stmt.name,
                 "source_span": span_of(stmt),
                 "body": [self._stmt(s) for s in stmt.body],
             }
+            self.current_class_stack.pop()
+            return out
         if isinstance(stmt, ast.Return):
             return {
                 "kind": "Return",
@@ -247,9 +305,42 @@ class EastBuilder:
                 "target": self._expr(target),
                 "value": value,
             }
+        if isinstance(stmt, ast.AugAssign):
+            target_expr = self._expr(stmt.target)
+            value_expr = self._expr(stmt.value)
+            if isinstance(stmt.target, ast.Name):
+                current = self._lookup_name_type(stmt.target.id)
+                if current in {"int", "float"} and value_expr["resolved_type"] in {"int", "float"}:
+                    self._bind_name_type(stmt.target.id, "float" if "float" in {current, value_expr["resolved_type"]} else "int", stmt)
+            return {
+                "kind": "AugAssign",
+                "source_span": span_of(stmt),
+                "target": target_expr,
+                "op": type(stmt.op).__name__,
+                "value": value_expr,
+            }
         if isinstance(stmt, ast.AnnAssign):
+            if isinstance(stmt.target, ast.Attribute):
+                value = self._expr(stmt.value) if stmt.value is not None else None
+                ann_ty = annotation_to_type(stmt.annotation)
+                if ann_ty is None:
+                    raise self._error("unsupported_syntax", "unsupported type annotation", stmt.annotation, "Use supported Python-style annotations.")
+                if value is not None and not self._types_compatible(ann_ty, value["resolved_type"]):
+                    raise self._error(
+                        "semantic_conflict",
+                        f"annotated type '{ann_ty}' conflicts with value type '{value['resolved_type']}'",
+                        stmt,
+                        "Align annotation and assigned value type.",
+                    )
+                return {
+                    "kind": "AnnAssign",
+                    "source_span": span_of(stmt),
+                    "target": self._expr(stmt.target),
+                    "annotation": ann_ty,
+                    "value": value,
+                }
             if not isinstance(stmt.target, ast.Name):
-                raise self._error("unsupported_syntax", "annotated assignment target must be Name", stmt, "Use simple variable annotation.")
+                raise self._error("unsupported_syntax", "annotated assignment target must be Name/Attribute", stmt, "Use simple variable annotation.")
             ann_ty = annotation_to_type(stmt.annotation)
             if ann_ty is None:
                 raise self._error("unsupported_syntax", "unsupported type annotation", stmt.annotation, "Use supported Python-style annotations.")
@@ -280,6 +371,11 @@ class EastBuilder:
                 "orelse": [self._stmt(s) for s in stmt.orelse],
             }
         if isinstance(stmt, ast.For):
+            if isinstance(stmt.target, ast.Name):
+                it_type, _ = self._resolve_expr_type(stmt.iter)
+                bind_t = self._iter_element_type(it_type)
+                if bind_t is not None:
+                    self._bind_name_type(stmt.target.id, bind_t, stmt)
             return {
                 "kind": "For",
                 "source_span": span_of(stmt),
@@ -345,15 +441,20 @@ class EastBuilder:
     def _function(self, fn: ast.FunctionDef) -> dict[str, Any]:
         fn_name = self._renamed(fn.name)
         arg_types: dict[str, str] = {}
-        for arg in fn.args.args:
+        in_class = len(self.current_class_stack) > 0
+        cur_cls = self.current_class_stack[-1] if in_class else None
+        for idx, arg in enumerate(fn.args.args):
             ann = annotation_to_type(arg.annotation)
             if ann is None:
-                raise self._error(
-                    "inference_failure",
-                    f"function argument '{arg.arg}' requires type annotation or inferable type",
-                    arg,
-                    "Add a type annotation to the argument.",
-                )
+                if in_class and idx == 0 and arg.arg == "self" and cur_cls is not None:
+                    ann = cur_cls
+                else:
+                    raise self._error(
+                        "inference_failure",
+                        f"function argument '{arg.arg}' requires type annotation or inferable type",
+                        arg,
+                        "Add a type annotation to the argument.",
+                    )
             arg_types[arg.arg] = ann
         ret_ty = annotation_to_type(fn.returns) if fn.returns is not None else "None"
         if ret_ty is None:
@@ -398,6 +499,8 @@ class EastBuilder:
                 return "bool", []
             if expr.id == "None":
                 return "None", []
+            if expr.id in {"Exception", "RuntimeError"}:
+                return "Exception", []
             t = self._lookup_name_type(expr.id)
             if t is None:
                 raise self._error(
@@ -491,6 +594,10 @@ class EastBuilder:
             raise self._error("inference_failure", f"if-expression branch types mismatch: {bt} vs {ot}", expr, "Align both branches to same type.")
         if isinstance(expr, ast.Attribute):
             bt, _ = self._resolve_expr_type(expr.value)
+            if isinstance(expr.value, ast.Name) and expr.value.id == "self" and bt in self.class_names:
+                fty = self._lookup_field_type(bt, expr.attr)
+                if fty is not None:
+                    return fty, []
             if bt == "Path":
                 if expr.attr == "parent":
                     return "Path", []
@@ -505,6 +612,12 @@ class EastBuilder:
             return "unknown", []
         if isinstance(expr, ast.Subscript):
             bt, _ = self._resolve_expr_type(expr.value)
+            if isinstance(expr.slice, ast.Slice):
+                if bt.startswith("list[") and bt.endswith("]"):
+                    return bt, []
+                if bt == "str":
+                    return "str", []
+                return "unknown", []
             if bt.startswith("list[") and bt.endswith("]"):
                 return bt[5:-1], []
             if bt.startswith("dict[") and bt.endswith("]"):
@@ -518,6 +631,23 @@ class EastBuilder:
             return "unknown", []
         if isinstance(expr, ast.Call):
             return self._resolve_call_type(expr)
+        if isinstance(expr, ast.ListComp):
+            if len(expr.generators) != 1:
+                raise self._error("unsupported_syntax", "only single-generator list comprehension is supported", expr, "Use one generator in list comprehension.")
+            gen = expr.generators[0]
+            if not isinstance(gen.target, ast.Name):
+                raise self._error("unsupported_syntax", "list comprehension target must be Name", gen.target, "Use simple name as comprehension target.")
+            iter_t, _ = self._resolve_expr_type(gen.iter)
+            target_t = self._iter_element_type(iter_t)
+            if target_t is None:
+                raise self._error("inference_failure", f"cannot infer comprehension target type from '{iter_t}'", gen.iter, "Add explicit annotation to iterable.")
+            self.type_env_stack.append(dict(self.type_env_stack[-1] if self.type_env_stack else {}))
+            self.type_env_stack[-1][gen.target.id] = target_t
+            for cond in gen.ifs:
+                self._resolve_expr_type(cond)
+            et, _ = self._resolve_expr_type(expr.elt)
+            self.type_env_stack.pop()
+            return f"list[{et}]", []
         if isinstance(expr, ast.JoinedStr):
             return "str", []
         raise self._error("unsupported_syntax", f"unsupported expression: {type(expr).__name__}", expr, "Rewrite expression to supported subset.")
@@ -529,6 +659,8 @@ class EastBuilder:
                 return fn, []
             if fn == "len":
                 return "int", []
+            if fn == "range":
+                return "list[int]", []
             if fn == "Path":
                 return "Path", []
             if fn in {"min", "max"}:
@@ -540,6 +672,10 @@ class EastBuilder:
                 return "float", []
             if fn in {"print", "write_rgb_png", "save_gif"}:
                 return "None", []
+            if fn in {"Exception", "RuntimeError"}:
+                return "Exception", []
+            if fn in self.class_names:
+                return fn, []
             known_ret = self.function_return_types.get(fn)
             if known_ret is not None:
                 return known_ret, []
@@ -561,6 +697,13 @@ class EastBuilder:
             if isinstance(expr.func.value, ast.Name) and expr.func.value.id == "math":
                 if m in {"sqrt", "sin", "cos", "tan", "exp", "log", "log10", "fabs", "floor", "ceil", "pow"}:
                     return "float", []
+            if isinstance(expr.func.value, ast.Name):
+                owner_name = expr.func.value.id
+                owner_t = self._lookup_name_type(owner_name)
+                if owner_t in self.class_names:
+                    r = self._lookup_method_return_type(owner_t, m)
+                    if r is not None:
+                        return r, []
             # container methods
             if m in {"append", "extend", "insert", "clear", "sort", "reverse", "update", "add"}:
                 return "None", []
@@ -568,6 +711,7 @@ class EastBuilder:
                 return "unknown", []
             if m in {"isdigit", "isalpha", "exists"}:
                 return "bool", []
+            return "unknown", []
         raise self._error("inference_failure", "cannot infer call expression type", expr, "Add annotation or extend EAST resolver.")
 
     def _borrow_kind(self, expr: ast.expr) -> BorrowKind:
@@ -602,6 +746,8 @@ class EastBuilder:
     def _types_compatible(self, t1: str, t2: str) -> bool:
         if t1 == t2:
             return True
+        if "unknown" in {t1, t2}:
+            return True
         return {t1, t2} == {"int", "float"}
 
     def _unify_types(self, types: list[str], node: ast.AST) -> str:
@@ -611,6 +757,43 @@ class EastBuilder:
         if set(uniq) == {"int", "float"}:
             return "float"
         raise self._error("inference_failure", f"ambiguous types: {uniq}", node, "Add explicit annotation/cast to make the type unique.")
+
+    def _iter_element_type(self, iterable_type: str) -> str | None:
+        if iterable_type.startswith("list[") and iterable_type.endswith("]"):
+            return iterable_type[5:-1]
+        if iterable_type.startswith("set[") and iterable_type.endswith("]"):
+            return iterable_type[4:-1]
+        if iterable_type.startswith("tuple[") and iterable_type.endswith("]"):
+            inside = iterable_type[6:-1]
+            if inside == "":
+                return None
+            first = inside.split(",", 1)[0]
+            return first
+        if iterable_type == "str":
+            return "str"
+        if iterable_type == "bytes" or iterable_type == "bytearray":
+            return "int"
+        if iterable_type == "unknown":
+            return "unknown"
+        return None
+
+    def _lookup_method_return_type(self, class_name: str, method: str) -> str | None:
+        cur: str | None = class_name
+        while cur is not None:
+            methods = self.class_method_return_types.get(cur, {})
+            if method in methods:
+                return methods[method]
+            cur = self.class_base.get(cur)
+        return None
+
+    def _lookup_field_type(self, class_name: str, field: str) -> str | None:
+        cur: str | None = class_name
+        while cur is not None:
+            fields = self.class_field_types.get(cur, {})
+            if field in fields:
+                return fields[field]
+            cur = self.class_base.get(cur)
+        return None
 
     def _renamed(self, name: str) -> str:
         return self.renamed_symbols.get(name, name)

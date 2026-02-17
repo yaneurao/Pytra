@@ -1,0 +1,302 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case32_pathlib_extended.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "ImportFrom",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 24
+        },
+        "module": "pathlib",
+        "level": 0,
+        "names": [
+          {
+            "name": "Path",
+            "asname": null
+          }
+        ]
+      },
+      {
+        "kind": "FunctionDef",
+        "name": "__pytra_main",
+        "original_name": "main",
+        "source_span": {
+          "lineno": 4,
+          "col": 0,
+          "end_lineno": 15,
+          "end_col": 28
+        },
+        "arg_types": {},
+        "return_type": "None",
+        "arg_usage": {},
+        "renamed_symbols": {
+          "main": "__pytra_main"
+        },
+        "body": [
+          {
+            "kind": "Assign",
+            "source_span": {
+              "lineno": 5,
+              "col": 4,
+              "end_lineno": 5,
+              "end_col": 42
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 5,
+                "col": 4,
+                "end_lineno": 5,
+                "end_col": 8
+              },
+              "resolved_type": "Path",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "root"
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 5,
+                "col": 11,
+                "end_lineno": 5,
+                "end_col": 42
+              },
+              "resolved_type": "Path",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "Path('test/obj/pathlib_case32')"
+            }
+          },
+          {
+            "kind": "Expr",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 43
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 6,
+                "col": 4,
+                "end_lineno": 6,
+                "end_col": 43
+              },
+              "resolved_type": "None",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "root.mkdir(parents=True, exist_ok=True)"
+            }
+          },
+          {
+            "kind": "Assign",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 31
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col": 4,
+                "end_lineno": 8,
+                "end_col": 9
+              },
+              "resolved_type": "Path",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "child"
+            },
+            "value": {
+              "kind": "BinOp",
+              "source_span": {
+                "lineno": 8,
+                "col": 12,
+                "end_lineno": 8,
+                "end_col": 31
+              },
+              "resolved_type": "Path",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "root / 'values.txt'"
+            }
+          },
+          {
+            "kind": "Expr",
+            "source_span": {
+              "lineno": 9,
+              "col": 4,
+              "end_lineno": 9,
+              "end_col": 26
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 9,
+                "col": 4,
+                "end_lineno": 9,
+                "end_col": 26
+              },
+              "resolved_type": "None",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "child.write_text('42')"
+            }
+          },
+          {
+            "kind": "Expr",
+            "source_span": {
+              "lineno": 11,
+              "col": 4,
+              "end_lineno": 11,
+              "end_col": 25
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 11,
+                "col": 4,
+                "end_lineno": 11,
+                "end_col": 25
+              },
+              "resolved_type": "None",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "print(child.exists())"
+            }
+          },
+          {
+            "kind": "Expr",
+            "source_span": {
+              "lineno": 12,
+              "col": 4,
+              "end_lineno": 12,
+              "end_col": 21
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 12,
+                "col": 4,
+                "end_lineno": 12,
+                "end_col": 21
+              },
+              "resolved_type": "None",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "print(child.name)"
+            }
+          },
+          {
+            "kind": "Expr",
+            "source_span": {
+              "lineno": 13,
+              "col": 4,
+              "end_lineno": 13,
+              "end_col": 21
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 13,
+                "col": 4,
+                "end_lineno": 13,
+                "end_col": 21
+              },
+              "resolved_type": "None",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "print(child.stem)"
+            }
+          },
+          {
+            "kind": "Expr",
+            "source_span": {
+              "lineno": 14,
+              "col": 4,
+              "end_lineno": 14,
+              "end_col": 49
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 14,
+                "col": 4,
+                "end_lineno": 14,
+                "end_col": 49
+              },
+              "resolved_type": "None",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "print((child.parent / 'values.txt').exists())"
+            }
+          },
+          {
+            "kind": "Expr",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 28
+            },
+            "value": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 15,
+                "col": 4,
+                "end_lineno": 15,
+                "end_col": 28
+              },
+              "resolved_type": "None",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "print(child.read_text())"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 19,
+          "col": 4,
+          "end_lineno": 19,
+          "end_col": 10
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 10
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "main()"
+        }
+      }
+    ],
+    "renamed_symbols": {
+      "main": "__pytra_main"
+    }
+  }
+}

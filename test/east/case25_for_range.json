@@ -1,0 +1,193 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case25_for_range.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "sum_range_29",
+        "original_name": "sum_range_29",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 9,
+          "end_col": 16
+        },
+        "arg_types": {
+          "n": "int"
+        },
+        "return_type": "int",
+        "arg_usage": {
+          "n": "readonly"
+        },
+        "renamed_symbols": {},
+        "body": [
+          {
+            "kind": "AnnAssign",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 18
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 4,
+                "end_lineno": 6,
+                "end_col": 9
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "total"
+            },
+            "annotation": "int",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 6,
+                "col": 17,
+                "end_lineno": 6,
+                "end_col": 18
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "0"
+            }
+          },
+          {
+            "kind": "For",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 18
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 8,
+                "end_lineno": 7,
+                "end_col": 9
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "i"
+            },
+            "iter": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 7,
+                "col": 13,
+                "end_lineno": 7,
+                "end_col": 21
+              },
+              "resolved_type": "list[int]",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "range(n)"
+            },
+            "body": [
+              {
+                "kind": "AugAssign",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 8,
+                  "end_lineno": 8,
+                  "end_col": 18
+                },
+                "target": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 8,
+                    "end_lineno": 8,
+                    "end_col": 13
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "total"
+                },
+                "op": "Add",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 17,
+                    "end_lineno": 8,
+                    "end_col": 18
+                  },
+                  "resolved_type": "int",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "i"
+                }
+              }
+            ],
+            "orelse": []
+          },
+          {
+            "kind": "Return",
+            "source_span": {
+              "lineno": 9,
+              "col": 4,
+              "end_lineno": 9,
+              "end_col": 16
+            },
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 11,
+                "end_lineno": 9,
+                "end_col": 16
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "total"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 13,
+          "col": 4,
+          "end_lineno": 13,
+          "end_col": 26
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 13,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 26
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(sum_range_29(5))"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}

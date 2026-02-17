@@ -1,0 +1,131 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case10_not.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "invert",
+        "original_name": "invert",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 9,
+          "end_col": 20
+        },
+        "arg_types": {
+          "flag": "bool"
+        },
+        "return_type": "bool",
+        "arg_usage": {
+          "flag": "readonly"
+        },
+        "renamed_symbols": {},
+        "body": [
+          {
+            "kind": "If",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 9,
+              "end_col": 20
+            },
+            "test": {
+              "kind": "UnaryOp",
+              "source_span": {
+                "lineno": 6,
+                "col": 7,
+                "end_lineno": 6,
+                "end_col": 15
+              },
+              "resolved_type": "bool",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "not flag"
+            },
+            "body": [
+              {
+                "kind": "Return",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 8,
+                  "end_lineno": 7,
+                  "end_col": 19
+                },
+                "value": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 7,
+                    "col": 15,
+                    "end_lineno": 7,
+                    "end_col": 19
+                  },
+                  "resolved_type": "bool",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "True"
+                }
+              }
+            ],
+            "orelse": [
+              {
+                "kind": "Return",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 8,
+                  "end_lineno": 9,
+                  "end_col": 20
+                },
+                "value": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 15,
+                    "end_lineno": 9,
+                    "end_col": 20
+                  },
+                  "resolved_type": "bool",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "False"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 13,
+          "col": 4,
+          "end_lineno": 13,
+          "end_col": 24
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 13,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 24
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(invert(False))"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}

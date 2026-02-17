@@ -1,0 +1,119 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case22_comprehension.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "comp_like_24",
+        "original_name": "comp_like_24",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 7,
+          "end_col": 16
+        },
+        "arg_types": {
+          "x": "int"
+        },
+        "return_type": "int",
+        "arg_usage": {
+          "x": "readonly"
+        },
+        "renamed_symbols": {},
+        "body": [
+          {
+            "kind": "AnnAssign",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 49
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 4,
+                "end_lineno": 6,
+                "end_col": 10
+              },
+              "resolved_type": "list[int]",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "values"
+            },
+            "annotation": "list[int]",
+            "value": {
+              "kind": "ListComp",
+              "source_span": {
+                "lineno": 6,
+                "col": 24,
+                "end_lineno": 6,
+                "end_col": 49
+              },
+              "resolved_type": "list[int]",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "[i for i in [1, 2, 3, 4]]"
+            }
+          },
+          {
+            "kind": "Return",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 16
+            },
+            "value": {
+              "kind": "BinOp",
+              "source_span": {
+                "lineno": 7,
+                "col": 11,
+                "end_lineno": 7,
+                "end_col": 16
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "x + 1"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 11,
+          "col": 4,
+          "end_lineno": 11,
+          "end_col": 26
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 11,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 26
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(comp_like_24(5))"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}

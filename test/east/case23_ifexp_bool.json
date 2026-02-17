@@ -1,0 +1,123 @@
+{
+  "ok": true,
+  "east": {
+    "kind": "Module",
+    "source_path": "test/py/case23_ifexp_bool.py",
+    "source_span": {
+      "lineno": null,
+      "col": null,
+      "end_lineno": null,
+      "end_col": null
+    },
+    "body": [
+      {
+        "kind": "FunctionDef",
+        "name": "pick_25",
+        "original_name": "pick_25",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 7,
+          "end_col": 12
+        },
+        "arg_types": {
+          "a": "int",
+          "b": "int",
+          "flag": "bool"
+        },
+        "return_type": "int",
+        "arg_usage": {
+          "a": "readonly",
+          "b": "readonly",
+          "flag": "readonly"
+        },
+        "renamed_symbols": {},
+        "body": [
+          {
+            "kind": "AnnAssign",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 43
+            },
+            "target": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 4,
+                "end_lineno": 6,
+                "end_col": 5
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "c"
+            },
+            "annotation": "int",
+            "value": {
+              "kind": "IfExp",
+              "source_span": {
+                "lineno": 6,
+                "col": 13,
+                "end_lineno": 6,
+                "end_col": 43
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "a if flag and a > b else b"
+            }
+          },
+          {
+            "kind": "Return",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 12
+            },
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 11,
+                "end_lineno": 7,
+                "end_col": 12
+              },
+              "resolved_type": "int",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "c"
+            }
+          }
+        ]
+      }
+    ],
+    "main_guard_body": [
+      {
+        "kind": "Expr",
+        "source_span": {
+          "lineno": 11,
+          "col": 4,
+          "end_lineno": 11,
+          "end_col": 31
+        },
+        "value": {
+          "kind": "Call",
+          "source_span": {
+            "lineno": 11,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 31
+          },
+          "resolved_type": "None",
+          "borrow_kind": "value",
+          "casts": [],
+          "repr": "print(pick_25(10, 3, True))"
+        }
+      }
+    ],
+    "renamed_symbols": {}
+  }
+}
