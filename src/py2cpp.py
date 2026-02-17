@@ -359,73 +359,6 @@ class CppEmitter:
             call = f"std::{fn}<{t}>({call}, {a})"
         return call
 
-    def _collect_local_decls(self, stmts: list[dict[str, Any]]) -> dict[str, str]:
-        out: dict[str, str] = {}
-        inline_declared: set[str] = set()
-
-        def add_name(name: str, typ: str | None) -> None:
-            if name == "":
-                return
-            if name in inline_declared:
-                return
-            if name not in out:
-                out[name] = typ if isinstance(typ, str) and typ != "" else "auto"
-
-        def walk(st: dict[str, Any], *, in_control: bool) -> None:
-            kind = st.get("kind")
-            if kind == "Assign":
-                target = st.get("target")
-                value = st.get("value")
-                if (bool(st.get("declare_init")) and not in_control) or (bool(st.get("declare", True)) and not in_control and isinstance(target, dict) and target.get("kind") == "Name"):
-                    # Keep declaration+initialization at assignment site.
-                    # This assignment must not be hoisted into pre-declarations.
-                    if isinstance(target, dict) and target.get("kind") == "Name":
-                        n = str(target.get("id", ""))
-                        if n != "":
-                            inline_declared.add(n)
-                else:
-                    if isinstance(target, dict) and target.get("kind") == "Name":
-                        add_name(str(target.get("id", "")), st.get("decl_type") or self.get_expr_type(value))
-                    if isinstance(target, dict) and target.get("kind") == "Tuple":
-                        value_t = self.get_expr_type(value) or ""
-                        elem_types: list[str] = []
-                        if value_t.startswith("tuple[") and value_t.endswith("]"):
-                            elem_types = self.split_generic(value_t[6:-1])
-                        for i, elt in enumerate(target.get("elements", [])):
-                            if isinstance(elt, dict) and elt.get("kind") == "Name":
-                                n = str(elt.get("id", ""))
-                                if n not in inline_declared:
-                                    add_name(n, elem_types[i] if i < len(elem_types) else self.get_expr_type(elt))
-            elif kind == "AnnAssign":
-                target = st.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    n = str(target.get("id", ""))
-                    if bool(st.get("declare", True)) and not in_control:
-                        if n != "":
-                            inline_declared.add(n)
-                    else:
-                        add_name(n, st.get("annotation"))
-            elif kind == "AugAssign":
-                target = st.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    n = str(target.get("id", ""))
-                    if n not in inline_declared:
-                        add_name(n, st.get("decl_type") or self.get_expr_type(target))
-            child_in_control = in_control or kind in {"If", "For", "ForRange", "While", "Try"}
-            for k in ("body", "orelse", "finalbody"):
-                for child in st.get(k, []):
-                    if isinstance(child, dict):
-                        walk(child, in_control=child_in_control)
-            for h in st.get("handlers", []):
-                if isinstance(h, dict):
-                    for child in h.get("body", []):
-                        if isinstance(child, dict):
-                            walk(child, in_control=True)
-
-        for s in stmts:
-            walk(s, in_control=False)
-        return out
-
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         kind = stmt.get("kind")
         self.emit_leading_comments(stmt)
@@ -796,21 +729,6 @@ class CppEmitter:
             self.emit(f"{ret} {name}({', '.join(params)}) {{")
         self.indent += 1
         self.scope_stack.append(fn_scope)
-        local_decls = self._collect_local_decls(list(stmt.get("body", [])))
-        for n, t in local_decls.items():
-            if n in fn_scope:
-                continue
-            ct = self.cpp_type(t)
-            if ct == "auto":
-                continue
-            if ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool", "str", "Path"} and not (
-                ct.startswith("list<") or ct.startswith("dict<") or ct.startswith("set<") or ct.startswith("std::tuple<")
-            ):
-                continue
-            self.emit(f"{ct} {n};")
-            self.current_scope().add(n)
-        if len(local_decls) > 0:
-            self.emit()
         self.emit_stmt_list(list(stmt.get("body", [])))
         self.scope_stack.pop()
         self.indent -= 1
