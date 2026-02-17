@@ -249,6 +249,7 @@ class CppEmitter:
     def _collect_local_decls(self, stmts: list[dict[str, Any]]) -> dict[str, str]:
         out: dict[str, str] = {}
         loop_counts: dict[str, tuple[int, str]] = {}
+        inline_declared: set[str] = set()
 
         def add_name(name: str, typ: str | None) -> None:
             if name == "":
@@ -259,18 +260,27 @@ class CppEmitter:
         def walk(st: dict[str, Any]) -> None:
             kind = st.get("kind")
             if kind == "Assign":
-                target = st.get("target")
-                value = st.get("value")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    add_name(str(target.get("id", "")), st.get("decl_type") or self.get_expr_type(value))
-                if isinstance(target, dict) and target.get("kind") == "Tuple":
-                    value_t = self.get_expr_type(value) or ""
-                    elem_types: list[str] = []
-                    if value_t.startswith("tuple[") and value_t.endswith("]"):
-                        elem_types = self.split_generic(value_t[6:-1])
-                    for i, elt in enumerate(target.get("elements", [])):
-                        if isinstance(elt, dict) and elt.get("kind") == "Name":
-                            add_name(str(elt.get("id", "")), elem_types[i] if i < len(elem_types) else self.get_expr_type(elt))
+                if bool(st.get("declare_init")):
+                    # Keep declaration+initialization at assignment site.
+                    # This assignment must not be hoisted into pre-declarations.
+                    target = st.get("target")
+                    if isinstance(target, dict) and target.get("kind") == "Name":
+                        n = str(target.get("id", ""))
+                        if n != "":
+                            inline_declared.add(n)
+                else:
+                    target = st.get("target")
+                    value = st.get("value")
+                    if isinstance(target, dict) and target.get("kind") == "Name":
+                        add_name(str(target.get("id", "")), st.get("decl_type") or self.get_expr_type(value))
+                    if isinstance(target, dict) and target.get("kind") == "Tuple":
+                        value_t = self.get_expr_type(value) or ""
+                        elem_types: list[str] = []
+                        if value_t.startswith("tuple[") and value_t.endswith("]"):
+                            elem_types = self.split_generic(value_t[6:-1])
+                        for i, elt in enumerate(target.get("elements", [])):
+                            if isinstance(elt, dict) and elt.get("kind") == "Name":
+                                add_name(str(elt.get("id", "")), elem_types[i] if i < len(elem_types) else self.get_expr_type(elt))
             elif kind == "AnnAssign":
                 target = st.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
@@ -278,7 +288,9 @@ class CppEmitter:
             elif kind == "AugAssign":
                 target = st.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
-                    add_name(str(target.get("id", "")), st.get("decl_type") or self.get_expr_type(target))
+                    n = str(target.get("id", ""))
+                    if n not in inline_declared:
+                        add_name(n, st.get("decl_type") or self.get_expr_type(target))
             elif kind == "ForRange":
                 target = st.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
@@ -378,14 +390,18 @@ class CppEmitter:
             op_name = str(stmt.get("op"))
             if op_name in AUG_BIN:
                 bop = AUG_BIN[op_name]
+                # Prefer idiomatic ++/-- for +/-1 updates.
+                if op_name in {"Add", "Sub"} and val == "1":
+                    self.emit(f"{target}{'++' if op_name == 'Add' else '--'};")
+                    return
                 if op_name == "FloorDiv":
                     self.emit(f"{target} = py_floordiv({target}, {val});")
                 elif op_name == "Mod":
                     self.emit(f"{target} = py_mod({target}, {val});")
                 elif op_name == "Div":
-                    self.emit(f"{target} = ({target} {bop} {val});")
+                    self.emit(f"{target} = {target} {bop} {val};")
                 else:
-                    self.emit(f"{target} = ({target} {bop} {val});")
+                    self.emit(f"{target} = {target} {bop} {val};")
             else:
                 self.emit(f"{target} {op} {val};")
             return

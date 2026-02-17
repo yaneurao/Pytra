@@ -5,10 +5,8 @@
 // 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 int64 square_plus_one(int64 n) {
-    int64 result;
-    
-    result = n * n;
-    result = (result + 1);
+    int64 result = n * n;
+    result++;
     return result;
 }
 

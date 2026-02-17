@@ -1964,6 +1964,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         },
                         "value": val_expr,
                         "declare": True,
+                        "declare_init": True,
                         "decl_type": val_expr.get("resolved_type", "unknown"),
                     }
                 )

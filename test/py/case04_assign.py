@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 def square_plus_one(n: int) -> int:
-    result: int = n * n
+    result = n * n
     result += 1
     return result
 
