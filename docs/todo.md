@@ -70,3 +70,8 @@
 - [ ] `sample/py` で使っている `math` モジュール呼び出し（`sqrt`, `sin`, `cos` など）を Go/Java ネイティブ変換で対応する。
 - [ ] `sample/py` で使っている `png_helper.write_rgb_png` の Go/Java ランタイム実装を追加する。
 - [ ] `sample/py` で使っている `gif_helper.save_gif` / `grayscale_palette` の Go/Java ランタイム実装を追加する。
+
+## Rust 追加TODO（現時点）
+
+- [ ] `src/rs_module/py_runtime.rs` の `py_write_rgb_png` で、Python 側 `png_helper.write_rgb_png` とバイナリ完全一致（IDAT 圧縮形式を含む）を実現する。
+- [ ] `py2rs.py` の `use py_runtime::{...}` 生成を使用関数ベースに最適化し、未使用 import 警告を削減する。

@@ -7241,6 +7241,11 @@ class pytra_16_glass_sculpture_chaos {
 
 </details>
 
+## 実装状況の詳細
+
+実装済み項目・未実装項目・対応予定なし項目は、次にまとめています。  
+[docs/pytra-readme.md](docs/pytra-readme.md)
+
 ## 補足説明
 
 - 本READMEは、実行速度比較と代表サンプルコード（`sample/06`, `sample/16`）の掲載を中心にしています。

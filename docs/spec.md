@@ -63,6 +63,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
   - `spec.md`: 本仕様
   - `how-to-use.md`: 使い方（CLI / コンパイル手順）
   - `sample-code.md`: サンプルコードと変換コードの対応表
+  - `pytra-readme.md`: README から分離した実装状況詳細
   - `gc.md`: 参照カウント GC の仕様
 - `sample/`
   - `py/`: 実用寄り Python サンプル（入力）
@@ -233,7 +234,7 @@ python -m unittest discover -s test -p "test_*.py" -v
   - `README.md` はユーザー向けの一次情報として扱います。機能追加・仕様変更・手順変更時は、必要に応じて `README.md` を更新します。
   - `README.md` からリンクされるドキュメント（`docs/how-to-use.md`, `docs/sample-code.md`, `docs/spec.md` など）も整合性を確認し、必要なら同時に更新します。
   - 実装とドキュメントの内容が不一致にならないことを、変更完了条件に含めます。
-- 現在の `py2rs.py` は最小実装です。生成 Rust は Python ソースを埋め込み、実行時に Python インタプリタ（`python3` 優先、`python` フォールバック）を呼び出します。
+- 現在の `py2rs.py` はネイティブ変換モードです。生成 Rust は Python インタプリタを呼び出しません。未対応構文は `TranspileError` で失敗します。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出さず、Node.js ランタイムのみで実行します。
 - 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
 - 現在の `py2swift.py` / `py2kotlin.py` は Node バックエンド実行モードです。生成 Swift/Kotlin は埋め込み Base64 文字列を復元して `node` を起動し、Python インタプリタは呼び出しません。
