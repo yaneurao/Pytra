@@ -1,95 +1,220 @@
-# EAST仕様
+# EAST仕様（実装準拠）
+
+この文書は `src/east.py` の現実装に合わせた EAST 仕様である。
 
 ## 1. 目的
 
-- Pytra は、各言語バックエンドに分散した前処理を共通化するため、EAST（Extended AST）を導入しなければならない（MUST）。
-- EAST は、Python AST から言語非依存の意味注釈付き表現へ変換する中間層でなければならない（MUST）。
+- EAST は Python AST から、言語非依存の意味注釈付き JSON を生成する中間表現である。
+- 目的は、型解決・readonly判定・cast指示・mainガード正規化を共通化すること。
 
-## 2. 適用範囲
+## 2. 入出力
 
-- EAST の対象は、Pytra が定義する Python サブセットとする（MUST）。
-- Python 完全互換（動的 import、動的実行機構の完全再現）は対象外とする（MUST NOT）。
+### 2.1 入力
 
-## 3. 責務境界
+- UTF-8 の Python ソースファイル 1 つ。
+- 対象は Pytra の Python サブセット。
 
-- EAST 生成器は、次を実施しなければならない（MUST）。
-  - 構文正規化（`main` ガード抽出、識別子衝突回避、必要な一時変数導入）
-  - 型解決（明示注釈 + 推論）
-  - 参照特性解決（読み取り専用/可変）
-  - 必要 cast の明示
-- バックエンドは、EAST を入力としてコード生成を行うべきである（SHOULD）。
-- 言語固有の最終判断（所有権、null、例外モデル、標準ライブラリ差分）はバックエンドが担う（MUST）。
+### 2.2 出力形式
 
-## 4. EASTノード必須属性
+- 成功時:
 
-- 式ノードは少なくとも次を保持しなければならない（MUST）。
-  - `resolved_type`
-  - `borrow_kind`（`value` / `readonly_ref` / `mutable_ref` / `move`）
-  - `casts`
-  - `source_span`
-- 関数ノードは少なくとも次を保持しなければならない（MUST）。
-  - `arg_types`
-  - `return_type`
-  - `arg_usage`（引数ごとの readonly/mutable）
-  - `renamed_symbols`
+```json
+{
+  "ok": true,
+  "east": { ... }
+}
+```
 
-## 5. 型システム
+- 失敗時:
 
-- EAST 内の正規型は Python 表記ベースで保持しなければならない（MUST）。
-  - 基本型: `int`, `float`, `bool`, `str`, `bytes`, `bytearray`, `None`
-  - 合成型: `list[T]`, `dict[K,V]`, `set[T]`, `tuple[...]`
-  - 拡張型: `Path`, ユーザー定義クラス
-- 各言語型への写像はバックエンド側の責務とする（MUST）。
+```json
+{
+  "ok": false,
+  "error": {
+    "kind": "inference_failure | unsupported_syntax | semantic_conflict",
+    "message": "...",
+    "source_span": {
+      "lineno": 1,
+      "col": 0,
+      "end_lineno": 1,
+      "end_col": 5
+    },
+    "hint": "..."
+  }
+}
+```
 
-## 6. 型推論
+### 2.3 CLI
 
-- 型推論は積極推論を採用してよい（MAY）。
-- ただし健全性を優先し、次を満たさない推論結果を採用してはならない（MUST NOT）。
-  - 型が一意に決まらない
-  - 後続使用点で矛盾する
-- 推論失敗時は EAST 生成を停止し、エラーを返さなければならない（MUST）。
+- `python src/east.py <input.py> [-o output.json] [--pretty]`
+- `--pretty` 指定時は整形 JSON を出力する。
 
-## 7. readonly解析
+## 3. トップレベルEAST構造
 
-- EAST 生成器は、関数引数について readonly/mutable 判定を行わなければならない（MUST）。
-- readonly 判定は、少なくとも次を満たす場合にのみ成立する（MUST）。
-  - 引数への再代入がない
-  - 可変操作（添字代入、`append` 等）がない
-  - 可変参照として外部へ渡していない
-- 判定結果は `arg_usage` に保存しなければならない（MUST）。
+`east` オブジェクトは次を持つ。
 
-## 8. cast
+- `kind`: 常に `"Module"`
+- `source_path`: 入力ファイルパス
+- `source_span`: モジュールの span（現実装では `null` を含み得る）
+- `body`: モジュール本体ステートメント配列
+- `main_guard_body`: `if __name__ == "__main__":` の本体
+- `renamed_symbols`: 識別子 rename マップ（例: `main -> __pytra_main`）
 
-- 暗黙変換が必要な箇所は、EAST 上で明示 cast として表現しなければならない（MUST）。
-- バックエンドは EAST cast 指示と矛盾する変換を行ってはならない（MUST NOT）。
-- バックエンド独自 cast 追加は、EAST cast と整合する範囲で許可する（MAY）。
+## 4. 構文正規化
 
-## 9. エラー契約
+- `if __name__ == "__main__":` は `main_guard_body` に分離する。
+- 識別子衝突回避として次を rename 対象にする。
+  - 重複定義名
+  - 予約名: `main`, `py_main`, `__pytra_main`
+- 生成される関数/クラスノードは `name`（rename後）と `original_name`（元名）を持つ。
 
-- EAST 生成エラーは、次を含まなければならない（MUST）。
-  - エラー種別（推論失敗/未対応構文/意味矛盾）
-  - `source_span`
-  - 利用者向け修正指針（短文）
+## 5. ノード共通属性
 
-## 10. バックエンド契約
+式ノード（`_expr` で生成されるノード）は次を持つ。
 
-- バックエンドは EAST の `resolved_type` / `borrow_kind` / `casts` を尊重しなければならない（MUST）。
-- EAST を受けたバックエンドは、言語固有の意味差分を吸収して最終コードを生成しなければならない（MUST）。
+- `kind`: 元 AST ノード名（例: `Name`, `Call`, `BinOp`）
+- `source_span`
+- `resolved_type`
+- `borrow_kind`:
+  - `value`
+  - `readonly_ref`
+  - `mutable_ref`
+- `casts`: cast 指示配列
+- `repr`: `ast.unparse` による文字列表現
 
-## 11. 導入計画
+関数ノードは次を持つ。
 
-- Phase 1（AST+EAST併用）:
-  - EAST 生成器を実装する（MUST）
-  - バックエンドはブリッジ経路を維持してもよい（MAY）
-- Phase 2（主要言語移行）:
-  - C++/Rust/Go/Java を EAST 経路へ移行する（SHOULD）
-- Phase 3（全面移行）:
-  - C#/JS/TS/Swift/Kotlin を EAST 経路へ移行する（SHOULD）
-  - AST直読み経路を削除する（SHOULD）
+- `arg_types`: 引数名 -> 型
+- `return_type`
+- `arg_usage`: 引数名 -> `readonly` / `mutable`
+- `renamed_symbols`: 当該関数に関わる rename 情報
 
-## 12. 受け入れ基準
+## 6. 型システム（現実装）
 
-- `test/py` 既存ケースが EAST 経由で変換可能であること（MUST）。
-- 仕様差分は文書化されていること（MUST）。
-- 推論失敗時エラーに位置情報と修正指針が含まれること（MUST）。
-- 共通ランタイムケース（例: `math`, `pathlib`）で言語間結果一致を維持すること（SHOULD）。
+### 6.1 正規型
+
+- 基本型: `int`, `float`, `bool`, `str`, `bytes`, `bytearray`, `None`
+- 合成型: `list[T]`, `set[T]`, `dict[K,V]`, `tuple[T1,...]`
+- 拡張型: `Path`, `Exception`, クラス名
+- 補助型: `unknown`（推論不能だが継続許容する箇所で利用）
+
+### 6.2 注釈正規化
+
+- `int8/uint8/int16/uint16/int32/uint32/int64/uint64` は `int` へ正規化。
+- `float32/float64` は `float` へ正規化。
+- `pathlib.Path` は `Path` へ正規化。
+
+## 7. 型推論ルール（現実装）
+
+- `Name` は型環境から解決する。未解決は `inference_failure`。
+- `Constant` は型を直接決定。
+- `List/Set/Dict`:
+  - 空コンテナは曖昧として `inference_failure`。
+  - 要素型の単一化が必要。
+- `Tuple` は要素型列から `tuple[...]` を構成。
+- `BinOp`:
+  - 数値混在は `float` へ昇格。
+  - `Path / str` は `Path`。
+- `Subscript`:
+  - `list[T][i] -> T`
+  - `dict[K,V][k] -> V`
+  - `str[i] -> str`
+  - `list/str` のスライスはそれぞれ `list[T]` / `str`
+- `Call`:
+  - 組み込み (`int/float/str/bool/len/range/round/min/max/...`) を既知型で解決。
+  - `Path(...)`, `pathlib.Path(...)` を `Path` 解決。
+  - `math.*`（`sqrt/sin/cos/tan/exp/log/log10/fabs/floor/ceil/pow`）は `float`。
+  - クラスコンストラクタ呼び出しはクラス型。
+  - クラスメソッド呼び出しは戻り値注釈（継承探索あり）から解決。
+  - 未解決呼び出しは `inference_failure`。
+- `ListComp`:
+  - 単一ジェネレータのみ対応。
+  - 反復対象からターゲット型を導出して `list[T]` を構成。
+
+## 8. cast 仕様
+
+現実装の `casts` は明示的な数値昇格で付与される。
+
+- 例:
+  - `int / int` や `int + float` で `int -> float` を指示。
+  - `ifexp` の分岐型が `int`/`float` 混在時に昇格指示。
+
+cast 要素は以下形式:
+
+```json
+{
+  "on": "left | right | body | orelse",
+  "from": "int",
+  "to": "float",
+  "reason": "numeric_promotion | ifexp_numeric_promotion"
+}
+```
+
+## 9. readonly 判定
+
+関数ごとに `ArgUsageAnalyzer` で引数を解析し、`arg_usage` を付与する。
+
+- `mutable` と判定される条件（少なくとも）:
+  - 引数への代入/拡張代入
+  - 引数への属性代入・添字代入
+  - 破壊的メソッド呼び出し（`append`, `extend`, `pop`, `write_text`, `mkdir` など）
+  - 純粋組み込み以外への引数渡し
+- それ以外は `readonly`。
+- 式ノードの `borrow_kind` は、関数引数参照時に `arg_usage` から反映される。
+
+## 10. 対応ステートメント
+
+現実装で EAST 化する主な文:
+
+- `FunctionDef`, `ClassDef`, `Return`
+- `Assign`, `AnnAssign`, `AugAssign`
+- `Expr`, `If`, `For`, `While`, `Try`, `Raise`
+- `Import`, `ImportFrom`, `Pass`, `Break`, `Continue`
+
+補足:
+
+- `Assign` は単一ターゲットのみ。
+- 一部構文はサブセット制約により `unsupported_syntax` となる。
+
+## 11. クラス情報の事前収集
+
+EAST 生成前に次を収集する。
+
+- クラス名集合
+- 継承関係（単純名ベース）
+- メソッド戻り値型
+- フィールド型
+  - クラス本体 `AnnAssign`
+  - `__init__` 内 `self.field = arg`（引数注釈由来）
+  - `self.field: T = ...`
+
+これにより `self.x` 参照や `obj.method()` の戻り型推論を実施する。
+
+## 12. エラー契約
+
+`EastBuildError` は以下 4 項目を持つ。
+
+- `kind`
+- `message`
+- `source_span`
+- `hint`
+
+`kind` は現実装では次を使用する。
+
+- `inference_failure`
+- `unsupported_syntax`
+- `semantic_conflict`
+
+`SyntaxError` も同形式へ変換して出力する。
+
+## 13. 既知の制約（現時点）
+
+- モジュール `source_span` は `lineno` 等が `null` になる場合がある。
+- `borrow_kind` の `move` は未使用。
+- 高度なデータフロー解析（エイリアス、厳密な副作用伝播）は未実装。
+- すべての Python 構文を網羅するものではない。
+
+## 14. 検証状態
+
+- `test/py` 全32ケースについて `src/east.py` で変換可能（`ok: true`）
+- 変換出力は `test/east/case*.json` に配置されている。
