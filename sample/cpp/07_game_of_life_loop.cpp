@@ -122,6 +122,7 @@ void run_07_game_of_life_loop() {
         grid = next_state(grid, w, h);
     }
     
+    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w * cell, h * cell, frames, grayscale_palette(), 4, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);

@@ -36,6 +36,7 @@ void run_10_plasma_effect() {
         frames.append(bytearray(frame));
     }
     
+    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, grayscale_palette(), 3, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);

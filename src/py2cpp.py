@@ -94,6 +94,7 @@ class CppEmitter:
         self.current_class_static_fields: set[str] = set()
         self.class_method_names: dict[str, set[str]] = {}
         self.class_base: dict[str, str | None] = {}
+        self.bridge_comment_emitted: set[str] = set()
 
     def emit(self, line: str = "") -> None:
         self.lines.append(("    " * self.indent) + line)
@@ -395,6 +396,7 @@ class CppEmitter:
             if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
                 self.emit_block_comment(str(value.get("value")))
             else:
+                self.emit_bridge_comment(value)
                 rendered = self.render_expr(value)
                 # Guard against stray identifier-only expression statements (e.g. "r;").
                 if isinstance(rendered, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", rendered):
@@ -1442,6 +1444,38 @@ class CppEmitter:
         if isinstance(rep, str) and rep != "":
             return rep
         return f"/* unsupported expr: {kind} */"
+
+    def emit_bridge_comment(self, expr: dict[str, Any] | None) -> None:
+        if not isinstance(expr, dict) or expr.get("kind") != "Call":
+            return
+        fn = expr.get("func")
+        if not isinstance(fn, dict):
+            return
+        key = ""
+        text = ""
+        if fn.get("kind") == "Name":
+            name = str(fn.get("id", ""))
+            if name == "save_gif":
+                key = "save_gif"
+                text = "// bridge: Python gif_helper.save_gif -> C++ runtime save_gif"
+            elif name == "write_rgb_png":
+                key = "write_rgb_png"
+                text = "// bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
+        elif fn.get("kind") == "Attribute":
+            owner = fn.get("value")
+            owner_name = ""
+            if isinstance(owner, dict) and owner.get("kind") == "Name":
+                owner_name = str(owner.get("id", ""))
+            attr = str(fn.get("attr", ""))
+            if owner_name == "gif_helper" and attr == "save_gif":
+                key = "save_gif"
+                text = "// bridge: Python gif_helper.save_gif -> C++ runtime save_gif"
+            elif owner_name == "png_helper" and attr == "write_rgb_png":
+                key = "write_rgb_png"
+                text = "// bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
+        if key != "" and key not in self.bridge_comment_emitted:
+            self.emit(text)
+            self.bridge_comment_emitted.add(key)
 
     def get_expr_type(self, expr: dict[str, Any] | None) -> str | None:
         if expr is None:

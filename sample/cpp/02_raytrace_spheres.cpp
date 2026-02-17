@@ -185,6 +185,7 @@ void run_raytrace() {
     
     float64 start = perf_counter();
     bytearray pixels = render(width, height, aa);
+    // bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png
     png_helper::write_rgb_png(out_path, width, height, pixels);
     float64 elapsed = perf_counter() - start;
     

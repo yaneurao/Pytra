@@ -62,6 +62,7 @@ void run_08_langtons_ant() {
             frames.append(capture(grid, w, h));
     }
     
+    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, grayscale_palette(), 5, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);
