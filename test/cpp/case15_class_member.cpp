@@ -1,36 +1,22 @@
-#include "cpp_module/gc.h"
 #include "cpp_module/py_runtime.h"
-#include <algorithm>
-#include <any>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
+// このファイルは `test/py/case15_class_member.py` のテスト/実装コードです。
+// 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
+// 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
-class Counter : public pycs::gc::PyObj
-{
-public:
-    inline static int value = 0;
-    int inc()
-    {
-        Counter::value = (Counter::value + 1);
+struct Counter {
+    inline static int64 value = 0;
+    
+    int64 inc() {
+        Counter::value++;
         return Counter::value;
     }
 };
 
-int main()
-{
-    pycs::gc::RcHandle<Counter> c = pycs::gc::RcHandle<Counter>::adopt(pycs::gc::rc_new<Counter>());
-    py_print(c->inc());
+int main() {
+    Counter c = Counter();
+    c.inc();
+    c = Counter();
+    py_print(c.inc());
     return 0;
 }

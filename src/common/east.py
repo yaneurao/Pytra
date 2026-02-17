@@ -1321,7 +1321,30 @@ def _sh_ann_to_type(ann: str) -> str:
         "bytes": "list[uint8]",
         "bytearray": "list[uint8]",
     }
-    return mapping.get(ann.strip(), ann.strip())
+    txt = ann.strip()
+    if txt in mapping:
+        return mapping[txt]
+    m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\[(.*)\]$", txt)
+    if m is None:
+        return txt
+    head = m.group(1)
+    inner = m.group(2).strip()
+    parts: list[str] = []
+    depth = 0
+    start = 0
+    for i, ch in enumerate(inner):
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            parts.append(inner[start:i].strip())
+            start = i + 1
+    tail = inner[start:].strip()
+    if tail != "":
+        parts.append(tail)
+    norm = [_sh_ann_to_type(p) for p in parts]
+    return f"{head}[{', '.join(norm)}]"
 
 
 def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
@@ -1347,12 +1370,24 @@ def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
 
 
 class _ShExprParser:
-    def __init__(self, text: str, *, line_no: int, col_base: int, name_types: dict[str, str], fn_return_types: dict[str, str]) -> None:
+    def __init__(
+        self,
+        text: str,
+        *,
+        line_no: int,
+        col_base: int,
+        name_types: dict[str, str],
+        fn_return_types: dict[str, str],
+        class_method_return_types: dict[str, dict[str, str]] | None = None,
+        class_base: dict[str, str | None] | None = None,
+    ) -> None:
         self.src = text
         self.line_no = line_no
         self.col_base = col_base
         self.name_types = name_types
         self.fn_return_types = fn_return_types
+        self.class_method_return_types = class_method_return_types or {}
+        self.class_base = class_base or {}
         self.tokens: list[dict[str, Any]] = self._tokenize(text)
         self.pos = 0
 
@@ -1415,7 +1450,7 @@ class _ShExprParser:
                 out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
                 i += 1
                 continue
-            if ch in {"+", "-", "*", "/", "(", ")", ","}:
+            if ch in {"+", "-", "*", "/", "%", "(", ")", ",", ".", "[", "]"}:
                 out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
                 i += 1
                 continue
@@ -1508,7 +1543,7 @@ class _ShExprParser:
 
     def _parse_muldiv(self) -> dict[str, Any]:
         node = self._parse_unary()
-        while self._cur()["k"] in {"*", "/"}:
+        while self._cur()["k"] in {"*", "/", "%"}:
             op_tok = self._eat()
             right = self._parse_unary()
             node = self._make_bin(node, op_tok["k"], right)
@@ -1531,10 +1566,88 @@ class _ShExprParser:
                 "op": "USub" if tok["k"] == "-" else "UAdd",
                 "operand": operand,
             }
-        return self._parse_primary()
+        return self._parse_postfix()
+
+    def _lookup_method_return(self, cls_name: str, method: str) -> str:
+        cur: str | None = cls_name
+        while cur is not None:
+            methods = self.class_method_return_types.get(cur, {})
+            if method in methods:
+                return methods[method]
+            cur = self.class_base.get(cur)
+        return "unknown"
+
+    def _parse_postfix(self) -> dict[str, Any]:
+        node = self._parse_primary()
+        while True:
+            tok = self._cur()
+            if tok["k"] == ".":
+                self._eat(".")
+                name_tok = self._eat("NAME")
+                s = int(node["source_span"]["col"]) - self.col_base
+                e = name_tok["e"]
+                node = {
+                    "kind": "Attribute",
+                    "source_span": self._node_span(s, e),
+                    "resolved_type": "unknown",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": self._src_slice(s, e),
+                    "value": node,
+                    "attr": str(name_tok["v"]),
+                }
+                continue
+            if tok["k"] == "(":
+                ltok = self._eat("(")
+                args: list[dict[str, Any]] = []
+                if self._cur()["k"] != ")":
+                    while True:
+                        args.append(self._parse_addsub())
+                        if self._cur()["k"] == ",":
+                            self._eat(",")
+                            continue
+                        break
+                rtok = self._eat(")")
+                s = int(node["source_span"]["col"]) - self.col_base
+                e = rtok["e"]
+                call_ret = "unknown"
+                fn_name = ""
+                if isinstance(node, dict) and node.get("kind") == "Name":
+                    fn_name = str(node.get("id", ""))
+                    if fn_name == "print":
+                        call_ret = "None"
+                    elif fn_name in self.fn_return_types:
+                        call_ret = self.fn_return_types[fn_name]
+                    elif fn_name in self.class_method_return_types:
+                        call_ret = fn_name
+                elif isinstance(node, dict) and node.get("kind") == "Attribute":
+                    owner = node.get("value")
+                    attr = str(node.get("attr", ""))
+                    if isinstance(owner, dict) and owner.get("kind") == "Name":
+                        owner_t = self.name_types.get(str(owner.get("id", "")), "unknown")
+                        if owner_t != "unknown":
+                            call_ret = self._lookup_method_return(owner_t, attr)
+                payload: dict[str, Any] = {
+                    "kind": "Call",
+                    "source_span": self._node_span(s, e),
+                    "resolved_type": call_ret,
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": self._src_slice(s, e),
+                    "func": node,
+                    "args": args,
+                    "keywords": [],
+                }
+                if fn_name == "print":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "print"
+                    payload["runtime_call"] = "py_print"
+                node = payload
+                continue
+            return node
 
     def _make_bin(self, left: dict[str, Any], op_sym: str, right: dict[str, Any]) -> dict[str, Any]:
-        op_map = {"+": "Add", "-": "Sub", "*": "Mult", "/": "Div"}
+        op_map = {"+": "Add", "-": "Sub", "*": "Mult", "/": "Div", "%": "Mod"}
         lt = str(left.get("resolved_type", "unknown"))
         rt = str(right.get("resolved_type", "unknown"))
         casts: list[dict[str, Any]] = []
@@ -1607,38 +1720,6 @@ class _ShExprParser:
             }
         if tok["k"] == "NAME":
             name_tok = self._eat("NAME")
-            if self._cur()["k"] == "(":
-                self._eat("(")
-                args: list[dict[str, Any]] = []
-                if self._cur()["k"] != ")":
-                    while True:
-                        args.append(self._parse_addsub())
-                        if self._cur()["k"] == ",":
-                            self._eat(",")
-                            continue
-                        break
-                end_tok = self._eat(")")
-                fn_name = str(name_tok["v"])
-                call_ret = "None" if fn_name == "print" else self.fn_return_types.get(fn_name, "unknown")
-                return {
-                    "kind": "Call",
-                    "source_span": self._node_span(name_tok["s"], end_tok["e"]),
-                    "resolved_type": call_ret,
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": self._src_slice(name_tok["s"], end_tok["e"]),
-                    "func": {
-                        "kind": "Name",
-                        "source_span": self._node_span(name_tok["s"], name_tok["e"]),
-                        "resolved_type": "unknown",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": fn_name,
-                        "id": fn_name,
-                    },
-                    "args": args,
-                    "keywords": [],
-                }
             nm = str(name_tok["v"])
             if nm in {"True", "False"}:
                 return {
@@ -1667,6 +1748,33 @@ class _ShExprParser:
             inner["source_span"] = self._node_span(l["s"], r["e"])
             inner["repr"] = self._src_slice(l["s"], r["e"])
             return inner
+        if tok["k"] == "[":
+            l = self._eat("[")
+            elements: list[dict[str, Any]] = []
+            if self._cur()["k"] != "]":
+                while True:
+                    elements.append(self._parse_addsub())
+                    if self._cur()["k"] == ",":
+                        self._eat(",")
+                        continue
+                    break
+            r = self._eat("]")
+            et = "unknown"
+            if len(elements) > 0:
+                et = str(elements[0].get("resolved_type", "unknown"))
+                for e in elements[1:]:
+                    if str(e.get("resolved_type", "unknown")) != et:
+                        et = "unknown"
+                        break
+            return {
+                "kind": "List",
+                "source_span": self._node_span(l["s"], r["e"]),
+                "resolved_type": f"list[{et}]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": self._src_slice(l["s"], r["e"]),
+                "elements": elements,
+            }
         raise EastBuildError(
             kind="unsupported_syntax",
             message=f"self_hosted parser cannot parse expression token: {tok['k']}",
@@ -1682,6 +1790,8 @@ def _sh_parse_expr(
     col_base: int,
     name_types: dict[str, str],
     fn_return_types: dict[str, str],
+    class_method_return_types: dict[str, dict[str, str]] | None = None,
+    class_base: dict[str, str | None] | None = None,
 ) -> dict[str, Any]:
     txt = text.strip()
     if txt == "":
@@ -1691,12 +1801,20 @@ def _sh_parse_expr(
             source_span=_sh_span(line_no, col_base, col_base),
             hint="Provide a non-empty expression.",
         )
-    parser = _ShExprParser(txt, line_no=line_no, col_base=col_base + (len(text) - len(text.lstrip())), name_types=name_types, fn_return_types=fn_return_types)
+    parser = _ShExprParser(
+        txt,
+        line_no=line_no,
+        col_base=col_base + (len(text) - len(text.lstrip())),
+        name_types=name_types,
+        fn_return_types=fn_return_types,
+        class_method_return_types=class_method_return_types,
+        class_base=class_base,
+    )
     return parser.parse()
 
 
 def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
-    """Self-hosted minimal parser path (currently supports case01/case02-level syntax)."""
+    """Self-hosted parser path for the growing EAST subset."""
     lines = source.splitlines()
     leading_file_comments: list[str] = []
     leading_file_trivia: list[dict[str, Any]] = []
@@ -1712,88 +1830,215 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             leading_file_trivia.append({"kind": "comment", "text": text})
             continue
         break
-    def_sigs: list[dict[str, Any]] = []
-    for i, ln in enumerate(lines, start=1):
-        m_def = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*->\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", ln)
+
+    def parse_def_sig(ln_no: int, ln: str, *, in_class: str | None = None) -> dict[str, Any] | None:
+        m_def = re.match(r"^\s*def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*->\s*(.+)\s*:\s*$", ln)
         if m_def is None:
-            continue
+            return None
         arg_types: dict[str, str] = {}
         args_raw = m_def.group(2)
         if args_raw.strip() != "":
             for p_txt, _off in _sh_split_args_with_offsets(args_raw):
-                m_param = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)$", p_txt)
-                if m_param is None:
+                p = p_txt.strip()
+                if p == "":
+                    continue
+                if in_class is not None and p == "self":
+                    arg_types["self"] = in_class
+                    continue
+                if ":" not in p:
                     raise EastBuildError(
                         kind="unsupported_syntax",
                         message=f"self_hosted parser cannot parse parameter: {p_txt}",
-                        source_span=_sh_span(i, 0, len(ln)),
+                        source_span=_sh_span(ln_no, 0, len(ln)),
                         hint="Use `name: Type` style parameters.",
                     )
-                arg_types[m_param.group(1)] = _sh_ann_to_type(m_param.group(2))
-        def_sigs.append(
-            {
-                "idx": i,
-                "line": ln,
-                "name": m_def.group(1),
-                "ret": _sh_ann_to_type(m_def.group(3)),
-                "arg_types": arg_types,
-            }
-        )
+                pn, pt = p.split(":", 1)
+                pn = pn.strip()
+                pt = pt.strip()
+                if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pn):
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse parameter name: {pn}",
+                        source_span=_sh_span(ln_no, 0, len(ln)),
+                        hint="Use valid identifier for parameter name.",
+                    )
+                if pt == "":
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse parameter type: {p_txt}",
+                        source_span=_sh_span(ln_no, 0, len(ln)),
+                        hint="Use `name: Type` style parameters.",
+                    )
+                arg_types[pn] = _sh_ann_to_type(pt)
+        return {
+            "name": m_def.group(1),
+            "ret": _sh_ann_to_type(m_def.group(3).strip()),
+            "arg_types": arg_types,
+        }
 
-    if len(def_sigs) == 0:
-        raise EastBuildError(
-            kind="unsupported_syntax",
-            message="self_hosted parser requires at least one top-level function definition",
-            source_span={"lineno": None, "col": None, "end_lineno": None, "end_col": None},
-            hint="Start with test/py/case01_add.py style input.",
-        )
-    fn_returns: dict[str, str] = {str(d["name"]): str(d["ret"]) for d in def_sigs}
-    fn_stmts: list[dict[str, Any]] = []
-    for idx, d in enumerate(def_sigs):
-        def_idx = int(d["idx"])
-        def_line = str(d["line"])
-        fn_name = str(d["name"])
-        fn_ret = str(d["ret"])
-        arg_types = dict(d["arg_types"])
-        end_limit = len(lines) + 1
-        if idx + 1 < len(def_sigs):
-            end_limit = int(def_sigs[idx + 1]["idx"])
+    class_method_return_types: dict[str, dict[str, str]] = {}
+    class_base: dict[str, str | None] = {}
+    fn_returns: dict[str, str] = {}
 
-        body_lines: list[tuple[int, str]] = []
-        for i in range(def_idx + 1, end_limit):
-            ln = lines[i - 1]
-            if ln.strip() == "":
+    cur_cls: str | None = None
+    cur_cls_indent = 0
+    for ln_no, ln in enumerate(lines, start=1):
+        s = ln.strip()
+        if s == "":
+            continue
+        indent = len(ln) - len(ln.lstrip(" "))
+        if cur_cls is not None and indent <= cur_cls_indent and not s.startswith("#"):
+            cur_cls = None
+        m_cls = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", ln)
+        if m_cls is not None:
+            cur_cls = m_cls.group(1)
+            cur_cls_indent = indent
+            class_base[cur_cls] = m_cls.group(2)
+            class_method_return_types.setdefault(cur_cls, {})
+            continue
+        if cur_cls is None:
+            sig = parse_def_sig(ln_no, ln)
+            if sig is not None:
+                fn_returns[str(sig["name"])] = str(sig["ret"])
+            continue
+        sig = parse_def_sig(ln_no, ln, in_class=cur_cls)
+        if sig is not None:
+            class_method_return_types[cur_cls][str(sig["name"])] = str(sig["ret"])
+
+    def split_top_commas(txt: str) -> list[str]:
+        out: list[str] = []
+        depth = 0
+        in_str: str | None = None
+        esc = False
+        start = 0
+        for i, ch in enumerate(txt):
+            if in_str is not None:
+                if esc:
+                    esc = False
+                    continue
+                if ch == "\\":
+                    esc = True
+                    continue
+                if ch == in_str:
+                    in_str = None
                 continue
-            if not ln.startswith(" "):
-                break
-            body_lines.append((i, ln))
-        if len(body_lines) == 0:
-            raise EastBuildError(
-                kind="unsupported_syntax",
-                message=f"self_hosted parser requires non-empty function body '{fn_name}'",
-                source_span=_sh_span(def_idx, 0, len(def_line)),
-                hint="Add return or if/else statements in function body.",
-            )
+            if ch in {"'", '"'}:
+                in_str = ch
+                continue
+            if ch in {"(", "[", "{"}:
+                depth += 1
+                continue
+            if ch in {")", "]", "}"}:
+                depth -= 1
+                continue
+            if ch == "," and depth == 0:
+                out.append(txt[start:i].strip())
+                start = i + 1
+        tail = txt[start:].strip()
+        if tail != "":
+            out.append(tail)
+        return out
 
-        stmts: list[dict[str, Any]] = []
-        end_lineno = body_lines[-1][0]
-        end_col = len(body_lines[-1][1])
-
-        def parse_return_stmt(ln_no: int, ln_txt: str) -> dict[str, Any]:
-            rcol = ln_txt.find("return ")
-            expr_txt = ln_txt[rcol + len("return ") :].strip()
-            expr_col = ln_txt.find(expr_txt, rcol + len("return "))
+    def parse_expr(expr_txt: str, *, ln_no: int, col: int, name_types: dict[str, str]) -> dict[str, Any]:
+        raw = expr_txt
+        txt = raw.strip()
+        if len(txt) >= 3 and txt[0] == "f" and txt[1] in {"'", '"'} and txt[-1] == txt[1]:
+            quote = txt[1]
+            inner = txt[2:-1]
+            values: list[dict[str, Any]] = []
+            i = 0
+            while i < len(inner):
+                j = inner.find("{", i)
+                if j < 0:
+                    tail = inner[i:]
+                    if tail != "":
+                        values.append(
+                            {
+                                "kind": "Constant",
+                                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                                "resolved_type": "str",
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": repr(tail),
+                                "value": tail,
+                            }
+                        )
+                    break
+                if j > i:
+                    lit = inner[i:j]
+                    values.append(
+                        {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, col, col + len(raw)),
+                            "resolved_type": "str",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": repr(lit),
+                            "value": lit,
+                        }
+                    )
+                k = inner.find("}", j + 1)
+                if k < 0:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message="unterminated f-string placeholder in self_hosted parser",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Close f-string placeholder with `}`.",
+                    )
+                inner_expr = inner[j + 1 : k].strip()
+                values.append({"kind": "FormattedValue", "value": parse_expr(inner_expr, ln_no=ln_no, col=col, name_types=dict(name_types))})
+                i = k + 1
             return {
-                "kind": "Return",
-                "source_span": _sh_span(ln_no, rcol, len(ln_txt)),
-                "value": _sh_parse_expr(
-                    expr_txt,
-                    line_no=ln_no,
-                    col_base=expr_col,
-                    name_types=dict(arg_types),
-                    fn_return_types=fn_returns,
-                ),
+                "kind": "JoinedStr",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "values": values,
             }
+
+        tuple_parts = split_top_commas(txt)
+        if len(tuple_parts) >= 2:
+            elems = [parse_expr(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in tuple_parts]
+            elem_ts = [str(e.get("resolved_type", "unknown")) for e in elems]
+            return {
+                "kind": "Tuple",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": "tuple[" + ", ".join(elem_ts) + "]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "elements": elems,
+            }
+
+        return _sh_parse_expr(
+            txt,
+            line_no=ln_no,
+            col_base=col,
+            name_types=name_types,
+            fn_return_types=fn_returns,
+            class_method_return_types=class_method_return_types,
+            class_base=class_base,
+        )
+
+    def parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
+        stmts: list[dict[str, Any]] = []
+
+        def collect_indented_block(start: int, parent_indent: int) -> tuple[list[tuple[int, str]], int]:
+            out: list[tuple[int, str]] = []
+            j = start
+            while j < len(body_lines):
+                n_no, n_ln = body_lines[j]
+                if n_ln.strip() == "":
+                    j += 1
+                    continue
+                n_indent = len(n_ln) - len(n_ln.lstrip(" "))
+                if n_indent <= parent_indent:
+                    break
+                out.append((n_no, n_ln))
+                j += 1
+            return out, j
 
         i = 0
         while i < len(body_lines):
@@ -1804,98 +2049,204 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             if s.startswith("if ") and s.endswith(":"):
                 cond_txt = s[len("if ") : -1].strip()
                 cond_col = ln_txt.find(cond_txt)
-                cond_expr = _sh_parse_expr(
-                    cond_txt,
-                    line_no=ln_no,
-                    col_base=cond_col,
-                    name_types=dict(arg_types),
-                    fn_return_types=fn_returns,
-                )
-                if i + 1 >= len(body_lines):
+                cond_expr = parse_expr(cond_txt, ln_no=ln_no, col=cond_col, name_types=dict(name_types))
+                then_block, j = collect_indented_block(i + 1, indent)
+                if len(then_block) == 0:
                     raise EastBuildError(
                         kind="unsupported_syntax",
-                        message=f"if body is missing in '{fn_name}'",
+                        message=f"if body is missing in '{scope_label}'",
                         source_span=_sh_span(ln_no, 0, len(ln_txt)),
                         hint="Add indented if-body.",
                     )
-                t_no, t_ln = body_lines[i + 1]
-                t_indent = len(t_ln) - len(t_ln.lstrip(" "))
-                if t_indent <= indent or not t_ln.strip().startswith("return "):
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"self_hosted currently supports if-body as direct return in '{fn_name}'",
-                        source_span=_sh_span(t_no, 0, len(t_ln)),
-                        hint="Use `if ...: return ...` form.",
-                    )
-                then_stmt = parse_return_stmt(t_no, t_ln)
                 else_stmt_list: list[dict[str, Any]] = []
-                jump = 2
-                if i + 2 < len(body_lines):
-                    e_no, e_ln = body_lines[i + 2]
+                if j < len(body_lines):
+                    e_no, e_ln = body_lines[j]
                     e_indent = len(e_ln) - len(e_ln.lstrip(" "))
                     if e_indent == indent and e_ln.strip() == "else:":
-                        if i + 3 >= len(body_lines):
+                        else_block, k = collect_indented_block(j + 1, indent)
+                        if len(else_block) == 0:
                             raise EastBuildError(
                                 kind="unsupported_syntax",
-                                message=f"else body is missing in '{fn_name}'",
+                                message=f"else body is missing in '{scope_label}'",
                                 source_span=_sh_span(e_no, 0, len(e_ln)),
                                 hint="Add indented else-body.",
                             )
-                        r_no, r_ln = body_lines[i + 3]
-                        r_indent = len(r_ln) - len(r_ln.lstrip(" "))
-                        if r_indent <= indent or not r_ln.strip().startswith("return "):
-                            raise EastBuildError(
-                                kind="unsupported_syntax",
-                                message=f"self_hosted currently supports else-body as direct return in '{fn_name}'",
-                                source_span=_sh_span(r_no, 0, len(r_ln)),
-                                hint="Use `else: return ...` form.",
-                            )
-                        else_stmt_list = [parse_return_stmt(r_no, r_ln)]
-                        jump = 4
+                        else_stmt_list = parse_stmt_block(else_block, name_types=dict(name_types), scope_label=scope_label)
+                        j = k
                 stmts.append(
                     {
                         "kind": "If",
                         "source_span": _sh_span(ln_no, ln_txt.find("if "), len(ln_txt)),
                         "test": cond_expr,
-                        "body": [then_stmt],
+                        "body": parse_stmt_block(then_block, name_types=dict(name_types), scope_label=scope_label),
                         "orelse": else_stmt_list,
                     }
                 )
-                i += jump
+                i = j
                 continue
 
-            if s.startswith("return "):
-                stmts.append(parse_return_stmt(ln_no, ln_txt))
-                i += 1
+            if s.startswith("for ") and s.endswith(":"):
+                m_for = re.match(r"^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+):$", s)
+                if m_for is None:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse for statement: {s}",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Use `for name in iterable:` form.",
+                    )
+                tgt = m_for.group(1)
+                iter_txt = m_for.group(2).strip()
+                iter_col = ln_txt.find(iter_txt)
+                iter_expr = parse_expr(iter_txt, ln_no=ln_no, col=iter_col, name_types=dict(name_types))
+                body_block, j = collect_indented_block(i + 1, indent)
+                if len(body_block) == 0:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"for body is missing in '{scope_label}'",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Add indented for-body.",
+                    )
+                t_ty = "unknown"
+                i_ty = str(iter_expr.get("resolved_type", "unknown"))
+                if i_ty.startswith("list[") and i_ty.endswith("]"):
+                    t_ty = i_ty[5:-1]
+                elif i_ty.startswith("tuple[") and i_ty.endswith("]"):
+                    t_ty = "unknown"
+                elif i_ty.startswith("set[") and i_ty.endswith("]"):
+                    t_ty = i_ty[4:-1]
+                if t_ty != "unknown":
+                    name_types[tgt] = t_ty
+                stmts.append(
+                    {
+                        "kind": "For",
+                        "source_span": _sh_span(ln_no, 0, len(ln_txt)),
+                        "target": {
+                            "kind": "Name",
+                            "source_span": _sh_span(ln_no, ln_txt.find(tgt), ln_txt.find(tgt) + len(tgt)),
+                            "resolved_type": name_types.get(tgt, "unknown"),
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": tgt,
+                            "id": tgt,
+                        },
+                        "target_type": name_types.get(tgt, "unknown"),
+                        "iter": iter_expr,
+                        "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                        "orelse": [],
+                    }
+                )
+                i = j
                 continue
 
-            m_ann = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
-            if m_ann is not None:
-                name = m_ann.group(1)
-                ann = _sh_ann_to_type(m_ann.group(2))
-                expr_txt = m_ann.group(3).strip()
+            if s == "try:":
+                try_body, j = collect_indented_block(i + 1, indent)
+                if len(try_body) == 0:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"try body is missing in '{scope_label}'",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Add indented try-body.",
+                    )
+                handlers: list[dict[str, Any]] = []
+                finalbody: list[dict[str, Any]] = []
+                while j < len(body_lines):
+                    h_no, h_ln = body_lines[j]
+                    h_s = h_ln.strip()
+                    h_indent = len(h_ln) - len(h_ln.lstrip(" "))
+                    if h_indent != indent:
+                        break
+                    m_exc = re.match(r"^except\s+([A-Za-z_][A-Za-z0-9_]*)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s)
+                    if m_exc is not None:
+                        ex_type = m_exc.group(1)
+                        ex_name = m_exc.group(2)
+                        h_body, k = collect_indented_block(j + 1, indent)
+                        handlers.append(
+                            {
+                                "kind": "ExceptHandler",
+                                "type": {
+                                    "kind": "Name",
+                                    "source_span": _sh_span(h_no, h_ln.find(ex_type), h_ln.find(ex_type) + len(ex_type)),
+                                    "resolved_type": "unknown",
+                                    "borrow_kind": "value",
+                                    "casts": [],
+                                    "repr": ex_type,
+                                    "id": ex_type,
+                                },
+                                "name": ex_name,
+                                "body": parse_stmt_block(h_body, name_types=dict(name_types), scope_label=scope_label),
+                            }
+                        )
+                        j = k
+                        continue
+                    if h_s == "finally:":
+                        f_body, k = collect_indented_block(j + 1, indent)
+                        finalbody = parse_stmt_block(f_body, name_types=dict(name_types), scope_label=scope_label)
+                        j = k
+                        continue
+                    break
+                stmts.append(
+                    {
+                        "kind": "Try",
+                        "source_span": _sh_span(ln_no, 0, len(ln_txt)),
+                        "body": parse_stmt_block(try_body, name_types=dict(name_types), scope_label=scope_label),
+                        "handlers": handlers,
+                        "orelse": [],
+                        "finalbody": finalbody,
+                    }
+                )
+                i = j
+                continue
+
+            if s.startswith("raise "):
+                expr_txt = s[len("raise ") :].strip()
                 expr_col = ln_txt.find(expr_txt)
                 stmts.append(
                     {
+                        "kind": "Raise",
+                        "source_span": _sh_span(ln_no, ln_txt.find("raise "), len(ln_txt)),
+                        "exc": parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                    }
+                )
+                i += 1
+                continue
+
+            if s == "pass":
+                stmts.append({"kind": "Pass", "source_span": _sh_span(ln_no, indent, indent + 4)})
+                i += 1
+                continue
+
+            if s.startswith("return "):
+                rcol = ln_txt.find("return ")
+                expr_txt = ln_txt[rcol + len("return ") :].strip()
+                expr_col = ln_txt.find(expr_txt, rcol + len("return "))
+                stmts.append(
+                    {
+                        "kind": "Return",
+                        "source_span": _sh_span(ln_no, rcol, len(ln_txt)),
+                        "value": parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                    }
+                )
+                i += 1
+                continue
+
+            m_ann = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
+            if m_ann is not None:
+                target_txt = m_ann.group(1)
+                ann = _sh_ann_to_type(m_ann.group(2))
+                expr_txt = m_ann.group(3).strip()
+                expr_col = ln_txt.find(expr_txt)
+                val_expr = parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+                target_col = ln_txt.find(target_txt)
+                target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                    name_types[str(target_expr.get("id", ""))] = ann
+                stmts.append(
+                    {
                         "kind": "AnnAssign",
-                        "source_span": _sh_span(ln_no, ln_txt.find(name), len(ln_txt)),
-                        "target": {
-                            "kind": "Name",
-                            "source_span": _sh_span(ln_no, ln_txt.find(name), ln_txt.find(name) + len(name)),
-                            "resolved_type": ann,
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": name,
-                            "id": name,
-                        },
+                        "source_span": _sh_span(ln_no, target_col, len(ln_txt)),
+                        "target": target_expr,
                         "annotation": ann,
-                        "value": _sh_parse_expr(
-                            expr_txt,
-                            line_no=ln_no,
-                            col_base=expr_col,
-                            name_types=dict(arg_types),
-                            fn_return_types=fn_returns,
-                        ),
+                        "value": val_expr,
                         "declare": True,
                         "decl_type": ann,
                     }
@@ -1903,33 +2254,75 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 i += 1
                 continue
 
-            m_aug = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*(\+=|-=|\*=|/=)\s*(.+)$", s)
+            m_aug = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*(\+=|-=|\*=|/=)\s*(.+)$", s)
             if m_aug is not None:
-                name = m_aug.group(1)
+                target_txt = m_aug.group(1)
                 op_map = {"+=": "Add", "-=": "Sub", "*=": "Mult", "/=": "Div"}
                 expr_txt = m_aug.group(3).strip()
                 expr_col = ln_txt.find(expr_txt)
+                target_col = ln_txt.find(target_txt)
+                target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+                val_expr = parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+                target_ty = "unknown"
+                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                    target_ty = name_types.get(str(target_expr.get("id", "")), "unknown")
                 stmts.append(
                     {
                         "kind": "AugAssign",
-                        "source_span": _sh_span(ln_no, ln_txt.find(name), len(ln_txt)),
-                        "target": {
+                        "source_span": _sh_span(ln_no, target_col, len(ln_txt)),
+                        "target": target_expr,
+                        "op": op_map[m_aug.group(2)],
+                        "value": val_expr,
+                        "declare": False,
+                        "decl_type": target_ty if target_ty != "unknown" else None,
+                    }
+                )
+                i += 1
+                continue
+
+            m_tasg = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
+            if m_tasg is not None:
+                n1 = m_tasg.group(1)
+                n2 = m_tasg.group(2)
+                expr_txt = m_tasg.group(3).strip()
+                expr_col = ln_txt.find(expr_txt)
+                rhs = parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+                c1 = ln_txt.find(n1)
+                c2 = ln_txt.find(n2, c1 + len(n1))
+                target_expr = {
+                    "kind": "Tuple",
+                    "source_span": _sh_span(ln_no, c1, c2 + len(n2)),
+                    "resolved_type": "unknown",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": f"{n1}, {n2}",
+                    "elements": [
+                        {
                             "kind": "Name",
-                            "source_span": _sh_span(ln_no, ln_txt.find(name), ln_txt.find(name) + len(name)),
-                            "resolved_type": arg_types.get(name, "unknown"),
+                            "source_span": _sh_span(ln_no, c1, c1 + len(n1)),
+                            "resolved_type": name_types.get(n1, "unknown"),
                             "borrow_kind": "value",
                             "casts": [],
-                            "repr": name,
-                            "id": name,
+                            "repr": n1,
+                            "id": n1,
                         },
-                        "op": op_map[m_aug.group(2)],
-                        "value": _sh_parse_expr(
-                            expr_txt,
-                            line_no=ln_no,
-                            col_base=expr_col,
-                            name_types=dict(arg_types),
-                            fn_return_types=fn_returns,
-                        ),
+                        {
+                            "kind": "Name",
+                            "source_span": _sh_span(ln_no, c2, c2 + len(n2)),
+                            "resolved_type": name_types.get(n2, "unknown"),
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": n2,
+                            "id": n2,
+                        },
+                    ],
+                }
+                stmts.append(
+                    {
+                        "kind": "Assign",
+                        "source_span": _sh_span(ln_no, c1, len(ln_txt)),
+                        "target": target_expr,
+                        "value": rhs,
                         "declare": False,
                         "decl_type": None,
                     }
@@ -1937,136 +2330,291 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 i += 1
                 continue
 
-            m_asg = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
+            m_asg = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*=\s*(.+)$", s)
             if m_asg is not None:
-                name = m_asg.group(1)
+                target_txt = m_asg.group(1)
                 expr_txt = m_asg.group(2).strip()
                 expr_col = ln_txt.find(expr_txt)
-                val_expr = _sh_parse_expr(
-                    expr_txt,
-                    line_no=ln_no,
-                    col_base=expr_col,
-                    name_types=dict(arg_types),
-                    fn_return_types=fn_returns,
-                )
+                target_col = ln_txt.find(target_txt)
+                target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+                val_expr = parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+                decl_type = val_expr.get("resolved_type", "unknown")
+                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                    nm = str(target_expr.get("id", ""))
+                    if nm != "":
+                        name_types[nm] = str(decl_type)
                 stmts.append(
                     {
                         "kind": "Assign",
-                        "source_span": _sh_span(ln_no, ln_txt.find(name), len(ln_txt)),
-                        "target": {
-                            "kind": "Name",
-                            "source_span": _sh_span(ln_no, ln_txt.find(name), ln_txt.find(name) + len(name)),
-                            "resolved_type": val_expr.get("resolved_type", "unknown"),
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": name,
-                            "id": name,
-                        },
+                        "source_span": _sh_span(ln_no, target_col, len(ln_txt)),
+                        "target": target_expr,
                         "value": val_expr,
                         "declare": True,
                         "declare_init": True,
-                        "decl_type": val_expr.get("resolved_type", "unknown"),
+                        "decl_type": decl_type,
                     }
                 )
                 i += 1
                 continue
 
-            raise EastBuildError(
-                kind="unsupported_syntax",
-                message=f"self_hosted parser cannot parse function statement: {s}",
-                source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                hint="Extend self_hosted statement parser for this syntax.",
-            )
-        fn_stmt = {
-            "kind": "FunctionDef",
-            "name": fn_name,
-            "original_name": fn_name,
-            "source_span": {"lineno": def_idx, "col": 0, "end_lineno": end_lineno, "end_col": end_col},
-            "arg_types": arg_types,
-            "return_type": fn_ret,
-            "arg_usage": {n: "readonly" for n in arg_types.keys()},
-            "renamed_symbols": {},
-            "leading_comments": leading_file_comments if idx == 0 else [],
-            "leading_trivia": leading_file_trivia if idx == 0 else [],
-            "body": stmts,
-        }
-        fn_stmts.append(fn_stmt)
+            expr_col = len(ln_txt) - len(ln_txt.lstrip(" "))
+            expr_stmt = parse_expr(s, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+            stmts.append({"kind": "Expr", "source_span": _sh_span(ln_no, expr_col, len(ln_txt)), "value": expr_stmt})
+            i += 1
+        return stmts
 
-    # Parse if __name__ == "__main__": block with one or more print(...) calls.
-    main_if_idx = None
-    for i, ln in enumerate(lines, start=1):
-        if re.match(r"^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$", ln):
-            main_if_idx = i
-            break
-    if main_if_idx is None:
-        raise EastBuildError(
-            kind="unsupported_syntax",
-            message="self_hosted parser requires if __name__ == \"__main__\": block",
-            source_span={"lineno": None, "col": None, "end_lineno": None, "end_col": None},
-            hint="Add main guard block.",
-        )
+    body_items: list[dict[str, Any]] = []
     main_stmts: list[dict[str, Any]] = []
-    for i in range(main_if_idx + 1, len(lines) + 1):
-        ln = lines[i - 1]
-        if re.match(r"^\s+print\(", ln):
-            expr_txt = ln.strip()
-            expr_col = ln.find(expr_txt)
-            main_expr = _sh_parse_expr(
-                expr_txt,
-                line_no=i,
-                col_base=expr_col,
-                name_types={},
-                fn_return_types=fn_returns,
-            )
-            main_stmts.append(
-                {
-                    "kind": "Expr",
-                    "source_span": _sh_span(i, expr_col, len(ln)),
-                    "value": main_expr,
-                }
-            )
-            continue
-        if ln.strip() == "":
-            continue
-        if len(ln) > 0 and not ln.startswith(" "):
-            break
-    if len(main_stmts) == 0:
-        raise EastBuildError(
-            kind="unsupported_syntax",
-            message="self_hosted parser currently supports print(...) statements in main guard",
-            source_span=_sh_span(main_if_idx, 0, len(lines[main_if_idx - 1])),
-            hint="Add one or more print(...) lines in main guard body.",
-        )
+    first_item_attached = False
 
-    # Parse simple top-level assignments (outside functions/main-guard).
-    module_stmts: list[dict[str, Any]] = []
-    in_main = False
-    for ln_no, ln in enumerate(lines, start=1):
+    i = 1
+    while i <= len(lines):
+        ln = lines[i - 1]
         s = ln.strip()
         if s == "" or s.startswith("#"):
+            i += 1
             continue
         if ln.startswith(" "):
+            i += 1
             continue
-        if re.match(r"^def\s+[A-Za-z_][A-Za-z0-9_]*\s*\(", ln):
+
+        m_main = re.match(r"^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$", ln)
+        if m_main is not None:
+            block: list[tuple[int, str]] = []
+            j = i + 1
+            while j <= len(lines):
+                bl = lines[j - 1]
+                if bl.strip() == "":
+                    j += 1
+                    continue
+                if not bl.startswith(" "):
+                    break
+                block.append((j, bl))
+                j += 1
+            main_name_types: dict[str, str] = {}
+            main_stmts = parse_stmt_block(block, name_types=main_name_types, scope_label="__main__")
+            i = j
             continue
-        if re.match(r"^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$", ln):
-            in_main = True
+
+        m_def = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*->\s*(.+)\s*:\s*$", ln)
+        if m_def is not None:
+            sig = parse_def_sig(i, ln)
+            assert sig is not None
+            fn_name = str(sig["name"])
+            fn_ret = str(sig["ret"])
+            arg_types = dict(sig["arg_types"])
+            block: list[tuple[int, str]] = []
+            j = i + 1
+            while j <= len(lines):
+                bl = lines[j - 1]
+                if bl.strip() == "":
+                    j += 1
+                    continue
+                if not bl.startswith(" "):
+                    break
+                block.append((j, bl))
+                j += 1
+            if len(block) == 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser requires non-empty function body '{fn_name}'",
+                    source_span=_sh_span(i, 0, len(ln)),
+                    hint="Add return or assignment statements in function body.",
+                )
+            stmts = parse_stmt_block(block, name_types=dict(arg_types), scope_label=fn_name)
+            item = {
+                "kind": "FunctionDef",
+                "name": fn_name,
+                "original_name": fn_name,
+                "source_span": {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
+                "arg_types": arg_types,
+                "return_type": fn_ret,
+                "arg_usage": {n: "readonly" for n in arg_types.keys()},
+                "renamed_symbols": {},
+                "leading_comments": [],
+                "leading_trivia": [],
+                "body": stmts,
+            }
+            if not first_item_attached:
+                item["leading_comments"] = list(leading_file_comments)
+                item["leading_trivia"] = list(leading_file_trivia)
+                first_item_attached = True
+            body_items.append(item)
+            i = j
             continue
-        if in_main:
+
+        m_cls = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", ln)
+        if m_cls is not None:
+            cls_name = m_cls.group(1)
+            base = m_cls.group(2)
+            cls_indent = len(ln) - len(ln.lstrip(" "))
+            block: list[tuple[int, str]] = []
+            j = i + 1
+            while j <= len(lines):
+                bl = lines[j - 1]
+                if bl.strip() == "":
+                    j += 1
+                    continue
+                bind = len(bl) - len(bl.lstrip(" "))
+                if bind <= cls_indent:
+                    break
+                block.append((j, bl))
+                j += 1
+            if len(block) == 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser requires non-empty class body '{cls_name}'",
+                    source_span=_sh_span(i, 0, len(ln)),
+                    hint="Add field or method definitions.",
+                )
+
+            field_types: dict[str, str] = {}
+            class_body: list[dict[str, Any]] = []
+            k = 0
+            while k < len(block):
+                ln_no, ln_txt = block[k]
+                s2 = ln_txt.strip()
+                bind = len(ln_txt) - len(ln_txt.lstrip(" "))
+                if bind == cls_indent + 4:
+                    m_field = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s2)
+                    if m_field is not None:
+                        fname = m_field.group(1)
+                        fty = _sh_ann_to_type(m_field.group(2))
+                        fexpr_txt = m_field.group(3).strip()
+                        fexpr_col = ln_txt.find(fexpr_txt)
+                        field_types[fname] = fty
+                        class_body.append(
+                            {
+                                "kind": "AnnAssign",
+                                "source_span": _sh_span(ln_no, ln_txt.find(fname), len(ln_txt)),
+                                "target": {
+                                    "kind": "Name",
+                                    "source_span": _sh_span(ln_no, ln_txt.find(fname), ln_txt.find(fname) + len(fname)),
+                                    "resolved_type": fty,
+                                    "borrow_kind": "value",
+                                    "casts": [],
+                                    "repr": fname,
+                                    "id": fname,
+                                },
+                                "annotation": fty,
+                                "value": parse_expr(fexpr_txt, ln_no=ln_no, col=fexpr_col, name_types={}),
+                                "declare": True,
+                                "decl_type": fty,
+                            }
+                        )
+                        k += 1
+                        continue
+                    sig = parse_def_sig(ln_no, ln_txt, in_class=cls_name)
+                    if sig is not None:
+                        mname = str(sig["name"])
+                        marg_types = dict(sig["arg_types"])
+                        mret = str(sig["ret"])
+                        method_block: list[tuple[int, str]] = []
+                        m = k + 1
+                        while m < len(block):
+                            n_no, n_txt = block[m]
+                            n_indent = len(n_txt) - len(n_txt.lstrip(" "))
+                            if n_indent <= bind:
+                                break
+                            method_block.append((n_no, n_txt))
+                            m += 1
+                        if len(method_block) == 0:
+                            raise EastBuildError(
+                                kind="unsupported_syntax",
+                                message=f"self_hosted parser requires non-empty method body '{cls_name}.{mname}'",
+                                source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                                hint="Add method statements.",
+                            )
+                        local_types = dict(marg_types)
+                        for fnm, fty in field_types.items():
+                            local_types[fnm] = fty
+                        stmts = parse_stmt_block(method_block, name_types=local_types, scope_label=f"{cls_name}.{mname}")
+                        if mname == "__init__":
+                            for st in stmts:
+                                if st.get("kind") == "Assign":
+                                    tgt = st.get("target")
+                                    if (
+                                        isinstance(tgt, dict)
+                                        and tgt.get("kind") == "Attribute"
+                                        and isinstance(tgt.get("value"), dict)
+                                        and tgt.get("value", {}).get("kind") == "Name"
+                                        and tgt.get("value", {}).get("id") == "self"
+                                    ):
+                                        fname = str(tgt.get("attr", ""))
+                                        if fname != "":
+                                            t = st.get("decl_type") or (st.get("value") or {}).get("resolved_type")
+                                            if isinstance(t, str) and t != "":
+                                                field_types[fname] = t
+                                if st.get("kind") == "AnnAssign":
+                                    tgt = st.get("target")
+                                    if (
+                                        isinstance(tgt, dict)
+                                        and tgt.get("kind") == "Attribute"
+                                        and isinstance(tgt.get("value"), dict)
+                                        and tgt.get("value", {}).get("kind") == "Name"
+                                        and tgt.get("value", {}).get("id") == "self"
+                                    ):
+                                        fname = str(tgt.get("attr", ""))
+                                        ann = st.get("annotation")
+                                        if fname != "" and isinstance(ann, str) and ann != "":
+                                            field_types[fname] = ann
+                        class_body.append(
+                            {
+                                "kind": "FunctionDef",
+                                "name": mname,
+                                "original_name": mname,
+                                "source_span": {
+                                    "lineno": ln_no,
+                                    "col": bind,
+                                    "end_lineno": method_block[-1][0],
+                                    "end_col": len(method_block[-1][1]),
+                                },
+                                "arg_types": marg_types,
+                                "return_type": mret,
+                                "arg_usage": {n: "readonly" for n in marg_types.keys()},
+                                "renamed_symbols": {},
+                                "body": stmts,
+                            }
+                        )
+                        k = m
+                        continue
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse class statement: {s2}",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Use field annotation or method definitions in class body.",
+                )
+
+            cls_item = {
+                "kind": "ClassDef",
+                "name": cls_name,
+                "original_name": cls_name,
+                "source_span": {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
+                "base": base,
+                "field_types": field_types,
+                "body": class_body,
+            }
+            if not first_item_attached:
+                cls_item["leading_comments"] = list(leading_file_comments)
+                cls_item["leading_trivia"] = list(leading_file_trivia)
+                first_item_attached = True
+            body_items.append(cls_item)
+            i = j
             continue
-        m_ann = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
-        if m_ann is not None:
-            name = m_ann.group(1)
-            ann = _sh_ann_to_type(m_ann.group(2))
-            expr_txt = m_ann.group(3).strip()
+
+        m_ann_top = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
+        if m_ann_top is not None:
+            name = m_ann_top.group(1)
+            ann = _sh_ann_to_type(m_ann_top.group(2))
+            expr_txt = m_ann_top.group(3).strip()
             expr_col = ln.find(expr_txt)
-            module_stmts.append(
+            body_items.append(
                 {
                     "kind": "AnnAssign",
-                    "source_span": _sh_span(ln_no, ln.find(name), len(ln)),
+                    "source_span": _sh_span(i, ln.find(name), len(ln)),
                     "target": {
                         "kind": "Name",
-                        "source_span": _sh_span(ln_no, ln.find(name), ln.find(name) + len(name)),
+                        "source_span": _sh_span(i, ln.find(name), ln.find(name) + len(name)),
                         "resolved_type": ann,
                         "borrow_kind": "value",
                         "casts": [],
@@ -2074,23 +2622,34 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         "id": name,
                     },
                     "annotation": ann,
-                    "value": _sh_parse_expr(
-                        expr_txt,
-                        line_no=ln_no,
-                        col_base=expr_col,
-                        name_types={},
-                        fn_return_types=fn_returns,
-                    ),
+                    "value": parse_expr(expr_txt, ln_no=i, col=expr_col, name_types={}),
                     "declare": True,
                     "decl_type": ann,
                 }
             )
+            i += 1
+            continue
+
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message=f"self_hosted parser cannot parse top-level statement: {s}",
+            source_span=_sh_span(i, 0, len(ln)),
+            hint="Use def/class/top-level typed assignment/main guard.",
+        )
+
+    if len(main_stmts) == 0:
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message="self_hosted parser requires if __name__ == \"__main__\": block",
+            source_span={"lineno": None, "col": None, "end_lineno": None, "end_col": None},
+            hint="Add main guard block with print(...).",
+        )
 
     return {
         "kind": "Module",
         "source_path": filename,
         "source_span": {"lineno": None, "col": None, "end_lineno": None, "end_col": None},
-        "body": fn_stmts + module_stmts,
+        "body": body_items,
         "main_guard_body": main_stmts,
         "renamed_symbols": {},
         "meta": {"parser_backend": "self_hosted"},

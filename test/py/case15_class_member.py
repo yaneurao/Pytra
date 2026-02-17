@@ -6,10 +6,12 @@ class Counter:
     value: int = 0
 
     def inc(self) -> int:
-        self.value += 1
-        return self.value
+        Counter.value += 1
+        return Counter.value
 
 
 if __name__ == "__main__":
     c: Counter = Counter()
+    c.inc()
+    c = Counter()
     print(c.inc())
