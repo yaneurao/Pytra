@@ -904,6 +904,30 @@ def _expr_repr(expr: dict[str, Any] | None) -> str:
     return rep
 
 
+def _cpp_type_name(east_type: str | None) -> str:
+    if east_type is None:
+        return "auto"
+    if east_type == "int":
+        return "long long"
+    if east_type == "float":
+        return "double"
+    if east_type == "bool":
+        return "bool"
+    if east_type == "str":
+        return "std::string"
+    if east_type == "Path":
+        return "Path"
+    if east_type.startswith("list["):
+        return "/*list*/ auto"
+    if east_type.startswith("dict["):
+        return "/*dict*/ auto"
+    if east_type.startswith("set["):
+        return "/*set*/ auto"
+    if east_type.startswith("tuple["):
+        return "/*tuple*/ auto"
+    return "auto"
+
+
 def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
     k = stmt.get("kind")
     sp = _fmt_span(stmt.get("source_span"))
@@ -967,8 +991,11 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
             out.append(("    " * level) + "}")
         return _indent(out, 0)
     if k == "For":
+        tgt_expr = stmt.get("target")
+        tgt = _expr_repr(tgt_expr)
+        tgt_ty = _cpp_type_name((tgt_expr or {}).get("resolved_type") if isinstance(tgt_expr, dict) else None)
         out.append(f"// [{sp}]")
-        out.append(f"for (auto { _render_expr(stmt.get('target')) } : { _render_expr(stmt.get('iter')) }) {{")
+        out.append(f"for ({tgt_ty} {tgt} : { _render_expr(stmt.get('iter')) }) {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
         out.append(("    " * level) + "}")
@@ -980,7 +1007,9 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
             out.append(("    " * level) + "}")
         return _indent(out, 0)
     if k == "ForRange":
-        tgt = _expr_repr(stmt.get("target"))
+        tgt_expr = stmt.get("target")
+        tgt = _expr_repr(tgt_expr)
+        tgt_ty = _cpp_type_name((tgt_expr or {}).get("resolved_type") if isinstance(tgt_expr, dict) else None)
         start = _render_expr(stmt.get("start"))
         stop = _render_expr(stmt.get("stop"))
         step = _render_expr(stmt.get("step"))
@@ -992,7 +1021,7 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
         else:
             cond = f"({step}) > 0 ? ({tgt}) < ({stop}) : ({tgt}) > ({stop})"
         out.append(f"// [{sp}]")
-        out.append(f"for (auto {tgt} = {start}; {cond}; {tgt} += ({step})) {{")
+        out.append(f"for ({tgt_ty} {tgt} = {start}; {cond}; {tgt} += ({step})) {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
         out.append(("    " * level) + "}")
