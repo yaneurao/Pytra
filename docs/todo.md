@@ -68,7 +68,16 @@
 - [x] `py2go.py` / `py2java.py` を Python 呼び出し不要のネイティブ変換モードへ移行する。
 - [x] `test/py`（case01〜30）を Go/Java ネイティブ変換して、Python 実行結果と一致させる。
 - [ ] Go/Java で、Python 側に型注釈がある変数・引数・戻り値を `any` / `Object` へ退化させず、可能な限り静的型（`int`/`float64`/`string`/`bool`/`[]byte`/`byte[]`/コンテナ型）へ落とす。
+  - [ ] `src/common/go_java_native_transpiler.py` の型注釈解釈を拡張し、`list[T]` / `dict[K,V]` / `set[T]` / `tuple[...]` を内部型タグへ保持する。
+  - [ ] 関数シグネチャ生成で、引数・戻り値の型注釈を Go/Java の静的型へ優先反映する（未注釈時のみ `any` / `Object`）。
+  - [ ] ローカル変数宣言で、型注釈付き代入 (`AnnAssign`) を `var/object` ではなく具体型で宣言する。
+  - [ ] コンテナ操作（`append`, `pop`, `pyGet`, `pySet`）のコード生成を型付きコンテナ前提で整合させる。
+  - [ ] `sample/py/15` 相当の複合ケースで Go/Java 生成コードの型退化が再発しないことを確認する。
 - [ ] Go/Java の `bytes` / `bytearray` 型注釈を優先して `[]byte` / `byte[]` へ反映し、`any` / `Object` ベース実装は型未確定ケースのみに限定する。
+  - [ ] 型注釈 `bytes` / `bytearray` を内部型タグで区別し、宣言時に Go:`[]byte` / Java:`byte[]` で出力する。
+  - [ ] `bytes(...)` / `bytearray(...)` / `pyToBytes` 周辺の生成コードで不要な `any` / `Object` キャストを削減する。
+  - [ ] 添字アクセス・代入・`append` / `extend` / `pop` の `[]byte` / `byte[]` パスを優先する分岐を追加する。
+  - [ ] `sample/py` の PNG/GIF 系ケースで、バイト列が終始 `[]byte` / `byte[]` で通ることを確認する。
 - [x] `sample/py` で使っている `math` モジュール呼び出し（`sqrt`, `sin`, `cos` など）を Go/Java ネイティブ変換で対応する。
 - [x] `sample/py` で使っている `png_helper.write_rgb_png` の Go/Java ランタイム実装を追加する。
 - [x] `sample/py` で使っている `gif_helper.save_gif` / `grayscale_palette` の Go/Java ランタイム実装を追加する。
@@ -83,5 +92,16 @@
 
 - [x] C++ のみ対応になっている `math` 拡張関数（`tan`, `log`, `log10`, `fabs`, `ceil`, `pow` など）を、Rust / C# / JS / TS / Go / Java / Swift / Kotlin の各ランタイムにも同等実装する。
 - [ ] C++ のみ実装が進んでいる `pathlib` 相当機能を、他ターゲット言語にも同一 API で実装する（`Path` の生成・結合・存在確認・文字列化など）。
+  - [ ] `pathlib` 最小共通 API を確定する（`Path(...)`, `/`, `exists`, `resolve`, `parent`, `name`, `stem`, `read_text`, `write_text`, `mkdir`, `str`）。
+  - [ ] `src/rs_module` / `src/cs_module` / `src/js_module` / `src/ts_module` / `src/go_module` / `src/java_module` に `pathlib` 相当ランタイムを追加する。
+  - [ ] `py2cpp.py` 以外の各トランスパイラで `import pathlib` と `Path` 呼び出しのマッピングを実装する。
+  - [ ] `sample/py` もしくは `test/py` にファイルI/Oを伴う `pathlib` 利用ケースを追加し、各言語で実行確認する。
 - [ ] 上記の平準化後、`docs/pytra-readme.md` の「対応module」を言語別の対応関数一覧で更新し、差分がある場合は理由を明記する。
+  - [ ] `math` / `pathlib` の言語別対応表を `docs/pytra-readme.md` に追加する。
+  - [ ] 未対応関数が残る言語には「未対応理由・代替手段・予定」を併記する。
+  - [ ] `README.md` / `docs/how-to-use.md` から参照される説明との整合を確認する。
 - [ ] `test/py` に `math` / `pathlib` の共通回帰テストを追加し、全ターゲット言語で同一期待値を満たすことを CI 相当手順で確認する。
+  - [ ] `test/py` に `math` 拡張（`tan/log/log10/fabs/ceil/pow`）の共通テストケースを追加する。
+  - [ ] `test/py` に `pathlib` 共通テストケース（生成・結合・存在確認・読み書き）を追加する。
+  - [ ] 各ターゲット（C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）への変換・実行コマンドを自動化スクリプトへ集約する。
+  - [ ] Python 実行結果との差分比較を自動化し、失敗ケースを一覧出力できるようにする。
