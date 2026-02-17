@@ -78,6 +78,7 @@ void run_06_julia_parameter_sweep() {
         frames.append(render_frame(width, height, cr, ci, max_iter, phase));
     }
     
+    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, julia_palette(), 8, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);

@@ -336,6 +336,7 @@ void run_16_glass_sculpture_chaos() {
     for (int64 i = 0; i < frames_n; ++i)
         frames.append(render_frame(width, height, i, frames_n));
     
+    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, palette_332(), 6, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);

@@ -47,6 +47,7 @@ void run_05_mandelbrot_zoom() {
         scale *= zoom_per_frame;
     }
     
+    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);

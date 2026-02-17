@@ -52,6 +52,7 @@ void run_12_sort_visualizer() {
             break;
     }
     
+    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, grayscale_palette(), 3, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);

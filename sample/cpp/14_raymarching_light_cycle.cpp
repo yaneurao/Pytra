@@ -61,6 +61,7 @@ void run_14_raymarching_light_cycle() {
         frames.append(bytearray(frame));
     }
     
+    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, palette(), 3, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);
