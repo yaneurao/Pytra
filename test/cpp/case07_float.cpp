@@ -5,7 +5,7 @@
 // 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 float64 half(float64 x) {
-    return py_div(x, 2.0);
+    return x / 2.0;
 }
 
 int main() {

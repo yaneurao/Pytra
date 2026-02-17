@@ -89,6 +89,7 @@ class CppEmitter:
         self.scope_stack: list[set[str]] = [set()]
         self.current_class_name: str | None = None
         self.current_class_fields: dict[str, str] = {}
+        self.current_class_static_fields: set[str] = set()
         self.class_method_names: dict[str, set[str]] = {}
         self.class_base: dict[str, str | None] = {}
 
@@ -257,20 +258,19 @@ class CppEmitter:
             if name not in out:
                 out[name] = typ if isinstance(typ, str) and typ != "" else "auto"
 
-        def walk(st: dict[str, Any]) -> None:
+        def walk(st: dict[str, Any], *, in_control: bool) -> None:
             kind = st.get("kind")
             if kind == "Assign":
-                if bool(st.get("declare_init")):
+                target = st.get("target")
+                value = st.get("value")
+                if bool(st.get("declare_init")) or (bool(st.get("declare", True)) and not in_control and isinstance(target, dict) and target.get("kind") == "Name"):
                     # Keep declaration+initialization at assignment site.
                     # This assignment must not be hoisted into pre-declarations.
-                    target = st.get("target")
                     if isinstance(target, dict) and target.get("kind") == "Name":
                         n = str(target.get("id", ""))
                         if n != "":
                             inline_declared.add(n)
                 else:
-                    target = st.get("target")
-                    value = st.get("value")
                     if isinstance(target, dict) and target.get("kind") == "Name":
                         add_name(str(target.get("id", "")), st.get("decl_type") or self.get_expr_type(value))
                     if isinstance(target, dict) and target.get("kind") == "Tuple":
@@ -284,7 +284,12 @@ class CppEmitter:
             elif kind == "AnnAssign":
                 target = st.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
-                    add_name(str(target.get("id", "")), st.get("annotation"))
+                    n = str(target.get("id", ""))
+                    if bool(st.get("declare", True)) and not in_control:
+                        if n != "":
+                            inline_declared.add(n)
+                    else:
+                        add_name(n, st.get("annotation"))
             elif kind == "AugAssign":
                 target = st.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
@@ -306,18 +311,19 @@ class CppEmitter:
                     cnt, _old_t = loop_counts.get(n, (0, t))
                     loop_counts[n] = (cnt + 1, t)
 
+            child_in_control = in_control or kind in {"If", "For", "ForRange", "While", "Try"}
             for k in ("body", "orelse", "finalbody"):
                 for child in st.get(k, []):
                     if isinstance(child, dict):
-                        walk(child)
+                        walk(child, in_control=child_in_control)
             for h in st.get("handlers", []):
                 if isinstance(h, dict):
                     for child in h.get("body", []):
                         if isinstance(child, dict):
-                            walk(child)
+                            walk(child, in_control=True)
 
         for s in stmts:
-            walk(s)
+            walk(s, in_control=False)
         for n, (cnt, t) in loop_counts.items():
             if cnt > 1:
                 add_name(n, t)
@@ -642,33 +648,44 @@ class CppEmitter:
         self.indent += 1
         prev_class = self.current_class_name
         prev_fields = self.current_class_fields
+        prev_static_fields = self.current_class_static_fields
         self.current_class_name = str(name)
         self.current_class_fields = dict(stmt.get("field_types", {}))
         class_body = list(stmt.get("body", []))
-        has_init = any(s.get("kind") == "FunctionDef" and s.get("name") == "__init__" for s in class_body)
-        field_defaults: dict[str, str] = {}
+        static_field_types: dict[str, str] = {}
+        static_field_defaults: dict[str, str] = {}
         for s in class_body:
             if s.get("kind") == "AnnAssign":
                 texpr = s.get("target")
                 if self.is_plain_name_expr(texpr):
-                    fname = self.render_expr(texpr)
+                    fname = str(texpr.get("id", ""))
+                    ann = s.get("annotation")
+                    if isinstance(ann, str) and ann != "":
+                        static_field_types[fname] = ann
                     if s.get("value") is not None:
-                        field_defaults[fname] = self.render_expr(s.get("value"))
-
-        for fname, fty in self.current_class_fields.items():
+                        static_field_defaults[fname] = self.render_expr(s.get("value"))
+        self.current_class_static_fields = set(static_field_types.keys())
+        instance_fields: dict[str, str] = {
+            k: v for k, v in self.current_class_fields.items() if k not in self.current_class_static_fields
+        }
+        has_init = any(s.get("kind") == "FunctionDef" and s.get("name") == "__init__" for s in class_body)
+        for fname, fty in static_field_types.items():
+            if fname in static_field_defaults:
+                self.emit(f"inline static {self.cpp_type(fty)} {fname} = {static_field_defaults[fname]};")
+            else:
+                self.emit(f"inline static {self.cpp_type(fty)} {fname};")
+        for fname, fty in instance_fields.items():
             self.emit(f"{self.cpp_type(fty)} {fname};")
-        if self.current_class_fields:
+        if len(static_field_types) > 0 or len(instance_fields) > 0:
             self.emit()
-        if len(self.current_class_fields) > 0 and not has_init:
+        if len(instance_fields) > 0 and not has_init:
             params: list[str] = []
-            for fname, fty in self.current_class_fields.items():
+            for fname, fty in instance_fields.items():
                 p = f"{self.cpp_type(fty)} {fname}"
-                if fname in field_defaults:
-                    p += f" = {field_defaults[fname]}"
                 params.append(p)
             self.emit(f"{name}({', '.join(params)}) {{")
             self.indent += 1
-            for fname in self.current_class_fields:
+            for fname in instance_fields:
                 self.emit(f"this->{fname} = {fname};")
             self.indent -= 1
             self.emit("}")
@@ -691,6 +708,7 @@ class CppEmitter:
                 self.emit_stmt(s)
         self.current_class_name = prev_class
         self.current_class_fields = prev_fields
+        self.current_class_static_fields = prev_static_fields
         self.indent -= 1
         self.emit("};")
 
@@ -715,7 +733,13 @@ class CppEmitter:
             base = self.render_expr(expr.get("value"))
             attr = expr.get("attr", "")
             if base == "self":
+                if self.current_class_name is not None and str(attr) in self.current_class_static_fields:
+                    return f"{self.current_class_name}::{attr}"
                 return f"this->{attr}"
+            # Class-name qualified member access in EAST uses dot syntax.
+            # Emit C++ scope resolution for static members/methods.
+            if base in self.class_base or base in self.class_method_names:
+                return f"{base}::{attr}"
             if base == "math":
                 if attr == "pi":
                     return "pycs::cpp_module::math::pi"
@@ -962,8 +986,11 @@ class CppEmitter:
             left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
             right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
             if op_name == "Div":
-                # Prefer EAST-provided casted division; otherwise keep legacy-compatible py_div semantics.
-                if len(cast_rules) > 0:
+                # Prefer direct C++ division when float is involved (or EAST already injected casts).
+                # Keep py_div fallback for int/int Python semantics.
+                lt = self.get_expr_type(left_expr if isinstance(left_expr, dict) else None) or ""
+                rt = self.get_expr_type(right_expr if isinstance(right_expr, dict) else None) or ""
+                if len(cast_rules) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
                     return f"{left} / {right}"
                 return f"py_div({left}, {right})"
             if op_name == "FloorDiv":
