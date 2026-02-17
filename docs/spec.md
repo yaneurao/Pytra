@@ -35,6 +35,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
     - `base_transpiler.py`: `TranspileError` と共通基底クラス
     - `transpile_shared.py`: AST 解析補助（スコープ、main guard 判定など）
     - `js_ts_native_transpiler.py`: JS/TS 向けネイティブコード生成
+    - `go_java_native_transpiler.py`: Go/Java 向けネイティブコード生成
+    - `swift_kotlin_node_transpiler.py`: Swift/Kotlin 向け Node バックエンドコード生成
   - `cpp_module/`: C++ 側ランタイム補助モジュール
   - `cs_module/`: C# 側ランタイム補助モジュール
   - `js_module/`: JavaScript 側ランタイム補助モジュール
@@ -177,6 +179,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - Python 側の画像保存は `py_module.png_helper.write_rgb_png(...)` を使用し、C++ 側は `src/cpp_module/png.h/.cpp` を利用します。
 - `sample/py` の連番（`01_...`, `02_...`）は README の実行時間比較表と対応づけるため、原則として欠番なしで管理します。
 - `sample/py/01_mandelbrot.py` はマンデルブロ集合画像を生成し、Python 実行時と C++ 実行時の画像一致（ハッシュ一致）を確認可能なサンプルです。
+- README のサンプルコード掲載は、現状 `sample/06` と `sample/16` を対象に Python と各ターゲット言語（C++, Rust, C#, JavaScript, TypeScript, Go, Java, Swift, Kotlin）を `details` 折りたたみで提示します。
 - 画像一致検証は、同名出力を言語別に退避してハッシュ（例: `sha256sum`）比較で行います。
 
 ## 7. ユニットテスト実行方法
@@ -190,9 +193,14 @@ python -m unittest discover -s test -p "test_*.py" -v
 想定内容:
 
 - `test/test_transpile_cases.py`
-  - `test/py/case*.py` (100件) を C# へ変換し、`test/cs/` と比較
+  - `test/py/case*.py`（現状30件）を C# へ変換し、`test/cs/` と比較
 - `test/test_self_transpile.py`
   - `src/py2cs.py` 自身の C# 変換が完走することを確認
+
+補足:
+
+- Swift/Kotlin については `test/py` 全30件を `test/swift`, `test/kotlin` に変換し、コンパイル・実行して Python 実行結果と一致することを確認済みです。
+- `sample/py` についても Swift/Kotlin 変換・コンパイル・実行の動作確認を行っています。
 
 ## 8. C++ 変換結果の検証手順
 
@@ -229,6 +237,7 @@ python -m unittest discover -s test -p "test_*.py" -v
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出さず、Node.js ランタイムのみで実行します。
 - 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
 - 現在の `py2swift.py` / `py2kotlin.py` は Node バックエンド実行モードです。生成 Swift/Kotlin は埋め込み Base64 文字列を復元して `node` を起動し、Python インタプリタは呼び出しません。
+- 現在の `py2swift.py` / `py2kotlin.py` は、内部的に `py2js` 相当の JavaScript コードを埋め込んで実行する方式です。そのため Swift と Kotlin の実行時間は近い傾向になります。
 - Go/Java の現状制約:
   - `test/py` のケース群はネイティブ変換・実行一致を確認済みです。
   - `sample/py` の一部（`math` / `png_helper` / `gif_helper` 依存が強いケース）は未対応機能が残っています。
