@@ -1,413 +1,421 @@
-#include "cpp_module/gc.h"
-#include "cpp_module/gif.h"
-#include "cpp_module/math.h"
 #include "cpp_module/py_runtime.h"
-#include "cpp_module/time.h"
-#include <algorithm>
-#include <any>
-#include <cstdint>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
 
-double clamp01(double v)
-{
-    if ((v < 0.0))
-    {
+
+
+
+float64 clamp01(float64 v) {
+    if (v < 0.0)
         return 0.0;
-    }
-    if ((v > 1.0))
-    {
+    if (v > 1.0)
         return 1.0;
-    }
     return v;
 }
 
-double dot(double ax, double ay, double az, double bx, double by, double bz)
-{
-    return (((ax * bx) + (ay * by)) + (az * bz));
+float64 dot(float64 ax, float64 ay, float64 az, float64 bx, float64 by, float64 bz) {
+    return ax * bx + ay * by + az * bz;
 }
 
-double length(double x, double y, double z)
-{
-    return pycs::cpp_module::math::sqrt((((x * x) + (y * y)) + (z * z)));
+float64 length(float64 x, float64 y, float64 z) {
+    return py_math::sqrt(x * x + y * y + z * z);
 }
 
-tuple<double, double, double> normalize(double x, double y, double z)
-{
-    auto l = length(x, y, z);
-    if ((l < 1e-09))
-    {
+std::tuple<float64, float64, float64> normalize(float64 x, float64 y, float64 z) {
+    float64 l = length(x, y, z);
+    if (l < 1e-09)
         return std::make_tuple(0.0, 0.0, 0.0);
-    }
-    return std::make_tuple(py_div(x, l), py_div(y, l), py_div(z, l));
+    return std::make_tuple(x / l, y / l, z / l);
 }
 
-tuple<double, double, double> reflect(double ix, double iy, double iz, double nx, double ny, double nz)
-{
-    double d = (dot(ix, iy, iz, nx, ny, nz) * 2.0);
-    return std::make_tuple((ix - (d * nx)), (iy - (d * ny)), (iz - (d * nz)));
+std::tuple<float64, float64, float64> reflect(float64 ix, float64 iy, float64 iz, float64 nx, float64 ny, float64 nz) {
+    float64 d = dot(ix, iy, iz, nx, ny, nz) * 2.0;
+    return std::make_tuple(ix - d * nx, iy - d * ny, iz - d * nz);
 }
 
-tuple<double, double, double> refract(double ix, double iy, double iz, double nx, double ny, double nz, double eta)
-{
-    auto cosi = (-dot(ix, iy, iz, nx, ny, nz));
-    auto sint2 = ((eta * eta) * (1.0 - (cosi * cosi)));
-    if ((sint2 > 1.0))
-    {
+std::tuple<float64, float64, float64> refract(float64 ix, float64 iy, float64 iz, float64 nx, float64 ny, float64 nz, float64 eta) {
+    float64 cosi = -dot(ix, iy, iz, nx, ny, nz);
+    float64 sint2 = eta * eta * (1.0 - cosi * cosi);
+    if (sint2 > 1.0)
         return reflect(ix, iy, iz, nx, ny, nz);
-    }
-    auto cost = pycs::cpp_module::math::sqrt((1.0 - sint2));
-    auto k = ((eta * cosi) - cost);
-    return std::make_tuple(((eta * ix) + (k * nx)), ((eta * iy) + (k * ny)), ((eta * iz) + (k * nz)));
+    float64 cost = py_math::sqrt(1.0 - sint2);
+    float64 k = eta * cosi - cost;
+    return std::make_tuple(eta * ix + k * nx, eta * iy + k * ny, eta * iz + k * nz);
 }
 
-double schlick(double cos_theta, double f0)
-{
-    double m = (1.0 - cos_theta);
-    return (f0 + ((1.0 - f0) * ((((m * m) * m) * m) * m)));
+float64 schlick(float64 cos_theta, float64 f0) {
+    float64 m = 1.0 - cos_theta;
+    return f0 + (1.0 - f0) * m * m * m * m * m;
 }
 
-tuple<double, double, double> sky_color(double dx, double dy, double dz, double tphase)
-{
-    double t = (0.5 * (dy + 1.0));
-    double r = (0.06 + (0.2 * t));
-    double g = (0.1 + (0.25 * t));
-    double b = (0.16 + (0.45 * t));
-    double band = (0.5 + (0.5 * pycs::cpp_module::math::sin((((8.0 * dx) + (6.0 * dz)) + tphase))));
-    r = (r + (0.08 * band));
-    g = (g + (0.05 * band));
-    b = (b + (0.12 * band));
+std::tuple<float64, float64, float64> sky_color(float64 dx, float64 dy, float64 dz, float64 tphase) {
+    float64 t = 0.5 * (dy + 1.0);
+    float64 r = 0.06 + 0.2 * t;
+    float64 g = 0.1 + 0.25 * t;
+    float64 b = 0.16 + 0.45 * t;
+    float64 band = 0.5 + 0.5 * py_math::sin(8.0 * dx + 6.0 * dz + tphase);
+    r += 0.08 * band;
+    g += 0.05 * band;
+    b += 0.12 * band;
     return std::make_tuple(clamp01(r), clamp01(g), clamp01(b));
 }
 
-double sphere_intersect(double ox, double oy, double oz, double dx, double dy, double dz, double cx, double cy, double cz, double radius)
-{
-    auto lx = (ox - cx);
-    auto ly = (oy - cy);
-    auto lz = (oz - cz);
-    auto b = (((lx * dx) + (ly * dy)) + (lz * dz));
-    auto c = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (radius * radius));
-    auto h = ((b * b) - c);
-    if ((h < 0.0))
-    {
-        return (-1.0);
-    }
-    auto s = pycs::cpp_module::math::sqrt(h);
-    auto t0 = ((-b) - s);
-    if ((t0 > 0.0001))
-    {
+float64 sphere_intersect(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, float64 dz, float64 cx, float64 cy, float64 cz, float64 radius) {
+    float64 lx = ox - cx;
+    float64 ly = oy - cy;
+    float64 lz = oz - cz;
+    float64 b = lx * dx + ly * dy + lz * dz;
+    float64 c = lx * lx + ly * ly + lz * lz - radius * radius;
+    float64 h = b * b - c;
+    if (h < 0.0)
+        return -1.0;
+    float64 s = py_math::sqrt(h);
+    float64 t0 = -b - s;
+    if (t0 > 0.0001)
         return t0;
-    }
-    auto t1 = ((-b) + s);
-    if ((t1 > 0.0001))
-    {
+    float64 t1 = -b + s;
+    if (t1 > 0.0001)
         return t1;
+    return -1.0;
+}
+
+list<uint8> palette_332() {
+    int64 r;
+    int64 g;
+    int64 b;
+    
+    list<uint8> p = list<uint8>(256 * 3);
+    for (int64 i = 0; i < 256; ++i) {
+        r = i >> 5 & 7;
+        g = i >> 2 & 7;
+        b = i & 3;
+        p[i * 3 + 0] = int64(static_cast<float64>(255 * r) / static_cast<float64>(7));
+        p[i * 3 + 1] = int64(static_cast<float64>(255 * g) / static_cast<float64>(7));
+        p[i * 3 + 2] = int64(static_cast<float64>(255 * b) / static_cast<float64>(3));
     }
-    return (-1.0);
+    return list<uint8>(p);
 }
 
-vector<uint8_t> palette_332()
-{
-    vector<uint8_t> p = py_bytearray((256 * 3));
-    auto __pytra_range_start_1 = 0;
-    auto __pytra_range_stop_2 = 256;
-    auto __pytra_range_step_3 = 1;
-    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
-    {
-        long long r = ((i >> 5) & 7);
-        long long g = ((i >> 2) & 7);
-        long long b = (i & 3);
-        p[((i * 3) + 0)] = static_cast<long long>(py_div((255 * r), 7));
-        p[((i * 3) + 1)] = static_cast<long long>(py_div((255 * g), 7));
-        p[((i * 3) + 2)] = static_cast<long long>(py_div((255 * b), 3));
-    }
-    return py_bytes(p);
+int64 quantize_332(float64 r, float64 g, float64 b) {
+    int64 rr = int64(clamp01(r) * 255.0);
+    int64 gg = int64(clamp01(g) * 255.0);
+    int64 bb = int64(clamp01(b) * 255.0);
+    return (rr >> 5 << 5) + (gg >> 5 << 2) + (bb >> 6);
 }
 
-long long quantize_332(double r, double g, double b)
-{
-    long long rr = static_cast<long long>((clamp01(r) * 255.0));
-    long long gg = static_cast<long long>((clamp01(g) * 255.0));
-    long long bb = static_cast<long long>((clamp01(b) * 255.0));
-    return ((((rr >> 5) << 5) + ((gg >> 5) << 2)) + (bb >> 6));
-}
-
-vector<uint8_t> render_frame(long long width, long long height, long long frame_id, long long frames_n)
-{
-    double t = py_div(frame_id, frames_n);
-    double tphase = ((2.0 * pycs::cpp_module::math::pi) * t);
-    double cam_r = 3.0;
-    auto cam_x = (cam_r * pycs::cpp_module::math::cos((tphase * 0.9)));
-    double cam_y = (1.1 + (0.25 * pycs::cpp_module::math::sin((tphase * 0.6))));
-    auto cam_z = (cam_r * pycs::cpp_module::math::sin((tphase * 0.9)));
-    double look_x = 0.0;
-    double look_y = 0.35;
-    double look_z = 0.0;
-    auto __pytra_tuple_4 = normalize((look_x - cam_x), (look_y - cam_y), (look_z - cam_z));
-    auto fwd_x = std::get<0>(__pytra_tuple_4);
-    auto fwd_y = std::get<1>(__pytra_tuple_4);
-    auto fwd_z = std::get<2>(__pytra_tuple_4);
-    auto __pytra_tuple_5 = normalize(fwd_z, 0.0, (-fwd_x));
-    auto right_x = std::get<0>(__pytra_tuple_5);
-    auto right_y = std::get<1>(__pytra_tuple_5);
-    auto right_z = std::get<2>(__pytra_tuple_5);
-    auto __pytra_tuple_6 = normalize(((right_y * fwd_z) - (right_z * fwd_y)), ((right_z * fwd_x) - (right_x * fwd_z)), ((right_x * fwd_y) - (right_y * fwd_x)));
-    auto up_x = std::get<0>(__pytra_tuple_6);
-    auto up_y = std::get<1>(__pytra_tuple_6);
-    auto up_z = std::get<2>(__pytra_tuple_6);
-    double s0x = (0.9 * pycs::cpp_module::math::cos((1.3 * tphase)));
-    double s0y = (0.15 + (0.35 * pycs::cpp_module::math::sin((1.7 * tphase))));
-    double s0z = (0.9 * pycs::cpp_module::math::sin((1.3 * tphase)));
-    double s1x = (1.2 * pycs::cpp_module::math::cos(((1.3 * tphase) + 2.094)));
-    double s1y = (0.1 + (0.4 * pycs::cpp_module::math::sin(((1.1 * tphase) + 0.8))));
-    double s1z = (1.2 * pycs::cpp_module::math::sin(((1.3 * tphase) + 2.094)));
-    double s2x = (1.0 * pycs::cpp_module::math::cos(((1.3 * tphase) + 4.188)));
-    double s2y = (0.2 + (0.3 * pycs::cpp_module::math::sin(((1.5 * tphase) + 1.9))));
-    double s2z = (1.0 * pycs::cpp_module::math::sin(((1.3 * tphase) + 4.188)));
-    double lr = 0.35;
-    double lx = (2.4 * pycs::cpp_module::math::cos((tphase * 1.8)));
-    double ly = (1.8 + (0.8 * pycs::cpp_module::math::sin((tphase * 1.2))));
-    double lz = (2.4 * pycs::cpp_module::math::sin((tphase * 1.8)));
-    vector<uint8_t> frame = py_bytearray((width * height));
-    double aspect = py_div(width, height);
-    double fov = 1.25;
-    long long i = 0;
-    auto __pytra_range_start_7 = 0;
-    auto __pytra_range_stop_8 = height;
-    auto __pytra_range_step_9 = 1;
-    if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto py = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (py < __pytra_range_stop_8) : (py > __pytra_range_stop_8); py += __pytra_range_step_9)
-    {
-        double sy = (1.0 - py_div((2.0 * (py + 0.5)), height));
-        auto __pytra_range_start_10 = 0;
-        auto __pytra_range_stop_11 = width;
-        auto __pytra_range_step_12 = 1;
-        if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-        for (auto px = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (px < __pytra_range_stop_11) : (px > __pytra_range_stop_11); px += __pytra_range_step_12)
-        {
-            double sx = ((py_div((2.0 * (px + 0.5)), width) - 1.0) * aspect);
-            auto rx = (fwd_x + (fov * ((sx * right_x) + (sy * up_x))));
-            auto ry = (fwd_y + (fov * ((sx * right_y) + (sy * up_y))));
-            auto rz = (fwd_z + (fov * ((sx * right_z) + (sy * up_z))));
-            auto __pytra_tuple_13 = normalize(rx, ry, rz);
-            auto dx = std::get<0>(__pytra_tuple_13);
-            auto dy = std::get<1>(__pytra_tuple_13);
-            auto dz = std::get<2>(__pytra_tuple_13);
-            double best_t = 1000000000.0;
-            long long hit_kind = 0;
-            double r = 0.0;
-            double g = 0.0;
-            double b = 0.0;
-            if ((dy < (-1e-06)))
-            {
-                double tf = py_div(((-1.2) - cam_y), dy);
-                if (((tf > 0.0001) && (tf < best_t)))
-                {
+list<uint8> render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
+    float64 fwd_x;
+    float64 fwd_y;
+    float64 fwd_z;
+    float64 right_x;
+    float64 right_y;
+    float64 right_z;
+    float64 up_x;
+    float64 up_y;
+    float64 up_z;
+    float64 sy;
+    float64 sx;
+    float64 rx;
+    float64 ry;
+    float64 rz;
+    float64 dx;
+    float64 dy;
+    float64 dz;
+    float64 best_t;
+    int64 hit_kind;
+    float64 r;
+    float64 g;
+    float64 b;
+    float64 tf;
+    float64 t0;
+    float64 t1;
+    float64 t2;
+    float64 hx;
+    float64 hz;
+    int64 cx;
+    int64 cz;
+    int64 checker;
+    float64 base_r;
+    float64 base_g;
+    float64 base_b;
+    float64 lxv;
+    float64 lyv;
+    float64 lzv;
+    float64 ldx;
+    float64 ldy;
+    float64 ldz;
+    float64 ndotl;
+    float64 ldist2;
+    float64 glow;
+    float64 cy;
+    float64 rad;
+    float64 hy;
+    float64 nx;
+    float64 ny;
+    float64 nz;
+    float64 rdx;
+    float64 rdy;
+    float64 rdz;
+    float64 tdx;
+    float64 tdy;
+    float64 tdz;
+    float64 sr;
+    float64 sg;
+    float64 sb;
+    float64 tr;
+    float64 tg;
+    float64 tb;
+    float64 cosi;
+    float64 fr;
+    float64 hvx;
+    float64 hvy;
+    float64 hvz;
+    float64 ndoth;
+    float64 spec;
+    
+    float64 t = static_cast<float64>(frame_id) / static_cast<float64>(frames_n);
+    float64 tphase = 2.0 * py_math::pi * t;
+    
+    
+    float64 cam_r = 3.0;
+    float64 cam_x = cam_r * py_math::cos(tphase * 0.9);
+    float64 cam_y = 1.1 + 0.25 * py_math::sin(tphase * 0.6);
+    float64 cam_z = cam_r * py_math::sin(tphase * 0.9);
+    float64 look_x = 0.0;
+    float64 look_y = 0.35;
+    float64 look_z = 0.0;
+    
+    auto __tuple_1 = normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z);
+    fwd_x = std::get<0>(__tuple_1);
+    fwd_y = std::get<1>(__tuple_1);
+    fwd_z = std::get<2>(__tuple_1);
+    auto __tuple_2 = normalize(fwd_z, 0.0, -fwd_x);
+    right_x = std::get<0>(__tuple_2);
+    right_y = std::get<1>(__tuple_2);
+    right_z = std::get<2>(__tuple_2);
+    auto __tuple_3 = normalize(right_y * fwd_z - right_z * fwd_y, right_z * fwd_x - right_x * fwd_z, right_x * fwd_y - right_y * fwd_x);
+    up_x = std::get<0>(__tuple_3);
+    up_y = std::get<1>(__tuple_3);
+    up_z = std::get<2>(__tuple_3);
+    
+    
+    float64 s0x = 0.9 * py_math::cos(1.3 * tphase);
+    float64 s0y = 0.15 + 0.35 * py_math::sin(1.7 * tphase);
+    float64 s0z = 0.9 * py_math::sin(1.3 * tphase);
+    float64 s1x = 1.2 * py_math::cos(1.3 * tphase + 2.094);
+    float64 s1y = 0.1 + 0.4 * py_math::sin(1.1 * tphase + 0.8);
+    float64 s1z = 1.2 * py_math::sin(1.3 * tphase + 2.094);
+    float64 s2x = 1.0 * py_math::cos(1.3 * tphase + 4.188);
+    float64 s2y = 0.2 + 0.3 * py_math::sin(1.5 * tphase + 1.9);
+    float64 s2z = 1.0 * py_math::sin(1.3 * tphase + 4.188);
+    float64 lr = 0.35;
+    float64 lx = 2.4 * py_math::cos(tphase * 1.8);
+    float64 ly = 1.8 + 0.8 * py_math::sin(tphase * 1.2);
+    float64 lz = 2.4 * py_math::sin(tphase * 1.8);
+    
+    list<uint8> frame = list<uint8>(width * height);
+    float64 aspect = static_cast<float64>(width) / static_cast<float64>(height);
+    float64 fov = 1.25;
+    
+    int64 i = 0;
+    for (int64 py = 0; py < height; ++py) {
+        sy = 1.0 - 2.0 * (static_cast<float64>(py) + 0.5) / static_cast<float64>(height);
+        for (int64 px = 0; px < width; ++px) {
+            sx = (2.0 * (static_cast<float64>(px) + 0.5) / static_cast<float64>(width) - 1.0) * aspect;
+            rx = fwd_x + fov * (sx * right_x + sy * up_x);
+            ry = fwd_y + fov * (sx * right_y + sy * up_y);
+            rz = fwd_z + fov * (sx * right_z + sy * up_z);
+            auto __tuple_4 = normalize(rx, ry, rz);
+            dx = std::get<0>(__tuple_4);
+            dy = std::get<1>(__tuple_4);
+            dz = std::get<2>(__tuple_4);
+            
+            
+            best_t = 1000000000.0;
+            hit_kind = 0;
+            r = 0.0;
+            g = 0.0;
+            b = 0.0;
+            
+            
+            if (dy < -1e-06) {
+                tf = (-1.2 - cam_y) / dy;
+                if (tf > 0.0001 && tf < best_t) {
                     best_t = tf;
                     hit_kind = 1;
                 }
             }
-            auto t0 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65);
-            if (((t0 > 0.0) && (t0 < best_t)))
-            {
+            
+            t0 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65);
+            if (t0 > 0.0 && t0 < best_t) {
                 best_t = t0;
                 hit_kind = 2;
             }
-            auto t1 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72);
-            if (((t1 > 0.0) && (t1 < best_t)))
-            {
+            t1 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72);
+            if (t1 > 0.0 && t1 < best_t) {
                 best_t = t1;
                 hit_kind = 3;
             }
-            auto t2 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58);
-            if (((t2 > 0.0) && (t2 < best_t)))
-            {
+            t2 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58);
+            if (t2 > 0.0 && t2 < best_t) {
                 best_t = t2;
                 hit_kind = 4;
             }
-            if ((hit_kind == 0))
-            {
-                auto __pytra_tuple_14 = sky_color(dx, dy, dz, tphase);
-                r = std::get<0>(__pytra_tuple_14);
-                g = std::get<1>(__pytra_tuple_14);
-                b = std::get<2>(__pytra_tuple_14);
-            }
-            else
-            {
-                if ((hit_kind == 1))
-                {
-                    auto hx = (cam_x + (best_t * dx));
-                    auto hz = (cam_z + (best_t * dz));
-                    long long cx = static_cast<long long>(pycs::cpp_module::math::floor((hx * 2.0)));
-                    long long cz = static_cast<long long>(pycs::cpp_module::math::floor((hz * 2.0)));
-                    auto checker = ((((cx + cz) % 2) == 0) ? 0 : 1);
-                    auto base_r = ((checker == 0) ? 0.1 : 0.04);
-                    auto base_g = ((checker == 0) ? 0.11 : 0.05);
-                    auto base_b = ((checker == 0) ? 0.13 : 0.08);
-                    auto lxv = (lx - hx);
-                    double lyv = (ly - (-1.2));
-                    auto lzv = (lz - hz);
-                    auto __pytra_tuple_15 = normalize(lxv, lyv, lzv);
-                    auto ldx = std::get<0>(__pytra_tuple_15);
-                    auto ldy = std::get<1>(__pytra_tuple_15);
-                    auto ldz = std::get<2>(__pytra_tuple_15);
-                    auto ndotl = max(ldy, 0.0);
-                    auto ldist2 = (((lxv * lxv) + (lyv * lyv)) + (lzv * lzv));
-                    double glow = py_div(8.0, (1.0 + ldist2));
-                    r = ((base_r + (0.8 * glow)) + (0.2 * ndotl));
-                    g = ((base_g + (0.5 * glow)) + (0.18 * ndotl));
-                    b = ((base_b + (1.0 * glow)) + (0.24 * ndotl));
-                }
-                else
-                {
-                    double cx = 0.0;
-                    double cy = 0.0;
-                    double cz = 0.0;
-                    double rad = 1.0;
-                    if ((hit_kind == 2))
-                    {
+            
+            if (hit_kind == 0) {
+                auto __tuple_5 = sky_color(dx, dy, dz, tphase);
+                r = std::get<0>(__tuple_5);
+                g = std::get<1>(__tuple_5);
+                b = std::get<2>(__tuple_5);
+            } else {
+                if (hit_kind == 1) {
+                    hx = cam_x + best_t * dx;
+                    hz = cam_z + best_t * dz;
+                    cx = int64(py_math::floor(hx * 2.0));
+                    cz = int64(py_math::floor(hz * 2.0));
+                    checker = ((cx + cz) % 2 == 0 ? 0 : 1);
+                    base_r = (checker == 0 ? 0.1 : 0.04);
+                    base_g = (checker == 0 ? 0.11 : 0.05);
+                    base_b = (checker == 0 ? 0.13 : 0.08);
+                    
+                    lxv = lx - hx;
+                    lyv = ly - -1.2;
+                    lzv = lz - hz;
+                    auto __tuple_6 = normalize(lxv, lyv, lzv);
+                    ldx = std::get<0>(__tuple_6);
+                    ldy = std::get<1>(__tuple_6);
+                    ldz = std::get<2>(__tuple_6);
+                    ndotl = std::max<float64>(static_cast<float64>(ldy), static_cast<float64>(0.0));
+                    ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
+                    glow = 8.0 / (1.0 + ldist2);
+                    r = base_r + 0.8 * glow + 0.2 * ndotl;
+                    g = base_g + 0.5 * glow + 0.18 * ndotl;
+                    b = base_b + 1.0 * glow + 0.24 * ndotl;
+                } else {
+                    cx = 0.0;
+                    cy = 0.0;
+                    cz = 0.0;
+                    rad = 1.0;
+                    if (hit_kind == 2) {
                         cx = s0x;
                         cy = s0y;
                         cz = s0z;
                         rad = 0.65;
-                    }
-                    else
-                    {
-                        if ((hit_kind == 3))
-                        {
+                    } else {
+                        if (hit_kind == 3) {
                             cx = s1x;
                             cy = s1y;
                             cz = s1z;
                             rad = 0.72;
-                        }
-                        else
-                        {
+                        } else {
                             cx = s2x;
                             cy = s2y;
                             cz = s2z;
                             rad = 0.58;
                         }
                     }
-                    auto hx = (cam_x + (best_t * dx));
-                    auto hy = (cam_y + (best_t * dy));
-                    auto hz = (cam_z + (best_t * dz));
-                    auto __pytra_tuple_16 = normalize(py_div((hx - cx), rad), py_div((hy - cy), rad), py_div((hz - cz), rad));
-                    auto nx = std::get<0>(__pytra_tuple_16);
-                    auto ny = std::get<1>(__pytra_tuple_16);
-                    auto nz = std::get<2>(__pytra_tuple_16);
-                    auto __pytra_tuple_17 = reflect(dx, dy, dz, nx, ny, nz);
-                    auto rdx = std::get<0>(__pytra_tuple_17);
-                    auto rdy = std::get<1>(__pytra_tuple_17);
-                    auto rdz = std::get<2>(__pytra_tuple_17);
-                    auto __pytra_tuple_18 = refract(dx, dy, dz, nx, ny, nz, py_div(1.0, 1.45));
-                    auto tdx = std::get<0>(__pytra_tuple_18);
-                    auto tdy = std::get<1>(__pytra_tuple_18);
-                    auto tdz = std::get<2>(__pytra_tuple_18);
-                    auto __pytra_tuple_19 = sky_color(rdx, rdy, rdz, tphase);
-                    auto sr = std::get<0>(__pytra_tuple_19);
-                    auto sg = std::get<1>(__pytra_tuple_19);
-                    auto sb = std::get<2>(__pytra_tuple_19);
-                    auto __pytra_tuple_20 = sky_color(tdx, tdy, tdz, (tphase + 0.8));
-                    auto tr = std::get<0>(__pytra_tuple_20);
-                    auto tg = std::get<1>(__pytra_tuple_20);
-                    auto tb = std::get<2>(__pytra_tuple_20);
-                    auto cosi = max((-(((dx * nx) + (dy * ny)) + (dz * nz))), 0.0);
-                    auto fr = schlick(cosi, 0.04);
-                    r = ((tr * (1.0 - fr)) + (sr * fr));
-                    g = ((tg * (1.0 - fr)) + (sg * fr));
-                    b = ((tb * (1.0 - fr)) + (sb * fr));
-                    auto lxv = (lx - hx);
-                    auto lyv = (ly - hy);
-                    auto lzv = (lz - hz);
-                    auto __pytra_tuple_21 = normalize(lxv, lyv, lzv);
-                    auto ldx = std::get<0>(__pytra_tuple_21);
-                    auto ldy = std::get<1>(__pytra_tuple_21);
-                    auto ldz = std::get<2>(__pytra_tuple_21);
-                    auto ndotl = max((((nx * ldx) + (ny * ldy)) + (nz * ldz)), 0.0);
-                    auto __pytra_tuple_22 = normalize((ldx - dx), (ldy - dy), (ldz - dz));
-                    auto hvx = std::get<0>(__pytra_tuple_22);
-                    auto hvy = std::get<1>(__pytra_tuple_22);
-                    auto hvz = std::get<2>(__pytra_tuple_22);
-                    auto ndoth = max((((nx * hvx) + (ny * hvy)) + (nz * hvz)), 0.0);
-                    auto spec = (ndoth * ndoth);
-                    spec = (spec * spec);
-                    spec = (spec * spec);
-                    spec = (spec * spec);
-                    double glow = py_div(10.0, (((1.0 + (lxv * lxv)) + (lyv * lyv)) + (lzv * lzv)));
-                    r = (r + (((0.2 * ndotl) + (0.8 * spec)) + (0.45 * glow)));
-                    g = (g + (((0.18 * ndotl) + (0.6 * spec)) + (0.35 * glow)));
-                    b = (b + (((0.26 * ndotl) + (1.0 * spec)) + (0.65 * glow)));
-                    if ((hit_kind == 2))
-                    {
-                        r = (r * 0.95);
-                        g = (g * 1.05);
-                        b = (b * 1.1);
-                    }
-                    else
-                    {
-                        if ((hit_kind == 3))
-                        {
-                            r = (r * 1.08);
-                            g = (g * 0.98);
-                            b = (b * 1.04);
-                        }
-                        else
-                        {
-                            r = (r * 1.02);
-                            g = (g * 1.1);
-                            b = (b * 0.95);
+                    hx = cam_x + best_t * dx;
+                    hy = cam_y + best_t * dy;
+                    hz = cam_z + best_t * dz;
+                    auto __tuple_7 = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
+                    nx = std::get<0>(__tuple_7);
+                    ny = std::get<1>(__tuple_7);
+                    nz = std::get<2>(__tuple_7);
+                    
+                    
+                    auto __tuple_8 = reflect(dx, dy, dz, nx, ny, nz);
+                    rdx = std::get<0>(__tuple_8);
+                    rdy = std::get<1>(__tuple_8);
+                    rdz = std::get<2>(__tuple_8);
+                    auto __tuple_9 = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
+                    tdx = std::get<0>(__tuple_9);
+                    tdy = std::get<1>(__tuple_9);
+                    tdz = std::get<2>(__tuple_9);
+                    auto __tuple_10 = sky_color(rdx, rdy, rdz, tphase);
+                    sr = std::get<0>(__tuple_10);
+                    sg = std::get<1>(__tuple_10);
+                    sb = std::get<2>(__tuple_10);
+                    auto __tuple_11 = sky_color(tdx, tdy, tdz, tphase + 0.8);
+                    tr = std::get<0>(__tuple_11);
+                    tg = std::get<1>(__tuple_11);
+                    tb = std::get<2>(__tuple_11);
+                    cosi = std::max<float64>(static_cast<float64>(-dx * nx + dy * ny + dz * nz), static_cast<float64>(0.0));
+                    fr = schlick(cosi, 0.04);
+                    r = tr * (1.0 - fr) + sr * fr;
+                    g = tg * (1.0 - fr) + sg * fr;
+                    b = tb * (1.0 - fr) + sb * fr;
+                    
+                    lxv = lx - hx;
+                    lyv = ly - hy;
+                    lzv = lz - hz;
+                    auto __tuple_12 = normalize(lxv, lyv, lzv);
+                    ldx = std::get<0>(__tuple_12);
+                    ldy = std::get<1>(__tuple_12);
+                    ldz = std::get<2>(__tuple_12);
+                    ndotl = std::max<float64>(static_cast<float64>(nx * ldx + ny * ldy + nz * ldz), static_cast<float64>(0.0));
+                    auto __tuple_13 = normalize(ldx - dx, ldy - dy, ldz - dz);
+                    hvx = std::get<0>(__tuple_13);
+                    hvy = std::get<1>(__tuple_13);
+                    hvz = std::get<2>(__tuple_13);
+                    ndoth = std::max<float64>(static_cast<float64>(nx * hvx + ny * hvy + nz * hvz), static_cast<float64>(0.0));
+                    spec = ndoth * ndoth;
+                    spec = spec * spec;
+                    spec = spec * spec;
+                    spec = spec * spec;
+                    glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
+                    r += 0.2 * ndotl + 0.8 * spec + 0.45 * glow;
+                    g += 0.18 * ndotl + 0.6 * spec + 0.35 * glow;
+                    b += 0.26 * ndotl + 1.0 * spec + 0.65 * glow;
+                    
+                    
+                    if (hit_kind == 2) {
+                        r *= 0.95;
+                        g *= 1.05;
+                        b *= 1.1;
+                    } else {
+                        if (hit_kind == 3) {
+                            r *= 1.08;
+                            g *= 0.98;
+                            b *= 1.04;
+                        } else {
+                            r *= 1.02;
+                            g *= 1.1;
+                            b *= 0.95;
                         }
                     }
                 }
             }
-            r = pycs::cpp_module::math::sqrt(clamp01(r));
-            g = pycs::cpp_module::math::sqrt(clamp01(g));
-            b = pycs::cpp_module::math::sqrt(clamp01(b));
+            
+            
+            r = py_math::sqrt(clamp01(r));
+            g = py_math::sqrt(clamp01(g));
+            b = py_math::sqrt(clamp01(b));
             frame[i] = quantize_332(r, g, b);
-            i = (i + 1);
+            i++;
         }
     }
-    return py_bytes(frame);
+    
+    return list<uint8>(frame);
 }
 
-void run_16_glass_sculpture_chaos()
-{
-    long long width = 320;
-    long long height = 240;
-    long long frames_n = 72;
-    string out_path = "sample/out/16_glass_sculpture_chaos.gif";
-    auto start = perf_counter();
-    vector<vector<uint8_t>> frames = {};
-    auto __pytra_range_start_23 = 0;
-    auto __pytra_range_stop_24 = frames_n;
-    auto __pytra_range_step_25 = 1;
-    if (__pytra_range_step_25 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto i = __pytra_range_start_23; (__pytra_range_step_25 > 0) ? (i < __pytra_range_stop_24) : (i > __pytra_range_stop_24); i += __pytra_range_step_25)
-    {
+void run_16_glass_sculpture_chaos() {
+    int64 width = 320;
+    int64 height = 240;
+    int64 frames_n = 72;
+    str out_path = "sample/out/16_glass_sculpture_chaos.gif";
+    
+    float64 start = perf_counter();
+    list<list<uint8>> frames = list<list<uint8>>{};
+    for (int64 i = 0; i < frames_n; ++i)
         frames.push_back(render_frame(width, height, i, frames_n));
-    }
-    pycs::cpp_module::gif::save_gif(out_path, width, height, frames, palette_332(), 6, 0);
-    auto elapsed = (perf_counter() - start);
+    
+    save_gif(out_path, width, height, frames, palette_332(), 6, 0);
+    float64 elapsed = perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);
 }
 
-int main()
-{
+int main() {
     run_16_glass_sculpture_chaos();
     return 0;
 }

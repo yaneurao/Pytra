@@ -309,12 +309,19 @@ class EastBuilder:
             return self._function(stmt)
         if isinstance(stmt, ast.ClassDef):
             self.current_class_stack.append(stmt.name)
+            is_dataclass = False
+            for dec in stmt.decorator_list:
+                if isinstance(dec, ast.Name) and dec.id == "dataclass":
+                    is_dataclass = True
+                if isinstance(dec, ast.Attribute) and dec.attr == "dataclass":
+                    is_dataclass = True
             out = {
                 "kind": "ClassDef",
                 "name": self._renamed(stmt.name),
                 "original_name": stmt.name,
                 "base": self.class_base.get(stmt.name),
                 "field_types": self.class_field_types.get(stmt.name, {}),
+                "dataclass": is_dataclass,
                 "source_span": span_of(stmt),
                 "body": [self._stmt(s) for s in stmt.body],
             }

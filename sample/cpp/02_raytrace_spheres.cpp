@@ -1,244 +1,231 @@
-#include "cpp_module/gc.h"
-#include "cpp_module/math.h"
-#include "cpp_module/png.h"
 #include "cpp_module/py_runtime.h"
-#include "cpp_module/time.h"
-#include <algorithm>
-#include <any>
-#include <cstdint>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
 
-double clamp01(double v)
-{
-    if ((v < 0.0))
-    {
+
+
+float64 clamp01(float64 v) {
+    if (v < 0.0)
         return 0.0;
-    }
-    if ((v > 1.0))
-    {
+    if (v > 1.0)
         return 1.0;
-    }
     return v;
 }
 
-double hit_sphere(double ox, double oy, double oz, double dx, double dy, double dz, double cx, double cy, double cz, double r)
-{
-    double lx = (ox - cx);
-    double ly = (oy - cy);
-    double lz = (oz - cz);
-    double a = (((dx * dx) + (dy * dy)) + (dz * dz));
-    double b = (2.0 * (((lx * dx) + (ly * dy)) + (lz * dz)));
-    double c = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (r * r));
-    double d = ((b * b) - ((4.0 * a) * c));
-    if ((d < 0.0))
-    {
-        return (-1.0);
-    }
-    double sd = pycs::cpp_module::math::sqrt(d);
-    double t0 = py_div(((-b) - sd), (2.0 * a));
-    double t1 = py_div(((-b) + sd), (2.0 * a));
-    if ((t0 > 0.001))
-    {
+float64 hit_sphere(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, float64 dz, float64 cx, float64 cy, float64 cz, float64 r) {
+    /* レイと球の交差距離t（交差しない場合は-1）を返す。 */
+    float64 lx = ox - cx;
+    float64 ly = oy - cy;
+    float64 lz = oz - cz;
+    
+    float64 a = dx * dx + dy * dy + dz * dz;
+    float64 b = 2.0 * (lx * dx + ly * dy + lz * dz);
+    float64 c = lx * lx + ly * ly + lz * lz - r * r;
+    
+    float64 d = b * b - 4.0 * a * c;
+    if (d < 0.0)
+        return -1.0;
+    
+    float64 sd = py_math::sqrt(d);
+    float64 t0 = (-b - sd) / (2.0 * a);
+    float64 t1 = (-b + sd) / (2.0 * a);
+    
+    if (t0 > 0.001)
         return t0;
-    }
-    if ((t1 > 0.001))
-    {
+    if (t1 > 0.001)
         return t1;
-    }
-    return (-1.0);
+    return -1.0;
 }
 
-vector<uint8_t> render(long long width, long long height, long long aa)
-{
-    vector<uint8_t> pixels = py_bytearray();
-    double ox = 0.0;
-    double oy = 0.0;
-    double oz = (-3.0);
-    double lx = (-0.4);
-    double ly = 0.8;
-    double lz = (-0.45);
-    auto __pytra_range_start_1 = 0;
-    auto __pytra_range_stop_2 = height;
-    auto __pytra_range_step_3 = 1;
-    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
-    {
-        auto __pytra_range_start_4 = 0;
-        auto __pytra_range_stop_5 = width;
-        auto __pytra_range_step_6 = 1;
-        if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-        for (auto x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
-        {
-            long long ar = 0;
-            long long ag = 0;
-            long long ab = 0;
-            auto __pytra_range_start_7 = 0;
-            auto __pytra_range_stop_8 = aa;
-            auto __pytra_range_step_9 = 1;
-            if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-            for (auto ay = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (ay < __pytra_range_stop_8) : (ay > __pytra_range_stop_8); ay += __pytra_range_step_9)
-            {
-                auto __pytra_range_start_10 = 0;
-                auto __pytra_range_stop_11 = aa;
-                auto __pytra_range_step_12 = 1;
-                if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-                for (auto ax = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (ax < __pytra_range_stop_11) : (ax > __pytra_range_stop_11); ax += __pytra_range_step_12)
-                {
-                    double fy = py_div((y + py_div((ay + 0.5), aa)), (height - 1));
-                    double fx = py_div((x + py_div((ax + 0.5), aa)), (width - 1));
-                    double sy = (1.0 - (2.0 * fy));
-                    double sx = (((2.0 * fx) - 1.0) * py_div(width, height));
-                    double dx = sx;
-                    double dy = sy;
-                    double dz = 1.0;
-                    double inv_len = py_div(1.0, pycs::cpp_module::math::sqrt((((dx * dx) + (dy * dy)) + (dz * dz))));
-                    dx = (dx * inv_len);
-                    dy = (dy * inv_len);
-                    dz = (dz * inv_len);
-                    double t_min = 1e+30;
-                    long long hit_id = (-1);
-                    double t = hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8);
-                    if (((t > 0.0) && (t < t_min)))
-                    {
+list<uint8> render(int64 width, int64 height, int64 aa) {
+    int64 ar;
+    int64 ag;
+    int64 ab;
+    float64 fy;
+    float64 fx;
+    float64 sy;
+    float64 sx;
+    float64 dx;
+    float64 dy;
+    float64 dz;
+    float64 inv_len;
+    float64 t_min;
+    int64 hit_id;
+    float64 t;
+    int64 r;
+    int64 g;
+    int64 b;
+    float64 px;
+    float64 py;
+    float64 pz;
+    float64 nx;
+    float64 ny;
+    float64 nz;
+    float64 diff;
+    float64 base_r;
+    float64 base_g;
+    float64 base_b;
+    int64 checker;
+    float64 shade;
+    float64 tsky;
+    int64 samples;
+    
+    list<uint8> pixels = list<uint8>{};
+    
+    
+    float64 ox = 0.0;
+    float64 oy = 0.0;
+    float64 oz = -3.0;
+    
+    
+    float64 lx = -0.4;
+    float64 ly = 0.8;
+    float64 lz = -0.45;
+    
+    for (int64 y = 0; y < height; ++y) {
+        for (int64 x = 0; x < width; ++x) {
+            ar = 0;
+            ag = 0;
+            ab = 0;
+            
+            for (int64 ay = 0; ay < aa; ++ay) {
+                for (int64 ax = 0; ax < aa; ++ax) {
+                    fy = (static_cast<float64>(y) + (static_cast<float64>(ay) + 0.5) / static_cast<float64>(aa)) / (static_cast<float64>(height - 1));
+                    fx = (static_cast<float64>(x) + (static_cast<float64>(ax) + 0.5) / static_cast<float64>(aa)) / (static_cast<float64>(width - 1));
+                    sy = 1.0 - 2.0 * fy;
+                    sx = (2.0 * fx - 1.0) * static_cast<float64>(width) / static_cast<float64>(height);
+                    
+                    dx = sx;
+                    dy = sy;
+                    dz = 1.0;
+                    inv_len = 1.0 / py_math::sqrt(dx * dx + dy * dy + dz * dz);
+                    dx *= inv_len;
+                    dy *= inv_len;
+                    dz *= inv_len;
+                    
+                    t_min = 1e+30;
+                    hit_id = -1;
+                    
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
+                    if (t > 0.0 && t < t_min) {
                         t_min = t;
                         hit_id = 0;
                     }
+                    
                     t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95);
-                    if (((t > 0.0) && (t < t_min)))
-                    {
+                    if (t > 0.0 && t < t_min) {
                         t_min = t;
                         hit_id = 1;
                     }
-                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, (-1001.0), 3.0, 1000.0);
-                    if (((t > 0.0) && (t < t_min)))
-                    {
+                    
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, -1001.0, 3.0, 1000.0);
+                    if (t > 0.0 && t < t_min) {
                         t_min = t;
                         hit_id = 2;
                     }
-                    long long r = 0;
-                    long long g = 0;
-                    long long b = 0;
-                    if ((hit_id >= 0))
-                    {
-                        double px = (ox + (dx * t_min));
-                        double py = (oy + (dy * t_min));
-                        double pz = (oz + (dz * t_min));
-                        double nx = 0.0;
-                        double ny = 0.0;
-                        double nz = 0.0;
-                        if ((hit_id == 0))
-                        {
-                            nx = py_div((px + 0.8), 0.8);
-                            ny = py_div((py + 0.2), 0.8);
-                            nz = py_div((pz - 2.2), 0.8);
-                        }
-                        else
-                        {
-                            if ((hit_id == 1))
-                            {
-                                nx = py_div((px - 0.9), 0.95);
-                                ny = py_div((py - 0.1), 0.95);
-                                nz = py_div((pz - 2.9), 0.95);
-                            }
-                            else
-                            {
+                    
+                    r = 0;
+                    g = 0;
+                    b = 0;
+                    
+                    if (hit_id >= 0) {
+                        px = ox + dx * t_min;
+                        py = oy + dy * t_min;
+                        pz = oz + dz * t_min;
+                        
+                        nx = 0.0;
+                        ny = 0.0;
+                        nz = 0.0;
+                        
+                        if (hit_id == 0) {
+                            nx = (px + 0.8) / 0.8;
+                            ny = (py + 0.2) / 0.8;
+                            nz = (pz - 2.2) / 0.8;
+                        } else {
+                            if (hit_id == 1) {
+                                nx = (px - 0.9) / 0.95;
+                                ny = (py - 0.1) / 0.95;
+                                nz = (pz - 2.9) / 0.95;
+                            } else {
                                 nx = 0.0;
                                 ny = 1.0;
                                 nz = 0.0;
                             }
                         }
-                        double diff = (((nx * (-lx)) + (ny * (-ly))) + (nz * (-lz)));
+                        
+                        diff = nx * -lx + ny * -ly + nz * -lz;
                         diff = clamp01(diff);
-                        double base_r = 0.0;
-                        double base_g = 0.0;
-                        double base_b = 0.0;
-                        if ((hit_id == 0))
-                        {
+                        
+                        base_r = 0.0;
+                        base_g = 0.0;
+                        base_b = 0.0;
+                        
+                        if (hit_id == 0) {
                             base_r = 0.95;
                             base_g = 0.35;
                             base_b = 0.25;
-                        }
-                        else
-                        {
-                            if ((hit_id == 1))
-                            {
+                        } else {
+                            if (hit_id == 1) {
                                 base_r = 0.25;
                                 base_g = 0.55;
                                 base_b = 0.95;
-                            }
-                            else
-                            {
-                                long long checker = (static_cast<long long>(((px + 50.0) * 0.8)) + static_cast<long long>(((pz + 50.0) * 0.8)));
-                                if (((checker % 2) == 0))
-                                {
+                            } else {
+                                checker = int64((px + 50.0) * 0.8) + int64((pz + 50.0) * 0.8);
+                                if (checker % 2 == 0) {
                                     base_r = 0.85;
                                     base_g = 0.85;
                                     base_b = 0.85;
-                                }
-                                else
-                                {
+                                } else {
                                     base_r = 0.2;
                                     base_g = 0.2;
                                     base_b = 0.2;
                                 }
                             }
                         }
-                        double shade = (0.12 + (0.88 * diff));
-                        r = static_cast<long long>((255.0 * clamp01((base_r * shade))));
-                        g = static_cast<long long>((255.0 * clamp01((base_g * shade))));
-                        b = static_cast<long long>((255.0 * clamp01((base_b * shade))));
+                        
+                        shade = 0.12 + 0.88 * diff;
+                        r = int64(255.0 * clamp01(base_r * shade));
+                        g = int64(255.0 * clamp01(base_g * shade));
+                        b = int64(255.0 * clamp01(base_b * shade));
+                    } else {
+                        tsky = 0.5 * (dy + 1.0);
+                        r = int64(255.0 * (0.65 + 0.2 * tsky));
+                        g = int64(255.0 * (0.75 + 0.18 * tsky));
+                        b = int64(255.0 * (0.9 + 0.08 * tsky));
                     }
-                    else
-                    {
-                        double tsky = (0.5 * (dy + 1.0));
-                        r = static_cast<long long>((255.0 * (0.65 + (0.2 * tsky))));
-                        g = static_cast<long long>((255.0 * (0.75 + (0.18 * tsky))));
-                        b = static_cast<long long>((255.0 * (0.9 + (0.08 * tsky))));
-                    }
-                    ar = (ar + r);
-                    ag = (ag + g);
-                    ab = (ab + b);
+                    
+                    ar += r;
+                    ag += g;
+                    ab += b;
                 }
             }
-            auto samples = (aa * aa);
+            
+            samples = aa * aa;
             pixels.push_back(py_floordiv(ar, samples));
             pixels.push_back(py_floordiv(ag, samples));
             pixels.push_back(py_floordiv(ab, samples));
         }
     }
+    
     return pixels;
 }
 
-void run_raytrace()
-{
-    long long width = 1600;
-    long long height = 900;
-    long long aa = 2;
-    string out_path = "sample/out/raytrace_02.png";
-    double start = perf_counter();
-    vector<uint8_t> pixels = render(width, height, aa);
-    pycs::cpp_module::png::write_rgb_png(out_path, width, height, pixels);
-    double elapsed = (perf_counter() - start);
+void run_raytrace() {
+    int64 width = 1600;
+    int64 height = 900;
+    int64 aa = 2;
+    str out_path = "sample/out/raytrace_02.png";
+    
+    float64 start = perf_counter();
+    list<uint8> pixels = render(width, height, aa);
+    write_rgb_png(out_path, width, height, pixels);
+    float64 elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("size:", width, "x", height);
     py_print("elapsed_sec:", elapsed);
 }
 
-int main()
-{
+int main() {
     run_raytrace();
     return 0;
 }
