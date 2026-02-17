@@ -258,9 +258,52 @@ static inline auto py_make_scope_exit(F&& fn) {
     return py_scope_exit<F>(std::forward<F>(fn));
 }
 
+enum class pytra_image_format_t {
+    png,
+    ppm,
+};
+
+inline pytra_image_format_t pytra_image_format = pytra_image_format_t::png;
+
+static inline str pytra_resolve_image_path_for_write(const str& path) {
+    if (pytra_image_format != pytra_image_format_t::ppm) {
+        return path;
+    }
+    const std::size_t dot = path.find_last_of('.');
+    if (dot == str::npos) {
+        return path + ".ppm";
+    }
+    return path.substr(0, dot) + ".ppm";
+}
+
+static inline void pytra_set_image_format(pytra_image_format_t fmt) {
+    pytra_image_format = fmt;
+}
+
+static inline void pytra_configure_from_argv(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        str arg = argv[i] != nullptr ? str(argv[i]) : str();
+        if (arg.rfind("--pytra-image-format=", 0) == 0) {
+            const str value = arg.substr(21);
+            if (value == "png") {
+                pytra_set_image_format(pytra_image_format_t::png);
+            } else if (value == "ppm") {
+                pytra_set_image_format(pytra_image_format_t::ppm);
+            } else {
+                throw std::runtime_error("unknown --pytra-image-format value: " + value);
+            }
+        }
+    }
+}
+
 namespace png_helper {
 static inline void write_rgb_png(const str& path, int64 width, int64 height, const list<uint8>& pixels) {
-    pycs::cpp_module::png::write_rgb_png(path, static_cast<int>(width), static_cast<int>(height), pixels);
+    const str out_path = pytra_resolve_image_path_for_write(path);
+    if (pytra_image_format == pytra_image_format_t::ppm) {
+        pycs::cpp_module::png::write_rgb_ppm(out_path, static_cast<int>(width), static_cast<int>(height), pixels);
+    } else {
+        pycs::cpp_module::png::write_rgb_png(out_path, static_cast<int>(width), static_cast<int>(height), pixels);
+    }
 }
 }  // namespace png_helper
 

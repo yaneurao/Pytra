@@ -207,8 +207,9 @@ class CppEmitter:
             self.emit_stmt(stmt)
             self.emit()
 
-        self.emit("int main() {")
+        self.emit("int main(int argc, char** argv) {")
         self.indent += 1
+        self.emit("pytra_configure_from_argv(argc, argv);")
         self.scope_stack.append(set())
         self.emit_stmt_list(list(self.doc.get("main_guard_body", [])))
         self.scope_stack.pop()
