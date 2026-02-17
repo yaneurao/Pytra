@@ -272,20 +272,6 @@ from pathlib import Path
 
 - `sample/py/` を Python のまま実行する場合は、`py_module` 解決のため `PYTHONPATH=src` を付けます。
 
-POSIX:
-
 ```bash
 PYTHONPATH=src python3 sample/py/01_mandelbrot.py
-```
-
-Windows PowerShell:
-
-```powershell
-$env:PYTHONPATH='src'; py sample/py/01_mandelbrot.py
-```
-
-Windows cmd.exe:
-
-```bat
-set PYTHONPATH=src && py sample/py/01_mandelbrot.py
 ```
