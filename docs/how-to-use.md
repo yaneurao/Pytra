@@ -267,11 +267,3 @@ from pathlib import Path
 ```
 
 上記を変換する場合、対象言語側でも `math` / `pathlib` 相当の実装が必要です。
-
-### 4. 実行時の注意
-
-- `sample/py/` を Python のまま実行する場合は、`py_module` 解決のため `PYTHONPATH=src` を付けます。
-
-```bash
-PYTHONPATH=src python3 sample/py/01_mandelbrot.py
-```
