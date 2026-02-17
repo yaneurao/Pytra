@@ -30,6 +30,7 @@ class JsTsNativeTranspiler(BaseTranspiler):
         self.current_class: str | None = None
         self.scope_stack: list[Scope] = []
         self._import_lines: list[str] = []
+        self.path_like_names: set[str] = set()
 
     def transpile_path(self, input_path: Path) -> str:
         module = ast.parse(input_path.read_text(encoding="utf-8"), filename=str(input_path))
@@ -38,6 +39,7 @@ class JsTsNativeTranspiler(BaseTranspiler):
     def transpile_module(self, module: ast.Module) -> str:
         self.class_names = {stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)}
         self._import_lines = self._build_runtime_imports()
+        self.path_like_names = set()
 
         body_lines: list[str] = []
         for stmt in module.body:
@@ -63,6 +65,7 @@ class JsTsNativeTranspiler(BaseTranspiler):
             f"const py_runtime = require(__pytra_root + '/src/{'js_module' if ext == 'js' else 'ts_module'}/py_runtime.{ext}');",
             f"const py_math = require(__pytra_root + '/src/{'js_module' if ext == 'js' else 'ts_module'}/math.{ext}');",
             f"const py_time = require(__pytra_root + '/src/{'js_module' if ext == 'js' else 'ts_module'}/time.{ext}');",
+            f"const pathlib = require(__pytra_root + '/src/{'js_module' if ext == 'js' else 'ts_module'}/pathlib.{ext}');",
             "const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;",
             "const { perfCounter } = py_time;",
         ]
@@ -79,6 +82,8 @@ class JsTsNativeTranspiler(BaseTranspiler):
                     lines.append(f"const {name} = require(__pytra_root + '/src/{module_dir}/math.{ext}');")
                 elif alias.name == "time":
                     lines.append(f"const {name} = require(__pytra_root + '/src/{module_dir}/time.{ext}');")
+                elif alias.name == "pathlib":
+                    lines.append(f"const {name} = require(__pytra_root + '/src/{module_dir}/pathlib.{ext}');")
                 elif alias.name == "py_module":
                     continue
                 else:
@@ -99,6 +104,15 @@ class JsTsNativeTranspiler(BaseTranspiler):
             return mapped
         if mod == "dataclasses":
             return []
+        if mod == "pathlib":
+            mapped: list[str] = []
+            for alias in stmt.names:
+                if alias.name == "Path":
+                    asname = alias.asname or alias.name
+                    mapped.append(f"const {asname} = pathlib.Path;")
+                else:
+                    raise TranspileError(f"unsupported from pathlib import {alias.name}")
+            return mapped
         if mod == "py_module":
             lines: list[str] = []
             for alias in stmt.names:
@@ -184,6 +198,7 @@ class JsTsNativeTranspiler(BaseTranspiler):
     def _transpile_assign_like(self, target: ast.expr, value: ast.expr | None, scope: Scope, *, declared_by_ann: bool) -> list[str]:
         rhs = "null" if value is None else self.transpile_expr(value)
         out: list[str] = []
+        is_path_rhs = value is not None and self._is_path_like_expr(value)
         if isinstance(target, ast.Tuple):
             if value is None:
                 raise TranspileError("tuple assignment requires value")
@@ -207,6 +222,8 @@ class JsTsNativeTranspiler(BaseTranspiler):
                 scope.declared.add(name)
                 # Python の変数は再代入可能なので、型注釈のみ宣言でも let で保持する。
                 out.append(f"let {name} = {rhs};")
+            if is_path_rhs:
+                self.path_like_names.add(name)
             return out
         lvalue = self._transpile_lvalue(target)
         out.append(f"{lvalue} = {rhs};")
@@ -417,10 +434,20 @@ class JsTsNativeTranspiler(BaseTranspiler):
                 ):
                     return f"{self.current_class}.{expr.attr}"
                 return f"this.{expr.attr}"
+            if self._is_path_like_expr(expr.value):
+                base = self.transpile_expr(expr.value)
+                if expr.attr == "parent":
+                    return f"{base}.parent()"
+                if expr.attr == "name":
+                    return f"{base}.name()"
+                if expr.attr == "stem":
+                    return f"{base}.stem()"
             return f"{self.transpile_expr(expr.value)}.{expr.attr}"
         if isinstance(expr, ast.BinOp):
             l = self.transpile_expr(expr.left)
             r = self.transpile_expr(expr.right)
+            if isinstance(expr.op, ast.Div) and self._is_path_like_expr(expr.left):
+                return f"pathlib.pathJoin({l}, {r})"
             if isinstance(expr.op, ast.FloorDiv):
                 return f"pyFloorDiv({l}, {r})"
             if isinstance(expr.op, ast.Mod):
@@ -481,6 +508,10 @@ class JsTsNativeTranspiler(BaseTranspiler):
             fn = expr.func.id
             if fn in self.class_names:
                 return f"new {fn}({', '.join(args)})"
+            if fn == "Path":
+                if len(args) != 1:
+                    raise TranspileError("Path() requires one argument")
+                return f"new pathlib.Path({args[0]})"
             if fn == "print":
                 return f"pyPrint({', '.join(args)})"
             if fn == "len":
@@ -524,6 +555,10 @@ class JsTsNativeTranspiler(BaseTranspiler):
         if isinstance(expr.func, ast.Attribute):
             obj = self.transpile_expr(expr.func.value)
             m = expr.func.attr
+            if isinstance(expr.func.value, ast.Name) and expr.func.value.id == "pathlib" and m == "Path":
+                if len(args) != 1:
+                    raise TranspileError("pathlib.Path() requires one argument")
+                return f"new pathlib.Path({args[0]})"
             if isinstance(expr.func.value, ast.Name) and expr.func.value.id == "math":
                 if m == "pi":
                     return "math.pi"
@@ -538,6 +573,32 @@ class JsTsNativeTranspiler(BaseTranspiler):
                 return f"pyIsAlpha({obj})"
             return f"{obj}.{m}({', '.join(args)})"
         raise TranspileError("unsupported call target")
+
+    def _is_path_like_expr(self, expr: ast.expr) -> bool:
+        if isinstance(expr, ast.Name):
+            return expr.id in self.path_like_names
+        if isinstance(expr, ast.Call):
+            if isinstance(expr.func, ast.Name) and expr.func.id == "Path":
+                return True
+            if (
+                isinstance(expr.func, ast.Attribute)
+                and isinstance(expr.func.value, ast.Name)
+                and expr.func.value.id == "pathlib"
+                and expr.func.attr == "Path"
+            ):
+                return True
+            if (
+                isinstance(expr.func, ast.Attribute)
+                and expr.func.attr in {"resolve", "parent"}
+                and self._is_path_like_expr(expr.func.value)
+            ):
+                return True
+        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Div):
+            return self._is_path_like_expr(expr.left)
+        if isinstance(expr, ast.Attribute):
+            if expr.attr == "parent":
+                return self._is_path_like_expr(expr.value)
+        return False
 
     def _transpile_fstring(self, expr: ast.JoinedStr) -> str:
         parts: list[str] = []

@@ -91,17 +91,18 @@
 ## 言語間ランタイム平準化 TODO
 
 - [x] C++ のみ対応になっている `math` 拡張関数（`tan`, `log`, `log10`, `fabs`, `ceil`, `pow` など）を、Rust / C# / JS / TS / Go / Java / Swift / Kotlin の各ランタイムにも同等実装する。
-- [ ] C++ のみ実装が進んでいる `pathlib` 相当機能を、他ターゲット言語にも同一 API で実装する（`Path` の生成・結合・存在確認・文字列化など）。
-  - [ ] `pathlib` 最小共通 API を確定する（`Path(...)`, `/`, `exists`, `resolve`, `parent`, `name`, `stem`, `read_text`, `write_text`, `mkdir`, `str`）。
-  - [ ] `src/rs_module` / `src/cs_module` / `src/js_module` / `src/ts_module` / `src/go_module` / `src/java_module` に `pathlib` 相当ランタイムを追加する。
-  - [ ] `py2cpp.py` 以外の各トランスパイラで `import pathlib` と `Path` 呼び出しのマッピングを実装する。
-  - [ ] `sample/py` もしくは `test/py` にファイルI/Oを伴う `pathlib` 利用ケースを追加し、各言語で実行確認する。
-- [ ] 上記の平準化後、`docs/pytra-readme.md` の「対応module」を言語別の対応関数一覧で更新し、差分がある場合は理由を明記する。
-  - [ ] `math` / `pathlib` の言語別対応表を `docs/pytra-readme.md` に追加する。
-  - [ ] 未対応関数が残る言語には「未対応理由・代替手段・予定」を併記する。
-  - [ ] `README.md` / `docs/how-to-use.md` から参照される説明との整合を確認する。
-- [ ] `test/py` に `math` / `pathlib` の共通回帰テストを追加し、全ターゲット言語で同一期待値を満たすことを CI 相当手順で確認する。
-  - [ ] `test/py` に `math` 拡張（`tan/log/log10/fabs/ceil/pow`）の共通テストケースを追加する。
-  - [ ] `test/py` に `pathlib` 共通テストケース（生成・結合・存在確認・読み書き）を追加する。
-  - [ ] 各ターゲット（C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）への変換・実行コマンドを自動化スクリプトへ集約する。
-  - [ ] Python 実行結果との差分比較を自動化し、失敗ケースを一覧出力できるようにする。
+- [x] C++ のみ実装が進んでいる `pathlib` 相当機能を、他ターゲット言語にも同一 API で実装する（`Path` の生成・結合・存在確認・文字列化など）。
+  - [x] `pathlib` 最小共通 API を確定する（`Path(...)`, `/`, `exists`, `resolve`, `parent`, `name`, `stem`, `read_text`, `write_text`, `mkdir`, `str`）。
+  - [x] `src/rs_module` / `src/cs_module` / `src/js_module` / `src/ts_module` / `src/go_module` / `src/java_module` に `pathlib` 相当ランタイムを追加する。
+  - [x] `py2cpp.py` 以外の各トランスパイラで `import pathlib` と `Path` 呼び出しのマッピングを実装する。
+  - [x] `sample/py` もしくは `test/py` にファイルI/Oを伴う `pathlib` 利用ケースを追加し、各言語で実行確認する。
+- [x] 上記の平準化後、`docs/pytra-readme.md` の「対応module」を言語別の対応関数一覧で更新し、差分がある場合は理由を明記する。
+  - [x] `math` / `pathlib` の言語別対応表を `docs/pytra-readme.md` に追加する。
+  - [x] 未対応関数が残る言語には「未対応理由・代替手段・予定」を併記する。
+  - [x] `README.md` / `docs/how-to-use.md` から参照される説明との整合を確認する。
+- [x] `test/py` に `math` / `pathlib` の共通回帰テストを追加し、全ターゲット言語で同一期待値を満たすことを CI 相当手順で確認する。
+  - [x] `test/py` に `math` 拡張（`tan/log/log10/fabs/ceil/pow`）の共通テストケースを追加する。
+  - [x] `test/py` に `pathlib` 共通テストケース（生成・結合・存在確認・読み書き）を追加する。
+  - [x] 各ターゲット（C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）への変換・実行コマンドを自動化スクリプトへ集約する。
+  - [x] Python 実行結果との差分比較を自動化し、失敗ケースを一覧出力できるようにする。
+  - 実行補足: 現在の開発環境では `mcs/go/javac/swiftc/kotlinc` が未導入のため、`tools/runtime_parity_check.py` は該当ターゲットを `SKIP` 表示で処理する。

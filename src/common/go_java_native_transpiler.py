@@ -45,6 +45,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         self.current_class: str | None = None
         self.scope_stack: list[Scope] = []
         self.function_renames: dict[str, str] = {}
+        self.path_like_names: set[str] = set()
 
     @property
     def is_go(self) -> bool:
@@ -60,6 +61,7 @@ class GoJavaNativeTranspiler(BaseTranspiler):
     def transpile_module(self, module: ast.Module, output_path: Path) -> str:
         self._collect_class_info(module)
         self._collect_function_info(module)
+        self.path_like_names = set()
         lines: list[str] = []
         defs: list[str] = []
 
@@ -447,6 +449,11 @@ class GoJavaNativeTranspiler(BaseTranspiler):
 
         if isinstance(target, ast.Name):
             out.extend(self._declare_or_assign(target.id, rhs, scope, rhs_go_type=rhs_go_type))
+            safe_name = self._safe_name(target.id)
+            if value is not None and self._is_path_expr(value):
+                self.path_like_names.add(safe_name)
+            else:
+                self.path_like_names.discard(safe_name)
             if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in self.class_names:
                 scope.class_types[target.id] = value.func.id
             return out
@@ -658,6 +665,14 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         if isinstance(expr, ast.Attribute):
             if isinstance(expr.value, ast.Name) and expr.value.id == "math" and expr.attr == "pi":
                 return "pyMathPi()" if self.is_go else "PyRuntime.pyMathPi()"
+            if self._is_path_expr(expr.value):
+                base_expr = self.transpile_expr(expr.value)
+                if expr.attr == "parent":
+                    return f"{'pyPathParent' if self.is_go else 'PyRuntime.pyPathParent'}({base_expr})"
+                if expr.attr == "name":
+                    return f"{'pyPathName' if self.is_go else 'PyRuntime.pyPathName'}({base_expr})"
+                if expr.attr == "stem":
+                    return f"{'pyPathStem' if self.is_go else 'PyRuntime.pyPathStem'}({base_expr})"
             if isinstance(expr.value, ast.Name) and expr.value.id == "self" and self.current_class is not None:
                 if expr.attr in self.class_static_fields.get(self.current_class, set()) and expr.attr not in self.class_instance_fields.get(self.current_class, set()):
                     holder = f"__cls_{self.current_class}"
@@ -667,6 +682,10 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             return f"pyGet({base}, {self._string_literal(expr.attr)})" if self.is_go else f"PyRuntime.pyGet({base}, {self._string_literal(expr.attr)})"
 
         if isinstance(expr, ast.BinOp):
+            if isinstance(expr.op, ast.Div) and self._is_path_expr(expr.left):
+                l = self.transpile_expr(expr.left)
+                r = self.transpile_expr(expr.right)
+                return f"{'pyPathJoin' if self.is_go else 'PyRuntime.pyPathJoin'}({l}, {r})"
             if self.is_go:
                 t = self._expr_go_type(expr)
                 if t in {"int", "float64"}:
@@ -834,6 +853,10 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             fn = expr.func.id
             if fn in self.class_names:
                 return f"New{fn}({', '.join(args)})"
+            if fn == "Path":
+                if len(args) != 1:
+                    raise TranspileError("Path() requires one argument")
+                return f"{'pyPathNew' if self.is_go else 'PyRuntime.pyPathNew'}({args[0]})"
             builtin = {
                 "print": "pyPrint" if self.is_go else "PyRuntime.pyPrint",
                 "len": "pyLen" if self.is_go else "PyRuntime.pyLen",
@@ -903,6 +926,10 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             method = expr.func.attr
             if isinstance(expr.func.value, ast.Name):
                 mod = expr.func.value.id
+                if mod == "pathlib" and method == "Path":
+                    if len(args) != 1:
+                        raise TranspileError("pathlib.Path() requires one argument")
+                    return f"{'pyPathNew' if self.is_go else 'PyRuntime.pyPathNew'}({args[0]})"
                 if mod == "math":
                     if method == "sqrt":
                         return f"math.Sqrt(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathSqrt({', '.join(args)})"
@@ -964,6 +991,21 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                 return f"{'pyIsDigit' if self.is_go else 'PyRuntime.pyIsDigit'}({obj})"
             if method == "isalpha":
                 return f"{'pyIsAlpha' if self.is_go else 'PyRuntime.pyIsAlpha'}({obj})"
+            if self._is_path_expr(expr.func.value):
+                if method == "resolve":
+                    return f"{'pyPathResolve' if self.is_go else 'PyRuntime.pyPathResolve'}({obj})"
+                if method == "exists":
+                    return f"{'pyPathExists' if self.is_go else 'PyRuntime.pyPathExists'}({obj})"
+                if method == "read_text":
+                    return f"{'pyPathReadText' if self.is_go else 'PyRuntime.pyPathReadText'}({obj})"
+                if method == "write_text":
+                    if len(args) == 0:
+                        raise TranspileError("write_text requires content")
+                    return f"{'pyPathWriteText' if self.is_go else 'PyRuntime.pyPathWriteText'}({obj}, {args[0]})"
+                if method == "mkdir":
+                    parents = args[0] if len(args) >= 1 else "false"
+                    exist_ok = args[1] if len(args) >= 2 else "false"
+                    return f"{'pyPathMkdir' if self.is_go else 'PyRuntime.pyPathMkdir'}({obj}, {parents}, {exist_ok})"
 
             # クラス型メソッド呼び出し推論（名前変数のみ）。
             if isinstance(expr.func.value, ast.Name):
@@ -1108,6 +1150,8 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                 return "bool"
             if ann.id == "str":
                 return "string"
+            if ann.id == "Path":
+                return "path"
         return None
 
     def _coerce_go_value(self, rhs: str, go_type: str, rhs_go_type: str | None = None) -> str:
@@ -1172,6 +1216,8 @@ class GoJavaNativeTranspiler(BaseTranspiler):
         if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.USub):
             return self._expr_go_type(expr.operand)
         if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
+            if expr.func.id == "Path":
+                return "path"
             if expr.func.id == "int":
                 return "int"
             if expr.func.id == "float":
@@ -1182,6 +1228,8 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                 return "bool"
         if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute):
             if isinstance(expr.func.value, ast.Name):
+                if expr.func.value.id == "pathlib" and expr.func.attr == "Path":
+                    return "path"
                 if expr.func.value.id == "math" and expr.func.attr in {"sqrt", "sin", "cos", "exp", "floor"}:
                     return "float64"
                 if expr.func.value.id == "time" and expr.func.attr == "perf_counter":
@@ -1200,6 +1248,39 @@ class GoJavaNativeTranspiler(BaseTranspiler):
             if isinstance(expr.op, (ast.Add, ast.Sub, ast.Mult)):
                 return "float64" if "float64" in {lt, rt} else "int"
         return None
+
+    def _is_path_expr(self, expr: ast.expr | None) -> bool:
+        if expr is None:
+            return False
+        if isinstance(expr, ast.Name):
+            nm = self._safe_name(expr.id)
+            if nm in self.path_like_names:
+                return True
+            for sc in reversed(self.scope_stack):
+                if sc.value_types.get(nm) == "path":
+                    return True
+            return False
+        if isinstance(expr, ast.Call):
+            if isinstance(expr.func, ast.Name) and expr.func.id == "Path":
+                return True
+            if (
+                isinstance(expr.func, ast.Attribute)
+                and isinstance(expr.func.value, ast.Name)
+                and expr.func.value.id == "pathlib"
+                and expr.func.attr == "Path"
+            ):
+                return True
+            if (
+                isinstance(expr.func, ast.Attribute)
+                and expr.func.attr in {"resolve", "parent"}
+                and self._is_path_expr(expr.func.value)
+            ):
+                return True
+        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Div):
+            return self._is_path_expr(expr.left)
+        if isinstance(expr, ast.Attribute) and expr.attr == "parent":
+            return self._is_path_expr(expr.value)
+        return False
 
     def _as_go_int(self, expr: ast.expr, expr_t: str | None) -> str:
         code = self.transpile_expr(expr)

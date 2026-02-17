@@ -1,3 +1,5 @@
+// このファイルは自動生成です（Python -> Go native mode）。
+
 // Go ネイティブ変換向け Python 互換ランタイム補助。
 
 package main
@@ -800,4 +802,23 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     }
     out = append(out, 0x3B)
     _ = os.WriteFile(pyToString(path), out, 0o644)
+}
+
+func py_main() any {
+    var root any = pyPathNew("test/obj/pathlib_case32")
+    _ = root
+    pyPathMkdir(root, true, true)
+    var child any = pyPathJoin(root, "values.txt")
+    _ = child
+    pyPathWriteText(child, "42")
+    pyPrint(pyPathExists(child))
+    pyPrint(pyPathName(child))
+    pyPrint(pyPathStem(child))
+    pyPrint(pyPathExists(pyPathJoin(pyPathParent(child), "values.txt")))
+    pyPrint(pyPathReadText(child))
+    return nil
+}
+
+func main() {
+    py_main()
 }

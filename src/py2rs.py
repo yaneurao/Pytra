@@ -713,6 +713,14 @@ class RustTranspiler(BaseTranspiler):
                 if expr.attr == "pi":
                     return "std::f64::consts::PI"
                 return f"math_{expr.attr}"
+            if self._expr_type(expr.value) == "py_runtime::PyPath":
+                obj = self.transpile_expr(expr.value)
+                if expr.attr == "parent":
+                    return f"{obj}.parent()"
+                if expr.attr == "name":
+                    return f"{obj}.name()"
+                if expr.attr == "stem":
+                    return f"{obj}.stem()"
             return f"{self.transpile_expr(expr.value)}.{expr.attr}"
         if isinstance(expr, ast.Constant):
             if isinstance(expr.value, bool):
@@ -731,6 +739,8 @@ class RustTranspiler(BaseTranspiler):
             r = self.transpile_expr(expr.right)
             lt = self._expr_type(expr.left)
             rt = self._expr_type(expr.right)
+            if isinstance(expr.op, ast.Div) and lt == "py_runtime::PyPath":
+                return f"(({l}) / ({r}))"
             if isinstance(expr.op, ast.Add):
                 if lt == "String" or rt == "String":
                     return f"format!(\"{{}}{{}}\", {l}, {r})"
@@ -817,6 +827,8 @@ class RustTranspiler(BaseTranspiler):
             if fn in self.class_names:
                 call_args = [self._prepare_call_arg(node, arg) for node, arg in zip(arg_nodes, args)]
                 return f"{fn}::new({', '.join(call_args)})"
+            if fn == "Path" and len(args) == 1:
+                return f"py_runtime::PyPath::new(&(format!(\"{{}}\", {args[0]})))"
             if fn == "bytearray":
                 if len(args) == 0:
                     return "Vec::<u8>::new()"
@@ -871,6 +883,13 @@ class RustTranspiler(BaseTranspiler):
                 call_args = [self._prepare_call_arg(node, arg) for node, arg in zip(arg_nodes, args)]
             return f"{self._ident(fn)}({', '.join(call_args)})"
         if isinstance(call.func, ast.Attribute):
+            if (
+                isinstance(call.func.value, ast.Name)
+                and call.func.value.id == "pathlib"
+                and call.func.attr == "Path"
+                and len(args) == 1
+            ):
+                return f"py_runtime::PyPath::new(&(format!(\"{{}}\", {args[0]})))"
             if isinstance(call.func.value, ast.Name) and call.func.value.id == "math":
                 casted = [f"(({a}) as f64)" for a in args]
                 args_joined = ", ".join(casted)
@@ -897,6 +916,26 @@ class RustTranspiler(BaseTranspiler):
                 return f"py_isdigit(&({obj}))"
             if method == "isalpha" and len(args) == 0:
                 return f"py_isalpha(&({obj}))"
+            obj_type = self._expr_type(call.func.value)
+            if obj_type == "py_runtime::PyPath":
+                if method == "resolve" and len(args) == 0:
+                    return f"{obj}.resolve()"
+                if method == "exists" and len(args) == 0:
+                    return f"{obj}.exists()"
+                if method == "read_text":
+                    return f"{obj}.read_text()"
+                if method == "write_text" and len(args) >= 1:
+                    return f"{obj}.write_text(&(format!(\"{{}}\", {args[0]})))"
+                if method == "mkdir":
+                    parents = args[0] if len(args) >= 1 else "false"
+                    exist_ok = args[1] if len(args) >= 2 else "false"
+                    return f"{obj}.mkdir({parents}, {exist_ok})"
+                if method == "name" and len(args) == 0:
+                    return f"{obj}.name()"
+                if method == "stem" and len(args) == 0:
+                    return f"{obj}.stem()"
+                if method == "parent" and len(args) == 0:
+                    return f"{obj}.parent()"
             return f"{obj}.{self._ident(method)}({', '.join(args)})"
         raise TranspileError("only direct calls are supported")
 
@@ -988,6 +1027,7 @@ class RustTranspiler(BaseTranspiler):
                 "bytearray": "Vec<u8>",
                 "bool": "bool",
                 "None": "()",
+                "Path": "py_runtime::PyPath",
             }
             if ann.id in mapping:
                 return mapping[ann.id]
@@ -1151,7 +1191,12 @@ class RustTranspiler(BaseTranspiler):
             if isinstance(expr.value, ast.Name) and len(self.type_env_stack) > 0:
                 base_ty = self.type_env_stack[-1].get(expr.value.id)
                 if base_ty is not None:
-                    return self.class_field_types.get(base_ty, {}).get(expr.attr)
+                    field_ty = self.class_field_types.get(base_ty, {}).get(expr.attr)
+                    if field_ty is not None:
+                        return field_ty
+            base_ty2 = self._expr_type(expr.value)
+            if base_ty2 == "py_runtime::PyPath" and expr.attr == "parent":
+                return "py_runtime::PyPath"
             return None
         if isinstance(expr, ast.Subscript):
             base_ty = self._expr_type(expr.value)
@@ -1173,6 +1218,10 @@ class RustTranspiler(BaseTranspiler):
             if lt == "String" or rt == "String":
                 return "String"
         if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Div):
+            lt = self._expr_type(expr.left)
+            if lt == "py_runtime::PyPath":
+                return "py_runtime::PyPath"
+        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Div):
             return "f64"
         if isinstance(expr, ast.BinOp):
             lt = self._expr_type(expr.left)
@@ -1183,6 +1232,8 @@ class RustTranspiler(BaseTranspiler):
             if lt in ints and rt in ints:
                 return "i64"
         if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
+            if expr.func.id == "Path":
+                return "py_runtime::PyPath"
             if expr.func.id in self.class_names:
                 return expr.func.id
             if expr.func.id == "str":
@@ -1193,6 +1244,23 @@ class RustTranspiler(BaseTranspiler):
                 return "i64"
             if expr.func.id in {"bytearray", "bytes", "grayscale_palette"}:
                 return "Vec<u8>"
+        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute):
+            if (
+                isinstance(expr.func.value, ast.Name)
+                and expr.func.value.id == "pathlib"
+                and expr.func.attr == "Path"
+            ):
+                return "py_runtime::PyPath"
+            obj_ty = self._expr_type(expr.func.value)
+            if obj_ty == "py_runtime::PyPath":
+                if expr.func.attr in {"resolve", "parent"}:
+                    return "py_runtime::PyPath"
+                if expr.func.attr in {"name", "stem", "read_text"}:
+                    return "String"
+                if expr.func.attr == "exists":
+                    return "bool"
+                if expr.func.attr in {"write_text", "mkdir"}:
+                    return "()"
         return None
 
     def _default_value_for_type(self, rust_type: str) -> str:

@@ -59,6 +59,7 @@ class CSharpTranspiler(BaseTranspiler):
         self.typing_aliases: dict[str, str] = {}
         self.wide_int_functions: Set[str] = set()
         self.force_long_int: bool = False
+        self.path_like_names: Set[str] = set()
 
     def _ident(self, name: str) -> str:
         if name in self.RESERVED_WORDS:
@@ -79,6 +80,7 @@ class CSharpTranspiler(BaseTranspiler):
         top_level_body: List[ast.stmt] = []
         using_lines: Set[str] = {"using System;", "using System.Collections.Generic;", "using System.IO;"}
         self.typing_aliases = {}
+        self.path_like_names = set()
         self.class_names = {
             stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)
         }
@@ -396,6 +398,16 @@ class CSharpTranspiler(BaseTranspiler):
                 key_types.append(key_type if key_type is not None else "object")
                 val_types.append(val_type if val_type is not None else "object")
             return f"Dictionary<{merge_types(key_types)}, {merge_types(val_types)}>"
+        if isinstance(expr, ast.Call):
+            if isinstance(expr.func, ast.Name) and expr.func.id == "Path":
+                return "Pytra.CsModule.py_path"
+            if (
+                isinstance(expr.func, ast.Attribute)
+                and isinstance(expr.func.value, ast.Name)
+                and expr.func.value.id == "pathlib"
+                and expr.func.attr == "Path"
+            ):
+                return "Pytra.CsModule.py_path"
         return None
 
     def transpile_function(self, fn: ast.FunctionDef, in_class: bool = False) -> str:
@@ -517,6 +529,8 @@ class CSharpTranspiler(BaseTranspiler):
             else:
                 line = f"{csharp_type} {self._ident(name)} = {self.transpile_expr(stmt.value)};"
         scope.declared.add(name)
+        if csharp_type == "Pytra.CsModule.py_path" or (stmt.value is not None and self._is_path_like_expr(stmt.value)):
+            self.path_like_names.add(name)
         return [line]
 
     def _transpile_assign(self, stmt: ast.Assign, scope: Scope) -> List[str]:
@@ -556,9 +570,13 @@ class CSharpTranspiler(BaseTranspiler):
         if name not in scope.declared:
             scope.declared.add(name)
             inferred_type = self._infer_expr_csharp_type(stmt.value)
+            if inferred_type == "Pytra.CsModule.py_path" or self._is_path_like_expr(stmt.value):
+                self.path_like_names.add(name)
             if inferred_type is not None:
                 return [f"{inferred_type} {self._ident(name)} = {self.transpile_expr(stmt.value)};"]
             return [f"var {self._ident(name)} = {self.transpile_expr(stmt.value)};"]
+        if self._is_path_like_expr(stmt.value):
+            self.path_like_names.add(name)
 
         return [f"{self._ident(name)} = {self.transpile_expr(stmt.value)};"]
 
@@ -728,6 +746,14 @@ class CSharpTranspiler(BaseTranspiler):
                     return "Math.PI"
                 if expr.attr == "e":
                     return "Math.E"
+            if self._is_path_like_expr(expr.value):
+                base = self.transpile_expr(expr.value)
+                if expr.attr == "parent":
+                    return f"{base}.parent()"
+                if expr.attr == "name":
+                    return f"{base}.name()"
+                if expr.attr == "stem":
+                    return f"{base}.stem()"
             if (
                 isinstance(expr.value, ast.Name)
                 and expr.value.id == "self"
@@ -761,6 +787,8 @@ class CSharpTranspiler(BaseTranspiler):
             left = self.transpile_expr(expr.left)
             right = self.transpile_expr(expr.right)
             if isinstance(expr.op, ast.Div):
+                if self._is_path_like_expr(expr.left):
+                    return f"({left} / {right})"
                 return f"((double)({left}) / (double)({right}))"
             if isinstance(expr.op, ast.FloorDiv):
                 return f"Pytra.CsModule.py_runtime.py_floordiv({left}, {right})"
@@ -843,6 +871,10 @@ class CSharpTranspiler(BaseTranspiler):
             if len(args_list) == 1:
                 return f"Pytra.CsModule.py_runtime.py_int({args_list[0]})"
             return "0"
+        if isinstance(call.func, ast.Name) and call.func.id == "Path":
+            if len(args_list) == 1:
+                return f"new Pytra.CsModule.py_path(Convert.ToString({args_list[0]}))"
+            return "new Pytra.CsModule.py_path(\"\")"
         if isinstance(call.func, ast.Name) and call.func.id == "float":
             if len(args_list) == 1:
                 return f"(double)({args_list[0]})"
@@ -873,6 +905,14 @@ class CSharpTranspiler(BaseTranspiler):
                 return f"new {self._ident(call.func.id)}({args})"
             return f"{self._ident(call.func.id)}({args})"
         if isinstance(call.func, ast.Attribute):
+            if (
+                isinstance(call.func.value, ast.Name)
+                and call.func.value.id == "pathlib"
+                and call.func.attr == "Path"
+            ):
+                if len(args_list) == 1:
+                    return f"new Pytra.CsModule.py_path(Convert.ToString({args_list[0]}))"
+                return "new Pytra.CsModule.py_path(\"\")"
             if isinstance(call.func.value, ast.Name) and call.func.value.id == "math":
                 math_map = {
                     "sqrt": "Sqrt",
@@ -916,6 +956,23 @@ class CSharpTranspiler(BaseTranspiler):
 
         return f"{self.transpile_expr(call.func)}({args})"
 
+    def _is_path_like_expr(self, expr: ast.expr) -> bool:
+        if isinstance(expr, ast.Name):
+            return expr.id in self.path_like_names
+        if isinstance(expr, ast.Call):
+            if isinstance(expr.func, ast.Name) and expr.func.id == "Path":
+                return True
+            if (
+                isinstance(expr.func, ast.Attribute)
+                and isinstance(expr.func.value, ast.Name)
+                and expr.func.value.id == "pathlib"
+                and expr.func.attr == "Path"
+            ):
+                return True
+        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Div):
+            return self._is_path_like_expr(expr.left)
+        return False
+
     def _map_annotation(self, annotation: ast.expr) -> str:
         # Python側型注釈をC#の型名にマッピングする。
         if isinstance(annotation, ast.Constant) and annotation.value is None:
@@ -934,6 +991,7 @@ class CSharpTranspiler(BaseTranspiler):
                 **CS_PRIMITIVE_TYPES,
                 "bytearray": "List<byte>",
                 "bytes": "List<byte>",
+                "Path": "Pytra.CsModule.py_path",
                 "list": "List<object>",
                 "set": "HashSet<object>",
                 "dict": "Dictionary<object, object>",

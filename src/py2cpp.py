@@ -51,6 +51,7 @@ class CppTranspiler(BaseTranspiler):
         self.global_function_renames: dict[str, str] = {}
         self.wide_int_functions: Set[str] = set()
         self.force_long_int: bool = False
+        self.path_like_names: Set[str] = set()
 
     def transpile_file(self, input_path: Path, output_path: Path) -> None:
         """1ファイルを読み込み、C++へ変換して出力する。
@@ -76,6 +77,7 @@ class CppTranspiler(BaseTranspiler):
         function_defs: List[str] = []
         class_defs: List[str] = []
         top_level_body: List[ast.stmt] = []
+        self.path_like_names = set()
         include_lines: Set[str] = {
             "#include <algorithm>",
             "#include <any>",
@@ -478,7 +480,11 @@ class CppTranspiler(BaseTranspiler):
             val_type = merge_types(value_types, "long long")
             return f"unordered_map<{key_type}, {val_type}>"
         if isinstance(expr, ast.BinOp):
-            if isinstance(expr.op, (ast.Div, ast.Pow)):
+            if isinstance(expr.op, ast.Div):
+                if self._is_path_like_expr(expr.left):
+                    return "Path"
+                return "double"
+            if isinstance(expr.op, ast.Pow):
                 return "double"
             lt = self._infer_expr_cpp_type(expr.left)
             rt = self._infer_expr_cpp_type(expr.right)
@@ -486,6 +492,8 @@ class CppTranspiler(BaseTranspiler):
         if isinstance(expr, ast.UnaryOp):
             return self._infer_expr_cpp_type(expr.operand)
         if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
+            if expr.func.id == "Path":
+                return "Path"
             if expr.func.id in {"len"}:
                 return "size_t"
             if expr.func.id in {"int"}:
@@ -496,6 +504,13 @@ class CppTranspiler(BaseTranspiler):
                 return "string"
             if expr.func.id in {"bytearray", "bytes"}:
                 return "vector<uint8_t>"
+        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute):
+            if (
+                isinstance(expr.func.value, ast.Name)
+                and expr.func.value.id == "pathlib"
+                and expr.func.attr == "Path"
+            ):
+                return "Path"
         return ""
 
     def transpile_function(self, fn: ast.FunctionDef, in_class: bool = False) -> str:
@@ -711,8 +726,12 @@ class CppTranspiler(BaseTranspiler):
         cpp_type = self._map_annotation(stmt.annotation)
         if stmt.value is None:
             scope.declared.add(name)
+            if cpp_type == "Path":
+                self.path_like_names.add(name)
             return [f"{cpp_type} {name};"]
         scope.declared.add(name)
+        if cpp_type == "Path" or (stmt.value is not None and self._is_path_like_expr(stmt.value)):
+            self.path_like_names.add(name)
         return [f"{cpp_type} {name} = {self.transpile_expr(stmt.value)};"]
 
     def _transpile_assign(self, stmt: ast.stmt, scope: Scope) -> List[str]:
@@ -749,9 +768,13 @@ class CppTranspiler(BaseTranspiler):
         if name not in scope.declared:
             scope.declared.add(name)
             inferred = self._infer_expr_cpp_type(stmt.value)
+            if inferred == "Path" or self._is_path_like_expr(stmt.value):
+                self.path_like_names.add(name)
             if inferred != "" and inferred != "auto":
                 return [f"{inferred} {name} = {self.transpile_expr(stmt.value)};"]
             return [f"auto {name} = {self.transpile_expr(stmt.value)};"]
+        if self._is_path_like_expr(stmt.value):
+            self.path_like_names.add(name)
 
         return [f"{name} = {self.transpile_expr(stmt.value)};"]
 
@@ -946,6 +969,14 @@ class CppTranspiler(BaseTranspiler):
                 return "false"
             return expr.id
         if isinstance(expr, ast.Attribute):
+            if self._is_path_like_expr(expr.value):
+                base = self.transpile_expr(expr.value)
+                if expr.attr == "parent":
+                    return f"{base}->parent()"
+                if expr.attr == "name":
+                    return f"{base}->name()"
+                if expr.attr == "stem":
+                    return f"{base}->stem()"
             if isinstance(expr.value, ast.Name) and expr.value.id == "ast":
                 return f"pycs::cpp_module::ast::{expr.attr}"
             if isinstance(expr.value, ast.Name) and expr.value.id == "math":
@@ -996,6 +1027,8 @@ class CppTranspiler(BaseTranspiler):
             if isinstance(expr.op, ast.Pow):
                 return f"py_pow({left}, {right})"
             if isinstance(expr.op, ast.Div):
+                if self._is_path_like_expr(expr.left):
+                    return f"(({left}) / ({right}))"
                 return f"py_div({left}, {right})"
             if isinstance(expr.op, ast.FloorDiv):
                 return f"py_floordiv({left}, {right})"
@@ -1083,6 +1116,10 @@ class CppTranspiler(BaseTranspiler):
             if len(call.args) == 1:
                 return f"py_to_string({args_list[0]})"
             return "\"\""
+        if isinstance(call.func, ast.Name) and call.func.id == "Path":
+            if len(call.args) == 1:
+                return f"Path({args_list[0]})"
+            return "Path()"
         if isinstance(call.func, ast.Name) and call.func.id == "int":
             if len(call.args) == 1:
                 return f"py_int({args_list[0]})"
@@ -1154,6 +1191,14 @@ class CppTranspiler(BaseTranspiler):
                 return f"pycs::gc::RcHandle<{call.func.id}>::adopt(pycs::gc::rc_new<{call.func.id}>({args}))"
             return f"{call.func.id}({args})"
         if isinstance(call.func, ast.Attribute):
+            if (
+                isinstance(call.func.value, ast.Name)
+                and call.func.value.id == "pathlib"
+                and call.func.attr == "Path"
+            ):
+                if len(args_list) == 1:
+                    return f"Path({args_list[0]})"
+                return "Path()"
             obj = self.transpile_expr(call.func.value)
             method = call.func.attr
             if method == "append" and len(args_list) == 1:
@@ -1188,6 +1233,33 @@ class CppTranspiler(BaseTranspiler):
 
         return f"{self.transpile_expr(call.func)}({args})"
 
+    def _is_path_like_expr(self, expr: ast.expr) -> bool:
+        if isinstance(expr, ast.Name):
+            return expr.id in self.path_like_names
+        if isinstance(expr, ast.Attribute):
+            if expr.attr == "parent":
+                return self._is_path_like_expr(expr.value)
+            return False
+        if isinstance(expr, ast.Call):
+            if isinstance(expr.func, ast.Name) and expr.func.id == "Path":
+                return True
+            if (
+                isinstance(expr.func, ast.Attribute)
+                and isinstance(expr.func.value, ast.Name)
+                and expr.func.value.id == "pathlib"
+                and expr.func.attr == "Path"
+            ):
+                return True
+            if (
+                isinstance(expr.func, ast.Attribute)
+                and expr.func.attr in {"resolve", "parent"}
+                and self._is_path_like_expr(expr.func.value)
+            ):
+                return True
+        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Div):
+            return self._is_path_like_expr(expr.left)
+        return False
+
     def _map_annotation(self, annotation: ast.expr) -> str:
         """Python 型注釈を C++ 型名へ変換する。"""
         if isinstance(annotation, ast.Constant) and annotation.value is None:
@@ -1207,6 +1279,8 @@ class CppTranspiler(BaseTranspiler):
                 return "vector<uint8_t>"
             if annotation.id == "bytes":
                 return "vector<uint8_t>"
+            if annotation.id == "Path":
+                return "Path"
             if annotation.id in self.class_names:
                 return f"pycs::gc::RcHandle<{annotation.id}>"
             return "auto"

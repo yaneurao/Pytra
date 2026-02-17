@@ -1,3 +1,5 @@
+// このファイルは自動生成です（Python -> Java native mode）。
+
 // Java ネイティブ変換向け Python 互換ランタイム補助。
 
 import java.io.ByteArrayOutputStream;
@@ -873,5 +875,24 @@ final class PyRuntime {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+}
+
+class case32_pathlib_extended {
+    static Object main() {
+        Object root = PyRuntime.pyPathNew("test/obj/pathlib_case32");
+        PyRuntime.pyPathMkdir(root, true, true);
+        Object child = PyRuntime.pyPathJoin(root, "values.txt");
+        PyRuntime.pyPathWriteText(child, "42");
+        PyRuntime.pyPrint(PyRuntime.pyPathExists(child));
+        PyRuntime.pyPrint(PyRuntime.pyPathName(child));
+        PyRuntime.pyPrint(PyRuntime.pyPathStem(child));
+        PyRuntime.pyPrint(PyRuntime.pyPathExists(PyRuntime.pyPathJoin(PyRuntime.pyPathParent(child), "values.txt")));
+        PyRuntime.pyPrint(PyRuntime.pyPathReadText(child));
+        return null;
+    }
+
+    public static void main(String[] args) {
+        main();
     }
 }

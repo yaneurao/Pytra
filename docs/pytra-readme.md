@@ -41,14 +41,22 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
 - `time`
   - `perf_counter`
 - `pathlib`
-  - C++ 実装（`src/cpp_module/pathlib.h/.cpp`）:
-    - `Path.resolve()`
-    - `Path.parent` / `Path.parents[index]`
+  - 共通対応（C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）:
+    - `Path(...)`, `pathlib.Path(...)`
     - `Path / "child"`（パス連結）
-    - `Path.read_text()`, `Path.write_text()`
-    - `Path.mkdir(parents_flag, exist_ok)`
-    - `Path.name()`, `Path.stem()`, `str(Path)`
-  - C# は `System.IO` へのマッピング中心で、`pathlib` 完全互換ではありません。
+    - `exists`, `resolve`, `parent`, `name`, `stem`
+    - `read_text`, `write_text`, `mkdir(parents, exist_ok)`
+    - `str(Path)`（文字列化）
+  - 実装位置:
+    - C++: `src/cpp_module/pathlib.h/.cpp`
+    - Rust: `src/rs_module/py_runtime.rs`（`PyPath`）
+    - C#: `src/cs_module/pathlib.cs`（`py_path`）
+    - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`
+    - Go/Java: `src/go_module/py_runtime.go`, `src/java_module/PyRuntime.java`
+    - Swift/Kotlin: Node バックエンド方式のため、実体は JS ランタイム（`src/js_module/pathlib.js`）に依存
+  - 差分:
+    - Python `pathlib` の完全互換ではなく、Pytra の最小共通 API に限定しています。
+    - `read_text` / `write_text` の encoding 指定は UTF-8 固定です（引数は互換目的で受理するが無視される実装を含む）。
 - `dataclasses`
   - `@dataclass` デコレータ（変換時展開）
   - C++ ランタイム補助（最小）:
