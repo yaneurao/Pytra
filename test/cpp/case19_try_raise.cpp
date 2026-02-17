@@ -6,15 +6,12 @@
 
 int64 maybe_fail_19(bool flag) {
     try {
-        if (flag) {
+        if (flag)
             throw std::runtime_error("fail-19");
-        }
         return 10;
     }
     catch (const std::exception& ex) {
         return 20;
-    }
-    {
     }
 }
 

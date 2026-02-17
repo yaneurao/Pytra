@@ -1,11 +1,11 @@
-# このファイルは `test/py/case22_comprehension.py` のテスト/実装コードです。
+# このファイルは `test/py/case33_ifexp_bool.py` のテスト/実装コードです。
 # 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
-def comp_like_24(x: int) -> int:
-    values: list[int] = [i for i in [1, 2, 3, 4]]
-    return x + 1
+def pick_25(a: int, b: int, flag: bool) -> int:
+    c: int = a if (flag and (a > b)) else b
+    return c
 
 
 if __name__ == "__main__":
-    print(comp_like_24(5))
+    print(pick_25(10, 3, True))

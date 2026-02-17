@@ -1,13 +1,15 @@
-# このファイルは `test/py/case25_for_range.py` のテスト/実装コードです。
+# このファイルは `test/py/case33_class_static.py` のテスト/実装コードです。
 # 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
-def sum_range_29(n: int) -> int:
+class Counter26:
     total: int = 0
-    for i in range(n):
-        total += i
-    return total
+
+    def add(self, x: int) -> int:
+        self.total += x
+        return self.total
 
 
 if __name__ == "__main__":
-    print(sum_range_29(5))
+    c: Counter26 = Counter26()
+    print(c.add(5))

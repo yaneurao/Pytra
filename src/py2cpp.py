@@ -334,7 +334,10 @@ class CppEmitter:
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         kind = stmt.get("kind")
         self.emit_leading_comments(stmt)
-        if kind in {"Import", "ImportFrom", "Pass"}:
+        if kind in {"Import", "ImportFrom"}:
+            return
+        if kind == "Pass":
+            self.emit("/* pass */")
             return
         if kind == "Break":
             self.emit("break;")
@@ -470,6 +473,18 @@ class CppEmitter:
                 self.emit(f"throw {self.render_expr(exc)};")
             return
         if kind == "Try":
+            finalbody = list(stmt.get("finalbody", []))
+            has_effective_finally = any(isinstance(s, dict) and s.get("kind") != "Pass" for s in finalbody)
+            if has_effective_finally:
+                self.emit("{")
+                self.indent += 1
+                gid = self.next_tmp("__finally")
+                self.emit(f"auto {gid} = py_make_scope_exit([&]() {{")
+                self.indent += 1
+                for s in finalbody:
+                    self.emit_stmt(s)
+                self.indent -= 1
+                self.emit("});")
             self.emit("try {")
             self.indent += 1
             for s in stmt.get("body", []):
@@ -484,11 +499,7 @@ class CppEmitter:
                     self.emit_stmt(s)
                 self.indent -= 1
                 self.emit("}")
-            if stmt.get("finalbody"):
-                self.emit("{")
-                self.indent += 1
-                for s in stmt.get("finalbody", []):
-                    self.emit_stmt(s)
+            if has_effective_finally:
                 self.indent -= 1
                 self.emit("}")
             return
@@ -505,7 +516,7 @@ class CppEmitter:
         if len(stmts) != 1:
             return False
         k = stmts[0].get("kind")
-        return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Break", "Continue"}
+        return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         target = stmt.get("target")

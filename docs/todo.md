@@ -215,8 +215,8 @@
 - [ ] `case11_fib` を `self_hosted` で通す。
 - [ ] `case12_string_ops` を `self_hosted` で通す。
 - [ ] `case13_class` 〜 `case16_instance_member`（クラス系）を `self_hosted` で通す。
-- [ ] `case17_loop` 〜 `case23_ifexp_bool`（ループ/例外/内包/ifexp）を `self_hosted` で通す。
-- [ ] `case24_class_static` 〜 `case32_pathlib_extended`（拡張ケース）を `self_hosted` で通す。
+- [ ] `case17_loop` 〜 `case24_ifexp_bool`（ループ/例外/内包/ifexp）を `self_hosted` で通す。
+- [ ] `case25_class_static` 〜 `case33_pathlib_extended`（拡張ケース）を `self_hosted` で通す。
 
 ### 切替完了条件
 
