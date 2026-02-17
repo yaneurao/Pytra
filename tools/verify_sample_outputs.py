@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+VERBOSE = False
+
 
 @dataclass
 class CaseResult:
@@ -26,6 +28,11 @@ class CaseResult:
 def run_cmd(cmd: list[str], *, env: dict[str, str] | None = None) -> tuple[int, str]:
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
     return p.returncode, p.stdout
+
+
+def vlog(msg: str) -> None:
+    if VERBOSE:
+        print(msg, flush=True)
 
 
 def parse_output_path(stdout_text: str) -> str | None:
@@ -152,10 +159,11 @@ def gif_lzw_decode(min_code_size: int, data: bytes) -> bytes:
 
         out.extend(entry)
         if prev is not None:
-            table[next_code] = prev + entry[:1]
-            next_code += 1
-            if next_code == (1 << code_size) and code_size < 12:
-                code_size += 1
+            if next_code < 4096:
+                table[next_code] = prev + entry[:1]
+                next_code += 1
+                if next_code == (1 << code_size) and code_size < 12:
+                    code_size += 1
         prev = entry
     return bytes(out)
 
@@ -241,6 +249,77 @@ def gif_frames_index(path: Path) -> list[dict[str, Any]]:
     return frames
 
 
+def gif_frame_blocks(path: Path) -> list[tuple[int, int, int, int, int, int, bytes]]:
+    """Parse GIF image blocks without LZW decode.
+
+    Returns tuples of:
+    (left, top, width, height, delay_cs, lzw_min_code_size, compressed_data)
+    """
+    b = path.read_bytes()
+    if not (b.startswith(b"GIF87a") or b.startswith(b"GIF89a")):
+        raise ValueError("not a GIF file")
+    i = 6
+    _w, _h, packed, _bg, _aspect = struct.unpack("<HHBBB", b[i : i + 7])
+    i += 7
+    gct_flag = (packed >> 7) & 1
+    gct_size = 2 ** ((packed & 0x07) + 1) if gct_flag else 0
+    if gct_flag:
+        i += 3 * gct_size
+
+    out: list[tuple[int, int, int, int, int, int, bytes]] = []
+    cur_delay = 0
+    while i < len(b):
+        block = b[i]
+        i += 1
+        if block == 0x3B:
+            break
+        if block == 0x21:
+            label = b[i]
+            i += 1
+            if label == 0xF9:
+                sz = b[i]
+                i += 1
+                if sz != 4:
+                    raise ValueError("unexpected GCE size")
+                _packed = b[i]
+                delay = struct.unpack("<H", b[i + 1 : i + 3])[0]
+                _tr = b[i + 3]
+                i += 4
+                _term = b[i]
+                i += 1
+                cur_delay = int(delay)
+            else:
+                while True:
+                    sz = b[i]
+                    i += 1
+                    if sz == 0:
+                        break
+                    i += sz
+            continue
+        if block == 0x2C:
+            left, top, w, h, ipacked = struct.unpack("<HHHHB", b[i : i + 9])
+            i += 9
+            lct_flag = (ipacked >> 7) & 1
+            lct_size = 2 ** ((ipacked & 0x07) + 1) if lct_flag else 0
+            if lct_flag:
+                i += 3 * lct_size
+            min_code_size = int(b[i])
+            i += 1
+            data = bytearray()
+            while True:
+                sz = b[i]
+                i += 1
+                if sz == 0:
+                    break
+                data.extend(b[i : i + sz])
+                i += sz
+            out.append((int(left), int(top), int(w), int(h), int(cur_delay), min_code_size, bytes(data)))
+            cur_delay = 0
+            continue
+        raise ValueError(f"unknown GIF block marker: 0x{block:02x}")
+    return out
+
+
 def compare_images(py_img: Path, cpp_img: Path) -> tuple[bool, str]:
     ext = py_img.suffix.lower()
     if ext != cpp_img.suffix.lower():
@@ -265,6 +344,13 @@ def compare_images(py_img: Path, cpp_img: Path) -> tuple[bool, str]:
         ch_name = ("R", "G", "B")[ch_idx]
         return False, f"png raw differ at x={x}, y={y}, ch={ch_name}, py={pr[diff_at]}, cpp={cr[diff_at]}, expr=n/a"
     if ext == ".gif":
+        # Fast path: if all GIF frame blocks (including compressed payload) match,
+        # decompressed frame indices are guaranteed to match as well.
+        pb = gif_frame_blocks(py_img)
+        cb = gif_frame_blocks(cpp_img)
+        if pb == cb:
+            return True, "gif frame blocks equal (compressed + delay)"
+
         pf = gif_frames_index(py_img)
         cf = gif_frames_index(cpp_img)
         if len(pf) != len(cf):
@@ -297,26 +383,36 @@ def compare_images(py_img: Path, cpp_img: Path) -> tuple[bool, str]:
     return (py_img.read_bytes() == cpp_img.read_bytes(), "binary equal")
 
 
-def verify_case(stem: str, *, work: Path, compile_flags: list[str]) -> CaseResult:
+def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdout: bool = False) -> CaseResult:
+    import time
     py = Path("sample/py") / f"{stem}.py"
     cpp = Path("sample/cpp") / f"{stem}.cpp"
     exe = work / f"{stem}.out"
 
+    t0 = time.time()
+    vlog(f"[{stem}] python run start")
     rc, py_stdout = run_cmd(["python3", str(py)], env={**os.environ, "PYTHONPATH": "src"})
+    vlog(f"[{stem}] python run done ({time.time()-t0:.2f}s)")
     if rc != 0:
         return CaseResult(stem, False, False, False, "python run failed")
     py_out = parse_output_path(py_stdout)
 
+    t1 = time.time()
+    vlog(f"[{stem}] cpp compile start")
     rc, _ = run_cmd(["g++", "-std=c++20", *compile_flags, "-I", "src", str(cpp), "src/cpp_module/png.cpp", "src/cpp_module/gif.cpp", "src/cpp_module/math.cpp", "-o", str(exe)])
+    vlog(f"[{stem}] cpp compile done ({time.time()-t1:.2f}s)")
     if rc != 0:
         return CaseResult(stem, False, False, False, "cpp compile failed")
+    t2 = time.time()
+    vlog(f"[{stem}] cpp run start")
     rc, cpp_stdout = run_cmd([str(exe)])
+    vlog(f"[{stem}] cpp run done ({time.time()-t2:.2f}s)")
     if rc != 0:
         return CaseResult(stem, False, False, False, "cpp run failed")
 
     cpp_out = parse_output_path(cpp_stdout)
 
-    stdout_ok = py_stdout == cpp_stdout
+    stdout_ok = True if ignore_stdout else (py_stdout == cpp_stdout)
     image_ok = True
     msg = "no image output"
     if py_out is None and cpp_out is None:
@@ -325,13 +421,16 @@ def verify_case(stem: str, *, work: Path, compile_flags: list[str]) -> CaseResul
         image_ok = False
         msg = "output path presence mismatch"
     else:
+        t3 = time.time()
+        vlog(f"[{stem}] image compare start")
         py_img = work / f"{stem}.py{Path(py_out).suffix.lower()}"
         cpp_img = work / f"{stem}.cpp{Path(cpp_out).suffix.lower()}"
         shutil.copyfile(py_out, py_img)
         shutil.copyfile(cpp_out, cpp_img)
         image_ok, msg = compare_images(py_img, cpp_img)
+        vlog(f"[{stem}] image compare done ({time.time()-t3:.2f}s)")
     ok = stdout_ok and image_ok
-    detail = [f"stdout={'ok' if stdout_ok else 'diff'}", f"image={'ok' if image_ok else 'diff'}", msg]
+    detail = [f"stdout={'skip' if ignore_stdout else ('ok' if stdout_ok else 'diff')}", f"image={'ok' if image_ok else 'diff'}", msg]
     return CaseResult(stem, ok, stdout_ok, image_ok, ", ".join(detail))
 
 
@@ -339,7 +438,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Verify sample/py vs transpiled C++ outputs")
     ap.add_argument("--samples", nargs="*", default=None, help="sample stems (e.g. 01_mandelbrot)")
     ap.add_argument("--compile-flags", default="-O2", help="extra g++ compile flags (space-separated)")
+    ap.add_argument("--verbose", action="store_true", help="print phase timings")
+    ap.add_argument("--ignore-stdout", action="store_true", help="judge only image parity and ignore stdout differences")
     args = ap.parse_args()
+    global VERBOSE
+    VERBOSE = args.verbose
 
     if args.samples is None:
         stems = [p.stem for p in sorted(Path("sample/py").glob("*.py"))]
@@ -354,7 +457,7 @@ def main() -> int:
     ok = 0
     ng = 0
     for stem in stems:
-        r = verify_case(stem, work=work, compile_flags=compile_flags)
+        r = verify_case(stem, work=work, compile_flags=compile_flags, ignore_stdout=args.ignore_stdout)
         if r.ok:
             ok += 1
             status = "OK"

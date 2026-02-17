@@ -70,8 +70,15 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 画像一致検証を自動実行する場合:
 
 ```bash
-python3 tools/verify_sample_outputs.py --compile-flags=\"-O2\"
+python3 tools/verify_sample_outputs.py --compile-flags="-O2"
 ```
 
 - `stdout` 差分と、画像の差分（PNG は raw scanline、GIF は LZW 展開後のフレームインデックス）をまとめて確認できます。
 - 画像差分がある場合は、最初の不一致位置（PNG: x/y/チャネル、GIF: フレーム/x/y）を表示します。
+- `sample/12_sort_visualizer` と `sample/16_glass_sculpture_chaos` では、GIF フレームブロック（遅延値 + LZW 圧縮データ）が一致することを確認済みです。
+
+実行時間などの `stdout` 差分を無視して、画像一致のみ確認したい場合:
+
+```bash
+python3 tools/verify_sample_outputs.py --ignore-stdout --compile-flags="-O2"
+```
