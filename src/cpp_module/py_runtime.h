@@ -24,6 +24,8 @@
 #include "cpp_module/math.h"
 #include "cpp_module/png.h"
 
+namespace py_math = pycs::cpp_module::math;
+
 using int8 = std::int8_t;
 using uint8 = std::uint8_t;
 using int16 = std::int16_t;
@@ -66,7 +68,7 @@ static inline std::string py_to_string(const char* v) {
     return std::string(v);
 }
 
-static inline std::string py_to_string(bool v) {
+static inline std::string py_bool_to_string(bool v) {
     return v ? "True" : "False";
 }
 
@@ -114,6 +116,32 @@ static inline str py_slice(const str& v, int64 lo, int64 up) {
     up = std::max<int64>(0, std::min<int64>(up, n));
     if (up < lo) up = lo;
     return v.substr(static_cast<std::size_t>(lo), static_cast<std::size_t>(up - lo));
+}
+
+template <class T>
+static inline T& py_at(list<T>& v, int64 idx) {
+    if (idx < 0) idx += static_cast<int64>(v.size());
+    if (idx < 0 || idx >= static_cast<int64>(v.size())) {
+        throw std::out_of_range("list index out of range");
+    }
+    return v[static_cast<std::size_t>(idx)];
+}
+
+template <class T>
+static inline const T& py_at(const list<T>& v, int64 idx) {
+    if (idx < 0) idx += static_cast<int64>(v.size());
+    if (idx < 0 || idx >= static_cast<int64>(v.size())) {
+        throw std::out_of_range("list index out of range");
+    }
+    return v[static_cast<std::size_t>(idx)];
+}
+
+static inline str py_at(const str& v, int64 idx) {
+    if (idx < 0) idx += static_cast<int64>(v.size());
+    if (idx < 0 || idx >= static_cast<int64>(v.size())) {
+        throw std::out_of_range("string index out of range");
+    }
+    return str(1, v[static_cast<std::size_t>(idx)]);
 }
 
 static inline void py_write_text(const Path& p, const str& s) {

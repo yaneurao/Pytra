@@ -5,7 +5,7 @@
 // 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 str make_msg_22(str name, int64 count) {
-    return (py_to_string(name) + ":22:" + py_to_string(count));
+    return name + ":22:" + std::to_string(count) + std::to_string(count * 2) + name + "-" + name;
 }
 
 int main() {

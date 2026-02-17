@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def main() -> None:
+def main():
     root = Path("test/obj/pathlib_case32")
     root.mkdir(parents=True, exist_ok=True)
 

@@ -2206,6 +2206,59 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "orelse": else_node,
             }
 
+        def split_top_plus(text: str) -> list[str]:
+            out: list[str] = []
+            depth = 0
+            in_str: str | None = None
+            esc = False
+            start = 0
+            for i, ch in enumerate(text):
+                if in_str is not None:
+                    if esc:
+                        esc = False
+                        continue
+                    if ch == "\\":
+                        esc = True
+                        continue
+                    if ch == in_str:
+                        in_str = None
+                    continue
+                if ch in {"'", '"'}:
+                    in_str = ch
+                    continue
+                if ch in {"(", "[", "{"}:
+                    depth += 1
+                    continue
+                if ch in {")", "]", "}"}:
+                    depth -= 1
+                    continue
+                if ch == "+" and depth == 0:
+                    out.append(text[start:i].strip())
+                    start = i + 1
+            tail = text[start:].strip()
+            if tail != "":
+                out.append(tail)
+            return out
+
+        # Handle concatenation chains that include f-strings before generic parsing.
+        plus_parts = split_top_plus(txt)
+        if len(plus_parts) >= 2 and any(p.startswith("f\"") or p.startswith("f'") for p in plus_parts):
+            nodes = [parse_expr(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in plus_parts]
+            node = nodes[0]
+            for rhs in nodes[1:]:
+                node = {
+                    "kind": "BinOp",
+                    "source_span": _sh_span(ln_no, col, col + len(raw)),
+                    "resolved_type": "str",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": txt,
+                    "left": node,
+                    "op": "Add",
+                    "right": rhs,
+                }
+            return node
+
         # dict literal: {"a": 1, "b": 2}
         if txt.startswith("{") and txt.endswith("}") and ":" in txt:
             inner = txt[1:-1].strip()
