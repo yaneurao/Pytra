@@ -75,3 +75,10 @@
 
 - [ ] `src/rs_module/py_runtime.rs` の `py_write_rgb_png` で、Python 側 `png_helper.write_rgb_png` とバイナリ完全一致（IDAT 圧縮形式を含む）を実現する。
 - [ ] `py2rs.py` の `use py_runtime::{...}` 生成を使用関数ベースに最適化し、未使用 import 警告を削減する。
+
+## 言語間ランタイム平準化 TODO
+
+- [ ] C++ のみ対応になっている `math` 拡張関数（`tan`, `log`, `log10`, `fabs`, `ceil`, `pow` など）を、Rust / C# / JS / TS / Go / Java / Swift / Kotlin の各ランタイムにも同等実装する。
+- [ ] C++ のみ実装が進んでいる `pathlib` 相当機能を、他ターゲット言語にも同一 API で実装する（`Path` の生成・結合・存在確認・文字列化など）。
+- [ ] 上記の平準化後、`docs/pytra-readme.md` の「対応module」を言語別の対応関数一覧で更新し、差分がある場合は理由を明記する。
+- [ ] `test/py` に `math` / `pathlib` の共通回帰テストを追加し、全ターゲット言語で同一期待値を満たすことを CI 相当手順で確認する。
