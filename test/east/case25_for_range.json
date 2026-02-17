@@ -125,6 +125,7 @@
               "casts": [],
               "repr": "1"
             },
+            "range_mode": "ascending",
             "body": [
               {
                 "kind": "AugAssign",

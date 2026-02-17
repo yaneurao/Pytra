@@ -374,6 +374,7 @@ class EastBuilder:
             rng = self._parse_range_iter(stmt.iter)
             if rng is not None:
                 start_node, stop_node, step_node = rng
+                range_mode = self._range_mode_from_step(step_node, stmt)
                 if isinstance(stmt.target, ast.Name):
                     self._bind_name_type(stmt.target.id, "int", stmt)
                 return {
@@ -383,6 +384,7 @@ class EastBuilder:
                     "start": self._expr(start_node),
                     "stop": self._expr(stop_node),
                     "step": self._expr(step_node),
+                    "range_mode": range_mode,
                     "body": [self._stmt(s) for s in stmt.body],
                     "orelse": [self._stmt(s) for s in stmt.orelse],
                 }
@@ -824,6 +826,20 @@ class EastBuilder:
             return expr.args[0], expr.args[1], expr.args[2]
         raise self._error("unsupported_syntax", "range() accepts 1..3 positional args", expr, "Use range(stop), range(start, stop), or range(start, stop, step).")
 
+    def _range_mode_from_step(self, step_node: ast.expr, node_for_error: ast.AST) -> str:
+        """Return range mode: 'ascending' | 'descending' | 'dynamic'."""
+        if isinstance(step_node, ast.Constant) and isinstance(step_node.value, int):
+            if step_node.value == 0:
+                raise self._error("semantic_conflict", "range() step must not be zero", node_for_error, "Use non-zero step in range().")
+            return "ascending" if step_node.value > 0 else "descending"
+        if isinstance(step_node, ast.UnaryOp) and isinstance(step_node.op, ast.USub):
+            if isinstance(step_node.operand, ast.Constant) and isinstance(step_node.operand.value, int):
+                val = -step_node.operand.value
+                if val == 0:
+                    raise self._error("semantic_conflict", "range() step must not be zero", node_for_error, "Use non-zero step in range().")
+                return "ascending" if val > 0 else "descending"
+        return "dynamic"
+
     def _renamed(self, name: str) -> str:
         return self.renamed_symbols.get(name, name)
 
@@ -968,8 +984,15 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
         start = _render_expr(stmt.get("start"))
         stop = _render_expr(stmt.get("stop"))
         step = _render_expr(stmt.get("step"))
+        mode = stmt.get("range_mode", "dynamic")
+        if mode == "ascending":
+            cond = f"({tgt}) < ({stop})"
+        elif mode == "descending":
+            cond = f"({tgt}) > ({stop})"
+        else:
+            cond = f"({step}) > 0 ? ({tgt}) < ({stop}) : ({tgt}) > ({stop})"
         out.append(f"// [{sp}]")
-        out.append(f"for (auto {tgt} = {start}; ({step}) > 0 ? ({tgt}) < ({stop}) : ({tgt}) > ({stop}); {tgt} += ({step})) {{")
+        out.append(f"for (auto {tgt} = {start}; {cond}; {tgt} += ({step})) {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
         out.append(("    " * level) + "}")
