@@ -12,7 +12,7 @@ float64 clamp01(float64 v) {
 }
 
 float64 hit_sphere(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, float64 dz, float64 cx, float64 cy, float64 cz, float64 r) {
-    /* レイと球の交差距離t（交差しない場合は-1）を返す。 */
+    // レイと球の交差距離t（交差しない場合は-1）を返す。
     float64 lx = ox - cx;
     float64 ly = oy - cy;
     float64 lz = oz - cz;
@@ -66,6 +66,7 @@ bytearray render(int64 width, int64 height, int64 aa) {
                     float64 dy = sy;
                     float64 dz = 1.0;
                     float64 inv_len = 1.0 / py_math::sqrt(dx * dx + dy * dy + dz * dz);
+                    
                     dx *= inv_len;
                     dy *= inv_len;
                     dz *= inv_len;
@@ -185,8 +186,10 @@ void run_raytrace() {
     
     float64 start = perf_counter();
     bytearray pixels = render(width, height, aa);
+    
     // bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png
     png_helper::write_rgb_png(out_path, width, height, pixels);
+    
     float64 elapsed = perf_counter() - start;
     
     py_print("output:", out_path);

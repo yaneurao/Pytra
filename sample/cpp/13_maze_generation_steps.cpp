@@ -40,11 +40,13 @@ void run_13_maze_generation_steps() {
         auto __tuple_1 = py_at(stack, -1);
         auto x = std::get<0>(__tuple_1);
         auto y = std::get<1>(__tuple_1);
+        
         list<std::tuple<int64, int64, int64, int64>> candidates = list<std::tuple<int64, int64, int64, int64>>{};
         for (int64 k = 0; k < 4; ++k) {
             auto __tuple_2 = dirs[k];
             auto dx = std::get<0>(__tuple_2);
             auto dy = std::get<1>(__tuple_2);
+            
             auto nx = x + dx;
             auto ny = y + dy;
             if ((nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (grid[ny][nx] == 1)) {
@@ -79,13 +81,16 @@ void run_13_maze_generation_steps() {
         
         if (step % capture_every == 0)
             frames.append(capture(grid, cell_w, cell_h, scale));
+        
         step++;
     }
     
     frames.append(capture(grid, cell_w, cell_h, scale));
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, cell_w * scale, cell_h * scale, frames, grayscale_palette(), 4, 0);
+    
     auto elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);

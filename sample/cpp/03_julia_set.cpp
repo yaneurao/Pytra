@@ -21,6 +21,7 @@ bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, fl
                     break;
                 zy = 2.0 * zx * zy + cy;
                 zx = zx2 - zy2 + cx;
+                
                 i++;
             }
             
@@ -55,8 +56,10 @@ void run_julia() {
     
     float64 start = perf_counter();
     bytearray pixels = render_julia(width, height, max_iter, -0.8, 0.156);
+    
     // bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png
     png_helper::write_rgb_png(out_path, width, height, pixels);
+    
     float64 elapsed = perf_counter() - start;
     
     py_print("output:", out_path);

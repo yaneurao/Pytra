@@ -122,25 +122,71 @@ class CppEmitter:
         trivia = stmt.get("leading_trivia")
         return isinstance(trivia, list) and len(trivia) > 0
 
+    def _stmt_layout_group(self, stmt: dict[str, Any]) -> str | None:
+        kind = str(stmt.get("kind", ""))
+        if kind == "AnnAssign":
+            return "decl"
+        if kind == "Assign":
+            if bool(stmt.get("declare", False)):
+                return "decl"
+            return "assign"
+        if kind in {"AugAssign", "Swap"}:
+            return "assign"
+        if kind == "Expr":
+            value = stmt.get("value")
+            if isinstance(value, dict) and value.get("kind") == "Call":
+                fn = value.get("func")
+                if isinstance(fn, dict):
+                    if fn.get("kind") == "Name" and str(fn.get("id", "")) in {"print", "save_gif", "write_rgb_png"}:
+                        return "io"
+                    if fn.get("kind") == "Attribute":
+                        owner = fn.get("value")
+                        owner_name = ""
+                        if isinstance(owner, dict) and owner.get("kind") == "Name":
+                            owner_name = str(owner.get("id", ""))
+                        attr = str(fn.get("attr", ""))
+                        if (owner_name == "png_helper" and attr == "write_rgb_png") or (
+                            owner_name == "gif_helper" and attr == "save_gif"
+                        ):
+                            return "io"
+            return "expr"
+        return None
+
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         prev_end: int | None = None
+        prev_group: str | None = None
         for stmt in stmts:
             start = self._stmt_start_line(stmt)
+            source_gap = False
             if (
                 prev_end is not None
                 and start is not None
                 and start > prev_end + 1
                 and not self._has_leading_trivia(stmt)
             ):
+                source_gap = True
                 for _ in range(start - prev_end - 1):
                     self.emit()
+            cur_group = self._stmt_layout_group(stmt)
+            if (
+                prev_group is not None
+                and cur_group is not None
+                and prev_group != cur_group
+                and prev_group in {"decl", "assign", "io"}
+                and cur_group in {"decl", "assign", "io"}
+                and not source_gap
+                and not self._has_leading_trivia(stmt)
+            ):
+                self.emit()
             self.emit_stmt(stmt)
             end = self._stmt_end_line(stmt)
             if end is not None:
                 prev_end = end
+            if cur_group is not None:
+                prev_group = cur_group
 
     def emit_block_comment(self, text: str) -> None:
-        """Emit C-style block comment for docstring-like standalone strings."""
+        """Emit line comments for docstring-like standalone strings."""
         normalized = text
         # Self-hosted parser can keep an extra quote pair for triple strings (e.g. ""text"").
         while (
@@ -160,15 +206,13 @@ class CppEmitter:
         safe = normalized.replace("*/", "* /")
         parts = safe.splitlines()
         if len(parts) == 0:
-            self.emit("/* */")
+            self.emit("//")
             return
-        if len(parts) == 1:
-            self.emit(f"/* {parts[0]} */")
-            return
-        self.emit("/*")
         for line in parts:
-            self.emit(line)
-        self.emit("*/")
+            if line == "":
+                self.emit("//")
+            else:
+                self.emit("// " + line)
 
     def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
         trivia = stmt.get("leading_trivia")

@@ -36,6 +36,7 @@ bytearray render_frame(int64 width, int64 height, float64 cr, float64 ci, int64 
                     break;
                 zy = 2.0 * zx * zy + ci;
                 zx = zx2 - zy2 + cr;
+                
                 i++;
             }
             if (i >= max_iter) {
@@ -45,6 +46,7 @@ bytearray render_frame(int64 width, int64 height, float64 cr, float64 ci, int64 
                 int64 color_index = 1 + (py_floordiv(i * 224, max_iter) + phase) % 255;
                 frame[idx] = color_index;
             }
+            
             idx++;
         }
     }
@@ -80,7 +82,9 @@ void run_06_julia_parameter_sweep() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, julia_palette(), 8, 0);
+    
     auto elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

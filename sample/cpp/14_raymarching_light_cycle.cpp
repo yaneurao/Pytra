@@ -54,6 +54,7 @@ void run_14_raymarching_light_cycle() {
             for (int64 x = 0; x < w; ++x) {
                 float64 px = static_cast<float64>(x) / (static_cast<float64>(w - 1)) * 2.0 - 1.0;
                 frame[i] = scene(px, py, light_x, light_y);
+                
                 i++;
             }
         }
@@ -63,7 +64,9 @@ void run_14_raymarching_light_cycle() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, palette(), 3, 0);
+    
     auto elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

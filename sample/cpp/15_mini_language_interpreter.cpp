@@ -170,6 +170,7 @@ struct Parser {
             throw std::runtime_error("parse error at pos=" + py_to_string(t.pos) + ", expected=" + kind + ", got=" + t.kind);
         }
         Token token = this->tokens[this->pos];
+        
         this->pos++;
         return token;
     }
@@ -339,6 +340,7 @@ int64 execute(const list<StmtNode>& stmts, const list<ExprNode>& expr_nodes, boo
         if (norm < 0)
             norm += 1000000007;
         checksum = (checksum * 131 + norm) % 1000000007;
+        
         printed++;
     }
     
@@ -384,6 +386,7 @@ void run_demo() {
     Parser parser = Parser(tokens);
     list<StmtNode> stmts = parser.parse_program();
     int64 checksum = execute(stmts, parser.expr_nodes, true);
+    
     py_print("demo_checksum:", checksum);
 }
 

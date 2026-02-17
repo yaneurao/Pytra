@@ -4,7 +4,7 @@
 // 将来のトランスパイルを意識して、構文はなるべく素直に書いています。
 
 int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
-    /* 1点 (cx, cy) の発散までの反復回数を返す。 */
+    // 1点 (cx, cy) の発散までの反復回数を返す。
     float64 x = 0.0;
     float64 y = 0.0;
     for (int64 i = 0; i < max_iter; ++i) {
@@ -19,7 +19,7 @@ int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
 }
 
 std::tuple<int64, int64, int64> color_map(int64 iter_count, int64 max_iter) {
-    /* 反復回数を RGB に変換する。 */
+    // 反復回数を RGB に変換する。
     if (iter_count >= max_iter)
         return std::make_tuple(0, 0, 0);
     
@@ -32,7 +32,7 @@ std::tuple<int64, int64, int64> color_map(int64 iter_count, int64 max_iter) {
 }
 
 bytearray render_mandelbrot(int64 width, int64 height, int64 max_iter, float64 x_min, float64 x_max, float64 y_min, float64 y_max) {
-    /* マンデルブロ画像の RGB バイト列を生成する。 */
+    // マンデルブロ画像の RGB バイト列を生成する。
     bytearray pixels = bytearray{};
     
     for (int64 y = 0; y < height; ++y) {
@@ -72,10 +72,12 @@ void run_mandelbrot() {
     float64 start = perf_counter();
     
     bytearray pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
+    
     // bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png
     png_helper::write_rgb_png(out_path, width, height, pixels);
     
     float64 elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("size:", width, "x", height);
     py_print("max_iter:", max_iter);

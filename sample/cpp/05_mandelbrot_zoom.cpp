@@ -19,9 +19,11 @@ bytearray render_frame(int64 width, int64 height, float64 center_x, float64 cent
                     break;
                 zy = 2.0 * zx * zy + cy;
                 zx = zx2 - zy2 + cx;
+                
                 i++;
             }
             frame[idx] = int64(255.0 * static_cast<float64>(i) / static_cast<float64>(max_iter));
+            
             idx++;
         }
     }
@@ -49,7 +51,9 @@ void run_05_mandelbrot_zoom() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0);
+    
     auto elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("frames:", frame_count);
     py_print("elapsed_sec:", elapsed);

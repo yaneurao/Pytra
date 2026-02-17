@@ -13,6 +13,7 @@ list<list<int64>> next_state(const list<list<int64>>& grid, int64 w, int64 h) {
                     if ((dx != 0) || (dy != 0)) {
                         int64 nx = (x + dx + w) % w;
                         int64 ny = (y + dy + h) % h;
+                        
                         cnt += grid[ny][nx];
                     }
                 }
@@ -124,7 +125,9 @@ void run_07_game_of_life_loop() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w * cell, h * cell, frames, grayscale_palette(), 4, 0);
+    
     auto elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("frames:", steps);
     py_print("elapsed_sec:", elapsed);

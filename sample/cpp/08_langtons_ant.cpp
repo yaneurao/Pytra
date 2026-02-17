@@ -8,6 +8,7 @@ bytearray capture(const list<list<int64>>& grid, int64 w, int64 h) {
     for (int64 y = 0; y < h; ++y) {
         for (int64 x = 0; x < w; ++x) {
             frame[i] = (grid[y][x] ? 255 : 0);
+            
             i++;
         }
     }
@@ -64,7 +65,9 @@ void run_08_langtons_ant() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, grayscale_palette(), 5, 0);
+    
     auto elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);

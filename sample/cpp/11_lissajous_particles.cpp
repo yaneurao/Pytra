@@ -57,7 +57,9 @@ void run_11_lissajous_particles() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, color_palette(), 3, 0);
+    
     auto elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

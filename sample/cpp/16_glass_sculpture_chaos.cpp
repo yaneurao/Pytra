@@ -53,6 +53,7 @@ std::tuple<float64, float64, float64> sky_color(float64 dx, float64 dy, float64 
     float64 g = 0.1 + 0.25 * t;
     float64 b = 0.16 + 0.45 * t;
     auto band = 0.5 + 0.5 * py_math::sin(8.0 * dx + 6.0 * dz + tphase);
+    
     r += 0.08 * band;
     g += 0.05 * band;
     b += 0.12 * band;
@@ -290,6 +291,7 @@ bytearray render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n
                     spec = spec * spec;
                     spec = spec * spec;
                     float64 glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
+                    
                     r += 0.2 * ndotl + 0.8 * spec + 0.45 * glow;
                     g += 0.18 * ndotl + 0.6 * spec + 0.35 * glow;
                     b += 0.26 * ndotl + 1.0 * spec + 0.65 * glow;
@@ -318,6 +320,7 @@ bytearray render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n
             g = py_math::sqrt(clamp01(g));
             b = py_math::sqrt(clamp01(b));
             frame[i] = quantize_332(r, g, b);
+            
             i++;
         }
     }
@@ -338,7 +341,9 @@ void run_16_glass_sculpture_chaos() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, palette_332(), 6, 0);
+    
     auto elapsed = perf_counter() - start;
+    
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);
