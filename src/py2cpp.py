@@ -1,1622 +1,1152 @@
-# このファイルは `src/py2cpp.py` の実装コードです。
-# Python AST から C++ コードを生成するためのトランスパイラ本体を定義します。
-# 変更時は既存仕様との整合性と、生成コードのコンパイル可否を確認してください。
+#!/usr/bin/env python3
+"""EAST -> C++ transpiler.
+
+This tool transpiles Pytra EAST JSON into C++ source.
+It can also accept a Python source file and internally run src/common/east.py conversion.
+"""
 
 from __future__ import annotations
 
 import argparse
-import ast
+import json
 from pathlib import Path
 import sys
-from typing import List, Set
+from typing import Any
 
-try:
-    from common.base_transpiler import BaseTranspiler, TranspileError
-    from common.transpile_shared import INT32_MAX, INT32_MIN, Scope
-except ModuleNotFoundError:
-    from src.common.base_transpiler import BaseTranspiler, TranspileError
-    from src.common.transpile_shared import INT32_MAX, INT32_MIN, Scope
+from common.east import EastBuildError, convert_path
 
 
-# Python 基本型名から C++ 基本型名への変換テーブル。
-CPP_PRIMITIVE_TYPES = {
-    # Python 標準の int は C++ では long long へ寄せる（実装方針）。
-    "int": "long long",
-    "int8": "int8_t",
-    "uint8": "uint8_t",
-    "int16": "int16_t",
-    "uint16": "uint16_t",
-    "int32": "int32_t",
-    "uint32": "uint32_t",
-    "int64": "int64_t",
-    "uint64": "uint64_t",
-    "float": "double",
-    "float32": "float",
-    "str": "string",
-    "bool": "bool",
-    "None": "void",
+CPP_HEADER = """#include <algorithm>
+#include "cpp_module/py_runtime.h"
+
+"""
+
+
+BIN_OPS = {
+    "Add": "+",
+    "Sub": "-",
+    "Mult": "*",
+    "Div": "/",
+    "FloorDiv": "/",
+    "Mod": "%",
+    "BitAnd": "&",
+    "BitOr": "|",
+    "BitXor": "^",
+    "LShift": "<<",
+    "RShift": ">>",
+}
+
+CMP_OPS = {
+    "Eq": "==",
+    "NotEq": "!=",
+    "Lt": "<",
+    "LtE": "<=",
+    "Gt": ">",
+    "GtE": ">=",
+    "In": "/* in */",
+    "NotIn": "/* not in */",
+    "Is": "==",
+    "IsNot": "!=",
+}
+
+AUG_OPS = {
+    "Add": "+=",
+    "Sub": "-=",
+    "Mult": "*=",
+    "Div": "/=",
+    "FloorDiv": "/=",
+    "Mod": "%=",
+    "BitAnd": "&=",
+    "BitOr": "|=",
+    "BitXor": "^=",
+    "LShift": "<<=",
+    "RShift": ">>=",
+}
+
+AUG_BIN = {
+    "Add": "+",
+    "Sub": "-",
+    "Mult": "*",
+    "Div": "/",
+    "FloorDiv": "//",
+    "Mod": "%",
+    "BitAnd": "&",
+    "BitOr": "|",
+    "BitXor": "^",
+    "LShift": "<<",
+    "RShift": ">>",
 }
 
 
-class CppTranspiler(BaseTranspiler):
-    """Python AST を C++ ソースコードへ変換する本体クラス。"""
-
-    def __init__(self) -> None:
-        """変換時に使う内部状態を初期化する。"""
-        super().__init__(temp_prefix="__pytra")
-        self.class_names: Set[str] = set()
-        self.exception_class_names: Set[str] = set()
-        self.current_class_name: str = ""
-        self.current_static_fields: Set[str] = set()
-        self.global_function_renames: dict[str, str] = {}
-        self.wide_int_functions: Set[str] = set()
-        self.force_long_int: bool = False
-        self.path_like_names: Set[str] = set()
-
-    def transpile_file(self, input_path: Path, output_path: Path) -> None:
-        """1ファイルを読み込み、C++へ変換して出力する。
-
-        Args:
-            input_path: 変換元 Python ファイルのパス。
-            output_path: 変換後 C++ ファイルの出力先パス。
-        """
-        source = input_path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(input_path))
-        cpp = self.transpile_module(tree)
-        output_path.write_text(cpp, encoding="utf-8")
-
-    def transpile_module(self, module: ast.Module) -> str:
-        """モジュールASTをC++コード文字列へ変換する。
-
-        Args:
-            module: Python AST の Module ノード。
-
-        Returns:
-            変換後の C++ ソースコード全文。
-        """
-        function_defs: List[str] = []
-        class_defs: List[str] = []
-        top_level_body: List[ast.stmt] = []
-        self.path_like_names = set()
-        include_lines: Set[str] = {
-            "#include <algorithm>",
-            "#include <any>",
-            "#include <cstdint>",
-            "#include <fstream>",
-            "#include <ios>",
-            "#include <iostream>",
-            "#include <string>",
-            "#include <vector>",
-            "#include <unordered_map>",
-            "#include <unordered_set>",
-            "#include <tuple>",
-            "#include <sstream>",
-            "#include <stdexcept>",
-            "#include <type_traits>",
-            '#include "cpp_module/gc.h"',
-            '#include "cpp_module/py_runtime.h"',
+class CppEmitter:
+    def __init__(self, east_doc: dict[str, Any]) -> None:
+        self.doc = east_doc
+        self.lines: list[str] = []
+        self.indent = 0
+        self.tmp_id = 0
+        self.renamed_symbols: dict[str, str] = {
+            str(k): str(v) for k, v in self.doc.get("renamed_symbols", {}).items()
         }
-        self.class_names = set()
-        self.exception_class_names = set()
-        for stmt in module.body:
-            if isinstance(stmt, ast.ClassDef):
-                self.class_names.add(stmt.name)
-                if len(stmt.bases) > 0 and isinstance(stmt.bases[0], ast.Name) and stmt.bases[0].id == "Exception":
-                    self.exception_class_names.add(stmt.name)
-
-        self.global_function_renames = {}
-        has_top_level_main = any(
-            isinstance(stmt, ast.FunctionDef) and stmt.name == "main" for stmt in module.body
-        )
-        if has_top_level_main:
-            self.global_function_renames["main"] = "py_main"
-        module_functions = [
-            stmt for stmt in module.body if isinstance(stmt, ast.FunctionDef)
-        ]
-        self.wide_int_functions = self._compute_wide_int_functions(module_functions)
-
-        for stmt in module.body:
-            if isinstance(stmt, ast.FunctionDef):
-                function_defs.append(self.transpile_function(stmt, False))
-            elif isinstance(stmt, ast.ClassDef):
-                class_defs.append(self.transpile_class(stmt))
-            elif isinstance(stmt, (ast.Import, ast.ImportFrom)):
-                include_lines = include_lines.union(self._includes_from_import(stmt))
-            else:
-                top_level_body.append(stmt)
-
-        main_stmts: List[ast.stmt] = []
-        for stmt in top_level_body:
-            if self._is_main_guard(stmt):
-                main_stmts.extend(stmt.body)
-            else:
-                main_stmts.append(stmt)
-
-        main_func = self.transpile_main(main_stmts, "main")
-
-        parts = sorted(include_lines)
-        parts.append("")
-        parts.append("using namespace std;")
-        parts.append("using namespace pycs::gc;")
-        parts.append("")
-
-        for cls in class_defs:
-            parts.extend(cls.splitlines())
-            parts.append("")
-
-        for fn in function_defs:
-            parts.extend(fn.splitlines())
-            parts.append("")
-
-        parts.extend(main_func.splitlines())
-        parts.append("")
-        return "\n".join(parts)
-
-    def _includes_from_import(self, stmt: ast.stmt) -> Set[str]:
-        """import文から必要な C++ include を推定する。
-
-        Args:
-            stmt: ast.Import または ast.ImportFrom ノード。
-
-        Returns:
-            追加すべき include 行の集合。
-        """
-        includes: Set[str] = set()
-        modules: List[str] = []
-        from_import_names: List[str] = []
-        if isinstance(stmt, ast.Import):
-            for alias in stmt.names:
-                modules.append(alias.name)
-        elif isinstance(stmt, ast.ImportFrom):
-            if stmt.module:
-                modules.append(stmt.module)
-            for alias in stmt.names:
-                from_import_names.append(alias.name)
-
-        for mod in modules:
-            if mod == "math":
-                includes.add('#include "cpp_module/math.h"')
-            elif mod == "ast":
-                includes.add('#include "cpp_module/ast.h"')
-            elif mod == "time":
-                includes.add('#include "cpp_module/time.h"')
-            elif mod == "pathlib":
-                includes.add('#include "cpp_module/pathlib.h"')
-            elif mod == "png_helper":
-                includes.add('#include "cpp_module/png.h"')
-            elif mod == "py_module":
-                if "png_helper" in from_import_names:
-                    includes.add('#include "cpp_module/png.h"')
-            elif mod == "py_module.gif_helper":
-                includes.add('#include "cpp_module/gif.h"')
-            elif mod == "typing":
-                includes.add("#include <any>")
-            elif mod == "dataclasses":
-                includes.add('#include "cpp_module/dataclasses.h"')
-        return includes
-
-    def transpile_class(self, cls: ast.ClassDef) -> str:
-        """Python class を C++ class 定義へ変換する。
-
-        Args:
-            cls: 変換対象の ClassDef ノード。
-
-        Returns:
-            C++ class 定義文字列。
-        """
-        if len(cls.bases) > 1:
-            raise TranspileError(f"Class '{cls.name}' multiple inheritance is not supported")
-
-        base: str = " : public pycs::gc::PyObj"
-        if len(cls.bases) > 0:
-            if not isinstance(cls.bases[0], ast.Name):
-                raise TranspileError(f"Class '{cls.name}' base class must be a simple name")
-            if cls.bases[0].id == "Exception":
-                base = " : public std::exception"
-            else:
-                base = f" : public {cls.bases[0].id}"
-
-        is_dataclass = self._is_dataclass_class(cls)
-        static_fields: List[str] = []
-        dataclass_fields: List[tuple[str, str, bool, str]] = []
-        static_field_names: Set[str] = set()
-        methods: List[ast.FunctionDef] = []
-
-        for stmt in cls.body:
-            if isinstance(stmt, ast.FunctionDef):
-                methods.append(stmt)
-            elif isinstance(stmt, ast.AnnAssign):
-                if is_dataclass:
-                    dataclass_fields.append(self._transpile_dataclass_field(stmt))
-                else:
-                    field_line, field_name = self._transpile_class_static_field(stmt)
-                    static_fields.append(field_line)
-                    static_field_names.add(field_name)
-            elif isinstance(stmt, ast.Assign):
-                field_line, field_name = self._transpile_class_static_assign(stmt)
-                static_fields.append(field_line)
-                static_field_names.add(field_name)
-            elif (
-                isinstance(stmt, ast.Expr)
-                and isinstance(stmt.value, ast.Constant)
-                and isinstance(stmt.value.value, str)
-            ):
-                # class docstring
-                continue
-            elif isinstance(stmt, ast.Pass):
-                continue
-            else:
-                raise TranspileError(f"Unsupported class member in '{cls.name}'")
-
-        instance_fields = self._collect_instance_fields(cls, static_field_names)
-        has_init = False
-        for method in methods:
-            if method.name == "__init__":
-                has_init = True
-                break
-
-        lines: List[str] = [f"class {cls.name}{base}", "{", "public:"]
-
-        for static_field in static_fields:
-            lines.extend(self._indent_block([static_field]))
-        for field_type, field_name, has_default, default_value in dataclass_fields:
-            if not has_default:
-                lines.extend(self._indent_block([f"{field_type} {field_name};"]))
-            else:
-                lines.extend(self._indent_block([f"{field_type} {field_name} = {default_value};"]))
-        for _, field_type, field_name in instance_fields:
-            lines.extend(self._indent_block([f"{field_type} {field_name};"]))
-
-        if is_dataclass and len(dataclass_fields) > 0 and not has_init:
-            ctor_params: List[str] = []
-            ctor_body: List[str] = []
-            for field_type, field_name, has_default, default_value in dataclass_fields:
-                if not has_default:
-                    ctor_params.append(f"{field_type} {field_name}")
-                else:
-                    ctor_params.append(f"{field_type} {field_name} = {default_value}")
-                ctor_body.append(f"this->{field_name} = {field_name};")
-            lines.extend(self._indent_block([f"{cls.name}({', '.join(ctor_params)})"]))
-            lines.extend(self._indent_block(["{"]))
-            lines.extend(self._indent_block(self._indent_block(ctor_body)))
-            lines.extend(self._indent_block(["}"]))
-
-        prev_class_name = self.current_class_name
-        prev_static_fields = self.current_static_fields
-        self.current_class_name = cls.name
-        self.current_static_fields = static_field_names
-        for method in methods:
-            lines.extend(self._indent_block(self.transpile_function(method, True).splitlines()))
-        self.current_class_name = prev_class_name
-        self.current_static_fields = prev_static_fields
-
-        lines.append("};")
-        return "\n".join(lines)
-
-    def _transpile_class_static_field(self, stmt: ast.stmt) -> tuple[str, str]:
-        """class本体の型付きメンバー宣言を static メンバーへ変換する。
-
-        Args:
-            stmt: クラス本体の AnnAssign ノード。
-
-        Returns:
-            (C++宣言行, フィールド名)
-        """
-        if not isinstance(stmt.target, ast.Name):
-            raise TranspileError("Class field declaration must be a simple name")
-
-        field_type = self._map_annotation(stmt.annotation)
-        field_name = stmt.target.id
-        if stmt.value is None:
-            return f"inline static {field_type} {field_name};", field_name
-        return f"inline static {field_type} {field_name} = {self.transpile_expr(stmt.value)};", field_name
-
-    def _transpile_dataclass_field(self, stmt: ast.stmt) -> tuple[str, str, bool, str]:
-        """dataclass フィールド宣言を C++ メンバー情報へ変換する。
-
-        Args:
-            stmt: dataclass 内の AnnAssign ノード。
-
-        Returns:
-            (型名, フィールド名, 既定値有無, 既定値文字列)
-        """
-        if not isinstance(stmt.target, ast.Name):
-            raise TranspileError("Dataclass field declaration must be a simple name")
-        field_type = self._map_annotation(stmt.annotation)
-        field_name = stmt.target.id
-        if stmt.value is None:
-            return field_type, field_name, False, ""
-        return field_type, field_name, True, self.transpile_expr(stmt.value)
-
-    def _transpile_class_static_assign(self, stmt: ast.stmt) -> tuple[str, str]:
-        """class本体の代入を static メンバー定義へ変換する。
-
-        Args:
-            stmt: クラス本体の Assign ノード。
-
-        Returns:
-            (C++宣言行, フィールド名)
-        """
-        if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
-            raise TranspileError("Class static assignment must be a simple name assignment")
-        field_name = stmt.targets[0].id
-        field_type = self._infer_expr_cpp_type(stmt.value)
-        if field_type == "":
-            field_type = "auto"
-        return f"inline static {field_type} {field_name} = {self.transpile_expr(stmt.value)};", field_name
-
-    def _collect_instance_fields(
-        self, cls: ast.stmt, static_field_names: Set[str]
-    ) -> List[tuple[str, str, str]]:
-        """__init__ からインスタンスフィールド候補を抽出する。
-
-        Args:
-            cls: 解析対象クラス。
-            static_field_names: static 扱い済みフィールド名の集合。
-
-        Returns:
-            (クラス名, 型名, フィールド名) の一覧。
-        """
-        fields: List[tuple[str, str, str]] = []
-        seen: Set[str] = set()
-
-        for stmt in cls.body:
-            if isinstance(stmt, ast.FunctionDef):
-                init_fn = stmt
-                if init_fn.name != "__init__":
-                    continue
-                arg_types: dict[str, str] = {}
-                idx = 0
-                for arg in init_fn.args.args:
-                    if idx == 0 and arg.arg == "self":
-                        idx = idx + 1
-                        continue
-                    if arg.annotation is not None:
-                        arg_types[arg.arg] = self._map_annotation(arg.annotation)
-                    idx = idx + 1
-
-                for init_stmt in init_fn.body:
-                    field_name: str = ""
-                    field_type: str = ""
-                    if isinstance(init_stmt, ast.AnnAssign):
-                        target_expr = init_stmt.target
-                        if isinstance(target_expr, ast.Attribute):
-                            attr_target = target_expr
-                            if isinstance(attr_target.value, ast.Name) and attr_target.value.id == "self":
-                                field_name = attr_target.attr
-                                field_type = self._map_annotation(init_stmt.annotation)
-                    elif isinstance(init_stmt, ast.Assign):
-                        if len(init_stmt.targets) == 1:
-                            target_expr = init_stmt.targets[0]
-                            if not isinstance(target_expr, ast.Attribute):
-                                continue
-                            attr_target = target_expr
-                            if isinstance(attr_target.value, ast.Name) and attr_target.value.id == "self":
-                                field_name = attr_target.attr
-                                field_type = self._infer_type(init_stmt.value, arg_types)
-
-                    if field_name == "" or field_type == "":
-                        continue
-                    if field_name in static_field_names:
-                        continue
-                    if field_name in seen:
-                        continue
-                    seen.add(field_name)
-                    fields.append((cls.name, field_type, field_name))
-                return fields
-
-        return fields
-
-    def _infer_type(self, expr: ast.expr, arg_types: dict[str, str]) -> str:
-        """式から C++ 型を推定する。
-
-        Args:
-            expr: 推定対象の式ノード。
-            arg_types: 引数名 -> 型名の対応表。
-        """
-        if isinstance(expr, ast.Name):
-            if expr.id in arg_types:
-                return arg_types[expr.id]
-            return ""
-        if isinstance(expr, ast.Constant):
-            return self._infer_expr_cpp_type(expr)
-        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
-            if expr.func.id in self.class_names:
-                return f"pycs::gc::RcHandle<{expr.func.id}>"
-        return ""
-
-    def _infer_expr_cpp_type(self, expr: ast.expr) -> str:
-        """リテラル式から C++ 基本型を推定する。"""
-        def merge_types(types: List[str], fallback: str = "auto") -> str:
-            if len(types) == 0:
-                return fallback
-            first = types[0]
-            if all(t == first for t in types):
-                return first
-            number_types = {"int", "long long", "double"}
-            if all(t in number_types for t in types):
-                return "double"
-            return fallback
-
-        if isinstance(expr, ast.Constant):
-            if isinstance(expr.value, bool):
-                return "bool"
-            if isinstance(expr.value, int):
-                return "long long"
-            if isinstance(expr.value, float):
-                return "double"
-            if isinstance(expr.value, str):
-                return "string"
-            return ""
-        if isinstance(expr, ast.List):
-            item_types: List[str] = []
-            for item in expr.elts:
-                t = self._infer_expr_cpp_type(item)
-                if t != "":
-                    item_types.append(t)
-            inner = merge_types(item_types, "long long")
-            return f"vector<{inner}>"
-        if isinstance(expr, ast.Set):
-            item_types = []
-            for item in expr.elts:
-                t = self._infer_expr_cpp_type(item)
-                if t != "":
-                    item_types.append(t)
-            inner = merge_types(item_types, "long long")
-            return f"unordered_set<{inner}>"
-        if isinstance(expr, ast.Dict):
-            key_types: List[str] = []
-            value_types: List[str] = []
-            for key, value in zip(expr.keys, expr.values):
-                if key is None:
-                    continue
-                kt = self._infer_expr_cpp_type(key)
-                vt = self._infer_expr_cpp_type(value)
-                if kt != "":
-                    key_types.append(kt)
-                if vt != "":
-                    value_types.append(vt)
-            key_type = merge_types(key_types, "string")
-            val_type = merge_types(value_types, "long long")
-            return f"unordered_map<{key_type}, {val_type}>"
-        if isinstance(expr, ast.BinOp):
-            if isinstance(expr.op, ast.Div):
-                if self._is_path_like_expr(expr.left):
-                    return "Path"
-                return "double"
-            if isinstance(expr.op, ast.Pow):
-                return "double"
-            lt = self._infer_expr_cpp_type(expr.left)
-            rt = self._infer_expr_cpp_type(expr.right)
-            return merge_types([t for t in (lt, rt) if t != ""], "auto")
-        if isinstance(expr, ast.UnaryOp):
-            return self._infer_expr_cpp_type(expr.operand)
-        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
-            if expr.func.id == "Path":
-                return "Path"
-            if expr.func.id in {"len"}:
-                return "size_t"
-            if expr.func.id in {"int"}:
-                return "long long"
-            if expr.func.id in {"float"}:
-                return "double"
-            if expr.func.id in {"str"}:
-                return "string"
-            if expr.func.id in {"bytearray", "bytes"}:
-                return "vector<uint8_t>"
-        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute):
-            if (
-                isinstance(expr.func.value, ast.Name)
-                and expr.func.value.id == "pathlib"
-                and expr.func.attr == "Path"
-            ):
-                return "Path"
-        return ""
-
-    def transpile_function(self, fn: ast.FunctionDef, in_class: bool = False) -> str:
-        """関数/メソッド定義を C++ の関数定義へ変換する。
-
-        Args:
-            fn: 変換対象の FunctionDef ノード。
-            in_class: クラス内メソッドかどうか。
-        """
-        is_constructor = in_class and fn.name == "__init__"
-        prev_force_long_int = self.force_long_int
-        self.force_long_int = fn.name in self.wide_int_functions or self._requires_wide_int(fn)
-        try:
-            return_type = self._map_annotation(fn.returns)
-            params: List[str] = []
-            declared: Set[str] = set()
-
-            idx = 0
-            for arg in fn.args.args:
-                if in_class and idx == 0 and arg.arg == "self":
-                    declared.add("self")
-                    idx = idx + 1
-                    continue
-                mapped = self._map_annotation(arg.annotation)
-                if self._should_pass_by_const_ref(mapped) and not self._is_param_mutated(fn, arg.arg):
-                    params.append(f"const {mapped}& {arg.arg}")
-                else:
-                    params.append(f"{mapped} {arg.arg}")
-                declared.add(arg.arg)
-                idx = idx + 1
-
-            body_lines = self.transpile_statements(fn.body, Scope(declared=declared))
-            if is_constructor:
-                if self.current_class_name == "":
-                    raise TranspileError("Constructor conversion requires class context")
-                if return_type != "void":
-                    raise TranspileError("__init__ return type must be None")
-                lines: List[str] = [f"{self.current_class_name}({', '.join(params)})", "{"]
-                lines.extend(self._indent_block(body_lines))
-                lines.append("}")
-                return "\n".join(lines)
-
-            fn_name = fn.name
-            if not in_class and fn_name in self.global_function_renames:
-                fn_name = self.global_function_renames[fn_name]
-            lines: List[str] = [f"{return_type} {fn_name}({', '.join(params)})", "{"]
-            lines.extend(self._indent_block(body_lines))
-            lines.append("}")
-            return "\n".join(lines)
-        finally:
-            self.force_long_int = prev_force_long_int
-
-    def _should_pass_by_const_ref(self, cpp_type: str) -> bool:
-        """コピーコストが高い型を const 参照渡しにするか判定する。"""
-        if cpp_type == "string":
-            return True
-        heavy_prefixes = ("vector<", "unordered_set<", "unordered_map<", "tuple<")
-        for prefix in heavy_prefixes:
-            if cpp_type.startswith(prefix):
-                return True
-        return False
-
-    def _is_param_mutated(self, fn: ast.FunctionDef, param_name: str) -> bool:
-        """関数内で引数が直接変更されるかを判定する。"""
-        mutating_methods = {
-            "append",
-            "extend",
-            "clear",
-            "insert",
-            "pop",
-            "remove",
-            "sort",
-            "reverse",
-            "update",
-            "add",
-            "discard",
-            "setdefault",
-        }
-
-        for node in ast.walk(fn):
-            if isinstance(node, ast.Assign):
-                for t in node.targets:
-                    if self._is_write_target_of_param(t, param_name):
-                        return True
-            elif isinstance(node, ast.AnnAssign):
-                if self._is_write_target_of_param(node.target, param_name):
-                    return True
-            elif isinstance(node, ast.AugAssign):
-                if self._is_write_target_of_param(node.target, param_name):
-                    return True
-            elif isinstance(node, ast.Delete):
-                for t in node.targets:
-                    if self._is_write_target_of_param(t, param_name):
-                        return True
-            elif isinstance(node, ast.For):
-                if self._contains_name(node.target, param_name):
-                    return True
-            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-                if isinstance(node.func.value, ast.Name) and node.func.value.id == param_name:
-                    if node.func.attr in mutating_methods:
-                        return True
-        return False
-
-    def _is_write_target_of_param(self, target: ast.expr, param_name: str) -> bool:
-        """代入先が引数自身またはその要素/属性かを判定する。"""
-        if isinstance(target, ast.Name):
-            return target.id == param_name
-        if isinstance(target, ast.Attribute):
-            return self._root_name(target) == param_name
-        if isinstance(target, ast.Subscript):
-            return self._root_name(target.value) == param_name
-        if isinstance(target, (ast.Tuple, ast.List)):
-            for elt in target.elts:
-                if self._is_write_target_of_param(elt, param_name):
-                    return True
-        return False
-
-    def _root_name(self, expr: ast.expr) -> str:
-        """属性/添字式の最も根の Name を返す。"""
-        cur = expr
-        while True:
-            if isinstance(cur, ast.Name):
-                return cur.id
-            if isinstance(cur, ast.Attribute):
-                cur = cur.value
-                continue
-            if isinstance(cur, ast.Subscript):
-                cur = cur.value
-                continue
-            return ""
-
-    def _contains_name(self, expr: ast.expr, name: str) -> bool:
-        """式に指定名が含まれるかを判定する。"""
-        for node in ast.walk(expr):
-            if isinstance(node, ast.Name) and node.id == name:
-                return True
-        return False
-
-    def transpile_main(self, body: List[ast.stmt], entry_name: str = "main") -> str:
-        """トップレベル文を C++ の main 関数へ変換する。"""
-        lines: List[str] = [f"int {entry_name}()", "{"]
-        body_lines = self.transpile_statements(body, Scope(declared=set()))
-        lines.extend(self._indent_block(body_lines))
-        lines.extend(self._indent_block(["return 0;"]))
-        lines.append("}")
-        return "\n".join(lines)
-
-    def transpile_statements(self, stmts: List[ast.stmt], scope: Scope) -> List[str]:
-        """文ノード列を C++ 文へ変換するディスパッチャ。"""
-        lines: List[str] = []
-
-        for stmt in stmts:
-            if isinstance(stmt, (ast.Import, ast.ImportFrom)):
-                continue
-            if (
-                isinstance(stmt, ast.Expr)
-                and isinstance(stmt.value, ast.Constant)
-                and isinstance(stmt.value.value, str)
-            ):
-                # docstring を実行文としては出力しない
-                continue
-            if isinstance(stmt, ast.Return):
-                if stmt.value is None:
-                    lines.append("return;")
-                else:
-                    lines.append(f"return {self.transpile_expr(stmt.value)};")
-            elif isinstance(stmt, ast.Expr):
-                expr = self.transpile_expr(stmt.value)
-                lines.append(f"{expr};")
-            elif isinstance(stmt, ast.AnnAssign):
-                lines.extend(self._transpile_ann_assign(stmt, scope))
-            elif isinstance(stmt, ast.Assign):
-                lines.extend(self._transpile_assign(stmt, scope))
-            elif isinstance(stmt, ast.AugAssign):
-                lines.extend(self._transpile_aug_assign(stmt))
-            elif isinstance(stmt, ast.If):
-                lines.extend(self._transpile_if(stmt, scope))
-            elif isinstance(stmt, ast.For):
-                lines.extend(self._transpile_for(stmt, scope))
-            elif isinstance(stmt, ast.While):
-                lines.extend(self._transpile_while(stmt, scope))
-            elif isinstance(stmt, ast.Try):
-                lines.extend(self._transpile_try(stmt, scope))
-            elif isinstance(stmt, ast.Raise):
-                lines.extend(self._transpile_raise(stmt))
-            elif isinstance(stmt, ast.Break):
-                lines.append("break;")
-            elif isinstance(stmt, ast.Continue):
-                lines.append("continue;")
-            elif isinstance(stmt, ast.Pass):
-                continue
-            else:
-                raise TranspileError("Unsupported statement")
-
-        return lines
-
-    def _transpile_ann_assign(self, stmt: ast.stmt, scope: Scope) -> List[str]:
-        """型注釈付き代入文を C++ 宣言/代入へ変換する。"""
-        target_expr = stmt.target
-        if isinstance(target_expr, ast.Attribute):
-            attr_target = target_expr
-            if isinstance(attr_target.value, ast.Name) and attr_target.value.id == "self":
-                if stmt.value is None:
-                    raise TranspileError(
-                        "Annotated assignment to self attributes requires an initializer"
-                    )
-                return [f"{self.transpile_expr(attr_target)} = {self.transpile_expr(stmt.value)};"]
-            raise TranspileError("Annotated assignment to attributes is not supported")
-        if not isinstance(stmt.target, ast.Name):
-            raise TranspileError("Only simple annotated assignments are supported")
-
-        name = stmt.target.id
-        cpp_type = self._map_annotation(stmt.annotation)
-        if stmt.value is None:
-            scope.declared.add(name)
-            if cpp_type == "Path":
-                self.path_like_names.add(name)
-            return [f"{cpp_type} {name};"]
-        scope.declared.add(name)
-        if cpp_type == "Path" or (stmt.value is not None and self._is_path_like_expr(stmt.value)):
-            self.path_like_names.add(name)
-        return [f"{cpp_type} {name} = {self.transpile_expr(stmt.value)};"]
-
-    def _transpile_assign(self, stmt: ast.stmt, scope: Scope) -> List[str]:
-        """通常の代入文を C++ 代入へ変換する。"""
-        if len(stmt.targets) != 1:
-            return ["// unsupported assignment"]
-        if isinstance(stmt.targets[0], ast.Tuple):
-            tuple_target = stmt.targets[0]
-            for elt in tuple_target.elts:
-                if not isinstance(elt, ast.Name):
-                    return ["// unsupported tuple assignment"]
-            tmp_name = self._new_temp("tuple")
-            lines: List[str] = [f"auto {tmp_name} = {self.transpile_expr(stmt.value)};"]
-            i = 0
-            for elt in tuple_target.elts:
-                name = elt.id
-                if name not in scope.declared:
-                    scope.declared.add(name)
-                    lines.append(f"auto {name} = std::get<{i}>({tmp_name});")
-                else:
-                    lines.append(f"{name} = std::get<{i}>({tmp_name});")
-                i = i + 1
-            return lines
-        if isinstance(stmt.targets[0], ast.Attribute):
-            target = self.transpile_expr(stmt.targets[0])
-            return [f"{target} = {self.transpile_expr(stmt.value)};"]
-        if isinstance(stmt.targets[0], ast.Subscript):
-            target = self.transpile_expr(stmt.targets[0])
-            return [f"{target} = {self.transpile_expr(stmt.value)};"]
-        if not isinstance(stmt.targets[0], ast.Name):
-            return ["// unsupported assignment"]
-
-        name = stmt.targets[0].id
-        if name not in scope.declared:
-            scope.declared.add(name)
-            inferred = self._infer_expr_cpp_type(stmt.value)
-            if inferred == "Path" or self._is_path_like_expr(stmt.value):
-                self.path_like_names.add(name)
-            if inferred != "" and inferred != "auto":
-                return [f"{inferred} {name} = {self.transpile_expr(stmt.value)};"]
-            return [f"auto {name} = {self.transpile_expr(stmt.value)};"]
-        if self._is_path_like_expr(stmt.value):
-            self.path_like_names.add(name)
-
-        return [f"{name} = {self.transpile_expr(stmt.value)};"]
-
-    def _transpile_aug_assign(self, stmt: ast.AugAssign) -> List[str]:
-        """拡張代入文を C++ の通常代入へ展開する。"""
-        target = self.transpile_expr(stmt.target)
-        value = self.transpile_expr(stmt.value)
-        if isinstance(stmt.op, ast.Pow):
-            return [f"{target} = py_pow({target}, {value});"]
-        if isinstance(stmt.op, ast.Div):
-            return [f"{target} = py_div({target}, {value});"]
-        if isinstance(stmt.op, ast.FloorDiv):
-            return [f"{target} = py_floordiv({target}, {value});"]
-        if isinstance(stmt.op, ast.Mod):
-            return [f"{target} = py_mod({target}, {value});"]
-        op = self._binop(stmt.op)
-        return [f"{target} = ({target} {op} {value});"]
-
-    def _transpile_for(self, stmt: ast.For, scope: Scope) -> List[str]:
-        """for 文を range-for 形式へ変換する。"""
-        tuple_names: List[str] = []
-        target_name: str = ""
-        if isinstance(stmt.target, ast.Name):
-            target_name = stmt.target.id
-        elif isinstance(stmt.target, ast.Tuple):
-            only_names = True
-            for elt in stmt.target.elts:
-                if not isinstance(elt, ast.Name):
-                    only_names = False
-                    break
-            if only_names:
-                target_name = "_for_item"
-                for elt in stmt.target.elts:
-                    tuple_names.append(elt.id)
-            else:
-                return ["// unsupported for-loop target"]
-        else:
-            return ["// unsupported for-loop target"]
-
-        lines: List[str] = []
-        body_scope = Scope(declared=set(scope.declared))
-        range_args = self._parse_range_args(stmt.iter)
-        if range_args is not None and len(tuple_names) == 0:
-            start_expr, stop_expr, step_expr = range_args
-            start_var = self._new_temp("range_start")
-            stop_var = self._new_temp("range_stop")
-            step_var = self._new_temp("range_step")
-            lines.append(f"auto {start_var} = {start_expr};")
-            lines.append(f"auto {stop_var} = {stop_expr};")
-            lines.append(f"auto {step_var} = {step_expr};")
-            lines.append(f"if ({step_var} == 0) throw std::runtime_error(\"range() arg 3 must not be zero\");")
-            if target_name != "_" and target_name in scope.declared:
-                init_part = f"{target_name} = {start_var}"
-            else:
-                init_part = f"auto {target_name} = {start_var}"
-                body_scope.declared.add(target_name)
-            lines.append(
-                f"for ({init_part}; "
-                f"({step_var} > 0) ? ({target_name} < {stop_var}) : ({target_name} > {stop_var}); "
-                f"{target_name} += {step_var})"
-            )
-            lines.append("{")
-        else:
-            lines.extend([f"for (const auto& {target_name} : {self.transpile_expr(stmt.iter)})", "{"])
-            body_scope.declared.add(target_name)
-
-        if len(tuple_names) > 0:
-            i = 0
-            for elt_name in tuple_names:
-                lines.extend(self._indent_block([f"auto {elt_name} = std::get<{i}>({target_name});"]))
-                body_scope.declared.add(elt_name)
-                i = i + 1
-        body_lines = self.transpile_statements(stmt.body, body_scope)
-        lines.extend(self._indent_block(body_lines))
-        lines.append("}")
-        if len(stmt.orelse) > 0:
-            lines.append("// for-else is not directly supported; else body emitted below")
-            lines.extend(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared))))
-        return lines
-
-    def _transpile_while(self, stmt: ast.While, scope: Scope) -> List[str]:
-        """while 文を C++ while 文へ変換する。"""
-        lines: List[str] = [f"while ({self.transpile_expr(stmt.test)})", "{"]
-        body_lines = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
-        lines.extend(self._indent_block(body_lines))
-        lines.append("}")
-        if len(stmt.orelse) > 0:
-            lines.append("// while-else is not directly supported; else body emitted below")
-            lines.extend(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared))))
-        return lines
-
-    def _transpile_try(self, stmt: ast.Try, scope: Scope) -> List[str]:
-        """try 文を C++ try/catch へ変換する。"""
-        lines: List[str] = ["try", "{"]
-        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))))
-        lines.append("}")
-
-        for handler in stmt.handlers:
-            ex_type: str = "std::exception"
-            if handler.type is not None:
-                if isinstance(handler.type, ast.Name) and handler.type.id == "Exception":
-                    ex_type = "std::exception"
-                else:
-                    ex_type = self.transpile_expr(handler.type)
-            ex_name: str = "ex"
-            if handler.name != "":
-                ex_name = handler.name
-            lines.append(f"catch (const {ex_type}& {ex_name})")
-            lines.append("{")
-            handler_declared = set(scope.declared)
-            handler_declared.add(ex_name)
-            handler_scope = Scope(declared=handler_declared)
-            lines.extend(self._indent_block(self.transpile_statements(handler.body, handler_scope)))
-            lines.append("}")
-
-        if len(stmt.finalbody) > 0:
-            lines.append("// finally is not directly supported in C++; emitted as plain block")
-            lines.append("{")
-            lines.extend(
-                self._indent_block(
-                    self.transpile_statements(stmt.finalbody, Scope(declared=set(scope.declared)))
-                )
-            )
-            lines.append("}")
-
-        if len(stmt.orelse) > 0:
-            lines.append("// try-else is not directly supported; else body emitted below")
-            lines.extend(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared))))
-
-        return lines
-
-    def _transpile_raise(self, stmt: ast.Raise) -> List[str]:
-        """raise 文を std::runtime_error の throw へ変換する。"""
-        if stmt.exc is None:
-            return ["throw;"]
-        if isinstance(stmt.exc, ast.Call) and len(stmt.exc.args) > 0:
-            return [f"throw std::runtime_error(py_to_string({self.transpile_expr(stmt.exc.args[0])}));"]
-        return [f"throw std::runtime_error(py_to_string({self.transpile_expr(stmt.exc)}));"]
-
-    def _transpile_if(self, stmt: ast.If, scope: Scope) -> List[str]:
-        """if 文を C++ if/else へ変換する。"""
-        cast_var: str = ""
-        cast_type: str = ""
-        if (
-            isinstance(stmt.test, ast.Call)
-            and isinstance(stmt.test.func, ast.Name)
-            and stmt.test.func.id == "isinstance"
-            and len(stmt.test.args) == 2
-            and isinstance(stmt.test.args[0], ast.Name)
-            and len(stmt.test.keywords) == 0
-        ):
-            cast_var = stmt.test.args[0].id
-            type_arg = stmt.test.args[1]
-            if isinstance(type_arg, ast.Attribute) and isinstance(type_arg.value, ast.Name):
-                cast_type = self.transpile_expr(type_arg)
-            elif isinstance(type_arg, ast.Name):
-                if type_arg.id in self.class_names:
-                    cast_type = type_arg.id
-
-        lines: List[str] = []
-        if cast_var != "" and cast_type != "":
-            lines.append(f"if (auto __cast_{cast_var} = py_cast<{cast_type}>({cast_var}))")
-            lines.append("{")
-        else:
-            lines.append(f"if ({self.transpile_expr(stmt.test)})")
-            lines.append("{")
-        then_lines: List[str] = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
-        if cast_var != "" and cast_type != "":
-            prefixed_then_lines: List[str] = [f"auto {cast_var} = __cast_{cast_var};"]
-            prefixed_then_lines.extend(then_lines)
-            then_lines = prefixed_then_lines
-        lines.extend(self._indent_block(then_lines))
-        lines.append("}")
-
-        if len(stmt.orelse) > 0:
-            lines.append("else")
-            lines.append("{")
-            else_lines = self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared)))
-            lines.extend(self._indent_block(else_lines))
-            lines.append("}")
-
-        return lines
-
-    def transpile_expr(self, expr: ast.expr) -> str:
-        """式ノードを C++ 式文字列へ変換する。"""
-        if isinstance(expr, ast.Name):
-            if expr.id == "self":
-                return "this"
-            if expr.id == "True":
-                return "true"
-            if expr.id == "False":
-                return "false"
-            return expr.id
-        if isinstance(expr, ast.Attribute):
-            if self._is_path_like_expr(expr.value):
-                base = self.transpile_expr(expr.value)
-                if expr.attr == "parent":
-                    return f"{base}->parent()"
-                if expr.attr == "name":
-                    return f"{base}->name()"
-                if expr.attr == "stem":
-                    return f"{base}->stem()"
-            if isinstance(expr.value, ast.Name) and expr.value.id == "ast":
-                return f"pycs::cpp_module::ast::{expr.attr}"
-            if isinstance(expr.value, ast.Name) and expr.value.id == "math":
-                return f"pycs::cpp_module::math::{expr.attr}"
-            if isinstance(expr.value, ast.Name) and expr.value.id == "time":
-                return f"pycs::cpp_module::{expr.attr}"
-            if isinstance(expr.value, ast.Name) and expr.value.id == "png_helper":
-                return f"pycs::cpp_module::png::{expr.attr}"
-            if (
-                isinstance(expr.value, ast.Name)
-                and expr.value.id == "self"
-                and self.current_class_name != ""
-                and expr.attr in self.current_static_fields
-            ):
-                return f"{self.current_class_name}::{expr.attr}"
-            if isinstance(expr.value, ast.Name) and expr.value.id == "self":
-                return f"this->{expr.attr}"
-            if isinstance(expr.value, ast.Name) and expr.value.id in self.class_names:
-                return f"{expr.value.id}::{expr.attr}"
-            return f"{self.transpile_expr(expr.value)}->{expr.attr}"
-        if isinstance(expr, ast.Constant):
-            return self._constant(expr.value)
-        if isinstance(expr, ast.List):
-            items: List[str] = []
-            for e in expr.elts:
-                items.append(self.transpile_expr(e))
-            return "{" + ", ".join(items) + "}"
-        if isinstance(expr, ast.Set):
-            items: List[str] = []
-            for e in expr.elts:
-                items.append(self.transpile_expr(e))
-            return "{" + ", ".join(items) + "}"
-        if isinstance(expr, ast.Tuple):
-            items: List[str] = []
-            for e in expr.elts:
-                items.append(self.transpile_expr(e))
-            return f"std::make_tuple({', '.join(items)})"
-        if isinstance(expr, ast.Dict):
-            entries: List[str] = []
-            for k, v in zip(expr.keys, expr.values):
-                if k is None:
-                    continue
-                entries.append(f"{{ {self.transpile_expr(k)}, {self.transpile_expr(v)} }}")
-            return "{" + ", ".join(entries) + "}"
-        if isinstance(expr, ast.BinOp):
-            left = self.transpile_expr(expr.left)
-            right = self.transpile_expr(expr.right)
-            if isinstance(expr.op, ast.Pow):
-                return f"py_pow({left}, {right})"
-            if isinstance(expr.op, ast.Div):
-                if self._is_path_like_expr(expr.left):
-                    return f"(({left}) / ({right}))"
-                return f"py_div({left}, {right})"
-            if isinstance(expr.op, ast.FloorDiv):
-                return f"py_floordiv({left}, {right})"
-            if isinstance(expr.op, ast.Mod):
-                return f"py_mod({left}, {right})"
-            return f"({left} {self._binop(expr.op)} {right})"
-        if isinstance(expr, ast.UnaryOp):
-            return f"({self._unaryop(expr.op)}{self.transpile_expr(expr.operand)})"
-        if isinstance(expr, ast.BoolOp):
-            op = self._boolop(expr.op)
-            values: List[str] = []
-            for v in expr.values:
-                values.append(self.transpile_expr(v))
-            return "(" + f" {op} ".join(values) + ")"
-        if isinstance(expr, ast.Compare):
-            if len(expr.ops) == 1 and len(expr.comparators) == 1:
-                return self._transpile_compare(expr.left, expr.ops[0], expr.comparators[0])
-            return self._transpile_chained_compare(expr)
-        if isinstance(expr, ast.Call):
-            return self._transpile_call(expr)
-        if isinstance(expr, ast.Subscript):
-            if isinstance(expr.slice, ast.Slice):
-                if expr.slice.step is not None:
-                    raise TranspileError("Slice step is not supported yet")
-                if expr.slice.lower is None or expr.slice.upper is None:
-                    raise TranspileError("Only slice form a[b:c] is supported")
-                has_start = "true"
-                start_expr = self.transpile_expr(expr.slice.lower)
-                has_stop = "true"
-                stop_expr = self.transpile_expr(expr.slice.upper)
-                return (
-                    f"py_slice({self.transpile_expr(expr.value)}, "
-                    f"{has_start}, {start_expr}, {has_stop}, {stop_expr})"
-                )
-            return f"py_get({self.transpile_expr(expr.value)}, {self.transpile_expr(expr.slice)})"
-        if isinstance(expr, ast.IfExp):
-            return (
-                f"({self.transpile_expr(expr.test)} ? {self.transpile_expr(expr.body)} : "
-                f"{self.transpile_expr(expr.orelse)})"
-            )
-        if isinstance(expr, ast.JoinedStr):
-            return self._transpile_joined_str(expr)
-        if isinstance(expr, ast.ListComp):
-            return self._transpile_list_comp(expr)
-        if isinstance(expr, ast.SetComp):
-            return self._transpile_set_comp(expr)
-        if isinstance(expr, ast.GeneratorExp):
-            return self._transpile_gen_comp(expr)
-        try:
-            return self._raw_expr_to_cpp(expr.as_text())
-        except Exception:
-            pass
-
-        raise TranspileError("Unsupported expression")
-
-    def _transpile_call(self, call: ast.expr) -> str:
-        """関数呼び出し式を C++ 呼び出し式へ変換する。"""
-        args_list: List[str] = []
-        for arg in call.args:
-            args_list.append(self.transpile_expr(arg))
-        for kw in call.keywords:
-            args_list.append(self.transpile_expr(kw.value))
-        args = ", ".join(args_list)
-
-        if isinstance(call.func, ast.Name) and call.func.id == "print":
-            if len(args_list) == 0:
-                return "py_print()"
-            return f"py_print({args})"
-        if isinstance(call.func, ast.Name) and call.func.id == "len":
-            return f"py_len({args})"
-        if isinstance(call.func, ast.Name) and call.func.id == "sorted":
-            return f"py_sorted({args})"
-        if isinstance(call.func, ast.Name) and call.func.id == "zip":
-            if len(args_list) == 2:
-                return f"py_zip({args_list[0]}, {args_list[1]})"
-            return "vector<tuple<int, int>>{}"
-        if isinstance(call.func, ast.Name) and call.func.id == "set":
-            if len(args_list) == 0:
-                return "unordered_set<string>{}"
-            return (
-                "unordered_set<std::remove_cvref_t<decltype(*"
-                + f"{args_list[0]}.begin())>>({args_list[0]}.begin(), {args_list[0]}.end())"
-            )
-        if isinstance(call.func, ast.Name) and call.func.id == "str":
-            if len(call.args) == 1:
-                return f"py_to_string({args_list[0]})"
-            return "\"\""
-        if isinstance(call.func, ast.Name) and call.func.id == "Path":
-            if len(call.args) == 1:
-                return f"Path({args_list[0]})"
-            return "Path()"
-        if isinstance(call.func, ast.Name) and call.func.id == "int":
-            if len(call.args) == 1:
-                return f"py_int({args_list[0]})"
-            return "0"
-        if isinstance(call.func, ast.Name) and call.func.id == "float":
-            if len(call.args) == 1:
-                return f"static_cast<double>({args_list[0]})"
-            return "0.0"
-        if isinstance(call.func, ast.Name) and call.func.id == "pow":
-            if len(args_list) == 2:
-                return f"py_pow({args_list[0]}, {args_list[1]})"
-            return "0.0"
-        if isinstance(call.func, ast.Name) and call.func.id == "open":
-            if len(args_list) >= 2:
-                if isinstance(call.args[1], ast.Constant) and isinstance(call.args[1].value, str):
-                    mode = call.args[1].value
-                    if "b" in mode:
-                        return f"std::make_shared<std::ofstream>({args_list[0]}, std::ios::binary)"
-                return f"std::make_shared<std::ofstream>({args_list[0]})"
-            return "std::make_shared<std::ofstream>()"
-        if isinstance(call.func, ast.Name) and call.func.id == "bytearray":
-            if len(args_list) == 0:
-                return "py_bytearray()"
-            if len(args_list) == 1:
-                return f"py_bytearray({args_list[0]})"
-            return "py_bytearray()"
-        if isinstance(call.func, ast.Name) and call.func.id == "bytes":
-            if len(args_list) == 1:
-                return f"py_bytes({args_list[0]})"
-            return "py_bytes()"
-        if isinstance(call.func, ast.Name) and call.func.id == "save_gif":
-            return f"pycs::cpp_module::gif::save_gif({args})"
-        if isinstance(call.func, ast.Name) and call.func.id == "grayscale_palette":
-            return f"pycs::cpp_module::gif::grayscale_palette({args})"
-        if isinstance(call.func, ast.Name) and call.func.id == "chr":
-            if len(args_list) == 1:
-                return f"string(1, static_cast<char>({args_list[0]}))"
-            return '""'
-        if isinstance(call.func, ast.Name) and call.func.id == "ord":
-            if len(args_list) == 1:
-                return f"py_ord({args_list[0]})"
-            return "0"
-        if isinstance(call.func, ast.Name) and call.func.id == "isinstance":
-            if len(call.args) == 2:
-                obj = self.transpile_expr(call.args[0])
-                type_arg = call.args[1]
-                if isinstance(type_arg, ast.Tuple):
-                    types: List[str] = []
-                    for elt in type_arg.elts:
-                        if isinstance(elt, ast.Attribute) and isinstance(elt.value, ast.Name) and elt.value.id == "ast":
-                            types.append(f"pycs::cpp_module::ast::{elt.attr}")
-                        elif isinstance(elt, ast.Name):
-                            types.append(elt.id)
-                    if len(types) > 0:
-                        return f"py_isinstance_any<decltype({obj}), {', '.join(types)}>({obj})"
-                if isinstance(type_arg, ast.Attribute) and isinstance(type_arg.value, ast.Name) and type_arg.value.id == "ast":
-                    return f"py_isinstance<pycs::cpp_module::ast::{type_arg.attr}>({obj})"
-                if isinstance(type_arg, ast.Name):
-                    if type_arg.id == "str":
-                        return f"py_isinstance<string>({obj})"
-                    return f"py_isinstance<{type_arg.id}>({obj})"
-            return "false"
-
-        if isinstance(call.func, ast.Name):
-            if call.func.id in self.global_function_renames:
-                mapped_name = self.global_function_renames[call.func.id]
-                return f"{mapped_name}({args})"
-            if call.func.id in self.class_names and call.func.id not in self.exception_class_names:
-                return f"pycs::gc::RcHandle<{call.func.id}>::adopt(pycs::gc::rc_new<{call.func.id}>({args}))"
-            return f"{call.func.id}({args})"
-        if isinstance(call.func, ast.Attribute):
-            if (
-                isinstance(call.func.value, ast.Name)
-                and call.func.value.id == "pathlib"
-                and call.func.attr == "Path"
-            ):
-                if len(args_list) == 1:
-                    return f"Path({args_list[0]})"
-                return "Path()"
-            obj = self.transpile_expr(call.func.value)
-            method = call.func.attr
-            if method == "append" and len(args_list) == 1:
-                return f"{obj}.push_back({args_list[0]})"
-            if method == "pop" and len(args_list) == 0:
-                return f"py_pop({obj})"
-            if method == "pop" and len(args_list) == 1:
-                return f"py_pop({obj}, {args_list[0]})"
-            if method == "extend" and len(args_list) == 1:
-                return f"py_extend({obj}, {args_list[0]})"
-            if method == "add" and len(args_list) == 1:
-                return f"{obj}.insert({args_list[0]})"
-            if method == "union" and len(args_list) == 1:
-                return f"py_set_union({obj}, {args_list[0]})"
-            if method == "splitlines":
-                return f"py_splitlines({obj})"
-            if method == "join" and len(args_list) == 1:
-                return f"py_join({obj}, {args_list[0]})"
-            if method == "replace" and len(args_list) == 2:
-                return f"py_replace({obj}, {args_list[0]}, {args_list[1]})"
-            if method == "isdigit" and len(args_list) == 0:
-                return f"py_isdigit({obj})"
-            if method == "isalpha" and len(args_list) == 0:
-                return f"py_isalpha({obj})"
-            if method == "write" and len(args_list) == 1:
-                return f"py_write(*{obj}, {args_list[0]})"
-            if method == "close" and len(args_list) == 0:
-                return f"{obj}->close()"
-            if method == "encode":
-                return obj
-            return f"{self.transpile_expr(call.func)}({args})"
-
-        return f"{self.transpile_expr(call.func)}({args})"
-
-    def _is_path_like_expr(self, expr: ast.expr) -> bool:
-        if isinstance(expr, ast.Name):
-            return expr.id in self.path_like_names
-        if isinstance(expr, ast.Attribute):
-            if expr.attr == "parent":
-                return self._is_path_like_expr(expr.value)
-            return False
-        if isinstance(expr, ast.Call):
-            if isinstance(expr.func, ast.Name) and expr.func.id == "Path":
-                return True
-            if (
-                isinstance(expr.func, ast.Attribute)
-                and isinstance(expr.func.value, ast.Name)
-                and expr.func.value.id == "pathlib"
-                and expr.func.attr == "Path"
-            ):
-                return True
-            if (
-                isinstance(expr.func, ast.Attribute)
-                and expr.func.attr in {"resolve", "parent"}
-                and self._is_path_like_expr(expr.func.value)
-            ):
-                return True
-        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Div):
-            return self._is_path_like_expr(expr.left)
-        return False
-
-    def _map_annotation(self, annotation: ast.expr) -> str:
-        """Python 型注釈を C++ 型名へ変換する。"""
-        if isinstance(annotation, ast.Constant) and annotation.value is None:
-            return "void"
-        if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
-            left = self._map_annotation(annotation.left)
-            right = self._map_annotation(annotation.right)
-            if left == "void":
-                return right
-            if right == "void":
-                return left
-            return "auto"
-        if isinstance(annotation, ast.Name):
-            if annotation.id in CPP_PRIMITIVE_TYPES:
-                return CPP_PRIMITIVE_TYPES[annotation.id]
-            if annotation.id == "bytearray":
-                return "vector<uint8_t>"
-            if annotation.id == "bytes":
-                return "vector<uint8_t>"
-            if annotation.id == "Path":
-                return "Path"
-            if annotation.id in self.class_names:
-                return f"pycs::gc::RcHandle<{annotation.id}>"
-            return "auto"
-        if isinstance(annotation, ast.Attribute):
-            if isinstance(annotation.value, ast.Name) and annotation.value.id == "ast":
-                if annotation.attr == "Module":
-                    return "pycs::cpp_module::ast::ModulePtr"
-                if annotation.attr == "stmt":
-                    return "pycs::cpp_module::ast::StmtPtr"
-                if annotation.attr == "expr":
-                    return "pycs::cpp_module::ast::ExprPtr"
-                if annotation.attr == "FunctionDef":
-                    return "std::shared_ptr<pycs::cpp_module::ast::FunctionDef>"
-                if annotation.attr == "ClassDef":
-                    return "std::shared_ptr<pycs::cpp_module::ast::ClassDef>"
-                if annotation.attr == "Assign":
-                    return "std::shared_ptr<pycs::cpp_module::ast::Assign>"
-                if annotation.attr == "AnnAssign":
-                    return "std::shared_ptr<pycs::cpp_module::ast::AnnAssign>"
-                if annotation.attr == "For":
-                    return "std::shared_ptr<pycs::cpp_module::ast::For>"
-                if annotation.attr == "If":
-                    return "std::shared_ptr<pycs::cpp_module::ast::If>"
-                if annotation.attr == "Try":
-                    return "std::shared_ptr<pycs::cpp_module::ast::Try>"
-                if annotation.attr == "Raise":
-                    return "std::shared_ptr<pycs::cpp_module::ast::Raise>"
-                if annotation.attr == "Call":
-                    return "std::shared_ptr<pycs::cpp_module::ast::Call>"
-                if annotation.attr == "JoinedStr":
-                    return "std::shared_ptr<pycs::cpp_module::ast::JoinedStr>"
-                if annotation.attr == "boolop":
-                    return "std::shared_ptr<pycs::cpp_module::ast::boolop>"
-                if annotation.attr == "cmpop":
-                    return "std::shared_ptr<pycs::cpp_module::ast::cmpop>"
-                if annotation.attr == "unaryop":
-                    return "std::shared_ptr<pycs::cpp_module::ast::unaryop>"
-                if annotation.attr == "operator":
-                    return "std::shared_ptr<pycs::cpp_module::ast::operator_>"
-                return "auto"
-            return "auto"
-        if isinstance(annotation, ast.Subscript):
-            raw_base: str = ""
-            if isinstance(annotation.value, ast.Name):
-                raw_base = annotation.value.id
-            elif isinstance(annotation.value, ast.Attribute):
-                raw_base = self.transpile_expr(annotation.value)
-            else:
-                return "auto"
-            base: str = ""
-            if raw_base == "list" or raw_base == "List":
-                base = "vector"
-            elif raw_base == "set" or raw_base == "Set":
-                base = "unordered_set"
-            elif raw_base == "dict" or raw_base == "Dict":
-                base = "unordered_map"
-            elif raw_base == "tuple" or raw_base == "Tuple":
-                base = "tuple"
-            else:
-                base = raw_base
-            args: List[str]
-            if isinstance(annotation.slice, ast.Tuple):
-                args = []
-                for e in annotation.slice.elts:
-                    args.append(self._map_annotation(e))
-            else:
-                args = [self._map_annotation(annotation.slice)]
-            return f"{base}<{', '.join(args)}>"
-
-        return "auto"
-
-    def _is_main_guard(self, stmt: ast.stmt) -> bool:
-        """if __name__ == \"__main__\" かを判定する。"""
-        if super()._is_main_guard(stmt):
-            return True
-        if not isinstance(stmt, ast.If):
-            return False
-        test = stmt.test
-        if not isinstance(test, ast.Compare):
-            try:
-                return test.as_text() == '__name__ == "__main__"'
-            except Exception:
-                return False
-        return False
-
-    def _raw_expr_to_cpp(self, text: str) -> str:
-        """RawExpr の文字列を最小限 C++ 表記に正規化する。"""
-        if text == "True":
-            return "true"
-        if text == "False":
-            return "false"
-        if text == "None":
-            return "nullptr"
-        return (
-            text.replace("(True)", "(true)")
-            .replace("(False)", "(false)")
-            .replace("(None)", "(nullptr)")
-            .replace(" True", " true")
-            .replace(" False", " false")
-            .replace(" None", " nullptr")
-        )
-
-    def _constant(self, value: object) -> str:
-        """Python リテラル値を C++ リテラル表現へ変換する。"""
-        if isinstance(value, str):
-            text = str(value)
-            escaped = (
-                text.replace("\\", "\\\\")
-                .replace('"', '\\"')
-                .replace("\n", "\\n")
-                .replace("\t", "\\t")
-                .replace("\r", "\\r")
-            )
-            return f'"{escaped}"'
-        text = str(value)
-        if text == "True":
-            return "true"
-        if text == "False":
-            return "false"
-        if text == "None":
-            return "nullptr"
-        if isinstance(value, int):
-            if self.force_long_int or value < INT32_MIN or value > INT32_MAX:
-                return f"{value}LL"
-        return text
-
-    def _binop(self, op: ast.operator) -> str:
-        """二項演算子ノードを C++ 演算子文字列へ変換する。"""
-        if isinstance(op, ast.Add):
-            return "+"
-        if isinstance(op, ast.Sub):
-            return "-"
-        if isinstance(op, ast.Mult):
-            return "*"
-        if isinstance(op, ast.Div):
-            return "/"
-        if isinstance(op, ast.FloorDiv):
-            return "/"
-        if isinstance(op, ast.Mod):
-            return "%"
-        if isinstance(op, ast.Pow):
-            return "**"
-        if isinstance(op, ast.BitOr):
-            return "|"
-        if isinstance(op, ast.BitAnd):
-            return "&"
-        if isinstance(op, ast.BitXor):
-            return "^"
-        if isinstance(op, ast.LShift):
-            return "<<"
-        if isinstance(op, ast.RShift):
-            return ">>"
-        raise TranspileError("Unsupported binary operator")
-
-    def _unaryop(self, op: ast.unaryop) -> str:
-        """単項演算子ノードを C++ 演算子文字列へ変換する。"""
-        if isinstance(op, ast.UAdd):
-            return "+"
-        if isinstance(op, ast.USub):
-            return "-"
-        if isinstance(op, ast.Not):
-            return "!"
-        raise TranspileError("Unsupported unary operator")
-
-    def _cmpop(self, op: ast.cmpop) -> str:
-        """比較演算子ノードを C++ 演算子文字列へ変換する。"""
-        if isinstance(op, ast.Eq):
-            return "=="
-        if isinstance(op, ast.NotEq):
-            return "!="
-        if isinstance(op, ast.Lt):
-            return "<"
-        if isinstance(op, ast.LtE):
-            return "<="
-        if isinstance(op, ast.Gt):
-            return ">"
-        if isinstance(op, ast.GtE):
-            return ">="
-        raise TranspileError("Unsupported comparison operator")
-
-    def _transpile_compare(self, left_expr: ast.expr, op: ast.cmpop, right_expr: ast.expr) -> str:
-        """比較式ノードを C++ 比較式へ変換する。"""
-        left = self.transpile_expr(left_expr)
-        right = self.transpile_expr(right_expr)
-        if isinstance(op, ast.In):
-            return f"py_in({left}, {right})"
-        if isinstance(op, ast.NotIn):
-            return f"(!py_in({left}, {right}))"
-        if isinstance(op, ast.Is):
-            return f"({left} == {right})"
-        if isinstance(op, ast.IsNot):
-            return f"({left} != {right})"
-        return f"({left} {self._cmpop(op)} {right})"
-
-    def _transpile_chained_compare(self, expr: ast.Compare) -> str:
-        """連鎖比較を pairwise 比較の AND に展開する。"""
-        items: List[str] = []
-        left_node = expr.left
-        for i, op in enumerate(expr.ops):
-            right_node = expr.comparators[i]
-            items.append(self._transpile_compare(left_node, op, right_node))
-            left_node = right_node
-        if len(items) == 0:
-            return "true"
-        return "(" + " && ".join(items) + ")"
-
-    def _transpile_comprehension_body(
-        self,
-        generators: List[ast.comprehension],
-        body_line: str,
-        index: int = 0,
-        temp_idx: int = 0,
-    ) -> List[str]:
-        """comprehension の for/if を入れ子の C++ for/if へ変換する。"""
-        if index >= len(generators):
-            return [body_line]
-
-        gen = generators[index]
-        iter_expr = self.transpile_expr(gen.iter)
-        lines: List[str] = []
-        loop_var = f"__pytra_item_{temp_idx}"
-        target_lines: List[str] = []
-
-        if isinstance(gen.target, ast.Name):
-            loop_var = gen.target.id
-        elif isinstance(gen.target, ast.Tuple):
-            tuple_names: List[str] = []
-            only_name_targets = True
-            for elt in gen.target.elts:
-                if isinstance(elt, ast.Name):
-                    tuple_names.append(elt.id)
-                else:
-                    only_name_targets = False
-                    break
-            if not only_name_targets:
-                raise TranspileError("Unsupported comprehension target")
-            for i, name in enumerate(tuple_names):
-                target_lines.append(f"auto {name} = std::get<{i}>({loop_var});")
-        else:
-            raise TranspileError("Unsupported comprehension target")
-
-        lines.append(f"for (const auto& {loop_var} : {iter_expr})")
-        lines.append("{")
-        body: List[str] = []
-        body.extend(target_lines)
-        for if_cond in gen.ifs:
-            body.append(f"if (!({self.transpile_expr(if_cond)})) continue;")
-        body.extend(self._transpile_comprehension_body(generators, body_line, index + 1, temp_idx + 1))
-        lines.extend(self._indent_block(body))
-        lines.append("}")
-        return lines
-
-    def _transpile_list_comp(self, expr: ast.ListComp) -> str:
-        """list comprehension を即時ラムダで vector 生成へ変換する。"""
-        elt_expr = self.transpile_expr(expr.elt)
-        elt_type = self._infer_expr_cpp_type(expr.elt)
-        if elt_type == "":
-            elt_type = "auto"
-        out_type = f"vector<{elt_type}>" if elt_type != "auto" else "vector<int>"
-
-        lines: List[str] = [f"{out_type} __pytra_out;"]
-        lines.extend(self._transpile_comprehension_body(expr.generators, f"__pytra_out.push_back({elt_expr});"))
-        lines.append("return __pytra_out;")
-        return "([&]() { " + " ".join(lines) + " })()"
-
-    def _transpile_set_comp(self, expr: ast.SetComp) -> str:
-        """set comprehension を即時ラムダで unordered_set 生成へ変換する。"""
-        elt_expr = self.transpile_expr(expr.elt)
-        elt_type = self._infer_expr_cpp_type(expr.elt)
-        if elt_type == "":
-            elt_type = "int"
-        lines: List[str] = [f"unordered_set<{elt_type}> __pytra_out;"]
-        lines.extend(self._transpile_comprehension_body(expr.generators, f"__pytra_out.insert({elt_expr});"))
-        lines.append("return __pytra_out;")
-        return "([&]() { " + " ".join(lines) + " })()"
-
-    def _transpile_gen_comp(self, expr: ast.GeneratorExp) -> str:
-        """generator expression は list として展開して返す。"""
-        pseudo_list = ast.ListComp(elt=expr.elt, generators=expr.generators)
-        return self._transpile_list_comp(pseudo_list)
-
-    def _boolop(self, op: ast.boolop) -> str:
-        """論理演算子ノードを C++ 論理演算子へ変換する。"""
-        if isinstance(op, ast.And):
-            return "&&"
-        if isinstance(op, ast.Or):
-            return "||"
-        raise TranspileError("Unsupported boolean operator")
-
-    def _transpile_joined_str(self, expr: ast.JoinedStr) -> str:
-        """f-string を文字列連結式へ変換する。"""
-        parts: List[str] = []
-        for value in expr.values:
-            if isinstance(value, ast.Constant) and isinstance(value.value, str):
-                parts.append(self._constant(value.value))
-            elif isinstance(value, ast.FormattedValue):
-                parts.append(f"py_to_string({self.transpile_expr(value.value)})")
-            else:
-                parts.append('""')
+        self.scope_stack: list[set[str]] = [set()]
+        self.current_class_name: str | None = None
+        self.current_class_fields: dict[str, str] = {}
+        self.class_method_names: dict[str, set[str]] = {}
+        self.class_base: dict[str, str | None] = {}
+
+    def emit(self, line: str = "") -> None:
+        self.lines.append(("    " * self.indent) + line)
+
+    def emit_block_comment(self, text: str) -> None:
+        """Emit C-style block comment for docstring-like standalone strings."""
+        safe = text.replace("*/", "* /")
+        parts = safe.splitlines()
         if len(parts) == 0:
-            return '""'
-        return "(" + " + ".join(parts) + ")"
+            self.emit("/* */")
+            return
+        if len(parts) == 1:
+            self.emit(f"/* {parts[0]} */")
+            return
+        self.emit("/*")
+        for line in parts:
+            self.emit(line)
+        self.emit("*/")
 
-    def _is_dataclass_class(self, cls: ast.stmt) -> bool:
-        """クラスに @dataclass デコレータが付いているかを判定する。"""
-        for decorator in cls.decorator_list:
-            if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
-                return True
-            if isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass":
+    def next_tmp(self, prefix: str = "__tmp") -> str:
+        self.tmp_id += 1
+        return f"{prefix}_{self.tmp_id}"
+
+    def transpile(self) -> str:
+        for stmt in self.doc.get("body", []):
+            if stmt.get("kind") == "ClassDef":
+                cls_name = str(stmt.get("name", ""))
+                if cls_name != "":
+                    mset: set[str] = set()
+                    for s in stmt.get("body", []):
+                        if s.get("kind") == "FunctionDef":
+                            mset.add(str(s.get("name")))
+                    self.class_method_names[cls_name] = mset
+                    base = stmt.get("base")
+                    self.class_base[cls_name] = str(base) if isinstance(base, str) else None
+
+        self.emit(CPP_HEADER.rstrip("\n"))
+        self.emit()
+
+        for stmt in self.doc.get("body", []):
+            self.emit_stmt(stmt)
+            self.emit()
+
+        self.emit("int main() {")
+        self.indent += 1
+        self.scope_stack.append(set())
+        for stmt in self.doc.get("main_guard_body", []):
+            self.emit_stmt(stmt)
+        self.scope_stack.pop()
+        self.emit("return 0;")
+        self.indent -= 1
+        self.emit("}")
+        self.emit()
+        return "\n".join(self.lines)
+
+    def current_scope(self) -> set[str]:
+        return self.scope_stack[-1]
+
+    def is_declared(self, name: str) -> bool:
+        for scope in reversed(self.scope_stack):
+            if name in scope:
                 return True
         return False
 
-def transpile(input_file: str, output_file: str) -> None:
-    """外部から使う簡易API。
+    def render_cond(self, expr: dict[str, Any] | None) -> str:
+        t = self.get_expr_type(expr) or ""
+        body = self.render_expr(expr)
+        if t in {"bool"}:
+            return body
+        if t == "str" or t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+            return f"(py_len({body}) != 0)"
+        return body
 
-    Args:
-        input_file: 入力 Python ファイルパス。
-        output_file: 出力 C++ ファイルパス。
-    """
-    transpiler = CppTranspiler()
-    transpiler.transpile_file(Path(input_file), Path(output_file))
+    def apply_cast(self, rendered_expr: str, to_type: str | None) -> str:
+        if not isinstance(to_type, str) or to_type == "":
+            return rendered_expr
+        return f"static_cast<{self.cpp_type(to_type)}>({rendered_expr})"
+
+    def render_minmax(self, fn: str, args: list[str], out_type: str | None) -> str:
+        if len(args) == 0:
+            return "/* invalid min/max */"
+        if len(args) == 1:
+            return args[0]
+        t = self.cpp_type(out_type or "auto")
+        casted = [f"static_cast<{t}>({a})" for a in args]
+        call = f"std::{fn}<{t}>({casted[0]}, {casted[1]})"
+        for a in casted[2:]:
+            call = f"std::{fn}<{t}>({call}, {a})"
+        return call
+
+    def _collect_local_decls(self, stmts: list[dict[str, Any]]) -> dict[str, str]:
+        out: dict[str, str] = {}
+        loop_counts: dict[str, tuple[int, str]] = {}
+
+        def add_name(name: str, typ: str | None) -> None:
+            if name == "":
+                return
+            if name not in out:
+                out[name] = typ if isinstance(typ, str) and typ != "" else "auto"
+
+        def walk(st: dict[str, Any]) -> None:
+            kind = st.get("kind")
+            if kind == "Assign":
+                target = st.get("target")
+                value = st.get("value")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    add_name(str(target.get("id", "")), st.get("decl_type") or self.get_expr_type(value))
+                if isinstance(target, dict) and target.get("kind") == "Tuple":
+                    value_t = self.get_expr_type(value) or ""
+                    elem_types: list[str] = []
+                    if value_t.startswith("tuple[") and value_t.endswith("]"):
+                        elem_types = self.split_generic(value_t[6:-1])
+                    for i, elt in enumerate(target.get("elements", [])):
+                        if isinstance(elt, dict) and elt.get("kind") == "Name":
+                            add_name(str(elt.get("id", "")), elem_types[i] if i < len(elem_types) else self.get_expr_type(elt))
+            elif kind == "AnnAssign":
+                target = st.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    add_name(str(target.get("id", "")), st.get("annotation"))
+            elif kind == "AugAssign":
+                target = st.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    add_name(str(target.get("id", "")), st.get("decl_type") or self.get_expr_type(target))
+            elif kind == "ForRange":
+                target = st.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    n = str(target.get("id", ""))
+                    t = st.get("target_type") or self.get_expr_type(target) or "int64"
+                    cnt, _old_t = loop_counts.get(n, (0, t))
+                    loop_counts[n] = (cnt + 1, t)
+            elif kind == "For":
+                target = st.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    n = str(target.get("id", ""))
+                    t = st.get("target_type") or self.get_expr_type(target) or "auto"
+                    cnt, _old_t = loop_counts.get(n, (0, t))
+                    loop_counts[n] = (cnt + 1, t)
+
+            for k in ("body", "orelse", "finalbody"):
+                for child in st.get(k, []):
+                    if isinstance(child, dict):
+                        walk(child)
+            for h in st.get("handlers", []):
+                if isinstance(h, dict):
+                    for child in h.get("body", []):
+                        if isinstance(child, dict):
+                            walk(child)
+
+        for s in stmts:
+            walk(s)
+        for n, (cnt, t) in loop_counts.items():
+            if cnt > 1:
+                add_name(n, t)
+        return out
+
+    def emit_stmt(self, stmt: dict[str, Any]) -> None:
+        kind = stmt.get("kind")
+        if kind in {"Import", "ImportFrom", "Pass"}:
+            return
+        if kind == "Break":
+            self.emit("break;")
+            return
+        if kind == "Continue":
+            self.emit("continue;")
+            return
+        if kind == "Expr":
+            value = stmt.get("value")
+            if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
+                self.emit_block_comment(str(value.get("value")))
+            else:
+                self.emit(self.render_expr(value) + ";")
+            return
+        if kind == "Return":
+            v = stmt.get("value")
+            if v is None:
+                self.emit("return;")
+            else:
+                self.emit(f"return {self.render_expr(v)};")
+            return
+        if kind == "Assign":
+            self.emit_assign(stmt)
+            return
+        if kind == "AnnAssign":
+            t = self.cpp_type(stmt.get("annotation"))
+            target = self.render_expr(stmt.get("target"))
+            val = stmt.get("value")
+            declare = bool(stmt.get("declare", True))
+            already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
+            if target.startswith("this->"):
+                if val is None:
+                    self.emit(f"{target};")
+                else:
+                    self.emit(f"{target} = {self.render_expr(val)};")
+                return
+            if val is None:
+                if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
+                    self.current_scope().add(target)
+                self.emit(f"{t} {target};" if (declare and not already_declared) else f"{target};")
+            else:
+                if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
+                    self.current_scope().add(target)
+                if declare and not already_declared:
+                    self.emit(f"{t} {target} = {self.render_expr(val)};")
+                else:
+                    self.emit(f"{target} = {self.render_expr(val)};")
+            return
+        if kind == "AugAssign":
+            op = AUG_OPS.get(stmt.get("op"), "+=")
+            target_expr = stmt.get("target")
+            target = self.render_expr(target_expr)
+            declare = bool(stmt.get("declare", False))
+            if declare and self.is_plain_name_expr(target_expr) and target not in self.current_scope():
+                t = self.cpp_type(stmt.get("decl_type") or self.get_expr_type(target_expr))
+                self.current_scope().add(target)
+                self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
+                return
+            val = self.render_expr(stmt.get("value"))
+            op_name = str(stmt.get("op"))
+            if op_name in AUG_BIN:
+                bop = AUG_BIN[op_name]
+                if op_name == "FloorDiv":
+                    self.emit(f"{target} = py_floordiv({target}, {val});")
+                elif op_name == "Mod":
+                    self.emit(f"{target} = py_mod({target}, {val});")
+                elif op_name == "Div":
+                    self.emit(f"{target} = ({target} {bop} {val});")
+                else:
+                    self.emit(f"{target} = ({target} {bop} {val});")
+            else:
+                self.emit(f"{target} {op} {val};")
+            return
+        if kind == "If":
+            self.emit(f"if ({self.render_cond(stmt.get('test'))}) {{")
+            self.indent += 1
+            for s in stmt.get("body", []):
+                self.emit_stmt(s)
+            self.indent -= 1
+            if stmt.get("orelse"):
+                self.emit("} else {")
+                self.indent += 1
+                for s in stmt.get("orelse", []):
+                    self.emit_stmt(s)
+                self.indent -= 1
+                self.emit("}")
+            else:
+                self.emit("}")
+            return
+        if kind == "While":
+            self.emit(f"while ({self.render_cond(stmt.get('test'))}) {{")
+            self.indent += 1
+            for s in stmt.get("body", []):
+                self.emit_stmt(s)
+            self.indent -= 1
+            self.emit("}")
+            return
+        if kind == "ForRange":
+            self.emit_for_range(stmt)
+            return
+        if kind == "For":
+            self.emit_for_each(stmt)
+            return
+        if kind == "Raise":
+            exc = stmt.get("exc")
+            if exc is None:
+                self.emit('throw std::runtime_error("raise");')
+            else:
+                self.emit(f"throw {self.render_expr(exc)};")
+            return
+        if kind == "Try":
+            self.emit("try {")
+            self.indent += 1
+            for s in stmt.get("body", []):
+                self.emit_stmt(s)
+            self.indent -= 1
+            self.emit("}")
+            for h in stmt.get("handlers", []):
+                name = h.get("name") or "ex"
+                self.emit(f"catch (const std::exception& {name}) {{")
+                self.indent += 1
+                for s in h.get("body", []):
+                    self.emit_stmt(s)
+                self.indent -= 1
+                self.emit("}")
+            if stmt.get("finalbody"):
+                self.emit("{")
+                self.indent += 1
+                for s in stmt.get("finalbody", []):
+                    self.emit_stmt(s)
+                self.indent -= 1
+                self.emit("}")
+            return
+        if kind == "FunctionDef":
+            self.emit_function(stmt)
+            return
+        if kind == "ClassDef":
+            self.emit_class(stmt)
+            return
+
+        self.emit(f"/* unsupported stmt kind: {kind} */")
+
+    def emit_assign(self, stmt: dict[str, Any]) -> None:
+        target = stmt.get("target")
+        value = stmt.get("value")
+        if target is None or value is None:
+            self.emit("/* invalid assign */")
+            return
+        if target.get("kind") == "Tuple":
+            tmp = self.next_tmp("__tuple")
+            self.emit(f"auto {tmp} = {self.render_expr(value)};")
+            tuple_elem_types: list[str] = []
+            value_t = self.get_expr_type(value)
+            if isinstance(value_t, str) and value_t.startswith("tuple[") and value_t.endswith("]"):
+                tuple_elem_types = self.split_generic(value_t[6:-1])
+            for i, elt in enumerate(target.get("elements", [])):
+                lhs = self.render_expr(elt)
+                if self.is_plain_name_expr(elt):
+                    name = str(elt.get("id", ""))
+                    if not self.is_declared(name):
+                        decl_t = self.cpp_type(tuple_elem_types[i] if i < len(tuple_elem_types) else self.get_expr_type(elt))
+                        self.current_scope().add(name)
+                        self.emit(f"{decl_t} {lhs} = std::get<{i}>({tmp});")
+                        continue
+                self.emit(f"{lhs} = std::get<{i}>({tmp});")
+            return
+        texpr = self.render_expr(target)
+        if self.is_plain_name_expr(target) and not self.is_declared(texpr):
+            dtype = self.cpp_type(stmt.get("decl_type") or self.get_expr_type(target) or self.get_expr_type(value))
+            self.current_scope().add(texpr)
+            self.emit(f"{dtype} {texpr} = {self.render_expr(value)};")
+            return
+        self.emit(f"{texpr} = {self.render_expr(value)};")
+
+    def is_plain_name_expr(self, expr: dict[str, Any] | None) -> bool:
+        return isinstance(expr, dict) and expr.get("kind") == "Name"
+
+    def emit_for_range(self, stmt: dict[str, Any]) -> None:
+        tgt = self.render_expr(stmt.get("target"))
+        tgt_ty = self.cpp_type(stmt.get("target_type") or self.get_expr_type(stmt.get("target")))
+        start = self.render_expr(stmt.get("start"))
+        stop = self.render_expr(stmt.get("stop"))
+        step = self.render_expr(stmt.get("step"))
+        mode = stmt.get("range_mode")
+        if mode == "ascending":
+            cond = f"({tgt} < {stop})"
+        elif mode == "descending":
+            cond = f"({tgt} > {stop})"
+        else:
+            cond = f"(({step}) > 0 ? ({tgt} < {stop}) : ({tgt} > {stop}))"
+        if self.is_declared(tgt):
+            self.emit(f"for ({tgt} = {start}; {cond}; {tgt} += ({step})) {{")
+        else:
+            self.emit(f"for ({tgt_ty} {tgt} = {start}; {cond}; {tgt} += ({step})) {{")
+            self.current_scope().add(tgt)
+        self.indent += 1
+        for s in stmt.get("body", []):
+            self.emit_stmt(s)
+        self.indent -= 1
+        self.emit("}")
+
+    def emit_for_each(self, stmt: dict[str, Any]) -> None:
+        target = stmt.get("target")
+        iter_expr = stmt.get("iter")
+        if isinstance(iter_expr, dict) and iter_expr.get("kind") == "RangeExpr":
+            pseudo = {
+                "target": target,
+                "target_type": stmt.get("target_type") or "int64",
+                "start": iter_expr.get("start"),
+                "stop": iter_expr.get("stop"),
+                "step": iter_expr.get("step"),
+                "range_mode": iter_expr.get("range_mode", "dynamic"),
+                "body": stmt.get("body", []),
+            }
+            self.emit_for_range(pseudo)
+            return
+        t = self.render_expr(target)
+        it = self.render_expr(iter_expr)
+        t_ty = self.cpp_type(stmt.get("target_type") or self.get_expr_type(target))
+        if t_ty == "auto":
+            self.emit(f"for (auto& {t} : {it}) {{")
+        else:
+            self.emit(f"for ({t_ty} {t} : {it}) {{")
+        self.indent += 1
+        self.scope_stack.append({t})
+        for s in stmt.get("body", []):
+            self.emit_stmt(s)
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit("}")
+
+    def emit_function(self, stmt: dict[str, Any], *, in_class: bool = False) -> None:
+        name = stmt.get("name", "fn")
+        ret = self.cpp_type(stmt.get("return_type"))
+        arg_types: dict[str, str] = stmt.get("arg_types", {})
+        arg_usage: dict[str, str] = stmt.get("arg_usage", {})
+        params: list[str] = []
+        fn_scope: set[str] = set()
+        for idx, (n, t) in enumerate(arg_types.items()):
+            if in_class and idx == 0 and n == "self":
+                continue
+            ct = self.cpp_type(t)
+            usage = arg_usage.get(n, "readonly")
+            by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            if by_ref and usage == "mutable":
+                params.append(f"{ct}& {n}")
+            else:
+                params.append(f"{ct} {n}")
+            fn_scope.add(n)
+        if in_class and name == "__init__" and self.current_class_name is not None:
+            self.emit(f"{self.current_class_name}({', '.join(params)}) {{")
+        else:
+            self.emit(f"{ret} {name}({', '.join(params)}) {{")
+        self.indent += 1
+        self.scope_stack.append(fn_scope)
+        local_decls = self._collect_local_decls(list(stmt.get("body", [])))
+        for n, t in local_decls.items():
+            if n in fn_scope:
+                continue
+            ct = self.cpp_type(t)
+            if ct == "auto":
+                continue
+            if ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool", "str", "Path"} and not (
+                ct.startswith("list<") or ct.startswith("dict<") or ct.startswith("set<") or ct.startswith("std::tuple<")
+            ):
+                continue
+            self.emit(f"{ct} {n};")
+            self.current_scope().add(n)
+        if len(local_decls) > 0:
+            self.emit()
+        for s in stmt.get("body", []):
+            self.emit_stmt(s)
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit("}")
+
+    def emit_class(self, stmt: dict[str, Any]) -> None:
+        name = stmt.get("name", "Class")
+        base = stmt.get("base")
+        base_txt = f" : public {base}" if isinstance(base, str) and base != "" else ""
+        self.emit(f"struct {name}{base_txt} {{")
+        self.indent += 1
+        prev_class = self.current_class_name
+        prev_fields = self.current_class_fields
+        self.current_class_name = str(name)
+        self.current_class_fields = dict(stmt.get("field_types", {}))
+        class_body = list(stmt.get("body", []))
+        has_init = any(s.get("kind") == "FunctionDef" and s.get("name") == "__init__" for s in class_body)
+        field_defaults: dict[str, str] = {}
+        for s in class_body:
+            if s.get("kind") == "AnnAssign":
+                texpr = s.get("target")
+                if self.is_plain_name_expr(texpr):
+                    fname = self.render_expr(texpr)
+                    if s.get("value") is not None:
+                        field_defaults[fname] = self.render_expr(s.get("value"))
+
+        for fname, fty in self.current_class_fields.items():
+            self.emit(f"{self.cpp_type(fty)} {fname};")
+        if self.current_class_fields:
+            self.emit()
+        if len(self.current_class_fields) > 0 and not has_init:
+            params: list[str] = []
+            for fname, fty in self.current_class_fields.items():
+                p = f"{self.cpp_type(fty)} {fname}"
+                if fname in field_defaults:
+                    p += f" = {field_defaults[fname]}"
+                params.append(p)
+            self.emit(f"{name}({', '.join(params)}) {{")
+            self.indent += 1
+            for fname in self.current_class_fields:
+                self.emit(f"this->{fname} = {fname};")
+            self.indent -= 1
+            self.emit("}")
+            self.emit()
+        for s in class_body:
+            if s.get("kind") == "FunctionDef":
+                self.emit_function(s, in_class=True)
+            elif s.get("kind") == "AnnAssign":
+                t = self.cpp_type(s.get("annotation"))
+                target_expr = s.get("target")
+                target = self.render_expr(target_expr)
+                if self.is_plain_name_expr(target_expr) and target in self.current_class_fields:
+                    continue
+                val = s.get("value")
+                if val is None:
+                    self.emit(f"{t} {target};")
+                else:
+                    self.emit(f"{t} {target} = {self.render_expr(val)};")
+            else:
+                self.emit_stmt(s)
+        self.current_class_name = prev_class
+        self.current_class_fields = prev_fields
+        self.indent -= 1
+        self.emit("};")
+
+    def render_expr(self, expr: dict[str, Any] | None) -> str:
+        if expr is None:
+            return "/* none */"
+        kind = expr.get("kind")
+
+        if kind == "Name":
+            name = str(expr.get("id", "_"))
+            return self.renamed_symbols.get(name, name)
+        if kind == "Constant":
+            v = expr.get("value")
+            if isinstance(v, bool):
+                return "true" if v else "false"
+            if v is None:
+                return "nullptr"
+            if isinstance(v, str):
+                return json.dumps(v)
+            return str(v)
+        if kind == "Attribute":
+            base = self.render_expr(expr.get("value"))
+            attr = expr.get("attr", "")
+            if base == "self":
+                return f"this->{attr}"
+            if base == "math":
+                if attr == "pi":
+                    return "pycs::cpp_module::math::pi"
+                if attr == "e":
+                    return "pycs::cpp_module::math::e"
+            bt = self.get_expr_type(expr.get("value"))
+            if bt == "Path":
+                if attr == "name":
+                    return f"{base}.filename().string()"
+                if attr == "stem":
+                    return f"{base}.stem().string()"
+                if attr == "parent":
+                    return f"{base}.parent_path()"
+            return f"{base}.{attr}"
+        if kind == "Call":
+            fn = expr.get("func") or {}
+            fn_name = self.render_expr(fn)
+            args = [self.render_expr(a) for a in expr.get("args", [])]
+            keywords = expr.get("keywords", [])
+            kw: dict[str, str] = {}
+            for k in keywords:
+                kname = k.get("arg")
+                if isinstance(kname, str):
+                    kw[kname] = self.render_expr(k.get("value"))
+            if expr.get("lowered_kind") == "BuiltinCall":
+                runtime_call = expr.get("runtime_call")
+                builtin_name = expr.get("builtin_name")
+                if runtime_call == "py_print":
+                    return f"py_print({', '.join(args)})"
+                if runtime_call == "py_len" and len(args) == 1:
+                    return f"py_len({args[0]})"
+                if runtime_call == "py_to_string" and len(args) == 1:
+                    return f"py_to_string({args[0]})"
+                if runtime_call == "static_cast" and len(args) == 1:
+                    target = self.cpp_type(expr.get("resolved_type"))
+                    arg_t = self.get_expr_type((expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None)
+                    if target == "int64" and arg_t in {"str", "unknown"}:
+                        return f"py_to_int64({args[0]})"
+                    return f"static_cast<{target}>({args[0]})"
+                if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
+                    fn = "min" if runtime_call == "py_min" else "max"
+                    return self.render_minmax(fn, args, self.get_expr_type(expr))
+                if runtime_call == "perf_counter":
+                    return "perf_counter()"
+                if runtime_call == "write_rgb_png":
+                    return f"write_rgb_png({', '.join(args)})"
+                if runtime_call == "grayscale_palette":
+                    return "grayscale_palette()"
+                if runtime_call == "save_gif":
+                    path = args[0] if len(args) >= 1 else '""'
+                    w = args[1] if len(args) >= 2 else "0"
+                    h = args[2] if len(args) >= 3 else "0"
+                    frames = args[3] if len(args) >= 4 else "list<list<uint8>>{}"
+                    palette = args[4] if len(args) >= 5 else "grayscale_palette()"
+                    if palette == "nullptr":
+                        palette = "grayscale_palette()"
+                    delay_cs = kw.get("delay_cs", "4")
+                    loop = kw.get("loop", "0")
+                    return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
+                if runtime_call == "py_isdigit" and len(args) == 1:
+                    return f"py_isdigit({args[0]})"
+                if runtime_call == "py_isalpha" and len(args) == 1:
+                    return f"py_isalpha({args[0]})"
+                if runtime_call == "std::runtime_error":
+                    if len(args) == 0:
+                        return 'std::runtime_error("error")'
+                    return f"std::runtime_error({args[0]})"
+                if runtime_call == "Path":
+                    return f"Path({', '.join(args)})"
+                if runtime_call == "std::filesystem::create_directories":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"std::filesystem::create_directories({owner})"
+                if runtime_call == "std::filesystem::exists":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"std::filesystem::exists({owner})"
+                if runtime_call == "py_write_text":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    write_arg = args[0] if len(args) >= 1 else '""'
+                    return f"py_write_text({owner}, {write_arg})"
+                if runtime_call == "py_read_text":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"py_read_text({owner})"
+                if runtime_call == "path_parent":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"{owner}.parent_path()"
+                if runtime_call == "path_name":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"{owner}.filename().string()"
+                if runtime_call == "path_stem":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"{owner}.stem().string()"
+                if runtime_call == "identity":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return owner
+                if runtime_call == "list.append":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    a0 = args[0] if len(args) >= 1 else "/* missing */"
+                    return f"{owner}.push_back({a0})"
+                if runtime_call == "list.extend":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    a0 = args[0] if len(args) >= 1 else "{}"
+                    return f"{owner}.insert({owner}.end(), {a0}.begin(), {a0}.end())"
+                if runtime_call == "list.pop":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    if len(args) == 0:
+                        return f"py_pop({owner})"
+                    return f"py_pop({owner}, {args[0]})"
+                if runtime_call == "list.clear":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"{owner}.clear()"
+                if runtime_call == "list.reverse":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"std::reverse({owner}.begin(), {owner}.end())"
+                if runtime_call == "list.sort":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"std::sort({owner}.begin(), {owner}.end())"
+                if runtime_call == "set.add":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    a0 = args[0] if len(args) >= 1 else "/* missing */"
+                    return f"{owner}.insert({a0})"
+                if runtime_call in {"set.discard", "set.remove"}:
+                    owner = self.render_expr((fn or {}).get("value"))
+                    a0 = args[0] if len(args) >= 1 else "/* missing */"
+                    return f"{owner}.erase({a0})"
+                if runtime_call == "set.clear":
+                    owner = self.render_expr((fn or {}).get("value"))
+                    return f"{owner}.clear()"
+                if isinstance(runtime_call, str) and runtime_call.startswith("std::"):
+                    return f"{runtime_call}({', '.join(args)})"
+                if builtin_name in {"bytes", "bytearray"}:
+                    return f"list<uint8>({', '.join(args)})" if len(args) >= 1 else "list<uint8>{}"
+            if fn.get("kind") == "Name":
+                raw = fn.get("id")
+                if raw == "range":
+                    raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
+                if raw == "print":
+                    return f"py_print({', '.join(args)})"
+                if raw == "len" and len(args) == 1:
+                    return f"py_len({args[0]})"
+                if raw == "str" and len(args) == 1:
+                    return f"py_to_string({args[0]})"
+                if raw in {"int", "float", "bool"} and len(args) == 1:
+                    target = self.cpp_type(expr.get("resolved_type"))
+                    arg_t = self.get_expr_type((expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None)
+                    if raw == "int" and target == "int64" and arg_t in {"str", "unknown"}:
+                        return f"py_to_int64({args[0]})"
+                    return f"static_cast<{target}>({args[0]})"
+                if raw in {"min", "max"} and len(args) >= 1:
+                    return self.render_minmax(raw, args, self.get_expr_type(expr))
+                if raw == "perf_counter":
+                    return "perf_counter()"
+                if raw in {"Exception", "RuntimeError"}:
+                    if len(args) == 0:
+                        return 'std::runtime_error("error")'
+                    return f"std::runtime_error({args[0]})"
+                if raw == "Path":
+                    return f"Path({', '.join(args)})"
+            if fn.get("kind") == "Attribute":
+                owner = fn.get("value")
+                owner_t = self.get_expr_type(owner)
+                owner_expr = self.render_expr(owner)
+                attr = fn.get("attr")
+                if owner_expr == "math":
+                    math_map = {
+                        "sqrt": "pycs::cpp_module::math::sqrt",
+                        "sin": "pycs::cpp_module::math::sin",
+                        "cos": "pycs::cpp_module::math::cos",
+                        "tan": "pycs::cpp_module::math::tan",
+                        "exp": "pycs::cpp_module::math::exp",
+                        "log": "pycs::cpp_module::math::log",
+                        "log10": "pycs::cpp_module::math::log10",
+                        "fabs": "pycs::cpp_module::math::fabs",
+                        "floor": "pycs::cpp_module::math::floor",
+                        "ceil": "pycs::cpp_module::math::ceil",
+                        "pow": "pycs::cpp_module::math::pow",
+                    }
+                    if attr in math_map:
+                        return f"{math_map[attr]}({', '.join(args)})"
+                if owner_t == "Path":
+                    if attr == "mkdir":
+                        return f"std::filesystem::create_directories({owner_expr})"
+                    if attr == "exists":
+                        return f"std::filesystem::exists({owner_expr})"
+                    if attr == "write_text":
+                        write_arg = args[0] if len(args) >= 1 else '""'
+                        return f"py_write_text({owner_expr}, {write_arg})"
+                    if attr == "read_text":
+                        return f"py_read_text({owner_expr})"
+                if attr == "isdigit":
+                    return f"py_isdigit({owner_expr})"
+                if attr == "isalpha":
+                    return f"py_isalpha({owner_expr})"
+                if owner_t.startswith("list["):
+                    if attr == "append":
+                        a0 = args[0] if len(args) >= 1 else "/* missing */"
+                        return f"{owner_expr}.push_back({a0})"
+                    if attr == "extend":
+                        a0 = args[0] if len(args) >= 1 else "{}"
+                        return f"{owner_expr}.insert({owner_expr}.end(), {a0}.begin(), {a0}.end())"
+                    if attr == "pop":
+                        if len(args) == 0:
+                            return f"py_pop({owner_expr})"
+                        return f"py_pop({owner_expr}, {args[0]})"
+                    if attr == "clear":
+                        return f"{owner_expr}.clear()"
+                    if attr == "reverse":
+                        return f"std::reverse({owner_expr}.begin(), {owner_expr}.end())"
+                    if attr == "sort":
+                        return f"std::sort({owner_expr}.begin(), {owner_expr}.end())"
+                if owner_t.startswith("set["):
+                    if attr == "add":
+                        a0 = args[0] if len(args) >= 1 else "/* missing */"
+                        return f"{owner_expr}.insert({a0})"
+                    if attr in {"discard", "remove"}:
+                        a0 = args[0] if len(args) >= 1 else "/* missing */"
+                        return f"{owner_expr}.erase({a0})"
+                    if attr == "clear":
+                        return f"{owner_expr}.clear()"
+            return f"{fn_name}({', '.join(args)})"
+        if kind == "RangeExpr":
+            start = self.render_expr(expr.get("start"))
+            stop = self.render_expr(expr.get("stop"))
+            step = self.render_expr(expr.get("step"))
+            return f"py_range({start}, {stop}, {step})"
+        if kind == "BinOp":
+            if expr.get("left") is None or expr.get("right") is None:
+                rep = expr.get("repr")
+                if isinstance(rep, str) and rep != "":
+                    return rep
+            left = self.render_expr(expr.get("left"))
+            right = self.render_expr(expr.get("right"))
+            cast_rules = expr.get("casts", [])
+            for c in cast_rules:
+                on = c.get("on")
+                to_t = c.get("to")
+                if on == "left":
+                    left = self.apply_cast(left, to_t)
+                elif on == "right":
+                    right = self.apply_cast(right, to_t)
+            op_name = expr.get("op")
+            if op_name == "Div":
+                # Prefer EAST-provided casted division; otherwise keep legacy-compatible py_div semantics.
+                if len(cast_rules) > 0:
+                    return f"({left} / {right})"
+                return f"py_div({left}, {right})"
+            if op_name == "FloorDiv":
+                return f"py_floordiv({left}, {right})"
+            if op_name == "Mod":
+                return f"py_mod({left}, {right})"
+            if op_name == "Mult":
+                lt = self.get_expr_type(expr.get("left")) or ""
+                rt = self.get_expr_type(expr.get("right")) or ""
+                if lt.startswith("list[") and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                    return f"py_repeat({left}, {right})"
+                if rt.startswith("list[") and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                    return f"py_repeat({right}, {left})"
+                if lt == "str" and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                    return f"py_repeat({left}, {right})"
+                if rt == "str" and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                    return f"py_repeat({right}, {left})"
+            op = BIN_OPS.get(op_name, "+")
+            return f"({left} {op} {right})"
+        if kind == "UnaryOp":
+            operand = self.render_expr(expr.get("operand"))
+            op = expr.get("op")
+            if op == "Not":
+                return f"(!{operand})"
+            if op == "USub":
+                return f"(-{operand})"
+            if op == "UAdd":
+                return f"(+{operand})"
+            return f"({operand})"
+        if kind == "BoolOp":
+            values = [self.render_expr(v) for v in expr.get("values", [])]
+            op = "&&" if expr.get("op") == "And" else "||"
+            return "(" + f" {op} ".join(values) + ")"
+        if kind == "Compare":
+            if expr.get("lowered_kind") == "Contains":
+                container = self.render_expr(expr.get("container"))
+                key = self.render_expr(expr.get("key"))
+                ctype = self.get_expr_type(expr.get("container")) or ""
+                if ctype.startswith("dict["):
+                    base = f"({container}.find({key}) != {container}.end())"
+                else:
+                    base = f"(std::find({container}.begin(), {container}.end(), {key}) != {container}.end())"
+                if bool(expr.get("negated", False)):
+                    return f"(!{base})"
+                return base
+            left = self.render_expr(expr.get("left"))
+            ops = expr.get("ops", [])
+            cmps = expr.get("comparators", [])
+            parts: list[str] = []
+            cur = left
+            for i, op in enumerate(ops):
+                rhs = self.render_expr(cmps[i])
+                cop = CMP_OPS.get(op, "==")
+                if cop == "/* in */":
+                    rhs_type = self.get_expr_type(cmps[i]) or ""
+                    if rhs_type.startswith("dict["):
+                        parts.append(f"({rhs}.find({cur}) != {rhs}.end())")
+                    else:
+                        parts.append(f"(std::find({rhs}.begin(), {rhs}.end(), {cur}) != {rhs}.end())")
+                elif cop == "/* not in */":
+                    rhs_type = self.get_expr_type(cmps[i]) or ""
+                    if rhs_type.startswith("dict["):
+                        parts.append(f"({rhs}.find({cur}) == {rhs}.end())")
+                    else:
+                        parts.append(f"(std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end())")
+                else:
+                    parts.append(f"({cur} {cop} {rhs})")
+                cur = rhs
+            return "(" + " && ".join(parts) + ")" if parts else "true"
+        if kind == "IfExp":
+            body = self.render_expr(expr.get("body"))
+            orelse = self.render_expr(expr.get("orelse"))
+            for c in expr.get("casts", []):
+                on = c.get("on")
+                to_t = c.get("to")
+                if on == "body":
+                    body = self.apply_cast(body, to_t)
+                elif on == "orelse":
+                    orelse = self.apply_cast(orelse, to_t)
+            return f"({self.render_expr(expr.get('test'))} ? {body} : {orelse})"
+        if kind == "List":
+            t = self.cpp_type(expr.get("resolved_type"))
+            items = ", ".join(self.render_expr(e) for e in expr.get("elements", []))
+            return f"{t}{{{items}}}"
+        if kind == "Tuple":
+            items = ", ".join(self.render_expr(e) for e in expr.get("elements", []))
+            return f"std::make_tuple({items})"
+        if kind == "Set":
+            t = self.cpp_type(expr.get("resolved_type"))
+            items = ", ".join(self.render_expr(e) for e in expr.get("elements", []))
+            return f"{t}{{{items}}}"
+        if kind == "Dict":
+            t = self.cpp_type(expr.get("resolved_type"))
+            items: list[str] = []
+            for kv in expr.get("entries", []):
+                k = self.render_expr(kv.get("key"))
+                v = self.render_expr(kv.get("value"))
+                items.append(f"{{{k}, {v}}}")
+            return f"{t}{{{', '.join(items)}}}"
+        if kind == "Subscript":
+            val = self.render_expr(expr.get("value"))
+            if expr.get("lowered_kind") == "SliceExpr":
+                lo = self.render_expr(expr.get("lower")) if expr.get("lower") is not None else "0"
+                up = self.render_expr(expr.get("upper")) if expr.get("upper") is not None else f"py_len({val})"
+                return f"py_slice({val}, {lo}, {up})"
+            sl = expr.get("slice")
+            if isinstance(sl, dict) and sl.get("kind") == "Slice":
+                lo = self.render_expr(sl.get("lower")) if sl.get("lower") is not None else "0"
+                up = self.render_expr(sl.get("upper")) if sl.get("upper") is not None else f"py_len({val})"
+                return f"py_slice({val}, {lo}, {up})"
+            return f"{val}[{self.render_expr(sl)}]"
+        if kind == "JoinedStr":
+            if expr.get("lowered_kind") == "Concat":
+                parts: list[str] = []
+                for p in expr.get("concat_parts", []):
+                    if p.get("kind") == "literal":
+                        parts.append(json.dumps(p.get("value", "")))
+                    elif p.get("kind") == "expr":
+                        val = p.get("value")
+                        if val is None:
+                            parts.append('""')
+                        else:
+                            parts.append(f"py_to_string({self.render_expr(val)})")
+                if len(parts) == 0:
+                    return '""'
+                return "(" + " + ".join(parts) + ")"
+            parts: list[str] = []
+            for p in expr.get("values", []):
+                pk = p.get("kind")
+                if pk == "Constant":
+                    parts.append(json.dumps(p.get("value", "")))
+                elif pk == "FormattedValue":
+                    parts.append(f"py_to_string({self.render_expr(p.get('value'))})")
+            if not parts:
+                return '""'
+            return "(" + " + ".join(parts) + ")"
+        if kind == "ListComp":
+            gens = expr.get("generators", [])
+            if len(gens) != 1:
+                return "{}"
+            g = gens[0]
+            tgt = self.render_expr(g.get("target"))
+            it = self.render_expr(g.get("iter"))
+            elt = self.render_expr(expr.get("elt"))
+            out_t = self.cpp_type(expr.get("resolved_type"))
+            lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
+            if isinstance(g.get("iter"), dict) and g.get("iter", {}).get("kind") == "RangeExpr":
+                rg = g.get("iter", {})
+                start = self.render_expr(rg.get("start"))
+                stop = self.render_expr(rg.get("stop"))
+                step = self.render_expr(rg.get("step"))
+                mode = rg.get("range_mode")
+                if mode == "ascending":
+                    cond = f"({tgt} < {stop})"
+                elif mode == "descending":
+                    cond = f"({tgt} > {stop})"
+                else:
+                    cond = f"(({step}) > 0 ? ({tgt} < {stop}) : ({tgt} > {stop}))"
+                lines.append(f"    for (int64 {tgt} = {start}; {cond}; {tgt} += ({step})) {{")
+            else:
+                lines.append(f"    for (auto {tgt} : {it}) {{")
+            ifs = g.get("ifs", [])
+            if len(ifs) == 0:
+                lines.append(f"        __out.push_back({elt});")
+            else:
+                cond = " && ".join(self.render_expr(c) for c in ifs)
+                lines.append(f"        if ({cond}) __out.push_back({elt});")
+            lines.append("    }")
+            lines.append("    return __out;")
+            lines.append("}()")
+            return " ".join(lines)
+
+        rep = expr.get("repr")
+        if isinstance(rep, str) and rep != "":
+            return rep
+        return f"/* unsupported expr: {kind} */"
+
+    def get_expr_type(self, expr: dict[str, Any] | None) -> str | None:
+        if expr is None:
+            return None
+        t = expr.get("resolved_type")
+        return t if isinstance(t, str) else None
+
+    def cpp_type(self, east_type: str | None) -> str:
+        if east_type is None:
+            return "auto"
+        if east_type == "None":
+            return "void"
+        if east_type in {
+            "int8",
+            "uint8",
+            "int16",
+            "uint16",
+            "int32",
+            "uint32",
+            "int64",
+            "uint64",
+            "float32",
+            "float64",
+            "bool",
+            "str",
+        }:
+            return east_type
+        if east_type == "Path":
+            return "Path"
+        if east_type == "Exception":
+            return "std::runtime_error"
+        if east_type.startswith("list[") and east_type.endswith("]"):
+            inner = self.split_generic(east_type[5:-1])
+            if len(inner) == 1:
+                return f"list<{self.cpp_type(inner[0])}>"
+        if east_type.startswith("set[") and east_type.endswith("]"):
+            inner = self.split_generic(east_type[4:-1])
+            if len(inner) == 1:
+                return f"set<{self.cpp_type(inner[0])}>"
+        if east_type.startswith("dict[") and east_type.endswith("]"):
+            inner = self.split_generic(east_type[5:-1])
+            if len(inner) == 2:
+                return f"dict<{self.cpp_type(inner[0])}, {self.cpp_type(inner[1])}>"
+        if east_type.startswith("tuple[") and east_type.endswith("]"):
+            inner = self.split_generic(east_type[6:-1])
+            return "std::tuple<" + ", ".join(self.cpp_type(x) for x in inner) + ">"
+        if east_type == "unknown":
+            return "auto"
+        if east_type.startswith("callable["):
+            return "auto"
+        if east_type == "module":
+            return "auto"
+        return east_type
+
+    def split_generic(self, s: str) -> list[str]:
+        if s == "":
+            return []
+        out: list[str] = []
+        depth = 0
+        start = 0
+        for i, ch in enumerate(s):
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                out.append(s[start:i].strip())
+                start = i + 1
+        out.append(s[start:].strip())
+        return out
 
 
-__all__ = ["TranspileError", "CppTranspiler", "transpile"]
+def load_east(input_path: Path) -> dict[str, Any]:
+    if input_path.suffix == ".json":
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise RuntimeError("Invalid EAST JSON payload")
+        if payload.get("ok") is False:
+            raise RuntimeError(f"EAST error: {payload.get('error')}")
+        if payload.get("ok") is True and isinstance(payload.get("east"), dict):
+            return payload["east"]
+        if payload.get("kind") == "Module":
+            return payload
+        raise RuntimeError("Invalid EAST JSON structure")
 
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Transpile typed Python code to C++")
-    parser.add_argument("input", help="Path to input Python file")
-    parser.add_argument("output", help="Path to output C++ file")
-    args = parser.parse_args()
     try:
-        transpile(args.input, args.output)
-    except (OSError, SyntaxError, TranspileError) as exc:
+        east = convert_path(input_path)
+    except (SyntaxError, EastBuildError) as exc:
+        raise RuntimeError(f"EAST conversion failed: {exc}") from exc
+    return east
+
+
+def transpile_to_cpp(east_module: dict[str, Any]) -> str:
+    return CppEmitter(east_module).transpile()
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Transpile Python/EAST to C++ via EAST")
+    ap.add_argument("input", help="Input .py or EAST .json")
+    ap.add_argument("-o", "--output", help="Output .cpp path")
+    args = ap.parse_args(argv)
+
+    input_path = Path(args.input)
+    if not input_path.exists():
+        print(f"error: input file not found: {input_path}", file=sys.stderr)
+        return 1
+
+    try:
+        east_module = load_east(input_path)
+        cpp = transpile_to_cpp(east_module)
+    except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+
+    if args.output:
+        out_path = Path(args.output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(cpp, encoding="utf-8")
+    else:
+        print(cpp)
     return 0
 
 

@@ -5,6 +5,10 @@
 def calc(x: int, y: int) -> int:
     return (x - y) * 2
 
+def div_calc(x: int, y: int) -> float:
+    return x / y
+
 
 if __name__ == "__main__":
     print(calc(9, 4))
+    print(div_calc(9, 4))

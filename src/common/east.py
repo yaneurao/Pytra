@@ -32,6 +32,7 @@ INT_TYPES = {
     "int64",
     "uint64",
 }
+FLOAT_TYPES = {"float32", "float64"}
 
 
 @dataclass
@@ -53,6 +54,7 @@ class EastBuildError(Exception):
 
 
 def span_of(node: ast.AST | None) -> dict[str, int | None]:
+    """Return stable source span dict for AST node or null-span for None."""
     if node is None:
         return {"lineno": None, "col": None, "end_lineno": None, "end_col": None}
     return {
@@ -64,6 +66,7 @@ def span_of(node: ast.AST | None) -> dict[str, int | None]:
 
 
 def is_main_guard(stmt: ast.stmt) -> bool:
+    """Check whether stmt is `if __name__ == "__main__":`."""
     if not isinstance(stmt, ast.If):
         return False
     test = stmt.test
@@ -84,17 +87,21 @@ def is_main_guard(stmt: ast.stmt) -> bool:
 
 
 def annotation_to_type(ann: ast.expr | None) -> str | None:
+    """Normalize Python annotation AST into EAST type string."""
     if ann is None:
         return None
     if isinstance(ann, ast.Name):
-        float_aliases = {"float32", "float64"}
         if ann.id == "int":
             return "int64"
         if ann.id in INT_TYPES:
             return ann.id
-        if ann.id in float_aliases:
-            return "float"
-        if ann.id in {"float", "bool", "str", "bytes", "bytearray", "Path"}:
+        if ann.id in FLOAT_TYPES:
+            return ann.id
+        if ann.id == "float":
+            return "float64"
+        if ann.id in {"bytes", "bytearray"}:
+            return "list[uint8]"
+        if ann.id in {"bool", "str", "Path"}:
             return ann.id
         if ann.id in {"None", "NoneType"}:
             return "None"
@@ -139,28 +146,34 @@ class ArgUsageAnalyzer(ast.NodeVisitor):
     PURE_BUILTINS = {"len", "print", "int", "float", "str", "bool", "range", "min", "max", "ord", "chr"}
 
     def __init__(self, arg_names: set[str]) -> None:
+        """Initialize analyzer for one function scope."""
         self.arg_names = set(arg_names)
         self.mutable: set[str] = set()
 
     def _mark_if_arg(self, node: ast.expr) -> None:
+        """Mark name as mutable if expression directly references an arg."""
         if isinstance(node, ast.Name) and node.id in self.arg_names:
             self.mutable.add(node.id)
 
     def visit_Assign(self, node: ast.Assign) -> Any:
+        """Assignment to arg/arg-substructure means mutable usage."""
         for t in node.targets:
             self._mark_mutation_target(t)
         self.generic_visit(node.value)
 
     def visit_AugAssign(self, node: ast.AugAssign) -> Any:
+        """Augmented assignment mutates arg targets."""
         self._mark_mutation_target(node.target)
         self.generic_visit(node.value)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> Any:
+        """Annotated assignment mutates arg targets too."""
         self._mark_mutation_target(node.target)
         if node.value is not None:
             self.generic_visit(node.value)
 
     def visit_Call(self, node: ast.Call) -> Any:
+        """Method calls on args are mutable when method is in mutating set."""
         if isinstance(node.func, ast.Attribute):
             owner = node.func.value
             if isinstance(owner, ast.Name) and owner.id in self.arg_names and node.func.attr in self.MUTATING_METHODS:
@@ -174,6 +187,7 @@ class ArgUsageAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _mark_mutation_target(self, target: ast.expr) -> None:
+        """Mark mutation when target writes arg itself/field/item."""
         if isinstance(target, ast.Name) and target.id in self.arg_names:
             self.mutable.add(target.id)
             return
@@ -186,9 +200,12 @@ class ArgUsageAnalyzer(ast.NodeVisitor):
 
 
 class EastBuilder:
+    """Build EAST JSON from Python AST with type and normalization passes."""
+
     RESERVED = {"main", "py_main", "__pytra_main"}
 
     def __init__(self, source: str, filename: str) -> None:
+        """Prepare parser state, type env stacks, and precompute tables."""
         self.source = source
         self.filename = filename
         self.module = ast.parse(source, filename=filename)
@@ -204,6 +221,7 @@ class EastBuilder:
         self.current_class_stack: list[str] = []
 
     def build(self) -> dict[str, Any]:
+        """Build module-level EAST document."""
         body: list[dict[str, Any]] = []
         main_body: list[dict[str, Any]] = []
         self._precompute_module_renames(self.module)
@@ -227,6 +245,7 @@ class EastBuilder:
         }
 
     def _precompute_module_renames(self, module: ast.Module) -> None:
+        """Collect rename/type/class metadata before node conversion."""
         counts: dict[str, int] = {}
         for stmt in module.body:
             if isinstance(stmt, (ast.FunctionDef, ast.ClassDef)):
@@ -284,6 +303,7 @@ class EastBuilder:
                 self.renamed_symbols[name] = f"__pytra_{name}"
 
     def _stmt(self, stmt: ast.stmt) -> dict[str, Any]:
+        """Convert one Python statement node into EAST statement node."""
         if isinstance(stmt, ast.FunctionDef):
             return self._function(stmt)
         if isinstance(stmt, ast.ClassDef):
@@ -292,6 +312,8 @@ class EastBuilder:
                 "kind": "ClassDef",
                 "name": self._renamed(stmt.name),
                 "original_name": stmt.name,
+                "base": self.class_base.get(stmt.name),
+                "field_types": self.class_field_types.get(stmt.name, {}),
                 "source_span": span_of(stmt),
                 "body": [self._stmt(s) for s in stmt.body],
             }
@@ -308,13 +330,25 @@ class EastBuilder:
                 raise self._error("unsupported_syntax", "only single-target assignment is supported", stmt, "Split assignment into one target per statement.")
             target = stmt.targets[0]
             value = self._expr(stmt.value)
+            declare = False
+            decl_type: str | None = None
             if isinstance(target, ast.Name):
+                declare = target.id not in self.type_env_stack[-1]
+                decl_type = value["resolved_type"]
                 self._bind_name_type(target.id, value["resolved_type"], stmt)
+            elif isinstance(target, ast.Tuple):
+                tuple_elem_types = self._tuple_element_types(value["resolved_type"])
+                if tuple_elem_types is not None and len(tuple_elem_types) == len(target.elts):
+                    for idx, elt in enumerate(target.elts):
+                        if isinstance(elt, ast.Name):
+                            self._bind_name_type(elt.id, tuple_elem_types[idx], stmt)
             return {
                 "kind": "Assign",
                 "source_span": span_of(stmt),
                 "target": self._expr(target),
                 "value": value,
+                "declare": declare,
+                "decl_type": decl_type,
             }
         if isinstance(stmt, ast.AugAssign):
             target_expr = self._expr(stmt.target)
@@ -323,20 +357,22 @@ class EastBuilder:
                 current = self._lookup_name_type(stmt.target.id)
                 rhs_t = value_expr["resolved_type"]
                 if current is not None and self._is_numeric_type(current) and self._is_numeric_type(rhs_t):
-                    self._bind_name_type(stmt.target.id, "float" if "float" in {current, rhs_t} else current, stmt)
+                    self._bind_name_type(stmt.target.id, self._promote_numeric_type(current, rhs_t), stmt)
             return {
                 "kind": "AugAssign",
                 "source_span": span_of(stmt),
                 "target": target_expr,
                 "op": type(stmt.op).__name__,
                 "value": value_expr,
+                "declare": False,
+                "decl_type": None,
             }
         if isinstance(stmt, ast.AnnAssign):
             if isinstance(stmt.target, ast.Attribute):
-                value = self._expr(stmt.value) if stmt.value is not None else None
                 ann_ty = annotation_to_type(stmt.annotation)
                 if ann_ty is None:
                     raise self._error("unsupported_syntax", "unsupported type annotation", stmt.annotation, "Use supported Python-style annotations.")
+                value = self._expr_with_expected_type(stmt.value, ann_ty) if stmt.value is not None else None
                 if value is not None and not self._types_compatible(ann_ty, value["resolved_type"]):
                     raise self._error(
                         "semantic_conflict",
@@ -356,7 +392,8 @@ class EastBuilder:
             ann_ty = annotation_to_type(stmt.annotation)
             if ann_ty is None:
                 raise self._error("unsupported_syntax", "unsupported type annotation", stmt.annotation, "Use supported Python-style annotations.")
-            value = self._expr(stmt.value) if stmt.value is not None else None
+            value = self._expr_with_expected_type(stmt.value, ann_ty) if stmt.value is not None else None
+            declare = stmt.target.id not in self.type_env_stack[-1] if len(self.type_env_stack) > 0 else True
             if value is not None and not self._types_compatible(ann_ty, value["resolved_type"]):
                 raise self._error(
                     "semantic_conflict",
@@ -371,6 +408,8 @@ class EastBuilder:
                 "target": self._expr(stmt.target),
                 "annotation": ann_ty,
                 "value": value,
+                "declare": declare,
+                "decl_type": ann_ty,
             }
         if isinstance(stmt, ast.Expr):
             return {"kind": "Expr", "source_span": span_of(stmt), "value": self._expr(stmt.value)}
@@ -393,6 +432,7 @@ class EastBuilder:
                     "kind": "ForRange",
                     "source_span": span_of(stmt),
                     "target": self._expr(stmt.target),
+                    "target_type": "int64",
                     "start": self._expr(start_node),
                     "stop": self._expr(stop_node),
                     "step": self._expr(step_node),
@@ -409,6 +449,7 @@ class EastBuilder:
                 "kind": "For",
                 "source_span": span_of(stmt),
                 "target": self._expr(stmt.target),
+                "target_type": self._lookup_name_type(stmt.target.id) if isinstance(stmt.target, ast.Name) else None,
                 "iter": self._expr(stmt.iter),
                 "body": [self._stmt(s) for s in stmt.body],
                 "orelse": [self._stmt(s) for s in stmt.orelse],
@@ -437,12 +478,23 @@ class EastBuilder:
                 "exc": self._expr(stmt.exc) if stmt.exc is not None else None,
             }
         if isinstance(stmt, ast.Import):
+            for a in stmt.names:
+                bind_name = a.asname or a.name.split(".")[0]
+                self._bind_name_type(bind_name, "module", stmt)
             return {
                 "kind": "Import",
                 "source_span": span_of(stmt),
                 "names": [{"name": a.name, "asname": a.asname} for a in stmt.names],
             }
         if isinstance(stmt, ast.ImportFrom):
+            for a in stmt.names:
+                bind_name = a.asname or a.name
+                if stmt.module == "time" and a.name == "perf_counter":
+                    self._bind_name_type(bind_name, "callable[float64]", stmt)
+                elif stmt.module == "math":
+                    self._bind_name_type(bind_name, "callable[float64]", stmt)
+                else:
+                    self._bind_name_type(bind_name, "unknown", stmt)
             return {
                 "kind": "ImportFrom",
                 "source_span": span_of(stmt),
@@ -459,6 +511,7 @@ class EastBuilder:
         raise self._error("unsupported_syntax", f"unsupported statement: {type(stmt).__name__}", stmt, "Rewrite to supported subset.")
 
     def _except_handler(self, h: ast.ExceptHandler) -> dict[str, Any]:
+        """Convert `except` clause into EAST handler node."""
         return {
             "kind": "ExceptHandler",
             "source_span": span_of(h),
@@ -468,6 +521,7 @@ class EastBuilder:
         }
 
     def _function(self, fn: ast.FunctionDef) -> dict[str, Any]:
+        """Convert function definition with arg usage + scoped typing."""
         fn_name = self._renamed(fn.name)
         arg_types: dict[str, str] = {}
         in_class = len(self.current_class_stack) > 0
@@ -512,7 +566,24 @@ class EastBuilder:
         }
 
     def _expr(self, expr: ast.expr) -> dict[str, Any]:
+        """Convert expression and attach resolved type/cast/borrow metadata."""
         resolved_type, casts = self._resolve_expr_type(expr)
+        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name) and expr.func.id == "range":
+            parsed = self._parse_range_iter(expr)
+            assert parsed is not None  # _parse_range_iter handles range() contract checks
+            start_node, stop_node, step_node = parsed
+            return {
+                "kind": "RangeExpr",
+                "source_span": span_of(expr),
+                "resolved_type": resolved_type,
+                "borrow_kind": self._borrow_kind(expr),
+                "casts": casts,
+                "repr": ast.unparse(expr) if hasattr(ast, "unparse") else None,
+                "start": self._expr_maybe(start_node),
+                "stop": self._expr_maybe(stop_node),
+                "step": self._expr_maybe(step_node),
+                "range_mode": self._range_mode_from_step(step_node, expr),
+            }
         out = {
             "kind": type(expr).__name__,
             "source_span": span_of(expr),
@@ -523,6 +594,21 @@ class EastBuilder:
         }
         out.update(self._expr_children(expr))
         return out
+
+    def _expr_with_expected_type(self, expr: ast.expr, expected_type: str) -> dict[str, Any]:
+        """Allow annotated empty container literals to reuse annotation type."""
+        if self._is_annotated_empty_container(expr, expected_type):
+            out = {
+                "kind": type(expr).__name__,
+                "source_span": span_of(expr),
+                "resolved_type": expected_type,
+                "borrow_kind": self._borrow_kind(expr),
+                "casts": [],
+                "repr": ast.unparse(expr) if hasattr(ast, "unparse") else None,
+            }
+            out.update(self._expr_children(expr))
+            return out
+        return self._expr(expr)
 
     def _expr_maybe(self, expr: ast.expr) -> dict[str, Any]:
         """Best-effort child serializer: keep structure even if strict typing fails."""
@@ -552,7 +638,7 @@ class EastBuilder:
         if isinstance(expr, ast.Attribute):
             return {"value": self._expr_maybe(expr.value), "attr": expr.attr}
         if isinstance(expr, ast.Call):
-            return {
+            payload = {
                 "func": self._expr_maybe(expr.func),
                 "args": [self._expr_maybe(a) for a in expr.args],
                 "keywords": [
@@ -560,6 +646,10 @@ class EastBuilder:
                     for kw in expr.keywords
                 ],
             }
+            lower = self._lower_call_info(expr)
+            if lower is not None:
+                payload.update(lower)
+            return payload
         if isinstance(expr, ast.BinOp):
             return {
                 "left": self._expr_maybe(expr.left),
@@ -571,11 +661,31 @@ class EastBuilder:
         if isinstance(expr, ast.BoolOp):
             return {"op": type(expr.op).__name__, "values": [self._expr_maybe(v) for v in expr.values]}
         if isinstance(expr, ast.Compare):
-            return {
+            payload = {
                 "left": self._expr_maybe(expr.left),
                 "ops": [type(o).__name__ for o in expr.ops],
                 "comparators": [self._expr_maybe(c) for c in expr.comparators],
             }
+            if len(expr.ops) == 1 and len(expr.comparators) == 1:
+                if isinstance(expr.ops[0], ast.In):
+                    payload.update(
+                        {
+                            "lowered_kind": "Contains",
+                            "container": self._expr_maybe(expr.comparators[0]),
+                            "key": self._expr_maybe(expr.left),
+                            "negated": False,
+                        }
+                    )
+                if isinstance(expr.ops[0], ast.NotIn):
+                    payload.update(
+                        {
+                            "lowered_kind": "Contains",
+                            "container": self._expr_maybe(expr.comparators[0]),
+                            "key": self._expr_maybe(expr.left),
+                            "negated": True,
+                        }
+                    )
+            return payload
         if isinstance(expr, ast.IfExp):
             return {
                 "test": self._expr_maybe(expr.test),
@@ -607,17 +717,26 @@ class EastBuilder:
                     "upper": self._expr_maybe(expr.slice.upper) if expr.slice.upper is not None else None,
                     "step": self._expr_maybe(expr.slice.step) if expr.slice.step is not None else None,
                 }
+                payload["lowered_kind"] = "SliceExpr"
+                payload["lower"] = payload["slice"]["lower"]
+                payload["upper"] = payload["slice"]["upper"]
+                payload["step"] = payload["slice"]["step"]
             else:
                 payload["slice"] = self._expr_maybe(expr.slice)
             return payload
         if isinstance(expr, ast.JoinedStr):
             values: list[dict[str, Any]] = []
+            concat_parts: list[dict[str, Any]] = []
             for part in expr.values:
                 if isinstance(part, ast.Constant):
-                    values.append({"kind": "Constant", "value": part.value})
+                    node = {"kind": "Constant", "value": part.value}
+                    values.append(node)
+                    concat_parts.append({"kind": "literal", "value": part.value})
                 elif isinstance(part, ast.FormattedValue):
-                    values.append({"kind": "FormattedValue", "value": self._expr_maybe(part.value)})
-            return {"values": values}
+                    inner = self._expr_maybe(part.value)
+                    values.append({"kind": "FormattedValue", "value": inner})
+                    concat_parts.append({"kind": "expr", "value": inner})
+            return {"values": values, "lowered_kind": "Concat", "concat_parts": concat_parts}
         if isinstance(expr, ast.ListComp):
             gens = []
             for g in expr.generators:
@@ -629,10 +748,114 @@ class EastBuilder:
                         "is_async": bool(g.is_async),
                     }
                 )
-            return {"elt": self._expr_maybe(expr.elt), "generators": gens}
+            payload = {"elt": self._expr_maybe(expr.elt), "generators": gens}
+            if len(expr.generators) == 1:
+                payload["lowered_kind"] = "ListCompSimple"
+            return payload
         return {}
 
+    def _lower_call_info(self, expr: ast.Call) -> dict[str, Any] | None:
+        """Annotate call nodes with language-neutral lowered builtin mapping."""
+        if isinstance(expr.func, ast.Name):
+            fn = expr.func.id
+            runtime = {
+                "print": "py_print",
+                "len": "py_len",
+                "str": "py_to_string",
+                "int": "static_cast",
+                "float": "static_cast",
+                "bool": "static_cast",
+                "bytes": "list[uint8]",
+                "bytearray": "list[uint8]",
+                "write_rgb_png": "write_rgb_png",
+                "save_gif": "save_gif",
+                "grayscale_palette": "grayscale_palette",
+                "min": "py_min",
+                "max": "py_max",
+                "perf_counter": "perf_counter",
+                "Path": "Path",
+                "Exception": "std::runtime_error",
+                "RuntimeError": "std::runtime_error",
+            }.get(fn)
+            if runtime is not None:
+                return {"lowered_kind": "BuiltinCall", "builtin_name": fn, "runtime_call": runtime}
+            return None
+        if isinstance(expr.func, ast.Attribute):
+            owner = expr.func.value
+            attr = expr.func.attr
+            if isinstance(owner, ast.Name) and owner.id == "math":
+                runtime = {
+                    "sqrt": "pycs::cpp_module::math::sqrt",
+                    "sin": "pycs::cpp_module::math::sin",
+                    "cos": "pycs::cpp_module::math::cos",
+                    "tan": "pycs::cpp_module::math::tan",
+                    "exp": "pycs::cpp_module::math::exp",
+                    "log": "pycs::cpp_module::math::log",
+                    "log10": "pycs::cpp_module::math::log10",
+                    "fabs": "pycs::cpp_module::math::fabs",
+                    "floor": "pycs::cpp_module::math::floor",
+                    "ceil": "pycs::cpp_module::math::ceil",
+                    "pow": "pycs::cpp_module::math::pow",
+                }.get(attr)
+                if runtime is not None:
+                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"math.{attr}", "runtime_call": runtime}
+            if isinstance(owner, ast.Name) and owner.id == "png_helper" and attr == "write_rgb_png":
+                return {"lowered_kind": "BuiltinCall", "builtin_name": "png_helper.write_rgb_png", "runtime_call": "write_rgb_png"}
+            if isinstance(owner, ast.Name) and owner.id == "gif_helper":
+                runtime = {
+                    "save_gif": "save_gif",
+                    "grayscale_palette": "grayscale_palette",
+                }.get(attr)
+                if runtime is not None:
+                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"gif_helper.{attr}", "runtime_call": runtime}
+            try:
+                owner_t, _ = self._resolve_expr_type(owner)
+            except EastBuildError:
+                owner_t = "unknown"
+            if owner_t == "Path":
+                runtime = {
+                    "mkdir": "std::filesystem::create_directories",
+                    "exists": "std::filesystem::exists",
+                    "write_text": "py_write_text",
+                    "read_text": "py_read_text",
+                    "resolve": "identity",
+                    "parent": "path_parent",
+                    "name": "path_name",
+                    "stem": "path_stem",
+                }.get(attr)
+                if runtime is not None:
+                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"Path.{attr}", "runtime_call": runtime}
+            if owner_t == "str":
+                runtime = {
+                    "isdigit": "py_isdigit",
+                    "isalpha": "py_isalpha",
+                }.get(attr)
+                if runtime is not None:
+                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"str.{attr}", "runtime_call": runtime}
+            if owner_t.startswith("list["):
+                runtime = {
+                    "append": "list.append",
+                    "extend": "list.extend",
+                    "pop": "list.pop",
+                    "clear": "list.clear",
+                    "reverse": "list.reverse",
+                    "sort": "list.sort",
+                }.get(attr)
+                if runtime is not None:
+                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"list.{attr}", "runtime_call": runtime}
+            if owner_t.startswith("set["):
+                runtime = {
+                    "add": "set.add",
+                    "discard": "set.discard",
+                    "remove": "set.remove",
+                    "clear": "set.clear",
+                }.get(attr)
+                if runtime is not None:
+                    return {"lowered_kind": "BuiltinCall", "builtin_name": f"set.{attr}", "runtime_call": runtime}
+        return None
+
     def _resolve_expr_type(self, expr: ast.expr) -> tuple[str, list[dict[str, Any]]]:
+        """Infer expression type and required numeric cast annotations."""
         if isinstance(expr, ast.Name):
             if expr.id in {"True", "False"}:
                 return "bool", []
@@ -655,7 +878,7 @@ class EastBuilder:
             if isinstance(expr.value, int):
                 return "int64", []
             if isinstance(expr.value, float):
-                return "float", []
+                return "float64", []
             if isinstance(expr.value, str):
                 return "str", []
             if expr.value is None:
@@ -692,22 +915,46 @@ class EastBuilder:
                 if lt == "Path":
                     return "Path", []
                 if self._is_numeric_type(lt) and self._is_numeric_type(rt):
-                    if self._is_int_type(lt):
-                        casts.append({"on": "left", "from": lt, "to": "float", "reason": "numeric_promotion"})
-                    if self._is_int_type(rt):
-                        casts.append({"on": "right", "from": rt, "to": "float", "reason": "numeric_promotion"})
-                    return "float", casts
+                    out_t = self._promote_numeric_type(lt, rt, for_division=True)
+                    if lt != out_t:
+                        casts.append({"on": "left", "from": lt, "to": out_t, "reason": "numeric_promotion"})
+                    if rt != out_t:
+                        casts.append({"on": "right", "from": rt, "to": out_t, "reason": "numeric_promotion"})
+                    return out_t, casts
             if isinstance(expr.op, (ast.Add, ast.Sub, ast.Mult, ast.Mod, ast.FloorDiv)):
                 if lt == "str" and rt == "str" and isinstance(expr.op, ast.Add):
                     return "str", []
+                if isinstance(expr.op, ast.Add):
+                    if (lt == "str" and rt == "unknown") or (rt == "str" and lt == "unknown"):
+                        return "str", []
+                if isinstance(expr.op, ast.Mult):
+                    if lt == "str" and self._is_int_type(rt):
+                        return "str", []
+                    if rt == "str" and self._is_int_type(lt):
+                        return "str", []
+                    if lt.startswith("list[") and lt.endswith("]") and self._is_int_type(rt):
+                        return lt, []
+                    if rt.startswith("list[") and rt.endswith("]") and self._is_int_type(lt):
+                        return rt, []
                 if self._is_numeric_type(lt) and self._is_numeric_type(rt):
                     if lt != rt:
+                        out_t = self._promote_numeric_type(lt, rt)
                         if self._is_int_type(lt):
-                            casts.append({"on": "left", "from": lt, "to": "float", "reason": "numeric_promotion"})
+                            casts.append({"on": "left", "from": lt, "to": out_t, "reason": "numeric_promotion"})
+                        if lt in FLOAT_TYPES and lt != out_t:
+                            casts.append({"on": "left", "from": lt, "to": out_t, "reason": "numeric_promotion"})
                         if self._is_int_type(rt):
-                            casts.append({"on": "right", "from": rt, "to": "float", "reason": "numeric_promotion"})
-                        return "float", casts
+                            casts.append({"on": "right", "from": rt, "to": out_t, "reason": "numeric_promotion"})
+                        if rt in FLOAT_TYPES and rt != out_t:
+                            casts.append({"on": "right", "from": rt, "to": out_t, "reason": "numeric_promotion"})
+                        return out_t, casts
                     return lt, []
+            if isinstance(expr.op, (ast.BitAnd, ast.BitOr, ast.BitXor, ast.LShift, ast.RShift)):
+                if self._is_int_type(lt) and self._is_int_type(rt):
+                    if lt == rt:
+                        return lt, []
+                    has_signed = lt.startswith("int") or rt.startswith("int")
+                    return ("int64" if has_signed else "uint64"), []
             raise self._error("inference_failure", f"cannot infer binop type: {lt} op {rt}", expr, "Add explicit cast or simplify expression.")
         if isinstance(expr, ast.UnaryOp):
             t, _ = self._resolve_expr_type(expr.operand)
@@ -726,10 +973,13 @@ class EastBuilder:
             if bt == ot:
                 return bt, []
             if self._is_numeric_type(bt) and self._is_numeric_type(ot):
-                return "float", [
-                    {"on": "body", "from": bt, "to": "float", "reason": "ifexp_numeric_promotion"},
-                    {"on": "orelse", "from": ot, "to": "float", "reason": "ifexp_numeric_promotion"},
-                ]
+                out_t = self._promote_numeric_type(bt, ot)
+                casts: list[dict[str, Any]] = []
+                if bt != out_t:
+                    casts.append({"on": "body", "from": bt, "to": out_t, "reason": "ifexp_numeric_promotion"})
+                if ot != out_t:
+                    casts.append({"on": "orelse", "from": ot, "to": out_t, "reason": "ifexp_numeric_promotion"})
+                return out_t, casts
             raise self._error("inference_failure", f"if-expression branch types mismatch: {bt} vs {ot}", expr, "Align both branches to same type.")
         if isinstance(expr, ast.Attribute):
             bt, _ = self._resolve_expr_type(expr.value)
@@ -746,7 +996,7 @@ class EastBuilder:
                 "pi",
                 "e",
             }:
-                return "float", []
+                return "float64", []
             # user-class/member unknown type is kept as dynamic marker
             return "unknown", []
         if isinstance(expr, ast.Subscript):
@@ -792,16 +1042,27 @@ class EastBuilder:
         raise self._error("unsupported_syntax", f"unsupported expression: {type(expr).__name__}", expr, "Rewrite expression to supported subset.")
 
     def _resolve_call_type(self, expr: ast.Call) -> tuple[str, list[dict[str, Any]]]:
+        """Infer return type of call expressions from known symbols/types."""
         if isinstance(expr.func, ast.Name):
             fn = expr.func.id
+            if fn == "perf_counter":
+                return "float64", []
             if fn == "int":
                 return "int64", []
-            if fn in {"float", "bool", "str", "bytes", "bytearray"}:
+            if fn == "float":
+                return "float64", []
+            if fn == "bytearray":
+                return "list[uint8]", []
+            if fn == "bytes":
+                return "list[uint8]", []
+            if fn in {"bool", "str"}:
                 return fn, []
             if fn == "len":
                 return "int64", []
             if fn == "range":
                 return "list[int64]", []
+            if fn == "grayscale_palette":
+                return "list[uint8]", []
             if fn == "Path":
                 return "Path", []
             if fn in {"min", "max"}:
@@ -810,7 +1071,7 @@ class EastBuilder:
                 ts = [self._resolve_expr_type(a)[0] for a in expr.args]
                 return self._unify_types(ts, expr), []
             if fn == "round":
-                return "float", []
+                return "float64", []
             if fn in {"print", "write_rgb_png", "save_gif"}:
                 return "None", []
             if fn in {"Exception", "RuntimeError"}:
@@ -837,7 +1098,7 @@ class EastBuilder:
                     return "None", []
             if isinstance(expr.func.value, ast.Name) and expr.func.value.id == "math":
                 if m in {"sqrt", "sin", "cos", "tan", "exp", "log", "log10", "fabs", "floor", "ceil", "pow"}:
-                    return "float", []
+                    return "float64", []
             if isinstance(expr.func.value, ast.Name):
                 owner_name = expr.func.value.id
                 owner_t = self._lookup_name_type(owner_name)
@@ -856,6 +1117,7 @@ class EastBuilder:
         raise self._error("inference_failure", "cannot infer call expression type", expr, "Add annotation or extend EAST resolver.")
 
     def _borrow_kind(self, expr: ast.expr) -> BorrowKind:
+        """Map expression usage to value/readonly_ref/mutable_ref marker."""
         if isinstance(expr, ast.Name) and len(self.arg_usage_stack) > 0:
             usage = self.arg_usage_stack[-1].get(expr.id)
             if usage == "readonly":
@@ -865,12 +1127,14 @@ class EastBuilder:
         return "value"
 
     def _lookup_name_type(self, name: str) -> str | None:
+        """Lookup name type from innermost to outer scope."""
         for env in reversed(self.type_env_stack):
             if name in env:
                 return env[name]
         return None
 
     def _bind_name_type(self, name: str, new_type: str, node: ast.AST) -> None:
+        """Bind inferred type to current scope with conflict detection."""
         if len(self.type_env_stack) == 0:
             return
         env = self.type_env_stack[-1]
@@ -885,6 +1149,7 @@ class EastBuilder:
         env[name] = new_type
 
     def _types_compatible(self, t1: str, t2: str) -> bool:
+        """Return whether two types can coexist for same symbol."""
         if t1 == t2:
             return True
         if "unknown" in {t1, t2}:
@@ -892,6 +1157,7 @@ class EastBuilder:
         return self._is_numeric_type(t1) and self._is_numeric_type(t2)
 
     def _unify_types(self, types: list[str], node: ast.AST) -> str:
+        """Unify multiple candidate types into one deterministic type."""
         uniq = sorted(set(types))
         if len(uniq) == 1:
             return uniq[0]
@@ -899,10 +1165,14 @@ class EastBuilder:
             has_signed = any(t.startswith("int") for t in uniq)
             return "int64" if has_signed else "uint64"
         if all(self._is_numeric_type(t) for t in uniq):
-            return "float"
+            out = uniq[0]
+            for t in uniq[1:]:
+                out = self._promote_numeric_type(out, t)
+            return out
         raise self._error("inference_failure", f"ambiguous types: {uniq}", node, "Add explicit annotation/cast to make the type unique.")
 
     def _iter_element_type(self, iterable_type: str) -> str | None:
+        """Extract element type from iterable-like EAST type."""
         if iterable_type.startswith("list[") and iterable_type.endswith("]"):
             return iterable_type[5:-1]
         if iterable_type.startswith("set[") and iterable_type.endswith("]"):
@@ -915,19 +1185,66 @@ class EastBuilder:
             return first
         if iterable_type == "str":
             return "str"
-        if iterable_type == "bytes" or iterable_type == "bytearray":
-            return "uint8"
         if iterable_type == "unknown":
             return "unknown"
         return None
 
     def _is_int_type(self, t: str) -> bool:
+        """Check integer scalar type."""
         return t in INT_TYPES
 
     def _is_numeric_type(self, t: str) -> bool:
-        return self._is_int_type(t) or t == "float"
+        """Check numeric scalar type (int/float families)."""
+        return self._is_int_type(t) or t in FLOAT_TYPES
+
+    def _promote_numeric_type(self, t1: str, t2: str, *, for_division: bool = False) -> str:
+        """Apply EAST numeric promotion rules."""
+        if for_division:
+            return "float64"
+        if t1 == t2:
+            return t1
+        if "float64" in {t1, t2}:
+            return "float64"
+        if "float32" in {t1, t2}:
+            return "float32"
+        if self._is_int_type(t1) and self._is_int_type(t2):
+            has_signed = t1.startswith("int") or t2.startswith("int")
+            return "int64" if has_signed else "uint64"
+        return "float64"
+
+    def _is_annotated_empty_container(self, expr: ast.expr, expected_type: str) -> bool:
+        """Allow empty literal only when annotation gives concrete container type."""
+        if isinstance(expr, ast.List):
+            return len(expr.elts) == 0 and expected_type.startswith("list[") and expected_type.endswith("]")
+        if isinstance(expr, ast.Set):
+            return len(expr.elts) == 0 and expected_type.startswith("set[") and expected_type.endswith("]")
+        if isinstance(expr, ast.Dict):
+            return len(expr.keys) == 0 and expected_type.startswith("dict[") and expected_type.endswith("]")
+        return False
+
+    def _tuple_element_types(self, tuple_type: str) -> list[str] | None:
+        """Parse `tuple[...]` type string into per-element type list."""
+        if not (tuple_type.startswith("tuple[") and tuple_type.endswith("]")):
+            return None
+        inside = tuple_type[6:-1]
+        if inside == "":
+            return []
+        parts: list[str] = []
+        depth = 0
+        start = 0
+        for i, ch in enumerate(inside):
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                parts.append(inside[start:i].strip())
+                start = i + 1
+        parts.append(inside[start:].strip())
+        return [p for p in parts if p]
 
     def _lookup_method_return_type(self, class_name: str, method: str) -> str | None:
+        """Resolve method return type following class inheritance chain."""
         cur: str | None = class_name
         while cur is not None:
             methods = self.class_method_return_types.get(cur, {})
@@ -937,6 +1254,7 @@ class EastBuilder:
         return None
 
     def _lookup_field_type(self, class_name: str, field: str) -> str | None:
+        """Resolve field type following class inheritance chain."""
         cur: str | None = class_name
         while cur is not None:
             fields = self.class_field_types.get(cur, {})
@@ -946,6 +1264,7 @@ class EastBuilder:
         return None
 
     def _parse_range_iter(self, expr: ast.expr) -> tuple[ast.expr, ast.expr, ast.expr] | None:
+        """Parse `range(...)` call into normalized `(start, stop, step)`."""
         if not (isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name) and expr.func.id == "range"):
             return None
         if expr.keywords:
@@ -974,33 +1293,40 @@ class EastBuilder:
         return "dynamic"
 
     def _renamed(self, name: str) -> str:
+        """Return renamed symbol when collision/reserved-name rewrite exists."""
         return self.renamed_symbols.get(name, name)
 
     def _error(self, kind: str, message: str, node: ast.AST | None, hint: str) -> EastBuildError:
+        """Construct EAST error payload object with normalized source span."""
         return EastBuildError(kind=kind, message=message, source_span=span_of(node), hint=hint)
 
 
 def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:
+    """Convert Python source string to EAST document."""
     return EastBuilder(source=source, filename=filename).build()
 
 
 def convert_path(input_path: Path) -> dict[str, Any]:
+    """Read Python file and convert to EAST document."""
     source = input_path.read_text(encoding="utf-8")
     return convert_source_to_east(source, str(input_path))
 
 
 def _dump_json(obj: dict[str, Any], *, pretty: bool) -> str:
+    """Serialize output JSON in compact or pretty mode."""
     if pretty:
         return json.dumps(obj, ensure_ascii=False, indent=2)
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
 
 
 def _indent(lines: list[str], level: int = 1) -> list[str]:
+    """Indent helper for human-readable C++-style rendering."""
     prefix = "    " * level
     return [prefix + ln if ln else "" for ln in lines]
 
 
 def _fmt_span(span: dict[str, Any] | None) -> str:
+    """Format source span as `line:col` for comments."""
     if not span:
         return "?:?"
     ln = span.get("lineno")
@@ -1011,6 +1337,7 @@ def _fmt_span(span: dict[str, Any] | None) -> str:
 
 
 def _render_expr(expr: dict[str, Any] | None) -> str:
+    """Render EAST expression as compact C++-style pseudo expression."""
     if expr is None:
         return "/* none */"
     rep = expr.get("repr")
@@ -1029,6 +1356,7 @@ def _render_expr(expr: dict[str, Any] | None) -> str:
 
 
 def _expr_repr(expr: dict[str, Any] | None) -> str:
+    """Best-effort expression representation (without metadata suffix)."""
     if expr is None:
         return "/* none */"
     rep = expr.get("repr")
@@ -1038,9 +1366,10 @@ def _expr_repr(expr: dict[str, Any] | None) -> str:
 
 
 def _cpp_type_name(east_type: str | None) -> str:
+    """Map EAST type names to human-view C++-like type labels."""
     if east_type is None:
         return "auto"
-    if east_type in INT_TYPES | {"float", "bool", "str", "Path", "bytes", "bytearray", "Exception", "None"}:
+    if east_type in INT_TYPES | FLOAT_TYPES | {"bool", "str", "Path", "Exception", "None"}:
         return east_type
     if east_type.startswith("list["):
         return east_type
@@ -1054,6 +1383,7 @@ def _cpp_type_name(east_type: str | None) -> str:
 
 
 def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
+    """Render one EAST statement as C++-style pseudo source lines."""
     k = stmt.get("kind")
     sp = _fmt_span(stmt.get("source_span"))
     pad = "    " * level
@@ -1229,6 +1559,7 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
 
 
 def render_east_human_cpp(out_doc: dict[str, Any]) -> str:
+    """Render whole EAST output into human-readable C++-style pseudo code."""
     lines: list[str] = []
     lines.append("// EAST Human View (C++-style pseudo source)")
     lines.append("// Generated by src/east.py")
@@ -1271,6 +1602,7 @@ def render_east_human_cpp(out_doc: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint for EAST JSON/human-view generation."""
     parser = argparse.ArgumentParser(description="Convert Python source into EAST JSON")
     parser.add_argument("input", help="Input Python file")
     parser.add_argument("-o", "--output", help="Output EAST JSON path")

@@ -19,49 +19,47 @@
 using namespace std;
 using namespace pycs::gc;
 
-long long lcg_next(long long state)
+long long run_integer_grid_checksum(long long width, long long height, long long seed)
 {
-    return (((1664525LL * state) + 1013904223LL) % 4294967296LL);
-}
-
-double run_pi_trial(long long total_samples, long long seed)
-{
-    long long inside = 0LL;
-    long long state = seed;
+    long long mod_main = 2147483647;
+    long long mod_out = 1000000007;
+    long long acc = py_mod(seed, mod_out);
     auto __pytra_range_start_1 = 0;
-    auto __pytra_range_stop_2 = total_samples;
+    auto __pytra_range_stop_2 = height;
     auto __pytra_range_step_3 = 1;
     if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto _ = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (_ < __pytra_range_stop_2) : (_ > __pytra_range_stop_2); _ += __pytra_range_step_3)
+    for (auto y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
     {
-        state = lcg_next(state);
-        double x = py_div(state, 4294967296.0);
-        state = lcg_next(state);
-        double y = py_div(state, 4294967296.0);
-        double dx = (x - 0.5);
-        double dy = (y - 0.5);
-        if ((((dx * dx) + (dy * dy)) <= 0.25))
+        long long row_sum = 0;
+        auto __pytra_range_start_4 = 0;
+        auto __pytra_range_stop_5 = width;
+        auto __pytra_range_step_6 = 1;
+        if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
+        for (auto x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
         {
-            inside = (inside + 1LL);
+            long long v = py_mod((((x * 37) + (y * 73)) + seed), mod_main);
+            v = py_mod(((v * 48271) + 1), mod_main);
+            row_sum = (row_sum + py_mod(v, 256));
         }
+        acc = py_mod((acc + (row_sum * (y + 1))), mod_out);
     }
-    return py_div((4.0 * inside), total_samples);
+    return acc;
 }
 
-void run_monte_carlo_pi()
+void run_integer_benchmark()
 {
-    long long samples = 54000000LL;
-    long long seed = 123456789LL;
+    long long width = 2400;
+    long long height = 1600;
     double start = perf_counter();
-    double pi_est = run_pi_trial(samples, seed);
+    long long checksum = run_integer_grid_checksum(width, height, 123456789);
     double elapsed = (perf_counter() - start);
-    py_print("samples:", samples);
-    py_print("pi_estimate:", pi_est);
+    py_print("pixels:", (width * height));
+    py_print("checksum:", checksum);
     py_print("elapsed_sec:", elapsed);
 }
 
 int main()
 {
-    run_monte_carlo_pi();
+    run_integer_benchmark();
     return 0;
 }

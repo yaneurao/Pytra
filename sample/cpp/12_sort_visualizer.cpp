@@ -31,13 +31,13 @@ vector<uint8_t> render(const vector<long long>& values, long long w, long long h
     if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
     for (auto i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
     {
-        long long x0 = static_cast<long long>((i * bar_w));
-        long long x1 = static_cast<long long>(((i + 1) * bar_w));
+        long long x0 = py_int((i * bar_w));
+        long long x1 = py_int(((i + 1) * bar_w));
         if ((x1 <= x0))
         {
             x1 = (x0 + 1);
         }
-        long long bh = static_cast<long long>((py_div(values[i], n) * h));
+        long long bh = py_int((py_div(py_get(values, i), n) * h));
         auto y = (h - bh);
         auto __pytra_range_start_4 = y;
         auto __pytra_range_stop_5 = h;
@@ -51,7 +51,7 @@ vector<uint8_t> render(const vector<long long>& values, long long w, long long h
             if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
             for (auto x = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (x < __pytra_range_stop_8) : (x > __pytra_range_stop_8); x += __pytra_range_step_9)
             {
-                frame[((y * w) + x)] = 255;
+                py_get(frame, ((y * w) + x)) = 255;
             }
         }
     }
@@ -72,7 +72,7 @@ void run_12_sort_visualizer()
     if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
     for (auto i = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (i < __pytra_range_stop_11) : (i > __pytra_range_stop_11); i += __pytra_range_step_12)
     {
-        values.push_back((((i * 37) + 19) % n));
+        values.push_back(py_mod(((i * 37) + 19), n));
     }
     vector<vector<uint8_t>> frames = {render(values, w, h)};
     long long op = 0;
@@ -89,14 +89,14 @@ void run_12_sort_visualizer()
         if (__pytra_range_step_18 == 0) throw std::runtime_error("range() arg 3 must not be zero");
         for (auto j = __pytra_range_start_16; (__pytra_range_step_18 > 0) ? (j < __pytra_range_stop_17) : (j > __pytra_range_stop_17); j += __pytra_range_step_18)
         {
-            if ((values[j] > values[(j + 1)]))
+            if ((py_get(values, j) > py_get(values, (j + 1))))
             {
-                auto tmp = values[j];
-                values[j] = values[(j + 1)];
-                values[(j + 1)] = tmp;
+                auto __pytra_tuple_19 = std::make_tuple(py_get(values, (j + 1)), py_get(values, j));
+                py_get(values, j) = std::get<0>(__pytra_tuple_19);
+                py_get(values, (j + 1)) = std::get<1>(__pytra_tuple_19);
                 swapped = true;
             }
-            if (((op % 8) == 0))
+            if ((py_mod(op, 8) == 0))
             {
                 frames.push_back(render(values, w, h));
             }
