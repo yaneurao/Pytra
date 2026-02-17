@@ -57,3 +57,8 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 - [test/java](../test/java): Java 変換結果
 - [test/swift](../test/swift): Swift 変換結果
 - [test/kotlin](../test/kotlin): Kotlin 変換結果
+
+## 6. 画像一致に関する補足
+
+- `sample/02_raytrace_spheres` については、Python 実行結果と C++ 実行結果で **PNG の画素（raw scanline）は一致** することを確認済みです。
+- 一方で PNG ファイル自体のバイト列は一致しません。これは主に IDAT の圧縮形式・圧縮率の差によるものです。
