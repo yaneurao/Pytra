@@ -1,23 +1,11 @@
 # 使い方について
 
-## トランスパイラ本体
-
-| 変換元 | 変換先 | 実装 |
-| - | - | - |
-| Python | C++ | [src/py2cpp.py](../src/py2cpp.py) |
-| Python | Rust | [src/py2rs.py](../src/py2rs.py) |
-| Python | C# | [src/py2cs.py](../src/py2cs.py) |
-| Python | JavaScript | [src/py2js.py](../src/py2js.py) |
-| Python | TypeScript | [src/py2ts.py](../src/py2ts.py) |
-| Python | Go | [src/py2go.py](../src/py2go.py) |
-| Python | Java | [src/py2java.py](../src/py2java.py) |
-| Python | Swift | [src/py2swift.py](../src/py2swift.py) |
-| Python | Kotlin | [src/py2kotlin.py](../src/py2kotlin.py) |
-
-
 ## トランスパイラの使い方
 
-### C++
+以下は言語別の手順です。必要な言語だけ展開して参照してください。
+
+<details>
+<summary>C++</summary>
 
 ```bash
 python src/py2cpp.py test/py/case28_iterable.py test/cpp/case28_iterable.cpp
@@ -29,7 +17,14 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/cpp/case28_iterable.cpp \
 ./test/obj/case28_iterable.out
 ```
 
-### Rust
+補足:
+- C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
+- 入力コードで使う Python モジュールに対応する実装を `src/cpp_module/` に用意してください（例: `math`, `time`, `pathlib`, `png`, `gif`）。
+
+</details>
+
+<details>
+<summary>Rust</summary>
 
 ```bash
 python src/py2rs.py test/py/case28_iterable.py test/rs/case28_iterable.rs
@@ -37,7 +32,13 @@ rustc -O test/rs/case28_iterable.rs -o test/obj/case28_iterable_rs.out
 ./test/obj/case28_iterable_rs.out
 ```
 
-### C#
+補足:
+- 入力コードで使う Python モジュールに対応する実装を `src/rs_module/` に用意してください。
+
+</details>
+
+<details>
+<summary>C#</summary>
 
 ```bash
 python src/py2cs.py test/py/case28_iterable.py test/cs/case28_iterable.cs
@@ -47,28 +48,52 @@ mcs -out:test/obj/case28_iterable.exe \
 mono test/obj/case28_iterable.exe
 ```
 
-### JavaScript
+補足:
+- 生成コードで利用するランタイム実装（`src/cs_module/*.cs`）を一緒にコンパイルしてください。
+
+</details>
+
+<details>
+<summary>JavaScript</summary>
 
 ```bash
 python src/py2js.py test/py/case28_iterable.py test/js/case28_iterable.js
 node test/js/case28_iterable.js
 ```
 
-### TypeScript
+補足:
+- `import` を使う場合は `src/js_module/` に対応ランタイム実装が必要です。
+
+</details>
+
+<details>
+<summary>TypeScript</summary>
 
 ```bash
 python src/py2ts.py test/py/case28_iterable.py test/ts/case28_iterable.ts
 npx tsx test/ts/case28_iterable.ts
 ```
 
-### Go
+補足:
+- `import` を使う場合は `src/ts_module/` に対応ランタイム実装が必要です。
+
+</details>
+
+<details>
+<summary>Go</summary>
 
 ```bash
 python src/py2go.py test/py/case28_iterable.py test/go/case28_iterable.go
 go run test/go/case28_iterable.go
 ```
 
-### Java
+補足:
+- `sample/py` の一部で使う `math` / `png_helper` / `gif_helper` 系 API は、Go 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
+
+</details>
+
+<details>
+<summary>Java</summary>
 
 ```bash
 python src/py2java.py test/py/case28_iterable.py test/java/case28_iterable.java
@@ -76,7 +101,13 @@ javac test/java/case28_iterable.java
 java -cp test/java case28_iterable
 ```
 
-### Swift
+補足:
+- `sample/py` の一部で使う `math` / `png_helper` / `gif_helper` 系 API は、Java 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
+
+</details>
+
+<details>
+<summary>Swift</summary>
 
 ```bash
 python src/py2swift.py test/py/case28_iterable.py test/swift/case28_iterable.swift
@@ -84,7 +115,13 @@ swiftc test/swift/case28_iterable.swift -o test/obj/case28_iterable_swift.out
 ./test/obj/case28_iterable_swift.out
 ```
 
-### Kotlin
+補足:
+- `py2swift.py` は Node バックエンド実行モードです（実行時に `node` を利用）。
+
+</details>
+
+<details>
+<summary>Kotlin</summary>
 
 ```bash
 python src/py2kotlin.py test/py/case28_iterable.py test/kotlin/case28_iterable.kt
@@ -92,31 +129,64 @@ kotlinc test/kotlin/case28_iterable.kt -include-runtime -d test/obj/case28_itera
 java -cp test/obj/case28_iterable_kotlin.jar pytra_case28_iterable
 ```
 
-## 注意点
+補足:
+- `py2kotlin.py` は Node バックエンド実行モードです（実行時に `node` を利用）。
 
-- 対象は Python のサブセットです。一般的な Python コードすべてが変換できるわけではありません。
-- 変数には、型注釈が必要です。（ただし一部は推論可能）。
-- Python で `import` するモジュールは、対応するランタイム実装が `src/cpp_module/` または `src/cs_module/` に必要です。
-- JavaScript / TypeScript のネイティブ変換で `import` を扱う場合は、対応するランタイム実装を `src/js_module/` / `src/ts_module/` に用意します（例: `py_runtime`, `time`, `math`）。
-- `sample/py/` を Python のまま実行する場合は、`py_module` を解決するため `PYTHONPATH=src` を付けて実行してください（例: `PYTHONPATH=src python3 sample/py/01_mandelbrot.py`）。
-- 生成された C++/C# は「読みやすさ」より「変換の忠実性」を優先しています。
-- 現在の `py2rs.py` は最小実装で、Python スクリプトを Rust 実行ファイルへ埋め込み、実行時に Python インタプリタを呼び出します（`python3` 優先、`python` フォールバック）。
-- 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出しません。
-- 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
-- 現在の `py2swift.py` / `py2kotlin.py` は Node バックエンド実行モードです。生成 Swift/Kotlin は `node` を呼び出し、`python3` は呼び出しません。
-- 現時点では `sample/py` の一部で使っている `math` / `png_helper` / `gif_helper` 系 API の Go/Java ネイティブ対応が未完了です。
+</details>
 
+## 共通の制約と注意点
 
-## 言語的制約
+Pytra は Python のサブセットを対象とします。通常の Python コードとして実行できる入力でも、未対応構文を含む場合は変換時に失敗します。
 
-- Pythonのsubset言語です。(通常のPythonのコードとして実行できます。)
-- 型を明示する必要があります。
-- ただし、以下のようなケースは暗黙の型推論を行います。
-  - x = 1 のように右辺が整数リテラルの時は、左辺は int 型である。
-  - x が int型だと、わかっているときの y = x (右辺の型は明らかにintなので左辺は型推論によりint)
+### 1. 型注釈と型推論
 
-型名について
-- intは、64-bit 符号付き整数型です。
-- int8,uint8,int16,uint16,int32,uint32,int64,uint64はそれが使えるplatformでは、それを使うようにします。(C++だとint8はint8_tに変換されます。)
-- floatは、Pythonの仕様に基づき、64-bit 浮動小数点数です。(C++だとdoubleになります。)
-- float32 という型名にすると 32-bit 浮動小数点数とみなして変換されます。(C++だとfloatになります。)
+- 基本は型注釈付きコードを推奨します。
+- ただし、次のような「型が一意に決まる代入」は注釈を省略できます。
+
+```python
+# リテラルからの推論
+x = 1         # int
+y = 1.5       # float
+s = "hello"   # str
+
+# 既知型からの推論
+a: int = 10
+b = a         # int
+```
+
+- 型が曖昧になるケースは注釈を付けてください。
+
+```python
+# 推論が不安定になりやすい例
+values = []              # 要素型が不明
+table = {}               # key/value 型が不明
+```
+
+### 2. 型名の扱い
+
+- `int` は 64-bit 符号付き整数として扱います。
+- `float` は Python 互換で 64-bit 浮動小数点として扱います（C++ では `double`）。
+- `float32` は 32-bit 浮動小数点として扱います（C++ では `float`）。
+- `int8,uint8,int16,uint16,int32,uint32,int64,uint64` は、対応ターゲットでその幅の整数型へ変換します（例: C++ の `int8_t`）。
+
+### 3. import とランタイムモジュール
+
+- Python 側で `import` したモジュールは、ターゲット言語側に対応ランタイムが必要です。
+- 例: C++ なら `src/cpp_module/`, C# なら `src/cs_module/`, JS/TS なら `src/js_module` / `src/ts_module`。
+
+```python
+import math
+from pathlib import Path
+```
+
+上記を変換する場合、対象言語側でも `math` / `pathlib` 相当の実装が必要です。
+
+### 4. 実行時の注意
+
+- `sample/py/` を Python のまま実行する場合は、`py_module` 解決のため `PYTHONPATH=src` を付けます。
+
+```bash
+PYTHONPATH=src python3 sample/py/01_mandelbrot.py
+```
+
+- 生成コードは「読みやすさ」より「変換の忠実性」を優先しています。
