@@ -61,7 +61,7 @@ rustc -O test/rs/case28_iterable.rs -o test/obj/case28_iterable_rs.out
 python src/py2cs.py test/py/case28_iterable.py test/cs/case28_iterable.cs
 mcs -out:test/obj/case28_iterable.exe \
   test/cs/case28_iterable.cs \
-  src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs
+  src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs src/cs_module/pathlib.cs
 mono test/obj/case28_iterable.exe
 ```
 

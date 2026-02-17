@@ -1,3 +1,5 @@
+// このファイルは自動生成です（Python -> Go native mode）。
+
 // Go ネイティブ変換向け Python 互換ランタイム補助。
 
 package main
@@ -800,4 +802,18 @@ func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS
     }
     out = append(out, 0x3B)
     _ = os.WriteFile(pyToString(path), out, 0o644)
+}
+
+func py_main() any {
+    pyPrint(pyLt(math.Abs(pyToFloat(math.Tan(pyToFloat(0.0)))), 1e-12))
+    pyPrint(pyLt(math.Abs(pyToFloat(pySub(math.Log(pyToFloat(math.Exp(pyToFloat(1.0)))), 1.0))), 1e-12))
+    pyPrint(pyToInt(math.Log10(pyToFloat(1000.0))))
+    pyPrint(pyToInt(pyMul(math.Abs(pyToFloat((-3.5))), 10.0)))
+    pyPrint(pyToInt(math.Ceil(pyToFloat(2.1))))
+    pyPrint(pyToInt(math.Pow(pyToFloat(2.0), pyToFloat(5.0))))
+    return nil
+}
+
+func main() {
+    py_main()
 }

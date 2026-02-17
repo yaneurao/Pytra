@@ -1,3 +1,5 @@
+// このファイルは自動生成です（Python -> Java native mode）。
+
 // Java ネイティブ変換向け Python 互換ランタイム補助。
 
 import java.io.ByteArrayOutputStream;
@@ -873,5 +875,21 @@ final class PyRuntime {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+}
+
+class case31_math_extended {
+    static Object main() {
+        PyRuntime.pyPrint(PyRuntime.pyLt(PyRuntime.pyMathFabs(PyRuntime.pyMathTan(0.0)), 1e-12));
+        PyRuntime.pyPrint(PyRuntime.pyLt(PyRuntime.pyMathFabs(PyRuntime.pySub(PyRuntime.pyMathLog(PyRuntime.pyMathExp(1.0)), 1.0)), 1e-12));
+        PyRuntime.pyPrint(PyRuntime.pyToInt(PyRuntime.pyMathLog10(1000.0)));
+        PyRuntime.pyPrint(PyRuntime.pyToInt(PyRuntime.pyMul(PyRuntime.pyMathFabs(PyRuntime.pyNeg(3.5)), 10.0)));
+        PyRuntime.pyPrint(PyRuntime.pyToInt(PyRuntime.pyMathCeil(2.1)));
+        PyRuntime.pyPrint(PyRuntime.pyToInt(PyRuntime.pyMathPow(2.0, 5.0)));
+        return null;
+    }
+
+    public static void main(String[] args) {
+        main();
     }
 }

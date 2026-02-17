@@ -61,6 +61,10 @@ public:
         return Path(std::filesystem::absolute(path_));
     }
 
+    bool exists() const {
+        return std::filesystem::exists(path_);
+    }
+
     Path operator/(const std::string& rhs) const {
         return Path(path_ / rhs);
     }

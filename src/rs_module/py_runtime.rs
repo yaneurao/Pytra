@@ -5,6 +5,7 @@
 use std::hash::Hash;
 use std::fs;
 use std::io::Write;
+use std::path::{Path as StdPath, PathBuf};
 use std::sync::Once;
 use std::time::Instant;
 use std::{collections::HashMap, collections::HashSet};
@@ -76,6 +77,11 @@ impl PyStringify for f32 {
 impl PyStringify for String {
     fn py_stringify(&self) -> String {
         self.clone()
+    }
+}
+impl PyStringify for PyPath {
+    fn py_stringify(&self) -> String {
+        self.to_string()
     }
 }
 impl PyStringify for &str {
@@ -355,6 +361,98 @@ pub fn math_ceil(v: f64) -> f64 {
 
 pub fn math_pow(a: f64, b: f64) -> f64 {
     a.powf(b)
+}
+
+#[derive(Clone, Debug)]
+pub struct PyPath {
+    value: String,
+}
+
+impl PyPath {
+    pub fn new(value: &str) -> Self {
+        Self {
+            value: value.to_string(),
+        }
+    }
+
+    pub fn resolve(&self) -> Self {
+        let p = StdPath::new(&self.value);
+        let abs: PathBuf = if p.is_absolute() {
+            p.to_path_buf()
+        } else {
+            std::env::current_dir().expect("cwd").join(p)
+        };
+        Self::new(abs.to_string_lossy().as_ref())
+    }
+
+    pub fn parent(&self) -> Self {
+        match StdPath::new(&self.value).parent() {
+            Some(p) => Self::new(p.to_string_lossy().as_ref()),
+            None => Self::new(""),
+        }
+    }
+
+    pub fn name(&self) -> String {
+        StdPath::new(&self.value)
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default()
+    }
+
+    pub fn stem(&self) -> String {
+        StdPath::new(&self.value)
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default()
+    }
+
+    pub fn exists(&self) -> bool {
+        StdPath::new(&self.value).exists()
+    }
+
+    pub fn read_text(&self) -> String {
+        std::fs::read_to_string(&self.value).expect("read_text failed")
+    }
+
+    pub fn write_text(&self, content: &str) {
+        std::fs::write(&self.value, content.as_bytes()).expect("write_text failed");
+    }
+
+    pub fn mkdir(&self, parents: bool, exist_ok: bool) {
+        let p = StdPath::new(&self.value);
+        let result = if parents {
+            std::fs::create_dir_all(p)
+        } else {
+            std::fs::create_dir(p)
+        };
+        if let Err(err) = result {
+            if !(exist_ok && p.exists()) {
+                panic!("mkdir failed: {}", err);
+            }
+        }
+    }
+}
+
+impl std::fmt::Display for PyPath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
+impl std::ops::Div<String> for PyPath {
+    type Output = PyPath;
+    fn div(self, rhs: String) -> Self::Output {
+        let joined = StdPath::new(&self.value).join(rhs);
+        PyPath::new(joined.to_string_lossy().as_ref())
+    }
+}
+
+impl std::ops::Div<&str> for PyPath {
+    type Output = PyPath;
+    fn div(self, rhs: &str) -> Self::Output {
+        let joined = StdPath::new(&self.value).join(rhs);
+        PyPath::new(joined.to_string_lossy().as_ref())
+    }
 }
 
 pub fn py_grayscale_palette() -> Vec<u8> {
