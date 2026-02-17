@@ -7,7 +7,7 @@
 int64 calc_17(list<int64> values) {
     int64 total = 0;
     for (int64 v : values) {
-        if (py_mod(v, 2) == 0)
+        if (v % 2 == 0)
             total = total + v;
         else
             total = total + v * 2;

@@ -330,6 +330,24 @@ class EastBuilder:
             if len(stmt.targets) != 1:
                 raise self._error("unsupported_syntax", "only single-target assignment is supported", stmt, "Split assignment into one target per statement.")
             target = stmt.targets[0]
+            if (
+                isinstance(target, ast.Tuple)
+                and isinstance(stmt.value, ast.Tuple)
+                and len(target.elts) == 2
+                and len(stmt.value.elts) == 2
+                and isinstance(target.elts[0], ast.Name)
+                and isinstance(target.elts[1], ast.Name)
+                and isinstance(stmt.value.elts[0], ast.Name)
+                and isinstance(stmt.value.elts[1], ast.Name)
+                and target.elts[0].id == stmt.value.elts[1].id
+                and target.elts[1].id == stmt.value.elts[0].id
+            ):
+                return {
+                    "kind": "Swap",
+                    "source_span": span_of(stmt),
+                    "left": self._expr(target.elts[0]),
+                    "right": self._expr(target.elts[1]),
+                }
             value = self._expr(stmt.value)
             declare = False
             decl_type: str | None = None
@@ -2289,6 +2307,43 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 rhs = parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
                 c1 = ln_txt.find(n1)
                 c2 = ln_txt.find(n2, c1 + len(n1))
+                if (
+                    isinstance(rhs, dict)
+                    and rhs.get("kind") == "Tuple"
+                    and len(rhs.get("elements", [])) == 2
+                    and isinstance(rhs.get("elements")[0], dict)
+                    and isinstance(rhs.get("elements")[1], dict)
+                    and rhs.get("elements")[0].get("kind") == "Name"
+                    and rhs.get("elements")[1].get("kind") == "Name"
+                    and str(rhs.get("elements")[0].get("id", "")) == n2
+                    and str(rhs.get("elements")[1].get("id", "")) == n1
+                ):
+                    stmts.append(
+                        {
+                            "kind": "Swap",
+                            "source_span": _sh_span(ln_no, c1, len(ln_txt)),
+                            "left": {
+                                "kind": "Name",
+                                "source_span": _sh_span(ln_no, c1, c1 + len(n1)),
+                                "resolved_type": name_types.get(n1, "unknown"),
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": n1,
+                                "id": n1,
+                            },
+                            "right": {
+                                "kind": "Name",
+                                "source_span": _sh_span(ln_no, c2, c2 + len(n2)),
+                                "resolved_type": name_types.get(n2, "unknown"),
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": n2,
+                                "id": n2,
+                            },
+                        }
+                    )
+                    i += 1
+                    continue
                 target_expr = {
                     "kind": "Tuple",
                     "source_span": _sh_span(ln_no, c1, c2 + len(n2)),
@@ -2776,6 +2831,14 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
             [
                 f"// [{sp}]",
                 f"{_render_expr(stmt.get('target'))} = {_render_expr(stmt.get('value'))};",
+            ],
+            level,
+        )
+    if k == "Swap":
+        return _indent(
+            [
+                f"// [{sp}]",
+                f"py_swap({_render_expr(stmt.get('left'))}, {_render_expr(stmt.get('right'))});",
             ],
             level,
         )

@@ -280,7 +280,9 @@ class CppEmitter:
                             elem_types = self.split_generic(value_t[6:-1])
                         for i, elt in enumerate(target.get("elements", [])):
                             if isinstance(elt, dict) and elt.get("kind") == "Name":
-                                add_name(str(elt.get("id", "")), elem_types[i] if i < len(elem_types) else self.get_expr_type(elt))
+                                n = str(elt.get("id", ""))
+                                if n not in inline_declared:
+                                    add_name(n, elem_types[i] if i < len(elem_types) else self.get_expr_type(elt))
             elif kind == "AnnAssign":
                 target = st.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
@@ -357,6 +359,11 @@ class CppEmitter:
         if kind == "Assign":
             self.emit_assign(stmt)
             return
+        if kind == "Swap":
+            left = self.render_expr(stmt.get("left"))
+            right = self.render_expr(stmt.get("right"))
+            self.emit(f"py_swap({left}, {right});")
+            return
         if kind == "AnnAssign":
             t = self.cpp_type(stmt.get("annotation"))
             target = self.render_expr(stmt.get("target"))
@@ -403,7 +410,7 @@ class CppEmitter:
                 if op_name == "FloorDiv":
                     self.emit(f"{target} = py_floordiv({target}, {val});")
                 elif op_name == "Mod":
-                    self.emit(f"{target} = py_mod({target}, {val});")
+                    self.emit(f"{target} = {target} {bop} {val};")
                 elif op_name == "Div":
                     self.emit(f"{target} = {target} {bop} {val};")
                 else:
@@ -498,7 +505,7 @@ class CppEmitter:
         if len(stmts) != 1:
             return False
         k = stmts[0].get("kind")
-        return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Break", "Continue"}
+        return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Break", "Continue"}
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         target = stmt.get("target")
@@ -996,7 +1003,7 @@ class CppEmitter:
             if op_name == "FloorDiv":
                 return f"py_floordiv({left}, {right})"
             if op_name == "Mod":
-                return f"py_mod({left}, {right})"
+                return f"{left} % {right}"
             if op_name == "Mult":
                 lt = self.get_expr_type(expr.get("left")) or ""
                 rt = self.get_expr_type(expr.get("right")) or ""
