@@ -16,8 +16,7 @@ from typing import Any
 from common.east import EastBuildError, convert_path
 
 
-CPP_HEADER = """#include <algorithm>
-#include "cpp_module/py_runtime.h"
+CPP_HEADER = """#include "cpp_module/py_runtime.h"
 
 """
 
@@ -170,6 +169,46 @@ class CppEmitter:
             return rendered_expr
         return f"static_cast<{self.cpp_type(to_type)}>({rendered_expr})"
 
+    def _binop_precedence(self, op_name: str) -> int:
+        if op_name in {"Mult", "Div", "FloorDiv", "Mod"}:
+            return 12
+        if op_name in {"Add", "Sub"}:
+            return 11
+        if op_name in {"LShift", "RShift"}:
+            return 10
+        if op_name == "BitAnd":
+            return 9
+        if op_name == "BitXor":
+            return 8
+        if op_name == "BitOr":
+            return 7
+        return 0
+
+    def _wrap_for_binop_operand(
+        self,
+        rendered: str,
+        operand_expr: dict[str, Any] | None,
+        parent_op: str,
+        *,
+        is_right: bool,
+    ) -> str:
+        if not isinstance(operand_expr, dict):
+            return rendered
+        kind = str(operand_expr.get("kind", ""))
+        if kind in {"IfExp", "BoolOp", "Compare"}:
+            return f"({rendered})"
+        if kind != "BinOp":
+            return rendered
+
+        child_op = str(operand_expr.get("op", ""))
+        parent_prec = self._binop_precedence(parent_op)
+        child_prec = self._binop_precedence(child_op)
+        if child_prec < parent_prec:
+            return f"({rendered})"
+        if is_right and child_prec == parent_prec and parent_op in {"Sub", "Div", "FloorDiv", "Mod", "LShift", "RShift"}:
+            return f"({rendered})"
+        return rendered
+
     def render_minmax(self, fn: str, args: list[str], out_type: str | None) -> str:
         if len(args) == 0:
             return "/* invalid min/max */"
@@ -289,7 +328,8 @@ class CppEmitter:
             if val is None:
                 if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
                     self.current_scope().add(target)
-                self.emit(f"{t} {target};" if (declare and not already_declared) else f"{target};")
+                if declare and not already_declared:
+                    self.emit(f"{t} {target};")
             else:
                 if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
                     self.current_scope().add(target)
@@ -435,15 +475,21 @@ class CppEmitter:
         step = self.render_expr(stmt.get("step"))
         mode = stmt.get("range_mode")
         if mode == "ascending":
-            cond = f"({tgt} < {stop})"
+            cond = f"{tgt} < {stop}"
         elif mode == "descending":
-            cond = f"({tgt} > {stop})"
+            cond = f"{tgt} > {stop}"
         else:
-            cond = f"(({step}) > 0 ? ({tgt} < {stop}) : ({tgt} > {stop}))"
+            cond = f"{step} > 0 ? {tgt} < {stop} : {tgt} > {stop}"
+        if step == "1":
+            inc = f"++{tgt}"
+        elif step == "-1":
+            inc = f"--{tgt}"
+        else:
+            inc = f"{tgt} += {step}"
         if self.is_declared(tgt):
-            self.emit(f"for ({tgt} = {start}; {cond}; {tgt} += ({step})) {{")
+            self.emit(f"for ({tgt} = {start}; {cond}; {inc}) {{")
         else:
-            self.emit(f"for ({tgt_ty} {tgt} = {start}; {cond}; {tgt} += ({step})) {{")
+            self.emit(f"for ({tgt_ty} {tgt} = {start}; {cond}; {inc}) {{")
             self.current_scope().add(tgt)
         self.indent += 1
         for s in stmt.get("body", []):
@@ -837,8 +883,10 @@ class CppEmitter:
                 rep = expr.get("repr")
                 if isinstance(rep, str) and rep != "":
                     return rep
-            left = self.render_expr(expr.get("left"))
-            right = self.render_expr(expr.get("right"))
+            left_expr = expr.get("left")
+            right_expr = expr.get("right")
+            left = self.render_expr(left_expr)
+            right = self.render_expr(right_expr)
             cast_rules = expr.get("casts", [])
             for c in cast_rules:
                 on = c.get("on")
@@ -848,10 +896,13 @@ class CppEmitter:
                 elif on == "right":
                     right = self.apply_cast(right, to_t)
             op_name = expr.get("op")
+            op_name_str = str(op_name)
+            left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
+            right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
             if op_name == "Div":
                 # Prefer EAST-provided casted division; otherwise keep legacy-compatible py_div semantics.
                 if len(cast_rules) > 0:
-                    return f"({left} / {right})"
+                    return f"{left} / {right}"
                 return f"py_div({left}, {right})"
             if op_name == "FloorDiv":
                 return f"py_floordiv({left}, {right})"
@@ -869,32 +920,32 @@ class CppEmitter:
                 if rt == "str" and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
                     return f"py_repeat({right}, {left})"
             op = BIN_OPS.get(op_name, "+")
-            return f"({left} {op} {right})"
+            return f"{left} {op} {right}"
         if kind == "UnaryOp":
             operand = self.render_expr(expr.get("operand"))
             op = expr.get("op")
             if op == "Not":
-                return f"(!{operand})"
+                return f"!{operand}"
             if op == "USub":
-                return f"(-{operand})"
+                return f"-{operand}"
             if op == "UAdd":
-                return f"(+{operand})"
-            return f"({operand})"
+                return f"+{operand}"
+            return operand
         if kind == "BoolOp":
             values = [self.render_expr(v) for v in expr.get("values", [])]
             op = "&&" if expr.get("op") == "And" else "||"
-            return "(" + f" {op} ".join(values) + ")"
+            return f" {op} ".join(values) if len(values) > 0 else "false"
         if kind == "Compare":
             if expr.get("lowered_kind") == "Contains":
                 container = self.render_expr(expr.get("container"))
                 key = self.render_expr(expr.get("key"))
                 ctype = self.get_expr_type(expr.get("container")) or ""
                 if ctype.startswith("dict["):
-                    base = f"({container}.find({key}) != {container}.end())"
+                    base = f"{container}.find({key}) != {container}.end()"
                 else:
-                    base = f"(std::find({container}.begin(), {container}.end(), {key}) != {container}.end())"
+                    base = f"std::find({container}.begin(), {container}.end(), {key}) != {container}.end()"
                 if bool(expr.get("negated", False)):
-                    return f"(!{base})"
+                    return f"!({base})"
                 return base
             left = self.render_expr(expr.get("left"))
             ops = expr.get("ops", [])
@@ -907,19 +958,19 @@ class CppEmitter:
                 if cop == "/* in */":
                     rhs_type = self.get_expr_type(cmps[i]) or ""
                     if rhs_type.startswith("dict["):
-                        parts.append(f"({rhs}.find({cur}) != {rhs}.end())")
+                        parts.append(f"{rhs}.find({cur}) != {rhs}.end()")
                     else:
-                        parts.append(f"(std::find({rhs}.begin(), {rhs}.end(), {cur}) != {rhs}.end())")
+                        parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) != {rhs}.end()")
                 elif cop == "/* not in */":
                     rhs_type = self.get_expr_type(cmps[i]) or ""
                     if rhs_type.startswith("dict["):
-                        parts.append(f"({rhs}.find({cur}) == {rhs}.end())")
+                        parts.append(f"{rhs}.find({cur}) == {rhs}.end()")
                     else:
-                        parts.append(f"(std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end())")
+                        parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
                 else:
-                    parts.append(f"({cur} {cop} {rhs})")
+                    parts.append(f"{cur} {cop} {rhs}")
                 cur = rhs
-            return "(" + " && ".join(parts) + ")" if parts else "true"
+            return " && ".join(parts) if parts else "true"
         if kind == "IfExp":
             body = self.render_expr(expr.get("body"))
             orelse = self.render_expr(expr.get("orelse"))
@@ -1099,7 +1150,7 @@ class CppEmitter:
         return out
 
 
-def load_east(input_path: Path) -> dict[str, Any]:
+def load_east(input_path: Path, *, parser_backend: str = "python_ast") -> dict[str, Any]:
     if input_path.suffix == ".json":
         payload = json.loads(input_path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
@@ -1113,7 +1164,7 @@ def load_east(input_path: Path) -> dict[str, Any]:
         raise RuntimeError("Invalid EAST JSON structure")
 
     try:
-        east = convert_path(input_path)
+        east = convert_path(input_path, parser_backend=parser_backend)
     except (SyntaxError, EastBuildError) as exc:
         raise RuntimeError(f"EAST conversion failed: {exc}") from exc
     return east
@@ -1127,6 +1178,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Transpile Python/EAST to C++ via EAST")
     ap.add_argument("input", help="Input .py or EAST .json")
     ap.add_argument("-o", "--output", help="Output .cpp path")
+    ap.add_argument("--parser-backend", choices=["python_ast", "self_hosted"], default="python_ast", help="Parser backend for .py input")
     args = ap.parse_args(argv)
 
     input_path = Path(args.input)
@@ -1135,7 +1187,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        east_module = load_east(input_path)
+        east_module = load_east(input_path, parser_backend=args.parser_backend)
         cpp = transpile_to_cpp(east_module)
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)

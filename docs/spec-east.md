@@ -4,8 +4,10 @@
 
 ## 1. 目的
 
-- EAST は Python AST から、言語非依存の意味注釈付き JSON を生成する中間表現である。
+- EAST(Extended AST) は Python AST から、言語非依存の意味注釈付き JSON を生成する中間表現である。
 - 型解決、cast情報、引数 readonly/mutable、mainガード分離を前段で確定させる。
+- Pythonにはastという抽象構文木を扱うモジュールがあるが、これだと元のソースコードのコメントなどを残してトランスパイルできないのでEASTという表現を考え、そしてこのためのparserをPythonで実装する。
+
 
 ## 2. 入出力
 

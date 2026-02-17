@@ -136,18 +136,18 @@
 
 ## EAST C++可読性改善 TODO
 
-- [ ] `east/py2cpp.py` の括弧出力を簡素化し、不要な多重括弧（`if ((((...)))` など）を削減する。
-  - [ ] 演算子優先順位テーブルを導入し、必要な箇所だけ括弧を残す。
+- [x] `east/py2cpp.py` の括弧出力を簡素化し、不要な多重括弧（`if ((((...)))` など）を削減する。
+  - [x] 演算子優先順位テーブルを導入し、必要な箇所だけ括弧を残す。
   - [ ] 比較・論理・算術の混在式で意味が変わらないことを `test/py` で回帰確認する。
 - [ ] Python docstring を C++の裸文字列文として出さず、コメントへ変換するか出力しない。
   - [ ] 関数先頭の単独文字列式（docstring）を `east.py` 側で専用メタ情報へ分離する。
   - [ ] `py2cpp.py` は `//` コメント出力に統一する（必要時のみ）。
-- [ ] `r; g; b;` のような無意味な式文を出さない。
-  - [ ] 未初期化宣言のみ必要な場合は `int64 r;` の宣言で完結させる。
+- [x] `r; g; b;` のような無意味な式文を出さない。
+  - [x] 未初期化宣言のみ必要な場合は `int64 r;` の宣言で完結させる。
   - [ ] 式文としての識別子単体出力を禁止するガードを `py2cpp.py` に追加する。
-- [ ] `for (i += (1))` 形式を C++らしい表記（`++i` など）へ寄せる。
-  - [ ] `step == 1` / `-1` の場合は `++i` / `--i` を使う。
-  - [ ] その他の step のみ `i += step` を維持する。
+- [x] `for (i += (1))` 形式を C++らしい表記（`++i` など）へ寄せる。
+  - [x] `step == 1` / `-1` の場合は `++i` / `--i` を使う。
+  - [x] その他の step のみ `i += step` を維持する。
 - [ ] API由来が追えるように、必要箇所に薄いコメントを付ける（例: `png_helper.write_rgb_png` 対応）。
   - [ ] `write_rgb_png` / `save_gif` / `grayscale_palette` などランタイムブリッジ関数に限定して付与する。
   - [ ] コメントが過剰にならないよう最小限に制御する。
@@ -174,3 +174,52 @@
   - [x] `a, b, c = f(...)` で `a,b,c` が未宣言なら型付き宣言を生成する。
   - [x] `sample/py/16` の `normalize(...)` 展開で `fwd_x` 等の未宣言エラーが消えることを確認する。
 - [x] 上記対応後、`sample/py` 全16件で `east/py2cpp.py` 変換→コンパイル→実行を再実施し、実行時間一覧を更新する。
+
+## self_hosted AST/Parser 段階移行 TODO
+
+- [ ] `src/common/east.py` に `parser_backend` 切替を導入する（`python_ast` / `self_hosted`）。
+  - [ ] CLI引数で `--parser-backend` を受け付ける。
+  - [ ] デフォルトは `python_ast` のまま維持する。
+  - [ ] 変換結果メタに backend 名を記録する。
+- [ ] `self_hosted` の最小字句解析器を追加する（コメント/改行/インデント含む）。
+  - [ ] `INDENT` / `DEDENT` / `NEWLINE` / `NAME` / `NUMBER` / `STRING` / 記号をトークン化する。
+  - [ ] `#` コメントを収集し、行番号つきで保持する。
+  - [ ] tokenize 失敗時のエラー位置・ヒントを EAST エラー形式で返す。
+- [ ] `self_hosted` の最小構文木（内部ノード）を定義する。
+  - [ ] まず `Module`, `FunctionDef`, `Assign`, `AnnAssign`, `Return`, `Expr`, `If`, `For`, `Call`, `Name`, `Constant`, `BinOp`, `Compare` を対象にする。
+  - [ ] 各ノードに `lineno/col/end_lineno/end_col` を持たせる。
+- [ ] `self_hosted` 用パーサ本体（再帰下降）を追加する。
+  - [ ] 式の優先順位テーブルを実装する（`* / %`, `+ -`, 比較, `and/or`）。
+  - [ ] `for ... in range(...)` と通常 `for ... in iterable` を識別する。
+  - [ ] 関数定義と型注釈（`x: int` / `-> int`）を解釈する。
+- [ ] 既存 EAST ビルド処理に `self_hosted` ノード経路を追加する。
+  - [ ] 既存の型推論・lowering（`ForRange`, `Contains`, `SliceExpr` など）を共通で再利用できる形にする。
+  - [ ] `python_ast` と `self_hosted` で EAST の形が揃うように正規化する。
+- [ ] コメント引き継ぎを実装する（`#` / docstring）。
+  - [ ] `#` コメントを `leading_comments` として関数/文に紐づける。
+  - [ ] `Expr(Constant(str))` の docstring と重複しないよう統合規則を決める。
+  - [ ] `src/py2cpp.py` で `leading_comments` を `/* ... */` 出力する。
+
+### ケース順移行（test/py/case01 から順に）
+
+- [x] `case01_add` を `self_hosted` で通す（EAST生成 + C++実行一致）。
+- [ ] `case02_sub_mul` を `self_hosted` で通す。
+- [ ] `case03_if_else` を `self_hosted` で通す。
+- [ ] `case04_assign` を `self_hosted` で通す。
+- [ ] `case05_compare` を `self_hosted` で通す。
+- [ ] `case06_string` を `self_hosted` で通す。
+- [ ] `case07_float` を `self_hosted` で通す。
+- [ ] `case08_nested_call` を `self_hosted` で通す。
+- [ ] `case09_top_level` を `self_hosted` で通す。
+- [ ] `case10_not` を `self_hosted` で通す。
+- [ ] `case11_fib` を `self_hosted` で通す。
+- [ ] `case12_string_ops` を `self_hosted` で通す。
+- [ ] `case13_class` 〜 `case16_instance_member`（クラス系）を `self_hosted` で通す。
+- [ ] `case17_loop` 〜 `case23_ifexp_bool`（ループ/例外/内包/ifexp）を `self_hosted` で通す。
+- [ ] `case24_class_static` 〜 `case32_pathlib_extended`（拡張ケース）を `self_hosted` で通す。
+
+### 切替完了条件
+
+- [ ] `test/py` 全ケースで `python_ast` と `self_hosted` の EAST が意味的に一致する。
+- [ ] `src/py2cpp.py` で `--parser-backend self_hosted` 時に `test/py` 全ケースが実行一致する。
+- [ ] デフォルト backend を `self_hosted` に変更し、`python_ast` はフォールバック扱いにする。

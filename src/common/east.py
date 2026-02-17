@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 import sys
@@ -1306,10 +1307,347 @@ def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:
     return EastBuilder(source=source, filename=filename).build()
 
 
-def convert_path(input_path: Path) -> dict[str, Any]:
+def _sh_span(line: int, col: int, end_col: int) -> dict[str, int]:
+    return {"lineno": line, "col": col, "end_lineno": line, "end_col": end_col}
+
+
+def _sh_ann_to_type(ann: str) -> str:
+    mapping = {
+        "int": "int64",
+        "float": "float64",
+        "bool": "bool",
+        "str": "str",
+        "None": "None",
+        "bytes": "list[uint8]",
+        "bytearray": "list[uint8]",
+    }
+    return mapping.get(ann.strip(), ann.strip())
+
+
+def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
+    out: list[tuple[str, int]] = []
+    depth = 0
+    start = 0
+    i = 0
+    while i < len(arg_text):
+        ch = arg_text[i]
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            part = arg_text[start:i]
+            out.append((part.strip(), start + (len(part) - len(part.lstrip()))))
+            start = i + 1
+        i += 1
+    tail = arg_text[start:]
+    if tail.strip() != "":
+        out.append((tail.strip(), start + (len(tail) - len(tail.lstrip()))))
+    return out
+
+
+def _sh_parse_expr(
+    text: str,
+    *,
+    line_no: int,
+    col_base: int,
+    name_types: dict[str, str],
+    fn_return_types: dict[str, str],
+) -> dict[str, Any]:
+    txt = text.strip()
+    if txt == "":
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message="empty expression in self_hosted backend",
+            source_span=_sh_span(line_no, col_base, col_base),
+            hint="Provide a non-empty expression.",
+        )
+
+    # Call expression: name(args...)
+    m_call = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\((.*)\)$", txt)
+    if m_call is not None:
+        fn_name = m_call.group(1)
+        args_raw = m_call.group(2)
+        fn_col = col_base + txt.find(fn_name)
+        args_nodes: list[dict[str, Any]] = []
+        for arg_txt, off in _sh_split_args_with_offsets(args_raw):
+            args_nodes.append(
+                _sh_parse_expr(
+                    arg_txt,
+                    line_no=line_no,
+                    col_base=col_base + txt.find(args_raw) + off,
+                    name_types=name_types,
+                    fn_return_types=fn_return_types,
+                )
+            )
+        call_ret = "None" if fn_name == "print" else fn_return_types.get(fn_name, "unknown")
+        return {
+            "kind": "Call",
+            "source_span": _sh_span(line_no, col_base, col_base + len(txt)),
+            "resolved_type": call_ret,
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": txt,
+            "func": {
+                "kind": "Name",
+                "source_span": _sh_span(line_no, fn_col, fn_col + len(fn_name)),
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": fn_name,
+                "id": fn_name,
+            },
+            "args": args_nodes,
+            "keywords": [],
+        }
+
+    # BinOp (+ only for case01)
+    depth = 0
+    plus_pos = -1
+    for i, ch in enumerate(txt):
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif ch == "+" and depth == 0:
+            plus_pos = i
+            break
+    if plus_pos >= 0:
+        left_txt = txt[:plus_pos].strip()
+        right_txt = txt[plus_pos + 1 :].strip()
+        left_off = txt.find(left_txt)
+        right_off = txt.find(right_txt, plus_pos + 1)
+        left = _sh_parse_expr(
+            left_txt,
+            line_no=line_no,
+            col_base=col_base + left_off,
+            name_types=name_types,
+            fn_return_types=fn_return_types,
+        )
+        right = _sh_parse_expr(
+            right_txt,
+            line_no=line_no,
+            col_base=col_base + right_off,
+            name_types=name_types,
+            fn_return_types=fn_return_types,
+        )
+        out_t = "int64" if left.get("resolved_type") == "int64" and right.get("resolved_type") == "int64" else "unknown"
+        return {
+            "kind": "BinOp",
+            "source_span": _sh_span(line_no, col_base, col_base + len(txt)),
+            "resolved_type": out_t,
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": txt,
+            "left": left,
+            "op": "Add",
+            "right": right,
+        }
+
+    # Integer constant
+    if re.match(r"^[0-9]+$", txt):
+        return {
+            "kind": "Constant",
+            "source_span": _sh_span(line_no, col_base, col_base + len(txt)),
+            "resolved_type": "int64",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": txt,
+            "value": int(txt),
+        }
+
+    # String constant
+    if len(txt) >= 2 and ((txt[0] == "'" and txt[-1] == "'") or (txt[0] == '"' and txt[-1] == '"')):
+        return {
+            "kind": "Constant",
+            "source_span": _sh_span(line_no, col_base, col_base + len(txt)),
+            "resolved_type": "str",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": txt,
+            "value": txt[1:-1],
+        }
+
+    # Name
+    if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", txt):
+        t = name_types.get(txt, "unknown")
+        return {
+            "kind": "Name",
+            "source_span": _sh_span(line_no, col_base, col_base + len(txt)),
+            "resolved_type": t,
+            "borrow_kind": "readonly_ref" if t != "unknown" else "value",
+            "casts": [],
+            "repr": txt,
+            "id": txt,
+        }
+
+    raise EastBuildError(
+        kind="unsupported_syntax",
+        message=f"self_hosted parser cannot parse expression: {txt}",
+        source_span=_sh_span(line_no, col_base, col_base + len(txt)),
+        hint="Use parser_backend=python_ast for unsupported syntax, then extend self_hosted parser.",
+    )
+
+
+def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
+    """Self-hosted minimal parser path (currently supports case01-level syntax)."""
+    lines = source.splitlines()
+    def_idx = None
+    for i, ln in enumerate(lines, start=1):
+        if re.match(r"^def\s+[A-Za-z_][A-Za-z0-9_]*\s*\(", ln):
+            def_idx = i
+            break
+    if def_idx is None:
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message="self_hosted parser requires at least one top-level function definition",
+            source_span={"lineno": None, "col": None, "end_lineno": None, "end_col": None},
+            hint="Start with test/py/case01_add.py style input.",
+        )
+
+    def_line = lines[def_idx - 1]
+    m_def = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*->\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", def_line)
+    if m_def is None:
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message="self_hosted parser currently supports `def name(args) -> Type:` form only",
+            source_span=_sh_span(def_idx, 0, len(def_line)),
+            hint="Use explicit return annotation and simple function signature.",
+        )
+    fn_name = m_def.group(1)
+    fn_args_raw = m_def.group(2)
+    fn_ret = _sh_ann_to_type(m_def.group(3))
+
+    arg_types: dict[str, str] = {}
+    if fn_args_raw.strip() != "":
+        for p_txt, _off in _sh_split_args_with_offsets(fn_args_raw):
+            m_param = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)$", p_txt)
+            if m_param is None:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse parameter: {p_txt}",
+                    source_span=_sh_span(def_idx, 0, len(def_line)),
+                    hint="Use `name: Type` style parameters.",
+                )
+            arg_types[m_param.group(1)] = _sh_ann_to_type(m_param.group(2))
+
+    ret_idx = None
+    for i in range(def_idx + 1, len(lines) + 1):
+        ln = lines[i - 1]
+        if re.match(r"^\s+return\s+", ln):
+            ret_idx = i
+            break
+        if len(ln) > 0 and not ln.startswith(" "):
+            break
+    if ret_idx is None:
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message="self_hosted parser requires a return statement in function body",
+            source_span=_sh_span(def_idx, 0, len(def_line)),
+            hint="Add `return ...` inside function body.",
+        )
+    ret_line = lines[ret_idx - 1]
+    ret_col = ret_line.find("return ")
+    ret_expr_txt = ret_line[ret_col + len("return ") :].strip()
+    ret_expr_col = ret_line.find(ret_expr_txt, ret_col + len("return "))
+    fn_returns = {fn_name: fn_ret}
+    ret_expr = _sh_parse_expr(
+        ret_expr_txt,
+        line_no=ret_idx,
+        col_base=ret_expr_col,
+        name_types=dict(arg_types),
+        fn_return_types=fn_returns,
+    )
+    ret_stmt = {
+        "kind": "Return",
+        "source_span": _sh_span(ret_idx, ret_col, len(ret_line)),
+        "value": ret_expr,
+    }
+
+    # Parse if __name__ == "__main__": block with one print(...) call.
+    main_if_idx = None
+    for i, ln in enumerate(lines, start=1):
+        if re.match(r"^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$", ln):
+            main_if_idx = i
+            break
+    if main_if_idx is None:
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message="self_hosted parser requires if __name__ == \"__main__\": block",
+            source_span={"lineno": None, "col": None, "end_lineno": None, "end_col": None},
+            hint="Add main guard block.",
+        )
+    main_expr_idx = None
+    for i in range(main_if_idx + 1, len(lines) + 1):
+        ln = lines[i - 1]
+        if re.match(r"^\s+print\(", ln):
+            main_expr_idx = i
+            break
+        if len(ln) > 0 and not ln.startswith(" "):
+            break
+    if main_expr_idx is None:
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message="self_hosted parser currently supports print(...) in main guard",
+            source_span=_sh_span(main_if_idx, 0, len(lines[main_if_idx - 1])),
+            hint="Add print(...) in main guard body.",
+        )
+    main_line = lines[main_expr_idx - 1]
+    expr_txt = main_line.strip()
+    expr_col = main_line.find(expr_txt)
+    main_expr = _sh_parse_expr(
+        expr_txt,
+        line_no=main_expr_idx,
+        col_base=expr_col,
+        name_types={},
+        fn_return_types=fn_returns,
+    )
+    main_stmt = {
+        "kind": "Expr",
+        "source_span": _sh_span(main_expr_idx, expr_col, len(main_line)),
+        "value": main_expr,
+    }
+
+    fn_stmt = {
+        "kind": "FunctionDef",
+        "name": fn_name,
+        "original_name": fn_name,
+        "source_span": {"lineno": def_idx, "col": 0, "end_lineno": ret_idx, "end_col": len(ret_line)},
+        "arg_types": arg_types,
+        "return_type": fn_ret,
+        "arg_usage": {n: "readonly" for n in arg_types.keys()},
+        "renamed_symbols": {},
+        "body": [ret_stmt],
+    }
+
+    return {
+        "kind": "Module",
+        "source_path": filename,
+        "source_span": {"lineno": None, "col": None, "end_lineno": None, "end_col": None},
+        "body": [fn_stmt],
+        "main_guard_body": [main_stmt],
+        "renamed_symbols": {},
+        "meta": {"parser_backend": "self_hosted"},
+    }
+
+
+def convert_source_to_east_with_backend(source: str, filename: str, parser_backend: str = "python_ast") -> dict[str, Any]:
+    if parser_backend == "python_ast":
+        return convert_source_to_east(source, filename)
+    if parser_backend == "self_hosted":
+        return convert_source_to_east_self_hosted(source, filename)
+    raise EastBuildError(
+        kind="unsupported_syntax",
+        message=f"unknown parser backend: {parser_backend}",
+        source_span={"lineno": None, "col": None, "end_lineno": None, "end_col": None},
+        hint="Use parser_backend in {python_ast, self_hosted}.",
+    )
+
+
+def convert_path(input_path: Path, parser_backend: str = "python_ast") -> dict[str, Any]:
     """Read Python file and convert to EAST document."""
     source = input_path.read_text(encoding="utf-8")
-    return convert_source_to_east(source, str(input_path))
+    return convert_source_to_east_with_backend(source, str(input_path), parser_backend=parser_backend)
 
 
 def _dump_json(obj: dict[str, Any], *, pretty: bool) -> str:
@@ -1608,6 +1946,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("-o", "--output", help="Output EAST JSON path")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON")
     parser.add_argument("--human-output", help="Output human-readable C++-style EAST path")
+    parser.add_argument("--parser-backend", choices=["python_ast", "self_hosted"], default="python_ast", help="Parser backend")
     args = parser.parse_args(argv)
 
     input_path = Path(args.input)
@@ -1616,7 +1955,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        east = convert_path(input_path)
+        east = convert_path(input_path, parser_backend=args.parser_backend)
     except SyntaxError as exc:
         err = {
             "kind": "unsupported_syntax",

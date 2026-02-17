@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "cpp_module/gif.h"
+#include "cpp_module/gc.h"
 #include "cpp_module/math.h"
 #include "cpp_module/png.h"
 
