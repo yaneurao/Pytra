@@ -62,6 +62,10 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 - `sample/02_raytrace_spheres` については、Python 実行結果と C++ 実行結果で **PNG の画素（raw scanline）は一致** することを確認済みです。
 - 一方で PNG ファイル自体のバイト列は一致しません。これは主に IDAT の圧縮形式・圧縮率の差によるものです。
+- PNG 一致判定の方針は次のとおりです。
+  - まず raw scanline（復号後画素）一致を判定する。
+  - raw scanline が一致し、ファイルバイト列のみ不一致の場合は「圧縮差」として扱う。
+  - raw scanline が不一致の場合は「画素差」として扱う。
 
 画像一致検証を自動実行する場合:
 
