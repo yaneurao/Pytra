@@ -765,6 +765,8 @@ class CppTranspiler(BaseTranspiler):
             return [f"{target} = py_div({target}, {value});"]
         if isinstance(stmt.op, ast.FloorDiv):
             return [f"{target} = py_floordiv({target}, {value});"]
+        if isinstance(stmt.op, ast.Mod):
+            return [f"{target} = py_mod({target}, {value});"]
         op = self._binop(stmt.op)
         return [f"{target} = ({target} {op} {value});"]
 
@@ -997,6 +999,8 @@ class CppTranspiler(BaseTranspiler):
                 return f"py_div({left}, {right})"
             if isinstance(expr.op, ast.FloorDiv):
                 return f"py_floordiv({left}, {right})"
+            if isinstance(expr.op, ast.Mod):
+                return f"py_mod({left}, {right})"
             return f"({left} {self._binop(expr.op)} {right})"
         if isinstance(expr, ast.UnaryOp):
             return f"({self._unaryop(expr.op)}{self.transpile_expr(expr.operand)})"
@@ -1026,7 +1030,7 @@ class CppTranspiler(BaseTranspiler):
                     f"py_slice({self.transpile_expr(expr.value)}, "
                     f"{has_start}, {start_expr}, {has_stop}, {stop_expr})"
                 )
-            return f"{self.transpile_expr(expr.value)}[{self.transpile_expr(expr.slice)}]"
+            return f"py_get({self.transpile_expr(expr.value)}, {self.transpile_expr(expr.slice)})"
         if isinstance(expr, ast.IfExp):
             return (
                 f"({self.transpile_expr(expr.test)} ? {self.transpile_expr(expr.body)} : "
@@ -1081,7 +1085,7 @@ class CppTranspiler(BaseTranspiler):
             return "\"\""
         if isinstance(call.func, ast.Name) and call.func.id == "int":
             if len(call.args) == 1:
-                return f"static_cast<long long>({args_list[0]})"
+                return f"py_int({args_list[0]})"
             return "0"
         if isinstance(call.func, ast.Name) and call.func.id == "float":
             if len(call.args) == 1:
@@ -1182,7 +1186,7 @@ class CppTranspiler(BaseTranspiler):
                 return obj
             return f"{self.transpile_expr(call.func)}({args})"
 
-        raise TranspileError("Only direct function calls are supported")
+        return f"{self.transpile_expr(call.func)}({args})"
 
     def _map_annotation(self, annotation: ast.expr) -> str:
         """Python 型注釈を C++ 型名へ変換する。"""

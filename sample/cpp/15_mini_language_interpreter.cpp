@@ -87,7 +87,7 @@ public:
     }
     string peek_kind()
     {
-        return this->tokens[this->pos]->kind;
+        return py_get(this->tokens, this->pos)->kind;
     }
     bool match(const string& kind)
     {
@@ -102,10 +102,10 @@ public:
     {
         if ((this->peek_kind() != kind))
         {
-            pycs::gc::RcHandle<Token> t = this->tokens[this->pos];
+            pycs::gc::RcHandle<Token> t = py_get(this->tokens, this->pos);
             throw std::runtime_error(py_to_string(((((("parse error at pos=" + py_to_string(t->pos)) + ", expected=") + kind) + ", got=") + t->kind)));
         }
-        pycs::gc::RcHandle<Token> token = this->tokens[this->pos];
+        pycs::gc::RcHandle<Token> token = py_get(this->tokens, this->pos);
         this->pos = (this->pos + 1);
         return token;
     }
@@ -212,20 +212,12 @@ public:
     {
         if (this->match("NUMBER"))
         {
-            pycs::gc::RcHandle<Token> token_num = this->tokens[(this->pos - 1)];
-            long long parsed_value = 0;
-            long long idx = 0;
-            while ((idx < py_len(token_num->text)))
-            {
-                string ch = py_slice(token_num->text, true, idx, true, (idx + 1));
-                parsed_value = (((parsed_value * 10) + py_ord(ch)) - py_ord("0"));
-                idx = (idx + 1);
-            }
-            return this->add_expr(pycs::gc::RcHandle<ExprNode>::adopt(pycs::gc::rc_new<ExprNode>("lit", parsed_value, "", "", (-1), (-1))));
+            pycs::gc::RcHandle<Token> token_num = py_get(this->tokens, (this->pos - 1));
+            return this->add_expr(pycs::gc::RcHandle<ExprNode>::adopt(pycs::gc::rc_new<ExprNode>("lit", py_int(token_num->text), "", "", (-1), (-1))));
         }
         if (this->match("IDENT"))
         {
-            pycs::gc::RcHandle<Token> token_ident = this->tokens[(this->pos - 1)];
+            pycs::gc::RcHandle<Token> token_ident = py_get(this->tokens, (this->pos - 1));
             return this->add_expr(pycs::gc::RcHandle<ExprNode>::adopt(pycs::gc::rc_new<ExprNode>("var", 0, token_ident->text, "", (-1), (-1))));
         }
         if (this->match("LPAREN"))
@@ -234,7 +226,7 @@ public:
             this->expect("RPAREN");
             return expr_index;
         }
-        auto t = this->tokens[this->pos];
+        auto t = py_get(this->tokens, this->pos);
         throw std::runtime_error(py_to_string(((("primary parse error at pos=" + py_to_string(t->pos)) + " got=") + t->kind)));
     }
 };
@@ -245,7 +237,7 @@ vector<pycs::gc::RcHandle<Token>> tokenize(const vector<string>& lines)
     long long line_index = 0;
     while ((line_index < py_len(lines)))
     {
-        string source = lines[line_index];
+        string source = py_get(lines, line_index);
         long long i = 0;
         long long n = py_len(source);
         while ((i < n))
@@ -343,13 +335,9 @@ vector<pycs::gc::RcHandle<Token>> tokenize(const vector<string>& lines)
     return tokens;
 }
 
-long long eval_expr(long long expr_index, const vector<pycs::gc::RcHandle<ExprNode>>& expr_nodes, unordered_map<string, long long> env)
+long long eval_expr(long long expr_index, const vector<pycs::gc::RcHandle<ExprNode>>& expr_nodes, const unordered_map<string, long long>& env)
 {
-    if (false)
-    {
-        env["__dummy__"] = 0;
-    }
-    pycs::gc::RcHandle<ExprNode> node = expr_nodes[expr_index];
+    pycs::gc::RcHandle<ExprNode> node = py_get(expr_nodes, expr_index);
     if ((node->kind == "lit"))
     {
         return node->value;
@@ -360,7 +348,7 @@ long long eval_expr(long long expr_index, const vector<pycs::gc::RcHandle<ExprNo
         {
             throw std::runtime_error(py_to_string(("undefined variable: " + node->name)));
         }
-        return env[node->name];
+        return py_get(env, node->name);
     }
     if ((node->kind == "neg"))
     {
@@ -404,7 +392,7 @@ long long execute(const vector<pycs::gc::RcHandle<StmtNode>>& stmts, const vecto
     {
         if ((stmt->kind == "let"))
         {
-            env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
+            py_get(env, stmt->name) = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
         }
         if ((stmt->kind == "assign"))
@@ -413,7 +401,7 @@ long long execute(const vector<pycs::gc::RcHandle<StmtNode>>& stmts, const vecto
             {
                 throw std::runtime_error(py_to_string(("assign to undefined variable: " + stmt->name)));
             }
-            env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
+            py_get(env, stmt->name) = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
         }
         long long value = eval_expr(stmt->expr_index, expr_nodes, env);
@@ -421,12 +409,12 @@ long long execute(const vector<pycs::gc::RcHandle<StmtNode>>& stmts, const vecto
         {
             py_print(value);
         }
-        long long norm = (value % 1000000007);
+        long long norm = py_mod(value, 1000000007);
         if ((norm < 0))
         {
             norm = (norm + 1000000007);
         }
-        checksum = (((checksum * 131) + norm) % 1000000007);
+        checksum = py_mod(((checksum * 131) + norm), 1000000007);
         printed = (printed + 1);
     }
     if (trace)
@@ -453,12 +441,12 @@ vector<string> build_benchmark_source(long long var_count, long long loops)
     if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
     for (auto i = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (i < __pytra_range_stop_5) : (i > __pytra_range_stop_5); i += __pytra_range_step_6)
     {
-        long long x = (i % var_count);
-        long long y = ((i + 3) % var_count);
-        long long c1 = ((i % 7) + 1);
-        long long c2 = ((i % 11) + 2);
+        long long x = py_mod(i, var_count);
+        long long y = py_mod((i + 3), var_count);
+        long long c1 = (py_mod(i, 7) + 1);
+        long long c2 = (py_mod(i, 11) + 2);
         lines.push_back(((((((((("v" + py_to_string(x)) + " = (v") + py_to_string(x)) + " * ") + py_to_string(c1)) + " + v") + py_to_string(y)) + " + 10000) / ") + py_to_string(c2)));
-        if (((i % 97) == 0))
+        if ((py_mod(i, 97) == 0))
         {
             lines.push_back(("print v" + py_to_string(x)));
         }

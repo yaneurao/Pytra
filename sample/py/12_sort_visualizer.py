@@ -42,9 +42,7 @@ def run_12_sort_visualizer() -> None:
         swapped = False
         for j in range(n - i - 1):
             if values[j] > values[j + 1]:
-                tmp = values[j]
-                values[j] = values[j + 1]
-                values[j + 1] = tmp
+                values[j], values[j + 1] = values[j + 1], values[j]
                 swapped = True
             if op % 8 == 0:
                 frames.append(render(values, w, h))

@@ -110,10 +110,6 @@ public static class Program
 
     public static long eval_expr(long expr_index, List<ExprNode> expr_nodes, Dictionary<string, long> env)
     {
-        if (Pytra.CsModule.py_runtime.py_bool(false))
-        {
-            Pytra.CsModule.py_runtime.py_set(env, "__dummy__", 0L);
-        }
         ExprNode node = Pytra.CsModule.py_runtime.py_get(expr_nodes, expr_index);
         if (Pytra.CsModule.py_runtime.py_bool((node.kind == "lit")))
         {
@@ -153,7 +149,7 @@ public static class Program
                 {
                     throw new Exception("division by zero");
                 }
-                return (long)Math.Floor((lhs) / (double)(rhs));
+                return Pytra.CsModule.py_runtime.py_floordiv(lhs, rhs);
             }
             throw new Exception(("unknown operator: " + node.op));
         }
@@ -186,12 +182,12 @@ public static class Program
             {
                 Pytra.CsModule.py_runtime.print(value);
             }
-            long norm = (value % 1000000007L);
+            long norm = Pytra.CsModule.py_runtime.py_mod(value, 1000000007L);
             if (Pytra.CsModule.py_runtime.py_bool((norm < 0L)))
             {
                 norm = (norm + 1000000007L);
             }
-            checksum = (((checksum * 131L) + norm) % 1000000007L);
+            checksum = Pytra.CsModule.py_runtime.py_mod(((checksum * 131L) + norm), 1000000007L);
             printed = (printed + 1L);
         }
         if (Pytra.CsModule.py_runtime.py_bool(trace))
@@ -218,12 +214,12 @@ public static class Program
         if (__pytra_range_step_6 == 0) throw new Exception("range() arg 3 must not be zero");
         for (var i = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (i < __pytra_range_stop_5) : (i > __pytra_range_stop_5); i += __pytra_range_step_6)
         {
-            long x = (i % var_count);
-            long y = ((i + 3L) % var_count);
-            long c1 = ((i % 7L) + 1L);
-            long c2 = ((i % 11L) + 2L);
+            long x = Pytra.CsModule.py_runtime.py_mod(i, var_count);
+            long y = Pytra.CsModule.py_runtime.py_mod((i + 3L), var_count);
+            long c1 = (Pytra.CsModule.py_runtime.py_mod(i, 7L) + 1L);
+            long c2 = (Pytra.CsModule.py_runtime.py_mod(i, 11L) + 2L);
             Pytra.CsModule.py_runtime.py_append(lines, ((((((((("v" + Convert.ToString(x)) + " = (v") + Convert.ToString(x)) + " * ") + Convert.ToString(c1)) + " + v") + Convert.ToString(y)) + " + 10000) / ") + Convert.ToString(c2)));
-            if (Pytra.CsModule.py_runtime.py_bool(((i % 97L) == 0L)))
+            if (Pytra.CsModule.py_runtime.py_bool((Pytra.CsModule.py_runtime.py_mod(i, 97L) == 0L)))
             {
                 Pytra.CsModule.py_runtime.py_append(lines, ("print v" + Convert.ToString(x)));
             }
@@ -462,15 +458,7 @@ public static class Program
             if (Pytra.CsModule.py_runtime.py_bool(this.match("NUMBER")))
             {
                 Token token_num = Pytra.CsModule.py_runtime.py_get(this.tokens, (this.pos - 1L));
-                long parsed_value = 0L;
-                long idx = 0L;
-                while (Pytra.CsModule.py_runtime.py_bool((idx < Pytra.CsModule.py_runtime.py_len(token_num.text))))
-                {
-                    string ch = Pytra.CsModule.py_runtime.py_slice(token_num.text, (long?)(idx), (long?)((idx + 1L)));
-                    parsed_value = (((parsed_value * 10L) + Pytra.CsModule.py_runtime.py_ord(ch)) - Pytra.CsModule.py_runtime.py_ord("0"));
-                    idx = (idx + 1L);
-                }
-                return this.add_expr(new ExprNode("lit", parsed_value, "", "", (-1L), (-1L)));
+                return this.add_expr(new ExprNode("lit", Pytra.CsModule.py_runtime.py_int(token_num.text), "", "", (-1L), (-1L)));
             }
             if (Pytra.CsModule.py_runtime.py_bool(this.match("IDENT")))
             {

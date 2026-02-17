@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Pytra.CsModule
 {
@@ -97,10 +98,10 @@ namespace Pytra.CsModule
             return source[idx];
         }
 
-        public static char py_get(string source, object indexLike)
+        public static string py_get(string source, object indexLike)
         {
             int idx = NormalizeIndex(Convert.ToInt64(indexLike), source.Length);
-            return source[idx];
+            return source[idx].ToString();
         }
 
         public static V py_get<K, V>(Dictionary<K, V> source, K key)
@@ -237,6 +238,57 @@ namespace Pytra.CsModule
                 throw new ArgumentException("ord() expected a character");
             }
             return value[0];
+        }
+
+        public static long py_int(object value)
+        {
+            if (value == null)
+            {
+                throw new ArgumentException("int() argument must not be null");
+            }
+            if (value is string s)
+            {
+                string t = s.Trim();
+                if (!long.TryParse(t, NumberStyles.Integer, CultureInfo.InvariantCulture, out long parsed))
+                {
+                    throw new ArgumentException("invalid literal for int()");
+                }
+                return parsed;
+            }
+            return Convert.ToInt64(value);
+        }
+
+        public static long py_floordiv(object left, object right)
+        {
+            long a = Convert.ToInt64(left);
+            long b = Convert.ToInt64(right);
+            if (b == 0)
+            {
+                throw new DivideByZeroException();
+            }
+            long q = a / b;
+            long r = a % b;
+            if (r != 0 && ((r > 0) != (b > 0)))
+            {
+                q -= 1;
+            }
+            return q;
+        }
+
+        public static long py_mod(object left, object right)
+        {
+            long a = Convert.ToInt64(left);
+            long b = Convert.ToInt64(right);
+            if (b == 0)
+            {
+                throw new DivideByZeroException();
+            }
+            long r = a % b;
+            if (r != 0 && ((r > 0) != (b > 0)))
+            {
+                r += b;
+            }
+            return r;
         }
 
         public static void print(params object[] args)
