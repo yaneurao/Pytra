@@ -55,7 +55,7 @@ void run_11_lissajous_particles() {
                 for (int64 dx = -2; dx < 3; ++dx) {
                     xx = x + dx;
                     yy = y + dy;
-                    if (xx >= 0 && xx < w && yy >= 0 && yy < h) {
+                    if ((xx >= 0) && (xx < w) && (yy >= 0) && (yy < h)) {
                         d2 = dx * dx + dy * dy;
                         if (d2 <= 4) {
                             idx = yy * w + xx;

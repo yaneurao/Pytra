@@ -228,12 +228,46 @@ class CppEmitter:
 
     def render_cond(self, expr: dict[str, Any] | None) -> str:
         t = self.get_expr_type(expr) or ""
-        body = self.render_expr(expr)
+        body = self._strip_outer_parens(self.render_expr(expr))
         if t in {"bool"}:
             return body
         if t == "str" or t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
-            return f"(py_len({body}) != 0)"
+            return f"py_len({body}) != 0"
         return body
+
+    def _strip_outer_parens(self, text: str) -> str:
+        s = text.strip()
+        while len(s) >= 2 and s.startswith("(") and s.endswith(")"):
+            depth = 0
+            in_str = False
+            esc = False
+            quote = ""
+            wrapped = True
+            for i, ch in enumerate(s):
+                if in_str:
+                    if esc:
+                        esc = False
+                    elif ch == "\\":
+                        esc = True
+                    elif ch == quote:
+                        in_str = False
+                    continue
+                if ch in {"'", '"'}:
+                    in_str = True
+                    quote = ch
+                    continue
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                    if depth == 0 and i != len(s) - 1:
+                        wrapped = False
+                        break
+            if wrapped and depth == 0:
+                s = s[1:-1].strip()
+                continue
+            break
+        return s
 
     def apply_cast(self, rendered_expr: str, to_type: str | None) -> str:
         if not isinstance(to_type, str) or to_type == "":
@@ -1138,9 +1172,43 @@ class CppEmitter:
             op = BIN_OPS.get(op_name, "+")
             return f"{left} {op} {right}"
         if kind == "UnaryOp":
-            operand = self.render_expr(expr.get("operand"))
+            operand_expr = expr.get("operand")
+            operand = self.render_expr(operand_expr)
             op = expr.get("op")
             if op == "Not":
+                if isinstance(operand_expr, dict) and operand_expr.get("kind") == "Compare":
+                    if operand_expr.get("lowered_kind") == "Contains":
+                        container = self.render_expr(operand_expr.get("container"))
+                        key = self.render_expr(operand_expr.get("key"))
+                        ctype = self.get_expr_type(operand_expr.get("container")) or ""
+                        if ctype.startswith("dict["):
+                            return f"{container}.find({key}) == {container}.end()"
+                        return f"std::find({container}.begin(), {container}.end(), {key}) == {container}.end()"
+                    ops = operand_expr.get("ops", [])
+                    cmps = operand_expr.get("comparators", [])
+                    if len(ops) == 1 and len(cmps) == 1:
+                        left = self.render_expr(operand_expr.get("left"))
+                        rhs = self.render_expr(cmps[0])
+                        op0 = ops[0]
+                        inv = {
+                            "Eq": "!=",
+                            "NotEq": "==",
+                            "Lt": ">=",
+                            "LtE": ">",
+                            "Gt": "<=",
+                            "GtE": "<",
+                            "Is": "!=",
+                            "IsNot": "==",
+                        }
+                        if op0 in inv:
+                            return f"{left} {inv[op0]} {rhs}"
+                        if op0 in {"In", "NotIn"}:
+                            rhs_type = self.get_expr_type(cmps[0]) or ""
+                            if rhs_type.startswith("dict["):
+                                found = f"{rhs}.find({left}) != {rhs}.end()"
+                            else:
+                                found = f"std::find({rhs}.begin(), {rhs}.end(), {left}) != {rhs}.end()"
+                            return f"!({found})" if op0 == "In" else found
                 return f"!({operand})"
             if op == "USub":
                 return f"-{operand}"
@@ -1148,7 +1216,10 @@ class CppEmitter:
                 return f"+{operand}"
             return operand
         if kind == "BoolOp":
-            values = [self.render_expr(v) for v in expr.get("values", [])]
+            values: list[str] = []
+            for v in expr.get("values", []):
+                txt = self.render_expr(v)
+                values.append(f"({txt})")
             op = "&&" if expr.get("op") == "And" else "||"
             return f" {op} ".join(values) if len(values) > 0 else "false"
         if kind == "Compare":

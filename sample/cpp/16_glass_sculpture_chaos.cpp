@@ -239,24 +239,24 @@ list<uint8> render_frame(int64 width, int64 height, int64 frame_id, int64 frames
             
             if (dy < -1e-06) {
                 tf = (-1.2 - cam_y) / dy;
-                if (tf > 0.0001 && tf < best_t) {
+                if ((tf > 0.0001) && (tf < best_t)) {
                     best_t = tf;
                     hit_kind = 1;
                 }
             }
             
             t0 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65);
-            if (t0 > 0.0 && t0 < best_t) {
+            if ((t0 > 0.0) && (t0 < best_t)) {
                 best_t = t0;
                 hit_kind = 2;
             }
             t1 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72);
-            if (t1 > 0.0 && t1 < best_t) {
+            if ((t1 > 0.0) && (t1 < best_t)) {
                 best_t = t1;
                 hit_kind = 3;
             }
             t2 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58);
-            if (t2 > 0.0 && t2 < best_t) {
+            if ((t2 > 0.0) && (t2 < best_t)) {
                 best_t = t2;
                 hit_kind = 4;
             }

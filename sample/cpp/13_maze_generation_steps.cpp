@@ -50,7 +50,7 @@ void run_13_maze_generation_steps() {
     list<list<uint8>> frames = list<list<uint8>>{};
     int64 step = 0;
     
-    while ((py_len(stack) != 0)) {
+    while (py_len(stack) != 0) {
         auto __tuple_1 = py_at(stack, -1);
         x = std::get<0>(__tuple_1);
         y = std::get<1>(__tuple_1);
@@ -61,7 +61,7 @@ void run_13_maze_generation_steps() {
             dy = std::get<1>(__tuple_2);
             nx = x + dx;
             ny = y + dy;
-            if (nx >= 1 && nx < cell_w - 1 && ny >= 1 && ny < cell_h - 1 && grid[ny][nx] == 1) {
+            if ((nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (grid[ny][nx] == 1)) {
                 if (dx == 2) {
                     candidates.push_back(std::make_tuple(nx, ny, x + 1, y));
                 } else {

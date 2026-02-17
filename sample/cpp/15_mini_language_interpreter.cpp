@@ -113,7 +113,7 @@ list<Token> tokenize(list<str> lines) {
             
             if (py_isdigit(ch)) {
                 start = i;
-                while (i < n && py_isdigit(py_slice(source, i, i + 1))) {
+                while ((i < n) && (py_isdigit(py_slice(source, i, i + 1)))) {
                     i++;
                 }
                 text = py_slice(source, start, i);
@@ -121,9 +121,9 @@ list<Token> tokenize(list<str> lines) {
                 continue;
             }
             
-            if (py_isalpha(ch) || ch == "_") {
+            if ((py_isalpha(ch)) || (ch == "_")) {
                 start = i;
-                while (i < n && py_isalpha(py_slice(source, i, i + 1)) || py_slice(source, i, i + 1) == "_" || py_isdigit(py_slice(source, i, i + 1))) {
+                while ((i < n) && (((py_isalpha(py_slice(source, i, i + 1))) || (py_slice(source, i, i + 1) == "_")) || (py_isdigit(py_slice(source, i, i + 1))))) {
                     i++;
                 }
                 text = py_slice(source, start, i);
@@ -315,7 +315,7 @@ int64 eval_expr(int64 expr_index, list<ExprNode>& expr_nodes, dict<str, int64>& 
         return node.value;
     
     if (node.kind == "var") {
-        if (!(env.find(node.name) != env.end()))
+        if (env.find(node.name) == env.end())
             throw std::runtime_error("undefined variable: " + node.name);
         return env[node.name];
     }
@@ -360,7 +360,7 @@ int64 execute(list<StmtNode> stmts, list<ExprNode> expr_nodes, bool trace) {
         }
         
         if (stmt.kind == "assign") {
-            if (!(env.find(stmt.name) != env.end()))
+            if (env.find(stmt.name) == env.end())
                 throw std::runtime_error("assign to undefined variable: " + stmt.name);
             env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env);
             continue;

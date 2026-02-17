@@ -17,7 +17,7 @@ list<list<int64>> next_state(list<list<int64>> grid, int64 w, int64 h) {
             cnt = 0;
             for (int64 dy = -1; dy < 2; ++dy) {
                 for (int64 dx = -1; dx < 2; ++dx) {
-                    if (dx != 0 || dy != 0) {
+                    if ((dx != 0) || (dy != 0)) {
                         nx = (x + dx + w) % w;
                         ny = (y + dy + h) % h;
                         cnt += grid[ny][nx];
@@ -25,10 +25,10 @@ list<list<int64>> next_state(list<list<int64>> grid, int64 w, int64 h) {
                 }
             }
             alive = grid[y][x];
-            if (alive == 1 && cnt == 2 || cnt == 3) {
+            if ((alive == 1) && ((cnt == 2) || (cnt == 3))) {
                 row.push_back(1);
             } else {
-                if (alive == 0 && cnt == 3)
+                if ((alive == 0) && (cnt == 3))
                     row.push_back(1);
                 else
                     row.push_back(0);

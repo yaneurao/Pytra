@@ -106,19 +106,19 @@ list<uint8> render(int64 width, int64 height, int64 aa) {
                     hit_id = -1;
                     
                     t = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
-                    if (t > 0.0 && t < t_min) {
+                    if ((t > 0.0) && (t < t_min)) {
                         t_min = t;
                         hit_id = 0;
                     }
                     
                     t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95);
-                    if (t > 0.0 && t < t_min) {
+                    if ((t > 0.0) && (t < t_min)) {
                         t_min = t;
                         hit_id = 1;
                     }
                     
                     t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, -1001.0, 3.0, 1000.0);
-                    if (t > 0.0 && t < t_min) {
+                    if ((t > 0.0) && (t < t_min)) {
                         t_min = t;
                         hit_id = 2;
                     }
