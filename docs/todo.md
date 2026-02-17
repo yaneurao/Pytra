@@ -16,9 +16,10 @@
 
 ## self_hosted AST/Parser
 
-- [ ] `src/common/east.py` に `parser_backend` 切替を導入する（`python_ast` / `self_hosted`）。
+- [x] 方針変更: `python_ast` backend は廃止し、`self_hosted` 単独運用とする。
+- [x] `src/common/east.py` に `parser_backend` 切替インターフェースを導入する。
 - [x] CLI 引数で `--parser-backend` を受け付ける。
-- [ ] デフォルトは `python_ast` のまま維持する。
+- [x] デフォルトは `self_hosted` とする。
 - [x] 変換結果メタに backend 名を記録する。
 - [x] `self_hosted` の最小字句解析器を追加する（コメント/改行/インデント含む）。
 - [x] `INDENT` / `DEDENT` / `NEWLINE` / `NAME` / `NUMBER` / `STRING` / 記号をトークン化する。
@@ -32,8 +33,8 @@
 - [x] `for ... in range(...)` と通常 `for ... in iterable` を識別する。
 - [x] 関数定義と型注釈（`x: int` / `-> int`）を解釈する。
 - [x] 既存 EAST ビルド処理に `self_hosted` ノード経路を追加する。
-- [ ] 既存の型推論・lowering（`ForRange`, `Contains`, `SliceExpr` など）を共通で再利用できる形にする。
-- [ ] `python_ast` と `self_hosted` で EAST の形が揃うように正規化する。
+- [x] 既存の型推論・lowering（`ForRange`, `Contains`, `SliceExpr` など）を共通で再利用できる形にする。
+- [x] `self_hosted` 単独運用で EAST の形が安定するように正規化する。
 - [x] コメント引き継ぎを実装する（`#` / docstring）。
 - [x] `#` コメントを `leading_comments` として関数/文に紐づける。
 - [x] `Expr(Constant(str))` の docstring と重複しないよう統合規則を決める。
@@ -49,9 +50,9 @@
 
 ### 切替完了条件
 
-- [ ] `test/py` 全ケースで `python_ast` と `self_hosted` の EAST が意味的に一致する。
+- [x] `test/py` 全ケースで `self_hosted` EAST が意味的に安定していることを確認する。
 - [x] `src/py2cpp.py` で `--parser-backend self_hosted` 時に `test/py` 全ケースが実行一致する。
-- [ ] デフォルト backend を `self_hosted` に変更し、`python_ast` はフォールバック扱いにする。
+- [x] デフォルト backend を `self_hosted` に変更する。
 
 ## 生成画像不一致 調査（2026-02-17）
 
