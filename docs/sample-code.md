@@ -62,3 +62,11 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 - `sample/02_raytrace_spheres` については、Python 実行結果と C++ 実行結果で **PNG の画素（raw scanline）は一致** することを確認済みです。
 - 一方で PNG ファイル自体のバイト列は一致しません。これは主に IDAT の圧縮形式・圧縮率の差によるものです。
+
+画像一致検証を自動実行する場合:
+
+```bash
+python3 tools/verify_sample_outputs.py --compile-flags=\"-O2\"
+```
+
+- `stdout` 差分と、画像の差分（PNG は raw scanline、GIF は LZW 展開後のフレームインデックス）をまとめて確認できます。
