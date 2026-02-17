@@ -2,8 +2,8 @@
 
 // 05: マンデルブロ集合ズームをアニメーションGIFとして出力するサンプル。
 
-bytearray render_frame(int64 width, int64 height, float64 center_x, float64 center_y, float64 scale, int64 max_iter) {
-    auto frame = bytearray(width * height);
+bytes render_frame(int64 width, int64 height, float64 center_x, float64 center_y, float64 scale, int64 max_iter) {
+    bytearray frame = bytearray(width * height);
     int64 idx = 0;
     for (int64 y = 0; y < height; ++y) {
         float64 cy = center_y + (static_cast<float64>(y) - static_cast<float64>(height) * 0.5) * scale;
@@ -19,15 +19,13 @@ bytearray render_frame(int64 width, int64 height, float64 center_x, float64 cent
                     break;
                 zy = 2.0 * zx * zy + cy;
                 zx = zx2 - zy2 + cx;
-                
                 i++;
             }
             frame[idx] = int64(255.0 * static_cast<float64>(i) / static_cast<float64>(max_iter));
-            
             idx++;
         }
     }
-    return bytearray(frame);
+    return bytes(frame);
 }
 
 void run_05_mandelbrot_zoom() {
@@ -42,7 +40,7 @@ void run_05_mandelbrot_zoom() {
     str out_path = "sample/out/05_mandelbrot_zoom.gif";
     
     auto start = perf_counter();
-    list<bytearray> frames = list<bytearray>{};
+    list<bytes> frames = list<bytes>{};
     float64 scale = base_scale;
     for (int64 _ = 0; _ < frame_count; ++_) {
         frames.append(render_frame(width, height, center_x, center_y, scale, max_iter));
@@ -51,9 +49,7 @@ void run_05_mandelbrot_zoom() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0);
-    
     auto elapsed = perf_counter() - start;
-    
     py_print("output:", out_path);
     py_print("frames:", frame_count);
     py_print("elapsed_sec:", elapsed);

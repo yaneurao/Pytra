@@ -1085,7 +1085,7 @@ class CppEmitter:
                 if raw == "range":
                     raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
                 if isinstance(raw, str) and raw in self.ref_classes:
-                    return f"rc_new<{raw}>({', '.join(args)})"
+                    return f"::rc_new<{raw}>({', '.join(args)})"
                 if raw == "print":
                     return f"py_print({', '.join(args)})"
                 if raw == "len" and len(args) == 1:

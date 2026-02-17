@@ -137,7 +137,7 @@ class CppTranspiler(BaseTranspiler):
         parts = sorted(include_lines)
         parts.append("")
         parts.append("using namespace std;")
-        parts.append("using namespace pycs::gc;")
+        parts.append("using namespace pytra::gc;")
         parts.append("")
 
         for cls in class_defs:
@@ -207,7 +207,7 @@ class CppTranspiler(BaseTranspiler):
         if len(cls.bases) > 1:
             raise TranspileError(f"Class '{cls.name}' multiple inheritance is not supported")
 
-        base: str = " : public pycs::gc::PyObj"
+        base: str = " : public pytra::gc::PyObj"
         if len(cls.bases) > 0:
             if not isinstance(cls.bases[0], ast.Name):
                 raise TranspileError(f"Class '{cls.name}' base class must be a simple name")
@@ -422,7 +422,7 @@ class CppTranspiler(BaseTranspiler):
             return self._infer_expr_cpp_type(expr)
         if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
             if expr.func.id in self.class_names:
-                return f"pycs::gc::RcHandle<{expr.func.id}>"
+                return f"pytra::gc::RcHandle<{expr.func.id}>"
         return ""
 
     def _infer_expr_cpp_type(self, expr: ast.expr) -> str:
@@ -980,13 +980,13 @@ class CppTranspiler(BaseTranspiler):
                 if expr.attr == "stem":
                     return f"{base}->stem()"
             if isinstance(expr.value, ast.Name) and expr.value.id == "ast":
-                return f"pycs::cpp_module::ast::{expr.attr}"
+                return f"pytra::cpp_module::ast::{expr.attr}"
             if isinstance(expr.value, ast.Name) and expr.value.id == "math":
-                return f"pycs::cpp_module::math::{expr.attr}"
+                return f"pytra::cpp_module::math::{expr.attr}"
             if isinstance(expr.value, ast.Name) and expr.value.id == "time":
-                return f"pycs::cpp_module::{expr.attr}"
+                return f"pytra::cpp_module::{expr.attr}"
             if isinstance(expr.value, ast.Name) and expr.value.id == "png_helper":
-                return f"pycs::cpp_module::png::{expr.attr}"
+                return f"pytra::cpp_module::png::{expr.attr}"
             if (
                 isinstance(expr.value, ast.Name)
                 and expr.value.id == "self"
@@ -1153,9 +1153,9 @@ class CppTranspiler(BaseTranspiler):
                 return f"py_bytes({args_list[0]})"
             return "py_bytes()"
         if isinstance(call.func, ast.Name) and call.func.id == "save_gif":
-            return f"pycs::cpp_module::gif::save_gif({args})"
+            return f"pytra::cpp_module::gif::save_gif({args})"
         if isinstance(call.func, ast.Name) and call.func.id == "grayscale_palette":
-            return f"pycs::cpp_module::gif::grayscale_palette({args})"
+            return f"pytra::cpp_module::gif::grayscale_palette({args})"
         if isinstance(call.func, ast.Name) and call.func.id == "chr":
             if len(args_list) == 1:
                 return f"string(1, static_cast<char>({args_list[0]}))"
@@ -1172,13 +1172,13 @@ class CppTranspiler(BaseTranspiler):
                     types: List[str] = []
                     for elt in type_arg.elts:
                         if isinstance(elt, ast.Attribute) and isinstance(elt.value, ast.Name) and elt.value.id == "ast":
-                            types.append(f"pycs::cpp_module::ast::{elt.attr}")
+                            types.append(f"pytra::cpp_module::ast::{elt.attr}")
                         elif isinstance(elt, ast.Name):
                             types.append(elt.id)
                     if len(types) > 0:
                         return f"py_isinstance_any<decltype({obj}), {', '.join(types)}>({obj})"
                 if isinstance(type_arg, ast.Attribute) and isinstance(type_arg.value, ast.Name) and type_arg.value.id == "ast":
-                    return f"py_isinstance<pycs::cpp_module::ast::{type_arg.attr}>({obj})"
+                    return f"py_isinstance<pytra::cpp_module::ast::{type_arg.attr}>({obj})"
                 if isinstance(type_arg, ast.Name):
                     if type_arg.id == "str":
                         return f"py_isinstance<string>({obj})"
@@ -1190,7 +1190,7 @@ class CppTranspiler(BaseTranspiler):
                 mapped_name = self.global_function_renames[call.func.id]
                 return f"{mapped_name}({args})"
             if call.func.id in self.class_names and call.func.id not in self.exception_class_names:
-                return f"pycs::gc::RcHandle<{call.func.id}>::adopt(pycs::gc::rc_new<{call.func.id}>({args}))"
+                return f"pytra::gc::RcHandle<{call.func.id}>::adopt(pytra::gc::rc_new<{call.func.id}>({args}))"
             return f"{call.func.id}({args})"
         if isinstance(call.func, ast.Attribute):
             if (
@@ -1287,44 +1287,44 @@ class CppTranspiler(BaseTranspiler):
             if annotation.id == "Path":
                 return "Path"
             if annotation.id in self.class_names:
-                return f"pycs::gc::RcHandle<{annotation.id}>"
+                return f"pytra::gc::RcHandle<{annotation.id}>"
             return "auto"
         if isinstance(annotation, ast.Attribute):
             if isinstance(annotation.value, ast.Name) and annotation.value.id == "ast":
                 if annotation.attr == "Module":
-                    return "pycs::cpp_module::ast::ModulePtr"
+                    return "pytra::cpp_module::ast::ModulePtr"
                 if annotation.attr == "stmt":
-                    return "pycs::cpp_module::ast::StmtPtr"
+                    return "pytra::cpp_module::ast::StmtPtr"
                 if annotation.attr == "expr":
-                    return "pycs::cpp_module::ast::ExprPtr"
+                    return "pytra::cpp_module::ast::ExprPtr"
                 if annotation.attr == "FunctionDef":
-                    return "std::shared_ptr<pycs::cpp_module::ast::FunctionDef>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::FunctionDef>"
                 if annotation.attr == "ClassDef":
-                    return "std::shared_ptr<pycs::cpp_module::ast::ClassDef>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::ClassDef>"
                 if annotation.attr == "Assign":
-                    return "std::shared_ptr<pycs::cpp_module::ast::Assign>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::Assign>"
                 if annotation.attr == "AnnAssign":
-                    return "std::shared_ptr<pycs::cpp_module::ast::AnnAssign>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::AnnAssign>"
                 if annotation.attr == "For":
-                    return "std::shared_ptr<pycs::cpp_module::ast::For>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::For>"
                 if annotation.attr == "If":
-                    return "std::shared_ptr<pycs::cpp_module::ast::If>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::If>"
                 if annotation.attr == "Try":
-                    return "std::shared_ptr<pycs::cpp_module::ast::Try>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::Try>"
                 if annotation.attr == "Raise":
-                    return "std::shared_ptr<pycs::cpp_module::ast::Raise>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::Raise>"
                 if annotation.attr == "Call":
-                    return "std::shared_ptr<pycs::cpp_module::ast::Call>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::Call>"
                 if annotation.attr == "JoinedStr":
-                    return "std::shared_ptr<pycs::cpp_module::ast::JoinedStr>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::JoinedStr>"
                 if annotation.attr == "boolop":
-                    return "std::shared_ptr<pycs::cpp_module::ast::boolop>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::boolop>"
                 if annotation.attr == "cmpop":
-                    return "std::shared_ptr<pycs::cpp_module::ast::cmpop>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::cmpop>"
                 if annotation.attr == "unaryop":
-                    return "std::shared_ptr<pycs::cpp_module::ast::unaryop>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::unaryop>"
                 if annotation.attr == "operator":
-                    return "std::shared_ptr<pycs::cpp_module::ast::operator_>"
+                    return "std::shared_ptr<pytra::cpp_module::ast::operator_>"
                 return "auto"
             return "auto"
         if isinstance(annotation, ast.Subscript):

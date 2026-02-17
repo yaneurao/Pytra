@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace pycs::cpp_module {
+namespace pytra::cpp_module {
 
 /**
  * @brief Python の `sys.path` を模したコンテナです。
@@ -41,8 +41,8 @@ public:
 // グローバル `sys` オブジェクト。
 extern SysModule* sys;
 
-}  // namespace pycs::cpp_module
+}  // namespace pytra::cpp_module
 
-using pycs::cpp_module::sys;
+using pytra::cpp_module::sys;
 
 #endif  // PYCS_CPP_MODULE_SYS_H

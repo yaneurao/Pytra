@@ -8,7 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace pycs::cpp_module::ast {
+namespace pytra::cpp_module::ast {
 namespace {
 
 struct LineInfo {
@@ -492,4 +492,4 @@ ModulePtr parse_file(const std::string& path) {
     return parse(oss.str(), path);
 }
 
-}  // namespace pycs::cpp_module::ast
+}  // namespace pytra::cpp_module::ast

@@ -53,7 +53,6 @@ std::tuple<float64, float64, float64> sky_color(float64 dx, float64 dy, float64 
     float64 g = 0.1 + 0.25 * t;
     float64 b = 0.16 + 0.45 * t;
     auto band = 0.5 + 0.5 * py_math::sin(8.0 * dx + 6.0 * dz + tphase);
-    
     r += 0.08 * band;
     g += 0.05 * band;
     b += 0.12 * band;
@@ -79,9 +78,9 @@ float64 sphere_intersect(float64 ox, float64 oy, float64 oz, float64 dx, float64
     return -1.0;
 }
 
-bytearray palette_332() {
+bytes palette_332() {
     // 3-3-2 量子化パレット。量子化処理が軽く、トランスパイル後も高速。
-    auto p = bytearray(256 * 3);
+    bytearray p = bytearray(256 * 3);
     for (int64 i = 0; i < 256; ++i) {
         int64 r = i >> 5 & 7;
         int64 g = i >> 2 & 7;
@@ -90,7 +89,7 @@ bytearray palette_332() {
         p[i * 3 + 1] = int64(static_cast<float64>(255 * g) / static_cast<float64>(7));
         p[i * 3 + 2] = int64(static_cast<float64>(255 * b) / static_cast<float64>(3));
     }
-    return bytearray(p);
+    return bytes(p);
 }
 
 int64 quantize_332(float64 r, float64 g, float64 b) {
@@ -100,7 +99,7 @@ int64 quantize_332(float64 r, float64 g, float64 b) {
     return (rr >> 5 << 5) + (gg >> 5 << 2) + (bb >> 6);
 }
 
-bytearray render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
+bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
     float64 t = static_cast<float64>(frame_id) / static_cast<float64>(frames_n);
     auto tphase = 2.0 * py_math::pi * t;
     
@@ -141,7 +140,7 @@ bytearray render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n
     auto ly = 1.8 + 0.8 * py_math::sin(tphase * 1.2);
     auto lz = 2.4 * py_math::sin(tphase * 1.8);
     
-    auto frame = bytearray(width * height);
+    bytearray frame = bytearray(width * height);
     float64 aspect = static_cast<float64>(width) / static_cast<float64>(height);
     float64 fov = 1.25;
     
@@ -291,7 +290,6 @@ bytearray render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n
                     spec = spec * spec;
                     spec = spec * spec;
                     float64 glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
-                    
                     r += 0.2 * ndotl + 0.8 * spec + 0.45 * glow;
                     g += 0.18 * ndotl + 0.6 * spec + 0.35 * glow;
                     b += 0.26 * ndotl + 1.0 * spec + 0.65 * glow;
@@ -320,12 +318,11 @@ bytearray render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n
             g = py_math::sqrt(clamp01(g));
             b = py_math::sqrt(clamp01(b));
             frame[i] = quantize_332(r, g, b);
-            
             i++;
         }
     }
     
-    return bytearray(frame);
+    return bytes(frame);
 }
 
 void run_16_glass_sculpture_chaos() {
@@ -335,15 +332,13 @@ void run_16_glass_sculpture_chaos() {
     str out_path = "sample/out/16_glass_sculpture_chaos.gif";
     
     auto start = perf_counter();
-    list<bytearray> frames = list<bytearray>{};
+    list<bytes> frames = list<bytes>{};
     for (int64 i = 0; i < frames_n; ++i)
         frames.append(render_frame(width, height, i, frames_n));
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, palette_332(), 6, 0);
-    
     auto elapsed = perf_counter() - start;
-    
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

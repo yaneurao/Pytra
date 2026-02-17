@@ -13,7 +13,6 @@ int64 run_integer_grid_checksum(int64 width, int64 height, int64 seed) {
         for (int64 x = 0; x < width; ++x) {
             int64 v = (x * 37 + y * 73 + seed) % mod_main;
             v = (v * 48271 + 1) % mod_main;
-            
             row_sum += v % 256;
         }
         acc = (acc + row_sum * (y + 1)) % mod_out;

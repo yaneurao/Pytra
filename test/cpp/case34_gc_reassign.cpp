@@ -16,8 +16,8 @@ struct Tracked : public PyObj {
 };
 
 void run_case34_gc_reassign() {
-    rc<Tracked> a = rc_new<Tracked>("A");
-    rc<Tracked> b = rc_new<Tracked>("B");
+    rc<Tracked> a = ::rc_new<Tracked>("A");
+    rc<Tracked> b = ::rc_new<Tracked>("B");
     py_print("before reassign");
     a = b;
     py_print("after reassign");

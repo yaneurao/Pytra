@@ -4,7 +4,7 @@
 
 #include "cpp_module/math.h"
 
-namespace pycs::cpp_module::math {
+namespace pytra::cpp_module::math {
 
 const double pi = 3.14159265358979323846;
 const double e = 2.71828182845904523536;
@@ -53,4 +53,4 @@ double pow(double x, double y) {
     return std::pow(x, y);
 }
 
-}  // namespace pycs::cpp_module::math
+}  // namespace pytra::cpp_module::math

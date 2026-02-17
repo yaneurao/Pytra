@@ -1,6 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
-struct Token {
+struct Token : public PyObj {
     str kind;
     str text;
     int64 pos;
@@ -13,7 +13,7 @@ struct Token {
     
 };
 
-struct ExprNode {
+struct ExprNode : public PyObj {
     str kind;
     int64 value;
     str name;
@@ -32,7 +32,7 @@ struct ExprNode {
     
 };
 
-struct StmtNode {
+struct StmtNode : public PyObj {
     str kind;
     str name;
     int64 expr_index;
@@ -45,8 +45,8 @@ struct StmtNode {
     
 };
 
-list<Token> tokenize(const list<str>& lines) {
-    list<Token> tokens = list<Token>{};
+list<rc<Token>> tokenize(const list<str>& lines) {
+    list<rc<Token>> tokens = list<rc<Token>>{};
     int64 line_index = 0;
     while (line_index < py_len(lines)) {
         str source = lines[line_index];
@@ -61,43 +61,43 @@ list<Token> tokenize(const list<str>& lines) {
             }
             
             if (ch == "+") {
-                tokens.append(Token("PLUS", ch, i));
+                tokens.append(::rc_new<Token>("PLUS", ch, i));
                 i++;
                 continue;
             }
             
             if (ch == "-") {
-                tokens.append(Token("MINUS", ch, i));
+                tokens.append(::rc_new<Token>("MINUS", ch, i));
                 i++;
                 continue;
             }
             
             if (ch == "*") {
-                tokens.append(Token("STAR", ch, i));
+                tokens.append(::rc_new<Token>("STAR", ch, i));
                 i++;
                 continue;
             }
             
             if (ch == "/") {
-                tokens.append(Token("SLASH", ch, i));
+                tokens.append(::rc_new<Token>("SLASH", ch, i));
                 i++;
                 continue;
             }
             
             if (ch == "(") {
-                tokens.append(Token("LPAREN", ch, i));
+                tokens.append(::rc_new<Token>("LPAREN", ch, i));
                 i++;
                 continue;
             }
             
             if (ch == ")") {
-                tokens.append(Token("RPAREN", ch, i));
+                tokens.append(::rc_new<Token>("RPAREN", ch, i));
                 i++;
                 continue;
             }
             
             if (ch == "=") {
-                tokens.append(Token("EQUAL", ch, i));
+                tokens.append(::rc_new<Token>("EQUAL", ch, i));
                 i++;
                 continue;
             }
@@ -108,7 +108,7 @@ list<Token> tokenize(const list<str>& lines) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
-                tokens.append(Token("NUMBER", text, start));
+                tokens.append(::rc_new<Token>("NUMBER", text, start));
                 continue;
             }
             
@@ -119,12 +119,12 @@ list<Token> tokenize(const list<str>& lines) {
                 }
                 str text = py_slice(source, start, i);
                 if (text == "let") {
-                    tokens.append(Token("LET", text, start));
+                    tokens.append(::rc_new<Token>("LET", text, start));
                 } else {
                     if (text == "print")
-                        tokens.append(Token("PRINT", text, start));
+                        tokens.append(::rc_new<Token>("PRINT", text, start));
                     else
-                        tokens.append(Token("IDENT", text, start));
+                        tokens.append(::rc_new<Token>("IDENT", text, start));
                 }
                 continue;
             }
@@ -132,30 +132,30 @@ list<Token> tokenize(const list<str>& lines) {
             throw std::runtime_error("tokenize error at line=" + std::to_string(line_index) + " pos=" + std::to_string(i) + " ch=" + ch);
         }
         
-        tokens.append(Token("NEWLINE", "", n));
+        tokens.append(::rc_new<Token>("NEWLINE", "", n));
         line_index++;
     }
     
-    tokens.append(Token("EOF", "", py_len(lines)));
+    tokens.append(::rc_new<Token>("EOF", "", py_len(lines)));
     return tokens;
 }
 
-struct Parser {
-    list<Token> tokens;
+struct Parser : public PyObj {
+    list<rc<Token>> tokens;
     int64 pos;
-    list<ExprNode> expr_nodes;
+    list<rc<ExprNode>> expr_nodes;
     
-    list<ExprNode> new_expr_nodes() {
-        list<ExprNode> nodes = list<ExprNode>{};
+    list<rc<ExprNode>> new_expr_nodes() {
+        list<rc<ExprNode>> nodes = list<rc<ExprNode>>{};
         return nodes;
     }
-    Parser(const list<Token>& tokens) {
+    Parser(const list<rc<Token>>& tokens) {
         this->tokens = tokens;
         this->pos = 0;
         this->expr_nodes = this->new_expr_nodes();
     }
     str peek_kind() {
-        return this->tokens[this->pos].kind;
+        return this->tokens[this->pos]->kind;
     }
     bool match(const str& kind) {
         if (this->peek_kind() == kind) {
@@ -164,13 +164,12 @@ struct Parser {
         }
         return false;
     }
-    Token expect(const str& kind) {
+    rc<Token> expect(const str& kind) {
         if (this->peek_kind() != kind) {
-            Token t = this->tokens[this->pos];
-            throw std::runtime_error("parse error at pos=" + py_to_string(t.pos) + ", expected=" + kind + ", got=" + t.kind);
+            rc<Token> t = this->tokens[this->pos];
+            throw std::runtime_error("parse error at pos=" + py_to_string(t->pos) + ", expected=" + kind + ", got=" + t->kind);
         }
-        Token token = this->tokens[this->pos];
-        
+        rc<Token> token = this->tokens[this->pos];
         this->pos++;
         return token;
     }
@@ -179,37 +178,37 @@ struct Parser {
             /* pass */
         }
     }
-    int64 add_expr(const ExprNode& node) {
+    int64 add_expr(const rc<ExprNode>& node) {
         this->expr_nodes.append(node);
         return py_len(this->expr_nodes) - 1;
     }
-    list<StmtNode> parse_program() {
-        list<StmtNode> stmts = list<StmtNode>{};
+    list<rc<StmtNode>> parse_program() {
+        list<rc<StmtNode>> stmts = list<rc<StmtNode>>{};
         this->skip_newlines();
         while (this->peek_kind() != "EOF") {
-            StmtNode stmt = this->parse_stmt();
+            rc<StmtNode> stmt = this->parse_stmt();
             stmts.append(stmt);
             this->skip_newlines();
         }
         return stmts;
     }
-    StmtNode parse_stmt() {
+    rc<StmtNode> parse_stmt() {
         if (this->match("LET")) {
-            str let_name = this->expect("IDENT").text;
+            str let_name = this->expect("IDENT")->text;
             this->expect("EQUAL");
             int64 let_expr_index = this->parse_expr();
-            return StmtNode("let", let_name, let_expr_index);
+            return ::rc_new<StmtNode>("let", let_name, let_expr_index);
         }
         
         if (this->match("PRINT")) {
             int64 print_expr_index = this->parse_expr();
-            return StmtNode("print", "", print_expr_index);
+            return ::rc_new<StmtNode>("print", "", print_expr_index);
         }
         
-        str assign_name = this->expect("IDENT").text;
+        str assign_name = this->expect("IDENT")->text;
         this->expect("EQUAL");
         int64 assign_expr_index = this->parse_expr();
-        return StmtNode("assign", assign_name, assign_expr_index);
+        return ::rc_new<StmtNode>("assign", assign_name, assign_expr_index);
     }
     int64 parse_expr() {
         return this->parse_add();
@@ -220,12 +219,12 @@ struct Parser {
         while (!(done)) {
             if (this->match("PLUS")) {
                 int64 right = this->parse_mul();
-                left = this->add_expr(ExprNode("bin", 0, "", "+", left, right));
+                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "+", left, right));
                 continue;
             }
             if (this->match("MINUS")) {
                 int64 right = this->parse_mul();
-                left = this->add_expr(ExprNode("bin", 0, "", "-", left, right));
+                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "-", left, right));
                 continue;
             }
             done = true;
@@ -238,12 +237,12 @@ struct Parser {
         while (!(done)) {
             if (this->match("STAR")) {
                 int64 right = this->parse_unary();
-                left = this->add_expr(ExprNode("bin", 0, "", "*", left, right));
+                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "*", left, right));
                 continue;
             }
             if (this->match("SLASH")) {
                 int64 right = this->parse_unary();
-                left = this->add_expr(ExprNode("bin", 0, "", "/", left, right));
+                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "/", left, right));
                 continue;
             }
             done = true;
@@ -253,19 +252,19 @@ struct Parser {
     int64 parse_unary() {
         if (this->match("MINUS")) {
             int64 child = this->parse_unary();
-            return this->add_expr(ExprNode("neg", 0, "", "", child, -1));
+            return this->add_expr(::rc_new<ExprNode>("neg", 0, "", "", child, -1));
         }
         return this->parse_primary();
     }
     int64 parse_primary() {
         if (this->match("NUMBER")) {
-            Token token_num = this->tokens[this->pos - 1];
-            return this->add_expr(ExprNode("lit", py_to_int64(token_num.text), "", "", -1, -1));
+            rc<Token> token_num = this->tokens[this->pos - 1];
+            return this->add_expr(::rc_new<ExprNode>("lit", py_to_int64(token_num->text), "", "", -1, -1));
         }
         
         if (this->match("IDENT")) {
-            Token token_ident = this->tokens[this->pos - 1];
-            return this->add_expr(ExprNode("var", 0, token_ident.text, "", -1, -1));
+            rc<Token> token_ident = this->tokens[this->pos - 1];
+            return this->add_expr(::rc_new<ExprNode>("var", 0, token_ident->text, "", -1, -1));
         }
         
         if (this->match("LPAREN")) {
@@ -274,73 +273,72 @@ struct Parser {
             return expr_index;
         }
         
-        auto t = this->tokens[this->pos];
-        throw std::runtime_error("primary parse error at pos=" + py_to_string(t.pos) + " got=" + t.kind);
+        rc<Token> t = this->tokens[this->pos];
+        throw std::runtime_error("primary parse error at pos=" + py_to_string(t->pos) + " got=" + t->kind);
     }
 };
 
-int64 eval_expr(int64 expr_index, const list<ExprNode>& expr_nodes, const dict<str, int64>& env) {
-    ExprNode node = expr_nodes[expr_index];
+int64 eval_expr(int64 expr_index, const list<rc<ExprNode>>& expr_nodes, const dict<str, int64>& env) {
+    rc<ExprNode> node = expr_nodes[expr_index];
     
-    if (node.kind == "lit")
-        return node.value;
+    if (node->kind == "lit")
+        return node->value;
     
-    if (node.kind == "var") {
-        if (!(env.find(node.name) != env.end()))
-            throw std::runtime_error("undefined variable: " + node.name);
-        return py_dict_get(env, node.name);
+    if (node->kind == "var") {
+        if (!(env.find(node->name) != env.end()))
+            throw std::runtime_error("undefined variable: " + node->name);
+        return py_dict_get(env, node->name);
     }
     
-    if (node.kind == "neg")
-        return -eval_expr(node.left, expr_nodes, env);
+    if (node->kind == "neg")
+        return -eval_expr(node->left, expr_nodes, env);
     
-    if (node.kind == "bin") {
-        int64 lhs = eval_expr(node.left, expr_nodes, env);
-        int64 rhs = eval_expr(node.right, expr_nodes, env);
-        if (node.op == "+")
+    if (node->kind == "bin") {
+        int64 lhs = eval_expr(node->left, expr_nodes, env);
+        int64 rhs = eval_expr(node->right, expr_nodes, env);
+        if (node->op == "+")
             return lhs + rhs;
-        if (node.op == "-")
+        if (node->op == "-")
             return lhs - rhs;
-        if (node.op == "*")
+        if (node->op == "*")
             return lhs * rhs;
-        if (node.op == "/") {
+        if (node->op == "/") {
             if (rhs == 0)
                 throw std::runtime_error("division by zero");
             // ミニ言語では整数除算を採用する。
             return py_floordiv(lhs, rhs);
         }
-        throw std::runtime_error("unknown operator: " + node.op);
+        throw std::runtime_error("unknown operator: " + node->op);
     }
     
-    throw std::runtime_error("unknown node kind: " + node.kind);
+    throw std::runtime_error("unknown node kind: " + node->kind);
 }
 
-int64 execute(const list<StmtNode>& stmts, const list<ExprNode>& expr_nodes, bool trace) {
+int64 execute(const list<rc<StmtNode>>& stmts, const list<rc<ExprNode>>& expr_nodes, bool trace) {
     dict<str, int64> env = dict<str, int64>{};
     int64 checksum = 0;
     int64 printed = 0;
     
-    for (StmtNode stmt : stmts) {
-        if (stmt.kind == "let") {
-            env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env);
+    for (rc<StmtNode> stmt : stmts) {
+        if (stmt->kind == "let") {
+            env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
         }
         
-        if (stmt.kind == "assign") {
-            if (!(env.find(stmt.name) != env.end()))
-                throw std::runtime_error("assign to undefined variable: " + stmt.name);
-            env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env);
+        if (stmt->kind == "assign") {
+            if (!(env.find(stmt->name) != env.end()))
+                throw std::runtime_error("assign to undefined variable: " + stmt->name);
+            env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
         }
         
-        int64 value = eval_expr(stmt.expr_index, expr_nodes, env);
+        int64 value = eval_expr(stmt->expr_index, expr_nodes, env);
         if (trace)
             py_print(value);
         int64 norm = value % 1000000007;
         if (norm < 0)
             norm += 1000000007;
         checksum = (checksum * 131 + norm) % 1000000007;
-        
         printed++;
     }
     
@@ -382,25 +380,24 @@ void run_demo() {
     demo_lines.append("print a");
     demo_lines.append("print a / b");
     
-    list<Token> tokens = tokenize(demo_lines);
-    Parser parser = Parser(tokens);
-    list<StmtNode> stmts = parser.parse_program();
-    int64 checksum = execute(stmts, parser.expr_nodes, true);
-    
+    list<rc<Token>> tokens = tokenize(demo_lines);
+    rc<Parser> parser = ::rc_new<Parser>(tokens);
+    list<rc<StmtNode>> stmts = parser->parse_program();
+    int64 checksum = execute(stmts, parser->expr_nodes, true);
     py_print("demo_checksum:", checksum);
 }
 
 void run_benchmark() {
     list<str> source_lines = build_benchmark_source(32, 120000);
     float64 start = perf_counter();
-    list<Token> tokens = tokenize(source_lines);
-    Parser parser = Parser(tokens);
-    list<StmtNode> stmts = parser.parse_program();
-    int64 checksum = execute(stmts, parser.expr_nodes, false);
+    list<rc<Token>> tokens = tokenize(source_lines);
+    rc<Parser> parser = ::rc_new<Parser>(tokens);
+    list<rc<StmtNode>> stmts = parser->parse_program();
+    int64 checksum = execute(stmts, parser->expr_nodes, false);
     float64 elapsed = perf_counter() - start;
     
     py_print("token_count:", py_len(tokens));
-    py_print("expr_count:", py_len(parser.expr_nodes));
+    py_print("expr_count:", py_len(parser->expr_nodes));
     py_print("stmt_count:", py_len(stmts));
     py_print("checksum:", checksum);
     py_print("elapsed_sec:", elapsed);

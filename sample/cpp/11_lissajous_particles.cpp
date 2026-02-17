@@ -2,8 +2,8 @@
 
 // 11: リサージュ運動する粒子をGIF出力するサンプル。
 
-bytearray color_palette() {
-    auto p = bytearray{};
+bytes color_palette() {
+    bytearray p = bytearray{};
     for (int64 i = 0; i < 256; ++i) {
         int64 r = i;
         int64 g = i * 3 % 256;
@@ -12,7 +12,7 @@ bytearray color_palette() {
         p.append(g);
         p.append(b);
     }
-    return bytearray(p);
+    return bytes(p);
 }
 
 void run_11_lissajous_particles() {
@@ -23,10 +23,10 @@ void run_11_lissajous_particles() {
     str out_path = "sample/out/11_lissajous_particles.gif";
     
     auto start = perf_counter();
-    list<bytearray> frames = list<bytearray>{};
+    list<bytes> frames = list<bytes>{};
     
     for (int64 t = 0; t < frames_n; ++t) {
-        auto frame = bytearray(w * h);
+        bytearray frame = bytearray(w * h);
         
         for (int64 p = 0; p < particles; ++p) {
             float64 phase = static_cast<float64>(p) * 0.261799;
@@ -52,14 +52,12 @@ void run_11_lissajous_particles() {
             }
         }
         
-        frames.append(bytearray(frame));
+        frames.append(bytes(frame));
     }
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, color_palette(), 3, 0);
-    
     auto elapsed = perf_counter() - start;
-    
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

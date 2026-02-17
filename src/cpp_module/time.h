@@ -4,7 +4,7 @@
 #ifndef PYCS_CPP_MODULE_TIME_H
 #define PYCS_CPP_MODULE_TIME_H
 
-namespace pycs::cpp_module {
+namespace pytra::cpp_module {
 
 /**
  * @brief 単調増加クロックに基づく高分解能時刻を秒で返します。
@@ -12,8 +12,8 @@ namespace pycs::cpp_module {
  */
 double perf_counter();
 
-}  // namespace pycs::cpp_module
+}  // namespace pytra::cpp_module
 
-using pycs::cpp_module::perf_counter;
+using pytra::cpp_module::perf_counter;
 
 #endif  // PYCS_CPP_MODULE_TIME_H

@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace pycs::cpp_module::gif {
+namespace pytra::cpp_module::gif {
 
 // 0..255 のグレースケールパレット (256*3 bytes) を返します。
 std::vector<std::uint8_t> grayscale_palette();
@@ -23,6 +23,6 @@ void save_gif(
     int loop = 0
 );
 
-}  // namespace pycs::cpp_module::gif
+}  // namespace pytra::cpp_module::gif
 
 #endif  // PYCS_CPP_MODULE_GIF_H

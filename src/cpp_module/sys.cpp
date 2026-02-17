@@ -2,7 +2,7 @@
 
 #include "cpp_module/sys.h"
 
-namespace pycs::cpp_module {
+namespace pytra::cpp_module {
 
 void SysPath::insert(int index, const std::string& value) {
     if (index < 0 || static_cast<std::size_t>(index) >= entries_.size()) {
@@ -20,4 +20,4 @@ SysModule::~SysModule() {
 
 SysModule* sys = new SysModule();
 
-}  // namespace pycs::cpp_module
+}  // namespace pytra::cpp_module

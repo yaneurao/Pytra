@@ -4,7 +4,7 @@
 
 #include "cpp_module/time.h"
 
-namespace pycs::cpp_module {
+namespace pytra::cpp_module {
 
 double perf_counter() {
     using Clock = std::chrono::steady_clock;
@@ -12,4 +12,4 @@ double perf_counter() {
     return Seconds(Clock::now().time_since_epoch()).count();
 }
 
-}  // namespace pycs::cpp_module
+}  // namespace pytra::cpp_module

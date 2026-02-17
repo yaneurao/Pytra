@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace pycs::cpp_module::ast {
+namespace pytra::cpp_module::ast {
 
 struct expr;
 struct stmt;
@@ -352,6 +352,6 @@ ModulePtr parse(const std::string& source, const std::string& filename = "<unkno
 // ファイルからPythonソースを読み込み、簡易ASTへ変換します。
 ModulePtr parse_file(const std::string& path);
 
-}  // namespace pycs::cpp_module::ast
+}  // namespace pytra::cpp_module::ast
 
 #endif  // PYCS_CPP_MODULE_AST_H

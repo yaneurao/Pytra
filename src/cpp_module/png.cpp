@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace pycs::cpp_module::png {
+namespace pytra::cpp_module::png {
 namespace {
 
 void append_u32_be(std::string& out, std::uint32_t v) {
@@ -145,4 +145,4 @@ void write_rgb_ppm(const std::string& path, int width, int height, const std::ve
     ofs.write(reinterpret_cast<const char*>(pixels.data()), static_cast<std::streamsize>(pixels.size()));
 }
 
-}  // namespace pycs::cpp_module::png
+}  // namespace pytra::cpp_module::png

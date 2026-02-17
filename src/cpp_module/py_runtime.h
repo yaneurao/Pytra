@@ -24,15 +24,15 @@
 #include "cpp_module/math.h"
 #include "cpp_module/png.h"
 
-namespace py_math = pycs::cpp_module::math;
-using PyObj = pycs::gc::PyObj;
+namespace py_math = pytra::cpp_module::math;
+using PyObj = pytra::gc::PyObj;
 
 template <class T>
-using rc = pycs::gc::RcHandle<T>;
+using rc = pytra::gc::RcHandle<T>;
 
 template <class T, class... Args>
 static inline rc<T> rc_new(Args&&... args) {
-    return rc<T>::adopt(pycs::gc::rc_new<T>(std::forward<Args>(args)...));
+    return rc<T>::adopt(pytra::gc::rc_new<T>(std::forward<Args>(args)...));
 }
 
 using int8 = std::int8_t;
@@ -342,9 +342,9 @@ namespace png_helper {
 static inline void write_rgb_png(const str& path, int64 width, int64 height, const list<uint8>& pixels) {
     const str out_path = pytra_resolve_image_path_for_write(path);
     if (pytra_image_format == pytra_image_format_t::ppm) {
-        pycs::cpp_module::png::write_rgb_ppm(out_path, static_cast<int>(width), static_cast<int>(height), pixels);
+        pytra::cpp_module::png::write_rgb_ppm(out_path, static_cast<int>(width), static_cast<int>(height), pixels);
     } else {
-        pycs::cpp_module::png::write_rgb_png(out_path, static_cast<int>(width), static_cast<int>(height), pixels);
+        pytra::cpp_module::png::write_rgb_png(out_path, static_cast<int>(width), static_cast<int>(height), pixels);
     }
 }
 }  // namespace png_helper
@@ -355,7 +355,7 @@ static inline void write_rgb_png(const str& path, int64 width, int64 height, con
 }
 
 static inline list<uint8> grayscale_palette() {
-    auto raw = pycs::cpp_module::gif::grayscale_palette();
+    auto raw = pytra::cpp_module::gif::grayscale_palette();
     return list<uint8>(raw.begin(), raw.end());
 }
 
@@ -375,11 +375,11 @@ static inline void save_gif(
     }
     std::vector<uint8> raw_pal;
     if (palette.empty()) {
-        raw_pal = pycs::cpp_module::gif::grayscale_palette();
+        raw_pal = pytra::cpp_module::gif::grayscale_palette();
     } else {
         raw_pal.assign(palette.begin(), palette.end());
     }
-    pycs::cpp_module::gif::save_gif(
+    pytra::cpp_module::gif::save_gif(
         path,
         static_cast<int>(width),
         static_cast<int>(height),

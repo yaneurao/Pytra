@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace pycs::cpp_module {
+namespace pytra::cpp_module {
 
 class Path;
 
@@ -149,9 +149,9 @@ inline std::string str(const Path& p) {
     return p.string();
 }
 
-}  // namespace pycs::cpp_module
+}  // namespace pytra::cpp_module
 
-using pycs::cpp_module::Path;
-using pycs::cpp_module::str;
+using pytra::cpp_module::Path;
+using pytra::cpp_module::str;
 
 #endif  // PYCS_CPP_MODULE_PATHLIB_H

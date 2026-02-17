@@ -7,7 +7,7 @@
 
 #include <type_traits>
 
-namespace pycs::cpp_module::dataclasses {
+namespace pytra::cpp_module::dataclasses {
 
 struct DataclassTag {};
 
@@ -19,6 +19,6 @@ constexpr T dataclass(T value) {
 template <typename T>
 constexpr bool is_dataclass_v = std::is_base_of_v<DataclassTag, T>;
 
-}  // namespace pycs::cpp_module::dataclasses
+}  // namespace pytra::cpp_module::dataclasses
 
 #endif  // PYCS_CPP_MODULE_DATACLASSES_H

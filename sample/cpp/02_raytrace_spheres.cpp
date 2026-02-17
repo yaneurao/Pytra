@@ -66,7 +66,6 @@ bytearray render(int64 width, int64 height, int64 aa) {
                     float64 dy = sy;
                     float64 dz = 1.0;
                     float64 inv_len = 1.0 / py_math::sqrt(dx * dx + dy * dy + dz * dz);
-                    
                     dx *= inv_len;
                     dy *= inv_len;
                     dz *= inv_len;
@@ -186,10 +185,8 @@ void run_raytrace() {
     
     float64 start = perf_counter();
     bytearray pixels = render(width, height, aa);
-    
     // bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png
     png_helper::write_rgb_png(out_path, width, height, pixels);
-    
     float64 elapsed = perf_counter() - start;
     
     py_print("output:", out_path);

@@ -2,10 +2,10 @@
 
 // 13: DFS迷路生成の進行状況をGIF出力するサンプル。
 
-bytearray capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale) {
+bytes capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale) {
     int64 width = w * scale;
     int64 height = h * scale;
-    auto frame = bytearray(width * height);
+    bytearray frame = bytearray(width * height);
     for (int64 y = 0; y < h; ++y) {
         for (int64 x = 0; x < w; ++x) {
             int64 v = (grid[y][x] == 0 ? 255 : 40);
@@ -16,7 +16,7 @@ bytearray capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale) 
             }
         }
     }
-    return bytearray(frame);
+    return bytes(frame);
 }
 
 void run_13_maze_generation_steps() {
@@ -33,20 +33,18 @@ void run_13_maze_generation_steps() {
     grid[1][1] = 0;
     
     list<std::tuple<int64, int64>> dirs = list<std::tuple<int64, int64>>{std::make_tuple(2, 0), std::make_tuple(-2, 0), std::make_tuple(0, 2), std::make_tuple(0, -2)};
-    list<bytearray> frames = list<bytearray>{};
+    list<bytes> frames = list<bytes>{};
     int64 step = 0;
     
     while (py_len(stack) != 0) {
         auto __tuple_1 = py_at(stack, -1);
-        auto x = std::get<0>(__tuple_1);
-        auto y = std::get<1>(__tuple_1);
-        
+        int64 x = std::get<0>(__tuple_1);
+        int64 y = std::get<1>(__tuple_1);
         list<std::tuple<int64, int64, int64, int64>> candidates = list<std::tuple<int64, int64, int64, int64>>{};
         for (int64 k = 0; k < 4; ++k) {
             auto __tuple_2 = dirs[k];
-            auto dx = std::get<0>(__tuple_2);
-            auto dy = std::get<1>(__tuple_2);
-            
+            int64 dx = std::get<0>(__tuple_2);
+            int64 dy = std::get<1>(__tuple_2);
             auto nx = x + dx;
             auto ny = y + dy;
             if ((nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (grid[ny][nx] == 1)) {
@@ -68,12 +66,12 @@ void run_13_maze_generation_steps() {
         if (py_len(candidates) == 0) {
             py_pop(stack);
         } else {
-            auto sel = candidates[(x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates)];
+            std::tuple<int64, int64, int64, int64> sel = candidates[(x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates)];
             auto __tuple_3 = sel;
-            auto nx = std::get<0>(__tuple_3);
-            auto ny = std::get<1>(__tuple_3);
-            auto wx = std::get<2>(__tuple_3);
-            auto wy = std::get<3>(__tuple_3);
+            int64 nx = std::get<0>(__tuple_3);
+            int64 ny = std::get<1>(__tuple_3);
+            int64 wx = std::get<2>(__tuple_3);
+            int64 wy = std::get<3>(__tuple_3);
             grid[wy][wx] = 0;
             grid[ny][nx] = 0;
             stack.append(std::make_tuple(nx, ny));
@@ -81,16 +79,13 @@ void run_13_maze_generation_steps() {
         
         if (step % capture_every == 0)
             frames.append(capture(grid, cell_w, cell_h, scale));
-        
         step++;
     }
     
     frames.append(capture(grid, cell_w, cell_h, scale));
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, cell_w * scale, cell_h * scale, frames, grayscale_palette(), 4, 0);
-    
     auto elapsed = perf_counter() - start;
-    
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);

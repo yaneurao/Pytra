@@ -4,7 +4,7 @@
 #ifndef PYCS_CPP_MODULE_MATH_H
 #define PYCS_CPP_MODULE_MATH_H
 
-namespace pycs::cpp_module::math {
+namespace pytra::cpp_module::math {
 
 /**
  * @brief 平方根を返します（Python の `math.sqrt` 相当）。
@@ -25,6 +25,6 @@ double pow(double x, double y);
 extern const double pi;
 extern const double e;
 
-}  // namespace pycs::cpp_module::math
+}  // namespace pytra::cpp_module::math
 
 #endif  // PYCS_CPP_MODULE_MATH_H

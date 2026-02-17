@@ -2,17 +2,16 @@
 
 // 08: ラングトンのアリの軌跡をGIF出力するサンプル。
 
-bytearray capture(const list<list<int64>>& grid, int64 w, int64 h) {
-    auto frame = bytearray(w * h);
+bytes capture(const list<list<int64>>& grid, int64 w, int64 h) {
+    bytearray frame = bytearray(w * h);
     int64 i = 0;
     for (int64 y = 0; y < h; ++y) {
         for (int64 x = 0; x < w; ++x) {
             frame[i] = (grid[y][x] ? 255 : 0);
-            
             i++;
         }
     }
-    return bytearray(frame);
+    return bytes(frame);
 }
 
 void run_08_langtons_ant() {
@@ -35,7 +34,7 @@ void run_08_langtons_ant() {
     
     int64 steps_total = 600000;
     int64 capture_every = 3000;
-    list<bytearray> frames = list<bytearray>{};
+    list<bytes> frames = list<bytes>{};
     
     for (int64 i = 0; i < steps_total; ++i) {
         if (grid[y][x] == 0) {
@@ -65,9 +64,7 @@ void run_08_langtons_ant() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, grayscale_palette(), 5, 0);
-    
     auto elapsed = perf_counter() - start;
-    
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);

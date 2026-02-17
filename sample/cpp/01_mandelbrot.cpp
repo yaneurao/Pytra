@@ -72,12 +72,10 @@ void run_mandelbrot() {
     float64 start = perf_counter();
     
     bytearray pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
-    
     // bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png
     png_helper::write_rgb_png(out_path, width, height, pixels);
     
     float64 elapsed = perf_counter() - start;
-    
     py_print("output:", out_path);
     py_print("size:", width, "x", height);
     py_print("max_iter:", max_iter);

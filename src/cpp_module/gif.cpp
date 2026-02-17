@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace pycs::cpp_module::gif {
+namespace pytra::cpp_module::gif {
 namespace {
 
 void append_u16_le(std::vector<std::uint8_t>& out, std::uint16_t v) {
@@ -163,4 +163,4 @@ void save_gif(
     ofs.write(reinterpret_cast<const char*>(out.data()), static_cast<std::streamsize>(out.size()));
 }
 
-}  // namespace pycs::cpp_module::gif
+}  // namespace pytra::cpp_module::gif

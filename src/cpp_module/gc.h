@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace pycs::gc {
+namespace pytra::gc {
 
 /**
  * @brief RC（参照カウント）管理対象の基底クラスです。
@@ -157,6 +157,6 @@ private:
     T* ptr_ = nullptr;
 };
 
-}  // namespace pycs::gc
+}  // namespace pytra::gc
 
 #endif  // PYCS_GC_H

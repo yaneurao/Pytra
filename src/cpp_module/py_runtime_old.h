@@ -39,12 +39,12 @@ std::string py_to_string(const T& value) {
 }
 
 template <typename T>
-std::string py_to_string(const pycs::cpp_module::ast::PyPtr<T>&) {
+std::string py_to_string(const pytra::cpp_module::ast::PyPtr<T>&) {
     return "<node>";
 }
 
-inline std::string py_to_string(const pycs::cpp_module::Path& value) {
-    return pycs::cpp_module::str(value);
+inline std::string py_to_string(const pytra::cpp_module::Path& value) {
+    return pytra::cpp_module::str(value);
 }
 
 inline std::string py_to_string(const std::vector<std::uint8_t>& value) {
@@ -195,7 +195,7 @@ inline void py_write(std::ofstream& fs, const T& data) {
 }
 
 template <typename T, typename U>
-std::shared_ptr<T> py_cast(const pycs::cpp_module::ast::PyPtr<U>& value) {
+std::shared_ptr<T> py_cast(const pytra::cpp_module::ast::PyPtr<U>& value) {
     return std::dynamic_pointer_cast<T>(static_cast<std::shared_ptr<U>>(value));
 }
 

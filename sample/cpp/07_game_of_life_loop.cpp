@@ -13,12 +13,11 @@ list<list<int64>> next_state(const list<list<int64>>& grid, int64 w, int64 h) {
                     if ((dx != 0) || (dy != 0)) {
                         int64 nx = (x + dx + w) % w;
                         int64 ny = (y + dy + h) % h;
-                        
                         cnt += grid[ny][nx];
                     }
                 }
             }
-            auto alive = grid[y][x];
+            int64 alive = grid[y][x];
             if ((alive == 1) && ((cnt == 2) || (cnt == 3))) {
                 row.append(1);
             } else {
@@ -33,10 +32,10 @@ list<list<int64>> next_state(const list<list<int64>>& grid, int64 w, int64 h) {
     return nxt;
 }
 
-bytearray render(const list<list<int64>>& grid, int64 w, int64 h, int64 cell) {
+bytes render(const list<list<int64>>& grid, int64 w, int64 h, int64 cell) {
     int64 width = w * cell;
     int64 height = h * cell;
-    auto frame = bytearray(width * height);
+    bytearray frame = bytearray(width * height);
     for (int64 y = 0; y < h; ++y) {
         for (int64 x = 0; x < w; ++x) {
             int64 v = (grid[y][x] ? 255 : 0);
@@ -47,7 +46,7 @@ bytearray render(const list<list<int64>>& grid, int64 w, int64 h, int64 cell) {
             }
         }
     }
-    return bytearray(frame);
+    return bytes(frame);
 }
 
 void run_07_game_of_life_loop() {
@@ -117,7 +116,7 @@ void run_07_game_of_life_loop() {
         }
     }
     
-    list<bytearray> frames = list<bytearray>{};
+    list<bytes> frames = list<bytes>{};
     for (int64 _ = 0; _ < steps; ++_) {
         frames.append(render(grid, w, h, cell));
         grid = next_state(grid, w, h);
@@ -125,9 +124,7 @@ void run_07_game_of_life_loop() {
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w * cell, h * cell, frames, grayscale_palette(), 4, 0);
-    
     auto elapsed = perf_counter() - start;
-    
     py_print("output:", out_path);
     py_print("frames:", steps);
     py_print("elapsed_sec:", elapsed);

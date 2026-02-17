@@ -33,7 +33,7 @@
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
 - 生成コードは `src/cpp_module/` のランタイム補助実装を利用します。
 - 補助関数は生成 `.cpp` に直書きせず、`cpp_module/py_runtime.h` 側を利用します。
-- class は `pycs::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
+- class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
 - class member は `inline static` として生成します。
 - `@dataclass` はフィールド定義とコンストラクタ生成を行います。
 - `raise` / `try` / `except` / `while` をサポートします。

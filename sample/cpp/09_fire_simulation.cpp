@@ -2,8 +2,8 @@
 
 // 09: 簡易ファイアエフェクトをGIF出力するサンプル。
 
-bytearray fire_palette() {
-    auto p = bytearray{};
+bytes fire_palette() {
+    bytearray p = bytearray{};
     for (int64 i = 0; i < 256; ++i) {
         int64 r = 0;
         int64 g = 0;
@@ -27,7 +27,7 @@ bytearray fire_palette() {
         p.append(g);
         p.append(b);
     }
-    return bytearray(p);
+    return bytes(p);
 }
 
 void run_09_fire_simulation() {
@@ -38,7 +38,7 @@ void run_09_fire_simulation() {
     
     auto start = perf_counter();
     list<list<int64>> heat = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(py_repeat(list<int64>{0}, w));     }     return __out; }();
-    list<bytearray> frames = list<bytearray>{};
+    list<bytes> frames = list<bytes>{};
     
     for (int64 t = 0; t < steps; ++t) {
         for (int64 x = 0; x < w; ++x) {
@@ -48,10 +48,10 @@ void run_09_fire_simulation() {
         
         for (int64 y = 1; y < h; ++y) {
             for (int64 x = 0; x < w; ++x) {
-                auto a = heat[y][x];
-                auto b = heat[y][(x - 1 + w) % w];
-                auto c = heat[y][(x + 1) % w];
-                auto d = heat[(y + 1) % h][x];
+                int64 a = heat[y][x];
+                int64 b = heat[y][(x - 1 + w) % w];
+                int64 c = heat[y][(x + 1) % w];
+                int64 d = heat[(y + 1) % h][x];
                 int64 v = py_floordiv((a + b + c + d), 4);
                 int64 cool = 1 + (x + y + t) % 3;
                 int64 nv = v - cool;
@@ -59,23 +59,20 @@ void run_09_fire_simulation() {
             }
         }
         
-        auto frame = bytearray(w * h);
+        bytearray frame = bytearray(w * h);
         int64 i = 0;
         for (int64 yy = 0; yy < h; ++yy) {
             for (int64 xx = 0; xx < w; ++xx) {
                 frame[i] = heat[yy][xx];
-                
                 i++;
             }
         }
-        frames.append(bytearray(frame));
+        frames.append(bytes(frame));
     }
     
     // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, fire_palette(), 4, 0);
-    
     auto elapsed = perf_counter() - start;
-    
     py_print("output:", out_path);
     py_print("frames:", steps);
     py_print("elapsed_sec:", elapsed);

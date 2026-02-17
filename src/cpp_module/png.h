@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace pycs::cpp_module::png {
+namespace pytra::cpp_module::png {
 
 /**
  * @brief RGB 8bit バッファを PNG ファイルとして保存します。
@@ -28,6 +28,6 @@ void write_rgb_png(const std::string& path, int width, int height, const std::ve
  */
 void write_rgb_ppm(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels);
 
-}  // namespace pycs::cpp_module::png
+}  // namespace pytra::cpp_module::png
 
 #endif  // PYCS_CPP_MODULE_PNG_H

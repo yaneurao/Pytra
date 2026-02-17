@@ -4,7 +4,7 @@
 
 #include "cpp_module/gc.h"
 
-namespace pycs::gc {
+namespace pytra::gc {
 
 void PyObj::rc_release_refs() {
     // デフォルト実装: 子参照を持たないオブジェクト。
@@ -37,4 +37,4 @@ void decref(PyObj* obj) noexcept {
     }
 }
 
-}  // namespace pycs::gc
+}  // namespace pytra::gc

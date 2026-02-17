@@ -456,6 +456,36 @@ class _ShExprParser:
             cur = self.class_base.get(cur)
         return "unknown"
 
+    def _split_generic_types(self, s: str) -> list[str]:
+        out: list[str] = []
+        depth = 0
+        start = 0
+        for i, ch in enumerate(s):
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                out.append(s[start:i].strip())
+                start = i + 1
+        out.append(s[start:].strip())
+        return out
+
+    def _subscript_result_type(self, container_type: str) -> str:
+        if container_type.startswith("list[") and container_type.endswith("]"):
+            inner = container_type[5:-1].strip()
+            return inner if inner != "" else "unknown"
+        if container_type.startswith("dict[") and container_type.endswith("]"):
+            inner = self._split_generic_types(container_type[5:-1].strip())
+            if len(inner) == 2 and inner[1] != "":
+                return inner[1]
+            return "unknown"
+        if container_type == "str":
+            return "str"
+        if container_type in {"bytes", "bytearray"}:
+            return "uint8"
+        return "unknown"
+
     def _parse_postfix(self) -> dict[str, Any]:
         node = self._parse_primary()
         while True:
@@ -468,6 +498,11 @@ class _ShExprParser:
                 attr_name = str(name_tok["v"])
                 owner_t = str(node.get("resolved_type", "unknown"))
                 attr_t = "unknown"
+                if isinstance(node, dict) and node.get("kind") == "Name" and node.get("id") == "self":
+                    # In method scope, class fields are injected into name_types.
+                    maybe_field_t = self.name_types.get(attr_name)
+                    if isinstance(maybe_field_t, str) and maybe_field_t != "":
+                        attr_t = maybe_field_t
                 if owner_t == "Path":
                     if attr_name in {"name", "stem"}:
                         attr_t = "str"
@@ -622,10 +657,11 @@ class _ShExprParser:
                 rtok = self._eat("]")
                 s = int(node["source_span"]["col"]) - self.col_base
                 e = rtok["e"]
+                out_t = self._subscript_result_type(str(node.get("resolved_type", "unknown")))
                 node = {
                     "kind": "Subscript",
                     "source_span": self._node_span(s, e),
-                    "resolved_type": "unknown",
+                    "resolved_type": out_t,
                     "borrow_kind": "value",
                     "casts": [],
                     "repr": self._src_slice(s, e),

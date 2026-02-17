@@ -10,7 +10,7 @@
 
 #include "../src/cpp_module/gc.h"
 
-namespace gc = pycs::gc;
+namespace gc = pytra::gc;
 
 // 単純な参照対象オブジェクト。デストラクト回数を検証しやすくする。
 struct TestLeaf : public gc::PyObj {
