@@ -1,0 +1,63 @@
+# ユーザー向け仕様（Pytra）
+
+このドキュメントは、Pytra を利用するユーザー向けの仕様です。
+
+## 1. 目的
+
+Pytra は、型注釈付き Python コードを次の言語へ変換するトランスパイラ群です。
+
+- Python -> C# (`src/py2cs.py`)
+- Python -> C++ (`src/py2cpp.py`)
+- Python -> Rust (`src/py2rs.py`)
+- Python -> JavaScript (`src/py2js.py`)
+- Python -> TypeScript (`src/py2ts.py`)
+- Python -> Go (`src/py2go.py`)
+- Python -> Java (`src/py2java.py`)
+- Python -> Swift (`src/py2swift.py`)
+- Python -> Kotlin (`src/py2kotlin.py`)
+
+## 2. Python 入力仕様
+
+- 入力 Python は、基本的に型注釈付きコードを前提とします。
+- `class` は単一継承をサポートします。
+- `self.xxx` に対する `__init__` 内代入はインスタンスメンバーとして扱います。
+- class 本体で宣言されたメンバーは class member（C# では `static`、C++ では `inline static`）として扱います。
+- `@dataclass` を付けた class は dataclass として扱い、フィールドとコンストラクタを生成します。
+- `import` / `from ... import ...` をサポートします。
+
+## 3. テストケース方針
+
+- 入力 Python は `test/py/` に配置します。
+- 言語別の変換結果は `test/cs/`, `test/cpp/`, `test/rs/`, `test/js/`, `test/ts/`, `test/go/`, `test/java/`, `test/swift/`, `test/kotlin/` に配置します。
+- 変換器都合で `test/py/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
+- ケース命名は `caseXX_*` 形式を基本とします。
+
+## 4. サンプルプログラム方針
+
+- 実用サンプルは `sample/py/` に配置します。
+- 言語別の変換結果は `sample/cpp/`, `sample/rs/`, `sample/cs/`, `sample/js/`, `sample/ts/`, `sample/go/`, `sample/java/`, `sample/swift/`, `sample/kotlin/` に配置します。
+- バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します（Git 管理外）。
+- Python から import する自作ライブラリは `src/py_module/` に配置します。
+- 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
+- GIF サンプルは `sample/out/*.gif` に出力します。
+
+## 5. ユニットテスト実行方法
+
+プロジェクトルート (`Pytra/`) で次を実行します。
+
+```bash
+python -m unittest discover -s test -p "test_*.py" -v
+```
+
+## 6. 利用時の注意
+
+- C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
+- 未対応構文はトランスパイル時に `TranspileError` で失敗します。
+- `test/obj/`, `test/cpp2/`, `sample/obj/`, `sample/out/` は生成物ディレクトリです。
+- `src/py_module/` を使う Python サンプルは、必要に応じて `PYTHONPATH=src` を付与して実行します。
+
+## 7. 関連ドキュメント
+
+- 使い方: `docs/how-to-use.md`
+- サンプルコード: `docs/sample-code.md`
+- 実装状況詳細: `docs/pytra-readme.md`

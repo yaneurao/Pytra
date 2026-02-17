@@ -1,0 +1,95 @@
+# 開発者向け仕様（Pytra）
+
+このドキュメントは、トランスパイラ実装・保守を行う開発者向け仕様です。
+
+## 1. リポジトリ構成
+
+- `src/`
+  - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`
+  - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
+  - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
+  - `cpp_module/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: 各ターゲット言語向けランタイム補助
+  - `py_module/`: Python 側の自作ライブラリ
+- `test/`: `py`（入力）と各ターゲット言語の変換結果
+- `sample/`: 実用サンプル入力と各言語変換結果
+- `docs/`: 仕様・使い方・実装状況
+
+## 2. C# 変換仕様（`py2cs.py`）
+
+- Python AST を解析し、`Program` クラスを持つ C# コードを生成します。
+- `import` / `from ... import ...` は `using` へ変換します。
+- 主な型対応:
+  - `int -> int`
+  - `float -> double`
+  - `str -> string`
+  - `bool -> bool`
+  - `None -> void`（戻り値注釈時）
+- class member は `public static` に変換します。
+- `__init__` で初期化される `self` 属性はインスタンスメンバーとして生成します。
+
+## 3. C++ 変換仕様（`py2cpp.py`）
+
+- Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
+- 生成コードは `src/cpp_module/` のランタイム補助実装を利用します。
+- 補助関数は生成 `.cpp` に直書きせず、`cpp_module/py_runtime.h` 側を利用します。
+- class は `pycs::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
+- class member は `inline static` として生成します。
+- `@dataclass` はフィールド定義とコンストラクタ生成を行います。
+- `raise` / `try` / `except` / `while` をサポートします。
+
+### 3.1 import と `cpp_module` 対応
+
+`py2cpp.py` は import 文に応じて include を生成します。
+
+- `import ast` -> `#include "cpp_module/ast.h"`
+- `import math` -> `#include "cpp_module/math.h"`
+- `import pathlib` -> `#include "cpp_module/pathlib.h"`
+- `import time` / `from time import ...` -> `#include "cpp_module/time.h"`
+- `from dataclasses import dataclass` -> `#include "cpp_module/dataclasses.h"`
+- `from py_module import png_helper` / `import png_helper` -> `#include "cpp_module/png.h"`
+- GC は常時 `#include "cpp_module/gc.h"` を利用
+
+主な補助モジュール実装:
+
+- `src/cpp_module/ast.h`, `src/cpp_module/ast.cpp`
+- `src/cpp_module/math.h`, `src/cpp_module/math.cpp`
+- `src/cpp_module/pathlib.h`, `src/cpp_module/pathlib.cpp`
+- `src/cpp_module/time.h`, `src/cpp_module/time.cpp`
+- `src/cpp_module/dataclasses.h`, `src/cpp_module/dataclasses.cpp`
+- `src/cpp_module/gc.h`, `src/cpp_module/gc.cpp`
+- `src/cpp_module/sys.h`, `src/cpp_module/sys.cpp`
+- `src/cpp_module/py_runtime.h`
+
+制約:
+
+- Python 側で import するモジュールは、原則として各ターゲット言語ランタイムにも対応実装を用意する必要があります。
+- 生成コードで使う補助関数は、各言語のランタイムモジュールへ集約し、生成コードへの重複定義を避けます。
+
+### 3.2 関数引数の受け渡し方針
+
+- コピーコストが高い型（`string`, `vector<...>`, `unordered_map<...>`, `unordered_set<...>`, `tuple<...>`）は、関数内で直接変更されない場合に `const T&` で受けます。
+- 引数の直接変更が検出された場合は値渡し（または非 const）を維持します。
+- 直接変更判定は、代入・拡張代入・`del`・破壊的メソッド呼び出し（`append`, `extend`, `insert`, `pop` など）を対象に行います。
+
+## 4. 検証手順（C++）
+
+1. Python 版トランスパイラで `test/py` を `test/cpp` へ変換
+2. 生成 C++ を `test/obj/` にコンパイル
+3. 実行結果を Python 実行結果と比較
+4. セルフホスティング検証時は自己変換実行ファイルで `test/py` -> `test/cpp2` を生成
+5. `test/cpp` と `test/cpp2` の一致を確認
+
+## 5. 実装上の共通ルール
+
+- `src/common/` には言語非依存で再利用される処理のみを配置します。
+- 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/common/` に置きません。
+- class 名・関数名・メンバー変数名には、日本語コメント（用途説明）を付与します。
+- 標準ライブラリ対応の記載は、モジュール名だけでなく関数単位で明記します。
+- ドキュメント未記載の関数は未対応扱いです。
+
+## 6. 各ターゲットの実行モード注記
+
+- `py2rs.py`: ネイティブ変換モード（Python インタプリタ非依存）
+- `py2js.py` / `py2ts.py`: ネイティブ変換モード（Node.js ランタイム）
+- `py2go.py` / `py2java.py`: ネイティブ変換モード（Python インタプリタ非依存）
+- `py2swift.py` / `py2kotlin.py`: Node バックエンド実行モード（Python インタプリタ非依存）
