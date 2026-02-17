@@ -17,95 +17,10 @@
 
 ## トランスパイラの使い方
 
-### 1. Python から C++ へ変換
-
-```bash
-python src/py2cpp.py <input.py> <output.cpp>
-```
-
-例:
+### C++
 
 ```bash
 python src/py2cpp.py test/py/case28_iterable.py test/cpp/case28_iterable.cpp
-```
-
-### 2. Python から Rust へ変換
-
-```bash
-python src/py2rs.py <input.py> <output.rs>
-```
-
-例:
-
-```bash
-python src/py2rs.py test/py/case28_iterable.py test/rs/case28_iterable.rs
-```
-
-### 3. Python から C# へ変換
-
-```bash
-python src/py2cs.py <input.py> <output.cs>
-```
-
-例:
-
-```bash
-python src/py2cs.py test/py/case28_iterable.py test/cs/case28_iterable.cs
-```
-
-### 4. Python から JavaScript へ変換
-
-```bash
-python src/py2js.py <input.py> <output.js>
-```
-
-例:
-
-```bash
-python src/py2js.py test/py/case28_iterable.py test/js/case28_iterable.js
-```
-
-### 5. Python から TypeScript へ変換
-
-```bash
-python src/py2ts.py <input.py> <output.ts>
-```
-
-例:
-
-```bash
-python src/py2ts.py test/py/case28_iterable.py test/ts/case28_iterable.ts
-```
-
-### 6. Python から Go へ変換
-
-```bash
-python src/py2go.py <input.py> <output.go>
-```
-
-例:
-
-```bash
-python src/py2go.py test/py/case28_iterable.py test/go/case28_iterable.go
-```
-
-### 7. Python から Java へ変換
-
-```bash
-python src/py2java.py <input.py> <output.java>
-```
-
-例:
-
-```bash
-python src/py2java.py test/py/case28_iterable.py test/java/case28_iterable.java
-```
-
-### 8. 変換後コードの実行例
-
-#### C++
-
-```bash
 g++ -std=c++20 -O3 -ffast-math -flto -I src test/cpp/case28_iterable.cpp \
   src/cpp_module/png.cpp src/cpp_module/gif.cpp src/cpp_module/math.cpp \
   src/cpp_module/time.cpp src/cpp_module/pathlib.cpp src/cpp_module/dataclasses.cpp \
@@ -114,48 +29,54 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/cpp/case28_iterable.cpp \
 ./test/obj/case28_iterable.out
 ```
 
-#### C#
+### Rust
 
 ```bash
+python src/py2rs.py test/py/case28_iterable.py test/rs/case28_iterable.rs
+rustc -O test/rs/case28_iterable.rs -o test/obj/case28_iterable_rs.out
+./test/obj/case28_iterable_rs.out
+```
+
+### C#
+
+```bash
+python src/py2cs.py test/py/case28_iterable.py test/cs/case28_iterable.cs
 mcs -out:test/obj/case28_iterable.exe \
   test/cs/case28_iterable.cs \
   src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs
 mono test/obj/case28_iterable.exe
 ```
 
-#### Rust
+### JavaScript
 
 ```bash
-rustc -O test/rs/case28_iterable.rs -o test/obj/case28_iterable_rs.out
-./test/obj/case28_iterable_rs.out
-```
-
-#### JavaScript
-
-```bash
+python src/py2js.py test/py/case28_iterable.py test/js/case28_iterable.js
 node test/js/case28_iterable.js
 ```
 
-#### TypeScript
+### TypeScript
 
 ```bash
+python src/py2ts.py test/py/case28_iterable.py test/ts/case28_iterable.ts
 npx tsx test/ts/case28_iterable.ts
 ```
 
-#### Go
+### Go
 
 ```bash
+python src/py2go.py test/py/case28_iterable.py test/go/case28_iterable.go
 go run test/go/case28_iterable.go
 ```
 
-#### Java
+### Java
 
 ```bash
+python src/py2java.py test/py/case28_iterable.py test/java/case28_iterable.java
 javac test/java/case28_iterable.java
 java -cp test/java case28_iterable
 ```
 
-#### Swift
+### Swift
 
 ```bash
 python src/py2swift.py test/py/case28_iterable.py test/swift/case28_iterable.swift
@@ -163,16 +84,15 @@ swiftc test/swift/case28_iterable.swift -o test/obj/case28_iterable_swift.out
 ./test/obj/case28_iterable_swift.out
 ```
 
-#### Kotlin
+### Kotlin
 
 ```bash
 python src/py2kotlin.py test/py/case28_iterable.py test/kotlin/case28_iterable.kt
 kotlinc test/kotlin/case28_iterable.kt -include-runtime -d test/obj/case28_iterable_kotlin.jar
-# 生成クラス名を直接指定して実行
 java -cp test/obj/case28_iterable_kotlin.jar pytra_case28_iterable
 ```
 
-### 9. 注意点
+## 注意点
 
 - 対象は Python のサブセットです。一般的な Python コードすべてが変換できるわけではありません。
 - 変数には、型注釈が必要です。（ただし一部は推論可能）。
