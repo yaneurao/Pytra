@@ -1,30 +1,15 @@
-#include "cpp_module/gc.h"
 #include "cpp_module/py_runtime.h"
-#include <algorithm>
-#include <any>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
+// このファイルは `test/py/case33_ifexp_bool.py` のテスト/実装コードです。
+// 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
+// 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
-int pick_25(int a, int b, bool flag)
-{
-    int c = ((flag && (a > b)) ? a : b);
+int64 pick_25(int64 a, int64 b, bool flag) {
+    int64 c = (flag && a > b ? a : b);
     return c;
 }
 
-int main()
-{
+int main() {
     py_print(pick_25(10, 3, true));
     return 0;
 }

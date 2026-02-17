@@ -1,36 +1,18 @@
-#include "cpp_module/gc.h"
 #include "cpp_module/py_runtime.h"
-#include <algorithm>
-#include <any>
-#include <cstdint>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
+// case30: スライス構文 a[b:c] の基本テスト（stepなし）。
 
-void py_main()
-{
-    vector<long long> nums = {10, 20, 30, 40, 50};
-    string text = "abcdef";
-    vector<long long> mid_nums = py_slice(nums, true, 1, true, 4);
-    string mid_text = py_slice(text, true, 2, true, 5);
+void __pytra_main() {
+    list<int64> nums = list<int64>{10, 20, 30, 40, 50};
+    str text = "abcdef";
+    list<int64> mid_nums = py_slice(nums, 1, 4);
+    str mid_text = py_slice(text, 2, 5);
     py_print(mid_nums[0]);
     py_print(mid_nums[2]);
     py_print(mid_text);
 }
 
-int main()
-{
-    py_main();
+int main() {
+    __pytra_main();
     return 0;
 }

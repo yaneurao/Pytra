@@ -1421,14 +1421,28 @@ class _ShExprParser:
                 j = i + 1
                 while j < len(text) and text[j].isdigit():
                     j += 1
+                has_float = False
                 if j < len(text) and text[j] == ".":
                     k = j + 1
                     while k < len(text) and text[k].isdigit():
                         k += 1
                     if k > j + 1:
-                        out.append({"k": "FLOAT", "v": text[i:k], "s": i, "e": k})
-                        i = k
-                        continue
+                        j = k
+                        has_float = True
+                if j < len(text) and text[j] in {"e", "E"}:
+                    k = j + 1
+                    if k < len(text) and text[k] in {"+", "-"}:
+                        k += 1
+                    d0 = k
+                    while k < len(text) and text[k].isdigit():
+                        k += 1
+                    if k > d0:
+                        j = k
+                        has_float = True
+                if has_float:
+                    out.append({"k": "FLOAT", "v": text[i:j], "s": i, "e": j})
+                    i = j
+                    continue
                 out.append({"k": "INT", "v": text[i:j], "s": i, "e": j})
                 i = j
                 continue
@@ -1468,7 +1482,7 @@ class _ShExprParser:
                 out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
                 i += 1
                 continue
-            if ch in {"+", "-", "*", "/", "%", "(", ")", ",", ".", "[", "]"}:
+            if ch in {"+", "-", "*", "/", "%", "(", ")", ",", ".", "[", "]", ":", "=", "{", "}"}:
                 out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
                 i += 1
                 continue
@@ -1503,9 +1517,51 @@ class _ShExprParser:
         return self.src[s:e].strip()
 
     def parse(self) -> dict[str, Any]:
-        node = self._parse_not()
+        node = self._parse_or()
         self._eat("EOF")
         return node
+
+    def _parse_or(self) -> dict[str, Any]:
+        node = self._parse_and()
+        values = [node]
+        while self._cur()["k"] == "NAME" and self._cur()["v"] == "or":
+            self._eat("NAME")
+            values.append(self._parse_and())
+        if len(values) == 1:
+            return node
+        s = int(values[0]["source_span"]["col"]) - self.col_base
+        e = int(values[-1]["source_span"]["end_col"]) - self.col_base
+        return {
+            "kind": "BoolOp",
+            "source_span": self._node_span(s, e),
+            "resolved_type": "bool",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": self._src_slice(s, e),
+            "op": "Or",
+            "values": values,
+        }
+
+    def _parse_and(self) -> dict[str, Any]:
+        node = self._parse_not()
+        values = [node]
+        while self._cur()["k"] == "NAME" and self._cur()["v"] == "and":
+            self._eat("NAME")
+            values.append(self._parse_not())
+        if len(values) == 1:
+            return node
+        s = int(values[0]["source_span"]["col"]) - self.col_base
+        e = int(values[-1]["source_span"]["end_col"]) - self.col_base
+        return {
+            "kind": "BoolOp",
+            "source_span": self._node_span(s, e),
+            "resolved_type": "bool",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": self._src_slice(s, e),
+            "op": "And",
+            "values": values,
+        }
 
     def _parse_not(self) -> dict[str, Any]:
         tok = self._cur()
@@ -1531,10 +1587,27 @@ class _ShExprParser:
         cmp_map = {"<": "Lt", "<=": "LtE", ">": "Gt", ">=": "GtE", "==": "Eq", "!=": "NotEq"}
         ops: list[str] = []
         comparators: list[dict[str, Any]] = []
-        while self._cur()["k"] in cmp_map:
-            tok = self._eat()
-            ops.append(cmp_map[tok["k"]])
-            comparators.append(self._parse_addsub())
+        while True:
+            if self._cur()["k"] in cmp_map:
+                tok = self._eat()
+                ops.append(cmp_map[tok["k"]])
+                comparators.append(self._parse_addsub())
+                continue
+            if self._cur()["k"] == "NAME" and self._cur()["v"] == "in":
+                self._eat("NAME")
+                ops.append("In")
+                comparators.append(self._parse_addsub())
+                continue
+            if self._cur()["k"] == "NAME" and self._cur()["v"] == "not":
+                pos = self.pos
+                self._eat("NAME")
+                if self._cur()["k"] == "NAME" and self._cur()["v"] == "in":
+                    self._eat("NAME")
+                    ops.append("NotIn")
+                    comparators.append(self._parse_addsub())
+                    continue
+                self.pos = pos
+            break
         if len(ops) == 0:
             return node
         start_col = int(node["source_span"]["col"]) - self.col_base
@@ -1604,23 +1677,43 @@ class _ShExprParser:
                 name_tok = self._eat("NAME")
                 s = int(node["source_span"]["col"]) - self.col_base
                 e = name_tok["e"]
+                attr_name = str(name_tok["v"])
+                owner_t = str(node.get("resolved_type", "unknown"))
+                attr_t = "unknown"
+                if owner_t == "Path":
+                    if attr_name in {"name", "stem"}:
+                        attr_t = "str"
+                    elif attr_name == "parent":
+                        attr_t = "Path"
                 node = {
                     "kind": "Attribute",
                     "source_span": self._node_span(s, e),
-                    "resolved_type": "unknown",
+                    "resolved_type": attr_t,
                     "borrow_kind": "value",
                     "casts": [],
                     "repr": self._src_slice(s, e),
                     "value": node,
-                    "attr": str(name_tok["v"]),
+                    "attr": attr_name,
                 }
                 continue
             if tok["k"] == "(":
                 ltok = self._eat("(")
                 args: list[dict[str, Any]] = []
+                keywords: list[dict[str, Any]] = []
                 if self._cur()["k"] != ")":
                     while True:
-                        args.append(self._parse_addsub())
+                        if self._cur()["k"] == "NAME":
+                            save_pos = self.pos
+                            name_tok = self._eat("NAME")
+                            if self._cur()["k"] == "=":
+                                self._eat("=")
+                                kw_val = self._parse_or()
+                                keywords.append({"arg": str(name_tok["v"]), "value": kw_val})
+                            else:
+                                self.pos = save_pos
+                                args.append(self._parse_or())
+                        else:
+                            args.append(self._parse_or())
                         if self._cur()["k"] == ",":
                             self._eat(",")
                             continue
@@ -1634,6 +1727,22 @@ class _ShExprParser:
                     fn_name = str(node.get("id", ""))
                     if fn_name == "print":
                         call_ret = "None"
+                    elif fn_name == "Path":
+                        call_ret = "Path"
+                    elif fn_name == "int":
+                        call_ret = "int64"
+                    elif fn_name == "float":
+                        call_ret = "float64"
+                    elif fn_name == "bool":
+                        call_ret = "bool"
+                    elif fn_name == "str":
+                        call_ret = "str"
+                    elif fn_name == "len":
+                        call_ret = "int64"
+                    elif fn_name == "range":
+                        call_ret = "range"
+                    elif fn_name in {"Exception", "RuntimeError"}:
+                        call_ret = "Exception"
                     elif fn_name in self.fn_return_types:
                         call_ret = self.fn_return_types[fn_name]
                     elif fn_name in self.class_method_return_types:
@@ -1645,6 +1754,13 @@ class _ShExprParser:
                         owner_t = self.name_types.get(str(owner.get("id", "")), "unknown")
                         if owner_t != "unknown":
                             call_ret = self._lookup_method_return(owner_t, attr)
+                        if owner_t == "Path":
+                            if attr in {"read_text", "name", "stem"}:
+                                call_ret = "str"
+                            elif attr in {"exists"}:
+                                call_ret = "bool"
+                            elif attr in {"mkdir", "write_text"}:
+                                call_ret = "None"
                 payload: dict[str, Any] = {
                     "kind": "Call",
                     "source_span": self._node_span(s, e),
@@ -1654,13 +1770,74 @@ class _ShExprParser:
                     "repr": self._src_slice(s, e),
                     "func": node,
                     "args": args,
-                    "keywords": [],
+                    "keywords": keywords,
                 }
                 if fn_name == "print":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "print"
                     payload["runtime_call"] = "py_print"
                 node = payload
+                continue
+            if tok["k"] == "[":
+                ltok = self._eat("[")
+                if self._cur()["k"] == ":":
+                    self._eat(":")
+                    up = None
+                    if self._cur()["k"] != "]":
+                        up = self._parse_addsub()
+                    rtok = self._eat("]")
+                    s = int(node["source_span"]["col"]) - self.col_base
+                    e = rtok["e"]
+                    node = {
+                        "kind": "Subscript",
+                        "source_span": self._node_span(s, e),
+                        "resolved_type": node.get("resolved_type", "unknown"),
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": self._src_slice(s, e),
+                        "value": node,
+                        "slice": {"kind": "Slice", "lower": None, "upper": up, "step": None},
+                        "lowered_kind": "SliceExpr",
+                        "lower": None,
+                        "upper": up,
+                    }
+                    continue
+                first = self._parse_addsub()
+                if self._cur()["k"] == ":":
+                    self._eat(":")
+                    up = None
+                    if self._cur()["k"] != "]":
+                        up = self._parse_addsub()
+                    rtok = self._eat("]")
+                    s = int(node["source_span"]["col"]) - self.col_base
+                    e = rtok["e"]
+                    node = {
+                        "kind": "Subscript",
+                        "source_span": self._node_span(s, e),
+                        "resolved_type": node.get("resolved_type", "unknown"),
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": self._src_slice(s, e),
+                        "value": node,
+                        "slice": {"kind": "Slice", "lower": first, "upper": up, "step": None},
+                        "lowered_kind": "SliceExpr",
+                        "lower": first,
+                        "upper": up,
+                    }
+                    continue
+                rtok = self._eat("]")
+                s = int(node["source_span"]["col"]) - self.col_base
+                e = rtok["e"]
+                node = {
+                    "kind": "Subscript",
+                    "source_span": self._node_span(s, e),
+                    "resolved_type": "unknown",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": self._src_slice(s, e),
+                    "value": node,
+                    "slice": first,
+                }
                 continue
             return node
 
@@ -1670,11 +1847,14 @@ class _ShExprParser:
         rt = str(right.get("resolved_type", "unknown"))
         casts: list[dict[str, Any]] = []
         if op_sym == "/":
-            out_t = "float64"
-            if lt == "int64":
-                casts.append({"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
-            if rt == "int64":
-                casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+            if lt == "Path" and rt in {"str", "Path"}:
+                out_t = "Path"
+            else:
+                out_t = "float64"
+                if lt == "int64":
+                    casts.append({"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+                if rt == "int64":
+                    casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
         elif lt == rt and lt in {"int64", "float64"}:
             out_t = lt
         elif lt in {"int64", "float64"} and rt in {"int64", "float64"}:
@@ -1761,7 +1941,7 @@ class _ShExprParser:
             }
         if tok["k"] == "(":
             l = self._eat("(")
-            inner = self._parse_addsub()
+            inner = self._parse_or()
             r = self._eat(")")
             inner["source_span"] = self._node_span(l["s"], r["e"])
             inner["repr"] = self._src_slice(l["s"], r["e"])
@@ -1850,7 +2030,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         break
 
     def parse_def_sig(ln_no: int, ln: str, *, in_class: str | None = None) -> dict[str, Any] | None:
-        m_def = re.match(r"^\s*def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*->\s*(.+)\s*:\s*$", ln)
+        m_def = re.match(r"^\s*def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", ln)
         if m_def is None:
             return None
         arg_types: dict[str, str] = {}
@@ -1890,7 +2070,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 arg_types[pn] = _sh_ann_to_type(pt)
         return {
             "name": m_def.group(1),
-            "ret": _sh_ann_to_type(m_def.group(3).strip()),
+            "ret": _sh_ann_to_type(m_def.group(3).strip()) if m_def.group(3) is not None else "None",
             "arg_types": arg_types,
         }
 
@@ -1960,6 +2140,155 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     def parse_expr(expr_txt: str, *, ln_no: int, col: int, name_types: dict[str, str]) -> dict[str, Any]:
         raw = expr_txt
         txt = raw.strip()
+
+        def split_top_keyword(text: str, kw: str) -> int:
+            depth = 0
+            in_str: str | None = None
+            esc = False
+            i = 0
+            while i < len(text):
+                ch = text[i]
+                if in_str is not None:
+                    if esc:
+                        esc = False
+                        i += 1
+                        continue
+                    if ch == "\\":
+                        esc = True
+                        i += 1
+                        continue
+                    if ch == in_str:
+                        in_str = None
+                    i += 1
+                    continue
+                if ch in {"'", '"'}:
+                    in_str = ch
+                    i += 1
+                    continue
+                if ch in {"(", "[", "{"}:
+                    depth += 1
+                    i += 1
+                    continue
+                if ch in {")", "]", "}"}:
+                    depth -= 1
+                    i += 1
+                    continue
+                if depth == 0 and text.startswith(kw, i):
+                    prev_ok = i == 0 or text[i - 1].isspace()
+                    next_ok = (i + len(kw) >= len(text)) or text[i + len(kw)].isspace()
+                    if prev_ok and next_ok:
+                        return i
+                i += 1
+            return -1
+
+        # if-expression: a if cond else b
+        p_if = split_top_keyword(txt, "if")
+        p_else = split_top_keyword(txt, "else")
+        if p_if >= 0 and p_else > p_if:
+            body_txt = txt[:p_if].strip()
+            test_txt = txt[p_if + 2 : p_else].strip()
+            else_txt = txt[p_else + 4 :].strip()
+            body_node = parse_expr(body_txt, ln_no=ln_no, col=col + txt.find(body_txt), name_types=dict(name_types))
+            test_node = parse_expr(test_txt, ln_no=ln_no, col=col + txt.find(test_txt), name_types=dict(name_types))
+            else_node = parse_expr(else_txt, ln_no=ln_no, col=col + txt.rfind(else_txt), name_types=dict(name_types))
+            rt = body_node.get("resolved_type", "unknown")
+            if rt != else_node.get("resolved_type", "unknown"):
+                rt = "unknown"
+            return {
+                "kind": "IfExp",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": rt,
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "test": test_node,
+                "body": body_node,
+                "orelse": else_node,
+            }
+
+        # dict literal: {"a": 1, "b": 2}
+        if txt.startswith("{") and txt.endswith("}") and ":" in txt:
+            inner = txt[1:-1].strip()
+            entries: list[dict[str, Any]] = []
+            if inner != "":
+                for part in split_top_commas(inner):
+                    if ":" not in part:
+                        raise EastBuildError(
+                            kind="unsupported_syntax",
+                            message=f"invalid dict entry in self_hosted parser: {part}",
+                            source_span=_sh_span(ln_no, col, col + len(raw)),
+                            hint="Use `key: value` form in dict literals.",
+                        )
+                    ktxt, vtxt = part.split(":", 1)
+                    ktxt = ktxt.strip()
+                    vtxt = vtxt.strip()
+                    entries.append(
+                        {
+                            "key": parse_expr(ktxt, ln_no=ln_no, col=col + txt.find(ktxt), name_types=dict(name_types)),
+                            "value": parse_expr(vtxt, ln_no=ln_no, col=col + txt.find(vtxt), name_types=dict(name_types)),
+                        }
+                    )
+            kt = "unknown"
+            vt = "unknown"
+            if len(entries) > 0:
+                kt = str(entries[0]["key"].get("resolved_type", "unknown"))
+                vt = str(entries[0]["value"].get("resolved_type", "unknown"))
+            return {
+                "kind": "Dict",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": f"dict[{kt},{vt}]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "entries": entries,
+            }
+
+        # Very simple list-comp support: [x for x in <iter>]
+        m_lc = re.match(r"^\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)\]$", txt)
+        if m_lc is not None:
+            elt_name = m_lc.group(1)
+            tgt_name = m_lc.group(2)
+            iter_txt = m_lc.group(3).strip()
+            iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+            it_t = str(iter_node.get("resolved_type", "unknown"))
+            elem_t = "unknown"
+            if it_t.startswith("list[") and it_t.endswith("]"):
+                elem_t = it_t[5:-1]
+            elt_node = {
+                "kind": "Name",
+                "source_span": _sh_span(ln_no, col, col + len(elt_name)),
+                "resolved_type": elem_t if elt_name == tgt_name else "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": elt_name,
+                "id": elt_name,
+            }
+            return {
+                "kind": "ListComp",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": f"list[{elem_t}]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "elt": elt_node,
+                "generators": [
+                    {
+                        "target": {
+                            "kind": "Name",
+                            "source_span": _sh_span(ln_no, col, col + len(tgt_name)),
+                            "resolved_type": "unknown",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": tgt_name,
+                            "id": tgt_name,
+                        },
+                        "iter": iter_node,
+                        "ifs": [],
+                    }
+                ],
+                "lowered_kind": "ListCompSimple",
+            }
+
         if len(txt) >= 3 and txt[0] == "f" and txt[1] in {"'", '"'} and txt[-1] == txt[1]:
             quote = txt[1]
             inner = txt[2:-1]
@@ -2134,6 +2463,84 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     t_ty = i_ty[4:-1]
                 if t_ty != "unknown":
                     name_types[tgt] = t_ty
+                if (
+                    isinstance(iter_expr, dict)
+                    and iter_expr.get("kind") == "Call"
+                    and isinstance(iter_expr.get("func"), dict)
+                    and iter_expr.get("func", {}).get("kind") == "Name"
+                    and iter_expr.get("func", {}).get("id") == "range"
+                ):
+                    rargs = list(iter_expr.get("args", []))
+                    start_node: dict[str, Any]
+                    stop_node: dict[str, Any]
+                    step_node: dict[str, Any]
+                    if len(rargs) == 1:
+                        start_node = {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
+                            "resolved_type": "int64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "0",
+                            "value": 0,
+                        }
+                        stop_node = rargs[0]
+                        step_node = {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
+                            "resolved_type": "int64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "1",
+                            "value": 1,
+                        }
+                    elif len(rargs) == 2:
+                        start_node = rargs[0]
+                        stop_node = rargs[1]
+                        step_node = {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
+                            "resolved_type": "int64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "1",
+                            "value": 1,
+                        }
+                    else:
+                        start_node = rargs[0]
+                        stop_node = rargs[1]
+                        step_node = rargs[2]
+                    name_types[tgt] = "int64"
+                    step_const = step_node.get("value") if isinstance(step_node, dict) else None
+                    mode = "dynamic"
+                    if step_const == 1:
+                        mode = "ascending"
+                    elif step_const == -1:
+                        mode = "descending"
+                    stmts.append(
+                        {
+                            "kind": "ForRange",
+                            "source_span": _sh_span(ln_no, 0, len(ln_txt)),
+                            "target": {
+                                "kind": "Name",
+                                "source_span": _sh_span(ln_no, ln_txt.find(tgt), ln_txt.find(tgt) + len(tgt)),
+                                "resolved_type": "int64",
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": tgt,
+                                "id": tgt,
+                            },
+                            "target_type": "int64",
+                            "start": start_node,
+                            "stop": stop_node,
+                            "step": step_node,
+                            "range_mode": mode,
+                            "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                            "orelse": [],
+                        }
+                    )
+                    i = j
+                    continue
                 stmts.append(
                     {
                         "kind": "For",
@@ -2421,6 +2828,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     body_items: list[dict[str, Any]] = []
     main_stmts: list[dict[str, Any]] = []
     first_item_attached = False
+    pending_dataclass = False
 
     i = 1
     while i <= len(lines):
@@ -2451,10 +2859,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = j
             continue
 
-        m_def = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*->\s*(.+)\s*:\s*$", ln)
-        if m_def is not None:
-            sig = parse_def_sig(i, ln)
-            assert sig is not None
+        sig = parse_def_sig(i, ln)
+        if sig is not None:
             fn_name = str(sig["name"])
             fn_ret = str(sig["ret"])
             arg_types = dict(sig["arg_types"])
@@ -2498,6 +2904,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = j
             continue
 
+        if s == "@dataclass":
+            pending_dataclass = True
+            i += 1
+            continue
+        if re.match(r"^(from\s+[A-Za-z_][A-Za-z0-9_\.]*\s+import\s+.+|import\s+[A-Za-z_][A-Za-z0-9_\.]*)\s*$", s):
+            i += 1
+            continue
+        if s.startswith("@"):
+            i += 1
+            continue
+
         m_cls = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", ln)
         if m_cls is not None:
             cls_name = m_cls.group(1)
@@ -2531,13 +2948,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 s2 = ln_txt.strip()
                 bind = len(ln_txt) - len(ln_txt.lstrip(" "))
                 if bind == cls_indent + 4:
-                    m_field = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s2)
+                    m_field = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", s2)
                     if m_field is not None:
                         fname = m_field.group(1)
                         fty = _sh_ann_to_type(m_field.group(2))
-                        fexpr_txt = m_field.group(3).strip()
-                        fexpr_col = ln_txt.find(fexpr_txt)
                         field_types[fname] = fty
+                        val_node = None
+                        if m_field.group(3) is not None:
+                            fexpr_txt = m_field.group(3).strip()
+                            fexpr_col = ln_txt.find(fexpr_txt)
+                            val_node = parse_expr(fexpr_txt, ln_no=ln_no, col=fexpr_col, name_types={})
                         class_body.append(
                             {
                                 "kind": "AnnAssign",
@@ -2552,7 +2972,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                     "id": fname,
                                 },
                                 "annotation": fty,
-                                "value": parse_expr(fexpr_txt, ln_no=ln_no, col=fexpr_col, name_types={}),
+                                "value": val_node,
                                 "declare": True,
                                 "decl_type": fty,
                             }
@@ -2646,9 +3066,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "original_name": cls_name,
                 "source_span": {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
                 "base": base,
+                "dataclass": pending_dataclass,
                 "field_types": field_types,
                 "body": class_body,
             }
+            pending_dataclass = False
             if not first_item_attached:
                 cls_item["leading_comments"] = list(leading_file_comments)
                 cls_item["leading_trivia"] = list(leading_file_trivia)
@@ -2700,13 +3122,19 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             hint="Add main guard block with print(...).",
         )
 
+    renamed_symbols: dict[str, str] = {}
+    for item in body_items:
+        if item.get("kind") == "FunctionDef" and item.get("name") == "main":
+            renamed_symbols["main"] = "__pytra_main"
+            item["name"] = "__pytra_main"
+
     return {
         "kind": "Module",
         "source_path": filename,
         "source_span": {"lineno": None, "col": None, "end_lineno": None, "end_col": None},
         "body": body_items,
         "main_guard_body": main_stmts,
-        "renamed_symbols": {},
+        "renamed_symbols": renamed_symbols,
         "meta": {"parser_backend": "self_hosted"},
     }
 

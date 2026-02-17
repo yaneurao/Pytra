@@ -74,6 +74,11 @@ static inline int64 py_to_int64(const str& v) {
     return static_cast<int64>(std::stoll(v));
 }
 
+template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+static inline int64 py_to_int64(T v) {
+    return static_cast<int64>(v);
+}
+
 template <class T>
 static inline void py_print(const T& v) {
     std::cout << v << std::endl;

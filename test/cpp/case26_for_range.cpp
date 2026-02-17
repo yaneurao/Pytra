@@ -1,38 +1,18 @@
-#include "cpp_module/gc.h"
 #include "cpp_module/py_runtime.h"
-#include <algorithm>
-#include <any>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
+// このファイルは `test/py/case33_for_range.py` のテスト/実装コードです。
+// 役割が分かりやすいように、読み手向けの説明コメントを付与しています。
+// 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
-int sum_range_29(int n)
-{
-    int total = 0;
-    auto __range_start_i = 0;
-    auto __range_stop_i = n;
-    auto __range_step_i = 1;
-    if (__range_step_i == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto i = __range_start_i; (__range_step_i > 0) ? (i < __range_stop_i) : (i > __range_stop_i); i += __range_step_i)
-    {
-        total = (total + i);
+int64 sum_range_29(int64 n) {
+    int64 total = 0;
+    for (int64 i = 0; i < n; ++i) {
+        total = total + i;
     }
     return total;
 }
 
-int main()
-{
+int main() {
     py_print(sum_range_29(5));
     return 0;
 }

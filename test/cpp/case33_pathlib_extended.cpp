@@ -1,39 +1,18 @@
-#include "cpp_module/gc.h"
-#include "cpp_module/pathlib.h"
 #include "cpp_module/py_runtime.h"
-#include <algorithm>
-#include <any>
-#include <cstdint>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
-
-void py_main()
-{
+void __pytra_main() {
     Path root = Path("test/obj/pathlib_case32");
-    root->mkdir(true, true);
-    Path child = ((root) / ("values.txt"));
-    child->write_text("42");
-    py_print(child->exists());
-    py_print(child->name());
-    py_print(child->stem());
-    py_print(((child->parent()) / ("values.txt"))->exists());
-    py_print(child->read_text());
+    std::filesystem::create_directories(root);
+    Path child = root / "values.txt";
+    py_write_text(child, "42");
+    py_print(std::filesystem::exists(child));
+    py_print(child.filename().string());
+    py_print(child.stem().string());
+    py_print(std::filesystem::exists(child.parent_path() / "values.txt"));
+    py_print(py_read_text(child));
 }
 
-int main()
-{
-    py_main();
+int main() {
+    __pytra_main();
     return 0;
 }

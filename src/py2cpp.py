@@ -660,6 +660,7 @@ class CppEmitter:
 
     def emit_class(self, stmt: dict[str, Any]) -> None:
         name = stmt.get("name", "Class")
+        is_dataclass = bool(stmt.get("dataclass", False))
         base = stmt.get("base")
         base_txt = f" : public {base}" if isinstance(base, str) and base != "" else ""
         self.emit(f"struct {name}{base_txt} {{")
@@ -672,6 +673,7 @@ class CppEmitter:
         class_body = list(stmt.get("body", []))
         static_field_types: dict[str, str] = {}
         static_field_defaults: dict[str, str] = {}
+        instance_field_defaults: dict[str, str] = {}
         for s in class_body:
             if s.get("kind") == "AnnAssign":
                 texpr = s.get("target")
@@ -679,9 +681,12 @@ class CppEmitter:
                     fname = str(texpr.get("id", ""))
                     ann = s.get("annotation")
                     if isinstance(ann, str) and ann != "":
-                        static_field_types[fname] = ann
-                    if s.get("value") is not None:
-                        static_field_defaults[fname] = self.render_expr(s.get("value"))
+                        if is_dataclass:
+                            instance_field_defaults[fname] = self.render_expr(s.get("value")) if s.get("value") is not None else instance_field_defaults.get(fname, "")
+                        else:
+                            static_field_types[fname] = ann
+                            if s.get("value") is not None:
+                                static_field_defaults[fname] = self.render_expr(s.get("value"))
         self.current_class_static_fields = set(static_field_types.keys())
         instance_fields: dict[str, str] = {
             k: v for k, v in self.current_class_fields.items() if k not in self.current_class_static_fields
@@ -700,6 +705,8 @@ class CppEmitter:
             params: list[str] = []
             for fname, fty in instance_fields.items():
                 p = f"{self.cpp_type(fty)} {fname}"
+                if fname in instance_field_defaults and instance_field_defaults[fname] != "":
+                    p += f" = {instance_field_defaults[fname]}"
                 params.append(p)
             self.emit(f"{name}({', '.join(params)}) {{")
             self.indent += 1
@@ -1008,6 +1015,8 @@ class CppEmitter:
                 # Keep py_div fallback for int/int Python semantics.
                 lt = self.get_expr_type(left_expr if isinstance(left_expr, dict) else None) or ""
                 rt = self.get_expr_type(right_expr if isinstance(right_expr, dict) else None) or ""
+                if lt == "Path" and rt in {"str", "Path"}:
+                    return f"{left} / {right}"
                 if len(cast_rules) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
                     return f"{left} / {right}"
                 return f"py_div({left}, {right})"
