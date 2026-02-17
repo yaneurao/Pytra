@@ -17,27 +17,27 @@
 ## self_hosted AST/Parser
 
 - [ ] `src/common/east.py` に `parser_backend` 切替を導入する（`python_ast` / `self_hosted`）。
-- [ ] CLI 引数で `--parser-backend` を受け付ける。
+- [x] CLI 引数で `--parser-backend` を受け付ける。
 - [ ] デフォルトは `python_ast` のまま維持する。
-- [ ] 変換結果メタに backend 名を記録する。
-- [ ] `self_hosted` の最小字句解析器を追加する（コメント/改行/インデント含む）。
-- [ ] `INDENT` / `DEDENT` / `NEWLINE` / `NAME` / `NUMBER` / `STRING` / 記号をトークン化する。
-- [ ] `#` コメントを収集し、行番号つきで保持する。
-- [ ] tokenize 失敗時のエラー位置・ヒントを EAST エラー形式で返す。
-- [ ] `self_hosted` の最小構文木（内部ノード）を定義する。
-- [ ] まず `Module`, `FunctionDef`, `Assign`, `AnnAssign`, `Return`, `Expr`, `If`, `For`, `Call`, `Name`, `Constant`, `BinOp`, `Compare` を対象にする。
-- [ ] 各ノードに `lineno/col/end_lineno/end_col` を持たせる。
-- [ ] `self_hosted` 用パーサ本体（再帰下降）を追加する。
-- [ ] 式の優先順位テーブルを実装する（`* / %`, `+ -`, 比較, `and/or`）。
-- [ ] `for ... in range(...)` と通常 `for ... in iterable` を識別する。
-- [ ] 関数定義と型注釈（`x: int` / `-> int`）を解釈する。
-- [ ] 既存 EAST ビルド処理に `self_hosted` ノード経路を追加する。
+- [x] 変換結果メタに backend 名を記録する。
+- [x] `self_hosted` の最小字句解析器を追加する（コメント/改行/インデント含む）。
+- [x] `INDENT` / `DEDENT` / `NEWLINE` / `NAME` / `NUMBER` / `STRING` / 記号をトークン化する。
+- [x] `#` コメントを収集し、行番号つきで保持する。
+- [x] tokenize 失敗時のエラー位置・ヒントを EAST エラー形式で返す。
+- [x] `self_hosted` の最小構文木（内部ノード）を定義する。
+- [x] まず `Module`, `FunctionDef`, `Assign`, `AnnAssign`, `Return`, `Expr`, `If`, `For`, `Call`, `Name`, `Constant`, `BinOp`, `Compare` を対象にする。
+- [x] 各ノードに `lineno/col/end_lineno/end_col` を持たせる。
+- [x] `self_hosted` 用パーサ本体（再帰下降）を追加する。
+- [x] 式の優先順位テーブルを実装する（`* / %`, `+ -`, 比較, `and/or`）。
+- [x] `for ... in range(...)` と通常 `for ... in iterable` を識別する。
+- [x] 関数定義と型注釈（`x: int` / `-> int`）を解釈する。
+- [x] 既存 EAST ビルド処理に `self_hosted` ノード経路を追加する。
 - [ ] 既存の型推論・lowering（`ForRange`, `Contains`, `SliceExpr` など）を共通で再利用できる形にする。
 - [ ] `python_ast` と `self_hosted` で EAST の形が揃うように正規化する。
-- [ ] コメント引き継ぎを実装する（`#` / docstring）。
-- [ ] `#` コメントを `leading_comments` として関数/文に紐づける。
-- [ ] `Expr(Constant(str))` の docstring と重複しないよう統合規則を決める。
-- [ ] `src/py2cpp.py` で `leading_comments` を `/* ... */` 出力する。
+- [x] コメント引き継ぎを実装する（`#` / docstring）。
+- [x] `#` コメントを `leading_comments` として関数/文に紐づける。
+- [x] `Expr(Constant(str))` の docstring と重複しないよう統合規則を決める。
+- [x] `src/py2cpp.py` で `leading_comments` を `// ...` 出力する。
 
 ### ケース順移行（test/py/case01 から順に）
 
