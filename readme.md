@@ -5391,7 +5391,8 @@ func pyWriteRGBPNG(path any, width any, height any, pixels any) {
     }
 
     var png bytes.Buffer
-    png.Write([]byte{0x89, 'P', 'N', 'G', '', '
+    png.Write([]byte{0x89, 'P', 'N', 'G', '
+', '
 ', 0x1a, '
 '})
     png.Write(pyChunk([]byte("IHDR"), ihdr))
@@ -6646,7 +6647,8 @@ final class PyRuntime {
         };
 
         try (FileOutputStream fos = new FileOutputStream(pyToString(path))) {
-            fos.write(new byte[] { (byte) 0x89, 'P', 'N', 'G', '', '
+            fos.write(new byte[] { (byte) 0x89, 'P', 'N', 'G', '
+', '
 ', 0x1a, '
 ' });
             fos.write(pyChunk("IHDR", ihdr));
@@ -7241,17 +7243,14 @@ class pytra_16_glass_sculpture_chaos {
 
 </details>
 
-## 実装状況の詳細
+## ドキュメント
 
-実装済み項目・未実装項目・対応予定なし項目は、次にまとめています。  
-[docs/pytra-readme.md](docs/pytra-readme.md)
+利用時によく参照する順で、関連ドキュメントをまとめています。
 
-## 補足説明
-
-- 本READMEは、実行速度比較と代表サンプルコード（`sample/06`, `sample/16`）の掲載を中心にしています。
-- 具体的な使い方（各言語への変換手順、実行方法、必要な環境）は [docs/how-to-use.md](docs/how-to-use.md) を参照してください。
-- 実装範囲・制約・ディレクトリ構成・運用ルールは [docs/spec.md](docs/spec.md) を参照してください。
-- サンプル一覧と各サンプルの概要は [docs/sample-code.md](docs/sample-code.md) を参照してください。
+- まず使い方を確認する: [docs/how-to-use.md](docs/how-to-use.md)
+- 実装済み項目・未実装項目・対応予定なしを確認する: [docs/pytra-readme.md](docs/pytra-readme.md)
+- サンプル一覧と概要を確認する: [docs/sample-code.md](docs/sample-code.md)
+- 仕様・制約・構成・運用ルールを確認する: [docs/spec.md](docs/spec.md)
 
 ## ライセンス
 
