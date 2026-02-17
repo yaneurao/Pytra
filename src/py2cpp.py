@@ -78,11 +78,12 @@ AUG_BIN = {
 
 
 class CppEmitter:
-    def __init__(self, east_doc: dict[str, Any]) -> None:
+    def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
         self.doc = east_doc
         self.lines: list[str] = []
         self.indent = 0
         self.tmp_id = 0
+        self.negative_index_mode = negative_index_mode
         self.renamed_symbols: dict[str, str] = {
             str(k): str(v) for k, v in self.doc.get("renamed_symbols", {}).items()
         }
@@ -194,6 +195,17 @@ class CppEmitter:
         if not isinstance(to_type, str) or to_type == "":
             return rendered_expr
         return f"static_cast<{self.cpp_type(to_type)}>({rendered_expr})"
+
+    def render_to_string(self, expr: dict[str, Any] | None) -> str:
+        rendered = self.render_expr(expr)
+        t = self.get_expr_type(expr) or ""
+        if t == "str":
+            return rendered
+        if t == "bool":
+            return f"py_bool_to_string({rendered})"
+        if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}:
+            return f"std::to_string({rendered})"
+        return f"py_to_string({rendered})"
 
     def _binop_precedence(self, op_name: str) -> int:
         if op_name in {"Mult", "Div", "FloorDiv", "Mod"}:
@@ -412,12 +424,8 @@ class CppEmitter:
                     return
                 if op_name == "FloorDiv":
                     self.emit(f"{target} = py_floordiv({target}, {val});")
-                elif op_name == "Mod":
-                    self.emit(f"{target} = {target} {bop} {val};")
-                elif op_name == "Div":
-                    self.emit(f"{target} = {target} {bop} {val};")
                 else:
-                    self.emit(f"{target} = {target} {bop} {val};")
+                    self.emit(f"{target} {op} {val};")
             else:
                 self.emit(f"{target} {op} {val};")
             return
@@ -559,6 +567,8 @@ class CppEmitter:
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
+        body_stmts = list(stmt.get("body", []))
+        omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         mode = stmt.get("range_mode")
         if mode == "ascending":
             cond = f"{tgt} < {stop}"
@@ -573,12 +583,20 @@ class CppEmitter:
         else:
             inc = f"{tgt} += {step}"
         if self.is_declared(tgt):
-            self.emit(f"for ({tgt} = {start}; {cond}; {inc}) {{")
+            hdr = f"for ({tgt} = {start}; {cond}; {inc})"
         else:
-            self.emit(f"for ({tgt_ty} {tgt} = {start}; {cond}; {inc}) {{")
+            hdr = f"for ({tgt_ty} {tgt} = {start}; {cond}; {inc})"
             self.current_scope().add(tgt)
+        if omit_braces:
+            self.emit(hdr)
+            self.indent += 1
+            self.emit_stmt(body_stmts[0])
+            self.indent -= 1
+            return
+
+        self.emit(hdr + " {")
         self.indent += 1
-        for s in stmt.get("body", []):
+        for s in body_stmts:
             self.emit_stmt(s)
         self.indent -= 1
         self.emit("}")
@@ -598,16 +616,28 @@ class CppEmitter:
             }
             self.emit_for_range(pseudo)
             return
+        body_stmts = list(stmt.get("body", []))
+        omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         t = self.render_expr(target)
         it = self.render_expr(iter_expr)
         t_ty = self.cpp_type(stmt.get("target_type") or self.get_expr_type(target))
         if t_ty == "auto":
-            self.emit(f"for (auto& {t} : {it}) {{")
+            hdr = f"for (auto& {t} : {it})"
         else:
-            self.emit(f"for ({t_ty} {t} : {it}) {{")
+            hdr = f"for ({t_ty} {t} : {it})"
+        if omit_braces:
+            self.emit(hdr)
+            self.indent += 1
+            self.scope_stack.append({t})
+            self.emit_stmt(body_stmts[0])
+            self.scope_stack.pop()
+            self.indent -= 1
+            return
+
+        self.emit(hdr + " {")
         self.indent += 1
         self.scope_stack.append({t})
-        for s in stmt.get("body", []):
+        for s in body_stmts:
             self.emit_stmt(s)
         self.scope_stack.pop()
         self.indent -= 1
@@ -767,9 +797,9 @@ class CppEmitter:
                 return f"{base}::{attr}"
             if base == "math":
                 if attr == "pi":
-                    return "pycs::cpp_module::math::pi"
+                    return "py_math::pi"
                 if attr == "e":
-                    return "pycs::cpp_module::math::e"
+                    return "py_math::e"
             bt = self.get_expr_type(expr.get("value"))
             if bt == "Path":
                 if attr == "name":
@@ -797,12 +827,15 @@ class CppEmitter:
                 if runtime_call == "py_len" and len(args) == 1:
                     return f"py_len({args[0]})"
                 if runtime_call == "py_to_string" and len(args) == 1:
-                    return f"py_to_string({args[0]})"
+                    src_expr = (expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None
+                    return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
                 if runtime_call == "static_cast" and len(args) == 1:
                     target = self.cpp_type(expr.get("resolved_type"))
                     arg_t = self.get_expr_type((expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None)
-                    if target == "int64" and arg_t in {"str", "unknown"}:
+                    if target == "int64" and arg_t == "str":
                         return f"py_to_int64({args[0]})"
+                    if target == "int64":
+                        return f"int64({args[0]})"
                     return f"static_cast<{target}>({args[0]})"
                 if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
                     fn = "min" if runtime_call == "py_min" else "max"
@@ -905,12 +938,15 @@ class CppEmitter:
                 if raw == "len" and len(args) == 1:
                     return f"py_len({args[0]})"
                 if raw == "str" and len(args) == 1:
-                    return f"py_to_string({args[0]})"
+                    src_expr = (expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None
+                    return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
                 if raw in {"int", "float", "bool"} and len(args) == 1:
                     target = self.cpp_type(expr.get("resolved_type"))
                     arg_t = self.get_expr_type((expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None)
-                    if raw == "int" and target == "int64" and arg_t in {"str", "unknown"}:
+                    if raw == "int" and target == "int64" and arg_t == "str":
                         return f"py_to_int64({args[0]})"
+                    if raw == "int" and target == "int64":
+                        return f"int64({args[0]})"
                     return f"static_cast<{target}>({args[0]})"
                 if raw in {"min", "max"} and len(args) >= 1:
                     return self.render_minmax(raw, args, self.get_expr_type(expr))
@@ -929,17 +965,17 @@ class CppEmitter:
                 attr = fn.get("attr")
                 if owner_expr == "math":
                     math_map = {
-                        "sqrt": "pycs::cpp_module::math::sqrt",
-                        "sin": "pycs::cpp_module::math::sin",
-                        "cos": "pycs::cpp_module::math::cos",
-                        "tan": "pycs::cpp_module::math::tan",
-                        "exp": "pycs::cpp_module::math::exp",
-                        "log": "pycs::cpp_module::math::log",
-                        "log10": "pycs::cpp_module::math::log10",
-                        "fabs": "pycs::cpp_module::math::fabs",
-                        "floor": "pycs::cpp_module::math::floor",
-                        "ceil": "pycs::cpp_module::math::ceil",
-                        "pow": "pycs::cpp_module::math::pow",
+                        "sqrt": "py_math::sqrt",
+                        "sin": "py_math::sin",
+                        "cos": "py_math::cos",
+                        "tan": "py_math::tan",
+                        "exp": "py_math::exp",
+                        "log": "py_math::log",
+                        "log10": "py_math::log10",
+                        "fabs": "py_math::fabs",
+                        "floor": "py_math::floor",
+                        "ceil": "py_math::ceil",
+                        "pow": "py_math::pow",
                     }
                     if attr in math_map:
                         return f"{math_map[attr]}({', '.join(args)})"
@@ -1119,6 +1155,7 @@ class CppEmitter:
             return f"{t}{{{', '.join(items)}}}"
         if kind == "Subscript":
             val = self.render_expr(expr.get("value"))
+            val_ty = self.get_expr_type(expr.get("value")) or ""
             if expr.get("lowered_kind") == "SliceExpr":
                 lo = self.render_expr(expr.get("lower")) if expr.get("lower") is not None else "0"
                 up = self.render_expr(expr.get("upper")) if expr.get("upper") is not None else f"py_len({val})"
@@ -1128,7 +1165,24 @@ class CppEmitter:
                 lo = self.render_expr(sl.get("lower")) if sl.get("lower") is not None else "0"
                 up = self.render_expr(sl.get("upper")) if sl.get("upper") is not None else f"py_len({val})"
                 return f"py_slice({val}, {lo}, {up})"
-            return f"{val}[{self.render_expr(sl)}]"
+            idx = self.render_expr(sl)
+            if val_ty.startswith("list[") or val_ty == "str":
+                if self.negative_index_mode == "off":
+                    return f"{val}[{idx}]"
+                if self.negative_index_mode == "const_only":
+                    is_neg_const = False
+                    if isinstance(sl, dict) and sl.get("kind") == "Constant":
+                        v = sl.get("value")
+                        is_neg_const = isinstance(v, int) and v < 0
+                    elif isinstance(sl, dict) and sl.get("kind") == "UnaryOp" and sl.get("op") == "USub":
+                        opd = sl.get("operand")
+                        if isinstance(opd, dict) and opd.get("kind") == "Constant" and isinstance(opd.get("value"), int):
+                            is_neg_const = True
+                    if is_neg_const:
+                        return f"py_at({val}, {idx})"
+                    return f"{val}[{idx}]"
+                return f"py_at({val}, {idx})"
+            return f"{val}[{idx}]"
         if kind == "JoinedStr":
             if expr.get("lowered_kind") == "Concat":
                 parts: list[str] = []
@@ -1140,20 +1194,31 @@ class CppEmitter:
                         if val is None:
                             parts.append('""')
                         else:
-                            parts.append(f"py_to_string({self.render_expr(val)})")
+                            vtxt = self.render_expr(val)
+                            vty = self.get_expr_type(val)
+                            if vty == "str":
+                                parts.append(vtxt)
+                            else:
+                                parts.append(self.render_to_string(val if isinstance(val, dict) else None))
                 if len(parts) == 0:
                     return '""'
-                return "(" + " + ".join(parts) + ")"
+                return " + ".join(parts)
             parts: list[str] = []
             for p in expr.get("values", []):
                 pk = p.get("kind")
                 if pk == "Constant":
                     parts.append(json.dumps(p.get("value", "")))
                 elif pk == "FormattedValue":
-                    parts.append(f"py_to_string({self.render_expr(p.get('value'))})")
+                    v = p.get("value")
+                    vtxt = self.render_expr(v)
+                    vty = self.get_expr_type(v if isinstance(v, dict) else None)
+                    if vty == "str":
+                        parts.append(vtxt)
+                    else:
+                        parts.append(self.render_to_string(v if isinstance(v, dict) else None))
             if not parts:
                 return '""'
-            return "(" + " + ".join(parts) + ")"
+            return " + ".join(parts)
         if kind == "ListComp":
             gens = expr.get("generators", [])
             if len(gens) != 1:
@@ -1286,8 +1351,8 @@ def load_east(input_path: Path, *, parser_backend: str = "python_ast") -> dict[s
     return east
 
 
-def transpile_to_cpp(east_module: dict[str, Any]) -> str:
-    return CppEmitter(east_module).transpile()
+def transpile_to_cpp(east_module: dict[str, Any], *, negative_index_mode: str = "const_only") -> str:
+    return CppEmitter(east_module, negative_index_mode=negative_index_mode).transpile()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1295,6 +1360,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("input", help="Input .py or EAST .json")
     ap.add_argument("-o", "--output", help="Output .cpp path")
     ap.add_argument("--parser-backend", choices=["python_ast", "self_hosted"], default="python_ast", help="Parser backend for .py input")
+    ap.add_argument(
+        "--negative-index-mode",
+        choices=["always", "const_only", "off"],
+        default="const_only",
+        help="Policy for Python-style negative indexing on list/str subscripts",
+    )
     args = ap.parse_args(argv)
 
     input_path = Path(args.input)
@@ -1304,7 +1375,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         east_module = load_east(input_path, parser_backend=args.parser_backend)
-        cpp = transpile_to_cpp(east_module)
+        cpp = transpile_to_cpp(east_module, negative_index_mode=args.negative_index_mode)
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
