@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import os
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -54,11 +55,16 @@ class Py2CppFeatureTest(unittest.TestCase):
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
 
             py_run = subprocess.run(
-                ["python", str(py_file)], cwd=ROOT, capture_output=True, text=True
+                ["python", str(py_file)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
             )
             cpp_run = subprocess.run(
                 [str(exe_file)], cwd=ROOT, capture_output=True, text=True
             )
+            self.assertEqual(py_run.returncode, 0, msg=py_run.stderr)
             self.assertEqual(cpp_run.returncode, 0, msg=cpp_run.stderr)
             return py_run.stdout.replace("\r\n", "\n"), cpp_run.stdout.replace("\r\n", "\n")
 
@@ -137,17 +143,84 @@ if __name__ == "__main__":
 
     def test_nested_list_comprehension(self) -> None:
         src = """
-def build() -> list[int]:
-    return [x + y for x in [1, 2] for y in [10, 20] if y > 10]
-
 if __name__ == "__main__":
-    v: list[int] = build()
+    v = [x + y for x in [1, 2] for y in [10, 20] if y > 10]
     print(len(v))
     print(v[0])
     print(v[1])
 """
         py_out, cpp_out = self._run_python_and_cpp(src)
         self.assertEqual(py_out, cpp_out)
+
+    def test_int_str_string_index_chained_compare_and_negative_mod(self) -> None:
+        src = """
+def run() -> None:
+    n: int = int("42")
+    s: str = "abc"
+    ch: str = s[1]
+    print(n)
+    print(ch)
+    print("a" <= ch <= "z")
+    print((-7) // 3)
+    print((-7) % 3)
+
+if __name__ == "__main__":
+    run()
+"""
+        py_out, cpp_out = self._run_python_and_cpp(src)
+        self.assertEqual(py_out, cpp_out)
+
+    def test_gif_helper_python_cpp_compat(self) -> None:
+        src = """
+from py_module.gif_helper import grayscale_palette, save_gif
+
+def run() -> None:
+    w: int = 4
+    h: int = 4
+    fr0: bytes = bytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+    fr1: bytes = bytes([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0])
+    frames: list[bytes] = [fr0, fr1]
+    out_path: str = "case.gif"
+    save_gif(out_path, w, h, frames, grayscale_palette(), 4, 0)
+
+if __name__ == "__main__":
+    run()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            py_file = work / "case.py"
+            cpp_file = work / "case.cpp"
+            exe_file = work / "case.out"
+            py_gif = work / "py.gif"
+            cpp_gif = work / "cpp.gif"
+            py_file.write_text(src, encoding="utf-8")
+
+            transpile(str(py_file), str(cpp_file))
+            comp = subprocess.run(
+                ["g++", "-std=c++20", "-O2", "-I", "src", str(cpp_file), *CPP_RUNTIME_SRCS, "-o", str(exe_file)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
+            py_run = subprocess.run(
+                ["python", str(py_file)],
+                cwd=work,
+                capture_output=True,
+                text=True,
+                env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(py_run.returncode, 0, msg=py_run.stderr)
+            (work / "case.gif").replace(py_gif)
+
+            cpp_run = subprocess.run([str(exe_file)], cwd=work, capture_output=True, text=True)
+            self.assertEqual(cpp_run.returncode, 0, msg=cpp_run.stderr)
+            (work / "case.gif").replace(cpp_gif)
+
+            py_bytes = py_gif.read_bytes()
+            cpp_bytes = cpp_gif.read_bytes()
+            self.assertEqual(py_bytes, cpp_bytes)
 
 
 if __name__ == "__main__":

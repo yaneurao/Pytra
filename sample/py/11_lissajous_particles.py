@@ -48,8 +48,7 @@ def run_11_lissajous_particles() -> None:
                         if d2 <= 4:
                             idx = yy * w + xx
                             v = color - d2 * 20
-                            if v < 0:
-                                v = 0
+                            v = max(0, v)
                             if v > frame[idx]:
                                 frame[idx] = v
 

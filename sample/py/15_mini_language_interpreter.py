@@ -209,13 +209,7 @@ class Parser:
     def parse_primary(self) -> int:
         if self.match("NUMBER"):
             token_num: Token = self.tokens[self.pos - 1]
-            parsed_value: int = 0
-            idx: int = 0
-            while idx < len(token_num.text):
-                ch: str = token_num.text[idx:idx + 1]
-                parsed_value = parsed_value * 10 + ord(ch) - ord("0")
-                idx += 1
-            return self.add_expr(ExprNode("lit", parsed_value, "", "", -1, -1))
+            return self.add_expr(ExprNode("lit", int(token_num.text), "", "", -1, -1))
 
         if self.match("IDENT"):
             token_ident: Token = self.tokens[self.pos - 1]
@@ -231,10 +225,6 @@ class Parser:
 
 
 def eval_expr(expr_index: int, expr_nodes: list[ExprNode], env: dict[str, int]) -> int:
-    # C++側で env が const 扱いになるのを避けるためのダミー書き込み。
-    if False:
-        env["__dummy__"] = 0
-
     node: ExprNode = expr_nodes[expr_index]
 
     if node.kind == "lit":

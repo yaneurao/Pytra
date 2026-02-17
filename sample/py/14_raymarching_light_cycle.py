@@ -11,15 +11,9 @@ from py_module.gif_helper import save_gif
 def palette() -> bytes:
     p = bytearray()
     for i in range(256):
-        r = int(20 + i * 0.9)
-        if r > 255:
-            r = 255
-        g = int(10 + i * 0.7)
-        if g > 255:
-            g = 255
-        b = int(30 + i)
-        if b > 255:
-            b = 255
+        r = min(255, int(20 + i * 0.9))
+        g = min(255, int(10 + i * 0.7))
+        b = min(255, int(30 + i))
         p.append(r)
         p.append(g)
         p.append(b)
@@ -41,11 +35,7 @@ def scene(x: float, y: float, light_x: float, light_y: float) -> int:
     lit = 1.0 / (1.0 + 3.5 * l * l)
 
     v = int(255.0 * blob * lit * 5.0)
-    if v < 0:
-        return 0
-    if v > 255:
-        return 255
-    return v
+    return min(255, max(0, v))
 
 
 def run_14_raymarching_light_cycle() -> None:

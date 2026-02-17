@@ -568,7 +568,9 @@ class CSharpTranspiler(BaseTranspiler):
         if isinstance(stmt.op, ast.Pow):
             return [f"{target} = Math.Pow({target}, {value});"]
         if isinstance(stmt.op, ast.FloorDiv):
-            return [f"{target} = ({target} / {value});"]
+            return [f"{target} = Pytra.CsModule.py_runtime.py_floordiv({target}, {value});"]
+        if isinstance(stmt.op, ast.Mod):
+            return [f"{target} = Pytra.CsModule.py_runtime.py_mod({target}, {value});"]
         if isinstance(stmt.op, ast.LShift):
             return [f"{target} = ({target} << (int)({value}));"]
         if isinstance(stmt.op, ast.RShift):
@@ -633,7 +635,11 @@ class CSharpTranspiler(BaseTranspiler):
         return lines
 
     def _transpile_while(self, stmt: ast.While, scope: Scope) -> List[str]:
-        lines = [f"while (Pytra.CsModule.py_runtime.py_bool({self.transpile_expr(stmt.test)}))", "{"]
+        if isinstance(stmt.test, ast.Constant) and isinstance(stmt.test.value, bool):
+            cond = "true" if stmt.test.value else "false"
+            lines = [f"while ({cond})", "{"]
+        else:
+            lines = [f"while (Pytra.CsModule.py_runtime.py_bool({self.transpile_expr(stmt.test)}))", "{"]
         body_lines = self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))
         lines.extend(self._indent_block(body_lines))
         lines.append("}")
@@ -757,7 +763,9 @@ class CSharpTranspiler(BaseTranspiler):
             if isinstance(expr.op, ast.Div):
                 return f"((double)({left}) / (double)({right}))"
             if isinstance(expr.op, ast.FloorDiv):
-                return f"(long)Math.Floor(({left}) / (double)({right}))"
+                return f"Pytra.CsModule.py_runtime.py_floordiv({left}, {right})"
+            if isinstance(expr.op, ast.Mod):
+                return f"Pytra.CsModule.py_runtime.py_mod({left}, {right})"
             if isinstance(expr.op, ast.LShift):
                 return f"({left} << (int)({right}))"
             if isinstance(expr.op, ast.RShift):
@@ -769,9 +777,9 @@ class CSharpTranspiler(BaseTranspiler):
             op = self._boolop(expr.op)
             return "(" + f" {op} ".join(self.transpile_expr(v) for v in expr.values) + ")"
         if isinstance(expr, ast.Compare):
-            if len(expr.ops) != 1 or len(expr.comparators) != 1:
-                return "/* chained-comparison */ false"
-            return self._transpile_compare(expr.left, expr.ops[0], expr.comparators[0])
+            if len(expr.ops) == 1 and len(expr.comparators) == 1:
+                return self._transpile_compare(expr.left, expr.ops[0], expr.comparators[0])
+            return self._transpile_chained_compare(expr)
         if isinstance(expr, ast.Call):
             return self._transpile_call(expr)
         if isinstance(expr, ast.Subscript):
@@ -833,7 +841,7 @@ class CSharpTranspiler(BaseTranspiler):
             return "new List<byte>()"
         if isinstance(call.func, ast.Name) and call.func.id == "int":
             if len(args_list) == 1:
-                return f"(long)({args_list[0]})"
+                return f"Pytra.CsModule.py_runtime.py_int({args_list[0]})"
             return "0"
         if isinstance(call.func, ast.Name) and call.func.id == "float":
             if len(args_list) == 1:
@@ -906,7 +914,7 @@ class CSharpTranspiler(BaseTranspiler):
                 return f"Pytra.CsModule.py_runtime.py_isalpha({self.transpile_expr(call.func.value)})"
             return f"{self.transpile_expr(call.func)}({args})"
 
-        raise TranspileError("Only direct function calls are supported")
+        return f"{self.transpile_expr(call.func)}({args})"
 
     def _map_annotation(self, annotation: ast.expr) -> str:
         # Python側型注釈をC#の型名にマッピングする。
@@ -975,7 +983,13 @@ class CSharpTranspiler(BaseTranspiler):
         if isinstance(value, int):
             return f"{value}L"
         if isinstance(value, str):
-            escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+            escaped = (
+                value.replace("\\", "\\\\")
+                .replace('"', '\\"')
+                .replace("\n", "\\n")
+                .replace("\t", "\\t")
+                .replace("\r", "\\r")
+            )
             return f'"{escaped}"'
         return repr(value)
 
@@ -1036,6 +1050,17 @@ class CSharpTranspiler(BaseTranspiler):
             return f"!object.ReferenceEquals({left}, {right})"
         return f"({left} {self._cmpop(op)} {right})"
 
+    def _transpile_chained_compare(self, expr: ast.Compare) -> str:
+        items: List[str] = []
+        left_node = expr.left
+        for i, op in enumerate(expr.ops):
+            right_node = expr.comparators[i]
+            items.append(self._transpile_compare(left_node, op, right_node))
+            left_node = right_node
+        if len(items) == 0:
+            return "true"
+        return "(" + " && ".join(items) + ")"
+
     def _boolop(self, op: ast.boolop) -> str:
         if isinstance(op, ast.And):
             return "&&"
@@ -1047,7 +1072,15 @@ class CSharpTranspiler(BaseTranspiler):
         parts: List[str] = []
         for value in expr.values:
             if isinstance(value, ast.Constant) and isinstance(value.value, str):
-                parts.append(value.value.replace("{", "{{").replace("}", "}}"))
+                parts.append(
+                    value.value.replace("\\", "\\\\")
+                    .replace('"', '\\"')
+                    .replace("\n", "\\n")
+                    .replace("\t", "\\t")
+                    .replace("\r", "\\r")
+                    .replace("{", "{{")
+                    .replace("}", "}}")
+                )
             elif isinstance(value, ast.FormattedValue):
                 parts.append("{" + self.transpile_expr(value.value) + "}")
             else:

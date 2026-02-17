@@ -10,7 +10,7 @@
 - [x] `bytearray(n)` / `bytes(...)` の初期化と相互変換を Python 互換に強化する。
 - [x] `list.pop()` / `list.pop(index)` の両方に対応する（現在は引数なし中心）。
 - [x] `math` モジュール互換を拡張する（`sin`, `cos`, `exp`, `pi` 以外も含め網羅）。
-- [ ] `gif` 出力ランタイム（`save_gif`, パレット関数）を `py_module` / `cpp_module` 対応で正式仕様化し、テストを追加する。
+- [x] `gif` 出力ランタイム（`save_gif`, パレット関数）を `py_module` / `cpp_module` 対応で正式仕様化し、テストを追加する。
 - [x] 連鎖比較（例: `0 <= x < n`）を AST から正しく展開して変換する。
 
 ## サンプル作成時に判明した追加TODO（05〜14対応）
@@ -41,27 +41,27 @@
 
 ## sample/py/15 追加時に見えた変換器側TODO
 
-- [ ] `int(<str>)` の数値変換を `py2cpp.py` / `py2cs.py` で正しく変換する（手動パース回避）。
-- [ ] 文字列の 1 文字添字（`s[i]`）を Python と整合する形で C++/C# に変換する（`char`/`string` 差の吸収）。
-- [ ] `str` の比較（`"a" <= ch <= "z"` のような範囲比較）を C# 含め正しく変換する。
-- [ ] `while True: ... return ...` 形式で C# 側の「全経路 return」誤検知が出ないよう制御フロー解析を改善する。
-- [ ] 空リスト初期化（`x: list[T] = []`）を C# 側で `List<T>` として安定生成する（`List<object>` への退化を防止）。
-- [ ] メソッド呼び出し経由の型付き空コンテナ生成（`self.new_list()` 等）を常時許容し、`Only direct function calls are supported` を解消する。
-- [ ] `dict` 参照で C++ 側が `const` 扱いになる問題（`env[key]`）を生成側で解決し、入力コードにダミー書き込みを要求しない。
-- [ ] 整数除算 `//` と剰余 `%` の負数挙動を Python と完全一致させる（C++/C# の演算差をランタイム吸収）。
-- [ ] 行連結文字列（`\n` を含む長いソース文字列）からのトークナイズが C++/C# 生成で壊れないよう文字列エスケープ処理を強化する。
-- [ ] 変換器都合で入力 Python を書き換えなくて済むよう、`sample/py/15` で行った回避実装をトランスパイラ側へ吸収する。
+- [x] `int(<str>)` の数値変換を `py2cpp.py` / `py2cs.py` で正しく変換する（手動パース回避）。
+- [x] 文字列の 1 文字添字（`s[i]`）を Python と整合する形で C++/C# に変換する（`char`/`string` 差の吸収）。
+- [x] `str` の比較（`"a" <= ch <= "z"` のような範囲比較）を C# 含め正しく変換する。
+- [x] `while True: ... return ...` 形式で C# 側の「全経路 return」誤検知が出ないよう制御フロー解析を改善する。
+- [x] 空リスト初期化（`x: list[T] = []`）を C# 側で `List<T>` として安定生成する（`List<object>` への退化を防止）。
+- [x] メソッド呼び出し経由の型付き空コンテナ生成（`self.new_list()` 等）を常時許容し、`Only direct function calls are supported` を解消する。
+- [x] `dict` 参照で C++ 側が `const` 扱いになる問題（`env[key]`）を生成側で解決し、入力コードにダミー書き込みを要求しない。
+- [x] 整数除算 `//` と剰余 `%` の負数挙動を Python と完全一致させる（C++/C# の演算差をランタイム吸収）。
+- [x] 行連結文字列（`\n` を含む長いソース文字列）からのトークナイズが C++/C# 生成で壊れないよう文字列エスケープ処理を強化する。
+- [x] 変換器都合で入力 Python を書き換えなくて済むよう、`sample/py/15` で行った回避実装をトランスパイラ側へ吸収する。
 
 ## sample/py の簡潔化候補（Python組み込み活用）
 
-- [ ] `sample/py/15_mini_language_interpreter.py`: 手動の数値文字列パースを `int(token_num.text)` に置き換える。
-- [ ] `sample/py/14_raymarching_light_cycle.py`: `if x > 255: x = 255` 系を `min(255, x)` に統一する（`r`, `g`, `b`, `v`）。
-- [ ] `sample/py/11_lissajous_particles.py`: `if v < 0: v = 0` を `max(0, v)` に置き換える。
-- [ ] `sample/py/09_fire_simulation.py`: 二重ループ初期化を `[[0] * w for _ in range(h)]` に置き換える。
-- [ ] `sample/py/13_maze_generation_steps.py`: `grid` 初期化を `[[1] * cell_w for _ in range(cell_h)]` に置き換える。
-- [ ] `sample/py/13_maze_generation_steps.py`: `while len(stack) > 0` を `while stack` に置き換える。
-- [ ] `sample/py/13_maze_generation_steps.py`: `stack[-1]` を使って末尾要素アクセスを簡潔化する。
-- [ ] `sample/py/12_sort_visualizer.py`: 一時変数スワップをタプル代入（`a, b = b, a`）へ置き換える。
+- [x] `sample/py/15_mini_language_interpreter.py`: 手動の数値文字列パースを `int(token_num.text)` に置き換える。
+- [x] `sample/py/14_raymarching_light_cycle.py`: `if x > 255: x = 255` 系を `min(255, x)` に統一する（`r`, `g`, `b`, `v`）。
+- [x] `sample/py/11_lissajous_particles.py`: `if v < 0: v = 0` を `max(0, v)` に置き換える。
+- [x] `sample/py/09_fire_simulation.py`: 二重ループ初期化を `[[0] * w for _ in range(h)]` に置き換える。
+- [x] `sample/py/13_maze_generation_steps.py`: `grid` 初期化を `[[1] * cell_w for _ in range(cell_h)]` に置き換える。
+- [x] `sample/py/13_maze_generation_steps.py`: `while len(stack) > 0` を `while stack` に置き換える。
+- [x] `sample/py/13_maze_generation_steps.py`: `stack[-1]` を使って末尾要素アクセスを簡潔化する。
+- [x] `sample/py/12_sort_visualizer.py`: 一時変数スワップをタプル代入（`a, b = b, a`）へ置き換える。
 
 ## Go / Java ネイティブ変換の追加TODO
 
@@ -69,14 +69,14 @@
 - [x] `test/py`（case01〜30）を Go/Java ネイティブ変換して、Python 実行結果と一致させる。
 - [ ] Go/Java で、Python 側に型注釈がある変数・引数・戻り値を `any` / `Object` へ退化させず、可能な限り静的型（`int`/`float64`/`string`/`bool`/`[]byte`/`byte[]`/コンテナ型）へ落とす。
 - [ ] Go/Java の `bytes` / `bytearray` 型注釈を優先して `[]byte` / `byte[]` へ反映し、`any` / `Object` ベース実装は型未確定ケースのみに限定する。
-- [ ] `sample/py` で使っている `math` モジュール呼び出し（`sqrt`, `sin`, `cos` など）を Go/Java ネイティブ変換で対応する。
-- [ ] `sample/py` で使っている `png_helper.write_rgb_png` の Go/Java ランタイム実装を追加する。
-- [ ] `sample/py` で使っている `gif_helper.save_gif` / `grayscale_palette` の Go/Java ランタイム実装を追加する。
+- [x] `sample/py` で使っている `math` モジュール呼び出し（`sqrt`, `sin`, `cos` など）を Go/Java ネイティブ変換で対応する。
+- [x] `sample/py` で使っている `png_helper.write_rgb_png` の Go/Java ランタイム実装を追加する。
+- [x] `sample/py` で使っている `gif_helper.save_gif` / `grayscale_palette` の Go/Java ランタイム実装を追加する。
 
 ## Rust 追加TODO（現時点）
 
 - [ ] `src/rs_module/py_runtime.rs` の `py_write_rgb_png` で、Python 側 `png_helper.write_rgb_png` とバイナリ完全一致（IDAT 圧縮形式を含む）を実現する。
-- [ ] `py2rs.py` の `use py_runtime::{...}` 生成を使用関数ベースに最適化し、未使用 import 警告を削減する。
+- [x] `py2rs.py` の `use py_runtime::{...}` 生成を使用関数ベースに最適化し、未使用 import 警告を削減する。
 
 ## 言語間ランタイム平準化 TODO
 

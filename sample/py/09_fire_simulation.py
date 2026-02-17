@@ -38,12 +38,7 @@ def run_09_fire_simulation() -> None:
     out_path = "sample/out/09_fire_simulation.gif"
 
     start = perf_counter()
-    heat: list[list[int]] = []
-    for _ in range(h):
-        row: list[int] = []
-        for _ in range(w):
-            row.append(0)
-        heat.append(row)
+    heat: list[list[int]] = [[0] * w for _ in range(h)]
     frames: list[bytes] = []
 
     for t in range(steps):

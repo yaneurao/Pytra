@@ -30,12 +30,7 @@ def run_13_maze_generation_steps() -> None:
     out_path = "sample/out/13_maze_generation_steps.gif"
 
     start = perf_counter()
-    grid: list[list[int]] = []
-    for _ in range(cell_h):
-        row: list[int] = []
-        for _ in range(cell_w):
-            row.append(1)
-        grid.append(row)
+    grid: list[list[int]] = [[1] * cell_w for _ in range(cell_h)]
     stack: list[tuple[int, int]] = [(1, 1)]
     grid[1][1] = 0
 
@@ -43,9 +38,8 @@ def run_13_maze_generation_steps() -> None:
     frames: list[bytes] = []
     step = 0
 
-    while len(stack) > 0:
-        last_index = len(stack) - 1
-        x, y = stack[last_index]
+    while stack:
+        x, y = stack[-1]
         candidates: list[tuple[int, int, int, int]] = []
         for k in range(4):
             dx, dy = dirs[k]

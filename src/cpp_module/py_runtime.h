@@ -239,6 +239,27 @@ inline auto py_floordiv(A lhs, B rhs) {
 }
 
 template <typename A, typename B>
+inline auto py_mod(A lhs, B rhs) {
+    using Ret = std::common_type_t<A, B>;
+    if constexpr (std::is_integral_v<A> && std::is_integral_v<B>) {
+        if (rhs == 0) {
+            throw std::runtime_error("integer modulo by zero");
+        }
+        Ret r = static_cast<Ret>(lhs % rhs);
+        if (r != 0 && ((r > 0) != (rhs > 0))) {
+            r += static_cast<Ret>(rhs);
+        }
+        return r;
+    } else {
+        double x = std::fmod(static_cast<double>(lhs), static_cast<double>(rhs));
+        if (x != 0.0 && ((x > 0.0) != (static_cast<double>(rhs) > 0.0))) {
+            x += static_cast<double>(rhs);
+        }
+        return x;
+    }
+}
+
+template <typename A, typename B>
 inline auto py_pow(A lhs, B rhs) {
     return std::pow(static_cast<double>(lhs), static_cast<double>(rhs));
 }
@@ -313,6 +334,73 @@ inline std::string py_slice(
 
 inline std::vector<std::uint8_t> py_bytearray() {
     return std::vector<std::uint8_t>();
+}
+
+inline long long py_int(const std::string& value) {
+    std::size_t pos = 0;
+    long long parsed = std::stoll(value, &pos, 10);
+    if (pos != value.size()) {
+        throw std::runtime_error("invalid literal for int()");
+    }
+    return parsed;
+}
+
+inline long long py_int(const char* value) {
+    return py_int(std::string(value));
+}
+
+template <typename T>
+inline long long py_int(const T& value) {
+    return static_cast<long long>(value);
+}
+
+template <typename T>
+inline T& py_get(std::vector<T>& source, long long index_like) {
+    long long idx = index_like;
+    if (idx < 0) {
+        idx += static_cast<long long>(source.size());
+    }
+    if (idx < 0 || idx >= static_cast<long long>(source.size())) {
+        throw std::out_of_range("list index out of range");
+    }
+    return source[static_cast<std::size_t>(idx)];
+}
+
+template <typename T>
+inline const T& py_get(const std::vector<T>& source, long long index_like) {
+    long long idx = index_like;
+    if (idx < 0) {
+        idx += static_cast<long long>(source.size());
+    }
+    if (idx < 0 || idx >= static_cast<long long>(source.size())) {
+        throw std::out_of_range("list index out of range");
+    }
+    return source[static_cast<std::size_t>(idx)];
+}
+
+inline std::string py_get(const std::string& source, long long index_like) {
+    long long idx = index_like;
+    if (idx < 0) {
+        idx += static_cast<long long>(source.size());
+    }
+    if (idx < 0 || idx >= static_cast<long long>(source.size())) {
+        throw std::out_of_range("string index out of range");
+    }
+    return std::string(1, source[static_cast<std::size_t>(idx)]);
+}
+
+template <typename K, typename V>
+inline V& py_get(std::unordered_map<K, V>& source, const K& key) {
+    return source[key];
+}
+
+template <typename K, typename V>
+inline const V& py_get(const std::unordered_map<K, V>& source, const K& key) {
+    auto it = source.find(key);
+    if (it == source.end()) {
+        throw std::out_of_range("key not found");
+    }
+    return it->second;
 }
 
 inline std::vector<std::uint8_t> py_bytearray(int n) {
