@@ -29,11 +29,41 @@
 
 ## 対応module
 
-- Python 標準ライブラリ（主要サブセット）:
-  - `math`, `time`, `pathlib`, `dataclasses`, `ast`
+Python標準ライブラリは「モジュール名だけ」でなく、対応関数を次のように限定します（未記載は未対応扱い）。
+
+- `math`
+  - 共通サブセット（主要ターゲットで利用実績あり）:
+    - `sqrt`, `sin`, `cos`, `exp`, `floor`
+    - 定数: `pi`, `e`
+  - C++ 追加実装（`src/cpp_module/math.*`）:
+    - `tan`, `log`, `log10`, `fabs`, `ceil`, `pow`
+- `time`
+  - `perf_counter`
+- `pathlib`
+  - C++ 実装（`src/cpp_module/pathlib.h/.cpp`）:
+    - `Path.resolve()`
+    - `Path.parent` / `Path.parents[index]`
+    - `Path / "child"`（パス連結）
+    - `Path.read_text()`, `Path.write_text()`
+    - `Path.mkdir(parents_flag, exist_ok)`
+    - `Path.name()`, `Path.stem()`, `str(Path)`
+  - C# は `System.IO` へのマッピング中心で、`pathlib` 完全互換ではありません。
+- `dataclasses`
+  - `@dataclass` デコレータ（変換時展開）
+  - C++ ランタイム補助（最小）:
+    - `dataclass(...)`, `DataclassTag`, `is_dataclass_v`
+- `ast`
+  - C++ 実装（`src/cpp_module/ast.*`）:
+    - `parse(source, filename)`
+    - `parse_file(path)`
+    - 主要ノード型（`Module`, `FunctionDef`, `ClassDef`, `Assign`, `Call` など）
+
 - 自作ライブラリ:
   - `py_module.png_helper`
+    - `write_rgb_png(path, width, height, pixels)`
   - `py_module.gif_helper`
+    - `save_gif(path, width, height, frames, palette, delay_cs, loop)`
+    - `grayscale_palette()`
 - ターゲット言語ごとのランタイム:
   - `src/cpp_module`, `src/cs_module`, `src/rs_module`
   - `src/js_module`, `src/ts_module`

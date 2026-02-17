@@ -234,6 +234,8 @@ python -m unittest discover -s test -p "test_*.py" -v
   - `README.md` はユーザー向けの一次情報として扱います。機能追加・仕様変更・手順変更時は、必要に応じて `README.md` を更新します。
   - `README.md` からリンクされるドキュメント（`docs/how-to-use.md`, `docs/sample-code.md`, `docs/spec.md` など）も整合性を確認し、必要なら同時に更新します。
   - 実装とドキュメントの内容が不一致にならないことを、変更完了条件に含めます。
+  - 標準ライブラリ対応の記載は、`math` のようなモジュール名だけを列挙してはなりません。`docs/pytra-readme.md` には、モジュールごとに対応済み関数（必要なら定数・クラス・メソッド）を明示します。
+  - ドキュメントに未記載の関数は「未対応扱い」とし、実装済みとみなさないことを原則とします。
 - 現在の `py2rs.py` はネイティブ変換モードです。生成 Rust は Python インタプリタを呼び出しません。未対応構文は `TranspileError` で失敗します。
 - 現在の `py2js.py` / `py2ts.py` はネイティブ変換モードです。生成 JS/TS は Python インタプリタを呼び出さず、Node.js ランタイムのみで実行します。
 - 現在の `py2go.py` / `py2java.py` はネイティブ変換モードです。生成 Go/Java は Python インタプリタを呼び出しません。
