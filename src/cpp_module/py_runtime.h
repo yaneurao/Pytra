@@ -81,7 +81,44 @@ private:
 };
 
 template <class T>
-using list = std::vector<T>;
+class list : public std::vector<T> {
+public:
+    using std::vector<T>::vector;
+    using typename std::vector<T>::const_iterator;
+    using typename std::vector<T>::iterator;
+
+    void append(const T& value) { this->push_back(value); }
+    void append(T&& value) { this->push_back(std::move(value)); }
+
+    template <class U>
+    void extend(const U& values) {
+        this->insert(this->end(), values.begin(), values.end());
+    }
+
+    T pop() {
+        if (this->empty()) {
+            throw std::out_of_range("pop from empty list");
+        }
+        T out = this->back();
+        this->pop_back();
+        return out;
+    }
+
+    T pop(int64 idx) {
+        if (this->empty()) {
+            throw std::out_of_range("pop from empty list");
+        }
+        if (idx < 0) idx += static_cast<int64>(this->size());
+        if (idx < 0 || idx >= static_cast<int64>(this->size())) {
+            throw std::out_of_range("pop index out of range");
+        }
+        T out = (*this)[static_cast<std::size_t>(idx)];
+        this->erase(this->begin() + idx);
+        return out;
+    }
+};
+
+using bytearray = list<uint8>;
 
 template <class K, class V>
 using dict = std::unordered_map<K, V>;
@@ -313,7 +350,8 @@ static inline void write_rgb_png(const str& path, int64 width, int64 height, con
 }
 
 static inline list<uint8> grayscale_palette() {
-    return pycs::cpp_module::gif::grayscale_palette();
+    auto raw = pycs::cpp_module::gif::grayscale_palette();
+    return list<uint8>(raw.begin(), raw.end());
 }
 
 static inline void save_gif(
@@ -325,13 +363,23 @@ static inline void save_gif(
     int64 delay_cs = 4,
     int64 loop = 0
 ) {
-    const auto pal = palette.empty() ? pycs::cpp_module::gif::grayscale_palette() : palette;
+    std::vector<std::vector<uint8>> raw_frames;
+    raw_frames.reserve(frames.size());
+    for (const auto& frame : frames) {
+        raw_frames.emplace_back(frame.begin(), frame.end());
+    }
+    std::vector<uint8> raw_pal;
+    if (palette.empty()) {
+        raw_pal = pycs::cpp_module::gif::grayscale_palette();
+    } else {
+        raw_pal.assign(palette.begin(), palette.end());
+    }
     pycs::cpp_module::gif::save_gif(
         path,
         static_cast<int>(width),
         static_cast<int>(height),
-        frames,
-        pal,
+        raw_frames,
+        raw_pal,
         static_cast<int>(delay_cs),
         static_cast<int>(loop)
     );
@@ -345,26 +393,12 @@ static inline float64 perf_counter() {
 
 template <class T>
 static inline T py_pop(list<T>& v) {
-    if (v.empty()) {
-        throw std::out_of_range("pop from empty list");
-    }
-    T out = v.back();
-    v.pop_back();
-    return out;
+    return v.pop();
 }
 
 template <class T>
 static inline T py_pop(list<T>& v, int64 idx) {
-    if (v.empty()) {
-        throw std::out_of_range("pop from empty list");
-    }
-    if (idx < 0) idx += static_cast<int64>(v.size());
-    if (idx < 0 || idx >= static_cast<int64>(v.size())) {
-        throw std::out_of_range("pop index out of range");
-    }
-    T out = v[static_cast<std::size_t>(idx)];
-    v.erase(v.begin() + idx);
-    return out;
+    return v.pop(idx);
 }
 
 template <class A, class B>
@@ -393,9 +427,9 @@ static inline list<int64> py_range(int64 start, int64 stop, int64 step) {
     list<int64> out;
     if (step == 0) return out;
     if (step > 0) {
-        for (int64 i = start; i < stop; i += step) out.push_back(i);
+        for (int64 i = start; i < stop; i += step) out.append(i);
     } else {
-        for (int64 i = start; i > stop; i += step) out.push_back(i);
+        for (int64 i = start; i > stop; i += step) out.append(i);
     }
     return out;
 }

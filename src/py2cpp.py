@@ -959,7 +959,7 @@ class CppEmitter:
                 if runtime_call == "list.append":
                     owner = self.render_expr((fn or {}).get("value"))
                     a0 = args[0] if len(args) >= 1 else "/* missing */"
-                    return f"{owner}.push_back({a0})"
+                    return f"{owner}.append({a0})"
                 if runtime_call == "list.extend":
                     owner = self.render_expr((fn or {}).get("value"))
                     a0 = args[0] if len(args) >= 1 else "{}"
@@ -992,7 +992,7 @@ class CppEmitter:
                 if isinstance(runtime_call, str) and runtime_call.startswith("std::"):
                     return f"{runtime_call}({', '.join(args)})"
                 if builtin_name in {"bytes", "bytearray"}:
-                    return f"list<uint8>({', '.join(args)})" if len(args) >= 1 else "list<uint8>{}"
+                    return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
             if fn.get("kind") == "Name":
                 raw = fn.get("id")
                 if raw == "range":
@@ -1002,7 +1002,7 @@ class CppEmitter:
                 if raw == "len" and len(args) == 1:
                     return f"py_len({args[0]})"
                 if raw in {"bytes", "bytearray"}:
-                    return f"list<uint8>({', '.join(args)})" if len(args) >= 1 else "list<uint8>{}"
+                    return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
                 if raw == "str" and len(args) == 1:
                     src_expr = (expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None
                     return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
@@ -1075,7 +1075,7 @@ class CppEmitter:
                 if owner_t.startswith("list["):
                     if attr == "append":
                         a0 = args[0] if len(args) >= 1 else "/* missing */"
-                        return f"{owner_expr}.push_back({a0})"
+                        return f"{owner_expr}.append({a0})"
                     if attr == "extend":
                         a0 = args[0] if len(args) >= 1 else "{}"
                         return f"{owner_expr}.insert({owner_expr}.end(), {a0}.begin(), {a0}.end())"
@@ -1101,7 +1101,7 @@ class CppEmitter:
                 if owner_t == "unknown":
                     if attr == "append":
                         a0 = args[0] if len(args) >= 1 else "/* missing */"
-                        return f"{owner_expr}.push_back({a0})"
+                        return f"{owner_expr}.append({a0})"
                     if attr == "extend":
                         a0 = args[0] if len(args) >= 1 else "{}"
                         return f"{owner_expr}.insert({owner_expr}.end(), {a0}.begin(), {a0}.end())"
@@ -1377,10 +1377,10 @@ class CppEmitter:
                 lines.append(f"    for (auto {tgt} : {it}) {{")
             ifs = g.get("ifs", [])
             if len(ifs) == 0:
-                lines.append(f"        __out.push_back({elt});")
+                lines.append(f"        __out.append({elt});")
             else:
                 cond = " && ".join(self.render_expr(c) for c in ifs)
-                lines.append(f"        if ({cond}) __out.push_back({elt});")
+                lines.append(f"        if ({cond}) __out.append({elt});")
             lines.append("    }")
             lines.append("    return __out;")
             lines.append("}()")
@@ -1424,6 +1424,8 @@ class CppEmitter:
         if east_type.startswith("list[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[5:-1])
             if len(inner) == 1:
+                if inner[0] == "uint8":
+                    return "bytearray"
                 return f"list<{self.cpp_type(inner[0])}>"
         if east_type.startswith("set[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[4:-1])

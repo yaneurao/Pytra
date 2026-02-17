@@ -2275,6 +2275,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 ln_no, ln_txt = block[k]
                 s2 = re.sub(r"\s+#.*$", "", ln_txt).strip()
                 bind = len(ln_txt) - len(ln_txt.lstrip(" "))
+                if s2 == "":
+                    k += 1
+                    continue
                 if bind == cls_indent + 4:
                     m_field = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", s2)
                     if m_field is not None:

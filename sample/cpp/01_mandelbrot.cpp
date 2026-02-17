@@ -31,9 +31,9 @@ std::tuple<int64, int64, int64> color_map(int64 iter_count, int64 max_iter) {
     return std::make_tuple(r, g, b);
 }
 
-list<uint8> render_mandelbrot(int64 width, int64 height, int64 max_iter, float64 x_min, float64 x_max, float64 y_min, float64 y_max) {
+bytearray render_mandelbrot(int64 width, int64 height, int64 max_iter, float64 x_min, float64 x_max, float64 y_min, float64 y_max) {
     /* ""マンデルブロ画像の RGB バイト列を生成する。"" */
-    list<uint8> pixels = list<uint8>{};
+    bytearray pixels = bytearray{};
     
     for (int64 y = 0; y < height; ++y) {
         float64 py = y_min + (y_max - y_min) * static_cast<float64>(y) / (static_cast<float64>(height - 1));
@@ -54,9 +54,9 @@ list<uint8> render_mandelbrot(int64 width, int64 height, int64 max_iter, float64
                 g = int64(255.0 * t);
                 b = int64(255.0 * (1.0 - t));
             }
-            pixels.push_back(r);
-            pixels.push_back(g);
-            pixels.push_back(b);
+            pixels.append(r);
+            pixels.append(g);
+            pixels.append(b);
         }
     }
     
@@ -71,7 +71,7 @@ void run_mandelbrot() {
     
     float64 start = perf_counter();
     
-    list<uint8> pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
+    bytearray pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
     png_helper::write_rgb_png(out_path, width, height, pixels);
     
     float64 elapsed = perf_counter() - start;
