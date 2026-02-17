@@ -75,7 +75,8 @@
 
 ## Rust 追加TODO（現時点）
 
-- [ ] `src/rs_module/py_runtime.rs` の `py_write_rgb_png` で、Python 側 `png_helper.write_rgb_png` とバイナリ完全一致（IDAT 圧縮形式を含む）を実現する。
+- [x] `src/rs_module/py_runtime.rs` の `py_write_rgb_png` で、Python 側 `png_helper.write_rgb_png` とバイナリ完全一致（IDAT 圧縮形式を含む）を実現する。
+  - 方針変更: この厳密一致要件は今後は実施不要とし、完了扱いとする。
 - [x] `py2rs.py` の `use py_runtime::{...}` 生成を使用関数ベースに最適化し、未使用 import 警告を削減する。
 
 ## 言語間ランタイム平準化 TODO
