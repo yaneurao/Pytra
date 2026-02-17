@@ -222,6 +222,26 @@ if __name__ == "__main__":
             cpp_bytes = cpp_gif.read_bytes()
             self.assertEqual(py_bytes, cpp_bytes)
 
+    def test_class_storage_strategy_case15_case34(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+
+            case15_py = ROOT / "test/py/case15_class_member.py"
+            case15_cpp = work / "case15.cpp"
+            transpile(str(case15_py), str(case15_cpp))
+            case15_txt = case15_cpp.read_text(encoding="utf-8")
+            self.assertIn("struct Counter {", case15_txt)
+            self.assertIn("Counter c = Counter();", case15_txt)
+            self.assertNotIn("rc<Counter>", case15_txt)
+
+            case34_py = ROOT / "test/py/case34_gc_reassign.py"
+            case34_cpp = work / "case34.cpp"
+            transpile(str(case34_py), str(case34_cpp))
+            case34_txt = case34_cpp.read_text(encoding="utf-8")
+            self.assertIn("struct Tracked : public PyObj {", case34_txt)
+            self.assertIn("rc<Tracked> a = rc_new<Tracked>(\"A\");", case34_txt)
+            self.assertIn("a = b;", case34_txt)
+
 
 if __name__ == "__main__":
     unittest.main()

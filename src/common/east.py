@@ -59,8 +59,8 @@ def _sh_ann_to_type(ann: str) -> str:
         "bool": "bool",
         "str": "str",
         "None": "None",
-        "bytes": "list[uint8]",
-        "bytearray": "list[uint8]",
+        "bytes": "bytes",
+        "bytearray": "bytearray",
     }
     txt = ann.strip()
     if txt in mapping:
@@ -531,6 +531,10 @@ class _ShExprParser:
                         call_ret = "int64"
                     elif fn_name == "range":
                         call_ret = "range"
+                    elif fn_name == "bytes":
+                        call_ret = "bytes"
+                    elif fn_name == "bytearray":
+                        call_ret = "bytearray"
                     elif fn_name in {"Exception", "RuntimeError"}:
                         call_ret = "Exception"
                     elif fn_name in self.fn_return_types:
@@ -2432,6 +2436,27 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "field_types": field_types,
                 "body": class_body,
             }
+            static_field_names: set[str] = set()
+            if not pending_dataclass:
+                for st in class_body:
+                    if st.get("kind") == "AnnAssign":
+                        tgt = st.get("target")
+                        if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                            fname = str(tgt.get("id", ""))
+                            if fname != "":
+                                static_field_names.add(fname)
+            has_del = any(
+                isinstance(st, dict) and st.get("kind") == "FunctionDef" and st.get("name") == "__del__"
+                for st in class_body
+            )
+            instance_field_names = {k for k in field_types.keys() if k not in static_field_names}
+            # conservative hint:
+            # - classes with instance state / __del__ / inheritance should keep reference semantics
+            # - stateless, non-inherited classes can be value candidates
+            if len(instance_field_names) == 0 and not has_del and not isinstance(base, str):
+                cls_item["class_storage_hint"] = "value"
+            else:
+                cls_item["class_storage_hint"] = "ref"
             pending_dataclass = False
             if not first_item_attached:
                 cls_item["leading_comments"] = list(leading_file_comments)

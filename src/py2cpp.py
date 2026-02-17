@@ -94,6 +94,10 @@ class CppEmitter:
         self.current_class_static_fields: set[str] = set()
         self.class_method_names: dict[str, set[str]] = {}
         self.class_base: dict[str, str | None] = {}
+        self.class_names: set[str] = set()
+        self.class_storage_hints: dict[str, str] = {}
+        self.ref_classes: set[str] = set()
+        self.value_classes: set[str] = set()
         self.bridge_comment_emitted: set[str] = set()
 
     def emit(self, line: str = "") -> None:
@@ -122,68 +126,22 @@ class CppEmitter:
         trivia = stmt.get("leading_trivia")
         return isinstance(trivia, list) and len(trivia) > 0
 
-    def _stmt_layout_group(self, stmt: dict[str, Any]) -> str | None:
-        kind = str(stmt.get("kind", ""))
-        if kind == "AnnAssign":
-            return "decl"
-        if kind == "Assign":
-            if bool(stmt.get("declare", False)):
-                return "decl"
-            return "assign"
-        if kind in {"AugAssign", "Swap"}:
-            return "assign"
-        if kind == "Expr":
-            value = stmt.get("value")
-            if isinstance(value, dict) and value.get("kind") == "Call":
-                fn = value.get("func")
-                if isinstance(fn, dict):
-                    if fn.get("kind") == "Name" and str(fn.get("id", "")) in {"print", "save_gif", "write_rgb_png"}:
-                        return "io"
-                    if fn.get("kind") == "Attribute":
-                        owner = fn.get("value")
-                        owner_name = ""
-                        if isinstance(owner, dict) and owner.get("kind") == "Name":
-                            owner_name = str(owner.get("id", ""))
-                        attr = str(fn.get("attr", ""))
-                        if (owner_name == "png_helper" and attr == "write_rgb_png") or (
-                            owner_name == "gif_helper" and attr == "save_gif"
-                        ):
-                            return "io"
-            return "expr"
-        return None
-
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         prev_end: int | None = None
-        prev_group: str | None = None
         for stmt in stmts:
             start = self._stmt_start_line(stmt)
-            source_gap = False
             if (
                 prev_end is not None
                 and start is not None
                 and start > prev_end + 1
                 and not self._has_leading_trivia(stmt)
             ):
-                source_gap = True
                 for _ in range(start - prev_end - 1):
                     self.emit()
-            cur_group = self._stmt_layout_group(stmt)
-            if (
-                prev_group is not None
-                and cur_group is not None
-                and prev_group != cur_group
-                and prev_group in {"decl", "assign", "io"}
-                and cur_group in {"decl", "assign", "io"}
-                and not source_gap
-                and not self._has_leading_trivia(stmt)
-            ):
-                self.emit()
             self.emit_stmt(stmt)
             end = self._stmt_end_line(stmt)
             if end is not None:
                 prev_end = end
-            if cur_group is not None:
-                prev_group = cur_group
 
     def emit_block_comment(self, text: str) -> None:
         """Emit line comments for docstring-like standalone strings."""
@@ -248,13 +206,27 @@ class CppEmitter:
             if stmt.get("kind") == "ClassDef":
                 cls_name = str(stmt.get("name", ""))
                 if cls_name != "":
+                    self.class_names.add(cls_name)
                     mset: set[str] = set()
                     for s in stmt.get("body", []):
                         if s.get("kind") == "FunctionDef":
-                            mset.add(str(s.get("name")))
+                            fn_name = str(s.get("name"))
+                            mset.add(fn_name)
                     self.class_method_names[cls_name] = mset
                     base = stmt.get("base")
                     self.class_base[cls_name] = str(base) if isinstance(base, str) else None
+                    hint = str(stmt.get("class_storage_hint", "ref"))
+                    self.class_storage_hints[cls_name] = hint if hint in {"value", "ref"} else "ref"
+
+        self.ref_classes = {name for name, hint in self.class_storage_hints.items() if hint == "ref"}
+        changed = True
+        while changed:
+            changed = False
+            for name, base in self.class_base.items():
+                if isinstance(base, str) and base != "" and base in self.ref_classes and name not in self.ref_classes:
+                    self.ref_classes.add(name)
+                    changed = True
+        self.value_classes = set(self.class_names) - set(self.ref_classes)
 
         self.emit_module_leading_trivia()
         self.emit(CPP_HEADER.rstrip("\n"))
@@ -471,7 +443,7 @@ class CppEmitter:
         if kind == "Swap":
             left = self.render_expr(stmt.get("left"))
             right = self.render_expr(stmt.get("right"))
-            self.emit(f"py_swap({left}, {right});")
+            self.emit(f"std::swap({left}, {right});")
             return
         if kind == "AnnAssign":
             t = self.cpp_type(stmt.get("annotation"))
@@ -643,6 +615,17 @@ class CppEmitter:
             self.emit("/* invalid assign */")
             return
         if target.get("kind") == "Tuple":
+            lhs_elems = list(target.get("elements", []))
+            if isinstance(value, dict) and value.get("kind") == "Tuple":
+                rhs_elems = list(value.get("elements", []))
+                if (
+                    len(lhs_elems) == 2
+                    and len(rhs_elems) == 2
+                    and self._expr_repr_eq(lhs_elems[0], rhs_elems[1])
+                    and self._expr_repr_eq(lhs_elems[1], rhs_elems[0])
+                ):
+                    self.emit(f"std::swap({self.render_lvalue(lhs_elems[0])}, {self.render_lvalue(lhs_elems[1])});")
+                    return
             tmp = self.next_tmp("__tuple")
             self.emit(f"auto {tmp} = {self.render_expr(value)};")
             tuple_elem_types: list[str] = []
@@ -670,6 +653,15 @@ class CppEmitter:
 
     def is_plain_name_expr(self, expr: dict[str, Any] | None) -> bool:
         return isinstance(expr, dict) and expr.get("kind") == "Name"
+
+    def _expr_repr_eq(self, a: dict[str, Any] | None, b: dict[str, Any] | None) -> bool:
+        if not isinstance(a, dict) or not isinstance(b, dict):
+            return False
+        ra = a.get("repr")
+        rb = b.get("repr")
+        if not isinstance(ra, str) or not isinstance(rb, str):
+            return False
+        return ra.strip() == rb.strip()
 
     def render_lvalue(self, expr: dict[str, Any] | None) -> str:
         if not isinstance(expr, dict):
@@ -803,6 +795,8 @@ class CppEmitter:
             fn_scope.add(n)
         if in_class and name == "__init__" and self.current_class_name is not None:
             self.emit(f"{self.current_class_name}({', '.join(params)}) {{")
+        elif in_class and name == "__del__" and self.current_class_name is not None:
+            self.emit(f"~{self.current_class_name}() {{")
         else:
             self.emit(f"{ret} {name}({', '.join(params)}) {{")
         self.indent += 1
@@ -819,7 +813,15 @@ class CppEmitter:
         name = stmt.get("name", "Class")
         is_dataclass = bool(stmt.get("dataclass", False))
         base = stmt.get("base")
-        base_txt = f" : public {base}" if isinstance(base, str) and base != "" else ""
+        cls_name = str(name)
+        gc_managed = cls_name in self.ref_classes
+        bases: list[str] = []
+        if isinstance(base, str) and base != "":
+            bases.append(f"public {base}")
+        base_is_gc = isinstance(base, str) and base in self.ref_classes
+        if gc_managed and not base_is_gc:
+            bases.append("public PyObj")
+        base_txt = "" if len(bases) == 0 else " : " + ", ".join(bases)
         self.emit(f"struct {name}{base_txt} {{")
         self.indent += 1
         prev_class = self.current_class_name
@@ -931,6 +933,8 @@ class CppEmitter:
                 if attr == "e":
                     return "py_math::e"
             bt = self.get_expr_type(expr.get("value"))
+            if bt in self.ref_classes:
+                return f"{base}->{attr}"
             if bt == "Path":
                 if attr == "name":
                     return f"{base}.name()"
@@ -1072,17 +1076,23 @@ class CppEmitter:
                     return f"{owner}.clear()"
                 if isinstance(runtime_call, str) and runtime_call.startswith("std::"):
                     return f"{runtime_call}({', '.join(args)})"
-                if builtin_name in {"bytes", "bytearray"}:
+                if builtin_name == "bytes":
+                    return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
+                if builtin_name == "bytearray":
                     return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
             if fn.get("kind") == "Name":
                 raw = fn.get("id")
                 if raw == "range":
                     raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
+                if isinstance(raw, str) and raw in self.ref_classes:
+                    return f"rc_new<{raw}>({', '.join(args)})"
                 if raw == "print":
                     return f"py_print({', '.join(args)})"
                 if raw == "len" and len(args) == 1:
                     return f"py_len({args[0]})"
-                if raw in {"bytes", "bytearray"}:
+                if raw == "bytes":
+                    return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
+                if raw == "bytearray":
                     return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
                 if raw == "str" and len(args) == 1:
                     src_expr = (expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None
@@ -1533,6 +1543,10 @@ class CppEmitter:
     def cpp_type(self, east_type: str | None) -> str:
         if east_type is None:
             return "auto"
+        if east_type in self.ref_classes:
+            return f"rc<{east_type}>"
+        if east_type in self.class_names:
+            return east_type
         if east_type == "None":
             return "void"
         if east_type in {
@@ -1548,6 +1562,8 @@ class CppEmitter:
             "float64",
             "bool",
             "str",
+            "bytes",
+            "bytearray",
         }:
             return east_type
         if east_type == "Path":

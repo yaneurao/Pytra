@@ -25,6 +25,15 @@
 #include "cpp_module/png.h"
 
 namespace py_math = pycs::cpp_module::math;
+using PyObj = pycs::gc::PyObj;
+
+template <class T>
+using rc = pycs::gc::RcHandle<T>;
+
+template <class T, class... Args>
+static inline rc<T> rc_new(Args&&... args) {
+    return rc<T>::adopt(pycs::gc::rc_new<T>(std::forward<Args>(args)...));
+}
 
 using int8 = std::int8_t;
 using uint8 = std::uint8_t;
@@ -119,6 +128,7 @@ public:
 };
 
 using bytearray = list<uint8>;
+using bytes = bytearray;
 
 template <class K, class V>
 using dict = std::unordered_map<K, V>;
@@ -264,11 +274,6 @@ static inline auto py_floordiv(A lhs, B rhs) {
     } else {
         return std::floor(static_cast<float64>(lhs) / static_cast<float64>(rhs));
     }
-}
-
-template <class T>
-static inline void py_swap(T& a, T& b) {
-    std::swap(a, b);
 }
 
 template <class F>
