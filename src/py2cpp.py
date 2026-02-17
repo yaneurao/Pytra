@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -378,7 +379,19 @@ class CppEmitter:
             if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
                 self.emit_block_comment(str(value.get("value")))
             else:
-                self.emit(self.render_expr(value) + ";")
+                rendered = self.render_expr(value)
+                # Guard against stray identifier-only expression statements (e.g. "r;").
+                if isinstance(rendered, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", rendered):
+                    if rendered == "break":
+                        self.emit("break;")
+                    elif rendered == "continue":
+                        self.emit("continue;")
+                    elif rendered == "pass":
+                        self.emit("/* pass */")
+                    else:
+                        self.emit(f"/* omitted bare identifier expression: {rendered} */")
+                else:
+                    self.emit(rendered + ";")
             return
         if kind == "Return":
             v = stmt.get("value")
@@ -1027,6 +1040,15 @@ class CppEmitter:
                     return f"std::runtime_error({args[0]})"
                 if raw == "Path":
                     return f"Path({', '.join(args)})"
+                if raw == "save_gif":
+                    path = args[0] if len(args) >= 1 else '""'
+                    w = args[1] if len(args) >= 2 else "0"
+                    h = args[2] if len(args) >= 3 else "0"
+                    frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
+                    palette = args[4] if len(args) >= 5 else "grayscale_palette()"
+                    delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
+                    loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
+                    return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
             if fn.get("kind") == "Attribute":
                 owner = fn.get("value")
                 owner_t = self.get_expr_type(owner)
@@ -1052,6 +1074,17 @@ class CppEmitter:
                         return f"{math_map[attr]}({', '.join(args)})"
                 if owner_expr == "png_helper" and attr == "write_rgb_png":
                     return f"png_helper::write_rgb_png({', '.join(args)})"
+                if owner_expr == "gif_helper" and attr == "save_gif":
+                    path = args[0] if len(args) >= 1 else '""'
+                    w = args[1] if len(args) >= 2 else "0"
+                    h = args[2] if len(args) >= 3 else "0"
+                    frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
+                    palette = args[4] if len(args) >= 5 else "grayscale_palette()"
+                    if palette == "nullptr":
+                        palette = "grayscale_palette()"
+                    delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
+                    loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
+                    return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
                 if owner_t == "Path":
                     if attr == "mkdir":
                         parents = kw.get("parents", "false")

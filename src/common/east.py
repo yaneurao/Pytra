@@ -2319,6 +2319,19 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         m = k + 1
                         while m < len(block):
                             n_no, n_txt = block[m]
+                            if n_txt.strip() == "":
+                                t = m + 1
+                                while t < len(block) and block[t][1].strip() == "":
+                                    t += 1
+                                if t >= len(block):
+                                    break
+                                t_txt = block[t][1]
+                                t_indent = len(t_txt) - len(t_txt.lstrip(" "))
+                                if t_indent <= bind:
+                                    break
+                                method_block.append((n_no, n_txt))
+                                m += 1
+                                continue
                             n_indent = len(n_txt) - len(n_txt.lstrip(" "))
                             if n_indent <= bind:
                                 break

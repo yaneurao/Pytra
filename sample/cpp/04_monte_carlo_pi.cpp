@@ -1,18 +1,17 @@
 #include "cpp_module/py_runtime.h"
 
+// 04: 整数演算のみで大きなグリッドを走査し、チェックサムを計算するサンプルです。
+// 浮動小数点誤差の影響を避け、言語間で比較しやすいベンチマークにします。
 
 int64 run_integer_grid_checksum(int64 width, int64 height, int64 seed) {
-    int64 row_sum;
-    int64 v;
-    
     int64 mod_main = 2147483647;
     int64 mod_out = 1000000007;
     int64 acc = seed % mod_out;
     
     for (int64 y = 0; y < height; ++y) {
-        row_sum = 0;
+        int64 row_sum = 0;
         for (int64 x = 0; x < width; ++x) {
-            v = (x * 37 + y * 73 + seed) % mod_main;
+            int64 v = (x * 37 + y * 73 + seed) % mod_main;
             v = (v * 48271 + 1) % mod_main;
             row_sum += v % 256;
         }
@@ -35,7 +34,8 @@ void run_integer_benchmark() {
     py_print("elapsed_sec:", elapsed);
 }
 
-int main() {
+int main(int argc, char** argv) {
+    pytra_configure_from_argv(argc, argv);
     run_integer_benchmark();
     return 0;
 }

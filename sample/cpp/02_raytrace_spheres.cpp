@@ -1,11 +1,7 @@
-// 02: 球のみのミニレイトレーサを実行し、PNG画像を出力するサンプルです。
-// トランスパイル互換のため、依存モジュールは最小限（timeのみ）にしています。
-
-
 #include "cpp_module/py_runtime.h"
 
-
-
+// 02: 球のみのミニレイトレーサを実行し、PNG画像を出力するサンプルです。
+// トランスパイル互換のため、依存モジュールは最小限（timeのみ）にしています。
 
 float64 clamp01(float64 v) {
     if (v < 0.0)
@@ -16,7 +12,7 @@ float64 clamp01(float64 v) {
 }
 
 float64 hit_sphere(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, float64 dz, float64 cx, float64 cy, float64 cz, float64 r) {
-    /* レイと球の交差距離t（交差しない場合は-1）を返す。 */
+    /* ""レイと球の交差距離t（交差しない場合は-1）を返す。"" */
     float64 lx = ox - cx;
     float64 ly = oy - cy;
     float64 lz = oz - cz;
@@ -40,76 +36,44 @@ float64 hit_sphere(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, f
     return -1.0;
 }
 
-list<uint8> render(int64 width, int64 height, int64 aa) {
-    int64 ar;
-    int64 ag;
-    int64 ab;
-    float64 fy;
-    float64 fx;
-    float64 sy;
-    float64 sx;
-    float64 dx;
-    float64 dy;
-    float64 dz;
-    float64 inv_len;
-    float64 t_min;
-    int64 hit_id;
-    float64 t;
-    int64 r;
-    int64 g;
-    int64 b;
-    float64 px;
-    float64 py;
-    float64 pz;
-    float64 nx;
-    float64 ny;
-    float64 nz;
-    float64 diff;
-    float64 base_r;
-    float64 base_g;
-    float64 base_b;
-    int64 checker;
-    float64 shade;
-    float64 tsky;
-    int64 samples;
+bytearray render(int64 width, int64 height, int64 aa) {
+    bytearray pixels = bytearray{};
     
-    list<uint8> pixels = list<uint8>{};
-    
-    
+    // カメラ原点
     float64 ox = 0.0;
     float64 oy = 0.0;
     float64 oz = -3.0;
     
-    
+    // ライト方向（正規化済み）
     float64 lx = -0.4;
     float64 ly = 0.8;
     float64 lz = -0.45;
     
     for (int64 y = 0; y < height; ++y) {
         for (int64 x = 0; x < width; ++x) {
-            ar = 0;
-            ag = 0;
-            ab = 0;
+            int64 ar = 0;
+            int64 ag = 0;
+            int64 ab = 0;
             
             for (int64 ay = 0; ay < aa; ++ay) {
                 for (int64 ax = 0; ax < aa; ++ax) {
-                    fy = (static_cast<float64>(y) + (static_cast<float64>(ay) + 0.5) / static_cast<float64>(aa)) / (static_cast<float64>(height - 1));
-                    fx = (static_cast<float64>(x) + (static_cast<float64>(ax) + 0.5) / static_cast<float64>(aa)) / (static_cast<float64>(width - 1));
-                    sy = 1.0 - 2.0 * fy;
-                    sx = (2.0 * fx - 1.0) * static_cast<float64>(width) / static_cast<float64>(height);
+                    float64 fy = (static_cast<float64>(y) + (static_cast<float64>(ay) + 0.5) / static_cast<float64>(aa)) / (static_cast<float64>(height - 1));
+                    float64 fx = (static_cast<float64>(x) + (static_cast<float64>(ax) + 0.5) / static_cast<float64>(aa)) / (static_cast<float64>(width - 1));
+                    float64 sy = 1.0 - 2.0 * fy;
+                    float64 sx = (2.0 * fx - 1.0) * static_cast<float64>(width) / static_cast<float64>(height);
                     
-                    dx = sx;
-                    dy = sy;
-                    dz = 1.0;
-                    inv_len = 1.0 / py_math::sqrt(dx * dx + dy * dy + dz * dz);
+                    float64 dx = sx;
+                    float64 dy = sy;
+                    float64 dz = 1.0;
+                    float64 inv_len = 1.0 / py_math::sqrt(dx * dx + dy * dy + dz * dz);
                     dx *= inv_len;
                     dy *= inv_len;
                     dz *= inv_len;
                     
-                    t_min = 1e+30;
-                    hit_id = -1;
+                    float64 t_min = 1e+30;
+                    int64 hit_id = -1;
                     
-                    t = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
+                    float64 t = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
                     if ((t > 0.0) && (t < t_min)) {
                         t_min = t;
                         hit_id = 0;
@@ -127,18 +91,18 @@ list<uint8> render(int64 width, int64 height, int64 aa) {
                         hit_id = 2;
                     }
                     
-                    r = 0;
-                    g = 0;
-                    b = 0;
+                    int64 r = 0;
+                    int64 g = 0;
+                    int64 b = 0;
                     
                     if (hit_id >= 0) {
-                        px = ox + dx * t_min;
-                        py = oy + dy * t_min;
-                        pz = oz + dz * t_min;
+                        float64 px = ox + dx * t_min;
+                        float64 py = oy + dy * t_min;
+                        float64 pz = oz + dz * t_min;
                         
-                        nx = 0.0;
-                        ny = 0.0;
-                        nz = 0.0;
+                        float64 nx = 0.0;
+                        float64 ny = 0.0;
+                        float64 nz = 0.0;
                         
                         if (hit_id == 0) {
                             nx = (px + 0.8) / 0.8;
@@ -156,12 +120,12 @@ list<uint8> render(int64 width, int64 height, int64 aa) {
                             }
                         }
                         
-                        diff = nx * -lx + ny * -ly + nz * -lz;
+                        float64 diff = nx * -lx + ny * -ly + nz * -lz;
                         diff = clamp01(diff);
                         
-                        base_r = 0.0;
-                        base_g = 0.0;
-                        base_b = 0.0;
+                        float64 base_r = 0.0;
+                        float64 base_g = 0.0;
+                        float64 base_b = 0.0;
                         
                         if (hit_id == 0) {
                             base_r = 0.95;
@@ -173,7 +137,7 @@ list<uint8> render(int64 width, int64 height, int64 aa) {
                                 base_g = 0.55;
                                 base_b = 0.95;
                             } else {
-                                checker = int64((px + 50.0) * 0.8) + int64((pz + 50.0) * 0.8);
+                                int64 checker = int64((px + 50.0) * 0.8) + int64((pz + 50.0) * 0.8);
                                 if (checker % 2 == 0) {
                                     base_r = 0.85;
                                     base_g = 0.85;
@@ -186,12 +150,12 @@ list<uint8> render(int64 width, int64 height, int64 aa) {
                             }
                         }
                         
-                        shade = 0.12 + 0.88 * diff;
+                        float64 shade = 0.12 + 0.88 * diff;
                         r = int64(255.0 * clamp01(base_r * shade));
                         g = int64(255.0 * clamp01(base_g * shade));
                         b = int64(255.0 * clamp01(base_b * shade));
                     } else {
-                        tsky = 0.5 * (dy + 1.0);
+                        float64 tsky = 0.5 * (dy + 1.0);
                         r = int64(255.0 * (0.65 + 0.2 * tsky));
                         g = int64(255.0 * (0.75 + 0.18 * tsky));
                         b = int64(255.0 * (0.9 + 0.08 * tsky));
@@ -203,10 +167,10 @@ list<uint8> render(int64 width, int64 height, int64 aa) {
                 }
             }
             
-            samples = aa * aa;
-            pixels.push_back(py_floordiv(ar, samples));
-            pixels.push_back(py_floordiv(ag, samples));
-            pixels.push_back(py_floordiv(ab, samples));
+            int64 samples = aa * aa;
+            pixels.append(py_floordiv(ar, samples));
+            pixels.append(py_floordiv(ag, samples));
+            pixels.append(py_floordiv(ab, samples));
         }
     }
     
@@ -220,7 +184,7 @@ void run_raytrace() {
     str out_path = "sample/out/raytrace_02.png";
     
     float64 start = perf_counter();
-    list<uint8> pixels = render(width, height, aa);
+    bytearray pixels = render(width, height, aa);
     png_helper::write_rgb_png(out_path, width, height, pixels);
     float64 elapsed = perf_counter() - start;
     
@@ -229,7 +193,8 @@ void run_raytrace() {
     py_print("elapsed_sec:", elapsed);
 }
 
-int main() {
+int main(int argc, char** argv) {
+    pytra_configure_from_argv(argc, argv);
     run_raytrace();
     return 0;
 }

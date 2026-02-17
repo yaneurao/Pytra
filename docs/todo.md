@@ -2,11 +2,11 @@
 
 ## EAST C++ 可読性
 
-- [ ] 比較・論理・算術の混在式で意味が変わらないことを `test/py` で回帰確認する。
+- [x] 比較・論理・算術の混在式で意味が変わらないことを `test/py` で回帰確認する。
 - [ ] Python docstring を C++ の裸文字列文として出さず、コメントへ変換するか出力しない。
 - [ ] 関数先頭の単独文字列式（docstring）を `east.py` 側で専用メタ情報へ分離する。
 - [ ] `py2cpp.py` は `//` コメント出力に統一する（必要時のみ）。
-- [ ] 式文としての識別子単体出力を禁止するガードを `py2cpp.py` に追加する。
+- [x] 式文としての識別子単体出力を禁止するガードを `py2cpp.py` に追加する。
 - [ ] API 由来が追えるように、必要箇所に薄いコメントを付ける（例: `png_helper.write_rgb_png` 対応）。
 - [ ] `write_rgb_png` / `save_gif` / `grayscale_palette` などランタイムブリッジ関数に限定して付与する。
 - [ ] コメントが過剰にならないよう最小限に制御する。
@@ -41,11 +41,11 @@
 
 ### ケース順移行（test/py/case01 から順に）
 
-- [ ] `case11_fib` を `self_hosted` で通す。
-- [ ] `case12_string_ops` を `self_hosted` で通す。
-- [ ] `case13_class` 〜 `case16_instance_member`（クラス系）を `self_hosted` で通す。
-- [ ] `case17_loop` 〜 `case24_ifexp_bool`（ループ/例外/内包/ifexp）を `self_hosted` で通す。
-- [ ] `case25_class_static` 〜 `case33_pathlib_extended`（拡張ケース）を `self_hosted` で通す。
+- [x] `case11_fib` を `self_hosted` で通す。
+- [x] `case12_string_ops` を `self_hosted` で通す。
+- [x] `case13_class` 〜 `case16_instance_member`（クラス系）を `self_hosted` で通す。
+- [x] `case17_loop` 〜 `case24_ifexp_bool`（ループ/例外/内包/ifexp）を `self_hosted` で通す。
+- [x] `case25_class_static` 〜 `case33_pathlib_extended`（拡張ケース）を `self_hosted` で通す。
 
 ### 切替完了条件
 
@@ -55,8 +55,8 @@
 
 ## 生成画像不一致 調査（2026-02-17）
 
-- [ ] `save_gif(..., delay_cs=..., loop=...)` の keyword 引数を `py2cpp.py` の非lowered `Call` 経路でも確実に反映する。
-- [ ] 現状 `sample/cpp/*` で `save_gif(..., palette)` のみになり `delay_cs` が既定値 `4` に落ちる問題を修正する。
+- [x] `save_gif(..., delay_cs=..., loop=...)` の keyword 引数を `py2cpp.py` の非lowered `Call` 経路でも確実に反映する。
+- [x] 現状 `sample/cpp/*` で `save_gif(..., palette)` のみになり `delay_cs` が既定値 `4` に落ちる問題を修正する。
 - [ ] `sample/05,06,08,10,11,14` で GIF の GCE delay 値が Python 実行結果と一致することを確認する。
 - [ ] 浮動小数点式の再結合（演算順序変更）を抑制し、Python と同じ評価順を優先する。
 - [ ] `a * (b / c)` が `a * b / c` に変わらないように、`render_expr` の括弧方針を見直す。

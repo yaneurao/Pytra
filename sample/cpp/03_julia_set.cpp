@@ -1,32 +1,22 @@
 #include "cpp_module/py_runtime.h"
 
+// 03: ジュリア集合を PNG 形式で出力するサンプルです。
+// トランスパイル互換を意識し、単純なループ中心で実装しています。
 
-
-list<uint8> render_julia(int64 width, int64 height, int64 max_iter, float64 cx, float64 cy) {
-    float64 zy0;
-    float64 zx;
-    float64 zy;
-    int64 i;
-    float64 zx2;
-    float64 zy2;
-    int64 r;
-    int64 g;
-    int64 b;
-    float64 t;
-    
-    list<uint8> pixels = list<uint8>{};
+bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, float64 cy) {
+    bytearray pixels = bytearray{};
     
     for (int64 y = 0; y < height; ++y) {
-        zy0 = -1.2 + 2.4 * static_cast<float64>(y) / (static_cast<float64>(height - 1));
+        float64 zy0 = -1.2 + 2.4 * static_cast<float64>(y) / (static_cast<float64>(height - 1));
         
         for (int64 x = 0; x < width; ++x) {
-            zx = -1.8 + 3.6 * static_cast<float64>(x) / (static_cast<float64>(width - 1));
-            zy = zy0;
+            float64 zx = -1.8 + 3.6 * static_cast<float64>(x) / (static_cast<float64>(width - 1));
+            float64 zy = zy0;
             
-            i = 0;
+            int64 i = 0;
             while (i < max_iter) {
-                zx2 = zx * zx;
-                zy2 = zy * zy;
+                float64 zx2 = zx * zx;
+                float64 zy2 = zy * zy;
                 if (zx2 + zy2 > 4.0)
                     break;
                 zy = 2.0 * zx * zy + cy;
@@ -34,23 +24,23 @@ list<uint8> render_julia(int64 width, int64 height, int64 max_iter, float64 cx, 
                 i++;
             }
             
-            r = 0;
-            g = 0;
-            b = 0;
+            int64 r = 0;
+            int64 g = 0;
+            int64 b = 0;
             if (i >= max_iter) {
                 r = 0;
                 g = 0;
                 b = 0;
             } else {
-                t = static_cast<float64>(i) / static_cast<float64>(max_iter);
+                float64 t = static_cast<float64>(i) / static_cast<float64>(max_iter);
                 r = int64(255.0 * (0.2 + 0.8 * t));
                 g = int64(255.0 * (0.1 + 0.9 * t * t));
                 b = int64(255.0 * (1.0 - t));
             }
             
-            pixels.push_back(r);
-            pixels.push_back(g);
-            pixels.push_back(b);
+            pixels.append(r);
+            pixels.append(g);
+            pixels.append(b);
         }
     }
     
@@ -64,7 +54,7 @@ void run_julia() {
     str out_path = "sample/out/julia_03.png";
     
     float64 start = perf_counter();
-    list<uint8> pixels = render_julia(width, height, max_iter, -0.8, 0.156);
+    bytearray pixels = render_julia(width, height, max_iter, -0.8, 0.156);
     png_helper::write_rgb_png(out_path, width, height, pixels);
     float64 elapsed = perf_counter() - start;
     
@@ -74,7 +64,8 @@ void run_julia() {
     py_print("elapsed_sec:", elapsed);
 }
 
-int main() {
+int main(int argc, char** argv) {
+    pytra_configure_from_argv(argc, argv);
     run_julia();
     return 0;
 }

@@ -1,29 +1,20 @@
 #include "cpp_module/py_runtime.h"
 
+// 05: マンデルブロ集合ズームをアニメーションGIFとして出力するサンプル。
 
-
-
-list<uint8> render_frame(int64 width, int64 height, float64 center_x, float64 center_y, float64 scale, int64 max_iter) {
-    float64 cy;
-    float64 cx;
-    float64 zx;
-    float64 zy;
-    int64 i;
-    float64 zx2;
-    float64 zy2;
-    
-    list<uint8> frame = list<uint8>(width * height);
+bytearray render_frame(int64 width, int64 height, float64 center_x, float64 center_y, float64 scale, int64 max_iter) {
+    auto frame = bytearray(width * height);
     int64 idx = 0;
     for (int64 y = 0; y < height; ++y) {
-        cy = center_y + (static_cast<float64>(y) - static_cast<float64>(height) * 0.5) * scale;
+        float64 cy = center_y + (static_cast<float64>(y) - static_cast<float64>(height) * 0.5) * scale;
         for (int64 x = 0; x < width; ++x) {
-            cx = center_x + (static_cast<float64>(x) - static_cast<float64>(width) * 0.5) * scale;
-            zx = 0.0;
-            zy = 0.0;
-            i = 0;
+            float64 cx = center_x + (static_cast<float64>(x) - static_cast<float64>(width) * 0.5) * scale;
+            float64 zx = 0.0;
+            float64 zy = 0.0;
+            int64 i = 0;
             while (i < max_iter) {
-                zx2 = zx * zx;
-                zy2 = zy * zy;
+                float64 zx2 = zx * zx;
+                float64 zy2 = zy * zy;
                 if (zx2 + zy2 > 4.0)
                     break;
                 zy = 2.0 * zx * zy + cy;
@@ -34,7 +25,7 @@ list<uint8> render_frame(int64 width, int64 height, float64 center_x, float64 ce
             idx++;
         }
     }
-    return list<uint8>(frame);
+    return bytearray(frame);
 }
 
 void run_05_mandelbrot_zoom() {
@@ -48,22 +39,23 @@ void run_05_mandelbrot_zoom() {
     float64 zoom_per_frame = 0.93;
     str out_path = "sample/out/05_mandelbrot_zoom.gif";
     
-    float64 start = perf_counter();
-    list<list<uint8>> frames = list<list<uint8>>{};
+    auto start = perf_counter();
+    list<bytearray> frames = list<bytearray>{};
     float64 scale = base_scale;
     for (int64 _ = 0; _ < frame_count; ++_) {
-        frames.push_back(render_frame(width, height, center_x, center_y, scale, max_iter));
+        frames.append(render_frame(width, height, center_x, center_y, scale, max_iter));
         scale *= zoom_per_frame;
     }
     
     save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0);
-    float64 elapsed = perf_counter() - start;
+    auto elapsed = perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frame_count);
     py_print("elapsed_sec:", elapsed);
 }
 
-int main() {
+int main(int argc, char** argv) {
+    pytra_configure_from_argv(argc, argv);
     run_05_mandelbrot_zoom();
     return 0;
 }

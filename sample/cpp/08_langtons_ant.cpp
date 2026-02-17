@@ -1,10 +1,9 @@
 #include "cpp_module/py_runtime.h"
 
+// 08: ラングトンのアリの軌跡をGIF出力するサンプル。
 
-
-
-list<uint8> capture(list<list<int64>> grid, int64 w, int64 h) {
-    list<uint8> frame = list<uint8>(w * h);
+bytearray capture(const list<list<int64>>& grid, int64 w, int64 h) {
+    auto frame = bytearray(w * h);
     int64 i = 0;
     for (int64 y = 0; y < h; ++y) {
         for (int64 x = 0; x < w; ++x) {
@@ -12,24 +11,22 @@ list<uint8> capture(list<list<int64>> grid, int64 w, int64 h) {
             i++;
         }
     }
-    return list<uint8>(frame);
+    return bytearray(frame);
 }
 
 void run_08_langtons_ant() {
-    list<int64> row;
-    
     int64 w = 420;
     int64 h = 420;
     str out_path = "sample/out/08_langtons_ant.gif";
     
-    float64 start = perf_counter();
+    auto start = perf_counter();
     
     list<list<int64>> grid = list<list<int64>>{};
     for (int64 gy = 0; gy < h; ++gy) {
-        row = list<int64>{};
+        list<int64> row = list<int64>{};
         for (int64 gx = 0; gx < w; ++gx)
-            row.push_back(0);
-        grid.push_back(row);
+            row.append(0);
+        grid.append(row);
     }
     int64 x = py_floordiv(w, 2);
     int64 y = py_floordiv(h, 2);
@@ -37,7 +34,7 @@ void run_08_langtons_ant() {
     
     int64 steps_total = 600000;
     int64 capture_every = 3000;
-    list<list<uint8>> frames = list<list<uint8>>{};
+    list<bytearray> frames = list<bytearray>{};
     
     for (int64 i = 0; i < steps_total; ++i) {
         if (grid[y][x] == 0) {
@@ -62,17 +59,18 @@ void run_08_langtons_ant() {
         }
         
         if (i % capture_every == 0)
-            frames.push_back(capture(grid, w, h));
+            frames.append(capture(grid, w, h));
     }
     
     save_gif(out_path, w, h, frames, grayscale_palette(), 5, 0);
-    float64 elapsed = perf_counter() - start;
+    auto elapsed = perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);
 }
 
-int main() {
+int main(int argc, char** argv) {
+    pytra_configure_from_argv(argc, argv);
     run_08_langtons_ant();
     return 0;
 }
