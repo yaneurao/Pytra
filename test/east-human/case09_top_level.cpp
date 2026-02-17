@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case09_top_level.py */ {
 
     // module body
-// [5:0] function original=mul3
-int64 mul3(int64 n /* readonly */) {
+    // [5:0] function original=mul3
+    int64 mul3(int64 n /* readonly */) {
         // [6:4]
         return n * 3 /* type=int64, borrow=value */;
     }

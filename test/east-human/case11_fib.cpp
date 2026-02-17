@@ -4,10 +4,10 @@
 namespace east_view /* source: test/py/case11_fib.py */ {
 
     // module body
-// [5:0] function original=fib
-int64 fib(int64 n /* readonly */) {
-// [6:4]
-if (n <= 1 /* type=bool, borrow=value */) {
+    // [5:0] function original=fib
+    int64 fib(int64 n /* readonly */) {
+        // [6:4]
+        if (n <= 1 /* type=bool, borrow=value */) {
             // [7:8]
             return n /* type=int64, borrow=readonly_ref */;
         }

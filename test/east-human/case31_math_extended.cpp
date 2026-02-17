@@ -8,8 +8,8 @@ namespace east_view /* source: test/py/case31_math_extended.py */ {
 
     // module body
     // [1:0] import math;
-// [4:0] function original=main
-None __pytra_main() {
+    // [4:0] function original=main
+    None __pytra_main() {
         // renamed_symbols: {'main': '__pytra_main'}
         // [5:4]
         print(math.fabs(math.tan(0.0)) < 1e-12) /* type=None, borrow=value */;

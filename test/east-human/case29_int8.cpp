@@ -7,8 +7,8 @@ namespace east_view /* source: test/py/case29_int8.py */ {
     //   main -> __pytra_main
 
     // module body
-// [2:0] function original=main
-None __pytra_main() {
+    // [2:0] function original=main
+    None __pytra_main() {
         // renamed_symbols: {'main': '__pytra_main'}
         // [4:4]
         int8 i /* type=int8, borrow=value */ = 1 /* type=int64, borrow=value */;

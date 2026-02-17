@@ -4,17 +4,17 @@
 namespace east_view /* source: test/py/case16_instance_member.py */ {
 
     // module body
-// [5:0] class original=Point
-struct Point {
-// [6:4] function original=__init__
-None __init__(Point self /* mutable */, int64 x /* readonly */, int64 y /* readonly */) {
+    // [5:0] class original=Point
+    struct Point {
+        // [6:4] function original=__init__
+        None __init__(Point self /* mutable */, int64 x /* readonly */, int64 y /* readonly */) {
             // [7:8]
             self.x /* type=int64, borrow=value */ = x /* type=int64, borrow=readonly_ref */;
             // [8:8]
             int64 self.y /* type=int64, borrow=value */ = y /* type=int64, borrow=readonly_ref */;
         }
-// [10:4] function original=total
-int64 total(Point self /* readonly */) {
+        // [10:4] function original=total
+        int64 total(Point self /* readonly */) {
             // [11:8]
             return self.x + self.y /* type=int64, borrow=value */;
         }

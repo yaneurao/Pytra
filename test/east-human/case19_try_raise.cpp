@@ -4,12 +4,12 @@
 namespace east_view /* source: test/py/case19_try_raise.py */ {
 
     // module body
-// [5:0] function original=maybe_fail_19
-int64 maybe_fail_19(bool flag /* readonly */) {
-// [6:4]
-try {
-// [7:8]
-if (flag /* type=bool, borrow=readonly_ref */) {
+    // [5:0] function original=maybe_fail_19
+    int64 maybe_fail_19(bool flag /* readonly */) {
+        // [6:4]
+        try {
+            // [7:8]
+            if (flag /* type=bool, borrow=readonly_ref */) {
                 // [8:12]
                 throw Exception('fail-19') /* type=Exception, borrow=value */;
             }

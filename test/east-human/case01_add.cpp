@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case01_add.py */ {
 
     // module body
-// [5:0] function original=add
-int64 add(int64 a /* readonly */, int64 b /* readonly */) {
+    // [5:0] function original=add
+    int64 add(int64 a /* readonly */, int64 b /* readonly */) {
         // [6:4]
         return a + b /* type=int64, borrow=value */;
     }

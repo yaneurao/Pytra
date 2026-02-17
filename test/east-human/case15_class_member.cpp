@@ -4,12 +4,12 @@
 namespace east_view /* source: test/py/case15_class_member.py */ {
 
     // module body
-// [5:0] class original=Counter
-struct Counter {
+    // [5:0] class original=Counter
+    struct Counter {
         // [6:4]
         int64 value /* type=int64, borrow=value */ = 0 /* type=int64, borrow=value */;
-// [8:4] function original=inc
-int64 inc(Counter self /* mutable */) {
+        // [8:4] function original=inc
+        int64 inc(Counter self /* mutable */) {
             // [9:8]
             self.value /* type=int64, borrow=value */ /* Add */= 1 /* type=int64, borrow=value */;
             // [10:8]

@@ -4,13 +4,13 @@
 namespace east_view /* source: test/py/case08_nested_call.py */ {
 
     // module body
-// [5:0] function original=inc
-int64 inc(int64 x /* readonly */) {
+    // [5:0] function original=inc
+    int64 inc(int64 x /* readonly */) {
         // [6:4]
         return x + 1 /* type=int64, borrow=value */;
     }
-// [9:0] function original=twice
-int64 twice(int64 x /* mutable */) {
+    // [9:0] function original=twice
+    int64 twice(int64 x /* mutable */) {
         // [10:4]
         return inc(inc(x)) /* type=int64, borrow=value */;
     }

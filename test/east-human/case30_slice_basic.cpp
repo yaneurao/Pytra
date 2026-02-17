@@ -7,8 +7,8 @@ namespace east_view /* source: test/py/case30_slice_basic.py */ {
     //   main -> __pytra_main
 
     // module body
-// [3:0] function original=main
-None __pytra_main() {
+    // [3:0] function original=main
+    None __pytra_main() {
         // renamed_symbols: {'main': '__pytra_main'}
         // [4:4]
         list[int64] nums /* type=list[int64], borrow=value */ = [10, 20, 30, 40, 50] /* type=list[int64], borrow=value */;

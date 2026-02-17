@@ -4,15 +4,15 @@
 namespace east_view /* source: test/py/case27_class_instance.py */ {
 
     // module body
-// [5:0] class original=Box100
-struct Box100 {
-// [6:4] function original=__init__
-None __init__(Box100 self /* mutable */, int64 seed /* readonly */) {
+    // [5:0] class original=Box100
+    struct Box100 {
+        // [6:4] function original=__init__
+        None __init__(Box100 self /* mutable */, int64 seed /* readonly */) {
             // [7:8]
             self.seed /* type=int64, borrow=value */ = seed /* type=int64, borrow=readonly_ref */;
         }
-// [9:4] function original=next
-int64 next(Box100 self /* mutable */) {
+        // [9:4] function original=next
+        int64 next(Box100 self /* mutable */) {
             // [10:8]
             self.seed /* type=int64, borrow=value */ /* Add */= 1 /* type=int64, borrow=value */;
             // [11:8]

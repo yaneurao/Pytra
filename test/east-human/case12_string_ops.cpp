@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case12_string_ops.py */ {
 
     // module body
-// [5:0] function original=decorate
-str decorate(str name /* readonly */) {
+    // [5:0] function original=decorate
+    str decorate(str name /* readonly */) {
         // [6:4]
         str prefix /* type=str, borrow=value */ = '[USER] ' /* type=str, borrow=value */;
         // [7:4]

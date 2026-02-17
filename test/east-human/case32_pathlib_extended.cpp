@@ -8,8 +8,8 @@ namespace east_view /* source: test/py/case32_pathlib_extended.py */ {
 
     // module body
     // [1:0] from pathlib import Path;
-// [4:0] function original=main
-None __pytra_main() {
+    // [4:0] function original=main
+    None __pytra_main() {
         // renamed_symbols: {'main': '__pytra_main'}
         // [5:4]
         root /* type=Path, borrow=value */ = Path('test/obj/pathlib_case32') /* type=Path, borrow=value */;

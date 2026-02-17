@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case20_fstring.py */ {
 
     // module body
-// [5:0] function original=make_msg_22
-str make_msg_22(str name /* readonly */, int64 count /* readonly */) {
+    // [5:0] function original=make_msg_22
+    str make_msg_22(str name /* readonly */, int64 count /* readonly */) {
         // [6:4]
         return f'{name}:22:{count}' /* type=str, borrow=value */;
     }

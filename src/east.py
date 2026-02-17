@@ -1056,6 +1056,7 @@ def _cpp_type_name(east_type: str | None) -> str:
 def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
     k = stmt.get("kind")
     sp = _fmt_span(stmt.get("source_span"))
+    pad = "    " * level
     out: list[str] = []
 
     if k == "Import":
@@ -1104,33 +1105,33 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
             level,
         )
     if k == "If":
-        out.append(f"// [{sp}]")
-        out.append(f"if ({_render_expr(stmt.get('test'))}) {{")
+        out.append(f"{pad}// [{sp}]")
+        out.append(f"{pad}if ({_render_expr(stmt.get('test'))}) {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
-        out.append(("    " * level) + "}")
+        out.append(f"{pad}}}")
         if stmt.get("orelse"):
-            out.append(("    " * level) + "else {")
+            out.append(f"{pad}else {{")
             for s in stmt.get("orelse", []):
                 out.extend(_render_stmt(s, level + 1))
-            out.append(("    " * level) + "}")
-        return _indent(out, 0)
+            out.append(f"{pad}}}")
+        return out
     if k == "For":
         tgt_expr = stmt.get("target")
         tgt = _expr_repr(tgt_expr)
         tgt_ty = _cpp_type_name((tgt_expr or {}).get("resolved_type") if isinstance(tgt_expr, dict) else None)
-        out.append(f"// [{sp}]")
-        out.append(f"for ({tgt_ty} {tgt} : { _render_expr(stmt.get('iter')) }) {{")
+        out.append(f"{pad}// [{sp}]")
+        out.append(f"{pad}for ({tgt_ty} {tgt} : { _render_expr(stmt.get('iter')) }) {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
-        out.append(("    " * level) + "}")
+        out.append(f"{pad}}}")
         if stmt.get("orelse"):
-            out.append(("    " * level) + "// for-else")
-            out.append(("    " * level) + "{")
+            out.append(f"{pad}// for-else")
+            out.append(f"{pad}{{")
             for s in stmt.get("orelse", []):
                 out.extend(_render_stmt(s, level + 1))
-            out.append(("    " * level) + "}")
-        return _indent(out, 0)
+            out.append(f"{pad}}}")
+        return out
     if k == "ForRange":
         tgt_expr = stmt.get("target")
         tgt = _expr_repr(tgt_expr)
@@ -1145,58 +1146,58 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
             cond = f"({tgt}) > ({stop})"
         else:
             cond = f"({step}) > 0 ? ({tgt}) < ({stop}) : ({tgt}) > ({stop})"
-        out.append(f"// [{sp}]")
-        out.append(f"for ({tgt_ty} {tgt} = {start}; {cond}; {tgt} += ({step})) {{")
+        out.append(f"{pad}// [{sp}]")
+        out.append(f"{pad}for ({tgt_ty} {tgt} = {start}; {cond}; {tgt} += ({step})) {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
-        out.append(("    " * level) + "}")
+        out.append(f"{pad}}}")
         if stmt.get("orelse"):
-            out.append(("    " * level) + "// for-else")
-            out.append(("    " * level) + "{")
+            out.append(f"{pad}// for-else")
+            out.append(f"{pad}{{")
             for s in stmt.get("orelse", []):
                 out.extend(_render_stmt(s, level + 1))
-            out.append(("    " * level) + "}")
-        return _indent(out, 0)
+            out.append(f"{pad}}}")
+        return out
     if k == "While":
-        out.append(f"// [{sp}]")
-        out.append(f"while ({_render_expr(stmt.get('test'))}) {{")
+        out.append(f"{pad}// [{sp}]")
+        out.append(f"{pad}while ({_render_expr(stmt.get('test'))}) {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
-        out.append(("    " * level) + "}")
+        out.append(f"{pad}}}")
         if stmt.get("orelse"):
-            out.append(("    " * level) + "// while-else")
-            out.append(("    " * level) + "{")
+            out.append(f"{pad}// while-else")
+            out.append(f"{pad}{{")
             for s in stmt.get("orelse", []):
                 out.extend(_render_stmt(s, level + 1))
-            out.append(("    " * level) + "}")
-        return _indent(out, 0)
+            out.append(f"{pad}}}")
+        return out
     if k == "Raise":
         return _indent([f"// [{sp}]", f"throw {_render_expr(stmt.get('exc'))};"], level)
     if k == "Try":
-        out.append(f"// [{sp}]")
-        out.append("try {")
+        out.append(f"{pad}// [{sp}]")
+        out.append(f"{pad}try {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
-        out.append(("    " * level) + "}")
+        out.append(f"{pad}}}")
         for h in stmt.get("handlers", []):
             ex_name = h.get("name") or "ex"
             ex_type = _render_expr(h.get("type"))
-            out.append(("    " * level) + f"catch ({ex_type} as {ex_name}) {{")
+            out.append(f"{pad}catch ({ex_type} as {ex_name}) {{")
             for s in h.get("body", []):
                 out.extend(_render_stmt(s, level + 1))
-            out.append(("    " * level) + "}")
+            out.append(f"{pad}}}")
         if stmt.get("orelse"):
-            out.append(("    " * level) + "// try-else")
-            out.append(("    " * level) + "{")
+            out.append(f"{pad}// try-else")
+            out.append(f"{pad}{{")
             for s in stmt.get("orelse", []):
                 out.extend(_render_stmt(s, level + 1))
-            out.append(("    " * level) + "}")
+            out.append(f"{pad}}}")
         if stmt.get("finalbody"):
-            out.append(("    " * level) + "/* finally */ {")
+            out.append(f"{pad}/* finally */ {{")
             for s in stmt.get("finalbody", []):
                 out.extend(_render_stmt(s, level + 1))
-            out.append(("    " * level) + "}")
-        return _indent(out, 0)
+            out.append(f"{pad}}}")
+        return out
     if k == "FunctionDef":
         name = stmt.get("name", "fn")
         ret = stmt.get("return_type", "None")
@@ -1206,23 +1207,23 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
         for n, t in arg_types.items():
             usage = arg_usage.get(n, "readonly")
             params.append(f"{t} {n} /* {usage} */")
-        out.append(f"// [{sp}] function original={stmt.get('original_name', name)}")
-        out.append(f"{ret} {name}({', '.join(params)}) {{")
+        out.append(f"{pad}// [{sp}] function original={stmt.get('original_name', name)}")
+        out.append(f"{pad}{ret} {name}({', '.join(params)}) {{")
         rs = stmt.get("renamed_symbols", {})
         if rs:
             out.append(("    " * (level + 1)) + f"// renamed_symbols: {rs}")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
-        out.append(("    " * level) + "}")
-        return _indent(out, 0)
+        out.append(f"{pad}}}")
+        return out
     if k == "ClassDef":
         name = stmt.get("name", "Class")
-        out.append(f"// [{sp}] class original={stmt.get('original_name', name)}")
-        out.append(f"struct {name} {{")
+        out.append(f"{pad}// [{sp}] class original={stmt.get('original_name', name)}")
+        out.append(f"{pad}struct {name} {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
-        out.append(("    " * level) + "};")
-        return _indent(out, 0)
+        out.append(f"{pad}}};")
+        return out
 
     return _indent([f"// [{sp}] <unsupported stmt kind={k}>"], level)
 

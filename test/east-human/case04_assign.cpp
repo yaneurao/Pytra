@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case04_assign.py */ {
 
     // module body
-// [5:0] function original=square_plus_one
-int64 square_plus_one(int64 n /* readonly */) {
+    // [5:0] function original=square_plus_one
+    int64 square_plus_one(int64 n /* readonly */) {
         // [6:4]
         int64 result /* type=int64, borrow=value */ = n * n /* type=int64, borrow=value */;
         // [7:4]

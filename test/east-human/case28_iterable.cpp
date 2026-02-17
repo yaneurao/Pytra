@@ -7,15 +7,15 @@ namespace east_view /* source: test/py/case28_iterable.py */ {
     //   main -> __pytra_main
 
     // module body
-// [2:0] function original=main
-None __pytra_main() {
+    // [2:0] function original=main
+    None __pytra_main() {
         // renamed_symbols: {'main': '__pytra_main'}
         // [4:4]
         list[int64] l /* type=list[int64], borrow=value */ = [1, 2, 3] /* type=list[int64], borrow=value */;
         // [5:4]
         sum /* type=int64, borrow=value */ = 0 /* type=int64, borrow=value */;
-// [6:4]
-for (int64 v : l /* type=list[int64], borrow=value */) {
+        // [6:4]
+        for (int64 v : l /* type=list[int64], borrow=value */) {
             // [7:8]
             sum /* type=int64, borrow=value */ /* Add */= v /* type=int64, borrow=value */;
         }

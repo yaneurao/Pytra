@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case23_ifexp_bool.py */ {
 
     // module body
-// [5:0] function original=pick_25
-int64 pick_25(int64 a /* readonly */, int64 b /* readonly */, bool flag /* readonly */) {
+    // [5:0] function original=pick_25
+    int64 pick_25(int64 a /* readonly */, int64 b /* readonly */, bool flag /* readonly */) {
         // [6:4]
         int64 c /* type=int64, borrow=value */ = a if flag and a > b else b /* type=int64, borrow=value */;
         // [7:4]
