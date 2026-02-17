@@ -1,5 +1,22 @@
 # 使い方について
 
+## 実行コマンドの前提（OS別）
+
+このドキュメントのコマンド例は、基本的に POSIX シェル（bash/zsh）形式で記載しています。  
+Windows では次の読み替えを行ってください。
+
+- Python 実行:
+  - POSIX: `python ...`
+  - Windows: `py ...`（または `python ...`）
+- 環境変数の一時指定:
+  - POSIX: `PYTHONPATH=src python ...`
+  - Windows PowerShell: `$env:PYTHONPATH='src'; py ...`
+  - Windows cmd.exe: `set PYTHONPATH=src && py ...`
+- 複数行コマンドの継続:
+  - POSIX: `\`
+  - Windows PowerShell: `` ` ``
+  - Windows cmd.exe: `^`
+
 ## トランスパイラの使い方
 
 以下は言語別の手順です。必要な言語だけ展開して参照してください。
@@ -164,10 +181,33 @@ table = {}               # key/value 型が不明
 
 ### 2. 型名の扱い
 
-- `int` は 64-bit 符号付き整数として扱います。
-- `float` は Python 互換で 64-bit 浮動小数点として扱います（C++ では `double`）。
-- `float32` は 32-bit 浮動小数点として扱います（C++ では `float`）。
-- `int8,uint8,int16,uint16,int32,uint32,int64,uint64` は、対応ターゲットでその幅の整数型へ変換します（例: C++ の `int8_t`）。
+- 数値・文字列の基本型は、主に次の対応で変換されます。
+  - C++: `int -> long long`, `float -> double`, `float32 -> float`, `str -> string`, `bool -> bool`
+  - C#: `int -> long`, `float -> double`, `float32 -> float`, `str -> string`, `bool -> bool`
+  - Rust: `int -> i64`, `float -> f64`, `float32 -> f32`, `str -> String`, `bool -> bool`
+- 固定幅整数注釈（`int8,uint8,int16,uint16,int32,uint32,int64,uint64`）は、C++/C#/Rust で対応する固定幅型へ変換されます。
+  - 例: `int8` は C++ で `int8_t`、C# で `sbyte`、Rust で `i8`
+- `bytes` / `bytearray` は次のように変換されます。
+  - C++: `vector<uint8_t>`
+  - C#: `List<byte>`
+  - Rust: `Vec<u8>`
+  - JS/TS: `number[]`（ランタイムの `pyBytearray` / `pyBytes`）
+  - Go/Java: ランタイムで `[]byte` / `byte[]` を扱います（注釈は `any` / `Object` ベース）
+- コンテナ型注釈は次のように変換されます。
+  - `list[T]` -> C++ `vector<T>` / C# `List<T>` / Rust `Vec<T>`
+  - `dict[K, V]` -> C++ `unordered_map<K, V>` / C# `Dictionary<K, V>` / Rust `HashMap<K, V>`
+  - `set[T]` -> C++ `unordered_set<T>` / C# `HashSet<T>` / Rust `HashSet<T>`
+  - `tuple[...]` -> C++ `tuple<...>` / C# `Tuple<...>` / Rust `(... )`
+
+```python
+# bytes / bytearray の例
+buf1: bytearray = bytearray(16)
+buf2: bytes = bytes(buf1)
+
+# コンテナ注釈の例
+ids: list[int] = [1, 2, 3]
+name_by_id: dict[int, str] = {1: "alice"}
+```
 
 ### 3. import とランタイムモジュール
 
@@ -185,8 +225,22 @@ from pathlib import Path
 
 - `sample/py/` を Python のまま実行する場合は、`py_module` 解決のため `PYTHONPATH=src` を付けます。
 
+POSIX:
+
 ```bash
 PYTHONPATH=src python3 sample/py/01_mandelbrot.py
+```
+
+Windows PowerShell:
+
+```powershell
+$env:PYTHONPATH='src'; py sample/py/01_mandelbrot.py
+```
+
+Windows cmd.exe:
+
+```bat
+set PYTHONPATH=src && py sample/py/01_mandelbrot.py
 ```
 
 - 生成コードは「読みやすさ」より「変換の忠実性」を優先しています。
