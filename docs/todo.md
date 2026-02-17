@@ -106,3 +106,50 @@
   - [x] 各ターゲット（C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）への変換・実行コマンドを自動化スクリプトへ集約する。
   - [x] Python 実行結果との差分比較を自動化し、失敗ケースを一覧出力できるようにする。
   - 実行補足: 現在の開発環境では `mcs/go/javac/swiftc/kotlinc` が未導入のため、`tools/runtime_parity_check.py` は該当ターゲットを `SKIP` 表示で処理する。
+
+## EAST / CppEmitter 簡素化 TODO
+
+- [x] `east.py` 側で式を低レベル化し、`CppEmitter` の `Call` 分岐を削減する。
+  - [x] `math.*`, `Path.*`, `len`, `print`, `str`, `int`, `float`, `bool`, `bytes`, `bytearray` を `BuiltinCall` 系ノードへ正規化する。
+  - [x] `CppEmitter` は `BuiltinCall` 名と引数をそのまま C++ ランタイム呼び出しへマッピングする。
+- [x] `Compare` の `in` / `not in` を専用ノード化し、コンテナ種別分岐を `east.py` 側で確定する。
+  - [x] `Contains(container, key, negated)` ノードを追加する。
+  - [x] `dict` と `list/set/tuple/str` の判定分岐を `east.py` 側に寄せる。
+- [x] `slice` を専用ノード化し、`CppEmitter` の `Subscript` 条件分岐を削減する。
+  - [x] `SliceExpr(value, lower, upper)` ノードを追加する。
+  - [x] `Subscript` は単一添字アクセスに限定して表現する。
+- [x] `JoinedStr`（f-string）を `Concat` 系へ事前展開し、文字列化規則を `east.py` で確定する。
+  - [x] `FormattedValue` の型に応じた `to_string` 方針を EAST ノードに埋め込む。
+  - [x] `CppEmitter` 側は連結出力のみを行う。
+- [x] 代入ノードに宣言情報を持たせ、`CppEmitter` 側のスコープ推測ロジックを削減する。
+  - [x] `Assign` / `AnnAssign` に `declare` / `decl_type` を追加する。
+  - [x] `AugAssign` の未宣言時挙動を `east.py` で正規化する。
+- [x] クラスノード情報を拡張し、`emit_class` の推測処理を削減する。
+  - [x] `ClassDef` に `base`, `field_types`, `field_defaults`, `constructor_signature` を持たせる。
+  - [x] dataclass/`__init__` の constructor 生成方針を EAST 側で確定する。
+- [x] `For` 系の正規化を強化し、`CppEmitter` の `for` 出力を単純化する。
+  - [x] `ForRange` と `ForEach` を完全分離し、`target_type` を持たせる。
+  - [x] `range_mode` と境界条件の確定を `east.py` 側で完了させる。
+- [x] `CppEmitter` を「文字列出力専用」へ段階移行し、挙動回帰を防ぐ。
+  - [x] 各段階で `test/py` の `test/cpp` 実行結果一致を確認する。
+  - [x] 各段階で `sample/py` の PNG/GIF 一致（バイナリ比較）を確認する。
+
+## EAST py2cpp sample対応 TODO（完了）
+
+- [x] `sample/py` の `list.append(...)` / `frames.append(...)` を C++ `vector::push_back` へ正しく変換する。
+  - [x] `Call(Attribute(..., "append"))` の lowered 情報を優先し、`append` を生のまま出力しない。
+  - [x] `list[uint8]` / `list[list[uint8]]` / `list[Token]` など複数型で回帰テストする。
+- [x] `perf_counter()` を C++ で解決する（`time` ランタイム呼び出しへマップ）。
+  - [x] `east/cpp_module/py_runtime.h` もしくは適切な `cpp_module/time.h` 経由で利用可能にする。
+  - [x] `sample/py` の計測系ケース（04,05,06,08,10,12,13）でコンパイル通過を確認する。
+- [x] `range(...)` は `py2cpp.py` で処理せず、EAST 構築時点で消し切る。
+  - [x] list comprehension 等の lowered 出力で `range` を未定義関数として出さない（生の `Call(Name("range"))` を残さない）。
+  - [x] `for in range` 以外の利用（式位置・代入・引数渡し）がある場合も、EAST専用ノードへ lower して後段へ渡す。
+  - [x] `py2cpp.py` 側に `range` 意味解釈を追加しない（残っていたらバグとして検出する）。
+- [x] `min` / `max` の出力を `std::min` / `std::max`（型整合付き）へ統一する。
+  - [x] `int`/`int64` 混在でテンプレート推論エラーが出ないよう型キャスト規則を追加する。
+  - [x] `sample/py/14` での `min(255, ...)` / `max(0, ...)` を回帰テストする。
+- [x] タプル分解代入の宣言不足を修正する（未宣言変数に代入だけが出る問題）。
+  - [x] `a, b, c = f(...)` で `a,b,c` が未宣言なら型付き宣言を生成する。
+  - [x] `sample/py/16` の `normalize(...)` 展開で `fwd_x` 等の未宣言エラーが消えることを確認する。
+- [x] 上記対応後、`sample/py` 全16件で `east/py2cpp.py` 変換→コンパイル→実行を再実施し、実行時間一覧を更新する。

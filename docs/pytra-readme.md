@@ -19,6 +19,7 @@
 - list/set comprehension の主要ケース
 - スライス（`a[b:c]`）
 - `if __name__ == "__main__":` ガード認識
+- EAST 変換（`east/east.py`）と EAST ベース C++ 変換（`east/py2cpp.py`）
 
 ## 実装済みの組み込み関数
 
@@ -26,6 +27,7 @@
 - `int`, `float`, `str`
 - `ord`, `bytes`, `bytearray`
 - `min`, `max`
+- `grayscale_palette`, `save_gif`, `write_rgb_png`（EAST/C++ ランタイム経由）
 
 ## 対応module
 
@@ -81,10 +83,20 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
 
 ## 作業中
 
-- 本ページに記載している未完了項目（「作業中」「未実装項目」）の継続対応
-- `sample/py/15` で見えた変換器側課題の吸収
-- Go/Java の `sample/py` 向けランタイム拡張（`math`, `png`, `gif`）
-- Rust 出力の PNG バイナリ完全一致化と import 生成最適化
+- Go/Java の静的型反映強化（`any`/`Object` 退化の削減）
+- Go/Java の `bytes` / `bytearray` パス最適化
+
+## EAST 実装状況
+
+- `east/east.py`
+  - `test/py` 32/32, `sample/py` 16/16 を EAST 変換可能
+  - `range(...)` は `ForRange` / `RangeExpr` へ正規化され、生の `Call(Name("range"))` は後段へ渡さない
+- `east/py2cpp.py`
+  - `sample/py` 16/16 を `変換 -> コンパイル -> 実行` まで通過
+  - `append/extend/pop`, `perf_counter`, `min/max`, `save_gif` / `write_rgb_png` / `grayscale_palette` をランタイム連携
+- ベンチマーク
+  - 一覧: `east/sample/benchmark_east_py2cpp.md`
+  - 詳細JSON: `east/sample/benchmark_east_py2cpp.json`
 
 ## 未実装項目
 

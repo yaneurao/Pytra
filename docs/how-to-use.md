@@ -151,6 +151,30 @@ java -cp test/obj/case28_iterable_kotlin.jar pytra_case28_iterable
 
 </details>
 
+<details>
+<summary>EAST (Python -> EAST -> C++)</summary>
+
+```bash
+# 1) Python を EAST(JSON) に変換
+python east/east.py sample/py/01_mandelbrot.py -o east/sample/east/01_mandelbrot.json --pretty
+
+# 2) EAST(JSON) から C++ へ変換（.py を直接渡しても可）
+python east/py2cpp.py east/sample/east/01_mandelbrot.json -o east/sample/cpp/01_mandelbrot.cpp
+
+# 3) コンパイルして実行
+g++ -std=c++17 -O2 -I . -I src east/sample/cpp/01_mandelbrot.cpp \
+  src/cpp_module/png.cpp src/cpp_module/gif.cpp \
+  -o east/sample/obj/01_mandelbrot
+./east/sample/obj/01_mandelbrot
+```
+
+補足:
+- EAST版 C++ は `#include "east/cpp_module/py_runtime.h"` を使用します。
+- そのため include path は `-I .` が必須です（`-I src` も併用）。
+- `sample/py` 全16件の最新実行時間は `east/sample/benchmark_east_py2cpp.md` を参照してください。
+
+</details>
+
 ## 共通の制約と注意点
 
 Pytra は Python のサブセットを対象とします。通常の Python コードとして実行できる入力でも、未対応構文を含む場合は変換時に失敗します。
