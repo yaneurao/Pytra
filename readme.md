@@ -7232,3 +7232,14 @@ class pytra_16_glass_sculpture_chaos {
 }
 ```
 </details>
+
+## 補足説明
+
+- 本READMEは、実行速度比較と代表サンプルコード（`sample/06`, `sample/16`）の掲載を中心にしています。
+- 具体的な使い方（各言語への変換手順、実行方法、必要な環境）は [docs/how-to-use.md](docs/how-to-use.md) を参照してください。
+- 実装範囲・制約・ディレクトリ構成・運用ルールは [docs/spec.md](docs/spec.md) を参照してください。
+- サンプル一覧と各サンプルの概要は [docs/sample-code.md](docs/sample-code.md) を参照してください。
+
+## ライセンス
+
+MIT License
