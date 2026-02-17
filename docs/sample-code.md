@@ -35,7 +35,15 @@
 注:
 - `py2swift.py` / `py2kotlin.py` は現在 Node バックエンド方式で、実行時に `node` を使用します（`python3` は呼び出しません）。
 
-## 4. テストコードとの関係
+## 4. 実行時の注意
+
+- `sample/py/` を Python のまま実行する場合は、`py_module` 解決のため `PYTHONPATH=src` を付けます。
+
+```bash
+PYTHONPATH=src python3 sample/py/01_mandelbrot.py
+```
+
+## 5. テストコードとの関係
 
 `test/` は小規模な機能確認ケース、`sample/` は実用寄り・負荷高めケースという役割分担です。
 
