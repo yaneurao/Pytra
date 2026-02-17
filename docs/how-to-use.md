@@ -181,30 +181,77 @@ table = {}               # key/value 型が不明
 
 ### 2. 型名の扱い
 
-- 数値・文字列の基本型は、主に次の対応で変換されます。
-  - C++: `int -> long long`, `float -> double`, `float32 -> float`, `str -> string`, `bool -> bool`
-  - C#: `int -> long`, `float -> double`, `float32 -> float`, `str -> string`, `bool -> bool`
-  - Rust: `int -> i64`, `float -> f64`, `float32 -> f32`, `str -> String`, `bool -> bool`
-- 固定幅整数注釈（`int8,uint8,int16,uint16,int32,uint32,int64,uint64`）は、C++/C#/Rust で対応する固定幅型へ変換されます。
-  - 例: `int8` は C++ で `int8_t`、C# で `sbyte`、Rust で `i8`
-- `bytes` / `bytearray` は次のように変換されます。
-  - C++: `vector<uint8_t>`
-  - C#: `List<byte>`
-  - Rust: `Vec<u8>`
-  - JS/TS: `number[]`（ランタイムの `pyBytearray` / `pyBytes`）
-  - Go/Java: ランタイムで `[]byte` / `byte[]` を扱います（注釈は `any` / `Object` ベース）
-- コンテナ型注釈は次のように変換されます。
-  - `list[T]` -> C++ `vector<T>` / C# `List<T>` / Rust `Vec<T>`
-  - `dict[K, V]` -> C++ `unordered_map<K, V>` / C# `Dictionary<K, V>` / Rust `HashMap<K, V>`
-  - `set[T]` -> C++ `unordered_set<T>` / C# `HashSet<T>` / Rust `HashSet<T>`
-  - `tuple[...]` -> C++ `tuple<...>` / C# `Tuple<...>` / Rust `(... )`
+以下は言語別の対応です。必要な言語だけ展開して確認してください。
+
+<details>
+<summary>C++</summary>
+
+- 基本型: `int -> long long`, `float -> double`, `float32 -> float`, `str -> string`, `bool -> bool`
+- 固定幅整数: `int8 -> int8_t`, `uint8 -> uint8_t`, `int16 -> int16_t`, `uint16 -> uint16_t`, `int32 -> int32_t`, `uint32 -> uint32_t`, `int64 -> int64_t`, `uint64 -> uint64_t`
+- バイト列: `bytes` / `bytearray` -> `vector<uint8_t>`
+- コンテナ: `list[T] -> vector<T>`, `dict[K, V] -> unordered_map<K, V>`, `set[T] -> unordered_set<T>`, `tuple[...] -> tuple<...>`
+
+</details>
+
+<details>
+<summary>Rust</summary>
+
+- 基本型: `int -> i64`, `float -> f64`, `float32 -> f32`, `str -> String`, `bool -> bool`
+- 固定幅整数: `int8 -> i8`, `uint8 -> u8`, `int16 -> i16`, `uint16 -> u16`, `int32 -> i32`, `uint32 -> u32`, `int64 -> i64`, `uint64 -> u64`
+- バイト列: `bytes` / `bytearray` -> `Vec<u8>`
+- コンテナ: `list[T] -> Vec<T>`, `dict[K, V] -> HashMap<K, V>`, `set[T] -> HashSet<T>`, `tuple[...] -> (... )`
+
+</details>
+
+<details>
+<summary>C#</summary>
+
+- 基本型: `int -> long`, `float -> double`, `float32 -> float`, `str -> string`, `bool -> bool`
+- 固定幅整数: `int8 -> sbyte`, `uint8 -> byte`, `int16 -> short`, `uint16 -> ushort`, `int32 -> int`, `uint32 -> uint`, `int64 -> long`, `uint64 -> ulong`
+- バイト列: `bytes` / `bytearray` -> `List<byte>`
+- コンテナ: `list[T] -> List<T>`, `dict[K, V] -> Dictionary<K, V>`, `set[T] -> HashSet<T>`, `tuple[...] -> Tuple<...>`
+
+</details>
+
+<details>
+<summary>JavaScript / TypeScript</summary>
+
+- 数値は `number` ベースで扱います。
+- `bytes` / `bytearray` はランタイム上 `number[]` として扱います（`pyBytearray` / `pyBytes`）。
+- `list` / `tuple` は配列、`dict` は `Map` 相当、`set` は `Set` 相当へ変換されます（ランタイム補助を併用）。
+
+</details>
+
+<details>
+<summary>Go</summary>
+
+- 現状は `any` ベース実装を併用しますが、数値演算部分では `int` / `float64` / `bool` / `string` の推論を行います。
+- `bytes` / `bytearray` はランタイムで `[]byte` として扱います。
+- Go の型注釈反映を強化して `any` 退化を減らす作業は `docs/todo.md` の未完了項目です。
+
+</details>
+
+<details>
+<summary>Java</summary>
+
+- 現状は `Object` ベース実装を併用します。
+- `bytes` / `bytearray` はランタイムで `byte[]` として扱います。
+- Java の型注釈反映を強化して `Object` 退化を減らす作業は `docs/todo.md` の未完了項目です。
+
+</details>
+
+<details>
+<summary>Swift / Kotlin</summary>
+
+- 現状は Node バックエンド実行方式のため、型変換仕様は実質 JavaScript 側の型表現に準拠します。
+- そのため、数値は `number` 相当、`bytes` / `bytearray` は `number[]` 相当で扱われます。
+
+</details>
 
 ```python
-# bytes / bytearray の例
+# 型注釈の例
 buf1: bytearray = bytearray(16)
 buf2: bytes = bytes(buf1)
-
-# コンテナ注釈の例
 ids: list[int] = [1, 2, 3]
 name_by_id: dict[int, str] = {1: "alice"}
 ```
@@ -242,5 +289,3 @@ Windows cmd.exe:
 ```bat
 set PYTHONPATH=src && py sample/py/01_mandelbrot.py
 ```
-
-- 生成コードは「読みやすさ」より「変換の忠実性」を優先しています。

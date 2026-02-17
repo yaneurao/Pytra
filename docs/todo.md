@@ -67,6 +67,8 @@
 
 - [x] `py2go.py` / `py2java.py` を Python 呼び出し不要のネイティブ変換モードへ移行する。
 - [x] `test/py`（case01〜30）を Go/Java ネイティブ変換して、Python 実行結果と一致させる。
+- [ ] Go/Java で、Python 側に型注釈がある変数・引数・戻り値を `any` / `Object` へ退化させず、可能な限り静的型（`int`/`float64`/`string`/`bool`/`[]byte`/`byte[]`/コンテナ型）へ落とす。
+- [ ] Go/Java の `bytes` / `bytearray` 型注釈を優先して `[]byte` / `byte[]` へ反映し、`any` / `Object` ベース実装は型未確定ケースのみに限定する。
 - [ ] `sample/py` で使っている `math` モジュール呼び出し（`sqrt`, `sin`, `cos` など）を Go/Java ネイティブ変換で対応する。
 - [ ] `sample/py` で使っている `png_helper.write_rgb_png` の Go/Java ランタイム実装を追加する。
 - [ ] `sample/py` で使っている `gif_helper.save_gif` / `grayscale_palette` の Go/Java ランタイム実装を追加する。
