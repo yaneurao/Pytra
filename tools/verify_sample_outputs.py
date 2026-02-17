@@ -246,9 +246,24 @@ def compare_images(py_img: Path, cpp_img: Path) -> tuple[bool, str]:
     if ext != cpp_img.suffix.lower():
         return False, f"suffix mismatch: {py_img.suffix} vs {cpp_img.suffix}"
     if ext == ".png":
-        p = png_raw_rgb(py_img)
-        c = png_raw_rgb(cpp_img)
-        return (p == c, "png raw equal" if p == c else "png raw differ")
+        pw, ph, pr = png_raw_rgb(py_img)
+        cw, ch, cr = png_raw_rgb(cpp_img)
+        if pw != cw or ph != ch:
+            return False, f"png size differ: {pw}x{ph} vs {cw}x{ch}"
+        if pr == cr:
+            return True, "png raw equal"
+        stride = pw * 3
+        diff_at = -1
+        for i, (a, b) in enumerate(zip(pr, cr)):
+            if a != b:
+                diff_at = i
+                break
+        if diff_at < 0:
+            return False, "png raw differ (unknown position)"
+        y, rem = divmod(diff_at, stride)
+        x, ch_idx = divmod(rem, 3)
+        ch_name = ("R", "G", "B")[ch_idx]
+        return False, f"png raw differ at x={x}, y={y}, ch={ch_name}, py={pr[diff_at]}, cpp={cr[diff_at]}, expr=n/a"
     if ext == ".gif":
         pf = gif_frames_index(py_img)
         cf = gif_frames_index(cpp_img)
@@ -261,9 +276,22 @@ def compare_images(py_img: Path, cpp_img: Path) -> tuple[bool, str]:
                 or a["width"] != b["width"]
                 or a["height"] != b["height"]
                 or a["delay"] != b["delay"]
-                or a["index"] != b["index"]
             ):
                 return False, f"gif frame differ at index {i}"
+            if a["index"] != b["index"]:
+                diff_at = -1
+                for j, (va, vb) in enumerate(zip(a["index"], b["index"])):
+                    if va != vb:
+                        diff_at = j
+                        break
+                if diff_at < 0:
+                    return False, f"gif frame differ at index {i} (index payload length mismatch)"
+                x = diff_at % a["width"]
+                y = diff_at // a["width"]
+                return (
+                    False,
+                    f"gif frame differ at frame={i}, x={x}, y={y}, py_idx={a['index'][diff_at]}, cpp_idx={b['index'][diff_at]}, expr=n/a",
+                )
         return True, "gif frames equal"
     # fallback: non-image outputs
     return (py_img.read_bytes() == cpp_img.read_bytes(), "binary equal")

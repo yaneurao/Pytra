@@ -60,7 +60,7 @@
 - [x] `sample/05,06,08,10,11,14` で GIF の GCE delay 値が Python 実行結果と一致することを確認する。
 - [ ] 浮動小数点式の再結合（演算順序変更）を抑制し、Python と同じ評価順を優先する。
 - [ ] `a * (b / c)` が `a * b / c` に変わらないように、`render_expr` の括弧方針を見直す。
-- [ ] `sample/01_mandelbrot` と `sample/03_julia_set` で PNG の raw scanline が一致することを確認する。
+- [x] `sample/01_mandelbrot` と `sample/03_julia_set` で PNG の raw scanline が一致することを確認する。
 - [ ] PNG 出力の差分を「画素差」と「圧縮差」に切り分けた上で、仕様として扱いを明文化する。
 - [x] `sample/02_raytrace_spheres` は画素一致・IDAT 圧縮差のみであることを docs に追記する。
 - [ ] 必要なら C++ 側 `src/cpp_module/png.cpp` を zlib 圧縮実装へ寄せ、IDAT 近似一致または完全一致方針を決める。
@@ -69,4 +69,4 @@
 - [ ] フレームデータ（LZW 展開後）が全フレーム一致することを確認する。
 - [x] 画像一致検証を自動化する。
 - [x] `sample/py` 全件について、`stdout` 比較に加えて PNG raw / GIF フレーム一致を検証するスクリプトを追加する。
-- [ ] 差分時は「最初の不一致座標・チャネル・元式」を出力できるようにする。
+- [x] 差分時は「最初の不一致座標・チャネル・元式」を出力できるようにする。

@@ -70,3 +70,4 @@ python3 tools/verify_sample_outputs.py --compile-flags=\"-O2\"
 ```
 
 - `stdout` 差分と、画像の差分（PNG は raw scanline、GIF は LZW 展開後のフレームインデックス）をまとめて確認できます。
+- 画像差分がある場合は、最初の不一致位置（PNG: x/y/チャネル、GIF: フレーム/x/y）を表示します。
