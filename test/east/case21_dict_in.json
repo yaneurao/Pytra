@@ -45,12 +45,12 @@
                 "end_lineno": 6,
                 "end_col": 5
               },
-              "resolved_type": "dict[str,int]",
+              "resolved_type": "dict[str,int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "d"
             },
-            "annotation": "dict[str,int]",
+            "annotation": "dict[str,int64]",
             "value": {
               "kind": "Dict",
               "source_span": {
@@ -59,7 +59,7 @@
                 "end_lineno": 6,
                 "end_col": 40
               },
-              "resolved_type": "dict[str,int]",
+              "resolved_type": "dict[str,int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "{'a': 1, 'b': 2}"

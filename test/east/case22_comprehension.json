@@ -21,9 +21,9 @@
           "end_col": 16
         },
         "arg_types": {
-          "x": "int"
+          "x": "int64"
         },
-        "return_type": "int",
+        "return_type": "int64",
         "arg_usage": {
           "x": "readonly"
         },
@@ -45,12 +45,12 @@
                 "end_lineno": 6,
                 "end_col": 10
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "values"
             },
-            "annotation": "list[int]",
+            "annotation": "list[int64]",
             "value": {
               "kind": "ListComp",
               "source_span": {
@@ -59,7 +59,7 @@
                 "end_lineno": 6,
                 "end_col": 49
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "[i for i in [1, 2, 3, 4]]"
@@ -81,7 +81,7 @@
                 "end_lineno": 7,
                 "end_col": 16
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "x + 1"

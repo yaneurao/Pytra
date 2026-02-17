@@ -5,18 +5,18 @@ namespace east_view /* source: test/py/case11_fib.py */ {
 
     // module body
 // [5:0] function original=fib
-int fib(int n /* readonly */) {
+int64 fib(int64 n /* readonly */) {
 // [6:4]
 if (n <= 1 /* type=bool, borrow=value */) {
             // [7:8]
-            return n /* type=int, borrow=readonly_ref */;
+            return n /* type=int64, borrow=readonly_ref */;
         }
         // [8:4]
-        return fib(n - 1) + fib(n - 2) /* type=int, borrow=value */;
+        return fib(n - 1) + fib(n - 2) /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [12:4]
         print(fib(10)) /* type=None, borrow=value */;
         return 0;

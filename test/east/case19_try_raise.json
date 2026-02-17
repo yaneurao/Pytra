@@ -23,7 +23,7 @@
         "arg_types": {
           "flag": "bool"
         },
-        "return_type": "int",
+        "return_type": "int64",
         "arg_usage": {
           "flag": "readonly"
         },
@@ -101,7 +101,7 @@
                     "end_lineno": 9,
                     "end_col": 17
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "10"
@@ -148,7 +148,7 @@
                         "end_lineno": 11,
                         "end_col": 17
                       },
-                      "resolved_type": "int",
+                      "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
                       "repr": "20"

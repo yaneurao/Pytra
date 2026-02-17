@@ -11,7 +11,7 @@ str greet(str name /* readonly */) {
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [10:4]
         print(greet('Codex')) /* type=None, borrow=value */;
         return 0;

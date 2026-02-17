@@ -21,10 +21,10 @@
           "end_col": 16
         },
         "arg_types": {
-          "a": "int",
-          "b": "int"
+          "a": "int64",
+          "b": "int64"
         },
-        "return_type": "int",
+        "return_type": "int64",
         "arg_usage": {
           "a": "readonly",
           "b": "readonly"
@@ -47,12 +47,12 @@
                 "end_lineno": 6,
                 "end_col": 5
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "x"
             },
-            "annotation": "int",
+            "annotation": "int64",
             "value": {
               "kind": "Name",
               "source_span": {
@@ -61,7 +61,7 @@
                 "end_lineno": 6,
                 "end_col": 14
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "readonly_ref",
               "casts": [],
               "repr": "a"
@@ -83,12 +83,12 @@
                 "end_lineno": 7,
                 "end_col": 5
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "y"
             },
-            "annotation": "int",
+            "annotation": "int64",
             "value": {
               "kind": "Name",
               "source_span": {
@@ -97,7 +97,7 @@
                 "end_lineno": 7,
                 "end_col": 14
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "readonly_ref",
               "casts": [],
               "repr": "b"
@@ -119,7 +119,7 @@
                 "end_lineno": 8,
                 "end_col": 8
               },
-              "resolved_type": "tuple[int,int]",
+              "resolved_type": "tuple[int64,int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "(x, y)"
@@ -132,7 +132,7 @@
                 "end_lineno": 8,
                 "end_col": 15
               },
-              "resolved_type": "tuple[int,int]",
+              "resolved_type": "tuple[int64,int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "(y, x)"
@@ -154,7 +154,7 @@
                 "end_lineno": 9,
                 "end_col": 16
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "x + y"

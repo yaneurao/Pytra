@@ -5,13 +5,13 @@ namespace east_view /* source: test/py/case02_sub_mul.py */ {
 
     // module body
 // [5:0] function original=calc
-int calc(int x /* readonly */, int y /* readonly */) {
+int64 calc(int64 x /* readonly */, int64 y /* readonly */) {
         // [6:4]
-        return (x - y) * 2 /* type=int, borrow=value */;
+        return (x - y) * 2 /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [10:4]
         print(calc(9, 4)) /* type=None, borrow=value */;
         return 0;

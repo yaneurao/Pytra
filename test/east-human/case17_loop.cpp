@@ -5,27 +5,27 @@ namespace east_view /* source: test/py/case17_loop.py */ {
 
     // module body
 // [5:0] function original=calc_17
-int calc_17(list[int] values /* readonly */) {
+int64 calc_17(list[int64] values /* readonly */) {
         // [6:4]
-        int total /* type=int, borrow=value */ = 0 /* type=int, borrow=value */;
+        int64 total /* type=int64, borrow=value */ = 0 /* type=int64, borrow=value */;
 // [7:4]
-for (auto v /* type=int, borrow=value */ : values /* type=list[int], borrow=readonly_ref */) {
+for (int64 v : values /* type=list[int64], borrow=readonly_ref */) {
 // [8:8]
 if (v % 2 == 0 /* type=bool, borrow=value */) {
                 // [9:12]
-                total /* type=int, borrow=value */ /* Add */= v /* type=int, borrow=value */;
+                total /* type=int64, borrow=value */ /* Add */= v /* type=int64, borrow=value */;
             }
             else {
                 // [11:12]
-                total /* type=int, borrow=value */ /* Add */= v * 2 /* type=int, borrow=value */;
+                total /* type=int64, borrow=value */ /* Add */= v * 2 /* type=int64, borrow=value */;
             }
         }
         // [12:4]
-        return total /* type=int, borrow=value */;
+        return total /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [16:4]
         print(calc_17([1, 2, 3, 4])) /* type=None, borrow=value */;
         return 0;

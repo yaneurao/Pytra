@@ -11,13 +11,13 @@ namespace east_view /* source: test/py/case29_int8.py */ {
 None __pytra_main() {
         // renamed_symbols: {'main': '__pytra_main'}
         // [4:4]
-        int i /* type=int, borrow=value */ = 1 /* type=int, borrow=value */;
+        int8 i /* type=int8, borrow=value */ = 1 /* type=int64, borrow=value */;
         // [5:4]
         print(i * 2) /* type=None, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [8:4]
         main() /* type=None, borrow=value */;
         return 0;

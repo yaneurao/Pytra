@@ -11,20 +11,20 @@ namespace east_view /* source: test/py/case28_iterable.py */ {
 None __pytra_main() {
         // renamed_symbols: {'main': '__pytra_main'}
         // [4:4]
-        list[int] l /* type=list[int], borrow=value */ = [1, 2, 3] /* type=list[int], borrow=value */;
+        list[int64] l /* type=list[int64], borrow=value */ = [1, 2, 3] /* type=list[int64], borrow=value */;
         // [5:4]
-        sum /* type=int, borrow=value */ = 0 /* type=int, borrow=value */;
+        sum /* type=int64, borrow=value */ = 0 /* type=int64, borrow=value */;
 // [6:4]
-for (auto v /* type=int, borrow=value */ : l /* type=list[int], borrow=value */) {
+for (int64 v : l /* type=list[int64], borrow=value */) {
             // [7:8]
-            sum /* type=int, borrow=value */ /* Add */= v /* type=int, borrow=value */;
+            sum /* type=int64, borrow=value */ /* Add */= v /* type=int64, borrow=value */;
         }
         // [8:4]
         print(sum) /* type=None, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [11:4]
         main() /* type=None, borrow=value */;
         return 0;

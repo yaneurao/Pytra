@@ -5,7 +5,7 @@ namespace east_view /* source: test/py/case19_try_raise.py */ {
 
     // module body
 // [5:0] function original=maybe_fail_19
-int maybe_fail_19(bool flag /* readonly */) {
+int64 maybe_fail_19(bool flag /* readonly */) {
 // [6:4]
 try {
 // [7:8]
@@ -14,11 +14,11 @@ if (flag /* type=bool, borrow=readonly_ref */) {
                 throw Exception('fail-19') /* type=Exception, borrow=value */;
             }
             // [9:8]
-            return 10 /* type=int, borrow=value */;
+            return 10 /* type=int64, borrow=value */;
         }
         catch (Exception /* type=Exception, borrow=value */ as ex) {
             // [11:8]
-            return 20 /* type=int, borrow=value */;
+            return 20 /* type=int64, borrow=value */;
         }
         /* finally */ {
             // [13:8] pass;
@@ -26,7 +26,7 @@ if (flag /* type=bool, borrow=readonly_ref */) {
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [17:4]
         print(maybe_fail_19(True)) /* type=None, borrow=value */;
         return 0;

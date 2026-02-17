@@ -21,7 +21,7 @@
           "end_col": 20
         },
         "arg_types": {
-          "n": "int"
+          "n": "int64"
         },
         "return_type": "bool",
         "arg_usage": {

@@ -5,15 +5,15 @@ namespace east_view /* source: test/py/case09_top_level.py */ {
 
     // module body
 // [5:0] function original=mul3
-int mul3(int n /* readonly */) {
+int64 mul3(int64 n /* readonly */) {
         // [6:4]
-        return n * 3 /* type=int, borrow=value */;
+        return n * 3 /* type=int64, borrow=value */;
     }
     // [9:0]
-    int value /* type=int, borrow=value */ = 7 /* type=int, borrow=value */;
+    int64 value /* type=int64, borrow=value */ = 7 /* type=int64, borrow=value */;
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [12:4]
         print(mul3(value)) /* type=None, borrow=value */;
         return 0;

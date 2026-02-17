@@ -11,7 +11,7 @@ float half(float x /* readonly */) {
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [10:4]
         print(half(5.0)) /* type=None, borrow=value */;
         return 0;

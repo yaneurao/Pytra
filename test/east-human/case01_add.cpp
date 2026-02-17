@@ -5,13 +5,13 @@ namespace east_view /* source: test/py/case01_add.py */ {
 
     // module body
 // [5:0] function original=add
-int add(int a /* readonly */, int b /* readonly */) {
+int64 add(int64 a /* readonly */, int64 b /* readonly */) {
         // [6:4]
-        return a + b /* type=int, borrow=value */;
+        return a + b /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [10:4]
         print(add(3, 4)) /* type=None, borrow=value */;
         return 0;

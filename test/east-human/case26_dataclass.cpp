@@ -8,18 +8,18 @@ namespace east_view /* source: test/py/case26_dataclass.py */ {
 // [9:0] class original=Point99
 struct Point99 {
         // [10:4]
-        int x /* type=int, borrow=value */ = /* none */;
+        int64 x /* type=int64, borrow=value */ = /* none */;
         // [11:4]
-        int y /* type=int, borrow=value */ = 10 /* type=int, borrow=value */;
+        int64 y /* type=int64, borrow=value */ = 10 /* type=int64, borrow=value */;
 // [13:4] function original=total
-int total(Point99 self /* readonly */) {
+int64 total(Point99 self /* readonly */) {
             // [14:8]
-            return self.x + self.y /* type=int, borrow=value */;
+            return self.x + self.y /* type=int64, borrow=value */;
         }
     };
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [18:4]
         Point99 p /* type=Point99, borrow=value */ = Point99(3) /* type=Point99, borrow=value */;
         // [19:4]

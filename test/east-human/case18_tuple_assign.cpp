@@ -5,19 +5,19 @@ namespace east_view /* source: test/py/case18_tuple_assign.py */ {
 
     // module body
 // [5:0] function original=swap_sum_18
-int swap_sum_18(int a /* readonly */, int b /* readonly */) {
+int64 swap_sum_18(int64 a /* readonly */, int64 b /* readonly */) {
         // [6:4]
-        int x /* type=int, borrow=value */ = a /* type=int, borrow=readonly_ref */;
+        int64 x /* type=int64, borrow=value */ = a /* type=int64, borrow=readonly_ref */;
         // [7:4]
-        int y /* type=int, borrow=value */ = b /* type=int, borrow=readonly_ref */;
+        int64 y /* type=int64, borrow=value */ = b /* type=int64, borrow=readonly_ref */;
         // [8:4]
-        (x, y) /* type=tuple[int,int], borrow=value */ = (y, x) /* type=tuple[int,int], borrow=value */;
+        (x, y) /* type=tuple[int64,int64], borrow=value */ = (y, x) /* type=tuple[int64,int64], borrow=value */;
         // [9:4]
-        return x + y /* type=int, borrow=value */;
+        return x + y /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [13:4]
         print(swap_sum_18(10, 20)) /* type=None, borrow=value */;
         return 0;

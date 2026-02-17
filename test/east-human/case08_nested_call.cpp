@@ -5,18 +5,18 @@ namespace east_view /* source: test/py/case08_nested_call.py */ {
 
     // module body
 // [5:0] function original=inc
-int inc(int x /* readonly */) {
+int64 inc(int64 x /* readonly */) {
         // [6:4]
-        return x + 1 /* type=int, borrow=value */;
+        return x + 1 /* type=int64, borrow=value */;
     }
 // [9:0] function original=twice
-int twice(int x /* mutable */) {
+int64 twice(int64 x /* mutable */) {
         // [10:4]
-        return inc(inc(x)) /* type=int, borrow=value */;
+        return inc(inc(x)) /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [14:4]
         print(twice(10)) /* type=None, borrow=value */;
         return 0;

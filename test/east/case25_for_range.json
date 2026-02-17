@@ -21,9 +21,9 @@
           "end_col": 16
         },
         "arg_types": {
-          "n": "int"
+          "n": "int64"
         },
-        "return_type": "int",
+        "return_type": "int64",
         "arg_usage": {
           "n": "readonly"
         },
@@ -45,12 +45,12 @@
                 "end_lineno": 6,
                 "end_col": 9
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "total"
             },
-            "annotation": "int",
+            "annotation": "int64",
             "value": {
               "kind": "Constant",
               "source_span": {
@@ -59,7 +59,7 @@
                 "end_lineno": 6,
                 "end_col": 18
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "0"
@@ -81,7 +81,7 @@
                 "end_lineno": 7,
                 "end_col": 9
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "i"
@@ -94,7 +94,7 @@
                 "end_lineno": null,
                 "end_col": null
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "0"
@@ -107,7 +107,7 @@
                 "end_lineno": 7,
                 "end_col": 20
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "readonly_ref",
               "casts": [],
               "repr": "n"
@@ -120,7 +120,7 @@
                 "end_lineno": null,
                 "end_col": null
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "1"
@@ -143,7 +143,7 @@
                     "end_lineno": 8,
                     "end_col": 13
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "total"
@@ -157,7 +157,7 @@
                     "end_lineno": 8,
                     "end_col": 18
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "i"
@@ -182,7 +182,7 @@
                 "end_lineno": 9,
                 "end_col": 16
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "total"

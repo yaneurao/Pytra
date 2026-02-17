@@ -22,7 +22,7 @@ str bark(Dog self /* readonly */) {
     };
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [16:4]
         Dog d /* type=Dog, borrow=value */ = Dog() /* type=Dog, borrow=value */;
         // [17:4]

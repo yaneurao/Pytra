@@ -37,12 +37,12 @@
                 "end_lineno": 6,
                 "end_col": 9
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "total"
             },
-            "annotation": "int",
+            "annotation": "int64",
             "value": {
               "kind": "Constant",
               "source_span": {
@@ -51,7 +51,7 @@
                 "end_lineno": 6,
                 "end_col": 18
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "0"
@@ -69,9 +69,9 @@
             },
             "arg_types": {
               "self": "Counter26",
-              "x": "int"
+              "x": "int64"
             },
-            "return_type": "int",
+            "return_type": "int64",
             "arg_usage": {
               "self": "mutable",
               "x": "readonly"
@@ -94,7 +94,7 @@
                     "end_lineno": 9,
                     "end_col": 18
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "self.total"
@@ -108,7 +108,7 @@
                     "end_lineno": 9,
                     "end_col": 23
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
                   "repr": "x"
@@ -130,7 +130,7 @@
                     "end_lineno": 10,
                     "end_col": 25
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "self.total"

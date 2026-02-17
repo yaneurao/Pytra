@@ -21,9 +21,9 @@
           "end_col": 16
         },
         "arg_types": {
-          "n": "int"
+          "n": "int64"
         },
-        "return_type": "int",
+        "return_type": "int64",
         "arg_usage": {
           "n": "readonly"
         },
@@ -67,7 +67,7 @@
                     "end_lineno": 7,
                     "end_col": 17
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "-n"
@@ -91,7 +91,7 @@
                     "end_lineno": 9,
                     "end_col": 16
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
                   "repr": "n"

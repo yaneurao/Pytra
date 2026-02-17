@@ -11,11 +11,11 @@ namespace east_view /* source: test/py/case30_slice_basic.py */ {
 None __pytra_main() {
         // renamed_symbols: {'main': '__pytra_main'}
         // [4:4]
-        list[int] nums /* type=list[int], borrow=value */ = [10, 20, 30, 40, 50] /* type=list[int], borrow=value */;
+        list[int64] nums /* type=list[int64], borrow=value */ = [10, 20, 30, 40, 50] /* type=list[int64], borrow=value */;
         // [5:4]
         str text /* type=str, borrow=value */ = 'abcdef' /* type=str, borrow=value */;
         // [7:4]
-        list[int] mid_nums /* type=list[int], borrow=value */ = nums[1:4] /* type=list[int], borrow=value */;
+        list[int64] mid_nums /* type=list[int64], borrow=value */ = nums[1:4] /* type=list[int64], borrow=value */;
         // [8:4]
         str mid_text /* type=str, borrow=value */ = text[2:5] /* type=str, borrow=value */;
         // [10:4]
@@ -27,7 +27,7 @@ None __pytra_main() {
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [16:4]
         main() /* type=None, borrow=value */;
         return 0;

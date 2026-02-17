@@ -5,13 +5,13 @@ namespace east_view /* source: test/py/case20_fstring.py */ {
 
     // module body
 // [5:0] function original=make_msg_22
-str make_msg_22(str name /* readonly */, int count /* readonly */) {
+str make_msg_22(str name /* readonly */, int64 count /* readonly */) {
         // [6:4]
         return f'{name}:22:{count}' /* type=str, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [10:4]
         print(make_msg_22('user', 7)) /* type=None, borrow=value */;
         return 0;

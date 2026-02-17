@@ -33,8 +33,8 @@
             },
             "arg_types": {
               "self": "Point",
-              "x": "int",
-              "y": "int"
+              "x": "int64",
+              "y": "int64"
             },
             "return_type": "None",
             "arg_usage": {
@@ -60,7 +60,7 @@
                     "end_lineno": 7,
                     "end_col": 14
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "self.x"
@@ -73,7 +73,7 @@
                     "end_lineno": 7,
                     "end_col": 18
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
                   "repr": "x"
@@ -95,12 +95,12 @@
                     "end_lineno": 8,
                     "end_col": 14
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "self.y"
                 },
-                "annotation": "int",
+                "annotation": "int64",
                 "value": {
                   "kind": "Name",
                   "source_span": {
@@ -109,7 +109,7 @@
                     "end_lineno": 8,
                     "end_col": 23
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
                   "repr": "y"
@@ -130,7 +130,7 @@
             "arg_types": {
               "self": "Point"
             },
-            "return_type": "int",
+            "return_type": "int64",
             "arg_usage": {
               "self": "readonly"
             },
@@ -152,7 +152,7 @@
                     "end_lineno": 11,
                     "end_col": 30
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "self.x + self.y"

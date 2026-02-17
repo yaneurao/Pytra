@@ -15,7 +15,7 @@ str decorate(str name /* readonly */) {
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [12:4]
         print(decorate('Alice')) /* type=None, borrow=value */;
         return 0;

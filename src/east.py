@@ -22,6 +22,16 @@ from typing import Any
 
 
 BorrowKind = str  # "value" | "readonly_ref" | "mutable_ref" | "move"
+INT_TYPES = {
+    "int8",
+    "uint8",
+    "int16",
+    "uint16",
+    "int32",
+    "uint32",
+    "int64",
+    "uint64",
+}
 
 
 @dataclass
@@ -77,13 +87,14 @@ def annotation_to_type(ann: ast.expr | None) -> str | None:
     if ann is None:
         return None
     if isinstance(ann, ast.Name):
-        int_aliases = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
         float_aliases = {"float32", "float64"}
-        if ann.id in int_aliases:
-            return "int"
+        if ann.id == "int":
+            return "int64"
+        if ann.id in INT_TYPES:
+            return ann.id
         if ann.id in float_aliases:
             return "float"
-        if ann.id in {"int", "float", "bool", "str", "bytes", "bytearray", "Path"}:
+        if ann.id in {"float", "bool", "str", "bytes", "bytearray", "Path"}:
             return ann.id
         if ann.id in {"None", "NoneType"}:
             return "None"
@@ -310,8 +321,9 @@ class EastBuilder:
             value_expr = self._expr(stmt.value)
             if isinstance(stmt.target, ast.Name):
                 current = self._lookup_name_type(stmt.target.id)
-                if current in {"int", "float"} and value_expr["resolved_type"] in {"int", "float"}:
-                    self._bind_name_type(stmt.target.id, "float" if "float" in {current, value_expr["resolved_type"]} else "int", stmt)
+                rhs_t = value_expr["resolved_type"]
+                if current is not None and self._is_numeric_type(current) and self._is_numeric_type(rhs_t):
+                    self._bind_name_type(stmt.target.id, "float" if "float" in {current, rhs_t} else current, stmt)
             return {
                 "kind": "AugAssign",
                 "source_span": span_of(stmt),
@@ -376,7 +388,7 @@ class EastBuilder:
                 start_node, stop_node, step_node = rng
                 range_mode = self._range_mode_from_step(step_node, stmt)
                 if isinstance(stmt.target, ast.Name):
-                    self._bind_name_type(stmt.target.id, "int", stmt)
+                    self._bind_name_type(stmt.target.id, "int64", stmt)
                 return {
                     "kind": "ForRange",
                     "source_span": span_of(stmt),
@@ -531,7 +543,7 @@ class EastBuilder:
             if isinstance(expr.value, bool):
                 return "bool", []
             if isinstance(expr.value, int):
-                return "int", []
+                return "int64", []
             if isinstance(expr.value, float):
                 return "float", []
             if isinstance(expr.value, str):
@@ -569,21 +581,21 @@ class EastBuilder:
             if isinstance(expr.op, ast.Div):
                 if lt == "Path":
                     return "Path", []
-                if lt in {"int", "float"} and rt in {"int", "float"}:
-                    if lt == "int":
-                        casts.append({"on": "left", "from": "int", "to": "float", "reason": "numeric_promotion"})
-                    if rt == "int":
-                        casts.append({"on": "right", "from": "int", "to": "float", "reason": "numeric_promotion"})
+                if self._is_numeric_type(lt) and self._is_numeric_type(rt):
+                    if self._is_int_type(lt):
+                        casts.append({"on": "left", "from": lt, "to": "float", "reason": "numeric_promotion"})
+                    if self._is_int_type(rt):
+                        casts.append({"on": "right", "from": rt, "to": "float", "reason": "numeric_promotion"})
                     return "float", casts
             if isinstance(expr.op, (ast.Add, ast.Sub, ast.Mult, ast.Mod, ast.FloorDiv)):
                 if lt == "str" and rt == "str" and isinstance(expr.op, ast.Add):
                     return "str", []
-                if lt in {"int", "float"} and rt in {"int", "float"}:
+                if self._is_numeric_type(lt) and self._is_numeric_type(rt):
                     if lt != rt:
-                        if lt == "int":
-                            casts.append({"on": "left", "from": "int", "to": "float", "reason": "numeric_promotion"})
-                        if rt == "int":
-                            casts.append({"on": "right", "from": "int", "to": "float", "reason": "numeric_promotion"})
+                        if self._is_int_type(lt):
+                            casts.append({"on": "left", "from": lt, "to": "float", "reason": "numeric_promotion"})
+                        if self._is_int_type(rt):
+                            casts.append({"on": "right", "from": rt, "to": "float", "reason": "numeric_promotion"})
                         return "float", casts
                     return lt, []
             raise self._error("inference_failure", f"cannot infer binop type: {lt} op {rt}", expr, "Add explicit cast or simplify expression.")
@@ -591,7 +603,7 @@ class EastBuilder:
             t, _ = self._resolve_expr_type(expr.operand)
             if isinstance(expr.op, ast.Not):
                 return "bool", []
-            if isinstance(expr.op, ast.USub) and t in {"int", "float"}:
+            if isinstance(expr.op, ast.USub) and self._is_numeric_type(t):
                 return t, []
             raise self._error("inference_failure", f"cannot infer unary op type for {t}", expr, "Use explicit cast.")
         if isinstance(expr, ast.BoolOp):
@@ -603,7 +615,7 @@ class EastBuilder:
             ot, _ = self._resolve_expr_type(expr.orelse)
             if bt == ot:
                 return bt, []
-            if {bt, ot} == {"int", "float"}:
+            if self._is_numeric_type(bt) and self._is_numeric_type(ot):
                 return "float", [
                     {"on": "body", "from": bt, "to": "float", "reason": "ifexp_numeric_promotion"},
                     {"on": "orelse", "from": ot, "to": "float", "reason": "ifexp_numeric_promotion"},
@@ -672,12 +684,14 @@ class EastBuilder:
     def _resolve_call_type(self, expr: ast.Call) -> tuple[str, list[dict[str, Any]]]:
         if isinstance(expr.func, ast.Name):
             fn = expr.func.id
-            if fn in {"int", "float", "bool", "str", "bytes", "bytearray"}:
+            if fn == "int":
+                return "int64", []
+            if fn in {"float", "bool", "str", "bytes", "bytearray"}:
                 return fn, []
             if fn == "len":
-                return "int", []
+                return "int64", []
             if fn == "range":
-                return "list[int]", []
+                return "list[int64]", []
             if fn == "Path":
                 return "Path", []
             if fn in {"min", "max"}:
@@ -765,13 +779,16 @@ class EastBuilder:
             return True
         if "unknown" in {t1, t2}:
             return True
-        return {t1, t2} == {"int", "float"}
+        return self._is_numeric_type(t1) and self._is_numeric_type(t2)
 
     def _unify_types(self, types: list[str], node: ast.AST) -> str:
         uniq = sorted(set(types))
         if len(uniq) == 1:
             return uniq[0]
-        if set(uniq) == {"int", "float"}:
+        if all(self._is_int_type(t) for t in uniq):
+            has_signed = any(t.startswith("int") for t in uniq)
+            return "int64" if has_signed else "uint64"
+        if all(self._is_numeric_type(t) for t in uniq):
             return "float"
         raise self._error("inference_failure", f"ambiguous types: {uniq}", node, "Add explicit annotation/cast to make the type unique.")
 
@@ -789,10 +806,16 @@ class EastBuilder:
         if iterable_type == "str":
             return "str"
         if iterable_type == "bytes" or iterable_type == "bytearray":
-            return "int"
+            return "uint8"
         if iterable_type == "unknown":
             return "unknown"
         return None
+
+    def _is_int_type(self, t: str) -> bool:
+        return t in INT_TYPES
+
+    def _is_numeric_type(self, t: str) -> bool:
+        return self._is_int_type(t) or t == "float"
 
     def _lookup_method_return_type(self, class_name: str, method: str) -> str | None:
         cur: str | None = class_name
@@ -907,24 +930,16 @@ def _expr_repr(expr: dict[str, Any] | None) -> str:
 def _cpp_type_name(east_type: str | None) -> str:
     if east_type is None:
         return "auto"
-    if east_type == "int":
-        return "long long"
-    if east_type == "float":
-        return "double"
-    if east_type == "bool":
-        return "bool"
-    if east_type == "str":
-        return "std::string"
-    if east_type == "Path":
-        return "Path"
+    if east_type in INT_TYPES | {"float", "bool", "str", "Path", "bytes", "bytearray", "Exception", "None"}:
+        return east_type
     if east_type.startswith("list["):
-        return "/*list*/ auto"
+        return east_type
     if east_type.startswith("dict["):
-        return "/*dict*/ auto"
+        return east_type
     if east_type.startswith("set["):
-        return "/*set*/ auto"
+        return east_type
     if east_type.startswith("tuple["):
-        return "/*tuple*/ auto"
+        return east_type
     return "auto"
 
 
@@ -1133,7 +1148,7 @@ def render_east_human_cpp(out_doc: dict[str, Any]) -> str:
     lines.append("")
 
     lines.append("    // main guard body")
-    lines.append("    int __east_main_guard() {")
+    lines.append("    int64 __east_main_guard() {")
     for s in east.get("main_guard_body", []):
         lines.extend(_render_stmt(s, 2))
     lines.append("        return 0;")

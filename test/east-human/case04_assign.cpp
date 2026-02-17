@@ -5,17 +5,17 @@ namespace east_view /* source: test/py/case04_assign.py */ {
 
     // module body
 // [5:0] function original=square_plus_one
-int square_plus_one(int n /* readonly */) {
+int64 square_plus_one(int64 n /* readonly */) {
         // [6:4]
-        int result /* type=int, borrow=value */ = n * n /* type=int, borrow=value */;
+        int64 result /* type=int64, borrow=value */ = n * n /* type=int64, borrow=value */;
         // [7:4]
-        result /* type=int, borrow=value */ /* Add */= 1 /* type=int, borrow=value */;
+        result /* type=int64, borrow=value */ /* Add */= 1 /* type=int64, borrow=value */;
         // [8:4]
-        return result /* type=int, borrow=value */;
+        return result /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [12:4]
         print(square_plus_one(5)) /* type=None, borrow=value */;
         return 0;

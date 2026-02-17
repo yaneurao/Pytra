@@ -5,20 +5,20 @@ namespace east_view /* source: test/py/case25_for_range.py */ {
 
     // module body
 // [5:0] function original=sum_range_29
-int sum_range_29(int n /* readonly */) {
+int64 sum_range_29(int64 n /* readonly */) {
         // [6:4]
-        int total /* type=int, borrow=value */ = 0 /* type=int, borrow=value */;
+        int64 total /* type=int64, borrow=value */ = 0 /* type=int64, borrow=value */;
 // [7:4]
-for (long long i = 0 /* type=int, borrow=value */; (i) < (n /* type=int, borrow=readonly_ref */); i += (1 /* type=int, borrow=value */)) {
+for (int64 i = 0 /* type=int64, borrow=value */; (i) < (n /* type=int64, borrow=readonly_ref */); i += (1 /* type=int64, borrow=value */)) {
             // [8:8]
-            total /* type=int, borrow=value */ /* Add */= i /* type=int, borrow=value */;
+            total /* type=int64, borrow=value */ /* Add */= i /* type=int64, borrow=value */;
         }
         // [9:4]
-        return total /* type=int, borrow=value */;
+        return total /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [13:4]
         print(sum_range_29(5)) /* type=None, borrow=value */;
         return 0;

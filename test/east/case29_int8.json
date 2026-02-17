@@ -43,12 +43,12 @@
                 "end_lineno": 4,
                 "end_col": 5
               },
-              "resolved_type": "int",
+              "resolved_type": "int8",
               "borrow_kind": "value",
               "casts": [],
               "repr": "i"
             },
-            "annotation": "int",
+            "annotation": "int8",
             "value": {
               "kind": "Constant",
               "source_span": {
@@ -57,7 +57,7 @@
                 "end_lineno": 4,
                 "end_col": 16
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "1"

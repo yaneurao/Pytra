@@ -21,11 +21,11 @@
           "end_col": 12
         },
         "arg_types": {
-          "a": "int",
-          "b": "int",
+          "a": "int64",
+          "b": "int64",
           "flag": "bool"
         },
-        "return_type": "int",
+        "return_type": "int64",
         "arg_usage": {
           "a": "readonly",
           "b": "readonly",
@@ -49,12 +49,12 @@
                 "end_lineno": 6,
                 "end_col": 5
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "c"
             },
-            "annotation": "int",
+            "annotation": "int64",
             "value": {
               "kind": "IfExp",
               "source_span": {
@@ -63,7 +63,7 @@
                 "end_lineno": 6,
                 "end_col": 43
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "a if flag and a > b else b"
@@ -85,7 +85,7 @@
                 "end_lineno": 7,
                 "end_col": 12
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "c"

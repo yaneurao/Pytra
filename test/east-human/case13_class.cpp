@@ -7,14 +7,14 @@ namespace east_view /* source: test/py/case13_class.py */ {
 // [5:0] class original=Multiplier
 struct Multiplier {
 // [6:4] function original=mul
-int mul(Multiplier self /* readonly */, int x /* readonly */, int y /* readonly */) {
+int64 mul(Multiplier self /* readonly */, int64 x /* readonly */, int64 y /* readonly */) {
             // [7:8]
-            return x * y /* type=int, borrow=value */;
+            return x * y /* type=int64, borrow=value */;
         }
     };
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [11:4]
         Multiplier m /* type=Multiplier, borrow=value */ = Multiplier() /* type=Multiplier, borrow=value */;
         // [12:4]

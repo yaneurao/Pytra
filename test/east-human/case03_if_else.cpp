@@ -5,20 +5,20 @@ namespace east_view /* source: test/py/case03_if_else.py */ {
 
     // module body
 // [5:0] function original=abs_like
-int abs_like(int n /* readonly */) {
+int64 abs_like(int64 n /* readonly */) {
 // [6:4]
 if (n < 0 /* type=bool, borrow=value */) {
             // [7:8]
-            return -n /* type=int, borrow=value */;
+            return -n /* type=int64, borrow=value */;
         }
         else {
             // [9:8]
-            return n /* type=int, borrow=readonly_ref */;
+            return n /* type=int64, borrow=readonly_ref */;
         }
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [13:4]
         print(abs_like(-12)) /* type=None, borrow=value */;
         return 0;

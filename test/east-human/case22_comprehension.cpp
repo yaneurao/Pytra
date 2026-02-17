@@ -5,15 +5,15 @@ namespace east_view /* source: test/py/case22_comprehension.py */ {
 
     // module body
 // [5:0] function original=comp_like_24
-int comp_like_24(int x /* readonly */) {
+int64 comp_like_24(int64 x /* readonly */) {
         // [6:4]
-        list[int] values /* type=list[int], borrow=value */ = [i for i in [1, 2, 3, 4]] /* type=list[int], borrow=value */;
+        list[int64] values /* type=list[int64], borrow=value */ = [i for i in [1, 2, 3, 4]] /* type=list[int64], borrow=value */;
         // [7:4]
-        return x + 1 /* type=int, borrow=value */;
+        return x + 1 /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [11:4]
         print(comp_like_24(5)) /* type=None, borrow=value */;
         return 0;

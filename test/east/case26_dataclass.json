@@ -54,12 +54,12 @@
                 "end_lineno": 10,
                 "end_col": 5
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "x"
             },
-            "annotation": "int",
+            "annotation": "int64",
             "value": null
           },
           {
@@ -78,12 +78,12 @@
                 "end_lineno": 11,
                 "end_col": 5
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "y"
             },
-            "annotation": "int",
+            "annotation": "int64",
             "value": {
               "kind": "Constant",
               "source_span": {
@@ -92,7 +92,7 @@
                 "end_lineno": 11,
                 "end_col": 15
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "10"
@@ -111,7 +111,7 @@
             "arg_types": {
               "self": "Point99"
             },
-            "return_type": "int",
+            "return_type": "int64",
             "arg_usage": {
               "self": "readonly"
             },
@@ -133,7 +133,7 @@
                     "end_lineno": 14,
                     "end_col": 30
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "self.x + self.y"

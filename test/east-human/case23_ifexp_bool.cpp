@@ -5,15 +5,15 @@ namespace east_view /* source: test/py/case23_ifexp_bool.py */ {
 
     // module body
 // [5:0] function original=pick_25
-int pick_25(int a /* readonly */, int b /* readonly */, bool flag /* readonly */) {
+int64 pick_25(int64 a /* readonly */, int64 b /* readonly */, bool flag /* readonly */) {
         // [6:4]
-        int c /* type=int, borrow=value */ = a if flag and a > b else b /* type=int, borrow=value */;
+        int64 c /* type=int64, borrow=value */ = a if flag and a > b else b /* type=int64, borrow=value */;
         // [7:4]
-        return c /* type=int, borrow=value */;
+        return c /* type=int64, borrow=value */;
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [11:4]
         print(pick_25(10, 3, True)) /* type=None, borrow=value */;
         return 0;

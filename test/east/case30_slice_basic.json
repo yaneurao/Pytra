@@ -43,12 +43,12 @@
                 "end_lineno": 4,
                 "end_col": 8
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "nums"
             },
-            "annotation": "list[int]",
+            "annotation": "list[int64]",
             "value": {
               "kind": "List",
               "source_span": {
@@ -57,7 +57,7 @@
                 "end_lineno": 4,
                 "end_col": 42
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "[10, 20, 30, 40, 50]"
@@ -115,12 +115,12 @@
                 "end_lineno": 7,
                 "end_col": 12
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "mid_nums"
             },
-            "annotation": "list[int]",
+            "annotation": "list[int64]",
             "value": {
               "kind": "Subscript",
               "source_span": {
@@ -129,7 +129,7 @@
                 "end_lineno": 7,
                 "end_col": 35
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "nums[1:4]"

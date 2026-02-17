@@ -5,7 +5,7 @@ namespace east_view /* source: test/py/case05_compare.py */ {
 
     // module body
 // [5:0] function original=is_large
-bool is_large(int n /* readonly */) {
+bool is_large(int64 n /* readonly */) {
 // [6:4]
 if (n >= 10 /* type=bool, borrow=value */) {
             // [7:8]
@@ -18,7 +18,7 @@ if (n >= 10 /* type=bool, borrow=value */) {
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [13:4]
         print(is_large(11)) /* type=None, borrow=value */;
         return 0;

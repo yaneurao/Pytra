@@ -18,7 +18,7 @@ if (not flag /* type=bool, borrow=value */) {
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [13:4]
         print(invert(False)) /* type=None, borrow=value */;
         return 0;

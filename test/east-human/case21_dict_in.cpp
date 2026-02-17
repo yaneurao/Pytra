@@ -7,7 +7,7 @@ namespace east_view /* source: test/py/case21_dict_in.py */ {
 // [5:0] function original=has_key_23
 bool has_key_23(str k /* readonly */) {
         // [6:4]
-        dict[str,int] d /* type=dict[str,int], borrow=value */ = {'a': 1, 'b': 2} /* type=dict[str,int], borrow=value */;
+        dict[str,int64] d /* type=dict[str,int64], borrow=value */ = {'a': 1, 'b': 2} /* type=dict[str,int64], borrow=value */;
 // [7:4]
 if (k in d /* type=bool, borrow=value */) {
             // [8:8]
@@ -20,7 +20,7 @@ if (k in d /* type=bool, borrow=value */) {
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [14:4]
         print(has_key_23('a')) /* type=None, borrow=value */;
         return 0;

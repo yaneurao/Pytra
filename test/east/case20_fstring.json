@@ -22,7 +22,7 @@
         },
         "arg_types": {
           "name": "str",
-          "count": "int"
+          "count": "int64"
         },
         "return_type": "str",
         "arg_usage": {

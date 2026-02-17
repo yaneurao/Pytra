@@ -32,7 +32,7 @@ None __pytra_main() {
     }
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [19:4]
         main() /* type=None, borrow=value */;
         return 0;

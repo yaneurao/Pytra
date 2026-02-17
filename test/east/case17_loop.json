@@ -21,9 +21,9 @@
           "end_col": 16
         },
         "arg_types": {
-          "values": "list[int]"
+          "values": "list[int64]"
         },
-        "return_type": "int",
+        "return_type": "int64",
         "arg_usage": {
           "values": "readonly"
         },
@@ -45,12 +45,12 @@
                 "end_lineno": 6,
                 "end_col": 9
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "total"
             },
-            "annotation": "int",
+            "annotation": "int64",
             "value": {
               "kind": "Constant",
               "source_span": {
@@ -59,7 +59,7 @@
                 "end_lineno": 6,
                 "end_col": 18
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "0"
@@ -81,7 +81,7 @@
                 "end_lineno": 7,
                 "end_col": 9
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "v"
@@ -94,7 +94,7 @@
                 "end_lineno": 7,
                 "end_col": 19
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "readonly_ref",
               "casts": [],
               "repr": "values"
@@ -138,7 +138,7 @@
                         "end_lineno": 9,
                         "end_col": 17
                       },
-                      "resolved_type": "int",
+                      "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
                       "repr": "total"
@@ -152,7 +152,7 @@
                         "end_lineno": 9,
                         "end_col": 22
                       },
-                      "resolved_type": "int",
+                      "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
                       "repr": "v"
@@ -176,7 +176,7 @@
                         "end_lineno": 11,
                         "end_col": 17
                       },
-                      "resolved_type": "int",
+                      "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
                       "repr": "total"
@@ -190,7 +190,7 @@
                         "end_lineno": 11,
                         "end_col": 27
                       },
-                      "resolved_type": "int",
+                      "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
                       "repr": "v * 2"
@@ -217,7 +217,7 @@
                 "end_lineno": 12,
                 "end_col": 16
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "total"

@@ -7,18 +7,18 @@ namespace east_view /* source: test/py/case15_class_member.py */ {
 // [5:0] class original=Counter
 struct Counter {
         // [6:4]
-        int value /* type=int, borrow=value */ = 0 /* type=int, borrow=value */;
+        int64 value /* type=int64, borrow=value */ = 0 /* type=int64, borrow=value */;
 // [8:4] function original=inc
-int inc(Counter self /* mutable */) {
+int64 inc(Counter self /* mutable */) {
             // [9:8]
-            self.value /* type=int, borrow=value */ /* Add */= 1 /* type=int, borrow=value */;
+            self.value /* type=int64, borrow=value */ /* Add */= 1 /* type=int64, borrow=value */;
             // [10:8]
-            return self.value /* type=int, borrow=value */;
+            return self.value /* type=int64, borrow=value */;
         }
     };
 
     // main guard body
-    int __east_main_guard() {
+    int64 __east_main_guard() {
         // [14:4]
         Counter c /* type=Counter, borrow=value */ = Counter() /* type=Counter, borrow=value */;
         // [15:4]

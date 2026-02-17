@@ -43,12 +43,12 @@
                 "end_lineno": 4,
                 "end_col": 5
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "l"
             },
-            "annotation": "list[int]",
+            "annotation": "list[int64]",
             "value": {
               "kind": "List",
               "source_span": {
@@ -57,7 +57,7 @@
                 "end_lineno": 4,
                 "end_col": 29
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "[1, 2, 3]"
@@ -79,7 +79,7 @@
                 "end_lineno": 5,
                 "end_col": 7
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "sum"
@@ -92,7 +92,7 @@
                 "end_lineno": 5,
                 "end_col": 11
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "0"
@@ -114,7 +114,7 @@
                 "end_lineno": 6,
                 "end_col": 9
               },
-              "resolved_type": "int",
+              "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
               "repr": "v"
@@ -127,7 +127,7 @@
                 "end_lineno": 6,
                 "end_col": 14
               },
-              "resolved_type": "list[int]",
+              "resolved_type": "list[int64]",
               "borrow_kind": "value",
               "casts": [],
               "repr": "l"
@@ -149,7 +149,7 @@
                     "end_lineno": 7,
                     "end_col": 11
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "sum"
@@ -163,7 +163,7 @@
                     "end_lineno": 7,
                     "end_col": 16
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "v"

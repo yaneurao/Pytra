@@ -33,10 +33,10 @@
             },
             "arg_types": {
               "self": "Multiplier",
-              "x": "int",
-              "y": "int"
+              "x": "int64",
+              "y": "int64"
             },
-            "return_type": "int",
+            "return_type": "int64",
             "arg_usage": {
               "self": "readonly",
               "x": "readonly",
@@ -60,7 +60,7 @@
                     "end_lineno": 7,
                     "end_col": 20
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "x * y"

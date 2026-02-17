@@ -33,7 +33,7 @@
             },
             "arg_types": {
               "self": "Box100",
-              "seed": "int"
+              "seed": "int64"
             },
             "return_type": "None",
             "arg_usage": {
@@ -58,7 +58,7 @@
                     "end_lineno": 7,
                     "end_col": 17
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "self.seed"
@@ -71,7 +71,7 @@
                     "end_lineno": 7,
                     "end_col": 24
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
                   "repr": "seed"
@@ -92,7 +92,7 @@
             "arg_types": {
               "self": "Box100"
             },
-            "return_type": "int",
+            "return_type": "int64",
             "arg_usage": {
               "self": "mutable"
             },
@@ -114,7 +114,7 @@
                     "end_lineno": 10,
                     "end_col": 17
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "self.seed"
@@ -128,7 +128,7 @@
                     "end_lineno": 10,
                     "end_col": 22
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "1"
@@ -150,7 +150,7 @@
                     "end_lineno": 11,
                     "end_col": 24
                   },
-                  "resolved_type": "int",
+                  "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
                   "repr": "self.seed"
