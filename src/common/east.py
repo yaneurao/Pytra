@@ -1462,20 +1462,52 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             return depth
 
         merged_lines: list[tuple[int, str]] = []
+        merged_line_end: dict[int, tuple[int, int]] = {}
         k = 0
         while k < len(body_lines):
             ln_no, ln_txt = body_lines[k]
             acc = ln_txt
             d = bracket_delta(ln_txt)
+            end_no = ln_no
+            end_txt = ln_txt
             while d > 0 and k + 1 < len(body_lines):
                 k += 1
-                acc += " " + body_lines[k][1].strip()
-                d += bracket_delta(body_lines[k][1])
+                next_no, next_txt = body_lines[k]
+                acc += " " + next_txt.strip()
+                d += bracket_delta(next_txt)
+                end_no = next_no
+                end_txt = next_txt
             merged_lines.append((ln_no, acc))
+            merged_line_end[ln_no] = (end_no, len(end_txt))
             k += 1
         body_lines = merged_lines
 
         stmts: list[dict[str, Any]] = []
+        pending_leading_trivia: list[dict[str, Any]] = []
+        pending_blank_count = 0
+
+        def block_end_span(start_ln: int, start_col: int, fallback_end_col: int, end_idx_exclusive: int) -> dict[str, int]:
+            if end_idx_exclusive > 0 and end_idx_exclusive - 1 < len(body_lines):
+                end_ln, end_txt = body_lines[end_idx_exclusive - 1]
+                return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": len(end_txt)}
+            return _sh_span(start_ln, start_col, fallback_end_col)
+
+        def stmt_span(start_ln: int, start_col: int, fallback_end_col: int) -> dict[str, int]:
+            end_ln, end_col = merged_line_end.get(start_ln, (start_ln, fallback_end_col))
+            return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": end_col}
+
+        def push_stmt(stmt: dict[str, Any]) -> None:
+            nonlocal pending_blank_count
+            if pending_blank_count > 0:
+                pending_leading_trivia.append({"kind": "blank", "count": pending_blank_count})
+                pending_blank_count = 0
+            if len(pending_leading_trivia) > 0:
+                stmt["leading_trivia"] = list(pending_leading_trivia)
+                comments = [x.get("text") for x in pending_leading_trivia if x.get("kind") == "comment" and isinstance(x.get("text"), str)]
+                if len(comments) > 0:
+                    stmt["leading_comments"] = comments
+                pending_leading_trivia.clear()
+            stmts.append(stmt)
 
         def collect_indented_block(start: int, parent_indent: int) -> tuple[list[tuple[int, str]], int]:
             out: list[tuple[int, str]] = []
@@ -1483,6 +1515,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             while j < len(body_lines):
                 n_no, n_ln = body_lines[j]
                 if n_ln.strip() == "":
+                    t = j + 1
+                    while t < len(body_lines) and body_lines[t][1].strip() == "":
+                        t += 1
+                    if t >= len(body_lines):
+                        break
+                    t_ln = body_lines[t][1]
+                    t_indent = len(t_ln) - len(t_ln.lstrip(" "))
+                    if t_indent <= parent_indent:
+                        break
+                    out.append((n_no, n_ln))
                     j += 1
                     continue
                 n_indent = len(n_ln) - len(n_ln.lstrip(" "))
@@ -1566,9 +1608,24 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         while i < len(body_lines):
             ln_no, ln_txt = body_lines[i]
             indent = len(ln_txt) - len(ln_txt.lstrip(" "))
-            s = strip_inline_comment(ln_txt.strip())
+            raw_s = ln_txt.strip()
+            s = strip_inline_comment(raw_s)
 
-            if s == "" or s.startswith("#"):
+            if raw_s == "":
+                pending_blank_count += 1
+                i += 1
+                continue
+            if raw_s.startswith("#"):
+                if pending_blank_count > 0:
+                    pending_leading_trivia.append({"kind": "blank", "count": pending_blank_count})
+                    pending_blank_count = 0
+                text = raw_s[1:]
+                if text.startswith(" "):
+                    text = text[1:]
+                pending_leading_trivia.append({"kind": "comment", "text": text})
+                i += 1
+                continue
+            if s == "":
                 i += 1
                 continue
 
@@ -1607,7 +1664,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         return [
                             {
                                 "kind": "If",
-                                "source_span": _sh_span(t_no, t_ln.find("elif "), len(t_ln)),
+                                "source_span": block_end_span(t_no, t_ln.find("elif "), len(t_ln), k3),
                                 "test": cond_expr2,
                                 "body": parse_stmt_block(elif_block, name_types=dict(name_types), scope_label=scope_label),
                                 "orelse": nested_orelse,
@@ -1627,10 +1684,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         hint="Add indented if-body.",
                     )
                 else_stmt_list, j = parse_if_tail(j, indent)
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "If",
-                        "source_span": _sh_span(ln_no, ln_txt.find("if "), len(ln_txt)),
+                        "source_span": block_end_span(ln_no, ln_txt.find("if "), len(ln_txt), j),
                         "test": cond_expr,
                         "body": parse_stmt_block(then_block, name_types=dict(name_types), scope_label=scope_label),
                         "orelse": else_stmt_list,
@@ -1724,10 +1781,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         mode = "ascending"
                     elif step_const == -1:
                         mode = "descending"
-                    stmts.append(
+                    push_stmt(
                         {
                             "kind": "ForRange",
-                            "source_span": _sh_span(ln_no, 0, len(ln_txt)),
+                            "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
                             "target": {
                                 "kind": "Name",
                                 "source_span": _sh_span(ln_no, ln_txt.find(tgt), ln_txt.find(tgt) + len(tgt)),
@@ -1748,10 +1805,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     )
                     i = j
                     continue
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "For",
-                        "source_span": _sh_span(ln_no, 0, len(ln_txt)),
+                        "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
                         "target": {
                             "kind": "Name",
                             "source_span": _sh_span(ln_no, ln_txt.find(tgt), ln_txt.find(tgt) + len(tgt)),
@@ -1782,10 +1839,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_span=_sh_span(ln_no, 0, len(ln_txt)),
                         hint="Add indented while-body.",
                     )
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "While",
-                        "source_span": _sh_span(ln_no, 0, len(ln_txt)),
+                        "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
                         "test": cond_expr,
                         "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
                         "orelse": [],
@@ -1840,10 +1897,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         j = k
                         continue
                     break
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "Try",
-                        "source_span": _sh_span(ln_no, 0, len(ln_txt)),
+                        "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
                         "body": parse_stmt_block(try_body, name_types=dict(name_types), scope_label=scope_label),
                         "handlers": handlers,
                         "orelse": [],
@@ -1856,10 +1913,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             if s.startswith("raise "):
                 expr_txt = s[len("raise ") :].strip()
                 expr_col = ln_txt.find(expr_txt)
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "Raise",
-                        "source_span": _sh_span(ln_no, ln_txt.find("raise "), len(ln_txt)),
+                        "source_span": stmt_span(ln_no, ln_txt.find("raise "), len(ln_txt)),
                         "exc": parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
                     }
                 )
@@ -1867,7 +1924,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 continue
 
             if s == "pass":
-                stmts.append({"kind": "Pass", "source_span": _sh_span(ln_no, indent, indent + 4)})
+                push_stmt({"kind": "Pass", "source_span": stmt_span(ln_no, indent, indent + 4)})
                 i += 1
                 continue
 
@@ -1875,10 +1932,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 rcol = ln_txt.find("return ")
                 expr_txt = ln_txt[rcol + len("return ") :].strip()
                 expr_col = ln_txt.find(expr_txt, rcol + len("return "))
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "Return",
-                        "source_span": _sh_span(ln_no, rcol, len(ln_txt)),
+                        "source_span": stmt_span(ln_no, rcol, len(ln_txt)),
                         "value": parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
                     }
                 )
@@ -1893,10 +1950,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
                 if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                     name_types[str(target_expr.get("id", ""))] = ann
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "AnnAssign",
-                        "source_span": _sh_span(ln_no, target_col, len(ln_txt)),
+                        "source_span": stmt_span(ln_no, target_col, len(ln_txt)),
                         "target": target_expr,
                         "annotation": ann,
                         "value": None,
@@ -1918,10 +1975,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
                 if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                     name_types[str(target_expr.get("id", ""))] = ann
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "AnnAssign",
-                        "source_span": _sh_span(ln_no, target_col, len(ln_txt)),
+                        "source_span": stmt_span(ln_no, target_col, len(ln_txt)),
                         "target": target_expr,
                         "annotation": ann,
                         "value": val_expr,
@@ -1944,10 +2001,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 target_ty = "unknown"
                 if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                     target_ty = name_types.get(str(target_expr.get("id", "")), "unknown")
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "AugAssign",
-                        "source_span": _sh_span(ln_no, target_col, len(ln_txt)),
+                        "source_span": stmt_span(ln_no, target_col, len(ln_txt)),
                         "target": target_expr,
                         "op": op_map[m_aug.group(2)],
                         "value": val_expr,
@@ -1978,10 +2035,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     and str(rhs.get("elements")[0].get("id", "")) == n2
                     and str(rhs.get("elements")[1].get("id", "")) == n1
                 ):
-                    stmts.append(
+                    push_stmt(
                         {
                             "kind": "Swap",
-                            "source_span": _sh_span(ln_no, c1, len(ln_txt)),
+                            "source_span": stmt_span(ln_no, c1, len(ln_txt)),
                             "left": {
                                 "kind": "Name",
                                 "source_span": _sh_span(ln_no, c1, c1 + len(n1)),
@@ -2032,10 +2089,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         },
                     ],
                 }
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "Assign",
-                        "source_span": _sh_span(ln_no, c1, len(ln_txt)),
+                        "source_span": stmt_span(ln_no, c1, len(ln_txt)),
                         "target": target_expr,
                         "value": rhs,
                         "declare": False,
@@ -2057,10 +2114,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     nm = str(target_expr.get("id", ""))
                     if nm != "":
                         name_types[nm] = str(decl_type)
-                stmts.append(
+                push_stmt(
                     {
                         "kind": "Assign",
-                        "source_span": _sh_span(ln_no, target_col, len(ln_txt)),
+                        "source_span": stmt_span(ln_no, target_col, len(ln_txt)),
                         "target": target_expr,
                         "value": val_expr,
                         "declare": True,
@@ -2073,7 +2130,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
 
             expr_col = len(ln_txt) - len(ln_txt.lstrip(" "))
             expr_stmt = parse_expr(s, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
-            stmts.append({"kind": "Expr", "source_span": _sh_span(ln_no, expr_col, len(ln_txt)), "value": expr_stmt})
+            push_stmt({"kind": "Expr", "source_span": stmt_span(ln_no, expr_col, len(ln_txt)), "value": expr_stmt})
             i += 1
         return stmts
 
@@ -2100,6 +2157,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             while j <= len(lines):
                 bl = lines[j - 1]
                 if bl.strip() == "":
+                    block.append((j, bl))
                     j += 1
                     continue
                 if not bl.startswith(" "):
@@ -2137,6 +2195,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             while j <= len(lines):
                 bl = lines[j - 1]
                 if bl.strip() == "":
+                    block.append((j, bl))
                     j += 1
                     continue
                 if not bl.startswith(" "):
@@ -2193,6 +2252,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             while j <= len(lines):
                 bl = lines[j - 1]
                 if bl.strip() == "":
+                    block.append((j, bl))
                     j += 1
                     continue
                 bind = len(bl) - len(bl.lstrip(" "))

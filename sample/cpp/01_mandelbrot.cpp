@@ -1,12 +1,13 @@
 #include "cpp_module/py_runtime.h"
 
-
+// 01: マンデルブロ集合を PNG 画像として出力するサンプルです。
+// 将来のトランスパイルを意識して、構文はなるべく素直に書いています。
 
 int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
     float64 x2;
     float64 y2;
     
-    /* 1点 (cx, cy) の発散までの反復回数を返す。 */
+    /* ""1点 (cx, cy) の発散までの反復回数を返す。"" */
     float64 x = 0.0;
     float64 y = 0.0;
     for (int64 i = 0; i < max_iter; ++i) {
@@ -21,11 +22,11 @@ int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
 }
 
 std::tuple<int64, int64, int64> color_map(int64 iter_count, int64 max_iter) {
-    /* 反復回数を RGB に変換する。 */
+    /* ""反復回数を RGB に変換する。"" */
     if (iter_count >= max_iter)
         return std::make_tuple(0, 0, 0);
     
-    
+    // 簡単なグラデーション（青系 -> 黄系）
     float64 t = static_cast<float64>(iter_count) / static_cast<float64>(max_iter);
     int64 r = int64(255.0 * t * t);
     int64 g = int64(255.0 * t);
@@ -42,7 +43,7 @@ list<uint8> render_mandelbrot(int64 width, int64 height, int64 max_iter, float64
     int64 b;
     float64 t;
     
-    /* マンデルブロ画像の RGB バイト列を生成する。 */
+    /* ""マンデルブロ画像の RGB バイト列を生成する。"" */
     list<uint8> pixels = list<uint8>{};
     
     for (int64 y = 0; y < height; ++y) {
@@ -88,7 +89,8 @@ void run_mandelbrot() {
     py_print("elapsed_sec:", elapsed);
 }
 
-int main() {
+int main(int argc, char** argv) {
+    pytra_configure_from_argv(argc, argv);
     run_mandelbrot();
     return 0;
 }

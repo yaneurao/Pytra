@@ -116,14 +116,9 @@ class CppEmitter:
                 return v2
         return None
 
-    def _has_blank_leading_trivia(self, stmt: dict[str, Any]) -> bool:
+    def _has_leading_trivia(self, stmt: dict[str, Any]) -> bool:
         trivia = stmt.get("leading_trivia")
-        if not isinstance(trivia, list):
-            return False
-        for item in trivia:
-            if isinstance(item, dict) and item.get("kind") == "blank":
-                return True
-        return False
+        return isinstance(trivia, list) and len(trivia) > 0
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         prev_end: int | None = None
@@ -133,7 +128,7 @@ class CppEmitter:
                 prev_end is not None
                 and start is not None
                 and start > prev_end + 1
-                and not self._has_blank_leading_trivia(stmt)
+                and not self._has_leading_trivia(stmt)
             ):
                 for _ in range(start - prev_end - 1):
                     self.emit()
@@ -1568,7 +1563,13 @@ def load_east(input_path: Path) -> dict[str, Any]:
     except (SyntaxError, EastBuildError) as exc:
         raise RuntimeError(f"EAST conversion failed: {exc}") from exc
     if isinstance(east, dict):
-        east["module_leading_trivia"] = extract_module_leading_trivia(source_text)
+        has_stmt_leading_trivia = False
+        body = east.get("body")
+        if isinstance(body, list) and len(body) > 0 and isinstance(body[0], dict):
+            trivia = body[0].get("leading_trivia")
+            has_stmt_leading_trivia = isinstance(trivia, list) and len(trivia) > 0
+        if not has_stmt_leading_trivia:
+            east["module_leading_trivia"] = extract_module_leading_trivia(source_text)
     return east
 
 

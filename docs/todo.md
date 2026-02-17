@@ -223,3 +223,21 @@
 - [ ] `test/py` 全ケースで `python_ast` と `self_hosted` の EAST が意味的に一致する。
 - [ ] `src/py2cpp.py` で `--parser-backend self_hosted` 時に `test/py` 全ケースが実行一致する。
 - [ ] デフォルト backend を `self_hosted` に変更し、`python_ast` はフォールバック扱いにする。
+
+## 生成画像不一致 調査ベース TODO（2026-02-17）
+
+- [ ] `save_gif(..., delay_cs=..., loop=...)` の keyword 引数を `py2cpp.py` の非lowered `Call` 経路でも確実に反映する。
+  - [ ] 現状 `sample/cpp/*` で `save_gif(..., palette)` のみになり `delay_cs` が既定値 `4` に落ちる問題を修正する。
+  - [ ] `sample/05,06,08,10,11,14` で GIF の GCE delay 値が Python 実行結果と一致することを確認する。
+- [ ] 浮動小数点式の再結合（演算順序変更）を抑制し、Python と同じ評価順を優先する。
+  - [ ] `a * (b / c)` が `a * b / c` に変わらないように、`render_expr` の括弧方針を見直す。
+  - [ ] `sample/01_mandelbrot` と `sample/03_julia_set` で PNG の raw scanline が一致することを確認する。
+- [ ] PNG 出力の差分を「画素差」と「圧縮差」に切り分けた上で、仕様として扱いを明文化する。
+  - [ ] `sample/02_raytrace_spheres` は画素一致・IDAT圧縮差のみであることを docs に追記する。
+  - [ ] 必要なら C++ 側 `src/cpp_module/png.cpp` を zlib 圧縮実装へ寄せ、IDAT 近似一致または完全一致方針を決める。
+- [ ] GIF の `sample/12_sort_visualizer` / `sample/16_glass_sculpture_chaos` のフレーム画素差を解消する。
+  - [ ] `render()` 内の float→int 変換境界（bar幅/補間/正規化）の評価順を Python と一致させる。
+  - [ ] フレームデータ（LZW展開後）が全フレーム一致することを確認する。
+- [ ] 画像一致検証を自動化する。
+  - [ ] `sample/py` 全件について、`stdout` 比較に加えて PNG raw / GIFフレーム一致を検証するスクリプトを追加する。
+  - [ ] 差分時は「最初の不一致座標・チャネル・元式」を出力できるようにする。
