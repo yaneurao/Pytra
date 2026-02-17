@@ -1,14 +1,12 @@
 // Rust 変換先で共通利用するランタイム補助。
 // - Python 互換の print 表示（bool は True/False）
 // - time.perf_counter 相当
-// - embed モード向けの Python 実行ヘルパ
 
-use std::env;
 use std::hash::Hash;
 use std::fs;
 use std::io::Write;
-use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::Once;
+use std::time::Instant;
 use std::{collections::HashMap, collections::HashSet};
 
 pub trait PyStringify {
@@ -449,77 +447,116 @@ pub fn py_save_gif(
     f.write_all(&out).expect("write gif file failed");
 }
 
-pub fn py_write_rgb_png(path: &str, width: i64, height: i64, pixels: &[u8]) {
-    // PNG は Rust 標準ライブラリだけでの実装コストが高いため、既存 Python helper を利用する。
-    let tmp = env::temp_dir().join(format!(
-        "pytra_png_pixels_{}_{}.bin",
-        std::process::id(),
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ));
-    fs::write(&tmp, pixels).expect("write temp png pixels failed");
-
-    let script = r#"
-import os, sys
-from py_module import png_helper
-p = sys.argv[1]
-out_path = sys.argv[2]
-w = int(sys.argv[3]); h = int(sys.argv[4])
-with open(p, "rb") as f:
-    raw = f.read()
-png_helper.write_rgb_png(out_path, w, h, raw)
-"#;
-
-    let py_path = match env::var("PYTHONPATH") {
-        Ok(v) if !v.is_empty() => format!("src:{}", v),
-        _ => "src".to_string(),
-    };
-    let status = Command::new("python3")
-        .arg("-c")
-        .arg(script)
-        .arg(tmp.to_string_lossy().to_string())
-        .arg(path)
-        .arg(width.to_string())
-        .arg(height.to_string())
-        .env("PYTHONPATH", py_path)
-        .status()
-        .expect("python3 execution failed");
-    let _ = fs::remove_file(&tmp);
-    if !status.success() {
-        panic!("py_write_rgb_png failed");
+fn png_crc32(data: &[u8]) -> u32 {
+    let mut crc: u32 = 0xFFFF_FFFF;
+    for &b in data {
+        crc ^= b as u32;
+        for _ in 0..8 {
+            if (crc & 1) != 0 {
+                crc = (crc >> 1) ^ 0xEDB8_8320;
+            } else {
+                crc >>= 1;
+            }
+        }
     }
+    !crc
+}
+
+fn png_adler32(data: &[u8]) -> u32 {
+    const MOD: u32 = 65521;
+    let mut s1: u32 = 1;
+    let mut s2: u32 = 0;
+    for &b in data {
+        s1 = (s1 + b as u32) % MOD;
+        s2 = (s2 + s1) % MOD;
+    }
+    (s2 << 16) | s1
+}
+
+fn png_chunk(kind: &[u8; 4], data: &[u8]) -> Vec<u8> {
+    let mut out = Vec::<u8>::with_capacity(12 + data.len());
+    out.extend_from_slice(&(data.len() as u32).to_be_bytes());
+    out.extend_from_slice(kind);
+    out.extend_from_slice(data);
+    let mut crc_input = Vec::<u8>::with_capacity(4 + data.len());
+    crc_input.extend_from_slice(kind);
+    crc_input.extend_from_slice(data);
+    out.extend_from_slice(&png_crc32(&crc_input).to_be_bytes());
+    out
+}
+
+fn zlib_store_compress(raw: &[u8]) -> Vec<u8> {
+    // zlib header: CMF=0x78 (deflate/32KB), FLG=0x01 (fastest, checksum OK)
+    let mut out = Vec::<u8>::with_capacity(raw.len() + 64);
+    out.push(0x78);
+    out.push(0x01);
+
+    let mut pos: usize = 0;
+    while pos < raw.len() {
+        let remain = raw.len() - pos;
+        let block_len = if remain > 65_535 { 65_535 } else { remain };
+        let final_block = pos + block_len >= raw.len();
+        out.push(if final_block { 0x01 } else { 0x00 }); // BFINAL + BTYPE=00
+        let len = block_len as u16;
+        let nlen = !len;
+        out.extend_from_slice(&len.to_le_bytes());
+        out.extend_from_slice(&nlen.to_le_bytes());
+        out.extend_from_slice(&raw[pos..(pos + block_len)]);
+        pos += block_len;
+    }
+
+    out.extend_from_slice(&png_adler32(raw).to_be_bytes());
+    out
+}
+
+pub fn py_write_rgb_png(path: &str, width: i64, height: i64, pixels: &[u8]) {
+    if width <= 0 || height <= 0 {
+        panic!("invalid image size");
+    }
+    let w = width as usize;
+    let h = height as usize;
+    let expected = w * h * 3;
+    if pixels.len() != expected {
+        panic!("pixels length mismatch: got={} expected={}", pixels.len(), expected);
+    }
+
+    let row_bytes = w * 3;
+    let mut scanlines = Vec::<u8>::with_capacity(h * (row_bytes + 1));
+    for y in 0..h {
+        scanlines.push(0); // filter type 0
+        let start = y * row_bytes;
+        scanlines.extend_from_slice(&pixels[start..(start + row_bytes)]);
+    }
+
+    let mut ihdr = Vec::<u8>::with_capacity(13);
+    ihdr.extend_from_slice(&(width as u32).to_be_bytes());
+    ihdr.extend_from_slice(&(height as u32).to_be_bytes());
+    ihdr.push(8); // bit depth
+    ihdr.push(2); // color type: RGB
+    ihdr.push(0); // compression
+    ihdr.push(0); // filter
+    ihdr.push(0); // interlace
+
+    let idat = zlib_store_compress(&scanlines);
+    let mut png = Vec::<u8>::new();
+    png.extend_from_slice(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]);
+    png.extend_from_slice(&png_chunk(b"IHDR", &ihdr));
+    png.extend_from_slice(&png_chunk(b"IDAT", &idat));
+    png.extend_from_slice(&png_chunk(b"IEND", &[]));
+
+    let parent = std::path::Path::new(path).parent();
+    if let Some(dir) = parent {
+        let _ = fs::create_dir_all(dir);
+    }
+    let mut f = fs::File::create(path).expect("create png file failed");
+    f.write_all(&png).expect("write png file failed");
 }
 
 pub fn perf_counter() -> f64 {
-    let d = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-    d.as_secs_f64()
-}
-
-fn run_with(interpreter: &str, source: &str) -> Option<i32> {
-    let mut cmd = Command::new(interpreter);
-    cmd.arg("-c").arg(source);
-
-    // sample/py が `from py_module ...` を使うため `PYTHONPATH=src` を付与する。
-    let py_path = match env::var("PYTHONPATH") {
-        Ok(v) if !v.is_empty() => format!("src:{}", v),
-        _ => "src".to_string(),
-    };
-    cmd.env("PYTHONPATH", py_path);
-
-    let status = cmd.status().ok()?;
-    Some(status.code().unwrap_or(1))
-}
-
-pub fn run_embedded_python(source: &str) -> i32 {
-    // python3 を優先し、無ければ python を試す。
-    if let Some(code) = run_with("python3", source) {
-        return code;
-    }
-    if let Some(code) = run_with("python", source) {
-        return code;
-    }
-    eprintln!("error: python interpreter not found (python3/python)");
-    1
+    static INIT: Once = Once::new();
+    static mut START: Option<Instant> = None;
+    INIT.call_once(|| unsafe {
+        START = Some(Instant::now());
+    });
+    unsafe { START.as_ref().expect("perf counter start must be initialized").elapsed().as_secs_f64() }
 }

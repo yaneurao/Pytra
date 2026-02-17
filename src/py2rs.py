@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Python -> Rust の変換器。
-# native 変換（サブセット）を優先し、未対応構文は embed 方式へフォールバックします。
+# native 変換（サブセット）専用。未対応構文は TranspileError で失敗します。
 
 from __future__ import annotations
 
@@ -1265,49 +1265,10 @@ class RustTranspiler(BaseTranspiler):
             return f"({value_expr})[&({index_expr})]"
         return f"({value_expr})[{index_expr} as usize]"
 
-def _rust_raw_string_literal(text: str) -> str:
-    """任意テキストを Rust の raw string literal へ変換する。"""
-    for n in range(1, 32):
-        fence = "#" * n
-        end_seq = f'"{fence}'
-        if end_seq not in text:
-            return f'r{fence}"{text}"{fence}'
-    # ほぼ起こらない保険。通常文字列へエスケープする。
-    escaped = (
-        text.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\n", "\\n")
-        .replace("\r", "\\r")
-        .replace("\t", "\\t")
-    )
-    return f'"{escaped}"'
-
-
 def _runtime_path_literal(output_path: Path) -> str:
     runtime_path = (Path(__file__).resolve().parent / "rs_module" / "py_runtime.rs").resolve()
     rel = os.path.relpath(runtime_path, output_path.parent.resolve())
     return rel.replace("\\", "/")
-
-
-def transpile_file_embed(input_path: Path, output_path: Path) -> None:
-    source = input_path.read_text(encoding="utf-8")
-    source_literal = _rust_raw_string_literal(source)
-    input_name = input_path.name
-    runtime_rel = _runtime_path_literal(output_path)
-
-    rust = f"""// このファイルは自動生成です。編集しないでください。
-// 入力 Python: {input_name}
-
-#[path = "{runtime_rel}"]
-mod py_runtime;
-
-fn main() {{
-    let source: &str = {source_literal};
-    std::process::exit(py_runtime::run_embedded_python(source));
-}}
-"""
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(rust, encoding="utf-8")
 
 
 def transpile_file_native(input_path: Path, output_path: Path) -> None:
@@ -1325,39 +1286,17 @@ def transpile_file_native(input_path: Path, output_path: Path) -> None:
     output_path.write_text(rust, encoding="utf-8")
 
 
-def transpile_file_auto(input_path: Path, output_path: Path) -> None:
-    try:
-        transpile_file_native(input_path, output_path)
-    except TranspileError as exc:
-        # native 未対応構文は embed 方式で実行可能性を維持する。
-        transpile_file_embed(input_path, output_path)
-        # 先頭へフォールバック理由を追記。
-        original = output_path.read_text(encoding="utf-8")
-        output_path.write_text(f"// fallback: {exc}\n{original}", encoding="utf-8")
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Transpile Python to Rust")
     parser.add_argument("input", help="input Python file")
     parser.add_argument("output", help="output Rust file")
-    parser.add_argument(
-        "--mode",
-        choices=["auto", "native", "embed"],
-        default="auto",
-        help="transpile mode: auto(native then fallback), native(raise on unsupported), embed(always)",
-    )
     args = parser.parse_args()
 
     input_path = Path(args.input)
     output_path = Path(args.output)
 
     try:
-        if args.mode == "native":
-            transpile_file_native(input_path, output_path)
-        elif args.mode == "embed":
-            transpile_file_embed(input_path, output_path)
-        else:
-            transpile_file_auto(input_path, output_path)
+        transpile_file_native(input_path, output_path)
     except Exception as exc:  # noqa: BLE001
         print(f"error: {exc}", file=sys.stderr)
         return 1
