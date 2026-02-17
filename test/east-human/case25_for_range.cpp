@@ -9,7 +9,7 @@ int sum_range_29(int n /* readonly */) {
         // [6:4]
         int total /* type=int, borrow=value */ = 0 /* type=int, borrow=value */;
 // [7:4]
-for (auto i /* type=int, borrow=value */ : range(n) /* type=list[int], borrow=value */) {
+for (auto i = 0 /* type=int, borrow=value */; (1 /* type=int, borrow=value */) > 0 ? (i) < (n /* type=int, borrow=readonly_ref */) : (i) > (n /* type=int, borrow=readonly_ref */); i += (1 /* type=int, borrow=value */)) {
             // [8:8]
             total /* type=int, borrow=value */ /* Add */= i /* type=int, borrow=value */;
         }
