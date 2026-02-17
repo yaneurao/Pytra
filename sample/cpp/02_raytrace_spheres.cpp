@@ -12,7 +12,7 @@ float64 clamp01(float64 v) {
 }
 
 float64 hit_sphere(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, float64 dz, float64 cx, float64 cy, float64 cz, float64 r) {
-    /* ""レイと球の交差距離t（交差しない場合は-1）を返す。"" */
+    /* レイと球の交差距離t（交差しない場合は-1）を返す。 */
     float64 lx = ox - cx;
     float64 ly = oy - cy;
     float64 lz = oz - cz;

@@ -2134,6 +2134,20 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i += 1
         return stmts
 
+    def extract_leading_docstring(stmts: list[dict[str, Any]]) -> tuple[str | None, list[dict[str, Any]]]:
+        if len(stmts) == 0:
+            return None, stmts
+        first = stmts[0]
+        if not isinstance(first, dict) or first.get("kind") != "Expr":
+            return None, stmts
+        val = first.get("value")
+        if not isinstance(val, dict) or val.get("kind") != "Constant":
+            return None, stmts
+        s = val.get("value")
+        if not isinstance(s, str):
+            return None, stmts
+        return s, stmts[1:]
+
     body_items: list[dict[str, Any]] = []
     main_stmts: list[dict[str, Any]] = []
     first_item_attached = False
@@ -2210,6 +2224,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     hint="Add return or assignment statements in function body.",
                 )
             stmts = parse_stmt_block(block, name_types=dict(arg_types), scope_label=fn_name)
+            docstring, stmts = extract_leading_docstring(stmts)
             item = {
                 "kind": "FunctionDef",
                 "name": fn_name,
@@ -2221,6 +2236,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "renamed_symbols": {},
                 "leading_comments": [],
                 "leading_trivia": [],
+                "docstring": docstring,
                 "body": stmts,
             }
             if not first_item_attached:
@@ -2348,6 +2364,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         for fnm, fty in field_types.items():
                             local_types[fnm] = fty
                         stmts = parse_stmt_block(method_block, name_types=local_types, scope_label=f"{cls_name}.{mname}")
+                        docstring, stmts = extract_leading_docstring(stmts)
                         if mname == "__init__":
                             for st in stmts:
                                 if st.get("kind") == "Assign":
@@ -2392,6 +2409,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 "return_type": mret,
                                 "arg_usage": {n: "readonly" for n in marg_types.keys()},
                                 "renamed_symbols": {},
+                                "docstring": docstring,
                                 "body": stmts,
                             }
                         )

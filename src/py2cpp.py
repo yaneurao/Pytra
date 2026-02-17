@@ -140,7 +140,23 @@ class CppEmitter:
 
     def emit_block_comment(self, text: str) -> None:
         """Emit C-style block comment for docstring-like standalone strings."""
-        safe = text.replace("*/", "* /")
+        normalized = text
+        # Self-hosted parser can keep an extra quote pair for triple strings (e.g. ""text"").
+        while (
+            isinstance(normalized, str)
+            and len(normalized) >= 4
+            and normalized.startswith('""')
+            and normalized.endswith('""')
+        ):
+            normalized = normalized[1:-1]
+        if (
+            isinstance(normalized, str)
+            and len(normalized) >= 2
+            and normalized.startswith('"')
+            and normalized.endswith('"')
+        ):
+            normalized = normalized[1:-1]
+        safe = normalized.replace("*/", "* /")
         parts = safe.splitlines()
         if len(parts) == 0:
             self.emit("/* */")
@@ -742,6 +758,9 @@ class CppEmitter:
             self.emit(f"{ret} {name}({', '.join(params)}) {{")
         self.indent += 1
         self.scope_stack.append(fn_scope)
+        docstring = stmt.get("docstring")
+        if isinstance(docstring, str) and docstring != "":
+            self.emit_block_comment(docstring)
         self.emit_stmt_list(list(stmt.get("body", [])))
         self.scope_stack.pop()
         self.indent -= 1
