@@ -203,15 +203,15 @@
 ### ケース順移行（test/py/case01 から順に）
 
 - [x] `case01_add` を `self_hosted` で通す（EAST生成 + C++実行一致）。
-- [ ] `case02_sub_mul` を `self_hosted` で通す。
-- [ ] `case03_if_else` を `self_hosted` で通す。
-- [ ] `case04_assign` を `self_hosted` で通す。
-- [ ] `case05_compare` を `self_hosted` で通す。
-- [ ] `case06_string` を `self_hosted` で通す。
-- [ ] `case07_float` を `self_hosted` で通す。
-- [ ] `case08_nested_call` を `self_hosted` で通す。
-- [ ] `case09_top_level` を `self_hosted` で通す。
-- [ ] `case10_not` を `self_hosted` で通す。
+- [x] `case02_sub_mul` を `self_hosted` で通す。
+- [x] `case03_if_else` を `self_hosted` で通す。
+- [x] `case04_assign` を `self_hosted` で通す。
+- [x] `case05_compare` を `self_hosted` で通す。
+- [x] `case06_string` を `self_hosted` で通す。
+- [x] `case07_float` を `self_hosted` で通す。
+- [x] `case08_nested_call` を `self_hosted` で通す。
+- [x] `case09_top_level` を `self_hosted` で通す。
+- [x] `case10_not` を `self_hosted` で通す。
 - [ ] `case11_fib` を `self_hosted` で通す。
 - [ ] `case12_string_ops` を `self_hosted` で通す。
 - [ ] `case13_class` 〜 `case16_instance_member`（クラス系）を `self_hosted` で通す。

@@ -110,6 +110,31 @@ class CppEmitter:
             self.emit(line)
         self.emit("*/")
 
+    def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
+        trivia = stmt.get("leading_trivia")
+        if isinstance(trivia, list):
+            for item in trivia:
+                if not isinstance(item, dict):
+                    continue
+                k = item.get("kind")
+                if k == "comment":
+                    text = item.get("text")
+                    if isinstance(text, str) and text != "":
+                        self.emit("// " + text)
+                elif k == "blank":
+                    count_raw = item.get("count", 1)
+                    count = count_raw if isinstance(count_raw, int) and count_raw > 0 else 1
+                    for _ in range(count):
+                        self.emit()
+            return
+
+        # Backward compatibility for older EAST payloads.
+        comments = stmt.get("leading_comments")
+        if isinstance(comments, list):
+            for c in comments:
+                if isinstance(c, str) and c != "":
+                    self.emit("// " + c)
+
     def next_tmp(self, prefix: str = "__tmp") -> str:
         self.tmp_id += 1
         return f"{prefix}_{self.tmp_id}"
@@ -288,6 +313,7 @@ class CppEmitter:
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         kind = stmt.get("kind")
+        self.emit_leading_comments(stmt)
         if kind in {"Import", "ImportFrom", "Pass"}:
             return
         if kind == "Break":
@@ -364,15 +390,29 @@ class CppEmitter:
                 self.emit(f"{target} {op} {val};")
             return
         if kind == "If":
+            body_stmts = list(stmt.get("body", []))
+            else_stmts = list(stmt.get("orelse", []))
+            if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
+                self.emit(f"if ({self.render_cond(stmt.get('test'))})")
+                self.indent += 1
+                self.emit_stmt(body_stmts[0])
+                self.indent -= 1
+                if len(else_stmts) > 0:
+                    self.emit("else")
+                    self.indent += 1
+                    self.emit_stmt(else_stmts[0])
+                    self.indent -= 1
+                return
+
             self.emit(f"if ({self.render_cond(stmt.get('test'))}) {{")
             self.indent += 1
-            for s in stmt.get("body", []):
+            for s in body_stmts:
                 self.emit_stmt(s)
             self.indent -= 1
-            if stmt.get("orelse"):
+            if len(else_stmts) > 0:
                 self.emit("} else {")
                 self.indent += 1
-                for s in stmt.get("orelse", []):
+                for s in else_stmts:
                     self.emit_stmt(s)
                 self.indent -= 1
                 self.emit("}")
@@ -431,6 +471,12 @@ class CppEmitter:
             return
 
         self.emit(f"/* unsupported stmt kind: {kind} */")
+
+    def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
+        if len(stmts) != 1:
+            return False
+        k = stmts[0].get("kind")
+        return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Break", "Continue"}
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         target = stmt.get("target")
