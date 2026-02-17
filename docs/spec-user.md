@@ -42,6 +42,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します（Git 管理外）。
 - Python から import する自作ライブラリは `src/py_module/` に配置します。
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
+- C++ 実行バイナリは起動オプション `--pytra-image-format=png|ppm` を受け付けます。
+  - `ppm` 指定時、`png_helper.write_rgb_png(...)` は PPM(P6) で出力され、出力拡張子は `.ppm` に切り替わります。
 - GIF サンプルは `sample/out/*.gif` に出力します。
 
 ## 5. ユニットテスト実行方法
