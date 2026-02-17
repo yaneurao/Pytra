@@ -50,14 +50,14 @@
 ### 切替完了条件
 
 - [ ] `test/py` 全ケースで `python_ast` と `self_hosted` の EAST が意味的に一致する。
-- [ ] `src/py2cpp.py` で `--parser-backend self_hosted` 時に `test/py` 全ケースが実行一致する。
+- [x] `src/py2cpp.py` で `--parser-backend self_hosted` 時に `test/py` 全ケースが実行一致する。
 - [ ] デフォルト backend を `self_hosted` に変更し、`python_ast` はフォールバック扱いにする。
 
 ## 生成画像不一致 調査（2026-02-17）
 
 - [x] `save_gif(..., delay_cs=..., loop=...)` の keyword 引数を `py2cpp.py` の非lowered `Call` 経路でも確実に反映する。
 - [x] 現状 `sample/cpp/*` で `save_gif(..., palette)` のみになり `delay_cs` が既定値 `4` に落ちる問題を修正する。
-- [ ] `sample/05,06,08,10,11,14` で GIF の GCE delay 値が Python 実行結果と一致することを確認する。
+- [x] `sample/05,06,08,10,11,14` で GIF の GCE delay 値が Python 実行結果と一致することを確認する。
 - [ ] 浮動小数点式の再結合（演算順序変更）を抑制し、Python と同じ評価順を優先する。
 - [ ] `a * (b / c)` が `a * b / c` に変わらないように、`render_expr` の括弧方針を見直す。
 - [ ] `sample/01_mandelbrot` と `sample/03_julia_set` で PNG の raw scanline が一致することを確認する。

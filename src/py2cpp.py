@@ -14,7 +14,7 @@ import re
 import sys
 from typing import Any
 
-from common.east import EastBuildError, convert_path
+from common.east import EastBuildError, convert_path, convert_source_to_east_with_backend
 
 
 CPP_HEADER = """#include "cpp_module/py_runtime.h"
@@ -1594,7 +1594,7 @@ class CppEmitter:
         return out
 
 
-def load_east(input_path: Path) -> dict[str, Any]:
+def load_east(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
     if input_path.suffix == ".json":
         payload = json.loads(input_path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
@@ -1609,7 +1609,10 @@ def load_east(input_path: Path) -> dict[str, Any]:
 
     try:
         source_text = input_path.read_text(encoding="utf-8")
-        east = convert_path(input_path)
+        if parser_backend == "self_hosted":
+            east = convert_path(input_path)
+        else:
+            east = convert_source_to_east_with_backend(source_text, str(input_path), parser_backend=parser_backend)
     except (SyntaxError, EastBuildError) as exc:
         raise RuntimeError(f"EAST conversion failed: {exc}") from exc
     if isinstance(east, dict):
@@ -1660,6 +1663,12 @@ def main(argv: list[str] | None = None) -> int:
         default="const_only",
         help="Policy for Python-style negative indexing on list/str subscripts",
     )
+    ap.add_argument(
+        "--parser-backend",
+        choices=["self_hosted"],
+        default="self_hosted",
+        help="EAST parser backend for .py input",
+    )
     args = ap.parse_args(argv)
 
     input_path = Path(args.input)
@@ -1668,7 +1677,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        east_module = load_east(input_path)
+        east_module = load_east(input_path, parser_backend=args.parser_backend)
         cpp = transpile_to_cpp(east_module, negative_index_mode=args.negative_index_mode)
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
