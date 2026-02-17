@@ -371,6 +371,21 @@ class EastBuilder:
                 "orelse": [self._stmt(s) for s in stmt.orelse],
             }
         if isinstance(stmt, ast.For):
+            rng = self._parse_range_iter(stmt.iter)
+            if rng is not None:
+                start_node, stop_node, step_node = rng
+                if isinstance(stmt.target, ast.Name):
+                    self._bind_name_type(stmt.target.id, "int", stmt)
+                return {
+                    "kind": "ForRange",
+                    "source_span": span_of(stmt),
+                    "target": self._expr(stmt.target),
+                    "start": self._expr(start_node),
+                    "stop": self._expr(stop_node),
+                    "step": self._expr(step_node),
+                    "body": [self._stmt(s) for s in stmt.body],
+                    "orelse": [self._stmt(s) for s in stmt.orelse],
+                }
             if isinstance(stmt.target, ast.Name):
                 it_type, _ = self._resolve_expr_type(stmt.iter)
                 bind_t = self._iter_element_type(it_type)
@@ -795,6 +810,20 @@ class EastBuilder:
             cur = self.class_base.get(cur)
         return None
 
+    def _parse_range_iter(self, expr: ast.expr) -> tuple[ast.expr, ast.expr, ast.expr] | None:
+        if not (isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name) and expr.func.id == "range"):
+            return None
+        if expr.keywords:
+            raise self._error("unsupported_syntax", "range() with keyword args is not supported", expr, "Use positional range arguments.")
+        argc = len(expr.args)
+        if argc == 1:
+            return ast.Constant(value=0), expr.args[0], ast.Constant(value=1)
+        if argc == 2:
+            return expr.args[0], expr.args[1], ast.Constant(value=1)
+        if argc == 3:
+            return expr.args[0], expr.args[1], expr.args[2]
+        raise self._error("unsupported_syntax", "range() accepts 1..3 positional args", expr, "Use range(stop), range(start, stop), or range(start, stop, step).")
+
     def _renamed(self, name: str) -> str:
         return self.renamed_symbols.get(name, name)
 
@@ -848,6 +877,15 @@ def _render_expr(expr: dict[str, Any] | None) -> str:
             cast_parts.append(f"{c.get('on')}:{c.get('from')}->{c.get('to')}({c.get('reason')})")
         cast_txt = " casts=" + ",".join(cast_parts)
     return f"{rep} /* type={typ}, borrow={borrow}{cast_txt} */"
+
+
+def _expr_repr(expr: dict[str, Any] | None) -> str:
+    if expr is None:
+        return "/* none */"
+    rep = expr.get("repr")
+    if rep is None:
+        return f"<{expr.get('kind', 'Expr')}>"
+    return rep
 
 
 def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
@@ -915,6 +953,23 @@ def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
     if k == "For":
         out.append(f"// [{sp}]")
         out.append(f"for (auto { _render_expr(stmt.get('target')) } : { _render_expr(stmt.get('iter')) }) {{")
+        for s in stmt.get("body", []):
+            out.extend(_render_stmt(s, level + 1))
+        out.append(("    " * level) + "}")
+        if stmt.get("orelse"):
+            out.append(("    " * level) + "// for-else")
+            out.append(("    " * level) + "{")
+            for s in stmt.get("orelse", []):
+                out.extend(_render_stmt(s, level + 1))
+            out.append(("    " * level) + "}")
+        return _indent(out, 0)
+    if k == "ForRange":
+        tgt = _expr_repr(stmt.get("target"))
+        start = _render_expr(stmt.get("start"))
+        stop = _render_expr(stmt.get("stop"))
+        step = _render_expr(stmt.get("step"))
+        out.append(f"// [{sp}]")
+        out.append(f"for (auto {tgt} = {start}; ({step}) > 0 ? ({tgt}) < ({stop}) : ({tgt}) > ({stop}); {tgt} += ({step})) {{")
         for s in stmt.get("body", []):
             out.extend(_render_stmt(s, level + 1))
         out.append(("    " * level) + "}")
