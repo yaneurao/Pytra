@@ -4,10 +4,10 @@
 namespace east_view /* source: test/py/case10_not.py */ {
 
     // module body
-// [5:0] function original=invert
-bool invert(bool flag /* readonly */) {
-// [6:4]
-if (not flag /* type=bool, borrow=value */) {
+    // [5:0] function original=invert
+    bool invert(bool flag /* readonly */) {
+        // [6:4]
+        if (not flag /* type=bool, borrow=value */) {
             // [7:8]
             return True /* type=bool, borrow=value */;
         }

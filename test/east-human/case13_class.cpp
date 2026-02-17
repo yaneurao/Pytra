@@ -4,10 +4,10 @@
 namespace east_view /* source: test/py/case13_class.py */ {
 
     // module body
-// [5:0] class original=Multiplier
-struct Multiplier {
-// [6:4] function original=mul
-int64 mul(Multiplier self /* readonly */, int64 x /* readonly */, int64 y /* readonly */) {
+    // [5:0] class original=Multiplier
+    struct Multiplier {
+        // [6:4] function original=mul
+        int64 mul(Multiplier self /* readonly */, int64 x /* readonly */, int64 y /* readonly */) {
             // [7:8]
             return x * y /* type=int64, borrow=value */;
         }

@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case22_comprehension.py */ {
 
     // module body
-// [5:0] function original=comp_like_24
-int64 comp_like_24(int64 x /* readonly */) {
+    // [5:0] function original=comp_like_24
+    int64 comp_like_24(int64 x /* readonly */) {
         // [6:4]
         list[int64] values /* type=list[int64], borrow=value */ = [i for i in [1, 2, 3, 4]] /* type=list[int64], borrow=value */;
         // [7:4]

@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case06_string.py */ {
 
     // module body
-// [5:0] function original=greet
-str greet(str name /* readonly */) {
+    // [5:0] function original=greet
+    str greet(str name /* readonly */) {
         // [6:4]
         return 'Hello, ' + name /* type=str, borrow=value */;
     }

@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case02_sub_mul.py */ {
 
     // module body
-// [5:0] function original=calc
-int64 calc(int64 x /* readonly */, int64 y /* readonly */) {
+    // [5:0] function original=calc
+    int64 calc(int64 x /* readonly */, int64 y /* readonly */) {
         // [6:4]
         return (x - y) * 2 /* type=int64, borrow=value */;
     }

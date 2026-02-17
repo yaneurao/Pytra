@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case18_tuple_assign.py */ {
 
     // module body
-// [5:0] function original=swap_sum_18
-int64 swap_sum_18(int64 a /* readonly */, int64 b /* readonly */) {
+    // [5:0] function original=swap_sum_18
+    int64 swap_sum_18(int64 a /* readonly */, int64 b /* readonly */) {
         // [6:4]
         int64 x /* type=int64, borrow=value */ = a /* type=int64, borrow=readonly_ref */;
         // [7:4]

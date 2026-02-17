@@ -4,8 +4,8 @@
 namespace east_view /* source: test/py/case07_float.py */ {
 
     // module body
-// [5:0] function original=half
-float half(float x /* readonly */) {
+    // [5:0] function original=half
+    float half(float x /* readonly */) {
         // [6:4]
         return x / 2.0 /* type=float, borrow=value */;
     }

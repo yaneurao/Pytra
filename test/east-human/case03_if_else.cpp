@@ -4,10 +4,10 @@
 namespace east_view /* source: test/py/case03_if_else.py */ {
 
     // module body
-// [5:0] function original=abs_like
-int64 abs_like(int64 n /* readonly */) {
-// [6:4]
-if (n < 0 /* type=bool, borrow=value */) {
+    // [5:0] function original=abs_like
+    int64 abs_like(int64 n /* readonly */) {
+        // [6:4]
+        if (n < 0 /* type=bool, borrow=value */) {
             // [7:8]
             return -n /* type=int64, borrow=value */;
         }

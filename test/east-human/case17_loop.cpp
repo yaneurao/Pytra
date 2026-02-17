@@ -4,14 +4,14 @@
 namespace east_view /* source: test/py/case17_loop.py */ {
 
     // module body
-// [5:0] function original=calc_17
-int64 calc_17(list[int64] values /* readonly */) {
+    // [5:0] function original=calc_17
+    int64 calc_17(list[int64] values /* readonly */) {
         // [6:4]
         int64 total /* type=int64, borrow=value */ = 0 /* type=int64, borrow=value */;
-// [7:4]
-for (int64 v : values /* type=list[int64], borrow=readonly_ref */) {
-// [8:8]
-if (v % 2 == 0 /* type=bool, borrow=value */) {
+        // [7:4]
+        for (int64 v : values /* type=list[int64], borrow=readonly_ref */) {
+            // [8:8]
+            if (v % 2 == 0 /* type=bool, borrow=value */) {
                 // [9:12]
                 total /* type=int64, borrow=value */ /* Add */= v /* type=int64, borrow=value */;
             }

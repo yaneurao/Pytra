@@ -4,18 +4,18 @@
 namespace east_view /* source: test/py/case14_inheritance.py */ {
 
     // module body
-// [5:0] class original=Animal
-struct Animal {
-// [6:4] function original=sound
-str sound(Animal self /* readonly */) {
+    // [5:0] class original=Animal
+    struct Animal {
+        // [6:4] function original=sound
+        str sound(Animal self /* readonly */) {
             // [7:8]
             return 'generic' /* type=str, borrow=value */;
         }
     };
-// [10:0] class original=Dog
-struct Dog {
-// [11:4] function original=bark
-str bark(Dog self /* readonly */) {
+    // [10:0] class original=Dog
+    struct Dog {
+        // [11:4] function original=bark
+        str bark(Dog self /* readonly */) {
             // [12:8]
             return self.sound() + '-bark' /* type=str, borrow=value */;
         }

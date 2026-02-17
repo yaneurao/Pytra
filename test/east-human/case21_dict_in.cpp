@@ -4,12 +4,12 @@
 namespace east_view /* source: test/py/case21_dict_in.py */ {
 
     // module body
-// [5:0] function original=has_key_23
-bool has_key_23(str k /* readonly */) {
+    // [5:0] function original=has_key_23
+    bool has_key_23(str k /* readonly */) {
         // [6:4]
         dict[str,int64] d /* type=dict[str,int64], borrow=value */ = {'a': 1, 'b': 2} /* type=dict[str,int64], borrow=value */;
-// [7:4]
-if (k in d /* type=bool, borrow=value */) {
+        // [7:4]
+        if (k in d /* type=bool, borrow=value */) {
             // [8:8]
             return True /* type=bool, borrow=value */;
         }

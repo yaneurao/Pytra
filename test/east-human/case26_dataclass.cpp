@@ -5,14 +5,14 @@ namespace east_view /* source: test/py/case26_dataclass.py */ {
 
     // module body
     // [5:0] from dataclasses import dataclass;
-// [9:0] class original=Point99
-struct Point99 {
+    // [9:0] class original=Point99
+    struct Point99 {
         // [10:4]
         int64 x /* type=int64, borrow=value */ = /* none */;
         // [11:4]
         int64 y /* type=int64, borrow=value */ = 10 /* type=int64, borrow=value */;
-// [13:4] function original=total
-int64 total(Point99 self /* readonly */) {
+        // [13:4] function original=total
+        int64 total(Point99 self /* readonly */) {
             // [14:8]
             return self.x + self.y /* type=int64, borrow=value */;
         }
