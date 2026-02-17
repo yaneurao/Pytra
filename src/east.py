@@ -817,11 +817,232 @@ def _dump_json(obj: dict[str, Any], *, pretty: bool) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
 
 
+def _indent(lines: list[str], level: int = 1) -> list[str]:
+    prefix = "    " * level
+    return [prefix + ln if ln else "" for ln in lines]
+
+
+def _fmt_span(span: dict[str, Any] | None) -> str:
+    if not span:
+        return "?:?"
+    ln = span.get("lineno")
+    col = span.get("col")
+    if ln is None or col is None:
+        return "?:?"
+    return f"{ln}:{col}"
+
+
+def _render_expr(expr: dict[str, Any] | None) -> str:
+    if expr is None:
+        return "/* none */"
+    rep = expr.get("repr")
+    if rep is None:
+        rep = f"<{expr.get('kind', 'Expr')}>"
+    typ = expr.get("resolved_type", "unknown")
+    borrow = expr.get("borrow_kind", "value")
+    casts = expr.get("casts", [])
+    cast_txt = ""
+    if casts:
+        cast_parts = []
+        for c in casts:
+            cast_parts.append(f"{c.get('on')}:{c.get('from')}->{c.get('to')}({c.get('reason')})")
+        cast_txt = " casts=" + ",".join(cast_parts)
+    return f"{rep} /* type={typ}, borrow={borrow}{cast_txt} */"
+
+
+def _render_stmt(stmt: dict[str, Any], level: int = 1) -> list[str]:
+    k = stmt.get("kind")
+    sp = _fmt_span(stmt.get("source_span"))
+    out: list[str] = []
+
+    if k == "Import":
+        names = ", ".join((n["name"] if n.get("asname") is None else f"{n['name']} as {n['asname']}") for n in stmt.get("names", []))
+        out.append(f"// [{sp}] import {names};")
+        return _indent(out, level)
+    if k == "ImportFrom":
+        names = ", ".join((n["name"] if n.get("asname") is None else f"{n['name']} as {n['asname']}") for n in stmt.get("names", []))
+        out.append(f"// [{sp}] from {stmt.get('module')} import {names};")
+        return _indent(out, level)
+    if k == "Pass":
+        return _indent([f"// [{sp}] pass;"], level)
+    if k == "Break":
+        return _indent([f"// [{sp}] break;"], level)
+    if k == "Continue":
+        return _indent([f"// [{sp}] continue;"], level)
+    if k == "Return":
+        v = _render_expr(stmt.get("value")) if stmt.get("value") is not None else "/* void */"
+        return _indent([f"// [{sp}]", f"return {v};"], level)
+    if k == "Expr":
+        return _indent([f"// [{sp}]", f"{_render_expr(stmt.get('value'))};"], level)
+    if k == "Assign":
+        return _indent(
+            [
+                f"// [{sp}]",
+                f"{_render_expr(stmt.get('target'))} = {_render_expr(stmt.get('value'))};",
+            ],
+            level,
+        )
+    if k == "AnnAssign":
+        ann = stmt.get("annotation", "auto")
+        return _indent(
+            [
+                f"// [{sp}]",
+                f"{ann} {_render_expr(stmt.get('target'))} = {_render_expr(stmt.get('value'))};",
+            ],
+            level,
+        )
+    if k == "AugAssign":
+        op = stmt.get("op", "Op")
+        return _indent(
+            [
+                f"// [{sp}]",
+                f"{_render_expr(stmt.get('target'))} /* {op} */= {_render_expr(stmt.get('value'))};",
+            ],
+            level,
+        )
+    if k == "If":
+        out.append(f"// [{sp}]")
+        out.append(f"if ({_render_expr(stmt.get('test'))}) {{")
+        for s in stmt.get("body", []):
+            out.extend(_render_stmt(s, level + 1))
+        out.append(("    " * level) + "}")
+        if stmt.get("orelse"):
+            out.append(("    " * level) + "else {")
+            for s in stmt.get("orelse", []):
+                out.extend(_render_stmt(s, level + 1))
+            out.append(("    " * level) + "}")
+        return _indent(out, 0)
+    if k == "For":
+        out.append(f"// [{sp}]")
+        out.append(f"for (auto { _render_expr(stmt.get('target')) } : { _render_expr(stmt.get('iter')) }) {{")
+        for s in stmt.get("body", []):
+            out.extend(_render_stmt(s, level + 1))
+        out.append(("    " * level) + "}")
+        if stmt.get("orelse"):
+            out.append(("    " * level) + "// for-else")
+            out.append(("    " * level) + "{")
+            for s in stmt.get("orelse", []):
+                out.extend(_render_stmt(s, level + 1))
+            out.append(("    " * level) + "}")
+        return _indent(out, 0)
+    if k == "While":
+        out.append(f"// [{sp}]")
+        out.append(f"while ({_render_expr(stmt.get('test'))}) {{")
+        for s in stmt.get("body", []):
+            out.extend(_render_stmt(s, level + 1))
+        out.append(("    " * level) + "}")
+        if stmt.get("orelse"):
+            out.append(("    " * level) + "// while-else")
+            out.append(("    " * level) + "{")
+            for s in stmt.get("orelse", []):
+                out.extend(_render_stmt(s, level + 1))
+            out.append(("    " * level) + "}")
+        return _indent(out, 0)
+    if k == "Raise":
+        return _indent([f"// [{sp}]", f"throw {_render_expr(stmt.get('exc'))};"], level)
+    if k == "Try":
+        out.append(f"// [{sp}]")
+        out.append("try {")
+        for s in stmt.get("body", []):
+            out.extend(_render_stmt(s, level + 1))
+        out.append(("    " * level) + "}")
+        for h in stmt.get("handlers", []):
+            ex_name = h.get("name") or "ex"
+            ex_type = _render_expr(h.get("type"))
+            out.append(("    " * level) + f"catch ({ex_type} as {ex_name}) {{")
+            for s in h.get("body", []):
+                out.extend(_render_stmt(s, level + 1))
+            out.append(("    " * level) + "}")
+        if stmt.get("orelse"):
+            out.append(("    " * level) + "// try-else")
+            out.append(("    " * level) + "{")
+            for s in stmt.get("orelse", []):
+                out.extend(_render_stmt(s, level + 1))
+            out.append(("    " * level) + "}")
+        if stmt.get("finalbody"):
+            out.append(("    " * level) + "/* finally */ {")
+            for s in stmt.get("finalbody", []):
+                out.extend(_render_stmt(s, level + 1))
+            out.append(("    " * level) + "}")
+        return _indent(out, 0)
+    if k == "FunctionDef":
+        name = stmt.get("name", "fn")
+        ret = stmt.get("return_type", "None")
+        arg_types: dict[str, str] = stmt.get("arg_types", {})
+        arg_usage: dict[str, str] = stmt.get("arg_usage", {})
+        params = []
+        for n, t in arg_types.items():
+            usage = arg_usage.get(n, "readonly")
+            params.append(f"{t} {n} /* {usage} */")
+        out.append(f"// [{sp}] function original={stmt.get('original_name', name)}")
+        out.append(f"{ret} {name}({', '.join(params)}) {{")
+        rs = stmt.get("renamed_symbols", {})
+        if rs:
+            out.append(("    " * (level + 1)) + f"// renamed_symbols: {rs}")
+        for s in stmt.get("body", []):
+            out.extend(_render_stmt(s, level + 1))
+        out.append(("    " * level) + "}")
+        return _indent(out, 0)
+    if k == "ClassDef":
+        name = stmt.get("name", "Class")
+        out.append(f"// [{sp}] class original={stmt.get('original_name', name)}")
+        out.append(f"struct {name} {{")
+        for s in stmt.get("body", []):
+            out.extend(_render_stmt(s, level + 1))
+        out.append(("    " * level) + "};")
+        return _indent(out, 0)
+
+    return _indent([f"// [{sp}] <unsupported stmt kind={k}>"], level)
+
+
+def render_east_human_cpp(out_doc: dict[str, Any]) -> str:
+    lines: list[str] = []
+    lines.append("// EAST Human View (C++-style pseudo source)")
+    lines.append("// Generated by src/east.py")
+    lines.append("")
+    if not out_doc.get("ok", False):
+        err = out_doc.get("error", {})
+        lines.append("/* EAST generation failed */")
+        lines.append(f"// kind: {err.get('kind')}")
+        lines.append(f"// message: {err.get('message')}")
+        lines.append(f"// source_span: {err.get('source_span')}")
+        lines.append(f"// hint: {err.get('hint')}")
+        lines.append("")
+        return "\n".join(lines) + "\n"
+
+    east = out_doc["east"]
+    lines.append(f"namespace east_view /* source: {east.get('source_path')} */ {{")
+    lines.append("")
+    rs = east.get("renamed_symbols", {})
+    if rs:
+        lines.append("    // renamed_symbols")
+        for k, v in rs.items():
+            lines.append(f"    //   {k} -> {v}")
+        lines.append("")
+
+    lines.append("    // module body")
+    for s in east.get("body", []):
+        lines.extend(_render_stmt(s, 1))
+    lines.append("")
+
+    lines.append("    // main guard body")
+    lines.append("    int __east_main_guard() {")
+    for s in east.get("main_guard_body", []):
+        lines.extend(_render_stmt(s, 2))
+    lines.append("        return 0;")
+    lines.append("    }")
+    lines.append("")
+    lines.append("} // namespace east_view")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Convert Python source into EAST JSON")
     parser.add_argument("input", help="Input Python file")
     parser.add_argument("-o", "--output", help="Output EAST JSON path")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON")
+    parser.add_argument("--human-output", help="Output human-readable C++-style EAST path")
     args = parser.parse_args(argv)
 
     input_path = Path(args.input)
@@ -846,25 +1067,43 @@ def main(argv: list[str] | None = None) -> int:
         out = {"ok": False, "error": err}
         payload = _dump_json(out, pretty=True)
         if args.output:
-            Path(args.output).write_text(payload + "\n", encoding="utf-8")
+            out_path = Path(args.output)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(payload + "\n", encoding="utf-8")
         else:
             print(payload)
+        if args.human_output:
+            human_path = Path(args.human_output)
+            human_path.parent.mkdir(parents=True, exist_ok=True)
+            human_path.write_text(render_east_human_cpp(out), encoding="utf-8")
         return 1
     except EastBuildError as exc:
         out = {"ok": False, "error": exc.to_payload()}
         payload = _dump_json(out, pretty=True)
         if args.output:
-            Path(args.output).write_text(payload + "\n", encoding="utf-8")
+            out_path = Path(args.output)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(payload + "\n", encoding="utf-8")
         else:
             print(payload)
+        if args.human_output:
+            human_path = Path(args.human_output)
+            human_path.parent.mkdir(parents=True, exist_ok=True)
+            human_path.write_text(render_east_human_cpp(out), encoding="utf-8")
         return 1
 
     out = {"ok": True, "east": east}
     payload = _dump_json(out, pretty=args.pretty)
     if args.output:
-        Path(args.output).write_text(payload + "\n", encoding="utf-8")
+        out_path = Path(args.output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(payload + "\n", encoding="utf-8")
     else:
         print(payload)
+    if args.human_output:
+        human_path = Path(args.human_output)
+        human_path.parent.mkdir(parents=True, exist_ok=True)
+        human_path.write_text(render_east_human_cpp(out), encoding="utf-8")
     return 0
 
 
