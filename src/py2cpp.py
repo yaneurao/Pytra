@@ -97,6 +97,51 @@ class CppEmitter:
     def emit(self, line: str = "") -> None:
         self.lines.append(("    " * self.indent) + line)
 
+    def _stmt_start_line(self, stmt: dict[str, Any]) -> int | None:
+        span = stmt.get("source_span")
+        if isinstance(span, dict):
+            v = span.get("lineno")
+            if isinstance(v, int) and v > 0:
+                return v
+        return None
+
+    def _stmt_end_line(self, stmt: dict[str, Any]) -> int | None:
+        span = stmt.get("source_span")
+        if isinstance(span, dict):
+            v = span.get("end_lineno")
+            if isinstance(v, int) and v > 0:
+                return v
+            v2 = span.get("lineno")
+            if isinstance(v2, int) and v2 > 0:
+                return v2
+        return None
+
+    def _has_blank_leading_trivia(self, stmt: dict[str, Any]) -> bool:
+        trivia = stmt.get("leading_trivia")
+        if not isinstance(trivia, list):
+            return False
+        for item in trivia:
+            if isinstance(item, dict) and item.get("kind") == "blank":
+                return True
+        return False
+
+    def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
+        prev_end: int | None = None
+        for stmt in stmts:
+            start = self._stmt_start_line(stmt)
+            if (
+                prev_end is not None
+                and start is not None
+                and start > prev_end + 1
+                and not self._has_blank_leading_trivia(stmt)
+            ):
+                for _ in range(start - prev_end - 1):
+                    self.emit()
+            self.emit_stmt(stmt)
+            end = self._stmt_end_line(stmt)
+            if end is not None:
+                prev_end = end
+
     def emit_block_comment(self, text: str) -> None:
         """Emit C-style block comment for docstring-like standalone strings."""
         safe = text.replace("*/", "* /")
@@ -164,8 +209,7 @@ class CppEmitter:
         self.emit("int main() {")
         self.indent += 1
         self.scope_stack.append(set())
-        for stmt in self.doc.get("main_guard_body", []):
-            self.emit_stmt(stmt)
+        self.emit_stmt_list(list(self.doc.get("main_guard_body", [])))
         self.scope_stack.pop()
         self.emit("return 0;")
         self.indent -= 1
@@ -446,14 +490,12 @@ class CppEmitter:
 
             self.emit(f"if ({self.render_cond(stmt.get('test'))}) {{")
             self.indent += 1
-            for s in body_stmts:
-                self.emit_stmt(s)
+            self.emit_stmt_list(body_stmts)
             self.indent -= 1
             if len(else_stmts) > 0:
                 self.emit("} else {")
                 self.indent += 1
-                for s in else_stmts:
-                    self.emit_stmt(s)
+                self.emit_stmt_list(else_stmts)
                 self.indent -= 1
                 self.emit("}")
             else:
@@ -462,8 +504,7 @@ class CppEmitter:
         if kind == "While":
             self.emit(f"while ({self.render_cond(stmt.get('test'))}) {{")
             self.indent += 1
-            for s in stmt.get("body", []):
-                self.emit_stmt(s)
+            self.emit_stmt_list(list(stmt.get("body", [])))
             self.indent -= 1
             self.emit("}")
             return
@@ -489,22 +530,19 @@ class CppEmitter:
                 gid = self.next_tmp("__finally")
                 self.emit(f"auto {gid} = py_make_scope_exit([&]() {{")
                 self.indent += 1
-                for s in finalbody:
-                    self.emit_stmt(s)
+                self.emit_stmt_list(finalbody)
                 self.indent -= 1
                 self.emit("});")
             self.emit("try {")
             self.indent += 1
-            for s in stmt.get("body", []):
-                self.emit_stmt(s)
+            self.emit_stmt_list(list(stmt.get("body", [])))
             self.indent -= 1
             self.emit("}")
             for h in stmt.get("handlers", []):
                 name = h.get("name") or "ex"
                 self.emit(f"catch (const std::exception& {name}) {{")
                 self.indent += 1
-                for s in h.get("body", []):
-                    self.emit_stmt(s)
+                self.emit_stmt_list(list(h.get("body", [])))
                 self.indent -= 1
                 self.emit("}")
             if has_effective_finally:
@@ -596,8 +634,7 @@ class CppEmitter:
 
         self.emit(hdr + " {")
         self.indent += 1
-        for s in body_stmts:
-            self.emit_stmt(s)
+        self.emit_stmt_list(body_stmts)
         self.indent -= 1
         self.emit("}")
 
@@ -637,8 +674,7 @@ class CppEmitter:
         self.emit(hdr + " {")
         self.indent += 1
         self.scope_stack.append({t})
-        for s in body_stmts:
-            self.emit_stmt(s)
+        self.emit_stmt_list(body_stmts)
         self.scope_stack.pop()
         self.indent -= 1
         self.emit("}")
@@ -682,8 +718,7 @@ class CppEmitter:
             self.current_scope().add(n)
         if len(local_decls) > 0:
             self.emit()
-        for s in stmt.get("body", []):
-            self.emit_stmt(s)
+        self.emit_stmt_list(list(stmt.get("body", [])))
         self.scope_stack.pop()
         self.indent -= 1
         self.emit("}")
@@ -786,6 +821,9 @@ class CppEmitter:
             return str(v)
         if kind == "Attribute":
             base = self.render_expr(expr.get("value"))
+            base_node = expr.get("value")
+            if isinstance(base_node, dict) and base_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                base = f"({base})"
             attr = expr.get("attr", "")
             if base == "self":
                 if self.current_class_name is not None and str(attr) in self.current_class_static_fields:
@@ -803,11 +841,11 @@ class CppEmitter:
             bt = self.get_expr_type(expr.get("value"))
             if bt == "Path":
                 if attr == "name":
-                    return f"{base}.filename().string()"
+                    return f"{base}.name()"
                 if attr == "stem":
-                    return f"{base}.stem().string()"
+                    return f"{base}.stem()"
                 if attr == "parent":
-                    return f"{base}.parent_path()"
+                    return f"{base}.parent()"
             return f"{base}.{attr}"
         if kind == "Call":
             fn = expr.get("func") or {}
@@ -868,27 +906,39 @@ class CppEmitter:
                 if runtime_call == "Path":
                     return f"Path({', '.join(args)})"
                 if runtime_call == "std::filesystem::create_directories":
-                    owner = self.render_expr((fn or {}).get("value"))
-                    return f"std::filesystem::create_directories({owner})"
+                    owner_node = (fn or {}).get("value")
+                    owner = self.render_expr(owner_node)
+                    if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                        owner = f"({owner})"
+                    return f"{owner}.mkdir(true, true)"
                 if runtime_call == "std::filesystem::exists":
-                    owner = self.render_expr((fn or {}).get("value"))
-                    return f"std::filesystem::exists({owner})"
+                    owner_node = (fn or {}).get("value")
+                    owner = self.render_expr(owner_node)
+                    if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                        owner = f"({owner})"
+                    return f"{owner}.exists()"
                 if runtime_call == "py_write_text":
-                    owner = self.render_expr((fn or {}).get("value"))
+                    owner_node = (fn or {}).get("value")
+                    owner = self.render_expr(owner_node)
+                    if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                        owner = f"({owner})"
                     write_arg = args[0] if len(args) >= 1 else '""'
-                    return f"py_write_text({owner}, {write_arg})"
+                    return f"{owner}.write_text({write_arg})"
                 if runtime_call == "py_read_text":
-                    owner = self.render_expr((fn or {}).get("value"))
-                    return f"py_read_text({owner})"
+                    owner_node = (fn or {}).get("value")
+                    owner = self.render_expr(owner_node)
+                    if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                        owner = f"({owner})"
+                    return f"{owner}.read_text()"
                 if runtime_call == "path_parent":
                     owner = self.render_expr((fn or {}).get("value"))
-                    return f"{owner}.parent_path()"
+                    return f"{owner}.parent()"
                 if runtime_call == "path_name":
                     owner = self.render_expr((fn or {}).get("value"))
-                    return f"{owner}.filename().string()"
+                    return f"{owner}.name()"
                 if runtime_call == "path_stem":
                     owner = self.render_expr((fn or {}).get("value"))
-                    return f"{owner}.stem().string()"
+                    return f"{owner}.stem()"
                 if runtime_call == "identity":
                     owner = self.render_expr((fn or {}).get("value"))
                     return owner
@@ -962,6 +1012,8 @@ class CppEmitter:
                 owner = fn.get("value")
                 owner_t = self.get_expr_type(owner)
                 owner_expr = self.render_expr(owner)
+                if isinstance(owner, dict) and owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                    owner_expr = f"({owner_expr})"
                 attr = fn.get("attr")
                 if owner_expr == "math":
                     math_map = {
@@ -981,14 +1033,20 @@ class CppEmitter:
                         return f"{math_map[attr]}({', '.join(args)})"
                 if owner_t == "Path":
                     if attr == "mkdir":
-                        return f"std::filesystem::create_directories({owner_expr})"
+                        parents = kw.get("parents", "false")
+                        exist_ok = kw.get("exist_ok", "false")
+                        if len(args) >= 1:
+                            parents = args[0]
+                        if len(args) >= 2:
+                            exist_ok = args[1]
+                        return f"{owner_expr}.mkdir({parents}, {exist_ok})"
                     if attr == "exists":
-                        return f"std::filesystem::exists({owner_expr})"
+                        return f"{owner_expr}.exists()"
                     if attr == "write_text":
                         write_arg = args[0] if len(args) >= 1 else '""'
-                        return f"py_write_text({owner_expr}, {write_arg})"
+                        return f"{owner_expr}.write_text({write_arg})"
                     if attr == "read_text":
-                        return f"py_read_text({owner_expr})"
+                        return f"{owner_expr}.read_text()"
                 if attr == "isdigit":
                     return f"py_isdigit({owner_expr})"
                 if attr == "isalpha":
