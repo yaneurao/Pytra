@@ -52,7 +52,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "c"
+              "repr": "c",
+              "id": "c"
             },
             "annotation": "int64",
             "value": {
@@ -66,7 +67,111 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "a if flag and a > b else b"
+              "repr": "a if flag and a > b else b",
+              "test": {
+                "kind": "BoolOp",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 19,
+                  "end_lineno": 6,
+                  "end_col": 35
+                },
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "flag and a > b",
+                "op": "And",
+                "values": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 19,
+                      "end_lineno": 6,
+                      "end_col": 23
+                    },
+                    "resolved_type": "bool",
+                    "borrow_kind": "readonly_ref",
+                    "casts": [],
+                    "repr": "flag",
+                    "id": "flag"
+                  },
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 29,
+                      "end_lineno": 6,
+                      "end_col": 34
+                    },
+                    "resolved_type": "bool",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "a > b",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 6,
+                        "col": 29,
+                        "end_lineno": 6,
+                        "end_col": 30
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "readonly_ref",
+                      "casts": [],
+                      "repr": "a",
+                      "id": "a"
+                    },
+                    "ops": [
+                      "Gt"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 6,
+                          "col": 33,
+                          "end_lineno": 6,
+                          "end_col": 34
+                        },
+                        "resolved_type": "int64",
+                        "borrow_kind": "readonly_ref",
+                        "casts": [],
+                        "repr": "b",
+                        "id": "b"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "body": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 13,
+                  "end_lineno": 6,
+                  "end_col": 14
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "a",
+                "id": "a"
+              },
+              "orelse": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 42,
+                  "end_lineno": 6,
+                  "end_col": 43
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "b",
+                "id": "b"
+              }
             }
           },
           {
@@ -88,7 +193,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "c"
+              "repr": "c",
+              "id": "c"
             }
           }
         ]
@@ -114,7 +220,96 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(pick_25(10, 3, True))"
+          "repr": "print(pick_25(10, 3, True))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 11,
+              "col": 4,
+              "end_lineno": 11,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 11,
+                "col": 10,
+                "end_lineno": 11,
+                "end_col": 30
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "pick_25(10, 3, True)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 10,
+                  "end_lineno": 11,
+                  "end_col": 17
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "pick_25",
+                "id": "pick_25"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 11,
+                    "col": 18,
+                    "end_lineno": 11,
+                    "end_col": 20
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "10",
+                  "value": 10
+                },
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 11,
+                    "col": 22,
+                    "end_lineno": 11,
+                    "end_col": 23
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "3",
+                  "value": 3
+                },
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 11,
+                    "col": 25,
+                    "end_lineno": 11,
+                    "end_col": 29
+                  },
+                  "resolved_type": "bool",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "True",
+                  "value": true
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

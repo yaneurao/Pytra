@@ -63,7 +63,36 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "x * y"
+                  "repr": "x * y",
+                  "left": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 7,
+                      "col": 15,
+                      "end_lineno": 7,
+                      "end_col": 16
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "readonly_ref",
+                    "casts": [],
+                    "repr": "x",
+                    "id": "x"
+                  },
+                  "op": "Mult",
+                  "right": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 7,
+                      "col": 19,
+                      "end_lineno": 7,
+                      "end_col": 20
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "readonly_ref",
+                    "casts": [],
+                    "repr": "y",
+                    "id": "y"
+                  }
                 }
               }
             ]
@@ -91,7 +120,8 @@
           "resolved_type": "Multiplier",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "m"
+          "repr": "m",
+          "id": "m"
         },
         "annotation": "Multiplier",
         "value": {
@@ -105,7 +135,23 @@
           "resolved_type": "Multiplier",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "Multiplier()"
+          "repr": "Multiplier()",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 11,
+              "col": 20,
+              "end_lineno": 11,
+              "end_col": 30
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "Multiplier",
+            "id": "Multiplier"
+          },
+          "args": [],
+          "keywords": []
         }
       },
       {
@@ -127,7 +173,96 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(m.mul(6, 7))"
+          "repr": "print(m.mul(6, 7))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 12,
+              "col": 4,
+              "end_lineno": 12,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 12,
+                "col": 10,
+                "end_lineno": 12,
+                "end_col": 21
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "m.mul(6, 7)",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 10,
+                  "end_lineno": 12,
+                  "end_col": 15
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "m.mul",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 10,
+                    "end_lineno": 12,
+                    "end_col": 11
+                  },
+                  "resolved_type": "Multiplier",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "m",
+                  "id": "m"
+                },
+                "attr": "mul"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 16,
+                    "end_lineno": 12,
+                    "end_col": 17
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "6",
+                  "value": 6
+                },
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 19,
+                    "end_lineno": 12,
+                    "end_col": 20
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "7",
+                  "value": 7
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

@@ -40,7 +40,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "total"
+              "repr": "total",
+              "id": "total"
             },
             "annotation": "int64",
             "value": {
@@ -54,7 +55,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "0"
+              "repr": "0",
+              "value": 0
             }
           },
           {
@@ -97,7 +99,22 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.total"
+                  "repr": "self.total",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 8,
+                      "end_lineno": 9,
+                      "end_col": 12
+                    },
+                    "resolved_type": "Counter26",
+                    "borrow_kind": "mutable_ref",
+                    "casts": [],
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "total"
                 },
                 "op": "Add",
                 "value": {
@@ -111,7 +128,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
-                  "repr": "x"
+                  "repr": "x",
+                  "id": "x"
                 }
               },
               {
@@ -133,7 +151,22 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.total"
+                  "repr": "self.total",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 10,
+                      "col": 15,
+                      "end_lineno": 10,
+                      "end_col": 19
+                    },
+                    "resolved_type": "Counter26",
+                    "borrow_kind": "mutable_ref",
+                    "casts": [],
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "total"
                 }
               }
             ]
@@ -161,7 +194,8 @@
           "resolved_type": "Counter26",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "c"
+          "repr": "c",
+          "id": "c"
         },
         "annotation": "Counter26",
         "value": {
@@ -175,7 +209,23 @@
           "resolved_type": "Counter26",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "Counter26()"
+          "repr": "Counter26()",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 14,
+              "col": 19,
+              "end_lineno": 14,
+              "end_col": 28
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "Counter26",
+            "id": "Counter26"
+          },
+          "args": [],
+          "keywords": []
         }
       },
       {
@@ -197,7 +247,82 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(c.add(5))"
+          "repr": "print(c.add(5))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 15,
+                "col": 10,
+                "end_lineno": 15,
+                "end_col": 18
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "c.add(5)",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 10,
+                  "end_lineno": 15,
+                  "end_col": 15
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "c.add",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 15,
+                    "col": 10,
+                    "end_lineno": 15,
+                    "end_col": 11
+                  },
+                  "resolved_type": "Counter26",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "c",
+                  "id": "c"
+                },
+                "attr": "add"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 15,
+                    "col": 16,
+                    "end_lineno": 15,
+                    "end_col": 17
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "5",
+                  "value": 5
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

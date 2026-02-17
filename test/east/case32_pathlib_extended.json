@@ -63,7 +63,8 @@
               "resolved_type": "Path",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "root"
+              "repr": "root",
+              "id": "root"
             },
             "value": {
               "kind": "Call",
@@ -76,7 +77,38 @@
               "resolved_type": "Path",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "Path('test/obj/pathlib_case32')"
+              "repr": "Path('test/obj/pathlib_case32')",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 11,
+                  "end_lineno": 5,
+                  "end_col": 15
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "Path",
+                "id": "Path"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 5,
+                    "col": 16,
+                    "end_lineno": 5,
+                    "end_col": 41
+                  },
+                  "resolved_type": "str",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "'test/obj/pathlib_case32'",
+                  "value": "test/obj/pathlib_case32"
+                }
+              ],
+              "keywords": []
             }
           },
           {
@@ -98,7 +130,72 @@
               "resolved_type": "None",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "root.mkdir(parents=True, exist_ok=True)"
+              "repr": "root.mkdir(parents=True, exist_ok=True)",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 4,
+                  "end_lineno": 6,
+                  "end_col": 14
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "root.mkdir",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 4,
+                    "end_lineno": 6,
+                    "end_col": 8
+                  },
+                  "resolved_type": "Path",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "root",
+                  "id": "root"
+                },
+                "attr": "mkdir"
+              },
+              "args": [],
+              "keywords": [
+                {
+                  "arg": "parents",
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 23,
+                      "end_lineno": 6,
+                      "end_col": 27
+                    },
+                    "resolved_type": "bool",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "True",
+                    "value": true
+                  }
+                },
+                {
+                  "arg": "exist_ok",
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 38,
+                      "end_lineno": 6,
+                      "end_col": 42
+                    },
+                    "resolved_type": "bool",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "True",
+                    "value": true
+                  }
+                }
+              ]
             }
           },
           {
@@ -120,7 +217,8 @@
               "resolved_type": "Path",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "child"
+              "repr": "child",
+              "id": "child"
             },
             "value": {
               "kind": "BinOp",
@@ -133,7 +231,36 @@
               "resolved_type": "Path",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "root / 'values.txt'"
+              "repr": "root / 'values.txt'",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 12,
+                  "end_lineno": 8,
+                  "end_col": 16
+                },
+                "resolved_type": "Path",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "root",
+                "id": "root"
+              },
+              "op": "Div",
+              "right": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 19,
+                  "end_lineno": 8,
+                  "end_col": 31
+                },
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "'values.txt'",
+                "value": "values.txt"
+              }
             }
           },
           {
@@ -155,7 +282,52 @@
               "resolved_type": "None",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "child.write_text('42')"
+              "repr": "child.write_text('42')",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 4,
+                  "end_lineno": 9,
+                  "end_col": 20
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "child.write_text",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 4,
+                    "end_lineno": 9,
+                    "end_col": 9
+                  },
+                  "resolved_type": "Path",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "child",
+                  "id": "child"
+                },
+                "attr": "write_text"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 21,
+                    "end_lineno": 9,
+                    "end_col": 25
+                  },
+                  "resolved_type": "str",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "'42'",
+                  "value": "42"
+                }
+              ],
+              "keywords": []
             }
           },
           {
@@ -177,7 +349,67 @@
               "resolved_type": "None",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "print(child.exists())"
+              "repr": "print(child.exists())",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 4,
+                  "end_lineno": 11,
+                  "end_col": 9
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "print",
+                "id": "print"
+              },
+              "args": [
+                {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 11,
+                    "col": 10,
+                    "end_lineno": 11,
+                    "end_col": 24
+                  },
+                  "resolved_type": "bool",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "child.exists()",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 11,
+                      "col": 10,
+                      "end_lineno": 11,
+                      "end_col": 22
+                    },
+                    "resolved_type": "unknown",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "child.exists",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 11,
+                        "col": 10,
+                        "end_lineno": 11,
+                        "end_col": 15
+                      },
+                      "resolved_type": "Path",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "child",
+                      "id": "child"
+                    },
+                    "attr": "exists"
+                  },
+                  "args": [],
+                  "keywords": []
+                }
+              ],
+              "keywords": []
             }
           },
           {
@@ -199,7 +431,52 @@
               "resolved_type": "None",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "print(child.name)"
+              "repr": "print(child.name)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 4,
+                  "end_lineno": 12,
+                  "end_col": 9
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "print",
+                "id": "print"
+              },
+              "args": [
+                {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 10,
+                    "end_lineno": 12,
+                    "end_col": 20
+                  },
+                  "resolved_type": "str",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "child.name",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 12,
+                      "col": 10,
+                      "end_lineno": 12,
+                      "end_col": 15
+                    },
+                    "resolved_type": "Path",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "child",
+                    "id": "child"
+                  },
+                  "attr": "name"
+                }
+              ],
+              "keywords": []
             }
           },
           {
@@ -221,7 +498,52 @@
               "resolved_type": "None",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "print(child.stem)"
+              "repr": "print(child.stem)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 4,
+                  "end_lineno": 13,
+                  "end_col": 9
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "print",
+                "id": "print"
+              },
+              "args": [
+                {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 13,
+                    "col": 10,
+                    "end_lineno": 13,
+                    "end_col": 20
+                  },
+                  "resolved_type": "str",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "child.stem",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 13,
+                      "col": 10,
+                      "end_lineno": 13,
+                      "end_col": 15
+                    },
+                    "resolved_type": "Path",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "child",
+                    "id": "child"
+                  },
+                  "attr": "stem"
+                }
+              ],
+              "keywords": []
             }
           },
           {
@@ -243,7 +565,109 @@
               "resolved_type": "None",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "print((child.parent / 'values.txt').exists())"
+              "repr": "print((child.parent / 'values.txt').exists())",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 4,
+                  "end_lineno": 14,
+                  "end_col": 9
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "print",
+                "id": "print"
+              },
+              "args": [
+                {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 14,
+                    "col": 10,
+                    "end_lineno": 14,
+                    "end_col": 48
+                  },
+                  "resolved_type": "bool",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "(child.parent / 'values.txt').exists()",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 14,
+                      "col": 10,
+                      "end_lineno": 14,
+                      "end_col": 46
+                    },
+                    "resolved_type": "unknown",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "(child.parent / 'values.txt').exists",
+                    "value": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 14,
+                        "col": 11,
+                        "end_lineno": 14,
+                        "end_col": 38
+                      },
+                      "resolved_type": "Path",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "child.parent / 'values.txt'",
+                      "left": {
+                        "kind": "Attribute",
+                        "source_span": {
+                          "lineno": 14,
+                          "col": 11,
+                          "end_lineno": 14,
+                          "end_col": 23
+                        },
+                        "resolved_type": "Path",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "child.parent",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 14,
+                            "col": 11,
+                            "end_lineno": 14,
+                            "end_col": 16
+                          },
+                          "resolved_type": "Path",
+                          "borrow_kind": "value",
+                          "casts": [],
+                          "repr": "child",
+                          "id": "child"
+                        },
+                        "attr": "parent"
+                      },
+                      "op": "Div",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 14,
+                          "col": 26,
+                          "end_lineno": 14,
+                          "end_col": 38
+                        },
+                        "resolved_type": "str",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "'values.txt'",
+                        "value": "values.txt"
+                      }
+                    },
+                    "attr": "exists"
+                  },
+                  "args": [],
+                  "keywords": []
+                }
+              ],
+              "keywords": []
             }
           },
           {
@@ -265,7 +689,67 @@
               "resolved_type": "None",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "print(child.read_text())"
+              "repr": "print(child.read_text())",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 4,
+                  "end_lineno": 15,
+                  "end_col": 9
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "print",
+                "id": "print"
+              },
+              "args": [
+                {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 15,
+                    "col": 10,
+                    "end_lineno": 15,
+                    "end_col": 27
+                  },
+                  "resolved_type": "str",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "child.read_text()",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 15,
+                      "col": 10,
+                      "end_lineno": 15,
+                      "end_col": 25
+                    },
+                    "resolved_type": "unknown",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "child.read_text",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 15,
+                        "col": 10,
+                        "end_lineno": 15,
+                        "end_col": 15
+                      },
+                      "resolved_type": "Path",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "child",
+                      "id": "child"
+                    },
+                    "attr": "read_text"
+                  },
+                  "args": [],
+                  "keywords": []
+                }
+              ],
+              "keywords": []
             }
           }
         ]
@@ -291,7 +775,23 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "main()"
+          "repr": "main()",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 19,
+              "col": 4,
+              "end_lineno": 19,
+              "end_col": 8
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "main",
+            "id": "main"
+          },
+          "args": [],
+          "keywords": []
         }
       }
     ],

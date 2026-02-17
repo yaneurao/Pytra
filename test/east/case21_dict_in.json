@@ -48,7 +48,8 @@
               "resolved_type": "dict[str,int64]",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "d"
+              "repr": "d",
+              "id": "d"
             },
             "annotation": "dict[str,int64]",
             "value": {
@@ -62,7 +63,69 @@
               "resolved_type": "dict[str,int64]",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "{'a': 1, 'b': 2}"
+              "repr": "{'a': 1, 'b': 2}",
+              "entries": [
+                {
+                  "key": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 25,
+                      "end_lineno": 6,
+                      "end_col": 28
+                    },
+                    "resolved_type": "str",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "'a'",
+                    "value": "a"
+                  },
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 30,
+                      "end_lineno": 6,
+                      "end_col": 31
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "1",
+                    "value": 1
+                  }
+                },
+                {
+                  "key": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 33,
+                      "end_lineno": 6,
+                      "end_col": 36
+                    },
+                    "resolved_type": "str",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "'b'",
+                    "value": "b"
+                  },
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 38,
+                      "end_lineno": 6,
+                      "end_col": 39
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "2",
+                    "value": 2
+                  }
+                }
+              ]
             }
           },
           {
@@ -84,7 +147,40 @@
               "resolved_type": "bool",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "k in d"
+              "repr": "k in d",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 7,
+                  "end_lineno": 7,
+                  "end_col": 8
+                },
+                "resolved_type": "str",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "k",
+                "id": "k"
+              },
+              "ops": [
+                "In"
+              ],
+              "comparators": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 7,
+                    "col": 12,
+                    "end_lineno": 7,
+                    "end_col": 13
+                  },
+                  "resolved_type": "dict[str,int64]",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "d",
+                  "id": "d"
+                }
+              ]
             },
             "body": [
               {
@@ -106,7 +202,8 @@
                   "resolved_type": "bool",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "True"
+                  "repr": "True",
+                  "value": true
                 }
               }
             ],
@@ -130,7 +227,8 @@
                   "resolved_type": "bool",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "False"
+                  "repr": "False",
+                  "value": false
                 }
               }
             ]
@@ -158,7 +256,68 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(has_key_23('a'))"
+          "repr": "print(has_key_23('a'))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 14,
+              "col": 4,
+              "end_lineno": 14,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 14,
+                "col": 10,
+                "end_lineno": 14,
+                "end_col": 25
+              },
+              "resolved_type": "bool",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "has_key_23('a')",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 10,
+                  "end_lineno": 14,
+                  "end_col": 20
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "has_key_23",
+                "id": "has_key_23"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 14,
+                    "col": 21,
+                    "end_lineno": 14,
+                    "end_col": 24
+                  },
+                  "resolved_type": "str",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "'a'",
+                  "value": "a"
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

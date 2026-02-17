@@ -48,7 +48,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "total"
+              "repr": "total",
+              "id": "total"
             },
             "annotation": "int64",
             "value": {
@@ -62,7 +63,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "0"
+              "repr": "0",
+              "value": 0
             }
           },
           {
@@ -84,7 +86,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "i"
+              "repr": "i",
+              "id": "i"
             },
             "start": {
               "kind": "Constant",
@@ -97,7 +100,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "0"
+              "repr": "0",
+              "value": 0
             },
             "stop": {
               "kind": "Name",
@@ -110,7 +114,8 @@
               "resolved_type": "int64",
               "borrow_kind": "readonly_ref",
               "casts": [],
-              "repr": "n"
+              "repr": "n",
+              "id": "n"
             },
             "step": {
               "kind": "Constant",
@@ -123,7 +128,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "1"
+              "repr": "1",
+              "value": 1
             },
             "range_mode": "ascending",
             "body": [
@@ -146,7 +152,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "total"
+                  "repr": "total",
+                  "id": "total"
                 },
                 "op": "Add",
                 "value": {
@@ -160,7 +167,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "i"
+                  "repr": "i",
+                  "id": "i"
                 }
               }
             ],
@@ -185,7 +193,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "total"
+              "repr": "total",
+              "id": "total"
             }
           }
         ]
@@ -211,7 +220,68 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(sum_range_29(5))"
+          "repr": "print(sum_range_29(5))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col": 4,
+              "end_lineno": 13,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 13,
+                "col": 10,
+                "end_lineno": 13,
+                "end_col": 25
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "sum_range_29(5)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 10,
+                  "end_lineno": 13,
+                  "end_col": 22
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "sum_range_29",
+                "id": "sum_range_29"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 13,
+                    "col": 23,
+                    "end_lineno": 13,
+                    "end_col": 24
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "5",
+                  "value": 5
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

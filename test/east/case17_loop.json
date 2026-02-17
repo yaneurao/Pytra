@@ -48,7 +48,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "total"
+              "repr": "total",
+              "id": "total"
             },
             "annotation": "int64",
             "value": {
@@ -62,7 +63,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "0"
+              "repr": "0",
+              "value": 0
             }
           },
           {
@@ -84,7 +86,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "v"
+              "repr": "v",
+              "id": "v"
             },
             "iter": {
               "kind": "Name",
@@ -97,7 +100,8 @@
               "resolved_type": "list[int64]",
               "borrow_kind": "readonly_ref",
               "casts": [],
-              "repr": "values"
+              "repr": "values",
+              "id": "values"
             },
             "body": [
               {
@@ -119,7 +123,68 @@
                   "resolved_type": "bool",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "v % 2 == 0"
+                  "repr": "v % 2 == 0",
+                  "left": {
+                    "kind": "BinOp",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 11,
+                      "end_lineno": 8,
+                      "end_col": 16
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "v % 2",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 11,
+                        "end_lineno": 8,
+                        "end_col": 12
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "v",
+                      "id": "v"
+                    },
+                    "op": "Mod",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 15,
+                        "end_lineno": 8,
+                        "end_col": 16
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "2",
+                      "value": 2
+                    }
+                  },
+                  "ops": [
+                    "Eq"
+                  ],
+                  "comparators": [
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 20,
+                        "end_lineno": 8,
+                        "end_col": 21
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "0",
+                      "value": 0
+                    }
+                  ]
                 },
                 "body": [
                   {
@@ -141,7 +206,8 @@
                       "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
-                      "repr": "total"
+                      "repr": "total",
+                      "id": "total"
                     },
                     "op": "Add",
                     "value": {
@@ -155,7 +221,8 @@
                       "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
-                      "repr": "v"
+                      "repr": "v",
+                      "id": "v"
                     }
                   }
                 ],
@@ -179,7 +246,8 @@
                       "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
-                      "repr": "total"
+                      "repr": "total",
+                      "id": "total"
                     },
                     "op": "Add",
                     "value": {
@@ -193,7 +261,36 @@
                       "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
-                      "repr": "v * 2"
+                      "repr": "v * 2",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 11,
+                          "col": 22,
+                          "end_lineno": 11,
+                          "end_col": 23
+                        },
+                        "resolved_type": "int64",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "v",
+                        "id": "v"
+                      },
+                      "op": "Mult",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 11,
+                          "col": 26,
+                          "end_lineno": 11,
+                          "end_col": 27
+                        },
+                        "resolved_type": "int64",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "2",
+                        "value": 2
+                      }
                     }
                   }
                 ]
@@ -220,7 +317,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "total"
+              "repr": "total",
+              "id": "total"
             }
           }
         ]
@@ -246,7 +344,125 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(calc_17([1, 2, 3, 4]))"
+          "repr": "print(calc_17([1, 2, 3, 4]))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 16,
+              "col": 4,
+              "end_lineno": 16,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 16,
+                "col": 10,
+                "end_lineno": 16,
+                "end_col": 31
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "calc_17([1, 2, 3, 4])",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 10,
+                  "end_lineno": 16,
+                  "end_col": 17
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "calc_17",
+                "id": "calc_17"
+              },
+              "args": [
+                {
+                  "kind": "List",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 18,
+                    "end_lineno": 16,
+                    "end_col": 30
+                  },
+                  "resolved_type": "list[int64]",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "[1, 2, 3, 4]",
+                  "elements": [
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 16,
+                        "col": 19,
+                        "end_lineno": 16,
+                        "end_col": 20
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "1",
+                      "value": 1
+                    },
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 16,
+                        "col": 22,
+                        "end_lineno": 16,
+                        "end_col": 23
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "2",
+                      "value": 2
+                    },
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 16,
+                        "col": 25,
+                        "end_lineno": 16,
+                        "end_col": 26
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "3",
+                      "value": 3
+                    },
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 16,
+                        "col": 28,
+                        "end_lineno": 16,
+                        "end_col": 29
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "4",
+                      "value": 4
+                    }
+                  ]
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

@@ -63,7 +63,22 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.x"
+                  "repr": "self.x",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 7,
+                      "col": 8,
+                      "end_lineno": 7,
+                      "end_col": 12
+                    },
+                    "resolved_type": "Point",
+                    "borrow_kind": "mutable_ref",
+                    "casts": [],
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "x"
                 },
                 "value": {
                   "kind": "Name",
@@ -76,7 +91,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
-                  "repr": "x"
+                  "repr": "x",
+                  "id": "x"
                 }
               },
               {
@@ -98,7 +114,22 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.y"
+                  "repr": "self.y",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 8,
+                      "end_lineno": 8,
+                      "end_col": 12
+                    },
+                    "resolved_type": "Point",
+                    "borrow_kind": "mutable_ref",
+                    "casts": [],
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "y"
                 },
                 "annotation": "int64",
                 "value": {
@@ -112,7 +143,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
-                  "repr": "y"
+                  "repr": "y",
+                  "id": "y"
                 }
               }
             ]
@@ -155,7 +187,64 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.x + self.y"
+                  "repr": "self.x + self.y",
+                  "left": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 11,
+                      "col": 15,
+                      "end_lineno": 11,
+                      "end_col": 21
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "self.x",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 11,
+                        "col": 15,
+                        "end_lineno": 11,
+                        "end_col": 19
+                      },
+                      "resolved_type": "Point",
+                      "borrow_kind": "readonly_ref",
+                      "casts": [],
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "x"
+                  },
+                  "op": "Add",
+                  "right": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 11,
+                      "col": 24,
+                      "end_lineno": 11,
+                      "end_col": 30
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "self.y",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 11,
+                        "col": 24,
+                        "end_lineno": 11,
+                        "end_col": 28
+                      },
+                      "resolved_type": "Point",
+                      "borrow_kind": "readonly_ref",
+                      "casts": [],
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "y"
+                  }
                 }
               }
             ]
@@ -183,7 +272,8 @@
           "resolved_type": "Point",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "p"
+          "repr": "p",
+          "id": "p"
         },
         "annotation": "Point",
         "value": {
@@ -197,7 +287,52 @@
           "resolved_type": "Point",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "Point(2, 5)"
+          "repr": "Point(2, 5)",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 15,
+              "col": 15,
+              "end_lineno": 15,
+              "end_col": 20
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "Point",
+            "id": "Point"
+          },
+          "args": [
+            {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 15,
+                "col": 21,
+                "end_lineno": 15,
+                "end_col": 22
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "2",
+              "value": 2
+            },
+            {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 15,
+                "col": 24,
+                "end_lineno": 15,
+                "end_col": 25
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "5",
+              "value": 5
+            }
+          ],
+          "keywords": []
         }
       },
       {
@@ -219,7 +354,67 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(p.total())"
+          "repr": "print(p.total())",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 16,
+              "col": 4,
+              "end_lineno": 16,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 16,
+                "col": 10,
+                "end_lineno": 16,
+                "end_col": 19
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "p.total()",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 10,
+                  "end_lineno": 16,
+                  "end_col": 17
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "p.total",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 10,
+                    "end_lineno": 16,
+                    "end_col": 11
+                  },
+                  "resolved_type": "Point",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "p",
+                  "id": "p"
+                },
+                "attr": "total"
+              },
+              "args": [],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

@@ -513,7 +513,7 @@ class EastBuilder:
 
     def _expr(self, expr: ast.expr) -> dict[str, Any]:
         resolved_type, casts = self._resolve_expr_type(expr)
-        return {
+        out = {
             "kind": type(expr).__name__,
             "source_span": span_of(expr),
             "resolved_type": resolved_type,
@@ -521,6 +521,116 @@ class EastBuilder:
             "casts": casts,
             "repr": ast.unparse(expr) if hasattr(ast, "unparse") else None,
         }
+        out.update(self._expr_children(expr))
+        return out
+
+    def _expr_maybe(self, expr: ast.expr) -> dict[str, Any]:
+        """Best-effort child serializer: keep structure even if strict typing fails."""
+        try:
+            return self._expr(expr)
+        except EastBuildError:
+            out: dict[str, Any] = {
+                "kind": type(expr).__name__,
+                "source_span": span_of(expr),
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": ast.unparse(expr) if hasattr(ast, "unparse") else None,
+            }
+            if isinstance(expr, ast.Name):
+                out["id"] = expr.id
+            if isinstance(expr, ast.Constant):
+                out["value"] = expr.value
+            return out
+
+    def _expr_children(self, expr: ast.expr) -> dict[str, Any]:
+        """Attach structured child nodes so literals/args keep explicit types in EAST."""
+        if isinstance(expr, ast.Name):
+            return {"id": expr.id}
+        if isinstance(expr, ast.Constant):
+            return {"value": expr.value}
+        if isinstance(expr, ast.Attribute):
+            return {"value": self._expr_maybe(expr.value), "attr": expr.attr}
+        if isinstance(expr, ast.Call):
+            return {
+                "func": self._expr_maybe(expr.func),
+                "args": [self._expr_maybe(a) for a in expr.args],
+                "keywords": [
+                    {"arg": kw.arg, "value": self._expr_maybe(kw.value)}
+                    for kw in expr.keywords
+                ],
+            }
+        if isinstance(expr, ast.BinOp):
+            return {
+                "left": self._expr_maybe(expr.left),
+                "op": type(expr.op).__name__,
+                "right": self._expr_maybe(expr.right),
+            }
+        if isinstance(expr, ast.UnaryOp):
+            return {"op": type(expr.op).__name__, "operand": self._expr_maybe(expr.operand)}
+        if isinstance(expr, ast.BoolOp):
+            return {"op": type(expr.op).__name__, "values": [self._expr_maybe(v) for v in expr.values]}
+        if isinstance(expr, ast.Compare):
+            return {
+                "left": self._expr_maybe(expr.left),
+                "ops": [type(o).__name__ for o in expr.ops],
+                "comparators": [self._expr_maybe(c) for c in expr.comparators],
+            }
+        if isinstance(expr, ast.IfExp):
+            return {
+                "test": self._expr_maybe(expr.test),
+                "body": self._expr_maybe(expr.body),
+                "orelse": self._expr_maybe(expr.orelse),
+            }
+        if isinstance(expr, ast.List):
+            return {"elements": [self._expr_maybe(e) for e in expr.elts]}
+        if isinstance(expr, ast.Tuple):
+            return {"elements": [self._expr_maybe(e) for e in expr.elts]}
+        if isinstance(expr, ast.Set):
+            return {"elements": [self._expr_maybe(e) for e in expr.elts]}
+        if isinstance(expr, ast.Dict):
+            entries = []
+            for k, v in zip(expr.keys, expr.values):
+                entries.append(
+                    {
+                        "key": self._expr_maybe(k) if k is not None else None,
+                        "value": self._expr_maybe(v),
+                    }
+                )
+            return {"entries": entries}
+        if isinstance(expr, ast.Subscript):
+            payload: dict[str, Any] = {"value": self._expr_maybe(expr.value)}
+            if isinstance(expr.slice, ast.Slice):
+                payload["slice"] = {
+                    "kind": "Slice",
+                    "lower": self._expr_maybe(expr.slice.lower) if expr.slice.lower is not None else None,
+                    "upper": self._expr_maybe(expr.slice.upper) if expr.slice.upper is not None else None,
+                    "step": self._expr_maybe(expr.slice.step) if expr.slice.step is not None else None,
+                }
+            else:
+                payload["slice"] = self._expr_maybe(expr.slice)
+            return payload
+        if isinstance(expr, ast.JoinedStr):
+            values: list[dict[str, Any]] = []
+            for part in expr.values:
+                if isinstance(part, ast.Constant):
+                    values.append({"kind": "Constant", "value": part.value})
+                elif isinstance(part, ast.FormattedValue):
+                    values.append({"kind": "FormattedValue", "value": self._expr_maybe(part.value)})
+            return {"values": values}
+        if isinstance(expr, ast.ListComp):
+            gens = []
+            for g in expr.generators:
+                gens.append(
+                    {
+                        "target": self._expr_maybe(g.target),  # type: ignore[arg-type]
+                        "iter": self._expr_maybe(g.iter),
+                        "ifs": [self._expr_maybe(c) for c in g.ifs],
+                        "is_async": bool(g.is_async),
+                    }
+                )
+            return {"elt": self._expr_maybe(expr.elt), "generators": gens}
+        return {}
 
     def _resolve_expr_type(self, expr: ast.expr) -> tuple[str, list[dict[str, Any]]]:
         if isinstance(expr, ast.Name):

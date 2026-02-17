@@ -61,7 +61,22 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.seed"
+                  "repr": "self.seed",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 7,
+                      "col": 8,
+                      "end_lineno": 7,
+                      "end_col": 12
+                    },
+                    "resolved_type": "Box100",
+                    "borrow_kind": "mutable_ref",
+                    "casts": [],
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "seed"
                 },
                 "value": {
                   "kind": "Name",
@@ -74,7 +89,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
-                  "repr": "seed"
+                  "repr": "seed",
+                  "id": "seed"
                 }
               }
             ]
@@ -117,7 +133,22 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.seed"
+                  "repr": "self.seed",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 10,
+                      "col": 8,
+                      "end_lineno": 10,
+                      "end_col": 12
+                    },
+                    "resolved_type": "Box100",
+                    "borrow_kind": "mutable_ref",
+                    "casts": [],
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "seed"
                 },
                 "op": "Add",
                 "value": {
@@ -131,7 +162,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "1"
+                  "repr": "1",
+                  "value": 1
                 }
               },
               {
@@ -153,7 +185,22 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.seed"
+                  "repr": "self.seed",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 11,
+                      "col": 15,
+                      "end_lineno": 11,
+                      "end_col": 19
+                    },
+                    "resolved_type": "Box100",
+                    "borrow_kind": "mutable_ref",
+                    "casts": [],
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "seed"
                 }
               }
             ]
@@ -181,7 +228,8 @@
           "resolved_type": "Box100",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "b"
+          "repr": "b",
+          "id": "b"
         },
         "annotation": "Box100",
         "value": {
@@ -195,7 +243,38 @@
           "resolved_type": "Box100",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "Box100(3)"
+          "repr": "Box100(3)",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 15,
+              "col": 16,
+              "end_lineno": 15,
+              "end_col": 22
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "Box100",
+            "id": "Box100"
+          },
+          "args": [
+            {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 15,
+                "col": 23,
+                "end_lineno": 15,
+                "end_col": 24
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "3",
+              "value": 3
+            }
+          ],
+          "keywords": []
         }
       },
       {
@@ -217,7 +296,67 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(b.next())"
+          "repr": "print(b.next())",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 16,
+              "col": 4,
+              "end_lineno": 16,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 16,
+                "col": 10,
+                "end_lineno": 16,
+                "end_col": 18
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "b.next()",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 10,
+                  "end_lineno": 16,
+                  "end_col": 16
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "b.next",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 10,
+                    "end_lineno": 16,
+                    "end_col": 11
+                  },
+                  "resolved_type": "Box100",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "b",
+                  "id": "b"
+                },
+                "attr": "next"
+              },
+              "args": [],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

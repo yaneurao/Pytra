@@ -48,7 +48,40 @@
               "resolved_type": "bool",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "n >= 10"
+              "repr": "n >= 10",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 7,
+                  "end_lineno": 6,
+                  "end_col": 8
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "n",
+                "id": "n"
+              },
+              "ops": [
+                "GtE"
+              ],
+              "comparators": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 12,
+                    "end_lineno": 6,
+                    "end_col": 14
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "10",
+                  "value": 10
+                }
+              ]
             },
             "body": [
               {
@@ -70,7 +103,8 @@
                   "resolved_type": "bool",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "True"
+                  "repr": "True",
+                  "value": true
                 }
               }
             ],
@@ -94,7 +128,8 @@
                   "resolved_type": "bool",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "False"
+                  "repr": "False",
+                  "value": false
                 }
               }
             ]
@@ -122,7 +157,68 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(is_large(11))"
+          "repr": "print(is_large(11))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col": 4,
+              "end_lineno": 13,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 13,
+                "col": 10,
+                "end_lineno": 13,
+                "end_col": 22
+              },
+              "resolved_type": "bool",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "is_large(11)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 10,
+                  "end_lineno": 13,
+                  "end_col": 18
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "is_large",
+                "id": "is_large"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 13,
+                    "col": 19,
+                    "end_lineno": 13,
+                    "end_col": 21
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "11",
+                  "value": 11
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

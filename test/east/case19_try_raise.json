@@ -57,7 +57,8 @@
                   "resolved_type": "bool",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
-                  "repr": "flag"
+                  "repr": "flag",
+                  "id": "flag"
                 },
                 "body": [
                   {
@@ -79,7 +80,38 @@
                       "resolved_type": "Exception",
                       "borrow_kind": "value",
                       "casts": [],
-                      "repr": "Exception('fail-19')"
+                      "repr": "Exception('fail-19')",
+                      "func": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 8,
+                          "col": 18,
+                          "end_lineno": 8,
+                          "end_col": 27
+                        },
+                        "resolved_type": "Exception",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "Exception",
+                        "id": "Exception"
+                      },
+                      "args": [
+                        {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 8,
+                            "col": 28,
+                            "end_lineno": 8,
+                            "end_col": 37
+                          },
+                          "resolved_type": "str",
+                          "borrow_kind": "value",
+                          "casts": [],
+                          "repr": "'fail-19'",
+                          "value": "fail-19"
+                        }
+                      ],
+                      "keywords": []
                     }
                   }
                 ],
@@ -104,7 +136,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "10"
+                  "repr": "10",
+                  "value": 10
                 }
               }
             ],
@@ -128,7 +161,8 @@
                   "resolved_type": "Exception",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "Exception"
+                  "repr": "Exception",
+                  "id": "Exception"
                 },
                 "name": "ex",
                 "body": [
@@ -151,7 +185,8 @@
                       "resolved_type": "int64",
                       "borrow_kind": "value",
                       "casts": [],
-                      "repr": "20"
+                      "repr": "20",
+                      "value": 20
                     }
                   }
                 ]
@@ -193,7 +228,68 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(maybe_fail_19(True))"
+          "repr": "print(maybe_fail_19(True))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 17,
+              "col": 4,
+              "end_lineno": 17,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 17,
+                "col": 10,
+                "end_lineno": 17,
+                "end_col": 29
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "maybe_fail_19(True)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 10,
+                  "end_lineno": 17,
+                  "end_col": 23
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "maybe_fail_19",
+                "id": "maybe_fail_19"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 17,
+                    "col": 24,
+                    "end_lineno": 17,
+                    "end_col": 28
+                  },
+                  "resolved_type": "bool",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "True",
+                  "value": true
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

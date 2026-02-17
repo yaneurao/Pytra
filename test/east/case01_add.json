@@ -50,7 +50,36 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "a + b"
+              "repr": "a + b",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 11,
+                  "end_lineno": 6,
+                  "end_col": 12
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "a",
+                "id": "a"
+              },
+              "op": "Add",
+              "right": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 15,
+                  "end_lineno": 6,
+                  "end_col": 16
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "b",
+                "id": "b"
+              }
             }
           }
         ]
@@ -76,7 +105,82 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(add(3, 4))"
+          "repr": "print(add(3, 4))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col": 4,
+              "end_lineno": 10,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 10,
+                "col": 10,
+                "end_lineno": 10,
+                "end_col": 19
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "add(3, 4)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 10,
+                  "end_lineno": 10,
+                  "end_col": 13
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "add",
+                "id": "add"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 14,
+                    "end_lineno": 10,
+                    "end_col": 15
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "3",
+                  "value": 3
+                },
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 17,
+                    "end_lineno": 10,
+                    "end_col": 18
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "4",
+                  "value": 4
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

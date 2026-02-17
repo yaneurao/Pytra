@@ -40,7 +40,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "value"
+              "repr": "value",
+              "id": "value"
             },
             "annotation": "int64",
             "value": {
@@ -54,7 +55,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "0"
+              "repr": "0",
+              "value": 0
             }
           },
           {
@@ -95,7 +97,22 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.value"
+                  "repr": "self.value",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 8,
+                      "end_lineno": 9,
+                      "end_col": 12
+                    },
+                    "resolved_type": "Counter",
+                    "borrow_kind": "mutable_ref",
+                    "casts": [],
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "value"
                 },
                 "op": "Add",
                 "value": {
@@ -109,7 +126,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "1"
+                  "repr": "1",
+                  "value": 1
                 }
               },
               {
@@ -131,7 +149,22 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.value"
+                  "repr": "self.value",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 10,
+                      "col": 15,
+                      "end_lineno": 10,
+                      "end_col": 19
+                    },
+                    "resolved_type": "Counter",
+                    "borrow_kind": "mutable_ref",
+                    "casts": [],
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "value"
                 }
               }
             ]
@@ -159,7 +192,8 @@
           "resolved_type": "Counter",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "c"
+          "repr": "c",
+          "id": "c"
         },
         "annotation": "Counter",
         "value": {
@@ -173,7 +207,23 @@
           "resolved_type": "Counter",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "Counter()"
+          "repr": "Counter()",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 14,
+              "col": 17,
+              "end_lineno": 14,
+              "end_col": 24
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "Counter",
+            "id": "Counter"
+          },
+          "args": [],
+          "keywords": []
         }
       },
       {
@@ -195,7 +245,67 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(c.inc())"
+          "repr": "print(c.inc())",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 15,
+                "col": 10,
+                "end_lineno": 15,
+                "end_col": 17
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "c.inc()",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 10,
+                  "end_lineno": 15,
+                  "end_col": 15
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "c.inc",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 15,
+                    "col": 10,
+                    "end_lineno": 15,
+                    "end_col": 11
+                  },
+                  "resolved_type": "Counter",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "c",
+                  "id": "c"
+                },
+                "attr": "inc"
+              },
+              "args": [],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

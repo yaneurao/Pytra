@@ -48,7 +48,36 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "n * 3"
+              "repr": "n * 3",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 11,
+                  "end_lineno": 6,
+                  "end_col": 12
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "n",
+                "id": "n"
+              },
+              "op": "Mult",
+              "right": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 15,
+                  "end_lineno": 6,
+                  "end_col": 16
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "3",
+                "value": 3
+              }
             }
           }
         ]
@@ -72,7 +101,8 @@
           "resolved_type": "int64",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "value"
+          "repr": "value",
+          "id": "value"
         },
         "annotation": "int64",
         "value": {
@@ -86,7 +116,8 @@
           "resolved_type": "int64",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "7"
+          "repr": "7",
+          "value": 7
         }
       }
     ],
@@ -110,7 +141,68 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(mul3(value))"
+          "repr": "print(mul3(value))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 12,
+              "col": 4,
+              "end_lineno": 12,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 12,
+                "col": 10,
+                "end_lineno": 12,
+                "end_col": 21
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "mul3(value)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 10,
+                  "end_lineno": 12,
+                  "end_col": 14
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "mul3",
+                "id": "mul3"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 15,
+                    "end_lineno": 12,
+                    "end_col": 20
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "value",
+                  "id": "value"
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

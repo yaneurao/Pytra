@@ -46,7 +46,8 @@
               "resolved_type": "int8",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "i"
+              "repr": "i",
+              "id": "i"
             },
             "annotation": "int8",
             "value": {
@@ -60,7 +61,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "1"
+              "repr": "1",
+              "value": 1
             }
           },
           {
@@ -82,7 +84,79 @@
               "resolved_type": "None",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "print(i * 2)"
+              "repr": "print(i * 2)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 4,
+                  "end_lineno": 5,
+                  "end_col": 9
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "print",
+                "id": "print"
+              },
+              "args": [
+                {
+                  "kind": "BinOp",
+                  "source_span": {
+                    "lineno": 5,
+                    "col": 10,
+                    "end_lineno": 5,
+                    "end_col": 15
+                  },
+                  "resolved_type": "float",
+                  "borrow_kind": "value",
+                  "casts": [
+                    {
+                      "on": "left",
+                      "from": "int8",
+                      "to": "float",
+                      "reason": "numeric_promotion"
+                    },
+                    {
+                      "on": "right",
+                      "from": "int64",
+                      "to": "float",
+                      "reason": "numeric_promotion"
+                    }
+                  ],
+                  "repr": "i * 2",
+                  "left": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 5,
+                      "col": 10,
+                      "end_lineno": 5,
+                      "end_col": 11
+                    },
+                    "resolved_type": "int8",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "i",
+                    "id": "i"
+                  },
+                  "op": "Mult",
+                  "right": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 5,
+                      "col": 14,
+                      "end_lineno": 5,
+                      "end_col": 15
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "2",
+                    "value": 2
+                  }
+                }
+              ],
+              "keywords": []
             }
           }
         ]
@@ -108,7 +182,23 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "main()"
+          "repr": "main()",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 8
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "main",
+            "id": "main"
+          },
+          "args": [],
+          "keywords": []
         }
       }
     ],

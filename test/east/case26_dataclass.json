@@ -57,7 +57,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "x"
+              "repr": "x",
+              "id": "x"
             },
             "annotation": "int64",
             "value": null
@@ -81,7 +82,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "y"
+              "repr": "y",
+              "id": "y"
             },
             "annotation": "int64",
             "value": {
@@ -95,7 +97,8 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "10"
+              "repr": "10",
+              "value": 10
             }
           },
           {
@@ -136,7 +139,64 @@
                   "resolved_type": "int64",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.x + self.y"
+                  "repr": "self.x + self.y",
+                  "left": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 14,
+                      "col": 15,
+                      "end_lineno": 14,
+                      "end_col": 21
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "self.x",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 14,
+                        "col": 15,
+                        "end_lineno": 14,
+                        "end_col": 19
+                      },
+                      "resolved_type": "Point99",
+                      "borrow_kind": "readonly_ref",
+                      "casts": [],
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "x"
+                  },
+                  "op": "Add",
+                  "right": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 14,
+                      "col": 24,
+                      "end_lineno": 14,
+                      "end_col": 30
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "self.y",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 14,
+                        "col": 24,
+                        "end_lineno": 14,
+                        "end_col": 28
+                      },
+                      "resolved_type": "Point99",
+                      "borrow_kind": "readonly_ref",
+                      "casts": [],
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "y"
+                  }
                 }
               }
             ]
@@ -164,7 +224,8 @@
           "resolved_type": "Point99",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "p"
+          "repr": "p",
+          "id": "p"
         },
         "annotation": "Point99",
         "value": {
@@ -178,7 +239,38 @@
           "resolved_type": "Point99",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "Point99(3)"
+          "repr": "Point99(3)",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 18,
+              "col": 17,
+              "end_lineno": 18,
+              "end_col": 24
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "Point99",
+            "id": "Point99"
+          },
+          "args": [
+            {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 18,
+                "col": 25,
+                "end_lineno": 18,
+                "end_col": 26
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "3",
+              "value": 3
+            }
+          ],
+          "keywords": []
         }
       },
       {
@@ -200,7 +292,67 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(p.total())"
+          "repr": "print(p.total())",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 19,
+              "col": 4,
+              "end_lineno": 19,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 19,
+                "col": 10,
+                "end_lineno": 19,
+                "end_col": 19
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "p.total()",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 10,
+                  "end_lineno": 19,
+                  "end_col": 17
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "p.total",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 19,
+                    "col": 10,
+                    "end_lineno": 19,
+                    "end_col": 11
+                  },
+                  "resolved_type": "Point99",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "p",
+                  "id": "p"
+                },
+                "attr": "total"
+              },
+              "args": [],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

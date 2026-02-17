@@ -59,7 +59,8 @@
                   "resolved_type": "str",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "'generic'"
+                  "repr": "'generic'",
+                  "value": "generic"
                 }
               }
             ]
@@ -115,7 +116,65 @@
                   "resolved_type": "str",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "self.sound() + '-bark'"
+                  "repr": "self.sound() + '-bark'",
+                  "left": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 12,
+                      "col": 15,
+                      "end_lineno": 12,
+                      "end_col": 27
+                    },
+                    "resolved_type": "str",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "self.sound()",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 12,
+                        "col": 15,
+                        "end_lineno": 12,
+                        "end_col": 25
+                      },
+                      "resolved_type": "unknown",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "self.sound",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 12,
+                          "col": 15,
+                          "end_lineno": 12,
+                          "end_col": 19
+                        },
+                        "resolved_type": "Dog",
+                        "borrow_kind": "readonly_ref",
+                        "casts": [],
+                        "repr": "self",
+                        "id": "self"
+                      },
+                      "attr": "sound"
+                    },
+                    "args": [],
+                    "keywords": []
+                  },
+                  "op": "Add",
+                  "right": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 12,
+                      "col": 30,
+                      "end_lineno": 12,
+                      "end_col": 37
+                    },
+                    "resolved_type": "str",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "'-bark'",
+                    "value": "-bark"
+                  }
                 }
               }
             ]
@@ -143,7 +202,8 @@
           "resolved_type": "Dog",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "d"
+          "repr": "d",
+          "id": "d"
         },
         "annotation": "Dog",
         "value": {
@@ -157,7 +217,23 @@
           "resolved_type": "Dog",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "Dog()"
+          "repr": "Dog()",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 16,
+              "col": 13,
+              "end_lineno": 16,
+              "end_col": 16
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "Dog",
+            "id": "Dog"
+          },
+          "args": [],
+          "keywords": []
         }
       },
       {
@@ -179,7 +255,67 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(d.bark())"
+          "repr": "print(d.bark())",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 17,
+              "col": 4,
+              "end_lineno": 17,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 17,
+                "col": 10,
+                "end_lineno": 17,
+                "end_col": 18
+              },
+              "resolved_type": "str",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "d.bark()",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 10,
+                  "end_lineno": 17,
+                  "end_col": 16
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "d.bark",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 17,
+                    "col": 10,
+                    "end_lineno": 17,
+                    "end_col": 11
+                  },
+                  "resolved_type": "Dog",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "d",
+                  "id": "d"
+                },
+                "attr": "bark"
+              },
+              "args": [],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

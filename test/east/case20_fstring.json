@@ -50,7 +50,47 @@
               "resolved_type": "str",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "f'{name}:22:{count}'"
+              "repr": "f'{name}:22:{count}'",
+              "values": [
+                {
+                  "kind": "FormattedValue",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 14,
+                      "end_lineno": 6,
+                      "end_col": 18
+                    },
+                    "resolved_type": "str",
+                    "borrow_kind": "readonly_ref",
+                    "casts": [],
+                    "repr": "name",
+                    "id": "name"
+                  }
+                },
+                {
+                  "kind": "Constant",
+                  "value": ":22:"
+                },
+                {
+                  "kind": "FormattedValue",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 24,
+                      "end_lineno": 6,
+                      "end_col": 29
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "readonly_ref",
+                    "casts": [],
+                    "repr": "count",
+                    "id": "count"
+                  }
+                }
+              ]
             }
           }
         ]
@@ -76,7 +116,82 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(make_msg_22('user', 7))"
+          "repr": "print(make_msg_22('user', 7))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col": 4,
+              "end_lineno": 10,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 10,
+                "col": 10,
+                "end_lineno": 10,
+                "end_col": 32
+              },
+              "resolved_type": "str",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "make_msg_22('user', 7)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 10,
+                  "end_lineno": 10,
+                  "end_col": 21
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "make_msg_22",
+                "id": "make_msg_22"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 22,
+                    "end_lineno": 10,
+                    "end_col": 28
+                  },
+                  "resolved_type": "str",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "'user'",
+                  "value": "user"
+                },
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 30,
+                    "end_lineno": 10,
+                    "end_col": 31
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "7",
+                  "value": 7
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

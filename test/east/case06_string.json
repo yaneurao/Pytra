@@ -48,7 +48,36 @@
               "resolved_type": "str",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "'Hello, ' + name"
+              "repr": "'Hello, ' + name",
+              "left": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 11,
+                  "end_lineno": 6,
+                  "end_col": 20
+                },
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "'Hello, '",
+                "value": "Hello, "
+              },
+              "op": "Add",
+              "right": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 23,
+                  "end_lineno": 6,
+                  "end_col": 27
+                },
+                "resolved_type": "str",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "name",
+                "id": "name"
+              }
             }
           }
         ]
@@ -74,7 +103,68 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(greet('Codex'))"
+          "repr": "print(greet('Codex'))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col": 4,
+              "end_lineno": 10,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 10,
+                "col": 10,
+                "end_lineno": 10,
+                "end_col": 24
+              },
+              "resolved_type": "str",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "greet('Codex')",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 10,
+                  "end_lineno": 10,
+                  "end_col": 15
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "greet",
+                "id": "greet"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 16,
+                    "end_lineno": 10,
+                    "end_col": 23
+                  },
+                  "resolved_type": "str",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "'Codex'",
+                  "value": "Codex"
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

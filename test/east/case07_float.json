@@ -48,7 +48,36 @@
               "resolved_type": "float",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "x / 2.0"
+              "repr": "x / 2.0",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 11,
+                  "end_lineno": 6,
+                  "end_col": 12
+                },
+                "resolved_type": "float",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "x",
+                "id": "x"
+              },
+              "op": "Div",
+              "right": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 15,
+                  "end_lineno": 6,
+                  "end_col": 18
+                },
+                "resolved_type": "float",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "2.0",
+                "value": 2.0
+              }
             }
           }
         ]
@@ -74,7 +103,68 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(half(5.0))"
+          "repr": "print(half(5.0))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col": 4,
+              "end_lineno": 10,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 10,
+                "col": 10,
+                "end_lineno": 10,
+                "end_col": 19
+              },
+              "resolved_type": "float",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "half(5.0)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 10,
+                  "end_lineno": 10,
+                  "end_col": 14
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "half",
+                "id": "half"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 15,
+                    "end_lineno": 10,
+                    "end_col": 18
+                  },
+                  "resolved_type": "float",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "5.0",
+                  "value": 5.0
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

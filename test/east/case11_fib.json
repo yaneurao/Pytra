@@ -48,7 +48,40 @@
               "resolved_type": "bool",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "n <= 1"
+              "repr": "n <= 1",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 7,
+                  "end_lineno": 6,
+                  "end_col": 8
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "n",
+                "id": "n"
+              },
+              "ops": [
+                "LtE"
+              ],
+              "comparators": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 12,
+                    "end_lineno": 6,
+                    "end_col": 13
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "1",
+                  "value": 1
+                }
+              ]
             },
             "body": [
               {
@@ -70,7 +103,8 @@
                   "resolved_type": "int64",
                   "borrow_kind": "readonly_ref",
                   "casts": [],
-                  "repr": "n"
+                  "repr": "n",
+                  "id": "n"
                 }
               }
             ],
@@ -95,7 +129,152 @@
               "resolved_type": "int64",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "fib(n - 1) + fib(n - 2)"
+              "repr": "fib(n - 1) + fib(n - 2)",
+              "left": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 11,
+                  "end_lineno": 8,
+                  "end_col": 21
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "fib(n - 1)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 11,
+                    "end_lineno": 8,
+                    "end_col": 14
+                  },
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "fib",
+                  "id": "fib"
+                },
+                "args": [
+                  {
+                    "kind": "BinOp",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 15,
+                      "end_lineno": 8,
+                      "end_col": 20
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "n - 1",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 15,
+                        "end_lineno": 8,
+                        "end_col": 16
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "readonly_ref",
+                      "casts": [],
+                      "repr": "n",
+                      "id": "n"
+                    },
+                    "op": "Sub",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 19,
+                        "end_lineno": 8,
+                        "end_col": 20
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "1",
+                      "value": 1
+                    }
+                  }
+                ],
+                "keywords": []
+              },
+              "op": "Add",
+              "right": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 24,
+                  "end_lineno": 8,
+                  "end_col": 34
+                },
+                "resolved_type": "int64",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "fib(n - 2)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 24,
+                    "end_lineno": 8,
+                    "end_col": 27
+                  },
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "fib",
+                  "id": "fib"
+                },
+                "args": [
+                  {
+                    "kind": "BinOp",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 28,
+                      "end_lineno": 8,
+                      "end_col": 33
+                    },
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "n - 2",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 28,
+                        "end_lineno": 8,
+                        "end_col": 29
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "readonly_ref",
+                      "casts": [],
+                      "repr": "n",
+                      "id": "n"
+                    },
+                    "op": "Sub",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 32,
+                        "end_lineno": 8,
+                        "end_col": 33
+                      },
+                      "resolved_type": "int64",
+                      "borrow_kind": "value",
+                      "casts": [],
+                      "repr": "2",
+                      "value": 2
+                    }
+                  }
+                ],
+                "keywords": []
+              }
             }
           }
         ]
@@ -121,7 +300,68 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(fib(10))"
+          "repr": "print(fib(10))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 12,
+              "col": 4,
+              "end_lineno": 12,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 12,
+                "col": 10,
+                "end_lineno": 12,
+                "end_col": 17
+              },
+              "resolved_type": "int64",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "fib(10)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 10,
+                  "end_lineno": 12,
+                  "end_col": 13
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "fib",
+                "id": "fib"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 14,
+                    "end_lineno": 12,
+                    "end_col": 16
+                  },
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "10",
+                  "value": 10
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],

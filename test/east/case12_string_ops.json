@@ -48,7 +48,8 @@
               "resolved_type": "str",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "prefix"
+              "repr": "prefix",
+              "id": "prefix"
             },
             "annotation": "str",
             "value": {
@@ -62,7 +63,8 @@
               "resolved_type": "str",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "'[USER] '"
+              "repr": "'[USER] '",
+              "value": "[USER] "
             }
           },
           {
@@ -84,7 +86,8 @@
               "resolved_type": "str",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "message"
+              "repr": "message",
+              "id": "message"
             },
             "annotation": "str",
             "value": {
@@ -98,7 +101,36 @@
               "resolved_type": "str",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "prefix + name"
+              "repr": "prefix + name",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 19,
+                  "end_lineno": 7,
+                  "end_col": 25
+                },
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "prefix",
+                "id": "prefix"
+              },
+              "op": "Add",
+              "right": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 28,
+                  "end_lineno": 7,
+                  "end_col": 32
+                },
+                "resolved_type": "str",
+                "borrow_kind": "readonly_ref",
+                "casts": [],
+                "repr": "name",
+                "id": "name"
+              }
             }
           },
           {
@@ -120,7 +152,36 @@
               "resolved_type": "str",
               "borrow_kind": "value",
               "casts": [],
-              "repr": "message + '!'"
+              "repr": "message + '!'",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 11,
+                  "end_lineno": 8,
+                  "end_col": 18
+                },
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "message",
+                "id": "message"
+              },
+              "op": "Add",
+              "right": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 21,
+                  "end_lineno": 8,
+                  "end_col": 24
+                },
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "'!'",
+                "value": "!"
+              }
             }
           }
         ]
@@ -146,7 +207,68 @@
           "resolved_type": "None",
           "borrow_kind": "value",
           "casts": [],
-          "repr": "print(decorate('Alice'))"
+          "repr": "print(decorate('Alice'))",
+          "func": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 12,
+              "col": 4,
+              "end_lineno": 12,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "print",
+            "id": "print"
+          },
+          "args": [
+            {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 12,
+                "col": 10,
+                "end_lineno": 12,
+                "end_col": 27
+              },
+              "resolved_type": "str",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "decorate('Alice')",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 10,
+                  "end_lineno": 12,
+                  "end_col": 18
+                },
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": "decorate",
+                "id": "decorate"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 19,
+                    "end_lineno": 12,
+                    "end_col": 26
+                  },
+                  "resolved_type": "str",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "'Alice'",
+                  "value": "Alice"
+                }
+              ],
+              "keywords": []
+            }
+          ],
+          "keywords": []
         }
       }
     ],
