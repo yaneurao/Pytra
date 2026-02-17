@@ -14,3 +14,5 @@ __pycache__/
 
 /test/java/*.class
 /sample/java/*.class
+
+/east/

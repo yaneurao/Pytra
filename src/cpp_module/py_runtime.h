@@ -1,550 +1,280 @@
-// このファイルは Python 由来の補助モジュールの共通公開ヘッダです。
-// 各モジュールの実体は専用ファイル（例: sys.h / sys.cpp）へ分離します。
-
-#ifndef PYCS_CPP_MODULE_PY_RUNTIME_H
-#define PYCS_CPP_MODULE_PY_RUNTIME_H
+#ifndef PYTRA_EAST_CPP_MODULE_PY_RUNTIME_H
+#define PYTRA_EAST_CPP_MODULE_PY_RUNTIME_H
 
 #include <algorithm>
-#include <any>
 #include <cctype>
-#include <cstdint>
 #include <cmath>
+#include <chrono>
+#include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <iterator>
-#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <tuple>
 #include <type_traits>
-#include <utility>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
-#include "cpp_module/ast.h"
-#include "cpp_module/pathlib.h"
-#include "cpp_module/sys.h"
+#include "cpp_module/gif.h"
+#include "cpp_module/math.h"
+#include "cpp_module/png.h"
 
-#ifndef __file__
-#define __file__ __FILE__
-#endif
+using int8 = std::int8_t;
+using uint8 = std::uint8_t;
+using int16 = std::int16_t;
+using uint16 = std::uint16_t;
+using int32 = std::int32_t;
+using uint32 = std::uint32_t;
+using int64 = std::int64_t;
+using uint64 = std::uint64_t;
+using float32 = float;
+using float64 = double;
+using str = std::string;
+using Path = std::filesystem::path;
 
-template <typename T>
-std::string py_to_string(const T& value) {
+template <class T>
+using list = std::vector<T>;
+
+template <class K, class V>
+using dict = std::unordered_map<K, V>;
+
+template <class T>
+using set = std::unordered_set<T>;
+
+template <class T>
+static inline int64 py_len(const T& v) {
+    return static_cast<int64>(v.size());
+}
+
+template <class T>
+static inline std::string py_to_string(const T& v) {
     std::ostringstream oss;
-    oss << value;
+    oss << v;
     return oss.str();
 }
 
-template <typename T>
-std::string py_to_string(const pycs::cpp_module::ast::PyPtr<T>&) {
-    return "<node>";
+static inline std::string py_to_string(const std::string& v) {
+    return v;
 }
 
-inline std::string py_to_string(const pycs::cpp_module::Path& value) {
-    return pycs::cpp_module::str(value);
+static inline std::string py_to_string(const char* v) {
+    return std::string(v);
 }
 
-inline std::string py_to_string(const std::vector<std::uint8_t>& value) {
-    return std::string(value.begin(), value.end());
+static inline std::string py_to_string(bool v) {
+    return v ? "True" : "False";
 }
 
-inline std::string py_to_string(const std::any& value) {
-    if (const auto* v = std::any_cast<bool>(&value)) {
-        return *v ? "True" : "False";
-    }
-    if (const auto* v = std::any_cast<int>(&value)) {
-        return py_to_string(*v);
-    }
-    if (const auto* v = std::any_cast<double>(&value)) {
-        return py_to_string(*v);
-    }
-    if (const auto* v = std::any_cast<std::string>(&value)) {
-        return *v;
-    }
-    return "<any>";
+static inline int64 py_to_int64(const str& v) {
+    return static_cast<int64>(std::stoll(v));
 }
 
-template <typename T>
-bool py_in(const T& key, const std::unordered_set<T>& s) {
-    return s.find(key) != s.end();
+template <class T>
+static inline void py_print(const T& v) {
+    std::cout << v << std::endl;
 }
 
-template <typename K, typename V>
-bool py_in(const K& key, const std::unordered_map<K, V>& m) {
-    return m.find(key) != m.end();
+static inline void py_print(bool v) {
+    std::cout << (v ? "True" : "False") << std::endl;
 }
 
-template <typename T>
-bool py_in(const T& key, const std::vector<T>& v) {
-    for (const auto& item : v) {
-        if (item == key) {
-            return true;
-        }
-    }
-    return false;
-}
-
-inline void py_print() {
+template <class T, class... Rest>
+static inline void py_print(const T& first, const Rest&... rest) {
+    std::cout << py_to_string(first);
+    ((std::cout << " " << py_to_string(rest)), ...);
     std::cout << std::endl;
 }
 
-template <typename T>
-void py_print_one(const T& value) {
-    std::cout << value;
+template <class T>
+static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up) {
+    const int64 n = static_cast<int64>(v.size());
+    if (lo < 0) lo += n;
+    if (up < 0) up += n;
+    lo = std::max<int64>(0, std::min<int64>(lo, n));
+    up = std::max<int64>(0, std::min<int64>(up, n));
+    if (up < lo) up = lo;
+    return list<T>(v.begin() + lo, v.begin() + up);
 }
 
-template <typename T>
-void py_extend(std::vector<T>& dst, const std::vector<T>& src) {
-    dst.insert(dst.end(), src.begin(), src.end());
+static inline str py_slice(const str& v, int64 lo, int64 up) {
+    const int64 n = static_cast<int64>(v.size());
+    if (lo < 0) lo += n;
+    if (up < 0) up += n;
+    lo = std::max<int64>(0, std::min<int64>(lo, n));
+    up = std::max<int64>(0, std::min<int64>(up, n));
+    if (up < lo) up = lo;
+    return v.substr(static_cast<std::size_t>(lo), static_cast<std::size_t>(up - lo));
 }
 
-template <typename T>
-void py_extend(std::vector<T>& dst, std::initializer_list<T> src) {
-    dst.insert(dst.end(), src.begin(), src.end());
+static inline void py_write_text(const Path& p, const str& s) {
+    std::ofstream ofs(p);
+    ofs << s;
 }
 
-inline void py_extend(std::string& dst, const std::string& src) {
-    dst.append(src);
+static inline str py_read_text(const Path& p) {
+    std::ifstream ifs(p);
+    std::stringstream ss;
+    ss << ifs.rdbuf();
+    return ss.str();
 }
 
-template <typename T>
-void py_extend(std::string& dst, const std::vector<T>& src) {
-    for (const auto& item : src) {
-        dst.push_back(static_cast<char>(item));
-    }
+template <class A, class B>
+static inline float64 py_div(A lhs, B rhs) {
+    return static_cast<float64>(lhs) / static_cast<float64>(rhs);
 }
 
-template <typename T>
-T py_pop(std::vector<T>& v) {
-    if (v.empty()) {
-        throw std::out_of_range("pop from empty list");
-    }
-    T value = v.back();
-    v.pop_back();
-    return value;
-}
-
-template <typename T>
-T py_pop(std::vector<T>& v, int index) {
-    if (v.empty()) {
-        throw std::out_of_range("pop from empty list");
-    }
-    int pos = index;
-    if (pos < 0) {
-        pos += static_cast<int>(v.size());
-    }
-    if (pos < 0 || pos >= static_cast<int>(v.size())) {
-        throw std::out_of_range("pop index out of range");
-    }
-    T value = v[static_cast<std::size_t>(pos)];
-    v.erase(v.begin() + pos);
-    return value;
-}
-
-inline int py_pop(std::string& s) {
-    if (s.empty()) {
-        throw std::out_of_range("pop from empty bytearray");
-    }
-    const unsigned char ch = static_cast<unsigned char>(s.back());
-    s.pop_back();
-    return static_cast<int>(ch);
-}
-
-inline int py_pop(std::string& s, int index) {
-    if (s.empty()) {
-        throw std::out_of_range("pop from empty bytearray");
-    }
-    int pos = index;
-    if (pos < 0) {
-        pos += static_cast<int>(s.size());
-    }
-    if (pos < 0 || pos >= static_cast<int>(s.size())) {
-        throw std::out_of_range("pop index out of range");
-    }
-    const unsigned char ch = static_cast<unsigned char>(s[static_cast<std::size_t>(pos)]);
-    s.erase(static_cast<std::size_t>(pos), 1);
-    return static_cast<int>(ch);
-}
-
-inline void py_print_one(bool value) {
-    std::cout << (value ? "True" : "False");
-}
-
-template <typename T, typename... Rest>
-void py_print(const T& first, const Rest&... rest) {
-    py_print_one(first);
-    ((std::cout << " ", py_print_one(rest)), ...);
-    std::cout << std::endl;
-}
-
-inline void py_write(std::ofstream& fs, const std::string& data) {
-    fs.write(data.data(), static_cast<std::streamsize>(data.size()));
-}
-
-inline void py_write(std::ofstream& fs, const std::vector<std::uint8_t>& data) {
-    fs.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
-}
-
-template <typename T>
-inline void py_write(std::ofstream& fs, const T& data) {
-    auto s = py_to_string(data);
-    fs.write(s.data(), static_cast<std::streamsize>(s.size()));
-}
-
-template <typename T, typename U>
-std::shared_ptr<T> py_cast(const pycs::cpp_module::ast::PyPtr<U>& value) {
-    return std::dynamic_pointer_cast<T>(static_cast<std::shared_ptr<U>>(value));
-}
-
-template <typename T>
-std::shared_ptr<T> py_cast(const std::any& value) {
-    if (const auto* p = std::any_cast<T>(&value)) {
-        return std::make_shared<T>(*p);
-    }
-    return nullptr;
-}
-
-template <typename T, typename U>
-std::shared_ptr<T> py_cast(const U& value) {
-    if constexpr (requires { value.template cast<T>(); }) {
-        return value.template cast<T>();
-    }
-    return std::dynamic_pointer_cast<T>(value);
-}
-
-template <typename A, typename B>
-inline auto py_div(A lhs, B rhs) -> double {
-    return static_cast<double>(lhs) / static_cast<double>(rhs);
-}
-
-template <typename A, typename B>
-inline auto py_floordiv(A lhs, B rhs) {
-    using Ret = std::common_type_t<A, B>;
+template <class A, class B>
+static inline auto py_floordiv(A lhs, B rhs) {
+    using R = std::common_type_t<A, B>;
     if constexpr (std::is_integral_v<A> && std::is_integral_v<B>) {
-        if (rhs == 0) {
-            throw std::runtime_error("division by zero");
-        }
-        Ret q = static_cast<Ret>(lhs / rhs);
-        Ret r = static_cast<Ret>(lhs % rhs);
-        if (r != 0 && ((r > 0) != (rhs > 0))) {
-            q -= 1;
-        }
+        if (rhs == 0) throw std::runtime_error("division by zero");
+        R q = static_cast<R>(lhs / rhs);
+        R r = static_cast<R>(lhs % rhs);
+        if (r != 0 && ((r > 0) != (rhs > 0))) q -= 1;
         return q;
     } else {
-        return std::floor(static_cast<double>(lhs) / static_cast<double>(rhs));
+        return std::floor(static_cast<float64>(lhs) / static_cast<float64>(rhs));
     }
 }
 
-template <typename A, typename B>
-inline auto py_mod(A lhs, B rhs) {
-    using Ret = std::common_type_t<A, B>;
+template <class A, class B>
+static inline auto py_mod(A lhs, B rhs) {
+    using R = std::common_type_t<A, B>;
     if constexpr (std::is_integral_v<A> && std::is_integral_v<B>) {
-        if (rhs == 0) {
-            throw std::runtime_error("integer modulo by zero");
-        }
-        Ret r = static_cast<Ret>(lhs % rhs);
-        if (r != 0 && ((r > 0) != (rhs > 0))) {
-            r += static_cast<Ret>(rhs);
-        }
+        if (rhs == 0) throw std::runtime_error("integer modulo by zero");
+        R r = static_cast<R>(lhs % rhs);
+        if (r != 0 && ((r > 0) != (rhs > 0))) r += static_cast<R>(rhs);
         return r;
     } else {
-        double x = std::fmod(static_cast<double>(lhs), static_cast<double>(rhs));
-        if (x != 0.0 && ((x > 0.0) != (static_cast<double>(rhs) > 0.0))) {
-            x += static_cast<double>(rhs);
-        }
+        float64 x = std::fmod(static_cast<float64>(lhs), static_cast<float64>(rhs));
+        if (x != 0.0 && ((x > 0.0) != (static_cast<float64>(rhs) > 0.0))) x += static_cast<float64>(rhs);
         return x;
     }
 }
 
-template <typename A, typename B>
-inline auto py_pow(A lhs, B rhs) {
-    return std::pow(static_cast<double>(lhs), static_cast<double>(rhs));
+static inline void write_rgb_png(const str& path, int64 width, int64 height, const list<uint8>& pixels) {
+    pycs::cpp_module::png::write_rgb_png(path, static_cast<int>(width), static_cast<int>(height), pixels);
 }
 
-template <typename T, typename U>
-bool py_isinstance(const U& value) {
-    return py_cast<T>(value) != nullptr;
+static inline list<uint8> grayscale_palette() {
+    return pycs::cpp_module::gif::grayscale_palette();
 }
 
-template <typename U, typename... Ts>
-bool py_isinstance_any(const U& value) {
-    return (py_isinstance<Ts>(value) || ...);
-}
-
-template <typename T>
-std::size_t py_len(const T& value) {
-    return value.size();
-}
-
-inline long long py_norm_slice_index(long long idx, long long length) {
-    long long v = idx;
-    if (v < 0) {
-        v += length;
-    }
-    if (v < 0) {
-        return 0;
-    }
-    if (v > length) {
-        return length;
-    }
-    return v;
-}
-
-template <typename T>
-std::vector<T> py_slice(
-    const std::vector<T>& source,
-    bool has_start,
-    long long start,
-    bool has_stop,
-    long long stop
+static inline void save_gif(
+    const str& path,
+    int64 width,
+    int64 height,
+    const list<list<uint8>>& frames,
+    const list<uint8>& palette,
+    int64 delay_cs = 4,
+    int64 loop = 0
 ) {
-    const long long length = static_cast<long long>(source.size());
-    const long long s = has_start ? py_norm_slice_index(start, length) : 0;
-    const long long e = has_stop ? py_norm_slice_index(stop, length) : length;
-    if (e <= s) {
-        return {};
-    }
-    return std::vector<T>(
-        source.begin() + static_cast<std::size_t>(s),
-        source.begin() + static_cast<std::size_t>(e)
+    const auto pal = palette.empty() ? pycs::cpp_module::gif::grayscale_palette() : palette;
+    pycs::cpp_module::gif::save_gif(
+        path,
+        static_cast<int>(width),
+        static_cast<int>(height),
+        frames,
+        pal,
+        static_cast<int>(delay_cs),
+        static_cast<int>(loop)
     );
 }
 
-inline std::string py_slice(
-    const std::string& source,
-    bool has_start,
-    long long start,
-    bool has_stop,
-    long long stop
-) {
-    const long long length = static_cast<long long>(source.size());
-    const long long s = has_start ? py_norm_slice_index(start, length) : 0;
-    const long long e = has_stop ? py_norm_slice_index(stop, length) : length;
-    if (e <= s) {
-        return std::string();
+static inline float64 perf_counter() {
+    using clock = std::chrono::steady_clock;
+    const auto now = clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::duration<float64>>(now).count();
+}
+
+template <class T>
+static inline T py_pop(list<T>& v) {
+    if (v.empty()) {
+        throw std::out_of_range("pop from empty list");
     }
-    return source.substr(
-        static_cast<std::size_t>(s),
-        static_cast<std::size_t>(e - s)
-    );
+    T out = v.back();
+    v.pop_back();
+    return out;
 }
 
-inline std::vector<std::uint8_t> py_bytearray() {
-    return std::vector<std::uint8_t>();
-}
-
-inline long long py_int(const std::string& value) {
-    std::size_t pos = 0;
-    long long parsed = std::stoll(value, &pos, 10);
-    if (pos != value.size()) {
-        throw std::runtime_error("invalid literal for int()");
+template <class T>
+static inline T py_pop(list<T>& v, int64 idx) {
+    if (v.empty()) {
+        throw std::out_of_range("pop from empty list");
     }
-    return parsed;
-}
-
-inline long long py_int(const char* value) {
-    return py_int(std::string(value));
-}
-
-template <typename T>
-inline long long py_int(const T& value) {
-    return static_cast<long long>(value);
-}
-
-template <typename T>
-inline T& py_get(std::vector<T>& source, long long index_like) {
-    long long idx = index_like;
-    if (idx < 0) {
-        idx += static_cast<long long>(source.size());
+    if (idx < 0) idx += static_cast<int64>(v.size());
+    if (idx < 0 || idx >= static_cast<int64>(v.size())) {
+        throw std::out_of_range("pop index out of range");
     }
-    if (idx < 0 || idx >= static_cast<long long>(source.size())) {
-        throw std::out_of_range("list index out of range");
-    }
-    return source[static_cast<std::size_t>(idx)];
+    T out = v[static_cast<std::size_t>(idx)];
+    v.erase(v.begin() + idx);
+    return out;
 }
 
-template <typename T>
-inline const T& py_get(const std::vector<T>& source, long long index_like) {
-    long long idx = index_like;
-    if (idx < 0) {
-        idx += static_cast<long long>(source.size());
-    }
-    if (idx < 0 || idx >= static_cast<long long>(source.size())) {
-        throw std::out_of_range("list index out of range");
-    }
-    return source[static_cast<std::size_t>(idx)];
+template <class A, class B>
+static inline auto py_min(const A& a, const B& b) -> std::common_type_t<A, B> {
+    using R = std::common_type_t<A, B>;
+    return std::min<R>(static_cast<R>(a), static_cast<R>(b));
 }
 
-inline std::string py_get(const std::string& source, long long index_like) {
-    long long idx = index_like;
-    if (idx < 0) {
-        idx += static_cast<long long>(source.size());
-    }
-    if (idx < 0 || idx >= static_cast<long long>(source.size())) {
-        throw std::out_of_range("string index out of range");
-    }
-    return std::string(1, source[static_cast<std::size_t>(idx)]);
+template <class A, class B, class... Rest>
+static inline auto py_min(const A& a, const B& b, const Rest&... rest) -> std::common_type_t<A, B, Rest...> {
+    return py_min(py_min(a, b), rest...);
 }
 
-template <typename K, typename V>
-inline V& py_get(std::unordered_map<K, V>& source, const K& key) {
-    return source[key];
+template <class A, class B>
+static inline auto py_max(const A& a, const B& b) -> std::common_type_t<A, B> {
+    using R = std::common_type_t<A, B>;
+    return std::max<R>(static_cast<R>(a), static_cast<R>(b));
 }
 
-template <typename K, typename V>
-inline const V& py_get(const std::unordered_map<K, V>& source, const K& key) {
-    auto it = source.find(key);
-    if (it == source.end()) {
-        throw std::out_of_range("key not found");
-    }
-    return it->second;
+template <class A, class B, class... Rest>
+static inline auto py_max(const A& a, const B& b, const Rest&... rest) -> std::common_type_t<A, B, Rest...> {
+    return py_max(py_max(a, b), rest...);
 }
 
-inline std::vector<std::uint8_t> py_bytearray(int n) {
-    if (n < 0) {
-        throw std::runtime_error("negative count");
-    }
-    return std::vector<std::uint8_t>(static_cast<std::size_t>(n), 0);
-}
-
-inline std::vector<std::uint8_t> py_bytes(const std::string& s) {
-    return std::vector<std::uint8_t>(s.begin(), s.end());
-}
-
-inline std::vector<std::uint8_t> py_bytes(const std::vector<std::uint8_t>& v) {
-    return v;
-}
-
-inline std::vector<std::uint8_t> py_bytes() {
-    return std::vector<std::uint8_t>();
-}
-
-inline std::vector<std::uint8_t> py_bytes(int n) {
-    if (n < 0) {
-        throw std::runtime_error("negative count");
-    }
-    return std::vector<std::uint8_t>(static_cast<std::size_t>(n), 0);
-}
-
-template <typename T>
-std::vector<std::uint8_t> py_bytes(const std::vector<T>& v) {
-    std::vector<std::uint8_t> out;
-    out.reserve(v.size());
-    for (const auto& item : v) {
-        out.push_back(static_cast<std::uint8_t>(item));
+static inline list<int64> py_range(int64 start, int64 stop, int64 step) {
+    list<int64> out;
+    if (step == 0) return out;
+    if (step > 0) {
+        for (int64 i = start; i < stop; i += step) out.push_back(i);
+    } else {
+        for (int64 i = start; i > stop; i += step) out.push_back(i);
     }
     return out;
 }
 
-template <typename T>
-std::vector<std::uint8_t> py_bytes(std::initializer_list<T> v) {
-    std::vector<std::uint8_t> out;
-    out.reserve(v.size());
-    for (const auto& item : v) {
-        out.push_back(static_cast<std::uint8_t>(item));
+template <class T>
+static inline list<T> py_repeat(const list<T>& v, int64 n) {
+    list<T> out;
+    if (n <= 0) return out;
+    out.reserve(v.size() * static_cast<std::size_t>(n));
+    for (int64 i = 0; i < n; ++i) {
+        out.insert(out.end(), v.begin(), v.end());
     }
     return out;
 }
 
-template <typename T>
-std::vector<T> py_sorted(const std::unordered_set<T>& s) {
-    std::vector<T> out(s.begin(), s.end());
-    std::sort(out.begin(), out.end());
-    return out;
-}
-
-template <typename T>
-std::vector<T> py_sorted(const std::vector<T>& v) {
-    std::vector<T> out = v;
-    std::sort(out.begin(), out.end());
-    return out;
-}
-
-template <typename T>
-std::unordered_set<T> py_set_union(const std::unordered_set<T>& a, const std::unordered_set<T>& b) {
-    std::unordered_set<T> out = a;
-    out.insert(b.begin(), b.end());
-    return out;
-}
-
-inline std::vector<std::string> py_splitlines(const std::string& s) {
-    std::vector<std::string> out;
-    std::stringstream ss(s);
-    std::string line;
-    while (std::getline(ss, line)) {
-        out.push_back(line);
+static inline str py_repeat(const str& v, int64 n) {
+    if (n <= 0) return "";
+    str out;
+    out.reserve(v.size() * static_cast<std::size_t>(n));
+    for (int64 i = 0; i < n; ++i) {
+        out += v;
     }
     return out;
 }
 
-template <typename T>
-std::string py_join(const std::string& sep, const std::vector<T>& parts) {
-    std::ostringstream oss;
-    for (std::size_t i = 0; i < parts.size(); ++i) {
-        if (i > 0) {
-            oss << sep;
-        }
-        oss << parts[i];
-    }
-    return oss.str();
+static inline bool py_isdigit(const str& ch) {
+    return ch.size() == 1 && std::isdigit(static_cast<unsigned char>(ch[0])) != 0;
 }
 
-inline std::string py_replace(const std::string& s, const std::string& from, const std::string& to) {
-    if (from.empty()) {
-        return s;
-    }
-    std::string out = s;
-    std::size_t pos = 0;
-    while ((pos = out.find(from, pos)) != std::string::npos) {
-        out.replace(pos, from.size(), to);
-        pos += to.size();
-    }
-    return out;
+static inline bool py_isalpha(const str& ch) {
+    return ch.size() == 1 && std::isalpha(static_cast<unsigned char>(ch[0])) != 0;
 }
 
-inline bool py_isdigit(const std::string& s) {
-    if (s.empty()) {
-        return false;
-    }
-    for (unsigned char c : s) {
-        if (!std::isdigit(c)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-inline bool py_isalpha(const std::string& s) {
-    if (s.empty()) {
-        return false;
-    }
-    for (unsigned char c : s) {
-        if (!std::isalpha(c)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-inline long long py_ord(const std::string& s) {
-    if (s.size() != 1) {
-        throw std::runtime_error("ord() expected a character");
-    }
-    return static_cast<unsigned char>(s[0]);
-}
-
-template <typename A, typename B>
-std::vector<std::tuple<A, B>> py_zip(const std::vector<A>& a, const std::vector<B>& b) {
-    std::vector<std::tuple<A, B>> out;
-    const std::size_t n = std::min(a.size(), b.size());
-    out.reserve(n);
-    for (std::size_t i = 0; i < n; ++i) {
-        out.push_back(std::make_tuple(a[i], b[i]));
-    }
-    return out;
-}
-
-#endif  // PYCS_CPP_MODULE_PY_RUNTIME_H
+#endif
