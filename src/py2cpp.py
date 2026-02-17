@@ -870,10 +870,13 @@ class CppEmitter:
                 if runtime_call == "static_cast" and len(args) == 1:
                     target = self.cpp_type(expr.get("resolved_type"))
                     arg_t = self.get_expr_type((expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None)
+                    numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
                     if target == "int64" and arg_t == "str":
                         return f"py_to_int64({args[0]})"
-                    if target == "int64":
+                    if target == "int64" and arg_t in numeric_t:
                         return f"int64({args[0]})"
+                    if target == "int64":
+                        return f"py_to_int64({args[0]})"
                     return f"static_cast<{target}>({args[0]})"
                 if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
                     fn = "min" if runtime_call == "py_min" else "max"
@@ -993,10 +996,13 @@ class CppEmitter:
                 if raw in {"int", "float", "bool"} and len(args) == 1:
                     target = self.cpp_type(expr.get("resolved_type"))
                     arg_t = self.get_expr_type((expr.get("args") or [None])[0] if isinstance(expr.get("args"), list) and len(expr.get("args")) > 0 else None)
+                    numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
                     if raw == "int" and target == "int64" and arg_t == "str":
                         return f"py_to_int64({args[0]})"
-                    if raw == "int" and target == "int64":
+                    if raw == "int" and target == "int64" and arg_t in numeric_t:
                         return f"int64({args[0]})"
+                    if raw == "int" and target == "int64":
+                        return f"py_to_int64({args[0]})"
                     return f"static_cast<{target}>({args[0]})"
                 if raw in {"min", "max"} and len(args) >= 1:
                     return self.render_minmax(raw, args, self.get_expr_type(expr))
@@ -1135,7 +1141,7 @@ class CppEmitter:
             operand = self.render_expr(expr.get("operand"))
             op = expr.get("op")
             if op == "Not":
-                return f"!{operand}"
+                return f"!({operand})"
             if op == "USub":
                 return f"-{operand}"
             if op == "UAdd":

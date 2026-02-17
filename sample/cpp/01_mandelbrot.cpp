@@ -1,13 +1,12 @@
-#include <algorithm>
 #include "cpp_module/py_runtime.h"
 
 
 
 int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
-    float64 x;
-    float64 y;
     float64 x2;
     float64 y2;
+    float64 y;
+    float64 x;
     
     /* 1点 (cx, cy) の発散までの反復回数を返す。 */
     x = 0.0;
@@ -15,9 +14,8 @@ int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
     for (int64 i = 0; i < max_iter; ++i) {
         x2 = x * x;
         y2 = y * y;
-        if (x2 + y2 > 4.0) {
+        if (x2 + y2 > 4.0)
             return i;
-        }
         y = 2.0 * x * y + cy;
         x = x2 - y2 + cx;
     }
@@ -25,24 +23,19 @@ int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
 }
 
 std::tuple<int64, int64, int64> color_map(int64 iter_count, int64 max_iter) {
-    float64 t;
-    int64 r;
-    int64 g;
-    int64 b;
-    
     /* 反復回数を RGB に変換する。 */
-    if (iter_count >= max_iter) {
+    if (iter_count >= max_iter)
         return std::make_tuple(0, 0, 0);
-    }
-    t = static_cast<float64>(iter_count) / static_cast<float64>(max_iter);
-    r = static_cast<int64>(255.0 * t * t);
-    g = static_cast<int64>(255.0 * t);
-    b = static_cast<int64>(255.0 * (1.0 - t));
+    
+    
+    float64 t = static_cast<float64>(iter_count) / static_cast<float64>(max_iter);
+    int64 r = int64(255.0 * t * t);
+    int64 g = int64(255.0 * t);
+    int64 b = int64(255.0 * (1.0 - t));
     return std::make_tuple(r, g, b);
 }
 
 list<uint8> render_mandelbrot(int64 width, int64 height, int64 max_iter, float64 x_min, float64 x_max, float64 y_min, float64 y_max) {
-    list<uint8> pixels;
     float64 py;
     float64 px;
     int64 it;
@@ -52,9 +45,11 @@ list<uint8> render_mandelbrot(int64 width, int64 height, int64 max_iter, float64
     float64 t;
     
     /* マンデルブロ画像の RGB バイト列を生成する。 */
-    pixels = list<uint8>{};
+    list<uint8> pixels = list<uint8>{};
+    
     for (int64 y = 0; y < height; ++y) {
         py = y_min + (y_max - y_min) * static_cast<float64>(y) / (static_cast<float64>(height - 1));
+        
         for (int64 x = 0; x < width; ++x) {
             px = x_min + (x_max - x_min) * static_cast<float64>(x) / (static_cast<float64>(width - 1));
             it = escape_count(px, py, max_iter);
@@ -64,35 +59,31 @@ list<uint8> render_mandelbrot(int64 width, int64 height, int64 max_iter, float64
                 b = 0;
             } else {
                 t = static_cast<float64>(it) / static_cast<float64>(max_iter);
-                r = static_cast<int64>(255.0 * t * t);
-                g = static_cast<int64>(255.0 * t);
-                b = static_cast<int64>(255.0 * (1.0 - t));
+                r = int64(255.0 * t * t);
+                g = int64(255.0 * t);
+                b = int64(255.0 * (1.0 - t));
             }
             pixels.push_back(r);
             pixels.push_back(g);
             pixels.push_back(b);
         }
     }
+    
     return pixels;
 }
 
 void run_mandelbrot() {
-    int64 width;
-    int64 height;
-    int64 max_iter;
-    str out_path;
-    float64 start;
-    list<uint8> pixels;
-    float64 elapsed;
+    int64 width = 1600;
+    int64 height = 1200;
+    int64 max_iter = 1000;
+    str out_path = "sample/out/mandelbrot_01.png";
     
-    width = 1600;
-    height = 1200;
-    max_iter = 1000;
-    out_path = "sample/out/mandelbrot_01.png";
-    start = perf_counter();
-    pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
+    float64 start = perf_counter();
+    
+    list<uint8> pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
     write_rgb_png(out_path, width, height, pixels);
-    elapsed = perf_counter() - start;
+    
+    float64 elapsed = perf_counter() - start;
     py_print("output:", out_path);
     py_print("size:", width, "x", height);
     py_print("max_iter:", max_iter);

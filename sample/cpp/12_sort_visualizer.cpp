@@ -1,121 +1,74 @@
-#include "cpp_module/gc.h"
-#include "cpp_module/gif.h"
 #include "cpp_module/py_runtime.h"
-#include "cpp_module/time.h"
-#include <algorithm>
-#include <any>
-#include <cstdint>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
 
-vector<uint8_t> render(const vector<long long>& values, long long w, long long h)
-{
-    vector<uint8_t> frame = py_bytearray((w * h));
-    size_t n = py_len(values);
-    double bar_w = py_div(w, n);
-    auto __pytra_range_start_1 = 0;
-    auto __pytra_range_stop_2 = n;
-    auto __pytra_range_step_3 = 1;
-    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
-    {
-        long long x0 = py_int((i * bar_w));
-        long long x1 = py_int(((i + 1) * bar_w));
-        if ((x1 <= x0))
-        {
-            x1 = (x0 + 1);
-        }
-        long long bh = py_int((py_div(py_get(values, i), n) * h));
-        auto y = (h - bh);
-        auto __pytra_range_start_4 = y;
-        auto __pytra_range_stop_5 = h;
-        auto __pytra_range_step_6 = 1;
-        if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-        for (y = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (y < __pytra_range_stop_5) : (y > __pytra_range_stop_5); y += __pytra_range_step_6)
-        {
-            auto __pytra_range_start_7 = x0;
-            auto __pytra_range_stop_8 = x1;
-            auto __pytra_range_step_9 = 1;
-            if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-            for (auto x = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (x < __pytra_range_stop_8) : (x > __pytra_range_stop_8); x += __pytra_range_step_9)
-            {
-                py_get(frame, ((y * w) + x)) = 255;
-            }
+
+
+list<uint8> render(list<int64> values, int64 w, int64 h) {
+    int64 x0;
+    int64 x1;
+    int64 bh;
+    int64 y;
+    
+    list<uint8> frame = list<uint8>(w * h);
+    int64 n = py_len(values);
+    float64 bar_w = static_cast<float64>(w) / static_cast<float64>(n);
+    for (int64 i = 0; i < n; ++i) {
+        x0 = int64(static_cast<float64>(i) * bar_w);
+        x1 = int64((static_cast<float64>(i + 1)) * bar_w);
+        if (x1 <= x0)
+            x1 = x0 + 1;
+        bh = int64(static_cast<float64>(values[i]) / static_cast<float64>(n) * static_cast<float64>(h));
+        y = h - bh;
+        for (y = y; y < h; ++y) {
+            for (int64 x = x0; x < x1; ++x)
+                frame[y * w + x] = 255;
         }
     }
-    return py_bytes(frame);
+    return list<uint8>(frame);
 }
 
-void run_12_sort_visualizer()
-{
-    long long w = 320;
-    long long h = 180;
-    long long n = 124;
-    string out_path = "sample/out/12_sort_visualizer.gif";
-    auto start = perf_counter();
-    vector<long long> values = {};
-    auto __pytra_range_start_10 = 0;
-    auto __pytra_range_stop_11 = n;
-    auto __pytra_range_step_12 = 1;
-    if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto i = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (i < __pytra_range_stop_11) : (i > __pytra_range_stop_11); i += __pytra_range_step_12)
-    {
-        values.push_back(py_mod(((i * 37) + 19), n));
-    }
-    vector<vector<uint8_t>> frames = {render(values, w, h)};
-    long long op = 0;
-    auto __pytra_range_start_13 = 0;
-    auto __pytra_range_stop_14 = n;
-    auto __pytra_range_step_15 = 1;
-    if (__pytra_range_step_15 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto i = __pytra_range_start_13; (__pytra_range_step_15 > 0) ? (i < __pytra_range_stop_14) : (i > __pytra_range_stop_14); i += __pytra_range_step_15)
-    {
-        bool swapped = false;
-        auto __pytra_range_start_16 = 0;
-        auto __pytra_range_stop_17 = ((n - i) - 1);
-        auto __pytra_range_step_18 = 1;
-        if (__pytra_range_step_18 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-        for (auto j = __pytra_range_start_16; (__pytra_range_step_18 > 0) ? (j < __pytra_range_stop_17) : (j > __pytra_range_stop_17); j += __pytra_range_step_18)
-        {
-            if ((py_get(values, j) > py_get(values, (j + 1))))
-            {
-                auto __pytra_tuple_19 = std::make_tuple(py_get(values, (j + 1)), py_get(values, j));
-                py_get(values, j) = std::get<0>(__pytra_tuple_19);
-                py_get(values, (j + 1)) = std::get<1>(__pytra_tuple_19);
+void run_12_sort_visualizer() {
+    bool swapped;
+    int64 i;
+    
+    int64 w = 320;
+    int64 h = 180;
+    int64 n = 124;
+    str out_path = "sample/out/12_sort_visualizer.gif";
+    
+    float64 start = perf_counter();
+    list<int64> values = list<int64>{};
+    for (i = 0; i < n; ++i)
+        values.push_back((i * 37 + 19) % n);
+    
+    list<list<uint8>> frames = list<list<uint8>>{render(values, w, h)};
+    
+    int64 op = 0;
+    for (i = 0; i < n; ++i) {
+        swapped = false;
+        for (int64 j = 0; j < n - i - 1; ++j) {
+            if (values[j] > values[j + 1]) {
+                auto __tuple_1 = std::make_tuple(values[j + 1], values[j]);
+                values[j] = std::get<0>(__tuple_1);
+                values[j + 1] = std::get<1>(__tuple_1);
                 swapped = true;
             }
-            if ((py_mod(op, 8) == 0))
-            {
+            if (op % 8 == 0)
                 frames.push_back(render(values, w, h));
-            }
-            op = (op + 1);
+            op++;
         }
-        if ((!swapped))
-        {
+        if (!(swapped))
             break;
-        }
     }
-    pycs::cpp_module::gif::save_gif(out_path, w, h, frames, pycs::cpp_module::gif::grayscale_palette(), 3, 0);
-    auto elapsed = (perf_counter() - start);
+    
+    save_gif(out_path, w, h, frames, grayscale_palette(), 3, 0);
+    float64 elapsed = perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);
 }
 
-int main()
-{
+int main() {
     run_12_sort_visualizer();
     return 0;
 }

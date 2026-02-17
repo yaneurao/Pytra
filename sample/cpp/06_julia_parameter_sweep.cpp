@@ -1,133 +1,110 @@
-#include "cpp_module/gc.h"
-#include "cpp_module/gif.h"
-#include "cpp_module/math.h"
 #include "cpp_module/py_runtime.h"
-#include "cpp_module/time.h"
-#include <algorithm>
-#include <any>
-#include <cstdint>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
 
-vector<uint8_t> julia_palette()
-{
-    vector<uint8_t> palette = py_bytearray((256 * 3));
+
+
+
+list<uint8> julia_palette() {
+    float64 t;
+    int64 r;
+    int64 g;
+    int64 b;
+    
+    list<uint8> palette = list<uint8>(256 * 3);
     palette[0] = 0;
     palette[1] = 0;
     palette[2] = 0;
-    auto __pytra_range_start_1 = 1;
-    auto __pytra_range_stop_2 = 256;
-    auto __pytra_range_step_3 = 1;
-    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
-    {
-        double t = py_div((i - 1), 254.0);
-        long long r = static_cast<long long>((255.0 * ((((9.0 * (1.0 - t)) * t) * t) * t)));
-        long long g = static_cast<long long>((255.0 * ((((15.0 * (1.0 - t)) * (1.0 - t)) * t) * t)));
-        long long b = static_cast<long long>((255.0 * ((((8.5 * (1.0 - t)) * (1.0 - t)) * (1.0 - t)) * t)));
-        palette[((i * 3) + 0)] = r;
-        palette[((i * 3) + 1)] = g;
-        palette[((i * 3) + 2)] = b;
+    for (int64 i = 1; i < 256; ++i) {
+        t = (static_cast<float64>(i - 1)) / 254.0;
+        r = int64(255.0 * 9.0 * (1.0 - t) * t * t * t);
+        g = int64(255.0 * 15.0 * (1.0 - t) * (1.0 - t) * t * t);
+        b = int64(255.0 * 8.5 * (1.0 - t) * (1.0 - t) * (1.0 - t) * t);
+        palette[i * 3 + 0] = r;
+        palette[i * 3 + 1] = g;
+        palette[i * 3 + 2] = b;
     }
-    return py_bytes(palette);
+    return list<uint8>(palette);
 }
 
-vector<uint8_t> render_frame(long long width, long long height, double cr, double ci, long long max_iter, long long phase)
-{
-    vector<uint8_t> frame = py_bytearray((width * height));
-    long long idx = 0;
-    auto __pytra_range_start_4 = 0;
-    auto __pytra_range_stop_5 = height;
-    auto __pytra_range_step_6 = 1;
-    if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto y = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (y < __pytra_range_stop_5) : (y > __pytra_range_stop_5); y += __pytra_range_step_6)
-    {
-        double zy0 = ((-1.2) + (2.4 * py_div(y, (height - 1))));
-        auto __pytra_range_start_7 = 0;
-        auto __pytra_range_stop_8 = width;
-        auto __pytra_range_step_9 = 1;
-        if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-        for (auto x = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (x < __pytra_range_stop_8) : (x > __pytra_range_stop_8); x += __pytra_range_step_9)
-        {
-            double zx = ((-1.8) + (3.6 * py_div(x, (width - 1))));
-            auto zy = zy0;
-            long long i = 0;
-            while ((i < max_iter))
-            {
-                auto zx2 = (zx * zx);
-                auto zy2 = (zy * zy);
-                if (((zx2 + zy2) > 4.0))
-                {
+list<uint8> render_frame(int64 width, int64 height, float64 cr, float64 ci, int64 max_iter, int64 phase) {
+    float64 zy0;
+    float64 zx;
+    float64 zy;
+    int64 i;
+    float64 zx2;
+    float64 zy2;
+    int64 color_index;
+    
+    list<uint8> frame = list<uint8>(width * height);
+    int64 idx = 0;
+    for (int64 y = 0; y < height; ++y) {
+        zy0 = -1.2 + 2.4 * static_cast<float64>(y) / (static_cast<float64>(height - 1));
+        for (int64 x = 0; x < width; ++x) {
+            zx = -1.8 + 3.6 * static_cast<float64>(x) / (static_cast<float64>(width - 1));
+            zy = zy0;
+            i = 0;
+            while (i < max_iter) {
+                zx2 = zx * zx;
+                zy2 = zy * zy;
+                if (zx2 + zy2 > 4.0)
                     break;
-                }
-                zy = (((2.0 * zx) * zy) + ci);
-                zx = ((zx2 - zy2) + cr);
-                i = (i + 1);
+                zy = 2.0 * zx * zy + ci;
+                zx = zx2 - zy2 + cr;
+                i++;
             }
-            if ((i >= max_iter))
-            {
+            if (i >= max_iter) {
                 frame[idx] = 0;
-            }
-            else
-            {
-                long long color_index = (1 + ((py_floordiv((i * 224), max_iter) + phase) % 255));
+            } else {
+                color_index = 1 + (py_floordiv(i * 224, max_iter) + phase) % 255;
                 frame[idx] = color_index;
             }
-            idx = (idx + 1);
+            idx++;
         }
     }
-    return py_bytes(frame);
+    return list<uint8>(frame);
 }
 
-void run_06_julia_parameter_sweep()
-{
-    long long width = 320;
-    long long height = 240;
-    long long frames_n = 72;
-    long long max_iter = 180;
-    string out_path = "sample/out/06_julia_parameter_sweep.gif";
-    auto start = perf_counter();
-    vector<vector<uint8_t>> frames = {};
-    double center_cr = (-0.745);
-    double center_ci = 0.186;
-    double radius_cr = 0.12;
-    double radius_ci = 0.1;
-    long long start_offset = 20;
-    long long phase_offset = 180;
-    auto __pytra_range_start_10 = 0;
-    auto __pytra_range_stop_11 = frames_n;
-    auto __pytra_range_step_12 = 1;
-    if (__pytra_range_step_12 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto i = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (i < __pytra_range_stop_11) : (i > __pytra_range_stop_11); i += __pytra_range_step_12)
-    {
-        double t = py_div(((i + start_offset) % frames_n), frames_n);
-        double angle = ((2.0 * pycs::cpp_module::math::pi) * t);
-        auto cr = (center_cr + (radius_cr * pycs::cpp_module::math::cos(angle)));
-        auto ci = (center_ci + (radius_ci * pycs::cpp_module::math::sin(angle)));
-        long long phase = ((phase_offset + (i * 5)) % 255);
+void run_06_julia_parameter_sweep() {
+    float64 t;
+    float64 angle;
+    float64 cr;
+    float64 ci;
+    int64 phase;
+    
+    int64 width = 320;
+    int64 height = 240;
+    int64 frames_n = 72;
+    int64 max_iter = 180;
+    str out_path = "sample/out/06_julia_parameter_sweep.gif";
+    
+    float64 start = perf_counter();
+    list<list<uint8>> frames = list<list<uint8>>{};
+    
+    float64 center_cr = -0.745;
+    float64 center_ci = 0.186;
+    float64 radius_cr = 0.12;
+    float64 radius_ci = 0.1;
+    
+    
+    int64 start_offset = 20;
+    int64 phase_offset = 180;
+    for (int64 i = 0; i < frames_n; ++i) {
+        t = static_cast<float64>((i + start_offset) % frames_n) / static_cast<float64>(frames_n);
+        angle = 2.0 * py_math::pi * t;
+        cr = center_cr + radius_cr * py_math::cos(angle);
+        ci = center_ci + radius_ci * py_math::sin(angle);
+        phase = (phase_offset + i * 5) % 255;
         frames.push_back(render_frame(width, height, cr, ci, max_iter, phase));
     }
-    pycs::cpp_module::gif::save_gif(out_path, width, height, frames, julia_palette(), 8, 0);
-    auto elapsed = (perf_counter() - start);
+    
+    save_gif(out_path, width, height, frames, julia_palette(), 8, 0);
+    float64 elapsed = perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);
 }
 
-int main()
-{
+int main() {
     run_06_julia_parameter_sweep();
     return 0;
 }

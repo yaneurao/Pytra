@@ -1,97 +1,69 @@
-#include "cpp_module/gc.h"
-#include "cpp_module/gif.h"
 #include "cpp_module/py_runtime.h"
-#include "cpp_module/time.h"
-#include <algorithm>
-#include <any>
-#include <cstdint>
-#include <fstream>
-#include <ios>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-using namespace std;
-using namespace pycs::gc;
 
-vector<uint8_t> render_frame(long long width, long long height, double center_x, double center_y, double scale, long long max_iter)
-{
-    vector<uint8_t> frame = py_bytearray((width * height));
-    long long idx = 0;
-    auto __pytra_range_start_1 = 0;
-    auto __pytra_range_stop_2 = height;
-    auto __pytra_range_step_3 = 1;
-    if (__pytra_range_step_3 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto y = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (y < __pytra_range_stop_2) : (y > __pytra_range_stop_2); y += __pytra_range_step_3)
-    {
-        double cy = (center_y + ((y - (height * 0.5)) * scale));
-        auto __pytra_range_start_4 = 0;
-        auto __pytra_range_stop_5 = width;
-        auto __pytra_range_step_6 = 1;
-        if (__pytra_range_step_6 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-        for (auto x = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (x < __pytra_range_stop_5) : (x > __pytra_range_stop_5); x += __pytra_range_step_6)
-        {
-            double cx = (center_x + ((x - (width * 0.5)) * scale));
-            double zx = 0.0;
-            double zy = 0.0;
-            long long i = 0;
-            while ((i < max_iter))
-            {
-                auto zx2 = (zx * zx);
-                auto zy2 = (zy * zy);
-                if (((zx2 + zy2) > 4.0))
-                {
+
+
+list<uint8> render_frame(int64 width, int64 height, float64 center_x, float64 center_y, float64 scale, int64 max_iter) {
+    float64 cy;
+    float64 cx;
+    float64 zx;
+    float64 zy;
+    int64 i;
+    float64 zx2;
+    float64 zy2;
+    
+    list<uint8> frame = list<uint8>(width * height);
+    int64 idx = 0;
+    for (int64 y = 0; y < height; ++y) {
+        cy = center_y + (static_cast<float64>(y) - static_cast<float64>(height) * 0.5) * scale;
+        for (int64 x = 0; x < width; ++x) {
+            cx = center_x + (static_cast<float64>(x) - static_cast<float64>(width) * 0.5) * scale;
+            zx = 0.0;
+            zy = 0.0;
+            i = 0;
+            while (i < max_iter) {
+                zx2 = zx * zx;
+                zy2 = zy * zy;
+                if (zx2 + zy2 > 4.0)
                     break;
-                }
-                zy = (((2.0 * zx) * zy) + cy);
-                zx = ((zx2 - zy2) + cx);
-                i = (i + 1);
+                zy = 2.0 * zx * zy + cy;
+                zx = zx2 - zy2 + cx;
+                i++;
             }
-            frame[idx] = static_cast<long long>(py_div((255.0 * i), max_iter));
-            idx = (idx + 1);
+            frame[idx] = int64(255.0 * static_cast<float64>(i) / static_cast<float64>(max_iter));
+            idx++;
         }
     }
-    return py_bytes(frame);
+    return list<uint8>(frame);
 }
 
-void run_05_mandelbrot_zoom()
-{
-    long long width = 320;
-    long long height = 240;
-    long long frame_count = 48;
-    long long max_iter = 110;
-    double center_x = (-0.743643887037151);
-    double center_y = 0.13182590420533;
-    double base_scale = py_div(3.2, width);
-    double zoom_per_frame = 0.93;
-    string out_path = "sample/out/05_mandelbrot_zoom.gif";
-    auto start = perf_counter();
-    vector<vector<uint8_t>> frames = {};
-    auto scale = base_scale;
-    auto __pytra_range_start_7 = 0;
-    auto __pytra_range_stop_8 = frame_count;
-    auto __pytra_range_step_9 = 1;
-    if (__pytra_range_step_9 == 0) throw std::runtime_error("range() arg 3 must not be zero");
-    for (auto _ = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (_ < __pytra_range_stop_8) : (_ > __pytra_range_stop_8); _ += __pytra_range_step_9)
-    {
+void run_05_mandelbrot_zoom() {
+    int64 width = 320;
+    int64 height = 240;
+    int64 frame_count = 48;
+    int64 max_iter = 110;
+    float64 center_x = -0.743643887037151;
+    float64 center_y = 0.13182590420533;
+    float64 base_scale = 3.2 / static_cast<float64>(width);
+    float64 zoom_per_frame = 0.93;
+    str out_path = "sample/out/05_mandelbrot_zoom.gif";
+    
+    float64 start = perf_counter();
+    list<list<uint8>> frames = list<list<uint8>>{};
+    float64 scale = base_scale;
+    for (int64 _ = 0; _ < frame_count; ++_) {
         frames.push_back(render_frame(width, height, center_x, center_y, scale, max_iter));
-        scale = (scale * zoom_per_frame);
+        scale *= zoom_per_frame;
     }
-    pycs::cpp_module::gif::save_gif(out_path, width, height, frames, pycs::cpp_module::gif::grayscale_palette(), 5, 0);
-    auto elapsed = (perf_counter() - start);
+    
+    save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0);
+    float64 elapsed = perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frame_count);
     py_print("elapsed_sec:", elapsed);
 }
 
-int main()
-{
+int main() {
     run_05_mandelbrot_zoom();
     return 0;
 }
