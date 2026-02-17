@@ -32,11 +32,12 @@
 Python標準ライブラリは「モジュール名だけ」でなく、対応関数を次のように限定します（未記載は未対応扱い）。
 
 - `math`
-  - 共通サブセット（主要ターゲットで利用実績あり）:
-    - `sqrt`, `sin`, `cos`, `exp`, `floor`
+  - 共通対応（C++/C#/Rust/JS/TS/Go/Java）:
+    - `sqrt`, `sin`, `cos`, `tan`, `exp`, `log`, `log10`, `fabs`, `floor`, `ceil`, `pow`
     - 定数: `pi`, `e`
-  - C++ 追加実装（`src/cpp_module/math.*`）:
-    - `tan`, `log`, `log10`, `fabs`, `ceil`, `pow`
+  - 差分:
+    - Swift/Kotlin は Node バックエンド方式のため、実体は JS/TS 側 `math` 実装に依存します。
+    - C# は `System.Math` へ直接マッピングする設計です（専用 `math` ランタイムは未分離）。
 - `time`
   - `perf_counter`
 - `pathlib`

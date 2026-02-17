@@ -549,9 +549,15 @@ func pyPerfCounter() any {
 func pyMathSqrt(v any) any { return math.Sqrt(pyToFloat(v)) }
 func pyMathSin(v any) any  { return math.Sin(pyToFloat(v)) }
 func pyMathCos(v any) any  { return math.Cos(pyToFloat(v)) }
+func pyMathTan(v any) any  { return math.Tan(pyToFloat(v)) }
 func pyMathExp(v any) any  { return math.Exp(pyToFloat(v)) }
+func pyMathLog(v any) any  { return math.Log(pyToFloat(v)) }
+func pyMathLog10(v any) any { return math.Log10(pyToFloat(v)) }
+func pyMathFabs(v any) any { return math.Abs(pyToFloat(v)) }
 func pyMathFloor(v any) any { return float64(math.Floor(pyToFloat(v))) }
-func pyMathPi() any        { return math.Pi }
+func pyMathCeil(v any) any { return float64(math.Ceil(pyToFloat(v))) }
+func pyMathPow(a any, b any) any { return math.Pow(pyToFloat(a), pyToFloat(b)) }
+func pyMathPi() any         { return math.Pi }
 
 // -------- png/gif helper --------
 

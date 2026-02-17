@@ -545,12 +545,36 @@ final class PyRuntime {
         return Math.cos(pyToFloat(v));
     }
 
+    static Object pyMathTan(Object v) {
+        return Math.tan(pyToFloat(v));
+    }
+
     static Object pyMathExp(Object v) {
         return Math.exp(pyToFloat(v));
     }
 
+    static Object pyMathLog(Object v) {
+        return Math.log(pyToFloat(v));
+    }
+
+    static Object pyMathLog10(Object v) {
+        return Math.log10(pyToFloat(v));
+    }
+
+    static Object pyMathFabs(Object v) {
+        return Math.abs(pyToFloat(v));
+    }
+
     static Object pyMathFloor(Object v) {
         return Math.floor(pyToFloat(v));
+    }
+
+    static Object pyMathCeil(Object v) {
+        return Math.ceil(pyToFloat(v));
+    }
+
+    static Object pyMathPow(Object a, Object b) {
+        return Math.pow(pyToFloat(a), pyToFloat(b));
     }
 
     static Object pyMathPi() {

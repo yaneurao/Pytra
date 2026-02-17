@@ -321,6 +321,10 @@ pub fn math_cos(v: f64) -> f64 {
     v.cos()
 }
 
+pub fn math_tan(v: f64) -> f64 {
+    v.tan()
+}
+
 pub fn math_sqrt(v: f64) -> f64 {
     v.sqrt()
 }
@@ -329,8 +333,28 @@ pub fn math_exp(v: f64) -> f64 {
     v.exp()
 }
 
+pub fn math_log(v: f64) -> f64 {
+    v.ln()
+}
+
+pub fn math_log10(v: f64) -> f64 {
+    v.log10()
+}
+
+pub fn math_fabs(v: f64) -> f64 {
+    v.abs()
+}
+
 pub fn math_floor(v: f64) -> f64 {
     v.floor()
+}
+
+pub fn math_ceil(v: f64) -> f64 {
+    v.ceil()
+}
+
+pub fn math_pow(a: f64, b: f64) -> f64 {
+    a.powf(b)
 }
 
 pub fn py_grayscale_palette() -> Vec<u8> {

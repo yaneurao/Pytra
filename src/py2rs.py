@@ -1276,10 +1276,38 @@ def transpile_file_native(input_path: Path, output_path: Path) -> None:
     tree = ast.parse(source, filename=str(input_path))
     runtime_rel = _runtime_path_literal(output_path)
     rust_body = RustTranspiler().transpile_module(tree)
+    runtime_symbols = [
+        "math_cos",
+        "math_tan",
+        "math_exp",
+        "math_log",
+        "math_log10",
+        "math_fabs",
+        "math_floor",
+        "math_ceil",
+        "math_pow",
+        "math_sin",
+        "math_sqrt",
+        "perf_counter",
+        "py_bool",
+        "py_grayscale_palette",
+        "py_in",
+        "py_isalpha",
+        "py_isdigit",
+        "py_len",
+        "py_print",
+        "py_save_gif",
+        "py_slice",
+        "py_write_rgb_png",
+    ]
+    used_symbols = [name for name in runtime_symbols if f"{name}(" in rust_body]
+    use_line = ""
+    if used_symbols:
+        use_line = "use py_runtime::{" + ", ".join(used_symbols) + "};\n\n"
     rust = (
         f'#[path = "{runtime_rel}"]\n'
         "mod py_runtime;\n"
-        "use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};\n\n"
+        + use_line
         + rust_body
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)

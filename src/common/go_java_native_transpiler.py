@@ -910,10 +910,22 @@ class GoJavaNativeTranspiler(BaseTranspiler):
                         return f"math.Sin(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathSin({', '.join(args)})"
                     if method == "cos":
                         return f"math.Cos(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathCos({', '.join(args)})"
+                    if method == "tan":
+                        return f"math.Tan(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathTan({', '.join(args)})"
                     if method == "exp":
                         return f"math.Exp(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathExp({', '.join(args)})"
+                    if method == "log":
+                        return f"math.Log(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathLog({', '.join(args)})"
+                    if method == "log10":
+                        return f"math.Log10(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathLog10({', '.join(args)})"
+                    if method == "fabs":
+                        return f"math.Abs(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathFabs({', '.join(args)})"
                     if method == "floor":
                         return f"math.Floor(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathFloor({', '.join(args)})"
+                    if method == "ceil":
+                        return f"math.Ceil(pyToFloat({args[0]}))" if self.is_go else f"PyRuntime.pyMathCeil({', '.join(args)})"
+                    if method == "pow":
+                        return f"math.Pow(pyToFloat({args[0]}), pyToFloat({args[1]}))" if self.is_go else f"PyRuntime.pyMathPow({', '.join(args)})"
                 if mod == "png_helper" and method == "write_rgb_png":
                     return f"{'pyWriteRGBPNG' if self.is_go else 'PyRuntime.pyWriteRGBPNG'}({', '.join(args)})"
                 if mod == "gif_helper":
