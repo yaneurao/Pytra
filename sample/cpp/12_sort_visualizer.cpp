@@ -11,7 +11,7 @@ bytearray render(const list<int64>& values, int64 w, int64 h) {
         int64 x1 = int64((static_cast<float64>(i + 1)) * bar_w);
         if (x1 <= x0)
             x1 = x0 + 1;
-        int64 bh = int64(values[i] / static_cast<float64>(n) * static_cast<float64>(h));
+        int64 bh = int64((values[i] / static_cast<float64>(n)) * static_cast<float64>(h));
         int64 y = h - bh;
         for (int64 y = y; y < h; ++y) {
             for (int64 x = x0; x < x1; ++x)

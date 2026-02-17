@@ -7,10 +7,10 @@ bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, fl
     bytearray pixels = bytearray{};
     
     for (int64 y = 0; y < height; ++y) {
-        float64 zy0 = -1.2 + 2.4 * static_cast<float64>(y) / (static_cast<float64>(height - 1));
+        float64 zy0 = -1.2 + 2.4 * (static_cast<float64>(y) / (static_cast<float64>(height - 1)));
         
         for (int64 x = 0; x < width; ++x) {
-            float64 zx = -1.8 + 3.6 * static_cast<float64>(x) / (static_cast<float64>(width - 1));
+            float64 zx = -1.8 + 3.6 * (static_cast<float64>(x) / (static_cast<float64>(width - 1)));
             float64 zy = zy0;
             
             int64 i = 0;

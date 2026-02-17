@@ -44,15 +44,15 @@ void run_14_raymarching_light_cycle() {
     
     for (int64 t = 0; t < frames_n; ++t) {
         auto frame = bytearray(w * h);
-        auto a = static_cast<float64>(t) / static_cast<float64>(frames_n) * py_math::pi * 2.0;
+        auto a = (static_cast<float64>(t) / static_cast<float64>(frames_n)) * py_math::pi * 2.0;
         auto light_x = 0.75 * py_math::cos(a);
         auto light_y = 0.55 * py_math::sin(a * 1.2);
         
         int64 i = 0;
         for (int64 y = 0; y < h; ++y) {
-            float64 py = static_cast<float64>(y) / (static_cast<float64>(h - 1)) * 2.0 - 1.0;
+            float64 py = (static_cast<float64>(y) / (static_cast<float64>(h - 1))) * 2.0 - 1.0;
             for (int64 x = 0; x < w; ++x) {
-                float64 px = static_cast<float64>(x) / (static_cast<float64>(w - 1)) * 2.0 - 1.0;
+                float64 px = (static_cast<float64>(x) / (static_cast<float64>(w - 1))) * 2.0 - 1.0;
                 frame[i] = scene(px, py, light_x, light_y);
                 
                 i++;

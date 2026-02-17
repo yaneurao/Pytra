@@ -58,8 +58,8 @@
 - [x] `save_gif(..., delay_cs=..., loop=...)` の keyword 引数を `py2cpp.py` の非lowered `Call` 経路でも確実に反映する。
 - [x] 現状 `sample/cpp/*` で `save_gif(..., palette)` のみになり `delay_cs` が既定値 `4` に落ちる問題を修正する。
 - [x] `sample/05,06,08,10,11,14` で GIF の GCE delay 値が Python 実行結果と一致することを確認する。
-- [ ] 浮動小数点式の再結合（演算順序変更）を抑制し、Python と同じ評価順を優先する。
-- [ ] `a * (b / c)` が `a * b / c` に変わらないように、`render_expr` の括弧方針を見直す。
+- [x] 浮動小数点式の再結合（演算順序変更）を抑制し、Python と同じ評価順を優先する。
+- [x] `a * (b / c)` が `a * b / c` に変わらないように、`render_expr` の括弧方針を見直す。
 - [x] `sample/01_mandelbrot` と `sample/03_julia_set` で PNG の raw scanline が一致することを確認する。
 - [x] PNG 出力の差分を「画素差」と「圧縮差」に切り分けた上で、仕様として扱いを明文化する。
 - [x] `sample/02_raytrace_spheres` は画素一致・IDAT 圧縮差のみであることを docs に追記する。

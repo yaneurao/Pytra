@@ -24,7 +24,7 @@ void run_10_plasma_effect() {
                 
                 
                 
-                int64 c = py_to_int64((v + 4.0) * 255.0 / 8.0);
+                int64 c = py_to_int64((v + 4.0) * (255.0 / 8.0));
                 if (c < 0)
                     c = 0;
                 if (c > 255)

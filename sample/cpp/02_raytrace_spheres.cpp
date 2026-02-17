@@ -60,7 +60,7 @@ bytearray render(int64 width, int64 height, int64 aa) {
                     float64 fy = (static_cast<float64>(y) + (static_cast<float64>(ay) + 0.5) / static_cast<float64>(aa)) / (static_cast<float64>(height - 1));
                     float64 fx = (static_cast<float64>(x) + (static_cast<float64>(ax) + 0.5) / static_cast<float64>(aa)) / (static_cast<float64>(width - 1));
                     float64 sy = 1.0 - 2.0 * fy;
-                    float64 sx = (2.0 * fx - 1.0) * static_cast<float64>(width) / static_cast<float64>(height);
+                    float64 sx = (2.0 * fx - 1.0) * (static_cast<float64>(width) / static_cast<float64>(height));
                     
                     float64 dx = sx;
                     float64 dy = sy;

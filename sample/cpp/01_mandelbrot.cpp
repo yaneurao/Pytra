@@ -36,10 +36,10 @@ bytearray render_mandelbrot(int64 width, int64 height, int64 max_iter, float64 x
     bytearray pixels = bytearray{};
     
     for (int64 y = 0; y < height; ++y) {
-        float64 py = y_min + (y_max - y_min) * static_cast<float64>(y) / (static_cast<float64>(height - 1));
+        float64 py = y_min + (y_max - y_min) * (static_cast<float64>(y) / (static_cast<float64>(height - 1)));
         
         for (int64 x = 0; x < width; ++x) {
-            float64 px = x_min + (x_max - x_min) * static_cast<float64>(x) / (static_cast<float64>(width - 1));
+            float64 px = x_min + (x_max - x_min) * (static_cast<float64>(x) / (static_cast<float64>(width - 1)));
             int64 it = escape_count(px, py, max_iter);
             int64 r;
             int64 g;
