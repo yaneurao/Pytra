@@ -26,8 +26,10 @@ class BaseEmitter:
         return f"{prefix}_{self.tmp_id}"
 
     def any_dict_get(self, obj: Any, key: str, default_value: Any) -> Any:
-        if isinstance(obj, dict):
-            return obj.get(key, default_value)
+        if not isinstance(obj, dict):
+            return default_value
+        if key in obj:
+            return obj[key]
         return default_value
 
     def get_expr_type(self, expr: Any) -> str:

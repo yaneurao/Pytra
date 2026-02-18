@@ -40,31 +40,34 @@ class BaseEmitter:
 
     def any_dict_get(
         self,
-        obj: dict[str, Any] | None,
+        obj: Any,
         key: str,
-        default_value: str | list[Any] | dict[str, Any] | None,
-    ) -> str | list[Any] | dict[str, Any] | None:
+        default_value: Any,
+    ) -> Any:
         if not isinstance(obj, dict):
             return default_value
-        return obj.get(key, default_value)
+        d: dict[str, Any] = obj
+        if key in d:
+            return d[key]
+        return default_value
 
-    def any_to_dict(self, v: str | list[Any] | dict[str, Any] | None) -> dict[str, Any] | None:
+    def any_to_dict(self, v: Any) -> dict[str, Any] | None:
+        out: dict[str, Any] | None = None
         if isinstance(v, dict):
-            d: dict[str, Any] = v
-            return d
-        return None
+            out = v
+        return out
 
-    def any_to_list(self, v: str | list[Any] | dict[str, Any] | None) -> list[Any]:
+    def any_to_list(self, v: Any) -> list[Any]:
+        out: list[Any] = []
         if isinstance(v, list):
-            out: list[Any] = v
-            return out
-        return []
+            out = v
+        return out
 
-    def any_to_str(self, v: str | list[Any] | dict[str, Any] | None) -> str:
+    def any_to_str(self, v: Any) -> str:
+        out: str = ""
         if isinstance(v, str):
-            s: str = v
-            return s
-        return ""
+            out = v
+        return out
 
     def get_expr_type(self, expr: dict[str, Any] | None) -> str:
         if expr is None:
