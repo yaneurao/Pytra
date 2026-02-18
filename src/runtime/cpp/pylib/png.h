@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace pytra::cpp_module::png {
+namespace pytra::pylib::png {
 
 /**
  * @brief RGB 8bit バッファを PNG ファイルとして保存します。
@@ -19,6 +19,10 @@ namespace pytra::cpp_module::png {
  */
 void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels);
 
-}  // namespace pytra::cpp_module::png
+}  // namespace pytra::pylib::png
+
+namespace pytra {
+namespace png = pylib::png;
+}
 
 #endif  // PYTRA_CPP_MODULE_PNG_H

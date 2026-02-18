@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace pytra::cpp_module::png {
+namespace pytra::pylib::png {
 namespace {
 
 void append_u32_be(std::string& out, std::uint32_t v) {
@@ -128,4 +128,4 @@ void write_rgb_png(const std::string& path, int width, int height, const std::ve
     ofs.write(png.data(), static_cast<std::streamsize>(png.size()));
 }
 
-}  // namespace pytra::cpp_module::png
+}  // namespace pytra::pylib::png

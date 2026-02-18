@@ -39,13 +39,13 @@ int main(int argc, char** argv) {
         0, 0, 255,
         255, 255, 255,
     };
-    pytra::cpp_module::png::write_rgb_png(out_png, 2, 2, png_pixels);
+    pytra::png::write_rgb_png(out_png, 2, 2, png_pixels);
 
     std::vector<std::uint8_t> frame0 = {0, 1, 2, 3};
     std::vector<std::uint8_t> frame1 = {3, 2, 1, 0};
     std::vector<std::vector<std::uint8_t>> frames = {frame0, frame1};
-    auto palette = pytra::cpp_module::gif::grayscale_palette();
-    pytra::cpp_module::gif::save_gif(out_gif, 2, 2, frames, palette, 4, 0);
+    auto palette = pytra::gif::grayscale_palette();
+    pytra::gif::save_gif(out_gif, 2, 2, frames, palette, 4, 0);
     return 0;
 }
 '''
