@@ -7,13 +7,13 @@ It can also accept a Python source file and internally run src/common/east.py co
 
 from __future__ import annotations
 
-import sys
 from typing import Any
 
 from common.code_emitter import CodeEmitter
 from common.east_io import load_east_from_path
 from common.language_profile import load_language_profile
 from pylib.path import Path
+from pylib import sys
 
 CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 
