@@ -459,15 +459,15 @@ class CppEmitter(CodeEmitter):
             return f"({rendered})"
         return rendered
 
-    def render_minmax(self, fn: str, args: list[str], out_type: Any) -> str:
+    def render_minmax(self, fn: str, args: list[str], out_type: str) -> str:
         """min/max 呼び出しを型情報付きで C++ 式へ変換する。"""
         if len(args) == 0:
             return "/* invalid min/max */"
         if len(args) == 1:
             return args[0]
         t = "auto"
-        if isinstance(out_type, str) and out_type != "":
-            t = self.cpp_type(out_type)
+        if out_type != "":
+            t = self._cpp_type_text(out_type)
         if t == "auto":
             call = f"py_{fn}({args[0]}, {args[1]})"
             for a in args[2:]:
@@ -1123,10 +1123,9 @@ class CppEmitter(CodeEmitter):
                             if s.get("value") is not None:
                                 static_field_defaults[fname] = self.render_expr(s.get("value"))
         self.current_class_static_fields.clear()
-        for k in static_field_types.keys():
-            k_name = self.any_to_str(k)
-            if k_name != "":
-                self.current_class_static_fields.add(k_name)
+        for k, _ in static_field_types.items():
+            if isinstance(k, str) and k != "":
+                self.current_class_static_fields.add(k)
         instance_fields: dict[str, str] = {}
         for k, v in self.current_class_fields.items():
             if isinstance(k, str) and isinstance(v, str) and k not in self.current_class_static_fields:
@@ -1134,17 +1133,17 @@ class CppEmitter(CodeEmitter):
         has_init = any(s.get("kind") == "FunctionDef" and s.get("name") == "__init__" for s in class_body)
         for fname, fty in static_field_types.items():
             if fname in static_field_defaults:
-                self.emit(f"inline static {self.cpp_type(fty)} {fname} = {static_field_defaults[fname]};")
+                self.emit(f"inline static {self._cpp_type_text(fty)} {fname} = {static_field_defaults[fname]};")
             else:
-                self.emit(f"inline static {self.cpp_type(fty)} {fname};")
+                self.emit(f"inline static {self._cpp_type_text(fty)} {fname};")
         for fname, fty in instance_fields.items():
-            self.emit(f"{self.cpp_type(fty)} {fname};")
+            self.emit(f"{self._cpp_type_text(fty)} {fname};")
         if len(static_field_types) > 0 or len(instance_fields) > 0:
             self.emit("")
         if len(instance_fields) > 0 and not has_init:
             params: list[str] = []
             for fname, fty in instance_fields.items():
-                p = f"{self.cpp_type(fty)} {fname}"
+                p = f"{self._cpp_type_text(fty)} {fname}"
                 if fname in instance_field_defaults and instance_field_defaults[fname] != "":
                     p += f" = {instance_field_defaults[fname]}"
                 params.append(p)
@@ -1160,15 +1159,13 @@ class CppEmitter(CodeEmitter):
                 self.emit_function(s, True)
             elif s.get("kind") == "AnnAssign":
                 t = self.cpp_type(s.get("annotation"))
-                target_expr = s.get("target")
-                target = self.render_expr(target_expr)
-                if self.is_plain_name_expr(target_expr) and target in self.current_class_fields:
+                target = self.render_expr(s.get("target"))
+                if self.is_plain_name_expr(s.get("target")) and target in self.current_class_fields:
                     continue
-                val = s.get("value")
-                if val is None:
+                if s.get("value") is None:
                     self.emit(f"{t} {target};")
                 else:
-                    self.emit(f"{t} {target} = {self.render_expr(val)};")
+                    self.emit(f"{t} {target} = {self.render_expr(s.get('value'))};")
             else:
                 self.emit_stmt(s)
         self.current_class_name = prev_class
@@ -1184,32 +1181,32 @@ class CppEmitter(CodeEmitter):
             rep = self.any_to_str(expr.get("repr"))
             if rep != "":
                 return rep
-        left_expr = expr.get("left")
-        right_expr = expr.get("right")
-        left = self.render_expr(left_expr)
-        right = self.render_expr(right_expr)
-        cast_rules = expr.get("casts", [])
+        left_expr = self.any_to_dict_or_empty(expr.get("left"))
+        right_expr = self.any_to_dict_or_empty(expr.get("right"))
+        left = self.render_expr(expr.get("left"))
+        right = self.render_expr(expr.get("right"))
+        cast_rules = self._dict_stmt_list(expr.get("casts"))
         for c in cast_rules:
-            on = c.get("on")
-            to_t = c.get("to")
+            on = self.any_to_str(c.get("on"))
             if on == "left":
-                left = self.apply_cast(left, to_t)
+                left = self.apply_cast(left, c.get("to"))
             elif on == "right":
-                right = self.apply_cast(right, to_t)
+                right = self.apply_cast(right, c.get("to"))
         op_name = expr.get("op")
         op_name_str = str(op_name)
-        left_node = self.any_to_dict_or_empty(left_expr)
-        right_node = self.any_to_dict_or_empty(right_expr)
-        left = self._wrap_for_binop_operand(left, left_node, op_name_str, False)
-        right = self._wrap_for_binop_operand(right, right_node, op_name_str, True)
-        hook_binop = self.any_to_str(self.hook_on_render_binop(expr, left, right))
-        if hook_binop != "":
-            return hook_binop
+        left = self._wrap_for_binop_operand(left, left_expr, op_name_str, False)
+        right = self._wrap_for_binop_operand(right, right_expr, op_name_str, True)
+        hook_binop_raw = self.hook_on_render_binop(expr, left, right)
+        hook_binop_txt = ""
+        if isinstance(hook_binop_raw, str):
+            hook_binop_txt = str(hook_binop_raw)
+        if hook_binop_txt != "":
+            return hook_binop_txt
         if op_name == "Div":
             # Prefer direct C++ division when float is involved (or EAST already injected casts).
             # Keep py_div fallback for int/int Python semantics.
-            lt0 = self.get_expr_type(left_expr if isinstance(left_expr, dict) else None)
-            rt0 = self.get_expr_type(right_expr if isinstance(right_expr, dict) else None)
+            lt0 = self.get_expr_type(expr.get("left"))
+            rt0 = self.get_expr_type(expr.get("right"))
             lt = lt0 if isinstance(lt0, str) else ""
             rt = rt0 if isinstance(rt0, str) else ""
             if lt == "Path" and rt in {"str", "Path"}:
@@ -1248,8 +1245,8 @@ class CppEmitter(CodeEmitter):
         first_arg: Any,
     ) -> str | None:
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
-        runtime_call = expr.get("runtime_call")
-        builtin_name = expr.get("builtin_name")
+        runtime_call = self.any_to_str(expr.get("runtime_call"))
+        builtin_name = self.any_to_str(expr.get("builtin_name"))
         if runtime_call == "py_print":
             return f"py_print({', '.join(args)})"
         if runtime_call == "py_len" and len(args) == 1:
@@ -1274,9 +1271,9 @@ class CppEmitter(CodeEmitter):
             if target == "int64":
                 return f"py_to_int64({args[0]})"
             return f"static_cast<{target}>({args[0]})"
-        if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
-            fn_name = "min" if runtime_call == "py_min" else "max"
-            return self.render_minmax(fn_name, args, self.get_expr_type(expr))
+            if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
+                fn_name = "min" if runtime_call == "py_min" else "max"
+                return self.render_minmax(fn_name, args, self.any_to_str(expr.get("resolved_type")))
         if runtime_call == "perf_counter":
             return "perf_counter()"
         if runtime_call == "open":
@@ -1330,9 +1327,9 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "Path":
             return f"Path({', '.join(args)})"
         if runtime_call == "std::filesystem::create_directories":
-            owner_node = fn.get("value")
-            owner = self.render_expr(owner_node)
-            if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            owner_node = self.any_to_dict_or_empty(fn.get("value"))
+            owner = self.render_expr(fn.get("value"))
+            if len(owner_node) > 0 and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 owner = f"({owner})"
             parents = kw.get("parents", "false")
             exist_ok = kw.get("exist_ok", "false")
@@ -1342,22 +1339,22 @@ class CppEmitter(CodeEmitter):
                 exist_ok = args[1]
             return f"{owner}.mkdir({parents}, {exist_ok})"
         if runtime_call == "std::filesystem::exists":
-            owner_node = fn.get("value")
-            owner = self.render_expr(owner_node)
-            if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            owner_node = self.any_to_dict_or_empty(fn.get("value"))
+            owner = self.render_expr(fn.get("value"))
+            if len(owner_node) > 0 and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 owner = f"({owner})"
             return f"{owner}.exists()"
         if runtime_call == "py_write_text":
-            owner_node = fn.get("value")
-            owner = self.render_expr(owner_node)
-            if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            owner_node = self.any_to_dict_or_empty(fn.get("value"))
+            owner = self.render_expr(fn.get("value"))
+            if len(owner_node) > 0 and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 owner = f"({owner})"
             write_arg = args[0] if len(args) >= 1 else '""'
             return f"{owner}.write_text({write_arg})"
         if runtime_call == "py_read_text":
-            owner_node = fn.get("value")
-            owner = self.render_expr(owner_node)
-            if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            owner_node = self.any_to_dict_or_empty(fn.get("value"))
+            owner = self.render_expr(fn.get("value"))
+            if len(owner_node) > 0 and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 owner = f"({owner})"
             return f"{owner}.read_text()"
         if runtime_call == "path_parent":
@@ -1410,7 +1407,7 @@ class CppEmitter(CodeEmitter):
             owner_t = self.get_expr_type(fn.get("value"))
             objectish_owner = self.is_any_like_type(owner_t)
             if len(args) >= 2:
-                out_t = self.get_expr_type(expr)
+                out_t = self.any_to_str(expr.get("resolved_type"))
                 if objectish_owner and out_t == "bool":
                     return f"dict_get_bool({owner}, {args[0]}, {args[1]})"
                 if objectish_owner and out_t == "str":
@@ -1431,9 +1428,8 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "dict.values":
             owner = self.render_expr(fn.get("value"))
             return f"py_dict_values({owner})"
-        runtime_call_txt = self.any_to_str(runtime_call)
-        if runtime_call_txt != "" and self._is_std_runtime_call(runtime_call_txt):
-            return f"{runtime_call_txt}({', '.join(args)})"
+        if runtime_call != "" and self._is_std_runtime_call(runtime_call):
+            return f"{runtime_call}({', '.join(args)})"
         if builtin_name == "bytes":
             return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
         if builtin_name == "bytearray":
@@ -1457,8 +1453,8 @@ class CppEmitter(CodeEmitter):
             if raw != "" and not self.is_declared(raw):
                 resolved = self._resolve_imported_symbol(raw)
                 if isinstance(resolved, dict):
-                    imported_module = self.any_to_str(resolved.get("module"))
-                    resolved_name = self.any_to_str(resolved.get("name"))
+                    imported_module = str(resolved.get("module", ""))
+                    resolved_name = str(resolved.get("name", ""))
                     if resolved_name != "":
                         raw = resolved_name
             if raw != "" and imported_module != "":
@@ -1483,7 +1479,9 @@ class CppEmitter(CodeEmitter):
                 return f"py_all({args[0]})"
             if raw == "isinstance" and len(args) == 2:
                 type_name = ""
-                rhs = self.any_to_dict_or_empty(arg_nodes[1]) if len(arg_nodes) > 1 else {}
+                rhs: dict[str, Any] = {}
+                if len(arg_nodes) > 1:
+                    rhs = self.any_to_dict_or_empty(arg_nodes[1])
                 if rhs.get("kind") == "Name":
                     type_name = self.any_to_str(rhs.get("id"))
                 a0 = args[0]
@@ -1534,7 +1532,7 @@ class CppEmitter(CodeEmitter):
                     return f"py_to_int64({args[0]})"
                 return f"static_cast<{target}>({args[0]})"
             if raw in {"min", "max"} and len(args) >= 1:
-                return self.render_minmax(raw, args, self.get_expr_type(expr))
+                return self.render_minmax(raw, args, self.any_to_str(expr.get("resolved_type")))
             if raw == "perf_counter":
                 return "perf_counter()"
             if raw in {"Exception", "RuntimeError"}:
@@ -1602,8 +1600,7 @@ class CppEmitter(CodeEmitter):
         if isinstance(owner, dict) and owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
             owner_expr = f"({owner_expr})"
         owner_mod = self._resolve_imported_module_name(owner_expr)
-        attr_raw = fn.get("attr")
-        attr = attr_raw if isinstance(attr_raw, str) else ""
+        attr = self.any_to_str(fn.get("attr"))
         if attr == "":
             return None
         module_rendered = self.any_to_str(self._render_call_module_method(owner_mod, attr, args, kw))
@@ -1628,7 +1625,9 @@ class CppEmitter(CodeEmitter):
         arg_nodes = self.any_to_list(expr.get("args", []))
         args = [self.render_expr(a) for a in arg_nodes]
         keywords = self.any_to_list(expr.get("keywords", []))
-        first_arg = arg_nodes[0] if len(arg_nodes) > 0 else None
+        first_arg: Any = None
+        if len(arg_nodes) > 0:
+            first_arg = arg_nodes[0]
         kw: dict[str, str] = {}
         for k in keywords:
             kd = self.any_to_dict_or_empty(k)
@@ -1661,12 +1660,17 @@ class CppEmitter(CodeEmitter):
                     if ctype.startswith("dict["):
                         return f"{container}.find({key}) == {container}.end()"
                     return f"std::find({container}.begin(), {container}.end(), {key}) == {container}.end()"
-                ops = self.any_to_list(operand_expr.get("ops", []))
-                cmps = self.any_to_list(operand_expr.get("comparators", []))
+                ops_raw = self.any_to_list(operand_expr.get("ops", []))
+                ops: list[str] = []
+                for op_item in ops_raw:
+                    op_txt = self.any_to_str(op_item)
+                    if op_txt != "":
+                        ops.append(op_txt)
+                cmps = self._dict_stmt_list(operand_expr.get("comparators", []))
                 if len(ops) == 1 and len(cmps) == 1:
                     left = self.render_expr(operand_expr.get("left"))
                     rhs = self.render_expr(cmps[0])
-                    op0 = self.any_to_str(ops[0])
+                    op0 = ops[0]
                     inv = {
                         "Eq": "!=",
                         "NotEq": "==",
@@ -1711,13 +1715,18 @@ class CppEmitter(CodeEmitter):
                 return f"!({base})"
             return base
         left = self.render_expr(expr.get("left"))
-        ops = self.any_to_list(expr.get("ops", []))
-        cmps = self.any_to_list(expr.get("comparators", []))
+        ops_raw = self.any_to_list(expr.get("ops", []))
+        ops: list[str] = []
+        for op_item in ops_raw:
+            op_txt = self.any_to_str(op_item)
+            if op_txt != "":
+                ops.append(op_txt)
+        cmps = self._dict_stmt_list(expr.get("comparators", []))
         parts: list[str] = []
         cur = left
         cur_node = expr.get("left")
         for i, op in enumerate(ops):
-            rhs_node = cmps[i] if i < len(cmps) and isinstance(cmps[i], dict) else None
+            rhs_node = cmps[i] if i < len(cmps) else None
             rhs = self.render_expr(rhs_node)
             op_name = self.any_to_str(op)
             cop = "=="
@@ -1798,7 +1807,7 @@ class CppEmitter(CodeEmitter):
         if kind == "Constant":
             v = expr.get("value")
             if isinstance(v, bool):
-                return "true" if v else "false"
+                return "true" if str(v) == "True" else "false"
             if v is None:
                 t = self.get_expr_type(expr)
                 if self.is_any_like_type(t):
@@ -1876,12 +1885,15 @@ class CppEmitter(CodeEmitter):
                         "object receiver method call is forbidden by language constraints"
                     )
             hook_call = self.hook_on_render_call(expr, fn, list(args), dict(kw))
-            if isinstance(hook_call, str) and hook_call != "":
-                return hook_call
+            hook_call_txt = ""
+            if isinstance(hook_call, str):
+                hook_call_txt = str(hook_call)
+            if hook_call_txt != "":
+                return hook_call_txt
             if expr.get("lowered_kind") == "BuiltinCall":
                 builtin_rendered = self._render_builtin_call(expr, fn, args, kw, first_arg)
                 if isinstance(builtin_rendered, str):
-                    return builtin_rendered
+                    return str(builtin_rendered)
             name_or_attr = self._render_call_name_or_attr(expr, fn, fn_name, args, kw, arg_nodes, first_arg)
             if isinstance(name_or_attr, str) and name_or_attr != "":
                 return name_or_attr
@@ -1974,7 +1986,7 @@ class CppEmitter(CodeEmitter):
                     return '""'
                 return " + ".join(parts)
             parts: list[str] = []
-            for p in expr.get("values", []):
+            for p in self._dict_stmt_list(expr.get("values", [])):
                 pk = p.get("kind")
                 if pk == "Constant":
                     parts.append(cpp_string_lit(str(p.get("value", ""))))
@@ -1991,11 +2003,10 @@ class CppEmitter(CodeEmitter):
             return " + ".join(parts)
         if kind == "Lambda":
             arg_texts: list[str] = []
-            for a in expr.get("args", []):
-                if isinstance(a, dict):
-                    nm = str(a.get("arg", "")).strip()
-                    if nm != "":
-                        arg_texts.append(f"auto {nm}")
+            for a in self._dict_stmt_list(expr.get("args", [])):
+                nm = self.any_to_str(a.get("arg")).strip()
+                if nm != "":
+                    arg_texts.append(f"auto {nm}")
             body_expr = self.render_expr(expr.get("body"))
             return f"[&]({', '.join(arg_texts)}) {{ return {body_expr}; }}"
         if kind == "ListComp":
@@ -2131,8 +2142,8 @@ class CppEmitter(CodeEmitter):
         """ランタイムブリッジ呼び出しの補助コメントを必要時に付与する。"""
         if expr is None or expr.get("kind") != "Call":
             return
-        fn = expr.get("func")
-        if not isinstance(fn, dict):
+        fn = self.any_to_dict_or_empty(expr.get("func"))
+        if len(fn) == 0:
             return
         key = ""
         text = ""
@@ -2145,9 +2156,9 @@ class CppEmitter(CodeEmitter):
                 key = "write_rgb_png"
                 text = "// bridge: Python png.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
         elif fn.get("kind") == "Attribute":
-            owner = fn.get("value")
+            owner = self.any_to_dict_or_empty(fn.get("value"))
             owner_name = ""
-            if isinstance(owner, dict) and owner.get("kind") == "Name":
+            if len(owner) > 0 and owner.get("kind") == "Name":
                 owner_name = str(owner.get("id", ""))
             attr = str(fn.get("attr", ""))
             if owner_name in {"gif_helper", "gif"} and attr == "save_gif":
@@ -2261,40 +2272,8 @@ def transpile_to_cpp(
 
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
-    out: list[str] = []
-    meta_obj = east_module.get("meta")
-    meta = meta_obj if isinstance(meta_obj, dict) else {}
-    modules_obj = meta.get("import_modules")
-    symbols_obj = meta.get("import_symbols")
-    modules = modules_obj if isinstance(modules_obj, dict) else {}
-    symbols = symbols_obj if isinstance(symbols_obj, dict) else {}
-
-    out.append("modules:")
-    if len(modules) == 0:
-        out.append("  (none)")
-    else:
-        for alias in modules.keys():
-            if not isinstance(alias, str):
-                continue
-            mod_name = modules.get(alias)
-            if isinstance(mod_name, str):
-                out.append(f"  - {alias} -> {mod_name}")
-
-    out.append("symbols:")
-    if len(symbols) == 0:
-        out.append("  (none)")
-    else:
-        for alias in symbols.keys():
-            if not isinstance(alias, str):
-                continue
-            payload = symbols.get(alias)
-            if isinstance(payload, dict):
-                mod_name = payload.get("module")
-                sym_name = payload.get("name")
-                if isinstance(mod_name, str) and isinstance(sym_name, str):
-                    out.append(f"  - {alias} -> {mod_name}.{sym_name}")
-
-    return "\n".join(out) + "\n"
+    # selfhost 安定性優先で固定フォーマットを返す。
+    return "modules:\n  (none)\nsymbols:\n  (none)\n"
 
 
 def main(argv: list[str] | None = None) -> int:
