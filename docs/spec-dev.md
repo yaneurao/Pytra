@@ -22,7 +22,7 @@
 
 - `pylib.assertions`
   - 関数: `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
-- `pylib.path`
+- `pylib.pathlib`
   - class: `Path`
   - メンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve`, `exists`, `mkdir`, `read_text`, `write_text`, `glob`, `cwd`
 - `pylib.json`

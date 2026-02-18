@@ -6,7 +6,7 @@ from pylib.typing import Any
 
 from pylib.east import EastBuildError, convert_path, convert_source_to_east_with_backend
 from pylib import json
-from pylib.path import Path
+from pylib.pathlib import Path
 
 
 def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:

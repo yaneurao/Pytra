@@ -8,7 +8,7 @@ import json
 import re
 from dataclasses import dataclass
 from pylib.typing import Any
-from pylib.path import Path
+from pylib.pathlib import Path
 from pylib import sys
 
 

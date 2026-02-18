@@ -6,7 +6,7 @@ import argparse
 
 from .core import EastBuildError, convert_path
 from .human import _dump_json, render_east_human_cpp
-from pylib.path import Path
+from pylib.pathlib import Path
 from pylib import sys
 
 def main(argv: list[str] | None = None) -> int:

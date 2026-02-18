@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pylib.typing import Any
 from pylib import json
-from pylib.path import Path
+from pylib.pathlib import Path
 
 
 def _deep_merge(dst: dict[str, Any], src: dict[str, Any]) -> dict[str, Any]:

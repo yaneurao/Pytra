@@ -5,7 +5,7 @@
 
 ## 1. Python標準モジュール代替（互換層）
 
-- `pylib.path`（`pathlib` 代替）
+- `pylib.pathlib`（`pathlib` 代替）
   - class: `Path`
   - `Path` の主なメンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve()`, `exists()`, `mkdir(parents=False, exist_ok=False)`, `read_text()`, `write_text()`, `glob()`, `cwd()`
 - `pylib.json`（`json` 代替）

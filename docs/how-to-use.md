@@ -20,13 +20,9 @@ Windows では次の読み替えを行ってください。
 ## 最初に確認する制約
 
 - Python の標準ライブラリ（`json`, `pathlib`, `sys`, `typing` など）を直接 `import` してはいけません。
-- `import` できるのは `src/pylib/` にあるモジュールのみです。
-- サポート済みモジュール一覧と API は [`docs/pylib-modules.md`](docs/pylib-modules.md) を参照してください。
+- `import` できるのは `src/pylib/` にあるモジュールのみです。Pythonの標準ライブラリの代替ライブラリも、すべてここに入っています。
+- サポート済みモジュール一覧と API は [`pylib-modules.md`](pylib-modules.md) を参照してください。
 
-## `src/pylib/` の使い方（概要）
-
-`src/pylib/` は、トランスパイル対象コードから import するための標準ライブラリ層です。  
-詳細な公開 API 一覧は `docs/pylib-modules.md` を参照してください。
 
 ## トランスパイラの使い方
 
@@ -374,7 +370,7 @@ name_by_id: dict[int, str] = {1: "alice"}
 
 ```python
 from pylib import png
-from pylib.path import Path
+from pylib.pathlib import Path
 ```
 
-上記を変換する場合、対象言語側でも `pylib.png` / `pylib.path` 相当の実装が必要です（原則として `src/pylib/*.py` からトランスパイラで生成します）。
+上記を変換する場合、対象言語側でも `pylib.png` / `pylib.pathlib` 相当の実装が必要です（原則として `src/pylib/*.py` からトランスパイラで生成します）。

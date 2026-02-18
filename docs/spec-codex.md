@@ -52,4 +52,4 @@
 - selfhost のビルドログは `stdout` 側に出ることがあるため、`> selfhost/build.all.log 2>&1` で統合取得する。
 - selfhost 対象コードでは、Python 専用表現が生成 C++ に漏れないことを確認する（例: `super().__init__`, Python 風継承表記）。
 - ランタイム変更時は `test/unit/test_py2cpp_features.py` の実行回帰に加え、selfhost の再生成・再コンパイル結果も確認する。
-- selfhost 対象の Python コードでは、標準モジュールの直接 import を極力避け、`src/pylib/` の shim を使う（例: `pylib.json`, `pylib.path`, `pylib.sys`, `pylib.typing`）。
+- selfhost 対象の Python コードでは、標準モジュールの直接 import を極力避け、`src/pylib/` の shim を使う（例: `pylib.json`, `pylib.pathlib`, `pylib.sys`, `pylib.typing`）。
