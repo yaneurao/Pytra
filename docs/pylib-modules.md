@@ -16,6 +16,13 @@
 - `pylib.typing`（`typing` 代替）
   - 型エイリアス: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar(name)`
+- `pylib.argparse`（`argparse` 代替・最小実装）
+  - class: `ArgumentParser`, `Namespace`
+  - `ArgumentParser` の主な機能: `add_argument(...)`, `parse_args(...)`
+- `pylib.re`（`re` 代替・最小実装）
+  - 定数: `S`
+  - class: `Match`
+  - 関数: `match(pattern, text, flags=0)`, `sub(pattern, repl, text, flags=0)`
 
 ## 2. Pytra独自モジュール
 
@@ -30,4 +37,3 @@
   - 関数: `convert_source_to_east(...)`, `convert_source_to_east_self_hosted(...)`, `convert_source_to_east_with_backend(...)`, `convert_path(...)`, `render_east_human_cpp(...)`, `main()`
 - `pylib.east_io`
   - 関数: `extract_module_leading_trivia(source)`, `load_east_from_path(input_path, parser_backend="self_hosted")`
-

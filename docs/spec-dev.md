@@ -33,6 +33,13 @@
 - `pylib.typing`
   - 型名: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar`
+- `pylib.argparse`
+  - クラス: `ArgumentParser`, `Namespace`
+  - 関数: `ArgumentParser.add_argument`, `ArgumentParser.parse_args`
+- `pylib.re`
+  - 定数: `S`
+  - クラス: `Match`
+  - 関数: `match`, `sub`
 - `pylib.png`
   - 関数: `write_rgb_png`
 - `pylib.gif`

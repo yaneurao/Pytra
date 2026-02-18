@@ -3,9 +3,9 @@
 
 from __future__ import annotations
 
-import argparse
-import json
-import re
+from pylib import argparse
+from pylib import json
+from pylib import re
 from dataclasses import dataclass
 from pylib.typing import Any
 from pylib.pathlib import Path

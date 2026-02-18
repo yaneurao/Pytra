@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import argparse
+from pylib import argparse
 from pylib.typing import Iterable
 
 

@@ -2,7 +2,7 @@
 """EAST CLI entrypoint."""
 from __future__ import annotations
 
-import argparse
+from pylib import argparse
 
 from .core import EastBuildError, convert_path
 from .human import _dump_json, render_east_human_cpp

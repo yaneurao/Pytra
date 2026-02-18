@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass
 from pathlib import Path
-import re
+from pylib import re
 
 from .js_ts_native_transpiler import JsTsConfig, JsTsNativeTranspiler
 
@@ -98,4 +98,3 @@ class SwiftKotlinNodeTranspiler:
         if normalized[0].isdigit():
             normalized = f"pytra_{normalized}"
         return normalized
-
