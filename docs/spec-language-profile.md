@@ -130,30 +130,54 @@ EAST 演算子 -> 出力トークン。
 }
 ```
 
-### 4.5 `naming`
+### 4.5 `syntax.identifiers`
 
 予約語回避、接頭辞、識別子規則。
 
 ```json
 {
-  "naming": {
-    "reserved": ["class", "template"],
-    "rename_prefix": "__py_"
+  "syntax": {
+    "identifiers": {
+      "reserved_words": ["class", "template"],
+      "rename_prefix": "__py_"
+    }
   }
 }
 ```
+
+### 4.6 `hooks`
+
+profile で表現しにくい分岐だけを hooks へ寄せます。
+
+```json
+{
+  "hooks": {
+    "module": "runtime.cpp.hooks.cpp_hooks",
+    "class": "CppHooks"
+  }
+}
+```
+
+`module` は言語固有側（例: `src/runtime/cpp/hooks/`）に配置し、`src/common/` へは置きません。
 
 ## 5. Hooks 仕様
 
 `profile.hooks` は JSON で表現しにくい分岐のみ担当します。
 
-- `on_render_call(node, rendered_args, context)`
-- `on_render_binop(node, left, right, context)`
-- `on_emit_stmt(node, context)`
+- `on_emit_stmt(emitter, stmt)`:
+  - `True` を返すと既定の文出力をスキップ
+- `on_render_call(emitter, call_node, func_node, rendered_args, rendered_kwargs)`
+- `on_render_binop(emitter, binop_node, left, right)`
 
 戻り値:
 - `None`: 既定ロジック継続
 - `str`: その文字列を採用
+
+### 5.1 実装位置（C++）
+
+```text
+src/runtime/cpp/hooks/cpp_hooks.py
+```
 
 ## 6. 妥当性ルール
 

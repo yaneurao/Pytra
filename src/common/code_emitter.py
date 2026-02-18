@@ -17,7 +17,7 @@ class CodeEmitter:
         """共通の出力状態と一時変数カウンタを初期化する。"""
         self.doc = east_doc
         self.profile = profile if isinstance(profile, dict) else {}
-        self.hooks = hooks if isinstance(hooks, dict) else {}
+        self.hooks = hooks if hooks is not None else {}
         self.lines: list[str] = []
         self.indent = 0
         self.tmp_id = 0
@@ -38,6 +38,50 @@ class CodeEmitter:
     def emit_stmt_list(self, stmts: list[Any]) -> None:
         for stmt in stmts:
             self.emit_stmt(stmt)  # type: ignore[attr-defined]
+
+    def _resolve_hook_callable(self, name: str) -> Any:
+        """hooks から指定名の callable を取り出す。無ければ None。"""
+        h = self.hooks
+        if isinstance(h, dict):
+            cand = h.get(name)
+            if callable(cand):
+                return cand
+            return None
+        cand = getattr(h, name, None)
+        if callable(cand):
+            return cand
+        return None
+
+    def call_hook(self, name: str, *args: Any, **kwargs: Any) -> Any:
+        """hooks の指定フックを呼び出す。未定義時は None を返す。"""
+        fn = self._resolve_hook_callable(name)
+        if fn is None:
+            return None
+        return fn(*args, **kwargs)
+
+    def profile_get(self, path: list[str], default_value: Any) -> Any:
+        """profile からネストキーを取得する。未定義時は既定値。"""
+        cur: Any = self.profile
+        for key in path:
+            if not isinstance(cur, dict) or key not in cur:
+                return default_value
+            cur = cur[key]
+        return cur
+
+    def syntax_text(self, key: str, default_value: str) -> str:
+        """profile.syntax からテンプレート文字列を取得する。"""
+        v = self.profile_get(["syntax", key], default_value)
+        if isinstance(v, str) and v != "":
+            return v
+        return default_value
+
+    def syntax_line(self, key: str, default_value: str, **kwargs: Any) -> str:
+        """profile.syntax のテンプレートを format 展開して返す。"""
+        text = self.syntax_text(key, default_value)
+        out = text
+        for k, v in kwargs.items():
+            out = out.replace("{" + str(k) + "}", str(v))
+        return out
 
     def next_tmp(self, prefix: str = "__tmp") -> str:
         """衝突しない一時変数名を生成する。"""

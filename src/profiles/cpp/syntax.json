@@ -2,11 +2,17 @@
   "syntax": {
     "comment_prefix": "//",
     "block_comment": "c",
+    "block_close": "}",
+    "if_no_brace": "if ({cond})",
+    "else_no_brace": "else",
     "if_open": "if ({cond}) {",
     "else_open": "} else {",
     "while_open": "while ({cond}) {",
     "function_open": "{ret} {name}({args}) {",
-    "class_open": "struct {name} : public PyObj {",
+    "ctor_open": "{name}({args}) {",
+    "dtor_open": "~{name}() {",
+    "class_open": "struct {name}{base_txt} {",
+    "class_close": "};",
     "identifiers": {
       "reserved_words": [
         "alignas",

@@ -18,6 +18,7 @@ from common.east_io import extract_module_leading_trivia as extract_module_leadi
 from common.east_io import load_east_from_path
 from common.language_profile import load_language_profile
 from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
+from runtime.cpp.hooks.cpp_hooks import CppHooks
 
 CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 
@@ -155,6 +156,19 @@ def load_cpp_type_map() -> dict[str, str]:
     return out
 
 
+def load_cpp_hooks(profile: dict[str, Any] | None = None) -> Any:
+    """C++ 用 hooks オブジェクトを profile 定義に基づいて生成する。"""
+    payload = profile if isinstance(profile, dict) else load_cpp_profile()
+    hooks = _safe_nested_dict(payload, ["hooks"]) if isinstance(payload, dict) else None
+    if hooks is None:
+        return {}
+    module_name = hooks.get("module")
+    class_name = hooks.get("class")
+    if module_name == "runtime.cpp.hooks.cpp_hooks" and class_name == "CppHooks":
+        return CppHooks()
+    return {}
+
+
 def _safe_nested_str_list(obj: Any, keys: list[str]) -> list[str] | None:
     cur: Any = obj
     for key in keys:
@@ -278,7 +292,8 @@ class CppEmitter(CodeEmitter):
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
         profile = load_cpp_profile()
-        CodeEmitter.__init__(self, east_doc, profile=profile, hooks={})
+        hooks = load_cpp_hooks(profile)
+        CodeEmitter.__init__(self, east_doc, profile=profile, hooks=hooks)
         self.negative_index_mode = negative_index_mode
         self.emit_main = emit_main
         # NOTE:
@@ -676,6 +691,9 @@ class CppEmitter(CodeEmitter):
         if stmt_node is None:
             return
         stmt = stmt_node
+        hook_stmt = self.call_hook("on_emit_stmt", self, stmt)
+        if hook_stmt is True:
+            return
         kind = stmt.get("kind")
         self.emit_leading_comments(stmt)
         if kind in {"Import", "ImportFrom"}:
@@ -833,14 +851,14 @@ class CppEmitter(CodeEmitter):
             body_stmts = [s for s in stmt.get("body", []) if isinstance(s, dict)]
             else_stmts = [s for s in stmt.get("orelse", []) if isinstance(s, dict)]
             if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
-                self.emit(f"if ({self.render_cond(stmt.get('test'))})")
+                self.emit(self.syntax_line("if_no_brace", "if ({cond})", cond=self.render_cond(stmt.get("test"))))
                 self.indent += 1
                 self.scope_stack.append(set())
                 self.emit_stmt(body_stmts[0])
                 self.scope_stack.pop()
                 self.indent -= 1
                 if len(else_stmts) > 0:
-                    self.emit("else")
+                    self.emit(self.syntax_text("else_no_brace", "else"))
                     self.indent += 1
                     self.scope_stack.append(set())
                     self.emit_stmt(else_stmts[0])
@@ -848,31 +866,31 @@ class CppEmitter(CodeEmitter):
                     self.indent -= 1
                 return
 
-            self.emit(f"if ({self.render_cond(stmt.get('test'))}) {{")
+            self.emit(self.syntax_line("if_open", "if ({cond}) {", cond=self.render_cond(stmt.get("test"))))
             self.indent += 1
             self.scope_stack.append(set())
             self.emit_stmt_list(body_stmts)
             self.scope_stack.pop()
             self.indent -= 1
             if len(else_stmts) > 0:
-                self.emit("} else {")
+                self.emit(self.syntax_text("else_open", "} else {"))
                 self.indent += 1
                 self.scope_stack.append(set())
                 self.emit_stmt_list(else_stmts)
                 self.scope_stack.pop()
                 self.indent -= 1
-                self.emit("}")
+                self.emit(self.syntax_text("block_close", "}"))
             else:
-                self.emit("}")
+                self.emit(self.syntax_text("block_close", "}"))
             return
         if kind == "While":
-            self.emit(f"while ({self.render_cond(stmt.get('test'))}) {{")
+            self.emit(self.syntax_line("while_open", "while ({cond}) {", cond=self.render_cond(stmt.get("test"))))
             self.indent += 1
             self.scope_stack.append(set())
             self.emit_stmt_list(list(stmt.get("body", [])))
             self.scope_stack.pop()
             self.indent -= 1
-            self.emit("}")
+            self.emit(self.syntax_text("block_close", "}"))
             return
         if kind == "ForRange":
             self.emit_for_range(stmt)
@@ -1190,11 +1208,19 @@ class CppEmitter(CodeEmitter):
                 params.append(f"{ct} {n}")
             fn_scope.add(n)
         if in_class and name == "__init__" and self.current_class_name is not None:
-            self.emit(f"{self.current_class_name}({', '.join(params)}) {{")
+            self.emit(self.syntax_line("ctor_open", "{name}({args}) {", name=self.current_class_name, args=", ".join(params)))
         elif in_class and name == "__del__" and self.current_class_name is not None:
-            self.emit(f"~{self.current_class_name}() {{")
+            self.emit(self.syntax_line("dtor_open", "~{name}() {", name=self.current_class_name))
         else:
-            self.emit(f"{ret} {name}({', '.join(params)}) {{")
+            self.emit(
+                self.syntax_line(
+                    "function_open",
+                    "{ret} {name}({args}) {",
+                    ret=ret,
+                    name=str(name),
+                    args=", ".join(params),
+                )
+            )
         self.indent += 1
         self.scope_stack.append(fn_scope)
         docstring = stmt.get("docstring")
@@ -1203,7 +1229,7 @@ class CppEmitter(CodeEmitter):
         self.emit_stmt_list(list(stmt.get("body", [])))
         self.scope_stack.pop()
         self.indent -= 1
-        self.emit("}")
+        self.emit(self.syntax_text("block_close", "}"))
 
     def emit_class(self, stmt: dict[str, Any]) -> None:
         """クラス定義ノードを C++ クラス/struct として出力する。"""
@@ -1219,7 +1245,7 @@ class CppEmitter(CodeEmitter):
         if gc_managed and not base_is_gc:
             bases.append("public PyObj")
         base_txt = "" if len(bases) == 0 else " : " + ", ".join(bases)
-        self.emit(f"struct {name}{base_txt} {{")
+        self.emit(self.syntax_line("class_open", "struct {name}{base_txt} {", name=str(name), base_txt=base_txt))
         self.indent += 1
         prev_class = self.current_class_name
         prev_fields = self.current_class_fields
@@ -1291,7 +1317,7 @@ class CppEmitter(CodeEmitter):
         self.current_class_fields = prev_fields
         self.current_class_static_fields = prev_static_fields
         self.indent -= 1
-        self.emit("};")
+        self.emit(self.syntax_text("class_close", "};"))
 
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
@@ -1391,6 +1417,16 @@ class CppEmitter(CodeEmitter):
                 kname = k.get("arg")
                 if isinstance(kname, str):
                     kw[kname] = self.render_expr(k.get("value"))
+            hook_call = self.call_hook(
+                "on_render_call",
+                self,
+                expr,
+                fn,
+                list(args),
+                dict(kw),
+            )
+            if isinstance(hook_call, str) and hook_call != "":
+                return hook_call
             if expr.get("lowered_kind") == "BuiltinCall":
                 runtime_call = expr.get("runtime_call")
                 builtin_name = expr.get("builtin_name")
@@ -1738,6 +1774,15 @@ class CppEmitter(CodeEmitter):
             op_name_str = str(op_name)
             left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
             right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
+            hook_binop = self.call_hook(
+                "on_render_binop",
+                self,
+                expr,
+                left,
+                right,
+            )
+            if isinstance(hook_binop, str) and hook_binop != "":
+                return hook_binop
             if op_name == "Div":
                 # Prefer direct C++ division when float is involved (or EAST already injected casts).
                 # Keep py_div fallback for int/int Python semantics.

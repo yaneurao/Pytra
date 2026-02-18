@@ -28,6 +28,26 @@ class _DummyEmitter(CodeEmitter):
         return "<?>"
 
 
+class _DummyHooks:
+    def on_emit_stmt(self, emitter: Any, stmt: Any) -> bool | None:
+        if isinstance(stmt, dict) and stmt.get("kind") == "Pass":
+            emitter.emit("// hooked")
+            return True
+        return None
+
+    def on_render_call(
+        self,
+        emitter: Any,
+        call_node: dict[str, Any],
+        func_node: dict[str, Any],
+        rendered_args: list[str],
+        rendered_kwargs: dict[str, str],
+    ) -> str | None:
+        if func_node.get("kind") == "Name" and func_node.get("id") == "hooked":
+            return "hooked_call()"
+        return None
+
+
 class CodeEmitterTest(unittest.TestCase):
     def test_emit_and_emit_stmt_list_and_next_tmp(self) -> None:
         em = _DummyEmitter({})
@@ -227,6 +247,35 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertTrue(em.is_forbidden_object_receiver_type("int64|object|None"))
         self.assertTrue(em.is_forbidden_object_receiver_type("str|any"))
         self.assertFalse(em.is_forbidden_object_receiver_type("str|int64|None"))
+
+    def test_profile_syntax_helpers(self) -> None:
+        em = CodeEmitter(
+            {},
+            profile={
+                "syntax": {
+                    "if_open": "IF({cond})",
+                }
+            },
+        )
+        self.assertEqual(em.syntax_text("if_open", "if ({cond}) {"), "IF({cond})")
+        self.assertEqual(em.syntax_line("if_open", "if ({cond}) {", cond="x"), "IF(x)")
+        self.assertEqual(em.syntax_line("missing", "while ({cond}) {", cond="y"), "while (y) {")
+
+    def test_hook_invocation_helpers(self) -> None:
+        hooks = _DummyHooks()
+        em = _DummyEmitter({}, hooks=hooks)
+        stmt_handled = em.call_hook("on_emit_stmt", em, {"kind": "Pass"})
+        self.assertTrue(stmt_handled)
+        self.assertIn("// hooked", em.lines)
+        hook_call = em.call_hook(
+            "on_render_call",
+            em,
+            {"kind": "Call"},
+            {"kind": "Name", "id": "hooked"},
+            [],
+            {},
+        )
+        self.assertEqual(hook_call, "hooked_call()")
 
 
 if __name__ == "__main__":
