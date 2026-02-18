@@ -128,17 +128,17 @@ class BaseEmitter:
             return any(p in {"Any", "object", "any"} for p in parts if p != "None")
         return False
 
-    def is_list_type(self, t: Any) -> bool:
-        return isinstance(t, str) and t.startswith("list[")
+    def is_list_type(self, t: str) -> bool:
+        return t.startswith("list[")
 
-    def is_set_type(self, t: Any) -> bool:
-        return isinstance(t, str) and t.startswith("set[")
+    def is_set_type(self, t: str) -> bool:
+        return t.startswith("set[")
 
-    def is_dict_type(self, t: Any) -> bool:
-        return isinstance(t, str) and t.startswith("dict[")
+    def is_dict_type(self, t: str) -> bool:
+        return t.startswith("dict[")
 
-    def is_indexable_sequence_type(self, t: Any) -> bool:
-        return isinstance(t, str) and (t.startswith("list[") or t in {"str", "bytes", "bytearray"})
+    def is_indexable_sequence_type(self, t: str) -> bool:
+        return t.startswith("list[") or t in {"str", "bytes", "bytearray"}
 
 
 CPP_HEADER = """#include "cpp_module/py_runtime.h"
@@ -294,8 +294,8 @@ class CppEmitter(BaseEmitter):
             i += 1
         return True
 
-    def _is_negative_const_index(self, node: Any) -> bool:
-        if not isinstance(node, dict):
+    def _is_negative_const_index(self, node: dict[str, Any] | None) -> bool:
+        if node is None:
             return False
         kind = str(node.get("kind", ""))
         if kind == "Constant":
@@ -321,8 +321,8 @@ class CppEmitter(BaseEmitter):
                         return False
         return False
 
-    def _is_redundant_super_init_call(self, expr: Any) -> bool:
-        if not isinstance(expr, dict) or expr.get("kind") != "Call":
+    def _is_redundant_super_init_call(self, expr: dict[str, Any] | None) -> bool:
+        if expr is None or expr.get("kind") != "Call":
             return False
         func = expr.get("func")
         if not isinstance(func, dict) or func.get("kind") != "Attribute":
@@ -340,6 +340,9 @@ class CppEmitter(BaseEmitter):
         args = expr.get("args")
         kws = expr.get("keywords")
         return isinstance(args, list) and len(args) == 0 and isinstance(kws, list) and len(kws) == 0
+
+    def _is_std_runtime_call(self, runtime_call: str) -> bool:
+        return runtime_call.startswith("std::")
 
     def transpile(self) -> str:
         body: list[dict[str, Any]] = []
@@ -447,7 +450,7 @@ class CppEmitter(BaseEmitter):
             i -= 1
         return False
 
-    def render_cond(self, expr: Any) -> str:
+    def render_cond(self, expr: dict[str, Any] | None) -> str:
         t: str = self.get_expr_type(expr)
         body = self._strip_outer_parens(self.render_expr(expr))
         if t in {"bool"}:
@@ -510,7 +513,7 @@ class CppEmitter(BaseEmitter):
             return rendered_expr
         return f"static_cast<{self.cpp_type(to_type)}>({rendered_expr})"
 
-    def render_to_string(self, expr: Any) -> str:
+    def render_to_string(self, expr: dict[str, Any] | None) -> str:
         rendered = self.render_expr(expr)
         t0 = self.get_expr_type(expr)
         t = t0 if isinstance(t0, str) else ""
@@ -522,7 +525,7 @@ class CppEmitter(BaseEmitter):
             return f"std::to_string({rendered})"
         return f"py_to_string({rendered})"
 
-    def render_expr_as_any(self, expr: Any) -> str:
+    def render_expr_as_any(self, expr: dict[str, Any] | None) -> str:
         if not isinstance(expr, dict):
             return f"make_object({self.render_expr(expr)})"
         kind = str(self.any_dict_get(expr, "kind", ""))
@@ -546,7 +549,7 @@ class CppEmitter(BaseEmitter):
             return f"make_object(list<object>{{{vals}}})"
         return f"make_object({self.render_expr(expr)})"
 
-    def render_boolop(self, expr: Any, force_value_select: bool = False) -> str:
+    def render_boolop(self, expr: dict[str, Any] | None, force_value_select: bool = False) -> str:
         if not isinstance(expr, dict):
             return "false"
         values = self.any_dict_get(expr, "values", [])
@@ -636,8 +639,8 @@ class CppEmitter(BaseEmitter):
             call = f"std::{fn}<{t}>({call}, {a})"
         return call
 
-    def emit_stmt(self, stmt: Any) -> None:
-        if not isinstance(stmt, dict):
+    def emit_stmt(self, stmt: dict[str, Any] | None) -> None:
+        if stmt is None:
             return
         kind = stmt.get("kind")
         self.emit_leading_comments(stmt)
@@ -884,8 +887,8 @@ class CppEmitter(BaseEmitter):
 
         self.emit(f"/* unsupported stmt kind: {kind} */")
 
-    def _can_omit_braces_for_single_stmt(self, stmts: list[Any]) -> bool:
-        filtered = [s for s in stmts if isinstance(s, dict)]
+    def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
+        filtered: list[dict[str, Any]] = [s for s in stmts if isinstance(s, dict)]
         if len(filtered) != 1:
             return False
         k = filtered[0].get("kind")
@@ -955,8 +958,8 @@ class CppEmitter(BaseEmitter):
                 rval = f"make_object({rval})"
         self.emit(f"{texpr} = {rval};")
 
-    def is_plain_name_expr(self, expr: Any) -> bool:
-        if not isinstance(expr, dict):
+    def is_plain_name_expr(self, expr: dict[str, Any] | None) -> bool:
+        if expr is None:
             return False
         return expr.get("kind") == "Name"
 
@@ -969,8 +972,8 @@ class CppEmitter(BaseEmitter):
             return False
         return ra.strip() == rb.strip()
 
-    def render_lvalue(self, expr: Any) -> str:
-        if not isinstance(expr, dict):
+    def render_lvalue(self, expr: dict[str, Any] | None) -> str:
+        if expr is None:
             return self.render_expr(expr)
         node = expr
         if node.get("kind") != "Subscript":
@@ -1236,13 +1239,9 @@ class CppEmitter(BaseEmitter):
         self.indent -= 1
         self.emit("};")
 
-    def render_expr(self, expr: Any) -> str:
+    def render_expr(self, expr: dict[str, Any] | None) -> str:
         if expr is None:
             return "/* none */"
-        if not isinstance(expr, dict):
-            if isinstance(expr, str):
-                return expr
-            return "/* non-expr */"
         kind = expr.get("kind")
 
         if kind == "Name":
@@ -1481,7 +1480,7 @@ class CppEmitter(BaseEmitter):
                 if runtime_call == "dict.values":
                     owner = self.render_expr(fn.get("value"))
                     return f"py_dict_values({owner})"
-                if isinstance(runtime_call, str) and runtime_call.startswith("std::"):
+                if isinstance(runtime_call, str) and self._is_std_runtime_call(runtime_call):
                     return f"{runtime_call}({', '.join(args)})"
                 if builtin_name == "bytes":
                     return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
@@ -2001,8 +2000,8 @@ class CppEmitter(BaseEmitter):
             return rep
         return f"/* unsupported expr: {kind} */"
 
-    def emit_bridge_comment(self, expr: Any) -> None:
-        if not isinstance(expr, dict) or expr.get("kind") != "Call":
+    def emit_bridge_comment(self, expr: dict[str, Any] | None) -> None:
+        if expr is None or expr.get("kind") != "Call":
             return
         fn = expr.get("func")
         if not isinstance(fn, dict):
@@ -2034,8 +2033,6 @@ class CppEmitter(BaseEmitter):
             self.bridge_comment_emitted.add(key)
 
     def cpp_type(self, east_type: Any) -> str:
-        if not isinstance(east_type, str):
-            return "auto"
         east_type = self.normalize_type_name(east_type)
         if east_type == "":
             return "auto"
