@@ -390,21 +390,27 @@ class CppEmitter(CodeEmitter):
         expr_dict = self.any_to_dict_or_empty(expr)
         if len(expr_dict) == 0:
             return "false"
-        values_raw = expr_dict["values"] if "values" in expr_dict else []
-        values = values_raw if isinstance(values_raw, list) else []
+        values = self._dict_stmt_list(expr_dict.get("values"))
         if len(values) == 0:
             return "false"
         value_texts: list[str] = []
         for v in values:
-            vd = self.any_to_dict(v)
-            if vd is not None:
-                value_texts.append(self.render_expr(vd))
+            value_texts.append(self.render_expr(v))
         if len(value_texts) == 0:
             return "false"
         op_name = self.any_dict_get_str(expr_dict, "op", "")
         op = "&&" if op_name == "And" else "||"
         wrapped_values = [f"({txt})" for txt in value_texts]
         return f" {op} ".join(wrapped_values)
+
+    def _dict_stmt_list(self, raw: Any) -> list[dict[str, Any]]:
+        """動的値から `list[dict]` を安全に取り出す。"""
+        out: list[dict[str, Any]] = []
+        items = self.any_to_list(raw)
+        for item in items:
+            if isinstance(item, dict):
+                out.append(item)
+        return out
 
     def _binop_precedence(self, op_name: str) -> int:
         """二項演算子の優先順位を返す。"""
@@ -472,7 +478,7 @@ class CppEmitter(CodeEmitter):
             return f"({rendered})"
         return rendered
 
-    def render_minmax(self, fn: str, args: list[str], out_type: str | None) -> str:
+    def render_minmax(self, fn: str, args: list[str], out_type: Any) -> str:
         """min/max 呼び出しを型情報付きで C++ 式へ変換する。"""
         if len(args) == 0:
             return "/* invalid min/max */"
@@ -494,8 +500,8 @@ class CppEmitter(CodeEmitter):
 
     def _emit_if_stmt(self, stmt: dict[str, Any]) -> None:
         """If ノードを出力する。"""
-        body_stmts = [s for s in stmt.get("body", []) if isinstance(s, dict)]
-        else_stmts = [s for s in stmt.get("orelse", []) if isinstance(s, dict)]
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        else_stmts = self._dict_stmt_list(stmt.get("orelse"))
         if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
             self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": self.render_cond(stmt.get("test"))}))
             self.indent += 1
@@ -534,14 +540,14 @@ class CppEmitter(CodeEmitter):
         self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
         self.indent += 1
         self.scope_stack.append(set())
-        self.emit_stmt_list(list(stmt.get("body", [])))
+        self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
         self.scope_stack.pop()
         self.indent -= 1
         self.emit(self.syntax_text("block_close", "}"))
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
-        hook_stmt = self.hook_on_emit_stmt(self, stmt)
+        hook_stmt = self.hook_on_emit_stmt(stmt)
         if hook_stmt is True:
             return
         kind = stmt.get("kind")
@@ -562,9 +568,12 @@ class CppEmitter(CodeEmitter):
             value = value_raw if isinstance(value_raw, dict) else None
             if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
                 self.emit_block_comment(str(value.get("value")))
-            elif self._is_redundant_super_init_call(value):
+            elif isinstance(value, dict) and self._is_redundant_super_init_call(value):
                 self.emit("/* super().__init__ omitted: base ctor is called implicitly */")
             else:
+                if not isinstance(value, dict):
+                    self.emit("/* unsupported expr */")
+                    return
                 self.emit_bridge_comment(value)
                 rendered = self.render_expr(value)
                 # Guard against stray identifier-only expression statements (e.g. "r;").
@@ -717,8 +726,8 @@ class CppEmitter(CodeEmitter):
                 self.emit(f"throw {self.render_expr(exc)};")
             return
         if kind == "Try":
-            finalbody = list(stmt.get("finalbody", []))
-            handlers = list(stmt.get("handlers", []))
+            finalbody = self._dict_stmt_list(stmt.get("finalbody"))
+            handlers = self._dict_stmt_list(stmt.get("handlers"))
             has_effective_finally = any(isinstance(s, dict) and s.get("kind") != "Pass" for s in finalbody)
             if has_effective_finally:
                 self.emit("{")
@@ -730,14 +739,14 @@ class CppEmitter(CodeEmitter):
                 self.indent -= 1
                 self.emit("});")
             if len(handlers) == 0:
-                self.emit_stmt_list(list(stmt.get("body", [])))
+                self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
                 if has_effective_finally:
                     self.indent -= 1
                     self.emit("}")
                 return
             self.emit("try {")
             self.indent += 1
-            self.emit_stmt_list(list(stmt.get("body", [])))
+            self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
             self.indent -= 1
             self.emit("}")
             for h in handlers:
@@ -745,7 +754,7 @@ class CppEmitter(CodeEmitter):
                 name = name_raw if isinstance(name_raw, str) and name_raw != "" else "ex"
                 self.emit(f"catch (const std::exception& {name}) {{")
                 self.indent += 1
-                self.emit_stmt_list(list(h.get("body", [])))
+                self.emit_stmt_list(self._dict_stmt_list(h.get("body")))
                 self.indent -= 1
                 self.emit("}")
             if has_effective_finally:
@@ -769,16 +778,11 @@ class CppEmitter(CodeEmitter):
         k = filtered[0].get("kind")
         return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
 
-    def emit_assign(self, stmt: Any) -> None:
+    def emit_assign(self, stmt: dict[str, Any]) -> None:
         """代入文（通常代入/タプル代入）を C++ へ出力する。"""
-        stmt_node = self.any_to_dict(stmt)
-        if stmt_node is None:
-            self.emit("/* invalid assign */")
-            return
-        stmt = stmt_node
         target = stmt.get("target")
         value = stmt.get("value")
-        if target is None or value is None:
+        if not isinstance(target, dict) or not isinstance(value, dict):
             self.emit("/* invalid assign */")
             return
         if target.get("kind") == "Tuple":
@@ -907,7 +911,7 @@ class CppEmitter(CodeEmitter):
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
-        body_stmts = list(stmt.get("body", []))
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
         omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         mode = stmt.get("range_mode")
         if mode == "ascending":
@@ -956,7 +960,7 @@ class CppEmitter(CodeEmitter):
             }
             self.emit_for_range(pseudo)
             return
-        body_stmts = list(stmt.get("body", []))
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
         omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         t = self.render_expr(target)
         it = self.render_expr(iter_expr)
@@ -1044,7 +1048,7 @@ class CppEmitter(CodeEmitter):
         docstring = stmt.get("docstring")
         if isinstance(docstring, str) and docstring != "":
             self.emit_block_comment(docstring)
-        self.emit_stmt_list(list(stmt.get("body", [])))
+        self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
         self.scope_stack.pop()
         self.indent -= 1
         self.emit(self.syntax_text("block_close", "}"))
@@ -1072,7 +1076,7 @@ class CppEmitter(CodeEmitter):
         self.current_class_name = str(name)
         self.current_class_base_name = str(base) if isinstance(base, str) else ""
         self.current_class_fields = dict(stmt.get("field_types", {}))
-        class_body = list(stmt.get("body", []))
+        class_body = self._dict_stmt_list(stmt.get("body"))
         static_field_types: dict[str, str] = {}
         static_field_defaults: dict[str, str] = {}
         instance_field_defaults: dict[str, str] = {}
@@ -1162,12 +1166,7 @@ class CppEmitter(CodeEmitter):
         op_name_str = str(op_name)
         left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
         right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
-        hook_binop = self.hook_on_render_binop(
-            self,
-            expr,
-            left,
-            right,
-        )
+        hook_binop = self.hook_on_render_binop(expr, left, right)
         if isinstance(hook_binop, str) and hook_binop != "":
             return hook_binop
         if op_name == "Div":
@@ -1643,13 +1642,7 @@ class CppEmitter(CodeEmitter):
                 kname = k.get("arg")
                 if isinstance(kname, str):
                     kw[kname] = self.render_expr(k.get("value"))
-            hook_call = self.hook_on_render_call(
-                self,
-                expr,
-                fn,
-                list(args),
-                dict(kw),
-            )
+            hook_call = self.hook_on_render_call(expr, fn, list(args), dict(kw))
             if isinstance(hook_call, str) and hook_call != "":
                 return hook_call
             if expr.get("lowered_kind") == "BuiltinCall":
