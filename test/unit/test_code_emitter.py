@@ -29,15 +29,14 @@ class _DummyEmitter(CodeEmitter):
 
 
 class _HookedEmitter(_DummyEmitter):
-    def hook_on_emit_stmt(self, emitter: Any, stmt: dict[str, Any]) -> Any:
+    def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> Any:
         if isinstance(stmt, dict) and stmt.get("kind") == "Pass":
-            emitter.emit("// hooked")
+            self.emit("// hooked")
             return True
         return None
 
     def hook_on_render_call(
         self,
-        emitter: Any,
         call_node: dict[str, Any],
         func_node: dict[str, Any],
         rendered_args: list[str],
@@ -81,6 +80,22 @@ class CodeEmitterTest(unittest.TestCase):
 
         self.assertEqual(em.any_to_str("abc"), "abc")
         self.assertEqual(em.any_to_str(10), "")
+
+    def test_any_helpers_boundary_cases(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.any_to_dict_or_empty({"k": 1}), {"k": 1})
+        self.assertEqual(em.any_to_dict_or_empty(None), {})
+        self.assertEqual(em.any_to_dict_or_empty([]), {})
+        self.assertEqual(em.any_to_dict_or_empty("x"), {})
+
+        self.assertEqual(em.any_to_list(["a", 1]), ["a", 1])
+        self.assertEqual(em.any_to_list(None), [])
+        self.assertEqual(em.any_to_list({"x": 1}), [])
+
+        self.assertEqual(em.any_dict_get_str({"x": "ok"}, "x", "ng"), "ok")
+        self.assertEqual(em.any_dict_get_str({"x": 1}, "x", "ng"), "ng")
+        self.assertEqual(em.any_dict_get_int({"x": 2}, "x", 9), 2)
+        self.assertEqual(em.any_dict_get_int({"x": "2"}, "x", 9), 9)
 
     def test_node_helpers(self) -> None:
         em = CodeEmitter({})
@@ -263,11 +278,10 @@ class CodeEmitterTest(unittest.TestCase):
 
     def test_hook_invocation_helpers(self) -> None:
         em = _HookedEmitter({})
-        stmt_handled = em.hook_on_emit_stmt(em, {"kind": "Pass"})
+        stmt_handled = em.hook_on_emit_stmt({"kind": "Pass"})
         self.assertTrue(stmt_handled)
         self.assertIn("// hooked", em.lines)
         hook_call = em.hook_on_render_call(
-            em,
             {"kind": "Call"},
             {"kind": "Name", "id": "hooked"},
             [],

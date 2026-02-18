@@ -55,13 +55,12 @@ class CodeEmitter:
         for stmt in stmts:
             self.emit_stmt(stmt)  # type: ignore[attr-defined]
 
-    def hook_on_emit_stmt(self, emitter: Any, stmt: dict[str, Any]) -> bool | None:
+    def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:
         """`on_emit_stmt` フック。既定では何もしない。"""
         return None
 
     def hook_on_render_call(
         self,
-        emitter: Any,
         call_node: dict[str, Any],
         func_node: dict[str, Any],
         rendered_args: list[str],
@@ -72,7 +71,6 @@ class CodeEmitter:
 
     def hook_on_render_binop(
         self,
-        emitter: Any,
         binop_node: dict[str, Any],
         left: str,
         right: str,
