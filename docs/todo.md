@@ -34,9 +34,17 @@
 ## py2cpp 縮退（行数削減）
 
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
-   - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: Name/Attribute 分岐は `_render_call_name_or_attr` へ分離済み
+   - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: `BuiltinCall` / Name/Attribute は helper 分離済み
+   - [ ] `render_expr` の `Call` で残っている module method / object method / fallback 呼び出しを 3 helper に分離する。
+   - [ ] `render_expr` の `Call` で runtime-call 解決前後の前処理（kw 展開・owner 抽出）を helper 化する。
+   - [ ] `render_expr` の `Call` 分岐を 200 行未満に縮退する（目標値を明示）。
    - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。: `BinOp` は専用 helper に分離済み
+   - [ ] `Compare` 分岐を helper へ切り出す（`Contains` / chain compare / `is` 系）。
+   - [ ] `UnaryOp` と `BoolOp` の条件式特化ロジックを helper へ切り出す。
+   - [ ] `Subscript` / `SliceExpr` / `Concat` を helper 化し、`render_expr` 直書きを削減する。
    - [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。: `If/While` は専用 helper に分離済み
+   - [ ] `For` / `AnnAssign` / `AugAssign` を helper 化して `emit_stmt` 本体を縮退する。
+   - [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
 2. [ ] 未使用関数の掃除を継続する。
    - [x] `extract_module_leading_trivia` ラッパーを削除。
    - [x] `_stmt_start_line` / `_stmt_end_line` / `_has_leading_trivia` を削除。
@@ -48,17 +56,27 @@
    - [ ] `any_dict_get` / `any_to_dict` / `any_to_list` / `any_to_str` の C++ 生成を確認し、`object.begin/end` 生成を消す。
    - [ ] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
    - [ ] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
+   - [ ] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
+   - [ ] `*_dict_get*` の default 引数を `str` / `int` / `list` 別 helper に分離し、`object` 強制変換を減らす。
+   - [ ] `split_*` / `is_*_type` の引数型を `str` に固定し、`py_slice(object,...)` 生成を消す。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
    - [ ] `str|None`, `dict|None`, `list|None` の Union 処理を見直し、`std::optional<T>` 優先にする。
    - [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
    - [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
+   - [ ] `py2cpp.py` で `nullopt` を default 値に渡している箇所を洗い出し、型ごとの既定値へ置換する。
+   - [ ] `std::any` を経由する経路（selfhost 変換由来）をログベースでリスト化し、順次削除する。
 3. [ ] selfhost コンパイルエラーを段階的にゼロ化する。
    - [ ] `selfhost/build.all.log` の先頭 200 行を優先して修正し、`total_errors < 300` にする。
    - [ ] 同手順で `total_errors < 100` まで減らす。
    - [ ] `total_errors = 0` にする。
+   - [x] 段階ゲート A: `total_errors <= 450` を達成し、`docs/todo.md` に主因更新。: 2026-02-18 再計測で `total_errors=404`
+   - [ ] 段階ゲート B: `total_errors <= 300` を達成し、同時に `test_code_emitter` 回帰を固定化。
+   - [ ] 段階ゲート C: `total_errors <= 100` を達成し、`tools/check_selfhost_cpp_diff.py` の最小ケースを通す。
 4. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
    - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
+   - [ ] `test/fixtures/arithmetic/add.py`（軽量ケース）でも selfhost 変換を実行し、最小成功ケースを確立する。
+   - [ ] selfhost 版の `--help` / `-o` 基本オプションが壊れていないことを確認する。
 5. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
    - [ ] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。
    - [x] `selfhost/py2cpp.out` と `python3 src/py2cpp.py` の出力差分チェックをスクリプト化する。: `tools/check_selfhost_cpp_diff.py`
@@ -102,5 +120,5 @@
 - 更新（2026-02-18 selfhost 追加）:
   1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
-  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=538`）。
-  4. 先頭エラー群は `CodeEmitter` 基底の `any_dict_get/profile_get/syntax_line` 由来で、selfhost 変換時に `dict` が `object` として扱われる点がボトルネック。
+  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=404`）。
+  4. 先頭エラー群は `py2cpp.py` 冒頭ユーティリティ（profile/runtime-call map 読込）と `CppEmitter` 初期化（`super().__init__` 近傍）の selfhost 生成不整合が中心。

@@ -114,6 +114,12 @@ class CodeEmitter:
             return obj[key]
         return default_value
 
+    def any_dict_has(self, obj: dict[str, Any], key: str) -> bool:
+        """dict 風入力が key を持つか判定する。"""
+        if not isinstance(obj, dict):
+            return False
+        return key in obj
+
     def any_dict_get_str(self, obj: dict[str, Any], key: str, default_value: str = "") -> str:
         """dict 風入力から文字列を取得し、失敗時は既定値を返す。"""
         if not isinstance(obj, dict):
@@ -122,6 +128,17 @@ class CodeEmitter:
             return default_value
         v = obj[key]
         return v if isinstance(v, str) else default_value
+
+    def any_dict_get_int(self, obj: dict[str, Any], key: str, default_value: int = 0) -> int:
+        """dict 風入力から整数を取得し、失敗時は既定値を返す。"""
+        if not isinstance(obj, dict):
+            return default_value
+        if key not in obj:
+            return default_value
+        v = obj[key]
+        if isinstance(v, int):
+            return int(v)
+        return default_value
 
     def any_to_dict(self, v: Any) -> dict[str, Any] | None:
         """動的値を dict に安全に変換する。変換不能なら None。"""
@@ -387,52 +404,62 @@ class CodeEmitter:
 
     def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
         """EAST の leading_trivia をコメント/空行として出力する。"""
-        raw = stmt.get("leading_trivia")
-        if not isinstance(raw, list):
+        if "leading_trivia" not in stmt:
             return
-        trivia = raw
-        for item in trivia:
+        trivia_obj = stmt["leading_trivia"]
+        trivia = self.any_to_list(trivia_obj)
+        if len(trivia) == 0:
+            return
+        i = 0
+        while i < len(trivia):
+            item = trivia[i]
+            i += 1
             item_dict = self.any_to_dict_or_empty(item)
-            if len(item_dict) == 0:
-                continue
-            k = self.any_dict_get_str(item_dict, "kind", "")
-            if k == "comment":
-                txt = self.any_dict_get_str(item_dict, "text", "")
-                self.emit(self.comment_line_prefix() + txt)
-            elif k == "blank":
-                cnt = self.any_dict_get(item_dict, "count", 1)
-                n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
-                for _ in range(n):
-                    self.emit("")
+            if len(item_dict) > 0:
+                k = self.any_dict_get_str(item_dict, "kind", "")
+                if k == "comment":
+                    txt = self.any_dict_get_str(item_dict, "text", "")
+                    self.emit(self.comment_line_prefix() + txt)
+                elif k == "blank":
+                    cnt = self.any_dict_get_int(item_dict, "count", 1)
+                    n = cnt if cnt > 0 else 1
+                    for _ in range(n):
+                        self.emit("")
 
     def emit_module_leading_trivia(self) -> None:
         """モジュール先頭のコメント/空行 trivia を出力する。"""
-        raw = self.doc.get("module_leading_trivia")
-        if not isinstance(raw, list):
+        if "module_leading_trivia" not in self.doc:
             return
-        trivia = raw
-        for item in trivia:
+        trivia_obj = self.doc["module_leading_trivia"]
+        trivia = self.any_to_list(trivia_obj)
+        if len(trivia) == 0:
+            return
+        i = 0
+        while i < len(trivia):
+            item = trivia[i]
+            i += 1
             item_dict = self.any_to_dict_or_empty(item)
-            if len(item_dict) == 0:
-                continue
-            k = self.any_dict_get_str(item_dict, "kind", "")
-            if k == "comment":
-                txt = self.any_dict_get_str(item_dict, "text", "")
-                self.emit(self.comment_line_prefix() + txt)
-            elif k == "blank":
-                cnt = self.any_dict_get(item_dict, "count", 1)
-                n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
-                for _ in range(n):
-                    self.emit("")
+            if len(item_dict) > 0:
+                k = self.any_dict_get_str(item_dict, "kind", "")
+                if k == "comment":
+                    txt = self.any_dict_get_str(item_dict, "text", "")
+                    self.emit(self.comment_line_prefix() + txt)
+                elif k == "blank":
+                    cnt = self.any_dict_get_int(item_dict, "count", 1)
+                    n = cnt if cnt > 0 else 1
+                    for _ in range(n):
+                        self.emit("")
 
-    def _is_negative_const_index(self, node: dict[str, Any] | None) -> bool:
+    def _is_negative_const_index(self, node: Any) -> bool:
         """添字ノードが負の定数インデックスかを判定する。"""
         node_dict = self.any_to_dict_or_empty(node)
         if len(node_dict) == 0:
             return False
         kind = self.any_dict_get_str(node_dict, "kind", "")
         if kind == "Constant":
-            v = self.any_dict_get(node_dict, "value", None)
+            if not self.any_dict_has(node_dict, "value"):
+                return False
+            v = node_dict["value"]
             if isinstance(v, int):
                 return int(v) < 0
             if isinstance(v, str):
@@ -442,9 +469,13 @@ class CodeEmitter:
                     return False
             return False
         if kind == "UnaryOp" and self.any_dict_get_str(node_dict, "op", "") == "USub":
-            opd = self.any_to_dict_or_empty(self.any_dict_get(node_dict, "operand", None))
+            if not self.any_dict_has(node_dict, "operand"):
+                return False
+            opd = self.any_to_dict_or_empty(node_dict["operand"])
             if self.any_dict_get_str(opd, "kind", "") == "Constant":
-                ov = self.any_dict_get(opd, "value", None)
+                if not self.any_dict_has(opd, "value"):
+                    return False
+                ov = opd["value"]
                 if isinstance(ov, int):
                     return int(ov) > 0
                 if isinstance(ov, str):
@@ -454,40 +485,47 @@ class CodeEmitter:
                         return False
         return False
 
-    def _is_redundant_super_init_call(self, expr: dict[str, Any] | None) -> bool:
+    def _is_redundant_super_init_call(self, expr: Any) -> bool:
         """暗黙基底 ctor 呼び出しと等価な super().__init__ かを判定する。"""
-        if expr is None or self.any_dict_get_str(expr, "kind", "") != "Call":
+        expr_dict = self.any_to_dict_or_empty(expr)
+        if len(expr_dict) == 0 or self.any_dict_get_str(expr_dict, "kind", "") != "Call":
             return False
-        func = self.any_to_dict_or_empty(self.any_dict_get(expr, "func", None))
+        if not self.any_dict_has(expr_dict, "func"):
+            return False
+        func = self.any_to_dict_or_empty(expr_dict["func"])
         if self.any_dict_get_str(func, "kind", "") != "Attribute":
             return False
         if self.any_dict_get_str(func, "attr", "") != "__init__":
             return False
-        owner = self.any_to_dict_or_empty(self.any_dict_get(func, "value", None))
+        if not self.any_dict_has(func, "value"):
+            return False
+        owner = self.any_to_dict_or_empty(func["value"])
         if self.any_dict_get_str(owner, "kind", "") != "Call":
             return False
-        owner_func = self.any_to_dict_or_empty(self.any_dict_get(owner, "func", None))
+        if not self.any_dict_has(owner, "func"):
+            return False
+        owner_func = self.any_to_dict_or_empty(owner["func"])
         if self.any_dict_get_str(owner_func, "kind", "") != "Name":
             return False
         if self.any_dict_get_str(owner_func, "id", "") != "super":
             return False
-        args = self.any_dict_get(expr, "args", [])
-        kws = self.any_dict_get(expr, "keywords", [])
+        args: Any = None
+        kws: Any = None
+        if self.any_dict_has(expr_dict, "args"):
+            args = expr_dict["args"]
+        if self.any_dict_has(expr_dict, "keywords"):
+            kws = expr_dict["keywords"]
         return isinstance(args, list) and len(args) == 0 and isinstance(kws, list) and len(kws) == 0
 
     def render_cond(self, expr: Any) -> str:
         """条件式文脈向けに式を真偽値へ正規化して出力する。"""
-        expr_node = self.any_to_dict(expr)
-        if expr_node is None:
+        expr_node = self.any_to_dict_or_empty(expr)
+        if len(expr_node) == 0:
             return "false"
-        t = self.get_expr_type(expr_node)
-        body = self._strip_outer_parens(self.render_expr(expr_node))
+        t = self.get_expr_type(expr)
+        body = self._strip_outer_parens(self.render_expr(expr))
         if t in {"bool"}:
             return body
         if t == "str" or t[:5] == "list[" or t[:5] == "dict[" or t[:4] == "set[" or t[:6] == "tuple[":
             return self.truthy_len_expr(body)
         return body
-
-
-# Backward compatibility for staged migration.
-BaseEmitter = CodeEmitter

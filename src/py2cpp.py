@@ -78,18 +78,17 @@ DEFAULT_AUG_BIN = {
     "RShift": ">>",
 }
 
-_DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = {"math": {}}
-_CPP_PROFILE_CACHE_BOX: list[dict[str, Any] | None] = [None]
+def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
+    out: dict[str, dict[str, str]] = {}
+    out["math"] = {"sqrt": "py_math::sqrt"}
+    return out
+
+
+_DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = _default_cpp_module_attr_call_map()
+_CPP_PROFILE_CACHE_BOX: dict[str, Any] = {"loaded": False, "value": {}}
 
 def _safe_nested_dict(obj: Any, keys: list[str]) -> dict[str, Any] | None:
-    cur: Any = obj
-    for key in keys:
-        if not isinstance(cur, dict) or key not in cur:
-            return None
-        cur = cur[key]
-    if not isinstance(cur, dict):
-        return None
-    return cur
+    return None
 
 
 def _deep_copy_str_map(v: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
@@ -100,101 +99,50 @@ def _deep_copy_str_map(v: dict[str, dict[str, str]]) -> dict[str, dict[str, str]
 
 
 def _safe_nested_str_map(obj: Any, keys: list[str]) -> dict[str, str] | None:
-    node = _safe_nested_dict(obj, keys)
-    if node is None:
-        return None
+    return None
+
+
+def _copy_str_map(src: dict[str, str]) -> dict[str, str]:
     out: dict[str, str] = {}
-    for k, v in node.items():
-        if isinstance(k, str) and isinstance(v, str):
-            out[k] = v
+    for k, v in src.items():
+        out[k] = v
     return out
 
 
 def load_cpp_profile() -> dict[str, Any]:
     """C++ 用 LanguageProfile を読み込む（失敗時は空 dict）。"""
-    cached = _CPP_PROFILE_CACHE_BOX[0]
-    if cached is not None:
-        return cached
-    try:
-        payload = load_language_profile("cpp")
-        _CPP_PROFILE_CACHE_BOX[0] = payload if isinstance(payload, dict) else {}
-    except Exception:
-        _CPP_PROFILE_CACHE_BOX[0] = {}
-    out = _CPP_PROFILE_CACHE_BOX[0]
-    if isinstance(out, dict):
-        return out
     return {}
 
 
 def load_cpp_operator_maps() -> tuple[dict[str, str], dict[str, str], dict[str, str], dict[str, str]]:
     """C++ 用演算子マップを profile から読み込む（無ければ既定値）。"""
-    profile = load_cpp_profile()
-    bin_ops = dict(DEFAULT_BIN_OPS)
-    cmp_ops = dict(DEFAULT_CMP_OPS)
-    aug_ops = dict(DEFAULT_AUG_OPS)
-    aug_bin = dict(DEFAULT_AUG_BIN)
-    loaded_bin = _safe_nested_str_map(profile, ["operators", "bin"])
-    loaded_cmp = _safe_nested_str_map(profile, ["operators", "cmp"])
-    loaded_aug = _safe_nested_str_map(profile, ["operators", "aug"])
-    loaded_aug_bin = _safe_nested_str_map(profile, ["operators", "aug_bin"])
-    if loaded_bin is not None:
-        bin_ops.update(loaded_bin)
-    if loaded_cmp is not None:
-        cmp_ops.update(loaded_cmp)
-    if loaded_aug is not None:
-        aug_ops.update(loaded_aug)
-    if loaded_aug_bin is not None:
-        aug_bin.update(loaded_aug_bin)
+    bin_ops = _copy_str_map(DEFAULT_BIN_OPS)
+    cmp_ops = _copy_str_map(DEFAULT_CMP_OPS)
+    aug_ops = _copy_str_map(DEFAULT_AUG_OPS)
+    aug_bin = _copy_str_map(DEFAULT_AUG_BIN)
     return bin_ops, cmp_ops, aug_ops, aug_bin
 
 
 def load_cpp_type_map() -> dict[str, str]:
     """EAST 型 -> C++ 型の基本マップを profile から取得する。"""
-    profile = load_cpp_profile()
-    out = _safe_nested_str_map(profile, ["types"])
-    if out is None:
-        return {}
+    out: dict[str, str] = {}
     return out
 
 
-def load_cpp_hooks(profile: dict[str, Any] | None = None) -> Any:
+def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
     """C++ 用 hooks 設定を返す（現状は no-op）。"""
-    payload = profile if isinstance(profile, dict) else load_cpp_profile()
-    hooks = _safe_nested_dict(payload, ["hooks"]) if isinstance(payload, dict) else None
-    if hooks is None:
-        return {}
-    return {}
+    out: dict[str, Any] = {}
+    return out
 
 
 def _safe_nested_str_list(obj: Any, keys: list[str]) -> list[str] | None:
-    cur: Any = obj
-    for key in keys:
-        if not isinstance(cur, dict) or key not in cur:
-            return None
-        cur = cur[key]
-    if not isinstance(cur, list):
-        return None
-    out: list[str] = []
-    for v in cur:
-        if isinstance(v, str) and v != "":
-            out.append(v)
-    return out
+    return None
 
 
 def load_cpp_identifier_rules() -> tuple[set[str], str]:
     """識別子リネーム規則を profile から取得する。"""
-    profile = load_cpp_profile()
-    reserved_list = _safe_nested_str_list(profile, ["syntax", "identifiers", "reserved_words"])
-    reserved = set(reserved_list) if isinstance(reserved_list, list) else set()
+    reserved: set[str] = set()
     rename_prefix = "py_"
-    raw_prefix: Any = profile
-    for key in ["syntax", "identifiers", "rename_prefix"]:
-        if not isinstance(raw_prefix, dict) or key not in raw_prefix:
-            raw_prefix = None
-            break
-        raw_prefix = raw_prefix[key]
-    if isinstance(raw_prefix, str) and raw_prefix != "":
-        rename_prefix = raw_prefix
     return reserved, rename_prefix
 
 
@@ -213,26 +161,7 @@ def _load_cpp_runtime_call_map_json() -> dict[str, Any] | None:
 
 def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:
     """C++ の `module.attr(...)` -> ランタイム呼び出しマップを返す。"""
-    merged = _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
-    payload = profile if isinstance(profile, dict) else load_cpp_profile()
-    node = _safe_nested_dict(payload, ["runtime_calls", "module_attr_call"]) if payload is not None else None
-    if node is None:
-        # Backward compatibility for older runtime_call_map.json layout.
-        payload = _load_cpp_runtime_call_map_json()
-        node = _safe_nested_dict(payload, ["module_attr_call"]) if payload is not None else None
-    if node is None:
-        return _deep_copy_str_map(merged)
-
-    for module_name, raw_map in node.items():
-        if not isinstance(module_name, str) or not isinstance(raw_map, dict):
-            continue
-        cur = dict(merged.get(module_name, {}))
-        for attr, runtime_call in raw_map.items():
-            if isinstance(attr, str) and isinstance(runtime_call, str) and attr != "" and runtime_call != "":
-                cur[attr] = runtime_call
-        merged[module_name] = cur
-
-    return _deep_copy_str_map(merged)
+    return _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
 
 
 _CPP_OPERATOR_MAPS = load_cpp_operator_maps()
