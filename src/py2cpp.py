@@ -1633,7 +1633,36 @@ def load_east(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[
         else:
             east = convert_source_to_east_with_backend(source_text, str(input_path), parser_backend=parser_backend)
     except (SyntaxError, EastBuildError) as exc:
-        raise RuntimeError(f"EAST conversion failed: {exc}") from exc
+        details: list[str] = [f"EAST conversion failed: {type(exc).__name__}"]
+        if isinstance(exc, EastBuildError):
+            span = exc.source_span if isinstance(exc.source_span, dict) else {}
+            ln = span.get("lineno")
+            col = span.get("col")
+            details.append(f"{exc.kind}: {exc.message}")
+            if isinstance(ln, int):
+                if isinstance(col, int):
+                    details.append(f"at {input_path}:{ln}:{col + 1}")
+                else:
+                    details.append(f"at {input_path}:{ln}")
+                src_lines = source_text.splitlines()
+                if 1 <= ln <= len(src_lines):
+                    details.append(f"source: {src_lines[ln - 1]}")
+            if isinstance(exc.hint, str) and exc.hint != "":
+                details.append(f"hint: {exc.hint}")
+        else:
+            ln = getattr(exc, "lineno", None)
+            off = getattr(exc, "offset", None)
+            txt = getattr(exc, "text", None)
+            msg = getattr(exc, "msg", str(exc))
+            details.append(str(msg))
+            if isinstance(ln, int):
+                if isinstance(off, int):
+                    details.append(f"at {input_path}:{ln}:{off}")
+                else:
+                    details.append(f"at {input_path}:{ln}")
+            if isinstance(txt, str) and txt.strip() != "":
+                details.append(f"source: {txt.rstrip()}")
+        raise RuntimeError("\n".join(details)) from exc
     if isinstance(east, dict):
         has_stmt_leading_trivia = False
         body = east.get("body")
