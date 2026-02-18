@@ -211,7 +211,7 @@ class CodeEmitter:
             out.append(tail)
         return out
 
-    def normalize_type_name(self, t: Any) -> str:
+    def normalize_type_name(self, t: str) -> str:
         """型名エイリアスを内部表現へ正規化する。"""
         if not isinstance(t, str):
             return ""
@@ -268,7 +268,7 @@ class CodeEmitter:
             return False
         return False
 
-    def is_forbidden_object_receiver_type(self, t: Any) -> bool:
+    def is_forbidden_object_receiver_type(self, t: str) -> bool:
         """object レシーバ禁止ルールに抵触する型か判定する。"""
         s = self.normalize_type_name(t)
         return self._is_forbidden_object_receiver_type_text(s)
@@ -352,19 +352,17 @@ class CodeEmitter:
             break
         return s
 
-    def is_plain_name_expr(self, expr: dict[str, Any] | None) -> bool:
+    def is_plain_name_expr(self, expr: Any) -> bool:
         """式が単純な Name ノードかを判定する。"""
-        if expr is None:
-            return False
         d = self.any_to_dict_or_empty(expr)
         return self.any_dict_get_str(d, "kind", "") == "Name"
 
-    def _expr_repr_eq(self, a: dict[str, Any] | None, b: dict[str, Any] | None) -> bool:
+    def _expr_repr_eq(self, a: Any, b: Any) -> bool:
         """2つの式 repr が同一かを比較する。"""
-        if not isinstance(a, dict) or not isinstance(b, dict):
-            return False
         da = self.any_to_dict_or_empty(a)
         db = self.any_to_dict_or_empty(b)
+        if len(da) == 0 or len(db) == 0:
+            return False
         ra = self.any_dict_get_str(da, "repr", "")
         rb = self.any_dict_get_str(db, "repr", "")
         return self._trim_ws(ra) == self._trim_ws(rb)
@@ -389,47 +387,52 @@ class CodeEmitter:
 
     def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
         """EAST の leading_trivia をコメント/空行として出力する。"""
-        trivia = self.any_dict_get(stmt, "leading_trivia", [])
-        if not isinstance(trivia, list):
+        raw = stmt.get("leading_trivia")
+        if not isinstance(raw, list):
             return
+        trivia = raw
         for item in trivia:
-            if not isinstance(item, dict):
+            item_dict = self.any_to_dict_or_empty(item)
+            if len(item_dict) == 0:
                 continue
-            k = self.any_dict_get_str(item, "kind", "")
+            k = self.any_dict_get_str(item_dict, "kind", "")
             if k == "comment":
-                txt = self.any_dict_get_str(item, "text", "")
+                txt = self.any_dict_get_str(item_dict, "text", "")
                 self.emit(self.comment_line_prefix() + txt)
             elif k == "blank":
-                cnt = self.any_dict_get(item, "count", 1)
+                cnt = self.any_dict_get(item_dict, "count", 1)
                 n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
                 for _ in range(n):
                     self.emit("")
 
     def emit_module_leading_trivia(self) -> None:
         """モジュール先頭のコメント/空行 trivia を出力する。"""
-        trivia = self.any_dict_get(self.doc, "module_leading_trivia", [])
-        if not isinstance(trivia, list):
+        raw = self.doc.get("module_leading_trivia")
+        if not isinstance(raw, list):
             return
+        trivia = raw
         for item in trivia:
-            if not isinstance(item, dict):
+            item_dict = self.any_to_dict_or_empty(item)
+            if len(item_dict) == 0:
                 continue
-            k = self.any_dict_get_str(item, "kind", "")
+            k = self.any_dict_get_str(item_dict, "kind", "")
             if k == "comment":
-                txt = self.any_dict_get_str(item, "text", "")
+                txt = self.any_dict_get_str(item_dict, "text", "")
                 self.emit(self.comment_line_prefix() + txt)
             elif k == "blank":
-                cnt = self.any_dict_get(item, "count", 1)
+                cnt = self.any_dict_get(item_dict, "count", 1)
                 n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
                 for _ in range(n):
                     self.emit("")
 
     def _is_negative_const_index(self, node: dict[str, Any] | None) -> bool:
         """添字ノードが負の定数インデックスかを判定する。"""
-        if node is None:
+        node_dict = self.any_to_dict_or_empty(node)
+        if len(node_dict) == 0:
             return False
-        kind = self.any_dict_get_str(node, "kind", "")
+        kind = self.any_dict_get_str(node_dict, "kind", "")
         if kind == "Constant":
-            v = self.any_dict_get(node, "value", None)
+            v = self.any_dict_get(node_dict, "value", None)
             if isinstance(v, int):
                 return int(v) < 0
             if isinstance(v, str):
@@ -438,8 +441,8 @@ class CodeEmitter:
                 except ValueError:
                     return False
             return False
-        if kind == "UnaryOp" and self.any_dict_get_str(node, "op", "") == "USub":
-            opd = self.any_to_dict_or_empty(self.any_dict_get(node, "operand", None))
+        if kind == "UnaryOp" and self.any_dict_get_str(node_dict, "op", "") == "USub":
+            opd = self.any_to_dict_or_empty(self.any_dict_get(node_dict, "operand", None))
             if self.any_dict_get_str(opd, "kind", "") == "Constant":
                 ov = self.any_dict_get(opd, "value", None)
                 if isinstance(ov, int):
