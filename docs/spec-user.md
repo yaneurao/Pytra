@@ -74,6 +74,12 @@ test/
 python -m unittest discover -s test/unit -p "test_*.py" -v
 ```
 
+`test/fixtures/**/case*.py` を一括実行して末尾出力 `True` を検証する専用テスト:
+
+```bash
+python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
+```
+
 ## 6. 利用時の注意
 
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。

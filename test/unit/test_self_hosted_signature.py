@@ -6,7 +6,7 @@ import json
 
 ROOT = Path(__file__).resolve().parents[2]
 EAST = ROOT / "src" / "common" / "east.py"
-SIG_DIR = ROOT / "test" / "fixtures" / "py" / "signature"
+SIG_DIR = ROOT / "test" / "fixtures" / "signature"
 
 
 class SelfHostedSignatureTest(unittest.TestCase):
