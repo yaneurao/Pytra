@@ -51,7 +51,6 @@
 
 `py2cpp.py` は import 文に応じて include を生成します。
 
-- `import ast` -> `#include "cpp_module/ast.h"`
 - `import math` -> `#include "cpp_module/math.h"`
 - `import pathlib` -> `#include "cpp_module/pathlib.h"`
 - `import time` / `from time import ...` -> `#include "cpp_module/time.h"`
@@ -61,7 +60,6 @@
 
 主な補助モジュール実装:
 
-- `src/cpp_module/ast.h`, `src/cpp_module/ast.cpp`
 - `src/cpp_module/math.h`, `src/cpp_module/math.cpp`
 - `src/cpp_module/pathlib.h`, `src/cpp_module/pathlib.cpp`
 - `src/cpp_module/time.h`, `src/cpp_module/time.cpp`

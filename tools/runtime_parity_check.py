@@ -49,7 +49,7 @@ def build_targets(case_stem: str) -> list[Target]:
                 f"g++ -std=c++20 -O2 -I src test/cpp/{case_stem}.cpp "
                 "src/cpp_module/png.cpp src/cpp_module/gif.cpp src/cpp_module/math.cpp "
                 "src/cpp_module/time.cpp src/cpp_module/pathlib.cpp src/cpp_module/dataclasses.cpp "
-                "src/cpp_module/ast.cpp src/cpp_module/gc.cpp "
+                "src/cpp_module/gc.cpp "
                 f"-o test/obj/{case_stem}_cpp.out && test/obj/{case_stem}_cpp.out"
             ),
             needs=("python", "g++"),

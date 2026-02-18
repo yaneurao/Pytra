@@ -29,7 +29,7 @@ python src/py2cpp.py test/py/case29_iterable.py test/cpp/case29_iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src test/cpp/case29_iterable.cpp \
   src/cpp_module/png.cpp src/cpp_module/gif.cpp src/cpp_module/math.cpp \
   src/cpp_module/time.cpp src/cpp_module/pathlib.cpp src/cpp_module/dataclasses.cpp \
-  src/cpp_module/ast.cpp src/cpp_module/gc.cpp \
+  src/cpp_module/gc.cpp \
   -o test/obj/case29_iterable.out
 ./test/obj/case29_iterable.out
 ```
