@@ -54,12 +54,8 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 ## 6. 画像一致に関する補足
 
-- `sample/02_raytrace_spheres` については、Python 実行結果と C++ 実行結果で **PNG の画素（raw scanline）は一致** することを確認済みです。
-- 一方で PNG ファイル自体のバイト列は一致しません。これは主に IDAT の圧縮形式・圧縮率の差によるものです。
-- PNG 一致判定の方針は次のとおりです。
-  - まず raw scanline（復号後画素）一致を判定する。
-  - raw scanline が一致し、ファイルバイト列のみ不一致の場合は「圧縮差」として扱う。
-  - raw scanline が不一致の場合は「画素差」として扱う。
+- 画像サンプルの一致判定は、Python 実行結果と C++ 実行結果の **出力ファイルバイト列完全一致** を基準とします。
+- PNG/GIF を区別せず、バイト列不一致は不一致（要修正）として扱います。
 
 画像一致検証を自動実行する場合:
 
@@ -67,8 +63,7 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 python3 tools/verify_sample_outputs.py --compile-flags="-O2"
 ```
 
-- `stdout` 差分と、画像の差分（PNG は raw scanline、GIF は LZW 展開後のフレームインデックス）をまとめて確認できます。
-- 画像差分がある場合は、最初の不一致位置（PNG: x/y/チャネル、GIF: フレーム/x/y）を表示します。
+- `stdout` 差分と、画像ファイルのバイト列差分をまとめて確認できます。
 - `sample/12_sort_visualizer` と `sample/16_glass_sculpture_chaos` では、GIF フレームブロック（遅延値 + LZW 圧縮データ）が一致することを確認済みです。
 
 実行時間などの `stdout` 差分を無視して、画像一致のみ確認したい場合:

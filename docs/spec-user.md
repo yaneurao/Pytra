@@ -69,8 +69,6 @@ test/
   - 画像: `from pylib import png`, `from pylib.gif import save_gif`
   - テスト補助: `from pylib.assertions import py_assert_eq` など
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
-- C++ 実行バイナリは起動オプション `--pytra-image-format=png|ppm` を受け付けます。
-  - `ppm` 指定時、`png.write_rgb_png(...)` は PPM(P6) で出力され、出力拡張子は `.ppm` に切り替わります。
 - GIF サンプルは `sample/out/*.gif` に出力します。
 
 ## 5. ユニットテスト実行方法

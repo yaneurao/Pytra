@@ -128,21 +128,4 @@ void write_rgb_png(const std::string& path, int width, int height, const std::ve
     ofs.write(png.data(), static_cast<std::streamsize>(png.size()));
 }
 
-void write_rgb_ppm(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels) {
-    if (width <= 0 || height <= 0) {
-        throw std::runtime_error("ppm: width/height must be positive");
-    }
-    const std::size_t expected = static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 3u;
-    if (pixels.size() != expected) {
-        throw std::runtime_error("ppm: pixels length mismatch");
-    }
-
-    std::ofstream ofs(path, std::ios::binary);
-    if (!ofs) {
-        throw std::runtime_error("ppm: failed to open output file");
-    }
-    ofs << "P6\n" << width << " " << height << "\n255\n";
-    ofs.write(reinterpret_cast<const char*>(pixels.data()), static_cast<std::streamsize>(pixels.size()));
-}
-
 }  // namespace pytra::cpp_module::png
