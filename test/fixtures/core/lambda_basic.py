@@ -1,6 +1,6 @@
 # このファイルは `test/fixtures/core/lambda_basic.py` のテストコードです。
 
-from pylib.runtime import py_assert_all, py_assert_eq
+from pylib.assertions import py_assert_all, py_assert_eq
 
 
 def run_lambda_basic() -> bool:

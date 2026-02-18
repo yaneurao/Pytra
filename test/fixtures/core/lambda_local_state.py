@@ -1,5 +1,5 @@
 # lambda consuming local state-like value
-from pylib.runtime import py_assert_all, py_assert_eq
+from pylib.assertions import py_assert_all, py_assert_eq
 
 
 def run_lambda_local_state() -> bool:

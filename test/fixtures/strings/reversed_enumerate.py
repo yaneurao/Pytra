@@ -1,7 +1,7 @@
 # このファイルは `test/fixtures/reversed_enumerate.py` のテスト/実装コードです。
 
 
-from pylib.runtime import py_assert_all, py_assert_eq
+from pylib.assertions import py_assert_all, py_assert_eq
 def run_reversed_enumerate() -> bool:
     values: list[int] = [3, 1, 4]
     acc: int = 0

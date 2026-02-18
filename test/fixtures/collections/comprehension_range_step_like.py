@@ -1,5 +1,5 @@
 # comprehension equivalent of range-step behavior via prebuilt step list
-from pylib.runtime import py_assert_all, py_assert_eq
+from pylib.assertions import py_assert_all, py_assert_eq
 
 
 def run_comprehension_range_step_like() -> bool:

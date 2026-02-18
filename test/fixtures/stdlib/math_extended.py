@@ -1,5 +1,5 @@
 
-from pylib.runtime import py_assert_stdout
+from pylib.assertions import py_assert_stdout
 import math
 
 

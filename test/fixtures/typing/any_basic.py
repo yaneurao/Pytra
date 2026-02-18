@@ -1,7 +1,7 @@
 # このファイルは `test/fixtures/typing/any_basic.py` のテスト/実装コードです。
 
 from typing import Any
-from pylib.runtime import py_assert_all, py_assert_eq, py_assert_true
+from pylib.assertions import py_assert_all, py_assert_eq, py_assert_true
 
 
 def run_any_basic() -> bool:

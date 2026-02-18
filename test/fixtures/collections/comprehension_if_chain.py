@@ -1,5 +1,5 @@
 # comprehension with chained predicates
-from pylib.runtime import py_assert_all, py_assert_eq
+from pylib.assertions import py_assert_all, py_assert_eq
 
 
 def run_comprehension_if_chain() -> bool:

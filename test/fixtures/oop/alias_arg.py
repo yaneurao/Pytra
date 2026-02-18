@@ -2,7 +2,7 @@
 # 参照セマンティクスが壊れると a,b の値が一致しない。
 
 
-from pylib.runtime import py_assert_stdout
+from pylib.assertions import py_assert_stdout
 class Box:
     def __init__(self, v: int) -> None:
         self.v = v

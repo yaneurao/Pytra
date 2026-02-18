@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from pylib.runtime import py_assert_true
+from pylib.assertions import py_assert_true
 
 
 def run_case() -> None:

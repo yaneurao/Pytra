@@ -1,4 +1,4 @@
-from pylib.runtime import py_assert_eq
+from pylib.assertions import py_assert_eq
 
 
 class Base:

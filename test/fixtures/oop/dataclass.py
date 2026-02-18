@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 
-from pylib.runtime import py_assert_stdout
+from pylib.assertions import py_assert_stdout
 from dataclasses import dataclass
 
 
