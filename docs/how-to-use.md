@@ -227,6 +227,18 @@ diff -u test/transpile/cpp/01_mandelbrot.cpp test/transpile/cpp2/01_mandelbrot.c
 - `selfhost/py2cpp.cpp` の該当行に対して、元の `src/py2cpp.py` の記述が `Any` 混在を増やしていないか確認する。
 - `selfhost/py2cpp.py` が古い場合があるため、毎回 `cp src/py2cpp.py selfhost/py2cpp.py` を先に実行する。
 
+## CodeEmitter 作業時の変換チェック
+
+`CodeEmitter` を段階的に改修するときは、各ステップごとに次を実行します。
+
+```bash
+python3 tools/check_py2cpp_transpile.py
+```
+
+補足:
+- 既定では既知の負例フィクスチャ（`test/fixtures/signature/ng_*.py` と `test/fixtures/typing/any_class_alias.py`）を除外して判定します。
+- 負例も含めて確認したい場合は `--include-expected-failures` を付けます。
+
 ## 共通の制約と注意点
 
 Pytra は Python のサブセットを対象とします。通常の Python コードとして実行できる入力でも、未対応構文を含む場合は変換時に失敗します。
