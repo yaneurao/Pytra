@@ -3728,14 +3728,6 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             hint="Use def/class/top-level typed assignment/main guard.",
         )
 
-    if len(main_stmts) == 0:
-        raise EastBuildError(
-            kind="unsupported_syntax",
-            message="self_hosted parser requires if __name__ == \"__main__\": block",
-            source_span={"lineno": None, "col": None, "end_lineno": None, "end_col": None},
-            hint="Add main guard block with print(...).",
-        )
-
     renamed_symbols: dict[str, str] = {}
     for item in body_items:
         if item.get("kind") == "FunctionDef" and item.get("name") == "main":

@@ -193,10 +193,17 @@ def cpp_char_lit(ch: byte) -> str:
 
 
 class CppEmitter(BaseEmitter):
-    def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
+    def __init__(
+        self,
+        east_doc: dict[str, Any],
+        *,
+        negative_index_mode: str = "const_only",
+        emit_main: bool = True,
+    ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
         super().__init__(east_doc)
         self.negative_index_mode = negative_index_mode
+        self.emit_main = emit_main
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
         # so dict[str, Any] -> dict iteration for renaming is disabled for now.
@@ -348,22 +355,23 @@ class CppEmitter(BaseEmitter):
             self.emit_stmt(stmt)
             self.emit("")
 
-        self.emit("int main(int argc, char** argv) {")
-        self.indent += 1
-        self.emit("pytra_configure_from_argv(argc, argv);")
-        self.scope_stack.append(set())
-        main_guard: list[dict[str, Any]] = []
-        raw_main_guard = self.doc.get("main_guard_body", [])
-        if isinstance(raw_main_guard, list):
-            for s in raw_main_guard:
-                if isinstance(s, dict):
-                    main_guard.append(s)
-        self.emit_stmt_list(main_guard)
-        self.scope_stack.pop()
-        self.emit("return 0;")
-        self.indent -= 1
-        self.emit("}")
-        self.emit("")
+        if self.emit_main:
+            self.emit("int main(int argc, char** argv) {")
+            self.indent += 1
+            self.emit("pytra_configure_from_argv(argc, argv);")
+            self.scope_stack.append(set())
+            main_guard: list[dict[str, Any]] = []
+            raw_main_guard = self.doc.get("main_guard_body", [])
+            if isinstance(raw_main_guard, list):
+                for s in raw_main_guard:
+                    if isinstance(s, dict):
+                        main_guard.append(s)
+            self.emit_stmt_list(main_guard)
+            self.scope_stack.pop()
+            self.emit("return 0;")
+            self.indent -= 1
+            self.emit("}")
+            self.emit("")
         out: str = ""
         i = 0
         while i < len(self.lines):
@@ -2111,9 +2119,18 @@ def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
     return extract_module_leading_trivia_common(source)
 
 
-def transpile_to_cpp(east_module: dict[str, Any], *, negative_index_mode: str = "const_only") -> str:
+def transpile_to_cpp(
+    east_module: dict[str, Any],
+    *,
+    negative_index_mode: str = "const_only",
+    emit_main: bool = True,
+) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
-    return CppEmitter(east_module, negative_index_mode=negative_index_mode).transpile()
+    return CppEmitter(
+        east_module,
+        negative_index_mode=negative_index_mode,
+        emit_main=emit_main,
+    ).transpile()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2123,6 +2140,11 @@ def main(argv: list[str] | None = None) -> int:
         ap,
         enable_negative_index_mode=True,
         parser_backends=["self_hosted"],
+    )
+    ap.add_argument(
+        "--no-main",
+        action="store_true",
+        help="Do not emit C++ main() (library/module output mode).",
     )
     args = normalize_common_transpile_args(
         ap.parse_args(argv),
@@ -2137,7 +2159,11 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         east_module = load_east(input_path, parser_backend=args.parser_backend)
-        cpp = transpile_to_cpp(east_module, negative_index_mode=args.negative_index_mode)
+        cpp = transpile_to_cpp(
+            east_module,
+            negative_index_mode=args.negative_index_mode,
+            emit_main=not bool(args.no_main),
+        )
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
