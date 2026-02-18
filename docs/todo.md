@@ -5,7 +5,7 @@
 作業ルール（step by step）:
 - [x] `CodeEmitter` の変更は段階適用し、各ステップで `test/fixtures` の変換可否を確認してから次へ進む。: `tools/check_py2cpp_transpile.py` を追加
 - [x] 同じく各ステップで `sample/py` 全件の変換可否を確認してから次へ進む。: `tools/check_py2cpp_transpile.py` を追加
-- [ ] 回帰が出た場合は次ステップへ進まず、その場で修正してから再確認する。
+- [x] 回帰が出た場合は次ステップへ進まず、その場で修正してから再確認する。
 
 1. [x] `BaseEmitter` を `CodeEmitter` へ改名し、段階移行する。
    - [x] `src/common/base_emitter.py` を `src/common/code_emitter.py` へ移動する。
