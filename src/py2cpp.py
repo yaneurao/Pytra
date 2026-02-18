@@ -1036,7 +1036,7 @@ class CppEmitter(CodeEmitter):
             t = self.any_to_str(arg_types.get(n))
             if in_class and idx == 0 and n == "self":
                 continue
-            ct = self.cpp_type(t)
+            ct = self._cpp_type_text(t)
             usage = self.any_to_str(arg_usage.get(n))
             if usage == "":
                 usage = "readonly"
@@ -1112,7 +1112,7 @@ class CppEmitter(CodeEmitter):
         for s in class_body:
             if s.get("kind") == "AnnAssign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
-                if self.is_plain_name_expr(texpr):
+                if self.is_plain_name_expr(s.get("target")):
                     fname = str(texpr.get("id", ""))
                     ann = self.any_to_str(s.get("annotation"))
                     if ann != "":
@@ -1452,17 +1452,15 @@ class CppEmitter(CodeEmitter):
     ) -> str | None:
         """Call の Name/Attribute 分岐を処理する。"""
         if fn.get("kind") == "Name":
-            raw = fn.get("id")
-            raw_txt = self.any_to_str(raw)
+            raw = self.any_to_str(fn.get("id"))
             imported_module = ""
-            if raw_txt != "" and not self.is_declared(raw_txt):
-                resolved = self._resolve_imported_symbol(raw_txt)
+            if raw != "" and not self.is_declared(raw):
+                resolved = self._resolve_imported_symbol(raw)
                 if isinstance(resolved, dict):
                     imported_module = self.any_to_str(resolved.get("module"))
                     resolved_name = self.any_to_str(resolved.get("name"))
                     if resolved_name != "":
-                        raw_txt = resolved_name
-            raw = raw_txt
+                        raw = resolved_name
             if raw != "" and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
                 if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "save_gif", "Path"}:
@@ -1713,8 +1711,8 @@ class CppEmitter(CodeEmitter):
                 return f"!({base})"
             return base
         left = self.render_expr(expr.get("left"))
-        ops = expr.get("ops", [])
-        cmps = expr.get("comparators", [])
+        ops = self.any_to_list(expr.get("ops", []))
+        cmps = self.any_to_list(expr.get("comparators", []))
         parts: list[str] = []
         cur = left
         cur_node = expr.get("left")
@@ -1722,7 +1720,9 @@ class CppEmitter(CodeEmitter):
             rhs_node = cmps[i] if i < len(cmps) and isinstance(cmps[i], dict) else None
             rhs = self.render_expr(rhs_node)
             op_name = self.any_to_str(op)
-            cop = CMP_OPS.get(op_name, "==")
+            cop = "=="
+            if op_name in CMP_OPS:
+                cop = CMP_OPS[op_name]
             if cop == "/* in */":
                 rhs_type0 = self.get_expr_type(rhs_node)
                 rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
@@ -1956,7 +1956,7 @@ class CppEmitter(CodeEmitter):
         if kind == "JoinedStr":
             if expr.get("lowered_kind") == "Concat":
                 parts: list[str] = []
-                for p in expr.get("concat_parts", []):
+                for p in self._dict_stmt_list(expr.get("concat_parts", [])):
                     if p.get("kind") == "literal":
                         parts.append(cpp_string_lit(str(p.get("value", ""))))
                     elif p.get("kind") == "expr":
