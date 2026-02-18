@@ -39,7 +39,7 @@ class CodeEmitter:
         for stmt in stmts:
             self.emit_stmt(stmt)  # type: ignore[attr-defined]
 
-    def hook_on_emit_stmt(self, emitter: Any, stmt: dict[str, Any]) -> Any:
+    def hook_on_emit_stmt(self, emitter: Any, stmt: dict[str, Any]) -> bool | None:
         """`on_emit_stmt` フック。既定では何もしない。"""
         return None
 
@@ -50,7 +50,7 @@ class CodeEmitter:
         func_node: dict[str, Any],
         rendered_args: list[str],
         rendered_kwargs: dict[str, str],
-    ) -> Any:
+    ) -> str | None:
         """`on_render_call` フック。既定では何もしない。"""
         return None
 
@@ -60,25 +60,24 @@ class CodeEmitter:
         binop_node: dict[str, Any],
         left: str,
         right: str,
-    ) -> Any:
+    ) -> str | None:
         """`on_render_binop` フック。既定では何もしない。"""
         return None
 
-    def profile_get(self, path: list[str], default_value: Any) -> Any:
+    def profile_get(self, path: list[str], default_value: str) -> str:
         """profile からネストキーを取得する。未定義時は既定値。"""
         cur: Any = self.profile
         for key in path:
             if not isinstance(cur, dict) or key not in cur:
                 return default_value
             cur = cur[key]
-        return cur
+        if isinstance(cur, str) and cur != "":
+            return cur
+        return default_value
 
     def syntax_text(self, key: str, default_value: str) -> str:
         """profile.syntax からテンプレート文字列を取得する。"""
-        v = self.profile_get(["syntax", key], default_value)
-        if isinstance(v, str) and v != "":
-            return v
-        return default_value
+        return self.profile_get(["syntax", key], default_value)
 
     def syntax_line(
         self,
