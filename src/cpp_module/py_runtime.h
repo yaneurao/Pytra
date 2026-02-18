@@ -148,10 +148,67 @@ using bytearray = list<uint8>;
 using bytes = bytearray;
 
 template <class K, class V>
-using dict = std::unordered_map<K, V>;
+class dict : public std::unordered_map<K, V> {
+public:
+    using std::unordered_map<K, V>::unordered_map;
+    using typename std::unordered_map<K, V>::const_iterator;
+    using typename std::unordered_map<K, V>::iterator;
+
+    V get(const K& key) const {
+        auto it = this->find(key);
+        if (it == this->end()) {
+            throw std::out_of_range("dict.get missing key");
+        }
+        return it->second;
+    }
+
+    V get(const K& key, const V& default_value) const {
+        auto it = this->find(key);
+        if (it == this->end()) {
+            return default_value;
+        }
+        return it->second;
+    }
+
+    list<K> keys() const {
+        list<K> out{};
+        out.reserve(this->size());
+        for (const auto& kv : *this) out.push_back(kv.first);
+        return out;
+    }
+
+    list<V> values() const {
+        list<V> out{};
+        out.reserve(this->size());
+        for (const auto& kv : *this) out.push_back(kv.second);
+        return out;
+    }
+
+    list<std::tuple<K, V>> items() const {
+        list<std::tuple<K, V>> out{};
+        out.reserve(this->size());
+        for (const auto& kv : *this) out.push_back(std::make_tuple(kv.first, kv.second));
+        return out;
+    }
+};
 
 template <class T>
-using set = std::unordered_set<T>;
+class set : public std::unordered_set<T> {
+public:
+    using std::unordered_set<T>::unordered_set;
+    using typename std::unordered_set<T>::const_iterator;
+    using typename std::unordered_set<T>::iterator;
+
+    void add(const T& value) { this->insert(value); }
+
+    void discard(const T& value) { this->erase(value); }
+
+    void remove(const T& value) {
+        if (this->erase(value) == 0) {
+            throw std::out_of_range("set.remove missing value");
+        }
+    }
+};
 
 class PyIntObj : public PyObj {
 public:

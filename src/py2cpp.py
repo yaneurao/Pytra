@@ -2053,16 +2053,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--negative-index-mode",
         choices=["always", "const_only", "off"],
-        default="const_only",
         help="Policy for Python-style negative indexing on list/str subscripts",
     )
     ap.add_argument(
         "--parser-backend",
         choices=["self_hosted"],
-        default="self_hosted",
         help="EAST parser backend for .py input",
     )
     args = ap.parse_args(argv)
+    if not args.negative_index_mode:
+        args.negative_index_mode = "const_only"
+    if not args.parser_backend:
+        args.parser_backend = "self_hosted"
 
     input_path = Path(args.input)
     if not input_path.exists():
