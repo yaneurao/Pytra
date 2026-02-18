@@ -79,10 +79,10 @@ test/
 python -m unittest discover -s test/unit -p "test_*.py" -v
 ```
 
-共通エミッタ基盤（`src/common/base_emitter.py`）のみを確認したい場合:
+共通エミッタ基盤（`src/common/code_emitter.py`）のみを確認したい場合:
 
 ```bash
-python -m unittest discover -s test/unit -p "test_base_emitter.py" -v
+python -m unittest discover -s test/unit -p "test_code_emitter.py" -v
 ```
 
 `test/fixtures/**/*.py` を一括実行して末尾出力 `True` を検証する専用テスト:

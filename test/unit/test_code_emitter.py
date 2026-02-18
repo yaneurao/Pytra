@@ -1,4 +1,4 @@
-"""BaseEmitter の共通ユーティリティ回帰テスト。"""
+"""CodeEmitter の共通ユーティリティ回帰テスト。"""
 
 from __future__ import annotations
 
@@ -13,10 +13,10 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.common.base_emitter import BaseEmitter
+from src.common.code_emitter import CodeEmitter
 
 
-class _DummyEmitter(BaseEmitter):
+class _DummyEmitter(CodeEmitter):
     def emit_stmt(self, stmt: Any) -> None:
         self.emit(f"stmt:{self.any_to_str(stmt)}")
 
@@ -28,7 +28,7 @@ class _DummyEmitter(BaseEmitter):
         return "<?>"
 
 
-class BaseEmitterTest(unittest.TestCase):
+class CodeEmitterTest(unittest.TestCase):
     def test_emit_and_emit_stmt_list_and_next_tmp(self) -> None:
         em = _DummyEmitter({})
         em.emit("root")
@@ -48,7 +48,7 @@ class BaseEmitterTest(unittest.TestCase):
         self.assertEqual(em.next_tmp("v"), "v_2")
 
     def test_any_helpers(self) -> None:
-        em = BaseEmitter({})
+        em = CodeEmitter({})
         self.assertEqual(em.any_dict_get({"x": 1}, "x", 9), 1)
         self.assertEqual(em.any_dict_get({"x": 1}, "y", 9), 9)
         self.assertEqual(em.any_dict_get(3, "x", 9), 9)
@@ -63,7 +63,7 @@ class BaseEmitterTest(unittest.TestCase):
         self.assertEqual(em.any_to_str(10), "")
 
     def test_node_helpers(self) -> None:
-        em = BaseEmitter({})
+        em = CodeEmitter({})
         self.assertTrue(em.is_name({"kind": "Name", "id": "x"}))
         self.assertTrue(em.is_name({"kind": "Name", "id": "x"}, "x"))
         self.assertFalse(em.is_name({"kind": "Name", "id": "x"}, "y"))
@@ -82,7 +82,7 @@ class BaseEmitterTest(unittest.TestCase):
         self.assertEqual(em.get_expr_type(None), "")
 
     def test_scope_and_expr_helpers(self) -> None:
-        em = BaseEmitter({})
+        em = CodeEmitter({})
         self.assertEqual(em.current_scope(), set())
         em.current_scope().add("x")
         self.assertTrue(em.is_declared("x"))
@@ -144,7 +144,7 @@ class BaseEmitterTest(unittest.TestCase):
         self.assertEqual(em.render_cond(None), "false")
 
     def test_negative_index_and_super_helpers(self) -> None:
-        em = BaseEmitter({})
+        em = CodeEmitter({})
         self.assertTrue(em._is_negative_const_index({"kind": "Constant", "value": -1}))
         self.assertTrue(
             em._is_negative_const_index(
@@ -183,7 +183,7 @@ class BaseEmitterTest(unittest.TestCase):
         self.assertFalse(em._is_redundant_super_init_call(not_super))
 
     def test_split_helpers(self) -> None:
-        em = BaseEmitter({})
+        em = CodeEmitter({})
         self.assertEqual(em.split_generic(""), [])
         self.assertEqual(
             em.split_generic("dict[str, list[int64]], set[str], int64"),
@@ -196,7 +196,7 @@ class BaseEmitterTest(unittest.TestCase):
         )
 
     def test_type_helpers(self) -> None:
-        em = BaseEmitter({})
+        em = CodeEmitter({})
         self.assertEqual(em.normalize_type_name("byte"), "uint8")
         self.assertEqual(em.normalize_type_name("any"), "Any")
         self.assertEqual(em.normalize_type_name("object"), "object")
@@ -221,7 +221,7 @@ class BaseEmitterTest(unittest.TestCase):
         self.assertFalse(em.is_indexable_sequence_type("dict[str, int64]"))
 
     def test_forbidden_object_receiver_rule(self) -> None:
-        em = BaseEmitter({})
+        em = CodeEmitter({})
         self.assertTrue(em.is_forbidden_object_receiver_type("Any"))
         self.assertTrue(em.is_forbidden_object_receiver_type("object"))
         self.assertTrue(em.is_forbidden_object_receiver_type("int64|object|None"))

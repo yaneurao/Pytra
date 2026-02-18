@@ -13,7 +13,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from common.base_emitter import BaseEmitter
+from common.code_emitter import CodeEmitter
 from common.east_io import extract_module_leading_trivia as extract_module_leading_trivia_common
 from common.east_io import load_east_from_path
 from common.language_profile import load_language_profile
@@ -24,7 +24,7 @@ CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 """
 
 
-BIN_OPS = {
+DEFAULT_BIN_OPS = {
     "Add": "+",
     "Sub": "-",
     "Mult": "*",
@@ -38,7 +38,7 @@ BIN_OPS = {
     "RShift": ">>",
 }
 
-CMP_OPS = {
+DEFAULT_CMP_OPS = {
     "Eq": "==",
     "NotEq": "!=",
     "Lt": "<",
@@ -51,7 +51,7 @@ CMP_OPS = {
     "IsNot": "!=",
 }
 
-AUG_OPS = {
+DEFAULT_AUG_OPS = {
     "Add": "+=",
     "Sub": "-=",
     "Mult": "*=",
@@ -65,7 +65,7 @@ AUG_OPS = {
     "RShift": ">>=",
 }
 
-AUG_BIN = {
+DEFAULT_AUG_BIN = {
     "Add": "+",
     "Sub": "-",
     "Mult": "*",
@@ -80,6 +80,7 @@ AUG_BIN = {
 }
 
 _DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = {"math": {}}
+_CPP_PROFILE_CACHE: dict[str, Any] | None = None
 
 def _safe_nested_dict(obj: Any, keys: list[str]) -> dict[str, Any] | None:
     cur: Any = obj
@@ -99,6 +100,61 @@ def _deep_copy_str_map(v: dict[str, dict[str, str]]) -> dict[str, dict[str, str]
     return out
 
 
+def _safe_nested_str_map(obj: Any, keys: list[str]) -> dict[str, str] | None:
+    node = _safe_nested_dict(obj, keys)
+    if node is None:
+        return None
+    out: dict[str, str] = {}
+    for k, v in node.items():
+        if isinstance(k, str) and isinstance(v, str):
+            out[k] = v
+    return out
+
+
+def load_cpp_profile() -> dict[str, Any]:
+    """C++ 用 LanguageProfile を読み込む（失敗時は空 dict）。"""
+    global _CPP_PROFILE_CACHE
+    if _CPP_PROFILE_CACHE is not None:
+        return _CPP_PROFILE_CACHE
+    try:
+        payload = load_language_profile("cpp")
+        _CPP_PROFILE_CACHE = payload if isinstance(payload, dict) else {}
+    except Exception:
+        _CPP_PROFILE_CACHE = {}
+    return _CPP_PROFILE_CACHE
+
+
+def load_cpp_operator_maps() -> tuple[dict[str, str], dict[str, str], dict[str, str], dict[str, str]]:
+    """C++ 用演算子マップを profile から読み込む（無ければ既定値）。"""
+    profile = load_cpp_profile()
+    bin_ops = dict(DEFAULT_BIN_OPS)
+    cmp_ops = dict(DEFAULT_CMP_OPS)
+    aug_ops = dict(DEFAULT_AUG_OPS)
+    aug_bin = dict(DEFAULT_AUG_BIN)
+    loaded_bin = _safe_nested_str_map(profile, ["operators", "bin"])
+    loaded_cmp = _safe_nested_str_map(profile, ["operators", "cmp"])
+    loaded_aug = _safe_nested_str_map(profile, ["operators", "aug"])
+    loaded_aug_bin = _safe_nested_str_map(profile, ["operators", "aug_bin"])
+    if loaded_bin is not None:
+        bin_ops.update(loaded_bin)
+    if loaded_cmp is not None:
+        cmp_ops.update(loaded_cmp)
+    if loaded_aug is not None:
+        aug_ops.update(loaded_aug)
+    if loaded_aug_bin is not None:
+        aug_bin.update(loaded_aug_bin)
+    return bin_ops, cmp_ops, aug_ops, aug_bin
+
+
+def load_cpp_type_map() -> dict[str, str]:
+    """EAST 型 -> C++ 型の基本マップを profile から取得する。"""
+    profile = load_cpp_profile()
+    out = _safe_nested_str_map(profile, ["types"])
+    if out is None:
+        return {}
+    return out
+
+
 def _load_cpp_runtime_call_map_json() -> dict[str, Any] | None:
     path = Path(__file__).resolve().parent / "runtime" / "cpp" / "runtime_call_map.json"
     if not path.exists():
@@ -112,14 +168,10 @@ def _load_cpp_runtime_call_map_json() -> dict[str, Any] | None:
     return None
 
 
-def load_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
+def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:
     """C++ の `module.attr(...)` -> ランタイム呼び出しマップを返す。"""
     merged = _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
-    payload: dict[str, Any] | None = None
-    try:
-        payload = load_language_profile("cpp")
-    except Exception:
-        payload = None
+    payload = profile if isinstance(profile, dict) else load_cpp_profile()
     node = _safe_nested_dict(payload, ["runtime_calls", "module_attr_call"]) if payload is not None else None
     if node is None:
         # Backward compatibility for older runtime_call_map.json layout.
@@ -138,6 +190,9 @@ def load_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         merged[module_name] = cur
 
     return _deep_copy_str_map(merged)
+
+
+BIN_OPS, CMP_OPS, AUG_OPS, AUG_BIN = load_cpp_operator_maps()
 
 
 def cpp_string_lit(s: str) -> str:
@@ -181,7 +236,7 @@ def cpp_char_lit(ch: byte) -> str:
     return "'" + ch + "'"
 
 
-class CppEmitter(BaseEmitter):
+class CppEmitter(CodeEmitter):
     def __init__(
         self,
         east_doc: dict[str, Any],
@@ -190,7 +245,8 @@ class CppEmitter(BaseEmitter):
         emit_main: bool = True,
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
-        BaseEmitter.__init__(self, east_doc)
+        profile = load_cpp_profile()
+        CodeEmitter.__init__(self, east_doc, profile=profile, hooks={})
         self.negative_index_mode = negative_index_mode
         self.emit_main = emit_main
         # NOTE:
@@ -208,7 +264,8 @@ class CppEmitter(BaseEmitter):
         self.ref_classes: set[str] = set()
         self.value_classes: set[str] = set()
         self.bridge_comment_emitted: set[str] = set()
-        self.module_attr_call_map = load_cpp_module_attr_call_map()
+        self.type_map = load_cpp_type_map()
+        self.module_attr_call_map = load_cpp_module_attr_call_map(self.profile)
         self.import_modules: dict[str, str] = {}
         self.import_symbols: dict[str, dict[str, str]] = {}
         meta = self.doc.get("meta")
@@ -2045,6 +2102,9 @@ class CppEmitter(BaseEmitter):
         east_type = self.normalize_type_name(east_type)
         if east_type == "":
             return "auto"
+        mapped = self.type_map.get(east_type)
+        if isinstance(mapped, str) and mapped != "":
+            return mapped
         if east_type in {"Any", "object"}:
             return "object"
         if "|" in east_type:
@@ -2064,29 +2124,8 @@ class CppEmitter(BaseEmitter):
             return east_type
         if east_type == "None":
             return "void"
-        if east_type in {
-            "int8",
-            "uint8",
-            "int16",
-            "uint16",
-            "int32",
-            "uint32",
-            "int64",
-            "uint64",
-            "float32",
-            "float64",
-            "bool",
-            "str",
-            "bytes",
-            "bytearray",
-        }:
-            return east_type
-        if east_type == "Path":
-            return "Path"
         if east_type == "PyFile":
             return "pytra::runtime::cpp::base::PyFile"
-        if east_type == "Exception":
-            return "std::runtime_error"
         if east_type.startswith("list[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[5:-1])
             if len(inner) == 1:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare selfhost/py2cpp.py as a self-contained source.
 
-This script inlines BaseEmitter into py2cpp.py so transpiling selfhost input
+This script inlines CodeEmitter into py2cpp.py so transpiling selfhost input
 no longer depends on cross-module import resolution.
 """
 
@@ -12,15 +12,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_PY2CPP = ROOT / "src" / "py2cpp.py"
-SRC_BASE = ROOT / "src" / "common" / "base_emitter.py"
+SRC_BASE = ROOT / "src" / "common" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
 
 
-def _extract_base_emitter_class(text: str) -> str:
-    marker = "class BaseEmitter:"
+def _extract_code_emitter_class(text: str) -> str:
+    marker = "class CodeEmitter:"
     i = text.find(marker)
     if i < 0:
-        raise RuntimeError("BaseEmitter class not found")
+        raise RuntimeError("CodeEmitter class not found")
     return text[i:].rstrip() + "\n"
 
 
@@ -49,13 +49,13 @@ def _strip_triple_quoted_docstrings(text: str) -> str:
 
 
 def _remove_import_line(text: str) -> str:
-    target = "from common.base_emitter import BaseEmitter\n"
+    target = "from common.code_emitter import CodeEmitter\n"
     if target not in text:
-        raise RuntimeError("py2cpp.py import for BaseEmitter not found")
+        raise RuntimeError("py2cpp.py import for CodeEmitter not found")
     return text.replace(target, "", 1)
 
 
-def _insert_base_emitter(text: str, base_class_text: str) -> str:
+def _insert_code_emitter(text: str, base_class_text: str) -> str:
     marker = "CPP_HEADER = "
     i = text.find(marker)
     if i < 0:
@@ -69,9 +69,9 @@ def main() -> int:
     py2cpp_text = SRC_PY2CPP.read_text(encoding="utf-8")
     base_text = SRC_BASE.read_text(encoding="utf-8")
 
-    base_class = _strip_triple_quoted_docstrings(_extract_base_emitter_class(base_text))
+    base_class = _strip_triple_quoted_docstrings(_extract_code_emitter_class(base_text))
     py2cpp_text = _remove_import_line(py2cpp_text)
-    out = _insert_base_emitter(py2cpp_text, base_class)
+    out = _insert_code_emitter(py2cpp_text, base_class)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)
     DST_SELFHOST.write_text(out, encoding="utf-8")
