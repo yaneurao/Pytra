@@ -67,11 +67,11 @@
    - [ ] `std::any` を経由する経路（selfhost 変換由来）をログベースでリスト化し、順次削除する。
 3. [ ] selfhost コンパイルエラーを段階的にゼロ化する。
    - [ ] `selfhost/build.all.log` の先頭 200 行を優先して修正し、`total_errors < 300` にする。
-   - [x] 同手順で `total_errors < 100` まで減らす。: 2026-02-18 再計測で `total_errors=97`
+   - [x] 同手順で `total_errors < 100` まで減らす。: 2026-02-18 再計測で `total_errors=80`
    - [ ] `total_errors = 0` にする。
    - [x] 段階ゲート A: `total_errors <= 450` を達成し、`docs/todo.md` に主因更新。: 2026-02-18 再計測で `total_errors=322`
    - [x] 段階ゲート B: `total_errors <= 300` を達成し、同時に `test_code_emitter` 回帰を固定化。: 2026-02-18 再計測で `total_errors=233`、`test/unit/test_code_emitter.py` は 12/12 pass
-   - [ ] 段階ゲート C: `total_errors <= 100` を達成し、`tools/check_selfhost_cpp_diff.py` の最小ケースを通す。
+   - [ ] 段階ゲート C: `total_errors <= 100` を達成し、`tools/check_selfhost_cpp_diff.py` の最小ケースを通す。: 2026-02-18 再計測で `total_errors=80`（diff チェックは未実施）
 4. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
    - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
@@ -120,7 +120,7 @@
 - 更新（2026-02-18 selfhost 追加）:
   1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
-  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（2026-02-18 再計測で `total_errors=97`）。
+  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（2026-02-18 再計測で `total_errors=80`）。
   4. 先頭エラー群は `emit_stmt`/`emit_stmt_list` の文リスト型、`render_boolop` 周辺の `Any` 取り回し、`self` 記号解決の C++ 生成不整合が中心。
   5. 解析補助:
      - `python3 tools/summarize_selfhost_errors.py selfhost/py2cpp.compile.log`

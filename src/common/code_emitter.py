@@ -172,6 +172,12 @@ class CodeEmitter:
             out = v
         return out
 
+    def any_to_bool(self, v: Any) -> bool:
+        """動的値を bool に安全に変換する。変換不能なら False。"""
+        if isinstance(v, bool):
+            return bool(v)
+        return False
+
     def get_expr_type(self, expr: Any) -> str:
         """式ノードから解決済み型文字列を取得する。"""
         expr_node = self.any_to_dict_or_empty(expr)

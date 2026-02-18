@@ -1253,10 +1253,10 @@ class CppEmitter(CodeEmitter):
             return f"py_len({args[0]})"
         if runtime_call == "py_to_string" and len(args) == 1:
             src_expr = first_arg
-            return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
+            return self.render_to_string(src_expr)
         if runtime_call == "static_cast" and len(args) == 1:
             target = self.cpp_type(expr.get("resolved_type"))
-            arg_t = self.get_expr_type(first_arg if isinstance(first_arg, dict) else None)
+            arg_t = self.get_expr_type(first_arg)
             numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
             if target == "int64" and arg_t == "str":
                 return f"py_to_int64({args[0]})"
@@ -1515,10 +1515,10 @@ class CppEmitter(CodeEmitter):
                 return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
             if raw == "str" and len(args) == 1:
                 src_expr = first_arg
-                return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
+                return self.render_to_string(src_expr)
             if raw in {"int", "float", "bool"} and len(args) == 1:
                 target = self.cpp_type(expr.get("resolved_type"))
-                arg_t = self.get_expr_type(first_arg if isinstance(first_arg, dict) else None)
+                arg_t = self.get_expr_type(first_arg)
                 numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
                 if raw == "bool" and self.is_any_like_type(arg_t):
                     return f"py_to_bool({args[0]})"
@@ -1563,11 +1563,8 @@ class CppEmitter(CodeEmitter):
         self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
-        owner_map = self.any_to_dict_or_empty(self.module_attr_call_map.get(owner_mod))
-        if len(owner_map) > 0:
-            runtime_call = self.any_to_str(owner_map.get(attr))
-            if runtime_call != "":
-                return f"{runtime_call}({', '.join(args)})"
+        if owner_mod == "math" and attr == "sqrt":
+            return f"py_math::sqrt({', '.join(args)})"
         if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
             return f"png_helper::write_rgb_png({', '.join(args)})"
         if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
@@ -1597,21 +1594,28 @@ class CppEmitter(CodeEmitter):
         kw: dict[str, str],
     ) -> str | None:
         """Attribute 形式の呼び出しを module/object/fallback の順で処理する。"""
-        owner = fn.get("value")
-        owner_t = self.get_expr_type(owner)
-        owner_expr = self.render_expr(owner)
-        if isinstance(owner, dict) and owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+        owner_obj: object = fn.get("value")
+        owner = self.any_to_dict_or_empty(owner_obj)
+        owner_t = self.get_expr_type(owner_obj)
+        owner_expr = self.render_expr(owner_obj)
+        if owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
             owner_expr = f"({owner_expr})"
         owner_mod = self._resolve_imported_module_name(owner_expr)
         attr = self.any_to_str(fn.get("attr"))
         if attr == "":
             return None
+        module_rendered_txt = ""
         module_rendered = self._render_call_module_method(owner_mod, attr, args, kw)
-        if isinstance(module_rendered, str) and module_rendered != "":
-            return module_rendered
+        if isinstance(module_rendered, str):
+            module_rendered_txt = str(module_rendered)
+        if module_rendered_txt != "":
+            return module_rendered_txt
+        object_rendered_txt = ""
         object_rendered = self._render_call_object_method(owner_t, owner_expr, attr)
-        if isinstance(object_rendered, str) and object_rendered != "":
-            return object_rendered
+        if isinstance(object_rendered, str):
+            object_rendered_txt = str(object_rendered)
+        if object_rendered_txt != "":
+            return object_rendered_txt
         return None
 
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
@@ -1623,12 +1627,15 @@ class CppEmitter(CodeEmitter):
         expr: dict[str, Any],
     ) -> dict[str, Any]:
         """Call ノードの前処理（func/args/kw 展開）を共通化する。"""
-        fn = self.any_to_dict_or_empty(expr.get("func"))
-        fn_name = self.render_expr(fn)
-        arg_nodes = self.any_to_list(expr.get("args", []))
+        fn_obj: object = expr.get("func")
+        fn = self.any_to_dict_or_empty(fn_obj)
+        fn_name = self.render_expr(fn_obj)
+        arg_nodes_obj: object = expr.get("args", [])
+        arg_nodes = self.any_to_list(arg_nodes_obj)
         args = [self.render_expr(a) for a in arg_nodes]
-        keywords = self.any_to_list(expr.get("keywords", []))
-        first_arg: Any = None
+        keywords_obj: object = expr.get("keywords", [])
+        keywords = self.any_to_list(keywords_obj)
+        first_arg: object = expr
         if len(arg_nodes) > 0:
             first_arg = arg_nodes[0]
         kw: dict[str, str] = {}
@@ -1640,7 +1647,7 @@ class CppEmitter(CodeEmitter):
             if kname != "":
                 kw[kname] = self.render_expr(kd.get("value"))
         out: dict[str, Any] = {}
-        out["fn"] = fn
+        out["fn"] = fn_obj
         out["fn_name"] = fn_name
         out["arg_nodes"] = arg_nodes
         out["args"] = args
@@ -1714,7 +1721,7 @@ class CppEmitter(CodeEmitter):
                 base = f"{container}.find({key}) != {container}.end()"
             else:
                 base = f"std::find({container}.begin(), {container}.end(), {key}) != {container}.end()"
-            if bool(expr.get("negated", False)):
+            if self.any_to_bool(expr.get("negated")):
                 return f"!({base})"
             return base
         left = self.render_expr(expr.get("left"))
@@ -1727,9 +1734,9 @@ class CppEmitter(CodeEmitter):
         cmps = self._dict_stmt_list(expr.get("comparators", []))
         parts: list[str] = []
         cur = left
-        cur_node = expr.get("left")
+        cur_node: object = expr.get("left")
         for i, op in enumerate(ops):
-            rhs_node = cmps[i] if i < len(cmps) else None
+            rhs_node: object = cmps[i] if i < len(cmps) else {}
             rhs = self.render_expr(rhs_node)
             op_name = self.any_to_str(op)
             cop = "=="
@@ -1750,7 +1757,11 @@ class CppEmitter(CodeEmitter):
                 else:
                     parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
             else:
-                opt_cmp = self._try_optimize_char_compare(cur_node if isinstance(cur_node, dict) else None, op_name, rhs_node)
+                opt_cmp = self._try_optimize_char_compare(
+                    self.any_to_dict_or_empty(cur_node),
+                    op_name,
+                    self.any_to_dict_or_empty(rhs_node),
+                )
                 if opt_cmp is not None:
                     parts.append(opt_cmp)
                 elif op_name in {"Is", "IsNot"} and rhs == "std::nullopt":
