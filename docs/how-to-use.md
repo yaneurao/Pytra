@@ -394,4 +394,4 @@ from pylib import png
 from pylib.path import Path
 ```
 
-上記を変換する場合、対象言語側でも `pylib.png` / `pylib.path` 相当の実装が必要です。
+上記を変換する場合、対象言語側でも `pylib.png` / `pylib.path` 相当の実装が必要です（原則として `src/pylib/*.py` からトランスパイラで生成します）。
