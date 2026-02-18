@@ -35,6 +35,18 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - 変換器都合で `test/fixtures/py/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
 - ケース命名は `caseXX_*` 形式を基本とします。
 
+`test/` の標準構成は次のとおりです。
+
+```text
+test/
+  unit/         # unittest のテストコード（test_*.py）
+  integration/  # 統合テストコード
+  fixtures/py/  # 変換元 Python ケース（caseXX_*.py）
+  transpile/    # 変換生成物と実行生成物（Git管理外）
+```
+
+- `test/transpile/` は使い捨ての生成物置き場です。必要に応じて全削除して再生成します。
+
 ## 4. サンプルプログラム方針
 
 - 実用サンプルは `sample/py/` に配置します。
