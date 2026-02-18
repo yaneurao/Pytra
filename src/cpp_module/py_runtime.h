@@ -55,6 +55,7 @@ public:
     str() = default;
     str(const std::string& s) : std::string(s) {}
     str(std::string&& s) : std::string(std::move(s)) {}
+    str(char c) : std::string(1, c) {}
 
     str operator[](int64 idx) const {
         int64 n = static_cast<int64>(this->size());

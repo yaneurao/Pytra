@@ -263,6 +263,7 @@ table = {}               # key/value 型が不明
   - `set[T] -> set<T>`（`std::unordered_set<T>` ラッパー）
   - `tuple[...] -> tuple<...>`
 - `dict` / `set` は Python 互換メソッド（`get`, `keys`, `values`, `items`, `add`, `discard`, `remove`）を `py_runtime.h` 側で提供します。
+- `str` / `list` / `dict` / `set` / `bytes` / `bytearray` は標準コンテナ継承ではなく wrapper として扱います。
 
 </details>
 

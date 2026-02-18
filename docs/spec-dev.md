@@ -72,6 +72,7 @@
 - `list<T>`: `std::vector<T>` ラッパー（`append`, `extend`, `pop` を提供）
 - `dict<K, V>`: `std::unordered_map<K,V>` ラッパー（`get`, `keys`, `values`, `items` を提供）
 - `set<T>`: `std::unordered_set<T>` ラッパー（`add`, `discard`, `remove` を提供）
+- `str`, `list`, `dict`, `set`, `bytes`, `bytearray` は「標準コンテナ継承」ではなく、Python 互換 API を持つ wrapper として扱う。
 
 制約:
 

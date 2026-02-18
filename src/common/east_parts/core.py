@@ -2684,6 +2684,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     t_ty = "unknown"
                 elif i_ty.startswith("set[") and i_ty.endswith("]"):
                     t_ty = i_ty[4:-1]
+                elif i_ty == "str":
+                    t_ty = "str"
+                elif i_ty in {"bytes", "bytearray"}:
+                    t_ty = "uint8"
                 target_names: list[str] = []
                 if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                     nm = str(target_expr.get("id", ""))
