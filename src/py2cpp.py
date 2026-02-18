@@ -601,15 +601,17 @@ class CppEmitter(CodeEmitter):
     def _emit_augassign_stmt(self, stmt: dict[str, Any]) -> None:
         """AugAssign ノードを出力する。"""
         op = "+="
-        target_expr = stmt.get("target")
-        target_expr_node = self.any_to_dict_or_empty(target_expr)
-        target = self._render_lvalue_for_augassign(target_expr)
+        target_expr_node = self.any_to_dict_or_empty(stmt.get("target"))
+        target = self._render_lvalue_for_augassign(stmt.get("target"))
         declare = self.any_dict_get_int(stmt, "declare", 0) != 0
         if declare and target_expr_node.get("kind") == "Name" and target not in self.current_scope():
             decl_t_raw = stmt.get("decl_type")
             decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
             inferred_t = self.get_expr_type(stmt.get("target"))
-            t = self.cpp_type(decl_t if decl_t != "" else inferred_t)
+            picked_t = decl_t
+            if picked_t == "":
+                picked_t = inferred_t
+            t = self._cpp_type_text(picked_t)
             self.current_scope().add(target)
             self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
             return
