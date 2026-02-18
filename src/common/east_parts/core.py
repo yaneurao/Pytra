@@ -863,6 +863,23 @@ class _ShExprParser:
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
+                    elif owner_t == "unknown":
+                        unknown_map = {
+                            "append": "list.append",
+                            "extend": "list.extend",
+                            "pop": "list.pop",
+                            "get": "dict.get",
+                            "items": "dict.items",
+                            "keys": "dict.keys",
+                            "values": "dict.values",
+                            "isdigit": "py_isdigit",
+                            "isalpha": "py_isalpha",
+                        }
+                        rc = unknown_map.get(attr)
+                        if rc is not None:
+                            payload["lowered_kind"] = "BuiltinCall"
+                            payload["builtin_name"] = attr
+                            payload["runtime_call"] = rc
                 node = payload
                 continue
             if tok["k"] == "[":
@@ -3484,4 +3501,3 @@ def convert_path(input_path: Path, parser_backend: str = "self_hosted") -> dict[
     """Read Python file and convert to EAST document."""
     source = input_path.read_text(encoding="utf-8")
     return convert_source_to_east_with_backend(source, str(input_path), parser_backend=parser_backend)
-

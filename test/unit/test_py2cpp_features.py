@@ -41,6 +41,48 @@ def transpile(input_py: Path, output_cpp: Path) -> None:
 
 
 class Py2CppFeatureTest(unittest.TestCase):
+    def test_east_builtin_call_normalization(self) -> None:
+        src = """from pathlib import Path
+
+def main() -> None:
+    s: str = "  x  "
+    xs: list[int] = []
+    d: dict[str, int] = {"a": 1}
+    p: Path = Path("tmp")
+    xs.append(1)
+    _ = s.strip()
+    _ = d.get("a", 0)
+    _ = p.exists()
+    print(len(xs))
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "norm.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+        runtime_calls: set[str] = set()
+        stack: list[object] = [east]
+        while stack:
+            cur = stack.pop()
+            if isinstance(cur, dict):
+                if cur.get("kind") == "Call" and cur.get("lowered_kind") == "BuiltinCall":
+                    rc = cur.get("runtime_call")
+                    if isinstance(rc, str):
+                        runtime_calls.add(rc)
+                for v in cur.values():
+                    stack.append(v)
+            elif isinstance(cur, list):
+                for it in cur:
+                    stack.append(it)
+        self.assertIn("list.append", runtime_calls)
+        self.assertIn("py_strip", runtime_calls)
+        self.assertIn("dict.get", runtime_calls)
+        self.assertIn("std::filesystem::exists", runtime_calls)
+        self.assertIn("py_len", runtime_calls)
+        self.assertIn("py_print", runtime_calls)
+
     def _compile_and_run_fixture(self, stem: str) -> str:
         with tempfile.TemporaryDirectory() as tmpdir:
             work = Path(tmpdir)

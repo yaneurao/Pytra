@@ -18,8 +18,17 @@
 
 ## EAST へ移譲（py2cpp 簡素化・第2段）
 
-1. [ ] `src/common/east_parts/core.py` で `Call(Name(...))` の `len/str/int/float/bool/min/max/Path/Exception` を全て `BuiltinCall` 化し、`py2cpp` の生分岐を削減する。
-2. [ ] `src/common/east_parts/core.py` で `Attribute` 呼び出しの `owner_t == "unknown"` フォールバック依存を減らし、型確定時は EAST で runtime_call を確定させる。
-3. [ ] `src/py2cpp.py` の `render_expr(kind=="Call")` から、EAST で吸収済みの `raw == ...` / `owner_t.startswith(...)` 分岐を段階削除する。
-4. [ ] `test/unit/test_py2cpp_features.py` に `BuiltinCall` 正規化の回帰（`dict.get/items/keys/values`, `str` メソッド, `Path` メソッド）を追加する。
-5. [ ] `test/unit` 一式を再実行し、`test/fixtures` 一括実行で退行がないことを確認する。
+1. [x] `src/common/east_parts/core.py` で `Call(Name(...))` の `len/str/int/float/bool/min/max/Path/Exception` を全て `BuiltinCall` 化し、`py2cpp` の生分岐を削減する。
+2. [x] `src/common/east_parts/core.py` で `Attribute` 呼び出しの `owner_t == "unknown"` フォールバック依存を減らし、型確定時は EAST で runtime_call を確定させる。
+3. [x] `src/py2cpp.py` の `render_expr(kind=="Call")` から、EAST で吸収済みの `raw == ...` / `owner_t.startswith(...)` 分岐を段階削除する。
+4. [x] `test/unit/test_py2cpp_features.py` に `BuiltinCall` 正規化の回帰（`dict.get/items/keys/values`, `str` メソッド, `Path` メソッド）を追加する。
+5. [x] `test/unit` 一式を再実行し、`test/fixtures` 一括実行で退行がないことを確認する。
+
+## BaseEmitter 共通化（言語非依存 EAST ユーティリティ）
+
+1. [x] `src/common/base_emitter.py` に言語非依存ヘルパ（`any_dict_get`, union型分解、`Any` 判定）を移し、`CppEmitter` の重複を削減する。
+2. [x] ノード補助（`is_name/is_call/is_attr` などの軽量判定）を `BaseEmitter` に追加し、各エミッタの分岐可読性を上げる。
+3. [x] 型文字列ユーティリティ（`is_list_type/is_dict_type/is_set_type`）を `BaseEmitter` へ寄せる。
+4. [x] `py2cpp.py` で `BaseEmitter` の新規ユーティリティ利用へ置換し、挙動差分がないことを回帰テストで確認する。
+5. [x] 次段として `py2rs.py` / `py2cs.py` でも流用可能な API 形に揃え、適用候補箇所を `todo.md` に追記する。
+   - 候補: `get_expr_type` / `split_generic` / `split_union` / `is_*_type` / `is_call` / `is_attr`

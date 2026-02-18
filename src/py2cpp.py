@@ -78,12 +78,6 @@ AUG_BIN = {
 }
 
 
-def any_dict_get(obj: Any, key: str, default: Any) -> Any:
-    if isinstance(obj, dict):
-        return obj.get(key, default)
-    return default
-
-
 def cpp_string_lit(s: str) -> str:
     out: str = '"'
     i: int64 = 0
@@ -172,30 +166,6 @@ class CppEmitter(BaseEmitter):
                 return False
             i += 1
         return True
-
-    def _normalize_type_name(self, t: Any) -> str:
-        if not isinstance(t, str):
-            return ""
-        s = str(t)
-        if s == "any":
-            return "Any"
-        if s == "object":
-            return "object"
-        return s
-
-    def _is_any_like_type(self, t: Any) -> bool:
-        s = self._normalize_type_name(t)
-        if s == "":
-            return False
-        if s in {"Any", "object", "unknown"}:
-            return True
-        if "|" in s:
-            parts = self.split_union(s)
-            return any(self._is_any_like_type(p) for p in parts if p != "None")
-        return False
-
-    def _is_indexable_sequence_type(self, t: str) -> bool:
-        return t.startswith("list[") or t in {"str", "bytes", "bytearray"}
 
     def _is_negative_const_index(self, node: Any) -> bool:
         if not isinstance(node, dict):
@@ -408,10 +378,10 @@ class CppEmitter(BaseEmitter):
     def render_expr_as_any(self, expr: Any) -> str:
         if not isinstance(expr, dict):
             return f"make_object({self.render_expr(expr)})"
-        kind = str(any_dict_get(expr, "kind", ""))
+        kind = str(self.any_dict_get(expr, "kind", ""))
         if kind == "Dict":
             items: list[str] = []
-            entries = any_dict_get(expr, "entries", [])
+            entries = self.any_dict_get(expr, "entries", [])
             if not isinstance(entries, list):
                 entries = []
             for kv in entries:
@@ -422,7 +392,7 @@ class CppEmitter(BaseEmitter):
                 items.append(f"{{{k}, {v}}}")
             return f"make_object(dict<str, object>{{{', '.join(items)}}})"
         if kind == "List":
-            elems = any_dict_get(expr, "elements", [])
+            elems = self.any_dict_get(expr, "elements", [])
             if not isinstance(elems, list):
                 elems = []
             vals = ", ".join(self.render_expr_as_any(e) for e in elems)
@@ -432,7 +402,7 @@ class CppEmitter(BaseEmitter):
     def render_boolop(self, expr: Any, force_value_select: bool = False) -> str:
         if not isinstance(expr, dict):
             return "false"
-        values = any_dict_get(expr, "values", [])
+        values = self.any_dict_get(expr, "values", [])
         if not isinstance(values, list):
             values = []
         value_nodes = [v for v in values if isinstance(v, dict)]
@@ -440,11 +410,11 @@ class CppEmitter(BaseEmitter):
             return "false"
         value_texts = [self.render_expr(v) for v in value_nodes]
         if not force_value_select and self.get_expr_type(expr) == "bool":
-            op = "&&" if any_dict_get(expr, "op", "") == "And" else "||"
+            op = "&&" if self.any_dict_get(expr, "op", "") == "And" else "||"
             values = [f"({txt})" for txt in value_texts]
             return f" {op} ".join(values)
 
-        op_name = str(any_dict_get(expr, "op", ""))
+        op_name = str(self.any_dict_get(expr, "op", ""))
         out = value_texts[-1]
         i = len(value_nodes) - 2
         while i >= 0:
@@ -584,7 +554,7 @@ class CppEmitter(BaseEmitter):
             ann_t_str: str = str(ann_t_raw) if isinstance(ann_t_raw, str) else ""
             if isinstance(val, dict) and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
                 inner_ann = self.split_generic(ann_t_str[5:-1])
-                if len(inner_ann) == 2 and self._is_any_like_type(inner_ann[1]):
+                if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
                     items: list[str] = []
                     for kv in val.get("entries", []):
                         if not isinstance(kv, dict):
@@ -607,7 +577,7 @@ class CppEmitter(BaseEmitter):
                 elif vkind == "ListComp" and isinstance(rendered_val, str):
                     # Keep as-is for selfhost stability; list-comp explicit typing can be improved later.
                     rendered_val = rendered_val
-            if self._is_any_like_type(ann_t_str) and val is not None:
+            if self.is_any_like_type(ann_t_str) and val is not None:
                 if isinstance(val, dict) and val.get("kind") == "Constant" and val.get("value") is None:
                     rendered_val = "object{}"
                 elif not rendered_val.startswith("make_object("):
@@ -648,7 +618,7 @@ class CppEmitter(BaseEmitter):
             val = self.render_expr(stmt.get("value"))
             target_t = self.get_expr_type(target_expr)
             value_t = self.get_expr_type(stmt.get("value"))
-            if self._is_any_like_type(value_t):
+            if self.is_any_like_type(value_t):
                 if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
                     val = f"py_to_int64({val})"
                 elif target_t in {"float32", "float64"}:
@@ -818,7 +788,7 @@ class CppEmitter(BaseEmitter):
             rval = self.render_expr(value)
             if isinstance(value, dict) and value.get("kind") == "BoolOp" and picked != "bool":
                 rval = self.render_boolop(value, True)
-            if self._is_any_like_type(picked):
+            if self.is_any_like_type(picked):
                 if isinstance(value, dict) and value.get("kind") == "Constant" and value.get("value") is None:
                     rval = "object{}"
                 elif not rval.startswith("make_object("):
@@ -829,7 +799,7 @@ class CppEmitter(BaseEmitter):
         t_target = self.get_expr_type(target)
         if isinstance(value, dict) and value.get("kind") == "BoolOp" and t_target != "bool":
             rval = self.render_boolop(value, True)
-        if self._is_any_like_type(t_target):
+        if self.is_any_like_type(t_target):
             if isinstance(value, dict) and value.get("kind") == "Constant" and value.get("value") is None:
                 rval = "object{}"
             elif not rval.startswith("make_object("):
@@ -864,7 +834,7 @@ class CppEmitter(BaseEmitter):
         idx = self.render_expr(sl)
         if val_ty.startswith("dict["):
             return f"{val}[{idx}]"
-        if self._is_indexable_sequence_type(val_ty):
+        if self.is_indexable_sequence_type(val_ty):
             if self.negative_index_mode == "off":
                 return f"{val}[{idx}]"
             if self.negative_index_mode == "const_only":
@@ -1135,7 +1105,7 @@ class CppEmitter(BaseEmitter):
                 return "true" if v else "false"
             if v is None:
                 t = self.get_expr_type(expr)
-                if self._is_any_like_type(t):
+                if self.is_any_like_type(t):
                     return "object{}"
                 return "std::nullopt"
             if isinstance(v, str):
@@ -1202,11 +1172,11 @@ class CppEmitter(BaseEmitter):
                         return f"py_to_int64({args[0]})"
                     if target == "int64" and arg_t in numeric_t:
                         return f"int64({args[0]})"
-                    if target == "int64" and self._is_any_like_type(arg_t):
+                    if target == "int64" and self.is_any_like_type(arg_t):
                         return f"py_to_int64({args[0]})"
-                    if target in {"float64", "float32"} and self._is_any_like_type(arg_t):
+                    if target in {"float64", "float32"} and self.is_any_like_type(arg_t):
                         return f"py_to_float64({args[0]})"
-                    if target == "bool" and self._is_any_like_type(arg_t):
+                    if target == "bool" and self.is_any_like_type(arg_t):
                         return f"py_to_bool({args[0]})"
                     if target == "int64":
                         return f"py_to_int64({args[0]})"
@@ -1415,9 +1385,9 @@ class CppEmitter(BaseEmitter):
                     target = self.cpp_type(expr.get("resolved_type"))
                     arg_t = self.get_expr_type(first_arg if isinstance(first_arg, dict) else None)
                     numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
-                    if raw == "bool" and self._is_any_like_type(arg_t):
+                    if raw == "bool" and self.is_any_like_type(arg_t):
                         return f"py_to_bool({args[0]})"
-                    if raw == "float" and self._is_any_like_type(arg_t):
+                    if raw == "float" and self.is_any_like_type(arg_t):
                         return f"py_to_float64({args[0]})"
                     if raw == "int" and target == "int64" and arg_t == "str":
                         return f"py_to_int64({args[0]})"
@@ -1482,29 +1452,8 @@ class CppEmitter(BaseEmitter):
                     loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
                     return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
                 if owner_t == "unknown":
-                    if attr == "append":
-                        a0 = args[0] if len(args) >= 1 else "/* missing */"
-                        return f"{owner_expr}.append({a0})"
-                    if attr == "extend":
-                        a0 = args[0] if len(args) >= 1 else "{}"
-                        return f"{owner_expr}.insert({owner_expr}.end(), {a0}.begin(), {a0}.end())"
-                    if attr == "pop":
-                        if len(args) == 0:
-                            return f"py_pop({owner_expr})"
-                        return f"py_pop({owner_expr}, {args[0]})"
                     if attr == "clear":
                         return f"{owner_expr}.clear()"
-                    if attr == "get":
-                        if len(args) >= 2:
-                            return f"py_dict_get_default({owner_expr}, {args[0]}, {args[1]})"
-                        if len(args) == 1:
-                            return f"py_dict_get({owner_expr}, {args[0]})"
-                    if attr == "items":
-                        return owner_expr
-                    if attr == "keys":
-                        return f"py_dict_keys({owner_expr})"
-                    if attr == "values":
-                        return f"py_dict_values({owner_expr})"
             return f"{fn_name}({', '.join(args)})"
         if kind == "RangeExpr":
             start = self.render_expr(expr.get("start"))
@@ -1675,7 +1624,7 @@ class CppEmitter(BaseEmitter):
             parts: list[str] = []
             for e in expr.get("elements", []):
                 rv = self.render_expr(e)
-                if self._is_any_like_type(elem_t):
+                if self.is_any_like_type(elem_t):
                     rv = f"make_object({rv})"
                 parts.append(rv)
             items = ", ".join(parts)
@@ -1701,9 +1650,9 @@ class CppEmitter(BaseEmitter):
             for kv in expr.get("entries", []):
                 k = self.render_expr(kv.get("key"))
                 v = self.render_expr(kv.get("value"))
-                if self._is_any_like_type(key_t):
+                if self.is_any_like_type(key_t):
                     k = f"make_object({k})"
-                if self._is_any_like_type(val_t):
+                if self.is_any_like_type(val_t):
                     v = f"make_object({v})"
                 items.append(f"{{{k}, {v}}}")
             return f"{t}{{{', '.join(items)}}}"
@@ -1723,7 +1672,7 @@ class CppEmitter(BaseEmitter):
             idx = self.render_expr(sl)
             if val_ty.startswith("dict["):
                 return f"py_dict_get({val}, {idx})"
-            if self._is_indexable_sequence_type(val_ty):
+            if self.is_indexable_sequence_type(val_ty):
                 if self.negative_index_mode == "off":
                     return f"{val}[{idx}]"
                 if self.negative_index_mode == "const_only":
@@ -1923,18 +1872,10 @@ class CppEmitter(BaseEmitter):
             self.emit(text)
             self.bridge_comment_emitted.add(key)
 
-    def get_expr_type(self, expr: Any) -> str:
-        if expr is None:
-            return ""
-        if not isinstance(expr, dict):
-            return ""
-        t = expr.get("resolved_type")
-        return t if isinstance(t, str) else ""
-
     def cpp_type(self, east_type: Any) -> str:
         if not isinstance(east_type, str):
             return "auto"
-        east_type = self._normalize_type_name(east_type)
+        east_type = self.normalize_type_name(east_type)
         if east_type == "":
             return "auto"
         if east_type in {"Any", "object"}:
@@ -1943,7 +1884,7 @@ class CppEmitter(BaseEmitter):
             parts = self.split_union(east_type)
             if len(parts) >= 2:
                 non_none = [p for p in parts if p != "None"]
-                if any(self._is_any_like_type(p) for p in non_none):
+                if any(self.is_any_like_type(p) for p in non_none):
                     return "object"
                 if len(parts) == 2 and len(non_none) == 1:
                     return f"std::optional<{self.cpp_type(non_none[0])}>"
@@ -1980,7 +1921,7 @@ class CppEmitter(BaseEmitter):
             if len(inner) == 1:
                 if inner[0] == "uint8":
                     return "bytearray"
-                if self._is_any_like_type(inner[0]):
+                if self.is_any_like_type(inner[0]):
                     return "list<object>"
                 if inner[0] == "unknown":
                     return "list<std::any>"
@@ -1994,7 +1935,7 @@ class CppEmitter(BaseEmitter):
         if east_type.startswith("dict[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[5:-1])
             if len(inner) == 2:
-                if self._is_any_like_type(inner[1]):
+                if self.is_any_like_type(inner[1]):
                     return f"dict<{self.cpp_type(inner[0] if inner[0] != 'unknown' else 'str')}, object>"
                 if inner[0] == "unknown" and inner[1] == "unknown":
                     return "dict<str, std::any>"
@@ -2015,42 +1956,6 @@ class CppEmitter(BaseEmitter):
         if east_type == "module":
             return "auto"
         return east_type
-
-    def split_generic(self, s: str) -> list[str]:
-        if s == "":
-            return []
-        out: list[str] = []
-        depth = 0
-        start = 0
-        for i, ch in enumerate(s):
-            if ch == "[":
-                depth += 1
-            elif ch == "]":
-                depth -= 1
-            elif ch == "," and depth == 0:
-                out.append(s[start:i].strip())
-                start = i + 1
-        out.append(s[start:].strip())
-        return out
-
-    def split_union(self, s: str) -> list[str]:
-        out: list[str] = []
-        depth = 0
-        start = 0
-        for i, ch in enumerate(s):
-            if ch in {"[", "("}:
-                depth += 1
-            elif ch in {"]", ")"}:
-                depth -= 1
-            elif ch == "|" and depth == 0:
-                part = s[start:i].strip()
-                if part != "":
-                    out.append(part)
-                start = i + 1
-        tail = s[start:].strip()
-        if tail != "":
-            out.append(tail)
-        return out
 
 
 def load_east(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
