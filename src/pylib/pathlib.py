@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import glob as _glob
-import os
+from pylib import glob as py_glob
+from pylib import os
 
 
 class _PathParents:
@@ -90,7 +90,7 @@ class Path:
 
     def glob(self, pattern: str) -> list["Path"]:
         base = self._value
-        paths = _glob.glob(os.path.join(base, pattern))
+        paths = py_glob.glob(os.path.join(base, pattern))
         out: list[Path] = []
         for p in paths:
             out.append(Path(p))

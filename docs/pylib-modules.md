@@ -16,6 +16,12 @@
 - `pylib.typing`（`typing` 代替）
   - 型エイリアス: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar(name)`
+- `pylib.os`（`os` 代替・最小実装）
+  - 変数: `path`
+  - `path` の主なメンバー: `join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`
+  - 関数: `getcwd()`, `mkdir(path)`, `makedirs(path, exist_ok=False)`
+- `pylib.glob`（`glob` 代替・最小実装）
+  - 関数: `glob(pattern)`
 - `pylib.argparse`（`argparse` 代替・最小実装）
   - class: `ArgumentParser`, `Namespace`
   - `ArgumentParser` の主な機能: `add_argument(...)`, `parse_args(...)`

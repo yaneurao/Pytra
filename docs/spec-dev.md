@@ -33,6 +33,11 @@
 - `pylib.typing`
   - 型名: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar`
+- `pylib.os`
+  - 変数: `path`（`join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`）
+  - 関数: `getcwd`, `mkdir`, `makedirs`
+- `pylib.glob`
+  - 関数: `glob`
 - `pylib.argparse`
   - クラス: `ArgumentParser`, `Namespace`
   - 関数: `ArgumentParser.add_argument`, `ArgumentParser.parse_args`
