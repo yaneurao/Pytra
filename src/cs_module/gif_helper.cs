@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Pytra.CsModule
 {
-    // Python の py_module.gif_helper 相当実装。
+    // Python の pylib.gif_helper 相当実装。
     public static class gif_helper
     {
         private static void EmitCode(List<byte> outv, ref int bitBuffer, ref int bitCount, int code, int codeSize)

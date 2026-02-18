@@ -1,7 +1,7 @@
 # このファイルは `test/fixtures/none_optional.py` のテスト/実装コードです。
 
 
-from py_module.py_runtime import py_assert_all, py_assert_eq, py_assert_true
+from pylib.py_runtime import py_assert_all, py_assert_eq, py_assert_true
 def maybe_value(flag: bool) -> int | None:
     if flag:
         return 42

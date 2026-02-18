@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from py_module.gif_helper import grayscale_palette, save_gif
+from pylib.gif_helper import grayscale_palette, save_gif
 
 
 def capture(grid: list[list[int]], w: int, h: int, scale: int) -> bytes:

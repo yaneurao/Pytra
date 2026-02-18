@@ -128,9 +128,9 @@ class CSharpTranspiler(BaseTranspiler):
         lines: Set[str] = set()
         if isinstance(stmt, ast.Import):
             for alias in stmt.names:
-                if alias.name in {"py_module", "time", "typing", "dataclasses", "__future__"}:
+                if alias.name in {"py_module", "pylib", "time", "typing", "dataclasses", "__future__"}:
                     continue
-                if alias.name.startswith("py_module."):
+                if alias.name.startswith("py_module.") or alias.name.startswith("pylib."):
                     continue
                 module_name = self._map_python_module(alias.name)
                 if alias.asname:
@@ -143,9 +143,9 @@ class CSharpTranspiler(BaseTranspiler):
             if stmt.level != 0:
                 return lines
             if stmt.module:
-                if stmt.module in {"py_module", "time", "dataclasses", "__future__"}:
+                if stmt.module in {"py_module", "pylib", "time", "dataclasses", "__future__"}:
                     return lines
-                if stmt.module.startswith("py_module."):
+                if stmt.module.startswith("py_module.") or stmt.module.startswith("pylib."):
                     return lines
                 if stmt.module == "typing":
                     for alias in stmt.names:

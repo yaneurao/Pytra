@@ -2,7 +2,7 @@
 # a = b の再代入で参照が切れたオブジェクトが破棄されることを確認します。
 
 
-from py_module.py_runtime import py_assert_stdout
+from pylib.py_runtime import py_assert_stdout
 class Tracked:
     def __init__(self, name: str) -> None:
         self.name = name

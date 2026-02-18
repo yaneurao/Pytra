@@ -84,7 +84,7 @@ class JsTsNativeTranspiler(BaseTranspiler):
                     lines.append(f"const {name} = require(__pytra_root + '/src/{module_dir}/time.{ext}');")
                 elif alias.name == "pathlib":
                     lines.append(f"const {name} = require(__pytra_root + '/src/{module_dir}/pathlib.{ext}');")
-                elif alias.name == "py_module":
+                elif alias.name in {"py_module", "pylib"}:
                     continue
                 else:
                     # __future__ 等は無視
@@ -113,16 +113,16 @@ class JsTsNativeTranspiler(BaseTranspiler):
                 else:
                     raise TranspileError(f"unsupported from pathlib import {alias.name}")
             return mapped
-        if mod == "py_module":
+        if mod in {"py_module", "pylib"}:
             lines: list[str] = []
             for alias in stmt.names:
                 if alias.name == "png_helper":
                     asname = alias.asname or alias.name
                     lines.append(f"const {asname} = require(__pytra_root + '/src/{module_dir}/png_helper.{ext}');")
                 else:
-                    raise TranspileError(f"unsupported from py_module import {alias.name}")
+                    raise TranspileError(f"unsupported from {mod} import {alias.name}")
             return lines
-        if mod == "py_module.gif_helper":
+        if mod in {"py_module.gif_helper", "pylib.gif_helper"}:
             names = []
             for alias in stmt.names:
                 asname = alias.asname or alias.name

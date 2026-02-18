@@ -1,5 +1,5 @@
 # lambda capture + multi args
-from py_module.py_runtime import py_assert_all, py_assert_eq
+from pylib.py_runtime import py_assert_all, py_assert_eq
 
 
 def run_lambda_capture_multiargs() -> bool:

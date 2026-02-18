@@ -1,6 +1,6 @@
 
 
-from py_module.py_runtime import py_assert_stdout
+from pylib.py_runtime import py_assert_stdout
 def main():
 
     i : int8 = 1

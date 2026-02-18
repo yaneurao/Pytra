@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 
-from py_module.py_runtime import py_assert_stdout
+from pylib.py_runtime import py_assert_stdout
 def comp_like_24(x: int) -> int:
     values: list[int] = [i for i in [1, 2, 3, 4]]
     return x + 1

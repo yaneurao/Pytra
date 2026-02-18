@@ -63,7 +63,7 @@ test/
 - 実用サンプルは `sample/py/` に配置します。
 - 言語別の変換結果は `sample/cpp/`, `sample/rs/`, `sample/cs/`, `sample/js/`, `sample/ts/`, `sample/go/`, `sample/java/`, `sample/swift/`, `sample/kotlin/` に配置します。
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します（Git 管理外）。
-- Python から import する自作ライブラリは `src/py_module/` に配置します。
+- Python から import する自作ライブラリは `src/pylib/` に配置します。
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
 - C++ 実行バイナリは起動オプション `--pytra-image-format=png|ppm` を受け付けます。
   - `ppm` 指定時、`png_helper.write_rgb_png(...)` は PPM(P6) で出力され、出力拡張子は `.ppm` に切り替わります。
@@ -94,7 +94,7 @@ python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
 - `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/` は生成物ディレクトリです。
-- `src/py_module/` を使う Python サンプルは、必要に応じて `PYTHONPATH=src` を付与して実行します。
+- `src/pylib/` を使う Python サンプルは、必要に応じて `PYTHONPATH=src` を付与して実行します。
 
 ## 7. 関連ドキュメント
 

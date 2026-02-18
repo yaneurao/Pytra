@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 
-from py_module.py_runtime import py_assert_stdout
+from pylib.py_runtime import py_assert_stdout
 def finally_effect_20(flag: bool) -> int:
     value: int = 0
     try:

@@ -80,7 +80,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from py_module.gif_helper import save_gif
+from pylib.gif_helper import save_gif
 
 
 def julia_palette() -> bytes:
@@ -2594,7 +2594,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from py_module.gif_helper import save_gif
+from pylib.gif_helper import save_gif
 
 
 def clamp01(v: float) -> float:

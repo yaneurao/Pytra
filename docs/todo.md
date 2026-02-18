@@ -9,6 +9,13 @@
 5. [ ] `selfhost/py2cpp.out sample/py/01_mandelbrot.py` 実行を通す。
 6. [ ] `selfhost/py2cpp.out` 生成結果と `python src/py2cpp.py` 生成結果の一致検証を実施する。
 
+## 画像ランタイム統一（Python正本）
+
+1. [ ] `src/pylib/png_helper.py` を正本として、各言語 `*_module` の PNG 実装を段階的にトランスパイル生成へ置換する。
+2. [ ] `src/pylib/gif_helper.py` を正本として、各言語 `*_module` の GIF 実装を段階的にトランスパイル生成へ置換する。
+3. [ ] 画像一致判定の既定手順を「復号後画素一致」優先へ統一し、言語別の検証スクリプトを整理する。
+4. [ ] 速度がボトルネックになる箇所のみ、言語別最適化の許容範囲を文書化する。
+
 ## 直近メモ
 
 - 進捗: `except ValueError:` 受理と `return`（値なし）受理を self_hosted parser に追加し、EAST 生成は通過。

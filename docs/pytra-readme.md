@@ -70,9 +70,9 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - 主要ノード型（`Module`, `FunctionDef`, `ClassDef`, `Assign`, `Call` など）
 
 - 自作ライブラリ:
-  - `py_module.png_helper`
+  - `pylib.png_helper`
     - `write_rgb_png(path, width, height, pixels)`
-  - `py_module.gif_helper`
+  - `pylib.gif_helper`
     - `save_gif(path, width, height, frames, palette, delay_cs, loop)`
     - `grayscale_palette()`
 - ターゲット言語ごとのランタイム:

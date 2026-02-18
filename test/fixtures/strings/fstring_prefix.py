@@ -1,7 +1,7 @@
 # このファイルは `test/fixtures/fstring_prefix.py` のテスト/実装コードです。
 
 
-from py_module.py_runtime import py_assert_all, py_assert_eq
+from pylib.py_runtime import py_assert_all, py_assert_eq
 def run_fstring_prefix() -> bool:
     name: str = "Pytra"
     x: int = 7

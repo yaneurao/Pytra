@@ -1,4 +1,4 @@
-// Python の py_module.gif_helper に対応する GIF 書き出し補助です。
+// Python の pylib.gif_helper に対応する GIF 書き出し補助です。
 
 #ifndef PYTRA_CPP_MODULE_GIF_H
 #define PYTRA_CPP_MODULE_GIF_H
