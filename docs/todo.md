@@ -1,11 +1,34 @@
 # TODO（未完了のみ）
 
+## CodeEmitter 化（JSON + Hooks）
+
+1. [ ] `BaseEmitter` を `CodeEmitter` へ改名し、段階移行する。
+   - [ ] `src/common/base_emitter.py` を `src/common/code_emitter.py` へ移動する。
+   - [ ] 互換エイリアス `BaseEmitter = CodeEmitter` を暫定で残す。
+   - [ ] `src/py2cpp.py` / テスト / ドキュメント参照を `CodeEmitter` 表記へ置換する。
+2. [ ] 言語差分を `LanguageProfile` JSON に切り出す。
+   - [ ] 型マップ（EAST 型 -> ターゲット型）を JSON で定義する。
+   - [ ] 演算子マップ・予約語・識別子リネーム規則を JSON で定義する。
+   - [ ] 組み込み関数/メソッドの runtime call map を JSON へ統合する。
+3. [ ] `CodeEmitter` へ `profile` 注入を実装する。
+   - [ ] `CodeEmitter(profile, hooks)` の初期化 API を追加する。
+   - [ ] `cpp_type` / call 解決 / 文テンプレートを profile 参照へ置換する。
+   - [ ] `src/py2cpp.py` の直書きマップを profile ロードに置換する。
+4. [ ] フック注入 (`EmitterHooks`) を実装する。
+   - [ ] `on_render_call`, `on_render_binop`, `on_emit_stmt` など最小フック面を定義する。
+   - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる。
+   - [ ] C++ 向け hooks 実装を `src/common/hooks/cpp_hooks.py` として分離する。
+5. [ ] 回帰確認を追加する。
+   - [ ] `test/unit/test_code_emitter.py` を追加し、profile/hook の境界を検証する。
+   - [ ] `test/unit/test_py2cpp_features.py` と `test/unit/test_image_runtime_parity.py` を回帰する。
+   - [ ] selfhost 検証フロー（`tools/prepare_selfhost_source.py`）に新構造を反映する。
+
 ## selfhost 回復（優先）
 
-1. [ ] `BaseEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
+1. [ ] `CodeEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
    - [ ] `any_dict_get` / `any_to_dict` / `any_to_list` / `any_to_str` の C++ 生成を確認し、`object.begin/end` 生成を消す。
    - [ ] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
-   - [ ] `test/unit/test_base_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
+   - [ ] `test/unit/test_code_emitter.py`（旧 `test_base_emitter.py`）に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
    - [ ] `str|None`, `dict|None`, `list|None` の Union 処理を見直し、`std::optional<T>` 優先にする。
    - [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
@@ -54,10 +77,10 @@
   3. `render_expr` 系 API が `dict|None` 固定のため、selfhost 生成側で `object/std::any` から呼び出した時に詰まる。
   4. 方針として selfhost 専用 lowering は極力増やさず、型付き helper と runtime 補助 API の拡充で汎用的に解消する。
 - 更新（2026-02-18）:
-  1. `BaseEmitter` 側の `any_*` を明示 `if` へ書き換え、ifexp（三項演算子）由来の不整合を削減する下準備を実施。
+  1. `BaseEmitter`（移行後 `CodeEmitter`）側の `any_*` を明示 `if` へ書き換え、ifexp（三項演算子）由来の不整合を削減する下準備を実施。
   2. `selfhost/py2cpp.py` と `selfhost/runtime/cpp/*` を `src` 最新へ同期済み。
   3. 依然として主因は `object` / `optional<dict>` / `std::any` の境界変換（代入・引数渡し・`py_dict_get_default` 呼び出し）に集中している。
 - 更新（2026-02-18 selfhost 追加）:
-  1. `tools/prepare_selfhost_source.py` を追加し、`src/common/base_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
+  1. `tools/prepare_selfhost_source.py` を追加し、`src/common/base_emitter.py`（移行後は `code_emitter.py`）を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
   3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=510`）。
