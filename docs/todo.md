@@ -61,3 +61,13 @@
 - [x] `selfhost/py2cpp.cpp` がコンパイル成功することをゴール条件に明記する。
 - [x] `selfhost` 実行で `sample/py/01` を変換し、`src/py2cpp.py` 生成結果と比較する検証手順を追記する。
 - [x] 一致判定条件（ソース一致 / 実行一致 / 画像一致）を `docs/spec-dev.md` に明記する。
+
+#### H. selfhost ビルドエラー直接解消（2026-02-18 再分類）
+
+- [ ] `src/py2cpp.py` 内の `Any` パラメータ補助関数を廃止し、`dict`/`list[dict]` 前提の経路へ寄せる。
+- [ ] `stmt.get(...)` の戻り値が `std::any` 化される箇所を、`isinstance(..., dict)` ガード付きローカル変数へ統一する。
+- [ ] 1文字アクセス（`s[i]`）由来の `char`/`str` 型崩壊を避けるため、文字判定ロジックを再実装する。
+- [ ] `strip/startswith/endswith/replace/join` の Python 文字列APIを C++ 側 API に落とす明示ルートを追加する。
+- [ ] `enumerate` / `reversed` が生で残る経路を EAST か lowering で除去する。
+- [ ] `py_is_none` 追加分を selfhost 側ランタイムにも同期し、未定義エラーを解消する。
+- [ ] `src/py2cpp.py -> selfhost/py2cpp.py` 同期後に `selfhost/py2cpp.cpp` を再生成し、エラー件数の減少を記録する。
