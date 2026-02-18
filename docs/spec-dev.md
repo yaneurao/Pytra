@@ -57,11 +57,11 @@
 - `from py_module import png_helper` / `import png_helper` -> `#include "cpp_module/png.h"`
 - GC は常時 `#include "cpp_module/gc.h"` を利用
 
-`math` などの `module.attr(...)` 呼び出しは、`src/common/runtime_call_map.json` の設定で C++ ランタイム呼び出しへマップします。
+`math` などの `module.attr(...)` 呼び出しは、`src/cpp_module/runtime_call_map.json` の設定で C++ ランタイム呼び出しへマップします。
 
 - 例: `"sqrt": "py_math::sqrt"`（`math.sqrt(...)` -> `py_math::sqrt(...)`）
-- 追加方法: `src/common/runtime_call_map.json` の `cpp.module_attr_call.<module>` に関数を追記
-- 起動時に JSON を読み込み、未定義項目は既定マップ（`src/common/runtime_call_map.py`）を使用
+- 追加方法: `src/cpp_module/runtime_call_map.json` の `cpp.module_attr_call.<module>` に関数を追記
+- 起動時に JSON を読み込み、未定義項目は `py2cpp.py` 内の既定マップを使用
 
 主な補助モジュール実装:
 

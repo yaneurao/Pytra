@@ -14,8 +14,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2cpp import load_east, transpile_to_cpp
-from src.common.runtime_call_map import load_cpp_module_attr_call_map
+from src.py2cpp import load_cpp_module_attr_call_map, load_east, transpile_to_cpp
 
 CPP_RUNTIME_SRCS = [
     "src/cpp_module/pathlib.cpp",
