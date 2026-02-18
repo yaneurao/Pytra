@@ -119,8 +119,6 @@ def cpp_char_lit(ch: byte) -> str:
 
 
 class CppEmitter(BaseEmitter):
-    """EAST を C++ ソースへ変換する実装クラス。"""
-
     def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
         super().__init__(east_doc)
@@ -355,10 +353,13 @@ class CppEmitter(BaseEmitter):
             i -= 1
         return False
 
-    def render_cond(self, expr: dict[str, Any] | None) -> str:
+    def render_cond(self, expr: Any) -> str:
         """条件式文脈向けに式を真偽値へ正規化して出力する。"""
-        t: str = self.get_expr_type(expr)
-        body = self._strip_outer_parens(self.render_expr(expr))
+        expr_node = self.any_to_dict(expr)
+        if expr_node is None:
+            return "false"
+        t: str = self.get_expr_type(expr_node)
+        body = self._strip_outer_parens(self.render_expr(expr_node))
         if t in {"bool"}:
             return body
         if t == "str" or t[:5] == "list[" or t[:5] == "dict[" or t[:4] == "set[" or t[:6] == "tuple[":
@@ -435,14 +436,15 @@ class CppEmitter(BaseEmitter):
             return f"std::to_string({rendered})"
         return f"py_to_string({rendered})"
 
-    def render_expr_as_any(self, expr: dict[str, Any] | None) -> str:
+    def render_expr_as_any(self, expr: Any) -> str:
         """式を `object`（Any 相当）へ昇格する式文字列を返す。"""
-        if not isinstance(expr, dict):
+        expr_node = self.any_to_dict(expr)
+        if expr_node is None:
             return f"make_object({self.render_expr(expr)})"
-        kind = self.any_to_str(self.any_dict_get(expr, "kind", ""))
+        kind = self.any_to_str(self.any_dict_get(expr_node, "kind", ""))
         if kind == "Dict":
             items: list[str] = []
-            entries = self.any_to_list(self.any_dict_get(expr, "entries", []))
+            entries = self.any_to_list(self.any_dict_get(expr_node, "entries", []))
             for kv_raw in entries:
                 kv = self.any_to_dict(kv_raw)
                 if kv is None:
@@ -452,10 +454,10 @@ class CppEmitter(BaseEmitter):
                 items.append(f"{{{k}, {v}}}")
             return f"make_object(dict<str, object>{{{', '.join(items)}}})"
         if kind == "List":
-            elems = self.any_to_list(self.any_dict_get(expr, "elements", []))
+            elems = self.any_to_list(self.any_dict_get(expr_node, "elements", []))
             vals = ", ".join(self.render_expr_as_any(self.any_to_dict(e)) for e in elems)
             return f"make_object(list<object>{{{vals}}})"
-        return f"make_object({self.render_expr(expr)})"
+        return f"make_object({self.render_expr(expr_node)})"
 
     def render_boolop(self, expr: dict[str, Any] | None, force_value_select: bool = False) -> str:
         """BoolOp を真偽演算または値選択式として出力する。"""
@@ -624,10 +626,12 @@ class CppEmitter(BaseEmitter):
             call = f"std::{fn}<{t}>({call}, {a})"
         return call
 
-    def emit_stmt(self, stmt: dict[str, Any] | None) -> None:
+    def emit_stmt(self, stmt: Any) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
-        if stmt is None:
+        stmt_node = self.any_to_dict(stmt)
+        if stmt_node is None:
             return
+        stmt = stmt_node
         kind = stmt.get("kind")
         self.emit_leading_comments(stmt)
         if kind in {"Import", "ImportFrom"}:
@@ -885,8 +889,13 @@ class CppEmitter(BaseEmitter):
         k = filtered[0].get("kind")
         return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
 
-    def emit_assign(self, stmt: dict[str, Any]) -> None:
+    def emit_assign(self, stmt: Any) -> None:
         """代入文（通常代入/タプル代入）を C++ へ出力する。"""
+        stmt_node = self.any_to_dict(stmt)
+        if stmt_node is None:
+            self.emit("/* invalid assign */")
+            return
+        stmt = stmt_node
         target = stmt.get("target")
         value = stmt.get("value")
         if target is None or value is None:
@@ -974,11 +983,12 @@ class CppEmitter(BaseEmitter):
             return False
         return ra.strip() == rb.strip()
 
-    def render_lvalue(self, expr: dict[str, Any] | None) -> str:
+    def render_lvalue(self, expr: Any) -> str:
         """左辺値文脈の式（添字代入含む）を C++ 文字列へ変換する。"""
-        if expr is None:
+        expr_node = self.any_to_dict(expr)
+        if expr_node is None:
             return self.render_expr(expr)
-        node = expr
+        node = expr_node
         if node.get("kind") != "Subscript":
             return self.render_expr(node)
         val_expr = node.get("value")
@@ -1248,10 +1258,12 @@ class CppEmitter(BaseEmitter):
         self.indent -= 1
         self.emit("};")
 
-    def render_expr(self, expr: dict[str, Any] | None) -> str:
+    def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
-        if expr is None:
+        expr_node = self.any_to_dict(expr)
+        if expr_node is None:
             return "/* none */"
+        expr = expr_node
         kind = expr.get("kind")
 
         if kind == "Name":
@@ -1477,7 +1489,18 @@ class CppEmitter(BaseEmitter):
                     return f"{owner}.clear()"
                 if runtime_call == "dict.get":
                     owner = self.render_expr(fn.get("value"))
+                    owner_t = self.get_expr_type(fn.get("value"))
+                    objectish_owner = self.is_any_like_type(owner_t)
                     if len(args) >= 2:
+                        out_t = self.get_expr_type(expr)
+                        if objectish_owner and out_t == "bool":
+                            return f"dict_get_bool({owner}, {args[0]}, {args[1]})"
+                        if objectish_owner and out_t == "str":
+                            return f"dict_get_str({owner}, {args[0]}, {args[1]})"
+                        if objectish_owner and out_t.startswith("list["):
+                            return f"dict_get_list({owner}, {args[0]}, {args[1]})"
+                        if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
+                            return f"dict_get_node({owner}, {args[0]}, {args[1]})"
                         return f"py_dict_get_default({owner}, {args[0]}, {args[1]})"
                     if len(args) == 1:
                         return f"py_dict_get({owner}, {args[0]})"

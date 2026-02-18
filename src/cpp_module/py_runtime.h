@@ -49,6 +49,14 @@ using uint64 = std::uint64_t;
 using float32 = float;
 using float64 = double;
 
+class str;
+template <class T> class list;
+template <class K, class V> class dict;
+static inline str obj_to_str(const object& v);
+static inline dict<str, object> obj_to_dict(const object& v);
+static inline const dict<str, object>* obj_to_dict_ptr(const object& v);
+static inline const list<object>* obj_to_list_ptr(const object& v);
+
 class str {
 public:
     using iterator = std::string::iterator;
@@ -61,9 +69,14 @@ public:
     str(std::string&& s) : data_(std::move(s)) {}
     str(std::size_t count, char ch) : data_(count, ch) {}
     str(char c) : data_(1, c) {}
+    str(const object& v) : data_(obj_to_str(v).std()) {}
 
     str& operator=(const char* s) {
         data_ = (s == nullptr ? "" : s);
+        return *this;
+    }
+    str& operator=(const object& v) {
+        data_ = obj_to_str(v).std();
         return *this;
     }
 
@@ -261,6 +274,10 @@ public:
     list(std::initializer_list<T> init) : data_(init) {}
     explicit list(std::size_t count) : data_(count) {}
     list(std::size_t count, const T& value) : data_(count, value) {}
+    template <class U = T, std::enable_if_t<std::is_same_v<U, object>, int> = 0>
+    list(const object& v) {
+        if (const auto* p = obj_to_list_ptr(v)) data_ = *p;
+    }
 
     template <class It>
     list(It first, It last) : data_(first, last) {}
@@ -275,6 +292,12 @@ public:
 
     operator const std::vector<T>&() const { return data_; }  // NOLINT(google-explicit-constructor)
     operator std::vector<T>&() { return data_; }              // NOLINT(google-explicit-constructor)
+    template <class U = T, std::enable_if_t<std::is_same_v<U, object>, int> = 0>
+    list& operator=(const object& v) {
+        if (const auto* p = obj_to_list_ptr(v)) data_ = *p;
+        else data_.clear();
+        return *this;
+    }
 
     iterator begin() { return data_.begin(); }
     iterator end() { return data_.end(); }
@@ -372,12 +395,19 @@ public:
 
     dict() = default;
     dict(std::initializer_list<value_type> init) : data_(init) {}
+    template <class KK = K, class VV = V, std::enable_if_t<std::is_same_v<KK, str> && std::is_same_v<VV, object>, int> = 0>
+    dict(const object& v) : data_(obj_to_dict(v)) {}
 
     template <class It>
     dict(It first, It last) : data_(first, last) {}
 
     operator const base_type&() const { return data_; }  // NOLINT(google-explicit-constructor)
     operator base_type&() { return data_; }              // NOLINT(google-explicit-constructor)
+    template <class KK = K, class VV = V, std::enable_if_t<std::is_same_v<KK, str> && std::is_same_v<VV, object>, int> = 0>
+    dict& operator=(const object& v) {
+        data_ = obj_to_dict(v);
+        return *this;
+    }
 
     iterator begin() { return data_.begin(); }
     iterator end() { return data_.end(); }
@@ -1122,6 +1152,45 @@ static inline str py_dict_get_default(const dict<str, std::any>& d, const char* 
     if (it == d.end()) return str(defval);
     if (const auto* s = std::any_cast<str>(&(it->second))) return *s;
     return str(defval);
+}
+
+static inline bool dict_get_bool(const object& obj, const char* key, bool defval) {
+    return py_to_bool(py_dict_get_default(obj, key, make_object(defval)));
+}
+
+static inline bool dict_get_bool(const std::optional<dict<str, object>>& d, const char* key, bool defval) {
+    return py_to_bool(py_dict_get_default(d, key, make_object(defval)));
+}
+
+static inline str dict_get_str(const object& obj, const char* key, const str& defval) {
+    return py_to_string(py_dict_get_default(obj, key, make_object(defval)));
+}
+
+static inline str dict_get_str(const std::optional<dict<str, object>>& d, const char* key, const str& defval) {
+    return py_to_string(py_dict_get_default(d, key, make_object(defval)));
+}
+
+static inline list<object> dict_get_list(
+    const object& obj, const char* key, const list<object>& defval = list<object>{}) {
+    object got = py_dict_get_default(obj, key, make_object(defval));
+    if (const auto* p = obj_to_list_ptr(got)) return *p;
+    return defval;
+}
+
+static inline list<object> dict_get_list(
+    const std::optional<dict<str, object>>& d, const char* key, const list<object>& defval = list<object>{}) {
+    object got = py_dict_get_default(d, key, make_object(defval));
+    if (const auto* p = obj_to_list_ptr(got)) return *p;
+    return defval;
+}
+
+static inline object dict_get_node(const object& obj, const char* key, const object& defval = object{}) {
+    return py_dict_get_default(obj, key, defval);
+}
+
+static inline object dict_get_node(
+    const std::optional<dict<str, object>>& d, const char* key, const object& defval = object{}) {
+    return py_dict_get_default(d, key, defval);
 }
 
 template <class T>

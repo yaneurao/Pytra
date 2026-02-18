@@ -366,3 +366,9 @@
 - [x] `py2cpp.py` の生成コードから STL 依存の前提（継承由来の暗黙利用）を除去し、wrapper API のみで成立させる。
 - [x] `test/fixtures/strings/str_for_each.py` を含む文字列走査ケースで、生成 C++ が簡潔な `for (str c : s)` を維持することを回帰確認する。
 - [x] `docs/spec-dev.md` / `docs/how-to-use.md` / `docs/spec-east.md` の wrapper 記述を実装実態と一致させる（移行完了時に再更新）。
+
+## 移管: 2026-02-18（selfhost 回復 1-3）
+
+- [x] `selfhost/py2cpp.cpp` で `object -> optional<dict<...>> / list<object> / str` 代入が失敗している箇所を、`any_to_dict/any_to_list/any_to_str` を通る形へ統一する。
+- [x] `py_dict_get_default(...)` 呼び出しの曖昧解決（`bool` 既定値など）を解消するため、`dict_get_bool/str/list/node` など型付き helper 呼び出しへ置換する。
+- [x] `emit_stmt` / `emit_assign` / `render_expr` の `dict|None` 固定引数を段階的に `Any` 受け + 内部 `dict` 化へ寄せ、selfhost 生成コードの `std::any` 入力と整合させる。

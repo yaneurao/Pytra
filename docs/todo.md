@@ -2,14 +2,12 @@
 
 ## selfhost 回復（分解版）
 
-1. [ ] `selfhost/py2cpp.cpp` で `object -> optional<dict<...>> / list<object> / str` 代入が失敗している箇所を、`any_to_dict/any_to_list/any_to_str` を通る形へ統一する。
-2. [ ] `py_dict_get_default(...)` 呼び出しの曖昧解決（`bool` 既定値など）を解消するため、`dict_get_bool/str/list/node` など型付き helper 呼び出しへ置換する。
-3. [ ] `emit_stmt` / `emit_assign` / `render_expr` の `dict|None` 固定引数を段階的に `Any` 受け + 内部 `dict` 化へ寄せ、selfhost 生成コードの `std::any` 入力と整合させる。
-4. [ ] `cpp_type` へ `str|None` 等が流入した際の `object` 退避を見直し、不要な `object` 経由変換を減らす。
-5. [ ] `selfhost/py2cpp.cpp` の先頭 500 行を重点レビューし、`BaseEmitter` 起点のエラー（型境界）を 0 件にする。
-6. [ ] `selfhost/py2cpp.out` を生成する。
-7. [ ] `selfhost/py2cpp.out sample/py/01_mandelbrot.py` 実行を通す。
-8. [ ] `selfhost/py2cpp.out` 生成結果と `python src/py2cpp.py` 生成結果の一致検証を実施する。
+1. [ ] `py2cpp.py` の `BaseEmitter` 共通化後、selfhost 生成時に `common.base_emitter` の内容を C++ へ取り込む手順（または inline 展開）を実装する。
+2. [ ] `cpp_type` へ `str|None` 等が流入した際の `object` 退避を見直し、不要な `object` 経由変換を減らす。
+3. [ ] `selfhost/py2cpp.cpp` の先頭 500 行を重点レビューし、`BaseEmitter` 起点のエラー（型境界）を 0 件にする。
+4. [ ] `selfhost/py2cpp.out` を生成する。
+5. [ ] `selfhost/py2cpp.out sample/py/01_mandelbrot.py` 実行を通す。
+6. [ ] `selfhost/py2cpp.out` 生成結果と `python src/py2cpp.py` 生成結果の一致検証を実施する。
 
 ## 直近メモ
 
