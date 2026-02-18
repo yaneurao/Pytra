@@ -293,11 +293,79 @@ class _ShExprParser:
         self._eat("EOF")
         return node
 
+    def _parse_lambda(self) -> dict[str, Any]:
+        tok = self._cur()
+        if not (tok["k"] == "NAME" and tok["v"] == "lambda"):
+            return self._parse_or()
+        lam_tok = self._eat("NAME")
+        arg_names: list[str] = []
+        while self._cur()["k"] != ":":
+            if self._cur()["k"] == ",":
+                self._eat(",")
+                continue
+            if self._cur()["k"] == "NAME":
+                arg_names.append(str(self._eat("NAME")["v"]))
+                continue
+            cur = self._cur()
+            raise EastBuildError(
+                kind="unsupported_syntax",
+                message=f"unsupported lambda parameter token: {cur['k']}",
+                source_span=self._node_span(cur["s"], cur["e"]),
+                hint="Use `lambda x, y: expr` form without annotations/defaults.",
+            )
+        self._eat(":")
+        bak: dict[str, str] = {}
+        for nm in arg_names:
+            bak[nm] = self.name_types.get(nm, "")
+            self.name_types[nm] = "unknown"
+        body = self._parse_ifexp()
+        for nm in arg_names:
+            old = bak.get(nm, "")
+            if old == "":
+                self.name_types.pop(nm, None)
+            else:
+                self.name_types[nm] = old
+        s = lam_tok["s"]
+        e = int(body["source_span"]["end_col"]) - self.col_base
+        body_t = str(body.get("resolved_type", "unknown"))
+        ret_t = body_t if body_t != "" else "unknown"
+        params = ",".join(["unknown" for _ in arg_names])
+        callable_t = f"callable[{params}->{ret_t}]"
+        return {
+            "kind": "Lambda",
+            "source_span": self._node_span(s, e),
+            "resolved_type": callable_t,
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": self._src_slice(s, e),
+            "args": [
+                {
+                    "kind": "arg",
+                    "arg": nm,
+                    "annotation": None,
+                    "resolved_type": "unknown",
+                }
+                for nm in arg_names
+            ],
+            "body": body,
+            "return_type": ret_t,
+        }
+
+    def _callable_return_type(self, t: str) -> str:
+        if not (t.startswith("callable[") and t.endswith("]")):
+            return "unknown"
+        core = t[len("callable[") : -1]
+        p = core.rfind("->")
+        if p < 0:
+            return "unknown"
+        out = core[p + 2 :].strip()
+        return out if out != "" else "unknown"
+
     def _parse_ifexp(self) -> dict[str, Any]:
-        body = self._parse_or()
+        body = self._parse_lambda()
         if self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
             self._eat("NAME")
-            test = self._parse_or()
+            test = self._parse_lambda()
             else_tok = self._eat("NAME")
             if else_tok["v"] != "else":
                 raise EastBuildError(
@@ -544,6 +612,24 @@ class _ShExprParser:
             return "uint8"
         return "unknown"
 
+    def _iter_item_type(self, iter_expr: dict[str, Any] | None) -> str:
+        if not isinstance(iter_expr, dict):
+            return "unknown"
+        t = str(iter_expr.get("resolved_type", "unknown"))
+        if t == "range":
+            return "int64"
+        if t.startswith("list[") and t.endswith("]"):
+            inner = t[5:-1].strip()
+            return inner if inner != "" else "unknown"
+        if t.startswith("set[") and t.endswith("]"):
+            inner = t[4:-1].strip()
+            return inner if inner != "" else "unknown"
+        if t == "bytearray" or t == "bytes":
+            return "uint8"
+        if t == "str":
+            return "str"
+        return "unknown"
+
     def _parse_postfix(self) -> dict[str, Any]:
         node = self._parse_primary()
         while True:
@@ -640,6 +726,8 @@ class _ShExprParser:
                         call_ret = self.fn_return_types[fn_name]
                     elif fn_name in self.class_method_return_types:
                         call_ret = fn_name
+                    else:
+                        call_ret = self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))
                 elif isinstance(node, dict) and node.get("kind") == "Attribute":
                     owner = node.get("value")
                     attr = str(node.get("attr", ""))
@@ -654,6 +742,8 @@ class _ShExprParser:
                                 call_ret = "bool"
                             elif attr in {"mkdir", "write_text"}:
                                 call_ret = "None"
+                elif isinstance(node, dict) and node.get("kind") == "Lambda":
+                    call_ret = str(node.get("return_type", "unknown"))
                 payload: dict[str, Any] = {
                     "kind": "Call",
                     "source_span": self._node_span(s, e),
@@ -1133,27 +1223,67 @@ class _ShExprParser:
                         ifs.append(self._parse_ifexp())
                     r = self._eat("]")
                     tgt_name = str(tgt_tok["v"])
+                    tgt_ty = self._iter_item_type(iter_expr)
+                    first_norm = first
+                    ifs_norm = ifs
+                    if tgt_ty != "unknown":
+                        old_t = self.name_types.get(tgt_name, "")
+                        self.name_types[tgt_name] = tgt_ty
+                        first_repr = first.get("repr")
+                        first_col = int(first.get("source_span", {}).get("col", self.col_base))
+                        if isinstance(first_repr, str) and first_repr != "":
+                            first_norm = _sh_parse_expr(
+                                first_repr,
+                                line_no=self.line_no,
+                                col_base=first_col,
+                                name_types=self.name_types,
+                                fn_return_types=self.fn_return_types,
+                                class_method_return_types=self.class_method_return_types,
+                                class_base=self.class_base,
+                            )
+                        ifs_norm = []
+                        for cond in ifs:
+                            cond_repr = cond.get("repr")
+                            cond_col = int(cond.get("source_span", {}).get("col", self.col_base))
+                            if isinstance(cond_repr, str) and cond_repr != "":
+                                ifs_norm.append(
+                                    _sh_parse_expr(
+                                        cond_repr,
+                                        line_no=self.line_no,
+                                        col_base=cond_col,
+                                        name_types=self.name_types,
+                                        fn_return_types=self.fn_return_types,
+                                        class_method_return_types=self.class_method_return_types,
+                                        class_base=self.class_base,
+                                    )
+                                )
+                            else:
+                                ifs_norm.append(cond)
+                        if old_t == "":
+                            self.name_types.pop(tgt_name, None)
+                        else:
+                            self.name_types[tgt_name] = old_t
                     return {
                         "kind": "ListComp",
                         "source_span": self._node_span(l["s"], r["e"]),
-                        "resolved_type": f"list[{str(first.get('resolved_type', 'unknown'))}]",
+                        "resolved_type": f"list[{str(first_norm.get('resolved_type', 'unknown'))}]",
                         "borrow_kind": "value",
                         "casts": [],
                         "repr": self._src_slice(l["s"], r["e"]),
-                        "elt": first,
+                        "elt": first_norm,
                         "generators": [
                             {
                                 "target": {
                                     "kind": "Name",
                                     "source_span": self._node_span(tgt_tok["s"], tgt_tok["e"]),
-                                    "resolved_type": "unknown",
+                                    "resolved_type": tgt_ty,
                                     "borrow_kind": "value",
                                     "casts": [],
                                     "repr": tgt_name,
                                     "id": tgt_name,
                                 },
                                 "iter": iter_expr,
-                                "ifs": ifs,
+                                "ifs": ifs_norm,
                             }
                         ],
                     }
@@ -1510,6 +1640,19 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     def parse_expr(expr_txt: str, *, ln_no: int, col: int, name_types: dict[str, str]) -> dict[str, Any]:
         raw = expr_txt
         txt = raw.strip()
+
+        # lambda は if-expression より結合が弱いので、
+        # ここでの簡易 ifexp 分解を回避して self_hosted 式パーサへ委譲する。
+        if txt.startswith("lambda "):
+            return _sh_parse_expr(
+                txt,
+                line_no=ln_no,
+                col_base=col,
+                name_types=name_types,
+                fn_return_types=fn_returns,
+                class_method_return_types=class_method_return_types,
+                class_base=class_base,
+            )
 
         def split_top_keyword(text: str, kw: str) -> int:
             depth = 0
@@ -1871,15 +2014,31 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     iter_txt = iter_and_if_txt
                     if_txt = ""
                 target_node = parse_expr(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
+                iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+
+                def infer_item_type(node: dict[str, Any]) -> str:
+                    t = str(node.get("resolved_type", "unknown"))
+                    if t == "range":
+                        return "int64"
+                    if t.startswith("list[") and t.endswith("]"):
+                        return t[5:-1].strip() or "unknown"
+                    if t.startswith("set[") and t.endswith("]"):
+                        return t[4:-1].strip() or "unknown"
+                    if t in {"bytes", "bytearray"}:
+                        return "uint8"
+                    if t == "str":
+                        return "str"
+                    return "unknown"
+
+                item_t = infer_item_type(iter_node)
                 comp_types = dict(name_types)
                 if isinstance(target_node, dict) and target_node.get("kind") == "Name":
-                    comp_types[str(target_node.get("id", ""))] = "unknown"
+                    comp_types[str(target_node.get("id", ""))] = item_t
                 elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
                     for e in target_node.get("elements", []):
                         if isinstance(e, dict) and e.get("kind") == "Name":
                             comp_types[str(e.get("id", ""))] = "unknown"
                 elt_node = parse_expr(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
-                iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
                 if_nodes: list[dict[str, Any]] = []
                 if if_txt != "":
                     if_nodes.append(parse_expr(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))

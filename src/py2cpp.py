@@ -1763,6 +1763,15 @@ class CppEmitter:
             if not parts:
                 return '""'
             return " + ".join(parts)
+        if kind == "Lambda":
+            arg_texts: list[str] = []
+            for a in expr.get("args", []):
+                if isinstance(a, dict):
+                    nm = str(a.get("arg", "")).strip()
+                    if nm != "":
+                        arg_texts.append(f"auto {nm}")
+            body_expr = self.render_expr(expr.get("body"))
+            return f"[&]({', '.join(arg_texts)}) {{ return {body_expr}; }}"
         if kind == "ListComp":
             gens = expr.get("generators", [])
             if len(gens) != 1:
