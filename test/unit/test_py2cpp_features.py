@@ -258,6 +258,20 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_str_index_char_compare_optimized_and_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = find_fixture_case("str_index_char_compare")
+            out_cpp = work / "str_index_char_compare.cpp"
+            transpile(src_py, out_cpp)
+            txt = out_cpp.read_text(encoding="utf-8")
+            self.assertIn("s.at(i) == 'B'", txt)
+            self.assertIn("s.at(0) != 'B'", txt)
+        out = self._compile_and_run_fixture("str_index_char_compare")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
     def test_emit_guard_rejects_object_receiver_call(self) -> None:
         east = {
             "kind": "Module",

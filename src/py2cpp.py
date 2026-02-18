@@ -272,6 +272,22 @@ def cpp_string_lit(s: str) -> str:
     return out
 
 
+def cpp_char_lit(ch: str) -> str:
+    if ch == "\\":
+        return "'\\\\'"
+    if ch == "'":
+        return "'\\''"
+    if ch == "\n":
+        return "'\\n'"
+    if ch == "\r":
+        return "'\\r'"
+    if ch == "\t":
+        return "'\\t'"
+    if ch == "\0":
+        return "'\\0'"
+    return "'" + ch + "'"
+
+
 class CppEmitter(BaseEmitter):
     def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
         self.doc: dict[str, Any] = east_doc
@@ -638,6 +654,61 @@ class CppEmitter(BaseEmitter):
         if op_name == "BitOr":
             return 7
         return 0
+
+    def _one_char_str_const(self, node: dict[str, Any] | None) -> str | None:
+        if not isinstance(node, dict) or node.get("kind") != "Constant":
+            return None
+        v = node.get("value")
+        if isinstance(v, str):
+            if len(v) == 1:
+                return v
+            if len(v) == 2 and v[0] == "\\":
+                esc = {
+                    "n": "\n",
+                    "r": "\r",
+                    "t": "\t",
+                    "\\": "\\",
+                    "'": "'",
+                    "0": "\0",
+                }
+                return esc.get(v[1])
+        return None
+
+    def _str_index_char_access(self, node: dict[str, Any] | None) -> str | None:
+        if not isinstance(node, dict) or node.get("kind") != "Subscript":
+            return None
+        value_node = node.get("value")
+        if self.get_expr_type(value_node) != "str":
+            return None
+        sl = node.get("slice")
+        if isinstance(sl, dict) and sl.get("kind") == "Slice":
+            return None
+        if self.negative_index_mode != "off" and self._is_negative_const_index(sl):
+            return None
+        base = self.render_expr(value_node)
+        if isinstance(value_node, dict) and value_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            base = f"({base})"
+        idx = self.render_expr(sl)
+        return f"{base}.at({idx})"
+
+    def _try_optimize_char_compare(
+        self,
+        left_node: dict[str, Any] | None,
+        op: str,
+        right_node: dict[str, Any] | None,
+    ) -> str | None:
+        if op not in {"Eq", "NotEq"}:
+            return None
+        cop = "==" if op == "Eq" else "!="
+        l_access = self._str_index_char_access(left_node)
+        r_ch = self._one_char_str_const(right_node)
+        if l_access is not None and r_ch is not None:
+            return f"{l_access} {cop} {cpp_char_lit(r_ch)}"
+        r_access = self._str_index_char_access(right_node)
+        l_ch = self._one_char_str_const(left_node)
+        if r_access is not None and l_ch is not None:
+            return f"{cpp_char_lit(l_ch)} {cop} {r_access}"
+        return None
 
     def _wrap_for_binop_operand(
         self,
@@ -1785,31 +1856,37 @@ class CppEmitter(BaseEmitter):
             cmps = expr.get("comparators", [])
             parts: list[str] = []
             cur = left
+            cur_node = expr.get("left")
             for i, op in enumerate(ops):
-                rhs = self.render_expr(cmps[i])
+                rhs_node = cmps[i] if i < len(cmps) and isinstance(cmps[i], dict) else None
+                rhs = self.render_expr(rhs_node)
                 cop = CMP_OPS.get(op, "==")
                 if cop == "/* in */":
-                    rhs_type0 = self.get_expr_type(cmps[i])
+                    rhs_type0 = self.get_expr_type(rhs_node)
                     rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
                     if rhs_type.startswith("dict["):
                         parts.append(f"{rhs}.find({cur}) != {rhs}.end()")
                     else:
                         parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) != {rhs}.end()")
                 elif cop == "/* not in */":
-                    rhs_type0 = self.get_expr_type(cmps[i])
+                    rhs_type0 = self.get_expr_type(rhs_node)
                     rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
                     if rhs_type.startswith("dict["):
                         parts.append(f"{rhs}.find({cur}) == {rhs}.end()")
                     else:
                         parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
                 else:
-                    if op in {"Is", "IsNot"} and rhs == "std::nullopt":
+                    opt_cmp = self._try_optimize_char_compare(cur_node if isinstance(cur_node, dict) else None, op, rhs_node)
+                    if opt_cmp is not None:
+                        parts.append(opt_cmp)
+                    elif op in {"Is", "IsNot"} and rhs == "std::nullopt":
                         parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({cur})")
                     elif op in {"Is", "IsNot"} and cur == "std::nullopt":
                         parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({rhs})")
                     else:
                         parts.append(f"{cur} {cop} {rhs}")
                 cur = rhs
+                cur_node = rhs_node
             return " && ".join(parts) if parts else "true"
         if kind == "IfExp":
             body = self.render_expr(expr.get("body"))
