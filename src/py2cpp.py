@@ -77,6 +77,12 @@ AUG_BIN = {
 }
 
 
+def cpp_string_lit(s: str) -> str:
+    escaped = s.replace("\\", "\\\\").replace('"', '\\"')
+    escaped = escaped.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+    return '"' + escaped + '"'
+
+
 class CppEmitter:
     def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
         self.doc = east_doc
@@ -386,10 +392,9 @@ class CppEmitter:
             return "/* invalid min/max */"
         if len(args) == 1:
             return args[0]
+        t = "auto"
         if isinstance(out_type, str) and out_type != "":
             t = self.cpp_type(out_type)
-        else:
-            t = "auto"
         if t == "auto":
             call = f"py_{fn}({args[0]}, {args[1]})"
             for a in args[2:]:
@@ -963,7 +968,7 @@ class CppEmitter:
             if v is None:
                 return "std::nullopt"
             if isinstance(v, str):
-                return json.dumps(v)
+                return cpp_string_lit(v)
             return str(v)
         if kind == "Attribute":
             base = self.render_expr(expr.get("value"))
@@ -1574,7 +1579,7 @@ class CppEmitter:
                 parts: list[str] = []
                 for p in expr.get("concat_parts", []):
                     if p.get("kind") == "literal":
-                        parts.append(json.dumps(p.get("value", "")))
+                        parts.append(cpp_string_lit(str(p.get("value", ""))))
                     elif p.get("kind") == "expr":
                         val = p.get("value")
                         if val is None:
@@ -1593,7 +1598,7 @@ class CppEmitter:
             for p in expr.get("values", []):
                 pk = p.get("kind")
                 if pk == "Constant":
-                    parts.append(json.dumps(p.get("value", "")))
+                    parts.append(cpp_string_lit(str(p.get("value", ""))))
                 elif pk == "FormattedValue":
                     v = p.get("value")
                     vtxt = self.render_expr(v)
@@ -1757,7 +1762,7 @@ class CppEmitter:
         t = expr.get("resolved_type")
         return t if isinstance(t, str) else ""
 
-    def cpp_type(self, east_type: str | None) -> str:
+    def cpp_type(self, east_type: Any) -> str:
         if not isinstance(east_type, str):
             return "auto"
         east_type = east_type.strip()

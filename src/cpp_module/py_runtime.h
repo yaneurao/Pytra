@@ -192,6 +192,23 @@ static inline int64 py_to_int64(T v) {
     return static_cast<int64>(v);
 }
 
+static inline int64 py_to_int64(const std::any& v) {
+    if (const auto* p = std::any_cast<int64>(&v)) return *p;
+    if (const auto* p = std::any_cast<int>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<uint64>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<float64>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<float32>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<bool>(&v)) return *p ? 1 : 0;
+    if (const auto* p = std::any_cast<str>(&v)) {
+        try {
+            return static_cast<int64>(std::stoll(*p));
+        } catch (...) {
+            return 0;
+        }
+    }
+    return 0;
+}
+
 template <class T>
 static inline void py_print(const T& v) {
     std::cout << v << std::endl;
@@ -483,6 +500,23 @@ static inline list<std::any>::const_iterator end(const std::any& v) {
     return empty.end();
 }
 
+// Selfhost-generated C++ can iterate std::any values that hold list<std::any>.
+// Provide std::begin/std::end overloads so range-for resolves them.
+namespace std {
+static inline ::list<std::any>::iterator begin(std::any& v) {
+    return ::begin(v);
+}
+static inline ::list<std::any>::iterator end(std::any& v) {
+    return ::end(v);
+}
+static inline ::list<std::any>::const_iterator begin(const std::any& v) {
+    return ::begin(v);
+}
+static inline ::list<std::any>::const_iterator end(const std::any& v) {
+    return ::end(v);
+}
+}  // namespace std
+
 template <class K, class V>
 static inline list<K> py_dict_keys(const dict<K, V>& d) {
     list<K> out;
@@ -505,6 +539,11 @@ static inline str py_at(const str& v, int64 idx) {
         throw std::out_of_range("string index out of range");
     }
     return str(1, v[static_cast<std::size_t>(idx)]);
+}
+
+static inline str py_slice(const std::any& v, int64 lo, int64 up) {
+    if (const auto* s = std::any_cast<str>(&v)) return py_slice(*s, lo, up);
+    return "";
 }
 
 static inline void py_write_text(const Path& p, const str& s) {
@@ -574,6 +613,11 @@ static inline list<T> py_reversed(const list<T>& values) {
     return out;
 }
 
+static inline list<std::any> py_reversed(const std::any& values) {
+    if (const auto* p = std::any_cast<list<std::any>>(&values)) return py_reversed(*p);
+    return {};
+}
+
 template <class T>
 static inline list<std::tuple<int64, T>> py_enumerate(const list<T>& values) {
     list<std::tuple<int64, T>> out;
@@ -582,6 +626,11 @@ static inline list<std::tuple<int64, T>> py_enumerate(const list<T>& values) {
         out.append(std::make_tuple(static_cast<int64>(i), values[i]));
     }
     return out;
+}
+
+static inline list<std::tuple<int64, std::any>> py_enumerate(const std::any& values) {
+    if (const auto* p = std::any_cast<list<std::any>>(&values)) return py_enumerate(*p);
+    return {};
 }
 
 template <class A, class B>

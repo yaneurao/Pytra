@@ -71,3 +71,10 @@
 - [ ] `enumerate` / `reversed` が生で残る経路を EAST か lowering で除去する。
 - [ ] `py_is_none` 追加分を selfhost 側ランタイムにも同期し、未定義エラーを解消する。
 - [x] `src/py2cpp.py -> selfhost/py2cpp.py` 同期後に `selfhost/py2cpp.cpp` を再生成し、エラー件数の減少を記録する。
+
+進捗メモ（2026-02-18）:
+- `py_runtime.h` に `std::any` 反復補助（`std::begin/std::end`）と `py_slice(std::any)`, `py_reversed(std::any)`, `py_enumerate(std::any)` を追加。
+- `src/py2cpp.py` の `render_minmax` で `t` 未定義になる経路を修正。
+- `src/py2cpp.py` の文字列リテラル生成で `json.dumps` 依存を除去（`cpp_string_lit`）。
+- `src/py2cpp.py` の `cpp_type` 入力型を `Any` 化。
+- selfhost C++コンパイルエラー件数: `438 -> 396 -> 393 -> 374`。
