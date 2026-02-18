@@ -18,3 +18,9 @@
 ## Codex 起動時の確認先
 
 - Codex は起動時に `docs/spec.md` を入口として読み、続けて [`docs/spec-codex.md`](./spec-codex.md) と [`docs/todo.md`](./todo.md) を確認します。
+
+## Any の現行方針
+
+- `Any` は C++ では `object`（`rc<PyObj>`）として表現します。
+- `None` は `object{}`（null ハンドル）で表現します。
+- boxing/unboxing は `make_object(...)` / `obj_to_*` / `py_to_*` を使用します。

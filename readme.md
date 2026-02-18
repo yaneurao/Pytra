@@ -25,6 +25,7 @@ Python から C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin への変�
 - Python をいったん内部の中間表現（EAST）へ正規化してから各言語へ変換するため、段階的な機能拡張がしやすい。
 - Python 標準 `ast` 依存を廃し、`self_hosted` パーサで自己変換可能性を高める設計。
 - Python/C++ 共通のアサート支援ランタイムを備え、挙動一致の確認をしやすい。
+- `Any` は C++ で `object(rc<PyObj>)` として扱う方針で実装を進めており、`typing` 系回帰で段階的に互換性を拡張中。
 
 
 ## 開発動機

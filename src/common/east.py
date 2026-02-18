@@ -2015,6 +2015,68 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     if_txt = ""
                 target_node = parse_expr(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
                 iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+                if (
+                    isinstance(iter_node, dict)
+                    and iter_node.get("kind") == "Call"
+                    and isinstance(iter_node.get("func"), dict)
+                    and iter_node.get("func", {}).get("kind") == "Name"
+                    and iter_node.get("func", {}).get("id") == "range"
+                ):
+                    rargs = list(iter_node.get("args", []))
+                    if len(rargs) == 1:
+                        start_node = {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, col, col),
+                            "resolved_type": "int64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "0",
+                            "value": 0,
+                        }
+                        stop_node = rargs[0]
+                        step_node = {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, col, col),
+                            "resolved_type": "int64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "1",
+                            "value": 1,
+                        }
+                    elif len(rargs) == 2:
+                        start_node = rargs[0]
+                        stop_node = rargs[1]
+                        step_node = {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, col, col),
+                            "resolved_type": "int64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "1",
+                            "value": 1,
+                        }
+                    else:
+                        start_node = rargs[0]
+                        stop_node = rargs[1]
+                        step_node = rargs[2]
+                    step_const = step_node.get("value") if isinstance(step_node, dict) else None
+                    mode = "dynamic"
+                    if step_const == 1:
+                        mode = "ascending"
+                    elif step_const == -1:
+                        mode = "descending"
+                    iter_node = {
+                        "kind": "RangeExpr",
+                        "source_span": iter_node.get("source_span"),
+                        "resolved_type": "range",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": iter_node.get("repr", "range(...)"),
+                        "start": start_node,
+                        "stop": stop_node,
+                        "step": step_node,
+                        "range_mode": mode,
+                    }
 
                 def infer_item_type(node: dict[str, Any]) -> str:
                     t = str(node.get("resolved_type", "unknown"))

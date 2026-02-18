@@ -126,9 +126,74 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
-    @unittest.skip("Any runtime is being redesigned to object(rc<PyObj>)")
     def test_any_basic_runtime(self) -> None:
         out = self._compile_and_run_fixture("any_basic")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_any_none_runtime(self) -> None:
+        out = self._compile_and_run_fixture("any_none")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_any_dict_items_runtime(self) -> None:
+        out = self._compile_and_run_fixture("any_dict_items")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_any_list_mixed_runtime(self) -> None:
+        out = self._compile_and_run_fixture("any_list_mixed")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_comprehension_nested_runtime(self) -> None:
+        out = self._compile_and_run_fixture("comprehension_nested")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_comprehension_if_chain_runtime(self) -> None:
+        out = self._compile_and_run_fixture("comprehension_if_chain")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_comprehension_range_step_like_runtime(self) -> None:
+        out = self._compile_and_run_fixture("comprehension_range_step_like")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_comprehension_range_step_runtime(self) -> None:
+        out = self._compile_and_run_fixture("comprehension_range_step")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_lambda_ifexp_runtime(self) -> None:
+        out = self._compile_and_run_fixture("lambda_ifexp")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_lambda_capture_multiargs_runtime(self) -> None:
+        out = self._compile_and_run_fixture("lambda_capture_multiargs")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_lambda_local_state_runtime(self) -> None:
+        out = self._compile_and_run_fixture("lambda_local_state")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_lambda_as_arg_runtime(self) -> None:
+        out = self._compile_and_run_fixture("lambda_as_arg")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")

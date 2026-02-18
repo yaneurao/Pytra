@@ -1,77 +1,45 @@
-# TODO
+# TODO（未完了のみ）
 
-## 最優先方針（確定）
+## 1. Any/object 方針への移行（最優先）
 
-- `Any -> std::any` は廃止する。
-- `Any -> object` とし、`object` は GC 管理対象（`rc<PyObj>`）で表現する。
-- `None` は `object` の null（空ハンドル）として扱う。
+- [x] `src/cpp_module/py_runtime.h` に `using object = rc<PyObj>;` を導入する。
+- [x] `Any -> object` 変換のためのボックス型を実装する。
+- [x] `PyIntObj` / `PyFloatObj` / `PyBoolObj` / `PyStrObj`
+- [x] `PyListObj` / `PyDictObj`（`list<object>` / `dict<str, object>` ベース）
+- [x] `make_object(...)` / `obj_to_int64` / `obj_to_float64` / `obj_to_bool` / `obj_to_str` を実装する。
+- [x] `py_is_none(object)` を実装し、null `object` 判定を統一する。
+- [x] `py_to_string(object)` を実装する。
 
-## フェーズ1: ランタイム土台（`src/cpp_module/py_runtime.h`）
+## 2. py2cpp 側の Any lowering 更新
 
-- [ ] `object` の型エイリアスを導入する（`using object = rc<PyObj>;`）。
-- [ ] `PyObj` 派生のボックス型を実装する。
-- [ ] `PyIntObj`（`int64`）
-- [ ] `PyFloatObj`（`float64`）
-- [ ] `PyBoolObj`（`bool`）
-- [ ] `PyStrObj`（`str`）
-- [ ] `PyListObj`（`list<object>`）
-- [ ] `PyDictObj`（`dict<str, object>`）
-- [ ] `PySetObj`（`set<object>` または当面 `set<str>` 制約）
-- [ ] `make_object(...)` ヘルパを実装する（プリミティブ/コンテナ -> `object`）。
-- [ ] `object` からの取り出しヘルパを実装する。
-- [ ] `obj_to_int64`
-- [ ] `obj_to_float64`
-- [ ] `obj_to_bool`
-- [ ] `obj_to_str`
-- [ ] `obj_to_dict`
-- [ ] `obj_to_list`
-- [ ] `py_is_none(object)` / `py_is_none(rc<...>)` を統一実装する。
-- [ ] `py_to_string(object)` を実装する。
-- [ ] `py_dict_get_default(dict<str, object>, ...)` を実装する。
+- [x] `src/py2cpp.py` の `cpp_type()` で `Any` / `object` を `object` 型へ解決する。
+- [x] `dict[str, Any]` を `dict<str, object>` に変換する。
+- [x] `list[Any]` を `list<object>` に変換する。
+- [x] `Any` 代入時に `make_object(...)` を生成する。
+- [x] `Any` 利用演算時に明示的 unbox (`obj_to_*`) を生成する。
+- [x] `Any is None` / `Any is not None` を `py_is_none` ベースへ統一する。
 
-## フェーズ2: 型変換（`src/py2cpp.py`）
+## 3. selfhost 回復
 
-- [ ] `cpp_type()` で `Any` / `object` を `object` 型へ解決する。
-- [ ] `dict[str, Any]` を `dict<str, object>` に変換する。
-- [ ] `list[Any]` を `list<object>` に変換する。
-- [ ] `set[Any]` の当面方針を定義する（制限付きでも可）。
-- [ ] `T | None` の扱いを整理する。
-- [ ] `Any | None` は `object` の null で表現（`optional` を使わない）。
-- [ ] `非Any` の `T | None` は現行どおり `optional<T>` を維持するか決定。
+- [x] `selfhost/py2cpp.cpp` を再生成し、現時点のコンパイルエラー件数を計測する。
+  - 計測値: `305` errors（`g++ -std=c++20 -O2 -I src selfhost/py2cpp.cpp ...`）
+- [ ] `Any -> object` 移行後の `selfhost` コンパイルを通す。
+- [ ] `selfhost` で `sample/py/01` を変換できることを確認する。
 
-## フェーズ3: 式/文 lowering 修正（`src/py2cpp.py`）
+## 4. 内包表現・lambda の追加回帰
 
-- [ ] `Any` 代入時に `make_object(...)` を生成する。
-- [ ] `Any` の算術・比較時に明示的 unbox ヘルパを生成する。
-- [ ] `dict[str, Any].get(...).items()` が `object` 経由で動作するように生成する。
-- [ ] `Any` 経由 `is None` / `is not None` を `py_is_none` に統一する。
-- [ ] `boolop` 値選択（`x or y`, `x and y`）で `object` truthy 判定を使う。
-- [ ] `str()` / `int()` / `float()` の `Any` 引数を `object` 経由変換へ統一する。
+- [x] `test/fixtures/collections` に内包表現の追加ケースを増やす。
+- [x] 二重内包（nested comprehension）
+- [x] `if` 句を複数持つ内包
+- [x] `range(start, stop, step)` を使う内包
+- [x] `test/fixtures/core` に lambda の追加ケースを増やす。
+- [x] `lambda` 本体が `ifexp` を含むケース
+- [x] 外側変数 capture + 複数引数
+- [x] 関数引数として lambda を渡すケース
+- [x] 上記を `test/unit/test_py2cpp_features.py` の C++ 実行回帰に追加する。
 
-## フェーズ4: テスト拡張
+## 5. ドキュメント更新
 
-- [ ] `test/fixtures/typing/any_basic.py` を新仕様（`object`）で通す。
-- [ ] `test/fixtures/typing` に追加する。
-- [ ] `any_none.py`（`is None` / `is not None`）
-- [ ] `any_dict_items.py`（`dict[str, Any].get(...).items()`）
-- [ ] `any_list_mixed.py`（`list[Any]` の混在要素）
-- [ ] `any_class_refcount.py`（`Any` にクラスインスタンスを入れて参照カウント確認）
-- [ ] `test/unit/test_py2cpp_features.py` に `Any` 系の C++実行回帰を追加する。
-
-## フェーズ5: selfhost 回復
-
-- [ ] `selfhost/py2cpp.cpp` を再生成し、コンパイルエラーを再計測する。
-- [ ] `std::any` 由来エラーが消えていることを確認する。
-- [ ] `sample/py/01` 変換まで selfhost 実行を通す。
-- [ ] `src/py2cpp.py` 生成結果との一致比較を行う（仕様に定義した一致条件で判定）。
-
-## ドキュメント更新
-
-- [ ] `docs/spec-east.md` に `Any -> object(rc<PyObj>)` を明記する。
-- [ ] `docs/spec-user.md` に `Any` の制約/仕様を追記する。
-- [ ] `docs/how-to-use.md` に selfhost 検証手順（`cpp_module` 同期含む）を維持更新する。
-
-## 進捗メモ
-
-- 2026-02-18 時点の旧方針（`Any -> std::any`）は破棄する。
-- 以後は `object(rc<PyObj>)` 方針のみで実装を進める。
+- [x] `docs/spec-east.md` に `Any -> object(rc<PyObj>)` 方針を明記する。
+- [x] `docs/spec.md` に `Any` の制約（boxing/unboxing, None 表現）を追記する。
+- [x] `readme.md` に `Any` 実装状況（移行中）を明記する。

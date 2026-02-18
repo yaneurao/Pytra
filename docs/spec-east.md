@@ -104,7 +104,7 @@
 - `int` は `int64` に正規化。
 - `float` は `float64` に正規化。
 - `float32/float64` はそのまま保持。
-- `any` / `object` は `Any` と同義に扱う（C++ 側では `std::any`）。
+- `any` / `object` は `Any` と同義に扱う（C++ 側では `object` = `rc<PyObj>`）。
 - `bytes` / `bytearray` は `list[uint8]` に正規化。
 - `pathlib.Path` は `Path` に正規化。
 
@@ -163,8 +163,8 @@
 
 `dict[str, Any]` の `.get(...).items()` について:
 
-- C++ 生成時は `dict[str, std::any>` を前提に、`Dict` リテラル値を `std::any(...)` へ再帰変換して初期化する。
-- これにより `.get(..., {})` で受ける既定値型と `.items()` 反復要素型の不整合を抑制する。
+- C++ 生成時は `dict[str, object]` を前提に、`Dict`/`List` リテラル値を `make_object(...)` で再帰変換して初期化する。
+- `.get(..., {})` で辞書既定値を与える場合は `dict[str, object]` へ正規化して扱う。
 
 ## 8. cast仕様
 

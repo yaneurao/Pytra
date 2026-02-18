@@ -31,6 +31,7 @@ using PyObj = pytra::gc::PyObj;
 
 template <class T>
 using rc = pytra::gc::RcHandle<T>;
+using object = rc<PyObj>;
 
 template <class T, class... Args>
 static inline rc<T> rc_new(Args&&... args) {
@@ -152,6 +153,160 @@ using dict = std::unordered_map<K, V>;
 template <class T>
 using set = std::unordered_set<T>;
 
+class PyIntObj : public PyObj {
+public:
+    explicit PyIntObj(int64 v) : value(v) {}
+    int64 value;
+};
+
+class PyFloatObj : public PyObj {
+public:
+    explicit PyFloatObj(float64 v) : value(v) {}
+    float64 value;
+};
+
+class PyBoolObj : public PyObj {
+public:
+    explicit PyBoolObj(bool v) : value(v) {}
+    bool value;
+};
+
+class PyStrObj : public PyObj {
+public:
+    explicit PyStrObj(str v) : value(std::move(v)) {}
+    str value;
+};
+
+class PyListObj : public PyObj {
+public:
+    explicit PyListObj(list<object> v) : value(std::move(v)) {}
+    list<object> value;
+};
+
+class PyDictObj : public PyObj {
+public:
+    explicit PyDictObj(dict<str, object> v) : value(std::move(v)) {}
+    dict<str, object> value;
+};
+
+template <class T>
+static inline T* py_obj_cast(const object& obj) {
+    if (!obj) return nullptr;
+    return dynamic_cast<T*>(obj.get());
+}
+
+template <class T, class... Args>
+static inline object object_new(Args&&... args) {
+    return object::adopt(static_cast<PyObj*>(pytra::gc::rc_new<T>(std::forward<Args>(args)...)));
+}
+
+template <class T, std::enable_if_t<std::is_base_of_v<PyObj, T>, int> = 0>
+static inline object make_object(const rc<T>& v) {
+    if (!v) return object();
+    return object(static_cast<PyObj*>(v.get()));
+}
+
+static inline object make_object(const object& v) { return v; }
+static inline object make_object(std::nullptr_t) { return object(); }
+static inline object make_object(const str& v) { return object_new<PyStrObj>(v); }
+static inline object make_object(const char* v) { return object_new<PyStrObj>(str(v)); }
+static inline object make_object(bool v) { return object_new<PyBoolObj>(v); }
+static inline object make_object(float64 v) { return object_new<PyFloatObj>(v); }
+static inline object make_object(float32 v) { return object_new<PyFloatObj>(static_cast<float64>(v)); }
+static inline object make_object(int64 v) { return object_new<PyIntObj>(v); }
+static inline object make_object(uint64 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
+static inline object make_object(int32 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
+static inline object make_object(uint32 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
+static inline object make_object(int16 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
+static inline object make_object(uint16 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
+static inline object make_object(int8 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
+static inline object make_object(uint8 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
+
+template <class T>
+static inline object make_object(const list<T>& values) {
+    list<object> out;
+    out.reserve(values.size());
+    for (const auto& v : values) out.append(make_object(v));
+    return object_new<PyListObj>(std::move(out));
+}
+
+template <class V>
+static inline object make_object(const dict<str, V>& values) {
+    dict<str, object> out;
+    for (const auto& kv : values) out[kv.first] = make_object(kv.second);
+    return object_new<PyDictObj>(std::move(out));
+}
+
+static inline int64 obj_to_int64(const object& v) {
+    if (!v) return 0;
+    if (const auto* p = py_obj_cast<PyIntObj>(v)) return p->value;
+    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return p->value ? 1 : 0;
+    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return static_cast<int64>(p->value);
+    if (const auto* p = py_obj_cast<PyStrObj>(v)) {
+        try {
+            return static_cast<int64>(std::stoll(p->value));
+        } catch (...) {
+            return 0;
+        }
+    }
+    return 0;
+}
+
+static inline float64 obj_to_float64(const object& v) {
+    if (!v) return 0.0;
+    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return p->value;
+    if (const auto* p = py_obj_cast<PyIntObj>(v)) return static_cast<float64>(p->value);
+    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return p->value ? 1.0 : 0.0;
+    if (const auto* p = py_obj_cast<PyStrObj>(v)) {
+        try {
+            return std::stod(p->value);
+        } catch (...) {
+            return 0.0;
+        }
+    }
+    return 0.0;
+}
+
+static inline bool obj_to_bool(const object& v) {
+    if (!v) return false;
+    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return p->value;
+    if (const auto* p = py_obj_cast<PyIntObj>(v)) return p->value != 0;
+    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return p->value != 0.0;
+    if (const auto* p = py_obj_cast<PyStrObj>(v)) return !p->value.empty();
+    if (const auto* p = py_obj_cast<PyListObj>(v)) return !p->value.empty();
+    if (const auto* p = py_obj_cast<PyDictObj>(v)) return !p->value.empty();
+    return true;
+}
+
+static inline str obj_to_str(const object& v) {
+    if (!v) return "None";
+    if (const auto* p = py_obj_cast<PyStrObj>(v)) return p->value;
+    if (const auto* p = py_obj_cast<PyIntObj>(v)) return std::to_string(p->value);
+    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return std::to_string(p->value);
+    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return p->value ? "True" : "False";
+    if (const auto* p = py_obj_cast<PyListObj>(v)) return "<list>";
+    if (const auto* p = py_obj_cast<PyDictObj>(v)) return "<dict>";
+    return "<object>";
+}
+
+static inline const dict<str, object>* obj_to_dict_ptr(const object& v) {
+    if (const auto* p = py_obj_cast<PyDictObj>(v)) return &(p->value);
+    return nullptr;
+}
+
+static inline dict<str, object> obj_to_dict(const object& v) {
+    if (const auto* p = obj_to_dict_ptr(v)) return *p;
+    return {};
+}
+
+static inline bool operator==(const object& lhs, const object& rhs) {
+    return lhs.get() == rhs.get();
+}
+
+static inline bool operator!=(const object& lhs, const object& rhs) {
+    return !(lhs == rhs);
+}
+
 template <class T>
 static inline int64 py_len(const T& v) {
     return static_cast<int64>(v.size());
@@ -201,6 +356,10 @@ static inline std::string py_to_string(const Path& v) {
     return v.string();
 }
 
+static inline std::string py_to_string(const object& v) {
+    return obj_to_str(v);
+}
+
 static inline std::string py_bool_to_string(bool v) {
     return v ? "True" : "False";
 }
@@ -212,6 +371,18 @@ static inline int64 py_to_int64(const str& v) {
 template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
 static inline int64 py_to_int64(T v) {
     return static_cast<int64>(v);
+}
+
+static inline int64 py_to_int64(const object& v) {
+    return obj_to_int64(v);
+}
+
+static inline float64 py_to_float64(const object& v) {
+    return obj_to_float64(v);
+}
+
+static inline bool py_to_bool(const object& v) {
+    return obj_to_bool(v);
 }
 
 static inline int64 py_to_int64(const std::any& v) {
@@ -348,6 +519,21 @@ static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
     return it->second;
 }
 
+static inline object py_dict_get(const dict<str, object>& d, const char* key) {
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        throw std::out_of_range("dict key not found");
+    }
+    return it->second;
+}
+
+static inline object py_dict_get(const object& obj, const char* key) {
+    if (const auto* p = obj_to_dict_ptr(obj)) {
+        return py_dict_get(*p, key);
+    }
+    throw std::runtime_error("py_dict_get on non-dict object");
+}
+
 static inline std::any py_dict_get(const std::any& obj, const char* key) {
     if (const auto* p = std::any_cast<dict<str, std::any>>(&obj)) {
         auto it = p->find(str(key));
@@ -373,6 +559,56 @@ static inline V py_dict_get_default(const dict<str, V>& d, const char* key, cons
         return defval;
     }
     return it->second;
+}
+
+static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const object& defval) {
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return defval;
+    }
+    return it->second;
+}
+
+static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const char* defval) {
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return make_object(str(defval));
+    }
+    return it->second;
+}
+
+static inline dict<str, object> py_dict_get_default(
+    const dict<str, object>& d, const char* key, const dict<str, object>& defval) {
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return defval;
+    }
+    if (const auto* p = obj_to_dict_ptr(it->second)) {
+        return *p;
+    }
+    return defval;
+}
+
+static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const str& defval) {
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return make_object(defval);
+    }
+    return it->second;
+}
+
+static inline object py_dict_get_default(const object& obj, const char* key, const object& defval) {
+    if (const auto* p = obj_to_dict_ptr(obj)) {
+        return py_dict_get_default(*p, key, defval);
+    }
+    return defval;
+}
+
+static inline object py_dict_get_default(const object& obj, const char* key, const char* defval) {
+    if (const auto* p = obj_to_dict_ptr(obj)) {
+        return py_dict_get_default(*p, key, defval);
+    }
+    return make_object(str(defval));
 }
 
 template <class D>
@@ -423,6 +659,10 @@ static inline bool py_is_none(const T&) {
     return false;
 }
 
+static inline bool py_is_none(const object& v) {
+    return !static_cast<bool>(v);
+}
+
 static inline bool py_is_none(const std::any& v) {
     if (!v.has_value()) return true;
     if (v.type() == typeid(std::nullopt_t)) return true;
@@ -466,6 +706,13 @@ static inline bool py_is_str(const str&) { return true; }
 template <class T> static inline bool py_is_int(const T&) { return std::is_integral_v<T> && !std::is_same_v<T, bool>; }
 template <class T> static inline bool py_is_float(const T&) { return std::is_floating_point_v<T>; }
 static inline bool py_is_bool(const bool&) { return true; }
+
+static inline bool py_is_dict(const object& v) { return py_obj_cast<PyDictObj>(v) != nullptr; }
+static inline bool py_is_list(const object& v) { return py_obj_cast<PyListObj>(v) != nullptr; }
+static inline bool py_is_str(const object& v) { return py_obj_cast<PyStrObj>(v) != nullptr; }
+static inline bool py_is_int(const object& v) { return py_obj_cast<PyIntObj>(v) != nullptr; }
+static inline bool py_is_float(const object& v) { return py_obj_cast<PyFloatObj>(v) != nullptr; }
+static inline bool py_is_bool(const object& v) { return py_obj_cast<PyBoolObj>(v) != nullptr; }
 
 static inline bool py_is_dict(const std::any& v) { return v.type() == typeid(dict<str, std::any>); }
 static inline bool py_is_list(const std::any& v) { return v.type() == typeid(list<std::any>); }
