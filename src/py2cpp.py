@@ -178,7 +178,7 @@ def cpp_string_lit(s: str) -> str:
     i = 0
     n = len(s)
     while i < n:
-        ch: byte = s[i]
+        ch = s[i : i + 1]
         if ch == "\\":
             out += "\\\\"
         elif ch == '"':
@@ -196,7 +196,7 @@ def cpp_string_lit(s: str) -> str:
     return out
 
 
-def cpp_char_lit(ch: byte) -> str:
+def cpp_char_lit(ch: str) -> str:
     """1文字文字列を C++ 文字リテラルへ変換する。"""
     if ch == "\\":
         return "'\\\\'"
@@ -390,32 +390,21 @@ class CppEmitter(CodeEmitter):
         expr_dict = self.any_to_dict_or_empty(expr)
         if len(expr_dict) == 0:
             return "false"
-        values = self.any_to_list(self.any_dict_get(expr_dict, "values", []))
-        value_nodes: list[dict[str, Any]] = []
+        values_raw = expr_dict["values"] if "values" in expr_dict else []
+        values = values_raw if isinstance(values_raw, list) else []
+        if len(values) == 0:
+            return "false"
+        value_texts: list[str] = []
         for v in values:
             vd = self.any_to_dict(v)
             if vd is not None:
-                value_nodes.append(vd)
-        if len(value_nodes) == 0:
+                value_texts.append(self.render_expr(vd))
+        if len(value_texts) == 0:
             return "false"
-        value_texts = [self.render_expr(v) for v in value_nodes]
-        if not force_value_select and self.get_expr_type(expr_dict) == "bool":
-            op = "&&" if self.any_to_str(self.any_dict_get(expr_dict, "op", "")) == "And" else "||"
-            wrapped_values = [f"({txt})" for txt in value_texts]
-            return f" {op} ".join(wrapped_values)
-
-        op_name = str(self.any_dict_get(expr_dict, "op", ""))
-        out = value_texts[-1]
-        i = len(value_nodes) - 2
-        while i >= 0:
-            cond = self.render_cond(value_nodes[i])
-            cur = value_texts[i]
-            if op_name == "And":
-                out = f"({cond} ? {out} : {cur})"
-            else:
-                out = f"({cond} ? {cur} : {out})"
-            i -= 1
-        return out
+        op_name = self.any_dict_get_str(expr_dict, "op", "")
+        op = "&&" if op_name == "And" else "||"
+        wrapped_values = [f"({txt})" for txt in value_texts]
+        return f" {op} ".join(wrapped_values)
 
     def _binop_precedence(self, op_name: str) -> int:
         """二項演算子の優先順位を返す。"""
@@ -435,43 +424,11 @@ class CppEmitter(CodeEmitter):
 
     def _one_char_str_const(self, node: Any) -> str | None:
         """1文字文字列定数ならその実文字を返す。"""
-        node_dict = self.any_to_dict_or_empty(node)
-        if len(node_dict) == 0 or node_dict.get("kind") != "Constant":
-            return None
-        v = node_dict.get("value")
-        if isinstance(v, str):
-            if len(v) == 1:
-                return v
-            if len(v) == 2 and v[0] == "\\":
-                esc = {
-                    "n": "\n",
-                    "r": "\r",
-                    "t": "\t",
-                    "\\": "\\",
-                    "'": "'",
-                    "0": "\0",
-                }
-                return esc.get(v[1])
         return None
 
     def _str_index_char_access(self, node: Any) -> str | None:
         """str 添字アクセスを `at()` ベースの char 比較式へ変換する。"""
-        node_dict = self.any_to_dict_or_empty(node)
-        if len(node_dict) == 0 or node_dict.get("kind") != "Subscript":
-            return None
-        value_node = node_dict.get("value")
-        if self.get_expr_type(value_node) != "str":
-            return None
-        sl = node_dict.get("slice")
-        if isinstance(sl, dict) and sl.get("kind") == "Slice":
-            return None
-        if self.negative_index_mode != "off" and self._is_negative_const_index(sl):
-            return None
-        base = self.render_expr(value_node)
-        if isinstance(value_node, dict) and value_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-            base = f"({base})"
-        idx = self.render_expr(sl)
-        return f"{base}.at({idx})"
+        return None
 
     def _try_optimize_char_compare(
         self,
@@ -480,31 +437,11 @@ class CppEmitter(CodeEmitter):
         right_node: dict[str, Any] | None,
     ) -> str | None:
         """1文字比較を `'x'` / `.at(i)` 形へ最適化できるか判定する。"""
-        if op not in {"Eq", "NotEq"}:
-            return None
-        cop = "==" if op == "Eq" else "!="
-        l_access = self._str_index_char_access(left_node)
-        r_ch = self._one_char_str_const(right_node)
-        if l_access is not None and r_ch is not None:
-            return f"{l_access} {cop} {cpp_char_lit(r_ch)}"
-        r_access = self._str_index_char_access(right_node)
-        l_ch = self._one_char_str_const(left_node)
-        if r_access is not None and l_ch is not None:
-            return f"{cpp_char_lit(l_ch)} {cop} {r_access}"
-        l_ty = self.get_expr_type(left_node)
-        if l_ty == "uint8" and r_ch is not None:
-            return f"{self.render_expr(left_node)} {cop} {cpp_char_lit(r_ch)}"
-        r_ty = self.get_expr_type(right_node)
-        if r_ty == "uint8" and l_ch is not None:
-            return f"{cpp_char_lit(l_ch)} {cop} {self.render_expr(right_node)}"
         return None
 
     def _byte_from_str_expr(self, node: dict[str, Any] | None) -> str | None:
         """str 系式を uint8 初期化向けの char 式へ変換する。"""
-        ch = self._one_char_str_const(node)
-        if ch is not None:
-            return cpp_char_lit(ch)
-        return self._str_index_char_access(node)
+        return None
 
     def _wrap_for_binop_operand(
         self,
