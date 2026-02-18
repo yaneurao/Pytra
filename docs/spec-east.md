@@ -107,6 +107,7 @@
 - `any` / `object` は `Any` と同義に扱う（C++ 側では `object` = `rc<PyObj>`）。
 - `bytes` / `bytearray` は `list[uint8]` に正規化。
 - `pathlib.Path` は `Path` に正規化。
+- C++ ランタイムの `str` / `list` / `dict` / `set` / `bytes` / `bytearray` は、STL 継承ではなく wrapper（composition）として実装する。
 
 ## 7. 型推論ルール
 

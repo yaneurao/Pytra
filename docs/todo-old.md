@@ -358,3 +358,11 @@
 - [x] `return`（値なし）の再発防止 unit test（`test/unit/test_east_core.py`）を追加する。
 - [x] `BaseEmitter` に `any_to_dict/any_to_list/any_to_str` ヘルパを追加する（自己変換時の型崩れ分析の土台）。
 - [x] `py_runtime.h` に `optional<dict<...>>` 向け `py_dict_get/py_dict_get_default` 補助オーバーロードを追加する。
+
+## 移管: 2026-02-18（C++ runtime wrapper 方針の整合）
+
+- [x] `py_runtime.h` の `str/list/dict/set` を STL 継承ベースから「非継承 wrapper（composition）」へ移行する。
+- [x] 非継承 `str` で range-for が自然に書けるよう、`begin()/end()`（必要なら iterator wrapper）を整理する。
+- [x] `py2cpp.py` の生成コードから STL 依存の前提（継承由来の暗黙利用）を除去し、wrapper API のみで成立させる。
+- [x] `test/fixtures/strings/str_for_each.py` を含む文字列走査ケースで、生成 C++ が簡潔な `for (str c : s)` を維持することを回帰確認する。
+- [x] `docs/spec-dev.md` / `docs/how-to-use.md` / `docs/spec-east.md` の wrapper 記述を実装実態と一致させる（移行完了時に再更新）。

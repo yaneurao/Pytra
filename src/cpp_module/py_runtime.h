@@ -49,38 +49,161 @@ using uint64 = std::uint64_t;
 using float32 = float;
 using float64 = double;
 
-class str : public std::string {
+class str {
 public:
-    using std::string::string;
+    using iterator = std::string::iterator;
+    using const_iterator = std::string::const_iterator;
+    static constexpr std::size_t npos = std::string::npos;
+
     str() = default;
-    str(const std::string& s) : std::string(s) {}
-    str(std::string&& s) : std::string(std::move(s)) {}
-    str(char c) : std::string(1, c) {}
+    str(const char* s) : data_(s == nullptr ? "" : s) {}
+    str(const std::string& s) : data_(s) {}
+    str(std::string&& s) : data_(std::move(s)) {}
+    str(std::size_t count, char ch) : data_(count, ch) {}
+    str(char c) : data_(1, c) {}
+
+    str& operator=(const char* s) {
+        data_ = (s == nullptr ? "" : s);
+        return *this;
+    }
+
+    operator const std::string&() const { return data_; }  // NOLINT(google-explicit-constructor)
+    operator std::string&() { return data_; }              // NOLINT(google-explicit-constructor)
+
+    const std::string& std() const { return data_; }
+    std::string& std() { return data_; }
+
+    iterator begin() { return data_.begin(); }
+    iterator end() { return data_.end(); }
+    const_iterator begin() const { return data_.begin(); }
+    const_iterator end() const { return data_.end(); }
+    const_iterator cbegin() const { return data_.cbegin(); }
+    const_iterator cend() const { return data_.cend(); }
+
+    std::size_t size() const { return data_.size(); }
+    bool empty() const { return data_.empty(); }
+    void clear() { data_.clear(); }
+    void reserve(std::size_t n) { data_.reserve(n); }
+    const char* c_str() const { return data_.c_str(); }
+
+    str& operator+=(const str& rhs) {
+        data_ += rhs.data_;
+        return *this;
+    }
+
+    str& operator+=(const std::string& rhs) {
+        data_ += rhs;
+        return *this;
+    }
+
+    str& operator+=(const char* rhs) {
+        data_ += rhs;
+        return *this;
+    }
+
+    str& operator+=(char ch) {
+        data_ += ch;
+        return *this;
+    }
 
     str operator[](int64 idx) const {
-        int64 n = static_cast<int64>(this->size());
+        int64 n = static_cast<int64>(data_.size());
         if (idx < 0) idx += n;
         if (idx < 0 || idx >= n) {
             throw std::out_of_range("string index out of range");
         }
-        return str(1, std::string::operator[](static_cast<std::size_t>(idx)));
+        return str(1, data_[static_cast<std::size_t>(idx)]);
     }
 
     char at(int64 idx) const {
-        int64 n = static_cast<int64>(this->size());
+        int64 n = static_cast<int64>(data_.size());
         if (idx < 0) idx += n;
         if (idx < 0 || idx >= n) {
             throw std::out_of_range("string index out of range");
         }
-        return std::string::at(static_cast<std::size_t>(idx));
+        return data_.at(static_cast<std::size_t>(idx));
     }
+
+    str substr(std::size_t pos, std::size_t count = std::string::npos) const {
+        return str(data_.substr(pos, count));
+    }
+
+    std::size_t find(const str& needle, std::size_t pos = 0) const {
+        return data_.find(needle.data_, pos);
+    }
+
+    std::size_t find(const char* needle, std::size_t pos = 0) const {
+        return data_.find(needle, pos);
+    }
+
+    std::size_t find(char needle, std::size_t pos = 0) const {
+        return data_.find(needle, pos);
+    }
+
+    std::size_t rfind(const str& needle, std::size_t pos = std::string::npos) const {
+        return data_.rfind(needle.data_, pos);
+    }
+
+    std::size_t rfind(const char* needle, std::size_t pos = std::string::npos) const {
+        return data_.rfind(needle, pos);
+    }
+
+    int compare(const str& other) const { return data_.compare(other.data_); }
+
+    int compare(std::size_t pos, std::size_t count, const str& other) const {
+        return data_.compare(pos, count, other.data_);
+    }
+
+    str& replace(std::size_t pos, std::size_t count, const str& replacement) {
+        data_.replace(pos, count, replacement.data_);
+        return *this;
+    }
+
+    std::size_t find_last_of(char ch, std::size_t pos = std::string::npos) const {
+        return data_.find_last_of(ch, pos);
+    }
+
+    std::size_t find_last_of(const str& chars, std::size_t pos = std::string::npos) const {
+        return data_.find_last_of(chars.data_, pos);
+    }
+
+    std::size_t find_last_of(const char* chars, std::size_t pos = std::string::npos) const {
+        return data_.find_last_of(chars, pos);
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const str& s) {
+        os << s.data_;
+        return os;
+    }
+
+    friend str operator+(const str& lhs, const str& rhs) { return str(lhs.data_ + rhs.data_); }
+    friend str operator+(const str& lhs, const std::string& rhs) { return str(lhs.data_ + rhs); }
+    friend str operator+(const std::string& lhs, const str& rhs) { return str(lhs + rhs.data_); }
+    friend str operator+(const str& lhs, const char* rhs) { return str(lhs.data_ + std::string(rhs)); }
+    friend str operator+(const char* lhs, const str& rhs) { return str(std::string(lhs) + rhs.data_); }
+    friend str operator+(const str& lhs, char rhs) { return str(lhs.data_ + rhs); }
+    friend str operator+(char lhs, const str& rhs) { return str(std::string(1, lhs) + rhs.data_); }
+
+    friend bool operator==(const str& lhs, const str& rhs) { return lhs.data_ == rhs.data_; }
+    friend bool operator==(const str& lhs, const char* rhs) { return lhs.data_ == rhs; }
+    friend bool operator==(const char* lhs, const str& rhs) { return lhs == rhs.data_; }
+    friend bool operator!=(const str& lhs, const str& rhs) { return !(lhs == rhs); }
+    friend bool operator!=(const str& lhs, const char* rhs) { return !(lhs == rhs); }
+    friend bool operator!=(const char* lhs, const str& rhs) { return !(lhs == rhs); }
+    friend bool operator<(const str& lhs, const str& rhs) { return lhs.data_ < rhs.data_; }
+    friend bool operator<=(const str& lhs, const str& rhs) { return lhs.data_ <= rhs.data_; }
+    friend bool operator>(const str& lhs, const str& rhs) { return lhs.data_ > rhs.data_; }
+    friend bool operator>=(const str& lhs, const str& rhs) { return lhs.data_ >= rhs.data_; }
+
+private:
+    std::string data_;
 };
 
 namespace std {
 template <>
 struct hash<str> {
     std::size_t operator()(const str& s) const noexcept {
-        return std::hash<std::string>{}(static_cast<const std::string&>(s));
+        return std::hash<std::string>{}(s.std());
     }
 };
 }  // namespace std
@@ -128,83 +251,182 @@ private:
 };
 
 template <class T>
-class list : public std::vector<T> {
+class list {
 public:
-    using std::vector<T>::vector;
-    using typename std::vector<T>::const_iterator;
-    using typename std::vector<T>::iterator;
+    using value_type = T;
+    using iterator = typename std::vector<T>::iterator;
+    using const_iterator = typename std::vector<T>::const_iterator;
+
+    list() = default;
+    list(std::initializer_list<T> init) : data_(init) {}
+    explicit list(std::size_t count) : data_(count) {}
+    list(std::size_t count, const T& value) : data_(count, value) {}
+
+    template <class It>
+    list(It first, It last) : data_(first, last) {}
 
     template <class U, std::enable_if_t<!std::is_same_v<U, T>, int> = 0>
     explicit list(const list<U>& other) {
-        this->reserve(other.size());
+        reserve(other.size());
         for (const auto& v : other) {
-            this->push_back(static_cast<T>(v));
+            data_.push_back(static_cast<T>(v));
         }
     }
 
-    void append(const T& value) { this->push_back(value); }
-    void append(T&& value) { this->push_back(std::move(value)); }
+    operator const std::vector<T>&() const { return data_; }  // NOLINT(google-explicit-constructor)
+    operator std::vector<T>&() { return data_; }              // NOLINT(google-explicit-constructor)
+
+    iterator begin() { return data_.begin(); }
+    iterator end() { return data_.end(); }
+    const_iterator begin() const { return data_.begin(); }
+    const_iterator end() const { return data_.end(); }
+    const_iterator cbegin() const { return data_.cbegin(); }
+    const_iterator cend() const { return data_.cend(); }
+
+    std::size_t size() const { return data_.size(); }
+    bool empty() const { return data_.empty(); }
+    void reserve(std::size_t n) { data_.reserve(n); }
+    void clear() { data_.clear(); }
+    void resize(std::size_t n) { data_.resize(n); }
+    void resize(std::size_t n, const T& value) { data_.resize(n, value); }
+
+    T& operator[](std::size_t i) { return data_[i]; }
+    const T& operator[](std::size_t i) const { return data_[i]; }
+    T& at(std::size_t i) { return data_.at(i); }
+    const T& at(std::size_t i) const { return data_.at(i); }
+    T& front() { return data_.front(); }
+    const T& front() const { return data_.front(); }
+    T& back() { return data_.back(); }
+    const T& back() const { return data_.back(); }
+
+    void push_back(const T& value) { data_.push_back(value); }
+    void push_back(T&& value) { data_.push_back(std::move(value)); }
+
+    template <class... Args>
+    T& emplace_back(Args&&... args) {
+        return data_.emplace_back(std::forward<Args>(args)...);
+    }
+
+    iterator insert(iterator pos, const T& value) { return data_.insert(pos, value); }
+    iterator insert(iterator pos, T&& value) { return data_.insert(pos, std::move(value)); }
+
+    template <class It>
+    iterator insert(iterator pos, It first, It last) {
+        return data_.insert(pos, first, last);
+    }
+
+    iterator erase(iterator pos) { return data_.erase(pos); }
+    iterator erase(iterator first, iterator last) { return data_.erase(first, last); }
+    void pop_back() { data_.pop_back(); }
+
+    void append(const T& value) { data_.push_back(value); }
+    void append(T&& value) { data_.push_back(std::move(value)); }
     template <class U = T, std::enable_if_t<!std::is_same_v<U, std::any>, int> = 0>
     void append(const std::any& value) {
         if (const auto* p = std::any_cast<U>(&value)) {
-            this->push_back(*p);
+            data_.push_back(*p);
         }
     }
 
     template <class U>
     void extend(const U& values) {
-        this->insert(this->end(), values.begin(), values.end());
+        data_.insert(data_.end(), values.begin(), values.end());
     }
 
     T pop() {
-        if (this->empty()) {
+        if (data_.empty()) {
             throw std::out_of_range("pop from empty list");
         }
-        T out = this->back();
-        this->pop_back();
+        T out = data_.back();
+        data_.pop_back();
         return out;
     }
 
     T pop(int64 idx) {
-        if (this->empty()) {
+        if (data_.empty()) {
             throw std::out_of_range("pop from empty list");
         }
-        if (idx < 0) idx += static_cast<int64>(this->size());
-        if (idx < 0 || idx >= static_cast<int64>(this->size())) {
+        if (idx < 0) idx += static_cast<int64>(data_.size());
+        if (idx < 0 || idx >= static_cast<int64>(data_.size())) {
             throw std::out_of_range("pop index out of range");
         }
-        T out = (*this)[static_cast<std::size_t>(idx)];
-        this->erase(this->begin() + idx);
+        T out = data_[static_cast<std::size_t>(idx)];
+        data_.erase(data_.begin() + idx);
         return out;
     }
+
+private:
+    std::vector<T> data_;
 };
 
 using bytearray = list<uint8>;
 using bytes = bytearray;
 
 template <class K, class V>
-class dict : public std::unordered_map<K, V> {
+class dict {
 public:
-    using Base = std::unordered_map<K, V>;
-    using std::unordered_map<K, V>::unordered_map;
-    using typename std::unordered_map<K, V>::const_iterator;
-    using typename std::unordered_map<K, V>::iterator;
-    using value_type = typename Base::value_type;
+    using base_type = std::unordered_map<K, V>;
+    using iterator = typename base_type::iterator;
+    using const_iterator = typename base_type::const_iterator;
+    using value_type = typename base_type::value_type;
 
     dict() = default;
-    dict(std::initializer_list<value_type> init) : Base(init) {}
+    dict(std::initializer_list<value_type> init) : data_(init) {}
+
+    template <class It>
+    dict(It first, It last) : data_(first, last) {}
+
+    operator const base_type&() const { return data_; }  // NOLINT(google-explicit-constructor)
+    operator base_type&() { return data_; }              // NOLINT(google-explicit-constructor)
+
+    iterator begin() { return data_.begin(); }
+    iterator end() { return data_.end(); }
+    const_iterator begin() const { return data_.begin(); }
+    const_iterator end() const { return data_.end(); }
+    const_iterator cbegin() const { return data_.cbegin(); }
+    const_iterator cend() const { return data_.cend(); }
+
+    std::size_t size() const { return data_.size(); }
+    bool empty() const { return data_.empty(); }
+    void clear() { data_.clear(); }
+
+    iterator find(const K& key) { return data_.find(key); }
+    const_iterator find(const K& key) const { return data_.find(key); }
+    std::size_t count(const K& key) const { return data_.count(key); }
+    bool contains(const K& key) const { return data_.find(key) != data_.end(); }
+
+    V& operator[](const K& key) { return data_[key]; }
+    V& at(const K& key) { return data_.at(key); }
+    const V& at(const K& key) const { return data_.at(key); }
+
+    std::pair<iterator, bool> insert(const value_type& value) { return data_.insert(value); }
+    std::pair<iterator, bool> insert(value_type&& value) { return data_.insert(std::move(value)); }
+
+    template <class P>
+    std::pair<iterator, bool> insert(P&& value) {
+        return data_.insert(std::forward<P>(value));
+    }
+
+    template <class... Args>
+    std::pair<iterator, bool> emplace(Args&&... args) {
+        return data_.emplace(std::forward<Args>(args)...);
+    }
+
+    std::size_t erase(const K& key) { return data_.erase(key); }
+    iterator erase(iterator pos) { return data_.erase(pos); }
+    iterator erase(iterator first, iterator last) { return data_.erase(first, last); }
 
     V get(const K& key) const {
-        auto it = this->find(key);
-        if (it == this->end()) {
+        auto it = data_.find(key);
+        if (it == data_.end()) {
             throw std::out_of_range("dict.get missing key");
         }
         return it->second;
     }
 
     V get(const K& key, const V& default_value) const {
-        auto it = this->find(key);
-        if (it == this->end()) {
+        auto it = data_.find(key);
+        if (it == data_.end()) {
             return default_value;
         }
         return it->second;
@@ -212,47 +434,76 @@ public:
 
     list<K> keys() const {
         list<K> out{};
-        out.reserve(this->size());
-        for (const auto& kv : *this) out.push_back(kv.first);
+        out.reserve(data_.size());
+        for (const auto& kv : data_) out.push_back(kv.first);
         return out;
     }
 
     list<V> values() const {
         list<V> out{};
-        out.reserve(this->size());
-        for (const auto& kv : *this) out.push_back(kv.second);
+        out.reserve(data_.size());
+        for (const auto& kv : data_) out.push_back(kv.second);
         return out;
     }
 
     list<std::tuple<K, V>> items() const {
         list<std::tuple<K, V>> out{};
-        out.reserve(this->size());
-        for (const auto& kv : *this) out.push_back(std::make_tuple(kv.first, kv.second));
+        out.reserve(data_.size());
+        for (const auto& kv : data_) out.push_back(std::make_tuple(kv.first, kv.second));
         return out;
     }
+
+private:
+    base_type data_;
 };
 
 template <class T>
-class set : public std::unordered_set<T> {
+class set {
 public:
-    using Base = std::unordered_set<T>;
-    using std::unordered_set<T>::unordered_set;
-    using typename std::unordered_set<T>::const_iterator;
-    using typename std::unordered_set<T>::iterator;
-    using value_type = typename Base::value_type;
+    using base_type = std::unordered_set<T>;
+    using iterator = typename base_type::iterator;
+    using const_iterator = typename base_type::const_iterator;
+    using value_type = typename base_type::value_type;
 
     set() = default;
-    set(std::initializer_list<value_type> init) : Base(init) {}
+    set(std::initializer_list<value_type> init) : data_(init) {}
 
-    void add(const T& value) { this->insert(value); }
+    template <class It>
+    set(It first, It last) : data_(first, last) {}
 
-    void discard(const T& value) { this->erase(value); }
+    operator const base_type&() const { return data_; }  // NOLINT(google-explicit-constructor)
+    operator base_type&() { return data_; }              // NOLINT(google-explicit-constructor)
+
+    iterator begin() { return data_.begin(); }
+    iterator end() { return data_.end(); }
+    const_iterator begin() const { return data_.begin(); }
+    const_iterator end() const { return data_.end(); }
+    const_iterator cbegin() const { return data_.cbegin(); }
+    const_iterator cend() const { return data_.cend(); }
+
+    std::size_t size() const { return data_.size(); }
+    bool empty() const { return data_.empty(); }
+    void clear() { data_.clear(); }
+
+    std::size_t count(const T& value) const { return data_.count(value); }
+    std::pair<iterator, bool> insert(const T& value) { return data_.insert(value); }
+    std::pair<iterator, bool> insert(T&& value) { return data_.insert(std::move(value)); }
+    std::size_t erase(const T& value) { return data_.erase(value); }
+    iterator find(const T& value) { return data_.find(value); }
+    const_iterator find(const T& value) const { return data_.find(value); }
+
+    void add(const T& value) { data_.insert(value); }
+
+    void discard(const T& value) { data_.erase(value); }
 
     void remove(const T& value) {
-        if (this->erase(value) == 0) {
+        if (data_.erase(value) == 0) {
             throw std::out_of_range("set.remove missing value");
         }
     }
+
+private:
+    base_type data_;
 };
 
 class PyIntObj : public PyObj {
