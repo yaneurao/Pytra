@@ -180,18 +180,20 @@ class CppEmitter:
             i += 1
         return True
 
-    def _normalize_type_name(self, t: str) -> str:
-        s = t.strip()
+    def _normalize_type_name(self, t: Any) -> str:
+        if not isinstance(t, str):
+            return ""
+        s = str(t)
         if s == "any":
             return "Any"
         if s == "object":
             return "Any"
         return s
 
-    def _is_any_like_type(self, t: str | None) -> bool:
-        if not isinstance(t, str):
-            return False
+    def _is_any_like_type(self, t: Any) -> bool:
         s = self._normalize_type_name(t)
+        if s == "":
+            return False
         if s in {"Any", "unknown"}:
             return True
         if "|" in s:
@@ -305,7 +307,7 @@ class CppEmitter:
             i -= 1
         return False
 
-    def render_cond(self, expr: dict[str, Any] | None) -> str:
+    def render_cond(self, expr: Any) -> str:
         t: str = self.get_expr_type(expr)
         body = self._strip_outer_parens(self.render_expr(expr))
         if t in {"bool"}:
@@ -368,7 +370,7 @@ class CppEmitter:
             return rendered_expr
         return f"static_cast<{self.cpp_type(to_type)}>({rendered_expr})"
 
-    def render_to_string(self, expr: dict[str, Any] | None) -> str:
+    def render_to_string(self, expr: Any) -> str:
         rendered = self.render_expr(expr)
         t0 = self.get_expr_type(expr)
         t = t0 if isinstance(t0, str) else ""
@@ -380,33 +382,37 @@ class CppEmitter:
             return f"std::to_string({rendered})"
         return f"py_to_string({rendered})"
 
-    def render_expr_as_any(self, expr: dict[str, Any] | None) -> str:
+    def render_expr_as_any(self, expr: Any) -> str:
         if not isinstance(expr, dict):
             return f"std::any({self.render_expr(expr)})"
-        kind = str(expr.get("kind", ""))
+        node: dict[str, Any] = expr
+        kind = str(node.get("kind", ""))
         if kind == "Dict":
             items: list[str] = []
-            for kv in expr.get("entries", []):
+            for kv in node.get("entries", []):
                 k = self.render_expr(kv.get("key"))
                 v = self.render_expr_as_any(kv.get("value"))
                 items.append(f"{{{k}, {v}}}")
             return f"std::any(dict<str, std::any>{{{', '.join(items)}}})"
         if kind == "List":
-            vals = ", ".join(self.render_expr_as_any(e) for e in expr.get("elements", []))
+            vals = ", ".join(self.render_expr_as_any(e) for e in node.get("elements", []))
             return f"std::any(list<std::any>{{{vals}}})"
         return f"std::any({self.render_expr(expr)})"
 
-    def render_boolop(self, expr: dict[str, Any], *, force_value_select: bool = False) -> str:
-        value_nodes = [v for v in expr.get("values", []) if isinstance(v, dict)]
+    def render_boolop(self, expr: Any, force_value_select: bool = False) -> str:
+        if not isinstance(expr, dict):
+            return "false"
+        node: dict[str, Any] = expr
+        value_nodes = [v for v in node.get("values", []) if isinstance(v, dict)]
         if len(value_nodes) == 0:
             return "false"
         value_texts = [self.render_expr(v) for v in value_nodes]
-        if not force_value_select and self.get_expr_type(expr) == "bool":
-            op = "&&" if expr.get("op") == "And" else "||"
+        if not force_value_select and self.get_expr_type(node) == "bool":
+            op = "&&" if node.get("op") == "And" else "||"
             values = [f"({txt})" for txt in value_texts]
             return f" {op} ".join(values)
 
-        op_name = str(expr.get("op"))
+        op_name = str(node.get("op"))
         out = value_texts[-1]
         i = len(value_nodes) - 2
         while i >= 0:
@@ -535,15 +541,20 @@ class CppEmitter:
         if kind == "AnnAssign":
             t = self.cpp_type(stmt.get("annotation"))
             target = self.render_expr(stmt.get("target"))
-            val = stmt.get("value")
-            rendered_val = self.render_expr(val) if val is not None else None
-            ann_t = stmt.get("annotation")
-            ann_t_str = ann_t if isinstance(ann_t, str) else ""
+            val_raw = stmt.get("value")
+            val = val_raw if isinstance(val_raw, dict) else None
+            rendered_val: str = ""
+            if val is not None:
+                rendered_val = self.render_expr(val)
+            ann_t_raw = stmt.get("annotation")
+            ann_t_str: str = ann_t_raw if isinstance(ann_t_raw, str) else ""
             if isinstance(val, dict) and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
                 inner_ann = self.split_generic(ann_t_str[5:-1])
                 if len(inner_ann) == 2 and self._is_any_like_type(inner_ann[1]):
                     items: list[str] = []
                     for kv in val.get("entries", []):
+                        if not isinstance(kv, dict):
+                            continue
                         k = self.render_expr(kv.get("key"))
                         v = self.render_expr_as_any(kv.get("value"))
                         items.append(f"{{{k}, {v}}}")
@@ -551,10 +562,8 @@ class CppEmitter:
             if isinstance(val, dict) and t != "auto":
                 vkind = val.get("kind")
                 if vkind == "BoolOp":
-                    ann_t_raw = stmt.get("annotation")
-                    ann_t = ann_t_raw if isinstance(ann_t_raw, str) else ""
-                    if ann_t != "bool":
-                        rendered_val = self.render_boolop(val, force_value_select=True)
+                    if ann_t_str != "bool":
+                        rendered_val = self.render_boolop(val, True)
                 if vkind == "List" and len(val.get("elements", [])) == 0:
                     rendered_val = f"{t}{{}}"
                 elif vkind == "Dict" and len(val.get("entries", [])) == 0:
@@ -562,8 +571,8 @@ class CppEmitter:
                 elif vkind == "Set" and len(val.get("elements", [])) == 0:
                     rendered_val = f"{t}{{}}"
                 elif vkind == "ListComp" and isinstance(rendered_val, str):
-                    rendered_val = rendered_val.replace("-> auto", f"-> {t}", 1).replace("auto __out", f"{t} __out", 1)
-                    rendered_val = rendered_val.replace("-> list<auto>", f"-> {t}", 1).replace("list<auto> __out", f"{t} __out", 1)
+                    # Keep as-is for selfhost stability; list-comp explicit typing can be improved later.
+                    rendered_val = rendered_val
             declare = bool(stmt.get("declare", True))
             already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
             if target.startswith("this->"):
@@ -707,7 +716,7 @@ class CppEmitter:
                 self.emit("}")
             return
         if kind == "FunctionDef":
-            self.emit_function(stmt)
+            self.emit_function(stmt, False)
             return
         if kind == "ClassDef":
             self.emit_class(stmt)
@@ -766,13 +775,13 @@ class CppEmitter:
             self.current_scope().add(texpr)
             rval = self.render_expr(value)
             if isinstance(value, dict) and value.get("kind") == "BoolOp" and picked != "bool":
-                rval = self.render_boolop(value, force_value_select=True)
+                rval = self.render_boolop(value, True)
             self.emit(f"{dtype} {texpr} = {rval};")
             return
         rval = self.render_expr(value)
         t_target = self.get_expr_type(target)
         if isinstance(value, dict) and value.get("kind") == "BoolOp" and t_target != "bool":
-            rval = self.render_boolop(value, force_value_select=True)
+            rval = self.render_boolop(value, True)
         self.emit(f"{texpr} = {rval};")
 
     def is_plain_name_expr(self, expr: Any) -> bool:
@@ -938,7 +947,7 @@ class CppEmitter:
         self.indent -= 1
         self.emit("}")
 
-    def emit_function(self, stmt: dict[str, Any], *, in_class: bool = False) -> None:
+    def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
         name = stmt.get("name", "fn")
         ret = self.cpp_type(stmt.get("return_type"))
         arg_types: dict[str, str] = stmt.get("arg_types", {})
@@ -1573,7 +1582,7 @@ class CppEmitter:
                 return f"+{operand}"
             return operand
         if kind == "BoolOp":
-            return self.render_boolop(expr)
+            return self.render_boolop(expr, False)
         if kind == "Compare":
             if expr.get("lowered_kind") == "Contains":
                 container = self.render_expr(expr.get("container"))

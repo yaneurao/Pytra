@@ -100,6 +100,12 @@ public:
 
     void append(const T& value) { this->push_back(value); }
     void append(T&& value) { this->push_back(std::move(value)); }
+    template <class U = T, std::enable_if_t<!std::is_same_v<U, std::any>, int> = 0>
+    void append(const std::any& value) {
+        if (const auto* p = std::any_cast<U>(&value)) {
+            this->push_back(*p);
+        }
+    }
 
     template <class U>
     void extend(const U& values) {

@@ -186,6 +186,8 @@ g++ -std=c++20 -O2 -I src test/transpile/cpp/01_mandelbrot.cpp \
 ```bash
 # 0) 入力となる selfhost ソースを最新化
 cp src/py2cpp.py selfhost/py2cpp.py
+rm -rf selfhost/cpp_module
+cp -r src/cpp_module selfhost/cpp_module
 
 # 1) Python 版 py2cpp で selfhost 用 C++ を生成
 python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp
