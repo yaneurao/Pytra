@@ -52,6 +52,13 @@ class BaseEmitter:
             out = v
         return out
 
+    def any_to_dict_or_empty(self, v: Any) -> dict[str, Any]:
+        """動的値を dict に安全に変換する。変換不能なら空 dict。"""
+        d = self.any_to_dict(v)
+        if isinstance(d, dict):
+            return d
+        return {}
+
     def any_to_list(self, v: Any) -> list[Any]:
         """動的値を list に安全に変換する。変換不能なら空 list。"""
         out: list[Any] = []
@@ -68,29 +75,25 @@ class BaseEmitter:
 
     def get_expr_type(self, expr: Any) -> str:
         """式ノードから解決済み型文字列を取得する。"""
-        expr_node = self.any_to_dict(expr)
-        if expr_node is None:
-            return ""
+        expr_node = self.any_to_dict_or_empty(expr)
         t = self.any_dict_get(expr_node, "resolved_type", "")
         return t if isinstance(t, str) else ""
 
     def is_name(self, node: Any, name: str | None = None) -> bool:
-        node_dict = self.any_to_dict(node)
-        if node_dict is None or self.any_dict_get(node_dict, "kind", "") != "Name":
+        node_dict = self.any_to_dict_or_empty(node)
+        if self.any_dict_get(node_dict, "kind", "") != "Name":
             return False
         if name is None:
             return True
         return str(self.any_dict_get(node_dict, "id", "")) == name
 
     def is_call(self, node: Any) -> bool:
-        node_dict = self.any_to_dict(node)
-        if node_dict is None:
-            return False
+        node_dict = self.any_to_dict_or_empty(node)
         return self.any_dict_get(node_dict, "kind", "") == "Call"
 
     def is_attr(self, node: Any, attr: str | None = None) -> bool:
-        node_dict = self.any_to_dict(node)
-        if node_dict is None or self.any_dict_get(node_dict, "kind", "") != "Attribute":
+        node_dict = self.any_to_dict_or_empty(node)
+        if self.any_dict_get(node_dict, "kind", "") != "Attribute":
             return False
         if attr is None:
             return True
@@ -367,8 +370,8 @@ class BaseEmitter:
                     return False
             return False
         if kind == "UnaryOp" and self.any_dict_get(node, "op", "") == "USub":
-            opd = self.any_to_dict(self.any_dict_get(node, "operand", None))
-            if opd is not None and self.any_dict_get(opd, "kind", "") == "Constant":
+            opd = self.any_to_dict_or_empty(self.any_dict_get(node, "operand", None))
+            if self.any_dict_get(opd, "kind", "") == "Constant":
                 ov = self.any_dict_get(opd, "value", None)
                 if isinstance(ov, int):
                     return int(ov) > 0
@@ -383,16 +386,16 @@ class BaseEmitter:
         """暗黙基底 ctor 呼び出しと等価な super().__init__ かを判定する。"""
         if expr is None or self.any_dict_get(expr, "kind", "") != "Call":
             return False
-        func = self.any_to_dict(self.any_dict_get(expr, "func", None))
-        if func is None or self.any_dict_get(func, "kind", "") != "Attribute":
+        func = self.any_to_dict_or_empty(self.any_dict_get(expr, "func", None))
+        if self.any_dict_get(func, "kind", "") != "Attribute":
             return False
         if str(self.any_dict_get(func, "attr", "")) != "__init__":
             return False
-        owner = self.any_to_dict(self.any_dict_get(func, "value", None))
-        if owner is None or self.any_dict_get(owner, "kind", "") != "Call":
+        owner = self.any_to_dict_or_empty(self.any_dict_get(func, "value", None))
+        if self.any_dict_get(owner, "kind", "") != "Call":
             return False
-        owner_func = self.any_to_dict(self.any_dict_get(owner, "func", None))
-        if owner_func is None or self.any_dict_get(owner_func, "kind", "") != "Name":
+        owner_func = self.any_to_dict_or_empty(self.any_dict_get(owner, "func", None))
+        if self.any_dict_get(owner_func, "kind", "") != "Name":
             return False
         if str(self.any_dict_get(owner_func, "id", "")) != "super":
             return False
@@ -402,9 +405,9 @@ class BaseEmitter:
 
     def render_cond(self, expr: Any) -> str:
         """条件式文脈向けに式を真偽値へ正規化して出力する。"""
-        expr_node = self.any_to_dict(expr)
-        if expr_node is None:
+        if expr is None or not isinstance(expr, dict):
             return "false"
+        expr_node = self.any_to_dict_or_empty(expr)
         t = self.get_expr_type(expr_node)
         body = self._strip_outer_parens(self.render_expr(expr_node))
         if t in {"bool"}:
