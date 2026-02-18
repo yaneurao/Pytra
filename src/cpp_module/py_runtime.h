@@ -158,6 +158,12 @@ static inline std::string py_to_string(const char* v) {
     return std::string(v);
 }
 
+template <class T>
+static inline std::string py_to_string(const std::optional<T>& v) {
+    if (!v.has_value()) return "None";
+    return py_to_string(*v);
+}
+
 static inline std::string py_to_string(const std::any& v) {
     if (const auto* p = std::any_cast<str>(&v)) return *p;
     if (const auto* p = std::any_cast<int64>(&v)) return std::to_string(*p);
@@ -200,6 +206,44 @@ static inline void py_print(const T& first, const Rest&... rest) {
     std::cout << py_to_string(first);
     ((std::cout << " " << py_to_string(rest)), ...);
     std::cout << std::endl;
+}
+
+static inline bool py_assert_true(bool cond, const str& label = "") {
+    if (cond) return true;
+    if (label != "") {
+        std::cout << "[assert_true] " << label << ": False" << std::endl;
+    } else {
+        std::cout << "[assert_true] False" << std::endl;
+    }
+    return false;
+}
+
+template <class A, class B>
+static inline bool py_assert_eq(const A& actual, const B& expected, const str& label = "") {
+    const bool ok = (actual == expected);
+    if (ok) return true;
+    if (label != "") {
+        std::cout << "[assert_eq] " << label << ": actual=" << py_to_string(actual)
+                  << ", expected=" << py_to_string(expected) << std::endl;
+    } else {
+        std::cout << "[assert_eq] actual=" << py_to_string(actual)
+                  << ", expected=" << py_to_string(expected) << std::endl;
+    }
+    return false;
+}
+
+static inline bool py_assert_all(const list<bool>& results, const str& label = "") {
+    for (bool v : results) {
+        if (!v) {
+            if (label != "") {
+                std::cout << "[assert_all] " << label << ": False" << std::endl;
+            } else {
+                std::cout << "[assert_all] False" << std::endl;
+            }
+            return false;
+        }
+    }
+    return true;
 }
 
 template <class T>
