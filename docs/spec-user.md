@@ -65,6 +65,8 @@ test/
 - 言語別の変換結果は `sample/cpp/`, `sample/rs/`, `sample/cs/`, `sample/js/`, `sample/ts/`, `sample/go/`, `sample/java/`, `sample/swift/`, `sample/kotlin/` に配置します。
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します（Git 管理外）。
 - Python から import する自作ライブラリは `src/pylib/` に配置します。
+  - 画像: `from pylib import png`, `from pylib.gif import save_gif`
+  - テスト補助: `from pylib.assertions import py_assert_eq` など
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
 - C++ 実行バイナリは起動オプション `--pytra-image-format=png|ppm` を受け付けます。
   - `ppm` 指定時、`png.write_rgb_png(...)` は PPM(P6) で出力され、出力拡張子は `.ppm` に切り替わります。

@@ -37,6 +37,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 補足:
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - 入力コードで使う Python モジュールに対応する実装を `src/cpp_module/` に用意してください（例: `math`, `time`, `pathlib`, `png`, `gif`）。
+- Python 側の import は `pylib` 名を使います（例: `from pylib import png`, `from pylib.gif import save_gif`, `from pylib.assertions import py_assert_eq`）。
 - `math.sqrt` など `module.attr(...)` の C++ 側マッピングは `src/cpp_module/runtime_call_map.json` で定義します。必要な関数は `module_attr_call` に追加できます。
 - 実行時に `--pytra-image-format=ppm` を付けると、`png.write_rgb_png(...)` は PNG ではなく PPM(P6) を出力します。
   - 例: `./test/transpile/obj/iterable.out --pytra-image-format=ppm`

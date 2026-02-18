@@ -75,6 +75,8 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
   - `pylib.gif`
     - `save_gif(path, width, height, frames, palette, delay_cs, loop)`
     - `grayscale_palette()`
+  - `pylib.assertions`
+    - `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - ターゲット言語ごとのランタイム:
   - `src/cpp_module`, `src/cs_module`, `src/rs_module`
   - `src/js_module`, `src/ts_module`

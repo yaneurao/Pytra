@@ -99,6 +99,12 @@
 - 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
 - 言語別に手書きするのは、性能・I/O 都合で必要な最小範囲に限定します。
 - 言語間一致は「復号後画素一致」を主判定とし、圧縮バイト列差（例: PNG IDAT）は副次扱いとします。
+- `src/pylib/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
+
+### 3.4 Python 補助ライブラリ命名
+
+- 旧 `pylib.runtime` は `pylib.assertions` へ改名済みです。
+- テスト補助関数（`py_assert_*`）は `from pylib.assertions import ...` で利用します。
 
 ## 4. 検証手順（C++）
 
