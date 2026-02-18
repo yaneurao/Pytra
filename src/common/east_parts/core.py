@@ -56,6 +56,7 @@ def _sh_ann_to_type(ann: str) -> str:
     mapping = {
         "int": "int64",
         "float": "float64",
+        "byte": "uint8",
         "bool": "bool",
         "str": "str",
         "None": "None",

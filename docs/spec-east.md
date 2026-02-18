@@ -103,6 +103,7 @@
 
 - `int` は `int64` に正規化。
 - `float` は `float64` に正規化。
+- `byte` は `uint8` に正規化（1文字/1byte用途の注釈エイリアス）。
 - `float32/float64` はそのまま保持。
 - `any` / `object` は `Any` と同義に扱う（C++ 側では `object` = `rc<PyObj>`）。
 - `bytes` / `bytearray` は `list[uint8]` に正規化。
