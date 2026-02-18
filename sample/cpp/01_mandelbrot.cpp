@@ -1,10 +1,11 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 01: マンデルブロ集合を PNG 画像として出力するサンプルです。
 // 将来のトランスパイルを意識して、構文はなるべく素直に書いています。
 
 int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
-    // 1点 (cx, cy) の発散までの反復回数を返す。
+    /* 1点 (cx, cy) の発散までの反復回数を返す。 */
     float64 x = 0.0;
     float64 y = 0.0;
     for (int64 i = 0; i < max_iter; ++i) {
@@ -19,7 +20,7 @@ int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
 }
 
 std::tuple<int64, int64, int64> color_map(int64 iter_count, int64 max_iter) {
-    // 反復回数を RGB に変換する。
+    /* 反復回数を RGB に変換する。 */
     if (iter_count >= max_iter)
         return std::make_tuple(0, 0, 0);
     
@@ -32,7 +33,7 @@ std::tuple<int64, int64, int64> color_map(int64 iter_count, int64 max_iter) {
 }
 
 bytearray render_mandelbrot(int64 width, int64 height, int64 max_iter, float64 x_min, float64 x_max, float64 y_min, float64 y_max) {
-    // マンデルブロ画像の RGB バイト列を生成する。
+    /* マンデルブロ画像の RGB バイト列を生成する。 */
     bytearray pixels = bytearray{};
     
     for (int64 y = 0; y < height; ++y) {

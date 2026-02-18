@@ -110,7 +110,8 @@ class CppEmitter:
         return None
 
     def _has_leading_trivia(self, stmt: dict[str, Any]) -> bool:
-        return False
+        trivia = stmt.get("leading_trivia")
+        return isinstance(trivia, list) and len(trivia) > 0
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         for stmt in stmts:
@@ -121,8 +122,22 @@ class CppEmitter:
         self.emit("/* " + text + " */")
 
     def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
-        # NOTE: selfhost bridge; comment trivia emission is temporarily disabled.
-        _ = stmt
+        trivia = stmt.get("leading_trivia")
+        if not isinstance(trivia, list):
+            return
+        for item in trivia:
+            if not isinstance(item, dict):
+                continue
+            k = item.get("kind")
+            if k == "comment":
+                txt = item.get("text")
+                if isinstance(txt, str):
+                    self.emit("// " + txt)
+            elif k == "blank":
+                cnt = item.get("count", 1)
+                n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
+                for _ in range(n):
+                    self.emit("")
 
     def next_tmp(self, prefix: str = "__tmp") -> str:
         self.tmp_id += 1
@@ -131,26 +146,36 @@ class CppEmitter:
     def _is_identifier_expr(self, text: str) -> bool:
         if len(text) == 0:
             return False
-        c0 = text[0]
+        c0 = text[0:1]
         if not (c0 == "_" or ("a" <= c0 <= "z") or ("A" <= c0 <= "Z")):
             return False
         i = 1
         while i < len(text):
-            ch = text[i]
+            ch = text[i:i + 1]
             if not (ch == "_" or ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9")):
                 return False
             i += 1
         return True
 
     def transpile(self) -> str:
-        body = list(self.doc.get("body", []))
+        body: list[dict[str, Any]] = []
+        raw_body = self.doc.get("body", [])
+        if isinstance(raw_body, list):
+            for s in raw_body:
+                if isinstance(s, dict):
+                    body.append(s)
         for stmt in body:
             if stmt.get("kind") == "ClassDef":
                 cls_name = str(stmt.get("name", ""))
                 if cls_name != "":
                     self.class_names.add(cls_name)
                     mset: set[str] = set()
-                    class_body = list(stmt.get("body", []))
+                    class_body: list[dict[str, Any]] = []
+                    raw_class_body = stmt.get("body", [])
+                    if isinstance(raw_class_body, list):
+                        for s in raw_class_body:
+                            if isinstance(s, dict):
+                                class_body.append(s)
                     for s in class_body:
                         if s.get("kind") == "FunctionDef":
                             fn_name = str(s.get("name"))
@@ -187,7 +212,12 @@ class CppEmitter:
         self.indent += 1
         self.emit("pytra_configure_from_argv(argc, argv);")
         self.scope_stack.append(set())
-        main_guard = list(self.doc.get("main_guard_body", []))
+        main_guard: list[dict[str, Any]] = []
+        raw_main_guard = self.doc.get("main_guard_body", [])
+        if isinstance(raw_main_guard, list):
+            for s in raw_main_guard:
+                if isinstance(s, dict):
+                    main_guard.append(s)
         self.emit_stmt_list(main_guard)
         self.scope_stack.pop()
         self.emit("return 0;")
@@ -204,7 +234,22 @@ class CppEmitter:
         return out
 
     def emit_module_leading_trivia(self) -> None:
-        _ = self.doc
+        trivia = self.doc.get("module_leading_trivia")
+        if not isinstance(trivia, list):
+            return
+        for item in trivia:
+            if not isinstance(item, dict):
+                continue
+            k = item.get("kind")
+            if k == "comment":
+                txt = item.get("text")
+                if isinstance(txt, str):
+                    self.emit("// " + txt)
+            elif k == "blank":
+                cnt = item.get("count", 1)
+                n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
+                for _ in range(n):
+                    self.emit("")
 
     def current_scope(self) -> set[str]:
         return self.scope_stack[-1]
@@ -219,8 +264,7 @@ class CppEmitter:
         return False
 
     def render_cond(self, expr: dict[str, Any] | None) -> str:
-        t0 = self.get_expr_type(expr)
-        t: str = t0 if isinstance(t0, str) else ""
+        t: str = self.get_expr_type(expr)
         body = self._strip_outer_parens(self.render_expr(expr))
         if t in {"bool"}:
             return body
@@ -244,7 +288,7 @@ class CppEmitter:
             wrapped: bool = True
             i: int = 0
             while i < len(s):
-                ch: str = s[i]
+                ch: str = s[i:i + 1]
                 if in_str:
                     if esc:
                         esc = False
@@ -342,8 +386,10 @@ class CppEmitter:
             return "/* invalid min/max */"
         if len(args) == 1:
             return args[0]
-        out_type_eff = out_type if isinstance(out_type, str) and out_type != "" else "auto"
-        t = self.cpp_type(out_type_eff)
+        if isinstance(out_type, str) and out_type != "":
+            t = self.cpp_type(out_type)
+        else:
+            t = "auto"
         if t == "auto":
             call = f"py_{fn}({args[0]}, {args[1]})"
             for a in args[2:]:
@@ -1688,16 +1734,18 @@ class CppEmitter:
             self.emit(text)
             self.bridge_comment_emitted.add(key)
 
-    def get_expr_type(self, expr: dict[str, Any] | None) -> str | None:
+    def get_expr_type(self, expr: dict[str, Any] | None) -> str:
         if expr is None:
-            return None
+            return ""
         t = expr.get("resolved_type")
-        return t if isinstance(t, str) else None
+        return t if isinstance(t, str) else ""
 
     def cpp_type(self, east_type: str | None) -> str:
-        if east_type is None:
+        if not isinstance(east_type, str):
             return "auto"
         east_type = east_type.strip()
+        if east_type == "":
+            return "auto"
         if east_type == "Any":
             return "std::any"
         if "|" in east_type:

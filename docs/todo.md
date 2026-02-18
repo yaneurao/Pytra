@@ -50,9 +50,9 @@
 
 #### F. コメント・空行保持の復旧
 
-- [ ] 一時無効化した `emit_module_leading_trivia` を再有効化する。
-- [ ] 一時無効化した `emit_leading_comments` を再有効化する。
-- [ ] `selfhost/py2cpp.py` 変換時にもコメント行・空行が保持されることを `sample/py/01` で確認する。
+- [x] 一時無効化した `emit_module_leading_trivia` を再有効化する。
+- [x] 一時無効化した `emit_leading_comments` を再有効化する。
+- [x] `selfhost/py2cpp.py` 変換時にもコメント行・空行が保持されることを `sample/py/01` で確認する。
 
 #### G. 検証フローの固定
 
