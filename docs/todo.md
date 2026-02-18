@@ -2,6 +2,11 @@
 
 ## CodeEmitter 化（JSON + Hooks）
 
+作業ルール（step by step）:
+- [ ] `CodeEmitter` の変更は段階適用し、各ステップで `test/fixtures` の変換可否を確認してから次へ進む。
+- [ ] 同じく各ステップで `sample/py` 全件の変換可否を確認してから次へ進む。
+- [ ] 回帰が出た場合は次ステップへ進まず、その場で修正してから再確認する。
+
 1. [x] `BaseEmitter` を `CodeEmitter` へ改名し、段階移行する。
    - [x] `src/common/base_emitter.py` を `src/common/code_emitter.py` へ移動する。
    - [x] 互換エイリアス `BaseEmitter = CodeEmitter` を暫定で残す。
@@ -17,12 +22,25 @@
    - [x] `src/py2cpp.py` の直書きマップを profile ロードに置換する。
 4. [ ] フック注入 (`EmitterHooks`) を実装する。
    - [x] `on_render_call`, `on_render_binop`, `on_emit_stmt` など最小フック面を定義する。
-   - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる。
+   - [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。
+   - [ ] `emit_stmt(If/While/For/AnnAssign/AugAssign)` の分岐を hooks + template helper へ段階分離する。
+   - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
    - [x] C++ 向け hooks 実装を `src/runtime/cpp/hooks/cpp_hooks.py` として分離する。
 5. [x] 回帰確認を追加する。
    - [x] `test/unit/test_code_emitter.py` を追加し、profile/hook の境界を検証する。
    - [x] `test/unit/test_py2cpp_features.py` と `test/unit/test_image_runtime_parity.py` を回帰する。
    - [x] selfhost 検証フロー（`tools/prepare_selfhost_source.py`）に新構造を反映する。
+
+## py2cpp 縮退（行数削減）
+
+1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
+   - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
+   - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。
+   - [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。
+2. [ ] 未使用関数の掃除を継続する。
+   - [x] `extract_module_leading_trivia` ラッパーを削除。
+   - [x] `_stmt_start_line` / `_stmt_end_line` / `_has_leading_trivia` を削除。
+   - [ ] `py2cpp.py` 内の補助関数で参照ゼロのものを追加洗い出しして削除する。
 
 ## selfhost 回復（優先）
 
