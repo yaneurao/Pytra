@@ -25,6 +25,8 @@
   - 計測値: `305` errors（`g++ -std=c++20 -O2 -I src selfhost/py2cpp.cpp ...`）
 - [ ] `Any -> object` 移行後の `selfhost` コンパイルを通す。
 - [ ] `selfhost` で `sample/py/01` を変換できることを確認する。
+  - 現状メモ: `PYTHONPATH=src python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` で
+    `unsupported_syntax: expected token EOF, got NAME`（`except ValueError:` 付近）により EAST 生成が停止。
 
 ## 4. 内包表現・lambda の追加回帰
 
