@@ -21,10 +21,10 @@
 #include <utility>
 #include <vector>
 
-#include "cpp_module/gif.h"
-#include "cpp_module/gc.h"
-#include "cpp_module/math.h"
-#include "cpp_module/png.h"
+#include "runtime/cpp/pylib/gif.h"
+#include "runtime/cpp/core/gc.h"
+#include "runtime/cpp/core/math.h"
+#include "runtime/cpp/pylib/png.h"
 
 namespace py_math = pytra::cpp_module::math;
 using PyObj = pytra::gc::PyObj;

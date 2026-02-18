@@ -17,14 +17,14 @@ if str(ROOT / "src") not in sys.path:
 from src.py2cpp import load_cpp_module_attr_call_map, load_east, transpile_to_cpp
 
 CPP_RUNTIME_SRCS = [
-    "src/cpp_module/pathlib.cpp",
-    "src/cpp_module/time.cpp",
-    "src/cpp_module/math.cpp",
-    "src/cpp_module/dataclasses.cpp",
-    "src/cpp_module/sys.cpp",
-    "src/cpp_module/png.cpp",
-    "src/cpp_module/gif.cpp",
-    "src/cpp_module/gc.cpp",
+    "src/runtime/cpp/core/pathlib.cpp",
+    "src/runtime/cpp/core/time.cpp",
+    "src/runtime/cpp/core/math.cpp",
+    "src/runtime/cpp/core/dataclasses.cpp",
+    "src/runtime/cpp/core/sys.cpp",
+    "src/runtime/cpp/pylib/png.cpp",
+    "src/runtime/cpp/pylib/gif.cpp",
+    "src/runtime/cpp/core/gc.cpp",
 ]
 
 def find_fixture_case(stem: str) -> Path:

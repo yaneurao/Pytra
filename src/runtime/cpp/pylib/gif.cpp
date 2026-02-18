@@ -1,6 +1,6 @@
 // Python の pylib.gif に対応する GIF 書き出し実装です。
 
-#include "cpp_module/gif.h"
+#include "runtime/cpp/pylib/gif.h"
 
 #include <cstdint>
 #include <fstream>

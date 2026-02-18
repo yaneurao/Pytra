@@ -1,6 +1,6 @@
 // このファイルは Python の `sys` モジュール互換実装の本体です。
 
-#include "cpp_module/sys.h"
+#include "runtime/cpp/core/sys.h"
 
 namespace pytra::cpp_module {
 

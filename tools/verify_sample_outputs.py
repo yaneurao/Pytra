@@ -399,7 +399,21 @@ def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdou
 
     t1 = time.time()
     vlog(f"[{stem}] cpp compile start")
-    rc, _ = run_cmd(["g++", "-std=c++20", *compile_flags, "-I", "src", str(cpp), "src/cpp_module/png.cpp", "src/cpp_module/gif.cpp", "src/cpp_module/math.cpp", "-o", str(exe)])
+    rc, _ = run_cmd(
+        [
+            "g++",
+            "-std=c++20",
+            *compile_flags,
+            "-I",
+            "src",
+            str(cpp),
+            "src/runtime/cpp/pylib/png.cpp",
+            "src/runtime/cpp/pylib/gif.cpp",
+            "src/runtime/cpp/core/math.cpp",
+            "-o",
+            str(exe),
+        ]
+    )
     vlog(f"[{stem}] cpp compile done ({time.time()-t1:.2f}s)")
     if rc != 0:
         return CaseResult(stem, False, False, False, "cpp compile failed")

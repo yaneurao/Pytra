@@ -3,7 +3,7 @@
 
 This script generates tiny PNG/GIF outputs with:
 - Python canonical implementations: src/pylib/png.py, src/pylib/gif.py
-- C++ runtimes: src/cpp_module/png.cpp, src/cpp_module/gif.cpp
+- C++ runtimes: src/runtime/cpp/pylib/png.cpp, src/runtime/cpp/pylib/gif.cpp
 
 It compares resulting bytes and exits non-zero on mismatch.
 """
@@ -21,8 +21,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _write_cpp_harness(path: Path) -> None:
     src = r'''
-#include "cpp_module/png.h"
-#include "cpp_module/gif.h"
+#include "runtime/cpp/pylib/png.h"
+#include "runtime/cpp/pylib/gif.h"
 
 #include <cstdint>
 #include <string>
@@ -66,8 +66,8 @@ def _build_and_run_cpp(work: Path, out_png: Path, out_gif: Path) -> None:
         "-I",
         "src",
         str(harness),
-        "src/cpp_module/png.cpp",
-        "src/cpp_module/gif.cpp",
+        "src/runtime/cpp/pylib/png.cpp",
+        "src/runtime/cpp/pylib/gif.cpp",
         "-o",
         str(exe),
     ]

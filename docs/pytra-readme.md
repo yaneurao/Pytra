@@ -50,7 +50,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - `read_text`, `write_text`, `mkdir(parents, exist_ok)`
     - `str(Path)`（文字列化）
   - 実装位置:
-    - C++: `src/cpp_module/pathlib.h/.cpp`
+    - C++: `src/runtime/cpp/core/pathlib.h/.cpp`
     - Rust: `src/rs_module/py_runtime.rs`（`PyPath`）
     - C#: `src/cs_module/pathlib.cs`（`py_path`）
     - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`
@@ -64,10 +64,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
   - C++ ランタイム補助（最小）:
     - `dataclass(...)`, `DataclassTag`, `is_dataclass_v`
 - `ast`
-  - C++ 実装（`src/cpp_module/ast.*`）:
-    - `parse(source, filename)`
-    - `parse_file(path)`
-    - 主要ノード型（`Module`, `FunctionDef`, `ClassDef`, `Assign`, `Call` など）
+  - C++ 実装は廃止済み（self-hosted EAST パーサへ移行）。
 
 - 自作ライブラリ:
   - `pylib.png`
@@ -78,7 +75,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
   - `pylib.assertions`
     - `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - ターゲット言語ごとのランタイム:
-  - `src/cpp_module`, `src/cs_module`, `src/rs_module`
+  - `src/runtime/cpp`, `src/cs_module`, `src/rs_module`
   - `src/js_module`, `src/ts_module`
   - `src/go_module`, `src/java_module`
   - `src/swift_module`, `src/kotlin_module`

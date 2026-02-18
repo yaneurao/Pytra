@@ -1,7 +1,7 @@
 // このファイルは PNG 出力の最小実装本体です。
 // 依存ライブラリなしで、無圧縮DEFLATE（zlibラッパ）を使って PNG を生成します。
 
-#include "cpp_module/png.h"
+#include "runtime/cpp/pylib/png.h"
 
 #include <cstdint>
 #include <fstream>

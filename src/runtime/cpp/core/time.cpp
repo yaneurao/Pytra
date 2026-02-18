@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-#include "cpp_module/time.h"
+#include "runtime/cpp/core/time.h"
 
 namespace pytra::cpp_module {
 

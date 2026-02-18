@@ -18,7 +18,7 @@ from common.east_io import extract_module_leading_trivia as extract_module_leadi
 from common.east_io import load_east_from_path
 from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
 
-CPP_HEADER = """#include "cpp_module/py_runtime.h"
+CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 
 """
 
@@ -116,7 +116,7 @@ def _deep_copy_str_map(v: dict[str, dict[str, str]]) -> dict[str, dict[str, str]
 
 
 def _load_cpp_runtime_call_map_json() -> dict[str, Any] | None:
-    path = Path(__file__).resolve().parent / "cpp_module" / "runtime_call_map.json"
+    path = Path(__file__).resolve().parent / "runtime" / "cpp" / "runtime_call_map.json"
     if not path.exists():
         return None
     try:

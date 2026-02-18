@@ -8,7 +8,7 @@
   - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
-  - `cpp_module/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: 各ターゲット言語向けランタイム補助
+  - `runtime/cpp/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: 各ターゲット言語向けランタイム補助
   - `pylib/`: Python 側の共通ライブラリ（正式）
 - `test/`: `py`（入力）と各ターゲット言語の変換結果
 - `sample/`: 実用サンプル入力と各言語変換結果
@@ -30,8 +30,8 @@
 ## 3. C++ 変換仕様（`py2cpp.py`）
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
-- 生成コードは `src/cpp_module/` のランタイム補助実装を利用します。
-- 補助関数は生成 `.cpp` に直書きせず、`cpp_module/py_runtime.h` 側を利用します。
+- 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
+- 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/py_runtime.h` 側を利用します。
 - class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
 - class member は `inline static` として生成します。
 - `@dataclass` はフィールド定義とコンストラクタ生成を行います。
@@ -46,21 +46,21 @@
   - raw scanline が一致し、IDAT のみ差がある場合は「圧縮差」として許容します。
   - 現時点では IDAT 圧縮バイト列の完全一致は目標にしません。
 
-### 3.1 import と `cpp_module` 対応
+### 3.1 import と `runtime/cpp` 対応
 
 `py2cpp.py` は import 文に応じて include を生成します。
 
-- `import math` -> `#include "cpp_module/math.h"`
-- `import pathlib` -> `#include "cpp_module/pathlib.h"`
-- `import time` / `from time import ...` -> `#include "cpp_module/time.h"`
-- `from dataclasses import dataclass` -> `#include "cpp_module/dataclasses.h"`
-- `from pylib import png` / `import png` -> `#include "cpp_module/png.h"`
-- GC は常時 `#include "cpp_module/gc.h"` を利用
+- `import math` -> `#include "runtime/cpp/core/math.h"`
+- `import pathlib` -> `#include "runtime/cpp/core/pathlib.h"`
+- `import time` / `from time import ...` -> `#include "runtime/cpp/core/time.h"`
+- `from dataclasses import dataclass` -> `#include "runtime/cpp/core/dataclasses.h"`
+- `from pylib import png` / `import png` -> `#include "runtime/cpp/pylib/png.h"`
+- GC は常時 `#include "runtime/cpp/core/gc.h"` を利用
 
-`math` などの `module.attr(...)` 呼び出しは、`src/cpp_module/runtime_call_map.json` の設定で C++ ランタイム呼び出しへマップします。
+`math` などの `module.attr(...)` 呼び出しは、`src/runtime/cpp/runtime_call_map.json` の設定で C++ ランタイム呼び出しへマップします。
 
 - 例: `"sqrt": "py_math::sqrt"`（`math.sqrt(...)` -> `py_math::sqrt(...)`）
-- 追加方法: `src/cpp_module/runtime_call_map.json` の `module_attr_call.<module>` に関数を追記
+- 追加方法: `src/runtime/cpp/runtime_call_map.json` の `module_attr_call.<module>` に関数を追記
 - 起動時に JSON を読み込み、未定義項目は `py2cpp.py` 内の既定マップを使用
 
 補足:
@@ -71,15 +71,17 @@
 
 主な補助モジュール実装:
 
-- `src/cpp_module/math.h`, `src/cpp_module/math.cpp`
-- `src/cpp_module/pathlib.h`, `src/cpp_module/pathlib.cpp`
-- `src/cpp_module/time.h`, `src/cpp_module/time.cpp`
-- `src/cpp_module/dataclasses.h`, `src/cpp_module/dataclasses.cpp`
-- `src/cpp_module/gc.h`, `src/cpp_module/gc.cpp`
-- `src/cpp_module/sys.h`, `src/cpp_module/sys.cpp`
-- `src/cpp_module/py_runtime.h`
+- `src/runtime/cpp/core/math.h`, `src/runtime/cpp/core/math.cpp`
+- `src/runtime/cpp/core/pathlib.h`, `src/runtime/cpp/core/pathlib.cpp`
+- `src/runtime/cpp/core/time.h`, `src/runtime/cpp/core/time.cpp`
+- `src/runtime/cpp/core/dataclasses.h`, `src/runtime/cpp/core/dataclasses.cpp`
+- `src/runtime/cpp/core/gc.h`, `src/runtime/cpp/core/gc.cpp`
+- `src/runtime/cpp/core/sys.h`, `src/runtime/cpp/core/sys.cpp`
+- `src/runtime/cpp/pylib/png.h`, `src/runtime/cpp/pylib/png.cpp`
+- `src/runtime/cpp/pylib/gif.h`, `src/runtime/cpp/pylib/gif.cpp`
+- `src/runtime/cpp/py_runtime.h`
 
-`src/cpp_module/py_runtime.h` のコンテナ方針:
+`src/runtime/cpp/py_runtime.h` のコンテナ方針:
 
 - `list<T>`: `std::vector<T>` ラッパー（`append`, `extend`, `pop` を提供）
 - `dict<K, V>`: `std::unordered_map<K,V>` ラッパー（`get`, `keys`, `values`, `items` を提供）
@@ -148,7 +150,7 @@
 - `src/common/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（言語非依存）
 - `src/common/base_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/py2cpp.py`: EAST JSON -> C++
-- `src/cpp_module/py_runtime.h`: C++ ランタイム集約
+- `src/runtime/cpp/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
   - `range(...)` の意味解釈は EAST 構築側で完了させる
   - `src/py2cpp.py` は正規化済み EAST を文字列化する

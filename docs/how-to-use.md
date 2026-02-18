@@ -27,25 +27,25 @@ Windows では次の読み替えを行ってください。
 ```bash
 python src/py2cpp.py test/fixtures/collections/iterable.py test/transpile/cpp/iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
-  src/cpp_module/png.cpp src/cpp_module/gif.cpp src/cpp_module/math.cpp \
-  src/cpp_module/time.cpp src/cpp_module/pathlib.cpp src/cpp_module/dataclasses.cpp \
-  src/cpp_module/gc.cpp \
+  src/runtime/cpp/pylib/png.cpp src/runtime/cpp/pylib/gif.cpp src/runtime/cpp/core/math.cpp \
+  src/runtime/cpp/core/time.cpp src/runtime/cpp/core/pathlib.cpp src/runtime/cpp/core/dataclasses.cpp \
+  src/runtime/cpp/core/gc.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out
 ```
 
 補足:
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
-- 入力コードで使う Python モジュールに対応する実装を `src/cpp_module/` に用意してください（例: `math`, `time`, `pathlib`, `png`, `gif`）。
+- 入力コードで使う Python モジュールに対応する実装を `src/runtime/cpp/` に用意してください（例: `core/math`, `core/time`, `core/pathlib`, `pylib/png`, `pylib/gif`）。
 - Python 側の import は `pylib` 名を使います（例: `from pylib import png`, `from pylib.gif import save_gif`, `from pylib.assertions import py_assert_eq`）。
-- `math.sqrt` など `module.attr(...)` の C++ 側マッピングは `src/cpp_module/runtime_call_map.json` で定義します。必要な関数は `module_attr_call` に追加できます。
+- `math.sqrt` など `module.attr(...)` の C++ 側マッピングは `src/runtime/cpp/runtime_call_map.json` で定義します。必要な関数は `module_attr_call` に追加できます。
 - 実行時に `--pytra-image-format=ppm` を付けると、`png.write_rgb_png(...)` は PNG ではなく PPM(P6) を出力します。
   - 例: `./test/transpile/obj/iterable.out --pytra-image-format=ppm`
   - この場合、出力拡張子は実行時に `.ppm` へ切り替わります（元コード上の `out_path` 文字列表示はそのままです）。
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 
-次のコマンドで、`src/pylib/png.py` / `src/pylib/gif.py` の出力と `src/cpp_module/png.cpp` / `src/cpp_module/gif.cpp` の出力が一致するかを確認できます。
+次のコマンドで、`src/pylib/png.py` / `src/pylib/gif.py` の出力と `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp` の出力が一致するかを確認できます。
 
 ```bash
 python3 tools/verify_image_runtime_parity.py
@@ -176,7 +176,7 @@ python src/py2cpp.py test/transpile/east/01_mandelbrot.json -o test/transpile/cp
 
 # 3) コンパイルして実行
 g++ -std=c++20 -O2 -I src test/transpile/cpp/01_mandelbrot.cpp \
-  src/cpp_module/png.cpp src/cpp_module/gif.cpp \
+  src/runtime/cpp/pylib/png.cpp src/runtime/cpp/pylib/gif.cpp \
   -o test/transpile/obj/01_mandelbrot
 ./test/transpile/obj/01_mandelbrot
 ```
@@ -196,8 +196,8 @@ g++ -std=c++20 -O2 -I src test/transpile/cpp/01_mandelbrot.cpp \
 ```bash
 # 0) 入力となる selfhost ソースを最新化
 cp src/py2cpp.py selfhost/py2cpp.py
-rm -rf selfhost/cpp_module
-cp -r src/cpp_module selfhost/cpp_module
+rm -rf selfhost/runtime
+cp -r src/runtime selfhost/runtime
 
 # 1) Python 版 py2cpp で selfhost 用 C++ を生成
 python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp
@@ -344,7 +344,7 @@ name_by_id: dict[int, str] = {1: "alice"}
 ### 3. import とランタイムモジュール
 
 - Python 側で `import` したモジュールは、ターゲット言語側に対応ランタイムが必要です。
-- 例: C++ なら `src/cpp_module/`, C# なら `src/cs_module/`, JS/TS なら `src/js_module` / `src/ts_module`。
+- 例: C++ なら `src/runtime/cpp/`, C# なら `src/cs_module/`, JS/TS なら `src/js_module` / `src/ts_module`。
 
 ```python
 import math

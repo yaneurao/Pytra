@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "cpp_module/math.h"
+#include "runtime/cpp/core/math.h"
 
 namespace pytra::cpp_module::math {
 
