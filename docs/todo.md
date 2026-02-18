@@ -15,9 +15,9 @@
    - [x] `CodeEmitter(profile, hooks)` の初期化 API を追加する。
    - [x] `cpp_type` / call 解決 / 文テンプレートを profile 参照へ置換する。
    - [x] `src/py2cpp.py` の直書きマップを profile ロードに置換する。
-4. [x] フック注入 (`EmitterHooks`) を実装する。
+4. [ ] フック注入 (`EmitterHooks`) を実装する。
    - [x] `on_render_call`, `on_render_binop`, `on_emit_stmt` など最小フック面を定義する。
-   - [x] profile で表現しにくいケースのみ hooks 側へ寄せる。
+   - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる。
    - [x] C++ 向け hooks 実装を `src/runtime/cpp/hooks/cpp_hooks.py` として分離する。
 5. [x] 回帰確認を追加する。
    - [x] `test/unit/test_code_emitter.py` を追加し、profile/hook の境界を検証する。
@@ -84,4 +84,4 @@
 - 更新（2026-02-18 selfhost 追加）:
   1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
-  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=510`）。
+  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=629`）。

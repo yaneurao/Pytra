@@ -18,7 +18,6 @@ from common.east_io import extract_module_leading_trivia as extract_module_leadi
 from common.east_io import load_east_from_path
 from common.language_profile import load_language_profile
 from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
-from runtime.cpp.hooks.cpp_hooks import CppHooks
 
 CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 
@@ -81,7 +80,7 @@ DEFAULT_AUG_BIN = {
 }
 
 _DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = {"math": {}}
-_CPP_PROFILE_CACHE: dict[str, Any] | None = None
+_CPP_PROFILE_CACHE_BOX: list[dict[str, Any] | None] = [None]
 
 def _safe_nested_dict(obj: Any, keys: list[str]) -> dict[str, Any] | None:
     cur: Any = obj
@@ -114,15 +113,18 @@ def _safe_nested_str_map(obj: Any, keys: list[str]) -> dict[str, str] | None:
 
 def load_cpp_profile() -> dict[str, Any]:
     """C++ 用 LanguageProfile を読み込む（失敗時は空 dict）。"""
-    global _CPP_PROFILE_CACHE
-    if _CPP_PROFILE_CACHE is not None:
-        return _CPP_PROFILE_CACHE
+    cached = _CPP_PROFILE_CACHE_BOX[0]
+    if cached is not None:
+        return cached
     try:
         payload = load_language_profile("cpp")
-        _CPP_PROFILE_CACHE = payload if isinstance(payload, dict) else {}
+        _CPP_PROFILE_CACHE_BOX[0] = payload if isinstance(payload, dict) else {}
     except Exception:
-        _CPP_PROFILE_CACHE = {}
-    return _CPP_PROFILE_CACHE
+        _CPP_PROFILE_CACHE_BOX[0] = {}
+    out = _CPP_PROFILE_CACHE_BOX[0]
+    if isinstance(out, dict):
+        return out
+    return {}
 
 
 def load_cpp_operator_maps() -> tuple[dict[str, str], dict[str, str], dict[str, str], dict[str, str]]:
@@ -157,15 +159,11 @@ def load_cpp_type_map() -> dict[str, str]:
 
 
 def load_cpp_hooks(profile: dict[str, Any] | None = None) -> Any:
-    """C++ 用 hooks オブジェクトを profile 定義に基づいて生成する。"""
+    """C++ 用 hooks 設定を返す（現状は no-op）。"""
     payload = profile if isinstance(profile, dict) else load_cpp_profile()
     hooks = _safe_nested_dict(payload, ["hooks"]) if isinstance(payload, dict) else None
     if hooks is None:
         return {}
-    module_name = hooks.get("module")
-    class_name = hooks.get("class")
-    if module_name == "runtime.cpp.hooks.cpp_hooks" and class_name == "CppHooks":
-        return CppHooks()
     return {}
 
 
@@ -238,7 +236,11 @@ def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict
     return _deep_copy_str_map(merged)
 
 
-BIN_OPS, CMP_OPS, AUG_OPS, AUG_BIN = load_cpp_operator_maps()
+_CPP_OPERATOR_MAPS = load_cpp_operator_maps()
+BIN_OPS: dict[str, str] = _CPP_OPERATOR_MAPS[0]
+CMP_OPS: dict[str, str] = _CPP_OPERATOR_MAPS[1]
+AUG_OPS: dict[str, str] = _CPP_OPERATOR_MAPS[2]
+AUG_BIN: dict[str, str] = _CPP_OPERATOR_MAPS[3]
 
 
 def cpp_string_lit(s: str) -> str:
@@ -691,7 +693,7 @@ class CppEmitter(CodeEmitter):
         if stmt_node is None:
             return
         stmt = stmt_node
-        hook_stmt = self.call_hook("on_emit_stmt", self, stmt)
+        hook_stmt = self.hook_on_emit_stmt(self, stmt)
         if hook_stmt is True:
             return
         kind = stmt.get("kind")
@@ -851,7 +853,7 @@ class CppEmitter(CodeEmitter):
             body_stmts = [s for s in stmt.get("body", []) if isinstance(s, dict)]
             else_stmts = [s for s in stmt.get("orelse", []) if isinstance(s, dict)]
             if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
-                self.emit(self.syntax_line("if_no_brace", "if ({cond})", cond=self.render_cond(stmt.get("test"))))
+                self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": self.render_cond(stmt.get("test"))}))
                 self.indent += 1
                 self.scope_stack.append(set())
                 self.emit_stmt(body_stmts[0])
@@ -866,7 +868,7 @@ class CppEmitter(CodeEmitter):
                     self.indent -= 1
                 return
 
-            self.emit(self.syntax_line("if_open", "if ({cond}) {", cond=self.render_cond(stmt.get("test"))))
+            self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
             self.indent += 1
             self.scope_stack.append(set())
             self.emit_stmt_list(body_stmts)
@@ -884,7 +886,7 @@ class CppEmitter(CodeEmitter):
                 self.emit(self.syntax_text("block_close", "}"))
             return
         if kind == "While":
-            self.emit(self.syntax_line("while_open", "while ({cond}) {", cond=self.render_cond(stmt.get("test"))))
+            self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
             self.indent += 1
             self.scope_stack.append(set())
             self.emit_stmt_list(list(stmt.get("body", [])))
@@ -1208,17 +1210,21 @@ class CppEmitter(CodeEmitter):
                 params.append(f"{ct} {n}")
             fn_scope.add(n)
         if in_class and name == "__init__" and self.current_class_name is not None:
-            self.emit(self.syntax_line("ctor_open", "{name}({args}) {", name=self.current_class_name, args=", ".join(params)))
+            self.emit(
+                self.syntax_line(
+                    "ctor_open",
+                    "{name}({args}) {",
+                    {"name": self.current_class_name, "args": ", ".join(params)},
+                )
+            )
         elif in_class and name == "__del__" and self.current_class_name is not None:
-            self.emit(self.syntax_line("dtor_open", "~{name}() {", name=self.current_class_name))
+            self.emit(self.syntax_line("dtor_open", "~{name}() {", {"name": self.current_class_name}))
         else:
             self.emit(
                 self.syntax_line(
                     "function_open",
                     "{ret} {name}({args}) {",
-                    ret=ret,
-                    name=str(name),
-                    args=", ".join(params),
+                    {"ret": ret, "name": str(name), "args": ", ".join(params)},
                 )
             )
         self.indent += 1
@@ -1245,7 +1251,7 @@ class CppEmitter(CodeEmitter):
         if gc_managed and not base_is_gc:
             bases.append("public PyObj")
         base_txt = "" if len(bases) == 0 else " : " + ", ".join(bases)
-        self.emit(self.syntax_line("class_open", "struct {name}{base_txt} {", name=str(name), base_txt=base_txt))
+        self.emit(self.syntax_line("class_open", "struct {name}{base_txt} {", {"name": str(name), "base_txt": base_txt}))
         self.indent += 1
         prev_class = self.current_class_name
         prev_fields = self.current_class_fields
@@ -1417,8 +1423,7 @@ class CppEmitter(CodeEmitter):
                 kname = k.get("arg")
                 if isinstance(kname, str):
                     kw[kname] = self.render_expr(k.get("value"))
-            hook_call = self.call_hook(
-                "on_render_call",
+            hook_call = self.hook_on_render_call(
                 self,
                 expr,
                 fn,
@@ -1774,8 +1779,7 @@ class CppEmitter(CodeEmitter):
             op_name_str = str(op_name)
             left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
             right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
-            hook_binop = self.call_hook(
-                "on_render_binop",
+            hook_binop = self.hook_on_render_binop(
                 self,
                 expr,
                 left,

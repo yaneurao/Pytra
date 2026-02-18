@@ -39,25 +39,30 @@ class CodeEmitter:
         for stmt in stmts:
             self.emit_stmt(stmt)  # type: ignore[attr-defined]
 
-    def _resolve_hook_callable(self, name: str) -> Any:
-        """hooks から指定名の callable を取り出す。無ければ None。"""
-        h = self.hooks
-        if isinstance(h, dict):
-            cand = h.get(name)
-            if callable(cand):
-                return cand
-            return None
-        cand = getattr(h, name, None)
-        if callable(cand):
-            return cand
+    def hook_on_emit_stmt(self, emitter: Any, stmt: dict[str, Any]) -> Any:
+        """`on_emit_stmt` フック。既定では何もしない。"""
         return None
 
-    def call_hook(self, name: str, *args: Any, **kwargs: Any) -> Any:
-        """hooks の指定フックを呼び出す。未定義時は None を返す。"""
-        fn = self._resolve_hook_callable(name)
-        if fn is None:
-            return None
-        return fn(*args, **kwargs)
+    def hook_on_render_call(
+        self,
+        emitter: Any,
+        call_node: dict[str, Any],
+        func_node: dict[str, Any],
+        rendered_args: list[str],
+        rendered_kwargs: dict[str, str],
+    ) -> Any:
+        """`on_render_call` フック。既定では何もしない。"""
+        return None
+
+    def hook_on_render_binop(
+        self,
+        emitter: Any,
+        binop_node: dict[str, Any],
+        left: str,
+        right: str,
+    ) -> Any:
+        """`on_render_binop` フック。既定では何もしない。"""
+        return None
 
     def profile_get(self, path: list[str], default_value: Any) -> Any:
         """profile からネストキーを取得する。未定義時は既定値。"""
@@ -75,12 +80,18 @@ class CodeEmitter:
             return v
         return default_value
 
-    def syntax_line(self, key: str, default_value: str, **kwargs: Any) -> str:
+    def syntax_line(
+        self,
+        key: str,
+        default_value: str,
+        values: dict[str, str] | None = None,
+    ) -> str:
         """profile.syntax のテンプレートを format 展開して返す。"""
         text = self.syntax_text(key, default_value)
         out = text
-        for k, v in kwargs.items():
-            out = out.replace("{" + str(k) + "}", str(v))
+        if isinstance(values, dict):
+            for k, v in values.items():
+                out = out.replace("{" + str(k) + "}", str(v))
         return out
 
     def next_tmp(self, prefix: str = "__tmp") -> str:
@@ -208,7 +219,9 @@ class CodeEmitter:
             return True
         if "|" in s:
             parts = self.split_union(s)
-            return any(self.is_any_like_type(p) for p in parts if p != "None")
+            if len(parts) == 1 and parts[0] == s:
+                return False
+            return any(self.is_any_like_type(p) for p in parts if p != "None" and p != s)
         return False
 
     def is_list_type(self, t: Any) -> bool:
