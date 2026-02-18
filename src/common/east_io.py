@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pylib.typing import Any
 
-from common.east import EastBuildError, convert_path, convert_source_to_east_with_backend
+from pylib.east import EastBuildError, convert_path, convert_source_to_east_with_backend
 from pylib import json
 from pylib.path import Path
 

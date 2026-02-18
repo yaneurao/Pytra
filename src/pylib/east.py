@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compatibility shim: use pylib.east as canonical facade."""
+"""Python source -> EAST converter facade (pylib)."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ src_root = Path(__file__).resolve().parents[1]
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 
-from pylib.east import (  # noqa: F401
+from common.east_parts import (  # noqa: F401
     BorrowKind,
     EastBuildError,
     FLOAT_TYPES,

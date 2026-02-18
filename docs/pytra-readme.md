@@ -19,7 +19,7 @@
 - list/set comprehension の主要ケース
 - スライス（`a[b:c]`）
 - `if __name__ == "__main__":` ガード認識
-- EAST 変換（`src/common/east.py`）と EAST ベース C++ 変換（`src/py2cpp.py`）
+- EAST 変換（`src/pylib/east.py`）と EAST ベース C++ 変換（`src/py2cpp.py`）
 
 ## 実装済みの組み込み関数
 
@@ -87,7 +87,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
 
 ## EAST 実装状況
 
-- `src/common/east.py`
+- `src/pylib/east.py`（`src/common/east.py` は互換 shim）
   - `test/fixtures` 32/32, `sample/py` 16/16 を EAST 変換可能
   - `range(...)` は `ForRange` / `RangeExpr` へ正規化され、生の `Call(Name("range"))` は後段へ渡さない
 - `src/py2cpp.py`

@@ -68,6 +68,7 @@ test/
 - Python から import する自作ライブラリは `src/pylib/` に配置します。
   - 画像: `from pylib import png`, `from pylib.gif import save_gif`
   - テスト補助: `from pylib.assertions import py_assert_eq` など
+  - EAST 変換器: `python src/pylib/east.py <input.py> ...`
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
 - GIF サンプルは `sample/out/*.gif` に出力します。
 

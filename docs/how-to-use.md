@@ -167,7 +167,7 @@ java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
 
 ```bash
 # 1) Python を EAST(JSON) に変換
-python src/common/east.py sample/py/01_mandelbrot.py -o test/transpile/east/01_mandelbrot.json --pretty
+python src/pylib/east.py sample/py/01_mandelbrot.py -o test/transpile/east/01_mandelbrot.json --pretty
 
 # 2) EAST(JSON) から C++ へ変換（.py を直接渡しても可）
 python src/py2cpp.py test/transpile/east/01_mandelbrot.json -o test/transpile/cpp/01_mandelbrot.cpp
@@ -180,7 +180,8 @@ g++ -std=c++20 -O2 -I src test/transpile/cpp/01_mandelbrot.cpp \
 ```
 
 補足:
-- EAST 変換器は `src/common/east.py`、EASTベース C++ 生成器は `src/py2cpp.py` を使用します。
+- EAST 変換器の正本は `src/pylib/east.py` です（`src/common/east.py` は互換 shim）。
+- EASTベース C++ 生成器は `src/py2cpp.py` を使用します。
 
 </details>
 
