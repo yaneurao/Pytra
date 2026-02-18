@@ -3192,6 +3192,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
 
     body_items: list[dict[str, Any]] = []
     main_stmts: list[dict[str, Any]] = []
+    import_module_bindings: dict[str, str] = {}
+    import_symbol_bindings: dict[str, dict[str, str]] = {}
     first_item_attached = False
     pending_dataclass = False
 
@@ -3282,8 +3284,85 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             pending_dataclass = True
             i += 1
             continue
-        if re.match(r"^(from\s+[A-Za-z_][A-Za-z0-9_\.]*\s+import\s+.+|import\s+[A-Za-z_][A-Za-z0-9_\.]*)\s*$", s):
-            i += 1
+        m_import = re.match(r"^import\s+(.+)$", s, flags=re.S)
+        if m_import is not None:
+            names_txt = m_import.group(1).strip()
+            raw_parts = [p.strip() for p in names_txt.split(",") if p.strip() != ""]
+            if len(raw_parts) == 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message="import statement has no module names",
+                    source_span=_sh_span(i, 0, len(ln)),
+                    hint="Use `import module` or `import module as alias`.",
+                )
+            aliases: list[dict[str, str | None]] = []
+            for part in raw_parts:
+                m_alias = re.match(r"^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$", part)
+                if m_alias is None:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"unsupported import clause: {part}",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Use `import module` or `import module as alias` form.",
+                    )
+                mod_name = m_alias.group(1)
+                as_name = m_alias.group(2)
+                bind_name = as_name if isinstance(as_name, str) and as_name != "" else mod_name.split(".")[0]
+                import_module_bindings[bind_name] = mod_name
+                aliases.append({"name": mod_name, "asname": as_name})
+            body_items.append(
+                {
+                    "kind": "Import",
+                    "source_span": _sh_span(i, 0, len(ln)),
+                    "names": aliases,
+                }
+            )
+            i = logical_end + 1
+            continue
+        m_import_from = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
+        if m_import_from is not None:
+            mod_name = m_import_from.group(1).strip()
+            names_txt = m_import_from.group(2).strip()
+            if names_txt == "*":
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message="from-import wildcard is not supported",
+                    source_span=_sh_span(i, 0, len(ln)),
+                    hint="Import explicit symbol names instead of '*'.",
+                )
+            raw_parts = [p.strip() for p in names_txt.split(",") if p.strip() != ""]
+            if len(raw_parts) == 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message="from-import statement has no symbol names",
+                    source_span=_sh_span(i, 0, len(ln)),
+                    hint="Use `from module import name` form.",
+                )
+            aliases: list[dict[str, str | None]] = []
+            for part in raw_parts:
+                m_alias = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$", part)
+                if m_alias is None:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"unsupported from-import clause: {part}",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Use `from module import name` or `... as alias`.",
+                    )
+                sym_name = m_alias.group(1)
+                as_name = m_alias.group(2)
+                bind_name = as_name if isinstance(as_name, str) and as_name != "" else sym_name
+                import_symbol_bindings[bind_name] = {"module": mod_name, "name": sym_name}
+                aliases.append({"name": sym_name, "asname": as_name})
+            body_items.append(
+                {
+                    "kind": "ImportFrom",
+                    "source_span": _sh_span(i, 0, len(ln)),
+                    "module": mod_name,
+                    "names": aliases,
+                    "level": 0,
+                }
+            )
+            i = logical_end + 1
             continue
         if s.startswith("@"):
             i += 1
@@ -3593,7 +3672,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         "body": body_items,
         "main_guard_body": main_stmts,
         "renamed_symbols": renamed_symbols,
-        "meta": {"parser_backend": "self_hosted"},
+        "meta": {
+            "parser_backend": "self_hosted",
+            "import_modules": import_module_bindings,
+            "import_symbols": import_symbol_bindings,
+        },
     }
 
 

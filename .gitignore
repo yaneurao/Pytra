@@ -14,3 +14,6 @@ __pycache__/
 /sample/java/*.class
 
 /selfhost/
+
+/import_pylib_png.png
+/from_import_symbols.png

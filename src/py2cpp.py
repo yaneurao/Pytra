@@ -213,6 +213,24 @@ class CppEmitter(BaseEmitter):
         self.value_classes: set[str] = set()
         self.bridge_comment_emitted: set[str] = set()
         self.module_attr_call_map = load_cpp_module_attr_call_map()
+        self.import_modules: dict[str, str] = {}
+        self.import_symbols: dict[str, dict[str, str]] = {}
+        meta = self.doc.get("meta")
+        if isinstance(meta, dict):
+            raw_mod = meta.get("import_modules")
+            if isinstance(raw_mod, dict):
+                for k, v in raw_mod.items():
+                    if isinstance(k, str) and isinstance(v, str) and k != "" and v != "":
+                        self.import_modules[k] = v
+            raw_sym = meta.get("import_symbols")
+            if isinstance(raw_sym, dict):
+                for k, v in raw_sym.items():
+                    if not isinstance(k, str) or k == "" or not isinstance(v, dict):
+                        continue
+                    mod = v.get("module")
+                    name = v.get("name")
+                    if isinstance(mod, str) and isinstance(name, str) and mod != "" and name != "":
+                        self.import_symbols[k] = {"module": mod, "name": name}
 
     def _stmt_start_line(self, stmt: dict[str, Any]) -> int | None:
         """将来の行情報連携用フック（現在は未使用）。"""
@@ -234,6 +252,49 @@ class CppEmitter(BaseEmitter):
     def _is_std_runtime_call(self, runtime_call: str) -> bool:
         """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
         return runtime_call.startswith("std::")
+
+    def _resolve_imported_module_name(self, name: str) -> str:
+        """import で束縛された識別子名を実モジュール名へ解決する。"""
+        mod = self.import_modules.get(name)
+        if isinstance(mod, str) and mod != "":
+            return mod
+        sym = self.import_symbols.get(name)
+        if isinstance(sym, dict):
+            parent = sym.get("module", "")
+            child = sym.get("name", "")
+            if parent == "pylib" and child != "":
+                return f"pylib.{child}"
+        return name
+
+    def _resolve_imported_symbol(self, name: str) -> dict[str, str] | None:
+        """from-import で束縛された識別子を返す（無ければ None）。"""
+        ent = self.import_symbols.get(name)
+        if not isinstance(ent, dict):
+            return None
+        mod = ent.get("module", "")
+        sym = ent.get("name", "")
+        if not isinstance(mod, str) or not isinstance(sym, str) or mod == "" or sym == "":
+            return None
+        return {"module": mod, "name": sym}
+
+    def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
+        """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
+        owner_map = self.module_attr_call_map.get(module_name)
+        if isinstance(owner_map, dict):
+            mapped = owner_map.get(symbol_name)
+            if isinstance(mapped, str) and mapped != "":
+                return mapped
+        if module_name == "pylib.png" and symbol_name == "write_rgb_png":
+            return "png_helper::write_rgb_png"
+        if module_name == "pylib.gif" and symbol_name == "save_gif":
+            return "save_gif"
+        if module_name == "time" and symbol_name == "perf_counter":
+            return "perf_counter"
+        if module_name == "pathlib" and symbol_name == "Path":
+            return "Path"
+        if module_name == "pylib.assertions" and symbol_name.startswith("py_assert_"):
+            return symbol_name
+        return None
 
     def transpile(self) -> str:
         """EAST ドキュメント全体を C++ ソース文字列へ変換する。"""
@@ -1180,7 +1241,8 @@ class CppEmitter(BaseEmitter):
             # Emit C++ scope resolution for static members/methods.
             if base in self.class_base or base in self.class_method_names:
                 return f"{base}::{attr}"
-            if base == "math":
+            base_module_name = self._resolve_imported_module_name(base)
+            if base_module_name == "math":
                 if attr == "pi":
                     return "py_math::pi"
                 if attr == "e":
@@ -1401,6 +1463,17 @@ class CppEmitter(BaseEmitter):
                     return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
             if fn.get("kind") == "Name":
                 raw = fn.get("id")
+                imported = None
+                imported_module = ""
+                if isinstance(raw, str) and not self.is_declared(raw):
+                    imported = self._resolve_imported_symbol(raw)
+                    if isinstance(imported, dict):
+                        imported_module = imported.get("module", "")
+                        raw = imported.get("name", raw)
+                if isinstance(raw, str) and imported_module != "":
+                    mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
+                    if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "save_gif", "Path"}:
+                        return f"{mapped_runtime}({', '.join(args)})"
                 if raw == "range":
                     raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
                 if isinstance(raw, str) and raw in self.ref_classes:
@@ -1494,16 +1567,17 @@ class CppEmitter(BaseEmitter):
                 owner_expr = self.render_expr(owner)
                 if isinstance(owner, dict) and owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                     owner_expr = f"({owner_expr})"
+                owner_mod = self._resolve_imported_module_name(owner_expr)
                 attr = fn.get("attr")
                 if isinstance(attr, str):
-                    owner_map = self.module_attr_call_map.get(owner_expr)
+                    owner_map = self.module_attr_call_map.get(owner_mod)
                     if isinstance(owner_map, dict):
                         runtime_call = owner_map.get(attr)
                         if isinstance(runtime_call, str):
                             return f"{runtime_call}({', '.join(args)})"
-                if owner_expr in {"png_helper", "png"} and attr == "write_rgb_png":
+                if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
                     return f"png_helper::write_rgb_png({', '.join(args)})"
-                if owner_expr in {"gif_helper", "gif"} and attr == "save_gif":
+                if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
                     path = args[0] if len(args) >= 1 else '""'
                     w = args[1] if len(args) >= 2 else "0"
                     h = args[2] if len(args) >= 3 else "0"

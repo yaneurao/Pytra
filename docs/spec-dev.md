@@ -63,6 +63,12 @@
 - 追加方法: `src/cpp_module/runtime_call_map.json` の `module_attr_call.<module>` に関数を追記
 - 起動時に JSON を読み込み、未定義項目は `py2cpp.py` 内の既定マップを使用
 
+補足:
+
+- `from module import symbol` / `from module import symbol as alias` は EAST の `meta.import_symbols` で保持し、呼び出し解決に使います。
+- `import module as alias` は EAST の `meta.import_modules` で保持し、`alias.attr(...)` を `module.attr(...)` として解決します。
+- `from module import *` は未対応です。
+
 主な補助モジュール実装:
 
 - `src/cpp_module/math.h`, `src/cpp_module/math.cpp`

@@ -62,6 +62,8 @@
 - `body`: 通常のトップレベル文
 - `main_guard_body`: `if __name__ == "__main__":` の本体
 - `renamed_symbols`: rename マップ
+- `meta.import_modules`: `import module [as alias]` の束縛情報（`alias -> module`）
+- `meta.import_symbols`: `from module import symbol [as alias]` の束縛情報（`alias -> {module,name}`）
 
 ## 4. 構文正規化
 
@@ -206,6 +208,7 @@
 - `Assign` は単一ターゲット文のみ。
 - タプル代入は対応（例: `x, y = ...`, `a[i], a[j] = ...`）。
 - 名前ターゲットについては RHS タプル型が分かる場合に型環境を更新。
+- `from module import *`（ワイルドカード import）は未対応。
 
 ## 11. クラス情報の事前収集
 

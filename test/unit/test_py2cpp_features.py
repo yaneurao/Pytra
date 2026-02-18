@@ -63,6 +63,40 @@ if __name__ == "__main__":
             cpp = transpile_to_cpp(east)
         self.assertIn("py_math::sqrt(9.0)", cpp)
 
+    def test_from_import_symbol_uses_runtime_call_map(self) -> None:
+        src = """from math import sqrt as msqrt
+
+def main() -> None:
+    x: float = msqrt(9.0)
+    print(x)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "from_math_call.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("py_math::sqrt(9.0)", cpp)
+
+    def test_import_module_alias_uses_runtime_call_map(self) -> None:
+        src = """import math as m
+
+def main() -> None:
+    x: float = m.sqrt(9.0)
+    print(x)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "math_alias_call.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("py_math::sqrt(9.0)", cpp)
+
     def test_east_builtin_call_normalization(self) -> None:
         src = """from pathlib import Path
 
@@ -216,6 +250,12 @@ if __name__ == "__main__":
 
     def test_any_dict_items_runtime(self) -> None:
         out = self._compile_and_run_fixture("any_dict_items")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_from_import_symbols_runtime(self) -> None:
+        out = self._compile_and_run_fixture("from_import_symbols")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
