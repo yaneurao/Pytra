@@ -1583,6 +1583,29 @@ class CppEmitter(CodeEmitter):
                     return f"{owner_expr}.clear()"
         return None
 
+    def _prepare_call_parts(
+        self,
+        expr: dict[str, Any],
+    ) -> tuple[dict[str, Any], str, list[Any], list[str], dict[str, str], Any]:
+        """Call ノードの前処理（func/args/kw 展開）を共通化する。"""
+        fn_raw = expr.get("func")
+        fn = fn_raw if isinstance(fn_raw, dict) else {}
+        fn_name = self.render_expr(fn)
+        arg_nodes_raw = expr.get("args", [])
+        arg_nodes = arg_nodes_raw if isinstance(arg_nodes_raw, list) else []
+        args = [self.render_expr(a) for a in arg_nodes]
+        keywords_raw = expr.get("keywords", [])
+        keywords = keywords_raw if isinstance(keywords_raw, list) else []
+        first_arg = arg_nodes[0] if len(arg_nodes) > 0 else None
+        kw: dict[str, str] = {}
+        for k in keywords:
+            if not isinstance(k, dict):
+                continue
+            kname = k.get("arg")
+            if isinstance(kname, str):
+                kw[kname] = self.render_expr(k.get("value"))
+        return fn, fn_name, arg_nodes, args, kw, first_arg
+
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
         expr_node = self.any_to_dict(expr)
@@ -1662,8 +1685,7 @@ class CppEmitter(CodeEmitter):
                     return f"{base}.parent()"
             return f"{base}.{attr}"
         if kind == "Call":
-            fn_raw = expr.get("func")
-            fn = fn_raw if isinstance(fn_raw, dict) else {}
+            fn, fn_name, arg_nodes, args, kw, first_arg = self._prepare_call_parts(expr)
             if fn.get("kind") == "Attribute":
                 owner_node = fn.get("value")
                 owner_t = self.get_expr_type(owner_node)
@@ -1671,16 +1693,6 @@ class CppEmitter(CodeEmitter):
                     raise RuntimeError(
                         "object receiver method call is forbidden by language constraints"
                     )
-            fn_name = self.render_expr(fn)
-            arg_nodes = expr.get("args", [])
-            args = [self.render_expr(a) for a in arg_nodes]
-            keywords = expr.get("keywords", [])
-            first_arg = arg_nodes[0] if isinstance(arg_nodes, list) and len(arg_nodes) > 0 else None
-            kw: dict[str, str] = {}
-            for k in keywords:
-                kname = k.get("arg")
-                if isinstance(kname, str):
-                    kw[kname] = self.render_expr(k.get("value"))
             hook_call = self.hook_on_render_call(expr, fn, list(args), dict(kw))
             if isinstance(hook_call, str) and hook_call != "":
                 return hook_call

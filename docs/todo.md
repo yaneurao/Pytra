@@ -36,7 +36,7 @@
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
    - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: `BuiltinCall` / Name/Attribute は helper 分離済み
    - [ ] `render_expr` の `Call` で残っている module method / object method / fallback 呼び出しを 3 helper に分離する。
-   - [ ] `render_expr` の `Call` で runtime-call 解決前後の前処理（kw 展開・owner 抽出）を helper 化する。
+   - [x] `render_expr` の `Call` で runtime-call 解決前後の前処理（kw 展開・owner 抽出）を helper 化する。
    - [ ] `render_expr` の `Call` 分岐を 200 行未満に縮退する（目標値を明示）。
    - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。: `BinOp` は専用 helper に分離済み
    - [ ] `Compare` 分岐を helper へ切り出す（`Contains` / chain compare / `is` 系）。
