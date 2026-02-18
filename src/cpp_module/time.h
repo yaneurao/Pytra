@@ -1,8 +1,8 @@
 // このファイルは Python の `time` モジュール互換の最小実装です。
 // 現時点では `perf_counter()` を提供します。
 
-#ifndef PYCS_CPP_MODULE_TIME_H
-#define PYCS_CPP_MODULE_TIME_H
+#ifndef PYTRA_CPP_MODULE_TIME_H
+#define PYTRA_CPP_MODULE_TIME_H
 
 namespace pytra::cpp_module {
 
@@ -16,4 +16,4 @@ double perf_counter();
 
 using pytra::cpp_module::perf_counter;
 
-#endif  // PYCS_CPP_MODULE_TIME_H
+#endif  // PYTRA_CPP_MODULE_TIME_H

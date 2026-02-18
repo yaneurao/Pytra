@@ -1,8 +1,8 @@
 // このファイルは Python の `math` モジュール互換の最小実装です。
 // 現時点ではトランスパイラが利用する `sqrt` を提供します。
 
-#ifndef PYCS_CPP_MODULE_MATH_H
-#define PYCS_CPP_MODULE_MATH_H
+#ifndef PYTRA_CPP_MODULE_MATH_H
+#define PYTRA_CPP_MODULE_MATH_H
 
 namespace pytra::cpp_module::math {
 
@@ -27,4 +27,4 @@ extern const double e;
 
 }  // namespace pytra::cpp_module::math
 
-#endif  // PYCS_CPP_MODULE_MATH_H
+#endif  // PYTRA_CPP_MODULE_MATH_H

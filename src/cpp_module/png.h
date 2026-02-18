@@ -1,8 +1,8 @@
 // このファイルは PNG 出力の最小実装を提供します。
 // Python 側の `png_helper.write_rgb_png` に対応します。
 
-#ifndef PYCS_CPP_MODULE_PNG_H
-#define PYCS_CPP_MODULE_PNG_H
+#ifndef PYTRA_CPP_MODULE_PNG_H
+#define PYTRA_CPP_MODULE_PNG_H
 
 #include <cstdint>
 #include <string>
@@ -30,4 +30,4 @@ void write_rgb_ppm(const std::string& path, int width, int height, const std::ve
 
 }  // namespace pytra::cpp_module::png
 
-#endif  // PYCS_CPP_MODULE_PNG_H
+#endif  // PYTRA_CPP_MODULE_PNG_H

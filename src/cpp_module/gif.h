@@ -1,7 +1,7 @@
 // Python の py_module.gif_helper に対応する GIF 書き出し補助です。
 
-#ifndef PYCS_CPP_MODULE_GIF_H
-#define PYCS_CPP_MODULE_GIF_H
+#ifndef PYTRA_CPP_MODULE_GIF_H
+#define PYTRA_CPP_MODULE_GIF_H
 
 #include <cstdint>
 #include <string>
@@ -25,4 +25,4 @@ void save_gif(
 
 }  // namespace pytra::cpp_module::gif
 
-#endif  // PYCS_CPP_MODULE_GIF_H
+#endif  // PYTRA_CPP_MODULE_GIF_H

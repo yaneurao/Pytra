@@ -1,8 +1,8 @@
 // このファイルは Python の `sys` モジュール互換の最小実装です。
 // 現時点では、トランスパイル済みコードで使う `sys.path.insert` を提供します。
 
-#ifndef PYCS_CPP_MODULE_SYS_H
-#define PYCS_CPP_MODULE_SYS_H
+#ifndef PYTRA_CPP_MODULE_SYS_H
+#define PYTRA_CPP_MODULE_SYS_H
 
 #include <cstddef>
 #include <string>
@@ -45,4 +45,4 @@ extern SysModule* sys;
 
 using pytra::cpp_module::sys;
 
-#endif  // PYCS_CPP_MODULE_SYS_H
+#endif  // PYTRA_CPP_MODULE_SYS_H

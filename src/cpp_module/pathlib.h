@@ -1,8 +1,8 @@
 // このファイルは Python の pathlib 互換機能を C++ で提供します。
 // Path の最小機能（親参照、連結、テキスト読み書き）を実装しています。
 
-#ifndef PYCS_CPP_MODULE_PATHLIB_H
-#define PYCS_CPP_MODULE_PATHLIB_H
+#ifndef PYTRA_CPP_MODULE_PATHLIB_H
+#define PYTRA_CPP_MODULE_PATHLIB_H
 
 #include <filesystem>
 #include <fstream>
@@ -154,4 +154,4 @@ inline std::string str(const Path& p) {
 using pytra::cpp_module::Path;
 using pytra::cpp_module::str;
 
-#endif  // PYCS_CPP_MODULE_PATHLIB_H
+#endif  // PYTRA_CPP_MODULE_PATHLIB_H
