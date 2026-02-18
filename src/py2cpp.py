@@ -78,8 +78,11 @@ AUG_BIN = {
 
 
 def cpp_string_lit(s: str) -> str:
-    out = '"'
-    for ch in s:
+    out: str = '"'
+    i: int64 = 0
+    n: int64 = len(s)
+    while i < n:
+        ch: str = s[i:i + 1]
         if ch == "\\":
             out += "\\\\"
         elif ch == '"':
@@ -92,6 +95,7 @@ def cpp_string_lit(s: str) -> str:
             out += "\\t"
         else:
             out += ch
+        i += 1
     out += '"'
     return out
 
