@@ -1,0 +1,55 @@
+{
+  "operators": {
+    "bin": {
+      "Add": "+",
+      "Sub": "-",
+      "Mult": "*",
+      "Div": "/",
+      "FloorDiv": "/",
+      "Mod": "%",
+      "BitAnd": "&",
+      "BitOr": "|",
+      "BitXor": "^",
+      "LShift": "<<",
+      "RShift": ">>"
+    },
+    "cmp": {
+      "Eq": "==",
+      "NotEq": "!=",
+      "Lt": "<",
+      "LtE": "<=",
+      "Gt": ">",
+      "GtE": ">=",
+      "In": "/* in */",
+      "NotIn": "/* not in */",
+      "Is": "==",
+      "IsNot": "!="
+    },
+    "aug": {
+      "Add": "+=",
+      "Sub": "-=",
+      "Mult": "*=",
+      "Div": "/=",
+      "FloorDiv": "/=",
+      "Mod": "%=",
+      "BitAnd": "&=",
+      "BitOr": "|=",
+      "BitXor": "^=",
+      "LShift": "<<=",
+      "RShift": ">>="
+    },
+    "aug_bin": {
+      "Add": "+",
+      "Sub": "-",
+      "Mult": "*",
+      "Div": "/",
+      "FloorDiv": "//",
+      "Mod": "%",
+      "BitAnd": "&",
+      "BitOr": "|",
+      "BitXor": "^",
+      "LShift": "<<",
+      "RShift": ">>"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "language": "cpp",
+  "include": [
+    "types.json",
+    "operators.json",
+    "runtime_calls.json",
+    "syntax.json"
+  ],
+  "hooks": {
+    "module": "common.hooks.cpp_hooks",
+    "class": "CppHooks"
+  }
+}

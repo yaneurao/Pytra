@@ -16,6 +16,7 @@ from typing import Any
 from common.base_emitter import BaseEmitter
 from common.east_io import extract_module_leading_trivia as extract_module_leading_trivia_common
 from common.east_io import load_east_from_path
+from common.language_profile import load_language_profile
 from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
 
 CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
@@ -78,21 +79,7 @@ AUG_BIN = {
     "RShift": ">>",
 }
 
-_DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = {
-    "math": {
-        "sqrt": "py_math::sqrt",
-        "sin": "py_math::sin",
-        "cos": "py_math::cos",
-        "tan": "py_math::tan",
-        "exp": "py_math::exp",
-        "log": "py_math::log",
-        "log10": "py_math::log10",
-        "fabs": "py_math::fabs",
-        "floor": "py_math::floor",
-        "ceil": "py_math::ceil",
-        "pow": "py_math::pow",
-    }
-}
+_DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = {"math": {}}
 
 def _safe_nested_dict(obj: Any, keys: list[str]) -> dict[str, Any] | None:
     cur: Any = obj
@@ -128,17 +115,27 @@ def _load_cpp_runtime_call_map_json() -> dict[str, Any] | None:
 def load_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     """C++ の `module.attr(...)` -> ランタイム呼び出しマップを返す。"""
     merged = _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
-    payload = _load_cpp_runtime_call_map_json()
-    node = _safe_nested_dict(payload, ["module_attr_call"]) if payload is not None else None
-    if node is not None:
-        for module_name, raw_map in node.items():
-            if not isinstance(module_name, str) or not isinstance(raw_map, dict):
-                continue
-            cur = dict(merged.get(module_name, {}))
-            for attr, runtime_call in raw_map.items():
-                if isinstance(attr, str) and isinstance(runtime_call, str) and attr != "" and runtime_call != "":
-                    cur[attr] = runtime_call
-            merged[module_name] = cur
+    payload: dict[str, Any] | None = None
+    try:
+        payload = load_language_profile("cpp")
+    except Exception:
+        payload = None
+    node = _safe_nested_dict(payload, ["runtime_calls", "module_attr_call"]) if payload is not None else None
+    if node is None:
+        # Backward compatibility for older runtime_call_map.json layout.
+        payload = _load_cpp_runtime_call_map_json()
+        node = _safe_nested_dict(payload, ["module_attr_call"]) if payload is not None else None
+    if node is None:
+        return _deep_copy_str_map(merged)
+
+    for module_name, raw_map in node.items():
+        if not isinstance(module_name, str) or not isinstance(raw_map, dict):
+            continue
+        cur = dict(merged.get(module_name, {}))
+        for attr, runtime_call in raw_map.items():
+            if isinstance(attr, str) and isinstance(runtime_call, str) and attr != "" and runtime_call != "":
+                cur[attr] = runtime_call
+        merged[module_name] = cur
 
     return _deep_copy_str_map(merged)
 
