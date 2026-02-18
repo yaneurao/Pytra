@@ -2,8 +2,8 @@
 // 読み手が責務を把握しやすいように、日本語コメントを追記しています。
 // 変更時は、スレッド安全性と参照カウント整合性を必ず確認してください。
 
-#ifndef PYCS_GC_H
-#define PYCS_GC_H
+#ifndef PYTRA_GC_H
+#define PYTRA_GC_H
 
 #include <atomic>
 #include <cassert>
@@ -159,4 +159,4 @@ private:
 
 }  // namespace pytra::gc
 
-#endif  // PYCS_GC_H
+#endif  // PYTRA_GC_H
