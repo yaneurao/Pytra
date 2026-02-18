@@ -77,6 +77,8 @@ class CodeEmitterTest(unittest.TestCase):
 
         self.assertEqual(em.any_to_list([1, 2]), [1, 2])
         self.assertEqual(em.any_to_list({"x": 1}), [])
+        self.assertEqual(em.any_to_dict_list([{"x": 1}, 2, "s"]), [{"x": 1}])
+        self.assertEqual(em.any_to_dict_list(None), [])
 
         self.assertEqual(em.any_to_str("abc"), "abc")
         self.assertEqual(em.any_to_str(10), "")
@@ -87,15 +89,19 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.any_to_dict_or_empty(None), {})
         self.assertEqual(em.any_to_dict_or_empty([]), {})
         self.assertEqual(em.any_to_dict_or_empty("x"), {})
+        self.assertEqual(em.any_to_dict_or_empty(0), {})
 
         self.assertEqual(em.any_to_list(["a", 1]), ["a", 1])
         self.assertEqual(em.any_to_list(None), [])
         self.assertEqual(em.any_to_list({"x": 1}), [])
+        self.assertEqual(em.any_to_dict_list([{"x": 1}, None, {"y": 2}]), [{"x": 1}, {"y": 2}])
 
         self.assertEqual(em.any_dict_get_str({"x": "ok"}, "x", "ng"), "ok")
         self.assertEqual(em.any_dict_get_str({"x": 1}, "x", "ng"), "ng")
+        self.assertEqual(em.any_dict_get_str(None, "x", "ng"), "ng")
         self.assertEqual(em.any_dict_get_int({"x": 2}, "x", 9), 2)
         self.assertEqual(em.any_dict_get_int({"x": "2"}, "x", 9), 9)
+        self.assertEqual(em.any_dict_get_int(None, "x", 9), 9)
 
     def test_node_helpers(self) -> None:
         em = CodeEmitter({})
@@ -152,6 +158,7 @@ class CodeEmitterTest(unittest.TestCase):
         em.emit_leading_comments(
             {
                 "leading_trivia": [
+                    "invalid",
                     {"kind": "comment", "text": "stmt comment"},
                     {"kind": "blank", "count": 2},
                 ]

@@ -55,8 +55,8 @@
 1. [ ] `CodeEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
    - [ ] `any_dict_get` / `any_to_dict` / `any_to_list` / `any_to_str` の C++ 生成を確認し、`object.begin/end` 生成を消す。
    - [ ] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
-   - [ ] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
-   - [ ] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
+   - [x] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
+   - [x] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
    - [ ] `*_dict_get*` の default 引数を `str` / `int` / `list` 別 helper に分離し、`object` 強制変換を減らす。
    - [ ] `split_*` / `is_*_type` の引数型を `str` に固定し、`py_slice(object,...)` 生成を消す。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。

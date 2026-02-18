@@ -157,6 +157,14 @@ class CodeEmitter:
             out = v
         return out
 
+    def any_to_dict_list(self, v: Any) -> list[dict[str, Any]]:
+        """動的値を `list[dict]` へ安全に変換する。"""
+        out: list[dict[str, Any]] = []
+        for item in self.any_to_list(v):
+            if isinstance(item, dict):
+                out.append(item)
+        return out
+
     def any_to_str(self, v: Any) -> str:
         """動的値を str に安全に変換する。変換不能なら空文字。"""
         out = ""
@@ -404,49 +412,37 @@ class CodeEmitter:
         """EAST の leading_trivia をコメント/空行として出力する。"""
         if "leading_trivia" not in stmt:
             return
-        trivia_obj = stmt["leading_trivia"]
-        trivia = self.any_to_list(trivia_obj)
+        trivia = self.any_to_dict_list(stmt["leading_trivia"])
         if len(trivia) == 0:
             return
-        i = 0
-        while i < len(trivia):
-            item = trivia[i]
-            i += 1
-            item_dict = self.any_to_dict_or_empty(item)
-            if len(item_dict) > 0:
-                k = self.any_dict_get_str(item_dict, "kind", "")
-                if k == "comment":
-                    txt = self.any_dict_get_str(item_dict, "text", "")
-                    self.emit(self.comment_line_prefix() + txt)
-                elif k == "blank":
-                    cnt = self.any_dict_get_int(item_dict, "count", 1)
-                    n = cnt if cnt > 0 else 1
-                    for _ in range(n):
-                        self.emit("")
+        for item in trivia:
+            k = self.any_dict_get_str(item, "kind", "")
+            if k == "comment":
+                txt = self.any_dict_get_str(item, "text", "")
+                self.emit(self.comment_line_prefix() + txt)
+            elif k == "blank":
+                cnt = self.any_dict_get_int(item, "count", 1)
+                n = cnt if cnt > 0 else 1
+                for _ in range(n):
+                    self.emit("")
 
     def emit_module_leading_trivia(self) -> None:
         """モジュール先頭のコメント/空行 trivia を出力する。"""
         if "module_leading_trivia" not in self.doc:
             return
-        trivia_obj = self.doc["module_leading_trivia"]
-        trivia = self.any_to_list(trivia_obj)
+        trivia = self.any_to_dict_list(self.doc["module_leading_trivia"])
         if len(trivia) == 0:
             return
-        i = 0
-        while i < len(trivia):
-            item = trivia[i]
-            i += 1
-            item_dict = self.any_to_dict_or_empty(item)
-            if len(item_dict) > 0:
-                k = self.any_dict_get_str(item_dict, "kind", "")
-                if k == "comment":
-                    txt = self.any_dict_get_str(item_dict, "text", "")
-                    self.emit(self.comment_line_prefix() + txt)
-                elif k == "blank":
-                    cnt = self.any_dict_get_int(item_dict, "count", 1)
-                    n = cnt if cnt > 0 else 1
-                    for _ in range(n):
-                        self.emit("")
+        for item in trivia:
+            k = self.any_dict_get_str(item, "kind", "")
+            if k == "comment":
+                txt = self.any_dict_get_str(item, "text", "")
+                self.emit(self.comment_line_prefix() + txt)
+            elif k == "blank":
+                cnt = self.any_dict_get_int(item, "count", 1)
+                n = cnt if cnt > 0 else 1
+                for _ in range(n):
+                    self.emit("")
 
     def _is_negative_const_index(self, node: Any) -> bool:
         """添字ノードが負の定数インデックスかを判定する。"""
