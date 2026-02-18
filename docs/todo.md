@@ -12,12 +12,12 @@
 
 #### A. 型系の正規化（EAST -> C++型）
 
-- [ ] `Any` を `object`（`std::any`）へ正規化するルールを `src/py2cpp.py` の型変換入口に一元化する。
+- [x] `Any` を `object`（`std::any`）へ正規化するルールを `src/py2cpp.py` の型変換入口に一元化する。
 - [ ] `Any` が関数引数・戻り値・ローカル変数・dict/list/set要素の全位置で同じルールで解決されることを確認する。
-- [ ] PEP604 (`T | None`) を EAST 側で正規化するか、C++型変換時に `optional<T>` へ正規化するかを決定し実装する。
-- [ ] `dict[str, Any]` / `dict[str, str | None]` を含むネスト型で、`cpp_type()` が一貫した型文字列を返すよう修正する。
+- [x] PEP604 (`T | None`) を EAST 側で正規化するか、C++型変換時に `optional<T>` へ正規化するかを決定し実装する。
+- [x] `dict[str, Any]` / `dict[str, str | None]` を含むネスト型で、`cpp_type()` が一貫した型文字列を返すよう修正する。
 - [ ] `list[set[str]]` など既知型プロパティへの代入で、RHS の `unknown` が残らないよう推論優先順位を定義・実装する。
-- [ ] 上記の型規則を `docs/spec-east.md` に追記する。
+- [x] 上記の型規則を `docs/spec-east.md` に追記する。
 
 #### B. `std::any` と `optional` の橋渡し
 
@@ -36,17 +36,17 @@
 
 #### D. `dict/list` 動的アクセスの整合
 
-- [ ] `dict[str, Any]` に対する `.get(...).items()` の典型パターンを最小再現ケース化する（`test/fixtures` 追加）。
-- [ ] `py_dict_get_default` の戻り値型に応じて `.items()` を安全に展開する経路を実装する。
+- [x] `dict[str, Any]` に対する `.get(...).items()` の典型パターンを最小再現ケース化する（`test/fixtures` 追加）。
+- [x] `py_dict_get_default` の戻り値型に応じて `.items()` を安全に展開する経路を実装する。
 - [ ] `list<any>` / `dict<any>` 反復時の `begin/end` 解決をランタイム側かコード生成側のどちらかに統一する。
 - [ ] `cannot convert std::any to dict/list` 系エラーが消えることを確認する。
 
 #### E. BoolOp と値選択（`or/and`）
 
-- [ ] `BoolOp` を真偽演算として扱うケースと「値選択式」として扱うケースを仕様として分離する。
-- [ ] EAST 生成時に値選択用 `or/and` を明示ノードへ lower するか、`py2cpp.py` 側で特別扱いするかを決定する。
+- [x] `BoolOp` を真偽演算として扱うケースと「値選択式」として扱うケースを仕様として分離する。
+- [x] EAST 生成時に値選択用 `or/and` を明示ノードへ lower するか、`py2cpp.py` 側で特別扱いするかを決定する。
 - [ ] selfhost の `t = x or ""` / `v = y and z` パターンで C++ 型崩壊しないことを確認する。
-- [ ] 仕様を `docs/spec-east.md` か `docs/spec.md` に追記する。
+- [x] 仕様を `docs/spec-east.md` か `docs/spec.md` に追記する。
 
 #### F. コメント・空行保持の復旧
 
@@ -77,4 +77,6 @@
 - `src/py2cpp.py` の `render_minmax` で `t` 未定義になる経路を修正。
 - `src/py2cpp.py` の文字列リテラル生成で `json.dumps` 依存を除去（`cpp_string_lit`）。
 - `src/py2cpp.py` の `cpp_type` 入力型を `Any` 化。
-- selfhost C++コンパイルエラー件数: `438 -> 396 -> 393 -> 374 -> 328`。
+- `dict[str, Any]` 初期化時に `std::any` へ再帰変換する経路と、tuple unpack `for` の単文最適化不備を修正。
+- `BoolOp` は C++ 生成時に「真偽演算」と「値選択式」を分離して出力する経路を追加（`test/fixtures/collections/case42_*` で検証）。
+- selfhost C++コンパイルエラー件数: `438 -> 396 -> 393 -> 374 -> 328 -> 333`（新機能追加後の再計測）。
