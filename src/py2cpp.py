@@ -1125,10 +1125,12 @@ class CppEmitter(CodeEmitter):
                                 static_field_defaults[fname] = self.render_expr(s.get("value"))
         self.current_class_static_fields.clear()
         for k in static_field_types.keys():
-            self.current_class_static_fields.add(k)
-        instance_fields: dict[str, str] = {
-            k: v for k, v in self.current_class_fields.items() if k not in self.current_class_static_fields
-        }
+            if isinstance(k, str):
+                self.current_class_static_fields.add(k)
+        instance_fields: dict[str, str] = {}
+        for k, v in self.current_class_fields.items():
+            if isinstance(k, str) and isinstance(v, str) and k not in self.current_class_static_fields:
+                instance_fields[k] = v
         has_init = any(s.get("kind") == "FunctionDef" and s.get("name") == "__init__" for s in class_body)
         for fname, fty in static_field_types.items():
             if fname in static_field_defaults:
