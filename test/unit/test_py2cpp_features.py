@@ -280,6 +280,24 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_import_math_module_runtime(self) -> None:
+        out = self._compile_and_run_fixture("import_math_module")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_import_time_from_runtime(self) -> None:
+        out = self._compile_and_run_fixture("import_time_from")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_import_pylib_png_runtime(self) -> None:
+        out = self._compile_and_run_fixture("import_pylib_png")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
     def test_str_index_char_compare_optimized_and_runtime(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             work = Path(tmpdir)
