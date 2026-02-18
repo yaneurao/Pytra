@@ -15,3 +15,11 @@
 
 - 現状: `PYTHONPATH=src python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` で
   `unsupported_syntax: expected token EOF, got NAME`（`except ValueError:` 付近）により EAST 生成が停止。
+
+## EAST へ移譲（py2cpp 簡素化・第2段）
+
+1. [ ] `src/common/east_parts/core.py` で `Call(Name(...))` の `len/str/int/float/bool/min/max/Path/Exception` を全て `BuiltinCall` 化し、`py2cpp` の生分岐を削減する。
+2. [ ] `src/common/east_parts/core.py` で `Attribute` 呼び出しの `owner_t == "unknown"` フォールバック依存を減らし、型確定時は EAST で runtime_call を確定させる。
+3. [ ] `src/py2cpp.py` の `render_expr(kind=="Call")` から、EAST で吸収済みの `raw == ...` / `owner_t.startswith(...)` 分岐を段階削除する。
+4. [ ] `test/unit/test_py2cpp_features.py` に `BuiltinCall` 正規化の回帰（`dict.get/items/keys/values`, `str` メソッド, `Path` メソッド）を追加する。
+5. [ ] `test/unit` 一式を再実行し、`test/fixtures` 一括実行で退行がないことを確認する。

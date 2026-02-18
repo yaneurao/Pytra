@@ -14,6 +14,7 @@ import sys
 from typing import Any
 
 from common.east import EastBuildError, convert_path, convert_source_to_east_with_backend
+from common.base_emitter import BaseEmitter
 
 
 CPP_HEADER = """#include "cpp_module/py_runtime.h"
@@ -106,12 +107,9 @@ def cpp_string_lit(s: str) -> str:
     return out
 
 
-class CppEmitter:
+class CppEmitter(BaseEmitter):
     def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
-        self.doc = east_doc
-        self.lines: list[str] = []
-        self.indent = 0
-        self.tmp_id = 0
+        super().__init__(east_doc)
         self.negative_index_mode = negative_index_mode
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
@@ -129,9 +127,6 @@ class CppEmitter:
         self.value_classes: set[str] = set()
         self.bridge_comment_emitted: set[str] = set()
 
-    def emit(self, line: str = "") -> None:
-        self.lines.append(("    " * self.indent) + line)
-
     def _stmt_start_line(self, stmt: dict[str, Any]) -> int | None:
         return None
 
@@ -141,10 +136,6 @@ class CppEmitter:
     def _has_leading_trivia(self, stmt: dict[str, Any]) -> bool:
         trivia = stmt.get("leading_trivia")
         return isinstance(trivia, list) and len(trivia) > 0
-
-    def emit_stmt_list(self, stmts: list[Any]) -> None:
-        for stmt in stmts:
-            self.emit_stmt(stmt)
 
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
@@ -167,10 +158,6 @@ class CppEmitter:
                 n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
                 for _ in range(n):
                     self.emit("")
-
-    def next_tmp(self, prefix: str = "__tmp") -> str:
-        self.tmp_id += 1
-        return f"{prefix}_{self.tmp_id}"
 
     def _is_identifier_expr(self, text: str) -> bool:
         if len(text) == 0:
