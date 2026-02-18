@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+
+from pylib.path import Path
 
 src_root = Path(__file__).resolve().parents[1]
 if str(src_root) not in sys.path:

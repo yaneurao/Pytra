@@ -5,9 +5,9 @@ Loads JSON profile trees from src/profiles/<lang>/profile.json with include supp
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 from pylib import json
+from pylib.path import Path
 
 
 def _deep_merge(dst: dict[str, Any], src: dict[str, Any]) -> dict[str, Any]:

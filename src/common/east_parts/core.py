@@ -7,9 +7,9 @@ import argparse
 import json
 import re
 from dataclasses import dataclass
-from pathlib import Path
 import sys
 from typing import Any
+from pylib.path import Path
 
 
 BorrowKind = str  # "value" | "readonly_ref" | "mutable_ref" | "move"

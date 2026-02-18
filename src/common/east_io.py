@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from common.east import EastBuildError, convert_path, convert_source_to_east_with_backend
 from pylib import json
+from pylib.path import Path
 
 
 def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:

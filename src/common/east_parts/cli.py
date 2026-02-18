@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
 
 from .core import EastBuildError, convert_path
 from .human import _dump_json, render_east_human_cpp
+from pylib.path import Path
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint for EAST JSON/human-view generation."""
