@@ -30,6 +30,11 @@
   - 定数: `S`
   - class: `Match`
   - 関数: `match(pattern, text, flags=0)`, `sub(pattern, repl, text, flags=0)`
+- `pylib.dataclasses`（`dataclasses` 代替・最小実装）
+  - デコレータ: `dataclass`
+- `pylib.enum`（`enum` 代替・最小実装）
+  - class: `Enum`, `IntEnum`, `IntFlag`
+  - 制約: クラス本体のメンバーは `NAME = expr` 形式を使用してください。
 
 ## 2. Pytra独自モジュール
 
@@ -42,5 +47,5 @@
 - `pylib.east`
   - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
   - 関数: `convert_source_to_east(...)`, `convert_source_to_east_self_hosted(...)`, `convert_source_to_east_with_backend(...)`, `convert_path(...)`, `render_east_human_cpp(...)`, `main()`
-- `pylib.east_io`
+- `pylib.east_parts.east_io`
   - 関数: `extract_module_leading_trivia(source)`, `load_east_from_path(input_path, parser_backend="self_hosted")`

@@ -6,7 +6,7 @@ from __future__ import annotations
 from pylib import argparse
 from pylib import json
 from pylib import re
-from dataclasses import dataclass
+from pylib.dataclasses import dataclass
 from pylib.typing import Any
 from pylib.pathlib import Path
 from pylib import sys
@@ -3475,6 +3475,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         if m_cls is not None:
             cls_name = m_cls.group(1)
             base = m_cls.group(2)
+            is_enum_base = base in {"Enum", "IntEnum", "IntFlag"}
             cls_indent = len(ln) - len(ln.lstrip(" "))
             block: list[tuple[int, str]] = []
             j = i + 1
@@ -3540,6 +3541,35 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         )
                         k += 1
                         continue
+                    if is_enum_base:
+                        m_enum_assign = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s2)
+                        if m_enum_assign is not None:
+                            fname = m_enum_assign.group(1)
+                            fexpr_txt = m_enum_assign.group(2).strip()
+                            name_col = ln_txt.find(fname)
+                            expr_col = ln_txt.find(fexpr_txt, name_col + len(fname))
+                            val_node = parse_expr(fexpr_txt, ln_no=ln_no, col=expr_col, name_types={})
+                            class_body.append(
+                                {
+                                    "kind": "Assign",
+                                    "source_span": _sh_span(ln_no, name_col, len(ln_txt)),
+                                    "target": {
+                                        "kind": "Name",
+                                        "source_span": _sh_span(ln_no, name_col, name_col + len(fname)),
+                                        "resolved_type": str(val_node.get("resolved_type", "unknown")),
+                                        "borrow_kind": "value",
+                                        "casts": [],
+                                        "repr": fname,
+                                        "id": fname,
+                                    },
+                                    "value": val_node,
+                                    "declare": True,
+                                    "declare_init": True,
+                                    "decl_type": str(val_node.get("resolved_type", "unknown")),
+                                }
+                            )
+                            k += 1
+                            continue
                     sig = parse_def_sig(ln_no, ln_txt, in_class=cls_name)
                     if sig is not None:
                         mname = str(sig["name"])
@@ -3663,7 +3693,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             # conservative hint:
             # - classes with instance state / __del__ / inheritance should keep reference semantics
             # - stateless, non-inherited classes can be value candidates
-            if len(instance_field_names) == 0 and not has_del and not isinstance(base, str):
+            if base in {"Enum", "IntEnum", "IntFlag"}:
+                cls_item["class_storage_hint"] = "value"
+            elif len(instance_field_names) == 0 and not has_del and not isinstance(base, str):
                 cls_item["class_storage_hint"] = "value"
             else:
                 cls_item["class_storage_hint"] = "ref"

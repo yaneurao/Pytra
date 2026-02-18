@@ -48,7 +48,6 @@
 ### 2.3 CLI
 
 - `python src/pylib/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
-- 互換経路として `python src/common/east.py ...` も利用可能（`pylib.east` へ委譲）。
 - `--pretty`: 整形 JSON を出力。
 - `--human-output`: C++風の人間可読ビューを出力。
 - `python src/py2cpp.py <input.py|east.json> [-o output.cpp]`: EASTベースの C++ 生成器。

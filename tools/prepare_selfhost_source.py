@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_PY2CPP = ROOT / "src" / "py2cpp.py"
-SRC_BASE = ROOT / "src" / "common" / "code_emitter.py"
+SRC_BASE = ROOT / "src" / "pylib" / "east_parts" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
 
 
@@ -49,7 +49,7 @@ def _strip_triple_quoted_docstrings(text: str) -> str:
 
 
 def _remove_import_line(text: str) -> str:
-    target = "from common.code_emitter import CodeEmitter\n"
+    target = "from pylib.east_parts.code_emitter import CodeEmitter\n"
     if target not in text:
         raise RuntimeError("py2cpp.py import for CodeEmitter not found")
     return text.replace(target, "", 1)

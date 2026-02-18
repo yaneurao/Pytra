@@ -1035,6 +1035,17 @@ static inline list<std::tuple<int64, std::any>> py_enumerate(const std::any& val
     return {};
 }
 
+template <class Tup, class V>
+static inline bool py_tuple_contains(const Tup& tup, const V& value) {
+    bool found = false;
+    std::apply(
+        [&](const auto&... elems) {
+            ((found = found || (elems == value)), ...);
+        },
+        tup);
+    return found;
+}
+
 template <class A, class B>
 static inline float64 py_div(A lhs, B rhs) {
     return static_cast<float64>(lhs) / static_cast<float64>(rhs);

@@ -2,7 +2,7 @@
 """EAST -> C++ transpiler.
 
 This tool transpiles Pytra EAST JSON into C++ source.
-It can also accept a Python source file and internally run src/common/east.py conversion.
+It can also accept a Python source file and internally run src/pylib/east.py conversion.
 """
 
 from __future__ import annotations
@@ -13,9 +13,9 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from common.code_emitter import CodeEmitter
-from common.east_io import extract_module_leading_trivia as extract_module_leading_trivia_common
-from common.east_io import load_east_from_path
+from pylib.east_parts.code_emitter import CodeEmitter
+from pylib.east_parts.east_io import extract_module_leading_trivia as extract_module_leading_trivia_common
+from pylib.east_parts.east_io import load_east_from_path
 from common.language_profile import load_language_profile
 from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
 

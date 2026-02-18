@@ -16,7 +16,7 @@ src_root = Path(__file__).resolve().parents[1]
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 
-from common.east_parts import (  # noqa: F401
+from pylib.east_parts import (  # noqa: F401
     BorrowKind,
     EastBuildError,
     FLOAT_TYPES,
