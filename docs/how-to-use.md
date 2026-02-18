@@ -64,9 +64,8 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 
 補足:
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
-- 入力コードで使う Python モジュールに対応する実装を `src/runtime/cpp/` に用意してください（例: `core/math`, `core/time`, `core/pathlib`, `pylib/png`, `pylib/gif`）。GC は `base/gc` を使います。
-- Python 側の import は `pylib` 名を使います（例: `from pylib import png`, `from pylib.gif import save_gif`, `from pylib.assertions import py_assert_eq`）。
-- `math.sqrt` など `module.attr(...)` の C++ 側マッピングは `src/runtime/cpp/runtime_call_map.json` で定義します。必要な関数は `module_attr_call` に追加できます。
+- Python 側で import できるのは `src/pylib/` にあるモジュールのみです（例: `from pylib import png`, `from pylib.gif import save_gif`, `from pylib.assertions import py_assert_eq`）。
+- `pylib` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
@@ -144,7 +143,7 @@ go run test/transpile/go/iterable.go
 ```
 
 補足:
-- `sample/py` の一部で使う `math` / `png` / `gif` 系 API は、Go 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
+- `sample/py` の一部で使う `pylib` API は、Go 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
 
 </details>
 
@@ -158,7 +157,7 @@ java -cp test/transpile/java iterable
 ```
 
 補足:
-- `sample/py` の一部で使う `math` / `png` / `gif` 系 API は、Java 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
+- `sample/py` の一部で使う `pylib` API は、Java 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
 
 </details>
 
@@ -385,12 +384,12 @@ name_by_id: dict[int, str] = {1: "alice"}
 
 ### 3. import とランタイムモジュール
 
-- Python 側で `import` したモジュールは、ターゲット言語側に対応ランタイムが必要です。
-- 例: C++ なら `src/runtime/cpp/`, C# なら `src/cs_module/`, JS/TS なら `src/js_module` / `src/ts_module`。
+- Python 側で `import` できるモジュールは `src/pylib/` にあるもののみです。
+- `pylib` モジュールごとに、ターゲット言語側の対応ランタイムが必要です。
 
 ```python
-import math
-from pathlib import Path
+from pylib import png
+from pylib.path import Path
 ```
 
-上記を変換する場合、対象言語側でも `math` / `pathlib` 相当の実装が必要です。
+上記を変換する場合、対象言語側でも `pylib.png` / `pylib.path` 相当の実装が必要です。
