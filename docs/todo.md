@@ -25,22 +25,53 @@
 3. [x] `from pylib.png import write_rgb_png` / `from pylib.gif import save_gif` / `from math import sqrt` の回帰テストを追加する。
 4. [x] `import` 関連の仕様追記（対応範囲・`*` 非対応）を `docs/spec-east.md` / `docs/spec-user.md` / `docs/spec-dev.md` に反映する。
 
-## selfhost 回復（後回し）
+## selfhost 回復（優先）
 
 1. [x] `py2cpp.py` の `BaseEmitter` 共通化後、selfhost 生成時に `common.base_emitter` の内容を C++ へ取り込む手順（または inline 展開）を実装する。
-2. [ ] `cpp_type` へ `str|None` 等が流入した際の `object` 退避を見直し、不要な `object` 経由変換を減らす。
-3. [ ] `selfhost/py2cpp.cpp` の先頭 500 行を重点レビューし、`BaseEmitter` 起点のエラー（型境界）を 0 件にする。
-4. [ ] `selfhost/py2cpp.out` を生成する。
-5. [ ] `selfhost/py2cpp.out sample/py/01_mandelbrot.py` 実行を通す。
-6. [ ] `selfhost/py2cpp.out` 生成結果と `python src/py2cpp.py` 生成結果の一致検証を実施する。
+   - [x] `tools/prepare_selfhost_source.py` を追加して、`selfhost/py2cpp.py` を自己完結化する。
+   - [x] `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` が通る状態に戻す。
+2. [ ] `BaseEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
+   - [ ] `any_dict_get` / `any_to_dict` / `any_to_list` / `any_to_str` の C++ 生成を確認し、`object.begin/end` 生成を消す。
+   - [ ] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
+   - [ ] `test/unit/test_base_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
+3. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
+   - [ ] `str|None`, `dict|None`, `list|None` の Union 処理を見直し、`std::optional<T>` 優先にする。
+   - [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
+   - [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
+4. [ ] selfhost コンパイルエラーを段階的にゼロ化する。
+   - [ ] `selfhost/build.all.log` の先頭 200 行を優先して修正し、`total_errors < 300` にする。
+   - [ ] 同手順で `total_errors < 100` まで減らす。
+   - [ ] `total_errors = 0` にする。
+5. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
+   - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
+   - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
+6. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
+   - [ ] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。
+   - [ ] `selfhost/py2cpp.out` と `python3 src/py2cpp.py` の出力差分チェックをスクリプト化する。
+   - [ ] CI 相当手順（ローカル）に組み込む。
 
 ## 複数ファイル構成（最終ゴール）
 
-1. [ ] `py2cpp.py` にモジュール依存解決を実装し、`import pylib.png` / `import pylib.gif` をソースとして追跡できるようにする。
-2. [ ] Python入力1ファイルから、必要な依存モジュールを含む「複数EAST（モジュール単位）」を構築する。
-3. [ ] C++生成を単一 `.cpp` 前提から拡張し、`main` モジュール + 依存モジュールの複数 `.cpp/.h` を出力できるようにする。
-4. [ ] ビルド手順を複数ファイル前提で整備し、`sample/py` 全件で Python 実行結果と一致することを確認する。
-5. [ ] 互換運用として、必要時のみ単一出力へ束ねるオプションを追加する（既定は複数ファイル構成）。
+1. [ ] 依存解決フェーズを追加する。
+   - [ ] `import` / `from ... import ...` を収集してモジュール依存グラフを作る。
+   - [ ] `pylib.*` とユーザーモジュールの探索パス解決（重複・循環検出）を実装する。
+   - [ ] 依存グラフを `--dump-deps` などで可視化できるようにする。
+2. [ ] モジュール単位 EAST を構築する。
+   - [ ] 入口ファイル + 依存モジュールを個別に EAST 化する。
+   - [ ] シンボル解決情報（公開関数/クラス、import alias）をモジュールメタへ保持する。
+   - [ ] モジュール間で必要な型情報を共有する最小スキーマを定義する。
+3. [ ] C++ 出力を複数ファイル化する。
+   - [ ] モジュールごとに `.h/.cpp` を生成し、宣言/定義を分離する。
+   - [ ] main モジュールから依存モジュールを include/link できるようにする。
+   - [ ] ランタイム include/namespace の重複を除去する。
+4. [ ] ビルド・実行検証を整備する。
+   - [ ] 複数ファイル生成物を一括コンパイルするスクリプトを追加する。
+   - [ ] `sample/py` 全件で Python 実行結果との一致確認を自動化する。
+   - [ ] 画像生成ケースはバイナリ一致で検証する。
+5. [ ] 互換オプションを追加する。
+   - [ ] 既定を複数ファイル出力にする。
+   - [ ] `--single-file`（仮称）で従来の単一 `.cpp` へ束ねるモードを提供する。
+   - [ ] 既存ユーザー向け移行手順を `docs/how-to-use.md` に追記する。
 
 ## 直近メモ
 
@@ -57,4 +88,4 @@
 - 更新（2026-02-18 selfhost 追加）:
   1. `tools/prepare_selfhost_source.py` を追加し、`src/common/base_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
-  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=509`）。
+  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=510`）。
