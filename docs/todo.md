@@ -8,7 +8,7 @@
    - [x] `src/py2cpp.py` / テスト / ドキュメント参照を `CodeEmitter` 表記へ置換する。
 2. [ ] 言語差分を `LanguageProfile` JSON に切り出す。
    - [x] `docs/spec-language-profile.md` で JSON スキーマ（v1）とロード順序を確定する。
-   - [ ] 型マップ（EAST 型 -> ターゲット型）を JSON で定義する。
+   - [x] 型マップ（EAST 型 -> ターゲット型）を JSON で定義する。
    - [ ] 演算子マップ・予約語・識別子リネーム規則を JSON で定義する。
    - [x] 組み込み関数/メソッドの runtime call map を JSON へ統合する。
 3. [ ] `CodeEmitter` へ `profile` 注入を実装する。
@@ -82,6 +82,6 @@
   2. `selfhost/py2cpp.py` と `selfhost/runtime/cpp/*` を `src` 最新へ同期済み。
   3. 依然として主因は `object` / `optional<dict>` / `std::any` の境界変換（代入・引数渡し・`py_dict_get_default` 呼び出し）に集中している。
 - 更新（2026-02-18 selfhost 追加）:
-  1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py`（移行後は `code_emitter.py`）を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
+  1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
   3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=510`）。
