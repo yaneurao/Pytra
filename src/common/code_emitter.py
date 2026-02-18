@@ -39,7 +39,7 @@ class CodeEmitter:
         """最上位 1 スコープだけを持つ初期スコープスタックを返す。"""
         return [set()]
 
-    def emit_stmt(self, stmt: Any) -> None:
+    def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """文ノード出力フック。派生クラス側で実装する。"""
         return
 
@@ -51,7 +51,7 @@ class CodeEmitter:
         """現在のインデントで1行を出力バッファへ追加する。"""
         self.lines.append(("    " * self.indent) + line)
 
-    def emit_stmt_list(self, stmts: list[Any]) -> None:
+    def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         for stmt in stmts:
             self.emit_stmt(stmt)  # type: ignore[attr-defined]
 
