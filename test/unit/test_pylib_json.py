@@ -12,26 +12,26 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.common.east_io import load_east_from_path
-from src.pylib import json as py_json
+from src.pylib import json
 
 
 class PyLibJsonTest(unittest.TestCase):
     def test_loads_basic_object(self) -> None:
-        obj = py_json.loads('{"a":1,"b":[true,false,null],"c":"x"}')
+        obj = json.loads('{"a":1,"b":[true,false,null],"c":"x"}')
         self.assertIsInstance(obj, dict)
         self.assertEqual(obj.get("a"), 1)
         self.assertEqual(obj.get("b"), [True, False, None])
         self.assertEqual(obj.get("c"), "x")
 
     def test_loads_unicode_escape(self) -> None:
-        obj = py_json.loads('{"s":"\\u3042"}')
+        obj = json.loads('{"s":"\\u3042"}')
         self.assertEqual(obj.get("s"), "あ")
 
     def test_dumps_compact_and_pretty(self) -> None:
         obj = {"x": [1, 2], "y": "z"}
-        compact = py_json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+        compact = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
         self.assertIn('"x":[1,2]', compact)
-        pretty = py_json.dumps(obj, ensure_ascii=False, indent=2)
+        pretty = json.dumps(obj, ensure_ascii=False, indent=2)
         self.assertIn("\n", pretty)
         self.assertIn('  "x"', pretty)
 
@@ -39,11 +39,10 @@ class PyLibJsonTest(unittest.TestCase):
         payload = {"kind": "Module", "body": [], "functions": [], "classes": []}
         with tempfile.TemporaryDirectory() as tmpdir:
             p = Path(tmpdir) / "mod.east.json"
-            p.write_text(py_json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            p.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
             out = load_east_from_path(p)
             self.assertEqual(out.get("kind"), "Module")
 
 
 if __name__ == "__main__":
     unittest.main()
-
