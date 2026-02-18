@@ -25,20 +25,20 @@ Windows では次の読み替えを行ってください。
 <summary>C++</summary>
 
 ```bash
-python src/py2cpp.py test/py/case29_iterable.py test/cpp/case29_iterable.cpp
-g++ -std=c++20 -O3 -ffast-math -flto -I src test/cpp/case29_iterable.cpp \
+python src/py2cpp.py test/fixtures/py/case29_iterable.py test/transpile/cpp/case29_iterable.cpp
+g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/case29_iterable.cpp \
   src/cpp_module/png.cpp src/cpp_module/gif.cpp src/cpp_module/math.cpp \
   src/cpp_module/time.cpp src/cpp_module/pathlib.cpp src/cpp_module/dataclasses.cpp \
   src/cpp_module/gc.cpp \
-  -o test/obj/case29_iterable.out
-./test/obj/case29_iterable.out
+  -o test/transpile/obj/case29_iterable.out
+./test/transpile/obj/case29_iterable.out
 ```
 
 補足:
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - 入力コードで使う Python モジュールに対応する実装を `src/cpp_module/` に用意してください（例: `math`, `time`, `pathlib`, `png`, `gif`）。
 - 実行時に `--pytra-image-format=ppm` を付けると、`png_helper.write_rgb_png(...)` は PNG ではなく PPM(P6) を出力します。
-  - 例: `./test/obj/case29_iterable.out --pytra-image-format=ppm`
+  - 例: `./test/transpile/obj/case29_iterable.out --pytra-image-format=ppm`
   - この場合、出力拡張子は実行時に `.ppm` へ切り替わります（元コード上の `out_path` 文字列表示はそのままです）。
 
 </details>
@@ -47,9 +47,9 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/cpp/case29_iterable.cpp \
 <summary>Rust</summary>
 
 ```bash
-python src/py2rs.py test/py/case29_iterable.py test/rs/case29_iterable.rs
-rustc -O test/rs/case29_iterable.rs -o test/obj/case29_iterable_rs.out
-./test/obj/case29_iterable_rs.out
+python src/py2rs.py test/fixtures/py/case29_iterable.py test/transpile/rs/case29_iterable.rs
+rustc -O test/transpile/rs/case29_iterable.rs -o test/transpile/obj/case29_iterable_rs.out
+./test/transpile/obj/case29_iterable_rs.out
 ```
 
 補足:
@@ -61,11 +61,11 @@ rustc -O test/rs/case29_iterable.rs -o test/obj/case29_iterable_rs.out
 <summary>C#</summary>
 
 ```bash
-python src/py2cs.py test/py/case29_iterable.py test/cs/case29_iterable.cs
-mcs -out:test/obj/case29_iterable.exe \
-  test/cs/case29_iterable.cs \
+python src/py2cs.py test/fixtures/py/case29_iterable.py test/transpile/cs/case29_iterable.cs
+mcs -out:test/transpile/obj/case29_iterable.exe \
+  test/transpile/cs/case29_iterable.cs \
   src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs src/cs_module/pathlib.cs
-mono test/obj/case29_iterable.exe
+mono test/transpile/obj/case29_iterable.exe
 ```
 
 補足:
@@ -77,8 +77,8 @@ mono test/obj/case29_iterable.exe
 <summary>JavaScript</summary>
 
 ```bash
-python src/py2js.py test/py/case29_iterable.py test/js/case29_iterable.js
-node test/js/case29_iterable.js
+python src/py2js.py test/fixtures/py/case29_iterable.py test/transpile/js/case29_iterable.js
+node test/transpile/js/case29_iterable.js
 ```
 
 補足:
@@ -90,8 +90,8 @@ node test/js/case29_iterable.js
 <summary>TypeScript</summary>
 
 ```bash
-python src/py2ts.py test/py/case29_iterable.py test/ts/case29_iterable.ts
-npx tsx test/ts/case29_iterable.ts
+python src/py2ts.py test/fixtures/py/case29_iterable.py test/transpile/ts/case29_iterable.ts
+npx tsx test/transpile/ts/case29_iterable.ts
 ```
 
 補足:
@@ -103,8 +103,8 @@ npx tsx test/ts/case29_iterable.ts
 <summary>Go</summary>
 
 ```bash
-python src/py2go.py test/py/case29_iterable.py test/go/case29_iterable.go
-go run test/go/case29_iterable.go
+python src/py2go.py test/fixtures/py/case29_iterable.py test/transpile/go/case29_iterable.go
+go run test/transpile/go/case29_iterable.go
 ```
 
 補足:
@@ -116,9 +116,9 @@ go run test/go/case29_iterable.go
 <summary>Java</summary>
 
 ```bash
-python src/py2java.py test/py/case29_iterable.py test/java/case29_iterable.java
-javac test/java/case29_iterable.java
-java -cp test/java case29_iterable
+python src/py2java.py test/fixtures/py/case29_iterable.py test/transpile/java/case29_iterable.java
+javac test/transpile/java/case29_iterable.java
+java -cp test/transpile/java case29_iterable
 ```
 
 補足:
@@ -130,9 +130,9 @@ java -cp test/java case29_iterable
 <summary>Swift</summary>
 
 ```bash
-python src/py2swift.py test/py/case29_iterable.py test/swift/case29_iterable.swift
-swiftc test/swift/case29_iterable.swift -o test/obj/case29_iterable_swift.out
-./test/obj/case29_iterable_swift.out
+python src/py2swift.py test/fixtures/py/case29_iterable.py test/transpile/swift/case29_iterable.swift
+swiftc test/transpile/swift/case29_iterable.swift -o test/transpile/obj/case29_iterable_swift.out
+./test/transpile/obj/case29_iterable_swift.out
 ```
 
 補足:
@@ -144,9 +144,9 @@ swiftc test/swift/case29_iterable.swift -o test/obj/case29_iterable_swift.out
 <summary>Kotlin</summary>
 
 ```bash
-python src/py2kotlin.py test/py/case29_iterable.py test/kotlin/case29_iterable.kt
-kotlinc test/kotlin/case29_iterable.kt -include-runtime -d test/obj/case29_iterable_kotlin.jar
-java -cp test/obj/case29_iterable_kotlin.jar pytra_case29_iterable
+python src/py2kotlin.py test/fixtures/py/case29_iterable.py test/transpile/kotlin/case29_iterable.kt
+kotlinc test/transpile/kotlin/case29_iterable.kt -include-runtime -d test/transpile/obj/case29_iterable_kotlin.jar
+java -cp test/transpile/obj/case29_iterable_kotlin.jar pytra_case29_iterable
 ```
 
 補足:

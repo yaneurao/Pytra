@@ -47,16 +47,16 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 `test/` は小規模な機能確認ケース、`sample/` は実用寄り・負荷高めケースという役割分担です。
 
-- [test/py](../test/py): 変換元テストコード
-- [test/cpp](../test/cpp): C++ 変換結果
-- [test/cs](../test/cs): C# 変換結果
-- [test/rs](../test/rs): Rust 変換結果
-- [test/js](../test/js): JavaScript 変換結果
-- [test/ts](../test/ts): TypeScript 変換結果
-- [test/go](../test/go): Go 変換結果
-- [test/java](../test/java): Java 変換結果
-- [test/swift](../test/swift): Swift 変換結果
-- [test/kotlin](../test/kotlin): Kotlin 変換結果
+- [test/fixtures/py](../test/fixtures/py): 変換元テストコード
+- [test/transpile/cpp](../test/transpile/cpp): C++ 変換結果
+- [test/transpile/cs](../test/transpile/cs): C# 変換結果
+- [test/transpile/rs](../test/transpile/rs): Rust 変換結果
+- [test/transpile/js](../test/transpile/js): JavaScript 変換結果
+- [test/transpile/ts](../test/transpile/ts): TypeScript 変換結果
+- [test/transpile/go](../test/transpile/go): Go 変換結果
+- [test/transpile/java](../test/transpile/java): Java 変換結果
+- [test/transpile/swift](../test/transpile/swift): Swift 変換結果
+- [test/transpile/kotlin](../test/transpile/kotlin): Kotlin 変換結果
 
 ## 6. 画像一致に関する補足
 

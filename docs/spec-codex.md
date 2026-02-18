@@ -35,6 +35,6 @@
 
 ## 6. テスト・最適化ルール
 
-- 変換器都合で `test/py/` の入力ケースを変更してはなりません。
+- 変換器都合で `test/fixtures/py/` の入力ケースを変更してはなりません。
 - 実行速度比較時の C++ は `-O3 -ffast-math -flto` を使用します。
-- 生成物ディレクトリ（`test/obj/`, `test/cpp2/`, `sample/obj/`, `sample/out/`）は Git 管理外運用を維持します。
+- 生成物ディレクトリ（`test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`）は Git 管理外運用を維持します。

@@ -1,6 +1,6 @@
 # TODO
 
-- [x] セルフホスティング済みトランスパイラ実行ファイル（`test/obj/pycpp_transpiler_self_new`）を使って、`test/py/case05` から `test/py/case100` までを `test/cpp2/` に変換し、各生成 C++ がコンパイル可能かを一括検証した。
+- [x] セルフホスティング済みトランスパイラ実行ファイル（`test/transpile/obj/pycpp_transpiler_self_new`）を使って、`test/fixtures/py/case05` から `test/fixtures/py/case100` までを `test/transpile/cpp2/` に変換し、各生成 C++ がコンパイル可能かを一括検証した。
   - 実施結果: `CASE_TOTAL=96`, `TRANSPILE_FAIL=0`, `COMPILE_OK=96`, `COMPILE_FAIL=0`
 
 ## トランスパイラ機能 TODO（今回の不足点整理）
@@ -66,7 +66,7 @@
 ## Go / Java ネイティブ変換の追加TODO
 
 - [x] `py2go.py` / `py2java.py` を Python 呼び出し不要のネイティブ変換モードへ移行する。
-- [x] `test/py`（case01〜30）を Go/Java ネイティブ変換して、Python 実行結果と一致させる。
+- [x] `test/fixtures/py`（case01〜30）を Go/Java ネイティブ変換して、Python 実行結果と一致させる。
 - [x] `sample/py` で使っている `math` モジュール呼び出し（`sqrt`, `sin`, `cos` など）を Go/Java ネイティブ変換で対応する。
 - [x] `sample/py` で使っている `png_helper.write_rgb_png` の Go/Java ランタイム実装を追加する。
 - [x] `sample/py` で使っている `gif_helper.save_gif` / `grayscale_palette` の Go/Java ランタイム実装を追加する。
@@ -84,14 +84,14 @@
   - [x] `pathlib` 最小共通 API を確定する（`Path(...)`, `/`, `exists`, `resolve`, `parent`, `name`, `stem`, `read_text`, `write_text`, `mkdir`, `str`）。
   - [x] `src/rs_module` / `src/cs_module` / `src/js_module` / `src/ts_module` / `src/go_module` / `src/java_module` に `pathlib` 相当ランタイムを追加する。
   - [x] `py2cpp.py` 以外の各トランスパイラで `import pathlib` と `Path` 呼び出しのマッピングを実装する。
-  - [x] `sample/py` もしくは `test/py` にファイルI/Oを伴う `pathlib` 利用ケースを追加し、各言語で実行確認する。
+  - [x] `sample/py` もしくは `test/fixtures/py` にファイルI/Oを伴う `pathlib` 利用ケースを追加し、各言語で実行確認する。
 - [x] 上記の平準化後、`docs/pytra-readme.md` の「対応module」を言語別の対応関数一覧で更新し、差分がある場合は理由を明記する。
   - [x] `math` / `pathlib` の言語別対応表を `docs/pytra-readme.md` に追加する。
   - [x] 未対応関数が残る言語には「未対応理由・代替手段・予定」を併記する。
   - [x] `README.md` / `docs/how-to-use.md` から参照される説明との整合を確認する。
-- [x] `test/py` に `math` / `pathlib` の共通回帰テストを追加し、全ターゲット言語で同一期待値を満たすことを CI 相当手順で確認する。
-  - [x] `test/py` に `math` 拡張（`tan/log/log10/fabs/ceil/pow`）の共通テストケースを追加する。
-  - [x] `test/py` に `pathlib` 共通テストケース（生成・結合・存在確認・読み書き）を追加する。
+- [x] `test/fixtures/py` に `math` / `pathlib` の共通回帰テストを追加し、全ターゲット言語で同一期待値を満たすことを CI 相当手順で確認する。
+  - [x] `test/fixtures/py` に `math` 拡張（`tan/log/log10/fabs/ceil/pow`）の共通テストケースを追加する。
+  - [x] `test/fixtures/py` に `pathlib` 共通テストケース（生成・結合・存在確認・読み書き）を追加する。
   - [x] 各ターゲット（C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）への変換・実行コマンドを自動化スクリプトへ集約する。
   - [x] Python 実行結果との差分比較を自動化し、失敗ケースを一覧出力できるようにする。
   - 実行補足: 現在の開発環境では `mcs/go/javac/swiftc/kotlinc` が未導入のため、`tools/runtime_parity_check.py` は該当ターゲットを `SKIP` 表示で処理する。
@@ -134,7 +134,7 @@
 - `sample/py` の PNG/GIF 系ケースで、バイト列が終始 `[]byte` / `byte[]` で通ることを確認する。
   - [x] `range_mode` と境界条件の確定を `east.py` 側で完了させる。
 - [x] `CppEmitter` を「文字列出力専用」へ段階移行し、挙動回帰を防ぐ。
-  - [x] 各段階で `test/py` の `test/cpp` 実行結果一致を確認する。
+  - [x] 各段階で `test/fixtures/py` の `test/transpile/cpp` 実行結果一致を確認する。
   - [x] 各段階で `sample/py` の PNG/GIF 一致（バイナリ比較）を確認する。
 
 ## EAST C++可読性改善 TODO
@@ -170,7 +170,7 @@
 ## self_hosted AST/Parser 段階移行 TODO
 
 
-### ケース順移行（test/py/case01 から順に）
+### ケース順移行（test/fixtures/py/case01 から順に）
 
 - [x] `case01_add` を `self_hosted` で通す（EAST生成 + C++実行一致）。
 - [x] `case02_sub_mul` を `self_hosted` で通す。
@@ -187,3 +187,78 @@
 
 
 ## 生成画像不一致 調査ベース TODO（2026-02-17）
+## 移管済み（docs/todo.md から） 2026-02-18
+
+- [x] 比較・論理・算術の混在式で意味が変わらないことを `test/fixtures/py` で回帰確認する。
+- [x] Python docstring を C++ の裸文字列文として出さず、コメントへ変換するか出力しない。
+- [x] 関数先頭の単独文字列式（docstring）を `east.py` 側で専用メタ情報へ分離する。
+- [x] `py2cpp.py` は `//` コメント出力に統一する（必要時のみ）。
+- [x] 式文としての識別子単体出力を禁止するガードを `py2cpp.py` に追加する。
+- [x] API 由来が追えるように、必要箇所に薄いコメントを付ける（例: `png_helper.write_rgb_png` 対応）。
+- [x] `write_rgb_png` / `save_gif` / `grayscale_palette` などランタイムブリッジ関数に限定して付与する。
+- [x] コメントが過剰にならないよう最小限に制御する。
+- [x] 生成コードのレイアウトを「意味単位」（初期化・計算・出力）で整える。
+- [x] 連続宣言ブロック、連続代入ブロック、I/O 呼び出しブロックの間にのみ空行を入れる。
+- [x] `sample/01` を可読性改善のゴールデンとして差分レビュー可能な形にする。
+- [x] 方針変更: `python_ast` backend は廃止し、`self_hosted` 単独運用とする。
+- [x] `src/common/east.py` に `parser_backend` 切替インターフェースを導入する。
+- [x] CLI 引数で `--parser-backend` を受け付ける。
+- [x] デフォルトは `self_hosted` とする。
+- [x] 変換結果メタに backend 名を記録する。
+- [x] `self_hosted` の最小字句解析器を追加する（コメント/改行/インデント含む）。
+- [x] `INDENT` / `DEDENT` / `NEWLINE` / `NAME` / `NUMBER` / `STRING` / 記号をトークン化する。
+- [x] `#` コメントを収集し、行番号つきで保持する。
+- [x] tokenize 失敗時のエラー位置・ヒントを EAST エラー形式で返す。
+- [x] `self_hosted` の最小構文木（内部ノード）を定義する。
+- [x] まず `Module`, `FunctionDef`, `Assign`, `AnnAssign`, `Return`, `Expr`, `If`, `For`, `Call`, `Name`, `Constant`, `BinOp`, `Compare` を対象にする。
+- [x] 各ノードに `lineno/col/end_lineno/end_col` を持たせる。
+- [x] `self_hosted` 用パーサ本体（再帰下降）を追加する。
+- [x] 式の優先順位テーブルを実装する（`* / %`, `+ -`, 比較, `and/or`）。
+- [x] `for ... in range(...)` と通常 `for ... in iterable` を識別する。
+- [x] 関数定義と型注釈（`x: int` / `-> int`）を解釈する。
+- [x] 既存 EAST ビルド処理に `self_hosted` ノード経路を追加する。
+- [x] 既存の型推論・lowering（`ForRange`, `Contains`, `SliceExpr` など）を共通で再利用できる形にする。
+- [x] `self_hosted` 単独運用で EAST の形が安定するように正規化する。
+- [x] コメント引き継ぎを実装する（`#` / docstring）。
+- [x] `#` コメントを `leading_comments` として関数/文に紐づける。
+- [x] `Expr(Constant(str))` の docstring と重複しないよう統合規則を決める。
+- [x] `src/py2cpp.py` で `leading_comments` を `// ...` 出力する。
+- [x] `case11_fib` を `self_hosted` で通す。
+- [x] `case12_string_ops` を `self_hosted` で通す。
+- [x] `case13_class` 〜 `case16_instance_member`（クラス系）を `self_hosted` で通す。
+- [x] `case17_loop` 〜 `case24_ifexp_bool`（ループ/例外/内包/ifexp）を `self_hosted` で通す。
+- [x] `case25_class_static` 〜 `case33_pathlib_extended`（拡張ケース）を `self_hosted` で通す。
+- [x] `test/fixtures/py` 全ケースで `self_hosted` EAST が意味的に安定していることを確認する。
+- [x] `src/py2cpp.py` で `--parser-backend self_hosted` 時に `test/fixtures/py` 全ケースが実行一致する。
+- [x] デフォルト backend を `self_hosted` に変更する。
+- [x] `save_gif(..., delay_cs=..., loop=...)` の keyword 引数を `py2cpp.py` の非lowered `Call` 経路でも確実に反映する。
+- [x] 現状 `sample/cpp/*` で `save_gif(..., palette)` のみになり `delay_cs` が既定値 `4` に落ちる問題を修正する。
+- [x] `sample/05,06,08,10,11,14` で GIF の GCE delay 値が Python 実行結果と一致することを確認する。
+- [x] 浮動小数点式の再結合（演算順序変更）を抑制し、Python と同じ評価順を優先する。
+- [x] `a * (b / c)` が `a * b / c` に変わらないように、`render_expr` の括弧方針を見直す。
+- [x] `sample/01_mandelbrot` と `sample/03_julia_set` で PNG の raw scanline が一致することを確認する。
+- [x] PNG 出力の差分を「画素差」と「圧縮差」に切り分けた上で、仕様として扱いを明文化する。
+- [x] `sample/02_raytrace_spheres` は画素一致・IDAT 圧縮差のみであることを docs に追記する。
+- [x] 必要なら C++ 側 `src/cpp_module/png.cpp` を zlib 圧縮実装へ寄せ、IDAT 近似一致または完全一致方針を決める。
+- [x] GIF の `sample/12_sort_visualizer` / `sample/16_glass_sculpture_chaos` のフレーム画素差を解消する。
+- [x] `render()` 内の float→int 変換境界（bar幅/補間/正規化）の評価順を Python と一致させる。
+- [x] フレームデータ（LZW 展開後）が全フレーム一致することを確認する。
+- [x] 画像一致検証を自動化する。
+- [x] `sample/py` 全件について、`stdout` 比較に加えて PNG raw / GIF フレーム一致を検証するスクリプトを追加する。
+- [x] 差分時は「最初の不一致座標・チャネル・元式」を出力できるようにする。
+- [x] 方針を明文化する: Pythonのユーザー定義クラスは参照セマンティクスを原則とし、値型化は「意味保存が証明できる場合のみ」許可する。
+- [x] `case34_gc_reassign` を回帰ゴールデンに設定し、`a = b` 後に同一オブジェクト共有（コピーで2個化しない）を必須条件にする。
+- [x] 値型化の適用条件を仕様化する（例: インスタンスフィールドなし、`__del__` なし、インスタンス同一性に依存する操作なし、代入/引数渡しで共有観測されない）。
+- [x] EAST 解析段階で「値型化候補クラス」と「参照必須クラス」を分類するメタ情報を追加する。
+- [x] `src/py2cpp.py` にクラスごとのストレージ戦略選択（`rc<T>` / `T`）を実装し、混在ケースで正しく `.` と `->` を切り替える。
+- [x] `case15_class_member` は以前どおり `Counter c = Counter();` へ戻す（最適化適用例）。
+- [x] `case34_gc_reassign` は `rc<Tracked>` のまま維持する（最適化非適用例）。
+- [x] 新規テストを追加する: 同一性依存ケース（代入共有、関数引数経由の更新共有、コンテナ格納後の共有）では必ず参照型を選ぶことを検証する。
+- [x] 新規テストを追加する: 値型化候補（実質 stateless クラス）では出力C++が値型になり、実行結果がPython一致することを検証する。
+- [x] selfhost一次ゴールを固定する: `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` が成功する。
+- [x] self-hosted parser で関数定義シグネチャの `*`（keyword-only 引数マーカー）を解釈可能にする。
+- [x] `*` 対応後、`selfhost/py2cpp.py` の EAST 生成が最後まで通ることを確認する。
+- [x] 関数定義シグネチャでの未対応要素（`/`, `*args`, `**kwargs`）の扱いを仕様化する（受理/拒否とエラーメッセージ）。
+- [x] `src/common/east.py` の対応箇所へ最小コメントを追加し、どのシグネチャ構文をサポートするか明記する。
+- [x] self_hosted parser の `STR` 解析で prefix 付き文字列（`f/r/b/u/rf/fr`）を正しく扱えるようにする。
+- [x] self_hosted parser の `f-string` を `JoinedStr/FormattedValue` に落とす（最低限 `{expr}` と `{{` `}}`）。

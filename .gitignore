@@ -6,22 +6,11 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 
-/test/test_gc
-/test/obj/
-/test/cpp/
-/test/cpp2/
-/test/cs/
-/test/go/
-/test/java/
-/test/js/
-/test/kotlin/
-/test/rs/
-/test/swift/
-/test/ts/
+/test/transpile/
 /sample/obj/
 /sample/out/
 
-/test/java/*.class
+/test/transpile/java/*.class
 /sample/java/*.class
 
 /east/

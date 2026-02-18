@@ -89,7 +89,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
 ## EAST 実装状況
 
 - `east/east.py`
-  - `test/py` 32/32, `sample/py` 16/16 を EAST 変換可能
+  - `test/fixtures/py` 32/32, `sample/py` 16/16 を EAST 変換可能
   - `range(...)` は `ForRange` / `RangeExpr` へ正規化され、生の `Call(Name("range"))` は後段へ渡さない
 - `east/py2cpp.py`
   - `sample/py` 16/16 を `変換 -> コンパイル -> 実行` まで通過

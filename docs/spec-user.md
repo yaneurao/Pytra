@@ -30,9 +30,9 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 
 ## 3. テストケース方針
 
-- 入力 Python は `test/py/` に配置します。
-- 言語別の変換結果は `test/cs/`, `test/cpp/`, `test/rs/`, `test/js/`, `test/ts/`, `test/go/`, `test/java/`, `test/swift/`, `test/kotlin/` に配置します。
-- 変換器都合で `test/py/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
+- 入力 Python は `test/fixtures/py/` に配置します。
+- 言語別の変換結果は `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/` に配置します。
+- 変換器都合で `test/fixtures/py/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
 - ケース命名は `caseXX_*` 形式を基本とします。
 
 ## 4. サンプルプログラム方針
@@ -51,14 +51,14 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 プロジェクトルート (`Pytra/`) で次を実行します。
 
 ```bash
-python -m unittest discover -s test -p "test_*.py" -v
+python -m unittest discover -s test/unit -p "test_*.py" -v
 ```
 
 ## 6. 利用時の注意
 
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
-- `test/obj/`, `test/cpp2/`, `sample/obj/`, `sample/out/` は生成物ディレクトリです。
+- `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/` は生成物ディレクトリです。
 - `src/py_module/` を使う Python サンプルは、必要に応じて `PYTHONPATH=src` を付与して実行します。
 
 ## 7. 関連ドキュメント
