@@ -1125,8 +1125,9 @@ class CppEmitter(CodeEmitter):
                                 static_field_defaults[fname] = self.render_expr(s.get("value"))
         self.current_class_static_fields.clear()
         for k in static_field_types.keys():
-            if isinstance(k, str):
-                self.current_class_static_fields.add(k)
+            k_name = self.any_to_str(k)
+            if k_name != "":
+                self.current_class_static_fields.add(k_name)
         instance_fields: dict[str, str] = {}
         for k, v in self.current_class_fields.items():
             if isinstance(k, str) and isinstance(v, str) and k not in self.current_class_static_fields:
