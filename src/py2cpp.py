@@ -15,6 +15,7 @@ from typing import Any
 
 from common.base_emitter import BaseEmitter
 from common.east import EastBuildError, convert_path, convert_source_to_east_with_backend
+from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
 
 CPP_HEADER = """#include "cpp_module/py_runtime.h"
 
@@ -2056,23 +2057,16 @@ def transpile_to_cpp(east_module: dict[str, Any], *, negative_index_mode: str = 
 def main(argv: list[str] | None = None) -> int:
     """CLI エントリポイント。変換実行と入出力を担当する。"""
     ap = argparse.ArgumentParser(description="Transpile Python/EAST to C++ via EAST")
-    ap.add_argument("input", help="Input .py or EAST .json")
-    ap.add_argument("-o", "--output", help="Output .cpp path")
-    ap.add_argument(
-        "--negative-index-mode",
-        choices=["always", "const_only", "off"],
-        help="Policy for Python-style negative indexing on list/str subscripts",
+    add_common_transpile_args(
+        ap,
+        enable_negative_index_mode=True,
+        parser_backends=["self_hosted"],
     )
-    ap.add_argument(
-        "--parser-backend",
-        choices=["self_hosted"],
-        help="EAST parser backend for .py input",
+    args = normalize_common_transpile_args(
+        ap.parse_args(argv),
+        default_negative_index_mode="const_only",
+        default_parser_backend="self_hosted",
     )
-    args = ap.parse_args(argv)
-    if not args.negative_index_mode:
-        args.negative_index_mode = "const_only"
-    if not args.parser_backend:
-        args.parser_backend = "self_hosted"
 
     input_path = Path(args.input)
     if not input_path.exists():
