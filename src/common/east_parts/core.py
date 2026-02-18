@@ -36,6 +36,7 @@ class EastBuildError(Exception):
     hint: str
 
     def to_payload(self) -> dict[str, Any]:
+        """例外情報を EAST エラー応答用 dict に整形する。"""
         return {
             "kind": self.kind,
             "message": self.message,
@@ -45,14 +46,16 @@ class EastBuildError(Exception):
 
 
 def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:
-    """Backward-compatible alias; self-hosted parser only."""
+    """後方互換用の入口。self-hosted パーサで EAST を生成する。"""
     return convert_source_to_east_self_hosted(source, filename)
 
 def _sh_span(line: int, col: int, end_col: int) -> dict[str, int]:
+    """self-hosted parser 用の source_span を生成する。"""
     return {"lineno": line, "col": col, "end_lineno": line, "end_col": end_col}
 
 
 def _sh_ann_to_type(ann: str) -> str:
+    """型注釈文字列を EAST 正規型へ変換する。"""
     mapping = {
         "int": "int64",
         "float": "float64",
@@ -90,6 +93,7 @@ def _sh_ann_to_type(ann: str) -> str:
 
 
 def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
+    """引数文字列をトップレベルのカンマで分割し、相対オフセットも返す。"""
     out: list[tuple[str, int]] = []
     depth = 0
     in_str: str | None = None
@@ -127,6 +131,8 @@ def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
 
 
 class _ShExprParser:
+    """self-hosted の式パーサ（再帰下降）。"""
+
     def __init__(
         self,
         text: str,
@@ -138,6 +144,7 @@ class _ShExprParser:
         class_method_return_types: dict[str, dict[str, str]] | None = None,
         class_base: dict[str, str | None] | None = None,
     ) -> None:
+        """式パースに必要な入力と型環境を初期化する。"""
         self.src = text
         self.line_no = line_no
         self.col_base = col_base
@@ -149,7 +156,9 @@ class _ShExprParser:
         self.pos = 0
 
     def _tokenize(self, text: str) -> list[dict[str, Any]]:
+        """式テキストを self-hosted 用トークン列へ変換する。"""
         def scan_string_token(start: int, quote_pos: int) -> int:
+            """文字列リテラルの終端位置を走査して返す。"""
             if quote_pos + 2 < len(text) and text[quote_pos : quote_pos + 3] in {"'''", '"""'}:
                 q3 = text[quote_pos : quote_pos + 3]
                 j = quote_pos + 3
@@ -269,9 +278,11 @@ class _ShExprParser:
         return out
 
     def _cur(self) -> dict[str, Any]:
+        """現在トークンを返す。"""
         return self.tokens[self.pos]
 
     def _eat(self, kind: str | None = None) -> dict[str, Any]:
+        """現在トークンを消費して返す。kind 指定時は一致を検証する。"""
         tok = self._cur()
         if kind is not None and tok["k"] != kind:
             raise EastBuildError(
@@ -284,17 +295,21 @@ class _ShExprParser:
         return tok
 
     def _node_span(self, s: int, e: int) -> dict[str, int]:
+        """式内相対位置をファイル基準の source_span へ変換する。"""
         return _sh_span(self.line_no, self.col_base + s, self.col_base + e)
 
     def _src_slice(self, s: int, e: int) -> str:
+        """元ソースから該当区間の repr 用文字列を取り出す。"""
         return self.src[s:e].strip()
 
     def parse(self) -> dict[str, Any]:
+        """式を最後まで解析し、EAST 式ノードを返す。"""
         node = self._parse_ifexp()
         self._eat("EOF")
         return node
 
     def _parse_lambda(self) -> dict[str, Any]:
+        """lambda 式を解析する。lambda でなければ次順位へ委譲する。"""
         tok = self._cur()
         if not (tok["k"] == "NAME" and tok["v"] == "lambda"):
             return self._parse_or()
@@ -353,6 +368,7 @@ class _ShExprParser:
         }
 
     def _callable_return_type(self, t: str) -> str:
+        """`callable[...]` 型文字列から戻り型だけを抽出する。"""
         if not (t.startswith("callable[") and t.endswith("]")):
             return "unknown"
         core = t[len("callable[") : -1]
@@ -363,6 +379,7 @@ class _ShExprParser:
         return out if out != "" else "unknown"
 
     def _parse_ifexp(self) -> dict[str, Any]:
+        """条件式 `a if cond else b` を解析する。"""
         body = self._parse_lambda()
         if self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
             self._eat("NAME")
@@ -395,6 +412,7 @@ class _ShExprParser:
         return body
 
     def _parse_or(self) -> dict[str, Any]:
+        """論理和（or）式を解析する。"""
         node = self._parse_and()
         values = [node]
         while self._cur()["k"] == "NAME" and self._cur()["v"] == "or":
@@ -416,6 +434,7 @@ class _ShExprParser:
         }
 
     def _parse_and(self) -> dict[str, Any]:
+        """論理積（and）式を解析する。"""
         node = self._parse_not()
         values = [node]
         while self._cur()["k"] == "NAME" and self._cur()["v"] == "and":
@@ -437,6 +456,7 @@ class _ShExprParser:
         }
 
     def _parse_not(self) -> dict[str, Any]:
+        """単項 not を解析する。"""
         tok = self._cur()
         if tok["k"] == "NAME" and tok["v"] == "not":
             self._eat("NAME")
@@ -456,6 +476,7 @@ class _ShExprParser:
         return self._parse_compare()
 
     def _parse_compare(self) -> dict[str, Any]:
+        """比較演算（連鎖比較含む）を解析する。"""
         node = self._parse_bitor()
         cmp_map = {"<": "Lt", "<=": "LtE", ">": "Gt", ">=": "GtE", "==": "Eq", "!=": "NotEq"}
         ops: list[str] = []
@@ -508,6 +529,7 @@ class _ShExprParser:
         }
 
     def _parse_bitor(self) -> dict[str, Any]:
+        """ビット OR を解析する。"""
         node = self._parse_bitxor()
         while self._cur()["k"] == "|":
             op_tok = self._eat()
@@ -516,6 +538,7 @@ class _ShExprParser:
         return node
 
     def _parse_bitxor(self) -> dict[str, Any]:
+        """ビット XOR を解析する。"""
         node = self._parse_bitand()
         while self._cur()["k"] == "^":
             op_tok = self._eat()
@@ -524,6 +547,7 @@ class _ShExprParser:
         return node
 
     def _parse_bitand(self) -> dict[str, Any]:
+        """ビット AND を解析する。"""
         node = self._parse_shift()
         while self._cur()["k"] == "&":
             op_tok = self._eat()
@@ -532,6 +556,7 @@ class _ShExprParser:
         return node
 
     def _parse_shift(self) -> dict[str, Any]:
+        """シフト演算を解析する。"""
         node = self._parse_addsub()
         while self._cur()["k"] in {"<<", ">>"}:
             op_tok = self._eat()
@@ -540,6 +565,7 @@ class _ShExprParser:
         return node
 
     def _parse_addsub(self) -> dict[str, Any]:
+        """加減算を解析する。"""
         node = self._parse_muldiv()
         while self._cur()["k"] in {"+", "-"}:
             op_tok = self._eat()
@@ -548,6 +574,7 @@ class _ShExprParser:
         return node
 
     def _parse_muldiv(self) -> dict[str, Any]:
+        """乗除算（`* / // %`）を解析する。"""
         node = self._parse_unary()
         while self._cur()["k"] in {"*", "/", "//", "%"}:
             op_tok = self._eat()
@@ -556,6 +583,7 @@ class _ShExprParser:
         return node
 
     def _parse_unary(self) -> dict[str, Any]:
+        """単項演算（`+` / `-`）を解析する。"""
         if self._cur()["k"] in {"+", "-"}:
             tok = self._eat()
             operand = self._parse_unary()
@@ -575,6 +603,7 @@ class _ShExprParser:
         return self._parse_postfix()
 
     def _lookup_method_return(self, cls_name: str, method: str) -> str:
+        """クラス継承を辿ってメソッド戻り型を解決する。"""
         cur: str | None = cls_name
         while cur is not None:
             methods = self.class_method_return_types.get(cur, {})
@@ -584,6 +613,7 @@ class _ShExprParser:
         return "unknown"
 
     def _split_generic_types(self, s: str) -> list[str]:
+        """ジェネリック型引数をトップレベルカンマで分割する。"""
         out: list[str] = []
         depth = 0
         start = 0
@@ -599,6 +629,7 @@ class _ShExprParser:
         return out
 
     def _split_union_types(self, s: str) -> list[str]:
+        """Union 型引数をトップレベル `|` で分割する。"""
         out: list[str] = []
         depth = 0
         start = 0
@@ -614,6 +645,7 @@ class _ShExprParser:
         return out
 
     def _is_forbidden_object_receiver_type(self, t: str) -> bool:
+        """object レシーバ禁止ルールに該当する型か判定する。"""
         s = t.strip()
         if s in {"object", "Any", "any"}:
             return True
@@ -623,6 +655,7 @@ class _ShExprParser:
         return False
 
     def _subscript_result_type(self, container_type: str) -> str:
+        """添字アクセスの結果型をコンテナ型から推論する。"""
         if container_type.startswith("list[") and container_type.endswith("]"):
             inner = container_type[5:-1].strip()
             return inner if inner != "" else "unknown"
@@ -638,6 +671,7 @@ class _ShExprParser:
         return "unknown"
 
     def _iter_item_type(self, iter_expr: dict[str, Any] | None) -> str:
+        """for 反復対象の要素型を推論する。"""
         if not isinstance(iter_expr, dict):
             return "unknown"
         t = str(iter_expr.get("resolved_type", "unknown"))
@@ -656,6 +690,7 @@ class _ShExprParser:
         return "unknown"
 
     def _parse_postfix(self) -> dict[str, Any]:
+        """属性参照・呼び出し・添字・スライスなど後置構文を解析する。"""
         node = self._parse_primary()
         while True:
             tok = self._cur()
@@ -979,6 +1014,7 @@ class _ShExprParser:
             return node
 
     def _parse_comp_target(self) -> dict[str, Any]:
+        """内包表現のターゲット（name / tuple）を解析する。"""
         if self._cur()["k"] == "NAME":
             nm = self._eat("NAME")
             t = self.name_types.get(str(nm["v"]), "unknown")
@@ -1019,6 +1055,7 @@ class _ShExprParser:
         )
 
     def _parse_call_arg_expr(self) -> dict[str, Any]:
+        """呼び出し引数式を解析し、必要なら generator 引数へ lower する。"""
         first = self._parse_ifexp()
         if not (self._cur()["k"] == "NAME" and self._cur()["v"] == "for"):
             return first
@@ -1053,6 +1090,7 @@ class _ShExprParser:
         }
 
     def _make_bin(self, left: dict[str, Any], op_sym: str, right: dict[str, Any]) -> dict[str, Any]:
+        """二項演算ノードを構築し、数値昇格 cast も付与する。"""
         op_map = {
             "+": "Add",
             "-": "Sub",
@@ -1108,6 +1146,7 @@ class _ShExprParser:
         }
 
     def _parse_primary(self) -> dict[str, Any]:
+        """リテラル・名前・括弧式などの primary 式を解析する。"""
         tok = self._cur()
         if tok["k"] == "INT":
             self._eat("INT")
@@ -1152,6 +1191,7 @@ class _ShExprParser:
                 values: list[dict[str, Any]] = []
 
                 def push_lit(segment: str) -> None:
+                    """f-string の生文字列片を values へ追加する。"""
                     lit = segment.replace("{{", "{").replace("}}", "}")
                     if lit == "":
                         return
@@ -1542,6 +1582,7 @@ def _sh_parse_expr(
     class_method_return_types: dict[str, dict[str, str]] | None = None,
     class_base: dict[str, str | None] | None = None,
 ) -> dict[str, Any]:
+    """1つの式文字列を self-hosted 方式で EAST 式ノードに変換する。"""
     txt = text.strip()
     if txt == "":
         raise EastBuildError(
@@ -1563,7 +1604,7 @@ def _sh_parse_expr(
 
 
 def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
-    """Self-hosted parser path for the growing EAST subset."""
+    """Python ソースを self-hosted パーサで EAST Module に変換する。"""
     lines = source.splitlines()
     leading_file_comments: list[str] = []
     leading_file_trivia: list[dict[str, Any]] = []
@@ -1581,6 +1622,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         break
 
     def parse_def_sig(ln_no: int, ln: str, *, in_class: str | None = None) -> dict[str, Any] | None:
+        """`def ...` 行から関数名・引数型・戻り型を抽出する。"""
         ln_norm = re.sub(r"\s+", " ", ln.strip())
         m_def = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", ln_norm)
         if m_def is None:
@@ -1665,6 +1707,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             depth: int,
             mode: str | None,
         ) -> tuple[int, str | None]:
+            """論理行マージ用に括弧深度と文字列モードを更新する。"""
             i = 0
             while i < len(txt):
                 if mode in {"'''", '"""'}:
@@ -1757,6 +1800,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             class_method_return_types[cur_cls][str(sig["name"])] = str(sig["ret"])
 
     def split_top_commas(txt: str) -> list[str]:
+        """文字列/括弧深度を考慮してトップレベルのカンマ分割を行う。"""
         out: list[str] = []
         depth = 0
         in_str: str | None = None
@@ -1791,6 +1835,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         return out
 
     def parse_expr(expr_txt: str, *, ln_no: int, col: int, name_types: dict[str, str]) -> dict[str, Any]:
+        """式文字列を EAST 式ノードへ変換する（簡易 lower を含む）。"""
         raw = expr_txt
         txt = raw.strip()
 
@@ -1808,6 +1853,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             )
 
         def split_top_keyword(text: str, kw: str) -> int:
+            """トップレベルでキーワード出現位置を探す（未検出なら -1）。"""
             depth = 0
             in_str: str | None = None
             esc = False
@@ -1936,6 +1982,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     return parse_expr(rewritten, ln_no=ln_no, col=col, name_types=dict(name_types))
 
         def split_top_plus(text: str) -> list[str]:
+            """トップレベルの `+` で式を分割する。"""
             out: list[str] = []
             depth = 0
             in_str: str | None = None
@@ -2232,6 +2279,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     }
 
                 def infer_item_type(node: dict[str, Any]) -> str:
+                    """dict リテラルのキー/値型推論に使う簡易型解決。"""
                     t = str(node.get("resolved_type", "unknown"))
                     if t == "range":
                         return "int64"
@@ -2401,6 +2449,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         )
 
     def parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
+        """インデントブロックを文単位で解析し、EAST 文リストを返す。"""
         body_lines, merged_line_end = merge_logical_lines(body_lines)
 
         stmts: list[dict[str, Any]] = []
@@ -2408,16 +2457,19 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         pending_blank_count = 0
 
         def block_end_span(start_ln: int, start_col: int, fallback_end_col: int, end_idx_exclusive: int) -> dict[str, int]:
+            """複数行文の終端まで含む source_span を生成する。"""
             if end_idx_exclusive > 0 and end_idx_exclusive - 1 < len(body_lines):
                 end_ln, end_txt = body_lines[end_idx_exclusive - 1]
                 return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": len(end_txt)}
             return _sh_span(start_ln, start_col, fallback_end_col)
 
         def stmt_span(start_ln: int, start_col: int, fallback_end_col: int) -> dict[str, int]:
+            """単文の source_span を論理行終端まで含めて生成する。"""
             end_ln, end_col = merged_line_end.get(start_ln, (start_ln, fallback_end_col))
             return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": end_col}
 
         def push_stmt(stmt: dict[str, Any]) -> None:
+            """保留中 trivia を付与して文リストへ追加する。"""
             nonlocal pending_blank_count
             if pending_blank_count > 0:
                 pending_leading_trivia.append({"kind": "blank", "count": pending_blank_count})
@@ -2431,6 +2483,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             stmts.append(stmt)
 
         def collect_indented_block(start: int, parent_indent: int) -> tuple[list[tuple[int, str]], int]:
+            """指定インデント配下のブロック行を収集する。"""
             out: list[tuple[int, str]] = []
             j = start
             while j < len(body_lines):
@@ -2456,6 +2509,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             return out, j
 
         def split_top_level_assign(text: str) -> tuple[str, str] | None:
+            """トップレベルの `=` を 1 つだけ持つ代入式を分割する。"""
             depth = 0
             in_str: str | None = None
             esc = False
@@ -2507,6 +2561,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             return None
 
         def strip_inline_comment(text: str) -> str:
+            """文字列リテラル外の末尾コメントを除去する。"""
             in_str: str | None = None
             esc = False
             for i, ch in enumerate(text):
@@ -2526,6 +2581,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             return text
 
         def split_top_level_from(text: str) -> tuple[str, str] | None:
+            """トップレベルの `for ... in ...` を target/iter に分解する。"""
             depth = 0
             in_str: str | None = None
             esc = False
@@ -2589,6 +2645,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
 
             if s.startswith("if ") and s.endswith(":"):
                 def parse_if_tail(start_idx: int, parent_indent: int) -> tuple[list[dict[str, Any]], int]:
+                    """if/elif/else 連鎖の後続ブロックを再帰的に解析する。"""
                     if start_idx >= len(body_lines):
                         return [], start_idx
                     t_no, t_ln = body_lines[start_idx]
@@ -3119,6 +3176,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         return stmts
 
     def extract_leading_docstring(stmts: list[dict[str, Any]]) -> tuple[str | None, list[dict[str, Any]]]:
+        """先頭文が docstring の場合に抽出し、残り文リストを返す。"""
         if len(stmts) == 0:
             return None, stmts
         first = stmts[0]
@@ -3540,6 +3598,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
 
 
 def convert_source_to_east_with_backend(source: str, filename: str, parser_backend: str = "self_hosted") -> dict[str, Any]:
+    """指定バックエンドでソースを EAST へ変換する統一入口。"""
     if parser_backend != "self_hosted":
         raise EastBuildError(
             kind="unsupported_syntax",
@@ -3551,6 +3610,6 @@ def convert_source_to_east_with_backend(source: str, filename: str, parser_backe
 
 
 def convert_path(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
-    """Read Python file and convert to EAST document."""
+    """Python ファイルを読み込み、EAST ドキュメントへ変換する。"""
     source = input_path.read_text(encoding="utf-8")
     return convert_source_to_east_with_backend(source, str(input_path), parser_backend=parser_backend)
