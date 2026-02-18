@@ -120,5 +120,12 @@
 - 更新（2026-02-18 selfhost 追加）:
   1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
-  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/py2cpp.compile.log` で `total_errors=233`）。
+  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（2026-02-18 再計測で `total_errors=211`）。
   4. 先頭エラー群は `emit_stmt`/`emit_stmt_list` の文リスト型、`render_boolop` 周辺の `Any` 取り回し、`self` 記号解決の C++ 生成不整合が中心。
+  5. 解析補助:
+     - `python3 tools/summarize_selfhost_errors.py selfhost/py2cpp.compile.log`
+     - `python3 tools/selfhost_error_hotspots.py selfhost/py2cpp.cpp selfhost/py2cpp.compile.log`
+  6. 2026-02-18 時点の上位ホットスポット（`selfhost_error_hotspots.py`）:
+     - `render_expr`: `72`
+     - `emit_class`: `17`
+     - `emit_assign`: `15`
