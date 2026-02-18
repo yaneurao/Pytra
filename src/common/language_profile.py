@@ -5,9 +5,9 @@ Loads JSON profile trees from src/profiles/<lang>/profile.json with include supp
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
+from pylib import json as py_json
 
 
 def _deep_merge(dst: dict[str, Any], src: dict[str, Any]) -> dict[str, Any]:
@@ -21,7 +21,7 @@ def _deep_merge(dst: dict[str, Any], src: dict[str, Any]) -> dict[str, Any]:
 
 
 def _load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = py_json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise RuntimeError(f"profile json root must be object: {path}")
     return payload

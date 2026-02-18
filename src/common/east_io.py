@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
 from common.east import EastBuildError, convert_path, convert_source_to_east_with_backend
+from pylib import json as py_json
 
 
 def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
@@ -36,7 +36,7 @@ def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
 def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     if input_path.suffix == ".json":
-        payload = json.loads(input_path.read_text(encoding="utf-8"))
+        payload = py_json.loads(input_path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
             raise RuntimeError("Invalid EAST JSON payload")
         if payload.get("ok") is False:
@@ -94,4 +94,3 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
         if not has_stmt_leading_trivia:
             east["module_leading_trivia"] = extract_module_leading_trivia(source_text)
     return east
-
