@@ -1544,36 +1544,70 @@ class CppEmitter(CodeEmitter):
                 loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
                 return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
         if fn.get("kind") == "Attribute":
-            owner = fn.get("value")
-            owner_t = self.get_expr_type(owner)
-            owner_expr = self.render_expr(owner)
-            if isinstance(owner, dict) and owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                owner_expr = f"({owner_expr})"
-            owner_mod = self._resolve_imported_module_name(owner_expr)
-            attr = fn.get("attr")
-            if isinstance(attr, str):
-                owner_map = self.module_attr_call_map.get(owner_mod)
-                if isinstance(owner_map, dict):
-                    runtime_call = owner_map.get(attr)
-                    if isinstance(runtime_call, str):
-                        return f"{runtime_call}({', '.join(args)})"
-            if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
-                return f"png_helper::write_rgb_png({', '.join(args)})"
-            if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
-                path = args[0] if len(args) >= 1 else '""'
-                w = args[1] if len(args) >= 2 else "0"
-                h = args[2] if len(args) >= 3 else "0"
-                frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
-                palette = args[4] if len(args) >= 5 else "grayscale_palette()"
-                if palette in {"nullptr", "std::nullopt"}:
-                    palette = "grayscale_palette()"
-                delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
-                loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
-                return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
-            if owner_t == "unknown":
-                if attr == "clear":
-                    return f"{owner_expr}.clear()"
+            attr_rendered = self._render_call_attribute(expr, fn, args, kw)
+            if isinstance(attr_rendered, str) and attr_rendered != "":
+                return attr_rendered
         return None
+
+    def _render_call_module_method(
+        self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
+    ) -> str | None:
+        """module.method(...) 呼び出しを処理する。"""
+        owner_map = self.module_attr_call_map.get(owner_mod)
+        if isinstance(owner_map, dict):
+            runtime_call = owner_map.get(attr)
+            if isinstance(runtime_call, str):
+                return f"{runtime_call}({', '.join(args)})"
+        if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
+            return f"png_helper::write_rgb_png({', '.join(args)})"
+        if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
+            path = args[0] if len(args) >= 1 else '""'
+            w = args[1] if len(args) >= 2 else "0"
+            h = args[2] if len(args) >= 3 else "0"
+            frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
+            palette = args[4] if len(args) >= 5 else "grayscale_palette()"
+            if palette in {"nullptr", "std::nullopt"}:
+                palette = "grayscale_palette()"
+            delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
+            loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
+            return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
+        return None
+
+    def _render_call_object_method(self, owner_t: str, owner_expr: str, attr: str) -> str | None:
+        """obj.method(...) 呼び出しのうち、型依存の特殊ケースを処理する。"""
+        if owner_t == "unknown" and attr == "clear":
+            return f"{owner_expr}.clear()"
+        return None
+
+    def _render_call_attribute(
+        self,
+        expr: dict[str, Any],
+        fn: dict[str, Any],
+        args: list[str],
+        kw: dict[str, str],
+    ) -> str | None:
+        """Attribute 形式の呼び出しを module/object/fallback の順で処理する。"""
+        owner = fn.get("value")
+        owner_t = self.get_expr_type(owner)
+        owner_expr = self.render_expr(owner)
+        if isinstance(owner, dict) and owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            owner_expr = f"({owner_expr})"
+        owner_mod = self._resolve_imported_module_name(owner_expr)
+        attr_raw = fn.get("attr")
+        attr = attr_raw if isinstance(attr_raw, str) else ""
+        if attr == "":
+            return None
+        module_rendered = self._render_call_module_method(owner_mod, attr, args, kw)
+        if isinstance(module_rendered, str) and module_rendered != "":
+            return module_rendered
+        object_rendered = self._render_call_object_method(owner_t, owner_expr, attr)
+        if isinstance(object_rendered, str) and object_rendered != "":
+            return object_rendered
+        return None
+
+    def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
+        """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
+        return f"{fn_name}({', '.join(args)})"
 
     def _prepare_call_parts(
         self,
@@ -1824,7 +1858,7 @@ class CppEmitter(CodeEmitter):
             name_or_attr = self._render_call_name_or_attr(expr, fn, fn_name, args, kw, arg_nodes, first_arg)
             if isinstance(name_or_attr, str) and name_or_attr != "":
                 return name_or_attr
-            return f"{fn_name}({', '.join(args)})"
+            return self._render_call_fallback(fn_name, args)
         if kind == "RangeExpr":
             start = self.render_expr(expr.get("start"))
             stop = self.render_expr(expr.get("stop"))
