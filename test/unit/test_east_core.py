@@ -129,6 +129,38 @@ if __name__ == "__main__":
         )
         self.assertTrue(has_for_range)
 
+    def test_super_call_is_parsed(self) -> None:
+        src = """
+class Base:
+    def __init__(self) -> None:
+        self.x: int = 1
+
+class Child(Base):
+    def __init__(self) -> None:
+        super().__init__()
+        self.x += 1
+
+def main() -> None:
+    c: Child = Child()
+    print(c.x)
+
+if __name__ == "__main__":
+    main()
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        calls = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Call"]
+        has_super = any(
+            isinstance(c.get("func"), dict)
+            and c.get("func", {}).get("kind") == "Attribute"
+            and isinstance(c.get("func", {}).get("value"), dict)
+            and c.get("func", {}).get("value", {}).get("kind") == "Call"
+            and isinstance(c.get("func", {}).get("value", {}).get("func"), dict)
+            and c.get("func", {}).get("value", {}).get("func", {}).get("kind") == "Name"
+            and c.get("func", {}).get("value", {}).get("func", {}).get("id") == "super"
+            for c in calls
+        )
+        self.assertTrue(has_super)
+
 
 if __name__ == "__main__":
     unittest.main()

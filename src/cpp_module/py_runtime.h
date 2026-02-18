@@ -289,6 +289,36 @@ static inline object make_object(uint16 v) { return object_new<PyIntObj>(static_
 static inline object make_object(int8 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
 static inline object make_object(uint8 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
 
+static inline object make_object(const std::any& v) {
+    if (!v.has_value()) return object();
+    if (const auto* p = std::any_cast<object>(&v)) return *p;
+    if (const auto* p = std::any_cast<str>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<const char*>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<bool>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<float64>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<float32>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<int64>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<uint64>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<int32>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<uint32>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<int16>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<uint16>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<int8>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<uint8>(&v)) return make_object(*p);
+    if (const auto* p = std::any_cast<list<std::any>>(&v)) {
+        list<object> out{};
+        out.reserve(p->size());
+        for (const auto& e : *p) out.append(make_object(e));
+        return object_new<PyListObj>(out);
+    }
+    if (const auto* p = std::any_cast<dict<str, std::any>>(&v)) {
+        dict<str, object> out{};
+        for (const auto& kv : *p) out[kv.first] = make_object(kv.second);
+        return object_new<PyDictObj>(out);
+    }
+    return object();
+}
+
 template <class T>
 static inline object make_object(const list<T>& values) {
     list<object> out;

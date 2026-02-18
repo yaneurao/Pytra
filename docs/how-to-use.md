@@ -194,10 +194,10 @@ python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp
 
 # 2) 生成 C++ をコンパイル
 g++ -std=c++20 -O2 -I src selfhost/py2cpp.cpp -o selfhost/py2cpp.out \
-  2> selfhost/build.stderr.log
+  > selfhost/build.all.log 2>&1
 
 # 3) ビルドエラーをカテゴリ確認
-rg "error:" selfhost/build.stderr.log
+rg "error:" selfhost/build.all.log
 ```
 
 コンパイル成功時の比較手順:
@@ -215,7 +215,7 @@ diff -u test/transpile/cpp/01_mandelbrot.cpp test/transpile/cpp2/01_mandelbrot.c
 ```
 
 失敗時の確認ポイント:
-- `build.stderr.log` の `error:` を先に分類し、型系（`std::any` / `optional`）と構文系（未lowering）を分ける。
+- `build.all.log` の `error:` を先に分類し、型系（`std::any` / `optional`）と構文系（未lowering）を分ける。
 - `selfhost/py2cpp.cpp` の該当行に対して、元の `src/py2cpp.py` の記述が `Any` 混在を増やしていないか確認する。
 - `selfhost/py2cpp.py` が古い場合があるため、毎回 `cp src/py2cpp.py selfhost/py2cpp.py` を先に実行する。
 

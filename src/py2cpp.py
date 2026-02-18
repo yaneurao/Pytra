@@ -14,7 +14,122 @@ import sys
 from typing import Any
 
 from common.east import EastBuildError, convert_path, convert_source_to_east_with_backend
-from common.base_emitter import BaseEmitter
+
+
+class BaseEmitter:
+    def __init__(self, east_doc: dict[str, Any]) -> None:
+        self.doc = east_doc
+        self.lines: list[str] = []
+        self.indent = 0
+        self.tmp_id = 0
+
+    def emit(self, line: str = "") -> None:
+        self.lines.append(("    " * self.indent) + line)
+
+    def emit_stmt_list(self, stmts: list[Any]) -> None:
+        for stmt in stmts:
+            self.emit_stmt(stmt)  # type: ignore[attr-defined]
+
+    def next_tmp(self, prefix: str = "__tmp") -> str:
+        self.tmp_id += 1
+        return f"{prefix}_{self.tmp_id}"
+
+    def any_dict_get(self, obj: Any, key: str, default_value: Any) -> Any:
+        if isinstance(obj, dict):
+            return obj.get(key, default_value)
+        return default_value
+
+    def get_expr_type(self, expr: Any) -> str:
+        if expr is None or not isinstance(expr, dict):
+            return ""
+        t = expr.get("resolved_type")
+        return t if isinstance(t, str) else ""
+
+    def is_name(self, node: Any, name: str | None = None) -> bool:
+        if not isinstance(node, dict) or node.get("kind") != "Name":
+            return False
+        if name is None:
+            return True
+        return str(node.get("id", "")) == name
+
+    def is_call(self, node: Any) -> bool:
+        return isinstance(node, dict) and node.get("kind") == "Call"
+
+    def is_attr(self, node: Any, attr: str | None = None) -> bool:
+        if not isinstance(node, dict) or node.get("kind") != "Attribute":
+            return False
+        if attr is None:
+            return True
+        return str(node.get("attr", "")) == attr
+
+    def split_generic(self, s: str) -> list[str]:
+        if s == "":
+            return []
+        out: list[str] = []
+        depth = 0
+        start = 0
+        for i, ch in enumerate(s):
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                out.append(s[start:i].strip())
+                start = i + 1
+        out.append(s[start:].strip())
+        return out
+
+    def split_union(self, s: str) -> list[str]:
+        out: list[str] = []
+        depth = 0
+        start = 0
+        for i, ch in enumerate(s):
+            if ch in {"[", "("}:
+                depth += 1
+            elif ch in {"]", ")"}:
+                depth -= 1
+            elif ch == "|" and depth == 0:
+                part = s[start:i].strip()
+                if part != "":
+                    out.append(part)
+                start = i + 1
+        tail = s[start:].strip()
+        if tail != "":
+            out.append(tail)
+        return out
+
+    def normalize_type_name(self, t: Any) -> str:
+        if not isinstance(t, str):
+            return ""
+        s = str(t)
+        if s == "any":
+            return "Any"
+        if s == "object":
+            return "object"
+        return s
+
+    def is_any_like_type(self, t: Any) -> bool:
+        s = self.normalize_type_name(t)
+        if s == "":
+            return False
+        if s in {"Any", "object", "unknown"}:
+            return True
+        if "|" in s:
+            parts = self.split_union(s)
+            return any(self.is_any_like_type(p) for p in parts if p != "None")
+        return False
+
+    def is_list_type(self, t: Any) -> bool:
+        return isinstance(t, str) and t.startswith("list[")
+
+    def is_set_type(self, t: Any) -> bool:
+        return isinstance(t, str) and t.startswith("set[")
+
+    def is_dict_type(self, t: Any) -> bool:
+        return isinstance(t, str) and t.startswith("dict[")
+
+    def is_indexable_sequence_type(self, t: Any) -> bool:
+        return isinstance(t, str) and (t.startswith("list[") or t in {"str", "bytes", "bytearray"})
 
 
 CPP_HEADER = """#include "cpp_module/py_runtime.h"
@@ -103,7 +218,7 @@ def cpp_string_lit(s: str) -> str:
 
 class CppEmitter(BaseEmitter):
     def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
-        super().__init__(east_doc)
+        BaseEmitter.__init__(self, east_doc)
         self.negative_index_mode = negative_index_mode
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
@@ -193,6 +308,26 @@ class CppEmitter(BaseEmitter):
                     except ValueError:
                         return False
         return False
+
+    def _is_redundant_super_init_call(self, expr: Any) -> bool:
+        if not isinstance(expr, dict) or expr.get("kind") != "Call":
+            return False
+        func = expr.get("func")
+        if not isinstance(func, dict) or func.get("kind") != "Attribute":
+            return False
+        if str(func.get("attr", "")) != "__init__":
+            return False
+        owner = func.get("value")
+        if not isinstance(owner, dict) or owner.get("kind") != "Call":
+            return False
+        owner_func = owner.get("func")
+        if not isinstance(owner_func, dict) or owner_func.get("kind") != "Name":
+            return False
+        if str(owner_func.get("id", "")) != "super":
+            return False
+        args = expr.get("args")
+        kws = expr.get("keywords")
+        return isinstance(args, list) and len(args) == 0 and isinstance(kws, list) and len(kws) == 0
 
     def transpile(self) -> str:
         body: list[dict[str, Any]] = []
@@ -510,6 +645,8 @@ class CppEmitter(BaseEmitter):
             value = value_raw if isinstance(value_raw, dict) else None
             if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
                 self.emit_block_comment(str(value.get("value")))
+            elif self._is_redundant_super_init_call(value):
+                self.emit("/* super().__init__ omitted: base ctor is called implicitly */")
             else:
                 self.emit_bridge_comment(value)
                 rendered = self.render_expr(value)

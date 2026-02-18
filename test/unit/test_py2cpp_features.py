@@ -252,6 +252,12 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_super_init_runtime(self) -> None:
+        out = self._compile_and_run_fixture("super_init")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
 
 if __name__ == "__main__":
     unittest.main()
