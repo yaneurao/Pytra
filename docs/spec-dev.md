@@ -87,6 +87,25 @@
 4. セルフホスティング検証時は自己変換実行ファイルで `test/fixtures/py` -> `test/transpile/cpp2` を生成
 5. `test/transpile/cpp` と `test/transpile/cpp2` の一致を確認
 
+### 4.1 selfhost 検証のゴール条件
+
+- 必須条件:
+  - `selfhost/py2cpp.py` から生成した `selfhost/py2cpp.cpp` がコンパイル成功する。
+  - その実行ファイルで `sample/py/01_mandelbrot.py` を C++ へ変換できる。
+- 推奨確認:
+  - `src/py2cpp.py` 生成版と `selfhost` 生成版の C++ ソース差分を確認する（差分自体は許容）。
+  - 変換後 C++ をコンパイル・実行し、Python 実行結果と一致することを確認する。
+
+### 4.2 一致判定条件（selfhost / 通常比較）
+
+- ソース一致:
+  - 生成 C++ の全文一致は「参考指標」であり、必須条件ではない。
+- 実行一致:
+  - 同じ入力に対して、Python 実行結果と生成 C++ 実行結果が一致することを必須とする。
+- 画像一致:
+  - PNG は raw scanline（復号後画素）一致を優先する。
+  - PPM 出力を使う場合はファイルバイト列一致でも比較可能。
+
 ## 5. EASTベース C++ 経路
 
 - `east/east.py`: Python AST -> EAST JSON

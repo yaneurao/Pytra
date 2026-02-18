@@ -5,8 +5,8 @@
 - [x] `test/fixtures/py` にシグネチャ構文テストを追加する（`*` を含むケース、拒否すべきケース）。
 - [ ] `selfhost/py2cpp.py` のトランスパイルが通ったら、`selfhost/py2cpp.cpp` のコンパイルまで確認する。
 - [ ] `selfhost/py2cpp.cpp` 実行で `sample/py/01` を変換させ、`src/py2cpp.py` の生成結果と一致比較する。
-- [ ] 一致条件を定義する（C++ソース全文一致か、コンパイル可能性＋実行結果一致か）を `docs/spec-dev.md` に追記する。
-- [ ] selfhost手順を `docs/how-to-use.md` に追記する（前提、コマンド、失敗時の確認ポイント）。
+- [x] 一致条件を定義する（C++ソース全文一致か、コンパイル可能性＋実行結果一致か）を `docs/spec-dev.md` に追記する。
+- [x] selfhost手順を `docs/how-to-use.md` に追記する（前提、コマンド、失敗時の確認ポイント）。
 
 ### selfhost C++コンパイル段階の未解決（2026-02-18）
 
@@ -56,8 +56,8 @@
 
 #### G. 検証フローの固定
 
-- [ ] selfhost 用の固定コマンド列（EAST生成 -> C++生成 -> g++コンパイル）を `docs/how-to-use.md` に追記する。
-- [ ] ビルドエラーをカテゴリ別に出す簡易チェックコマンド（`rg "error:"`）を手順に含める。
-- [ ] `selfhost/py2cpp.cpp` がコンパイル成功することをゴール条件に明記する。
-- [ ] `selfhost` 実行で `sample/py/01` を変換し、`src/py2cpp.py` 生成結果と比較する検証手順を追記する。
-- [ ] 一致判定条件（ソース一致 / 実行一致 / 画像一致）を `docs/spec-dev.md` に明記する。
+- [x] selfhost 用の固定コマンド列（EAST生成 -> C++生成 -> g++コンパイル）を `docs/how-to-use.md` に追記する。
+- [x] ビルドエラーをカテゴリ別に出す簡易チェックコマンド（`rg "error:"`）を手順に含める。
+- [x] `selfhost/py2cpp.cpp` がコンパイル成功することをゴール条件に明記する。
+- [x] `selfhost` 実行で `sample/py/01` を変換し、`src/py2cpp.py` 生成結果と比較する検証手順を追記する。
+- [x] 一致判定条件（ソース一致 / 実行一致 / 画像一致）を `docs/spec-dev.md` に明記する。

@@ -178,6 +178,47 @@ g++ -std=c++17 -O2 -I . -I src east/sample/cpp/01_mandelbrot.cpp \
 
 </details>
 
+## selfhost 検証手順（`py2cpp.py` -> `py2cpp.cpp`）
+
+前提:
+- プロジェクトルートで実行する。
+- `g++` が使えること。
+- `selfhost/` は検証用の作業ディレクトリ（Git管理外）として扱う。
+
+```bash
+# 0) 入力となる selfhost ソースを最新化
+cp src/py2cpp.py selfhost/py2cpp.py
+
+# 1) Python 版 py2cpp で selfhost 用 C++ を生成
+python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp
+
+# 2) 生成 C++ をコンパイル
+g++ -std=c++20 -O2 -I src selfhost/py2cpp.cpp -o selfhost/py2cpp.out \
+  2> selfhost/build.stderr.log
+
+# 3) ビルドエラーをカテゴリ確認
+rg "error:" selfhost/build.stderr.log
+```
+
+コンパイル成功時の比較手順:
+
+```bash
+# 4) selfhost 実行ファイルで sample/py/01 を変換
+mkdir -p test/transpile/cpp2
+./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp
+
+# 5) Python 版 py2cpp でも同じ入力を変換
+python3 src/py2cpp.py sample/py/01_mandelbrot.py -o test/transpile/cpp/01_mandelbrot.cpp
+
+# 6) 生成差分を確認（ソース差分は許容、まずは確認用）
+diff -u test/transpile/cpp/01_mandelbrot.cpp test/transpile/cpp2/01_mandelbrot.cpp || true
+```
+
+失敗時の確認ポイント:
+- `build.stderr.log` の `error:` を先に分類し、型系（`std::any` / `optional`）と構文系（未lowering）を分ける。
+- `selfhost/py2cpp.cpp` の該当行に対して、元の `src/py2cpp.py` の記述が `Any` 混在を増やしていないか確認する。
+- `selfhost/py2cpp.py` が古い場合があるため、毎回 `cp src/py2cpp.py selfhost/py2cpp.py` を先に実行する。
+
 ## 共通の制約と注意点
 
 Pytra は Python のサブセットを対象とします。通常の Python コードとして実行できる入力でも、未対応構文を含む場合は変換時に失敗します。
