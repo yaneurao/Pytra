@@ -10,7 +10,7 @@ from __future__ import annotations
 from pylib.typing import Any
 
 from common.code_emitter import CodeEmitter
-from pylib.east_io import load_east_from_path
+from pylib.east_io import UserFacingError, load_east_from_path
 from common.language_profile import load_language_profile
 from pylib.pathlib import Path
 from pylib import sys
@@ -1657,9 +1657,10 @@ class CppEmitter(CodeEmitter):
 
     def _render_unary_expr(self, expr: dict[str, Any]) -> str:
         """UnaryOp ノードを C++ 式へ変換する。"""
-        operand_expr = self.any_to_dict_or_empty(expr.get("operand"))
-        operand = self.render_expr(operand_expr)
-        op = expr.get("op")
+        operand_obj: object = expr.get("operand")
+        operand_expr = self.any_to_dict_or_empty(operand_obj)
+        operand = self.render_expr(operand_obj)
+        op = self.any_to_str(expr.get("op"))
         if op == "Not":
             if len(operand_expr) > 0 and operand_expr.get("kind") == "Compare":
                 if operand_expr.get("lowered_kind") == "Contains":
@@ -1670,16 +1671,17 @@ class CppEmitter(CodeEmitter):
                     if ctype.startswith("dict["):
                         return f"{container}.find({key}) == {container}.end()"
                     return f"std::find({container}.begin(), {container}.end(), {key}) == {container}.end()"
-                ops_raw = self.any_to_list(operand_expr.get("ops", []))
+                ops_raw = self.any_to_list(operand_expr.get("ops"))
                 ops: list[str] = []
                 for op_item in ops_raw:
                     op_txt = self.any_to_str(op_item)
                     if op_txt != "":
                         ops.append(op_txt)
-                cmps = self._dict_stmt_list(operand_expr.get("comparators", []))
+                cmps = self._dict_stmt_list(operand_expr.get("comparators"))
                 if len(ops) == 1 and len(cmps) == 1:
                     left = self.render_expr(operand_expr.get("left"))
-                    rhs = self.render_expr(cmps[0])
+                    rhs_node0: object = cmps[0]
+                    rhs = self.render_expr(rhs_node0)
                     op0 = ops[0]
                     inv = {
                         "Eq": "!=",
@@ -1694,7 +1696,7 @@ class CppEmitter(CodeEmitter):
                     if op0 in inv:
                         return f"{left} {inv[op0]} {rhs}"
                     if op0 in {"In", "NotIn"}:
-                        rhs_type0 = self.get_expr_type(cmps[0])
+                        rhs_type0 = self.get_expr_type(rhs_node0)
                         rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
                         found = ""
                         if rhs_type.startswith("dict["):
@@ -1725,20 +1727,20 @@ class CppEmitter(CodeEmitter):
                 return f"!({base})"
             return base
         left = self.render_expr(expr.get("left"))
-        ops_raw = self.any_to_list(expr.get("ops", []))
+        ops_raw = self.any_to_list(expr.get("ops"))
         ops: list[str] = []
         for op_item in ops_raw:
             op_txt = self.any_to_str(op_item)
             if op_txt != "":
                 ops.append(op_txt)
-        cmps = self._dict_stmt_list(expr.get("comparators", []))
+        cmps = self._dict_stmt_list(expr.get("comparators"))
         parts: list[str] = []
         cur = left
         cur_node: object = expr.get("left")
         for i, op in enumerate(ops):
             rhs_node: object = cmps[i] if i < len(cmps) else {}
             rhs = self.render_expr(rhs_node)
-            op_name = self.any_to_str(op)
+            op_name = op
             cop = "=="
             if op_name in CMP_OPS:
                 cop = CMP_OPS[op_name]
@@ -1783,10 +1785,11 @@ class CppEmitter(CodeEmitter):
             lo = self.render_expr(expr.get("lower")) if expr.get("lower") is not None else "0"
             up = self.render_expr(expr.get("upper")) if expr.get("upper") is not None else f"py_len({val})"
             return f"py_slice({val}, {lo}, {up})"
-        sl = expr.get("slice")
-        if isinstance(sl, dict) and sl.get("kind") == "Slice":
-            lo = self.render_expr(sl.get("lower")) if sl.get("lower") is not None else "0"
-            up = self.render_expr(sl.get("upper")) if sl.get("upper") is not None else f"py_len({val})"
+        sl: object = expr.get("slice")
+        sl_node = self.any_to_dict_or_empty(sl)
+        if len(sl_node) > 0 and sl_node.get("kind") == "Slice":
+            lo = self.render_expr(sl_node.get("lower")) if sl_node.get("lower") is not None else "0"
+            up = self.render_expr(sl_node.get("upper")) if sl_node.get("upper") is not None else f"py_len({val})"
             return f"py_slice({val}, {lo}, {up})"
         idx = self.render_expr(sl)
         if val_ty.startswith("dict["):
@@ -1806,11 +1809,11 @@ class CppEmitter(CodeEmitter):
         expr_node = self.any_to_dict(expr)
         if expr_node is None:
             return "/* none */"
-        expr = expr_node
-        kind = expr.get("kind")
+        expr_d = expr_node
+        kind = expr_d.get("kind")
 
         if kind == "Name":
-            name = str(expr.get("id", "_"))
+            name = str(expr_d.get("id", "_"))
             if name in self.renamed_symbols:
                 return self.renamed_symbols[name]
             if name in self.reserved_words:
@@ -1819,17 +1822,17 @@ class CppEmitter(CodeEmitter):
                 return renamed
             return name
         if kind == "Constant":
-            v = expr.get("value")
+            v = expr_d.get("value")
             if isinstance(v, bool):
                 return "true" if str(v) == "True" else "false"
             if v is None:
-                t = self.get_expr_type(expr)
+                t = self.get_expr_type(expr_d)
                 if self.is_any_like_type(t):
                     return "object{}"
                 return "std::nullopt"
             if isinstance(v, str):
-                if self.get_expr_type(expr) == "bytes":
-                    raw = expr.get("repr")
+                if self.get_expr_type(expr_d) == "bytes":
+                    raw = expr_d.get("repr")
                     if isinstance(raw, str):
                         qpos = -1
                         i = 0
@@ -1844,16 +1847,16 @@ class CppEmitter(CodeEmitter):
                 return cpp_string_lit(v)
             return str(v)
         if kind == "Attribute":
-            owner_t = self.get_expr_type(expr.get("value"))
+            owner_t = self.get_expr_type(expr_d.get("value"))
             if self.is_forbidden_object_receiver_type(owner_t):
                 raise RuntimeError(
                     "object receiver attribute access is forbidden by language constraints"
                 )
-            base = self.render_expr(expr.get("value"))
-            base_node = expr.get("value")
+            base = self.render_expr(expr_d.get("value"))
+            base_node = expr_d.get("value")
             if isinstance(base_node, dict) and base_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 base = f"({base})"
-            attr = expr.get("attr", "")
+            attr = expr_d.get("attr", "")
             if base == "self":
                 if self.current_class_name is not None and str(attr) in self.current_class_static_fields:
                     return f"{self.current_class_name}::{attr}"
@@ -1868,7 +1871,7 @@ class CppEmitter(CodeEmitter):
                     return "py_math::pi"
                 if attr == "e":
                     return "py_math::e"
-            bt = self.get_expr_type(expr.get("value"))
+            bt = self.get_expr_type(expr_d.get("value"))
             if bt in self.ref_classes:
                 return f"{base}->{attr}"
             if bt == "Path":
@@ -1880,7 +1883,7 @@ class CppEmitter(CodeEmitter):
                     return f"{base}.parent()"
             return f"{base}.{attr}"
         if kind == "Call":
-            call_parts = self._prepare_call_parts(expr)
+            call_parts = self._prepare_call_parts(expr_d)
             fn = self.any_to_dict_or_empty(call_parts.get("fn"))
             fn_name = self.any_to_str(call_parts.get("fn_name"))
             arg_nodes = self.any_to_list(call_parts.get("arg_nodes"))
@@ -1904,8 +1907,8 @@ class CppEmitter(CodeEmitter):
                 hook_call_txt = str(hook_call)
             if hook_call_txt != "":
                 return hook_call_txt
-            if expr.get("lowered_kind") == "BuiltinCall":
-                builtin_rendered = self._render_builtin_call(expr, fn, args, kw, first_arg)
+            if expr_d.get("lowered_kind") == "BuiltinCall":
+                builtin_rendered = self._render_builtin_call(expr_d, fn, args, kw, first_arg)
                 if isinstance(builtin_rendered, str):
                     return str(builtin_rendered)
             name_or_attr = self._render_call_name_or_attr(expr, fn, fn_name, args, kw, arg_nodes, first_arg)
@@ -1913,37 +1916,37 @@ class CppEmitter(CodeEmitter):
                 return name_or_attr
             return self._render_call_fallback(fn_name, args)
         if kind == "RangeExpr":
-            start = self.render_expr(expr.get("start"))
-            stop = self.render_expr(expr.get("stop"))
-            step = self.render_expr(expr.get("step"))
+            start = self.render_expr(expr_d.get("start"))
+            stop = self.render_expr(expr_d.get("stop"))
+            step = self.render_expr(expr_d.get("step"))
             return f"py_range({start}, {stop}, {step})"
         if kind == "BinOp":
-            return self._render_binop_expr(expr)
+            return self._render_binop_expr(expr_d)
         if kind == "UnaryOp":
-            return self._render_unary_expr(expr)
+            return self._render_unary_expr(expr_d)
         if kind == "BoolOp":
-            return self.render_boolop(expr, False)
+            return self.render_boolop(expr_d, False)
         if kind == "Compare":
-            return self._render_compare_expr(expr)
+            return self._render_compare_expr(expr_d)
         if kind == "IfExp":
-            body = self.render_expr(expr.get("body"))
-            orelse = self.render_expr(expr.get("orelse"))
-            for c in expr.get("casts", []):
+            body = self.render_expr(expr_d.get("body"))
+            orelse = self.render_expr(expr_d.get("orelse"))
+            for c in expr_d.get("casts", []):
                 on = c.get("on")
                 to_t = c.get("to")
                 if on == "body":
                     body = self.apply_cast(body, to_t)
                 elif on == "orelse":
                     orelse = self.apply_cast(orelse, to_t)
-            return f"({self.render_expr(expr.get('test'))} ? {body} : {orelse})"
+            return f"({self.render_expr(expr_d.get('test'))} ? {body} : {orelse})"
         if kind == "List":
-            t = self.cpp_type(expr.get("resolved_type"))
+            t = self.cpp_type(expr_d.get("resolved_type"))
             elem_t = ""
-            rt = self.get_expr_type(expr)
+            rt = self.get_expr_type(expr_d)
             if isinstance(rt, str) and rt.startswith("list[") and rt.endswith("]"):
                 elem_t = rt[5:-1].strip()
             parts: list[str] = []
-            for e in expr.get("elements", []):
+            for e in expr_d.get("elements", []):
                 rv = self.render_expr(e)
                 if self.is_any_like_type(elem_t):
                     rv = f"make_object({rv})"
@@ -1951,24 +1954,24 @@ class CppEmitter(CodeEmitter):
             items = ", ".join(parts)
             return f"{t}{{{items}}}"
         if kind == "Tuple":
-            items = ", ".join(self.render_expr(e) for e in expr.get("elements", []))
+            items = ", ".join(self.render_expr(e) for e in expr_d.get("elements", []))
             return f"std::make_tuple({items})"
         if kind == "Set":
-            t = self.cpp_type(expr.get("resolved_type"))
-            items = ", ".join(self.render_expr(e) for e in expr.get("elements", []))
+            t = self.cpp_type(expr_d.get("resolved_type"))
+            items = ", ".join(self.render_expr(e) for e in expr_d.get("elements", []))
             return f"{t}{{{items}}}"
         if kind == "Dict":
-            t = self.cpp_type(expr.get("resolved_type"))
+            t = self.cpp_type(expr_d.get("resolved_type"))
             items: list[str] = []
             key_t = ""
             val_t = ""
-            rt = self.get_expr_type(expr)
+            rt = self.get_expr_type(expr_d)
             if isinstance(rt, str) and rt.startswith("dict[") and rt.endswith("]"):
                 inner = self.split_generic(rt[5:-1])
                 if len(inner) == 2:
                     key_t = inner[0]
                     val_t = inner[1]
-            for kv in expr.get("entries", []):
+            for kv in expr_d.get("entries", []):
                 k = self.render_expr(kv.get("key"))
                 v = self.render_expr(kv.get("value"))
                 if self.is_any_like_type(key_t):
@@ -1980,9 +1983,9 @@ class CppEmitter(CodeEmitter):
         if kind == "Subscript":
             return self._render_subscript_expr(expr)
         if kind == "JoinedStr":
-            if expr.get("lowered_kind") == "Concat":
+            if expr_d.get("lowered_kind") == "Concat":
                 parts: list[str] = []
-                for p in self._dict_stmt_list(expr.get("concat_parts", [])):
+                for p in self._dict_stmt_list(expr_d.get("concat_parts")):
                     if p.get("kind") == "literal":
                         parts.append(cpp_string_lit(str(p.get("value", ""))))
                     elif p.get("kind") == "expr":
@@ -2000,7 +2003,7 @@ class CppEmitter(CodeEmitter):
                     return '""'
                 return " + ".join(parts)
             parts: list[str] = []
-            for p in self._dict_stmt_list(expr.get("values", [])):
+            for p in self._dict_stmt_list(expr_d.get("values")):
                 pk = p.get("kind")
                 if pk == "Constant":
                     parts.append(cpp_string_lit(str(p.get("value", ""))))
@@ -2017,14 +2020,14 @@ class CppEmitter(CodeEmitter):
             return " + ".join(parts)
         if kind == "Lambda":
             arg_texts: list[str] = []
-            for a in self._dict_stmt_list(expr.get("args", [])):
+            for a in self._dict_stmt_list(expr_d.get("args")):
                 nm = self.any_to_str(a.get("arg")).strip()
                 if nm != "":
                     arg_texts.append(f"auto {nm}")
-            body_expr = self.render_expr(expr.get("body"))
+            body_expr = self.render_expr(expr_d.get("body"))
             return f"[&]({', '.join(arg_texts)}) {{ return {body_expr}; }}"
         if kind == "ListComp":
-            gens = self._dict_stmt_list(expr.get("generators"))
+            gens = self._dict_stmt_list(expr_d.get("generators"))
             if len(gens) != 1:
                 return "{}"
             g = gens[0]
@@ -2032,8 +2035,8 @@ class CppEmitter(CodeEmitter):
             g_target = self.any_to_dict_or_empty(g_target_raw)
             tgt = self.render_expr(g_target_raw)
             it = self.render_expr(g.get("iter"))
-            elt = self.render_expr(expr.get("elt"))
-            out_t = self.cpp_type(expr.get("resolved_type"))
+            elt = self.render_expr(expr_d.get("elt"))
+            out_t = self.cpp_type(expr_d.get("resolved_type"))
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = g_target.get("kind") == "Tuple"
             iter_tmp = self.next_tmp("__it")
@@ -2076,7 +2079,7 @@ class CppEmitter(CodeEmitter):
             lines.append("}()")
             return " ".join(lines)
         if kind == "SetComp":
-            gens = self._dict_stmt_list(expr.get("generators"))
+            gens = self._dict_stmt_list(expr_d.get("generators"))
             if len(gens) != 1:
                 return "{}"
             g = gens[0]
@@ -2084,8 +2087,8 @@ class CppEmitter(CodeEmitter):
             g_target = self.any_to_dict_or_empty(g_target_raw)
             tgt = self.render_expr(g_target_raw)
             it = self.render_expr(g.get("iter"))
-            elt = self.render_expr(expr.get("elt"))
-            out_t = self.cpp_type(expr.get("resolved_type"))
+            elt = self.render_expr(expr_d.get("elt"))
+            out_t = self.cpp_type(expr_d.get("resolved_type"))
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = g_target.get("kind") == "Tuple"
             iter_tmp = self.next_tmp("__it")
@@ -2111,7 +2114,7 @@ class CppEmitter(CodeEmitter):
             lines.append("}()")
             return " ".join(lines)
         if kind == "DictComp":
-            gens = self._dict_stmt_list(expr.get("generators"))
+            gens = self._dict_stmt_list(expr_d.get("generators"))
             if len(gens) != 1:
                 return "{}"
             g = gens[0]
@@ -2119,9 +2122,9 @@ class CppEmitter(CodeEmitter):
             g_target = self.any_to_dict_or_empty(g_target_raw)
             tgt = self.render_expr(g_target_raw)
             it = self.render_expr(g.get("iter"))
-            key = self.render_expr(expr.get("key"))
-            val = self.render_expr(expr.get("value"))
-            out_t = self.cpp_type(expr.get("resolved_type"))
+            key = self.render_expr(expr_d.get("key"))
+            val = self.render_expr(expr_d.get("value"))
+            out_t = self.cpp_type(expr_d.get("resolved_type"))
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = g_target.get("kind") == "Tuple"
             iter_tmp = self.next_tmp("__it")
@@ -2147,7 +2150,7 @@ class CppEmitter(CodeEmitter):
             lines.append("}()")
             return " ".join(lines)
 
-        rep = self.any_to_str(expr.get("repr"))
+        rep = self.any_to_str(expr_d.get("repr"))
         if rep != "":
             return rep
         return f"/* unsupported expr: {kind} */"
@@ -2363,8 +2366,25 @@ def main(argv: list[str] | None = None) -> int:
                 print(dep_text, end="")
             return 0
         cpp = transpile_to_cpp(east_module, negative_index_mode, not no_main)
+    except UserFacingError as exc:
+        print("error: 変換に失敗しました。", file=sys.stderr)
+        print(str(exc), file=sys.stderr)
+        return 1
     except Exception as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        msg = str(exc)
+        if "forbidden by language constraints" in msg:
+            print("error: 変換に失敗しました。", file=sys.stderr)
+            print("[unsupported_by_design] この構文は言語仕様上サポート対象外です。", file=sys.stderr)
+            print(msg, file=sys.stderr)
+            return 1
+        if "unexpected raw range Call in EAST" in msg:
+            print("error: 変換に失敗しました。", file=sys.stderr)
+            print("[not_implemented] この構文の lower が未実装です。", file=sys.stderr)
+            print(msg, file=sys.stderr)
+            return 1
+        print("error: 変換中に内部エラーが発生しました。", file=sys.stderr)
+        print("[internal_error] バグの可能性があります。再現コードを添えて報告してください。", file=sys.stderr)
+        print(msg, file=sys.stderr)
         return 1
 
     if output_txt != "":

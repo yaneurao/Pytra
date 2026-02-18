@@ -256,6 +256,15 @@ python3 tools/check_py2cpp_transpile.py
 
 Pytra は Python のサブセットを対象とします。通常の Python コードとして実行できる入力でも、未対応構文を含む場合は変換時に失敗します。
 
+### 0. エラーカテゴリ
+
+`src/py2cpp.py` の失敗時メッセージは、次のカテゴリで表示されます。
+
+- `[user_syntax_error]`: ユーザーコードの文法エラーです。
+- `[not_implemented]`: まだ実装されていない構文です（将来対応候補）。
+- `[unsupported_by_design]`: 言語仕様として非対応の構文です。
+- `[internal_error]`: トランスパイラ内部エラーです。
+
 ### 1. 型注釈と型推論
 
 - 基本は型注釈付きコードを推奨します。

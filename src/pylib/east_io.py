@@ -2,11 +2,37 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pylib.typing import Any
 
 from pylib.east import EastBuildError, convert_path, convert_source_to_east_with_backend
 from pylib import json
 from pylib.pathlib import Path
+
+
+@dataclass
+class UserFacingError(Exception):
+    """ユーザーにそのまま提示するための分類済み例外。"""
+
+    category: str
+    summary: str
+    details: list[str]
+
+    def __str__(self) -> str:
+        lines = [f"[{self.category}] {self.summary}"]
+        lines.extend(self.details)
+        return "\n".join(lines)
+
+
+def _is_unsupported_by_design(err: EastBuildError) -> bool:
+    msg = str(err.message)
+    hint = str(err.hint)
+    return ("forbidden by language constraints" in msg) or ("language constraints" in hint)
+
+
+def _is_user_syntax_error(err: EastBuildError) -> bool:
+    msg = str(err.message)
+    return ("cannot parse" in msg) or ("unexpected token" in msg) or ("invalid syntax" in msg)
 
 
 def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
@@ -38,14 +64,26 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
     if input_path.suffix == ".json":
         payload = json.loads(input_path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
-            raise RuntimeError("Invalid EAST JSON payload")
+            raise UserFacingError(
+                category="input_invalid",
+                summary="EAST JSON の形式が不正です。",
+                details=["期待形式: dict ルートの JSON"],
+            )
         if payload.get("ok") is False:
-            raise RuntimeError(f"EAST error: {payload.get('error')}")
+            raise UserFacingError(
+                category="east_error",
+                summary="EAST JSON にエラー情報が含まれています。",
+                details=[f"error: {payload.get('error')}"],
+            )
         if payload.get("ok") is True and isinstance(payload.get("east"), dict):
             return payload["east"]
         if payload.get("kind") == "Module":
             return payload
-        raise RuntimeError("Invalid EAST JSON structure")
+        raise UserFacingError(
+            category="input_invalid",
+            summary="EAST JSON の構造が不正です。",
+            details=["期待形式: {'ok': true, 'east': {...}} または {'kind': 'Module', ...}"],
+        )
 
     try:
         source_text = input_path.read_text(encoding="utf-8")
@@ -54,7 +92,7 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
         else:
             east = convert_source_to_east_with_backend(source_text, str(input_path), parser_backend=parser_backend)
     except (SyntaxError, EastBuildError) as exc:
-        details: list[str] = [f"EAST conversion failed: {type(exc).__name__}"]
+        details: list[str] = []
         if isinstance(exc, EastBuildError):
             span = exc.source_span if isinstance(exc.source_span, dict) else {}
             ln = span.get("lineno")
@@ -70,6 +108,23 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
                     details.append(f"source: {src_lines[ln - 1]}")
             if isinstance(exc.hint, str) and exc.hint != "":
                 details.append(f"hint: {exc.hint}")
+            if _is_user_syntax_error(exc):
+                raise UserFacingError(
+                    category="user_syntax_error",
+                    summary="Python の文法エラーです。",
+                    details=details,
+                ) from exc
+            if _is_unsupported_by_design(exc):
+                raise UserFacingError(
+                    category="unsupported_by_design",
+                    summary="この構文は言語仕様上サポート対象外です。",
+                    details=details,
+                ) from exc
+            raise UserFacingError(
+                category="not_implemented",
+                summary="この構文はまだ実装されていません。",
+                details=details,
+            ) from exc
         else:
             ln = getattr(exc, "lineno", None)
             off = getattr(exc, "offset", None)
@@ -83,7 +138,11 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
                     details.append(f"at {input_path}:{ln}")
             if isinstance(txt, str) and txt.strip() != "":
                 details.append(f"source: {txt.rstrip()}")
-        raise RuntimeError("\n".join(details)) from exc
+            raise UserFacingError(
+                category="user_syntax_error",
+                summary="Python の文法エラーです。",
+                details=details,
+            ) from exc
 
     if isinstance(east, dict):
         has_stmt_leading_trivia = False
