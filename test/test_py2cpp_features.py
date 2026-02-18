@@ -16,7 +16,6 @@ if str(ROOT) not in sys.path:
 from src.py2cpp import transpile
 
 CPP_RUNTIME_SRCS = [
-    "src/cpp_module/ast.cpp",
     "src/cpp_module/pathlib.cpp",
     "src/cpp_module/time.cpp",
     "src/cpp_module/math.cpp",
