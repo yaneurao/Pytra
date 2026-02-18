@@ -1248,6 +1248,24 @@ class CppEmitter:
                     return f"py_isdigit({args[0]})"
                 if runtime_call == "py_isalpha" and len(args) == 1:
                     return f"py_isalpha({args[0]})"
+                if runtime_call == "py_strip" and len(args) == 0:
+                    owner = self.render_expr(fn.get("value"))
+                    return f"py_strip({owner})"
+                if runtime_call == "py_rstrip" and len(args) == 0:
+                    owner = self.render_expr(fn.get("value"))
+                    return f"py_rstrip({owner})"
+                if runtime_call == "py_startswith" and len(args) == 1:
+                    owner = self.render_expr(fn.get("value"))
+                    return f"py_startswith({owner}, {args[0]})"
+                if runtime_call == "py_endswith" and len(args) == 1:
+                    owner = self.render_expr(fn.get("value"))
+                    return f"py_endswith({owner}, {args[0]})"
+                if runtime_call == "py_replace" and len(args) == 2:
+                    owner = self.render_expr(fn.get("value"))
+                    return f"py_replace({owner}, {args[0]}, {args[1]})"
+                if runtime_call == "py_join" and len(args) == 1:
+                    owner = self.render_expr(fn.get("value"))
+                    return f"py_join({owner}, {args[0]})"
                 if runtime_call == "std::runtime_error":
                     if len(args) == 0:
                         return 'std::runtime_error("error")'
@@ -1259,7 +1277,13 @@ class CppEmitter:
                     owner = self.render_expr(owner_node)
                     if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                         owner = f"({owner})"
-                    return f"{owner}.mkdir(true, true)"
+                    parents = kw.get("parents", "false")
+                    exist_ok = kw.get("exist_ok", "false")
+                    if len(args) >= 1:
+                        parents = args[0]
+                    if len(args) >= 2:
+                        exist_ok = args[1]
+                    return f"{owner}.mkdir({parents}, {exist_ok})"
                 if runtime_call == "std::filesystem::exists":
                     owner_node = fn.get("value")
                     owner = self.render_expr(owner_node)
@@ -1324,6 +1348,21 @@ class CppEmitter:
                 if runtime_call == "set.clear":
                     owner = self.render_expr(fn.get("value"))
                     return f"{owner}.clear()"
+                if runtime_call == "dict.get":
+                    owner = self.render_expr(fn.get("value"))
+                    if len(args) >= 2:
+                        return f"py_dict_get_default({owner}, {args[0]}, {args[1]})"
+                    if len(args) == 1:
+                        return f"py_dict_get({owner}, {args[0]})"
+                if runtime_call == "dict.items":
+                    owner = self.render_expr(fn.get("value"))
+                    return owner
+                if runtime_call == "dict.keys":
+                    owner = self.render_expr(fn.get("value"))
+                    return f"py_dict_keys({owner})"
+                if runtime_call == "dict.values":
+                    owner = self.render_expr(fn.get("value"))
+                    return f"py_dict_values({owner})"
                 if isinstance(runtime_call, str) and runtime_call.startswith("std::"):
                     return f"{runtime_call}({', '.join(args)})"
                 if builtin_name == "bytes":
@@ -1444,19 +1483,6 @@ class CppEmitter:
                         return f"{math_map[attr]}({', '.join(args)})"
                 if owner_expr == "png_helper" and attr == "write_rgb_png":
                     return f"png_helper::write_rgb_png({', '.join(args)})"
-                if owner_t == "str":
-                    if attr == "strip" and len(args) == 0:
-                        return f"py_strip({owner_expr})"
-                    if attr == "rstrip" and len(args) == 0:
-                        return f"py_rstrip({owner_expr})"
-                    if attr == "startswith" and len(args) == 1:
-                        return f"py_startswith({owner_expr}, {args[0]})"
-                    if attr == "endswith" and len(args) == 1:
-                        return f"py_endswith({owner_expr}, {args[0]})"
-                    if attr == "replace" and len(args) == 2:
-                        return f"py_replace({owner_expr}, {args[0]}, {args[1]})"
-                    if attr == "join" and len(args) == 1:
-                        return f"py_join({owner_expr}, {args[0]})"
                 if owner_expr == "gif_helper" and attr == "save_gif":
                     path = args[0] if len(args) >= 1 else '""'
                     w = args[1] if len(args) >= 2 else "0"
@@ -1468,64 +1494,6 @@ class CppEmitter:
                     delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
                     loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
                     return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
-                if owner_t == "Path":
-                    if attr == "mkdir":
-                        parents = kw.get("parents", "false")
-                        exist_ok = kw.get("exist_ok", "false")
-                        if len(args) >= 1:
-                            parents = args[0]
-                        if len(args) >= 2:
-                            exist_ok = args[1]
-                        return f"{owner_expr}.mkdir({parents}, {exist_ok})"
-                    if attr == "exists":
-                        return f"{owner_expr}.exists()"
-                    if attr == "write_text":
-                        write_arg = args[0] if len(args) >= 1 else '""'
-                        return f"{owner_expr}.write_text({write_arg})"
-                    if attr == "read_text":
-                        return f"{owner_expr}.read_text()"
-                if attr == "isdigit":
-                    return f"py_isdigit({owner_expr})"
-                if attr == "isalpha":
-                    return f"py_isalpha({owner_expr})"
-                if owner_t.startswith("list["):
-                    if attr == "append":
-                        a0 = args[0] if len(args) >= 1 else "/* missing */"
-                        return f"{owner_expr}.append({a0})"
-                    if attr == "extend":
-                        a0 = args[0] if len(args) >= 1 else "{}"
-                        return f"{owner_expr}.insert({owner_expr}.end(), {a0}.begin(), {a0}.end())"
-                    if attr == "pop":
-                        if len(args) == 0:
-                            return f"py_pop({owner_expr})"
-                        return f"py_pop({owner_expr}, {args[0]})"
-                    if attr == "clear":
-                        return f"{owner_expr}.clear()"
-                    if attr == "reverse":
-                        return f"std::reverse({owner_expr}.begin(), {owner_expr}.end())"
-                    if attr == "sort":
-                        return f"std::sort({owner_expr}.begin(), {owner_expr}.end())"
-                if owner_t.startswith("set["):
-                    if attr == "add":
-                        a0 = args[0] if len(args) >= 1 else "/* missing */"
-                        return f"{owner_expr}.insert({a0})"
-                    if attr in {"discard", "remove"}:
-                        a0 = args[0] if len(args) >= 1 else "/* missing */"
-                        return f"{owner_expr}.erase({a0})"
-                    if attr == "clear":
-                        return f"{owner_expr}.clear()"
-                if owner_t.startswith("dict["):
-                    if attr == "get":
-                        if len(args) >= 2:
-                            return f"py_dict_get_default({owner_expr}, {args[0]}, {args[1]})"
-                        if len(args) == 1:
-                            return f"py_dict_get({owner_expr}, {args[0]})"
-                    if attr == "items":
-                        return owner_expr
-                    if attr == "keys":
-                        return f"py_dict_keys({owner_expr})"
-                    if attr == "values":
-                        return f"py_dict_values({owner_expr})"
                 if owner_t == "unknown":
                     if attr == "append":
                         a0 = args[0] if len(args) >= 1 else "/* missing */"

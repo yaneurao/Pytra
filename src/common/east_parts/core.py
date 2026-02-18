@@ -759,6 +759,110 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "print"
                     payload["runtime_call"] = "py_print"
+                elif fn_name == "len":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "len"
+                    payload["runtime_call"] = "py_len"
+                elif fn_name == "str":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "str"
+                    payload["runtime_call"] = "py_to_string"
+                elif fn_name in {"int", "float", "bool"}:
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = fn_name
+                    payload["runtime_call"] = "static_cast"
+                elif fn_name in {"min", "max"}:
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = fn_name
+                    payload["runtime_call"] = "py_min" if fn_name == "min" else "py_max"
+                elif fn_name == "perf_counter":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "perf_counter"
+                    payload["runtime_call"] = "perf_counter"
+                elif fn_name in {"Exception", "RuntimeError"}:
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = fn_name
+                    payload["runtime_call"] = "std::runtime_error"
+                elif fn_name == "Path":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "Path"
+                    payload["runtime_call"] = "Path"
+                elif fn_name in {"bytes", "bytearray"}:
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = fn_name
+                elif isinstance(node, dict) and node.get("kind") == "Attribute":
+                    attr = str(node.get("attr", ""))
+                    owner = node.get("value")
+                    owner_t = str(owner.get("resolved_type", "unknown")) if isinstance(owner, dict) else "unknown"
+                    if owner_t == "str":
+                        str_map = {
+                            "strip": "py_strip",
+                            "rstrip": "py_rstrip",
+                            "startswith": "py_startswith",
+                            "endswith": "py_endswith",
+                            "replace": "py_replace",
+                            "join": "py_join",
+                            "isdigit": "py_isdigit",
+                            "isalpha": "py_isalpha",
+                        }
+                        rc = str_map.get(attr)
+                        if rc is not None:
+                            payload["lowered_kind"] = "BuiltinCall"
+                            payload["builtin_name"] = attr
+                            payload["runtime_call"] = rc
+                    elif owner_t == "Path":
+                        path_map = {
+                            "mkdir": "std::filesystem::create_directories",
+                            "exists": "std::filesystem::exists",
+                            "write_text": "py_write_text",
+                            "read_text": "py_read_text",
+                            "parent": "path_parent",
+                            "name": "path_name",
+                            "stem": "path_stem",
+                        }
+                        rc = path_map.get(attr)
+                        if rc is not None:
+                            payload["lowered_kind"] = "BuiltinCall"
+                            payload["builtin_name"] = attr
+                            payload["runtime_call"] = rc
+                    elif owner_t.startswith("list["):
+                        list_map = {
+                            "append": "list.append",
+                            "extend": "list.extend",
+                            "pop": "list.pop",
+                            "clear": "list.clear",
+                            "reverse": "list.reverse",
+                            "sort": "list.sort",
+                        }
+                        rc = list_map.get(attr)
+                        if rc is not None:
+                            payload["lowered_kind"] = "BuiltinCall"
+                            payload["builtin_name"] = attr
+                            payload["runtime_call"] = rc
+                    elif owner_t.startswith("set["):
+                        set_map = {
+                            "add": "set.add",
+                            "discard": "set.discard",
+                            "remove": "set.remove",
+                            "clear": "set.clear",
+                        }
+                        rc = set_map.get(attr)
+                        if rc is not None:
+                            payload["lowered_kind"] = "BuiltinCall"
+                            payload["builtin_name"] = attr
+                            payload["runtime_call"] = rc
+                    elif owner_t.startswith("dict["):
+                        dict_map = {
+                            "get": "dict.get",
+                            "items": "dict.items",
+                            "keys": "dict.keys",
+                            "values": "dict.values",
+                        }
+                        rc = dict_map.get(attr)
+                        if rc is not None:
+                            payload["lowered_kind"] = "BuiltinCall"
+                            payload["builtin_name"] = attr
+                            payload["runtime_call"] = rc
                 node = payload
                 continue
             if tok["k"] == "[":
@@ -3380,5 +3484,4 @@ def convert_path(input_path: Path, parser_backend: str = "self_hosted") -> dict[
     """Read Python file and convert to EAST document."""
     source = input_path.read_text(encoding="utf-8")
     return convert_source_to_east_with_backend(source, str(input_path), parser_backend=parser_backend)
-
 
