@@ -7,7 +7,6 @@ It can also accept a Python source file and internally run src/common/east.py co
 
 from __future__ import annotations
 
-import argparse
 import json
 from pathlib import Path
 import sys
@@ -16,7 +15,6 @@ from typing import Any
 from common.code_emitter import CodeEmitter
 from common.east_io import load_east_from_path
 from common.language_profile import load_language_profile
-from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
 
 CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 
@@ -976,15 +974,15 @@ class CppEmitter(CodeEmitter):
             self.emit("/* invalid for */")
             return
         if iter_expr.get("kind") == "RangeExpr":
-            pseudo = {
-                "target": target_raw,
-                "target_type": stmt.get("target_type") if isinstance(stmt.get("target_type"), str) and stmt.get("target_type") != "" else "int64",
-                "start": iter_expr.get("start"),
-                "stop": iter_expr.get("stop"),
-                "step": iter_expr.get("step"),
-                "range_mode": iter_expr.get("range_mode", "dynamic"),
-                "body": stmt.get("body", []),
-            }
+            pseudo: dict[str, Any] = {}
+            pseudo["target"] = target_raw
+            t_raw = stmt.get("target_type")
+            pseudo["target_type"] = t_raw if isinstance(t_raw, str) and t_raw != "" else "int64"
+            pseudo["start"] = iter_expr.get("start")
+            pseudo["stop"] = iter_expr.get("stop")
+            pseudo["step"] = iter_expr.get("step")
+            pseudo["range_mode"] = iter_expr.get("range_mode", "dynamic")
+            pseudo["body"] = stmt.get("body", [])
             self.emit_for_range(pseudo)
             return
         body_stmts = self._dict_stmt_list(stmt.get("body"))
@@ -1034,17 +1032,22 @@ class CppEmitter(CodeEmitter):
         """関数定義ノードを C++ 関数として出力する。"""
         name = stmt.get("name", "fn")
         ret = self.cpp_type(stmt.get("return_type"))
-        arg_types: dict[str, str] = stmt.get("arg_types", {})
-        arg_usage: dict[str, str] = stmt.get("arg_usage", {})
+        arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
+        arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
         params: list[str] = []
         fn_scope: set[str] = set()
-        arg_names = list(arg_types.keys())
+        arg_names: list[str] = []
+        for raw_n in arg_types.keys():
+            if isinstance(raw_n, str):
+                arg_names.append(raw_n)
         for idx, n in enumerate(arg_names):
-            t = arg_types.get(n, "")
+            t = self.any_to_str(arg_types.get(n))
             if in_class and idx == 0 and n == "self":
                 continue
             ct = self.cpp_type(t)
-            usage = arg_usage.get(n, "readonly")
+            usage = self.any_to_str(arg_usage.get(n))
+            if usage == "":
+                usage = "readonly"
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
             if by_ref and usage == "mutable":
                 params.append(f"{ct}& {n}")
@@ -1061,11 +1064,11 @@ class CppEmitter(CodeEmitter):
                     self.syntax_line(
                         "ctor_open",
                         "{name}({args}) {",
-                        {"name": self.current_class_name, "args": ", ".join(params)},
+                        {"name": str(self.current_class_name), "args": ", ".join(params)},
                     )
                 )
         elif in_class and name == "__del__" and self.current_class_name is not None:
-            self.emit(self.syntax_line("dtor_open", "~{name}() {", {"name": self.current_class_name}))
+            self.emit(self.syntax_line("dtor_open", "~{name}() {", {"name": str(self.current_class_name)}))
         else:
             self.emit(
                 self.syntax_line(
@@ -1076,8 +1079,8 @@ class CppEmitter(CodeEmitter):
             )
         self.indent += 1
         self.scope_stack.append(fn_scope)
-        docstring = stmt.get("docstring")
-        if isinstance(docstring, str) and docstring != "":
+        docstring = self.any_to_str(stmt.get("docstring"))
+        if docstring != "":
             self.emit_block_comment(docstring)
         self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
         self.scope_stack.pop()
@@ -1106,7 +1109,10 @@ class CppEmitter(CodeEmitter):
         prev_static_fields = self.current_class_static_fields
         self.current_class_name = str(name)
         self.current_class_base_name = str(base) if isinstance(base, str) else ""
-        self.current_class_fields = dict(stmt.get("field_types", {}))
+        self.current_class_fields = {}
+        for fk, fv in self.any_to_dict_or_empty(stmt.get("field_types")).items():
+            if isinstance(fk, str):
+                self.current_class_fields[fk] = self.any_to_str(fv)
         class_body = self._dict_stmt_list(stmt.get("body"))
         static_field_types: dict[str, str] = {}
         static_field_defaults: dict[str, str] = {}
@@ -1727,6 +1733,7 @@ class CppEmitter(CodeEmitter):
                         if op0 in {"In", "NotIn"}:
                             rhs_type0 = self.get_expr_type(cmps[0])
                             rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
+                            found = ""
                             if rhs_type.startswith("dict["):
                                 found = f"{rhs}.find({left}) != {rhs}.end()"
                             else:
@@ -1746,6 +1753,7 @@ class CppEmitter(CodeEmitter):
                 key = self.render_expr(expr.get("key"))
                 ctype0 = self.get_expr_type(expr.get("container"))
                 ctype = ctype0 if isinstance(ctype0, str) else ""
+                base = ""
                 if ctype.startswith("dict["):
                     base = f"{container}.find({key}) != {container}.end()"
                 else:
@@ -2155,14 +2163,13 @@ class CppEmitter(CodeEmitter):
         return east_type
 
 
-def load_east(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
+def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     return load_east_from_path(input_path, parser_backend=parser_backend)
 
 
 def transpile_to_cpp(
     east_module: dict[str, Any],
-    *,
     negative_index_mode: str = "const_only",
     emit_main: bool = True,
 ) -> str:
@@ -2176,41 +2183,68 @@ def transpile_to_cpp(
 
 def main(argv: list[str] | None = None) -> int:
     """CLI エントリポイント。変換実行と入出力を担当する。"""
-    ap = argparse.ArgumentParser(description="Transpile Python/EAST to C++ via EAST")
-    add_common_transpile_args(
-        ap,
-        enable_negative_index_mode=True,
-        parser_backends=["self_hosted"],
-    )
-    ap.add_argument(
-        "--no-main",
-        action="store_true",
-        help="Do not emit C++ main() (library/module output mode).",
-    )
-    args = normalize_common_transpile_args(
-        ap.parse_args(argv),
-        default_negative_index_mode="const_only",
-        default_parser_backend="self_hosted",
-    )
+    argv_list: list[str] = []
+    if isinstance(argv, list):
+        argv_list = list(argv)
+    input_txt = ""
+    output_txt = ""
+    negative_index_mode = "const_only"
+    parser_backend = "self_hosted"
+    no_main = False
 
-    input_path = Path(args.input)
+    i = 0
+    while i < len(argv_list):
+        a = str(argv_list[i])
+        if a in {"-o", "--output"}:
+            i += 1
+            if i >= len(argv_list):
+                print("error: missing value for --output", file=sys.stderr)
+                return 1
+            output_txt = argv_list[i]
+        elif a == "--negative-index-mode":
+            i += 1
+            if i >= len(argv_list):
+                print("error: missing value for --negative-index-mode", file=sys.stderr)
+                return 1
+            negative_index_mode = argv_list[i]
+        elif a == "--parser-backend":
+            i += 1
+            if i >= len(argv_list):
+                print("error: missing value for --parser-backend", file=sys.stderr)
+                return 1
+            parser_backend = argv_list[i]
+        elif a == "--no-main":
+            no_main = True
+        elif a.startswith("-"):
+            print(f"error: unknown option: {a}", file=sys.stderr)
+            return 1
+        else:
+            if input_txt == "":
+                input_txt = a
+            else:
+                print(f"error: unexpected extra argument: {a}", file=sys.stderr)
+                return 1
+        i += 1
+
+    if input_txt == "":
+        print("usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--negative-index-mode MODE] [--no-main]", file=sys.stderr)
+        return 1
+
+    input_path = Path(input_txt)
     if not input_path.exists():
         print(f"error: input file not found: {input_path}", file=sys.stderr)
         return 1
 
+    cpp = ""
     try:
-        east_module = load_east(input_path, parser_backend=args.parser_backend)
-        cpp = transpile_to_cpp(
-            east_module,
-            negative_index_mode=args.negative_index_mode,
-            emit_main=not bool(args.no_main),
-        )
+        east_module = load_east(input_path, parser_backend)
+        cpp = transpile_to_cpp(east_module, negative_index_mode, not no_main)
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    if args.output:
-        out_path = Path(args.output)
+    if output_txt != "":
+        out_path = Path(output_txt)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(cpp, encoding="utf-8")
     else:
@@ -2219,4 +2253,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(list(sys.argv[1:])))
