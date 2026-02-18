@@ -1,131 +1,119 @@
-// このファイルは PNG 出力の最小実装本体です。
-// 依存ライブラリなしで、無圧縮DEFLATE（zlibラッパ）を使って PNG を生成します。
+// このファイルは src/pylib/png.py を正本として C++ 実装化したものです。
 
 #include "runtime/cpp/pylib/png.h"
 
-#include <cstdint>
-#include <fstream>
-#include <stdexcept>
-#include <string>
-#include <vector>
+#include "runtime/cpp/py_runtime.h"
 
 namespace pytra::pylib::png {
 namespace {
 
-void append_u32_be(std::string& out, std::uint32_t v) {
-    out.push_back(static_cast<char>((v >> 24) & 0xFF));
-    out.push_back(static_cast<char>((v >> 16) & 0xFF));
-    out.push_back(static_cast<char>((v >> 8) & 0xFF));
-    out.push_back(static_cast<char>(v & 0xFF));
-}
-
-std::uint32_t crc32_bytes(const std::string& data) {
-    std::uint32_t crc = 0xFFFFFFFFu;
-    for (unsigned char b : data) {
+int64 _crc32(const bytes& data) {
+    int64 crc = 4294967295;
+    int64 poly = 3988292384;
+    for (uint8 b : data) {
         crc ^= b;
-        for (int i = 0; i < 8; ++i) {
-            if (crc & 1u) {
-                crc = (crc >> 1) ^ 0xEDB88320u;
+        int64 i = 0;
+        while (i < 8) {
+            if ((crc & 1) != 0) {
+                crc = (crc >> 1) ^ poly;
             } else {
                 crc >>= 1;
             }
+            i++;
         }
     }
-    return ~crc;
+    return crc ^ 4294967295;
 }
 
-std::uint32_t adler32_bytes(const std::string& data) {
-    constexpr std::uint32_t MOD = 65521u;
-    std::uint32_t a = 1u;
-    std::uint32_t b = 0u;
-    for (unsigned char ch : data) {
-        a = (a + static_cast<std::uint32_t>(ch)) % MOD;
-        b = (b + a) % MOD;
+int64 _adler32(const bytes& data) {
+    int64 mod = 65521;
+    int64 s1 = 1;
+    int64 s2 = 0;
+    for (uint8 b : data) {
+        s1 += b;
+        if (s1 >= mod) {
+            s1 -= mod;
+        }
+        s2 += s1;
+        s2 %= mod;
     }
-    return (b << 16) | a;
+    return ((s2 << 16) | s1) & 4294967295;
 }
 
-void append_chunk(std::string& out, const char type[4], const std::string& payload) {
-    append_u32_be(out, static_cast<std::uint32_t>(payload.size()));
-    const std::size_t type_pos = out.size();
-    out.append(type, 4);
-    out.append(payload);
-    const std::string crc_input = out.substr(type_pos, 4 + payload.size());
-    append_u32_be(out, crc32_bytes(crc_input));
+bytes _u16le(int64 v) {
+    return bytes(list<int64>{v & 255, (v >> 8) & 255});
 }
 
-std::string zlib_store(const std::string& raw) {
-    std::string out;
-    // zlib header: CMF/FLG (deflate, 32K window, fastest strategy)
-    out.push_back(static_cast<char>(0x78));
-    out.push_back(static_cast<char>(0x01));
+bytes _u32be(int64 v) {
+    return bytes(list<int64>{(v >> 24) & 255, (v >> 16) & 255, (v >> 8) & 255, v & 255});
+}
 
-    std::size_t pos = 0;
-    while (pos < raw.size()) {
-        const std::size_t remain = raw.size() - pos;
-        const std::uint16_t len = static_cast<std::uint16_t>(remain > 65535 ? 65535 : remain);
-        const bool final_block = (pos + len == raw.size());
+bytes _zlib_deflate_store(const bytes& data) {
+    bytearray out = bytearray{};
+    out.extend(py_bytes_lit("\x78\x01"));
+    int64 n = py_len(data);
+    int64 pos = 0;
+    while (pos < n) {
+        int64 remain = n - pos;
+        int64 chunk_len = (remain > 65535 ? 65535 : remain);
+        int64 final = ((pos + chunk_len) >= n ? 1 : 0);
+        out.append(final);
+        out.extend(_u16le(chunk_len));
+        out.extend(_u16le(65535 ^ chunk_len));
+        out.extend(py_slice(data, pos, pos + chunk_len));
+        pos += chunk_len;
+    }
+    out.extend(_u32be(_adler32(data)));
+    return bytes(out);
+}
 
-        out.push_back(static_cast<char>(final_block ? 0x01 : 0x00));  // BFINAL + BTYPE=00
-        out.push_back(static_cast<char>(len & 0xFF));
-        out.push_back(static_cast<char>((len >> 8) & 0xFF));
-        const std::uint16_t nlen = static_cast<std::uint16_t>(~len);
-        out.push_back(static_cast<char>(nlen & 0xFF));
-        out.push_back(static_cast<char>((nlen >> 8) & 0xFF));
-        out.append(raw, pos, len);
-        pos += len;
+bytes _chunk(const bytes& chunk_type, const bytes& data) {
+    bytes length = _u32be(py_len(data));
+    int64 crc = _crc32(chunk_type + data) & 4294967295;
+    return length + chunk_type + data + _u32be(crc);
+}
+
+void write_rgb_png_impl(const str& path, int64 width, int64 height, const bytes& pixels) {
+    bytes raw = bytes(pixels);
+    int64 expected = width * height * 3;
+    if (py_len(raw) != expected) {
+        throw ValueError(
+            "pixels length mismatch: got=" + std::to_string(py_len(raw)) + " expected=" + std::to_string(expected)
+        );
     }
 
-    append_u32_be(out, adler32_bytes(raw));
-    return out;
+    bytearray scanlines = bytearray{};
+    int64 row_bytes = width * 3;
+    int64 y = 0;
+    while (y < height) {
+        scanlines.append(0);
+        int64 start = y * row_bytes;
+        int64 end = start + row_bytes;
+        scanlines.extend(py_slice(raw, start, end));
+        y++;
+    }
+
+    bytes ihdr = _u32be(width) + _u32be(height) + bytes(list<int64>{8, 2, 0, 0, 0});
+    bytes idat = _zlib_deflate_store(bytes(scanlines));
+
+    bytearray png_data = bytearray{};
+    png_data.extend(py_bytes_lit("\x89PNG\r\n\x1a\n"));
+    png_data.extend(_chunk(py_bytes_lit("IHDR"), ihdr));
+    png_data.extend(_chunk(py_bytes_lit("IDAT"), idat));
+    png_data.extend(_chunk(py_bytes_lit("IEND"), py_bytes_lit("")));
+
+    pytra::runtime::cpp::base::PyFile f = open(path, "wb");
+    {
+        auto __finally_1 = py_make_scope_exit([&]() { f.close(); });
+        f.write(png_data);
+    }
 }
 
 }  // namespace
 
 void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels) {
-    if (width <= 0 || height <= 0) {
-        throw std::runtime_error("png: width/height must be positive");
-    }
-    const std::size_t expected = static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 3u;
-    if (pixels.size() != expected) {
-        throw std::runtime_error("png: pixels length mismatch");
-    }
-
-    const int row_bytes = width * 3;
-    std::string raw;
-    raw.reserve(static_cast<std::size_t>(height) * static_cast<std::size_t>(row_bytes + 1));
-    for (int y = 0; y < height; ++y) {
-        raw.push_back(static_cast<char>(0));  // filter type 0
-        const std::size_t row_start = static_cast<std::size_t>(y) * static_cast<std::size_t>(row_bytes);
-        for (int i = 0; i < row_bytes; ++i) {
-            raw.push_back(static_cast<char>(pixels[row_start + static_cast<std::size_t>(i)]));
-        }
-    }
-
-    std::string ihdr;
-    ihdr.reserve(13);
-    append_u32_be(ihdr, static_cast<std::uint32_t>(width));
-    append_u32_be(ihdr, static_cast<std::uint32_t>(height));
-    ihdr.push_back(static_cast<char>(8));   // bit depth
-    ihdr.push_back(static_cast<char>(2));   // color type RGB
-    ihdr.push_back(static_cast<char>(0));   // compression
-    ihdr.push_back(static_cast<char>(0));   // filter
-    ihdr.push_back(static_cast<char>(0));   // interlace
-
-    const std::string idat = zlib_store(raw);
-
-    std::string png;
-    png.reserve(8 + 12 + ihdr.size() + 12 + idat.size() + 12);
-    png.append("\x89PNG\r\n\x1a\n", 8);
-    append_chunk(png, "IHDR", ihdr);
-    append_chunk(png, "IDAT", idat);
-    append_chunk(png, "IEND", "");
-
-    std::ofstream ofs(path, std::ios::binary);
-    if (!ofs) {
-        throw std::runtime_error("png: failed to open output file");
-    }
-    ofs.write(png.data(), static_cast<std::streamsize>(png.size()));
+    bytes buf(pixels.begin(), pixels.end());
+    write_rgb_png_impl(str(path), int64(width), int64(height), buf);
 }
 
 }  // namespace pytra::pylib::png

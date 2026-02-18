@@ -1246,7 +1246,7 @@ class CppEmitter(BaseEmitter):
                                 break
                             i += 1
                         if qpos >= 0:
-                            return f"bytes({raw[qpos:]})"
+                            return f"py_bytes_lit({raw[qpos:]})"
                     return f"bytes({cpp_string_lit(v)})"
                 return cpp_string_lit(v)
             return str(v)

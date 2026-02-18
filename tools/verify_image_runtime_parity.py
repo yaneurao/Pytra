@@ -68,6 +68,8 @@ def _build_and_run_cpp(work: Path, out_png: Path, out_gif: Path) -> None:
         str(harness),
         "src/runtime/cpp/pylib/png.cpp",
         "src/runtime/cpp/pylib/gif.cpp",
+        "src/runtime/cpp/base/io.cpp",
+        "src/runtime/cpp/base/bytes_util.cpp",
         "-o",
         str(exe),
     ]

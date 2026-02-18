@@ -371,6 +371,18 @@ static inline bytes operator+(const char* lhs, const bytes& rhs) {
     return out;
 }
 
+template <std::size_t N>
+static inline bytes py_bytes_lit(const char (&s)[N]) {
+    bytes out{};
+    out.reserve(N - 1);
+    std::size_t i = 0;
+    while (i + 1 <= N - 1) {
+        out.append(static_cast<uint8>(static_cast<unsigned char>(s[i])));
+        i++;
+    }
+    return out;
+}
+
 static inline bytes py_int_to_bytes(int64 value, int64 length, const str& byteorder) {
     auto raw = pytra::runtime::cpp::base::int_to_bytes(value, length, static_cast<std::string>(byteorder));
     return bytes(raw.begin(), raw.end());
