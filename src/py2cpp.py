@@ -116,20 +116,6 @@ class CppEmitter:
         for stmt in stmts:
             self.emit_stmt(stmt)
 
-    def _as_dict(self, value: Any) -> dict[str, Any] | None:
-        if isinstance(value, dict):
-            return value
-        return None
-
-    def _as_dict_list(self, values: Any) -> list[dict[str, Any]]:
-        out: list[dict[str, Any]] = []
-        if not isinstance(values, list):
-            return out
-        for v in values:
-            if isinstance(v, dict):
-                out.append(v)
-        return out
-
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
         self.emit("/* " + text + " */")
@@ -157,14 +143,14 @@ class CppEmitter:
         return True
 
     def transpile(self) -> str:
-        body = self._as_dict_list(self.doc.get("body", []))
+        body = list(self.doc.get("body", []))
         for stmt in body:
             if stmt.get("kind") == "ClassDef":
                 cls_name = str(stmt.get("name", ""))
                 if cls_name != "":
                     self.class_names.add(cls_name)
                     mset: set[str] = set()
-                    class_body = self._as_dict_list(stmt.get("body", []))
+                    class_body = list(stmt.get("body", []))
                     for s in class_body:
                         if s.get("kind") == "FunctionDef":
                             fn_name = str(s.get("name"))
@@ -201,7 +187,7 @@ class CppEmitter:
         self.indent += 1
         self.emit("pytra_configure_from_argv(argc, argv);")
         self.scope_stack.append(set())
-        main_guard = self._as_dict_list(self.doc.get("main_guard_body", []))
+        main_guard = list(self.doc.get("main_guard_body", []))
         self.emit_stmt_list(main_guard)
         self.scope_stack.pop()
         self.emit("return 0;")
@@ -384,7 +370,8 @@ class CppEmitter:
             self.emit("continue;")
             return
         if kind == "Expr":
-            value = self._as_dict(stmt.get("value"))
+            value_raw = stmt.get("value")
+            value = value_raw if isinstance(value_raw, dict) else None
             if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
                 self.emit_block_comment(str(value.get("value")))
             else:
@@ -404,7 +391,8 @@ class CppEmitter:
                     self.emit(rendered + ";")
             return
         if kind == "Return":
-            v = self._as_dict(stmt.get("value"))
+            v_raw = stmt.get("value")
+            v = v_raw if isinstance(v_raw, dict) else None
             if v is None:
                 self.emit("return;")
             else:
@@ -483,8 +471,8 @@ class CppEmitter:
                 self.emit(f"{target} {op} {val};")
             return
         if kind == "If":
-            body_stmts = self._as_dict_list(stmt.get("body", []))
-            else_stmts = self._as_dict_list(stmt.get("orelse", []))
+            body_stmts = list(stmt.get("body", []))
+            else_stmts = list(stmt.get("orelse", []))
             if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
                 self.emit(f"if ({self.render_cond(stmt.get('test'))})")
                 self.indent += 1
@@ -522,7 +510,7 @@ class CppEmitter:
             self.emit(f"while ({self.render_cond(stmt.get('test'))}) {{")
             self.indent += 1
             self.scope_stack.append(set())
-            self.emit_stmt_list(self._as_dict_list(stmt.get("body", [])))
+            self.emit_stmt_list(list(stmt.get("body", [])))
             self.scope_stack.pop()
             self.indent -= 1
             self.emit("}")
@@ -554,15 +542,15 @@ class CppEmitter:
                 self.emit("});")
             self.emit("try {")
             self.indent += 1
-            self.emit_stmt_list(self._as_dict_list(stmt.get("body", [])))
+            self.emit_stmt_list(list(stmt.get("body", [])))
             self.indent -= 1
             self.emit("}")
-            for h in self._as_dict_list(stmt.get("handlers", [])):
+            for h in stmt.get("handlers", []):
                 name_raw = h.get("name")
                 name = name_raw if isinstance(name_raw, str) and name_raw != "" else "ex"
                 self.emit(f"catch (const std::exception& {name}) {{")
                 self.indent += 1
-                self.emit_stmt_list(self._as_dict_list(h.get("body", [])))
+                self.emit_stmt_list(list(h.get("body", [])))
                 self.indent -= 1
                 self.emit("}")
             if has_effective_finally:
@@ -705,7 +693,7 @@ class CppEmitter:
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
-        body_stmts = self._as_dict_list(stmt.get("body", []))
+        body_stmts = list(stmt.get("body", []))
         omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         mode = stmt.get("range_mode")
         if mode == "ascending":
@@ -753,7 +741,7 @@ class CppEmitter:
             }
             self.emit_for_range(pseudo)
             return
-        body_stmts = self._as_dict_list(stmt.get("body", []))
+        body_stmts = list(stmt.get("body", []))
         omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         t = self.render_expr(target)
         it = self.render_expr(iter_expr)
@@ -822,7 +810,7 @@ class CppEmitter:
         docstring = stmt.get("docstring")
         if isinstance(docstring, str) and docstring != "":
             self.emit_block_comment(docstring)
-        self.emit_stmt_list(self._as_dict_list(stmt.get("body", [])))
+        self.emit_stmt_list(list(stmt.get("body", [])))
         self.scope_stack.pop()
         self.indent -= 1
         self.emit("}")
@@ -847,7 +835,7 @@ class CppEmitter:
         prev_static_fields = self.current_class_static_fields
         self.current_class_name = str(name)
         self.current_class_fields = dict(stmt.get("field_types", {}))
-        class_body = self._as_dict_list(stmt.get("body", []))
+        class_body = list(stmt.get("body", []))
         static_field_types: dict[str, str] = {}
         static_field_defaults: dict[str, str] = {}
         instance_field_defaults: dict[str, str] = {}
