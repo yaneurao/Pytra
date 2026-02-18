@@ -865,15 +865,14 @@ class CppEmitter(CodeEmitter):
         val = self.render_expr(node.get("value"))
         val_ty0 = self.get_expr_type(node.get("value"))
         val_ty = val_ty0 if isinstance(val_ty0, str) else ""
-        sl = node.get("slice")
-        idx = self.render_expr(sl)
+        idx = self.render_expr(node.get("slice"))
         if val_ty.startswith("dict["):
             return f"{val}[{idx}]"
         if self.is_indexable_sequence_type(val_ty):
             if self.negative_index_mode == "off":
                 return f"{val}[{idx}]"
             if self.negative_index_mode == "const_only":
-                if self._is_negative_const_index(sl):
+                if self._is_negative_const_index(node.get("slice")):
                     return f"py_at({val}, {idx})"
                 return f"{val}[{idx}]"
             return f"py_at({val}, {idx})"
