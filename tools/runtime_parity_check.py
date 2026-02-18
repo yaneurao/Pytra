@@ -58,7 +58,7 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
                 f"g++ -std=c++20 -O2 -I src test/transpile/cpp/{case_stem}.cpp "
                 "src/runtime/cpp/pylib/png.cpp src/runtime/cpp/pylib/gif.cpp src/runtime/cpp/core/math.cpp "
                 "src/runtime/cpp/core/time.cpp src/runtime/cpp/core/pathlib.cpp src/runtime/cpp/core/dataclasses.cpp "
-                "src/runtime/cpp/core/gc.cpp "
+                "src/runtime/cpp/base/gc.cpp "
                 f"-o test/transpile/obj/{case_stem}_cpp.out && test/transpile/obj/{case_stem}_cpp.out"
             ),
             needs=("python", "g++"),

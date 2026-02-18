@@ -29,14 +29,14 @@ python src/py2cpp.py test/fixtures/collections/iterable.py test/transpile/cpp/it
 g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
   src/runtime/cpp/pylib/png.cpp src/runtime/cpp/pylib/gif.cpp src/runtime/cpp/core/math.cpp \
   src/runtime/cpp/core/time.cpp src/runtime/cpp/core/pathlib.cpp src/runtime/cpp/core/dataclasses.cpp \
-  src/runtime/cpp/core/gc.cpp \
+  src/runtime/cpp/base/gc.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out
 ```
 
 補足:
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
-- 入力コードで使う Python モジュールに対応する実装を `src/runtime/cpp/` に用意してください（例: `core/math`, `core/time`, `core/pathlib`, `pylib/png`, `pylib/gif`）。
+- 入力コードで使う Python モジュールに対応する実装を `src/runtime/cpp/` に用意してください（例: `core/math`, `core/time`, `core/pathlib`, `pylib/png`, `pylib/gif`）。GC は `base/gc` を使います。
 - Python 側の import は `pylib` 名を使います（例: `from pylib import png`, `from pylib.gif import save_gif`, `from pylib.assertions import py_assert_eq`）。
 - `math.sqrt` など `module.attr(...)` の C++ 側マッピングは `src/runtime/cpp/runtime_call_map.json` で定義します。必要な関数は `module_attr_call` に追加できます。
 - 実行時に `--pytra-image-format=ppm` を付けると、`png.write_rgb_png(...)` は PNG ではなく PPM(P6) を出力します。

@@ -24,7 +24,7 @@ CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/core/sys.cpp",
     "src/runtime/cpp/pylib/png.cpp",
     "src/runtime/cpp/pylib/gif.cpp",
-    "src/runtime/cpp/core/gc.cpp",
+    "src/runtime/cpp/base/gc.cpp",
 ]
 
 def find_fixture_case(stem: str) -> Path:

@@ -55,7 +55,7 @@
 - `import time` / `from time import ...` -> `#include "runtime/cpp/core/time.h"`
 - `from dataclasses import dataclass` -> `#include "runtime/cpp/core/dataclasses.h"`
 - `from pylib import png` / `import png` -> `#include "runtime/cpp/pylib/png.h"`
-- GC は常時 `#include "runtime/cpp/core/gc.h"` を利用
+- GC は常時 `#include "runtime/cpp/base/gc.h"` を利用
 
 `math` などの `module.attr(...)` 呼び出しは、`src/runtime/cpp/runtime_call_map.json` の設定で C++ ランタイム呼び出しへマップします。
 
@@ -75,7 +75,7 @@
 - `src/runtime/cpp/core/pathlib.h`, `src/runtime/cpp/core/pathlib.cpp`
 - `src/runtime/cpp/core/time.h`, `src/runtime/cpp/core/time.cpp`
 - `src/runtime/cpp/core/dataclasses.h`, `src/runtime/cpp/core/dataclasses.cpp`
-- `src/runtime/cpp/core/gc.h`, `src/runtime/cpp/core/gc.cpp`
+- `src/runtime/cpp/base/gc.h`, `src/runtime/cpp/base/gc.cpp`
 - `src/runtime/cpp/core/sys.h`, `src/runtime/cpp/core/sys.cpp`
 - `src/runtime/cpp/pylib/png.h`, `src/runtime/cpp/pylib/png.cpp`
 - `src/runtime/cpp/pylib/gif.h`, `src/runtime/cpp/pylib/gif.cpp`

@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "runtime/cpp/pylib/gif.h"
-#include "runtime/cpp/core/gc.h"
+#include "runtime/cpp/base/gc.h"
 #include "runtime/cpp/core/math.h"
 #include "runtime/cpp/pylib/png.h"
 
