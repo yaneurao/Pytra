@@ -1090,7 +1090,7 @@ class CppEmitter(CodeEmitter):
     def emit_class(self, stmt: dict[str, Any]) -> None:
         """クラス定義ノードを C++ クラス/struct として出力する。"""
         name = stmt.get("name", "Class")
-        is_dataclass = bool(stmt.get("dataclass", False))
+        is_dataclass = self.any_dict_get_int(stmt, "dataclass", 0) != 0
         base = stmt.get("base")
         cls_name = str(name)
         gc_managed = cls_name in self.ref_classes
@@ -1109,7 +1109,7 @@ class CppEmitter(CodeEmitter):
         prev_static_fields = self.current_class_static_fields
         self.current_class_name = str(name)
         self.current_class_base_name = str(base) if isinstance(base, str) else ""
-        self.current_class_fields = {}
+        self.current_class_fields.clear()
         for fk, fv in self.any_to_dict_or_empty(stmt.get("field_types")).items():
             if isinstance(fk, str):
                 self.current_class_fields[fk] = self.any_to_str(fv)
@@ -1119,18 +1119,20 @@ class CppEmitter(CodeEmitter):
         instance_field_defaults: dict[str, str] = {}
         for s in class_body:
             if s.get("kind") == "AnnAssign":
-                texpr = s.get("target")
+                texpr = self.any_to_dict_or_empty(s.get("target"))
                 if self.is_plain_name_expr(texpr):
                     fname = str(texpr.get("id", ""))
-                    ann = s.get("annotation")
-                    if isinstance(ann, str) and ann != "":
+                    ann = self.any_to_str(s.get("annotation"))
+                    if ann != "":
                         if is_dataclass:
                             instance_field_defaults[fname] = self.render_expr(s.get("value")) if s.get("value") is not None else instance_field_defaults.get(fname, "")
                         else:
                             static_field_types[fname] = ann
                             if s.get("value") is not None:
                                 static_field_defaults[fname] = self.render_expr(s.get("value"))
-        self.current_class_static_fields = set(static_field_types.keys())
+        self.current_class_static_fields.clear()
+        for k in static_field_types.keys():
+            self.current_class_static_fields.add(k)
         instance_fields: dict[str, str] = {
             k: v for k, v in self.current_class_fields.items() if k not in self.current_class_static_fields
         }
