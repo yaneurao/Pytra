@@ -84,19 +84,11 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
 _DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = _default_cpp_module_attr_call_map()
 _CPP_PROFILE_CACHE_BOX: dict[str, Any] = {"loaded": False, "value": {}}
 
-def _safe_nested_dict(obj: Any, keys: list[str]) -> dict[str, Any] | None:
-    return None
-
-
 def _deep_copy_str_map(v: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
     for k, inner in v.items():
         out[k] = dict(inner)
     return out
-
-
-def _safe_nested_str_map(obj: Any, keys: list[str]) -> dict[str, str] | None:
-    return None
 
 
 def _copy_str_map(src: dict[str, str]) -> dict[str, str]:
@@ -143,19 +135,11 @@ def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
     return out
 
 
-def _safe_nested_str_list(obj: Any, keys: list[str]) -> list[str] | None:
-    return None
-
-
 def load_cpp_identifier_rules() -> tuple[set[str], str]:
     """識別子リネーム規則を profile から取得する。"""
     reserved: set[str] = set()
     rename_prefix = "py_"
     return reserved, rename_prefix
-
-
-def _load_cpp_runtime_call_map_json() -> dict[str, Any] | None:
-    return None
 
 
 def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:

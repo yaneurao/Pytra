@@ -48,7 +48,7 @@
 2. [ ] 未使用関数の掃除を継続する。
    - [x] `extract_module_leading_trivia` ラッパーを削除。
    - [x] `_stmt_start_line` / `_stmt_end_line` / `_has_leading_trivia` を削除。
-   - [ ] `py2cpp.py` 内の補助関数で参照ゼロのものを追加洗い出しして削除する。
+   - [x] `py2cpp.py` 内の補助関数で参照ゼロのものを追加洗い出しして削除する。: `_safe_nested_dict` / `_safe_nested_str_map` / `_safe_nested_str_list` / `_load_cpp_runtime_call_map_json` を削除
 
 ## selfhost 回復（優先）
 
