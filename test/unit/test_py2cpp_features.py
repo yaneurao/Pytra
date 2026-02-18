@@ -43,6 +43,22 @@ def transpile(input_py: Path, output_cpp: Path) -> None:
 
 
 class Py2CppFeatureTest(unittest.TestCase):
+    def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
+        src = """def main() -> None:
+    auto: int = 1
+    print(auto)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "reserved_name.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("int64 py_auto = 1;", cpp)
+        self.assertIn("py_print(py_auto);", cpp)
+
     def test_runtime_call_map_for_math_is_loaded_from_json(self) -> None:
         mp = load_cpp_module_attr_call_map()
         self.assertIn("math", mp)

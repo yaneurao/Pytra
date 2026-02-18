@@ -9,7 +9,7 @@
 2. [ ] 言語差分を `LanguageProfile` JSON に切り出す。
    - [x] `docs/spec-language-profile.md` で JSON スキーマ（v1）とロード順序を確定する。
    - [x] 型マップ（EAST 型 -> ターゲット型）を JSON で定義する。
-   - [ ] 演算子マップ・予約語・識別子リネーム規則を JSON で定義する。
+   - [x] 演算子マップ・予約語・識別子リネーム規則を JSON で定義する。
    - [x] 組み込み関数/メソッドの runtime call map を JSON へ統合する。
 3. [ ] `CodeEmitter` へ `profile` 注入を実装する。
    - [x] `CodeEmitter(profile, hooks)` の初期化 API を追加する。

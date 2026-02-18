@@ -155,6 +155,38 @@ def load_cpp_type_map() -> dict[str, str]:
     return out
 
 
+def _safe_nested_str_list(obj: Any, keys: list[str]) -> list[str] | None:
+    cur: Any = obj
+    for key in keys:
+        if not isinstance(cur, dict) or key not in cur:
+            return None
+        cur = cur[key]
+    if not isinstance(cur, list):
+        return None
+    out: list[str] = []
+    for v in cur:
+        if isinstance(v, str) and v != "":
+            out.append(v)
+    return out
+
+
+def load_cpp_identifier_rules() -> tuple[set[str], str]:
+    """識別子リネーム規則を profile から取得する。"""
+    profile = load_cpp_profile()
+    reserved_list = _safe_nested_str_list(profile, ["syntax", "identifiers", "reserved_words"])
+    reserved = set(reserved_list) if isinstance(reserved_list, list) else set()
+    rename_prefix = "py_"
+    raw_prefix: Any = profile
+    for key in ["syntax", "identifiers", "rename_prefix"]:
+        if not isinstance(raw_prefix, dict) or key not in raw_prefix:
+            raw_prefix = None
+            break
+        raw_prefix = raw_prefix[key]
+    if isinstance(raw_prefix, str) and raw_prefix != "":
+        rename_prefix = raw_prefix
+    return reserved, rename_prefix
+
+
 def _load_cpp_runtime_call_map_json() -> dict[str, Any] | None:
     path = Path(__file__).resolve().parent / "runtime" / "cpp" / "runtime_call_map.json"
     if not path.exists():
@@ -266,6 +298,7 @@ class CppEmitter(CodeEmitter):
         self.bridge_comment_emitted: set[str] = set()
         self.type_map = load_cpp_type_map()
         self.module_attr_call_map = load_cpp_module_attr_call_map(self.profile)
+        self.reserved_words, self.rename_prefix = load_cpp_identifier_rules()
         self.import_modules: dict[str, str] = {}
         self.import_symbols: dict[str, dict[str, str]] = {}
         meta = self.doc.get("meta")
@@ -1270,7 +1303,13 @@ class CppEmitter(CodeEmitter):
 
         if kind == "Name":
             name = str(expr.get("id", "_"))
-            return self.renamed_symbols.get(name, name)
+            if name in self.renamed_symbols:
+                return self.renamed_symbols[name]
+            if name in self.reserved_words:
+                renamed = f"{self.rename_prefix}{name}"
+                self.renamed_symbols[name] = renamed
+                return renamed
+            return name
         if kind == "Constant":
             v = expr.get("value")
             if isinstance(v, bool):
