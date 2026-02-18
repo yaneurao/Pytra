@@ -104,6 +104,7 @@
 - `int` は `int64` に正規化。
 - `float` は `float64` に正規化。
 - `float32/float64` はそのまま保持。
+- `any` / `object` は `Any` と同義に扱う（C++ 側では `std::any`）。
 - `bytes` / `bytearray` は `list[uint8]` に正規化。
 - `pathlib.Path` は `Path` に正規化。
 
@@ -137,6 +138,12 @@
 - `bytes(...)` / `bytearray(...)` は `list[uint8]`
 - クラスコンストラクタ/メソッドは事前収集した型情報で推論
 - `ListComp`: 単一ジェネレータのみ対応
+- `BoolOp` (`or`/`and`) は EAST 上では `kind: BoolOp` として保持する。
+  - C++ 生成時に、期待型が `bool` のときは真偽演算（`&&`/`||`）として出力する。
+  - 期待型が `bool` 以外のときは Python の値選択式として出力する。
+    - `a or b` -> `truthy(a) ? a : b`
+    - `a and b` -> `truthy(a) ? b : a`
+  - 値選択の判定・出力は `src/py2cpp.py` 側で行い、EAST では追加ノードへ lower しない。
 
 `range` について:
 
@@ -153,6 +160,11 @@
   - `set.add`, `set.discard`, `set.remove`, `set.clear`
   - `write_rgb_png`, `save_gif`, `grayscale_palette`
   - `py_isdigit`, `py_isalpha`
+
+`dict[str, Any]` の `.get(...).items()` について:
+
+- C++ 生成時は `dict[str, std::any>` を前提に、`Dict` リテラル値を `std::any(...)` へ再帰変換して初期化する。
+- これにより `.get(..., {})` で受ける既定値型と `.items()` 反復要素型の不整合を抑制する。
 
 ## 8. cast仕様
 

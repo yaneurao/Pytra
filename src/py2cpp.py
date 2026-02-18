@@ -78,9 +78,22 @@ AUG_BIN = {
 
 
 def cpp_string_lit(s: str) -> str:
-    escaped = s.replace("\\", "\\\\").replace('"', '\\"')
-    escaped = escaped.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
-    return '"' + escaped + '"'
+    out = '"'
+    for ch in s:
+        if ch == "\\":
+            out += "\\\\"
+        elif ch == '"':
+            out += '\\"'
+        elif ch == "\n":
+            out += "\\n"
+        elif ch == "\r":
+            out += "\\r"
+        elif ch == "\t":
+            out += "\\t"
+        else:
+            out += ch
+    out += '"'
+    return out
 
 
 class CppEmitter:
@@ -162,6 +175,25 @@ class CppEmitter:
                 return False
             i += 1
         return True
+
+    def _normalize_type_name(self, t: str) -> str:
+        s = t.strip()
+        if s == "any":
+            return "Any"
+        if s == "object":
+            return "Any"
+        return s
+
+    def _is_any_like_type(self, t: str | None) -> bool:
+        if not isinstance(t, str):
+            return False
+        s = self._normalize_type_name(t)
+        if s in {"Any", "unknown"}:
+            return True
+        if "|" in s:
+            parts = self.split_union(s)
+            return any(self._is_any_like_type(p) for p in parts if p != "None")
+        return False
 
     def transpile(self) -> str:
         body: list[dict[str, Any]] = []
@@ -344,6 +376,45 @@ class CppEmitter:
             return f"std::to_string({rendered})"
         return f"py_to_string({rendered})"
 
+    def render_expr_as_any(self, expr: dict[str, Any] | None) -> str:
+        if not isinstance(expr, dict):
+            return f"std::any({self.render_expr(expr)})"
+        kind = str(expr.get("kind", ""))
+        if kind == "Dict":
+            items: list[str] = []
+            for kv in expr.get("entries", []):
+                k = self.render_expr(kv.get("key"))
+                v = self.render_expr_as_any(kv.get("value"))
+                items.append(f"{{{k}, {v}}}")
+            return f"std::any(dict<str, std::any>{{{', '.join(items)}}})"
+        if kind == "List":
+            vals = ", ".join(self.render_expr_as_any(e) for e in expr.get("elements", []))
+            return f"std::any(list<std::any>{{{vals}}})"
+        return f"std::any({self.render_expr(expr)})"
+
+    def render_boolop(self, expr: dict[str, Any], *, force_value_select: bool = False) -> str:
+        value_nodes = [v for v in expr.get("values", []) if isinstance(v, dict)]
+        if len(value_nodes) == 0:
+            return "false"
+        value_texts = [self.render_expr(v) for v in value_nodes]
+        if not force_value_select and self.get_expr_type(expr) == "bool":
+            op = "&&" if expr.get("op") == "And" else "||"
+            values = [f"({txt})" for txt in value_texts]
+            return f" {op} ".join(values)
+
+        op_name = str(expr.get("op"))
+        out = value_texts[-1]
+        i = len(value_nodes) - 2
+        while i >= 0:
+            cond = self.render_cond(value_nodes[i])
+            cur = value_texts[i]
+            if op_name == "And":
+                out = f"({cond} ? {out} : {cur})"
+            else:
+                out = f"({cond} ? {cur} : {out})"
+            i -= 1
+        return out
+
     def _binop_precedence(self, op_name: str) -> int:
         if op_name in {"Mult", "Div", "FloorDiv", "Mod"}:
             return 12
@@ -462,8 +533,24 @@ class CppEmitter:
             target = self.render_expr(stmt.get("target"))
             val = stmt.get("value")
             rendered_val = self.render_expr(val) if val is not None else None
+            ann_t = stmt.get("annotation")
+            ann_t_str = ann_t if isinstance(ann_t, str) else ""
+            if isinstance(val, dict) and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
+                inner_ann = self.split_generic(ann_t_str[5:-1])
+                if len(inner_ann) == 2 and self._is_any_like_type(inner_ann[1]):
+                    items: list[str] = []
+                    for kv in val.get("entries", []):
+                        k = self.render_expr(kv.get("key"))
+                        v = self.render_expr_as_any(kv.get("value"))
+                        items.append(f"{{{k}, {v}}}")
+                    rendered_val = f"{t}{{{', '.join(items)}}}"
             if isinstance(val, dict) and t != "auto":
                 vkind = val.get("kind")
+                if vkind == "BoolOp":
+                    ann_t_raw = stmt.get("annotation")
+                    ann_t = ann_t_raw if isinstance(ann_t_raw, str) else ""
+                    if ann_t != "bool":
+                        rendered_val = self.render_boolop(val, force_value_select=True)
                 if vkind == "List" and len(val.get("elements", [])) == 0:
                     rendered_val = f"{t}{{}}"
                 elif vkind == "Dict" and len(val.get("entries", [])) == 0:
@@ -507,6 +594,13 @@ class CppEmitter:
                 self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
                 return
             val = self.render_expr(stmt.get("value"))
+            target_t = self.get_expr_type(target_expr)
+            value_t = self.get_expr_type(stmt.get("value"))
+            if self._is_any_like_type(value_t):
+                if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+                    val = f"py_to_int64({val})"
+                elif target_t in {"float32", "float64"}:
+                    val = f"static_cast<float64>(py_to_int64({val}))"
             op_name = str(stmt.get("op"))
             if op_name in AUG_BIN:
                 bop = AUG_BIN[op_name]
@@ -666,9 +760,16 @@ class CppEmitter:
             picked = d0 if isinstance(d0, str) and d0 != "" else (d1 if isinstance(d1, str) and d1 != "" else d2)
             dtype = self.cpp_type(picked)
             self.current_scope().add(texpr)
-            self.emit(f"{dtype} {texpr} = {self.render_expr(value)};")
+            rval = self.render_expr(value)
+            if isinstance(value, dict) and value.get("kind") == "BoolOp" and picked != "bool":
+                rval = self.render_boolop(value, force_value_select=True)
+            self.emit(f"{dtype} {texpr} = {rval};")
             return
-        self.emit(f"{texpr} = {self.render_expr(value)};")
+        rval = self.render_expr(value)
+        t_target = self.get_expr_type(target)
+        if isinstance(value, dict) and value.get("kind") == "BoolOp" and t_target != "bool":
+            rval = self.render_boolop(value, force_value_select=True)
+        self.emit(f"{texpr} = {rval};")
 
     def is_plain_name_expr(self, expr: Any) -> bool:
         return isinstance(expr, dict) and expr.get("kind") == "Name"
@@ -801,6 +902,9 @@ class CppEmitter:
         t_ty = self.cpp_type(t0 if isinstance(t0, str) and t0 != "" else t1)
         target_names = self._target_bound_names(target if isinstance(target, dict) else None)
         unpack_tuple = isinstance(target, dict) and target.get("kind") == "Tuple"
+        if unpack_tuple:
+            # tuple unpack emits extra binding lines before the loop body; keep braces for correctness.
+            omit_braces = False
         if unpack_tuple:
             iter_tmp = self.next_tmp("__it")
             hdr = f"for (auto {iter_tmp} : {it})"
@@ -1465,12 +1569,7 @@ class CppEmitter:
                 return f"+{operand}"
             return operand
         if kind == "BoolOp":
-            values: list[str] = []
-            for v in expr.get("values", []):
-                txt = self.render_expr(v)
-                values.append(f"({txt})")
-            op = "&&" if expr.get("op") == "And" else "||"
-            return f" {op} ".join(values) if len(values) > 0 else "false"
+            return self.render_boolop(expr)
         if kind == "Compare":
             if expr.get("lowered_kind") == "Contains":
                 container = self.render_expr(expr.get("container"))
@@ -1771,7 +1870,7 @@ class CppEmitter:
     def cpp_type(self, east_type: Any) -> str:
         if not isinstance(east_type, str):
             return "auto"
-        east_type = east_type.strip()
+        east_type = self._normalize_type_name(east_type)
         if east_type == "":
             return "auto"
         if east_type == "Any":
