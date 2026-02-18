@@ -138,6 +138,18 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_dict_wrapper_methods_runtime(self) -> None:
+        out = self._compile_and_run_fixture("dict_wrapper_methods")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_set_wrapper_methods_runtime(self) -> None:
+        out = self._compile_and_run_fixture("set_wrapper_methods")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
     def test_boolop_value_select_runtime(self) -> None:
         out = self._compile_and_run_fixture("boolop_value_select")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]

@@ -150,9 +150,14 @@ using bytes = bytearray;
 template <class K, class V>
 class dict : public std::unordered_map<K, V> {
 public:
+    using Base = std::unordered_map<K, V>;
     using std::unordered_map<K, V>::unordered_map;
     using typename std::unordered_map<K, V>::const_iterator;
     using typename std::unordered_map<K, V>::iterator;
+    using value_type = typename Base::value_type;
+
+    dict() = default;
+    dict(std::initializer_list<value_type> init) : Base(init) {}
 
     V get(const K& key) const {
         auto it = this->find(key);
@@ -195,9 +200,14 @@ public:
 template <class T>
 class set : public std::unordered_set<T> {
 public:
+    using Base = std::unordered_set<T>;
     using std::unordered_set<T>::unordered_set;
     using typename std::unordered_set<T>::const_iterator;
     using typename std::unordered_set<T>::iterator;
+    using value_type = typename Base::value_type;
+
+    set() = default;
+    set(std::initializer_list<value_type> init) : Base(init) {}
 
     void add(const T& value) { this->insert(value); }
 
@@ -614,6 +624,24 @@ static inline V py_dict_get_default(const dict<str, V>& d, const char* key, cons
     auto it = d.find(str(key));
     if (it == d.end()) {
         return defval;
+    }
+    return it->second;
+}
+
+template <class K, class V, class D, std::enable_if_t<std::is_convertible_v<D, V>, int> = 0>
+static inline V py_dict_get_default(const dict<K, V>& d, const K& key, const D& defval) {
+    auto it = d.find(key);
+    if (it == d.end()) {
+        return static_cast<V>(defval);
+    }
+    return it->second;
+}
+
+template <class V, class D, std::enable_if_t<std::is_convertible_v<D, V>, int> = 0>
+static inline V py_dict_get_default(const dict<str, V>& d, const char* key, const D& defval) {
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return static_cast<V>(defval);
     }
     return it->second;
 }
