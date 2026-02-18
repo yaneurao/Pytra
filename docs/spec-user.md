@@ -29,7 +29,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - `import` / `from ... import ...` をサポートします。
 - `from ... import *`（ワイルドカード import）はサポート対象外です。
 - トランスパイル対象コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の直接 import は禁止です。
-- import 可能なのは `src/pylib/` にあるモジュールのみです（公開 API は `docs/pylib-modules.md` を参照）。
+- import 可能なのは `src/pylib/` のモジュールと、ユーザーが作成した自作 `.py` モジュールです。
+- 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
 - `object` 型（`Any` 由来を含む）に対する属性アクセス・メソッド呼び出しは禁止です。
   - 例: `x: object` に対して `x.foo()` / `x.bar` は不可。
   - 必要な場合は、明示的に型を確定させた変数へ代入してからアクセスしてください。

@@ -37,7 +37,7 @@
 - selfhost 対象コード（特に `src/common/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
 - import は静的に解決できる形で記述し、自己変換時に未対応構文を増やさないことを優先します。
 - トランスパイル対象の Python コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の `import` を全面禁止とします。
-- トランスパイル対象コードが import できるのは `src/pylib/` にあるモジュールのみです。
+- トランスパイル対象コードが import できるのは `src/pylib/` モジュールと、ユーザー自作 `.py` モジュールです。
 
 ## 6. テスト・最適化ルール
 
