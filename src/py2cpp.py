@@ -134,6 +134,8 @@ class BaseEmitter:
         if not isinstance(t, str):
             return ""
         s = str(t)
+        if s == "byte":
+            return "uint8"
         if s == "any":
             return "Any"
         if s == "object":
@@ -257,7 +259,7 @@ def cpp_string_lit(s: str) -> str:
     i = 0
     n = len(s)
     while i < n:
-        ch: str = s[i]
+        ch: byte = s[i]
         if ch == "\\":
             out += "\\\\"
         elif ch == '"':
@@ -275,7 +277,7 @@ def cpp_string_lit(s: str) -> str:
     return out
 
 
-def cpp_char_lit(ch: str) -> str:
+def cpp_char_lit(ch: byte) -> str:
     if ch == "\\":
         return "'\\\\'"
     if ch == "'":
@@ -541,7 +543,7 @@ class CppEmitter(BaseEmitter):
             wrapped: bool = True
             i = 0
             while i < len(s):
-                ch: str = s[i]
+                ch: byte = s[i]
                 if in_str:
                     if esc:
                         esc = False
@@ -711,7 +713,19 @@ class CppEmitter(BaseEmitter):
         l_ch = self._one_char_str_const(left_node)
         if r_access is not None and l_ch is not None:
             return f"{cpp_char_lit(l_ch)} {cop} {r_access}"
+        l_ty = self.get_expr_type(left_node)
+        if l_ty == "uint8" and r_ch is not None:
+            return f"{self.render_expr(left_node)} {cop} {cpp_char_lit(r_ch)}"
+        r_ty = self.get_expr_type(right_node)
+        if r_ty == "uint8" and l_ch is not None:
+            return f"{cpp_char_lit(l_ch)} {cop} {self.render_expr(right_node)}"
         return None
+
+    def _byte_from_str_expr(self, node: dict[str, Any] | None) -> str | None:
+        ch = self._one_char_str_const(node)
+        if ch is not None:
+            return cpp_char_lit(ch)
+        return self._str_index_char_access(node)
 
     def _wrap_for_binop_operand(
         self,
@@ -825,6 +839,10 @@ class CppEmitter(BaseEmitter):
                 rendered_val = self.render_expr(val)
             ann_t_raw = stmt.get("annotation")
             ann_t_str: str = str(ann_t_raw) if isinstance(ann_t_raw, str) else ""
+            if ann_t_str in {"byte", "uint8"} and isinstance(val, dict):
+                byte_val = self._byte_from_str_expr(val)
+                if byte_val is not None:
+                    rendered_val = byte_val
             if isinstance(val, dict) and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
                 inner_ann = self.split_generic(ann_t_str[5:-1])
                 if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
@@ -1059,6 +1077,10 @@ class CppEmitter(BaseEmitter):
             dtype = self.cpp_type(picked)
             self.current_scope().add(texpr)
             rval = self.render_expr(value)
+            if dtype == "uint8" and isinstance(value, dict):
+                byte_val = self._byte_from_str_expr(value)
+                if byte_val is not None:
+                    rval = byte_val
             if isinstance(value, dict) and value.get("kind") == "BoolOp" and picked != "bool":
                 rval = self.render_boolop(value, True)
             if self.is_any_like_type(picked):
@@ -1070,6 +1092,10 @@ class CppEmitter(BaseEmitter):
             return
         rval = self.render_expr(value)
         t_target = self.get_expr_type(target)
+        if t_target == "uint8" and isinstance(value, dict):
+            byte_val = self._byte_from_str_expr(value)
+            if byte_val is not None:
+                rval = byte_val
         if isinstance(value, dict) and value.get("kind") == "BoolOp" and t_target != "bool":
             rval = self.render_boolop(value, True)
         if self.is_any_like_type(t_target):

@@ -95,6 +95,8 @@ class BaseEmitter:
         if not isinstance(t, str):
             return ""
         s = str(t)
+        if s == "byte":
+            return "uint8"
         if s == "any":
             return "Any"
         if s == "object":
