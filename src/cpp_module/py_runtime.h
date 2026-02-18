@@ -55,6 +55,24 @@ public:
     str() = default;
     str(const std::string& s) : std::string(s) {}
     str(std::string&& s) : std::string(std::move(s)) {}
+
+    str operator[](int64 idx) const {
+        int64 n = static_cast<int64>(this->size());
+        if (idx < 0) idx += n;
+        if (idx < 0 || idx >= n) {
+            throw std::out_of_range("string index out of range");
+        }
+        return str(1, std::string::operator[](static_cast<std::size_t>(idx)));
+    }
+
+    char at(int64 idx) const {
+        int64 n = static_cast<int64>(this->size());
+        if (idx < 0) idx += n;
+        if (idx < 0 || idx >= n) {
+            throw std::out_of_range("string index out of range");
+        }
+        return std::string::at(static_cast<std::size_t>(idx));
+    }
 };
 
 namespace std {
@@ -1067,7 +1085,7 @@ static inline str py_at(const str& v, int64 idx) {
     if (idx < 0 || idx >= static_cast<int64>(v.size())) {
         throw std::out_of_range("string index out of range");
     }
-    return str(1, v[static_cast<std::size_t>(idx)]);
+    return str(1, static_cast<const std::string&>(v)[static_cast<std::size_t>(idx)]);
 }
 
 static inline str py_slice(const std::any& v, int64 lo, int64 up) {
@@ -1089,14 +1107,14 @@ static inline str py_read_text(const Path& p) {
 
 static inline str py_lstrip(const str& s) {
     std::size_t i = 0;
-    while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i])) != 0) i++;
+    while (i < s.size() && std::isspace(static_cast<unsigned char>(static_cast<const std::string&>(s)[i])) != 0) i++;
     return s.substr(i);
 }
 
 static inline str py_rstrip(const str& s) {
     if (s.empty()) return s;
     std::size_t i = s.size();
-    while (i > 0 && std::isspace(static_cast<unsigned char>(s[i - 1])) != 0) i--;
+    while (i > 0 && std::isspace(static_cast<unsigned char>(static_cast<const std::string&>(s)[i - 1])) != 0) i--;
     return s.substr(0, i);
 }
 
@@ -1373,11 +1391,11 @@ static inline str py_repeat(const str& v, int64 n) {
 }
 
 static inline bool py_isdigit(const str& ch) {
-    return ch.size() == 1 && std::isdigit(static_cast<unsigned char>(ch[0])) != 0;
+    return ch.size() == 1 && std::isdigit(static_cast<unsigned char>(static_cast<const std::string&>(ch)[0])) != 0;
 }
 
 static inline bool py_isalpha(const str& ch) {
-    return ch.size() == 1 && std::isalpha(static_cast<unsigned char>(ch[0])) != 0;
+    return ch.size() == 1 && std::isalpha(static_cast<unsigned char>(static_cast<const std::string&>(ch)[0])) != 0;
 }
 
 #endif
