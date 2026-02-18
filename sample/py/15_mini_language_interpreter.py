@@ -36,7 +36,7 @@ def tokenize(lines: list[str]) -> list[Token]:
         i: int = 0
         n: int = len(source)
         while i < n:
-            ch: str = source[i:i + 1]
+            ch: str = source[i]
 
             if ch == " ":
                 i += 1
@@ -79,7 +79,7 @@ def tokenize(lines: list[str]) -> list[Token]:
 
             if ch.isdigit():
                 start: int = i
-                while i < n and source[i:i + 1].isdigit():
+                while i < n and source[i].isdigit():
                     i += 1
                 text: str = source[start:i]
                 tokens.append(Token("NUMBER", text, start))
@@ -87,7 +87,7 @@ def tokenize(lines: list[str]) -> list[Token]:
 
             if ch.isalpha() or ch == "_":
                 start = i
-                while i < n and ((source[i:i + 1].isalpha() or source[i:i + 1] == "_") or source[i:i + 1].isdigit()):
+                while i < n and ((source[i].isalpha() or source[i] == "_") or source[i].isdigit()):
                     i += 1
                 text = source[start:i]
                 if text == "let":
