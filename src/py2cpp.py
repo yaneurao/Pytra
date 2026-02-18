@@ -546,6 +546,12 @@ class CppEmitter(CodeEmitter):
         self.indent -= 1
         self.emit(self.syntax_text("block_close", "}"))
 
+    def _render_lvalue_for_augassign(self, target_expr: dict[str, Any]) -> str:
+        """AugAssign 向けに左辺を簡易レンダリングする。"""
+        if target_expr.get("kind") == "Name":
+            return str(target_expr.get("id", "_"))
+        return self.render_lvalue(target_expr)
+
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
         hook_stmt = self.hook_on_emit_stmt(stmt)
@@ -671,18 +677,18 @@ class CppEmitter(CodeEmitter):
         if kind == "AugAssign":
             op = "+="
             target_expr = self.any_to_dict_or_empty(stmt.get("target"))
-            target = self.render_lvalue(target_expr)
+            target = self._render_lvalue_for_augassign(target_expr)
             declare = self.any_dict_get_int(stmt, "declare", 0) != 0
-            if declare and self.is_plain_name_expr(target_expr) and target not in self.current_scope():
+            if declare and target_expr.get("kind") == "Name" and target not in self.current_scope():
                 decl_t_raw = stmt.get("decl_type")
                 decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
-                inferred_t = self.get_expr_type(target_expr)
+                inferred_t = self.get_expr_type(stmt.get("target"))
                 t = self.cpp_type(decl_t if decl_t != "" else inferred_t)
                 self.current_scope().add(target)
                 self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
                 return
             val = self.render_expr(stmt.get("value"))
-            target_t = self.get_expr_type(target_expr)
+            target_t = self.get_expr_type(stmt.get("target"))
             value_t = self.get_expr_type(stmt.get("value"))
             if self.is_any_like_type(value_t):
                 if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
@@ -718,7 +724,7 @@ class CppEmitter(CodeEmitter):
             return
         if kind == "Raise":
             exc = stmt.get("exc")
-            if exc is None:
+            if exc is None or not isinstance(exc, dict):
                 self.emit('throw std::runtime_error("raise");')
             else:
                 self.emit(f"throw {self.render_expr(exc)};")
