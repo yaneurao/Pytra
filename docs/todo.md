@@ -21,9 +21,9 @@
 
 #### B. `std::any` と `optional` の橋渡し
 
-- [ ] `== None` / `!= None` / `is None` / `is not None` が `std::any` 値でも安全に評価できる補助関数を `py_runtime.h` に追加する。
-- [ ] `dict.get()` の戻り値が `std::any` の場合、`optional<T>` へ安全に変換するヘルパを追加する。
-- [ ] `emit_stmt` / `render_expr` で `std::any` と `optional<T>` の比較が直接生成されないようガードする。
+- [x] `== None` / `!= None` / `is None` / `is not None` が `std::any` 値でも安全に評価できる補助関数を `py_runtime.h` に追加する。
+- [x] `dict.get()` の戻り値が `std::any` の場合、`optional<T>` へ安全に変換するヘルパを追加する。
+- [x] `emit_stmt` / `render_expr` で `std::any` と `optional<T>` の比較が直接生成されないようガードする。
 - [ ] `selfhost/py2cpp.cpp` の `no match for operator==(... nullopt_t)` 系エラーが消えることを確認する。
 
 #### C. 文字列/反復ユーティリティの selfhost 対応

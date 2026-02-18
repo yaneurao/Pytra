@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-import re
 import sys
 from typing import Any
 
@@ -94,7 +93,7 @@ class CppEmitter:
         self.current_class_fields: dict[str, str] = {}
         self.current_class_static_fields: set[str] = set()
         self.class_method_names: dict[str, set[str]] = {}
-        self.class_base: dict[str, str | None] = {}
+        self.class_base: dict[str, str] = {}
         self.class_names: set[str] = set()
         self.class_storage_hints: dict[str, str] = {}
         self.ref_classes: set[str] = set()
@@ -117,6 +116,20 @@ class CppEmitter:
         for stmt in stmts:
             self.emit_stmt(stmt)
 
+    def _as_dict(self, value: Any) -> dict[str, Any] | None:
+        if isinstance(value, dict):
+            return value
+        return None
+
+    def _as_dict_list(self, values: Any) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        if not isinstance(values, list):
+            return out
+        for v in values:
+            if isinstance(v, dict):
+                out.append(v)
+        return out
+
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
         self.emit("/* " + text + " */")
@@ -129,20 +142,37 @@ class CppEmitter:
         self.tmp_id += 1
         return f"{prefix}_{self.tmp_id}"
 
+    def _is_identifier_expr(self, text: str) -> bool:
+        if len(text) == 0:
+            return False
+        c0 = text[0]
+        if not (c0 == "_" or ("a" <= c0 <= "z") or ("A" <= c0 <= "Z")):
+            return False
+        i = 1
+        while i < len(text):
+            ch = text[i]
+            if not (ch == "_" or ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9")):
+                return False
+            i += 1
+        return True
+
     def transpile(self) -> str:
-        for stmt in self.doc.get("body", []):
+        body = self._as_dict_list(self.doc.get("body", []))
+        for stmt in body:
             if stmt.get("kind") == "ClassDef":
                 cls_name = str(stmt.get("name", ""))
                 if cls_name != "":
                     self.class_names.add(cls_name)
                     mset: set[str] = set()
-                    for s in stmt.get("body", []):
+                    class_body = self._as_dict_list(stmt.get("body", []))
+                    for s in class_body:
                         if s.get("kind") == "FunctionDef":
                             fn_name = str(s.get("name"))
                             mset.add(fn_name)
                     self.class_method_names[cls_name] = mset
-                    base = stmt.get("base")
-                    self.class_base[cls_name] = str(base) if isinstance(base, str) else None
+                    base_raw = stmt.get("base")
+                    base = str(base_raw) if isinstance(base_raw, str) else ""
+                    self.class_base[cls_name] = base
                     hint = str(stmt.get("class_storage_hint", "ref"))
                     self.class_storage_hints[cls_name] = hint if hint in {"value", "ref"} else "ref"
 
@@ -151,7 +181,7 @@ class CppEmitter:
         while changed:
             changed = False
             for name, base in self.class_base.items():
-                if isinstance(base, str) and base != "" and base in self.ref_classes and name not in self.ref_classes:
+                if base != "" and base in self.ref_classes and name not in self.ref_classes:
                     self.ref_classes.add(name)
                     changed = True
         self.value_classes = {name for name in self.class_names if name not in self.ref_classes}
@@ -163,7 +193,7 @@ class CppEmitter:
         self.emit(header_text)
         self.emit("")
 
-        for stmt in self.doc.get("body", []):
+        for stmt in body:
             self.emit_stmt(stmt)
             self.emit("")
 
@@ -171,7 +201,8 @@ class CppEmitter:
         self.indent += 1
         self.emit("pytra_configure_from_argv(argc, argv);")
         self.scope_stack.append(set())
-        self.emit_stmt_list(list(self.doc.get("main_guard_body", [])))
+        main_guard = self._as_dict_list(self.doc.get("main_guard_body", []))
+        self.emit_stmt_list(main_guard)
         self.scope_stack.pop()
         self.emit("return 0;")
         self.indent -= 1
@@ -203,7 +234,7 @@ class CppEmitter:
 
     def render_cond(self, expr: dict[str, Any] | None) -> str:
         t0 = self.get_expr_type(expr)
-        t: str = t0 if t0 is not None else ""
+        t: str = t0 if isinstance(t0, str) else ""
         body = self._strip_outer_parens(self.render_expr(expr))
         if t in {"bool"}:
             return body
@@ -219,7 +250,7 @@ class CppEmitter:
         while len(s) > 0 and s[-1] in ws:
             s = s[:-1]
 
-        while len(s) >= 2 and s[0] == "(" and s[-1] == ")":
+        while len(s) >= 2 and s[:1] == "(" and s[-1:] == ")":
             depth: int = 0
             in_str: bool = False
             esc: bool = False
@@ -353,14 +384,14 @@ class CppEmitter:
             self.emit("continue;")
             return
         if kind == "Expr":
-            value = stmt.get("value")
+            value = self._as_dict(stmt.get("value"))
             if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
                 self.emit_block_comment(str(value.get("value")))
             else:
                 self.emit_bridge_comment(value)
                 rendered = self.render_expr(value)
                 # Guard against stray identifier-only expression statements (e.g. "r;").
-                if isinstance(rendered, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", rendered):
+                if isinstance(rendered, str) and self._is_identifier_expr(rendered):
                     if rendered == "break":
                         self.emit("break;")
                     elif rendered == "continue":
@@ -373,7 +404,7 @@ class CppEmitter:
                     self.emit(rendered + ";")
             return
         if kind == "Return":
-            v = stmt.get("value")
+            v = self._as_dict(stmt.get("value"))
             if v is None:
                 self.emit("return;")
             else:
@@ -452,8 +483,8 @@ class CppEmitter:
                 self.emit(f"{target} {op} {val};")
             return
         if kind == "If":
-            body_stmts = list(stmt.get("body", []))
-            else_stmts = list(stmt.get("orelse", []))
+            body_stmts = self._as_dict_list(stmt.get("body", []))
+            else_stmts = self._as_dict_list(stmt.get("orelse", []))
             if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
                 self.emit(f"if ({self.render_cond(stmt.get('test'))})")
                 self.indent += 1
@@ -491,7 +522,7 @@ class CppEmitter:
             self.emit(f"while ({self.render_cond(stmt.get('test'))}) {{")
             self.indent += 1
             self.scope_stack.append(set())
-            self.emit_stmt_list(list(stmt.get("body", [])))
+            self.emit_stmt_list(self._as_dict_list(stmt.get("body", [])))
             self.scope_stack.pop()
             self.indent -= 1
             self.emit("}")
@@ -523,15 +554,15 @@ class CppEmitter:
                 self.emit("});")
             self.emit("try {")
             self.indent += 1
-            self.emit_stmt_list(list(stmt.get("body", [])))
+            self.emit_stmt_list(self._as_dict_list(stmt.get("body", [])))
             self.indent -= 1
             self.emit("}")
-            for h in stmt.get("handlers", []):
+            for h in self._as_dict_list(stmt.get("handlers", [])):
                 name_raw = h.get("name")
                 name = name_raw if isinstance(name_raw, str) and name_raw != "" else "ex"
                 self.emit(f"catch (const std::exception& {name}) {{")
                 self.indent += 1
-                self.emit_stmt_list(list(h.get("body", [])))
+                self.emit_stmt_list(self._as_dict_list(h.get("body", [])))
                 self.indent -= 1
                 self.emit("}")
             if has_effective_finally:
@@ -674,7 +705,7 @@ class CppEmitter:
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
-        body_stmts = list(stmt.get("body", []))
+        body_stmts = self._as_dict_list(stmt.get("body", []))
         omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         mode = stmt.get("range_mode")
         if mode == "ascending":
@@ -722,7 +753,7 @@ class CppEmitter:
             }
             self.emit_for_range(pseudo)
             return
-        body_stmts = list(stmt.get("body", []))
+        body_stmts = self._as_dict_list(stmt.get("body", []))
         omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         t = self.render_expr(target)
         it = self.render_expr(iter_expr)
@@ -791,7 +822,7 @@ class CppEmitter:
         docstring = stmt.get("docstring")
         if isinstance(docstring, str) and docstring != "":
             self.emit_block_comment(docstring)
-        self.emit_stmt_list(list(stmt.get("body", [])))
+        self.emit_stmt_list(self._as_dict_list(stmt.get("body", [])))
         self.scope_stack.pop()
         self.indent -= 1
         self.emit("}")
@@ -816,7 +847,7 @@ class CppEmitter:
         prev_static_fields = self.current_class_static_fields
         self.current_class_name = str(name)
         self.current_class_fields = dict(stmt.get("field_types", {}))
-        class_body = list(stmt.get("body", []))
+        class_body = self._as_dict_list(stmt.get("body", []))
         static_field_types: dict[str, str] = {}
         static_field_defaults: dict[str, str] = {}
         instance_field_defaults: dict[str, str] = {}
@@ -1416,7 +1447,12 @@ class CppEmitter:
                     else:
                         parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
                 else:
-                    parts.append(f"{cur} {cop} {rhs}")
+                    if op in {"Is", "IsNot"} and rhs == "std::nullopt":
+                        parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({cur})")
+                    elif op in {"Is", "IsNot"} and cur == "std::nullopt":
+                        parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({rhs})")
+                    else:
+                        parts.append(f"{cur} {cop} {rhs}")
                 cur = rhs
             return " && ".join(parts) if parts else "true"
         if kind == "IfExp":

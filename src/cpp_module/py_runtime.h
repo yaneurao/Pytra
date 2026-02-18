@@ -369,6 +369,30 @@ static inline str py_dict_get_default(const dict<str, std::any>& d, const char* 
 }
 
 template <class T>
+static inline bool py_is_none(const std::optional<T>& v) {
+    return !v.has_value();
+}
+
+template <class T>
+static inline bool py_is_none(const T&) {
+    return false;
+}
+
+static inline bool py_is_none(const std::any& v) {
+    if (!v.has_value()) return true;
+    if (v.type() == typeid(std::nullopt_t)) return true;
+    return false;
+}
+
+template <class T>
+static inline std::optional<T> py_any_to_optional(const std::any& v) {
+    if (!v.has_value()) return std::nullopt;
+    if (const auto* p = std::any_cast<T>(&v)) return *p;
+    if (const auto* p = std::any_cast<std::optional<T>>(&v)) return *p;
+    return std::nullopt;
+}
+
+template <class T>
 static inline bool py_any(const T& values) {
     for (const auto& v : values) {
         if (static_cast<bool>(v)) return true;
