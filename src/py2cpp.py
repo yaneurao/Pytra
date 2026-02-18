@@ -10,7 +10,7 @@ from __future__ import annotations
 from pylib.typing import Any
 
 from common.code_emitter import CodeEmitter
-from common.east_io import load_east_from_path
+from pylib.east_io import load_east_from_path
 from common.language_profile import load_language_profile
 from pylib.path import Path
 from pylib import sys

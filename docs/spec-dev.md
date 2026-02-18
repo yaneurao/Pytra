@@ -161,7 +161,8 @@
 
 - `src/pylib/east.py`: Python -> EAST JSON（正本）
 - `src/common/east.py`: 互換 shim（`pylib.east` を再エクスポート）
-- `src/common/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（言語非依存）
+- `src/pylib/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
+- `src/common/east_io.py`: 互換 shim（`pylib.east_io` を再エクスポート）
 - `src/common/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/py2cpp.py`: EAST JSON -> C++
 - `src/runtime/cpp/py_runtime.h`: C++ ランタイム集約
