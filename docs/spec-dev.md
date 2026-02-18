@@ -15,6 +15,34 @@
 - `sample/`: 実用サンプル入力と各言語変換結果
 - `docs/`: 仕様・使い方・実装状況
 
+### 1.1 `src/pylib/` 公開API（実装基準）
+
+`src/pylib/` は selfhost を含む共通 Python ライブラリの正本です。  
+`_` で始まる名前は内部実装扱いとし、以下を公開APIとして扱います。
+
+- `pylib.assertions`
+  - 関数: `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
+- `pylib.path`
+  - class: `Path`
+  - メンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve`, `exists`, `mkdir`, `read_text`, `write_text`, `glob`, `cwd`
+- `pylib.json`
+  - 関数: `loads`, `dumps`
+- `pylib.sys`
+  - 変数: `argv`, `path`, `stderr`, `stdout`
+  - 関数: `exit`, `set_argv`, `set_path`, `write_stderr`, `write_stdout`
+- `pylib.typing`
+  - 型名: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
+  - 関数: `TypeVar`
+- `pylib.png`
+  - 関数: `write_rgb_png`
+- `pylib.gif`
+  - 関数: `grayscale_palette`, `save_gif`
+- `pylib.east`
+  - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
+  - 関数: `convert_source_to_east`, `convert_source_to_east_self_hosted`, `convert_source_to_east_with_backend`, `convert_path`, `render_east_human_cpp`, `main`
+- `pylib.east_io`
+  - 関数: `extract_module_leading_trivia`, `load_east_from_path`
+
 ## 2. C# 変換仕様（`py2cs.py`）
 
 - Python AST を解析し、`Program` クラスを持つ C# コードを生成します。
