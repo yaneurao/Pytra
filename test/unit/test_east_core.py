@@ -27,6 +27,28 @@ def _walk(node: Any):
 
 
 class EastCoreTest(unittest.TestCase):
+    def test_except_without_as_is_supported(self) -> None:
+        src = """
+def f(x: str) -> bool:
+    try:
+        _ = int(x)
+        return True
+    except ValueError:
+        return False
+
+def main() -> None:
+    print(f("12"))
+
+if __name__ == "__main__":
+    main()
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        try_nodes = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Try"]
+        self.assertEqual(len(try_nodes), 1)
+        handlers = try_nodes[0].get("handlers", [])
+        self.assertEqual(len(handlers), 1)
+        self.assertIsNone(handlers[0].get("name"))
+
     def test_builtin_call_lowering_for_common_methods(self) -> None:
         src = """
 from pathlib import Path

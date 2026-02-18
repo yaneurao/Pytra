@@ -2797,10 +2797,15 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     h_indent = len(h_ln) - len(h_ln.lstrip(" "))
                     if h_indent != indent:
                         break
-                    m_exc = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s, flags=re.S)
-                    if m_exc is not None:
-                        ex_type_txt = m_exc.group(1).strip()
-                        ex_name = m_exc.group(2)
+                    m_exc_as = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s, flags=re.S)
+                    m_exc_plain = re.match(r"^except\s+(.+?)\s*:\s*$", h_s, flags=re.S)
+                    if m_exc_as is not None or m_exc_plain is not None:
+                        if m_exc_as is not None:
+                            ex_type_txt = m_exc_as.group(1).strip()
+                            ex_name: str | None = m_exc_as.group(2)
+                        else:
+                            ex_type_txt = m_exc_plain.group(1).strip() if m_exc_plain is not None else "Exception"
+                            ex_name = None
                         ex_type_col = h_ln.find(ex_type_txt)
                         h_body, k = collect_indented_block(j + 1, indent)
                         handlers.append(

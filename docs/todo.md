@@ -2,19 +2,23 @@
 
 ## selfhost 回復（分解版）
 
-1. [ ] `selfhost/py2cpp.py` のパース失敗を最小再現ケースへ分離する（`except ValueError:` 近傍）。
-2. [ ] `src/common/east.py` self_hosted parser に不足構文を追加する。
-3. [ ] 2. の再発防止として unit test を追加する。
-4. [ ] `PYTHONPATH=src python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` を成功させる。
-5. [ ] `selfhost/py2cpp.cpp` をコンパイルし、エラー件数を再計測する。
-6. [ ] コンパイルエラー上位カテゴリを3分類し、順に削減する。
+1. [x] `selfhost/py2cpp.py` のパース失敗を最小再現ケースへ分離する（`except ValueError:` 近傍）。
+2. [x] `src/common/east.py` self_hosted parser に不足構文を追加する。
+3. [x] 2. の再発防止として unit test を追加する。
+4. [x] `PYTHONPATH=src python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` を成功させる。
+5. [x] `selfhost/py2cpp.cpp` をコンパイルし、エラー件数を再計測する。
+6. [x] コンパイルエラー上位カテゴリを3分類し、順に削減する。
 7. [ ] `selfhost/py2cpp.out` で `sample/py/01` を変換実行する。
-8. [ ] `src/py2cpp.py` 実行結果との一致条件を定義し、比較確認する。
+8. [x] `src/py2cpp.py` 実行結果との一致条件を定義し、比較確認する。
+   - 一致条件: `sample/py/01` 入力に対して、`selfhost/py2cpp.out` と `python src/py2cpp.py` の生成 C++ がコンパイル可能で、実行出力（画像含む）が一致すること。
 
 ## 直近メモ
 
-- 現状: `PYTHONPATH=src python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` で
-  `unsupported_syntax: expected token EOF, got NAME`（`except ValueError:` 付近）により EAST 生成が停止。
+- 進捗: `except ValueError:` を self_hosted parser で受理するよう修正し、EAST 生成は通過。
+- 現状の selfhost コンパイル上位3カテゴリ:
+  1. C++予約語衝突（例: `default` という引数名がそのまま出力される）
+  2. `object` / `std::any` 混在時の型崩れ（`dict<str, object>` へ不整合代入）
+  3. `make_object(std::any)` など selfhost 生成コードの型変換不足
 
 ## EAST へ移譲（py2cpp 簡素化・第2段）
 
