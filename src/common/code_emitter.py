@@ -17,7 +17,7 @@ class CodeEmitter:
 
     def __init__(
         self,
-        east_doc: dict[str, Any],
+        east_doc: dict[str, Any] = {},
         profile: dict[str, Any] = {},
         hooks: dict[str, Any] = {},
     ) -> None:
