@@ -6,35 +6,22 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-try:
-    from .east_parts import (  # type: ignore[attr-defined]  # noqa: F401
-        BorrowKind,
-        EastBuildError,
-        FLOAT_TYPES,
-        INT_TYPES,
-        convert_path,
-        convert_source_to_east,
-        convert_source_to_east_self_hosted,
-        convert_source_to_east_with_backend,
-        main,
-        render_east_human_cpp,
-    )
-except ImportError:  # pragma: no cover - script execution path
-    src_root = Path(__file__).resolve().parents[1]
-    if str(src_root) not in sys.path:
-        sys.path.insert(0, str(src_root))
-    from common.east_parts import (  # type: ignore[no-redef]  # noqa: F401
-        BorrowKind,
-        EastBuildError,
-        FLOAT_TYPES,
-        INT_TYPES,
-        convert_path,
-        convert_source_to_east,
-        convert_source_to_east_self_hosted,
-        convert_source_to_east_with_backend,
-        main,
-        render_east_human_cpp,
-    )
+src_root = Path(__file__).resolve().parents[1]
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from common.east_parts import (  # noqa: F401
+    BorrowKind,
+    EastBuildError,
+    FLOAT_TYPES,
+    INT_TYPES,
+    convert_path,
+    convert_source_to_east,
+    convert_source_to_east_self_hosted,
+    convert_source_to_east_with_backend,
+    main,
+    render_east_human_cpp,
+)
 
 if __name__ == "__main__":
     raise SystemExit(main())
