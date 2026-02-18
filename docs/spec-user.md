@@ -30,9 +30,9 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 
 ## 3. テストケース方針
 
-- 入力 Python は `test/fixtures/py/` 配下に配置します（カテゴリ別サブディレクトリ）。
+- 入力 Python は `test/fixtures/` 配下に配置します（カテゴリ別サブディレクトリ）。
 - 言語別の変換結果は `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/` に配置します。
-- 変換器都合で `test/fixtures/py/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
+- 変換器都合で `test/fixtures/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
 - ケース命名は `caseXX_*` 形式を基本とします。
 
 `test/` の標準構成は次のとおりです。
@@ -41,7 +41,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 test/
   unit/         # unittest のテストコード（test_*.py）
   integration/  # 統合テストコード
-  fixtures/py/  # 変換元 Python ケース（caseXX_*.py, カテゴリ別）
+  fixtures/     # 変換元 Python ケース（caseXX_*.py, カテゴリ別）
     core/
     control/
     strings/

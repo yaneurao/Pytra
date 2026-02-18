@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE_ROOT = ROOT / "test" / "fixtures" / "py"
+FIXTURE_ROOT = ROOT / "test" / "fixtures"
 
 
 @dataclass
@@ -175,7 +175,7 @@ def main() -> int:
         "cases",
         nargs="*",
         default=["case32_math_extended", "case33_pathlib_extended"],
-        help="case stems under test/fixtures/py/** (without .py)",
+        help="case stems under test/fixtures/** (without .py)",
     )
     args = parser.parse_args()
 

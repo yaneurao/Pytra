@@ -25,7 +25,7 @@ Windows では次の読み替えを行ってください。
 <summary>C++</summary>
 
 ```bash
-python src/py2cpp.py test/fixtures/py/collections/case29_iterable.py test/transpile/cpp/case29_iterable.cpp
+python src/py2cpp.py test/fixtures/collections/case29_iterable.py test/transpile/cpp/case29_iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/case29_iterable.cpp \
   src/cpp_module/png.cpp src/cpp_module/gif.cpp src/cpp_module/math.cpp \
   src/cpp_module/time.cpp src/cpp_module/pathlib.cpp src/cpp_module/dataclasses.cpp \
@@ -47,7 +47,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/case29_iterable.c
 <summary>Rust</summary>
 
 ```bash
-python src/py2rs.py test/fixtures/py/collections/case29_iterable.py test/transpile/rs/case29_iterable.rs
+python src/py2rs.py test/fixtures/collections/case29_iterable.py test/transpile/rs/case29_iterable.rs
 rustc -O test/transpile/rs/case29_iterable.rs -o test/transpile/obj/case29_iterable_rs.out
 ./test/transpile/obj/case29_iterable_rs.out
 ```
@@ -61,7 +61,7 @@ rustc -O test/transpile/rs/case29_iterable.rs -o test/transpile/obj/case29_itera
 <summary>C#</summary>
 
 ```bash
-python src/py2cs.py test/fixtures/py/collections/case29_iterable.py test/transpile/cs/case29_iterable.cs
+python src/py2cs.py test/fixtures/collections/case29_iterable.py test/transpile/cs/case29_iterable.cs
 mcs -out:test/transpile/obj/case29_iterable.exe \
   test/transpile/cs/case29_iterable.cs \
   src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs src/cs_module/pathlib.cs
@@ -77,7 +77,7 @@ mono test/transpile/obj/case29_iterable.exe
 <summary>JavaScript</summary>
 
 ```bash
-python src/py2js.py test/fixtures/py/collections/case29_iterable.py test/transpile/js/case29_iterable.js
+python src/py2js.py test/fixtures/collections/case29_iterable.py test/transpile/js/case29_iterable.js
 node test/transpile/js/case29_iterable.js
 ```
 
@@ -90,7 +90,7 @@ node test/transpile/js/case29_iterable.js
 <summary>TypeScript</summary>
 
 ```bash
-python src/py2ts.py test/fixtures/py/collections/case29_iterable.py test/transpile/ts/case29_iterable.ts
+python src/py2ts.py test/fixtures/collections/case29_iterable.py test/transpile/ts/case29_iterable.ts
 npx tsx test/transpile/ts/case29_iterable.ts
 ```
 
@@ -103,7 +103,7 @@ npx tsx test/transpile/ts/case29_iterable.ts
 <summary>Go</summary>
 
 ```bash
-python src/py2go.py test/fixtures/py/collections/case29_iterable.py test/transpile/go/case29_iterable.go
+python src/py2go.py test/fixtures/collections/case29_iterable.py test/transpile/go/case29_iterable.go
 go run test/transpile/go/case29_iterable.go
 ```
 
@@ -116,7 +116,7 @@ go run test/transpile/go/case29_iterable.go
 <summary>Java</summary>
 
 ```bash
-python src/py2java.py test/fixtures/py/collections/case29_iterable.py test/transpile/java/case29_iterable.java
+python src/py2java.py test/fixtures/collections/case29_iterable.py test/transpile/java/case29_iterable.java
 javac test/transpile/java/case29_iterable.java
 java -cp test/transpile/java case29_iterable
 ```
@@ -130,7 +130,7 @@ java -cp test/transpile/java case29_iterable
 <summary>Swift</summary>
 
 ```bash
-python src/py2swift.py test/fixtures/py/collections/case29_iterable.py test/transpile/swift/case29_iterable.swift
+python src/py2swift.py test/fixtures/collections/case29_iterable.py test/transpile/swift/case29_iterable.swift
 swiftc test/transpile/swift/case29_iterable.swift -o test/transpile/obj/case29_iterable_swift.out
 ./test/transpile/obj/case29_iterable_swift.out
 ```
@@ -144,7 +144,7 @@ swiftc test/transpile/swift/case29_iterable.swift -o test/transpile/obj/case29_i
 <summary>Kotlin</summary>
 
 ```bash
-python src/py2kotlin.py test/fixtures/py/collections/case29_iterable.py test/transpile/kotlin/case29_iterable.kt
+python src/py2kotlin.py test/fixtures/collections/case29_iterable.py test/transpile/kotlin/case29_iterable.kt
 kotlinc test/transpile/kotlin/case29_iterable.kt -include-runtime -d test/transpile/obj/case29_iterable_kotlin.jar
 java -cp test/transpile/obj/case29_iterable_kotlin.jar pytra_case29_iterable
 ```

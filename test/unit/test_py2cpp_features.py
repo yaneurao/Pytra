@@ -30,7 +30,7 @@ CPP_RUNTIME_SRCS = [
 
 
 def find_fixture_case(stem: str) -> Path:
-    matches = sorted((ROOT / "test" / "fixtures" / "py").rglob(f"{stem}.py"))
+    matches = sorted((ROOT / "test" / "fixtures").rglob(f"{stem}.py"))
     if not matches:
         raise FileNotFoundError(f"missing fixture: {stem}")
     return matches[0]

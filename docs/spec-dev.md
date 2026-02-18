@@ -81,10 +81,10 @@
 
 ## 4. 検証手順（C++）
 
-1. Python 版トランスパイラで `test/fixtures/py` を `test/transpile/cpp` へ変換
+1. Python 版トランスパイラで `test/fixtures` を `test/transpile/cpp` へ変換
 2. 生成 C++ を `test/transpile/obj/` にコンパイル
 3. 実行結果を Python 実行結果と比較
-4. セルフホスティング検証時は自己変換実行ファイルで `test/fixtures/py` -> `test/transpile/cpp2` を生成
+4. セルフホスティング検証時は自己変換実行ファイルで `test/fixtures` -> `test/transpile/cpp2` を生成
 5. `test/transpile/cpp` と `test/transpile/cpp2` の一致を確認
 
 ### 4.1 selfhost 検証のゴール条件

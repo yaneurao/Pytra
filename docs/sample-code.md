@@ -47,7 +47,7 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 `test/` は小規模な機能確認ケース、`sample/` は実用寄り・負荷高めケースという役割分担です。
 
-- [test/fixtures/py](../test/fixtures/py): 変換元テストコード
+- [test/fixtures](../test/fixtures): 変換元テストコード
 - [test/transpile/cpp](../test/transpile/cpp): C++ 変換結果
 - [test/transpile/cs](../test/transpile/cs): C# 変換結果
 - [test/transpile/rs](../test/transpile/rs): Rust 変換結果

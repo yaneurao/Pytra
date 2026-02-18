@@ -2,7 +2,7 @@
 
 ## selfhost（`py2cpp.py` を `py2cpp.py` で変換）
 
-- [x] `test/fixtures/py` にシグネチャ構文テストを追加する（`*` を含むケース、拒否すべきケース）。
+- [x] `test/fixtures` にシグネチャ構文テストを追加する（`*` を含むケース、拒否すべきケース）。
 - [ ] `selfhost/py2cpp.py` のトランスパイルが通ったら、`selfhost/py2cpp.cpp` のコンパイルまで確認する。
 - [ ] `selfhost/py2cpp.cpp` 実行で `sample/py/01` を変換させ、`src/py2cpp.py` の生成結果と一致比較する。
 - [x] 一致条件を定義する（C++ソース全文一致か、コンパイル可能性＋実行結果一致か）を `docs/spec-dev.md` に追記する。
@@ -36,7 +36,7 @@
 
 #### D. `dict/list` 動的アクセスの整合
 
-- [ ] `dict[str, Any]` に対する `.get(...).items()` の典型パターンを最小再現ケース化する（`test/fixtures/py` 追加）。
+- [ ] `dict[str, Any]` に対する `.get(...).items()` の典型パターンを最小再現ケース化する（`test/fixtures` 追加）。
 - [ ] `py_dict_get_default` の戻り値型に応じて `.items()` を安全に展開する経路を実装する。
 - [ ] `list<any>` / `dict<any>` 反復時の `begin/end` 解決をランタイム側かコード生成側のどちらかに統一する。
 - [ ] `cannot convert std::any to dict/list` 系エラーが消えることを確認する。

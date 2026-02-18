@@ -1,6 +1,6 @@
 # TODO
 
-- [x] セルフホスティング済みトランスパイラ実行ファイル（`test/transpile/obj/pycpp_transpiler_self_new`）を使って、`test/fixtures/py/case05` から `test/fixtures/py/case100` までを `test/transpile/cpp2/` に変換し、各生成 C++ がコンパイル可能かを一括検証した。
+- [x] セルフホスティング済みトランスパイラ実行ファイル（`test/transpile/obj/pycpp_transpiler_self_new`）を使って、`test/fixtures/case05` から `test/fixtures/case100` までを `test/transpile/cpp2/` に変換し、各生成 C++ がコンパイル可能かを一括検証した。
   - 実施結果: `CASE_TOTAL=96`, `TRANSPILE_FAIL=0`, `COMPILE_OK=96`, `COMPILE_FAIL=0`
 
 ## トランスパイラ機能 TODO（今回の不足点整理）
@@ -66,7 +66,7 @@
 ## Go / Java ネイティブ変換の追加TODO
 
 - [x] `py2go.py` / `py2java.py` を Python 呼び出し不要のネイティブ変換モードへ移行する。
-- [x] `test/fixtures/py`（case01〜30）を Go/Java ネイティブ変換して、Python 実行結果と一致させる。
+- [x] `test/fixtures`（case01〜30）を Go/Java ネイティブ変換して、Python 実行結果と一致させる。
 - [x] `sample/py` で使っている `math` モジュール呼び出し（`sqrt`, `sin`, `cos` など）を Go/Java ネイティブ変換で対応する。
 - [x] `sample/py` で使っている `png_helper.write_rgb_png` の Go/Java ランタイム実装を追加する。
 - [x] `sample/py` で使っている `gif_helper.save_gif` / `grayscale_palette` の Go/Java ランタイム実装を追加する。
@@ -84,14 +84,14 @@
   - [x] `pathlib` 最小共通 API を確定する（`Path(...)`, `/`, `exists`, `resolve`, `parent`, `name`, `stem`, `read_text`, `write_text`, `mkdir`, `str`）。
   - [x] `src/rs_module` / `src/cs_module` / `src/js_module` / `src/ts_module` / `src/go_module` / `src/java_module` に `pathlib` 相当ランタイムを追加する。
   - [x] `py2cpp.py` 以外の各トランスパイラで `import pathlib` と `Path` 呼び出しのマッピングを実装する。
-  - [x] `sample/py` もしくは `test/fixtures/py` にファイルI/Oを伴う `pathlib` 利用ケースを追加し、各言語で実行確認する。
+  - [x] `sample/py` もしくは `test/fixtures` にファイルI/Oを伴う `pathlib` 利用ケースを追加し、各言語で実行確認する。
 - [x] 上記の平準化後、`docs/pytra-readme.md` の「対応module」を言語別の対応関数一覧で更新し、差分がある場合は理由を明記する。
   - [x] `math` / `pathlib` の言語別対応表を `docs/pytra-readme.md` に追加する。
   - [x] 未対応関数が残る言語には「未対応理由・代替手段・予定」を併記する。
   - [x] `README.md` / `docs/how-to-use.md` から参照される説明との整合を確認する。
-- [x] `test/fixtures/py` に `math` / `pathlib` の共通回帰テストを追加し、全ターゲット言語で同一期待値を満たすことを CI 相当手順で確認する。
-  - [x] `test/fixtures/py` に `math` 拡張（`tan/log/log10/fabs/ceil/pow`）の共通テストケースを追加する。
-  - [x] `test/fixtures/py` に `pathlib` 共通テストケース（生成・結合・存在確認・読み書き）を追加する。
+- [x] `test/fixtures` に `math` / `pathlib` の共通回帰テストを追加し、全ターゲット言語で同一期待値を満たすことを CI 相当手順で確認する。
+  - [x] `test/fixtures` に `math` 拡張（`tan/log/log10/fabs/ceil/pow`）の共通テストケースを追加する。
+  - [x] `test/fixtures` に `pathlib` 共通テストケース（生成・結合・存在確認・読み書き）を追加する。
   - [x] 各ターゲット（C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）への変換・実行コマンドを自動化スクリプトへ集約する。
   - [x] Python 実行結果との差分比較を自動化し、失敗ケースを一覧出力できるようにする。
   - 実行補足: 現在の開発環境では `mcs/go/javac/swiftc/kotlinc` が未導入のため、`tools/runtime_parity_check.py` は該当ターゲットを `SKIP` 表示で処理する。
@@ -134,7 +134,7 @@
 - `sample/py` の PNG/GIF 系ケースで、バイト列が終始 `[]byte` / `byte[]` で通ることを確認する。
   - [x] `range_mode` と境界条件の確定を `east.py` 側で完了させる。
 - [x] `CppEmitter` を「文字列出力専用」へ段階移行し、挙動回帰を防ぐ。
-  - [x] 各段階で `test/fixtures/py` の `test/transpile/cpp` 実行結果一致を確認する。
+  - [x] 各段階で `test/fixtures` の `test/transpile/cpp` 実行結果一致を確認する。
   - [x] 各段階で `sample/py` の PNG/GIF 一致（バイナリ比較）を確認する。
 
 ## EAST C++可読性改善 TODO
@@ -170,7 +170,7 @@
 ## self_hosted AST/Parser 段階移行 TODO
 
 
-### ケース順移行（test/fixtures/py/case01 から順に）
+### ケース順移行（test/fixtures/case01 から順に）
 
 - [x] `case01_add` を `self_hosted` で通す（EAST生成 + C++実行一致）。
 - [x] `case02_sub_mul` を `self_hosted` で通す。
@@ -189,7 +189,7 @@
 ## 生成画像不一致 調査ベース TODO（2026-02-17）
 ## 移管済み（docs/todo.md から） 2026-02-18
 
-- [x] 比較・論理・算術の混在式で意味が変わらないことを `test/fixtures/py` で回帰確認する。
+- [x] 比較・論理・算術の混在式で意味が変わらないことを `test/fixtures` で回帰確認する。
 - [x] Python docstring を C++ の裸文字列文として出さず、コメントへ変換するか出力しない。
 - [x] 関数先頭の単独文字列式（docstring）を `east.py` 側で専用メタ情報へ分離する。
 - [x] `py2cpp.py` は `//` コメント出力に統一する（必要時のみ）。
@@ -228,8 +228,8 @@
 - [x] `case13_class` 〜 `case16_instance_member`（クラス系）を `self_hosted` で通す。
 - [x] `case17_loop` 〜 `case24_ifexp_bool`（ループ/例外/内包/ifexp）を `self_hosted` で通す。
 - [x] `case25_class_static` 〜 `case33_pathlib_extended`（拡張ケース）を `self_hosted` で通す。
-- [x] `test/fixtures/py` 全ケースで `self_hosted` EAST が意味的に安定していることを確認する。
-- [x] `src/py2cpp.py` で `--parser-backend self_hosted` 時に `test/fixtures/py` 全ケースが実行一致する。
+- [x] `test/fixtures` 全ケースで `self_hosted` EAST が意味的に安定していることを確認する。
+- [x] `src/py2cpp.py` で `--parser-backend self_hosted` 時に `test/fixtures` 全ケースが実行一致する。
 - [x] デフォルト backend を `self_hosted` に変更する。
 - [x] `save_gif(..., delay_cs=..., loop=...)` の keyword 引数を `py2cpp.py` の非lowered `Call` 経路でも確実に反映する。
 - [x] 現状 `sample/cpp/*` で `save_gif(..., palette)` のみになり `delay_cs` が既定値 `4` に落ちる問題を修正する。

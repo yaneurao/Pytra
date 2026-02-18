@@ -226,7 +226,7 @@
 
 ## 15. 検証状態
 
-- `test/fixtures/py` 32/32 を `east/east.py` で変換可能（`ok: true`）
+- `test/fixtures` 32/32 を `east/east.py` で変換可能（`ok: true`）
 - `sample/py` 16/16 を `east/east.py` で変換可能（`ok: true`）
 - `sample/py` 16/16 を `east/py2cpp.py` で「変換→コンパイル→実行」可能（`ok`）
   - 実行時間一覧: `east/sample/benchmark_east_py2cpp.md`
