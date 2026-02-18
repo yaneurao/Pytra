@@ -104,3 +104,6 @@
 - [ ] `dict[str, Any]` / `dict[str, str | None]` のようなネスト型注釈を C++出力時に安全に解決する。
 - [ ] `call(generator_exp)` の lowering を明示仕様化する（`list-comp` へ正規化するか、専用 `GeneratorExp` を実装するか）。
 - [ ] selfhost 生成C++（`selfhost/py2cpp.cpp`）のコンパイルエラーをカテゴリ別に整理し、最小修正順で潰す。
+- [ ] `dict[str, Any]` に対する `.get(...).items()` 連鎖を C++ で確実に展開できるようにする（`py_dict_get_default` と `items` 展開の型整合）。
+- [ ] `list[set[str]]` など「属性側の既知型」と「RHS リテラルの unknown 推論」の不一致を解消する（例: `self.scope_stack = [set()]`）。
+- [ ] self_hosted parser の `BoolOp`（`or/and`）を値選択用途で使った場合の扱いを定義する（現状は bool 演算へ寄るため selfhost で破綻しやすい）。
