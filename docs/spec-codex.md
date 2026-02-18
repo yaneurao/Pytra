@@ -36,6 +36,8 @@
 - 生成コードの補助関数は各ターゲット言語ランタイム（`src/*_module/`）へ集約し、生成コードに重複埋め込みしません。
 - selfhost 対象コード（特に `src/common/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
 - import は静的に解決できる形で記述し、自己変換時に未対応構文を増やさないことを優先します。
+- トランスパイル対象の Python コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の `import` を全面禁止とします。
+- トランスパイル対象コードが import できるのは `src/pylib/` にあるモジュールのみです。
 
 ## 6. テスト・最適化ルール
 
@@ -52,4 +54,4 @@
 - selfhost のビルドログは `stdout` 側に出ることがあるため、`> selfhost/build.all.log 2>&1` で統合取得する。
 - selfhost 対象コードでは、Python 専用表現が生成 C++ に漏れないことを確認する（例: `super().__init__`, Python 風継承表記）。
 - ランタイム変更時は `test/unit/test_py2cpp_features.py` の実行回帰に加え、selfhost の再生成・再コンパイル結果も確認する。
-- selfhost 対象の Python コードでは、標準モジュールの直接 import を極力避け、`src/pylib/` の shim を使う（例: `pylib.json`, `pylib.pathlib`, `pylib.sys`, `pylib.typing`, `pylib.os`, `pylib.glob`）。
+- selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pylib/` の shim のみを使う（例: `pylib.json`, `pylib.pathlib`, `pylib.sys`, `pylib.typing`, `pylib.os`, `pylib.glob`, `pylib.argparse`, `pylib.re`）。
