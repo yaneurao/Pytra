@@ -887,8 +887,7 @@ class CppEmitter(CodeEmitter):
             names.add(str(target.get("id", "_")))
             return names
         if target.get("kind") == "Tuple":
-            for e in target.get("elements", []):
-                e_dict = self.any_to_dict_or_empty(e)
+            for e_dict in self._dict_stmt_list(target.get("elements")):
                 if e_dict.get("kind") == "Name":
                     names.add(str(e_dict.get("id", "_")))
         return names
@@ -906,15 +905,19 @@ class CppEmitter(CodeEmitter):
 
     def emit_for_range(self, stmt: dict[str, Any]) -> None:
         """ForRange ノードを C++ の for ループとして出力する。"""
-        target_raw = stmt.get("target")
-        target_node = self.any_to_dict_or_empty(target_raw)
+        target_node = self.any_to_dict_or_empty(stmt.get("target"))
         if len(target_node) == 0:
             self.emit("/* invalid for-range target */")
             return
-        tgt = self.render_expr(target_raw)
-        t0 = stmt.get("target_type")
-        t1 = self.get_expr_type(target_raw)
-        tgt_ty = self.cpp_type(t0 if isinstance(t0, str) and t0 != "" else t1)
+        tgt = self.render_expr(stmt.get("target"))
+        t0 = self.any_to_str(stmt.get("target_type"))
+        t1 = self.get_expr_type(stmt.get("target"))
+        tgt_ty_txt = ""
+        if t0 != "":
+            tgt_ty_txt = t0
+        else:
+            tgt_ty_txt = t1
+        tgt_ty = self._cpp_type_text(tgt_ty_txt)
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
@@ -957,16 +960,14 @@ class CppEmitter(CodeEmitter):
 
     def emit_for_each(self, stmt: dict[str, Any]) -> None:
         """For ノード（反復）を C++ range-for として出力する。"""
-        target_raw = stmt.get("target")
-        iter_expr_raw = stmt.get("iter")
-        target = self.any_to_dict_or_empty(target_raw)
-        iter_expr = self.any_to_dict_or_empty(iter_expr_raw)
+        target = self.any_to_dict_or_empty(stmt.get("target"))
+        iter_expr = self.any_to_dict_or_empty(stmt.get("iter"))
         if len(target) == 0 or len(iter_expr) == 0:
             self.emit("/* invalid for */")
             return
         if iter_expr.get("kind") == "RangeExpr":
             pseudo: dict[str, Any] = {}
-            pseudo["target"] = target_raw
+            pseudo["target"] = stmt.get("target")
             t_raw = stmt.get("target_type")
             pseudo["target_type"] = t_raw if isinstance(t_raw, str) and t_raw != "" else "int64"
             pseudo["start"] = iter_expr.get("start")
@@ -978,11 +979,11 @@ class CppEmitter(CodeEmitter):
             return
         body_stmts = self._dict_stmt_list(stmt.get("body"))
         omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
-        t = self.render_expr(target_raw)
-        it = self.render_expr(iter_expr_raw)
-        t0 = stmt.get("target_type")
-        t1 = self.get_expr_type(target_raw)
-        t_ty = self.cpp_type(t0 if isinstance(t0, str) and t0 != "" else t1)
+        t = self.render_expr(stmt.get("target"))
+        it = self.render_expr(stmt.get("iter"))
+        t0 = self.any_to_str(stmt.get("target_type"))
+        t1 = self.get_expr_type(stmt.get("target"))
+        t_ty = self._cpp_type_text(t0 if t0 != "" else t1)
         target_names = self._target_bound_names(target)
         unpack_tuple = target.get("kind") == "Tuple"
         if unpack_tuple:
@@ -1233,7 +1234,9 @@ class CppEmitter(CodeEmitter):
                 return f"py_repeat({left}, {right})"
             if rt == "str" and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
                 return f"py_repeat({right}, {left})"
-        op = BIN_OPS.get(op_name, "+")
+        op = "+"
+        if op_name_str in BIN_OPS:
+            op = BIN_OPS[op_name_str]
         return f"{left} {op} {right}"
 
     def _render_builtin_call(
@@ -1450,15 +1453,17 @@ class CppEmitter(CodeEmitter):
         """Call の Name/Attribute 分岐を処理する。"""
         if fn.get("kind") == "Name":
             raw = fn.get("id")
+            raw_txt = self.any_to_str(raw)
             imported_module = ""
-            if isinstance(raw, str) and not self.is_declared(raw):
-                resolved = self._resolve_imported_symbol(raw)
+            if raw_txt != "" and not self.is_declared(raw_txt):
+                resolved = self._resolve_imported_symbol(raw_txt)
                 if isinstance(resolved, dict):
                     imported_module = self.any_to_str(resolved.get("module"))
                     resolved_name = self.any_to_str(resolved.get("name"))
                     if resolved_name != "":
-                        raw = resolved_name
-            if isinstance(raw, str) and imported_module != "":
+                        raw_txt = resolved_name
+            raw = raw_txt
+            if raw != "" and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
                 if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "save_gif", "Path"}:
                     return f"{mapped_runtime}({', '.join(args)})"
@@ -1480,9 +1485,9 @@ class CppEmitter(CodeEmitter):
                 return f"py_all({args[0]})"
             if raw == "isinstance" and len(args) == 2:
                 type_name = ""
-                rhs = arg_nodes[1] if isinstance(arg_nodes, list) and len(arg_nodes) > 1 else None
-                if isinstance(rhs, dict) and rhs.get("kind") == "Name":
-                    type_name = str(rhs.get("id", ""))
+                rhs = self.any_to_dict_or_empty(arg_nodes[1]) if len(arg_nodes) > 1 else {}
+                if rhs.get("kind") == "Name":
+                    type_name = self.any_to_str(rhs.get("id"))
                 a0 = args[0]
                 if type_name == "dict":
                     return f"py_is_dict({a0})"
@@ -1559,10 +1564,10 @@ class CppEmitter(CodeEmitter):
         self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
-        owner_map = self.module_attr_call_map.get(owner_mod)
-        if isinstance(owner_map, dict):
-            runtime_call = owner_map.get(attr)
-            if isinstance(runtime_call, str):
+        owner_map = self.any_to_dict_or_empty(self.module_attr_call_map.get(owner_mod))
+        if len(owner_map) > 0:
+            runtime_call = self.any_to_str(owner_map.get(attr))
+            if runtime_call != "":
                 return f"{runtime_call}({', '.join(args)})"
         if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
             return f"png_helper::write_rgb_png({', '.join(args)})"
@@ -1620,22 +1625,20 @@ class CppEmitter(CodeEmitter):
         expr: dict[str, Any],
     ) -> dict[str, Any]:
         """Call ノードの前処理（func/args/kw 展開）を共通化する。"""
-        fn_raw = expr.get("func")
-        fn = fn_raw if isinstance(fn_raw, dict) else {}
+        fn = self.any_to_dict_or_empty(expr.get("func"))
         fn_name = self.render_expr(fn)
-        arg_nodes_raw = expr.get("args", [])
-        arg_nodes = arg_nodes_raw if isinstance(arg_nodes_raw, list) else []
+        arg_nodes = self.any_to_list(expr.get("args", []))
         args = [self.render_expr(a) for a in arg_nodes]
-        keywords_raw = expr.get("keywords", [])
-        keywords = keywords_raw if isinstance(keywords_raw, list) else []
+        keywords = self.any_to_list(expr.get("keywords", []))
         first_arg = arg_nodes[0] if len(arg_nodes) > 0 else None
         kw: dict[str, str] = {}
         for k in keywords:
-            if not isinstance(k, dict):
+            kd = self.any_to_dict_or_empty(k)
+            if len(kd) == 0:
                 continue
-            kname = k.get("arg")
-            if isinstance(kname, str):
-                kw[kname] = self.render_expr(k.get("value"))
+            kname = self.any_to_str(kd.get("arg"))
+            if kname != "":
+                kw[kname] = self.render_expr(kd.get("value"))
         out: dict[str, Any] = {}
         out["fn"] = fn
         out["fn_name"] = fn_name
@@ -1647,11 +1650,11 @@ class CppEmitter(CodeEmitter):
 
     def _render_unary_expr(self, expr: dict[str, Any]) -> str:
         """UnaryOp ノードを C++ 式へ変換する。"""
-        operand_expr = expr.get("operand")
+        operand_expr = self.any_to_dict_or_empty(expr.get("operand"))
         operand = self.render_expr(operand_expr)
         op = expr.get("op")
         if op == "Not":
-            if isinstance(operand_expr, dict) and operand_expr.get("kind") == "Compare":
+            if len(operand_expr) > 0 and operand_expr.get("kind") == "Compare":
                 if operand_expr.get("lowered_kind") == "Contains":
                     container = self.render_expr(operand_expr.get("container"))
                     key = self.render_expr(operand_expr.get("key"))
@@ -1660,12 +1663,12 @@ class CppEmitter(CodeEmitter):
                     if ctype.startswith("dict["):
                         return f"{container}.find({key}) == {container}.end()"
                     return f"std::find({container}.begin(), {container}.end(), {key}) == {container}.end()"
-                ops = operand_expr.get("ops", [])
-                cmps = operand_expr.get("comparators", [])
+                ops = self.any_to_list(operand_expr.get("ops", []))
+                cmps = self.any_to_list(operand_expr.get("comparators", []))
                 if len(ops) == 1 and len(cmps) == 1:
                     left = self.render_expr(operand_expr.get("left"))
                     rhs = self.render_expr(cmps[0])
-                    op0 = ops[0]
+                    op0 = self.any_to_str(ops[0])
                     inv = {
                         "Eq": "!=",
                         "NotEq": "==",
@@ -1718,7 +1721,8 @@ class CppEmitter(CodeEmitter):
         for i, op in enumerate(ops):
             rhs_node = cmps[i] if i < len(cmps) and isinstance(cmps[i], dict) else None
             rhs = self.render_expr(rhs_node)
-            cop = CMP_OPS.get(op, "==")
+            op_name = self.any_to_str(op)
+            cop = CMP_OPS.get(op_name, "==")
             if cop == "/* in */":
                 rhs_type0 = self.get_expr_type(rhs_node)
                 rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
@@ -1734,18 +1738,18 @@ class CppEmitter(CodeEmitter):
                 else:
                     parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
             else:
-                opt_cmp = self._try_optimize_char_compare(cur_node if isinstance(cur_node, dict) else None, op, rhs_node)
+                opt_cmp = self._try_optimize_char_compare(cur_node if isinstance(cur_node, dict) else None, op_name, rhs_node)
                 if opt_cmp is not None:
                     parts.append(opt_cmp)
-                elif op in {"Is", "IsNot"} and rhs == "std::nullopt":
-                    parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({cur})")
-                elif op in {"Is", "IsNot"} and cur == "std::nullopt":
-                    parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({rhs})")
+                elif op_name in {"Is", "IsNot"} and rhs == "std::nullopt":
+                    parts.append(f"{'!' if op_name == 'IsNot' else ''}py_is_none({cur})")
+                elif op_name in {"Is", "IsNot"} and cur == "std::nullopt":
+                    parts.append(f"{'!' if op_name == 'IsNot' else ''}py_is_none({rhs})")
                 else:
                     parts.append(f"{cur} {cop} {rhs}")
             cur = rhs
             cur_node = rhs_node
-        return " && ".join(parts) if parts else "true"
+        return " && ".join(parts) if len(parts) > 0 else "true"
 
     def _render_subscript_expr(self, expr: dict[str, Any]) -> str:
         """Subscript/Slice 式を C++ 式へ変換する。"""
@@ -1982,7 +1986,7 @@ class CppEmitter(CodeEmitter):
                         parts.append(vtxt)
                     else:
                         parts.append(self.render_to_string(v if isinstance(v, dict) else None))
-            if not parts:
+            if len(parts) == 0:
                 return '""'
             return " + ".join(parts)
         if kind == "Lambda":
