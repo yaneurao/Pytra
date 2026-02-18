@@ -22,8 +22,8 @@
    - [x] `src/py2cpp.py` の直書きマップを profile ロードに置換する。
 4. [ ] フック注入 (`EmitterHooks`) を実装する。
    - [x] `on_render_call`, `on_render_binop`, `on_emit_stmt` など最小フック面を定義する。
-   - [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。
-   - [ ] `emit_stmt(If/While/For/AnnAssign/AugAssign)` の分岐を hooks + template helper へ段階分離する。
+   - [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。: `BinOp` は `_render_binop_expr` へ分離済み
+   - [ ] `emit_stmt(If/While/For/AnnAssign/AugAssign)` の分岐を hooks + template helper へ段階分離する。: `If/While` は `_emit_if_stmt` / `_emit_while_stmt` へ分離済み
    - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
    - [x] C++ 向け hooks 実装を `src/runtime/cpp/hooks/cpp_hooks.py` として分離する。
 5. [x] 回帰確認を追加する。
@@ -35,8 +35,8 @@
 
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
    - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
-   - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。
-   - [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。
+   - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。: `BinOp` は専用 helper に分離済み
+   - [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。: `If/While` は専用 helper に分離済み
 2. [ ] 未使用関数の掃除を継続する。
    - [x] `extract_module_leading_trivia` ラッパーを削除。
    - [x] `_stmt_start_line` / `_stmt_end_line` / `_has_leading_trivia` を削除。

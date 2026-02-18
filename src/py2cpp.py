@@ -14,7 +14,6 @@ import sys
 from typing import Any
 
 from common.code_emitter import CodeEmitter
-from common.east_io import extract_module_leading_trivia as extract_module_leading_trivia_common
 from common.east_io import load_east_from_path
 from common.language_profile import load_language_profile
 from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
@@ -334,19 +333,6 @@ class CppEmitter(CodeEmitter):
                     name = v.get("name")
                     if isinstance(mod, str) and isinstance(name, str) and mod != "" and name != "":
                         self.import_symbols[k] = {"module": mod, "name": name}
-
-    def _stmt_start_line(self, stmt: dict[str, Any]) -> int | None:
-        """将来の行情報連携用フック（現在は未使用）。"""
-        return None
-
-    def _stmt_end_line(self, stmt: dict[str, Any]) -> int | None:
-        """将来の行情報連携用フック（現在は未使用）。"""
-        return None
-
-    def _has_leading_trivia(self, stmt: dict[str, Any]) -> bool:
-        """文に先頭コメント/空行情報が付いているか判定する。"""
-        trivia = stmt.get("leading_trivia")
-        return isinstance(trivia, list) and len(trivia) > 0
 
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
@@ -687,6 +673,53 @@ class CppEmitter(CodeEmitter):
             call = f"std::{fn}<{t}>({call}, {a})"
         return call
 
+    def _emit_if_stmt(self, stmt: dict[str, Any]) -> None:
+        """If ノードを出力する。"""
+        body_stmts = [s for s in stmt.get("body", []) if isinstance(s, dict)]
+        else_stmts = [s for s in stmt.get("orelse", []) if isinstance(s, dict)]
+        if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
+            self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": self.render_cond(stmt.get("test"))}))
+            self.indent += 1
+            self.scope_stack.append(set())
+            self.emit_stmt(body_stmts[0])
+            self.scope_stack.pop()
+            self.indent -= 1
+            if len(else_stmts) > 0:
+                self.emit(self.syntax_text("else_no_brace", "else"))
+                self.indent += 1
+                self.scope_stack.append(set())
+                self.emit_stmt(else_stmts[0])
+                self.scope_stack.pop()
+                self.indent -= 1
+            return
+
+        self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
+        self.indent += 1
+        self.scope_stack.append(set())
+        self.emit_stmt_list(body_stmts)
+        self.scope_stack.pop()
+        self.indent -= 1
+        if len(else_stmts) > 0:
+            self.emit(self.syntax_text("else_open", "} else {"))
+            self.indent += 1
+            self.scope_stack.append(set())
+            self.emit_stmt_list(else_stmts)
+            self.scope_stack.pop()
+            self.indent -= 1
+            self.emit(self.syntax_text("block_close", "}"))
+        else:
+            self.emit(self.syntax_text("block_close", "}"))
+
+    def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
+        """While ノードを出力する。"""
+        self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
+        self.indent += 1
+        self.scope_stack.append(set())
+        self.emit_stmt_list(list(stmt.get("body", [])))
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit(self.syntax_text("block_close", "}"))
+
     def emit_stmt(self, stmt: Any) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
         stmt_node = self.any_to_dict(stmt)
@@ -850,49 +883,10 @@ class CppEmitter(CodeEmitter):
                 self.emit(f"{target} {op} {val};")
             return
         if kind == "If":
-            body_stmts = [s for s in stmt.get("body", []) if isinstance(s, dict)]
-            else_stmts = [s for s in stmt.get("orelse", []) if isinstance(s, dict)]
-            if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
-                self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": self.render_cond(stmt.get("test"))}))
-                self.indent += 1
-                self.scope_stack.append(set())
-                self.emit_stmt(body_stmts[0])
-                self.scope_stack.pop()
-                self.indent -= 1
-                if len(else_stmts) > 0:
-                    self.emit(self.syntax_text("else_no_brace", "else"))
-                    self.indent += 1
-                    self.scope_stack.append(set())
-                    self.emit_stmt(else_stmts[0])
-                    self.scope_stack.pop()
-                    self.indent -= 1
-                return
-
-            self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
-            self.indent += 1
-            self.scope_stack.append(set())
-            self.emit_stmt_list(body_stmts)
-            self.scope_stack.pop()
-            self.indent -= 1
-            if len(else_stmts) > 0:
-                self.emit(self.syntax_text("else_open", "} else {"))
-                self.indent += 1
-                self.scope_stack.append(set())
-                self.emit_stmt_list(else_stmts)
-                self.scope_stack.pop()
-                self.indent -= 1
-                self.emit(self.syntax_text("block_close", "}"))
-            else:
-                self.emit(self.syntax_text("block_close", "}"))
+            self._emit_if_stmt(stmt)
             return
         if kind == "While":
-            self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
-            self.indent += 1
-            self.scope_stack.append(set())
-            self.emit_stmt_list(list(stmt.get("body", [])))
-            self.scope_stack.pop()
-            self.indent -= 1
-            self.emit(self.syntax_text("block_close", "}"))
+            self._emit_while_stmt(stmt)
             return
         if kind == "ForRange":
             self.emit_for_range(stmt)
@@ -1324,6 +1318,68 @@ class CppEmitter(CodeEmitter):
         self.current_class_static_fields = prev_static_fields
         self.indent -= 1
         self.emit(self.syntax_text("class_close", "};"))
+
+    def _render_binop_expr(self, expr: dict[str, Any]) -> str:
+        """BinOp ノードを C++ 式へ変換する。"""
+        if expr.get("left") is None or expr.get("right") is None:
+            rep = expr.get("repr")
+            if isinstance(rep, str) and rep != "":
+                return rep
+        left_expr = expr.get("left")
+        right_expr = expr.get("right")
+        left = self.render_expr(left_expr)
+        right = self.render_expr(right_expr)
+        cast_rules = expr.get("casts", [])
+        for c in cast_rules:
+            on = c.get("on")
+            to_t = c.get("to")
+            if on == "left":
+                left = self.apply_cast(left, to_t)
+            elif on == "right":
+                right = self.apply_cast(right, to_t)
+        op_name = expr.get("op")
+        op_name_str = str(op_name)
+        left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
+        right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
+        hook_binop = self.hook_on_render_binop(
+            self,
+            expr,
+            left,
+            right,
+        )
+        if isinstance(hook_binop, str) and hook_binop != "":
+            return hook_binop
+        if op_name == "Div":
+            # Prefer direct C++ division when float is involved (or EAST already injected casts).
+            # Keep py_div fallback for int/int Python semantics.
+            lt0 = self.get_expr_type(left_expr if isinstance(left_expr, dict) else None)
+            rt0 = self.get_expr_type(right_expr if isinstance(right_expr, dict) else None)
+            lt = lt0 if isinstance(lt0, str) else ""
+            rt = rt0 if isinstance(rt0, str) else ""
+            if lt == "Path" and rt in {"str", "Path"}:
+                return f"{left} / {right}"
+            if len(cast_rules) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
+                return f"{left} / {right}"
+            return f"py_div({left}, {right})"
+        if op_name == "FloorDiv":
+            return f"py_floordiv({left}, {right})"
+        if op_name == "Mod":
+            return f"{left} % {right}"
+        if op_name == "Mult":
+            lt0 = self.get_expr_type(expr.get("left"))
+            rt0 = self.get_expr_type(expr.get("right"))
+            lt = lt0 if isinstance(lt0, str) else ""
+            rt = rt0 if isinstance(rt0, str) else ""
+            if lt.startswith("list[") and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                return f"py_repeat({left}, {right})"
+            if rt.startswith("list[") and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                return f"py_repeat({right}, {left})"
+            if lt == "str" and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                return f"py_repeat({left}, {right})"
+            if rt == "str" and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                return f"py_repeat({right}, {left})"
+        op = BIN_OPS.get(op_name, "+")
+        return f"{left} {op} {right}"
 
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
@@ -1759,65 +1815,7 @@ class CppEmitter(CodeEmitter):
             step = self.render_expr(expr.get("step"))
             return f"py_range({start}, {stop}, {step})"
         if kind == "BinOp":
-            if expr.get("left") is None or expr.get("right") is None:
-                rep = expr.get("repr")
-                if isinstance(rep, str) and rep != "":
-                    return rep
-            left_expr = expr.get("left")
-            right_expr = expr.get("right")
-            left = self.render_expr(left_expr)
-            right = self.render_expr(right_expr)
-            cast_rules = expr.get("casts", [])
-            for c in cast_rules:
-                on = c.get("on")
-                to_t = c.get("to")
-                if on == "left":
-                    left = self.apply_cast(left, to_t)
-                elif on == "right":
-                    right = self.apply_cast(right, to_t)
-            op_name = expr.get("op")
-            op_name_str = str(op_name)
-            left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
-            right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
-            hook_binop = self.hook_on_render_binop(
-                self,
-                expr,
-                left,
-                right,
-            )
-            if isinstance(hook_binop, str) and hook_binop != "":
-                return hook_binop
-            if op_name == "Div":
-                # Prefer direct C++ division when float is involved (or EAST already injected casts).
-                # Keep py_div fallback for int/int Python semantics.
-                lt0 = self.get_expr_type(left_expr if isinstance(left_expr, dict) else None)
-                rt0 = self.get_expr_type(right_expr if isinstance(right_expr, dict) else None)
-                lt = lt0 if isinstance(lt0, str) else ""
-                rt = rt0 if isinstance(rt0, str) else ""
-                if lt == "Path" and rt in {"str", "Path"}:
-                    return f"{left} / {right}"
-                if len(cast_rules) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
-                    return f"{left} / {right}"
-                return f"py_div({left}, {right})"
-            if op_name == "FloorDiv":
-                return f"py_floordiv({left}, {right})"
-            if op_name == "Mod":
-                return f"{left} % {right}"
-            if op_name == "Mult":
-                lt0 = self.get_expr_type(expr.get("left"))
-                rt0 = self.get_expr_type(expr.get("right"))
-                lt = lt0 if isinstance(lt0, str) else ""
-                rt = rt0 if isinstance(rt0, str) else ""
-                if lt.startswith("list[") and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                    return f"py_repeat({left}, {right})"
-                if rt.startswith("list[") and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                    return f"py_repeat({right}, {left})"
-                if lt == "str" and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                    return f"py_repeat({left}, {right})"
-                if rt == "str" and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                    return f"py_repeat({right}, {left})"
-            op = BIN_OPS.get(op_name, "+")
-            return f"{left} {op} {right}"
+            return self._render_binop_expr(expr)
         if kind == "UnaryOp":
             operand_expr = expr.get("operand")
             operand = self.render_expr(operand_expr)
@@ -2259,11 +2257,6 @@ class CppEmitter(CodeEmitter):
 def load_east(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     return load_east_from_path(input_path, parser_backend=parser_backend)
-
-
-def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
-    """モジュール先頭のコメント/空行を trivia 形式で抽出する。"""
-    return extract_module_leading_trivia_common(source)
 
 
 def transpile_to_cpp(
