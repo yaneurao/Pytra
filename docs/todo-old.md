@@ -262,3 +262,47 @@
 - [x] `src/common/east.py` の対応箇所へ最小コメントを追加し、どのシグネチャ構文をサポートするか明記する。
 - [x] self_hosted parser の `STR` 解析で prefix 付き文字列（`f/r/b/u/rf/fr`）を正しく扱えるようにする。
 - [x] self_hosted parser の `f-string` を `JoinedStr/FormattedValue` に落とす（最低限 `{expr}` と `{{` `}}`）。
+
+## 移管: 2026-02-18（docs/todo.md から完了済みを移動）
+
+### Any/object 方針への移行（完了）
+
+- [x] `src/cpp_module/py_runtime.h` に `using object = rc<PyObj>;` を導入する。
+- [x] `Any -> object` 変換のためのボックス型を実装する。
+- [x] `PyIntObj` / `PyFloatObj` / `PyBoolObj` / `PyStrObj`
+- [x] `PyListObj` / `PyDictObj`（`list<object>` / `dict<str, object>` ベース）
+- [x] `make_object(...)` / `obj_to_int64` / `obj_to_float64` / `obj_to_bool` / `obj_to_str` を実装する。
+- [x] `py_is_none(object)` を実装し、null `object` 判定を統一する。
+- [x] `py_to_string(object)` を実装する。
+
+### py2cpp 側 Any lowering（完了）
+
+- [x] `src/py2cpp.py` の `cpp_type()` で `Any` / `object` を `object` 型へ解決する。
+- [x] `dict[str, Any]` を `dict<str, object>` に変換する。
+- [x] `list[Any]` を `list<object>` に変換する。
+- [x] `Any` 代入時に `make_object(...)` を生成する。
+- [x] `Any` 利用演算時に明示的 unbox (`obj_to_*`) を生成する。
+- [x] `Any is None` / `Any is not None` を `py_is_none` ベースへ統一する。
+
+### selfhost 回復（部分完了）
+
+- [x] `selfhost/py2cpp.cpp` を再生成し、現時点のコンパイルエラー件数を計測する。
+  - 計測値: `305` errors（`g++ -std=c++20 -O2 -I src selfhost/py2cpp.cpp ...`）
+
+### 内包表現・lambda 追加回帰（完了）
+
+- [x] `test/fixtures/collections` に内包表現の追加ケースを増やす。
+- [x] 二重内包（nested comprehension）
+- [x] `if` 句を複数持つ内包
+- [x] `range(start, stop, step)` を使う内包
+- [x] `test/fixtures/core` に lambda の追加ケースを増やす。
+- [x] `lambda` 本体が `ifexp` を含むケース
+- [x] 外側変数 capture + 複数引数
+- [x] 関数引数として lambda を渡すケース
+- [x] 上記を `test/unit/test_py2cpp_features.py` の C++ 実行回帰に追加する。
+
+### ドキュメント更新（完了）
+
+- [x] `docs/spec-east.md` に `Any -> object(rc<PyObj>)` 方針を明記する。
+- [x] `docs/spec.md` に `Any` の制約（boxing/unboxing, None 表現）を追記する。
+- [x] `readme.md` に `Any` 実装状況（移行中）を明記する。
