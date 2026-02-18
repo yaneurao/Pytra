@@ -29,6 +29,13 @@ CPP_RUNTIME_SRCS = [
 ]
 
 
+def find_fixture_case(stem: str) -> Path:
+    matches = sorted((ROOT / "test" / "fixtures" / "py").rglob(f"{stem}.py"))
+    if not matches:
+        raise FileNotFoundError(f"missing fixture: {stem}")
+    return matches[0]
+
+
 class Py2CppFeatureTest(unittest.TestCase):
     def _run_python_and_cpp(self, source: str) -> tuple[str, str]:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -227,7 +234,7 @@ if __name__ == "__main__":
         with tempfile.TemporaryDirectory() as tmpdir:
             work = Path(tmpdir)
 
-            case15_py = ROOT / "test" / "fixtures" / "py" / "case15_class_member.py"
+            case15_py = find_fixture_case("case15_class_member")
             case15_cpp = work / "case15.cpp"
             transpile(str(case15_py), str(case15_cpp))
             case15_txt = case15_cpp.read_text(encoding="utf-8")
@@ -235,7 +242,7 @@ if __name__ == "__main__":
             self.assertIn("Counter c = Counter();", case15_txt)
             self.assertNotIn("rc<Counter>", case15_txt)
 
-            case34_py = ROOT / "test" / "fixtures" / "py" / "case34_gc_reassign.py"
+            case34_py = find_fixture_case("case34_gc_reassign")
             case34_cpp = work / "case34.cpp"
             transpile(str(case34_py), str(case34_cpp))
             case34_txt = case34_cpp.read_text(encoding="utf-8")

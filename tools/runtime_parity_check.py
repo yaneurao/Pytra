@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+FIXTURE_ROOT = ROOT / "test" / "fixtures" / "py"
 
 
 @dataclass
@@ -40,11 +41,19 @@ def can_run(target: Target) -> bool:
     return True
 
 
-def build_targets(case_stem: str) -> list[Target]:
+def find_case_path(case_stem: str) -> Path | None:
+    matches = sorted(FIXTURE_ROOT.rglob(f"{case_stem}.py"))
+    if not matches:
+        return None
+    return matches[0]
+
+
+def build_targets(case_stem: str, case_path: Path) -> list[Target]:
+    case_src = case_path.as_posix()
     return [
         Target(
             name="cpp",
-            transpile_cmd=f"python src/py2cpp.py test/fixtures/py/{case_stem}.py test/transpile/cpp/{case_stem}.cpp",
+            transpile_cmd=f"python src/py2cpp.py {shlex.quote(case_src)} test/transpile/cpp/{case_stem}.cpp",
             run_cmd=(
                 f"g++ -std=c++20 -O2 -I src test/transpile/cpp/{case_stem}.cpp "
                 "src/cpp_module/png.cpp src/cpp_module/gif.cpp src/cpp_module/math.cpp "
@@ -56,13 +65,13 @@ def build_targets(case_stem: str) -> list[Target]:
         ),
         Target(
             name="rs",
-            transpile_cmd=f"python src/py2rs.py test/fixtures/py/{case_stem}.py test/transpile/rs/{case_stem}.rs",
+            transpile_cmd=f"python src/py2rs.py {shlex.quote(case_src)} test/transpile/rs/{case_stem}.rs",
             run_cmd=f"rustc -O test/transpile/rs/{case_stem}.rs -o test/transpile/obj/{case_stem}_rs.out && test/transpile/obj/{case_stem}_rs.out",
             needs=("python", "rustc"),
         ),
         Target(
             name="cs",
-            transpile_cmd=f"python src/py2cs.py test/fixtures/py/{case_stem}.py test/transpile/cs/{case_stem}.cs",
+            transpile_cmd=f"python src/py2cs.py {shlex.quote(case_src)} test/transpile/cs/{case_stem}.cs",
             run_cmd=(
                 f"mcs -out:test/transpile/obj/{case_stem}_cs.exe test/transpile/cs/{case_stem}.cs "
                 "src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs src/cs_module/pathlib.cs "
@@ -72,37 +81,37 @@ def build_targets(case_stem: str) -> list[Target]:
         ),
         Target(
             name="js",
-            transpile_cmd=f"python src/py2js.py test/fixtures/py/{case_stem}.py test/transpile/js/{case_stem}.js",
+            transpile_cmd=f"python src/py2js.py {shlex.quote(case_src)} test/transpile/js/{case_stem}.js",
             run_cmd=f"node test/transpile/js/{case_stem}.js",
             needs=("python", "node"),
         ),
         Target(
             name="ts",
-            transpile_cmd=f"python src/py2ts.py test/fixtures/py/{case_stem}.py test/transpile/ts/{case_stem}.ts",
+            transpile_cmd=f"python src/py2ts.py {shlex.quote(case_src)} test/transpile/ts/{case_stem}.ts",
             run_cmd=f"npx -y tsx test/transpile/ts/{case_stem}.ts",
             needs=("python", "node", "npx"),
         ),
         Target(
             name="go",
-            transpile_cmd=f"python src/py2go.py test/fixtures/py/{case_stem}.py test/transpile/go/{case_stem}.go",
+            transpile_cmd=f"python src/py2go.py {shlex.quote(case_src)} test/transpile/go/{case_stem}.go",
             run_cmd=f"go run test/transpile/go/{case_stem}.go",
             needs=("python", "go"),
         ),
         Target(
             name="java",
-            transpile_cmd=f"python src/py2java.py test/fixtures/py/{case_stem}.py test/transpile/java/{case_stem}.java",
+            transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} test/transpile/java/{case_stem}.java",
             run_cmd=f"javac test/transpile/java/{case_stem}.java && java -cp test/transpile/java {case_stem}",
             needs=("python", "javac", "java"),
         ),
         Target(
             name="swift",
-            transpile_cmd=f"python src/py2swift.py test/fixtures/py/{case_stem}.py test/transpile/swift/{case_stem}.swift",
+            transpile_cmd=f"python src/py2swift.py {shlex.quote(case_src)} test/transpile/swift/{case_stem}.swift",
             run_cmd=f"swiftc test/transpile/swift/{case_stem}.swift -o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out",
             needs=("python", "swiftc", "node"),
         ),
         Target(
             name="kotlin",
-            transpile_cmd=f"python src/py2kotlin.py test/fixtures/py/{case_stem}.py test/transpile/kotlin/{case_stem}.kt",
+            transpile_cmd=f"python src/py2kotlin.py {shlex.quote(case_src)} test/transpile/kotlin/{case_stem}.kt",
             run_cmd=(
                 f"kotlinc test/transpile/kotlin/{case_stem}.kt -include-runtime -d test/transpile/obj/{case_stem}_kotlin.jar "
                 f"&& java -jar test/transpile/obj/{case_stem}_kotlin.jar"
@@ -113,7 +122,11 @@ def build_targets(case_stem: str) -> list[Target]:
 
 
 def check_case(case_stem: str) -> int:
-    py = run_shell(f"python test/fixtures/py/{case_stem}.py")
+    case_path = find_case_path(case_stem)
+    if case_path is None:
+        print(f"[ERROR] missing case: {case_stem}")
+        return 1
+    py = run_shell(f"python {shlex.quote(case_path.as_posix())}")
     if py.returncode != 0:
         print(f"[ERROR] python:{case_stem} failed")
         print(py.stderr.strip())
@@ -121,7 +134,7 @@ def check_case(case_stem: str) -> int:
     expected = normalize(py.stdout)
 
     mismatches: list[str] = []
-    for target in build_targets(case_stem):
+    for target in build_targets(case_stem, case_path):
         if not can_run(target):
             print(f"[SKIP] {case_stem}:{target.name} (missing toolchain)")
             continue
@@ -161,17 +174,13 @@ def main() -> int:
     parser.add_argument(
         "cases",
         nargs="*",
-        default=["case31_math_extended", "case32_pathlib_extended"],
-        help="case stems under test/fixtures/py (without .py)",
+        default=["case32_math_extended", "case33_pathlib_extended"],
+        help="case stems under test/fixtures/py/** (without .py)",
     )
     args = parser.parse_args()
 
     exit_code = 0
     for stem in args.cases:
-        if not (ROOT / "test" / "fixtures" / "py" / f"{stem}.py").exists():
-            print(f"[ERROR] missing case: {stem}")
-            exit_code = 1
-            continue
         code = check_case(stem)
         if code != 0:
             exit_code = code
