@@ -102,5 +102,5 @@
 - 更新（2026-02-18 selfhost 追加）:
   1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
-  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=625`）。
+  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=623`）。
   4. 先頭エラー群は `CodeEmitter` 基底の `any_dict_get/profile_get/syntax_line` 由来で、selfhost 変換時に `dict` が `object` として扱われる点がボトルネック。

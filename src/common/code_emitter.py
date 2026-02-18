@@ -7,6 +7,13 @@ from typing import Any
 
 class CodeEmitter:
     """EAST -> 各言語のコード生成で共通利用する最小基底クラス。"""
+    doc: dict[str, Any]
+    profile: dict[str, Any]
+    hooks: Any
+    lines: list[str]
+    indent: int
+    tmp_id: int
+    scope_stack: list[set[str]]
 
     def __init__(
         self,
@@ -64,33 +71,30 @@ class CodeEmitter:
         """`on_render_binop` フック。既定では何もしない。"""
         return None
 
-    def profile_get(self, path: list[str], default_value: str) -> str:
-        """profile からネストキーを取得する。未定義時は既定値。"""
-        cur: Any = self.profile
-        for key in path:
-            if not isinstance(cur, dict) or key not in cur:
-                return default_value
-            cur = cur[key]
-        if isinstance(cur, str) and cur != "":
-            return cur
-        return default_value
-
     def syntax_text(self, key: str, default_value: str) -> str:
         """profile.syntax からテンプレート文字列を取得する。"""
-        return self.profile_get(["syntax", key], default_value)
+        profile = self.profile
+        if not isinstance(profile, dict):
+            return default_value
+        syn = profile.get("syntax")
+        if not isinstance(syn, dict):
+            return default_value
+        v = syn.get(key)
+        if isinstance(v, str) and v != "":
+            return v
+        return default_value
 
     def syntax_line(
         self,
         key: str,
         default_value: str,
-        values: dict[str, str] | None = None,
+        values: dict[str, str],
     ) -> str:
         """profile.syntax のテンプレートを format 展開して返す。"""
         text = self.syntax_text(key, default_value)
         out = text
-        if isinstance(values, dict):
-            for k, v in values.items():
-                out = out.replace("{" + str(k) + "}", str(v))
+        for k, v in values.items():
+            out = out.replace("{" + str(k) + "}", str(v))
         return out
 
     def next_tmp(self, prefix: str = "__tmp") -> str:
