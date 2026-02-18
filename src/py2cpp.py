@@ -1551,9 +1551,12 @@ class CppEmitter(CodeEmitter):
                 loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
                 return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
         if fn.get("kind") == "Attribute":
+            attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw)
-            if isinstance(attr_rendered, str) and attr_rendered != "":
-                return attr_rendered
+            if isinstance(attr_rendered, str):
+                attr_rendered_txt = str(attr_rendered)
+            if attr_rendered_txt != "":
+                return attr_rendered_txt
         return None
 
     def _render_call_module_method(
