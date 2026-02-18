@@ -20,6 +20,8 @@
 `src/pylib/` は selfhost を含む共通 Python ライブラリの正本です。  
 `_` で始まる名前は内部実装扱いとし、以下を公開APIとして扱います。
 
+- トランスパイル対象コードでの標準モジュール直接 import は禁止し、`pylib.*` のみを許可します。
+
 - `pylib.assertions`
   - 関数: `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - `pylib.pathlib`

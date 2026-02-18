@@ -6,6 +6,7 @@
 - 実装仕様: [`docs/spec-dev.md`](./spec-dev.md)
 - 言語プロファイル仕様: [`docs/spec-language-profile.md`](./spec-language-profile.md)
 - Codex 向け運用仕様: [`docs/spec-codex.md`](./spec-codex.md)
+- `pylib` モジュール一覧: [`docs/pylib-modules.md`](./pylib-modules.md)
 
 ## 読み分け方
 
