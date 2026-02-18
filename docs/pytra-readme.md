@@ -19,7 +19,7 @@
 - list/set comprehension の主要ケース
 - スライス（`a[b:c]`）
 - `if __name__ == "__main__":` ガード認識
-- EAST 変換（`east/east.py`）と EAST ベース C++ 変換（`east/py2cpp.py`）
+- EAST 変換（`src/common/east.py`）と EAST ベース C++ 変換（`src/py2cpp.py`）
 
 ## 実装済みの組み込み関数
 
@@ -88,15 +88,14 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
 
 ## EAST 実装状況
 
-- `east/east.py`
+- `src/common/east.py`
   - `test/fixtures` 32/32, `sample/py` 16/16 を EAST 変換可能
   - `range(...)` は `ForRange` / `RangeExpr` へ正規化され、生の `Call(Name("range"))` は後段へ渡さない
-- `east/py2cpp.py`
+- `src/py2cpp.py`
   - `sample/py` 16/16 を `変換 -> コンパイル -> 実行` まで通過
   - `append/extend/pop`, `perf_counter`, `min/max`, `save_gif` / `write_rgb_png` / `grayscale_palette` をランタイム連携
 - ベンチマーク
-  - 一覧: `east/sample/benchmark_east_py2cpp.md`
-  - 詳細JSON: `east/sample/benchmark_east_py2cpp.json`
+  - 一覧/詳細は `sample/` 配下の最新計測結果を参照
 
 ## 未実装項目
 

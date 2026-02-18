@@ -12,7 +12,6 @@
   - `py_module/`: Python 側の自作ライブラリ
 - `test/`: `py`（入力）と各ターゲット言語の変換結果
 - `sample/`: 実用サンプル入力と各言語変換結果
-- `east/`: EAST 変換器・EASTベース変換器・EASTランタイム・検証出力
 - `docs/`: 仕様・使い方・実装状況
 
 ## 2. C# 変換仕様（`py2cs.py`）
@@ -108,13 +107,12 @@
 
 ## 5. EASTベース C++ 経路
 
-- `east/east.py`: Python AST -> EAST JSON
-- `east/py2cpp.py`: EAST JSON -> C++
-- `east/cpp_module/py_runtime.h`: EAST側 C++ ランタイム集約
+- `src/common/east.py`: Python -> EAST JSON
+- `src/py2cpp.py`: EAST JSON -> C++
+- `src/cpp_module/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
   - `range(...)` の意味解釈は EAST 構築側で完了させる
-  - `east/py2cpp.py` は正規化済み EAST を文字列化する
-  - `east/py2cpp.py` は `src/py2cpp.py` を内部利用しない
+  - `src/py2cpp.py` は正規化済み EAST を文字列化する
 
 ## 6. 実装上の共通ルール
 

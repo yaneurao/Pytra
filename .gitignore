@@ -13,5 +13,4 @@ __pycache__/
 /test/transpile/java/*.class
 /sample/java/*.class
 
-/east/
 /selfhost/

@@ -159,22 +159,20 @@ java -cp test/transpile/obj/case29_iterable_kotlin.jar pytra_case29_iterable
 
 ```bash
 # 1) Python を EAST(JSON) に変換
-python east/east.py sample/py/01_mandelbrot.py -o east/sample/east/01_mandelbrot.json --pretty
+python src/common/east.py sample/py/01_mandelbrot.py -o test/transpile/east/01_mandelbrot.json --pretty
 
 # 2) EAST(JSON) から C++ へ変換（.py を直接渡しても可）
-python east/py2cpp.py east/sample/east/01_mandelbrot.json -o east/sample/cpp/01_mandelbrot.cpp
+python src/py2cpp.py test/transpile/east/01_mandelbrot.json -o test/transpile/cpp/01_mandelbrot.cpp
 
 # 3) コンパイルして実行
-g++ -std=c++17 -O2 -I . -I src east/sample/cpp/01_mandelbrot.cpp \
+g++ -std=c++20 -O2 -I src test/transpile/cpp/01_mandelbrot.cpp \
   src/cpp_module/png.cpp src/cpp_module/gif.cpp \
-  -o east/sample/obj/01_mandelbrot
-./east/sample/obj/01_mandelbrot
+  -o test/transpile/obj/01_mandelbrot
+./test/transpile/obj/01_mandelbrot
 ```
 
 補足:
-- EAST版 C++ は `#include "east/cpp_module/py_runtime.h"` を使用します。
-- そのため include path は `-I .` が必須です（`-I src` も併用）。
-- `sample/py` 全16件の最新実行時間は `east/sample/benchmark_east_py2cpp.md` を参照してください。
+- EAST 変換器は `src/common/east.py`、EASTベース C++ 生成器は `src/py2cpp.py` を使用します。
 
 </details>
 
