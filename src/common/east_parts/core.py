@@ -773,6 +773,8 @@ class _ShExprParser:
                         call_ret = "None"
                     elif fn_name == "Path":
                         call_ret = "Path"
+                    elif fn_name == "open":
+                        call_ret = "PyFile"
                     elif fn_name == "int":
                         call_ret = "int64"
                     elif fn_name == "float":
@@ -816,6 +818,9 @@ class _ShExprParser:
                             elif attr in {"exists"}:
                                 call_ret = "bool"
                             elif attr in {"mkdir", "write_text"}:
+                                call_ret = "None"
+                        elif owner_t == "PyFile":
+                            if attr in {"close", "write"}:
                                 call_ret = "None"
                 elif isinstance(node, dict) and node.get("kind") == "Lambda":
                     call_ret = str(node.get("return_type", "unknown"))
@@ -862,6 +867,10 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "Path"
                     payload["runtime_call"] = "Path"
+                elif fn_name == "open":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "open"
+                    payload["runtime_call"] = "open"
                 elif fn_name in {"bytes", "bytearray"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
@@ -896,6 +905,15 @@ class _ShExprParser:
                             "stem": "path_stem",
                         }
                         rc = path_map.get(attr)
+                        if rc is not None:
+                            payload["lowered_kind"] = "BuiltinCall"
+                            payload["builtin_name"] = attr
+                            payload["runtime_call"] = rc
+                    elif owner_t in INT_TYPES | {"int"}:
+                        int_map = {
+                            "to_bytes": "py_int_to_bytes",
+                        }
+                        rc = int_map.get(attr)
                         if rc is not None:
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
@@ -1126,6 +1144,11 @@ class _ShExprParser:
                     casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
         elif op_sym == "//":
             out_t = "int64" if lt in {"int64", "unknown"} and rt in {"int64", "unknown"} else "float64"
+        elif op_sym == "+" and (
+            (lt in {"bytes", "bytearray"} and rt in {"bytes", "bytearray"})
+            or (lt == "str" and rt == "str")
+        ):
+            out_t = "bytes" if (lt in {"bytes", "bytearray"} and rt in {"bytes", "bytearray"}) else "str"
         elif lt == rt and lt in {"int64", "float64"}:
             out_t = lt
         elif lt in {"int64", "float64"} and rt in {"int64", "float64"}:
@@ -1260,10 +1283,13 @@ class _ShExprParser:
                     "repr": raw,
                     "values": values,
                 }
+            resolved_type = "str"
+            if "b" in prefix and "f" not in prefix:
+                resolved_type = "bytes"
             return {
                 "kind": "Constant",
                 "source_span": self._node_span(tok["s"], tok["e"]),
-                "resolved_type": "str",
+                "resolved_type": resolved_type,
                 "borrow_kind": "value",
                 "casts": [],
                 "repr": raw,

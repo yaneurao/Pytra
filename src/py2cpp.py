@@ -810,6 +810,7 @@ class CppEmitter(BaseEmitter):
             return
         if kind == "Try":
             finalbody = list(stmt.get("finalbody", []))
+            handlers = list(stmt.get("handlers", []))
             has_effective_finally = any(isinstance(s, dict) and s.get("kind") != "Pass" for s in finalbody)
             if has_effective_finally:
                 self.emit("{")
@@ -820,12 +821,18 @@ class CppEmitter(BaseEmitter):
                 self.emit_stmt_list(finalbody)
                 self.indent -= 1
                 self.emit("});")
+            if len(handlers) == 0:
+                self.emit_stmt_list(list(stmt.get("body", [])))
+                if has_effective_finally:
+                    self.indent -= 1
+                    self.emit("}")
+                return
             self.emit("try {")
             self.indent += 1
             self.emit_stmt_list(list(stmt.get("body", [])))
             self.indent -= 1
             self.emit("}")
-            for h in stmt.get("handlers", []):
+            for h in handlers:
                 name_raw = h.get("name")
                 name = name_raw if isinstance(name_raw, str) and name_raw != "" else "ex"
                 self.emit(f"catch (const std::exception& {name}) {{")
@@ -1228,6 +1235,19 @@ class CppEmitter(BaseEmitter):
                     return "object{}"
                 return "std::nullopt"
             if isinstance(v, str):
+                if self.get_expr_type(expr) == "bytes":
+                    raw = expr.get("repr")
+                    if isinstance(raw, str):
+                        qpos = -1
+                        i = 0
+                        while i < len(raw):
+                            if raw[i] in {'"', "'"}:
+                                qpos = i
+                                break
+                            i += 1
+                        if qpos >= 0:
+                            return f"bytes({raw[qpos:]})"
+                    return f"bytes({cpp_string_lit(v)})"
                 return cpp_string_lit(v)
             return str(v)
         if kind == "Attribute":
@@ -1318,6 +1338,13 @@ class CppEmitter(BaseEmitter):
                     return self.render_minmax(fn, args, self.get_expr_type(expr))
                 if runtime_call == "perf_counter":
                     return "perf_counter()"
+                if runtime_call == "open":
+                    return f"open({', '.join(args)})"
+                if runtime_call == "py_int_to_bytes":
+                    owner = self.render_expr(fn.get("value"))
+                    length = args[0] if len(args) >= 1 else "0"
+                    byteorder = args[1] if len(args) >= 2 else '"little"'
+                    return f"py_int_to_bytes({owner}, {length}, {byteorder})"
                 if runtime_call == "write_rgb_png":
                     return f"png_helper::write_rgb_png({', '.join(args)})"
                 if runtime_call == "grayscale_palette":
@@ -2035,6 +2062,8 @@ class CppEmitter(BaseEmitter):
             parts = self.split_union(east_type)
             if len(parts) >= 2:
                 non_none = [p for p in parts if p != "None"]
+                if len(non_none) >= 1 and set(non_none).issubset({"bytes", "bytearray"}):
+                    return "bytes"
                 if any(self.is_any_like_type(p) for p in non_none):
                     return "object"
                 if len(parts) == 2 and len(non_none) == 1:
@@ -2065,6 +2094,8 @@ class CppEmitter(BaseEmitter):
             return east_type
         if east_type == "Path":
             return "Path"
+        if east_type == "PyFile":
+            return "pytra::runtime::cpp::base::PyFile"
         if east_type == "Exception":
             return "std::runtime_error"
         if east_type.startswith("list[") and east_type.endswith("]"):

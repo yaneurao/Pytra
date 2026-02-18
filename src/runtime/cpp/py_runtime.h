@@ -31,6 +31,7 @@
 
 namespace py_math = pytra::math;
 using PyObj = pytra::gc::PyObj;
+using PyFile = pytra::runtime::cpp::base::PyFile;
 
 template <class T>
 using rc = pytra::gc::RcHandle<T>;

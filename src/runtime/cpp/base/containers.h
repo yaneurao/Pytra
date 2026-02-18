@@ -225,6 +225,21 @@ public:
     list(std::initializer_list<T> init) : data_(init) {}
     explicit list(std::size_t count) : data_(count) {}
     list(std::size_t count, const T& value) : data_(count, value) {}
+    template <class U = T, std::enable_if_t<std::is_same_v<U, uint8>, int> = 0>
+    list(const char* s) {
+        if (s == nullptr) return;
+        const unsigned char* p = reinterpret_cast<const unsigned char*>(s);
+        while (*p != 0) {
+            data_.push_back(static_cast<uint8>(*p));
+            ++p;
+        }
+    }
+    template <class U = T, std::enable_if_t<std::is_same_v<U, uint8>, int> = 0>
+    list(const str& s) {
+        for (char ch : s) {
+            data_.push_back(static_cast<uint8>(static_cast<unsigned char>(ch)));
+        }
+    }
     template <class U = T, std::enable_if_t<std::is_same_v<U, object>, int> = 0>
     list(const object& v) {
         if (const auto* p = obj_to_list_ptr(v)) data_ = *p;
@@ -304,7 +319,9 @@ public:
 
     template <class U>
     void extend(const U& values) {
-        data_.insert(data_.end(), values.begin(), values.end());
+        for (const auto& value : values) {
+            data_.push_back(static_cast<T>(value));
+        }
     }
 
     T pop() {
@@ -335,6 +352,24 @@ private:
 
 using bytearray = list<uint8>;
 using bytes = bytearray;
+
+static inline bytes operator+(const bytes& lhs, const bytes& rhs) {
+    bytes out = lhs;
+    out.extend(rhs);
+    return out;
+}
+
+static inline bytes operator+(const bytes& lhs, const char* rhs) {
+    bytes out = lhs;
+    out.extend(bytes(rhs));
+    return out;
+}
+
+static inline bytes operator+(const char* lhs, const bytes& rhs) {
+    bytes out = bytes(lhs);
+    out.extend(rhs);
+    return out;
+}
 
 static inline bytes py_int_to_bytes(int64 value, int64 length, const str& byteorder) {
     auto raw = pytra::runtime::cpp::base::int_to_bytes(value, length, static_cast<std::string>(byteorder));

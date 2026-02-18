@@ -60,7 +60,9 @@ def grayscale_palette() -> bytes:
     p = bytearray()
     i = 0
     while i < 256:
-        p.extend((i, i, i))
+        p.append(i)
+        p.append(i)
+        p.append(i)
         i += 1
     return bytes(p)
 
