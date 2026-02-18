@@ -519,6 +519,71 @@ static inline str py_read_text(const Path& p) {
     return ss.str();
 }
 
+static inline str py_lstrip(const str& s) {
+    std::size_t i = 0;
+    while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i])) != 0) i++;
+    return s.substr(i);
+}
+
+static inline str py_rstrip(const str& s) {
+    if (s.empty()) return s;
+    std::size_t i = s.size();
+    while (i > 0 && std::isspace(static_cast<unsigned char>(s[i - 1])) != 0) i--;
+    return s.substr(0, i);
+}
+
+static inline str py_strip(const str& s) {
+    return py_rstrip(py_lstrip(s));
+}
+
+static inline bool py_startswith(const str& s, const str& prefix) {
+    return s.rfind(prefix, 0) == 0;
+}
+
+static inline bool py_endswith(const str& s, const str& suffix) {
+    if (suffix.size() > s.size()) return false;
+    return s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+static inline str py_replace(const str& s, const str& oldv, const str& newv) {
+    if (oldv.empty()) return s;
+    str out = s;
+    std::size_t pos = 0;
+    while ((pos = out.find(oldv, pos)) != str::npos) {
+        out.replace(pos, oldv.size(), newv);
+        pos += newv.size();
+    }
+    return out;
+}
+
+template <class T>
+static inline str py_join(const str& sep, const list<T>& values) {
+    if (values.empty()) return "";
+    str out = py_to_string(values[0]);
+    for (std::size_t i = 1; i < values.size(); i++) {
+        out += sep;
+        out += py_to_string(values[i]);
+    }
+    return out;
+}
+
+template <class T>
+static inline list<T> py_reversed(const list<T>& values) {
+    list<T> out(values.begin(), values.end());
+    std::reverse(out.begin(), out.end());
+    return out;
+}
+
+template <class T>
+static inline list<std::tuple<int64, T>> py_enumerate(const list<T>& values) {
+    list<std::tuple<int64, T>> out;
+    out.reserve(values.size());
+    for (std::size_t i = 0; i < values.size(); i++) {
+        out.append(std::make_tuple(static_cast<int64>(i), values[i]));
+    }
+    return out;
+}
+
 template <class A, class B>
 static inline float64 py_div(A lhs, B rhs) {
     return static_cast<float64>(lhs) / static_cast<float64>(rhs);

@@ -28,11 +28,11 @@
 
 #### C. 文字列/反復ユーティリティの selfhost 対応
 
-- [ ] `strip/rstrip/startswith/endswith/replace/join` を C++ ランタイム関数へマッピングする（`py_runtime.h`）。
-- [ ] `src/py2cpp.py` で上記メソッド呼び出しを C++ 標準APIまたはランタイムAPIへ lowering する。
-- [ ] `reversed()` の lowering を追加する（`for` で使うケースを優先）。
-- [ ] `enumerate()` の lowering を追加する（`for i, x in enumerate(...)` を優先）。
-- [ ] `no member named 'startswith'` / `'replace'` / `reversed not declared` / `enumerate not declared` のビルドエラー解消を確認する。
+- [x] `strip/rstrip/startswith/endswith/replace/join` を C++ ランタイム関数へマッピングする（`py_runtime.h`）。
+- [x] `src/py2cpp.py` で上記メソッド呼び出しを C++ 標準APIまたはランタイムAPIへ lowering する。
+- [x] `reversed()` の lowering を追加する（`for` で使うケースを優先）。
+- [x] `enumerate()` の lowering を追加する（`for i, x in enumerate(...)` を優先）。
+- [x] `no member named 'startswith'` / `'replace'` / `reversed not declared` / `enumerate not declared` のビルドエラー解消を確認する。
 
 #### D. `dict/list` 動的アクセスの整合
 
@@ -70,4 +70,4 @@
 - [ ] `strip/startswith/endswith/replace/join` の Python 文字列APIを C++ 側 API に落とす明示ルートを追加する。
 - [ ] `enumerate` / `reversed` が生で残る経路を EAST か lowering で除去する。
 - [ ] `py_is_none` 追加分を selfhost 側ランタイムにも同期し、未定義エラーを解消する。
-- [ ] `src/py2cpp.py -> selfhost/py2cpp.py` 同期後に `selfhost/py2cpp.cpp` を再生成し、エラー件数の減少を記録する。
+- [x] `src/py2cpp.py -> selfhost/py2cpp.py` 同期後に `selfhost/py2cpp.cpp` を再生成し、エラー件数の減少を記録する。

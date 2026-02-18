@@ -1145,6 +1145,10 @@ class CppEmitter:
                     return f"py_print({', '.join(args)})"
                 if raw == "len" and len(args) == 1:
                     return f"py_len({args[0]})"
+                if raw == "reversed" and len(args) == 1:
+                    return f"py_reversed({args[0]})"
+                if raw == "enumerate" and len(args) == 1:
+                    return f"py_enumerate({args[0]})"
                 if raw == "any" and len(args) == 1:
                     return f"py_any({args[0]})"
                 if raw == "all" and len(args) == 1:
@@ -1241,6 +1245,19 @@ class CppEmitter:
                         return f"{math_map[attr]}({', '.join(args)})"
                 if owner_expr == "png_helper" and attr == "write_rgb_png":
                     return f"png_helper::write_rgb_png({', '.join(args)})"
+                if owner_t == "str":
+                    if attr == "strip" and len(args) == 0:
+                        return f"py_strip({owner_expr})"
+                    if attr == "rstrip" and len(args) == 0:
+                        return f"py_rstrip({owner_expr})"
+                    if attr == "startswith" and len(args) == 1:
+                        return f"py_startswith({owner_expr}, {args[0]})"
+                    if attr == "endswith" and len(args) == 1:
+                        return f"py_endswith({owner_expr}, {args[0]})"
+                    if attr == "replace" and len(args) == 2:
+                        return f"py_replace({owner_expr}, {args[0]}, {args[1]})"
+                    if attr == "join" and len(args) == 1:
+                        return f"py_join({owner_expr}, {args[0]})"
                 if owner_expr == "gif_helper" and attr == "save_gif":
                     path = args[0] if len(args) >= 1 else '""'
                     w = args[1] if len(args) >= 2 else "0"
