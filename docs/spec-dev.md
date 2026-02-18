@@ -117,11 +117,23 @@
 ## 5. EASTベース C++ 経路
 
 - `src/common/east.py`: Python -> EAST JSON
+- `src/common/base_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/py2cpp.py`: EAST JSON -> C++
 - `src/cpp_module/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
   - `range(...)` の意味解釈は EAST 構築側で完了させる
   - `src/py2cpp.py` は正規化済み EAST を文字列化する
+  - 言語非依存の補助ロジックは `BaseEmitter` 側へ段階的に集約する
+
+### 5.1 BaseEmitter テスト方針
+
+- `src/common/base_emitter.py` の回帰は `test/unit/test_base_emitter.py` で担保します。
+- 主対象:
+  - 出力バッファ操作（`emit`, `emit_stmt_list`, `next_tmp`）
+  - 動的入力安全化（`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`）
+  - ノード判定（`is_name`, `is_call`, `is_attr`, `get_expr_type`）
+  - 型文字列補助（`split_generic`, `split_union`, `normalize_type_name`, `is_*_type`）
+- `BaseEmitter` に機能追加・仕様変更した場合は、同ファイルへ対応テストを追加してから利用側エミッタへ展開します。
 
 ## 6. 実装上の共通ルール
 

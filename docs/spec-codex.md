@@ -42,6 +42,7 @@
 - 変換器都合で `test/fixtures/` の入力ケースを変更してはなりません。
 - 実行速度比較時の C++ は `-O3 -ffast-math -flto` を使用します。
 - 生成物ディレクトリ（`test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`）は Git 管理外運用を維持します。
+- `src/common/base_emitter.py` を変更した場合は `test/unit/test_base_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
 
 ## 7. selfhost 運用ノウハウ
 
