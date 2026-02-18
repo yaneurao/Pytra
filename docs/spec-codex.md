@@ -40,3 +40,11 @@
 - 変換器都合で `test/fixtures/` の入力ケースを変更してはなりません。
 - 実行速度比較時の C++ は `-O3 -ffast-math -flto` を使用します。
 - 生成物ディレクトリ（`test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`）は Git 管理外運用を維持します。
+
+## 7. selfhost 運用ノウハウ
+
+- selfhost 検証前に、`selfhost/py2cpp.py` と `selfhost/cpp_module/*` は `src` の最新へ同期してよい（必要時は同期を優先）。
+- `#include "cpp_module/..."` は `selfhost/` 配下の同名ヘッダが優先解決される。`src/cpp_module` だけ更新しても selfhost ビルドは直らないことがある。
+- selfhost のビルドログは `stdout` 側に出ることがあるため、`> selfhost/build.all.log 2>&1` で統合取得する。
+- selfhost 対象コードでは、Python 専用表現が生成 C++ に漏れないことを確認する（例: `super().__init__`, Python 風継承表記）。
+- ランタイム変更時は `test/unit/test_py2cpp_features.py` の実行回帰に加え、selfhost の再生成・再コンパイル結果も確認する。
