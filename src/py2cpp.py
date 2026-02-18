@@ -18,15 +18,15 @@ from common.east import EastBuildError, convert_path, convert_source_to_east_wit
 
 class BaseEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
-        self.doc = east_doc
+        self.doc: dict[str, Any] = east_doc
         self.lines: list[str] = []
-        self.indent = 0
-        self.tmp_id = 0
+        self.indent: int = 0
+        self.tmp_id: int = 0
 
     def emit(self, line: str = "") -> None:
         self.lines.append(("    " * self.indent) + line)
 
-    def emit_stmt_list(self, stmts: list[Any]) -> None:
+    def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         for stmt in stmts:
             self.emit_stmt(stmt)  # type: ignore[attr-defined]
 
@@ -34,29 +34,29 @@ class BaseEmitter:
         self.tmp_id += 1
         return f"{prefix}_{self.tmp_id}"
 
-    def any_dict_get(self, obj: Any, key: str, default_value: Any) -> Any:
-        if isinstance(obj, dict):
-            return obj.get(key, default_value)
+    def any_dict_get(self, obj: dict[str, Any], key: str, default_value: Any) -> Any:
+        if key in obj:
+            return obj[key]
         return default_value
 
-    def get_expr_type(self, expr: Any) -> str:
-        if expr is None or not isinstance(expr, dict):
+    def get_expr_type(self, expr: dict[str, Any] | None) -> str:
+        if expr is None:
             return ""
         t = expr.get("resolved_type")
         return t if isinstance(t, str) else ""
 
-    def is_name(self, node: Any, name: str | None = None) -> bool:
-        if not isinstance(node, dict) or node.get("kind") != "Name":
+    def is_name(self, node: dict[str, Any] | None, name: str | None = None) -> bool:
+        if node is None or node.get("kind") != "Name":
             return False
         if name is None:
             return True
         return str(node.get("id", "")) == name
 
-    def is_call(self, node: Any) -> bool:
-        return isinstance(node, dict) and node.get("kind") == "Call"
+    def is_call(self, node: dict[str, Any] | None) -> bool:
+        return node is not None and node.get("kind") == "Call"
 
-    def is_attr(self, node: Any, attr: str | None = None) -> bool:
-        if not isinstance(node, dict) or node.get("kind") != "Attribute":
+    def is_attr(self, node: dict[str, Any] | None, attr: str | None = None) -> bool:
+        if node is None or node.get("kind") != "Attribute":
             return False
         if attr is None:
             return True
@@ -117,6 +117,15 @@ class BaseEmitter:
         if "|" in s:
             parts = self.split_union(s)
             return any(self.is_any_like_type(p) for p in parts if p != "None")
+        return False
+
+    def is_forbidden_object_receiver_type(self, t: Any) -> bool:
+        s = self.normalize_type_name(t)
+        if s in {"Any", "object", "any"}:
+            return True
+        if "|" in s:
+            parts = self.split_union(s)
+            return any(p in {"Any", "object", "any"} for p in parts if p != "None")
         return False
 
     def is_list_type(self, t: Any) -> bool:
@@ -218,7 +227,10 @@ def cpp_string_lit(s: str) -> str:
 
 class CppEmitter(BaseEmitter):
     def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
-        BaseEmitter.__init__(self, east_doc)
+        self.doc: dict[str, Any] = east_doc
+        self.lines: list[str] = []
+        self.indent: int = 0
+        self.tmp_id: int = 0
         self.negative_index_mode = negative_index_mode
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
@@ -1249,6 +1261,11 @@ class CppEmitter(BaseEmitter):
                 return cpp_string_lit(v)
             return str(v)
         if kind == "Attribute":
+            owner_t = self.get_expr_type(expr.get("value"))
+            if self.is_forbidden_object_receiver_type(owner_t):
+                raise RuntimeError(
+                    "object receiver attribute access is forbidden by language constraints"
+                )
             base = self.render_expr(expr.get("value"))
             base_node = expr.get("value")
             if isinstance(base_node, dict) and base_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
@@ -1281,6 +1298,13 @@ class CppEmitter(BaseEmitter):
         if kind == "Call":
             fn_raw = expr.get("func")
             fn = fn_raw if isinstance(fn_raw, dict) else {}
+            if fn.get("kind") == "Attribute":
+                owner_node = fn.get("value")
+                owner_t = self.get_expr_type(owner_node)
+                if self.is_forbidden_object_receiver_type(owner_t):
+                    raise RuntimeError(
+                        "object receiver method call is forbidden by language constraints"
+                    )
             fn_name = self.render_expr(fn)
             arg_nodes = expr.get("args", [])
             args = [self.render_expr(a) for a in arg_nodes]

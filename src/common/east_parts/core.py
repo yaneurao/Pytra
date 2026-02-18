@@ -597,6 +597,30 @@ class _ShExprParser:
         out.append(s[start:].strip())
         return out
 
+    def _split_union_types(self, s: str) -> list[str]:
+        out: list[str] = []
+        depth = 0
+        start = 0
+        for i, ch in enumerate(s):
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+            elif ch == "|" and depth == 0:
+                out.append(s[start:i].strip())
+                start = i + 1
+        out.append(s[start:].strip())
+        return out
+
+    def _is_forbidden_object_receiver_type(self, t: str) -> bool:
+        s = t.strip()
+        if s in {"object", "Any", "any"}:
+            return True
+        if "|" in s:
+            parts = self._split_union_types(s)
+            return any(p in {"object", "Any", "any"} for p in parts if p != "None")
+        return False
+
     def _subscript_result_type(self, container_type: str) -> str:
         if container_type.startswith("list[") and container_type.endswith("]"):
             inner = container_type[5:-1].strip()
@@ -641,6 +665,13 @@ class _ShExprParser:
                 e = name_tok["e"]
                 attr_name = str(name_tok["v"])
                 owner_t = str(node.get("resolved_type", "unknown"))
+                if self._is_forbidden_object_receiver_type(owner_t):
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message="object receiver attribute/method access is forbidden by language constraints",
+                        source_span=self._node_span(s, e),
+                        hint="Cast or assign to a concrete type before attribute/method access.",
+                    )
                 attr_t = "unknown"
                 if isinstance(node, dict) and node.get("kind") == "Name" and node.get("id") == "self":
                     # In method scope, class fields are injected into name_types.

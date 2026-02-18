@@ -58,6 +58,14 @@ class SelfHostedSignatureTest(unittest.TestCase):
         err = payload.get("error", {})
         self.assertEqual(err.get("kind"), "unsupported_syntax")
 
+    def test_reject_object_receiver_access(self) -> None:
+        cp, payload = self._run_east(SIG_DIR / "ng_object_receiver.py")
+        self.assertNotEqual(cp.returncode, 0)
+        self.assertEqual(payload.get("ok"), False)
+        err = payload.get("error", {})
+        self.assertEqual(err.get("kind"), "unsupported_syntax")
+        self.assertIn("object receiver", str(err.get("message", "")))
+
 
 if __name__ == "__main__":
     unittest.main()

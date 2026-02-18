@@ -258,6 +258,29 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_emit_guard_rejects_object_receiver_call(self) -> None:
+        east = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": {"kind": "Name", "id": "x", "resolved_type": "object"},
+                            "attr": "bit_length",
+                        },
+                        "args": [],
+                        "keywords": [],
+                        "resolved_type": "unknown",
+                    },
+                }
+            ],
+        }
+        with self.assertRaisesRegex(RuntimeError, "object receiver method call"):
+            transpile_to_cpp(east)
+
 
 if __name__ == "__main__":
     unittest.main()

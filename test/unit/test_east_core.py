@@ -14,6 +14,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.common.east import convert_source_to_east_with_backend
+from src.common.east import EastBuildError
 
 
 def _walk(node: Any):
@@ -160,6 +161,20 @@ if __name__ == "__main__":
             for c in calls
         )
         self.assertTrue(has_super)
+
+    def test_object_receiver_access_is_rejected(self) -> None:
+        src = """
+def f(x: object) -> int:
+    return x.bit_length()
+
+def main() -> None:
+    print(f(1))
+
+if __name__ == "__main__":
+    main()
+"""
+        with self.assertRaises(EastBuildError):
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
 
 
 if __name__ == "__main__":

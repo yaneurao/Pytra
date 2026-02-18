@@ -27,6 +27,9 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - class 本体で宣言されたメンバーは class member（C# では `static`、C++ では `inline static`）として扱います。
 - `@dataclass` を付けた class は dataclass として扱い、フィールドとコンストラクタを生成します。
 - `import` / `from ... import ...` をサポートします。
+- `object` 型（`Any` 由来を含む）に対する属性アクセス・メソッド呼び出しは禁止です。
+  - 例: `x: object` に対して `x.foo()` / `x.bar` は不可。
+  - 必要な場合は、明示的に型を確定させた変数へ代入してからアクセスしてください。
 
 ## 3. テストケース方針
 

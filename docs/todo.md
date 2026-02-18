@@ -11,22 +11,35 @@
 7. [ ] `selfhost/py2cpp.out` で `sample/py/01` を変換実行する。
 8. [x] `src/py2cpp.py` 実行結果との一致条件を定義し、比較確認する。
    - 一致条件: `sample/py/01` 入力に対して、`selfhost/py2cpp.out` と `python src/py2cpp.py` の生成 C++ がコンパイル可能で、実行出力（画像含む）が一致すること。
-9. [ ] `selfhost/` には `src` 最新をコピーしてよい前提で、`selfhost/py2cpp.py` と `selfhost/cpp_module/*` を同期する（`cp -f src/py2cpp.py selfhost/py2cpp.py` / `cp -f src/cpp_module/* selfhost/cpp_module/`）。
-10. [ ] `g++` ログ取得を `> selfhost/build.all.log 2>&1` に統一し、`stderr` 空でも原因追跡できるようにする。
+9. [x] `selfhost/` には `src` 最新をコピーしてよい前提で、`selfhost/py2cpp.py` と `selfhost/cpp_module/*` を同期する（`cp -f src/py2cpp.py selfhost/py2cpp.py` / `cp -f src/cpp_module/* selfhost/cpp_module/`）。
+10. [x] `g++` ログ取得を `> selfhost/build.all.log 2>&1` に統一し、`stderr` 空でも原因追跡できるようにする。
 11. [ ] selfhost 生成コードに残る Python 構文由来（`class ... : BaseEmitter`, `super().__init__`）を selfhost 対応表現へ置換する。
 12. [ ] `object` / `std::any` 橋渡し不足を解消する（`make_object(std::any)` 相当、`dict<str, object>` 連携）。
-13. [ ] selfhost 生成の `CppEmitter` で `BaseEmitter` 依存を使わずに完結できるようにする（または selfhost 用 lower を追加する）。
+13. [ ] `src/py2cpp.py` の `BaseEmitter` を「自己変換可能な最小型付き API」に整理し、`emit_stmt` 参照や `dict/object` 代入崩れを解消する。
 14. [ ] `selfhost/py2cpp.out` を生成し、`sample/py/01_mandelbrot.py` を変換できるところまで到達する。
 15. [ ] `selfhost/py2cpp.out` 生成結果と `python src/py2cpp.py` 生成結果の一致検証を実施する。
+
+## object 制約の実装反映（汎用）
+
+1. [x] EAST で `object` レシーバの属性アクセス・メソッド呼び出しを検出し、`unsupported_syntax` を返す。
+2. [x] `py2cpp.py` の emit 時にもガードを追加し、`object` レシーバの呼び出し漏れを最終防止する。
+3. [x] `test/fixtures/signature/` に `object` レシーバ呼び出し禁止の NG ケースを追加する。
+4. [x] `test/unit` に NG ケースが失敗することを確認する回帰テストを追加する。
+
+## 追加回帰（super）
+
+1. [x] `super()` の回帰 fixture を追加する（`test/fixtures/oop/super_init.py`）。
+2. [x] EAST parser 側で `super().__init__()` を含むコードが parse できる unit test を追加する。
+3. [x] C++ 変換して実行まで通る runtime test を追加する（`test/unit/test_py2cpp_features.py`）。
 
 ## 直近メモ
 
 - 進捗: `except ValueError:` を self_hosted parser で受理するよう修正し、EAST 生成は通過。
-- 現在の主要原因（2026-02-18）:
-  1. `selfhost/cpp_module/py_runtime.h` が `src/cpp_module/py_runtime.h` と不一致な状態がある（include 解決で `selfhost` 側が優先される）。
-  2. selfhost 生成 `selfhost/py2cpp.cpp` に Python 構文が残る（`struct CppEmitter : public BaseEmitter`, `super().__init__`）。
-  3. `object` / `std::any` 橋渡し不足で `make_object(std::any)` などが解決できない。
-  4. 以前 `stderr` のみを見てエラーを見逃したため、`stdout+stderr` 取得へ統一が必要。
+- 現在の主要原因（2026-02-18 再計測）:
+  1. `selfhost/py2cpp.cpp` 冒頭の `BaseEmitter` 変換で型崩れが発生している（`dict<str, object> doc` への `make_object(east_doc)` 代入など）。
+  2. `BaseEmitter.__init__(...)` が `BaseEmitter::__init__(self, ...)` として出力されるなど、Python メソッド呼び出し記法の漏れが残っている。
+  3. `object` / `std::any` 混在のままメソッド呼び出しが出力され、`obj.get(...)` / `startswith(...)` などが C++ 型に落ちきっていない。
+  4. 方針として selfhost 専用 lowering は極力増やさず、言語制約（`object` レシーバ呼び出し禁止）と型付き API への整理で汎用的に解消する。
 
 ## EAST へ移譲（py2cpp 簡素化・第2段）
 
