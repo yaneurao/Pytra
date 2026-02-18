@@ -17,24 +17,31 @@ from common.east import EastBuildError, convert_path, convert_source_to_east_wit
 
 
 class BaseEmitter:
+    """EAST エミッタの共通ユーティリティを提供する基底クラス。"""
+
     def __init__(self) -> None:
+        """出力バッファや一時変数カウンタなど共通状態を初期化する。"""
         self.doc: dict[str, Any] = {}
         self.lines: list[str] = []
         self.indent = 0
         self.tmp_id = 0
 
     def emit_stmt(self, stmt: dict[str, Any] | None) -> None:
+        """文ノードを出力する。派生クラスで実装する。"""
         # Subclasses override this.
         return
 
     def emit(self, line: str = "") -> None:
+        """現在のインデントで 1 行を出力バッファに追加する。"""
         self.lines.append(("    " * self.indent) + line)
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
+        """文リストを順に出力する。"""
         for stmt in stmts:
             self.emit_stmt(stmt)  # type: ignore[attr-defined]
 
     def next_tmp(self, prefix: str = "__tmp") -> str:
+        """衝突しない一時変数名を生成する。"""
         self.tmp_id += 1
         return f"{prefix}_{self.tmp_id}"
 
@@ -44,6 +51,7 @@ class BaseEmitter:
         key: str,
         default_value: Any,
     ) -> Any:
+        """dict 風入力から key を取得し、失敗時は既定値を返す。"""
         if not isinstance(obj, dict):
             return default_value
         d: dict[str, Any] = obj
@@ -52,24 +60,28 @@ class BaseEmitter:
         return default_value
 
     def any_to_dict(self, v: Any) -> dict[str, Any] | None:
+        """動的値を dict に安全に変換する。変換不能なら None。"""
         out: dict[str, Any] | None = None
         if isinstance(v, dict):
             out = v
         return out
 
     def any_to_list(self, v: Any) -> list[Any]:
+        """動的値を list に安全に変換する。変換不能なら空 list。"""
         out: list[Any] = []
         if isinstance(v, list):
             out = v
         return out
 
     def any_to_str(self, v: Any) -> str:
+        """動的値を str に安全に変換する。変換不能なら空文字。"""
         out: str = ""
         if isinstance(v, str):
             out = v
         return out
 
     def get_expr_type(self, expr: dict[str, Any] | None) -> str:
+        """式ノードから解決済み型文字列を取得する。"""
         if expr is None:
             return ""
         t = expr.get("resolved_type")
@@ -78,6 +90,7 @@ class BaseEmitter:
         return ""
 
     def is_name(self, node: dict[str, Any] | None, name: str | None = None) -> bool:
+        """ノードが Name か判定し、必要なら識別子名も一致確認する。"""
         if node is None or node.get("kind") != "Name":
             return False
         if name is None:
@@ -85,9 +98,11 @@ class BaseEmitter:
         return str(node.get("id", "")) == name
 
     def is_call(self, node: dict[str, Any] | None) -> bool:
+        """ノードが Call かを返す。"""
         return node is not None and node.get("kind") == "Call"
 
     def is_attr(self, node: dict[str, Any] | None, attr: str | None = None) -> bool:
+        """ノードが Attribute か判定し、必要なら属性名も一致確認する。"""
         if node is None or node.get("kind") != "Attribute":
             return False
         if attr is None:
@@ -95,6 +110,7 @@ class BaseEmitter:
         return str(node.get("attr", "")) == attr
 
     def split_generic(self, s: str) -> list[str]:
+        """トップレベルのカンマでジェネリック引数を分割する。"""
         out: list[str] = []
         if s == "":
             return out
@@ -112,6 +128,7 @@ class BaseEmitter:
         return out
 
     def split_union(self, s: str) -> list[str]:
+        """トップレベルの `|` で Union 型文字列を分割する。"""
         out: list[str] = []
         depth = 0
         start = 0
@@ -131,6 +148,7 @@ class BaseEmitter:
         return out
 
     def normalize_type_name(self, t: str | None) -> str:
+        """型名エイリアスを内部表現へ正規化する。"""
         if not isinstance(t, str):
             return ""
         s = str(t)
@@ -143,6 +161,7 @@ class BaseEmitter:
         return s
 
     def _is_any_like_type_text(self, s: str) -> bool:
+        """型文字列が Any 同等かどうかを判定する。"""
         if s == "":
             return False
         if s == "Any" or s == "object" or s == "unknown":
@@ -158,10 +177,12 @@ class BaseEmitter:
         return False
 
     def is_any_like_type(self, t: str | None) -> bool:
+        """入力型名を正規化した上で Any 同等判定を行う。"""
         s = self.normalize_type_name(t)
         return self._is_any_like_type_text(s)
 
     def _is_forbidden_object_receiver_type_text(self, s: str) -> bool:
+        """object レシーバ禁止ルールに抵触する型文字列か判定する。"""
         if s == "Any" or s == "object" or s == "any":
             return True
         if "|" in s:
@@ -175,19 +196,24 @@ class BaseEmitter:
         return False
 
     def is_forbidden_object_receiver_type(self, t: str | None) -> bool:
+        """object レシーバ禁止ルールに抵触する型か判定する。"""
         s = self.normalize_type_name(t)
         return self._is_forbidden_object_receiver_type_text(s)
 
     def is_list_type(self, t: str) -> bool:
+        """型文字列が list[...] かを返す。"""
         return t.startswith("list[")
 
     def is_set_type(self, t: str) -> bool:
+        """型文字列が set[...] かを返す。"""
         return t.startswith("set[")
 
     def is_dict_type(self, t: str) -> bool:
+        """型文字列が dict[...] かを返す。"""
         return t.startswith("dict[")
 
     def is_indexable_sequence_type(self, t: str) -> bool:
+        """添字アクセス可能なシーケンス型か判定する。"""
         if t.startswith("list["):
             return True
         return t == "str" or t == "bytes" or t == "bytearray"
@@ -255,6 +281,7 @@ AUG_BIN = {
 
 
 def cpp_string_lit(s: str) -> str:
+    """Python 文字列を C++ 文字列リテラルへエスケープ変換する。"""
     out: str = '"'
     i = 0
     n = len(s)
@@ -278,6 +305,7 @@ def cpp_string_lit(s: str) -> str:
 
 
 def cpp_char_lit(ch: byte) -> str:
+    """1文字文字列を C++ 文字リテラルへ変換する。"""
     if ch == "\\":
         return "'\\\\'"
     if ch == "'":
@@ -294,7 +322,10 @@ def cpp_char_lit(ch: byte) -> str:
 
 
 class CppEmitter(BaseEmitter):
+    """EAST を C++ ソースへ変換する実装クラス。"""
+
     def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
+        """変換設定とクラス解析用の状態を初期化する。"""
         self.doc: dict[str, Any] = east_doc
         self.lines: list[str] = []
         self.indent = 0
@@ -317,12 +348,15 @@ class CppEmitter(BaseEmitter):
         self.bridge_comment_emitted: set[str] = set()
 
     def _stmt_start_line(self, stmt: dict[str, Any]) -> int | None:
+        """将来の行情報連携用フック（現在は未使用）。"""
         return None
 
     def _stmt_end_line(self, stmt: dict[str, Any]) -> int | None:
+        """将来の行情報連携用フック（現在は未使用）。"""
         return None
 
     def _has_leading_trivia(self, stmt: dict[str, Any]) -> bool:
+        """文に先頭コメント/空行情報が付いているか判定する。"""
         trivia = stmt.get("leading_trivia")
         return isinstance(trivia, list) and len(trivia) > 0
 
@@ -331,6 +365,7 @@ class CppEmitter(BaseEmitter):
         self.emit("/* " + text + " */")
 
     def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
+        """EAST の leading_trivia を C++ コメント/空行として出力する。"""
         trivia = stmt.get("leading_trivia")
         if not isinstance(trivia, list):
             return
@@ -349,6 +384,7 @@ class CppEmitter(BaseEmitter):
                     self.emit("")
 
     def _is_identifier_expr(self, text: str) -> bool:
+        """式文字列が単純な識別子のみかを判定する。"""
         if len(text) == 0:
             return False
         c0 = text[0:1]
@@ -363,6 +399,7 @@ class CppEmitter(BaseEmitter):
         return True
 
     def _is_negative_const_index(self, node: dict[str, Any] | None) -> bool:
+        """添字ノードが負の定数インデックスかを判定する。"""
         if node is None:
             return False
         kind = str(node.get("kind", ""))
@@ -390,6 +427,7 @@ class CppEmitter(BaseEmitter):
         return False
 
     def _is_redundant_super_init_call(self, expr: dict[str, Any] | None) -> bool:
+        """暗黙基底 ctor 呼び出しと等価な super().__init__ かを判定する。"""
         if expr is None or expr.get("kind") != "Call":
             return False
         func = expr.get("func")
@@ -410,9 +448,11 @@ class CppEmitter(BaseEmitter):
         return isinstance(args, list) and len(args) == 0 and isinstance(kws, list) and len(kws) == 0
 
     def _is_std_runtime_call(self, runtime_call: str) -> bool:
+        """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
         return runtime_call.startswith("std::")
 
     def transpile(self) -> str:
+        """EAST ドキュメント全体を C++ ソース文字列へ変換する。"""
         body: list[dict[str, Any]] = []
         raw_body = self.doc.get("body", [])
         if isinstance(raw_body, list):
@@ -489,6 +529,7 @@ class CppEmitter(BaseEmitter):
         return out
 
     def emit_module_leading_trivia(self) -> None:
+        """モジュール先頭のコメント/空行 trivia を出力する。"""
         trivia = self.doc.get("module_leading_trivia")
         if not isinstance(trivia, list):
             return
@@ -507,9 +548,11 @@ class CppEmitter(BaseEmitter):
                     self.emit("")
 
     def current_scope(self) -> set[str]:
+        """現在のスコープで宣言済みの識別子集合を返す。"""
         return self.scope_stack[-1]
 
     def is_declared(self, name: str) -> bool:
+        """指定名がどこかの有効スコープで宣言済みか判定する。"""
         i = len(self.scope_stack) - 1
         while i >= 0:
             scope: set[str] = self.scope_stack[i]
@@ -519,6 +562,7 @@ class CppEmitter(BaseEmitter):
         return False
 
     def render_cond(self, expr: dict[str, Any] | None) -> str:
+        """条件式文脈向けに式を真偽値へ正規化して出力する。"""
         t: str = self.get_expr_type(expr)
         body = self._strip_outer_parens(self.render_expr(expr))
         if t in {"bool"}:
@@ -528,6 +572,7 @@ class CppEmitter(BaseEmitter):
         return body
 
     def _strip_outer_parens(self, text: str) -> str:
+        """式全体を囲う不要な最外括弧を安全に取り除く。"""
         s: str = text
         ws: set[str] = {" ", "\t", "\n", "\r", "\f", "\v"}
         while len(s) > 0 and s[0] in ws:
@@ -577,12 +622,14 @@ class CppEmitter(BaseEmitter):
         return s
 
     def apply_cast(self, rendered_expr: str, to_type: str | None) -> str:
+        """EAST の cast 指示に従い C++ 側の明示キャストを適用する。"""
         to_type_text = to_type if isinstance(to_type, str) else ""
         if to_type_text == "":
             return rendered_expr
         return f"static_cast<{self.cpp_type(to_type_text)}>({rendered_expr})"
 
     def render_to_string(self, expr: dict[str, Any] | None) -> str:
+        """式を文字列化する（型に応じて最適な変換関数を選ぶ）。"""
         rendered = self.render_expr(expr)
         t0 = self.get_expr_type(expr)
         t = t0 if isinstance(t0, str) else ""
@@ -595,6 +642,7 @@ class CppEmitter(BaseEmitter):
         return f"py_to_string({rendered})"
 
     def render_expr_as_any(self, expr: dict[str, Any] | None) -> str:
+        """式を `object`（Any 相当）へ昇格する式文字列を返す。"""
         if not isinstance(expr, dict):
             return f"make_object({self.render_expr(expr)})"
         kind = self.any_to_str(self.any_dict_get(expr, "kind", ""))
@@ -616,6 +664,7 @@ class CppEmitter(BaseEmitter):
         return f"make_object({self.render_expr(expr)})"
 
     def render_boolop(self, expr: dict[str, Any] | None, force_value_select: bool = False) -> str:
+        """BoolOp を真偽演算または値選択式として出力する。"""
         if not isinstance(expr, dict):
             return "false"
         values = self.any_to_list(self.any_dict_get(expr, "values", []))
@@ -646,6 +695,7 @@ class CppEmitter(BaseEmitter):
         return out
 
     def _binop_precedence(self, op_name: str) -> int:
+        """二項演算子の優先順位を返す。"""
         if op_name in {"Mult", "Div", "FloorDiv", "Mod"}:
             return 12
         if op_name in {"Add", "Sub"}:
@@ -661,6 +711,7 @@ class CppEmitter(BaseEmitter):
         return 0
 
     def _one_char_str_const(self, node: dict[str, Any] | None) -> str | None:
+        """1文字文字列定数ならその実文字を返す。"""
         if not isinstance(node, dict) or node.get("kind") != "Constant":
             return None
         v = node.get("value")
@@ -680,6 +731,7 @@ class CppEmitter(BaseEmitter):
         return None
 
     def _str_index_char_access(self, node: dict[str, Any] | None) -> str | None:
+        """str 添字アクセスを `at()` ベースの char 比較式へ変換する。"""
         if not isinstance(node, dict) or node.get("kind") != "Subscript":
             return None
         value_node = node.get("value")
@@ -702,6 +754,7 @@ class CppEmitter(BaseEmitter):
         op: str,
         right_node: dict[str, Any] | None,
     ) -> str | None:
+        """1文字比較を `'x'` / `.at(i)` 形へ最適化できるか判定する。"""
         if op not in {"Eq", "NotEq"}:
             return None
         cop = "==" if op == "Eq" else "!="
@@ -722,6 +775,7 @@ class CppEmitter(BaseEmitter):
         return None
 
     def _byte_from_str_expr(self, node: dict[str, Any] | None) -> str | None:
+        """str 系式を uint8 初期化向けの char 式へ変換する。"""
         ch = self._one_char_str_const(node)
         if ch is not None:
             return cpp_char_lit(ch)
@@ -735,6 +789,7 @@ class CppEmitter(BaseEmitter):
         *,
         is_right: bool,
     ) -> str:
+        """二項演算の結合順を壊さないため必要時に括弧を補う。"""
         if not isinstance(operand_expr, dict):
             return rendered
         kind = str(operand_expr.get("kind", ""))
@@ -756,6 +811,7 @@ class CppEmitter(BaseEmitter):
         return rendered
 
     def render_minmax(self, fn: str, args: list[str], out_type: str | None) -> str:
+        """min/max 呼び出しを型情報付きで C++ 式へ変換する。"""
         if len(args) == 0:
             return "/* invalid min/max */"
         if len(args) == 1:
@@ -775,6 +831,7 @@ class CppEmitter(BaseEmitter):
         return call
 
     def emit_stmt(self, stmt: dict[str, Any] | None) -> None:
+        """1つの文ノードを C++ 文へ変換して出力する。"""
         if stmt is None:
             return
         kind = stmt.get("kind")
@@ -1027,6 +1084,7 @@ class CppEmitter(BaseEmitter):
         self.emit(f"/* unsupported stmt kind: {kind} */")
 
     def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
+        """単文ブロックで波括弧を省略可能か判定する。"""
         filtered: list[dict[str, Any]] = [s for s in stmts if isinstance(s, dict)]
         if len(filtered) != 1:
             return False
@@ -1034,6 +1092,7 @@ class CppEmitter(BaseEmitter):
         return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:
+        """代入文（通常代入/タプル代入）を C++ へ出力する。"""
         target = stmt.get("target")
         value = stmt.get("value")
         if target is None or value is None:
@@ -1106,11 +1165,13 @@ class CppEmitter(BaseEmitter):
         self.emit(f"{texpr} = {rval};")
 
     def is_plain_name_expr(self, expr: dict[str, Any] | None) -> bool:
+        """式が単純な Name ノードかを判定する。"""
         if expr is None:
             return False
         return expr.get("kind") == "Name"
 
     def _expr_repr_eq(self, a: dict[str, Any] | None, b: dict[str, Any] | None) -> bool:
+        """2つの式 repr が同一かを比較する。"""
         if not isinstance(a, dict) or not isinstance(b, dict):
             return False
         ra = a.get("repr")
@@ -1120,6 +1181,7 @@ class CppEmitter(BaseEmitter):
         return ra.strip() == rb.strip()
 
     def render_lvalue(self, expr: dict[str, Any] | None) -> str:
+        """左辺値文脈の式（添字代入含む）を C++ 文字列へ変換する。"""
         if expr is None:
             return self.render_expr(expr)
         node = expr
@@ -1144,6 +1206,7 @@ class CppEmitter(BaseEmitter):
         return f"{val}[{idx}]"
 
     def _target_bound_names(self, target: dict[str, Any] | None) -> set[str]:
+        """for ターゲットが束縛する識別子名を収集する。"""
         names: set[str] = set()
         if not isinstance(target, dict):
             return names
@@ -1157,6 +1220,7 @@ class CppEmitter(BaseEmitter):
         return names
 
     def _emit_target_unpack(self, target: dict[str, Any] | None, src: str) -> None:
+        """タプルターゲットへのアンパック代入を出力する。"""
         if not isinstance(target, dict):
             return
         if target.get("kind") != "Tuple":
@@ -1167,6 +1231,7 @@ class CppEmitter(BaseEmitter):
                 self.emit(f"auto {nm} = std::get<{i}>({src});")
 
     def emit_for_range(self, stmt: dict[str, Any]) -> None:
+        """ForRange ノードを C++ の for ループとして出力する。"""
         tgt = self.render_expr(stmt.get("target"))
         t0 = stmt.get("target_type")
         t1 = self.get_expr_type(stmt.get("target"))
@@ -1208,6 +1273,7 @@ class CppEmitter(BaseEmitter):
         self.emit("}")
 
     def emit_for_each(self, stmt: dict[str, Any]) -> None:
+        """For ノード（反復）を C++ range-for として出力する。"""
         target = stmt.get("target")
         iter_expr = stmt.get("iter")
         if isinstance(iter_expr, dict) and iter_expr.get("kind") == "RangeExpr":
@@ -1264,6 +1330,7 @@ class CppEmitter(BaseEmitter):
         self.emit("}")
 
     def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
+        """関数定義ノードを C++ 関数として出力する。"""
         name = stmt.get("name", "fn")
         ret = self.cpp_type(stmt.get("return_type"))
         arg_types: dict[str, str] = stmt.get("arg_types", {})
@@ -1300,6 +1367,7 @@ class CppEmitter(BaseEmitter):
         self.emit("}")
 
     def emit_class(self, stmt: dict[str, Any]) -> None:
+        """クラス定義ノードを C++ クラス/struct として出力する。"""
         name = stmt.get("name", "Class")
         is_dataclass = bool(stmt.get("dataclass", False))
         base = stmt.get("base")
@@ -1387,6 +1455,7 @@ class CppEmitter(BaseEmitter):
         self.emit("};")
 
     def render_expr(self, expr: dict[str, Any] | None) -> str:
+        """式ノードを C++ の式文字列へ変換する中核処理。"""
         if expr is None:
             return "/* none */"
         kind = expr.get("kind")
@@ -2154,6 +2223,7 @@ class CppEmitter(BaseEmitter):
         return f"/* unsupported expr: {kind} */"
 
     def emit_bridge_comment(self, expr: dict[str, Any] | None) -> None:
+        """ランタイムブリッジ呼び出しの補助コメントを必要時に付与する。"""
         if expr is None or expr.get("kind") != "Call":
             return
         fn = expr.get("func")
@@ -2186,6 +2256,7 @@ class CppEmitter(BaseEmitter):
             self.bridge_comment_emitted.add(key)
 
     def cpp_type(self, east_type: Any) -> str:
+        """EAST 型名を C++ 型名へマッピングする。"""
         east_type = self.normalize_type_name(east_type)
         if east_type == "":
             return "auto"
@@ -2270,6 +2341,7 @@ class CppEmitter(BaseEmitter):
 
 
 def load_east(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
+    """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     if input_path.suffix == ".json":
         payload = json.loads(input_path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
@@ -2331,6 +2403,7 @@ def load_east(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[
 
 
 def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
+    """モジュール先頭のコメント/空行を trivia 形式で抽出する。"""
     out: list[dict[str, Any]] = []
     blank_count = 0
     for raw in source.splitlines():
@@ -2354,10 +2427,12 @@ def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
 
 
 def transpile_to_cpp(east_module: dict[str, Any], *, negative_index_mode: str = "const_only") -> str:
+    """EAST Module を C++ ソース文字列へ変換する。"""
     return CppEmitter(east_module, negative_index_mode=negative_index_mode).transpile()
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI エントリポイント。変換実行と入出力を担当する。"""
     ap = argparse.ArgumentParser(description="Transpile Python/EAST to C++ via EAST")
     ap.add_argument("input", help="Input .py or EAST .json")
     ap.add_argument("-o", "--output", help="Output .cpp path")

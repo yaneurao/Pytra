@@ -256,7 +256,7 @@ table = {}               # key/value 型が不明
 
 - 基本型: `int -> long long`, `float -> double`, `float32 -> float`, `str -> string`, `bool -> bool`
 - 固定幅整数: `int8 -> int8_t`, `uint8 -> uint8_t`, `int16 -> int16_t`, `uint16 -> uint16_t`, `int32 -> int32_t`, `uint32 -> uint32_t`, `int64 -> int64_t`, `uint64 -> uint64_t`
-- 注釈エイリアス: `byte` は `uint8` として扱います（1文字/1byte用途）。
+- 型注釈エイリアス: `byte` は `uint8` として扱います（1文字/1byte用途）。
 - バイト列: `bytes` / `bytearray` -> `vector<uint8_t>`
 - コンテナ:
   - `list[T] -> list<T>`（`std::vector<T>` ラッパー）
