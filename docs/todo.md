@@ -23,7 +23,11 @@
 4. [ ] フック注入 (`EmitterHooks`) を実装する。
    - [x] `on_render_call`, `on_render_binop`, `on_emit_stmt` など最小フック面を定義する。
    - [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。: `BinOp` + `Call(Name/Attribute)` は helper 分離済み
+     - [ ] `render_expr(IfExp/List/Tuple/Set/Dict/Subscript)` を `hook_on_render_expr_kind(kind, node)` へ委譲できる形へ整理する。
+     - [ ] `JoinedStr/Lambda/Comp` 系を `hook_on_render_expr_complex(node)` へ分離する。
    - [ ] `emit_stmt(If/While/For/AnnAssign/AugAssign)` の分岐を hooks + template helper へ段階分離する。: `If/While` は `_emit_if_stmt` / `_emit_while_stmt` へ分離済み
+     - [ ] `emit_stmt(Return/Expr/Assign/Try)` を `hook_on_emit_stmt_kind(kind, stmt)` 前提で分割する。
+     - [ ] `emit_stmt` 本体を「dispatch + fallback」のみ（50行以下目標）へ縮退する。
    - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
    - [x] C++ 向け hooks 実装を `src/runtime/cpp/hooks/cpp_hooks.py` として分離する。
 5. [x] 回帰確認を追加する。
@@ -35,14 +39,20 @@
 
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
    - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: `BuiltinCall` / Name/Attribute は helper 分離済み
+     - [ ] `dict.get/list.* / set.*` 呼び出し解決を runtime-call map + hook へ移して `py2cpp.py` 直書きを削減する。
+     - [ ] `Path`/`png`/`gif` の module method 解決を `cpp_hooks.py` 側へ寄せる。
    - [x] `render_expr` の `Call` で残っている module method / object method / fallback 呼び出しを 3 helper に分離する。
    - [x] `render_expr` の `Call` で runtime-call 解決前後の前処理（kw 展開・owner 抽出）を helper 化する。
    - [x] `render_expr` の `Call` 分岐を 200 行未満に縮退する（目標値を明示）。: 現在は helper 呼び出し中心で 20 行前後
    - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。: `BinOp` / `Compare` / `UnaryOp` は専用 helper に分離済み
+     - [ ] `IfExp` の cast 適用ロジックを helper 化する。
+     - [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
    - [x] `Compare` 分岐を helper へ切り出す（`Contains` / chain compare / `is` 系）。
    - [x] `UnaryOp` と `BoolOp` の条件式特化ロジックを helper へ切り出す。: `UnaryOp` は `_render_unary_expr` へ分離、`BoolOp` は既存 `render_boolop` を継続利用
    - [x] `Subscript` / `SliceExpr` / `Concat` を helper 化し、`render_expr` 直書きを削減する。: `Subscript`/`SliceExpr` は `_render_subscript_expr` へ分離（`Concat` は既存 helper 経路）
    - [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。: `If/While` は専用 helper に分離済み
+     - [ ] `syntax.if/elif/else`, `syntax.while`, `syntax.for_range`, `syntax.for_each` の最小テンプレート定義を profile へ追加する。
+     - [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
    - [x] `For` / `AnnAssign` / `AugAssign` を helper 化して `emit_stmt` 本体を縮退する。: `For` は既存 `emit_for_each`/`emit_for_range`、`AnnAssign`/`AugAssign` は helper 分離済み
    - [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
 2. [ ] 未使用関数の掃除を継続する。
@@ -55,9 +65,13 @@
 1. [ ] `CodeEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
    - [x] `any_dict_get` / `any_to_dict` / `any_to_list` / `any_to_str` の C++ 生成を確認し、`object.begin/end` 生成を消す。
    - [ ] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
+     - [ ] `render_expr` の先頭正規化で `expr_node` 再代入パターンを除去し、`object -> dict` を1回に固定する。
+     - [ ] `*_dict_stmt_list` 系引数を `expr.get(..., [])` ではなく `expr.get(...)` + helper 正規化へ統一する。
    - [x] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
    - [x] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
    - [ ] `*_dict_get*` の default 引数を `str` / `int` / `list` 別 helper に分離し、`object` 強制変換を減らす。
+     - [ ] `any_dict_get_bool` / `any_dict_get_list` / `any_dict_get_dict` を追加する。
+     - [ ] `py_dict_get_default(..., list<object>{})` を全箇所削減する（selfhost compile logで追跡）。
    - [x] `split_*` / `is_*_type` の引数型を `str` に固定し、`py_slice(object,...)` 生成を消す。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
    - [ ] `str|None`, `dict|None`, `list|None` の Union 処理を見直し、`std::optional<T>` 優先にする。
@@ -65,18 +79,23 @@
    - [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
    - [ ] `py2cpp.py` で `nullopt` を default 値に渡している箇所を洗い出し、型ごとの既定値へ置換する。
    - [ ] `std::any` を経由する経路（selfhost 変換由来）をログベースでリスト化し、順次削除する。
+     - [ ] `tools/summarize_selfhost_errors.py` 出力の `cannot convert std::any` 発生行をホットスポット表に集約する。
+     - [ ] 上位3関数ごとにパッチを分けて改善し、毎回 `check_py2cpp_transpile.py` を通す。
 3. [ ] selfhost コンパイルエラーを段階的にゼロ化する。
-   - [ ] `selfhost/build.all.log` の先頭 200 行を優先して修正し、`total_errors < 300` にする。
+   - [x] `selfhost/build.all.log` の先頭 200 行を優先して修正し、`total_errors < 300` にする。: 2026-02-18 再計測で `total_errors=82`
    - [x] 同手順で `total_errors < 100` まで減らす。: 2026-02-18 再計測で `total_errors=82`
+   - [ ] `total_errors <= 50` にする。
+   - [ ] `total_errors <= 20` にする。
    - [ ] `total_errors = 0` にする。
    - [x] 段階ゲート A: `total_errors <= 450` を達成し、`docs/todo.md` に主因更新。: 2026-02-18 再計測で `total_errors=322`
    - [x] 段階ゲート B: `total_errors <= 300` を達成し、同時に `test_code_emitter` 回帰を固定化。: 2026-02-18 再計測で `total_errors=233`、`test/unit/test_code_emitter.py` は 12/12 pass
-   - [ ] 段階ゲート C: `total_errors <= 100` を達成し、`tools/check_selfhost_cpp_diff.py` の最小ケースを通す。: 2026-02-18 再計測で `total_errors=82`（diff チェックは未実施）
+   - [ ] 段階ゲート C-1: `total_errors <= 100` を維持する。: 2026-02-18 再計測で `total_errors=82`
+   - [ ] 段階ゲート C-2: `tools/check_selfhost_cpp_diff.py` の最小ケースを通す。
 4. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
    - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
+   - [ ] `./selfhost/py2cpp.out --help` と `./selfhost/py2cpp.out INPUT.py -o OUT.cpp` を通す。
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
    - [ ] `test/fixtures/arithmetic/add.py`（軽量ケース）でも selfhost 変換を実行し、最小成功ケースを確立する。
-   - [ ] selfhost 版の `--help` / `-o` 基本オプションが壊れていないことを確認する。
 5. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
    - [ ] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。
    - [x] `selfhost/py2cpp.out` と `python3 src/py2cpp.py` の出力差分チェックをスクリプト化する。: `tools/check_selfhost_cpp_diff.py`
