@@ -148,12 +148,57 @@ class _ShExprParser:
         self.pos = 0
 
     def _tokenize(self, text: str) -> list[dict[str, Any]]:
+        def scan_string_token(start: int, quote_pos: int) -> int:
+            if quote_pos + 2 < len(text) and text[quote_pos : quote_pos + 3] in {"'''", '"""'}:
+                q3 = text[quote_pos : quote_pos + 3]
+                j = quote_pos + 3
+                while j + 2 < len(text):
+                    if text[j : j + 3] == q3:
+                        return j + 3
+                    j += 1
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message="unterminated triple-quoted string literal in self_hosted parser",
+                    source_span=_sh_span(self.line_no, self.col_base + start, self.col_base + len(text)),
+                    hint="Close triple-quoted string with matching quote.",
+                )
+            q = text[quote_pos]
+            j = quote_pos + 1
+            while j < len(text):
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == q:
+                    return j + 1
+                j += 1
+            raise EastBuildError(
+                kind="unsupported_syntax",
+                message="unterminated string literal in self_hosted parser",
+                source_span=_sh_span(self.line_no, self.col_base + start, self.col_base + len(text)),
+                hint="Close string literal with matching quote.",
+            )
+
         out: list[dict[str, Any]] = []
         i = 0
         while i < len(text):
             ch = text[i]
             if ch.isspace():
                 i += 1
+                continue
+            # string literal prefixes: r"...", f"...", b"...", u"...", rf"...", fr"...", ...
+            pref_len = 0
+            if i + 1 < len(text):
+                p1 = text[i]
+                if p1 in "rRbBuUfF" and text[i + 1] in {"'", '"'}:
+                    pref_len = 1
+                elif i + 2 < len(text):
+                    p2 = text[i : i + 2]
+                    if all(c in "rRbBuUfF" for c in p2) and text[i + 2] in {"'", '"'}:
+                        pref_len = 2
+            if pref_len > 0:
+                end = scan_string_token(i, i + pref_len)
+                out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
+                i = end
                 continue
             if ch.isdigit():
                 j = i + 1
@@ -192,43 +237,14 @@ class _ShExprParser:
                 i = j
                 continue
             if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
-                q3 = text[i : i + 3]
-                j = i + 3
-                while j + 2 < len(text):
-                    if text[j : j + 3] == q3:
-                        j += 3
-                        break
-                    j += 1
-                if j > len(text) or text[j - 3 : j] != q3:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message="unterminated triple-quoted string literal in self_hosted parser",
-                        source_span=_sh_span(self.line_no, self.col_base + i, self.col_base + len(text)),
-                        hint="Close triple-quoted string with matching quote.",
-                    )
-                out.append({"k": "STR", "v": text[i:j], "s": i, "e": j})
-                i = j
+                end = scan_string_token(i, i)
+                out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
+                i = end
                 continue
             if ch in {"'", '"'}:
-                q = ch
-                j = i + 1
-                while j < len(text):
-                    if text[j] == "\\":
-                        j += 2
-                        continue
-                    if text[j] == q:
-                        j += 1
-                        break
-                    j += 1
-                if j > len(text) or text[j - 1] != q:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message="unterminated string literal in self_hosted parser",
-                        source_span=_sh_span(self.line_no, self.col_base + i, self.col_base + len(text)),
-                        hint="Close string literal with matching quote.",
-                    )
-                out.append({"k": "STR", "v": text[i:j], "s": i, "e": j})
-                i = j
+                end = scan_string_token(i, i)
+                out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
+                i = end
                 continue
             if i + 1 < len(text) and text[i : i + 2] in {"<=", ">=", "==", "!=", "//", "<<", ">>"}:
                 out.append({"k": text[i : i + 2], "v": text[i : i + 2], "s": i, "e": i + 2})
@@ -273,9 +289,41 @@ class _ShExprParser:
         return self.src[s:e].strip()
 
     def parse(self) -> dict[str, Any]:
-        node = self._parse_or()
+        node = self._parse_ifexp()
         self._eat("EOF")
         return node
+
+    def _parse_ifexp(self) -> dict[str, Any]:
+        body = self._parse_or()
+        if self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
+            self._eat("NAME")
+            test = self._parse_or()
+            else_tok = self._eat("NAME")
+            if else_tok["v"] != "else":
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message="expected 'else' in conditional expression",
+                    source_span=self._node_span(else_tok["s"], else_tok["e"]),
+                    hint="Use `a if cond else b` syntax.",
+                )
+            orelse = self._parse_ifexp()
+            s = int(body["source_span"]["col"]) - self.col_base
+            e = int(orelse["source_span"]["end_col"]) - self.col_base
+            rt = str(body.get("resolved_type", "unknown"))
+            if rt != str(orelse.get("resolved_type", "unknown")):
+                rt = "unknown"
+            return {
+                "kind": "IfExp",
+                "source_span": self._node_span(s, e),
+                "resolved_type": rt,
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": self._src_slice(s, e),
+                "test": test,
+                "body": body,
+                "orelse": orelse,
+            }
+        return body
 
     def _parse_or(self) -> dict[str, Any]:
         node = self._parse_and()
@@ -353,6 +401,16 @@ class _ShExprParser:
                 self._eat("NAME")
                 ops.append("In")
                 comparators.append(self._parse_bitor())
+                continue
+            if self._cur()["k"] == "NAME" and self._cur()["v"] == "is":
+                self._eat("NAME")
+                if self._cur()["k"] == "NAME" and self._cur()["v"] == "not":
+                    self._eat("NAME")
+                    ops.append("IsNot")
+                    comparators.append(self._parse_bitor())
+                else:
+                    ops.append("Is")
+                    comparators.append(self._parse_bitor())
                 continue
             if self._cur()["k"] == "NAME" and self._cur()["v"] == "not":
                 pos = self.pos
@@ -530,13 +588,13 @@ class _ShExprParser:
                             name_tok = self._eat("NAME")
                             if self._cur()["k"] == "=":
                                 self._eat("=")
-                                kw_val = self._parse_or()
+                                kw_val = self._parse_ifexp()
                                 keywords.append({"arg": str(name_tok["v"]), "value": kw_val})
                             else:
                                 self.pos = save_pos
-                                args.append(self._parse_or())
+                                args.append(self._parse_call_arg_expr())
                         else:
-                            args.append(self._parse_or())
+                            args.append(self._parse_call_arg_expr())
                         if self._cur()["k"] == ",":
                             self._eat(",")
                             if self._cur()["k"] == ")":
@@ -671,6 +729,80 @@ class _ShExprParser:
                 continue
             return node
 
+    def _parse_comp_target(self) -> dict[str, Any]:
+        if self._cur()["k"] == "NAME":
+            nm = self._eat("NAME")
+            t = self.name_types.get(str(nm["v"]), "unknown")
+            return {
+                "kind": "Name",
+                "source_span": self._node_span(nm["s"], nm["e"]),
+                "resolved_type": t,
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": str(nm["v"]),
+                "id": str(nm["v"]),
+            }
+        if self._cur()["k"] == "(":
+            l = self._eat("(")
+            elems: list[dict[str, Any]] = []
+            elems.append(self._parse_comp_target())
+            while self._cur()["k"] == ",":
+                self._eat(",")
+                if self._cur()["k"] == ")":
+                    break
+                elems.append(self._parse_comp_target())
+            r = self._eat(")")
+            return {
+                "kind": "Tuple",
+                "source_span": self._node_span(l["s"], r["e"]),
+                "resolved_type": "tuple[unknown]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": self._src_slice(l["s"], r["e"]),
+                "elements": elems,
+            }
+        tok = self._cur()
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message="invalid comprehension target in call argument",
+            source_span=self._node_span(tok["s"], tok["e"]),
+            hint="Use name or tuple target in generator expression.",
+        )
+
+    def _parse_call_arg_expr(self) -> dict[str, Any]:
+        first = self._parse_ifexp()
+        if not (self._cur()["k"] == "NAME" and self._cur()["v"] == "for"):
+            return first
+        self._eat("NAME")
+        target = self._parse_comp_target()
+        in_tok = self._eat("NAME")
+        if in_tok["v"] != "in":
+            raise EastBuildError(
+                kind="unsupported_syntax",
+                message="expected 'in' in generator expression",
+                source_span=self._node_span(in_tok["s"], in_tok["e"]),
+                hint="Use `for x in iterable` form.",
+            )
+        iter_expr = self._parse_ifexp()
+        ifs: list[dict[str, Any]] = []
+        while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
+            self._eat("NAME")
+            ifs.append(self._parse_ifexp())
+        s = int(first["source_span"]["col"]) - self.col_base
+        end_node = ifs[-1] if len(ifs) > 0 else iter_expr
+        e = int(end_node["source_span"]["end_col"]) - self.col_base
+        return {
+            "kind": "ListComp",
+            "source_span": self._node_span(s, e),
+            "resolved_type": f"list[{first.get('resolved_type', 'unknown')}]",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": self._src_slice(s, e),
+            "elt": first,
+            "generators": [{"target": target, "iter": iter_expr, "ifs": ifs, "is_async": False}],
+            "lowered_kind": "GeneratorArg",
+        }
+
     def _make_bin(self, left: dict[str, Any], op_sym: str, right: dict[str, Any]) -> dict[str, Any]:
         op_map = {
             "+": "Add",
@@ -798,14 +930,14 @@ class _ShExprParser:
                     "repr": self._src_slice(l["s"], r["e"]),
                     "elements": [],
                 }
-            first = self._parse_or()
+            first = self._parse_ifexp()
             if self._cur()["k"] == ",":
                 elements = [first]
                 while self._cur()["k"] == ",":
                     self._eat(",")
                     if self._cur()["k"] == ")":
                         break
-                    elements.append(self._parse_or())
+                    elements.append(self._parse_ifexp())
                 r = self._eat(")")
                 elem_types = [str(e.get("resolved_type", "unknown")) for e in elements]
                 return {
@@ -825,7 +957,7 @@ class _ShExprParser:
             l = self._eat("[")
             elements: list[dict[str, Any]] = []
             if self._cur()["k"] != "]":
-                first = self._parse_or()
+                first = self._parse_ifexp()
                 # list comprehension: [elt for x in iter if cond]
                 if self._cur()["k"] == "NAME" and self._cur()["v"] == "for":
                     self._eat("NAME")
@@ -838,7 +970,7 @@ class _ShExprParser:
                             source_span=self._node_span(in_tok["s"], in_tok["e"]),
                             hint="Use `[x for x in iterable]` syntax.",
                         )
-                    iter_expr = self._parse_or()
+                    iter_expr = self._parse_ifexp()
                     if (
                         isinstance(iter_expr, dict)
                         and iter_expr.get("kind") == "Call"
@@ -904,7 +1036,7 @@ class _ShExprParser:
                     ifs: list[dict[str, Any]] = []
                     while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
                         self._eat("NAME")
-                        ifs.append(self._parse_or())
+                        ifs.append(self._parse_ifexp())
                     r = self._eat("]")
                     tgt_name = str(tgt_tok["v"])
                     return {
@@ -938,7 +1070,7 @@ class _ShExprParser:
                         self._eat(",")
                         if self._cur()["k"] == "]":
                             break
-                        elements.append(self._parse_or())
+                        elements.append(self._parse_ifexp())
                         continue
                     break
             r = self._eat("]")
@@ -972,19 +1104,19 @@ class _ShExprParser:
                     "keys": [],
                     "values": [],
                 }
-            first = self._parse_or()
+            first = self._parse_ifexp()
             if self._cur()["k"] == ":":
                 keys = [first]
                 vals: list[dict[str, Any]] = []
                 self._eat(":")
-                vals.append(self._parse_or())
+                vals.append(self._parse_ifexp())
                 while self._cur()["k"] == ",":
                     self._eat(",")
                     if self._cur()["k"] == "}":
                         break
-                    keys.append(self._parse_or())
+                    keys.append(self._parse_ifexp())
                     self._eat(":")
-                    vals.append(self._parse_or())
+                    vals.append(self._parse_ifexp())
                 r = self._eat("}")
                 kt = str(keys[0].get("resolved_type", "unknown")) if len(keys) > 0 else "unknown"
                 vt = str(vals[0].get("resolved_type", "unknown")) if len(vals) > 0 else "unknown"
@@ -1003,7 +1135,7 @@ class _ShExprParser:
                 self._eat(",")
                 if self._cur()["k"] == "}":
                     break
-                elements.append(self._parse_or())
+                elements.append(self._parse_ifexp())
             r = self._eat("}")
             et = str(elements[0].get("resolved_type", "unknown")) if len(elements) > 0 else "unknown"
             return {
@@ -1072,41 +1204,72 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         break
 
     def parse_def_sig(ln_no: int, ln: str, *, in_class: str | None = None) -> dict[str, Any] | None:
-        m_def = re.match(r"^\s*def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", ln)
+        ln_norm = re.sub(r"\s+", " ", ln.strip())
+        m_def = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", ln_norm)
         if m_def is None:
             return None
         arg_types: dict[str, str] = {}
         args_raw = m_def.group(2)
         if args_raw.strip() != "":
+            # Supported:
+            # - name: Type
+            # - name: Type = default
+            # - "*" keyword-only marker
+            # Not supported:
+            # - "/" positional-only marker
+            # - *args / **kwargs
             for p_txt, _off in _sh_split_args_with_offsets(args_raw):
                 p = p_txt.strip()
                 if p == "":
                     continue
+                if p == "*":
+                    continue
+                if p == "/":
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message="self_hosted parser cannot parse positional-only marker '/' in parameter list",
+                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                        hint="Remove '/' from signature for now.",
+                    )
+                if p.startswith("**"):
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse variadic kwargs parameter: {p_txt}",
+                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                        hint="Use explicit parameters instead of **kwargs.",
+                    )
+                if p.startswith("*"):
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse variadic args parameter: {p_txt}",
+                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                        hint="Use explicit parameters instead of *args.",
+                    )
                 if in_class is not None and p == "self":
                     arg_types["self"] = in_class
                     continue
-                if ":" not in p:
+                m_param = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", p)
+                if m_param is None:
                     raise EastBuildError(
                         kind="unsupported_syntax",
                         message=f"self_hosted parser cannot parse parameter: {p_txt}",
-                        source_span=_sh_span(ln_no, 0, len(ln)),
+                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
                         hint="Use `name: Type` style parameters.",
                     )
-                pn, pt = p.split(":", 1)
-                pn = pn.strip()
-                pt = pt.strip()
+                pn = m_param.group(1).strip()
+                pt = m_param.group(2).strip()
                 if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pn):
                     raise EastBuildError(
                         kind="unsupported_syntax",
                         message=f"self_hosted parser cannot parse parameter name: {pn}",
-                        source_span=_sh_span(ln_no, 0, len(ln)),
+                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
                         hint="Use valid identifier for parameter name.",
                     )
                 if pt == "":
                     raise EastBuildError(
                         kind="unsupported_syntax",
                         message=f"self_hosted parser cannot parse parameter type: {p_txt}",
-                        source_span=_sh_span(ln_no, 0, len(ln)),
+                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
                         hint="Use `name: Type` style parameters.",
                     )
                 arg_types[pn] = _sh_ann_to_type(pt)
@@ -1115,6 +1278,77 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             "ret": _sh_ann_to_type(m_def.group(3).strip()) if m_def.group(3) is not None else "None",
             "arg_types": arg_types,
         }
+
+    def merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tuple[int, str]], dict[int, tuple[int, int]]]:
+        """Merge physical lines into logical statements (paren/brace and triple-quoted string continuation)."""
+
+        def scan_line(
+            txt: str,
+            *,
+            depth: int,
+            mode: str | None,
+        ) -> tuple[int, str | None]:
+            i = 0
+            while i < len(txt):
+                if mode in {"'''", '"""'}:
+                    close = txt.find(mode, i)
+                    if close < 0:
+                        i = len(txt)
+                        continue
+                    i = close + 3
+                    mode = None
+                    continue
+                ch = txt[i]
+                if mode in {"'", '"'}:
+                    if ch == "\\":
+                        i += 2
+                        continue
+                    if ch == mode:
+                        mode = None
+                    i += 1
+                    continue
+                if i + 2 < len(txt) and txt[i : i + 3] in {"'''", '"""'}:
+                    mode = txt[i : i + 3]
+                    i += 3
+                    continue
+                if ch in {"'", '"'}:
+                    mode = ch
+                    i += 1
+                    continue
+                if ch == "#":
+                    break
+                if ch in {"(", "[", "{"}:
+                    depth += 1
+                elif ch in {")", "]", "}"}:
+                    depth -= 1
+                i += 1
+            return depth, mode
+
+        merged: list[tuple[int, str]] = []
+        merged_line_end: dict[int, tuple[int, int]] = {}
+        idx = 0
+        while idx < len(raw_lines):
+            start_no, start_txt = raw_lines[idx]
+            acc = start_txt
+            depth = 0
+            mode: str | None = None
+            depth, mode = scan_line(start_txt, depth=depth, mode=mode)
+            end_no = start_no
+            end_txt = start_txt
+            while (depth > 0 or mode in {"'''", '"""'}) and idx + 1 < len(raw_lines):
+                idx += 1
+                next_no, next_txt = raw_lines[idx]
+                if mode in {"'''", '"""'}:
+                    acc += "\n" + next_txt
+                else:
+                    acc += " " + next_txt.strip()
+                depth, mode = scan_line(next_txt, depth=depth, mode=mode)
+                end_no = next_no
+                end_txt = next_txt
+            merged.append((start_no, acc))
+            merged_line_end[start_no] = (end_no, len(end_txt))
+            idx += 1
+        return merged, merged_line_end
 
     class_method_return_types: dict[str, dict[str, str]] = {}
     class_base: dict[str, str | None] = {}
@@ -1248,6 +1482,69 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "orelse": else_node,
             }
 
+        # Normalize generator-arg any/all into list-comp form for self_hosted parser.
+        m_any_all = re.match(r"^(any|all)\((.+)\)$", txt, flags=re.S)
+        if m_any_all is not None:
+            fn_name = m_any_all.group(1)
+            inner_arg = m_any_all.group(2).strip()
+            if split_top_keyword(inner_arg, "for") > 0 and split_top_keyword(inner_arg, "in") > 0:
+                lc = parse_expr(f"[{inner_arg}]", ln_no=ln_no, col=col + txt.find(inner_arg), name_types=dict(name_types))
+                return {
+                    "kind": "Call",
+                    "source_span": _sh_span(ln_no, col, col + len(raw)),
+                    "resolved_type": "bool",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": txt,
+                    "func": {
+                        "kind": "Name",
+                        "source_span": _sh_span(ln_no, col, col + len(fn_name)),
+                        "resolved_type": "unknown",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": fn_name,
+                        "id": fn_name,
+                    },
+                    "args": [lc],
+                    "keywords": [],
+                }
+
+        # Normalize single generator-argument calls into list-comp argument form.
+        # Example: ", ".join(f(x) for x in items) -> ", ".join([f(x) for x in items])
+        if txt.endswith(")"):
+            depth = 0
+            in_str: str | None = None
+            esc = False
+            open_idx = -1
+            close_idx = -1
+            for idx, ch in enumerate(txt):
+                if in_str is not None:
+                    if esc:
+                        esc = False
+                    elif ch == "\\":
+                        esc = True
+                    elif ch == in_str:
+                        in_str = None
+                    continue
+                if ch in {"'", '"'}:
+                    in_str = ch
+                    continue
+                if ch == "(":
+                    if depth == 0 and open_idx < 0:
+                        open_idx = idx
+                    depth += 1
+                    continue
+                if ch == ")":
+                    depth -= 1
+                    if depth == 0:
+                        close_idx = idx
+                    continue
+            if open_idx > 0 and close_idx == len(txt) - 1:
+                inner = txt[open_idx + 1 : close_idx].strip()
+                if split_top_commas(inner) == [inner] and split_top_keyword(inner, "for") > 0 and split_top_keyword(inner, "in") > 0:
+                    rewritten = txt[: open_idx + 1] + "[" + inner + "]" + txt[close_idx:]
+                    return parse_expr(rewritten, ln_no=ln_no, col=col, name_types=dict(name_types))
+
         def split_top_plus(text: str) -> list[str]:
             out: list[str] = []
             depth = 0
@@ -1301,6 +1598,123 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 }
             return node
 
+        # dict-comp support: {k: v for x in it} / {k: v for a, b in it}
+        if txt.startswith("{") and txt.endswith("}") and ":" in txt:
+            inner = txt[1:-1].strip()
+            p_for = split_top_keyword(inner, "for")
+            if p_for > 0:
+                head = inner[:p_for].strip()
+                tail = inner[p_for + 3 :].strip()
+                p_in = split_top_keyword(tail, "in")
+                if p_in <= 0:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"invalid dict comprehension in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `{key: value for item in iterable}` form.",
+                    )
+                tgt_txt = tail[:p_in].strip()
+                iter_txt = tail[p_in + 2 :].strip()
+                p_if = split_top_keyword(iter_txt, "if")
+                if p_if >= 0:
+                    iter_txt = iter_txt[:p_if].strip()
+                if ":" not in head:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"invalid dict comprehension pair in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `key: value` pair before `for`.",
+                    )
+                ktxt, vtxt = head.split(":", 1)
+                ktxt = ktxt.strip()
+                vtxt = vtxt.strip()
+                target_node = parse_expr(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
+                comp_types = dict(name_types)
+                if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                    comp_types[str(target_node.get("id", ""))] = "unknown"
+                elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
+                    for e in target_node.get("elements", []):
+                        if isinstance(e, dict) and e.get("kind") == "Name":
+                            comp_types[str(e.get("id", ""))] = "unknown"
+                key_node = parse_expr(ktxt, ln_no=ln_no, col=col + txt.find(ktxt), name_types=dict(comp_types))
+                val_node = parse_expr(vtxt, ln_no=ln_no, col=col + txt.find(vtxt), name_types=dict(comp_types))
+                iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+                kt = str(key_node.get("resolved_type", "unknown"))
+                vt = str(val_node.get("resolved_type", "unknown"))
+                return {
+                    "kind": "DictComp",
+                    "source_span": _sh_span(ln_no, col, col + len(raw)),
+                    "resolved_type": f"dict[{kt},{vt}]",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": txt,
+                    "key": key_node,
+                    "value": val_node,
+                    "generators": [
+                        {
+                            "target": target_node,
+                            "iter": iter_node,
+                            "ifs": [],
+                            "is_async": False,
+                        }
+                    ],
+                }
+
+        # set-comp support: {x for x in it} / {x for a, b in it if cond}
+        if txt.startswith("{") and txt.endswith("}") and ":" not in txt:
+            inner = txt[1:-1].strip()
+            p_for = split_top_keyword(inner, "for")
+            if p_for > 0:
+                elt_txt = inner[:p_for].strip()
+                tail = inner[p_for + 3 :].strip()
+                p_in = split_top_keyword(tail, "in")
+                if p_in <= 0:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"invalid set comprehension in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `{elem for item in iterable}` form.",
+                    )
+                tgt_txt = tail[:p_in].strip()
+                iter_and_if_txt = tail[p_in + 2 :].strip()
+                p_if = split_top_keyword(iter_and_if_txt, "if")
+                if p_if >= 0:
+                    iter_txt = iter_and_if_txt[:p_if].strip()
+                    if_txt = iter_and_if_txt[p_if + 2 :].strip()
+                else:
+                    iter_txt = iter_and_if_txt
+                    if_txt = ""
+                target_node = parse_expr(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
+                comp_types = dict(name_types)
+                if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                    comp_types[str(target_node.get("id", ""))] = "unknown"
+                elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
+                    for e in target_node.get("elements", []):
+                        if isinstance(e, dict) and e.get("kind") == "Name":
+                            comp_types[str(e.get("id", ""))] = "unknown"
+                elt_node = parse_expr(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
+                iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+                if_nodes: list[dict[str, Any]] = []
+                if if_txt != "":
+                    if_nodes.append(parse_expr(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
+                return {
+                    "kind": "SetComp",
+                    "source_span": _sh_span(ln_no, col, col + len(raw)),
+                    "resolved_type": f"set[{elt_node.get('resolved_type', 'unknown')}]",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": txt,
+                    "elt": elt_node,
+                    "generators": [
+                        {
+                            "target": target_node,
+                            "iter": iter_node,
+                            "ifs": if_nodes,
+                            "is_async": False,
+                        }
+                    ],
+                }
+
         # dict literal: {"a": 1, "b": 2}
         if txt.startswith("{") and txt.endswith("}") and ":" in txt:
             inner = txt[1:-1].strip()
@@ -1337,6 +1751,62 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "repr": txt,
                 "entries": entries,
             }
+
+        # list-comp support: [expr for target in iter if cond]
+        if txt.startswith("[") and txt.endswith("]"):
+            inner = txt[1:-1].strip()
+            p_for = split_top_keyword(inner, "for")
+            if p_for > 0:
+                elt_txt = inner[:p_for].strip()
+                tail = inner[p_for + 3 :].strip()
+                p_in = split_top_keyword(tail, "in")
+                if p_in <= 0:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"invalid list comprehension in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `[elem for item in iterable]` form.",
+                    )
+                tgt_txt = tail[:p_in].strip()
+                iter_and_if_txt = tail[p_in + 2 :].strip()
+                p_if = split_top_keyword(iter_and_if_txt, "if")
+                if p_if >= 0:
+                    iter_txt = iter_and_if_txt[:p_if].strip()
+                    if_txt = iter_and_if_txt[p_if + 2 :].strip()
+                else:
+                    iter_txt = iter_and_if_txt
+                    if_txt = ""
+                target_node = parse_expr(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
+                comp_types = dict(name_types)
+                if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                    comp_types[str(target_node.get("id", ""))] = "unknown"
+                elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
+                    for e in target_node.get("elements", []):
+                        if isinstance(e, dict) and e.get("kind") == "Name":
+                            comp_types[str(e.get("id", ""))] = "unknown"
+                elt_node = parse_expr(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
+                iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+                if_nodes: list[dict[str, Any]] = []
+                if if_txt != "":
+                    if_nodes.append(parse_expr(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
+                elem_t = str(elt_node.get("resolved_type", "unknown"))
+                return {
+                    "kind": "ListComp",
+                    "source_span": _sh_span(ln_no, col, col + len(raw)),
+                    "resolved_type": f"list[{elem_t}]",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": txt,
+                    "elt": elt_node,
+                    "generators": [
+                        {
+                            "target": target_node,
+                            "iter": iter_node,
+                            "ifs": if_nodes,
+                            "is_async": False,
+                        }
+                    ],
+                }
 
         # Very simple list-comp support: [x for x in <iter>]
         m_lc = re.match(r"^\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)\]$", txt)
@@ -1388,37 +1858,35 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             quote = txt[1]
             inner = txt[2:-1]
             values: list[dict[str, Any]] = []
+
+            def push_lit(segment: str) -> None:
+                lit = segment.replace("{{", "{").replace("}}", "}")
+                if lit == "":
+                    return
+                values.append(
+                    {
+                        "kind": "Constant",
+                        "source_span": _sh_span(ln_no, col, col + len(raw)),
+                        "resolved_type": "str",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": repr(lit),
+                        "value": lit,
+                    }
+                )
+
             i = 0
             while i < len(inner):
                 j = inner.find("{", i)
                 if j < 0:
-                    tail = inner[i:]
-                    if tail != "":
-                        values.append(
-                            {
-                                "kind": "Constant",
-                                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                                "resolved_type": "str",
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": repr(tail),
-                                "value": tail,
-                            }
-                        )
+                    push_lit(inner[i:])
                     break
+                if j + 1 < len(inner) and inner[j + 1] == "{":
+                    push_lit(inner[i : j + 1])
+                    i = j + 2
+                    continue
                 if j > i:
-                    lit = inner[i:j]
-                    values.append(
-                        {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, col, col + len(raw)),
-                            "resolved_type": "str",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": repr(lit),
-                            "value": lit,
-                        }
-                    )
+                    push_lit(inner[i:j])
                 k = inner.find("}", j + 1)
                 if k < 0:
                     raise EastBuildError(
@@ -1465,62 +1933,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         )
 
     def parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
-        def bracket_delta(txt: str) -> int:
-            depth = 0
-            in_str: str | None = None
-            esc = False
-            i = 0
-            while i < len(txt):
-                ch = txt[i]
-                if in_str is not None:
-                    if esc:
-                        esc = False
-                    elif ch == "\\":
-                        esc = True
-                    elif ch == in_str:
-                        if i + 2 < len(txt) and txt[i : i + 3] == in_str * 3:
-                            i += 2
-                        else:
-                            in_str = None
-                    i += 1
-                    continue
-                if i + 2 < len(txt) and txt[i : i + 3] in {"'''", '"""'}:
-                    in_str = txt[i]
-                    i += 3
-                    continue
-                if ch in {"'", '"'}:
-                    in_str = ch
-                    i += 1
-                    continue
-                if ch == "#":
-                    break
-                if ch in {"(", "[", "{"}:
-                    depth += 1
-                elif ch in {")", "]", "}"}:
-                    depth -= 1
-                i += 1
-            return depth
-
-        merged_lines: list[tuple[int, str]] = []
-        merged_line_end: dict[int, tuple[int, int]] = {}
-        k = 0
-        while k < len(body_lines):
-            ln_no, ln_txt = body_lines[k]
-            acc = ln_txt
-            d = bracket_delta(ln_txt)
-            end_no = ln_no
-            end_txt = ln_txt
-            while d > 0 and k + 1 < len(body_lines):
-                k += 1
-                next_no, next_txt = body_lines[k]
-                acc += " " + next_txt.strip()
-                d += bracket_delta(next_txt)
-                end_no = next_no
-                end_txt = next_txt
-            merged_lines.append((ln_no, acc))
-            merged_line_end[ln_no] = (end_no, len(end_txt))
-            k += 1
-        body_lines = merged_lines
+        body_lines, merged_line_end = merge_logical_lines(body_lines)
 
         stmts: list[dict[str, Any]] = []
         pending_leading_trivia: list[dict[str, Any]] = []
@@ -1644,6 +2057,43 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     return text[:i].rstrip()
             return text
 
+        def split_top_level_from(text: str) -> tuple[str, str] | None:
+            depth = 0
+            in_str: str | None = None
+            esc = False
+            i = 0
+            while i < len(text):
+                ch = text[i]
+                if in_str is not None:
+                    if esc:
+                        esc = False
+                    elif ch == "\\":
+                        esc = True
+                    elif ch == in_str:
+                        in_str = None
+                    i += 1
+                    continue
+                if ch in {"'", '"'}:
+                    in_str = ch
+                    i += 1
+                    continue
+                if ch in {"(", "[", "{"}:
+                    depth += 1
+                    i += 1
+                    continue
+                if ch in {")", "]", "}"}:
+                    depth -= 1
+                    i += 1
+                    continue
+                if depth == 0 and text.startswith(" from ", i):
+                    lhs = text[:i].strip()
+                    rhs = text[i + 6 :].strip()
+                    if lhs != "" and rhs != "":
+                        return lhs, rhs
+                    return None
+                i += 1
+            return None
+
         i = 0
         while i < len(body_lines):
             ln_no, ln_txt = body_lines[i]
@@ -1737,17 +2187,19 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 continue
 
             if s.startswith("for ") and s.endswith(":"):
-                m_for = re.match(r"^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+):$", s)
+                m_for = re.match(r"^for\s+(.+)\s+in\s+(.+):$", s, flags=re.S)
                 if m_for is None:
                     raise EastBuildError(
                         kind="unsupported_syntax",
                         message=f"self_hosted parser cannot parse for statement: {s}",
                         source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                        hint="Use `for name in iterable:` form.",
+                        hint="Use `for target in iterable:` form.",
                     )
-                tgt = m_for.group(1)
+                tgt_txt = m_for.group(1).strip()
                 iter_txt = m_for.group(2).strip()
+                tgt_col = ln_txt.find(tgt_txt)
                 iter_col = ln_txt.find(iter_txt)
+                target_expr = parse_expr(tgt_txt, ln_no=ln_no, col=tgt_col, name_types=dict(name_types))
                 iter_expr = parse_expr(iter_txt, ln_no=ln_no, col=iter_col, name_types=dict(name_types))
                 body_block, j = collect_indented_block(i + 1, indent)
                 if len(body_block) == 0:
@@ -1765,9 +2217,24 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     t_ty = "unknown"
                 elif i_ty.startswith("set[") and i_ty.endswith("]"):
                     t_ty = i_ty[4:-1]
+                target_names: list[str] = []
+                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                    nm = str(target_expr.get("id", ""))
+                    if nm != "":
+                        target_names.append(nm)
+                elif isinstance(target_expr, dict) and target_expr.get("kind") == "Tuple":
+                    for e in target_expr.get("elements", []):
+                        if isinstance(e, dict) and e.get("kind") == "Name":
+                            nm = str(e.get("id", ""))
+                            if nm != "":
+                                target_names.append(nm)
                 if t_ty != "unknown":
-                    name_types[tgt] = t_ty
+                    for nm in target_names:
+                        name_types[nm] = t_ty
                 if (
+                    isinstance(target_expr, dict)
+                    and target_expr.get("kind") == "Name"
+                    and
                     isinstance(iter_expr, dict)
                     and iter_expr.get("kind") == "Call"
                     and isinstance(iter_expr.get("func"), dict)
@@ -1814,7 +2281,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         start_node = rargs[0]
                         stop_node = rargs[1]
                         step_node = rargs[2]
-                    name_types[tgt] = "int64"
+                    tgt = str(target_expr.get("id", ""))
+                    if tgt != "":
+                        name_types[tgt] = "int64"
                     step_const = step_node.get("value") if isinstance(step_node, dict) else None
                     mode = "dynamic"
                     if step_const == 1:
@@ -1825,15 +2294,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         {
                             "kind": "ForRange",
                             "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
-                            "target": {
-                                "kind": "Name",
-                                "source_span": _sh_span(ln_no, ln_txt.find(tgt), ln_txt.find(tgt) + len(tgt)),
-                                "resolved_type": "int64",
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": tgt,
-                                "id": tgt,
-                            },
+                            "target": target_expr,
                             "target_type": "int64",
                             "start": start_node,
                             "stop": stop_node,
@@ -1849,16 +2310,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     {
                         "kind": "For",
                         "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
-                        "target": {
-                            "kind": "Name",
-                            "source_span": _sh_span(ln_no, ln_txt.find(tgt), ln_txt.find(tgt) + len(tgt)),
-                            "resolved_type": name_types.get(tgt, "unknown"),
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": tgt,
-                            "id": tgt,
-                        },
-                        "target_type": name_types.get(tgt, "unknown"),
+                        "target": target_expr,
+                        "target_type": t_ty,
                         "iter": iter_expr,
                         "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
                         "orelse": [],
@@ -1908,23 +2361,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     h_indent = len(h_ln) - len(h_ln.lstrip(" "))
                     if h_indent != indent:
                         break
-                    m_exc = re.match(r"^except\s+([A-Za-z_][A-Za-z0-9_]*)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s)
+                    m_exc = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s, flags=re.S)
                     if m_exc is not None:
-                        ex_type = m_exc.group(1)
+                        ex_type_txt = m_exc.group(1).strip()
                         ex_name = m_exc.group(2)
+                        ex_type_col = h_ln.find(ex_type_txt)
                         h_body, k = collect_indented_block(j + 1, indent)
                         handlers.append(
                             {
                                 "kind": "ExceptHandler",
-                                "type": {
-                                    "kind": "Name",
-                                    "source_span": _sh_span(h_no, h_ln.find(ex_type), h_ln.find(ex_type) + len(ex_type)),
-                                    "resolved_type": "unknown",
-                                    "borrow_kind": "value",
-                                    "casts": [],
-                                    "repr": ex_type,
-                                    "id": ex_type,
-                                },
+                                "type": parse_expr(ex_type_txt, ln_no=h_no, col=ex_type_col, name_types=dict(name_types)),
                                 "name": ex_name,
                                 "body": parse_stmt_block(h_body, name_types=dict(name_types), scope_label=scope_label),
                             }
@@ -1953,11 +2399,20 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             if s.startswith("raise "):
                 expr_txt = s[len("raise ") :].strip()
                 expr_col = ln_txt.find(expr_txt)
+                cause_expr = None
+                cause_split = split_top_level_from(expr_txt)
+                if cause_split is not None:
+                    exc_txt, cause_txt = cause_split
+                    expr_txt = exc_txt
+                    expr_col = ln_txt.find(expr_txt)
+                    cause_col = ln_txt.find(cause_txt)
+                    cause_expr = parse_expr(cause_txt, ln_no=ln_no, col=cause_col, name_types=dict(name_types))
                 push_stmt(
                     {
                         "kind": "Raise",
                         "source_span": stmt_span(ln_no, ln_txt.find("raise "), len(ln_txt)),
                         "exc": parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                        "cause": cause_expr,
                     }
                 )
                 i += 1
@@ -2193,9 +2648,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     first_item_attached = False
     pending_dataclass = False
 
+    top_lines = list(enumerate(lines, start=1))
+    top_merged_lines, top_merged_end = merge_logical_lines(top_lines)
+    top_merged_map = {ln_no: txt for ln_no, txt in top_merged_lines}
     i = 1
     while i <= len(lines):
-        ln = lines[i - 1]
+        ln = top_merged_map.get(i, lines[i - 1])
+        logical_end = top_merged_end.get(i, (i, len(lines[i - 1])))[0]
         s = ln.strip()
         if s == "" or s.startswith("#"):
             i += 1
@@ -2222,23 +2681,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             main_stmts = parse_stmt_block(block, name_types=main_name_types, scope_label="__main__")
             i = j
             continue
-
         sig_line = ln
-        sig_end_line = i
-        if s.startswith("def ") and not s.endswith(":"):
-            j = i + 1
-            merged = s
-            while j <= len(lines):
-                part = lines[j - 1].strip()
-                if part == "":
-                    j += 1
-                    continue
-                merged += part
-                sig_end_line = j
-                if part.endswith(":"):
-                    break
-                j += 1
-            sig_line = merged
+        sig_end_line = logical_end
         sig = parse_def_sig(i, sig_line)
         if sig is not None:
             fn_name = str(sig["name"])
@@ -2323,12 +2767,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_span=_sh_span(i, 0, len(ln)),
                     hint="Add field or method definitions.",
                 )
+            class_block, _class_line_end = merge_logical_lines(block)
 
             field_types: dict[str, str] = {}
             class_body: list[dict[str, Any]] = []
             k = 0
-            while k < len(block):
-                ln_no, ln_txt = block[k]
+            while k < len(class_block):
+                ln_no, ln_txt = class_block[k]
                 s2 = re.sub(r"\s+#.*$", "", ln_txt).strip()
                 bind = len(ln_txt) - len(ln_txt.lstrip(" "))
                 if s2 == "":
@@ -2373,15 +2818,15 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         mret = str(sig["ret"])
                         method_block: list[tuple[int, str]] = []
                         m = k + 1
-                        while m < len(block):
-                            n_no, n_txt = block[m]
+                        while m < len(class_block):
+                            n_no, n_txt = class_block[m]
                             if n_txt.strip() == "":
                                 t = m + 1
-                                while t < len(block) and block[t][1].strip() == "":
+                                while t < len(class_block) and class_block[t][1].strip() == "":
                                     t += 1
-                                if t >= len(block):
+                                if t >= len(class_block):
                                     break
-                                t_txt = block[t][1]
+                                t_txt = class_block[t][1]
                                 t_indent = len(t_txt) - len(t_txt.lstrip(" "))
                                 if t_indent <= bind:
                                     break
@@ -2502,7 +2947,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = j
             continue
 
-        m_ann_top = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
+        m_ann_top = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s, flags=re.S)
         if m_ann_top is not None:
             name = m_ann_top.group(1)
             ann = _sh_ann_to_type(m_ann_top.group(2))
@@ -2527,7 +2972,50 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     "decl_type": ann,
                 }
             )
-            i += 1
+            i = logical_end + 1
+            continue
+
+        asg_top = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s, flags=re.S)
+        if asg_top is not None:
+            name = asg_top.group(1)
+            expr_txt = asg_top.group(2).strip()
+            expr_col = ln.find(expr_txt)
+            if expr_col < 0:
+                expr_col = 0
+            val_node = parse_expr(expr_txt, ln_no=i, col=expr_col, name_types={})
+            decl_type = str(val_node.get("resolved_type", "unknown"))
+            body_items.append(
+                {
+                    "kind": "Assign",
+                    "source_span": _sh_span(i, ln.find(name), len(ln)),
+                    "target": {
+                        "kind": "Name",
+                        "source_span": _sh_span(i, ln.find(name), ln.find(name) + len(name)),
+                        "resolved_type": decl_type,
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": name,
+                        "id": name,
+                    },
+                    "value": val_node,
+                    "declare": True,
+                    "declare_init": True,
+                    "decl_type": decl_type,
+                }
+            )
+            i = logical_end + 1
+            continue
+
+        if (s.startswith('"""') and s.endswith('"""')) or (s.startswith("'''") and s.endswith("'''")):
+            # Module-level docstring / standalone string expression.
+            body_items.append(
+                {
+                    "kind": "Expr",
+                    "source_span": _sh_span(i, 0, len(ln)),
+                    "value": parse_expr(s, ln_no=i, col=0, name_types={}),
+                }
+            )
+            i = logical_end + 1
             continue
 
         raise EastBuildError(

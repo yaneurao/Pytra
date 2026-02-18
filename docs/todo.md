@@ -83,3 +83,24 @@
 - [x] `case34_gc_reassign` は `rc<Tracked>` のまま維持する（最適化非適用例）。
 - [x] 新規テストを追加する: 同一性依存ケース（代入共有、関数引数経由の更新共有、コンテナ格納後の共有）では必ず参照型を選ぶことを検証する。
 - [x] 新規テストを追加する: 値型化候補（実質 stateless クラス）では出力C++が値型になり、実行結果がPython一致することを検証する。
+
+## selfhost（`py2cpp.py` を `py2cpp.py` で変換）
+
+- [x] selfhost一次ゴールを固定する: `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` が成功する。
+- [x] self-hosted parser で関数定義シグネチャの `*`（keyword-only 引数マーカー）を解釈可能にする。
+- [x] `*` 対応後、`selfhost/py2cpp.py` の EAST 生成が最後まで通ることを確認する。
+- [x] 関数定義シグネチャでの未対応要素（`/`, `*args`, `**kwargs`）の扱いを仕様化する（受理/拒否とエラーメッセージ）。
+- [x] `src/common/east.py` の対応箇所へ最小コメントを追加し、どのシグネチャ構文をサポートするか明記する。
+- [ ] `test/py` にシグネチャ構文テストを追加する（`*` を含むケース、拒否すべきケース）。
+- [ ] `selfhost/py2cpp.py` のトランスパイルが通ったら、`selfhost/py2cpp.cpp` のコンパイルまで確認する。
+- [ ] `selfhost/py2cpp.cpp` 実行で `sample/py/01` を変換させ、`src/py2cpp.py` の生成結果と一致比較する。
+- [ ] 一致条件を定義する（C++ソース全文一致か、コンパイル可能性＋実行結果一致か）を `docs/spec-dev.md` に追記する。
+- [ ] selfhost手順を `docs/how-to-use.md` に追記する（前提、コマンド、失敗時の確認ポイント）。
+
+### selfhost C++コンパイル段階の未解決（2026-02-18）
+
+- [ ] 型注釈 `Any` を C++出力で扱えるようにする（最低でも `object` 互換に正規化する）。
+- [ ] PEP604 形式の union (`T | None`) を EAST または C++型変換段で受理し、C++型へ正規化する。
+- [ ] `dict[str, Any]` / `dict[str, str | None]` のようなネスト型注釈を C++出力時に安全に解決する。
+- [ ] `call(generator_exp)` の lowering を明示仕様化する（`list-comp` へ正規化するか、専用 `GeneratorExp` を実装するか）。
+- [ ] selfhost 生成C++（`selfhost/py2cpp.cpp`）のコンパイルエラーをカテゴリ別に整理し、最小修正順で潰す。

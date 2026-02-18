@@ -1543,6 +1543,16 @@ class CppEmitter:
     def cpp_type(self, east_type: str | None) -> str:
         if east_type is None:
             return "auto"
+        east_type = east_type.strip()
+        if east_type == "Any":
+            return "std::any"
+        if "|" in east_type:
+            parts = self.split_union(east_type)
+            if len(parts) >= 2:
+                non_none = [p for p in parts if p != "None"]
+                if len(parts) == 2 and len(non_none) == 1:
+                    return f"std::optional<{self.cpp_type(non_none[0])}>"
+                return "std::any"
         if east_type in self.ref_classes:
             return f"rc<{east_type}>"
         if east_type in self.class_names:
@@ -1610,6 +1620,25 @@ class CppEmitter:
                 out.append(s[start:i].strip())
                 start = i + 1
         out.append(s[start:].strip())
+        return out
+
+    def split_union(self, s: str) -> list[str]:
+        out: list[str] = []
+        depth = 0
+        start = 0
+        for i, ch in enumerate(s):
+            if ch in {"[", "("}:
+                depth += 1
+            elif ch in {"]", ")"}:
+                depth -= 1
+            elif ch == "|" and depth == 0:
+                part = s[start:i].strip()
+                if part != "":
+                    out.append(part)
+                start = i + 1
+        tail = s[start:].strip()
+        if tail != "":
+            out.append(tail)
         return out
 
 

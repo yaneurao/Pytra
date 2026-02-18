@@ -2,6 +2,7 @@
 #define PYTRA_EAST_CPP_MODULE_PY_RUNTIME_H
 
 #include <algorithm>
+#include <any>
 #include <cctype>
 #include <cmath>
 #include <chrono>
@@ -9,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
