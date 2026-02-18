@@ -42,9 +42,8 @@
   - デフォルトは `const_only`（定数の負数添字のみ Python 互換処理を有効化）。
   - `always`: すべての添字アクセスで Python 互換の負数添字処理を有効化。
   - `off`: Python 互換の負数添字処理を行わず、通常の `[]` を生成。
-- PNG 画像の一致判定は、ファイルバイト列ではなく raw scanline（復号後画素）を優先します。
-  - raw scanline が一致し、IDAT のみ差がある場合は「圧縮差」として許容します。
-  - 現時点では IDAT 圧縮バイト列の完全一致は目標にしません。
+- PNG 画像の一致判定は、ファイルバイト列の完全一致を基準とします。
+- GIF 画像の一致判定も、ファイルバイト列の完全一致を基準とします。
 
 ### 3.1 import と `runtime/cpp` 対応
 
@@ -106,16 +105,30 @@
 - `png` / `gif` は Python 側（`src/pylib/`）を正本実装とします。
 - 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
 - 言語別に手書きするのは、性能・I/O 都合で必要な最小範囲に限定します。
-- 言語間一致は「復号後画素一致」を主判定とし、圧縮バイト列差（例: PNG IDAT）は副次扱いとします。
+- 言語間一致は「生成ファイルのバイト列完全一致」を主判定とします。
 - `src/pylib/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
 - 受け入れ基準:
-  - 置換作業中は、同一入力に対して `src/pylib/*.py` 出力と各言語ランタイム出力が一致することを必須とします。
+  - 置換作業中は、同一入力に対して `src/pylib/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
   - C++ では `tools/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
 
 ### 3.4 Python 補助ライブラリ命名
 
 - 旧 `pylib.runtime` は `pylib.assertions` へ改名済みです。
 - テスト補助関数（`py_assert_*`）は `from pylib.assertions import ...` で利用します。
+
+### 3.5 画像ランタイム最適化ポリシー（py2cpp）
+
+- 対象: `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp`。
+- 前提: `src/pylib/png.py` / `src/pylib/gif.py` を正本とし、意味差を導入しない。
+- 許容する最適化:
+  - ループ展開・`reserve` 追加・一時バッファ削減など、出力バイト列を変えない最適化。
+  - 例外メッセージ変更を伴わない境界チェックの軽量化。
+- 原則禁止:
+  - 画像出力仕様を変える最適化（PNG chunk 構成、GIF 制御ブロック、色テーブル順など）。
+  - Python 正本と異なる既定値・フォーマット・丸め方への変更。
+- 受け入れ条件:
+  - 変更後に `python3 tools/verify_image_runtime_parity.py` が `True` を返すこと。
+  - `test/unit/test_image_runtime_parity.py` と `test/unit/test_py2cpp_features.py` を通過すること。
 
 ## 4. 検証手順（C++）
 
@@ -141,8 +154,7 @@
 - 実行一致:
   - 同じ入力に対して、Python 実行結果と生成 C++ 実行結果が一致することを必須とする。
 - 画像一致:
-  - PNG は raw scanline（復号後画素）一致を優先する。
-  - PPM 出力を使う場合はファイルバイト列一致でも比較可能。
+  - PNG/GIF ともに、出力ファイルのバイト列完全一致を必須とする。
 
 ## 5. EASTベース C++ 経路
 

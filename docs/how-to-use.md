@@ -39,9 +39,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 - 入力コードで使う Python モジュールに対応する実装を `src/runtime/cpp/` に用意してください（例: `core/math`, `core/time`, `core/pathlib`, `pylib/png`, `pylib/gif`）。GC は `base/gc` を使います。
 - Python 側の import は `pylib` 名を使います（例: `from pylib import png`, `from pylib.gif import save_gif`, `from pylib.assertions import py_assert_eq`）。
 - `math.sqrt` など `module.attr(...)` の C++ 側マッピングは `src/runtime/cpp/runtime_call_map.json` で定義します。必要な関数は `module_attr_call` に追加できます。
-- 実行時に `--pytra-image-format=ppm` を付けると、`png.write_rgb_png(...)` は PNG ではなく PPM(P6) を出力します。
-  - 例: `./test/transpile/obj/iterable.out --pytra-image-format=ppm`
-  - この場合、出力拡張子は実行時に `.ppm` へ切り替わります（元コード上の `out_path` 文字列表示はそのままです）。
+- `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 

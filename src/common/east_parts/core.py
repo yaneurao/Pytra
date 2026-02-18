@@ -211,6 +211,14 @@ class _ShExprParser:
                 i = end
                 continue
             if ch.isdigit():
+                if ch == "0" and i + 2 < len(text) and text[i + 1] in {"x", "X"}:
+                    j = i + 2
+                    while j < len(text) and (text[j].isdigit() or text[j].lower() in {"a", "b", "c", "d", "e", "f"}):
+                        j += 1
+                    if j > i + 2:
+                        out.append({"k": "INT", "v": text[i:j], "s": i, "e": j})
+                        i = j
+                        continue
                 j = i + 1
                 while j < len(text) and text[j].isdigit():
                     j += 1
@@ -1157,7 +1165,7 @@ class _ShExprParser:
                 "borrow_kind": "value",
                 "casts": [],
                 "repr": tok["v"],
-                "value": int(tok["v"]),
+                "value": int(str(tok["v"]), 0),
             }
         if tok["k"] == "FLOAT":
             self._eat("FLOAT")
@@ -2849,6 +2857,60 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 i = j
                 continue
 
+            if s.startswith("with ") and s.endswith(":"):
+                m_with = re.match(r"^with\s+(.+)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", s, flags=re.S)
+                if m_with is None:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse with statement: {s}",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Use `with expr as name:` form.",
+                    )
+                ctx_txt = m_with.group(1).strip()
+                as_name = m_with.group(2).strip()
+                ctx_col = ln_txt.find(ctx_txt)
+                as_col = ln_txt.find(as_name, ctx_col + len(ctx_txt))
+                ctx_expr = parse_expr(ctx_txt, ln_no=ln_no, col=ctx_col, name_types=dict(name_types))
+                name_types[as_name] = str(ctx_expr.get("resolved_type", "unknown"))
+                body_block, j = collect_indented_block(i + 1, indent)
+                if len(body_block) == 0:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"with body is missing in '{scope_label}'",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Add indented with-body.",
+                    )
+                assign_stmt = {
+                    "kind": "Assign",
+                    "source_span": stmt_span(ln_no, as_col, len(ln_txt)),
+                    "target": {
+                        "kind": "Name",
+                        "source_span": _sh_span(ln_no, as_col, as_col + len(as_name)),
+                        "resolved_type": str(ctx_expr.get("resolved_type", "unknown")),
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": as_name,
+                        "id": as_name,
+                    },
+                    "value": ctx_expr,
+                    "declare": True,
+                    "declare_init": True,
+                    "decl_type": str(ctx_expr.get("resolved_type", "unknown")),
+                }
+                close_expr = parse_expr(f"{as_name}.close()", ln_no=ln_no, col=as_col, name_types=dict(name_types))
+                try_stmt = {
+                    "kind": "Try",
+                    "source_span": block_end_span(ln_no, ln_txt.find("with "), len(ln_txt), j),
+                    "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                    "handlers": [],
+                    "orelse": [],
+                    "finalbody": [{"kind": "Expr", "source_span": stmt_span(ln_no, as_col, len(ln_txt)), "value": close_expr}],
+                }
+                push_stmt(assign_stmt)
+                push_stmt(try_stmt)
+                i = j
+                continue
+
             if s.startswith("while ") and s.endswith(":"):
                 cond_txt = s[len("while ") : -1].strip()
                 cond_col = ln_txt.find(cond_txt)
@@ -3030,10 +3092,25 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 i += 1
                 continue
 
-            m_aug = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*(\+=|-=|\*=|/=)\s*(.+)$", s)
+            m_aug = re.match(
+                r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*(\+=|-=|\*=|/=|//=|%=|&=|\|=|\^=|<<=|>>=)\s*(.+)$",
+                s,
+            )
             if m_aug is not None:
                 target_txt = m_aug.group(1)
-                op_map = {"+=": "Add", "-=": "Sub", "*=": "Mult", "/=": "Div"}
+                op_map = {
+                    "+=": "Add",
+                    "-=": "Sub",
+                    "*=": "Mult",
+                    "/=": "Div",
+                    "//=": "FloorDiv",
+                    "%=": "Mod",
+                    "&=": "BitAnd",
+                    "|=": "BitOr",
+                    "^=": "BitXor",
+                    "<<=": "LShift",
+                    ">>=": "RShift",
+                }
                 expr_txt = m_aug.group(3).strip()
                 expr_col = ln_txt.find(expr_txt)
                 target_col = ln_txt.find(target_txt)
