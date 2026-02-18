@@ -48,6 +48,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 - `pylib` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
 - `src/runtime/cpp/pylib/*.cpp` は手書き固定ではなく、`src/pylib/*.py` をトランスパイラで変換して生成・更新する前提です。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
+- import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います。
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 

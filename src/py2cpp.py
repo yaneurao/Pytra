@@ -2194,6 +2194,42 @@ def transpile_to_cpp(
     ).transpile()
 
 
+def dump_deps_text(east_module: dict[str, Any]) -> str:
+    """EAST の import メタデータを人間向けテキストへ整形する。"""
+    out: list[str] = []
+    meta_obj = east_module.get("meta")
+    meta = meta_obj if isinstance(meta_obj, dict) else {}
+    modules_obj = meta.get("import_modules")
+    symbols_obj = meta.get("import_symbols")
+    modules = modules_obj if isinstance(modules_obj, dict) else {}
+    symbols = symbols_obj if isinstance(symbols_obj, dict) else {}
+
+    out.append("modules:")
+    if len(modules) == 0:
+        out.append("  (none)")
+    else:
+        keys = sorted([str(k) for k in modules.keys()])
+        for alias in keys:
+            mod_name = modules.get(alias)
+            if isinstance(mod_name, str):
+                out.append(f"  - {alias} -> {mod_name}")
+
+    out.append("symbols:")
+    if len(symbols) == 0:
+        out.append("  (none)")
+    else:
+        keys = sorted([str(k) for k in symbols.keys()])
+        for alias in keys:
+            payload = symbols.get(alias)
+            if isinstance(payload, dict):
+                mod_name = payload.get("module")
+                sym_name = payload.get("name")
+                if isinstance(mod_name, str) and isinstance(sym_name, str):
+                    out.append(f"  - {alias} -> {mod_name}.{sym_name}")
+
+    return "\n".join(out) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI エントリポイント。変換実行と入出力を担当する。"""
     argv_list: list[str] = []
@@ -2204,6 +2240,7 @@ def main(argv: list[str] | None = None) -> int:
     negative_index_mode = "const_only"
     parser_backend = "self_hosted"
     no_main = False
+    dump_deps = False
 
     i = 0
     while i < len(argv_list):
@@ -2228,6 +2265,8 @@ def main(argv: list[str] | None = None) -> int:
             parser_backend = argv_list[i]
         elif a == "--no-main":
             no_main = True
+        elif a == "--dump-deps":
+            dump_deps = True
         elif a.startswith("-"):
             print(f"error: unknown option: {a}", file=sys.stderr)
             return 1
@@ -2240,7 +2279,10 @@ def main(argv: list[str] | None = None) -> int:
         i += 1
 
     if input_txt == "":
-        print("usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--negative-index-mode MODE] [--no-main]", file=sys.stderr)
+        print(
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--negative-index-mode MODE] [--no-main] [--dump-deps]",
+            file=sys.stderr,
+        )
         return 1
 
     input_path = Path(input_txt)
@@ -2251,6 +2293,15 @@ def main(argv: list[str] | None = None) -> int:
     cpp = ""
     try:
         east_module = load_east(input_path, parser_backend)
+        if dump_deps:
+            dep_text = dump_deps_text(east_module)
+            if output_txt != "":
+                out_path = Path(output_txt)
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(dep_text, encoding="utf-8")
+            else:
+                print(dep_text, end="")
+            return 0
         cpp = transpile_to_cpp(east_module, negative_index_mode, not no_main)
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
