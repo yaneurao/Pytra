@@ -15,6 +15,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.py2cpp import load_east, transpile_to_cpp
+from src.common.runtime_call_map import load_cpp_module_attr_call_map
 
 CPP_RUNTIME_SRCS = [
     "src/cpp_module/pathlib.cpp",
@@ -41,6 +42,28 @@ def transpile(input_py: Path, output_cpp: Path) -> None:
 
 
 class Py2CppFeatureTest(unittest.TestCase):
+    def test_runtime_call_map_for_math_is_loaded_from_json(self) -> None:
+        mp = load_cpp_module_attr_call_map()
+        self.assertIn("math", mp)
+        self.assertEqual(mp["math"].get("sqrt"), "py_math::sqrt")
+
+    def test_math_module_call_uses_runtime_call_map(self) -> None:
+        src = """import math
+
+def main() -> None:
+    x: float = math.sqrt(9.0)
+    print(x)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "math_call.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("py_math::sqrt(9.0)", cpp)
+
     def test_east_builtin_call_normalization(self) -> None:
         src = """from pathlib import Path
 

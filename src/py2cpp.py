@@ -15,6 +15,7 @@ from typing import Any
 from common.base_emitter import BaseEmitter
 from common.east_io import extract_module_leading_trivia as extract_module_leading_trivia_common
 from common.east_io import load_east_from_path
+from common.runtime_call_map import load_cpp_module_attr_call_map
 from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
 
 CPP_HEADER = """#include "cpp_module/py_runtime.h"
@@ -139,6 +140,7 @@ class CppEmitter(BaseEmitter):
         self.ref_classes: set[str] = set()
         self.value_classes: set[str] = set()
         self.bridge_comment_emitted: set[str] = set()
+        self.module_attr_call_map = load_cpp_module_attr_call_map()
 
     def _stmt_start_line(self, stmt: dict[str, Any]) -> int | None:
         """将来の行情報連携用フック（現在は未使用）。"""
@@ -1421,22 +1423,12 @@ class CppEmitter(BaseEmitter):
                 if isinstance(owner, dict) and owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                     owner_expr = f"({owner_expr})"
                 attr = fn.get("attr")
-                if owner_expr == "math":
-                    math_map = {
-                        "sqrt": "py_math::sqrt",
-                        "sin": "py_math::sin",
-                        "cos": "py_math::cos",
-                        "tan": "py_math::tan",
-                        "exp": "py_math::exp",
-                        "log": "py_math::log",
-                        "log10": "py_math::log10",
-                        "fabs": "py_math::fabs",
-                        "floor": "py_math::floor",
-                        "ceil": "py_math::ceil",
-                        "pow": "py_math::pow",
-                    }
-                    if attr in math_map:
-                        return f"{math_map[attr]}({', '.join(args)})"
+                if isinstance(attr, str):
+                    owner_map = self.module_attr_call_map.get(owner_expr)
+                    if isinstance(owner_map, dict):
+                        runtime_call = owner_map.get(attr)
+                        if isinstance(runtime_call, str):
+                            return f"{runtime_call}({', '.join(args)})"
                 if owner_expr == "png_helper" and attr == "write_rgb_png":
                     return f"png_helper::write_rgb_png({', '.join(args)})"
                 if owner_expr == "gif_helper" and attr == "save_gif":
