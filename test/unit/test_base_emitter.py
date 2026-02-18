@@ -20,6 +20,13 @@ class _DummyEmitter(BaseEmitter):
     def emit_stmt(self, stmt: Any) -> None:
         self.emit(f"stmt:{self.any_to_str(stmt)}")
 
+    def render_expr(self, expr: Any) -> str:
+        if isinstance(expr, dict):
+            rep = expr.get("repr")
+            if isinstance(rep, str):
+                return rep
+        return "<?>"
+
 
 class BaseEmitterTest(unittest.TestCase):
     def test_emit_and_emit_stmt_list_and_next_tmp(self) -> None:
@@ -73,6 +80,107 @@ class BaseEmitterTest(unittest.TestCase):
         self.assertEqual(em.get_expr_type({"resolved_type": "int64"}), "int64")
         self.assertEqual(em.get_expr_type({"resolved_type": 3}), "")
         self.assertEqual(em.get_expr_type(None), "")
+
+    def test_scope_and_expr_helpers(self) -> None:
+        em = BaseEmitter({})
+        self.assertEqual(em.current_scope(), set())
+        em.current_scope().add("x")
+        self.assertTrue(em.is_declared("x"))
+        em.scope_stack.append(set(["y"]))
+        self.assertTrue(em.is_declared("x"))
+        self.assertTrue(em.is_declared("y"))
+        self.assertFalse(em.is_declared("z"))
+
+        self.assertTrue(em._is_identifier_expr("abc_1"))
+        self.assertFalse(em._is_identifier_expr("1abc"))
+        self.assertFalse(em._is_identifier_expr("a-b"))
+
+        self.assertEqual(em._strip_outer_parens(" ( (x + 1) ) "), "x + 1")
+        self.assertEqual(em._strip_outer_parens("(x) + (y)"), "(x) + (y)")
+        self.assertEqual(em._strip_outer_parens('(")")'), '")"')
+
+        self.assertTrue(em.is_plain_name_expr({"kind": "Name", "id": "v"}))
+        self.assertFalse(em.is_plain_name_expr({"kind": "Call"}))
+        self.assertTrue(em._expr_repr_eq({"repr": "a + b "}, {"repr": "a + b"}))
+        self.assertFalse(em._expr_repr_eq({"repr": "a + b"}, {"repr": "a - b"}))
+
+    def test_trivia_and_cond_helpers(self) -> None:
+        em = _DummyEmitter(
+            {
+                "module_leading_trivia": [
+                    {"kind": "comment", "text": "file header"},
+                    {"kind": "blank", "count": 1},
+                ]
+            }
+        )
+        em.emit_module_leading_trivia()
+        em.emit_leading_comments(
+            {
+                "leading_trivia": [
+                    {"kind": "comment", "text": "stmt comment"},
+                    {"kind": "blank", "count": 2},
+                ]
+            }
+        )
+        self.assertEqual(
+            em.lines,
+            [
+                "// file header",
+                "",
+                "// stmt comment",
+                "",
+                "",
+            ],
+        )
+
+        self.assertEqual(
+            em.render_cond({"resolved_type": "bool", "repr": "(flag)"}),
+            "flag",
+        )
+        self.assertEqual(
+            em.render_cond({"resolved_type": "list[int64]", "repr": " (xs) "}),
+            "py_len(xs) != 0",
+        )
+        self.assertEqual(em.render_cond(None), "false")
+
+    def test_negative_index_and_super_helpers(self) -> None:
+        em = BaseEmitter({})
+        self.assertTrue(em._is_negative_const_index({"kind": "Constant", "value": -1}))
+        self.assertTrue(
+            em._is_negative_const_index(
+                {
+                    "kind": "UnaryOp",
+                    "op": "USub",
+                    "operand": {"kind": "Constant", "value": 2},
+                }
+            )
+        )
+        self.assertFalse(em._is_negative_const_index({"kind": "Constant", "value": 0}))
+        self.assertFalse(em._is_negative_const_index({"kind": "Name", "id": "i"}))
+
+        super_init = {
+            "kind": "Call",
+            "func": {
+                "kind": "Attribute",
+                "attr": "__init__",
+                "value": {
+                    "kind": "Call",
+                    "func": {"kind": "Name", "id": "super"},
+                    "args": [],
+                    "keywords": [],
+                },
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertTrue(em._is_redundant_super_init_call(super_init))
+        not_super = {
+            "kind": "Call",
+            "func": {"kind": "Name", "id": "f"},
+            "args": [],
+            "keywords": [],
+        }
+        self.assertFalse(em._is_redundant_super_init_call(not_super))
 
     def test_split_helpers(self) -> None:
         em = BaseEmitter({})

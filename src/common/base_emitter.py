@@ -14,10 +14,15 @@ class BaseEmitter:
         self.lines: list[str] = []
         self.indent = 0
         self.tmp_id = 0
+        self.scope_stack: list[set[str]] = [set()]
 
     def emit_stmt(self, stmt: Any) -> None:
         """文ノード出力フック。派生クラス側で実装する。"""
         return
+
+    def render_expr(self, expr: Any) -> str:
+        """式ノード出力フック。派生クラス側で実装する。"""
+        return ""
 
     def emit(self, line: str = "") -> None:
         """現在のインデントで1行を出力バッファへ追加する。"""
@@ -180,3 +185,206 @@ class BaseEmitter:
         """object レシーバ禁止ルールに抵触する型か判定する。"""
         s = self.normalize_type_name(t)
         return self._is_forbidden_object_receiver_type_text(s)
+
+    def current_scope(self) -> set[str]:
+        """現在のスコープで宣言済みの識別子集合を返す。"""
+        return self.scope_stack[-1]
+
+    def is_declared(self, name: str) -> bool:
+        """指定名がどこかの有効スコープで宣言済みか判定する。"""
+        i = len(self.scope_stack) - 1
+        while i >= 0:
+            scope: set[str] = self.scope_stack[i]
+            if name in scope:
+                return True
+            i -= 1
+        return False
+
+    def _is_identifier_expr(self, text: str) -> bool:
+        """式文字列が単純な識別子のみかを判定する。"""
+        if len(text) == 0:
+            return False
+        c0 = text[0:1]
+        if not (c0 == "_" or ("a" <= c0 <= "z") or ("A" <= c0 <= "Z")):
+            return False
+        i = 1
+        while i < len(text):
+            ch = text[i]
+            if not (ch == "_" or ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9")):
+                return False
+            i += 1
+        return True
+
+    def _strip_outer_parens(self, text: str) -> str:
+        """式全体を囲う不要な最外括弧を安全に取り除く。"""
+        s: str = text
+        ws: set[str] = {" ", "\t", "\n", "\r", "\f", "\v"}
+        while len(s) > 0 and s[0] in ws:
+            s = s[1:]
+        while len(s) > 0 and s[-1] in ws:
+            s = s[:-1]
+
+        while len(s) >= 2 and s[:1] == "(" and s[-1:] == ")":
+            depth = 0
+            in_str = False
+            esc = False
+            quote = ""
+            wrapped = True
+            i = 0
+            while i < len(s):
+                ch = s[i]
+                if in_str:
+                    if esc:
+                        esc = False
+                    elif ch == "\\":
+                        esc = True
+                    elif ch == quote:
+                        in_str = False
+                    i += 1
+                    continue
+                if ch == "'" or ch == '"':
+                    in_str = True
+                    quote = ch
+                    i += 1
+                    continue
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                    if depth == 0 and i != len(s) - 1:
+                        wrapped = False
+                        break
+                i += 1
+            if wrapped and depth == 0:
+                s = s[1:-1]
+                while len(s) > 0 and s[0] in ws:
+                    s = s[1:]
+                while len(s) > 0 and s[-1] in ws:
+                    s = s[:-1]
+                continue
+            break
+        return s
+
+    def is_plain_name_expr(self, expr: dict[str, Any] | None) -> bool:
+        """式が単純な Name ノードかを判定する。"""
+        if expr is None:
+            return False
+        return expr.get("kind") == "Name"
+
+    def _expr_repr_eq(self, a: dict[str, Any] | None, b: dict[str, Any] | None) -> bool:
+        """2つの式 repr が同一かを比較する。"""
+        if not isinstance(a, dict) or not isinstance(b, dict):
+            return False
+        ra = a.get("repr")
+        rb = b.get("repr")
+        if not isinstance(ra, str) or not isinstance(rb, str):
+            return False
+        return ra.strip() == rb.strip()
+
+    def comment_line_prefix(self) -> str:
+        """単行コメント出力時の接頭辞を返す。"""
+        return "// "
+
+    def truthy_len_expr(self, rendered: str) -> str:
+        """シーケンス真偽判定に使う式を返す。"""
+        return f"py_len({rendered}) != 0"
+
+    def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
+        """EAST の leading_trivia をコメント/空行として出力する。"""
+        trivia = stmt.get("leading_trivia")
+        if not isinstance(trivia, list):
+            return
+        for item in trivia:
+            if not isinstance(item, dict):
+                continue
+            k = item.get("kind")
+            if k == "comment":
+                txt = item.get("text")
+                if isinstance(txt, str):
+                    self.emit(self.comment_line_prefix() + txt)
+            elif k == "blank":
+                cnt = item.get("count", 1)
+                n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
+                for _ in range(n):
+                    self.emit("")
+
+    def emit_module_leading_trivia(self) -> None:
+        """モジュール先頭のコメント/空行 trivia を出力する。"""
+        trivia = self.doc.get("module_leading_trivia")
+        if not isinstance(trivia, list):
+            return
+        for item in trivia:
+            if not isinstance(item, dict):
+                continue
+            k = item.get("kind")
+            if k == "comment":
+                txt = item.get("text")
+                if isinstance(txt, str):
+                    self.emit(self.comment_line_prefix() + txt)
+            elif k == "blank":
+                cnt = item.get("count", 1)
+                n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
+                for _ in range(n):
+                    self.emit("")
+
+    def _is_negative_const_index(self, node: dict[str, Any] | None) -> bool:
+        """添字ノードが負の定数インデックスかを判定する。"""
+        if node is None:
+            return False
+        kind = str(node.get("kind", ""))
+        if kind == "Constant":
+            v = node.get("value")
+            if isinstance(v, int):
+                return int(v) < 0
+            if isinstance(v, str):
+                try:
+                    return int(v) < 0
+                except ValueError:
+                    return False
+            return False
+        if kind == "UnaryOp" and node.get("op") == "USub":
+            opd = node.get("operand")
+            if isinstance(opd, dict) and opd.get("kind") == "Constant":
+                ov = opd.get("value")
+                if isinstance(ov, int):
+                    return int(ov) > 0
+                if isinstance(ov, str):
+                    try:
+                        return int(ov) > 0
+                    except ValueError:
+                        return False
+        return False
+
+    def _is_redundant_super_init_call(self, expr: dict[str, Any] | None) -> bool:
+        """暗黙基底 ctor 呼び出しと等価な super().__init__ かを判定する。"""
+        if expr is None or expr.get("kind") != "Call":
+            return False
+        func = expr.get("func")
+        if not isinstance(func, dict) or func.get("kind") != "Attribute":
+            return False
+        if str(func.get("attr", "")) != "__init__":
+            return False
+        owner = func.get("value")
+        if not isinstance(owner, dict) or owner.get("kind") != "Call":
+            return False
+        owner_func = owner.get("func")
+        if not isinstance(owner_func, dict) or owner_func.get("kind") != "Name":
+            return False
+        if str(owner_func.get("id", "")) != "super":
+            return False
+        args = expr.get("args")
+        kws = expr.get("keywords")
+        return isinstance(args, list) and len(args) == 0 and isinstance(kws, list) and len(kws) == 0
+
+    def render_cond(self, expr: Any) -> str:
+        """条件式文脈向けに式を真偽値へ正規化して出力する。"""
+        expr_node = self.any_to_dict(expr)
+        if expr_node is None:
+            return "false"
+        t = self.get_expr_type(expr_node)
+        body = self._strip_outer_parens(self.render_expr(expr_node))
+        if t in {"bool"}:
+            return body
+        if t == "str" or t[:5] == "list[" or t[:5] == "dict[" or t[:4] == "set[" or t[:6] == "tuple[":
+            return self.truthy_len_expr(body)
+        return body
