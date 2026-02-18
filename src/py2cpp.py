@@ -94,9 +94,6 @@ _DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = {
     }
 }
 
-_CACHE_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] | None = None
-
-
 def _safe_nested_dict(obj: Any, keys: list[str]) -> dict[str, Any] | None:
     cur: Any = obj
     for key in keys:
@@ -130,10 +127,6 @@ def _load_cpp_runtime_call_map_json() -> dict[str, Any] | None:
 
 def load_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     """C++ の `module.attr(...)` -> ランタイム呼び出しマップを返す。"""
-    global _CACHE_CPP_MODULE_ATTR_CALL_MAP
-    if _CACHE_CPP_MODULE_ATTR_CALL_MAP is not None:
-        return _deep_copy_str_map(_CACHE_CPP_MODULE_ATTR_CALL_MAP)
-
     merged = _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
     payload = _load_cpp_runtime_call_map_json()
     node = _safe_nested_dict(payload, ["module_attr_call"]) if payload is not None else None
@@ -147,7 +140,6 @@ def load_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
                     cur[attr] = runtime_call
             merged[module_name] = cur
 
-    _CACHE_CPP_MODULE_ATTR_CALL_MAP = merged
     return _deep_copy_str_map(merged)
 
 

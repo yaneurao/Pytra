@@ -2,13 +2,13 @@
 
 ## 画像ランタイム統一（Python正本）
 
-1. [ ] `src/pylib/png.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
+1. [x] `src/pylib/png.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
    - [x] `py2cpp` に `--no-main` を追加し、ライブラリ変換（`main` なし）を可能にする。
    - [x] self-hosted parser で `0x...` 整数リテラルと `^=` など拡張代入を受理する。
    - [x] self-hosted parser で `with expr as name:` を `Assign + Try(finally close)` へ lower する。
    - [x] `pylib/png.py` 変換結果で残るランタイム依存（`open`, `ValueError`, `to_bytes` など）を C++ ランタイム API へ接続する。
    - [x] 生成結果を `src/runtime/cpp/pylib/png.cpp` へ置換し、既存出力と一致確認する。
-2. [ ] `src/pylib/gif.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
+2. [x] `src/pylib/gif.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
    - [x] `_lzw_encode` のネスト関数を除去し、self-hosted parser で変換可能な形へ整理する。
    - [x] `py2cpp --no-main src/pylib/gif.py` で C++ ソース生成できるところまで到達する。
    - [x] 生成結果で残るランタイム依存（`open`, `ValueError`, `to_bytes` など）を C++ ランタイム API へ接続する。
@@ -27,7 +27,7 @@
 
 ## selfhost 回復（後回し）
 
-1. [ ] `py2cpp.py` の `BaseEmitter` 共通化後、selfhost 生成時に `common.base_emitter` の内容を C++ へ取り込む手順（または inline 展開）を実装する。
+1. [x] `py2cpp.py` の `BaseEmitter` 共通化後、selfhost 生成時に `common.base_emitter` の内容を C++ へ取り込む手順（または inline 展開）を実装する。
 2. [ ] `cpp_type` へ `str|None` 等が流入した際の `object` 退避を見直し、不要な `object` 経由変換を減らす。
 3. [ ] `selfhost/py2cpp.cpp` の先頭 500 行を重点レビューし、`BaseEmitter` 起点のエラー（型境界）を 0 件にする。
 4. [ ] `selfhost/py2cpp.out` を生成する。
@@ -54,3 +54,7 @@
   1. `BaseEmitter` 側の `any_*` を明示 `if` へ書き換え、ifexp（三項演算子）由来の不整合を削減する下準備を実施。
   2. `selfhost/py2cpp.py` と `selfhost/runtime/cpp/*` を `src` 最新へ同期済み。
   3. 依然として主因は `object` / `optional<dict>` / `std::any` の境界変換（代入・引数渡し・`py_dict_get_default` 呼び出し）に集中している。
+- 更新（2026-02-18 selfhost 追加）:
+  1. `tools/prepare_selfhost_source.py` を追加し、`src/common/base_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
+  2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
+  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=509`）。
