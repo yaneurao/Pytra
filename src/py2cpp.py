@@ -1906,7 +1906,10 @@ class CppEmitter(CodeEmitter):
         expr_d = self.any_to_dict_or_empty(expr)
         if len(expr_d) == 0:
             return "/* none */"
-        kind = expr_d.get("kind")
+        kind = self.any_to_str(expr_d.get("kind"))
+        hook_expr = self.hook_on_render_expr_kind(kind, expr_d)
+        if isinstance(hook_expr, str) and hook_expr != "":
+            return hook_expr
 
         if kind == "Name":
             name = str(expr_d.get("id", "_"))
