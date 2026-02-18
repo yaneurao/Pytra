@@ -11,6 +11,10 @@
 7. [ ] `selfhost/py2cpp.out` で `sample/py/01` を変換実行する。
 8. [x] `src/py2cpp.py` 実行結果との一致条件を定義し、比較確認する。
    - 一致条件: `sample/py/01` 入力に対して、`selfhost/py2cpp.out` と `python src/py2cpp.py` の生成 C++ がコンパイル可能で、実行出力（画像含む）が一致すること。
+9. [ ] `tools/selfhost_error_report.py` の分類結果に基づき、`keyword_collision` を 0 件化する。
+10. [ ] `tools/selfhost_error_report.py` の分類結果に基づき、`object_any_mismatch` を 0 件化する。
+11. [ ] `tools/selfhost_error_report.py` の分類結果に基づき、`dict_attr_access_mismatch` を 0 件化する。
+12. [ ] `tools/selfhost_error_report.py` の分類結果で `other` を段階的に削減する。
 
 ## 直近メモ
 
@@ -19,6 +23,11 @@
   1. C++予約語衝突（例: `default` という引数名がそのまま出力される）
   2. `object` / `std::any` 混在時の型崩れ（`dict<str, object>` へ不整合代入）
   3. `make_object(std::any)` など selfhost 生成コードの型変換不足
+- `python3 tools/selfhost_error_report.py selfhost/build.stderr.log`（2026-02-18）:
+  - `total_errors=570`
+  - `keyword_collision=4`
+  - `object_any_mismatch=48`
+  - `other=518`
 
 ## EAST へ移譲（py2cpp 簡素化・第2段）
 
