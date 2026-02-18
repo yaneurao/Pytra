@@ -22,19 +22,24 @@ Windows では次の読み替えを行ってください。
 `src/pylib/` は、トランスパイル対象コードから import するための標準ライブラリ層です。  
 ここに記載の公開 API をサポート対象とします（`_` で始まる名前は内部用）。
 
-- `pylib.assertions`
-  - 関数: `py_assert_true(cond, label="")`, `py_assert_eq(actual, expected, label="")`, `py_assert_all(results, label="")`, `py_assert_stdout(expected_lines, fn)`
-- `pylib.path`
+### Python標準モジュール代替（互換層）
+
+- `pylib.path`（`pathlib` 代替）
   - class: `Path`
   - `Path` の主なメンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve()`, `exists()`, `mkdir(parents=False, exist_ok=False)`, `read_text()`, `write_text()`, `glob()`, `cwd()`
-- `pylib.json`
+- `pylib.json`（`json` 代替）
   - 関数: `loads(text)`, `dumps(obj, ensure_ascii=True, indent=None, separators=None)`
-- `pylib.sys`
+- `pylib.sys`（`sys` 代替）
   - 変数: `argv`, `path`, `stderr`, `stdout`
   - 関数: `exit(code=0)`, `set_argv(values)`, `set_path(values)`, `write_stderr(text)`, `write_stdout(text)`
-- `pylib.typing`
+- `pylib.typing`（`typing` 代替）
   - 型エイリアス: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar(name)`
+
+### Pytra独自モジュール
+
+- `pylib.assertions`
+  - 関数: `py_assert_true(cond, label="")`, `py_assert_eq(actual, expected, label="")`, `py_assert_all(results, label="")`, `py_assert_stdout(expected_lines, fn)`
 - `pylib.png`
   - 関数: `write_rgb_png(path, width, height, pixels)`
 - `pylib.gif`
