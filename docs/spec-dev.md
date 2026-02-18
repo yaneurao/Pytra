@@ -106,6 +106,9 @@
 - 言語別に手書きするのは、性能・I/O 都合で必要な最小範囲に限定します。
 - 言語間一致は「復号後画素一致」を主判定とし、圧縮バイト列差（例: PNG IDAT）は副次扱いとします。
 - `src/pylib/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
+- 受け入れ基準:
+  - 置換作業中は、同一入力に対して `src/pylib/*.py` 出力と各言語ランタイム出力が一致することを必須とします。
+  - C++ では `tools/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
 
 ### 3.4 Python 補助ライブラリ命名
 

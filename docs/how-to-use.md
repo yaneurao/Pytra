@@ -43,6 +43,14 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
   - 例: `./test/transpile/obj/iterable.out --pytra-image-format=ppm`
   - この場合、出力拡張子は実行時に `.ppm` へ切り替わります（元コード上の `out_path` 文字列表示はそのままです）。
 
+### 画像ランタイム一致チェック（Python正本 vs C++）
+
+次のコマンドで、`src/pylib/png.py` / `src/pylib/gif.py` の出力と `src/cpp_module/png.cpp` / `src/cpp_module/gif.cpp` の出力が一致するかを確認できます。
+
+```bash
+python3 tools/verify_image_runtime_parity.py
+```
+
 </details>
 
 <details>
