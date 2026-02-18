@@ -48,17 +48,33 @@ using int64 = std::int64_t;
 using uint64 = std::uint64_t;
 using float32 = float;
 using float64 = double;
-using str = std::string;
+
+class str : public std::string {
+public:
+    using std::string::string;
+    str() = default;
+    str(const std::string& s) : std::string(s) {}
+    str(std::string&& s) : std::string(std::move(s)) {}
+};
+
+namespace std {
+template <>
+struct hash<str> {
+    std::size_t operator()(const str& s) const noexcept {
+        return std::hash<std::string>{}(static_cast<const std::string&>(s));
+    }
+};
+}  // namespace std
 
 class Path {
 public:
     Path() = default;
     Path(const char* s) : p_(s) {}
-    Path(const str& s) : p_(s) {}
+    Path(const str& s) : p_(std::string(s)) {}
     Path(const std::filesystem::path& p) : p_(p) {}
 
     Path operator/(const char* rhs) const { return Path(p_ / rhs); }
-    Path operator/(const str& rhs) const { return Path(p_ / rhs); }
+    Path operator/(const str& rhs) const { return Path(p_ / std::filesystem::path(std::string(rhs))); }
     Path operator/(const Path& rhs) const { return Path(p_ / rhs.p_); }
 
     Path parent() const { return Path(p_.parent_path()); }
