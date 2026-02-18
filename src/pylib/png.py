@@ -6,14 +6,29 @@ RGB 8bit バッファを PNG ファイルとして保存する。
 
 from __future__ import annotations
 
-import binascii
 import struct
 import zlib
 
 
+def _crc32(data: bytes) -> int:
+    """PNG chunk CRC32 を pure Python で計算する。"""
+    crc = 0xFFFFFFFF
+    poly = 0xEDB88320
+    for b in data:
+        crc ^= b
+        i = 0
+        while i < 8:
+            if (crc & 1) != 0:
+                crc = (crc >> 1) ^ poly
+            else:
+                crc >>= 1
+            i += 1
+    return crc ^ 0xFFFFFFFF
+
+
 def _chunk(chunk_type: bytes, data: bytes) -> bytes:
     length = struct.pack(">I", len(data))
-    crc = binascii.crc32(chunk_type + data) & 0xFFFFFFFF
+    crc = _crc32(chunk_type + data) & 0xFFFFFFFF
     return length + chunk_type + data + struct.pack(">I", crc)
 
 
