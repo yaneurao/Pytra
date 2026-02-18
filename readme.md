@@ -22,6 +22,9 @@ Python から C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin への変�
 
 - 1つの Python コードベースから複数言語へ展開できるため、仕様差分や重複実装を減らせる。
 - Python 実行と各ターゲット実行を比較しやすく、性能改善（特に C++/Rust 化）に繋げやすい。
+- Python をいったん内部の中間表現（EAST）へ正規化してから各言語へ変換するため、段階的な機能拡張がしやすい。
+- Python 標準 `ast` 依存を廃し、`self_hosted` パーサで自己変換可能性を高める設計。
+- Python/C++ 共通のアサート支援ランタイムを備え、挙動一致の確認をしやすい。
 
 
 ## 開発動機
