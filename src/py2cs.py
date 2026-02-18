@@ -898,9 +898,9 @@ class CSharpTranspiler(BaseTranspiler):
 
         if isinstance(call.func, ast.Name):
             if call.func.id == "save_gif":
-                return f"Pytra.CsModule.gif_helper.save_gif({args})"
+                return f"Pytra.CsModule.gif.save_gif({args})"
             if call.func.id == "grayscale_palette":
-                return "Pytra.CsModule.gif_helper.grayscale_palette()"
+                return "Pytra.CsModule.gif.grayscale_palette()"
             if call.func.id in self.class_names:
                 return f"new {self._ident(call.func.id)}({args})"
             return f"{self._ident(call.func.id)}({args})"
@@ -931,10 +931,10 @@ class CSharpTranspiler(BaseTranspiler):
                 return f"Math.{mapped}({args})"
             if (
                 isinstance(call.func.value, ast.Name)
-                and call.func.value.id == "png_helper"
+                and call.func.value.id in {"png_helper", "png"}
                 and call.func.attr == "write_rgb_png"
             ):
-                return f"Pytra.CsModule.png_helper.write_rgb_png({args})"
+                return f"Pytra.CsModule.png.write_rgb_png({args})"
             if call.func.attr == "append" and len(args_list) == 1:
                 return (
                     "Pytra.CsModule.py_runtime.py_append("

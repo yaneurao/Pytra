@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from pylib.gif_helper import save_gif
+from pylib.gif import save_gif
 
 
 def palette() -> bytes:

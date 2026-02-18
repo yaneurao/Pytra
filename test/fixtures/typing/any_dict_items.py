@@ -1,7 +1,7 @@
 # このファイルは `test/fixtures/typing/any_dict_items.py` のテスト/実装コードです。
 
 from typing import Any
-from pylib.py_runtime import py_assert_all, py_assert_eq
+from pylib.runtime import py_assert_all, py_assert_eq
 
 
 def run_any_dict_items() -> bool:

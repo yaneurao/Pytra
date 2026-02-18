@@ -10,7 +10,6 @@
   - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
   - `cpp_module/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: 各ターゲット言語向けランタイム補助
   - `pylib/`: Python 側の共通ライブラリ（正式）
-  - `py_module/`: 互換エイリアス（段階的廃止予定）
 - `test/`: `py`（入力）と各ターゲット言語の変換結果
 - `sample/`: 実用サンプル入力と各言語変換結果
 - `docs/`: 仕様・使い方・実装状況
@@ -55,7 +54,7 @@
 - `import pathlib` -> `#include "cpp_module/pathlib.h"`
 - `import time` / `from time import ...` -> `#include "cpp_module/time.h"`
 - `from dataclasses import dataclass` -> `#include "cpp_module/dataclasses.h"`
-- `from pylib import png_helper` / `import png_helper` -> `#include "cpp_module/png.h"`
+- `from pylib import png` / `import png` -> `#include "cpp_module/png.h"`
 - GC は常時 `#include "cpp_module/gc.h"` を利用
 
 `math` などの `module.attr(...)` 呼び出しは、`src/cpp_module/runtime_call_map.json` の設定で C++ ランタイム呼び出しへマップします。
@@ -96,7 +95,7 @@
 
 ### 3.3 画像系ランタイム（PNG/GIF）方針
 
-- `png_helper` / `gif_helper` は Python 側（`src/pylib/`）を正本実装とします。
+- `png` / `gif` は Python 側（`src/pylib/`）を正本実装とします。
 - 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
 - 言語別に手書きするのは、性能・I/O 都合で必要な最小範囲に限定します。
 - 言語間一致は「復号後画素一致」を主判定とし、圧縮バイト列差（例: PNG IDAT）は副次扱いとします。

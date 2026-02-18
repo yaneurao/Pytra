@@ -38,7 +38,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - 入力コードで使う Python モジュールに対応する実装を `src/cpp_module/` に用意してください（例: `math`, `time`, `pathlib`, `png`, `gif`）。
 - `math.sqrt` など `module.attr(...)` の C++ 側マッピングは `src/cpp_module/runtime_call_map.json` で定義します。必要な関数は `module_attr_call` に追加できます。
-- 実行時に `--pytra-image-format=ppm` を付けると、`png_helper.write_rgb_png(...)` は PNG ではなく PPM(P6) を出力します。
+- 実行時に `--pytra-image-format=ppm` を付けると、`png.write_rgb_png(...)` は PNG ではなく PPM(P6) を出力します。
   - 例: `./test/transpile/obj/iterable.out --pytra-image-format=ppm`
   - この場合、出力拡張子は実行時に `.ppm` へ切り替わります（元コード上の `out_path` 文字列表示はそのままです）。
 
@@ -109,7 +109,7 @@ go run test/transpile/go/iterable.go
 ```
 
 補足:
-- `sample/py` の一部で使う `math` / `png_helper` / `gif_helper` 系 API は、Go 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
+- `sample/py` の一部で使う `math` / `png` / `gif` 系 API は、Go 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
 
 </details>
 
@@ -123,7 +123,7 @@ java -cp test/transpile/java iterable
 ```
 
 補足:
-- `sample/py` の一部で使う `math` / `png_helper` / `gif_helper` 系 API は、Java 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
+- `sample/py` の一部で使う `math` / `png` / `gif` 系 API は、Java 側ランタイム拡張が必要なケースがあります（最新状況は `docs/todo.md` を参照）。
 
 </details>
 

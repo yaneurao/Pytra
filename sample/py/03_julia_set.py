@@ -2,7 +2,7 @@
 # トランスパイル互換を意識し、単純なループ中心で実装しています。
 
 from time import perf_counter
-from pylib import png_helper
+from pylib import png
 
 
 def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -> bytearray:
@@ -53,7 +53,7 @@ def run_julia() -> None:
 
     start: float = perf_counter()
     pixels: bytearray = render_julia(width, height, max_iter, -0.8, 0.156)
-    png_helper.write_rgb_png(out_path, width, height, pixels)
+    png.write_rgb_png(out_path, width, height, pixels)
     elapsed: float = perf_counter() - start
 
     print("output:", out_path)

@@ -1,7 +1,7 @@
 # 値型最適化候補のテスト（インスタンス状態なし）。
 
 
-from pylib.py_runtime import py_assert_stdout
+from pylib.runtime import py_assert_stdout
 class Tag:
     def id(self) -> int:
         return 7

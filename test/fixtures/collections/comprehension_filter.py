@@ -1,6 +1,6 @@
 # このファイルは `test/fixtures/collections/comprehension_filter.py` のテストコードです。
 
-from pylib.py_runtime import py_assert_all, py_assert_eq
+from pylib.runtime import py_assert_all, py_assert_eq
 
 
 def run_comprehension_filter() -> bool:

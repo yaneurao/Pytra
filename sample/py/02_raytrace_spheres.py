@@ -2,7 +2,7 @@
 # トランスパイル互換のため、依存モジュールは最小限（timeのみ）にしています。
 
 import math
-from pylib import png_helper
+from pylib import png
 from time import perf_counter
 
 
@@ -173,7 +173,7 @@ def run_raytrace() -> None:
 
     start: float = perf_counter()
     pixels: bytearray = render(width, height, aa)
-    png_helper.write_rgb_png(out_path, width, height, pixels)
+    png.write_rgb_png(out_path, width, height, pixels)
     elapsed: float = perf_counter() - start
 
     print("output:", out_path)

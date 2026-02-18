@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 
-from pylib.py_runtime import py_assert_stdout
+from pylib.runtime import py_assert_stdout
 def last_item_25() -> int:
     stack: list[int] = [10, 20, 30, 40]
     return stack[-1]

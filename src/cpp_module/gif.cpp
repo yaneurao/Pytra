@@ -1,4 +1,4 @@
-// Python の pylib.gif_helper に対応する GIF 書き出し実装です。
+// Python の pylib.gif に対応する GIF 書き出し実装です。
 
 #include "cpp_module/gif.h"
 

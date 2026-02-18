@@ -116,13 +116,13 @@ class JsTsNativeTranspiler(BaseTranspiler):
         if mod in {"py_module", "pylib"}:
             lines: list[str] = []
             for alias in stmt.names:
-                if alias.name == "png_helper":
+                if alias.name in {"png_helper", "png"}:
                     asname = alias.asname or alias.name
                     lines.append(f"const {asname} = require(__pytra_root + '/src/{module_dir}/png_helper.{ext}');")
                 else:
                     raise TranspileError(f"unsupported from {mod} import {alias.name}")
             return lines
-        if mod in {"py_module.gif_helper", "pylib.gif_helper"}:
+        if mod in {"py_module.gif_helper", "pylib.gif_helper", "pylib.gif"}:
             names = []
             for alias in stmt.names:
                 asname = alias.asname or alias.name

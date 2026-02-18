@@ -1,6 +1,6 @@
 
 
-from pylib.py_runtime import py_assert_stdout
+from pylib.runtime import py_assert_stdout
 def main():
 
     l : list[int] = [1, 2, 3]

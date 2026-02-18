@@ -2,7 +2,7 @@
 # 将来のトランスパイルを意識して、構文はなるべく素直に書いています。
 
 from time import perf_counter
-from pylib import png_helper
+from pylib import png
 
 
 def escape_count(cx: float, cy: float, max_iter: int) -> int:
@@ -86,7 +86,7 @@ def run_mandelbrot() -> None:
         -1.2,
         1.2,
     )
-    png_helper.write_rgb_png(out_path, width, height, pixels)
+    png.write_rgb_png(out_path, width, height, pixels)
 
     elapsed: float = perf_counter() - start
     print("output:", out_path)

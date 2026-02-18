@@ -1,6 +1,6 @@
 # このファイルは `test/fixtures/dict_get_items.py` のテスト/実装コードです。
 
-from pylib.py_runtime import py_assert_eq
+from pylib.runtime import py_assert_eq
 from typing import Any
 
 

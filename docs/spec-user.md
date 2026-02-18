@@ -66,7 +66,7 @@ test/
 - Python から import する自作ライブラリは `src/pylib/` に配置します。
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
 - C++ 実行バイナリは起動オプション `--pytra-image-format=png|ppm` を受け付けます。
-  - `ppm` 指定時、`png_helper.write_rgb_png(...)` は PPM(P6) で出力され、出力拡張子は `.ppm` に切り替わります。
+  - `ppm` 指定時、`png.write_rgb_png(...)` は PPM(P6) で出力され、出力拡張子は `.ppm` に切り替わります。
 - GIF サンプルは `sample/out/*.gif` に出力します。
 
 ## 5. ユニットテスト実行方法

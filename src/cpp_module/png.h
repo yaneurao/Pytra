@@ -1,5 +1,5 @@
 // このファイルは PNG 出力の最小実装を提供します。
-// Python 側の `png_helper.write_rgb_png` に対応します。
+// Python 側の `png.write_rgb_png` に対応します。
 
 #ifndef PYTRA_CPP_MODULE_PNG_H
 #define PYTRA_CPP_MODULE_PNG_H

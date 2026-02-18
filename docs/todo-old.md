@@ -68,12 +68,12 @@
 - [x] `py2go.py` / `py2java.py` を Python 呼び出し不要のネイティブ変換モードへ移行する。
 - [x] `test/fixtures`（case01〜30）を Go/Java ネイティブ変換して、Python 実行結果と一致させる。
 - [x] `sample/py` で使っている `math` モジュール呼び出し（`sqrt`, `sin`, `cos` など）を Go/Java ネイティブ変換で対応する。
-- [x] `sample/py` で使っている `png_helper.write_rgb_png` の Go/Java ランタイム実装を追加する。
-- [x] `sample/py` で使っている `gif_helper.save_gif` / `grayscale_palette` の Go/Java ランタイム実装を追加する。
+- [x] `sample/py` で使っている `png.write_rgb_png` の Go/Java ランタイム実装を追加する。
+- [x] `sample/py` で使っている `gif.save_gif` / `grayscale_palette` の Go/Java ランタイム実装を追加する。
 
 ## Rust 追加TODO（現時点）
 
-- [x] `src/rs_module/py_runtime.rs` の `py_write_rgb_png` で、Python 側 `png_helper.write_rgb_png` とバイナリ完全一致（IDAT 圧縮形式を含む）を実現する。
+- [x] `src/rs_module/py_runtime.rs` の `py_write_rgb_png` で、Python 側 `png.write_rgb_png` とバイナリ完全一致（IDAT 圧縮形式を含む）を実現する。
   - 方針変更: この厳密一致要件は今後は実施不要とし、完了扱いとする。
 - [x] `py2rs.py` の `use py_runtime::{...}` 生成を使用関数ベースに最適化し、未使用 import 警告を削減する。
 
@@ -194,7 +194,7 @@
 - [x] 関数先頭の単独文字列式（docstring）を `east.py` 側で専用メタ情報へ分離する。
 - [x] `py2cpp.py` は `//` コメント出力に統一する（必要時のみ）。
 - [x] 式文としての識別子単体出力を禁止するガードを `py2cpp.py` に追加する。
-- [x] API 由来が追えるように、必要箇所に薄いコメントを付ける（例: `png_helper.write_rgb_png` 対応）。
+- [x] API 由来が追えるように、必要箇所に薄いコメントを付ける（例: `png.write_rgb_png` 対応）。
 - [x] `write_rgb_png` / `save_gif` / `grayscale_palette` などランタイムブリッジ関数に限定して付与する。
 - [x] コメントが過剰にならないよう最小限に制御する。
 - [x] 生成コードのレイアウトを「意味単位」（初期化・計算・出力）で整える。

@@ -1501,9 +1501,9 @@ class CppEmitter(BaseEmitter):
                         runtime_call = owner_map.get(attr)
                         if isinstance(runtime_call, str):
                             return f"{runtime_call}({', '.join(args)})"
-                if owner_expr == "png_helper" and attr == "write_rgb_png":
+                if owner_expr in {"png_helper", "png"} and attr == "write_rgb_png":
                     return f"png_helper::write_rgb_png({', '.join(args)})"
-                if owner_expr == "gif_helper" and attr == "save_gif":
+                if owner_expr in {"gif_helper", "gif"} and attr == "save_gif":
                     path = args[0] if len(args) >= 1 else '""'
                     w = args[1] if len(args) >= 2 else "0"
                     h = args[2] if len(args) >= 3 else "0"
@@ -1922,22 +1922,22 @@ class CppEmitter(BaseEmitter):
             name = str(fn.get("id", ""))
             if name == "save_gif":
                 key = "save_gif"
-                text = "// bridge: Python gif_helper.save_gif -> C++ runtime save_gif"
+                text = "// bridge: Python gif.save_gif -> C++ runtime save_gif"
             elif name == "write_rgb_png":
                 key = "write_rgb_png"
-                text = "// bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
+                text = "// bridge: Python png.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
         elif fn.get("kind") == "Attribute":
             owner = fn.get("value")
             owner_name = ""
             if isinstance(owner, dict) and owner.get("kind") == "Name":
                 owner_name = str(owner.get("id", ""))
             attr = str(fn.get("attr", ""))
-            if owner_name == "gif_helper" and attr == "save_gif":
+            if owner_name in {"gif_helper", "gif"} and attr == "save_gif":
                 key = "save_gif"
-                text = "// bridge: Python gif_helper.save_gif -> C++ runtime save_gif"
-            elif owner_name == "png_helper" and attr == "write_rgb_png":
+                text = "// bridge: Python gif.save_gif -> C++ runtime save_gif"
+            elif owner_name in {"png_helper", "png"} and attr == "write_rgb_png":
                 key = "write_rgb_png"
-                text = "// bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
+                text = "// bridge: Python png.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
         if key != "" and key not in self.bridge_comment_emitted:
             self.emit(text)
             self.bridge_comment_emitted.add(key)

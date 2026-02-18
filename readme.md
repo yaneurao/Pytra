@@ -80,7 +80,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from pylib.gif_helper import save_gif
+from pylib.gif import save_gif
 
 
 def julia_palette() -> bytes:
@@ -252,7 +252,7 @@ void run_06_julia_parameter_sweep() {
         frames.append(render_frame(width, height, cr, ci, max_iter, phase));
     }
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, julia_palette(), 8, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);
@@ -469,7 +469,7 @@ public static class Program
             var phase = ((phase_offset + (i * 5L)) % 255L);
             Pytra.CsModule.py_runtime.py_append(frames, render_frame(width, height, cr, ci, max_iter, phase));
         }
-        Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, julia_palette(), delay_cs: 8L, loop: 0L);
+        Pytra.CsModule.gif.save_gif(out_path, width, height, frames, julia_palette(), delay_cs: 8L, loop: 0L);
         var elapsed = (Pytra.CsModule.time.perf_counter() - start);
         Pytra.CsModule.py_runtime.print("output:", out_path);
         Pytra.CsModule.py_runtime.print("frames:", frames_n);
@@ -2594,7 +2594,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from pylib.gif_helper import save_gif
+from pylib.gif import save_gif
 
 
 def clamp01(v: float) -> float:
@@ -3247,7 +3247,7 @@ void run_16_glass_sculpture_chaos() {
     for (int64 i = 0; i < frames_n; ++i)
         frames.append(render_frame(width, height, i, frames_n));
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, palette_332(), 6, 0);
     auto elapsed = perf_counter() - start;
     py_print("output:", out_path);
@@ -3989,7 +3989,7 @@ public static class Program
         {
             Pytra.CsModule.py_runtime.py_append(frames, render_frame(width, height, i, frames_n));
         }
-        Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, palette_332(), delay_cs: 6L, loop: 0L);
+        Pytra.CsModule.gif.save_gif(out_path, width, height, frames, palette_332(), delay_cs: 6L, loop: 0L);
         var elapsed = (Pytra.CsModule.time.perf_counter() - start);
         Pytra.CsModule.py_runtime.print("output:", out_path);
         Pytra.CsModule.py_runtime.print("frames:", frames_n);

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from pylib.gif_helper import grayscale_palette, save_gif
+from pylib.gif import grayscale_palette, save_gif
 
 
 def render(values: list[int], w: int, h: int) -> bytes:
