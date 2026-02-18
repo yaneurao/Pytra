@@ -67,6 +67,12 @@
 - `src/cpp_module/sys.h`, `src/cpp_module/sys.cpp`
 - `src/cpp_module/py_runtime.h`
 
+`src/cpp_module/py_runtime.h` のコンテナ方針:
+
+- `list<T>`: `std::vector<T>` ラッパー（`append`, `extend`, `pop` を提供）
+- `dict<K, V>`: `std::unordered_map<K,V>` ラッパー（`get`, `keys`, `values`, `items` を提供）
+- `set<T>`: `std::unordered_set<T>` ラッパー（`add`, `discard`, `remove` を提供）
+
 制約:
 
 - Python 側で import するモジュールは、原則として各ターゲット言語ランタイムにも対応実装を用意する必要があります。

@@ -15,6 +15,7 @@
 10. [ ] `tools/selfhost_error_report.py` の分類結果に基づき、`object_any_mismatch` を 0 件化する。
 11. [ ] `tools/selfhost_error_report.py` の分類結果に基づき、`dict_attr_access_mismatch` を 0 件化する。
 12. [ ] `tools/selfhost_error_report.py` の分類結果で `other` を段階的に削減する。
+13. [ ] selfhost 生成コードに残る Python 構文由来（`class ... : BaseEmitter`, `super().__init__`）を selfhost 対応表現へ置換する。
 
 ## 直近メモ
 
@@ -28,6 +29,8 @@
   - `keyword_collision=4`
   - `object_any_mismatch=48`
   - `other=518`
+- 追加ブロッカー（2026-02-18 再計測）:
+  - `selfhost/py2cpp.cpp` に `BaseEmitter` 継承や `super().__init__` が残り、C++ 生成として不正。
 
 ## EAST へ移譲（py2cpp 簡素化・第2段）
 

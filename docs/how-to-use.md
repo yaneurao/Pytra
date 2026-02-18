@@ -257,7 +257,12 @@ table = {}               # key/value 型が不明
 - 基本型: `int -> long long`, `float -> double`, `float32 -> float`, `str -> string`, `bool -> bool`
 - 固定幅整数: `int8 -> int8_t`, `uint8 -> uint8_t`, `int16 -> int16_t`, `uint16 -> uint16_t`, `int32 -> int32_t`, `uint32 -> uint32_t`, `int64 -> int64_t`, `uint64 -> uint64_t`
 - バイト列: `bytes` / `bytearray` -> `vector<uint8_t>`
-- コンテナ: `list[T] -> vector<T>`, `dict[K, V] -> unordered_map<K, V>`, `set[T] -> unordered_set<T>`, `tuple[...] -> tuple<...>`
+- コンテナ:
+  - `list[T] -> list<T>`（`std::vector<T>` ラッパー）
+  - `dict[K, V] -> dict<K, V>`（`std::unordered_map<K,V>` ラッパー）
+  - `set[T] -> set<T>`（`std::unordered_set<T>` ラッパー）
+  - `tuple[...] -> tuple<...>`
+- `dict` / `set` は Python 互換メソッド（`get`, `keys`, `values`, `items`, `add`, `discard`, `remove`）を `py_runtime.h` 側で提供します。
 
 </details>
 
