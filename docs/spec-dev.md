@@ -48,6 +48,10 @@
   - 定数: `S`
   - クラス: `Match`
   - 関数: `match`, `sub`
+- `pylib.dataclasses`
+  - デコレータ: `dataclass`
+- `pylib.enum`
+  - クラス: `Enum`, `IntEnum`, `IntFlag`
 - `pylib.png`
   - 関数: `write_rgb_png`
 - `pylib.gif`
@@ -55,8 +59,16 @@
 - `pylib.east`
   - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
   - 関数: `convert_source_to_east`, `convert_source_to_east_self_hosted`, `convert_source_to_east_with_backend`, `convert_path`, `render_east_human_cpp`, `main`
-- `pylib.east_io`
+- `pylib.east_parts.east_io`
   - 関数: `extract_module_leading_trivia`, `load_east_from_path`
+
+### enum サポート（現状）
+
+- 入力側は `from pylib.enum import Enum, IntEnum, IntFlag` を使用します（標準 `enum` は使用不可）。
+- `Enum` / `IntEnum` / `IntFlag` のクラス本体は `NAME = expr` 形式のメンバー定義をサポートします。
+- C++ 生成では `enum class` へ lower します。
+  - `IntEnum` / `IntFlag` には `int64` との比較演算子を補助生成します。
+  - `IntFlag` には `|`, `&`, `^`, `~` の演算子を補助生成します。
 
 ## 2. C# 変換仕様（`py2cs.py`）
 
@@ -203,10 +215,8 @@
 ## 5. EASTベース C++ 経路
 
 - `src/pylib/east.py`: Python -> EAST JSON（正本）
-- `src/common/east.py`: 互換 shim（`pylib.east` を再エクスポート）
-- `src/pylib/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
-- `src/common/east_io.py`: 互換 shim（`pylib.east_io` を再エクスポート）
-- `src/common/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
+- `src/pylib/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
+- `src/pylib/east_parts/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/py2cpp.py`: EAST JSON -> C++
 - `src/runtime/cpp/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
@@ -219,7 +229,7 @@
 
 ### 5.1 CodeEmitter テスト方針
 
-- `src/common/code_emitter.py` の回帰は `test/unit/test_code_emitter.py` で担保します。
+- `src/pylib/east_parts/code_emitter.py` の回帰は `test/unit/test_code_emitter.py` で担保します。
 - 主対象:
   - 出力バッファ操作（`emit`, `emit_stmt_list`, `next_tmp`）
   - 動的入力安全化（`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`）

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from pylib.dataclasses import dataclass
 from pylib.typing import Any
 
 from pylib.east import EastBuildError, convert_path, convert_source_to_east_with_backend

@@ -1,5 +1,18 @@
 # TODO（未完了のみ）
 
+## `enum` サポート（予定）
+
+1. [x] `pylib.enum` を追加し、`Enum` / `IntEnum` / `IntFlag` の最小互換 API を実装する。
+   - [x] 値定義・比較の基本動作を実装する。
+   - [x] `IntFlag` の `|`, `&`, `^`, `~` を実装する。
+2. [x] EAST 変換で `Enum` 系クラス定義（`NAME = expr`）を認識できるようにする。
+3. [x] `py2cpp` で `Enum` / `IntEnum` / `IntFlag` を C++ 側へ変換する最小経路を実装する。
+   - [x] `Enum` 系基底クラス継承は C++ 側で省略し、静的メンバー定数として出力する。
+   - [x] `Enum` / `IntEnum` / `IntFlag` を `enum class` へ lower する。
+   - [x] `IntFlag` の C++ 型安全なビット演算ラッパ（`|`, `&`, `^`, `~`）を追加する。
+4. [x] `test/fixtures` に `Enum` / `IntEnum` / `IntFlag` の実行一致テストを追加する。
+5. [x] `docs/pylib-modules.md` / `docs/how-to-use.md` にサポート内容を追記する。
+
 ## CodeEmitter 化（JSON + Hooks）
 
 作業ルール（step by step）:
@@ -8,7 +21,7 @@
 - [x] 回帰が出た場合は次ステップへ進まず、その場で修正してから再確認する。
 
 1. [x] `BaseEmitter` を `CodeEmitter` へ改名し、段階移行する。
-   - [x] `src/common/base_emitter.py` を `src/common/code_emitter.py` へ移動する。
+   - [x] `src/common/base_emitter.py` を `src/pylib/east_parts/code_emitter.py` へ移動する。
    - [x] 互換エイリアス `BaseEmitter = CodeEmitter` を暫定で残す。
    - [x] `src/py2cpp.py` / テスト / ドキュメント参照を `CodeEmitter` 表記へ置換する。
 2. [x] 言語差分を `LanguageProfile` JSON に切り出す。
@@ -137,7 +150,7 @@
   2. `selfhost/py2cpp.py` と `selfhost/runtime/cpp/*` を `src` 最新へ同期済み。
   3. 依然として主因は `object` / `optional<dict>` / `std::any` の境界変換（代入・引数渡し・`py_dict_get_default` 呼び出し）に集中している。
 - 更新（2026-02-18 selfhost 追加）:
-  1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
+  1. `tools/prepare_selfhost_source.py` を追加し、`src/pylib/east_parts/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
   3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（2026-02-18 再計測で `total_errors=82`）。
   4. 先頭エラー群は `emit_stmt`/`emit_stmt_list` の文リスト型、`render_boolop` 周辺の `Any` 取り回し、`self` 記号解決の C++ 生成不整合が中心。

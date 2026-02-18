@@ -226,12 +226,12 @@ class CodeEmitter:
         depth = 0
         start = 0
         for i, ch in enumerate(s):
-            if ch in {"[", "("}:
+            if ch in ("[", "("):
                 depth += 1
-            elif ch in {"]", ")"}:
+            elif ch in ("]", ")"):
                 depth -= 1
             elif ch == "|" and depth == 0:
-                part = s[start:i].strip()
+                part: str = s[start:i].strip()
                 if part != "":
                     out.append(part)
                 start = i + 1
@@ -258,9 +258,9 @@ class CodeEmitter:
         s = self.normalize_type_name(t)
         if s == "":
             return False
-        if s in {"Any", "object", "unknown"}:
+        if s in ("Any", "object", "unknown"):
             return True
-        if "|" in s:
+        if s.find("|") != -1:
             parts = self.split_union(s)
             if len(parts) == 1 and parts[0] == s:
                 return False
@@ -281,18 +281,18 @@ class CodeEmitter:
 
     def is_indexable_sequence_type(self, t: str) -> bool:
         """添字アクセス可能なシーケンス型か判定する。"""
-        return t[:5] == "list[" or t in {"str", "bytes", "bytearray"}
+        return t[:5] == "list[" or t in ("str", "bytes", "bytearray")
 
     def _is_forbidden_object_receiver_type_text(self, s: str) -> bool:
         """object レシーバ禁止ルールに抵触する型文字列か判定する。"""
-        if s in {"Any", "object", "any"}:
+        if s in ("Any", "object", "any"):
             return True
-        if "|" in s:
+        if s.find("|") != -1:
             parts = self.split_union(s)
             for p in parts:
                 if p == "None":
                     continue
-                if p in {"Any", "object", "any"}:
+                if p in ("Any", "object", "any"):
                     return True
             return False
         return False
@@ -323,12 +323,9 @@ class CodeEmitter:
         c0 = text[0:1]
         if not (c0 == "_" or ("a" <= c0 <= "z") or ("A" <= c0 <= "Z")):
             return False
-        i = 1
-        while i < len(text):
-            ch = text[i]
+        for ch in text[1:]:
             if not (ch == "_" or ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9")):
                 return False
-            i += 1
         return True
 
     def _strip_outer_parens(self, text: str) -> str:
@@ -346,9 +343,7 @@ class CodeEmitter:
             esc = False
             quote = ""
             wrapped = True
-            i = 0
-            while i < len(s):
-                ch = s[i]
+            for i, ch in enumerate(s):
                 if in_str:
                     if esc:
                         esc = False
@@ -356,12 +351,10 @@ class CodeEmitter:
                         esc = True
                     elif ch == quote:
                         in_str = False
-                    i += 1
                     continue
                 if ch == "'" or ch == '"':
                     in_str = True
                     quote = ch
-                    i += 1
                     continue
                 if ch == "(":
                     depth += 1
@@ -370,7 +363,6 @@ class CodeEmitter:
                     if depth == 0 and i != len(s) - 1:
                         wrapped = False
                         break
-                i += 1
             if wrapped and depth == 0:
                 s = s[1:-1]
                 while len(s) > 0 and s[0] in ws:
@@ -524,7 +516,7 @@ class CodeEmitter:
             return "false"
         t = self.get_expr_type(expr)
         body = self._strip_outer_parens(self.render_expr(expr))
-        if t in {"bool"}:
+        if t in ("bool",):
             return body
         if t == "str" or t[:5] == "list[" or t[:5] == "dict[" or t[:4] == "set[" or t[:6] == "tuple[":
             return self.truthy_len_expr(body)

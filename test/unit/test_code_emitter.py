@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.common.code_emitter import CodeEmitter
+from src.pylib.east_parts.code_emitter import CodeEmitter
 
 
 class _DummyEmitter(CodeEmitter):

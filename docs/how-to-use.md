@@ -19,7 +19,7 @@ Windows では次の読み替えを行ってください。
 
 ## 最初に確認する制約
 
-- Python の標準ライブラリ（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）を直接 `import` してはいけません。
+- Python の標準ライブラリ（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, `enum` など）を直接 `import` してはいけません。
 - `import` できるのは `src/pylib/` にあるモジュールと、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
 - サポート済みモジュール一覧と API は [`pylib-modules.md`](pylib-modules.md) を参照してください。
@@ -189,7 +189,7 @@ g++ -std=c++20 -O2 -I src test/transpile/cpp/01_mandelbrot.cpp \
 ```
 
 補足:
-- EAST 変換器の正本は `src/pylib/east.py` です（`src/common/east.py` は互換 shim）。
+- EAST 変換器は `src/pylib/east.py` を使用します。
 - EASTベース C++ 生成器は `src/py2cpp.py` を使用します。
 
 </details>

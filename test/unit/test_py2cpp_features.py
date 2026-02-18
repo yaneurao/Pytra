@@ -376,6 +376,42 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_str_slice_runtime(self) -> None:
+        out = self._compile_and_run_fixture("str_slice")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_enumerate_basic_runtime(self) -> None:
+        out = self._compile_and_run_fixture("enumerate_basic")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_in_membership_runtime(self) -> None:
+        out = self._compile_and_run_fixture("in_membership")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_enum_basic_runtime(self) -> None:
+        out = self._compile_and_run_fixture("enum_basic")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_intenum_basic_runtime(self) -> None:
+        out = self._compile_and_run_fixture("intenum_basic")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_intflag_basic_runtime(self) -> None:
+        out = self._compile_and_run_fixture("intflag_basic")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
     def test_emit_guard_rejects_object_receiver_call(self) -> None:
         east = {
             "kind": "Module",

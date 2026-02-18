@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from common.code_emitter import CodeEmitter
+from pylib.east_parts.code_emitter import CodeEmitter
 
 # Backward compatibility for incremental migration.
 BaseEmitter = CodeEmitter

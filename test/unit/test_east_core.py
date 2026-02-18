@@ -13,8 +13,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.common.east import convert_source_to_east_with_backend
-from src.common.east import EastBuildError
+from src.pylib.east import convert_source_to_east_with_backend
+from src.pylib.east import EastBuildError
 
 
 def _walk(node: Any):
