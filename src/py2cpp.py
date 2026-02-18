@@ -385,21 +385,18 @@ class CppEmitter(CodeEmitter):
         """式を `object`（Any 相当）へ昇格する式文字列を返す。"""
         return f"make_object({self.render_expr(expr)})"
 
-    def render_expr_node(self, expr: dict[str, Any]) -> str:
-        """dict ノード専用の式レンダラ薄ラッパ。"""
-        return self.render_expr(expr)
-
     def render_boolop(self, expr: Any, force_value_select: bool = False) -> str:
         """BoolOp を真偽演算または値選択式として出力する。"""
         expr_dict = self.any_to_dict_or_empty(expr)
         if len(expr_dict) == 0:
             return "false"
-        values = self._dict_stmt_list(expr_dict.get("values"))
+        values = self.any_to_list(expr_dict.get("values"))
         if len(values) == 0:
             return "false"
         value_texts: list[str] = []
         for v in values:
-            value_texts.append(self.render_expr_node(v))
+            if isinstance(v, dict):
+                value_texts.append(self.render_expr(v))
         if len(value_texts) == 0:
             return "false"
         op_name = self.any_dict_get_str(expr_dict, "op", "")
@@ -568,20 +565,18 @@ class CppEmitter(CodeEmitter):
             self.emit("continue;")
             return
         if kind == "Expr":
-            value_raw = stmt.get("value")
-            value: dict[str, Any] | None = None
-            if isinstance(value_raw, dict):
-                value = value_raw
-            if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
-                self.emit_block_comment(str(value.get("value")))
-            elif isinstance(value, dict) and self._is_redundant_super_init_call(value):
+            value_node = self.any_to_dict_or_empty(stmt.get("value"))
+            value_is_dict: bool = isinstance(stmt.get("value"), dict)
+            if value_is_dict and value_node.get("kind") == "Constant" and isinstance(value_node.get("value"), str):
+                self.emit_block_comment(str(value_node.get("value")))
+            elif value_is_dict and self._is_redundant_super_init_call(stmt.get("value")):
                 self.emit("/* super().__init__ omitted: base ctor is called implicitly */")
             else:
-                if not isinstance(value, dict):
+                if not value_is_dict:
                     self.emit("/* unsupported expr */")
                     return
-                self.emit_bridge_comment(value)
-                rendered = self.render_expr(value)
+                self.emit_bridge_comment(value_node)
+                rendered = self.render_expr(stmt.get("value"))
                 # Guard against stray identifier-only expression statements (e.g. "r;").
                 if isinstance(rendered, str) and self._is_identifier_expr(rendered):
                     if rendered == "break":
@@ -596,14 +591,11 @@ class CppEmitter(CodeEmitter):
                     self.emit(rendered + ";")
             return
         if kind == "Return":
-            v_raw = stmt.get("value")
-            v: dict[str, Any] | None = None
-            if isinstance(v_raw, dict):
-                v = v_raw
-            if v is None:
+            v_is_dict: bool = isinstance(stmt.get("value"), dict)
+            if not v_is_dict:
                 self.emit("return;")
             else:
-                self.emit(f"return {self.render_expr(v)};")
+                self.emit(f"return {self.render_expr(stmt.get('value'))};")
             return
         if kind == "Assign":
             self.emit_assign(stmt)
@@ -616,20 +608,18 @@ class CppEmitter(CodeEmitter):
         if kind == "AnnAssign":
             t = self.cpp_type(stmt.get("annotation"))
             target = self.render_expr(stmt.get("target"))
-            val_raw = stmt.get("value")
-            val: dict[str, Any] | None = None
-            if isinstance(val_raw, dict):
-                val = val_raw
+            val = self.any_to_dict_or_empty(stmt.get("value"))
+            val_is_dict: bool = isinstance(stmt.get("value"), dict)
             rendered_val: str = ""
-            if val is not None:
-                rendered_val = self.render_expr(val)
+            if val_is_dict:
+                rendered_val = self.render_expr(stmt.get("value"))
             ann_t_raw = stmt.get("annotation")
             ann_t_str: str = str(ann_t_raw) if isinstance(ann_t_raw, str) else ""
-            if ann_t_str in {"byte", "uint8"} and isinstance(val, dict):
+            if ann_t_str in {"byte", "uint8"} and val_is_dict:
                 byte_val = self._byte_from_str_expr(val)
                 if byte_val is not None:
                     rendered_val = str(byte_val)
-            if isinstance(val, dict) and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
+            if val_is_dict and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
                 inner_ann = self.split_generic(ann_t_str[5:-1])
                 if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
                     items: list[str] = []
@@ -638,11 +628,11 @@ class CppEmitter(CodeEmitter):
                         v = self.render_expr_as_any(kv.get("value"))
                         items.append(f"{{{k}, {v}}}")
                     rendered_val = f"{t}{{{', '.join(items)}}}"
-            if isinstance(val, dict) and t != "auto":
+            if val_is_dict and t != "auto":
                 vkind = val.get("kind")
                 if vkind == "BoolOp":
                     if ann_t_str != "bool":
-                        rendered_val = self.render_boolop(val, True)
+                        rendered_val = self.render_boolop(stmt.get("value"), True)
                 if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
                     rendered_val = f"{t}{{}}"
                 elif vkind == "Dict" and len(self._dict_stmt_list(val.get("entries"))) == 0:
@@ -652,20 +642,20 @@ class CppEmitter(CodeEmitter):
                 elif vkind == "ListComp" and isinstance(rendered_val, str):
                     # Keep as-is for selfhost stability; list-comp explicit typing can be improved later.
                     rendered_val = rendered_val
-            if self.is_any_like_type(ann_t_str) and val is not None:
-                if isinstance(val, dict) and val.get("kind") == "Constant" and val.get("value") is None:
+            if self.is_any_like_type(ann_t_str) and val_is_dict:
+                if val.get("kind") == "Constant" and val.get("value") is None:
                     rendered_val = "object{}"
                 elif not rendered_val.startswith("make_object("):
                     rendered_val = f"make_object({rendered_val})"
-            declare = bool(stmt.get("declare", True))
+            declare = self.any_dict_get_int(stmt, "declare", 1) != 0
             already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
             if target.startswith("this->"):
-                if val is None:
+                if not val_is_dict:
                     self.emit(f"{target};")
                 else:
                     self.emit(f"{target} = {rendered_val};")
                 return
-            if val is None:
+            if not val_is_dict:
                 if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
                     self.current_scope().add(target)
                 if declare and not already_declared:
