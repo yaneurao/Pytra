@@ -114,13 +114,24 @@ def load_cpp_profile() -> dict[str, Any]:
     return {}
 
 
-def load_cpp_operator_maps() -> tuple[dict[str, str], dict[str, str], dict[str, str], dict[str, str]]:
-    """C++ 用演算子マップを profile から読み込む（無ければ既定値）。"""
-    bin_ops = _copy_str_map(DEFAULT_BIN_OPS)
-    cmp_ops = _copy_str_map(DEFAULT_CMP_OPS)
-    aug_ops = _copy_str_map(DEFAULT_AUG_OPS)
-    aug_bin = _copy_str_map(DEFAULT_AUG_BIN)
-    return bin_ops, cmp_ops, aug_ops, aug_bin
+def load_cpp_bin_ops() -> dict[str, str]:
+    """C++ 用二項演算子マップを返す。"""
+    return _copy_str_map(DEFAULT_BIN_OPS)
+
+
+def load_cpp_cmp_ops() -> dict[str, str]:
+    """C++ 用比較演算子マップを返す。"""
+    return _copy_str_map(DEFAULT_CMP_OPS)
+
+
+def load_cpp_aug_ops() -> dict[str, str]:
+    """C++ 用複合代入演算子マップを返す。"""
+    return _copy_str_map(DEFAULT_AUG_OPS)
+
+
+def load_cpp_aug_bin() -> dict[str, str]:
+    """C++ 用複合代入分解時の演算子マップを返す。"""
+    return _copy_str_map(DEFAULT_AUG_BIN)
 
 
 def load_cpp_type_map() -> dict[str, str]:
@@ -147,15 +158,6 @@ def load_cpp_identifier_rules() -> tuple[set[str], str]:
 
 
 def _load_cpp_runtime_call_map_json() -> dict[str, Any] | None:
-    path = Path(__file__).resolve().parent / "runtime" / "cpp" / "runtime_call_map.json"
-    if not path.exists():
-        return None
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        if isinstance(payload, dict):
-            return payload
-    except Exception:
-        return None
     return None
 
 
@@ -164,11 +166,10 @@ def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict
     return _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
 
 
-_CPP_OPERATOR_MAPS = load_cpp_operator_maps()
-BIN_OPS: dict[str, str] = _CPP_OPERATOR_MAPS[0]
-CMP_OPS: dict[str, str] = _CPP_OPERATOR_MAPS[1]
-AUG_OPS: dict[str, str] = _CPP_OPERATOR_MAPS[2]
-AUG_BIN: dict[str, str] = _CPP_OPERATOR_MAPS[3]
+BIN_OPS: dict[str, str] = load_cpp_bin_ops()
+CMP_OPS: dict[str, str] = load_cpp_cmp_ops()
+AUG_OPS: dict[str, str] = load_cpp_aug_ops()
+AUG_BIN: dict[str, str] = load_cpp_aug_bin()
 
 
 def cpp_string_lit(s: str) -> str:
@@ -209,7 +210,7 @@ def cpp_char_lit(ch: byte) -> str:
         return "'\\t'"
     if ch == "\0":
         return "'\\0'"
-    return "'" + ch + "'"
+    return "'" + str(ch) + "'"
 
 
 class CppEmitter(CodeEmitter):
@@ -223,7 +224,13 @@ class CppEmitter(CodeEmitter):
         """変換設定とクラス解析用の状態を初期化する。"""
         profile = load_cpp_profile()
         hooks = load_cpp_hooks(profile)
-        CodeEmitter.__init__(self, east_doc, profile=profile, hooks=hooks)
+        self.doc: dict[str, Any] = east_doc
+        self.profile: dict[str, Any] = profile
+        self.hooks: dict[str, Any] = hooks
+        self.lines: list[str] = []
+        self.indent: int64 = 0
+        self.tmp_id: int64 = 0
+        self.scope_stack: list[set[str]] = [set()]
         self.negative_index_mode = negative_index_mode
         self.emit_main = emit_main
         # NOTE:
@@ -241,8 +248,10 @@ class CppEmitter(CodeEmitter):
         self.ref_classes: set[str] = set()
         self.value_classes: set[str] = set()
         self.bridge_comment_emitted: set[str] = set()
-        self.type_map = load_cpp_type_map()
-        self.module_attr_call_map = load_cpp_module_attr_call_map(self.profile)
+        self.type_map: dict[str, str] = load_cpp_type_map()
+        self.module_attr_call_map: dict[str, dict[str, str]] = load_cpp_module_attr_call_map(self.profile)
+        self.reserved_words: set[str] = set()
+        self.rename_prefix: str = "py_"
         self.reserved_words, self.rename_prefix = load_cpp_identifier_rules()
         self.import_modules: dict[str, str] = {}
         self.import_symbols: dict[str, dict[str, str]] = {}

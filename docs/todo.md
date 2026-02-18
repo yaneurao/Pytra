@@ -69,7 +69,7 @@
    - [ ] `selfhost/build.all.log` の先頭 200 行を優先して修正し、`total_errors < 300` にする。
    - [ ] 同手順で `total_errors < 100` まで減らす。
    - [ ] `total_errors = 0` にする。
-   - [x] 段階ゲート A: `total_errors <= 450` を達成し、`docs/todo.md` に主因更新。: 2026-02-18 再計測で `total_errors=404`
+   - [x] 段階ゲート A: `total_errors <= 450` を達成し、`docs/todo.md` に主因更新。: 2026-02-18 再計測で `total_errors=380`
    - [ ] 段階ゲート B: `total_errors <= 300` を達成し、同時に `test_code_emitter` 回帰を固定化。
    - [ ] 段階ゲート C: `total_errors <= 100` を達成し、`tools/check_selfhost_cpp_diff.py` の最小ケースを通す。
 4. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
@@ -120,5 +120,5 @@
 - 更新（2026-02-18 selfhost 追加）:
   1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
-  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=404`）。
+  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=380`）。
   4. 先頭エラー群は `py2cpp.py` 冒頭ユーティリティ（profile/runtime-call map 読込）と `CppEmitter` 初期化（`super().__init__` 近傍）の selfhost 生成不整合が中心。
