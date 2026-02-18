@@ -534,6 +534,108 @@ class CppEmitter(CodeEmitter):
             return str(target_node.get("id", "_"))
         return self.render_lvalue(target_expr)
 
+    def _emit_annassign_stmt(self, stmt: dict[str, Any]) -> None:
+        """AnnAssign ノードを出力する。"""
+        t = self.cpp_type(stmt.get("annotation"))
+        target = self.render_expr(stmt.get("target"))
+        val = self.any_to_dict_or_empty(stmt.get("value"))
+        val_is_dict: bool = isinstance(stmt.get("value"), dict)
+        rendered_val: str = ""
+        if val_is_dict:
+            rendered_val = self.render_expr(stmt.get("value"))
+        ann_t_raw = stmt.get("annotation")
+        ann_t_str: str = str(ann_t_raw) if isinstance(ann_t_raw, str) else ""
+        if ann_t_str in {"byte", "uint8"} and val_is_dict:
+            byte_val = self._byte_from_str_expr(val)
+            if byte_val is not None:
+                rendered_val = str(byte_val)
+        if val_is_dict and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
+            inner_ann = self.split_generic(ann_t_str[5:-1])
+            if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
+                items: list[str] = []
+                for kv in self._dict_stmt_list(val.get("entries")):
+                    k = self.render_expr(kv.get("key"))
+                    v = self.render_expr_as_any(kv.get("value"))
+                    items.append(f"{{{k}, {v}}}")
+                rendered_val = f"{t}{{{', '.join(items)}}}"
+        if val_is_dict and t != "auto":
+            vkind = val.get("kind")
+            if vkind == "BoolOp":
+                if ann_t_str != "bool":
+                    rendered_val = self.render_boolop(stmt.get("value"), True)
+            if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
+                rendered_val = f"{t}{{}}"
+            elif vkind == "Dict" and len(self._dict_stmt_list(val.get("entries"))) == 0:
+                rendered_val = f"{t}{{}}"
+            elif vkind == "Set" and len(self._dict_stmt_list(val.get("elements"))) == 0:
+                rendered_val = f"{t}{{}}"
+            elif vkind == "ListComp" and isinstance(rendered_val, str):
+                # Keep as-is for selfhost stability; list-comp explicit typing can be improved later.
+                rendered_val = rendered_val
+        if self.is_any_like_type(ann_t_str) and val_is_dict:
+            if val.get("kind") == "Constant" and val.get("value") is None:
+                rendered_val = "object{}"
+            elif not rendered_val.startswith("make_object("):
+                rendered_val = f"make_object({rendered_val})"
+        declare = self.any_dict_get_int(stmt, "declare", 1) != 0
+        already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
+        if target.startswith("this->"):
+            if not val_is_dict:
+                self.emit(f"{target};")
+            else:
+                self.emit(f"{target} = {rendered_val};")
+            return
+        if not val_is_dict:
+            if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
+                self.current_scope().add(target)
+            if declare and not already_declared:
+                self.emit(f"{t} {target};")
+            return
+        if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
+            self.current_scope().add(target)
+        if declare and not already_declared:
+            self.emit(f"{t} {target} = {rendered_val};")
+        else:
+            self.emit(f"{target} = {rendered_val};")
+
+    def _emit_augassign_stmt(self, stmt: dict[str, Any]) -> None:
+        """AugAssign ノードを出力する。"""
+        op = "+="
+        target_expr = stmt.get("target")
+        target_expr_node = self.any_to_dict_or_empty(target_expr)
+        target = self._render_lvalue_for_augassign(target_expr)
+        declare = self.any_dict_get_int(stmt, "declare", 0) != 0
+        if declare and target_expr_node.get("kind") == "Name" and target not in self.current_scope():
+            decl_t_raw = stmt.get("decl_type")
+            decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
+            inferred_t = self.get_expr_type(stmt.get("target"))
+            t = self.cpp_type(decl_t if decl_t != "" else inferred_t)
+            self.current_scope().add(target)
+            self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
+            return
+        val = self.render_expr(stmt.get("value"))
+        target_t = self.get_expr_type(stmt.get("target"))
+        value_t = self.get_expr_type(stmt.get("value"))
+        if self.is_any_like_type(value_t):
+            if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+                val = f"py_to_int64({val})"
+            elif target_t in {"float32", "float64"}:
+                val = f"static_cast<float64>(py_to_int64({val}))"
+        op_name = str(stmt.get("op"))
+        if op_name in AUG_OPS:
+            op = AUG_OPS[op_name]
+        if op_name in AUG_BIN:
+            # Prefer idiomatic ++/-- for +/-1 updates.
+            if op_name in {"Add", "Sub"} and val == "1":
+                self.emit(f"{target}{'++' if op_name == 'Add' else '--'};")
+                return
+            if op_name == "FloorDiv":
+                self.emit(f"{target} = py_floordiv({target}, {val});")
+            else:
+                self.emit(f"{target} {op} {val};")
+            return
+        self.emit(f"{target} {op} {val};")
+
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
         hook_stmt = self.hook_on_emit_stmt(stmt)
@@ -594,104 +696,10 @@ class CppEmitter(CodeEmitter):
             self.emit(f"std::swap({left}, {right});")
             return
         if kind == "AnnAssign":
-            t = self.cpp_type(stmt.get("annotation"))
-            target = self.render_expr(stmt.get("target"))
-            val = self.any_to_dict_or_empty(stmt.get("value"))
-            val_is_dict: bool = isinstance(stmt.get("value"), dict)
-            rendered_val: str = ""
-            if val_is_dict:
-                rendered_val = self.render_expr(stmt.get("value"))
-            ann_t_raw = stmt.get("annotation")
-            ann_t_str: str = str(ann_t_raw) if isinstance(ann_t_raw, str) else ""
-            if ann_t_str in {"byte", "uint8"} and val_is_dict:
-                byte_val = self._byte_from_str_expr(val)
-                if byte_val is not None:
-                    rendered_val = str(byte_val)
-            if val_is_dict and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
-                inner_ann = self.split_generic(ann_t_str[5:-1])
-                if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
-                    items: list[str] = []
-                    for kv in self._dict_stmt_list(val.get("entries")):
-                        k = self.render_expr(kv.get("key"))
-                        v = self.render_expr_as_any(kv.get("value"))
-                        items.append(f"{{{k}, {v}}}")
-                    rendered_val = f"{t}{{{', '.join(items)}}}"
-            if val_is_dict and t != "auto":
-                vkind = val.get("kind")
-                if vkind == "BoolOp":
-                    if ann_t_str != "bool":
-                        rendered_val = self.render_boolop(stmt.get("value"), True)
-                if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
-                    rendered_val = f"{t}{{}}"
-                elif vkind == "Dict" and len(self._dict_stmt_list(val.get("entries"))) == 0:
-                    rendered_val = f"{t}{{}}"
-                elif vkind == "Set" and len(self._dict_stmt_list(val.get("elements"))) == 0:
-                    rendered_val = f"{t}{{}}"
-                elif vkind == "ListComp" and isinstance(rendered_val, str):
-                    # Keep as-is for selfhost stability; list-comp explicit typing can be improved later.
-                    rendered_val = rendered_val
-            if self.is_any_like_type(ann_t_str) and val_is_dict:
-                if val.get("kind") == "Constant" and val.get("value") is None:
-                    rendered_val = "object{}"
-                elif not rendered_val.startswith("make_object("):
-                    rendered_val = f"make_object({rendered_val})"
-            declare = self.any_dict_get_int(stmt, "declare", 1) != 0
-            already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
-            if target.startswith("this->"):
-                if not val_is_dict:
-                    self.emit(f"{target};")
-                else:
-                    self.emit(f"{target} = {rendered_val};")
-                return
-            if not val_is_dict:
-                if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
-                    self.current_scope().add(target)
-                if declare and not already_declared:
-                    self.emit(f"{t} {target};")
-            else:
-                if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
-                    self.current_scope().add(target)
-                if declare and not already_declared:
-                    self.emit(f"{t} {target} = {rendered_val};")
-                else:
-                    self.emit(f"{target} = {rendered_val};")
+            self._emit_annassign_stmt(stmt)
             return
         if kind == "AugAssign":
-            op = "+="
-            target_expr = stmt.get("target")
-            target_expr_node = self.any_to_dict_or_empty(target_expr)
-            target = self._render_lvalue_for_augassign(target_expr)
-            declare = self.any_dict_get_int(stmt, "declare", 0) != 0
-            if declare and target_expr_node.get("kind") == "Name" and target not in self.current_scope():
-                decl_t_raw = stmt.get("decl_type")
-                decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
-                inferred_t = self.get_expr_type(stmt.get("target"))
-                t = self.cpp_type(decl_t if decl_t != "" else inferred_t)
-                self.current_scope().add(target)
-                self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
-                return
-            val = self.render_expr(stmt.get("value"))
-            target_t = self.get_expr_type(stmt.get("target"))
-            value_t = self.get_expr_type(stmt.get("value"))
-            if self.is_any_like_type(value_t):
-                if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-                    val = f"py_to_int64({val})"
-                elif target_t in {"float32", "float64"}:
-                    val = f"static_cast<float64>(py_to_int64({val}))"
-            op_name = str(stmt.get("op"))
-            if op_name in AUG_OPS:
-                op = AUG_OPS[op_name]
-            if op_name in AUG_BIN:
-                # Prefer idiomatic ++/-- for +/-1 updates.
-                if op_name in {"Add", "Sub"} and val == "1":
-                    self.emit(f"{target}{'++' if op_name == 'Add' else '--'};")
-                    return
-                if op_name == "FloorDiv":
-                    self.emit(f"{target} = py_floordiv({target}, {val});")
-                else:
-                    self.emit(f"{target} {op} {val};")
-            else:
-                self.emit(f"{target} {op} {val};")
+            self._emit_augassign_stmt(stmt)
             return
         if kind == "If":
             self._emit_if_stmt(stmt)
@@ -1590,6 +1598,135 @@ class CppEmitter(CodeEmitter):
                 kw[kname] = self.render_expr(k.get("value"))
         return fn, fn_name, arg_nodes, args, kw, first_arg
 
+    def _render_unary_expr(self, expr: dict[str, Any]) -> str:
+        """UnaryOp ノードを C++ 式へ変換する。"""
+        operand_expr = expr.get("operand")
+        operand = self.render_expr(operand_expr)
+        op = expr.get("op")
+        if op == "Not":
+            if isinstance(operand_expr, dict) and operand_expr.get("kind") == "Compare":
+                if operand_expr.get("lowered_kind") == "Contains":
+                    container = self.render_expr(operand_expr.get("container"))
+                    key = self.render_expr(operand_expr.get("key"))
+                    ctype0 = self.get_expr_type(operand_expr.get("container"))
+                    ctype = ctype0 if isinstance(ctype0, str) else ""
+                    if ctype.startswith("dict["):
+                        return f"{container}.find({key}) == {container}.end()"
+                    return f"std::find({container}.begin(), {container}.end(), {key}) == {container}.end()"
+                ops = operand_expr.get("ops", [])
+                cmps = operand_expr.get("comparators", [])
+                if len(ops) == 1 and len(cmps) == 1:
+                    left = self.render_expr(operand_expr.get("left"))
+                    rhs = self.render_expr(cmps[0])
+                    op0 = ops[0]
+                    inv = {
+                        "Eq": "!=",
+                        "NotEq": "==",
+                        "Lt": ">=",
+                        "LtE": ">",
+                        "Gt": "<=",
+                        "GtE": "<",
+                        "Is": "!=",
+                        "IsNot": "==",
+                    }
+                    if op0 in inv:
+                        return f"{left} {inv[op0]} {rhs}"
+                    if op0 in {"In", "NotIn"}:
+                        rhs_type0 = self.get_expr_type(cmps[0])
+                        rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
+                        found = ""
+                        if rhs_type.startswith("dict["):
+                            found = f"{rhs}.find({left}) != {rhs}.end()"
+                        else:
+                            found = f"std::find({rhs}.begin(), {rhs}.end(), {left}) != {rhs}.end()"
+                        return f"!({found})" if op0 == "In" else found
+            return f"!({operand})"
+        if op == "USub":
+            return f"-{operand}"
+        if op == "UAdd":
+            return f"+{operand}"
+        return operand
+
+    def _render_compare_expr(self, expr: dict[str, Any]) -> str:
+        """Compare ノードを C++ 式へ変換する。"""
+        if expr.get("lowered_kind") == "Contains":
+            container = self.render_expr(expr.get("container"))
+            key = self.render_expr(expr.get("key"))
+            ctype0 = self.get_expr_type(expr.get("container"))
+            ctype = ctype0 if isinstance(ctype0, str) else ""
+            base = ""
+            if ctype.startswith("dict["):
+                base = f"{container}.find({key}) != {container}.end()"
+            else:
+                base = f"std::find({container}.begin(), {container}.end(), {key}) != {container}.end()"
+            if bool(expr.get("negated", False)):
+                return f"!({base})"
+            return base
+        left = self.render_expr(expr.get("left"))
+        ops = expr.get("ops", [])
+        cmps = expr.get("comparators", [])
+        parts: list[str] = []
+        cur = left
+        cur_node = expr.get("left")
+        for i, op in enumerate(ops):
+            rhs_node = cmps[i] if i < len(cmps) and isinstance(cmps[i], dict) else None
+            rhs = self.render_expr(rhs_node)
+            cop = CMP_OPS.get(op, "==")
+            if cop == "/* in */":
+                rhs_type0 = self.get_expr_type(rhs_node)
+                rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
+                if rhs_type.startswith("dict["):
+                    parts.append(f"{rhs}.find({cur}) != {rhs}.end()")
+                else:
+                    parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) != {rhs}.end()")
+            elif cop == "/* not in */":
+                rhs_type0 = self.get_expr_type(rhs_node)
+                rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
+                if rhs_type.startswith("dict["):
+                    parts.append(f"{rhs}.find({cur}) == {rhs}.end()")
+                else:
+                    parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
+            else:
+                opt_cmp = self._try_optimize_char_compare(cur_node if isinstance(cur_node, dict) else None, op, rhs_node)
+                if opt_cmp is not None:
+                    parts.append(opt_cmp)
+                elif op in {"Is", "IsNot"} and rhs == "std::nullopt":
+                    parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({cur})")
+                elif op in {"Is", "IsNot"} and cur == "std::nullopt":
+                    parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({rhs})")
+                else:
+                    parts.append(f"{cur} {cop} {rhs}")
+            cur = rhs
+            cur_node = rhs_node
+        return " && ".join(parts) if parts else "true"
+
+    def _render_subscript_expr(self, expr: dict[str, Any]) -> str:
+        """Subscript/Slice 式を C++ 式へ変換する。"""
+        val = self.render_expr(expr.get("value"))
+        val_ty0 = self.get_expr_type(expr.get("value"))
+        val_ty = val_ty0 if isinstance(val_ty0, str) else ""
+        if expr.get("lowered_kind") == "SliceExpr":
+            lo = self.render_expr(expr.get("lower")) if expr.get("lower") is not None else "0"
+            up = self.render_expr(expr.get("upper")) if expr.get("upper") is not None else f"py_len({val})"
+            return f"py_slice({val}, {lo}, {up})"
+        sl = expr.get("slice")
+        if isinstance(sl, dict) and sl.get("kind") == "Slice":
+            lo = self.render_expr(sl.get("lower")) if sl.get("lower") is not None else "0"
+            up = self.render_expr(sl.get("upper")) if sl.get("upper") is not None else f"py_len({val})"
+            return f"py_slice({val}, {lo}, {up})"
+        idx = self.render_expr(sl)
+        if val_ty.startswith("dict["):
+            return f"py_dict_get({val}, {idx})"
+        if self.is_indexable_sequence_type(val_ty):
+            if self.negative_index_mode == "off":
+                return f"{val}[{idx}]"
+            if self.negative_index_mode == "const_only":
+                if self._is_negative_const_index(sl):
+                    return f"py_at({val}, {idx})"
+                return f"{val}[{idx}]"
+            return f"py_at({val}, {idx})"
+        return f"{val}[{idx}]"
+
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
         expr_node = self.any_to_dict(expr)
@@ -1696,105 +1833,11 @@ class CppEmitter(CodeEmitter):
         if kind == "BinOp":
             return self._render_binop_expr(expr)
         if kind == "UnaryOp":
-            operand_expr = expr.get("operand")
-            operand = self.render_expr(operand_expr)
-            op = expr.get("op")
-            if op == "Not":
-                if isinstance(operand_expr, dict) and operand_expr.get("kind") == "Compare":
-                    if operand_expr.get("lowered_kind") == "Contains":
-                        container = self.render_expr(operand_expr.get("container"))
-                        key = self.render_expr(operand_expr.get("key"))
-                        ctype0 = self.get_expr_type(operand_expr.get("container"))
-                        ctype = ctype0 if isinstance(ctype0, str) else ""
-                        if ctype.startswith("dict["):
-                            return f"{container}.find({key}) == {container}.end()"
-                        return f"std::find({container}.begin(), {container}.end(), {key}) == {container}.end()"
-                    ops = operand_expr.get("ops", [])
-                    cmps = operand_expr.get("comparators", [])
-                    if len(ops) == 1 and len(cmps) == 1:
-                        left = self.render_expr(operand_expr.get("left"))
-                        rhs = self.render_expr(cmps[0])
-                        op0 = ops[0]
-                        inv = {
-                            "Eq": "!=",
-                            "NotEq": "==",
-                            "Lt": ">=",
-                            "LtE": ">",
-                            "Gt": "<=",
-                            "GtE": "<",
-                            "Is": "!=",
-                            "IsNot": "==",
-                        }
-                        if op0 in inv:
-                            return f"{left} {inv[op0]} {rhs}"
-                        if op0 in {"In", "NotIn"}:
-                            rhs_type0 = self.get_expr_type(cmps[0])
-                            rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
-                            found = ""
-                            if rhs_type.startswith("dict["):
-                                found = f"{rhs}.find({left}) != {rhs}.end()"
-                            else:
-                                found = f"std::find({rhs}.begin(), {rhs}.end(), {left}) != {rhs}.end()"
-                            return f"!({found})" if op0 == "In" else found
-                return f"!({operand})"
-            if op == "USub":
-                return f"-{operand}"
-            if op == "UAdd":
-                return f"+{operand}"
-            return operand
+            return self._render_unary_expr(expr)
         if kind == "BoolOp":
             return self.render_boolop(expr, False)
         if kind == "Compare":
-            if expr.get("lowered_kind") == "Contains":
-                container = self.render_expr(expr.get("container"))
-                key = self.render_expr(expr.get("key"))
-                ctype0 = self.get_expr_type(expr.get("container"))
-                ctype = ctype0 if isinstance(ctype0, str) else ""
-                base = ""
-                if ctype.startswith("dict["):
-                    base = f"{container}.find({key}) != {container}.end()"
-                else:
-                    base = f"std::find({container}.begin(), {container}.end(), {key}) != {container}.end()"
-                if bool(expr.get("negated", False)):
-                    return f"!({base})"
-                return base
-            left = self.render_expr(expr.get("left"))
-            ops = expr.get("ops", [])
-            cmps = expr.get("comparators", [])
-            parts: list[str] = []
-            cur = left
-            cur_node = expr.get("left")
-            for i, op in enumerate(ops):
-                rhs_node = cmps[i] if i < len(cmps) and isinstance(cmps[i], dict) else None
-                rhs = self.render_expr(rhs_node)
-                cop = CMP_OPS.get(op, "==")
-                if cop == "/* in */":
-                    rhs_type0 = self.get_expr_type(rhs_node)
-                    rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
-                    if rhs_type.startswith("dict["):
-                        parts.append(f"{rhs}.find({cur}) != {rhs}.end()")
-                    else:
-                        parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) != {rhs}.end()")
-                elif cop == "/* not in */":
-                    rhs_type0 = self.get_expr_type(rhs_node)
-                    rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
-                    if rhs_type.startswith("dict["):
-                        parts.append(f"{rhs}.find({cur}) == {rhs}.end()")
-                    else:
-                        parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
-                else:
-                    opt_cmp = self._try_optimize_char_compare(cur_node if isinstance(cur_node, dict) else None, op, rhs_node)
-                    if opt_cmp is not None:
-                        parts.append(opt_cmp)
-                    elif op in {"Is", "IsNot"} and rhs == "std::nullopt":
-                        parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({cur})")
-                    elif op in {"Is", "IsNot"} and cur == "std::nullopt":
-                        parts.append(f"{'!' if op == 'IsNot' else ''}py_is_none({rhs})")
-                    else:
-                        parts.append(f"{cur} {cop} {rhs}")
-                cur = rhs
-                cur_node = rhs_node
-            return " && ".join(parts) if parts else "true"
+            return self._render_compare_expr(expr)
         if kind == "IfExp":
             body = self.render_expr(expr.get("body"))
             orelse = self.render_expr(expr.get("orelse"))
@@ -1848,30 +1891,7 @@ class CppEmitter(CodeEmitter):
                 items.append(f"{{{k}, {v}}}")
             return f"{t}{{{', '.join(items)}}}"
         if kind == "Subscript":
-            val = self.render_expr(expr.get("value"))
-            val_ty0 = self.get_expr_type(expr.get("value"))
-            val_ty = val_ty0 if isinstance(val_ty0, str) else ""
-            if expr.get("lowered_kind") == "SliceExpr":
-                lo = self.render_expr(expr.get("lower")) if expr.get("lower") is not None else "0"
-                up = self.render_expr(expr.get("upper")) if expr.get("upper") is not None else f"py_len({val})"
-                return f"py_slice({val}, {lo}, {up})"
-            sl = expr.get("slice")
-            if isinstance(sl, dict) and sl.get("kind") == "Slice":
-                lo = self.render_expr(sl.get("lower")) if sl.get("lower") is not None else "0"
-                up = self.render_expr(sl.get("upper")) if sl.get("upper") is not None else f"py_len({val})"
-                return f"py_slice({val}, {lo}, {up})"
-            idx = self.render_expr(sl)
-            if val_ty.startswith("dict["):
-                return f"py_dict_get({val}, {idx})"
-            if self.is_indexable_sequence_type(val_ty):
-                if self.negative_index_mode == "off":
-                    return f"{val}[{idx}]"
-                if self.negative_index_mode == "const_only":
-                    if self._is_negative_const_index(sl):
-                        return f"py_at({val}, {idx})"
-                    return f"{val}[{idx}]"
-                return f"py_at({val}, {idx})"
-            return f"{val}[{idx}]"
+            return self._render_subscript_expr(expr)
         if kind == "JoinedStr":
             if expr.get("lowered_kind") == "Concat":
                 parts: list[str] = []

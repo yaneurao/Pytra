@@ -38,12 +38,12 @@
    - [ ] `render_expr` の `Call` で残っている module method / object method / fallback 呼び出しを 3 helper に分離する。
    - [x] `render_expr` の `Call` で runtime-call 解決前後の前処理（kw 展開・owner 抽出）を helper 化する。
    - [ ] `render_expr` の `Call` 分岐を 200 行未満に縮退する（目標値を明示）。
-   - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。: `BinOp` は専用 helper に分離済み
-   - [ ] `Compare` 分岐を helper へ切り出す（`Contains` / chain compare / `is` 系）。
-   - [ ] `UnaryOp` と `BoolOp` の条件式特化ロジックを helper へ切り出す。
-   - [ ] `Subscript` / `SliceExpr` / `Concat` を helper 化し、`render_expr` 直書きを削減する。
+   - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。: `BinOp` / `Compare` / `UnaryOp` は専用 helper に分離済み
+   - [x] `Compare` 分岐を helper へ切り出す（`Contains` / chain compare / `is` 系）。
+   - [x] `UnaryOp` と `BoolOp` の条件式特化ロジックを helper へ切り出す。: `UnaryOp` は `_render_unary_expr` へ分離、`BoolOp` は既存 `render_boolop` を継続利用
+   - [x] `Subscript` / `SliceExpr` / `Concat` を helper 化し、`render_expr` 直書きを削減する。: `Subscript`/`SliceExpr` は `_render_subscript_expr` へ分離（`Concat` は既存 helper 経路）
    - [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。: `If/While` は専用 helper に分離済み
-   - [ ] `For` / `AnnAssign` / `AugAssign` を helper 化して `emit_stmt` 本体を縮退する。
+   - [ ] `For` / `AnnAssign` / `AugAssign` を helper 化して `emit_stmt` 本体を縮退する。: `AnnAssign`/`AugAssign` は helper 分離済み
    - [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
 2. [ ] 未使用関数の掃除を継続する。
    - [x] `extract_module_leading_trivia` ラッパーを削除。
