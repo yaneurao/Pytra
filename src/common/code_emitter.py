@@ -18,17 +18,26 @@ class CodeEmitter:
     def __init__(
         self,
         east_doc: dict[str, Any],
-        profile: dict[str, Any] | None = None,
-        hooks: dict[str, Any] | None = None,
+        profile: dict[str, Any] = {},
+        hooks: dict[str, Any] = {},
     ) -> None:
         """共通の出力状態と一時変数カウンタを初期化する。"""
         self.doc = east_doc
-        self.profile = profile if profile is not None else {}
-        self.hooks = hooks if hooks is not None else {}
-        self.lines = []
+        self.profile = profile
+        self.hooks = hooks
+        self.lines = self._empty_lines()
         self.indent = 0
         self.tmp_id = 0
-        self.scope_stack = [set()]
+        self.scope_stack = self._root_scope_stack()
+
+    def _empty_lines(self) -> list[str]:
+        """空の `list[str]` を返す。"""
+        out: list[str] = []
+        return out
+
+    def _root_scope_stack(self) -> list[set[str]]:
+        """最上位 1 スコープだけを持つ初期スコープスタックを返す。"""
+        return [set()]
 
     def emit_stmt(self, stmt: Any) -> None:
         """文ノード出力フック。派生クラス側で実装する。"""
@@ -73,11 +82,9 @@ class CodeEmitter:
 
     def syntax_text(self, key: str, default_value: str) -> str:
         """profile.syntax からテンプレート文字列を取得する。"""
-        syn = self.any_to_dict(self.profile.get("syntax"))
-        if syn is None:
-            return default_value
-        v = syn.get(key)
-        if isinstance(v, str) and v != "":
+        syn = self.any_to_dict_or_empty(self.profile.get("syntax"))
+        v = self.any_dict_get_str(syn, key, default_value)
+        if v != "":
             return v
         return default_value
 
@@ -99,24 +106,34 @@ class CodeEmitter:
         self.tmp_id += 1
         return f"{prefix}_{self.tmp_id}"
 
-    def any_dict_get(self, obj: dict[str, Any] | None, key: str, default_value: Any) -> Any:
+    def any_dict_get(self, obj: dict[str, Any], key: str, default_value: Any) -> Any:
         """dict 風入力から key を取得し、失敗時は既定値を返す。"""
-        d = obj if isinstance(obj, dict) else None
-        if d is None:
+        if not isinstance(obj, dict):
             return default_value
-        return d.get(key, default_value)
+        if key in obj:
+            return obj[key]
+        return default_value
+
+    def any_dict_get_str(self, obj: dict[str, Any], key: str, default_value: str = "") -> str:
+        """dict 風入力から文字列を取得し、失敗時は既定値を返す。"""
+        if not isinstance(obj, dict):
+            return default_value
+        if key not in obj:
+            return default_value
+        v = obj[key]
+        return v if isinstance(v, str) else default_value
 
     def any_to_dict(self, v: Any) -> dict[str, Any] | None:
         """動的値を dict に安全に変換する。変換不能なら None。"""
-        out: dict[str, Any] | None = None
         if isinstance(v, dict):
-            out = v
-        return out
+            return v
+        return None
 
     def any_to_dict_or_empty(self, v: Any) -> dict[str, Any]:
         """動的値を dict に安全に変換する。変換不能なら空 dict。"""
-        d = self.any_to_dict(v)
-        return d if d is not None else {}
+        if isinstance(v, dict):
+            return v
+        return {}
 
     def any_to_list(self, v: Any) -> list[Any]:
         """動的値を list に安全に変換する。変換不能なら空 list。"""
@@ -134,41 +151,33 @@ class CodeEmitter:
 
     def get_expr_type(self, expr: Any) -> str:
         """式ノードから解決済み型文字列を取得する。"""
-        expr_node = self.any_to_dict(expr)
-        if expr_node is None:
-            return ""
-        t = self.any_dict_get(expr_node, "resolved_type", "")
-        return t if isinstance(t, str) else ""
+        expr_node = self.any_to_dict_or_empty(expr)
+        return self.any_dict_get_str(expr_node, "resolved_type", "")
 
     def is_name(self, node: Any, name: str | None = None) -> bool:
-        node_dict = self.any_to_dict(node)
-        if node_dict is None:
-            return False
-        if self.any_dict_get(node_dict, "kind", "") != "Name":
+        node_dict = self.any_to_dict_or_empty(node)
+        if self.any_dict_get_str(node_dict, "kind", "") != "Name":
             return False
         if name is None:
             return True
-        return str(self.any_dict_get(node_dict, "id", "")) == name
+        return self.any_dict_get_str(node_dict, "id", "") == name
 
     def is_call(self, node: Any) -> bool:
-        node_dict = self.any_to_dict(node)
-        if node_dict is None:
-            return False
-        return self.any_dict_get(node_dict, "kind", "") == "Call"
+        node_dict = self.any_to_dict_or_empty(node)
+        return self.any_dict_get_str(node_dict, "kind", "") == "Call"
 
     def is_attr(self, node: Any, attr: str | None = None) -> bool:
-        node_dict = self.any_to_dict(node)
-        if node_dict is None:
-            return False
-        if self.any_dict_get(node_dict, "kind", "") != "Attribute":
+        node_dict = self.any_to_dict_or_empty(node)
+        if self.any_dict_get_str(node_dict, "kind", "") != "Attribute":
             return False
         if attr is None:
             return True
-        return str(self.any_dict_get(node_dict, "attr", "")) == attr
+        return self.any_dict_get_str(node_dict, "attr", "") == attr
 
     def split_generic(self, s: str) -> list[str]:
         if s == "":
-            return []
+            out0: list[str] = []
+            return out0
         out: list[str] = []
         depth = 0
         start = 0
@@ -215,7 +224,7 @@ class CodeEmitter:
             return "object"
         return s
 
-    def is_any_like_type(self, t: Any) -> bool:
+    def is_any_like_type(self, t: str) -> bool:
         """Any 同等（Any/object/unknown/Union 含む）型か判定する。"""
         s = self.normalize_type_name(t)
         if s == "":
@@ -229,28 +238,20 @@ class CodeEmitter:
             return any(self.is_any_like_type(p) for p in parts if p != "None" and p != s)
         return False
 
-    def is_list_type(self, t: Any) -> bool:
+    def is_list_type(self, t: str) -> bool:
         """型文字列が list[...] かを返す。"""
-        if not isinstance(t, str):
-            return False
         return t[:5] == "list["
 
-    def is_set_type(self, t: Any) -> bool:
+    def is_set_type(self, t: str) -> bool:
         """型文字列が set[...] かを返す。"""
-        if not isinstance(t, str):
-            return False
         return t[:4] == "set["
 
-    def is_dict_type(self, t: Any) -> bool:
+    def is_dict_type(self, t: str) -> bool:
         """型文字列が dict[...] かを返す。"""
-        if not isinstance(t, str):
-            return False
         return t[:5] == "dict["
 
-    def is_indexable_sequence_type(self, t: Any) -> bool:
+    def is_indexable_sequence_type(self, t: str) -> bool:
         """添字アクセス可能なシーケンス型か判定する。"""
-        if not isinstance(t, str):
-            return False
         return t[:5] == "list[" or t in {"str", "bytes", "bytearray"}
 
     def _is_forbidden_object_receiver_type_text(self, s: str) -> bool:
@@ -355,16 +356,17 @@ class CodeEmitter:
         """式が単純な Name ノードかを判定する。"""
         if expr is None:
             return False
-        return self.any_dict_get(expr, "kind", "") == "Name"
+        d = self.any_to_dict_or_empty(expr)
+        return self.any_dict_get_str(d, "kind", "") == "Name"
 
     def _expr_repr_eq(self, a: dict[str, Any] | None, b: dict[str, Any] | None) -> bool:
         """2つの式 repr が同一かを比較する。"""
         if not isinstance(a, dict) or not isinstance(b, dict):
             return False
-        ra = self.any_dict_get(a, "repr", "")
-        rb = self.any_dict_get(b, "repr", "")
-        if not isinstance(ra, str) or not isinstance(rb, str):
-            return False
+        da = self.any_to_dict_or_empty(a)
+        db = self.any_to_dict_or_empty(b)
+        ra = self.any_dict_get_str(da, "repr", "")
+        rb = self.any_dict_get_str(db, "repr", "")
         return self._trim_ws(ra) == self._trim_ws(rb)
 
     def _trim_ws(self, text: str) -> str:
@@ -393,11 +395,10 @@ class CodeEmitter:
         for item in trivia:
             if not isinstance(item, dict):
                 continue
-            k = self.any_dict_get(item, "kind", "")
+            k = self.any_dict_get_str(item, "kind", "")
             if k == "comment":
-                txt = self.any_dict_get(item, "text", "")
-                if isinstance(txt, str):
-                    self.emit(self.comment_line_prefix() + txt)
+                txt = self.any_dict_get_str(item, "text", "")
+                self.emit(self.comment_line_prefix() + txt)
             elif k == "blank":
                 cnt = self.any_dict_get(item, "count", 1)
                 n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
@@ -412,11 +413,10 @@ class CodeEmitter:
         for item in trivia:
             if not isinstance(item, dict):
                 continue
-            k = self.any_dict_get(item, "kind", "")
+            k = self.any_dict_get_str(item, "kind", "")
             if k == "comment":
-                txt = self.any_dict_get(item, "text", "")
-                if isinstance(txt, str):
-                    self.emit(self.comment_line_prefix() + txt)
+                txt = self.any_dict_get_str(item, "text", "")
+                self.emit(self.comment_line_prefix() + txt)
             elif k == "blank":
                 cnt = self.any_dict_get(item, "count", 1)
                 n = int(cnt) if isinstance(cnt, int) and cnt > 0 else 1
@@ -427,7 +427,7 @@ class CodeEmitter:
         """添字ノードが負の定数インデックスかを判定する。"""
         if node is None:
             return False
-        kind = str(self.any_dict_get(node, "kind", ""))
+        kind = self.any_dict_get_str(node, "kind", "")
         if kind == "Constant":
             v = self.any_dict_get(node, "value", None)
             if isinstance(v, int):
@@ -438,9 +438,9 @@ class CodeEmitter:
                 except ValueError:
                     return False
             return False
-        if kind == "UnaryOp" and self.any_dict_get(node, "op", "") == "USub":
+        if kind == "UnaryOp" and self.any_dict_get_str(node, "op", "") == "USub":
             opd = self.any_to_dict_or_empty(self.any_dict_get(node, "operand", None))
-            if self.any_dict_get(opd, "kind", "") == "Constant":
+            if self.any_dict_get_str(opd, "kind", "") == "Constant":
                 ov = self.any_dict_get(opd, "value", None)
                 if isinstance(ov, int):
                     return int(ov) > 0
@@ -453,20 +453,20 @@ class CodeEmitter:
 
     def _is_redundant_super_init_call(self, expr: dict[str, Any] | None) -> bool:
         """暗黙基底 ctor 呼び出しと等価な super().__init__ かを判定する。"""
-        if expr is None or self.any_dict_get(expr, "kind", "") != "Call":
+        if expr is None or self.any_dict_get_str(expr, "kind", "") != "Call":
             return False
         func = self.any_to_dict_or_empty(self.any_dict_get(expr, "func", None))
-        if self.any_dict_get(func, "kind", "") != "Attribute":
+        if self.any_dict_get_str(func, "kind", "") != "Attribute":
             return False
-        if str(self.any_dict_get(func, "attr", "")) != "__init__":
+        if self.any_dict_get_str(func, "attr", "") != "__init__":
             return False
         owner = self.any_to_dict_or_empty(self.any_dict_get(func, "value", None))
-        if self.any_dict_get(owner, "kind", "") != "Call":
+        if self.any_dict_get_str(owner, "kind", "") != "Call":
             return False
         owner_func = self.any_to_dict_or_empty(self.any_dict_get(owner, "func", None))
-        if self.any_dict_get(owner_func, "kind", "") != "Name":
+        if self.any_dict_get_str(owner_func, "kind", "") != "Name":
             return False
-        if str(self.any_dict_get(owner_func, "id", "")) != "super":
+        if self.any_dict_get_str(owner_func, "id", "") != "super":
             return False
         args = self.any_dict_get(expr, "args", [])
         kws = self.any_dict_get(expr, "keywords", [])
