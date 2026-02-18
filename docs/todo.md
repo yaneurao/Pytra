@@ -3,7 +3,16 @@
 ## 画像ランタイム統一（Python正本）
 
 1. [ ] `src/pylib/png.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
+   - [x] `py2cpp` に `--no-main` を追加し、ライブラリ変換（`main` なし）を可能にする。
+   - [x] self-hosted parser で `0x...` 整数リテラルと `^=` など拡張代入を受理する。
+   - [x] self-hosted parser で `with expr as name:` を `Assign + Try(finally close)` へ lower する。
+   - [ ] `pylib/png.py` 変換結果で残るランタイム依存（`open`, `ValueError`, `to_bytes` など）を C++ ランタイム API へ接続する。
+   - [ ] 生成結果を `src/runtime/cpp/pylib/png.cpp` へ置換し、既存出力と一致確認する。
 2. [ ] `src/pylib/gif.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
+   - [x] `_lzw_encode` のネスト関数を除去し、self-hosted parser で変換可能な形へ整理する。
+   - [x] `py2cpp --no-main src/pylib/gif.py` で C++ ソース生成できるところまで到達する。
+   - [ ] 生成結果で残るランタイム依存（`open`, `ValueError`, `to_bytes` など）を C++ ランタイム API へ接続する。
+   - [ ] 生成結果を `src/runtime/cpp/pylib/gif.cpp` へ置換し、既存出力と一致確認する。
 3. [x] 画像一致判定の既定手順を「バイナリ完全一致」へ統一し、`py2cpp` 向けの検証スクリプトを整理する。
    - [x] `pylib` と `runtime/cpp/pylib` の PNG/GIF 出力一致を確認する自動テスト（最小ケース）を追加する。
    - [x] 置換作業中の受け入れ基準を「Python正本と同じ入力で同一出力」へ固定する。

@@ -17,28 +17,37 @@ def _lzw_encode(data: bytes, min_code_size: int = 8) -> bytes:
     bit_buffer = 0
     bit_count = 0
 
-    def emit(code: int) -> None:
-        nonlocal bit_buffer, bit_count
-        bit_buffer |= code << bit_count
+    bit_buffer |= clear_code << bit_count
+    bit_count += code_size
+    while bit_count >= 8:
+        out.append(bit_buffer & 0xFF)
+        bit_buffer >>= 8
+        bit_count -= 8
+    code_size = min_code_size + 1
+
+    for v in data:
+        bit_buffer |= v << bit_count
         bit_count += code_size
         while bit_count >= 8:
             out.append(bit_buffer & 0xFF)
             bit_buffer >>= 8
             bit_count -= 8
 
-    def reset_table() -> None:
-        nonlocal code_size
+        bit_buffer |= clear_code << bit_count
+        bit_count += code_size
+        while bit_count >= 8:
+            out.append(bit_buffer & 0xFF)
+            bit_buffer >>= 8
+            bit_count -= 8
+
         code_size = min_code_size + 1
 
-    emit(clear_code)
-    reset_table()
-
-    for v in data:
-        emit(v)
-        emit(clear_code)
-        reset_table()
-
-    emit(end_code)
+    bit_buffer |= end_code << bit_count
+    bit_count += code_size
+    while bit_count >= 8:
+        out.append(bit_buffer & 0xFF)
+        bit_buffer >>= 8
+        bit_count -= 8
 
     if bit_count > 0:
         out.append(bit_buffer & 0xFF)
