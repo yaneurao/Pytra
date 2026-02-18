@@ -670,7 +670,7 @@ class CppEmitter:
             return
         self.emit(f"{texpr} = {self.render_expr(value)};")
 
-    def is_plain_name_expr(self, expr: dict[str, Any] | None) -> bool:
+    def is_plain_name_expr(self, expr: Any) -> bool:
         return isinstance(expr, dict) and expr.get("kind") == "Name"
 
     def _expr_repr_eq(self, a: dict[str, Any] | None, b: dict[str, Any] | None) -> bool:
@@ -682,7 +682,7 @@ class CppEmitter:
             return False
         return ra.strip() == rb.strip()
 
-    def render_lvalue(self, expr: dict[str, Any] | None) -> str:
+    def render_lvalue(self, expr: Any) -> str:
         if not isinstance(expr, dict):
             return self.render_expr(expr)
         if expr.get("kind") != "Subscript":
@@ -953,9 +953,13 @@ class CppEmitter:
         self.indent -= 1
         self.emit("};")
 
-    def render_expr(self, expr: dict[str, Any] | None) -> str:
+    def render_expr(self, expr: Any) -> str:
         if expr is None:
             return "/* none */"
+        if not isinstance(expr, dict):
+            if isinstance(expr, str):
+                return expr
+            return "/* non-expr */"
         kind = expr.get("kind")
 
         if kind == "Name":
@@ -1724,7 +1728,7 @@ class CppEmitter:
             return rep
         return f"/* unsupported expr: {kind} */"
 
-    def emit_bridge_comment(self, expr: dict[str, Any] | None) -> None:
+    def emit_bridge_comment(self, expr: Any) -> None:
         if not isinstance(expr, dict) or expr.get("kind") != "Call":
             return
         fn = expr.get("func")
@@ -1756,8 +1760,10 @@ class CppEmitter:
             self.emit(text)
             self.bridge_comment_emitted.add(key)
 
-    def get_expr_type(self, expr: dict[str, Any] | None) -> str:
+    def get_expr_type(self, expr: Any) -> str:
         if expr is None:
+            return ""
+        if not isinstance(expr, dict):
             return ""
         t = expr.get("resolved_type")
         return t if isinstance(t, str) else ""

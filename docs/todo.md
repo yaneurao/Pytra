@@ -77,4 +77,4 @@
 - `src/py2cpp.py` の `render_minmax` で `t` 未定義になる経路を修正。
 - `src/py2cpp.py` の文字列リテラル生成で `json.dumps` 依存を除去（`cpp_string_lit`）。
 - `src/py2cpp.py` の `cpp_type` 入力型を `Any` 化。
-- selfhost C++コンパイルエラー件数: `438 -> 396 -> 393 -> 374`。
+- selfhost C++コンパイルエラー件数: `438 -> 396 -> 393 -> 374 -> 328`。
