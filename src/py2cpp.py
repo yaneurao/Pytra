@@ -77,6 +77,12 @@ AUG_BIN = {
 }
 
 
+def any_dict_get(obj: Any, key: str, default: Any) -> Any:
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return default
+
+
 def cpp_string_lit(s: str) -> str:
     out: str = '"'
     i: int64 = 0
@@ -136,7 +142,7 @@ class CppEmitter:
         trivia = stmt.get("leading_trivia")
         return isinstance(trivia, list) and len(trivia) > 0
 
-    def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
+    def emit_stmt_list(self, stmts: list[Any]) -> None:
         for stmt in stmts:
             self.emit_stmt(stmt)
 
@@ -199,6 +205,36 @@ class CppEmitter:
         if "|" in s:
             parts = self.split_union(s)
             return any(self._is_any_like_type(p) for p in parts if p != "None")
+        return False
+
+    def _is_indexable_sequence_type(self, t: str) -> bool:
+        return t.startswith("list[") or t in {"str", "bytes", "bytearray"}
+
+    def _is_negative_const_index(self, node: Any) -> bool:
+        if not isinstance(node, dict):
+            return False
+        kind = str(node.get("kind", ""))
+        if kind == "Constant":
+            v = node.get("value")
+            if isinstance(v, int):
+                return v < 0
+            if isinstance(v, str):
+                try:
+                    return int(v) < 0
+                except ValueError:
+                    return False
+            return False
+        if kind == "UnaryOp" and node.get("op") == "USub":
+            opd = node.get("operand")
+            if isinstance(opd, dict) and opd.get("kind") == "Constant":
+                ov = opd.get("value")
+                if isinstance(ov, int):
+                    return ov > 0
+                if isinstance(ov, str):
+                    try:
+                        return int(ov) > 0
+                    except ValueError:
+                        return False
         return False
 
     def transpile(self) -> str:
@@ -385,34 +421,43 @@ class CppEmitter:
     def render_expr_as_any(self, expr: Any) -> str:
         if not isinstance(expr, dict):
             return f"std::any({self.render_expr(expr)})"
-        node: dict[str, Any] = expr
-        kind = str(node.get("kind", ""))
+        kind = str(any_dict_get(expr, "kind", ""))
         if kind == "Dict":
             items: list[str] = []
-            for kv in node.get("entries", []):
+            entries = any_dict_get(expr, "entries", [])
+            if not isinstance(entries, list):
+                entries = []
+            for kv in entries:
+                if not isinstance(kv, dict):
+                    continue
                 k = self.render_expr(kv.get("key"))
                 v = self.render_expr_as_any(kv.get("value"))
                 items.append(f"{{{k}, {v}}}")
             return f"std::any(dict<str, std::any>{{{', '.join(items)}}})"
         if kind == "List":
-            vals = ", ".join(self.render_expr_as_any(e) for e in node.get("elements", []))
+            elems = any_dict_get(expr, "elements", [])
+            if not isinstance(elems, list):
+                elems = []
+            vals = ", ".join(self.render_expr_as_any(e) for e in elems)
             return f"std::any(list<std::any>{{{vals}}})"
         return f"std::any({self.render_expr(expr)})"
 
     def render_boolop(self, expr: Any, force_value_select: bool = False) -> str:
         if not isinstance(expr, dict):
             return "false"
-        node: dict[str, Any] = expr
-        value_nodes = [v for v in node.get("values", []) if isinstance(v, dict)]
+        values = any_dict_get(expr, "values", [])
+        if not isinstance(values, list):
+            values = []
+        value_nodes = [v for v in values if isinstance(v, dict)]
         if len(value_nodes) == 0:
             return "false"
         value_texts = [self.render_expr(v) for v in value_nodes]
-        if not force_value_select and self.get_expr_type(node) == "bool":
-            op = "&&" if node.get("op") == "And" else "||"
+        if not force_value_select and self.get_expr_type(expr) == "bool":
+            op = "&&" if any_dict_get(expr, "op", "") == "And" else "||"
             values = [f"({txt})" for txt in value_texts]
             return f" {op} ".join(values)
 
-        op_name = str(node.get("op"))
+        op_name = str(any_dict_get(expr, "op", ""))
         out = value_texts[-1]
         i = len(value_nodes) - 2
         while i >= 0:
@@ -487,7 +532,9 @@ class CppEmitter:
             call = f"std::{fn}<{t}>({call}, {a})"
         return call
 
-    def emit_stmt(self, stmt: dict[str, Any]) -> None:
+    def emit_stmt(self, stmt: Any) -> None:
+        if not isinstance(stmt, dict):
+            return
         kind = stmt.get("kind")
         self.emit_leading_comments(stmt)
         if kind in {"Import", "ImportFrom"}:
@@ -726,10 +773,11 @@ class CppEmitter:
 
         self.emit(f"/* unsupported stmt kind: {kind} */")
 
-    def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
-        if len(stmts) != 1:
+    def _can_omit_braces_for_single_stmt(self, stmts: list[Any]) -> bool:
+        filtered = [s for s in stmts if isinstance(s, dict)]
+        if len(filtered) != 1:
             return False
-        k = stmts[0].get("kind")
+        k = filtered[0].get("kind")
         return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:
@@ -814,19 +862,11 @@ class CppEmitter:
         idx = self.render_expr(sl)
         if val_ty.startswith("dict["):
             return f"{val}[{idx}]"
-        if val_ty.startswith("list["):
+        if self._is_indexable_sequence_type(val_ty):
             if self.negative_index_mode == "off":
                 return f"{val}[{idx}]"
             if self.negative_index_mode == "const_only":
-                is_neg_const = False
-                if isinstance(sl, dict) and sl.get("kind") == "Constant":
-                    v = sl.get("value")
-                    is_neg_const = isinstance(v, int) and v < 0
-                elif isinstance(sl, dict) and sl.get("kind") == "UnaryOp" and sl.get("op") == "USub":
-                    opd = sl.get("operand")
-                    if isinstance(opd, dict) and opd.get("kind") == "Constant" and isinstance(opd.get("value"), int):
-                        is_neg_const = True
-                if is_neg_const:
+                if self._is_negative_const_index(sl):
                     return f"py_at({val}, {idx})"
                 return f"{val}[{idx}]"
             return f"py_at({val}, {idx})"
@@ -1678,19 +1718,11 @@ class CppEmitter:
             idx = self.render_expr(sl)
             if val_ty.startswith("dict["):
                 return f"py_dict_get({val}, {idx})"
-            if val_ty.startswith("list[") or val_ty == "str":
+            if self._is_indexable_sequence_type(val_ty):
                 if self.negative_index_mode == "off":
                     return f"{val}[{idx}]"
                 if self.negative_index_mode == "const_only":
-                    is_neg_const = False
-                    if isinstance(sl, dict) and sl.get("kind") == "Constant":
-                        v = sl.get("value")
-                        is_neg_const = isinstance(v, int) and v < 0
-                    elif isinstance(sl, dict) and sl.get("kind") == "UnaryOp" and sl.get("op") == "USub":
-                        opd = sl.get("operand")
-                        if isinstance(opd, dict) and opd.get("kind") == "Constant" and isinstance(opd.get("value"), int):
-                            is_neg_const = True
-                    if is_neg_const:
+                    if self._is_negative_const_index(sl):
                         return f"py_at({val}, {idx})"
                     return f"{val}[{idx}]"
                 return f"py_at({val}, {idx})"

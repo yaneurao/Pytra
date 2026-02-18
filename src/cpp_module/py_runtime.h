@@ -98,6 +98,14 @@ public:
     using typename std::vector<T>::const_iterator;
     using typename std::vector<T>::iterator;
 
+    template <class U, std::enable_if_t<!std::is_same_v<U, T>, int> = 0>
+    explicit list(const list<U>& other) {
+        this->reserve(other.size());
+        for (const auto& v : other) {
+            this->push_back(static_cast<T>(v));
+        }
+    }
+
     void append(const T& value) { this->push_back(value); }
     void append(T&& value) { this->push_back(std::move(value)); }
     template <class U = T, std::enable_if_t<!std::is_same_v<U, std::any>, int> = 0>
@@ -160,6 +168,14 @@ static inline std::string py_to_string(const std::string& v) {
     return v;
 }
 
+static inline std::string py_to_string(uint8 v) {
+    return std::to_string(static_cast<int>(v));
+}
+
+static inline std::string py_to_string(int8 v) {
+    return std::to_string(static_cast<int>(v));
+}
+
 static inline std::string py_to_string(const char* v) {
     return std::string(v);
 }
@@ -201,6 +217,12 @@ static inline int64 py_to_int64(T v) {
 static inline int64 py_to_int64(const std::any& v) {
     if (const auto* p = std::any_cast<int64>(&v)) return *p;
     if (const auto* p = std::any_cast<int>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<uint8>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<int8>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<uint16>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<int16>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<uint32>(&v)) return static_cast<int64>(*p);
+    if (const auto* p = std::any_cast<int32>(&v)) return static_cast<int64>(*p);
     if (const auto* p = std::any_cast<uint64>(&v)) return static_cast<int64>(*p);
     if (const auto* p = std::any_cast<float64>(&v)) return static_cast<int64>(*p);
     if (const auto* p = std::any_cast<float32>(&v)) return static_cast<int64>(*p);
