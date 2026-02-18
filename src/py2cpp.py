@@ -436,8 +436,7 @@ class CppEmitter(CodeEmitter):
         rendered: str,
         operand_expr: dict[str, Any] | None,
         parent_op: str,
-        *,
-        is_right: bool,
+        is_right: bool = False,
     ) -> str:
         """二項演算の結合順を壊さないため必要時に括弧を補う。"""
         if not isinstance(operand_expr, dict):
@@ -716,11 +715,10 @@ class CppEmitter(CodeEmitter):
             self.emit_for_each(stmt)
             return
         if kind == "Raise":
-            exc = stmt.get("exc")
-            if exc is None or not isinstance(exc, dict):
+            if not isinstance(stmt.get("exc"), dict):
                 self.emit('throw std::runtime_error("raise");')
             else:
-                self.emit(f"throw {self.render_expr(exc)};")
+                self.emit(f"throw {self.render_expr(stmt.get('exc'))};")
             return
         if kind == "Try":
             finalbody = self._dict_stmt_list(stmt.get("finalbody"))
@@ -780,10 +778,8 @@ class CppEmitter(CodeEmitter):
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         """代入文（通常代入/タプル代入）を C++ へ出力する。"""
-        target_raw = stmt.get("target")
-        value_raw = stmt.get("value")
-        target = self.any_to_dict_or_empty(target_raw)
-        value = self.any_to_dict_or_empty(value_raw)
+        target = self.any_to_dict_or_empty(stmt.get("target"))
+        value = self.any_to_dict_or_empty(stmt.get("value"))
         if len(target) == 0 or len(value) == 0:
             self.emit("/* invalid assign */")
             return
@@ -800,9 +796,9 @@ class CppEmitter(CodeEmitter):
                     self.emit(f"std::swap({self.render_lvalue(lhs_elems[0])}, {self.render_lvalue(lhs_elems[1])});")
                     return
             tmp = self.next_tmp("__tuple")
-            self.emit(f"auto {tmp} = {self.render_expr(value_raw)};")
+            self.emit(f"auto {tmp} = {self.render_expr(stmt.get('value'))};")
             tuple_elem_types: list[str] = []
-            value_t = self.get_expr_type(value_raw)
+            value_t = self.get_expr_type(stmt.get("value"))
             if isinstance(value_t, str) and value_t.startswith("tuple[") and value_t.endswith("]"):
                 tuple_elem_types = self.split_generic(value_t[6:-1])
             for i, elt in enumerate(target.get("elements", [])):
@@ -811,27 +807,32 @@ class CppEmitter(CodeEmitter):
                     elt_dict = self.any_to_dict_or_empty(elt)
                     name = str(elt_dict.get("id", ""))
                     if not self.is_declared(name):
-                        decl_t = self.cpp_type(tuple_elem_types[i] if i < len(tuple_elem_types) else self.get_expr_type(elt))
+                        decl_t_txt = ""
+                        if i < len(tuple_elem_types):
+                            decl_t_txt = tuple_elem_types[i]
+                        else:
+                            decl_t_txt = self.get_expr_type(elt)
+                        decl_t = self._cpp_type_text(decl_t_txt)
                         self.current_scope().add(name)
                         self.emit(f"{decl_t} {lhs} = std::get<{i}>({tmp});")
                         continue
                 self.emit(f"{lhs} = std::get<{i}>({tmp});")
             return
-        texpr = self.render_lvalue(target_raw)
-        if self.is_plain_name_expr(target_raw) and not self.is_declared(texpr):
+        texpr = self.render_lvalue(stmt.get("target"))
+        if self.is_plain_name_expr(stmt.get("target")) and not self.is_declared(texpr):
             d0 = str(stmt.get("decl_type", ""))
-            d1 = self.get_expr_type(target_raw)
-            d2 = self.get_expr_type(value_raw)
+            d1 = self.get_expr_type(stmt.get("target"))
+            d2 = self.get_expr_type(stmt.get("value"))
             picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
-            dtype = self.cpp_type(picked)
+            dtype = self._cpp_type_text(picked)
             self.current_scope().add(texpr)
-            rval = self.render_expr(value_raw)
+            rval = self.render_expr(stmt.get("value"))
             if dtype == "uint8" and isinstance(value, dict):
                 byte_val = self._byte_from_str_expr(value)
                 if byte_val is not None:
                     rval = str(byte_val)
             if isinstance(value, dict) and value.get("kind") == "BoolOp" and picked != "bool":
-                rval = self.render_boolop(value, True)
+                rval = self.render_boolop(stmt.get("value"), True)
             if self.is_any_like_type(picked):
                 if isinstance(value, dict) and value.get("kind") == "Constant" and value.get("value") is None:
                     rval = "object{}"
@@ -839,14 +840,14 @@ class CppEmitter(CodeEmitter):
                     rval = f"make_object({rval})"
             self.emit(f"{dtype} {texpr} = {rval};")
             return
-        rval = self.render_expr(value_raw)
-        t_target = self.get_expr_type(target_raw)
+        rval = self.render_expr(stmt.get("value"))
+        t_target = self.get_expr_type(stmt.get("target"))
         if t_target == "uint8" and isinstance(value, dict):
             byte_val = self._byte_from_str_expr(value)
             if byte_val is not None:
                 rval = str(byte_val)
         if isinstance(value, dict) and value.get("kind") == "BoolOp" and t_target != "bool":
-            rval = self.render_boolop(value, True)
+            rval = self.render_boolop(stmt.get("value"), True)
         if self.is_any_like_type(t_target):
             if isinstance(value, dict) and value.get("kind") == "Constant" and value.get("value") is None:
                 rval = "object{}"
@@ -856,15 +857,13 @@ class CppEmitter(CodeEmitter):
 
     def render_lvalue(self, expr: Any) -> str:
         """左辺値文脈の式（添字代入含む）を C++ 文字列へ変換する。"""
-        expr_node = self.any_to_dict(expr)
-        if expr_node is None:
+        node = self.any_to_dict_or_empty(expr)
+        if len(node) == 0:
             return self.render_expr(expr)
-        node = expr_node
         if node.get("kind") != "Subscript":
-            return self.render_expr(node)
-        val_expr = node.get("value")
-        val = self.render_expr(val_expr)
-        val_ty0 = self.get_expr_type(val_expr)
+            return self.render_expr(expr)
+        val = self.render_expr(node.get("value"))
+        val_ty0 = self.get_expr_type(node.get("value"))
         val_ty = val_ty0 if isinstance(val_ty0, str) else ""
         sl = node.get("slice")
         idx = self.render_expr(sl)
@@ -1151,14 +1150,14 @@ class CppEmitter(CodeEmitter):
                 params.append(p)
             self.emit(f"{name}({', '.join(params)}) {{")
             self.indent += 1
-            for fname in instance_fields:
+            for fname in instance_fields.keys():
                 self.emit(f"this->{fname} = {fname};")
             self.indent -= 1
             self.emit("}")
             self.emit("")
         for s in class_body:
             if s.get("kind") == "FunctionDef":
-                self.emit_function(s, in_class=True)
+                self.emit_function(s, True)
             elif s.get("kind") == "AnnAssign":
                 t = self.cpp_type(s.get("annotation"))
                 target_expr = s.get("target")
@@ -1182,8 +1181,8 @@ class CppEmitter(CodeEmitter):
     def _render_binop_expr(self, expr: dict[str, Any]) -> str:
         """BinOp ノードを C++ 式へ変換する。"""
         if expr.get("left") is None or expr.get("right") is None:
-            rep = expr.get("repr")
-            if isinstance(rep, str) and rep != "":
+            rep = self.any_to_str(expr.get("repr"))
+            if rep != "":
                 return rep
         left_expr = expr.get("left")
         right_expr = expr.get("right")
@@ -1199,10 +1198,12 @@ class CppEmitter(CodeEmitter):
                 right = self.apply_cast(right, to_t)
         op_name = expr.get("op")
         op_name_str = str(op_name)
-        left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
-        right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
-        hook_binop = self.hook_on_render_binop(expr, left, right)
-        if isinstance(hook_binop, str) and hook_binop != "":
+        left_node = self.any_to_dict_or_empty(left_expr)
+        right_node = self.any_to_dict_or_empty(right_expr)
+        left = self._wrap_for_binop_operand(left, left_node, op_name_str, False)
+        right = self._wrap_for_binop_operand(right, right_node, op_name_str, True)
+        hook_binop = self.any_to_str(self.hook_on_render_binop(expr, left, right))
+        if hook_binop != "":
             return hook_binop
         if op_name == "Div":
             # Prefer direct C++ division when float is involved (or EAST already injected casts).
@@ -1428,8 +1429,9 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "dict.values":
             owner = self.render_expr(fn.get("value"))
             return f"py_dict_values({owner})"
-        if isinstance(runtime_call, str) and self._is_std_runtime_call(runtime_call):
-            return f"{runtime_call}({', '.join(args)})"
+        runtime_call_txt = self.any_to_str(runtime_call)
+        if runtime_call_txt != "" and self._is_std_runtime_call(runtime_call_txt):
+            return f"{runtime_call_txt}({', '.join(args)})"
         if builtin_name == "bytes":
             return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
         if builtin_name == "bytearray":
@@ -1449,14 +1451,14 @@ class CppEmitter(CodeEmitter):
         """Call の Name/Attribute 分岐を処理する。"""
         if fn.get("kind") == "Name":
             raw = fn.get("id")
-            imported: dict[str, Any] = {}
             imported_module = ""
             if isinstance(raw, str) and not self.is_declared(raw):
                 resolved = self._resolve_imported_symbol(raw)
                 if isinstance(resolved, dict):
-                    imported = resolved
-                    imported_module = imported.get("module", "")
-                    raw = imported.get("name", raw)
+                    imported_module = self.any_to_str(resolved.get("module"))
+                    resolved_name = self.any_to_str(resolved.get("name"))
+                    if resolved_name != "":
+                        raw = resolved_name
             if isinstance(raw, str) and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
                 if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "save_gif", "Path"}:
@@ -1549,8 +1551,8 @@ class CppEmitter(CodeEmitter):
                 loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
                 return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
         if fn.get("kind") == "Attribute":
-            attr_rendered = self._render_call_attribute(expr, fn, args, kw)
-            if isinstance(attr_rendered, str) and attr_rendered != "":
+            attr_rendered = self.any_to_str(self._render_call_attribute(expr, fn, args, kw))
+            if attr_rendered != "":
                 return attr_rendered
         return None
 
@@ -1602,11 +1604,11 @@ class CppEmitter(CodeEmitter):
         attr = attr_raw if isinstance(attr_raw, str) else ""
         if attr == "":
             return None
-        module_rendered = self._render_call_module_method(owner_mod, attr, args, kw)
-        if isinstance(module_rendered, str) and module_rendered != "":
+        module_rendered = self.any_to_str(self._render_call_module_method(owner_mod, attr, args, kw))
+        if module_rendered != "":
             return module_rendered
-        object_rendered = self._render_call_object_method(owner_t, owner_expr, attr)
-        if isinstance(object_rendered, str) and object_rendered != "":
+        object_rendered = self.any_to_str(self._render_call_object_method(owner_t, owner_expr, attr))
+        if object_rendered != "":
             return object_rendered
         return None
 
@@ -1617,7 +1619,7 @@ class CppEmitter(CodeEmitter):
     def _prepare_call_parts(
         self,
         expr: dict[str, Any],
-    ) -> tuple[dict[str, Any], str, list[Any], list[str], dict[str, str], Any]:
+    ) -> dict[str, Any]:
         """Call ノードの前処理（func/args/kw 展開）を共通化する。"""
         fn_raw = expr.get("func")
         fn = fn_raw if isinstance(fn_raw, dict) else {}
@@ -1635,7 +1637,14 @@ class CppEmitter(CodeEmitter):
             kname = k.get("arg")
             if isinstance(kname, str):
                 kw[kname] = self.render_expr(k.get("value"))
-        return fn, fn_name, arg_nodes, args, kw, first_arg
+        out: dict[str, Any] = {}
+        out["fn"] = fn
+        out["fn_name"] = fn_name
+        out["arg_nodes"] = arg_nodes
+        out["args"] = args
+        out["kw"] = kw
+        out["first_arg"] = first_arg
+        return out
 
     def _render_unary_expr(self, expr: dict[str, Any]) -> str:
         """UnaryOp ノードを C++ 式へ変換する。"""
@@ -1845,7 +1854,17 @@ class CppEmitter(CodeEmitter):
                     return f"{base}.parent()"
             return f"{base}.{attr}"
         if kind == "Call":
-            fn, fn_name, arg_nodes, args, kw, first_arg = self._prepare_call_parts(expr)
+            call_parts = self._prepare_call_parts(expr)
+            fn = self.any_to_dict_or_empty(call_parts.get("fn"))
+            fn_name = self.any_to_str(call_parts.get("fn_name"))
+            arg_nodes = self.any_to_list(call_parts.get("arg_nodes"))
+            args = [self.any_to_str(a) for a in self.any_to_list(call_parts.get("args"))]
+            kw_raw = self.any_to_dict_or_empty(call_parts.get("kw"))
+            kw: dict[str, str] = {}
+            for k, v in kw_raw.items():
+                if isinstance(k, str):
+                    kw[k] = self.any_to_str(v)
+            first_arg = call_parts.get("first_arg")
             if fn.get("kind") == "Attribute":
                 owner_node = fn.get("value")
                 owner_t = self.get_expr_type(owner_node)
@@ -2100,8 +2119,8 @@ class CppEmitter(CodeEmitter):
             lines.append("}()")
             return " ".join(lines)
 
-        rep = expr.get("repr")
-        if isinstance(rep, str) and rep != "":
+        rep = self.any_to_str(expr.get("repr"))
+        if rep != "":
             return rep
         return f"/* unsupported expr: {kind} */"
 
