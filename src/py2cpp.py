@@ -17,11 +17,15 @@ from common.east import EastBuildError, convert_path, convert_source_to_east_wit
 
 
 class BaseEmitter:
-    def __init__(self, east_doc: dict[str, Any]) -> None:
-        self.doc: dict[str, Any] = east_doc
+    def __init__(self) -> None:
+        self.doc: dict[str, Any] = {}
         self.lines: list[str] = []
         self.indent: int = 0
         self.tmp_id: int = 0
+
+    def emit_stmt(self, stmt: dict[str, Any] | None) -> None:
+        # Subclasses override this.
+        return
 
     def emit(self, line: str = "") -> None:
         self.lines.append(("    " * self.indent) + line)
@@ -34,16 +38,41 @@ class BaseEmitter:
         self.tmp_id += 1
         return f"{prefix}_{self.tmp_id}"
 
-    def any_dict_get(self, obj: dict[str, Any], key: str, default_value: Any) -> Any:
-        if key in obj:
-            return obj[key]
-        return default_value
+    def any_dict_get(
+        self,
+        obj: dict[str, Any] | None,
+        key: str,
+        default_value: str | list[Any] | dict[str, Any] | None,
+    ) -> str | list[Any] | dict[str, Any] | None:
+        if not isinstance(obj, dict):
+            return default_value
+        return obj.get(key, default_value)
+
+    def any_to_dict(self, v: str | list[Any] | dict[str, Any] | None) -> dict[str, Any] | None:
+        if isinstance(v, dict):
+            d: dict[str, Any] = v
+            return d
+        return None
+
+    def any_to_list(self, v: str | list[Any] | dict[str, Any] | None) -> list[Any]:
+        if isinstance(v, list):
+            out: list[Any] = v
+            return out
+        return []
+
+    def any_to_str(self, v: str | list[Any] | dict[str, Any] | None) -> str:
+        if isinstance(v, str):
+            s: str = v
+            return s
+        return ""
 
     def get_expr_type(self, expr: dict[str, Any] | None) -> str:
         if expr is None:
             return ""
         t = expr.get("resolved_type")
-        return t if isinstance(t, str) else ""
+        if isinstance(t, str):
+            return str(t)
+        return ""
 
     def is_name(self, node: dict[str, Any] | None, name: str | None = None) -> bool:
         if node is None or node.get("kind") != "Name":
@@ -63,9 +92,9 @@ class BaseEmitter:
         return str(node.get("attr", "")) == attr
 
     def split_generic(self, s: str) -> list[str]:
-        if s == "":
-            return []
         out: list[str] = []
+        if s == "":
+            return out
         depth = 0
         start = 0
         for i, ch in enumerate(s):
@@ -84,21 +113,21 @@ class BaseEmitter:
         depth = 0
         start = 0
         for i, ch in enumerate(s):
-            if ch in {"[", "("}:
+            if ch == "[" or ch == "(":
                 depth += 1
-            elif ch in {"]", ")"}:
+            elif ch == "]" or ch == ")":
                 depth -= 1
             elif ch == "|" and depth == 0:
-                part = s[start:i].strip()
+                part: str = s[start:i].strip()
                 if part != "":
                     out.append(part)
                 start = i + 1
-        tail = s[start:].strip()
+        tail: str = s[start:].strip()
         if tail != "":
             out.append(tail)
         return out
 
-    def normalize_type_name(self, t: Any) -> str:
+    def normalize_type_name(self, t: str | None) -> str:
         if not isinstance(t, str):
             return ""
         s = str(t)
@@ -108,25 +137,41 @@ class BaseEmitter:
             return "object"
         return s
 
-    def is_any_like_type(self, t: Any) -> bool:
-        s = self.normalize_type_name(t)
+    def _is_any_like_type_text(self, s: str) -> bool:
         if s == "":
             return False
-        if s in {"Any", "object", "unknown"}:
+        if s == "Any" or s == "object" or s == "unknown":
             return True
         if "|" in s:
             parts = self.split_union(s)
-            return any(self.is_any_like_type(p) for p in parts if p != "None")
+            for p in parts:
+                if p == "None":
+                    continue
+                if self._is_any_like_type_text(p):
+                    return True
+            return False
         return False
 
-    def is_forbidden_object_receiver_type(self, t: Any) -> bool:
+    def is_any_like_type(self, t: str | None) -> bool:
         s = self.normalize_type_name(t)
-        if s in {"Any", "object", "any"}:
+        return self._is_any_like_type_text(s)
+
+    def _is_forbidden_object_receiver_type_text(self, s: str) -> bool:
+        if s == "Any" or s == "object" or s == "any":
             return True
         if "|" in s:
             parts = self.split_union(s)
-            return any(p in {"Any", "object", "any"} for p in parts if p != "None")
+            for p in parts:
+                if p == "None":
+                    continue
+                if p == "Any" or p == "object" or p == "any":
+                    return True
+            return False
         return False
+
+    def is_forbidden_object_receiver_type(self, t: str | None) -> bool:
+        s = self.normalize_type_name(t)
+        return self._is_forbidden_object_receiver_type_text(s)
 
     def is_list_type(self, t: str) -> bool:
         return t.startswith("list[")
@@ -138,7 +183,9 @@ class BaseEmitter:
         return t.startswith("dict[")
 
     def is_indexable_sequence_type(self, t: str) -> bool:
-        return t.startswith("list[") or t in {"str", "bytes", "bytearray"}
+        if t.startswith("list["):
+            return True
+        return t == "str" or t == "bytes" or t == "bytearray"
 
 
 CPP_HEADER = """#include "cpp_module/py_runtime.h"
@@ -301,7 +348,7 @@ class CppEmitter(BaseEmitter):
         if kind == "Constant":
             v = node.get("value")
             if isinstance(v, int):
-                return v < 0
+                return int(v) < 0
             if isinstance(v, str):
                 try:
                     return int(v) < 0
@@ -313,7 +360,7 @@ class CppEmitter(BaseEmitter):
             if isinstance(opd, dict) and opd.get("kind") == "Constant":
                 ov = opd.get("value")
                 if isinstance(ov, int):
-                    return ov > 0
+                    return int(ov) > 0
                 if isinstance(ov, str):
                     try:
                         return int(ov) > 0
@@ -509,9 +556,10 @@ class CppEmitter(BaseEmitter):
         return s
 
     def apply_cast(self, rendered_expr: str, to_type: str | None) -> str:
-        if not isinstance(to_type, str) or to_type == "":
+        to_type_text = to_type if isinstance(to_type, str) else ""
+        if to_type_text == "":
             return rendered_expr
-        return f"static_cast<{self.cpp_type(to_type)}>({rendered_expr})"
+        return f"static_cast<{self.cpp_type(to_type_text)}>({rendered_expr})"
 
     def render_to_string(self, expr: dict[str, Any] | None) -> str:
         rendered = self.render_expr(expr)
@@ -528,41 +576,40 @@ class CppEmitter(BaseEmitter):
     def render_expr_as_any(self, expr: dict[str, Any] | None) -> str:
         if not isinstance(expr, dict):
             return f"make_object({self.render_expr(expr)})"
-        kind = str(self.any_dict_get(expr, "kind", ""))
+        kind = self.any_to_str(self.any_dict_get(expr, "kind", ""))
         if kind == "Dict":
             items: list[str] = []
-            entries = self.any_dict_get(expr, "entries", [])
-            if not isinstance(entries, list):
-                entries = []
-            for kv in entries:
-                if not isinstance(kv, dict):
+            entries = self.any_to_list(self.any_dict_get(expr, "entries", []))
+            for kv_raw in entries:
+                kv = self.any_to_dict(kv_raw)
+                if kv is None:
                     continue
-                k = self.render_expr(kv.get("key"))
-                v = self.render_expr_as_any(kv.get("value"))
+                k = self.render_expr(self.any_to_dict(self.any_dict_get(kv, "key", None)))
+                v = self.render_expr_as_any(self.any_to_dict(self.any_dict_get(kv, "value", None)))
                 items.append(f"{{{k}, {v}}}")
             return f"make_object(dict<str, object>{{{', '.join(items)}}})"
         if kind == "List":
-            elems = self.any_dict_get(expr, "elements", [])
-            if not isinstance(elems, list):
-                elems = []
-            vals = ", ".join(self.render_expr_as_any(e) for e in elems)
+            elems = self.any_to_list(self.any_dict_get(expr, "elements", []))
+            vals = ", ".join(self.render_expr_as_any(self.any_to_dict(e)) for e in elems)
             return f"make_object(list<object>{{{vals}}})"
         return f"make_object({self.render_expr(expr)})"
 
     def render_boolop(self, expr: dict[str, Any] | None, force_value_select: bool = False) -> str:
         if not isinstance(expr, dict):
             return "false"
-        values = self.any_dict_get(expr, "values", [])
-        if not isinstance(values, list):
-            values = []
-        value_nodes = [v for v in values if isinstance(v, dict)]
+        values = self.any_to_list(self.any_dict_get(expr, "values", []))
+        value_nodes: list[dict[str, Any]] = []
+        for v in values:
+            vd = self.any_to_dict(v)
+            if vd is not None:
+                value_nodes.append(vd)
         if len(value_nodes) == 0:
             return "false"
         value_texts = [self.render_expr(v) for v in value_nodes]
         if not force_value_select and self.get_expr_type(expr) == "bool":
-            op = "&&" if self.any_dict_get(expr, "op", "") == "And" else "||"
-            values = [f"({txt})" for txt in value_texts]
-            return f" {op} ".join(values)
+            op = "&&" if self.any_to_str(self.any_dict_get(expr, "op", "")) == "And" else "||"
+            wrapped_values = [f"({txt})" for txt in value_texts]
+            return f" {op} ".join(wrapped_values)
 
         op_name = str(self.any_dict_get(expr, "op", ""))
         out = value_texts[-1]

@@ -2895,6 +2895,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 i += 1
                 continue
 
+            if s == "return":
+                rcol = ln_txt.find("return")
+                push_stmt(
+                    {
+                        "kind": "Return",
+                        "source_span": stmt_span(ln_no, rcol, len(ln_txt)),
+                        "value": None,
+                    }
+                )
+                i += 1
+                continue
+
             if s.startswith("return "):
                 rcol = ln_txt.find("return ")
                 expr_txt = ln_txt[rcol + len("return ") :].strip()

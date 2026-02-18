@@ -391,6 +391,11 @@ static inline const dict<str, object>* obj_to_dict_ptr(const object& v) {
     return nullptr;
 }
 
+static inline const list<object>* obj_to_list_ptr(const object& v) {
+    if (const auto* p = py_obj_cast<PyListObj>(v)) return &(p->value);
+    return nullptr;
+}
+
 static inline dict<str, object> obj_to_dict(const object& v) {
     if (const auto* p = obj_to_dict_ptr(v)) return *p;
     return {};
@@ -607,6 +612,14 @@ static inline const V& py_dict_get(const dict<K, V>& d, const K& key) {
     return it->second;
 }
 
+template <class K, class V>
+static inline const V& py_dict_get(const std::optional<dict<K, V>>& d, const K& key) {
+    if (!d.has_value()) {
+        throw std::out_of_range("dict key not found");
+    }
+    return py_dict_get(*d, key);
+}
+
 template <class V>
 static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
     auto it = d.find(str(key));
@@ -614,6 +627,14 @@ static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
         throw std::out_of_range("dict key not found");
     }
     return it->second;
+}
+
+template <class V>
+static inline const V& py_dict_get(const std::optional<dict<str, V>>& d, const char* key) {
+    if (!d.has_value()) {
+        throw std::out_of_range("dict key not found");
+    }
+    return py_dict_get(*d, key);
 }
 
 static inline object py_dict_get(const dict<str, object>& d, const char* key) {
@@ -649,6 +670,14 @@ static inline V py_dict_get_default(const dict<K, V>& d, const K& key, const V& 
     return it->second;
 }
 
+template <class K, class V>
+static inline V py_dict_get_default(const std::optional<dict<K, V>>& d, const K& key, const V& defval) {
+    if (!d.has_value()) {
+        return defval;
+    }
+    return py_dict_get_default(*d, key, defval);
+}
+
 template <class V>
 static inline V py_dict_get_default(const dict<str, V>& d, const char* key, const V& defval) {
     auto it = d.find(str(key));
@@ -656,6 +685,14 @@ static inline V py_dict_get_default(const dict<str, V>& d, const char* key, cons
         return defval;
     }
     return it->second;
+}
+
+template <class V>
+static inline V py_dict_get_default(const std::optional<dict<str, V>>& d, const char* key, const V& defval) {
+    if (!d.has_value()) {
+        return defval;
+    }
+    return py_dict_get_default(*d, key, defval);
 }
 
 template <class K, class V, class D, std::enable_if_t<std::is_convertible_v<D, V>, int> = 0>
@@ -667,6 +704,14 @@ static inline V py_dict_get_default(const dict<K, V>& d, const K& key, const D& 
     return it->second;
 }
 
+template <class K, class V, class D, std::enable_if_t<std::is_convertible_v<D, V>, int> = 0>
+static inline V py_dict_get_default(const std::optional<dict<K, V>>& d, const K& key, const D& defval) {
+    if (!d.has_value()) {
+        return static_cast<V>(defval);
+    }
+    return py_dict_get_default(*d, key, defval);
+}
+
 template <class V, class D, std::enable_if_t<std::is_convertible_v<D, V>, int> = 0>
 static inline V py_dict_get_default(const dict<str, V>& d, const char* key, const D& defval) {
     auto it = d.find(str(key));
@@ -674,6 +719,14 @@ static inline V py_dict_get_default(const dict<str, V>& d, const char* key, cons
         return static_cast<V>(defval);
     }
     return it->second;
+}
+
+template <class V, class D, std::enable_if_t<std::is_convertible_v<D, V>, int> = 0>
+static inline V py_dict_get_default(const std::optional<dict<str, V>>& d, const char* key, const D& defval) {
+    if (!d.has_value()) {
+        return static_cast<V>(defval);
+    }
+    return py_dict_get_default(*d, key, defval);
 }
 
 static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const object& defval) {
@@ -724,6 +777,27 @@ static inline object py_dict_get_default(const object& obj, const char* key, con
         return py_dict_get_default(*p, key, defval);
     }
     return make_object(str(defval));
+}
+
+static inline object py_dict_get_default(const std::optional<dict<str, object>>& d, const char* key, const object& defval) {
+    if (!d.has_value()) {
+        return defval;
+    }
+    return py_dict_get_default(*d, key, defval);
+}
+
+static inline object py_dict_get_default(const std::optional<dict<str, object>>& d, const char* key, const char* defval) {
+    if (!d.has_value()) {
+        return make_object(str(defval));
+    }
+    return py_dict_get_default(*d, key, defval);
+}
+
+static inline object py_dict_get_default(const std::optional<dict<str, object>>& d, const char* key, const str& defval) {
+    if (!d.has_value()) {
+        return make_object(defval);
+    }
+    return py_dict_get_default(*d, key, defval);
 }
 
 template <class D>
@@ -829,6 +903,27 @@ static inline bool py_is_int(const object& v) { return py_obj_cast<PyIntObj>(v) 
 static inline bool py_is_float(const object& v) { return py_obj_cast<PyFloatObj>(v) != nullptr; }
 static inline bool py_is_bool(const object& v) { return py_obj_cast<PyBoolObj>(v) != nullptr; }
 
+template <class T> static inline bool py_is_dict(const std::optional<T>& v) {
+    if (!v.has_value()) return false;
+    return py_is_dict(*v);
+}
+template <class T> static inline bool py_is_list(const std::optional<T>& v) {
+    if (!v.has_value()) return false;
+    return py_is_list(*v);
+}
+template <class T> static inline bool py_is_set(const std::optional<T>& v) {
+    if (!v.has_value()) return false;
+    return py_is_set(*v);
+}
+template <class T> static inline bool py_is_str(const std::optional<T>& v) {
+    if (!v.has_value()) return false;
+    return py_is_str(*v);
+}
+template <class T> static inline bool py_is_bool(const std::optional<T>& v) {
+    if (!v.has_value()) return false;
+    return py_is_bool(*v);
+}
+
 static inline bool py_is_dict(const std::any& v) { return v.type() == typeid(dict<str, std::any>); }
 static inline bool py_is_list(const std::any& v) { return v.type() == typeid(list<std::any>); }
 static inline bool py_is_set(const std::any& v) { return v.type() == typeid(set<str>) || v.type() == typeid(set<std::any>); }
@@ -888,6 +983,34 @@ static inline list<std::any>::const_iterator end(const std::any& v) {
     if (const auto* p = std::any_cast<list<std::any>>(&v)) return p->end();
     static const list<std::any> empty;
     return empty.end();
+}
+
+static inline list<object>::const_iterator begin(const object& v) {
+    if (const auto* p = obj_to_list_ptr(v)) return p->begin();
+    static const list<object> empty;
+    return empty.begin();
+}
+
+static inline list<object>::const_iterator end(const object& v) {
+    if (const auto* p = obj_to_list_ptr(v)) return p->end();
+    static const list<object> empty;
+    return empty.end();
+}
+
+static inline list<object>::const_iterator begin(const std::optional<object>& v) {
+    if (!v.has_value()) {
+        static const list<object> empty;
+        return empty.begin();
+    }
+    return begin(*v);
+}
+
+static inline list<object>::const_iterator end(const std::optional<object>& v) {
+    if (!v.has_value()) {
+        static const list<object> empty;
+        return empty.end();
+    }
+    return end(*v);
 }
 
 // Selfhost-generated C++ can iterate std::any values that hold list<std::any>.
@@ -994,6 +1117,13 @@ static inline str py_join(const str& sep, const list<T>& values) {
         out += py_to_string(values[i]);
     }
     return out;
+}
+
+static inline str py_join(const str& sep, const object& values) {
+    if (const auto* p = obj_to_list_ptr(values)) {
+        return py_join(sep, *p);
+    }
+    return "";
 }
 
 template <class T>

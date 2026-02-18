@@ -176,6 +176,26 @@ if __name__ == "__main__":
         with self.assertRaises(EastBuildError):
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
 
+    def test_bare_return_is_parsed_as_return_stmt(self) -> None:
+        src = """
+def f(flag: bool) -> None:
+    if flag:
+        return
+    print(1)
+
+def main() -> None:
+    f(True)
+    print(True)
+
+if __name__ == "__main__":
+    main()
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        returns = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Return"]
+        self.assertGreaterEqual(len(returns), 1)
+        bare = [r for r in returns if r.get("value") is None]
+        self.assertGreaterEqual(len(bare), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
