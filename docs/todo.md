@@ -18,7 +18,7 @@
 4. [ ] フック注入 (`EmitterHooks`) を実装する。
    - [ ] `on_render_call`, `on_render_binop`, `on_emit_stmt` など最小フック面を定義する。
    - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる。
-   - [ ] C++ 向け hooks 実装を `src/common/hooks/cpp_hooks.py` として分離する。
+   - [ ] C++ 向け hooks 実装を `src/runtime/cpp/hooks/cpp_hooks.py` として分離する。
 5. [ ] 回帰確認を追加する。
    - [ ] `test/unit/test_code_emitter.py` を追加し、profile/hook の境界を検証する。
    - [ ] `test/unit/test_py2cpp_features.py` と `test/unit/test_image_runtime_parity.py` を回帰する。

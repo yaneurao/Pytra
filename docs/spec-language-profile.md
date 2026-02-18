@@ -45,7 +45,7 @@
     "syntax.json"
   ],
   "hooks": {
-    "module": "common.hooks.cpp_hooks",
+    "module": "runtime.cpp.hooks.cpp_hooks",
     "class": "CppHooks"
   }
 }
@@ -169,4 +169,3 @@ EAST 演算子 -> 出力トークン。
 2. `runtime_call_map.json` の内容を `profiles/cpp/runtime_calls.json` へ移す。
 3. `py2cpp.py` 直書きマップを順次削除する。
 4. `BaseEmitter` を `CodeEmitter` へ改名し、`BaseEmitter = CodeEmitter` で互換維持する。
-
