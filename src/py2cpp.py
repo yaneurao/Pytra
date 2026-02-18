@@ -546,10 +546,11 @@ class CppEmitter(CodeEmitter):
         self.indent -= 1
         self.emit(self.syntax_text("block_close", "}"))
 
-    def _render_lvalue_for_augassign(self, target_expr: dict[str, Any]) -> str:
+    def _render_lvalue_for_augassign(self, target_expr: Any) -> str:
         """AugAssign 向けに左辺を簡易レンダリングする。"""
-        if target_expr.get("kind") == "Name":
-            return str(target_expr.get("id", "_"))
+        target_node = self.any_to_dict_or_empty(target_expr)
+        if target_node.get("kind") == "Name":
+            return str(target_node.get("id", "_"))
         return self.render_lvalue(target_expr)
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
@@ -557,7 +558,7 @@ class CppEmitter(CodeEmitter):
         hook_stmt = self.hook_on_emit_stmt(stmt)
         if hook_stmt is True:
             return
-        kind = stmt.get("kind")
+        kind = str(stmt.get("kind", ""))
         self.emit_leading_comments(stmt)
         if kind in {"Import", "ImportFrom"}:
             return
@@ -676,10 +677,11 @@ class CppEmitter(CodeEmitter):
             return
         if kind == "AugAssign":
             op = "+="
-            target_expr = self.any_to_dict_or_empty(stmt.get("target"))
+            target_expr = stmt.get("target")
+            target_expr_node = self.any_to_dict_or_empty(target_expr)
             target = self._render_lvalue_for_augassign(target_expr)
             declare = self.any_dict_get_int(stmt, "declare", 0) != 0
-            if declare and target_expr.get("kind") == "Name" and target not in self.current_scope():
+            if declare and target_expr_node.get("kind") == "Name" and target not in self.current_scope():
                 decl_t_raw = stmt.get("decl_type")
                 decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
                 inferred_t = self.get_expr_type(stmt.get("target"))
@@ -776,17 +778,22 @@ class CppEmitter(CodeEmitter):
 
     def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
         """単文ブロックで波括弧を省略可能か判定する。"""
-        filtered: list[dict[str, Any]] = [s for s in stmts if isinstance(s, dict)]
+        filtered: list[dict[str, Any]] = []
+        for s in stmts:
+            if isinstance(s, dict):
+                filtered.append(s)
         if len(filtered) != 1:
             return False
-        k = filtered[0].get("kind")
+        k = str(filtered[0].get("kind", ""))
         return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         """代入文（通常代入/タプル代入）を C++ へ出力する。"""
-        target = stmt.get("target")
-        value = stmt.get("value")
-        if not isinstance(target, dict) or not isinstance(value, dict):
+        target_raw = stmt.get("target")
+        value_raw = stmt.get("value")
+        target = self.any_to_dict_or_empty(target_raw)
+        value = self.any_to_dict_or_empty(value_raw)
+        if len(target) == 0 or len(value) == 0:
             self.emit("/* invalid assign */")
             return
         if target.get("kind") == "Tuple":
@@ -802,15 +809,16 @@ class CppEmitter(CodeEmitter):
                     self.emit(f"std::swap({self.render_lvalue(lhs_elems[0])}, {self.render_lvalue(lhs_elems[1])});")
                     return
             tmp = self.next_tmp("__tuple")
-            self.emit(f"auto {tmp} = {self.render_expr(value)};")
+            self.emit(f"auto {tmp} = {self.render_expr(value_raw)};")
             tuple_elem_types: list[str] = []
-            value_t = self.get_expr_type(value)
+            value_t = self.get_expr_type(value_raw)
             if isinstance(value_t, str) and value_t.startswith("tuple[") and value_t.endswith("]"):
                 tuple_elem_types = self.split_generic(value_t[6:-1])
             for i, elt in enumerate(target.get("elements", [])):
                 lhs = self.render_expr(elt)
                 if self.is_plain_name_expr(elt):
-                    name = str(elt.get("id", ""))
+                    elt_dict = self.any_to_dict_or_empty(elt)
+                    name = str(elt_dict.get("id", ""))
                     if not self.is_declared(name):
                         decl_t = self.cpp_type(tuple_elem_types[i] if i < len(tuple_elem_types) else self.get_expr_type(elt))
                         self.current_scope().add(name)
@@ -818,19 +826,19 @@ class CppEmitter(CodeEmitter):
                         continue
                 self.emit(f"{lhs} = std::get<{i}>({tmp});")
             return
-        texpr = self.render_lvalue(target)
-        if self.is_plain_name_expr(target) and not self.is_declared(texpr):
-            d0 = stmt.get("decl_type")
-            d1 = self.get_expr_type(target)
-            d2 = self.get_expr_type(value)
-            picked = d0 if isinstance(d0, str) and d0 != "" else (d1 if isinstance(d1, str) and d1 != "" else d2)
+        texpr = self.render_lvalue(target_raw)
+        if self.is_plain_name_expr(target_raw) and not self.is_declared(texpr):
+            d0 = str(stmt.get("decl_type", ""))
+            d1 = self.get_expr_type(target_raw)
+            d2 = self.get_expr_type(value_raw)
+            picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
             dtype = self.cpp_type(picked)
             self.current_scope().add(texpr)
-            rval = self.render_expr(value)
+            rval = self.render_expr(value_raw)
             if dtype == "uint8" and isinstance(value, dict):
                 byte_val = self._byte_from_str_expr(value)
                 if byte_val is not None:
-                    rval = byte_val
+                    rval = str(byte_val)
             if isinstance(value, dict) and value.get("kind") == "BoolOp" and picked != "bool":
                 rval = self.render_boolop(value, True)
             if self.is_any_like_type(picked):
@@ -840,12 +848,12 @@ class CppEmitter(CodeEmitter):
                     rval = f"make_object({rval})"
             self.emit(f"{dtype} {texpr} = {rval};")
             return
-        rval = self.render_expr(value)
-        t_target = self.get_expr_type(target)
+        rval = self.render_expr(value_raw)
+        t_target = self.get_expr_type(target_raw)
         if t_target == "uint8" and isinstance(value, dict):
             byte_val = self._byte_from_str_expr(value)
             if byte_val is not None:
-                rval = byte_val
+                rval = str(byte_val)
         if isinstance(value, dict) and value.get("kind") == "BoolOp" and t_target != "bool":
             rval = self.render_boolop(value, True)
         if self.is_any_like_type(t_target):
@@ -881,23 +889,24 @@ class CppEmitter(CodeEmitter):
             return f"py_at({val}, {idx})"
         return f"{val}[{idx}]"
 
-    def _target_bound_names(self, target: dict[str, Any] | None) -> set[str]:
+    def _target_bound_names(self, target: dict[str, Any]) -> set[str]:
         """for ターゲットが束縛する識別子名を収集する。"""
         names: set[str] = set()
-        if not isinstance(target, dict):
+        if not isinstance(target, dict) or len(target) == 0:
             return names
         if target.get("kind") == "Name":
             names.add(str(target.get("id", "_")))
             return names
         if target.get("kind") == "Tuple":
             for e in target.get("elements", []):
-                if isinstance(e, dict) and e.get("kind") == "Name":
-                    names.add(str(e.get("id", "_")))
+                e_dict = self.any_to_dict_or_empty(e)
+                if e_dict.get("kind") == "Name":
+                    names.add(str(e_dict.get("id", "_")))
         return names
 
-    def _emit_target_unpack(self, target: dict[str, Any] | None, src: str) -> None:
+    def _emit_target_unpack(self, target: dict[str, Any], src: str) -> None:
         """タプルターゲットへのアンパック代入を出力する。"""
-        if not isinstance(target, dict):
+        if not isinstance(target, dict) or len(target) == 0:
             return
         if target.get("kind") != "Tuple":
             return
@@ -908,22 +917,31 @@ class CppEmitter(CodeEmitter):
 
     def emit_for_range(self, stmt: dict[str, Any]) -> None:
         """ForRange ノードを C++ の for ループとして出力する。"""
-        tgt = self.render_expr(stmt.get("target"))
+        target_raw = stmt.get("target")
+        target_node = self.any_to_dict_or_empty(target_raw)
+        if len(target_node) == 0:
+            self.emit("/* invalid for-range target */")
+            return
+        tgt = self.render_expr(target_raw)
         t0 = stmt.get("target_type")
-        t1 = self.get_expr_type(stmt.get("target"))
+        t1 = self.get_expr_type(target_raw)
         tgt_ty = self.cpp_type(t0 if isinstance(t0, str) and t0 != "" else t1)
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
         body_stmts = self._dict_stmt_list(stmt.get("body"))
         omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
-        mode = stmt.get("range_mode")
+        mode = self.any_to_str(stmt.get("range_mode"))
+        if mode == "":
+            mode = "dynamic"
+        cond = ""
         if mode == "ascending":
             cond = f"{tgt} < {stop}"
         elif mode == "descending":
             cond = f"{tgt} > {stop}"
         else:
             cond = f"{step} > 0 ? {tgt} < {stop} : {tgt} > {stop}"
+        inc = ""
         if step == "1":
             inc = f"++{tgt}"
         elif step == "-1":
@@ -950,11 +968,16 @@ class CppEmitter(CodeEmitter):
 
     def emit_for_each(self, stmt: dict[str, Any]) -> None:
         """For ノード（反復）を C++ range-for として出力する。"""
-        target = stmt.get("target")
-        iter_expr = stmt.get("iter")
-        if isinstance(iter_expr, dict) and iter_expr.get("kind") == "RangeExpr":
+        target_raw = stmt.get("target")
+        iter_expr_raw = stmt.get("iter")
+        target = self.any_to_dict_or_empty(target_raw)
+        iter_expr = self.any_to_dict_or_empty(iter_expr_raw)
+        if len(target) == 0 or len(iter_expr) == 0:
+            self.emit("/* invalid for */")
+            return
+        if iter_expr.get("kind") == "RangeExpr":
             pseudo = {
-                "target": target,
+                "target": target_raw,
                 "target_type": stmt.get("target_type") if isinstance(stmt.get("target_type"), str) and stmt.get("target_type") != "" else "int64",
                 "start": iter_expr.get("start"),
                 "stop": iter_expr.get("stop"),
@@ -966,16 +989,18 @@ class CppEmitter(CodeEmitter):
             return
         body_stmts = self._dict_stmt_list(stmt.get("body"))
         omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
-        t = self.render_expr(target)
-        it = self.render_expr(iter_expr)
+        t = self.render_expr(target_raw)
+        it = self.render_expr(iter_expr_raw)
         t0 = stmt.get("target_type")
-        t1 = self.get_expr_type(target)
+        t1 = self.get_expr_type(target_raw)
         t_ty = self.cpp_type(t0 if isinstance(t0, str) and t0 != "" else t1)
-        target_names = self._target_bound_names(target if isinstance(target, dict) else None)
-        unpack_tuple = isinstance(target, dict) and target.get("kind") == "Tuple"
+        target_names = self._target_bound_names(target)
+        unpack_tuple = target.get("kind") == "Tuple"
         if unpack_tuple:
             # tuple unpack emits extra binding lines before the loop body; keep braces for correctness.
             omit_braces = False
+        iter_tmp = ""
+        hdr = ""
         if unpack_tuple:
             iter_tmp = self.next_tmp("__it")
             hdr = f"for (auto {iter_tmp} : {it})"
@@ -989,7 +1014,7 @@ class CppEmitter(CodeEmitter):
             self.indent += 1
             self.scope_stack.append(target_names)
             if unpack_tuple:
-                self._emit_target_unpack(target if isinstance(target, dict) else None, iter_tmp)
+                self._emit_target_unpack(target, iter_tmp)
             self.emit_stmt(body_stmts[0])
             self.scope_stack.pop()
             self.indent -= 1
@@ -999,7 +1024,7 @@ class CppEmitter(CodeEmitter):
         self.indent += 1
         self.scope_stack.append(target_names)
         if unpack_tuple:
-            self._emit_target_unpack(target if isinstance(target, dict) else None, iter_tmp)
+            self._emit_target_unpack(target, iter_tmp)
         self.emit_stmt_list(body_stmts)
         self.scope_stack.pop()
         self.indent -= 1
@@ -1013,7 +1038,9 @@ class CppEmitter(CodeEmitter):
         arg_usage: dict[str, str] = stmt.get("arg_usage", {})
         params: list[str] = []
         fn_scope: set[str] = set()
-        for idx, (n, t) in enumerate(arg_types.items()):
+        arg_names = list(arg_types.keys())
+        for idx, n in enumerate(arg_names):
+            t = arg_types.get(n, "")
             if in_class and idx == 0 and n == "self":
                 continue
             ct = self.cpp_type(t)
@@ -1418,11 +1445,12 @@ class CppEmitter(CodeEmitter):
         """Call の Name/Attribute 分岐を処理する。"""
         if fn.get("kind") == "Name":
             raw = fn.get("id")
-            imported = None
+            imported: dict[str, Any] = {}
             imported_module = ""
             if isinstance(raw, str) and not self.is_declared(raw):
-                imported = self._resolve_imported_symbol(raw)
-                if isinstance(imported, dict):
+                resolved = self._resolve_imported_symbol(raw)
+                if isinstance(resolved, dict):
+                    imported = resolved
                     imported_module = imported.get("module", "")
                     raw = imported.get("name", raw)
             if isinstance(raw, str) and imported_module != "":
@@ -1885,24 +1913,28 @@ class CppEmitter(CodeEmitter):
             body_expr = self.render_expr(expr.get("body"))
             return f"[&]({', '.join(arg_texts)}) {{ return {body_expr}; }}"
         if kind == "ListComp":
-            gens = expr.get("generators", [])
+            gens = self._dict_stmt_list(expr.get("generators"))
             if len(gens) != 1:
                 return "{}"
             g = gens[0]
-            g_target = g.get("target")
-            tgt = self.render_expr(g_target)
+            g_target_raw = g.get("target")
+            g_target = self.any_to_dict_or_empty(g_target_raw)
+            tgt = self.render_expr(g_target_raw)
             it = self.render_expr(g.get("iter"))
             elt = self.render_expr(expr.get("elt"))
             out_t = self.cpp_type(expr.get("resolved_type"))
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
-            tuple_unpack = isinstance(g_target, dict) and g_target.get("kind") == "Tuple"
+            tuple_unpack = g_target.get("kind") == "Tuple"
             iter_tmp = self.next_tmp("__it")
-            if isinstance(g.get("iter"), dict) and g.get("iter", {}).get("kind") == "RangeExpr":
-                rg = g.get("iter", {})
+            rg = self.any_to_dict_or_empty(g.get("iter"))
+            if rg.get("kind") == "RangeExpr":
                 start = self.render_expr(rg.get("start"))
                 stop = self.render_expr(rg.get("stop"))
                 step = self.render_expr(rg.get("step"))
-                mode = rg.get("range_mode")
+                mode = self.any_to_str(rg.get("range_mode"))
+                if mode == "":
+                    mode = "dynamic"
+                cond = ""
                 if mode == "ascending":
                     cond = f"({tgt} < {stop})"
                 elif mode == "descending":
@@ -1919,28 +1951,32 @@ class CppEmitter(CodeEmitter):
                             lines.append(f"        auto {nm} = std::get<{i}>({iter_tmp});")
                 else:
                     lines.append(f"    for (auto {tgt} : {it}) {{")
-            ifs = g.get("ifs", [])
+            ifs = self._dict_stmt_list(g.get("ifs"))
             if len(ifs) == 0:
                 lines.append(f"        __out.append({elt});")
             else:
-                cond = " && ".join(self.render_expr(c) for c in ifs)
+                cond_parts: list[str] = []
+                for c in ifs:
+                    cond_parts.append(self.render_expr(c))
+                cond = " && ".join(cond_parts)
                 lines.append(f"        if ({cond}) __out.append({elt});")
             lines.append("    }")
             lines.append("    return __out;")
             lines.append("}()")
             return " ".join(lines)
         if kind == "SetComp":
-            gens = expr.get("generators", [])
+            gens = self._dict_stmt_list(expr.get("generators"))
             if len(gens) != 1:
                 return "{}"
             g = gens[0]
-            g_target = g.get("target")
-            tgt = self.render_expr(g_target)
+            g_target_raw = g.get("target")
+            g_target = self.any_to_dict_or_empty(g_target_raw)
+            tgt = self.render_expr(g_target_raw)
             it = self.render_expr(g.get("iter"))
             elt = self.render_expr(expr.get("elt"))
             out_t = self.cpp_type(expr.get("resolved_type"))
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
-            tuple_unpack = isinstance(g_target, dict) and g_target.get("kind") == "Tuple"
+            tuple_unpack = g_target.get("kind") == "Tuple"
             iter_tmp = self.next_tmp("__it")
             if tuple_unpack:
                 lines.append(f"    for (auto {iter_tmp} : {it}) {{")
@@ -1950,29 +1986,33 @@ class CppEmitter(CodeEmitter):
                         lines.append(f"        auto {nm} = std::get<{i}>({iter_tmp});")
             else:
                 lines.append(f"    for (auto {tgt} : {it}) {{")
-            ifs = g.get("ifs", [])
+            ifs = self._dict_stmt_list(g.get("ifs"))
             if len(ifs) == 0:
                 lines.append(f"        __out.insert({elt});")
             else:
-                cond = " && ".join(self.render_expr(c) for c in ifs)
+                cond_parts: list[str] = []
+                for c in ifs:
+                    cond_parts.append(self.render_expr(c))
+                cond = " && ".join(cond_parts)
                 lines.append(f"        if ({cond}) __out.insert({elt});")
             lines.append("    }")
             lines.append("    return __out;")
             lines.append("}()")
             return " ".join(lines)
         if kind == "DictComp":
-            gens = expr.get("generators", [])
+            gens = self._dict_stmt_list(expr.get("generators"))
             if len(gens) != 1:
                 return "{}"
             g = gens[0]
-            g_target = g.get("target")
-            tgt = self.render_expr(g_target)
+            g_target_raw = g.get("target")
+            g_target = self.any_to_dict_or_empty(g_target_raw)
+            tgt = self.render_expr(g_target_raw)
             it = self.render_expr(g.get("iter"))
             key = self.render_expr(expr.get("key"))
             val = self.render_expr(expr.get("value"))
             out_t = self.cpp_type(expr.get("resolved_type"))
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
-            tuple_unpack = isinstance(g_target, dict) and g_target.get("kind") == "Tuple"
+            tuple_unpack = g_target.get("kind") == "Tuple"
             iter_tmp = self.next_tmp("__it")
             if tuple_unpack:
                 lines.append(f"    for (auto {iter_tmp} : {it}) {{")
@@ -1982,11 +2022,14 @@ class CppEmitter(CodeEmitter):
                         lines.append(f"        auto {nm} = std::get<{i}>({iter_tmp});")
             else:
                 lines.append(f"    for (auto {tgt} : {it}) {{")
-            ifs = g.get("ifs", [])
+            ifs = self._dict_stmt_list(g.get("ifs"))
             if len(ifs) == 0:
                 lines.append(f"        __out[{key}] = {val};")
             else:
-                cond = " && ".join(self.render_expr(c) for c in ifs)
+                cond_parts: list[str] = []
+                for c in ifs:
+                    cond_parts.append(self.render_expr(c))
+                cond = " && ".join(cond_parts)
                 lines.append(f"        if ({cond}) __out[{key}] = {val};")
             lines.append("    }")
             lines.append("    return __out;")
