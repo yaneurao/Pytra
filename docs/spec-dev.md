@@ -8,6 +8,7 @@
   - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
+  - `profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
   - `runtime/cpp/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: 各ターゲット言語向けランタイム補助
   - `pylib/`: Python 側の共通ライブラリ（正式）
 - `test/`: `py`（入力）と各ターゲット言語の変換結果
@@ -56,11 +57,11 @@
 - `from pylib import png` / `import png` -> `#include "runtime/cpp/pylib/png.h"`
 - GC は常時 `#include "runtime/cpp/base/gc.h"` を利用
 
-`math` などの `module.attr(...)` 呼び出しは、`src/runtime/cpp/runtime_call_map.json` の設定で C++ ランタイム呼び出しへマップします。
+`math` などの `module.attr(...)` 呼び出しは、`LanguageProfile`（JSON）の設定で C++ ランタイム呼び出しへマップします。
 
 - 例: `"sqrt": "py_math::sqrt"`（`math.sqrt(...)` -> `py_math::sqrt(...)`）
-- 追加方法: `src/runtime/cpp/runtime_call_map.json` の `module_attr_call.<module>` に関数を追記
-- 起動時に JSON を読み込み、未定義項目は `py2cpp.py` 内の既定マップを使用
+- 追加方法: `src/profiles/cpp/runtime_calls.json` の `runtime_calls.module_attr_call.<module>` に関数を追記
+- 起動時に profile JSON を読み込み、未定義項目は共通既定値で補完します。
 
 補足:
 
@@ -181,7 +182,18 @@
   - 型文字列補助（`split_generic`, `split_union`, `normalize_type_name`, `is_*_type`）
 - `BaseEmitter` に機能追加・仕様変更した場合は、同ファイルへ対応テストを追加してから利用側エミッタへ展開します。
 
-## 6. 実装上の共通ルール
+## 6. LanguageProfile / CodeEmitter
+
+- `CodeEmitter` は言語非依存の骨組み（ノード走査、スコープ管理、共通補助）を担当します。
+- 言語固有差分は `LanguageProfile` JSON に定義します。
+  - 型マップ
+  - 演算子マップ
+  - runtime call マップ
+  - 構文テンプレート
+- JSON だけで表現しにくい例外ケースは `hooks` で処理します。
+- 詳細スキーマは `docs/spec-language-profile.md` を正本とします。
+
+## 7. 実装上の共通ルール
 
 - `src/common/` には言語非依存で再利用される処理のみを配置します。
 - 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/common/` に置きません。
@@ -191,7 +203,7 @@
 - 標準ライブラリ対応の記載は、モジュール名だけでなく関数単位で明記します。
 - ドキュメント未記載の関数は未対応扱いです。
 
-## 7. 各ターゲットの実行モード注記
+## 8. 各ターゲットの実行モード注記
 
 - `py2rs.py`: ネイティブ変換モード（Python インタプリタ非依存）
 - `py2js.py` / `py2ts.py`: ネイティブ変換モード（Node.js ランタイム）

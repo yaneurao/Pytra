@@ -4,6 +4,7 @@
 
 - 利用仕様: [`docs/spec-user.md`](./spec-user.md)
 - 実装仕様: [`docs/spec-dev.md`](./spec-dev.md)
+- 言語プロファイル仕様: [`docs/spec-language-profile.md`](./spec-language-profile.md)
 - Codex 向け運用仕様: [`docs/spec-codex.md`](./spec-codex.md)
 
 ## 読み分け方
@@ -12,6 +13,8 @@
   - [`docs/spec-user.md`](./spec-user.md)
 - 実装方針・モジュール構成・変換仕様を確認したい場合:
   - [`docs/spec-dev.md`](./spec-dev.md)
+- `CodeEmitter` の JSON プロファイルと hooks 仕様を確認したい場合:
+  - [`docs/spec-language-profile.md`](./spec-language-profile.md)
 - Codex の作業ルール・TODO 運用・コミット運用を確認したい場合:
   - [`docs/spec-codex.md`](./spec-codex.md)
 
