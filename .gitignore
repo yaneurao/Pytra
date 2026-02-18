@@ -8,7 +8,16 @@ __pycache__/
 
 /test/test_gc
 /test/obj/
+/test/cpp/
 /test/cpp2/
+/test/cs/
+/test/go/
+/test/java/
+/test/js/
+/test/kotlin/
+/test/rs/
+/test/swift/
+/test/ts/
 /sample/obj/
 /sample/out/
 
