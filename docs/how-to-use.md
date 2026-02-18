@@ -220,6 +220,9 @@ python3 src/py2cpp.py sample/py/01_mandelbrot.py -o test/transpile/cpp/01_mandel
 
 # 6) 生成差分を確認（ソース差分は許容、まずは確認用）
 diff -u test/transpile/cpp/01_mandelbrot.cpp test/transpile/cpp2/01_mandelbrot.cpp || true
+
+# 7) Python版とselfhost版の出力差分を代表ケースで一括確認
+python3 tools/check_selfhost_cpp_diff.py --show-diff
 ```
 
 失敗時の確認ポイント:

@@ -61,7 +61,7 @@
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
 5. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
    - [ ] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。
-   - [ ] `selfhost/py2cpp.out` と `python3 src/py2cpp.py` の出力差分チェックをスクリプト化する。
+   - [x] `selfhost/py2cpp.out` と `python3 src/py2cpp.py` の出力差分チェックをスクリプト化する。: `tools/check_selfhost_cpp_diff.py`
    - [ ] CI 相当手順（ローカル）に組み込む。
 
 ## 複数ファイル構成（最終ゴール）
