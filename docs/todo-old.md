@@ -306,3 +306,55 @@
 - [x] `docs/spec-east.md` に `Any -> object(rc<PyObj>)` 方針を明記する。
 - [x] `docs/spec.md` に `Any` の制約（boxing/unboxing, None 表現）を追記する。
 - [x] `readme.md` に `Any` 実装状況（移行中）を明記する。
+
+## 移管: 2026-02-18（todo.md から完了済みを移動・2）
+
+### selfhost 回復（完了分）
+
+- [x] `selfhost/py2cpp.py` のパース失敗を最小再現ケースへ分離する（`except ValueError:` 近傍）。
+- [x] `src/common/east.py` self_hosted parser に不足構文を追加する。
+- [x] 2. の再発防止として unit test を追加する。
+- [x] `PYTHONPATH=src python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` を成功させる。
+- [x] `selfhost/py2cpp.cpp` をコンパイルし、エラー件数を再計測する。
+- [x] コンパイルエラー上位カテゴリを3分類し、順に削減する。
+- [x] `src/py2cpp.py` 実行結果との一致条件を定義し、比較確認する。
+- [x] `selfhost/` には `src` 最新をコピーしてよい前提で、`selfhost/py2cpp.py` と `selfhost/cpp_module/*` を同期する（`cp -f src/py2cpp.py selfhost/py2cpp.py` / `cp -f src/cpp_module/* selfhost/cpp_module/`）。
+- [x] `g++` ログ取得を `> selfhost/build.all.log 2>&1` に統一し、`stderr` 空でも原因追跡できるようにする。
+
+### object 制約の実装反映（汎用）
+
+- [x] EAST で `object` レシーバの属性アクセス・メソッド呼び出しを検出し、`unsupported_syntax` を返す。
+- [x] `py2cpp.py` の emit 時にもガードを追加し、`object` レシーバの呼び出し漏れを最終防止する。
+- [x] `test/fixtures/signature/` に `object` レシーバ呼び出し禁止の NG ケースを追加する。
+- [x] `test/unit` に NG ケースが失敗することを確認する回帰テストを追加する。
+
+### 追加回帰（super）
+
+- [x] `super()` の回帰 fixture を追加する（`test/fixtures/oop/super_init.py`）。
+- [x] EAST parser 側で `super().__init__()` を含むコードが parse できる unit test を追加する。
+- [x] C++ 変換して実行まで通る runtime test を追加する（`test/unit/test_py2cpp_features.py`）。
+
+### EAST へ移譲（py2cpp 簡素化・第2段）
+
+- [x] `src/common/east_parts/core.py` で `Call(Name(...))` の `len/str/int/float/bool/min/max/Path/Exception` を全て `BuiltinCall` 化し、`py2cpp` の生分岐を削減する。
+- [x] `src/common/east_parts/core.py` で `Attribute` 呼び出しの `owner_t == "unknown"` フォールバック依存を減らし、型確定時は EAST で runtime_call を確定させる。
+- [x] `src/py2cpp.py` の `render_expr(kind=="Call")` から、EAST で吸収済みの `raw == ...` / `owner_t.startswith(...)` 分岐を段階削除する。
+- [x] `test/unit/test_py2cpp_features.py` に `BuiltinCall` 正規化の回帰（`dict.get/items/keys/values`, `str` メソッド, `Path` メソッド）を追加する。
+- [x] `test/unit` 一式を再実行し、`test/fixtures` 一括実行で退行がないことを確認する。
+
+### BaseEmitter 共通化（言語非依存 EAST ユーティリティ）
+
+- [x] `src/common/base_emitter.py` に言語非依存ヘルパ（`any_dict_get`, union型分解、`Any` 判定）を移し、`CppEmitter` の重複を削減する。
+- [x] ノード補助（`is_name/is_call/is_attr` などの軽量判定）を `BaseEmitter` に追加し、各エミッタの分岐可読性を上げる。
+- [x] 型文字列ユーティリティ（`is_list_type/is_dict_type/is_set_type`）を `BaseEmitter` へ寄せる。
+- [x] `py2cpp.py` で `BaseEmitter` の新規ユーティリティ利用へ置換し、挙動差分がないことを回帰テストで確認する。
+- [x] 次段として `py2rs.py` / `py2cs.py` でも流用可能な API 形に揃え、適用候補箇所を `todo.md` に追記する。
+
+## 移管: 2026-02-18（todo.md から完了済みを移動・3）
+
+### selfhost 回復（完了分）
+
+- [x] self_hosted parser で `return`（値なし）を文として受理する。
+- [x] `return`（値なし）の再発防止 unit test（`test/unit/test_east_core.py`）を追加する。
+- [x] `BaseEmitter` に `any_to_dict/any_to_list/any_to_str` ヘルパを追加する（自己変換時の型崩れ分析の土台）。
+- [x] `py_runtime.h` に `optional<dict<...>>` 向け `py_dict_get/py_dict_get_default` 補助オーバーロードを追加する。
