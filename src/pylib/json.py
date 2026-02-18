@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from pylib.typing import Any
 
 
 class _JsonParser:
@@ -257,4 +257,3 @@ def dumps(
         raise TypeError(f"json.dumps unsupported type: {type(v).__name__}")
 
     return _dump(obj, 0)
-

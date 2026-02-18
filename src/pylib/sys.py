@@ -7,7 +7,6 @@ imports of Python stdlib `sys`.
 from __future__ import annotations
 
 import sys as _sys
-from typing import Any
 
 argv = _sys.argv
 path = _sys.path
@@ -35,4 +34,3 @@ def write_stderr(text: str) -> None:
 
 def write_stdout(text: str) -> None:
     stdout.write(text)
-

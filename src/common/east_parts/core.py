@@ -7,7 +7,7 @@ import argparse
 import json
 import re
 from dataclasses import dataclass
-from typing import Any
+from pylib.typing import Any
 from pylib.path import Path
 from pylib import sys
 

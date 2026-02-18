@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-from typing import Iterable
+from pylib.typing import Iterable
 
 
 def add_common_transpile_args(
@@ -46,4 +46,3 @@ def normalize_common_transpile_args(
         if not cur:
             setattr(args, "parser_backend", default_parser_backend)
     return args
-

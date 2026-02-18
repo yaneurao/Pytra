@@ -7,7 +7,7 @@ It can also accept a Python source file and internally run src/common/east.py co
 
 from __future__ import annotations
 
-from typing import Any
+from pylib.typing import Any
 
 from common.code_emitter import CodeEmitter
 from common.east_io import load_east_from_path

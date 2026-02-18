@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
-from typing import List, Set
+from pylib.typing import List, Set
 
 INT32_MIN = -(2**31)
 INT32_MAX = 2**31 - 1

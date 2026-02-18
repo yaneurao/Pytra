@@ -5,7 +5,7 @@ Loads JSON profile trees from src/profiles/<lang>/profile.json with include supp
 
 from __future__ import annotations
 
-from typing import Any
+from pylib.typing import Any
 from pylib import json
 from pylib.path import Path
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from pylib.typing import Any
 
 from common.east import EastBuildError, convert_path, convert_source_to_east_with_backend
 from pylib import json
