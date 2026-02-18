@@ -2040,8 +2040,8 @@ class CppEmitter(CodeEmitter):
         """正規化済み型名（str）を C++ 型名へマッピングする。"""
         if east_type == "":
             return "auto"
-        mapped = self.type_map.get(east_type)
-        if isinstance(mapped, str) and mapped != "":
+        mapped = self.any_to_str(self.type_map.get(east_type))
+        if mapped != "":
             return mapped
         if east_type in {"Any", "object"}:
             return "object"
@@ -2049,8 +2049,14 @@ class CppEmitter(CodeEmitter):
             parts = self.split_union(east_type)
             if len(parts) >= 2:
                 non_none = [p for p in parts if p != "None"]
-                if len(non_none) >= 1 and set(non_none).issubset({"bytes", "bytearray"}):
-                    return "bytes"
+                if len(non_none) >= 1:
+                    only_bytes = True
+                    for p in non_none:
+                        if p not in {"bytes", "bytearray"}:
+                            only_bytes = False
+                            break
+                    if only_bytes:
+                        return "bytes"
                 if any(self.is_any_like_type(p) for p in non_none):
                     return "object"
                 if len(parts) == 2 and len(non_none) == 1:
