@@ -46,6 +46,7 @@
 
 ## 7. selfhost 運用ノウハウ
 
+- `python3 tools/prepare_selfhost_source.py` を先に実行し、`BaseEmitter` を `selfhost/py2cpp.py` へインライン展開した自己完結ソースを作ってから selfhost 変換を行う。
 - selfhost 検証前に、`selfhost/py2cpp.py` と `selfhost/runtime/cpp/*` は `src` の最新へ同期してよい（必要時は同期を優先）。
 - `#include "runtime/cpp/..."` は `selfhost/` 配下の同名ヘッダが優先解決される。`src/runtime/cpp` だけ更新しても selfhost ビルドは直らないことがある。
 - selfhost のビルドログは `stdout` 側に出ることがあるため、`> selfhost/build.all.log 2>&1` で統合取得する。
