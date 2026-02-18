@@ -2,16 +2,16 @@
 """EAST human renderer helpers."""
 from __future__ import annotations
 
-import json
 from typing import Any
+from pylib import json as py_json
 
 from .core import FLOAT_TYPES, INT_TYPES
 
 def _dump_json(obj: dict[str, Any], *, pretty: bool) -> str:
     """Serialize output JSON in compact or pretty mode."""
     if pretty:
-        return json.dumps(obj, ensure_ascii=False, indent=2)
-    return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+        return py_json.dumps(obj, ensure_ascii=False, indent=2)
+    return py_json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
 
 
 def _indent(lines: list[str], level: int = 1) -> list[str]:
@@ -302,5 +302,4 @@ def render_east_human_cpp(out_doc: dict[str, Any]) -> str:
     lines.append("} // namespace east_view")
     lines.append("")
     return "\n".join(lines)
-
 
