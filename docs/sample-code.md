@@ -48,15 +48,9 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 `test/` は小規模な機能確認ケース、`sample/` は実用寄り・負荷高めケースという役割分担です。
 
 - [test/fixtures](../test/fixtures): 変換元テストコード
-- [test/transpile/cpp](../test/transpile/cpp): C++ 変換結果
-- [test/transpile/cs](../test/transpile/cs): C# 変換結果
-- [test/transpile/rs](../test/transpile/rs): Rust 変換結果
-- [test/transpile/js](../test/transpile/js): JavaScript 変換結果
-- [test/transpile/ts](../test/transpile/ts): TypeScript 変換結果
-- [test/transpile/go](../test/transpile/go): Go 変換結果
-- [test/transpile/java](../test/transpile/java): Java 変換結果
-- [test/transpile/swift](../test/transpile/swift): Swift 変換結果
-- [test/transpile/kotlin](../test/transpile/kotlin): Kotlin 変換結果
+- [test/unit](../test/unit): ユニットテスト
+- `test/transpile/`: 変換生成物の作業ディレクトリ（Git管理外）
+  - GitHub上では閲覧できません。必要な場合はローカルでトランスパイル実行して生成してください。
 
 ## 6. 画像一致に関する補足
 
