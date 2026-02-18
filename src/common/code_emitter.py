@@ -23,12 +23,12 @@ class CodeEmitter:
     ) -> None:
         """共通の出力状態と一時変数カウンタを初期化する。"""
         self.doc = east_doc
-        self.profile = profile if isinstance(profile, dict) else {}
+        self.profile = profile if profile is not None else {}
         self.hooks = hooks if hooks is not None else {}
-        self.lines: list[str] = []
+        self.lines = []
         self.indent = 0
         self.tmp_id = 0
-        self.scope_stack: list[set[str]] = [set()]
+        self.scope_stack = [set()]
 
     def emit_stmt(self, stmt: Any) -> None:
         """文ノード出力フック。派生クラス側で実装する。"""
@@ -73,11 +73,8 @@ class CodeEmitter:
 
     def syntax_text(self, key: str, default_value: str) -> str:
         """profile.syntax からテンプレート文字列を取得する。"""
-        profile = self.profile
-        if not isinstance(profile, dict):
-            return default_value
-        syn = profile.get("syntax")
-        if not isinstance(syn, dict):
+        syn = self.any_to_dict(self.profile.get("syntax"))
+        if syn is None:
             return default_value
         v = syn.get(key)
         if isinstance(v, str) and v != "":
@@ -102,13 +99,12 @@ class CodeEmitter:
         self.tmp_id += 1
         return f"{prefix}_{self.tmp_id}"
 
-    def any_dict_get(self, obj: Any, key: str, default_value: Any) -> Any:
+    def any_dict_get(self, obj: dict[str, Any] | None, key: str, default_value: Any) -> Any:
         """dict 風入力から key を取得し、失敗時は既定値を返す。"""
-        if not isinstance(obj, dict):
+        d = obj if isinstance(obj, dict) else None
+        if d is None:
             return default_value
-        if key in obj:
-            return obj[key]
-        return default_value
+        return d.get(key, default_value)
 
     def any_to_dict(self, v: Any) -> dict[str, Any] | None:
         """動的値を dict に安全に変換する。変換不能なら None。"""
@@ -120,9 +116,7 @@ class CodeEmitter:
     def any_to_dict_or_empty(self, v: Any) -> dict[str, Any]:
         """動的値を dict に安全に変換する。変換不能なら空 dict。"""
         d = self.any_to_dict(v)
-        if isinstance(d, dict):
-            return d
-        return {}
+        return d if d is not None else {}
 
     def any_to_list(self, v: Any) -> list[Any]:
         """動的値を list に安全に変換する。変換不能なら空 list。"""
@@ -140,12 +134,16 @@ class CodeEmitter:
 
     def get_expr_type(self, expr: Any) -> str:
         """式ノードから解決済み型文字列を取得する。"""
-        expr_node = self.any_to_dict_or_empty(expr)
+        expr_node = self.any_to_dict(expr)
+        if expr_node is None:
+            return ""
         t = self.any_dict_get(expr_node, "resolved_type", "")
         return t if isinstance(t, str) else ""
 
     def is_name(self, node: Any, name: str | None = None) -> bool:
-        node_dict = self.any_to_dict_or_empty(node)
+        node_dict = self.any_to_dict(node)
+        if node_dict is None:
+            return False
         if self.any_dict_get(node_dict, "kind", "") != "Name":
             return False
         if name is None:
@@ -153,11 +151,15 @@ class CodeEmitter:
         return str(self.any_dict_get(node_dict, "id", "")) == name
 
     def is_call(self, node: Any) -> bool:
-        node_dict = self.any_to_dict_or_empty(node)
+        node_dict = self.any_to_dict(node)
+        if node_dict is None:
+            return False
         return self.any_dict_get(node_dict, "kind", "") == "Call"
 
     def is_attr(self, node: Any, attr: str | None = None) -> bool:
-        node_dict = self.any_to_dict_or_empty(node)
+        node_dict = self.any_to_dict(node)
+        if node_dict is None:
+            return False
         if self.any_dict_get(node_dict, "kind", "") != "Attribute":
             return False
         if attr is None:
@@ -472,9 +474,9 @@ class CodeEmitter:
 
     def render_cond(self, expr: Any) -> str:
         """条件式文脈向けに式を真偽値へ正規化して出力する。"""
-        if expr is None or not isinstance(expr, dict):
+        expr_node = self.any_to_dict(expr)
+        if expr_node is None:
             return "false"
-        expr_node = self.any_to_dict_or_empty(expr)
         t = self.get_expr_type(expr_node)
         body = self._strip_outer_parens(self.render_expr(expr_node))
         if t in {"bool"}:

@@ -1381,6 +1381,206 @@ class CppEmitter(CodeEmitter):
         op = BIN_OPS.get(op_name, "+")
         return f"{left} {op} {right}"
 
+    def _render_builtin_call(
+        self,
+        expr: dict[str, Any],
+        fn: dict[str, Any],
+        args: list[str],
+        kw: dict[str, str],
+        first_arg: Any,
+    ) -> str | None:
+        """lowered_kind=BuiltinCall の呼び出しを処理する。"""
+        runtime_call = expr.get("runtime_call")
+        builtin_name = expr.get("builtin_name")
+        if runtime_call == "py_print":
+            return f"py_print({', '.join(args)})"
+        if runtime_call == "py_len" and len(args) == 1:
+            return f"py_len({args[0]})"
+        if runtime_call == "py_to_string" and len(args) == 1:
+            src_expr = first_arg
+            return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
+        if runtime_call == "static_cast" and len(args) == 1:
+            target = self.cpp_type(expr.get("resolved_type"))
+            arg_t = self.get_expr_type(first_arg if isinstance(first_arg, dict) else None)
+            numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            if target == "int64" and arg_t == "str":
+                return f"py_to_int64({args[0]})"
+            if target == "int64" and arg_t in numeric_t:
+                return f"int64({args[0]})"
+            if target == "int64" and self.is_any_like_type(arg_t):
+                return f"py_to_int64({args[0]})"
+            if target in {"float64", "float32"} and self.is_any_like_type(arg_t):
+                return f"py_to_float64({args[0]})"
+            if target == "bool" and self.is_any_like_type(arg_t):
+                return f"py_to_bool({args[0]})"
+            if target == "int64":
+                return f"py_to_int64({args[0]})"
+            return f"static_cast<{target}>({args[0]})"
+        if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
+            fn_name = "min" if runtime_call == "py_min" else "max"
+            return self.render_minmax(fn_name, args, self.get_expr_type(expr))
+        if runtime_call == "perf_counter":
+            return "perf_counter()"
+        if runtime_call == "open":
+            return f"open({', '.join(args)})"
+        if runtime_call == "py_int_to_bytes":
+            owner = self.render_expr(fn.get("value"))
+            length = args[0] if len(args) >= 1 else "0"
+            byteorder = args[1] if len(args) >= 2 else '"little"'
+            return f"py_int_to_bytes({owner}, {length}, {byteorder})"
+        if runtime_call == "write_rgb_png":
+            return f"png_helper::write_rgb_png({', '.join(args)})"
+        if runtime_call == "grayscale_palette":
+            return "grayscale_palette()"
+        if runtime_call == "save_gif":
+            path = args[0] if len(args) >= 1 else '""'
+            w = args[1] if len(args) >= 2 else "0"
+            h = args[2] if len(args) >= 3 else "0"
+            frames = args[3] if len(args) >= 4 else "list<list<uint8>>{}"
+            palette = args[4] if len(args) >= 5 else "grayscale_palette()"
+            if palette in {"nullptr", "std::nullopt"}:
+                palette = "grayscale_palette()"
+            delay_cs = kw.get("delay_cs", "4")
+            loop = kw.get("loop", "0")
+            return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
+        if runtime_call == "py_isdigit" and len(args) == 1:
+            return f"py_isdigit({args[0]})"
+        if runtime_call == "py_isalpha" and len(args) == 1:
+            return f"py_isalpha({args[0]})"
+        if runtime_call == "py_strip" and len(args) == 0:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_strip({owner})"
+        if runtime_call == "py_rstrip" and len(args) == 0:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_rstrip({owner})"
+        if runtime_call == "py_startswith" and len(args) == 1:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_startswith({owner}, {args[0]})"
+        if runtime_call == "py_endswith" and len(args) == 1:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_endswith({owner}, {args[0]})"
+        if runtime_call == "py_replace" and len(args) == 2:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_replace({owner}, {args[0]}, {args[1]})"
+        if runtime_call == "py_join" and len(args) == 1:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_join({owner}, {args[0]})"
+        if runtime_call == "std::runtime_error":
+            if len(args) == 0:
+                return 'std::runtime_error("error")'
+            return f"std::runtime_error({args[0]})"
+        if runtime_call == "Path":
+            return f"Path({', '.join(args)})"
+        if runtime_call == "std::filesystem::create_directories":
+            owner_node = fn.get("value")
+            owner = self.render_expr(owner_node)
+            if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                owner = f"({owner})"
+            parents = kw.get("parents", "false")
+            exist_ok = kw.get("exist_ok", "false")
+            if len(args) >= 1:
+                parents = args[0]
+            if len(args) >= 2:
+                exist_ok = args[1]
+            return f"{owner}.mkdir({parents}, {exist_ok})"
+        if runtime_call == "std::filesystem::exists":
+            owner_node = fn.get("value")
+            owner = self.render_expr(owner_node)
+            if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                owner = f"({owner})"
+            return f"{owner}.exists()"
+        if runtime_call == "py_write_text":
+            owner_node = fn.get("value")
+            owner = self.render_expr(owner_node)
+            if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                owner = f"({owner})"
+            write_arg = args[0] if len(args) >= 1 else '""'
+            return f"{owner}.write_text({write_arg})"
+        if runtime_call == "py_read_text":
+            owner_node = fn.get("value")
+            owner = self.render_expr(owner_node)
+            if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                owner = f"({owner})"
+            return f"{owner}.read_text()"
+        if runtime_call == "path_parent":
+            owner = self.render_expr(fn.get("value"))
+            return f"{owner}.parent()"
+        if runtime_call == "path_name":
+            owner = self.render_expr(fn.get("value"))
+            return f"{owner}.name()"
+        if runtime_call == "path_stem":
+            owner = self.render_expr(fn.get("value"))
+            return f"{owner}.stem()"
+        if runtime_call == "identity":
+            owner = self.render_expr(fn.get("value"))
+            return owner
+        if runtime_call == "list.append":
+            owner = self.render_expr(fn.get("value"))
+            a0 = args[0] if len(args) >= 1 else "/* missing */"
+            return f"{owner}.append({a0})"
+        if runtime_call == "list.extend":
+            owner = self.render_expr(fn.get("value"))
+            a0 = args[0] if len(args) >= 1 else "{}"
+            return f"{owner}.insert({owner}.end(), {a0}.begin(), {a0}.end())"
+        if runtime_call == "list.pop":
+            owner = self.render_expr(fn.get("value"))
+            if len(args) == 0:
+                return f"py_pop({owner})"
+            return f"py_pop({owner}, {args[0]})"
+        if runtime_call == "list.clear":
+            owner = self.render_expr(fn.get("value"))
+            return f"{owner}.clear()"
+        if runtime_call == "list.reverse":
+            owner = self.render_expr(fn.get("value"))
+            return f"std::reverse({owner}.begin(), {owner}.end())"
+        if runtime_call == "list.sort":
+            owner = self.render_expr(fn.get("value"))
+            return f"std::sort({owner}.begin(), {owner}.end())"
+        if runtime_call == "set.add":
+            owner = self.render_expr(fn.get("value"))
+            a0 = args[0] if len(args) >= 1 else "/* missing */"
+            return f"{owner}.insert({a0})"
+        if runtime_call in {"set.discard", "set.remove"}:
+            owner = self.render_expr(fn.get("value"))
+            a0 = args[0] if len(args) >= 1 else "/* missing */"
+            return f"{owner}.erase({a0})"
+        if runtime_call == "set.clear":
+            owner = self.render_expr(fn.get("value"))
+            return f"{owner}.clear()"
+        if runtime_call == "dict.get":
+            owner = self.render_expr(fn.get("value"))
+            owner_t = self.get_expr_type(fn.get("value"))
+            objectish_owner = self.is_any_like_type(owner_t)
+            if len(args) >= 2:
+                out_t = self.get_expr_type(expr)
+                if objectish_owner and out_t == "bool":
+                    return f"dict_get_bool({owner}, {args[0]}, {args[1]})"
+                if objectish_owner and out_t == "str":
+                    return f"dict_get_str({owner}, {args[0]}, {args[1]})"
+                if objectish_owner and out_t.startswith("list["):
+                    return f"dict_get_list({owner}, {args[0]}, {args[1]})"
+                if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
+                    return f"dict_get_node({owner}, {args[0]}, {args[1]})"
+                return f"py_dict_get_default({owner}, {args[0]}, {args[1]})"
+            if len(args) == 1:
+                return f"py_dict_get({owner}, {args[0]})"
+        if runtime_call == "dict.items":
+            owner = self.render_expr(fn.get("value"))
+            return owner
+        if runtime_call == "dict.keys":
+            owner = self.render_expr(fn.get("value"))
+            return f"py_dict_keys({owner})"
+        if runtime_call == "dict.values":
+            owner = self.render_expr(fn.get("value"))
+            return f"py_dict_values({owner})"
+        if isinstance(runtime_call, str) and self._is_std_runtime_call(runtime_call):
+            return f"{runtime_call}({', '.join(args)})"
+        if builtin_name == "bytes":
+            return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
+        if builtin_name == "bytearray":
+            return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
+        return None
+
     def _render_call_name_or_attr(
         self,
         expr: dict[str, Any],
@@ -1632,195 +1832,9 @@ class CppEmitter(CodeEmitter):
             if isinstance(hook_call, str) and hook_call != "":
                 return hook_call
             if expr.get("lowered_kind") == "BuiltinCall":
-                runtime_call = expr.get("runtime_call")
-                builtin_name = expr.get("builtin_name")
-                if runtime_call == "py_print":
-                    return f"py_print({', '.join(args)})"
-                if runtime_call == "py_len" and len(args) == 1:
-                    return f"py_len({args[0]})"
-                if runtime_call == "py_to_string" and len(args) == 1:
-                    src_expr = first_arg
-                    return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
-                if runtime_call == "static_cast" and len(args) == 1:
-                    target = self.cpp_type(expr.get("resolved_type"))
-                    arg_t = self.get_expr_type(first_arg if isinstance(first_arg, dict) else None)
-                    numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
-                    if target == "int64" and arg_t == "str":
-                        return f"py_to_int64({args[0]})"
-                    if target == "int64" and arg_t in numeric_t:
-                        return f"int64({args[0]})"
-                    if target == "int64" and self.is_any_like_type(arg_t):
-                        return f"py_to_int64({args[0]})"
-                    if target in {"float64", "float32"} and self.is_any_like_type(arg_t):
-                        return f"py_to_float64({args[0]})"
-                    if target == "bool" and self.is_any_like_type(arg_t):
-                        return f"py_to_bool({args[0]})"
-                    if target == "int64":
-                        return f"py_to_int64({args[0]})"
-                    return f"static_cast<{target}>({args[0]})"
-                if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
-                    fn = "min" if runtime_call == "py_min" else "max"
-                    return self.render_minmax(fn, args, self.get_expr_type(expr))
-                if runtime_call == "perf_counter":
-                    return "perf_counter()"
-                if runtime_call == "open":
-                    return f"open({', '.join(args)})"
-                if runtime_call == "py_int_to_bytes":
-                    owner = self.render_expr(fn.get("value"))
-                    length = args[0] if len(args) >= 1 else "0"
-                    byteorder = args[1] if len(args) >= 2 else '"little"'
-                    return f"py_int_to_bytes({owner}, {length}, {byteorder})"
-                if runtime_call == "write_rgb_png":
-                    return f"png_helper::write_rgb_png({', '.join(args)})"
-                if runtime_call == "grayscale_palette":
-                    return "grayscale_palette()"
-                if runtime_call == "save_gif":
-                    path = args[0] if len(args) >= 1 else '""'
-                    w = args[1] if len(args) >= 2 else "0"
-                    h = args[2] if len(args) >= 3 else "0"
-                    frames = args[3] if len(args) >= 4 else "list<list<uint8>>{}"
-                    palette = args[4] if len(args) >= 5 else "grayscale_palette()"
-                    if palette in {"nullptr", "std::nullopt"}:
-                        palette = "grayscale_palette()"
-                    delay_cs = kw.get("delay_cs", "4")
-                    loop = kw.get("loop", "0")
-                    return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
-                if runtime_call == "py_isdigit" and len(args) == 1:
-                    return f"py_isdigit({args[0]})"
-                if runtime_call == "py_isalpha" and len(args) == 1:
-                    return f"py_isalpha({args[0]})"
-                if runtime_call == "py_strip" and len(args) == 0:
-                    owner = self.render_expr(fn.get("value"))
-                    return f"py_strip({owner})"
-                if runtime_call == "py_rstrip" and len(args) == 0:
-                    owner = self.render_expr(fn.get("value"))
-                    return f"py_rstrip({owner})"
-                if runtime_call == "py_startswith" and len(args) == 1:
-                    owner = self.render_expr(fn.get("value"))
-                    return f"py_startswith({owner}, {args[0]})"
-                if runtime_call == "py_endswith" and len(args) == 1:
-                    owner = self.render_expr(fn.get("value"))
-                    return f"py_endswith({owner}, {args[0]})"
-                if runtime_call == "py_replace" and len(args) == 2:
-                    owner = self.render_expr(fn.get("value"))
-                    return f"py_replace({owner}, {args[0]}, {args[1]})"
-                if runtime_call == "py_join" and len(args) == 1:
-                    owner = self.render_expr(fn.get("value"))
-                    return f"py_join({owner}, {args[0]})"
-                if runtime_call == "std::runtime_error":
-                    if len(args) == 0:
-                        return 'std::runtime_error("error")'
-                    return f"std::runtime_error({args[0]})"
-                if runtime_call == "Path":
-                    return f"Path({', '.join(args)})"
-                if runtime_call == "std::filesystem::create_directories":
-                    owner_node = fn.get("value")
-                    owner = self.render_expr(owner_node)
-                    if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                        owner = f"({owner})"
-                    parents = kw.get("parents", "false")
-                    exist_ok = kw.get("exist_ok", "false")
-                    if len(args) >= 1:
-                        parents = args[0]
-                    if len(args) >= 2:
-                        exist_ok = args[1]
-                    return f"{owner}.mkdir({parents}, {exist_ok})"
-                if runtime_call == "std::filesystem::exists":
-                    owner_node = fn.get("value")
-                    owner = self.render_expr(owner_node)
-                    if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                        owner = f"({owner})"
-                    return f"{owner}.exists()"
-                if runtime_call == "py_write_text":
-                    owner_node = fn.get("value")
-                    owner = self.render_expr(owner_node)
-                    if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                        owner = f"({owner})"
-                    write_arg = args[0] if len(args) >= 1 else '""'
-                    return f"{owner}.write_text({write_arg})"
-                if runtime_call == "py_read_text":
-                    owner_node = fn.get("value")
-                    owner = self.render_expr(owner_node)
-                    if isinstance(owner_node, dict) and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                        owner = f"({owner})"
-                    return f"{owner}.read_text()"
-                if runtime_call == "path_parent":
-                    owner = self.render_expr(fn.get("value"))
-                    return f"{owner}.parent()"
-                if runtime_call == "path_name":
-                    owner = self.render_expr(fn.get("value"))
-                    return f"{owner}.name()"
-                if runtime_call == "path_stem":
-                    owner = self.render_expr(fn.get("value"))
-                    return f"{owner}.stem()"
-                if runtime_call == "identity":
-                    owner = self.render_expr(fn.get("value"))
-                    return owner
-                if runtime_call == "list.append":
-                    owner = self.render_expr(fn.get("value"))
-                    a0 = args[0] if len(args) >= 1 else "/* missing */"
-                    return f"{owner}.append({a0})"
-                if runtime_call == "list.extend":
-                    owner = self.render_expr(fn.get("value"))
-                    a0 = args[0] if len(args) >= 1 else "{}"
-                    return f"{owner}.insert({owner}.end(), {a0}.begin(), {a0}.end())"
-                if runtime_call == "list.pop":
-                    owner = self.render_expr(fn.get("value"))
-                    if len(args) == 0:
-                        return f"py_pop({owner})"
-                    return f"py_pop({owner}, {args[0]})"
-                if runtime_call == "list.clear":
-                    owner = self.render_expr(fn.get("value"))
-                    return f"{owner}.clear()"
-                if runtime_call == "list.reverse":
-                    owner = self.render_expr(fn.get("value"))
-                    return f"std::reverse({owner}.begin(), {owner}.end())"
-                if runtime_call == "list.sort":
-                    owner = self.render_expr(fn.get("value"))
-                    return f"std::sort({owner}.begin(), {owner}.end())"
-                if runtime_call == "set.add":
-                    owner = self.render_expr(fn.get("value"))
-                    a0 = args[0] if len(args) >= 1 else "/* missing */"
-                    return f"{owner}.insert({a0})"
-                if runtime_call in {"set.discard", "set.remove"}:
-                    owner = self.render_expr(fn.get("value"))
-                    a0 = args[0] if len(args) >= 1 else "/* missing */"
-                    return f"{owner}.erase({a0})"
-                if runtime_call == "set.clear":
-                    owner = self.render_expr(fn.get("value"))
-                    return f"{owner}.clear()"
-                if runtime_call == "dict.get":
-                    owner = self.render_expr(fn.get("value"))
-                    owner_t = self.get_expr_type(fn.get("value"))
-                    objectish_owner = self.is_any_like_type(owner_t)
-                    if len(args) >= 2:
-                        out_t = self.get_expr_type(expr)
-                        if objectish_owner and out_t == "bool":
-                            return f"dict_get_bool({owner}, {args[0]}, {args[1]})"
-                        if objectish_owner and out_t == "str":
-                            return f"dict_get_str({owner}, {args[0]}, {args[1]})"
-                        if objectish_owner and out_t.startswith("list["):
-                            return f"dict_get_list({owner}, {args[0]}, {args[1]})"
-                        if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
-                            return f"dict_get_node({owner}, {args[0]}, {args[1]})"
-                        return f"py_dict_get_default({owner}, {args[0]}, {args[1]})"
-                    if len(args) == 1:
-                        return f"py_dict_get({owner}, {args[0]})"
-                if runtime_call == "dict.items":
-                    owner = self.render_expr(fn.get("value"))
-                    return owner
-                if runtime_call == "dict.keys":
-                    owner = self.render_expr(fn.get("value"))
-                    return f"py_dict_keys({owner})"
-                if runtime_call == "dict.values":
-                    owner = self.render_expr(fn.get("value"))
-                    return f"py_dict_values({owner})"
-                if isinstance(runtime_call, str) and self._is_std_runtime_call(runtime_call):
-                    return f"{runtime_call}({', '.join(args)})"
-                if builtin_name == "bytes":
-                    return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
-                if builtin_name == "bytearray":
-                    return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
+                builtin_rendered = self._render_builtin_call(expr, fn, args, kw, first_arg)
+                if isinstance(builtin_rendered, str):
+                    return builtin_rendered
             name_or_attr = self._render_call_name_or_attr(expr, fn, fn_name, args, kw, arg_nodes, first_arg)
             if isinstance(name_or_attr, str) and name_or_attr != "":
                 return name_or_attr

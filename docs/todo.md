@@ -34,7 +34,7 @@
 ## py2cpp 縮退（行数削減）
 
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
-   - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: Name/Attribute 分岐は `_render_call_name_or_attr` へ分離済み
+   - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: `BuiltinCall` は `_render_builtin_call`、Name/Attribute は `_render_call_name_or_attr` へ分離済み
    - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。: `BinOp` は専用 helper に分離済み
    - [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。: `If/While` は専用 helper に分離済み
 2. [ ] 未使用関数の掃除を継続する。
@@ -102,5 +102,5 @@
 - 更新（2026-02-18 selfhost 追加）:
   1. `tools/prepare_selfhost_source.py` を追加し、`src/common/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
-  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=623`）。
+  3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（`selfhost/build.all.log` で `total_errors=597`）。
   4. 先頭エラー群は `CodeEmitter` 基底の `any_dict_get/profile_get/syntax_line` 由来で、selfhost 変換時に `dict` が `object` として扱われる点がボトルネック。
