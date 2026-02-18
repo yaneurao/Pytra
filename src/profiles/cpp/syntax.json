@@ -1,0 +1,11 @@
+{
+  "syntax": {
+    "comment_prefix": "//",
+    "block_comment": "c",
+    "if_open": "if ({cond}) {",
+    "else_open": "} else {",
+    "while_open": "while ({cond}) {",
+    "function_open": "{ret} {name}({args}) {",
+    "class_open": "struct {name} : public PyObj {"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "defaults": {
+    "type_aliases": {
+      "byte": "uint8",
+      "any": "Any",
+      "object": "object"
+    }
+  }
+}
