@@ -633,9 +633,7 @@ class CppEmitter(CodeEmitter):
                 inner_ann = self.split_generic(ann_t_str[5:-1])
                 if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
                     items: list[str] = []
-                    for kv in val.get("entries", []):
-                        if not isinstance(kv, dict):
-                            continue
+                    for kv in self._dict_stmt_list(val.get("entries")):
                         k = self.render_expr(kv.get("key"))
                         v = self.render_expr_as_any(kv.get("value"))
                         items.append(f"{{{k}, {v}}}")
@@ -645,11 +643,11 @@ class CppEmitter(CodeEmitter):
                 if vkind == "BoolOp":
                     if ann_t_str != "bool":
                         rendered_val = self.render_boolop(val, True)
-                if vkind == "List" and len(val.get("elements", [])) == 0:
+                if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
                     rendered_val = f"{t}{{}}"
-                elif vkind == "Dict" and len(val.get("entries", [])) == 0:
+                elif vkind == "Dict" and len(self._dict_stmt_list(val.get("entries"))) == 0:
                     rendered_val = f"{t}{{}}"
-                elif vkind == "Set" and len(val.get("elements", [])) == 0:
+                elif vkind == "Set" and len(self._dict_stmt_list(val.get("elements"))) == 0:
                     rendered_val = f"{t}{{}}"
                 elif vkind == "ListComp" and isinstance(rendered_val, str):
                     # Keep as-is for selfhost stability; list-comp explicit typing can be improved later.
