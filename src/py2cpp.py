@@ -2034,6 +2034,10 @@ class CppEmitter(CodeEmitter):
     def cpp_type(self, east_type: Any) -> str:
         """EAST 型名を C++ 型名へマッピングする。"""
         east_type = self.normalize_type_name(east_type)
+        return self._cpp_type_text(east_type)
+
+    def _cpp_type_text(self, east_type: str) -> str:
+        """正規化済み型名（str）を C++ 型名へマッピングする。"""
         if east_type == "":
             return "auto"
         mapped = self.type_map.get(east_type)
@@ -2050,7 +2054,7 @@ class CppEmitter(CodeEmitter):
                 if any(self.is_any_like_type(p) for p in non_none):
                     return "object"
                 if len(parts) == 2 and len(non_none) == 1:
-                    return f"std::optional<{self.cpp_type(non_none[0])}>"
+                    return f"std::optional<{self._cpp_type_text(non_none[0])}>"
                 return "std::any"
         if east_type in self.ref_classes:
             return f"rc<{east_type}>"
@@ -2069,28 +2073,28 @@ class CppEmitter(CodeEmitter):
                     return "list<object>"
                 if inner[0] == "unknown":
                     return "list<std::any>"
-                return f"list<{self.cpp_type(inner[0])}>"
+                return f"list<{self._cpp_type_text(inner[0])}>"
         if east_type.startswith("set[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[4:-1])
             if len(inner) == 1:
                 if inner[0] == "unknown":
                     return "set<str>"
-                return f"set<{self.cpp_type(inner[0])}>"
+                return f"set<{self._cpp_type_text(inner[0])}>"
         if east_type.startswith("dict[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[5:-1])
             if len(inner) == 2:
                 if self.is_any_like_type(inner[1]):
-                    return f"dict<{self.cpp_type(inner[0] if inner[0] != 'unknown' else 'str')}, object>"
+                    return f"dict<{self._cpp_type_text(inner[0] if inner[0] != 'unknown' else 'str')}, object>"
                 if inner[0] == "unknown" and inner[1] == "unknown":
                     return "dict<str, std::any>"
                 if inner[0] == "unknown":
-                    return f"dict<str, {self.cpp_type(inner[1])}>"
+                    return f"dict<str, {self._cpp_type_text(inner[1])}>"
                 if inner[1] == "unknown":
-                    return f"dict<{self.cpp_type(inner[0])}, std::any>"
-                return f"dict<{self.cpp_type(inner[0])}, {self.cpp_type(inner[1])}>"
+                    return f"dict<{self._cpp_type_text(inner[0])}, std::any>"
+                return f"dict<{self._cpp_type_text(inner[0])}, {self._cpp_type_text(inner[1])}>"
         if east_type.startswith("tuple[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[6:-1])
-            return "std::tuple<" + ", ".join(self.cpp_type(x) for x in inner) + ">"
+            return "std::tuple<" + ", ".join(self._cpp_type_text(x) for x in inner) + ">"
         if east_type == "unknown":
             return "std::any"
         if east_type.startswith("callable["):
