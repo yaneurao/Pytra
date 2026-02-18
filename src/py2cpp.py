@@ -385,6 +385,10 @@ class CppEmitter(CodeEmitter):
         """式を `object`（Any 相当）へ昇格する式文字列を返す。"""
         return f"make_object({self.render_expr(expr)})"
 
+    def render_expr_node(self, expr: dict[str, Any]) -> str:
+        """dict ノード専用の式レンダラ薄ラッパ。"""
+        return self.render_expr(expr)
+
     def render_boolop(self, expr: Any, force_value_select: bool = False) -> str:
         """BoolOp を真偽演算または値選択式として出力する。"""
         expr_dict = self.any_to_dict_or_empty(expr)
@@ -395,7 +399,7 @@ class CppEmitter(CodeEmitter):
             return "false"
         value_texts: list[str] = []
         for v in values:
-            value_texts.append(self.render_expr(v))
+            value_texts.append(self.render_expr_node(v))
         if len(value_texts) == 0:
             return "false"
         op_name = self.any_dict_get_str(expr_dict, "op", "")
@@ -565,7 +569,9 @@ class CppEmitter(CodeEmitter):
             return
         if kind == "Expr":
             value_raw = stmt.get("value")
-            value = value_raw if isinstance(value_raw, dict) else None
+            value: dict[str, Any] | None = None
+            if isinstance(value_raw, dict):
+                value = value_raw
             if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
                 self.emit_block_comment(str(value.get("value")))
             elif isinstance(value, dict) and self._is_redundant_super_init_call(value):
@@ -591,7 +597,9 @@ class CppEmitter(CodeEmitter):
             return
         if kind == "Return":
             v_raw = stmt.get("value")
-            v = v_raw if isinstance(v_raw, dict) else None
+            v: dict[str, Any] | None = None
+            if isinstance(v_raw, dict):
+                v = v_raw
             if v is None:
                 self.emit("return;")
             else:
@@ -609,7 +617,9 @@ class CppEmitter(CodeEmitter):
             t = self.cpp_type(stmt.get("annotation"))
             target = self.render_expr(stmt.get("target"))
             val_raw = stmt.get("value")
-            val = val_raw if isinstance(val_raw, dict) else None
+            val: dict[str, Any] | None = None
+            if isinstance(val_raw, dict):
+                val = val_raw
             rendered_val: str = ""
             if val is not None:
                 rendered_val = self.render_expr(val)
@@ -618,7 +628,7 @@ class CppEmitter(CodeEmitter):
             if ann_t_str in {"byte", "uint8"} and isinstance(val, dict):
                 byte_val = self._byte_from_str_expr(val)
                 if byte_val is not None:
-                    rendered_val = byte_val
+                    rendered_val = str(byte_val)
             if isinstance(val, dict) and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
                 inner_ann = self.split_generic(ann_t_str[5:-1])
                 if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
