@@ -73,7 +73,7 @@ class Py2CppFeatureTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             work = Path(tmpdir)
 
-            case15_py = find_fixture_case("case15_class_member")
+            case15_py = find_fixture_case("class_member")
             case15_cpp = work / "case15.cpp"
             transpile(case15_py, case15_cpp)
             case15_txt = case15_cpp.read_text(encoding="utf-8")
@@ -81,7 +81,7 @@ class Py2CppFeatureTest(unittest.TestCase):
             self.assertIn("Counter c = Counter();", case15_txt)
             self.assertNotIn("rc<Counter>", case15_txt)
 
-            case34_py = find_fixture_case("case34_gc_reassign")
+            case34_py = find_fixture_case("gc_reassign")
             case34_cpp = work / "case34.cpp"
             transpile(case34_py, case34_cpp)
             case34_txt = case34_cpp.read_text(encoding="utf-8")
@@ -90,14 +90,14 @@ class Py2CppFeatureTest(unittest.TestCase):
             self.assertIn("rc_new<Tracked>(\"A\")", case34_txt)
             self.assertIn("a = b;", case34_txt)
 
-    def test_case41_dict_get_items_runtime(self) -> None:
-        out = self._compile_and_run_fixture("case41_dict_get_items")
+    def test_dict_get_items_runtime(self) -> None:
+        out = self._compile_and_run_fixture("dict_get_items")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
-    def test_case42_boolop_value_select_runtime(self) -> None:
-        out = self._compile_and_run_fixture("case42_boolop_value_select")
+    def test_boolop_value_select_runtime(self) -> None:
+        out = self._compile_and_run_fixture("boolop_value_select")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")

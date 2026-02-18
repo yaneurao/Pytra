@@ -78,5 +78,5 @@
 - `src/py2cpp.py` の文字列リテラル生成で `json.dumps` 依存を除去（`cpp_string_lit`）。
 - `src/py2cpp.py` の `cpp_type` 入力型を `Any` 化。
 - `dict[str, Any]` 初期化時に `std::any` へ再帰変換する経路と、tuple unpack `for` の単文最適化不備を修正。
-- `BoolOp` は C++ 生成時に「真偽演算」と「値選択式」を分離して出力する経路を追加（`test/fixtures/collections/case42_*` で検証）。
+- `BoolOp` は C++ 生成時に「真偽演算」と「値選択式」を分離して出力する経路を追加（`test/fixtures/collections/boolop_value_select.py` で検証）。
 - selfhost C++コンパイルエラー件数: `438 -> 396 -> 393 -> 374 -> 328 -> 333 -> 335`（新機能追加後の再計測）。

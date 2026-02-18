@@ -33,7 +33,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - 入力 Python は `test/fixtures/` 配下に配置します（カテゴリ別サブディレクトリ）。
 - 言語別の変換結果は `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/` に配置します。
 - 変換器都合で `test/fixtures/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
-- ケース命名は `caseXX_*` 形式を基本とします。
+- ケース命名は説明的な `snake_case`（例: `dict_get_items.py`）を基本とします。
 
 `test/` の標準構成は次のとおりです。
 
@@ -41,7 +41,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 test/
   unit/         # unittest のテストコード（test_*.py）
   integration/  # 統合テストコード
-  fixtures/     # 変換元 Python ケース（caseXX_*.py, カテゴリ別）
+  fixtures/     # 変換元 Python ケース（*.py, カテゴリ別）
     core/
     control/
     strings/
@@ -74,7 +74,7 @@ test/
 python -m unittest discover -s test/unit -p "test_*.py" -v
 ```
 
-`test/fixtures/**/case*.py` を一括実行して末尾出力 `True` を検証する専用テスト:
+`test/fixtures/**/*.py` を一括実行して末尾出力 `True` を検証する専用テスト:
 
 ```bash
 python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v

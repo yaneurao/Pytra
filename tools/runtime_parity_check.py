@@ -174,7 +174,7 @@ def main() -> int:
     parser.add_argument(
         "cases",
         nargs="*",
-        default=["case32_math_extended", "case33_pathlib_extended"],
+        default=["math_extended", "pathlib_extended"],
         help="case stems under test/fixtures/** (without .py)",
     )
     args = parser.parse_args()

@@ -14,7 +14,10 @@ FIXTURE_ROOT = ROOT / "test" / "fixtures"
 
 class FixturesTruthTest(unittest.TestCase):
     def test_all_cases_print_true(self) -> None:
-        cases = sorted(FIXTURE_ROOT.rglob("case*.py"))
+        cases = sorted(
+            p for p in FIXTURE_ROOT.rglob("*.py")
+            if p.parent.name != "signature"
+        )
         self.assertGreater(len(cases), 0, "No fixture case files found")
 
         env = dict(os.environ)
