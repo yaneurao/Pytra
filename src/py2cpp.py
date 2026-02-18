@@ -254,7 +254,7 @@ def cpp_string_lit(s: str) -> str:
     i: int64 = 0
     n: int64 = len(s)
     while i < n:
-        ch: str = s[i:i + 1]
+        ch: str = s[i]
         if ch == "\\":
             out += "\\\\"
         elif ch == '"':
@@ -351,7 +351,7 @@ class CppEmitter(BaseEmitter):
             return False
         i = 1
         while i < len(text):
-            ch = text[i:i + 1]
+            ch = text[i]
             if not (ch == "_" or ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9")):
                 return False
             i += 1
@@ -538,7 +538,7 @@ class CppEmitter(BaseEmitter):
             wrapped: bool = True
             i: int = 0
             while i < len(s):
-                ch: str = s[i:i + 1]
+                ch: str = s[i]
                 if in_str:
                     if esc:
                         esc = False
