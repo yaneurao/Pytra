@@ -139,6 +139,7 @@
 
 - `src/common/` には言語非依存で再利用される処理のみを配置します。
 - 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/common/` に置きません。
+- CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/common/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。
 - selfhost 対象コードでは、動的 import（`try/except ImportError` による分岐 import や `importlib`）を避け、静的 import のみを使用します。
 - class 名・関数名・メンバー変数名には、日本語コメント（用途説明）を付与します。
 - 標準ライブラリ対応の記載は、モジュール名だけでなく関数単位で明記します。
