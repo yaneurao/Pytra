@@ -36,7 +36,7 @@
 4. [ ] フック注入 (`EmitterHooks`) を実装する。
    - [x] `on_render_call`, `on_render_binop`, `on_emit_stmt` など最小フック面を定義する。
    - [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。: `BinOp` + `Call(Name/Attribute)` は helper 分離済み
-     - [ ] `render_expr(IfExp/List/Tuple/Set/Dict/Subscript)` を `hook_on_render_expr_kind(kind, node)` へ委譲できる形へ整理する。
+    - [ ] `render_expr(IfExp/List/Tuple/Set/Dict/Subscript)` を `hook_on_render_expr_kind(kind, node)` へ委譲できる形へ整理する。: フック面 (`hook_on_render_expr_kind`) と `render_expr` 入口呼び出しは実装済み。個別 kind の委譲を段階移行する。
      - [ ] `JoinedStr/Lambda/Comp` 系を `hook_on_render_expr_complex(node)` へ分離する。
    - [ ] `emit_stmt(If/While/For/AnnAssign/AugAssign)` の分岐を hooks + template helper へ段階分離する。: `If/While` は `_emit_if_stmt` / `_emit_while_stmt` へ分離済み
      - [ ] `emit_stmt(Return/Expr/Assign/Try)` を `hook_on_emit_stmt_kind(kind, stmt)` 前提で分割する。

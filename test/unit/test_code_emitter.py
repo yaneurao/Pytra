@@ -46,6 +46,15 @@ class _HookedEmitter(_DummyEmitter):
             return "hooked_call()"
         return None
 
+    def hook_on_render_expr_kind(
+        self,
+        kind: str,
+        expr_node: dict[str, Any],
+    ) -> Any:
+        if kind == "MagicExpr":
+            return "magic_expr()"
+        return None
+
 
 class CodeEmitterTest(unittest.TestCase):
     def test_emit_and_emit_stmt_list_and_next_tmp(self) -> None:
@@ -295,6 +304,8 @@ class CodeEmitterTest(unittest.TestCase):
             {},
         )
         self.assertEqual(hook_call, "hooked_call()")
+        hook_expr = em.hook_on_render_expr_kind("MagicExpr", {"kind": "MagicExpr"})
+        self.assertEqual(hook_expr, "magic_expr()")
 
 
 if __name__ == "__main__":
