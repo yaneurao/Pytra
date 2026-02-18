@@ -670,13 +670,14 @@ class CppEmitter(CodeEmitter):
             return
         if kind == "AugAssign":
             op = "+="
-            target_expr = stmt.get("target")
+            target_expr = self.any_to_dict_or_empty(stmt.get("target"))
             target = self.render_lvalue(target_expr)
-            declare = bool(stmt.get("declare", False))
+            declare = self.any_dict_get_int(stmt, "declare", 0) != 0
             if declare and self.is_plain_name_expr(target_expr) and target not in self.current_scope():
-                decl_t = stmt.get("decl_type")
+                decl_t_raw = stmt.get("decl_type")
+                decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
                 inferred_t = self.get_expr_type(target_expr)
-                t = self.cpp_type(decl_t if isinstance(decl_t, str) and decl_t != "" else inferred_t)
+                t = self.cpp_type(decl_t if decl_t != "" else inferred_t)
                 self.current_scope().add(target)
                 self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
                 return
@@ -692,7 +693,6 @@ class CppEmitter(CodeEmitter):
             if op_name in AUG_OPS:
                 op = AUG_OPS[op_name]
             if op_name in AUG_BIN:
-                bop = AUG_BIN[op_name]
                 # Prefer idiomatic ++/-- for +/-1 updates.
                 if op_name in {"Add", "Sub"} and val == "1":
                     self.emit(f"{target}{'++' if op_name == 'Add' else '--'};")
