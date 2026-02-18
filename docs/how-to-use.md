@@ -21,7 +21,7 @@ Windows では次の読み替えを行ってください。
 
 - Python の標準ライブラリ（`json`, `pathlib`, `sys`, `typing` など）を直接 `import` してはいけません。
 - `import` できるのは `src/pylib/` にあるモジュールのみです。
-- サポート済みモジュール一覧と API は `docs/pylib-modules.md` を参照してください。
+- サポート済みモジュール一覧と API は [`docs/pylib-modules.md`](docs/pylib-modules.md) を参照してください。
 
 ## `src/pylib/` の使い方（概要）
 
