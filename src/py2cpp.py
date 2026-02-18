@@ -136,7 +136,7 @@ def load_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
 
     merged = _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
     payload = _load_cpp_runtime_call_map_json()
-    node = _safe_nested_dict(payload, ["cpp", "module_attr_call"]) if payload is not None else None
+    node = _safe_nested_dict(payload, ["module_attr_call"]) if payload is not None else None
     if node is not None:
         for module_name, raw_map in node.items():
             if not isinstance(module_name, str) or not isinstance(raw_map, dict):

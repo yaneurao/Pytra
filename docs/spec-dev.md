@@ -60,7 +60,7 @@
 `math` などの `module.attr(...)` 呼び出しは、`src/cpp_module/runtime_call_map.json` の設定で C++ ランタイム呼び出しへマップします。
 
 - 例: `"sqrt": "py_math::sqrt"`（`math.sqrt(...)` -> `py_math::sqrt(...)`）
-- 追加方法: `src/cpp_module/runtime_call_map.json` の `cpp.module_attr_call.<module>` に関数を追記
+- 追加方法: `src/cpp_module/runtime_call_map.json` の `module_attr_call.<module>` に関数を追記
 - 起動時に JSON を読み込み、未定義項目は `py2cpp.py` 内の既定マップを使用
 
 主な補助モジュール実装:

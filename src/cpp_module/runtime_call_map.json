@@ -1,19 +1,17 @@
 {
-  "cpp": {
-    "module_attr_call": {
-      "math": {
-        "sqrt": "py_math::sqrt",
-        "sin": "py_math::sin",
-        "cos": "py_math::cos",
-        "tan": "py_math::tan",
-        "exp": "py_math::exp",
-        "log": "py_math::log",
-        "log10": "py_math::log10",
-        "fabs": "py_math::fabs",
-        "floor": "py_math::floor",
-        "ceil": "py_math::ceil",
-        "pow": "py_math::pow"
-      }
+  "module_attr_call": {
+    "math": {
+      "sqrt": "py_math::sqrt",
+      "sin": "py_math::sin",
+      "cos": "py_math::cos",
+      "tan": "py_math::tan",
+      "exp": "py_math::exp",
+      "log": "py_math::log",
+      "log10": "py_math::log10",
+      "fabs": "py_math::fabs",
+      "floor": "py_math::floor",
+      "ceil": "py_math::ceil",
+      "pow": "py_math::pow"
     }
   }
 }
