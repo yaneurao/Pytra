@@ -22,6 +22,8 @@ CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/core/math.cpp",
     "src/runtime/cpp/core/dataclasses.cpp",
     "src/runtime/cpp/core/sys.cpp",
+    "src/runtime/cpp/base/io.cpp",
+    "src/runtime/cpp/base/bytes_util.cpp",
     "src/runtime/cpp/pylib/png.cpp",
     "src/runtime/cpp/pylib/gif.cpp",
     "src/runtime/cpp/base/gc.cpp",

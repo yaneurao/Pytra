@@ -355,6 +355,8 @@ def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdou
             "src/runtime/cpp/pylib/png.cpp",
             "src/runtime/cpp/pylib/gif.cpp",
             "src/runtime/cpp/core/math.cpp",
+            "src/runtime/cpp/base/io.cpp",
+            "src/runtime/cpp/base/bytes_util.cpp",
             "-o",
             str(exe),
         ]

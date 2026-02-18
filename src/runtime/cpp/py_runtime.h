@@ -21,6 +21,9 @@
 #include <utility>
 #include <vector>
 
+#include "runtime/cpp/base/bytes_util.h"
+#include "runtime/cpp/base/exceptions.h"
+#include "runtime/cpp/base/io.h"
 #include "runtime/cpp/pylib/gif.h"
 #include "runtime/cpp/base/gc.h"
 #include "runtime/cpp/core/math.h"
@@ -212,6 +215,10 @@ private:
     std::string data_;
 };
 
+static inline pytra::runtime::cpp::base::PyFile open(const str& path, const str& mode) {
+    return pytra::runtime::cpp::base::open(static_cast<std::string>(path), static_cast<std::string>(mode));
+}
+
 namespace std {
 template <>
 struct hash<str> {
@@ -384,6 +391,11 @@ private:
 
 using bytearray = list<uint8>;
 using bytes = bytearray;
+
+static inline bytes py_int_to_bytes(int64 value, int64 length, const str& byteorder) {
+    auto raw = pytra::runtime::cpp::base::int_to_bytes(value, length, static_cast<std::string>(byteorder));
+    return bytes(raw.begin(), raw.end());
+}
 
 template <class K, class V>
 class dict {
