@@ -20,8 +20,8 @@ class BaseEmitter:
     def __init__(self) -> None:
         self.doc: dict[str, Any] = {}
         self.lines: list[str] = []
-        self.indent: int = 0
-        self.tmp_id: int = 0
+        self.indent = 0
+        self.tmp_id = 0
 
     def emit_stmt(self, stmt: dict[str, Any] | None) -> None:
         # Subclasses override this.
@@ -254,8 +254,8 @@ AUG_BIN = {
 
 def cpp_string_lit(s: str) -> str:
     out: str = '"'
-    i: int64 = 0
-    n: int64 = len(s)
+    i = 0
+    n = len(s)
     while i < n:
         ch: str = s[i]
         if ch == "\\":
@@ -295,8 +295,8 @@ class CppEmitter(BaseEmitter):
     def __init__(self, east_doc: dict[str, Any], *, negative_index_mode: str = "const_only") -> None:
         self.doc: dict[str, Any] = east_doc
         self.lines: list[str] = []
-        self.indent: int = 0
-        self.tmp_id: int = 0
+        self.indent = 0
+        self.tmp_id = 0
         self.negative_index_mode = negative_index_mode
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
@@ -508,7 +508,7 @@ class CppEmitter(BaseEmitter):
         return self.scope_stack[-1]
 
     def is_declared(self, name: str) -> bool:
-        i: int = len(self.scope_stack) - 1
+        i = len(self.scope_stack) - 1
         while i >= 0:
             scope: set[str] = self.scope_stack[i]
             if name in scope:
@@ -534,12 +534,12 @@ class CppEmitter(BaseEmitter):
             s = s[:-1]
 
         while len(s) >= 2 and s[:1] == "(" and s[-1:] == ")":
-            depth: int = 0
+            depth = 0
             in_str: bool = False
             esc: bool = False
             quote: str = ""
             wrapped: bool = True
-            i: int = 0
+            i = 0
             while i < len(s):
                 ch: str = s[i]
                 if in_str:
