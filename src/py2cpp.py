@@ -193,7 +193,7 @@ class CppEmitter(BaseEmitter):
         emit_main: bool = True,
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
-        super().__init__(east_doc)
+        BaseEmitter.__init__(self, east_doc)
         self.negative_index_mode = negative_index_mode
         self.emit_main = emit_main
         # NOTE:
