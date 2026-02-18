@@ -157,7 +157,7 @@ class CppEmitter:
         self.value_classes = {name for name in self.class_names if name not in self.ref_classes}
 
         self.emit_module_leading_trivia()
-        header_text = CPP_HEADER
+        header_text: str = CPP_HEADER
         if len(header_text) > 0 and header_text[-1] == "\n":
             header_text = header_text[:-1]
         self.emit(header_text)
@@ -177,7 +177,7 @@ class CppEmitter:
         self.indent -= 1
         self.emit("}")
         self.emit("")
-        out = ""
+        out: str = ""
         i = 0
         while i < len(self.lines):
             if i > 0:
@@ -193,9 +193,9 @@ class CppEmitter:
         return self.scope_stack[-1]
 
     def is_declared(self, name: str) -> bool:
-        i = len(self.scope_stack) - 1
+        i: int = len(self.scope_stack) - 1
         while i >= 0:
-            scope = self.scope_stack[i]
+            scope: set[str] = self.scope_stack[i]
             if name in scope:
                 return True
             i -= 1
@@ -203,7 +203,7 @@ class CppEmitter:
 
     def render_cond(self, expr: dict[str, Any] | None) -> str:
         t0 = self.get_expr_type(expr)
-        t = t0 if t0 is not None else ""
+        t: str = t0 if t0 is not None else ""
         body = self._strip_outer_parens(self.render_expr(expr))
         if t in {"bool"}:
             return body
@@ -212,22 +212,22 @@ class CppEmitter:
         return body
 
     def _strip_outer_parens(self, text: str) -> str:
-        s = text
-        ws = {" ", "\t", "\n", "\r", "\f", "\v"}
+        s: str = text
+        ws: set[str] = {" ", "\t", "\n", "\r", "\f", "\v"}
         while len(s) > 0 and s[0] in ws:
             s = s[1:]
         while len(s) > 0 and s[-1] in ws:
             s = s[:-1]
 
         while len(s) >= 2 and s[0] == "(" and s[-1] == ")":
-            depth = 0
-            in_str = False
-            esc = False
-            quote = ""
-            wrapped = True
-            i = 0
+            depth: int = 0
+            in_str: bool = False
+            esc: bool = False
+            quote: str = ""
+            wrapped: bool = True
+            i: int = 0
             while i < len(s):
-                ch = s[i]
+                ch: str = s[i]
                 if in_str:
                     if esc:
                         esc = False
