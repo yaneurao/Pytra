@@ -624,6 +624,12 @@ class _ShExprParser:
                         call_ret = "int64"
                     elif fn_name == "range":
                         call_ret = "range"
+                    elif fn_name == "list":
+                        call_ret = "list[unknown]"
+                    elif fn_name == "set":
+                        call_ret = "set[unknown]"
+                    elif fn_name == "dict":
+                        call_ret = "dict[unknown,unknown]"
                     elif fn_name == "bytes":
                         call_ret = "bytes"
                     elif fn_name == "bytearray":
@@ -885,6 +891,84 @@ class _ShExprParser:
         if tok["k"] == "STR":
             self._eat("STR")
             raw = tok["v"]
+            # Support prefixed literals (f/r/b/u/rf/fr...) in expression parser.
+            p = 0
+            while p < len(raw) and raw[p] in "rRbBuUfF":
+                p += 1
+            prefix = raw[:p].lower()
+            if p >= len(raw):
+                p = 0
+
+            is_triple = p + 2 < len(raw) and raw[p : p + 3] in {"'''", '"""'}
+            if is_triple:
+                body = raw[p + 3 : -3]
+            else:
+                body = raw[p + 1 : -1]
+
+            if "f" in prefix:
+                values: list[dict[str, Any]] = []
+
+                def push_lit(segment: str) -> None:
+                    lit = segment.replace("{{", "{").replace("}}", "}")
+                    if lit == "":
+                        return
+                    values.append(
+                        {
+                            "kind": "Constant",
+                            "source_span": self._node_span(tok["s"], tok["e"]),
+                            "resolved_type": "str",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": repr(lit),
+                            "value": lit,
+                        }
+                    )
+
+                i = 0
+                while i < len(body):
+                    j = body.find("{", i)
+                    if j < 0:
+                        push_lit(body[i:])
+                        break
+                    if j + 1 < len(body) and body[j + 1] == "{":
+                        push_lit(body[i : j + 1])
+                        i = j + 2
+                        continue
+                    if j > i:
+                        push_lit(body[i:j])
+                    k = body.find("}", j + 1)
+                    if k < 0:
+                        raise EastBuildError(
+                            kind="unsupported_syntax",
+                            message="unterminated f-string placeholder in self_hosted parser",
+                            source_span=self._node_span(tok["s"], tok["e"]),
+                            hint="Close f-string placeholder with `}`.",
+                        )
+                    inner_expr = body[j + 1 : k].strip()
+                    values.append(
+                        {
+                            "kind": "FormattedValue",
+                            "value": _sh_parse_expr(
+                                inner_expr,
+                                line_no=self.line_no,
+                                col_base=self.col_base + tok["s"],
+                                name_types=self.name_types,
+                                fn_return_types=self.fn_return_types,
+                                class_method_return_types=self.class_method_return_types,
+                                class_base=self.class_base,
+                            ),
+                        }
+                    )
+                    i = k + 1
+                return {
+                    "kind": "JoinedStr",
+                    "source_span": self._node_span(tok["s"], tok["e"]),
+                    "resolved_type": "str",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": raw,
+                    "values": values,
+                }
             return {
                 "kind": "Constant",
                 "source_span": self._node_span(tok["s"], tok["e"]),
@@ -892,7 +976,7 @@ class _ShExprParser:
                 "borrow_kind": "value",
                 "casts": [],
                 "repr": raw,
-                "value": raw[1:-1],
+                "value": body,
             }
         if tok["k"] == "NAME":
             name_tok = self._eat("NAME")
@@ -906,6 +990,16 @@ class _ShExprParser:
                     "casts": [],
                     "repr": nm,
                     "value": (nm == "True"),
+                }
+            if nm == "None":
+                return {
+                    "kind": "Constant",
+                    "source_span": self._node_span(name_tok["s"], name_tok["e"]),
+                    "resolved_type": "None",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": nm,
+                    "value": None,
                 }
             t = self.name_types.get(nm, "unknown")
             return {

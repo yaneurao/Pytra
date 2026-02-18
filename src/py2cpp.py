@@ -85,9 +85,10 @@ class CppEmitter:
         self.indent = 0
         self.tmp_id = 0
         self.negative_index_mode = negative_index_mode
-        self.renamed_symbols: dict[str, str] = {
-            str(k): str(v) for k, v in self.doc.get("renamed_symbols", {}).items()
-        }
+        # NOTE:
+        # self-host compile path currently treats EAST payload values as dynamic,
+        # so dict[str, Any] -> dict iteration for renaming is disabled for now.
+        self.renamed_symbols: dict[str, str] = {}
         self.scope_stack: list[set[str]] = [set()]
         self.current_class_name: str | None = None
         self.current_class_fields: dict[str, str] = {}
@@ -104,98 +105,25 @@ class CppEmitter:
         self.lines.append(("    " * self.indent) + line)
 
     def _stmt_start_line(self, stmt: dict[str, Any]) -> int | None:
-        span = stmt.get("source_span")
-        if isinstance(span, dict):
-            v = span.get("lineno")
-            if isinstance(v, int) and v > 0:
-                return v
         return None
 
     def _stmt_end_line(self, stmt: dict[str, Any]) -> int | None:
-        span = stmt.get("source_span")
-        if isinstance(span, dict):
-            v = span.get("end_lineno")
-            if isinstance(v, int) and v > 0:
-                return v
-            v2 = span.get("lineno")
-            if isinstance(v2, int) and v2 > 0:
-                return v2
         return None
 
     def _has_leading_trivia(self, stmt: dict[str, Any]) -> bool:
-        trivia = stmt.get("leading_trivia")
-        return isinstance(trivia, list) and len(trivia) > 0
+        return False
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
-        prev_end: int | None = None
         for stmt in stmts:
-            start = self._stmt_start_line(stmt)
-            if (
-                prev_end is not None
-                and start is not None
-                and start > prev_end + 1
-                and not self._has_leading_trivia(stmt)
-            ):
-                for _ in range(start - prev_end - 1):
-                    self.emit()
             self.emit_stmt(stmt)
-            end = self._stmt_end_line(stmt)
-            if end is not None:
-                prev_end = end
 
     def emit_block_comment(self, text: str) -> None:
-        """Emit line comments for docstring-like standalone strings."""
-        normalized = text
-        # Self-hosted parser can keep an extra quote pair for triple strings (e.g. ""text"").
-        while (
-            isinstance(normalized, str)
-            and len(normalized) >= 4
-            and normalized.startswith('""')
-            and normalized.endswith('""')
-        ):
-            normalized = normalized[1:-1]
-        if (
-            isinstance(normalized, str)
-            and len(normalized) >= 2
-            and normalized.startswith('"')
-            and normalized.endswith('"')
-        ):
-            normalized = normalized[1:-1]
-        safe = normalized.replace("*/", "* /")
-        parts = safe.splitlines()
-        if len(parts) == 0:
-            self.emit("//")
-            return
-        for line in parts:
-            if line == "":
-                self.emit("//")
-            else:
-                self.emit("// " + line)
+        """Emit docstring/comment as C-style block comment."""
+        self.emit("/* " + text + " */")
 
     def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
-        trivia = stmt.get("leading_trivia")
-        if isinstance(trivia, list):
-            for item in trivia:
-                if not isinstance(item, dict):
-                    continue
-                k = item.get("kind")
-                if k == "comment":
-                    text = item.get("text")
-                    if isinstance(text, str) and text != "":
-                        self.emit("// " + text)
-                elif k == "blank":
-                    count_raw = item.get("count", 1)
-                    count = count_raw if isinstance(count_raw, int) and count_raw > 0 else 1
-                    for _ in range(count):
-                        self.emit()
-            return
-
-        # Backward compatibility for older EAST payloads.
-        comments = stmt.get("leading_comments")
-        if isinstance(comments, list):
-            for c in comments:
-                if isinstance(c, str) and c != "":
-                    self.emit("// " + c)
+        # NOTE: selfhost bridge; comment trivia emission is temporarily disabled.
+        _ = stmt
 
     def next_tmp(self, prefix: str = "__tmp") -> str:
         self.tmp_id += 1
@@ -226,15 +154,18 @@ class CppEmitter:
                 if isinstance(base, str) and base != "" and base in self.ref_classes and name not in self.ref_classes:
                     self.ref_classes.add(name)
                     changed = True
-        self.value_classes = set(self.class_names) - set(self.ref_classes)
+        self.value_classes = {name for name in self.class_names if name not in self.ref_classes}
 
         self.emit_module_leading_trivia()
-        self.emit(CPP_HEADER.rstrip("\n"))
-        self.emit()
+        header_text = CPP_HEADER
+        if len(header_text) > 0 and header_text[-1] == "\n":
+            header_text = header_text[:-1]
+        self.emit(header_text)
+        self.emit("")
 
         for stmt in self.doc.get("body", []):
             self.emit_stmt(stmt)
-            self.emit()
+            self.emit("")
 
         self.emit("int main(int argc, char** argv) {")
         self.indent += 1
@@ -245,57 +176,58 @@ class CppEmitter:
         self.emit("return 0;")
         self.indent -= 1
         self.emit("}")
-        self.emit()
-        return "\n".join(self.lines)
+        self.emit("")
+        out = ""
+        i = 0
+        while i < len(self.lines):
+            if i > 0:
+                out += "\n"
+            out += self.lines[i]
+            i += 1
+        return out
 
     def emit_module_leading_trivia(self) -> None:
-        trivia = self.doc.get("module_leading_trivia")
-        if not isinstance(trivia, list):
-            return
-        for item in trivia:
-            if not isinstance(item, dict):
-                continue
-            k = item.get("kind")
-            if k == "comment":
-                text = item.get("text")
-                if isinstance(text, str):
-                    self.emit("// " + text)
-            elif k == "blank":
-                count_raw = item.get("count", 1)
-                count = count_raw if isinstance(count_raw, int) and count_raw > 0 else 1
-                for _ in range(count):
-                    self.emit()
-        if len(trivia) > 0:
-            self.emit()
+        _ = self.doc
 
     def current_scope(self) -> set[str]:
         return self.scope_stack[-1]
 
     def is_declared(self, name: str) -> bool:
-        for scope in reversed(self.scope_stack):
+        i = len(self.scope_stack) - 1
+        while i >= 0:
+            scope = self.scope_stack[i]
             if name in scope:
                 return True
+            i -= 1
         return False
 
     def render_cond(self, expr: dict[str, Any] | None) -> str:
         t0 = self.get_expr_type(expr)
-        t = t0 if isinstance(t0, str) else ""
+        t = t0 if t0 is not None else ""
         body = self._strip_outer_parens(self.render_expr(expr))
         if t in {"bool"}:
             return body
-        if t == "str" or t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+        if t == "str" or t[:5] == "list[" or t[:5] == "dict[" or t[:4] == "set[" or t[:6] == "tuple[":
             return f"py_len({body}) != 0"
         return body
 
     def _strip_outer_parens(self, text: str) -> str:
-        s = text.strip()
-        while len(s) >= 2 and s.startswith("(") and s.endswith(")"):
+        s = text
+        ws = {" ", "\t", "\n", "\r", "\f", "\v"}
+        while len(s) > 0 and s[0] in ws:
+            s = s[1:]
+        while len(s) > 0 and s[-1] in ws:
+            s = s[:-1]
+
+        while len(s) >= 2 and s[0] == "(" and s[-1] == ")":
             depth = 0
             in_str = False
             esc = False
             quote = ""
             wrapped = True
-            for i, ch in enumerate(s):
+            i = 0
+            while i < len(s):
+                ch = s[i]
                 if in_str:
                     if esc:
                         esc = False
@@ -303,10 +235,12 @@ class CppEmitter:
                         esc = True
                     elif ch == quote:
                         in_str = False
+                    i += 1
                     continue
-                if ch in {"'", '"'}:
+                if ch == "'" or ch == '"':
                     in_str = True
                     quote = ch
+                    i += 1
                     continue
                 if ch == "(":
                     depth += 1
@@ -315,8 +249,13 @@ class CppEmitter:
                     if depth == 0 and i != len(s) - 1:
                         wrapped = False
                         break
+                i += 1
             if wrapped and depth == 0:
-                s = s[1:-1].strip()
+                s = s[1:-1]
+                while len(s) > 0 and s[0] in ws:
+                    s = s[1:]
+                while len(s) > 0 and s[-1] in ws:
+                    s = s[:-1]
                 continue
             break
         return s
@@ -907,7 +846,7 @@ class CppEmitter:
         for fname, fty in instance_fields.items():
             self.emit(f"{self.cpp_type(fty)} {fname};")
         if len(static_field_types) > 0 or len(instance_fields) > 0:
-            self.emit()
+            self.emit("")
         if len(instance_fields) > 0 and not has_init:
             params: list[str] = []
             for fname, fty in instance_fields.items():
@@ -921,7 +860,7 @@ class CppEmitter:
                 self.emit(f"this->{fname} = {fname};")
             self.indent -= 1
             self.emit("}")
-            self.emit()
+            self.emit("")
         for s in class_body:
             if s.get("kind") == "FunctionDef":
                 self.emit_function(s, in_class=True)
@@ -1141,6 +1080,40 @@ class CppEmitter:
                     return f"py_print({', '.join(args)})"
                 if raw == "len" and len(args) == 1:
                     return f"py_len({args[0]})"
+                if raw == "any" and len(args) == 1:
+                    return f"py_any({args[0]})"
+                if raw == "all" and len(args) == 1:
+                    return f"py_all({args[0]})"
+                if raw == "isinstance" and len(args) == 2:
+                    type_name = ""
+                    rhs = arg_nodes[1] if isinstance(arg_nodes, list) and len(arg_nodes) > 1 else None
+                    if isinstance(rhs, dict) and rhs.get("kind") == "Name":
+                        type_name = str(rhs.get("id", ""))
+                    a0 = args[0]
+                    if type_name == "dict":
+                        return f"py_is_dict({a0})"
+                    if type_name == "list":
+                        return f"py_is_list({a0})"
+                    if type_name == "set":
+                        return f"py_is_set({a0})"
+                    if type_name == "str":
+                        return f"py_is_str({a0})"
+                    if type_name == "int":
+                        return f"py_is_int({a0})"
+                    if type_name == "float":
+                        return f"py_is_float({a0})"
+                    if type_name == "bool":
+                        return f"py_is_bool({a0})"
+                    return "false"
+                if raw == "set" and len(args) == 0:
+                    t = self.cpp_type(expr.get("resolved_type"))
+                    return f"{t}{{}}"
+                if raw == "list" and len(args) == 0:
+                    t = self.cpp_type(expr.get("resolved_type"))
+                    return f"{t}{{}}"
+                if raw == "dict" and len(args) == 0:
+                    t = self.cpp_type(expr.get("resolved_type"))
+                    return f"{t}{{}}"
                 if raw == "bytes":
                     return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
                 if raw == "bytearray":

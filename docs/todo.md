@@ -99,6 +99,8 @@
 
 ### selfhost C++コンパイル段階の未解決（2026-02-18）
 
+- [x] self_hosted parser の `STR` 解析で prefix 付き文字列（`f/r/b/u/rf/fr`）を正しく扱えるようにする。
+- [x] self_hosted parser の `f-string` を `JoinedStr/FormattedValue` に落とす（最低限 `{expr}` と `{{` `}}`）。
 - [ ] 型注釈 `Any` を C++出力で扱えるようにする（最低でも `object` 互換に正規化する）。
 - [ ] PEP604 形式の union (`T | None`) を EAST または C++型変換段で受理し、C++型へ正規化する。
 - [ ] `dict[str, Any]` / `dict[str, str | None]` のようなネスト型注釈を C++出力時に安全に解決する。
@@ -107,3 +109,7 @@
 - [ ] `dict[str, Any]` に対する `.get(...).items()` 連鎖を C++ で確実に展開できるようにする（`py_dict_get_default` と `items` 展開の型整合）。
 - [ ] `list[set[str]]` など「属性側の既知型」と「RHS リテラルの unknown 推論」の不一致を解消する（例: `self.scope_stack = [set()]`）。
 - [ ] self_hosted parser の `BoolOp`（`or/and`）を値選択用途で使った場合の扱いを定義する（現状は bool 演算へ寄るため selfhost で破綻しやすい）。
+- [ ] `str` メソッドの selfhost 対応を追加する（`strip/rstrip/startswith/endswith/replace/join`）。
+- [ ] `reversed/enumerate` の selfhost 変換を追加する（ランタイムヘルパ or EAST lower）。
+- [ ] `std::any` と `optional[T]` の橋渡しを整理する（`== None`、`if x is None`、`dict.get` 戻り値）。
+- [ ] `emit_module_leading_trivia` / `emit_leading_comments` の一時無効化を解除し、コメント/空行保持を selfhost でも再有効化する。
