@@ -14,6 +14,7 @@ import sys
 from typing import Any
 
 from common.code_emitter import CodeEmitter
+from common.east_io import extract_module_leading_trivia as extract_module_leading_trivia_common
 from common.east_io import load_east_from_path
 from common.language_profile import load_language_profile
 from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
@@ -333,6 +334,19 @@ class CppEmitter(CodeEmitter):
                     name = v.get("name")
                     if isinstance(mod, str) and isinstance(name, str) and mod != "" and name != "":
                         self.import_symbols[k] = {"module": mod, "name": name}
+
+    def _stmt_start_line(self, stmt: dict[str, Any]) -> int | None:
+        """将来の行情報連携用フック（現在は未使用）。"""
+        return None
+
+    def _stmt_end_line(self, stmt: dict[str, Any]) -> int | None:
+        """将来の行情報連携用フック（現在は未使用）。"""
+        return None
+
+    def _has_leading_trivia(self, stmt: dict[str, Any]) -> bool:
+        """文に先頭コメント/空行情報が付いているか判定する。"""
+        trivia = stmt.get("leading_trivia")
+        return isinstance(trivia, list) and len(trivia) > 0
 
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
@@ -673,53 +687,6 @@ class CppEmitter(CodeEmitter):
             call = f"std::{fn}<{t}>({call}, {a})"
         return call
 
-    def _emit_if_stmt(self, stmt: dict[str, Any]) -> None:
-        """If ノードを出力する。"""
-        body_stmts = [s for s in stmt.get("body", []) if isinstance(s, dict)]
-        else_stmts = [s for s in stmt.get("orelse", []) if isinstance(s, dict)]
-        if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
-            self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": self.render_cond(stmt.get("test"))}))
-            self.indent += 1
-            self.scope_stack.append(set())
-            self.emit_stmt(body_stmts[0])
-            self.scope_stack.pop()
-            self.indent -= 1
-            if len(else_stmts) > 0:
-                self.emit(self.syntax_text("else_no_brace", "else"))
-                self.indent += 1
-                self.scope_stack.append(set())
-                self.emit_stmt(else_stmts[0])
-                self.scope_stack.pop()
-                self.indent -= 1
-            return
-
-        self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
-        self.indent += 1
-        self.scope_stack.append(set())
-        self.emit_stmt_list(body_stmts)
-        self.scope_stack.pop()
-        self.indent -= 1
-        if len(else_stmts) > 0:
-            self.emit(self.syntax_text("else_open", "} else {"))
-            self.indent += 1
-            self.scope_stack.append(set())
-            self.emit_stmt_list(else_stmts)
-            self.scope_stack.pop()
-            self.indent -= 1
-            self.emit(self.syntax_text("block_close", "}"))
-        else:
-            self.emit(self.syntax_text("block_close", "}"))
-
-    def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
-        """While ノードを出力する。"""
-        self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
-        self.indent += 1
-        self.scope_stack.append(set())
-        self.emit_stmt_list(list(stmt.get("body", [])))
-        self.scope_stack.pop()
-        self.indent -= 1
-        self.emit(self.syntax_text("block_close", "}"))
-
     def emit_stmt(self, stmt: Any) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
         stmt_node = self.any_to_dict(stmt)
@@ -883,10 +850,49 @@ class CppEmitter(CodeEmitter):
                 self.emit(f"{target} {op} {val};")
             return
         if kind == "If":
-            self._emit_if_stmt(stmt)
+            body_stmts = [s for s in stmt.get("body", []) if isinstance(s, dict)]
+            else_stmts = [s for s in stmt.get("orelse", []) if isinstance(s, dict)]
+            if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
+                self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": self.render_cond(stmt.get("test"))}))
+                self.indent += 1
+                self.scope_stack.append(set())
+                self.emit_stmt(body_stmts[0])
+                self.scope_stack.pop()
+                self.indent -= 1
+                if len(else_stmts) > 0:
+                    self.emit(self.syntax_text("else_no_brace", "else"))
+                    self.indent += 1
+                    self.scope_stack.append(set())
+                    self.emit_stmt(else_stmts[0])
+                    self.scope_stack.pop()
+                    self.indent -= 1
+                return
+
+            self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
+            self.indent += 1
+            self.scope_stack.append(set())
+            self.emit_stmt_list(body_stmts)
+            self.scope_stack.pop()
+            self.indent -= 1
+            if len(else_stmts) > 0:
+                self.emit(self.syntax_text("else_open", "} else {"))
+                self.indent += 1
+                self.scope_stack.append(set())
+                self.emit_stmt_list(else_stmts)
+                self.scope_stack.pop()
+                self.indent -= 1
+                self.emit(self.syntax_text("block_close", "}"))
+            else:
+                self.emit(self.syntax_text("block_close", "}"))
             return
         if kind == "While":
-            self._emit_while_stmt(stmt)
+            self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
+            self.indent += 1
+            self.scope_stack.append(set())
+            self.emit_stmt_list(list(stmt.get("body", [])))
+            self.scope_stack.pop()
+            self.indent -= 1
+            self.emit(self.syntax_text("block_close", "}"))
             return
         if kind == "ForRange":
             self.emit_for_range(stmt)
@@ -1319,211 +1325,6 @@ class CppEmitter(CodeEmitter):
         self.indent -= 1
         self.emit(self.syntax_text("class_close", "};"))
 
-    def _render_binop_expr(self, expr: dict[str, Any]) -> str:
-        """BinOp ノードを C++ 式へ変換する。"""
-        if expr.get("left") is None or expr.get("right") is None:
-            rep = expr.get("repr")
-            if isinstance(rep, str) and rep != "":
-                return rep
-        left_expr = expr.get("left")
-        right_expr = expr.get("right")
-        left = self.render_expr(left_expr)
-        right = self.render_expr(right_expr)
-        cast_rules = expr.get("casts", [])
-        for c in cast_rules:
-            on = c.get("on")
-            to_t = c.get("to")
-            if on == "left":
-                left = self.apply_cast(left, to_t)
-            elif on == "right":
-                right = self.apply_cast(right, to_t)
-        op_name = expr.get("op")
-        op_name_str = str(op_name)
-        left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
-        right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
-        hook_binop = self.hook_on_render_binop(
-            self,
-            expr,
-            left,
-            right,
-        )
-        if isinstance(hook_binop, str) and hook_binop != "":
-            return hook_binop
-        if op_name == "Div":
-            # Prefer direct C++ division when float is involved (or EAST already injected casts).
-            # Keep py_div fallback for int/int Python semantics.
-            lt0 = self.get_expr_type(left_expr if isinstance(left_expr, dict) else None)
-            rt0 = self.get_expr_type(right_expr if isinstance(right_expr, dict) else None)
-            lt = lt0 if isinstance(lt0, str) else ""
-            rt = rt0 if isinstance(rt0, str) else ""
-            if lt == "Path" and rt in {"str", "Path"}:
-                return f"{left} / {right}"
-            if len(cast_rules) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
-                return f"{left} / {right}"
-            return f"py_div({left}, {right})"
-        if op_name == "FloorDiv":
-            return f"py_floordiv({left}, {right})"
-        if op_name == "Mod":
-            return f"{left} % {right}"
-        if op_name == "Mult":
-            lt0 = self.get_expr_type(expr.get("left"))
-            rt0 = self.get_expr_type(expr.get("right"))
-            lt = lt0 if isinstance(lt0, str) else ""
-            rt = rt0 if isinstance(rt0, str) else ""
-            if lt.startswith("list[") and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({left}, {right})"
-            if rt.startswith("list[") and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({right}, {left})"
-            if lt == "str" and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({left}, {right})"
-            if rt == "str" and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({right}, {left})"
-        op = BIN_OPS.get(op_name, "+")
-        return f"{left} {op} {right}"
-
-    def _render_call_name_or_attr(
-        self,
-        expr: dict[str, Any],
-        fn: dict[str, Any],
-        fn_name: str,
-        args: list[str],
-        kw: dict[str, str],
-        arg_nodes: list[Any],
-        first_arg: Any,
-    ) -> str | None:
-        """Call の Name/Attribute 分岐を処理する。"""
-        if fn.get("kind") == "Name":
-            raw = fn.get("id")
-            imported = None
-            imported_module = ""
-            if isinstance(raw, str) and not self.is_declared(raw):
-                imported = self._resolve_imported_symbol(raw)
-                if isinstance(imported, dict):
-                    imported_module = imported.get("module", "")
-                    raw = imported.get("name", raw)
-            if isinstance(raw, str) and imported_module != "":
-                mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
-                if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "save_gif", "Path"}:
-                    return f"{mapped_runtime}({', '.join(args)})"
-            if raw == "range":
-                raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
-            if isinstance(raw, str) and raw in self.ref_classes:
-                return f"::rc_new<{raw}>({', '.join(args)})"
-            if raw == "print":
-                return f"py_print({', '.join(args)})"
-            if raw == "len" and len(args) == 1:
-                return f"py_len({args[0]})"
-            if raw == "reversed" and len(args) == 1:
-                return f"py_reversed({args[0]})"
-            if raw == "enumerate" and len(args) == 1:
-                return f"py_enumerate({args[0]})"
-            if raw == "any" and len(args) == 1:
-                return f"py_any({args[0]})"
-            if raw == "all" and len(args) == 1:
-                return f"py_all({args[0]})"
-            if raw == "isinstance" and len(args) == 2:
-                type_name = ""
-                rhs = arg_nodes[1] if isinstance(arg_nodes, list) and len(arg_nodes) > 1 else None
-                if isinstance(rhs, dict) and rhs.get("kind") == "Name":
-                    type_name = str(rhs.get("id", ""))
-                a0 = args[0]
-                if type_name == "dict":
-                    return f"py_is_dict({a0})"
-                if type_name == "list":
-                    return f"py_is_list({a0})"
-                if type_name == "set":
-                    return f"py_is_set({a0})"
-                if type_name == "str":
-                    return f"py_is_str({a0})"
-                if type_name == "int":
-                    return f"py_is_int({a0})"
-                if type_name == "float":
-                    return f"py_is_float({a0})"
-                if type_name == "bool":
-                    return f"py_is_bool({a0})"
-                return "false"
-            if raw == "set" and len(args) == 0:
-                t = self.cpp_type(expr.get("resolved_type"))
-                return f"{t}{{}}"
-            if raw == "list" and len(args) == 0:
-                t = self.cpp_type(expr.get("resolved_type"))
-                return f"{t}{{}}"
-            if raw == "dict" and len(args) == 0:
-                t = self.cpp_type(expr.get("resolved_type"))
-                return f"{t}{{}}"
-            if raw == "bytes":
-                return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
-            if raw == "bytearray":
-                return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
-            if raw == "str" and len(args) == 1:
-                src_expr = first_arg
-                return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
-            if raw in {"int", "float", "bool"} and len(args) == 1:
-                target = self.cpp_type(expr.get("resolved_type"))
-                arg_t = self.get_expr_type(first_arg if isinstance(first_arg, dict) else None)
-                numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
-                if raw == "bool" and self.is_any_like_type(arg_t):
-                    return f"py_to_bool({args[0]})"
-                if raw == "float" and self.is_any_like_type(arg_t):
-                    return f"py_to_float64({args[0]})"
-                if raw == "int" and target == "int64" and arg_t == "str":
-                    return f"py_to_int64({args[0]})"
-                if raw == "int" and target == "int64" and arg_t in numeric_t:
-                    return f"int64({args[0]})"
-                if raw == "int" and target == "int64":
-                    return f"py_to_int64({args[0]})"
-                return f"static_cast<{target}>({args[0]})"
-            if raw in {"min", "max"} and len(args) >= 1:
-                return self.render_minmax(raw, args, self.get_expr_type(expr))
-            if raw == "perf_counter":
-                return "perf_counter()"
-            if raw in {"Exception", "RuntimeError"}:
-                if len(args) == 0:
-                    return 'std::runtime_error("error")'
-                return f"std::runtime_error({args[0]})"
-            if raw == "Path":
-                return f"Path({', '.join(args)})"
-            if raw == "save_gif":
-                path = args[0] if len(args) >= 1 else '""'
-                w = args[1] if len(args) >= 2 else "0"
-                h = args[2] if len(args) >= 3 else "0"
-                frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
-                palette = args[4] if len(args) >= 5 else "grayscale_palette()"
-                delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
-                loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
-                return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
-        if fn.get("kind") == "Attribute":
-            owner = fn.get("value")
-            owner_t = self.get_expr_type(owner)
-            owner_expr = self.render_expr(owner)
-            if isinstance(owner, dict) and owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                owner_expr = f"({owner_expr})"
-            owner_mod = self._resolve_imported_module_name(owner_expr)
-            attr = fn.get("attr")
-            if isinstance(attr, str):
-                owner_map = self.module_attr_call_map.get(owner_mod)
-                if isinstance(owner_map, dict):
-                    runtime_call = owner_map.get(attr)
-                    if isinstance(runtime_call, str):
-                        return f"{runtime_call}({', '.join(args)})"
-            if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
-                return f"png_helper::write_rgb_png({', '.join(args)})"
-            if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
-                path = args[0] if len(args) >= 1 else '""'
-                w = args[1] if len(args) >= 2 else "0"
-                h = args[2] if len(args) >= 3 else "0"
-                frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
-                palette = args[4] if len(args) >= 5 else "grayscale_palette()"
-                if palette in {"nullptr", "std::nullopt"}:
-                    palette = "grayscale_palette()"
-                delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
-                loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
-                return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
-            if owner_t == "unknown":
-                if attr == "clear":
-                    return f"{owner_expr}.clear()"
-        return None
-
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
         expr_node = self.any_to_dict(expr)
@@ -1821,9 +1622,136 @@ class CppEmitter(CodeEmitter):
                     return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
                 if builtin_name == "bytearray":
                     return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
-            name_or_attr = self._render_call_name_or_attr(expr, fn, fn_name, args, kw, arg_nodes, first_arg)
-            if isinstance(name_or_attr, str) and name_or_attr != "":
-                return name_or_attr
+            if fn.get("kind") == "Name":
+                raw = fn.get("id")
+                imported = None
+                imported_module = ""
+                if isinstance(raw, str) and not self.is_declared(raw):
+                    imported = self._resolve_imported_symbol(raw)
+                    if isinstance(imported, dict):
+                        imported_module = imported.get("module", "")
+                        raw = imported.get("name", raw)
+                if isinstance(raw, str) and imported_module != "":
+                    mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
+                    if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "save_gif", "Path"}:
+                        return f"{mapped_runtime}({', '.join(args)})"
+                if raw == "range":
+                    raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
+                if isinstance(raw, str) and raw in self.ref_classes:
+                    return f"::rc_new<{raw}>({', '.join(args)})"
+                if raw == "print":
+                    return f"py_print({', '.join(args)})"
+                if raw == "len" and len(args) == 1:
+                    return f"py_len({args[0]})"
+                if raw == "reversed" and len(args) == 1:
+                    return f"py_reversed({args[0]})"
+                if raw == "enumerate" and len(args) == 1:
+                    return f"py_enumerate({args[0]})"
+                if raw == "any" and len(args) == 1:
+                    return f"py_any({args[0]})"
+                if raw == "all" and len(args) == 1:
+                    return f"py_all({args[0]})"
+                if raw == "isinstance" and len(args) == 2:
+                    type_name = ""
+                    rhs = arg_nodes[1] if isinstance(arg_nodes, list) and len(arg_nodes) > 1 else None
+                    if isinstance(rhs, dict) and rhs.get("kind") == "Name":
+                        type_name = str(rhs.get("id", ""))
+                    a0 = args[0]
+                    if type_name == "dict":
+                        return f"py_is_dict({a0})"
+                    if type_name == "list":
+                        return f"py_is_list({a0})"
+                    if type_name == "set":
+                        return f"py_is_set({a0})"
+                    if type_name == "str":
+                        return f"py_is_str({a0})"
+                    if type_name == "int":
+                        return f"py_is_int({a0})"
+                    if type_name == "float":
+                        return f"py_is_float({a0})"
+                    if type_name == "bool":
+                        return f"py_is_bool({a0})"
+                    return "false"
+                if raw == "set" and len(args) == 0:
+                    t = self.cpp_type(expr.get("resolved_type"))
+                    return f"{t}{{}}"
+                if raw == "list" and len(args) == 0:
+                    t = self.cpp_type(expr.get("resolved_type"))
+                    return f"{t}{{}}"
+                if raw == "dict" and len(args) == 0:
+                    t = self.cpp_type(expr.get("resolved_type"))
+                    return f"{t}{{}}"
+                if raw == "bytes":
+                    return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
+                if raw == "bytearray":
+                    return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
+                if raw == "str" and len(args) == 1:
+                    src_expr = first_arg
+                    return self.render_to_string(src_expr if isinstance(src_expr, dict) else None)
+                if raw in {"int", "float", "bool"} and len(args) == 1:
+                    target = self.cpp_type(expr.get("resolved_type"))
+                    arg_t = self.get_expr_type(first_arg if isinstance(first_arg, dict) else None)
+                    numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+                    if raw == "bool" and self.is_any_like_type(arg_t):
+                        return f"py_to_bool({args[0]})"
+                    if raw == "float" and self.is_any_like_type(arg_t):
+                        return f"py_to_float64({args[0]})"
+                    if raw == "int" and target == "int64" and arg_t == "str":
+                        return f"py_to_int64({args[0]})"
+                    if raw == "int" and target == "int64" and arg_t in numeric_t:
+                        return f"int64({args[0]})"
+                    if raw == "int" and target == "int64":
+                        return f"py_to_int64({args[0]})"
+                    return f"static_cast<{target}>({args[0]})"
+                if raw in {"min", "max"} and len(args) >= 1:
+                    return self.render_minmax(raw, args, self.get_expr_type(expr))
+                if raw == "perf_counter":
+                    return "perf_counter()"
+                if raw in {"Exception", "RuntimeError"}:
+                    if len(args) == 0:
+                        return 'std::runtime_error("error")'
+                    return f"std::runtime_error({args[0]})"
+                if raw == "Path":
+                    return f"Path({', '.join(args)})"
+                if raw == "save_gif":
+                    path = args[0] if len(args) >= 1 else '""'
+                    w = args[1] if len(args) >= 2 else "0"
+                    h = args[2] if len(args) >= 3 else "0"
+                    frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
+                    palette = args[4] if len(args) >= 5 else "grayscale_palette()"
+                    delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
+                    loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
+                    return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
+            if fn.get("kind") == "Attribute":
+                owner = fn.get("value")
+                owner_t = self.get_expr_type(owner)
+                owner_expr = self.render_expr(owner)
+                if isinstance(owner, dict) and owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                    owner_expr = f"({owner_expr})"
+                owner_mod = self._resolve_imported_module_name(owner_expr)
+                attr = fn.get("attr")
+                if isinstance(attr, str):
+                    owner_map = self.module_attr_call_map.get(owner_mod)
+                    if isinstance(owner_map, dict):
+                        runtime_call = owner_map.get(attr)
+                        if isinstance(runtime_call, str):
+                            return f"{runtime_call}({', '.join(args)})"
+                if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
+                    return f"png_helper::write_rgb_png({', '.join(args)})"
+                if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
+                    path = args[0] if len(args) >= 1 else '""'
+                    w = args[1] if len(args) >= 2 else "0"
+                    h = args[2] if len(args) >= 3 else "0"
+                    frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
+                    palette = args[4] if len(args) >= 5 else "grayscale_palette()"
+                    if palette in {"nullptr", "std::nullopt"}:
+                        palette = "grayscale_palette()"
+                    delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
+                    loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
+                    return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
+                if owner_t == "unknown":
+                    if attr == "clear":
+                        return f"{owner_expr}.clear()"
             return f"{fn_name}({', '.join(args)})"
         if kind == "RangeExpr":
             start = self.render_expr(expr.get("start"))
@@ -1831,7 +1759,65 @@ class CppEmitter(CodeEmitter):
             step = self.render_expr(expr.get("step"))
             return f"py_range({start}, {stop}, {step})"
         if kind == "BinOp":
-            return self._render_binop_expr(expr)
+            if expr.get("left") is None or expr.get("right") is None:
+                rep = expr.get("repr")
+                if isinstance(rep, str) and rep != "":
+                    return rep
+            left_expr = expr.get("left")
+            right_expr = expr.get("right")
+            left = self.render_expr(left_expr)
+            right = self.render_expr(right_expr)
+            cast_rules = expr.get("casts", [])
+            for c in cast_rules:
+                on = c.get("on")
+                to_t = c.get("to")
+                if on == "left":
+                    left = self.apply_cast(left, to_t)
+                elif on == "right":
+                    right = self.apply_cast(right, to_t)
+            op_name = expr.get("op")
+            op_name_str = str(op_name)
+            left = self._wrap_for_binop_operand(left, left_expr if isinstance(left_expr, dict) else None, op_name_str, is_right=False)
+            right = self._wrap_for_binop_operand(right, right_expr if isinstance(right_expr, dict) else None, op_name_str, is_right=True)
+            hook_binop = self.hook_on_render_binop(
+                self,
+                expr,
+                left,
+                right,
+            )
+            if isinstance(hook_binop, str) and hook_binop != "":
+                return hook_binop
+            if op_name == "Div":
+                # Prefer direct C++ division when float is involved (or EAST already injected casts).
+                # Keep py_div fallback for int/int Python semantics.
+                lt0 = self.get_expr_type(left_expr if isinstance(left_expr, dict) else None)
+                rt0 = self.get_expr_type(right_expr if isinstance(right_expr, dict) else None)
+                lt = lt0 if isinstance(lt0, str) else ""
+                rt = rt0 if isinstance(rt0, str) else ""
+                if lt == "Path" and rt in {"str", "Path"}:
+                    return f"{left} / {right}"
+                if len(cast_rules) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
+                    return f"{left} / {right}"
+                return f"py_div({left}, {right})"
+            if op_name == "FloorDiv":
+                return f"py_floordiv({left}, {right})"
+            if op_name == "Mod":
+                return f"{left} % {right}"
+            if op_name == "Mult":
+                lt0 = self.get_expr_type(expr.get("left"))
+                rt0 = self.get_expr_type(expr.get("right"))
+                lt = lt0 if isinstance(lt0, str) else ""
+                rt = rt0 if isinstance(rt0, str) else ""
+                if lt.startswith("list[") and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                    return f"py_repeat({left}, {right})"
+                if rt.startswith("list[") and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                    return f"py_repeat({right}, {left})"
+                if lt == "str" and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                    return f"py_repeat({left}, {right})"
+                if rt == "str" and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
+                    return f"py_repeat({right}, {left})"
+            op = BIN_OPS.get(op_name, "+")
+            return f"{left} {op} {right}"
         if kind == "UnaryOp":
             operand_expr = expr.get("operand")
             operand = self.render_expr(operand_expr)
@@ -2273,6 +2259,11 @@ class CppEmitter(CodeEmitter):
 def load_east(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     return load_east_from_path(input_path, parser_backend=parser_backend)
+
+
+def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
+    """モジュール先頭のコメント/空行を trivia 形式で抽出する。"""
+    return extract_module_leading_trivia_common(source)
 
 
 def transpile_to_cpp(
