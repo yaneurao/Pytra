@@ -117,6 +117,7 @@
 ## 5. EASTベース C++ 経路
 
 - `src/common/east.py`: Python -> EAST JSON
+- `src/common/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（言語非依存）
 - `src/common/base_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/py2cpp.py`: EAST JSON -> C++
 - `src/cpp_module/py_runtime.h`: C++ ランタイム集約
