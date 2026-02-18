@@ -547,7 +547,7 @@ class CppEmitter:
             if val is not None:
                 rendered_val = self.render_expr(val)
             ann_t_raw = stmt.get("annotation")
-            ann_t_str: str = ann_t_raw if isinstance(ann_t_raw, str) else ""
+            ann_t_str: str = str(ann_t_raw) if isinstance(ann_t_raw, str) else ""
             if isinstance(val, dict) and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
                 inner_ann = self.split_generic(ann_t_str[5:-1])
                 if len(inner_ann) == 2 and self._is_any_like_type(inner_ann[1]):
@@ -595,7 +595,7 @@ class CppEmitter:
                     self.emit(f"{target} = {rendered_val};")
             return
         if kind == "AugAssign":
-            op = AUG_OPS.get(stmt.get("op"), "+=")
+            op = "+="
             target_expr = stmt.get("target")
             target = self.render_lvalue(target_expr)
             declare = bool(stmt.get("declare", False))
@@ -615,6 +615,8 @@ class CppEmitter:
                 elif target_t in {"float32", "float64"}:
                     val = f"static_cast<float64>(py_to_int64({val}))"
             op_name = str(stmt.get("op"))
+            if op_name in AUG_OPS:
+                op = AUG_OPS[op_name]
             if op_name in AUG_BIN:
                 bop = AUG_BIN[op_name]
                 # Prefer idiomatic ++/-- for +/-1 updates.
@@ -629,8 +631,8 @@ class CppEmitter:
                 self.emit(f"{target} {op} {val};")
             return
         if kind == "If":
-            body_stmts = list(stmt.get("body", []))
-            else_stmts = list(stmt.get("orelse", []))
+            body_stmts = [s for s in stmt.get("body", []) if isinstance(s, dict)]
+            else_stmts = [s for s in stmt.get("orelse", []) if isinstance(s, dict)]
             if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
                 self.emit(f"if ({self.render_cond(stmt.get('test'))})")
                 self.indent += 1
@@ -785,7 +787,9 @@ class CppEmitter:
         self.emit(f"{texpr} = {rval};")
 
     def is_plain_name_expr(self, expr: Any) -> bool:
-        return isinstance(expr, dict) and expr.get("kind") == "Name"
+        if not isinstance(expr, dict):
+            return False
+        return expr.get("kind") == "Name"
 
     def _expr_repr_eq(self, a: dict[str, Any] | None, b: dict[str, Any] | None) -> bool:
         if not isinstance(a, dict) or not isinstance(b, dict):
@@ -799,13 +803,14 @@ class CppEmitter:
     def render_lvalue(self, expr: Any) -> str:
         if not isinstance(expr, dict):
             return self.render_expr(expr)
-        if expr.get("kind") != "Subscript":
-            return self.render_expr(expr)
-        val_expr = expr.get("value")
+        node = expr
+        if node.get("kind") != "Subscript":
+            return self.render_expr(node)
+        val_expr = node.get("value")
         val = self.render_expr(val_expr)
         val_ty0 = self.get_expr_type(val_expr)
         val_ty = val_ty0 if isinstance(val_ty0, str) else ""
-        sl = expr.get("slice")
+        sl = node.get("slice")
         idx = self.render_expr(sl)
         if val_ty.startswith("dict["):
             return f"{val}[{idx}]"
