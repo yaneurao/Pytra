@@ -2246,8 +2246,9 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     if len(modules) == 0:
         out.append("  (none)")
     else:
-        keys = sorted([str(k) for k in modules.keys()])
-        for alias in keys:
+        for alias in modules.keys():
+            if not isinstance(alias, str):
+                continue
             mod_name = modules.get(alias)
             if isinstance(mod_name, str):
                 out.append(f"  - {alias} -> {mod_name}")
@@ -2256,8 +2257,9 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     if len(symbols) == 0:
         out.append("  (none)")
     else:
-        keys = sorted([str(k) for k in symbols.keys()])
-        for alias in keys:
+        for alias in symbols.keys():
+            if not isinstance(alias, str):
+                continue
             payload = symbols.get(alias)
             if isinstance(payload, dict):
                 mod_name = payload.get("module")
