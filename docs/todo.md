@@ -1,51 +1,23 @@
 # TODO（未完了のみ）
 
-## 画像ランタイム統一（Python正本）
-
-1. [x] `src/pylib/png.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
-   - [x] `py2cpp` に `--no-main` を追加し、ライブラリ変換（`main` なし）を可能にする。
-   - [x] self-hosted parser で `0x...` 整数リテラルと `^=` など拡張代入を受理する。
-   - [x] self-hosted parser で `with expr as name:` を `Assign + Try(finally close)` へ lower する。
-   - [x] `pylib/png.py` 変換結果で残るランタイム依存（`open`, `ValueError`, `to_bytes` など）を C++ ランタイム API へ接続する。
-   - [x] 生成結果を `src/runtime/cpp/pylib/png.cpp` へ置換し、既存出力と一致確認する。
-2. [x] `src/pylib/gif.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
-   - [x] `_lzw_encode` のネスト関数を除去し、self-hosted parser で変換可能な形へ整理する。
-   - [x] `py2cpp --no-main src/pylib/gif.py` で C++ ソース生成できるところまで到達する。
-   - [x] 生成結果で残るランタイム依存（`open`, `ValueError`, `to_bytes` など）を C++ ランタイム API へ接続する。
-   - [x] 生成結果を `src/runtime/cpp/pylib/gif.cpp` へ置換し、既存出力と一致確認する。
-3. [x] 画像一致判定の既定手順を「バイナリ完全一致」へ統一し、`py2cpp` 向けの検証スクリプトを整理する。
-   - [x] `pylib` と `runtime/cpp/pylib` の PNG/GIF 出力一致を確認する自動テスト（最小ケース）を追加する。
-   - [x] 置換作業中の受け入れ基準を「Python正本と同じ入力で同一出力」へ固定する。
-4. [x] 速度がボトルネックになる箇所のみ、`py2cpp` 向け最適化の許容範囲を文書化する。
-
-## import 強化（完了）
-
-1. [x] `from XXX import YYY` / `as` を EAST メタデータと `py2cpp` の両方で解決し、呼び出し先ランタイムへ正しく接続する。
-2. [x] `import module as alias` の `module.attr(...)` を alias 解決できるようにする。
-3. [x] `from pylib.png import write_rgb_png` / `from pylib.gif import save_gif` / `from math import sqrt` の回帰テストを追加する。
-4. [x] `import` 関連の仕様追記（対応範囲・`*` 非対応）を `docs/spec-east.md` / `docs/spec-user.md` / `docs/spec-dev.md` に反映する。
-
 ## selfhost 回復（優先）
 
-1. [x] `py2cpp.py` の `BaseEmitter` 共通化後、selfhost 生成時に `common.base_emitter` の内容を C++ へ取り込む手順（または inline 展開）を実装する。
-   - [x] `tools/prepare_selfhost_source.py` を追加して、`selfhost/py2cpp.py` を自己完結化する。
-   - [x] `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` が通る状態に戻す。
-2. [ ] `BaseEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
+1. [ ] `BaseEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
    - [ ] `any_dict_get` / `any_to_dict` / `any_to_list` / `any_to_str` の C++ 生成を確認し、`object.begin/end` 生成を消す。
    - [ ] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
    - [ ] `test/unit/test_base_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
-3. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
+2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
    - [ ] `str|None`, `dict|None`, `list|None` の Union 処理を見直し、`std::optional<T>` 優先にする。
    - [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
    - [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
-4. [ ] selfhost コンパイルエラーを段階的にゼロ化する。
+3. [ ] selfhost コンパイルエラーを段階的にゼロ化する。
    - [ ] `selfhost/build.all.log` の先頭 200 行を優先して修正し、`total_errors < 300` にする。
    - [ ] 同手順で `total_errors < 100` まで減らす。
    - [ ] `total_errors = 0` にする。
-5. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
+4. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
    - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
-6. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
+5. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
    - [ ] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。
    - [ ] `selfhost/py2cpp.out` と `python3 src/py2cpp.py` の出力差分チェックをスクリプト化する。
    - [ ] CI 相当手順（ローカル）に組み込む。

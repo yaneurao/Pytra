@@ -372,3 +372,36 @@
 - [x] `selfhost/py2cpp.cpp` で `object -> optional<dict<...>> / list<object> / str` 代入が失敗している箇所を、`any_to_dict/any_to_list/any_to_str` を通る形へ統一する。
 - [x] `py_dict_get_default(...)` 呼び出しの曖昧解決（`bool` 既定値など）を解消するため、`dict_get_bool/str/list/node` など型付き helper 呼び出しへ置換する。
 - [x] `emit_stmt` / `emit_assign` / `render_expr` の `dict|None` 固定引数を段階的に `Any` 受け + 内部 `dict` 化へ寄せ、selfhost 生成コードの `std::any` 入力と整合させる。
+
+## 移管: 2026-02-18（todo.md から完了済みを移動・4）
+
+### 画像ランタイム統一（Python正本）
+
+- [x] `src/pylib/png.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
+  - [x] `py2cpp` に `--no-main` を追加し、ライブラリ変換（`main` なし）を可能にする。
+  - [x] self-hosted parser で `0x...` 整数リテラルと `^=` など拡張代入を受理する。
+  - [x] self-hosted parser で `with expr as name:` を `Assign + Try(finally close)` へ lower する。
+  - [x] `pylib/png.py` 変換結果で残るランタイム依存（`open`, `ValueError`, `to_bytes` など）を C++ ランタイム API へ接続する。
+  - [x] 生成結果を `src/runtime/cpp/pylib/png.cpp` へ置換し、既存出力と一致確認する。
+- [x] `src/pylib/gif.py` を正本として、`py2cpp` 向け C++ 画像ランタイム（`src/runtime/cpp/pylib`）を段階的にトランスパイル生成へ置換する。
+  - [x] `_lzw_encode` のネスト関数を除去し、self-hosted parser で変換可能な形へ整理する。
+  - [x] `py2cpp --no-main src/pylib/gif.py` で C++ ソース生成できるところまで到達する。
+  - [x] 生成結果で残るランタイム依存（`open`, `ValueError`, `to_bytes` など）を C++ ランタイム API へ接続する。
+  - [x] 生成結果を `src/runtime/cpp/pylib/gif.cpp` へ置換し、既存出力と一致確認する。
+- [x] 画像一致判定の既定手順を「バイナリ完全一致」へ統一し、`py2cpp` 向けの検証スクリプトを整理する。
+  - [x] `pylib` と `runtime/cpp/pylib` の PNG/GIF 出力一致を確認する自動テスト（最小ケース）を追加する。
+  - [x] 置換作業中の受け入れ基準を「Python正本と同じ入力で同一出力」へ固定する。
+- [x] 速度がボトルネックになる箇所のみ、`py2cpp` 向け最適化の許容範囲を文書化する。
+
+### import 強化
+
+- [x] `from XXX import YYY` / `as` を EAST メタデータと `py2cpp` の両方で解決し、呼び出し先ランタイムへ正しく接続する。
+- [x] `import module as alias` の `module.attr(...)` を alias 解決できるようにする。
+- [x] `from pylib.png import write_rgb_png` / `from pylib.gif import save_gif` / `from math import sqrt` の回帰テストを追加する。
+- [x] `import` 関連の仕様追記（対応範囲・`*` 非対応）を `docs/spec-east.md` / `docs/spec-user.md` / `docs/spec-dev.md` に反映する。
+
+### selfhost 回復（完了済み分）
+
+- [x] `py2cpp.py` の `BaseEmitter` 共通化後、selfhost 生成時に `common.base_emitter` の内容を C++ へ取り込む手順（または inline 展開）を実装する。
+  - [x] `tools/prepare_selfhost_source.py` を追加して、`selfhost/py2cpp.py` を自己完結化する。
+  - [x] `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` が通る状態に戻す。
