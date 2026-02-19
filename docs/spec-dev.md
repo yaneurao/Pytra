@@ -111,6 +111,11 @@
   - `--str-slice-mode {byte}`（`codepoint` は未実装）
   - 現行の `byte` / `native` では、`str[i]` の返り値型は `str`（1文字）です。
   - 添字境界外挙動は `--bounds-check-mode` に従います（`off`/`always`/`debug`）。
+- 生成コード最適化は `-O0`〜`-O3` で制御します。
+  - `-O0`: 最適化なし（デバッグ/差分調査向け）
+  - `-O1`: 軽量最適化
+  - `-O2`: 中程度の最適化
+  - `-O3`（既定）: 積極最適化
 - list/str の負数添字（例: `a[-1]`）は `--negative-index-mode` で制御します。
   - デフォルトは `const_only`（定数の負数添字のみ Python 互換処理を有効化）。
   - `always`: すべての添字アクセスで Python 互換の負数添字処理を有効化。

@@ -54,6 +54,11 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 - 除算仕様は `--floor-div-mode {native,python}` と `--mod-mode {native,python}` で切替できます（既定は `native`）。
 - 整数ビット幅は `--int-width {32,64,bigint}` で指定できます（`bigint` は未実装）。
 - 文字列の添字/スライス意味論は `--str-index-mode {byte,codepoint,native}` / `--str-slice-mode {byte,codepoint}` で指定できます（`codepoint` は未実装）。
+- 生成コード最適化は `-O0`〜`-O3` で指定できます（既定は `-O3`）。
+  - `-O0`: 最適化なし（調査向け）
+  - `-O1`: 軽量最適化
+  - `-O2`: 中程度の最適化
+  - `-O3`: 積極最適化（既定）
 - オプション群は `--preset {native,balanced,python}` で一括指定できます。個別指定を併用した場合は個別指定が優先されます。
 - 解決後のオプションを確認したい場合は `--dump-options` を使います。
 
@@ -66,6 +71,8 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
   - `python src/py2cpp.py INPUT.py -o OUT.cpp --preset python --int-width 64`
 - 最終解決オプション確認:
   - `python src/py2cpp.py INPUT.py --preset balanced --mod-mode native --dump-options`
+- selfhost 調査向け（最適化なし）:
+  - `python src/py2cpp.py INPUT.py -o OUT.cpp -O0`
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 

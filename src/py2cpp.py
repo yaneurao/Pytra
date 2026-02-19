@@ -329,6 +329,7 @@ class CppEmitter(CodeEmitter):
         int_width: str = "64",
         str_index_mode: str = "native",
         str_slice_mode: str = "byte",
+        opt_level: str = "2",
         emit_main: bool = True,
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
@@ -342,6 +343,7 @@ class CppEmitter(CodeEmitter):
         self.int_width = int_width
         self.str_index_mode = str_index_mode
         self.str_slice_mode = str_slice_mode
+        self.opt_level = opt_level
         self.emit_main = emit_main
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
@@ -368,6 +370,13 @@ class CppEmitter(CodeEmitter):
         self.reserved_words, self.rename_prefix = load_cpp_identifier_rules()
         self.import_modules: dict[str, str] = {}
         self.import_symbols: dict[str, dict[str, str]] = {}
+
+    def _opt_ge(self, level: int) -> bool:
+        """最適化レベルが指定値以上かを返す。"""
+        cur = 3
+        if self.opt_level in {"0", "1", "2", "3"}:
+            cur = int(self.opt_level)
+        return cur >= level
 
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
@@ -677,6 +686,8 @@ class CppEmitter(CodeEmitter):
         right_node: Any,
     ) -> str | None:
         """1文字比較を `'x'` / `.at(i)` 形へ最適化できるか判定する。"""
+        if not self._opt_ge(3):
+            return None
         if op not in {"Eq", "NotEq"}:
             return None
         cop = "==" if op == "Eq" else "!="
@@ -909,7 +920,7 @@ class CppEmitter(CodeEmitter):
             op = op_txt
         if _map_get_str(AUG_BIN, op_name) != "":
             # Prefer idiomatic ++/-- for +/-1 updates.
-            if op_name in {"Add", "Sub"} and val == "1":
+            if self._opt_ge(2) and op_name in {"Add", "Sub"} and val == "1":
                 if op_name == "Add":
                     self.emit(f"{target}++;")
                 else:
@@ -1152,6 +1163,8 @@ class CppEmitter(CodeEmitter):
 
     def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
         """単文ブロックで波括弧を省略可能か判定する。"""
+        if not self._opt_ge(1):
+            return False
         filtered: list[dict[str, Any]] = []
         for s in stmts:
             if isinstance(s, dict):
@@ -1170,7 +1183,7 @@ class CppEmitter(CodeEmitter):
             return
         if target.get("kind") == "Tuple":
             lhs_elems = self.any_dict_get_list(target, "elements")
-            if isinstance(value, dict) and value.get("kind") == "Tuple":
+            if self._opt_ge(2) and isinstance(value, dict) and value.get("kind") == "Tuple":
                 rhs_elems = self.any_dict_get_list(value, "elements")
                 if (
                     len(lhs_elems) == 2
@@ -1325,9 +1338,9 @@ class CppEmitter(CodeEmitter):
         else:
             cond = f"{step} > 0 ? {tgt} < {stop} : {tgt} > {stop}"
         inc = ""
-        if step == "1":
+        if self._opt_ge(2) and step == "1":
             inc = f"++{tgt}"
-        elif step == "-1":
+        elif self._opt_ge(2) and step == "-1":
             inc = f"--{tgt}"
         else:
             inc = f"{tgt} += {step}"
@@ -2914,6 +2927,7 @@ def transpile_to_cpp(
     int_width: str = "64",
     str_index_mode: str = "native",
     str_slice_mode: str = "byte",
+    opt_level: str = "2",
     emit_main: bool = True,
 ) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
@@ -2926,6 +2940,7 @@ def transpile_to_cpp(
         int_width,
         str_index_mode,
         str_slice_mode,
+        opt_level,
         emit_main,
     ).transpile()
 
@@ -2995,6 +3010,7 @@ def main(argv: list[str]) -> int:
     int_width_opt = _dict_str_get(parsed, "int_width_opt", "")
     str_index_mode_opt = _dict_str_get(parsed, "str_index_mode_opt", "")
     str_slice_mode_opt = _dict_str_get(parsed, "str_slice_mode_opt", "")
+    opt_level_opt = _dict_str_get(parsed, "opt_level_opt", "")
     preset = _dict_str_get(parsed, "preset", "")
     parser_backend = _dict_str_get(parsed, "parser_backend", "self_hosted")
     no_main = _dict_str_get(parsed, "no_main", "0") == "1"
@@ -3008,21 +3024,22 @@ def main(argv: list[str]) -> int:
     int_width = ""
     str_index_mode = ""
     str_slice_mode = ""
+    opt_level = ""
 
     if show_help:
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 0
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 1
     try:
-        negative_index_mode, bounds_check_mode, floor_div_mode, mod_mode, int_width, str_index_mode, str_slice_mode = resolve_codegen_options(
+        negative_index_mode, bounds_check_mode, floor_div_mode, mod_mode, int_width, str_index_mode, str_slice_mode, opt_level = resolve_codegen_options(
             preset,
             negative_index_mode_opt,
             bounds_check_mode_opt,
@@ -3031,6 +3048,7 @@ def main(argv: list[str]) -> int:
             int_width_opt,
             str_index_mode_opt,
             str_slice_mode_opt,
+            opt_level_opt,
         )
     except ValueError:
         print("error: invalid codegen options", file=sys.stderr)
@@ -3043,6 +3061,7 @@ def main(argv: list[str]) -> int:
         int_width,
         str_index_mode,
         str_slice_mode,
+        opt_level,
     )
     allowed_planned = [
         "--int-width=bigint is not implemented yet",
@@ -3072,6 +3091,7 @@ def main(argv: list[str]) -> int:
             int_width,
             str_index_mode,
             str_slice_mode,
+            opt_level,
         )
         if output_txt != "":
             out_path = Path(output_txt)
@@ -3102,6 +3122,7 @@ def main(argv: list[str]) -> int:
             int_width,
             str_index_mode,
             str_slice_mode,
+            opt_level,
             not no_main,
         )
     except Exception as ex:
