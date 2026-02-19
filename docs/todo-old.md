@@ -2,6 +2,11 @@
 
 ## 2026-02-19 移管: TODO整理（完了セクション）
 
+1. [x] selfhost 入力経路の段階回復
+   - [x] `load_east` の `.json` 経路を selfhost で通す（`.py` は未実装のまま維持）。
+   - [x] `.json` 経路で `test/fixtures/core/add.py` 由来 EAST を selfhost 変換できることを確認する。: `/tmp/add.east.json -> /tmp/add.selfhost.cpp` 生成成功
+   - [x] `.json` 経路でのエラー分類（`input_invalid` / `not_implemented`）を固定する。: `.py` 入力は `not_implemented`、`.json` 解析失敗は `input_invalid`
+
 0.5 [x] `test/fixtures/stdlib` compile-fail 7件を順次解消する（1件ずつ green 化）
    - [x] 現状固定: `math/os_glob/pathlib/sys/typing` は pass、`argparse/dataclasses/enum/json/re` は compile fail。
    - [x] 共通修正A: `pylib.std.*` モジュール参照が C++ 側で未解決になる経路を塞ぐ（`module.symbol` を必ず runtime 呼び出しへ lower）。
