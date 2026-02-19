@@ -164,6 +164,10 @@ profile で表現しにくい分岐だけを hooks へ寄せます。
 
 `profile.hooks` は JSON で表現しにくい分岐のみ担当します。
 
+selfhost 制約:
+- hooks API は `dict[str, Any]` / `list[str]` / `str` / `bool` を中心に扱い、`callable` 型注釈に依存しません。
+- `CodeEmitter` 側はフックを「辞書から取り出して呼ぶ」方式で扱い、型注釈由来の selfhost 変換詰まりを避けます。
+
 - `on_emit_stmt(emitter, stmt)`:
   - `True` を返すと既定の文出力をスキップ
 - `on_render_call(emitter, call_node, func_node, rendered_args, rendered_kwargs)`

@@ -23,9 +23,9 @@
        - [ ] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
        - [ ] 上記生成物を `g++` でビルドして、実行結果が Python 実行と一致することを確認する。
 3. [ ] CodeEmitter hook 移管の再開（selfhostを壊さない手順）
-   - [ ] `CodeEmitter` に hooks 辞書呼び出しを導入する前に、selfhost非対応構文（`callable` など）を使わない制約版APIを定義する。
-     - [ ] hook シグネチャを `dict[str, Any]` / `list[str]` のみで完結させる（`callable` 注釈禁止）。
-     - [ ] 制約版 API の最小仕様を `docs/spec-language-profile.md` へ追記する。
+   - [x] `CodeEmitter` に hooks 辞書呼び出しを導入する前に、selfhost非対応構文（`callable` など）を使わない制約版APIを定義する。
+     - [x] hook シグネチャを `dict[str, Any]` / `list[str]` のみで完結させる（`callable` 注釈禁止）。
+     - [x] 制約版 API の最小仕様を `docs/spec-language-profile.md` へ追記する。
    - [ ] `cpp_hooks.py` は最初に `png/gif` のみ移管し、`py2cpp.py` の既存分岐を1件ずつ削る。
      - [ ] `png.write_rgb_png` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。
      - [ ] `gif.save_gif` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。
