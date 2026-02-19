@@ -4,6 +4,7 @@
 
 - 利用仕様: [`docs/spec-user.md`](./spec-user.md)
 - 実装仕様: [`docs/spec-dev.md`](./spec-dev.md)
+- ランタイム仕様: [`docs/spec-runtime.md`](./spec-runtime.md)
 - 言語プロファイル仕様: [`docs/spec-language-profile.md`](./spec-language-profile.md)
 - Codex 向け運用仕様: [`docs/spec-codex.md`](./spec-codex.md)
 - `pylib` モジュール一覧: [`docs/pylib-modules.md`](./pylib-modules.md)
@@ -14,6 +15,8 @@
   - [`docs/spec-user.md`](./spec-user.md)
 - 実装方針・モジュール構成・変換仕様を確認したい場合:
   - [`docs/spec-dev.md`](./spec-dev.md)
+- C++ ランタイム配置・include対応規約を確認したい場合:
+  - [`docs/spec-runtime.md`](./spec-runtime.md)
 - `CodeEmitter` の JSON プロファイルと hooks 仕様を確認したい場合:
   - [`docs/spec-language-profile.md`](./spec-language-profile.md)
 - Codex の作業ルール・TODO 運用・コミット運用を確認したい場合:
