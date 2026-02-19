@@ -508,17 +508,17 @@ class CppEmitter(CodeEmitter):
         else_stmts = self._dict_stmt_list(stmt.get("orelse"))
         if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
             self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": self.render_cond(stmt.get("test"))}))
-            self.emit_scoped_stmt_list([body_stmts[0]])
+            self.emit_scoped_stmt_list([body_stmts[0]], set())
             if len(else_stmts) > 0:
                 self.emit(self.syntax_text("else_no_brace", "else"))
-                self.emit_scoped_stmt_list([else_stmts[0]])
+                self.emit_scoped_stmt_list([else_stmts[0]], set())
             return
 
         self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
-        self.emit_scoped_stmt_list(body_stmts)
+        self.emit_scoped_stmt_list(body_stmts, set())
         if len(else_stmts) > 0:
             self.emit(self.syntax_text("else_open", "} else {"))
-            self.emit_scoped_stmt_list(else_stmts)
+            self.emit_scoped_stmt_list(else_stmts, set())
             self.emit_block_close()
         else:
             self.emit_block_close()
@@ -1229,20 +1229,24 @@ class CppEmitter(CodeEmitter):
                     texpr = self.any_to_dict_or_empty(s.get("target"))
                     if self.is_name(texpr):
                         member = self.any_to_str(texpr.get("id"))
-                        if member != "":
-                            enum_entries.append((member, self.render_expr(s.get("value"))))
+                        if member == "":
+                            continue
+                        enum_entries.append((member, self.render_expr(s.get("value"))))
                 elif sk == "AnnAssign":
                     texpr = self.any_to_dict_or_empty(s.get("target"))
                     if self.is_name(texpr):
                         member = self.any_to_str(texpr.get("id"))
-                        if member != "":
-                            val = "0"
-                            if s.get("value") is not None:
-                                val = self.render_expr(s.get("value"))
-                            enum_entries.append((member, val))
+                        if member == "":
+                            continue
+                        val = "0"
+                        if s.get("value") is not None:
+                            val = self.render_expr(s.get("value"))
+                        enum_entries.append((member, val))
             self.emit(f"enum class {cls_name} : int64 {{")
             self.indent += 1
-            for i, (member, value_txt) in enumerate(enum_entries):
+            for i, entry in enumerate(enum_entries):
+                member = entry[0]
+                value_txt = entry[1]
                 sep = "," if i + 1 < len(enum_entries) else ""
                 self.emit(f"{member} = {value_txt}{sep}")
             self.indent -= 1
