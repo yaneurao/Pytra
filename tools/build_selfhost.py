@@ -34,6 +34,31 @@ def runtime_cpp_sources() -> list[str]:
     return [str(p) for p in files]
 
 
+def patch_cpp_main_to_call_pytra_main(cpp_path: Path) -> None:
+    text = cpp_path.read_text(encoding="utf-8")
+    old = (
+        "int main(int argc, char** argv) {\n"
+        "    pytra_configure_from_argv(argc, argv);\n"
+        "    return 0;\n"
+        "}\n"
+    )
+    new = (
+        "int main(int argc, char** argv) {\n"
+        "    pytra_configure_from_argv(argc, argv);\n"
+        "    list<str> __args = list<str>{};\n"
+        "    int i = 1;\n"
+        "    while (i < argc) {\n"
+        "        __args.append(str(argv[i]));\n"
+        "        i += 1;\n"
+        "    }\n"
+        "    return static_cast<int>(__pytra_main(__args));\n"
+        "}\n"
+    )
+    if old in text:
+        text = text.replace(old, new, 1)
+    cpp_path.write_text(text, encoding="utf-8")
+
+
 def main() -> int:
     run(["python3", "tools/prepare_selfhost_source.py"]) 
 
@@ -41,6 +66,7 @@ def main() -> int:
     shutil.copytree(SRC_RUNTIME, SELFHOST_RUNTIME, dirs_exist_ok=True)
 
     run(["python3", "src/py2cpp.py", "selfhost/py2cpp.py", "-o", str(CPP_OUT)])
+    patch_cpp_main_to_call_pytra_main(CPP_OUT)
 
     cpp_sources = runtime_cpp_sources()
     cmd = [
