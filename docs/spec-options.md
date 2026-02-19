@@ -1,0 +1,121 @@
+# トランスパイルオプション仕様（案）
+
+この文書は、Pytra のオプション設計を整理するためのドラフトです。  
+目的は「Python 互換性」と「生成コード性能」のトレードオフを、利用者が明示的に選べるようにすることです。
+
+## 1. 設計方針
+
+- 既定値は `native` 寄り（性能優先）とする。
+- Python 互換性を重視する場合は、`balanced` / `python` プリセットや個別オプションで明示的に opt-in する。
+- オプションは段階導入する。
+  - Phase 1: `py2cpp.py` 先行
+  - Phase 2: 共通 CLI（`src/common/transpile_cli.py`）へ集約
+  - Phase 3: LanguageProfile で言語別既定値を切替可能にする
+
+## 2. 実装済みオプション（現状）
+
+`py2cpp.py` で有効:
+
+- `--negative-index-mode {always,const_only,off}`
+  - `always`: 負数添字を常に Python 互換で処理
+  - `const_only`: 定数負数添字のみ Python 互換（現行デフォルト）
+  - `off`: Python 互換処理を行わない
+- `--parser-backend {self_hosted,cpython}`
+  - EAST 生成バックエンド選択
+- `--no-main`
+  - `main` 関数を生成しない
+- `--dump-deps`
+  - 依存情報を出力
+
+## 3. 追加候補オプション
+
+### 3.1 互換性/安全性
+
+- `--bounds-check-mode {always,debug,off}`
+  - list/str 添字アクセスの境界チェック
+  - `always`: 常時チェック（安全）
+  - `debug`: デバッグビルド相当時のみチェック
+  - `off`: 無チェック（高速だが危険）
+- `--floor-div-mode {python,native}`
+  - `//`（floor division）の意味
+  - `python`: Python 準拠（負数入力でも floor）
+  - `native`: ターゲット言語の `/`(整数除算) をそのまま使う。
+- `--mod-mode {python,native}`
+  - `%`（剰余）の意味
+  - `python`: Python 準拠（除数の符号に揃う）
+  - `native`: ターゲット言語の `%` をそのまま使う
+- `--any-cast-mode {checked,unchecked}`
+  - `Any/object` からの取り出しを実行時検証するか
+
+### 3.2 文字列仕様
+
+- `--str-index-mode {byte,codepoint,native}`
+  - str型の文字の実体
+  - `byte`: 1 byte 単位（高速、現行実装寄り）
+  - `codepoint`: Unicode 1 文字単位（Python 互換寄り）
+  - `native` : ターゲット言語の string に相当するものを(wrapして)そのまま使う。
+- `--str-slice-mode {byte,codepoint}`
+  - slice の意味論も同様に揃える
+
+### 3.3 数値仕様
+
+- `--int-width {32,64,bigint}`
+  - `int` の既定ビット幅
+  - `32`はint32_t, `64`はint64_t
+  - `bigint`: 多倍長整数（Python 互換寄り、実装コスト高）
+
+### 3.4 生成コード形態
+
+- `--emit-layout {single,split}`
+  - `single`: 単一ファイルに変換される。
+  - `split`: モジュール分割出力
+- `--runtime-linkage {header,static,shared}`
+  - ランタイム補助の組み込み形態
+
+## 4. プリセット案
+
+- 方針:
+  - デフォルトは `native` 系を選び、C++ 変換時の性能を優先する。
+  - 互換性を重視する場合は `python` 系を選ぶ。
+
+- `--preset native`（デフォルト候補）
+  - `negative-index-mode=off`
+  - `bounds-check-mode=off`
+  - `floor-div-mode=native`
+  - `mod-mode=native`
+  - `str-index-mode=native`
+  - `str-slice-mode=byte`
+  - `int-width=64`
+
+- `--preset balanced`
+  - `negative-index-mode=const_only`
+  - `bounds-check-mode=debug`
+  - `floor-div-mode=python`
+  - `mod-mode=python`
+  - `str-index-mode=byte`
+  - `str-slice-mode=byte`
+  - `int-width=64`
+
+- `--preset python`
+  - `negative-index-mode=always`
+  - `bounds-check-mode=always`
+  - `floor-div-mode=python`
+  - `mod-mode=python`
+  - `str-index-mode=codepoint`
+  - `str-slice-mode=codepoint`
+  - `int-width=bigint`（実装完了後）
+
+
+## 5. 導入優先順位（提案）
+
+1. `bounds-check-mode` を最優先導入
+2. `floor-div-mode` / `mod-mode` で `//` と `%` の仕様を独立制御
+3. `int-width=bigint` を追加し、整数モデルを明示化
+4. `str-index-mode` を導入し、文字列互換性を選択可能化
+5. `preset` を追加して運用コストを下げる
+6. `int-overflow` 詳細動作や `emit-layout=split` を段階実装
+
+## 6. 補足
+
+- 既存仕様（`docs/spec-dev.md`）との整合が必要なため、導入時は必ず同時更新する。
+- 破壊的変更になり得る項目（`int-width`, `str-index-mode`）は、デフォルト変更前に 1 リリース以上の移行期間を設ける。
