@@ -803,10 +803,13 @@ class CppEmitter(CodeEmitter):
         """AnnAssign ノードを出力する。"""
         t = self.cpp_type(stmt.get("annotation"))
         decl_hint = self.any_dict_get_str(stmt, "decl_type", "")
+        ann_text_fallback = str(stmt.get("annotation"))
         if decl_hint != "":
             t = self._cpp_type_text(decl_hint)
         elif t == "auto":
             t = self.cpp_type(stmt.get("decl_type"))
+            if t == "auto" and ann_text_fallback not in {"", "{}", "None"}:
+                t = self._cpp_type_text(self.normalize_type_name(ann_text_fallback))
         target = self.render_expr(stmt.get("target"))
         val = self.any_to_dict_or_empty(stmt.get("value"))
         val_is_dict: bool = isinstance(stmt.get("value"), dict)
@@ -816,6 +819,8 @@ class CppEmitter(CodeEmitter):
         ann_t_str = self.any_dict_get_str(stmt, "annotation", "")
         if ann_t_str == "":
             ann_t_str = self.any_dict_get_str(stmt, "decl_type", "")
+        if ann_t_str == "" and ann_text_fallback not in {"", "{}", "None"}:
+            ann_t_str = ann_text_fallback
         if ann_t_str in {"byte", "uint8"} and val_is_dict:
             byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
@@ -2597,7 +2602,13 @@ class CppEmitter(CodeEmitter):
             else:
                 cond_parts: list[str] = []
                 for c in ifs:
-                    cond_parts.append(self.render_expr(c))
+                    c_txt = self.render_expr(c)
+                    if c_txt in {"", "true"}:
+                        c_node = self.any_to_dict_or_empty(c)
+                        c_rep = self.any_dict_get_str(c_node, "repr", "")
+                        if c_rep != "":
+                            c_txt = c_rep
+                    cond_parts.append(c_txt if c_txt != "" else "true")
                 cond: str = " && ".join(cond_parts)
                 lines.append(f"        if ({cond}) __out.append({elt});")
             lines.append("    }")
@@ -2635,7 +2646,13 @@ class CppEmitter(CodeEmitter):
             else:
                 cond_parts: list[str] = []
                 for c in ifs:
-                    cond_parts.append(self.render_expr(c))
+                    c_txt = self.render_expr(c)
+                    if c_txt in {"", "true"}:
+                        c_node = self.any_to_dict_or_empty(c)
+                        c_rep = self.any_dict_get_str(c_node, "repr", "")
+                        if c_rep != "":
+                            c_txt = c_rep
+                    cond_parts.append(c_txt if c_txt != "" else "true")
                 cond: str = " && ".join(cond_parts)
                 lines.append(f"        if ({cond}) __out.insert({elt});")
             lines.append("    }")
@@ -2674,7 +2691,13 @@ class CppEmitter(CodeEmitter):
             else:
                 cond_parts: list[str] = []
                 for c in ifs:
-                    cond_parts.append(self.render_expr(c))
+                    c_txt = self.render_expr(c)
+                    if c_txt in {"", "true"}:
+                        c_node = self.any_to_dict_or_empty(c)
+                        c_rep = self.any_dict_get_str(c_node, "repr", "")
+                        if c_rep != "":
+                            c_txt = c_rep
+                    cond_parts.append(c_txt if c_txt != "" else "true")
                 cond: str = " && ".join(cond_parts)
                 lines.append(f"        if ({cond}) __out[{key}] = {val};")
             lines.append("    }")
