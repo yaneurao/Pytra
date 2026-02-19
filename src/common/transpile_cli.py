@@ -169,6 +169,11 @@ def dump_codegen_options_text(
     return out
 
 
+def empty_parse_dict() -> dict[str, str]:
+    out: dict[str, str] = {}
+    return out
+
+
 def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
     """py2cpp 向け CLI 引数を解析し、値辞書またはエラー文字列を返す。"""
     out: dict[str, str] = {
@@ -193,52 +198,52 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         if a in {"-o", "--output"}:
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --output"
+                return empty_parse_dict(), "missing value for --output"
             out["output"] = argv[i]
         elif a == "--negative-index-mode":
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --negative-index-mode"
+                return empty_parse_dict(), "missing value for --negative-index-mode"
             out["negative_index_mode_opt"] = argv[i]
         elif a == "--bounds-check-mode":
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --bounds-check-mode"
+                return empty_parse_dict(), "missing value for --bounds-check-mode"
             out["bounds_check_mode_opt"] = argv[i]
         elif a == "--floor-div-mode":
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --floor-div-mode"
+                return empty_parse_dict(), "missing value for --floor-div-mode"
             out["floor_div_mode_opt"] = argv[i]
         elif a == "--mod-mode":
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --mod-mode"
+                return empty_parse_dict(), "missing value for --mod-mode"
             out["mod_mode_opt"] = argv[i]
         elif a == "--int-width":
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --int-width"
+                return empty_parse_dict(), "missing value for --int-width"
             out["int_width_opt"] = argv[i]
         elif a == "--str-index-mode":
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --str-index-mode"
+                return empty_parse_dict(), "missing value for --str-index-mode"
             out["str_index_mode_opt"] = argv[i]
         elif a == "--str-slice-mode":
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --str-slice-mode"
+                return empty_parse_dict(), "missing value for --str-slice-mode"
             out["str_slice_mode_opt"] = argv[i]
         elif a == "--preset":
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --preset"
+                return empty_parse_dict(), "missing value for --preset"
             out["preset"] = argv[i]
         elif a == "--parser-backend":
             i += 1
             if i >= len(argv):
-                return {}, "missing value for --parser-backend"
+                return empty_parse_dict(), "missing value for --parser-backend"
             out["parser_backend"] = argv[i]
         elif a == "--no-main":
             out["no_main"] = "1"
@@ -247,11 +252,11 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         elif a == "--dump-options":
             out["dump_options"] = "1"
         elif a.startswith("-"):
-            return {}, f"unknown option: {a}"
+            return empty_parse_dict(), f"unknown option: {a}"
         else:
             if out["input"] == "":
                 out["input"] = a
             else:
-                return {}, f"unexpected extra argument: {a}"
+                return empty_parse_dict(), f"unexpected extra argument: {a}"
         i += 1
     return out, ""

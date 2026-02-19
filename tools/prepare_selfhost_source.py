@@ -88,6 +88,7 @@ def _extract_top_level_block(text: str, name: str, kind: str) -> str:
 def _extract_support_blocks() -> str:
     cli_text = SRC_TRANSPILE_CLI.read_text(encoding="utf-8")
     blocks = [
+        _extract_top_level_block(cli_text, "empty_parse_dict", "def"),
         _extract_top_level_block(cli_text, "resolve_codegen_options", "def"),
         _extract_top_level_block(cli_text, "validate_codegen_options", "def"),
         _extract_top_level_block(cli_text, "dump_codegen_options_text", "def"),

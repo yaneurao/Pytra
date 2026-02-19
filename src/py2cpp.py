@@ -17,22 +17,71 @@ from pylib.pathlib import Path
 from pylib import sys
 
 
-class UserFacingError(Exception):
-    category: str
-    summary: str
-    details: list[str]
+def _make_user_error(category: str, summary: str, details: list[str]) -> Exception:
+    payload = "__PYTRA_USER_ERROR__|" + category + "|" + summary
+    i = 0
+    while i < len(details):
+        payload += "\n" + details[i]
+        i += 1
+    return RuntimeError(payload)
 
-    def __init__(self, category: str, summary: str, details: list[str]) -> None:
-        super().__init__(summary)
-        self.category = category
-        self.summary = summary
-        self.details = details
 
-    def __str__(self) -> str:
-        lines: list[str] = [f"[{self.category}] {self.summary}"]
-        for line in self.details:
-            lines.append(line)
-        return "\n".join(lines)
+def _parse_user_error(err: Any) -> dict[str, Any]:
+    text = str(err)
+    tag = "__PYTRA_USER_ERROR__|"
+    if not text.startswith(tag):
+        out0: dict[str, Any] = {}
+        out0["category"] = ""
+        out0["summary"] = ""
+        out0["details"] = []
+        return out0
+    lines: list[str] = []
+    cur = ""
+    i = 0
+    while i < len(text):
+        ch = text[i : i + 1]
+        if ch == "\n":
+            lines.append(cur)
+            cur = ""
+        else:
+            cur += ch
+        i += 1
+    lines.append(cur)
+    head = lines[0] if len(lines) > 0 else ""
+    parts: list[str] = []
+    cur = ""
+    split_count = 0
+    i = 0
+    while i < len(head):
+        ch = head[i : i + 1]
+        if ch == "|" and split_count < 2:
+            parts.append(cur)
+            cur = ""
+            split_count += 1
+        else:
+            cur += ch
+        i += 1
+    parts.append(cur)
+    if len(parts) != 3:
+        out1: dict[str, Any] = {}
+        out1["category"] = ""
+        out1["summary"] = ""
+        out1["details"] = []
+        return out1
+    category = parts[1]
+    summary = parts[2]
+    details: list[str] = []
+    i = 1
+    while i < len(lines):
+        line = lines[i]
+        if line != "":
+            details.append(line)
+        i += 1
+    out: dict[str, Any] = {}
+    out["category"] = category
+    out["summary"] = summary
+    out["details"] = details
+    return out
 
 CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 
@@ -2755,10 +2804,10 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
                 return payload.get("east")
             if payload.get("kind") == "Module":
                 return payload
-        raise UserFacingError(
-            category="input_invalid",
-            summary="EAST JSON の形式が不正です。",
-            details=["期待形式: {'ok': true, 'east': {...}} または {'kind': 'Module', ...}"],
+        raise _make_user_error(
+            "input_invalid",
+            "EAST JSON の形式が不正です。",
+            ["期待形式: {'ok': true, 'east': {...}} または {'kind': 'Module', ...}"],
         )
     try:
         source_text = input_path.read_text(encoding="utf-8")
@@ -2768,23 +2817,28 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
             east = convert_source_to_east_with_backend(source_text, str(input_path), parser_backend=parser_backend)
     except SyntaxError as ex:
         msg = str(ex)
-        raise UserFacingError(
-            category="user_syntax_error",
-            summary="Python の文法エラーです。",
-            details=[msg],
+        raise _make_user_error(
+            "user_syntax_error",
+            "Python の文法エラーです。",
+            [msg],
         ) from ex
     except Exception as ex:
-        if isinstance(ex, UserFacingError):
-            if ex.category == "not_implemented":
+        parsed_err = _parse_user_error(ex)
+        ex_cat = str(parsed_err.get("category", ""))
+        ex_details = parsed_err.get("details", [])
+        if not isinstance(ex_details, list):
+            ex_details = []
+        if ex_cat != "":
+            if ex_cat == "not_implemented":
                 first = ""
-                if len(ex.details) > 0 and isinstance(ex.details[0], str):
-                    first = ex.details[0]
+                if len(ex_details) > 0 and isinstance(ex_details[0], str):
+                    first = ex_details[0]
                 if first == "":
-                    raise UserFacingError(
-                        category="user_syntax_error",
-                        summary="Python の文法エラーです。",
-                        details=[],
-                ) from ex
+                    raise _make_user_error(
+                        "user_syntax_error",
+                        "Python の文法エラーです。",
+                        [],
+                    ) from ex
             raise ex
         msg = str(ex)
         category = "not_implemented"
@@ -2798,17 +2852,13 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
         if "forbidden by language constraints" in msg:
             category = "unsupported_by_design"
             summary = "この構文は言語仕様上サポート対象外です。"
-        raise UserFacingError(
-            category=category,
-            summary=summary,
-            details=[msg],
-        ) from ex
+        raise _make_user_error(category, summary, [msg]) from ex
     if isinstance(east, dict):
         return east
-    raise UserFacingError(
-        category="input_invalid",
-        summary="EAST の生成に失敗しました。",
-        details=["EAST ルートが dict ではありません。"],
+    raise _make_user_error(
+        "input_invalid",
+        "EAST の生成に失敗しました。",
+        ["EAST ルートが dict ではありません。"],
     )
 
 
@@ -2845,13 +2895,15 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
 
 def print_user_error(err: Any) -> None:
     """分類済みユーザーエラーをカテゴリ別に表示する。"""
-    if not isinstance(err, UserFacingError):
+    parsed_err = _parse_user_error(err)
+    cat = str(parsed_err.get("category", ""))
+    details = parsed_err.get("details", [])
+    if not isinstance(details, list):
+        details = []
+    if cat == "":
         print("error: 変換に失敗しました。", file=sys.stderr)
         print("[transpile_error] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
         return
-    ue: UserFacingError = err
-    cat = ue.category
-    details = ue.details
     if cat == "user_syntax_error":
         print("error: 入力 Python の文法エラーです。", file=sys.stderr)
         print("[user_syntax_error] 構文を修正してください。", file=sys.stderr)
@@ -2884,9 +2936,7 @@ def main(argv: list[str]) -> int:
     argv_list: list[str] = []
     for a in argv:
         argv_list.append(a)
-    parsed_pair: tuple[dict[str, str], str] = parse_py2cpp_argv(argv_list)
-    parsed: dict[str, str] = parsed_pair[0]
-    parse_err: str = parsed_pair[1]
+    parsed, parse_err = parse_py2cpp_argv(argv_list)
     if parse_err != "":
         print(f"error: {parse_err}", file=sys.stderr)
         return 1
@@ -3003,7 +3053,9 @@ def main(argv: list[str]) -> int:
             not no_main,
         )
     except Exception as ex:
-        if isinstance(ex, UserFacingError):
+        parsed_err = _parse_user_error(ex)
+        cat = str(parsed_err.get("category", ""))
+        if cat != "":
             print_user_error(ex)
             return 1
         print("error: 変換中に内部エラーが発生しました。", file=sys.stderr)
