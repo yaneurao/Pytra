@@ -2708,9 +2708,13 @@ class CppEmitter(CodeEmitter):
         if len(expr_d) == 0:
             return "/* none */"
         kind = self.any_to_str(expr_d.get("kind"))
-        _ = self.hook_on_render_expr_kind(kind, expr_d)
+        hook_kind = self.hook_on_render_expr_kind(kind, expr_d)
+        if isinstance(hook_kind, str) and hook_kind != "":
+            return hook_kind
         if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
-            _ = self.hook_on_render_expr_complex(expr_d)
+            hook_complex = self.hook_on_render_expr_complex(expr_d)
+            if isinstance(hook_complex, str) and hook_complex != "":
+                return hook_complex
 
         if kind == "Name":
             name = str(expr_d.get("id", "_"))
@@ -2795,13 +2799,6 @@ class CppEmitter(CodeEmitter):
             bt = self.get_expr_type(expr_d.get("value"))
             if bt in self.ref_classes:
                 return f"{base}->{attr}"
-            if bt == "Path":
-                if attr == "name":
-                    return f"{base}.name()"
-                if attr == "stem":
-                    return f"{base}.stem()"
-                if attr == "parent":
-                    return f"{base}.parent()"
             return f"{base}.{attr}"
         if kind == "Call":
             call_parts: dict[str, Any] = self._prepare_call_parts(expr_d)

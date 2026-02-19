@@ -91,11 +91,23 @@ def on_render_expr_kind(
     """式 kind 単位の出力フック。"""
     if kind != "Attribute":
         return None
+    owner_node = emitter.any_to_dict_or_empty(expr_node.get("value"))
     base_expr = emitter.render_expr(expr_node.get("value"))
+    owner_kind = emitter.any_dict_get_str(owner_node, "kind", "")
+    if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+        base_expr = "(" + base_expr + ")"
+    owner_t = emitter.get_expr_type(expr_node.get("value"))
     base_mod = emitter._resolve_imported_module_name(base_expr)
     base_mod = emitter._normalize_runtime_module_name(base_mod)
     base_key = emitter._last_dotted_name(base_mod)
     attr = emitter.any_dict_get_str(expr_node, "attr", "")
+    if owner_t == "Path":
+        if attr == "name":
+            return base_expr + ".name()"
+        if attr == "stem":
+            return base_expr + ".stem()"
+        if attr == "parent":
+            return base_expr + ".parent()"
     if base_key in {"png", "png_helper"} and attr == "write_rgb_png":
         return "pytra::png::write_rgb_png"
     if base_key in {"gif", "gif_helper"} and attr == "save_gif":
