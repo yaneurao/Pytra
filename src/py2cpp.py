@@ -26,8 +26,8 @@ def _make_user_error(category: str, summary: str, details: list[str]) -> Excepti
     return RuntimeError(payload)
 
 
-def _parse_user_error(err: Any) -> dict[str, Any]:
-    text = str(err)
+def _parse_user_error(err_text: str) -> dict[str, Any]:
+    text = err_text
     tag = "__PYTRA_USER_ERROR__|"
     if not text.startswith(tag):
         out0: dict[str, Any] = {}
@@ -626,15 +626,15 @@ class CppEmitter(CodeEmitter):
             return ""
         return ""
 
-    def _str_index_char_access(self, node: dict[str, Any]) -> str:
+    def _str_index_char_access(self, node: Any) -> str:
         """str 添字アクセスを `at()` ベースの char 比較式へ変換する。"""
         nd = self.any_to_dict_or_empty(node)
         if len(nd) == 0 or nd.get("kind") != "Subscript":
             return ""
-        value_node = self.any_to_dict_or_empty(nd.get("value"))
+        value_node: Any = nd.get("value")
         if self.get_expr_type(value_node) != "str":
             return ""
-        sl = self.any_to_dict_or_empty(nd.get("slice"))
+        sl: Any = nd.get("slice")
         sl_node = self.any_to_dict_or_empty(sl)
         if len(sl_node) > 0 and sl_node.get("kind") == "Slice":
             return ""
@@ -649,9 +649,9 @@ class CppEmitter(CodeEmitter):
 
     def _try_optimize_char_compare(
         self,
-        left_node: dict[str, Any],
+        left_node: Any,
         op: str,
-        right_node: dict[str, Any],
+        right_node: Any,
     ) -> str | None:
         """1文字比較を `'x'` / `.at(i)` 形へ最適化できるか判定する。"""
         if op not in {"Eq", "NotEq"}:
@@ -673,7 +673,7 @@ class CppEmitter(CodeEmitter):
             return f"{cpp_char_lit(l_ch)} {cop} {self.render_expr(right_node)}"
         return None
 
-    def _byte_from_str_expr(self, node: dict[str, Any]) -> str:
+    def _byte_from_str_expr(self, node: Any) -> str:
         """str 系式を uint8 初期化向けの char 式へ変換する。"""
         ch = self._one_char_str_const(node)
         if ch != "":
@@ -776,7 +776,7 @@ class CppEmitter(CodeEmitter):
         ann_t_raw = stmt.get("annotation")
         ann_t_str: str = str(ann_t_raw) if isinstance(ann_t_raw, str) else ""
         if ann_t_str in {"byte", "uint8"} and val_is_dict:
-            byte_val = self._byte_from_str_expr(val)
+            byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
                 rendered_val = str(byte_val)
         if val_is_dict and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
@@ -946,8 +946,7 @@ class CppEmitter(CodeEmitter):
         if hook_stmt is True:
             return
         kind = self.any_to_str(stmt.get("kind"))
-        hook_kind = self.hook_on_emit_stmt_kind(kind, stmt)
-        if isinstance(hook_kind, bool) and hook_kind:
+        if self.hook_on_emit_stmt_kind(kind, stmt) is True:
             return
         self.emit_leading_comments(stmt)
         if kind == "Expr":
@@ -1205,7 +1204,7 @@ class CppEmitter(CodeEmitter):
             self.current_scope().add(texpr)
             rval = self.render_expr(stmt.get("value"))
             if dtype == "uint8" and isinstance(value, dict):
-                byte_val = self._byte_from_str_expr(value)
+                byte_val = self._byte_from_str_expr(stmt.get("value"))
                 if byte_val != "":
                     rval = str(byte_val)
             if isinstance(value, dict) and value.get("kind") == "BoolOp" and picked != "bool":
@@ -1220,7 +1219,7 @@ class CppEmitter(CodeEmitter):
         rval = self.render_expr(stmt.get("value"))
         t_target = self.get_expr_type(stmt.get("target"))
         if t_target == "uint8" and isinstance(value, dict):
-            byte_val = self._byte_from_str_expr(value)
+            byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
                 rval = str(byte_val)
         if isinstance(value, dict) and value.get("kind") == "BoolOp" and t_target != "bool":
@@ -1552,7 +1551,9 @@ class CppEmitter(CodeEmitter):
         base_is_gc = base in self.ref_classes
         if gc_managed and not base_is_gc:
             bases.append("public PyObj")
-        base_txt = "" if len(bases) == 0 else " : " + ", ".join(bases)
+        base_txt: str = ""
+        if len(bases) > 0:
+            base_txt = " : " + ", ".join(bases)
         self.emit_class_open(str(name), base_txt)
         self.indent += 1
         prev_class = self.current_class_name
@@ -1585,11 +1586,10 @@ class CppEmitter(CodeEmitter):
                                 static_field_defaults[fname] = self.render_expr(s.get("value"))
             elif is_enum_base and s.get("kind") == "Assign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
-                if self.is_name(texpr, None):
+                if self.is_name(s.get("target"), None):
                     fname = self.any_to_str(texpr.get("id"))
                     if fname != "":
-                        value_node = self.any_to_dict_or_empty(s.get("value"))
-                        inferred = self.get_expr_type(value_node)
+                        inferred = self.get_expr_type(s.get("value"))
                         ann = inferred if isinstance(inferred, str) else ""
                         if ann == "" or ann == "unknown":
                             ann = "int64" if base in {"IntEnum", "IntFlag"} else "int64"
@@ -1638,18 +1638,20 @@ class CppEmitter(CodeEmitter):
                 t = self.cpp_type(s.get("annotation"))
                 target = self.render_expr(s.get("target"))
                 if self.is_plain_name_expr(s.get("target")) and target in self.current_class_fields:
-                    continue
-                if s.get("value") is None:
+                    pass
+                elif s.get("value") is None:
                     self.emit(f"{t} {target};")
                 else:
                     self.emit(f"{t} {target} = {self.render_expr(s.get('value'))};")
             elif is_enum_base and s.get("kind") == "Assign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
-                if self.is_name(texpr, None):
+                skip_stmt = False
+                if self.is_name(s.get("target"), None):
                     fname = self.any_to_str(texpr.get("id"))
                     if fname in consumed_assign_fields:
-                        continue
-                self.emit_stmt(s)
+                        skip_stmt = True
+                if not skip_stmt:
+                    self.emit_stmt(s)
             else:
                 self.emit_stmt(s)
         self.current_class_name = prev_class
@@ -2133,11 +2135,10 @@ class CppEmitter(CodeEmitter):
         kw: dict[str, str] = {}
         for k in keywords:
             kd = self.any_to_dict_or_empty(k)
-            if len(kd) == 0:
-                continue
-            kname = self.any_to_str(kd.get("arg"))
-            if kname != "":
-                kw[kname] = self.render_expr(kd.get("value"))
+            if len(kd) > 0:
+                kw_name = self.any_to_str(kd.get("arg"))
+                if kw_name != "":
+                    kw[kw_name] = self.render_expr(kd.get("value"))
         out: dict[str, Any] = {}
         out["fn"] = fn_obj
         out["fn_name"] = fn_name
@@ -2257,9 +2258,9 @@ class CppEmitter(CodeEmitter):
                     parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
             else:
                 opt_cmp = self._try_optimize_char_compare(
-                    self.any_to_dict_or_empty(cur_node),
+                    cur_node,
                     op_name,
-                    self.any_to_dict_or_empty(rhs_node),
+                    rhs_node,
                 )
                 if opt_cmp is not None:
                     parts.append(opt_cmp)
@@ -2318,15 +2319,9 @@ class CppEmitter(CodeEmitter):
         if len(expr_d) == 0:
             return "/* none */"
         kind = self.any_to_str(expr_d.get("kind"))
-        hook_expr = self.hook_on_render_expr_kind(kind, expr_d)
-        hook_expr_txt = hook_expr if isinstance(hook_expr, str) else ""
-        if hook_expr_txt != "":
-            return hook_expr_txt
+        _ = self.hook_on_render_expr_kind(kind, expr_d)
         if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
-            hook_complex = self.hook_on_render_expr_complex(expr_d)
-            hook_complex_txt = hook_complex if isinstance(hook_complex, str) else ""
-            if hook_complex_txt != "":
-                return hook_complex_txt
+            _ = self.hook_on_render_expr_complex(expr_d)
 
         if kind == "Name":
             name = str(expr_d.get("id", "_"))
@@ -2370,8 +2365,9 @@ class CppEmitter(CodeEmitter):
                     "object receiver method call / attribute access is forbidden by language constraints"
                 )
             base = self.render_expr(expr_d.get("value"))
-            base_node = expr_d.get("value")
-            if isinstance(base_node, dict) and base_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            base_node = self.any_to_dict_or_empty(expr_d.get("value"))
+            base_kind = self.any_dict_get_str(base_node, "kind", "")
+            if base_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 base = f"({base})"
             attr = expr_d.get("attr", "")
             if base == "self":
@@ -2823,7 +2819,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
             [msg],
         ) from ex
     except Exception as ex:
-        parsed_err = _parse_user_error(ex)
+        parsed_err = _parse_user_error(str(ex))
         ex_cat = str(parsed_err.get("category", ""))
         ex_details = parsed_err.get("details", [])
         if not isinstance(ex_details, list):
@@ -2893,13 +2889,16 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     return "modules:\n  (none)\nsymbols:\n  (none)\n"
 
 
-def print_user_error(err: Any) -> None:
+def print_user_error(err_text: str) -> None:
     """分類済みユーザーエラーをカテゴリ別に表示する。"""
-    parsed_err = _parse_user_error(err)
+    parsed_err = _parse_user_error(err_text)
     cat = str(parsed_err.get("category", ""))
-    details = parsed_err.get("details", [])
-    if not isinstance(details, list):
-        details = []
+    details: list[str] = []
+    raw_details = parsed_err.get("details", [])
+    if isinstance(raw_details, list):
+        for item in raw_details:
+            if isinstance(item, str):
+                details.append(item)
     if cat == "":
         print("error: 変換に失敗しました。", file=sys.stderr)
         print("[transpile_error] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
@@ -2979,10 +2978,10 @@ def main(argv: list[str]) -> int:
             str_index_mode_opt,
             str_slice_mode_opt,
         )
-    except ValueError as ex:
-        print(f"error: {ex}", file=sys.stderr)
+    except ValueError:
+        print("error: invalid codegen options", file=sys.stderr)
         return 1
-    opt_err = validate_codegen_options(
+    opt_err: str = validate_codegen_options(
         negative_index_mode,
         bounds_check_mode,
         floor_div_mode,
@@ -3001,7 +3000,6 @@ def main(argv: list[str]) -> int:
         for s in allowed_planned:
             if opt_err == s:
                 allow_planned = True
-                break
     if opt_err != "" and not allow_planned:
         print(f"error: {opt_err}", file=sys.stderr)
         return 1
@@ -3053,10 +3051,10 @@ def main(argv: list[str]) -> int:
             not no_main,
         )
     except Exception as ex:
-        parsed_err = _parse_user_error(ex)
+        parsed_err = _parse_user_error(str(ex))
         cat = str(parsed_err.get("category", ""))
         if cat != "":
-            print_user_error(ex)
+            print_user_error(str(ex))
             return 1
         print("error: 変換中に内部エラーが発生しました。", file=sys.stderr)
         print("[internal_error] バグの可能性があります。再現コードを添えて報告してください。", file=sys.stderr)

@@ -440,10 +440,15 @@ class CodeEmitter:
     def _strip_outer_parens(self, text: str) -> str:
         """式全体を囲う不要な最外括弧を安全に取り除く。"""
         s: str = text
-        ws: set[str] = {" ", "\t", "\n", "\r", "\f", "\v"}
-        while len(s) > 0 and s[0] in ws:
+        while len(s) > 0:
+            ch = s[0:1]
+            if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
+                break
             s = s[1:]
-        while len(s) > 0 and s[-1] in ws:
+        while len(s) > 0:
+            ch = s[-1:]
+            if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
+                break
             s = s[:-1]
 
         while len(s) >= 2 and s[:1] == "(" and s[-1:] == ")":
@@ -480,9 +485,15 @@ class CodeEmitter:
                 i += 1
             if wrapped and depth == 0:
                 s = s[1:-1]
-                while len(s) > 0 and s[0] in ws:
+                while len(s) > 0:
+                    ch = s[0:1]
+                    if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
+                        break
                     s = s[1:]
-                while len(s) > 0 and s[-1] in ws:
+                while len(s) > 0:
+                    ch = s[-1:]
+                    if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
+                        break
                     s = s[:-1]
                 continue
             break
@@ -506,10 +517,15 @@ class CodeEmitter:
     def _trim_ws(self, text: str) -> str:
         """先頭末尾の空白を除いた文字列を返す。"""
         s = text
-        ws: set[str] = {" ", "\t", "\n", "\r", "\f", "\v"}
-        while len(s) > 0 and s[0] in ws:
+        while len(s) > 0:
+            ch = s[0:1]
+            if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
+                break
             s = s[1:]
-        while len(s) > 0 and s[-1] in ws:
+        while len(s) > 0:
+            ch = s[-1:]
+            if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
+                break
             s = s[:-1]
         return s
 
@@ -616,13 +632,13 @@ class CodeEmitter:
             return False
         if self.any_dict_get_str(owner_func, "id", "") != "super":
             return False
-        args: Any = None
-        kws: Any = None
+        args: list[Any] = []
+        kws: list[Any] = []
         if self.any_dict_has(expr_dict, "args"):
-            args = expr_dict["args"]
+            args = self.any_to_list(expr_dict["args"])
         if self.any_dict_has(expr_dict, "keywords"):
-            kws = expr_dict["keywords"]
-        return isinstance(args, list) and len(args) == 0 and isinstance(kws, list) and len(kws) == 0
+            kws = self.any_to_list(expr_dict["keywords"])
+        return len(args) == 0 and len(kws) == 0
 
     def render_cond(self, expr: Any) -> str:
         """条件式文脈向けに式を真偽値へ正規化して出力する。"""
