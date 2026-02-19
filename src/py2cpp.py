@@ -12,6 +12,7 @@ from pytra.std.typing import Any
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
 from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
 from pytra.compiler.east import convert_path, convert_source_to_east_with_backend
+from pytra.runtime.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
 from pytra.std.pathlib import Path
 from pytra.std import sys
@@ -289,20 +290,7 @@ def load_cpp_type_map() -> dict[str, str]:
 def load_cpp_hooks(profile: dict[str, Any] | None = None) -> Any:
     """C++ 用 hooks 設定を返す。"""
     _ = profile
-    try:
-        # Prefer import path when src/runtime is discoverable on sys.path.
-        from runtime.cpp.hooks.cpp_hooks import CppHooks
-
-        return CppHooks()
-    except Exception:
-        # Fallback: load hooks module by file path to avoid package-shadowing.
-        hook_path = Path(__file__).parent / "runtime" / "cpp" / "hooks" / "cpp_hooks.py"
-        scope: dict[str, Any] = {}
-        exec(hook_path.read_text(encoding="utf-8"), scope)
-        hook_cls = scope.get("CppHooks")
-        if hook_cls is None:
-            return {}
-        return hook_cls()
+    return build_cpp_hooks()
 
 
 def load_cpp_identifier_rules() -> tuple[set[str], str]:
@@ -3502,27 +3490,31 @@ def _is_pytra_module_name(module_name: str) -> bool:
     return module_name == "pytra" or module_name.startswith("pytra.")
 
 
+def _path_key_for_graph(p: Path) -> str:
+    """依存グラフ内部で使うパス文字列キーを返す。"""
+    return str(p)
+
+
+def _rel_disp_for_graph(base: Path, p: Path) -> str:
+    """表示用に `base` からの相対パス文字列を返す。"""
+    base_txt = str(base)
+    p_txt = str(p)
+    if base_txt.endswith("/"):
+        base_prefix = base_txt
+    else:
+        base_prefix = base_txt + "/"
+    if p_txt.startswith(base_prefix):
+        return p_txt[len(base_prefix) :]
+    if p_txt == base_txt:
+        return "."
+    return p_txt
+
+
 def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
-    def _path_key(p: Path) -> str:
-        return str(p)
-
-    def _rel_disp(base: Path, p: Path) -> str:
-        base_txt = str(base)
-        p_txt = str(p)
-        if base_txt.endswith("/"):
-            base_prefix = base_txt
-        else:
-            base_prefix = base_txt + "/"
-        if p_txt.startswith(base_prefix):
-            return p_txt[len(base_prefix) :]
-        if p_txt == base_txt:
-            return "."
-        return p_txt
-
     root = entry_path.parent
     queue: list[Path] = [entry_path]
-    queued: set[str] = {_path_key(entry_path)}
+    queued: set[str] = {_path_key_for_graph(entry_path)}
     visited: set[str] = set()
     edges: list[str] = []
     edge_seen: set[str] = set()
@@ -3542,12 +3534,12 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
 
     while len(queue) > 0:
         cur_path = queue.pop(0)
-        cur_key = _path_key(cur_path)
+        cur_key = _path_key_for_graph(cur_path)
         if cur_key in visited:
             continue
         visited.add(cur_key)
         key_to_path[cur_key] = cur_path
-        key_to_disp[cur_key] = _rel_disp(root, cur_path)
+        key_to_disp[cur_key] = _rel_disp_for_graph(root, cur_path)
         try:
             east_cur = load_east(cur_path)
         except Exception:
@@ -3569,8 +3561,8 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             dep_file = _resolve_user_module_path(mod, root)
             dep_disp = mod
             if dep_file is not None:
-                dep_key = _path_key(dep_file)
-                dep_disp = _rel_disp(root, dep_file)
+                dep_key = _path_key_for_graph(dep_file)
+                dep_disp = _rel_disp_for_graph(root, dep_file)
                 graph_adj[cur_key].append(dep_key)
                 key_to_path[dep_key] = dep_file
                 key_to_disp[dep_key] = dep_disp
