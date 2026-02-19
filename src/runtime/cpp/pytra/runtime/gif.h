@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace pytra::pylib::tra::gif {
+namespace pytra::runtime::gif {
 
 std::vector<std::uint8_t> grayscale_palette();
 
@@ -22,10 +22,10 @@ void save_gif(
     int loop = 0
 );
 
-}  // namespace pytra::pylib::tra::gif
+}  // namespace pytra::runtime::gif
 
 namespace pytra {
-namespace gif = pylib::tra::gif;
+namespace gif = runtime::gif;
 }
 
 #endif  // PYTRA_CPP_MODULE_GIF_H

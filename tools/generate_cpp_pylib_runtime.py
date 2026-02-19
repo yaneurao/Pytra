@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate C++ pylib runtime files from src/pylib/tra/*.py."""
+"""Generate C++ runtime files from src/pytra/runtime/*.py."""
 
 from __future__ import annotations
 
@@ -32,13 +32,17 @@ def _namespace_parts_from_source(source_rel: str) -> list[str]:
 
 
 def _cpp_namespace_from_source(source_rel: str) -> str:
-    """`src/pytra/runtime/gif.py` -> `pytra::pylib::tra::gif` を返す。"""
-    return "pytra::" + "::".join(_namespace_parts_from_source(source_rel))
+    """`src/pytra/runtime/gif.py` -> `pytra::runtime::gif` を返す。"""
+    parts = _namespace_parts_from_source(source_rel)
+    return "::".join(parts)
 
 
 def _cpp_alias_target_from_source(source_rel: str) -> str:
     """`namespace pytra { namespace x = ...; }` 用の右辺を返す。"""
-    return "::".join(_namespace_parts_from_source(source_rel))
+    parts = _namespace_parts_from_source(source_rel)
+    if len(parts) >= 2 and parts[0] == "pytra":
+        return "::".join(parts[1:])
+    return "::".join(parts)
 
 
 def _png_header_text(namespace_cpp: str, alias_target: str) -> str:

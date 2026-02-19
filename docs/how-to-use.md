@@ -48,7 +48,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - Python 側で import できるのは `src/pylib/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pytra.runtime import png`, `from pytra.runtime.gif import save_gif`, `from pytra.runtime.assertions import py_assert_eq`）。
 - `pylib` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
-- `src/runtime/cpp/pytra/runtime/*.cpp` は手書き固定ではなく、`src/pylib/tra/*.py` をトランスパイラで変換して生成・更新する前提です（現状は bridge `.cpp` 経由）。
+- `src/runtime/cpp/pytra/runtime/*.cpp` は手書き固定ではなく、`src/pytra/runtime/*.py` をトランスパイラで変換して生成・更新する前提です。
 - 生成更新は `python3 tools/generate_cpp_pylib_runtime.py` で行います（CI では `--check` で検証します）。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います。

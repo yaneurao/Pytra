@@ -10,10 +10,10 @@
   - 目的: Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, `enum` など）の**代替実装**を提供するための領域です。
   - 方針: トランスパイル対象コードで Python 標準モジュールを直接 `import` せず、`pytra.std.*` を使えるようにします。
   - ルール: Python 標準モジュール代替は原則として `src/pylib/std/` に配置します。
-- `src/pylib/tra/`:
+- `src/pytra/runtime/`:
   - 目的: Pytra 固有の機能（例: EAST 変換、画像出力ヘルパー、アサーション補助）を提供するための領域です。
   - 方針: Python 標準モジュールの代替ではない、トランスパイラ/ランタイム都合の機能をここへ集約します。
-  - ルール: Pytra 独自モジュールは `src/pylib/tra/` に配置します。
+  - ルール: Pytra 独自モジュールは `src/pytra/runtime/` に配置します。
 
 ## 1. Python標準モジュール代替（互換層）
 
