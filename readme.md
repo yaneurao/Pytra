@@ -512,6 +512,7 @@ if __name__ == "__main__":
 利用時によく参照する順で、関連ドキュメントをまとめています。
 
 - まず使い方を確認する: [docs/how-to-use.md](docs/how-to-use.md)
+- 開発補助スクリプト一覧を確認する: [docs/tools.md](docs/tools.md)
 - オプション設計（性能/互換性トレードオフ）を確認する: [docs/spec-options.md](docs/spec-options.md)
 - 実装済み項目・未実装項目・対応予定なしを確認する: [docs/pytra-readme.md](docs/pytra-readme.md)
 - サンプル一覧と概要を確認する: [docs/sample-code.md](docs/sample-code.md)

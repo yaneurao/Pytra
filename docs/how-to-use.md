@@ -24,6 +24,7 @@ Windows では次の読み替えを行ってください。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
 - サポート済みモジュール一覧と API は [`pylib-modules.md`](pylib-modules.md) を参照してください。
 - 変換オプションの方針と候補は [`spec-options.md`](spec-options.md) を参照してください。
+- 補助スクリプト（`tools/`）の用途一覧は [`tools.md`](tools.md) を参照してください。
 
 
 ## トランスパイラの使い方
