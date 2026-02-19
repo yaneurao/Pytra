@@ -18,6 +18,7 @@ from src.pylib.tra.transpile_cli import dump_codegen_options_text, parse_py2cpp_
 from src.py2cpp import load_cpp_module_attr_call_map, load_east, transpile_to_cpp
 
 CPP_RUNTIME_SRCS = [
+    "src/runtime/cpp/base/gc.cpp",
     "src/runtime/cpp/core/pathlib.cpp",
     "src/runtime/cpp/core/time.cpp",
     "src/runtime/cpp/core/math.cpp",
@@ -27,7 +28,6 @@ CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/base/bytes_util.cpp",
     "src/runtime/cpp/pylib/png.cpp",
     "src/runtime/cpp/pylib/gif.cpp",
-    "src/runtime/cpp/base/gc.cpp",
 ]
 
 def find_fixture_case(stem: str) -> Path:
@@ -620,6 +620,12 @@ if __name__ == "__main__":
 
     def test_pathlib_extended_runtime(self) -> None:
         out = self._compile_and_run_fixture("pathlib_extended")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_os_glob_extended_runtime(self) -> None:
+        out = self._compile_and_run_fixture("os_glob_extended")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")

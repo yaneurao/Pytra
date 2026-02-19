@@ -54,14 +54,14 @@
      - [ ] `json`:
        - [ ] `fixtures/stdlib/json_extended.py` を単体 compile-run で通し、`json.loads/dumps` の最低限 API を固定する。
        - [ ] `test/unit/test_py2cpp_features.py` に `json_extended` runtime 回帰を追加する。
-     - [ ] `os/glob`:
-       - [ ] `fixtures/stdlib/os_glob_extended.py` を compile-run で通す。
-       - [ ] `os.path.join/splitext/dirname/basename/exists` と `glob.glob` の呼び出し解決を点検する。
-       - [ ] `test/unit/test_py2cpp_features.py` に `os_glob_extended` runtime 回帰を追加する。
+    - [ ] `os/glob`:
+      - [x] `fixtures/stdlib/os_glob_extended.py` を compile-run で通す。
+      - [x] `os.path.join/splitext/dirname/basename/exists` と `glob.glob` の呼び出し解決を点検する。
+      - [x] `test/unit/test_py2cpp_features.py` に `os_glob_extended` runtime 回帰を追加する。
      - [ ] `argparse/sys/typing/re/dataclasses/enum`:
        - [ ] 1モジュールずつ compile-run 可否を確認し、失敗要因を個別タスクへ分解する。
        - [ ] 各モジュールが通るたびに `*_extended.py` を runtime 回帰へ昇格する。
-   - [ ] 接続後に `*_extended.py` を compile-run 回帰へ昇格する（`os_glob_extended`, `json_extended` から再開）。
+  - [ ] 接続後に `*_extended.py` を compile-run 回帰へ昇格する（`os_glob_extended` は反映済み、`json_extended` が未着手）。
 
 ## CodeEmitter 化（JSON + Hooks）
 

@@ -388,6 +388,10 @@ static inline void py_print(const T& v) {
     std::cout << v << std::endl;
 }
 
+static inline void py_print(const std::any& v) {
+    std::cout << py_to_string(v) << std::endl;
+}
+
 static inline void py_print(bool v) {
     std::cout << (v ? "True" : "False") << std::endl;
 }
@@ -435,6 +439,159 @@ static inline bool py_assert_all(const list<bool>& results, const str& label = "
         }
     }
     return true;
+}
+
+static inline str py_os_path_join(const str& a, const str& b) {
+    if (a.empty()) return b;
+    if (b.empty()) return a;
+    const char tail = a.std().back();
+    if (tail == '/' || tail == '\\') return a + b;
+    return a + "/" + b;
+}
+
+static inline str py_str_from_any_like(const std::any& v) {
+    if (const auto* p = std::any_cast<str>(&v)) return *p;
+    if (const auto* p = std::any_cast<const char*>(&v)) return str(*p);
+    if (const auto* p = std::any_cast<std::string>(&v)) return str(*p);
+    if (const auto* p = std::any_cast<object>(&v)) return obj_to_str(*p);
+    return str(py_to_string(v));
+}
+
+static inline str py_os_path_join(const std::any& a, const std::any& b) {
+    return py_os_path_join(py_str_from_any_like(a), py_str_from_any_like(b));
+}
+
+static inline str py_os_path_join(const char* a, const char* b) {
+    return py_os_path_join(str(a), str(b));
+}
+
+static inline str py_os_path_join(const object& a, const object& b) {
+    return py_os_path_join(obj_to_str(a), obj_to_str(b));
+}
+
+static inline str py_os_path_basename(const str& p) {
+    const std::string s = p.std();
+    const std::size_t pos = s.find_last_of("/\\");
+    if (pos == std::string::npos) return str(s);
+    return str(s.substr(pos + 1));
+}
+
+static inline str py_os_path_basename(const std::any& p) {
+    return py_os_path_basename(py_str_from_any_like(p));
+}
+
+static inline str py_os_path_basename(const object& p) {
+    return py_os_path_basename(obj_to_str(p));
+}
+
+static inline str py_os_path_dirname(const str& p) {
+    const std::string s = p.std();
+    const std::size_t pos = s.find_last_of("/\\");
+    if (pos == std::string::npos) return str("");
+    return str(s.substr(0, pos));
+}
+
+static inline str py_os_path_dirname(const std::any& p) {
+    return py_os_path_dirname(py_str_from_any_like(p));
+}
+
+static inline str py_os_path_dirname(const object& p) {
+    return py_os_path_dirname(obj_to_str(p));
+}
+
+static inline std::tuple<str, str> py_os_path_splitext(const str& p) {
+    const std::string s = p.std();
+    const std::size_t sep = s.find_last_of("/\\");
+    const std::size_t dot = s.find_last_of('.');
+    if (dot == std::string::npos) return std::tuple<str, str>{str(s), str("")};
+    if (sep != std::string::npos && dot < sep + 1) return std::tuple<str, str>{str(s), str("")};
+    return std::tuple<str, str>{str(s.substr(0, dot)), str(s.substr(dot))};
+}
+
+static inline std::tuple<str, str> py_os_path_splitext(const std::any& p) {
+    return py_os_path_splitext(py_str_from_any_like(p));
+}
+
+static inline std::tuple<str, str> py_os_path_splitext(const object& p) {
+    return py_os_path_splitext(obj_to_str(p));
+}
+
+static inline str py_os_path_abspath(const str& p) {
+    return str(std::filesystem::absolute(std::filesystem::path(p.std())).generic_string());
+}
+
+static inline str py_os_path_abspath(const std::any& p) {
+    return py_os_path_abspath(py_str_from_any_like(p));
+}
+
+static inline str py_os_path_abspath(const object& p) {
+    return py_os_path_abspath(obj_to_str(p));
+}
+
+static inline bool py_os_path_exists(const str& p) {
+    return std::filesystem::exists(std::filesystem::path(p.std()));
+}
+
+static inline bool py_os_path_exists(const std::any& p) {
+    return py_os_path_exists(py_str_from_any_like(p));
+}
+
+static inline bool py_os_path_exists(const char* p) {
+    return py_os_path_exists(str(p));
+}
+
+static inline bool py_os_path_exists(const object& p) {
+    return py_os_path_exists(obj_to_str(p));
+}
+
+static inline bool py_glob_match_simple(const str& text, const str& pattern) {
+    const std::string s = text.std();
+    const std::string p = pattern.std();
+    std::size_t si = 0;
+    std::size_t pi = 0;
+    std::size_t star = std::string::npos;
+    std::size_t mark = 0;
+    while (si < s.size()) {
+        if (pi < p.size() && (p[pi] == '?' || p[pi] == s[si])) {
+            ++si;
+            ++pi;
+            continue;
+        }
+        if (pi < p.size() && p[pi] == '*') {
+            star = pi++;
+            mark = si;
+            continue;
+        }
+        if (star != std::string::npos) {
+            pi = star + 1;
+            si = ++mark;
+            continue;
+        }
+        return false;
+    }
+    while (pi < p.size() && p[pi] == '*') ++pi;
+    return pi == p.size();
+}
+
+static inline list<str> py_glob_glob(const str& pattern) {
+    const std::string pat = pattern.std();
+    const std::size_t sep = pat.find_last_of("/\\");
+    const std::string dir = (sep == std::string::npos) ? "." : pat.substr(0, sep);
+    const std::string mask = (sep == std::string::npos) ? pat : pat.substr(sep + 1);
+    list<str> out{};
+    std::error_code ec{};
+    if (mask.find('*') == std::string::npos && mask.find('?') == std::string::npos) {
+        const std::filesystem::path single = std::filesystem::path(pat);
+        if (std::filesystem::exists(single, ec)) out.append(str(single.generic_string()));
+        return out;
+    }
+    for (const auto& ent : std::filesystem::directory_iterator(std::filesystem::path(dir), ec)) {
+        if (ec) break;
+        const str name(ent.path().filename().generic_string());
+        if (!py_glob_match_simple(name, str(mask))) continue;
+        out.append(str(ent.path().generic_string()));
+    }
+    return out;
 }
 
 template <class T>

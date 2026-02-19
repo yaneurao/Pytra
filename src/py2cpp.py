@@ -162,6 +162,20 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "ceil": "py_math::ceil",
         "pow": "py_math::pow",
     }
+    out["os.path"] = {
+        "join": "py_os_path_join",
+        "dirname": "py_os_path_dirname",
+        "basename": "py_os_path_basename",
+        "splitext": "py_os_path_splitext",
+        "abspath": "py_os_path_abspath",
+        "exists": "py_os_path_exists",
+    }
+    out["glob"] = {
+        "glob": "py_glob_glob",
+    }
+    out["pylib.std.glob"] = {
+        "glob": "py_glob_glob",
+    }
     return out
 
 
@@ -1943,7 +1957,11 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "dict.values":
             owner = self.render_expr(fn.get("value"))
             return f"py_dict_values({owner})"
-        if runtime_call != "" and self._is_std_runtime_call(runtime_call):
+        if runtime_call != "" and (
+            self._is_std_runtime_call(runtime_call)
+            or runtime_call.startswith("py_os_path_")
+            or runtime_call == "py_glob_glob"
+        ):
             return f"{runtime_call}({', '.join(args)})"
         if builtin_name == "bytes":
             return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
