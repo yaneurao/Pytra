@@ -262,6 +262,42 @@ if __name__ == "__main__":
         self.assertIn('#include "pytra/runtime/gif.h"', cpp)
         self.assertIn("pytra::gif::save_gif(", cpp)
 
+    def test_from_pytra_std_time_import_perf_counter_resolves(self) -> None:
+        src = """from pytra.std.time import perf_counter
+
+def main() -> None:
+    t0: float = perf_counter()
+    print(t0 >= 0.0)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "from_pytra_std_time_perf_counter.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn('#include "pytra/std/time.h"', cpp)
+        self.assertIn("perf_counter()", cpp)
+
+    def test_from_pytra_std_pathlib_import_path_resolves(self) -> None:
+        src = """from pytra.std.pathlib import Path
+
+def main() -> None:
+    p: Path = Path("a")
+    print(p.name)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "from_pytra_std_pathlib_path.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn('#include "pytra/std/pathlib.h"', cpp)
+        self.assertIn("Path(\"a\")", cpp)
+
     def test_dump_deps_text_lists_modules_and_symbols(self) -> None:
         src = """import math
 from pytra.std.json import loads as json_loads, dumps
