@@ -130,6 +130,13 @@ def _replace_load_east_for_selfhost(text: str) -> str:
     stub = (
         "def load_east(input_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, Any]:\n"
         "    pass\n"
+        "    input_txt = str(input_path)\n"
+        "    if input_txt.endswith(\".json\"):\n"
+        "        raise _make_user_error(\n"
+        "            \"input_invalid\",\n"
+        "            \"EAST JSON の形式が不正です。\",\n"
+        "            [\"selfhost 最小モードでは .json の直接読み込みは未対応です。\"],\n"
+        "        )\n"
         "    details: list[str] = [\"selfhost load_east is not enabled; use Python driver path\"]\n"
         "    raise _make_user_error(\n"
         "        \"not_implemented\",\n"

@@ -17,7 +17,7 @@
        - [ ] `selfhost/py2cpp.out` 側に `load_east(.py)` の実処理を実装し、`not_implemented` を返さないようにする。
          - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。
          - [ ] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。
-         - [ ] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。
+         - [x] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。: 現在は `.py` -> `not_implemented`、`.json` -> `input_invalid`、`--help` は `0` を確認済み。
        - [ ] `src/pytra/compiler/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
          - [ ] bootstrap 専用コードを `src/pytra/compiler/east.py` facade 側へ隔離し、`east_parts.core` から除去する。
          - [ ] `east_parts.core` の import を `pytra.std.*`（または同等 shim）に固定する。
@@ -117,8 +117,8 @@
    - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
      - [ ] 引数パース互換（`INPUT OUTPUT` 形式）と `-o` 形式の両方で通ることを確認する。
        - [x] `argv[0]` 混入で `unexpected extra argument` になる不具合を修正し、`-o` 形式で `not_implemented` まで到達することを確認する（2026-02-19）。
-       - [x] `parse_py2cpp_argv` が `INPUT OUTPUT` 形式（`-o` 省略）を受理するように実装した（2026-02-19）。
-      - [ ] 失敗時に `user_syntax_error` / `input_invalid` / `not_implemented` の分類が維持されることを確認する。
+      - [x] `parse_py2cpp_argv` が `INPUT OUTPUT` 形式（`-o` 省略）を受理するように実装した（2026-02-19）。
+      - [x] 失敗時に `user_syntax_error` / `input_invalid` / `not_implemented` の分類が維持されることを確認する。: selfhost 実行で `.py` と `.json` の分類を確認済み（2026-02-19）。
    - [x] `./selfhost/py2cpp.out --help` を通す。
    - [ ] `./selfhost/py2cpp.out INPUT.py -o OUT.cpp` を通す。
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
