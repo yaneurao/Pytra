@@ -1802,6 +1802,35 @@ static inline list<uint8> py_gif_grayscale_palette_list() {
     return list<uint8>(raw.begin(), raw.end());
 }
 
+static inline void py_png_write_rgb_png(const str& path, int64 width, int64 height, const bytearray& pixels) {
+    pytra::png::write_rgb_png(
+        std::string(path),
+        static_cast<int>(width),
+        static_cast<int>(height),
+        py_u8_vector(pixels)
+    );
+}
+
+static inline void py_gif_save_gif(
+    const str& path,
+    int64 width,
+    int64 height,
+    const list<bytearray>& frames,
+    const bytes& palette,
+    int64 delay_cs = 4,
+    int64 loop = 0
+) {
+    pytra::gif::save_gif(
+        std::string(path),
+        static_cast<int>(width),
+        static_cast<int>(height),
+        py_u8_matrix(frames),
+        py_u8_vector(palette),
+        static_cast<int>(delay_cs),
+        static_cast<int>(loop)
+    );
+}
+
 static inline float64 perf_counter() {
     using clock = std::chrono::steady_clock;
     const auto now = clock::now().time_since_epoch();
