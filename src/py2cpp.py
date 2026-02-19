@@ -1014,7 +1014,7 @@ class CppEmitter(CodeEmitter):
         self.emit_stmt_list(body_stmts)
         self.scope_stack.pop()
         self.indent -= 1
-        self.emit("}")
+        self.emit_block_close()
 
     def emit_for_each(self, stmt: dict[str, Any]) -> None:
         """For ノード（反復）を C++ range-for として出力する。"""
@@ -1088,7 +1088,7 @@ class CppEmitter(CodeEmitter):
         self.emit_stmt_list(body_stmts)
         self.scope_stack.pop()
         self.indent -= 1
-        self.emit("}")
+        self.emit_block_close()
 
     def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
         """関数定義ノードを C++ 関数として出力する。"""
