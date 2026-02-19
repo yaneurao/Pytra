@@ -2,6 +2,12 @@
 
 ## 直近実行キュー（細分化）
 
+1. [ ] 複数ファイル構成（import 強化）を最優先で実施する。
+   - [ ] 「## 複数ファイル構成（最終ゴール）」の 1. 依存解決フェーズを先行着手する。
+   - [ ] `import` / `from ... import ...` の依存グラフ生成を先に実装する。
+   - [ ] `pylib.*` とユーザーモジュール探索パスの解決・衝突規則を先に固める。
+   - [ ] 完了後にモジュール単位 EAST と複数ファイル出力（`.h/.cpp` 分割）へ進む。
+
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
      - 依存本体: `pylib.tra.east_parts.core::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
