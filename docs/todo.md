@@ -203,5 +203,8 @@
   9. selfhost の `load_east` に `.json` 入力経路を追加し、`py_read_east_module_json`（C++ runtime）経由で EAST JSON を直接読み込めるようにした。
   10. `CppEmitter` 生成時の `CodeEmitter` 基底初期化を `load_cpp_profile()` 付きに修正し、selfhost での `dict key not found: syntax` を解消した。
   11. `tools/selfhost_transpile.py` を追加し、`.py` 入力を一時 EAST JSON 化して selfhost バイナリに渡す暫定運用を可能にした。
+  12. selfhost JSON 直入力時の改行崩れ（`\\n` がそのまま出る問題）を修正し、通常の改行付き C++ 出力へ回復した。
+  13. selfhost 生成 C++ で関数本体が空になる問題（`emit_stmt_list` の基底 no-op 束縛）を解消し、`return`/式文が出力されるようにした。
+  14. selfhost 生成 C++ の `print(...)` 残留を暫定修正し、フォールバックでも `py_print(...)` を出力するようにした。
   2. `g++` コンパイルエラーは `total_errors=72`（`<=100` 維持）を確認。
   3. 現在の上位は `__pytra_main`（import/runtime 参照境界）と `emit_class` / `emit_assign` の `Any` 境界由来の型不整合。
