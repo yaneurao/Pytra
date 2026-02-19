@@ -1281,11 +1281,13 @@ class CppEmitter(CodeEmitter):
                     p += f" = {instance_field_defaults[fname]}"
                 params.append(p)
             self.emit(f"{name}({', '.join(params)}) {{")
-            self.indent += 1
-            for fname in instance_fields.keys():
-                self.emit(f"this->{fname} = {fname};")
-            self.indent -= 1
-            self.emit("}")
+
+            def _emit_auto_ctor_body() -> None:
+                for fname in instance_fields.keys():
+                    self.emit(f"this->{fname} = {fname};")
+
+            self.emit_with_scope(set(), _emit_auto_ctor_body)
+            self.emit_block_close()
             self.emit("")
         for s in class_body:
             if s.get("kind") == "FunctionDef":
