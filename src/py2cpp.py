@@ -163,6 +163,19 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "ceil": "py_math::ceil",
         "pow": "py_math::pow",
     }
+    out["pytra.std.math"] = {
+        "sqrt": "py_math::sqrt",
+        "sin": "py_math::sin",
+        "cos": "py_math::cos",
+        "tan": "py_math::tan",
+        "exp": "py_math::exp",
+        "log": "py_math::log",
+        "log10": "py_math::log10",
+        "fabs": "py_math::fabs",
+        "floor": "py_math::floor",
+        "ceil": "py_math::ceil",
+        "pow": "py_math::pow",
+    }
     out["os.path"] = {
         "join": "py_os_path_join",
         "dirname": "py_os_path_dirname",
@@ -596,10 +609,10 @@ class CppEmitter(CodeEmitter):
     def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
         """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
-        owner_keys: list[str] = []
-        owner_keys.append(module_name_norm)
+        owner_keys: list[str] = [module_name_norm]
         short = self._last_dotted_name(module_name_norm)
-        if short != module_name_norm:
+        # `pytra.*` は正規モジュール名で解決し、短縮名への暗黙フォールバックは使わない。
+        if short != module_name_norm and not module_name_norm.startswith("pytra."):
             owner_keys.append(short)
         for owner_key in owner_keys:
             if owner_key in self.module_attr_call_map:
@@ -2341,10 +2354,10 @@ class CppEmitter(CodeEmitter):
             ns = self.module_namespace_map[owner_mod_norm]
             if ns != "":
                 return f"{ns}::{attr}({', '.join(args)})"
-        owner_keys: list[str] = []
-        owner_keys.append(owner_mod_norm)
+        owner_keys: list[str] = [owner_mod_norm]
         short = self._last_dotted_name(owner_mod_norm)
-        if short != owner_mod_norm:
+        # `pytra.*` は正規モジュール名で解決し、短縮名への暗黙フォールバックは使わない。
+        if short != owner_mod_norm and not owner_mod_norm.startswith("pytra."):
             owner_keys.append(short)
         for owner_key in owner_keys:
             if owner_key in self.module_attr_call_map:
