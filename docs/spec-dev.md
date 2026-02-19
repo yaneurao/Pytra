@@ -92,6 +92,10 @@
 - class member は `inline static` として生成します。
 - `@dataclass` はフィールド定義とコンストラクタ生成を行います。
 - `raise` / `try` / `except` / `while` をサポートします。
+- list/str 添字境界チェックは `--bounds-check-mode` で制御します。
+  - `off`（既定）: 通常の `[]` アクセスを生成します。
+  - `always`: 実行時チェック付きの `py_at_bounds` を生成します。
+  - `debug`: デバッグビルド時のみチェックする `py_at_bounds_debug` を生成します。
 - `//`（floor division）は `--floor-div-mode` で制御します。
   - `native`（既定）: C++ の `/` をそのまま生成します。
   - `python`: Python 準拠の floor division になるように `py_floordiv` を生成します。

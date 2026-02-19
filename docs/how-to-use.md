@@ -50,6 +50,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 - `src/runtime/cpp/pylib/*.cpp` は手書き固定ではなく、`src/pylib/*.py` をトランスパイラで変換して生成・更新する前提です。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います。
+- 添字境界チェックは `--bounds-check-mode {always,debug,off}` で切替できます（既定は `off`）。
 - 除算仕様は `--floor-div-mode {native,python}` と `--mod-mode {native,python}` で切替できます（既定は `native`）。
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
