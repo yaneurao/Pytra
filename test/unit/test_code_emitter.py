@@ -122,6 +122,12 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.any_dict_get_int({"x": 2}, "x", 9), 2)
         self.assertEqual(em.any_dict_get_int({"x": "2"}, "x", 9), 9)
         self.assertEqual(em.any_dict_get_int(None, "x", 9), 9)
+        self.assertTrue(em.any_dict_get_bool({"x": True}, "x", False))
+        self.assertFalse(em.any_dict_get_bool({"x": 1}, "x", False))
+        self.assertEqual(em.any_dict_get_list({"x": [1, 2]}, "x"), [1, 2])
+        self.assertEqual(em.any_dict_get_list({"x": "not-list"}, "x"), [])
+        self.assertEqual(em.any_dict_get_dict({"x": {"k": 1}}, "x"), {"k": 1})
+        self.assertEqual(em.any_dict_get_dict({"x": 3}, "x"), {})
 
     def test_node_helpers(self) -> None:
         em = CodeEmitter({})

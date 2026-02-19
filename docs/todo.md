@@ -83,7 +83,7 @@
    - [x] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
    - [x] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
    - [ ] `*_dict_get*` の default 引数を `str` / `int` / `list` 別 helper に分離し、`object` 強制変換を減らす。
-     - [ ] `any_dict_get_bool` / `any_dict_get_list` / `any_dict_get_dict` を追加する。
+     - [x] `any_dict_get_bool` / `any_dict_get_list` / `any_dict_get_dict` を追加する。
      - [ ] `py_dict_get_default(..., list<object>{})` を全箇所削減する（selfhost compile logで追跡）。
    - [x] `split_*` / `is_*_type` の引数型を `str` に固定し、`py_slice(object,...)` 生成を消す。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
