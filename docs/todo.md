@@ -124,7 +124,7 @@
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
    - [ ] `test/fixtures/arithmetic/add.py`（軽量ケース）でも selfhost 変換を実行し、最小成功ケースを確立する。
    - [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
-     - [x] `load_east` を `.json` 受理 / `.py` `not_implemented` に分割した。
+     - [x] `load_east` を `.json` `input_invalid` / `.py` `not_implemented` に分割した（selfhost 最小モード）。
      - [x] selfhost parser 非対応のネスト関数を含む補助関数（import graph / multi-file）の一部をスタブへ置換した。
      - [ ] `Path`/`json` 操作の型退化で C++ 生成が崩れる箇所を段階的に縮退し、`tools/build_selfhost.py` を再 green 化する。
      - [x] `tools/build_selfhost.py` は再度 green（`selfhost/py2cpp.out` 生成成功）へ回復した。現在の制約: selfhost 実行時の `.py` 入力は `not_implemented`。
@@ -169,7 +169,7 @@
 - 更新（2026-02-19 selfhost 進捗）:
   1. `tools/prepare_selfhost_source.py` -> `src/py2cpp.py selfhost/py2cpp.py` は継続して通過。
   2. selfhost C++ の型エラー（`error:`）は解消済み。単体リンク失敗は runtime `.cpp` 同時リンクで解消。
-  3. 現在の selfhost 実行時は `load_east` スタブのため、入力変換は `[not_implemented]` を返す（設計通りの暫定動作）。
+  3. 現在の selfhost 実行時は `load_east` スタブのため、`.py` 入力は `[not_implemented]`、`.json` 入力は `[input_invalid]` を返す（設計通りの暫定動作）。
   4. `--help` は selfhost 実行で終了コード `0` で表示されるように修正済み（`parse_py2cpp_argv` の `continue` 依存を回避）。
   5. `a in {"x","y"}` の selfhost C++ 生成は一時オブジェクト生成の都合で不安定なため、CLI 解析経路では `a == "x" or a == "y"` を採用。
   6. `tools/check_selfhost_cpp_diff.py` に `--mode allow-not-implemented`（既定）を追加し、現段階の selfhost 未実装ケースを skip 集計できるようにした。
