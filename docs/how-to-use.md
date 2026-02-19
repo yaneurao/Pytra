@@ -70,6 +70,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - 複数ファイル出力先は `--output-dir DIR` で指定できます（`--multi-file` 時）。
 - 複数ファイル出力のビルドは `python3 tools/build_multi_cpp.py out/manifest.json -o out/app.out` を使います。
 - `--multi-file` では、ユーザーモジュール import 呼び出しを C++ namespace 参照へ変換してリンク可能な形で出力します。
+- 複数ファイル出力の実行一致チェックは `python3 tools/verify_multi_file_outputs.py --samples 01_mandelbrot` のように実行できます。
 
 例:
 - 性能優先（既定）:

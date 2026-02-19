@@ -147,7 +147,7 @@
    - [ ] ランタイム include/namespace の重複を除去する。
 4. [ ] ビルド・実行検証を整備する。
    - [x] 複数ファイル生成物を一括コンパイルするスクリプトを追加する。: `tools/build_multi_cpp.py`
-   - [ ] `sample/py` 全件で Python 実行結果との一致確認を自動化する。
+   - [ ] `sample/py` 全件で Python 実行結果との一致確認を自動化する。: `tools/verify_multi_file_outputs.py` を追加（現状は `01_mandelbrot` の検証を確認済み）
    - [ ] 画像生成ケースはバイナリ一致で検証する。
 5. [ ] 互換オプションを追加する。
    - [ ] 既定を複数ファイル出力にする。
