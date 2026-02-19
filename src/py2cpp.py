@@ -286,7 +286,7 @@ class CppEmitter(CodeEmitter):
     def transpile(self) -> str:
         """EAST ドキュメント全体を C++ ソース文字列へ変換する。"""
         body: list[dict[str, Any]] = []
-        raw_body = self.doc.get("body", [])
+        raw_body = self.any_dict_get_list(self.doc, "body")
         if isinstance(raw_body, list):
             for s in raw_body:
                 if isinstance(s, dict):
@@ -298,7 +298,7 @@ class CppEmitter(CodeEmitter):
                     self.class_names.add(cls_name)
                     mset: set[str] = set()
                     class_body: list[dict[str, Any]] = []
-                    raw_class_body = stmt.get("body", [])
+                    raw_class_body = self.any_dict_get_list(stmt, "body")
                     if isinstance(raw_class_body, list):
                         for s in raw_class_body:
                             if isinstance(s, dict):
@@ -341,7 +341,7 @@ class CppEmitter(CodeEmitter):
             self.emit("pytra_configure_from_argv(argc, argv);")
             self.scope_stack.append(set())
             main_guard: list[dict[str, Any]] = []
-            raw_main_guard = self.doc.get("main_guard_body", [])
+            raw_main_guard = self.any_dict_get_list(self.doc, "main_guard_body")
             if isinstance(raw_main_guard, list):
                 for s in raw_main_guard:
                     if isinstance(s, dict):
@@ -876,9 +876,9 @@ class CppEmitter(CodeEmitter):
             self.emit("/* invalid assign */")
             return
         if target.get("kind") == "Tuple":
-            lhs_elems = list(target.get("elements", []))
+            lhs_elems = self.any_dict_get_list(target, "elements")
             if isinstance(value, dict) and value.get("kind") == "Tuple":
-                rhs_elems = list(value.get("elements", []))
+                rhs_elems = self.any_dict_get_list(value, "elements")
                 if (
                     len(lhs_elems) == 2
                     and len(rhs_elems) == 2
@@ -893,7 +893,7 @@ class CppEmitter(CodeEmitter):
             value_t = self.get_expr_type(stmt.get("value"))
             if isinstance(value_t, str) and value_t.startswith("tuple[") and value_t.endswith("]"):
                 tuple_elem_types = self.split_generic(value_t[6:-1])
-            for i, elt in enumerate(target.get("elements", [])):
+            for i, elt in enumerate(self.any_dict_get_list(target, "elements")):
                 lhs = self.render_expr(elt)
                 if self.is_plain_name_expr(elt):
                     elt_dict = self.any_to_dict_or_empty(elt)
@@ -996,7 +996,7 @@ class CppEmitter(CodeEmitter):
             return
         if target.get("kind") != "Tuple":
             return
-        for i, e in enumerate(target.get("elements", [])):
+        for i, e in enumerate(self.any_dict_get_list(target, "elements")):
             if isinstance(e, dict) and e.get("kind") == "Name":
                 nm = self.render_expr(e)
                 self.emit(f"auto {nm} = std::get<{i}>({src});")
@@ -1020,7 +1020,7 @@ class CppEmitter(CodeEmitter):
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
         body_stmts = self._dict_stmt_list(stmt.get("body"))
-        omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
+        omit_braces = len(self.any_dict_get_list(stmt, "orelse")) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         mode = self.any_to_str(stmt.get("range_mode"))
         if mode == "":
             mode = "dynamic"
@@ -1078,11 +1078,11 @@ class CppEmitter(CodeEmitter):
             pseudo["stop"] = iter_expr.get("stop")
             pseudo["step"] = iter_expr.get("step")
             pseudo["range_mode"] = iter_expr.get("range_mode", "dynamic")
-            pseudo["body"] = stmt.get("body", [])
+            pseudo["body"] = self.any_dict_get_list(stmt, "body")
             self.emit_for_range(pseudo)
             return
         body_stmts = self._dict_stmt_list(stmt.get("body"))
-        omit_braces = len(stmt.get("orelse", [])) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
+        omit_braces = len(self.any_dict_get_list(stmt, "orelse")) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
         t = self.render_expr(stmt.get("target"))
         it = self.render_expr(stmt.get("iter"))
         t0 = self.any_to_str(stmt.get("target_type"))
@@ -1823,10 +1823,10 @@ class CppEmitter(CodeEmitter):
         fn_obj: object = expr.get("func")
         fn = self.any_to_dict_or_empty(fn_obj)
         fn_name = self.render_expr(fn_obj)
-        arg_nodes_obj: object = expr.get("args", [])
+        arg_nodes_obj: object = self.any_dict_get_list(expr, "args")
         arg_nodes = self.any_to_list(arg_nodes_obj)
         args = [self.render_expr(a) for a in arg_nodes]
-        keywords_obj: object = expr.get("keywords", [])
+        keywords_obj: object = self.any_dict_get_list(expr, "keywords")
         keywords = self.any_to_list(keywords_obj)
         first_arg: object = expr
         if len(arg_nodes) > 0:

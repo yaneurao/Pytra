@@ -213,6 +213,39 @@ class CodeEmitter:
             return int(v)
         return default_value
 
+    def any_dict_get_bool(self, obj: dict[str, Any], key: str, default_value: bool = False) -> bool:
+        """dict 風入力から真偽値を取得し、失敗時は既定値を返す。"""
+        if not isinstance(obj, dict):
+            return default_value
+        if key not in obj:
+            return default_value
+        v = obj[key]
+        if isinstance(v, bool):
+            return bool(v)
+        return default_value
+
+    def any_dict_get_list(self, obj: dict[str, Any], key: str) -> list[Any]:
+        """dict 風入力から list を取得し、失敗時は空 list を返す。"""
+        if not isinstance(obj, dict):
+            return []
+        if key not in obj:
+            return []
+        v = obj[key]
+        if isinstance(v, list):
+            return v
+        return []
+
+    def any_dict_get_dict(self, obj: dict[str, Any], key: str) -> dict[str, Any]:
+        """dict 風入力から dict を取得し、失敗時は空 dict を返す。"""
+        if not isinstance(obj, dict):
+            return {}
+        if key not in obj:
+            return {}
+        v = obj[key]
+        if isinstance(v, dict):
+            return v
+        return {}
+
     def any_to_dict(self, v: Any) -> dict[str, Any] | None:
         """動的値を dict に安全に変換する。変換不能なら None。"""
         if isinstance(v, dict):
