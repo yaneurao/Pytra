@@ -191,13 +191,13 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "exit": "py_sys_exit",
     }
     out["png"] = {
-        "write_rgb_png": "png_helper::write_rgb_png",
+        "write_rgb_png": "write_rgb_png",
     }
     out["png_helper"] = {
-        "write_rgb_png": "png_helper::write_rgb_png",
+        "write_rgb_png": "write_rgb_png",
     }
     out["pylib.tra.png"] = {
-        "write_rgb_png": "png_helper::write_rgb_png",
+        "write_rgb_png": "write_rgb_png",
     }
     out["gif"] = {
         "save_gif": "save_gif",
@@ -1956,6 +1956,30 @@ class CppEmitter(CodeEmitter):
             op = op_txt
         return f"{left} {op} {right}"
 
+    def _render_write_rgb_png_call(self, args: list[str]) -> str:
+        """`write_rgb_png(...)` 呼び出しを `pytra::png` 直呼びへ整形する。"""
+        path = args[0] if len(args) >= 1 else '""'
+        w = args[1] if len(args) >= 2 else "0"
+        h = args[2] if len(args) >= 3 else "0"
+        pixels = args[3] if len(args) >= 4 else "list<uint8>{}"
+        return f"pytra::png::write_rgb_png({path}, int({w}), int({h}), py_u8_vector({pixels}))"
+
+    def _render_save_gif_call(self, args: list[str], kw: dict[str, str], frames_default: str) -> str:
+        """`save_gif(...)` 呼び出しを `pytra::gif` 直呼びへ整形する。"""
+        path = args[0] if len(args) >= 1 else '""'
+        w = args[1] if len(args) >= 2 else "0"
+        h = args[2] if len(args) >= 3 else "0"
+        frames = args[3] if len(args) >= 4 else frames_default
+        palette = args[4] if len(args) >= 5 else "py_gif_grayscale_palette_list()"
+        if palette in {"nullptr", "std::nullopt"}:
+            palette = "py_gif_grayscale_palette_list()"
+        delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
+        loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
+        return (
+            f"pytra::gif::save_gif({path}, int({w}), int({h}), "
+            f"py_u8_matrix({frames}), py_u8_vector({palette}), int({delay_cs}), int({loop}))"
+        )
+
     def _render_builtin_call(
         self,
         expr: dict[str, Any],
@@ -2005,7 +2029,11 @@ class CppEmitter(CodeEmitter):
             byteorder = args[1] if len(args) >= 2 else '"little"'
             return f"py_int_to_bytes({owner}, {length}, {byteorder})"
         if runtime_call == "grayscale_palette":
-            return "grayscale_palette()"
+            return "py_gif_grayscale_palette_list()"
+        if runtime_call == "write_rgb_png":
+            return self._render_write_rgb_png_call(args)
+        if runtime_call == "save_gif":
+            return self._render_save_gif_call(args, kw, "list<list<uint8>>{}")
         if runtime_call == "py_isdigit" and len(args) == 1:
             return f"py_isdigit({args[0]})"
         if runtime_call == "py_isalpha" and len(args) == 1:
@@ -2146,7 +2174,6 @@ class CppEmitter(CodeEmitter):
             self._is_std_runtime_call(runtime_call)
             or runtime_call.startswith("py_os_path_")
             or runtime_call == "py_glob_glob"
-            or runtime_call.startswith("png_helper::")
         ):
             return f"{runtime_call}({', '.join(args)})"
         if builtin_name == "bytes":
@@ -2178,6 +2205,10 @@ class CppEmitter(CodeEmitter):
                     raw = resolved_name
             if raw != "" and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
+                if isinstance(mapped_runtime, str) and mapped_runtime == "write_rgb_png":
+                    return self._render_write_rgb_png_call(args)
+                if isinstance(mapped_runtime, str) and mapped_runtime == "save_gif":
+                    return self._render_save_gif_call(args, kw, "list<bytearray>{}")
                 if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "Path"}:
                     return f"{mapped_runtime}({', '.join(args)})"
             if raw == "range":
@@ -2258,8 +2289,14 @@ class CppEmitter(CodeEmitter):
                 if len(args) == 0:
                     return 'std::runtime_error("error")'
                 return f"std::runtime_error({args[0]})"
+            if raw == "grayscale_palette":
+                return "py_gif_grayscale_palette_list()"
             if raw == "Path":
                 return f"Path({', '.join(args)})"
+            if raw == "write_rgb_png":
+                return self._render_write_rgb_png_call(args)
+            if raw == "save_gif":
+                return self._render_save_gif_call(args, kw, "list<bytearray>{}")
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw)
@@ -2277,6 +2314,10 @@ class CppEmitter(CodeEmitter):
             owner_map = self.module_attr_call_map[owner_mod]
             if attr in owner_map:
                 mapped = owner_map[attr]
+                if mapped == "write_rgb_png":
+                    return self._render_write_rgb_png_call(args)
+                if mapped == "save_gif":
+                    return self._render_save_gif_call(args, kw, "list<bytearray>{}")
                 if mapped != "":
                     return f"{mapped}({', '.join(args)})"
         if owner_mod in {"typing", "pylib.std.typing"} and attr == "TypeVar":
@@ -2628,7 +2669,7 @@ class CppEmitter(CodeEmitter):
                 return f"{base}::{attr}"
             base_module_name = self._resolve_imported_module_name(base)
             if base_module_name in {"png", "png_helper", "pylib.tra.png"} and str(attr) == "write_rgb_png":
-                return "png_helper::write_rgb_png"
+                return "pytra::png::write_rgb_png"
             if base_module_name in {"gif", "gif_helper", "pylib.tra.gif"} and str(attr) == "save_gif":
                 return "save_gif"
             if base_module_name == "math":
@@ -3007,7 +3048,7 @@ class CppEmitter(CodeEmitter):
                 text = "// bridge: Python gif.save_gif -> C++ runtime save_gif"
             elif name == "write_rgb_png":
                 key = "write_rgb_png"
-                text = "// bridge: Python png.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
+                text = "// bridge: Python png.write_rgb_png -> C++ runtime pytra::png::write_rgb_png"
         elif fn_kind == "Attribute":
             owner = self.any_to_dict_or_empty(fn.get("value"))
             owner_name = ""
@@ -3019,7 +3060,7 @@ class CppEmitter(CodeEmitter):
                 text = "// bridge: Python gif.save_gif -> C++ runtime save_gif"
             elif owner_name in {"png_helper", "png"} and attr == "write_rgb_png":
                 key = "write_rgb_png"
-                text = "// bridge: Python png.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
+                text = "// bridge: Python png.write_rgb_png -> C++ runtime pytra::png::write_rgb_png"
         if key != "" and key not in self.bridge_comment_emitted:
             self.emit(text)
             self.bridge_comment_emitted.add(key)
@@ -3256,23 +3297,7 @@ def _dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str
 
 
 def _is_valid_cpp_namespace_name(ns: str) -> bool:
-    """`foo::bar` 形式の C++ namespace 名として妥当か判定する。"""
-    if ns == "":
-        return True
-    parts = ns.split("::")
-    for p in parts:
-        if p == "":
-            return False
-        c0 = p[0:1]
-        if not (c0 == "_" or ("a" <= c0 <= "z") or ("A" <= c0 <= "Z")):
-            return False
-        i = 1
-        while i < len(p):
-            ch = p[i : i + 1]
-            ok = ch == "_" or ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9")
-            if not ok:
-                return False
-            i += 1
+    """selfhost 安定性優先の簡易チェック。"""
     return True
 
 

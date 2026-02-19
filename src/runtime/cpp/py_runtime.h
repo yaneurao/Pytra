@@ -1784,51 +1784,22 @@ static inline void py_sys_write_stdout(const str& text) {
     std::exit(static_cast<int>(code));
 }
 
-namespace png_helper {
-static inline void write_rgb_png(const str& path, int64 width, int64 height, const list<uint8>& pixels) {
-    pytra::png::write_rgb_png(path, static_cast<int>(width), static_cast<int>(height), pixels);
-}
-}  // namespace png_helper
-
-// Backward compatibility for previously generated C++.
-static inline void write_rgb_png(const str& path, int64 width, int64 height, const list<uint8>& pixels) {
-    png_helper::write_rgb_png(path, width, height, pixels);
+static inline std::vector<uint8> py_u8_vector(const list<uint8>& src) {
+    return std::vector<uint8>(src.begin(), src.end());
 }
 
-static inline list<uint8> grayscale_palette() {
-    auto raw = pytra::gif::grayscale_palette();
-    return list<uint8>(raw.begin(), raw.end());
-}
-
-static inline void save_gif(
-    const str& path,
-    int64 width,
-    int64 height,
-    const list<list<uint8>>& frames,
-    const list<uint8>& palette,
-    int64 delay_cs = 4,
-    int64 loop = 0
-) {
-    std::vector<std::vector<uint8>> raw_frames;
-    raw_frames.reserve(frames.size());
+static inline std::vector<std::vector<uint8>> py_u8_matrix(const list<list<uint8>>& frames) {
+    std::vector<std::vector<uint8>> out;
+    out.reserve(frames.size());
     for (const auto& frame : frames) {
-        raw_frames.emplace_back(frame.begin(), frame.end());
+        out.emplace_back(frame.begin(), frame.end());
     }
-    std::vector<uint8> raw_pal;
-    if (palette.empty()) {
-        raw_pal = pytra::gif::grayscale_palette();
-    } else {
-        raw_pal.assign(palette.begin(), palette.end());
-    }
-    pytra::gif::save_gif(
-        path,
-        static_cast<int>(width),
-        static_cast<int>(height),
-        raw_frames,
-        raw_pal,
-        static_cast<int>(delay_cs),
-        static_cast<int>(loop)
-    );
+    return out;
+}
+
+static inline list<uint8> py_gif_grayscale_palette_list() {
+    const std::vector<uint8> raw = pytra::gif::grayscale_palette();
+    return list<uint8>(raw.begin(), raw.end());
 }
 
 static inline float64 perf_counter() {
