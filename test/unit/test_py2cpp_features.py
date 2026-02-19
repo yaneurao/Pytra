@@ -611,6 +611,18 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_math_extended_runtime(self) -> None:
+        out = self._compile_and_run_fixture("math_extended")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_pathlib_extended_runtime(self) -> None:
+        out = self._compile_and_run_fixture("pathlib_extended")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
     def test_emit_guard_rejects_object_receiver_call(self) -> None:
         east = {
             "kind": "Module",

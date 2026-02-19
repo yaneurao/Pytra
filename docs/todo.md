@@ -38,8 +38,13 @@
    - [x] 上記スクリプトを日次作業のデフォルトゲートとして運用する。: `docs/spec-codex.md` に運用ルール追記済み
 5. [ ] `unit` と `fixtures/stdlib` の同値性を揃える
    - [x] `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` の `fixtures/stdlib/*_extended.py` を追加する。
-   - [ ] 追加した 6 ケースを C++ 変換・コンパイル・実行まで含めて回帰させる。
-   - [ ] `test/unit/test_py2cpp_features.py` の新規 runtime テスト失敗要因を分解し、順に修正する。
+   - [x] 既存 C++ ランタイムで実行可能な `math` / `pathlib` を `test/unit/test_py2cpp_features.py` の runtime 回帰に追加する。
+   - [x] `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` の compile-run 失敗要因を分解する。
+     - [x] 共通: `pylib.*` モジュール import の C++ 側ランタイム接続が未実装（`argparse/re/sys/typing`）。
+     - [x] `dataclasses`: `Exception` 継承/`repr`/rc 比較などの未対応が残る。
+     - [x] `enum`: `IntFlag` 合成値の型退化（`std::any`）による演算子不整合が残る。
+   - [ ] 未対応モジュールを順に C++ runtime 接続する（`json -> os/glob -> argparse -> sys/typing -> re -> dataclasses -> enum`）。
+   - [ ] 接続後に `*_extended.py` を compile-run 回帰へ昇格する（`os_glob_extended`, `json_extended` から再開）。
 
 ## CodeEmitter 化（JSON + Hooks）
 
