@@ -190,6 +190,18 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     out["pytra.std.glob"] = {
         "glob": "py_glob_glob",
     }
+    out["time"] = {
+        "perf_counter": "perf_counter",
+    }
+    out["pytra.std.time"] = {
+        "perf_counter": "perf_counter",
+    }
+    out["pathlib"] = {
+        "Path": "Path",
+    }
+    out["pytra.std.pathlib"] = {
+        "Path": "Path",
+    }
     out["sys"] = {
         "set_argv": "py_sys_set_argv",
         "set_path": "py_sys_set_path",
@@ -621,10 +633,6 @@ class CppEmitter(CodeEmitter):
                     mapped = owner_map[symbol_name]
                     if mapped != "":
                         return mapped
-        if module_name_norm == "time" and symbol_name == "perf_counter":
-            return "perf_counter"
-        if module_name_norm == "pathlib" and symbol_name == "Path":
-            return "Path"
         if module_name_norm == "pytra.runtime.assertions" and symbol_name.startswith("py_assert_"):
             return symbol_name
         if module_name_norm in {"sys", "pytra.std.sys"}:
