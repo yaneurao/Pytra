@@ -19,10 +19,10 @@
    - [ ] `CodeEmitter` に hooks 辞書呼び出しを導入する前に、selfhost非対応構文（`callable` など）を使わない制約版APIを定義する。
    - [ ] `cpp_hooks.py` は最初に `png/gif` のみ移管し、`py2cpp.py` の既存分岐を1件ずつ削る。
    - [ ] 各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` の両方を必須ゲートにする。
-4. [ ] ローカル CI 相当手順の固定化
+4. [x] ローカル CI 相当手順の固定化
    - [x] 回帰コマンド群（transpile/feature/selfhost build/selfhost diff）を1コマンド実行できるスクリプト化。: `tools/run_local_ci.py`
    - [x] `docs/how-to-use.md` か `docs/spec-codex.md` に実行手順を追記。: `docs/spec-codex.md` へ追記
-   - [ ] 上記スクリプトを日次作業のデフォルトゲートとして運用する。
+   - [x] 上記スクリプトを日次作業のデフォルトゲートとして運用する。: `docs/spec-codex.md` に運用ルール追記済み
 
 ## `enum` サポート（予定）
 
