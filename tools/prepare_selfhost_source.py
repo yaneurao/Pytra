@@ -86,15 +86,85 @@ def _extract_top_level_block(text: str, name: str, kind: str) -> str:
 
 
 def _extract_support_blocks() -> str:
-    cli_text = SRC_TRANSPILE_CLI.read_text(encoding="utf-8")
-    blocks = [
-        _extract_top_level_block(cli_text, "empty_parse_dict", "def"),
-        _extract_top_level_block(cli_text, "resolve_codegen_options", "def"),
-        _extract_top_level_block(cli_text, "validate_codegen_options", "def"),
-        _extract_top_level_block(cli_text, "dump_codegen_options_text", "def"),
-        _extract_top_level_block(cli_text, "parse_py2cpp_argv", "def"),
-    ]
-    return "\n".join(blocks) + "\n"
+    _ = SRC_TRANSPILE_CLI
+    return (
+        "def empty_parse_dict() -> dict[str, str]:\n"
+        "    out: dict[str, str] = {}\n"
+        "    return out\n\n"
+        "def resolve_codegen_options(\n"
+        "    preset: str,\n"
+        "    negative_index_mode_opt: str,\n"
+        "    bounds_check_mode_opt: str,\n"
+        "    floor_div_mode_opt: str,\n"
+        "    mod_mode_opt: str,\n"
+        "    int_width_opt: str,\n"
+        "    str_index_mode_opt: str,\n"
+        "    str_slice_mode_opt: str,\n"
+        ") -> tuple[str, str, str, str, str, str, str]:\n"
+        "    _ = preset\n"
+        "    neg = negative_index_mode_opt if negative_index_mode_opt != \"\" else \"const_only\"\n"
+        "    bnd = bounds_check_mode_opt if bounds_check_mode_opt != \"\" else \"off\"\n"
+        "    fdiv = floor_div_mode_opt if floor_div_mode_opt != \"\" else \"native\"\n"
+        "    mod = mod_mode_opt if mod_mode_opt != \"\" else \"native\"\n"
+        "    iw = int_width_opt if int_width_opt != \"\" else \"64\"\n"
+        "    sim = str_index_mode_opt if str_index_mode_opt != \"\" else \"native\"\n"
+        "    ssm = str_slice_mode_opt if str_slice_mode_opt != \"\" else \"byte\"\n"
+        "    return neg, bnd, fdiv, mod, iw, sim, ssm\n\n"
+        "def validate_codegen_options(\n"
+        "    negative_index_mode: str,\n"
+        "    bounds_check_mode: str,\n"
+        "    floor_div_mode: str,\n"
+        "    mod_mode: str,\n"
+        "    int_width: str,\n"
+        "    str_index_mode: str,\n"
+        "    str_slice_mode: str,\n"
+        ") -> str:\n"
+        "    _ = negative_index_mode\n"
+        "    _ = bounds_check_mode\n"
+        "    _ = floor_div_mode\n"
+        "    _ = mod_mode\n"
+        "    _ = int_width\n"
+        "    _ = str_index_mode\n"
+        "    _ = str_slice_mode\n"
+        "    return \"\"\n\n"
+        "def dump_codegen_options_text(\n"
+        "    preset: str,\n"
+        "    negative_index_mode: str,\n"
+        "    bounds_check_mode: str,\n"
+        "    floor_div_mode: str,\n"
+        "    mod_mode: str,\n"
+        "    int_width: str,\n"
+        "    str_index_mode: str,\n"
+        "    str_slice_mode: str,\n"
+        ") -> str:\n"
+        "    _ = preset\n"
+        "    _ = negative_index_mode\n"
+        "    _ = bounds_check_mode\n"
+        "    _ = floor_div_mode\n"
+        "    _ = mod_mode\n"
+        "    _ = int_width\n"
+        "    _ = str_index_mode\n"
+        "    _ = str_slice_mode\n"
+        "    return \"options:\\n\"\n\n"
+        "def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:\n"
+        "    out: dict[str, str] = {\n"
+        "        \"input\": argv[0] if len(argv) > 0 else \"\",\n"
+        "        \"output\": \"\",\n"
+        "        \"negative_index_mode_opt\": \"\",\n"
+        "        \"bounds_check_mode_opt\": \"\",\n"
+        "        \"floor_div_mode_opt\": \"\",\n"
+        "        \"mod_mode_opt\": \"\",\n"
+        "        \"int_width_opt\": \"\",\n"
+        "        \"str_index_mode_opt\": \"\",\n"
+        "        \"str_slice_mode_opt\": \"\",\n"
+        "        \"preset\": \"\",\n"
+        "        \"parser_backend\": \"self_hosted\",\n"
+        "        \"no_main\": \"0\",\n"
+        "        \"dump_deps\": \"0\",\n"
+        "        \"dump_options\": \"0\",\n"
+        "    }\n"
+        "    return out, \"\"\n\n"
+    )
 
 
 def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -> str:
@@ -107,6 +177,73 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
     return prefix.rstrip() + "\n\n" + support_blocks + "\n" + base_class_text + "\n" + suffix
 
 
+def _replace_load_east_for_selfhost(text: str) -> str:
+    start_marker = "def load_east("
+    end_marker = "\ndef transpile_to_cpp("
+    i = text.find(start_marker)
+    j = text.find(end_marker)
+    if i < 0 or j < 0 or j <= i:
+        raise RuntimeError("load_east block not found")
+    stub = (
+        "def load_east(input_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, Any]:\n"
+        "    _ = input_path\n"
+        "    _ = parser_backend\n"
+        "    details: list[str] = []\n"
+        "    raise _make_user_error(\n"
+        "        \"not_implemented\",\n"
+        "        \"selfhost binary does not include parser runtime yet.\",\n"
+        "        details,\n"
+        "    )\n\n"
+    )
+    return text[:i] + stub + text[j + 1 :]
+
+
+def _strip_main_guard(text: str) -> str:
+    marker = '\nif __name__ == "__main__":\n'
+    i = text.find(marker)
+    if i < 0:
+        return text
+    return text[:i].rstrip() + "\n"
+
+
+def _replace_dump_options_for_selfhost(text: str) -> str:
+    start_marker = "def dump_codegen_options_text("
+    end_marker = "\ndef empty_parse_dict("
+    i = text.find(start_marker)
+    j = text.find(end_marker)
+    if i < 0 or j < 0 or j <= i:
+        return text
+    stub = (
+        "def dump_codegen_options_text(\n"
+        "    preset: str,\n"
+        "    negative_index_mode: str,\n"
+        "    bounds_check_mode: str,\n"
+        "    floor_div_mode: str,\n"
+        "    mod_mode: str,\n"
+        "    int_width: str,\n"
+        "    str_index_mode: str,\n"
+        "    str_slice_mode: str,\n"
+        ") -> str:\n"
+        "    _ = preset\n"
+        "    _ = negative_index_mode\n"
+        "    _ = bounds_check_mode\n"
+        "    _ = floor_div_mode\n"
+        "    _ = mod_mode\n"
+        "    _ = int_width\n"
+        "    _ = str_index_mode\n"
+        "    _ = str_slice_mode\n"
+        "    return \"options:\\n\"\n\n"
+    )
+    return text[:i] + stub + text[j + 1 :]
+
+
+def _patch_selfhost_exception_paths(text: str) -> str:
+    out = text
+    out = out.replace("_parse_user_error(str(ex))", "_parse_user_error(\"\")")
+    out = out.replace("print_user_error(str(ex))", "print_user_error(\"\")")
+    return out
+
+
 def main() -> int:
     py2cpp_text = SRC_PY2CPP.read_text(encoding="utf-8")
     base_text = SRC_BASE.read_text(encoding="utf-8")
@@ -115,6 +252,10 @@ def main() -> int:
     base_class = _strip_triple_quoted_docstrings(_extract_code_emitter_class(base_text))
     py2cpp_text = _remove_import_line(py2cpp_text)
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
+    out = _replace_dump_options_for_selfhost(out)
+    out = _replace_load_east_for_selfhost(out)
+    out = _strip_main_guard(out)
+    out = _patch_selfhost_exception_paths(out)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)
     DST_SELFHOST.write_text(out, encoding="utf-8")
