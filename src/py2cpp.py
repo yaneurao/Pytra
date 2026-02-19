@@ -3832,6 +3832,128 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
     return out
 
 
+def _sanitize_module_label(s: str) -> str:
+    out = ""
+    i = 0
+    while i < len(s):
+        ch = s[i : i + 1]
+        ok = ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9") or ch == "_"
+        if ok:
+            out += ch
+        else:
+            out += "_"
+        i += 1
+    if out == "":
+        out = "module"
+    if "0" <= out[0:1] <= "9":
+        out = "_" + out
+    return out
+
+
+def _module_rel_label(root: Path, module_path: Path) -> str:
+    root_txt = str(root)
+    path_txt = str(module_path)
+    if root_txt != "" and not root_txt.endswith("/"):
+        root_txt += "/"
+    rel = path_txt
+    if root_txt != "" and path_txt.startswith(root_txt):
+        rel = path_txt[len(root_txt) :]
+    if rel.endswith(".py"):
+        rel = rel[:-3]
+    rel = rel.replace("/", "__")
+    return _sanitize_module_label(rel)
+
+
+def _write_multi_file_cpp(
+    *,
+    entry_path: Path,
+    module_east_map: dict[str, dict[str, Any]],
+    output_dir: Path,
+    negative_index_mode: str,
+    bounds_check_mode: str,
+    floor_div_mode: str,
+    mod_mode: str,
+    int_width: str,
+    str_index_mode: str,
+    str_slice_mode: str,
+    opt_level: str,
+    top_namespace: str,
+    emit_main: bool,
+) -> dict[str, Any]:
+    """モジュールごとに `.h/.cpp` を `out/include`, `out/src` へ出力する。"""
+    include_dir = output_dir / "include"
+    src_dir = output_dir / "src"
+    include_dir.mkdir(parents=True, exist_ok=True)
+    src_dir.mkdir(parents=True, exist_ok=True)
+
+    root = entry_path.parent
+    entry_key = str(entry_path)
+    files_obj = module_east_map.keys()
+    files = list(files_obj)
+    files.sort()
+
+    manifest: dict[str, Any] = {}
+    manifest["entry"] = entry_key
+    manifest["include_dir"] = str(include_dir)
+    manifest["src_dir"] = str(src_dir)
+    manifest["modules"] = []
+
+    i = 0
+    while i < len(files):
+        mod_key = files[i]
+        east = module_east_map[mod_key]
+        mod_path = Path(mod_key)
+        label = _module_rel_label(root, mod_path)
+        hdr_path = include_dir / (label + ".h")
+        cpp_path = src_dir / (label + ".cpp")
+        guard = "PYTRA_MULTI_" + _sanitize_module_label(label).upper() + "_H"
+        hdr_text = (
+            "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
+            "#ifndef " + guard + "\n"
+            "#define " + guard + "\n\n"
+            "namespace pytra_multi {\n"
+            "void module_" + label + "();\n"
+            "}  // namespace pytra_multi\n\n"
+            "#endif  // " + guard + "\n"
+        )
+        hdr_path.write_text(hdr_text, encoding="utf-8")
+
+        is_entry = mod_key == entry_key
+        cpp_txt = transpile_to_cpp(
+            east,
+            negative_index_mode,
+            bounds_check_mode,
+            floor_div_mode,
+            mod_mode,
+            int_width,
+            str_index_mode,
+            str_slice_mode,
+            opt_level,
+            top_namespace,
+            emit_main if is_entry else False,
+        )
+        cpp_path.write_text(cpp_txt, encoding="utf-8")
+
+        modules_obj = manifest.get("modules")
+        modules = modules_obj if isinstance(modules_obj, list) else []
+        modules.append(
+            {
+                "module": mod_key,
+                "label": label,
+                "header": str(hdr_path),
+                "source": str(cpp_path),
+                "is_entry": is_entry,
+            }
+        )
+        manifest["modules"] = modules
+        i += 1
+
+    manifest_path = output_dir / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    manifest["manifest"] = str(manifest_path)
+    return manifest
+
+
 def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:
     """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する。"""
     if module_name.startswith("pytra.") or module_name == "pytra":
@@ -3916,6 +4038,7 @@ def main(argv: list[str]) -> int:
         return 1
     input_txt = _dict_str_get(parsed, "input", "")
     output_txt = _dict_str_get(parsed, "output", "")
+    output_dir_txt = _dict_str_get(parsed, "output_dir", "")
     top_namespace_opt = _dict_str_get(parsed, "top_namespace_opt", "")
     negative_index_mode_opt = _dict_str_get(parsed, "negative_index_mode_opt", "")
     bounds_check_mode_opt = _dict_str_get(parsed, "bounds_check_mode_opt", "")
@@ -3928,6 +4051,7 @@ def main(argv: list[str]) -> int:
     preset = _dict_str_get(parsed, "preset", "")
     parser_backend = _dict_str_get(parsed, "parser_backend", "self_hosted")
     no_main = _dict_str_get(parsed, "no_main", "0") == "1"
+    single_file = _dict_str_get(parsed, "single_file", "1") == "1"
     dump_deps = _dict_str_get(parsed, "dump_deps", "0") == "1"
     dump_options = _dict_str_get(parsed, "dump_options", "0") == "1"
     show_help = _dict_str_get(parsed, "help", "0") == "1"
@@ -3942,13 +4066,13 @@ def main(argv: list[str]) -> int:
 
     if show_help:
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 0
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 1
@@ -4035,19 +4159,52 @@ def main(argv: list[str]) -> int:
             else:
                 print(dep_text, end="")
             return 0
-        cpp = transpile_to_cpp(
-            east_module,
-            negative_index_mode,
-            bounds_check_mode,
-            floor_div_mode,
-            mod_mode,
-            int_width,
-            str_index_mode,
-            str_slice_mode,
-            opt_level,
-            top_namespace_opt,
-            not no_main,
-        )
+        if single_file:
+            cpp = transpile_to_cpp(
+                east_module,
+                negative_index_mode,
+                bounds_check_mode,
+                floor_div_mode,
+                mod_mode,
+                int_width,
+                str_index_mode,
+                str_slice_mode,
+                opt_level,
+                top_namespace_opt,
+                not no_main,
+            )
+        else:
+            module_east_map: dict[str, dict[str, Any]] = {}
+            if input_txt.endswith(".py"):
+                module_east_map = build_module_east_map(input_path, parser_backend)
+            else:
+                module_east_map[str(input_path)] = east_module
+            out_dir = Path(output_dir_txt) if output_dir_txt != "" else Path("out")
+            if output_txt != "":
+                out_dir = Path(output_txt)
+            mf = _write_multi_file_cpp(
+                entry_path=input_path,
+                module_east_map=module_east_map,
+                output_dir=out_dir,
+                negative_index_mode=negative_index_mode,
+                bounds_check_mode=bounds_check_mode,
+                floor_div_mode=floor_div_mode,
+                mod_mode=mod_mode,
+                int_width=int_width,
+                str_index_mode=str_index_mode,
+                str_slice_mode=str_slice_mode,
+                opt_level=opt_level,
+                top_namespace=top_namespace_opt,
+                emit_main=not no_main,
+            )
+            msg = "multi-file output generated at: " + str(out_dir)
+            manifest_txt = mf.get("manifest")
+            if isinstance(manifest_txt, str) and manifest_txt != "":
+                msg += "\nmanifest: " + manifest_txt + "\n"
+            else:
+                msg += "\n"
+            print(msg, end="")
+            return 0
     except Exception as ex:
         parsed_err = _parse_user_error(str(ex))
         cat = str(parsed_err.get("category", ""))

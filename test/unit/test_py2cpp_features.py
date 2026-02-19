@@ -104,6 +104,15 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed.get("output"), "out.cpp")
         self.assertEqual(parsed.get("opt_level_opt"), "2")
 
+    def test_parse_py2cpp_argv_multi_file_flags(self) -> None:
+        parsed, err = parse_py2cpp_argv(["input.py", "--multi-file", "--output-dir", "out"])
+        self.assertEqual(err, "")
+        self.assertEqual(parsed.get("single_file"), "0")
+        self.assertEqual(parsed.get("output_dir"), "out")
+        parsed2, err2 = parse_py2cpp_argv(["input.py", "--single-file"])
+        self.assertEqual(err2, "")
+        self.assertEqual(parsed2.get("single_file"), "1")
+
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
         src = """def main() -> None:
     auto: int = 1
@@ -564,6 +573,36 @@ if __name__ == "__main__":
             )
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("[user_syntax_error]", proc.stderr)
+
+    def test_cli_multi_file_generates_out_include_src(self) -> None:
+        src_main = """import helper
+
+def main() -> None:
+    print(helper.f())
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            out_dir = root / "out"
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+            self.assertTrue((out_dir / "include").exists())
+            self.assertTrue((out_dir / "src").exists())
+            self.assertTrue((out_dir / "manifest.json").exists())
+            manifest_txt = (out_dir / "manifest.json").read_text(encoding="utf-8")
+            self.assertIn("main.py", manifest_txt)
+            self.assertIn("helper.py", manifest_txt)
 
     def test_cli_reports_input_invalid_category(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
