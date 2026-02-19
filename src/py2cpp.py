@@ -1926,6 +1926,10 @@ class CppEmitter(CodeEmitter):
         hook_expr = self.hook_on_render_expr_kind(kind, expr_d)
         if isinstance(hook_expr, str) and hook_expr != "":
             return hook_expr
+        if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
+            hook_complex = self.hook_on_render_expr_complex(expr_d)
+            if isinstance(hook_complex, str) and hook_complex != "":
+                return hook_complex
 
         if kind == "Name":
             name = str(expr_d.get("id", "_"))

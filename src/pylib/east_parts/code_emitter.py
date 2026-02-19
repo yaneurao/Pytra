@@ -94,6 +94,13 @@ class CodeEmitter:
         """`on_render_expr_kind` フック。既定では何もしない。"""
         return None
 
+    def hook_on_render_expr_complex(
+        self,
+        expr_node: dict[str, Any],
+    ) -> str | None:
+        """複雑式（JoinedStr/Lambda/Comp 系）用フック。既定では何もしない。"""
+        return None
+
     def syntax_text(self, key: str, default_value: str) -> str:
         """profile.syntax からテンプレート文字列を取得する。"""
         syn = self.any_to_dict_or_empty(self.profile.get("syntax"))

@@ -37,7 +37,7 @@
    - [x] `on_render_call`, `on_render_binop`, `on_emit_stmt` など最小フック面を定義する。
    - [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。: `BinOp` + `Call(Name/Attribute)` は helper 分離済み
     - [x] `render_expr(IfExp/List/Tuple/Set/Dict/Subscript)` を `hook_on_render_expr_kind(kind, node)` へ委譲できる形へ整理する。: `render_expr` 先頭で kind フックを共通呼び出しする形へ移行済み。
-     - [ ] `JoinedStr/Lambda/Comp` 系を `hook_on_render_expr_complex(node)` へ分離する。
+    - [x] `JoinedStr/Lambda/Comp` 系を `hook_on_render_expr_complex(node)` へ分離する。: 入口フックを実装し、`JoinedStr/Lambda/ListComp/SetComp/DictComp` で委譲可能化。
    - [ ] `emit_stmt(If/While/For/AnnAssign/AugAssign)` の分岐を hooks + template helper へ段階分離する。: `If/While` は `_emit_if_stmt` / `_emit_while_stmt` へ分離済み
     - [x] `emit_stmt(Return/Expr/Assign/Try)` を `hook_on_emit_stmt_kind(kind, stmt)` 前提で分割する。
      - [ ] `emit_stmt` 本体を「dispatch + fallback」のみ（50行以下目標）へ縮退する。
