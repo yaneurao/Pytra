@@ -31,7 +31,7 @@
      - [ ] `gif.save_gif` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。
      - [ ] 置換ごとに `tools/check_py2cpp_transpile.py` を実行し、差分を確認する。
    - [ ] 各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` の両方を必須ゲートにする。
-     - [ ] 上記 2 コマンド失敗時はコミット禁止ルールを `docs/spec-codex.md` に明記する。
+     - [x] 上記 2 コマンド失敗時はコミット禁止ルールを `docs/spec-codex.md` に明記する。
 4. [x] ローカル CI 相当手順の固定化
    - [x] 回帰コマンド群（transpile/feature/selfhost build/selfhost diff）を1コマンド実行できるスクリプト化。: `tools/run_local_ci.py`
    - [x] `docs/how-to-use.md` か `docs/spec-codex.md` に実行手順を追記。: `docs/spec-codex.md` へ追記
@@ -85,7 +85,7 @@
 
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
    - [ ] 目標値を固定する（`src/py2cpp.py` 実コード 1500 行以下を当面目標）。
-   - [ ] ベースライン行数を計測し、`docs/todo.md` に記録する（毎回更新）。
+   - [x] ベースライン行数を計測し、`docs/todo.md` に記録する（毎回更新）。: 2026-02-19 時点 `src/py2cpp.py` は `3148` 行（`wc -l`）
    - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: `BuiltinCall` / Name/Attribute は helper 分離済み
      - [ ] `dict.get/list.* / set.*` 呼び出し解決を runtime-call map + hook へ移して `py2cpp.py` 直書きを削減する。
      - [ ] `Path`/`png`/`gif` の module method 解決を `cpp_hooks.py` 側へ寄せる。
