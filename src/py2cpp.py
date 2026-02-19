@@ -190,6 +190,15 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "write_stdout": "py_sys_write_stdout",
         "exit": "py_sys_exit",
     }
+    out["png"] = {
+        "write_rgb_png": "png_helper::write_rgb_png",
+    }
+    out["png_helper"] = {
+        "write_rgb_png": "png_helper::write_rgb_png",
+    }
+    out["pylib.tra.png"] = {
+        "write_rgb_png": "png_helper::write_rgb_png",
+    }
     return out
 
 
@@ -2265,8 +2274,6 @@ class CppEmitter(CodeEmitter):
                     return f"{mapped}({', '.join(args)})"
         if owner_mod in {"typing", "pylib.std.typing"} and attr == "TypeVar":
             return "make_object(1)"
-        if owner_mod in {"png_helper", "png", "pylib.tra.png"} and attr == "write_rgb_png":
-            return f"png_helper::write_rgb_png({', '.join(args)})"
         if owner_mod in {"gif_helper", "gif", "pylib.tra.gif"} and attr == "save_gif":
             path = args[0] if len(args) >= 1 else '""'
             w = args[1] if len(args) >= 2 else "0"
