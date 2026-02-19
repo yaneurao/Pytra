@@ -9,8 +9,8 @@
    - [ ] 既存の `pylib.*` 直参照分岐を段階削除し、上記規則へ統一する。
 
 2. [ ] C++ ランタイム配置を include 規約に合わせる。
-   - [ ] `src/runtime/cpp/pytra/std/*.h|*.cpp` を生成・配置する。: 現在は bridge header のみ追加済み
-   - [ ] `src/runtime/cpp/pytra/runtime/*.h|*.cpp` を生成・配置する。: 現在は bridge header のみ追加済み
+   - [x] `src/runtime/cpp/pytra/std/*.h|*.cpp` を生成・配置する。: 現在は bridge header/bridge cpp を追加済み
+   - [x] `src/runtime/cpp/pytra/runtime/*.h|*.cpp` を生成・配置する。: 現在は bridge header/bridge cpp を追加済み
    - [ ] `src/runtime/cpp/std/*` / `src/runtime/cpp/pylib/*` 参照を全廃する。
 
 3. [ ] import 解決機能の回帰テストを追加・強化する。
