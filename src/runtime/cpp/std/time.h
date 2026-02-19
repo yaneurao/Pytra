@@ -1,19 +1,6 @@
-// このファイルは Python の `time` モジュール互換の最小実装です。
-// 現時点では `perf_counter()` を提供します。
+#ifndef PYTRA_RUNTIME_CPP_STD_TIME_COMPAT_H
+#define PYTRA_RUNTIME_CPP_STD_TIME_COMPAT_H
 
-#ifndef PYTRA_CPP_MODULE_TIME_H
-#define PYTRA_CPP_MODULE_TIME_H
+#include "runtime/cpp/pytra/std/time.h"
 
-namespace pytra::cpp_module {
-
-/**
- * @brief 単調増加クロックに基づく高分解能時刻を秒で返します。
- * @return 起点不定の経過秒。差分を実行時間計測に利用します。
- */
-double perf_counter();
-
-}  // namespace pytra::cpp_module
-
-using pytra::cpp_module::perf_counter;
-
-#endif  // PYTRA_CPP_MODULE_TIME_H
+#endif

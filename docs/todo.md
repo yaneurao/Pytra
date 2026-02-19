@@ -1,29 +1,5 @@
 # TODO（未完了のみ）
 
-## 最優先（py2cpp）: モジュール import + ランタイム仕様反映
-
-1. [ ] import と include の 1対1 対応を `py2cpp.py` に実装する（最優先）。
-   - [x] `import pytra.std.X` -> `#include "pytra/std/X.h"` を出力する。
-   - [x] `import pytra.runtime.X` -> `#include "pytra/runtime/X.h"` を出力する。
-   - [x] `from pytra.std.X import f` / `from pytra.runtime.X import f` を同じ規則で解決する。
-   - [ ] 既存の `pylib.*` 直参照分岐を段階削除し、上記規則へ統一する。
-
-2. [ ] C++ ランタイム配置を include 規約に合わせる。
-   - [x] `src/runtime/cpp/pytra/std/*.h|*.cpp` を生成・配置する。: 現在は bridge header/bridge cpp を追加済み
-   - [x] `src/runtime/cpp/pytra/runtime/*.h|*.cpp` を生成・配置する。: 現在は bridge header/bridge cpp を追加済み
-   - [ ] `src/runtime/cpp/std/*` / `src/runtime/cpp/pylib/*` 参照を全廃する。
-
-3. [ ] import 解決機能の回帰テストを追加・強化する。
-   - [x] `test/unit/test_py2cpp_features.py` に `pytra.std` / `pytra.runtime` import の include 生成テストを追加する。
-   - [x] `test/fixtures/stdlib` に `import pytra.std.*` / `from pytra.std.* import ...` のケースを追加する。: `pytra_std_import_math.py`
-   - [x] `test/fixtures/stdlib` に `import pytra.runtime.*` / `from pytra.runtime.* import ...` のケースを追加する。: `pytra_runtime_png.py`
-   - [x] `tools/check_py2cpp_transpile.py` と `tools/verify_sample_outputs.py` をゲートに固定する。
-
-4. [ ] ドキュメントと実装の差分をゼロにする。
-   - [x] `docs/how-to-use.md` のコンパイル例を `#include "pytra/...` 規約に整合させる。: `-I src/runtime/cpp` を追記
-   - [ ] `docs/spec-dev.md` の include 例と実ファイル配置を同期する。
-   - [ ] 仕様変更完了後、完了タスクを `docs/todo-old.md` へ移す。
-
 ## 直近実行キュー（細分化）
 
 2. [ ] selfhost `.py` 経路の段階回復

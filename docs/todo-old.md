@@ -1,5 +1,24 @@
 # TODO
 
+## 2026-02-19-20 完了: py2cpp import + runtime 配置同期
+
+1. [x] import と include の 1対1 対応を `py2cpp.py` に実装する（最優先）。
+   - [x] `import pytra.std.X` -> `#include "pytra/std/X.h"` を出力する。
+   - [x] `import pytra.runtime.X` -> `#include "pytra/runtime/X.h"` を出力する。
+   - [x] `from pytra.std.X import f` / `from pytra.runtime.X import f` を同じ規則で解決する。
+   - [x] 既存の `pylib.*` 直参照分岐を段階削除し、上記規則へ統一する。
+2. [x] C++ ランタイム配置を include 規約に合わせる。
+   - [x] `src/runtime/cpp/pytra/std/*.h|*.cpp` を配置する。
+   - [x] `src/runtime/cpp/pytra/runtime/*.h|*.cpp` を配置する。
+   - [x] 実装・ビルド導線の `src/runtime/cpp/std/*` / `src/runtime/cpp/pylib/*` 参照を `pytra/*` 側へ移行する。
+3. [x] import 解決機能の回帰テストを追加・強化する。
+   - [x] `test/unit/test_py2cpp_features.py` に `pytra.std` / `pytra.runtime` import の include 生成テストを追加する。
+   - [x] `test/fixtures/stdlib` に `import pytra.std.*` / `from pytra.std.* import ...` のケースを追加する。
+   - [x] `test/fixtures/stdlib` に `import pytra.runtime.*` / `from pytra.runtime.* import ...` のケースを追加する。
+4. [x] ドキュメントと実装の差分を同期する。
+   - [x] `docs/how-to-use.md` / `docs/spec-dev.md` を同期する。
+   - [x] 完了項目を `docs/todo-old.md` へ移す。
+
 ## 2026-02-19 移管: TODO整理（完了セクション）
 
 ## 2026-02-19 移管: CodeEmitter 化（完了小セクション）

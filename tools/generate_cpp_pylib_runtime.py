@@ -105,7 +105,7 @@ def _png_wrapper_text(namespace_cpp: str) -> str:
     return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
-#include \"runtime/cpp/pylib/png.h\"
+#include \"runtime/cpp/pytra/runtime/png.h\"
 
 #include \"runtime/cpp/py_runtime.h\"
 
@@ -127,7 +127,7 @@ def _gif_wrapper_text(namespace_cpp: str) -> str:
     return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
-#include \"runtime/cpp/pylib/gif.h\"
+#include \"runtime/cpp/pytra/runtime/gif.h\"
 
 #include \"runtime/cpp/py_runtime.h\"
 
@@ -234,10 +234,10 @@ def main() -> int:
     png_cpp = _png_wrapper_text(png_ns).replace("__PYTRA_PNG_IMPL__", _strip_runtime_include(png_impl).rstrip())
     gif_cpp = _gif_wrapper_text(gif_ns).replace("__PYTRA_GIF_IMPL__", _strip_runtime_include(gif_impl).rstrip())
     outputs: list[tuple[str, str]] = [
-        ("src/runtime/cpp/pylib/png.h", _png_header_text(png_ns, png_alias)),
-        ("src/runtime/cpp/pylib/gif.h", _gif_header_text(gif_ns, gif_alias)),
-        ("src/runtime/cpp/pylib/png.cpp", png_cpp),
-        ("src/runtime/cpp/pylib/gif.cpp", gif_cpp),
+        ("src/runtime/cpp/pytra/runtime/png.h", _png_header_text(png_ns, png_alias)),
+        ("src/runtime/cpp/pytra/runtime/gif.h", _gif_header_text(gif_ns, gif_alias)),
+        ("src/runtime/cpp/pytra/runtime/png.cpp", png_cpp),
+        ("src/runtime/cpp/pytra/runtime/gif.cpp", gif_cpp),
     ]
     for target_rel, text in outputs:
         if write_or_check(target_rel, text.rstrip() + "\n", args.check):

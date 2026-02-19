@@ -40,7 +40,7 @@
 ## 3. ランタイム生成・言語間確認
 
 - `tools/generate_cpp_pylib_runtime.py`
-  - 目的: `src/pylib/tra/*.py` から `src/runtime/cpp/pylib/*.h/.cpp` 生成物を更新・検証する。
+  - 目的: `src/pylib/tra/*.py` から `src/runtime/cpp/pytra/runtime/*.h/.cpp` 生成物を更新・検証する。
   - 主要オプション: `--check`
 - `tools/runtime_parity_check.py`
   - 目的: 複数ターゲット言語でのランタイム平準化チェックを実行する。

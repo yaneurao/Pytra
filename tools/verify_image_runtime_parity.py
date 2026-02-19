@@ -21,8 +21,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _write_cpp_harness(path: Path) -> None:
     src = r'''
-#include "runtime/cpp/pylib/png.h"
-#include "runtime/cpp/pylib/gif.h"
+#include "runtime/cpp/pytra/runtime/png.h"
+#include "runtime/cpp/pytra/runtime/gif.h"
 
 #include <cstdint>
 #include <string>
@@ -65,6 +65,8 @@ def _build_and_run_cpp(work: Path, out_png: Path, out_gif: Path) -> None:
         "-O2",
         "-I",
         "src",
+        "-I",
+        "src/runtime/cpp",
         str(harness),
         "src/runtime/cpp/pytra/runtime/png.cpp",
         "src/runtime/cpp/pytra/runtime/gif.cpp",

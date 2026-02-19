@@ -1,2 +1,2 @@
-// bridge translation unit: keep legacy implementation path while migrating.
-#include "runtime/cpp/std/dataclasses.cpp"
+// 実装本体はヘッダ内テンプレートとして提供しています。
+#include "runtime/cpp/pytra/std/dataclasses.h"

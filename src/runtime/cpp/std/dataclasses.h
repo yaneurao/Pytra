@@ -1,24 +1,6 @@
-// このファイルは Python の dataclasses 互換の最小スタブです。
-// 現状のトランスパイラでは @dataclass は変換時に展開されるため、
-// ランタイムとしては識別用の軽量APIのみ定義します。
+#ifndef PYTRA_RUNTIME_CPP_STD_DATACLASSES_COMPAT_H
+#define PYTRA_RUNTIME_CPP_STD_DATACLASSES_COMPAT_H
 
-#ifndef PYTRA_CPP_MODULE_DATACLASSES_H
-#define PYTRA_CPP_MODULE_DATACLASSES_H
+#include "runtime/cpp/pytra/std/dataclasses.h"
 
-#include <type_traits>
-
-namespace pytra::cpp_module::dataclasses {
-
-struct DataclassTag {};
-
-template <typename T>
-constexpr T dataclass(T value) {
-    return value;
-}
-
-template <typename T>
-constexpr bool is_dataclass_v = std::is_base_of_v<DataclassTag, T>;
-
-}  // namespace pytra::cpp_module::dataclasses
-
-#endif  // PYTRA_CPP_MODULE_DATACLASSES_H
+#endif

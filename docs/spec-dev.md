@@ -154,14 +154,14 @@
 
 主な補助モジュール実装:
 
-- `src/runtime/cpp/pytra/std/math.h`（bridge）, `src/runtime/cpp/std/math.cpp`
-- `src/runtime/cpp/pytra/std/pathlib.h`（bridge）, `src/runtime/cpp/std/pathlib.cpp`
-- `src/runtime/cpp/pytra/std/time.h`（bridge）, `src/runtime/cpp/std/time.cpp`
-- `src/runtime/cpp/pytra/std/dataclasses.h`（bridge）, `src/runtime/cpp/std/dataclasses.cpp`
+- `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp`
+- `src/runtime/cpp/pytra/std/pathlib.h`, `src/runtime/cpp/pytra/std/pathlib.cpp`
+- `src/runtime/cpp/pytra/std/time.h`, `src/runtime/cpp/pytra/std/time.cpp`
+- `src/runtime/cpp/pytra/std/dataclasses.h`, `src/runtime/cpp/pytra/std/dataclasses.cpp`
 - `src/runtime/cpp/base/gc.h`, `src/runtime/cpp/base/gc.cpp`
-- `src/runtime/cpp/pytra/std/sys.h`（bridge）, `src/runtime/cpp/std/sys.cpp`
-- `src/runtime/cpp/pytra/runtime/png.h`（bridge）, `src/runtime/cpp/pylib/png.cpp`
-- `src/runtime/cpp/pytra/runtime/gif.h`（bridge）, `src/runtime/cpp/pylib/gif.cpp`
+- `src/runtime/cpp/pytra/std/sys.h`, `src/runtime/cpp/pytra/std/sys.cpp`
+- `src/runtime/cpp/pytra/runtime/png.h`, `src/runtime/cpp/pytra/runtime/png.cpp`
+- `src/runtime/cpp/pytra/runtime/gif.h`, `src/runtime/cpp/pytra/runtime/gif.cpp`
 - `src/runtime/cpp/py_runtime.h`
 
 `src/runtime/cpp/py_runtime.h` のコンテナ方針:
@@ -202,11 +202,11 @@
 
 ### 3.5 画像ランタイム最適化ポリシー（py2cpp）
 
-- 対象: `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp`（自動生成）。
+- 対象: `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp`（自動生成）。
 - 前提: `src/pylib/tra/png.py` / `src/pylib/tra/gif.py` を正本とし、意味差を導入しない。
 - 生成手順:
   - `python3 tools/generate_cpp_pylib_runtime.py`
-  - 生成物は `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp` に直接出力される。
+  - 生成物は `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp` に直接出力される。
   - これら 2 ファイルの本体ロジックを手書きで追加してはならない。
   - C++ namespace は生成元 Python ファイルのパスから自動導出する（ハードコードしない）。
     - 例: `src/pylib/tra/gif.py` -> `pytra::pylib::tra::gif`

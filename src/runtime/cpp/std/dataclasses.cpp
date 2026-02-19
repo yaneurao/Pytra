@@ -1,2 +1,1 @@
-// 実装本体はヘッダ内テンプレートとして提供しています。
-#include "runtime/cpp/std/dataclasses.h"
+#include "runtime/cpp/pytra/std/dataclasses.cpp"

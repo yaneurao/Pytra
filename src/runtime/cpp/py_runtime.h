@@ -26,10 +26,10 @@
 #include "runtime/cpp/base/bytes_util.h"
 #include "runtime/cpp/base/exceptions.h"
 #include "runtime/cpp/base/io.h"
-#include "runtime/cpp/pylib/gif.h"
+#include "runtime/cpp/pytra/runtime/gif.h"
 #include "runtime/cpp/base/gc.h"
-#include "runtime/cpp/std/math.h"
-#include "runtime/cpp/pylib/png.h"
+#include "runtime/cpp/pytra/std/math.h"
+#include "runtime/cpp/pytra/runtime/png.h"
 
 namespace py_math = pytra::math;
 using PyObj = pytra::gc::PyObj;

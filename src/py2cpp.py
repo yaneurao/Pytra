@@ -173,20 +173,10 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     out["glob"] = {
         "glob": "py_glob_glob",
     }
-    out["pylib.std.glob"] = {
-        "glob": "py_glob_glob",
-    }
     out["pytra.std.glob"] = {
         "glob": "py_glob_glob",
     }
     out["sys"] = {
-        "set_argv": "py_sys_set_argv",
-        "set_path": "py_sys_set_path",
-        "write_stderr": "py_sys_write_stderr",
-        "write_stdout": "py_sys_write_stdout",
-        "exit": "py_sys_exit",
-    }
-    out["pylib.std.sys"] = {
         "set_argv": "py_sys_set_argv",
         "set_path": "py_sys_set_path",
         "write_stderr": "py_sys_write_stderr",
