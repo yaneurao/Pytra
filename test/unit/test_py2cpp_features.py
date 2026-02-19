@@ -225,6 +225,31 @@ def main() -> None:
         self.assertIn("  - pytra.std.json.dumps", txt)
         self.assertIn("  - pytra.runtime.png.write_rgb_png", txt)
 
+    def test_cli_dump_deps_includes_user_module_graph(self) -> None:
+        src_main = """import helper
+
+def main() -> None:
+    print(helper.f())
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "--dump-deps"],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+        self.assertIn("graph:", proc.stdout)
+        self.assertIn("main.py -> helper.py", proc.stdout)
+
     def test_floor_div_mode_native_and_python(self) -> None:
         src = """def main() -> None:
     a: int = 7

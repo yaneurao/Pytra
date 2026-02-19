@@ -3454,6 +3454,122 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     return out
 
 
+def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
+    """EAST module から import / from-import のモジュール名を抽出する。"""
+    out: list[str] = []
+    seen: set[str] = set()
+    body_obj: object = east_module.get("body")
+    if not isinstance(body_obj, list):
+        return out
+    i = 0
+    while i < len(body_obj):
+        stmt = body_obj[i]
+        if isinstance(stmt, dict):
+            kind_obj: object = stmt.get("kind")
+            kind = kind_obj if isinstance(kind_obj, str) else ""
+            if kind == "Import":
+                names_obj: object = stmt.get("names")
+                if isinstance(names_obj, list):
+                    j = 0
+                    while j < len(names_obj):
+                        ent = names_obj[j]
+                        if isinstance(ent, dict):
+                            name_obj: object = ent.get("name")
+                            name = name_obj if isinstance(name_obj, str) else ""
+                            if name != "" and name not in seen:
+                                seen.add(name)
+                                out.append(name)
+                        j += 1
+            elif kind == "ImportFrom":
+                mod_obj: object = stmt.get("module")
+                mod = mod_obj if isinstance(mod_obj, str) else ""
+                if mod != "" and mod not in seen:
+                    seen.add(mod)
+                    out.append(mod)
+        i += 1
+    return out
+
+
+def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:
+    """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する。"""
+    if module_name.startswith("pytra.") or module_name == "pytra":
+        return None
+    rel = module_name.replace(".", "/")
+    cand_py = search_root / (rel + ".py")
+    if cand_py.exists():
+        return cand_py
+    cand_pkg = search_root / rel / "__init__.py"
+    if cand_pkg.exists():
+        return cand_pkg
+    return None
+
+
+def dump_deps_graph_text(entry_path: Path) -> str:
+    """入力 `.py` から辿れるユーザーモジュール依存グラフを整形して返す。"""
+    def _path_key(p: Path) -> str:
+        return str(p)
+
+    def _rel_disp(base: Path, p: Path) -> str:
+        base_txt = str(base)
+        p_txt = str(p)
+        if base_txt.endswith("/"):
+            base_prefix = base_txt
+        else:
+            base_prefix = base_txt + "/"
+        if p_txt.startswith(base_prefix):
+            return p_txt[len(base_prefix) :]
+        if p_txt == base_txt:
+            return "."
+        return p_txt
+
+    root = entry_path.parent
+    queue: list[Path] = [entry_path]
+    queued: set[str] = {_path_key(entry_path)}
+    visited: set[str] = set()
+    edges: list[str] = []
+    edge_seen: set[str] = set()
+
+    while len(queue) > 0:
+        cur_path = queue.pop(0)
+        cur_key = _path_key(cur_path)
+        if cur_key in visited:
+            continue
+        visited.add(cur_key)
+        try:
+            east_cur = load_east(cur_path)
+        except Exception:
+            continue
+        mods = _collect_import_modules(east_cur)
+        cur_disp = _rel_disp(root, cur_path)
+        i = 0
+        while i < len(mods):
+            mod = mods[i]
+            dep_file = _resolve_user_module_path(mod, root)
+            dep_disp = mod
+            if dep_file is not None:
+                dep_disp = _rel_disp(root, dep_file)
+            edge = cur_disp + " -> " + dep_disp
+            if edge not in edge_seen:
+                edge_seen.add(edge)
+                edges.append(edge)
+            if dep_file is not None:
+                dep_key = _path_key(dep_file)
+                if dep_key not in queued and dep_key not in visited:
+                    queued.add(dep_key)
+                    queue.append(dep_file)
+            i += 1
+
+    out = "graph:\n"
+    if len(edges) == 0:
+        out += "  (none)\n"
+    else:
+        i = 0
+        while i < len(edges):
+            out += "  - " + edges[i] + "\n"
+            i += 1
+    return out
+
+
 def print_user_error(err_text: str) -> None:
     """分類済みユーザーエラーをカテゴリ別に表示する。"""
     parsed_err = _parse_user_error(err_text)
@@ -3625,6 +3741,8 @@ def main(argv: list[str]) -> int:
         east_module = load_east(input_path, parser_backend)
         if dump_deps:
             dep_text = dump_deps_text(east_module)
+            if input_txt.endswith(".py"):
+                dep_text += dump_deps_graph_text(input_path)
             if output_txt != "":
                 out_path = Path(output_txt)
                 out_path.parent.mkdir(parents=True, exist_ok=True)
