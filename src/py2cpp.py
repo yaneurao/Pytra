@@ -1976,8 +1976,6 @@ class CppEmitter(CodeEmitter):
             length = args[0] if len(args) >= 1 else "0"
             byteorder = args[1] if len(args) >= 2 else '"little"'
             return f"py_int_to_bytes({owner}, {length}, {byteorder})"
-        if runtime_call == "write_rgb_png":
-            return f"png_helper::write_rgb_png({', '.join(args)})"
         if runtime_call == "grayscale_palette":
             return "grayscale_palette()"
         if runtime_call == "save_gif":
@@ -2131,6 +2129,7 @@ class CppEmitter(CodeEmitter):
             self._is_std_runtime_call(runtime_call)
             or runtime_call.startswith("py_os_path_")
             or runtime_call == "py_glob_glob"
+            or runtime_call.startswith("png_helper::")
         ):
             return f"{runtime_call}({', '.join(args)})"
         if builtin_name == "bytes":
