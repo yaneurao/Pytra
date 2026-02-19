@@ -1,5 +1,6 @@
-// このファイルは Python の `math` モジュール互換の最小実装です。
-// 現時点ではトランスパイラが利用する `sqrt` を提供します。
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/math.py
+// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_CPP_MODULE_MATH_H
 #define PYTRA_CPP_MODULE_MATH_H
@@ -8,11 +9,6 @@
 
 namespace pytra::core::math {
 
-/**
- * @brief 平方根を返します（Python の `math.sqrt` 相当）。
- * @param x 非負の実数値。
- * @return x の平方根。
- */
 double sqrt(double x);
 double sin(double x);
 double cos(double x);

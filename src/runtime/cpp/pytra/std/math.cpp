@@ -1,4 +1,6 @@
-// このファイルは Python の `math` モジュール互換実装の本体です。
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/math.py
+// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include <cmath>
 
@@ -22,49 +24,17 @@ static double any_to_double(const std::any& v) {
 const double pi = 3.14159265358979323846;
 const double e = 2.71828182845904523536;
 
-double sqrt(double x) {
-    return std::sqrt(x);
-}
-
-double sin(double x) {
-    return std::sin(x);
-}
-
-double cos(double x) {
-    return std::cos(x);
-}
-
-double exp(double x) {
-    return std::exp(x);
-}
-
-double tan(double x) {
-    return std::tan(x);
-}
-
-double log(double x) {
-    return std::log(x);
-}
-
-double log10(double x) {
-    return std::log10(x);
-}
-
-double fabs(double x) {
-    return std::fabs(x);
-}
-
-double floor(double x) {
-    return std::floor(x);
-}
-
-double ceil(double x) {
-    return std::ceil(x);
-}
-
-double pow(double x, double y) {
-    return std::pow(x, y);
-}
+double sqrt(double x) { return std::sqrt(x); }
+double sin(double x) { return std::sin(x); }
+double cos(double x) { return std::cos(x); }
+double exp(double x) { return std::exp(x); }
+double tan(double x) { return std::tan(x); }
+double log(double x) { return std::log(x); }
+double log10(double x) { return std::log10(x); }
+double fabs(double x) { return std::fabs(x); }
+double floor(double x) { return std::floor(x); }
+double ceil(double x) { return std::ceil(x); }
+double pow(double x, double y) { return std::pow(x, y); }
 
 double sqrt(const std::any& x) { return sqrt(any_to_double(x)); }
 double sin(const std::any& x) { return sin(any_to_double(x)); }

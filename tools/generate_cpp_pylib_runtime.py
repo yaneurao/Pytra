@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate C++ runtime files from src/pytra/runtime/*.py."""
+"""Generate C++ runtime files from src/pytra/{runtime,std}/*.py."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 PNG_SOURCE = "src/pytra/runtime/png.py"
 GIF_SOURCE = "src/pytra/runtime/gif.py"
+STD_MATH_SOURCE = "src/pytra/std/math.py"
 
 
 def _namespace_parts_from_source(source_rel: str) -> list[str]:
@@ -175,6 +176,108 @@ void save_gif(
 """
 
 
+def _std_math_header_text() -> str:
+    return """// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/math.py
+// command: python3 tools/generate_cpp_pylib_runtime.py
+
+#ifndef PYTRA_CPP_MODULE_MATH_H
+#define PYTRA_CPP_MODULE_MATH_H
+
+#include <any>
+
+namespace pytra::core::math {
+
+double sqrt(double x);
+double sin(double x);
+double cos(double x);
+double exp(double x);
+double tan(double x);
+double log(double x);
+double log10(double x);
+double fabs(double x);
+double floor(double x);
+double ceil(double x);
+double pow(double x, double y);
+double sqrt(const std::any& x);
+double sin(const std::any& x);
+double cos(const std::any& x);
+double exp(const std::any& x);
+double tan(const std::any& x);
+double log(const std::any& x);
+double log10(const std::any& x);
+double fabs(const std::any& x);
+double floor(const std::any& x);
+double ceil(const std::any& x);
+double pow(const std::any& x, const std::any& y);
+extern const double pi;
+extern const double e;
+
+}  // namespace pytra::core::math
+
+namespace pytra {
+namespace math = core::math;
+}
+
+#endif  // PYTRA_CPP_MODULE_MATH_H
+"""
+
+
+def _std_math_cpp_text() -> str:
+    return """// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/math.py
+// command: python3 tools/generate_cpp_pylib_runtime.py
+
+#include <cmath>
+
+#include "runtime/cpp/pytra/std/math.h"
+
+namespace pytra::core::math {
+
+static double any_to_double(const std::any& v) {
+    if (const auto* p = std::any_cast<double>(&v)) return *p;
+    if (const auto* p = std::any_cast<float>(&v)) return static_cast<double>(*p);
+    if (const auto* p = std::any_cast<long long>(&v)) return static_cast<double>(*p);
+    if (const auto* p = std::any_cast<unsigned long long>(&v)) return static_cast<double>(*p);
+    if (const auto* p = std::any_cast<long>(&v)) return static_cast<double>(*p);
+    if (const auto* p = std::any_cast<unsigned long>(&v)) return static_cast<double>(*p);
+    if (const auto* p = std::any_cast<int>(&v)) return static_cast<double>(*p);
+    if (const auto* p = std::any_cast<unsigned>(&v)) return static_cast<double>(*p);
+    if (const auto* p = std::any_cast<bool>(&v)) return *p ? 1.0 : 0.0;
+    return 0.0;
+}
+
+const double pi = 3.14159265358979323846;
+const double e = 2.71828182845904523536;
+
+double sqrt(double x) { return std::sqrt(x); }
+double sin(double x) { return std::sin(x); }
+double cos(double x) { return std::cos(x); }
+double exp(double x) { return std::exp(x); }
+double tan(double x) { return std::tan(x); }
+double log(double x) { return std::log(x); }
+double log10(double x) { return std::log10(x); }
+double fabs(double x) { return std::fabs(x); }
+double floor(double x) { return std::floor(x); }
+double ceil(double x) { return std::ceil(x); }
+double pow(double x, double y) { return std::pow(x, y); }
+
+double sqrt(const std::any& x) { return sqrt(any_to_double(x)); }
+double sin(const std::any& x) { return sin(any_to_double(x)); }
+double cos(const std::any& x) { return cos(any_to_double(x)); }
+double exp(const std::any& x) { return exp(any_to_double(x)); }
+double tan(const std::any& x) { return tan(any_to_double(x)); }
+double log(const std::any& x) { return log(any_to_double(x)); }
+double log10(const std::any& x) { return log10(any_to_double(x)); }
+double fabs(const std::any& x) { return fabs(any_to_double(x)); }
+double floor(const std::any& x) { return floor(any_to_double(x)); }
+double ceil(const std::any& x) { return ceil(any_to_double(x)); }
+double pow(const std::any& x, const std::any& y) { return pow(any_to_double(x), any_to_double(y)); }
+
+}  // namespace pytra::core::math
+"""
+
+
 def transpile_to_cpp(source_rel: str) -> str:
     source = ROOT / source_rel
     with tempfile.TemporaryDirectory() as tmp:
@@ -242,6 +345,8 @@ def main() -> int:
         ("src/runtime/cpp/pytra/runtime/gif.h", _gif_header_text(gif_ns, gif_alias)),
         ("src/runtime/cpp/pytra/runtime/png.cpp", png_cpp),
         ("src/runtime/cpp/pytra/runtime/gif.cpp", gif_cpp),
+        ("src/runtime/cpp/pytra/std/math.h", _std_math_header_text()),
+        ("src/runtime/cpp/pytra/std/math.cpp", _std_math_cpp_text()),
     ]
     for target_rel, text in outputs:
         if write_or_check(target_rel, text.rstrip() + "\n", args.check):

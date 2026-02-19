@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from pylib.tra.gif import grayscale_palette, save_gif
+from pytra.runtime.gif import grayscale_palette, save_gif
 
 
 def run_10_plasma_effect() -> None:

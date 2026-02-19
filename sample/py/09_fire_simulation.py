@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from pylib.tra.gif import save_gif
+from pytra.runtime.gif import save_gif
 
 
 def fire_palette() -> bytes:
