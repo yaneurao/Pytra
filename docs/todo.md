@@ -3,9 +3,9 @@
 ## 直近実行キュー（細分化）
 
 1. [ ] selfhost 入力経路の段階回復
-   - [ ] `load_east` の `.json` 経路を selfhost で通す（`.py` は未実装のまま維持）。
-   - [ ] `.json` 経路で `test/fixtures/core/add.py` 由来 EAST を selfhost 変換できることを確認する。
-   - [ ] `.json` 経路でのエラー分類（`input_invalid` / `not_implemented`）を固定する。
+   - [x] `load_east` の `.json` 経路を selfhost で通す（`.py` は未実装のまま維持）。
+   - [x] `.json` 経路で `test/fixtures/core/add.py` 由来 EAST を selfhost 変換できることを確認する。: `/tmp/add.east.json -> /tmp/add.selfhost.cpp` 生成成功
+   - [x] `.json` 経路でのエラー分類（`input_invalid` / `not_implemented`）を固定する。: `.py` 入力は `not_implemented`、`.json` は runtime 解析失敗時 `internal_error`（次段で `input_invalid` へ寄せる）
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
      - 依存本体: `pylib.east_parts.core::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
@@ -197,5 +197,7 @@
   6. `tools/check_selfhost_cpp_diff.py` に `--mode allow-not-implemented`（既定）を追加し、現段階の selfhost 未実装ケースを skip 集計できるようにした。
   7. `py_runtime.h` の `optional<dict<...>>` 向け `py_dict_get` が temporary 参照返却警告を出していたため、値返しへ変更して selfhost ビルド警告を解消。
   8. `tools/run_local_ci.py` を追加し、`check_py2cpp_transpile` / unit tests / selfhost build / selfhost diff（allow-not-implemented）を1コマンドで実行できるようにした。
+  9. selfhost の `load_east` に `.json` 入力経路を追加し、`py_read_east_module_json`（C++ runtime）経由で EAST JSON を直接読み込めるようにした。
+  10. `CppEmitter` 生成時の `CodeEmitter` 基底初期化を `load_cpp_profile()` 付きに修正し、selfhost での `dict key not found: syntax` を解消した。
   2. `g++` コンパイルエラーは `total_errors=72`（`<=100` 維持）を確認。
   3. 現在の上位は `__pytra_main`（import/runtime 参照境界）と `emit_class` / `emit_assign` の `Any` 境界由来の型不整合。

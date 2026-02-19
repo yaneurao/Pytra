@@ -129,12 +129,13 @@ def _replace_load_east_for_selfhost(text: str) -> str:
         raise RuntimeError("load_east block not found")
     stub = (
         "def load_east(input_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, Any]:\n"
-        "    _ = input_path\n"
         "    _ = parser_backend\n"
-        "    details: list[str] = []\n"
+        "    if str(input_path).endswith(\".json\"):\n"
+        "        return py_read_east_module_json(input_path)\n"
+        "    details: list[str] = [\"use .json EAST input for selfhost now\"]\n"
         "    raise _make_user_error(\n"
         "        \"not_implemented\",\n"
-        "        \"selfhost binary does not include parser runtime yet.\",\n"
+        "        \"selfhost parser for .py input is not enabled yet.\",\n"
         "        details,\n"
         "    )\n\n"
     )
@@ -182,24 +183,6 @@ def _replace_dump_options_for_selfhost(text: str) -> str:
 
 def _patch_selfhost_exception_paths(text: str) -> str:
     out = text
-    old = (
-        "    except Exception as ex:\n"
-        "        parsed_err = _parse_user_error(str(ex))\n"
-        "        cat = str(parsed_err.get(\"category\", \"\"))\n"
-        "        if cat != \"\":\n"
-        "            print_user_error(str(ex))\n"
-        "            return 1\n"
-        "        print(\"error: 変換中に内部エラーが発生しました。\", file=sys.stderr)\n"
-        "        print(\"[internal_error] バグの可能性があります。再現コードを添えて報告してください。\", file=sys.stderr)\n"
-        "        return 1\n"
-    )
-    new = (
-        "    except Exception:\n"
-        "        print(\"error: selfhost parser/runtime is not fully enabled yet.\", file=sys.stderr)\n"
-        "        print(\"[not_implemented] use python3 src/py2cpp.py for now.\", file=sys.stderr)\n"
-        "        return 1\n"
-    )
-    out = out.replace(old, new, 1)
     old2 = (
         "    if input_txt == \"\":\n"
         "        print(\n"
@@ -223,6 +206,18 @@ def _patch_selfhost_exception_paths(text: str) -> str:
         "        return 1\n"
     )
     out = out.replace(old2, new2, 1)
+    old3 = (
+        "        print(\"error: 変換中に内部エラーが発生しました。\", file=sys.stderr)\n"
+        "        print(\"[internal_error] バグの可能性があります。再現コードを添えて報告してください。\", file=sys.stderr)\n"
+        "        return 1\n"
+    )
+    new3 = (
+        "        print(\"error: 変換中に内部エラーが発生しました。\", file=sys.stderr)\n"
+        "        print(\"[internal_error] バグの可能性があります。再現コードを添えて報告してください。\", file=sys.stderr)\n"
+        "        print(str(ex), file=sys.stderr)\n"
+        "        return 1\n"
+    )
+    out = out.replace(old3, new3, 1)
     return out
 
 

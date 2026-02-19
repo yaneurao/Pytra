@@ -268,6 +268,10 @@ static inline std::string py_to_string(const std::string& v) {
     return v;
 }
 
+static inline std::string py_to_string(const std::exception& v) {
+    return std::string(v.what());
+}
+
 static inline std::string py_to_string(uint8 v) {
     return std::to_string(static_cast<int>(v));
 }
@@ -500,7 +504,7 @@ template <class V>
 static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
     auto it = d.find(str(key));
     if (it == d.end()) {
-        throw std::out_of_range("dict key not found");
+        throw std::out_of_range(std::string("dict key not found: ") + key);
     }
     return it->second;
 }
@@ -517,7 +521,7 @@ static inline V py_dict_get(const std::optional<dict<str, V>>& d, const char* ke
 static inline object py_dict_get(const dict<str, object>& d, const char* key) {
     auto it = d.find(str(key));
     if (it == d.end()) {
-        throw std::out_of_range("dict key not found");
+        throw std::out_of_range(std::string("dict key not found: ") + key);
     }
     return it->second;
 }
@@ -985,6 +989,209 @@ static inline str py_read_text(const Path& p) {
     std::stringstream ss;
     ss << ifs.rdbuf();
     return ss.str();
+}
+
+class PyJsonReader {
+public:
+    explicit PyJsonReader(const str& text)
+        : s_(text.std()), i_(0) {}
+
+    object parse() {
+        skip_ws();
+        object v = parse_value();
+        skip_ws();
+        if (i_ != s_.size()) throw std::runtime_error("invalid json: trailing characters");
+        return v;
+    }
+
+private:
+    std::string s_;
+    std::size_t i_;
+
+    void skip_ws() {
+        while (i_ < s_.size()) {
+            const char ch = s_[i_];
+            if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
+                ++i_;
+                continue;
+            }
+            break;
+        }
+    }
+
+    object parse_value() {
+        if (i_ >= s_.size()) throw std::runtime_error("invalid json: unexpected end");
+        const char ch = s_[i_];
+        if (ch == '{') return make_object(parse_object());
+        if (ch == '[') return make_object(parse_array());
+        if (ch == '"') return make_object(parse_string());
+        if (ch == 't') {
+            consume_literal("true");
+            return make_object(true);
+        }
+        if (ch == 'f') {
+            consume_literal("false");
+            return make_object(false);
+        }
+        if (ch == 'n') {
+            consume_literal("null");
+            return object();
+        }
+        return parse_number();
+    }
+
+    void consume_literal(const char* lit) {
+        std::size_t k = 0;
+        while (lit[k] != '\0') {
+            if (i_ + k >= s_.size() || s_[i_ + k] != lit[k]) {
+                throw std::runtime_error("invalid json token");
+            }
+            ++k;
+        }
+        i_ += k;
+    }
+
+    dict<str, object> parse_object() {
+        dict<str, object> out{};
+        if (i_ >= s_.size() || s_[i_] != '{') throw std::runtime_error("invalid json object");
+        ++i_;
+        skip_ws();
+        if (i_ < s_.size() && s_[i_] == '}') {
+            ++i_;
+            return out;
+        }
+        while (true) {
+            skip_ws();
+            str key = parse_string();
+            skip_ws();
+            if (i_ >= s_.size() || s_[i_] != ':') throw std::runtime_error("invalid json object");
+            ++i_;
+            skip_ws();
+            out[key] = parse_value();
+            skip_ws();
+            if (i_ >= s_.size()) throw std::runtime_error("invalid json object");
+            const char sep = s_[i_++];
+            if (sep == '}') return out;
+            if (sep != ',') throw std::runtime_error("invalid json object");
+        }
+    }
+
+    list<object> parse_array() {
+        list<object> out{};
+        if (i_ >= s_.size() || s_[i_] != '[') throw std::runtime_error("invalid json array");
+        ++i_;
+        skip_ws();
+        if (i_ < s_.size() && s_[i_] == ']') {
+            ++i_;
+            return out;
+        }
+        while (true) {
+            skip_ws();
+            out.append(parse_value());
+            skip_ws();
+            if (i_ >= s_.size()) throw std::runtime_error("invalid json array");
+            const char sep = s_[i_++];
+            if (sep == ']') return out;
+            if (sep != ',') throw std::runtime_error("invalid json array");
+        }
+    }
+
+    static int hex_digit(char ch) {
+        if (ch >= '0' && ch <= '9') return static_cast<int>(ch - '0');
+        if (ch >= 'a' && ch <= 'f') return static_cast<int>(ch - 'a' + 10);
+        if (ch >= 'A' && ch <= 'F') return static_cast<int>(ch - 'A' + 10);
+        return -1;
+    }
+
+    str parse_string() {
+        if (i_ >= s_.size() || s_[i_] != '"') throw std::runtime_error("invalid json string");
+        ++i_;
+        std::string out;
+        while (i_ < s_.size()) {
+            const char ch = s_[i_++];
+            if (ch == '"') return str(out);
+            if (ch != '\\') {
+                out.push_back(ch);
+                continue;
+            }
+            if (i_ >= s_.size()) throw std::runtime_error("invalid json escape");
+            const char esc = s_[i_++];
+            if (esc == '"') out.push_back('"');
+            else if (esc == '\\') out.push_back('\\');
+            else if (esc == '/') out.push_back('/');
+            else if (esc == 'b') out.push_back('\b');
+            else if (esc == 'f') out.push_back('\f');
+            else if (esc == 'n') out.push_back('\n');
+            else if (esc == 'r') out.push_back('\r');
+            else if (esc == 't') out.push_back('\t');
+            else if (esc == 'u') {
+                if (i_ + 4 > s_.size()) throw std::runtime_error("invalid json unicode escape");
+                int code = 0;
+                for (int k = 0; k < 4; ++k) {
+                    const int hv = hex_digit(s_[i_ + static_cast<std::size_t>(k)]);
+                    if (hv < 0) throw std::runtime_error("invalid json unicode escape");
+                    code = (code << 4) | hv;
+                }
+                i_ += 4;
+                if (code >= 0 && code <= 0x7F) out.push_back(static_cast<char>(code));
+                else out.push_back('?');
+            } else {
+                throw std::runtime_error("invalid json escape");
+            }
+        }
+        throw std::runtime_error("unterminated json string");
+    }
+
+    object parse_number() {
+        const std::size_t start = i_;
+        if (s_[i_] == '-') ++i_;
+        if (i_ >= s_.size()) throw std::runtime_error("invalid json number");
+        if (s_[i_] == '0') {
+            ++i_;
+        } else {
+            if (!(s_[i_] >= '0' && s_[i_] <= '9')) throw std::runtime_error("invalid json number");
+            while (i_ < s_.size() && s_[i_] >= '0' && s_[i_] <= '9') ++i_;
+        }
+        bool is_float = false;
+        if (i_ < s_.size() && s_[i_] == '.') {
+            is_float = true;
+            ++i_;
+            if (i_ >= s_.size() || !(s_[i_] >= '0' && s_[i_] <= '9')) throw std::runtime_error("invalid json number");
+            while (i_ < s_.size() && s_[i_] >= '0' && s_[i_] <= '9') ++i_;
+        }
+        if (i_ < s_.size() && (s_[i_] == 'e' || s_[i_] == 'E')) {
+            is_float = true;
+            ++i_;
+            if (i_ < s_.size() && (s_[i_] == '+' || s_[i_] == '-')) ++i_;
+            if (i_ >= s_.size() || !(s_[i_] >= '0' && s_[i_] <= '9')) throw std::runtime_error("invalid json exponent");
+            while (i_ < s_.size() && s_[i_] >= '0' && s_[i_] <= '9') ++i_;
+        }
+        const std::string token = s_.substr(start, i_ - start);
+        if (is_float) return make_object(static_cast<float64>(std::stod(token)));
+        return make_object(static_cast<int64>(std::stoll(token)));
+    }
+};
+
+static inline dict<str, object> py_read_east_module_json(const Path& p) {
+    PyJsonReader reader(py_read_text(p));
+    object root = reader.parse();
+    const dict<str, object>* payload = obj_to_dict_ptr(root);
+    if (payload == nullptr) {
+        throw std::runtime_error("invalid east json: root must be object");
+    }
+    auto it_kind = payload->find("kind");
+    if (it_kind != payload->end()) {
+        if (py_to_string(it_kind->second) == "Module") {
+            return *payload;
+        }
+    }
+    auto it_ok = payload->find("ok");
+    auto it_east = payload->find("east");
+    if (it_ok != payload->end() && it_east != payload->end() && obj_to_bool(it_ok->second)) {
+        const dict<str, object>* east = obj_to_dict_ptr(it_east->second);
+        if (east != nullptr) return *east;
+    }
+    throw std::runtime_error("invalid east json: expected {'ok': true, 'east': {...}} or {'kind':'Module',...}");
 }
 
 static inline str py_lstrip(const str& s) {

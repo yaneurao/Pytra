@@ -194,7 +194,9 @@ def _map_get_str(src: dict[str, str], key: str) -> str:
 
 def load_cpp_profile() -> dict[str, Any]:
     """C++ 用 LanguageProfile を読み込む（失敗時は空 dict）。"""
-    return {}
+    out: dict[str, Any] = {}
+    out["syntax"] = {}
+    return out
 
 
 def load_cpp_bin_ops() -> dict[str, str]:
@@ -1457,7 +1459,7 @@ class CppEmitter(CodeEmitter):
                 fn_scope.add(n)
         if in_class and name == "__init__" and self.current_class_name is not None:
             if self.current_class_base_name == "CodeEmitter":
-                self.emit(f"{self.current_class_name}({', '.join(params)}) : CodeEmitter(east_doc, dict<str, object>{{}}, dict<str, object>{{}}) {{")
+                self.emit(f"{self.current_class_name}({', '.join(params)}) : CodeEmitter(east_doc, load_cpp_profile(), dict<str, object>{{}}) {{")
             else:
                 self.emit_ctor_open(str(self.current_class_name), ", ".join(params))
         elif in_class and name == "__del__" and self.current_class_name is not None:
