@@ -1,5 +1,18 @@
 # TODO
 
+## 2026-02-20 完了: import 解決優先キュー
+
+1. [x] import 解決フェーズを最優先で完了した（`selfhost` より先）。
+   - [x] `import` / `from ... import ...` の収集と依存グラフ生成（`--dump-deps`）を実装済み。
+   - [x] `pytra.*` とユーザーモジュールの探索パス解決、重複・循環検出を実装済み。
+   - [x] `pytra.runtime.png/gif` について、hook 側の短縮名（`png_helper`/`gif_helper`）依存を削除し、正規モジュール名ベースへ統一した。
+   - [x] `pytra.std.*` / `pytra.runtime.*` の include 解決を 1 対 1 規則ベースへ整理し、現行 C++ ランタイム実体があるモジュールのみ include するよう調整した。
+   - [x] `module.attr` / `from-import symbol` 解決で、`pytra.*` モジュールに対する短縮名フォールバック（末尾要素一致）を使わないようにした。
+   - [x] `pytra.std.math` を runtime-call map に明示し、短縮名フォールバックに依存しない解決へ寄せた。
+   - [x] `from XXX import YYY` の解決を runtime include / 呼び出し解決まで一貫させ、hook 側の暫定名寄せ分岐を削除した。
+   - [x] runtime 側 include パス（`pytra/std/*`, `pytra/runtime/*`）と import 正規化ルールを完全同期した。
+   - [x] 複数ファイル構成で `sample/py` の import ケースを通し、`tools/check_py2cpp_transpile.py` をゲート化した（`--check-multi-file-imports`）。
+
 ## 2026-02-19 完了: 複数ファイル構成（import 強化）先行キュー
 
 1. [x] 「複数ファイル構成（最終ゴール）」の依存解決フェーズを先行着手した。

@@ -35,10 +35,38 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     return False, first
 
 
+def _run_one_multifile(src: Path, out_dir: Path) -> tuple[bool, str]:
+    cp = subprocess.run(
+        ["python3", str(PY2CPP), str(src), "--multi-file", "--output-dir", str(out_dir)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if cp.returncode == 0:
+        return True, ""
+    msg = cp.stderr.strip() or cp.stdout.strip()
+    first = msg.splitlines()[0] if msg else "unknown error"
+    return False, first
+
+
+def _has_import_statement(src: Path) -> bool:
+    text = src.read_text(encoding="utf-8")
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("import ") or s.startswith("from "):
+            return True
+    return False
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="check py2cpp transpile success for fixtures/sample")
     ap.add_argument("--include-expected-failures", action="store_true", help="do not skip known negative fixtures")
     ap.add_argument("--verbose", action="store_true", help="print passing files")
+    ap.add_argument(
+        "--check-multi-file-imports",
+        action="store_true",
+        help="also run --multi-file check for sample files that contain import/from",
+    )
     args = ap.parse_args()
 
     fixture_files = sorted((ROOT / "test" / "fixtures").rglob("*.py"))
@@ -64,6 +92,20 @@ def main() -> int:
                     print("OK", rel)
             else:
                 fails.append((rel, msg))
+        if args.check_multi_file_imports:
+            for src in sample_files:
+                rel = str(src.relative_to(ROOT))
+                if not _has_import_statement(src):
+                    continue
+                total += 1
+                out_dir = Path(tmpdir) / "multi_out"
+                good, msg = _run_one_multifile(src, out_dir)
+                if good:
+                    ok += 1
+                    if args.verbose:
+                        print("OK", rel, "[multi-file]")
+                else:
+                    fails.append((rel + " [multi-file]", msg))
 
     print(f"checked={total} ok={ok} fail={len(fails)} skipped={skipped}")
     if fails:
@@ -75,4 +117,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
