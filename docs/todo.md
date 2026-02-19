@@ -67,7 +67,7 @@
      - [ ] `syntax.if/elif/else`, `syntax.while`, `syntax.for_range`, `syntax.for_each` の最小テンプレート定義を profile へ追加する。
      - [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
    - [x] `For` / `AnnAssign` / `AugAssign` を helper 化して `emit_stmt` 本体を縮退する。: `For` は既存 `emit_for_each`/`emit_for_range`、`AnnAssign`/`AugAssign` は helper 分離済み
-   - [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。: `open/close` helper は移管済み。`body` 側は `emit_scoped_stmt_list` と `emit_with_scope` を導入し、`If/While/FunctionDef` へ適用済み。`ClassDef` 本体適用を継続する。
+   - [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。: `open/close` helper は移管済み。`body` 側は `emit_scoped_stmt_list` / `emit_with_scope` / `emit_scoped_block` を導入し、`If/While/ForRange/FunctionDef` へ適用済み。`ClassDef` 本体適用を継続する。
 2. [ ] 未使用関数の掃除を継続する。
    - [x] `extract_module_leading_trivia` ラッパーを削除。
    - [x] `_stmt_start_line` / `_stmt_end_line` / `_has_leading_trivia` を削除。

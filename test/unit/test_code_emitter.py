@@ -358,6 +358,19 @@ class CodeEmitterTest(unittest.TestCase):
             ],
         )
 
+    def test_emit_scoped_block_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit_scoped_block("if (cond) {", ["a", "b"], {"x"})
+        self.assertEqual(
+            em.lines,
+            [
+                "if (cond) {",
+                "    stmt:a",
+                "    stmt:b",
+                "}",
+            ],
+        )
+
     def test_hook_invocation_helpers(self) -> None:
         em = _HookedEmitter({})
         stmt_handled = em.hook_on_emit_stmt({"kind": "Pass"})
