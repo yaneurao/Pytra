@@ -3664,6 +3664,13 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     out["relative_imports"] = relative_imports
     out["reserved_conflicts"] = reserved_conflicts
     out["cycles"] = cycles
+    user_module_files: list[str] = []
+    visited_keys = list(visited)
+    visited_keys.sort()
+    for key in visited_keys:
+        if key in key_to_path:
+            user_module_files.append(str(key_to_path[key]))
+    out["user_module_files"] = user_module_files
     return out
 
 
@@ -3722,6 +3729,24 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
             "import 解決に失敗しました（未解決/衝突/循環）。",
             details,
         )
+
+
+def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted") -> dict[str, dict[str, Any]]:
+    """入口 + 依存ユーザーモジュールを個別に EAST 化して返す。"""
+    analysis = _analyze_import_graph(entry_path)
+    _validate_import_graph_or_raise(analysis)
+    files_obj = analysis.get("user_module_files")
+    files: list[str] = files_obj if isinstance(files_obj, list) else []
+    out: dict[str, dict[str, Any]] = {}
+    i = 0
+    while i < len(files):
+        f = files[i]
+        if isinstance(f, str):
+            p = Path(f)
+            east = load_east(p, parser_backend)
+            out[str(p)] = east
+        i += 1
+    return out
 
 
 def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:

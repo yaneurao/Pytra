@@ -15,7 +15,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options
-from src.py2cpp import dump_deps_text, load_cpp_module_attr_call_map, load_east, transpile_to_cpp
+from src.py2cpp import build_module_east_map, dump_deps_text, load_cpp_module_attr_call_map, load_east, transpile_to_cpp
 
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/base/gc.cpp",
@@ -298,6 +298,27 @@ def f() -> int:
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("cycles:", proc.stderr)
+
+    def test_build_module_east_map_collects_entry_and_user_deps(self) -> None:
+        src_main = """import helper
+
+def main() -> None:
+    print(helper.f())
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            mp = build_module_east_map(main_py)
+        self.assertIn(str(main_py), mp)
+        self.assertIn(str(helper_py), mp)
+        self.assertEqual(mp[str(main_py)].get("kind"), "Module")
+        self.assertEqual(mp[str(helper_py)].get("kind"), "Module")
 
     def test_floor_div_mode_native_and_python(self) -> None:
         src = """def main() -> None:
