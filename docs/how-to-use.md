@@ -52,6 +52,8 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - 生成更新は `python3 tools/generate_cpp_pylib_runtime.py` で行います（CI では `--check` で検証します）。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います（`modules/symbols` と `graph` を出力）。
+- `pytra` 名前空間は予約済みです。入力ファイルと同じディレクトリに `pytra.py` / `pytra/__init__.py` を置くことはできません。
+- ユーザーモジュール import で未解決・循環参照がある場合、`[input_invalid]` で早期エラーにします。
 - 添字境界チェックは `--bounds-check-mode {always,debug,off}` で切替できます（既定は `off`）。
 - 除算仕様は `--floor-div-mode {native,python}` と `--mod-mode {native,python}` で切替できます（既定は `native`）。
 - 整数ビット幅は `--int-width {32,64,bigint}` で指定できます（`bigint` は未実装）。
