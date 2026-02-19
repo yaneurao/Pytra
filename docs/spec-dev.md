@@ -23,48 +23,48 @@
 - トランスパイル対象コードでの標準モジュール直接 import は禁止します。
 - import は `pylib.*` とユーザー自作モジュール（`.py`）を許可します。
 
-- `pylib.assertions`
+- `pylib.tra.assertions`
   - 関数: `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
-- `pylib.pathlib`
+- `pylib.std.pathlib`
   - class: `Path`
   - メンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve`, `exists`, `mkdir`, `read_text`, `write_text`, `glob`, `cwd`
-- `pylib.json`
+- `pylib.std.json`
   - 関数: `loads`, `dumps`
-- `pylib.sys`
+- `pylib.std.sys`
   - 変数: `argv`, `path`, `stderr`, `stdout`
   - 関数: `exit`, `set_argv`, `set_path`, `write_stderr`, `write_stdout`
-- `pylib.typing`
+- `pylib.std.typing`
   - 型名: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar`
-- `pylib.os`
+- `pylib.std.os`
   - 変数: `path`（`join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`）
   - 関数: `getcwd`, `mkdir`, `makedirs`
-- `pylib.glob`
+- `pylib.std.glob`
   - 関数: `glob`
-- `pylib.argparse`
+- `pylib.std.argparse`
   - クラス: `ArgumentParser`, `Namespace`
   - 関数: `ArgumentParser.add_argument`, `ArgumentParser.parse_args`
-- `pylib.re`
+- `pylib.std.re`
   - 定数: `S`
   - クラス: `Match`
   - 関数: `match`, `sub`
-- `pylib.dataclasses`
+- `pylib.std.dataclasses`
   - デコレータ: `dataclass`
-- `pylib.enum`
+- `pylib.std.enum`
   - クラス: `Enum`, `IntEnum`, `IntFlag`
-- `pylib.png`
+- `pylib.tra.png`
   - 関数: `write_rgb_png`
-- `pylib.gif`
+- `pylib.tra.gif`
   - 関数: `grayscale_palette`, `save_gif`
-- `pylib.east`
+- `pylib.tra.east`
   - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
   - 関数: `convert_source_to_east`, `convert_source_to_east_self_hosted`, `convert_source_to_east_with_backend`, `convert_path`, `render_east_human_cpp`, `main`
-- `pylib.east_parts.east_io`
+- `pylib.tra.east_parts.east_io`
   - 関数: `extract_module_leading_trivia`, `load_east_from_path`
 
 ### enum サポート（現状）
 
-- 入力側は `from pylib.enum import Enum, IntEnum, IntFlag` を使用します（標準 `enum` は使用不可）。
+- 入力側は `from pylib.std.enum import Enum, IntEnum, IntFlag` を使用します（標準 `enum` は使用不可）。
 - `Enum` / `IntEnum` / `IntFlag` のクラス本体は `NAME = expr` 形式のメンバー定義をサポートします。
 - C++ 生成では `enum class` へ lower します。
   - `IntEnum` / `IntFlag` には `int64` との比較演算子を補助生成します。
@@ -133,7 +133,7 @@
 - `import pathlib` -> `#include "runtime/cpp/core/pathlib.h"`
 - `import time` / `from time import ...` -> `#include "runtime/cpp/core/time.h"`
 - `from dataclasses import dataclass` -> `#include "runtime/cpp/core/dataclasses.h"`
-- `from pylib import png` / `import png` -> `#include "runtime/cpp/pylib/png.h"`
+- `from pylib.tra import png` / `import png` -> `#include "runtime/cpp/pylib/png.h"`
 - GC は常時 `#include "runtime/cpp/base/gc.h"` を利用
 
 `math` などの `module.attr(...)` 呼び出しは、`LanguageProfile`（JSON）の設定で C++ ランタイム呼び出しへマップします。
@@ -193,8 +193,8 @@
 
 ### 3.4 Python 補助ライブラリ命名
 
-- 旧 `pylib.runtime` は `pylib.assertions` へ改名済みです。
-- テスト補助関数（`py_assert_*`）は `from pylib.assertions import ...` で利用します。
+- 旧 `pylib.runtime` は `pylib.tra.assertions` へ改名済みです。
+- テスト補助関数（`py_assert_*`）は `from pylib.tra.assertions import ...` で利用します。
 
 ### 3.5 画像ランタイム最適化ポリシー（py2cpp）
 

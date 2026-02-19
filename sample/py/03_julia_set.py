@@ -2,7 +2,7 @@
 # トランスパイル互換を意識し、単純なループ中心で実装しています。
 
 from time import perf_counter
-from pylib import png
+from pylib.tra import png
 
 
 def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -> bytearray:

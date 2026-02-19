@@ -1,5 +1,5 @@
 
-from pylib.assertions import py_assert_all, py_assert_eq
+from pylib.tra.assertions import py_assert_all, py_assert_eq
 import math
 
 

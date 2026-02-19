@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from pylib.dataclasses import dataclass
-from pylib.typing import Any
+from pylib.std.dataclasses import dataclass
+from pylib.std.typing import Any
 
-from pylib.east import EastBuildError, convert_path, convert_source_to_east_with_backend
-from pylib import json
-from pylib.pathlib import Path
+from pylib.tra.east import EastBuildError, convert_path, convert_source_to_east_with_backend
+from pylib.std import json
+from pylib.std.pathlib import Path
 
 
 @dataclass

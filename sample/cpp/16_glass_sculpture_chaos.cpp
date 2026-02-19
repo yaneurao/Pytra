@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 16: ガラス彫刻のカオス回転をレイトレーシングで描き、GIF出力するサンプル。
 
 float64 clamp01(float64 v) {
@@ -36,8 +37,8 @@ std::tuple<float64, float64, float64> refract(float64 ix, float64 iy, float64 iz
     float64 sint2 = eta * eta * (1.0 - cosi * cosi);
     if (sint2 > 1.0)
         return reflect(ix, iy, iz, nx, ny, nz);
-    auto cost = py_math::sqrt(1.0 - sint2);
-    auto k = eta * cosi - cost;
+    std::any cost = make_object(py_math::sqrt(1.0 - sint2));
+    std::any k = make_object(eta * cosi - cost);
     return std::make_tuple(eta * ix + k * nx, eta * iy + k * ny, eta * iz + k * nz);
 }
 
@@ -52,10 +53,10 @@ std::tuple<float64, float64, float64> sky_color(float64 dx, float64 dy, float64 
     float64 r = 0.06 + 0.2 * t;
     float64 g = 0.1 + 0.25 * t;
     float64 b = 0.16 + 0.45 * t;
-    auto band = 0.5 + 0.5 * py_math::sin(8.0 * dx + 6.0 * dz + tphase);
-    r += 0.08 * band;
-    g += 0.05 * band;
-    b += 0.12 * band;
+    std::any band = make_object(0.5 + 0.5 * py_math::sin(8.0 * dx + 6.0 * dz + tphase));
+    r += static_cast<float64>(py_to_int64(0.08 * band));
+    g += static_cast<float64>(py_to_int64(0.05 * band));
+    b += static_cast<float64>(py_to_int64(0.12 * band));
     return std::make_tuple(clamp01(r), clamp01(g), clamp01(b));
 }
 
@@ -68,11 +69,11 @@ float64 sphere_intersect(float64 ox, float64 oy, float64 oz, float64 dx, float64
     float64 h = b * b - c;
     if (h < 0.0)
         return -1.0;
-    auto s = py_math::sqrt(h);
-    auto t0 = -b - s;
+    std::any s = make_object(py_math::sqrt(h));
+    std::any t0 = make_object(-b - s);
     if (t0 > 0.0001)
         return t0;
-    auto t1 = -b + s;
+    std::any t1 = make_object(-b + s);
     if (t1 > 0.0001)
         return t1;
     return -1.0;
@@ -101,13 +102,13 @@ int64 quantize_332(float64 r, float64 g, float64 b) {
 
 bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
     float64 t = static_cast<float64>(frame_id) / static_cast<float64>(frames_n);
-    auto tphase = 2.0 * py_math::pi * t;
+    std::any tphase = make_object(2.0 * py_math::pi * t);
     
     // カメラはゆっくり周回
     float64 cam_r = 3.0;
-    auto cam_x = cam_r * py_math::cos(tphase * 0.9);
-    auto cam_y = 1.1 + 0.25 * py_math::sin(tphase * 0.6);
-    auto cam_z = cam_r * py_math::sin(tphase * 0.9);
+    std::any cam_x = make_object(cam_r * py_math::cos(tphase * 0.9));
+    std::any cam_y = make_object(1.1 + 0.25 * py_math::sin(tphase * 0.6));
+    std::any cam_z = make_object(cam_r * py_math::sin(tphase * 0.9));
     float64 look_x = 0.0;
     float64 look_y = 0.35;
     float64 look_z = 0.0;
@@ -126,19 +127,19 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
     float64 up_z = std::get<2>(__tuple_3);
     
     // 動くガラス彫刻（3球）と発光球
-    auto s0x = 0.9 * py_math::cos(1.3 * tphase);
-    auto s0y = 0.15 + 0.35 * py_math::sin(1.7 * tphase);
-    auto s0z = 0.9 * py_math::sin(1.3 * tphase);
-    auto s1x = 1.2 * py_math::cos(1.3 * tphase + 2.094);
-    auto s1y = 0.1 + 0.4 * py_math::sin(1.1 * tphase + 0.8);
-    auto s1z = 1.2 * py_math::sin(1.3 * tphase + 2.094);
-    auto s2x = 1.0 * py_math::cos(1.3 * tphase + 4.188);
-    auto s2y = 0.2 + 0.3 * py_math::sin(1.5 * tphase + 1.9);
-    auto s2z = 1.0 * py_math::sin(1.3 * tphase + 4.188);
+    std::any s0x = make_object(0.9 * py_math::cos(1.3 * tphase));
+    std::any s0y = make_object(0.15 + 0.35 * py_math::sin(1.7 * tphase));
+    std::any s0z = make_object(0.9 * py_math::sin(1.3 * tphase));
+    std::any s1x = make_object(1.2 * py_math::cos(1.3 * tphase + 2.094));
+    std::any s1y = make_object(0.1 + 0.4 * py_math::sin(1.1 * tphase + 0.8));
+    std::any s1z = make_object(1.2 * py_math::sin(1.3 * tphase + 2.094));
+    std::any s2x = make_object(1.0 * py_math::cos(1.3 * tphase + 4.188));
+    std::any s2y = make_object(0.2 + 0.3 * py_math::sin(1.5 * tphase + 1.9));
+    std::any s2z = make_object(1.0 * py_math::sin(1.3 * tphase + 4.188));
     float64 lr = 0.35;
-    auto lx = 2.4 * py_math::cos(tphase * 1.8);
-    auto ly = 1.8 + 0.8 * py_math::sin(tphase * 1.2);
-    auto lz = 2.4 * py_math::sin(tphase * 1.8);
+    std::any lx = make_object(2.4 * py_math::cos(tphase * 1.8));
+    std::any ly = make_object(1.8 + 0.8 * py_math::sin(tphase * 1.2));
+    std::any lz = make_object(2.4 * py_math::sin(tphase * 1.8));
     
     bytearray frame = bytearray(width * height);
     float64 aspect = static_cast<float64>(width) / static_cast<float64>(height);
@@ -149,9 +150,9 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
         float64 sy = 1.0 - 2.0 * (static_cast<float64>(py) + 0.5) / static_cast<float64>(height);
         for (int64 px = 0; px < width; ++px) {
             float64 sx = (2.0 * (static_cast<float64>(px) + 0.5) / static_cast<float64>(width) - 1.0) * aspect;
-            auto rx = fwd_x + fov * (sx * right_x + sy * up_x);
-            auto ry = fwd_y + fov * (sx * right_y + sy * up_y);
-            auto rz = fwd_z + fov * (sx * right_z + sy * up_z);
+            std::any rx = make_object(fwd_x + fov * (sx * right_x + sy * up_x));
+            std::any ry = make_object(fwd_y + fov * (sx * right_y + sy * up_y));
+            std::any rz = make_object(fwd_z + fov * (sx * right_z + sy * up_z));
             auto __tuple_4 = normalize(rx, ry, rz);
             float64 dx = std::get<0>(__tuple_4);
             float64 dy = std::get<1>(__tuple_4);
@@ -173,17 +174,17 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                 }
             }
             
-            auto t0 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65);
+            std::any t0 = make_object(sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65));
             if ((t0 > 0.0) && (t0 < best_t)) {
                 best_t = t0;
                 hit_kind = 2;
             }
-            auto t1 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72);
+            std::any t1 = make_object(sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72));
             if ((t1 > 0.0) && (t1 < best_t)) {
                 best_t = t1;
                 hit_kind = 3;
             }
-            auto t2 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58);
+            std::any t2 = make_object(sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58));
             if ((t2 > 0.0) && (t2 < best_t)) {
                 best_t = t2;
                 hit_kind = 4;
@@ -196,8 +197,8 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                 b = std::get<2>(__tuple_5);
             } else {
                 if (hit_kind == 1) {
-                    auto hx = cam_x + best_t * dx;
-                    auto hz = cam_z + best_t * dz;
+                    std::any hx = make_object(cam_x + best_t * dx);
+                    std::any hz = make_object(cam_z + best_t * dz);
                     int64 cx = py_to_int64(py_math::floor(hx * 2.0));
                     int64 cz = py_to_int64(py_math::floor(hz * 2.0));
                     int64 checker = ((cx + cz) % 2 == 0 ? 0 : 1);
@@ -205,15 +206,15 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     float64 base_g = (checker == 0 ? 0.11 : 0.05);
                     float64 base_b = (checker == 0 ? 0.13 : 0.08);
                     // 発光球の寄与
-                    auto lxv = lx - hx;
-                    auto lyv = ly - -1.2;
-                    auto lzv = lz - hz;
+                    std::any lxv = make_object(lx - hx);
+                    std::any lyv = make_object(ly - -1.2);
+                    std::any lzv = make_object(lz - hz);
                     auto __tuple_6 = normalize(lxv, lyv, lzv);
                     float64 ldx = std::get<0>(__tuple_6);
                     float64 ldy = std::get<1>(__tuple_6);
                     float64 ldz = std::get<2>(__tuple_6);
-                    auto ndotl = py_max(ldy, 0.0);
-                    auto ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
+                    std::any ndotl = make_object(std::max<std::any>(static_cast<std::any>(ldy), static_cast<std::any>(0.0)));
+                    std::any ldist2 = make_object(lxv * lxv + lyv * lyv + lzv * lzv);
                     float64 glow = 8.0 / (1.0 + ldist2);
                     r = base_r + 0.8 * glow + 0.2 * ndotl;
                     g = base_g + 0.5 * glow + 0.18 * ndotl;
@@ -241,9 +242,9 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                             rad = 0.58;
                         }
                     }
-                    auto hx = cam_x + best_t * dx;
-                    auto hy = cam_y + best_t * dy;
-                    auto hz = cam_z + best_t * dz;
+                    std::any hx = make_object(cam_x + best_t * dx);
+                    std::any hy = make_object(cam_y + best_t * dy);
+                    std::any hz = make_object(cam_z + best_t * dz);
                     auto __tuple_7 = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
                     float64 nx = std::get<0>(__tuple_7);
                     float64 ny = std::get<1>(__tuple_7);
@@ -266,29 +267,29 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     float64 tr = std::get<0>(__tuple_11);
                     float64 tg = std::get<1>(__tuple_11);
                     float64 tb = std::get<2>(__tuple_11);
-                    auto cosi = py_max(-dx * nx + dy * ny + dz * nz, 0.0);
+                    std::any cosi = make_object(std::max<std::any>(static_cast<std::any>(-dx * nx + dy * ny + dz * nz), static_cast<std::any>(0.0)));
                     float64 fr = schlick(cosi, 0.04);
                     r = tr * (1.0 - fr) + sr * fr;
                     g = tg * (1.0 - fr) + sg * fr;
                     b = tb * (1.0 - fr) + sb * fr;
                     
-                    auto lxv = lx - hx;
-                    auto lyv = ly - hy;
-                    auto lzv = lz - hz;
+                    std::any lxv = make_object(lx - hx);
+                    std::any lyv = make_object(ly - hy);
+                    std::any lzv = make_object(lz - hz);
                     auto __tuple_12 = normalize(lxv, lyv, lzv);
                     float64 ldx = std::get<0>(__tuple_12);
                     float64 ldy = std::get<1>(__tuple_12);
                     float64 ldz = std::get<2>(__tuple_12);
-                    auto ndotl = py_max(nx * ldx + ny * ldy + nz * ldz, 0.0);
+                    std::any ndotl = make_object(std::max<std::any>(static_cast<std::any>(nx * ldx + ny * ldy + nz * ldz), static_cast<std::any>(0.0)));
                     auto __tuple_13 = normalize(ldx - dx, ldy - dy, ldz - dz);
                     float64 hvx = std::get<0>(__tuple_13);
                     float64 hvy = std::get<1>(__tuple_13);
                     float64 hvz = std::get<2>(__tuple_13);
-                    auto ndoth = py_max(nx * hvx + ny * hvy + nz * hvz, 0.0);
-                    auto spec = ndoth * ndoth;
-                    spec = spec * spec;
-                    spec = spec * spec;
-                    spec = spec * spec;
+                    std::any ndoth = make_object(std::max<std::any>(static_cast<std::any>(nx * hvx + ny * hvy + nz * hvz), static_cast<std::any>(0.0)));
+                    std::any spec = make_object(ndoth * ndoth);
+                    spec = make_object(spec * spec);
+                    spec = make_object(spec * spec);
+                    spec = make_object(spec * spec);
                     float64 glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
                     r += 0.2 * ndotl + 0.8 * spec + 0.45 * glow;
                     g += 0.18 * ndotl + 0.6 * spec + 0.35 * glow;
@@ -331,14 +332,14 @@ void run_16_glass_sculpture_chaos() {
     int64 frames_n = 72;
     str out_path = "sample/out/16_glass_sculpture_chaos.gif";
     
-    auto start = perf_counter();
+    std::any start = make_object(perf_counter());
     list<bytes> frames = list<bytes>{};
     for (int64 i = 0; i < frames_n; ++i)
         frames.append(render_frame(width, height, i, frames_n));
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, palette_332(), 6, 0);
-    auto elapsed = perf_counter() - start;
+    std::any elapsed = make_object(perf_counter() - start);
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

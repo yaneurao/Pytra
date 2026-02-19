@@ -1,5 +1,5 @@
-from pylib import sys
-from pylib.assertions import py_assert_stdout
+from pylib.std import sys
+from pylib.tra.assertions import py_assert_stdout
 
 
 def main() -> None:

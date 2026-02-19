@@ -45,7 +45,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 
 補足:
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
-- Python 側で import できるのは `src/pylib/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pylib import png`, `from pylib.gif import save_gif`, `from pylib.assertions import py_assert_eq`）。
+- Python 側で import できるのは `src/pylib/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pylib.tra import png`, `from pylib.tra.gif import save_gif`, `from pylib.tra.assertions import py_assert_eq`）。
 - `pylib` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
 - `src/runtime/cpp/pylib/*.cpp` は手書き固定ではなく、`src/pylib/*.py` をトランスパイラで変換して生成・更新する前提です。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
@@ -399,8 +399,8 @@ name_by_id: dict[int, str] = {1: "alice"}
 - その対応ランタイムは、原則として `src/pylib/*.py` を各言語向けトランスパイラで変換して生成します（手書きは最小限）。
 
 ```python
-from pylib import png
-from pylib.pathlib import Path
+from pylib.tra import png
+from pylib.std.pathlib import Path
 ```
 
-上記を変換する場合、対象言語側でも `pylib.png` / `pylib.pathlib` 相当の実装が必要です（原則として `src/pylib/*.py` からトランスパイラで生成します）。
+上記を変換する場合、対象言語側でも `pylib.tra.png` / `pylib.std.pathlib` 相当の実装が必要です（原則として `src/pylib/*.py` からトランスパイラで生成します）。

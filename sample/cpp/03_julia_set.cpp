@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 03: ジュリア集合を PNG 形式で出力するサンプルです。
 // トランスパイル互換を意識し、単純なループ中心で実装しています。
 
@@ -55,7 +56,7 @@ void run_julia() {
     
     float64 start = perf_counter();
     bytearray pixels = render_julia(width, height, max_iter, -0.8, 0.156);
-    // bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png
+    // bridge: Python png.write_rgb_png -> C++ runtime png_helper::write_rgb_png
     png_helper::write_rgb_png(out_path, width, height, pixels);
     float64 elapsed = perf_counter() - start;
     

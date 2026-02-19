@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 
-from pylib.assertions import py_assert_stdout
+from pylib.tra.assertions import py_assert_stdout
 def make_msg_22(name: str, count: int) -> str:
     return f"{name}:22:{count}" + f"{count*2}" + f"{name}-{name}"
 

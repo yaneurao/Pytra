@@ -1,5 +1,5 @@
-from pylib.assertions import py_assert_stdout
-from pylib.dataclasses import dataclass
+from pylib.tra.assertions import py_assert_stdout
+from pylib.std.dataclasses import dataclass
 
 
 @dataclass

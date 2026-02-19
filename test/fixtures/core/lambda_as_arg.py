@@ -1,5 +1,5 @@
 # lambda passed as function argument
-from pylib.assertions import py_assert_all, py_assert_eq
+from pylib.tra.assertions import py_assert_all, py_assert_eq
 
 
 def apply_once(f: callable, x: int) -> int:

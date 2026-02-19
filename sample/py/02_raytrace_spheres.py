@@ -2,7 +2,7 @@
 # トランスパイル互換のため、依存モジュールは最小限（timeのみ）にしています。
 
 import math
-from pylib import png
+from pylib.tra import png
 from time import perf_counter
 
 

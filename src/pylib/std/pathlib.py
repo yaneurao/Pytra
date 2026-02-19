@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pylib import glob as py_glob
-from pylib import os
+from pylib.std import glob as py_glob
+from pylib.std import os
 
 
 class _PathParents:

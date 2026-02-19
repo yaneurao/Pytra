@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass
 from pathlib import Path
-from pylib import re
+from pylib.std import re
 
 from .js_ts_native_transpiler import JsTsConfig, JsTsNativeTranspiler
 

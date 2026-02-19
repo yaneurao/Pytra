@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pylib import argparse
-from pylib.typing import Iterable
+from pylib.std import argparse
+from pylib.std.typing import Iterable
 
 
 def add_common_transpile_args(

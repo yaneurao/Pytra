@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pylib import png
-from pylib.assertions import py_assert_all, py_assert_eq, py_assert_true
+from pylib.tra import png
+from pylib.tra.assertions import py_assert_all, py_assert_eq, py_assert_true
 
 
 def run_case() -> None:

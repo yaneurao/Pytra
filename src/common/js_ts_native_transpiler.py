@@ -122,7 +122,7 @@ class JsTsNativeTranspiler(BaseTranspiler):
                 else:
                     raise TranspileError(f"unsupported from {mod} import {alias.name}")
             return lines
-        if mod in {"py_module.gif_helper", "pylib.gif_helper", "pylib.gif"}:
+        if mod in {"py_module.gif_helper", "pylib.tra.gif_helper", "pylib.tra.gif"}:
             names = []
             for alias in stmt.names:
                 asname = alias.asname or alias.name

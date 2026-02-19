@@ -27,6 +27,12 @@ def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description="compare py2cpp outputs: python vs selfhost")
     ap.add_argument("--selfhost-bin", default="selfhost/py2cpp.out")
+    ap.add_argument(
+        "--selfhost-driver",
+        choices=["direct", "bridge"],
+        default="direct",
+        help="direct: call selfhost bin directly, bridge: use tools/selfhost_transpile.py",
+    )
     ap.add_argument("--cases", nargs="*", default=DEFAULT_CASES)
     ap.add_argument("--show-diff", action="store_true")
     ap.add_argument(
@@ -40,6 +46,10 @@ def main() -> int:
     selfhost_bin = ROOT / args.selfhost_bin
     if not selfhost_bin.exists():
         print(f"missing selfhost binary: {selfhost_bin}")
+        return 2
+    bridge_tool = ROOT / "tools" / "selfhost_transpile.py"
+    if args.selfhost_driver == "bridge" and not bridge_tool.exists():
+        print(f"missing bridge tool: {bridge_tool}")
         return 2
 
     mismatches = 0
@@ -60,7 +70,20 @@ def main() -> int:
                 print(f"[FAIL python] {rel}: {(cp1.stderr.strip() or cp1.stdout.strip()).splitlines()[:1]}")
                 mismatches += 1
                 continue
-            cp2 = _run([str(selfhost_bin), str(src), "-o", str(out_sh)])
+            if args.selfhost_driver == "bridge":
+                cp2 = _run(
+                    [
+                        "python3",
+                        str(bridge_tool),
+                        str(src),
+                        "-o",
+                        str(out_sh),
+                        "--selfhost-bin",
+                        str(selfhost_bin),
+                    ]
+                )
+            else:
+                cp2 = _run([str(selfhost_bin), str(src), "-o", str(out_sh)])
             if cp2.returncode != 0:
                 msg = (cp2.stderr.strip() or cp2.stdout.strip())
                 if args.mode == "allow-not-implemented" and "[not_implemented]" in msg:
