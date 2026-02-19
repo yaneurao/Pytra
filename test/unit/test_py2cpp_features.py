@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2cpp import load_cpp_module_attr_call_map, load_east, transpile_to_cpp
+from src.py2cpp import dump_options_text, load_cpp_module_attr_call_map, load_east, resolve_codegen_options, transpile_to_cpp
 
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/core/pathlib.cpp",
@@ -43,6 +43,27 @@ def transpile(input_py: Path, output_cpp: Path) -> None:
 
 
 class Py2CppFeatureTest(unittest.TestCase):
+    def test_preset_resolution_and_override(self) -> None:
+        neg, bnd, fdiv, mod = resolve_codegen_options("native", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod), ("off", "off", "native", "native"))
+
+        neg, bnd, fdiv, mod = resolve_codegen_options("balanced", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod), ("const_only", "debug", "python", "python"))
+
+        neg, bnd, fdiv, mod = resolve_codegen_options("python", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod), ("always", "always", "python", "python"))
+
+        neg, bnd, fdiv, mod = resolve_codegen_options("native", "", "", "python", "")
+        self.assertEqual((neg, bnd, fdiv, mod), ("off", "off", "python", "native"))
+
+    def test_dump_options_text_contains_resolved_values(self) -> None:
+        txt = dump_options_text("balanced", "const_only", "debug", "python", "python")
+        self.assertIn("preset: balanced", txt)
+        self.assertIn("negative-index-mode: const_only", txt)
+        self.assertIn("bounds-check-mode: debug", txt)
+        self.assertIn("floor-div-mode: python", txt)
+        self.assertIn("mod-mode: python", txt)
+
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
         src = """def main() -> None:
     auto: int = 1
