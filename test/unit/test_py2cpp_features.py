@@ -19,15 +19,15 @@ from src.py2cpp import load_cpp_module_attr_call_map, load_east, transpile_to_cp
 
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/base/gc.cpp",
-    "src/runtime/cpp/std/pathlib.cpp",
-    "src/runtime/cpp/std/time.cpp",
-    "src/runtime/cpp/std/math.cpp",
-    "src/runtime/cpp/std/dataclasses.cpp",
-    "src/runtime/cpp/std/sys.cpp",
+    "src/runtime/cpp/pytra/std/pathlib.cpp",
+    "src/runtime/cpp/pytra/std/time.cpp",
+    "src/runtime/cpp/pytra/std/math.cpp",
+    "src/runtime/cpp/pytra/std/dataclasses.cpp",
+    "src/runtime/cpp/pytra/std/sys.cpp",
     "src/runtime/cpp/base/io.cpp",
     "src/runtime/cpp/base/bytes_util.cpp",
-    "src/runtime/cpp/pylib/png.cpp",
-    "src/runtime/cpp/pylib/gif.cpp",
+    "src/runtime/cpp/pytra/runtime/png.cpp",
+    "src/runtime/cpp/pytra/runtime/gif.cpp",
 ]
 
 def find_fixture_case(stem: str) -> Path:

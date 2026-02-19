@@ -37,8 +37,8 @@ Windows では次の読み替えを行ってください。
 ```bash
 python src/py2cpp.py test/fixtures/collections/iterable.py test/transpile/cpp/iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cpp/iterable.cpp \
-  src/runtime/cpp/pylib/png.cpp src/runtime/cpp/pylib/gif.cpp src/runtime/cpp/std/math.cpp \
-  src/runtime/cpp/std/time.cpp src/runtime/cpp/std/pathlib.cpp src/runtime/cpp/std/dataclasses.cpp \
+  src/runtime/cpp/pytra/runtime/png.cpp src/runtime/cpp/pytra/runtime/gif.cpp src/runtime/cpp/pytra/std/math.cpp \
+  src/runtime/cpp/pytra/std/time.cpp src/runtime/cpp/pytra/std/pathlib.cpp src/runtime/cpp/pytra/std/dataclasses.cpp \
   src/runtime/cpp/base/gc.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out
@@ -48,7 +48,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - Python 側で import できるのは `src/pylib/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pylib.tra import png`, `from pylib.tra.gif import save_gif`, `from pylib.tra.assertions import py_assert_eq`）。
 - `pylib` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
-- `src/runtime/cpp/pylib/*.cpp` は手書き固定ではなく、`src/pylib/tra/*.py` をトランスパイラで変換して生成・更新する前提です。
+- `src/runtime/cpp/pytra/runtime/*.cpp` は手書き固定ではなく、`src/pylib/tra/*.py` をトランスパイラで変換して生成・更新する前提です（現状は bridge `.cpp` 経由）。
 - 生成更新は `python3 tools/generate_cpp_pylib_runtime.py` で行います（CI では `--check` で検証します）。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います。
@@ -81,7 +81,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 
-次のコマンドで、`src/pylib/tra/png.py` / `src/pylib/tra/gif.py` の出力と `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp`（自動生成）経由の C++ 出力が一致するかを確認できます。
+次のコマンドで、`src/pylib/tra/png.py` / `src/pylib/tra/gif.py` の出力と `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp`（bridge）経由の C++ 出力が一致するかを確認できます。
 
 ```bash
 python3 tools/verify_image_runtime_parity.py
@@ -211,8 +211,8 @@ python src/pylib/east.py sample/py/01_mandelbrot.py -o test/transpile/east/01_ma
 python src/py2cpp.py test/transpile/east/01_mandelbrot.json -o test/transpile/cpp/01_mandelbrot.cpp
 
 # 3) コンパイルして実行
-g++ -std=c++20 -O2 -I src test/transpile/cpp/01_mandelbrot.cpp \
-  src/runtime/cpp/pylib/png.cpp src/runtime/cpp/pylib/gif.cpp \
+g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cpp \
+  src/runtime/cpp/pytra/runtime/png.cpp src/runtime/cpp/pytra/runtime/gif.cpp \
   -o test/transpile/obj/01_mandelbrot
 ./test/transpile/obj/01_mandelbrot
 ```
