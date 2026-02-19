@@ -1,5 +1,5 @@
-// このファイルは PNG 出力の最小実装を提供します。
-// Python 側の `png.write_rgb_png` に対応します。
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_CPP_MODULE_PNG_H
 #define PYTRA_CPP_MODULE_PNG_H
@@ -10,13 +10,6 @@
 
 namespace pytra::pylib::png {
 
-/**
- * @brief RGB 8bit バッファを PNG ファイルとして保存します。
- * @param path 出力PNGファイルパス。
- * @param width 画像幅（pixel）。
- * @param height 画像高さ（pixel）。
- * @param pixels 長さ width*height*3 の RGB バイト列。
- */
 void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels);
 
 }  // namespace pytra::pylib::png

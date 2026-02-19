@@ -158,7 +158,6 @@
 - `src/runtime/cpp/core/sys.h`, `src/runtime/cpp/core/sys.cpp`
 - `src/runtime/cpp/pylib/png.h`, `src/runtime/cpp/pylib/png.cpp`
 - `src/runtime/cpp/pylib/gif.h`, `src/runtime/cpp/pylib/gif.cpp`
-- `src/runtime/cpp/pylib/generated/png_impl.cpp`, `src/runtime/cpp/pylib/generated/gif_impl.cpp`（`src/pylib/tra/*.py` から自動生成）
 - `src/runtime/cpp/py_runtime.h`
 
 `src/runtime/cpp/py_runtime.h` のコンテナ方針:
@@ -199,12 +198,12 @@
 
 ### 3.5 画像ランタイム最適化ポリシー（py2cpp）
 
-- 対象: `src/runtime/cpp/pylib/generated/png_impl.cpp` / `src/runtime/cpp/pylib/generated/gif_impl.cpp`。
+- 対象: `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp`（自動生成）。
 - 前提: `src/pylib/tra/png.py` / `src/pylib/tra/gif.py` を正本とし、意味差を導入しない。
 - 生成手順:
   - `python3 tools/generate_cpp_pylib_runtime.py`
-  - 生成物は `src/runtime/cpp/pylib/generated/*.cpp` に出力され、`src/runtime/cpp/pylib/*.cpp` の薄いラッパから参照される。
-  - `src/runtime/cpp/pylib/*.cpp` の本体ロジックを手書きで追加してはならない。
+  - 生成物は `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp` に直接出力される。
+  - これら 2 ファイルの本体ロジックを手書きで追加してはならない。
 - 許容する最適化:
   - ループ展開・`reserve` 追加・一時バッファ削減など、出力バイト列を変えない最適化。
   - 例外メッセージ変更を伴わない境界チェックの軽量化。

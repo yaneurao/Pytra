@@ -176,6 +176,20 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     out["pylib.std.glob"] = {
         "glob": "py_glob_glob",
     }
+    out["sys"] = {
+        "set_argv": "py_sys_set_argv",
+        "set_path": "py_sys_set_path",
+        "write_stderr": "py_sys_write_stderr",
+        "write_stdout": "py_sys_write_stdout",
+        "exit": "py_sys_exit",
+    }
+    out["pylib.std.sys"] = {
+        "set_argv": "py_sys_set_argv",
+        "set_path": "py_sys_set_path",
+        "write_stderr": "py_sys_write_stderr",
+        "write_stdout": "py_sys_write_stdout",
+        "exit": "py_sys_exit",
+    }
     return out
 
 
@@ -480,6 +494,17 @@ class CppEmitter(CodeEmitter):
             return "Path"
         if module_name == "pylib.tra.assertions" and symbol_name.startswith("py_assert_"):
             return symbol_name
+        if module_name in {"sys", "pylib.std.sys"}:
+            if symbol_name == "set_argv":
+                return "py_sys_set_argv"
+            if symbol_name == "set_path":
+                return "py_sys_set_path"
+            if symbol_name == "write_stderr":
+                return "py_sys_write_stderr"
+            if symbol_name == "write_stdout":
+                return "py_sys_write_stdout"
+            if symbol_name == "exit":
+                return "py_sys_exit"
         return None
 
     def transpile(self) -> str:
@@ -2102,6 +2127,8 @@ class CppEmitter(CodeEmitter):
                 mapped = owner_map[attr]
                 if mapped != "":
                     return f"{mapped}({', '.join(args)})"
+        if owner_mod in {"typing", "pylib.std.typing"} and attr == "TypeVar":
+            return "make_object(1)"
         if owner_mod in {"png_helper", "png", "pylib.tra.png"} and attr == "write_rgb_png":
             return f"png_helper::write_rgb_png({', '.join(args)})"
         if owner_mod in {"gif_helper", "gif", "pylib.tra.gif"} and attr == "save_gif":
@@ -2380,7 +2407,7 @@ class CppEmitter(CodeEmitter):
             if v is None:
                 t = self.get_expr_type(expr)
                 if self.is_any_like_type(t):
-                    return "object{}"
+                    return "make_object(1)"
                 return "std::nullopt"
             if isinstance(v, str):
                 v_txt: str = str(v)
@@ -2429,6 +2456,27 @@ class CppEmitter(CodeEmitter):
                     return "py_math::pi"
                 if attr == "e":
                     return "py_math::e"
+            if base_module_name in {"typing", "pylib.std.typing"}:
+                if attr in {
+                    "Any",
+                    "List",
+                    "Set",
+                    "Dict",
+                    "Tuple",
+                    "Iterable",
+                    "Sequence",
+                    "Mapping",
+                    "Optional",
+                    "Union",
+                    "Callable",
+                    "TypeAlias",
+                }:
+                    return "make_object(1)"
+            if base_module_name in {"sys", "pylib.std.sys"}:
+                if attr == "argv":
+                    return "py_sys_argv()"
+                if attr == "path":
+                    return "py_sys_path()"
             bt = self.get_expr_type(expr_d.get("value"))
             if bt in self.ref_classes:
                 return f"{base}->{attr}"

@@ -37,7 +37,7 @@
 - `CodeEmitter` など全言語で共有可能な基底ロジックは `src/common/` 側へ寄せ、`py2cpp.py` には C++ 固有ロジックのみを残します。
 - 今後の多言語展開を見据え、`py2cpp.py` の肥大化を避けるため、共通化可能な処理は段階的に `src/common/` へ移管します。
 - 生成コードの補助関数は各ターゲット言語ランタイム（`src/*_module/`）へ集約し、生成コードに重複埋め込みしません。
-- `src/runtime/cpp/pylib/generated/*.cpp` は `src/pylib/tra/*.py` からの生成物として扱い、手編集しません（更新は `python3 tools/generate_cpp_pylib_runtime.py` を使用）。
+- `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp` は `src/pylib/tra/*.py` からの生成物として扱い、手編集しません（更新は `python3 tools/generate_cpp_pylib_runtime.py` を使用）。
 - `json` に限らず、Python 標準ライブラリ相当機能を `runtime/cpp` 側へ追加実装してはいけません。
 - Python 標準ライブラリ相当機能の正本は常に `src/pylib/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
 - selfhost 対象コード（特に `src/pylib/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。

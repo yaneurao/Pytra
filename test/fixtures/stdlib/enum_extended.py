@@ -1,4 +1,4 @@
-from pylib.tra.assertions import py_assert_stdout
+from pylib.tra.assertions import py_assert_all, py_assert_eq
 from pylib.std.enum import Enum, IntEnum, IntFlag
 
 
@@ -18,20 +18,18 @@ class Perm(IntFlag):
     EXEC = 4
 
 
-def main() -> None:
-    print(Color.RED == Color.RED)
-    print(Color.RED == Color.BLUE)
-    print(Status.OK == 0)
-    print(int(Status.ERROR))
+def run_enum_extended() -> bool:
+    checks: list[bool] = []
+    checks.append(py_assert_eq(Color.RED == Color.RED, True, "enum-eq"))
+    checks.append(py_assert_eq(Color.RED == Color.BLUE, False, "enum-neq"))
+    checks.append(py_assert_eq(Status.OK == 0, True, "int-enum-eq"))
+    checks.append(py_assert_eq(int(Status.ERROR), 1, "int-enum-int"))
     rw = Perm.READ | Perm.WRITE
-    print(int(rw))
-    print(int(rw & Perm.WRITE))
-    print(int(rw ^ Perm.WRITE))
-
-
-def _case_main() -> None:
-    main()
+    checks.append(py_assert_eq(int(rw), 3, "flag-or"))
+    checks.append(py_assert_eq(int(rw & Perm.WRITE), 2, "flag-and"))
+    checks.append(py_assert_eq(int(rw ^ Perm.WRITE), 1, "flag-xor"))
+    return py_assert_all(checks, "enum_extended")
 
 
 if __name__ == "__main__":
-    print(py_assert_stdout(["True", "False", "True", "1", "3", "2", "1"], _case_main))
+    print(run_enum_extended())

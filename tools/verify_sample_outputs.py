@@ -331,7 +331,7 @@ def compare_images(py_img: Path, cpp_img: Path) -> tuple[bool, str]:
 def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdout: bool = False) -> CaseResult:
     import time
     py = Path("sample/py") / f"{stem}.py"
-    cpp = Path("sample/cpp") / f"{stem}.cpp"
+    cpp = work / f"{stem}.cpp"
     exe = work / f"{stem}.out"
 
     t0 = time.time()
@@ -341,6 +341,13 @@ def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdou
     if rc != 0:
         return CaseResult(stem, False, False, False, "python run failed")
     py_out = parse_output_path(py_stdout)
+
+    t1 = time.time()
+    vlog(f"[{stem}] transpile start")
+    rc, transpile_out = run_cmd(["python3", "src/py2cpp.py", str(py), "-o", str(cpp)])
+    vlog(f"[{stem}] transpile done ({time.time()-t1:.2f}s)")
+    if rc != 0:
+        return CaseResult(stem, False, False, False, "transpile failed")
 
     t1 = time.time()
     vlog(f"[{stem}] cpp compile start")
@@ -355,6 +362,11 @@ def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdou
             "src/runtime/cpp/pylib/png.cpp",
             "src/runtime/cpp/pylib/gif.cpp",
             "src/runtime/cpp/core/math.cpp",
+            "src/runtime/cpp/core/time.cpp",
+            "src/runtime/cpp/core/pathlib.cpp",
+            "src/runtime/cpp/core/dataclasses.cpp",
+            "src/runtime/cpp/core/sys.cpp",
+            "src/runtime/cpp/base/gc.cpp",
             "src/runtime/cpp/base/io.cpp",
             "src/runtime/cpp/base/bytes_util.cpp",
             "-o",

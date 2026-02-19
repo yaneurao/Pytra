@@ -77,7 +77,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 
-次のコマンドで、`src/pylib/tra/png.py` / `src/pylib/tra/gif.py` の出力と `src/runtime/cpp/pylib/generated/png_impl.cpp` / `src/runtime/cpp/pylib/generated/gif_impl.cpp` 経由の C++ 出力が一致するかを確認できます。
+次のコマンドで、`src/pylib/tra/png.py` / `src/pylib/tra/gif.py` の出力と `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp`（自動生成）経由の C++ 出力が一致するかを確認できます。
 
 ```bash
 python3 tools/verify_image_runtime_parity.py

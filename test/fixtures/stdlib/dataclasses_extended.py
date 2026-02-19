@@ -1,4 +1,4 @@
-from pylib.tra.assertions import py_assert_stdout
+from pylib.tra.assertions import py_assert_all, py_assert_eq
 from pylib.std.dataclasses import dataclass
 
 
@@ -14,29 +14,22 @@ class MyError(Exception):
     summary: str
 
 
-def main() -> None:
+def run_dataclasses_extended() -> bool:
+    checks: list[bool] = []
     p = Point(1)
-    print(p.x)
-    print(p.y)
+    checks.append(py_assert_eq(p.x, 1, "p.x"))
+    checks.append(py_assert_eq(p.y, 0, "p.y"))
     a = Point(1, 2)
     b = Point(1, 2)
     c = Point(2, 1)
-    print(repr(a))
-    print(a == b)
-    print(a == c)
+    checks.append(py_assert_eq(repr(a), "Point(x=1, y=2)", "repr"))
+    checks.append(py_assert_eq(a == b, True, "eq"))
+    checks.append(py_assert_eq(a == c, False, "neq"))
     e = MyError("kind", "message")
-    print(e.category)
-    print(e.summary)
-
-
-def _case_main() -> None:
-    main()
+    checks.append(py_assert_eq(e.category, "kind", "category"))
+    checks.append(py_assert_eq(e.summary, "message", "summary"))
+    return py_assert_all(checks, "dataclasses_extended")
 
 
 if __name__ == "__main__":
-    print(
-        py_assert_stdout(
-            ["1", "0", "Point(x=1, y=2)", "True", "False", "kind", "message"],
-            _case_main,
-        )
-    )
+    print(run_dataclasses_extended())

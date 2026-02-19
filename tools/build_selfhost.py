@@ -31,13 +31,7 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
 
 def runtime_cpp_sources() -> list[str]:
     files_all = sorted(SELFHOST_RUNTIME.rglob("*.cpp"))
-    files: list[Path] = []
-    for p in files_all:
-        norm = str(p).replace("\\", "/")
-        if "/pylib/generated/" in norm:
-            continue
-        files.append(p)
-    return [str(p) for p in files]
+    return [str(p) for p in files_all]
 
 
 def patch_cpp_main_to_call_pytra_main(cpp_path: Path) -> None:
@@ -69,6 +63,8 @@ def main() -> int:
     run(["python3", "tools/prepare_selfhost_source.py"]) 
 
     SELFHOST_RUNTIME.parent.mkdir(parents=True, exist_ok=True)
+    if SELFHOST_RUNTIME.exists():
+        shutil.rmtree(SELFHOST_RUNTIME)
     shutil.copytree(SRC_RUNTIME, SELFHOST_RUNTIME, dirs_exist_ok=True)
 
     run(["python3", "src/py2cpp.py", "selfhost/py2cpp.py", "-o", str(CPP_OUT)])

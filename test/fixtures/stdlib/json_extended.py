@@ -1,40 +1,33 @@
 from pylib.std import json
-from pylib.tra.assertions import py_assert_stdout
+from pylib.tra.assertions import py_assert_all, py_assert_eq
 
 
-def main() -> None:
+def run_json_extended() -> bool:
+    checks: list[bool] = []
     obj = json.loads('{"a":1,"b":[true,false,null],"s":"\\u3042"}')
-    print(obj["a"])
-    print(obj["b"][1])
-    print(obj["b"][2] is None)
-    print(obj["s"])
+    checks.append(py_assert_eq(obj["a"], 1, "obj.a"))
+    checks.append(py_assert_eq(obj["b"][1], False, "obj.b[1]"))
+    checks.append(py_assert_eq(obj["b"][2] is None, True, "obj.b[2] is None"))
+    checks.append(py_assert_eq(obj["s"], "あ", "obj.s"))
 
     escaped = json.loads('{"t":"a\\\\b\\n\\t\\\"\\/"}')
-    print(escaped["t"] == 'a\\b\n\t"/')
+    checks.append(py_assert_eq(escaped["t"] == 'a\\b\n\t"/', True, "escaped"))
 
     compact = json.dumps({"x": [1, 2], "s": "あ"}, ensure_ascii=True, separators=(",", ":"))
-    print("\\u3042" in compact)
-    print('"x":[1,2]' in compact)
+    checks.append(py_assert_eq("\\u3042" in compact, True, "compact-unicode"))
+    checks.append(py_assert_eq('"x":[1,2]' in compact, True, "compact-array"))
 
     pretty = json.dumps({"k": 1}, ensure_ascii=False, indent=2)
-    print("\n" in pretty)
-    print('  "k"' in pretty)
+    checks.append(py_assert_eq("\n" in pretty, True, "pretty-newline"))
+    checks.append(py_assert_eq('  "k"' in pretty, True, "pretty-indent"))
 
     try:
         json.loads('{"a":1')
-        print("NoError")
+        checks.append(py_assert_eq("NoError", "ValueError", "invalid-json"))
     except ValueError:
-        print("ValueError")
-
-
-def _case_main() -> None:
-    main()
+        checks.append(py_assert_eq("ValueError", "ValueError", "invalid-json"))
+    return py_assert_all(checks, "json_extended")
 
 
 if __name__ == "__main__":
-    print(
-        py_assert_stdout(
-            ["1", "False", "True", "あ", "True", "True", "True", "True", "True", "ValueError"],
-            _case_main,
-        )
-    )
+    print(run_json_extended())

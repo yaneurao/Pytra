@@ -7,6 +7,7 @@
 #include <cmath>
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -1381,9 +1382,78 @@ static inline auto py_make_scope_exit(F&& fn) {
     return py_scope_exit<F>(std::forward<F>(fn));
 }
 
+static inline list<str>& py_sys_argv_storage();
+static inline void py_sys_set_argv(const list<str>& values);
+
 static inline void pytra_configure_from_argv(int argc, char** argv) {
-    (void)argc;
-    (void)argv;
+    list<str> args{};
+    args.reserve(static_cast<std::size_t>(argc));
+    for (int i = 0; i < argc; ++i) {
+        args.append(str(argv[i]));
+    }
+    py_sys_set_argv(args);
+}
+
+static inline list<str>& py_sys_argv_storage() {
+    static list<str> v{};
+    return v;
+}
+
+static inline list<str>& py_sys_path_storage() {
+    static list<str> v{};
+    return v;
+}
+
+static inline list<str> py_sys_argv() {
+    return py_sys_argv_storage();
+}
+
+static inline list<str> py_sys_path() {
+    return py_sys_path_storage();
+}
+
+static inline void py_sys_set_argv(const list<str>& values) {
+    py_sys_argv_storage() = values;
+}
+
+static inline void py_sys_set_path(const list<str>& values) {
+    py_sys_path_storage() = values;
+}
+
+static inline list<str> py_to_str_list_from_object(const object& obj) {
+    list<str> out{};
+    const list<object>* p = obj_to_list_ptr(obj);
+    if (p == nullptr) return out;
+    out.reserve(p->size());
+    for (const object& v : *p) out.append(obj_to_str(v));
+    return out;
+}
+
+static inline list<str> py_to_str_list_from_any(const std::any& value) {
+    if (!value.has_value()) return {};
+    if (const auto* p = std::any_cast<list<str>>(&value)) return *p;
+    if (const auto* p = std::any_cast<object>(&value)) return py_to_str_list_from_object(*p);
+    return {};
+}
+
+static inline void py_sys_set_argv(const std::any& values) {
+    py_sys_set_argv(py_to_str_list_from_any(values));
+}
+
+static inline void py_sys_set_path(const std::any& values) {
+    py_sys_set_path(py_to_str_list_from_any(values));
+}
+
+static inline void py_sys_write_stderr(const str& text) {
+    std::cerr << text;
+}
+
+static inline void py_sys_write_stdout(const str& text) {
+    std::cout << text;
+}
+
+[[noreturn]] static inline void py_sys_exit(int64 code = 0) {
+    std::exit(static_cast<int>(code));
 }
 
 namespace png_helper {

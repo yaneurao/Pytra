@@ -1,4 +1,5 @@
-// Python の pylib.tra.gif に対応する GIF 書き出し補助です。
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_CPP_MODULE_GIF_H
 #define PYTRA_CPP_MODULE_GIF_H
@@ -9,10 +10,8 @@
 
 namespace pytra::pylib::gif {
 
-// 0..255 のグレースケールパレット (256*3 bytes) を返します。
 std::vector<std::uint8_t> grayscale_palette();
 
-// インデックスカラーフレーム列を GIF89a アニメーションとして保存します。
 void save_gif(
     const std::string& path,
     int width,

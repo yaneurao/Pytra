@@ -2,6 +2,48 @@
 
 ## 直近実行キュー（細分化）
 
+0.5 [ ] `test/fixtures/stdlib` compile-fail 7件を順次解消する（1件ずつ green 化）
+   - [ ] 現状固定: `math/os_glob/pathlib/sys/typing` は pass、`argparse/dataclasses/enum/json/re` は compile fail。
+   - [ ] 共通修正A: `pylib.std.*` モジュール参照が C++ 側で未解決になる経路を塞ぐ（`module.symbol` を必ず runtime 呼び出しへ lower）。
+   - [ ] 共通修正B: `std::any` へ退化した値に対するメソッド呼び出し生成（`obj.method(...)`）を禁止し、型付き受け口へ寄せる。
+   - [x] 共通修正C: `py_assert_stdout` 依存の古い fixture 形式を現行の assertions 形式に統一する。
+   - [ ] `json_extended` を最優先で修正する。
+     - [ ] `json.loads/dumps` が `pylib.std.json` 経由で解決されることを確認する。
+     - [ ] `dict/list` 返却値への添字アクセスが `std::any` 退化しないようにする。
+   - [ ] `sys_extended` を修正する。
+     - [x] `sys.argv` 参照を runtime 側アクセサへ固定する。
+     - [x] `_case_main/main` 呼び出し不整合を除去する。
+   - [ ] `typing_extended` を修正する。
+     - [x] `typing.Any` 等のシンボル参照を「実行時 no-op な型情報」として安全に lower する。
+   - [ ] `re_extended` を修正する。
+     - [ ] `re.match/search/sub/split` と match object の `group` 呼び出しを型付きで出力する。
+   - [ ] `argparse_extended` を修正する。
+     - [ ] `ArgumentParser` インスタンスが `std::any` 退化しない生成経路へ変更する。
+     - [ ] `add_argument/parse_args` の戻り値（namespace）アクセスを型付きで通す。
+   - [ ] `dataclasses_extended` を修正する。
+     - [ ] `repr` / 比較演算 / 例外継承周辺の不足を埋める。
+   - [ ] `enum_extended` を修正する。
+     - [ ] `IntFlag` の演算（`|`, `&`）で `std::any` 退化しないようにする。
+   - [ ] ゲート: 各ケース修正ごとに以下を実施する。
+     - [ ] `PYTHONPATH=src python3 test/fixtures/stdlib/<case>.py`
+     - [ ] `python3 src/py2cpp.py test/fixtures/stdlib/<case>.py -o /tmp/<case>.cpp`
+     - [ ] `g++` で runtime をリンクして実行し、Python 出力と一致確認
+   - [ ] 受け入れ条件: `test/fixtures/stdlib/*.py` が 10/10 で compile-run 一致。
+
+0. [ ] `runtime/cpp/pylib` を完全自動生成へ移行する（手書きラッパ/手書きヘッダ廃止）
+   - [x] 方針確定: `src/runtime/cpp/pylib/*.h` / `*.cpp` を手書き管理しない構成へ変更する。
+   - [x] `src/pylib/tra/png.py` / `src/pylib/tra/gif.py` から、C++ 側で直接 include/link 可能な成果物（宣言 + 定義）を生成する。
+   - [x] 生成結果の公開シンボル（`pytra::pylib::png::*`, `pytra::pylib::gif::*`）を固定し、`py_runtime.h` 側の include を生成物へ切替える。
+   - [x] 現在の手書き `src/runtime/cpp/pylib/png.h`, `src/runtime/cpp/pylib/png.cpp`, `src/runtime/cpp/pylib/gif.h`, `src/runtime/cpp/pylib/gif.cpp` を削除する。
+   - [x] 生成スクリプト `tools/generate_cpp_pylib_runtime.py` を「ヘッダ/実装の両方を出力する」仕様へ拡張する。
+   - [x] `tools/build_selfhost.py` / `tools/run_local_ci.py` / `tools/verify_*` の参照先を新生成物構成へ更新する。
+   - [ ] 受け入れ条件:
+     - [x] `python3 tools/generate_cpp_pylib_runtime.py --check` が pass。
+     - [x] `python3 tools/check_py2cpp_transpile.py` が pass。
+     - [x] `python3 tools/build_selfhost.py` が pass。
+     - [ ] `python3 tools/verify_sample_outputs.py` が pass。
+     - [x] `python3 tools/verify_image_runtime_parity.py` が pass。
+
 1. [ ] selfhost 入力経路の段階回復
    - [x] `load_east` の `.json` 経路を selfhost で通す（`.py` は未実装のまま維持）。
    - [x] `.json` 経路で `test/fixtures/core/add.py` 由来 EAST を selfhost 変換できることを確認する。: `/tmp/add.east.json -> /tmp/add.selfhost.cpp` 生成成功
