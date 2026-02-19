@@ -204,6 +204,9 @@
   - `python3 tools/generate_cpp_pylib_runtime.py`
   - 生成物は `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp` に直接出力される。
   - これら 2 ファイルの本体ロジックを手書きで追加してはならない。
+  - C++ namespace は生成元 Python ファイルのパスから自動導出する（ハードコードしない）。
+    - 例: `src/pylib/tra/gif.py` -> `pytra::pylib::tra::gif`
+    - 例: `src/pylib/tra/png.py` -> `pytra::pylib::tra::png`
 - 許容する最適化:
   - ループ展開・`reserve` 追加・一時バッファ削減など、出力バイト列を変えない最適化。
   - 例外メッセージ変更を伴わない境界チェックの軽量化。

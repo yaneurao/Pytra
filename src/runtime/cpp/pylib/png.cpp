@@ -5,7 +5,7 @@
 
 #include "runtime/cpp/py_runtime.h"
 
-namespace pytra::pylib::png {
+namespace pytra::pylib::tra::png {
 namespace generated {
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pylib/tra/png.py
@@ -138,4 +138,4 @@ void write_rgb_png(const std::string& path, int width, int height, const std::ve
     generated::write_rgb_png(str(path), int64(width), int64(height), raw);
 }
 
-}  // namespace pytra::pylib::png
+}  // namespace pytra::pylib::tra::png

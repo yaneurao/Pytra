@@ -15,8 +15,34 @@ PNG_SOURCE = "src/pylib/tra/png.py"
 GIF_SOURCE = "src/pylib/tra/gif.py"
 
 
-def _png_header_text() -> str:
-    return """// AUTO-GENERATED FILE. DO NOT EDIT.
+def _namespace_parts_from_source(source_rel: str) -> list[str]:
+    """`src/.../*.py` から C++ namespace 用パーツを抽出する。"""
+    p = Path(source_rel)
+    parts = list(p.parts)
+    if len(parts) < 3:
+        raise ValueError(f"invalid source path: {source_rel}")
+    if parts[0] != "src":
+        raise ValueError(f"source path must start with src/: {source_rel}")
+    if p.suffix != ".py":
+        raise ValueError(f"source path must be .py: {source_rel}")
+    out = parts[1:-1] + [p.stem]
+    if len(out) == 0:
+        raise ValueError(f"empty namespace parts from source: {source_rel}")
+    return out
+
+
+def _cpp_namespace_from_source(source_rel: str) -> str:
+    """`src/pylib/tra/gif.py` -> `pytra::pylib::tra::gif` を返す。"""
+    return "pytra::" + "::".join(_namespace_parts_from_source(source_rel))
+
+
+def _cpp_alias_target_from_source(source_rel: str) -> str:
+    """`namespace pytra { namespace x = ...; }` 用の右辺を返す。"""
+    return "::".join(_namespace_parts_from_source(source_rel))
+
+
+def _png_header_text(namespace_cpp: str, alias_target: str) -> str:
+    return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_CPP_MODULE_PNG_H
@@ -26,22 +52,22 @@ def _png_header_text() -> str:
 #include <string>
 #include <vector>
 
-namespace pytra::pylib::png {
+namespace {namespace_cpp} {{
 
 void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels);
 
-}  // namespace pytra::pylib::png
+}}  // namespace {namespace_cpp}
 
-namespace pytra {
-namespace png = pylib::png;
-}
+namespace pytra {{
+namespace png = {alias_target};
+}}
 
 #endif  // PYTRA_CPP_MODULE_PNG_H
 """
 
 
-def _gif_header_text() -> str:
-    return """// AUTO-GENERATED FILE. DO NOT EDIT.
+def _gif_header_text(namespace_cpp: str, alias_target: str) -> str:
+    return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_CPP_MODULE_GIF_H
@@ -51,7 +77,7 @@ def _gif_header_text() -> str:
 #include <string>
 #include <vector>
 
-namespace pytra::pylib::gif {
+namespace {namespace_cpp} {{
 
 std::vector<std::uint8_t> grayscale_palette();
 
@@ -65,55 +91,55 @@ void save_gif(
     int loop = 0
 );
 
-}  // namespace pytra::pylib::gif
+}}  // namespace {namespace_cpp}
 
-namespace pytra {
-namespace gif = pylib::gif;
-}
+namespace pytra {{
+namespace gif = {alias_target};
+}}
 
 #endif  // PYTRA_CPP_MODULE_GIF_H
 """
 
 
-def _png_wrapper_text() -> str:
-    return """// AUTO-GENERATED FILE. DO NOT EDIT.
+def _png_wrapper_text(namespace_cpp: str) -> str:
+    return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
-#include "runtime/cpp/pylib/png.h"
+#include \"runtime/cpp/pylib/png.h\"
 
-#include "runtime/cpp/py_runtime.h"
+#include \"runtime/cpp/py_runtime.h\"
 
-namespace pytra::pylib::png {
-namespace generated {
+namespace {namespace_cpp} {{
+namespace generated {{
 __PYTRA_PNG_IMPL__
-}  // namespace generated
+}}  // namespace generated
 
-void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels) {
+void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels) {{
     const bytes raw(pixels.begin(), pixels.end());
     generated::write_rgb_png(str(path), int64(width), int64(height), raw);
-}
+}}
 
-}  // namespace pytra::pylib::png
+}}  // namespace {namespace_cpp}
 """
 
 
-def _gif_wrapper_text() -> str:
-    return """// AUTO-GENERATED FILE. DO NOT EDIT.
+def _gif_wrapper_text(namespace_cpp: str) -> str:
+    return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
-#include "runtime/cpp/pylib/gif.h"
+#include \"runtime/cpp/pylib/gif.h\"
 
-#include "runtime/cpp/py_runtime.h"
+#include \"runtime/cpp/py_runtime.h\"
 
-namespace pytra::pylib::gif {
-namespace generated {
+namespace {namespace_cpp} {{
+namespace generated {{
 __PYTRA_GIF_IMPL__
-}  // namespace generated
+}}  // namespace generated
 
-std::vector<std::uint8_t> grayscale_palette() {
+std::vector<std::uint8_t> grayscale_palette() {{
     const bytes raw = generated::grayscale_palette();
     return std::vector<std::uint8_t>(raw.begin(), raw.end());
-}
+}}
 
 void save_gif(
     const std::string& path,
@@ -123,12 +149,12 @@ void save_gif(
     const std::vector<std::uint8_t>& palette,
     int delay_cs,
     int loop
-) {
-    list<bytes> frame_list{};
+) {{
+    list<bytes> frame_list{{}};
     frame_list.reserve(frames.size());
-    for (const auto& fr : frames) {
+    for (const auto& fr : frames) {{
         frame_list.append(bytes(fr.begin(), fr.end()));
-    }
+    }}
     const bytes pal_bytes(palette.begin(), palette.end());
     generated::save_gif(
         str(path),
@@ -139,9 +165,9 @@ void save_gif(
         int64(delay_cs),
         int64(loop)
     );
-}
+}}
 
-}  // namespace pytra::pylib::gif
+}}  // namespace {namespace_cpp}
 """
 
 
@@ -152,7 +178,7 @@ def transpile_to_cpp(source_rel: str) -> str:
         cmd = ["python3", "src/py2cpp.py", str(source), "--no-main", "-o", str(out_cpp)]
         p = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
         if p.returncode != 0:
-            raise RuntimeError(f"failed: {' '.join(cmd)}\n{p.stderr}")
+            raise RuntimeError(f"failed: {' '.join(cmd)}\\n{p.stderr}")
         return out_cpp.read_text(encoding="utf-8")
 
 
@@ -196,15 +222,20 @@ def main() -> int:
 
     changed = False
 
+    png_ns = _cpp_namespace_from_source(PNG_SOURCE)
+    gif_ns = _cpp_namespace_from_source(GIF_SOURCE)
+    png_alias = _cpp_alias_target_from_source(PNG_SOURCE)
+    gif_alias = _cpp_alias_target_from_source(GIF_SOURCE)
+
     raw_png = transpile_to_cpp(PNG_SOURCE)
     raw_gif = transpile_to_cpp(GIF_SOURCE)
     png_impl = normalize_generated_impl_text(raw_png, PNG_SOURCE)
     gif_impl = normalize_generated_impl_text(raw_gif, GIF_SOURCE)
-    png_cpp = _png_wrapper_text().replace("__PYTRA_PNG_IMPL__", _strip_runtime_include(png_impl).rstrip())
-    gif_cpp = _gif_wrapper_text().replace("__PYTRA_GIF_IMPL__", _strip_runtime_include(gif_impl).rstrip())
+    png_cpp = _png_wrapper_text(png_ns).replace("__PYTRA_PNG_IMPL__", _strip_runtime_include(png_impl).rstrip())
+    gif_cpp = _gif_wrapper_text(gif_ns).replace("__PYTRA_GIF_IMPL__", _strip_runtime_include(gif_impl).rstrip())
     outputs: list[tuple[str, str]] = [
-        ("src/runtime/cpp/pylib/png.h", _png_header_text()),
-        ("src/runtime/cpp/pylib/gif.h", _gif_header_text()),
+        ("src/runtime/cpp/pylib/png.h", _png_header_text(png_ns, png_alias)),
+        ("src/runtime/cpp/pylib/gif.h", _gif_header_text(gif_ns, gif_alias)),
         ("src/runtime/cpp/pylib/png.cpp", png_cpp),
         ("src/runtime/cpp/pylib/gif.cpp", gif_cpp),
     ]

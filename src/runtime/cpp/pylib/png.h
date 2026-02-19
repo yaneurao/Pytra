@@ -8,14 +8,14 @@
 #include <string>
 #include <vector>
 
-namespace pytra::pylib::png {
+namespace pytra::pylib::tra::png {
 
 void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels);
 
-}  // namespace pytra::pylib::png
+}  // namespace pytra::pylib::tra::png
 
 namespace pytra {
-namespace png = pylib::png;
+namespace png = pylib::tra::png;
 }
 
 #endif  // PYTRA_CPP_MODULE_PNG_H
