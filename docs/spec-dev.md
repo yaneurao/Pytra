@@ -92,6 +92,9 @@
 - class member は `inline static` として生成します。
 - `@dataclass` はフィールド定義とコンストラクタ生成を行います。
 - `raise` / `try` / `except` / `while` をサポートします。
+- `//`（floor division）は `--floor-div-mode` で制御します。
+  - `native`（既定）: C++ の `/` をそのまま生成します。
+  - `python`: Python 準拠の floor division になるように `py_floordiv` を生成します。
 - `%`（剰余）は `--mod-mode` で制御します。
   - `native`（既定）: C++ の `%` をそのまま生成します。
   - `python`: Python 準拠の剰余意味論になるようにランタイム補助を挟みます。

@@ -115,6 +115,52 @@ if __name__ == "__main__":
             cpp = transpile_to_cpp(east)
         self.assertIn("py_math::sqrt(9.0)", cpp)
 
+    def test_floor_div_mode_native_and_python(self) -> None:
+        src = """def main() -> None:
+    a: int = 7
+    b: int = 3
+    c: int = a // b
+    a //= b
+    print(c, a)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "floor_div_mode.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp_native = transpile_to_cpp(east, floor_div_mode="native")
+            cpp_python = transpile_to_cpp(east, floor_div_mode="python")
+        self.assertIn("a / b", cpp_native)
+        self.assertIn("a /= b;", cpp_native)
+        self.assertNotIn("py_floordiv(", cpp_native)
+        self.assertIn("py_floordiv(a, b)", cpp_python)
+        self.assertIn("a = py_floordiv(a, b);", cpp_python)
+
+    def test_mod_mode_native_and_python(self) -> None:
+        src = """def main() -> None:
+    a: int = 7
+    b: int = 3
+    c: int = a % b
+    a %= b
+    print(c, a)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "mod_mode.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp_native = transpile_to_cpp(east, mod_mode="native")
+            cpp_python = transpile_to_cpp(east, mod_mode="python")
+        self.assertIn("a % b", cpp_native)
+        self.assertIn("a %= b;", cpp_native)
+        self.assertNotIn("py_mod(", cpp_native)
+        self.assertIn("py_mod(a, b)", cpp_python)
+        self.assertIn("a = py_mod(a, b);", cpp_python)
+
     def test_east_builtin_call_normalization(self) -> None:
         src = """from pathlib import Path
 

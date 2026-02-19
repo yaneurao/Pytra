@@ -1065,6 +1065,24 @@ static inline auto py_floordiv(A lhs, B rhs) {
     }
 }
 
+template <class A, class B>
+static inline auto py_mod(A lhs, B rhs) {
+    using R = std::common_type_t<A, B>;
+    if constexpr (std::is_integral_v<A> && std::is_integral_v<B>) {
+        if (rhs == 0) throw std::runtime_error("integer modulo by zero");
+        R r = static_cast<R>(lhs % rhs);
+        if (r != 0 && ((r > 0) != (rhs > 0))) r += static_cast<R>(rhs);
+        return r;
+    } else {
+        float64 lf = static_cast<float64>(lhs);
+        float64 rf = static_cast<float64>(rhs);
+        if (rf == 0.0) throw std::runtime_error("float modulo");
+        float64 r = std::fmod(lf, rf);
+        if (r != 0.0 && ((r > 0.0) != (rf > 0.0))) r += rf;
+        return r;
+    }
+}
+
 template <class F>
 class py_scope_exit {
 public:

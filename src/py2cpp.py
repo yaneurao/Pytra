@@ -207,6 +207,8 @@ class CppEmitter(CodeEmitter):
         self,
         east_doc: dict[str, Any],
         negative_index_mode: str = "const_only",
+        floor_div_mode: str = "native",
+        mod_mode: str = "native",
         emit_main: bool = True,
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
@@ -220,6 +222,8 @@ class CppEmitter(CodeEmitter):
         self.tmp_id: int64 = 0
         self.scope_stack: list[set[str]] = [set()]
         self.negative_index_mode = negative_index_mode
+        self.floor_div_mode = floor_div_mode
+        self.mod_mode = mod_mode
         self.emit_main = emit_main
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
@@ -648,13 +652,39 @@ class CppEmitter(CodeEmitter):
                     self.emit(self.syntax_line("augassign_dec", "{target}--;", {"target": target}))
                 return
             if op_name == "FloorDiv":
-                self.emit(
-                    self.syntax_line(
-                        "augassign_floordiv",
-                        "{target} = py_floordiv({target}, {value});",
-                        {"target": target, "value": val},
+                if self.floor_div_mode == "python":
+                    self.emit(
+                        self.syntax_line(
+                            "augassign_floordiv",
+                            "{target} = py_floordiv({target}, {value});",
+                            {"target": target, "value": val},
+                        )
                     )
-                )
+                else:
+                    self.emit(
+                        self.syntax_line(
+                            "augassign_floordiv_native",
+                            "{target} /= {value};",
+                            {"target": target, "value": val},
+                        )
+                    )
+            elif op_name == "Mod":
+                if self.mod_mode == "python":
+                    self.emit(
+                        self.syntax_line(
+                            "augassign_mod",
+                            "{target} = py_mod({target}, {value});",
+                            {"target": target, "value": val},
+                        )
+                    )
+                else:
+                    self.emit(
+                        self.syntax_line(
+                            "augassign_apply",
+                            "{target} {op} {value};",
+                            {"target": target, "op": op, "value": val},
+                        )
+                    )
             else:
                 self.emit(
                     self.syntax_line(
@@ -1355,8 +1385,12 @@ class CppEmitter(CodeEmitter):
                 return f"{left} / {right}"
             return f"py_div({left}, {right})"
         if op_name == "FloorDiv":
-            return f"py_floordiv({left}, {right})"
+            if self.floor_div_mode == "python":
+                return f"py_floordiv({left}, {right})"
+            return f"{left} / {right}"
         if op_name == "Mod":
+            if self.mod_mode == "python":
+                return f"py_mod({left}, {right})"
             return f"{left} % {right}"
         if op_name == "Mult":
             lt0 = self.get_expr_type(expr.get("left"))
@@ -2451,10 +2485,18 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
 def transpile_to_cpp(
     east_module: dict[str, Any],
     negative_index_mode: str = "const_only",
+    floor_div_mode: str = "native",
+    mod_mode: str = "native",
     emit_main: bool = True,
 ) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
-    return CppEmitter(east_module, negative_index_mode, emit_main).transpile()
+    return CppEmitter(
+        east_module,
+        negative_index_mode,
+        floor_div_mode,
+        mod_mode,
+        emit_main,
+    ).transpile()
 
 
 def dump_deps_text(east_module: dict[str, Any]) -> str:
@@ -2471,6 +2513,8 @@ def main(argv: list[str]) -> int:
     input_txt = ""
     output_txt = ""
     negative_index_mode = "const_only"
+    floor_div_mode = "native"
+    mod_mode = "native"
     parser_backend = "self_hosted"
     no_main = False
     dump_deps = False
@@ -2490,6 +2534,18 @@ def main(argv: list[str]) -> int:
                 print("error: missing value for --negative-index-mode", file=sys.stderr)
                 return 1
             negative_index_mode = argv_list[i]
+        elif a == "--floor-div-mode":
+            i += 1
+            if i >= len(argv_list):
+                print("error: missing value for --floor-div-mode", file=sys.stderr)
+                return 1
+            floor_div_mode = argv_list[i]
+        elif a == "--mod-mode":
+            i += 1
+            if i >= len(argv_list):
+                print("error: missing value for --mod-mode", file=sys.stderr)
+                return 1
+            mod_mode = argv_list[i]
         elif a == "--parser-backend":
             i += 1
             if i >= len(argv_list):
@@ -2513,9 +2569,15 @@ def main(argv: list[str]) -> int:
 
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--negative-index-mode MODE] [--no-main] [--dump-deps]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--negative-index-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--no-main] [--dump-deps]",
             file=sys.stderr,
         )
+        return 1
+    if floor_div_mode not in {"native", "python"}:
+        print(f"error: invalid --floor-div-mode: {floor_div_mode}", file=sys.stderr)
+        return 1
+    if mod_mode not in {"native", "python"}:
+        print(f"error: invalid --mod-mode: {mod_mode}", file=sys.stderr)
         return 1
 
     input_path = Path(input_txt)
@@ -2535,7 +2597,13 @@ def main(argv: list[str]) -> int:
             else:
                 print(dep_text, end="")
             return 0
-        cpp = transpile_to_cpp(east_module, negative_index_mode, not no_main)
+        cpp = transpile_to_cpp(
+            east_module,
+            negative_index_mode,
+            floor_div_mode,
+            mod_mode,
+            not no_main,
+        )
     except UserFacingError:
         print("error: 変換に失敗しました。", file=sys.stderr)
         print("[transpile_error] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
