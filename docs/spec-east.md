@@ -248,3 +248,26 @@
 - `test/fixtures` 32/32 を `src/pylib/east.py` で変換可能（`ok: true`）
 - `sample/py` 16/16 を `src/pylib/east.py` で変換可能（`ok: true`）
 - `sample/py` 16/16 を `src/py2cpp.py` で「変換→コンパイル→実行」可能（`ok`）
+
+## 16. 段階導入計画（EAST移行）
+
+- Phase 1: EAST 生成器を先行実装し、型解決・rename・cast 明示を EAST 側へ集約する。
+- Phase 2: 各バックエンドは AST 直読み依存を減らし、EAST 入力前提へ段階移行する。
+- Phase 3: AST 直読み経路を廃止し、EAST を唯一の中間表現として運用する。
+
+補足:
+- 各フェーズの進行管理は `docs/todo.md` で行う。
+- 詳細な実装分担（emitter/profile/hooks）は `docs/spec-dev.md` に従う。
+
+## 17. EAST導入の受け入れ基準
+
+- 既存 `test/fixtures` が EAST 経由で変換可能であること。
+- 推論失敗時に、`kind` / `source_span` / `hint` を含むエラーを返すこと。
+- 仕様差分は文書化され、後段エミッタで暗黙救済しないこと（例: `range` の生 Call を残さない）。
+- 共通ランタイムケース（`math`, `pathlib` など）で、言語間の意味一致を維持できること。
+
+## 18. 将来拡張（方針）
+
+- `borrow_kind` は現状 `value | readonly_ref | mutable_ref` を使用し、`move` は未使用。
+- 将来的には Rust 向けの参照注釈（`&` / `&mut` 相当）へ接続可能な表現を維持する。
+  - ただし、Rust 固有の最終判断（所有権・ライフタイム詳細）はバックエンド責務とする。

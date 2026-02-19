@@ -36,6 +36,10 @@
    - [x] 回帰コマンド群（transpile/feature/selfhost build/selfhost diff）を1コマンド実行できるスクリプト化。: `tools/run_local_ci.py`
    - [x] `docs/how-to-use.md` か `docs/spec-codex.md` に実行手順を追記。: `docs/spec-codex.md` へ追記
    - [x] 上記スクリプトを日次作業のデフォルトゲートとして運用する。: `docs/spec-codex.md` に運用ルール追記済み
+5. [ ] `unit` と `fixtures/stdlib` の同値性を揃える
+   - [x] `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` の `fixtures/stdlib/*_extended.py` を追加する。
+   - [ ] 追加した 6 ケースを C++ 変換・コンパイル・実行まで含めて回帰させる。
+   - [ ] `test/unit/test_py2cpp_features.py` の新規 runtime テスト失敗要因を分解し、順に修正する。
 
 ## CodeEmitter 化（JSON + Hooks）
 

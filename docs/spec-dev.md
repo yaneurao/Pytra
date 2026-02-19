@@ -88,8 +88,8 @@
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
 - 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/py_runtime.h` 側を利用します。
-- JSON の実装は `src/pylib/json.py` を正本とし、`runtime/cpp` 側に独自 JSON パーサを持ちません。
-  - C++ 側の JSON 処理が必要な場合も、`src/pylib/json.py` をトランスパイルした結果を利用します。
+- `json` に限らず、Python 標準ライブラリ相当機能は `src/pylib/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
+  - C++ 側で必要な処理は、`src/pylib/*.py` のトランスパイル結果を利用します。
 - class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
 - class member は `inline static` として生成します。
 - `@dataclass` はフィールド定義とコンストラクタ生成を行います。

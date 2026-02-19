@@ -35,7 +35,8 @@
 - `CodeEmitter` など全言語で共有可能な基底ロジックは `src/common/` 側へ寄せ、`py2cpp.py` には C++ 固有ロジックのみを残します。
 - 今後の多言語展開を見据え、`py2cpp.py` の肥大化を避けるため、共通化可能な処理は段階的に `src/common/` へ移管します。
 - 生成コードの補助関数は各ターゲット言語ランタイム（`src/*_module/`）へ集約し、生成コードに重複埋め込みしません。
-- JSON 実装は `src/pylib/json.py` を単一正本とし、`runtime/cpp` 側に別実装を追加しません。
+- `json` に限らず、Python 標準ライブラリ相当機能を `runtime/cpp` 側へ追加実装してはいけません。
+- Python 標準ライブラリ相当機能の正本は常に `src/pylib/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
 - selfhost 対象コード（特に `src/pylib/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
 - import は静的に解決できる形で記述し、自己変換時に未対応構文を増やさないことを優先します。
 - トランスパイル対象の Python コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の `import` を全面禁止とします。
