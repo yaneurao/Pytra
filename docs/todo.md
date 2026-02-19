@@ -7,15 +7,15 @@
 - P1: 互換性/性能トレードオフを CLI で選択可能にする
 - P2: 運用性（preset / profile / docs）を整備する
 
-1. [ ] P0 `%` オプション (`--mod-mode`) を実装する。
-   - [ ] CLI に `--mod-mode {native,python}` を追加する（既定 `native`）。
-   - [ ] C++ 生成で `%` を `native` / `python` で切替える。
-   - [ ] `python` モード時のランタイム補助（剰余意味論）を実装する。
-   - [ ] `test/fixtures` に `%` の正負組み合わせケースを追加する。
-2. [ ] P0 `//` オプション (`--floor-div-mode`) を実装する。
-   - [ ] CLI に `--floor-div-mode {native,python}` を追加する（既定 `native`）。
-   - [ ] C++ 生成で整数除算の意味論をモード別に切替える。
-   - [ ] `test/fixtures` に負数入力を含む `//` ケースを追加する。
+1. [x] P0 `%` オプション (`--mod-mode`) を実装する。
+   - [x] CLI に `--mod-mode {native,python}` を追加する（既定 `native`）。
+   - [x] C++ 生成で `%` を `native` / `python` で切替える。
+   - [x] `python` モード時のランタイム補助（剰余意味論）を実装する。
+   - [x] `test/unit/test_py2cpp_features.py` に `mod_mode` 切替回帰テストを追加する。
+2. [x] P0 `//` オプション (`--floor-div-mode`) を実装する。
+   - [x] CLI に `--floor-div-mode {native,python}` を追加する（既定 `native`）。
+   - [x] C++ 生成で整数除算の意味論をモード別に切替える。
+   - [x] `test/unit/test_py2cpp_features.py` に `floor_div_mode` 切替回帰テストを追加する。
 3. [ ] P1 境界チェックオプション (`--bounds-check-mode`) を実装する。
    - [ ] `--bounds-check-mode {always,debug,off}` を追加する。
    - [ ] list/str 添字アクセスの生成をモード別に切替える。
