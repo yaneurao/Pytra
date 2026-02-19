@@ -18,7 +18,7 @@
   - `--int-width`（`32/64`）を実装し、`bigint` は planned（未実装エラー）として扱う。
   - `--str-index-mode` / `--str-slice-mode` を追加し、`codepoint` は planned（未実装エラー）として扱う。
   - `--preset {native,balanced,python}` と `--dump-options` を実装。
-  - オプション処理を `src/common/transpile_cli.py` へ集約し、`py2cpp.py` 側の重複を削減。
+  - オプション処理を `src/pylib/tra/transpile_cli.py` へ集約し、`py2cpp.py` 側の重複を削減。
   - エラー表示を `user_syntax_error` / `unsupported_by_design` / `not_implemented` などカテゴリ別に整理。
   - `docs/spec-options.md` / `docs/spec-dev.md` / `docs/spec-east.md` / `docs/how-to-use.md` を同期更新。
 

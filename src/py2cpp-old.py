@@ -17,7 +17,7 @@ from pylib.tra.east_parts.code_emitter import CodeEmitter
 from pylib.tra.east_parts.east_io import extract_module_leading_trivia as extract_module_leading_trivia_common
 from pylib.tra.east_parts.east_io import load_east_from_path
 from common.language_profile import load_language_profile
-from common.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
+from pylib.tra.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
 
 CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 

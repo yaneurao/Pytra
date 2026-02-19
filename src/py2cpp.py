@@ -10,7 +10,7 @@ from __future__ import annotations
 from pylib.std.typing import Any
 
 from pylib.tra.east_parts.code_emitter import CodeEmitter
-from common.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
+from pylib.tra.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
 from pylib.tra.east import convert_path, convert_source_to_east_with_backend
 from pylib.std import json
 from pylib.std.pathlib import Path
