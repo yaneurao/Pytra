@@ -189,6 +189,20 @@ class CodeEmitter:
         self.tmp_id += 1
         return f"{prefix}_{self.tmp_id}"
 
+    def rename_if_reserved(
+        self,
+        name: str,
+        reserved_words: set[str],
+        rename_prefix: str,
+        renamed_symbols: dict[str, str],
+    ) -> str:
+        """予約語衝突時のリネーム結果を返し、必要ならキャッシュへ保存する。"""
+        if name in renamed_symbols:
+            return renamed_symbols[name]
+        if name in reserved_words:
+            return f"{rename_prefix}{name}"
+        return name
+
     def any_dict_get(self, obj: dict[str, Any], key: str, default_value: Any) -> Any:
         """dict 風入力から key を取得し、失敗時は既定値を返す。"""
         if not isinstance(obj, dict):

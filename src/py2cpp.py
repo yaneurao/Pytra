@@ -2351,13 +2351,7 @@ class CppEmitter(CodeEmitter):
 
         if kind == "Name":
             name = str(expr_d.get("id", "_"))
-            if name in self.renamed_symbols:
-                return self.renamed_symbols[name]
-            if name in self.reserved_words:
-                renamed = f"{self.rename_prefix}{name}"
-                self.renamed_symbols[name] = renamed
-                return renamed
-            return name
+            return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
         if kind == "Constant":
             v = expr_d.get("value")
             raw_repr = self.any_to_str(expr_d.get("repr"))
