@@ -30,6 +30,9 @@
 - `--mod-mode {python,native}`
   - `python`: `py_mod` により Python 準拠
   - `native`: C++ `%` をそのまま利用（現行デフォルト）
+- `--int-width {32,64,bigint}`
+  - `32`/`64` は実装済み
+  - `bigint` は未実装（指定時はエラー）
 - `--parser-backend {self_hosted,cpython}`
   - EAST 生成バックエンド選択
 - `--no-main`
@@ -61,10 +64,9 @@
 
 ### 3.3 数値仕様
 
-- `--int-width {32,64,bigint}`
-  - `int` の既定ビット幅
-  - `32`はint32_t, `64`はint64_t
-  - `bigint`: 多倍長整数（Python 互換寄り、実装コスト高）
+- `--int-width=bigint`
+  - 多倍長整数（Python 互換寄り、実装コスト高）
+  - 現時点では未実装
 
 ### 3.4 生成コード形態
 

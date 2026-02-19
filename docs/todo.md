@@ -25,7 +25,7 @@
    - [ ] `--str-slice-mode {byte,codepoint}` を追加する。
    - [ ] 返り値型と境界外挙動を `spec-dev.md` / `spec-east.md` に明記する。
 5. [ ] P1 `--int-width {32,64,bigint}` を段階導入する。
-   - [ ] `32/64` 切替を先行実装する。
+   - [x] `32/64` 切替を先行実装する。
    - [ ] `bigint` は `planned` としてフェーズ分離し、前提ランタイムを明記する。
 6. [x] P2 プリセット (`--preset`) を実装する。
    - [x] `native`（既定）/`balanced`/`python` を実装する。

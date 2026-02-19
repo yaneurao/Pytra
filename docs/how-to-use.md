@@ -52,6 +52,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 - import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います。
 - 添字境界チェックは `--bounds-check-mode {always,debug,off}` で切替できます（既定は `off`）。
 - 除算仕様は `--floor-div-mode {native,python}` と `--mod-mode {native,python}` で切替できます（既定は `native`）。
+- 整数ビット幅は `--int-width {32,64,bigint}` で指定できます（`bigint` は未実装）。
 - オプション群は `--preset {native,balanced,python}` で一括指定できます。個別指定を併用した場合は個別指定が優先されます。
 - 解決後のオプションを確認したい場合は `--dump-options` を使います。
 

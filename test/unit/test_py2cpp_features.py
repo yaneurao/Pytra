@@ -44,25 +44,26 @@ def transpile(input_py: Path, output_cpp: Path) -> None:
 
 class Py2CppFeatureTest(unittest.TestCase):
     def test_preset_resolution_and_override(self) -> None:
-        neg, bnd, fdiv, mod = resolve_codegen_options("native", "", "", "", "")
-        self.assertEqual((neg, bnd, fdiv, mod), ("off", "off", "native", "native"))
+        neg, bnd, fdiv, mod, iw = resolve_codegen_options("native", "", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw), ("off", "off", "native", "native", "64"))
 
-        neg, bnd, fdiv, mod = resolve_codegen_options("balanced", "", "", "", "")
-        self.assertEqual((neg, bnd, fdiv, mod), ("const_only", "debug", "python", "python"))
+        neg, bnd, fdiv, mod, iw = resolve_codegen_options("balanced", "", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw), ("const_only", "debug", "python", "python", "64"))
 
-        neg, bnd, fdiv, mod = resolve_codegen_options("python", "", "", "", "")
-        self.assertEqual((neg, bnd, fdiv, mod), ("always", "always", "python", "python"))
+        neg, bnd, fdiv, mod, iw = resolve_codegen_options("python", "", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw), ("always", "always", "python", "python", "bigint"))
 
-        neg, bnd, fdiv, mod = resolve_codegen_options("native", "", "", "python", "")
-        self.assertEqual((neg, bnd, fdiv, mod), ("off", "off", "python", "native"))
+        neg, bnd, fdiv, mod, iw = resolve_codegen_options("native", "", "", "python", "", "32")
+        self.assertEqual((neg, bnd, fdiv, mod, iw), ("off", "off", "python", "native", "32"))
 
     def test_dump_options_text_contains_resolved_values(self) -> None:
-        txt = dump_options_text("balanced", "const_only", "debug", "python", "python")
+        txt = dump_options_text("balanced", "const_only", "debug", "python", "python", "64")
         self.assertIn("preset: balanced", txt)
         self.assertIn("negative-index-mode: const_only", txt)
         self.assertIn("bounds-check-mode: debug", txt)
         self.assertIn("floor-div-mode: python", txt)
         self.assertIn("mod-mode: python", txt)
+        self.assertIn("int-width: 64", txt)
 
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
         src = """def main() -> None:
@@ -206,6 +207,21 @@ if __name__ == "__main__":
         self.assertIn("py_at_bounds(s, i)", cpp_always)
         self.assertIn("py_at_bounds_debug(xs, i)", cpp_debug)
         self.assertIn("py_at_bounds_debug(s, i)", cpp_debug)
+
+    def test_int_width_32_and_64(self) -> None:
+        src = """def main() -> None:
+    x: int = 1
+    y: int = x + 2
+    print(y)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "int_width.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp64 = transpile_to_cpp(east, int_width="64")
+            cpp32 = transpile_to_cpp(east, int_width="32")
+        self.assertIn("int64 x = 1;", cpp64)
+        self.assertIn("int32 x = 1;", cpp32)
 
     def test_east_builtin_call_normalization(self) -> None:
         src = """from pathlib import Path

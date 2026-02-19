@@ -210,6 +210,7 @@ class CppEmitter(CodeEmitter):
         bounds_check_mode: str = "off",
         floor_div_mode: str = "native",
         mod_mode: str = "native",
+        int_width: str = "64",
         emit_main: bool = True,
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
@@ -226,6 +227,7 @@ class CppEmitter(CodeEmitter):
         self.bounds_check_mode = bounds_check_mode
         self.floor_div_mode = floor_div_mode
         self.mod_mode = mod_mode
+        self.int_width = int_width
         self.emit_main = emit_main
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
@@ -244,6 +246,9 @@ class CppEmitter(CodeEmitter):
         self.value_classes: set[str] = set()
         self.bridge_comment_emitted: set[str] = set()
         self.type_map: dict[str, str] = load_cpp_type_map()
+        if self.int_width == "32":
+            self.type_map["int64"] = "int32"
+            self.type_map["uint64"] = "uint32"
         self.module_attr_call_map: dict[str, dict[str, str]] = load_cpp_module_attr_call_map(self.profile)
         self.reserved_words: set[str] = set()
         self.rename_prefix: str = "py_"
@@ -2490,6 +2495,7 @@ def transpile_to_cpp(
     bounds_check_mode: str = "off",
     floor_div_mode: str = "native",
     mod_mode: str = "native",
+    int_width: str = "64",
     emit_main: bool = True,
 ) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
@@ -2499,6 +2505,7 @@ def transpile_to_cpp(
         bounds_check_mode,
         floor_div_mode,
         mod_mode,
+        int_width,
         emit_main,
     ).transpile()
 
@@ -2515,12 +2522,14 @@ def resolve_codegen_options(
     bounds_check_mode_opt: str,
     floor_div_mode_opt: str,
     mod_mode_opt: str,
-) -> tuple[str, str, str, str]:
+    int_width_opt: str,
+) -> tuple[str, str, str, str, str]:
     """プリセットと個別指定から最終オプションを決定する。"""
     neg = "const_only"
     bnd = "off"
     fdiv = "native"
     mod = "native"
+    int_width = "64"
 
     if preset != "":
         if preset == "native":
@@ -2528,16 +2537,19 @@ def resolve_codegen_options(
             bnd = "off"
             fdiv = "native"
             mod = "native"
+            int_width = "64"
         elif preset == "balanced":
             neg = "const_only"
             bnd = "debug"
             fdiv = "python"
             mod = "python"
+            int_width = "64"
         elif preset == "python":
             neg = "always"
             bnd = "always"
             fdiv = "python"
             mod = "python"
+            int_width = "bigint"
         else:
             raise ValueError(f"invalid --preset: {preset}")
 
@@ -2549,8 +2561,10 @@ def resolve_codegen_options(
         fdiv = floor_div_mode_opt
     if mod_mode_opt != "":
         mod = mod_mode_opt
+    if int_width_opt != "":
+        int_width = int_width_opt
 
-    return neg, bnd, fdiv, mod
+    return neg, bnd, fdiv, mod, int_width
 
 
 def dump_options_text(
@@ -2559,6 +2573,7 @@ def dump_options_text(
     bounds_check_mode: str,
     floor_div_mode: str,
     mod_mode: str,
+    int_width: str,
 ) -> str:
     """解決済みオプションを人間向けテキストへ整形する。"""
     p = preset if preset != "" else "(none)"
@@ -2569,6 +2584,7 @@ def dump_options_text(
         f"  bounds-check-mode: {bounds_check_mode}\n"
         f"  floor-div-mode: {floor_div_mode}\n"
         f"  mod-mode: {mod_mode}\n"
+        f"  int-width: {int_width}\n"
     )
 
 
@@ -2583,6 +2599,7 @@ def main(argv: list[str]) -> int:
     bounds_check_mode_opt = ""
     floor_div_mode_opt = ""
     mod_mode_opt = ""
+    int_width_opt = ""
     preset = ""
     parser_backend = "self_hosted"
     no_main = False
@@ -2622,6 +2639,12 @@ def main(argv: list[str]) -> int:
                 print("error: missing value for --mod-mode", file=sys.stderr)
                 return 1
             mod_mode_opt = argv_list[i]
+        elif a == "--int-width":
+            i += 1
+            if i >= len(argv_list):
+                print("error: missing value for --int-width", file=sys.stderr)
+                return 1
+            int_width_opt = argv_list[i]
         elif a == "--preset":
             i += 1
             if i >= len(argv_list):
@@ -2653,17 +2676,18 @@ def main(argv: list[str]) -> int:
 
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 1
     try:
-        negative_index_mode, bounds_check_mode, floor_div_mode, mod_mode = resolve_codegen_options(
+        negative_index_mode, bounds_check_mode, floor_div_mode, mod_mode, int_width = resolve_codegen_options(
             preset,
             negative_index_mode_opt,
             bounds_check_mode_opt,
             floor_div_mode_opt,
             mod_mode_opt,
+            int_width_opt,
         )
     except ValueError as ex:
         print(f"error: {ex}", file=sys.stderr)
@@ -2680,6 +2704,12 @@ def main(argv: list[str]) -> int:
     if mod_mode not in {"native", "python"}:
         print(f"error: invalid --mod-mode: {mod_mode}", file=sys.stderr)
         return 1
+    if int_width not in {"32", "64", "bigint"}:
+        print(f"error: invalid --int-width: {int_width}", file=sys.stderr)
+        return 1
+    if int_width == "bigint":
+        print("error: --int-width=bigint is not implemented yet", file=sys.stderr)
+        return 1
 
     input_path = Path(input_txt)
     if not input_path.exists():
@@ -2692,6 +2722,7 @@ def main(argv: list[str]) -> int:
             bounds_check_mode,
             floor_div_mode,
             mod_mode,
+            int_width,
         )
         if output_txt != "":
             out_path = Path(output_txt)
@@ -2719,6 +2750,7 @@ def main(argv: list[str]) -> int:
             bounds_check_mode,
             floor_div_mode,
             mod_mode,
+            int_width,
             not no_main,
         )
     except UserFacingError:
