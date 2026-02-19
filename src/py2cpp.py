@@ -181,11 +181,7 @@ def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
 
 def load_cpp_identifier_rules() -> tuple[set[str], str]:
     """識別子リネーム規則を profile から取得する。"""
-    reserved: set[str] = set()
-    for w in CPP_RESERVED_WORDS:
-        reserved.add(w)
-    rename_prefix = "py_"
-    return reserved, rename_prefix
+    return set(CPP_RESERVED_WORDS), "py_"
 
 
 def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:
@@ -298,22 +294,6 @@ class CppEmitter(CodeEmitter):
         self.reserved_words, self.rename_prefix = load_cpp_identifier_rules()
         self.import_modules: dict[str, str] = {}
         self.import_symbols: dict[str, dict[str, str]] = {}
-        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
-        raw_mod = self.any_to_dict_or_empty(meta.get("import_modules"))
-        for k, v in raw_mod.items():
-            if isinstance(k, str) and isinstance(v, str) and k != "" and v != "":
-                self.import_modules[k] = v
-        raw_sym = self.any_to_dict_or_empty(meta.get("import_symbols"))
-        for k, v in raw_sym.items():
-            if not isinstance(k, str) or k == "" or not isinstance(v, dict):
-                continue
-            mod_txt = self.any_to_str(v.get("module"))
-            name_txt = self.any_to_str(v.get("name"))
-            if mod_txt != "" and name_txt != "":
-                ent: dict[str, str] = {}
-                ent["module"] = mod_txt
-                ent["name"] = name_txt
-                self.import_symbols[k] = ent
 
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
