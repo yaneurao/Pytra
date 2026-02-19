@@ -122,6 +122,36 @@ class CodeEmitter:
             out = out.replace("{" + str(k) + "}", str(v))
         return out
 
+    def emit_function_open(self, ret: str, name: str, args: str) -> None:
+        """関数ブロック開始行を出力する。"""
+        self.emit(
+            self.syntax_line(
+                "function_open",
+                "{ret} {name}({args}) {",
+                {"ret": ret, "name": name, "args": args},
+            )
+        )
+
+    def emit_ctor_open(self, name: str, args: str) -> None:
+        """コンストラクタ開始行を出力する。"""
+        self.emit(self.syntax_line("ctor_open", "{name}({args}) {", {"name": name, "args": args}))
+
+    def emit_dtor_open(self, name: str) -> None:
+        """デストラクタ開始行を出力する。"""
+        self.emit(self.syntax_line("dtor_open", "~{name}() {", {"name": name}))
+
+    def emit_class_open(self, name: str, base_txt: str) -> None:
+        """クラス/構造体開始行を出力する。"""
+        self.emit(self.syntax_line("class_open", "struct {name}{base_txt} {", {"name": name, "base_txt": base_txt}))
+
+    def emit_class_close(self) -> None:
+        """クラス/構造体終端行を出力する。"""
+        self.emit(self.syntax_text("class_close", "};"))
+
+    def emit_block_close(self) -> None:
+        """汎用ブロック終端行を出力する。"""
+        self.emit(self.syntax_text("block_close", "}"))
+
     def next_tmp(self, prefix: str = "__tmp") -> str:
         """衝突しない一時変数名を生成する。"""
         self.tmp_id += 1

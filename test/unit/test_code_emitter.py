@@ -303,6 +303,26 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.syntax_line("if_open", "if ({cond}) {", {"cond": "x"}), "IF(x)")
         self.assertEqual(em.syntax_line("missing", "while ({cond}) {", {"cond": "y"}), "while (y) {")
 
+    def test_emit_block_open_close_helpers(self) -> None:
+        em = CodeEmitter({})
+        em.emit_function_open("int64", "f", "int64 x")
+        em.emit_ctor_open("Point", "int64 x, int64 y")
+        em.emit_dtor_open("Point")
+        em.emit_class_open("Point", "")
+        em.emit_class_close()
+        em.emit_block_close()
+        self.assertEqual(
+            em.lines,
+            [
+                "int64 f(int64 x) {",
+                "Point(int64 x, int64 y) {",
+                "~Point() {",
+                "struct Point {",
+                "};",
+                "}",
+            ],
+        )
+
     def test_hook_invocation_helpers(self) -> None:
         em = _HookedEmitter({})
         stmt_handled = em.hook_on_emit_stmt({"kind": "Pass"})
