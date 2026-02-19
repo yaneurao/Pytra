@@ -63,6 +63,6 @@
 - selfhost のビルドログは `stdout` 側に出ることがあるため、`> selfhost/build.all.log 2>&1` で統合取得する。
 - selfhost 対象コードでは、Python 専用表現が生成 C++ に漏れないことを確認する（例: `super().__init__`, Python 風継承表記）。
 - ランタイム変更時は `test/unit/test_py2cpp_features.py` の実行回帰に加え、selfhost の再生成・再コンパイル結果も確認する。
-- selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pylib/` の shim のみを使う（例: `pylib.std.json`, `pylib.std.pathlib`, `pylib.std.sys`, `pylib.std.typing`, `pylib.std.os`, `pylib.std.glob`, `pylib.std.argparse`, `pylib.std.re`）。
+- selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pylib/` の shim のみを使う（例: `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.typing`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`）。
 - selfhost 向けに確実性を優先する箇所では、`continue` に依存した分岐や `x in {"a", "b"}` のようなリテラル集合 membership を避け、`if/elif` と明示比較（`x == "a" or x == "b"`）を優先する。
 - 日次の最小回帰は `python3 tools/run_local_ci.py` を実行し、`check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff をまとめて通す。

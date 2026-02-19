@@ -6,7 +6,7 @@ import os as _os
 
 
 class _PathModule:
-    """Subset of os.path used by pylib.std.pathlib and user code."""
+    """Subset of os.path used by pytra.std.pathlib and user code."""
 
     def join(self, a: str, b: str) -> str:
         return _os.path.join(a, b)

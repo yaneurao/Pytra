@@ -1,6 +1,6 @@
 
 
-from pylib.tra.assertions import py_assert_stdout
+from pytra.runtime.assertions import py_assert_stdout
 def main():
 
     i : int8 = 1

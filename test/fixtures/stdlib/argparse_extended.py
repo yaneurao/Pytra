@@ -1,5 +1,5 @@
-from pylib.std.argparse import ArgumentParser
-from pylib.tra.assertions import py_assert_all, py_assert_eq
+from pytra.std.argparse import ArgumentParser
+from pytra.runtime.assertions import py_assert_all, py_assert_eq
 
 
 def run_argparse_extended() -> bool:

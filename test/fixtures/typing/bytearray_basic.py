@@ -1,6 +1,6 @@
 # このファイルは `test/fixtures/typing/bytearray_basic.py` のテスト/実装コードです。
 
-from pylib.tra.assertions import py_assert_all, py_assert_eq
+from pytra.runtime.assertions import py_assert_all, py_assert_eq
 
 
 def run_bytearray_basic() -> bool:

@@ -12,7 +12,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.pytra.compiler.east_parts.east_io import load_east_from_path
-from src.pylib.std import json
+from src.pytra.std import json
 
 
 class PyLibJsonTest(unittest.TestCase):

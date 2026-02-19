@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from pylib.std.dataclasses import dataclass
-from pylib.std.typing import Any
+from pytra.std.dataclasses import dataclass
+from pytra.std.typing import Any
 
 from pytra.compiler.east import EastBuildError, convert_path, convert_source_to_east_with_backend
-from pylib.std import json
-from pylib.std.pathlib import Path
+from pytra.std import json
+from pytra.std.pathlib import Path
 
 
 @dataclass

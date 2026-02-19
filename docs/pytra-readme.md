@@ -67,12 +67,12 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
   - C++ 実装は廃止済み（self-hosted EAST パーサへ移行）。
 
 - 自作ライブラリ:
-  - `pylib.tra.png`
+  - `pytra.runtime.png`
     - `write_rgb_png(path, width, height, pixels)`
-  - `pylib.tra.gif`
+  - `pytra.runtime.gif`
     - `save_gif(path, width, height, frames, palette, delay_cs, loop)`
     - `grayscale_palette()`
-  - `pylib.tra.assertions`
+  - `pytra.runtime.assertions`
     - `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - ターゲット言語ごとのランタイム:
   - `src/runtime/cpp`, `src/cs_module`, `src/rs_module`

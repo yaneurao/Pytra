@@ -1,5 +1,5 @@
-from pylib.std.re import sub
-from pylib.tra.assertions import py_assert_all, py_assert_eq
+from pytra.std.re import sub
+from pytra.runtime.assertions import py_assert_all, py_assert_eq
 
 
 def run_re_extended() -> bool:

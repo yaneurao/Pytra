@@ -1,1 +1,1 @@
-"""Python stdlib-compatible modules for Pytra."""
+"""Python stdlib compatibility modules for Pytra."""

@@ -1,5 +1,5 @@
 # lambda consuming local state-like value
-from pylib.tra.assertions import py_assert_all, py_assert_eq
+from pytra.runtime.assertions import py_assert_all, py_assert_eq
 
 
 def run_lambda_local_state() -> bool:

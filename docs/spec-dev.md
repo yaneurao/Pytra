@@ -23,34 +23,34 @@
 - トランスパイル対象コードでの標準モジュール直接 import は禁止します。
 - import は `pylib.*` とユーザー自作モジュール（`.py`）を許可します。
 
-- `pylib.tra.assertions`
+- `pytra.runtime.assertions`
   - 関数: `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
-- `pylib.std.pathlib`
+- `pytra.std.pathlib`
   - class: `Path`
   - メンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve`, `exists`, `mkdir`, `read_text`, `write_text`, `glob`, `cwd`
-- `pylib.std.json`
+- `pytra.std.json`
   - 関数: `loads`, `dumps`
-- `pylib.std.sys`
+- `pytra.std.sys`
   - 変数: `argv`, `path`, `stderr`, `stdout`
   - 関数: `exit`, `set_argv`, `set_path`, `write_stderr`, `write_stdout`
-- `pylib.std.typing`
+- `pytra.std.typing`
   - 型名: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar`
-- `pylib.std.os`
+- `pytra.std.os`
   - 変数: `path`（`join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`）
   - 関数: `getcwd`, `mkdir`, `makedirs`
-- `pylib.std.glob`
+- `pytra.std.glob`
   - 関数: `glob`
-- `pylib.std.argparse`
+- `pytra.std.argparse`
   - クラス: `ArgumentParser`, `Namespace`
   - 関数: `ArgumentParser.add_argument`, `ArgumentParser.parse_args`
-- `pylib.std.re`
+- `pytra.std.re`
   - 定数: `S`
   - クラス: `Match`
   - 関数: `match`, `sub`
-- `pylib.std.dataclasses`
+- `pytra.std.dataclasses`
   - デコレータ: `dataclass`
-- `pylib.std.enum`
+- `pytra.std.enum`
   - クラス: `Enum`, `IntEnum`, `IntFlag`
 - `pytra.runtime.png`
   - 関数: `write_rgb_png`
@@ -64,7 +64,7 @@
 
 ### enum サポート（現状）
 
-- 入力側は `from pylib.std.enum import Enum, IntEnum, IntFlag` を使用します（標準 `enum` は使用不可）。
+- 入力側は `from pytra.std.enum import Enum, IntEnum, IntFlag` を使用します（標準 `enum` は使用不可）。
 - `Enum` / `IntEnum` / `IntFlag` のクラス本体は `NAME = expr` 形式のメンバー定義をサポートします。
 - C++ 生成では `enum class` へ lower します。
   - `IntEnum` / `IntFlag` には `int64` との比較演算子を補助生成します。
@@ -190,27 +190,27 @@
 - 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
 - 言語別に手書きするのは、性能・I/O 都合で必要な最小範囲に限定します。
 - 言語間一致は「生成ファイルのバイト列完全一致」を主判定とします。
-- `src/pylib/tra/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
+- `src/pytra/runtime/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
 - 受け入れ基準:
   - 置換作業中は、同一入力に対して `src/pylib/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
   - C++ では `tools/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
 
 ### 3.4 Python 補助ライブラリ命名
 
-- 旧 `pylib.runtime` は `pylib.tra.assertions` へ改名済みです。
-- テスト補助関数（`py_assert_*`）は `from pylib.tra.assertions import ...` で利用します。
+- 旧 `pylib.runtime` は `pytra.runtime.assertions` へ改名済みです。
+- テスト補助関数（`py_assert_*`）は `from pytra.runtime.assertions import ...` で利用します。
 
 ### 3.5 画像ランタイム最適化ポリシー（py2cpp）
 
 - 対象: `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp`（自動生成）。
-- 前提: `src/pylib/tra/png.py` / `src/pylib/tra/gif.py` を正本とし、意味差を導入しない。
+- 前提: `src/pytra/runtime/png.py` / `src/pytra/runtime/gif.py` を正本とし、意味差を導入しない。
 - 生成手順:
   - `python3 tools/generate_cpp_pylib_runtime.py`
   - 生成物は `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp` に直接出力される。
   - これら 2 ファイルの本体ロジックを手書きで追加してはならない。
   - C++ namespace は生成元 Python ファイルのパスから自動導出する（ハードコードしない）。
-    - 例: `src/pylib/tra/gif.py` -> `pytra::pylib::tra::gif`
-    - 例: `src/pylib/tra/png.py` -> `pytra::pylib::tra::png`
+    - 例: `src/pytra/runtime/gif.py` -> `pytra::pylib::tra::gif`
+    - 例: `src/pytra/runtime/png.py` -> `pytra::pylib::tra::png`
 - 許容する最適化:
   - ループ展開・`reserve` 追加・一時バッファ削減など、出力バイト列を変えない最適化。
   - 例外メッセージ変更を伴わない境界チェックの軽量化。
@@ -287,7 +287,7 @@
 
 - `src/common/` には言語非依存で再利用される処理のみを配置します。
 - 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/common/` に置きません。
-- CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/pylib/tra/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。
+- CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/pytra/compiler/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。
 - selfhost 対象コードでは、動的 import（`try/except ImportError` による分岐 import や `importlib`）を避け、静的 import のみを使用します。
 - class 名・関数名・メンバー変数名には、日本語コメント（用途説明）を付与します。
 - 標準ライブラリ対応の記載は、モジュール名だけでなく関数単位で明記します。

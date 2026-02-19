@@ -1,5 +1,5 @@
-from pylib.std import sys
-from pylib.tra.assertions import py_assert_all, py_assert_eq
+from pytra.std import sys
+from pytra.runtime.assertions import py_assert_all, py_assert_eq
 
 
 def run_sys_extended() -> bool:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pylib.std.typing import Any
+from pytra.std.typing import Any
 
 S = 1
 
@@ -402,7 +402,7 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
             return None
         return Match(text, [name, expr])
 
-    raise ValueError(f"unsupported regex pattern in pylib.std.re: {pattern}")
+    raise ValueError(f"unsupported regex pattern in pytra.std.re: {pattern}")
 
 
 def sub(pattern: str, repl: str, text: str, flags: int = 0) -> str:
@@ -440,4 +440,4 @@ def sub(pattern: str, repl: str, text: str, flags: int = 0) -> str:
                 out.append(repl)
         return "".join(out)
 
-    raise ValueError(f"unsupported regex sub pattern in pylib.std.re: {pattern}")
+    raise ValueError(f"unsupported regex sub pattern in pytra.std.re: {pattern}")

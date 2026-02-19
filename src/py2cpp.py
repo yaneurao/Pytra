@@ -2,19 +2,19 @@
 """EAST -> C++ transpiler.
 
 This tool transpiles Pytra EAST JSON into C++ source.
-It can also accept a Python source file and internally run src/pylib/east.py conversion.
+It can also accept a Python source file and internally run src/pytra/compiler/east.py conversion.
 """
 
 from __future__ import annotations
 
-from pylib.std.typing import Any
+from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pylib.tra.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
+from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
 from pytra.compiler.east import convert_path, convert_source_to_east_with_backend
-from pylib.std import json
-from pylib.std.pathlib import Path
-from pylib.std import sys
+from pytra.std import json
+from pytra.std.pathlib import Path
+from pytra.std import sys
 
 
 def _make_user_error(category: str, summary: str, details: list[str]) -> Exception:
@@ -426,9 +426,9 @@ class CppEmitter(CodeEmitter):
 
     def _normalize_runtime_module_name(self, module_name: str) -> str:
         """旧 `pylib.*` 名を `pytra.*` 名へ正規化する。"""
-        if module_name.startswith("pylib.std."):
+        if module_name.startswith("pytra.std."):
             return "pytra.std." + module_name[10:]
-        if module_name == "pylib.std":
+        if module_name == "pytra.std":
             return "pytra.std"
         if module_name.startswith("pylib.tra."):
             return "pytra.runtime." + module_name[10:]

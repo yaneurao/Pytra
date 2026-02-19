@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pylib.std import sys
-from pylib.std.typing import Any
+from pytra.std import sys
+from pytra.std.typing import Any
 
 
 class Namespace:

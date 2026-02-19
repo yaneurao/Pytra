@@ -8,7 +8,7 @@
 
 - `src/pylib/std/`:
   - 目的: Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, `enum` など）の**代替実装**を提供するための領域です。
-  - 方針: トランスパイル対象コードで Python 標準モジュールを直接 `import` せず、`pylib.std.*` を使えるようにします。
+  - 方針: トランスパイル対象コードで Python 標準モジュールを直接 `import` せず、`pytra.std.*` を使えるようにします。
   - ルール: Python 標準モジュール代替は原則として `src/pylib/std/` に配置します。
 - `src/pylib/tra/`:
   - 目的: Pytra 固有の機能（例: EAST 変換、画像出力ヘルパー、アサーション補助）を提供するための領域です。
@@ -17,39 +17,39 @@
 
 ## 1. Python標準モジュール代替（互換層）
 
-- `pylib.std.pathlib`（`pathlib` 代替）
+- `pytra.std.pathlib`（`pathlib` 代替）
   - class: `Path`
   - `Path` の主なメンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve()`, `exists()`, `mkdir(parents=False, exist_ok=False)`, `read_text()`, `write_text()`, `glob()`, `cwd()`
-- `pylib.std.json`（`json` 代替）
+- `pytra.std.json`（`json` 代替）
   - 関数: `loads(text)`, `dumps(obj, ensure_ascii=True, indent=None, separators=None)`
-- `pylib.std.sys`（`sys` 代替）
+- `pytra.std.sys`（`sys` 代替）
   - 変数: `argv`, `path`, `stderr`, `stdout`
   - 関数: `exit(code=0)`, `set_argv(values)`, `set_path(values)`, `write_stderr(text)`, `write_stdout(text)`
-- `pylib.std.typing`（`typing` 代替）
+- `pytra.std.typing`（`typing` 代替）
   - 型エイリアス: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar(name)`
-- `pylib.std.os`（`os` 代替・最小実装）
+- `pytra.std.os`（`os` 代替・最小実装）
   - 変数: `path`
   - `path` の主なメンバー: `join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`
   - 関数: `getcwd()`, `mkdir(path)`, `makedirs(path, exist_ok=False)`
-- `pylib.std.glob`（`glob` 代替・最小実装）
+- `pytra.std.glob`（`glob` 代替・最小実装）
   - 関数: `glob(pattern)`
-- `pylib.std.argparse`（`argparse` 代替・最小実装）
+- `pytra.std.argparse`（`argparse` 代替・最小実装）
   - class: `ArgumentParser`, `Namespace`
   - `ArgumentParser` の主な機能: `add_argument(...)`, `parse_args(...)`
-- `pylib.std.re`（`re` 代替・最小実装）
+- `pytra.std.re`（`re` 代替・最小実装）
   - 定数: `S`
   - class: `Match`
   - 関数: `match(pattern, text, flags=0)`, `sub(pattern, repl, text, flags=0)`
-- `pylib.std.dataclasses`（`dataclasses` 代替・最小実装）
+- `pytra.std.dataclasses`（`dataclasses` 代替・最小実装）
   - デコレータ: `dataclass`
-- `pylib.std.enum`（`enum` 代替・最小実装）
+- `pytra.std.enum`（`enum` 代替・最小実装）
   - class: `Enum`, `IntEnum`, `IntFlag`
   - 制約: クラス本体のメンバーは `NAME = expr` 形式を使用してください。
 
 ## 2. Pytra独自モジュール
 
-- `pylib.tra.assertions`
+- `pytra.runtime.assertions`
   - 関数: `py_assert_true(cond, label="")`, `py_assert_eq(actual, expected, label="")`, `py_assert_all(results, label="")`, `py_assert_stdout(expected_lines, fn)`
 - `pytra.runtime.png`
   - 関数: `write_rgb_png(path, width, height, pixels)`

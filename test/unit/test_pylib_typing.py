@@ -10,7 +10,7 @@ if str(ROOT) not in std_sys.path:
 if str(ROOT / "src") not in std_sys.path:
     std_sys.path.insert(0, str(ROOT / "src"))
 
-from src.pylib.std import typing as py_typing
+from src.pytra.std import typing as py_typing
 
 
 class PyLibTypingTest(unittest.TestCase):
