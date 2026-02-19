@@ -210,13 +210,19 @@ class CodeEmitter:
         if key not in obj:
             return default_value
         v = obj[key]
-        s = self.any_to_str(v)
-        if s != "":
-            return s
+        if isinstance(v, str):
+            s = self.any_to_str(v)
+            if s != "":
+                return s
+            return default_value
         if v is None:
             return default_value
+        if isinstance(v, bool) or isinstance(v, int) or isinstance(v, float):
+            return default_value
+        if isinstance(v, dict) or isinstance(v, list) or isinstance(v, set):
+            return default_value
         s2 = str(v)
-        if s2 == "":
+        if s2 == "" or s2 == "None":
             return default_value
         return s2
 

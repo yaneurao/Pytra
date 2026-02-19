@@ -207,6 +207,7 @@
   13. selfhost 生成 C++ で関数本体が空になる問題（`emit_stmt_list` の基底 no-op 束縛）を解消し、`return`/式文が出力されるようにした。
   14. selfhost 生成 C++ の `print(...)` 残留を暫定修正し、フォールバックでも `py_print(...)` を出力するようにした。
   15. `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` の `sample/py/01_mandelbrot.py` 差分を解消（引数順崩れ/`png.write_rgb_png` 残留/浮動小数リテラル差分を修正）。
-  16. 残課題: `test/fixtures/collections/comprehension_filter.py` で selfhost 差分が 1 件残る（`if (true)` への崩れ、`list[bool]` が `list<object>` へ崩れる）。
+  16. `test/fixtures/collections/comprehension_filter.py` の selfhost 差分を解消（内包表現 `if` 条件崩れと `list[bool]` 初期化型崩れを修正）。
+  17. `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` の既定ケースで `mismatches=0` を確認。
   2. `g++` コンパイルエラーは `total_errors=72`（`<=100` 維持）を確認。
   3. 現在の上位は `__pytra_main`（import/runtime 参照境界）と `emit_class` / `emit_assign` の `Any` 境界由来の型不整合。

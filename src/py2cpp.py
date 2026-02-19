@@ -803,7 +803,10 @@ class CppEmitter(CodeEmitter):
         """AnnAssign ノードを出力する。"""
         t = self.cpp_type(stmt.get("annotation"))
         decl_hint = self.any_dict_get_str(stmt, "decl_type", "")
+        decl_hint_fallback = str(stmt.get("decl_type"))
         ann_text_fallback = str(stmt.get("annotation"))
+        if decl_hint == "" and decl_hint_fallback not in {"", "{}", "None"}:
+            decl_hint = decl_hint_fallback
         if decl_hint != "":
             t = self._cpp_type_text(decl_hint)
         elif t == "auto":
@@ -818,14 +821,15 @@ class CppEmitter(CodeEmitter):
             rendered_val = self.render_expr(stmt.get("value"))
         ann_t_str = self.any_dict_get_str(stmt, "annotation", "")
         if ann_t_str == "":
-            ann_t_str = self.any_dict_get_str(stmt, "decl_type", "")
+            ann_t_str = decl_hint
         if ann_t_str == "" and ann_text_fallback not in {"", "{}", "None"}:
             ann_t_str = ann_text_fallback
         if ann_t_str in {"byte", "uint8"} and val_is_dict:
             byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
                 rendered_val = str(byte_val)
-        if val_is_dict and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
+        val_kind = self.any_dict_get_str(val, "kind", "")
+        if val_is_dict and val_kind == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
             inner_ann = self.split_generic(ann_t_str[5:-1])
             if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
                 items: list[str] = []
@@ -835,7 +839,7 @@ class CppEmitter(CodeEmitter):
                     items.append(f"{{{k}, {v}}}")
                 rendered_val = f"{t}{{{', '.join(items)}}}"
         if val_is_dict and t != "auto":
-            vkind = val.get("kind")
+            vkind = val_kind
             if vkind == "BoolOp":
                 if ann_t_str != "bool":
                     rendered_val = self.render_boolop(stmt.get("value"), True)
@@ -849,7 +853,7 @@ class CppEmitter(CodeEmitter):
                 # Keep as-is for selfhost stability; list-comp explicit typing can be improved later.
                 rendered_val = rendered_val
         if self.is_any_like_type(ann_t_str) and val_is_dict:
-            if val.get("kind") == "Constant" and val.get("value") is None:
+            if val_kind == "Constant" and val.get("value") is None:
                 rendered_val = "object{}"
             elif not rendered_val.startswith("make_object("):
                 rendered_val = f"make_object({rendered_val})"
