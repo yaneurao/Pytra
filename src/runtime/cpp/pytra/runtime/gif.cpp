@@ -5,7 +5,7 @@
 
 #include "runtime/cpp/py_runtime.h"
 
-namespace pytra::pylib::tra::gif {
+namespace pytra::runtime::gif {
 namespace generated {
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/gif.py
@@ -177,4 +177,4 @@ void save_gif(
     );
 }
 
-}  // namespace pytra::pylib::tra::gif
+}  // namespace pytra::runtime::gif
