@@ -244,6 +244,12 @@ def _patch_selfhost_exception_paths(text: str) -> str:
     return out
 
 
+def _patch_main_guard_for_selfhost(text: str) -> str:
+    old = 'if __name__ == "__main__":\n    sys.exit(main(list(sys.argv[1:])))\n'
+    new = 'if __name__ == "__main__":\n    pass\n'
+    return text.replace(old, new)
+
+
 def main() -> int:
     py2cpp_text = SRC_PY2CPP.read_text(encoding="utf-8")
     base_text = SRC_BASE.read_text(encoding="utf-8")
@@ -254,6 +260,7 @@ def main() -> int:
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
     out = _replace_dump_options_for_selfhost(out)
     out = _replace_load_east_for_selfhost(out)
+    out = _patch_main_guard_for_selfhost(out)
     out = _strip_main_guard(out)
     out = _patch_selfhost_exception_paths(out)
 
