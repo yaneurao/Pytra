@@ -7,8 +7,13 @@
    - [ ] `.json` 経路で `test/fixtures/core/add.py` 由来 EAST を selfhost 変換できることを確認する。
    - [ ] `.json` 経路でのエラー分類（`input_invalid` / `not_implemented`）を固定する。
 2. [ ] selfhost `.py` 経路の段階回復
-   - [ ] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
-   - [ ] `tools/prepare_selfhost_source.py` に取り込み可能な関数群を「安全（selfhost通過済み）」と「要分割」に分ける。
+   - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
+     - 依存本体: `pylib.east_parts.core::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
+     - 主要 shim 依存: `pylib.argparse`, `pylib.json`, `pylib.re`, `pylib.pathlib`, `pylib.sys`, `pylib.dataclasses`, `pylib.typing`
+     - selfhost 非対応要素: `pylib.east` facade の bootstrap path 操作（`import sys as _bootstrap_sys` と `sys.path.insert`）
+   - [x] `tools/prepare_selfhost_source.py` に取り込み可能な関数群を「安全（selfhost通過済み）」と「要分割」に分ける。
+     - 安全（通過済み）: `CodeEmitter` 本体、`transpile_cli` の関数群（`parse_py2cpp_argv` など）、main差し替え
+     - 要分割: `pylib.east` facade 経由の import 連鎖、`east_parts.core` 全量取り込み（サイズ過大かつ selfhost 変換コスト高）
    - [ ] `sample/py/01_mandelbrot.py` を selfhost 経路で `-o` 生成できるところまで回復する。
 3. [ ] CodeEmitter hook 移管の再開（selfhostを壊さない手順）
    - [ ] `CodeEmitter` に hooks 辞書呼び出しを導入する前に、selfhost非対応構文（`callable` など）を使わない制約版APIを定義する。
