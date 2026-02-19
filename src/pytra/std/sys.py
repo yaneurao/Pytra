@@ -19,13 +19,11 @@ def exit(code: int = 0) -> None:
 
 
 def set_argv(values: list[str]) -> None:
-    global argv
-    argv = values
+    _sys.argv[:] = values
 
 
 def set_path(values: list[str]) -> None:
-    global path
-    path = values
+    _sys.path[:] = values
 
 
 def write_stderr(text: str) -> None:

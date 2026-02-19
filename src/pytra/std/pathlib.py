@@ -32,7 +32,7 @@ class Path:
         return self._value
 
     def __repr__(self) -> str:
-        return f"Path({self._value!r})"
+        return "Path(" + repr(self._value) + ")"
 
     def __fspath__(self) -> str:
         return self._value
