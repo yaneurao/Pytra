@@ -219,38 +219,33 @@ g++ -std=c++20 -O2 -I src test/transpile/cpp/01_mandelbrot.cpp \
 - `selfhost/` は検証用の作業ディレクトリ（Git管理外）として扱う。
 
 ```bash
-# 0) 入力となる selfhost ソースを最新化
-python3 tools/prepare_selfhost_source.py
-mkdir -p selfhost/runtime
-cp -a src/runtime/. selfhost/runtime/
+# 0) selfhost C++ を生成してビルド（ランタイム .cpp も含めてリンク）
+python3 tools/build_selfhost.py > selfhost/build.all.log 2>&1
 
-# 1) Python 版 py2cpp で selfhost 用 C++ を生成
-python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp
-
-# 2) 生成 C++ をコンパイル
-g++ -std=c++20 -O2 -I src selfhost/py2cpp.cpp -o selfhost/py2cpp.out \
-  > selfhost/build.all.log 2>&1
-
-# 3) ビルドエラーをカテゴリ確認
+# 1) ビルドエラーをカテゴリ確認
 rg "error:" selfhost/build.all.log
 ```
 
 コンパイル成功時の比較手順:
 
 ```bash
-# 4) selfhost 実行ファイルで sample/py/01 を変換
+# 2) selfhost 実行ファイルで sample/py/01 を変換
 mkdir -p test/transpile/cpp2
 ./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp
 
-# 5) Python 版 py2cpp でも同じ入力を変換
+# 3) Python 版 py2cpp でも同じ入力を変換
 python3 src/py2cpp.py sample/py/01_mandelbrot.py -o test/transpile/cpp/01_mandelbrot.cpp
 
-# 6) 生成差分を確認（ソース差分は許容、まずは確認用）
+# 4) 生成差分を確認（ソース差分は許容、まずは確認用）
 diff -u test/transpile/cpp/01_mandelbrot.cpp test/transpile/cpp2/01_mandelbrot.cpp || true
 
-# 7) Python版とselfhost版の出力差分を代表ケースで一括確認
+# 5) Python版とselfhost版の出力差分を代表ケースで一括確認
 python3 tools/check_selfhost_cpp_diff.py --show-diff
 ```
+
+補足:
+- 現時点の `selfhost/py2cpp.py` は `load_east()` をスタブ化しているため、`INPUT.py` 変換は未対応です。
+- 上記の 2) 以降は selfhost 入力パーサ復帰後に有効化する想定です。
 
 失敗時の確認ポイント:
 - `build.all.log` の `error:` を先に分類し、型系（`std::any` / `optional`）と構文系（未lowering）を分ける。
