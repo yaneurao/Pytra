@@ -478,14 +478,14 @@ class CppEmitter(CodeEmitter):
         if len(expr_dict) == 0:
             return "false"
         raw_values = self.any_to_list(expr_dict.get("values"))
-        value_nodes: list[dict[str, Any]] = []
+        value_nodes: list[Any] = []
         for v in raw_values:
             if isinstance(v, dict):
                 value_nodes.append(v)
         if len(value_nodes) == 0:
             return "false"
         value_texts = [self.render_expr(v) for v in value_nodes]
-        if not force_value_select and self.get_expr_type(expr_dict) == "bool":
+        if not force_value_select and self.get_expr_type(expr) == "bool":
             op = "&&" if self.any_dict_get_str(expr_dict, "op", "") == "And" else "||"
             wrapped_values = [f"({txt})" for txt in value_texts]
             return f" {op} ".join(wrapped_values)
@@ -533,8 +533,8 @@ class CppEmitter(CodeEmitter):
         nd = self.any_to_dict_or_empty(node)
         if len(nd) == 0 or nd.get("kind") != "Constant":
             return ""
-        v = nd.get("value")
-        if not isinstance(v, str):
+        v = self.any_to_str(self.any_dict_get(nd, "value", ""))
+        if v == "":
             return ""
         if len(v) == 1:
             return v
@@ -560,10 +560,10 @@ class CppEmitter(CodeEmitter):
         nd = self.any_to_dict_or_empty(node)
         if len(nd) == 0 or nd.get("kind") != "Subscript":
             return ""
-        value_node = nd.get("value")
+        value_node = self.any_dict_get(nd, "value", {})
         if self.get_expr_type(value_node) != "str":
             return ""
-        sl = nd.get("slice")
+        sl = self.any_dict_get(nd, "slice", {})
         sl_node = self.any_to_dict_or_empty(sl)
         if len(sl_node) > 0 and sl_node.get("kind") == "Slice":
             return ""
@@ -876,7 +876,7 @@ class CppEmitter(CodeEmitter):
             return
         kind = self.any_to_str(stmt.get("kind"))
         hook_kind = self.hook_on_emit_stmt_kind(kind, stmt)
-        if hook_kind is True:
+        if self.any_to_bool(hook_kind):
             return
         self.emit_leading_comments(stmt)
         if kind == "Expr":
@@ -1252,7 +1252,7 @@ class CppEmitter(CodeEmitter):
             inc = f"--{tgt}"
         else:
             inc = f"{tgt} += {step}"
-        hdr = self.syntax_line(
+        hdr: str = self.syntax_line(
             "for_range_open",
             "for ({type} {target} = {start}; {cond}; {inc})",
             {
@@ -1266,14 +1266,18 @@ class CppEmitter(CodeEmitter):
         if omit_braces:
             self.emit(hdr)
             self.indent += 1
-            self.scope_stack.append(set([tgt]))
+            scope_names: set[str] = set()
+            scope_names.add(tgt)
+            self.scope_stack.append(scope_names)
             self.emit_stmt(body_stmts[0])
             self.scope_stack.pop()
             self.indent -= 1
             return
 
         self.emit(hdr + " {")
-        self.emit_scoped_stmt_list(body_stmts, {tgt})
+        scope_names: set[str] = set()
+        scope_names.add(tgt)
+        self.emit_scoped_stmt_list(body_stmts, scope_names)
         self.emit_block_close()
 
     def emit_for_each(self, stmt: dict[str, Any]) -> None:
@@ -1406,33 +1410,33 @@ class CppEmitter(CodeEmitter):
         is_enum_base = base in {"Enum", "IntEnum", "IntFlag"}
         if is_enum_base:
             cls_name = str(name)
-            enum_entries: list[tuple[str, str]] = []
+            enum_members: list[str] = []
+            enum_values: list[str] = []
             class_body = self._dict_stmt_list(stmt.get("body"))
             for s in class_body:
                 sk = self.any_to_str(s.get("kind"))
                 if sk == "Assign":
                     texpr = self.any_to_dict_or_empty(s.get("target"))
-                    if self.is_name(texpr):
+                    if self.is_name(s.get("target"), None):
                         member = self.any_to_str(texpr.get("id"))
-                        if member == "":
-                            continue
-                        enum_entries.append((member, self.render_expr(s.get("value"))))
+                        if member != "":
+                            enum_members.append(member)
+                            enum_values.append(self.render_expr(s.get("value")))
                 elif sk == "AnnAssign":
                     texpr = self.any_to_dict_or_empty(s.get("target"))
-                    if self.is_name(texpr):
+                    if self.is_name(s.get("target"), None):
                         member = self.any_to_str(texpr.get("id"))
-                        if member == "":
-                            continue
-                        val = "0"
-                        if s.get("value") is not None:
-                            val = self.render_expr(s.get("value"))
-                        enum_entries.append((member, val))
+                        if member != "":
+                            val = "0"
+                            if s.get("value") is not None:
+                                val = self.render_expr(s.get("value"))
+                            enum_members.append(member)
+                            enum_values.append(val)
             self.emit(f"enum class {cls_name} : int64 {{")
             self.indent += 1
-            for i, entry in enumerate(enum_entries):
-                member = entry[0]
-                value_txt = entry[1]
-                sep = "," if i + 1 < len(enum_entries) else ""
+            for i, member in enumerate(enum_members):
+                value_txt = enum_values[i]
+                sep = "," if i + 1 < len(enum_members) else ""
                 self.emit(f"{member} = {value_txt}{sep}")
             self.indent -= 1
             self.emit("};")
@@ -1507,7 +1511,7 @@ class CppEmitter(CodeEmitter):
                                 static_field_defaults[fname] = self.render_expr(s.get("value"))
             elif is_enum_base and s.get("kind") == "Assign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
-                if self.is_name(texpr):
+                if self.is_name(texpr, None):
                     fname = self.any_to_str(texpr.get("id"))
                     if fname != "":
                         value_node = self.any_to_dict_or_empty(s.get("value"))
@@ -1567,7 +1571,7 @@ class CppEmitter(CodeEmitter):
                     self.emit(f"{t} {target} = {self.render_expr(s.get('value'))};")
             elif is_enum_base and s.get("kind") == "Assign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
-                if self.is_name(texpr):
+                if self.is_name(texpr, None):
                     fname = self.any_to_str(texpr.get("id"))
                     if fname in consumed_assign_fields:
                         continue
@@ -2240,12 +2244,14 @@ class CppEmitter(CodeEmitter):
             return "/* none */"
         kind = self.any_to_str(expr_d.get("kind"))
         hook_expr = self.hook_on_render_expr_kind(kind, expr_d)
-        if isinstance(hook_expr, str) and hook_expr != "":
-            return hook_expr
+        hook_expr_txt = self.any_to_str(hook_expr)
+        if hook_expr_txt != "":
+            return hook_expr_txt
         if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
             hook_complex = self.hook_on_render_expr_complex(expr_d)
-            if isinstance(hook_complex, str) and hook_complex != "":
-                return hook_complex
+            hook_complex_txt = self.any_to_str(hook_complex)
+            if hook_complex_txt != "":
+                return hook_complex_txt
 
         if kind == "Name":
             name = str(expr_d.get("id", "_"))
