@@ -1,5 +1,24 @@
 # TODO（未完了のみ）
 
+## 直近実行キュー（細分化）
+
+1. [ ] selfhost 入力経路の段階回復
+   - [ ] `load_east` の `.json` 経路を selfhost で通す（`.py` は未実装のまま維持）。
+   - [ ] `.json` 経路で `test/fixtures/core/add.py` 由来 EAST を selfhost 変換できることを確認する。
+   - [ ] `.json` 経路でのエラー分類（`input_invalid` / `not_implemented`）を固定する。
+2. [ ] selfhost `.py` 経路の段階回復
+   - [ ] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
+   - [ ] `tools/prepare_selfhost_source.py` に取り込み可能な関数群を「安全（selfhost通過済み）」と「要分割」に分ける。
+   - [ ] `sample/py/01_mandelbrot.py` を selfhost 経路で `-o` 生成できるところまで回復する。
+3. [ ] CodeEmitter hook 移管の再開（selfhostを壊さない手順）
+   - [ ] `CodeEmitter` に hooks 辞書呼び出しを導入する前に、selfhost非対応構文（`callable` など）を使わない制約版APIを定義する。
+   - [ ] `cpp_hooks.py` は最初に `png/gif` のみ移管し、`py2cpp.py` の既存分岐を1件ずつ削る。
+   - [ ] 各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` の両方を必須ゲートにする。
+4. [ ] ローカル CI 相当手順の固定化
+   - [x] 回帰コマンド群（transpile/feature/selfhost build/selfhost diff）を1コマンド実行できるスクリプト化。: `tools/run_local_ci.py`
+   - [x] `docs/how-to-use.md` か `docs/spec-codex.md` に実行手順を追記。: `docs/spec-codex.md` へ追記
+   - [ ] 上記スクリプトを日次作業のデフォルトゲートとして運用する。
+
 ## `enum` サポート（予定）
 
 1. [x] `pylib.enum` を追加し、`Enum` / `IntEnum` / `IntFlag` の最小互換 API を実装する。
@@ -103,7 +122,7 @@
    - [x] 段階ゲート A: `total_errors <= 450` を達成し、`docs/todo.md` に主因更新。: 2026-02-18 再計測で `total_errors=322`
    - [x] 段階ゲート B: `total_errors <= 300` を達成し、同時に `test_code_emitter` 回帰を固定化。: 2026-02-18 再計測で `total_errors=233`、`test/unit/test_code_emitter.py` は 12/12 pass
    - [x] 段階ゲート C-1: `total_errors <= 100` を維持する。: 2026-02-19 再計測で `total_errors=72`
-   - [ ] 段階ゲート C-2: `tools/check_selfhost_cpp_diff.py` の最小ケースを通す。
+   - [x] 段階ゲート C-2: `tools/check_selfhost_cpp_diff.py` の最小ケースを通す。: `--mode allow-not-implemented` で `mismatches=0`
 4. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
    - [x] `tools/build_selfhost.py` を追加し、runtime `.cpp` を含めて `selfhost/py2cpp.out` を生成できるようにする。
    - [x] `selfhost/py2cpp.out` は `__pytra_main(argv)` を実行する状態まで接続する（no-op ではない）。
@@ -113,9 +132,9 @@
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
    - [ ] `test/fixtures/arithmetic/add.py`（軽量ケース）でも selfhost 変換を実行し、最小成功ケースを確立する。
 5. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
-   - [ ] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。
+   - [x] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。: `test/fixtures/core/add.py`, `test/fixtures/control/if_else.py`, `sample/py/01_mandelbrot.py`
    - [x] `selfhost/py2cpp.out` と `python3 src/py2cpp.py` の出力差分チェックをスクリプト化する。: `tools/check_selfhost_cpp_diff.py`
-   - [ ] CI 相当手順（ローカル）に組み込む。
+   - [x] CI 相当手順（ローカル）に組み込む。: `tools/run_local_ci.py`
 
 ## 複数ファイル構成（最終ゴール）
 
@@ -172,5 +191,6 @@
   5. `a in {"x","y"}` の selfhost C++ 生成は一時オブジェクト生成の都合で不安定なため、CLI 解析経路では `a == "x" or a == "y"` を採用。
   6. `tools/check_selfhost_cpp_diff.py` に `--mode allow-not-implemented`（既定）を追加し、現段階の selfhost 未実装ケースを skip 集計できるようにした。
   7. `py_runtime.h` の `optional<dict<...>>` 向け `py_dict_get` が temporary 参照返却警告を出していたため、値返しへ変更して selfhost ビルド警告を解消。
+  8. `tools/run_local_ci.py` を追加し、`check_py2cpp_transpile` / unit tests / selfhost build / selfhost diff（allow-not-implemented）を1コマンドで実行できるようにした。
   2. `g++` コンパイルエラーは `total_errors=72`（`<=100` 維持）を確認。
   3. 現在の上位は `__pytra_main`（import/runtime 参照境界）と `emit_class` / `emit_assign` の `Any` 境界由来の型不整合。
