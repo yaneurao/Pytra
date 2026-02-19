@@ -190,24 +190,6 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "write_stdout": "py_sys_write_stdout",
         "exit": "py_sys_exit",
     }
-    out["png"] = {
-        "write_rgb_png": "write_rgb_png",
-    }
-    out["pytra.runtime.png"] = {
-        "write_rgb_png": "write_rgb_png",
-    }
-    out["png_helper"] = {
-        "write_rgb_png": "write_rgb_png",
-    }
-    out["gif"] = {
-        "save_gif": "save_gif",
-    }
-    out["pytra.runtime.gif"] = {
-        "save_gif": "save_gif",
-    }
-    out["gif_helper"] = {
-        "save_gif": "save_gif",
-    }
     return out
 
 
