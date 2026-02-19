@@ -176,6 +176,9 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     out["pylib.std.glob"] = {
         "glob": "py_glob_glob",
     }
+    out["pytra.std.glob"] = {
+        "glob": "py_glob_glob",
+    }
     out["sys"] = {
         "set_argv": "py_sys_set_argv",
         "set_path": "py_sys_set_path",
@@ -190,13 +193,26 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "write_stdout": "py_sys_write_stdout",
         "exit": "py_sys_exit",
     }
+    out["pytra.std.sys"] = {
+        "set_argv": "py_sys_set_argv",
+        "set_path": "py_sys_set_path",
+        "write_stderr": "py_sys_write_stderr",
+        "write_stdout": "py_sys_write_stdout",
+        "exit": "py_sys_exit",
+    }
     out["png"] = {
+        "write_rgb_png": "write_rgb_png",
+    }
+    out["pytra.runtime.png"] = {
         "write_rgb_png": "write_rgb_png",
     }
     out["png_helper"] = {
         "write_rgb_png": "write_rgb_png",
     }
     out["gif"] = {
+        "save_gif": "save_gif",
+    }
+    out["pytra.runtime.gif"] = {
         "save_gif": "save_gif",
     }
     out["gif_helper"] = {
@@ -418,6 +434,73 @@ class CppEmitter(CodeEmitter):
         self.current_function_return_type: str = ""
         self.declared_var_types: dict[str, str] = {}
 
+    def _module_name_to_cpp_include(self, module_name: str) -> str:
+        """Python import モジュール名を C++ include へ解決する。"""
+        if module_name.startswith("pytra.std."):
+            return "pytra/std/" + module_name[10:] + ".h"
+        if module_name.startswith("pytra.runtime."):
+            return "pytra/runtime/" + module_name[14:] + ".h"
+        if module_name.startswith("pylib.std."):
+            return "pytra/std/" + module_name[10:] + ".h"
+        if module_name.startswith("pylib.tra."):
+            return "pytra/runtime/" + module_name[10:] + ".h"
+        legacy_std: dict[str, str] = {
+            "math": "pytra/std/math.h",
+            "time": "pytra/std/time.h",
+            "pathlib": "pytra/std/pathlib.h",
+            "dataclasses": "pytra/std/dataclasses.h",
+            "sys": "pytra/std/sys.h",
+        }
+        if module_name in legacy_std:
+            return legacy_std[module_name]
+        legacy_runtime: dict[str, str] = {
+            "png": "pytra/runtime/png.h",
+            "gif": "pytra/runtime/gif.h",
+            "assertions": "pytra/runtime/assertions.h",
+        }
+        if module_name in legacy_runtime:
+            return legacy_runtime[module_name]
+        return ""
+
+    def _collect_import_cpp_includes(self, body: list[dict[str, Any]]) -> list[str]:
+        """EAST body から必要な C++ include を収集する。"""
+        includes: list[str] = []
+        seen: set[str] = set()
+        for stmt in body:
+            kind = self.any_to_str(stmt.get("kind"))
+            if kind == "Import":
+                for ent in self._dict_stmt_list(stmt.get("names")):
+                    mod_name = self.any_to_str(ent.get("name"))
+                    inc = self._module_name_to_cpp_include(mod_name)
+                    if inc != "" and inc not in seen:
+                        seen.add(inc)
+                        includes.append(inc)
+            elif kind == "ImportFrom":
+                mod_name = self.any_to_str(stmt.get("module"))
+                inc = self._module_name_to_cpp_include(mod_name)
+                if inc != "" and inc not in seen:
+                    seen.add(inc)
+                    includes.append(inc)
+                if mod_name in {"pytra.std", "pylib.std"}:
+                    for ent in self._dict_stmt_list(stmt.get("names")):
+                        sym = self.any_to_str(ent.get("name"))
+                        if sym == "":
+                            continue
+                        sym_inc = self._module_name_to_cpp_include("pytra.std." + sym)
+                        if sym_inc != "" and sym_inc not in seen:
+                            seen.add(sym_inc)
+                            includes.append(sym_inc)
+                if mod_name in {"pytra.runtime", "pylib.tra"}:
+                    for ent in self._dict_stmt_list(stmt.get("names")):
+                        sym = self.any_to_str(ent.get("name"))
+                        if sym == "":
+                            continue
+                        sym_inc = self._module_name_to_cpp_include("pytra.runtime." + sym)
+                        if sym_inc != "" and sym_inc not in seen:
+                            seen.add(sym_inc)
+                            includes.append(sym_inc)
+        return includes
+
     def _opt_ge(self, level: int) -> bool:
         """最適化レベルが指定値以上かを返す。"""
         cur = 3
@@ -525,9 +608,9 @@ class CppEmitter(CodeEmitter):
             return "perf_counter"
         if module_name == "pathlib" and symbol_name == "Path":
             return "Path"
-        if module_name == "pylib.tra.assertions" and symbol_name.startswith("py_assert_"):
+        if module_name in {"pylib.tra.assertions", "pytra.runtime.assertions"} and symbol_name.startswith("py_assert_"):
             return symbol_name
-        if module_name in {"sys", "pylib.std.sys"}:
+        if module_name in {"sys", "pylib.std.sys", "pytra.std.sys"}:
             if symbol_name == "set_argv":
                 return "py_sys_set_argv"
             if symbol_name == "set_path":
@@ -599,6 +682,9 @@ class CppEmitter(CodeEmitter):
         if len(header_text) > 0 and header_text[-1] == NEWLINE_CHAR:
             header_text = header_text[:-1]
         self.emit(header_text)
+        extra_includes = self._collect_import_cpp_includes(body)
+        for inc in extra_includes:
+            self.emit(f"#include \"{inc}\"")
         self.emit("")
 
         if self.top_namespace != "":

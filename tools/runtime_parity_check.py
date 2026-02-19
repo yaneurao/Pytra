@@ -56,6 +56,7 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
             transpile_cmd=f"python src/py2cpp.py {shlex.quote(case_src)} test/transpile/cpp/{case_stem}.cpp",
             run_cmd=(
                 f"g++ -std=c++20 -O2 -I src test/transpile/cpp/{case_stem}.cpp "
+                "-I src/runtime/cpp "
                 "src/runtime/cpp/pylib/png.cpp src/runtime/cpp/pylib/gif.cpp src/runtime/cpp/std/math.cpp "
                 "src/runtime/cpp/std/time.cpp src/runtime/cpp/std/pathlib.cpp src/runtime/cpp/std/dataclasses.cpp "
                 "src/runtime/cpp/base/io.cpp src/runtime/cpp/base/bytes_util.cpp "

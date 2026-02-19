@@ -161,6 +161,41 @@ if __name__ == "__main__":
             cpp = transpile_to_cpp(east)
         self.assertIn("py_math::sqrt(9.0)", cpp)
 
+    def test_pytra_std_import_emits_one_to_one_include(self) -> None:
+        src = """import pytra.std.math as math
+
+def main() -> None:
+    print(math.sqrt(9.0))
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pytra_std_import.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn('#include "pytra/std/math.h"', cpp)
+        self.assertIn("py_math::sqrt(9.0)", cpp)
+
+    def test_pytra_runtime_import_emits_one_to_one_include(self) -> None:
+        src = """import pytra.runtime.png as png
+
+def main() -> None:
+    pixels: bytearray = bytearray(3)
+    png.write_rgb_png("x.png", 1, 1, pixels)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pytra_runtime_import.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn('#include "pytra/runtime/png.h"', cpp)
+        self.assertIn("pytra::png::write_rgb_png", cpp)
+
     def test_floor_div_mode_native_and_python(self) -> None:
         src = """def main() -> None:
     a: int = 7
@@ -314,6 +349,8 @@ if __name__ == "__main__":
                     "-O2",
                     "-I",
                     "src",
+                    "-I",
+                    "src/runtime/cpp",
                     str(out_cpp),
                     *CPP_RUNTIME_SRCS,
                     "-o",
