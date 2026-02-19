@@ -2,11 +2,6 @@
 
 ## 直近実行キュー（細分化）
 
-
-1. [ ] selfhost 入力経路の段階回復
-   - [x] `load_east` の `.json` 経路を selfhost で通す（`.py` は未実装のまま維持）。
-   - [x] `.json` 経路で `test/fixtures/core/add.py` 由来 EAST を selfhost 変換できることを確認する。: `/tmp/add.east.json -> /tmp/add.selfhost.cpp` 生成成功
-   - [x] `.json` 経路でのエラー分類（`input_invalid` / `not_implemented`）を固定する。: `.py` 入力は `not_implemented`、`.json` 解析失敗は `input_invalid`
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
      - 依存本体: `pylib.tra.east_parts.core::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
