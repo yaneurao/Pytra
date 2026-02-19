@@ -122,3 +122,17 @@
 
 - 既存仕様（`docs/spec-dev.md`）との整合が必要なため、導入時は必ず同時更新する。
 - 破壊的変更になり得る項目（`int-width`, `str-index-mode`）は、デフォルト変更前に 1 リリース以上の移行期間を設ける。
+
+### 6.1 仕様整合チェック手順
+
+オプションを追加・変更したときは、次を同時に更新する。
+
+1. `docs/spec-options.md`（オプション定義・既定値・preset）
+2. `docs/spec-dev.md`（実装仕様と CLI 反映）
+3. `docs/spec-east.md`（EAST 側と生成器側の責務境界）
+4. `docs/how-to-use.md`（利用例）
+
+更新後は次を確認する。
+
+1. `python src/py2cpp.py INPUT.py --dump-options` の出力が仕様通りであること
+2. `test/unit/test_py2cpp_features.py` の該当オプション回帰が通ること

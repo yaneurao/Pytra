@@ -46,3 +46,173 @@ def normalize_common_transpile_args(
         if not cur:
             setattr(args, "parser_backend", default_parser_backend)
     return args
+
+
+def resolve_codegen_options(
+    preset: str,
+    negative_index_mode_opt: str,
+    bounds_check_mode_opt: str,
+    floor_div_mode_opt: str,
+    mod_mode_opt: str,
+    int_width_opt: str,
+) -> tuple[str, str, str, str, str]:
+    """プリセットと個別指定から最終オプションを決定する。"""
+    neg = "const_only"
+    bnd = "off"
+    fdiv = "native"
+    mod = "native"
+    int_width = "64"
+
+    if preset != "":
+        if preset == "native":
+            neg = "off"
+            bnd = "off"
+            fdiv = "native"
+            mod = "native"
+            int_width = "64"
+        elif preset == "balanced":
+            neg = "const_only"
+            bnd = "debug"
+            fdiv = "python"
+            mod = "python"
+            int_width = "64"
+        elif preset == "python":
+            neg = "always"
+            bnd = "always"
+            fdiv = "python"
+            mod = "python"
+            int_width = "bigint"
+        else:
+            raise ValueError(f"invalid --preset: {preset}")
+
+    if negative_index_mode_opt != "":
+        neg = negative_index_mode_opt
+    if bounds_check_mode_opt != "":
+        bnd = bounds_check_mode_opt
+    if floor_div_mode_opt != "":
+        fdiv = floor_div_mode_opt
+    if mod_mode_opt != "":
+        mod = mod_mode_opt
+    if int_width_opt != "":
+        int_width = int_width_opt
+    return neg, bnd, fdiv, mod, int_width
+
+
+def validate_codegen_options(
+    negative_index_mode: str,
+    bounds_check_mode: str,
+    floor_div_mode: str,
+    mod_mode: str,
+    int_width: str,
+) -> str:
+    """最終オプションの妥当性を検証し、エラーメッセージを返す。"""
+    if negative_index_mode not in {"always", "const_only", "off"}:
+        return f"invalid --negative-index-mode: {negative_index_mode}"
+    if bounds_check_mode not in {"always", "debug", "off"}:
+        return f"invalid --bounds-check-mode: {bounds_check_mode}"
+    if floor_div_mode not in {"native", "python"}:
+        return f"invalid --floor-div-mode: {floor_div_mode}"
+    if mod_mode not in {"native", "python"}:
+        return f"invalid --mod-mode: {mod_mode}"
+    if int_width not in {"32", "64", "bigint"}:
+        return f"invalid --int-width: {int_width}"
+    if int_width == "bigint":
+        return "--int-width=bigint is not implemented yet"
+    return ""
+
+
+def dump_codegen_options_text(
+    preset: str,
+    negative_index_mode: str,
+    bounds_check_mode: str,
+    floor_div_mode: str,
+    mod_mode: str,
+    int_width: str,
+) -> str:
+    """解決済みオプションを人間向けテキストへ整形する。"""
+    p = preset if preset != "" else "(none)"
+    return (
+        "options:\n"
+        f"  preset: {p}\n"
+        f"  negative-index-mode: {negative_index_mode}\n"
+        f"  bounds-check-mode: {bounds_check_mode}\n"
+        f"  floor-div-mode: {floor_div_mode}\n"
+        f"  mod-mode: {mod_mode}\n"
+        f"  int-width: {int_width}\n"
+    )
+
+
+def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
+    """py2cpp 向け CLI 引数を解析し、値辞書またはエラー文字列を返す。"""
+    out: dict[str, str] = {
+        "input": "",
+        "output": "",
+        "negative_index_mode_opt": "",
+        "bounds_check_mode_opt": "",
+        "floor_div_mode_opt": "",
+        "mod_mode_opt": "",
+        "int_width_opt": "",
+        "preset": "",
+        "parser_backend": "self_hosted",
+        "no_main": "0",
+        "dump_deps": "0",
+        "dump_options": "0",
+    }
+    i = 0
+    while i < len(argv):
+        a = str(argv[i])
+        if a in {"-o", "--output"}:
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --output"
+            out["output"] = argv[i]
+        elif a == "--negative-index-mode":
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --negative-index-mode"
+            out["negative_index_mode_opt"] = argv[i]
+        elif a == "--bounds-check-mode":
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --bounds-check-mode"
+            out["bounds_check_mode_opt"] = argv[i]
+        elif a == "--floor-div-mode":
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --floor-div-mode"
+            out["floor_div_mode_opt"] = argv[i]
+        elif a == "--mod-mode":
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --mod-mode"
+            out["mod_mode_opt"] = argv[i]
+        elif a == "--int-width":
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --int-width"
+            out["int_width_opt"] = argv[i]
+        elif a == "--preset":
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --preset"
+            out["preset"] = argv[i]
+        elif a == "--parser-backend":
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --parser-backend"
+            out["parser_backend"] = argv[i]
+        elif a == "--no-main":
+            out["no_main"] = "1"
+        elif a == "--dump-deps":
+            out["dump_deps"] = "1"
+        elif a == "--dump-options":
+            out["dump_options"] = "1"
+        elif a.startswith("-"):
+            return {}, f"unknown option: {a}"
+        else:
+            if out["input"] == "":
+                out["input"] = a
+            else:
+                return {}, f"unexpected extra argument: {a}"
+        i += 1
+    return out, ""

@@ -56,6 +56,16 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 - オプション群は `--preset {native,balanced,python}` で一括指定できます。個別指定を併用した場合は個別指定が優先されます。
 - 解決後のオプションを確認したい場合は `--dump-options` を使います。
 
+例:
+- 性能優先（既定）:
+  - `python src/py2cpp.py INPUT.py -o OUT.cpp --preset native`
+- 互換性バランス:
+  - `python src/py2cpp.py INPUT.py -o OUT.cpp --preset balanced`
+- 互換性優先（注: `int-width=bigint` は未実装）:
+  - `python src/py2cpp.py INPUT.py -o OUT.cpp --preset python --int-width 64`
+- 最終解決オプション確認:
+  - `python src/py2cpp.py INPUT.py --preset balanced --mod-mode native --dump-options`
+
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 
 次のコマンドで、`src/pylib/png.py` / `src/pylib/gif.py` の出力と `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp` の出力が一致するかを確認できます。

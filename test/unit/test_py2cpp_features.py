@@ -14,7 +14,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2cpp import dump_options_text, load_cpp_module_attr_call_map, load_east, resolve_codegen_options, transpile_to_cpp
+from src.common.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options
+from src.py2cpp import load_cpp_module_attr_call_map, load_east, transpile_to_cpp
 
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/core/pathlib.cpp",
@@ -57,13 +58,33 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual((neg, bnd, fdiv, mod, iw), ("off", "off", "python", "native", "32"))
 
     def test_dump_options_text_contains_resolved_values(self) -> None:
-        txt = dump_options_text("balanced", "const_only", "debug", "python", "python", "64")
+        txt = dump_codegen_options_text("balanced", "const_only", "debug", "python", "python", "64")
         self.assertIn("preset: balanced", txt)
         self.assertIn("negative-index-mode: const_only", txt)
         self.assertIn("bounds-check-mode: debug", txt)
         self.assertIn("floor-div-mode: python", txt)
         self.assertIn("mod-mode: python", txt)
         self.assertIn("int-width: 64", txt)
+
+    def test_parse_py2cpp_argv(self) -> None:
+        parsed, err = parse_py2cpp_argv(
+            [
+                "input.py",
+                "-o",
+                "out.cpp",
+                "--preset",
+                "balanced",
+                "--mod-mode",
+                "native",
+                "--dump-options",
+            ]
+        )
+        self.assertEqual(err, "")
+        self.assertEqual(parsed.get("input"), "input.py")
+        self.assertEqual(parsed.get("output"), "out.cpp")
+        self.assertEqual(parsed.get("preset"), "balanced")
+        self.assertEqual(parsed.get("mod_mode_opt"), "native")
+        self.assertEqual(parsed.get("dump_options"), "1")
 
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
         src = """def main() -> None:
@@ -292,6 +313,48 @@ if __name__ == "__main__":
             run = subprocess.run([str(out_exe)], cwd=ROOT, capture_output=True, text=True)
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             return run.stdout.replace("\r\n", "\n")
+
+    def test_cli_reports_user_syntax_error_category(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            bad_py = Path(tmpdir) / "bad.py"
+            bad_py.write_text("def main(:\n    pass\n", encoding="utf-8")
+            out_cpp = Path(tmpdir) / "bad.cpp"
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(bad_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("[user_syntax_error]", proc.stderr)
+
+    def test_cli_reports_input_invalid_category(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            bad_json = Path(tmpdir) / "bad.json"
+            bad_json.write_text("[1,2,3]", encoding="utf-8")
+            out_cpp = Path(tmpdir) / "bad.cpp"
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(bad_json), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("[input_invalid]", proc.stderr)
+
+    def test_cli_dump_options_allows_planned_bigint_preset(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "ok.py"
+            src_py.write_text("print(1)\n", encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(src_py), "--preset", "python", "--dump-options"],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+            self.assertIn("preset: python", proc.stdout)
+            self.assertIn("int-width: bigint", proc.stdout)
 
     def test_class_storage_strategy_case15_case34(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
