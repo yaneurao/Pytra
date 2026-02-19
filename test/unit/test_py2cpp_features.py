@@ -15,7 +15,14 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options
-from src.py2cpp import build_module_east_map, dump_deps_text, load_cpp_module_attr_call_map, load_east, transpile_to_cpp
+from src.py2cpp import (
+    build_module_east_map,
+    build_module_symbol_index,
+    dump_deps_text,
+    load_cpp_module_attr_call_map,
+    load_east,
+    transpile_to_cpp,
+)
 
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/base/gc.cpp",
@@ -319,6 +326,35 @@ def main() -> None:
         self.assertIn(str(helper_py), mp)
         self.assertEqual(mp[str(main_py)].get("kind"), "Module")
         self.assertEqual(mp[str(helper_py)].get("kind"), "Module")
+
+    def test_build_module_symbol_index_contains_defs_and_import_aliases(self) -> None:
+        src_main = """import helper as hp
+from helper import C as HC
+
+def run() -> int:
+    return hp.f()
+"""
+        src_helper = """class C:
+    x: int = 1
+
+def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            mp = build_module_east_map(main_py)
+            idx = build_module_symbol_index(mp)
+        self.assertIn(str(main_py), idx)
+        self.assertIn(str(helper_py), idx)
+        self.assertIn("run", idx[str(main_py)]["functions"])
+        self.assertIn("f", idx[str(helper_py)]["functions"])
+        self.assertIn("C", idx[str(helper_py)]["classes"])
+        self.assertEqual(idx[str(main_py)]["import_modules"].get("hp"), "helper")
+        self.assertIn("HC", idx[str(main_py)]["import_symbols"])
 
     def test_floor_div_mode_native_and_python(self) -> None:
         src = """def main() -> None:

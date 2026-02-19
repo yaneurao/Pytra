@@ -3749,6 +3749,50 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
     return out
 
 
+def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """モジュール単位 EAST から公開シンボルと import alias 情報を抽出する。"""
+    out: dict[str, dict[str, Any]] = {}
+    for mod_path, east in module_east_map.items():
+        body_obj: object = east.get("body")
+        body: list[dict[str, Any]] = []
+        if isinstance(body_obj, list):
+            i = 0
+            while i < len(body_obj):
+                item = body_obj[i]
+                if isinstance(item, dict):
+                    body.append(item)
+                i += 1
+        funcs: list[str] = []
+        classes: list[str] = []
+        i = 0
+        while i < len(body):
+            st = body[i]
+            kind_obj: object = st.get("kind")
+            kind = kind_obj if isinstance(kind_obj, str) else ""
+            if kind == "FunctionDef":
+                name_obj: object = st.get("name")
+                if isinstance(name_obj, str) and name_obj != "":
+                    funcs.append(name_obj)
+            elif kind == "ClassDef":
+                name_obj = st.get("name")
+                if isinstance(name_obj, str) and name_obj != "":
+                    classes.append(name_obj)
+            i += 1
+        meta_obj: object = east.get("meta")
+        meta = meta_obj if isinstance(meta_obj, dict) else {}
+        import_modules_obj: object = meta.get("import_modules")
+        import_symbols_obj: object = meta.get("import_symbols")
+        import_modules = import_modules_obj if isinstance(import_modules_obj, dict) else {}
+        import_symbols = import_symbols_obj if isinstance(import_symbols_obj, dict) else {}
+        out[mod_path] = {
+            "functions": funcs,
+            "classes": classes,
+            "import_modules": import_modules,
+            "import_symbols": import_symbols,
+        }
+    return out
+
+
 def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:
     """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する。"""
     if module_name.startswith("pytra.") or module_name == "pytra":
