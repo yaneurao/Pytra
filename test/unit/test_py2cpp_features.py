@@ -89,6 +89,13 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed.get("mod_mode_opt"), "native")
         self.assertEqual(parsed.get("dump_options"), "1")
 
+    def test_parse_py2cpp_argv_accepts_positional_output(self) -> None:
+        parsed, err = parse_py2cpp_argv(["input.py", "out.cpp", "-O2"])
+        self.assertEqual(err, "")
+        self.assertEqual(parsed.get("input"), "input.py")
+        self.assertEqual(parsed.get("output"), "out.cpp")
+        self.assertEqual(parsed.get("opt_level_opt"), "2")
+
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
         src = """def main() -> None:
     auto: int = 1

@@ -113,7 +113,8 @@
    - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
      - [ ] 引数パース互換（`INPUT OUTPUT` 形式）と `-o` 形式の両方で通ることを確認する。
        - [x] `argv[0]` 混入で `unexpected extra argument` になる不具合を修正し、`-o` 形式で `not_implemented` まで到達することを確認する（2026-02-19）。
-     - [ ] 失敗時に `user_syntax_error` / `input_invalid` / `not_implemented` の分類が維持されることを確認する。
+       - [x] `parse_py2cpp_argv` が `INPUT OUTPUT` 形式（`-o` 省略）を受理するように実装した（2026-02-19）。
+      - [ ] 失敗時に `user_syntax_error` / `input_invalid` / `not_implemented` の分類が維持されることを確認する。
    - [x] `./selfhost/py2cpp.out --help` を通す。
    - [ ] `./selfhost/py2cpp.out INPUT.py -o OUT.cpp` を通す。
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。

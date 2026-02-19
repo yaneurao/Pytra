@@ -290,6 +290,9 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         else:
             if out["input"] == "":
                 out["input"] = a
+            elif out["output"] == "":
+                # `py2cpp.py INPUT.py OUTPUT.cpp` 形式も受け付ける。
+                out["output"] = a
             else:
                 return empty_parse_dict(), f"unexpected extra argument: {a}"
         i += 1
