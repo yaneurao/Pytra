@@ -29,6 +29,7 @@
    - [ ] `cpp_hooks.py` は最初に `png/gif` のみ移管し、`py2cpp.py` の既存分岐を1件ずつ削る。
      - [ ] `png.write_rgb_png` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。
      - [ ] `gif.save_gif` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。
+     - [ ] 補足: `cpp_hooks.py` 側の `on_render_call` 追加は着手済み。selfhost を壊さない hook 呼び出し経路（高階関数を使わない方式）を先に確定する。
      - [ ] 置換ごとに `tools/check_py2cpp_transpile.py` を実行し、差分を確認する。
    - [ ] 各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` の両方を必須ゲートにする。
      - [x] 上記 2 コマンド失敗時はコミット禁止ルールを `docs/spec-codex.md` に明記する。

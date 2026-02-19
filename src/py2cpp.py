@@ -249,6 +249,7 @@ def load_cpp_type_map() -> dict[str, str]:
 
 def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
     """C++ 用 hooks 設定を返す（現状は no-op）。"""
+    _ = profile
     out: dict[str, Any] = {}
     return out
 
