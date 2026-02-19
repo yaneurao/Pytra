@@ -85,6 +85,10 @@
      - [ ] `*_dict_stmt_list` 系引数を `expr.get(..., [])` ではなく `expr.get(...)` + helper 正規化へ統一する。
    - [x] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
    - [x] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
+   - [ ] `hook_on_*` 系の `hooks` コンテナ型を selfhost で安定化する。
+     - [x] `CodeEmitter` 側の hook 呼び出しを object receiver メソッド参照（`self.hooks.on_*`）から排除する。
+     - [ ] `selfhost/py2cpp.cpp` で `hooks` が `object` へ退化しないよう、`dict[str, Any]` を維持する初期化経路へ統一する。
+     - [ ] `fn(self, ...)` 呼び出しが C++ 側で無効式になる問題を、hook 無効化または型付き dispatcher で解消する。
    - [ ] `*_dict_get*` の default 引数を `str` / `int` / `list` 別 helper に分離し、`object` 強制変換を減らす。
      - [x] `any_dict_get_bool` / `any_dict_get_list` / `any_dict_get_dict` を追加する。
      - [ ] `py_dict_get_default(..., list<object>{})` を全箇所削減する（selfhost compile logで追跡）。
@@ -119,6 +123,10 @@
    - [ ] `./selfhost/py2cpp.out INPUT.py -o OUT.cpp` を通す。
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
    - [ ] `test/fixtures/arithmetic/add.py`（軽量ケース）でも selfhost 変換を実行し、最小成功ケースを確立する。
+   - [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
+     - [x] `load_east` を `.json` 受理 / `.py` `not_implemented` に分割した。
+     - [x] selfhost parser 非対応のネスト関数を含む補助関数（import graph / multi-file）の一部をスタブへ置換した。
+     - [ ] `Path`/`json` 操作の型退化で C++ 生成が崩れる箇所を段階的に縮退し、`tools/build_selfhost.py` を再 green 化する。
 5. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
    - [x] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。: `test/fixtures/core/add.py`, `test/fixtures/control/if_else.py`, `sample/py/01_mandelbrot.py`
    - [x] `selfhost/py2cpp.out` と `python3 src/py2cpp.py` の出力差分チェックをスクリプト化する。: `tools/check_selfhost_cpp_diff.py`

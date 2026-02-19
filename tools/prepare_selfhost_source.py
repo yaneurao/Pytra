@@ -239,6 +239,91 @@ def _patch_main_guard_for_selfhost(text: str) -> str:
     return text.replace(old, new)
 
 
+def _replace_import_graph_helpers_for_selfhost(text: str) -> str:
+    """selfhost parser 非対応のネスト関数を含むヘルパを簡易実装へ置換する。"""
+    out = text
+    start_a = "def _analyze_import_graph("
+    end_a = "\ndef _format_import_graph_report("
+    ia = out.find(start_a)
+    ja = out.find(end_a)
+    if ia >= 0 and ja > ia:
+        stub_a = (
+            "def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:\n"
+            "    \"\"\"selfhost 最小互換: 依存グラフ解析は簡易結果を返す。\"\"\"\n"
+            "    out: dict[str, Any] = {}\n"
+            "    out[\"edges\"] = []\n"
+            "    out[\"missing_modules\"] = []\n"
+            "    out[\"relative_imports\"] = []\n"
+            "    out[\"reserved_conflicts\"] = []\n"
+            "    out[\"cycles\"] = []\n"
+            "    out[\"user_module_files\"] = [str(entry_path)]\n"
+            "    return out\n\n"
+        )
+        out = out[:ia] + stub_a + out[ja + 1 :]
+
+    start_b = "def _format_import_graph_report("
+    end_b = "\ndef _validate_import_graph_or_raise("
+    ib = out.find(start_b)
+    jb = out.find(end_b)
+    if ib >= 0 and jb > ib:
+        stub_b = (
+            "def _format_import_graph_report(analysis: dict[str, Any]) -> str:\n"
+            "    \"\"\"selfhost 最小互換: --dump-deps 表示を簡易化する。\"\"\"\n"
+            "    _ = analysis\n"
+            "    return \"graph:\\n  (selfhost minimal mode)\\n\"\n\n"
+        )
+        out = out[:ib] + stub_b + out[jb + 1 :]
+    return out
+
+
+def _replace_multi_file_helpers_for_selfhost(text: str) -> str:
+    """selfhost parser 非対応のネスト関数を含む multi-file 出力ヘルパを置換する。"""
+    out = text
+    start = "def _write_multi_file_cpp("
+    end = "\ndef _resolve_user_module_path("
+    i = out.find(start)
+    j = out.find(end)
+    if i >= 0 and j > i:
+        stub = (
+            "def _write_multi_file_cpp(\n"
+            "    *,\n"
+            "    entry_path: Path,\n"
+            "    module_east_map: dict[str, dict[str, Any]],\n"
+            "    output_dir: Path,\n"
+            "    negative_index_mode: str,\n"
+            "    bounds_check_mode: str,\n"
+            "    floor_div_mode: str,\n"
+            "    mod_mode: str,\n"
+            "    int_width: str,\n"
+            "    str_index_mode: str,\n"
+            "    str_slice_mode: str,\n"
+            "    opt_level: str,\n"
+            "    top_namespace: str,\n"
+            "    emit_main: bool,\n"
+            ") -> dict[str, Any]:\n"
+            "    _ = entry_path\n"
+            "    _ = module_east_map\n"
+            "    _ = output_dir\n"
+            "    _ = negative_index_mode\n"
+            "    _ = bounds_check_mode\n"
+            "    _ = floor_div_mode\n"
+            "    _ = mod_mode\n"
+            "    _ = int_width\n"
+            "    _ = str_index_mode\n"
+            "    _ = str_slice_mode\n"
+            "    _ = opt_level\n"
+            "    _ = top_namespace\n"
+            "    _ = emit_main\n"
+            "    raise _make_user_error(\n"
+            "        \"not_implemented\",\n"
+            "        \"selfhost multi-file output is not implemented yet.\",\n"
+            "        [\"use --single-file in selfhost mode\"],\n"
+            "    )\n\n"
+        )
+        out = out[:i] + stub + out[j + 1 :]
+    return out
+
+
 def main() -> int:
     py2cpp_text = SRC_PY2CPP.read_text(encoding="utf-8")
     base_text = SRC_BASE.read_text(encoding="utf-8")
@@ -249,6 +334,8 @@ def main() -> int:
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
     out = _replace_dump_options_for_selfhost(out)
     out = _replace_load_east_for_selfhost(out)
+    out = _replace_multi_file_helpers_for_selfhost(out)
+    out = _replace_import_graph_helpers_for_selfhost(out)
     out = _patch_main_guard_for_selfhost(out)
     out = _strip_main_guard(out)
     out = _patch_selfhost_exception_paths(out)
