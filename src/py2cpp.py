@@ -3377,8 +3377,81 @@ def transpile_to_cpp(
 
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
-    # selfhost 安定性優先で固定フォーマットを返す。
-    return "modules:\n  (none)\nsymbols:\n  (none)\n"
+    body_obj: object = east_module.get("body")
+    body: list[dict[str, Any]] = []
+    if isinstance(body_obj, list):
+        i = 0
+        while i < len(body_obj):
+            item = body_obj[i]
+            if isinstance(item, dict):
+                body.append(item)
+            i += 1
+
+    modules: list[str] = []
+    module_seen: set[str] = set()
+    symbols: list[str] = []
+    symbol_seen: set[str] = set()
+
+    i = 0
+    while i < len(body):
+        stmt = body[i]
+        kind = stmt.get("kind")
+        if kind == "Import":
+            names_obj: object = stmt.get("names")
+            if isinstance(names_obj, list):
+                j = 0
+                while j < len(names_obj):
+                    ent = names_obj[j]
+                    if isinstance(ent, dict):
+                        mod_name_obj: object = ent.get("name")
+                        mod_name = mod_name_obj if isinstance(mod_name_obj, str) else ""
+                        if mod_name != "" and mod_name not in module_seen:
+                            module_seen.add(mod_name)
+                            modules.append(mod_name)
+                    j += 1
+        elif kind == "ImportFrom":
+            mod_obj: object = stmt.get("module")
+            mod_name = mod_obj if isinstance(mod_obj, str) else ""
+            if mod_name != "" and mod_name not in module_seen:
+                module_seen.add(mod_name)
+                modules.append(mod_name)
+            names_obj = stmt.get("names")
+            if isinstance(names_obj, list):
+                j = 0
+                while j < len(names_obj):
+                    ent = names_obj[j]
+                    if isinstance(ent, dict):
+                        sym_obj: object = ent.get("name")
+                        alias_obj: object = ent.get("asname")
+                        sym_name = sym_obj if isinstance(sym_obj, str) else ""
+                        alias = alias_obj if isinstance(alias_obj, str) else ""
+                        if sym_name != "":
+                            label = mod_name + "." + sym_name
+                            if alias != "":
+                                label += " as " + alias
+                            if label not in symbol_seen:
+                                symbol_seen.add(label)
+                                symbols.append(label)
+                    j += 1
+        i += 1
+
+    out = "modules:\n"
+    if len(modules) == 0:
+        out += "  (none)\n"
+    else:
+        i = 0
+        while i < len(modules):
+            out += "  - " + modules[i] + "\n"
+            i += 1
+    out += "symbols:\n"
+    if len(symbols) == 0:
+        out += "  (none)\n"
+    else:
+        i = 0
+        while i < len(symbols):
+            out += "  - " + symbols[i] + "\n"
+            i += 1
+    return out
 
 
 def print_user_error(err_text: str) -> None:

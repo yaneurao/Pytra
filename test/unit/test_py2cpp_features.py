@@ -15,7 +15,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options
-from src.py2cpp import load_cpp_module_attr_call_map, load_east, transpile_to_cpp
+from src.py2cpp import dump_deps_text, load_cpp_module_attr_call_map, load_east, transpile_to_cpp
 
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/base/gc.cpp",
@@ -202,6 +202,28 @@ if __name__ == "__main__":
             cpp = transpile_to_cpp(east)
         self.assertIn('#include "pytra/runtime/png.h"', cpp)
         self.assertIn("pytra::png::write_rgb_png", cpp)
+
+    def test_dump_deps_text_lists_modules_and_symbols(self) -> None:
+        src = """import math
+from pytra.std.json import loads as json_loads, dumps
+from pytra.runtime.png import write_rgb_png
+
+def main() -> None:
+    print(math.sqrt(4.0))
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "deps_case.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            txt = dump_deps_text(east)
+        self.assertIn("modules:", txt)
+        self.assertIn("  - math", txt)
+        self.assertIn("  - pytra.std.json", txt)
+        self.assertIn("  - pytra.runtime.png", txt)
+        self.assertIn("symbols:", txt)
+        self.assertIn("  - pytra.std.json.loads as json_loads", txt)
+        self.assertIn("  - pytra.std.json.dumps", txt)
+        self.assertIn("  - pytra.runtime.png.write_rgb_png", txt)
 
     def test_floor_div_mode_native_and_python(self) -> None:
         src = """def main() -> None:
