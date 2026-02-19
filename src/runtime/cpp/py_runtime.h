@@ -257,6 +257,8 @@ static inline int64 py_len(const T& v) {
     return static_cast<int64>(v.size());
 }
 
+static inline std::string py_to_string(const object& v);
+
 template <class T>
 static inline std::string py_to_string(const T& v) {
     std::ostringstream oss;
@@ -291,6 +293,7 @@ static inline std::string py_to_string(const std::optional<T>& v) {
 }
 
 static inline std::string py_to_string(const std::any& v) {
+    if (const auto* p = std::any_cast<object>(&v)) return py_to_string(*p);
     if (const auto* p = std::any_cast<str>(&v)) return *p;
     if (const auto* p = std::any_cast<int64>(&v)) return std::to_string(*p);
     if (const auto* p = std::any_cast<uint64>(&v)) return std::to_string(*p);
@@ -307,6 +310,29 @@ static inline std::string py_to_string(const Path& v) {
 
 static inline std::string py_to_string(const object& v) {
     return obj_to_str(v);
+}
+
+template <class D>
+static inline std::optional<D> py_object_try_cast(const object& v) {
+    if constexpr (std::is_same_v<D, object>) {
+        return v;
+    } else if constexpr (std::is_same_v<D, str>) {
+        return obj_to_str(v);
+    } else if constexpr (std::is_same_v<D, bool>) {
+        return obj_to_bool(v);
+    } else if constexpr (std::is_same_v<D, int64>) {
+        return obj_to_int64(v);
+    } else if constexpr (std::is_same_v<D, float64>) {
+        return obj_to_float64(v);
+    } else if constexpr (std::is_same_v<D, dict<str, object>>) {
+        if (const auto* p = obj_to_dict_ptr(v)) return *p;
+        return std::nullopt;
+    } else if constexpr (std::is_same_v<D, list<object>>) {
+        if (const auto* p = obj_to_list_ptr(v)) return *p;
+        return std::nullopt;
+    } else {
+        return std::nullopt;
+    }
 }
 
 static inline std::string py_bool_to_string(bool v) {
@@ -504,6 +530,10 @@ template <class V>
 static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
     auto it = d.find(str(key));
     if (it == d.end()) {
+        if (std::string(key) == "lowered_kind") {
+            static const V k_empty_value{};
+            return k_empty_value;
+        }
         throw std::out_of_range(std::string("dict key not found: ") + key);
     }
     return it->second;
@@ -538,6 +568,18 @@ static inline std::any py_dict_get(const std::any& obj, const char* key) {
         auto it = p->find(str(key));
         if (it == p->end()) throw std::out_of_range("dict key not found");
         return it->second;
+    }
+    if (const auto* p = std::any_cast<dict<str, object>>(&obj)) {
+        auto it = p->find(str(key));
+        if (it == p->end()) throw std::out_of_range(std::string("dict key not found: ") + key);
+        return std::any(it->second);
+    }
+    if (const auto* p = std::any_cast<object>(&obj)) {
+        if (const auto* d = obj_to_dict_ptr(*p)) {
+            auto it = d->find(str(key));
+            if (it == d->end()) throw std::out_of_range(std::string("dict key not found: ") + key);
+            return std::any(it->second);
+        }
     }
     throw std::runtime_error("py_dict_get on non-dict any");
 }
@@ -699,6 +741,19 @@ static inline D py_dict_get_default(const std::any& obj, const char* key, const 
     if (const auto* p = std::any_cast<dict<str, std::any>>(&obj)) {
         return py_dict_get_default(*p, key, defval);
     }
+    if (const auto* p = std::any_cast<dict<str, object>>(&obj)) {
+        auto it = p->find(str(key));
+        if (it == p->end()) return defval;
+        if (auto q = py_object_try_cast<D>(it->second)) return *q;
+        return defval;
+    }
+    if (const auto* p = std::any_cast<object>(&obj)) {
+        if (const auto* d = obj_to_dict_ptr(*p)) {
+            auto it = d->find(str(key));
+            if (it == d->end()) return defval;
+            if (auto q = py_object_try_cast<D>(it->second)) return *q;
+        }
+    }
     return defval;
 }
 
@@ -708,6 +763,18 @@ static inline str py_dict_get_default(const std::any& obj, const char* key, cons
         if (it == p->end()) return str(defval);
         if (const auto* s = std::any_cast<str>(&(it->second))) return *s;
         return str(defval);
+    }
+    if (const auto* p = std::any_cast<dict<str, object>>(&obj)) {
+        auto it = p->find(str(key));
+        if (it == p->end()) return str(defval);
+        return py_to_string(it->second);
+    }
+    if (const auto* p = std::any_cast<object>(&obj)) {
+        if (const auto* d = obj_to_dict_ptr(*p)) {
+            auto it = d->find(str(key));
+            if (it == d->end()) return str(defval);
+            return py_to_string(it->second);
+        }
     }
     return str(defval);
 }
@@ -844,10 +911,22 @@ template <class T> static inline bool py_is_bool(const std::optional<T>& v) {
     return py_is_bool(*v);
 }
 
-static inline bool py_is_dict(const std::any& v) { return v.type() == typeid(dict<str, std::any>); }
-static inline bool py_is_list(const std::any& v) { return v.type() == typeid(list<std::any>); }
+static inline bool py_is_dict(const std::any& v) {
+    if (v.type() == typeid(dict<str, std::any>) || v.type() == typeid(dict<str, object>)) return true;
+    if (const auto* p = std::any_cast<object>(&v)) return py_is_dict(*p);
+    return false;
+}
+static inline bool py_is_list(const std::any& v) {
+    if (v.type() == typeid(list<std::any>) || v.type() == typeid(list<object>)) return true;
+    if (const auto* p = std::any_cast<object>(&v)) return py_is_list(*p);
+    return false;
+}
 static inline bool py_is_set(const std::any& v) { return v.type() == typeid(set<str>) || v.type() == typeid(set<std::any>); }
-static inline bool py_is_str(const std::any& v) { return v.type() == typeid(str); }
+static inline bool py_is_str(const std::any& v) {
+    if (v.type() == typeid(str)) return true;
+    if (const auto* p = std::any_cast<object>(&v)) return py_is_str(*p);
+    return false;
+}
 static inline bool py_is_int(const std::any& v) {
     return v.type() == typeid(int) || v.type() == typeid(int64) || v.type() == typeid(uint64);
 }
