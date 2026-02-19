@@ -191,6 +191,7 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
     out: dict[str, str] = {
         "input": "",
         "output": "",
+        "top_namespace_opt": "",
         "negative_index_mode_opt": "",
         "bounds_check_mode_opt": "",
         "floor_div_mode_opt": "",
@@ -221,6 +222,11 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
             if i >= len(argv):
                 return empty_parse_dict(), "missing value for --negative-index-mode"
             out["negative_index_mode_opt"] = argv[i]
+        elif a == "--top-namespace":
+            i += 1
+            if i >= len(argv):
+                return empty_parse_dict(), "missing value for --top-namespace"
+            out["top_namespace_opt"] = argv[i]
         elif a == "--bounds-check-mode":
             i += 1
             if i >= len(argv):

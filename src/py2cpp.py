@@ -377,6 +377,7 @@ class CppEmitter(CodeEmitter):
         str_index_mode: str = "native",
         str_slice_mode: str = "byte",
         opt_level: str = "2",
+        top_namespace: str = "",
         emit_main: bool = True,
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
@@ -391,6 +392,7 @@ class CppEmitter(CodeEmitter):
         self.str_index_mode = str_index_mode
         self.str_slice_mode = str_slice_mode
         self.opt_level = opt_level
+        self.top_namespace = top_namespace
         self.emit_main = emit_main
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
@@ -599,11 +601,20 @@ class CppEmitter(CodeEmitter):
         self.emit(header_text)
         self.emit("")
 
+        if self.top_namespace != "":
+            self.emit(f"namespace {self.top_namespace} {{")
+            self.emit("")
+            self.indent += 1
+
         for stmt in body:
             self.emit_stmt(stmt)
             self.emit("")
 
         if self.emit_main:
+            if self.top_namespace != "":
+                self.indent -= 1
+                self.emit(f"}}  // namespace {self.top_namespace}")
+                self.emit("")
             has_pytra_main = False
             for stmt in body:
                 if stmt.get("kind") == "FunctionDef" and self.any_to_str(stmt.get("name")) == "__pytra_main":
@@ -623,15 +634,27 @@ class CppEmitter(CodeEmitter):
                 default_args: list[str] = []
                 pytra_args = self.function_arg_types.get("__pytra_main", default_args)
                 if isinstance(pytra_args, list) and len(pytra_args) >= 1:
-                    self.emit("__pytra_main(py_sys_argv());")
+                    if self.top_namespace != "":
+                        self.emit(f"{self.top_namespace}::__pytra_main(py_sys_argv());")
+                    else:
+                        self.emit("__pytra_main(py_sys_argv());")
                 else:
-                    self.emit("__pytra_main();")
+                    if self.top_namespace != "":
+                        self.emit(f"{self.top_namespace}::__pytra_main();")
+                    else:
+                        self.emit("__pytra_main();")
             else:
+                if self.top_namespace != "":
+                    self.emit(f"using namespace {self.top_namespace};")
                 self.emit_stmt_list(main_guard)
             self.scope_stack.pop()
             self.emit("return 0;")
             self.indent -= 1
             self.emit("}")
+            self.emit("")
+        elif self.top_namespace != "":
+            self.indent -= 1
+            self.emit(f"}}  // namespace {self.top_namespace}")
             self.emit("")
         out: str = ""
         i = 0
@@ -3166,6 +3189,7 @@ def transpile_to_cpp(
     str_index_mode: str = "native",
     str_slice_mode: str = "byte",
     opt_level: str = "2",
+    top_namespace: str = "",
     emit_main: bool = True,
 ) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
@@ -3179,6 +3203,7 @@ def transpile_to_cpp(
         str_index_mode,
         str_slice_mode,
         opt_level,
+        top_namespace,
         emit_main,
     ).transpile()
 
@@ -3230,6 +3255,27 @@ def _dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str
     return default_value
 
 
+def _is_valid_cpp_namespace_name(ns: str) -> bool:
+    """`foo::bar` 形式の C++ namespace 名として妥当か判定する。"""
+    if ns == "":
+        return True
+    parts = ns.split("::")
+    for p in parts:
+        if p == "":
+            return False
+        c0 = p[0:1]
+        if not (c0 == "_" or ("a" <= c0 <= "z") or ("A" <= c0 <= "Z")):
+            return False
+        i = 1
+        while i < len(p):
+            ch = p[i : i + 1]
+            ok = ch == "_" or ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9")
+            if not ok:
+                return False
+            i += 1
+    return True
+
+
 def main(argv: list[str]) -> int:
     """CLI エントリポイント。変換実行と入出力を担当する。"""
     argv_list: list[str] = []
@@ -3241,6 +3287,7 @@ def main(argv: list[str]) -> int:
         return 1
     input_txt = _dict_str_get(parsed, "input", "")
     output_txt = _dict_str_get(parsed, "output", "")
+    top_namespace_opt = _dict_str_get(parsed, "top_namespace_opt", "")
     negative_index_mode_opt = _dict_str_get(parsed, "negative_index_mode_opt", "")
     bounds_check_mode_opt = _dict_str_get(parsed, "bounds_check_mode_opt", "")
     floor_div_mode_opt = _dict_str_get(parsed, "floor_div_mode_opt", "")
@@ -3266,15 +3313,18 @@ def main(argv: list[str]) -> int:
 
     if show_help:
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 0
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
+        return 1
+    if not _is_valid_cpp_namespace_name(top_namespace_opt):
+        print(f"error: invalid --top-namespace: {top_namespace_opt}", file=sys.stderr)
         return 1
     try:
         negative_index_mode, bounds_check_mode, floor_div_mode, mod_mode, int_width, str_index_mode, str_slice_mode, opt_level = resolve_codegen_options(
@@ -3361,6 +3411,7 @@ def main(argv: list[str]) -> int:
             str_index_mode,
             str_slice_mode,
             opt_level,
+            top_namespace_opt,
             not no_main,
         )
     except Exception as ex:

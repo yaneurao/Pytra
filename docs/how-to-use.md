@@ -63,6 +63,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
   - `-O3`: 積極最適化（既定）
 - オプション群は `--preset {native,balanced,python}` で一括指定できます。個別指定を併用した場合は個別指定が優先されます。
 - 解決後のオプションを確認したい場合は `--dump-options` を使います。
+- 生成コードのトップ namespace を付けたい場合は `--top-namespace NS` を使います（未指定時はトップ namespace なし）。
 
 例:
 - 性能優先（既定）:
@@ -75,6 +76,8 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
   - `python src/py2cpp.py INPUT.py --preset balanced --mod-mode native --dump-options`
 - selfhost 調査向け（最適化なし）:
   - `python src/py2cpp.py INPUT.py -o OUT.cpp -O0`
+- トップ namespace を付ける:
+  - `python src/py2cpp.py INPUT.py -o OUT.cpp --top-namespace myproj`
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 

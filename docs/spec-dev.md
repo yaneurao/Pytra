@@ -118,6 +118,9 @@
   - `-O1`: 軽量最適化
   - `-O2`: 中程度の最適化
   - `-O3`（既定）: 積極最適化
+- 生成 C++ のトップ namespace は `--top-namespace NS` で指定できます。
+  - 未指定時（既定）はトップ namespace なし。
+  - 指定時は `main` をグローバルに残し、`NS::__pytra_main(...)` を呼び出します。
 - list/str の負数添字（例: `a[-1]`）は `--negative-index-mode` で制御します。
   - デフォルトは `const_only`（定数の負数添字のみ Python 互換処理を有効化）。
   - `always`: すべての添字アクセスで Python 互換の負数添字処理を有効化。
