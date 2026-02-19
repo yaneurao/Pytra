@@ -60,6 +60,11 @@
   - `NS` を指定した場合、生成 C++ 本文を `namespace NS { ... }` で包む
   - `main` はグローバルに残し、`NS::__pytra_main(...)` を呼び出す
   - 未指定時（既定）はトップ namespace なし
+- `--single-file` / `--multi-file`
+  - `--single-file`（既定）: 従来の単一 `.cpp` 出力
+  - `--multi-file`: モジュール単位で `out/include`, `out/src` と `manifest.json` を出力
+- `--output-dir DIR`
+  - `--multi-file` 時の出力ディレクトリ（未指定時は `out`）
 
 ## 3. 追加候補オプション
 

@@ -191,6 +191,7 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
     out: dict[str, str] = {
         "input": "",
         "output": "",
+        "output_dir": "",
         "top_namespace_opt": "",
         "negative_index_mode_opt": "",
         "bounds_check_mode_opt": "",
@@ -203,6 +204,7 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         "preset": "",
         "parser_backend": "self_hosted",
         "no_main": "0",
+        "single_file": "1",
         "dump_deps": "0",
         "dump_options": "0",
         "help": "0",
@@ -222,6 +224,15 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
             if i >= len(argv):
                 return empty_parse_dict(), "missing value for --negative-index-mode"
             out["negative_index_mode_opt"] = argv[i]
+        elif a == "--output-dir":
+            i += 1
+            if i >= len(argv):
+                return empty_parse_dict(), "missing value for --output-dir"
+            out["output_dir"] = argv[i]
+        elif a == "--single-file":
+            out["single_file"] = "1"
+        elif a == "--multi-file":
+            out["single_file"] = "0"
         elif a == "--top-namespace":
             i += 1
             if i >= len(argv):
