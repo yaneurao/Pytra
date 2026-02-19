@@ -86,85 +86,28 @@ def _extract_top_level_block(text: str, name: str, kind: str) -> str:
 
 
 def _extract_support_blocks() -> str:
-    _ = SRC_TRANSPILE_CLI
-    return (
-        "def empty_parse_dict() -> dict[str, str]:\n"
-        "    out: dict[str, str] = {}\n"
-        "    return out\n\n"
-        "def resolve_codegen_options(\n"
-        "    preset: str,\n"
-        "    negative_index_mode_opt: str,\n"
-        "    bounds_check_mode_opt: str,\n"
-        "    floor_div_mode_opt: str,\n"
-        "    mod_mode_opt: str,\n"
-        "    int_width_opt: str,\n"
-        "    str_index_mode_opt: str,\n"
-        "    str_slice_mode_opt: str,\n"
-        ") -> tuple[str, str, str, str, str, str, str]:\n"
-        "    _ = preset\n"
-        "    neg = negative_index_mode_opt if negative_index_mode_opt != \"\" else \"const_only\"\n"
-        "    bnd = bounds_check_mode_opt if bounds_check_mode_opt != \"\" else \"off\"\n"
-        "    fdiv = floor_div_mode_opt if floor_div_mode_opt != \"\" else \"native\"\n"
-        "    mod = mod_mode_opt if mod_mode_opt != \"\" else \"native\"\n"
-        "    iw = int_width_opt if int_width_opt != \"\" else \"64\"\n"
-        "    sim = str_index_mode_opt if str_index_mode_opt != \"\" else \"native\"\n"
-        "    ssm = str_slice_mode_opt if str_slice_mode_opt != \"\" else \"byte\"\n"
-        "    return neg, bnd, fdiv, mod, iw, sim, ssm\n\n"
-        "def validate_codegen_options(\n"
-        "    negative_index_mode: str,\n"
-        "    bounds_check_mode: str,\n"
-        "    floor_div_mode: str,\n"
-        "    mod_mode: str,\n"
-        "    int_width: str,\n"
-        "    str_index_mode: str,\n"
-        "    str_slice_mode: str,\n"
-        ") -> str:\n"
-        "    _ = negative_index_mode\n"
-        "    _ = bounds_check_mode\n"
-        "    _ = floor_div_mode\n"
-        "    _ = mod_mode\n"
-        "    _ = int_width\n"
-        "    _ = str_index_mode\n"
-        "    _ = str_slice_mode\n"
-        "    return \"\"\n\n"
-        "def dump_codegen_options_text(\n"
-        "    preset: str,\n"
-        "    negative_index_mode: str,\n"
-        "    bounds_check_mode: str,\n"
-        "    floor_div_mode: str,\n"
-        "    mod_mode: str,\n"
-        "    int_width: str,\n"
-        "    str_index_mode: str,\n"
-        "    str_slice_mode: str,\n"
-        ") -> str:\n"
-        "    _ = preset\n"
-        "    _ = negative_index_mode\n"
-        "    _ = bounds_check_mode\n"
-        "    _ = floor_div_mode\n"
-        "    _ = mod_mode\n"
-        "    _ = int_width\n"
-        "    _ = str_index_mode\n"
-        "    _ = str_slice_mode\n"
-        "    return \"options:\\n\"\n\n"
-        "def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:\n"
-        "    out: dict[str, str] = {\n"
-        "        \"input\": argv[0] if len(argv) > 0 else \"\",\n"
-        "        \"output\": \"\",\n"
-        "        \"negative_index_mode_opt\": \"\",\n"
-        "        \"bounds_check_mode_opt\": \"\",\n"
-        "        \"floor_div_mode_opt\": \"\",\n"
-        "        \"mod_mode_opt\": \"\",\n"
-        "        \"int_width_opt\": \"\",\n"
-        "        \"str_index_mode_opt\": \"\",\n"
-        "        \"str_slice_mode_opt\": \"\",\n"
-        "        \"preset\": \"\",\n"
-        "        \"parser_backend\": \"self_hosted\",\n"
-        "        \"no_main\": \"0\",\n"
-        "        \"dump_deps\": \"0\",\n"
-        "        \"dump_options\": \"0\",\n"
-        "    }\n"
-        "    return out, \"\"\n\n"
+    cli_text = SRC_TRANSPILE_CLI.read_text(encoding="utf-8")
+    names = [
+        "resolve_codegen_options",
+        "validate_codegen_options",
+        "dump_codegen_options_text",
+        "empty_parse_dict",
+        "parse_py2cpp_argv",
+    ]
+    parts: list[str] = []
+    for name in names:
+        parts.append(_extract_top_level_block(cli_text, name, "def"))
+    parts.append(
+        "def is_help_requested(parsed: dict[str, str], argv: list[str]) -> bool:\n"
+        "    _ = parsed\n"
+        "    i = 0\n"
+        "    while i < len(argv):\n"
+        "        if argv[i] == \"-h\" or argv[i] == \"--help\":\n"
+        "            return True\n"
+        "        i += 1\n"
+        "    return False\n\n"
     )
+    return "\n".join(parts)
 
 
 def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -> str:
@@ -239,8 +182,47 @@ def _replace_dump_options_for_selfhost(text: str) -> str:
 
 def _patch_selfhost_exception_paths(text: str) -> str:
     out = text
-    out = out.replace("_parse_user_error(str(ex))", "_parse_user_error(\"\")")
-    out = out.replace("print_user_error(str(ex))", "print_user_error(\"\")")
+    old = (
+        "    except Exception as ex:\n"
+        "        parsed_err = _parse_user_error(str(ex))\n"
+        "        cat = str(parsed_err.get(\"category\", \"\"))\n"
+        "        if cat != \"\":\n"
+        "            print_user_error(str(ex))\n"
+        "            return 1\n"
+        "        print(\"error: 変換中に内部エラーが発生しました。\", file=sys.stderr)\n"
+        "        print(\"[internal_error] バグの可能性があります。再現コードを添えて報告してください。\", file=sys.stderr)\n"
+        "        return 1\n"
+    )
+    new = (
+        "    except Exception:\n"
+        "        print(\"error: selfhost parser/runtime is not fully enabled yet.\", file=sys.stderr)\n"
+        "        print(\"[not_implemented] use python3 src/py2cpp.py for now.\", file=sys.stderr)\n"
+        "        return 1\n"
+    )
+    out = out.replace(old, new, 1)
+    old2 = (
+        "    if input_txt == \"\":\n"
+        "        print(\n"
+        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]\",\n"
+        "            file=sys.stderr,\n"
+        "        )\n"
+        "        return 1\n"
+    )
+    new2 = (
+        "    if is_help_requested(parsed, argv_list):\n"
+        "        print(\n"
+        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]\",\n"
+        "            file=sys.stderr,\n"
+        "        )\n"
+        "        return 0\n"
+        "    if input_txt == \"\":\n"
+        "        print(\n"
+        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]\",\n"
+        "            file=sys.stderr,\n"
+        "        )\n"
+        "        return 1\n"
+    )
+    out = out.replace(old2, new2, 1)
     return out
 
 

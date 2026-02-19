@@ -53,7 +53,7 @@ def main() -> int:
                 print(f"[FAIL python] {rel}: {(cp1.stderr.strip() or cp1.stdout.strip()).splitlines()[:1]}")
                 mismatches += 1
                 continue
-            cp2 = _run([str(selfhost_bin), str(src), str(out_sh)])
+            cp2 = _run([str(selfhost_bin), str(src), "-o", str(out_sh)])
             if cp2.returncode != 0:
                 print(f"[FAIL selfhost] {rel}: {(cp2.stderr.strip() or cp2.stdout.strip()).splitlines()[:1]}")
                 mismatches += 1
@@ -76,4 +76,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

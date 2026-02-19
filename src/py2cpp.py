@@ -2953,6 +2953,7 @@ def main(argv: list[str]) -> int:
     no_main = _dict_str_get(parsed, "no_main", "0") == "1"
     dump_deps = _dict_str_get(parsed, "dump_deps", "0") == "1"
     dump_options = _dict_str_get(parsed, "dump_options", "0") == "1"
+    show_help = _dict_str_get(parsed, "help", "0") == "1"
     negative_index_mode = ""
     bounds_check_mode = ""
     floor_div_mode = ""
@@ -2961,6 +2962,12 @@ def main(argv: list[str]) -> int:
     str_index_mode = ""
     str_slice_mode = ""
 
+    if show_help:
+        print(
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]",
+            file=sys.stderr,
+        )
+        return 0
     if input_txt == "":
         print(
             "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]",

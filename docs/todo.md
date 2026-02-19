@@ -106,8 +106,10 @@
    - [ ] 段階ゲート C-2: `tools/check_selfhost_cpp_diff.py` の最小ケースを通す。
 4. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
    - [x] `tools/build_selfhost.py` を追加し、runtime `.cpp` を含めて `selfhost/py2cpp.out` を生成できるようにする。
+   - [x] `selfhost/py2cpp.out` は `__pytra_main(argv)` を実行する状態まで接続する（no-op ではない）。
    - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
-   - [ ] `./selfhost/py2cpp.out --help` と `./selfhost/py2cpp.out INPUT.py -o OUT.cpp` を通す。
+   - [x] `./selfhost/py2cpp.out --help` を通す。
+   - [ ] `./selfhost/py2cpp.out INPUT.py -o OUT.cpp` を通す。
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
    - [ ] `test/fixtures/arithmetic/add.py`（軽量ケース）でも selfhost 変換を実行し、最小成功ケースを確立する。
 5. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
@@ -164,5 +166,9 @@
      - `emit_assign`: `15`
 - 更新（2026-02-19 selfhost 進捗）:
   1. `tools/prepare_selfhost_source.py` -> `src/py2cpp.py selfhost/py2cpp.py` は継続して通過。
+  2. selfhost C++ の型エラー（`error:`）は解消済み。単体リンク失敗は runtime `.cpp` 同時リンクで解消。
+  3. 現在の selfhost 実行時は `load_east` スタブのため、入力変換は `[not_implemented]` を返す（設計通りの暫定動作）。
+  4. `--help` は selfhost 実行で終了コード `0` で表示されるように修正済み（`parse_py2cpp_argv` の `continue` 依存を回避）。
+  5. `a in {"x","y"}` の selfhost C++ 生成は一時オブジェクト生成の都合で不安定なため、CLI 解析経路では `a == "x" or a == "y"` を採用。
   2. `g++` コンパイルエラーは `total_errors=72`（`<=100` 維持）を確認。
   3. 現在の上位は `__pytra_main`（import/runtime 参照境界）と `emit_class` / `emit_assign` の `Any` 境界由来の型不整合。

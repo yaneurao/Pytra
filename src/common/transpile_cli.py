@@ -191,11 +191,14 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         "no_main": "0",
         "dump_deps": "0",
         "dump_options": "0",
+        "help": "0",
     }
     i = 0
     while i < len(argv):
         a = str(argv[i])
-        if a in {"-o", "--output"}:
+        if a == "-h" or a == "--help":
+            out["help"] = "1"
+        elif a == "-o" or a == "--output":
             i += 1
             if i >= len(argv):
                 return empty_parse_dict(), "missing value for --output"
