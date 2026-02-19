@@ -446,6 +446,38 @@ static inline const T& py_at(const list<T>& v, int64 idx) {
     return v[static_cast<std::size_t>(idx)];
 }
 
+template <class Seq>
+static inline decltype(auto) py_at_bounds(Seq& v, int64 idx) {
+    const int64 n = py_len(v);
+    if (idx < 0 || idx >= n) throw std::out_of_range("index out of range");
+    return v[static_cast<std::size_t>(idx)];
+}
+
+template <class Seq>
+static inline decltype(auto) py_at_bounds(const Seq& v, int64 idx) {
+    const int64 n = py_len(v);
+    if (idx < 0 || idx >= n) throw std::out_of_range("index out of range");
+    return v[static_cast<std::size_t>(idx)];
+}
+
+template <class Seq>
+static inline decltype(auto) py_at_bounds_debug(Seq& v, int64 idx) {
+#ifndef NDEBUG
+    return py_at_bounds(v, idx);
+#else
+    return v[static_cast<std::size_t>(idx)];
+#endif
+}
+
+template <class Seq>
+static inline decltype(auto) py_at_bounds_debug(const Seq& v, int64 idx) {
+#ifndef NDEBUG
+    return py_at_bounds(v, idx);
+#else
+    return v[static_cast<std::size_t>(idx)];
+#endif
+}
+
 template <class K, class V>
 static inline const V& py_dict_get(const dict<K, V>& d, const K& key) {
     auto it = d.find(key);

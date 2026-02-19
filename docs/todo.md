@@ -16,10 +16,10 @@
    - [x] CLI に `--floor-div-mode {native,python}` を追加する（既定 `native`）。
    - [x] C++ 生成で整数除算の意味論をモード別に切替える。
    - [x] `test/unit/test_py2cpp_features.py` に `floor_div_mode` 切替回帰テストを追加する。
-3. [ ] P1 境界チェックオプション (`--bounds-check-mode`) を実装する。
-   - [ ] `--bounds-check-mode {always,debug,off}` を追加する。
-   - [ ] list/str 添字アクセスの生成をモード別に切替える。
-   - [ ] `debug` 判定条件（ビルドフラグ/CLI）を仕様化し実装する。
+3. [x] P1 境界チェックオプション (`--bounds-check-mode`) を実装する。
+   - [x] `--bounds-check-mode {always,debug,off}` を追加する。
+   - [x] list/str 添字アクセスの生成をモード別に切替える。
+   - [x] `debug` 判定条件（`NDEBUG`）を仕様化し実装する。
 4. [ ] P1 文字列オプションを実装する。
    - [ ] `--str-index-mode {byte,codepoint,native}` を追加する。
    - [ ] `--str-slice-mode {byte,codepoint}` を追加する。

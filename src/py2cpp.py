@@ -207,6 +207,7 @@ class CppEmitter(CodeEmitter):
         self,
         east_doc: dict[str, Any],
         negative_index_mode: str = "const_only",
+        bounds_check_mode: str = "off",
         floor_div_mode: str = "native",
         mod_mode: str = "native",
         emit_main: bool = True,
@@ -222,6 +223,7 @@ class CppEmitter(CodeEmitter):
         self.tmp_id: int64 = 0
         self.scope_stack: list[set[str]] = [set()]
         self.negative_index_mode = negative_index_mode
+        self.bounds_check_mode = bounds_check_mode
         self.floor_div_mode = floor_div_mode
         self.mod_mode = mod_mode
         self.emit_main = emit_main
@@ -949,14 +951,20 @@ class CppEmitter(CodeEmitter):
         if val_ty.startswith("dict["):
             return f"{val}[{idx}]"
         if self.is_indexable_sequence_type(val_ty):
-            if self.negative_index_mode == "off":
-                return f"{val}[{idx}]"
-            if self.negative_index_mode == "const_only":
-                if self._is_negative_const_index(node.get("slice")):
-                    return f"py_at({val}, {idx})"
-                return f"{val}[{idx}]"
-            return f"py_at({val}, {idx})"
+            return self._render_sequence_index(val, idx, node.get("slice"))
         return f"{val}[{idx}]"
+
+    def _render_sequence_index(self, value_expr: str, index_expr: str, index_node: Any) -> str:
+        """list/str 添字アクセスのモード別コード生成を行う。"""
+        if self.negative_index_mode == "always":
+            return f"py_at({value_expr}, {index_expr})"
+        if self.negative_index_mode == "const_only" and self._is_negative_const_index(index_node):
+            return f"py_at({value_expr}, {index_expr})"
+        if self.bounds_check_mode == "always":
+            return f"py_at_bounds({value_expr}, {index_expr})"
+        if self.bounds_check_mode == "debug":
+            return f"py_at_bounds_debug({value_expr}, {index_expr})"
+        return f"{value_expr}[{index_expr}]"
 
     def _target_bound_names(self, target: dict[str, Any]) -> set[str]:
         """for ターゲットが束縛する識別子名を収集する。"""
@@ -1977,13 +1985,7 @@ class CppEmitter(CodeEmitter):
         if val_ty.startswith("dict["):
             return f"py_dict_get({val}, {idx})"
         if self.is_indexable_sequence_type(val_ty):
-            if self.negative_index_mode == "off":
-                return f"{val}[{idx}]"
-            if self.negative_index_mode == "const_only":
-                if self._is_negative_const_index(sl):
-                    return f"py_at({val}, {idx})"
-                return f"{val}[{idx}]"
-            return f"py_at({val}, {idx})"
+            return self._render_sequence_index(val, idx, sl)
         return f"{val}[{idx}]"
 
     def render_expr(self, expr: Any) -> str:
@@ -2485,6 +2487,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
 def transpile_to_cpp(
     east_module: dict[str, Any],
     negative_index_mode: str = "const_only",
+    bounds_check_mode: str = "off",
     floor_div_mode: str = "native",
     mod_mode: str = "native",
     emit_main: bool = True,
@@ -2493,6 +2496,7 @@ def transpile_to_cpp(
     return CppEmitter(
         east_module,
         negative_index_mode,
+        bounds_check_mode,
         floor_div_mode,
         mod_mode,
         emit_main,
@@ -2513,6 +2517,7 @@ def main(argv: list[str]) -> int:
     input_txt = ""
     output_txt = ""
     negative_index_mode = "const_only"
+    bounds_check_mode = "off"
     floor_div_mode = "native"
     mod_mode = "native"
     parser_backend = "self_hosted"
@@ -2534,6 +2539,12 @@ def main(argv: list[str]) -> int:
                 print("error: missing value for --negative-index-mode", file=sys.stderr)
                 return 1
             negative_index_mode = argv_list[i]
+        elif a == "--bounds-check-mode":
+            i += 1
+            if i >= len(argv_list):
+                print("error: missing value for --bounds-check-mode", file=sys.stderr)
+                return 1
+            bounds_check_mode = argv_list[i]
         elif a == "--floor-div-mode":
             i += 1
             if i >= len(argv_list):
@@ -2569,9 +2580,12 @@ def main(argv: list[str]) -> int:
 
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--negative-index-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--no-main] [--dump-deps]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--no-main] [--dump-deps]",
             file=sys.stderr,
         )
+        return 1
+    if bounds_check_mode not in {"always", "debug", "off"}:
+        print(f"error: invalid --bounds-check-mode: {bounds_check_mode}", file=sys.stderr)
         return 1
     if floor_div_mode not in {"native", "python"}:
         print(f"error: invalid --floor-div-mode: {floor_div_mode}", file=sys.stderr)
@@ -2600,6 +2614,7 @@ def main(argv: list[str]) -> int:
         cpp = transpile_to_cpp(
             east_module,
             negative_index_mode,
+            bounds_check_mode,
             floor_div_mode,
             mod_mode,
             not no_main,

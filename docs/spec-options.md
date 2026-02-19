@@ -20,6 +20,16 @@
   - `always`: 負数添字を常に Python 互換で処理
   - `const_only`: 定数負数添字のみ Python 互換（現行デフォルト）
   - `off`: Python 互換処理を行わない
+- `--bounds-check-mode {always,debug,off}`
+  - `always`: 添字アクセスを常時チェック
+  - `debug`: `NDEBUG` 無効時のみチェック
+  - `off`: チェックしない（現行デフォルト）
+- `--floor-div-mode {python,native}`
+  - `python`: `py_floordiv` により Python 準拠
+  - `native`: C++ `/` をそのまま利用（現行デフォルト）
+- `--mod-mode {python,native}`
+  - `python`: `py_mod` により Python 準拠
+  - `native`: C++ `%` をそのまま利用（現行デフォルト）
 - `--parser-backend {self_hosted,cpython}`
   - EAST 生成バックエンド選択
 - `--no-main`
@@ -31,19 +41,6 @@
 
 ### 3.1 互換性/安全性
 
-- `--bounds-check-mode {always,debug,off}`
-  - list/str 添字アクセスの境界チェック
-  - `always`: 常時チェック（安全）
-  - `debug`: デバッグビルド相当時のみチェック
-  - `off`: 無チェック（高速だが危険）
-- `--floor-div-mode {python,native}`
-  - `//`（floor division）の意味
-  - `python`: Python 準拠（負数入力でも floor）
-  - `native`: ターゲット言語の `/`(整数除算) をそのまま使う。
-- `--mod-mode {python,native}`
-  - `%`（剰余）の意味
-  - `python`: Python 準拠（除数の符号に揃う）
-  - `native`: ターゲット言語の `%` をそのまま使う
 - `--any-cast-mode {checked,unchecked}`
   - `Any/object` からの取り出しを実行時検証するか
 
@@ -108,12 +105,10 @@
 
 ## 5. 導入優先順位（提案）
 
-1. `bounds-check-mode` を最優先導入
-2. `floor-div-mode` / `mod-mode` で `//` と `%` の仕様を独立制御
-3. `int-width=bigint` を追加し、整数モデルを明示化
-4. `str-index-mode` を導入し、文字列互換性を選択可能化
-5. `preset` を追加して運用コストを下げる
-6. `int-overflow` 詳細動作や `emit-layout=split` を段階実装
+1. `int-width=bigint` を追加し、整数モデルを明示化
+2. `str-index-mode` を導入し、文字列互換性を選択可能化
+3. `preset` を追加して運用コストを下げる
+4. `int-overflow` 詳細動作や `emit-layout=split` を段階実装
 
 ## 6. 補足
 

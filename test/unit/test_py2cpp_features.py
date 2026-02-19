@@ -161,6 +161,31 @@ if __name__ == "__main__":
         self.assertIn("py_mod(a, b)", cpp_python)
         self.assertIn("a = py_mod(a, b);", cpp_python)
 
+    def test_bounds_check_mode_off_always_debug(self) -> None:
+        src = """def main() -> None:
+    xs: list[int] = [1, 2, 3]
+    i: int = 1
+    s: str = "ABC"
+    print(xs[i], s[i])
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "bounds_mode.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp_off = transpile_to_cpp(east, bounds_check_mode="off")
+            cpp_always = transpile_to_cpp(east, bounds_check_mode="always")
+            cpp_debug = transpile_to_cpp(east, bounds_check_mode="debug")
+        self.assertIn("xs[i]", cpp_off)
+        self.assertIn("s[i]", cpp_off)
+        self.assertNotIn("py_at_bounds(", cpp_off)
+        self.assertIn("py_at_bounds(xs, i)", cpp_always)
+        self.assertIn("py_at_bounds(s, i)", cpp_always)
+        self.assertIn("py_at_bounds_debug(xs, i)", cpp_debug)
+        self.assertIn("py_at_bounds_debug(s, i)", cpp_debug)
+
     def test_east_builtin_call_normalization(self) -> None:
         src = """from pathlib import Path
 
