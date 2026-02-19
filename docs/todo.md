@@ -206,7 +206,7 @@
   6. `tools/check_selfhost_cpp_diff.py` に `--mode allow-not-implemented`（既定）を追加し、現段階の selfhost 未実装ケースを skip 集計できるようにした。
   7. `py_runtime.h` の `optional<dict<...>>` 向け `py_dict_get` が temporary 参照返却警告を出していたため、値返しへ変更して selfhost ビルド警告を解消。
   8. `tools/run_local_ci.py` を追加し、`check_py2cpp_transpile` / unit tests / selfhost build / selfhost diff（allow-not-implemented）を1コマンドで実行できるようにした。
-  9. selfhost の `load_east` に `.json` 入力経路を追加し、`py_read_east_module_json`（C++ runtime）経由で EAST JSON を直接読み込めるようにした。
+  9. selfhost の `load_east` に `.json` 入力経路を追加し、当時は C++ runtime 経由で EAST JSON を直接読み込めるようにした（現在は `pylib/json.py` 正本化方針へ移行中）。
   10. `CppEmitter` 生成時の `CodeEmitter` 基底初期化を `load_cpp_profile()` 付きに修正し、selfhost での `dict key not found: syntax` を解消した。
   11. `tools/selfhost_transpile.py` を追加し、`.py` 入力を一時 EAST JSON 化して selfhost バイナリに渡す暫定運用を可能にした。
   12. selfhost JSON 直入力時の改行崩れ（`\\n` がそのまま出る問題）を修正し、通常の改行付き C++ 出力へ回復した。
