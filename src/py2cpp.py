@@ -242,6 +242,17 @@ def _map_get_str(src: dict[str, str], key: str) -> str:
     return ""
 
 
+def _looks_like_runtime_function_name(name: str) -> bool:
+    """ランタイム関数名（`py_*` か `ns::func`）らしい文字列か判定する。"""
+    if name == "":
+        return False
+    if name.find("::") != -1:
+        return True
+    if name.startswith("py_"):
+        return True
+    return False
+
+
 def load_cpp_profile() -> dict[str, Any]:
     """C++ 用 LanguageProfile を読み込む（失敗時は空 dict）。"""
     out: dict[str, Any] = {}
@@ -293,11 +304,23 @@ def load_cpp_type_map() -> dict[str, str]:
     }
 
 
-def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
-    """C++ 用 hooks 設定を返す（現状は no-op）。"""
+def load_cpp_hooks(profile: dict[str, Any] | None = None) -> Any:
+    """C++ 用 hooks 設定を返す。"""
     _ = profile
-    out: dict[str, Any] = {}
-    return out
+    try:
+        # Prefer import path when src/runtime is discoverable on sys.path.
+        from runtime.cpp.hooks.cpp_hooks import CppHooks
+
+        return CppHooks()
+    except Exception:
+        # Fallback: load hooks module by file path to avoid package-shadowing.
+        hook_path = Path(__file__).parent / "runtime" / "cpp" / "hooks" / "cpp_hooks.py"
+        scope: dict[str, Any] = {}
+        exec(hook_path.read_text(encoding="utf-8"), scope)
+        hook_cls = scope.get("CppHooks")
+        if hook_cls is None:
+            return {}
+        return hook_cls()
 
 
 def load_cpp_identifier_rules() -> tuple[set[str], str]:
@@ -2060,41 +2083,6 @@ class CppEmitter(CodeEmitter):
             op = op_txt
         return f"{left} {op} {right}"
 
-    def _render_write_rgb_png_call(self, args: list[str]) -> str:
-        """`write_rgb_png(...)` 呼び出しを `pytra::png` 直呼びへ整形する。"""
-        path = args[0] if len(args) >= 1 else '""'
-        w = args[1] if len(args) >= 2 else "0"
-        h = args[2] if len(args) >= 3 else "0"
-        pixels = args[3] if len(args) >= 4 else "list<uint8>{}"
-        return f"pytra::png::write_rgb_png({path}, int({w}), int({h}), py_u8_vector({pixels}))"
-
-    def _render_save_gif_call(self, args: list[str], kw: dict[str, str], frames_default: str) -> str:
-        """`save_gif(...)` 呼び出しを `pytra::gif` 直呼びへ整形する。"""
-        path = args[0] if len(args) >= 1 else '""'
-        w = args[1] if len(args) >= 2 else "0"
-        h = args[2] if len(args) >= 3 else "0"
-        frames = args[3] if len(args) >= 4 else frames_default
-        palette = args[4] if len(args) >= 5 else "py_gif_grayscale_palette_list()"
-        if palette in {"nullptr", "std::nullopt"}:
-            palette = "py_gif_grayscale_palette_list()"
-        delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
-        loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
-        return f"pytra::gif::save_gif({path}, int({w}), int({h}), py_u8_matrix({frames}), py_u8_vector({palette}), int({delay_cs}), int({loop}))"
-
-    def _render_special_runtime_call(
-        self,
-        call_name: str,
-        args: list[str],
-        kw: dict[str, str],
-        frames_default: str,
-    ) -> str | None:
-        """画像系などの特別呼び出しを共通処理する。"""
-        if call_name == "write_rgb_png":
-            return self._render_write_rgb_png_call(args)
-        if call_name == "save_gif":
-            return self._render_save_gif_call(args, kw, frames_default)
-        return None
-
     def _render_builtin_call(
         self,
         expr: dict[str, Any],
@@ -2145,9 +2133,6 @@ class CppEmitter(CodeEmitter):
             return f"py_int_to_bytes({owner}, {length}, {byteorder})"
         if runtime_call == "grayscale_palette":
             return "py_gif_grayscale_palette_list()"
-        special_builtin = self._render_special_runtime_call(runtime_call, args, kw, "list<list<uint8>>{}")
-        if isinstance(special_builtin, str):
-            return special_builtin
         if runtime_call == "py_isdigit" and len(args) == 1:
             return f"py_isdigit({args[0]})"
         if runtime_call == "py_isalpha" and len(args) == 1:
@@ -2325,12 +2310,11 @@ class CppEmitter(CodeEmitter):
             if raw != "" and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
                 mapped_runtime_txt = mapped_runtime if isinstance(mapped_runtime, str) else ""
-                special_imported = self._render_special_runtime_call(
-                    mapped_runtime_txt, args, kw, "list<bytearray>{}"
-                )
-                if isinstance(special_imported, str):
-                    return special_imported
-                if mapped_runtime_txt != "" and mapped_runtime_txt not in {"perf_counter", "Path"}:
+                if (
+                    mapped_runtime_txt != ""
+                    and mapped_runtime_txt not in {"perf_counter", "Path"}
+                    and _looks_like_runtime_function_name(mapped_runtime_txt)
+                ):
                     return f"{mapped_runtime_txt}({', '.join(args)})"
                 imported_module_norm = self._normalize_runtime_module_name(imported_module)
                 if imported_module_norm in self.module_namespace_map:
@@ -2419,9 +2403,6 @@ class CppEmitter(CodeEmitter):
                 return "py_gif_grayscale_palette_list()"
             if raw == "Path":
                 return f"Path({', '.join(args)})"
-            special_name = self._render_special_runtime_call(raw, args, kw, "list<bytearray>{}")
-            if isinstance(special_name, str):
-                return special_name
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw)
@@ -2450,10 +2431,7 @@ class CppEmitter(CodeEmitter):
                 owner_map = self.module_attr_call_map[owner_key]
                 if attr in owner_map:
                     mapped = owner_map[attr]
-                    special_mapped = self._render_special_runtime_call(mapped, args, kw, "list<bytearray>{}")
-                    if isinstance(special_mapped, str):
-                        return special_mapped
-                    if mapped != "":
+                    if mapped != "" and _looks_like_runtime_function_name(mapped):
                         return f"{mapped}({', '.join(args)})"
         if owner_mod_norm in {"typing", "pytra.std.typing"} and attr == "TypeVar":
             return "make_object(1)"
