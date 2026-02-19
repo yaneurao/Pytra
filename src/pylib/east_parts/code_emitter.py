@@ -59,6 +59,14 @@ class CodeEmitter:
         """`on_emit_stmt` フック。既定では何もしない。"""
         return None
 
+    def hook_on_emit_stmt_kind(
+        self,
+        kind: str,
+        stmt: dict[str, Any],
+    ) -> bool | None:
+        """`on_emit_stmt_kind` フック。既定では何もしない。"""
+        return None
+
     def hook_on_render_call(
         self,
         call_node: dict[str, Any],

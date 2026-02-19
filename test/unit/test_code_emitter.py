@@ -35,6 +35,12 @@ class _HookedEmitter(_DummyEmitter):
             return True
         return None
 
+    def hook_on_emit_stmt_kind(self, kind: str, stmt: dict[str, Any]) -> Any:
+        if kind == "Return":
+            self.emit("// hooked-kind-return")
+            return True
+        return None
+
     def hook_on_render_call(
         self,
         call_node: dict[str, Any],
@@ -297,6 +303,9 @@ class CodeEmitterTest(unittest.TestCase):
         stmt_handled = em.hook_on_emit_stmt({"kind": "Pass"})
         self.assertTrue(stmt_handled)
         self.assertIn("// hooked", em.lines)
+        kind_handled = em.hook_on_emit_stmt_kind("Return", {"kind": "Return"})
+        self.assertTrue(kind_handled)
+        self.assertIn("// hooked-kind-return", em.lines)
         hook_call = em.hook_on_render_call(
             {"kind": "Call"},
             {"kind": "Name", "id": "hooked"},

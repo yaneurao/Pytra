@@ -39,7 +39,7 @@
     - [x] `render_expr(IfExp/List/Tuple/Set/Dict/Subscript)` を `hook_on_render_expr_kind(kind, node)` へ委譲できる形へ整理する。: `render_expr` 先頭で kind フックを共通呼び出しする形へ移行済み。
      - [ ] `JoinedStr/Lambda/Comp` 系を `hook_on_render_expr_complex(node)` へ分離する。
    - [ ] `emit_stmt(If/While/For/AnnAssign/AugAssign)` の分岐を hooks + template helper へ段階分離する。: `If/While` は `_emit_if_stmt` / `_emit_while_stmt` へ分離済み
-     - [ ] `emit_stmt(Return/Expr/Assign/Try)` を `hook_on_emit_stmt_kind(kind, stmt)` 前提で分割する。
+    - [x] `emit_stmt(Return/Expr/Assign/Try)` を `hook_on_emit_stmt_kind(kind, stmt)` 前提で分割する。
      - [ ] `emit_stmt` 本体を「dispatch + fallback」のみ（50行以下目標）へ縮退する。
    - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
    - [x] C++ 向け hooks 実装を `src/runtime/cpp/hooks/cpp_hooks.py` として分離する。

@@ -650,7 +650,10 @@ class CppEmitter(CodeEmitter):
         hook_stmt = self.hook_on_emit_stmt(stmt)
         if hook_stmt is True:
             return
-        kind = str(stmt.get("kind", ""))
+        kind = self.any_to_str(stmt.get("kind"))
+        hook_kind = self.hook_on_emit_stmt_kind(kind, stmt)
+        if hook_kind is True:
+            return
         self.emit_leading_comments(stmt)
         if kind in {"Import", "ImportFrom"}:
             return
@@ -664,40 +667,13 @@ class CppEmitter(CodeEmitter):
             self.emit("continue;")
             return
         if kind == "Expr":
-            value_node = self.any_to_dict_or_empty(stmt.get("value"))
-            value_is_dict: bool = isinstance(stmt.get("value"), dict)
-            if value_is_dict and value_node.get("kind") == "Constant" and isinstance(value_node.get("value"), str):
-                self.emit_block_comment(str(value_node.get("value")))
-            elif value_is_dict and self._is_redundant_super_init_call(stmt.get("value")):
-                self.emit("/* super().__init__ omitted: base ctor is called implicitly */")
-            else:
-                if not value_is_dict:
-                    self.emit("/* unsupported expr */")
-                    return
-                self.emit_bridge_comment(value_node)
-                rendered = self.render_expr(stmt.get("value"))
-                # Guard against stray identifier-only expression statements (e.g. "r;").
-                if isinstance(rendered, str) and self._is_identifier_expr(rendered):
-                    if rendered == "break":
-                        self.emit("break;")
-                    elif rendered == "continue":
-                        self.emit("continue;")
-                    elif rendered == "pass":
-                        self.emit("/* pass */")
-                    else:
-                        self.emit(f"/* omitted bare identifier expression: {rendered} */")
-                else:
-                    self.emit(rendered + ";")
+            self._emit_expr_stmt(stmt)
             return
         if kind == "Return":
-            v_is_dict: bool = isinstance(stmt.get("value"), dict)
-            if not v_is_dict:
-                self.emit("return;")
-            else:
-                self.emit(f"return {self.render_expr(stmt.get('value'))};")
+            self._emit_return_stmt(stmt)
             return
         if kind == "Assign":
-            self.emit_assign(stmt)
+            self._emit_assign_stmt(stmt)
             return
         if kind == "Swap":
             left = self.render_expr(stmt.get("left"))
@@ -729,40 +705,7 @@ class CppEmitter(CodeEmitter):
                 self.emit(f"throw {self.render_expr(stmt.get('exc'))};")
             return
         if kind == "Try":
-            finalbody = self._dict_stmt_list(stmt.get("finalbody"))
-            handlers = self._dict_stmt_list(stmt.get("handlers"))
-            has_effective_finally = any(isinstance(s, dict) and s.get("kind") != "Pass" for s in finalbody)
-            if has_effective_finally:
-                self.emit("{")
-                self.indent += 1
-                gid = self.next_tmp("__finally")
-                self.emit(f"auto {gid} = py_make_scope_exit([&]() {{")
-                self.indent += 1
-                self.emit_stmt_list(finalbody)
-                self.indent -= 1
-                self.emit("});")
-            if len(handlers) == 0:
-                self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
-                if has_effective_finally:
-                    self.indent -= 1
-                    self.emit("}")
-                return
-            self.emit("try {")
-            self.indent += 1
-            self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
-            self.indent -= 1
-            self.emit("}")
-            for h in handlers:
-                name_raw = h.get("name")
-                name = name_raw if isinstance(name_raw, str) and name_raw != "" else "ex"
-                self.emit(f"catch (const std::exception& {name}) {{")
-                self.indent += 1
-                self.emit_stmt_list(self._dict_stmt_list(h.get("body")))
-                self.indent -= 1
-                self.emit("}")
-            if has_effective_finally:
-                self.indent -= 1
-                self.emit("}")
+            self._emit_try_stmt(stmt)
             return
         if kind == "FunctionDef":
             self.emit_function(stmt, False)
@@ -772,6 +715,79 @@ class CppEmitter(CodeEmitter):
             return
 
         self.emit(f"/* unsupported stmt kind: {kind} */")
+
+    def _emit_expr_stmt(self, stmt: dict[str, Any]) -> None:
+        value_node = self.any_to_dict_or_empty(stmt.get("value"))
+        value_is_dict: bool = isinstance(stmt.get("value"), dict)
+        if value_is_dict and value_node.get("kind") == "Constant" and isinstance(value_node.get("value"), str):
+            self.emit_block_comment(str(value_node.get("value")))
+            return
+        if value_is_dict and self._is_redundant_super_init_call(stmt.get("value")):
+            self.emit("/* super().__init__ omitted: base ctor is called implicitly */")
+            return
+        if not value_is_dict:
+            self.emit("/* unsupported expr */")
+            return
+        self.emit_bridge_comment(value_node)
+        rendered = self.render_expr(stmt.get("value"))
+        # Guard against stray identifier-only expression statements (e.g. "r;").
+        if isinstance(rendered, str) and self._is_identifier_expr(rendered):
+            if rendered == "break":
+                self.emit("break;")
+            elif rendered == "continue":
+                self.emit("continue;")
+            elif rendered == "pass":
+                self.emit("/* pass */")
+            else:
+                self.emit(f"/* omitted bare identifier expression: {rendered} */")
+            return
+        self.emit(rendered + ";")
+
+    def _emit_return_stmt(self, stmt: dict[str, Any]) -> None:
+        v_is_dict: bool = isinstance(stmt.get("value"), dict)
+        if not v_is_dict:
+            self.emit("return;")
+            return
+        self.emit(f"return {self.render_expr(stmt.get('value'))};")
+
+    def _emit_assign_stmt(self, stmt: dict[str, Any]) -> None:
+        self.emit_assign(stmt)
+
+    def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:
+        finalbody = self._dict_stmt_list(stmt.get("finalbody"))
+        handlers = self._dict_stmt_list(stmt.get("handlers"))
+        has_effective_finally = any(isinstance(s, dict) and s.get("kind") != "Pass" for s in finalbody)
+        if has_effective_finally:
+            self.emit("{")
+            self.indent += 1
+            gid = self.next_tmp("__finally")
+            self.emit(f"auto {gid} = py_make_scope_exit([&]() {{")
+            self.indent += 1
+            self.emit_stmt_list(finalbody)
+            self.indent -= 1
+            self.emit("});")
+        if len(handlers) == 0:
+            self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
+            if has_effective_finally:
+                self.indent -= 1
+                self.emit("}")
+            return
+        self.emit("try {")
+        self.indent += 1
+        self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
+        self.indent -= 1
+        self.emit("}")
+        for h in handlers:
+            name_raw = h.get("name")
+            name = name_raw if isinstance(name_raw, str) and name_raw != "" else "ex"
+            self.emit(f"catch (const std::exception& {name}) {{")
+            self.indent += 1
+            self.emit_stmt_list(self._dict_stmt_list(h.get("body")))
+            self.indent -= 1
+            self.emit("}")
+        if has_effective_finally:
+            self.indent -= 1
+            self.emit("}")
 
     def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
         """単文ブロックで波括弧を省略可能か判定する。"""
