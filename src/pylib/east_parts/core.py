@@ -1204,6 +1204,57 @@ class _ShExprParser:
         if tok["k"] == "STR":
             self._eat("STR")
             raw = tok["v"]
+            def decode_py_string_body(text: str, raw_mode: bool) -> str:
+                """Python 文字列リテラル本体（引用符除去後）を簡易復号する。"""
+                if raw_mode:
+                    return text
+                out = ""
+                i = 0
+                while i < len(text):
+                    ch = text[i : i + 1]
+                    if ch != "\\":
+                        out += ch
+                        i += 1
+                        continue
+                    i += 1
+                    if i >= len(text):
+                        out += "\\"
+                        break
+                    esc = text[i : i + 1]
+                    i += 1
+                    if esc == "n":
+                        out += "\n"
+                    elif esc == "r":
+                        out += "\r"
+                    elif esc == "t":
+                        out += "\t"
+                    elif esc == "b":
+                        out += "\b"
+                    elif esc == "f":
+                        out += "\f"
+                    elif esc == "v":
+                        out += "\v"
+                    elif esc == "a":
+                        out += "\a"
+                    elif esc in {'"', "'", "\\"}:
+                        out += esc
+                    elif esc == "x" and i + 1 < len(text):
+                        hex2 = text[i : i + 2]
+                        try:
+                            out += chr(int(hex2, 16))
+                            i += 2
+                        except ValueError:
+                            out += "x"
+                    elif esc == "u" and i + 3 < len(text):
+                        hex4 = text[i : i + 4]
+                        try:
+                            out += chr(int(hex4, 16))
+                            i += 4
+                        except ValueError:
+                            out += "u"
+                    else:
+                        out += esc
+                return out
             # Support prefixed literals (f/r/b/u/rf/fr...) in expression parser.
             p = 0
             while p < len(raw) and raw[p] in "rRbBuUfF":
@@ -1220,10 +1271,12 @@ class _ShExprParser:
 
             if "f" in prefix:
                 values: list[dict[str, Any]] = []
+                is_raw = "r" in prefix
 
                 def push_lit(segment: str) -> None:
                     """f-string の生文字列片を values へ追加する。"""
                     lit = segment.replace("{{", "{").replace("}}", "}")
+                    lit = decode_py_string_body(lit, is_raw)
                     if lit == "":
                         return
                     values.append(
@@ -1286,6 +1339,7 @@ class _ShExprParser:
             resolved_type = "str"
             if "b" in prefix and "f" not in prefix:
                 resolved_type = "bytes"
+            body = decode_py_string_body(body, "r" in prefix)
             return {
                 "kind": "Constant",
                 "source_span": self._node_span(tok["s"], tok["e"]),

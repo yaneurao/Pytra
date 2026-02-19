@@ -22,6 +22,15 @@ class CodeEmitter:
         hooks: dict[str, Any] = {},
     ) -> None:
         """共通の出力状態と一時変数カウンタを初期化する。"""
+        self.init_base_state(east_doc, profile, hooks)
+
+    def init_base_state(
+        self,
+        east_doc: dict[str, Any],
+        profile: dict[str, Any],
+        hooks: dict[str, Any],
+    ) -> None:
+        """基底状態（doc/profile/hooks/出力バッファ）を再初期化する。"""
         self.doc = east_doc
         self.profile = profile
         self.hooks = hooks
@@ -201,7 +210,9 @@ class CodeEmitter:
         if key not in obj:
             return default_value
         v = obj[key]
-        return v if isinstance(v, str) else default_value
+        if not isinstance(v, str):
+            return default_value
+        return self.any_to_str(v)
 
     def any_dict_get_int(self, obj: dict[str, Any], key: str, default_value: int = 0) -> int:
         """dict 風入力から整数を取得し、失敗時は既定値を返す。"""
@@ -232,9 +243,9 @@ class CodeEmitter:
         if key not in obj:
             return []
         v = obj[key]
-        if isinstance(v, list):
-            return v
-        return []
+        if not isinstance(v, list):
+            return []
+        return self.any_to_list(v)
 
     def any_dict_get_dict(self, obj: dict[str, Any], key: str) -> dict[str, Any]:
         """dict 風入力から dict を取得し、失敗時は空 dict を返す。"""
@@ -243,9 +254,9 @@ class CodeEmitter:
         if key not in obj:
             return {}
         v = obj[key]
-        if isinstance(v, dict):
-            return v
-        return {}
+        if not isinstance(v, dict):
+            return {}
+        return self.any_to_dict_or_empty(v)
 
     def any_to_dict(self, v: Any) -> dict[str, Any] | None:
         """動的値を dict に安全に変換する。変換不能なら None。"""

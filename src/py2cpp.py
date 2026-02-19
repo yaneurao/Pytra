@@ -87,6 +87,10 @@ CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 
 """
 
+# `"\n"` のエスケープ解釈に依存しないため、実改行を定数化して使う。
+NEWLINE_CHAR = """
+"""
+
 
 DEFAULT_BIN_OPS = {
     "Add": "+",
@@ -330,13 +334,7 @@ class CppEmitter(CodeEmitter):
         """変換設定とクラス解析用の状態を初期化する。"""
         profile = load_cpp_profile()
         hooks = load_cpp_hooks(profile)
-        self.doc: dict[str, Any] = east_doc
-        self.profile: dict[str, Any] = profile
-        self.hooks: dict[str, Any] = hooks
-        self.lines: list[str] = []
-        self.indent: int64 = 0
-        self.tmp_id: int64 = 0
-        self.scope_stack: list[set[str]] = [set()]
+        self.init_base_state(east_doc, profile, hooks)
         self.negative_index_mode = negative_index_mode
         self.bounds_check_mode = bounds_check_mode
         self.floor_div_mode = floor_div_mode
@@ -349,7 +347,6 @@ class CppEmitter(CodeEmitter):
         # self-host compile path currently treats EAST payload values as dynamic,
         # so dict[str, Any] -> dict iteration for renaming is disabled for now.
         self.renamed_symbols: dict[str, str] = {}
-        self.scope_stack: list[set[str]] = [set()]
         self.current_class_name: str | None = None
         self.current_class_base_name: str = ""
         self.current_class_fields: dict[str, str] = {}
@@ -375,6 +372,30 @@ class CppEmitter(CodeEmitter):
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
         self.emit("/* " + text + " */")
+
+    def emit_function_open(self, ret: str, name: str, args: str) -> None:
+        """C++ 関数ヘッダを直接出力する（selfhost の syntax_line 崩れ回避）。"""
+        self.emit(f"{ret} {name}({args}) {{")
+
+    def emit_ctor_open(self, name: str, args: str) -> None:
+        """C++ コンストラクタヘッダを直接出力する。"""
+        self.emit(f"{name}({args}) {{")
+
+    def emit_dtor_open(self, name: str) -> None:
+        """C++ デストラクタヘッダを直接出力する。"""
+        self.emit(f"~{name}() {{")
+
+    def emit_class_open(self, name: str, base_txt: str) -> None:
+        """C++ クラス（struct）ヘッダを直接出力する。"""
+        self.emit(f"struct {name}{base_txt} {{")
+
+    def emit_class_close(self) -> None:
+        """C++ クラス終端を出力する。"""
+        self.emit("};")
+
+    def emit_block_close(self) -> None:
+        """C++ ブロック終端を出力する。"""
+        self.emit("}")
 
     def _is_std_runtime_call(self, runtime_call: str) -> bool:
         """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
@@ -480,7 +501,7 @@ class CppEmitter(CodeEmitter):
 
         self.emit_module_leading_trivia()
         header_text: str = CPP_HEADER
-        if len(header_text) > 0 and header_text[-1] == "\n":
+        if len(header_text) > 0 and header_text[-1] == NEWLINE_CHAR:
             header_text = header_text[:-1]
         self.emit(header_text)
         self.emit("")
@@ -510,7 +531,7 @@ class CppEmitter(CodeEmitter):
         i = 0
         while i < len(self.lines):
             if i > 0:
-                out += "\n"
+                out += NEWLINE_CHAR
             out += self.lines[i]
             i += 1
         return out
@@ -1006,6 +1027,25 @@ class CppEmitter(CodeEmitter):
             self._emit_noop_stmt(stmt)
             return
         self.emit(f"/* unsupported stmt kind: {kind} */")
+
+    def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
+        """CppEmitter 側で文ディスパッチを固定し、selfhost時の静的束縛を避ける。"""
+        for stmt in stmts:
+            self.emit_stmt(stmt)
+
+    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
+        """スコープ付き文リスト出力（CppEmitter 固有ディスパッチ）。"""
+        self.indent += 1
+        self.scope_stack.append(scope_names)
+        self.emit_stmt_list(stmts)
+        self.scope_stack.pop()
+        self.indent -= 1
+
+    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
+        """ブロック開始行を出力し、スコープ付きで本文を出力して閉じる。"""
+        self.emit(open_line)
+        self.emit_scoped_stmt_list(stmts, scope_names)
+        self.emit_block_close()
 
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
         kind = self.any_to_str(stmt.get("kind"))
@@ -1736,10 +1776,10 @@ class CppEmitter(CodeEmitter):
         args: list[str],
         kw: dict[str, str],
         first_arg: Any,
-    ) -> str | None:
+    ) -> str:
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
-        runtime_call = self.any_to_str(expr.get("runtime_call"))
-        builtin_name = self.any_to_str(expr.get("builtin_name"))
+        runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
+        builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
         if runtime_call == "py_print":
             return f"py_print({', '.join(args)})"
         if runtime_call == "py_len" and len(args) == 1:
@@ -1927,7 +1967,7 @@ class CppEmitter(CodeEmitter):
             return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
         if builtin_name == "bytearray":
             return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
-        return None
+        return ""
 
     def _render_call_name_or_attr(
         self,
@@ -2116,6 +2156,8 @@ class CppEmitter(CodeEmitter):
 
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
         """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
+        if fn_name == "print":
+            return f"py_print({', '.join(args)})"
         return f"{fn_name}({', '.join(args)})"
 
     def _prepare_call_parts(
@@ -2158,7 +2200,7 @@ class CppEmitter(CodeEmitter):
         op = self.any_to_str(expr.get("op"))
         if op == "Not":
             if len(operand_expr) > 0 and operand_expr.get("kind") == "Compare":
-                if operand_expr.get("lowered_kind") == "Contains":
+                if self.any_dict_get_str(operand_expr, "lowered_kind", "") == "Contains":
                     container = self.render_expr(operand_expr.get("container"))
                     key = self.render_expr(operand_expr.get("key"))
                     ctype0 = self.get_expr_type(operand_expr.get("container"))
@@ -2208,7 +2250,7 @@ class CppEmitter(CodeEmitter):
 
     def _render_compare_expr(self, expr: dict[str, Any]) -> str:
         """Compare ノードを C++ 式へ変換する。"""
-        if expr.get("lowered_kind") == "Contains":
+        if self.any_dict_get_str(expr, "lowered_kind", "") == "Contains":
             container = self.render_expr(expr.get("container"))
             key = self.render_expr(expr.get("key"))
             ctype0 = self.get_expr_type(expr.get("container"))
@@ -2283,7 +2325,7 @@ class CppEmitter(CodeEmitter):
         val = self.render_expr(expr.get("value"))
         val_ty0 = self.get_expr_type(expr.get("value"))
         val_ty = val_ty0 if isinstance(val_ty0, str) else ""
-        if expr.get("lowered_kind") == "SliceExpr":
+        if self.any_dict_get_str(expr, "lowered_kind", "") == "SliceExpr":
             lo = self.render_expr(expr.get("lower")) if expr.get("lower") is not None else "0"
             up = self.render_expr(expr.get("upper")) if expr.get("upper") is not None else f"py_len({val})"
             return f"py_slice({val}, {lo}, {up})"
@@ -2422,10 +2464,12 @@ class CppEmitter(CodeEmitter):
                 hook_call_txt = str(hook_call)
             if hook_call_txt != "":
                 return hook_call_txt
-            if expr_d.get("lowered_kind") == "BuiltinCall":
-                builtin_rendered = self._render_builtin_call(expr_d, fn, args, kw, first_arg)
-                if isinstance(builtin_rendered, str):
-                    return str(builtin_rendered)
+            lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
+            has_runtime_call = self.any_dict_has(expr_d, "runtime_call")
+            if lowered_kind == "BuiltinCall" or has_runtime_call:
+                builtin_rendered: str = self._render_builtin_call(expr_d, fn, args, kw, first_arg)
+                if builtin_rendered != "":
+                    return builtin_rendered
             name_or_attr = self._render_call_name_or_attr(expr_d, fn, fn_name, args, kw, arg_nodes, first_arg)
             name_or_attr_txt = ""
             if isinstance(name_or_attr, str):
@@ -2496,7 +2540,7 @@ class CppEmitter(CodeEmitter):
         if kind == "Subscript":
             return self._render_subscript_expr(expr)
         if kind == "JoinedStr":
-            if expr_d.get("lowered_kind") == "Concat":
+            if self.any_dict_get_str(expr_d, "lowered_kind", "") == "Concat":
                 parts: list[str] = []
                 for p in self._dict_stmt_list(expr_d.get("concat_parts")):
                     if p.get("kind") == "literal":
