@@ -67,24 +67,26 @@ class CppHooks:
             sym = emitter._resolve_imported_symbol(fn_name)
             module_name = emitter.any_dict_get_str(sym, "module", "")
             symbol_name = emitter.any_dict_get_str(sym, "name", "")
+            module_key = emitter._last_dotted_name(module_name)
             if module_name in {"pylib", "pylib.tra"} and symbol_name == "png":
                 return self._render_write_rgb_png(rendered_args)
             if module_name in {"pylib", "pylib.tra"} and symbol_name == "gif":
                 return self._render_save_gif(rendered_args, rendered_kwargs)
-            if module_name in {"png", "png_helper", "pylib.tra.png"} and symbol_name == "write_rgb_png":
+            if module_key in {"png", "png_helper"} and symbol_name == "write_rgb_png":
                 return self._render_write_rgb_png(rendered_args)
-            if module_name in {"gif", "gif_helper", "pylib.tra.gif"} and symbol_name == "save_gif":
+            if module_key in {"gif", "gif_helper"} and symbol_name == "save_gif":
                 return self._render_save_gif(rendered_args, rendered_kwargs)
 
         if fn_kind == "Attribute":
             owner_node = emitter.any_to_dict_or_empty(func_node.get("value"))
             owner_expr = emitter.render_expr(func_node.get("value"))
             owner_mod = emitter._resolve_imported_module_name(owner_expr)
+            owner_key = emitter._last_dotted_name(owner_mod)
             attr = emitter.any_dict_get_str(func_node, "attr", "")
             if owner_node.get("kind") in {"Name", "Attribute"}:
-                if owner_mod in {"png_helper", "png", "pylib.tra.png"} and attr == "write_rgb_png":
+                if owner_key in {"png", "png_helper"} and attr == "write_rgb_png":
                     return self._render_write_rgb_png(rendered_args)
-                if owner_mod in {"gif_helper", "gif", "pylib.tra.gif"} and attr == "save_gif":
+                if owner_key in {"gif", "gif_helper"} and attr == "save_gif":
                     return self._render_save_gif(rendered_args, rendered_kwargs)
         return None
 

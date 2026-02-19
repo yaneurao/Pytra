@@ -196,16 +196,10 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     out["png_helper"] = {
         "write_rgb_png": "write_rgb_png",
     }
-    out["pylib.tra.png"] = {
-        "write_rgb_png": "write_rgb_png",
-    }
     out["gif"] = {
         "save_gif": "save_gif",
     }
     out["gif_helper"] = {
-        "save_gif": "save_gif",
-    }
-    out["pylib.tra.gif"] = {
         "save_gif": "save_gif",
     }
     return out
@@ -515,12 +509,18 @@ class CppEmitter(CodeEmitter):
 
     def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
         """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
-        if module_name in self.module_attr_call_map:
-            owner_map = self.module_attr_call_map[module_name]
-            if symbol_name in owner_map:
-                mapped = owner_map[symbol_name]
-                if mapped != "":
-                    return mapped
+        owner_keys: list[str] = []
+        owner_keys.append(module_name)
+        short = self._last_dotted_name(module_name)
+        if short != module_name:
+            owner_keys.append(short)
+        for owner_key in owner_keys:
+            if owner_key in self.module_attr_call_map:
+                owner_map = self.module_attr_call_map[owner_key]
+                if symbol_name in owner_map:
+                    mapped = owner_map[symbol_name]
+                    if mapped != "":
+                        return mapped
         if module_name == "time" and symbol_name == "perf_counter":
             return "perf_counter"
         if module_name == "pathlib" and symbol_name == "Path":
@@ -2310,16 +2310,22 @@ class CppEmitter(CodeEmitter):
         self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
-        if owner_mod in self.module_attr_call_map:
-            owner_map = self.module_attr_call_map[owner_mod]
-            if attr in owner_map:
-                mapped = owner_map[attr]
-                if mapped == "write_rgb_png":
-                    return self._render_write_rgb_png_call(args)
-                if mapped == "save_gif":
-                    return self._render_save_gif_call(args, kw, "list<bytearray>{}")
-                if mapped != "":
-                    return f"{mapped}({', '.join(args)})"
+        owner_keys: list[str] = []
+        owner_keys.append(owner_mod)
+        short = self._last_dotted_name(owner_mod)
+        if short != owner_mod:
+            owner_keys.append(short)
+        for owner_key in owner_keys:
+            if owner_key in self.module_attr_call_map:
+                owner_map = self.module_attr_call_map[owner_key]
+                if attr in owner_map:
+                    mapped = owner_map[attr]
+                    if mapped == "write_rgb_png":
+                        return self._render_write_rgb_png_call(args)
+                    if mapped == "save_gif":
+                        return self._render_save_gif_call(args, kw, "list<bytearray>{}")
+                    if mapped != "":
+                        return f"{mapped}({', '.join(args)})"
         if owner_mod in {"typing", "pylib.std.typing"} and attr == "TypeVar":
             return "make_object(1)"
         return None
@@ -2668,10 +2674,11 @@ class CppEmitter(CodeEmitter):
             if base in self.class_base or base in self.class_method_names:
                 return f"{base}::{attr}"
             base_module_name = self._resolve_imported_module_name(base)
-            if base_module_name in {"png", "png_helper", "pylib.tra.png"} and str(attr) == "write_rgb_png":
+            base_module_key = self._last_dotted_name(base_module_name)
+            if base_module_key in {"png", "png_helper"} and str(attr) == "write_rgb_png":
                 return "pytra::png::write_rgb_png"
-            if base_module_name in {"gif", "gif_helper", "pylib.tra.gif"} and str(attr) == "save_gif":
-                return "save_gif"
+            if base_module_key in {"gif", "gif_helper"} and str(attr) == "save_gif":
+                return "pytra::gif::save_gif"
             if base_module_name == "math":
                 if attr == "pi":
                     return "py_math::pi"
