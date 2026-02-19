@@ -4205,6 +4205,7 @@ def main(argv: list[str]) -> int:
     parser_backend = _dict_str_get(parsed, "parser_backend", "self_hosted")
     no_main = _dict_str_get(parsed, "no_main", "0") == "1"
     single_file = _dict_str_get(parsed, "single_file", "1") == "1"
+    output_mode_explicit = _dict_str_get(parsed, "output_mode_explicit", "0") == "1"
     dump_deps = _dict_str_get(parsed, "dump_deps", "0") == "1"
     dump_options = _dict_str_get(parsed, "dump_options", "0") == "1"
     show_help = _dict_str_get(parsed, "help", "0") == "1"
@@ -4275,6 +4276,9 @@ def main(argv: list[str]) -> int:
     if not input_path.exists():
         print(f"error: input file not found: {input_path}", file=sys.stderr)
         return 1
+    # 互換維持: 出力先が `.cpp` の場合は明示モード指定がなくても single-file 扱いにする。
+    if (not output_mode_explicit) and output_txt.endswith(".cpp"):
+        single_file = True
     if dump_options:
         options_text: str = dump_codegen_options_text(
             preset,

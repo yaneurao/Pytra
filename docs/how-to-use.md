@@ -66,7 +66,8 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - オプション群は `--preset {native,balanced,python}` で一括指定できます。個別指定を併用した場合は個別指定が優先されます。
 - 解決後のオプションを確認したい場合は `--dump-options` を使います。
 - 生成コードのトップ namespace を付けたい場合は `--top-namespace NS` を使います（未指定時はトップ namespace なし）。
-- 出力形態は `--single-file`（既定）と `--multi-file`（`out/include`, `out/src` + `manifest.json`）を選べます。
+- 出力形態は `--multi-file`（既定）と `--single-file` を選べます。
+- `--multi-file` は `out/include`, `out/src` + `manifest.json` を生成します。
 - 複数ファイル出力先は `--output-dir DIR` で指定できます（`--multi-file` 時）。
 - 複数ファイル出力のビルドは `python3 tools/build_multi_cpp.py out/manifest.json -o out/app.out` を使います。
 - `--multi-file` では、ユーザーモジュール import 呼び出しを C++ namespace 参照へ変換してリンク可能な形で出力します。

@@ -139,11 +139,6 @@
    - [x] `pytra.*` とユーザーモジュールの探索パス解決（重複・循環検出）を実装する。
      - [x] 同名モジュール衝突時の優先順位（ユーザー/`pytra`）を仕様化して実装する。: `pytra` 名前空間予約（ユーザー側 `pytra.py` / `pytra/__init__.py` 禁止）
    - [x] 依存グラフを `--dump-deps` などで可視化できるようにする。: `src/py2cpp.py --dump-deps`
-5. [ ] 互換オプションを追加する。
-   - [ ] 既定を複数ファイル出力にする。
-   - [x] `--single-file`（仮称）で従来の単一 `.cpp` へ束ねるモードを提供する。: `--single-file` / `--multi-file` を実装
-   - [x] 既存ユーザー向け移行手順を `docs/how-to-use.md` に追記する。
-
 ## 直近メモ
 
 - 進捗: `except ValueError:` 受理と `return`（値なし）受理を self_hosted parser に追加し、EAST 生成は通過。

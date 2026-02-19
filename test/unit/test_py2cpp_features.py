@@ -109,9 +109,15 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(err, "")
         self.assertEqual(parsed.get("single_file"), "0")
         self.assertEqual(parsed.get("output_dir"), "out")
+        self.assertEqual(parsed.get("output_mode_explicit"), "1")
         parsed2, err2 = parse_py2cpp_argv(["input.py", "--single-file"])
         self.assertEqual(err2, "")
         self.assertEqual(parsed2.get("single_file"), "1")
+        self.assertEqual(parsed2.get("output_mode_explicit"), "1")
+        parsed3, err3 = parse_py2cpp_argv(["input.py"])
+        self.assertEqual(err3, "")
+        self.assertEqual(parsed3.get("single_file"), "0")
+        self.assertEqual(parsed3.get("output_mode_explicit"), "0")
 
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
         src = """def main() -> None:
@@ -607,6 +613,24 @@ def main() -> None:
             src_txt = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
             self.assertIn('#include "pytra_multi_prelude.h"', src_txt)
             self.assertNotIn('#include "runtime/cpp/py_runtime.h"', src_txt)
+
+    def test_cli_default_mode_is_multi_file(self) -> None:
+        src_main = """def main() -> None:
+    print(1)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            out_dir = root / "out"
+            main_py = root / "main.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+            self.assertTrue((out_dir / "manifest.json").exists())
 
     def test_cli_multi_file_user_import_build_and_run(self) -> None:
         src_main = """import helper

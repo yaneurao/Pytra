@@ -204,7 +204,8 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         "preset": "",
         "parser_backend": "self_hosted",
         "no_main": "0",
-        "single_file": "1",
+        "single_file": "0",
+        "output_mode_explicit": "0",
         "dump_deps": "0",
         "dump_options": "0",
         "help": "0",
@@ -231,8 +232,10 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
             out["output_dir"] = argv[i]
         elif a == "--single-file":
             out["single_file"] = "1"
+            out["output_mode_explicit"] = "1"
         elif a == "--multi-file":
             out["single_file"] = "0"
+            out["output_mode_explicit"] = "1"
         elif a == "--top-namespace":
             i += 1
             if i >= len(argv):
