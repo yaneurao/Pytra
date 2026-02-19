@@ -66,11 +66,12 @@ class CppHooks:
                 return self._render_save_gif(rendered_args, rendered_kwargs)
             sym = emitter._resolve_imported_symbol(fn_name)
             module_name = emitter.any_dict_get_str(sym, "module", "")
+            module_name = emitter._normalize_runtime_module_name(module_name)
             symbol_name = emitter.any_dict_get_str(sym, "name", "")
             module_key = emitter._last_dotted_name(module_name)
-            if module_name in {"pylib", "pylib.tra"} and symbol_name == "png":
+            if module_name in {"pytra", "pytra.runtime"} and symbol_name == "png":
                 return self._render_write_rgb_png(rendered_args)
-            if module_name in {"pylib", "pylib.tra"} and symbol_name == "gif":
+            if module_name in {"pytra", "pytra.runtime"} and symbol_name == "gif":
                 return self._render_save_gif(rendered_args, rendered_kwargs)
             if module_key in {"png", "png_helper"} and symbol_name == "write_rgb_png":
                 return self._render_write_rgb_png(rendered_args)
@@ -81,6 +82,7 @@ class CppHooks:
             owner_node = emitter.any_to_dict_or_empty(func_node.get("value"))
             owner_expr = emitter.render_expr(func_node.get("value"))
             owner_mod = emitter._resolve_imported_module_name(owner_expr)
+            owner_mod = emitter._normalize_runtime_module_name(owner_mod)
             owner_key = emitter._last_dotted_name(owner_mod)
             attr = emitter.any_dict_get_str(func_node, "attr", "")
             if owner_node.get("kind") in {"Name", "Attribute"}:
