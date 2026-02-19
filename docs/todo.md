@@ -5,17 +5,17 @@
 1. [ ] 複数ファイル構成（import 強化）を最優先で実施する。
    - [ ] 「## 複数ファイル構成（最終ゴール）」の 1. 依存解決フェーズを先行着手する。
    - [ ] `import` / `from ... import ...` の依存グラフ生成を先に実装する。
-   - [ ] `pylib.*` とユーザーモジュール探索パスの解決・衝突規則を先に固める。
+   - [ ] `pytra.*` とユーザーモジュール探索パスの解決・衝突規則を先に固める。
    - [ ] 完了後にモジュール単位 EAST と複数ファイル出力（`.h/.cpp` 分割）へ進む。
 
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
-     - 依存本体: `pylib.tra.east_parts.core::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
-     - 主要 shim 依存: `pylib.std.argparse`, `pylib.std.json`, `pylib.std.re`, `pylib.std.pathlib`, `pylib.std.sys`, `pylib.std.dataclasses`, `pylib.std.typing`
-     - selfhost 非対応要素: `pylib.tra.east` facade の bootstrap path 操作（`import sys as _bootstrap_sys` と `sys.path.insert`）
+     - 依存本体: `src/pylib/tra/east_parts/core.py::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
+     - 主要 shim 依存: `pytra.std.argparse`, `pytra.std.json`, `pytra.std.re`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.dataclasses`, `pytra.std.typing`
+     - selfhost 非対応要素: `src/pylib/tra/east.py` facade の bootstrap path 操作（`import sys as _bootstrap_sys` と `sys.path.insert`）
    - [x] `tools/prepare_selfhost_source.py` に取り込み可能な関数群を「安全（selfhost通過済み）」と「要分割」に分ける。
      - 安全（通過済み）: `CodeEmitter` 本体、`transpile_cli` の関数群（`parse_py2cpp_argv` など）、main差し替え
-     - 要分割: `pylib.tra.east` facade 経由の import 連鎖、`east_parts.core` 全量取り込み（サイズ過大かつ selfhost 変換コスト高）
+     - 要分割: `src/pylib/tra/east.py` facade 経由の import 連鎖、`east_parts.core` 全量取り込み（サイズ過大かつ selfhost 変換コスト高）
    - [ ] `sample/py/01_mandelbrot.py` を selfhost 経路で `-o` 生成できるところまで回復する。
      - [x] 暫定ブリッジ `tools/selfhost_transpile.py` を追加し、`.py -> EAST JSON -> selfhost` で `test/fixtures/core/add.py` の生成を確認。
      - [x] 同ブリッジ経路で `sample/py/01_mandelbrot.py` の `-o` 生成を確認。
@@ -24,9 +24,9 @@
          - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。
          - [ ] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。
          - [ ] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。
-       - [ ] `pylib.tra.east_parts.core` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
-         - [ ] bootstrap 専用コードを `pylib.tra.east` facade 側へ隔離し、`east_parts.core` から除去する。
-         - [ ] `east_parts.core` の import を `pylib.std.*` のみに固定する。
+       - [ ] `src/pylib/tra/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
+         - [ ] bootstrap 専用コードを `src/pylib/tra/east.py` facade 側へ隔離し、`east_parts.core` から除去する。
+         - [ ] `east_parts.core` の import を `pytra.std.*`（または同等 shim）に固定する。
          - [ ] `tools/prepare_selfhost_source.py` の取り込み対象へ `east_parts.core` を段階追加する。
        - [ ] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
        - [ ] 上記生成物を `g++` でビルドして、実行結果が Python 実行と一致することを確認する。
@@ -136,8 +136,8 @@
    - [ ] `import` / `from ... import ...` を収集してモジュール依存グラフを作る。
      - [ ] 相対 import（`from .mod import x`）の解決ルールを仕様化する。
      - [ ] 循環 import 検出時のエラー分類を `input_invalid` で統一する。
-   - [ ] `pylib.*` とユーザーモジュールの探索パス解決（重複・循環検出）を実装する。
-     - [ ] 同名モジュール衝突時の優先順位（ユーザー/`pylib`）を仕様化して実装する。
+   - [ ] `pytra.*` とユーザーモジュールの探索パス解決（重複・循環検出）を実装する。
+     - [ ] 同名モジュール衝突時の優先順位（ユーザー/`pytra`）を仕様化して実装する。
    - [x] 依存グラフを `--dump-deps` などで可視化できるようにする。: `src/py2cpp.py --dump-deps`
 2. [ ] モジュール単位 EAST を構築する。
    - [ ] 入口ファイル + 依存モジュールを個別に EAST 化する。
@@ -171,7 +171,7 @@
   2. `selfhost/py2cpp.py` と `selfhost/runtime/cpp/*` を `src` 最新へ同期済み。
   3. 依然として主因は `object` / `optional<dict>` / `std::any` の境界変換（代入・引数渡し・`py_dict_get_default` 呼び出し）に集中している。
 - 更新（2026-02-18 selfhost 追加）:
-  1. `tools/prepare_selfhost_source.py` を追加し、`src/pylib/east_parts/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
+  1. `tools/prepare_selfhost_source.py` を追加し、`src/pylib/tra/east_parts/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
   3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（2026-02-18 再計測で `total_errors=82`）。
   4. 先頭エラー群は `emit_stmt`/`emit_stmt_list` の文リスト型、`render_boolop` 周辺の `Any` 取り回し、`self` 記号解決の C++ 生成不整合が中心。
@@ -191,7 +191,7 @@
   6. `tools/check_selfhost_cpp_diff.py` に `--mode allow-not-implemented`（既定）を追加し、現段階の selfhost 未実装ケースを skip 集計できるようにした。
   7. `py_runtime.h` の `optional<dict<...>>` 向け `py_dict_get` が temporary 参照返却警告を出していたため、値返しへ変更して selfhost ビルド警告を解消。
   8. `tools/run_local_ci.py` を追加し、`check_py2cpp_transpile` / unit tests / selfhost build / selfhost diff（allow-not-implemented）を1コマンドで実行できるようにした。
-  9. selfhost の `load_east` に `.json` 入力経路を追加し、当時は C++ runtime 経由で EAST JSON を直接読み込めるようにした（現在は `pylib/json.py` 正本化方針へ移行中）。
+  9. selfhost の `load_east` に `.json` 入力経路を追加し、当時は C++ runtime 経由で EAST JSON を直接読み込めるようにした（現在は pure Python 実装の正本化方針へ移行中）。
   10. `CppEmitter` 生成時の `CodeEmitter` 基底初期化を `load_cpp_profile()` 付きに修正し、selfhost での `dict key not found: syntax` を解消した。
   11. `tools/selfhost_transpile.py` を追加し、`.py` 入力を一時 EAST JSON 化して selfhost バイナリに渡す暫定運用を可能にした。
   12. selfhost JSON 直入力時の改行崩れ（`\\n` がそのまま出る問題）を修正し、通常の改行付き C++ 出力へ回復した。
