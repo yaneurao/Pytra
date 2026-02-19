@@ -1,4 +1,6 @@
-// このファイルは Python の `time` モジュール互換実装の本体です。
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/time.py
+// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include <chrono>
 

@@ -1,2 +1,5 @@
-// 実装本体はヘッダ内インラインで提供しています。
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/pathlib.py
+// command: python3 tools/generate_cpp_pylib_runtime.py
+
 #include "runtime/cpp/pytra/std/pathlib.h"

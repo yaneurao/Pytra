@@ -1,4 +1,6 @@
-// このファイルは Python の `sys` モジュール互換実装の本体です。
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/sys.py
+// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include "runtime/cpp/pytra/std/sys.h"
 

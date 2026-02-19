@@ -73,7 +73,7 @@ bytes _zlib_deflate_store(const bytes& data) {
         int64 chunk_len = (remain > 65535 ? 65535 : remain);
         int64 final = (pos + chunk_len >= n ? 1 : 0);
         // stored block: BTYPE=00, header bit field in LSB order (final in bit0)
-        out.append(final);
+        out.append(static_cast<uint8>(py_to_int64(final)));
         out.extend(_u16le(chunk_len));
         out.extend(_u16le(0xFFFF ^ chunk_len));
         out.extend(py_slice(data, pos, pos + chunk_len));
@@ -107,7 +107,7 @@ void write_rgb_png(const str& path, int64 width, int64 height, const bytes& pixe
     int64 row_bytes = width * 3;
     int64 y = 0;
     while (y < height) {
-        scanlines.append(0);
+        scanlines.append(static_cast<uint8>(py_to_int64(0)));
         int64 start = y * row_bytes;
         int64 end = start + row_bytes;
         scanlines.extend(py_slice(raw, start, end));

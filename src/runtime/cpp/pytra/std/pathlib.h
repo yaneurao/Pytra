@@ -1,8 +1,9 @@
-// このファイルは Python の pathlib 互換機能を C++ で提供します。
-// Path の最小機能（親参照、連結、テキスト読み書き）を実装しています。
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/pathlib.py
+// command: python3 tools/generate_cpp_pylib_runtime.py
 
-#ifndef PYTRA_CPP_MODULE_PATHLIB_H
-#define PYTRA_CPP_MODULE_PATHLIB_H
+#ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_PATHLIB_H
+#define PYTRA_RUNTIME_CPP_PYTRA_STD_PATHLIB_H
 
 #include <filesystem>
 #include <fstream>
@@ -151,4 +152,4 @@ inline std::string str(const Path& p) {
 
 }  // namespace pytra::cpp_module
 
-#endif  // PYTRA_CPP_MODULE_PATHLIB_H
+#endif  // PYTRA_RUNTIME_CPP_PYTRA_STD_PATHLIB_H

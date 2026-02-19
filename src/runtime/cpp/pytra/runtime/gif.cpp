@@ -33,7 +33,7 @@ bytes _lzw_encode(const bytes& data, int64 min_code_size) {
     bit_buffer |= clear_code << bit_count;
     bit_count += code_size;
     while (bit_count >= 8) {
-        out.append(bit_buffer & 0xFF);
+        out.append(static_cast<uint8>(py_to_int64(bit_buffer & 0xFF)));
         bit_buffer >>= 8;
         bit_count -= 8;
     }
@@ -43,7 +43,7 @@ bytes _lzw_encode(const bytes& data, int64 min_code_size) {
         bit_buffer |= py_to_int64(v << bit_count);
         bit_count += code_size;
         while (bit_count >= 8) {
-            out.append(bit_buffer & 0xFF);
+            out.append(static_cast<uint8>(py_to_int64(bit_buffer & 0xFF)));
             bit_buffer >>= 8;
             bit_count -= 8;
         }
@@ -51,7 +51,7 @@ bytes _lzw_encode(const bytes& data, int64 min_code_size) {
         bit_buffer |= clear_code << bit_count;
         bit_count += code_size;
         while (bit_count >= 8) {
-            out.append(bit_buffer & 0xFF);
+            out.append(static_cast<uint8>(py_to_int64(bit_buffer & 0xFF)));
             bit_buffer >>= 8;
             bit_count -= 8;
         }
@@ -62,13 +62,13 @@ bytes _lzw_encode(const bytes& data, int64 min_code_size) {
     bit_buffer |= end_code << bit_count;
     bit_count += code_size;
     while (bit_count >= 8) {
-        out.append(bit_buffer & 0xFF);
+        out.append(static_cast<uint8>(py_to_int64(bit_buffer & 0xFF)));
         bit_buffer >>= 8;
         bit_count -= 8;
     }
     
     if (bit_count > 0)
-        out.append(bit_buffer & 0xFF);
+        out.append(static_cast<uint8>(py_to_int64(bit_buffer & 0xFF)));
     
     return bytes(out);
 }
@@ -78,9 +78,9 @@ bytes grayscale_palette() {
     bytearray p = bytearray{};
     int64 i = 0;
     while (i < 256) {
-        p.append(i);
-        p.append(i);
-        p.append(i);
+        p.append(static_cast<uint8>(py_to_int64(i)));
+        p.append(static_cast<uint8>(py_to_int64(i)));
+        p.append(static_cast<uint8>(py_to_int64(i)));
         i++;
     }
     return bytes(p);
@@ -100,41 +100,41 @@ void save_gif(const str& path, int64 width, int64 height, const list<bytes>& fra
     out.extend(py_bytes_lit("GIF89a"));
     out.extend(py_int_to_bytes(width, 2, "little"));
     out.extend(py_int_to_bytes(height, 2, "little"));
-    out.append(0xF7);
-    out.append(0);
-    out.append(0);
+    out.append(static_cast<uint8>(py_to_int64(0xF7)));
+    out.append(static_cast<uint8>(py_to_int64(0)));
+    out.append(static_cast<uint8>(py_to_int64(0)));
     out.extend(palette);
     
     // Netscape loop extension
     out.extend(py_bytes_lit("\x21\xFF\x0BNETSCAPE2.0\x03\x01"));
     out.extend(py_int_to_bytes(loop, 2, "little"));
-    out.append(0);
+    out.append(static_cast<uint8>(py_to_int64(0)));
     
     for (bytes fr : frames) {
         out.extend(py_bytes_lit("\x21\xF9\x04\x00"));
         out.extend(py_int_to_bytes(delay_cs, 2, "little"));
         out.extend(py_bytes_lit("\x00\x00"));
         
-        out.append(0x2C);
+        out.append(static_cast<uint8>(py_to_int64(0x2C)));
         out.extend(py_int_to_bytes((0), 2, "little"));
         out.extend(py_int_to_bytes((0), 2, "little"));
         out.extend(py_int_to_bytes(width, 2, "little"));
         out.extend(py_int_to_bytes(height, 2, "little"));
-        out.append(0);
+        out.append(static_cast<uint8>(py_to_int64(0)));
         
-        out.append(8);
+        out.append(static_cast<uint8>(py_to_int64(8)));
         bytes compressed = _lzw_encode(fr, 8);
         int64 pos = 0;
         while (pos < py_len(compressed)) {
             bytes chunk = py_slice(compressed, pos, pos + 255);
-            out.append(py_len(chunk));
+            out.append(static_cast<uint8>(py_to_int64(py_len(chunk))));
             out.extend(chunk);
             pos += py_len(chunk);
         }
-        out.append(0);
+        out.append(static_cast<uint8>(py_to_int64(0)));
     }
     
-    out.append(0x3B);
+    out.append(static_cast<uint8>(py_to_int64(0x3B)));
     
     pytra::runtime::cpp::base::PyFile f = open(path, "wb");
     {
