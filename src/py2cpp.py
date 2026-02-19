@@ -724,30 +724,59 @@ class CppEmitter(CodeEmitter):
         if hook_kind is True:
             return
         self.emit_leading_comments(stmt)
-        dispatch: dict[str, Any] = {
-            "Expr": self._emit_expr_stmt,
-            "Return": self._emit_return_stmt,
-            "Assign": self._emit_assign_stmt,
-            "Swap": self._emit_swap_stmt,
-            "AnnAssign": self._emit_annassign_stmt,
-            "AugAssign": self._emit_augassign_stmt,
-            "If": self._emit_if_stmt,
-            "While": self._emit_while_stmt,
-            "ForRange": self.emit_for_range,
-            "For": self.emit_for_each,
-            "Raise": self._emit_raise_stmt,
-            "Try": self._emit_try_stmt,
-            "FunctionDef": self._emit_function_stmt,
-            "ClassDef": self._emit_class_stmt,
-            "Pass": self._emit_pass_stmt,
-            "Break": self._emit_break_stmt,
-            "Continue": self._emit_continue_stmt,
-            "Import": self._emit_noop_stmt,
-            "ImportFrom": self._emit_noop_stmt,
-        }
-        handler = dispatch.get(kind)
-        if handler is not None:
-            handler(stmt)
+        if kind == "Expr":
+            self._emit_expr_stmt(stmt)
+            return
+        if kind == "Return":
+            self._emit_return_stmt(stmt)
+            return
+        if kind == "Assign":
+            self._emit_assign_stmt(stmt)
+            return
+        if kind == "Swap":
+            self._emit_swap_stmt(stmt)
+            return
+        if kind == "AnnAssign":
+            self._emit_annassign_stmt(stmt)
+            return
+        if kind == "AugAssign":
+            self._emit_augassign_stmt(stmt)
+            return
+        if kind == "If":
+            self._emit_if_stmt(stmt)
+            return
+        if kind == "While":
+            self._emit_while_stmt(stmt)
+            return
+        if kind == "ForRange":
+            self.emit_for_range(stmt)
+            return
+        if kind == "For":
+            self.emit_for_each(stmt)
+            return
+        if kind == "Raise":
+            self._emit_raise_stmt(stmt)
+            return
+        if kind == "Try":
+            self._emit_try_stmt(stmt)
+            return
+        if kind == "FunctionDef":
+            self._emit_function_stmt(stmt)
+            return
+        if kind == "ClassDef":
+            self._emit_class_stmt(stmt)
+            return
+        if kind == "Pass":
+            self._emit_pass_stmt(stmt)
+            return
+        if kind == "Break":
+            self._emit_break_stmt(stmt)
+            return
+        if kind == "Continue":
+            self._emit_continue_stmt(stmt)
+            return
+        if kind == "Import" or kind == "ImportFrom":
+            self._emit_noop_stmt(stmt)
             return
         self.emit(f"/* unsupported stmt kind: {kind} */")
 
@@ -1051,11 +1080,11 @@ class CppEmitter(CodeEmitter):
         )
         if omit_braces:
             self.emit(hdr)
-
-            def _emit_for_range_single() -> None:
-                self.emit_stmt(body_stmts[0])
-
-            self.emit_with_scope({tgt}, _emit_for_range_single)
+            self.indent += 1
+            self.scope_stack.append(set([tgt]))
+            self.emit_stmt(body_stmts[0])
+            self.scope_stack.pop()
+            self.indent -= 1
             return
 
         self.emit(hdr + " {")
@@ -1117,13 +1146,13 @@ class CppEmitter(CodeEmitter):
                 )
         if omit_braces:
             self.emit(hdr)
-
-            def _emit_for_each_single() -> None:
-                if unpack_tuple:
-                    self._emit_target_unpack(target, iter_tmp)
-                self.emit_stmt(body_stmts[0])
-
-            self.emit_with_scope(target_names, _emit_for_each_single)
+            self.indent += 1
+            self.scope_stack.append(set(target_names))
+            if unpack_tuple:
+                self._emit_target_unpack(target, iter_tmp)
+            self.emit_stmt(body_stmts[0])
+            self.scope_stack.pop()
+            self.indent -= 1
             return
 
         self.emit(hdr + " {")
@@ -1175,13 +1204,13 @@ class CppEmitter(CodeEmitter):
             self.emit_function_open(ret, str(name), ", ".join(params))
         docstring = self.any_to_str(stmt.get("docstring"))
         body_stmts = self._dict_stmt_list(stmt.get("body"))
-
-        def _emit_function_body() -> None:
-            if docstring != "":
-                self.emit_block_comment(docstring)
-            self.emit_stmt_list(body_stmts)
-
-        self.emit_with_scope(fn_scope, _emit_function_body)
+        self.indent += 1
+        self.scope_stack.append(set(fn_scope))
+        if docstring != "":
+            self.emit_block_comment(docstring)
+        self.emit_stmt_list(body_stmts)
+        self.scope_stack.pop()
+        self.indent -= 1
         self.emit_block_close()
 
     def emit_class(self, stmt: dict[str, Any]) -> None:
@@ -1327,12 +1356,12 @@ class CppEmitter(CodeEmitter):
                     p += f" = {instance_field_defaults[fname]}"
                 params.append(p)
             self.emit(f"{name}({', '.join(params)}) {{")
-
-            def _emit_auto_ctor_body() -> None:
-                for fname in instance_fields.keys():
-                    self.emit(f"this->{fname} = {fname};")
-
-            self.emit_with_scope(set(), _emit_auto_ctor_body)
+            self.indent += 1
+            self.scope_stack.append(set())
+            for fname in instance_fields.keys():
+                self.emit(f"this->{fname} = {fname};")
+            self.scope_stack.pop()
+            self.indent -= 1
             self.emit_block_close()
             self.emit("")
         for s in class_body:
@@ -2530,9 +2559,14 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     return "modules:\n  (none)\nsymbols:\n  (none)\n"
 
 
-def print_user_error(err: UserFacingError) -> None:
+def print_user_error(err: Any) -> None:
     """分類済みユーザーエラーをカテゴリ別に表示する。"""
-    cat = err.category
+    if not isinstance(err, UserFacingError):
+        print("error: 変換に失敗しました。", file=sys.stderr)
+        print("[transpile_error] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
+        return
+    ue: UserFacingError = err
+    cat = ue.category
     if cat == "user_syntax_error":
         print("error: 入力 Python の文法エラーです。", file=sys.stderr)
         print("[user_syntax_error] 構文を修正してください。", file=sys.stderr)
@@ -2548,7 +2582,7 @@ def print_user_error(err: UserFacingError) -> None:
     else:
         print("error: 変換に失敗しました。", file=sys.stderr)
         print(f"[{cat}] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
-    for line in err.details:
+    for line in ue.details:
         if line != "":
             print(line, file=sys.stderr)
 
@@ -2576,6 +2610,13 @@ def main(argv: list[str]) -> int:
     no_main = parsed.get("no_main", "0") == "1"
     dump_deps = parsed.get("dump_deps", "0") == "1"
     dump_options = parsed.get("dump_options", "0") == "1"
+    negative_index_mode = ""
+    bounds_check_mode = ""
+    floor_div_mode = ""
+    mod_mode = ""
+    int_width = ""
+    str_index_mode = ""
+    str_slice_mode = ""
 
     if input_txt == "":
         print(
@@ -2606,12 +2647,18 @@ def main(argv: list[str]) -> int:
         str_index_mode,
         str_slice_mode,
     )
-    allowed_planned = {
+    allowed_planned = [
         "--int-width=bigint is not implemented yet",
         "--str-index-mode=codepoint is not implemented yet",
         "--str-slice-mode=codepoint is not implemented yet",
-    }
-    if opt_err != "" and not (dump_options and opt_err in allowed_planned):
+    ]
+    allow_planned = False
+    if dump_options and opt_err != "":
+        for s in allowed_planned:
+            if opt_err == s:
+                allow_planned = True
+                break
+    if opt_err != "" and not allow_planned:
         print(f"error: {opt_err}", file=sys.stderr)
         return 1
 

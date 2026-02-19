@@ -152,23 +152,29 @@ class CodeEmitter:
         """汎用ブロック終端行を出力する。"""
         self.emit(self.syntax_text("block_close", "}"))
 
-    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: set[str] | None = None) -> None:
+    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: Any = None) -> None:
         """現在 indent 位置でスコープを1段積み、文リストを出力する。"""
         self.indent += 1
-        self.scope_stack.append(set() if scope_names is None else set(scope_names))
+        next_scope: set[str] = set()
+        if isinstance(scope_names, set):
+            next_scope = set(scope_names)
+        self.scope_stack.append(next_scope)
         self.emit_stmt_list(stmts)
         self.scope_stack.pop()
         self.indent -= 1
 
-    def emit_with_scope(self, scope_names: set[str] | None, body_fn: Any) -> None:
+    def emit_with_scope(self, scope_names: Any, body_fn: Any) -> None:
         """現在 indent 位置でスコープを1段積み、コールバック本体を実行する。"""
         self.indent += 1
-        self.scope_stack.append(set() if scope_names is None else set(scope_names))
+        next_scope: set[str] = set()
+        if isinstance(scope_names, set):
+            next_scope = set(scope_names)
+        self.scope_stack.append(next_scope)
         body_fn()
         self.scope_stack.pop()
         self.indent -= 1
 
-    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: set[str] | None = None) -> None:
+    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: Any = None) -> None:
         """`open_line` を出力し、スコープ付きで文リストを出して block を閉じる。"""
         self.emit(open_line)
         self.emit_scoped_stmt_list(stmts, scope_names)
