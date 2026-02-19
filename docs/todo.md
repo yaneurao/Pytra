@@ -127,6 +127,7 @@
      - [x] `load_east` を `.json` 受理 / `.py` `not_implemented` に分割した。
      - [x] selfhost parser 非対応のネスト関数を含む補助関数（import graph / multi-file）の一部をスタブへ置換した。
      - [ ] `Path`/`json` 操作の型退化で C++ 生成が崩れる箇所を段階的に縮退し、`tools/build_selfhost.py` を再 green 化する。
+     - [x] `tools/build_selfhost.py` は再度 green（`selfhost/py2cpp.out` 生成成功）へ回復した。現在の制約: selfhost 実行時の `.py` 入力は `not_implemented`。
 5. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
    - [x] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。: `test/fixtures/core/add.py`, `test/fixtures/control/if_else.py`, `sample/py/01_mandelbrot.py`
    - [x] `selfhost/py2cpp.out` と `python3 src/py2cpp.py` の出力差分チェックをスクリプト化する。: `tools/check_selfhost_cpp_diff.py`

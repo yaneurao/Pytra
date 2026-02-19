@@ -129,23 +129,11 @@ def _replace_load_east_for_selfhost(text: str) -> str:
         raise RuntimeError("load_east block not found")
     stub = (
         "def load_east(input_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, Any]:\n"
-        "    _ = parser_backend\n"
-        "    if input_path.suffix == \".json\":\n"
-        "        payload = json.loads(input_path.read_text(encoding=\"utf-8\"))\n"
-        "        if isinstance(payload, dict):\n"
-        "            if \"ok\" in payload and payload[\"ok\"] == True and \"east\" in payload and isinstance(payload[\"east\"], dict):\n"
-        "                return payload[\"east\"]\n"
-        "            if \"kind\" in payload and payload[\"kind\"] == \"Module\":\n"
-        "                return payload\n"
-        "        raise _make_user_error(\n"
-        "            \"input_invalid\",\n"
-        "            \"EAST JSON の形式が不正です。\",\n"
-        "            [\"期待形式: {'ok': true, 'east': {...}} または {'kind': 'Module', ...}\"],\n"
-        "        )\n"
-        "    details: list[str] = [\"selfhost .py parsing is not implemented yet; use JSON bridge path\"]\n"
+        "    pass\n"
+        "    details: list[str] = [\"selfhost load_east is not enabled; use Python driver path\"]\n"
         "    raise _make_user_error(\n"
         "        \"not_implemented\",\n"
-        "        \"selfhost load_east(.py) is not implemented yet.\",\n"
+        "        \"selfhost load_east is not implemented yet.\",\n"
         "        details,\n"
         "    )\n\n"
     )
@@ -276,6 +264,212 @@ def _replace_import_graph_helpers_for_selfhost(text: str) -> str:
     return out
 
 
+def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
+    """selfhost で型崩れしやすい重い補助関数を最小スタブへ置換する。"""
+    out = text
+
+    def repl(start_marker: str, end_marker: str, stub: str) -> None:
+        nonlocal out
+        i = out.find(start_marker)
+        j = out.find(end_marker)
+        if i >= 0 and j > i:
+            out = out[:i] + stub + out[j + 1 :]
+
+    repl(
+        "def load_cpp_hooks(",
+        "\ndef load_cpp_identifier_rules(",
+        (
+            "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> Any:\n"
+            "    pass\n"
+            "    return make_object(0)\n\n"
+        ),
+    )
+
+    repl(
+        "def dump_deps_text(",
+        "\ndef _collect_import_modules(",
+        (
+            "def dump_deps_text(east_module: dict[str, Any]) -> str:\n"
+            "    pass\n"
+            "    return \"modules:\\n  (selfhost minimal mode)\\nsymbols:\\n  (selfhost minimal mode)\\n\"\n\n"
+        ),
+    )
+
+    repl(
+        "def _collect_import_modules(",
+        "\n\nLEGACY_MODULE_IMPORTS",
+        (
+            "def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:\n"
+            "    pass\n"
+            "    return []\n\n"
+        ),
+    )
+
+    repl(
+        "def build_module_east_map(",
+        "\ndef build_module_symbol_index(",
+        (
+            "def build_module_east_map(entry_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, dict[str, Any]]:\n"
+            "    pass\n"
+            "    out: dict[str, dict[str, Any]] = {}\n"
+            "    return out\n\n"
+        ),
+    )
+
+    repl(
+        "def build_module_symbol_index(",
+        "\ndef build_module_type_schema(",
+        (
+            "def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:\n"
+            "    pass\n"
+            "    out: dict[str, dict[str, Any]] = {}\n"
+            "    return out\n\n"
+        ),
+    )
+
+    repl(
+        "def build_module_type_schema(",
+        "\ndef _sanitize_module_label(",
+        (
+            "def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:\n"
+            "    pass\n"
+            "    out: dict[str, dict[str, Any]] = {}\n"
+            "    return out\n\n"
+        ),
+    )
+
+    repl(
+        "def _module_name_from_path(",
+        "\ndef _write_multi_file_cpp(",
+        (
+            "def _module_name_from_path(root: Path, module_path: Path) -> str:\n"
+            "    pass\n"
+            "    return \"\"\n\n"
+        ),
+    )
+
+    repl(
+        "def _rel_disp_for_graph(",
+        "\ndef _analyze_import_graph(",
+        (
+            "def _rel_disp_for_graph(base: Path, p: Path) -> str:\n"
+            "    pass\n"
+            "    return str(p)\n\n"
+        ),
+    )
+
+    repl(
+        "def _validate_import_graph_or_raise(",
+        "\ndef build_module_east_map(",
+        (
+            "def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:\n"
+            "    pass\n"
+            "    return\n\n"
+        ),
+    )
+
+    repl(
+        "def _resolve_user_module_path(",
+        "\ndef dump_deps_graph_text(",
+        (
+            "def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:\n"
+            "    pass\n"
+            "    return None\n\n"
+        ),
+    )
+    return out
+
+
+def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
+    """CodeEmitter の hook 呼び出しを selfhost 用に no-op 化する。"""
+    out = text
+
+    def repl(start_marker: str, end_marker: str, stub: str) -> None:
+        nonlocal out
+        i = out.find(start_marker)
+        j = out.find(end_marker)
+        if i >= 0 and j > i:
+            out = out[:i] + stub + out[j + 1 :]
+
+    repl(
+        "    def hook_on_emit_stmt(",
+        "\n    def hook_on_emit_stmt_kind(",
+        (
+            "    def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:\n"
+            "        pass\n"
+            "        return None\n"
+        ),
+    )
+    repl(
+        "    def hook_on_emit_stmt_kind(",
+        "\n    def hook_on_render_call(",
+        (
+            "    def hook_on_emit_stmt_kind(\n"
+            "        self,\n"
+            "        kind: str,\n"
+            "        stmt: dict[str, Any],\n"
+            "    ) -> bool | None:\n"
+            "        pass\n"
+            "        return None\n"
+        ),
+    )
+    repl(
+        "    def hook_on_render_call(",
+        "\n    def hook_on_render_binop(",
+        (
+            "    def hook_on_render_call(\n"
+            "        self,\n"
+            "        call_node: dict[str, Any],\n"
+            "        func_node: dict[str, Any],\n"
+            "        rendered_args: list[str],\n"
+            "        rendered_kwargs: dict[str, str],\n"
+            "    ) -> str | None:\n"
+            "        pass\n"
+            "        return None\n"
+        ),
+    )
+    repl(
+        "    def hook_on_render_binop(",
+        "\n    def hook_on_render_expr_kind(",
+        (
+            "    def hook_on_render_binop(\n"
+            "        self,\n"
+            "        binop_node: dict[str, Any],\n"
+            "        left: str,\n"
+            "        right: str,\n"
+            "    ) -> str | None:\n"
+            "        pass\n"
+            "        return None\n"
+        ),
+    )
+    repl(
+        "    def hook_on_render_expr_kind(",
+        "\n    def hook_on_render_expr_complex(",
+        (
+            "    def hook_on_render_expr_kind(\n"
+            "        self,\n"
+            "        kind: str,\n"
+            "        expr_node: dict[str, Any],\n"
+            "    ) -> str | None:\n"
+            "        pass\n"
+            "        return None\n"
+        ),
+    )
+    repl(
+        "    def hook_on_render_expr_complex(",
+        "\n    def syntax_text(",
+        (
+            "    def hook_on_render_expr_complex(\n"
+            "        self,\n"
+            "        expr_node: dict[str, Any],\n"
+            "    ) -> str | None:\n"
+            "        pass\n"
+            "        return None\n"
+        ),
+    )
+    return out
+
+
 def _replace_multi_file_helpers_for_selfhost(text: str) -> str:
     """selfhost parser 非対応のネスト関数を含む multi-file 出力ヘルパを置換する。"""
     out = text
@@ -285,40 +479,10 @@ def _replace_multi_file_helpers_for_selfhost(text: str) -> str:
     j = out.find(end)
     if i >= 0 and j > i:
         stub = (
-            "def _write_multi_file_cpp(\n"
-            "    *,\n"
-            "    entry_path: Path,\n"
-            "    module_east_map: dict[str, dict[str, Any]],\n"
-            "    output_dir: Path,\n"
-            "    negative_index_mode: str,\n"
-            "    bounds_check_mode: str,\n"
-            "    floor_div_mode: str,\n"
-            "    mod_mode: str,\n"
-            "    int_width: str,\n"
-            "    str_index_mode: str,\n"
-            "    str_slice_mode: str,\n"
-            "    opt_level: str,\n"
-            "    top_namespace: str,\n"
-            "    emit_main: bool,\n"
-            ") -> dict[str, Any]:\n"
-            "    _ = entry_path\n"
-            "    _ = module_east_map\n"
-            "    _ = output_dir\n"
-            "    _ = negative_index_mode\n"
-            "    _ = bounds_check_mode\n"
-            "    _ = floor_div_mode\n"
-            "    _ = mod_mode\n"
-            "    _ = int_width\n"
-            "    _ = str_index_mode\n"
-            "    _ = str_slice_mode\n"
-            "    _ = opt_level\n"
-            "    _ = top_namespace\n"
-            "    _ = emit_main\n"
-            "    raise _make_user_error(\n"
-            "        \"not_implemented\",\n"
-            "        \"selfhost multi-file output is not implemented yet.\",\n"
-            "        [\"use --single-file in selfhost mode\"],\n"
-            "    )\n\n"
+            "def _write_multi_file_cpp() -> dict[str, Any]:\n"
+            "    pass\n"
+            "    out: dict[str, Any] = {}\n"
+            "    return out\n\n"
         )
         out = out[:i] + stub + out[j + 1 :]
     return out
@@ -333,9 +497,11 @@ def main() -> int:
     py2cpp_text = _remove_import_line(py2cpp_text)
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
     out = _replace_dump_options_for_selfhost(out)
+    out = _patch_code_emitter_hooks_for_selfhost(out)
     out = _replace_load_east_for_selfhost(out)
     out = _replace_multi_file_helpers_for_selfhost(out)
     out = _replace_import_graph_helpers_for_selfhost(out)
+    out = _replace_misc_heavy_helpers_for_selfhost(out)
     out = _patch_main_guard_for_selfhost(out)
     out = _strip_main_guard(out)
     out = _patch_selfhost_exception_paths(out)

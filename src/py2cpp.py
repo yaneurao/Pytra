@@ -372,7 +372,7 @@ class CppEmitter(CodeEmitter):
         opt_level: str = "2",
         top_namespace: str = "",
         emit_main: bool = True,
-        module_namespace_map: dict[str, str] | None = None,
+        module_namespace_map: dict[str, str] = {},
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
         profile = load_cpp_profile()
@@ -413,7 +413,7 @@ class CppEmitter(CodeEmitter):
         self.reserved_words.add("main")
         self.import_modules: dict[str, str] = {}
         self.import_symbols: dict[str, dict[str, str]] = {}
-        self.module_namespace_map: dict[str, str] = module_namespace_map if isinstance(module_namespace_map, dict) else {}
+        self.module_namespace_map = module_namespace_map
         self.function_arg_types: dict[str, list[str]] = {}
         self.current_function_return_type: str = ""
         self.declared_var_types: dict[str, str] = {}
@@ -3300,7 +3300,7 @@ def transpile_to_cpp(
     opt_level: str = "2",
     top_namespace: str = "",
     emit_main: bool = True,
-    module_namespace_map: dict[str, str] | None = None,
+    module_namespace_map: dict[str, str] = {},
 ) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
     return CppEmitter(
@@ -4237,6 +4237,7 @@ def main(argv: list[str]) -> int:
                 print(dep_text, end="")
             return 0
         if single_file:
+            empty_ns: dict[str, str] = {}
             cpp = transpile_to_cpp(
                 east_module,
                 negative_index_mode,
@@ -4249,6 +4250,7 @@ def main(argv: list[str]) -> int:
                 opt_level,
                 top_namespace_opt,
                 not no_main,
+                empty_ns,
             )
         else:
             module_east_map: dict[str, dict[str, Any]] = {}
