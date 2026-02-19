@@ -66,11 +66,9 @@ class CodeEmitter:
 
     def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:
         """`on_emit_stmt` フック。既定では何もしない。"""
-        if hasattr(self.hooks, "on_emit_stmt"):
-            return self.hooks.on_emit_stmt(self, stmt)
-        if isinstance(self.hooks, dict) and "on_emit_stmt" in self.hooks:
-            fn = self.hooks.get("on_emit_stmt")
-            if hasattr(fn, "__call__"):
+        if "on_emit_stmt" in self.hooks:
+            fn = self.hooks["on_emit_stmt"]
+            if fn is not None:
                 return fn(self, stmt)
         return None
 
@@ -80,11 +78,9 @@ class CodeEmitter:
         stmt: dict[str, Any],
     ) -> bool | None:
         """`on_emit_stmt_kind` フック。既定では何もしない。"""
-        if hasattr(self.hooks, "on_emit_stmt_kind"):
-            return self.hooks.on_emit_stmt_kind(self, kind, stmt)
-        if isinstance(self.hooks, dict) and "on_emit_stmt_kind" in self.hooks:
-            fn = self.hooks.get("on_emit_stmt_kind")
-            if hasattr(fn, "__call__"):
+        if "on_emit_stmt_kind" in self.hooks:
+            fn = self.hooks["on_emit_stmt_kind"]
+            if fn is not None:
                 return fn(self, kind, stmt)
         return None
 
@@ -96,11 +92,9 @@ class CodeEmitter:
         rendered_kwargs: dict[str, str],
     ) -> str | None:
         """`on_render_call` フック。既定では何もしない。"""
-        if hasattr(self.hooks, "on_render_call"):
-            return self.hooks.on_render_call(self, call_node, func_node, rendered_args, rendered_kwargs)
-        if isinstance(self.hooks, dict) and "on_render_call" in self.hooks:
-            fn = self.hooks.get("on_render_call")
-            if hasattr(fn, "__call__"):
+        if "on_render_call" in self.hooks:
+            fn = self.hooks["on_render_call"]
+            if fn is not None:
                 return fn(self, call_node, func_node, rendered_args, rendered_kwargs)
         return None
 
@@ -111,11 +105,9 @@ class CodeEmitter:
         right: str,
     ) -> str | None:
         """`on_render_binop` フック。既定では何もしない。"""
-        if hasattr(self.hooks, "on_render_binop"):
-            return self.hooks.on_render_binop(self, binop_node, left, right)
-        if isinstance(self.hooks, dict) and "on_render_binop" in self.hooks:
-            fn = self.hooks.get("on_render_binop")
-            if hasattr(fn, "__call__"):
+        if "on_render_binop" in self.hooks:
+            fn = self.hooks["on_render_binop"]
+            if fn is not None:
                 return fn(self, binop_node, left, right)
         return None
 
@@ -125,11 +117,9 @@ class CodeEmitter:
         expr_node: dict[str, Any],
     ) -> str | None:
         """`on_render_expr_kind` フック。既定では何もしない。"""
-        if hasattr(self.hooks, "on_render_expr_kind"):
-            return self.hooks.on_render_expr_kind(self, kind, expr_node)
-        if isinstance(self.hooks, dict) and "on_render_expr_kind" in self.hooks:
-            fn = self.hooks.get("on_render_expr_kind")
-            if hasattr(fn, "__call__"):
+        if "on_render_expr_kind" in self.hooks:
+            fn = self.hooks["on_render_expr_kind"]
+            if fn is not None:
                 return fn(self, kind, expr_node)
         return None
 
@@ -138,11 +128,9 @@ class CodeEmitter:
         expr_node: dict[str, Any],
     ) -> str | None:
         """複雑式（JoinedStr/Lambda/Comp 系）用フック。既定では何もしない。"""
-        if hasattr(self.hooks, "on_render_expr_complex"):
-            return self.hooks.on_render_expr_complex(self, expr_node)
-        if isinstance(self.hooks, dict) and "on_render_expr_complex" in self.hooks:
-            fn = self.hooks.get("on_render_expr_complex")
-            if hasattr(fn, "__call__"):
+        if "on_render_expr_complex" in self.hooks:
+            fn = self.hooks["on_render_expr_complex"]
+            if fn is not None:
                 return fn(self, expr_node)
         return None
 
