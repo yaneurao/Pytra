@@ -2,12 +2,6 @@
 
 ## 直近実行キュー（細分化）
 
-1. [ ] 複数ファイル構成（import 強化）を最優先で実施する。
-   - [x] 「## 複数ファイル構成（最終ゴール）」の 1. 依存解決フェーズを先行着手する。: `--dump-deps` と import 検証（未解決/循環/予約衝突）を実装
-   - [x] `import` / `from ... import ...` の依存グラフ生成を先に実装する。: `--dump-deps` で `modules/symbols` に加えてユーザーモジュール依存 `graph` を出力
-   - [x] `pytra.*` とユーザーモジュール探索パスの解決・衝突規則を先に固める。: `pytra` 名前空間予約、未解決ユーザーモジュール、循環 import を `input_invalid` で早期検出
-   - [ ] 完了後にモジュール単位 EAST と複数ファイル出力（`.h/.cpp` 分割）へ進む。
-
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
      - 依存本体: `src/pytra/compiler/east_parts/core.py::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
