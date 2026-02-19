@@ -392,6 +392,63 @@ class CodeEmitterTest(unittest.TestCase):
         hook_complex = em.hook_on_render_expr_complex({"kind": "JoinedStr"})
         self.assertEqual(hook_complex, "complex_expr()")
 
+    def test_hook_invocation_helpers_with_dict_hooks(self) -> None:
+        calls: list[str] = []
+
+        def on_emit_stmt(_em: CodeEmitter, stmt: dict[str, Any]) -> Any:
+            calls.append("emit_stmt:" + str(stmt.get("kind")))
+            return True
+
+        def on_emit_stmt_kind(_em: CodeEmitter, kind: str, _stmt: dict[str, Any]) -> Any:
+            calls.append("emit_stmt_kind:" + kind)
+            return True
+
+        def on_render_call(
+            _em: CodeEmitter,
+            _call_node: dict[str, Any],
+            _func_node: dict[str, Any],
+            _rendered_args: list[str],
+            _rendered_kwargs: dict[str, str],
+        ) -> Any:
+            calls.append("render_call")
+            return "dict_hook_call()"
+
+        def on_render_expr_kind(_em: CodeEmitter, kind: str, _expr_node: dict[str, Any]) -> Any:
+            calls.append("render_expr_kind:" + kind)
+            return "dict_hook_expr()"
+
+        def on_render_expr_complex(_em: CodeEmitter, _expr_node: dict[str, Any]) -> Any:
+            calls.append("render_expr_complex")
+            return "dict_hook_complex()"
+
+        hooks: dict[str, Any] = {
+            "on_emit_stmt": on_emit_stmt,
+            "on_emit_stmt_kind": on_emit_stmt_kind,
+            "on_render_call": on_render_call,
+            "on_render_expr_kind": on_render_expr_kind,
+            "on_render_expr_complex": on_render_expr_complex,
+        }
+        em = CodeEmitter({}, {}, hooks)
+        self.assertTrue(em.hook_on_emit_stmt({"kind": "Pass"}))
+        self.assertTrue(em.hook_on_emit_stmt_kind("Return", {"kind": "Return"}))
+        self.assertEqual(
+            em.hook_on_render_call({"kind": "Call"}, {"kind": "Name"}, [], {}),
+            "dict_hook_call()",
+        )
+        self.assertEqual(
+            em.hook_on_render_expr_kind("MagicExpr", {"kind": "MagicExpr"}),
+            "dict_hook_expr()",
+        )
+        self.assertEqual(
+            em.hook_on_render_expr_complex({"kind": "JoinedStr"}),
+            "dict_hook_complex()",
+        )
+        self.assertIn("emit_stmt:Pass", calls)
+        self.assertIn("emit_stmt_kind:Return", calls)
+        self.assertIn("render_call", calls)
+        self.assertIn("render_expr_kind:MagicExpr", calls)
+        self.assertIn("render_expr_complex", calls)
+
 
 if __name__ == "__main__":
     unittest.main()
