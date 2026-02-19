@@ -402,7 +402,6 @@ class CppEmitter(CodeEmitter):
         self.class_storage_hints: dict[str, str] = {}
         self.ref_classes: set[str] = set()
         self.value_classes: set[str] = set()
-        self.bridge_comment_emitted: set[str] = set()
         self.type_map: dict[str, str] = load_cpp_type_map()
         if self.int_width == "32":
             self.type_map["int64"] = "int32"
@@ -3131,39 +3130,8 @@ class CppEmitter(CodeEmitter):
 
     def emit_bridge_comment(self, expr: dict[str, Any] | None) -> None:
         """ランタイムブリッジ呼び出しの補助コメントを必要時に付与する。"""
-        # 変換後ソースを原文に近づけるため、ブリッジ補助コメントは既定で出力しない。
+        _ = expr
         return
-        if expr is None or expr.get("kind") != "Call":
-            return
-        fn = self.any_to_dict_or_empty(expr.get("func"))
-        if len(fn) == 0:
-            return
-        key = ""
-        text = ""
-        fn_kind = self.any_to_str(fn.get("kind"))
-        if fn_kind == "Name":
-            name = str(fn.get("id", ""))
-            if name == "save_gif":
-                key = "save_gif"
-                text = "// bridge: Python gif.save_gif -> C++ runtime save_gif"
-            elif name == "write_rgb_png":
-                key = "write_rgb_png"
-                text = "// bridge: Python png.write_rgb_png -> C++ runtime pytra::png::write_rgb_png"
-        elif fn_kind == "Attribute":
-            owner = self.any_to_dict_or_empty(fn.get("value"))
-            owner_name = ""
-            if len(owner) > 0 and owner.get("kind") == "Name":
-                owner_name = str(owner.get("id", ""))
-            attr = str(fn.get("attr", ""))
-            if owner_name in {"gif_helper", "gif"} and attr == "save_gif":
-                key = "save_gif"
-                text = "// bridge: Python gif.save_gif -> C++ runtime save_gif"
-            elif owner_name in {"png_helper", "png"} and attr == "write_rgb_png":
-                key = "write_rgb_png"
-                text = "// bridge: Python png.write_rgb_png -> C++ runtime pytra::png::write_rgb_png"
-        if key != "" and key not in self.bridge_comment_emitted:
-            self.emit(text)
-            self.bridge_comment_emitted.add(key)
 
     def cpp_type(self, east_type: Any) -> str:
         """EAST 型名を C++ 型名へマッピングする。"""
