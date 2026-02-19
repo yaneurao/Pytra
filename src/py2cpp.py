@@ -1001,19 +1001,19 @@ class CppEmitter(CodeEmitter):
         )
         if omit_braces:
             self.emit(hdr)
-            self.indent += 1
-            self.scope_stack.append({tgt})
-            self.emit_stmt(body_stmts[0])
-            self.scope_stack.pop()
-            self.indent -= 1
+
+            def _emit_for_range_single() -> None:
+                self.emit_stmt(body_stmts[0])
+
+            self.emit_with_scope({tgt}, _emit_for_range_single)
             return
 
         self.emit(hdr + " {")
-        self.indent += 1
-        self.scope_stack.append({tgt})
-        self.emit_stmt_list(body_stmts)
-        self.scope_stack.pop()
-        self.indent -= 1
+
+        def _emit_for_range_body() -> None:
+            self.emit_stmt_list(body_stmts)
+
+        self.emit_with_scope({tgt}, _emit_for_range_body)
         self.emit_block_close()
 
     def emit_for_each(self, stmt: dict[str, Any]) -> None:
@@ -1071,23 +1071,23 @@ class CppEmitter(CodeEmitter):
                 )
         if omit_braces:
             self.emit(hdr)
-            self.indent += 1
-            self.scope_stack.append(target_names)
-            if unpack_tuple:
-                self._emit_target_unpack(target, iter_tmp)
-            self.emit_stmt(body_stmts[0])
-            self.scope_stack.pop()
-            self.indent -= 1
+
+            def _emit_for_each_single() -> None:
+                if unpack_tuple:
+                    self._emit_target_unpack(target, iter_tmp)
+                self.emit_stmt(body_stmts[0])
+
+            self.emit_with_scope(target_names, _emit_for_each_single)
             return
 
         self.emit(hdr + " {")
-        self.indent += 1
-        self.scope_stack.append(target_names)
-        if unpack_tuple:
-            self._emit_target_unpack(target, iter_tmp)
-        self.emit_stmt_list(body_stmts)
-        self.scope_stack.pop()
-        self.indent -= 1
+
+        def _emit_for_each_body() -> None:
+            if unpack_tuple:
+                self._emit_target_unpack(target, iter_tmp)
+            self.emit_stmt_list(body_stmts)
+
+        self.emit_with_scope(target_names, _emit_for_each_body)
         self.emit_block_close()
 
     def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
