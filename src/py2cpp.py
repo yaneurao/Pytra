@@ -177,11 +177,11 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "pow": "py_math::pow",
     }
     out["pytra.runtime.png"] = {
-        "write_rgb_png": "py_png_write_rgb_png",
+        "write_rgb_png": "pytra::png::write_rgb_png_py",
     }
     out["pytra.runtime.gif"] = {
-        "save_gif": "py_gif_save_gif",
-        "grayscale_palette": "py_gif_grayscale_palette_list",
+        "save_gif": "pytra::gif::save_gif_py",
+        "grayscale_palette": "pytra::gif::grayscale_palette_py",
     }
     out["os.path"] = {
         "join": "py_os_path_join",

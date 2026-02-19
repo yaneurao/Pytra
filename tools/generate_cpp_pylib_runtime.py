@@ -57,9 +57,19 @@ def _png_header_text(namespace_cpp: str, alias_target: str) -> str:
 #include <string>
 #include <vector>
 
+class str;
+template <class T>
+class list;
+
 namespace {namespace_cpp} {{
 
 void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels);
+void write_rgb_png_py(
+    const str& path,
+    std::int64_t width,
+    std::int64_t height,
+    const list<std::uint8_t>& pixels
+);
 
 }}  // namespace {namespace_cpp}
 
@@ -82,9 +92,14 @@ def _gif_header_text(namespace_cpp: str, alias_target: str) -> str:
 #include <string>
 #include <vector>
 
+class str;
+template <class T>
+class list;
+
 namespace {namespace_cpp} {{
 
 std::vector<std::uint8_t> grayscale_palette();
+list<std::uint8_t> grayscale_palette_py();
 
 void save_gif(
     const std::string& path,
@@ -94,6 +109,15 @@ void save_gif(
     const std::vector<std::uint8_t>& palette,
     int delay_cs = 4,
     int loop = 0
+);
+void save_gif_py(
+    const str& path,
+    std::int64_t width,
+    std::int64_t height,
+    const list<list<std::uint8_t>>& frames,
+    const list<std::uint8_t>& palette,
+    std::int64_t delay_cs = 4,
+    std::int64_t loop = 0
 );
 
 }}  // namespace {namespace_cpp}
@@ -124,6 +148,15 @@ void write_rgb_png(const std::string& path, int width, int height, const std::ve
     generated::write_rgb_png(str(path), int64(width), int64(height), raw);
 }}
 
+void write_rgb_png_py(
+    const str& path,
+    std::int64_t width,
+    std::int64_t height,
+    const list<std::uint8_t>& pixels
+) {{
+    generated::write_rgb_png(path, int64(width), int64(height), pixels);
+}}
+
 }}  // namespace {namespace_cpp}
 """
 
@@ -144,6 +177,10 @@ __PYTRA_GIF_IMPL__
 std::vector<std::uint8_t> grayscale_palette() {{
     const bytes raw = generated::grayscale_palette();
     return std::vector<std::uint8_t>(raw.begin(), raw.end());
+}}
+
+list<std::uint8_t> grayscale_palette_py() {{
+    return generated::grayscale_palette();
 }}
 
 void save_gif(
@@ -170,6 +207,18 @@ void save_gif(
         int64(delay_cs),
         int64(loop)
     );
+}}
+
+void save_gif_py(
+    const str& path,
+    std::int64_t width,
+    std::int64_t height,
+    const list<list<std::uint8_t>>& frames,
+    const list<std::uint8_t>& palette,
+    std::int64_t delay_cs,
+    std::int64_t loop
+) {{
+    generated::save_gif(path, int64(width), int64(height), frames, palette, int64(delay_cs), int64(loop));
 }}
 
 }}  // namespace {namespace_cpp}

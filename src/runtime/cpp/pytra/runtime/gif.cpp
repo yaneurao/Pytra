@@ -151,6 +151,10 @@ std::vector<std::uint8_t> grayscale_palette() {
     return std::vector<std::uint8_t>(raw.begin(), raw.end());
 }
 
+list<std::uint8_t> grayscale_palette_py() {
+    return generated::grayscale_palette();
+}
+
 void save_gif(
     const std::string& path,
     int width,
@@ -175,6 +179,18 @@ void save_gif(
         int64(delay_cs),
         int64(loop)
     );
+}
+
+void save_gif_py(
+    const str& path,
+    std::int64_t width,
+    std::int64_t height,
+    const list<list<std::uint8_t>>& frames,
+    const list<std::uint8_t>& palette,
+    std::int64_t delay_cs,
+    std::int64_t loop
+) {
+    generated::save_gif(path, int64(width), int64(height), frames, palette, int64(delay_cs), int64(loop));
 }
 
 }  // namespace pytra::runtime::gif

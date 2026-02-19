@@ -138,4 +138,13 @@ void write_rgb_png(const std::string& path, int width, int height, const std::ve
     generated::write_rgb_png(str(path), int64(width), int64(height), raw);
 }
 
+void write_rgb_png_py(
+    const str& path,
+    std::int64_t width,
+    std::int64_t height,
+    const list<std::uint8_t>& pixels
+) {
+    generated::write_rgb_png(path, int64(width), int64(height), pixels);
+}
+
 }  // namespace pytra::runtime::png

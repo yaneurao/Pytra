@@ -224,7 +224,7 @@ if __name__ == "__main__":
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
         self.assertIn('#include "pytra/runtime/png.h"', cpp)
-        self.assertIn("py_png_write_rgb_png", cpp)
+        self.assertIn("pytra::png::write_rgb_png_py", cpp)
 
     def test_from_pytra_runtime_import_png_emits_one_to_one_include(self) -> None:
         src = """from pytra.runtime import png
@@ -242,7 +242,7 @@ if __name__ == "__main__":
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
         self.assertIn('#include "pytra/runtime/png.h"', cpp)
-        self.assertIn("py_png_write_rgb_png", cpp)
+        self.assertIn("pytra::png::write_rgb_png_py", cpp)
 
     def test_from_pytra_runtime_import_gif_emits_one_to_one_include(self) -> None:
         src = """from pytra.runtime import gif
@@ -260,7 +260,7 @@ if __name__ == "__main__":
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
         self.assertIn('#include "pytra/runtime/gif.h"', cpp)
-        self.assertIn("py_gif_save_gif(", cpp)
+        self.assertIn("pytra::gif::save_gif_py(", cpp)
 
     def test_from_pytra_std_time_import_perf_counter_resolves(self) -> None:
         src = """from pytra.std.time import perf_counter
