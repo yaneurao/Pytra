@@ -212,6 +212,8 @@ class CppEmitter(CodeEmitter):
         floor_div_mode: str = "native",
         mod_mode: str = "native",
         int_width: str = "64",
+        str_index_mode: str = "native",
+        str_slice_mode: str = "byte",
         emit_main: bool = True,
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
@@ -229,6 +231,8 @@ class CppEmitter(CodeEmitter):
         self.floor_div_mode = floor_div_mode
         self.mod_mode = mod_mode
         self.int_width = int_width
+        self.str_index_mode = str_index_mode
+        self.str_slice_mode = str_slice_mode
         self.emit_main = emit_main
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
@@ -2497,6 +2501,8 @@ def transpile_to_cpp(
     floor_div_mode: str = "native",
     mod_mode: str = "native",
     int_width: str = "64",
+    str_index_mode: str = "native",
+    str_slice_mode: str = "byte",
     emit_main: bool = True,
 ) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
@@ -2507,6 +2513,8 @@ def transpile_to_cpp(
         floor_div_mode,
         mod_mode,
         int_width,
+        str_index_mode,
+        str_slice_mode,
         emit_main,
     ).transpile()
 
@@ -2556,6 +2564,8 @@ def main(argv: list[str]) -> int:
     floor_div_mode_opt = parsed.get("floor_div_mode_opt", "")
     mod_mode_opt = parsed.get("mod_mode_opt", "")
     int_width_opt = parsed.get("int_width_opt", "")
+    str_index_mode_opt = parsed.get("str_index_mode_opt", "")
+    str_slice_mode_opt = parsed.get("str_slice_mode_opt", "")
     preset = parsed.get("preset", "")
     parser_backend = parsed.get("parser_backend", "self_hosted")
     no_main = parsed.get("no_main", "0") == "1"
@@ -2564,18 +2574,20 @@ def main(argv: list[str]) -> int:
 
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 1
     try:
-        negative_index_mode, bounds_check_mode, floor_div_mode, mod_mode, int_width = resolve_codegen_options(
+        negative_index_mode, bounds_check_mode, floor_div_mode, mod_mode, int_width, str_index_mode, str_slice_mode = resolve_codegen_options(
             preset,
             negative_index_mode_opt,
             bounds_check_mode_opt,
             floor_div_mode_opt,
             mod_mode_opt,
             int_width_opt,
+            str_index_mode_opt,
+            str_slice_mode_opt,
         )
     except ValueError as ex:
         print(f"error: {ex}", file=sys.stderr)
@@ -2586,8 +2598,15 @@ def main(argv: list[str]) -> int:
         floor_div_mode,
         mod_mode,
         int_width,
+        str_index_mode,
+        str_slice_mode,
     )
-    if opt_err != "" and not (dump_options and opt_err == "--int-width=bigint is not implemented yet"):
+    allowed_planned = {
+        "--int-width=bigint is not implemented yet",
+        "--str-index-mode=codepoint is not implemented yet",
+        "--str-slice-mode=codepoint is not implemented yet",
+    }
+    if opt_err != "" and not (dump_options and opt_err in allowed_planned):
         print(f"error: {opt_err}", file=sys.stderr)
         return 1
 
@@ -2603,6 +2622,8 @@ def main(argv: list[str]) -> int:
             floor_div_mode,
             mod_mode,
             int_width,
+            str_index_mode,
+            str_slice_mode,
         )
         if output_txt != "":
             out_path = Path(output_txt)
@@ -2631,6 +2652,8 @@ def main(argv: list[str]) -> int:
             floor_div_mode,
             mod_mode,
             int_width,
+            str_index_mode,
+            str_slice_mode,
             not no_main,
         )
     except UserFacingError as ex:

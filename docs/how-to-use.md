@@ -53,6 +53,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 - 添字境界チェックは `--bounds-check-mode {always,debug,off}` で切替できます（既定は `off`）。
 - 除算仕様は `--floor-div-mode {native,python}` と `--mod-mode {native,python}` で切替できます（既定は `native`）。
 - 整数ビット幅は `--int-width {32,64,bigint}` で指定できます（`bigint` は未実装）。
+- 文字列の添字/スライス意味論は `--str-index-mode {byte,codepoint,native}` / `--str-slice-mode {byte,codepoint}` で指定できます（`codepoint` は未実装）。
 - オプション群は `--preset {native,balanced,python}` で一括指定できます。個別指定を併用した場合は個別指定が優先されます。
 - 解決後のオプションを確認したい場合は `--dump-options` を使います。
 

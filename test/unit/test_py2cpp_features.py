@@ -45,26 +45,28 @@ def transpile(input_py: Path, output_cpp: Path) -> None:
 
 class Py2CppFeatureTest(unittest.TestCase):
     def test_preset_resolution_and_override(self) -> None:
-        neg, bnd, fdiv, mod, iw = resolve_codegen_options("native", "", "", "", "", "")
-        self.assertEqual((neg, bnd, fdiv, mod, iw), ("off", "off", "native", "native", "64"))
+        neg, bnd, fdiv, mod, iw, sidx, ssli = resolve_codegen_options("native", "", "", "", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli), ("off", "off", "native", "native", "64", "native", "byte"))
 
-        neg, bnd, fdiv, mod, iw = resolve_codegen_options("balanced", "", "", "", "", "")
-        self.assertEqual((neg, bnd, fdiv, mod, iw), ("const_only", "debug", "python", "python", "64"))
+        neg, bnd, fdiv, mod, iw, sidx, ssli = resolve_codegen_options("balanced", "", "", "", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli), ("const_only", "debug", "python", "python", "64", "byte", "byte"))
 
-        neg, bnd, fdiv, mod, iw = resolve_codegen_options("python", "", "", "", "", "")
-        self.assertEqual((neg, bnd, fdiv, mod, iw), ("always", "always", "python", "python", "bigint"))
+        neg, bnd, fdiv, mod, iw, sidx, ssli = resolve_codegen_options("python", "", "", "", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli), ("always", "always", "python", "python", "bigint", "codepoint", "codepoint"))
 
-        neg, bnd, fdiv, mod, iw = resolve_codegen_options("native", "", "", "python", "", "32")
-        self.assertEqual((neg, bnd, fdiv, mod, iw), ("off", "off", "python", "native", "32"))
+        neg, bnd, fdiv, mod, iw, sidx, ssli = resolve_codegen_options("native", "", "", "python", "", "32", "byte", "byte")
+        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli), ("off", "off", "python", "native", "32", "byte", "byte"))
 
     def test_dump_options_text_contains_resolved_values(self) -> None:
-        txt = dump_codegen_options_text("balanced", "const_only", "debug", "python", "python", "64")
+        txt = dump_codegen_options_text("balanced", "const_only", "debug", "python", "python", "64", "byte", "byte")
         self.assertIn("preset: balanced", txt)
         self.assertIn("negative-index-mode: const_only", txt)
         self.assertIn("bounds-check-mode: debug", txt)
         self.assertIn("floor-div-mode: python", txt)
         self.assertIn("mod-mode: python", txt)
         self.assertIn("int-width: 64", txt)
+        self.assertIn("str-index-mode: byte", txt)
+        self.assertIn("str-slice-mode: byte", txt)
 
     def test_parse_py2cpp_argv(self) -> None:
         parsed, err = parse_py2cpp_argv(
@@ -355,6 +357,21 @@ if __name__ == "__main__":
             self.assertEqual(proc.returncode, 0, msg=proc.stderr)
             self.assertIn("preset: python", proc.stdout)
             self.assertIn("int-width: bigint", proc.stdout)
+            self.assertIn("str-index-mode: codepoint", proc.stdout)
+            self.assertIn("str-slice-mode: codepoint", proc.stdout)
+
+    def test_cli_rejects_codepoint_modes_without_dump_options(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "ok.py"
+            src_py.write_text("print(1)\n", encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(src_py), "--str-index-mode", "codepoint"],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("--str-index-mode=codepoint is not implemented yet", proc.stderr)
 
     def test_class_storage_strategy_case15_case34(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

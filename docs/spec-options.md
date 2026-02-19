@@ -33,6 +33,12 @@
 - `--int-width {32,64,bigint}`
   - `32`/`64` は実装済み
   - `bigint` は未実装（指定時はエラー）
+- `--str-index-mode {byte,codepoint,native}`
+  - `byte`/`native` は利用可能
+  - `codepoint` は未実装（指定時はエラー）
+- `--str-slice-mode {byte,codepoint}`
+  - `byte` は利用可能
+  - `codepoint` は未実装（指定時はエラー）
 - `--parser-backend {self_hosted,cpython}`
   - EAST 生成バックエンド選択
 - `--no-main`

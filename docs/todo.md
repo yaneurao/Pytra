@@ -21,8 +21,8 @@
    - [x] list/str 添字アクセスの生成をモード別に切替える。
    - [x] `debug` 判定条件（`NDEBUG`）を仕様化し実装する。
 4. [ ] P1 文字列オプションを実装する。
-   - [ ] `--str-index-mode {byte,codepoint,native}` を追加する。
-   - [ ] `--str-slice-mode {byte,codepoint}` を追加する。
+   - [x] `--str-index-mode {byte,codepoint,native}` を追加する（`codepoint` は未実装扱い）。
+   - [x] `--str-slice-mode {byte,codepoint}` を追加する（`codepoint` は未実装扱い）。
    - [ ] 返り値型と境界外挙動を `spec-dev.md` / `spec-east.md` に明記する。
 5. [x] P1 `--int-width {32,64,bigint}` を段階導入する。
    - [x] `32/64` 切替を先行実装する。
