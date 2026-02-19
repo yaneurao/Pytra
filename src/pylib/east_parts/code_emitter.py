@@ -168,6 +168,12 @@ class CodeEmitter:
         self.scope_stack.pop()
         self.indent -= 1
 
+    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: set[str] | None = None) -> None:
+        """`open_line` を出力し、スコープ付きで文リストを出して block を閉じる。"""
+        self.emit(open_line)
+        self.emit_scoped_stmt_list(stmts, scope_names)
+        self.emit_block_close()
+
     def next_tmp(self, prefix: str = "__tmp") -> str:
         """衝突しない一時変数名を生成する。"""
         self.tmp_id += 1

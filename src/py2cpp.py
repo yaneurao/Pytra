@@ -509,9 +509,11 @@ class CppEmitter(CodeEmitter):
 
     def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
         """While ノードを出力する。"""
-        self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
-        self.emit_scoped_stmt_list(self._dict_stmt_list(stmt.get("body")))
-        self.emit_block_close()
+        self.emit_scoped_block(
+            self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}),
+            self._dict_stmt_list(stmt.get("body")),
+            set(),
+        )
 
     def _render_lvalue_for_augassign(self, target_expr: Any) -> str:
         """AugAssign 向けに左辺を簡易レンダリングする。"""
@@ -1009,11 +1011,7 @@ class CppEmitter(CodeEmitter):
             return
 
         self.emit(hdr + " {")
-
-        def _emit_for_range_body() -> None:
-            self.emit_stmt_list(body_stmts)
-
-        self.emit_with_scope({tgt}, _emit_for_range_body)
+        self.emit_scoped_stmt_list(body_stmts, {tgt})
         self.emit_block_close()
 
     def emit_for_each(self, stmt: dict[str, Any]) -> None:
@@ -1081,13 +1079,13 @@ class CppEmitter(CodeEmitter):
             return
 
         self.emit(hdr + " {")
-
-        def _emit_for_each_body() -> None:
-            if unpack_tuple:
-                self._emit_target_unpack(target, iter_tmp)
-            self.emit_stmt_list(body_stmts)
-
-        self.emit_with_scope(target_names, _emit_for_each_body)
+        self.indent += 1
+        self.scope_stack.append(set(target_names))
+        if unpack_tuple:
+            self._emit_target_unpack(target, iter_tmp)
+        self.emit_stmt_list(body_stmts)
+        self.scope_stack.pop()
+        self.indent -= 1
         self.emit_block_close()
 
     def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
