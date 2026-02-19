@@ -1142,23 +1142,11 @@ class CppEmitter(CodeEmitter):
             if self.current_class_base_name == "CodeEmitter":
                 self.emit(f"{self.current_class_name}({', '.join(params)}) : CodeEmitter(east_doc, dict<str, object>{{}}, dict<str, object>{{}}) {{")
             else:
-                self.emit(
-                    self.syntax_line(
-                        "ctor_open",
-                        "{name}({args}) {",
-                        {"name": str(self.current_class_name), "args": ", ".join(params)},
-                    )
-                )
+                self.emit_ctor_open(str(self.current_class_name), ", ".join(params))
         elif in_class and name == "__del__" and self.current_class_name is not None:
-            self.emit(self.syntax_line("dtor_open", "~{name}() {", {"name": str(self.current_class_name)}))
+            self.emit_dtor_open(str(self.current_class_name))
         else:
-            self.emit(
-                self.syntax_line(
-                    "function_open",
-                    "{ret} {name}({args}) {",
-                    {"ret": ret, "name": str(name), "args": ", ".join(params)},
-                )
-            )
+            self.emit_function_open(ret, str(name), ", ".join(params))
         self.indent += 1
         self.scope_stack.append(fn_scope)
         docstring = self.any_to_str(stmt.get("docstring"))
@@ -1167,7 +1155,7 @@ class CppEmitter(CodeEmitter):
         self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
         self.scope_stack.pop()
         self.indent -= 1
-        self.emit(self.syntax_text("block_close", "}"))
+        self.emit_block_close()
 
     def emit_class(self, stmt: dict[str, Any]) -> None:
         """クラス定義ノードを C++ クラス/struct として出力する。"""
@@ -1242,7 +1230,7 @@ class CppEmitter(CodeEmitter):
         if gc_managed and not base_is_gc:
             bases.append("public PyObj")
         base_txt = "" if len(bases) == 0 else " : " + ", ".join(bases)
-        self.emit(self.syntax_line("class_open", "struct {name}{base_txt} {", {"name": str(name), "base_txt": base_txt}))
+        self.emit_class_open(str(name), base_txt)
         self.indent += 1
         prev_class = self.current_class_name
         prev_class_base = self.current_class_base_name
@@ -1344,7 +1332,7 @@ class CppEmitter(CodeEmitter):
         self.current_class_fields = prev_fields
         self.current_class_static_fields = prev_static_fields
         self.indent -= 1
-        self.emit(self.syntax_text("class_close", "};"))
+        self.emit_class_close()
 
     def _render_binop_expr(self, expr: dict[str, Any]) -> str:
         """BinOp ノードを C++ 式へ変換する。"""
