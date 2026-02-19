@@ -2,6 +2,31 @@
 
 ## 2026-02-19 移管: TODO整理（完了セクション）
 
+## 2026-02-19 移管: CodeEmitter 化（完了小セクション）
+
+作業ルール（step by step）:
+- [x] `CodeEmitter` の変更は段階適用し、各ステップで `test/fixtures` の変換可否を確認してから次へ進む。: `tools/check_py2cpp_transpile.py` を追加
+- [x] 同じく各ステップで `sample/py` 全件の変換可否を確認してから次へ進む。: `tools/check_py2cpp_transpile.py` を追加
+- [x] 回帰が出た場合は次ステップへ進まず、その場で修正してから再確認する。
+
+1. [x] `BaseEmitter` を `CodeEmitter` へ改名し、段階移行する。
+   - [x] `src/common/base_emitter.py` を `src/pylib/east_parts/code_emitter.py` へ移動する。
+   - [x] 互換エイリアス `BaseEmitter = CodeEmitter` を暫定で残す。
+   - [x] `src/py2cpp.py` / テスト / ドキュメント参照を `CodeEmitter` 表記へ置換する。
+2. [x] 言語差分を `LanguageProfile` JSON に切り出す。
+   - [x] `docs/spec-language-profile.md` で JSON スキーマ（v1）とロード順序を確定する。
+   - [x] 型マップ（EAST 型 -> ターゲット型）を JSON で定義する。
+   - [x] 演算子マップ・予約語・識別子リネーム規則を JSON で定義する。
+   - [x] 組み込み関数/メソッドの runtime call map を JSON へ統合する。
+3. [x] `CodeEmitter` へ `profile` 注入を実装する。
+   - [x] `CodeEmitter(profile, hooks)` の初期化 API を追加する。
+   - [x] `cpp_type` / call 解決 / 文テンプレートを profile 参照へ置換する。
+   - [x] `src/py2cpp.py` の直書きマップを profile ロードに置換する。
+5. [x] 回帰確認を追加する。
+   - [x] `test/unit/test_code_emitter.py` を追加し、profile/hook の境界を検証する。
+   - [x] `test/unit/test_py2cpp_features.py` と `test/unit/test_image_runtime_parity.py` を回帰する。
+   - [x] selfhost 検証フロー（`tools/prepare_selfhost_source.py`）に新構造を反映する。
+
 1. [x] selfhost 入力経路の段階回復
    - [x] `load_east` の `.json` 経路を selfhost で通す（`.py` は未実装のまま維持）。
    - [x] `.json` 経路で `test/fixtures/core/add.py` 由来 EAST を selfhost 変換できることを確認する。: `/tmp/add.east.json -> /tmp/add.selfhost.cpp` 生成成功

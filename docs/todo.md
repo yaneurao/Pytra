@@ -38,24 +38,6 @@
 
 ## CodeEmitter 化（JSON + Hooks）
 
-作業ルール（step by step）:
-- [x] `CodeEmitter` の変更は段階適用し、各ステップで `test/fixtures` の変換可否を確認してから次へ進む。: `tools/check_py2cpp_transpile.py` を追加
-- [x] 同じく各ステップで `sample/py` 全件の変換可否を確認してから次へ進む。: `tools/check_py2cpp_transpile.py` を追加
-- [x] 回帰が出た場合は次ステップへ進まず、その場で修正してから再確認する。
-
-1. [x] `BaseEmitter` を `CodeEmitter` へ改名し、段階移行する。
-   - [x] `src/common/base_emitter.py` を `src/pylib/east_parts/code_emitter.py` へ移動する。
-   - [x] 互換エイリアス `BaseEmitter = CodeEmitter` を暫定で残す。
-   - [x] `src/py2cpp.py` / テスト / ドキュメント参照を `CodeEmitter` 表記へ置換する。
-2. [x] 言語差分を `LanguageProfile` JSON に切り出す。
-   - [x] `docs/spec-language-profile.md` で JSON スキーマ（v1）とロード順序を確定する。
-   - [x] 型マップ（EAST 型 -> ターゲット型）を JSON で定義する。
-   - [x] 演算子マップ・予約語・識別子リネーム規則を JSON で定義する。
-   - [x] 組み込み関数/メソッドの runtime call map を JSON へ統合する。
-3. [x] `CodeEmitter` へ `profile` 注入を実装する。
-   - [x] `CodeEmitter(profile, hooks)` の初期化 API を追加する。
-   - [x] `cpp_type` / call 解決 / 文テンプレートを profile 参照へ置換する。
-   - [x] `src/py2cpp.py` の直書きマップを profile ロードに置換する。
 4. [ ] フック注入 (`EmitterHooks`) を実装する。
    - [x] `on_render_call`, `on_render_binop`, `on_emit_stmt` など最小フック面を定義する。
    - [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。: `BinOp` + `Call(Name/Attribute)` は helper 分離済み
@@ -66,10 +48,6 @@
     - [x] `emit_stmt` 本体を「dispatch + fallback」のみ（50行以下目標）へ縮退する。
    - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
    - [x] C++ 向け hooks 実装を `src/runtime/cpp/hooks/cpp_hooks.py` として分離する。
-5. [x] 回帰確認を追加する。
-   - [x] `test/unit/test_code_emitter.py` を追加し、profile/hook の境界を検証する。
-   - [x] `test/unit/test_py2cpp_features.py` と `test/unit/test_image_runtime_parity.py` を回帰する。
-   - [x] selfhost 検証フロー（`tools/prepare_selfhost_source.py`）に新構造を反映する。
 
 ## py2cpp 縮退（行数削減）
 
