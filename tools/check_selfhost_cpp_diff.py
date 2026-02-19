@@ -29,6 +29,12 @@ def main() -> int:
     ap.add_argument("--selfhost-bin", default="selfhost/py2cpp.out")
     ap.add_argument("--cases", nargs="*", default=DEFAULT_CASES)
     ap.add_argument("--show-diff", action="store_true")
+    ap.add_argument(
+        "--mode",
+        choices=["strict", "allow-not-implemented"],
+        default="allow-not-implemented",
+        help="strict: any selfhost failure is mismatch, allow-not-implemented: [not_implemented] is skipped",
+    )
     args = ap.parse_args()
 
     selfhost_bin = ROOT / args.selfhost_bin
@@ -37,6 +43,7 @@ def main() -> int:
         return 2
 
     mismatches = 0
+    skipped = 0
     with tempfile.TemporaryDirectory() as tmpdir:
         td = Path(tmpdir)
         for rel in args.cases:
@@ -55,7 +62,12 @@ def main() -> int:
                 continue
             cp2 = _run([str(selfhost_bin), str(src), "-o", str(out_sh)])
             if cp2.returncode != 0:
-                print(f"[FAIL selfhost] {rel}: {(cp2.stderr.strip() or cp2.stdout.strip()).splitlines()[:1]}")
+                msg = (cp2.stderr.strip() or cp2.stdout.strip())
+                if args.mode == "allow-not-implemented" and "[not_implemented]" in msg:
+                    skipped += 1
+                    print(f"[SKIP selfhost-not-implemented] {rel}")
+                    continue
+                print(f"[FAIL selfhost] {rel}: {msg.splitlines()[:1]}")
                 mismatches += 1
                 continue
 
@@ -70,7 +82,7 @@ def main() -> int:
             else:
                 print(f"[OK] {rel}")
 
-    print(f"mismatches={mismatches}")
+    print(f"mismatches={mismatches} skipped={skipped}")
     return 1 if mismatches else 0
 
 

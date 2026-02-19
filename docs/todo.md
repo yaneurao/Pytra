@@ -170,5 +170,6 @@
   3. 現在の selfhost 実行時は `load_east` スタブのため、入力変換は `[not_implemented]` を返す（設計通りの暫定動作）。
   4. `--help` は selfhost 実行で終了コード `0` で表示されるように修正済み（`parse_py2cpp_argv` の `continue` 依存を回避）。
   5. `a in {"x","y"}` の selfhost C++ 生成は一時オブジェクト生成の都合で不安定なため、CLI 解析経路では `a == "x" or a == "y"` を採用。
+  6. `tools/check_selfhost_cpp_diff.py` に `--mode allow-not-implemented`（既定）を追加し、現段階の selfhost 未実装ケースを skip 集計できるようにした。
   2. `g++` コンパイルエラーは `total_errors=72`（`<=100` 維持）を確認。
   3. 現在の上位は `__pytra_main`（import/runtime 参照境界）と `emit_class` / `emit_assign` の `Any` 境界由来の型不整合。
