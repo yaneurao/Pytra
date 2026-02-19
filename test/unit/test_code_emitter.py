@@ -347,12 +347,7 @@ class CodeEmitterTest(unittest.TestCase):
     def test_emit_with_scope_helper(self) -> None:
         em = _DummyEmitter({})
         em.emit("before")
-
-        def _body() -> None:
-            em.emit_stmt("a")
-            em.emit_stmt("b")
-
-        em.emit_with_scope({"x"}, _body)
+        em.emit_with_scope({"x"}, ["a", "b"])
         em.emit("after")
         self.assertEqual(
             em.lines,

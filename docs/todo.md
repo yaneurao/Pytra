@@ -161,3 +161,7 @@
      - `render_expr`: `69`
      - `emit_class`: `17`
      - `emit_assign`: `15`
+- 更新（2026-02-19 selfhost 進捗）:
+  1. `tools/prepare_selfhost_source.py` -> `src/py2cpp.py selfhost/py2cpp.py` は継続して通過。
+  2. `g++` コンパイルエラーは `total_errors=90` まで削減（`<=100` 維持）。
+  3. 現在の上位は `emit_scoped_stmt_list` 呼び出しシグネチャ不一致、`member` 未束縛、`std::any` 比較/出力関連。

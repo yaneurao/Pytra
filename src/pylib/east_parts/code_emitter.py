@@ -157,20 +157,22 @@ class CodeEmitter:
         self.indent += 1
         next_scope: set[str] = set()
         if isinstance(scope_names, set):
-            next_scope = set(scope_names)
+            next_scope = scope_names
         self.scope_stack.append(next_scope)
         self.emit_stmt_list(stmts)
         self.scope_stack.pop()
         self.indent -= 1
 
     def emit_with_scope(self, scope_names: Any, body_fn: Any) -> None:
-        """現在 indent 位置でスコープを1段積み、コールバック本体を実行する。"""
+        """現在 indent 位置でスコープを1段積み、文リスト本体を出力する。"""
         self.indent += 1
         next_scope: set[str] = set()
         if isinstance(scope_names, set):
-            next_scope = set(scope_names)
+            next_scope = scope_names
         self.scope_stack.append(next_scope)
-        body_fn()
+        if isinstance(body_fn, list):
+            for stmt in self.any_to_list(body_fn):
+                self.emit_stmt(stmt)  # type: ignore[arg-type]
         self.scope_stack.pop()
         self.indent -= 1
 
@@ -340,16 +342,16 @@ class CodeEmitter:
         depth = 0
         start = 0
         for i, ch in enumerate(s):
-            if ch in ("[", "("):
+            if ch == "[" or ch == "(":
                 depth += 1
-            elif ch in ("]", ")"):
+            elif ch == "]" or ch == ")":
                 depth -= 1
             elif ch == "|" and depth == 0:
                 part: str = s[start:i].strip()
                 if part != "":
                     out.append(part)
                 start = i + 1
-        tail = s[start:].strip()
+        tail: str = s[start:].strip()
         if tail != "":
             out.append(tail)
         return out
@@ -372,7 +374,7 @@ class CodeEmitter:
         s = self.normalize_type_name(t)
         if s == "":
             return False
-        if s in ("Any", "object", "unknown"):
+        if s == "Any" or s == "object" or s == "unknown":
             return True
         if s.find("|") != -1:
             parts = self.split_union(s)
@@ -395,18 +397,18 @@ class CodeEmitter:
 
     def is_indexable_sequence_type(self, t: str) -> bool:
         """添字アクセス可能なシーケンス型か判定する。"""
-        return t[:5] == "list[" or t in ("str", "bytes", "bytearray")
+        return t[:5] == "list[" or t == "str" or t == "bytes" or t == "bytearray"
 
     def _is_forbidden_object_receiver_type_text(self, s: str) -> bool:
         """object レシーバ禁止ルールに抵触する型文字列か判定する。"""
-        if s in ("Any", "object", "any"):
+        if s == "Any" or s == "object" or s == "any":
             return True
         if s.find("|") != -1:
             parts = self.split_union(s)
             for p in parts:
                 if p == "None":
                     continue
-                if p in ("Any", "object", "any"):
+                if p == "Any" or p == "object" or p == "any":
                     return True
             return False
         return False
@@ -630,7 +632,7 @@ class CodeEmitter:
             return "false"
         t = self.get_expr_type(expr)
         body = self._strip_outer_parens(self.render_expr(expr))
-        if t in ("bool",):
+        if t == "bool":
             return body
         if t == "str" or t[:5] == "list[" or t[:5] == "dict[" or t[:4] == "set[" or t[:6] == "tuple[":
             return self.truthy_len_expr(body)
