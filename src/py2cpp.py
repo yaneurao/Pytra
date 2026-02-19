@@ -655,66 +655,65 @@ class CppEmitter(CodeEmitter):
         if hook_kind is True:
             return
         self.emit_leading_comments(stmt)
-        if kind in {"Import", "ImportFrom"}:
+        dispatch: dict[str, Any] = {
+            "Expr": self._emit_expr_stmt,
+            "Return": self._emit_return_stmt,
+            "Assign": self._emit_assign_stmt,
+            "Swap": self._emit_swap_stmt,
+            "AnnAssign": self._emit_annassign_stmt,
+            "AugAssign": self._emit_augassign_stmt,
+            "If": self._emit_if_stmt,
+            "While": self._emit_while_stmt,
+            "ForRange": self.emit_for_range,
+            "For": self.emit_for_each,
+            "Raise": self._emit_raise_stmt,
+            "Try": self._emit_try_stmt,
+            "FunctionDef": self._emit_function_stmt,
+            "ClassDef": self._emit_class_stmt,
+            "Pass": self._emit_pass_stmt,
+            "Break": self._emit_break_stmt,
+            "Continue": self._emit_continue_stmt,
+            "Import": self._emit_noop_stmt,
+            "ImportFrom": self._emit_noop_stmt,
+        }
+        handler = dispatch.get(kind)
+        if handler is not None:
+            handler(stmt)
             return
-        if kind == "Pass":
-            self.emit("/* pass */")
-            return
-        if kind == "Break":
-            self.emit("break;")
-            return
-        if kind == "Continue":
-            self.emit("continue;")
-            return
-        if kind == "Expr":
-            self._emit_expr_stmt(stmt)
-            return
-        if kind == "Return":
-            self._emit_return_stmt(stmt)
-            return
-        if kind == "Assign":
-            self._emit_assign_stmt(stmt)
-            return
-        if kind == "Swap":
-            left = self.render_expr(stmt.get("left"))
-            right = self.render_expr(stmt.get("right"))
-            self.emit(f"std::swap({left}, {right});")
-            return
-        if kind == "AnnAssign":
-            self._emit_annassign_stmt(stmt)
-            return
-        if kind == "AugAssign":
-            self._emit_augassign_stmt(stmt)
-            return
-        if kind == "If":
-            self._emit_if_stmt(stmt)
-            return
-        if kind == "While":
-            self._emit_while_stmt(stmt)
-            return
-        if kind == "ForRange":
-            self.emit_for_range(stmt)
-            return
-        if kind == "For":
-            self.emit_for_each(stmt)
-            return
-        if kind == "Raise":
-            if not isinstance(stmt.get("exc"), dict):
-                self.emit('throw std::runtime_error("raise");')
-            else:
-                self.emit(f"throw {self.render_expr(stmt.get('exc'))};")
-            return
-        if kind == "Try":
-            self._emit_try_stmt(stmt)
-            return
-        if kind == "FunctionDef":
-            self.emit_function(stmt, False)
-            return
-        if kind == "ClassDef":
-            self.emit_class(stmt)
-            return
-
         self.emit(f"/* unsupported stmt kind: {kind} */")
+
+    def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
+        _ = stmt
+        return
+
+    def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
+        _ = stmt
+        self.emit("/* pass */")
+
+    def _emit_break_stmt(self, stmt: dict[str, Any]) -> None:
+        _ = stmt
+        self.emit("break;")
+
+    def _emit_continue_stmt(self, stmt: dict[str, Any]) -> None:
+        _ = stmt
+        self.emit("continue;")
+
+    def _emit_swap_stmt(self, stmt: dict[str, Any]) -> None:
+        left = self.render_expr(stmt.get("left"))
+        right = self.render_expr(stmt.get("right"))
+        self.emit(f"std::swap({left}, {right});")
+
+    def _emit_raise_stmt(self, stmt: dict[str, Any]) -> None:
+        if not isinstance(stmt.get("exc"), dict):
+            self.emit('throw std::runtime_error("raise");')
+        else:
+            self.emit(f"throw {self.render_expr(stmt.get('exc'))};")
+
+    def _emit_function_stmt(self, stmt: dict[str, Any]) -> None:
+        self.emit_function(stmt, False)
+
+    def _emit_class_stmt(self, stmt: dict[str, Any]) -> None:
+        self.emit_class(stmt)
 
     def _emit_expr_stmt(self, stmt: dict[str, Any]) -> None:
         value_node = self.any_to_dict_or_empty(stmt.get("value"))
