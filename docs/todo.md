@@ -139,12 +139,6 @@
    - [x] `pytra.*` とユーザーモジュールの探索パス解決（重複・循環検出）を実装する。
      - [x] 同名モジュール衝突時の優先順位（ユーザー/`pytra`）を仕様化して実装する。: `pytra` 名前空間予約（ユーザー側 `pytra.py` / `pytra/__init__.py` 禁止）
    - [x] 依存グラフを `--dump-deps` などで可視化できるようにする。: `src/py2cpp.py --dump-deps`
-3. [ ] C++ 出力を複数ファイル化する。
-   - [x] モジュールごとに `.h/.cpp` を生成し、宣言/定義を分離する。: `--multi-file` で module ごとの `.h/.cpp` と `manifest.json` を出力
-     - [x] 生成先ディレクトリ構造（`out/include`, `out/src` など）を固定する。: `--output-dir` 未指定時 `out/include`,`out/src`
-     - [x] シンボル重複回避の命名規則（namespace / include guard）を定義する。: 相対パス由来ラベル + sanitize で guard 生成
-   - [x] main モジュールから依存モジュールを include/link できるようにする。: ユーザーモジュール呼び出しを `namespace::symbol` へ変換し、前方宣言を補完
-   - [ ] ランタイム include/namespace の重複を除去する。
 5. [ ] 互換オプションを追加する。
    - [ ] 既定を複数ファイル出力にする。
    - [x] `--single-file`（仮称）で従来の単一 `.cpp` へ束ねるモードを提供する。: `--single-file` / `--multi-file` を実装

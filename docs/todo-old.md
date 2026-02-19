@@ -1,5 +1,16 @@
 # TODO
 
+## 2026-02-19 完了: C++ 複数ファイル出力
+
+1. [x] モジュールごとに `.h/.cpp` を生成し、宣言/定義を分離する。
+   - [x] `--multi-file` で module ごとの `.h/.cpp` と `manifest.json` を出力。
+   - [x] 生成先ディレクトリ構造（`out/include`, `out/src`）を固定。
+   - [x] シンボル重複回避の命名規則（相対パス由来ラベル + sanitize）を実装。
+2. [x] main モジュールから依存モジュールを include/link できるようにする。
+   - [x] ユーザーモジュール呼び出しを `namespace::symbol` へ変換し、前方宣言を補完。
+3. [x] ランタイム include/namespace の重複を除去する。
+   - [x] `pytra_multi_prelude.h` を生成し、各 `.cpp` の runtime include を共通化。
+
 ## 2026-02-19 完了: 複数ファイル出力のビルド・実行検証
 
 1. [x] 複数ファイル生成物を一括コンパイルするスクリプトを追加する。

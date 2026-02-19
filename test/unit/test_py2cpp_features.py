@@ -600,9 +600,13 @@ def main() -> None:
             self.assertTrue((out_dir / "include").exists())
             self.assertTrue((out_dir / "src").exists())
             self.assertTrue((out_dir / "manifest.json").exists())
+            self.assertTrue((out_dir / "include" / "pytra_multi_prelude.h").exists())
             manifest_txt = (out_dir / "manifest.json").read_text(encoding="utf-8")
             self.assertIn("main.py", manifest_txt)
             self.assertIn("helper.py", manifest_txt)
+            src_txt = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
+            self.assertIn('#include "pytra_multi_prelude.h"', src_txt)
+            self.assertNotIn('#include "runtime/cpp/py_runtime.h"', src_txt)
 
     def test_cli_multi_file_user_import_build_and_run(self) -> None:
         src_main = """import helper

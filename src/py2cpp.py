@@ -3916,6 +3916,15 @@ def _write_multi_file_cpp(
     src_dir = output_dir / "src"
     include_dir.mkdir(parents=True, exist_ok=True)
     src_dir.mkdir(parents=True, exist_ok=True)
+    prelude_hdr = include_dir / "pytra_multi_prelude.h"
+    prelude_hdr.write_text(
+        "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
+        "#ifndef PYTRA_MULTI_PRELUDE_H\n"
+        "#define PYTRA_MULTI_PRELUDE_H\n\n"
+        "#include \"runtime/cpp/py_runtime.h\"\n\n"
+        "#endif  // PYTRA_MULTI_PRELUDE_H\n",
+        encoding="utf-8",
+    )
 
     root = entry_path.parent
     entry_key = str(entry_path)
@@ -3988,6 +3997,12 @@ def _write_multi_file_cpp(
             "pytra_mod_" + label,
             emit_main if is_entry else False,
             module_ns_map,
+        )
+        # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。
+        cpp_txt = cpp_txt.replace(
+            '#include "runtime/cpp/py_runtime.h"',
+            '#include "pytra_multi_prelude.h"',
+            1,
         )
         # ユーザーモジュール import 呼び出しを解決するため、参照先関数の前方宣言を補う。
         meta_obj = east.get("meta")
