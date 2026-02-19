@@ -2509,6 +2509,69 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     return "modules:\n  (none)\nsymbols:\n  (none)\n"
 
 
+def resolve_codegen_options(
+    preset: str,
+    negative_index_mode_opt: str,
+    bounds_check_mode_opt: str,
+    floor_div_mode_opt: str,
+    mod_mode_opt: str,
+) -> tuple[str, str, str, str]:
+    """プリセットと個別指定から最終オプションを決定する。"""
+    neg = "const_only"
+    bnd = "off"
+    fdiv = "native"
+    mod = "native"
+
+    if preset != "":
+        if preset == "native":
+            neg = "off"
+            bnd = "off"
+            fdiv = "native"
+            mod = "native"
+        elif preset == "balanced":
+            neg = "const_only"
+            bnd = "debug"
+            fdiv = "python"
+            mod = "python"
+        elif preset == "python":
+            neg = "always"
+            bnd = "always"
+            fdiv = "python"
+            mod = "python"
+        else:
+            raise ValueError(f"invalid --preset: {preset}")
+
+    if negative_index_mode_opt != "":
+        neg = negative_index_mode_opt
+    if bounds_check_mode_opt != "":
+        bnd = bounds_check_mode_opt
+    if floor_div_mode_opt != "":
+        fdiv = floor_div_mode_opt
+    if mod_mode_opt != "":
+        mod = mod_mode_opt
+
+    return neg, bnd, fdiv, mod
+
+
+def dump_options_text(
+    preset: str,
+    negative_index_mode: str,
+    bounds_check_mode: str,
+    floor_div_mode: str,
+    mod_mode: str,
+) -> str:
+    """解決済みオプションを人間向けテキストへ整形する。"""
+    p = preset if preset != "" else "(none)"
+    return (
+        "options:\n"
+        f"  preset: {p}\n"
+        f"  negative-index-mode: {negative_index_mode}\n"
+        f"  bounds-check-mode: {bounds_check_mode}\n"
+        f"  floor-div-mode: {floor_div_mode}\n"
+        f"  mod-mode: {mod_mode}\n"
+    )
+
+
 def main(argv: list[str]) -> int:
     """CLI エントリポイント。変換実行と入出力を担当する。"""
     argv_list: list[str] = []
@@ -2516,13 +2579,15 @@ def main(argv: list[str]) -> int:
         argv_list.append(a)
     input_txt = ""
     output_txt = ""
-    negative_index_mode = "const_only"
-    bounds_check_mode = "off"
-    floor_div_mode = "native"
-    mod_mode = "native"
+    negative_index_mode_opt = ""
+    bounds_check_mode_opt = ""
+    floor_div_mode_opt = ""
+    mod_mode_opt = ""
+    preset = ""
     parser_backend = "self_hosted"
     no_main = False
     dump_deps = False
+    dump_options = False
 
     i = 0
     while i < len(argv_list):
@@ -2538,25 +2603,31 @@ def main(argv: list[str]) -> int:
             if i >= len(argv_list):
                 print("error: missing value for --negative-index-mode", file=sys.stderr)
                 return 1
-            negative_index_mode = argv_list[i]
+            negative_index_mode_opt = argv_list[i]
         elif a == "--bounds-check-mode":
             i += 1
             if i >= len(argv_list):
                 print("error: missing value for --bounds-check-mode", file=sys.stderr)
                 return 1
-            bounds_check_mode = argv_list[i]
+            bounds_check_mode_opt = argv_list[i]
         elif a == "--floor-div-mode":
             i += 1
             if i >= len(argv_list):
                 print("error: missing value for --floor-div-mode", file=sys.stderr)
                 return 1
-            floor_div_mode = argv_list[i]
+            floor_div_mode_opt = argv_list[i]
         elif a == "--mod-mode":
             i += 1
             if i >= len(argv_list):
                 print("error: missing value for --mod-mode", file=sys.stderr)
                 return 1
-            mod_mode = argv_list[i]
+            mod_mode_opt = argv_list[i]
+        elif a == "--preset":
+            i += 1
+            if i >= len(argv_list):
+                print("error: missing value for --preset", file=sys.stderr)
+                return 1
+            preset = argv_list[i]
         elif a == "--parser-backend":
             i += 1
             if i >= len(argv_list):
@@ -2567,6 +2638,8 @@ def main(argv: list[str]) -> int:
             no_main = True
         elif a == "--dump-deps":
             dump_deps = True
+        elif a == "--dump-options":
+            dump_options = True
         elif a.startswith("-"):
             print(f"error: unknown option: {a}", file=sys.stderr)
             return 1
@@ -2580,9 +2653,23 @@ def main(argv: list[str]) -> int:
 
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--no-main] [--dump-deps]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
+        return 1
+    try:
+        negative_index_mode, bounds_check_mode, floor_div_mode, mod_mode = resolve_codegen_options(
+            preset,
+            negative_index_mode_opt,
+            bounds_check_mode_opt,
+            floor_div_mode_opt,
+            mod_mode_opt,
+        )
+    except ValueError as ex:
+        print(f"error: {ex}", file=sys.stderr)
+        return 1
+    if negative_index_mode not in {"always", "const_only", "off"}:
+        print(f"error: invalid --negative-index-mode: {negative_index_mode}", file=sys.stderr)
         return 1
     if bounds_check_mode not in {"always", "debug", "off"}:
         print(f"error: invalid --bounds-check-mode: {bounds_check_mode}", file=sys.stderr)
@@ -2598,6 +2685,21 @@ def main(argv: list[str]) -> int:
     if not input_path.exists():
         print(f"error: input file not found: {input_path}", file=sys.stderr)
         return 1
+    if dump_options:
+        options_text = dump_options_text(
+            preset,
+            negative_index_mode,
+            bounds_check_mode,
+            floor_div_mode,
+            mod_mode,
+        )
+        if output_txt != "":
+            out_path = Path(output_txt)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(options_text, encoding="utf-8")
+        else:
+            print(options_text, end="")
+        return 0
 
     cpp = ""
     try:

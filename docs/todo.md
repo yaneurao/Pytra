@@ -27,10 +27,10 @@
 5. [ ] P1 `--int-width {32,64,bigint}` を段階導入する。
    - [ ] `32/64` 切替を先行実装する。
    - [ ] `bigint` は `planned` としてフェーズ分離し、前提ランタイムを明記する。
-6. [ ] P2 プリセット (`--preset`) を実装する。
-   - [ ] `native`（既定）/`balanced`/`python` を実装する。
-   - [ ] 競合時ルール（`--preset` と個別オプション同時指定）を明文化する。
-   - [ ] `--preset` 展開結果を `--dump-options`（新設）で可視化する。
+6. [x] P2 プリセット (`--preset`) を実装する。
+   - [x] `native`（既定）/`balanced`/`python` を実装する。
+   - [x] 競合時ルール（`--preset` と個別オプション同時指定）を明文化する。
+   - [x] `--preset` 展開結果を `--dump-options`（新設）で可視化する。
 7. [ ] P2 オプション処理を共通 CLI へ集約する。
    - [ ] `src/common/transpile_cli.py` に共通パーサ実装を追加する。
    - [ ] `py2cpp.py` 側の重複引数処理を削減する。
