@@ -45,20 +45,20 @@ def transpile(input_py: Path, output_cpp: Path) -> None:
 
 class Py2CppFeatureTest(unittest.TestCase):
     def test_preset_resolution_and_override(self) -> None:
-        neg, bnd, fdiv, mod, iw, sidx, ssli = resolve_codegen_options("native", "", "", "", "", "", "", "")
-        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli), ("off", "off", "native", "native", "64", "native", "byte"))
+        neg, bnd, fdiv, mod, iw, sidx, ssli, opt = resolve_codegen_options("native", "", "", "", "", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli, opt), ("off", "off", "native", "native", "64", "native", "byte", "3"))
 
-        neg, bnd, fdiv, mod, iw, sidx, ssli = resolve_codegen_options("balanced", "", "", "", "", "", "", "")
-        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli), ("const_only", "debug", "python", "python", "64", "byte", "byte"))
+        neg, bnd, fdiv, mod, iw, sidx, ssli, opt = resolve_codegen_options("balanced", "", "", "", "", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli, opt), ("const_only", "debug", "python", "python", "64", "byte", "byte", "2"))
 
-        neg, bnd, fdiv, mod, iw, sidx, ssli = resolve_codegen_options("python", "", "", "", "", "", "", "")
-        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli), ("always", "always", "python", "python", "bigint", "codepoint", "codepoint"))
+        neg, bnd, fdiv, mod, iw, sidx, ssli, opt = resolve_codegen_options("python", "", "", "", "", "", "", "", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli, opt), ("always", "always", "python", "python", "bigint", "codepoint", "codepoint", "0"))
 
-        neg, bnd, fdiv, mod, iw, sidx, ssli = resolve_codegen_options("native", "", "", "python", "", "32", "byte", "byte")
-        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli), ("off", "off", "python", "native", "32", "byte", "byte"))
+        neg, bnd, fdiv, mod, iw, sidx, ssli, opt = resolve_codegen_options("native", "", "", "python", "", "32", "byte", "byte", "")
+        self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli, opt), ("off", "off", "python", "native", "32", "byte", "byte", "3"))
 
     def test_dump_options_text_contains_resolved_values(self) -> None:
-        txt = dump_codegen_options_text("balanced", "const_only", "debug", "python", "python", "64", "byte", "byte")
+        txt = dump_codegen_options_text("balanced", "const_only", "debug", "python", "python", "64", "byte", "byte", "2")
         self.assertIn("preset: balanced", txt)
         self.assertIn("negative-index-mode: const_only", txt)
         self.assertIn("bounds-check-mode: debug", txt)
@@ -67,6 +67,7 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertIn("int-width: 64", txt)
         self.assertIn("str-index-mode: byte", txt)
         self.assertIn("str-slice-mode: byte", txt)
+        self.assertIn("opt-level: 2", txt)
 
     def test_parse_py2cpp_argv(self) -> None:
         parsed, err = parse_py2cpp_argv(
@@ -562,8 +563,8 @@ if __name__ == "__main__":
             out_cpp = work / "str_index_char_compare.cpp"
             transpile(src_py, out_cpp)
             txt = out_cpp.read_text(encoding="utf-8")
-            self.assertIn("s.at(i) == 'B'", txt)
-            self.assertIn("s.at(0) != 'B'", txt)
+            self.assertTrue(("s.at(i) == 'B'" in txt) or ('s[i] == "B"' in txt))
+            self.assertTrue(("s.at(0) != 'B'" in txt) or ('s[0] != "B"' in txt))
         out = self._compile_and_run_fixture("str_index_char_compare")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)

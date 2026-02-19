@@ -85,8 +85,8 @@
 ## py2cpp 縮退（行数削減）
 
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
-   - [ ] 目標値を固定する（`src/py2cpp.py` 実コード 1500 行以下を当面目標）。
-   - [x] ベースライン行数を計測し、`docs/todo.md` に記録する（毎回更新）。: 2026-02-19 時点 `src/py2cpp.py` は `3148` 行（`wc -l`）
+   - [x] 目標値を固定する（`src/py2cpp.py` 実コード 1500 行以下を当面目標）。
+   - [x] ベースライン行数を計測し、`docs/todo.md` に記録する（毎回更新）。: 2026-02-19 時点 `src/py2cpp.py` は `3149` 行（`wc -l`）
    - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: `BuiltinCall` / Name/Attribute は helper 分離済み
      - [ ] `dict.get/list.* / set.*` 呼び出し解決を runtime-call map + hook へ移して `py2cpp.py` 直書きを削減する。
      - [ ] `Path`/`png`/`gif` の module method 解決を `cpp_hooks.py` 側へ寄せる。
