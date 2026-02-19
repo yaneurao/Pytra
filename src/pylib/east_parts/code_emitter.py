@@ -152,6 +152,14 @@ class CodeEmitter:
         """汎用ブロック終端行を出力する。"""
         self.emit(self.syntax_text("block_close", "}"))
 
+    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: set[str] | None = None) -> None:
+        """現在 indent 位置でスコープを1段積み、文リストを出力する。"""
+        self.indent += 1
+        self.scope_stack.append(set() if scope_names is None else set(scope_names))
+        self.emit_stmt_list(stmts)
+        self.scope_stack.pop()
+        self.indent -= 1
+
     def next_tmp(self, prefix: str = "__tmp") -> str:
         """衝突しない一時変数名を生成する。"""
         self.tmp_id += 1

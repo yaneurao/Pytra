@@ -492,46 +492,26 @@ class CppEmitter(CodeEmitter):
         else_stmts = self._dict_stmt_list(stmt.get("orelse"))
         if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
             self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": self.render_cond(stmt.get("test"))}))
-            self.indent += 1
-            self.scope_stack.append(set())
-            self.emit_stmt(body_stmts[0])
-            self.scope_stack.pop()
-            self.indent -= 1
+            self.emit_scoped_stmt_list([body_stmts[0]])
             if len(else_stmts) > 0:
                 self.emit(self.syntax_text("else_no_brace", "else"))
-                self.indent += 1
-                self.scope_stack.append(set())
-                self.emit_stmt(else_stmts[0])
-                self.scope_stack.pop()
-                self.indent -= 1
+                self.emit_scoped_stmt_list([else_stmts[0]])
             return
 
         self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
-        self.indent += 1
-        self.scope_stack.append(set())
-        self.emit_stmt_list(body_stmts)
-        self.scope_stack.pop()
-        self.indent -= 1
+        self.emit_scoped_stmt_list(body_stmts)
         if len(else_stmts) > 0:
             self.emit(self.syntax_text("else_open", "} else {"))
-            self.indent += 1
-            self.scope_stack.append(set())
-            self.emit_stmt_list(else_stmts)
-            self.scope_stack.pop()
-            self.indent -= 1
-            self.emit(self.syntax_text("block_close", "}"))
+            self.emit_scoped_stmt_list(else_stmts)
+            self.emit_block_close()
         else:
-            self.emit(self.syntax_text("block_close", "}"))
+            self.emit_block_close()
 
     def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
         """While ノードを出力する。"""
         self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
-        self.indent += 1
-        self.scope_stack.append(set())
-        self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
-        self.scope_stack.pop()
-        self.indent -= 1
-        self.emit(self.syntax_text("block_close", "}"))
+        self.emit_scoped_stmt_list(self._dict_stmt_list(stmt.get("body")))
+        self.emit_block_close()
 
     def _render_lvalue_for_augassign(self, target_expr: Any) -> str:
         """AugAssign 向けに左辺を簡易レンダリングする。"""

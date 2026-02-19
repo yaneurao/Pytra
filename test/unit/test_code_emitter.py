@@ -323,6 +323,21 @@ class CodeEmitterTest(unittest.TestCase):
             ],
         )
 
+    def test_emit_scoped_stmt_list_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit("before")
+        em.emit_scoped_stmt_list(["a", "b"], {"x"})
+        em.emit("after")
+        self.assertEqual(
+            em.lines,
+            [
+                "before",
+                "    stmt:a",
+                "    stmt:b",
+                "after",
+            ],
+        )
+
     def test_hook_invocation_helpers(self) -> None:
         em = _HookedEmitter({})
         stmt_handled = em.hook_on_emit_stmt({"kind": "Pass"})
