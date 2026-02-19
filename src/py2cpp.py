@@ -1127,14 +1127,15 @@ class CppEmitter(CodeEmitter):
             self.emit_dtor_open(str(self.current_class_name))
         else:
             self.emit_function_open(ret, str(name), ", ".join(params))
-        self.indent += 1
-        self.scope_stack.append(fn_scope)
         docstring = self.any_to_str(stmt.get("docstring"))
-        if docstring != "":
-            self.emit_block_comment(docstring)
-        self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
-        self.scope_stack.pop()
-        self.indent -= 1
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+
+        def _emit_function_body() -> None:
+            if docstring != "":
+                self.emit_block_comment(docstring)
+            self.emit_stmt_list(body_stmts)
+
+        self.emit_with_scope(fn_scope, _emit_function_body)
         self.emit_block_close()
 
     def emit_class(self, stmt: dict[str, Any]) -> None:

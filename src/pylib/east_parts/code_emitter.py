@@ -160,6 +160,14 @@ class CodeEmitter:
         self.scope_stack.pop()
         self.indent -= 1
 
+    def emit_with_scope(self, scope_names: set[str] | None, body_fn: Any) -> None:
+        """現在 indent 位置でスコープを1段積み、コールバック本体を実行する。"""
+        self.indent += 1
+        self.scope_stack.append(set() if scope_names is None else set(scope_names))
+        body_fn()
+        self.scope_stack.pop()
+        self.indent -= 1
+
     def next_tmp(self, prefix: str = "__tmp") -> str:
         """衝突しない一時変数名を生成する。"""
         self.tmp_id += 1
