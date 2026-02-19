@@ -30,7 +30,7 @@
      - [x] 制約版 API の最小仕様を `docs/spec-language-profile.md` へ追記する。
    - [ ] `cpp_hooks.py` は最初に `png/gif` のみ移管し、`py2cpp.py` の既存分岐を1件ずつ削る。
      - [ ] `png.write_rgb_png` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。: `module_attr_call_map` 化は完了（`_render_call_module_method` の直書き分岐は削減済み）
-     - [ ] `gif.save_gif` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。
+     - [ ] `gif.save_gif` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。: `save_gif` 引数整形 helper 化と hook 側分岐追加は完了。`py2cpp.py` 直書き（BuiltinCall/Name fallback）の最終撤去が残り。
      - [ ] 補足: `cpp_hooks.py` 側の `on_render_call` 追加は着手済み。selfhost を壊さない hook 呼び出し経路（高階関数を使わない方式）を先に確定する。
      - [ ] 置換ごとに `tools/check_py2cpp_transpile.py` を実行し、差分を確認する。
    - [ ] 各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` の両方を必須ゲートにする。

@@ -199,6 +199,15 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     out["pylib.tra.png"] = {
         "write_rgb_png": "png_helper::write_rgb_png",
     }
+    out["gif"] = {
+        "save_gif": "save_gif",
+    }
+    out["gif_helper"] = {
+        "save_gif": "save_gif",
+    }
+    out["pylib.tra.gif"] = {
+        "save_gif": "save_gif",
+    }
     return out
 
 
@@ -510,10 +519,6 @@ class CppEmitter(CodeEmitter):
                 mapped = owner_map[symbol_name]
                 if mapped != "":
                     return mapped
-        if module_name == "pylib.tra.png" and symbol_name == "write_rgb_png":
-            return "png_helper::write_rgb_png"
-        if module_name == "pylib.tra.gif" and symbol_name == "save_gif":
-            return "save_gif"
         if module_name == "time" and symbol_name == "perf_counter":
             return "perf_counter"
         if module_name == "pathlib" and symbol_name == "Path":
@@ -1928,13 +1933,26 @@ class CppEmitter(CodeEmitter):
             op = op_txt
         return f"{left} {op} {right}"
 
+    def _render_save_gif_call(self, args: list[str], kw: dict[str, str], frames_default: str) -> str:
+        """`save_gif(...)` 呼び出しの引数整形を共通化する。"""
+        path = args[0] if len(args) >= 1 else '""'
+        w = args[1] if len(args) >= 2 else "0"
+        h = args[2] if len(args) >= 3 else "0"
+        frames = args[3] if len(args) >= 4 else frames_default
+        palette = args[4] if len(args) >= 5 else "grayscale_palette()"
+        if palette in {"nullptr", "std::nullopt"}:
+            palette = "grayscale_palette()"
+        delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
+        loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
+        return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
+
     def _render_builtin_call(
         self,
         expr: dict[str, Any],
         fn: dict[str, Any],
         args: list[str],
-        arg_nodes: list[Any],
         kw: dict[str, str],
+        arg_nodes: list[Any],
         first_arg: Any,
     ) -> str:
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
@@ -1979,16 +1997,7 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "grayscale_palette":
             return "grayscale_palette()"
         if runtime_call == "save_gif":
-            path = args[0] if len(args) >= 1 else '""'
-            w = args[1] if len(args) >= 2 else "0"
-            h = args[2] if len(args) >= 3 else "0"
-            frames = args[3] if len(args) >= 4 else "list<list<uint8>>{}"
-            palette = args[4] if len(args) >= 5 else "grayscale_palette()"
-            if palette in {"nullptr", "std::nullopt"}:
-                palette = "grayscale_palette()"
-            delay_cs = kw.get("delay_cs", "4")
-            loop = kw.get("loop", "0")
-            return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
+            return self._render_save_gif_call(args, kw, "list<list<uint8>>{}")
         if runtime_call == "py_isdigit" and len(args) == 1:
             return f"py_isdigit({args[0]})"
         if runtime_call == "py_isalpha" and len(args) == 1:
@@ -2244,14 +2253,7 @@ class CppEmitter(CodeEmitter):
             if raw == "Path":
                 return f"Path({', '.join(args)})"
             if raw == "save_gif":
-                path = args[0] if len(args) >= 1 else '""'
-                w = args[1] if len(args) >= 2 else "0"
-                h = args[2] if len(args) >= 3 else "0"
-                frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
-                palette = args[4] if len(args) >= 5 else "grayscale_palette()"
-                delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
-                loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
-                return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
+                return self._render_save_gif_call(args, kw, "list<bytearray>{}")
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw)
@@ -2273,17 +2275,6 @@ class CppEmitter(CodeEmitter):
                     return f"{mapped}({', '.join(args)})"
         if owner_mod in {"typing", "pylib.std.typing"} and attr == "TypeVar":
             return "make_object(1)"
-        if owner_mod in {"gif_helper", "gif", "pylib.tra.gif"} and attr == "save_gif":
-            path = args[0] if len(args) >= 1 else '""'
-            w = args[1] if len(args) >= 2 else "0"
-            h = args[2] if len(args) >= 3 else "0"
-            frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
-            palette = args[4] if len(args) >= 5 else "grayscale_palette()"
-            if palette in {"nullptr", "std::nullopt"}:
-                palette = "grayscale_palette()"
-            delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
-            loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
-            return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
         return None
 
     def _render_call_object_method(self, owner_t: str, owner_expr: str, attr: str) -> str | None:
@@ -2699,7 +2690,7 @@ class CppEmitter(CodeEmitter):
             lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
             has_runtime_call = self.any_dict_has(expr_d, "runtime_call")
             if lowered_kind == "BuiltinCall" or has_runtime_call:
-                builtin_rendered: str = self._render_builtin_call(expr_d, fn, args, arg_nodes, kw, first_arg)
+                builtin_rendered: str = self._render_builtin_call(expr_d, fn, args, kw, arg_nodes, first_arg)
                 if builtin_rendered != "":
                     return builtin_rendered
             name_or_attr = self._render_call_name_or_attr(expr_d, fn, fn_name, args, kw, arg_nodes, first_arg)

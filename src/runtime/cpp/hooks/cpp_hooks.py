@@ -48,6 +48,10 @@ class CppHooks:
                 return f"png_helper::write_rgb_png({', '.join(rendered_args)})"
             if module_name in {"pylib", "pylib.tra"} and symbol_name == "gif":
                 return self._render_save_gif(rendered_args, rendered_kwargs)
+            if module_name in {"png", "png_helper", "pylib.tra.png"} and symbol_name == "write_rgb_png":
+                return f"png_helper::write_rgb_png({', '.join(rendered_args)})"
+            if module_name in {"gif", "gif_helper", "pylib.tra.gif"} and symbol_name == "save_gif":
+                return self._render_save_gif(rendered_args, rendered_kwargs)
 
         if fn_kind == "Attribute":
             owner_node = emitter.any_to_dict_or_empty(func_node.get("value"))
