@@ -755,18 +755,24 @@ class CppEmitter(CodeEmitter):
         """If ノードを出力する。"""
         body_stmts = self._dict_stmt_list(stmt.get("body"))
         else_stmts = self._dict_stmt_list(stmt.get("orelse"))
+        cond_txt = self.render_cond(stmt.get("test"))
+        if cond_txt == "":
+            test_node = self.any_to_dict_or_empty(stmt.get("test"))
+            cond_txt = self.any_dict_get_str(test_node, "repr", "")
+            if cond_txt == "":
+                cond_txt = "false"
         if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
-            self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": self.render_cond(stmt.get("test"))}))
+            self.emit(f"if ({cond_txt})")
             self.emit_scoped_stmt_list([body_stmts[0]], set())
             if len(else_stmts) > 0:
-                self.emit(self.syntax_text("else_no_brace", "else"))
+                self.emit("else")
                 self.emit_scoped_stmt_list([else_stmts[0]], set())
             return
 
-        self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}))
+        self.emit(f"if ({cond_txt}) {{")
         self.emit_scoped_stmt_list(body_stmts, set())
         if len(else_stmts) > 0:
-            self.emit(self.syntax_text("else_open", "} else {"))
+            self.emit("} else {")
             self.emit_scoped_stmt_list(else_stmts, set())
             self.emit_block_close()
         else:
@@ -774,8 +780,14 @@ class CppEmitter(CodeEmitter):
 
     def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
         """While ノードを出力する。"""
+        cond_txt = self.render_cond(stmt.get("test"))
+        if cond_txt == "":
+            test_node = self.any_to_dict_or_empty(stmt.get("test"))
+            cond_txt = self.any_dict_get_str(test_node, "repr", "")
+            if cond_txt == "":
+                cond_txt = "false"
         self.emit_scoped_block(
-            self.syntax_line("while_open", "while ({cond}) {", {"cond": self.render_cond(stmt.get("test"))}),
+            f"while ({cond_txt}) {{",
             self._dict_stmt_list(stmt.get("body")),
             set(),
         )
@@ -790,14 +802,20 @@ class CppEmitter(CodeEmitter):
     def _emit_annassign_stmt(self, stmt: dict[str, Any]) -> None:
         """AnnAssign ノードを出力する。"""
         t = self.cpp_type(stmt.get("annotation"))
+        decl_hint = self.any_dict_get_str(stmt, "decl_type", "")
+        if decl_hint != "":
+            t = self._cpp_type_text(decl_hint)
+        elif t == "auto":
+            t = self.cpp_type(stmt.get("decl_type"))
         target = self.render_expr(stmt.get("target"))
         val = self.any_to_dict_or_empty(stmt.get("value"))
         val_is_dict: bool = isinstance(stmt.get("value"), dict)
         rendered_val: str = ""
         if val_is_dict:
             rendered_val = self.render_expr(stmt.get("value"))
-        ann_t_raw = stmt.get("annotation")
-        ann_t_str: str = str(ann_t_raw) if isinstance(ann_t_raw, str) else ""
+        ann_t_str = self.any_dict_get_str(stmt, "annotation", "")
+        if ann_t_str == "":
+            ann_t_str = self.any_dict_get_str(stmt, "decl_type", "")
         if ann_t_str in {"byte", "uint8"} and val_is_dict:
             byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
@@ -834,40 +852,22 @@ class CppEmitter(CodeEmitter):
         already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
         if target.startswith("this->"):
             if not val_is_dict:
-                self.emit(self.syntax_line("annassign_member_noinit", "{target};", {"target": target}))
+                self.emit(f"{target};")
             else:
-                self.emit(
-                    self.syntax_line(
-                        "annassign_member_init",
-                        "{target} = {value};",
-                        {"target": target, "value": rendered_val},
-                    )
-                )
+                self.emit(f"{target} = {rendered_val};")
             return
         if not val_is_dict:
             if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
-                self.current_scope().add(target)
+                self.declare_in_current_scope(target)
             if declare and not already_declared:
-                self.emit(self.syntax_line("annassign_decl_noinit", "{type} {target};", {"type": t, "target": target}))
+                self.emit(f"{t} {target};")
             return
         if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
-            self.current_scope().add(target)
+            self.declare_in_current_scope(target)
         if declare and not already_declared:
-            self.emit(
-                self.syntax_line(
-                    "annassign_decl_init",
-                    "{type} {target} = {value};",
-                    {"type": t, "target": target, "value": rendered_val},
-                )
-            )
+            self.emit(f"{t} {target} = {rendered_val};")
         else:
-            self.emit(
-                self.syntax_line(
-                    "annassign_assign",
-                    "{target} = {value};",
-                    {"target": target, "value": rendered_val},
-                )
-            )
+            self.emit(f"{target} = {rendered_val};")
 
     def _emit_augassign_stmt(self, stmt: dict[str, Any]) -> None:
         """AugAssign ノードを出力する。"""
@@ -883,14 +883,8 @@ class CppEmitter(CodeEmitter):
             if picked_t == "":
                 picked_t = inferred_t
             t = self._cpp_type_text(picked_t)
-            self.current_scope().add(target)
-            self.emit(
-                self.syntax_line(
-                    "augassign_decl_init",
-                    "{type} {target} = {value};",
-                    {"type": t, "target": target, "value": self.render_expr(stmt.get("value"))},
-                )
-            )
+            self.declare_in_current_scope(target)
+            self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
             return
         val = self.render_expr(stmt.get("value"))
         target_t = self.get_expr_type(stmt.get("target"))
@@ -908,60 +902,24 @@ class CppEmitter(CodeEmitter):
             # Prefer idiomatic ++/-- for +/-1 updates.
             if op_name in {"Add", "Sub"} and val == "1":
                 if op_name == "Add":
-                    self.emit(self.syntax_line("augassign_inc", "{target}++;", {"target": target}))
+                    self.emit(f"{target}++;")
                 else:
-                    self.emit(self.syntax_line("augassign_dec", "{target}--;", {"target": target}))
+                    self.emit(f"{target}--;")
                 return
             if op_name == "FloorDiv":
                 if self.floor_div_mode == "python":
-                    self.emit(
-                        self.syntax_line(
-                            "augassign_floordiv",
-                            "{target} = py_floordiv({target}, {value});",
-                            {"target": target, "value": val},
-                        )
-                    )
+                    self.emit(f"{target} = py_floordiv({target}, {val});")
                 else:
-                    self.emit(
-                        self.syntax_line(
-                            "augassign_floordiv_native",
-                            "{target} /= {value};",
-                            {"target": target, "value": val},
-                        )
-                    )
+                    self.emit(f"{target} /= {val};")
             elif op_name == "Mod":
                 if self.mod_mode == "python":
-                    self.emit(
-                        self.syntax_line(
-                            "augassign_mod",
-                            "{target} = py_mod({target}, {value});",
-                            {"target": target, "value": val},
-                        )
-                    )
+                    self.emit(f"{target} = py_mod({target}, {val});")
                 else:
-                    self.emit(
-                        self.syntax_line(
-                            "augassign_apply",
-                            "{target} {op} {value};",
-                            {"target": target, "op": op, "value": val},
-                        )
-                    )
+                    self.emit(f"{target} {op} {val};")
             else:
-                self.emit(
-                    self.syntax_line(
-                        "augassign_apply",
-                        "{target} {op} {value};",
-                        {"target": target, "op": op, "value": val},
-                    )
-                )
+                self.emit(f"{target} {op} {val};")
             return
-        self.emit(
-            self.syntax_line(
-                "augassign_apply",
-                "{target} {op} {value};",
-                {"target": target, "op": op, "value": val},
-            )
-        )
+        self.emit(f"{target} {op} {val};")
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
@@ -1126,9 +1084,9 @@ class CppEmitter(CodeEmitter):
         rendered = self.render_expr(stmt.get("value"))
         # Guard against stray identifier-only expression statements (e.g. "r;").
         if isinstance(rendered, str) and self._is_identifier_expr(rendered):
-            if rendered == "break":
+            if rendered == "break" or rendered == "py_break":
                 self.emit("break;")
-            elif rendered == "continue":
+            elif rendered == "continue" or rendered == "py_continue":
                 self.emit("continue;")
             elif rendered == "pass":
                 self.emit("/* pass */")
@@ -1231,7 +1189,7 @@ class CppEmitter(CodeEmitter):
                         else:
                             decl_t_txt = self.get_expr_type(elt)
                         decl_t = self._cpp_type_text(decl_t_txt)
-                        self.current_scope().add(name)
+                        self.declare_in_current_scope(name)
                         self.emit(f"{decl_t} {lhs} = std::get<{i}>({tmp});")
                         continue
                 self.emit(f"{lhs} = std::get<{i}>({tmp});")
@@ -1243,7 +1201,7 @@ class CppEmitter(CodeEmitter):
             d2 = self.get_expr_type(stmt.get("value"))
             picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
             dtype = self._cpp_type_text(picked)
-            self.current_scope().add(texpr)
+            self.declare_in_current_scope(texpr)
             rval = self.render_expr(stmt.get("value"))
             if dtype == "uint8" and isinstance(value, dict):
                 byte_val = self._byte_from_str_expr(stmt.get("value"))
@@ -1364,17 +1322,7 @@ class CppEmitter(CodeEmitter):
             inc = f"--{tgt}"
         else:
             inc = f"{tgt} += {step}"
-        hdr: str = self.syntax_line(
-            "for_range_open",
-            "for ({type} {target} = {start}; {cond}; {inc})",
-            {
-                "type": tgt_ty,
-                "target": tgt,
-                "start": start,
-                "cond": cond,
-                "inc": inc,
-            },
-        )
+        hdr: str = f"for ({tgt_ty} {tgt} = {start}; {cond}; {inc})"
         if omit_braces:
             self.emit(hdr)
             self.indent += 1
@@ -1427,24 +1375,12 @@ class CppEmitter(CodeEmitter):
         hdr = ""
         if unpack_tuple:
             iter_tmp = self.next_tmp("__it")
-            hdr = self.syntax_line(
-                "for_each_unpack_open",
-                "for (auto {iter_tmp} : {iter})",
-                {"iter_tmp": iter_tmp, "iter": it},
-            )
+            hdr = f"for (auto {iter_tmp} : {it})"
         else:
             if t_ty == "auto":
-                hdr = self.syntax_line(
-                    "for_each_auto_ref_open",
-                    "for (auto& {target} : {iter})",
-                    {"target": t, "iter": it},
-                )
+                hdr = f"for (auto& {t} : {it})"
             else:
-                hdr = self.syntax_line(
-                    "for_each_typed_open",
-                    "for ({type} {target} : {iter})",
-                    {"type": t_ty, "target": t, "iter": it},
-                )
+                hdr = f"for ({t_ty} {t} : {it})"
         if omit_braces:
             self.emit(hdr)
             self.indent += 1
@@ -1472,12 +1408,35 @@ class CppEmitter(CodeEmitter):
         ret = self.cpp_type(stmt.get("return_type"))
         arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
         arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
+        arg_index = self.any_to_dict_or_empty(stmt.get("arg_index"))
         params: list[str] = []
         fn_scope: set[str] = set()
         arg_names: list[str] = []
-        for raw_n in arg_types.keys():
-            if isinstance(raw_n, str):
+        raw_order = self.any_dict_get_list(stmt, "arg_order")
+        for raw_n in raw_order:
+            if isinstance(raw_n, str) and raw_n != "" and raw_n in arg_types:
                 arg_names.append(raw_n)
+        if len(arg_names) == 0:
+            remaining: list[str] = []
+            for raw_n in arg_types.keys():
+                if isinstance(raw_n, str):
+                    remaining.append(raw_n)
+            while len(remaining) > 0:
+                best_name = ""
+                best_idx = 1000000000
+                for n in remaining:
+                    idx = self.any_dict_get_int(arg_index, n, 1000000000)
+                    if idx < best_idx or (idx == best_idx and (best_name == "" or n < best_name)):
+                        best_idx = idx
+                        best_name = n
+                if best_name == "":
+                    break
+                arg_names.append(best_name)
+                next_remaining: list[str] = []
+                for n in remaining:
+                    if n != best_name:
+                        next_remaining.append(n)
+                remaining = next_remaining
         for idx, n in enumerate(arg_names):
             t = self.any_to_str(arg_types.get(n))
             skip_self = in_class and idx == 0 and n == "self"
@@ -1980,7 +1939,8 @@ class CppEmitter(CodeEmitter):
         first_arg: Any,
     ) -> str | None:
         """Call の Name/Attribute 分岐を処理する。"""
-        if fn.get("kind") == "Name":
+        fn_kind = self.any_to_str(fn.get("kind"))
+        if fn_kind == "Name":
             raw = self.any_to_str(fn.get("id"))
             imported_module = ""
             if raw != "" and not self.is_declared(raw):
@@ -2082,7 +2042,7 @@ class CppEmitter(CodeEmitter):
                 delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
                 loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
                 return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
-        if fn.get("kind") == "Attribute":
+        if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw)
             if isinstance(attr_rendered, str):
@@ -2139,7 +2099,11 @@ class CppEmitter(CodeEmitter):
         owner_mod = self._resolve_imported_module_name(owner_expr)
         attr = self.any_to_str(fn.get("attr"))
         if attr == "":
+            attr = str(fn.get("attr"))
+        if attr == "":
             return None
+        if owner_mod == "":
+            owner_mod = owner_expr
         module_rendered_txt = ""
         module_rendered = self._render_call_module_method(owner_mod, attr, args, kw)
         if isinstance(module_rendered, str):
@@ -2208,12 +2172,7 @@ class CppEmitter(CodeEmitter):
                     if ctype.startswith("dict["):
                         return f"{container}.find({key}) == {container}.end()"
                     return f"std::find({container}.begin(), {container}.end(), {key}) == {container}.end()"
-                ops_raw = self.any_to_list(operand_expr.get("ops"))
-                ops: list[str] = []
-                for op_item in ops_raw:
-                    op_txt = self.any_to_str(op_item)
-                    if op_txt != "":
-                        ops.append(op_txt)
+                ops = self.any_to_str_list(operand_expr.get("ops"))
                 cmps = self._dict_stmt_list(operand_expr.get("comparators"))
                 if len(ops) == 1 and len(cmps) == 1:
                     left = self.render_expr(operand_expr.get("left"))
@@ -2264,12 +2223,12 @@ class CppEmitter(CodeEmitter):
                 return f"!({base})"
             return base
         left = self.render_expr(expr.get("left"))
-        ops_raw = self.any_to_list(expr.get("ops"))
-        ops: list[str] = []
-        for op_item in ops_raw:
-            op_txt = self.any_to_str(op_item)
-            if op_txt != "":
-                ops.append(op_txt)
+        ops = self.any_to_str_list(expr.get("ops"))
+        if len(ops) == 0:
+            rep = self.any_dict_get_str(expr, "repr", "")
+            if rep != "":
+                return rep
+            return "true"
         cmps = self._dict_stmt_list(expr.get("comparators"))
         parts: list[str] = []
         cur = left
@@ -2378,6 +2337,9 @@ class CppEmitter(CodeEmitter):
             return name
         if kind == "Constant":
             v = expr_d.get("value")
+            raw_repr = self.any_to_str(expr_d.get("repr"))
+            if raw_repr != "" and not isinstance(v, bool) and v is not None and not isinstance(v, str):
+                return raw_repr
             if isinstance(v, bool):
                 return "true" if str(v) == "True" else "false"
             if v is None:
@@ -2423,6 +2385,10 @@ class CppEmitter(CodeEmitter):
             if base in self.class_base or base in self.class_method_names:
                 return f"{base}::{attr}"
             base_module_name = self._resolve_imported_module_name(base)
+            if base_module_name in {"png", "png_helper", "pylib.png"} and str(attr) == "write_rgb_png":
+                return "png_helper::write_rgb_png"
+            if base_module_name in {"gif", "gif_helper", "pylib.gif"} and str(attr) == "save_gif":
+                return "save_gif"
             if base_module_name == "math":
                 if attr == "pi":
                     return "py_math::pi"
@@ -2451,7 +2417,7 @@ class CppEmitter(CodeEmitter):
                 if isinstance(k, str):
                     kw[k] = self.any_to_str(v)
             first_arg: object = call_parts.get("first_arg")
-            if fn.get("kind") == "Attribute":
+            if self.any_to_str(fn.get("kind")) == "Attribute":
                 owner_node: object = fn.get("value")
                 owner_t = self.get_expr_type(owner_node)
                 if self.is_forbidden_object_receiver_type(owner_t):
@@ -2723,6 +2689,8 @@ class CppEmitter(CodeEmitter):
 
     def emit_bridge_comment(self, expr: dict[str, Any] | None) -> None:
         """ランタイムブリッジ呼び出しの補助コメントを必要時に付与する。"""
+        # 変換後ソースを原文に近づけるため、ブリッジ補助コメントは既定で出力しない。
+        return
         if expr is None or expr.get("kind") != "Call":
             return
         fn = self.any_to_dict_or_empty(expr.get("func"))
@@ -2730,7 +2698,8 @@ class CppEmitter(CodeEmitter):
             return
         key = ""
         text = ""
-        if fn.get("kind") == "Name":
+        fn_kind = self.any_to_str(fn.get("kind"))
+        if fn_kind == "Name":
             name = str(fn.get("id", ""))
             if name == "save_gif":
                 key = "save_gif"
@@ -2738,7 +2707,7 @@ class CppEmitter(CodeEmitter):
             elif name == "write_rgb_png":
                 key = "write_rgb_png"
                 text = "// bridge: Python png.write_rgb_png -> C++ runtime png_helper::write_rgb_png"
-        elif fn.get("kind") == "Attribute":
+        elif fn_kind == "Attribute":
             owner = self.any_to_dict_or_empty(fn.get("value"))
             owner_name = ""
             if len(owner) > 0 and owner.get("kind") == "Name":
@@ -2756,7 +2725,12 @@ class CppEmitter(CodeEmitter):
 
     def cpp_type(self, east_type: Any) -> str:
         """EAST 型名を C++ 型名へマッピングする。"""
-        east_type_txt = self.normalize_type_name(east_type)
+        east_type_txt = self.any_to_str(east_type)
+        if east_type_txt == "" and east_type is not None:
+            ttxt = str(east_type)
+            if ttxt != "" and ttxt not in {"{}", "[]"}:
+                east_type_txt = ttxt
+        east_type_txt = self.normalize_type_name(east_type_txt)
         return self._cpp_type_text(east_type_txt)
 
     def _cpp_type_text(self, east_type: str) -> str:

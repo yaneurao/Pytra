@@ -210,9 +210,15 @@ class CodeEmitter:
         if key not in obj:
             return default_value
         v = obj[key]
-        if not isinstance(v, str):
+        s = self.any_to_str(v)
+        if s != "":
+            return s
+        if v is None:
             return default_value
-        return self.any_to_str(v)
+        s2 = str(v)
+        if s2 == "":
+            return default_value
+        return s2
 
     def any_dict_get_int(self, obj: dict[str, Any], key: str, default_value: int = 0) -> int:
         """dict 風入力から整数を取得し、失敗時は既定値を返す。"""
@@ -221,6 +227,8 @@ class CodeEmitter:
         if key not in obj:
             return default_value
         v = obj[key]
+        if isinstance(v, bool):
+            return 1 if v else 0
         if isinstance(v, int):
             return int(v)
         return default_value
@@ -275,6 +283,17 @@ class CodeEmitter:
         out: list[Any] = []
         if isinstance(v, list):
             out = v
+        return out
+
+    def any_to_str_list(self, v: Any) -> list[str]:
+        """動的値を `list[str]` へ安全に変換する。"""
+        out: list[str] = []
+        for item in self.any_to_list(v):
+            s = self.any_to_str(item)
+            if s == "" and item is not None:
+                s = str(item)
+            if s != "":
+                out.append(s)
         return out
 
     def any_to_dict_list(self, v: Any) -> list[dict[str, Any]]:
@@ -425,6 +444,12 @@ class CodeEmitter:
     def current_scope(self) -> set[str]:
         """現在のスコープで宣言済みの識別子集合を返す。"""
         return self.scope_stack[-1]
+
+    def declare_in_current_scope(self, name: str) -> None:
+        """現在スコープへ宣言済み名を追加する（selfhost互換で再代入する）。"""
+        scope = self.current_scope()
+        scope.add(name)
+        self.scope_stack[-1] = scope
 
     def is_declared(self, name: str) -> bool:
         """指定名がどこかの有効スコープで宣言済みか判定する。"""
@@ -657,7 +682,13 @@ class CodeEmitter:
         if len(expr_node) == 0:
             return "false"
         t = self.get_expr_type(expr)
-        body = self._strip_outer_parens(self.render_expr(expr))
+        body_raw = self.render_expr(expr)
+        body = self._strip_outer_parens(body_raw)
+        if body == "":
+            # selfhost 経路で一部式レンダが空文字に崩れる場合の保険。
+            body = self._trim_ws(self.any_dict_get_str(expr_node, "repr", ""))
+        if body == "":
+            return "false"
         if t == "bool":
             return body
         if t == "str" or t[:5] == "list[" or t[:5] == "dict[" or t[:4] == "set[" or t[:6] == "tuple[":

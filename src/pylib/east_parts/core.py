@@ -1716,6 +1716,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         if m_def is None:
             return None
         arg_types: dict[str, str] = {}
+        arg_order: list[str] = []
         args_raw = m_def.group(2)
         if args_raw.strip() != "":
             # Supported:
@@ -1754,6 +1755,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     )
                 if in_class is not None and p == "self":
                     arg_types["self"] = in_class
+                    arg_order.append("self")
                     continue
                 m_param = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", p)
                 if m_param is None:
@@ -1780,10 +1782,12 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         hint="Use `name: Type` style parameters.",
                     )
                 arg_types[pn] = _sh_ann_to_type(pt)
+                arg_order.append(pn)
         return {
             "name": m_def.group(1),
             "ret": _sh_ann_to_type(m_def.group(3).strip()) if m_def.group(3) is not None else "None",
             "arg_types": arg_types,
+            "arg_order": arg_order,
         }
 
     def merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tuple[int, str]], dict[int, tuple[int, int]]]:
@@ -3394,6 +3398,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             fn_name = str(sig["name"])
             fn_ret = str(sig["ret"])
             arg_types = dict(sig["arg_types"])
+            arg_order = list(sig.get("arg_order", list(arg_types.keys())))
             block: list[tuple[int, str]] = []
             j = sig_end_line + 1
             while j <= len(lines):
@@ -3421,6 +3426,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "original_name": fn_name,
                 "source_span": {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
                 "arg_types": arg_types,
+                "arg_order": arg_order,
+                "arg_index": {n: i for i, n in enumerate(arg_order)},
                 "return_type": fn_ret,
                 "arg_usage": {n: "readonly" for n in arg_types.keys()},
                 "renamed_symbols": {},
@@ -3628,6 +3635,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     if sig is not None:
                         mname = str(sig["name"])
                         marg_types = dict(sig["arg_types"])
+                        marg_order = list(sig.get("arg_order", list(marg_types.keys())))
                         mret = str(sig["ret"])
                         method_block: list[tuple[int, str]] = []
                         m = k + 1
@@ -3704,6 +3712,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                     "end_col": len(method_block[-1][1]),
                                 },
                                 "arg_types": marg_types,
+                                "arg_order": marg_order,
+                                "arg_index": {n: i for i, n in enumerate(marg_order)},
                                 "return_type": mret,
                                 "arg_usage": {n: "readonly" for n in marg_types.keys()},
                                 "renamed_symbols": {},
