@@ -259,6 +259,21 @@ static inline int64 py_len(const T& v) {
     return static_cast<int64>(v.size());
 }
 
+static inline int64 py_len(const std::any& v) {
+    if (const auto* p = std::any_cast<str>(&v)) return static_cast<int64>(p->size());
+    if (const auto* p = std::any_cast<std::string>(&v)) return static_cast<int64>(p->size());
+    if (const auto* p = std::any_cast<list<std::any>>(&v)) return static_cast<int64>(p->size());
+    if (const auto* p = std::any_cast<list<object>>(&v)) return static_cast<int64>(p->size());
+    if (const auto* p = std::any_cast<dict<str, std::any>>(&v)) return static_cast<int64>(p->size());
+    if (const auto* p = std::any_cast<dict<str, object>>(&v)) return static_cast<int64>(p->size());
+    if (const auto* p = std::any_cast<object>(&v)) {
+        if (const auto* d = obj_to_dict_ptr(*p)) return static_cast<int64>(d->size());
+        if (const auto* lst = obj_to_list_ptr(*p)) return static_cast<int64>(lst->size());
+        return 0;
+    }
+    return 0;
+}
+
 static inline std::string py_to_string(const object& v);
 
 template <class T>
@@ -521,6 +536,10 @@ static inline bool py_to_bool(const object& v) {
     return obj_to_bool(v);
 }
 
+static inline bool py_to_bool(bool v) {
+    return v;
+}
+
 static inline int64 py_to_int64(const std::any& v) {
     if (const auto* p = std::any_cast<int64>(&v)) return *p;
     if (const auto* p = std::any_cast<int>(&v)) return static_cast<int64>(*p);
@@ -560,6 +579,20 @@ static inline float64 py_to_float64(const std::any& v) {
     }
     if (const auto* p = std::any_cast<object>(&v)) return obj_to_float64(*p);
     return 0.0;
+}
+
+static inline bool py_to_bool(const std::any& v) {
+    if (const auto* p = std::any_cast<bool>(&v)) return *p;
+    if (const auto* p = std::any_cast<int64>(&v)) return *p != 0;
+    if (const auto* p = std::any_cast<int32>(&v)) return *p != 0;
+    if (const auto* p = std::any_cast<uint64>(&v)) return *p != 0;
+    if (const auto* p = std::any_cast<uint32>(&v)) return *p != 0;
+    if (const auto* p = std::any_cast<float64>(&v)) return *p != 0.0;
+    if (const auto* p = std::any_cast<float32>(&v)) return *p != 0.0f;
+    if (const auto* p = std::any_cast<str>(&v)) return !p->empty();
+    if (const auto* p = std::any_cast<std::string>(&v)) return !p->empty();
+    if (const auto* p = std::any_cast<object>(&v)) return obj_to_bool(*p);
+    return false;
 }
 
 template <class T>
@@ -873,6 +906,11 @@ static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
         throw std::out_of_range(std::string("dict key not found: ") + key);
     }
     return it->second;
+}
+
+template <class V>
+static inline const V& py_dict_get(const dict<str, V>& d, const object& key) {
+    return py_dict_get(d, str(key));
 }
 
 template <class V>
