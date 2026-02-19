@@ -68,6 +68,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - 生成コードのトップ namespace を付けたい場合は `--top-namespace NS` を使います（未指定時はトップ namespace なし）。
 - 出力形態は `--single-file`（既定）と `--multi-file`（`out/include`, `out/src` + `manifest.json`）を選べます。
 - 複数ファイル出力先は `--output-dir DIR` で指定できます（`--multi-file` 時）。
+- 複数ファイル出力のビルドは `python3 tools/build_multi_cpp.py out/manifest.json -o out/app.out` を使います。
 
 例:
 - 性能優先（既定）:
