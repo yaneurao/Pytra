@@ -488,11 +488,12 @@ static inline const V& py_dict_get(const dict<K, V>& d, const K& key) {
 }
 
 template <class K, class V>
-static inline const V& py_dict_get(const std::optional<dict<K, V>>& d, const K& key) {
+static inline V py_dict_get(const std::optional<dict<K, V>>& d, const K& key) {
     if (!d.has_value()) {
         throw std::out_of_range("dict key not found");
     }
-    return py_dict_get(*d, key);
+    const dict<K, V>& dv = d.value();
+    return py_dict_get(dv, key);
 }
 
 template <class V>
@@ -505,11 +506,12 @@ static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
 }
 
 template <class V>
-static inline const V& py_dict_get(const std::optional<dict<str, V>>& d, const char* key) {
+static inline V py_dict_get(const std::optional<dict<str, V>>& d, const char* key) {
     if (!d.has_value()) {
         throw std::out_of_range("dict key not found");
     }
-    return py_dict_get(*d, key);
+    const dict<str, V>& dv = d.value();
+    return py_dict_get(dv, key);
 }
 
 static inline object py_dict_get(const dict<str, object>& d, const char* key) {
