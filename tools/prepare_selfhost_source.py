@@ -174,6 +174,7 @@ def _replace_dump_options_for_selfhost(text: str) -> str:
         "    int_width: str,\n"
         "    str_index_mode: str,\n"
         "    str_slice_mode: str,\n"
+        "    opt_level: str,\n"
         ") -> str:\n"
         "    _ = preset\n"
         "    _ = negative_index_mode\n"
@@ -183,6 +184,7 @@ def _replace_dump_options_for_selfhost(text: str) -> str:
         "    _ = int_width\n"
         "    _ = str_index_mode\n"
         "    _ = str_slice_mode\n"
+        "    _ = opt_level\n"
         "    return \"options:\\n\"\n\n"
     )
     return text[:i] + stub + text[j + 1 :]
@@ -193,7 +195,7 @@ def _patch_selfhost_exception_paths(text: str) -> str:
     old2 = (
         "    if input_txt == \"\":\n"
         "        print(\n"
-        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]\",\n"
+        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]\",\n"
         "            file=sys.stderr,\n"
         "        )\n"
         "        return 1\n"
@@ -201,13 +203,13 @@ def _patch_selfhost_exception_paths(text: str) -> str:
     new2 = (
         "    if is_help_requested(parsed, argv_list):\n"
         "        print(\n"
-        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]\",\n"
+        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]\",\n"
         "            file=sys.stderr,\n"
         "        )\n"
         "        return 0\n"
         "    if input_txt == \"\":\n"
         "        print(\n"
-        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [--no-main] [--dump-deps] [--dump-options]\",\n"
+        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]\",\n"
         "            file=sys.stderr,\n"
         "        )\n"
         "        return 1\n"

@@ -57,7 +57,8 @@ def resolve_codegen_options(
     int_width_opt: str,
     str_index_mode_opt: str,
     str_slice_mode_opt: str,
-) -> tuple[str, str, str, str, str, str, str]:
+    opt_level_opt: str,
+) -> tuple[str, str, str, str, str, str, str, str]:
     """プリセットと個別指定から最終オプションを決定する。"""
     neg = "const_only"
     bnd = "off"
@@ -66,6 +67,7 @@ def resolve_codegen_options(
     int_width = "64"
     str_index = "native"
     str_slice = "byte"
+    opt_level = "3"
 
     if preset != "":
         if preset == "native":
@@ -76,6 +78,7 @@ def resolve_codegen_options(
             int_width = "64"
             str_index = "native"
             str_slice = "byte"
+            opt_level = "3"
         elif preset == "balanced":
             neg = "const_only"
             bnd = "debug"
@@ -84,6 +87,7 @@ def resolve_codegen_options(
             int_width = "64"
             str_index = "byte"
             str_slice = "byte"
+            opt_level = "2"
         elif preset == "python":
             neg = "always"
             bnd = "always"
@@ -92,6 +96,7 @@ def resolve_codegen_options(
             int_width = "bigint"
             str_index = "codepoint"
             str_slice = "codepoint"
+            opt_level = "0"
         else:
             raise ValueError(f"invalid --preset: {preset}")
 
@@ -109,7 +114,9 @@ def resolve_codegen_options(
         str_index = str_index_mode_opt
     if str_slice_mode_opt != "":
         str_slice = str_slice_mode_opt
-    return neg, bnd, fdiv, mod, int_width, str_index, str_slice
+    if opt_level_opt != "":
+        opt_level = opt_level_opt
+    return neg, bnd, fdiv, mod, int_width, str_index, str_slice, opt_level
 
 
 def validate_codegen_options(
@@ -120,6 +127,7 @@ def validate_codegen_options(
     int_width: str,
     str_index_mode: str,
     str_slice_mode: str,
+    opt_level: str,
 ) -> str:
     """最終オプションの妥当性を検証し、エラーメッセージを返す。"""
     if negative_index_mode not in {"always", "const_only", "off"}:
@@ -138,6 +146,8 @@ def validate_codegen_options(
         return f"invalid --str-index-mode: {str_index_mode}"
     if str_slice_mode not in {"byte", "codepoint"}:
         return f"invalid --str-slice-mode: {str_slice_mode}"
+    if opt_level not in {"0", "1", "2", "3"}:
+        return f"invalid -O level: {opt_level}"
     if str_index_mode == "codepoint":
         return "--str-index-mode=codepoint is not implemented yet"
     if str_slice_mode == "codepoint":
@@ -154,6 +164,7 @@ def dump_codegen_options_text(
     int_width: str,
     str_index_mode: str,
     str_slice_mode: str,
+    opt_level: str,
 ) -> str:
     """解決済みオプションを人間向けテキストへ整形する。"""
     p = preset if preset != "" else "(none)"
@@ -166,6 +177,7 @@ def dump_codegen_options_text(
     out += f"  int-width: {int_width}\n"
     out += f"  str-index-mode: {str_index_mode}\n"
     out += f"  str-slice-mode: {str_slice_mode}\n"
+    out += f"  opt-level: {opt_level}\n"
     return out
 
 
@@ -186,6 +198,7 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         "int_width_opt": "",
         "str_index_mode_opt": "",
         "str_slice_mode_opt": "",
+        "opt_level_opt": "",
         "preset": "",
         "parser_backend": "self_hosted",
         "no_main": "0",
@@ -238,6 +251,18 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
             if i >= len(argv):
                 return empty_parse_dict(), "missing value for --str-slice-mode"
             out["str_slice_mode_opt"] = argv[i]
+        elif a in {"-O0", "-O1", "-O2", "-O3"}:
+            out["opt_level_opt"] = a[2:]
+        elif a == "-O":
+            i += 1
+            if i >= len(argv):
+                return empty_parse_dict(), "missing value for -O"
+            out["opt_level_opt"] = argv[i]
+        elif a == "--opt-level":
+            i += 1
+            if i >= len(argv):
+                return empty_parse_dict(), "missing value for --opt-level"
+            out["opt_level_opt"] = argv[i]
         elif a == "--preset":
             i += 1
             if i >= len(argv):

@@ -39,6 +39,12 @@
 - `--str-slice-mode {byte,codepoint}`
   - `byte` は利用可能
   - `codepoint` は未実装（指定時はエラー）
+- `-O0` / `-O1` / `-O2` / `-O3`
+  - 生成コード最適化レベル
+  - `-O0`: 最適化なし（読みやすさ/調査優先）
+  - `-O1`: 軽量最適化
+  - `-O2`: 中程度の最適化
+  - `-O3`: 積極最適化（既定）
 - `--parser-backend {self_hosted,cpython}`
   - EAST 生成バックエンド選択
 - `--no-main`
@@ -97,6 +103,7 @@
   - `str-index-mode=native`
   - `str-slice-mode=byte`
   - `int-width=64`
+  - `-O3`
 
 - `--preset balanced`
   - `negative-index-mode=const_only`
@@ -106,6 +113,7 @@
   - `str-index-mode=byte`
   - `str-slice-mode=byte`
   - `int-width=64`
+  - `-O2`
 
 - `--preset python`
   - `negative-index-mode=always`
@@ -115,6 +123,7 @@
   - `str-index-mode=codepoint`
   - `str-slice-mode=codepoint`
   - `int-width=bigint`（実装完了後）
+  - `-O0`
 
 
 ## 5. 導入優先順位（提案）
