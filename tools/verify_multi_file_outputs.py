@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -25,6 +26,11 @@ def normalize_stdout(text: str) -> str:
             continue
         out.append(ln)
     return "\n".join(out)
+
+
+def parse_output_path(stdout_text: str) -> str | None:
+    m = re.search(r"^output:\s*(.+)$", stdout_text, flags=re.M)
+    return m.group(1).strip() if m else None
 
 
 def verify_case(root: Path, stem: str) -> tuple[bool, str]:
@@ -53,6 +59,15 @@ def verify_case(root: Path, stem: str) -> tuple[bool, str]:
             return False, f"{stem}: cpp run failed"
         if normalize_stdout(py_stdout) != normalize_stdout(cpp_stdout):
             return False, f"{stem}: stdout mismatch"
+        py_out = parse_output_path(py_stdout)
+        cpp_out = parse_output_path(cpp_stdout)
+        if py_out is not None and cpp_out is not None:
+            py_img = root / py_out
+            cpp_img = root / cpp_out
+            if (not py_img.exists()) or (not cpp_img.exists()):
+                return False, f"{stem}: output image missing"
+            if py_img.read_bytes() != cpp_img.read_bytes():
+                return False, f"{stem}: output image mismatch"
     return True, f"{stem}: ok"
 
 

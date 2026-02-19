@@ -1,5 +1,14 @@
 # TODO
 
+## 2026-02-19 完了: 複数ファイル出力のビルド・実行検証
+
+1. [x] 複数ファイル生成物を一括コンパイルするスクリプトを追加する。
+   - [x] `tools/build_multi_cpp.py` を追加。
+2. [x] `sample/py` 全件で Python 実行結果との一致確認を自動化する。
+   - [x] `tools/verify_multi_file_outputs.py` を追加し、`sample/py` 16件で `OK=16 NG=0` を確認。
+3. [x] 画像生成ケースをバイナリ一致で検証する。
+   - [x] `tools/verify_multi_file_outputs.py` で `output:` 指定ファイルのバイト一致を検証。
+
 ## 2026-02-19 完了: モジュール単位 EAST 準備
 
 1. [x] 入口ファイル + 依存モジュールを個別に EAST 化する。

@@ -145,10 +145,6 @@
      - [x] シンボル重複回避の命名規則（namespace / include guard）を定義する。: 相対パス由来ラベル + sanitize で guard 生成
    - [x] main モジュールから依存モジュールを include/link できるようにする。: ユーザーモジュール呼び出しを `namespace::symbol` へ変換し、前方宣言を補完
    - [ ] ランタイム include/namespace の重複を除去する。
-4. [ ] ビルド・実行検証を整備する。
-   - [x] 複数ファイル生成物を一括コンパイルするスクリプトを追加する。: `tools/build_multi_cpp.py`
-   - [ ] `sample/py` 全件で Python 実行結果との一致確認を自動化する。: `tools/verify_multi_file_outputs.py` を追加（現状は `01_mandelbrot` の検証を確認済み）
-   - [ ] 画像生成ケースはバイナリ一致で検証する。
 5. [ ] 互換オプションを追加する。
    - [ ] 既定を複数ファイル出力にする。
    - [x] `--single-file`（仮称）で従来の単一 `.cpp` へ束ねるモードを提供する。: `--single-file` / `--multi-file` を実装
