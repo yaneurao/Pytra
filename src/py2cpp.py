@@ -1996,8 +1996,6 @@ class CppEmitter(CodeEmitter):
             return f"py_int_to_bytes({owner}, {length}, {byteorder})"
         if runtime_call == "grayscale_palette":
             return "grayscale_palette()"
-        if runtime_call == "save_gif":
-            return self._render_save_gif_call(args, kw, "list<list<uint8>>{}")
         if runtime_call == "py_isdigit" and len(args) == 1:
             return f"py_isdigit({args[0]})"
         if runtime_call == "py_isalpha" and len(args) == 1:

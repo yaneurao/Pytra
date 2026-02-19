@@ -38,6 +38,9 @@ class CppHooks:
         rendered_kwargs: dict[str, str],
     ) -> str | None:
         """Call 式出力フック。文字列を返すとその式を採用する。"""
+        runtime_call = emitter.any_dict_get_str(call_node, "runtime_call", "")
+        if runtime_call == "save_gif":
+            return self._render_save_gif(rendered_args, rendered_kwargs)
         fn_kind = emitter.any_dict_get_str(func_node, "kind", "")
         if fn_kind == "Name":
             fn_name = emitter.any_dict_get_str(func_node, "id", "")
