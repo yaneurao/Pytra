@@ -5,35 +5,6 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 
-def _render_write_rgb_png(args: list[str]) -> str:
-    """`write_rgb_png` 呼び出しを `pytra::png` 直呼びへ整形する。"""
-    path = args[0] if len(args) >= 1 else '""'
-    w = args[1] if len(args) >= 2 else "0"
-    h = args[2] if len(args) >= 3 else "0"
-    pixels = args[3] if len(args) >= 4 else "list<uint8>{}"
-    return (
-        f"pytra::png::write_rgb_png({path}, int({w}), int({h}), "
-        f"std::vector<uint8>({pixels}.begin(), {pixels}.end()))"
-    )
-
-
-def _render_save_gif(args: list[str], kw: dict[str, str]) -> str:
-    """`save_gif` 呼び出しを C++ ランタイムシグネチャへ整形する。"""
-    path = args[0] if len(args) >= 1 else '""'
-    w = args[1] if len(args) >= 2 else "0"
-    h = args[2] if len(args) >= 3 else "0"
-    frames = args[3] if len(args) >= 4 else "list<bytearray>{}"
-    palette = args[4] if len(args) >= 5 else "py_gif_grayscale_palette_list()"
-    if palette in {"nullptr", "std::nullopt"}:
-        palette = "py_gif_grayscale_palette_list()"
-    delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
-    loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
-    return (
-        f"pytra::gif::save_gif({path}, int({w}), int({h}), "
-        f"py_u8_matrix({frames}), py_u8_vector({palette}), int({delay_cs}), int({loop}))"
-    )
-
-
 def _render_owner_expr(emitter: Any, func_node: dict[str, Any]) -> str:
     """Attribute call の owner 式を C++ 向けに整形する。"""
     owner_node = emitter.any_to_dict_or_empty(func_node.get("value"))
@@ -86,6 +57,17 @@ def _infer_runtime_call_from_func_node(emitter: Any, func_node: dict[str, Any]) 
     return ""
 
 
+def _looks_like_runtime_symbol(name: str) -> bool:
+    """ランタイム関数シンボルとして直接出力できる文字列か判定する。"""
+    if name == "":
+        return False
+    if "::" in name:
+        return True
+    if name.startswith("py_"):
+        return True
+    return False
+
+
 def on_render_call(
     emitter: Any,
     call_node: dict[str, Any],
@@ -128,10 +110,6 @@ def on_render_call(
     if runtime_call == "identity":
         owner = _render_owner_expr(emitter, func_node)
         return owner
-    if runtime_call == "save_gif":
-        return _render_save_gif(rendered_args, rendered_kwargs)
-    if runtime_call == "write_rgb_png":
-        return _render_write_rgb_png(rendered_args)
     return None
 
 
@@ -162,10 +140,8 @@ def on_render_expr_kind(
     mapped = ""
     if owner_kind in {"Name", "Attribute"} and attr != "":
         mapped = _lookup_module_attr_runtime_call(emitter, base_mod, attr)
-    if mapped == "write_rgb_png":
-        return "pytra::png::write_rgb_png"
-    if mapped == "save_gif":
-        return "pytra::gif::save_gif"
+    if _looks_like_runtime_symbol(mapped):
+        return mapped
     return None
 
 

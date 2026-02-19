@@ -177,11 +177,11 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "pow": "py_math::pow",
     }
     out["pytra.runtime.png"] = {
-        "write_rgb_png": "write_rgb_png",
+        "write_rgb_png": "py_png_write_rgb_png",
     }
     out["pytra.runtime.gif"] = {
-        "save_gif": "save_gif",
-        "grayscale_palette": "grayscale_palette",
+        "save_gif": "py_gif_save_gif",
+        "grayscale_palette": "py_gif_grayscale_palette_list",
     }
     out["os.path"] = {
         "join": "py_os_path_join",
@@ -2263,7 +2263,8 @@ class CppEmitter(CodeEmitter):
                     and mapped_runtime_txt not in {"perf_counter", "Path"}
                     and _looks_like_runtime_function_name(mapped_runtime_txt)
                 ):
-                    return f"{mapped_runtime_txt}({', '.join(args)})"
+                    merged_args = self._merge_runtime_call_args(args, kw)
+                    return f"{mapped_runtime_txt}({', '.join(merged_args)})"
                 imported_module_norm = self._normalize_runtime_module_name(imported_module)
                 if imported_module_norm in self.module_namespace_map:
                     ns = self.module_namespace_map[imported_module_norm]
@@ -2347,8 +2348,6 @@ class CppEmitter(CodeEmitter):
                 if len(args) == 0:
                     return 'std::runtime_error("error")'
                 return f"std::runtime_error({args[0]})"
-            if raw == "grayscale_palette":
-                return "py_gif_grayscale_palette_list()"
             if raw == "Path":
                 return f"Path({', '.join(args)})"
         if fn_kind == "Attribute":
@@ -2364,11 +2363,12 @@ class CppEmitter(CodeEmitter):
         self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
+        merged_args = self._merge_runtime_call_args(args, kw)
         owner_mod_norm = self._normalize_runtime_module_name(owner_mod)
         if owner_mod_norm in self.module_namespace_map:
             ns = self.module_namespace_map[owner_mod_norm]
             if ns != "":
-                return f"{ns}::{attr}({', '.join(args)})"
+                return f"{ns}::{attr}({', '.join(merged_args)})"
         owner_keys: list[str] = [owner_mod_norm]
         short = self._last_dotted_name(owner_mod_norm)
         # `pytra.*` は正規モジュール名で解決し、短縮名への暗黙フォールバックは使わない。
@@ -2380,10 +2380,23 @@ class CppEmitter(CodeEmitter):
                 if attr in owner_map:
                     mapped = owner_map[attr]
                     if mapped != "" and _looks_like_runtime_function_name(mapped):
-                        return f"{mapped}({', '.join(args)})"
+                        return f"{mapped}({', '.join(merged_args)})"
         if owner_mod_norm in {"typing", "pytra.std.typing"} and attr == "TypeVar":
             return "make_object(1)"
         return None
+
+    def _merge_runtime_call_args(self, args: list[str], kw: dict[str, str]) -> list[str]:
+        """runtime 呼び出し用に `args + keyword values` を並べた引数列を返す。"""
+        if len(kw) == 0:
+            return args
+        out: list[str] = []
+        i = 0
+        while i < len(args):
+            out.append(args[i])
+            i += 1
+        for _k, v in kw.items():
+            out.append(v)
+        return out
 
     def _render_call_object_method(
         self, owner_t: str, owner_expr: str, attr: str, args: list[str]
