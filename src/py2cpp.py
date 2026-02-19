@@ -1975,10 +1975,7 @@ class CppEmitter(CodeEmitter):
             palette = "py_gif_grayscale_palette_list()"
         delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
         loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
-        return (
-            f"pytra::gif::save_gif({path}, int({w}), int({h}), "
-            f"py_u8_matrix({frames}), py_u8_vector({palette}), int({delay_cs}), int({loop}))"
-        )
+        return f"pytra::gif::save_gif({path}, int({w}), int({h}), py_u8_matrix({frames}), py_u8_vector({palette}), int({delay_cs}), int({loop}))"
 
     def _render_builtin_call(
         self,
