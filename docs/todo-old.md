@@ -1,5 +1,18 @@
 # TODO
 
+## 2026-02-20 移管: `enum` サポート（完了）
+
+1. [x] `pylib.enum` を追加し、`Enum` / `IntEnum` / `IntFlag` の最小互換 API を実装する。
+   - [x] 値定義・比較の基本動作を実装する。
+   - [x] `IntFlag` の `|`, `&`, `^`, `~` を実装する。
+2. [x] EAST 変換で `Enum` 系クラス定義（`NAME = expr`）を認識できるようにする。
+3. [x] `py2cpp` で `Enum` / `IntEnum` / `IntFlag` を C++ 側へ変換する最小経路を実装する。
+   - [x] `Enum` 系基底クラス継承は C++ 側で省略し、静的メンバー定数として出力する。
+   - [x] `Enum` / `IntEnum` / `IntFlag` を `enum class` へ lower する。
+   - [x] `IntFlag` の C++ 型安全なビット演算ラッパ（`|`, `&`, `^`, `~`）を追加する。
+4. [x] `test/fixtures` に `Enum` / `IntEnum` / `IntFlag` の実行一致テストを追加する。
+5. [x] `docs/pylib-modules.md` / `docs/how-to-use.md` にサポート内容を追記する。
+
 - [x] オプション体系（spec-options 反映）を実装完了。
   - `--mod-mode` / `--floor-div-mode` / `--bounds-check-mode` を実装。
   - `--int-width`（`32/64`）を実装し、`bigint` は planned（未実装エラー）として扱う。
