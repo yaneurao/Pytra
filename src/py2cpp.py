@@ -433,31 +433,24 @@ class CppEmitter(CodeEmitter):
     def _module_name_to_cpp_include(self, module_name: str) -> str:
         """Python import モジュール名を C++ include へ解決する。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
-        std_direct: dict[str, str] = {
-            "pytra.std.math": "pytra/std/math.h",
-            "pytra.std.time": "pytra/std/time.h",
-            "pytra.std.pathlib": "pytra/std/pathlib.h",
-            "pytra.std.dataclasses": "pytra/std/dataclasses.h",
-            "pytra.std.sys": "pytra/std/sys.h",
-            "pytra.std.json": "pytra/std/json.h",
-            "pytra.std.typing": "pytra/std/typing.h",
-        }
-        if module_name_norm in std_direct:
-            return std_direct[module_name_norm]
-        runtime_direct: dict[str, str] = {
-            "pytra.runtime.png": "pytra/runtime/png.h",
-            "pytra.runtime.gif": "pytra/runtime/gif.h",
-            "pytra.runtime.assertions": "pytra/runtime/assertions.h",
-            "pytra.runtime.east": "pytra/runtime/east.h",
-        }
-        if module_name_norm in runtime_direct:
-            return runtime_direct[module_name_norm]
+        if module_name_norm.startswith("pytra.std."):
+            tail = module_name_norm[10:]
+            std_cpp_modules = {"math", "time", "pathlib", "dataclasses", "sys", "json", "typing"}
+            if tail in std_cpp_modules:
+                return "pytra/std/" + tail.replace(".", "/") + ".h"
+        if module_name_norm.startswith("pytra.runtime."):
+            tail = module_name_norm[14:]
+            runtime_cpp_modules = {"png", "gif", "assertions", "east"}
+            if tail in runtime_cpp_modules:
+                return "pytra/runtime/" + tail.replace(".", "/") + ".h"
         legacy_std: dict[str, str] = {
             "math": "pytra/std/math.h",
             "time": "pytra/std/time.h",
             "pathlib": "pytra/std/pathlib.h",
             "dataclasses": "pytra/std/dataclasses.h",
             "sys": "pytra/std/sys.h",
+            "json": "pytra/std/json.h",
+            "typing": "pytra/std/typing.h",
         }
         if module_name_norm in legacy_std:
             return legacy_std[module_name_norm]
@@ -465,6 +458,7 @@ class CppEmitter(CodeEmitter):
             "png": "pytra/runtime/png.h",
             "gif": "pytra/runtime/gif.h",
             "assertions": "pytra/runtime/assertions.h",
+            "east": "pytra/runtime/east.h",
         }
         if module_name_norm in legacy_runtime:
             return legacy_runtime[module_name_norm]

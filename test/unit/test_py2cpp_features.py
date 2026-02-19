@@ -226,6 +226,42 @@ if __name__ == "__main__":
         self.assertIn('#include "pytra/runtime/png.h"', cpp)
         self.assertIn("pytra::png::write_rgb_png", cpp)
 
+    def test_from_pytra_runtime_import_png_emits_one_to_one_include(self) -> None:
+        src = """from pytra.runtime import png
+
+def main() -> None:
+    pixels: bytearray = bytearray(3)
+    png.write_rgb_png("x.png", 1, 1, pixels)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "from_pytra_runtime_import_png.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn('#include "pytra/runtime/png.h"', cpp)
+        self.assertIn("pytra::png::write_rgb_png", cpp)
+
+    def test_from_pytra_runtime_import_gif_emits_one_to_one_include(self) -> None:
+        src = """from pytra.runtime import gif
+
+def main() -> None:
+    frames: list[bytearray] = []
+    gif.save_gif("x.gif", 1, 1, frames)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "from_pytra_runtime_import_gif.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn('#include "pytra/runtime/gif.h"', cpp)
+        self.assertIn("pytra::gif::save_gif(", cpp)
+
     def test_dump_deps_text_lists_modules_and_symbols(self) -> None:
         src = """import math
 from pytra.std.json import loads as json_loads, dumps

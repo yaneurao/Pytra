@@ -1,6 +1,20 @@
 # TODO（未完了のみ）
 
+## 優先方針（2026-02-19 更新）
+
+- まず `import` 解決（依存グラフ・探索パス・`from ... import ...` を含む）を先に完了させる。
+- `selfhost` は import 解決完了後に回す（手戻り抑制のため）。
+
 ## 直近実行キュー（細分化）
+
+1. [ ] import 解決フェーズを最優先で完了する（`selfhost` より先）。
+   - [x] `import` / `from ... import ...` の収集と依存グラフ生成（`--dump-deps`）を実装済み。
+   - [x] `pytra.*` とユーザーモジュールの探索パス解決、重複・循環検出を実装済み。
+   - [x] `pytra.runtime.png/gif` について、hook 側の短縮名（`png_helper`/`gif_helper`）依存を削除し、正規モジュール名ベースへ統一した。
+   - [x] `pytra.std.*` / `pytra.runtime.*` の include 解決を 1 対 1 規則ベースへ整理し、現行 C++ ランタイム実体があるモジュールのみ include するよう調整した。
+   - [ ] `from XXX import YYY` の解決を runtime include / 呼び出し解決まで一貫させ、hook 側の暫定名寄せ分岐を削除する。
+   - [ ] runtime 側 include パス（`pytra/std/*`, `pytra/runtime/*`）と import 正規化ルールを完全同期する。
+   - [ ] 複数ファイル構成で `sample/py` の import ケースを通し、`tools/check_py2cpp_transpile.py` をゲート化する。
 
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
@@ -76,7 +90,7 @@
    - [x] `_stmt_start_line` / `_stmt_end_line` / `_has_leading_trivia` を削除。
    - [x] `py2cpp.py` 内の補助関数で参照ゼロのものを追加洗い出しして削除する。: `_safe_nested_dict` / `_safe_nested_str_map` / `_safe_nested_str_list` / `_load_cpp_runtime_call_map_json` を削除
 
-## selfhost 回復（優先）
+## selfhost 回復（後段）
 
 1. [ ] `CodeEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
    - [x] `any_dict_get` / `any_to_dict` / `any_to_list` / `any_to_str` の C++ 生成を確認し、`object.begin/end` 生成を消す。

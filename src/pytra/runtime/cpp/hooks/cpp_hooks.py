@@ -99,14 +99,9 @@ def on_render_call(
         module_name = emitter.any_dict_get_str(sym, "module", "")
         module_name = emitter._normalize_runtime_module_name(module_name)
         symbol_name = emitter.any_dict_get_str(sym, "name", "")
-        module_key = emitter._last_dotted_name(module_name)
-        if module_name in {"pytra", "pytra.runtime"} and symbol_name == "png":
+        if module_name == "pytra.runtime.png" and symbol_name == "write_rgb_png":
             return _render_write_rgb_png(rendered_args)
-        if module_name in {"pytra", "pytra.runtime"} and symbol_name == "gif":
-            return _render_save_gif(rendered_args, rendered_kwargs)
-        if module_key in {"png", "png_helper"} and symbol_name == "write_rgb_png":
-            return _render_write_rgb_png(rendered_args)
-        if module_key in {"gif", "gif_helper"} and symbol_name == "save_gif":
+        if module_name == "pytra.runtime.gif" and symbol_name == "save_gif":
             return _render_save_gif(rendered_args, rendered_kwargs)
 
     if fn_kind == "Attribute":
@@ -114,12 +109,11 @@ def on_render_call(
         owner_expr = emitter.render_expr(func_node.get("value"))
         owner_mod = emitter._resolve_imported_module_name(owner_expr)
         owner_mod = emitter._normalize_runtime_module_name(owner_mod)
-        owner_key = emitter._last_dotted_name(owner_mod)
         attr = emitter.any_dict_get_str(func_node, "attr", "")
         if owner_node.get("kind") in {"Name", "Attribute"}:
-            if owner_key in {"png", "png_helper"} and attr == "write_rgb_png":
+            if owner_mod == "pytra.runtime.png" and attr == "write_rgb_png":
                 return _render_write_rgb_png(rendered_args)
-            if owner_key in {"gif", "gif_helper"} and attr == "save_gif":
+            if owner_mod == "pytra.runtime.gif" and attr == "save_gif":
                 return _render_save_gif(rendered_args, rendered_kwargs)
     return None
 
@@ -140,7 +134,6 @@ def on_render_expr_kind(
     owner_t = emitter.get_expr_type(expr_node.get("value"))
     base_mod = emitter._resolve_imported_module_name(base_expr)
     base_mod = emitter._normalize_runtime_module_name(base_mod)
-    base_key = emitter._last_dotted_name(base_mod)
     attr = emitter.any_dict_get_str(expr_node, "attr", "")
     if owner_t == "Path":
         if attr == "name":
@@ -149,9 +142,9 @@ def on_render_expr_kind(
             return base_expr + ".stem()"
         if attr == "parent":
             return base_expr + ".parent()"
-    if base_key in {"png", "png_helper"} and attr == "write_rgb_png":
+    if base_mod == "pytra.runtime.png" and attr == "write_rgb_png":
         return "pytra::png::write_rgb_png"
-    if base_key in {"gif", "gif_helper"} and attr == "save_gif":
+    if base_mod == "pytra.runtime.gif" and attr == "save_gif":
         return "pytra::gif::save_gif"
     return None
 
