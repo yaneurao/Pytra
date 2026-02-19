@@ -1,5 +1,14 @@
 # TODO
 
+## 2026-02-19 完了: モジュール単位 EAST 準備
+
+1. [x] 入口ファイル + 依存モジュールを個別に EAST 化する。
+   - [x] `build_module_east_map(entry_path)` を追加。
+2. [x] シンボル解決情報（公開関数/クラス、import alias）をモジュールメタへ保持する。
+   - [x] `build_module_symbol_index(...)` を追加。
+3. [x] モジュール間で必要な型情報を共有する最小スキーマを定義する。
+   - [x] `build_module_type_schema(...)` を追加。
+
 ## 2026-02-19 完了: `runtime/cpp/pytra/std/*` 自動生成移行
 
 1. [x] `runtime/cpp/pytra/std/*` を自動生成へ移行する（`math` を含む）。

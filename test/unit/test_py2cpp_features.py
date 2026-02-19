@@ -18,6 +18,7 @@ from src.pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py
 from src.py2cpp import (
     build_module_east_map,
     build_module_symbol_index,
+    build_module_type_schema,
     dump_deps_text,
     load_cpp_module_attr_call_map,
     load_east,
@@ -355,6 +356,31 @@ def f() -> int:
         self.assertIn("C", idx[str(helper_py)]["classes"])
         self.assertEqual(idx[str(main_py)]["import_modules"].get("hp"), "helper")
         self.assertIn("HC", idx[str(main_py)]["import_symbols"])
+
+    def test_build_module_type_schema_contains_function_and_class_types(self) -> None:
+        src_main = """def run(v: int) -> int:
+    return v + 1
+"""
+        src_helper = """class C:
+    x: int = 1
+
+def f(a: int, b: int) -> int:
+    return a + b
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            mp = {
+                str(main_py): load_east(main_py),
+                str(helper_py): load_east(helper_py),
+            }
+            schema = build_module_type_schema(mp)
+        self.assertEqual(schema[str(main_py)]["functions"]["run"]["return_type"], "int64")
+        self.assertEqual(schema[str(helper_py)]["functions"]["f"]["arg_types"]["a"], "int64")
+        self.assertEqual(schema[str(helper_py)]["classes"]["C"]["field_types"]["x"], "int64")
 
     def test_floor_div_mode_native_and_python(self) -> None:
         src = """def main() -> None:
