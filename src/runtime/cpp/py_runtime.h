@@ -1292,6 +1292,62 @@ static inline bool operator<(int64 lhs, const std::any& rhs) {
     return false;
 }
 
+static inline bool operator<(const std::any& lhs, const std::any& rhs) {
+    return py_to_float64(lhs) < py_to_float64(rhs);
+}
+
+static inline bool operator>(const std::any& lhs, const std::any& rhs) {
+    return py_to_float64(lhs) > py_to_float64(rhs);
+}
+
+static inline bool operator<=(const std::any& lhs, const std::any& rhs) {
+    return py_to_float64(lhs) <= py_to_float64(rhs);
+}
+
+static inline bool operator>=(const std::any& lhs, const std::any& rhs) {
+    return py_to_float64(lhs) >= py_to_float64(rhs);
+}
+
+template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+static inline bool operator<(const std::any& lhs, T rhs) {
+    return py_to_float64(lhs) < static_cast<float64>(rhs);
+}
+
+template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+static inline bool operator>(const std::any& lhs, T rhs) {
+    return py_to_float64(lhs) > static_cast<float64>(rhs);
+}
+
+template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+static inline bool operator<=(const std::any& lhs, T rhs) {
+    return py_to_float64(lhs) <= static_cast<float64>(rhs);
+}
+
+template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+static inline bool operator>=(const std::any& lhs, T rhs) {
+    return py_to_float64(lhs) >= static_cast<float64>(rhs);
+}
+
+template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+static inline bool operator<(T lhs, const std::any& rhs) {
+    return static_cast<float64>(lhs) < py_to_float64(rhs);
+}
+
+template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+static inline bool operator>(T lhs, const std::any& rhs) {
+    return static_cast<float64>(lhs) > py_to_float64(rhs);
+}
+
+template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+static inline bool operator<=(T lhs, const std::any& rhs) {
+    return static_cast<float64>(lhs) <= py_to_float64(rhs);
+}
+
+template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+static inline bool operator>=(T lhs, const std::any& rhs) {
+    return static_cast<float64>(lhs) >= py_to_float64(rhs);
+}
+
 static inline str operator+(const char* lhs, const std::any& rhs) {
     return str(lhs) + py_to_string(rhs);
 }
@@ -1306,6 +1362,10 @@ static inline float64 operator+(const std::any& lhs, T rhs) {
     return py_to_float64(lhs) + static_cast<float64>(rhs);
 }
 
+static inline float64 operator+(const std::any& lhs, const std::any& rhs) {
+    return py_to_float64(lhs) + py_to_float64(rhs);
+}
+
 template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
 static inline float64 operator-(T lhs, const std::any& rhs) {
     return static_cast<float64>(lhs) - py_to_float64(rhs);
@@ -1314,6 +1374,10 @@ static inline float64 operator-(T lhs, const std::any& rhs) {
 template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
 static inline float64 operator-(const std::any& lhs, T rhs) {
     return py_to_float64(lhs) - static_cast<float64>(rhs);
+}
+
+static inline float64 operator-(const std::any& lhs, const std::any& rhs) {
+    return py_to_float64(lhs) - py_to_float64(rhs);
 }
 
 template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
@@ -1326,6 +1390,10 @@ static inline float64 operator*(const std::any& lhs, T rhs) {
     return py_to_float64(lhs) * static_cast<float64>(rhs);
 }
 
+static inline float64 operator*(const std::any& lhs, const std::any& rhs) {
+    return py_to_float64(lhs) * py_to_float64(rhs);
+}
+
 template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
 static inline float64 operator/(T lhs, const std::any& rhs) {
     return static_cast<float64>(lhs) / py_to_float64(rhs);
@@ -1334,6 +1402,10 @@ static inline float64 operator/(T lhs, const std::any& rhs) {
 template <class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
 static inline float64 operator/(const std::any& lhs, T rhs) {
     return py_to_float64(lhs) / static_cast<float64>(rhs);
+}
+
+static inline float64 operator/(const std::any& lhs, const std::any& rhs) {
+    return py_to_float64(lhs) / py_to_float64(rhs);
 }
 
 static inline list<std::any>::iterator begin(std::any& v) {

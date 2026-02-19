@@ -3,6 +3,8 @@
 
 // py_runtime.h から分離した Python 互換コンテナ/文字列ラッパ。
 // このヘッダは py_runtime.h 側で定義される型エイリアス・前方宣言を利用します。
+template <class D>
+std::optional<D> py_object_try_cast(const object& v);
 
 class str {
 public:
@@ -131,6 +133,30 @@ public:
         return data_.find_last_of(chars, pos);
     }
 
+    bool isdigit() const {
+        if (data_.empty()) return false;
+        for (char ch : data_) {
+            if (!std::isdigit(static_cast<unsigned char>(ch))) return false;
+        }
+        return true;
+    }
+
+    bool isalpha() const {
+        if (data_.empty()) return false;
+        for (char ch : data_) {
+            if (!std::isalpha(static_cast<unsigned char>(ch))) return false;
+        }
+        return true;
+    }
+
+    bool isalnum() const {
+        if (data_.empty()) return false;
+        for (char ch : data_) {
+            if (!std::isalnum(static_cast<unsigned char>(ch))) return false;
+        }
+        return true;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const str& s) {
         os << s.data_;
         return os;
@@ -244,15 +270,38 @@ public:
     list(const object& v) {
         if (const auto* p = obj_to_list_ptr(v)) data_ = *p;
     }
+    template <class U = T, std::enable_if_t<!std::is_same_v<U, object>, int> = 0>
+    list(const object& v) {
+        if (const auto* p = obj_to_list_ptr(v)) {
+            reserve(p->size());
+            for (const object& elem : *p) {
+                if constexpr (std::is_constructible_v<T, object>) {
+                    data_.push_back(T(elem));
+                } else {
+                    auto casted = py_object_try_cast<T>(elem);
+                    if (casted.has_value()) data_.push_back(*casted);
+                }
+            }
+        }
+    }
 
     template <class It>
     list(It first, It last) : data_(first, last) {}
 
     template <class U, std::enable_if_t<!std::is_same_v<U, T>, int> = 0>
-    explicit list(const list<U>& other) {
+    list(const list<U>& other) {
         reserve(other.size());
         for (const auto& v : other) {
-            data_.push_back(static_cast<T>(v));
+            if constexpr (std::is_same_v<U, object>) {
+                if constexpr (std::is_constructible_v<T, object>) {
+                    data_.push_back(T(v));
+                } else {
+                    auto casted = py_object_try_cast<T>(v);
+                    if (casted.has_value()) data_.push_back(*casted);
+                }
+            } else {
+                data_.push_back(static_cast<T>(v));
+            }
         }
     }
 
@@ -310,9 +359,13 @@ public:
 
     void append(const T& value) { data_.push_back(value); }
     void append(T&& value) { data_.push_back(std::move(value)); }
-    template <class U = T, std::enable_if_t<!std::is_same_v<U, std::any>, int> = 0>
-    void append(const std::any& value) {
-        if (const auto* p = std::any_cast<U>(&value)) {
+    template <
+        class A,
+        class U = T,
+        std::enable_if_t<!std::is_same_v<U, std::any> && std::is_same_v<std::decay_t<A>, std::any>, int> = 0>
+    void append(A&& value) {
+        const std::any& any_value = value;
+        if (const auto* p = std::any_cast<U>(&any_value)) {
             data_.push_back(*p);
         }
     }

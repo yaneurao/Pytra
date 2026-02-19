@@ -40,6 +40,17 @@ def parse_output_path(stdout_text: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
+def normalize_stdout_for_compare(stdout_text: str) -> str:
+    """実行時間など揺らぐ行を除外して比較用に正規化する。"""
+    out_lines: list[str] = []
+    for line in stdout_text.splitlines():
+        low = line.strip().lower()
+        if low.startswith("elapsed_sec:") or low.startswith("elapsed:") or low.startswith("time_sec:"):
+            continue
+        out_lines.append(line)
+    return "\n".join(out_lines)
+
+
 def png_raw_rgb(path: Path) -> tuple[int, int, bytes]:
     b = path.read_bytes()
     if b[:8] != b"\x89PNG\r\n\x1a\n":
@@ -385,7 +396,10 @@ def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdou
 
     cpp_out = parse_output_path(cpp_stdout)
 
-    stdout_ok = True if ignore_stdout else (py_stdout == cpp_stdout)
+    if ignore_stdout:
+        stdout_ok = True
+    else:
+        stdout_ok = normalize_stdout_for_compare(py_stdout) == normalize_stdout_for_compare(cpp_stdout)
     image_ok = True
     msg = "no image output"
     if py_out is None and cpp_out is None:
