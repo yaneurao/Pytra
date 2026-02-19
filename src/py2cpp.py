@@ -181,7 +181,14 @@ def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
 
 def load_cpp_identifier_rules() -> tuple[set[str], str]:
     """識別子リネーム規則を profile から取得する。"""
-    return set(CPP_RESERVED_WORDS), "py_"
+    reserved: set[str] = {
+        "alignas", "alignof", "asm", "auto", "break", "case", "catch", "char", "class", "const", "constexpr",
+        "continue", "default", "delete", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if",
+        "inline", "int", "long", "namespace", "new", "operator", "private", "protected", "public", "register",
+        "return", "short", "signed", "sizeof", "static", "struct", "switch", "template", "this", "throw", "try",
+        "typedef", "typename", "union", "unsigned", "virtual", "void", "volatile", "while",
+    }
+    return reserved, "py_"
 
 
 def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:

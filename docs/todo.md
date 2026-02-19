@@ -102,7 +102,7 @@
    - [ ] `total_errors = 0` にする。
    - [x] 段階ゲート A: `total_errors <= 450` を達成し、`docs/todo.md` に主因更新。: 2026-02-18 再計測で `total_errors=322`
    - [x] 段階ゲート B: `total_errors <= 300` を達成し、同時に `test_code_emitter` 回帰を固定化。: 2026-02-18 再計測で `total_errors=233`、`test/unit/test_code_emitter.py` は 12/12 pass
-   - [x] 段階ゲート C-1: `total_errors <= 100` を維持する。: 2026-02-19 再計測で `total_errors=98`
+   - [x] 段階ゲート C-1: `total_errors <= 100` を維持する。: 2026-02-19 再計測で `total_errors=96`
    - [ ] 段階ゲート C-2: `tools/check_selfhost_cpp_diff.py` の最小ケースを通す。
 4. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
    - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
@@ -163,5 +163,5 @@
      - `emit_assign`: `15`
 - 更新（2026-02-19 selfhost 進捗）:
   1. `tools/prepare_selfhost_source.py` -> `src/py2cpp.py selfhost/py2cpp.py` は継続して通過。
-  2. `g++` コンパイルエラーは `total_errors=98`（`<=100` 維持）を確認。
+  2. `g++` コンパイルエラーは `total_errors=96`（`<=100` 維持）を確認。
   3. 現在の上位は `emit_class` / `render_boolop` / `emit_assign` の `Any` 境界由来の型不整合と `set(list<str>)` 推論不整合。
