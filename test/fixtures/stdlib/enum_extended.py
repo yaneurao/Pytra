@@ -24,7 +24,7 @@ def run_enum_extended() -> bool:
     checks.append(py_assert_eq(Color.RED == Color.BLUE, False, "enum-neq"))
     checks.append(py_assert_eq(Status.OK == 0, True, "int-enum-eq"))
     checks.append(py_assert_eq(int(Status.ERROR), 1, "int-enum-int"))
-    rw = Perm.READ | Perm.WRITE
+    rw: Perm = Perm.READ | Perm.WRITE
     checks.append(py_assert_eq(int(rw), 3, "flag-or"))
     checks.append(py_assert_eq(int(rw & Perm.WRITE), 2, "flag-and"))
     checks.append(py_assert_eq(int(rw ^ Perm.WRITE), 1, "flag-xor"))

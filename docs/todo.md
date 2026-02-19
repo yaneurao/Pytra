@@ -2,33 +2,33 @@
 
 ## 直近実行キュー（細分化）
 
-0.5 [ ] `test/fixtures/stdlib` compile-fail 7件を順次解消する（1件ずつ green 化）
-   - [ ] 現状固定: `math/os_glob/pathlib/sys/typing` は pass、`argparse/dataclasses/enum/json/re` は compile fail。
-   - [ ] 共通修正A: `pylib.std.*` モジュール参照が C++ 側で未解決になる経路を塞ぐ（`module.symbol` を必ず runtime 呼び出しへ lower）。
-   - [ ] 共通修正B: `std::any` へ退化した値に対するメソッド呼び出し生成（`obj.method(...)`）を禁止し、型付き受け口へ寄せる。
+0.5 [x] `test/fixtures/stdlib` compile-fail 7件を順次解消する（1件ずつ green 化）
+   - [x] 現状固定: `math/os_glob/pathlib/sys/typing` は pass、`argparse/dataclasses/enum/json/re` は compile fail。
+   - [x] 共通修正A: `pylib.std.*` モジュール参照が C++ 側で未解決になる経路を塞ぐ（`module.symbol` を必ず runtime 呼び出しへ lower）。
+   - [x] 共通修正B: `std::any` へ退化した値に対するメソッド呼び出し生成（`obj.method(...)`）を禁止し、型付き受け口へ寄せる。
    - [x] 共通修正C: `py_assert_stdout` 依存の古い fixture 形式を現行の assertions 形式に統一する。
-   - [ ] `json_extended` を最優先で修正する。
-     - [ ] `json.loads/dumps` が `pylib.std.json` 経由で解決されることを確認する。
-     - [ ] `dict/list` 返却値への添字アクセスが `std::any` 退化しないようにする。
-   - [ ] `sys_extended` を修正する。
+   - [x] `json_extended` を最優先で修正する。
+     - [x] `json.loads/dumps` が `pylib.std.json` 経由で解決されることを確認する。
+     - [x] `dict/list` 返却値への添字アクセスが `std::any` 退化しないようにする。
+   - [x] `sys_extended` を修正する。
      - [x] `sys.argv` 参照を runtime 側アクセサへ固定する。
      - [x] `_case_main/main` 呼び出し不整合を除去する。
-   - [ ] `typing_extended` を修正する。
+   - [x] `typing_extended` を修正する。
      - [x] `typing.Any` 等のシンボル参照を「実行時 no-op な型情報」として安全に lower する。
-   - [ ] `re_extended` を修正する。
-     - [ ] `re.match/search/sub/split` と match object の `group` 呼び出しを型付きで出力する。
-   - [ ] `argparse_extended` を修正する。
-     - [ ] `ArgumentParser` インスタンスが `std::any` 退化しない生成経路へ変更する。
-     - [ ] `add_argument/parse_args` の戻り値（namespace）アクセスを型付きで通す。
-   - [ ] `dataclasses_extended` を修正する。
-     - [ ] `repr` / 比較演算 / 例外継承周辺の不足を埋める。
-   - [ ] `enum_extended` を修正する。
-     - [ ] `IntFlag` の演算（`|`, `&`）で `std::any` 退化しないようにする。
-   - [ ] ゲート: 各ケース修正ごとに以下を実施する。
-     - [ ] `PYTHONPATH=src python3 test/fixtures/stdlib/<case>.py`
-     - [ ] `python3 src/py2cpp.py test/fixtures/stdlib/<case>.py -o /tmp/<case>.cpp`
-     - [ ] `g++` で runtime をリンクして実行し、Python 出力と一致確認
-   - [ ] 受け入れ条件: `test/fixtures/stdlib/*.py` が 10/10 で compile-run 一致。
+   - [x] `re_extended` を修正する。
+     - [x] `re.match/search/sub/split` と match object の `group` 呼び出しを型付きで出力する。
+   - [x] `argparse_extended` を修正する。
+     - [x] `ArgumentParser` インスタンスが `std::any` 退化しない生成経路へ変更する。
+     - [x] `add_argument/parse_args` の戻り値（namespace）アクセスを型付きで通す。
+   - [x] `dataclasses_extended` を修正する。
+     - [x] `repr` / 比較演算 / 例外継承周辺の不足を埋める。
+   - [x] `enum_extended` を修正する。
+     - [x] `IntFlag` の演算（`|`, `&`）で `std::any` 退化しないようにする。
+   - [x] ゲート: 各ケース修正ごとに以下を実施する。
+     - [x] `PYTHONPATH=src python3 test/fixtures/stdlib/<case>.py`
+     - [x] `python3 src/py2cpp.py test/fixtures/stdlib/<case>.py -o /tmp/<case>.cpp`
+     - [x] `g++` で runtime をリンクして実行し、Python 出力と一致確認
+   - [x] 受け入れ条件: `test/fixtures/stdlib/*.py` が 10/10 で compile-run 一致。
 
 0. [ ] `runtime/cpp/pylib` を完全自動生成へ移行する（手書きラッパ/手書きヘッダ廃止）
    - [x] 方針確定: `src/runtime/cpp/pylib/*.h` / `*.cpp` を手書き管理しない構成へ変更する。
@@ -92,18 +92,18 @@
      - [x] 共通: `pylib.*` モジュール import の C++ 側ランタイム接続が未実装（`argparse/re/sys/typing`）。
      - [x] `dataclasses`: `Exception` 継承/`repr`/rc 比較などの未対応が残る。
      - [x] `enum`: `IntFlag` 合成値の型退化（`std::any`）による演算子不整合が残る。
-   - [ ] 未対応モジュールを順に C++ runtime 接続する（`json -> os/glob -> argparse -> sys/typing -> re -> dataclasses -> enum`）。
+   - [x] 未対応モジュールを順に C++ runtime 接続する（`json -> os/glob -> argparse -> sys/typing -> re -> dataclasses -> enum`）。
      - [ ] `json`:
-       - [ ] `fixtures/stdlib/json_extended.py` を単体 compile-run で通し、`json.loads/dumps` の最低限 API を固定する。
+       - [x] `fixtures/stdlib/json_extended.py` を単体 compile-run で通し、`json.loads/dumps` の最低限 API を固定する。
        - [ ] `test/unit/test_py2cpp_features.py` に `json_extended` runtime 回帰を追加する。
     - [ ] `os/glob`:
       - [x] `fixtures/stdlib/os_glob_extended.py` を compile-run で通す。
       - [x] `os.path.join/splitext/dirname/basename/exists` と `glob.glob` の呼び出し解決を点検する。
       - [x] `test/unit/test_py2cpp_features.py` に `os_glob_extended` runtime 回帰を追加する。
-     - [ ] `argparse/sys/typing/re/dataclasses/enum`:
-       - [ ] 1モジュールずつ compile-run 可否を確認し、失敗要因を個別タスクへ分解する。
+     - [x] `argparse/sys/typing/re/dataclasses/enum`:
+       - [x] 1モジュールずつ compile-run 可否を確認し、失敗要因を個別タスクへ分解する。
        - [ ] 各モジュールが通るたびに `*_extended.py` を runtime 回帰へ昇格する。
-  - [ ] 接続後に `*_extended.py` を compile-run 回帰へ昇格する（`os_glob_extended` は反映済み、`json_extended` が未着手）。
+  - [ ] 接続後に `*_extended.py` を compile-run 回帰へ昇格する（`stdlib` 10/10 compile-run は達成済み、unit 回帰追加が未完）。
 
 ## CodeEmitter 化（JSON + Hooks）
 

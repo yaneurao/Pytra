@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -312,6 +313,165 @@ static inline std::string py_to_string(const Path& v) {
 static inline std::string py_to_string(const object& v) {
     return obj_to_str(v);
 }
+
+static inline str _py_json_escape(const str& s) {
+    std::string out;
+    out.reserve(static_cast<std::size_t>(py_len(s)) + 8);
+    out.push_back('"');
+    const std::string src = py_to_string(s);
+    for (char ch : src) {
+        if (ch == '\\') out += "\\\\";
+        else if (ch == '"') out += "\\\"";
+        else if (ch == '\n') out += "\\n";
+        else if (ch == '\r') out += "\\r";
+        else if (ch == '\t') out += "\\t";
+        else out.push_back(ch);
+    }
+    out.push_back('"');
+    return str(out);
+}
+
+static inline str dumps(const str& v) {
+    return _py_json_escape(v);
+}
+
+static inline str dumps(const char* v) {
+    return _py_json_escape(str(v));
+}
+
+static inline str dumps(bool v) {
+    return v ? str("true") : str("false");
+}
+
+template <class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+static inline str dumps(T v) {
+    return str(std::to_string(static_cast<long long>(v)));
+}
+
+static inline str dumps(const object& v) {
+    if (!v) return "null";
+    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return dumps(p->value);
+    if (const auto* p = py_obj_cast<PyIntObj>(v)) return dumps(p->value);
+    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return str(std::to_string(p->value));
+    if (const auto* p = py_obj_cast<PyStrObj>(v)) return dumps(p->value);
+    return dumps(obj_to_str(v));
+}
+
+static inline bool _py_is_ws(char ch) {
+    return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f' || ch == '\v';
+}
+
+static inline str sub(const str& pattern, const str& repl, const str& text) {
+    const std::string pat = py_to_string(pattern);
+    const std::string rep = py_to_string(repl);
+    const std::string src = py_to_string(text);
+    if (pat == "\\s+") {
+        std::string out;
+        out.reserve(src.size());
+        bool in_ws = false;
+        for (char ch : src) {
+            if (_py_is_ws(ch)) {
+                if (!in_ws) out += rep;
+                in_ws = true;
+            } else {
+                out.push_back(ch);
+                in_ws = false;
+            }
+        }
+        return str(out);
+    }
+    try {
+        return str(std::regex_replace(src, std::regex(pat), rep));
+    } catch (...) {
+        return text;
+    }
+}
+
+struct ArgumentParser {
+    struct _OptSpec {
+        list<str> names;
+        str dest;
+        bool takes_value;
+    };
+
+    str _description;
+    list<str> _positionals;
+    list<_OptSpec> _options;
+
+    explicit ArgumentParser(const str& description = "") : _description(description), _positionals{}, _options{} {}
+
+    void add_argument(const str& a0) {
+        const std::string n0 = py_to_string(a0);
+        if (!n0.empty() && n0[0] == '-') {
+            _OptSpec sp{};
+            sp.names = list<str>{a0};
+            sp.dest = (n0.size() > 2 && n0[0] == '-' && n0[1] == '-') ? str(n0.substr(2)) : a0;
+            sp.takes_value = false;
+            _options.append(sp);
+            return;
+        }
+        _positionals.append(a0);
+    }
+
+    void add_argument(const str& a0, const str& a1) {
+        const std::string n0 = py_to_string(a0);
+        const std::string n1 = py_to_string(a1);
+        if ((!n0.empty() && n0[0] == '-') || (!n1.empty() && n1[0] == '-')) {
+            _OptSpec sp{};
+            sp.names = list<str>{a0, a1};
+            if (!n1.empty() && n1.size() > 2 && n1[0] == '-' && n1[1] == '-') sp.dest = str(n1.substr(2));
+            else if (!n0.empty() && n0.size() > 2 && n0[0] == '-' && n0[1] == '-') sp.dest = str(n0.substr(2));
+            else sp.dest = a1;
+            sp.takes_value = true;
+            _options.append(sp);
+            return;
+        }
+        _positionals.append(a0);
+        _positionals.append(a1);
+    }
+
+    dict<str, object> parse_args(const list<str>& argv) const {
+        dict<str, object> out{};
+        for (const _OptSpec& sp : _options) {
+            if (sp.takes_value) out[sp.dest] = object{};
+            else out[sp.dest] = make_object(false);
+        }
+        int64 pos_i = 0;
+        int64 i = 0;
+        while (i < py_len(argv)) {
+            const str tok = argv[i];
+            const std::string tok_s = py_to_string(tok);
+            if (!tok_s.empty() && tok_s[0] == '-') {
+                const _OptSpec* hit = nullptr;
+                for (const _OptSpec& sp : _options) {
+                    for (const str& name : sp.names) {
+                        if (name == tok) {
+                            hit = &sp;
+                            break;
+                        }
+                    }
+                    if (hit != nullptr) break;
+                }
+                if (hit == nullptr) throw std::runtime_error("argparse: unknown option");
+                if (hit->takes_value) {
+                    if (i + 1 >= py_len(argv)) throw std::runtime_error("argparse: missing option value");
+                    out[hit->dest] = make_object(argv[i + 1]);
+                    i += 2;
+                } else {
+                    out[hit->dest] = make_object(true);
+                    i += 1;
+                }
+                continue;
+            }
+            if (pos_i < py_len(_positionals)) {
+                out[_positionals[pos_i]] = make_object(tok);
+                pos_i += 1;
+            }
+            i += 1;
+        }
+        return out;
+    }
+};
 
 template <class D>
 static inline std::optional<D> py_object_try_cast(const object& v) {

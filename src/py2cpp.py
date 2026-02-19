@@ -2437,7 +2437,7 @@ class CppEmitter(CodeEmitter):
             base_kind = self.any_dict_get_str(base_node, "kind", "")
             if base_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 base = f"({base})"
-            attr = expr_d.get("attr", "")
+            attr = self.any_to_str(expr_d.get("attr"))
             if base == "self":
                 if self.current_class_name is not None and str(attr) in self.current_class_static_fields:
                     return f"{self.current_class_name}::{attr}"

@@ -62,7 +62,7 @@ class ArgumentParser:
             sys.write_stderr(f"error: {msg}\n")
         raise SystemExit(2)
 
-    def parse_args(self, argv: list[str] | None = None) -> Namespace:
+    def parse_args(self, argv: list[str] | None = None) -> dict[str, Any]:
         args = list(sys.argv[1:] if argv is None else argv)
 
         specs_pos = [s for s in self._specs if not s.is_optional]
@@ -112,5 +112,4 @@ class ArgumentParser:
         if pos_i < len(specs_pos):
             self._fail(f"missing required argument: {specs_pos[pos_i].dest}")
 
-        return Namespace(**values)
-
+        return values
