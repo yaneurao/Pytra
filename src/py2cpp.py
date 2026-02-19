@@ -587,22 +587,40 @@ class CppEmitter(CodeEmitter):
         already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
         if target.startswith("this->"):
             if not val_is_dict:
-                self.emit(f"{target};")
+                self.emit(self.syntax_line("annassign_member_noinit", "{target};", {"target": target}))
             else:
-                self.emit(f"{target} = {rendered_val};")
+                self.emit(
+                    self.syntax_line(
+                        "annassign_member_init",
+                        "{target} = {value};",
+                        {"target": target, "value": rendered_val},
+                    )
+                )
             return
         if not val_is_dict:
             if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
                 self.current_scope().add(target)
             if declare and not already_declared:
-                self.emit(f"{t} {target};")
+                self.emit(self.syntax_line("annassign_decl_noinit", "{type} {target};", {"type": t, "target": target}))
             return
         if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
             self.current_scope().add(target)
         if declare and not already_declared:
-            self.emit(f"{t} {target} = {rendered_val};")
+            self.emit(
+                self.syntax_line(
+                    "annassign_decl_init",
+                    "{type} {target} = {value};",
+                    {"type": t, "target": target, "value": rendered_val},
+                )
+            )
         else:
-            self.emit(f"{target} = {rendered_val};")
+            self.emit(
+                self.syntax_line(
+                    "annassign_assign",
+                    "{target} = {value};",
+                    {"target": target, "value": rendered_val},
+                )
+            )
 
     def _emit_augassign_stmt(self, stmt: dict[str, Any]) -> None:
         """AugAssign ノードを出力する。"""
@@ -619,7 +637,13 @@ class CppEmitter(CodeEmitter):
                 picked_t = inferred_t
             t = self._cpp_type_text(picked_t)
             self.current_scope().add(target)
-            self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
+            self.emit(
+                self.syntax_line(
+                    "augassign_decl_init",
+                    "{type} {target} = {value};",
+                    {"type": t, "target": target, "value": self.render_expr(stmt.get("value"))},
+                )
+            )
             return
         val = self.render_expr(stmt.get("value"))
         target_t = self.get_expr_type(stmt.get("target"))
@@ -636,14 +660,35 @@ class CppEmitter(CodeEmitter):
         if _map_get_str(AUG_BIN, op_name) != "":
             # Prefer idiomatic ++/-- for +/-1 updates.
             if op_name in {"Add", "Sub"} and val == "1":
-                self.emit(f"{target}{'++' if op_name == 'Add' else '--'};")
+                if op_name == "Add":
+                    self.emit(self.syntax_line("augassign_inc", "{target}++;", {"target": target}))
+                else:
+                    self.emit(self.syntax_line("augassign_dec", "{target}--;", {"target": target}))
                 return
             if op_name == "FloorDiv":
-                self.emit(f"{target} = py_floordiv({target}, {val});")
+                self.emit(
+                    self.syntax_line(
+                        "augassign_floordiv",
+                        "{target} = py_floordiv({target}, {value});",
+                        {"target": target, "value": val},
+                    )
+                )
             else:
-                self.emit(f"{target} {op} {val};")
+                self.emit(
+                    self.syntax_line(
+                        "augassign_apply",
+                        "{target} {op} {value};",
+                        {"target": target, "op": op, "value": val},
+                    )
+                )
             return
-        self.emit(f"{target} {op} {val};")
+        self.emit(
+            self.syntax_line(
+                "augassign_apply",
+                "{target} {op} {value};",
+                {"target": target, "op": op, "value": val},
+            )
+        )
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
