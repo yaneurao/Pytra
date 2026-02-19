@@ -3793,6 +3793,45 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
     return out
 
 
+def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """モジュール間共有用の最小型スキーマ（関数/クラス）を構築する。"""
+    out: dict[str, dict[str, Any]] = {}
+    for mod_path, east in module_east_map.items():
+        body_obj: object = east.get("body")
+        body: list[dict[str, Any]] = []
+        if isinstance(body_obj, list):
+            i = 0
+            while i < len(body_obj):
+                item = body_obj[i]
+                if isinstance(item, dict):
+                    body.append(item)
+                i += 1
+        fn_schema: dict[str, dict[str, Any]] = {}
+        cls_schema: dict[str, dict[str, Any]] = {}
+        i = 0
+        while i < len(body):
+            st = body[i]
+            kind_obj: object = st.get("kind")
+            kind = kind_obj if isinstance(kind_obj, str) else ""
+            if kind == "FunctionDef":
+                name_obj: object = st.get("name")
+                if isinstance(name_obj, str) and name_obj != "":
+                    arg_types_obj: object = st.get("arg_types")
+                    arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
+                    ret_obj: object = st.get("return_type")
+                    ret_type = ret_obj if isinstance(ret_obj, str) else "None"
+                    fn_schema[name_obj] = {"arg_types": arg_types, "return_type": ret_type}
+            elif kind == "ClassDef":
+                name_obj = st.get("name")
+                if isinstance(name_obj, str) and name_obj != "":
+                    fields_obj: object = st.get("field_types")
+                    fields = fields_obj if isinstance(fields_obj, dict) else {}
+                    cls_schema[name_obj] = {"field_types": fields}
+            i += 1
+        out[mod_path] = {"functions": fn_schema, "classes": cls_schema}
+    return out
+
+
 def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:
     """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する。"""
     if module_name.startswith("pytra.") or module_name == "pytra":
