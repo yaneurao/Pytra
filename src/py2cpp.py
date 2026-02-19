@@ -10,10 +10,29 @@ from __future__ import annotations
 from pylib.typing import Any
 
 from pylib.east_parts.code_emitter import CodeEmitter
-from pylib.east_parts.east_io import UserFacingError, load_east_from_path
 from common.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
+from pylib.east import convert_path, convert_source_to_east_with_backend
+from pylib import json
 from pylib.pathlib import Path
 from pylib import sys
+
+
+class UserFacingError(Exception):
+    category: str
+    summary: str
+    details: list[str]
+
+    def __init__(self, category: str, summary: str, details: list[str]) -> None:
+        super().__init__(summary)
+        self.category = category
+        self.summary = summary
+        self.details = details
+
+    def __str__(self) -> str:
+        lines: list[str] = [f"[{self.category}] {self.summary}"]
+        for line in self.details:
+            lines.append(line)
+        return "\n".join(lines)
 
 CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 
@@ -344,7 +363,8 @@ class CppEmitter(CodeEmitter):
         """from-import で束縛された識別子を返す（無ければ空 dict）。"""
         if name in self.import_symbols:
             return self.import_symbols[name]
-        return {}
+        out: dict[str, str] = {}
+        return out
 
     def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
         """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
@@ -533,7 +553,9 @@ class CppEmitter(CodeEmitter):
         nd = self.any_to_dict_or_empty(node)
         if len(nd) == 0 or nd.get("kind") != "Constant":
             return ""
-        v = self.any_to_str(self.any_dict_get(nd, "value", ""))
+        v = ""
+        if "value" in nd:
+            v = self.any_to_str(nd["value"])
         if v == "":
             return ""
         if len(v) == 1:
@@ -555,15 +577,15 @@ class CppEmitter(CodeEmitter):
             return ""
         return ""
 
-    def _str_index_char_access(self, node: Any) -> str:
+    def _str_index_char_access(self, node: dict[str, Any]) -> str:
         """str 添字アクセスを `at()` ベースの char 比較式へ変換する。"""
         nd = self.any_to_dict_or_empty(node)
         if len(nd) == 0 or nd.get("kind") != "Subscript":
             return ""
-        value_node = self.any_dict_get(nd, "value", {})
+        value_node = self.any_to_dict_or_empty(nd.get("value"))
         if self.get_expr_type(value_node) != "str":
             return ""
-        sl = self.any_dict_get(nd, "slice", {})
+        sl = self.any_to_dict_or_empty(nd.get("slice"))
         sl_node = self.any_to_dict_or_empty(sl)
         if len(sl_node) > 0 and sl_node.get("kind") == "Slice":
             return ""
@@ -578,9 +600,9 @@ class CppEmitter(CodeEmitter):
 
     def _try_optimize_char_compare(
         self,
-        left_node: Any,
+        left_node: dict[str, Any],
         op: str,
-        right_node: Any,
+        right_node: dict[str, Any],
     ) -> str | None:
         """1文字比較を `'x'` / `.at(i)` 形へ最適化できるか判定する。"""
         if op not in {"Eq", "NotEq"}:
@@ -602,7 +624,7 @@ class CppEmitter(CodeEmitter):
             return f"{cpp_char_lit(l_ch)} {cop} {self.render_expr(right_node)}"
         return None
 
-    def _byte_from_str_expr(self, node: Any) -> str:
+    def _byte_from_str_expr(self, node: dict[str, Any]) -> str:
         """str 系式を uint8 初期化向けの char 式へ変換する。"""
         ch = self._one_char_str_const(node)
         if ch != "":
@@ -876,7 +898,7 @@ class CppEmitter(CodeEmitter):
             return
         kind = self.any_to_str(stmt.get("kind"))
         hook_kind = self.hook_on_emit_stmt_kind(kind, stmt)
-        if self.any_to_bool(hook_kind):
+        if isinstance(hook_kind, bool) and hook_kind:
             return
         self.emit_leading_comments(stmt)
         if kind == "Expr":
@@ -1368,20 +1390,23 @@ class CppEmitter(CodeEmitter):
                 arg_names.append(raw_n)
         for idx, n in enumerate(arg_names):
             t = self.any_to_str(arg_types.get(n))
-            if in_class and idx == 0 and n == "self":
-                continue
+            skip_self = in_class and idx == 0 and n == "self"
             ct = self._cpp_type_text(t)
             usage = self.any_to_str(arg_usage.get(n))
             if usage == "":
                 usage = "readonly"
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
-            if by_ref and usage == "mutable":
+            if skip_self:
+                pass
+            elif by_ref and usage == "mutable":
                 params.append(f"{ct}& {n}")
+                fn_scope.add(n)
             elif by_ref:
                 params.append(f"const {ct}& {n}")
+                fn_scope.add(n)
             else:
                 params.append(f"{ct} {n}")
-            fn_scope.add(n)
+                fn_scope.add(n)
         if in_class and name == "__init__" and self.current_class_name is not None:
             if self.current_class_base_name == "CodeEmitter":
                 self.emit(f"{self.current_class_name}({', '.join(params)}) : CodeEmitter(east_doc, dict<str, object>{{}}, dict<str, object>{{}}) {{")
@@ -1977,11 +2002,12 @@ class CppEmitter(CodeEmitter):
         self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
-        owner_map = self.module_attr_call_map.get(owner_mod)
-        if isinstance(owner_map, dict):
-            mapped = owner_map.get(attr)
-            if isinstance(mapped, str) and mapped != "":
-                return f"{mapped}({', '.join(args)})"
+        if owner_mod in self.module_attr_call_map:
+            owner_map = self.module_attr_call_map[owner_mod]
+            if attr in owner_map:
+                mapped = owner_map[attr]
+                if mapped != "":
+                    return f"{mapped}({', '.join(args)})"
         if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
             return f"png_helper::write_rgb_png({', '.join(args)})"
         if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
@@ -2244,12 +2270,12 @@ class CppEmitter(CodeEmitter):
             return "/* none */"
         kind = self.any_to_str(expr_d.get("kind"))
         hook_expr = self.hook_on_render_expr_kind(kind, expr_d)
-        hook_expr_txt = self.any_to_str(hook_expr)
+        hook_expr_txt = hook_expr if isinstance(hook_expr, str) else ""
         if hook_expr_txt != "":
             return hook_expr_txt
         if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
             hook_complex = self.hook_on_render_expr_complex(expr_d)
-            hook_complex_txt = self.any_to_str(hook_complex)
+            hook_complex_txt = hook_complex if isinstance(hook_complex, str) else ""
             if hook_complex_txt != "":
                 return hook_complex_txt
 
@@ -2722,7 +2748,68 @@ class CppEmitter(CodeEmitter):
 
 def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
-    return load_east_from_path(input_path, parser_backend=parser_backend)
+    if input_path.suffix == ".json":
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            if payload.get("ok") is True and isinstance(payload.get("east"), dict):
+                return payload.get("east")
+            if payload.get("kind") == "Module":
+                return payload
+        raise UserFacingError(
+            category="input_invalid",
+            summary="EAST JSON の形式が不正です。",
+            details=["期待形式: {'ok': true, 'east': {...}} または {'kind': 'Module', ...}"],
+        )
+    try:
+        source_text = input_path.read_text(encoding="utf-8")
+        if parser_backend == "self_hosted":
+            east = convert_path(input_path)
+        else:
+            east = convert_source_to_east_with_backend(source_text, str(input_path), parser_backend=parser_backend)
+    except SyntaxError as ex:
+        msg = str(ex)
+        raise UserFacingError(
+            category="user_syntax_error",
+            summary="Python の文法エラーです。",
+            details=[msg],
+        ) from ex
+    except Exception as ex:
+        if isinstance(ex, UserFacingError):
+            if ex.category == "not_implemented":
+                first = ""
+                if len(ex.details) > 0 and isinstance(ex.details[0], str):
+                    first = ex.details[0]
+                if first == "":
+                    raise UserFacingError(
+                        category="user_syntax_error",
+                        summary="Python の文法エラーです。",
+                        details=[],
+                ) from ex
+            raise ex
+        msg = str(ex)
+        category = "not_implemented"
+        summary = "この構文はまだ実装されていません。"
+        if msg == "":
+            category = "user_syntax_error"
+            summary = "Python の文法エラーです。"
+        if ("cannot parse" in msg) or ("unexpected token" in msg) or ("invalid syntax" in msg):
+            category = "user_syntax_error"
+            summary = "Python の文法エラーです。"
+        if "forbidden by language constraints" in msg:
+            category = "unsupported_by_design"
+            summary = "この構文は言語仕様上サポート対象外です。"
+        raise UserFacingError(
+            category=category,
+            summary=summary,
+            details=[msg],
+        ) from ex
+    if isinstance(east, dict):
+        return east
+    raise UserFacingError(
+        category="input_invalid",
+        summary="EAST の生成に失敗しました。",
+        details=["EAST ルートが dict ではありません。"],
+    )
 
 
 def transpile_to_cpp(
@@ -2764,6 +2851,7 @@ def print_user_error(err: Any) -> None:
         return
     ue: UserFacingError = err
     cat = ue.category
+    details = ue.details
     if cat == "user_syntax_error":
         print("error: 入力 Python の文法エラーです。", file=sys.stderr)
         print("[user_syntax_error] 構文を修正してください。", file=sys.stderr)
@@ -2779,9 +2867,16 @@ def print_user_error(err: Any) -> None:
     else:
         print("error: 変換に失敗しました。", file=sys.stderr)
         print(f"[{cat}] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
-    for line in ue.details:
+    for line in details:
         if line != "":
             print(line, file=sys.stderr)
+
+
+def _dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str:
+    """`dict[str, str]` から文字列値を安全に取得する。"""
+    if key in src:
+        return src[key]
+    return default_value
 
 
 def main(argv: list[str]) -> int:
@@ -2789,24 +2884,26 @@ def main(argv: list[str]) -> int:
     argv_list: list[str] = []
     for a in argv:
         argv_list.append(a)
-    parsed, parse_err = parse_py2cpp_argv(argv_list)
+    parsed_pair: tuple[dict[str, str], str] = parse_py2cpp_argv(argv_list)
+    parsed: dict[str, str] = parsed_pair[0]
+    parse_err: str = parsed_pair[1]
     if parse_err != "":
         print(f"error: {parse_err}", file=sys.stderr)
         return 1
-    input_txt = parsed.get("input", "")
-    output_txt = parsed.get("output", "")
-    negative_index_mode_opt = parsed.get("negative_index_mode_opt", "")
-    bounds_check_mode_opt = parsed.get("bounds_check_mode_opt", "")
-    floor_div_mode_opt = parsed.get("floor_div_mode_opt", "")
-    mod_mode_opt = parsed.get("mod_mode_opt", "")
-    int_width_opt = parsed.get("int_width_opt", "")
-    str_index_mode_opt = parsed.get("str_index_mode_opt", "")
-    str_slice_mode_opt = parsed.get("str_slice_mode_opt", "")
-    preset = parsed.get("preset", "")
-    parser_backend = parsed.get("parser_backend", "self_hosted")
-    no_main = parsed.get("no_main", "0") == "1"
-    dump_deps = parsed.get("dump_deps", "0") == "1"
-    dump_options = parsed.get("dump_options", "0") == "1"
+    input_txt = _dict_str_get(parsed, "input", "")
+    output_txt = _dict_str_get(parsed, "output", "")
+    negative_index_mode_opt = _dict_str_get(parsed, "negative_index_mode_opt", "")
+    bounds_check_mode_opt = _dict_str_get(parsed, "bounds_check_mode_opt", "")
+    floor_div_mode_opt = _dict_str_get(parsed, "floor_div_mode_opt", "")
+    mod_mode_opt = _dict_str_get(parsed, "mod_mode_opt", "")
+    int_width_opt = _dict_str_get(parsed, "int_width_opt", "")
+    str_index_mode_opt = _dict_str_get(parsed, "str_index_mode_opt", "")
+    str_slice_mode_opt = _dict_str_get(parsed, "str_slice_mode_opt", "")
+    preset = _dict_str_get(parsed, "preset", "")
+    parser_backend = _dict_str_get(parsed, "parser_backend", "self_hosted")
+    no_main = _dict_str_get(parsed, "no_main", "0") == "1"
+    dump_deps = _dict_str_get(parsed, "dump_deps", "0") == "1"
+    dump_options = _dict_str_get(parsed, "dump_options", "0") == "1"
     negative_index_mode = ""
     bounds_check_mode = ""
     floor_div_mode = ""
@@ -2864,7 +2961,7 @@ def main(argv: list[str]) -> int:
         print(f"error: input file not found: {input_path}", file=sys.stderr)
         return 1
     if dump_options:
-        options_text = dump_codegen_options_text(
+        options_text: str = dump_codegen_options_text(
             preset,
             negative_index_mode,
             bounds_check_mode,
@@ -2905,10 +3002,10 @@ def main(argv: list[str]) -> int:
             str_slice_mode,
             not no_main,
         )
-    except UserFacingError as ex:
-        print_user_error(ex)
-        return 1
-    except Exception:
+    except Exception as ex:
+        if isinstance(ex, UserFacingError):
+            print_user_error(ex)
+            return 1
         print("error: 変換中に内部エラーが発生しました。", file=sys.stderr)
         print("[internal_error] バグの可能性があります。再現コードを添えて報告してください。", file=sys.stderr)
         return 1
@@ -2923,4 +3020,4 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(list(sys.argv[1:])))
+    sys.exit(main(list(sys.argv[1:])))

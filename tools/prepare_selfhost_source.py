@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC_PY2CPP = ROOT / "src" / "py2cpp.py"
 SRC_BASE = ROOT / "src" / "pylib" / "east_parts" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
+SRC_TRANSPILE_CLI = ROOT / "src" / "common" / "transpile_cli.py"
 
 
 def _extract_code_emitter_class(text: str) -> str:
@@ -49,29 +50,70 @@ def _strip_triple_quoted_docstrings(text: str) -> str:
 
 
 def _remove_import_line(text: str) -> str:
-    target = "from pylib.east_parts.code_emitter import CodeEmitter\n"
-    if target not in text:
-        raise RuntimeError("py2cpp.py import for CodeEmitter not found")
-    return text.replace(target, "", 1)
+    targets = [
+        "from pylib.east_parts.code_emitter import CodeEmitter\n",
+        "from common.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n",
+    ]
+    out = text
+    for target in targets:
+        if target in out:
+            out = out.replace(target, "", 1)
+    return out
 
 
-def _insert_code_emitter(text: str, base_class_text: str) -> str:
+def _extract_top_level_block(text: str, name: str, kind: str) -> str:
+    lines = text.splitlines(keepends=True)
+    marker = f"{kind} {name}"
+    start = -1
+    for i, line in enumerate(lines):
+        if line.startswith(marker):
+            start = i
+            if i > 0 and lines[i - 1].startswith("@"):
+                start = i - 1
+            break
+    if start < 0:
+        raise RuntimeError(f"block not found: {kind} {name}")
+    end = len(lines)
+    i = start + 1
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("def ") or line.startswith("class ") or line.startswith("@"):
+            end = i
+            break
+        i += 1
+    block = "".join(lines[start:end]).rstrip() + "\n"
+    return block
+
+
+def _extract_support_blocks() -> str:
+    cli_text = SRC_TRANSPILE_CLI.read_text(encoding="utf-8")
+    blocks = [
+        _extract_top_level_block(cli_text, "resolve_codegen_options", "def"),
+        _extract_top_level_block(cli_text, "validate_codegen_options", "def"),
+        _extract_top_level_block(cli_text, "dump_codegen_options_text", "def"),
+        _extract_top_level_block(cli_text, "parse_py2cpp_argv", "def"),
+    ]
+    return "\n".join(blocks) + "\n"
+
+
+def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -> str:
     marker = "CPP_HEADER = "
     i = text.find(marker)
     if i < 0:
         raise RuntimeError("CPP_HEADER marker not found in py2cpp.py")
     prefix = text[:i]
     suffix = text[i:]
-    return prefix.rstrip() + "\n\n" + base_class_text + "\n" + suffix
+    return prefix.rstrip() + "\n\n" + support_blocks + "\n" + base_class_text + "\n" + suffix
 
 
 def main() -> int:
     py2cpp_text = SRC_PY2CPP.read_text(encoding="utf-8")
     base_text = SRC_BASE.read_text(encoding="utf-8")
+    support_blocks = _extract_support_blocks()
 
     base_class = _strip_triple_quoted_docstrings(_extract_code_emitter_class(base_text))
     py2cpp_text = _remove_import_line(py2cpp_text)
-    out = _insert_code_emitter(py2cpp_text, base_class)
+    out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)
     DST_SELFHOST.write_text(out, encoding="utf-8")

@@ -157,17 +157,16 @@ def dump_codegen_options_text(
 ) -> str:
     """解決済みオプションを人間向けテキストへ整形する。"""
     p = preset if preset != "" else "(none)"
-    return (
-        "options:\n"
-        f"  preset: {p}\n"
-        f"  negative-index-mode: {negative_index_mode}\n"
-        f"  bounds-check-mode: {bounds_check_mode}\n"
-        f"  floor-div-mode: {floor_div_mode}\n"
-        f"  mod-mode: {mod_mode}\n"
-        f"  int-width: {int_width}\n"
-        f"  str-index-mode: {str_index_mode}\n"
-        f"  str-slice-mode: {str_slice_mode}\n"
-    )
+    out = "options:\n"
+    out += f"  preset: {p}\n"
+    out += f"  negative-index-mode: {negative_index_mode}\n"
+    out += f"  bounds-check-mode: {bounds_check_mode}\n"
+    out += f"  floor-div-mode: {floor_div_mode}\n"
+    out += f"  mod-mode: {mod_mode}\n"
+    out += f"  int-width: {int_width}\n"
+    out += f"  str-index-mode: {str_index_mode}\n"
+    out += f"  str-slice-mode: {str_slice_mode}\n"
+    return out
 
 
 def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
