@@ -1933,19 +1933,6 @@ class CppEmitter(CodeEmitter):
             op = op_txt
         return f"{left} {op} {right}"
 
-    def _render_save_gif_call(self, args: list[str], kw: dict[str, str], frames_default: str) -> str:
-        """`save_gif(...)` 呼び出しの引数整形を共通化する。"""
-        path = args[0] if len(args) >= 1 else '""'
-        w = args[1] if len(args) >= 2 else "0"
-        h = args[2] if len(args) >= 3 else "0"
-        frames = args[3] if len(args) >= 4 else frames_default
-        palette = args[4] if len(args) >= 5 else "grayscale_palette()"
-        if palette in {"nullptr", "std::nullopt"}:
-            palette = "grayscale_palette()"
-        delay_cs = kw.get("delay_cs", args[5] if len(args) >= 6 else "4")
-        loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
-        return f"save_gif({path}, {w}, {h}, {frames}, {palette}, {delay_cs}, {loop})"
-
     def _render_builtin_call(
         self,
         expr: dict[str, Any],
@@ -2168,7 +2155,7 @@ class CppEmitter(CodeEmitter):
                     raw = resolved_name
             if raw != "" and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
-                if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "save_gif", "Path"}:
+                if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "Path"}:
                     return f"{mapped_runtime}({', '.join(args)})"
             if raw == "range":
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
@@ -2250,8 +2237,6 @@ class CppEmitter(CodeEmitter):
                 return f"std::runtime_error({args[0]})"
             if raw == "Path":
                 return f"Path({', '.join(args)})"
-            if raw == "save_gif":
-                return self._render_save_gif_call(args, kw, "list<bytearray>{}")
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw)
