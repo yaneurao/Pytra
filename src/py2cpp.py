@@ -551,10 +551,6 @@ class CppEmitter(CodeEmitter):
                     for raw_n in arg_order:
                         if isinstance(raw_n, str) and raw_n in arg_types:
                             ordered.append(self.any_to_str(arg_types.get(raw_n)))
-                    if len(ordered) == 0:
-                        for raw_n in arg_types.keys():
-                            if isinstance(raw_n, str):
-                                ordered.append(self.any_to_str(arg_types.get(raw_n)))
                     self.function_arg_types[fn_name] = ordered
 
         self.ref_classes = {name for name, hint in self.class_storage_hints.items() if hint == "ref"}
@@ -595,7 +591,11 @@ class CppEmitter(CodeEmitter):
                     if isinstance(s, dict):
                         main_guard.append(s)
             if has_pytra_main:
-                self.emit("__pytra_main();")
+                pytra_args = self.function_arg_types.get("__pytra_main", [])
+                if isinstance(pytra_args, list) and len(pytra_args) >= 1:
+                    self.emit("__pytra_main(py_sys_argv());")
+                else:
+                    self.emit("__pytra_main();")
             else:
                 self.emit_stmt_list(main_guard)
             self.scope_stack.pop()
@@ -612,11 +612,9 @@ class CppEmitter(CodeEmitter):
             i += 1
         return out
 
-    def apply_cast(self, rendered_expr: str, to_type: Any) -> str:
+    def apply_cast(self, rendered_expr: str, to_type: str) -> str:
         """EAST の cast 指示に従い C++ 側の明示キャストを適用する。"""
-        to_type_text = ""
-        if isinstance(to_type, str):
-            to_type_text = to_type
+        to_type_text = to_type if isinstance(to_type, str) else ""
         if to_type_text == "byte":
             to_type_text = "uint8"
         if to_type_text == "":
@@ -630,6 +628,14 @@ class CppEmitter(CodeEmitter):
         if to_type_text == "str":
             return f"py_to_string({rendered_expr})"
         return f"static_cast<{to_type_text}>({rendered_expr})"
+
+    def _can_runtime_cast_target(self, target_t: str) -> bool:
+        """実行時キャストを安全に適用できる型か判定する。"""
+        if target_t == "" or target_t in {"unknown", "Any", "object"}:
+            return False
+        if "|" in target_t or "Any" in target_t or "None" in target_t:
+            return False
+        return True
 
     def render_to_string(self, expr: Any) -> str:
         """式を文字列化する（型に応じて最適な変換関数を選ぶ）。"""
@@ -817,7 +823,7 @@ class CppEmitter(CodeEmitter):
             return f"({rendered})"
         return rendered
 
-    def render_minmax(self, fn: str, args: list[str], out_type: str, arg_nodes: list[Any] | None = None) -> str:
+    def render_minmax(self, fn: str, args: list[str], out_type: str, arg_nodes: Any = None) -> str:
         """min/max 呼び出しを型情報付きで C++ 式へ変換する。"""
         if len(args) == 0:
             return "/* invalid min/max */"
@@ -826,7 +832,9 @@ class CppEmitter(CodeEmitter):
         t = "auto"
         if out_type != "":
             t = self._cpp_type_text(out_type)
-        arg_nodes_safe: list[Any] = arg_nodes if isinstance(arg_nodes, list) else []
+        arg_nodes_safe: list[Any] = []
+        if isinstance(arg_nodes, list):
+            arg_nodes_safe = arg_nodes
         if t in {"auto", "object", "std::any"}:
             saw_float = False
             saw_int = False
@@ -962,11 +970,11 @@ class CppEmitter(CodeEmitter):
                 rendered_val = f"{t}{{}}"
             elif vkind == "ListComp" and isinstance(rendered_val, str):
                 if "[&]() -> list<object> {" in rendered_val:
-                    rendered_val = rendered_val.replace("[&]() -> list<object> {", f"[&]() -> {t} {{", 1)
-                    rendered_val = rendered_val.replace("list<object> __out;", f"{t} __out;", 1)
+                    rendered_val = rendered_val.replace("[&]() -> list<object> {", f"[&]() -> {t} {{")
+                    rendered_val = rendered_val.replace("list<object> __out;", f"{t} __out;")
         val_t0 = self.get_expr_type(stmt.get("value"))
         val_t = val_t0 if isinstance(val_t0, str) else ""
-        if not self.is_any_like_type(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
+        if self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
             rendered_val = self.apply_cast(rendered_val, ann_t_str)
         if self.is_any_like_type(ann_t_str) and val_is_dict:
             if val_kind == "Constant" and val.get("value") is None:
@@ -1230,7 +1238,7 @@ class CppEmitter(CodeEmitter):
         ret_t = self.current_function_return_type
         expr_t0 = self.get_expr_type(stmt.get("value"))
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
-        if ret_t != "" and ret_t not in {"void", "unknown", "Any", "object"} and self.is_any_like_type(expr_t):
+        if self._can_runtime_cast_target(ret_t) and self.is_any_like_type(expr_t):
             rv = self.apply_cast(rv, ret_t)
         self.emit(f"return {rv};")
 
@@ -1361,8 +1369,8 @@ class CppEmitter(CodeEmitter):
             self.declared_var_types[texpr] = picked
             rval = self.render_expr(stmt.get("value"))
             if dtype.startswith("list<") and "[&]() -> list<object> {" in rval:
-                rval = rval.replace("[&]() -> list<object> {", f"[&]() -> {dtype} {{", 1)
-                rval = rval.replace("list<object> __out;", f"{dtype} __out;", 1)
+                rval = rval.replace("[&]() -> list<object> {", f"[&]() -> {dtype} {{")
+                rval = rval.replace("list<object> __out;", f"{dtype} __out;")
             if dtype == "uint8" and isinstance(value, dict):
                 byte_val = self._byte_from_str_expr(stmt.get("value"))
                 if byte_val != "":
@@ -1371,7 +1379,7 @@ class CppEmitter(CodeEmitter):
                 rval = self.render_boolop(stmt.get("value"), True)
             rval_t0 = self.get_expr_type(stmt.get("value"))
             rval_t = rval_t0 if isinstance(rval_t0, str) else ""
-            if not self.is_any_like_type(picked) and self.is_any_like_type(rval_t):
+            if self._can_runtime_cast_target(picked) and self.is_any_like_type(rval_t):
                 rval = self.apply_cast(rval, picked)
             if self.is_any_like_type(picked):
                 if isinstance(value, dict) and value.get("kind") == "Constant" and value.get("value") is None:
@@ -1390,7 +1398,7 @@ class CppEmitter(CodeEmitter):
             rval = self.render_boolop(stmt.get("value"), True)
         rval_t0 = self.get_expr_type(stmt.get("value"))
         rval_t = rval_t0 if isinstance(rval_t0, str) else ""
-        if not self.is_any_like_type(t_target) and self.is_any_like_type(rval_t):
+        if self._can_runtime_cast_target(t_target) and self.is_any_like_type(rval_t):
             rval = self.apply_cast(rval, t_target)
         if self.is_any_like_type(t_target):
             if isinstance(value, dict) and value.get("kind") == "Constant" and value.get("value") is None:
@@ -1591,27 +1599,6 @@ class CppEmitter(CodeEmitter):
         for raw_n in raw_order:
             if isinstance(raw_n, str) and raw_n != "" and raw_n in arg_types:
                 arg_names.append(raw_n)
-        if len(arg_names) == 0:
-            remaining: list[str] = []
-            for raw_n in arg_types.keys():
-                if isinstance(raw_n, str):
-                    remaining.append(raw_n)
-            while len(remaining) > 0:
-                best_name = ""
-                best_idx = 1000000000
-                for n in remaining:
-                    idx = self.any_dict_get_int(arg_index, n, 1000000000)
-                    if idx < best_idx or (idx == best_idx and (best_name == "" or n < best_name)):
-                        best_idx = idx
-                        best_name = n
-                if best_name == "":
-                    break
-                arg_names.append(best_name)
-                next_remaining: list[str] = []
-                for n in remaining:
-                    if n != best_name:
-                        next_remaining.append(n)
-                remaining = next_remaining
         for idx, n in enumerate(arg_names):
             t = self.any_to_str(arg_types.get(n))
             skip_self = in_class and idx == 0 and n == "self"
@@ -1856,10 +1843,11 @@ class CppEmitter(CodeEmitter):
         cast_rules = self._dict_stmt_list(expr.get("casts"))
         for c in cast_rules:
             on = self.any_to_str(c.get("on"))
+            to_txt = self.any_to_str(c.get("to"))
             if on == "left":
-                left = self.apply_cast(left, c.get("to"))
+                left = self.apply_cast(left, to_txt)
             elif on == "right":
-                right = self.apply_cast(right, c.get("to"))
+                right = self.apply_cast(right, to_txt)
         op_name = expr.get("op")
         op_name_str = str(op_name)
         left = self._wrap_for_binop_operand(left, left_expr, op_name_str, False)
@@ -2051,11 +2039,7 @@ class CppEmitter(CodeEmitter):
             if owner_t.startswith("list[") and owner_t.endswith("]"):
                 inner_t = owner_t[5:-1].strip()
                 if inner_t != "" and not self.is_any_like_type(inner_t):
-                    src_node: Any = arg_nodes[0] if len(arg_nodes) >= 1 else {}
-                    src_t0 = self.get_expr_type(src_node)
-                    src_t = src_t0 if isinstance(src_t0, str) else ""
-                    if src_t != inner_t:
-                        a0 = f"{self._cpp_type_text(inner_t)}({a0})"
+                    a0 = f"{self._cpp_type_text(inner_t)}({a0})"
             return f"{owner}.append({a0})"
         if runtime_call == "list.extend":
             owner = self.render_expr(fn.get("value"))
@@ -2318,7 +2302,7 @@ class CppEmitter(CodeEmitter):
 
     def _coerce_call_arg(self, arg_txt: str, arg_node: Any, target_t: str) -> str:
         """関数シグネチャに合わせて引数を必要最小限キャストする。"""
-        if target_t == "" or target_t == "unknown":
+        if not self._can_runtime_cast_target(target_t):
             return arg_txt
         at0 = self.get_expr_type(arg_node)
         at = at0 if isinstance(at0, str) else ""
@@ -2547,7 +2531,7 @@ class CppEmitter(CodeEmitter):
         casts = self._dict_stmt_list(expr.get("casts"))
         for c in casts:
             on = self.any_to_str(c.get("on"))
-            to_t: object = c.get("to")
+            to_t = self.any_to_str(c.get("to"))
             if on == "body":
                 body = self.apply_cast(body, to_t)
             elif on == "orelse":
