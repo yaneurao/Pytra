@@ -2766,11 +2766,6 @@ class CppEmitter(CodeEmitter):
                 return f"{base}::{attr}"
             base_module_name = self._resolve_imported_module_name(base)
             base_module_name = self._normalize_runtime_module_name(base_module_name)
-            base_module_key = self._last_dotted_name(base_module_name)
-            if base_module_key in {"png", "png_helper"} and str(attr) == "write_rgb_png":
-                return "pytra::png::write_rgb_png"
-            if base_module_key in {"gif", "gif_helper"} and str(attr) == "save_gif":
-                return "pytra::gif::save_gif"
             if base_module_name == "math":
                 if attr == "pi":
                     return "py_math::pi"

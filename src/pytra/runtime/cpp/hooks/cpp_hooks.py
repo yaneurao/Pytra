@@ -83,8 +83,29 @@ def on_render_call(
     return None
 
 
+def on_render_expr_kind(
+    emitter: Any,
+    kind: str,
+    expr_node: dict[str, Any],
+) -> str | None:
+    """式 kind 単位の出力フック。"""
+    if kind != "Attribute":
+        return None
+    base_expr = emitter.render_expr(expr_node.get("value"))
+    base_mod = emitter._resolve_imported_module_name(base_expr)
+    base_mod = emitter._normalize_runtime_module_name(base_mod)
+    base_key = emitter._last_dotted_name(base_mod)
+    attr = emitter.any_dict_get_str(expr_node, "attr", "")
+    if base_key in {"png", "png_helper"} and attr == "write_rgb_png":
+        return "pytra::png::write_rgb_png"
+    if base_key in {"gif", "gif_helper"} and attr == "save_gif":
+        return "pytra::gif::save_gif"
+    return None
+
+
 def build_cpp_hooks() -> dict[str, Any]:
     """C++ エミッタへ注入する hooks dict を構築する。"""
     hooks: dict[str, Any] = {}
     hooks["on_render_call"] = on_render_call
+    hooks["on_render_expr_kind"] = on_render_expr_kind
     return hooks

@@ -56,7 +56,7 @@
    - [x] ベースライン行数を計測し、`docs/todo.md` に記録する（毎回更新）。: 2026-02-19 時点 `src/py2cpp.py` は `4305` 行（`wc -l`）
    - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: `BuiltinCall` / Name/Attribute は helper 分離済み
      - [ ] `dict.get/list.* / set.*` 呼び出し解決を runtime-call map + hook へ移して `py2cpp.py` 直書きを削減する。
-     - [ ] `Path`/`png`/`gif` の module method 解決を `cpp_hooks.py` 側へ寄せる。
+     - [ ] `Path`/`png`/`gif` の module method 解決を `cpp_hooks.py` 側へ寄せる。: `png/gif` は `Call` + `Attribute` とも hooks 移管済み。`Path` を継続。
    - [x] `render_expr` の `Call` で残っている module method / object method / fallback 呼び出しを 3 helper に分離する。
    - [x] `render_expr` の `Call` で runtime-call 解決前後の前処理（kw 展開・owner 抽出）を helper 化する。
    - [x] `render_expr` の `Call` 分岐を 200 行未満に縮退する（目標値を明示）。: 現在は helper 呼び出し中心で 20 行前後
