@@ -2064,6 +2064,20 @@ class CppEmitter(CodeEmitter):
         loop = kw.get("loop", args[6] if len(args) >= 7 else "0")
         return f"pytra::gif::save_gif({path}, int({w}), int({h}), py_u8_matrix({frames}), py_u8_vector({palette}), int({delay_cs}), int({loop}))"
 
+    def _render_special_runtime_call(
+        self,
+        call_name: str,
+        args: list[str],
+        kw: dict[str, str],
+        frames_default: str,
+    ) -> str | None:
+        """画像系などの特別呼び出しを共通処理する。"""
+        if call_name == "write_rgb_png":
+            return self._render_write_rgb_png_call(args)
+        if call_name == "save_gif":
+            return self._render_save_gif_call(args, kw, frames_default)
+        return None
+
     def _render_builtin_call(
         self,
         expr: dict[str, Any],
@@ -2114,10 +2128,9 @@ class CppEmitter(CodeEmitter):
             return f"py_int_to_bytes({owner}, {length}, {byteorder})"
         if runtime_call == "grayscale_palette":
             return "py_gif_grayscale_palette_list()"
-        if runtime_call == "write_rgb_png":
-            return self._render_write_rgb_png_call(args)
-        if runtime_call == "save_gif":
-            return self._render_save_gif_call(args, kw, "list<list<uint8>>{}")
+        special_builtin = self._render_special_runtime_call(runtime_call, args, kw, "list<list<uint8>>{}")
+        if isinstance(special_builtin, str):
+            return special_builtin
         if runtime_call == "py_isdigit" and len(args) == 1:
             return f"py_isdigit({args[0]})"
         if runtime_call == "py_isalpha" and len(args) == 1:
@@ -2289,10 +2302,11 @@ class CppEmitter(CodeEmitter):
                     raw = resolved_name
             if raw != "" and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
-                if isinstance(mapped_runtime, str) and mapped_runtime == "write_rgb_png":
-                    return self._render_write_rgb_png_call(args)
-                if isinstance(mapped_runtime, str) and mapped_runtime == "save_gif":
-                    return self._render_save_gif_call(args, kw, "list<bytearray>{}")
+                special_imported = self._render_special_runtime_call(
+                    self.any_to_str(mapped_runtime), args, kw, "list<bytearray>{}"
+                )
+                if isinstance(special_imported, str):
+                    return special_imported
                 if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "Path"}:
                     return f"{mapped_runtime}({', '.join(args)})"
             if raw == "range":
@@ -2377,10 +2391,9 @@ class CppEmitter(CodeEmitter):
                 return "py_gif_grayscale_palette_list()"
             if raw == "Path":
                 return f"Path({', '.join(args)})"
-            if raw == "write_rgb_png":
-                return self._render_write_rgb_png_call(args)
-            if raw == "save_gif":
-                return self._render_save_gif_call(args, kw, "list<bytearray>{}")
+            special_name = self._render_special_runtime_call(raw, args, kw, "list<bytearray>{}")
+            if isinstance(special_name, str):
+                return special_name
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw)
@@ -2405,10 +2418,9 @@ class CppEmitter(CodeEmitter):
                 owner_map = self.module_attr_call_map[owner_key]
                 if attr in owner_map:
                     mapped = owner_map[attr]
-                    if mapped == "write_rgb_png":
-                        return self._render_write_rgb_png_call(args)
-                    if mapped == "save_gif":
-                        return self._render_save_gif_call(args, kw, "list<bytearray>{}")
+                    special_mapped = self._render_special_runtime_call(mapped, args, kw, "list<bytearray>{}")
+                    if isinstance(special_mapped, str):
+                        return special_mapped
                     if mapped != "":
                         return f"{mapped}({', '.join(args)})"
         if owner_mod in {"typing", "pytra.std.typing"} and attr == "TypeVar":
