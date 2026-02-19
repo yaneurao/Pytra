@@ -52,14 +52,14 @@
   - デコレータ: `dataclass`
 - `pylib.std.enum`
   - クラス: `Enum`, `IntEnum`, `IntFlag`
-- `pylib.tra.png`
+- `pytra.runtime.png`
   - 関数: `write_rgb_png`
-- `pylib.tra.gif`
+- `pytra.runtime.gif`
   - 関数: `grayscale_palette`, `save_gif`
-- `pylib.tra.east`
+- `pytra.compiler.east`
   - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
   - 関数: `convert_source_to_east`, `convert_source_to_east_self_hosted`, `convert_source_to_east_with_backend`, `convert_path`, `render_east_human_cpp`, `main`
-- `pylib.tra.east_parts.east_io`
+- `pytra.compiler.east_parts.east_io`
   - 関数: `extract_module_leading_trivia`, `load_east_from_path`
 
 ### enum サポート（現状）

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Python source -> EAST converter facade (pylib)."""
+"""Python source -> EAST converter facade (compiler)."""
 
 from __future__ import annotations
 
@@ -12,11 +12,11 @@ if _bootstrap_src not in _bootstrap_sys.path:
 from pylib.std.pathlib import Path
 from pylib.std import sys
 
-src_root = Path(__file__).resolve().parents[1]
+src_root = Path(__file__).resolve().parents[2]
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 
-from pylib.tra.east_parts import (  # noqa: F401
+from pytra.compiler.east_parts import (  # noqa: F401
     BorrowKind,
     EastBuildError,
     FLOAT_TYPES,

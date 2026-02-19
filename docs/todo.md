@@ -10,12 +10,12 @@
 
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
-     - 依存本体: `src/pylib/tra/east_parts/core.py::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
+     - 依存本体: `src/pytra/compiler/east_parts/core.py::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
      - 主要 shim 依存: `pytra.std.argparse`, `pytra.std.json`, `pytra.std.re`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.dataclasses`, `pytra.std.typing`
-     - selfhost 非対応要素: `src/pylib/tra/east.py` facade の bootstrap path 操作（`import sys as _bootstrap_sys` と `sys.path.insert`）
+     - selfhost 非対応要素: `src/pytra/compiler/east.py` facade の bootstrap path 操作（`import sys as _bootstrap_sys` と `sys.path.insert`）
    - [x] `tools/prepare_selfhost_source.py` に取り込み可能な関数群を「安全（selfhost通過済み）」と「要分割」に分ける。
      - 安全（通過済み）: `CodeEmitter` 本体、`transpile_cli` の関数群（`parse_py2cpp_argv` など）、main差し替え
-     - 要分割: `src/pylib/tra/east.py` facade 経由の import 連鎖、`east_parts.core` 全量取り込み（サイズ過大かつ selfhost 変換コスト高）
+     - 要分割: `src/pytra/compiler/east.py` facade 経由の import 連鎖、`east_parts.core` 全量取り込み（サイズ過大かつ selfhost 変換コスト高）
    - [ ] `sample/py/01_mandelbrot.py` を selfhost 経路で `-o` 生成できるところまで回復する。
      - [x] 暫定ブリッジ `tools/selfhost_transpile.py` を追加し、`.py -> EAST JSON -> selfhost` で `test/fixtures/core/add.py` の生成を確認。
      - [x] 同ブリッジ経路で `sample/py/01_mandelbrot.py` の `-o` 生成を確認。
@@ -24,8 +24,8 @@
          - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。
          - [ ] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。
          - [ ] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。
-       - [ ] `src/pylib/tra/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
-         - [ ] bootstrap 専用コードを `src/pylib/tra/east.py` facade 側へ隔離し、`east_parts.core` から除去する。
+       - [ ] `src/pytra/compiler/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
+         - [ ] bootstrap 専用コードを `src/pytra/compiler/east.py` facade 側へ隔離し、`east_parts.core` から除去する。
          - [ ] `east_parts.core` の import を `pytra.std.*`（または同等 shim）に固定する。
          - [ ] `tools/prepare_selfhost_source.py` の取り込み対象へ `east_parts.core` を段階追加する。
        - [ ] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
@@ -171,7 +171,7 @@
   2. `selfhost/py2cpp.py` と `selfhost/runtime/cpp/*` を `src` 最新へ同期済み。
   3. 依然として主因は `object` / `optional<dict>` / `std::any` の境界変換（代入・引数渡し・`py_dict_get_default` 呼び出し）に集中している。
 - 更新（2026-02-18 selfhost 追加）:
-  1. `tools/prepare_selfhost_source.py` を追加し、`src/pylib/tra/east_parts/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
+  1. `tools/prepare_selfhost_source.py` を追加し、`src/pytra/compiler/east_parts/code_emitter.py` を `selfhost/py2cpp.py` へ自動インライン展開できるようにした。
   2. `python3 src/py2cpp.py selfhost/py2cpp.py -o selfhost/py2cpp.cpp` は再び通過するようになった。
   3. 現在の主因は `Any/object` 境界由来の C++ 型不整合（2026-02-18 再計測で `total_errors=82`）。
   4. 先頭エラー群は `emit_stmt`/`emit_stmt_list` の文リスト型、`render_boolop` 周辺の `Any` 取り回し、`self` 記号解決の C++ 生成不整合が中心。

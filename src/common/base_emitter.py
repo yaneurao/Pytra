@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from pylib.tra.east_parts.code_emitter import CodeEmitter
+from pytra.compiler.east_parts.code_emitter import CodeEmitter
 
 # Backward compatibility for incremental migration.
 BaseEmitter = CodeEmitter
-
