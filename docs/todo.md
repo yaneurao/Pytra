@@ -8,15 +8,6 @@
    - [ ] `pytra.*` とユーザーモジュール探索パスの解決・衝突規則を先に固める。
    - [ ] 完了後にモジュール単位 EAST と複数ファイル出力（`.h/.cpp` 分割）へ進む。
 
-1.1 [ ] `runtime/cpp/pytra/std/*` を自動生成へ移行する（`math` を含む）。
-   - [x] 生成スクリプトを `pytra.runtime` だけでなく `pytra.std` モジュールにも対応させる（まず `math` から対応）。
-   - [x] `src/runtime/cpp/pytra/std/math.h/.cpp` を自動生成物へ置換し、手書き実装を廃止する。
-   - [x] `pathlib/time/dataclasses/sys` も同様に生成対象へ揃える。
-   - [x] `python3 tools/generate_cpp_pylib_runtime.py --check`（または後継コマンド）で `std/runtime` 両方の stale チェックが通るようにする。
-   - [x] 生成後に `tools/check_py2cpp_transpile.py` と `tools/verify_sample_outputs.py` で回帰確認する。
-     - [x] `tools/check_py2cpp_transpile.py` は pass（`checked=103 ok=103 fail=0 skipped=5`）。
-     - [x] `tools/verify_sample_outputs.py` は pass（`OK=16 NG=0`）。
-
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
      - 依存本体: `src/pytra/compiler/east_parts/core.py::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
