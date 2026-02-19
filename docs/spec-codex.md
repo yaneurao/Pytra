@@ -56,3 +56,4 @@
 - ランタイム変更時は `test/unit/test_py2cpp_features.py` の実行回帰に加え、selfhost の再生成・再コンパイル結果も確認する。
 - selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pylib/` の shim のみを使う（例: `pylib.json`, `pylib.pathlib`, `pylib.sys`, `pylib.typing`, `pylib.os`, `pylib.glob`, `pylib.argparse`, `pylib.re`）。
 - selfhost 向けに確実性を優先する箇所では、`continue` に依存した分岐や `x in {"a", "b"}` のようなリテラル集合 membership を避け、`if/elif` と明示比較（`x == "a" or x == "b"`）を優先する。
+- 日次の最小回帰は `python3 tools/run_local_ci.py` を実行し、`check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff をまとめて通す。
