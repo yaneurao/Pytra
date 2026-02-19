@@ -30,7 +30,13 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
 
 
 def runtime_cpp_sources() -> list[str]:
-    files = sorted(SELFHOST_RUNTIME.rglob("*.cpp"))
+    files_all = sorted(SELFHOST_RUNTIME.rglob("*.cpp"))
+    files: list[Path] = []
+    for p in files_all:
+        norm = str(p).replace("\\", "/")
+        if "/pylib/generated/" in norm:
+            continue
+        files.append(p)
     return [str(p) for p in files]
 
 

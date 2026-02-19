@@ -158,6 +158,7 @@
 - `src/runtime/cpp/core/sys.h`, `src/runtime/cpp/core/sys.cpp`
 - `src/runtime/cpp/pylib/png.h`, `src/runtime/cpp/pylib/png.cpp`
 - `src/runtime/cpp/pylib/gif.h`, `src/runtime/cpp/pylib/gif.cpp`
+- `src/runtime/cpp/pylib/generated/png_impl.cpp`, `src/runtime/cpp/pylib/generated/gif_impl.cpp`（`src/pylib/tra/*.py` から自動生成）
 - `src/runtime/cpp/py_runtime.h`
 
 `src/runtime/cpp/py_runtime.h` のコンテナ方針:
@@ -186,7 +187,7 @@
 - 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
 - 言語別に手書きするのは、性能・I/O 都合で必要な最小範囲に限定します。
 - 言語間一致は「生成ファイルのバイト列完全一致」を主判定とします。
-- `src/pylib/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
+- `src/pylib/tra/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
 - 受け入れ基準:
   - 置換作業中は、同一入力に対して `src/pylib/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
   - C++ では `tools/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
@@ -198,8 +199,12 @@
 
 ### 3.5 画像ランタイム最適化ポリシー（py2cpp）
 
-- 対象: `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp`。
-- 前提: `src/pylib/png.py` / `src/pylib/gif.py` を正本とし、意味差を導入しない。
+- 対象: `src/runtime/cpp/pylib/generated/png_impl.cpp` / `src/runtime/cpp/pylib/generated/gif_impl.cpp`。
+- 前提: `src/pylib/tra/png.py` / `src/pylib/tra/gif.py` を正本とし、意味差を導入しない。
+- 生成手順:
+  - `python3 tools/generate_cpp_pylib_runtime.py`
+  - 生成物は `src/runtime/cpp/pylib/generated/*.cpp` に出力され、`src/runtime/cpp/pylib/*.cpp` の薄いラッパから参照される。
+  - `src/runtime/cpp/pylib/*.cpp` の本体ロジックを手書きで追加してはならない。
 - 許容する最適化:
   - ループ展開・`reserve` 追加・一時バッファ削減など、出力バイト列を変えない最適化。
   - 例外メッセージ変更を伴わない境界チェックの軽量化。

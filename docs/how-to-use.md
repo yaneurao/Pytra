@@ -47,7 +47,8 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - Python 側で import できるのは `src/pylib/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pylib.tra import png`, `from pylib.tra.gif import save_gif`, `from pylib.tra.assertions import py_assert_eq`）。
 - `pylib` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
-- `src/runtime/cpp/pylib/*.cpp` は手書き固定ではなく、`src/pylib/*.py` をトランスパイラで変換して生成・更新する前提です。
+- `src/runtime/cpp/pylib/*.cpp` は手書き固定ではなく、`src/pylib/tra/*.py` をトランスパイラで変換して生成・更新する前提です。
+- 生成更新は `python3 tools/generate_cpp_pylib_runtime.py` で行います（CI では `--check` で検証します）。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います。
 - 添字境界チェックは `--bounds-check-mode {always,debug,off}` で切替できます（既定は `off`）。
@@ -76,7 +77,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 
-次のコマンドで、`src/pylib/png.py` / `src/pylib/gif.py` の出力と `src/runtime/cpp/pylib/png.cpp` / `src/runtime/cpp/pylib/gif.cpp` の出力が一致するかを確認できます。
+次のコマンドで、`src/pylib/tra/png.py` / `src/pylib/tra/gif.py` の出力と `src/runtime/cpp/pylib/generated/png_impl.cpp` / `src/runtime/cpp/pylib/generated/gif_impl.cpp` 経由の C++ 出力が一致するかを確認できます。
 
 ```bash
 python3 tools/verify_image_runtime_parity.py
