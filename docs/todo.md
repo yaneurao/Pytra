@@ -30,7 +30,7 @@
      - [x] 制約版 API の最小仕様を `docs/spec-language-profile.md` へ追記する。
    - [ ] `cpp_hooks.py` は最初に `png/gif` のみ移管し、`py2cpp.py` の既存分岐を1件ずつ削る。
      - [x] `png.write_rgb_png` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。: `CodeEmitter.hook_on_render_call` に実配線を追加し、`_render_special_runtime_call` 系分岐を削除済み。
-     - [x] `gif.save_gif` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。: `runtime_call`/`Name`/`Attribute` の解決は `CppHooks.on_render_call` 側へ統一済み。
+     - [x] `gif.save_gif` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。: `runtime_call`/`Name`/`Attribute` の解決は `build_cpp_hooks()` 注入の `on_render_call` 側へ統一済み。
      - [x] 補足: `cpp_hooks.py` 側の `on_render_call` 追加は着手済み。`pytra.*` 名へ正規化する処理を追加済み。selfhost を壊さない hook 呼び出し経路（高階関数を使わない方式）を先に確定する。
      - [ ] 置換ごとに `tools/check_py2cpp_transpile.py` を実行し、差分を確認する。
    - [ ] 各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` の両方を必須ゲートにする。
@@ -47,7 +47,7 @@
     - [x] `emit_stmt(Return/Expr/Assign/Try)` を `hook_on_emit_stmt_kind(kind, stmt)` 前提で分割する。
     - [x] `emit_stmt` 本体を「dispatch + fallback」のみ（50行以下目標）へ縮退する。
    - [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
-   - [x] C++ 向け hooks 実装を `src/runtime/cpp/hooks/cpp_hooks.py` として分離する。
+   - [x] C++ 向け hooks 実装を `src/pytra/runtime/cpp/hooks/cpp_hooks.py` として分離する。
 
 ## py2cpp 縮退（行数削減）
 

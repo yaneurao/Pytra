@@ -45,8 +45,8 @@
     "syntax.json"
   ],
   "hooks": {
-    "module": "runtime.cpp.hooks.cpp_hooks",
-    "class": "CppHooks"
+    "module": "pytra.runtime.cpp.hooks.cpp_hooks",
+    "factory": "build_cpp_hooks"
   }
 }
 ```
@@ -152,13 +152,13 @@ profile で表現しにくい分岐だけを hooks へ寄せます。
 ```json
 {
   "hooks": {
-    "module": "runtime.cpp.hooks.cpp_hooks",
-    "class": "CppHooks"
+    "module": "pytra.runtime.cpp.hooks.cpp_hooks",
+    "factory": "build_cpp_hooks"
   }
 }
 ```
 
-`module` は言語固有側（例: `src/runtime/cpp/hooks/`）に配置し、`src/common/` へは置きません。
+`module` は言語固有側（例: `src/pytra/runtime/cpp/hooks/`）に配置し、`src/common/` へは置きません。
 
 ## 5. Hooks 仕様
 
@@ -180,7 +180,7 @@ selfhost 制約:
 ### 5.1 実装位置（C++）
 
 ```text
-src/runtime/cpp/hooks/cpp_hooks.py
+src/pytra/runtime/cpp/hooks/cpp_hooks.py
 ```
 
 ## 6. 妥当性ルール

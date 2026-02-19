@@ -1,1 +1,0 @@
-"""C++ runtime support package."""
