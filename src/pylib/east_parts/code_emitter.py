@@ -152,31 +152,24 @@ class CodeEmitter:
         """汎用ブロック終端行を出力する。"""
         self.emit(self.syntax_text("block_close", "}"))
 
-    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: Any = None) -> None:
+    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
         """現在 indent 位置でスコープを1段積み、文リストを出力する。"""
         self.indent += 1
-        next_scope: set[str] = set()
-        if isinstance(scope_names, set):
-            next_scope = scope_names
-        self.scope_stack.append(next_scope)
+        self.scope_stack.append(scope_names)
         self.emit_stmt_list(stmts)
         self.scope_stack.pop()
         self.indent -= 1
 
-    def emit_with_scope(self, scope_names: Any, body_fn: Any) -> None:
+    def emit_with_scope(self, scope_names: set[str], body_fn: list[Any]) -> None:
         """現在 indent 位置でスコープを1段積み、文リスト本体を出力する。"""
         self.indent += 1
-        next_scope: set[str] = set()
-        if isinstance(scope_names, set):
-            next_scope = scope_names
-        self.scope_stack.append(next_scope)
-        if isinstance(body_fn, list):
-            for stmt in self.any_to_list(body_fn):
-                self.emit_stmt(stmt)  # type: ignore[arg-type]
+        self.scope_stack.append(scope_names)
+        for stmt in body_fn:
+            self.emit_stmt(stmt)  # type: ignore[arg-type]
         self.scope_stack.pop()
         self.indent -= 1
 
-    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: Any = None) -> None:
+    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
         """`open_line` を出力し、スコープ付きで文リストを出して block を閉じる。"""
         self.emit(open_line)
         self.emit_scoped_stmt_list(stmts, scope_names)
@@ -459,7 +452,10 @@ class CodeEmitter:
             esc = False
             quote = ""
             wrapped = True
-            for i, ch in enumerate(s):
+            i = 0
+            n = len(s)
+            while i < n:
+                ch = s[i : i + 1]
                 if in_str:
                     if esc:
                         esc = False
@@ -467,10 +463,12 @@ class CodeEmitter:
                         esc = True
                     elif ch == quote:
                         in_str = False
+                    i += 1
                     continue
                 if ch == "'" or ch == '"':
                     in_str = True
                     quote = ch
+                    i += 1
                     continue
                 if ch == "(":
                     depth += 1
@@ -479,6 +477,7 @@ class CodeEmitter:
                     if depth == 0 and i != len(s) - 1:
                         wrapped = False
                         break
+                i += 1
             if wrapped and depth == 0:
                 s = s[1:-1]
                 while len(s) > 0 and s[0] in ws:

@@ -11,7 +11,6 @@ from pylib.typing import Any
 
 from pylib.east_parts.code_emitter import CodeEmitter
 from pylib.east_parts.east_io import UserFacingError, load_east_from_path
-from common.language_profile import load_language_profile
 from common.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
 from pylib.pathlib import Path
 from pylib import sys
@@ -78,12 +77,30 @@ DEFAULT_AUG_BIN = {
 
 def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
-    out["math"] = {"sqrt": "py_math::sqrt"}
+    out["math"] = {
+        "sqrt": "py_math::sqrt",
+        "sin": "py_math::sin",
+        "cos": "py_math::cos",
+        "tan": "py_math::tan",
+        "exp": "py_math::exp",
+        "log": "py_math::log",
+        "log10": "py_math::log10",
+        "fabs": "py_math::fabs",
+        "floor": "py_math::floor",
+        "ceil": "py_math::ceil",
+        "pow": "py_math::pow",
+    }
     return out
 
 
 _DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = _default_cpp_module_attr_call_map()
-_CPP_PROFILE_CACHE_BOX: dict[str, Any] = {"loaded": False, "value": {}}
+CPP_RESERVED_WORDS: list[str] = [
+    "alignas", "alignof", "asm", "auto", "break", "case", "catch", "char", "class", "const", "constexpr",
+    "continue", "default", "delete", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if",
+    "inline", "int", "long", "namespace", "new", "operator", "private", "protected", "public", "register",
+    "return", "short", "signed", "sizeof", "static", "struct", "switch", "template", "this", "throw", "try",
+    "typedef", "typename", "union", "unsigned", "virtual", "void", "volatile", "while",
+]
 
 def _deep_copy_str_map(v: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
@@ -134,8 +151,26 @@ def load_cpp_aug_bin() -> dict[str, str]:
 
 def load_cpp_type_map() -> dict[str, str]:
     """EAST 型 -> C++ 型の基本マップを profile から取得する。"""
-    out: dict[str, str] = {}
-    return out
+    return {
+        "int8": "int8",
+        "uint8": "uint8",
+        "int16": "int16",
+        "uint16": "uint16",
+        "int32": "int32",
+        "uint32": "uint32",
+        "int64": "int64",
+        "uint64": "uint64",
+        "float32": "float32",
+        "float64": "float64",
+        "bool": "bool",
+        "str": "str",
+        "bytes": "bytes",
+        "bytearray": "bytearray",
+        "Path": "Path",
+        "Exception": "std::runtime_error",
+        "Any": "object",
+        "object": "object",
+    }
 
 
 def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -147,12 +182,15 @@ def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
 def load_cpp_identifier_rules() -> tuple[set[str], str]:
     """識別子リネーム規則を profile から取得する。"""
     reserved: set[str] = set()
+    for w in CPP_RESERVED_WORDS:
+        reserved.add(w)
     rename_prefix = "py_"
     return reserved, rename_prefix
 
 
 def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:
     """C++ の `module.attr(...)` -> ランタイム呼び出しマップを返す。"""
+    _ = profile
     return _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
 
 
@@ -260,8 +298,22 @@ class CppEmitter(CodeEmitter):
         self.reserved_words, self.rename_prefix = load_cpp_identifier_rules()
         self.import_modules: dict[str, str] = {}
         self.import_symbols: dict[str, dict[str, str]] = {}
-        # NOTE:
-        # selfhost 安定化を優先し、meta 由来の import 解決は段階的に戻す。
+        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        raw_mod = self.any_to_dict_or_empty(meta.get("import_modules"))
+        for k, v in raw_mod.items():
+            if isinstance(k, str) and isinstance(v, str) and k != "" and v != "":
+                self.import_modules[k] = v
+        raw_sym = self.any_to_dict_or_empty(meta.get("import_symbols"))
+        for k, v in raw_sym.items():
+            if not isinstance(k, str) or k == "" or not isinstance(v, dict):
+                continue
+            mod_txt = self.any_to_str(v.get("module"))
+            name_txt = self.any_to_str(v.get("name"))
+            if mod_txt != "" and name_txt != "":
+                ent: dict[str, str] = {}
+                ent["module"] = mod_txt
+                ent["name"] = name_txt
+                self.import_symbols[k] = ent
 
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
@@ -273,14 +325,58 @@ class CppEmitter(CodeEmitter):
 
     def _resolve_imported_module_name(self, name: str) -> str:
         """import で束縛された識別子名を実モジュール名へ解決する。"""
+        if name in self.import_modules:
+            mod_name = self.import_modules[name]
+            if mod_name != "":
+                return mod_name
+        if name in self.import_symbols:
+            sym = self.import_symbols[name]
+            parent = ""
+            child = ""
+            if "module" in sym:
+                parent = sym["module"]
+            if "name" in sym:
+                child = sym["name"]
+            if parent == "pylib" and child != "":
+                return f"pylib.{child}"
         return name
 
-    def _resolve_imported_symbol(self, name: str) -> dict[str, str] | None:
-        """from-import で束縛された識別子を返す（無ければ None）。"""
-        return None
+    def _last_dotted_name(self, name: str) -> str:
+        """`a.b.c` の末尾要素 `c` を返す。"""
+        last = name
+        i = 0
+        n = len(name)
+        while i < n:
+            ch = name[i : i + 1]
+            if ch == ".":
+                last = name[i + 1 :]
+            i += 1
+        return last
+
+    def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
+        """from-import で束縛された識別子を返す（無ければ空 dict）。"""
+        if name in self.import_symbols:
+            return self.import_symbols[name]
+        return {}
 
     def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
         """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
+        if module_name in self.module_attr_call_map:
+            owner_map = self.module_attr_call_map[module_name]
+            if symbol_name in owner_map:
+                mapped = owner_map[symbol_name]
+                if mapped != "":
+                    return mapped
+        if module_name == "pylib.png" and symbol_name == "write_rgb_png":
+            return "png_helper::write_rgb_png"
+        if module_name == "pylib.gif" and symbol_name == "save_gif":
+            return "save_gif"
+        if module_name == "time" and symbol_name == "perf_counter":
+            return "perf_counter"
+        if module_name == "pathlib" and symbol_name == "Path":
+            return "Path"
+        if module_name == "pylib.assertions" and symbol_name.startswith("py_assert_"):
+            return symbol_name
         return None
 
     def transpile(self) -> str:
@@ -394,19 +490,31 @@ class CppEmitter(CodeEmitter):
         expr_dict = self.any_to_dict_or_empty(expr)
         if len(expr_dict) == 0:
             return "false"
-        values = self.any_to_list(expr_dict.get("values"))
-        if len(values) == 0:
-            return "false"
-        value_texts: list[str] = []
-        for v in values:
+        raw_values = self.any_to_list(expr_dict.get("values"))
+        value_nodes: list[dict[str, Any]] = []
+        for v in raw_values:
             if isinstance(v, dict):
-                value_texts.append(self.render_expr(v))
-        if len(value_texts) == 0:
+                value_nodes.append(v)
+        if len(value_nodes) == 0:
             return "false"
+        value_texts = [self.render_expr(v) for v in value_nodes]
+        if not force_value_select and self.get_expr_type(expr_dict) == "bool":
+            op = "&&" if self.any_dict_get_str(expr_dict, "op", "") == "And" else "||"
+            wrapped_values = [f"({txt})" for txt in value_texts]
+            return f" {op} ".join(wrapped_values)
+
         op_name = self.any_dict_get_str(expr_dict, "op", "")
-        op = "&&" if op_name == "And" else "||"
-        wrapped_values = [f"({txt})" for txt in value_texts]
-        return f" {op} ".join(wrapped_values)
+        out = value_texts[-1]
+        i = len(value_nodes) - 2
+        while i >= 0:
+            cond = self.render_cond(value_nodes[i])
+            cur = value_texts[i]
+            if op_name == "And":
+                out = f"({cond} ? {out} : {cur})"
+            else:
+                out = f"({cond} ? {cur} : {out})"
+            i -= 1
+        return out
 
     def _dict_stmt_list(self, raw: Any) -> list[dict[str, Any]]:
         """動的値から `list[dict]` を安全に取り出す。"""
@@ -433,26 +541,86 @@ class CppEmitter(CodeEmitter):
             return 7
         return 0
 
-    def _one_char_str_const(self, node: Any) -> str | None:
+    def _one_char_str_const(self, node: Any) -> str:
         """1文字文字列定数ならその実文字を返す。"""
-        return None
+        nd = self.any_to_dict_or_empty(node)
+        if len(nd) == 0 or nd.get("kind") != "Constant":
+            return ""
+        v = nd.get("value")
+        if not isinstance(v, str):
+            return ""
+        if len(v) == 1:
+            return v
+        if len(v) == 2 and v[0:1] == "\\":
+            c = v[1:2]
+            if c == "n":
+                return "\n"
+            if c == "r":
+                return "\r"
+            if c == "t":
+                return "\t"
+            if c == "\\":
+                return "\\"
+            if c == "'":
+                return "'"
+            if c == "0":
+                return "\0"
+            return ""
+        return ""
 
-    def _str_index_char_access(self, node: Any) -> str | None:
+    def _str_index_char_access(self, node: Any) -> str:
         """str 添字アクセスを `at()` ベースの char 比較式へ変換する。"""
-        return None
+        nd = self.any_to_dict_or_empty(node)
+        if len(nd) == 0 or nd.get("kind") != "Subscript":
+            return ""
+        value_node = nd.get("value")
+        if self.get_expr_type(value_node) != "str":
+            return ""
+        sl = nd.get("slice")
+        sl_node = self.any_to_dict_or_empty(sl)
+        if len(sl_node) > 0 and sl_node.get("kind") == "Slice":
+            return ""
+        if self.negative_index_mode != "off" and self._is_negative_const_index(sl):
+            return ""
+        base = self.render_expr(value_node)
+        base_node = self.any_to_dict_or_empty(value_node)
+        if len(base_node) > 0 and base_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            base = f"({base})"
+        idx = self.render_expr(sl)
+        return f"{base}.at({idx})"
 
     def _try_optimize_char_compare(
         self,
-        left_node: dict[str, Any] | None,
+        left_node: Any,
         op: str,
-        right_node: dict[str, Any] | None,
+        right_node: Any,
     ) -> str | None:
         """1文字比較を `'x'` / `.at(i)` 形へ最適化できるか判定する。"""
+        if op not in {"Eq", "NotEq"}:
+            return None
+        cop = "==" if op == "Eq" else "!="
+        l_access = self._str_index_char_access(left_node)
+        r_ch = self._one_char_str_const(right_node)
+        if l_access != "" and r_ch != "":
+            return f"{l_access} {cop} {cpp_char_lit(r_ch)}"
+        r_access = self._str_index_char_access(right_node)
+        l_ch = self._one_char_str_const(left_node)
+        if r_access != "" and l_ch != "":
+            return f"{cpp_char_lit(l_ch)} {cop} {r_access}"
+        l_ty = self.get_expr_type(left_node)
+        if l_ty == "uint8" and r_ch != "":
+            return f"{self.render_expr(left_node)} {cop} {cpp_char_lit(r_ch)}"
+        r_ty = self.get_expr_type(right_node)
+        if r_ty == "uint8" and l_ch != "":
+            return f"{cpp_char_lit(l_ch)} {cop} {self.render_expr(right_node)}"
         return None
 
-    def _byte_from_str_expr(self, node: dict[str, Any] | None) -> str | None:
+    def _byte_from_str_expr(self, node: Any) -> str:
         """str 系式を uint8 初期化向けの char 式へ変換する。"""
-        return None
+        ch = self._one_char_str_const(node)
+        if ch != "":
+            return cpp_char_lit(ch)
+        return self._str_index_char_access(node)
 
     def _wrap_for_binop_operand(
         self,
@@ -551,7 +719,7 @@ class CppEmitter(CodeEmitter):
         ann_t_str: str = str(ann_t_raw) if isinstance(ann_t_raw, str) else ""
         if ann_t_str in {"byte", "uint8"} and val_is_dict:
             byte_val = self._byte_from_str_expr(val)
-            if byte_val is not None:
+            if byte_val != "":
                 rendered_val = str(byte_val)
         if val_is_dict and val.get("kind") == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
             inner_ann = self.split_generic(ann_t_str[5:-1])
@@ -781,7 +949,37 @@ class CppEmitter(CodeEmitter):
         self.emit(f"/* unsupported stmt kind: {kind} */")
 
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
-        _ = stmt
+        kind = self.any_to_str(stmt.get("kind"))
+        if kind == "Import":
+            for ent in self._dict_stmt_list(stmt.get("names")):
+                name = self.any_to_str(ent.get("name"))
+                asname = self.any_to_str(ent.get("asname"))
+                if name == "":
+                    continue
+                if asname != "":
+                    self.import_modules[asname] = name
+                else:
+                    base = self._last_dotted_name(name)
+                    if base != "":
+                        self.import_modules[base] = name
+            return
+        if kind == "ImportFrom":
+            mod = self.any_to_str(stmt.get("module"))
+            for ent in self._dict_stmt_list(stmt.get("names")):
+                name = self.any_to_str(ent.get("name"))
+                asname = self.any_to_str(ent.get("asname"))
+                if mod == "" or name == "":
+                    continue
+                if asname != "":
+                    sym_ent: dict[str, str] = {}
+                    sym_ent["module"] = mod
+                    sym_ent["name"] = name
+                    self.import_symbols[asname] = sym_ent
+                else:
+                    sym_ent: dict[str, str] = {}
+                    sym_ent["module"] = mod
+                    sym_ent["name"] = name
+                    self.import_symbols[name] = sym_ent
         return
 
     def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
@@ -950,7 +1148,7 @@ class CppEmitter(CodeEmitter):
             rval = self.render_expr(stmt.get("value"))
             if dtype == "uint8" and isinstance(value, dict):
                 byte_val = self._byte_from_str_expr(value)
-                if byte_val is not None:
+                if byte_val != "":
                     rval = str(byte_val)
             if isinstance(value, dict) and value.get("kind") == "BoolOp" and picked != "bool":
                 rval = self.render_boolop(stmt.get("value"), True)
@@ -965,7 +1163,7 @@ class CppEmitter(CodeEmitter):
         t_target = self.get_expr_type(stmt.get("target"))
         if t_target == "uint8" and isinstance(value, dict):
             byte_val = self._byte_from_str_expr(value)
-            if byte_val is not None:
+            if byte_val != "":
                 rval = str(byte_val)
         if isinstance(value, dict) and value.get("kind") == "BoolOp" and t_target != "bool":
             rval = self.render_boolop(stmt.get("value"), True)
@@ -1678,11 +1876,10 @@ class CppEmitter(CodeEmitter):
             imported_module = ""
             if raw != "" and not self.is_declared(raw):
                 resolved = self._resolve_imported_symbol(raw)
-                if isinstance(resolved, dict):
-                    imported_module = str(resolved.get("module", ""))
-                    resolved_name = str(resolved.get("name", ""))
-                    if resolved_name != "":
-                        raw = resolved_name
+                imported_module = resolved["module"] if "module" in resolved else ""
+                resolved_name = resolved["name"] if "name" in resolved else ""
+                if resolved_name != "":
+                    raw = resolved_name
             if raw != "" and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
                 if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "save_gif", "Path"}:
@@ -1789,8 +1986,11 @@ class CppEmitter(CodeEmitter):
         self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
-        if owner_mod == "math" and attr == "sqrt":
-            return f"py_math::sqrt({', '.join(args)})"
+        owner_map = self.module_attr_call_map.get(owner_mod)
+        if isinstance(owner_map, dict):
+            mapped = owner_map.get(attr)
+            if isinstance(mapped, str) and mapped != "":
+                return f"{mapped}({', '.join(args)})"
         if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
             return f"png_helper::write_rgb_png({', '.join(args)})"
         if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
@@ -2099,7 +2299,7 @@ class CppEmitter(CodeEmitter):
             owner_t = self.get_expr_type(expr_d.get("value"))
             if self.is_forbidden_object_receiver_type(owner_t):
                 raise RuntimeError(
-                    "object receiver attribute access is forbidden by language constraints"
+                    "object receiver method call / attribute access is forbidden by language constraints"
                 )
             base = self.render_expr(expr_d.get("value"))
             base_node = expr_d.get("value")
