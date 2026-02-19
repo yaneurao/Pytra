@@ -1,5 +1,45 @@
 # TODO（未完了のみ）
 
+## オプション体系（spec-options 反映）
+
+優先度ルール:
+- P0: 既存仕様との整合を壊さない最小実装
+- P1: 互換性/性能トレードオフを CLI で選択可能にする
+- P2: 運用性（preset / profile / docs）を整備する
+
+1. [ ] P0 `%` オプション (`--mod-mode`) を実装する。
+   - [ ] CLI に `--mod-mode {native,python}` を追加する（既定 `native`）。
+   - [ ] C++ 生成で `%` を `native` / `python` で切替える。
+   - [ ] `python` モード時のランタイム補助（剰余意味論）を実装する。
+   - [ ] `test/fixtures` に `%` の正負組み合わせケースを追加する。
+2. [ ] P0 `//` オプション (`--floor-div-mode`) を実装する。
+   - [ ] CLI に `--floor-div-mode {native,python}` を追加する（既定 `native`）。
+   - [ ] C++ 生成で整数除算の意味論をモード別に切替える。
+   - [ ] `test/fixtures` に負数入力を含む `//` ケースを追加する。
+3. [ ] P1 境界チェックオプション (`--bounds-check-mode`) を実装する。
+   - [ ] `--bounds-check-mode {always,debug,off}` を追加する。
+   - [ ] list/str 添字アクセスの生成をモード別に切替える。
+   - [ ] `debug` 判定条件（ビルドフラグ/CLI）を仕様化し実装する。
+4. [ ] P1 文字列オプションを実装する。
+   - [ ] `--str-index-mode {byte,codepoint,native}` を追加する。
+   - [ ] `--str-slice-mode {byte,codepoint}` を追加する。
+   - [ ] 返り値型と境界外挙動を `spec-dev.md` / `spec-east.md` に明記する。
+5. [ ] P1 `--int-width {32,64,bigint}` を段階導入する。
+   - [ ] `32/64` 切替を先行実装する。
+   - [ ] `bigint` は `planned` としてフェーズ分離し、前提ランタイムを明記する。
+6. [ ] P2 プリセット (`--preset`) を実装する。
+   - [ ] `native`（既定）/`balanced`/`python` を実装する。
+   - [ ] 競合時ルール（`--preset` と個別オプション同時指定）を明文化する。
+   - [ ] `--preset` 展開結果を `--dump-options`（新設）で可視化する。
+7. [ ] P2 オプション処理を共通 CLI へ集約する。
+   - [ ] `src/common/transpile_cli.py` に共通パーサ実装を追加する。
+   - [ ] `py2cpp.py` 側の重複引数処理を削減する。
+   - [ ] エラー種別（未実装/非対応/文法エラー）ごとのメッセージ整理を行う。
+8. [ ] P2 ドキュメント同期と移行案内を整備する。
+   - [ ] `spec-options.md` / `spec-dev.md` / `spec-east.md` の整合チェック手順を追加する。
+   - [ ] `how-to-use.md` に利用例（native/balanced/python）を追加する。
+   - [ ] 破壊的変更候補（`int-width`, `str-index-mode`）の移行期間方針を更新する。
+
 ## `enum` サポート（予定）
 
 1. [x] `pylib.enum` を追加し、`Enum` / `IntEnum` / `IntFlag` の最小互換 API を実装する。
