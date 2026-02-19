@@ -106,6 +106,11 @@
   - `64`（既定）: `int64`/`uint64` を出力します。
   - `32`: `int32`/`uint32` を出力します。
   - `bigint`: 未実装（指定時エラー）。
+- 文字列添字/スライスは次で制御します。
+  - `--str-index-mode {byte,native}`（`codepoint` は未実装）
+  - `--str-slice-mode {byte}`（`codepoint` は未実装）
+  - 現行の `byte` / `native` では、`str[i]` の返り値型は `str`（1文字）です。
+  - 添字境界外挙動は `--bounds-check-mode` に従います（`off`/`always`/`debug`）。
 - list/str の負数添字（例: `a[-1]`）は `--negative-index-mode` で制御します。
   - デフォルトは `const_only`（定数の負数添字のみ Python 互換処理を有効化）。
   - `always`: すべての添字アクセスで Python 互換の負数添字処理を有効化。

@@ -136,6 +136,8 @@
 - `dict[K,V][k] -> V`
 - `str[i] -> str`
 - `list/str` スライスは同型
+  - EAST 自体は `Subscript`/`Slice` を保持し、`str-index-mode` / `str-slice-mode` の意味論は生成器側で適用する。
+  - 現行 C++ 生成器では `byte` / `native` を実装済み、`codepoint` は未実装。
 - `Call`:
 - 既知: `int`, `float`, `bool`, `str`, `bytes`, `bytearray`, `len`, `range`, `min`, `max`, `round`, `print`, `write_rgb_png`, `save_gif`, `grayscale_palette`, `perf_counter`, `Path`, `Exception`, `RuntimeError`
 - `float(...)`, `round(...)`, `perf_counter()`, `math.*` 主要関数は `float64`

@@ -1,5 +1,14 @@
 # TODO
 
+- [x] オプション体系（spec-options 反映）を実装完了。
+  - `--mod-mode` / `--floor-div-mode` / `--bounds-check-mode` を実装。
+  - `--int-width`（`32/64`）を実装し、`bigint` は planned（未実装エラー）として扱う。
+  - `--str-index-mode` / `--str-slice-mode` を追加し、`codepoint` は planned（未実装エラー）として扱う。
+  - `--preset {native,balanced,python}` と `--dump-options` を実装。
+  - オプション処理を `src/common/transpile_cli.py` へ集約し、`py2cpp.py` 側の重複を削減。
+  - エラー表示を `user_syntax_error` / `unsupported_by_design` / `not_implemented` などカテゴリ別に整理。
+  - `docs/spec-options.md` / `docs/spec-dev.md` / `docs/spec-east.md` / `docs/how-to-use.md` を同期更新。
+
 - [x] セルフホスティング済みトランスパイラ実行ファイル（`test/transpile/obj/pycpp_transpiler_self_new`）を使って、`test/fixtures/case05` から `test/fixtures/case100` までを `test/transpile/cpp2/` に変換し、各生成 C++ がコンパイル可能かを一括検証した。
   - 実施結果: `CASE_TOTAL=96`, `TRANSPILE_FAIL=0`, `COMPILE_OK=96`, `COMPILE_FAIL=0`
 
