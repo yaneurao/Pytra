@@ -434,16 +434,25 @@ class CppEmitter(CodeEmitter):
         self.current_function_return_type: str = ""
         self.declared_var_types: dict[str, str] = {}
 
+    def _normalize_runtime_module_name(self, module_name: str) -> str:
+        """旧 `pylib.*` 名を `pytra.*` 名へ正規化する。"""
+        if module_name.startswith("pylib.std."):
+            return "pytra.std." + module_name[10:]
+        if module_name == "pylib.std":
+            return "pytra.std"
+        if module_name.startswith("pylib.tra."):
+            return "pytra.runtime." + module_name[10:]
+        if module_name == "pylib.tra":
+            return "pytra.runtime"
+        return module_name
+
     def _module_name_to_cpp_include(self, module_name: str) -> str:
         """Python import モジュール名を C++ include へ解決する。"""
+        module_name = self._normalize_runtime_module_name(module_name)
         if module_name.startswith("pytra.std."):
             return "pytra/std/" + module_name[10:] + ".h"
         if module_name.startswith("pytra.runtime."):
             return "pytra/runtime/" + module_name[14:] + ".h"
-        if module_name.startswith("pylib.std."):
-            return "pytra/std/" + module_name[10:] + ".h"
-        if module_name.startswith("pylib.tra."):
-            return "pytra/runtime/" + module_name[10:] + ".h"
         legacy_std: dict[str, str] = {
             "math": "pytra/std/math.h",
             "time": "pytra/std/time.h",
@@ -477,11 +486,12 @@ class CppEmitter(CodeEmitter):
                         includes.append(inc)
             elif kind == "ImportFrom":
                 mod_name = self.any_to_str(stmt.get("module"))
+                mod_name = self._normalize_runtime_module_name(mod_name)
                 inc = self._module_name_to_cpp_include(mod_name)
                 if inc != "" and inc not in seen:
                     seen.add(inc)
                     includes.append(inc)
-                if mod_name in {"pytra.std", "pylib.std"}:
+                if mod_name == "pytra.std":
                     for ent in self._dict_stmt_list(stmt.get("names")):
                         sym = self.any_to_str(ent.get("name"))
                         if sym == "":
@@ -490,7 +500,7 @@ class CppEmitter(CodeEmitter):
                         if sym_inc != "" and sym_inc not in seen:
                             seen.add(sym_inc)
                             includes.append(sym_inc)
-                if mod_name in {"pytra.runtime", "pylib.tra"}:
+                if mod_name == "pytra.runtime":
                     for ent in self._dict_stmt_list(stmt.get("names")):
                         sym = self.any_to_str(ent.get("name"))
                         if sym == "":
@@ -592,6 +602,7 @@ class CppEmitter(CodeEmitter):
 
     def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
         """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
+        module_name = self._normalize_runtime_module_name(module_name)
         owner_keys: list[str] = []
         owner_keys.append(module_name)
         short = self._last_dotted_name(module_name)
@@ -608,9 +619,9 @@ class CppEmitter(CodeEmitter):
             return "perf_counter"
         if module_name == "pathlib" and symbol_name == "Path":
             return "Path"
-        if module_name in {"pylib.tra.assertions", "pytra.runtime.assertions"} and symbol_name.startswith("py_assert_"):
+        if module_name == "pytra.runtime.assertions" and symbol_name.startswith("py_assert_"):
             return symbol_name
-        if module_name in {"sys", "pylib.std.sys", "pytra.std.sys"}:
+        if module_name in {"sys", "pytra.std.sys"}:
             if symbol_name == "set_argv":
                 return "py_sys_set_argv"
             if symbol_name == "set_path":
@@ -2393,6 +2404,7 @@ class CppEmitter(CodeEmitter):
         self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
+        owner_mod = self._normalize_runtime_module_name(owner_mod)
         owner_keys: list[str] = []
         owner_keys.append(owner_mod)
         short = self._last_dotted_name(owner_mod)
@@ -2409,7 +2421,7 @@ class CppEmitter(CodeEmitter):
                         return self._render_save_gif_call(args, kw, "list<bytearray>{}")
                     if mapped != "":
                         return f"{mapped}({', '.join(args)})"
-        if owner_mod in {"typing", "pylib.std.typing"} and attr == "TypeVar":
+        if owner_mod in {"typing", "pytra.std.typing"} and attr == "TypeVar":
             return "make_object(1)"
         return None
 
@@ -2434,6 +2446,7 @@ class CppEmitter(CodeEmitter):
         if owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
             owner_expr = f"({owner_expr})"
         owner_mod = self._resolve_imported_module_name(owner_expr)
+        owner_mod = self._normalize_runtime_module_name(owner_mod)
         attr = self.any_to_str(fn.get("attr"))
         if attr == "":
             attr = str(fn.get("attr"))
@@ -2757,6 +2770,7 @@ class CppEmitter(CodeEmitter):
             if base in self.class_base or base in self.class_method_names:
                 return f"{base}::{attr}"
             base_module_name = self._resolve_imported_module_name(base)
+            base_module_name = self._normalize_runtime_module_name(base_module_name)
             base_module_key = self._last_dotted_name(base_module_name)
             if base_module_key in {"png", "png_helper"} and str(attr) == "write_rgb_png":
                 return "pytra::png::write_rgb_png"
@@ -2767,7 +2781,7 @@ class CppEmitter(CodeEmitter):
                     return "py_math::pi"
                 if attr == "e":
                     return "py_math::e"
-            if base_module_name in {"typing", "pylib.std.typing"}:
+            if base_module_name in {"typing", "pytra.std.typing"}:
                 if attr in {
                     "Any",
                     "List",
@@ -2783,7 +2797,7 @@ class CppEmitter(CodeEmitter):
                     "TypeAlias",
                 }:
                     return "make_object(1)"
-            if base_module_name in {"sys", "pylib.std.sys"}:
+            if base_module_name in {"sys", "pytra.std.sys"}:
                 if attr == "argv":
                     return "py_sys_argv()"
                 if attr == "path":

@@ -15,8 +15,8 @@
 
 3. [ ] import 解決機能の回帰テストを追加・強化する。
    - [x] `test/unit/test_py2cpp_features.py` に `pytra.std` / `pytra.runtime` import の include 生成テストを追加する。
-   - [ ] `test/fixtures/stdlib` に `import pytra.std.*` / `from pytra.std.* import ...` のケースを追加する。
-   - [ ] `test/fixtures/stdlib` に `import pytra.runtime.*` / `from pytra.runtime.* import ...` のケースを追加する。
+   - [x] `test/fixtures/stdlib` に `import pytra.std.*` / `from pytra.std.* import ...` のケースを追加する。: `pytra_std_import_math.py`
+   - [x] `test/fixtures/stdlib` に `import pytra.runtime.*` / `from pytra.runtime.* import ...` のケースを追加する。: `pytra_runtime_png.py`
    - [x] `tools/check_py2cpp_transpile.py` と `tools/verify_sample_outputs.py` をゲートに固定する。
 
 4. [ ] ドキュメントと実装の差分をゼロにする。
