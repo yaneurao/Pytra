@@ -37,8 +37,8 @@ Windows では次の読み替えを行ってください。
 ```bash
 python src/py2cpp.py test/fixtures/collections/iterable.py test/transpile/cpp/iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src test/transpile/cpp/iterable.cpp \
-  src/runtime/cpp/pylib/png.cpp src/runtime/cpp/pylib/gif.cpp src/runtime/cpp/core/math.cpp \
-  src/runtime/cpp/core/time.cpp src/runtime/cpp/core/pathlib.cpp src/runtime/cpp/core/dataclasses.cpp \
+  src/runtime/cpp/pylib/png.cpp src/runtime/cpp/pylib/gif.cpp src/runtime/cpp/std/math.cpp \
+  src/runtime/cpp/std/time.cpp src/runtime/cpp/std/pathlib.cpp src/runtime/cpp/std/dataclasses.cpp \
   src/runtime/cpp/base/gc.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out

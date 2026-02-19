@@ -50,7 +50,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - `read_text`, `write_text`, `mkdir(parents, exist_ok)`
     - `str(Path)`（文字列化）
   - 実装位置:
-    - C++: `src/runtime/cpp/core/pathlib.h/.cpp`
+    - C++: `src/runtime/cpp/std/pathlib.h/.cpp`
     - Rust: `src/rs_module/py_runtime.rs`（`PyPath`）
     - C#: `src/cs_module/pathlib.cs`（`py_path`）
     - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`

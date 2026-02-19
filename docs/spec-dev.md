@@ -132,10 +132,10 @@
 
 `py2cpp.py` は import 文に応じて include を生成します。
 
-- `import math` -> `#include "runtime/cpp/core/math.h"`
-- `import pathlib` -> `#include "runtime/cpp/core/pathlib.h"`
-- `import time` / `from time import ...` -> `#include "runtime/cpp/core/time.h"`
-- `from dataclasses import dataclass` -> `#include "runtime/cpp/core/dataclasses.h"`
+- `import math` -> `#include "runtime/cpp/std/math.h"`
+- `import pathlib` -> `#include "runtime/cpp/std/pathlib.h"`
+- `import time` / `from time import ...` -> `#include "runtime/cpp/std/time.h"`
+- `from dataclasses import dataclass` -> `#include "runtime/cpp/std/dataclasses.h"`
 - `from pylib.tra import png` / `import png` -> `#include "runtime/cpp/pylib/png.h"`
 - GC は常時 `#include "runtime/cpp/base/gc.h"` を利用
 
@@ -153,12 +153,12 @@
 
 主な補助モジュール実装:
 
-- `src/runtime/cpp/core/math.h`, `src/runtime/cpp/core/math.cpp`
-- `src/runtime/cpp/core/pathlib.h`, `src/runtime/cpp/core/pathlib.cpp`
-- `src/runtime/cpp/core/time.h`, `src/runtime/cpp/core/time.cpp`
-- `src/runtime/cpp/core/dataclasses.h`, `src/runtime/cpp/core/dataclasses.cpp`
+- `src/runtime/cpp/std/math.h`, `src/runtime/cpp/std/math.cpp`
+- `src/runtime/cpp/std/pathlib.h`, `src/runtime/cpp/std/pathlib.cpp`
+- `src/runtime/cpp/std/time.h`, `src/runtime/cpp/std/time.cpp`
+- `src/runtime/cpp/std/dataclasses.h`, `src/runtime/cpp/std/dataclasses.cpp`
 - `src/runtime/cpp/base/gc.h`, `src/runtime/cpp/base/gc.cpp`
-- `src/runtime/cpp/core/sys.h`, `src/runtime/cpp/core/sys.cpp`
+- `src/runtime/cpp/std/sys.h`, `src/runtime/cpp/std/sys.cpp`
 - `src/runtime/cpp/pylib/png.h`, `src/runtime/cpp/pylib/png.cpp`
 - `src/runtime/cpp/pylib/gif.h`, `src/runtime/cpp/pylib/gif.cpp`
 - `src/runtime/cpp/py_runtime.h`

@@ -19,11 +19,11 @@ from src.py2cpp import load_cpp_module_attr_call_map, load_east, transpile_to_cp
 
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/base/gc.cpp",
-    "src/runtime/cpp/core/pathlib.cpp",
-    "src/runtime/cpp/core/time.cpp",
-    "src/runtime/cpp/core/math.cpp",
-    "src/runtime/cpp/core/dataclasses.cpp",
-    "src/runtime/cpp/core/sys.cpp",
+    "src/runtime/cpp/std/pathlib.cpp",
+    "src/runtime/cpp/std/time.cpp",
+    "src/runtime/cpp/std/math.cpp",
+    "src/runtime/cpp/std/dataclasses.cpp",
+    "src/runtime/cpp/std/sys.cpp",
     "src/runtime/cpp/base/io.cpp",
     "src/runtime/cpp/base/bytes_util.cpp",
     "src/runtime/cpp/pylib/png.cpp",

@@ -28,7 +28,7 @@
 #include "runtime/cpp/base/io.h"
 #include "runtime/cpp/pylib/gif.h"
 #include "runtime/cpp/base/gc.h"
-#include "runtime/cpp/core/math.h"
+#include "runtime/cpp/std/math.h"
 #include "runtime/cpp/pylib/png.h"
 
 namespace py_math = pytra::math;

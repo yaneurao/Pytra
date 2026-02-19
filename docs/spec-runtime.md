@@ -3,13 +3,13 @@
 ### 1. 生成物と手書き実装の責務分離を明文化する
 
 - 自動生成:
-  - `pytra/std/<mod>.h`
-  - `pytra/std/<mod>.cpp`
-  - `pytra/runtime/<mod>.h`
-  - `pytra/runtime/<mod>.cpp`
+  - `runtime/cpp/pytra/std/<mod>.h`
+  - `runtime/cpp/pytra/std/<mod>.cpp`
+  - `runtime/cpp/pytra/runtime/<mod>.h`
+  - `runtime/cpp/pytra/runtime/<mod>.cpp`
 - 手書き許可:
-  - `pytra/std/<mod>-impl.cpp`
-  - `pytra/runtime/<mod>-impl.cpp`
+  - `runtime/cpp/pytra/std/<mod>-impl.cpp`
+  - `runtime/cpp/pytra/runtime/<mod>-impl.cpp`
 - ルール:
   - `<mod>.h/.cpp` は常に再生成対象（手編集禁止）。
   - `*-impl.cpp` は手編集可能（再生成対象外）。
@@ -25,6 +25,7 @@
   - Python の import 名と C++ include パスは 1 対 1 対応にする。
   - 例: `import pytra.std.math` -> `#include "pytra/std/math.h"`。
   - 例: `import pytra.runtime.png` -> `#include "pytra/runtime/png.h"`。
+  - コンパイル時は `src/runtime/cpp` を include ルート（`-I`）として渡す。
 
 ### 3. 自作モジュール import の生成仕様を追加する
 
@@ -40,7 +41,7 @@
 
 - `*-impl.cpp` に置く関数は C++ 依存の最小 primitive だけに限定する。
   - 例: filesystem, regex, clock, process, OS API
-- それ以外のロジック（整形・変換・検証）は Python 側 (`pytra/*.py`) に残す。
+- それ以外のロジック（整形・変換・検証）は Python 側 (`src/pylib/*.py`) に残す。
 - これにより、言語間差異を `*-impl` 層へ閉じ込める。
 
 ### 5. 生成テンプレートの最小ルール
@@ -57,7 +58,7 @@
 
 - 各モジュールで最低限次を満たすこと:
   1. Python実行結果と C++ 実行結果が一致する
-  2. `pytra/std` と `pytra/runtime` の import 形式（`import` / `from ... import ...`）の両方が通る
+  2. `runtime/cpp/pytra/std` と `runtime/cpp/pytra/runtime` に対応する import 形式（`import` / `from ... import ...`）の両方が通る
   3. 生成物を削除して再生成しても差分が安定する（再現可能）
 
 ### 7. 将来の多言語展開を見据えた命名
@@ -66,16 +67,11 @@
   - 例: `-impl.cs`, `-impl.rs` など
 - 仕様文書では「ネイティブ実装層（impl層）」として抽象名で定義する。
 
-### 8. 既存配置からの移行方針（`runtime/cpp` 整理）
+### 8. 現行配置の固定
 
-- 現在 `runtime/cpp/core/*` などにある実体は、最終的に import 名準拠の配置へ寄せる。
-  - 目標: `pytra/std/*.h|*.cpp` / `pytra/runtime/*.h|*.cpp` を唯一の公開配置とする。
-- 移行期間:
-  - 旧パス（`runtime/cpp/core/*` など）は残さず削除する。
-  - 新規生成コード・既存生成コードともに新パスへ強制移行する。
-- 完了条件:
-  - import 名から include を機械的変換しただけでコンパイルが通る。
-  - `py2cpp.py` 内の旧パス向けハードコードが除去されている。
+- C++ ランタイム実体は `runtime/cpp/pytra/std/*` と `runtime/cpp/pytra/runtime/*` を正とする。
+- include は現時点で上記パスを直接参照する方式に固定する。
+- 将来レイアウト変更を行う場合は、本仕様を先に更新してから実装変更する。
 
 ### 9. 命名方針
 
