@@ -19,7 +19,13 @@
      - [x] 同ブリッジ経路で `sample/py/01_mandelbrot.py` の `-o` 生成を確認。
      - [ ] pure selfhost（中間 Python 呼び出しなし）で `.py -> -o` を通す。
        - [ ] `selfhost/py2cpp.out` 側に `load_east(.py)` の実処理を実装し、`not_implemented` を返さないようにする。
+         - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。
+         - [ ] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。
+         - [ ] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。
        - [ ] `pylib.tra.east_parts.core` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
+         - [ ] bootstrap 専用コードを `pylib.tra.east` facade 側へ隔離し、`east_parts.core` から除去する。
+         - [ ] `east_parts.core` の import を `pylib.std.*` のみに固定する。
+         - [ ] `tools/prepare_selfhost_source.py` の取り込み対象へ `east_parts.core` を段階追加する。
        - [ ] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
        - [ ] 上記生成物を `g++` でビルドして、実行結果が Python 実行と一致することを確認する。
 3. [ ] CodeEmitter hook 移管の再開（selfhostを壊さない手順）
@@ -45,6 +51,16 @@
      - [x] `dataclasses`: `Exception` 継承/`repr`/rc 比較などの未対応が残る。
      - [x] `enum`: `IntFlag` 合成値の型退化（`std::any`）による演算子不整合が残る。
    - [ ] 未対応モジュールを順に C++ runtime 接続する（`json -> os/glob -> argparse -> sys/typing -> re -> dataclasses -> enum`）。
+     - [ ] `json`:
+       - [ ] `fixtures/stdlib/json_extended.py` を単体 compile-run で通し、`json.loads/dumps` の最低限 API を固定する。
+       - [ ] `test/unit/test_py2cpp_features.py` に `json_extended` runtime 回帰を追加する。
+     - [ ] `os/glob`:
+       - [ ] `fixtures/stdlib/os_glob_extended.py` を compile-run で通す。
+       - [ ] `os.path.join/splitext/dirname/basename/exists` と `glob.glob` の呼び出し解決を点検する。
+       - [ ] `test/unit/test_py2cpp_features.py` に `os_glob_extended` runtime 回帰を追加する。
+     - [ ] `argparse/sys/typing/re/dataclasses/enum`:
+       - [ ] 1モジュールずつ compile-run 可否を確認し、失敗要因を個別タスクへ分解する。
+       - [ ] 各モジュールが通るたびに `*_extended.py` を runtime 回帰へ昇格する。
    - [ ] 接続後に `*_extended.py` を compile-run 回帰へ昇格する（`os_glob_extended`, `json_extended` から再開）。
 
 ## CodeEmitter 化（JSON + Hooks）
