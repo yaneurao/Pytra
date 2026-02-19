@@ -1998,6 +1998,21 @@ class CppEmitter(CodeEmitter):
             return self._render_sequence_index(val, idx, sl)
         return f"{val}[{idx}]"
 
+    def _render_ifexp_expr(self, expr: dict[str, Any]) -> str:
+        """IfExp（三項演算）を C++ 式へ変換する。"""
+        body = self.render_expr(expr.get("body"))
+        orelse = self.render_expr(expr.get("orelse"))
+        casts = self._dict_stmt_list(expr.get("casts"))
+        for c in casts:
+            on = self.any_to_str(c.get("on"))
+            to_t: object = c.get("to")
+            if on == "body":
+                body = self.apply_cast(body, to_t)
+            elif on == "orelse":
+                orelse = self.apply_cast(orelse, to_t)
+        test_expr = self.render_expr(expr.get("test"))
+        return f"({test_expr} ? {body} : {orelse})"
+
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
         expr_d = self.any_to_dict_or_empty(expr)
@@ -2133,17 +2148,7 @@ class CppEmitter(CodeEmitter):
         if kind == "Compare":
             return self._render_compare_expr(expr_d)
         if kind == "IfExp":
-            body = self.render_expr(expr_d.get("body"))
-            orelse = self.render_expr(expr_d.get("orelse"))
-            casts = self._dict_stmt_list(expr_d.get("casts"))
-            for c in casts:
-                on = self.any_to_str(c.get("on"))
-                to_t: object = c.get("to")
-                if on == "body":
-                    body = self.apply_cast(body, to_t)
-                elif on == "orelse":
-                    orelse = self.apply_cast(orelse, to_t)
-            return f"({self.render_expr(expr_d.get('test'))} ? {body} : {orelse})"
+            return self._render_ifexp_expr(expr_d)
         if kind == "List":
             t = self.cpp_type(expr_d.get("resolved_type"))
             elem_t = ""

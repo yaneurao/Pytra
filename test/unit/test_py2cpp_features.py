@@ -246,6 +246,17 @@ if __name__ == "__main__":
         self.assertIn("int64 x = 1;", cpp64)
         self.assertIn("int32 x = 1;", cpp32)
 
+    def test_ifexp_renders_cpp_ternary(self) -> None:
+        src = """def pick(v: int) -> int:
+    return 1 if v > 0 else 2
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "ifexp.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+        self.assertIn("? 1 : 2", cpp)
+
     def test_east_builtin_call_normalization(self) -> None:
         src = """from pathlib import Path
 
