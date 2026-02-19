@@ -9,14 +9,14 @@ _bootstrap_src = __file__.replace("\\", "/").rsplit("/", 2)[0]
 if _bootstrap_src not in _bootstrap_sys.path:
     _bootstrap_sys.path.insert(0, _bootstrap_src)
 
-from pylib.pathlib import Path
-from pylib import sys
+from pylib.std.pathlib import Path
+from pylib.std import sys
 
 src_root = Path(__file__).resolve().parents[1]
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 
-from pylib.east_parts import (  # noqa: F401
+from pylib.tra.east_parts import (  # noqa: F401
     BorrowKind,
     EastBuildError,
     FLOAT_TYPES,

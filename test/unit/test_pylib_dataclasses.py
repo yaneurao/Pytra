@@ -1,4 +1,4 @@
-"""pylib.dataclasses の最小互換テスト。"""
+"""pylib.std.dataclasses の最小互換テスト。"""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pylib.dataclasses import dataclass
+from src.pylib.std.dataclasses import dataclass
 
 
 @dataclass

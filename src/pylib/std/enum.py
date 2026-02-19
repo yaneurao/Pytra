@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pylib.typing import Any
+from pylib.std.typing import Any
 
 
 class EnumMeta(type):

@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 12: バブルソートの途中状態をGIF出力するサンプル。
 
 bytes render(const list<int64>& values, int64 w, int64 h) {
@@ -27,7 +28,7 @@ void run_12_sort_visualizer() {
     int64 n = 124;
     str out_path = "sample/out/12_sort_visualizer.gif";
     
-    auto start = perf_counter();
+    std::any start = make_object(perf_counter());
     list<int64> values = list<int64>{};
     for (int64 i = 0; i < n; ++i)
         values.append((i * 37 + 19) % n);
@@ -50,9 +51,9 @@ void run_12_sort_visualizer() {
             break;
     }
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, grayscale_palette(), 3, 0);
-    auto elapsed = perf_counter() - start;
+    std::any elapsed = make_object(perf_counter() - start);
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);

@@ -1,5 +1,5 @@
-from pylib import json
-from pylib.assertions import py_assert_stdout
+from pylib.std import json
+from pylib.tra.assertions import py_assert_stdout
 
 
 def main() -> None:

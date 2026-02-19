@@ -7,14 +7,14 @@ It can also accept a Python source file and internally run src/pylib/east.py con
 
 from __future__ import annotations
 
-from pylib.typing import Any
+from pylib.std.typing import Any
 
-from pylib.east_parts.code_emitter import CodeEmitter
+from pylib.tra.east_parts.code_emitter import CodeEmitter
 from common.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
-from pylib.east import convert_path, convert_source_to_east_with_backend
-from pylib import json
-from pylib.pathlib import Path
-from pylib import sys
+from pylib.tra.east import convert_path, convert_source_to_east_with_backend
+from pylib.std import json
+from pylib.std.pathlib import Path
+from pylib.std import sys
 
 
 def _make_user_error(category: str, summary: str, details: list[str]) -> Exception:
@@ -425,8 +425,8 @@ class CppEmitter(CodeEmitter):
                 parent = sym["module"]
             if "name" in sym:
                 child = sym["name"]
-            if parent == "pylib" and child != "":
-                return f"pylib.{child}"
+            if parent != "" and child != "":
+                return f"{parent}.{child}"
         return name
 
     def _last_dotted_name(self, name: str) -> str:
@@ -456,15 +456,15 @@ class CppEmitter(CodeEmitter):
                 mapped = owner_map[symbol_name]
                 if mapped != "":
                     return mapped
-        if module_name == "pylib.png" and symbol_name == "write_rgb_png":
+        if module_name == "pylib.tra.png" and symbol_name == "write_rgb_png":
             return "png_helper::write_rgb_png"
-        if module_name == "pylib.gif" and symbol_name == "save_gif":
+        if module_name == "pylib.tra.gif" and symbol_name == "save_gif":
             return "save_gif"
         if module_name == "time" and symbol_name == "perf_counter":
             return "perf_counter"
         if module_name == "pathlib" and symbol_name == "Path":
             return "Path"
-        if module_name == "pylib.assertions" and symbol_name.startswith("py_assert_"):
+        if module_name == "pylib.tra.assertions" and symbol_name.startswith("py_assert_"):
             return symbol_name
         return None
 
@@ -2084,9 +2084,9 @@ class CppEmitter(CodeEmitter):
                 mapped = owner_map[attr]
                 if mapped != "":
                     return f"{mapped}({', '.join(args)})"
-        if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
+        if owner_mod in {"png_helper", "png", "pylib.tra.png"} and attr == "write_rgb_png":
             return f"png_helper::write_rgb_png({', '.join(args)})"
-        if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
+        if owner_mod in {"gif_helper", "gif", "pylib.tra.gif"} and attr == "save_gif":
             path = args[0] if len(args) >= 1 else '""'
             w = args[1] if len(args) >= 2 else "0"
             h = args[2] if len(args) >= 3 else "0"
@@ -2408,9 +2408,9 @@ class CppEmitter(CodeEmitter):
             if base in self.class_base or base in self.class_method_names:
                 return f"{base}::{attr}"
             base_module_name = self._resolve_imported_module_name(base)
-            if base_module_name in {"png", "png_helper", "pylib.png"} and str(attr) == "write_rgb_png":
+            if base_module_name in {"png", "png_helper", "pylib.tra.png"} and str(attr) == "write_rgb_png":
                 return "png_helper::write_rgb_png"
-            if base_module_name in {"gif", "gif_helper", "pylib.gif"} and str(attr) == "save_gif":
+            if base_module_name in {"gif", "gif_helper", "pylib.tra.gif"} and str(attr) == "save_gif":
                 return "save_gif"
             if base_module_name == "math":
                 if attr == "pi":

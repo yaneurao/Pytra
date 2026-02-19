@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pylib.typing import Any
+from pylib.std.typing import Any
 
 
 class CppHooks:
@@ -44,9 +44,9 @@ class CppHooks:
             sym = emitter._resolve_imported_symbol(fn_name)
             module_name = emitter.any_dict_get_str(sym, "module", "")
             symbol_name = emitter.any_dict_get_str(sym, "name", "")
-            if module_name == "pylib" and symbol_name == "png":
+            if module_name in {"pylib", "pylib.tra"} and symbol_name == "png":
                 return f"png_helper::write_rgb_png({', '.join(rendered_args)})"
-            if module_name == "pylib" and symbol_name == "gif":
+            if module_name in {"pylib", "pylib.tra"} and symbol_name == "gif":
                 return self._render_save_gif(rendered_args, rendered_kwargs)
 
         if fn_kind == "Attribute":
@@ -55,9 +55,9 @@ class CppHooks:
             owner_mod = emitter._resolve_imported_module_name(owner_expr)
             attr = emitter.any_dict_get_str(func_node, "attr", "")
             if owner_node.get("kind") in {"Name", "Attribute"}:
-                if owner_mod in {"png_helper", "png", "pylib.png"} and attr == "write_rgb_png":
+                if owner_mod in {"png_helper", "png", "pylib.tra.png"} and attr == "write_rgb_png":
                     return f"png_helper::write_rgb_png({', '.join(rendered_args)})"
-                if owner_mod in {"gif_helper", "gif", "pylib.gif"} and attr == "save_gif":
+                if owner_mod in {"gif_helper", "gif", "pylib.tra.gif"} and attr == "save_gif":
                     return self._render_save_gif(rendered_args, rendered_kwargs)
         return None
 

@@ -10,7 +10,7 @@ if str(ROOT) not in std_sys.path:
 if str(ROOT / "src") not in std_sys.path:
     std_sys.path.insert(0, str(ROOT / "src"))
 
-from src.pylib import sys as py_sys
+from src.pylib.std import sys as py_sys
 
 
 class PyLibSysTest(unittest.TestCase):

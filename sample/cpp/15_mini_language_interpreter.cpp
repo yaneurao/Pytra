@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 struct Token : public PyObj {
     str kind;
     str text;
@@ -53,7 +54,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
         int64 i = 0;
         int64 n = py_len(source);
         while (i < n) {
-            str ch = py_slice(source, i, i + 1);
+            str ch = source[i];
             
             if (ch == " ") {
                 i++;
@@ -102,9 +103,9 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 continue;
             }
             
-            if (py_isdigit(ch)) {
+            if (ch.isdigit()) {
                 int64 start = i;
-                while ((i < n) && (py_isdigit(py_slice(source, i, i + 1)))) {
+                while ((i < n) && (source[i].isdigit())) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
@@ -112,9 +113,9 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 continue;
             }
             
-            if ((py_isalpha(ch)) || (ch == "_")) {
+            if ((ch.isalpha()) || (ch == "_")) {
                 int64 start = i;
-                while ((i < n) && (((py_isalpha(py_slice(source, i, i + 1))) || (py_slice(source, i, i + 1) == "_")) || (py_isdigit(py_slice(source, i, i + 1))))) {
+                while ((i < n) && (((source[i].isalpha()) || (source.at(i) == '_')) || (source[i].isdigit()))) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
@@ -361,8 +362,6 @@ list<str> build_benchmark_source(int64 var_count, int64 loops) {
         int64 c1 = i % 7 + 1;
         int64 c2 = i % 11 + 2;
         lines.append("v" + std::to_string(x) + " = (v" + std::to_string(x) + " * " + std::to_string(c1) + " + v" + std::to_string(y) + " + 10000) / " + std::to_string(c2));
-        
-        
         if (i % 97 == 0)
             lines.append("print v" + std::to_string(x));
     }
@@ -410,6 +409,6 @@ void __pytra_main() {
 
 int main(int argc, char** argv) {
     pytra_configure_from_argv(argc, argv);
-    __pytra_main();
+    main();
     return 0;
 }

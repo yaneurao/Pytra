@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 05: マンデルブロ集合ズームをアニメーションGIFとして出力するサンプル。
 
 bytes render_frame(int64 width, int64 height, float64 center_x, float64 center_y, float64 scale, int64 max_iter) {
@@ -39,7 +40,7 @@ void run_05_mandelbrot_zoom() {
     float64 zoom_per_frame = 0.93;
     str out_path = "sample/out/05_mandelbrot_zoom.gif";
     
-    auto start = perf_counter();
+    std::any start = make_object(perf_counter());
     list<bytes> frames = list<bytes>{};
     float64 scale = base_scale;
     for (int64 _ = 0; _ < frame_count; ++_) {
@@ -47,9 +48,9 @@ void run_05_mandelbrot_zoom() {
         scale *= zoom_per_frame;
     }
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0);
-    auto elapsed = perf_counter() - start;
+    std::any elapsed = make_object(perf_counter() - start);
     py_print("output:", out_path);
     py_print("frames:", frame_count);
     py_print("elapsed_sec:", elapsed);

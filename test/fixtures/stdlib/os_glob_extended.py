@@ -1,5 +1,5 @@
-from pylib import glob, os
-from pylib.assertions import py_assert_stdout
+from pylib.std import glob, os
+from pylib.tra.assertions import py_assert_stdout
 
 
 def main() -> None:

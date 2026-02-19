@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 09: 簡易ファイアエフェクトをGIF出力するサンプル。
 
 bytes fire_palette() {
@@ -36,8 +37,8 @@ void run_09_fire_simulation() {
     int64 steps = 420;
     str out_path = "sample/out/09_fire_simulation.gif";
     
-    auto start = perf_counter();
-    list<list<int64>> heat = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(py_repeat(list<int64>{0}, w));     }     return __out; }();
+    std::any start = make_object(perf_counter());
+    list<list<int64>> heat = [&]() -> list<object> {     list<object> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(py_repeat(list<int64>{0}, w));     }     return __out; }();
     list<bytes> frames = list<bytes>{};
     
     for (int64 t = 0; t < steps; ++t) {
@@ -70,9 +71,9 @@ void run_09_fire_simulation() {
         frames.append(bytes(frame));
     }
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, fire_palette(), 4, 0);
-    auto elapsed = perf_counter() - start;
+    std::any elapsed = make_object(perf_counter() - start);
     py_print("output:", out_path);
     py_print("frames:", steps);
     py_print("elapsed_sec:", elapsed);

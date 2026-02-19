@@ -1,7 +1,7 @@
 # このファイルは `test/fixtures/boolop_value_select.py` のテスト/実装コードです。
 
 
-from pylib.assertions import py_assert_all, py_assert_eq
+from pylib.tra.assertions import py_assert_all, py_assert_eq
 def run_boolop_value_select() -> bool:
     x: str = ""
     y: str = "fallback"

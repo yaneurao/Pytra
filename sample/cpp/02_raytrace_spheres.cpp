@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 02: 球のみのミニレイトレーサを実行し、PNG画像を出力するサンプルです。
 // トランスパイル互換のため、依存モジュールは最小限（timeのみ）にしています。
 
@@ -12,7 +13,7 @@ float64 clamp01(float64 v) {
 }
 
 float64 hit_sphere(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, float64 dz, float64 cx, float64 cy, float64 cz, float64 r) {
-    // レイと球の交差距離t（交差しない場合は-1）を返す。
+    /* レイと球の交差距離t（交差しない場合は-1）を返す。 */
     float64 lx = ox - cx;
     float64 ly = oy - cy;
     float64 lz = oz - cz;
@@ -185,7 +186,7 @@ void run_raytrace() {
     
     float64 start = perf_counter();
     bytearray pixels = render(width, height, aa);
-    // bridge: Python png_helper.write_rgb_png -> C++ runtime png_helper::write_rgb_png
+    // bridge: Python png.write_rgb_png -> C++ runtime png_helper::write_rgb_png
     png_helper::write_rgb_png(out_path, width, height, pixels);
     float64 elapsed = perf_counter() - start;
     

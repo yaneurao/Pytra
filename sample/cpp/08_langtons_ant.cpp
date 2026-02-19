@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 08: ラングトンのアリの軌跡をGIF出力するサンプル。
 
 bytes capture(const list<list<int64>>& grid, int64 w, int64 h) {
@@ -19,7 +20,7 @@ void run_08_langtons_ant() {
     int64 h = 420;
     str out_path = "sample/out/08_langtons_ant.gif";
     
-    auto start = perf_counter();
+    std::any start = make_object(perf_counter());
     
     list<list<int64>> grid = list<list<int64>>{};
     for (int64 gy = 0; gy < h; ++gy) {
@@ -62,9 +63,9 @@ void run_08_langtons_ant() {
             frames.append(capture(grid, w, h));
     }
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, grayscale_palette(), 5, 0);
-    auto elapsed = perf_counter() - start;
+    std::any elapsed = make_object(perf_counter() - start);
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);

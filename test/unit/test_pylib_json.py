@@ -11,8 +11,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pylib.east_parts.east_io import load_east_from_path
-from src.pylib import json
+from src.pylib.tra.east_parts.east_io import load_east_from_path
+from src.pylib.std import json
 
 
 class PyLibJsonTest(unittest.TestCase):

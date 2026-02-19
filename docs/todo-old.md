@@ -2,7 +2,7 @@
 
 ## 2026-02-20 移管: `enum` サポート（完了）
 
-1. [x] `pylib.enum` を追加し、`Enum` / `IntEnum` / `IntFlag` の最小互換 API を実装する。
+1. [x] `pylib.std.enum` を追加し、`Enum` / `IntEnum` / `IntFlag` の最小互換 API を実装する。
    - [x] 値定義・比較の基本動作を実装する。
    - [x] `IntFlag` の `|`, `&`, `^`, `~` を実装する。
 2. [x] EAST 変換で `Enum` 系クラス定義（`NAME = expr`）を認識できるようにする。
@@ -419,7 +419,7 @@
 
 - [x] `from XXX import YYY` / `as` を EAST メタデータと `py2cpp` の両方で解決し、呼び出し先ランタイムへ正しく接続する。
 - [x] `import module as alias` の `module.attr(...)` を alias 解決できるようにする。
-- [x] `from pylib.png import write_rgb_png` / `from pylib.gif import save_gif` / `from math import sqrt` の回帰テストを追加する。
+- [x] `from pylib.tra.png import write_rgb_png` / `from pylib.tra.gif import save_gif` / `from math import sqrt` の回帰テストを追加する。
 - [x] `import` 関連の仕様追記（対応範囲・`*` 非対応）を `docs/spec-east.md` / `docs/spec-user.md` / `docs/spec-dev.md` に反映する。
 
 ### selfhost 回復（完了済み分）

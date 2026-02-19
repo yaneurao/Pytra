@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_PY2CPP = ROOT / "src" / "py2cpp.py"
-SRC_BASE = ROOT / "src" / "pylib" / "east_parts" / "code_emitter.py"
+SRC_BASE = ROOT / "src" / "pylib" / "tra" / "east_parts" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
 SRC_TRANSPILE_CLI = ROOT / "src" / "common" / "transpile_cli.py"
 
@@ -51,7 +51,7 @@ def _strip_triple_quoted_docstrings(text: str) -> str:
 
 def _remove_import_line(text: str) -> str:
     targets = [
-        "from pylib.east_parts.code_emitter import CodeEmitter\n",
+        "from pylib.tra.east_parts.code_emitter import CodeEmitter\n",
         "from common.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n",
     ]
     out = text

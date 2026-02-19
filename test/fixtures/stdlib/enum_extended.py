@@ -1,5 +1,5 @@
-from pylib.assertions import py_assert_stdout
-from pylib.enum import Enum, IntEnum, IntFlag
+from pylib.tra.assertions import py_assert_stdout
+from pylib.std.enum import Enum, IntEnum, IntFlag
 
 
 class Color(Enum):

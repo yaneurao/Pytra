@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 
-from pylib.assertions import py_assert_stdout
+from pylib.tra.assertions import py_assert_stdout
 class Point:
     def __init__(self, x: int, y: int) -> None:
         self.x = x

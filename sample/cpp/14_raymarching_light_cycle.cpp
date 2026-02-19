@@ -1,13 +1,14 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 14: 簡易レイマーチ風の光源移動シーンをGIF出力するサンプル。
 
 bytes palette() {
     bytearray p = bytearray{};
     for (int64 i = 0; i < 256; ++i) {
-        auto r = py_min(255, int64(static_cast<float64>(20) + static_cast<float64>(i) * 0.9));
-        auto g = py_min(255, int64(static_cast<float64>(10) + static_cast<float64>(i) * 0.7));
-        auto b = py_min(255, int64(30 + i));
+        std::any r = make_object(std::min<std::any>(static_cast<std::any>(255), static_cast<std::any>(int64(static_cast<float64>(20) + static_cast<float64>(i) * 0.9))));
+        std::any g = make_object(std::min<std::any>(static_cast<std::any>(255), static_cast<std::any>(int64(static_cast<float64>(10) + static_cast<float64>(i) * 0.7))));
+        std::any b = make_object(std::min<std::any>(static_cast<std::any>(255), static_cast<std::any>(int64(30 + i))));
         p.append(r);
         p.append(g);
         p.append(b);
@@ -20,17 +21,17 @@ int64 scene(float64 x, float64 y, float64 light_x, float64 light_y) {
     float64 y1 = y + 0.2;
     float64 x2 = x - 0.35;
     float64 y2 = y - 0.15;
-    auto r1 = py_math::sqrt(x1 * x1 + y1 * y1);
-    auto r2 = py_math::sqrt(x2 * x2 + y2 * y2);
-    auto blob = py_math::exp(-7.0 * r1 * r1) + py_math::exp(-8.0 * r2 * r2);
+    std::any r1 = make_object(py_math::sqrt(x1 * x1 + y1 * y1));
+    std::any r2 = make_object(py_math::sqrt(x2 * x2 + y2 * y2));
+    std::any blob = make_object(py_math::exp(-7.0 * r1 * r1) + py_math::exp(-8.0 * r2 * r2));
     
     float64 lx = x - light_x;
     float64 ly = y - light_y;
-    auto l = py_math::sqrt(lx * lx + ly * ly);
+    std::any l = make_object(py_math::sqrt(lx * lx + ly * ly));
     float64 lit = 1.0 / (1.0 + 3.5 * l * l);
     
     int64 v = py_to_int64(255.0 * blob * lit * 5.0);
-    return py_min(255, py_max(0, v));
+    return std::min<std::any>(static_cast<std::any>(255), static_cast<std::any>(std::max<std::any>(static_cast<std::any>(0), static_cast<std::any>(v))));
 }
 
 void run_14_raymarching_light_cycle() {
@@ -39,14 +40,14 @@ void run_14_raymarching_light_cycle() {
     int64 frames_n = 84;
     str out_path = "sample/out/14_raymarching_light_cycle.gif";
     
-    auto start = perf_counter();
+    std::any start = make_object(perf_counter());
     list<bytes> frames = list<bytes>{};
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
-        auto a = (static_cast<float64>(t) / static_cast<float64>(frames_n)) * py_math::pi * 2.0;
-        auto light_x = 0.75 * py_math::cos(a);
-        auto light_y = 0.55 * py_math::sin(a * 1.2);
+        std::any a = make_object((static_cast<float64>(t) / static_cast<float64>(frames_n)) * py_math::pi * 2.0);
+        std::any light_x = make_object(0.75 * py_math::cos(a));
+        std::any light_y = make_object(0.55 * py_math::sin(a * 1.2));
         
         int64 i = 0;
         for (int64 y = 0; y < h; ++y) {
@@ -61,9 +62,9 @@ void run_14_raymarching_light_cycle() {
         frames.append(bytes(frame));
     }
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, w, h, frames, palette(), 3, 0);
-    auto elapsed = perf_counter() - start;
+    std::any elapsed = make_object(perf_counter() - start);
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

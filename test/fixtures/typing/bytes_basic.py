@@ -1,6 +1,6 @@
 # このファイルは `test/fixtures/typing/bytes_basic.py` のテスト/実装コードです。
 
-from pylib.assertions import py_assert_all, py_assert_eq
+from pylib.tra.assertions import py_assert_all, py_assert_eq
 
 
 def run_bytes_basic() -> bool:

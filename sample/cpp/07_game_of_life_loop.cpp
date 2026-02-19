@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 07: Game of Life の進化をGIF出力するサンプル。
 
 list<list<int64>> next_state(const list<list<int64>>& grid, int64 w, int64 h) {
@@ -56,7 +57,7 @@ void run_07_game_of_life_loop() {
     int64 steps = 210;
     str out_path = "sample/out/07_game_of_life_loop.gif";
     
-    auto start = perf_counter();
+    std::any start = make_object(perf_counter());
     list<list<int64>> grid = list<list<int64>>{};
     for (int64 _ = 0; _ < h; ++_) {
         list<int64> row = list<int64>{};
@@ -122,9 +123,9 @@ void run_07_game_of_life_loop() {
         grid = next_state(grid, w, h);
     }
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, w * cell, h * cell, frames, grayscale_palette(), 4, 0);
-    auto elapsed = perf_counter() - start;
+    std::any elapsed = make_object(perf_counter() - start);
     py_print("output:", out_path);
     py_print("frames:", steps);
     py_print("elapsed_sec:", elapsed);

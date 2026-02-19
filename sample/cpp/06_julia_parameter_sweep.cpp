@@ -1,5 +1,6 @@
 #include "cpp_module/py_runtime.h"
 
+
 // 06: ジュリア集合のパラメータを回してGIF出力するサンプル。
 
 bytes julia_palette() {
@@ -58,7 +59,7 @@ void run_06_julia_parameter_sweep() {
     int64 max_iter = 180;
     str out_path = "sample/out/06_julia_parameter_sweep.gif";
     
-    auto start = perf_counter();
+    std::any start = make_object(perf_counter());
     list<bytes> frames = list<bytes>{};
     // 既知の見栄えが良い近傍を楕円軌道で巡回し、単調な白飛びを抑える。
     float64 center_cr = -0.745;
@@ -71,16 +72,16 @@ void run_06_julia_parameter_sweep() {
     int64 phase_offset = 180;
     for (int64 i = 0; i < frames_n; ++i) {
         float64 t = static_cast<float64>((i + start_offset) % frames_n) / static_cast<float64>(frames_n);
-        auto angle = 2.0 * py_math::pi * t;
-        auto cr = center_cr + radius_cr * py_math::cos(angle);
-        auto ci = center_ci + radius_ci * py_math::sin(angle);
+        std::any angle = make_object(2.0 * py_math::pi * t);
+        std::any cr = make_object(center_cr + radius_cr * py_math::cos(angle));
+        std::any ci = make_object(center_ci + radius_ci * py_math::sin(angle));
         int64 phase = (phase_offset + i * 5) % 255;
         frames.append(render_frame(width, height, cr, ci, max_iter, phase));
     }
     
-    // bridge: Python gif_helper.save_gif -> C++ runtime save_gif
+    // bridge: Python gif.save_gif -> C++ runtime save_gif
     save_gif(out_path, width, height, frames, julia_palette(), 8, 0);
-    auto elapsed = perf_counter() - start;
+    std::any elapsed = make_object(perf_counter() - start);
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

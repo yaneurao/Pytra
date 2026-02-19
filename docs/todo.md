@@ -8,18 +8,18 @@
    - [x] `.json` 経路でのエラー分類（`input_invalid` / `not_implemented`）を固定する。: `.py` 入力は `not_implemented`、`.json` 解析失敗は `input_invalid`
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
-     - 依存本体: `pylib.east_parts.core::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
-     - 主要 shim 依存: `pylib.argparse`, `pylib.json`, `pylib.re`, `pylib.pathlib`, `pylib.sys`, `pylib.dataclasses`, `pylib.typing`
-     - selfhost 非対応要素: `pylib.east` facade の bootstrap path 操作（`import sys as _bootstrap_sys` と `sys.path.insert`）
+     - 依存本体: `pylib.tra.east_parts.core::{EastBuildError, convert_path, convert_source_to_east_with_backend}`
+     - 主要 shim 依存: `pylib.std.argparse`, `pylib.std.json`, `pylib.std.re`, `pylib.std.pathlib`, `pylib.std.sys`, `pylib.std.dataclasses`, `pylib.std.typing`
+     - selfhost 非対応要素: `pylib.tra.east` facade の bootstrap path 操作（`import sys as _bootstrap_sys` と `sys.path.insert`）
    - [x] `tools/prepare_selfhost_source.py` に取り込み可能な関数群を「安全（selfhost通過済み）」と「要分割」に分ける。
      - 安全（通過済み）: `CodeEmitter` 本体、`transpile_cli` の関数群（`parse_py2cpp_argv` など）、main差し替え
-     - 要分割: `pylib.east` facade 経由の import 連鎖、`east_parts.core` 全量取り込み（サイズ過大かつ selfhost 変換コスト高）
+     - 要分割: `pylib.tra.east` facade 経由の import 連鎖、`east_parts.core` 全量取り込み（サイズ過大かつ selfhost 変換コスト高）
    - [ ] `sample/py/01_mandelbrot.py` を selfhost 経路で `-o` 生成できるところまで回復する。
      - [x] 暫定ブリッジ `tools/selfhost_transpile.py` を追加し、`.py -> EAST JSON -> selfhost` で `test/fixtures/core/add.py` の生成を確認。
      - [x] 同ブリッジ経路で `sample/py/01_mandelbrot.py` の `-o` 生成を確認。
      - [ ] pure selfhost（中間 Python 呼び出しなし）で `.py -> -o` を通す。
        - [ ] `selfhost/py2cpp.out` 側に `load_east(.py)` の実処理を実装し、`not_implemented` を返さないようにする。
-       - [ ] `pylib.east_parts.core` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
+       - [ ] `pylib.tra.east_parts.core` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
        - [ ] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
        - [ ] 上記生成物を `g++` でビルドして、実行結果が Python 実行と一致することを確認する。
 3. [ ] CodeEmitter hook 移管の再開（selfhostを壊さない手順）

@@ -69,7 +69,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from pylib.gif import save_gif
+from pylib.tra.gif import save_gif
 
 
 def julia_palette() -> bytes:
@@ -184,7 +184,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from pylib.gif import save_gif
+from pylib.tra.gif import save_gif
 
 
 def clamp01(v: float) -> float:
@@ -512,6 +512,7 @@ if __name__ == "__main__":
 利用時によく参照する順で、関連ドキュメントをまとめています。
 
 - まず使い方を確認する: [docs/how-to-use.md](docs/how-to-use.md)
+- オプション設計（性能/互換性トレードオフ）を確認する: [docs/spec-options.md](docs/spec-options.md)
 - 実装済み項目・未実装項目・対応予定なしを確認する: [docs/pytra-readme.md](docs/pytra-readme.md)
 - サンプル一覧と概要を確認する: [docs/sample-code.md](docs/sample-code.md)
 - 仕様・制約・構成・運用ルールを確認する: [docs/spec.md](docs/spec.md)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import ast
-from pylib.typing import List, Set
+from pylib.std.typing import List, Set
 
 from .transpile_shared import (
     INT32_MAX,

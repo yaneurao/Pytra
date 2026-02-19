@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 
-from pylib.assertions import py_assert_stdout
+from pylib.tra.assertions import py_assert_stdout
 class Multiplier:
     def mul(self, x: int, y: int) -> int:
         return x * y
