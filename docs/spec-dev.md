@@ -151,6 +151,9 @@
 - `from module import symbol` / `from module import symbol as alias` は EAST の `meta.import_symbols` で保持し、呼び出し解決に使います。
 - `import module as alias` は EAST の `meta.import_modules` で保持し、`alias.attr(...)` を `module.attr(...)` として解決します。
 - `from module import *` は未対応です。
+- `pytra` 名前空間は予約です。入力ルート配下の `pytra.py` / `pytra/__init__.py` は衝突として `input_invalid` を返します。
+- ユーザーモジュール探索は「入力ファイルの親ディレクトリ基準」で行います（`foo.bar` -> `foo/bar.py` または `foo/bar/__init__.py`）。
+- 未解決ユーザーモジュール import と循環 import は `input_invalid` で早期エラーにします。
 
 主な補助モジュール実装:
 

@@ -439,10 +439,25 @@ class CppEmitter(CodeEmitter):
     def _module_name_to_cpp_include(self, module_name: str) -> str:
         """Python import モジュール名を C++ include へ解決する。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
-        if module_name_norm.startswith("pytra.std."):
-            return "pytra/std/" + module_name_norm[10:] + ".h"
-        if module_name_norm.startswith("pytra.runtime."):
-            return "pytra/runtime/" + module_name_norm[14:] + ".h"
+        std_direct: dict[str, str] = {
+            "pytra.std.math": "pytra/std/math.h",
+            "pytra.std.time": "pytra/std/time.h",
+            "pytra.std.pathlib": "pytra/std/pathlib.h",
+            "pytra.std.dataclasses": "pytra/std/dataclasses.h",
+            "pytra.std.sys": "pytra/std/sys.h",
+            "pytra.std.json": "pytra/std/json.h",
+            "pytra.std.typing": "pytra/std/typing.h",
+        }
+        if module_name_norm in std_direct:
+            return std_direct[module_name_norm]
+        runtime_direct: dict[str, str] = {
+            "pytra.runtime.png": "pytra/runtime/png.h",
+            "pytra.runtime.gif": "pytra/runtime/gif.h",
+            "pytra.runtime.assertions": "pytra/runtime/assertions.h",
+            "pytra.runtime.east": "pytra/runtime/east.h",
+        }
+        if module_name_norm in runtime_direct:
+            return runtime_direct[module_name_norm]
         legacy_std: dict[str, str] = {
             "math": "pytra/std/math.h",
             "time": "pytra/std/time.h",
@@ -3490,22 +3505,32 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
     return out
 
 
-def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:
-    """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する。"""
-    if module_name.startswith("pytra.") or module_name == "pytra":
-        return None
-    rel = module_name.replace(".", "/")
-    cand_py = search_root / (rel + ".py")
-    if cand_py.exists():
-        return cand_py
-    cand_pkg = search_root / rel / "__init__.py"
-    if cand_pkg.exists():
-        return cand_pkg
-    return None
+LEGACY_MODULE_IMPORTS: set[str] = {
+    "__future__",
+    "math",
+    "time",
+    "pathlib",
+    "dataclasses",
+    "sys",
+    "typing",
+    "re",
+    "argparse",
+    "json",
+    "os",
+    "glob",
+    "enum",
+    "png",
+    "gif",
+    "assertions",
+}
 
 
-def dump_deps_graph_text(entry_path: Path) -> str:
-    """入力 `.py` から辿れるユーザーモジュール依存グラフを整形して返す。"""
+def _is_pytra_module_name(module_name: str) -> bool:
+    return module_name == "pytra" or module_name.startswith("pytra.")
+
+
+def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
+    """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
     def _path_key(p: Path) -> str:
         return str(p)
 
@@ -3528,6 +3553,19 @@ def dump_deps_graph_text(entry_path: Path) -> str:
     visited: set[str] = set()
     edges: list[str] = []
     edge_seen: set[str] = set()
+    missing_modules: list[str] = []
+    missing_seen: set[str] = set()
+    relative_imports: list[str] = []
+    relative_seen: set[str] = set()
+    graph_adj: dict[str, list[str]] = {}
+    key_to_disp: dict[str, str] = {}
+    key_to_path: dict[str, Path] = {}
+
+    reserved_conflicts: list[str] = []
+    if (root / "pytra.py").exists():
+        reserved_conflicts.append(str(root / "pytra.py"))
+    if (root / "pytra" / "__init__.py").exists():
+        reserved_conflicts.append(str(root / "pytra" / "__init__.py"))
 
     while len(queue) > 0:
         cur_path = queue.pop(0)
@@ -3535,39 +3573,175 @@ def dump_deps_graph_text(entry_path: Path) -> str:
         if cur_key in visited:
             continue
         visited.add(cur_key)
+        key_to_path[cur_key] = cur_path
+        key_to_disp[cur_key] = _rel_disp(root, cur_path)
         try:
             east_cur = load_east(cur_path)
         except Exception:
             continue
         mods = _collect_import_modules(east_cur)
-        cur_disp = _rel_disp(root, cur_path)
+        if cur_key not in graph_adj:
+            graph_adj[cur_key] = []
+        cur_disp = key_to_disp[cur_key]
         i = 0
         while i < len(mods):
             mod = mods[i]
+            if mod.startswith("."):
+                rel_item = cur_disp + ": " + mod
+                if rel_item not in relative_seen:
+                    relative_seen.add(rel_item)
+                    relative_imports.append(rel_item)
+                i += 1
+                continue
             dep_file = _resolve_user_module_path(mod, root)
             dep_disp = mod
             if dep_file is not None:
+                dep_key = _path_key(dep_file)
                 dep_disp = _rel_disp(root, dep_file)
+                graph_adj[cur_key].append(dep_key)
+                key_to_path[dep_key] = dep_file
+                key_to_disp[dep_key] = dep_disp
+                if dep_key not in queued and dep_key not in visited:
+                    queued.add(dep_key)
+                    queue.append(dep_file)
+            elif not _is_pytra_module_name(mod) and mod not in LEGACY_MODULE_IMPORTS:
+                miss = cur_disp + ": " + mod
+                if miss not in missing_seen:
+                    missing_seen.add(miss)
+                    missing_modules.append(miss)
             edge = cur_disp + " -> " + dep_disp
             if edge not in edge_seen:
                 edge_seen.add(edge)
                 edges.append(edge)
-            if dep_file is not None:
-                dep_key = _path_key(dep_file)
-                if dep_key not in queued and dep_key not in visited:
-                    queued.add(dep_key)
-                    queue.append(dep_file)
             i += 1
 
+    cycles: list[str] = []
+    cycle_seen: set[str] = set()
+    color: dict[str, int] = {}
+    stack: list[str] = []
+
+    def _dfs(key: str) -> None:
+        color[key] = 1
+        stack.append(key)
+        nxts = graph_adj.get(key, [])
+        i = 0
+        while i < len(nxts):
+            nxt = nxts[i]
+            c = color.get(nxt, 0)
+            if c == 0:
+                _dfs(nxt)
+            elif c == 1:
+                j = len(stack) - 1
+                while j >= 0 and stack[j] != nxt:
+                    j -= 1
+                if j >= 0:
+                    nodes = stack[j:] + [nxt]
+                    disp_nodes: list[str] = []
+                    k = 0
+                    while k < len(nodes):
+                        dk = nodes[k]
+                        disp_nodes.append(key_to_disp.get(dk, dk))
+                        k += 1
+                    cycle_txt = " -> ".join(disp_nodes)
+                    if cycle_txt not in cycle_seen:
+                        cycle_seen.add(cycle_txt)
+                        cycles.append(cycle_txt)
+            i += 1
+        stack.pop()
+        color[key] = 2
+
+    keys = list(graph_adj.keys())
+    i = 0
+    while i < len(keys):
+        k = keys[i]
+        if color.get(k, 0) == 0:
+            _dfs(k)
+        i += 1
+
+    out: dict[str, Any] = {}
+    out["edges"] = edges
+    out["missing_modules"] = missing_modules
+    out["relative_imports"] = relative_imports
+    out["reserved_conflicts"] = reserved_conflicts
+    out["cycles"] = cycles
+    return out
+
+
+def _format_import_graph_report(analysis: dict[str, Any]) -> str:
+    """依存解析結果を `--dump-deps` 向けテキストへ整形する。"""
+    edges_obj = analysis.get("edges")
+    edges: list[str] = edges_obj if isinstance(edges_obj, list) else []
     out = "graph:\n"
     if len(edges) == 0:
         out += "  (none)\n"
     else:
         i = 0
         while i < len(edges):
-            out += "  - " + edges[i] + "\n"
+            item = edges[i]
+            if isinstance(item, str):
+                out += "  - " + item + "\n"
             i += 1
+
+    def _append_list_section(label: str, key: str) -> None:
+        nonlocal out
+        items_obj = analysis.get(key)
+        items: list[str] = items_obj if isinstance(items_obj, list) else []
+        out += label + ":\n"
+        if len(items) == 0:
+            out += "  (none)\n"
+        else:
+            j = 0
+            while j < len(items):
+                val = items[j]
+                if isinstance(val, str):
+                    out += "  - " + val + "\n"
+                j += 1
+
+    _append_list_section("cycles", "cycles")
+    _append_list_section("missing", "missing_modules")
+    _append_list_section("relative", "relative_imports")
+    _append_list_section("reserved", "reserved_conflicts")
     return out
+
+
+def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
+    """依存解析の重大問題を `input_invalid` として報告する。"""
+    details: list[str] = []
+    for key in ["reserved_conflicts", "relative_imports", "missing_modules", "cycles"]:
+        vals_obj = analysis.get(key)
+        vals = vals_obj if isinstance(vals_obj, list) else []
+        i = 0
+        while i < len(vals):
+            v = vals[i]
+            if isinstance(v, str) and v != "":
+                details.append(key + ": " + v)
+            i += 1
+    if len(details) > 0:
+        raise _make_user_error(
+            "input_invalid",
+            "import 解決に失敗しました（未解決/衝突/循環）。",
+            details,
+        )
+
+
+def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:
+    """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する。"""
+    if module_name.startswith("pytra.") or module_name == "pytra":
+        return None
+    rel = module_name.replace(".", "/")
+    cand_py = search_root / (rel + ".py")
+    if cand_py.exists():
+        return cand_py
+    cand_pkg = search_root / rel / "__init__.py"
+    if cand_pkg.exists():
+        return cand_pkg
+    return None
+
+
+def dump_deps_graph_text(entry_path: Path) -> str:
+    """入力 `.py` から辿れるユーザーモジュール依存グラフを整形して返す。"""
+    analysis = _analyze_import_graph(entry_path)
+    return _format_import_graph_report(analysis)
 
 
 def print_user_error(err_text: str) -> None:
@@ -3738,6 +3912,9 @@ def main(argv: list[str]) -> int:
 
     cpp = ""
     try:
+        if input_txt.endswith(".py"):
+            analysis = _analyze_import_graph(input_path)
+            _validate_import_graph_or_raise(analysis)
         east_module = load_east(input_path, parser_backend)
         if dump_deps:
             dep_text = dump_deps_text(east_module)

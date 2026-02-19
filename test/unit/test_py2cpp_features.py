@@ -250,6 +250,55 @@ def main() -> None:
         self.assertIn("graph:", proc.stdout)
         self.assertIn("main.py -> helper.py", proc.stdout)
 
+    def test_cli_reports_input_invalid_for_missing_user_module(self) -> None:
+        src_main = """import missing_mod
+
+def main() -> None:
+    print(1)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("missing_modules:", proc.stderr)
+
+    def test_cli_reports_input_invalid_for_import_cycle(self) -> None:
+        src_main = """import helper
+
+def main() -> None:
+    print(1)
+"""
+        src_helper = """import main
+
+def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("cycles:", proc.stderr)
+
     def test_floor_div_mode_native_and_python(self) -> None:
         src = """def main() -> None:
     a: int = 7
