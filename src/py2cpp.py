@@ -2207,10 +2207,15 @@ class CppEmitter(CodeEmitter):
             a0 = args[0] if len(args) >= 1 else "/* missing */"
             owner_t0 = self.get_expr_type(fn.get("value"))
             owner_t = owner_t0 if isinstance(owner_t0, str) else ""
+            if owner_t == "bytearray":
+                a0 = f"static_cast<uint8>(py_to_int64({a0}))"
             if owner_t.startswith("list[") and owner_t.endswith("]"):
                 inner_t: str = owner_t[5:-1].strip()
                 if inner_t != "" and not self.is_any_like_type(inner_t):
-                    a0 = f"{self._cpp_type_text(inner_t)}({a0})"
+                    if inner_t == "uint8":
+                        a0 = f"static_cast<uint8>(py_to_int64({a0}))"
+                    else:
+                        a0 = f"{self._cpp_type_text(inner_t)}({a0})"
             return f"{owner}.append({a0})"
         if runtime_call == "list.extend":
             owner = self.render_expr(fn.get("value"))
@@ -2428,10 +2433,24 @@ class CppEmitter(CodeEmitter):
             return "make_object(1)"
         return None
 
-    def _render_call_object_method(self, owner_t: str, owner_expr: str, attr: str) -> str | None:
+    def _render_call_object_method(
+        self, owner_t: str, owner_expr: str, attr: str, args: list[str]
+    ) -> str | None:
         """obj.method(...) 呼び出しのうち、型依存の特殊ケースを処理する。"""
         if owner_t == "unknown" and attr == "clear":
             return f"{owner_expr}.clear()"
+        if attr == "append":
+            a0 = args[0] if len(args) >= 1 else "/* missing */"
+            if owner_t == "bytearray":
+                a0 = f"static_cast<uint8>(py_to_int64({a0}))"
+                return f"{owner_expr}.append({a0})"
+            if owner_t.startswith("list[") and owner_t.endswith("]"):
+                inner_t: str = owner_t[5:-1].strip()
+                if inner_t == "uint8":
+                    a0 = f"static_cast<uint8>(py_to_int64({a0}))"
+                elif inner_t != "" and not self.is_any_like_type(inner_t):
+                    a0 = f"{self._cpp_type_text(inner_t)}({a0})"
+                return f"{owner_expr}.append({a0})"
         return None
 
     def _render_call_attribute(
@@ -2464,7 +2483,7 @@ class CppEmitter(CodeEmitter):
         if module_rendered_txt != "":
             return module_rendered_txt
         object_rendered_txt = ""
-        object_rendered = self._render_call_object_method(owner_t, owner_expr, attr)
+        object_rendered = self._render_call_object_method(owner_t, owner_expr, attr, args)
         if isinstance(object_rendered, str):
             object_rendered_txt = str(object_rendered)
         if object_rendered_txt != "":

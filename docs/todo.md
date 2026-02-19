@@ -13,9 +13,9 @@
    - [x] `src/runtime/cpp/pytra/std/math.h/.cpp` を自動生成物へ置換し、手書き実装を廃止する。
    - [ ] `pathlib/time/dataclasses/sys` も同様に生成対象へ揃える。
    - [x] `python3 tools/generate_cpp_pylib_runtime.py --check`（または後継コマンド）で `std/runtime` 両方の stale チェックが通るようにする。
-   - [ ] 生成後に `tools/check_py2cpp_transpile.py` と `tools/verify_sample_outputs.py` で回帰確認する。
+   - [x] 生成後に `tools/check_py2cpp_transpile.py` と `tools/verify_sample_outputs.py` で回帰確認する。
      - [x] `tools/check_py2cpp_transpile.py` は pass（`checked=103 ok=103 fail=0 skipped=5`）。
-     - [ ] `tools/verify_sample_outputs.py` は `sample/14_raymarching_light_cycle` の C++ 実行時エラー（`palette must be 256*3 bytes`）が残るため未完。
+     - [x] `tools/verify_sample_outputs.py` は pass（`OK=16 NG=0`）。
 
 2. [ ] selfhost `.py` 経路の段階回復
    - [x] `load_east` スタブ置換のために必要な EAST 変換依存（parser/east_io）を最小単位で棚卸しする。
