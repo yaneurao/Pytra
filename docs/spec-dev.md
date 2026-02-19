@@ -132,11 +132,12 @@
 
 `py2cpp.py` は import 文に応じて include を生成します。
 
-- `import math` -> `#include "runtime/cpp/std/math.h"`
-- `import pathlib` -> `#include "runtime/cpp/std/pathlib.h"`
-- `import time` / `from time import ...` -> `#include "runtime/cpp/std/time.h"`
-- `from dataclasses import dataclass` -> `#include "runtime/cpp/std/dataclasses.h"`
-- `from pylib.tra import png` / `import png` -> `#include "runtime/cpp/pylib/png.h"`
+- `import pytra.std.math` -> `#include "pytra/std/math.h"`
+- `import pytra.std.pathlib` -> `#include "pytra/std/pathlib.h"`
+- `import pytra.std.time` / `from pytra.std.time import ...` -> `#include "pytra/std/time.h"`
+- `from pytra.std.dataclasses import dataclass` -> `#include "pytra/std/dataclasses.h"`
+- `import pytra.runtime.png` -> `#include "pytra/runtime/png.h"`
+- `import pytra.runtime.gif` -> `#include "pytra/runtime/gif.h"`
 - GC は常時 `#include "runtime/cpp/base/gc.h"` を利用
 
 `math` などの `module.attr(...)` 呼び出しは、`LanguageProfile`（JSON）の設定で C++ ランタイム呼び出しへマップします。
@@ -153,14 +154,14 @@
 
 主な補助モジュール実装:
 
-- `src/runtime/cpp/std/math.h`, `src/runtime/cpp/std/math.cpp`
-- `src/runtime/cpp/std/pathlib.h`, `src/runtime/cpp/std/pathlib.cpp`
-- `src/runtime/cpp/std/time.h`, `src/runtime/cpp/std/time.cpp`
-- `src/runtime/cpp/std/dataclasses.h`, `src/runtime/cpp/std/dataclasses.cpp`
+- `src/runtime/cpp/pytra/std/math.h`（bridge）, `src/runtime/cpp/std/math.cpp`
+- `src/runtime/cpp/pytra/std/pathlib.h`（bridge）, `src/runtime/cpp/std/pathlib.cpp`
+- `src/runtime/cpp/pytra/std/time.h`（bridge）, `src/runtime/cpp/std/time.cpp`
+- `src/runtime/cpp/pytra/std/dataclasses.h`（bridge）, `src/runtime/cpp/std/dataclasses.cpp`
 - `src/runtime/cpp/base/gc.h`, `src/runtime/cpp/base/gc.cpp`
-- `src/runtime/cpp/std/sys.h`, `src/runtime/cpp/std/sys.cpp`
-- `src/runtime/cpp/pylib/png.h`, `src/runtime/cpp/pylib/png.cpp`
-- `src/runtime/cpp/pylib/gif.h`, `src/runtime/cpp/pylib/gif.cpp`
+- `src/runtime/cpp/pytra/std/sys.h`（bridge）, `src/runtime/cpp/std/sys.cpp`
+- `src/runtime/cpp/pytra/runtime/png.h`（bridge）, `src/runtime/cpp/pylib/png.cpp`
+- `src/runtime/cpp/pytra/runtime/gif.h`（bridge）, `src/runtime/cpp/pylib/gif.cpp`
 - `src/runtime/cpp/py_runtime.h`
 
 `src/runtime/cpp/py_runtime.h` のコンテナ方針:
