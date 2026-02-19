@@ -12,6 +12,7 @@
    - [x] `from XXX import YYY` の解決を runtime include / 呼び出し解決まで一貫させ、hook 側の暫定名寄せ分岐を削除した。
    - [x] runtime 側 include パス（`pytra/std/*`, `pytra/runtime/*`）と import 正規化ルールを完全同期した。
    - [x] 複数ファイル構成で `sample/py` の import ケースを通し、`tools/check_py2cpp_transpile.py` をゲート化した（`--check-multi-file-imports`）。
+   - [x] `cpp_hooks.py` から `owner_mod == "pytra.runtime.png"` などのライブラリ決め打ち分岐を削除し、`runtime_call` + `module_attr_call_map` ベース解決へ統一した。
 
 ## 2026-02-19 完了: 複数ファイル構成（import 強化）先行キュー
 

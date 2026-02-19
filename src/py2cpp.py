@@ -176,6 +176,13 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "ceil": "py_math::ceil",
         "pow": "py_math::pow",
     }
+    out["pytra.runtime.png"] = {
+        "write_rgb_png": "write_rgb_png",
+    }
+    out["pytra.runtime.gif"] = {
+        "save_gif": "save_gif",
+        "grayscale_palette": "grayscale_palette",
+    }
     out["os.path"] = {
         "join": "py_os_path_join",
         "dirname": "py_os_path_dirname",

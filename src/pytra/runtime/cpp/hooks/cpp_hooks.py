@@ -44,6 +44,48 @@ def _render_owner_expr(emitter: Any, func_node: dict[str, Any]) -> str:
     return owner_expr
 
 
+def _lookup_module_attr_runtime_call(emitter: Any, module_name: str, attr: str) -> str:
+    """`module.attr` から runtime_call 名を引く（pytra.* は短縮名フォールバックしない）。"""
+    module_name_norm = emitter._normalize_runtime_module_name(module_name)
+    keys: list[str] = [module_name_norm]
+    short = emitter._last_dotted_name(module_name_norm)
+    if short != module_name_norm and not module_name_norm.startswith("pytra."):
+        keys.append(short)
+    for key in keys:
+        if key in emitter.module_attr_call_map:
+            owner_map = emitter.module_attr_call_map[key]
+            if attr in owner_map:
+                mapped = owner_map[attr]
+                if isinstance(mapped, str) and mapped != "":
+                    return mapped
+    return ""
+
+
+def _infer_runtime_call_from_func_node(emitter: Any, func_node: dict[str, Any]) -> str:
+    """Call ノードの func から runtime_call を推定する。"""
+    fn_kind = emitter.any_dict_get_str(func_node, "kind", "")
+    if fn_kind == "Name":
+        fn_name = emitter.any_dict_get_str(func_node, "id", "")
+        if fn_name == "":
+            return ""
+        sym = emitter._resolve_imported_symbol(fn_name)
+        module_name = emitter.any_dict_get_str(sym, "module", "")
+        symbol_name = emitter.any_dict_get_str(sym, "name", "")
+        if module_name != "" and symbol_name != "":
+            mapped = emitter._resolve_runtime_call_for_imported_symbol(module_name, symbol_name)
+            if isinstance(mapped, str) and mapped != "":
+                return mapped
+        return ""
+    if fn_kind == "Attribute":
+        owner_expr = emitter.render_expr(func_node.get("value"))
+        owner_mod = emitter._resolve_imported_module_name(owner_expr)
+        owner_mod = emitter._normalize_runtime_module_name(owner_mod)
+        attr = emitter.any_dict_get_str(func_node, "attr", "")
+        if owner_mod != "" and attr != "":
+            return _lookup_module_attr_runtime_call(emitter, owner_mod, attr)
+    return ""
+
+
 def on_render_call(
     emitter: Any,
     call_node: dict[str, Any],
@@ -53,6 +95,8 @@ def on_render_call(
 ) -> str | None:
     """Call 式出力フック。文字列を返すとその式を採用する。"""
     runtime_call = emitter.any_dict_get_str(call_node, "runtime_call", "")
+    if runtime_call == "":
+        runtime_call = _infer_runtime_call_from_func_node(emitter, func_node)
     if runtime_call == "std::filesystem::create_directories":
         owner = _render_owner_expr(emitter, func_node)
         parents = rendered_kwargs.get("parents", "false")
@@ -88,33 +132,6 @@ def on_render_call(
         return _render_save_gif(rendered_args, rendered_kwargs)
     if runtime_call == "write_rgb_png":
         return _render_write_rgb_png(rendered_args)
-    fn_kind = emitter.any_dict_get_str(func_node, "kind", "")
-    if fn_kind == "Name":
-        fn_name = emitter.any_dict_get_str(func_node, "id", "")
-        if fn_name == "write_rgb_png":
-            return _render_write_rgb_png(rendered_args)
-        if fn_name == "save_gif":
-            return _render_save_gif(rendered_args, rendered_kwargs)
-        sym = emitter._resolve_imported_symbol(fn_name)
-        module_name = emitter.any_dict_get_str(sym, "module", "")
-        module_name = emitter._normalize_runtime_module_name(module_name)
-        symbol_name = emitter.any_dict_get_str(sym, "name", "")
-        if module_name == "pytra.runtime.png" and symbol_name == "write_rgb_png":
-            return _render_write_rgb_png(rendered_args)
-        if module_name == "pytra.runtime.gif" and symbol_name == "save_gif":
-            return _render_save_gif(rendered_args, rendered_kwargs)
-
-    if fn_kind == "Attribute":
-        owner_node = emitter.any_to_dict_or_empty(func_node.get("value"))
-        owner_expr = emitter.render_expr(func_node.get("value"))
-        owner_mod = emitter._resolve_imported_module_name(owner_expr)
-        owner_mod = emitter._normalize_runtime_module_name(owner_mod)
-        attr = emitter.any_dict_get_str(func_node, "attr", "")
-        if owner_node.get("kind") in {"Name", "Attribute"}:
-            if owner_mod == "pytra.runtime.png" and attr == "write_rgb_png":
-                return _render_write_rgb_png(rendered_args)
-            if owner_mod == "pytra.runtime.gif" and attr == "save_gif":
-                return _render_save_gif(rendered_args, rendered_kwargs)
     return None
 
 
@@ -142,9 +159,12 @@ def on_render_expr_kind(
             return base_expr + ".stem()"
         if attr == "parent":
             return base_expr + ".parent()"
-    if base_mod == "pytra.runtime.png" and attr == "write_rgb_png":
+    mapped = ""
+    if owner_kind in {"Name", "Attribute"} and attr != "":
+        mapped = _lookup_module_attr_runtime_call(emitter, base_mod, attr)
+    if mapped == "write_rgb_png":
         return "pytra::png::write_rgb_png"
-    if base_mod == "pytra.runtime.gif" and attr == "save_gif":
+    if mapped == "save_gif":
         return "pytra::gif::save_gif"
     return None
 
