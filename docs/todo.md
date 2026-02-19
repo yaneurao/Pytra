@@ -30,14 +30,14 @@
      - [x] `g++` で runtime をリンクして実行し、Python 出力と一致確認
    - [x] 受け入れ条件: `test/fixtures/stdlib/*.py` が 10/10 で compile-run 一致。
 
-0. [ ] `runtime/cpp/pylib` を完全自動生成へ移行する（手書きラッパ/手書きヘッダ廃止）
+0. [x] `runtime/cpp/pylib` を完全自動生成へ移行する（手書きラッパ/手書きヘッダ廃止）
    - [x] 方針確定: `src/runtime/cpp/pylib/*.h` / `*.cpp` を手書き管理しない構成へ変更する。
    - [x] `src/pylib/tra/png.py` / `src/pylib/tra/gif.py` から、C++ 側で直接 include/link 可能な成果物（宣言 + 定義）を生成する。
    - [x] 生成結果の公開シンボル（`pytra::pylib::png::*`, `pytra::pylib::gif::*`）を固定し、`py_runtime.h` 側の include を生成物へ切替える。
    - [x] 現在の手書き `src/runtime/cpp/pylib/png.h`, `src/runtime/cpp/pylib/png.cpp`, `src/runtime/cpp/pylib/gif.h`, `src/runtime/cpp/pylib/gif.cpp` を削除する。
    - [x] 生成スクリプト `tools/generate_cpp_pylib_runtime.py` を「ヘッダ/実装の両方を出力する」仕様へ拡張する。
    - [x] `tools/build_selfhost.py` / `tools/run_local_ci.py` / `tools/verify_*` の参照先を新生成物構成へ更新する。
-   - [ ] 受け入れ条件:
+   - [x] 受け入れ条件:
      - [x] `python3 tools/generate_cpp_pylib_runtime.py --check` が pass。
      - [x] `python3 tools/check_py2cpp_transpile.py` が pass。
      - [x] `python3 tools/build_selfhost.py` が pass。
@@ -85,7 +85,7 @@
    - [x] 回帰コマンド群（transpile/feature/selfhost build/selfhost diff）を1コマンド実行できるスクリプト化。: `tools/run_local_ci.py`
    - [x] `docs/how-to-use.md` か `docs/spec-codex.md` に実行手順を追記。: `docs/spec-codex.md` へ追記
    - [x] 上記スクリプトを日次作業のデフォルトゲートとして運用する。: `docs/spec-codex.md` に運用ルール追記済み
-5. [ ] `unit` と `fixtures/stdlib` の同値性を揃える
+5. [x] `unit` と `fixtures/stdlib` の同値性を揃える
    - [x] `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` の `fixtures/stdlib/*_extended.py` を追加する。
    - [x] 既存 C++ ランタイムで実行可能な `math` / `pathlib` を `test/unit/test_py2cpp_features.py` の runtime 回帰に追加する。
    - [x] `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` の compile-run 失敗要因を分解する。
@@ -93,10 +93,10 @@
      - [x] `dataclasses`: `Exception` 継承/`repr`/rc 比較などの未対応が残る。
      - [x] `enum`: `IntFlag` 合成値の型退化（`std::any`）による演算子不整合が残る。
    - [x] 未対応モジュールを順に C++ runtime 接続する（`json -> os/glob -> argparse -> sys/typing -> re -> dataclasses -> enum`）。
-     - [ ] `json`:
+     - [x] `json`:
        - [x] `fixtures/stdlib/json_extended.py` を単体 compile-run で通し、`json.loads/dumps` の最低限 API を固定する。
        - [x] `test/unit/test_py2cpp_features.py` に `json_extended` runtime 回帰を追加する。: `test_json_extended_runtime`
-    - [ ] `os/glob`:
+    - [x] `os/glob`:
       - [x] `fixtures/stdlib/os_glob_extended.py` を compile-run で通す。
       - [x] `os.path.join/splitext/dirname/basename/exists` と `glob.glob` の呼び出し解決を点検する。
       - [x] `test/unit/test_py2cpp_features.py` に `os_glob_extended` runtime 回帰を追加する。
