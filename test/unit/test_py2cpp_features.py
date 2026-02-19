@@ -604,6 +604,44 @@ def main() -> None:
             self.assertIn("main.py", manifest_txt)
             self.assertIn("helper.py", manifest_txt)
 
+    def test_cli_multi_file_user_import_build_and_run(self) -> None:
+        src_main = """import helper
+
+def main() -> None:
+    print(helper.f())
+
+if __name__ == "__main__":
+    main()
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            out_dir = root / "out"
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            exe = out_dir / "app.out"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            tr = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            bd = subprocess.run(
+                ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(bd.returncode, 0, msg=bd.stderr)
+            rn = subprocess.run([str(exe)], cwd=ROOT, capture_output=True, text=True)
+            self.assertEqual(rn.returncode, 0, msg=rn.stderr)
+            self.assertIn("1", rn.stdout)
+
     def test_cli_reports_input_invalid_category(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             bad_json = Path(tmpdir) / "bad.json"

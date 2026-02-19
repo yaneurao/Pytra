@@ -143,7 +143,7 @@
    - [x] モジュールごとに `.h/.cpp` を生成し、宣言/定義を分離する。: `--multi-file` で module ごとの `.h/.cpp` と `manifest.json` を出力
      - [x] 生成先ディレクトリ構造（`out/include`, `out/src` など）を固定する。: `--output-dir` 未指定時 `out/include`,`out/src`
      - [x] シンボル重複回避の命名規則（namespace / include guard）を定義する。: 相対パス由来ラベル + sanitize で guard 生成
-   - [ ] main モジュールから依存モジュールを include/link できるようにする。
+   - [x] main モジュールから依存モジュールを include/link できるようにする。: ユーザーモジュール呼び出しを `namespace::symbol` へ変換し、前方宣言を補完
    - [ ] ランタイム include/namespace の重複を除去する。
 4. [ ] ビルド・実行検証を整備する。
    - [x] 複数ファイル生成物を一括コンパイルするスクリプトを追加する。: `tools/build_multi_cpp.py`

@@ -379,6 +379,7 @@ class CppEmitter(CodeEmitter):
         opt_level: str = "2",
         top_namespace: str = "",
         emit_main: bool = True,
+        module_namespace_map: dict[str, str] | None = None,
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
         profile = load_cpp_profile()
@@ -420,6 +421,7 @@ class CppEmitter(CodeEmitter):
         self.reserved_words.add("main")
         self.import_modules: dict[str, str] = {}
         self.import_symbols: dict[str, dict[str, str]] = {}
+        self.module_namespace_map: dict[str, str] = module_namespace_map if isinstance(module_namespace_map, dict) else {}
         self.function_arg_types: dict[str, list[str]] = {}
         self.current_function_return_type: str = ""
         self.declared_var_types: dict[str, str] = {}
@@ -2330,6 +2332,11 @@ class CppEmitter(CodeEmitter):
                     return special_imported
                 if mapped_runtime_txt != "" and mapped_runtime_txt not in {"perf_counter", "Path"}:
                     return f"{mapped_runtime_txt}({', '.join(args)})"
+                imported_module_norm = self._normalize_runtime_module_name(imported_module)
+                if imported_module_norm in self.module_namespace_map:
+                    ns = self.module_namespace_map[imported_module_norm]
+                    if ns != "":
+                        return f"{ns}::{raw}({', '.join(args)})"
             if raw == "range":
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
             if isinstance(raw, str) and raw in self.ref_classes:
@@ -2429,6 +2436,10 @@ class CppEmitter(CodeEmitter):
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
         owner_mod_norm = self._normalize_runtime_module_name(owner_mod)
+        if owner_mod_norm in self.module_namespace_map:
+            ns = self.module_namespace_map[owner_mod_norm]
+            if ns != "":
+                return f"{ns}::{attr}({', '.join(args)})"
         owner_keys: list[str] = []
         owner_keys.append(owner_mod_norm)
         short = self._last_dotted_name(owner_mod_norm)
@@ -3373,6 +3384,7 @@ def transpile_to_cpp(
     opt_level: str = "2",
     top_namespace: str = "",
     emit_main: bool = True,
+    module_namespace_map: dict[str, str] | None = None,
 ) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
     return CppEmitter(
@@ -3387,6 +3399,7 @@ def transpile_to_cpp(
         opt_level,
         top_namespace,
         emit_main,
+        module_namespace_map,
     ).transpile()
 
 
@@ -3818,9 +3831,11 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                 if isinstance(name_obj, str) and name_obj != "":
                     arg_types_obj: object = st.get("arg_types")
                     arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
+                    arg_order_obj: object = st.get("arg_order")
+                    arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
                     ret_obj: object = st.get("return_type")
                     ret_type = ret_obj if isinstance(ret_obj, str) else "None"
-                    fn_schema[name_obj] = {"arg_types": arg_types, "return_type": ret_type}
+                    fn_schema[name_obj] = {"arg_types": arg_types, "arg_order": arg_order, "return_type": ret_type}
             elif kind == "ClassDef":
                 name_obj = st.get("name")
                 if isinstance(name_obj, str) and name_obj != "":
@@ -3864,6 +3879,22 @@ def _module_rel_label(root: Path, module_path: Path) -> str:
     return _sanitize_module_label(rel)
 
 
+def _module_name_from_path(root: Path, module_path: Path) -> str:
+    root_txt = str(root)
+    path_txt = str(module_path)
+    if root_txt != "" and not root_txt.endswith("/"):
+        root_txt += "/"
+    rel = path_txt
+    if root_txt != "" and path_txt.startswith(root_txt):
+        rel = path_txt[len(root_txt) :]
+    if rel.endswith(".py"):
+        rel = rel[:-3]
+    rel = rel.replace("/", ".")
+    if rel.endswith(".__init__"):
+        rel = rel[: -9]
+    return rel
+
+
 def _write_multi_file_cpp(
     *,
     entry_path: Path,
@@ -3891,6 +3922,31 @@ def _write_multi_file_cpp(
     files_obj = module_east_map.keys()
     files = list(files_obj)
     files.sort()
+    module_ns_map: dict[str, str] = {}
+    module_label_map: dict[str, str] = {}
+    i = 0
+    while i < len(files):
+        mod_key = files[i]
+        mod_path = Path(mod_key)
+        label = _module_rel_label(root, mod_path)
+        module_label_map[mod_key] = label
+        mod_name = _module_name_from_path(root, mod_path)
+        if mod_name != "":
+            module_ns_map[mod_name] = "pytra_mod_" + label
+        i += 1
+
+    symbol_index = build_module_symbol_index(module_east_map)
+    type_schema = build_module_type_schema(module_east_map)
+
+    def _inject_after_includes(cpp_text: str, block: str) -> str:
+        if block == "":
+            return cpp_text
+        pos = cpp_text.find("\n\n")
+        if pos < 0:
+            return cpp_text + "\n" + block + "\n"
+        head = cpp_text[: pos + 2]
+        tail = cpp_text[pos + 2 :]
+        return head + block + "\n" + tail
 
     manifest: dict[str, Any] = {}
     manifest["entry"] = entry_key
@@ -3903,7 +3959,7 @@ def _write_multi_file_cpp(
         mod_key = files[i]
         east = module_east_map[mod_key]
         mod_path = Path(mod_key)
-        label = _module_rel_label(root, mod_path)
+        label = module_label_map[mod_key]
         hdr_path = include_dir / (label + ".h")
         cpp_path = src_dir / (label + ".cpp")
         guard = "PYTRA_MULTI_" + _sanitize_module_label(label).upper() + "_H"
@@ -3929,9 +3985,91 @@ def _write_multi_file_cpp(
             str_index_mode,
             str_slice_mode,
             opt_level,
-            top_namespace,
+            "pytra_mod_" + label,
             emit_main if is_entry else False,
+            module_ns_map,
         )
+        # ユーザーモジュール import 呼び出しを解決するため、参照先関数の前方宣言を補う。
+        meta_obj = east.get("meta")
+        meta = meta_obj if isinstance(meta_obj, dict) else {}
+        type_emitter = CppEmitter(
+            east,
+            negative_index_mode,
+            bounds_check_mode,
+            floor_div_mode,
+            mod_mode,
+            int_width,
+            str_index_mode,
+            str_slice_mode,
+            opt_level,
+            "",
+            False,
+            {},
+        )
+        import_modules_obj = meta.get("import_modules")
+        import_modules = import_modules_obj if isinstance(import_modules_obj, dict) else {}
+        import_symbols_obj = meta.get("import_symbols")
+        import_symbols = import_symbols_obj if isinstance(import_symbols_obj, dict) else {}
+        dep_modules: set[str] = set()
+        for _alias, mod_name_obj in import_modules.items():
+            if isinstance(mod_name_obj, str) and mod_name_obj != "":
+                dep_modules.add(mod_name_obj)
+        for _alias, sym_obj in import_symbols.items():
+            sym = sym_obj if isinstance(sym_obj, dict) else {}
+            mod_name_obj = sym.get("module")
+            if isinstance(mod_name_obj, str) and mod_name_obj != "":
+                dep_modules.add(mod_name_obj)
+        fwd_lines: list[str] = []
+        for mod_name in dep_modules:
+            if mod_name not in module_ns_map:
+                continue
+            target_ns = module_ns_map[mod_name]
+            target_key = ""
+            for k2, p2 in module_east_map.items():
+                if _module_name_from_path(root, Path(k2)) == mod_name:
+                    target_key = k2
+                    break
+            if target_key == "":
+                continue
+            target_schema_obj = type_schema.get(target_key)
+            target_schema = target_schema_obj if isinstance(target_schema_obj, dict) else {}
+            funcs_obj = target_schema.get("functions")
+            funcs = funcs_obj if isinstance(funcs_obj, dict) else {}
+            # `main` は他モジュールから呼ばれない前提。
+            fn_decls: list[str] = []
+            for fn_name, sig_obj in funcs.items():
+                if not isinstance(fn_name, str) or fn_name == "main":
+                    continue
+                sig = sig_obj if isinstance(sig_obj, dict) else {}
+                ret_obj = sig.get("return_type")
+                ret_t = ret_obj if isinstance(ret_obj, str) else "None"
+                if ret_t == "None":
+                    ret_cpp = "void"
+                else:
+                    ret_cpp = type_emitter._cpp_type_text(ret_t)
+                arg_types_obj = sig.get("arg_types")
+                arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
+                arg_order_obj = sig.get("arg_order")
+                arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
+                parts: list[str] = []
+                j = 0
+                while j < len(arg_order):
+                    an = arg_order[j]
+                    if not isinstance(an, str):
+                        j += 1
+                        continue
+                    at_obj = arg_types.get(an)
+                    at = at_obj if isinstance(at_obj, str) else "object"
+                    at_cpp = type_emitter._cpp_type_text(at)
+                    parts.append(at_cpp + " " + an)
+                    j += 1
+                fn_decls.append("    " + ret_cpp + " " + fn_name + "(" + ", ".join(parts) + ");")
+            if len(fn_decls) > 0:
+                fwd_lines.append("namespace " + target_ns + " {")
+                fwd_lines.extend(fn_decls)
+                fwd_lines.append("}  // namespace " + target_ns)
+        if len(fwd_lines) > 0:
+            cpp_txt = _inject_after_includes(cpp_txt, "\n".join(fwd_lines))
         cpp_path.write_text(cpp_txt, encoding="utf-8")
 
         modules_obj = manifest.get("modules")
