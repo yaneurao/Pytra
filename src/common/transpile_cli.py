@@ -55,13 +55,17 @@ def resolve_codegen_options(
     floor_div_mode_opt: str,
     mod_mode_opt: str,
     int_width_opt: str,
-) -> tuple[str, str, str, str, str]:
+    str_index_mode_opt: str,
+    str_slice_mode_opt: str,
+) -> tuple[str, str, str, str, str, str, str]:
     """プリセットと個別指定から最終オプションを決定する。"""
     neg = "const_only"
     bnd = "off"
     fdiv = "native"
     mod = "native"
     int_width = "64"
+    str_index = "native"
+    str_slice = "byte"
 
     if preset != "":
         if preset == "native":
@@ -70,18 +74,24 @@ def resolve_codegen_options(
             fdiv = "native"
             mod = "native"
             int_width = "64"
+            str_index = "native"
+            str_slice = "byte"
         elif preset == "balanced":
             neg = "const_only"
             bnd = "debug"
             fdiv = "python"
             mod = "python"
             int_width = "64"
+            str_index = "byte"
+            str_slice = "byte"
         elif preset == "python":
             neg = "always"
             bnd = "always"
             fdiv = "python"
             mod = "python"
             int_width = "bigint"
+            str_index = "codepoint"
+            str_slice = "codepoint"
         else:
             raise ValueError(f"invalid --preset: {preset}")
 
@@ -95,7 +105,11 @@ def resolve_codegen_options(
         mod = mod_mode_opt
     if int_width_opt != "":
         int_width = int_width_opt
-    return neg, bnd, fdiv, mod, int_width
+    if str_index_mode_opt != "":
+        str_index = str_index_mode_opt
+    if str_slice_mode_opt != "":
+        str_slice = str_slice_mode_opt
+    return neg, bnd, fdiv, mod, int_width, str_index, str_slice
 
 
 def validate_codegen_options(
@@ -104,6 +118,8 @@ def validate_codegen_options(
     floor_div_mode: str,
     mod_mode: str,
     int_width: str,
+    str_index_mode: str,
+    str_slice_mode: str,
 ) -> str:
     """最終オプションの妥当性を検証し、エラーメッセージを返す。"""
     if negative_index_mode not in {"always", "const_only", "off"}:
@@ -118,6 +134,14 @@ def validate_codegen_options(
         return f"invalid --int-width: {int_width}"
     if int_width == "bigint":
         return "--int-width=bigint is not implemented yet"
+    if str_index_mode not in {"byte", "codepoint", "native"}:
+        return f"invalid --str-index-mode: {str_index_mode}"
+    if str_slice_mode not in {"byte", "codepoint"}:
+        return f"invalid --str-slice-mode: {str_slice_mode}"
+    if str_index_mode == "codepoint":
+        return "--str-index-mode=codepoint is not implemented yet"
+    if str_slice_mode == "codepoint":
+        return "--str-slice-mode=codepoint is not implemented yet"
     return ""
 
 
@@ -128,6 +152,8 @@ def dump_codegen_options_text(
     floor_div_mode: str,
     mod_mode: str,
     int_width: str,
+    str_index_mode: str,
+    str_slice_mode: str,
 ) -> str:
     """解決済みオプションを人間向けテキストへ整形する。"""
     p = preset if preset != "" else "(none)"
@@ -139,6 +165,8 @@ def dump_codegen_options_text(
         f"  floor-div-mode: {floor_div_mode}\n"
         f"  mod-mode: {mod_mode}\n"
         f"  int-width: {int_width}\n"
+        f"  str-index-mode: {str_index_mode}\n"
+        f"  str-slice-mode: {str_slice_mode}\n"
     )
 
 
@@ -152,6 +180,8 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         "floor_div_mode_opt": "",
         "mod_mode_opt": "",
         "int_width_opt": "",
+        "str_index_mode_opt": "",
+        "str_slice_mode_opt": "",
         "preset": "",
         "parser_backend": "self_hosted",
         "no_main": "0",
@@ -191,6 +221,16 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
             if i >= len(argv):
                 return {}, "missing value for --int-width"
             out["int_width_opt"] = argv[i]
+        elif a == "--str-index-mode":
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --str-index-mode"
+            out["str_index_mode_opt"] = argv[i]
+        elif a == "--str-slice-mode":
+            i += 1
+            if i >= len(argv):
+                return {}, "missing value for --str-slice-mode"
+            out["str_slice_mode_opt"] = argv[i]
         elif a == "--preset":
             i += 1
             if i >= len(argv):
