@@ -963,7 +963,17 @@ class CppEmitter(CodeEmitter):
             inc = f"--{tgt}"
         else:
             inc = f"{tgt} += {step}"
-        hdr = f"for ({tgt_ty} {tgt} = {start}; {cond}; {inc})"
+        hdr = self.syntax_line(
+            "for_range_open",
+            "for ({type} {target} = {start}; {cond}; {inc})",
+            {
+                "type": tgt_ty,
+                "target": tgt,
+                "start": start,
+                "cond": cond,
+                "inc": inc,
+            },
+        )
         if omit_braces:
             self.emit(hdr)
             self.indent += 1
@@ -1016,12 +1026,24 @@ class CppEmitter(CodeEmitter):
         hdr = ""
         if unpack_tuple:
             iter_tmp = self.next_tmp("__it")
-            hdr = f"for (auto {iter_tmp} : {it})"
+            hdr = self.syntax_line(
+                "for_each_unpack_open",
+                "for (auto {iter_tmp} : {iter})",
+                {"iter_tmp": iter_tmp, "iter": it},
+            )
         else:
             if t_ty == "auto":
-                hdr = f"for (auto& {t} : {it})"
+                hdr = self.syntax_line(
+                    "for_each_auto_ref_open",
+                    "for (auto& {target} : {iter})",
+                    {"target": t, "iter": it},
+                )
             else:
-                hdr = f"for ({t_ty} {t} : {it})"
+                hdr = self.syntax_line(
+                    "for_each_typed_open",
+                    "for ({type} {target} : {iter})",
+                    {"type": t_ty, "target": t, "iter": it},
+                )
         if omit_braces:
             self.emit(hdr)
             self.indent += 1
