@@ -34,6 +34,16 @@ def _render_save_gif(args: list[str], kw: dict[str, str]) -> str:
     )
 
 
+def _render_owner_expr(emitter: Any, func_node: dict[str, Any]) -> str:
+    """Attribute call の owner 式を C++ 向けに整形する。"""
+    owner_node = emitter.any_to_dict_or_empty(func_node.get("value"))
+    owner_expr = emitter.render_expr(func_node.get("value"))
+    owner_kind = emitter.any_dict_get_str(owner_node, "kind", "")
+    if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+        owner_expr = "(" + owner_expr + ")"
+    return owner_expr
+
+
 def on_render_call(
     emitter: Any,
     call_node: dict[str, Any],
@@ -43,6 +53,37 @@ def on_render_call(
 ) -> str | None:
     """Call 式出力フック。文字列を返すとその式を採用する。"""
     runtime_call = emitter.any_dict_get_str(call_node, "runtime_call", "")
+    if runtime_call == "std::filesystem::create_directories":
+        owner = _render_owner_expr(emitter, func_node)
+        parents = rendered_kwargs.get("parents", "false")
+        exist_ok = rendered_kwargs.get("exist_ok", "false")
+        if len(rendered_args) >= 1:
+            parents = rendered_args[0]
+        if len(rendered_args) >= 2:
+            exist_ok = rendered_args[1]
+        return owner + ".mkdir(" + parents + ", " + exist_ok + ")"
+    if runtime_call == "std::filesystem::exists":
+        owner = _render_owner_expr(emitter, func_node)
+        return owner + ".exists()"
+    if runtime_call == "py_write_text":
+        owner = _render_owner_expr(emitter, func_node)
+        write_arg = rendered_args[0] if len(rendered_args) >= 1 else '""'
+        return owner + ".write_text(" + write_arg + ")"
+    if runtime_call == "py_read_text":
+        owner = _render_owner_expr(emitter, func_node)
+        return owner + ".read_text()"
+    if runtime_call == "path_parent":
+        owner = _render_owner_expr(emitter, func_node)
+        return owner + ".parent()"
+    if runtime_call == "path_name":
+        owner = _render_owner_expr(emitter, func_node)
+        return owner + ".name()"
+    if runtime_call == "path_stem":
+        owner = _render_owner_expr(emitter, func_node)
+        return owner + ".stem()"
+    if runtime_call == "identity":
+        owner = _render_owner_expr(emitter, func_node)
+        return owner
     if runtime_call == "save_gif":
         return _render_save_gif(rendered_args, rendered_kwargs)
     if runtime_call == "write_rgb_png":

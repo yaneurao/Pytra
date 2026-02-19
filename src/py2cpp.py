@@ -2130,49 +2130,6 @@ class CppEmitter(CodeEmitter):
             return f"std::runtime_error({args[0]})"
         if runtime_call == "Path":
             return f"Path({', '.join(args)})"
-        if runtime_call == "std::filesystem::create_directories":
-            owner_node = self.any_to_dict_or_empty(fn.get("value"))
-            owner = self.render_expr(fn.get("value"))
-            if len(owner_node) > 0 and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                owner = f"({owner})"
-            parents = kw.get("parents", "false")
-            exist_ok = kw.get("exist_ok", "false")
-            if len(args) >= 1:
-                parents = args[0]
-            if len(args) >= 2:
-                exist_ok = args[1]
-            return f"{owner}.mkdir({parents}, {exist_ok})"
-        if runtime_call == "std::filesystem::exists":
-            owner_node = self.any_to_dict_or_empty(fn.get("value"))
-            owner = self.render_expr(fn.get("value"))
-            if len(owner_node) > 0 and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                owner = f"({owner})"
-            return f"{owner}.exists()"
-        if runtime_call == "py_write_text":
-            owner_node = self.any_to_dict_or_empty(fn.get("value"))
-            owner = self.render_expr(fn.get("value"))
-            if len(owner_node) > 0 and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                owner = f"({owner})"
-            write_arg = args[0] if len(args) >= 1 else '""'
-            return f"{owner}.write_text({write_arg})"
-        if runtime_call == "py_read_text":
-            owner_node = self.any_to_dict_or_empty(fn.get("value"))
-            owner = self.render_expr(fn.get("value"))
-            if len(owner_node) > 0 and owner_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                owner = f"({owner})"
-            return f"{owner}.read_text()"
-        if runtime_call == "path_parent":
-            owner = self.render_expr(fn.get("value"))
-            return f"{owner}.parent()"
-        if runtime_call == "path_name":
-            owner = self.render_expr(fn.get("value"))
-            return f"{owner}.name()"
-        if runtime_call == "path_stem":
-            owner = self.render_expr(fn.get("value"))
-            return f"{owner}.stem()"
-        if runtime_call == "identity":
-            owner = self.render_expr(fn.get("value"))
-            return owner
         if runtime_call == "list.append":
             owner = self.render_expr(fn.get("value"))
             a0 = args[0] if len(args) >= 1 else "/* missing */"
