@@ -12,6 +12,7 @@ from pylib.typing import Any
 from pylib.east_parts.code_emitter import CodeEmitter
 from pylib.east_parts.east_io import UserFacingError, load_east_from_path
 from common.language_profile import load_language_profile
+from common.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
 from pylib.pathlib import Path
 from pylib import sys
 
@@ -2516,76 +2517,27 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     return "modules:\n  (none)\nsymbols:\n  (none)\n"
 
 
-def resolve_codegen_options(
-    preset: str,
-    negative_index_mode_opt: str,
-    bounds_check_mode_opt: str,
-    floor_div_mode_opt: str,
-    mod_mode_opt: str,
-    int_width_opt: str,
-) -> tuple[str, str, str, str, str]:
-    """プリセットと個別指定から最終オプションを決定する。"""
-    neg = "const_only"
-    bnd = "off"
-    fdiv = "native"
-    mod = "native"
-    int_width = "64"
-
-    if preset != "":
-        if preset == "native":
-            neg = "off"
-            bnd = "off"
-            fdiv = "native"
-            mod = "native"
-            int_width = "64"
-        elif preset == "balanced":
-            neg = "const_only"
-            bnd = "debug"
-            fdiv = "python"
-            mod = "python"
-            int_width = "64"
-        elif preset == "python":
-            neg = "always"
-            bnd = "always"
-            fdiv = "python"
-            mod = "python"
-            int_width = "bigint"
-        else:
-            raise ValueError(f"invalid --preset: {preset}")
-
-    if negative_index_mode_opt != "":
-        neg = negative_index_mode_opt
-    if bounds_check_mode_opt != "":
-        bnd = bounds_check_mode_opt
-    if floor_div_mode_opt != "":
-        fdiv = floor_div_mode_opt
-    if mod_mode_opt != "":
-        mod = mod_mode_opt
-    if int_width_opt != "":
-        int_width = int_width_opt
-
-    return neg, bnd, fdiv, mod, int_width
-
-
-def dump_options_text(
-    preset: str,
-    negative_index_mode: str,
-    bounds_check_mode: str,
-    floor_div_mode: str,
-    mod_mode: str,
-    int_width: str,
-) -> str:
-    """解決済みオプションを人間向けテキストへ整形する。"""
-    p = preset if preset != "" else "(none)"
-    return (
-        "options:\n"
-        f"  preset: {p}\n"
-        f"  negative-index-mode: {negative_index_mode}\n"
-        f"  bounds-check-mode: {bounds_check_mode}\n"
-        f"  floor-div-mode: {floor_div_mode}\n"
-        f"  mod-mode: {mod_mode}\n"
-        f"  int-width: {int_width}\n"
-    )
+def print_user_error(err: UserFacingError) -> None:
+    """分類済みユーザーエラーをカテゴリ別に表示する。"""
+    cat = err.category
+    if cat == "user_syntax_error":
+        print("error: 入力 Python の文法エラーです。", file=sys.stderr)
+        print("[user_syntax_error] 構文を修正してください。", file=sys.stderr)
+    elif cat == "unsupported_by_design":
+        print("error: 言語仕様上サポート対象外の構文です。", file=sys.stderr)
+        print("[unsupported_by_design] 仕様に沿った書き方へ変更してください。", file=sys.stderr)
+    elif cat == "not_implemented":
+        print("error: まだ未実装の構文です。", file=sys.stderr)
+        print("[not_implemented] TODO の実装状況を確認してください。", file=sys.stderr)
+    elif cat == "input_invalid":
+        print("error: 入力ファイル形式が不正です。", file=sys.stderr)
+        print("[input_invalid] .py か正しい EAST JSON を指定してください。", file=sys.stderr)
+    else:
+        print("error: 変換に失敗しました。", file=sys.stderr)
+        print(f"[{cat}] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
+    for line in err.details:
+        if line != "":
+            print(line, file=sys.stderr)
 
 
 def main(argv: list[str]) -> int:
@@ -2593,86 +2545,22 @@ def main(argv: list[str]) -> int:
     argv_list: list[str] = []
     for a in argv:
         argv_list.append(a)
-    input_txt = ""
-    output_txt = ""
-    negative_index_mode_opt = ""
-    bounds_check_mode_opt = ""
-    floor_div_mode_opt = ""
-    mod_mode_opt = ""
-    int_width_opt = ""
-    preset = ""
-    parser_backend = "self_hosted"
-    no_main = False
-    dump_deps = False
-    dump_options = False
-
-    i = 0
-    while i < len(argv_list):
-        a = str(argv_list[i])
-        if a in {"-o", "--output"}:
-            i += 1
-            if i >= len(argv_list):
-                print("error: missing value for --output", file=sys.stderr)
-                return 1
-            output_txt = argv_list[i]
-        elif a == "--negative-index-mode":
-            i += 1
-            if i >= len(argv_list):
-                print("error: missing value for --negative-index-mode", file=sys.stderr)
-                return 1
-            negative_index_mode_opt = argv_list[i]
-        elif a == "--bounds-check-mode":
-            i += 1
-            if i >= len(argv_list):
-                print("error: missing value for --bounds-check-mode", file=sys.stderr)
-                return 1
-            bounds_check_mode_opt = argv_list[i]
-        elif a == "--floor-div-mode":
-            i += 1
-            if i >= len(argv_list):
-                print("error: missing value for --floor-div-mode", file=sys.stderr)
-                return 1
-            floor_div_mode_opt = argv_list[i]
-        elif a == "--mod-mode":
-            i += 1
-            if i >= len(argv_list):
-                print("error: missing value for --mod-mode", file=sys.stderr)
-                return 1
-            mod_mode_opt = argv_list[i]
-        elif a == "--int-width":
-            i += 1
-            if i >= len(argv_list):
-                print("error: missing value for --int-width", file=sys.stderr)
-                return 1
-            int_width_opt = argv_list[i]
-        elif a == "--preset":
-            i += 1
-            if i >= len(argv_list):
-                print("error: missing value for --preset", file=sys.stderr)
-                return 1
-            preset = argv_list[i]
-        elif a == "--parser-backend":
-            i += 1
-            if i >= len(argv_list):
-                print("error: missing value for --parser-backend", file=sys.stderr)
-                return 1
-            parser_backend = argv_list[i]
-        elif a == "--no-main":
-            no_main = True
-        elif a == "--dump-deps":
-            dump_deps = True
-        elif a == "--dump-options":
-            dump_options = True
-        elif a.startswith("-"):
-            print(f"error: unknown option: {a}", file=sys.stderr)
-            return 1
-        else:
-            if input_txt == "":
-                input_txt = a
-            else:
-                print(f"error: unexpected extra argument: {a}", file=sys.stderr)
-                return 1
-        i += 1
+    parsed, parse_err = parse_py2cpp_argv(argv_list)
+    if parse_err != "":
+        print(f"error: {parse_err}", file=sys.stderr)
+        return 1
+    input_txt = parsed.get("input", "")
+    output_txt = parsed.get("output", "")
+    negative_index_mode_opt = parsed.get("negative_index_mode_opt", "")
+    bounds_check_mode_opt = parsed.get("bounds_check_mode_opt", "")
+    floor_div_mode_opt = parsed.get("floor_div_mode_opt", "")
+    mod_mode_opt = parsed.get("mod_mode_opt", "")
+    int_width_opt = parsed.get("int_width_opt", "")
+    preset = parsed.get("preset", "")
+    parser_backend = parsed.get("parser_backend", "self_hosted")
+    no_main = parsed.get("no_main", "0") == "1"
+    dump_deps = parsed.get("dump_deps", "0") == "1"
+    dump_options = parsed.get("dump_options", "0") == "1"
 
     if input_txt == "":
         print(
@@ -2692,23 +2580,15 @@ def main(argv: list[str]) -> int:
     except ValueError as ex:
         print(f"error: {ex}", file=sys.stderr)
         return 1
-    if negative_index_mode not in {"always", "const_only", "off"}:
-        print(f"error: invalid --negative-index-mode: {negative_index_mode}", file=sys.stderr)
-        return 1
-    if bounds_check_mode not in {"always", "debug", "off"}:
-        print(f"error: invalid --bounds-check-mode: {bounds_check_mode}", file=sys.stderr)
-        return 1
-    if floor_div_mode not in {"native", "python"}:
-        print(f"error: invalid --floor-div-mode: {floor_div_mode}", file=sys.stderr)
-        return 1
-    if mod_mode not in {"native", "python"}:
-        print(f"error: invalid --mod-mode: {mod_mode}", file=sys.stderr)
-        return 1
-    if int_width not in {"32", "64", "bigint"}:
-        print(f"error: invalid --int-width: {int_width}", file=sys.stderr)
-        return 1
-    if int_width == "bigint":
-        print("error: --int-width=bigint is not implemented yet", file=sys.stderr)
+    opt_err = validate_codegen_options(
+        negative_index_mode,
+        bounds_check_mode,
+        floor_div_mode,
+        mod_mode,
+        int_width,
+    )
+    if opt_err != "" and not (dump_options and opt_err == "--int-width=bigint is not implemented yet"):
+        print(f"error: {opt_err}", file=sys.stderr)
         return 1
 
     input_path = Path(input_txt)
@@ -2716,7 +2596,7 @@ def main(argv: list[str]) -> int:
         print(f"error: input file not found: {input_path}", file=sys.stderr)
         return 1
     if dump_options:
-        options_text = dump_options_text(
+        options_text = dump_codegen_options_text(
             preset,
             negative_index_mode,
             bounds_check_mode,
@@ -2753,9 +2633,8 @@ def main(argv: list[str]) -> int:
             int_width,
             not no_main,
         )
-    except UserFacingError:
-        print("error: 変換に失敗しました。", file=sys.stderr)
-        print("[transpile_error] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
+    except UserFacingError as ex:
+        print_user_error(ex)
         return 1
     except Exception:
         print("error: 変換中に内部エラーが発生しました。", file=sys.stderr)
