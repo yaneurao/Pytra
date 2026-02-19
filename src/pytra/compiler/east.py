@@ -9,8 +9,8 @@ _bootstrap_src = __file__.replace("\\", "/").rsplit("/", 2)[0]
 if _bootstrap_src not in _bootstrap_sys.path:
     _bootstrap_sys.path.insert(0, _bootstrap_src)
 
-from pylib.std.pathlib import Path
-from pylib.std import sys
+from pytra.std.pathlib import Path
+from pytra.std import sys
 
 src_root = Path(__file__).resolve().parents[2]
 if str(src_root) not in sys.path:

@@ -11,8 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-PNG_SOURCE = "src/pylib/tra/png.py"
-GIF_SOURCE = "src/pylib/tra/gif.py"
+PNG_SOURCE = "src/pytra/runtime/png.py"
+GIF_SOURCE = "src/pytra/runtime/gif.py"
 
 
 def _namespace_parts_from_source(source_rel: str) -> list[str]:
@@ -32,7 +32,7 @@ def _namespace_parts_from_source(source_rel: str) -> list[str]:
 
 
 def _cpp_namespace_from_source(source_rel: str) -> str:
-    """`src/pylib/tra/gif.py` -> `pytra::pylib::tra::gif` を返す。"""
+    """`src/pytra/runtime/gif.py` -> `pytra::pylib::tra::gif` を返す。"""
     return "pytra::" + "::".join(_namespace_parts_from_source(source_rel))
 
 

@@ -8,7 +8,7 @@
 namespace pytra::pylib::tra::gif {
 namespace generated {
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pylib/tra/gif.py
+// source: src/pytra/runtime/gif.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 

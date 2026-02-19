@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC_PY2CPP = ROOT / "src" / "py2cpp.py"
 SRC_BASE = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
-SRC_TRANSPILE_CLI = ROOT / "src" / "pylib" / "tra" / "transpile_cli.py"
+SRC_TRANSPILE_CLI = ROOT / "src" / "pytra" / "compiler" / "transpile_cli.py"
 
 
 def _extract_code_emitter_class(text: str) -> str:
@@ -52,7 +52,7 @@ def _strip_triple_quoted_docstrings(text: str) -> str:
 def _remove_import_line(text: str) -> str:
     targets = [
         "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n",
-        "from pylib.tra.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n",
+        "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n",
     ]
     out = text
     for target in targets:

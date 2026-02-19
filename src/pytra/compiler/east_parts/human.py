@@ -2,8 +2,8 @@
 """EAST human renderer helpers."""
 from __future__ import annotations
 
-from pylib.std.typing import Any
-from pylib.std import json
+from pytra.std.typing import Any
+from pytra.std import json
 
 from .core import FLOAT_TYPES, INT_TYPES
 

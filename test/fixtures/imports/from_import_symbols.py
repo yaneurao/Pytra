@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from math import floor, sqrt as msqrt
-from pylib.tra.assertions import py_assert_all, py_assert_eq, py_assert_true
-from pylib.tra.png import write_rgb_png
+from pytra.runtime.assertions import py_assert_all, py_assert_eq, py_assert_true
+from pytra.runtime.png import write_rgb_png
 from time import perf_counter
 
 
@@ -16,7 +16,7 @@ def run_case() -> None:
     results.append(py_assert_eq(int(msqrt(81.0)), 9, "from math import sqrt as msqrt"))
     results.append(py_assert_eq(int(floor(3.9)), 3, "from math import floor"))
     results.append(py_assert_true(t1 >= t0, "from time import perf_counter"))
-    results.append(py_assert_eq(len(pixels), 9, "from pylib.tra.png import write_rgb_png"))
+    results.append(py_assert_eq(len(pixels), 9, "from pytra.runtime.png import write_rgb_png"))
     print(py_assert_all(results, "from-import symbols"))
 
 

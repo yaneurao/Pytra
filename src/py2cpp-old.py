@@ -17,7 +17,7 @@ from pytra.compiler.east_parts.code_emitter import CodeEmitter
 from pytra.compiler.east_parts.east_io import extract_module_leading_trivia as extract_module_leading_trivia_common
 from pytra.compiler.east_parts.east_io import load_east_from_path
 from common.language_profile import load_language_profile
-from pylib.tra.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
+from pytra.compiler.transpile_cli import add_common_transpile_args, normalize_common_transpile_args
 
 CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
 
@@ -387,15 +387,15 @@ class CppEmitter(CodeEmitter):
             mapped = owner_map.get(symbol_name)
             if isinstance(mapped, str) and mapped != "":
                 return mapped
-        if module_name == "pylib.tra.png" and symbol_name == "write_rgb_png":
+        if module_name == "pytra.runtime.png" and symbol_name == "write_rgb_png":
             return "png_helper::write_rgb_png"
-        if module_name == "pylib.tra.gif" and symbol_name == "save_gif":
+        if module_name == "pytra.runtime.gif" and symbol_name == "save_gif":
             return "save_gif"
         if module_name == "time" and symbol_name == "perf_counter":
             return "perf_counter"
         if module_name == "pathlib" and symbol_name == "Path":
             return "Path"
-        if module_name == "pylib.tra.assertions" and symbol_name.startswith("py_assert_"):
+        if module_name == "pytra.runtime.assertions" and symbol_name.startswith("py_assert_"):
             return symbol_name
         return None
 
@@ -1736,9 +1736,9 @@ class CppEmitter(CodeEmitter):
                         runtime_call = owner_map.get(attr)
                         if isinstance(runtime_call, str):
                             return f"{runtime_call}({', '.join(args)})"
-                if owner_mod in {"png_helper", "png", "pylib.tra.png"} and attr == "write_rgb_png":
+                if owner_mod in {"png_helper", "png", "pytra.runtime.png"} and attr == "write_rgb_png":
                     return f"png_helper::write_rgb_png({', '.join(args)})"
-                if owner_mod in {"gif_helper", "gif", "pylib.tra.gif"} and attr == "save_gif":
+                if owner_mod in {"gif_helper", "gif", "pytra.runtime.gif"} and attr == "save_gif":
                     path = args[0] if len(args) >= 1 else '""'
                     w = args[1] if len(args) >= 2 else "0"
                     h = args[2] if len(args) >= 3 else "0"

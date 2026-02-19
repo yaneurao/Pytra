@@ -8,7 +8,7 @@
 namespace pytra::pylib::tra::png {
 namespace generated {
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pylib/tra/png.py
+// source: src/pytra/runtime/png.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 

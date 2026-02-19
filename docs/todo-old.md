@@ -53,11 +53,11 @@
 
 0.5 [x] `test/fixtures/stdlib` compile-fail 7件を順次解消する（1件ずつ green 化）
    - [x] 現状固定: `math/os_glob/pathlib/sys/typing` は pass、`argparse/dataclasses/enum/json/re` は compile fail。
-   - [x] 共通修正A: `pylib.std.*` モジュール参照が C++ 側で未解決になる経路を塞ぐ（`module.symbol` を必ず runtime 呼び出しへ lower）。
+   - [x] 共通修正A: `pytra.std.*` モジュール参照が C++ 側で未解決になる経路を塞ぐ（`module.symbol` を必ず runtime 呼び出しへ lower）。
    - [x] 共通修正B: `std::any` へ退化した値に対するメソッド呼び出し生成（`obj.method(...)`）を禁止し、型付き受け口へ寄せる。
    - [x] 共通修正C: `py_assert_stdout` 依存の古い fixture 形式を現行の assertions 形式に統一する。
    - [x] `json_extended` を最優先で修正する。
-     - [x] `json.loads/dumps` が `pylib.std.json` 経由で解決されることを確認する。
+     - [x] `json.loads/dumps` が `pytra.std.json` 経由で解決されることを確認する。
      - [x] `dict/list` 返却値への添字アクセスが `std::any` 退化しないようにする。
    - [x] `sys_extended` を修正する。
      - [x] `sys.argv` 参照を runtime 側アクセサへ固定する。
@@ -81,7 +81,7 @@
 
 0. [x] `runtime/cpp/pylib` を完全自動生成へ移行する（手書きラッパ/手書きヘッダ廃止）
    - [x] 方針確定: `src/runtime/cpp/pylib/*.h` / `*.cpp` を手書き管理しない構成へ変更する。
-   - [x] `src/pylib/tra/png.py` / `src/pylib/tra/gif.py` から、C++ 側で直接 include/link 可能な成果物（宣言 + 定義）を生成する。
+   - [x] `src/pytra/runtime/png.py` / `src/pytra/runtime/gif.py` から、C++ 側で直接 include/link 可能な成果物（宣言 + 定義）を生成する。
    - [x] 生成結果の公開シンボル（`pytra::pylib::png::*`, `pytra::pylib::gif::*`）を固定し、`py_runtime.h` 側の include を生成物へ切替える。
    - [x] 現在の手書き `src/runtime/cpp/pylib/png.h`, `src/runtime/cpp/pylib/png.cpp`, `src/runtime/cpp/pylib/gif.h`, `src/runtime/cpp/pylib/gif.cpp` を削除する。
    - [x] 生成スクリプト `tools/generate_cpp_pylib_runtime.py` を「ヘッダ/実装の両方を出力する」仕様へ拡張する。
@@ -120,7 +120,7 @@
 
 ## 2026-02-20 移管: `enum` サポート（完了）
 
-1. [x] `pylib.std.enum` を追加し、`Enum` / `IntEnum` / `IntFlag` の最小互換 API を実装する。
+1. [x] `pytra.std.enum` を追加し、`Enum` / `IntEnum` / `IntFlag` の最小互換 API を実装する。
    - [x] 値定義・比較の基本動作を実装する。
    - [x] `IntFlag` の `|`, `&`, `^`, `~` を実装する。
 2. [x] EAST 変換で `Enum` 系クラス定義（`NAME = expr`）を認識できるようにする。
@@ -136,7 +136,7 @@
   - `--int-width`（`32/64`）を実装し、`bigint` は planned（未実装エラー）として扱う。
   - `--str-index-mode` / `--str-slice-mode` を追加し、`codepoint` は planned（未実装エラー）として扱う。
   - `--preset {native,balanced,python}` と `--dump-options` を実装。
-  - オプション処理を `src/pylib/tra/transpile_cli.py` へ集約し、`py2cpp.py` 側の重複を削減。
+  - オプション処理を `src/pytra/compiler/transpile_cli.py` へ集約し、`py2cpp.py` 側の重複を削減。
   - エラー表示を `user_syntax_error` / `unsupported_by_design` / `not_implemented` などカテゴリ別に整理。
   - `docs/spec-options.md` / `docs/spec-dev.md` / `docs/spec-east.md` / `docs/how-to-use.md` を同期更新。
 
@@ -537,7 +537,7 @@
 
 - [x] `from XXX import YYY` / `as` を EAST メタデータと `py2cpp` の両方で解決し、呼び出し先ランタイムへ正しく接続する。
 - [x] `import module as alias` の `module.attr(...)` を alias 解決できるようにする。
-- [x] `from pylib.tra.png import write_rgb_png` / `from pylib.tra.gif import save_gif` / `from math import sqrt` の回帰テストを追加する。
+- [x] `from pytra.runtime.png import write_rgb_png` / `from pytra.runtime.gif import save_gif` / `from math import sqrt` の回帰テストを追加する。
 - [x] `import` 関連の仕様追記（対応範囲・`*` 非対応）を `docs/spec-east.md` / `docs/spec-user.md` / `docs/spec-dev.md` に反映する。
 
 ### selfhost 回復（完了済み分）

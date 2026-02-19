@@ -3,13 +3,13 @@
 
 from __future__ import annotations
 
-from pylib.std import argparse
-from pylib.std import json
-from pylib.std import re
-from pylib.std.dataclasses import dataclass
-from pylib.std.typing import Any
-from pylib.std.pathlib import Path
-from pylib.std import sys
+from pytra.std import argparse
+from pytra.std import json
+from pytra.std import re
+from pytra.std.dataclasses import dataclass
+from pytra.std.typing import Any
+from pytra.std.pathlib import Path
+from pytra.std import sys
 
 
 BorrowKind = str  # "value" | "readonly_ref" | "mutable_ref" | "move"

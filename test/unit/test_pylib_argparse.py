@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pylib.std import argparse as py_argparse
+from src.pytra.std import argparse as py_argparse
 
 
 class PyLibArgparseTest(unittest.TestCase):
@@ -20,18 +20,17 @@ class PyLibArgparseTest(unittest.TestCase):
         p.add_argument("-o", "--output")
         p.add_argument("--pretty", action="store_true")
         ns = p.parse_args(["a.py", "-o", "out.cpp", "--pretty"])
-        self.assertEqual(ns.input, "a.py")
-        self.assertEqual(ns.output, "out.cpp")
-        self.assertTrue(ns.pretty)
+        self.assertEqual(ns["input"], "a.py")
+        self.assertEqual(ns["output"], "out.cpp")
+        self.assertTrue(ns["pretty"])
 
     def test_parse_choices(self) -> None:
         p = py_argparse.ArgumentParser("x")
         p.add_argument("input")
         p.add_argument("--mode", choices=["a", "b"], default="a")
         ns = p.parse_args(["in.py", "--mode", "b"])
-        self.assertEqual(ns.mode, "b")
+        self.assertEqual(ns["mode"], "b")
 
 
 if __name__ == "__main__":
     unittest.main()
-

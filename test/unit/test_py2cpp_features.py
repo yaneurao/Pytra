@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pylib.tra.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options
+from src.pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options
 from src.py2cpp import load_cpp_module_attr_call_map, load_east, transpile_to_cpp
 
 CPP_RUNTIME_SRCS = [

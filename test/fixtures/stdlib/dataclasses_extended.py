@@ -1,5 +1,5 @@
-from pylib.tra.assertions import py_assert_all, py_assert_eq
-from pylib.std.dataclasses import dataclass
+from pytra.runtime.assertions import py_assert_all, py_assert_eq
+from pytra.std.dataclasses import dataclass
 
 
 @dataclass

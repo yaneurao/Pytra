@@ -2,12 +2,12 @@
 """EAST CLI entrypoint."""
 from __future__ import annotations
 
-from pylib.std import argparse
+from pytra.std import argparse
 
 from .core import EastBuildError, convert_path
 from .human import _dump_json, render_east_human_cpp
-from pylib.std.pathlib import Path
-from pylib.std import sys
+from pytra.std.pathlib import Path
+from pytra.std import sys
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint for EAST JSON/human-view generation."""

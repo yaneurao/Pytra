@@ -87,7 +87,7 @@ def _run_python_canonical(out_png: Path, out_gif: Path) -> None:
     import sys
 
     sys.path.insert(0, str((ROOT / "src").resolve()))
-    from pylib.tra import gif, png
+    from pytra.runtime import gif, png
 
     png_pixels = bytearray(
         [

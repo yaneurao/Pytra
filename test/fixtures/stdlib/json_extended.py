@@ -1,5 +1,5 @@
-from pylib.std.json import dumps
-from pylib.tra.assertions import py_assert_all, py_assert_eq
+from pytra.std.json import dumps
+from pytra.runtime.assertions import py_assert_all, py_assert_eq
 
 
 def run_json_extended() -> bool:
