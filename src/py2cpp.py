@@ -635,15 +635,19 @@ class CppEmitter(CodeEmitter):
             to_type_text = "uint8"
         if to_type_text == "":
             return rendered_expr
-        if to_type_text in {"float32", "float64"}:
+        norm_t = self.normalize_type_name(to_type_text)
+        if norm_t in {"float32", "float64"}:
             return f"py_to_float64({rendered_expr})"
-        if to_type_text in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-            return f"{to_type_text}(py_to_int64({rendered_expr}))"
-        if to_type_text == "bool":
+        if norm_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+            return f"{norm_t}(py_to_int64({rendered_expr}))"
+        if norm_t == "bool":
             return f"py_to_bool({rendered_expr})"
-        if to_type_text == "str":
+        if norm_t == "str":
             return f"py_to_string({rendered_expr})"
-        return f"static_cast<{to_type_text}>({rendered_expr})"
+        cast_cpp = self._cpp_type_text(norm_t)
+        if cast_cpp in {"", "auto"}:
+            return rendered_expr
+        return f"static_cast<{cast_cpp}>({rendered_expr})"
 
     def _can_runtime_cast_target(self, target_t: str) -> bool:
         """実行時キャストを安全に適用できる型か判定する。"""

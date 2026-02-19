@@ -41,7 +41,7 @@
      - [x] `python3 tools/generate_cpp_pylib_runtime.py --check` が pass。
      - [x] `python3 tools/check_py2cpp_transpile.py` が pass。
      - [x] `python3 tools/build_selfhost.py` が pass。
-     - [ ] `python3 tools/verify_sample_outputs.py` が pass。
+     - [x] `python3 tools/verify_sample_outputs.py` が pass。: 2026-02-19 再計測で `SUMMARY OK=16 NG=0`
      - [x] `python3 tools/verify_image_runtime_parity.py` が pass。
 
 1. [ ] selfhost 入力経路の段階回復
@@ -95,15 +95,15 @@
    - [x] 未対応モジュールを順に C++ runtime 接続する（`json -> os/glob -> argparse -> sys/typing -> re -> dataclasses -> enum`）。
      - [ ] `json`:
        - [x] `fixtures/stdlib/json_extended.py` を単体 compile-run で通し、`json.loads/dumps` の最低限 API を固定する。
-       - [ ] `test/unit/test_py2cpp_features.py` に `json_extended` runtime 回帰を追加する。
+       - [x] `test/unit/test_py2cpp_features.py` に `json_extended` runtime 回帰を追加する。: `test_json_extended_runtime`
     - [ ] `os/glob`:
       - [x] `fixtures/stdlib/os_glob_extended.py` を compile-run で通す。
       - [x] `os.path.join/splitext/dirname/basename/exists` と `glob.glob` の呼び出し解決を点検する。
       - [x] `test/unit/test_py2cpp_features.py` に `os_glob_extended` runtime 回帰を追加する。
      - [x] `argparse/sys/typing/re/dataclasses/enum`:
        - [x] 1モジュールずつ compile-run 可否を確認し、失敗要因を個別タスクへ分解する。
-       - [ ] 各モジュールが通るたびに `*_extended.py` を runtime 回帰へ昇格する。
-  - [ ] 接続後に `*_extended.py` を compile-run 回帰へ昇格する（`stdlib` 10/10 compile-run は達成済み、unit 回帰追加が未完）。
+       - [x] 各モジュールが通るたびに `*_extended.py` を runtime 回帰へ昇格する。: `argparse/sys/typing/re/dataclasses/enum/json` を `test/unit/test_py2cpp_features.py` へ追加済み
+  - [x] 接続後に `*_extended.py` を compile-run 回帰へ昇格する（`stdlib` 10/10 compile-run は達成済み、unit 回帰追加が未完）。: `python3 test/unit/test_py2cpp_features.py` 63 tests pass
 
 ## CodeEmitter 化（JSON + Hooks）
 
