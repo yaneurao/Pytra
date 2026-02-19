@@ -13,6 +13,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 import sys
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,18 +32,19 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
 
 def runtime_cpp_sources() -> list[str]:
     files_all = sorted(SELFHOST_RUNTIME.rglob("*.cpp"))
-    return [str(p) for p in files_all]
+    out: list[str] = []
+    for p in files_all:
+        rel = p.relative_to(SELFHOST_RUNTIME).as_posix()
+        # 互換レイヤ（std/pylib）は新実体（pytra/*）と二重定義になるため除外する。
+        if rel.startswith("cpp/std/") or rel.startswith("cpp/pylib/"):
+            continue
+        out.append(str(p))
+    return out
 
 
 def patch_cpp_main_to_call_pytra_main(cpp_path: Path) -> None:
     text = cpp_path.read_text(encoding="utf-8")
-    old = (
-        "int main(int argc, char** argv) {\n"
-        "    pytra_configure_from_argv(argc, argv);\n"
-        "    return 0;\n"
-        "}\n"
-    )
-    new = (
+    new_main = (
         "int main(int argc, char** argv) {\n"
         "    pytra_configure_from_argv(argc, argv);\n"
         "    list<str> __args = list<str>{};\n"
@@ -54,8 +56,11 @@ def patch_cpp_main_to_call_pytra_main(cpp_path: Path) -> None:
         "    return static_cast<int>(__pytra_main(__args));\n"
         "}\n"
     )
-    if old in text:
-        text = text.replace(old, new, 1)
+    # 生成コードの main 本体が変化しても差し替えられるよう、関数単位で置換する。
+    pattern = re.compile(r"int main\(int argc, char\*\* argv\) \{\n(?:.|\n)*?\n\}\n$", re.M)
+    text, n = pattern.subn(new_main, text, count=1)
+    if n == 0:
+        raise RuntimeError("failed to patch generated selfhost main()")
     cpp_path.write_text(text, encoding="utf-8")
 
 
@@ -76,6 +81,7 @@ def main() -> int:
         "-std=c++17",
         "-O2",
         "-Iselfhost",
+        "-Iselfhost/runtime/cpp",
         str(CPP_OUT),
         *cpp_sources,
         "-o",

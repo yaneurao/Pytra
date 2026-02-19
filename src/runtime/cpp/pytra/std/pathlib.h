@@ -151,7 +151,4 @@ inline std::string str(const Path& p) {
 
 }  // namespace pytra::cpp_module
 
-using pytra::cpp_module::Path;
-using pytra::cpp_module::str;
-
 #endif  // PYTRA_CPP_MODULE_PATHLIB_H

@@ -438,11 +438,11 @@ class CppEmitter(CodeEmitter):
 
     def _module_name_to_cpp_include(self, module_name: str) -> str:
         """Python import モジュール名を C++ include へ解決する。"""
-        module_name = self._normalize_runtime_module_name(module_name)
-        if module_name.startswith("pytra.std."):
-            return "pytra/std/" + module_name[10:] + ".h"
-        if module_name.startswith("pytra.runtime."):
-            return "pytra/runtime/" + module_name[14:] + ".h"
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        if module_name_norm.startswith("pytra.std."):
+            return "pytra/std/" + module_name_norm[10:] + ".h"
+        if module_name_norm.startswith("pytra.runtime."):
+            return "pytra/runtime/" + module_name_norm[14:] + ".h"
         legacy_std: dict[str, str] = {
             "math": "pytra/std/math.h",
             "time": "pytra/std/time.h",
@@ -450,15 +450,15 @@ class CppEmitter(CodeEmitter):
             "dataclasses": "pytra/std/dataclasses.h",
             "sys": "pytra/std/sys.h",
         }
-        if module_name in legacy_std:
-            return legacy_std[module_name]
+        if module_name_norm in legacy_std:
+            return legacy_std[module_name_norm]
         legacy_runtime: dict[str, str] = {
             "png": "pytra/runtime/png.h",
             "gif": "pytra/runtime/gif.h",
             "assertions": "pytra/runtime/assertions.h",
         }
-        if module_name in legacy_runtime:
-            return legacy_runtime[module_name]
+        if module_name_norm in legacy_runtime:
+            return legacy_runtime[module_name_norm]
         return ""
 
     def _collect_import_cpp_includes(self, body: list[dict[str, Any]]) -> list[str]:
@@ -592,11 +592,11 @@ class CppEmitter(CodeEmitter):
 
     def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
         """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
-        module_name = self._normalize_runtime_module_name(module_name)
+        module_name_norm = self._normalize_runtime_module_name(module_name)
         owner_keys: list[str] = []
-        owner_keys.append(module_name)
-        short = self._last_dotted_name(module_name)
-        if short != module_name:
+        owner_keys.append(module_name_norm)
+        short = self._last_dotted_name(module_name_norm)
+        if short != module_name_norm:
             owner_keys.append(short)
         for owner_key in owner_keys:
             if owner_key in self.module_attr_call_map:
@@ -605,13 +605,13 @@ class CppEmitter(CodeEmitter):
                     mapped = owner_map[symbol_name]
                     if mapped != "":
                         return mapped
-        if module_name == "time" and symbol_name == "perf_counter":
+        if module_name_norm == "time" and symbol_name == "perf_counter":
             return "perf_counter"
-        if module_name == "pathlib" and symbol_name == "Path":
+        if module_name_norm == "pathlib" and symbol_name == "Path":
             return "Path"
-        if module_name == "pytra.runtime.assertions" and symbol_name.startswith("py_assert_"):
+        if module_name_norm == "pytra.runtime.assertions" and symbol_name.startswith("py_assert_"):
             return symbol_name
-        if module_name in {"sys", "pytra.std.sys"}:
+        if module_name_norm in {"sys", "pytra.std.sys"}:
             if symbol_name == "set_argv":
                 return "py_sys_set_argv"
             if symbol_name == "set_path":
@@ -2302,13 +2302,14 @@ class CppEmitter(CodeEmitter):
                     raw = resolved_name
             if raw != "" and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
+                mapped_runtime_txt = mapped_runtime if isinstance(mapped_runtime, str) else ""
                 special_imported = self._render_special_runtime_call(
-                    self.any_to_str(mapped_runtime), args, kw, "list<bytearray>{}"
+                    mapped_runtime_txt, args, kw, "list<bytearray>{}"
                 )
                 if isinstance(special_imported, str):
                     return special_imported
-                if isinstance(mapped_runtime, str) and mapped_runtime not in {"perf_counter", "Path"}:
-                    return f"{mapped_runtime}({', '.join(args)})"
+                if mapped_runtime_txt != "" and mapped_runtime_txt not in {"perf_counter", "Path"}:
+                    return f"{mapped_runtime_txt}({', '.join(args)})"
             if raw == "range":
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
             if isinstance(raw, str) and raw in self.ref_classes:
@@ -2407,11 +2408,11 @@ class CppEmitter(CodeEmitter):
         self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
-        owner_mod = self._normalize_runtime_module_name(owner_mod)
+        owner_mod_norm = self._normalize_runtime_module_name(owner_mod)
         owner_keys: list[str] = []
-        owner_keys.append(owner_mod)
-        short = self._last_dotted_name(owner_mod)
-        if short != owner_mod:
+        owner_keys.append(owner_mod_norm)
+        short = self._last_dotted_name(owner_mod_norm)
+        if short != owner_mod_norm:
             owner_keys.append(short)
         for owner_key in owner_keys:
             if owner_key in self.module_attr_call_map:
@@ -2423,7 +2424,7 @@ class CppEmitter(CodeEmitter):
                         return special_mapped
                     if mapped != "":
                         return f"{mapped}({', '.join(args)})"
-        if owner_mod in {"typing", "pytra.std.typing"} and attr == "TypeVar":
+        if owner_mod_norm in {"typing", "pytra.std.typing"} and attr == "TypeVar":
             return "make_object(1)"
         return None
 
@@ -3412,7 +3413,14 @@ def main(argv: list[str]) -> int:
     argv_list: list[str] = []
     for a in argv:
         argv_list.append(a)
-    parsed, parse_err = parse_py2cpp_argv(argv_list)
+    parse_argv = argv_list
+    # selfhost 実行時に実行ファイル名が argv に混入する経路を吸収する。
+    if len(argv_list) >= 2:
+        head = str(argv_list[0])
+        is_exec_name = head[-4:] == ".out" or head[-4:] == ".exe" or head[-6:] == "py2cpp"
+        if is_exec_name and not head.startswith("-"):
+            parse_argv = list(argv_list[1:])
+    parsed, parse_err = parse_py2cpp_argv(parse_argv)
     if parse_err != "":
         print(f"error: {parse_err}", file=sys.stderr)
         return 1
