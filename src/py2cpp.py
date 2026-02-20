@@ -22,6 +22,11 @@ RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 
 
+def _join_str_list(sep: str, items: list[str]) -> str:
+    """selfhost 安定化用: 区切り文字列による結合を明示関数化する。"""
+    return sep.join(items)
+
+
 def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
     """`root_dir` 配下に `module_tail` 相当の `.py` / package があるかを返す。"""
     if module_tail == "":
@@ -56,7 +61,7 @@ def _module_tail_to_cpp_header_path(module_tail: str) -> str:
         if leaf.endswith("_impl"):
             leaf = leaf[: len(leaf) - 5] + "-impl"
             parts[len(parts) - 1] = leaf
-    return "/".join(parts) + ".h"
+    return _join_str_list("/", parts) + ".h"
 
 
 def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
@@ -840,28 +845,34 @@ class CppEmitter(CodeEmitter):
         out: dict[str, str] = {}
         return out
 
-    def _module_source_path_for_name(self, module_name: str) -> Path | None:
-        """`pytra.*` モジュール名から runtime source `.py` パスを返す。"""
+    def _module_source_path_for_name(self, module_name: str) -> Path:
+        """`pytra.*` モジュール名から runtime source `.py` パスを返す（未解決時は空 Path）。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
         if module_name_norm.startswith("pytra.std."):
-            tail = module_name_norm[10:].replace(".", "/")
-            p = Path(str(RUNTIME_STD_SOURCE_ROOT) + "/" + tail + ".py")
+            tail: str = str(module_name_norm[10:].replace(".", "/"))
+            std_root_txt: str = str(RUNTIME_STD_SOURCE_ROOT)
+            p_txt: str = std_root_txt + "/" + tail + ".py"
+            p = Path(p_txt)
             if p.exists():
                 return p
-            init_p = Path(str(RUNTIME_STD_SOURCE_ROOT) + "/" + tail + "/__init__.py")
+            init_txt: str = std_root_txt + "/" + tail + "/__init__.py"
+            init_p = Path(init_txt)
             if init_p.exists():
                 return init_p
-            return None
+            return Path("")
         if module_name_norm.startswith("pytra.utils."):
-            tail = module_name_norm[12:].replace(".", "/")
-            p = Path(str(RUNTIME_UTILS_SOURCE_ROOT) + "/" + tail + ".py")
+            tail: str = str(module_name_norm[12:].replace(".", "/"))
+            utils_root_txt: str = str(RUNTIME_UTILS_SOURCE_ROOT)
+            p_txt: str = utils_root_txt + "/" + tail + ".py"
+            p = Path(p_txt)
             if p.exists():
                 return p
-            init_p = Path(str(RUNTIME_UTILS_SOURCE_ROOT) + "/" + tail + "/__init__.py")
+            init_txt: str = utils_root_txt + "/" + tail + "/__init__.py"
+            init_p = Path(init_txt)
             if init_p.exists():
                 return init_p
-            return None
-        return None
+            return Path("")
+        return Path("")
 
     def _module_function_arg_types(self, module_name: str, fn_name: str) -> list[str]:
         """モジュール関数の引数型列を返す（不明時は空 list）。"""
@@ -872,50 +883,11 @@ class CppEmitter(CodeEmitter):
                 return fn_map[fn_name]
             return []
         fn_map: dict[str, list[str]] = {}
-        src_path = self._module_source_path_for_name(module_name_norm)
-        if src_path is None:
+        src_path: Path = self._module_source_path_for_name(module_name_norm)
+        if str(src_path) == "":
             self._module_fn_arg_type_cache[module_name_norm] = fn_map
             return []
-        try:
-            east_mod = load_east(src_path)
-        except Exception:
-            fn_map = _extract_function_arg_types_from_python_source(src_path)
-            self._module_fn_arg_type_cache[module_name_norm] = fn_map
-            if fn_name in fn_map:
-                return fn_map[fn_name]
-            return []
-        body_obj = east_mod.get("body")
-        body: list[dict[str, Any]] = []
-        if isinstance(body_obj, list):
-            i = 0
-            while i < len(body_obj):
-                item = body_obj[i]
-                if isinstance(item, dict):
-                    body.append(item)
-                i += 1
-        i = 0
-        while i < len(body):
-            st = body[i]
-            if self.any_to_str(st.get("kind")) == "FunctionDef":
-                name = self.any_to_str(st.get("name"))
-                if name != "":
-                    arg_types_obj = st.get("arg_types")
-                    arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
-                    arg_order_obj = st.get("arg_order")
-                    arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
-                    seq: list[str] = []
-                    j = 0
-                    while j < len(arg_order):
-                        an = arg_order[j]
-                        if isinstance(an, str):
-                            t_obj = arg_types.get(an)
-                            t = t_obj if isinstance(t_obj, str) else "unknown"
-                            seq.append(t)
-                        j += 1
-                    fn_map[name] = seq
-            i += 1
-        if len(fn_map) == 0:
-            fn_map = _extract_function_arg_types_from_python_source(src_path)
+        fn_map = _extract_function_arg_types_from_python_source(src_path)
         self._module_fn_arg_type_cache[module_name_norm] = fn_map
         if fn_name in fn_map:
             return fn_map[fn_name]
@@ -1447,7 +1419,7 @@ class CppEmitter(CodeEmitter):
                     k = self.render_expr(kv.get("key"))
                     v = self.render_expr_as_any(kv.get("value"))
                     items.append(f"{{{k}, {v}}}")
-                rendered_val = f"{t}{{{', '.join(items)}}}"
+                rendered_val = f"{t}{{{_join_str_list(', ', items)}}}"
         if val_is_dict and t != "auto":
             vkind = val_kind
             if vkind == "BoolOp":
@@ -2322,7 +2294,7 @@ class CppEmitter(CodeEmitter):
                 if fname in instance_field_defaults and instance_field_defaults[fname] != "":
                     p += f" = {instance_field_defaults[fname]}"
                 params.append(p)
-            self.emit(f"{name}({', '.join(params)}) {{")
+            self.emit(f"{name}({_join_str_list(', ', params)}) {{")
             self.indent += 1
             self.scope_stack.append(set())
             for fname in instance_fields.keys():
@@ -2441,7 +2413,7 @@ class CppEmitter(CodeEmitter):
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
         if runtime_call == "py_print":
-            return f"py_print({', '.join(args)})"
+            return f"py_print({_join_str_list(', ', args)})"
         if runtime_call == "py_len" and len(args) == 1:
             return f"py_len({args[0]})"
         if runtime_call == "py_to_string" and len(args) == 1:
@@ -2470,7 +2442,7 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "perf_counter":
             return "pytra::std::time::perf_counter()"
         if runtime_call == "open":
-            return f"open({', '.join(args)})"
+            return f"open({_join_str_list(', ', args)})"
         if runtime_call == "py_int_to_bytes":
             owner = self.render_expr(fn.get("value"))
             length = args[0] if len(args) >= 1 else "0"
@@ -2503,7 +2475,7 @@ class CppEmitter(CodeEmitter):
                 return '::std::runtime_error("error")'
             return f"::std::runtime_error({args[0]})"
         if runtime_call == "Path":
-            return f"Path({', '.join(args)})"
+            return f"Path({_join_str_list(', ', args)})"
         if runtime_call == "list.append":
             owner = self.render_expr(fn.get("value"))
             a0 = args[0] if len(args) >= 1 else "/* missing */"
@@ -2575,11 +2547,11 @@ class CppEmitter(CodeEmitter):
             owner = self.render_expr(fn.get("value"))
             return f"py_dict_values({owner})"
         if runtime_call != "" and (self._is_std_runtime_call(runtime_call) or runtime_call.startswith("py_")):
-            return f"{runtime_call}({', '.join(args)})"
+            return f"{runtime_call}({_join_str_list(', ', args)})"
         if builtin_name == "bytes":
-            return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
+            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
         if builtin_name == "bytearray":
-            return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
+            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
         return ""
 
     def _render_call_name_or_attr(
@@ -2605,29 +2577,31 @@ class CppEmitter(CodeEmitter):
                     raw = resolved_name
             if raw != "" and imported_module != "":
                 mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
-                mapped_runtime_txt = mapped_runtime if isinstance(mapped_runtime, str) else ""
+                mapped_runtime_txt = ""
+                if mapped_runtime is not None:
+                    mapped_runtime_txt = str(mapped_runtime)
                 if (
                     mapped_runtime_txt != ""
                     and mapped_runtime_txt not in {"perf_counter", "Path"}
                     and _looks_like_runtime_function_name(mapped_runtime_txt)
                 ):
                     merged_args = self._merge_runtime_call_args(args, kw)
-                    call_args = merged_args
-                    if "::" in mapped_runtime_txt:
+                    call_args: list[str] = merged_args
+                    if self._contains_text(mapped_runtime_txt, "::"):
                         call_args = self._coerce_args_for_module_function(imported_module, raw, merged_args, arg_nodes)
-                    return f"{mapped_runtime_txt}({', '.join(call_args)})"
+                    return f"{mapped_runtime_txt}({_join_str_list(', ', call_args)})"
                 imported_module_norm = self._normalize_runtime_module_name(imported_module)
                 if imported_module_norm in self.module_namespace_map:
                     ns = self.module_namespace_map[imported_module_norm]
                     if ns != "":
-                        call_args = self._coerce_args_for_module_function(imported_module, raw, args, arg_nodes)
-                        return f"{ns}::{raw}({', '.join(call_args)})"
+                        call_args: list[str] = self._coerce_args_for_module_function(imported_module, raw, args, arg_nodes)
+                        return f"{ns}::{raw}({_join_str_list(', ', call_args)})"
             if raw == "range":
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
             if isinstance(raw, str) and raw in self.ref_classes:
-                return f"::rc_new<{raw}>({', '.join(args)})"
+                return f"::rc_new<{raw}>({_join_str_list(', ', args)})"
             if raw == "print":
-                return f"py_print({', '.join(args)})"
+                return f"py_print({_join_str_list(', ', args)})"
             if raw == "len" and len(args) == 1:
                 return f"py_len({args[0]})"
             if raw == "reversed" and len(args) == 1:
@@ -2671,9 +2645,9 @@ class CppEmitter(CodeEmitter):
                 t = self.cpp_type(expr.get("resolved_type"))
                 return f"{t}{{}}"
             if raw == "bytes":
-                return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
+                return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
             if raw == "bytearray":
-                return f"bytearray({', '.join(args)})" if len(args) >= 1 else "bytearray{}"
+                return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
             if raw == "str" and len(args) == 1:
                 src_expr = first_arg
                 return self.render_to_string(src_expr)
@@ -2701,7 +2675,7 @@ class CppEmitter(CodeEmitter):
                     return '::std::runtime_error("error")'
                 return f"::std::runtime_error({args[0]})"
             if raw == "Path":
-                return f"Path({', '.join(args)})"
+                return f"Path({_join_str_list(', ', args)})"
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw)
@@ -2727,7 +2701,7 @@ class CppEmitter(CodeEmitter):
             ns = self.module_namespace_map[owner_mod_norm]
             if ns != "":
                 call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
-                return f"{ns}::{attr}({', '.join(call_args)})"
+                return f"{ns}::{attr}({_join_str_list(', ', call_args)})"
         owner_keys: list[str] = [owner_mod_norm]
         short = self._last_dotted_name(owner_mod_norm)
         # `pytra.*` は正規モジュール名で解決し、短縮名への暗黙フォールバックは使わない。
@@ -2743,11 +2717,11 @@ class CppEmitter(CodeEmitter):
                             call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
                         else:
                             call_args = merged_args
-                        return f"{mapped}({', '.join(call_args)})"
+                        return f"{mapped}({_join_str_list(', ', call_args)})"
         ns = self._module_name_to_cpp_namespace(owner_mod_norm)
         if ns != "":
             call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
-            return f"{ns}::{attr}({', '.join(call_args)})"
+            return f"{ns}::{attr}({_join_str_list(', ', call_args)})"
         return None
 
     def _merge_runtime_call_args(self, args: list[str], kw: dict[str, str]) -> list[str]:
@@ -2874,8 +2848,8 @@ class CppEmitter(CodeEmitter):
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
         """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
         if fn_name == "print":
-            return f"py_print({', '.join(args)})"
-        return f"{fn_name}({', '.join(args)})"
+            return f"py_print({_join_str_list(', ', args)})"
+        return f"{fn_name}({_join_str_list(', ', args)})"
 
     def _prepare_call_parts(
         self,
@@ -3030,7 +3004,7 @@ class CppEmitter(CodeEmitter):
                     parts.append(f"{cur} {cop} {rhs}")
             cur = rhs
             cur_node = rhs_node
-        return " && ".join(parts) if len(parts) > 0 else "true"
+        return _join_str_list(" && ", parts) if len(parts) > 0 else "true"
 
     def _render_subscript_expr(self, expr: dict[str, Any]) -> str:
         """Subscript/Slice 式を C++ 式へ変換する。"""
@@ -3293,7 +3267,7 @@ class CppEmitter(CodeEmitter):
                 if self.is_any_like_type(val_t):
                     v = f"make_object({v})"
                 items.append(f"{{{k}, {v}}}")
-            return f"{t}{{{', '.join(items)}}}"
+            return f"{t}{{{_join_str_list(', ', items)}}}"
         if kind == "Subscript":
             return self._render_subscript_expr(expr)
         if kind == "JoinedStr":
@@ -3315,7 +3289,7 @@ class CppEmitter(CodeEmitter):
                                 parts.append(self.render_to_string(val))
                 if len(parts) == 0:
                     return '""'
-                return " + ".join(parts)
+                return _join_str_list(" + ", parts)
             parts: list[str] = []
             for p in self._dict_stmt_list(expr_d.get("values")):
                 pk = p.get("kind")
@@ -3331,7 +3305,7 @@ class CppEmitter(CodeEmitter):
                         parts.append(self.render_to_string(v))
             if len(parts) == 0:
                 return '""'
-            return " + ".join(parts)
+            return _join_str_list(" + ", parts)
         if kind == "Lambda":
             arg_texts: list[str] = []
             for a in self._dict_stmt_list(expr_d.get("args")):
@@ -3339,7 +3313,7 @@ class CppEmitter(CodeEmitter):
                 if nm != "":
                     arg_texts.append(f"auto {nm}")
             body_expr = self.render_expr(expr_d.get("body"))
-            return f"[&]({', '.join(arg_texts)}) {{ return {body_expr}; }}"
+            return f"[&]({_join_str_list(', ', arg_texts)}) {{ return {body_expr}; }}"
         if kind == "ListComp":
             gens = self.any_to_list(expr_d.get("generators"))
             if len(gens) != 1:
@@ -3400,7 +3374,7 @@ class CppEmitter(CodeEmitter):
                         if c_rep != "":
                             c_txt = c_rep
                     cond_parts.append(c_txt if c_txt != "" else "true")
-                cond: str = " && ".join(cond_parts)
+                cond: str = _join_str_list(" && ", cond_parts)
                 lines.append(f"        if ({cond}) __out.append({elt});")
             lines.append("    }")
             lines.append("    return __out;")
@@ -3445,7 +3419,7 @@ class CppEmitter(CodeEmitter):
                         if c_rep != "":
                             c_txt = c_rep
                     cond_parts.append(c_txt if c_txt != "" else "true")
-                cond: str = " && ".join(cond_parts)
+                cond: str = _join_str_list(" && ", cond_parts)
                 lines.append(f"        if ({cond}) __out.insert({elt});")
             lines.append("    }")
             lines.append("    return __out;")
@@ -3491,7 +3465,7 @@ class CppEmitter(CodeEmitter):
                         if c_rep != "":
                             c_txt = c_rep
                     cond_parts.append(c_txt if c_txt != "" else "true")
-                cond: str = " && ".join(cond_parts)
+                cond: str = _join_str_list(" && ", cond_parts)
                 lines.append(f"        if ({cond}) __out[{key}] = {val};")
             lines.append("    }")
             lines.append("    return __out;")
@@ -3749,14 +3723,14 @@ def _split_type_args(text: str) -> list[str]:
                 depth -= 1
             cur += ch
         elif ch == "," and depth == 0:
-            part = cur.strip()
+            part: str = cur.strip()
             if part != "":
                 out.append(part)
             cur = ""
         else:
             cur += ch
         i += 1
-    tail = cur.strip()
+    tail: str = cur.strip()
     if tail != "":
         out.append(tail)
     return out
@@ -3764,7 +3738,7 @@ def _split_type_args(text: str) -> list[str]:
 
 def _header_cpp_type_from_east(east_t: str) -> str:
     """EAST 型名を runtime header 向け C++ 型名へ変換する。"""
-    t = east_t.strip()
+    t: str = east_t.strip()
     if t == "":
         return "object"
     prim: dict[str, str] = {
@@ -3800,16 +3774,17 @@ def _header_cpp_type_from_east(east_t: str) -> str:
             i += 1
         if len(parts) == 2 and len(non_none) == 1:
             return "::std::optional<" + _header_cpp_type_from_east(non_none[0]) + ">"
-        folded: set[str] = set()
+        folded: list[str] = []
         i = 0
         while i < len(non_none):
             p = non_none[i]
             if p == "bytearray":
                 p = "bytes"
-            folded.add(p)
+            if p not in folded:
+                folded.append(p)
             i += 1
         if len(folded) == 1:
-            only = next(iter(folded))
+            only: str = folded[0]
             return _header_cpp_type_from_east(only)
         return "object"
     if t.startswith("list[") and t.endswith("]"):
@@ -3848,9 +3823,12 @@ def _header_guard_from_path(path: Path) -> str:
     out = ""
     i = 0
     while i < len(src):
-        ch = src[i : i + 1]
+        ch: str = src[i : i + 1]
         ok = ("A" <= ch <= "Z") or ("0" <= ch <= "9")
-        out += ch if ok else "_"
+        if ok:
+            out += ch
+        else:
+            out += "_"
         i += 1
     while out.startswith("_"):
         out = out[1:]
@@ -3999,7 +3977,7 @@ def build_cpp_header_from_east(
     lines.append("")
     lines.append("#endif  // " + guard)
     lines.append("")
-    return "\n".join(lines)
+    return _join_str_list("\n", lines)
 
 
 def _runtime_module_tail_from_source_path(input_path: Path) -> str:
@@ -4045,7 +4023,7 @@ def _runtime_output_rel_tail(module_tail: str) -> str:
         if leaf.endswith("_impl"):
             leaf = leaf[: len(leaf) - 5] + "-impl"
             parts[len(parts) - 1] = leaf
-    rel = "/".join(parts)
+    rel = _join_str_list("/", parts)
     if rel == "std" or rel.startswith("std/"):
         return rel
     return "utils/" + rel
@@ -4056,7 +4034,7 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
     if module_tail == "":
         return ""
     if module_tail.startswith("std/"):
-        rest = module_tail[4:].replace("/", "::")
+        rest: str = module_tail[4:].replace("/", "::")
         return "pytra::std::" + rest
     if module_tail == "std":
         return "pytra::std"
@@ -4067,9 +4045,13 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
     """EAST `meta.import_bindings` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
     meta_obj = east_module.get("meta")
-    meta = meta_obj if isinstance(meta_obj, dict) else {}
+    meta: dict[str, Any] = {}
+    if isinstance(meta_obj, dict):
+        meta = meta_obj
     binds_obj = meta.get("import_bindings")
-    binds = binds_obj if isinstance(binds_obj, list) else []
+    binds: list[Any] = []
+    if isinstance(binds_obj, list):
+        binds = binds_obj
     i = 0
     while i < len(binds):
         item = binds[i]
@@ -4099,9 +4081,13 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
     """EAST `meta.qualified_symbol_refs` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
     meta_obj = east_module.get("meta")
-    meta = meta_obj if isinstance(meta_obj, dict) else {}
+    meta: dict[str, Any] = {}
+    if isinstance(meta_obj, dict):
+        meta = meta_obj
     refs_obj = meta.get("qualified_symbol_refs")
-    refs = refs_obj if isinstance(refs_obj, list) else []
+    refs: list[Any] = []
+    if isinstance(refs_obj, list):
+        refs = refs_obj
     i = 0
     while i < len(refs):
         item = refs[i]
@@ -4402,7 +4388,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                         dk = nodes[k]
                         disp_nodes.append(key_to_disp.get(dk, dk))
                         k += 1
-                    cycle_txt = " -> ".join(disp_nodes)
+                    cycle_txt = _join_str_list(" -> ", disp_nodes)
                     if cycle_txt not in cycle_seen:
                         cycle_seen.add(cycle_txt)
                         cycles.append(cycle_txt)
@@ -5010,7 +4996,7 @@ def _write_multi_file_cpp(
                 fwd_lines.extend(fn_decls)
                 fwd_lines.append("}  // namespace " + target_ns)
         if len(fwd_lines) > 0:
-            cpp_txt = _inject_after_includes(cpp_txt, "\n".join(fwd_lines))
+            cpp_txt = _inject_after_includes(cpp_txt, _join_str_list("\n", fwd_lines))
         cpp_path.write_text(cpp_txt, encoding="utf-8")
 
         modules_obj = manifest.get("modules")
@@ -5261,8 +5247,8 @@ def main(argv: list[str]) -> int:
             _validate_import_graph_or_raise(analysis)
             module_east_map_cache = build_module_east_map(input_path, parser_backend)
         east_module: dict[str, Any]
-        if input_txt.endswith(".py") and str(input_path) in module_east_map_cache:
-            east_module = module_east_map_cache[str(input_path)]
+        if input_txt.endswith(".py") and input_txt in module_east_map_cache:
+            east_module = module_east_map_cache[input_txt]
         else:
             east_module = load_east(input_path, parser_backend)
         if dump_deps:

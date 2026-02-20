@@ -365,6 +365,10 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "    _ = profile\n"
             "    out: dict[str, dict[str, str]] = {}\n"
             "    return out\n\n"
+            "BIN_OPS: dict[str, str] = load_cpp_bin_ops()\n"
+            "CMP_OPS: dict[str, str] = load_cpp_cmp_ops()\n"
+            "AUG_OPS: dict[str, str] = load_cpp_aug_ops()\n"
+            "AUG_BIN: dict[str, str] = load_cpp_aug_bin()\n\n"
         ),
     )
 
@@ -421,6 +425,50 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
     )
 
     repl(
+        "def _meta_import_bindings(",
+        "\ndef _meta_qualified_symbol_refs(",
+        (
+            "def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:\n"
+            "    pass\n"
+            "    _meta_ignored = east_module\n"
+            "    return []\n\n"
+        ),
+    )
+
+    repl(
+        "def _meta_qualified_symbol_refs(",
+        "\ndef dump_deps_text(",
+        (
+            "def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, str]]:\n"
+            "    pass\n"
+            "    _meta_ignored = east_module\n"
+            "    return []\n\n"
+        ),
+    )
+
+    repl(
+        "def _header_cpp_type_from_east(",
+        "\ndef _header_guard_from_path(",
+        (
+            "def _header_cpp_type_from_east(east_t: str) -> str:\n"
+            "    pass\n"
+            "    _east_t = east_t\n"
+            "    return \"object\"\n\n"
+        ),
+    )
+
+    repl(
+        "def _header_guard_from_path(",
+        "\ndef build_cpp_header_from_east(",
+        (
+            "def _header_guard_from_path(path: Path) -> str:\n"
+            "    pass\n"
+            "    _path = path\n"
+            "    return \"PYTRA_SELFHOST_DUMMY_H\"\n\n"
+        ),
+    )
+
+    repl(
         "def build_cpp_header_from_east(",
         "\ndef _runtime_module_tail_from_source_path(",
         (
@@ -431,10 +479,10 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "    output_path: Path = Path(\"\"),\n"
             ") -> str:\n"
             "    pass\n"
-            "    _ = east_module\n"
-            "    _ = top_namespace\n"
-            "    _ = source_path\n"
-            "    _ = output_path\n"
+            "    _east = east_module\n"
+            "    _ns = top_namespace\n"
+            "    _src = source_path\n"
+            "    _out = output_path\n"
             "    return \"\"\n\n"
         ),
     )

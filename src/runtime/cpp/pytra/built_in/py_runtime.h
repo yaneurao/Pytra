@@ -1128,6 +1128,36 @@ static inline object dict_get_node(
     return py_dict_get_default(d, key, defval);
 }
 
+static inline str dict_get_node(const dict<str, str>& d, const str& key, const str& defval = "") {
+    if (d.find(key) != d.end()) {
+        return py_dict_get(d, key);
+    }
+    return defval;
+}
+
+static inline str dict_get_node(const dict<str, str>& d, const str& key, const char* defval) {
+    if (d.find(key) != d.end()) {
+        return py_dict_get(d, key);
+    }
+    return str(defval);
+}
+
+static inline str dict_get_node(const dict<str, str>& d, const char* key, const str& defval = "") {
+    str k = str(key);
+    if (d.find(k) != d.end()) {
+        return py_dict_get(d, k);
+    }
+    return defval;
+}
+
+static inline str dict_get_node(const dict<str, str>& d, const char* key, const char* defval) {
+    str k = str(key);
+    if (d.find(k) != d.end()) {
+        return py_dict_get(d, k);
+    }
+    return str(defval);
+}
+
 // Python の型判定（isinstance 的な分岐）で使う述語群。
 template <class T>
 static inline bool py_is_none(const ::std::optional<T>& v) {
