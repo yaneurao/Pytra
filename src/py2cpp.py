@@ -724,7 +724,7 @@ class CppEmitter(CodeEmitter):
                 includes.sort()
                 return includes
         for stmt in body:
-            kind = self.any_to_str(stmt.get("kind"))
+            kind = self._node_kind_from_dict(stmt)
             if kind == "Import":
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     mod_name = self.any_to_str(ent.get("name"))
@@ -1480,14 +1480,14 @@ class CppEmitter(CodeEmitter):
         """文リスト中の `Name` 代入候補型を収集する。"""
         out: dict[str, str] = {}
         for st in stmts:
-            kind = self.any_to_str(st.get("kind"))
+            kind = self._node_kind_from_dict(st)
             if kind == "Assign":
                 tgt = self.any_to_dict_or_empty(st.get("target"))
-                if self.any_to_str(tgt.get("kind")) == "Name":
+                if self._node_kind_from_dict(tgt) == "Name":
                     name = self.any_to_str(tgt.get("id"))
                     if name != "":
                         out[name] = self._infer_name_assign_type(st, tgt)
-                elif self.any_to_str(tgt.get("kind")) == "Tuple":
+                elif self._node_kind_from_dict(tgt) == "Tuple":
                     elems = self.any_dict_get_list(tgt, "elements")
                     value_t_obj = self.get_expr_type(st.get("value"))
                     value_t = value_t_obj if isinstance(value_t_obj, str) else ""
@@ -1505,7 +1505,7 @@ class CppEmitter(CodeEmitter):
                     i = 0
                     while i < len(elems):
                         ent = self.any_to_dict_or_empty(elems[i])
-                        if self.any_to_str(ent.get("kind")) == "Name":
+                        if self._node_kind_from_dict(ent) == "Name":
                             nm = self.any_to_str(ent.get("id"))
                             if nm != "":
                                 et = ""
@@ -1519,7 +1519,7 @@ class CppEmitter(CodeEmitter):
                         i += 1
             elif kind == "AnnAssign":
                 tgt = self.any_to_dict_or_empty(st.get("target"))
-                if self.any_to_str(tgt.get("kind")) == "Name":
+                if self._node_kind_from_dict(tgt) == "Name":
                     name = self.any_to_str(tgt.get("id"))
                     if name != "":
                         out[name] = self._infer_name_assign_type(st, tgt)
@@ -1794,7 +1794,7 @@ class CppEmitter(CodeEmitter):
         hook_stmt = self.hook_on_emit_stmt(stmt)
         if hook_stmt is True:
             return
-        kind = self.any_to_str(stmt.get("kind"))
+        kind = self._node_kind_from_dict(stmt)
         if self.hook_on_emit_stmt_kind(kind, stmt) is True:
             return
         self.emit_leading_comments(stmt)
@@ -1874,7 +1874,7 @@ class CppEmitter(CodeEmitter):
         self.emit_block_close()
 
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
-        kind = self.any_to_str(stmt.get("kind"))
+        kind = self._node_kind_from_dict(stmt)
         if kind == "Import":
             ents = self._dict_stmt_list(stmt.get("names"))
             if len(ents) == 0:
@@ -2053,7 +2053,7 @@ class CppEmitter(CodeEmitter):
         if k == "Assign":
             tgt = self.any_to_dict_or_empty(one.get("target"))
             # tuple assign は C++ で複数行へ展開されるため単文扱い不可
-            if self.any_to_str(tgt.get("kind")) == "Tuple":
+            if self._node_kind_from_dict(tgt) == "Tuple":
                 return False
         return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
 
@@ -2197,9 +2197,9 @@ class CppEmitter(CodeEmitter):
         """`Name = imported_symbol` 形式の再エクスポート代入かを返す。"""
         if len(self.scope_stack) != 1:
             return False
-        if self.any_to_str(target.get("kind")) != "Name":
+        if self._node_kind_from_dict(target) != "Name":
             return False
-        kind = self.any_to_str(value.get("kind"))
+        kind = self._node_kind_from_dict(value)
         if kind == "Name":
             name = self.any_to_str(value.get("id"))
             if name in self.import_modules:
@@ -2209,7 +2209,7 @@ class CppEmitter(CodeEmitter):
             return False
         if kind == "Attribute":
             owner = self.any_to_dict_or_empty(value.get("value"))
-            if self.any_to_str(owner.get("kind")) != "Name":
+            if self._node_kind_from_dict(owner) != "Name":
                 return False
             owner_name = self.any_to_str(owner.get("id"))
             if owner_name in self.import_modules:
@@ -2474,7 +2474,7 @@ class CppEmitter(CodeEmitter):
             enum_values: list[str] = []
             class_body = self._dict_stmt_list(stmt.get("body"))
             for s in class_body:
-                sk = self.any_to_str(s.get("kind"))
+                sk = self._node_kind_from_dict(s)
                 if sk == "Assign":
                     texpr = self.any_to_dict_or_empty(s.get("target"))
                     if self.is_name(s.get("target"), None):

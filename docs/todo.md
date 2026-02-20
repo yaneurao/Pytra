@@ -126,9 +126,9 @@
      - [x] `CodeEmitter` 側の hook 呼び出しを object receiver メソッド参照（`self.hooks.on_*`）から排除する。
      - [x] `selfhost/py2cpp.cpp` で `hooks` が `object` へ退化しないよう、`dict[str, Any]` を維持する初期化経路へ統一する。: `CodeEmitter.hooks` を `dict[str, Any]` へ固定し、`selfhost/py2cpp.cpp` で `inline static dict<str, object> hooks;` を確認（2026-02-20）。
      - [x] `fn(self, ...)` 呼び出しが C++ 側で無効式になる問題を、selfhost 生成時 hook no-op 化で解消した。: `tools/prepare_selfhost_source.py` による置換後 `selfhost/py2cpp.cpp` で `hook_on_*` は `nullopt` 返却のみ（2026-02-20）。
-   - [ ] `*_dict_get*` の default 引数を `str` / `int` / `list` 別 helper に分離し、`object` 強制変換を減らす。
+   - [x] `*_dict_get*` の default 引数を `str` / `int` / `list` 別 helper に分離し、`object` 強制変換を減らす。
      - [x] `any_dict_get_bool` / `any_dict_get_list` / `any_dict_get_dict` を追加する。
-     - [ ] `py_dict_get_default(..., list<object>{})` を全箇所削減する（selfhost compile logで追跡）。
+     - [x] `py_dict_get_default(..., list<object>{})` を全箇所削減する（selfhost compile logで追跡）。: `src/py2cpp.py` / `selfhost/py2cpp.cpp` を grep して残存なし（2026-02-20）。
    - [x] `split_*` / `is_*_type` の引数型を `str` に固定し、`py_slice(object,...)` 生成を消す。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
    - [ ] `str|None`, `dict|None`, `list|None` の Union 処理を見直し、`std::optional<T>` 優先にする。
