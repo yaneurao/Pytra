@@ -1,9 +1,17 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/std/typing.py
+// generated-by: src/py2cpp.py
 
-#ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_TYPING_H
-#define PYTRA_RUNTIME_CPP_PYTRA_STD_TYPING_H
+#ifndef SRC_RUNTIME_CPP_PYTRA_STD_TYPING_H
+#define SRC_RUNTIME_CPP_PYTRA_STD_TYPING_H
 
-// typing symbols are compile-time only in py2cpp output.
+#include <any>
+#include <string>
 
-#endif
+namespace pytra::std::typing {
+
+::std::any TypeVar(::std::string name);
+
+}  // namespace pytra::std::typing
+
+#endif  // SRC_RUNTIME_CPP_PYTRA_STD_TYPING_H

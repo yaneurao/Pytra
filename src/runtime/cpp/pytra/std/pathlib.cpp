@@ -1,4 +1,10 @@
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/runtime/std/pathlib.py
+#include "runtime/cpp/py_runtime.h"
 
-#include "runtime/cpp/pytra/std/pathlib.h"
+#include "pytra/std/pathlib.h"
+
+namespace pytra::std::pathlib {
+
+    
+    
+    
+}  // namespace pytra::std::pathlib

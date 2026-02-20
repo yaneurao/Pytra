@@ -1,4 +1,10 @@
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/runtime/std/dataclasses.py
+#include "runtime/cpp/py_runtime.h"
 
-#include "runtime/cpp/pytra/std/dataclasses.h"
+#include "pytra/std/dataclasses.h"
+
+namespace pytra::std::dataclasses {
+
+    
+    
+    
+}  // namespace pytra::std::dataclasses

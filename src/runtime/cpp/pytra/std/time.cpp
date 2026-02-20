@@ -1,16 +1,13 @@
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/runtime/std/time.py
+#include "runtime/cpp/py_runtime.h"
 
-#include <chrono>
+#include "pytra/std/time.h"
 
-#include "runtime/cpp/pytra/std/time.h"
+namespace pytra::std::time {
 
-namespace pytra::cpp_module {
-
-double perf_counter() {
-    using Clock = ::std::chrono::steady_clock;
-    using Seconds = ::std::chrono::duration<double>;
-    return Seconds(Clock::now().time_since_epoch()).count();
-}
-
-}  // namespace pytra::cpp_module
+    
+    
+    float64 perf_counter() {
+        return py_to_float64(pytra::std::time::perf_counter());
+    }
+    
+}  // namespace pytra::std::time
