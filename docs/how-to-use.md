@@ -48,10 +48,11 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - Python 側で import できるのは `src/pytra/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`, `from pytra.utils.assertions import py_assert_eq`）。
 - `pytra` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
-- `src/runtime/cpp/pytra/utils/*.cpp` は手書き固定ではなく、`src/pytra/utils/*.py` をトランスパイラで変換して生成・更新する前提です。
-- `python3 src/py2cpp.py src/pytra/utils/<mod>.py -o ... --header-output ...` で `*.cpp` / `*.h` を同時生成できます。
-- `python3 src/py2cpp.py src/pytra/utils/<mod>.py --emit-runtime-cpp` を使うと、`src/runtime/cpp/pytra/utils/...` の既定パスへ直接生成します。
+- `src/runtime/cpp/pytra/{std,utils,compiler}/*.cpp` は手書き固定ではなく、`src/pytra/{std,utils,compiler}/*.py` をトランスパイラで変換して生成・更新する前提です。
+- `python3 src/py2cpp.py src/pytra/<tree>/<mod>.py -o ... --header-output ...` で `*.cpp` / `*.h` を同時生成できます。
+- `python3 src/py2cpp.py src/pytra/<tree>/<mod>.py --emit-runtime-cpp` を使うと、`src/runtime/cpp/pytra/<tree>/...` の既定パスへ直接生成します（`<tree>` は `std` / `utils` / `compiler`）。
 - 例: `src/pytra/std/math.py` -> `src/runtime/cpp/pytra/std/math.cpp` と `src/runtime/cpp/pytra/std/math.h`。
+- 例: `src/pytra/compiler/east_parts/core.py` -> `src/runtime/cpp/pytra/compiler/east_parts/core.cpp` と `src/runtime/cpp/pytra/compiler/east_parts/core.h`。
 - `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` は bridge 方式で生成され、`runtime` 側の公開 API に型変換ラッパが付きます。
 - `src/pytra/std/json.py` / `src/pytra/std/typing.py` / `src/pytra/utils/assertions.py` も `.h/.cpp` を生成します。
 - 不足するネイティブ処理は `*-impl.cpp`（例: `src/runtime/cpp/pytra/std/math-impl.cpp`）で補完します。
