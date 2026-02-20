@@ -126,6 +126,11 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed.get("header_output"), "out.h")
         self.assertEqual(parsed.get("output"), "out.cpp")
 
+    def test_parse_py2cpp_argv_emit_runtime_cpp(self) -> None:
+        parsed, err = parse_py2cpp_argv(["src/pytra/runtime/std/math.py", "--emit-runtime-cpp"])
+        self.assertEqual(err, "")
+        self.assertEqual(parsed.get("emit_runtime_cpp"), "1")
+
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
         src = """def main() -> None:
     auto: int = 1

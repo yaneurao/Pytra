@@ -16,6 +16,7 @@
   - `*-impl.cpp` は手編集可能（再生成対象外）。
   - `<mod>.cpp` から `*-impl.cpp` の関数へ委譲する。
   - 生成器は `src/py2cpp.py` のみを正とし、特定モジュール専用の生成スクリプトは追加しない。
+  - 既定出力先への生成は `py2cpp.py --emit-runtime-cpp` を使う。
 
 ### 2. include規約を固定する
 
