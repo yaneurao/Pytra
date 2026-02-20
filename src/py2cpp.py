@@ -18,6 +18,9 @@ from pytra.std.pathlib import Path
 from pytra.std import sys
 
 
+RUNTIME_AUTOGEN_SKIP_ENV = "PYTRA_SKIP_RUNTIME_AUTOGEN"
+
+
 def _make_user_error(category: str, summary: str, details: list[str]) -> Exception:
     payload = "__PYTRA_USER_ERROR__|" + category + "|" + summary
     i = 0
@@ -4072,6 +4075,44 @@ def _dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str
     return default_value
 
 
+def _should_autogen_runtime_cpp(input_path: Path) -> bool:
+    """`src/pytra/{runtime,std}/*.py` の変換時に runtime/cpp 再生成を走らせるか判定する。"""
+    try:
+        p = str(input_path)
+    except Exception:
+        return False
+    if not p.endswith(".py"):
+        return False
+    return p.startswith("src/pytra/runtime/") or p.startswith("src/pytra/std/")
+
+
+def _run_runtime_cpp_autogen_if_needed(input_path: Path) -> None:
+    """必要時に `runtime/cpp/pytra/*` 自動生成を実行する。"""
+    if not _should_autogen_runtime_cpp(input_path):
+        return
+    import os
+    import subprocess
+    if str(os.environ.get(RUNTIME_AUTOGEN_SKIP_ENV, "")) == "1":
+        return
+
+    env = dict(os.environ)
+    env[RUNTIME_AUTOGEN_SKIP_ENV] = "1"
+    p = subprocess.run(
+        ["python3", "tools/generate_cpp_pylib_runtime.py"],
+        cwd=".",
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    if p.returncode != 0:
+        msg = p.stderr.strip()
+        if msg == "":
+            msg = p.stdout.strip()
+        if msg == "":
+            msg = "runtime C++ generation failed"
+        raise RuntimeError(msg)
+
+
 def _is_valid_cpp_namespace_name(ns: str) -> bool:
     """selfhost 安定性優先の簡易チェック。"""
     return True
@@ -4282,8 +4323,10 @@ def main(argv: list[str]) -> int:
         out_path = Path(output_txt)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(cpp, encoding="utf-8")
+        _run_runtime_cpp_autogen_if_needed(input_path)
     else:
         print(cpp)
+        _run_runtime_cpp_autogen_if_needed(input_path)
     return 0
 
 
