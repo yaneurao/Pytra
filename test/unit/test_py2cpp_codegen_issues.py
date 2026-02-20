@@ -17,7 +17,6 @@ from src.py2cpp import load_east, transpile_to_cpp
 
 
 class Py2CppCodegenIssueTest(unittest.TestCase):
-    @unittest.skip("TODO: py2cpp が分岐内初回代入を関数スコープへホイストできていない")
     def test_branch_first_assignment_is_hoisted_before_if(self) -> None:
         src = """def choose_sep(use_default: bool) -> str:
     if use_default:
@@ -46,7 +45,6 @@ class Py2CppCodegenIssueTest(unittest.TestCase):
         self.assertNotIn("str key_sep = \"=\";", cpp)
         self.assertIn("return py_to_string(item_sep + key_sep);", cpp)
 
-    @unittest.skip("TODO: optional[tuple[str,str]] の展開と型付け生成が崩れている")
     def test_optional_tuple_destructure_keeps_str_type(self) -> None:
         src = """def dump_like(indent: int | None, separators: tuple[str, str] | None) -> str:
     if separators is None:
@@ -68,8 +66,10 @@ class Py2CppCodegenIssueTest(unittest.TestCase):
 
         self.assertNotIn("::std::any item_sep", cpp)
         self.assertNotIn("::std::any key_sep", cpp)
-        self.assertNotIn("::std::get<0>(__tuple_3)", cpp)
-        self.assertNotIn("::std::get<1>(__tuple_3)", cpp)
+        self.assertNotIn("::std::get<0>(separators)", cpp)
+        self.assertNotIn("::std::get<1>(separators)", cpp)
+        self.assertIn("auto __tuple_", cpp)
+        self.assertIn("= *(separators);", cpp)
         self.assertIn("item_sep", cpp)
         self.assertIn("key_sep", cpp)
 

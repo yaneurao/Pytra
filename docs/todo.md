@@ -9,12 +9,12 @@
   - [x] 最小再現の生成テストを追加:
     - `test/unit/test_py2cpp_codegen_issues.py::Py2CppCodegenIssueTest::test_branch_first_assignment_is_hoisted_before_if`
     - `test/unit/test_py2cpp_codegen_issues.py::Py2CppCodegenIssueTest::test_optional_tuple_destructure_keeps_str_type`
-    - 現在は `@unittest.skip` で固定（修正完了後に skip を外す）。
-  - [ ] 修正方針:
+  - [x] 修正:
     - 関数単位で「分岐後にも参照されるローカル」を事前収集し、`if/else` の外側で宣言、分岐内は代入のみを出力する。
-    - `TupleAssign`/`Assign` の両方で同一規則になるよう `emit_assign` を整理する。
+    - `TupleAssign` で `tuple[...]|None` からの代入時に `optional` を展開してから `std::get<>` する。
+    - 事前宣言変数への代入で型情報を見失わないよう `declared_var_types` のフォールバックを追加する。
   - [ ] 受け入れ条件:
-    - 上記テストの skip を外して green にする。
+    - 上記 2 テストが green であること（skip なし）。
     - `runtime/cpp/pytra/std/json.cpp` 末尾 `dumps()` と同種のスコープ崩れが再発しないことを確認する。
 
 ## 優先方針（2026-02-19 更新）

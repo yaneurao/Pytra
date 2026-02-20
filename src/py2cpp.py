@@ -1333,6 +1333,140 @@ class CppEmitter(CodeEmitter):
             call = f"::std::{fn}<{t}>({call}, {a})"
         return call
 
+    def _infer_name_assign_type(self, stmt: dict[str, Any], target_node: dict[str, Any]) -> str:
+        """`Name = ...` / `AnnAssign Name` の宣言候補型を推定する。"""
+        decl_t = self.any_dict_get_str(stmt, "decl_type", "")
+        if decl_t != "":
+            return self.normalize_type_name(decl_t)
+        ann_t = self.any_dict_get_str(stmt, "annotation", "")
+        if ann_t != "":
+            return self.normalize_type_name(ann_t)
+        t_target = self.get_expr_type(target_node)
+        if isinstance(t_target, str) and t_target != "":
+            return self.normalize_type_name(t_target)
+        t_value = self.get_expr_type(stmt.get("value"))
+        if isinstance(t_value, str) and t_value != "":
+            return self.normalize_type_name(t_value)
+        return ""
+
+    def _collect_assigned_name_types(self, stmts: list[dict[str, Any]]) -> dict[str, str]:
+        """文リスト中の `Name` 代入候補型を収集する。"""
+        out: dict[str, str] = {}
+        for st in stmts:
+            kind = self.any_to_str(st.get("kind"))
+            if kind == "Assign":
+                tgt = self.any_to_dict_or_empty(st.get("target"))
+                if self.any_to_str(tgt.get("kind")) == "Name":
+                    name = self.any_to_str(tgt.get("id"))
+                    if name != "":
+                        out[name] = self._infer_name_assign_type(st, tgt)
+                elif self.any_to_str(tgt.get("kind")) == "Tuple":
+                    elems = self.any_dict_get_list(tgt, "elements")
+                    value_t_obj = self.get_expr_type(st.get("value"))
+                    value_t = value_t_obj if isinstance(value_t_obj, str) else ""
+                    tuple_t = ""
+                    if value_t.startswith("tuple[") and value_t.endswith("]"):
+                        tuple_t = value_t
+                    elif self._contains_text(value_t, "|"):
+                        for part in self.split_union(value_t):
+                            if part.startswith("tuple[") and part.endswith("]"):
+                                tuple_t = part
+                                break
+                    elem_types: list[str] = []
+                    if tuple_t != "":
+                        elem_types = self.split_generic(tuple_t[6:-1])
+                    i = 0
+                    while i < len(elems):
+                        ent = self.any_to_dict_or_empty(elems[i])
+                        if self.any_to_str(ent.get("kind")) == "Name":
+                            nm = self.any_to_str(ent.get("id"))
+                            if nm != "":
+                                et = ""
+                                if i < len(elem_types):
+                                    et = self.normalize_type_name(elem_types[i])
+                                if et == "":
+                                    t_ent = self.get_expr_type(ent)
+                                    if isinstance(t_ent, str):
+                                        et = self.normalize_type_name(t_ent)
+                                out[nm] = et
+                        i += 1
+            elif kind == "AnnAssign":
+                tgt = self.any_to_dict_or_empty(st.get("target"))
+                if self.any_to_str(tgt.get("kind")) == "Name":
+                    name = self.any_to_str(tgt.get("id"))
+                    if name != "":
+                        out[name] = self._infer_name_assign_type(st, tgt)
+            elif kind == "If":
+                child_body = self._collect_assigned_name_types(self._dict_stmt_list(st.get("body")))
+                child_else = self._collect_assigned_name_types(self._dict_stmt_list(st.get("orelse")))
+                for nm, ty in child_body.items():
+                    out[nm] = ty
+                for nm, ty in child_else.items():
+                    if nm in out:
+                        out[nm] = self._merge_decl_types_for_branch_join(out[nm], ty)
+                    else:
+                        out[nm] = ty
+            elif kind == "Try":
+                child_groups: list[list[dict[str, Any]]] = []
+                child_groups.append(self._dict_stmt_list(st.get("body")))
+                child_groups.append(self._dict_stmt_list(st.get("orelse")))
+                child_groups.append(self._dict_stmt_list(st.get("finalbody")))
+                for h in self._dict_stmt_list(st.get("handlers")):
+                    child_groups.append(self._dict_stmt_list(h.get("body")))
+                for grp in child_groups:
+                    child_map = self._collect_assigned_name_types(grp)
+                    for nm, ty in child_map.items():
+                        if nm in out:
+                            out[nm] = self._merge_decl_types_for_branch_join(out[nm], ty)
+                        else:
+                            out[nm] = ty
+        return out
+
+    def _merge_decl_types_for_branch_join(self, left_t: str, right_t: str) -> str:
+        """if/else 合流時の宣言型候補をマージする。"""
+        l = self.normalize_type_name(left_t)
+        r = self.normalize_type_name(right_t)
+        if l in {"", "unknown"}:
+            l = ""
+        if r in {"", "unknown"}:
+            r = ""
+        if l == "":
+            return r
+        if r == "":
+            return l
+        if l == r:
+            return l
+        int_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        float_types = {"float32", "float64"}
+        if (l in int_types or l in float_types) and (r in int_types or r in float_types):
+            if l in float_types or r in float_types:
+                return "float64"
+            return "int64"
+        if self.is_any_like_type(l) or self.is_any_like_type(r):
+            return "object"
+        return l
+
+    def _predeclare_if_join_names(self, body_stmts: list[dict[str, Any]], else_stmts: list[dict[str, Any]]) -> None:
+        """if/else 両分岐で代入される名前を外側スコープへ事前宣言する。"""
+        if len(else_stmts) == 0:
+            return
+        body_types = self._collect_assigned_name_types(body_stmts)
+        else_types = self._collect_assigned_name_types(else_stmts)
+        shared = set(body_types.keys()).intersection(set(else_types.keys()))
+        for name in sorted(shared):
+            if name == "" or self.is_declared(name):
+                continue
+            decl_t = self._merge_decl_types_for_branch_join(body_types.get(name, ""), else_types.get(name, ""))
+            if decl_t == "":
+                decl_t = "object"
+            cpp_t = self._cpp_type_text(decl_t)
+            if cpp_t in {"", "auto"}:
+                decl_t = "object"
+                cpp_t = "object"
+            self.emit(f"{cpp_t} {name};")
+            self.declare_in_current_scope(name)
+            self.declared_var_types[name] = decl_t
+
     def _emit_if_stmt(self, stmt: dict[str, Any]) -> None:
         """If ノードを出力する。"""
         body_stmts = self._dict_stmt_list(stmt.get("body"))
@@ -1343,6 +1477,7 @@ class CppEmitter(CodeEmitter):
             cond_txt = self.any_dict_get_str(test_node, "repr", "")
             if cond_txt == "":
                 cond_txt = "false"
+        self._predeclare_if_join_names(body_stmts, else_stmts)
         if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
             self.emit(f"if ({cond_txt})")
             self.emit_scoped_stmt_list([body_stmts[0]], set())
@@ -1786,11 +1921,27 @@ class CppEmitter(CodeEmitter):
                     self.emit(f"::std::swap({self.render_lvalue(lhs_elems[0])}, {self.render_lvalue(lhs_elems[1])});")
                     return
             tmp = self.next_tmp("__tuple")
-            self.emit(f"auto {tmp} = {self.render_expr(stmt.get('value'))};")
+            value_expr = self.render_expr(stmt.get("value"))
             tuple_elem_types: list[str] = []
             value_t = self.get_expr_type(stmt.get("value"))
-            if isinstance(value_t, str) and value_t.startswith("tuple[") and value_t.endswith("]"):
-                tuple_elem_types = self.split_generic(value_t[6:-1])
+            value_is_optional_tuple = False
+            if isinstance(value_t, str):
+                tuple_type_text = ""
+                if value_t.startswith("tuple[") and value_t.endswith("]"):
+                    tuple_type_text = value_t
+                elif self._contains_text(value_t, "|"):
+                    for part in self.split_union(value_t):
+                        if part.startswith("tuple[") and part.endswith("]"):
+                            tuple_type_text = part
+                            break
+                if tuple_type_text != "":
+                    tuple_elem_types = self.split_generic(tuple_type_text[6:-1])
+                    if tuple_type_text != value_t:
+                        value_is_optional_tuple = True
+            if value_is_optional_tuple:
+                self.emit(f"auto {tmp} = *({value_expr});")
+            else:
+                self.emit(f"auto {tmp} = {value_expr};")
             for i, elt in enumerate(self.any_dict_get_list(target, "elements")):
                 lhs = self.render_expr(elt)
                 if self.is_plain_name_expr(elt):
@@ -1862,6 +2013,9 @@ class CppEmitter(CodeEmitter):
             return
         rval = self.render_expr(stmt.get("value"))
         t_target = self.get_expr_type(stmt.get("target"))
+        if self.is_plain_name_expr(stmt.get("target")) and t_target in {"", "unknown"}:
+            if texpr in self.declared_var_types:
+                t_target = self.declared_var_types[texpr]
         if t_target == "uint8" and isinstance(value, dict):
             byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
