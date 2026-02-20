@@ -28,6 +28,44 @@ def _walk(node: Any):
 
 
 class EastCoreTest(unittest.TestCase):
+    def test_quoted_type_annotation_is_normalized(self) -> None:
+        src = """
+def f(p: "Path", xs: "list[int]") -> "Path":
+    return p
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "f"]
+        self.assertEqual(len(funcs), 1)
+        fn = funcs[0]
+        arg_types = fn.get("arg_types", {})
+        self.assertEqual(arg_types.get("p"), "Path")
+        self.assertEqual(arg_types.get("xs"), "list[int64]")
+        self.assertEqual(fn.get("return_type"), "Path")
+
+    def test_dict_set_comprehension_infers_target_type(self) -> None:
+        src = """
+def main() -> None:
+    xs: list[int] = [1, 2, 3, 4]
+    ys: set[int] = {x * x for x in xs if x % 2 == 1}
+    ds: dict[int, int] = {x: x * x for x in xs if x % 2 == 0}
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        dict_comps = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "DictComp"]
+        set_comps = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "SetComp"]
+        self.assertEqual(len(dict_comps), 1)
+        self.assertEqual(len(set_comps), 1)
+        dc = dict_comps[0]
+        sc = set_comps[0]
+        self.assertEqual(dc.get("resolved_type"), "dict[int64,int64]")
+        self.assertEqual(sc.get("resolved_type"), "set[int64]")
+        self.assertEqual(dc.get("key", {}).get("resolved_type"), "int64")
+        self.assertEqual(dc.get("value", {}).get("resolved_type"), "int64")
+        self.assertEqual(sc.get("elt", {}).get("resolved_type"), "int64")
+        d_ifs = dc.get("generators", [{}])[0].get("ifs", [])
+        s_ifs = sc.get("generators", [{}])[0].get("ifs", [])
+        self.assertEqual(len(d_ifs), 1)
+        self.assertEqual(len(s_ifs), 1)
+
     def test_except_without_as_is_supported(self) -> None:
         src = """
 def f(x: str) -> bool:
