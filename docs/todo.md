@@ -12,6 +12,41 @@
 2. [x] `src/runtime/cpp/pytra/built_in/py_runtime.h` の class / 関数に目的説明コメントを追加する。
    - [x] object ラッパクラス群、変換ヘルパ群、os.path/glob、dict 取得、演算互換、runtime 状態管理の各セクションに C++ コメントを追加済み。
 
+## 2026-02-20 追加: spec-import 反映（最優先）
+
+1. [ ] import 構文の第一段階サポート範囲を実装と一致させる。
+   - [ ] 対応: `import M`, `import M as A`, `from M import S`, `from M import S as A`。
+   - [ ] 未対応: `from M import *`, 相対 import（`from .m import x`）を `input_invalid`（`kind=unsupported_import_form`）で統一する。
+2. [ ] `ImportBinding` を import 情報の正本として導入・統一する。
+   - [ ] `module_id`, `export_name`, `local_name`, `binding_kind`, `source_file`, `source_line` を保持する。
+   - [ ] `meta.import_modules` / `meta.import_symbols` は `ImportBinding` から導出するだけにする。
+3. [ ] モジュール解決を `resolve_module_name(raw_name, root_dir)` に一本化する。
+   - [ ] `pytra.*` を予約名前空間として最優先解決する。
+   - [ ] `pytra.py` / `pytra/__init__.py` の衝突は `reserved_conflict` として `input_invalid` にする。
+   - [ ] 未解決は `missing_module` として `input_invalid` にする。
+4. [ ] `ExportTable` を追加し `from M import S` の事前検証を実装する。
+   - [ ] 公開対象: トップレベル `FunctionDef`, `ClassDef`, `Assign/AnnAssign(Name)`。
+   - [ ] 未定義シンボル import は `missing_symbol` として `input_invalid` にする。
+5. [ ] 名前解決優先順位を固定し、同順位衝突を `duplicate_binding` で失敗させる。
+   - [ ] 優先順位: ローカル変数 > 関数引数 > クラスメンバ > import symbol alias > import module alias > 組み込み。
+   - [ ] `from M import S` のみ時に `M.T` を参照した場合は未束縛として `input_invalid` にする。
+6. [ ] C++ 生成規則を「常に完全修飾名へ正規化」に統一する。
+   - [ ] `from foo.bar import add as plus` を `foo.bar` モジュール include + `ns_of(foo.bar)::add` 呼び出しへ落とす。
+   - [ ] include は `ImportBinding` 由来で重複排除 + 安定ソートする。
+7. [ ] single-file / multi-file で同一 `module_namespace_map` を使用し、解決結果差分を禁止する。
+   - [ ] forward 宣言/呼び出し解決ともに同じ map を使う。
+   - [ ] `--dump-deps` と通常変換で依存解決結果が一致することをテストで保証する。
+8. [ ] import エラーの詳細フォーマットを統一する。
+   - [ ] `input_invalid` の detail に `kind`, `file`, `import` を必ず含める。
+   - [ ] `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unsupported_import_form`。
+9. [ ] import 最小受け入れテストマトリクスを追加する。
+   - [ ] 正常: 4形式（`import` / `import as` / `from import` / `from import as`）。
+   - [ ] 異常: `import *`, 相対 import, モジュール未存在, シンボル未存在, 同名 alias 衝突。
+   - [ ] single/multi と `--dump-deps` で同じ解決結果になることを自動検証する。
+10. [ ] 言語非依存 import IR の土台を追加する（後続 backend 共通化）。
+   - [ ] `QualifiedSymbolRef(module_id, symbol, local_name)` を定義し、backend 手前で `Name(alias)` を正規化する。
+   - [ ] backend には「解釈済み import 情報のみ」を渡し、言語側で import 意味解釈しない設計にする。
+
 ## 優先方針（2026-02-19 更新）
 
 - まず `import` 解決（依存グラフ・探索パス・`from ... import ...` を含む）を先に完了させる。
