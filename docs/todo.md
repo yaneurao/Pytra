@@ -1,5 +1,22 @@
 # TODO（未完了のみ）
 
+## 最優先（2026-02-20 追加: py2cpp コード生成不具合）
+
+- [ ] `py2cpp.py` の分岐内初回代入（関数スコープ変数）が C++ でブロックスコープ宣言になってしまう問題を修正する。
+  - [x] 原因調査:
+    - `emit_assign`（`src/py2cpp.py`）が `is_declared` 判定を現在スコープ基準で行うため、`if/else` 内初回代入が `str x = ...;` として各ブロックに閉じる。
+    - その後の `return x + y` はブロック外参照となり、未宣言エラーを誘発する。
+  - [x] 最小再現の生成テストを追加:
+    - `test/unit/test_py2cpp_codegen_issues.py::Py2CppCodegenIssueTest::test_branch_first_assignment_is_hoisted_before_if`
+    - `test/unit/test_py2cpp_codegen_issues.py::Py2CppCodegenIssueTest::test_optional_tuple_destructure_keeps_str_type`
+    - 現在は `@unittest.skip` で固定（修正完了後に skip を外す）。
+  - [ ] 修正方針:
+    - 関数単位で「分岐後にも参照されるローカル」を事前収集し、`if/else` の外側で宣言、分岐内は代入のみを出力する。
+    - `TupleAssign`/`Assign` の両方で同一規則になるよう `emit_assign` を整理する。
+  - [ ] 受け入れ条件:
+    - 上記テストの skip を外して green にする。
+    - `runtime/cpp/pytra/std/json.cpp` 末尾 `dumps()` と同種のスコープ崩れが再発しないことを確認する。
+
 ## 優先方針（2026-02-19 更新）
 
 - まず `import` 解決（依存グラフ・探索パス・`from ... import ...` を含む）を先に完了させる。
