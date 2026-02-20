@@ -109,6 +109,71 @@ float64 f(float64 x) {
 }
 ```
 
+#### 2.2 Python入力から `.h/.cpp` が生成される流れ（定数を含む）
+
+次の Python を入力として `py2cpp.py` を実行すると、`.h` と `.cpp` の両方が生成される。
+
+```python
+# src/pytra/runtime/std/math.py
+import pytra.std.math_impl as _m
+
+pi: float = _m.pi
+e: float = _m.e
+
+def sqrt(x: float) -> float:
+    return _m.sqrt(x)
+```
+
+生成コマンド（例）:
+
+```bash
+# 既定パスへ直接生成
+python3 src/py2cpp.py src/pytra/runtime/std/math.py --emit-runtime-cpp
+
+# 任意パスへ生成
+python3 src/py2cpp.py src/pytra/runtime/std/math.py \
+  -o /tmp/math.cpp \
+  --header-output /tmp/math.h \
+  --top-namespace pytra::std::math
+```
+
+生成 `.h` の例（定数宣言 + 関数宣言）:
+
+```cpp
+namespace pytra::std::math {
+
+extern double pi;
+extern double e;
+
+double sqrt(double x);
+
+}  // namespace pytra::std::math
+```
+
+生成 `.cpp` の例（定数定義 + 関数定義）:
+
+```cpp
+#include "pytra/std/math-impl.h"
+
+namespace pytra::std::math {
+
+float64 pi = py_to_float64(pytra::std::math_impl::pi);
+float64 e = py_to_float64(pytra::std::math_impl::e);
+
+float64 sqrt(float64 x) {
+    return py_to_float64(pytra::std::math_impl::sqrt(x));
+}
+
+}  // namespace pytra::std::math
+```
+
+要点:
+- Python のモジュール変数代入（`pi = _m.pi`）は、C++ 側では
+  - `.h`: `extern` 宣言
+  - `.cpp`: 実体定義
+  として出力される。
+- import 先が `_impl` の場合、include は `-impl.h`、namespace は `_impl` のままになる。
+
 ### 3. 自作モジュール import の生成仕様を追加する
 
 - `import mylib` / `from mylib import f` の場合:
@@ -186,6 +251,9 @@ float64 f(float64 x) {
 
 - C++ 生成側では、Python 側モジュール定義を保持したまま、必要に応じてネイティブ関数へマップする。
 - 例（`pytra.std.math`）:
-  - `pi = _m.pi` は `inline const float64 pi = py_math::pi;` のような定数公開で受ける。
-  - `return _m.sqrt(x)` は `py_math::sqrt(x)` 呼び出しで受ける。
-- 上記マップ先（`py_math::*`）は手書き実装として事前に提供し、生成コードはそれを参照する。
+  - `pi = _m.pi` は
+    - `.h`: `extern double pi;`
+    - `.cpp`: `float64 pi = py_to_float64(pytra::std::math_impl::pi);`
+    のように宣言/定義へ分離して受ける。
+  - `return _m.sqrt(x)` は `pytra::std::math_impl::sqrt(x)` 呼び出しで受ける。
+- 上記マップ先（`pytra::std::<name>_impl::*`）は手書き実装として事前に提供し、生成コードはそれを参照する。
