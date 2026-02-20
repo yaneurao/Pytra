@@ -206,14 +206,6 @@ DEFAULT_AUG_BIN = {
     "RShift": ">>",
 }
 
-def _map_get_str(src: dict[str, str], key: str) -> str:
-    """dict[str, str] から文字列値を安全に取得する。"""
-    v = src.get(key)
-    if isinstance(v, str):
-        return str(v)
-    return ""
-
-
 def _looks_like_runtime_function_name(name: str) -> bool:
     """ランタイム関数名（`py_*` か `ns::func`）らしい文字列か判定する。"""
     if name == "":
@@ -1450,10 +1442,10 @@ class CppEmitter(CodeEmitter):
             elif target_t in {"float32", "float64"}:
                 val = f"static_cast<float64>(py_to_int64({val}))"
         op_name = str(stmt.get("op"))
-        op_txt = _map_get_str(AUG_OPS, op_name)
+        op_txt = str(AUG_OPS.get(op_name, ""))
         if op_txt != "":
             op = op_txt
-        if _map_get_str(AUG_BIN, op_name) != "":
+        if str(AUG_BIN.get(op_name, "")) != "":
             # Prefer idiomatic ++/-- for +/-1 updates.
             if self._opt_ge(2) and op_name in {"Add", "Sub"} and val == "1":
                 if op_name == "Add":
@@ -2346,7 +2338,7 @@ class CppEmitter(CodeEmitter):
             if rt == "str" and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
                 return f"py_repeat({right}, {left})"
         op = "+"
-        op_txt = _map_get_str(BIN_OPS, op_name_str)
+        op_txt = str(BIN_OPS.get(op_name_str, ""))
         if op_txt != "":
             op = op_txt
         return f"{left} {op} {right}"
@@ -2907,7 +2899,7 @@ class CppEmitter(CodeEmitter):
             rhs = self.render_expr(rhs_node)
             op_name: str = op
             cop = "=="
-            cop_txt = _map_get_str(CMP_OPS, op_name)
+            cop_txt = str(CMP_OPS.get(op_name, ""))
             if cop_txt != "":
                 cop = cop_txt
             if cop == "/* in */":
