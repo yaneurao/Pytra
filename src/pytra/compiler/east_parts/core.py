@@ -1717,6 +1717,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             return None
         arg_types: dict[str, str] = {}
         arg_order: list[str] = []
+        arg_defaults: dict[str, str] = {}
         args_raw = m_def.group(2)
         if args_raw.strip() != "":
             # Supported:
@@ -1783,11 +1784,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     )
                 arg_types[pn] = _sh_ann_to_type(pt)
                 arg_order.append(pn)
+                pdef = m_param.group(3)
+                if pdef is not None:
+                    default_txt = pdef.strip()
+                    if default_txt != "":
+                        arg_defaults[pn] = default_txt
         return {
             "name": m_def.group(1),
             "ret": _sh_ann_to_type(m_def.group(3).strip()) if m_def.group(3) is not None else "None",
             "arg_types": arg_types,
             "arg_order": arg_order,
+            "arg_defaults": arg_defaults,
         }
 
     def merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tuple[int, str]], dict[int, tuple[int, int]]]:
@@ -3428,6 +3435,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             fn_ret = str(sig["ret"])
             arg_types = dict(sig["arg_types"])
             arg_order = list(sig.get("arg_order", list(arg_types.keys())))
+            arg_defaults_raw_obj = sig.get("arg_defaults")
+            arg_defaults_raw = arg_defaults_raw_obj if isinstance(arg_defaults_raw_obj, dict) else {}
             block: list[tuple[int, str]] = []
             j = sig_end_line + 1
             while j <= len(lines):
@@ -3449,6 +3458,20 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
             stmts = parse_stmt_block(block, name_types=dict(arg_types), scope_label=fn_name)
             docstring, stmts = extract_leading_docstring(stmts)
+            arg_defaults: dict[str, Any] = {}
+            for arg_name in arg_order:
+                if arg_name in arg_defaults_raw:
+                    default_txt = str(arg_defaults_raw[arg_name]).strip()
+                    if default_txt != "":
+                        default_col = sig_line.find(default_txt)
+                        if default_col < 0:
+                            default_col = 0
+                        arg_defaults[arg_name] = parse_expr(
+                            default_txt,
+                            ln_no=i,
+                            col=default_col,
+                            name_types=dict(arg_types),
+                        )
             item = {
                 "kind": "FunctionDef",
                 "name": fn_name,
@@ -3456,6 +3479,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "source_span": {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
                 "arg_types": arg_types,
                 "arg_order": arg_order,
+                "arg_defaults": arg_defaults,
                 "arg_index": {n: i for i, n in enumerate(arg_order)},
                 "return_type": fn_ret,
                 "arg_usage": {n: "readonly" for n in arg_types.keys()},
@@ -3677,6 +3701,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         mname = str(sig["name"])
                         marg_types = dict(sig["arg_types"])
                         marg_order = list(sig.get("arg_order", list(marg_types.keys())))
+                        marg_defaults_raw_obj = sig.get("arg_defaults")
+                        marg_defaults_raw = marg_defaults_raw_obj if isinstance(marg_defaults_raw_obj, dict) else {}
                         mret = str(sig["ret"])
                         method_block: list[tuple[int, str]] = []
                         m = k + 1
@@ -3712,6 +3738,20 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             local_types[fnm] = fty
                         stmts = parse_stmt_block(method_block, name_types=local_types, scope_label=f"{cls_name}.{mname}")
                         docstring, stmts = extract_leading_docstring(stmts)
+                        marg_defaults: dict[str, Any] = {}
+                        for arg_name in marg_order:
+                            if arg_name in marg_defaults_raw:
+                                default_txt = str(marg_defaults_raw[arg_name]).strip()
+                                if default_txt != "":
+                                    default_col = ln_txt.find(default_txt)
+                                    if default_col < 0:
+                                        default_col = bind
+                                    marg_defaults[arg_name] = parse_expr(
+                                        default_txt,
+                                        ln_no=ln_no,
+                                        col=default_col,
+                                        name_types=local_types,
+                                    )
                         if mname == "__init__":
                             for st in stmts:
                                 if st.get("kind") == "Assign":
@@ -3754,6 +3794,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 },
                                 "arg_types": marg_types,
                                 "arg_order": marg_order,
+                                "arg_defaults": marg_defaults,
                                 "arg_index": {n: i for i, n in enumerate(marg_order)},
                                 "return_type": mret,
                                 "arg_usage": {n: "readonly" for n in marg_types.keys()},

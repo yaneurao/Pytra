@@ -21,18 +21,17 @@ def _is_digit(ch: str) -> bool:
 def _hex_value(ch: str) -> int:
     if ch >= "0" and ch <= "9":
         return int(ch)
-    low = ch.lower()
-    if low == "a":
+    if ch == "a" or ch == "A":
         return 10
-    if low == "b":
+    if ch == "b" or ch == "B":
         return 11
-    if low == "c":
+    if ch == "c" or ch == "C":
         return 12
-    if low == "d":
+    if ch == "d" or ch == "D":
         return 13
-    if low == "e":
+    if ch == "e" or ch == "E":
         return 14
-    if low == "f":
+    if ch == "f" or ch == "F":
         return 15
     raise ValueError("invalid json unicode escape")
 
@@ -56,10 +55,10 @@ def _hex4(code: int) -> str:
     d1 = v % 16
     v = v // 16
     d0 = v % 16
-    p0 = _HEX_DIGITS[d0 : d0 + 1]
-    p1 = _HEX_DIGITS[d1 : d1 + 1]
-    p2 = _HEX_DIGITS[d2 : d2 + 1]
-    p3 = _HEX_DIGITS[d3 : d3 + 1]
+    p0: str = _HEX_DIGITS[d0 : d0 + 1]
+    p1: str = _HEX_DIGITS[d1 : d1 + 1]
+    p2: str = _HEX_DIGITS[d2 : d2 + 1]
+    p3: str = _HEX_DIGITS[d3 : d3 + 1]
     return p0 + p1 + p2 + p3
 
 
@@ -73,7 +72,7 @@ class _JsonParser:
         self.n = len(text)
         self.i = 0
 
-    def parse(self):
+    def parse(self) -> object:
         self._skip_ws()
         out = self._parse_value()
         self._skip_ws()
@@ -85,7 +84,7 @@ class _JsonParser:
         while self.i < self.n and _is_ws(self.text[self.i]):
             self.i += 1
 
-    def _parse_value(self):
+    def _parse_value(self) -> object:
         if self.i >= self.n:
             raise ValueError("invalid json: unexpected end")
         ch = self.text[self.i]
@@ -197,7 +196,7 @@ class _JsonParser:
                 out_chars.append(ch)
         raise ValueError("unterminated json string")
 
-    def _parse_number(self):
+    def _parse_number(self) -> object:
         start = self.i
         if self.text[self.i] == "-":
             self.i += 1
@@ -233,18 +232,20 @@ class _JsonParser:
                     self.i += 1
         token = self.text[start : self.i]
         if is_float:
-            return float(token)
-        return int(token)
+            num_f: float = float(token)
+            return num_f
+        num_i: int = int(token)
+        return num_i
 
 
-def loads(text: str):
+def loads(text: str) -> object:
     return _JsonParser(text).parse()
 
 
 def _escape_str(s: str, ensure_ascii: bool) -> str:
     out: list[str] = ['"']
     for ch in s:
-        code = ord(ch)
+        code: int = ord(ch)
         if ch == '"':
             out.append('\\"')
         elif ch == "\\":
@@ -280,13 +281,16 @@ def _dump_json_list(
     if indent is None:
         dumped: list[str] = []
         for x in values:
-            dumped.append(_dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level))
+            dumped_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level)
+            dumped.append(dumped_txt)
         return "[" + item_sep.join(dumped) + "]"
+    indent_i: int = int(indent)
     inner: list[str] = []
     for x in values:
-        prefix = " " * (indent * (level + 1))
-        inner.append(prefix + _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1))
-    return "[\n" + _COMMA_NL.join(inner) + "\n" + (" " * (indent * level)) + "]"
+        prefix: str = " " * (indent_i * (level + 1))
+        value_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1)
+        inner.append(prefix + value_txt)
+    return "[\n" + _COMMA_NL.join(inner) + "\n" + (" " * (indent_i * level)) + "]"
 
 
 def _dump_json_dict(
@@ -302,17 +306,18 @@ def _dump_json_dict(
     if indent is None:
         parts: list[str] = []
         for k, x in values.items():
-            k_txt = _escape_str(str(k), ensure_ascii)
-            v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level)
+            k_txt: str = _escape_str(str(k), ensure_ascii)
+            v_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level)
             parts.append(k_txt + key_sep + v_txt)
         return "{" + item_sep.join(parts) + "}"
+    indent_i: int = int(indent)
     inner: list[str] = []
     for k, x in values.items():
-        prefix = " " * (indent * (level + 1))
-        k_txt = _escape_str(str(k), ensure_ascii)
-        v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1)
+        prefix: str = " " * (indent_i * (level + 1))
+        k_txt: str = _escape_str(str(k), ensure_ascii)
+        v_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1)
         inner.append(prefix + k_txt + key_sep + v_txt)
-    return "{\n" + _COMMA_NL.join(inner) + "\n" + (" " * (indent * level)) + "}"
+    return "{\n" + _COMMA_NL.join(inner) + "\n" + (" " * (indent_i * level)) + "}"
 
 
 def _dump_json_value(
@@ -334,10 +339,12 @@ def _dump_json_value(
     if isinstance(v, str):
         return _escape_str(v, ensure_ascii)
     if isinstance(v, list):
-        return _dump_json_list(list(v), ensure_ascii, indent, item_sep, key_sep, level)
+        as_list: list[object] = list(v)
+        return _dump_json_list(as_list, ensure_ascii, indent, item_sep, key_sep, level)
     if isinstance(v, dict):
-        return _dump_json_dict(dict(v), ensure_ascii, indent, item_sep, key_sep, level)
-    raise TypeError(f"json.dumps unsupported type: {type(v).__name__}")
+        as_dict: dict[str, object] = dict(v)
+        return _dump_json_dict(as_dict, ensure_ascii, indent, item_sep, key_sep, level)
+    raise TypeError("json.dumps unsupported type")
 
 
 def dumps(

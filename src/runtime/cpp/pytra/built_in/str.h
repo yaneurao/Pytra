@@ -212,6 +212,22 @@ public:
         return true;
     }
 
+    str lower() const {
+        ::std::string out = data_;
+        for (char& ch : out) {
+            ch = static_cast<char>(::std::tolower(static_cast<unsigned char>(ch)));
+        }
+        return str(::std::move(out));
+    }
+
+    str upper() const {
+        ::std::string out = data_;
+        for (char& ch : out) {
+            ch = static_cast<char>(::std::toupper(static_cast<unsigned char>(ch)));
+        }
+        return str(::std::move(out));
+    }
+
     friend ::std::ostream& operator<<(::std::ostream& os, const str& s) {
         os << s.data_;
         return os;

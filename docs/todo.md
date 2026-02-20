@@ -2,7 +2,7 @@
 
 ## 最優先（2026-02-20 追加: py2cpp コード生成不具合）
 
-- [ ] `py2cpp.py` の分岐内初回代入（関数スコープ変数）が C++ でブロックスコープ宣言になってしまう問題を修正する。
+- [x] `py2cpp.py` の分岐内初回代入（関数スコープ変数）が C++ でブロックスコープ宣言になってしまう問題を修正する。
   - [x] 原因調査:
     - `emit_assign`（`src/py2cpp.py`）が `is_declared` 判定を現在スコープ基準で行うため、`if/else` 内初回代入が `str x = ...;` として各ブロックに閉じる。
     - その後の `return x + y` はブロック外参照となり、未宣言エラーを誘発する。
@@ -13,9 +13,9 @@
     - 関数単位で「分岐後にも参照されるローカル」を事前収集し、`if/else` の外側で宣言、分岐内は代入のみを出力する。
     - `TupleAssign` で `tuple[...]|None` からの代入時に `optional` を展開してから `std::get<>` する。
     - 事前宣言変数への代入で型情報を見失わないよう `declared_var_types` のフォールバックを追加する。
-  - [ ] 受け入れ条件:
-    - 上記 2 テストが green であること（skip なし）。
-    - `runtime/cpp/pytra/std/json.cpp` 末尾 `dumps()` と同種のスコープ崩れが再発しないことを確認する。
+  - [x] 受け入れ条件:
+    - 上記 2 テストが green であること（skip なし）。: `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py'` で `2/2 OK`。
+    - `runtime/cpp/pytra/std/json.cpp` 末尾 `dumps()` と同種のスコープ崩れが再発しないことを確認する。: `--emit-runtime-cpp` 再生成 + `g++ -c src/runtime/cpp/pytra/std/json.cpp` を確認済み。
 
 ## 優先方針（2026-02-19 更新）
 
@@ -40,7 +40,7 @@
          - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。
          - [ ] selfhost 最小モードの `load_east(.json)` を復活させ、`tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` を再び通す（`std::any` 退化を回避した実装にする）。
            - [x] 暫定措置: `check_selfhost_cpp_diff --mode allow-not-implemented --selfhost-driver bridge` では `[input_invalid]` を skip 扱いにした（本タスク完了時に戻す）。
-           - [ ] `src/pytra/std/json.py` を C++ へ安全に生成できるサブセットへ段階分割し、`runtime/cpp/pytra/std/json.cpp` の selfhost ビルドエラー（`ord/chr` / 文字列 `.begin()` / optional tuple 展開など）を解消する。
+           - [x] `src/pytra/std/json.py` を C++ へ安全に生成できるサブセットへ段階分割し、`runtime/cpp/pytra/std/json.cpp` の selfhost ビルドエラー（`ord/chr` / 文字列 `.begin()` / optional tuple 展開など）を解消する。: `json.cpp` 単体コンパイル通過、`json_extended` の Python/C++ 出力一致を確認済み（2026-02-20）。
          - [ ] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。
          - [x] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。: 現在は `.py` -> `not_implemented`、`.json` -> `input_invalid`、`--help` は `0` を確認済み。
        - [x] `src/py2cpp.py` の EAST 読み込み import を `pytra.compiler.east` facade から `pytra.compiler.east_parts.core` へ切り替えた（selfhost 時の動的 import 依存を削減）。
