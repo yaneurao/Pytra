@@ -3,6 +3,11 @@
 
 #include "container_common.h"
 
+template <class T>
+class list;
+template <class T>
+::std::string py_to_string(const T& v);
+
 class str {
 public:
     using iterator = ::std::string::iterator;
@@ -170,6 +175,17 @@ public:
 
     ::std::size_t find_last_of(const char* chars, ::std::size_t pos = ::std::string::npos) const {
         return data_.find_last_of(chars, pos);
+    }
+
+    template <class T>
+    str join(const list<T>& values) const {
+        if (values.empty()) return "";
+        str out = py_to_string(values[0]);
+        for (::std::size_t i = 1; i < values.size(); i++) {
+            out += *this;
+            out += py_to_string(values[i]);
+        }
+        return out;
     }
 
     bool isdigit() const {

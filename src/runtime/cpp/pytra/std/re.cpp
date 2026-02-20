@@ -25,7 +25,7 @@ namespace pytra::std::re {
                 out.append(str(ch));
                 i++;
             }
-            return py_to_string(py_join("", out));
+            return py_to_string(str("").join(out));
         }
         return py_to_string(py_replace(text, pattern, repl));
     }

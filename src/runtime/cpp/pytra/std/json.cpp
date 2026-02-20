@@ -35,7 +35,7 @@ namespace pytra::std::json {
             }
         }
         out.append(str("\""));
-        return py_to_string(py_join("", out));
+        return py_to_string(str("").join(out));
     }
     
     str dumps(const object& obj) {
