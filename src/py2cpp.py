@@ -283,12 +283,25 @@ def _normalize_param_annotation(ann: str) -> str:
 
 def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, list[str]]:
     """EAST 化に失敗するモジュール用の関数シグネチャ簡易抽出。"""
+    sigs = _extract_function_signatures_from_python_source(src_path)
     out: dict[str, list[str]] = {}
+    for fn_name in sigs:
+        sig = sigs[fn_name]
+        arg_types_obj = sig.get("arg_types")
+        if isinstance(arg_types_obj, list):
+            out[fn_name] = arg_types_obj
+    return out
+
+
+def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str, dict[str, list[str]]]:
+    """`def` シグネチャから引数型とデフォルト値（テキスト）を抽出する。"""
     try:
         text = src_path.read_text(encoding="utf-8")
     except Exception:
-        return out
+        empty: dict[str, dict[str, list[str]]] = {}
+        return empty
     lines: list[str] = text.splitlines()
+    sig_map: dict[str, dict[str, list[str]]] = {}
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -333,6 +346,7 @@ def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, 
                 continue
             params = sig0[p0 + 1 : p1]
             arg_types: list[str] = []
+            arg_defaults: list[str] = []
             parts = _split_top_level_csv(params)
             p = 0
             while p < len(parts):
@@ -340,18 +354,25 @@ def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, 
                 p += 1
                 if prm == "" or prm.startswith("*"):
                     continue
+                default_txt = ""
+                eq_top = prm.find("=")
+                if eq_top >= 0:
+                    default_txt = prm[eq_top + 1 :].strip()
+                    prm = prm[:eq_top].strip()
                 colon = prm.find(":")
                 if colon < 0:
                     arg_types.append("unknown")
+                    arg_defaults.append(default_txt)
                     continue
                 ann = prm[colon + 1 :]
-                eq = ann.find("=")
-                if eq >= 0:
-                    ann = ann[:eq]
                 arg_types.append(_normalize_param_annotation(ann))
-            out[name] = arg_types
+                arg_defaults.append(default_txt)
+            sig: dict[str, list[str]] = {}
+            sig["arg_types"] = arg_types
+            sig["arg_defaults"] = arg_defaults
+            sig_map[name] = sig
         i += 1
-    return out
+    return sig_map
 
 
 def load_cpp_profile() -> dict[str, Any]:
@@ -1341,7 +1362,7 @@ class CppEmitter(CodeEmitter):
         ann_t = self.any_dict_get_str(stmt, "annotation", "")
         if ann_t != "":
             return self.normalize_type_name(ann_t)
-        t_target = self.get_expr_type(target_node)
+        t_target = self.get_expr_type(stmt.get("target"))
         if isinstance(t_target, str) and t_target != "":
             return self.normalize_type_name(t_target)
         t_value = self.get_expr_type(stmt.get("value"))
@@ -1385,7 +1406,7 @@ class CppEmitter(CodeEmitter):
                                 if i < len(elem_types):
                                     et = self.normalize_type_name(elem_types[i])
                                 if et == "":
-                                    t_ent = self.get_expr_type(ent)
+                                    t_ent = self.get_expr_type(elems[i])
                                     if isinstance(t_ent, str):
                                         et = self.normalize_type_name(t_ent)
                                 out[nm] = et
@@ -1452,11 +1473,15 @@ class CppEmitter(CodeEmitter):
             return
         body_types = self._collect_assigned_name_types(body_stmts)
         else_types = self._collect_assigned_name_types(else_stmts)
-        shared = set(body_types.keys()).intersection(set(else_types.keys()))
-        for name in sorted(shared):
-            if name == "" or self.is_declared(name):
+        for name, _body_ty in body_types.items():
+            _ = _body_ty
+            if name == "":
                 continue
-            decl_t = self._merge_decl_types_for_branch_join(body_types.get(name, ""), else_types.get(name, ""))
+            if name not in else_types:
+                continue
+            if self.is_declared(name):
+                continue
+            decl_t = self._merge_decl_types_for_branch_join(body_types[name], else_types[name])
             if decl_t == "":
                 decl_t = "object"
             cpp_t = self._cpp_type_text(decl_t)
@@ -2587,6 +2612,8 @@ class CppEmitter(CodeEmitter):
             numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
             if target == "int64" and arg_t == "str":
                 return f"py_to_int64({args[0]})"
+            if target in {"float64", "float32"} and arg_t == "str":
+                return f"py_to_float64({args[0]})"
             if target == "int64" and arg_t in numeric_t:
                 return f"int64({args[0]})"
             if target == "int64" and self.is_any_like_type(arg_t):
@@ -2802,12 +2829,51 @@ class CppEmitter(CodeEmitter):
             if raw == "set" and len(args) == 0:
                 t = self.cpp_type(expr.get("resolved_type"))
                 return f"{t}{{}}"
+            if raw == "set" and len(args) == 1:
+                t = self.cpp_type(expr.get("resolved_type"))
+                at0 = self.get_expr_type(first_arg)
+                at = at0 if isinstance(at0, str) else ""
+                if at.startswith("set["):
+                    return args[0]
+                if t == "set<object>" and at in {"Any", "object"}:
+                    return f"{t}({args[0]})"
+                if t.startswith("set<"):
+                    if t == "set<object>" and at not in {"Any", "object"}:
+                        return args[0]
+                    return f"{t}({args[0]})"
+                return f"set({args[0]})"
             if raw == "list" and len(args) == 0:
                 t = self.cpp_type(expr.get("resolved_type"))
                 return f"{t}{{}}"
+            if raw == "list" and len(args) == 1:
+                t = self.cpp_type(expr.get("resolved_type"))
+                at0 = self.get_expr_type(first_arg)
+                at = at0 if isinstance(at0, str) else ""
+                if at.startswith("list["):
+                    return args[0]
+                if t == "list<object>" and at in {"Any", "object"}:
+                    return f"{t}({args[0]})"
+                if t.startswith("list<"):
+                    if t == "list<object>" and at not in {"Any", "object"}:
+                        return args[0]
+                    return f"{t}({args[0]})"
+                return f"list({args[0]})"
             if raw == "dict" and len(args) == 0:
                 t = self.cpp_type(expr.get("resolved_type"))
                 return f"{t}{{}}"
+            if raw == "dict" and len(args) == 1:
+                t = self.cpp_type(expr.get("resolved_type"))
+                at0 = self.get_expr_type(first_arg)
+                at = at0 if isinstance(at0, str) else ""
+                if at.startswith("dict["):
+                    return args[0]
+                if t == "dict<str, object>" and at in {"Any", "object"}:
+                    return f"{t}({args[0]})"
+                if t.startswith("dict<"):
+                    if t == "dict<str, object>" and at not in {"Any", "object"}:
+                        return args[0]
+                    return f"{t}({args[0]})"
+                return f"dict({args[0]})"
             if raw == "bytes":
                 return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
             if raw == "bytearray":
@@ -2822,6 +2888,8 @@ class CppEmitter(CodeEmitter):
                 if raw == "bool" and self.is_any_like_type(arg_t):
                     return f"py_to_bool({args[0]})"
                 if raw == "float" and self.is_any_like_type(arg_t):
+                    return f"py_to_float64({args[0]})"
+                if raw == "float" and arg_t == "str":
                     return f"py_to_float64({args[0]})"
                 if raw == "int" and target == "int64" and arg_t == "str":
                     return f"py_to_int64({args[0]})"
@@ -4007,6 +4075,54 @@ def _header_guard_from_path(path: Path) -> str:
     return out
 
 
+def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str:
+    """EAST の既定値ノードを C++ ヘッダ宣言用の式文字列へ変換する。"""
+    kind = str(node.get("kind", ""))
+    if kind == "Constant":
+        val = node.get("value")
+        if val is None:
+            return "::std::nullopt"
+        if isinstance(val, bool):
+            return "true" if val else "false"
+        if isinstance(val, int):
+            return str(val)
+        if isinstance(val, float):
+            return str(val)
+        if isinstance(val, str):
+            escaped = val.replace("\\", "\\\\").replace('"', '\\"')
+            return '"' + escaped + '"'
+        return ""
+    if kind == "Name":
+        ident = str(node.get("id", ""))
+        if ident == "None":
+            return "::std::nullopt"
+        if ident == "True":
+            return "true"
+        if ident == "False":
+            return "false"
+        return ""
+    if kind == "Tuple":
+        elems_obj = node.get("elements")
+        elems = elems_obj if isinstance(elems_obj, list) else []
+        if len(elems) == 0:
+            return "::std::tuple<>{}"
+        parts: list[str] = []
+        i = 0
+        while i < len(elems):
+            e = elems[i]
+            if isinstance(e, dict):
+                txt = _header_render_default_expr(e, "Any")
+                if txt == "":
+                    return ""
+                parts.append(txt)
+            i += 1
+        if len(parts) == 0:
+            return ""
+        return "::std::make_tuple(" + _join_str_list(", ", parts) + ")"
+    _ = east_target_t
+    return ""
+
+
 def build_cpp_header_from_east(
     east_module: dict[str, Any],
     top_namespace: str = "",
@@ -4056,6 +4172,8 @@ def build_cpp_header_from_east(
                 arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
                 arg_order_obj = st.get("arg_order")
                 arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
+                arg_defaults_obj = st.get("arg_defaults")
+                arg_defaults = arg_defaults_obj if isinstance(arg_defaults_obj, dict) else {}
                 parts: list[str] = []
                 j = 0
                 while j < len(arg_order):
@@ -4065,10 +4183,19 @@ def build_cpp_header_from_east(
                         at = at_obj if isinstance(at_obj, str) else "Any"
                         at_cpp = _header_cpp_type_from_east(at)
                         used_types.add(at_cpp)
+                        param_txt = ""
                         if at_cpp in by_value_types:
-                            parts.append(at_cpp + " " + an)
+                            param_txt = at_cpp + " " + an
                         else:
-                            parts.append("const " + at_cpp + "& " + an)
+                            param_txt = "const " + at_cpp + "& " + an
+                        if an in arg_defaults:
+                            default_node_obj = arg_defaults.get(an)
+                            default_node = default_node_obj if isinstance(default_node_obj, dict) else {}
+                            if len(default_node) > 0:
+                                default_txt = _header_render_default_expr(default_node, at)
+                                if default_txt != "":
+                                    param_txt += " = " + default_txt
+                        parts.append(param_txt)
                     j += 1
                 sep = ", "
                 fn_lines.append(ret_cpp + " " + name + "(" + sep.join(parts) + ");")
@@ -5452,7 +5579,7 @@ def main(argv: list[str]) -> int:
             cpp_out.parent.mkdir(parents=True, exist_ok=True)
             hdr_out.parent.mkdir(parents=True, exist_ok=True)
             runtime_ns_map: dict[str, str] = {}
-            cpp_txt_runtime = transpile_to_cpp(
+            cpp_txt_runtime: str = transpile_to_cpp(
                 east_module,
                 negative_index_mode,
                 bounds_check_mode,
