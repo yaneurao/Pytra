@@ -156,6 +156,7 @@ static inline object make_object(const rc<T>& v) {
 static inline object make_object(const object& v) { return v; }
 static inline object make_object(::std::nullptr_t) { return object(); }
 static inline object make_object(const str& v) { return object_new<PyStrObj>(v); }
+static inline object make_object(const ::std::string& v) { return object_new<PyStrObj>(str(v)); }
 static inline object make_object(const char* v) { return object_new<PyStrObj>(str(v)); }
 static inline object make_object(bool v) { return object_new<PyBoolObj>(v); }
 static inline object make_object(float64 v) { return object_new<PyFloatObj>(v); }
@@ -173,6 +174,7 @@ static inline object make_object(const ::std::any& v) {
     if (!v.has_value()) return object();
     if (const auto* p = ::std::any_cast<object>(&v)) return *p;
     if (const auto* p = ::std::any_cast<str>(&v)) return make_object(*p);
+    if (const auto* p = ::std::any_cast<::std::string>(&v)) return make_object(*p);
     if (const auto* p = ::std::any_cast<const char*>(&v)) return make_object(*p);
     if (const auto* p = ::std::any_cast<bool>(&v)) return make_object(*p);
     if (const auto* p = ::std::any_cast<float64>(&v)) return make_object(*p);
@@ -991,6 +993,11 @@ static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
 }
 
 template <class V>
+static inline const V& py_dict_get(const dict<str, V>& d, const ::std::string& key) {
+    return py_dict_get(d, str(key));
+}
+
+template <class V>
 static inline const V& py_dict_get(const dict<str, V>& d, const object& key) {
     return py_dict_get(d, str(key));
 }
@@ -1010,6 +1017,10 @@ static inline object py_dict_get(const dict<str, object>& d, const char* key) {
         throw ::std::out_of_range(::std::string("dict key not found: ") + key);
     }
     return it->second;
+}
+
+static inline object py_dict_get(const dict<str, object>& d, const ::std::string& key) {
+    return py_dict_get(d, key.c_str());
 }
 
 static inline object py_dict_get(const object& obj, const char* key) {

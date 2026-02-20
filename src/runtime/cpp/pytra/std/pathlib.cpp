@@ -101,7 +101,7 @@ namespace pytra::std::pathlib {
             }
         }
         list<Path> glob(const str& pattern) {
-            list<str> paths = static_cast<list<str>>(pytra::std::glob::glob(py_os_path_join(this->_value, pattern)));
+            list<str> paths = static_cast<list<str>>(py_glob_glob(py_os_path_join(this->_value, pattern)));
             list<Path> out = list<Path>{};
             for (str p : paths)
                 out.append(Path(Path(p)));

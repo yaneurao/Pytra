@@ -1,6 +1,7 @@
 #include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 #include "pytra/std/sys.h"
+#include "pytra/std/typing.h"
 
 namespace pytra::std::sys {
 
@@ -9,6 +10,7 @@ namespace pytra::std::sys {
 Python 実行時は `list` を保持する軽量実装として振る舞い、
 トランスパイル時は `py_runtime_*` ランタイム関数へ接続される。
  */
+    
     
     
     
@@ -33,15 +35,45 @@ Python 実行時は `list` を保持する軽量実装として振る舞い、
         }
     }
     
-    void set_argv(const list<str>& values) {
+    list<str> _to_str_list_fallback(const object& values) {
+        try {
+            return static_cast<list<str>>(py_to_str_list_from_object(values));
+        }
+        catch (const ::std::exception& ex) {
+            /* pass */
+        }
+        list<str> out = list<str>{};
+        if (py_is_list(values)) {
+            list<object> src = list<object>(values);
+            for (::std::any v : src)
+                out.append(str(py_to_string(v)));
+        }
+        return out;
+    }
+    
+    void set_argv(const object& values) {
+        list<str> vals = list<str>{};
+        try {
+            vals = static_cast<list<str>>(py_to_str_list_from_any(values));
+        }
+        catch (const ::std::exception& ex) {
+            vals = _to_str_list_fallback(values);
+        }
         argv.clear();
-        for (str v : values)
+        for (str v : vals)
             argv.append(v);
     }
     
-    void set_path(const list<str>& values) {
+    void set_path(const object& values) {
+        list<str> vals = list<str>{};
+        try {
+            vals = static_cast<list<str>>(py_to_str_list_from_any(values));
+        }
+        catch (const ::std::exception& ex) {
+            vals = _to_str_list_fallback(values);
+        }
         path.clear();
-        for (str v : values)
+        for (str v : vals)
             path.append(v);
     }
     
