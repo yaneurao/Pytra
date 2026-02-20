@@ -19,10 +19,12 @@
      - [x] 暫定ブリッジ `tools/selfhost_transpile.py` を追加し、`.py -> EAST JSON -> selfhost` で `test/fixtures/core/add.py` の生成を確認。
      - [x] 同ブリッジ経路で `sample/py/01_mandelbrot.py` の `-o` 生成を確認。
      - [ ] pure selfhost（中間 Python 呼び出しなし）で `.py -> -o` を通す。
-       - [ ] `selfhost/py2cpp.out` 側に `load_east(.py)` の実処理を実装し、`not_implemented` を返さないようにする。
+      - [ ] `selfhost/py2cpp.out` 側に `load_east(.py)` の実処理を実装し、`not_implemented` を返さないようにする。
          - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。
          - [ ] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。
          - [x] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。: 現在は `.py` -> `not_implemented`、`.json` -> `input_invalid`、`--help` は `0` を確認済み。
+       - [x] `src/py2cpp.py` の EAST 読み込み import を `pytra.compiler.east` facade から `pytra.compiler.east_parts.core` へ切り替えた（selfhost 時の動的 import 依存を削減）。
+       - [ ] `tools/build_selfhost.py` の現行失敗要因を段階解消する（`literal.join` 生成崩れ、`AUG_OPS/BIN_OPS` 未束縛、`parse_py2cpp_argv` 返り値の tuple 退化）。
        - [ ] `src/pytra/compiler/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
          - [x] bootstrap 専用コードを `src/pytra/compiler/east.py` facade 側へ隔離し、`east_parts.core` から除去する。
          - [x] `east_parts.core` の import を `pytra.std.*`（または同等 shim）に固定する。
