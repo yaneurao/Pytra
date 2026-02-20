@@ -3614,7 +3614,7 @@ def _runtime_module_tail_from_source_path(input_path: Path) -> str:
 
 
 def _runtime_output_rel_tail(module_tail: str) -> str:
-    """module tail（`std/math_impl`）を runtime/cpp 相対パス tail へ写像する。"""
+    """module tail（`std/math_impl` など）を runtime/cpp 相対パス tail へ写像する。"""
     parts: list[str] = []
     cur = ""
     i = 0
@@ -3632,7 +3632,10 @@ def _runtime_output_rel_tail(module_tail: str) -> str:
         if leaf.endswith("_impl"):
             leaf = leaf[: len(leaf) - 5] + "-impl"
             parts[len(parts) - 1] = leaf
-    return "/".join(parts)
+    rel = "/".join(parts)
+    if rel == "std" or rel.startswith("std/"):
+        return rel
+    return "runtime/" + rel
 
 
 def _runtime_namespace_for_tail(module_tail: str) -> str:
@@ -4574,6 +4577,9 @@ def main(argv: list[str]) -> int:
             if module_tail == "":
                 print("error: --emit-runtime-cpp input must be under src/pytra/runtime/", file=sys.stderr)
                 return 1
+            if module_tail.endswith("_impl"):
+                print("skip: impl module is hand-written on C++ side: " + module_tail)
+                return 0
             ns = top_namespace_opt
             if ns == "":
                 ns = _runtime_namespace_for_tail(module_tail)
