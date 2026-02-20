@@ -38,20 +38,20 @@
 - `CodeEmitter` など全言語で共有可能な基底ロジックは `src/common/` 側へ寄せ、`py2cpp.py` には C++ 固有ロジックのみを残します。
 - 今後の多言語展開を見据え、`py2cpp.py` の肥大化を避けるため、共通化可能な処理は段階的に `src/common/` へ移管します。
 - 生成コードの補助関数は各ターゲット言語ランタイム（`src/*_module/`）へ集約し、生成コードに重複埋め込みしません。
-- `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp` は `src/pytra/runtime/*.py` からの生成物として扱い、手編集しません（`py2cpp.py` 実行時に自動更新される）。
+- `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` は `src/pytra/utils/*.py` からの生成物として扱い、手編集しません（`py2cpp.py` 実行時に自動更新される）。
 - `json` に限らず、Python 標準ライブラリ相当機能を `runtime/cpp` 側へ追加実装してはいけません。
-- Python 標準ライブラリ相当機能の正本は常に `src/pylib/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
-- selfhost 対象コード（特に `src/pylib/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
+- Python 標準ライブラリ相当機能の正本は常に `src/pytra/std/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
+- selfhost 対象コード（特に `src/pytra/compiler/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
 - import は静的に解決できる形で記述し、自己変換時に未対応構文を増やさないことを優先します。
 - トランスパイル対象の Python コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の `import` を全面禁止とします。
-- トランスパイル対象コードが import できるのは `src/pylib/` モジュールと、ユーザー自作 `.py` モジュールです。
+- トランスパイル対象コードが import できるのは `src/pytra/std/`・`src/pytra/utils/` モジュールと、ユーザー自作 `.py` モジュールです。
 
 ## 6. テスト・最適化ルール
 
 - 変換器都合で `test/fixtures/` の入力ケースを変更してはなりません。
 - 実行速度比較時の C++ は `-O3 -ffast-math -flto` を使用します。
 - 生成物ディレクトリ（`test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`）は Git 管理外運用を維持します。
-- `src/pylib/east_parts/code_emitter.py` を変更した場合は `test/unit/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
+- `src/pytra/compiler/east_parts/code_emitter.py` を変更した場合は `test/unit/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
 - `CodeEmitter` / `py2cpp` 系の変更では、最低限 `python3 tools/check_py2cpp_transpile.py` と `python3 tools/build_selfhost.py` の両方を通過させてからコミットします。
 - 上記 2 コマンドのいずれかが失敗した状態でのコミットは禁止します。
 
@@ -63,6 +63,6 @@
 - selfhost のビルドログは `stdout` 側に出ることがあるため、`> selfhost/build.all.log 2>&1` で統合取得する。
 - selfhost 対象コードでは、Python 専用表現が生成 C++ に漏れないことを確認する（例: `super().__init__`, Python 風継承表記）。
 - ランタイム変更時は `test/unit/test_py2cpp_features.py` の実行回帰に加え、selfhost の再生成・再コンパイル結果も確認する。
-- selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pylib/` の shim のみを使う（例: `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.typing`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`）。
+- selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pytra/std/` の shim のみを使う（例: `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.typing`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`）。
 - selfhost 向けに確実性を優先する箇所では、`continue` に依存した分岐や `x in {"a", "b"}` のようなリテラル集合 membership を避け、`if/elif` と明示比較（`x == "a" or x == "b"`）を優先する。
 - 日次の最小回帰は `python3 tools/run_local_ci.py` を実行し、`check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff をまとめて通す。

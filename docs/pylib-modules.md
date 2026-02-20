@@ -10,10 +10,10 @@
   - 目的: Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, `enum` など）の**代替実装**を提供するための領域です。
   - 方針: トランスパイル対象コードで Python 標準モジュールを直接 `import` せず、`pytra.std.*` を使えるようにします。
   - ルール: Python 標準モジュール代替は原則として `src/pytra/std/` に配置します。
-- `src/pytra/runtime/`:
+- `src/pytra/utils/`:
   - 目的: Pytra 固有の機能（例: EAST 変換、画像出力ヘルパー、アサーション補助）を提供するための領域です。
   - 方針: Python 標準モジュールの代替ではない、トランスパイラ/ランタイム都合の機能をここへ集約します。
-  - ルール: Pytra 独自モジュールは `src/pytra/runtime/` に配置します。
+  - ルール: Pytra 独自モジュールは `src/pytra/utils/` に配置します。
 
 ## 1. Python標準モジュール代替（互換層）
 
@@ -49,11 +49,11 @@
 
 ## 2. Pytra独自モジュール
 
-- `pytra.runtime.assertions`
+- `pytra.utils.assertions`
   - 関数: `py_assert_true(cond, label="")`, `py_assert_eq(actual, expected, label="")`, `py_assert_all(results, label="")`, `py_assert_stdout(expected_lines, fn)`
-- `pytra.runtime.png`
+- `pytra.utils.png`
   - 関数: `write_rgb_png(path, width, height, pixels)`
-- `pytra.runtime.gif`
+- `pytra.utils.gif`
   - 関数: `grayscale_palette()`, `save_gif(path, width, height, frames, palette, delay_cs=4, loop=0)`
 - `pytra.compiler.east`
   - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`

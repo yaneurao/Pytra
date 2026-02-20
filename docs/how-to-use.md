@@ -20,7 +20,7 @@ Windows では次の読み替えを行ってください。
 ## 最初に確認する制約
 
 - Python の標準ライブラリ（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, `enum` など）を直接 `import` してはいけません。
-- `import` できるのは `src/pytra/` 配下にあるモジュール（`pytra.std.*`, `pytra.runtime.*`, `pytra.compiler.*`）と、ユーザーが作成した自作 `.py` モジュールです。
+- `import` できるのは `src/pytra/` 配下にあるモジュール（`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`）と、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
 - サポート済みモジュール一覧と API は [`pylib-modules.md`](pylib-modules.md) を参照してください。
 - 変換オプションの方針と候補は [`spec-options.md`](spec-options.md) を参照してください。
@@ -37,23 +37,23 @@ Windows では次の読み替えを行ってください。
 ```bash
 python src/py2cpp.py test/fixtures/collections/iterable.py test/transpile/cpp/iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cpp/iterable.cpp \
-  src/runtime/cpp/pytra/runtime/png.cpp src/runtime/cpp/pytra/runtime/gif.cpp src/runtime/cpp/pytra/std/math.cpp src/runtime/cpp/pytra/std/math-impl.cpp \
+  src/runtime/cpp/pytra/utils/png.cpp src/runtime/cpp/pytra/utils/gif.cpp src/runtime/cpp/pytra/std/math.cpp src/runtime/cpp/pytra/std/math-impl.cpp \
   src/runtime/cpp/pytra/std/time.cpp src/runtime/cpp/pytra/std/pathlib.cpp src/runtime/cpp/pytra/std/dataclasses.cpp \
-  src/runtime/cpp/base/gc.cpp \
+  src/runtime/cpp/pytra/built_in/gc.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out
 ```
 
 補足:
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
-- Python 側で import できるのは `src/pytra/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pytra.runtime import png`, `from pytra.runtime.gif import save_gif`, `from pytra.runtime.assertions import py_assert_eq`）。
+- Python 側で import できるのは `src/pytra/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`, `from pytra.utils.assertions import py_assert_eq`）。
 - `pytra` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
-- `src/runtime/cpp/pytra/runtime/*.cpp` は手書き固定ではなく、`src/pytra/runtime/*.py` をトランスパイラで変換して生成・更新する前提です。
-- `python3 src/py2cpp.py src/pytra/runtime/<mod>.py -o ... --header-output ...` で `*.cpp` / `*.h` を同時生成できます。
-- `python3 src/py2cpp.py src/pytra/runtime/<mod>.py --emit-runtime-cpp` を使うと、`src/runtime/cpp/pytra/...` の既定パスへ直接生成します。
-- 例: `src/pytra/runtime/std/math.py` -> `src/runtime/cpp/pytra/std/math.cpp` と `src/runtime/cpp/pytra/std/math.h`。
-- `src/pytra/runtime/png.py` / `src/pytra/runtime/gif.py` は bridge 方式で生成され、`runtime` 側の公開 API に型変換ラッパが付きます。
-- `src/pytra/runtime/std/json.py` / `src/pytra/runtime/std/typing.py` / `src/pytra/runtime/assertions.py` / `src/pytra/runtime/east.py` も `.h/.cpp` を生成します。
+- `src/runtime/cpp/pytra/utils/*.cpp` は手書き固定ではなく、`src/pytra/utils/*.py` をトランスパイラで変換して生成・更新する前提です。
+- `python3 src/py2cpp.py src/pytra/utils/<mod>.py -o ... --header-output ...` で `*.cpp` / `*.h` を同時生成できます。
+- `python3 src/py2cpp.py src/pytra/utils/<mod>.py --emit-runtime-cpp` を使うと、`src/runtime/cpp/pytra/utils/...` の既定パスへ直接生成します。
+- 例: `src/pytra/std/math.py` -> `src/runtime/cpp/pytra/std/math.cpp` と `src/runtime/cpp/pytra/std/math.h`。
+- `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` は bridge 方式で生成され、`runtime` 側の公開 API に型変換ラッパが付きます。
+- `src/pytra/std/json.py` / `src/pytra/std/typing.py` / `src/pytra/utils/assertions.py` も `.h/.cpp` を生成します。
 - 不足するネイティブ処理は `*-impl.cpp`（例: `src/runtime/cpp/pytra/std/math-impl.cpp`）で補完します。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います（`modules/symbols` と `graph` を出力）。
@@ -95,7 +95,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 
-次のコマンドで、`src/pytra/runtime/png.py` / `src/pytra/runtime/gif.py` の出力と `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp`（bridge）経由の C++ 出力が一致するかを確認できます。
+次のコマンドで、`src/pytra/utils/png.py` / `src/pytra/utils/gif.py` の出力と `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp`（bridge）経由の C++ 出力が一致するかを確認できます。
 
 ```bash
 python3 tools/verify_image_runtime_parity.py
@@ -226,7 +226,7 @@ python src/py2cpp.py test/transpile/east/01_mandelbrot.json -o test/transpile/cp
 
 # 3) コンパイルして実行
 g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cpp \
-  src/runtime/cpp/pytra/runtime/png.cpp src/runtime/cpp/pytra/runtime/gif.cpp \
+  src/runtime/cpp/pytra/utils/png.cpp src/runtime/cpp/pytra/utils/gif.cpp \
   -o test/transpile/obj/01_mandelbrot
 ./test/transpile/obj/01_mandelbrot
 ```
@@ -413,13 +413,13 @@ name_by_id: dict[int, str] = {1: "alice"}
 
 ### 3. import とランタイムモジュール
 
-- Python 側で `import` できるモジュールは `src/pytra/` 配下のモジュール（`pytra.std.*`, `pytra.runtime.*`, `pytra.compiler.*`）と、ユーザー自作 `.py` モジュールです。
+- Python 側で `import` できるモジュールは `src/pytra/` 配下のモジュール（`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`）と、ユーザー自作 `.py` モジュールです。
 - `pytra` モジュールごとに、ターゲット言語側の対応ランタイムが必要です。
-- その対応ランタイムは、原則として `src/pytra/runtime/*.py` / `src/pytra/runtime/std/*.py` を各言語向けトランスパイラで変換して生成します（手書きは最小限）。
+- その対応ランタイムは、原則として `src/pytra/utils/*.py` / `src/pytra/std/*.py` を各言語向けトランスパイラで変換して生成します（手書きは最小限）。
 
 ```python
-from pytra.runtime import png
+from pytra.utils import png
 from pytra.std.pathlib import Path
 ```
 
-上記を変換する場合、対象言語側でも `pytra.runtime.png` / `pytra.std.pathlib` 相当の実装が必要です（原則として `src/pytra/runtime/*.py` と `src/pytra/runtime/std/*.py` からトランスパイラで生成します）。
+上記を変換する場合、対象言語側でも `pytra.utils.png` / `pytra.std.pathlib` 相当の実装が必要です（原則として `src/pytra/utils/*.py` と `src/pytra/std/*.py` からトランスパイラで生成します）。

@@ -19,7 +19,7 @@
 - list/set comprehension の主要ケース
 - スライス（`a[b:c]`）
 - `if __name__ == "__main__":` ガード認識
-- EAST 変換（`src/pylib/east.py`）と EAST ベース C++ 変換（`src/py2cpp.py`）
+- EAST 変換（`src/pytra/compiler/east.py`）と EAST ベース C++ 変換（`src/py2cpp.py`）
 
 ## 実装済みの組み込み関数
 
@@ -67,12 +67,12 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
   - C++ 実装は廃止済み（self-hosted EAST パーサへ移行）。
 
 - 自作ライブラリ:
-  - `pytra.runtime.png`
+  - `pytra.utils.png`
     - `write_rgb_png(path, width, height, pixels)`
-  - `pytra.runtime.gif`
+  - `pytra.utils.gif`
     - `save_gif(path, width, height, frames, palette, delay_cs, loop)`
     - `grayscale_palette()`
-  - `pytra.runtime.assertions`
+  - `pytra.utils.assertions`
     - `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - ターゲット言語ごとのランタイム:
   - `src/runtime/cpp`, `src/cs_module`, `src/rs_module`
@@ -87,7 +87,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
 
 ## EAST 実装状況
 
-- `src/pylib/east.py`
+- `src/pytra/compiler/east.py`
   - `test/fixtures` 32/32, `sample/py` 16/16 を EAST 変換可能
   - `range(...)` は `ForRange` / `RangeExpr` へ正規化され、生の `Call(Name("range"))` は後段へ渡さない
 - `src/py2cpp.py`

@@ -1,6 +1,6 @@
 # EAST仕様（実装準拠）
 
-この文書は `src/pylib/east.py` の現実装に合わせた EAST 仕様である。
+この文書は `src/pytra/compiler/east.py` の現実装に合わせた EAST 仕様である。
 
 ## 1. 目的
 
@@ -47,7 +47,7 @@
 
 ### 2.3 CLI
 
-- `python src/pylib/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
+- `python src/pytra/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
 - `--pretty`: 整形 JSON を出力。
 - `--human-output`: C++風の人間可読ビューを出力。
 - `python src/py2cpp.py <input.py|east.json> [-o output.cpp]`: EASTベースの C++ 生成器。
@@ -245,8 +245,8 @@
 
 ## 15. 検証状態
 
-- `test/fixtures` 32/32 を `src/pylib/east.py` で変換可能（`ok: true`）
-- `sample/py` 16/16 を `src/pylib/east.py` で変換可能（`ok: true`）
+- `test/fixtures` 32/32 を `src/pytra/compiler/east.py` で変換可能（`ok: true`）
+- `sample/py` 16/16 を `src/pytra/compiler/east.py` で変換可能（`ok: true`）
 - `sample/py` 16/16 を `src/py2cpp.py` で「変換→コンパイル→実行」可能（`ok`）
 
 ## 16. 段階導入計画（EAST移行）

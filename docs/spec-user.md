@@ -29,7 +29,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - `import` / `from ... import ...` をサポートします。
 - `from ... import *`（ワイルドカード import）はサポート対象外です。
 - トランスパイル対象コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の直接 import は禁止です。
-- import 可能なのは `src/pylib/` のモジュールと、ユーザーが作成した自作 `.py` モジュールです。
+- import 可能なのは `src/pytra/` 配下のモジュールと、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
 - `object` 型（`Any` 由来を含む）に対する属性アクセス・メソッド呼び出しは禁止です。
   - 例: `x: object` に対して `x.foo()` / `x.bar` は不可。
@@ -68,10 +68,10 @@ test/
 - 実用サンプルは `sample/py/` に配置します。
 - 言語別の変換結果は `sample/cpp/`, `sample/rs/`, `sample/cs/`, `sample/js/`, `sample/ts/`, `sample/go/`, `sample/java/`, `sample/swift/`, `sample/kotlin/` に配置します。
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します（Git 管理外）。
-- Python から import する自作ライブラリは `src/pylib/` に配置します。
-  - 画像: `from pytra.runtime import png`, `from pytra.runtime.gif import save_gif`
-  - テスト補助: `from pytra.runtime.assertions import py_assert_eq` など
-  - EAST 変換器: `python src/pylib/east.py <input.py> ...`
+- Python から import する自作ライブラリは `src/pytra/` 配下（`pytra.std.*`, `pytra.utils.*`）を使用します。
+  - 画像: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`
+  - テスト補助: `from pytra.utils.assertions import py_assert_eq` など
+  - EAST 変換器: `python src/pytra/compiler/east.py <input.py> ...`
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
 - GIF サンプルは `sample/out/*.gif` に出力します。
 
@@ -83,7 +83,7 @@ test/
 python -m unittest discover -s test/unit -p "test_*.py" -v
 ```
 
-共通エミッタ基盤（`src/pylib/east_parts/code_emitter.py`）のみを確認したい場合:
+共通エミッタ基盤（`src/pytra/compiler/east_parts/code_emitter.py`）のみを確認したい場合:
 
 ```bash
 python -m unittest discover -s test/unit -p "test_code_emitter.py" -v
@@ -100,7 +100,7 @@ python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
 - `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/` は生成物ディレクトリです。
-- `src/pylib/` を使う Python サンプルは、必要に応じて `PYTHONPATH=src` を付与して実行します。
+- `src/pytra/` 配下モジュールを使う Python サンプルは、必要に応じて `PYTHONPATH=src` を付与して実行します。
 
 ## 7. 関連ドキュメント
 

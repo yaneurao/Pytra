@@ -42,7 +42,7 @@
     "syntax.json"
   ],
   "hooks": {
-    "module": "pytra.runtime.cpp.hooks.cpp_hooks",
+    "module": "hooks.cpp.hooks.cpp_hooks",
     "factory": "build_cpp_hooks"
   }
 }
@@ -100,7 +100,7 @@ EAST 演算子 -> 出力トークン。
     },
     "module_attr_call": {
       "pytra.std.sys": {
-        "write_stdout": "py_sys_write_stdout"
+        "write_stdout": "pytra::std::sys::write_stdout"
       }
     },
     "method_call": {
@@ -149,13 +149,13 @@ profile で表現しにくい分岐だけを hooks へ寄せます。
 ```json
 {
   "hooks": {
-    "module": "pytra.runtime.cpp.hooks.cpp_hooks",
+    "module": "hooks.cpp.hooks.cpp_hooks",
     "factory": "build_cpp_hooks"
   }
 }
 ```
 
-`module` は言語固有側（例: `src/pytra/runtime/cpp/hooks/`）に配置し、`src/common/` へは置きません。
+`module` は言語固有側（例: `src/hooks/cpp/hooks/`）に配置し、`src/common/` へは置きません。
 
 ## 5. Hooks 仕様
 
@@ -177,7 +177,7 @@ selfhost 制約:
 ### 5.1 実装位置（C++）
 
 ```text
-src/pytra/runtime/cpp/hooks/cpp_hooks.py
+src/hooks/cpp/hooks/cpp_hooks.py
 ```
 
 ## 6. 妥当性ルール

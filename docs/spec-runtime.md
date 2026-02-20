@@ -5,14 +5,14 @@
 - 自動生成:
   - `runtime/cpp/pytra/std/<mod>.h`
   - `runtime/cpp/pytra/std/<mod>.cpp`
-  - `runtime/cpp/pytra/runtime/<mod>.h`
-  - `runtime/cpp/pytra/runtime/<mod>.cpp`
+  - `runtime/cpp/pytra/utils/<mod>.h`
+  - `runtime/cpp/pytra/utils/<mod>.cpp`
   - 例: `runtime/cpp/pytra/std/json.h/.cpp`, `runtime/cpp/pytra/std/typing.h/.cpp`,
-    `runtime/cpp/pytra/runtime/assertions.h/.cpp`, `runtime/cpp/pytra/runtime/east.h/.cpp`
-  - `runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/runtime/std/math.py` を `src/py2cpp.py` で解釈した結果（関数シグネチャ）から生成する。
+    `runtime/cpp/pytra/utils/assertions.h/.cpp`
+  - `runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/std/math.py` を `src/py2cpp.py` で解釈した結果（関数シグネチャ）から生成する。
 - 手書き許可:
   - `runtime/cpp/pytra/std/<mod>-impl.cpp`
-  - `runtime/cpp/pytra/runtime/<mod>-impl.cpp`
+  - `runtime/cpp/pytra/utils/<mod>-impl.cpp`
 - ルール:
   - `<mod>.h/.cpp` は常に再生成対象（手編集禁止）。
   - `*-impl.cpp` は手編集可能（再生成対象外）。
@@ -24,24 +24,33 @@
 
 - 生成コード側で import に対応して出力する include は次で固定する。
   - `from pytra.std.glob import glob` -> `#include "pytra/std/glob.h"`
-  - `from pytra.runtime.gif import save_gif` -> `#include "pytra/runtime/gif.h"`
+  - `from pytra.utils.gif import save_gif` -> `#include "pytra/utils/gif.h"`
 - トランスパイラが include パスを 1 方式に固定し、旧配置との混在を禁止する。
 - ルール追加:
   - Python の import 名と C++ include パスは 1 対 1 対応にする。
   - 例: `import pytra.std.math` -> `#include "pytra/std/math.h"`。
-  - 例: `import pytra.runtime.png` -> `#include "pytra/runtime/png.h"`。
+  - 例: `import pytra.utils.png` -> `#include "pytra/utils/png.h"`。
   - コンパイル時は `src/runtime/cpp` を include ルート（`-I`）として渡す。
+  - 組み込み基盤ヘッダは `runtime/cpp/pytra/built_in/py_runtime.h` を正本とする。
+  - `runtime/cpp/pytra/built_in/*.h` の相互 include は同一ディレクトリ相対（例: `#include "str.h"`）で記述する。
+
+#### 2.0 built_in ヘッダの guard ルール
+
+- `runtime/cpp/pytra/built_in/*.h` の include guard は、`runtime/cpp/pytra/` 以降の相対パスから生成する。
+  - 変換規則: `/` と `.` と `-` を `_` に置換し、英大文字化し、先頭に `PYTRA_` を付ける。
+  - 例: `runtime/cpp/pytra/built_in/list.h` -> `PYTRA_BUILT_IN_LIST_H`
+  - 例: `runtime/cpp/pytra/built_in/py_runtime.h` -> `PYTRA_BUILT_IN_PY_RUNTIME_H`
 
 #### 2.1 モジュール名変換ルール（自作モジュール向け）
 
 基本ルール:
 - `pytra.std.<mod>` は `pytra::std::<mod>` に対応する。
-- `pytra.runtime.<mod>` は `pytra::runtime::<mod>` に対応する。
+- `pytra.utils.<mod>` は `pytra::utils::<mod>` に対応する。
 - include パスは `.` を `/` に変換して `.h` を付ける。
 - 末尾が `_impl` のモジュールだけは、include パスで `_impl -> -impl` に写像する。
 - namespace は `_impl` のまま維持する（`-impl` にはしない）。
 - `.h` 出力は「モジュール単位」で作成される。
-  - 生成先: `runtime/cpp/pytra/std/<mod>.h` または `runtime/cpp/pytra/runtime/<mod>.h`
+  - 生成先: `runtime/cpp/pytra/std/<mod>.h` または `runtime/cpp/pytra/utils/<mod>.h`
   - モジュールのトップレベル関数は宣言になる（定義は `.cpp`）
   - モジュールのトップレベル定数/変数は `extern` 宣言になる（実体は `.cpp`）
 
@@ -74,17 +83,17 @@ double perf_counter();
 例2: ランタイムモジュール（通常）
 
 ```python
-import pytra.runtime.png as png
+import pytra.utils.png as png
 
 def save(path: str, w: int, h: int, pixels: bytes) -> None:
     png.write_rgb_png(path, w, h, pixels)
 ```
 
 ```cpp
-#include "pytra/runtime/png.h"
+#include "pytra/utils/png.h"
 
 void save(const str& path, int64 w, int64 h, const bytes& pixels) {
-    pytra::runtime::png::write_rgb_png(path, w, h, pixels);
+    pytra::utils::png::write_rgb_png(path, w, h, pixels);
 }
 ```
 
@@ -138,7 +147,7 @@ double sqrt(double x);
 次の Python を入力として `py2cpp.py` を実行すると、`.h` と `.cpp` の両方が生成される。
 
 ```python
-# src/pytra/runtime/std/math.py
+# src/pytra/std/math.py
 import pytra.std.math_impl as _m
 
 pi: float = _m.pi
@@ -152,10 +161,10 @@ def sqrt(x: float) -> float:
 
 ```bash
 # 既定パスへ直接生成
-python3 src/py2cpp.py src/pytra/runtime/std/math.py --emit-runtime-cpp
+python3 src/py2cpp.py src/pytra/std/math.py --emit-runtime-cpp
 
 # 任意パスへ生成
-python3 src/py2cpp.py src/pytra/runtime/std/math.py \
+python3 src/py2cpp.py src/pytra/std/math.py \
   -o /tmp/math.cpp \
   --header-output /tmp/math.h \
   --top-namespace pytra::std::math
@@ -212,7 +221,7 @@ float64 sqrt(float64 x) {
 
 - `*-impl.cpp` に置く関数は C++ 依存の最小 primitive だけに限定する。
   - 例: filesystem, regex, clock, process, OS API
-- それ以外のロジック（整形・変換・検証）は Python 側 (`src/pytra/runtime/*.py`) に残す。
+- それ以外のロジック（整形・変換・検証）は Python 側 (`src/pytra/utils/*.py`) に残す。
 - これにより、言語間差異を `*-impl` 層へ閉じ込める。
 
 ### 5. 生成テンプレートの最小ルール
@@ -226,7 +235,7 @@ float64 sqrt(float64 x) {
   - 必要なら `#include "<mod>-impl.cpp"` は行わず、関数宣言経由でリンク解決する
   - 変換された Python ロジック本体 + `*-impl` 呼び出し
   - `py2cpp.py -o <mod>.cpp` で生成する（手編集しない）
-  - `pytra.runtime.png` / `pytra.runtime.gif` は bridge 方式:
+  - `pytra.utils.png` / `pytra.utils.gif` は bridge 方式:
     - 変換本体を `namespace ...::generated` に出力
     - 公開 API (`write_rgb_png`, `save_gif`, `grayscale_palette`) は bridge 関数で型変換して公開
 
@@ -238,7 +247,7 @@ float64 sqrt(float64 x) {
 
 - 各モジュールで最低限次を満たすこと:
   1. Python実行結果と C++ 実行結果が一致する
-  2. `runtime/cpp/pytra/std` と `runtime/cpp/pytra/runtime` に対応する import 形式（`import` / `from ... import ...`）の両方が通る
+  2. `runtime/cpp/pytra/std` と `runtime/cpp/pytra/utils` に対応する import 形式（`import` / `from ... import ...`）の両方が通る
   3. 生成物を削除して再生成しても差分が安定する（再現可能）
 
 ### 7. 将来の多言語展開を見据えた命名
@@ -249,7 +258,7 @@ float64 sqrt(float64 x) {
 
 ### 8. 現行配置の固定
 
-- C++ ランタイム実体は `runtime/cpp/pytra/std/*` と `runtime/cpp/pytra/runtime/*` を正とする。
+- C++ ランタイム実体は `runtime/cpp/pytra/std/*` と `runtime/cpp/pytra/utils/*` を正とする。
 - include は現時点で上記パスを直接参照する方式に固定する。
 - 将来レイアウト変更を行う場合は、本仕様を先に更新してから実装変更する。
 
@@ -257,12 +266,12 @@ float64 sqrt(float64 x) {
 
 - ライブラリ階層は次の2系統に統一する。
   - `pytra.std`: Python 標準ライブラリ代替
-  - `pytra.runtime`: Pytra 固有ランタイム補助
+  - `pytra.utils`: Pytra 固有ランタイム補助
 - `utils` のような汎用名は使わず、責務が読める名前を優先する。
 
 ### 10. `pytra.*` モジュール変換方針（無視禁止）
 
-- `pytra.std.*` / `pytra.runtime.*` は通常の Python モジュールとして扱う。
+- `pytra.std.*` / `pytra.utils.*` は通常の Python モジュールとして扱う。
   - `import` / モジュール変数代入 / 関数本体を「フォルダ名だけで」無視してはならない。
   - 例: `pi = _m.pi`、`def sqrt(...): return _m.sqrt(...)` は意味を持つ記述として扱う。
 - ネイティブ実装への差し替えは、明示的境界でのみ許可する。

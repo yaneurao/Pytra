@@ -23,7 +23,7 @@
 - トランスパイル対象コードでの標準モジュール直接 import は禁止します。
 - import は `pytra.*` とユーザー自作モジュール（`.py`）を許可します。
 
-- `pytra.runtime.assertions`
+- `pytra.utils.assertions`
   - 関数: `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - `pytra.std.pathlib`
   - class: `Path`
@@ -52,9 +52,9 @@
   - デコレータ: `dataclass`
 - `pytra.std.enum`
   - クラス: `Enum`, `IntEnum`, `IntFlag`
-- `pytra.runtime.png`
+- `pytra.utils.png`
   - 関数: `write_rgb_png`
-- `pytra.runtime.gif`
+- `pytra.utils.gif`
   - 関数: `grayscale_palette`, `save_gif`
 - `pytra.compiler.east`
   - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
@@ -87,8 +87,8 @@
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
-- 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/py_runtime.h` 側を利用します。
-- `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py`（必要に応じて `src/pytra/runtime/std/*.py`）を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
+- 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/pytra/built_in/py_runtime.h` 側を利用します。
+- `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
   - C++ 側で必要な処理は、これら Python 正本のトランスパイル結果を利用します。
 - class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
 - class member は `inline static` として生成します。
@@ -136,13 +136,13 @@
 - `import pytra.std.pathlib` -> `#include "pytra/std/pathlib.h"`
 - `import pytra.std.time` / `from pytra.std.time import ...` -> `#include "pytra/std/time.h"`
 - `from pytra.std.dataclasses import dataclass` -> `#include "pytra/std/dataclasses.h"`
-- `import pytra.runtime.png` -> `#include "pytra/runtime/png.h"`
-- `import pytra.runtime.gif` -> `#include "pytra/runtime/gif.h"`
-- GC は常時 `#include "runtime/cpp/base/gc.h"` を利用
+- `import pytra.utils.png` -> `#include "pytra/utils/png.h"`
+- `import pytra.utils.gif` -> `#include "pytra/utils/gif.h"`
+- GC は常時 `#include "runtime/cpp/pytra/built_in/gc.h"` を利用
 
 `module.attr(...)` 呼び出しは、`LanguageProfile`（JSON）の設定またはモジュール名→namespace 解決で C++ 側へ解決します。
 
-- 例: `runtime_calls.module_attr_call.pytra.std.sys.write_stdout -> py_sys_write_stdout`
+- 例: `runtime_calls.module_attr_call.pytra.std.sys.write_stdout -> pytra::std::sys::write_stdout`
 - map 未定義の場合は import モジュール名から C++ namespace を導出して `ns::attr(...)` へフォールバックします
 - 起動時に profile JSON を読み込み、未定義項目は共通既定値とフォールバック規則で補完します。
 
@@ -164,15 +164,22 @@
 - `src/runtime/cpp/pytra/std/dataclasses.h`, `src/runtime/cpp/pytra/std/dataclasses.cpp`
 - `src/runtime/cpp/pytra/std/json.h`, `src/runtime/cpp/pytra/std/json.cpp`
 - `src/runtime/cpp/pytra/std/typing.h`, `src/runtime/cpp/pytra/std/typing.cpp`
-- `src/runtime/cpp/base/gc.h`, `src/runtime/cpp/base/gc.cpp`
+- `src/runtime/cpp/pytra/built_in/gc.h`, `src/runtime/cpp/pytra/built_in/gc.cpp`
 - `src/runtime/cpp/pytra/std/sys.h`, `src/runtime/cpp/pytra/std/sys.cpp`
-- `src/runtime/cpp/pytra/runtime/png.h`, `src/runtime/cpp/pytra/runtime/png.cpp`
-- `src/runtime/cpp/pytra/runtime/gif.h`, `src/runtime/cpp/pytra/runtime/gif.cpp`
-- `src/runtime/cpp/pytra/runtime/assertions.h`, `src/runtime/cpp/pytra/runtime/assertions.cpp`
-- `src/runtime/cpp/pytra/runtime/east.h`, `src/runtime/cpp/pytra/runtime/east.cpp`
-- `src/runtime/cpp/py_runtime.h`
+- `src/runtime/cpp/pytra/utils/png.h`, `src/runtime/cpp/pytra/utils/png.cpp`
+- `src/runtime/cpp/pytra/utils/gif.h`, `src/runtime/cpp/pytra/utils/gif.cpp`
+- `src/runtime/cpp/pytra/utils/assertions.h`, `src/runtime/cpp/pytra/utils/assertions.cpp`
+- `src/runtime/cpp/pytra/built_in/py_runtime.h`
 
-`src/runtime/cpp/py_runtime.h` のコンテナ方針:
+`src/runtime/cpp/pytra/built_in/` の位置づけ:
+
+- Python 組み込み型/基盤機能の C++ 実装を置く共通層です。
+- 例: GC、I/O、bytes 補助、コンテナ/文字列ラッパ。
+- 言語固有モジュール (`src/runtime/cpp/pytra/std/*`, `src/runtime/cpp/pytra/utils/*`) から再利用されます。
+- `py_runtime.h` は `str/path/list/dict/set` を直接 include します（`containers.h` は廃止）。
+- `built_in` 配下ヘッダの include guard は相対パス由来の `PYTRA_BUILT_IN_*` 命名で統一します。
+
+`src/runtime/cpp/pytra/built_in/py_runtime.h` のコンテナ方針:
 
 - `list<T>`: `std::vector<T>` ラッパー（`append`, `extend`, `pop` を提供）
 - `dict<K, V>`: `std::unordered_map<K,V>` ラッパー（`get`, `keys`, `values`, `items` を提供）
@@ -194,32 +201,32 @@
 
 ### 3.3 画像系ランタイム（PNG/GIF）方針
 
-- `png` / `gif` は Python 側（`src/pytra/runtime/`）を正本実装とします。
+- `png` / `gif` は Python 側（`src/pytra/utils/`）を正本実装とします。
 - 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
 - 言語別に手書きするのは、性能・I/O 都合で必要な最小範囲に限定します。
 - 言語間一致は「生成ファイルのバイト列完全一致」を主判定とします。
-- `src/pytra/runtime/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
+- `src/pytra/utils/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
 - 受け入れ基準:
-  - 置換作業中は、同一入力に対して `src/pytra/runtime/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
+  - 置換作業中は、同一入力に対して `src/pytra/utils/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
   - C++ では `tools/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
 
 ### 3.4 Python 補助ライブラリ命名
 
-- 旧 `pylib.runtime` 互換名は廃止済みで、`pytra.runtime.assertions` を正とします。
-- テスト補助関数（`py_assert_*`）は `from pytra.runtime.assertions import ...` で利用します。
+- 旧 `pylib.runtime` 互換名は廃止済みで、`pytra.utils.assertions` を正とします。
+- テスト補助関数（`py_assert_*`）は `from pytra.utils.assertions import ...` で利用します。
 
 ### 3.5 画像ランタイム最適化ポリシー（py2cpp）
 
-- 対象: `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp`（自動生成）。
-- 前提: `src/pytra/runtime/png.py` / `src/pytra/runtime/gif.py` を正本とし、意味差を導入しない。
+- 対象: `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp`（自動生成）。
+- 前提: `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` を正本とし、意味差を導入しない。
 - 生成手順:
-  - `python3 src/py2cpp.py src/pytra/runtime/png.py -o /tmp/png.cpp`
-  - `python3 src/py2cpp.py src/pytra/runtime/gif.py -o /tmp/gif.cpp`
-  - 生成物は `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp` に直接出力される。
+  - `python3 src/py2cpp.py src/pytra/utils/png.py -o /tmp/png.cpp`
+  - `python3 src/py2cpp.py src/pytra/utils/gif.py -o /tmp/gif.cpp`
+  - 生成物は `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` に直接出力される。
   - これら 2 ファイルの本体ロジックを手書きで追加してはならない。
   - C++ namespace は生成元 Python ファイルのパスから自動導出する（ハードコードしない）。
-    - 例: `src/pytra/runtime/gif.py` -> `pytra::runtime::gif`
-    - 例: `src/pytra/runtime/png.py` -> `pytra::runtime::png`
+    - 例: `src/pytra/utils/gif.py` -> `pytra::utils::gif`
+    - 例: `src/pytra/utils/png.py` -> `pytra::utils::png`
 - 許容する最適化:
   - ループ展開・`reserve` 追加・一時バッファ削減など、出力バイト列を変えない最適化。
   - 例外メッセージ変更を伴わない境界チェックの軽量化。
@@ -262,7 +269,7 @@
 - `src/pytra/compiler/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
 - `src/pytra/compiler/east_parts/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/py2cpp.py`: EAST JSON -> C++
-- `src/runtime/cpp/py_runtime.h`: C++ ランタイム集約
+- `src/runtime/cpp/pytra/built_in/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
   - `range(...)` の意味解釈は EAST 構築側で完了させる
   - `src/py2cpp.py` は正規化済み EAST を文字列化する
