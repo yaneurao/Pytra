@@ -1,34 +1,55 @@
-"""pylib sys wrapper.
+"""Minimal sys shim for Pytra.
 
-This module centralizes process/runtime access so transpiler code avoids direct
-imports of Python stdlib `sys`.
+Python 実行時は `list` を保持する軽量実装として振る舞い、
+トランスパイル時は `py_runtime_*` ランタイム関数へ接続される。
 """
 
 from __future__ import annotations
 
-import sys as _sys
+import sys as _host_sys
 
-argv = _sys.argv
-path = _sys.path
-stderr = _sys.stderr
-stdout = _sys.stdout
+argv: list[str] = []
+path: list[str] = []
+stderr: object = None
+stdout: object = None
+
+# Python 実行時のホスト値
+argv = _host_sys.argv
+path = _host_sys.path
+stderr = _host_sys.stderr
+stdout = _host_sys.stdout
 
 
 def exit(code: int = 0) -> None:
-    raise SystemExit(code)
+    try:
+        py_runtime_exit(code)
+    except NameError:
+        _host_sys.exit(code)
 
 
 def set_argv(values: list[str]) -> None:
-    _sys.argv[:] = values
+    argv.clear()
+    for v in values:
+        argv.append(v)
 
 
 def set_path(values: list[str]) -> None:
-    _sys.path[:] = values
+    path.clear()
+    for v in values:
+        path.append(v)
+
+
+def write_stderr_impl(text: str) -> None:
+    py_runtime_write_stderr(text)
+
+
+def write_stdout_impl(text: str) -> None:
+    py_runtime_write_stdout(text)
 
 
 def write_stderr(text: str) -> None:
-    stderr.write(text)
+    write_stderr_impl(text)
 
 
 def write_stdout(text: str) -> None:
-    stdout.write(text)
+    write_stdout_impl(text)

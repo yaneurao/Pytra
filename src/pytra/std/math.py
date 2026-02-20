@@ -1,11 +1,11 @@
-"""pytra.std.math: thin wrapper over Python math module."""
+"""pytra.std.math: thin wrapper over native math_impl module."""
 
 from __future__ import annotations
 
-import math as _m
+import pytra.std.math_impl as _m
 
-pi = _m.pi
-e = _m.e
+pi: float = _m.pi
+e: float = _m.e
 
 
 def sqrt(x: float) -> float:

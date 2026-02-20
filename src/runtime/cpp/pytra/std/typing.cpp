@@ -1,36 +1,41 @@
-#include "runtime/cpp/py_runtime.h"
+#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 
 namespace pytra::std::typing {
 
+    /* Minimal typing shim for selfhost-friendly imports.
+
+This module is intentionally small and runtime-light. It provides names used in
+type annotations so core modules avoid direct stdlib `typing` imports.
+ */
     
-    int64 Any = 1;
     
-    int64 List = 1;
+    str Any = "Any";
     
-    int64 Set = 1;
+    str List = "List";
     
-    int64 Dict = 1;
+    str Set = "Set";
     
-    int64 Tuple = 1;
+    str Dict = "Dict";
     
-    int64 Iterable = 1;
+    str Tuple = "Tuple";
     
-    int64 Sequence = 1;
+    str Iterable = "Iterable";
     
-    int64 Mapping = 1;
+    str Sequence = "Sequence";
     
-    int64 Optional = 1;
+    str Mapping = "Mapping";
     
-    int64 Union = 1;
+    str Optional = "Optional";
     
-    int64 Callable = 1;
+    str Union = "Union";
     
-    int64 TypeAlias = 1;
+    str Callable = "Callable";
     
-    int64 TypeVar(const str& name) {
-        str _ = name;
-        return 1;
+    str TypeAlias = "TypeAlias";
+    
+    str TypeVar(const str& name) {
+        return name;
     }
     
 }  // namespace pytra::std::typing
