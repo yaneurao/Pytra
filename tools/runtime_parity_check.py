@@ -8,6 +8,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -30,8 +31,8 @@ def normalize(text: str) -> str:
     return "\n".join(lines)
 
 
-def run_shell(cmd: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, cwd=ROOT, shell=True, capture_output=True, text=True)
+def run_shell(cmd: str, cwd: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(cmd, cwd=cwd, shell=True, capture_output=True, text=True)
 
 
 def can_run(target: Target) -> bool:
@@ -136,38 +137,43 @@ def check_case(case_stem: str) -> int:
     if case_path is None:
         print(f"[ERROR] missing case: {case_stem}")
         return 1
-    py = run_shell(f"python {shlex.quote(case_path.as_posix())}")
-    if py.returncode != 0:
-        print(f"[ERROR] python:{case_stem} failed")
-        print(py.stderr.strip())
-        return 1
-    expected = normalize(py.stdout)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        work = Path(tmpdir)
+        (work / "src").symlink_to(ROOT / "src", target_is_directory=True)
+        (work / "test").symlink_to(ROOT / "test", target_is_directory=True)
 
-    mismatches: list[str] = []
-    for target in build_targets(case_stem, case_path):
-        if not can_run(target):
-            print(f"[SKIP] {case_stem}:{target.name} (missing toolchain)")
-            continue
+        py = run_shell(f"PYTHONPATH=src python {shlex.quote(case_path.as_posix())}", cwd=work)
+        if py.returncode != 0:
+            print(f"[ERROR] python:{case_stem} failed")
+            print(py.stderr.strip())
+            return 1
+        expected = normalize(py.stdout)
 
-        tr = run_shell(target.transpile_cmd)
-        if tr.returncode != 0:
-            mismatches.append(f"{case_stem}:{target.name}: transpile failed: {tr.stderr.strip()}")
-            continue
+        mismatches: list[str] = []
+        for target in build_targets(case_stem, case_path):
+            if not can_run(target):
+                print(f"[SKIP] {case_stem}:{target.name} (missing toolchain)")
+                continue
 
-        rr = run_shell(target.run_cmd)
-        if rr.returncode != 0:
-            mismatches.append(f"{case_stem}:{target.name}: run failed: {rr.stderr.strip()}")
-            continue
+            tr = run_shell(target.transpile_cmd, cwd=work)
+            if tr.returncode != 0:
+                mismatches.append(f"{case_stem}:{target.name}: transpile failed: {tr.stderr.strip()}")
+                continue
 
-        actual = normalize(rr.stdout)
-        if actual != expected:
-            mismatches.append(
-                f"{case_stem}:{target.name}: output mismatch\n"
-                f"  expected: {expected!r}\n"
-                f"  actual  : {actual!r}"
-            )
-        else:
-            print(f"[OK] {case_stem}:{target.name}")
+            rr = run_shell(target.run_cmd, cwd=work)
+            if rr.returncode != 0:
+                mismatches.append(f"{case_stem}:{target.name}: run failed: {rr.stderr.strip()}")
+                continue
+
+            actual = normalize(rr.stdout)
+            if actual != expected:
+                mismatches.append(
+                    f"{case_stem}:{target.name}: output mismatch\n"
+                    f"  expected: {expected!r}\n"
+                    f"  actual  : {actual!r}"
+                )
+            else:
+                print(f"[OK] {case_stem}:{target.name}")
 
     if mismatches:
         print("\n[FAIL] mismatches")

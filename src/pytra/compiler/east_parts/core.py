@@ -273,7 +273,6 @@ def _sh_parse_def_sig(
         # - "*" keyword-only marker
         # Not supported:
         # - "/" positional-only marker
-        # - *args / **kwargs
         for p_txt, _off in _sh_split_args_with_offsets(args_raw):
             p = p_txt.strip()
             if p == "":
@@ -3720,6 +3719,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
 
             field_types: dict[str, str] = {}
             class_body: list[dict[str, Any]] = []
+            pending_method_decorators: list[str] = []
             k = 0
             while k < len(class_block):
                 ln_no, ln_txt = class_block[k]
@@ -3727,6 +3727,25 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 bind = len(ln_txt) - len(ln_txt.lstrip(" "))
                 if s2 == "":
                     k += 1
+                    continue
+                if bind == cls_indent + 4 and s2.startswith("@"):
+                    dec_name = s2[1:].strip()
+                    if dec_name != "":
+                        pending_method_decorators.append(dec_name)
+                    k += 1
+                    continue
+                if bind == cls_indent + 4 and (s2.startswith('"""') or s2.startswith("'''")):
+                    q = s2[:3]
+                    if s2.count(q) >= 2 and len(s2) > 3:
+                        k += 1
+                        continue
+                    k += 1
+                    while k < len(class_block):
+                        _doc_no, doc_txt = class_block[k]
+                        if q in doc_txt:
+                            k += 1
+                            break
+                        k += 1
                     continue
                 if bind == cls_indent + 4:
                     m_field = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", s2)
@@ -3905,10 +3924,12 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 "return_type": mret,
                                 "arg_usage": arg_usage_map,
                                 "renamed_symbols": {},
+                                "decorators": list(pending_method_decorators),
                                 "docstring": docstring,
                                 "body": stmts,
                             }
                         )
+                        pending_method_decorators = []
                         k = m
                         continue
                 raise EastBuildError(

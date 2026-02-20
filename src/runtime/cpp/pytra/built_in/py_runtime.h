@@ -1663,6 +1663,16 @@ static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values) {
     return out;
 }
 
+template <class T>
+static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values, int64 start) {
+    list<::std::tuple<int64, T>> out;
+    out.reserve(values.size());
+    for (::std::size_t i = 0; i < values.size(); i++) {
+        out.append(::std::make_tuple(start + static_cast<int64>(i), values[i]));
+    }
+    return out;
+}
+
 static inline list<::std::tuple<int64, str>> py_enumerate(const str& values) {
     list<::std::tuple<int64, str>> out;
     out.reserve(values.size());
@@ -1672,9 +1682,24 @@ static inline list<::std::tuple<int64, str>> py_enumerate(const str& values) {
     return out;
 }
 
+static inline list<::std::tuple<int64, str>> py_enumerate(const str& values, int64 start) {
+    list<::std::tuple<int64, str>> out;
+    out.reserve(values.size());
+    for (::std::size_t i = 0; i < values.size(); i++) {
+        out.append(::std::make_tuple(start + static_cast<int64>(i), values[i]));
+    }
+    return out;
+}
+
 static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::any& values) {
     if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_enumerate(*p);
     if (const auto* p = ::std::any_cast<str>(&values)) return py_enumerate(*p);
+    return {};
+}
+
+static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::any& values, int64 start) {
+    if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_enumerate(*p, start);
+    if (const auto* p = ::std::any_cast<str>(&values)) return py_enumerate(*p, start);
     return {};
 }
 

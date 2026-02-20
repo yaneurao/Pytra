@@ -2964,6 +2964,8 @@ class CppEmitter(CodeEmitter):
                 return f"py_reversed({args[0]})"
             if raw == "enumerate" and len(args) == 1:
                 return f"py_enumerate({args[0]})"
+            if raw == "enumerate" and len(args) >= 2:
+                return f"py_enumerate({args[0]}, py_to_int64({args[1]}))"
             if raw == "any" and len(args) == 1:
                 return f"py_any({args[0]})"
             if raw == "all" and len(args) == 1:

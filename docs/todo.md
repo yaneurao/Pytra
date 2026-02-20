@@ -4,13 +4,15 @@
 
 - [ ] `src/pytra/std/*.py` を `--emit-runtime-cpp` で再生成し、`src/runtime/cpp/pytra/std/` への反映を自動生成起点に統一する。
   - [ ] 対象: 少なくとも `math.py`, `json.py`, `pathlib.py`, `re.py`, `sys.py`, `typing.py`, `dataclasses.py`, `time.py`, `glob.py`。
+  - [ ] 進捗: `dataclasses.py` 以外（`math/json/pathlib/re/sys/typing/time/glob`）は self_hosted parser で EAST 変換可能。
+  - [ ] ブロッカー: `dataclasses.py` のネスト `def`（`wrap`）が self_hosted parser 未対応。
   - [ ] 受け入れ条件:
-    - [ ] `python3 src/py2cpp.py src/pytra/std/math.py --emit-runtime-cpp` 後に `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp` が更新される。
-    - [ ] `python3 test/fixtures/stdlib/math_extended.py` と対応 C++ 実行結果が一致する。
+    - [x] `python3 src/py2cpp.py src/pytra/std/math.py --emit-runtime-cpp` 後に `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp` が更新される。
+    - [x] `python3 test/fixtures/stdlib/math_extended.py` と対応 C++ 実行結果が一致する。
 
-- [ ] `enumerate()` 変換を拡張し、`start` 引数つきケースを回帰テストで固定する。
-  - [ ] 追加ケース: `enumerate(xs)`, `enumerate(xs, 1)`, `enumerate(xs, 5)`, タプル分解あり/なし。
-  - [ ] 受け入れ条件: `test/fixtures` 側の Python/C++ 出力一致テストが green。
+- [x] `enumerate()` 変換を拡張し、`start` 引数つきケースを回帰テストで固定する。
+  - [x] 追加ケース: `enumerate(xs)`, `enumerate(xs, 1)`, `enumerate(xs, 5)`, タプル分解あり/なし（非分解は `pair` 受け取り）。
+  - [x] 受け入れ条件: `test/fixtures` 側の Python/C++ 出力一致テストが green。
 
 - [ ] 内包表記とラムダのテストを増やし、コード生成崩れを早期検知できるようにする。
   - [ ] 追加ケース: list/set/dict comprehension（if あり/なし）、lambda の即時呼び出し、lambda を変数へ代入して呼び出し。
