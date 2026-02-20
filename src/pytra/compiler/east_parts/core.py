@@ -84,6 +84,8 @@ def _sh_ann_to_type(ann: str) -> str:
         "bytearray": "bytearray",
     }
     txt = ann.strip()
+    if len(txt) >= 2 and ((txt[0] == "'" and txt[-1] == "'") or (txt[0] == '"' and txt[-1] == '"')):
+        txt = txt[1:-1].strip()
     if txt in mapping:
         return mapping[txt]
     m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\[(.*)\]$", txt)
@@ -545,6 +547,41 @@ def _sh_infer_item_type(node: dict[str, Any]) -> str:
     if t == "str":
         return "str"
     return "unknown"
+
+
+def _sh_bind_comp_target_types(
+    base_types: dict[str, str],
+    target_node: dict[str, Any],
+    iter_node: dict[str, Any],
+) -> dict[str, str]:
+    """内包表記 target へ反復要素型を束縛した name_types を返す。"""
+    out = dict(base_types)
+    item_t = _sh_infer_item_type(iter_node)
+    if target_node.get("kind") == "Name":
+        nm = str(target_node.get("id", ""))
+        if nm != "":
+            out[nm] = item_t
+        return out
+    if target_node.get("kind") != "Tuple":
+        return out
+    elem_nodes = target_node.get("elements", [])
+    elem_types: list[str] = []
+    if item_t.startswith("tuple[") and item_t.endswith("]"):
+        inner = item_t[6:-1].strip()
+        if inner != "":
+            elem_types = _sh_split_top_commas(inner)
+    i = 0
+    while i < len(elem_nodes):
+        e = elem_nodes[i]
+        if isinstance(e, dict) and e.get("kind") == "Name":
+            nm = str(e.get("id", ""))
+            if nm != "":
+                if i < len(elem_types):
+                    out[nm] = elem_types[i].strip() or "unknown"
+                else:
+                    out[nm] = "unknown"
+        i += 1
+    return out
 
 
 def _sh_block_end_span(
@@ -2441,10 +2478,14 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                     hint="Use `{key: value for item in iterable}` form.",
                 )
             tgt_txt = tail[:p_in].strip()
-            iter_txt = tail[p_in + 2 :].strip()
-            p_if = _sh_split_top_keyword(iter_txt, "if")
+            iter_and_if_txt = tail[p_in + 2 :].strip()
+            p_if = _sh_split_top_keyword(iter_and_if_txt, "if")
             if p_if >= 0:
-                iter_txt = iter_txt[:p_if].strip()
+                iter_txt = iter_and_if_txt[:p_if].strip()
+                if_txt = iter_and_if_txt[p_if + 2 :].strip()
+            else:
+                iter_txt = iter_and_if_txt
+                if_txt = ""
             if ":" not in head:
                 raise EastBuildError(
                     kind="unsupported_syntax",
@@ -2456,16 +2497,13 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             ktxt = ktxt.strip()
             vtxt = vtxt.strip()
             target_node = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
-            comp_types = dict(name_types)
-            if isinstance(target_node, dict) and target_node.get("kind") == "Name":
-                comp_types[str(target_node.get("id", ""))] = "unknown"
-            elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
-                for e in target_node.get("elements", []):
-                    if isinstance(e, dict) and e.get("kind") == "Name":
-                        comp_types[str(e.get("id", ""))] = "unknown"
+            iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+            comp_types = _sh_bind_comp_target_types(dict(name_types), target_node, iter_node)
             key_node = _sh_parse_expr_lowered(ktxt, ln_no=ln_no, col=col + txt.find(ktxt), name_types=dict(comp_types))
             val_node = _sh_parse_expr_lowered(vtxt, ln_no=ln_no, col=col + txt.find(vtxt), name_types=dict(comp_types))
-            iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+            if_nodes: list[dict[str, Any]] = []
+            if if_txt != "":
+                if_nodes.append(_sh_parse_expr_lowered(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
             kt = str(key_node.get("resolved_type", "unknown"))
             vt = str(val_node.get("resolved_type", "unknown"))
             return {
@@ -2481,7 +2519,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                     {
                         "target": target_node,
                         "iter": iter_node,
-                        "ifs": [],
+                        "ifs": if_nodes,
                         "is_async": False,
                     }
                 ],
@@ -2511,16 +2549,10 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             else:
                 iter_txt = iter_and_if_txt
                 if_txt = ""
-            target_node = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
-            comp_types = dict(name_types)
-            if isinstance(target_node, dict) and target_node.get("kind") == "Name":
-                comp_types[str(target_node.get("id", ""))] = "unknown"
-            elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
-                for e in target_node.get("elements", []):
-                    if isinstance(e, dict) and e.get("kind") == "Name":
-                        comp_types[str(e.get("id", ""))] = "unknown"
-            elt_node = _sh_parse_expr_lowered(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
             iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+            target_node = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
+            comp_types = _sh_bind_comp_target_types(dict(name_types), target_node, iter_node)
+            elt_node = _sh_parse_expr_lowered(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
             if_nodes: list[dict[str, Any]] = []
             if if_txt != "":
                 if_nodes.append(_sh_parse_expr_lowered(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
@@ -2670,14 +2702,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                     "range_mode": mode,
                 }
 
-            item_t = _sh_infer_item_type(iter_node)
-            comp_types = dict(name_types)
-            if isinstance(target_node, dict) and target_node.get("kind") == "Name":
-                comp_types[str(target_node.get("id", ""))] = item_t
-            elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
-                for e in target_node.get("elements", []):
-                    if isinstance(e, dict) and e.get("kind") == "Name":
-                        comp_types[str(e.get("id", ""))] = "unknown"
+            comp_types = _sh_bind_comp_target_types(dict(name_types), target_node, iter_node)
             elt_node = _sh_parse_expr_lowered(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
             if_nodes: list[dict[str, Any]] = []
             if if_txt != "":

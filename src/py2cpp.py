@@ -2238,6 +2238,7 @@ class CppEmitter(CodeEmitter):
         idx_t0 = self.get_expr_type(node.get("slice"))
         idx_t = idx_t0 if isinstance(idx_t0, str) else ""
         if val_ty.startswith("dict["):
+            idx = self._coerce_dict_key_expr(node.get("value"), idx, node.get("slice"))
             return f"{val}[{idx}]"
         if self.is_indexable_sequence_type(val_ty):
             if self.is_any_like_type(idx_t):
@@ -2256,6 +2257,26 @@ class CppEmitter(CodeEmitter):
         if self.bounds_check_mode == "debug":
             return f"py_at_bounds_debug({value_expr}, {index_expr})"
         return f"{value_expr}[{index_expr}]"
+
+    def _coerce_dict_key_expr(self, owner_node: Any, key_expr: str, key_node: Any) -> str:
+        """`dict[K, V]` 参照用の key 式を K に合わせて整形する。"""
+        owner_t0 = self.get_expr_type(owner_node)
+        owner_t = owner_t0 if isinstance(owner_t0, str) else ""
+        if self.is_any_like_type(owner_t):
+            return key_expr
+        if not owner_t.startswith("dict[") or not owner_t.endswith("]"):
+            return key_expr
+        inner = self.split_generic(owner_t[5:-1])
+        if len(inner) != 2:
+            return key_expr
+        key_t = self.normalize_type_name(inner[0])
+        if key_t in {"", "unknown"}:
+            return key_expr
+        if self.is_any_like_type(key_t):
+            if key_expr.startswith("make_object("):
+                return key_expr
+            return f"make_object({key_expr})"
+        return self.apply_cast(key_expr, key_t)
 
     def _target_bound_names(self, target: dict[str, Any]) -> set[str]:
         """for ターゲットが束縛する識別子名を収集する。"""
@@ -2863,22 +2884,29 @@ class CppEmitter(CodeEmitter):
             owner = self.render_expr(fn.get("value"))
             return f"{owner}.clear()"
         if runtime_call == "dict.get":
-            owner = self.render_expr(fn.get("value"))
-            owner_t = self.get_expr_type(fn.get("value"))
+            owner_node = fn.get("value")
+            owner = self.render_expr(owner_node)
+            owner_t = self.get_expr_type(owner_node)
             objectish_owner = self.is_any_like_type(owner_t)
+            key_expr = args[0] if len(args) >= 1 else "/* missing */"
+            key_node: Any = None
+            if len(arg_nodes) >= 1:
+                key_node = arg_nodes[0]
+            if not objectish_owner:
+                key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
             if len(args) >= 2:
                 out_t = self.any_to_str(expr.get("resolved_type"))
                 if objectish_owner and out_t == "bool":
-                    return f"dict_get_bool({owner}, {args[0]}, {args[1]})"
+                    return f"dict_get_bool({owner}, {key_expr}, {args[1]})"
                 if objectish_owner and out_t == "str":
-                    return f"dict_get_str({owner}, {args[0]}, {args[1]})"
+                    return f"dict_get_str({owner}, {key_expr}, {args[1]})"
                 if objectish_owner and out_t.startswith("list["):
-                    return f"dict_get_list({owner}, {args[0]}, {args[1]})"
+                    return f"dict_get_list({owner}, {key_expr}, {args[1]})"
                 if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
-                    return f"dict_get_node({owner}, {args[0]}, {args[1]})"
-                return f"py_dict_get_default({owner}, {args[0]}, {args[1]})"
+                    return f"dict_get_node({owner}, {key_expr}, {args[1]})"
+                return f"py_dict_get_default({owner}, {key_expr}, {args[1]})"
             if len(args) == 1:
-                return f"py_dict_get({owner}, {args[0]})"
+                return f"py_dict_get({owner}, {key_expr})"
         if runtime_call == "dict.items":
             owner = self.render_expr(fn.get("value"))
             return owner
@@ -3475,6 +3503,7 @@ class CppEmitter(CodeEmitter):
             return f"py_slice({val}, {lo}, {up})"
         idx = self.render_expr(sl)
         if val_ty.startswith("dict["):
+            idx = self._coerce_dict_key_expr(expr.get("value"), idx, sl)
             return f"py_dict_get({val}, {idx})"
         if self.is_indexable_sequence_type(val_ty):
             idx_t0 = self.get_expr_type(sl)
@@ -3867,6 +3896,11 @@ class CppEmitter(CodeEmitter):
             it = self.render_expr(g.get("iter"))
             elt = self.render_expr(expr_d.get("elt"))
             out_t = self.cpp_type(expr_d.get("resolved_type"))
+            if out_t in {"set<object>", "object", "std::any", "::std::any", "auto"}:
+                elt_t0 = self.get_expr_type(expr_d.get("elt"))
+                elt_t = elt_t0 if isinstance(elt_t0, str) else ""
+                if elt_t != "" and elt_t != "unknown":
+                    out_t = self._cpp_type_text(f"set[{elt_t}]")
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
             iter_tmp = self.next_tmp("__it")
@@ -3913,6 +3947,13 @@ class CppEmitter(CodeEmitter):
             key = self.render_expr(expr_d.get("key"))
             val = self.render_expr(expr_d.get("value"))
             out_t = self.cpp_type(expr_d.get("resolved_type"))
+            if out_t in {"dict<str, object>", "object", "std::any", "::std::any", "auto"}:
+                key_t0 = self.get_expr_type(expr_d.get("key"))
+                val_t0 = self.get_expr_type(expr_d.get("value"))
+                key_t = key_t0 if isinstance(key_t0, str) else ""
+                val_t = val_t0 if isinstance(val_t0, str) else ""
+                if key_t != "" and key_t != "unknown" and val_t != "" and val_t != "unknown":
+                    out_t = self._cpp_type_text(f"dict[{key_t},{val_t}]")
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
             iter_tmp = self.next_tmp("__it")

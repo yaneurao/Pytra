@@ -14,11 +14,11 @@
   - [x] 追加ケース: `enumerate(xs)`, `enumerate(xs, 1)`, `enumerate(xs, 5)`, タプル分解あり/なし（非分解は `pair` 受け取り）。
   - [x] 受け入れ条件: `test/fixtures` 側の Python/C++ 出力一致テストが green。
 
-- [ ] 内包表記とラムダのテストを増やし、コード生成崩れを早期検知できるようにする。
-  - [ ] 追加ケース: list/set/dict comprehension（if あり/なし）、lambda の即時呼び出し、lambda を変数へ代入して呼び出し。
-  - [x] 進捗: `lambda_immediate` / `comprehension_ifexp` fixture を追加し、対応 unit test を追加した。
-  - [ ] ブロッカー: `dict/set` comprehension は現在 C++ 生成で型不整合（`dict<int,...>` が `dict<str, object>` へ崩れる）を先に修正する必要がある。
-  - [ ] 受け入れ条件: 追加した fixture が Python/C++ で一致し、`tools/check_py2cpp_transpile.py` が green。
+- [x] 内包表記とラムダのテストを増やし、コード生成崩れを早期検知できるようにする。
+  - [x] 追加ケース: list/set/dict comprehension（if あり/なし）、lambda の即時呼び出し、lambda を変数へ代入して呼び出し。
+  - [x] 進捗: `lambda_immediate` / `comprehension_ifexp` / `comprehension_dict_set` fixture を追加し、対応 unit test を追加した。
+  - [x] ブロッカー解消: `dict/set` comprehension の型不整合（`dict<int,...>` が `dict<str, object>` へ崩れる）を修正した（EAST 側 target 型束縛 + C++ 側 dict key 型キャスト）。
+  - [x] 受け入れ条件: 追加 fixture の Python/C++ 一致と `tools/check_py2cpp_transpile.py` green（`checked=106 ok=106 fail=0 skipped=5`）を確認済み。
 
 - [ ] `import_pytra_runtime_png.png` 誤生成の原因を特定し、再発防止テストを追加する。
   - [x] 原因候補を特定: `tools/runtime_parity_check.py` が repo 直下 `cwd` で fixture 実行しており、画像出力が作業ツリーへ漏れる。
