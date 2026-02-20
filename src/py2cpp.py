@@ -147,6 +147,37 @@ def _parse_user_error(err_text: str) -> dict[str, Any]:
     out["details"] = details
     return out
 
+
+def _dict_any_get_list(src: dict[str, Any], key: str) -> list[Any]:
+    """`dict[str, Any]` から list を安全に取得する。"""
+    if key not in src:
+        out0: list[Any] = []
+        return out0
+    value = src[key]
+    if isinstance(value, list):
+        return value
+    out1: list[Any] = []
+    return out1
+
+
+def _dict_any_get_str_list(src: dict[str, Any], key: str) -> list[str]:
+    """`dict[str, Any]` の list 値を `list[str]` として取得する。"""
+    out: list[str] = []
+    raw = _dict_any_get_list(src, key)
+    for item in raw:
+        if isinstance(item, str):
+            out.append(item)
+    return out
+
+
+def _dict_str_list_get(src: dict[str, list[str]], key: str) -> list[str]:
+    """`dict[str, list[str]]` から `list[str]` を安全に取得する。"""
+    if key in src:
+        return src[key]
+    out: list[str] = []
+    return out
+
+
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 """
@@ -2854,13 +2885,7 @@ class CppEmitter(CodeEmitter):
         first_arg: Any,
     ) -> str | None:
         """Call の Name/Attribute 分岐を処理する。"""
-        fn_kind = self.any_to_str(fn.get("kind"))
-        if fn_kind == "":
-            fn_kind_obj = fn.get("kind")
-            if fn_kind_obj is not None:
-                fn_kind_txt = str(fn_kind_obj)
-                if fn_kind_txt not in {"", "None", "{}", "[]"}:
-                    fn_kind = fn_kind_txt
+        fn_kind = self._node_kind_from_dict(fn)
         if fn_kind == "Name":
             raw = self.any_to_str(fn.get("id"))
             imported_module = ""
@@ -3142,13 +3167,7 @@ class CppEmitter(CodeEmitter):
         owner_obj: object = fn.get("value")
         owner = self.any_to_dict_or_empty(owner_obj)
         owner_t = self.get_expr_type(owner_obj)
-        owner_kind = self.any_to_str(owner.get("kind"))
-        if owner_kind == "":
-            owner_kind_obj = owner.get("kind")
-            if owner_kind_obj is not None:
-                owner_kind_txt = str(owner_kind_obj)
-                if owner_kind_txt not in {"", "None", "{}", "[]"}:
-                    owner_kind = owner_kind_txt
+        owner_kind = self._node_kind_from_dict(owner)
         if owner_kind == "Name":
             owner_name = self.any_to_str(owner.get("id"))
             if owner_name in self.declared_var_types:
@@ -3461,13 +3480,7 @@ class CppEmitter(CodeEmitter):
         expr_d = self.any_to_dict_or_empty(expr)
         if len(expr_d) == 0:
             return "/* none */"
-        kind = self.any_to_str(expr_d.get("kind"))
-        if kind == "":
-            raw_kind_obj = expr_d.get("kind")
-            if raw_kind_obj is not None:
-                raw_kind_txt = str(raw_kind_obj)
-                if raw_kind_txt not in {"", "None", "{}", "[]"}:
-                    kind = raw_kind_txt
+        kind = self._node_kind_from_dict(expr_d)
         hook_kind = self.hook_on_render_expr_kind(kind, expr_d)
         if isinstance(hook_kind, str) and hook_kind != "":
             return hook_kind
@@ -3516,13 +3529,7 @@ class CppEmitter(CodeEmitter):
                 )
             base = self.render_expr(expr_d.get("value"))
             base_node = self.any_to_dict_or_empty(expr_d.get("value"))
-            base_kind = self.any_dict_get_str(base_node, "kind", "")
-            if base_kind == "":
-                base_kind_obj = base_node.get("kind")
-                if base_kind_obj is not None:
-                    base_kind_txt = str(base_kind_obj)
-                    if base_kind_txt not in {"", "None", "{}", "[]"}:
-                        base_kind = base_kind_txt
+            base_kind = self._node_kind_from_dict(base_node)
             if base_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 base = f"({base})"
             attr = self.any_to_str(expr_d.get("attr"))
@@ -3582,13 +3589,7 @@ class CppEmitter(CodeEmitter):
                 if isinstance(k, str):
                     kw[k] = self.any_to_str(v)
             first_arg: object = call_parts.get("first_arg")
-            fn_kind_for_call = self.any_to_str(fn.get("kind"))
-            if fn_kind_for_call == "":
-                fn_kind_obj = fn.get("kind")
-                if fn_kind_obj is not None:
-                    fn_kind_txt = str(fn_kind_obj)
-                    if fn_kind_txt not in {"", "None", "{}", "[]"}:
-                        fn_kind_for_call = fn_kind_txt
+            fn_kind_for_call = self._node_kind_from_dict(fn)
             if fn_kind_for_call == "Attribute":
                 owner_node: object = fn.get("value")
                 owner_t = self.get_expr_type(owner_node)
@@ -4033,9 +4034,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
     except Exception as ex:
         parsed_err = _parse_user_error(str(ex))
         ex_cat = str(parsed_err.get("category", ""))
-        ex_details = parsed_err.get("details", [])
-        if not isinstance(ex_details, list):
-            ex_details = []
+        ex_details = _dict_any_get_str_list(parsed_err, "details")
         if ex_cat != "":
             if ex_cat == "not_implemented":
                 first = ""
@@ -4859,7 +4858,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     def _dfs(key: str) -> None:
         color[key] = 1
         stack.append(key)
-        nxts = graph_adj.get(key, [])
+        nxts = _dict_str_list_get(graph_adj, key)
         i = 0
         while i < len(nxts):
             nxt = nxts[i]
@@ -5558,12 +5557,7 @@ def print_user_error(err_text: str) -> None:
     """分類済みユーザーエラーをカテゴリ別に表示する。"""
     parsed_err = _parse_user_error(err_text)
     cat = str(parsed_err.get("category", ""))
-    details: list[str] = []
-    raw_details = parsed_err.get("details", [])
-    if isinstance(raw_details, list):
-        for item in raw_details:
-            if isinstance(item, str):
-                details.append(str(item))
+    details = _dict_any_get_str_list(parsed_err, "details")
     if cat == "":
         print("error: 変換に失敗しました。", file=sys.stderr)
         print("[transpile_error] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)

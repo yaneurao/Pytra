@@ -118,8 +118,8 @@
      - [x] `get_expr_type` は `resolved_type` の動的値フォールバックを追加し、selfhost 変換時の空文字化を抑制した（2026-02-20）。
      - [x] `_is_redundant_super_init_call` は `dict` 正規化と `kind` 取得の共通化（`_node_kind_from_dict`）で `Any/object` 境界でも安定化した（2026-02-20）。
      - [x] `render_cond` の同等整理（`optional<dict>` 境界の削減）を実施した。: `repr` の動的値フォールバックと外側括弧除去を追加し、`test/unit/test_code_emitter.py` で回帰固定（2026-02-20）。
-     - [ ] `render_expr` の先頭正規化で `expr_node` 再代入パターンを除去し、`object -> dict` を1回に固定する。
-     - [ ] `*_dict_stmt_list` 系引数を `expr.get(..., [])` ではなく `expr.get(...)` + helper 正規化へ統一する。
+     - [x] `render_expr` の先頭正規化で `expr_node` 再代入パターンを除去し、`object -> dict` を1回に固定する。: `kind` 取得を `_node_kind_from_dict` に統一し、手書き fallback 再代入を削減（2026-02-20）。
+     - [x] `*_dict_stmt_list` 系引数を `expr.get(..., [])` ではなく `expr.get(...)` + helper 正規化へ統一する。: `dict.get(..., [])` 残存3件（`details`/`graph_adj`）を helper 経由へ置換（2026-02-20）。
    - [x] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
    - [x] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
    - [ ] `hook_on_*` 系の `hooks` コンテナ型を selfhost で安定化する。
