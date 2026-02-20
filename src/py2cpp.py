@@ -2774,6 +2774,15 @@ class CppEmitter(CodeEmitter):
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
+        list_ops = self._render_runtime_call_list_ops(runtime_call, fn, args)
+        if list_ops != "":
+            return list_ops
+        set_ops = self._render_runtime_call_set_ops(runtime_call, fn, args)
+        if set_ops != "":
+            return set_ops
+        dict_ops = self._render_runtime_call_dict_ops(runtime_call, expr, fn, args, arg_nodes)
+        if dict_ops != "":
+            return dict_ops
         if runtime_call == "py_print":
             return f"py_print({_join_str_list(', ', args)})"
         if runtime_call == "py_len" and len(args) == 1:
@@ -2842,6 +2851,16 @@ class CppEmitter(CodeEmitter):
             return f"::std::runtime_error({args[0]})"
         if runtime_call == "Path":
             return f"Path({_join_str_list(', ', args)})"
+        if runtime_call != "" and (self._is_std_runtime_call(runtime_call) or runtime_call.startswith("py_")):
+            return f"{runtime_call}({_join_str_list(', ', args)})"
+        if builtin_name == "bytes":
+            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
+        if builtin_name == "bytearray":
+            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
+        return ""
+
+    def _render_runtime_call_list_ops(self, runtime_call: str, fn: dict[str, Any], args: list[str]) -> str:
+        """`runtime_call` の list 系（append/extend/pop/clear/reverse/sort）を処理する。"""
         if runtime_call == "list.append":
             owner = self.render_expr(fn.get("value"))
             a0 = args[0] if len(args) >= 1 else "/* missing */"
@@ -2875,6 +2894,10 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "list.sort":
             owner = self.render_expr(fn.get("value"))
             return f"::std::sort({owner}.begin(), {owner}.end())"
+        return ""
+
+    def _render_runtime_call_set_ops(self, runtime_call: str, fn: dict[str, Any], args: list[str]) -> str:
+        """`runtime_call` の set 系（add/discard/remove/clear）を処理する。"""
         if runtime_call == "set.add":
             owner = self.render_expr(fn.get("value"))
             a0 = args[0] if len(args) >= 1 else "/* missing */"
@@ -2886,6 +2909,17 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "set.clear":
             owner = self.render_expr(fn.get("value"))
             return f"{owner}.clear()"
+        return ""
+
+    def _render_runtime_call_dict_ops(
+        self,
+        runtime_call: str,
+        expr: dict[str, Any],
+        fn: dict[str, Any],
+        args: list[str],
+        arg_nodes: list[Any],
+    ) -> str:
+        """`runtime_call` の dict 系（get/items/keys/values）を処理する。"""
         if runtime_call == "dict.get":
             owner_node: object = fn.get("value")
             owner = self.render_expr(owner_node)
@@ -2910,21 +2944,15 @@ class CppEmitter(CodeEmitter):
                 return f"py_dict_get_default({owner}, {key_expr}, {args[1]})"
             if len(args) == 1:
                 return f"py_dict_get({owner}, {key_expr})"
+            return ""
         if runtime_call == "dict.items":
-            owner = self.render_expr(fn.get("value"))
-            return owner
+            return self.render_expr(fn.get("value"))
         if runtime_call == "dict.keys":
             owner = self.render_expr(fn.get("value"))
             return f"py_dict_keys({owner})"
         if runtime_call == "dict.values":
             owner = self.render_expr(fn.get("value"))
             return f"py_dict_values({owner})"
-        if runtime_call != "" and (self._is_std_runtime_call(runtime_call) or runtime_call.startswith("py_")):
-            return f"{runtime_call}({_join_str_list(', ', args)})"
-        if builtin_name == "bytes":
-            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
-        if builtin_name == "bytearray":
-            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
         return ""
 
     def _render_call_name_or_attr(
