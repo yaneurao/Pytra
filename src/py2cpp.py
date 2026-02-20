@@ -2765,7 +2765,7 @@ class CppEmitter(CodeEmitter):
                 return f"{base}::{attr}"
             base_module_name = self._resolve_imported_module_name(base)
             base_module_name = self._normalize_runtime_module_name(base_module_name)
-            if base_module_name == "math":
+            if base_module_name in {"math", "pytra.std.math"}:
                 if attr == "pi":
                     return "py_math::pi"
                 if attr == "e":
