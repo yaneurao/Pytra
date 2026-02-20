@@ -116,6 +116,13 @@
    - [x] `extract_module_leading_trivia` ラッパーを削除。
    - [x] `_stmt_start_line` / `_stmt_end_line` / `_has_leading_trivia` を削除。
    - [x] `py2cpp.py` 内の補助関数で参照ゼロのものを追加洗い出しして削除する。: `_safe_nested_dict` / `_safe_nested_str_map` / `_safe_nested_str_list` / `_load_cpp_runtime_call_map_json` を削除
+   - [ ] 未使用シンボル削除を「1シンボルずつ」進める手順を固定化する。
+     - [ ] 対象リスト作成: `src/runtime/cpp/pytra/built_in/py_runtime.h` と `src/py2cpp.py` の関数/補助関数を列挙し、`docs/todo.md` に候補一覧を作る。
+     - [ ] 参照確認: 各候補ごとに `rg <symbol>` で repo 全体の参照を確認し、「実使用」「互換レイヤ」「未使用」に分類する。
+     - [ ] 1件削除: 「未使用」1件だけを削除し、同時に代替呼び出し（例: helper -> method）へ置換する。
+     - [ ] 1件検証: 毎回 `python3 tools/check_py2cpp_transpile.py` を実行して回帰を確認する。
+     - [ ] 1件コミット: 1シンボル削除ごとに独立コミットする（後戻り容易化）。
+     - [ ] 影響反映: public API を消した場合は `docs/spec-runtime.md` / `docs/spec-dev.md` の該当記述を同コミットで更新する。
 
 ## selfhost 回復（後段）
 
