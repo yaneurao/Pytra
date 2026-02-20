@@ -1700,10 +1700,6 @@ static inline void py_runtime_write_stdout(const str& text) {
     ::std::cout << text;
 }
 
-static inline object py_runtime_stderr() {
-    return make_object(int64(1));
-}
-
 static inline object py_runtime_stdout() {
     return make_object(int64(1));
 }
