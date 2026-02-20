@@ -1691,11 +1691,6 @@ static inline ArgumentParser py_argparse_argument_parser(const str& description 
     return ArgumentParser(description);
 }
 
-// 画像ランタイムなどへ渡す byte 列の変換補助。
-static inline ::std::vector<uint8> py_u8_vector(const list<uint8>& src) {
-    return ::std::vector<uint8>(src.begin(), src.end());
-}
-
 static inline ::std::vector<::std::vector<uint8>> py_u8_matrix(const list<list<uint8>>& frames) {
     ::std::vector<::std::vector<uint8>> out;
     out.reserve(frames.size());
