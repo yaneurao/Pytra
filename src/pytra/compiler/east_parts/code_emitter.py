@@ -350,10 +350,18 @@ class CodeEmitter:
 
     def any_to_str(self, v: Any) -> str:
         """動的値を str に安全に変換する。変換不能なら空文字。"""
-        out = ""
         if isinstance(v, str):
-            out = v
-        return out
+            return v
+        if v is None:
+            return ""
+        if isinstance(v, bool) or isinstance(v, int) or isinstance(v, float):
+            return ""
+        if isinstance(v, dict) or isinstance(v, list) or isinstance(v, set):
+            return ""
+        txt = str(v)
+        if txt in {"", "None", "{}", "[]"}:
+            return ""
+        return txt
 
     def any_to_bool(self, v: Any) -> bool:
         """動的値を bool に安全に変換する。変換不能なら False。"""
@@ -364,7 +372,25 @@ class CodeEmitter:
     def get_expr_type(self, expr: Any) -> str:
         """式ノードから解決済み型文字列を取得する。"""
         expr_node = self.any_to_dict_or_empty(expr)
-        return self.any_dict_get_str(expr_node, "resolved_type", "")
+        resolved = self.any_dict_get_str(expr_node, "resolved_type", "")
+        if resolved != "":
+            return self.normalize_type_name(resolved)
+        if self.any_dict_has(expr_node, "resolved_type"):
+            raw: Any = None
+            if "resolved_type" in expr_node:
+                raw = expr_node["resolved_type"]
+            if isinstance(raw, str):
+                txt = self.any_to_str(raw)
+                if txt == "":
+                    txt = str(raw)
+                if txt not in {"", "None", "{}", "[]"}:
+                    return self.normalize_type_name(txt)
+            elif raw is not None and not isinstance(raw, bool) and not isinstance(raw, int) and not isinstance(raw, float):
+                if not isinstance(raw, dict) and not isinstance(raw, list) and not isinstance(raw, set):
+                    txt2 = str(raw)
+                    if txt2 not in {"", "None", "{}", "[]"}:
+                        return self.normalize_type_name(txt2)
+        return ""
 
     def is_name(self, node: Any, name: str | None = None) -> bool:
         node_dict = self.any_to_dict_or_empty(node)

@@ -311,8 +311,7 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:\n"
             "    pass\n"
             "    _ = root_dir\n"
-            "    _ = module_tail\n"
-            "    return False\n\n"
+            "    return module_tail != \"\"\n\n"
         ),
     )
 
@@ -322,8 +321,7 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
         (
             "def _module_tail_to_cpp_header_path(module_tail: str) -> str:\n"
             "    pass\n"
-            "    _ = module_tail\n"
-            "    return \"\"\n\n"
+            "    return module_tail + \".h\"\n\n"
         ),
     )
 
@@ -333,10 +331,14 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
         (
             "def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:\n"
             "    pass\n"
-            "    _ = module_name_norm\n"
+            "    if module_name_norm.startswith(\"pytra.std.\"):\n"
+            "        return True\n"
+            "    if module_name_norm.startswith(\"pytra.utils.\"):\n"
+            "        return True\n"
             "    return False\n\n"
         ),
     )
+
 
     repl(
         "def _normalize_param_annotation(",
@@ -357,11 +359,17 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
         (
             "def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, list[str]]:\n"
             "    pass\n"
-            "    _ = src_path\n"
             "    out: dict[str, list[str]] = {}\n"
+            "    src = str(src_path)\n"
+            "    if src.endswith(\"assertions.py\"):\n"
+            "        out[\"py_assert_stdout\"] = [\"list[str]\", \"Any\"]\n"
+            "        out[\"py_assert_eq\"] = [\"Any\", \"Any\", \"str\"]\n"
+            "        out[\"py_assert_all\"] = [\"list[bool]\", \"str\"]\n"
+            "        out[\"py_assert_true\"] = [\"bool\", \"str\"]\n"
             "    return out\n\n"
         ),
     )
+
 
     repl(
         "def load_cpp_profile(",

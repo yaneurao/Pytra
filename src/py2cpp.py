@@ -764,9 +764,50 @@ class CppEmitter(CodeEmitter):
                     self.import_symbols[local_name] = sym_ent
                     self.import_symbol_modules.add(module_id)
                 i += 1
+            if len(self.import_symbols) == 0:
+                legacy_syms = self.any_to_dict_or_empty(meta.get("import_symbols"))
+                for local_name, sym_obj in legacy_syms.items():
+                    if not isinstance(local_name, str):
+                        continue
+                    sym = self.any_to_dict_or_empty(sym_obj)
+                    module_id = self.any_to_str(sym.get("module"))
+                    symbol_name = self.any_to_str(sym.get("name"))
+                    if module_id != "" and symbol_name != "":
+                        sym_ent2: dict[str, str] = {}
+                        sym_ent2["module"] = module_id
+                        sym_ent2["name"] = symbol_name
+                        self.import_symbols[local_name] = sym_ent2
+                        self.import_symbol_modules.add(module_id)
+            if len(self.import_modules) == 0:
+                legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
+                for local_name, module_id_obj in legacy_mods.items():
+                    if not isinstance(local_name, str):
+                        continue
+                    module_id = self.any_to_str(module_id_obj)
+                    if module_id != "":
+                        self.import_modules[local_name] = module_id
             return
-        # 互換メタ（import_modules/import_symbols）は使わず、
-        # canonical な import_bindings / qualified_symbol_refs のみを解釈する。
+        # canonical メタが空の場合は legacy メタへフォールバックする。
+        legacy_syms = self.any_to_dict_or_empty(meta.get("import_symbols"))
+        for local_name, sym_obj in legacy_syms.items():
+            if not isinstance(local_name, str):
+                continue
+            sym = self.any_to_dict_or_empty(sym_obj)
+            module_id = self.any_to_str(sym.get("module"))
+            symbol_name = self.any_to_str(sym.get("name"))
+            if module_id != "" and symbol_name != "":
+                sym_ent3: dict[str, str] = {}
+                sym_ent3["module"] = module_id
+                sym_ent3["name"] = symbol_name
+                self.import_symbols[local_name] = sym_ent3
+                self.import_symbol_modules.add(module_id)
+        legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
+        for local_name, module_id_obj in legacy_mods.items():
+            if not isinstance(local_name, str):
+                continue
+            module_id = self.any_to_str(module_id_obj)
+            if module_id != "":
+                self.import_modules[local_name] = module_id
         return
 
     def _opt_ge(self, level: int) -> bool:
@@ -863,6 +904,36 @@ class CppEmitter(CodeEmitter):
         """from-import で束縛された識別子を返す（無ければ空 dict）。"""
         if name in self.import_symbols:
             return self.import_symbols[name]
+        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
+        i = 0
+        while i < len(refs):
+            ref = refs[i]
+            local_name = self.any_to_str(ref.get("local_name"))
+            if local_name == name:
+                module_id = self.any_to_str(ref.get("module_id"))
+                symbol = self.any_to_str(ref.get("symbol"))
+                if module_id != "" and symbol != "":
+                    out_ref: dict[str, str] = {}
+                    out_ref["module"] = module_id
+                    out_ref["name"] = symbol
+                    return out_ref
+            i += 1
+        binds = self.any_to_dict_list(meta.get("import_bindings"))
+        i = 0
+        while i < len(binds):
+            ent = binds[i]
+            if self.any_to_str(ent.get("binding_kind")) == "symbol":
+                local_name = self.any_to_str(ent.get("local_name"))
+                if local_name == name:
+                    module_id = self.any_to_str(ent.get("module_id"))
+                    export_name = self.any_to_str(ent.get("export_name"))
+                    if module_id != "" and export_name != "":
+                        out_bind: dict[str, str] = {}
+                        out_bind["module"] = module_id
+                        out_bind["name"] = export_name
+                        return out_bind
+            i += 1
         out: dict[str, str] = {}
         return out
 
@@ -1620,7 +1691,12 @@ class CppEmitter(CodeEmitter):
             return
         if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
             self.declare_in_current_scope(target)
-            self.declared_var_types[target] = ann_t_str if ann_t_str != "" else decl_hint
+            picked_decl_t = ann_t_str if ann_t_str != "" else decl_hint
+            if picked_decl_t == "":
+                picked_decl_t = val_t
+            if picked_decl_t == "":
+                picked_decl_t = self.get_expr_type(stmt.get("target"))
+            self.declared_var_types[target] = self.normalize_type_name(picked_decl_t)
         if declare and not already_declared:
             self.emit(f"{t} {target} = {rendered_val};")
         else:
@@ -1765,7 +1841,16 @@ class CppEmitter(CodeEmitter):
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
         kind = self.any_to_str(stmt.get("kind"))
         if kind == "Import":
-            for ent in self._dict_stmt_list(stmt.get("names")):
+            ents = self._dict_stmt_list(stmt.get("names"))
+            if len(ents) == 0:
+                raw_names = self.any_to_list(stmt.get("names"))
+                i = 0
+                while i < len(raw_names):
+                    ent = self.any_to_dict_or_empty(raw_names[i])
+                    if len(ent) > 0:
+                        ents.append(ent)
+                    i += 1
+            for ent in ents:
                 name = self.any_to_str(ent.get("name"))
                 asname = self.any_to_str(ent.get("asname"))
                 if name == "":
@@ -1779,7 +1864,16 @@ class CppEmitter(CodeEmitter):
             return
         if kind == "ImportFrom":
             mod = self.any_to_str(stmt.get("module"))
-            for ent in self._dict_stmt_list(stmt.get("names")):
+            ents = self._dict_stmt_list(stmt.get("names"))
+            if len(ents) == 0:
+                raw_names = self.any_to_list(stmt.get("names"))
+                i = 0
+                while i < len(raw_names):
+                    ent = self.any_to_dict_or_empty(raw_names[i])
+                    if len(ent) > 0:
+                        ents.append(ent)
+                    i += 1
+            for ent in ents:
                 name = self.any_to_str(ent.get("name"))
                 asname = self.any_to_str(ent.get("asname"))
                 if mod == "" or name == "":
@@ -2757,6 +2851,12 @@ class CppEmitter(CodeEmitter):
     ) -> str | None:
         """Call の Name/Attribute 分岐を処理する。"""
         fn_kind = self.any_to_str(fn.get("kind"))
+        if fn_kind == "":
+            fn_kind_obj = fn.get("kind")
+            if fn_kind_obj is not None:
+                fn_kind_txt = str(fn_kind_obj)
+                if fn_kind_txt not in {"", "None", "{}", "[]"}:
+                    fn_kind = fn_kind_txt
         if fn_kind == "Name":
             raw = self.any_to_str(fn.get("id"))
             imported_module = ""
@@ -2787,6 +2887,20 @@ class CppEmitter(CodeEmitter):
                     if ns != "":
                         call_args: list[str] = self._coerce_args_for_module_function(imported_module, raw, args, arg_nodes)
                         return f"{ns}::{raw}({_join_str_list(', ', call_args)})"
+            if raw.startswith("py_assert_"):
+                call_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    a = args[i]
+                    if raw == "py_assert_stdout":
+                        if i == 1 and not a.startswith("make_object("):
+                            a = f"make_object({a})"
+                    elif raw == "py_assert_eq":
+                        if i < 2 and not a.startswith("make_object("):
+                            a = f"make_object({a})"
+                    call_args.append(a)
+                    i += 1
+                return f"pytra::utils::assertions::{raw}({_join_str_list(', ', call_args)})"
             if raw == "range":
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
             if isinstance(raw, str) and raw in self.ref_classes:
@@ -2986,15 +3100,26 @@ class CppEmitter(CodeEmitter):
         self, owner_t: str, owner_expr: str, attr: str, args: list[str]
     ) -> str | None:
         """obj.method(...) 呼び出しのうち、型依存の特殊ケースを処理する。"""
+        owner_types: list[str] = [owner_t]
+        if self._contains_text(owner_t, "|"):
+            owner_types = self.split_union(owner_t)
         if owner_t == "unknown" and attr == "clear":
             return f"{owner_expr}.clear()"
         if attr == "append":
             a0 = args[0] if len(args) >= 1 else "/* missing */"
-            if owner_t == "bytearray":
+            if "bytearray" in owner_types:
                 a0 = f"static_cast<uint8>(py_to_int64({a0}))"
                 return f"{owner_expr}.append({a0})"
-            if owner_t.startswith("list[") and owner_t.endswith("]"):
-                inner_t: str = owner_t[5:-1].strip()
+            list_owner_t = ""
+            i = 0
+            while i < len(owner_types):
+                t = owner_types[i]
+                if t.startswith("list[") and t.endswith("]"):
+                    list_owner_t = t
+                    break
+                i += 1
+            if list_owner_t != "":
+                inner_t: str = list_owner_t[5:-1].strip()
                 if inner_t == "uint8":
                     a0 = f"static_cast<uint8>(py_to_int64({a0}))"
                 elif inner_t != "" and not self.is_any_like_type(inner_t):
@@ -3013,8 +3138,21 @@ class CppEmitter(CodeEmitter):
         owner_obj: object = fn.get("value")
         owner = self.any_to_dict_or_empty(owner_obj)
         owner_t = self.get_expr_type(owner_obj)
+        owner_kind = self.any_to_str(owner.get("kind"))
+        if owner_kind == "":
+            owner_kind_obj = owner.get("kind")
+            if owner_kind_obj is not None:
+                owner_kind_txt = str(owner_kind_obj)
+                if owner_kind_txt not in {"", "None", "{}", "[]"}:
+                    owner_kind = owner_kind_txt
+        if owner_kind == "Name":
+            owner_name = self.any_to_str(owner.get("id"))
+            if owner_name in self.declared_var_types:
+                declared_owner_t = self.declared_var_types[owner_name]
+                if declared_owner_t not in {"", "unknown"}:
+                    owner_t = declared_owner_t
         owner_expr = self.render_expr(owner_obj)
-        if owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
             owner_expr = f"({owner_expr})"
         owner_mod = self._resolve_imported_module_name(owner_expr)
         if owner_mod == "":
@@ -3085,6 +3223,35 @@ class CppEmitter(CodeEmitter):
 
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
         """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
+        if fn_name.startswith("py_assert_"):
+            call_args: list[str] = []
+            i = 0
+            while i < len(args):
+                a = args[i]
+                if fn_name == "py_assert_stdout":
+                    if i == 1 and not a.startswith("make_object("):
+                        a = f"make_object({a})"
+                elif fn_name == "py_assert_eq":
+                    if i < 2 and not a.startswith("make_object("):
+                        a = f"make_object({a})"
+                call_args.append(a)
+                i += 1
+            return f"pytra::utils::assertions::{fn_name}({_join_str_list(', ', call_args)})"
+        if fn_name.endswith(".append") and len(args) == 1:
+            owner_expr = fn_name[: len(fn_name) - 7]
+            a0 = args[0]
+            owner_t = ""
+            if owner_expr in self.declared_var_types:
+                owner_t = self.declared_var_types[owner_expr]
+            if owner_t == "bytearray":
+                a0 = f"static_cast<uint8>(py_to_int64({a0}))"
+            elif owner_t.startswith("list[") and owner_t.endswith("]"):
+                inner_t = owner_t[5:-1].strip()
+                if inner_t == "uint8":
+                    a0 = f"static_cast<uint8>(py_to_int64({a0}))"
+                elif inner_t != "" and not self.is_any_like_type(inner_t):
+                    a0 = f"{self._cpp_type_text(inner_t)}({a0})"
+            return f"{owner_expr}.append({a0})"
         if fn_name == "print":
             return f"py_print({_join_str_list(', ', args)})"
         return f"{fn_name}({_join_str_list(', ', args)})"
@@ -3291,6 +3458,12 @@ class CppEmitter(CodeEmitter):
         if len(expr_d) == 0:
             return "/* none */"
         kind = self.any_to_str(expr_d.get("kind"))
+        if kind == "":
+            raw_kind_obj = expr_d.get("kind")
+            if raw_kind_obj is not None:
+                raw_kind_txt = str(raw_kind_obj)
+                if raw_kind_txt not in {"", "None", "{}", "[]"}:
+                    kind = raw_kind_txt
         hook_kind = self.hook_on_render_expr_kind(kind, expr_d)
         if isinstance(hook_kind, str) and hook_kind != "":
             return hook_kind
@@ -3340,6 +3513,12 @@ class CppEmitter(CodeEmitter):
             base = self.render_expr(expr_d.get("value"))
             base_node = self.any_to_dict_or_empty(expr_d.get("value"))
             base_kind = self.any_dict_get_str(base_node, "kind", "")
+            if base_kind == "":
+                base_kind_obj = base_node.get("kind")
+                if base_kind_obj is not None:
+                    base_kind_txt = str(base_kind_obj)
+                    if base_kind_txt not in {"", "None", "{}", "[]"}:
+                        base_kind = base_kind_txt
             if base_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 base = f"({base})"
             attr = self.any_to_str(expr_d.get("attr"))
@@ -3399,7 +3578,14 @@ class CppEmitter(CodeEmitter):
                 if isinstance(k, str):
                     kw[k] = self.any_to_str(v)
             first_arg: object = call_parts.get("first_arg")
-            if self.any_to_str(fn.get("kind")) == "Attribute":
+            fn_kind_for_call = self.any_to_str(fn.get("kind"))
+            if fn_kind_for_call == "":
+                fn_kind_obj = fn.get("kind")
+                if fn_kind_obj is not None:
+                    fn_kind_txt = str(fn_kind_obj)
+                    if fn_kind_txt not in {"", "None", "{}", "[]"}:
+                        fn_kind_for_call = fn_kind_txt
+            if fn_kind_for_call == "Attribute":
                 owner_node: object = fn.get("value")
                 owner_t = self.get_expr_type(owner_node)
                 if self.is_forbidden_object_receiver_type(owner_t):
@@ -4350,25 +4536,24 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
         binds = binds_obj
     i = 0
     while i < len(binds):
-        item = binds[i]
-        if isinstance(item, dict):
-            module_id_obj = item.get("module_id")
-            export_name_obj = item.get("export_name")
-            local_name_obj = item.get("local_name")
-            binding_kind_obj = item.get("binding_kind")
+        item_obj = binds[i]
+        item = item_obj if isinstance(item_obj, dict) else {}
+        if len(item) > 0:
+            module_id_obj: object = item.get("module_id")
+            export_name_obj: object = item.get("export_name")
+            local_name_obj: object = item.get("local_name")
+            binding_kind_obj: object = item.get("binding_kind")
             module_id = module_id_obj if isinstance(module_id_obj, str) else ""
             export_name = export_name_obj if isinstance(export_name_obj, str) else ""
             local_name = local_name_obj if isinstance(local_name_obj, str) else ""
             binding_kind = binding_kind_obj if isinstance(binding_kind_obj, str) else ""
             if module_id != "" and local_name != "" and binding_kind in {"module", "symbol"}:
-                out.append(
-                    {
-                        "module_id": module_id,
-                        "export_name": export_name,
-                        "local_name": local_name,
-                        "binding_kind": binding_kind,
-                    }
-                )
+                ent: dict[str, str] = {}
+                ent["module_id"] = module_id
+                ent["export_name"] = export_name
+                ent["local_name"] = local_name
+                ent["binding_kind"] = binding_kind
+                out.append(ent)
         i += 1
     return out
 
@@ -4386,16 +4571,21 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
         refs = refs_obj
     i = 0
     while i < len(refs):
-        item = refs[i]
-        if isinstance(item, dict):
-            module_id_obj = item.get("module_id")
-            symbol_obj = item.get("symbol")
-            local_name_obj = item.get("local_name")
+        item_obj = refs[i]
+        item = item_obj if isinstance(item_obj, dict) else {}
+        if len(item) > 0:
+            module_id_obj: object = item.get("module_id")
+            symbol_obj: object = item.get("symbol")
+            local_name_obj: object = item.get("local_name")
             module_id = module_id_obj if isinstance(module_id_obj, str) else ""
             symbol = symbol_obj if isinstance(symbol_obj, str) else ""
             local_name = local_name_obj if isinstance(local_name_obj, str) else ""
             if module_id != "" and symbol != "" and local_name != "":
-                out.append({"module_id": module_id, "symbol": symbol, "local_name": local_name})
+                ent: dict[str, str] = {}
+                ent["module_id"] = module_id
+                ent["symbol"] = symbol
+                ent["local_name"] = local_name
+                out.append(ent)
         i += 1
     return out
 
