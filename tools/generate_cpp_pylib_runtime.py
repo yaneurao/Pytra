@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import inspect
 import os
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any as TypingAny
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -384,6 +386,43 @@ def _python_value_to_cpp_literal(v: object) -> str:
     return ""
 
 
+def _is_any_annotation(ann: object) -> bool:
+    """型注釈が Any かどうかを判定する。"""
+    if ann is TypingAny:
+        return True
+    txt = str(ann).replace(" ", "")
+    if txt in {"Any", "typing.Any", "pytra.std.typing.Any", "pytra.runtime.std.typing.Any"}:
+        return True
+    return False
+
+
+def _resolve_any_wrapper_targets_from_source(source_rel: str) -> set[tuple[str, int]]:
+    """Any 型注釈を持つ関数を (関数名, 引数数) で返す。"""
+    mod = _load_module_from_source(source_rel)
+    out: set[tuple[str, int]] = set()
+    if mod is None:
+        return out
+    for name in dir(mod):
+        obj = getattr(mod, name)
+        if not inspect.isfunction(obj):
+            continue
+        if getattr(obj, "__module__", "") != getattr(mod, "__name__", ""):
+            continue
+        try:
+            sig = inspect.signature(obj)
+        except (TypeError, ValueError):
+            continue
+        params = list(sig.parameters.values())
+        has_any = False
+        for p in params:
+            if _is_any_annotation(p.annotation):
+                has_any = True
+                break
+        if has_any:
+            out.add((name, len(params)))
+    return out
+
+
 def _resolve_constant_exprs_from_source(source_rel: str, consts: list[tuple[str, str]]) -> list[tuple[str, str]]:
     """抽出定数に対し、Python モジュール値が得られる場合はリテラルで上書きする。"""
     mod = _load_module_from_source(source_rel)
@@ -411,6 +450,7 @@ def _std_auto_module_header_text(
     module_name: str,
     funcs: list[tuple[str, list[str]]],
     consts: list[tuple[str, str]],
+    any_wrapper_targets: set[tuple[str, int]],
 ) -> str:
     guard = _header_guard_from_target(target_h_rel)
     lines: list[str] = []
@@ -430,9 +470,12 @@ def _std_auto_module_header_text(
         ds = ", ".join([f"double {p}" for p in params])
         lines.append(f"double {fn_name}({ds});")
     for fn_name, params in funcs:
-        if len(params) == 1:
+        arity = len(params)
+        if (fn_name, arity) not in any_wrapper_targets:
+            continue
+        if arity == 1:
             lines.append(f"double {fn_name}(const ::std::any& x);")
-        elif len(params) == 2:
+        elif arity == 2:
             lines.append(f"double {fn_name}(const ::std::any& x, const ::std::any& y);")
     for name, _expr in consts:
         lines.append(f"extern const double {name};")
@@ -450,8 +493,10 @@ def _std_auto_module_cpp_text(
     module_name: str,
     funcs: list[tuple[str, list[str]]],
     consts: list[tuple[str, str]],
+    any_wrapper_targets: set[tuple[str, int]],
 ) -> str:
     lines: list[str] = []
+    has_any_wrapper = len(any_wrapper_targets) > 0
     lines.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
     lines.append(f"// source: {source_rel}")
     lines.append("// generated-by: src/py2cpp.py")
@@ -463,19 +508,20 @@ def _std_auto_module_cpp_text(
     lines.append("")
     lines.append(f"namespace pytra::std::{module_name} {{")
     lines.append("")
-    lines.append("static double any_to_double(const ::std::any& v) {")
-    lines.append("    if (const auto* p = ::std::any_cast<double>(&v)) return *p;")
-    lines.append("    if (const auto* p = ::std::any_cast<float>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = ::std::any_cast<long long>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = ::std::any_cast<unsigned long long>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = ::std::any_cast<long>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = ::std::any_cast<unsigned long>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = ::std::any_cast<int>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = ::std::any_cast<unsigned>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = ::std::any_cast<bool>(&v)) return *p ? 1.0 : 0.0;")
-    lines.append("    return 0.0;")
-    lines.append("}")
-    lines.append("")
+    if has_any_wrapper:
+        lines.append("static double any_to_double(const ::std::any& v) {")
+        lines.append("    if (const auto* p = ::std::any_cast<double>(&v)) return *p;")
+        lines.append("    if (const auto* p = ::std::any_cast<float>(&v)) return static_cast<double>(*p);")
+        lines.append("    if (const auto* p = ::std::any_cast<long long>(&v)) return static_cast<double>(*p);")
+        lines.append("    if (const auto* p = ::std::any_cast<unsigned long long>(&v)) return static_cast<double>(*p);")
+        lines.append("    if (const auto* p = ::std::any_cast<long>(&v)) return static_cast<double>(*p);")
+        lines.append("    if (const auto* p = ::std::any_cast<unsigned long>(&v)) return static_cast<double>(*p);")
+        lines.append("    if (const auto* p = ::std::any_cast<int>(&v)) return static_cast<double>(*p);")
+        lines.append("    if (const auto* p = ::std::any_cast<unsigned>(&v)) return static_cast<double>(*p);")
+        lines.append("    if (const auto* p = ::std::any_cast<bool>(&v)) return *p ? 1.0 : 0.0;")
+        lines.append("    return 0.0;")
+        lines.append("}")
+        lines.append("")
     for name, expr in consts:
         lines.append(f"const double {name} = {expr};")
     lines.append("")
@@ -485,9 +531,12 @@ def _std_auto_module_cpp_text(
         lines.append(f"double {fn_name}({ds}) {{ return ::std::{fn_name}({call_args}); }}")
     lines.append("")
     for fn_name, params in funcs:
-        if len(params) == 1:
+        arity = len(params)
+        if (fn_name, arity) not in any_wrapper_targets:
+            continue
+        if arity == 1:
             lines.append(f"double {fn_name}(const ::std::any& x) {{ return {fn_name}(any_to_double(x)); }}")
-        elif len(params) == 2:
+        elif arity == 2:
             lines.append(f"double {fn_name}(const ::std::any& x, const ::std::any& y) {{ return {fn_name}(any_to_double(x), any_to_double(y)); }}")
     lines.append("")
     lines.append(f"}}  // namespace pytra::std::{module_name}")
@@ -896,8 +945,9 @@ def main() -> int:
         funcs = _extract_public_functions_from_transpiled(raw_mod)
         consts = _extract_public_constants_from_transpiled(raw_mod)
         consts = _resolve_constant_exprs_from_source(src_rel, consts)
-        h_txt = _std_auto_module_header_text(src_rel, h_rel, mod_name, funcs, consts)
-        cpp_txt = _std_auto_module_cpp_text(src_rel, h_rel, mod_name, funcs, consts)
+        any_wrapper_targets = _resolve_any_wrapper_targets_from_source(src_rel)
+        h_txt = _std_auto_module_header_text(src_rel, h_rel, mod_name, funcs, consts, any_wrapper_targets)
+        cpp_txt = _std_auto_module_cpp_text(src_rel, h_rel, mod_name, funcs, consts, any_wrapper_targets)
         auto_std_outputs.append((h_rel, h_txt))
         auto_std_outputs.append((cpp_rel, cpp_txt))
     outputs: list[tuple[str, str]] = [
