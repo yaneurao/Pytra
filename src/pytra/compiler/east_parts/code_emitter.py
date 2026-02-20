@@ -392,6 +392,32 @@ class CodeEmitter:
                         return self.normalize_type_name(txt2)
         return ""
 
+    def _node_kind_from_dict(self, node_dict: dict[str, Any]) -> str:
+        """dict 化済みノードの `kind` を文字列として安全に返す。"""
+        if len(node_dict) == 0:
+            return ""
+        kind = self.any_dict_get_str(node_dict, "kind", "")
+        if kind != "":
+            return kind
+        if "kind" not in node_dict:
+            return ""
+        raw = node_dict["kind"]
+        if raw is None:
+            return ""
+        if isinstance(raw, bool) or isinstance(raw, int) or isinstance(raw, float):
+            return ""
+        if isinstance(raw, dict) or isinstance(raw, list) or isinstance(raw, set):
+            return ""
+        txt = str(raw)
+        if txt in {"", "None", "{}", "[]"}:
+            return ""
+        return txt
+
+    def node_kind(self, node: Any) -> str:
+        """ノードの `kind` を文字列として安全に返す。"""
+        node_dict = self.any_to_dict_or_empty(node)
+        return self._node_kind_from_dict(node_dict)
+
     def is_name(self, node: Any, name: str | None = None) -> bool:
         node_dict = self.any_to_dict_or_empty(node)
         if self.any_dict_get_str(node_dict, "kind", "") != "Name":
@@ -717,33 +743,23 @@ class CodeEmitter:
     def _is_redundant_super_init_call(self, expr: Any) -> bool:
         """暗黙基底 ctor 呼び出しと等価な super().__init__ かを判定する。"""
         expr_dict = self.any_to_dict_or_empty(expr)
-        if len(expr_dict) == 0 or self.any_dict_get_str(expr_dict, "kind", "") != "Call":
+        if len(expr_dict) == 0 or self._node_kind_from_dict(expr_dict) != "Call":
             return False
-        if not self.any_dict_has(expr_dict, "func"):
-            return False
-        func = self.any_to_dict_or_empty(expr_dict["func"])
-        if self.any_dict_get_str(func, "kind", "") != "Attribute":
+        func = self.any_to_dict_or_empty(expr_dict.get("func"))
+        if self._node_kind_from_dict(func) != "Attribute":
             return False
         if self.any_dict_get_str(func, "attr", "") != "__init__":
             return False
-        if not self.any_dict_has(func, "value"):
+        owner = self.any_to_dict_or_empty(func.get("value"))
+        if self._node_kind_from_dict(owner) != "Call":
             return False
-        owner = self.any_to_dict_or_empty(func["value"])
-        if self.any_dict_get_str(owner, "kind", "") != "Call":
-            return False
-        if not self.any_dict_has(owner, "func"):
-            return False
-        owner_func = self.any_to_dict_or_empty(owner["func"])
-        if self.any_dict_get_str(owner_func, "kind", "") != "Name":
+        owner_func = self.any_to_dict_or_empty(owner.get("func"))
+        if self._node_kind_from_dict(owner_func) != "Name":
             return False
         if self.any_dict_get_str(owner_func, "id", "") != "super":
             return False
-        args: list[Any] = []
-        kws: list[Any] = []
-        if self.any_dict_has(expr_dict, "args"):
-            args = self.any_to_list(expr_dict["args"])
-        if self.any_dict_has(expr_dict, "keywords"):
-            kws = self.any_to_list(expr_dict["keywords"])
+        args = self.any_to_list(expr_dict.get("args"))
+        kws = self.any_to_list(expr_dict.get("keywords"))
         return len(args) == 0 and len(kws) == 0
 
     def render_cond(self, expr: Any) -> str:

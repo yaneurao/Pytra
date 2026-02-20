@@ -68,6 +68,13 @@ class _HookedEmitter(_DummyEmitter):
 
 
 class CodeEmitterTest(unittest.TestCase):
+    class _KindLike:
+        def __init__(self, text: str) -> None:
+            self.text = text
+
+        def __str__(self) -> str:
+            return self.text
+
     def test_emit_and_emit_stmt_list_and_next_tmp(self) -> None:
         em = _DummyEmitter({})
         em.emit("root")
@@ -147,6 +154,10 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.get_expr_type({"resolved_type": "int64"}), "int64")
         self.assertEqual(em.get_expr_type({"resolved_type": 3}), "")
         self.assertEqual(em.get_expr_type(None), "")
+        self.assertEqual(em.get_expr_type({"resolved_type": self._KindLike("list[int64]")}), "list[int64]")
+        self.assertEqual(em.node_kind({"kind": "Call"}), "Call")
+        self.assertEqual(em.node_kind({"kind": self._KindLike("Attribute")}), "Attribute")
+        self.assertEqual(em.node_kind({"kind": 1}), "")
 
     def test_scope_and_expr_helpers(self) -> None:
         em = CodeEmitter({})
@@ -242,6 +253,22 @@ class CodeEmitterTest(unittest.TestCase):
             "keywords": [],
         }
         self.assertTrue(em._is_redundant_super_init_call(super_init))
+        super_init_dynamic_kind = {
+            "kind": self._KindLike("Call"),
+            "func": {
+                "kind": self._KindLike("Attribute"),
+                "attr": "__init__",
+                "value": {
+                    "kind": self._KindLike("Call"),
+                    "func": {"kind": self._KindLike("Name"), "id": "super"},
+                    "args": [],
+                    "keywords": [],
+                },
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertTrue(em._is_redundant_super_init_call(super_init_dynamic_kind))
         not_super = {
             "kind": "Call",
             "func": {"kind": "Name", "id": "f"},

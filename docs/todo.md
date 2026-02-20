@@ -43,7 +43,7 @@
            - [x] `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` の既定ケースで `mismatches=0` を達成する。: `test/fixtures/core/add.py`, `test/fixtures/control/if_else.py`, `test/fixtures/collections/comprehension_filter.py`, `sample/py/01_mandelbrot.py` で `mismatches=0` を確認済み（2026-02-20）。
            - [x] 暫定措置: `check_selfhost_cpp_diff --mode allow-not-implemented --selfhost-driver bridge` では `[input_invalid]` を skip 扱いにした（本タスク完了時に戻す）。
            - [x] `src/pytra/std/json.py` を C++ へ安全に生成できるサブセットへ段階分割し、`runtime/cpp/pytra/std/json.cpp` の selfhost ビルドエラー（`ord/chr` / 文字列 `.begin()` / optional tuple 展開など）を解消する。: `json.cpp` 単体コンパイル通過、`json_extended` の Python/C++ 出力一致を確認済み（2026-02-20）。
-         - [ ] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。
+         - [x] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。: `./selfhost/py2cpp.out --help` と `./selfhost/py2cpp.out <EAST.json> -o out.cpp` を確認済み（2026-02-20）。
          - [x] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。: 現在は `.py` -> `not_implemented`、`.json` -> `input_invalid`、`--help` は `0` を確認済み。
        - [x] `src/py2cpp.py` の EAST 読み込み import を `pytra.compiler.east` facade から `pytra.compiler.east_parts.core` へ切り替えた（selfhost 時の動的 import 依存を削減）。
        - [x] `tools/build_selfhost.py` の現行失敗要因を段階解消する（`literal.join` 生成崩れ、`AUG_OPS/BIN_OPS` 未束縛、`parse_py2cpp_argv` 返り値の tuple 退化）。: 2026-02-20 時点で `python3 tools/build_selfhost.py` が再び green（`selfhost/py2cpp.out` 生成成功）。
@@ -115,6 +115,9 @@
 1. [ ] `CodeEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
    - [x] `any_dict_get` / `any_to_dict` / `any_to_list` / `any_to_str` の C++ 生成を確認し、`object.begin/end` 生成を消す。
    - [ ] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
+     - [x] `get_expr_type` は `resolved_type` の動的値フォールバックを追加し、selfhost 変換時の空文字化を抑制した（2026-02-20）。
+     - [x] `_is_redundant_super_init_call` は `dict` 正規化と `kind` 取得の共通化（`_node_kind_from_dict`）で `Any/object` 境界でも安定化した（2026-02-20）。
+     - [ ] `render_cond` の同等整理（`optional<dict>` 境界の削減）を継続する。
      - [ ] `render_expr` の先頭正規化で `expr_node` 再代入パターンを除去し、`object -> dict` を1回に固定する。
      - [ ] `*_dict_stmt_list` 系引数を `expr.get(..., [])` ではなく `expr.get(...)` + helper 正規化へ統一する。
    - [x] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
