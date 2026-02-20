@@ -24,11 +24,14 @@
   - [x] ブロッカー解消: `dict/set` comprehension の型不整合（`dict<int,...>` が `dict<str, object>` へ崩れる）を修正した（EAST 側 target 型束縛 + C++ 側 dict key 型キャスト）。
   - [x] 受け入れ条件: 追加 fixture の Python/C++ 一致と `tools/check_py2cpp_transpile.py` green（`checked=106 ok=106 fail=0 skipped=5`）を確認済み。
 
-- [ ] `import_pytra_runtime_png.png` 誤生成の原因を特定し、再発防止テストを追加する。
+- [x] `import_pytra_runtime_png.png` 誤生成の原因を特定し、再発防止テストを追加する。
   - [x] 原因候補を特定: `tools/runtime_parity_check.py` が repo 直下 `cwd` で fixture 実行しており、画像出力が作業ツリーへ漏れる。
   - [x] 暫定対策: `runtime_parity_check` を一時作業ディレクトリ実行へ変更し、`cwd` 由来の出力漏れを抑止。
-  - [ ] 再現条件（入力ファイル・コマンド・期待値）を `docs/spec-import.md` または `docs/todo.md` のメモに残す。
-  - [ ] 受け入れ条件: 不要 png が生成されないことを自動テスト（または検査スクリプト）で確認。
+  - [x] 再現条件（入力ファイル・コマンド・期待値）メモ:
+    - 入力: `test/fixtures/imports/import_pytra_runtime_png.py`
+    - コマンド: `python3 tools/runtime_parity_check.py import_pytra_runtime_png --targets cpp`
+    - 期待値: repo 直下に `import_pytra_runtime_png.png` が生成されない。
+  - [x] 受け入れ条件: `test/unit/test_image_runtime_parity.py::test_runtime_parity_check_does_not_leak_png_to_repo_root` を追加して確認。
 
 - [ ] トランスパイル時パススルー記法（`# Pytra::cpp` / `# Pytra::pass`）の仕様化と最小実装を行う。
   - [ ] 仕様: 適用位置、インデント維持、複数ブロック連結、既存 docstring コメント変換との優先順位を `docs/spec.md` か `docs/spec-east.md` に明記。
