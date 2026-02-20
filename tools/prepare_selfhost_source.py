@@ -384,6 +384,18 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "    return None\n\n"
         ),
     )
+
+    repl(
+        "def _run_runtime_cpp_autogen_if_needed(",
+        "\ndef _is_valid_cpp_namespace_name(",
+        (
+            "def _run_runtime_cpp_autogen_if_needed(input_path: Path) -> None:\n"
+            "    pass\n"
+            "    _ = input_path\n"
+            "    # selfhost では runtime 自動生成を行わない。\n"
+            "    return\n\n"
+        ),
+    )
     return out
 
 

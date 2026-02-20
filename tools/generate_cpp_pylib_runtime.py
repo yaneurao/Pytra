@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate C++ runtime files from src/pytra/{runtime,std}/*.py."""
+"""Generate C++ runtime files from src/pytra/runtime/**/*.py."""
 
 from __future__ import annotations
 
@@ -14,7 +14,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 PNG_SOURCE = "src/pytra/runtime/png.py"
 GIF_SOURCE = "src/pytra/runtime/gif.py"
-STD_MATH_SOURCE = "src/pytra/std/math.py"
+ASSERTIONS_SOURCE = "src/pytra/runtime/assertions.py"
+EAST_SOURCE = "src/pytra/runtime/east.py"
+STD_MATH_SOURCE = "src/pytra/runtime/std/math.py"
+STD_TIME_SOURCE = "src/pytra/runtime/std/time.py"
+STD_PATHLIB_SOURCE = "src/pytra/runtime/std/pathlib.py"
+STD_DATACLASSES_SOURCE = "src/pytra/runtime/std/dataclasses.py"
+STD_SYS_SOURCE = "src/pytra/runtime/std/sys.py"
+STD_JSON_SOURCE = "src/pytra/runtime/std/json.py"
+STD_TYPING_SOURCE = "src/pytra/runtime/std/typing.py"
 
 
 def _namespace_parts_from_source(source_rel: str) -> list[str]:
@@ -226,9 +234,65 @@ void save_gif_py(
 """
 
 
+def _runtime_assertions_header_text() -> str:
+    return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: {ASSERTIONS_SOURCE}
+// command: python3 tools/generate_cpp_pylib_runtime.py
+
+#ifndef PYTRA_RUNTIME_CPP_PYTRA_RUNTIME_ASSERTIONS_H
+#define PYTRA_RUNTIME_CPP_PYTRA_RUNTIME_ASSERTIONS_H
+
+// assertion helpers are provided by runtime/cpp/py_runtime.h
+
+#endif
+"""
+
+
+def _runtime_east_header_text() -> str:
+    return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: {EAST_SOURCE}
+// command: python3 tools/generate_cpp_pylib_runtime.py
+
+#ifndef PYTRA_RUNTIME_CPP_PYTRA_RUNTIME_EAST_H
+#define PYTRA_RUNTIME_CPP_PYTRA_RUNTIME_EAST_H
+
+// EAST parser/runtime bridge is not linked in current selfhost stage.
+
+#endif
+"""
+
+
+def _std_json_header_text() -> str:
+    return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: {STD_JSON_SOURCE}
+// command: python3 tools/generate_cpp_pylib_runtime.py
+
+#ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_JSON_H
+#define PYTRA_RUNTIME_CPP_PYTRA_STD_JSON_H
+
+// json runtime functions are provided via py_runtime helpers in current backend.
+
+#endif
+"""
+
+
+def _std_typing_header_text() -> str:
+    return f"""// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: {STD_TYPING_SOURCE}
+// command: python3 tools/generate_cpp_pylib_runtime.py
+
+#ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_TYPING_H
+#define PYTRA_RUNTIME_CPP_PYTRA_STD_TYPING_H
+
+// typing symbols are compile-time only in py2cpp output.
+
+#endif
+"""
+
+
 def _std_math_header_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/math.py
+// source: src/pytra/runtime/std/math.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_CPP_MODULE_MATH_H
@@ -275,7 +339,7 @@ namespace math = core::math;
 
 def _std_math_cpp_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/math.py
+// source: src/pytra/runtime/std/math.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include <cmath>
@@ -329,7 +393,7 @@ double pow(const std::any& x, const std::any& y) { return pow(any_to_double(x), 
 
 def _std_time_header_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/time.py
+// source: src/pytra/runtime/std/time.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_TIME_H
@@ -347,7 +411,7 @@ double perf_counter();
 
 def _std_time_cpp_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/time.py
+// source: src/pytra/runtime/std/time.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include <chrono>
@@ -368,7 +432,7 @@ double perf_counter() {
 
 def _std_dataclasses_header_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/dataclasses.py
+// source: src/pytra/runtime/std/dataclasses.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
@@ -396,7 +460,7 @@ constexpr bool is_dataclass_v = std::is_base_of_v<DataclassTag, T>;
 
 def _std_dataclasses_cpp_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/dataclasses.py
+// source: src/pytra/runtime/std/dataclasses.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include "runtime/cpp/pytra/std/dataclasses.h"
@@ -405,7 +469,7 @@ def _std_dataclasses_cpp_text() -> str:
 
 def _std_sys_header_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/sys.py
+// source: src/pytra/runtime/std/sys.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_SYS_H
@@ -445,7 +509,7 @@ using pytra::cpp_module::sys;
 
 def _std_sys_cpp_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/sys.py
+// source: src/pytra/runtime/std/sys.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include "runtime/cpp/pytra/std/sys.h"
@@ -474,7 +538,7 @@ SysModule* sys = new SysModule();
 
 def _std_pathlib_header_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/pathlib.py
+// source: src/pytra/runtime/std/pathlib.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_PATHLIB_H
@@ -633,7 +697,7 @@ inline std::string str(const Path& p) {
 
 def _std_pathlib_cpp_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/pathlib.py
+// source: src/pytra/runtime/std/pathlib.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include "runtime/cpp/pytra/std/pathlib.h"
@@ -705,10 +769,14 @@ def main() -> int:
     png_cpp = _png_wrapper_text(png_ns).replace("__PYTRA_PNG_IMPL__", _strip_runtime_include(png_impl).rstrip())
     gif_cpp = _gif_wrapper_text(gif_ns).replace("__PYTRA_GIF_IMPL__", _strip_runtime_include(gif_impl).rstrip())
     outputs: list[tuple[str, str]] = [
+        ("src/runtime/cpp/pytra/runtime/assertions.h", _runtime_assertions_header_text()),
+        ("src/runtime/cpp/pytra/runtime/east.h", _runtime_east_header_text()),
         ("src/runtime/cpp/pytra/runtime/png.h", _png_header_text(png_ns, png_alias)),
         ("src/runtime/cpp/pytra/runtime/gif.h", _gif_header_text(gif_ns, gif_alias)),
         ("src/runtime/cpp/pytra/runtime/png.cpp", png_cpp),
         ("src/runtime/cpp/pytra/runtime/gif.cpp", gif_cpp),
+        ("src/runtime/cpp/pytra/std/json.h", _std_json_header_text()),
+        ("src/runtime/cpp/pytra/std/typing.h", _std_typing_header_text()),
         ("src/runtime/cpp/pytra/std/math.h", _std_math_header_text()),
         ("src/runtime/cpp/pytra/std/math.cpp", _std_math_cpp_text()),
         ("src/runtime/cpp/pytra/std/time.h", _std_time_header_text()),

@@ -10,18 +10,18 @@
   - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
   - `profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
   - `runtime/cpp/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: 各ターゲット言語向けランタイム補助
-  - `pylib/`: Python 側の共通ライブラリ（正式）
+  - `pytra/`: Python 側の共通ライブラリ（正式）
 - `test/`: `py`（入力）と各ターゲット言語の変換結果
 - `sample/`: 実用サンプル入力と各言語変換結果
 - `docs/`: 仕様・使い方・実装状況
 
-### 1.1 `src/pylib/` 公開API（実装基準）
+### 1.1 `src/pytra/` 公開API（実装基準）
 
-`src/pylib/` は selfhost を含む共通 Python ライブラリの正本です。  
+`src/pytra/` は selfhost を含む共通 Python ライブラリの正本です。  
 `_` で始まる名前は内部実装扱いとし、以下を公開APIとして扱います。
 
 - トランスパイル対象コードでの標準モジュール直接 import は禁止します。
-- import は `pylib.*` とユーザー自作モジュール（`.py`）を許可します。
+- import は `pytra.*` とユーザー自作モジュール（`.py`）を許可します。
 
 - `pytra.runtime.assertions`
   - 関数: `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
@@ -88,8 +88,8 @@
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
 - 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/py_runtime.h` 側を利用します。
-- `json` に限らず、Python 標準ライブラリ相当機能は `src/pylib/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
-  - C++ 側で必要な処理は、`src/pylib/*.py` のトランスパイル結果を利用します。
+- `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py`（必要に応じて `src/pytra/runtime/std/*.py`）を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
+  - C++ 側で必要な処理は、これら Python 正本のトランスパイル結果を利用します。
 - class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
 - class member は `inline static` として生成します。
 - `@dataclass` はフィールド定義とコンストラクタ生成を行います。
@@ -190,18 +190,18 @@
 
 ### 3.3 画像系ランタイム（PNG/GIF）方針
 
-- `png` / `gif` は Python 側（`src/pylib/`）を正本実装とします。
+- `png` / `gif` は Python 側（`src/pytra/runtime/`）を正本実装とします。
 - 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
 - 言語別に手書きするのは、性能・I/O 都合で必要な最小範囲に限定します。
 - 言語間一致は「生成ファイルのバイト列完全一致」を主判定とします。
 - `src/pytra/runtime/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
 - 受け入れ基準:
-  - 置換作業中は、同一入力に対して `src/pylib/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
+  - 置換作業中は、同一入力に対して `src/pytra/runtime/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
   - C++ では `tools/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
 
 ### 3.4 Python 補助ライブラリ命名
 
-- 旧 `pylib.runtime` は `pytra.runtime.assertions` へ改名済みです。
+- 旧 `pylib.runtime` 互換名は廃止済みで、`pytra.runtime.assertions` を正とします。
 - テスト補助関数（`py_assert_*`）は `from pytra.runtime.assertions import ...` で利用します。
 
 ### 3.5 画像ランタイム最適化ポリシー（py2cpp）
@@ -255,9 +255,9 @@
 
 ## 5. EASTベース C++ 経路
 
-- `src/pylib/east.py`: Python -> EAST JSON（正本）
-- `src/pylib/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
-- `src/pylib/east_parts/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
+- `src/pytra/compiler/east.py`: Python -> EAST JSON（正本）
+- `src/pytra/compiler/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
+- `src/pytra/compiler/east_parts/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/py2cpp.py`: EAST JSON -> C++
 - `src/runtime/cpp/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
@@ -270,7 +270,7 @@
 
 ### 5.1 CodeEmitter テスト方針
 
-- `src/pylib/east_parts/code_emitter.py` の回帰は `test/unit/test_code_emitter.py` で担保します。
+- `src/pytra/compiler/east_parts/code_emitter.py` の回帰は `test/unit/test_code_emitter.py` で担保します。
 - 主対象:
   - 出力バッファ操作（`emit`, `emit_stmt_list`, `next_tmp`）
   - 動的入力安全化（`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`）

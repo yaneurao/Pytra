@@ -20,7 +20,7 @@ Windows では次の読み替えを行ってください。
 ## 最初に確認する制約
 
 - Python の標準ライブラリ（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, `enum` など）を直接 `import` してはいけません。
-- `import` できるのは `src/pylib/` にあるモジュールと、ユーザーが作成した自作 `.py` モジュールです。
+- `import` できるのは `src/pytra/` 配下にあるモジュール（`pytra.std.*`, `pytra.runtime.*`, `pytra.compiler.*`）と、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
 - サポート済みモジュール一覧と API は [`pylib-modules.md`](pylib-modules.md) を参照してください。
 - 変換オプションの方針と候補は [`spec-options.md`](spec-options.md) を参照してください。
@@ -215,7 +215,7 @@ java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
 
 ```bash
 # 1) Python を EAST(JSON) に変換
-python src/pylib/east.py sample/py/01_mandelbrot.py -o test/transpile/east/01_mandelbrot.json --pretty
+python src/pytra/compiler/east.py sample/py/01_mandelbrot.py -o test/transpile/east/01_mandelbrot.json --pretty
 
 # 2) EAST(JSON) から C++ へ変換（.py を直接渡しても可）
 python src/py2cpp.py test/transpile/east/01_mandelbrot.json -o test/transpile/cpp/01_mandelbrot.cpp
@@ -228,7 +228,7 @@ g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cp
 ```
 
 補足:
-- EAST 変換器は `src/pylib/east.py` を使用します。
+- EAST 変換器は `src/pytra/compiler/east.py` を使用します。
 - EASTベース C++ 生成器は `src/py2cpp.py` を使用します。
 
 </details>
@@ -409,13 +409,13 @@ name_by_id: dict[int, str] = {1: "alice"}
 
 ### 3. import とランタイムモジュール
 
-- Python 側で `import` できるモジュールは `src/pylib/` モジュールと、ユーザー自作 `.py` モジュールです。
-- `pylib` モジュールごとに、ターゲット言語側の対応ランタイムが必要です。
-- その対応ランタイムは、原則として `src/pylib/*.py` を各言語向けトランスパイラで変換して生成します（手書きは最小限）。
+- Python 側で `import` できるモジュールは `src/pytra/` 配下のモジュール（`pytra.std.*`, `pytra.runtime.*`, `pytra.compiler.*`）と、ユーザー自作 `.py` モジュールです。
+- `pytra` モジュールごとに、ターゲット言語側の対応ランタイムが必要です。
+- その対応ランタイムは、原則として `src/pytra/runtime/*.py` / `src/pytra/runtime/std/*.py` を各言語向けトランスパイラで変換して生成します（手書きは最小限）。
 
 ```python
 from pytra.runtime import png
 from pytra.std.pathlib import Path
 ```
 
-上記を変換する場合、対象言語側でも `pytra.runtime.png` / `pytra.std.pathlib` 相当の実装が必要です（原則として `src/pylib/*.py` からトランスパイラで生成します）。
+上記を変換する場合、対象言語側でも `pytra.runtime.png` / `pytra.std.pathlib` 相当の実装が必要です（原則として `src/pytra/runtime/*.py` と `src/pytra/runtime/std/*.py` からトランスパイラで生成します）。

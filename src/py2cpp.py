@@ -4076,14 +4076,11 @@ def _dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str
 
 
 def _should_autogen_runtime_cpp(input_path: Path) -> bool:
-    """`src/pytra/{runtime,std}/*.py` の変換時に runtime/cpp 再生成を走らせるか判定する。"""
-    try:
-        p = str(input_path)
-    except Exception:
-        return False
+    """`src/pytra/runtime/*.py` 系の変換時に runtime/cpp 再生成を走らせるか判定する。"""
+    p = str(input_path)
     if not p.endswith(".py"):
         return False
-    return p.startswith("src/pytra/runtime/") or p.startswith("src/pytra/std/")
+    return p.startswith("src/pytra/runtime/")
 
 
 def _run_runtime_cpp_autogen_if_needed(input_path: Path) -> None:

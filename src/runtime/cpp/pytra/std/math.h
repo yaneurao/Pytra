@@ -1,5 +1,5 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/math.py
+// source: src/pytra/runtime/std/math.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_CPP_MODULE_MATH_H

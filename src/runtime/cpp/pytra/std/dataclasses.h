@@ -1,5 +1,5 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/dataclasses.py
+// source: src/pytra/runtime/std/dataclasses.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H

@@ -41,7 +41,7 @@
 
 - `*-impl.cpp` に置く関数は C++ 依存の最小 primitive だけに限定する。
   - 例: filesystem, regex, clock, process, OS API
-- それ以外のロジック（整形・変換・検証）は Python 側 (`src/pylib/*.py`) に残す。
+- それ以外のロジック（整形・変換・検証）は Python 側 (`src/pytra/runtime/*.py`) に残す。
 - これにより、言語間差異を `*-impl` 層へ閉じ込める。
 
 ### 5. 生成テンプレートの最小ルール
