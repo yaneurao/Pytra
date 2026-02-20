@@ -14,12 +14,12 @@
 
 ## 2026-02-20 追加: spec-import 反映（最優先）
 
-1. [ ] import 構文の第一段階サポート範囲を実装と一致させる。
-   - [ ] 対応: `import M`, `import M as A`, `from M import S`, `from M import S as A`。
-   - [ ] 未対応: `from M import *`, 相対 import（`from .m import x`）を `input_invalid`（`kind=unsupported_import_form`）で統一する。
-2. [ ] `ImportBinding` を import 情報の正本として導入・統一する。
-   - [ ] `module_id`, `export_name`, `local_name`, `binding_kind`, `source_file`, `source_line` を保持する。
-   - [ ] `meta.import_modules` / `meta.import_symbols` は `ImportBinding` から導出するだけにする。
+1. [x] import 構文の第一段階サポート範囲を実装と一致させる。
+   - [x] 対応: `import M`, `import M as A`, `from M import S`, `from M import S as A`。
+   - [x] 未対応: `from M import *`, 相対 import（`from .m import x`）を `input_invalid`（`kind=unsupported_import_form`）で統一する。
+2. [x] `ImportBinding` を import 情報の正本として導入・統一する。
+   - [x] `module_id`, `export_name`, `local_name`, `binding_kind`, `source_file`, `source_line` を保持する。
+   - [x] `meta.import_modules` / `meta.import_symbols` は `ImportBinding` から導出するだけにする。
 3. [ ] モジュール解決を `resolve_module_name(raw_name, root_dir)` に一本化する。
    - [ ] `pytra.*` を予約名前空間として最優先解決する。
    - [ ] `pytra.py` / `pytra/__init__.py` の衝突は `reserved_conflict` として `input_invalid` にする。
@@ -36,12 +36,12 @@
 7. [ ] single-file / multi-file で同一 `module_namespace_map` を使用し、解決結果差分を禁止する。
    - [ ] forward 宣言/呼び出し解決ともに同じ map を使う。
    - [ ] `--dump-deps` と通常変換で依存解決結果が一致することをテストで保証する。
-8. [ ] import エラーの詳細フォーマットを統一する。
-   - [ ] `input_invalid` の detail に `kind`, `file`, `import` を必ず含める。
-   - [ ] `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unsupported_import_form`。
+8. [x] import エラーの詳細フォーマットを統一する。
+   - [x] `input_invalid` の detail に `kind`, `file`, `import` を必ず含める。
+   - [x] `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unsupported_import_form`。
 9. [ ] import 最小受け入れテストマトリクスを追加する。
-   - [ ] 正常: 4形式（`import` / `import as` / `from import` / `from import as`）。
-   - [ ] 異常: `import *`, 相対 import, モジュール未存在, シンボル未存在, 同名 alias 衝突。
+   - [x] 正常: 4形式（`import` / `import as` / `from import` / `from import as`）。
+   - [x] 異常: `import *`, 相対 import, モジュール未存在, シンボル未存在, 同名 alias 衝突。
    - [ ] single/multi と `--dump-deps` で同じ解決結果になることを自動検証する。
 10. [ ] 言語非依存 import IR の土台を追加する（後続 backend 共通化）。
    - [ ] `QualifiedSymbolRef(module_id, symbol, local_name)` を定義し、backend 手前で `Name(alias)` を正規化する。

@@ -628,10 +628,43 @@ class CppEmitter(CodeEmitter):
                 return "pytra::utils::" + tail
         return ""
 
-    def _collect_import_cpp_includes(self, body: list[dict[str, Any]]) -> list[str]:
+    def _collect_import_cpp_includes(self, body: list[dict[str, Any]], meta: dict[str, Any] | None = None) -> list[str]:
         """EAST body から必要な C++ include を収集する。"""
         includes: list[str] = []
         seen: set[str] = set()
+        if isinstance(meta, dict):
+            bindings_obj = meta.get("import_bindings")
+            bindings = bindings_obj if isinstance(bindings_obj, list) else []
+            if len(bindings) > 0:
+                i = 0
+                while i < len(bindings):
+                    item = bindings[i]
+                    if isinstance(item, dict):
+                        module_id_obj = item.get("module_id")
+                        export_name_obj = item.get("export_name")
+                        binding_kind_obj = item.get("binding_kind")
+                        module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+                        export_name = export_name_obj if isinstance(export_name_obj, str) else ""
+                        binding_kind = binding_kind_obj if isinstance(binding_kind_obj, str) else ""
+                        if module_id != "":
+                            mod_name = self._normalize_runtime_module_name(module_id)
+                            inc = self._module_name_to_cpp_include(mod_name)
+                            if inc != "" and inc not in seen:
+                                seen.add(inc)
+                                includes.append(inc)
+                            if binding_kind == "symbol" and export_name != "":
+                                if mod_name == "pytra.std":
+                                    sym_inc = self._module_name_to_cpp_include("pytra.std." + export_name)
+                                    if sym_inc != "" and sym_inc not in seen:
+                                        seen.add(sym_inc)
+                                        includes.append(sym_inc)
+                                elif mod_name == "pytra.utils":
+                                    sym_inc = self._module_name_to_cpp_include("pytra.utils." + export_name)
+                                    if sym_inc != "" and sym_inc not in seen:
+                                        seen.add(sym_inc)
+                                        includes.append(sym_inc)
+                    i += 1
+                return includes
         for stmt in body:
             kind = self.any_to_str(stmt.get("kind"))
             if kind == "Import":
@@ -664,9 +697,62 @@ class CppEmitter(CodeEmitter):
                             continue
                         sym_inc = self._module_name_to_cpp_include("pytra.utils." + sym)
                         if sym_inc != "" and sym_inc not in seen:
-                            seen.add(sym_inc)
-                            includes.append(sym_inc)
+                                seen.add(sym_inc)
+                                includes.append(sym_inc)
         return includes
+
+    def _seed_import_maps_from_meta(self) -> None:
+        """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
+        meta_obj = self.doc.get("meta")
+        meta = meta_obj if isinstance(meta_obj, dict) else {}
+        bindings_obj = meta.get("import_bindings")
+        bindings = bindings_obj if isinstance(bindings_obj, list) else []
+        if len(bindings) > 0:
+            i = 0
+            while i < len(bindings):
+                item = bindings[i]
+                if isinstance(item, dict):
+                    module_id_obj = item.get("module_id")
+                    export_name_obj = item.get("export_name")
+                    local_name_obj = item.get("local_name")
+                    binding_kind_obj = item.get("binding_kind")
+                    module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+                    export_name = export_name_obj if isinstance(export_name_obj, str) else ""
+                    local_name = local_name_obj if isinstance(local_name_obj, str) else ""
+                    binding_kind = binding_kind_obj if isinstance(binding_kind_obj, str) else ""
+                    if module_id == "" or local_name == "":
+                        i += 1
+                        continue
+                    if binding_kind == "module":
+                        self.import_modules[local_name] = module_id
+                    elif binding_kind == "symbol" and export_name != "":
+                        sym_ent: dict[str, str] = {}
+                        sym_ent["module"] = module_id
+                        sym_ent["name"] = export_name
+                        self.import_symbols[local_name] = sym_ent
+                i += 1
+            return
+        import_modules_obj = meta.get("import_modules")
+        import_symbols_obj = meta.get("import_symbols")
+        import_modules = import_modules_obj if isinstance(import_modules_obj, dict) else {}
+        import_symbols = import_symbols_obj if isinstance(import_symbols_obj, dict) else {}
+        for alias_obj, mod_obj in import_modules.items():
+            if isinstance(alias_obj, str) and isinstance(mod_obj, str) and alias_obj != "" and mod_obj != "":
+                self.import_modules[alias_obj] = mod_obj
+        for alias_obj, sym_obj in import_symbols.items():
+            if not isinstance(alias_obj, str) or alias_obj == "":
+                continue
+            sym = sym_obj if isinstance(sym_obj, dict) else {}
+            module_obj = sym.get("module")
+            name_obj = sym.get("name")
+            module = module_obj if isinstance(module_obj, str) else ""
+            name = name_obj if isinstance(name_obj, str) else ""
+            if module == "" or name == "":
+                continue
+            sym_ent: dict[str, str] = {}
+            sym_ent["module"] = module
+            sym_ent["name"] = name
+            self.import_symbols[alias_obj] = sym_ent
 
     def _opt_ge(self, level: int) -> bool:
         """最適化レベルが指定値以上かを返す。"""
@@ -897,6 +983,9 @@ class CppEmitter(CodeEmitter):
 
     def transpile(self) -> str:
         """EAST ドキュメント全体を C++ ソース文字列へ変換する。"""
+        self._seed_import_maps_from_meta()
+        meta_obj = self.doc.get("meta")
+        meta = meta_obj if isinstance(meta_obj, dict) else {}
         body: list[dict[str, Any]] = []
         raw_body = self.any_dict_get_list(self.doc, "body")
         if isinstance(raw_body, list):
@@ -954,7 +1043,7 @@ class CppEmitter(CodeEmitter):
         if len(header_text) > 0 and header_text[-1] == NEWLINE_CHAR:
             header_text = header_text[:-1]
         self.emit(header_text)
-        extra_includes = self._collect_import_cpp_includes(body)
+        extra_includes = self._collect_import_cpp_includes(body, meta)
         for inc in extra_includes:
             self.emit(f"#include \"{inc}\"")
         self.emit("")
@@ -3527,6 +3616,40 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
                     ) from ex
             raise ex
         msg = str(ex)
+        msg_attr = getattr(ex, "message", None)
+        if msg == "" and isinstance(msg_attr, str):
+            msg = msg_attr
+        source_line = ""
+        source_span_obj = getattr(ex, "source_span", None)
+        if isinstance(source_span_obj, dict):
+            line_obj = source_span_obj.get("lineno")
+            line_no = line_obj if isinstance(line_obj, int) else 0
+            if line_no > 0:
+                src_lines = source_text.splitlines()
+                idx = line_no - 1
+                if idx >= 0 and idx < len(src_lines):
+                    source_line = src_lines[idx].strip()
+        if "from-import wildcard is not supported" in msg:
+            import_txt = source_line if source_line != "" else "from ... import *"
+            raise _make_user_error(
+                "input_invalid",
+                "import 構文が未対応です。",
+                [f"kind=unsupported_import_form file={input_path} import={import_txt}"],
+            ) from ex
+        if "relative import is not supported" in msg:
+            import_txt = source_line if source_line != "" else "from .module import symbol"
+            raise _make_user_error(
+                "input_invalid",
+                "import 構文が未対応です。",
+                [f"kind=unsupported_import_form file={input_path} import={import_txt}"],
+            ) from ex
+        if "duplicate import binding:" in msg:
+            import_txt = source_line if source_line != "" else msg
+            raise _make_user_error(
+                "input_invalid",
+                "import 束縛が重複しています。",
+                [f"kind=duplicate_binding file={input_path} import={import_txt}"],
+            ) from ex
         category = "not_implemented"
         summary = "この構文はまだ実装されていません。"
         if msg == "":
@@ -3907,8 +4030,41 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
     return "pytra::utils::" + module_tail.replace("/", "::")
 
 
+def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
+    """EAST `meta.import_bindings` を正規化して返す（無い場合は空）。"""
+    out: list[dict[str, str]] = []
+    meta_obj = east_module.get("meta")
+    meta = meta_obj if isinstance(meta_obj, dict) else {}
+    binds_obj = meta.get("import_bindings")
+    binds = binds_obj if isinstance(binds_obj, list) else []
+    i = 0
+    while i < len(binds):
+        item = binds[i]
+        if isinstance(item, dict):
+            module_id_obj = item.get("module_id")
+            export_name_obj = item.get("export_name")
+            local_name_obj = item.get("local_name")
+            binding_kind_obj = item.get("binding_kind")
+            module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+            export_name = export_name_obj if isinstance(export_name_obj, str) else ""
+            local_name = local_name_obj if isinstance(local_name_obj, str) else ""
+            binding_kind = binding_kind_obj if isinstance(binding_kind_obj, str) else ""
+            if module_id != "" and local_name != "" and binding_kind in {"module", "symbol"}:
+                out.append(
+                    {
+                        "module_id": module_id,
+                        "export_name": export_name,
+                        "local_name": local_name,
+                        "binding_kind": binding_kind,
+                    }
+                )
+        i += 1
+    return out
+
+
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
+    import_bindings = _meta_import_bindings(east_module)
     body_obj: object = east_module.get("body")
     body: list[dict[str, Any]] = []
     if isinstance(body_obj, list):
@@ -3924,48 +4080,68 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     symbols: list[str] = []
     symbol_seen: set[str] = set()
 
-    i = 0
-    while i < len(body):
-        stmt = body[i]
-        kind = stmt.get("kind")
-        if kind == "Import":
-            names_obj: object = stmt.get("names")
-            if isinstance(names_obj, list):
-                j = 0
-                while j < len(names_obj):
-                    ent = names_obj[j]
-                    if isinstance(ent, dict):
-                        mod_name_obj: object = ent.get("name")
-                        mod_name = mod_name_obj if isinstance(mod_name_obj, str) else ""
-                        if mod_name != "" and mod_name not in module_seen:
-                            module_seen.add(mod_name)
-                            modules.append(mod_name)
-                    j += 1
-        elif kind == "ImportFrom":
-            mod_obj: object = stmt.get("module")
-            mod_name = mod_obj if isinstance(mod_obj, str) else ""
+    if len(import_bindings) > 0:
+        i = 0
+        while i < len(import_bindings):
+            ent = import_bindings[i]
+            mod_name = ent["module_id"]
+            export_name = ent["export_name"]
+            local_name = ent["local_name"]
+            binding_kind = ent["binding_kind"]
             if mod_name != "" and mod_name not in module_seen:
                 module_seen.add(mod_name)
                 modules.append(mod_name)
-            names_obj = stmt.get("names")
-            if isinstance(names_obj, list):
-                j = 0
-                while j < len(names_obj):
-                    ent = names_obj[j]
-                    if isinstance(ent, dict):
-                        sym_obj: object = ent.get("name")
-                        alias_obj: object = ent.get("asname")
-                        sym_name = sym_obj if isinstance(sym_obj, str) else ""
-                        alias = alias_obj if isinstance(alias_obj, str) else ""
-                        if sym_name != "":
-                            label = mod_name + "." + sym_name
-                            if alias != "":
-                                label += " as " + alias
-                            if label not in symbol_seen:
-                                symbol_seen.add(label)
-                                symbols.append(label)
-                    j += 1
-        i += 1
+            if binding_kind == "symbol" and export_name != "":
+                label = mod_name + "." + export_name
+                if local_name != "" and local_name != export_name:
+                    label += " as " + local_name
+                if label not in symbol_seen:
+                    symbol_seen.add(label)
+                    symbols.append(label)
+            i += 1
+    else:
+        i = 0
+        while i < len(body):
+            stmt = body[i]
+            kind = stmt.get("kind")
+            if kind == "Import":
+                names_obj: object = stmt.get("names")
+                if isinstance(names_obj, list):
+                    j = 0
+                    while j < len(names_obj):
+                        ent = names_obj[j]
+                        if isinstance(ent, dict):
+                            mod_name_obj: object = ent.get("name")
+                            mod_name = mod_name_obj if isinstance(mod_name_obj, str) else ""
+                            if mod_name != "" and mod_name not in module_seen:
+                                module_seen.add(mod_name)
+                                modules.append(mod_name)
+                        j += 1
+            elif kind == "ImportFrom":
+                mod_obj: object = stmt.get("module")
+                mod_name = mod_obj if isinstance(mod_obj, str) else ""
+                if mod_name != "" and mod_name not in module_seen:
+                    module_seen.add(mod_name)
+                    modules.append(mod_name)
+                names_obj = stmt.get("names")
+                if isinstance(names_obj, list):
+                    j = 0
+                    while j < len(names_obj):
+                        ent = names_obj[j]
+                        if isinstance(ent, dict):
+                            sym_obj: object = ent.get("name")
+                            alias_obj: object = ent.get("asname")
+                            sym_name = sym_obj if isinstance(sym_obj, str) else ""
+                            alias = alias_obj if isinstance(alias_obj, str) else ""
+                            if sym_name != "":
+                                label = mod_name + "." + sym_name
+                                if alias != "":
+                                    label += " as " + alias
+                                if label not in symbol_seen:
+                                    symbol_seen.add(label)
+                                    symbols.append(label)
+                        j += 1
+            i += 1
 
     out = "modules:\n"
     if len(modules) == 0:
@@ -4233,15 +4409,55 @@ def _format_import_graph_report(analysis: dict[str, Any]) -> str:
 def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     """依存解析の重大問題を `input_invalid` として報告する。"""
     details: list[str] = []
-    for key in ["reserved_conflicts", "relative_imports", "missing_modules", "cycles"]:
-        vals_obj = analysis.get(key)
-        vals = vals_obj if isinstance(vals_obj, list) else []
-        i = 0
-        while i < len(vals):
-            v = vals[i]
-            if isinstance(v, str) and v != "":
-                details.append(key + ": " + v)
-            i += 1
+    reserved_obj = analysis.get("reserved_conflicts")
+    reserved = reserved_obj if isinstance(reserved_obj, list) else []
+    i = 0
+    while i < len(reserved):
+        v = reserved[i]
+        if isinstance(v, str) and v != "":
+            details.append(f"kind=reserved_conflict file={v} import=pytra")
+        i += 1
+
+    relative_obj = analysis.get("relative_imports")
+    relative = relative_obj if isinstance(relative_obj, list) else []
+    i = 0
+    while i < len(relative):
+        v = relative[i]
+        if isinstance(v, str) and v != "":
+            file_part = v
+            mod_part = v
+            sep = ": "
+            if sep in v:
+                pos = v.find(sep)
+                file_part = v[:pos]
+                mod_part = v[pos + len(sep) :]
+            details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
+        i += 1
+
+    missing_obj = analysis.get("missing_modules")
+    missing = missing_obj if isinstance(missing_obj, list) else []
+    i = 0
+    while i < len(missing):
+        v = missing[i]
+        if isinstance(v, str) and v != "":
+            file_part = v
+            mod_part = v
+            sep = ": "
+            if sep in v:
+                pos = v.find(sep)
+                file_part = v[:pos]
+                mod_part = v[pos + len(sep) :]
+            details.append(f"kind=missing_module file={file_part} import={mod_part}")
+        i += 1
+
+    cycles_obj = analysis.get("cycles")
+    cycles = cycles_obj if isinstance(cycles_obj, list) else []
+    i = 0
+    while i < len(cycles):
+        v = cycles[i]
+        if isinstance(v, str) and v != "":
+            details.append(f"kind=import_cycle file=(graph) import={v}")
+        i += 1
     if len(details) > 0:
         raise _make_user_error(
             "input_invalid",
@@ -4299,13 +4515,36 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
             i += 1
         meta_obj: object = east.get("meta")
         meta = meta_obj if isinstance(meta_obj, dict) else {}
-        import_modules_obj: object = meta.get("import_modules")
-        import_symbols_obj: object = meta.get("import_symbols")
-        import_modules = import_modules_obj if isinstance(import_modules_obj, dict) else {}
-        import_symbols = import_symbols_obj if isinstance(import_symbols_obj, dict) else {}
+        import_bindings = _meta_import_bindings(east)
+        import_modules: dict[str, str] = {}
+        import_symbols: dict[str, dict[str, str]] = {}
+        if len(import_bindings) > 0:
+            i = 0
+            while i < len(import_bindings):
+                ent = import_bindings[i]
+                module_id = ent["module_id"]
+                export_name = ent["export_name"]
+                local_name = ent["local_name"]
+                binding_kind = ent["binding_kind"]
+                if binding_kind == "module":
+                    import_modules[local_name] = module_id
+                elif binding_kind == "symbol" and export_name != "":
+                    sym_ent: dict[str, str] = {}
+                    sym_ent["module"] = module_id
+                    sym_ent["name"] = export_name
+                    import_symbols[local_name] = sym_ent
+                i += 1
+        else:
+            import_modules_obj: object = meta.get("import_modules")
+            import_symbols_obj: object = meta.get("import_symbols")
+            import_modules_obj2 = import_modules_obj if isinstance(import_modules_obj, dict) else {}
+            import_symbols_obj2 = import_symbols_obj if isinstance(import_symbols_obj, dict) else {}
+            import_modules = dict(import_modules_obj2)
+            import_symbols = dict(import_symbols_obj2)
         out[mod_path] = {
             "functions": funcs,
             "classes": classes,
+            "import_bindings": import_bindings,
             "import_modules": import_modules,
             "import_symbols": import_symbols,
         }
