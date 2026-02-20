@@ -40,7 +40,7 @@
          - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。
          - [ ] selfhost 最小モードの `load_east(.json)` を復活させ、`tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` を再び通す（`std::any` 退化を回避した実装にする）。
            - [x] `.json` 読み込み自体は復活し、`bridge-json-unavailable` skip は解消した（2026-02-20）。
-           - [ ] ただし現在は `mismatches=4`（`test/fixtures/core/add.py`, `test/fixtures/control/if_else.py`, `test/fixtures/collections/comprehension_filter.py`, `sample/py/01_mandelbrot.py`）で差分解消が未完了。
+           - [x] `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` の既定ケースで `mismatches=0` を達成する。: `test/fixtures/core/add.py`, `test/fixtures/control/if_else.py`, `test/fixtures/collections/comprehension_filter.py`, `sample/py/01_mandelbrot.py` で `mismatches=0` を確認済み（2026-02-20）。
            - [x] 暫定措置: `check_selfhost_cpp_diff --mode allow-not-implemented --selfhost-driver bridge` では `[input_invalid]` を skip 扱いにした（本タスク完了時に戻す）。
            - [x] `src/pytra/std/json.py` を C++ へ安全に生成できるサブセットへ段階分割し、`runtime/cpp/pytra/std/json.cpp` の selfhost ビルドエラー（`ord/chr` / 文字列 `.begin()` / optional tuple 展開など）を解消する。: `json.cpp` 単体コンパイル通過、`json_extended` の Python/C++ 出力一致を確認済み（2026-02-20）。
          - [ ] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。
