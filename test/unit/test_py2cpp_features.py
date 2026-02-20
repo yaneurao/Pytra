@@ -350,6 +350,42 @@ def main() -> None:
         self.assertIn("  - pytra.std.json.dumps", txt)
         self.assertIn("  - pytra.utils.png.write_rgb_png", txt)
 
+    def test_east_meta_import_bindings_is_emitted(self) -> None:
+        src = """import math as m
+from pytra.std.json import loads as json_loads
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "import_bindings.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+        meta_obj = east.get("meta")
+        meta = meta_obj if isinstance(meta_obj, dict) else {}
+        bindings_obj = meta.get("import_bindings")
+        bindings = bindings_obj if isinstance(bindings_obj, list) else []
+        self.assertGreaterEqual(len(bindings), 2)
+        self.assertIn(
+            {
+                "module_id": "math",
+                "export_name": "",
+                "local_name": "m",
+                "binding_kind": "module",
+                "source_file": str(src_py),
+                "source_line": 1,
+            },
+            bindings,
+        )
+        self.assertIn(
+            {
+                "module_id": "pytra.std.json",
+                "export_name": "loads",
+                "local_name": "json_loads",
+                "binding_kind": "symbol",
+                "source_file": str(src_py),
+                "source_line": 2,
+            },
+            bindings,
+        )
+
     def test_cli_dump_deps_includes_user_module_graph(self) -> None:
         src_main = """import helper
 
@@ -394,7 +430,9 @@ def main() -> None:
             )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
-        self.assertIn("missing_modules:", proc.stderr)
+        self.assertIn("kind=missing_module", proc.stderr)
+        self.assertIn("file=main.py", proc.stderr)
+        self.assertIn("import=missing_mod", proc.stderr)
 
     def test_cli_reports_input_invalid_for_import_cycle(self) -> None:
         src_main = """import helper
@@ -422,7 +460,87 @@ def f() -> int:
             )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
-        self.assertIn("cycles:", proc.stderr)
+        self.assertIn("kind=import_cycle", proc.stderr)
+        self.assertIn("main.py -> helper.py -> main.py", proc.stderr)
+
+    def test_cli_reports_input_invalid_for_relative_import(self) -> None:
+        src_main = """from .helper import f
+
+def main() -> None:
+    print(f())
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("kind=unsupported_import_form", proc.stderr)
+        self.assertIn("import=from .helper import f", proc.stderr)
+
+    def test_cli_reports_input_invalid_for_from_import_star(self) -> None:
+        src_main = """from helper import *
+
+def main() -> None:
+    print(1)
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("kind=unsupported_import_form", proc.stderr)
+        self.assertIn("import=from helper import *", proc.stderr)
+
+    def test_cli_reports_input_invalid_for_duplicate_import_binding(self) -> None:
+        src_main = """from a import x
+from b import x
+
+def main() -> None:
+    print(x)
+"""
+        src_a = """x: int = 1
+"""
+        src_b = """x: int = 2
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            a_py = root / "a.py"
+            b_py = root / "b.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            a_py.write_text(src_a, encoding="utf-8")
+            b_py.write_text(src_b, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("kind=duplicate_binding", proc.stderr)
 
     def test_build_module_east_map_collects_entry_and_user_deps(self) -> None:
         src_main = """import helper

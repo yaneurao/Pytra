@@ -3355,8 +3355,37 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     main_stmts: list[dict[str, Any]] = []
     import_module_bindings: dict[str, str] = {}
     import_symbol_bindings: dict[str, dict[str, str]] = {}
+    import_bindings: list[dict[str, Any]] = []
+    import_binding_names: set[str] = set()
     first_item_attached = False
     pending_dataclass = False
+
+    def append_import_binding(
+        module_id: str,
+        export_name: str,
+        local_name: str,
+        binding_kind: str,
+        source_line: int,
+    ) -> None:
+        """import 情報の正本 `ImportBinding` を追加する。"""
+        if local_name in import_binding_names:
+            raise EastBuildError(
+                kind="unsupported_syntax",
+                message=f"duplicate import binding: {local_name}",
+                source_span=_sh_span(source_line, 0, 0),
+                hint="Rename alias to avoid duplicate imported names.",
+            )
+        import_binding_names.add(local_name)
+        import_bindings.append(
+            {
+                "module_id": module_id,
+                "export_name": export_name,
+                "local_name": local_name,
+                "binding_kind": binding_kind,
+                "source_file": filename,
+                "source_line": source_line,
+            }
+        )
 
     top_lines = list(enumerate(lines, start=1))
     top_merged_lines, top_merged_end = merge_logical_lines(top_lines)
@@ -3472,7 +3501,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 mod_name = m_alias.group(1)
                 as_name = m_alias.group(2)
                 bind_name = as_name if isinstance(as_name, str) and as_name != "" else mod_name.split(".")[0]
-                import_module_bindings[bind_name] = mod_name
+                append_import_binding(mod_name, "", bind_name, "module", i)
                 aliases.append({"name": mod_name, "asname": as_name})
             body_items.append(
                 {
@@ -3483,6 +3512,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             )
             i = logical_end + 1
             continue
+        if s.startswith("from "):
+            marker = " import "
+            pos = s.find(marker)
+            if pos >= 0:
+                mod_txt = s[5:pos].strip()
+                if mod_txt.startswith("."):
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message="relative import is not supported",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Use absolute import form: `from module import name`.",
+                    )
         m_import_from = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
         if m_import_from is not None:
             mod_name = m_import_from.group(1).strip()
@@ -3515,7 +3556,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 sym_name = m_alias.group(1)
                 as_name = m_alias.group(2)
                 bind_name = as_name if isinstance(as_name, str) and as_name != "" else sym_name
-                import_symbol_bindings[bind_name] = {"module": mod_name, "name": sym_name}
+                append_import_binding(mod_name, sym_name, bind_name, "symbol", i)
                 aliases.append({"name": sym_name, "asname": as_name})
             body_items.append(
                 {
@@ -3856,6 +3897,26 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             renamed_symbols["main"] = "__pytra_main"
             item["name"] = "__pytra_main"
 
+    # 互換メタデータは ImportBinding 正本から導出する。
+    import_module_bindings = {}
+    import_symbol_bindings = {}
+    for binding in import_bindings:
+        module_id_obj = binding.get("module_id")
+        local_name_obj = binding.get("local_name")
+        export_name_obj = binding.get("export_name")
+        binding_kind_obj = binding.get("binding_kind")
+        module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+        local_name = local_name_obj if isinstance(local_name_obj, str) else ""
+        export_name = export_name_obj if isinstance(export_name_obj, str) else ""
+        binding_kind = binding_kind_obj if isinstance(binding_kind_obj, str) else ""
+        if module_id == "" or local_name == "":
+            continue
+        if binding_kind == "module":
+            import_module_bindings[local_name] = module_id
+            continue
+        if binding_kind == "symbol" and export_name != "":
+            import_symbol_bindings[local_name] = {"module": module_id, "name": export_name}
+
     return {
         "kind": "Module",
         "source_path": filename,
@@ -3865,6 +3926,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         "renamed_symbols": renamed_symbols,
         "meta": {
             "parser_backend": "self_hosted",
+            "import_bindings": import_bindings,
             "import_modules": import_module_bindings,
             "import_symbols": import_symbol_bindings,
         },
