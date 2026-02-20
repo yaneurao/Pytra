@@ -34,28 +34,80 @@
 
 #### 2.1 モジュール名変換ルール（自作モジュール向け）
 
-- namespace 変換:
-  - `pytra.std.<mod>` は `pytra::std::<mod>` に変換する（`.` を `::` へ変換）。
-  - `pytra.runtime.<mod>` は `pytra::runtime::<mod>` に変換する。
-- include 変換:
-  - `pytra.std.<mod>` は `pytra/std/<mod>.h` に変換する。
-  - `pytra.runtime.<mod>` は `pytra/runtime/<mod>.h` に変換する。
-- `_impl` 接尾辞の特別規則:
-  - include パスだけ `_impl` を `-impl` に写像する。
-  - namespace は `_impl` のまま維持する。
+基本ルール:
+- `pytra.std.<mod>` は `pytra::std::<mod>` に対応する。
+- `pytra.runtime.<mod>` は `pytra::runtime::<mod>` に対応する。
+- include パスは `.` を `/` に変換して `.h` を付ける。
+- 末尾が `_impl` のモジュールだけは、include パスで `_impl -> -impl` に写像する。
+- namespace は `_impl` のまま維持する（`-impl` にはしない）。
 
-例:
-- Python:
-  - `import pytra.std.math_impl as _m`
-  - `return _m.sqrt(x)`
-- 生成 C++:
-  - `#include "pytra/std/math-impl.h"`
-  - `return pytra::std::math_impl::sqrt(x);`
+例1: 標準モジュール（通常）
 
-この規則に従えば、ユーザー定義の native 実装も同じ方式で追加できる。
-- 例: `import pytra.std.foo_impl as _f` を使う場合
-  - include は `pytra/std/foo-impl.h`
-  - namespace は `pytra::std::foo_impl`
+```python
+import pytra.std.time as t
+
+def now() -> float:
+    return t.perf_counter()
+```
+
+```cpp
+#include "pytra/std/time.h"
+
+double now() {
+    return pytra::std::time::perf_counter();
+}
+```
+
+例2: ランタイムモジュール（通常）
+
+```python
+import pytra.runtime.png as png
+
+def save(path: str, w: int, h: int, pixels: bytes) -> None:
+    png.write_rgb_png(path, w, h, pixels)
+```
+
+```cpp
+#include "pytra/runtime/png.h"
+
+void save(const str& path, int64 w, int64 h, const bytes& pixels) {
+    pytra::runtime::png::write_rgb_png(path, w, h, pixels);
+}
+```
+
+例3: `_impl` 付きモジュール（特別規則）
+
+```python
+import pytra.std.math_impl as _m
+
+def root(x: float) -> float:
+    return _m.sqrt(x)
+```
+
+```cpp
+#include "pytra/std/math-impl.h"  // include は -impl
+
+float64 root(float64 x) {
+    return pytra::std::math_impl::sqrt(x);  // namespace は _impl
+}
+```
+
+例4: ユーザー定義 native モジュールを追加する場合
+
+```python
+import pytra.std.foo_impl as _f
+
+def f(x: float) -> float:
+    return _f.calc(x)
+```
+
+```cpp
+#include "pytra/std/foo-impl.h"
+
+float64 f(float64 x) {
+    return pytra::std::foo_impl::calc(x);
+}
+```
 
 ### 3. 自作モジュール import の生成仕様を追加する
 
