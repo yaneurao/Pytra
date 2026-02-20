@@ -148,13 +148,16 @@
 
 補足:
 
-- `from module import symbol` / `from module import symbol as alias` は EAST の `meta.import_symbols` で保持し、呼び出し解決に使います。
-- `import module as alias` は EAST の `meta.import_modules` で保持し、`alias.attr(...)` を `module.attr(...)` として解決します。
+- import 情報の正本は EAST の `meta.import_bindings` です（`ImportBinding[]`）。
+- `from module import symbol` は EAST の `meta.qualified_symbol_refs`（`QualifiedSymbolRef[]`）へ正規化し、backend 手前で alias 解決を完了させます。
+- `meta.import_modules` / `meta.import_symbols` は互換用途として残し、正本から導出します。
+- `import module as alias` は `alias.attr(...)` を `module.attr(...)` として解決します。
 - `from module import *` は未対応です。
 - 相対 import（`from .mod import x`）は現状未対応です。検出時は `input_invalid` として終了します。
 - `pytra` 名前空間は予約です。入力ルート配下の `pytra.py` / `pytra/__init__.py` は衝突として `input_invalid` を返します。
 - ユーザーモジュール探索は「入力ファイルの親ディレクトリ基準」で行います（`foo.bar` -> `foo/bar.py` または `foo/bar/__init__.py`）。
 - 未解決ユーザーモジュール import と循環 import は `input_invalid` で早期エラーにします。
+- `from M import S` のみがある状態で `M.T` を参照した場合、`M` は束縛されないため `input_invalid`（`kind=missing_symbol`）として扱います。
 
 主な補助モジュール実装:
 

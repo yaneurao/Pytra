@@ -62,8 +62,25 @@
 - `body`: 通常のトップレベル文
 - `main_guard_body`: `if __name__ == "__main__":` の本体
 - `renamed_symbols`: rename マップ
+- `meta.import_bindings`: import 正本（`ImportBinding[]`）
+- `meta.qualified_symbol_refs`: `from-import` の解決済み参照（`QualifiedSymbolRef[]`）
 - `meta.import_modules`: `import module [as alias]` の束縛情報（`alias -> module`）
 - `meta.import_symbols`: `from module import symbol [as alias]` の束縛情報（`alias -> {module,name}`）
+
+`ImportBinding` は次を持つ。
+
+- `module_id`
+- `export_name`（`import M` では空文字）
+- `local_name`
+- `binding_kind`（`module` / `symbol`）
+- `source_file`
+- `source_line`
+
+`QualifiedSymbolRef` は次を持つ。
+
+- `module_id`
+- `symbol`
+- `local_name`
 
 ## 4. 構文正規化
 
