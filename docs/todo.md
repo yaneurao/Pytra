@@ -3,12 +3,16 @@
 ## 最優先（2026-02-20 追加: todo2 優先TODO 反映）
 
 - [ ] `src/pytra/std/*.py` を `--emit-runtime-cpp` で再生成し、`src/runtime/cpp/pytra/std/` への反映を自動生成起点に統一する。
-  - [ ] 対象: 少なくとも `math.py`, `json.py`, `pathlib.py`, `re.py`, `sys.py`, `typing.py`, `dataclasses.py`, `time.py`, `glob.py`。
-  - [ ] 進捗: `dataclasses.py` 以外（`math/json/pathlib/re/sys/typing/time/glob`）は self_hosted parser で EAST 変換可能。
-  - [ ] ブロッカー: `dataclasses.py` のネスト `def`（`wrap`）が self_hosted parser 未対応。
+  - [ ] 対象: 少なくとも `math.py`, `json.py`, `pathlib.py`, `re.py`, `sys.py`, `typing.py`, `dataclasses.py`, `time.py`, `glob.py`, `os.py`。
+  - [x] 進捗: `math/json/pathlib/re/sys/typing/dataclasses/time/glob/os` は self_hosted parser で EAST 変換可能。
+  - [ ] ブロッカー:
+    - `pathlib.py` 再生成物が C++ コンパイル失敗（class フィールド推論不足、`self` 参照、`from pytra.std import os` 解決不足）。
+    - `os.py` 再生成物が C++ コンパイル失敗（`path` モジュール変数の初期化順序/参照解決崩れ）。
   - [ ] 受け入れ条件:
     - [x] `python3 src/py2cpp.py src/pytra/std/math.py --emit-runtime-cpp` 後に `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp` が更新される。
     - [x] `python3 test/fixtures/stdlib/math_extended.py` と対応 C++ 実行結果が一致する。
+    - [ ] `python3 src/py2cpp.py src/pytra/std/pathlib.py --emit-runtime-cpp` 後の `src/runtime/cpp/pytra/std/pathlib.cpp` が単体コンパイルできる（`g++ -c`）。
+    - [ ] `python3 src/py2cpp.py src/pytra/std/os.py --emit-runtime-cpp` 後の `src/runtime/cpp/pytra/std/os.cpp` が単体コンパイルできる（`g++ -c`）。
 
 - [x] `enumerate()` 変換を拡張し、`start` 引数つきケースを回帰テストで固定する。
   - [x] 追加ケース: `enumerate(xs)`, `enumerate(xs, 1)`, `enumerate(xs, 5)`, タプル分解あり/なし（非分解は `pair` 受け取り）。
