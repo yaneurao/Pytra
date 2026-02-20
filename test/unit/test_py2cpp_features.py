@@ -664,7 +664,9 @@ if __name__ == "__main__":
                 text=True,
             )
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
-            run = subprocess.run([str(out_exe)], cwd=ROOT, capture_output=True, text=True)
+            # fixture が相対パスで画像を書いてもリポジトリ直下を汚さないように、
+            # 実行時の cwd は一時ディレクトリに固定する。
+            run = subprocess.run([str(out_exe)], cwd=work, capture_output=True, text=True)
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             return run.stdout.replace("\r\n", "\n")
 
