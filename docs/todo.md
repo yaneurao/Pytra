@@ -77,7 +77,11 @@
      - [x] 同ブリッジ経路で `sample/py/01_mandelbrot.py` の `-o` 生成を確認。
      - [x] `src/py2cpp.py` の runtime モジュール解決を `pytra.compiler.*` まで拡張し、`_runtime_module_tail_from_source_path` / include / namespace の経路に `compiler/` を追加した。
      - [ ] `src/pytra/compiler/east_parts/core.py --emit-runtime-cpp` 生成物（`runtime/cpp/pytra/compiler/east_parts/core.cpp`）を単体コンパイル可能化する。
-       - [ ] 現状ブロッカー: 生成 `core.cpp` に `std::any` 退化・`dict.update` 未対応・`Exception` 継承変換など複数のコード生成破綻が残る。
+       - [x] 下準備: `dict.update` 未対応は `src/runtime/cpp/pytra/built_in/dict.h` 拡張で解消した。
+       - [x] 下準備: Python 例外継承 (`class X(Exception)`) は C++ 側継承省略へ統一してビルド阻害を回避した。
+       - [ ] 現在ブロッカーA: `Call(...).attr()` が `ns::func(...)::attr()` へ誤解決されるケースが残る（`re.group(...).strip()` など）。
+       - [ ] 現在ブロッカーB: `core.py` 内の mutable 引数/ローカルが `const` 扱いで生成される経路が残る（`list.append`/`dict[...] =` が失敗）。
+       - [ ] 現在ブロッカーC: self_hosted parser 本体の一部構文（keyword-only 呼び出し、tuple 要素アクセス、`lstrip(" ")` 等）が現行 C++ 生成と不整合。
      - [ ] pure selfhost（中間 Python 呼び出しなし）で `.py -> -o` を通す。
       - [ ] `selfhost/py2cpp.out` 側に `load_east(.py)` の実処理を実装し、`not_implemented` を返さないようにする。
          - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。

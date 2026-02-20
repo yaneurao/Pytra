@@ -1735,6 +1735,20 @@ class CppEmitter(CodeEmitter):
                     rendered_val = rendered_val.replace("list<object> __out;", f"{t} __out;")
         val_t0 = self.get_expr_type(stmt.get("value"))
         val_t = val_t0 if isinstance(val_t0, str) else ""
+        if rendered_val != "" and ann_t_str != "" and self._contains_text(val_t, "|"):
+            union_parts = self.split_union(val_t)
+            has_none = False
+            non_none_norm: list[str] = []
+            for p in union_parts:
+                pn = self.normalize_type_name(p)
+                if pn == "None":
+                    has_none = True
+                    continue
+                if pn != "":
+                    non_none_norm.append(pn)
+            ann_norm = self.normalize_type_name(ann_t_str)
+            if has_none and len(non_none_norm) == 1 and non_none_norm[0] == ann_norm:
+                rendered_val = f"({rendered_val}).value()"
         if self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
             rendered_val = self.apply_cast(rendered_val, ann_t_str)
         if self.is_any_like_type(ann_t_str) and val_is_dict:
@@ -2539,6 +2553,10 @@ class CppEmitter(CodeEmitter):
         name = stmt.get("name", "Class")
         is_dataclass = self.any_dict_get_int(stmt, "dataclass", 0) != 0
         base = self.any_to_str(stmt.get("base"))
+        if base in {"Exception", "BaseException", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"}:
+            # Python 例外継承は runtime 側の C++ 例外階層と1対1対応しないため、
+            # クラス本体（フィールド/メソッド）を優先して継承は省略する。
+            base = ""
         is_enum_base = base in {"Enum", "IntEnum", "IntFlag"}
         if is_enum_base:
             cls_name = str(name)
@@ -3293,10 +3311,12 @@ class CppEmitter(CodeEmitter):
         owner_expr = self.render_expr(owner_obj)
         if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
             owner_expr = f"({owner_expr})"
-        owner_mod = self._resolve_imported_module_name(owner_expr)
-        if owner_mod == "":
-            owner_mod = self._cpp_expr_to_module_name(owner_expr)
-        owner_mod = self._normalize_runtime_module_name(owner_mod)
+        owner_mod = ""
+        if owner_kind in {"Name", "Attribute"}:
+            owner_mod = self._resolve_imported_module_name(owner_expr)
+            if owner_mod == "" and owner_expr.startswith("pytra."):
+                owner_mod = owner_expr
+            owner_mod = self._normalize_runtime_module_name(owner_mod)
         arg_nodes_obj: object = expr.get("args")
         arg_nodes = self.any_to_list(arg_nodes_obj)
         attr = self.any_to_str(fn.get("attr"))
@@ -3658,7 +3678,9 @@ class CppEmitter(CodeEmitter):
         if base in self.class_base or base in self.class_method_names:
             return f"{base}::{attr}"
         # import モジュールの属性参照は map -> namespace の順で解決する。
-        base_module_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(base))
+        base_module_name = ""
+        if base_kind in {"Name", "Attribute"}:
+            base_module_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(base))
         if base_module_name != "":
             owner_keys: list[str] = [base_module_name]
             short = self._last_dotted_name(base_module_name)
@@ -3815,7 +3837,6 @@ class CppEmitter(CodeEmitter):
             return f"{t}{{{items}}}"
         if kind == "Dict":
             t = self.cpp_type(expr_d.get("resolved_type"))
-            items: list[str] = []
             key_t = ""
             val_t = ""
             rt = self.get_expr_type(expr)
@@ -3825,30 +3846,56 @@ class CppEmitter(CodeEmitter):
                     key_t = inner[0]
                     val_t = inner[1]
             entries = self._dict_stmt_list(expr_d.get("entries"))
-            if len(entries) > 0:
-                for kv in entries:
-                    k = self.render_expr(kv.get("key"))
-                    v = self.render_expr(kv.get("value"))
-                    if self.is_any_like_type(key_t):
-                        k = f"make_object({k})"
-                    if self.is_any_like_type(val_t):
-                        v = f"make_object({v})"
-                    items.append(f"{{{k}, {v}}}")
-            else:
-                keys = self._dict_stmt_list(expr_d.get("keys"))
-                vals = self._dict_stmt_list(expr_d.get("values"))
-                i = 0
-                while i < len(keys) and i < len(vals):
-                    key_node: Any = keys[i]
-                    val_node: Any = vals[i]
-                    k = self.render_expr(key_node)
-                    v = self.render_expr(val_node)
-                    if self.is_any_like_type(key_t):
-                        k = f"make_object({k})"
-                    if self.is_any_like_type(val_t):
-                        v = f"make_object({v})"
-                    items.append(f"{{{k}, {v}}}")
-                    i += 1
+            if len(entries) == 0:
+                return f"{t}{{}}"
+            # resolved_type が空/不正確な場合は key/value ノードから最低限を再推定する。
+            inferred_key = ""
+            inferred_val = ""
+            key_mixed = False
+            val_mixed = False
+            for kv in entries:
+                key_node: Any = kv.get("key")
+                val_node: Any = kv.get("value")
+                kt0 = self.get_expr_type(key_node)
+                kt = kt0 if isinstance(kt0, str) else ""
+                if kt not in {"", "unknown"}:
+                    if inferred_key == "":
+                        inferred_key = kt
+                    elif kt != inferred_key:
+                        key_mixed = True
+                vt0 = self.get_expr_type(val_node)
+                vt = vt0 if isinstance(vt0, str) else ""
+                if vt not in {"", "unknown"}:
+                    if inferred_val == "":
+                        inferred_val = vt
+                    elif vt != inferred_val:
+                        val_mixed = True
+            if key_t in {"", "unknown"} and inferred_key != "" and not key_mixed:
+                key_t = inferred_key
+            if val_t in {"", "unknown"} and inferred_val != "" and not val_mixed:
+                val_t = inferred_val
+            if t in {"auto", "dict<str, str>", "dict<str, ::std::any>"}:
+                key_pick = key_t if key_t not in {"", "unknown"} and not key_mixed else "str"
+                if val_mixed:
+                    val_pick = "Any"
+                else:
+                    val_pick = val_t if val_t not in {"", "unknown"} else (inferred_val if inferred_val != "" else "str")
+                if self.is_any_like_type(val_pick):
+                    t = f"dict<{self._cpp_type_text(key_pick)}, object>"
+                    val_t = "Any"
+                else:
+                    t = f"dict<{self._cpp_type_text(key_pick)}, {self._cpp_type_text(val_pick)}>"
+            items: list[str] = []
+            for kv in entries:
+                key_node: Any = kv.get("key")
+                val_node: Any = kv.get("value")
+                k = self.render_expr(key_node)
+                v = self.render_expr(val_node)
+                if self.is_any_like_type(key_t):
+                    k = f"make_object({k})"
+                if self.is_any_like_type(val_t):
+                    v = f"make_object({v})"
+                items.append(f"{{{k}, {v}}}")
             return f"{t}{{{_join_str_list(', ', items)}}}"
         if kind == "Subscript":
             return self._render_subscript_expr(expr)
@@ -4175,6 +4222,28 @@ class CppEmitter(CodeEmitter):
             return "auto"
         if east_type == "module":
             return "auto"
+        if east_type.find(".") >= 0:
+            dot = east_type.rfind(".")
+            owner = east_type[:dot]
+            leaf = east_type[dot + 1 :]
+            if owner != "" and leaf != "":
+                mod_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(owner))
+                ns = self._module_name_to_cpp_namespace(mod_name)
+                leaf_head = leaf[:1]
+                looks_like_class = leaf_head != "" and "A" <= leaf_head <= "Z"
+                if ns != "":
+                    if looks_like_class:
+                        return f"rc<{ns}::{leaf}>"
+                    return f"{ns}::{leaf}"
+                if owner.startswith("pytra."):
+                    owner_ns = "pytra::" + owner[6:].replace(".", "::")
+                    if looks_like_class:
+                        return f"rc<{owner_ns}::{leaf}>"
+                    return owner_ns + "::" + leaf
+                owner_ns = owner.replace(".", "::")
+                if looks_like_class:
+                    return f"rc<{owner_ns}::{leaf}>"
+                return owner_ns + "::" + leaf
         return east_type
 
 
@@ -4337,6 +4406,35 @@ def _split_type_args(text: str) -> list[str]:
     return out
 
 
+def _split_top_level_union(text: str) -> list[str]:
+    """`A|B[list[C|D]]` をトップレベルの `|` で分割する。"""
+    out: list[str] = []
+    cur = ""
+    depth = 0
+    i = 0
+    while i < len(text):
+        ch = text[i : i + 1]
+        if ch == "[":
+            depth += 1
+            cur += ch
+        elif ch == "]":
+            if depth > 0:
+                depth -= 1
+            cur += ch
+        elif ch == "|" and depth == 0:
+            part = cur.strip()
+            if part != "":
+                out.append(part)
+            cur = ""
+        else:
+            cur += ch
+        i += 1
+    tail = cur.strip()
+    if tail != "":
+        out.append(tail)
+    return out
+
+
 def _header_cpp_type_from_east(
     east_t: str,
     ref_classes: set[str] | None = None,
@@ -4376,8 +4474,9 @@ def _header_cpp_type_from_east(
     }
     if t in prim:
         return prim[t]
-    if "|" in t:
-        parts = _split_type_args(t.replace("|", ","))
+    parts_union = _split_top_level_union(t)
+    if len(parts_union) > 1:
+        parts = parts_union
         non_none: list[str] = []
         i = 0
         while i < len(parts):
@@ -4420,6 +4519,14 @@ def _header_cpp_type_from_east(
             i += 1
         sep = ", "
         return "::std::tuple<" + sep.join(vals) + ">"
+    if "." in t:
+        ns_t = t.replace(".", "::")
+        dot = t.rfind(".")
+        leaf = t[dot + 1 :] if dot >= 0 else t
+        head = leaf[:1]
+        if head != "" and "A" <= head <= "Z":
+            return "rc<" + ns_t + ">"
+        return ns_t
     return t
 
 

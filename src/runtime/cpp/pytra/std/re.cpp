@@ -27,6 +27,14 @@ namespace pytra::std::re {
         }
     };
     
+    str group(const ::std::optional<rc<Match>>& m, int64 idx) {
+        /* `Match | None` から group を安全取得する（None は空文字）。 */
+        if (py_is_none(m))
+            return "";
+        rc<Match> mm = (m).value();
+        return mm->group(idx);
+    }
+    
     bool _is_ident(const str& s) {
         if (s == "")
             return false;

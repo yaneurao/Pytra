@@ -37,6 +37,12 @@ public:
     ::std::size_t size() const { return data_.size(); }
     bool empty() const { return data_.empty(); }
     void clear() { data_.clear(); }
+    void update(const dict<K, V>& other) {
+        for (const auto& kv : other) data_[kv.first] = kv.second;
+    }
+    void update(const base_type& other) {
+        for (const auto& kv : other) data_[kv.first] = kv.second;
+    }
 
     iterator find(const K& key) { return data_.find(key); }
     const_iterator find(const K& key) const { return data_.find(key); }

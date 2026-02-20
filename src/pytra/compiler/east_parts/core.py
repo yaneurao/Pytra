@@ -12,7 +12,8 @@ from pytra.std.pathlib import Path
 from pytra.std import sys
 
 
-BorrowKind = str
+# `BorrowKind` は実体のない型エイリアス用途のみなので、
+# selfhost 生成コードでは値として生成しない。
 INT_TYPES = {
     "int8",
     "uint8",
@@ -54,12 +55,12 @@ class EastBuildError(Exception):
 
     def to_payload(self) -> dict[str, Any]:
         """例外情報を EAST エラー応答用 dict に整形する。"""
-        return {
-            "kind": self.kind,
-            "message": self.message,
-            "source_span": self.source_span,
-            "hint": self.hint,
-        }
+        out: dict[str, Any] = {}
+        out["kind"] = self.kind
+        out["message"] = self.message
+        out["source_span"] = self.source_span
+        out["hint"] = self.hint
+        return out
 
 
 def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:
@@ -83,16 +84,16 @@ def _sh_ann_to_type(ann: str) -> str:
         "bytes": "bytes",
         "bytearray": "bytearray",
     }
-    txt = ann.strip()
+    txt: str = ann.strip()
     if len(txt) >= 2 and ((txt[0] == "'" and txt[-1] == "'") or (txt[0] == '"' and txt[-1] == '"')):
         txt = txt[1:-1].strip()
     if txt in mapping:
         return mapping[txt]
-    m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\[(.*)\]$", txt)
+    m: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\[(.*)\]$", txt)
     if m is None:
         return txt
-    head = m.group(1)
-    inner = m.group(2).strip()
+    head: str = re.group(m, 1)
+    inner: str = re.group(m, 2).strip()
     parts: list[str] = []
     depth = 0
     start = 0
@@ -240,34 +241,32 @@ def _sh_append_fstring_literal(values: list[dict[str, Any]], segment: str, span:
     lit = _sh_decode_py_string_body(lit, raw_mode)
     if lit == "":
         return
-    values.append(
-        {
-            "kind": "Constant",
-            "source_span": span,
-            "resolved_type": "str",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": repr(lit),
-            "value": lit,
-        }
-    )
+    node: dict[str, Any] = {}
+    node["kind"] = "Constant"
+    node["source_span"] = span
+    node["resolved_type"] = "str"
+    node["borrow_kind"] = "value"
+    node["casts"] = []
+    node["repr"] = json.dumps(lit)
+    node["value"] = lit
+    values.append(node)
 
 
 def _sh_parse_def_sig(
     ln_no: int,
     ln: str,
     *,
-    in_class: str | None = None,
+    in_class: str = "",
 ) -> dict[str, Any] | None:
     """`def ...` 行から関数名・引数型・戻り型を抽出する。"""
-    ln_norm = re.sub(r"\s+", " ", ln.strip())
-    m_def = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", ln_norm)
+    ln_norm: str = re.sub(r"\s+", " ", ln.strip())
+    m_def: re.Match | None = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", ln_norm)
     if m_def is None:
         return None
     arg_types: dict[str, str] = {}
     arg_order: list[str] = []
     arg_defaults: dict[str, str] = {}
-    args_raw = m_def.group(2)
+    args_raw: str = re.group(m_def, 2)
     if args_raw.strip() != "":
         # Supported:
         # - name: Type
@@ -276,7 +275,7 @@ def _sh_parse_def_sig(
         # Not supported:
         # - "/" positional-only marker
         for p_txt, _off in _sh_split_args_with_offsets(args_raw):
-            p = p_txt.strip()
+            p: str = p_txt.strip()
             if p == "":
                 continue
             if p == "*":
@@ -302,11 +301,11 @@ def _sh_parse_def_sig(
                     source_span=_sh_span(ln_no, 0, len(ln_norm)),
                     hint="Use explicit parameters instead of *args.",
                 )
-            if in_class is not None and p == "self":
+            if in_class != "" and p == "self":
                 arg_types["self"] = in_class
                 arg_order.append("self")
                 continue
-            m_param = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", p)
+            m_param: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", p)
             if m_param is None:
                 raise EastBuildError(
                     kind="unsupported_syntax",
@@ -314,8 +313,8 @@ def _sh_parse_def_sig(
                     source_span=_sh_span(ln_no, 0, len(ln_norm)),
                     hint="Use `name: Type` style parameters.",
                 )
-            pn = m_param.group(1).strip()
-            pt = m_param.group(2).strip()
+            pn: str = re.group(m_param, 1).strip()
+            pt: str = re.group(m_param, 2).strip()
             if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pn):
                 raise EastBuildError(
                     kind="unsupported_syntax",
@@ -332,53 +331,53 @@ def _sh_parse_def_sig(
                 )
             arg_types[pn] = _sh_ann_to_type(pt)
             arg_order.append(pn)
-            pdef = m_param.group(3)
-            if pdef is not None and pdef != "":
+            pdef: str = re.group(m_param, 3)
+            if pdef != "":
                 default_txt = pdef.strip()
                 if default_txt != "":
                     arg_defaults[pn] = default_txt
-    ret_group = m_def.group(3)
-    return {
-        "name": m_def.group(1),
-        "ret": _sh_ann_to_type(ret_group.strip()) if ret_group not in {None, ""} else "None",
-        "arg_types": arg_types,
-        "arg_order": arg_order,
-        "arg_defaults": arg_defaults,
-    }
+    ret_group: str = re.group(m_def, 3)
+    out_sig: dict[str, Any] = {}
+    out_sig["name"] = re.group(m_def, 1)
+    out_sig["ret"] = _sh_ann_to_type(ret_group.strip()) if ret_group != "" else "None"
+    out_sig["arg_types"] = arg_types
+    out_sig["arg_order"] = arg_order
+    out_sig["arg_defaults"] = arg_defaults
+    return out_sig
 
 
 def _sh_scan_logical_line_state(
     txt: str,
-    *,
     depth: int,
-    mode: str | None,
-) -> tuple[int, str | None]:
+    mode: str,
+) -> tuple[int, str]:
     """論理行マージ用に括弧深度と文字列モードを更新する。"""
     i = 0
+    mode_cur = mode
     while i < len(txt):
-        if mode in {"'''", '"""'}:
-            close = txt.find(mode, i)
+        if mode_cur in {"'''", '"""'}:
+            close = txt.find(mode_cur, i)
             if close < 0:
                 i = len(txt)
                 continue
             i = close + 3
-            mode = None
+            mode_cur = ""
             continue
         ch = txt[i]
-        if mode in {"'", '"'}:
+        if mode_cur in {"'", '"'}:
             if ch == "\\":
                 i += 2
                 continue
-            if ch == mode:
-                mode = None
+            if ch == mode_cur:
+                mode_cur = ""
             i += 1
             continue
         if i + 2 < len(txt) and txt[i : i + 3] in {"'''", '"""'}:
-            mode = txt[i : i + 3]
+            mode_cur = txt[i : i + 3]
             i += 3
             continue
         if ch in {"'", '"'}:
-            mode = ch
+            mode_cur = ch
             i += 1
             continue
         if ch == "#":
@@ -388,7 +387,7 @@ def _sh_scan_logical_line_state(
         elif ch in {")", "]", "}"}:
             depth -= 1
         i += 1
-    return depth, mode
+    return depth, mode_cur
 
 
 def _sh_merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tuple[int, str]], dict[int, tuple[int, int]]]:
@@ -400,8 +399,8 @@ def _sh_merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tupl
         start_no, start_txt = raw_lines[idx]
         acc = start_txt
         depth = 0
-        mode: str | None = None
-        depth, mode = _sh_scan_logical_line_state(start_txt, depth=depth, mode=mode)
+        mode = ""
+        depth, mode = _sh_scan_logical_line_state(start_txt, depth, mode)
         end_no = start_no
         end_txt = start_txt
         while (depth > 0 or mode in {"'''", '"""'}) and idx + 1 < len(raw_lines):
@@ -411,7 +410,7 @@ def _sh_merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tupl
                 acc += "\n" + next_txt
             else:
                 acc += " " + next_txt.strip()
-            depth, mode = _sh_scan_logical_line_state(next_txt, depth=depth, mode=mode)
+            depth, mode = _sh_scan_logical_line_state(next_txt, depth, mode)
             end_no = next_no
             end_txt = next_txt
         merged.append((start_no, acc))
@@ -540,9 +539,15 @@ def _sh_infer_item_type(node: dict[str, Any]) -> str:
     if t == "range":
         return "int64"
     if t.startswith("list[") and t.endswith("]"):
-        return t[5:-1].strip() or "unknown"
+        inner = t[5:-1].strip()
+        if inner != "":
+            return inner
+        return "unknown"
     if t.startswith("set[") and t.endswith("]"):
-        return t[4:-1].strip() or "unknown"
+        inner = t[4:-1].strip()
+        if inner != "":
+            return inner
+        return "unknown"
     if t in {"bytes", "bytearray"}:
         return "uint8"
     if t == "str":
@@ -556,7 +561,7 @@ def _sh_bind_comp_target_types(
     iter_node: dict[str, Any],
 ) -> dict[str, str]:
     """内包表記 target へ反復要素型を束縛した name_types を返す。"""
-    out = dict(base_types)
+    out: dict[str, str] = dict(base_types)
     item_t = _sh_infer_item_type(iter_node)
     if target_node.get("kind") == "Name":
         nm = str(target_node.get("id", ""))
@@ -578,7 +583,10 @@ def _sh_bind_comp_target_types(
             nm = str(e.get("id", ""))
             if nm != "":
                 if i < len(elem_types):
-                    out[nm] = elem_types[i].strip() or "unknown"
+                    et = elem_types[i].strip()
+                    if et == "":
+                        et = "unknown"
+                    out[nm] = et
                 else:
                     out[nm] = "unknown"
         i += 1
@@ -618,7 +626,10 @@ def _sh_push_stmt_with_trivia(
 ) -> int:
     """保留中 trivia を付与して文リストへ追加し、更新後 blank 数を返す。"""
     if pending_blank_count > 0:
-        pending_leading_trivia.append({"kind": "blank", "count": pending_blank_count})
+        blank_item: dict[str, Any] = {}
+        blank_item["kind"] = "blank"
+        blank_item["count"] = pending_blank_count
+        pending_leading_trivia.append(blank_item)
         pending_blank_count = 0
     if len(pending_leading_trivia) > 0:
         stmt["leading_trivia"] = list(pending_leading_trivia)
@@ -2382,10 +2393,10 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         }
 
     # Normalize generator-arg any/all into list-comp form for self_hosted parser.
-    m_any_all = re.match(r"^(any|all)\((.+)\)$", txt, flags=re.S)
+    m_any_all: re.Match | None = re.match(r"^(any|all)\((.+)\)$", txt, flags=re.S)
     if m_any_all is not None:
-        fn_name = m_any_all.group(1)
-        inner_arg = m_any_all.group(2).strip()
+        fn_name = re.group(m_any_all, 1)
+        inner_arg = re.group(m_any_all, 2).strip()
         if _sh_split_top_keyword(inner_arg, "for") > 0 and _sh_split_top_keyword(inner_arg, "in") > 0:
             lc = _sh_parse_expr_lowered(f"[{inner_arg}]", ln_no=ln_no, col=col + txt.find(inner_arg), name_types=dict(name_types))
             return {
@@ -2728,11 +2739,11 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             }
 
     # Very simple list-comp support: [x for x in <iter>]
-    m_lc = re.match(r"^\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)\]$", txt)
+    m_lc: re.Match | None = re.match(r"^\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)\]$", txt)
     if m_lc is not None:
-        elt_name = m_lc.group(1)
-        tgt_name = m_lc.group(2)
-        iter_txt = m_lc.group(3).strip()
+        elt_name = re.group(m_lc, 1)
+        tgt_name = re.group(m_lc, 2)
+        iter_txt = re.group(m_lc, 3).strip()
         iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
         it_t = str(iter_node.get("resolved_type", "unknown"))
         elem_t = "unknown"
@@ -2900,7 +2911,7 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             continue
 
         if s.startswith("for ") and s.endswith(":"):
-            m_for = re.match(r"^for\s+(.+)\s+in\s+(.+):$", s, flags=re.S)
+            m_for: re.Match | None = re.match(r"^for\s+(.+)\s+in\s+(.+):$", s, flags=re.S)
             if m_for is None:
                 raise EastBuildError(
                     kind="unsupported_syntax",
@@ -2908,8 +2919,8 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                     source_span=_sh_span(ln_no, 0, len(ln_txt)),
                     hint="Use `for target in iterable:` form.",
                 )
-            tgt_txt = m_for.group(1).strip()
-            iter_txt = m_for.group(2).strip()
+            tgt_txt = re.group(m_for, 1).strip()
+            iter_txt = re.group(m_for, 2).strip()
             tgt_col = ln_txt.find(tgt_txt)
             iter_col = ln_txt.find(iter_txt)
             target_expr = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=tgt_col, name_types=dict(name_types))
@@ -3038,7 +3049,7 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             continue
 
         if s.startswith("with ") and s.endswith(":"):
-            m_with = re.match(r"^with\s+(.+)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", s, flags=re.S)
+            m_with: re.Match | None = re.match(r"^with\s+(.+)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", s, flags=re.S)
             if m_with is None:
                 raise EastBuildError(
                     kind="unsupported_syntax",
@@ -3046,8 +3057,8 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                     source_span=_sh_span(ln_no, 0, len(ln_txt)),
                     hint="Use `with expr as name:` form.",
                 )
-            ctx_txt = m_with.group(1).strip()
-            as_name = m_with.group(2).strip()
+            ctx_txt = re.group(m_with, 1).strip()
+            as_name = re.group(m_with, 2).strip()
             ctx_col = ln_txt.find(ctx_txt)
             as_col = ln_txt.find(as_name, ctx_col + len(ctx_txt))
             ctx_expr = _sh_parse_expr_lowered(ctx_txt, ln_no=ln_no, col=ctx_col, name_types=dict(name_types))
@@ -3132,14 +3143,14 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                 h_indent = len(h_ln) - len(h_ln.lstrip(" "))
                 if h_indent != indent:
                     break
-                m_exc_as = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s, flags=re.S)
-                m_exc_plain = re.match(r"^except\s+(.+?)\s*:\s*$", h_s, flags=re.S)
+                m_exc_as: re.Match | None = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s, flags=re.S)
+                m_exc_plain: re.Match | None = re.match(r"^except\s+(.+?)\s*:\s*$", h_s, flags=re.S)
                 if m_exc_as is not None or m_exc_plain is not None:
                     if m_exc_as is not None:
-                        ex_type_txt = m_exc_as.group(1).strip()
-                        ex_name: str | None = m_exc_as.group(2)
+                        ex_type_txt = re.group(m_exc_as, 1).strip()
+                        ex_name: str | None = re.group(m_exc_as, 2)
                     else:
-                        ex_type_txt = m_exc_plain.group(1).strip() if m_exc_plain is not None else "Exception"
+                        ex_type_txt = re.group(m_exc_plain, 1).strip() if m_exc_plain is not None else "Exception"
                         ex_name = None
                     ex_type_col = h_ln.find(ex_type_txt)
                     h_body, k = _sh_collect_indented_block(body_lines, j + 1, indent)
@@ -3225,10 +3236,10 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             i += 1
             continue
 
-        m_ann_decl = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*(.+)$", s)
+        m_ann_decl: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*(.+)$", s)
         if m_ann_decl is not None and "=" not in s:
-            target_txt = m_ann_decl.group(1)
-            ann = _sh_ann_to_type(m_ann_decl.group(2))
+            target_txt = re.group(m_ann_decl, 1)
+            ann = _sh_ann_to_type(re.group(m_ann_decl, 2))
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
@@ -3247,11 +3258,11 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             i += 1
             continue
 
-        m_ann = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
+        m_ann: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
         if m_ann is not None:
-            target_txt = m_ann.group(1)
-            ann = _sh_ann_to_type(m_ann.group(2))
-            expr_txt = m_ann.group(3).strip()
+            target_txt = re.group(m_ann, 1)
+            ann = _sh_ann_to_type(re.group(m_ann, 2))
+            expr_txt = re.group(m_ann, 3).strip()
             expr_col = ln_txt.find(expr_txt)
             val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
             target_col = ln_txt.find(target_txt)
@@ -3272,12 +3283,12 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             i += 1
             continue
 
-        m_aug = re.match(
+        m_aug: re.Match | None = re.match(
             r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*(\+=|-=|\*=|/=|//=|%=|&=|\|=|\^=|<<=|>>=)\s*(.+)$",
             s,
         )
         if m_aug is not None:
-            target_txt = m_aug.group(1)
+            target_txt = re.group(m_aug, 1)
             op_map = {
                 "+=": "Add",
                 "-=": "Sub",
@@ -3291,7 +3302,7 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                 "<<=": "LShift",
                 ">>=": "RShift",
             }
-            expr_txt = m_aug.group(3).strip()
+            expr_txt = re.group(m_aug, 3).strip()
             expr_col = ln_txt.find(expr_txt)
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
@@ -3304,7 +3315,7 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                     "kind": "AugAssign",
                     "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
                     "target": target_expr,
-                    "op": op_map[m_aug.group(2)],
+                    "op": op_map[re.group(m_aug, 2)],
                     "value": val_expr,
                     "declare": False,
                     "decl_type": target_ty if target_ty != "unknown" else None,
@@ -3313,11 +3324,11 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             i += 1
             continue
 
-        m_tasg = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
+        m_tasg: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
         if m_tasg is not None:
-            n1 = m_tasg.group(1)
-            n2 = m_tasg.group(2)
-            expr_txt = m_tasg.group(3).strip()
+            n1 = re.group(m_tasg, 1)
+            n2 = re.group(m_tasg, 2)
+            expr_txt = re.group(m_tasg, 3).strip()
             expr_col = ln_txt.find(expr_txt)
             rhs = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
             c1 = ln_txt.find(n1)
@@ -3464,11 +3475,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         indent = len(ln) - len(ln.lstrip(" "))
         if cur_cls is not None and indent <= cur_cls_indent and not s.startswith("#"):
             cur_cls = None
-        m_cls = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", ln)
+        m_cls: re.Match | None = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", ln)
         if m_cls is not None:
-            cur_cls = m_cls.group(1)
+            cur_cls = re.group(m_cls, 1)
             cur_cls_indent = indent
-            class_base[cur_cls] = m_cls.group(2)
+            class_base[cur_cls] = re.group(m_cls, 2)
             class_method_return_types.setdefault(cur_cls, {})
             continue
         if cur_cls is None:
@@ -3509,7 +3520,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i += 1
             continue
 
-        m_main = re.match(r"^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$", ln)
+        m_main: re.Match | None = re.match(r"^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$", ln)
         if m_main is not None:
             block: list[tuple[int, str]] = []
             j = i + 1
@@ -3601,9 +3612,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             pending_dataclass = True
             i += 1
             continue
-        m_import = re.match(r"^import\s+(.+)$", s, flags=re.S)
+        m_import: re.Match | None = re.match(r"^import\s+(.+)$", s, flags=re.S)
         if m_import is not None:
-            names_txt = m_import.group(1).strip()
+            names_txt = re.group(m_import, 1).strip()
             raw_parts = [p.strip() for p in names_txt.split(",") if p.strip() != ""]
             if len(raw_parts) == 0:
                 raise EastBuildError(
@@ -3614,7 +3625,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
             aliases: list[dict[str, str | None]] = []
             for part in raw_parts:
-                m_alias = re.match(r"^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$", part)
+                m_alias: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$", part)
                 if m_alias is None:
                     raise EastBuildError(
                         kind="unsupported_syntax",
@@ -3622,8 +3633,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Use `import module` or `import module as alias` form.",
                     )
-                mod_name = m_alias.group(1)
-                as_name = m_alias.group(2)
+                mod_name = re.group(m_alias, 1)
+                as_name = re.group(m_alias, 2)
                 bind_name = as_name if isinstance(as_name, str) and as_name != "" else mod_name.split(".")[0]
                 _sh_append_import_binding(
                     import_bindings=import_bindings,
@@ -3657,10 +3668,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Use absolute import form: `from module import name`.",
                     )
-        m_import_from = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
+        m_import_from: re.Match | None = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
         if m_import_from is not None:
-            mod_name = m_import_from.group(1).strip()
-            names_txt = m_import_from.group(2).strip()
+            mod_name = re.group(m_import_from, 1).strip()
+            names_txt = re.group(m_import_from, 2).strip()
             if names_txt == "*":
                 raise EastBuildError(
                     kind="unsupported_syntax",
@@ -3678,7 +3689,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
             aliases: list[dict[str, str | None]] = []
             for part in raw_parts:
-                m_alias = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$", part)
+                m_alias: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$", part)
                 if m_alias is None:
                     raise EastBuildError(
                         kind="unsupported_syntax",
@@ -3686,8 +3697,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Use `from module import name` or `... as alias`.",
                     )
-                sym_name = m_alias.group(1)
-                as_name = m_alias.group(2)
+                sym_name = re.group(m_alias, 1)
+                as_name = re.group(m_alias, 2)
                 bind_name = as_name if isinstance(as_name, str) and as_name != "" else sym_name
                 _sh_append_import_binding(
                     import_bindings=import_bindings,
@@ -3715,10 +3726,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i += 1
             continue
 
-        m_cls = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", ln)
+        m_cls: re.Match | None = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", ln)
         if m_cls is not None:
-            cls_name = m_cls.group(1)
-            base = m_cls.group(2)
+            cls_name = re.group(m_cls, 1)
+            base = re.group(m_cls, 2)
             is_enum_base = base in {"Enum", "IntEnum", "IntFlag"}
             cls_indent = len(ln) - len(ln.lstrip(" "))
             block: list[tuple[int, str]] = []
@@ -3787,14 +3798,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 class_storage_hint_override = "ref"
                                 k += 1
                                 continue
-                    m_field = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", s2)
+                    m_field: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", s2)
                     if m_field is not None:
-                        fname = m_field.group(1)
-                        fty = _sh_ann_to_type(m_field.group(2))
+                        fname = re.group(m_field, 1)
+                        fty = _sh_ann_to_type(re.group(m_field, 2))
                         field_types[fname] = fty
                         val_node = None
-                        if m_field.group(3) not in {None, ""}:
-                            fexpr_txt = m_field.group(3).strip()
+                        if re.group(m_field, 3) != "":
+                            fexpr_txt = re.group(m_field, 3).strip()
                             fexpr_col = ln_txt.find(fexpr_txt)
                             val_node = parse_expr(fexpr_txt, ln_no=ln_no, col=fexpr_col, name_types={})
                         class_body.append(
@@ -3819,10 +3830,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         k += 1
                         continue
                     if is_enum_base:
-                        m_enum_assign = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s2)
+                        m_enum_assign: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s2)
                         if m_enum_assign is not None:
-                            fname = m_enum_assign.group(1)
-                            fexpr_txt = m_enum_assign.group(2).strip()
+                            fname = re.group(m_enum_assign, 1)
+                            fexpr_txt = re.group(m_enum_assign, 2).strip()
                             name_col = ln_txt.find(fname)
                             expr_col = ln_txt.find(fexpr_txt, name_col + len(fname))
                             val_node = parse_expr(fexpr_txt, ln_no=ln_no, col=expr_col, name_types={})
@@ -4024,11 +4035,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = j
             continue
 
-        m_ann_top = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s, flags=re.S)
+        m_ann_top: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s, flags=re.S)
         if m_ann_top is not None:
-            name = m_ann_top.group(1)
-            ann = _sh_ann_to_type(m_ann_top.group(2))
-            expr_txt = m_ann_top.group(3).strip()
+            name = re.group(m_ann_top, 1)
+            ann = _sh_ann_to_type(re.group(m_ann_top, 2))
+            expr_txt = re.group(m_ann_top, 3).strip()
             expr_col = ln.find(expr_txt)
             body_items.append(
                 {
@@ -4052,10 +4063,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = logical_end + 1
             continue
 
-        asg_top = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s, flags=re.S)
+        asg_top: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s, flags=re.S)
         if asg_top is not None:
-            name = asg_top.group(1)
-            expr_txt = asg_top.group(2).strip()
+            name = re.group(asg_top, 1)
+            expr_txt = re.group(asg_top, 2).strip()
             expr_col = ln.find(expr_txt)
             if expr_col < 0:
                 expr_col = 0

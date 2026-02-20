@@ -20,6 +20,14 @@ class Match:
         return self._groups[idx - 1]
 
 
+def group(m: Match | None, idx: int = 0) -> str:
+    """`Match | None` から group を安全取得する（None は空文字）。"""
+    if m is None:
+        return ""
+    mm: Match = m
+    return mm.group(idx)
+
+
 def _is_ident(s: str) -> bool:
     if s == "":
         return False
