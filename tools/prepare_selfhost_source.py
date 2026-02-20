@@ -404,9 +404,11 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
         "def load_cpp_hooks(",
         "\ndef load_cpp_identifier_rules(",
         (
-            "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> Any:\n"
+            "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:\n"
             "    pass\n"
-            "    return make_object(0)\n\n"
+            "    _ = profile\n"
+            "    out: dict[str, Any] = {}\n"
+            "    return out\n\n"
         ),
     )
 

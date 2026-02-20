@@ -124,7 +124,7 @@
    - [x] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
    - [ ] `hook_on_*` 系の `hooks` コンテナ型を selfhost で安定化する。
      - [x] `CodeEmitter` 側の hook 呼び出しを object receiver メソッド参照（`self.hooks.on_*`）から排除する。
-     - [ ] `selfhost/py2cpp.cpp` で `hooks` が `object` へ退化しないよう、`dict[str, Any]` を維持する初期化経路へ統一する。
+     - [x] `selfhost/py2cpp.cpp` で `hooks` が `object` へ退化しないよう、`dict[str, Any]` を維持する初期化経路へ統一する。: `CodeEmitter.hooks` を `dict[str, Any]` へ固定し、`selfhost/py2cpp.cpp` で `inline static dict<str, object> hooks;` を確認（2026-02-20）。
      - [ ] `fn(self, ...)` 呼び出しが C++ 側で無効式になる問題を、hook 無効化または型付き dispatcher で解消する。
    - [ ] `*_dict_get*` の default 引数を `str` / `int` / `list` 別 helper に分離し、`object` 強制変換を減らす。
      - [x] `any_dict_get_bool` / `any_dict_get_list` / `any_dict_get_dict` を追加する。

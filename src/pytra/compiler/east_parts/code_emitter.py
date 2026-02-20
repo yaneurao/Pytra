@@ -9,7 +9,7 @@ class CodeEmitter:
     """EAST -> 各言語のコード生成で共通利用する最小基底クラス。"""
     doc: dict[str, Any]
     profile: dict[str, Any]
-    hooks: Any
+    hooks: dict[str, Any]
     lines: list[str]
     indent: int
     tmp_id: int

@@ -438,10 +438,14 @@ def load_cpp_type_map() -> dict[str, str]:
     }
 
 
-def load_cpp_hooks(profile: dict[str, Any] | None = None) -> Any:
+def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
     """C++ 用 hooks 設定を返す。"""
     _ = profile
-    return build_cpp_hooks()
+    hooks = build_cpp_hooks()
+    if isinstance(hooks, dict):
+        return hooks
+    out: dict[str, Any] = {}
+    return out
 
 
 def load_cpp_identifier_rules() -> tuple[set[str], str]:
@@ -544,7 +548,7 @@ class CppEmitter(CodeEmitter):
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
         profile = load_cpp_profile()
-        hooks = load_cpp_hooks(profile)
+        hooks: dict[str, Any] = load_cpp_hooks(profile)
         self.init_base_state(east_doc, profile, hooks)
         self.negative_index_mode = negative_index_mode
         self.bounds_check_mode = bounds_check_mode
