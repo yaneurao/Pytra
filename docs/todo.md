@@ -27,7 +27,7 @@
        - [ ] `tools/build_selfhost.py` の現行失敗要因を段階解消する（`literal.join` 生成崩れ、`AUG_OPS/BIN_OPS` 未束縛、`parse_py2cpp_argv` 返り値の tuple 退化）。
          - [ ] `CppEmitter._module_source_path_for_name` の selfhost 変換で `Path` が `float64` 退化する経路を除去する（`Path /` と `str + Path` を使わない）。
          - [ ] `CppEmitter._module_function_arg_types` の `load_east` 依存を selfhost 最小モードで無効化する（`not_implemented` のままでもビルド通過を優先）。
-         - [ ] `parse_py2cpp_argv` の返り値が tuple 退化する経路を修正し、`_dict_str_get(parsed, ...)` 呼び出しを常に `dict[str, str]` で通す。
+         - [x] `parse_py2cpp_argv` の返り値が tuple 退化する経路を修正し、`_dict_str_get(parsed, ...)` 呼び出しを常に `dict[str, str]` で通す。
          - [ ] `", ".join(...)` / `" && ".join(...)` など literal `.join` が C++ 側で `char[]` 扱いになる箇所を全置換する（`sep` 変数経由または `py_join` 経由）。
          - [ ] `BIN_OPS` / `AUG_OPS` / `CMP_OPS` の global 参照が selfhost で未束縛になる経路を切り分け、`CodeEmitter` 側 accessor 経由へ寄せる。
        - [ ] `src/pytra/compiler/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
