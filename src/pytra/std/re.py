@@ -28,6 +28,11 @@ def group(m: Match | None, idx: int = 0) -> str:
     return mm.group(idx)
 
 
+def strip_group(m: Match | None, idx: int = 0) -> str:
+    """group を取得して前後空白を除去する。"""
+    return group(m, idx).strip()
+
+
 def _is_ident(s: str) -> bool:
     if s == "":
         return False

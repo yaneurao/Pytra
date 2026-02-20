@@ -93,7 +93,7 @@ def _sh_ann_to_type(ann: str) -> str:
     if m is None:
         return txt
     head: str = re.group(m, 1)
-    inner: str = re.group(m, 2).strip()
+    inner: str = re.strip_group(m, 2)
     parts: list[str] = []
     depth = 0
     start = 0
@@ -313,8 +313,8 @@ def _sh_parse_def_sig(
                     source_span=_sh_span(ln_no, 0, len(ln_norm)),
                     hint="Use `name: Type` style parameters.",
                 )
-            pn: str = re.group(m_param, 1).strip()
-            pt: str = re.group(m_param, 2).strip()
+            pn: str = re.strip_group(m_param, 1)
+            pt: str = re.strip_group(m_param, 2)
             if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pn):
                 raise EastBuildError(
                     kind="unsupported_syntax",
@@ -2396,7 +2396,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
     m_any_all: re.Match | None = re.match(r"^(any|all)\((.+)\)$", txt, flags=re.S)
     if m_any_all is not None:
         fn_name = re.group(m_any_all, 1)
-        inner_arg = re.group(m_any_all, 2).strip()
+        inner_arg = re.strip_group(m_any_all, 2)
         if _sh_split_top_keyword(inner_arg, "for") > 0 and _sh_split_top_keyword(inner_arg, "in") > 0:
             lc = _sh_parse_expr_lowered(f"[{inner_arg}]", ln_no=ln_no, col=col + txt.find(inner_arg), name_types=dict(name_types))
             return {
@@ -2743,7 +2743,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
     if m_lc is not None:
         elt_name = re.group(m_lc, 1)
         tgt_name = re.group(m_lc, 2)
-        iter_txt = re.group(m_lc, 3).strip()
+        iter_txt = re.strip_group(m_lc, 3)
         iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
         it_t = str(iter_node.get("resolved_type", "unknown"))
         elem_t = "unknown"
@@ -2919,8 +2919,8 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                     source_span=_sh_span(ln_no, 0, len(ln_txt)),
                     hint="Use `for target in iterable:` form.",
                 )
-            tgt_txt = re.group(m_for, 1).strip()
-            iter_txt = re.group(m_for, 2).strip()
+            tgt_txt = re.strip_group(m_for, 1)
+            iter_txt = re.strip_group(m_for, 2)
             tgt_col = ln_txt.find(tgt_txt)
             iter_col = ln_txt.find(iter_txt)
             target_expr = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=tgt_col, name_types=dict(name_types))
@@ -3057,8 +3057,8 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                     source_span=_sh_span(ln_no, 0, len(ln_txt)),
                     hint="Use `with expr as name:` form.",
                 )
-            ctx_txt = re.group(m_with, 1).strip()
-            as_name = re.group(m_with, 2).strip()
+            ctx_txt = re.strip_group(m_with, 1)
+            as_name = re.strip_group(m_with, 2)
             ctx_col = ln_txt.find(ctx_txt)
             as_col = ln_txt.find(as_name, ctx_col + len(ctx_txt))
             ctx_expr = _sh_parse_expr_lowered(ctx_txt, ln_no=ln_no, col=ctx_col, name_types=dict(name_types))
@@ -3147,10 +3147,10 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                 m_exc_plain: re.Match | None = re.match(r"^except\s+(.+?)\s*:\s*$", h_s, flags=re.S)
                 if m_exc_as is not None or m_exc_plain is not None:
                     if m_exc_as is not None:
-                        ex_type_txt = re.group(m_exc_as, 1).strip()
+                        ex_type_txt = re.strip_group(m_exc_as, 1)
                         ex_name: str | None = re.group(m_exc_as, 2)
                     else:
-                        ex_type_txt = re.group(m_exc_plain, 1).strip() if m_exc_plain is not None else "Exception"
+                        ex_type_txt = re.strip_group(m_exc_plain, 1) if m_exc_plain is not None else "Exception"
                         ex_name = None
                     ex_type_col = h_ln.find(ex_type_txt)
                     h_body, k = _sh_collect_indented_block(body_lines, j + 1, indent)
@@ -3262,7 +3262,7 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
         if m_ann is not None:
             target_txt = re.group(m_ann, 1)
             ann = _sh_ann_to_type(re.group(m_ann, 2))
-            expr_txt = re.group(m_ann, 3).strip()
+            expr_txt = re.strip_group(m_ann, 3)
             expr_col = ln_txt.find(expr_txt)
             val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
             target_col = ln_txt.find(target_txt)
@@ -3302,7 +3302,7 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                 "<<=": "LShift",
                 ">>=": "RShift",
             }
-            expr_txt = re.group(m_aug, 3).strip()
+            expr_txt = re.strip_group(m_aug, 3)
             expr_col = ln_txt.find(expr_txt)
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
@@ -3328,7 +3328,7 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
         if m_tasg is not None:
             n1 = re.group(m_tasg, 1)
             n2 = re.group(m_tasg, 2)
-            expr_txt = re.group(m_tasg, 3).strip()
+            expr_txt = re.strip_group(m_tasg, 3)
             expr_col = ln_txt.find(expr_txt)
             rhs = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
             c1 = ln_txt.find(n1)
@@ -3614,7 +3614,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             continue
         m_import: re.Match | None = re.match(r"^import\s+(.+)$", s, flags=re.S)
         if m_import is not None:
-            names_txt = re.group(m_import, 1).strip()
+            names_txt = re.strip_group(m_import, 1)
             raw_parts = [p.strip() for p in names_txt.split(",") if p.strip() != ""]
             if len(raw_parts) == 0:
                 raise EastBuildError(
@@ -3670,8 +3670,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     )
         m_import_from: re.Match | None = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
         if m_import_from is not None:
-            mod_name = re.group(m_import_from, 1).strip()
-            names_txt = re.group(m_import_from, 2).strip()
+            mod_name = re.strip_group(m_import_from, 1)
+            names_txt = re.strip_group(m_import_from, 2)
             if names_txt == "*":
                 raise EastBuildError(
                     kind="unsupported_syntax",
@@ -3805,7 +3805,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         field_types[fname] = fty
                         val_node = None
                         if re.group(m_field, 3) != "":
-                            fexpr_txt = re.group(m_field, 3).strip()
+                            fexpr_txt = re.strip_group(m_field, 3)
                             fexpr_col = ln_txt.find(fexpr_txt)
                             val_node = parse_expr(fexpr_txt, ln_no=ln_no, col=fexpr_col, name_types={})
                         class_body.append(
@@ -3833,7 +3833,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         m_enum_assign: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s2)
                         if m_enum_assign is not None:
                             fname = re.group(m_enum_assign, 1)
-                            fexpr_txt = re.group(m_enum_assign, 2).strip()
+                            fexpr_txt = re.strip_group(m_enum_assign, 2)
                             name_col = ln_txt.find(fname)
                             expr_col = ln_txt.find(fexpr_txt, name_col + len(fname))
                             val_node = parse_expr(fexpr_txt, ln_no=ln_no, col=expr_col, name_types={})
@@ -4039,7 +4039,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         if m_ann_top is not None:
             name = re.group(m_ann_top, 1)
             ann = _sh_ann_to_type(re.group(m_ann_top, 2))
-            expr_txt = re.group(m_ann_top, 3).strip()
+            expr_txt = re.strip_group(m_ann_top, 3)
             expr_col = ln.find(expr_txt)
             body_items.append(
                 {
@@ -4066,7 +4066,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         asg_top: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s, flags=re.S)
         if asg_top is not None:
             name = re.group(asg_top, 1)
-            expr_txt = re.group(asg_top, 2).strip()
+            expr_txt = re.strip_group(asg_top, 2)
             expr_col = ln.find(expr_txt)
             if expr_col < 0:
                 expr_col = 0

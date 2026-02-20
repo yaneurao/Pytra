@@ -35,6 +35,11 @@ namespace pytra::std::re {
         return mm->group(idx);
     }
     
+    str strip_group(const ::std::optional<rc<Match>>& m, int64 idx) {
+        /* group を取得して前後空白を除去する。 */
+        return py_to_string(py_strip(group(m, idx)));
+    }
+    
     bool _is_ident(const str& s) {
         if (s == "")
             return false;
