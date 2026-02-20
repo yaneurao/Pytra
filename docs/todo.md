@@ -1,5 +1,30 @@
 # TODO（未完了のみ）
 
+## 最優先（2026-02-20 追加: todo2 優先TODO 反映）
+
+- [ ] `src/pytra/std/*.py` を `--emit-runtime-cpp` で再生成し、`src/runtime/cpp/pytra/std/` への反映を自動生成起点に統一する。
+  - [ ] 対象: 少なくとも `math.py`, `json.py`, `pathlib.py`, `re.py`, `sys.py`, `typing.py`, `dataclasses.py`, `time.py`, `glob.py`。
+  - [ ] 受け入れ条件:
+    - [ ] `python3 src/py2cpp.py src/pytra/std/math.py --emit-runtime-cpp` 後に `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp` が更新される。
+    - [ ] `python3 test/fixtures/stdlib/math_extended.py` と対応 C++ 実行結果が一致する。
+
+- [ ] `enumerate()` 変換を拡張し、`start` 引数つきケースを回帰テストで固定する。
+  - [ ] 追加ケース: `enumerate(xs)`, `enumerate(xs, 1)`, `enumerate(xs, 5)`, タプル分解あり/なし。
+  - [ ] 受け入れ条件: `test/fixtures` 側の Python/C++ 出力一致テストが green。
+
+- [ ] 内包表記とラムダのテストを増やし、コード生成崩れを早期検知できるようにする。
+  - [ ] 追加ケース: list/set/dict comprehension（if あり/なし）、lambda の即時呼び出し、lambda を変数へ代入して呼び出し。
+  - [ ] 受け入れ条件: 追加した fixture が Python/C++ で一致し、`tools/check_py2cpp_transpile.py` が green。
+
+- [ ] `import_pytra_runtime_png.png` 誤生成の原因を特定し、再発防止テストを追加する。
+  - [ ] 再現条件（入力ファイル・コマンド・期待値）を `docs/spec-import.md` または `docs/todo.md` のメモに残す。
+  - [ ] 受け入れ条件: 不要 png が生成されないことを自動テスト（または検査スクリプト）で確認。
+
+- [ ] トランスパイル時パススルー記法（`# Pytra::cpp` / `# Pytra::pass`）の仕様化と最小実装を行う。
+  - [ ] 仕様: 適用位置、インデント維持、複数ブロック連結、既存 docstring コメント変換との優先順位を `docs/spec.md` か `docs/spec-east.md` に明記。
+  - [ ] 実装: EAST 保持形式を定義し、C++ エミッタでそのまま展開できる最小経路を追加する。
+  - [ ] 受け入れ条件: 最小 fixture（1件）で Python 実行に影響を与えず、C++ 出力に意図した行が入る。
+
 ## 最優先（2026-02-20 追加: py2cpp コード生成不具合）
 
 - [x] `py2cpp.py` の分岐内初回代入（関数スコープ変数）が C++ でブロックスコープ宣言になってしまう問題を修正する。
