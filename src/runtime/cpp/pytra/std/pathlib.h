@@ -1,5 +1,5 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/runtime/std/pathlib.py
+// source: src/pytra/utils/std/pathlib.py
 // generated-by: src/py2cpp.py
 
 #ifndef SRC_RUNTIME_CPP_PYTRA_STD_PATHLIB_H

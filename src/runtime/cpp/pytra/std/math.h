@@ -1,9 +1,9 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/runtime/std/math.py
+// source: src/pytra/std/math.py
 // generated-by: src/py2cpp.py
 
-#ifndef SRC_RUNTIME_CPP_PYTRA_STD_MATH_H
-#define SRC_RUNTIME_CPP_PYTRA_STD_MATH_H
+#ifndef PYTRA_STD_MATH_H
+#define PYTRA_STD_MATH_H
 
 namespace pytra::std::math {
 
@@ -24,4 +24,4 @@ float64 pow(float64 x, float64 y);
 
 }  // namespace pytra::std::math
 
-#endif  // SRC_RUNTIME_CPP_PYTRA_STD_MATH_H
+#endif  // PYTRA_STD_MATH_H

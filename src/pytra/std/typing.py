@@ -6,19 +6,19 @@ type annotations so core modules avoid direct stdlib `typing` imports.
 
 from __future__ import annotations
 
-Any = object
-List = list
-Set = set
-Dict = dict
-Tuple = tuple
-Iterable = list
-Sequence = list
-Mapping = dict
-Optional = object
-Union = object
-Callable = object
-TypeAlias = object
+Any = "Any"
+List = "List"
+Set = "Set"
+Dict = "Dict"
+Tuple = "Tuple"
+Iterable = "Iterable"
+Sequence = "Sequence"
+Mapping = "Mapping"
+Optional = "Optional"
+Union = "Union"
+Callable = "Callable"
+TypeAlias = "TypeAlias"
 
 
-def TypeVar(name: str) -> object:
-    return object
+def TypeVar(name: str) -> str:
+    return name

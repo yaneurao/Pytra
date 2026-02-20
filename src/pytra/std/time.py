@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
-from time import perf_counter
+import pytra.std.time_impl as _impl
+
+
+def perf_counter() -> float:
+    return _impl.perf_counter()
+
 
 __all__ = ["perf_counter"]
