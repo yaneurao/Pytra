@@ -8,6 +8,7 @@
    - [x] `src/runtime/cpp/pytra/runtime/assertions.h`, `src/runtime/cpp/pytra/runtime/east.h`, `src/runtime/cpp/pytra/std/json.h`, `src/runtime/cpp/pytra/std/typing.h` の手書きスタブを廃止し、生成物へ置換する。
    - [x] `python3 src/py2cpp.py src/pytra/runtime/<mod>.py -o ...` 実行だけで `src/runtime/cpp/pytra/` 全体が更新されることを検証する。
    - [x] `src/pytra/runtime/**/*.py` が self_hosted parser で受理されることを確認する（`import *` 廃止、引数型注釈不足の解消、`!r` 非対応回避）。
+   - [x] `test/fixtures/stdlib/math_extended.py` 相当の C++ 実行検証を確認する（`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_math_extended_runtime`）。
    - [x] 上記完了後、関連ドキュメント（`docs/how-to-use.md`, `docs/spec-dev.md`, `docs/spec-runtime.md`）を同期する。
 
 ## 優先方針（2026-02-19 更新）
