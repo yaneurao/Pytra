@@ -32,6 +32,7 @@ using int64 = ::std::int64_t;
 using uint64 = ::std::uint64_t;
 using float32 = float;
 using float64 = double;
+// 上の型エイリアスは EAST 側の固定幅型名（int64 など）を C++ 基本型へ対応付ける。
 
 #include "bytes_util.h"
 #include "exceptions.h"
@@ -63,6 +64,8 @@ static inline const list<object>* obj_to_list_ptr(const object& v);
 #include "dict.h"
 #include "set.h"
 
+// Python の動的 object を C++ 側で保持するための最小ラッパクラス群。
+// 各 Py*Obj は値を保持するだけで、振る舞いは下のヘルパ関数側で提供する。
 class PyIntObj : public PyObj {
 public:
     explicit PyIntObj(int64 v) : value(v) {}
@@ -110,6 +113,7 @@ static inline object object_new(Args&&... args) {
     return object::adopt(static_cast<PyObj*>(pytra::gc::rc_new<T>(::std::forward<Args>(args)...)));
 }
 
+// C++ 値 -> Python object への昇格ヘルパ。
 template <class T, ::std::enable_if_t<::std::is_base_of_v<PyObj, T>, int> = 0>
 static inline object make_object(const rc<T>& v) {
     if (!v) return object();
@@ -177,6 +181,7 @@ static inline object make_object(const dict<str, V>& values) {
     return object_new<PyDictObj>(::std::move(out));
 }
 
+// Python object -> C++ 値の基本変換。
 static inline int64 obj_to_int64(const object& v) {
     if (!v) return 0;
     if (const auto* p = py_obj_cast<PyIntObj>(v)) return p->value;
@@ -252,6 +257,7 @@ static inline bool operator!=(const object& lhs, const object& rhs) {
     return !(lhs == rhs);
 }
 
+// Python 組み込み相当の基本ユーティリティ（len / 文字列化）。
 template <class T>
 static inline int64 py_len(const T& v) {
     return static_cast<int64>(v.size());
@@ -327,6 +333,7 @@ static inline ::std::string py_to_string(const object& v) {
     return obj_to_str(v);
 }
 
+// `re.sub` の最小互換実装で使用する空白判定と置換ヘルパ。
 static inline bool _py_is_ws(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f' || ch == '\v';
 }
@@ -443,6 +450,7 @@ struct ArgumentParser {
     }
 };
 
+// `object` / `any` に入った値を型付きで取り出す補助キャスト群。
 template <class D>
 static inline ::std::optional<D> py_object_try_cast(const object& v) {
     if constexpr (::std::is_same_v<D, object>) {
@@ -550,6 +558,7 @@ static inline bool py_to_bool(const ::std::any& v) {
     return false;
 }
 
+// Python の print 互換（bool 表記や複数引数の空白区切りを吸収）。
 template <class T>
 static inline void py_print(const T& v) {
     ::std::cout << v << ::std::endl;
@@ -570,6 +579,7 @@ static inline void py_print(const T& first, const Rest&... rest) {
     ::std::cout << ::std::endl;
 }
 
+// os.path / glob の最小互換ヘルパ。
 static inline str py_os_path_join(const str& a, const str& b) {
     if (a.empty()) return b;
     if (b.empty()) return a;
@@ -723,6 +733,7 @@ static inline list<str> py_glob_glob(const str& pattern) {
     return out;
 }
 
+// list / str の添字・スライス互換ヘルパ。
 template <class T>
 static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up) {
     const int64 n = static_cast<int64>(v.size());
@@ -794,6 +805,7 @@ static inline decltype(auto) py_at_bounds_debug(const Seq& v, int64 idx) {
 #endif
 }
 
+// dict 取得ヘルパ群。`get` の既定値付きと例外送出版の両方を提供する。
 template <class K, class V>
 static inline const V& py_dict_get(const dict<K, V>& d, const K& key) {
     auto it = d.find(key);
@@ -1116,6 +1128,7 @@ static inline object dict_get_node(
     return py_dict_get_default(d, key, defval);
 }
 
+// Python の型判定（isinstance 的な分岐）で使う述語群。
 template <class T>
 static inline bool py_is_none(const ::std::optional<T>& v) {
     return !v.has_value();
@@ -1224,6 +1237,7 @@ static inline bool py_is_int(const ::std::any& v) {
 static inline bool py_is_float(const ::std::any& v) { return v.type() == typeid(float32) || v.type() == typeid(float64); }
 static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(bool); }
 
+// selfhost 由来の `std::any` 比較式をそのまま通すための演算子補助。
 static inline bool operator==(const ::std::any& lhs, const char* rhs) {
     if (const auto* p = ::std::any_cast<str>(&lhs)) return *p == str(rhs);
     return false;
@@ -1363,6 +1377,7 @@ static inline float64 operator/(const ::std::any& lhs, const ::std::any& rhs) {
     return py_to_float64(lhs) / py_to_float64(rhs);
 }
 
+// `for x in any_value` を成立させるための begin/end ブリッジ。
 static inline list<::std::any>::iterator begin(::std::any& v) {
     if (auto* p = ::std::any_cast<list<::std::any>>(&v)) return p->begin();
     static list<::std::any> empty;
@@ -1432,6 +1447,7 @@ static inline ::list<::std::any>::const_iterator end(const ::std::any& v) {
 }
 }  // namespace std
 
+// dict.keys / dict.values の Python 互換。
 template <class K, class V>
 static inline list<K> py_dict_keys(const dict<K, V>& d) {
     list<K> out;
@@ -1461,6 +1477,7 @@ static inline str py_slice(const ::std::any& v, int64 lo, int64 up) {
     return "";
 }
 
+// Path 読み書き・文字列メソッド互換ヘルパ。
 static inline void py_write_text(const Path& p, const str& s) {
     ::std::ofstream ofs(p.native());
     ofs << s;
@@ -1510,6 +1527,7 @@ static inline str py_replace(const str& s, const str& oldv, const str& newv) {
     return out;
 }
 
+// reversed / enumerate / tuple in 判定の互換実装。
 template <class T>
 static inline list<T> py_reversed(const list<T>& values) {
     list<T> out(values.begin(), values.end());
@@ -1548,6 +1566,7 @@ static inline bool py_tuple_contains(const Tup& tup, const V& value) {
     return found;
 }
 
+// `/` / `//` / `%` の Python 互換セマンティクス（とくに負数時の扱い）を提供する。
 template <class A, class B>
 static inline float64 py_div(A lhs, B rhs) {
     return static_cast<float64>(lhs) / static_cast<float64>(rhs);
@@ -1585,6 +1604,7 @@ static inline auto py_mod(A lhs, B rhs) {
     }
 }
 
+// try/finally を C++ で再現するための scope-exit ガード。
 template <class F>
 class py_scope_exit {
 public:
@@ -1609,6 +1629,7 @@ static inline auto py_make_scope_exit(F&& fn) {
     return py_scope_exit<F>(::std::forward<F>(fn));
 }
 
+// 実行時引数・標準出力入出力の最小ランタイム状態。
 static inline list<str>& py_runtime_argv_storage();
 static inline void py_runtime_set_argv(const list<str>& values);
 
@@ -1695,6 +1716,7 @@ static inline ArgumentParser py_argparse_argument_parser(const str& description 
     return ArgumentParser(description);
 }
 
+// 画像ランタイムなどへ渡す byte 列の変換補助。
 static inline ::std::vector<uint8> py_u8_vector(const list<uint8>& src) {
     return ::std::vector<uint8>(src.begin(), src.end());
 }
@@ -1730,6 +1752,7 @@ static inline auto py_max(const A& a, const B& b, const Rest&... rest) -> ::std:
     return py_max(py_max(a, b), rest...);
 }
 
+// Python の range / シーケンス repeat 互換。
 static inline list<int64> py_range(int64 start, int64 stop, int64 step) {
     list<int64> out;
     if (step == 0) return out;

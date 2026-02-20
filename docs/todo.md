@@ -9,6 +9,8 @@
    - [x] 1件検証: `python3 tools/check_py2cpp_transpile.py` を実行し、`checked=103 ok=103 fail=0 skipped=5` を確認。
    - [x] 1件コミット: 1シンボル削除ごとに独立コミットする（後戻り容易化）。: `a89f5a8`, `6d8261c`, `36ab6df`
    - [ ] 影響反映: public API を消した場合は `docs/spec-runtime.md` / `docs/spec-dev.md` の該当記述を同コミットで更新する。
+2. [x] `src/runtime/cpp/pytra/built_in/py_runtime.h` の class / 関数に目的説明コメントを追加する。
+   - [x] object ラッパクラス群、変換ヘルパ群、os.path/glob、dict 取得、演算互換、runtime 状態管理の各セクションに C++ コメントを追加済み。
 
 ## 優先方針（2026-02-19 更新）
 
