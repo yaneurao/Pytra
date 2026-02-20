@@ -93,6 +93,7 @@ def _extract_support_blocks() -> str:
         "validate_codegen_options",
         "dump_codegen_options_text",
         "empty_parse_dict",
+        "_parse_error_dict",
         "parse_py2cpp_argv",
     ]
     parts: list[str] = []

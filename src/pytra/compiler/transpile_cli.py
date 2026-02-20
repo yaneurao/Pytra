@@ -183,11 +183,18 @@ def dump_codegen_options_text(
 
 def empty_parse_dict() -> dict[str, str]:
     out: dict[str, str] = {}
+    out["__error"] = ""
     return out
 
 
-def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
-    """py2cpp 向け CLI 引数を解析し、値辞書またはエラー文字列を返す。"""
+def _parse_error_dict(msg: str) -> dict[str, str]:
+    out = empty_parse_dict()
+    out["__error"] = msg
+    return out
+
+
+def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
+    """py2cpp 向け CLI 引数を解析し、値辞書（`__error` 含む）を返す。"""
     out: dict[str, str] = {
         "input": "",
         "output": "",
@@ -211,6 +218,7 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         "header_output": "",
         "emit_runtime_cpp": "0",
         "help": "0",
+        "__error": "",
     }
     i = 0
     while i < len(argv):
@@ -220,17 +228,17 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         elif a == "-o" or a == "--output":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --output"
+                return _parse_error_dict("missing value for --output")
             out["output"] = argv[i]
         elif a == "--negative-index-mode":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --negative-index-mode"
+                return _parse_error_dict("missing value for --negative-index-mode")
             out["negative_index_mode_opt"] = argv[i]
         elif a == "--output-dir":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --output-dir"
+                return _parse_error_dict("missing value for --output-dir")
             out["output_dir"] = argv[i]
         elif a == "--single-file":
             out["single_file"] = "1"
@@ -241,59 +249,59 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         elif a == "--top-namespace":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --top-namespace"
+                return _parse_error_dict("missing value for --top-namespace")
             out["top_namespace_opt"] = argv[i]
         elif a == "--bounds-check-mode":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --bounds-check-mode"
+                return _parse_error_dict("missing value for --bounds-check-mode")
             out["bounds_check_mode_opt"] = argv[i]
         elif a == "--floor-div-mode":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --floor-div-mode"
+                return _parse_error_dict("missing value for --floor-div-mode")
             out["floor_div_mode_opt"] = argv[i]
         elif a == "--mod-mode":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --mod-mode"
+                return _parse_error_dict("missing value for --mod-mode")
             out["mod_mode_opt"] = argv[i]
         elif a == "--int-width":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --int-width"
+                return _parse_error_dict("missing value for --int-width")
             out["int_width_opt"] = argv[i]
         elif a == "--str-index-mode":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --str-index-mode"
+                return _parse_error_dict("missing value for --str-index-mode")
             out["str_index_mode_opt"] = argv[i]
         elif a == "--str-slice-mode":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --str-slice-mode"
+                return _parse_error_dict("missing value for --str-slice-mode")
             out["str_slice_mode_opt"] = argv[i]
         elif a in {"-O0", "-O1", "-O2", "-O3"}:
             out["opt_level_opt"] = a[2:]
         elif a == "-O":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for -O"
+                return _parse_error_dict("missing value for -O")
             out["opt_level_opt"] = argv[i]
         elif a == "--opt-level":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --opt-level"
+                return _parse_error_dict("missing value for --opt-level")
             out["opt_level_opt"] = argv[i]
         elif a == "--preset":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --preset"
+                return _parse_error_dict("missing value for --preset")
             out["preset"] = argv[i]
         elif a == "--parser-backend":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --parser-backend"
+                return _parse_error_dict("missing value for --parser-backend")
             out["parser_backend"] = argv[i]
         elif a == "--no-main":
             out["no_main"] = "1"
@@ -304,12 +312,12 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         elif a == "--header-output":
             i += 1
             if i >= len(argv):
-                return empty_parse_dict(), "missing value for --header-output"
+                return _parse_error_dict("missing value for --header-output")
             out["header_output"] = argv[i]
         elif a == "--emit-runtime-cpp":
             out["emit_runtime_cpp"] = "1"
         elif a.startswith("-"):
-            return empty_parse_dict(), f"unknown option: {a}"
+            return _parse_error_dict(f"unknown option: {a}")
         else:
             if out["input"] == "":
                 out["input"] = a
@@ -317,6 +325,6 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
                 # `py2cpp.py INPUT.py OUTPUT.cpp` 形式も受け付ける。
                 out["output"] = a
             else:
-                return empty_parse_dict(), f"unexpected extra argument: {a}"
+                return _parse_error_dict(f"unexpected extra argument: {a}")
         i += 1
-    return out, ""
+    return out

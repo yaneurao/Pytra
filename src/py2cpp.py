@@ -5136,7 +5136,8 @@ def main(argv: list[str]) -> int:
         is_exec_name = head[-4:] == ".out" or head[-4:] == ".exe" or head[-6:] == "py2cpp"
         if is_exec_name and not head.startswith("-"):
             parse_argv = list(argv_list[1:])
-    parsed, parse_err = parse_py2cpp_argv(parse_argv)
+    parsed = parse_py2cpp_argv(parse_argv)
+    parse_err = _dict_str_get(parsed, "__error", "")
     if parse_err != "":
         print(f"error: {parse_err}", file=sys.stderr)
         return 1
