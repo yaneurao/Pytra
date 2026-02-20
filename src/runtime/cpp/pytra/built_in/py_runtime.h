@@ -1700,10 +1700,6 @@ static inline void py_runtime_write_stdout(const str& text) {
     ::std::cout << text;
 }
 
-static inline object py_runtime_stdout() {
-    return make_object(int64(1));
-}
-
 [[noreturn]] static inline void py_runtime_exit(int64 code = 0) {
     ::std::exit(static_cast<int>(code));
 }
