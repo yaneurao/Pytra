@@ -1,5 +1,7 @@
 #include "runtime/cpp/pytra/built_in/py_runtime.h"
 
+#include "pytra/std/math.h"
+
 #include "pytra/std/math-impl.h"
 
 namespace pytra::std::math {
