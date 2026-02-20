@@ -2447,7 +2447,7 @@ class CppEmitter(CodeEmitter):
             return f"py_replace({owner}, {args[0]}, {args[1]})"
         if runtime_call == "py_join" and len(args) == 1:
             owner = self.render_expr(fn.get("value"))
-            return f"py_join({owner}, {args[0]})"
+            return f"{owner}.join({args[0]})"
         if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
             if len(args) == 0:
                 return '::std::runtime_error("error")'

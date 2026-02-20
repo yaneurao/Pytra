@@ -1511,24 +1511,6 @@ static inline str py_replace(const str& s, const str& oldv, const str& newv) {
 }
 
 template <class T>
-static inline str py_join(const str& sep, const list<T>& values) {
-    if (values.empty()) return "";
-    str out = py_to_string(values[0]);
-    for (::std::size_t i = 1; i < values.size(); i++) {
-        out += sep;
-        out += py_to_string(values[i]);
-    }
-    return out;
-}
-
-static inline str py_join(const str& sep, const object& values) {
-    if (const auto* p = obj_to_list_ptr(values)) {
-        return py_join(sep, *p);
-    }
-    return "";
-}
-
-template <class T>
 static inline list<T> py_reversed(const list<T>& values) {
     list<T> out(values.begin(), values.end());
     ::std::reverse(out.begin(), out.end());
