@@ -2887,7 +2887,7 @@ class CppEmitter(CodeEmitter):
             owner = self.render_expr(fn.get("value"))
             return f"{owner}.clear()"
         if runtime_call == "dict.get":
-            owner_node = fn.get("value")
+            owner_node: object = fn.get("value")
             owner = self.render_expr(owner_node)
             owner_t = self.get_expr_type(owner_node)
             objectish_owner = self.is_any_like_type(owner_t)

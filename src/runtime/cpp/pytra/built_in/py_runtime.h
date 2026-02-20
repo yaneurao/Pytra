@@ -1078,6 +1078,11 @@ static inline V py_dict_get_default(const dict<str, V>& d, const char* key, cons
 }
 
 template <class V>
+static inline V py_dict_get_default(const dict<str, V>& d, const str& key, const V& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
+template <class V>
 static inline V py_dict_get_default(const ::std::optional<dict<str, V>>& d, const char* key, const V& defval) {
     if (!d.has_value()) {
         return defval;
@@ -1112,6 +1117,11 @@ static inline V py_dict_get_default(const dict<str, V>& d, const char* key, cons
 }
 
 template <class V, class D, ::std::enable_if_t<::std::is_convertible_v<D, V>, int> = 0>
+static inline V py_dict_get_default(const dict<str, V>& d, const str& key, const D& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
+template <class V, class D, ::std::enable_if_t<::std::is_convertible_v<D, V>, int> = 0>
 static inline V py_dict_get_default(const ::std::optional<dict<str, V>>& d, const char* key, const D& defval) {
     if (!d.has_value()) {
         return static_cast<V>(defval);
@@ -1135,6 +1145,14 @@ static inline object py_dict_get_default(const dict<str, object>& d, const char*
     return it->second;
 }
 
+static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const object& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
+static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const char* defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
 static inline dict<str, object> py_dict_get_default(
     const dict<str, object>& d, const char* key, const dict<str, object>& defval) {
     auto it = d.find(str(key));
@@ -1155,6 +1173,10 @@ static inline object py_dict_get_default(const dict<str, object>& d, const char*
     return it->second;
 }
 
+static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const str& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
 static inline object py_dict_get_default(const object& obj, const char* key, const object& defval) {
     if (const auto* p = obj_to_dict_ptr(obj)) {
         return py_dict_get_default(*p, key, defval);
@@ -1167,6 +1189,14 @@ static inline object py_dict_get_default(const object& obj, const char* key, con
         return py_dict_get_default(*p, key, defval);
     }
     return make_object(str(defval));
+}
+
+static inline object py_dict_get_default(const object& obj, const str& key, const object& defval) {
+    return py_dict_get_default(obj, key.c_str(), defval);
+}
+
+static inline object py_dict_get_default(const object& obj, const str& key, const char* defval) {
+    return py_dict_get_default(obj, key.c_str(), defval);
 }
 
 static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const char* key, const object& defval) {
@@ -1190,6 +1220,18 @@ static inline object py_dict_get_default(const ::std::optional<dict<str, object>
     return py_dict_get_default(*d, key, defval);
 }
 
+static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const str& key, const object& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
+static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const str& key, const char* defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
+static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const str& key, const str& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
 template <class D>
 static inline D py_dict_get_default(const dict<str, ::std::any>& d, const char* key, const D& defval) {
     auto it = d.find(str(key));
@@ -1201,6 +1243,11 @@ static inline D py_dict_get_default(const dict<str, ::std::any>& d, const char* 
         return defval;
     }
     return *p;
+}
+
+template <class D>
+static inline D py_dict_get_default(const dict<str, ::std::any>& d, const str& key, const D& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
 }
 
 template <class D>
@@ -1222,6 +1269,11 @@ static inline D py_dict_get_default(const ::std::any& obj, const char* key, cons
         }
     }
     return defval;
+}
+
+template <class D>
+static inline D py_dict_get_default(const ::std::any& obj, const str& key, const D& defval) {
+    return py_dict_get_default(obj, key.c_str(), defval);
 }
 
 static inline str py_dict_get_default(const ::std::any& obj, const char* key, const char* defval) {
@@ -1246,11 +1298,19 @@ static inline str py_dict_get_default(const ::std::any& obj, const char* key, co
     return str(defval);
 }
 
+static inline str py_dict_get_default(const ::std::any& obj, const str& key, const char* defval) {
+    return py_dict_get_default(obj, key.c_str(), defval);
+}
+
 static inline str py_dict_get_default(const dict<str, ::std::any>& d, const char* key, const char* defval) {
     auto it = d.find(str(key));
     if (it == d.end()) return str(defval);
     if (const auto* s = ::std::any_cast<str>(&(it->second))) return *s;
     return str(defval);
+}
+
+static inline str py_dict_get_default(const dict<str, ::std::any>& d, const str& key, const char* defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
 }
 
 static inline bool dict_get_bool(const object& obj, const char* key, bool defval) {

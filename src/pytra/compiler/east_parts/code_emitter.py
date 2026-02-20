@@ -711,9 +711,9 @@ class CodeEmitter:
             return
         self._emit_trivia_items(trivia)
 
-    def _parse_passthrough_comment(self, text: str) -> dict[str, str]:
+    def _parse_passthrough_comment(self, text: str) -> dict[str, Any]:
         """`# Pytra::cpp` / `# Pytra::pass` 記法を解釈して directive を返す。"""
-        out: dict[str, str] = {}
+        out: dict[str, Any] = {}
         raw = self._trim_ws(text)
         prefix = ""
         if raw.startswith("Pytra::cpp"):
