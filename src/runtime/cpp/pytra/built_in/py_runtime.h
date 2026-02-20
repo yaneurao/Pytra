@@ -327,49 +327,6 @@ static inline ::std::string py_to_string(const object& v) {
     return obj_to_str(v);
 }
 
-static inline str _py_json_escape(const str& s) {
-    ::std::string out;
-    out.reserve(static_cast<::std::size_t>(py_len(s)) + 8);
-    out.push_back('"');
-    const ::std::string src = py_to_string(s);
-    for (char ch : src) {
-        if (ch == '\\') out += "\\\\";
-        else if (ch == '"') out += "\\\"";
-        else if (ch == '\n') out += "\\n";
-        else if (ch == '\r') out += "\\r";
-        else if (ch == '\t') out += "\\t";
-        else out.push_back(ch);
-    }
-    out.push_back('"');
-    return str(out);
-}
-
-static inline str dumps(const str& v) {
-    return _py_json_escape(v);
-}
-
-static inline str dumps(const char* v) {
-    return _py_json_escape(str(v));
-}
-
-static inline str dumps(bool v) {
-    return v ? str("true") : str("false");
-}
-
-template <class T, ::std::enable_if_t<::std::is_integral_v<T>, int> = 0>
-static inline str dumps(T v) {
-    return str(::std::to_string(static_cast<long long>(v)));
-}
-
-static inline str dumps(const object& v) {
-    if (!v) return "null";
-    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return dumps(p->value);
-    if (const auto* p = py_obj_cast<PyIntObj>(v)) return dumps(p->value);
-    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return str(::std::to_string(p->value));
-    if (const auto* p = py_obj_cast<PyStrObj>(v)) return dumps(p->value);
-    return dumps(obj_to_str(v));
-}
-
 static inline bool _py_is_ws(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f' || ch == '\v';
 }
