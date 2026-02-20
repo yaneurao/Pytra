@@ -132,7 +132,7 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
     ]
 
 
-def check_case(case_stem: str) -> int:
+def check_case(case_stem: str, enabled_targets: set[str]) -> int:
     case_path = find_case_path(case_stem)
     if case_path is None:
         print(f"[ERROR] missing case: {case_stem}")
@@ -151,6 +151,8 @@ def check_case(case_stem: str) -> int:
 
         mismatches: list[str] = []
         for target in build_targets(case_stem, case_path):
+            if target.name not in enabled_targets:
+                continue
             if not can_run(target):
                 print(f"[SKIP] {case_stem}:{target.name} (missing toolchain)")
                 continue
@@ -193,11 +195,25 @@ def main() -> int:
         default=["math_extended", "pathlib_extended"],
         help="case stems under test/fixtures/** (without .py)",
     )
+    parser.add_argument(
+        "--targets",
+        default="cpp",
+        help="comma separated targets (default: cpp)",
+    )
     args = parser.parse_args()
+
+    enabled_targets: set[str] = set()
+    for raw in args.targets.split(","):
+        name = raw.strip()
+        if name != "":
+            enabled_targets.add(name)
+    if len(enabled_targets) == 0:
+        print("[ERROR] --targets must include at least one target")
+        return 1
 
     exit_code = 0
     for stem in args.cases:
-        code = check_case(stem)
+        code = check_case(stem, enabled_targets)
         if code != 0:
             exit_code = code
     return exit_code
