@@ -23,6 +23,7 @@ from src.py2cpp import (
     dump_deps_graph_text,
     load_cpp_module_attr_call_map,
     load_east,
+    _meta_qualified_symbol_refs,
     resolve_module_name,
     transpile_to_cpp,
 )
@@ -258,6 +259,28 @@ if __name__ == "__main__":
         self.assertIn('#include "pytra/utils/png.h"', cpp)
         self.assertIn("pytra::utils::png::write_rgb_png(", cpp)
 
+    def test_import_includes_are_deduped_and_sorted(self) -> None:
+        src = """import pytra.utils.png as png
+from pytra.utils import gif
+from pytra.utils.png import write_rgb_png
+
+def main() -> None:
+    frames: list[bytearray] = []
+    gif.save_gif("x.gif", 1, 1, frames)
+    pixels: bytearray = bytearray(3)
+    write_rgb_png("x.png", 1, 1, pixels)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "include_sort.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        gif_inc = '#include "pytra/utils/gif.h"'
+        png_inc = '#include "pytra/utils/png.h"'
+        self.assertEqual(cpp.count(gif_inc), 1)
+        self.assertEqual(cpp.count(png_inc), 1)
+        self.assertLess(cpp.find(gif_inc), cpp.find(png_inc))
+
     def test_from_pytra_runtime_import_png_emits_one_to_one_include(self) -> None:
         src = """from pytra.utils import png
 
@@ -387,6 +410,15 @@ from pytra.std.json import loads as json_loads
             },
             bindings,
         )
+        refs = _meta_qualified_symbol_refs(east)
+        self.assertIn(
+            {
+                "module_id": "pytra.std.json",
+                "symbol": "loads",
+                "local_name": "json_loads",
+            },
+            refs,
+        )
 
     def test_cli_dump_deps_includes_user_module_graph(self) -> None:
         src_main = """import helper
@@ -432,6 +464,33 @@ def main() -> None:
             module_map = build_module_east_map(main_py)
         self.assertIn("main.py -> helper.py", deps_txt)
         self.assertEqual(set(module_map.keys()), {str(main_py), str(helper_py)})
+
+    def test_multi_file_from_import_alias_uses_fully_qualified_symbol(self) -> None:
+        src_main = """from helper import add as plus
+
+def main() -> None:
+    print(plus(1, 2))
+"""
+        src_helper = """def add(a: int, b: int) -> int:
+    return a + b
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            out_dir = root / "out"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+            main_cpp = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
+        self.assertIn("namespace pytra_mod_helper {", main_cpp)
+        self.assertIn("pytra_mod_helper::add(1, 2)", main_cpp)
 
     def test_cli_reports_input_invalid_for_missing_user_module(self) -> None:
         src_main = """import missing_mod
@@ -564,6 +623,36 @@ def main() -> None:
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=duplicate_binding", proc.stderr)
 
+    def test_cli_reports_input_invalid_for_duplicate_import_binding_mixed(self) -> None:
+        src_main = """import a as m
+from b import x as m
+
+def main() -> None:
+    print(1)
+"""
+        src_a = """x: int = 1
+"""
+        src_b = """x: int = 2
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            a_py = root / "a.py"
+            b_py = root / "b.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            a_py.write_text(src_a, encoding="utf-8")
+            b_py.write_text(src_b, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("kind=duplicate_binding", proc.stderr)
+
     def test_cli_reports_input_invalid_for_missing_import_symbol(self) -> None:
         src_main = """from helper import missing_symbol
 
@@ -590,6 +679,64 @@ def main() -> None:
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=missing_symbol", proc.stderr)
         self.assertIn("import=from helper import missing_symbol", proc.stderr)
+
+    def test_cli_reports_input_invalid_for_unbound_module_after_from_import(self) -> None:
+        src_main = """from helper import f
+
+def main() -> None:
+    print(helper.g())
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("kind=missing_symbol", proc.stderr)
+        self.assertIn("import=helper.g", proc.stderr)
+
+    def test_name_resolution_prefers_local_over_import_symbol(self) -> None:
+        src = """from pytra.std.math import sqrt as calc
+
+def main() -> None:
+    calc: int = 3
+    print(calc)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "local_over_import_symbol.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("int64 calc = 3;", cpp)
+        self.assertIn("py_print(calc);", cpp)
+        self.assertNotIn("math::sqrt", cpp)
+
+    def test_name_resolution_prefers_arg_over_import_module(self) -> None:
+        src = """import pytra.std.math as m
+
+def f(m: int) -> int:
+    return m + 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "arg_over_import_module.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+        self.assertIn("int64 f(int64 m)", cpp)
+        self.assertIn("return m + 1;", cpp)
+        self.assertNotIn("pytra::std::math::", cpp)
 
     def test_build_module_east_map_collects_entry_and_user_deps(self) -> None:
         src_main = """import helper
