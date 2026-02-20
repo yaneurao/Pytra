@@ -79,7 +79,7 @@
      - [ ] `src/pytra/compiler/east_parts/core.py --emit-runtime-cpp` 生成物（`runtime/cpp/pytra/compiler/east_parts/core.cpp`）を単体コンパイル可能化する。
        - [x] 下準備: `dict.update` 未対応は `src/runtime/cpp/pytra/built_in/dict.h` 拡張で解消した。
        - [x] 下準備: Python 例外継承 (`class X(Exception)`) は C++ 側継承省略へ統一してビルド阻害を回避した。
-       - [ ] 現在ブロッカーA: `Call(...).attr()` が `ns::func(...)::attr()` へ誤解決されるケースが残る（`re.group(...).strip()` など）。
+       - [x] ブロッカーA: `Call(...).attr()` が `ns::func(...)::attr()` へ誤解決されるケースは、`re.strip_group(...)` 導入と call/attribute 解決見直しで解消した。
        - [ ] 現在ブロッカーB: `core.py` 内の mutable 引数/ローカルが `const` 扱いで生成される経路が残る（`list.append`/`dict[...] =` が失敗）。
        - [ ] 現在ブロッカーC: self_hosted parser 本体の一部構文（keyword-only 呼び出し、tuple 要素アクセス、`lstrip(" ")` 等）が現行 C++ 生成と不整合。
      - [ ] pure selfhost（中間 Python 呼び出しなし）で `.py -> -o` を通す。
