@@ -2783,6 +2783,9 @@ class CppEmitter(CodeEmitter):
         dict_ops = self._render_runtime_call_dict_ops(runtime_call, expr, fn, args, arg_nodes)
         if dict_ops != "":
             return dict_ops
+        str_ops = self._render_runtime_call_str_ops(runtime_call, fn, args)
+        if str_ops != "":
+            return str_ops
         if runtime_call == "py_print":
             return f"py_print({_join_str_list(', ', args)})"
         if runtime_call == "py_len" and len(args) == 1:
@@ -2823,28 +2826,6 @@ class CppEmitter(CodeEmitter):
             length = args[0] if len(args) >= 1 else "0"
             byteorder = args[1] if len(args) >= 2 else '"little"'
             return f"py_int_to_bytes({owner}, {length}, {byteorder})"
-        if runtime_call == "py_isdigit" and len(args) == 1:
-            return f"py_isdigit({args[0]})"
-        if runtime_call == "py_isalpha" and len(args) == 1:
-            return f"py_isalpha({args[0]})"
-        if runtime_call == "py_strip" and len(args) == 0:
-            owner = self.render_expr(fn.get("value"))
-            return f"py_strip({owner})"
-        if runtime_call == "py_rstrip" and len(args) == 0:
-            owner = self.render_expr(fn.get("value"))
-            return f"py_rstrip({owner})"
-        if runtime_call == "py_startswith" and len(args) == 1:
-            owner = self.render_expr(fn.get("value"))
-            return f"py_startswith({owner}, {args[0]})"
-        if runtime_call == "py_endswith" and len(args) == 1:
-            owner = self.render_expr(fn.get("value"))
-            return f"py_endswith({owner}, {args[0]})"
-        if runtime_call == "py_replace" and len(args) == 2:
-            owner = self.render_expr(fn.get("value"))
-            return f"py_replace({owner}, {args[0]}, {args[1]})"
-        if runtime_call == "py_join" and len(args) == 1:
-            owner = self.render_expr(fn.get("value"))
-            return f"str({owner}).join({args[0]})"
         if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
             if len(args) == 0:
                 return '::std::runtime_error("error")'
@@ -2953,6 +2934,32 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "dict.values":
             owner = self.render_expr(fn.get("value"))
             return f"py_dict_values({owner})"
+        return ""
+
+    def _render_runtime_call_str_ops(self, runtime_call: str, fn: dict[str, Any], args: list[str]) -> str:
+        """`runtime_call` の文字列系処理（strip/startswith/replace/join など）を処理する。"""
+        if runtime_call == "py_isdigit" and len(args) == 1:
+            return f"py_isdigit({args[0]})"
+        if runtime_call == "py_isalpha" and len(args) == 1:
+            return f"py_isalpha({args[0]})"
+        if runtime_call == "py_strip" and len(args) == 0:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_strip({owner})"
+        if runtime_call == "py_rstrip" and len(args) == 0:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_rstrip({owner})"
+        if runtime_call == "py_startswith" and len(args) == 1:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_startswith({owner}, {args[0]})"
+        if runtime_call == "py_endswith" and len(args) == 1:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_endswith({owner}, {args[0]})"
+        if runtime_call == "py_replace" and len(args) == 2:
+            owner = self.render_expr(fn.get("value"))
+            return f"py_replace({owner}, {args[0]}, {args[1]})"
+        if runtime_call == "py_join" and len(args) == 1:
+            owner = self.render_expr(fn.get("value"))
+            return f"str({owner}).join({args[0]})"
         return ""
 
     def _render_call_name_or_attr(

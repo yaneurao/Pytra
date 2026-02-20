@@ -133,6 +133,7 @@
    - [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。: `BuiltinCall` / Name/Attribute は helper 分離済み
      - [ ] `dict.get/list.* / set.*` 呼び出し解決を runtime-call map + hook へ移して `py2cpp.py` 直書きを削減する。
      - [x] `BuiltinCall` の `list.* / set.* / dict.*` 分岐を `CppEmitter` 専用 helper（`_render_runtime_call_*_ops`）へ切り出し、`_render_builtin_call` 本体の分岐密度を下げた（2026-02-21）。
+     - [x] 文字列系 runtime-call（`py_strip` / `py_replace` / `py_join` など）も helper（`_render_runtime_call_str_ops`）へ切り出し、`_render_builtin_call` をさらに縮退した（2026-02-21）。
      - [x] `Path`/`png`/`gif` の module method 解決を `cpp_hooks.py` 側へ寄せる。: `png/gif` は `Call` + `Attribute`、`Path` は `Attribute(name/stem/parent)` を hooks 移管済み。
    - [x] `render_expr` の `Call` で残っている module method / object method / fallback 呼び出しを 3 helper に分離する。
    - [x] `render_expr` の `Call` で runtime-call 解決前後の前処理（kw 展開・owner 抽出）を helper 化する。
