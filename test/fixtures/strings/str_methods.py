@@ -1,7 +1,7 @@
 # このファイルは `test/fixtures/str_methods.py` のテスト/実装コードです。
 
 
-from pytra.runtime.assertions import py_assert_all, py_assert_eq, py_assert_true
+from pytra.utils.assertions import py_assert_all, py_assert_eq, py_assert_true
 def run_str_methods() -> bool:
     s: str = "  alpha_beta  "
     a: str = s.strip()

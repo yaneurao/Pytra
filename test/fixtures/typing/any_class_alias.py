@@ -1,7 +1,7 @@
 # このファイルは `test/fixtures/typing/any_class_alias.py` のテスト/実装コードです。
 
 from typing import Any
-from pytra.runtime.assertions import py_assert_all, py_assert_eq, py_assert_true
+from pytra.utils.assertions import py_assert_all, py_assert_eq, py_assert_true
 
 
 class Box:

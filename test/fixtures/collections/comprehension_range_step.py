@@ -1,5 +1,5 @@
 # comprehension with range(start, stop, step)
-from pytra.runtime.assertions import py_assert_all, py_assert_eq
+from pytra.utils.assertions import py_assert_all, py_assert_eq
 
 
 def run_comprehension_range_step() -> bool:

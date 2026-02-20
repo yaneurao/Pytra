@@ -1,7 +1,7 @@
 # case30: スライス構文 a[b:c] の基本テスト（stepなし）。
 
 
-from pytra.runtime.assertions import py_assert_stdout
+from pytra.utils.assertions import py_assert_stdout
 def main() -> None:
     nums: list[int] = [10, 20, 30, 40, 50]
     text: str = "abcdef"

@@ -1,6 +1,6 @@
 
 
-from pytra.runtime.assertions import py_assert_stdout
+from pytra.utils.assertions import py_assert_stdout
 def main():
 
     l : list[int] = [1, 2, 3]

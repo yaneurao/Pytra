@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import pytra.runtime.png as png
-from pytra.runtime.assertions import py_assert_all, py_assert_eq, py_assert_true
+import pytra.utils.png as png
+from pytra.utils.assertions import py_assert_all, py_assert_eq, py_assert_true
 
 
 def run_case() -> None:

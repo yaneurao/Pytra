@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 
-from pytra.runtime.assertions import py_assert_stdout
+from pytra.utils.assertions import py_assert_stdout
 def has_key_23(k: str) -> bool:
     d: dict[str, int] = {"a": 1, "b": 2}
     if k in d:

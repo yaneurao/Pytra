@@ -3,7 +3,7 @@
 # 変更時は、既存仕様との整合性とテスト結果を必ず確認してください。
 
 
-from pytra.runtime.assertions import py_assert_stdout
+from pytra.utils.assertions import py_assert_stdout
 def greet(name: str) -> str:
     return "Hello, " + name
 

@@ -1,6 +1,6 @@
 # このファイルは `test/fixtures/core/lambda_basic.py` のテストコードです。
 
-from pytra.runtime.assertions import py_assert_all, py_assert_eq
+from pytra.utils.assertions import py_assert_all, py_assert_eq
 
 
 def run_lambda_basic() -> bool:
