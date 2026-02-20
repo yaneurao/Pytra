@@ -628,6 +628,8 @@ class CppEmitter(CodeEmitter):
 
     def _resolve_imported_module_name(self, name: str) -> str:
         """import で束縛された識別子名を実モジュール名へ解決する。"""
+        if self.is_declared(name):
+            return ""
         if name in self.import_modules:
             mod_name = self.import_modules[name]
             if mod_name != "":
@@ -642,7 +644,7 @@ class CppEmitter(CodeEmitter):
                 child = sym["name"]
             if parent != "" and child != "":
                 return f"{parent}.{child}"
-        return name
+        return ""
 
     def _last_dotted_name(self, name: str) -> str:
         """`a.b.c` の末尾要素 `c` を返す。"""
@@ -2483,12 +2485,15 @@ class CppEmitter(CodeEmitter):
             attr = str(fn.get("attr"))
         if attr == "":
             return None
-        if owner_mod == "":
-            owner_mod = owner_expr
         module_rendered_txt = ""
-        module_rendered = self._render_call_module_method(owner_mod, attr, args, kw)
-        if isinstance(module_rendered, str):
-            module_rendered_txt = str(module_rendered)
+        if owner_mod != "":
+            module_rendered = self._render_call_module_method(owner_mod, attr, args, kw)
+            if isinstance(module_rendered, str):
+                module_rendered_txt = str(module_rendered)
+        elif owner_expr.startswith("pytra."):
+            module_rendered = self._render_call_module_method(owner_expr, attr, args, kw)
+            if isinstance(module_rendered, str):
+                module_rendered_txt = str(module_rendered)
         if module_rendered_txt != "":
             return module_rendered_txt
         object_rendered_txt = ""

@@ -22,8 +22,8 @@ static double any_to_double(const std::any& v) {
     return 0.0;
 }
 
-const double pi = 3.14159265358979323846;
-const double e = 2.71828182845904523536;
+const double pi = pytra::math::pi;
+const double e = pytra::math::e;
 
 double sqrt(double x) { return std::sqrt(x); }
 double sin(double x) { return std::sin(x); }

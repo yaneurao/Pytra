@@ -145,6 +145,10 @@ def on_render_expr_kind(
         mapped = _lookup_module_attr_runtime_call(emitter, base_mod, attr)
     if _looks_like_runtime_symbol(mapped):
         return mapped
+    if base_mod != "" and attr != "":
+        ns = emitter._module_name_to_cpp_namespace(base_mod)
+        if isinstance(ns, str) and ns != "":
+            return ns + "::" + attr
     return None
 
 
