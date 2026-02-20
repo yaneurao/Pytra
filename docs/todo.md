@@ -1,5 +1,14 @@
 # TODO（未完了のみ）
 
+## 最優先（todo2 準拠）
+
+1. [ ] `docs/todo2.md` の MUST を満たす。
+   - [ ] `src/runtime/cpp/pytra/` 配下の全ファイルを `src/pytra/runtime/` から `py2cpp.py` により生成する構成へ統一する。
+   - [ ] `src/runtime/cpp/pytra/std/*` の生成元・配置方針を `todo2.md` に合わせて再設計する（手書き/別経路生成を禁止）。
+   - [ ] `src/runtime/cpp/pytra/runtime/assertions.h`, `src/runtime/cpp/pytra/runtime/east.h`, `src/runtime/cpp/pytra/std/json.h`, `src/runtime/cpp/pytra/std/typing.h` の手書きスタブを廃止し、生成物へ置換する。
+   - [ ] `python3 src/py2cpp.py src/pytra/runtime/<mod>.py -o ...` 実行だけで `src/runtime/cpp/pytra/` 全体が更新されることを検証する。
+   - [ ] 上記完了後、関連ドキュメント（`docs/how-to-use.md`, `docs/spec-dev.md`, `docs/spec-runtime.md`）を同期する。
+
 ## 優先方針（2026-02-19 更新）
 
 - まず `import` 解決（依存グラフ・探索パス・`from ... import ...` を含む）を先に完了させる。
