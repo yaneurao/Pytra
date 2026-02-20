@@ -7,20 +7,20 @@
 
 namespace pytra::std::math {
 
-extern double pi;
-extern double e;
+extern float64 pi;
+extern float64 e;
 
-double sqrt(double x);
-double sin(double x);
-double cos(double x);
-double tan(double x);
-double exp(double x);
-double log(double x);
-double log10(double x);
-double fabs(double x);
-double floor(double x);
-double ceil(double x);
-double pow(double x, double y);
+float64 sqrt(float64 x);
+float64 sin(float64 x);
+float64 cos(float64 x);
+float64 tan(float64 x);
+float64 exp(float64 x);
+float64 log(float64 x);
+float64 log10(float64 x);
+float64 fabs(float64 x);
+float64 floor(float64 x);
+float64 ceil(float64 x);
+float64 pow(float64 x, float64 y);
 
 }  // namespace pytra::std::math
 

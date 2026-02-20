@@ -7,6 +7,9 @@
 
 namespace pytra::std::json {
 
+str loads(const str& text);
+str _escape_str(const str& s);
+str dumps(const object& obj);
 
 }  // namespace pytra::std::json
 

@@ -1,20 +1,19 @@
 from __future__ import annotations
 
-import pytra.std.typing as _typing
-
-Any = _typing.Any
-List = _typing.List
-Set = _typing.Set
-Dict = _typing.Dict
-Tuple = _typing.Tuple
-Iterable = _typing.Iterable
-Sequence = _typing.Sequence
-Mapping = _typing.Mapping
-Optional = _typing.Optional
-Union = _typing.Union
-Callable = _typing.Callable
-TypeAlias = _typing.TypeAlias
+Any: int = 1
+List: int = 1
+Set: int = 1
+Dict: int = 1
+Tuple: int = 1
+Iterable: int = 1
+Sequence: int = 1
+Mapping: int = 1
+Optional: int = 1
+Union: int = 1
+Callable: int = 1
+TypeAlias: int = 1
 
 
-def TypeVar(name: str) -> object:
-    return _typing.TypeVar(name)
+def TypeVar(name: str) -> int:
+    _ = name
+    return 1

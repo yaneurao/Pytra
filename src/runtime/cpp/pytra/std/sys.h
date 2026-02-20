@@ -5,17 +5,18 @@
 #ifndef SRC_RUNTIME_CPP_PYTRA_STD_SYS_H
 #define SRC_RUNTIME_CPP_PYTRA_STD_SYS_H
 
-#include <cstdint>
-#include <string>
-#include <vector>
-
 namespace pytra::std::sys {
 
-void exit(::std::int64_t code);
-void set_argv(::std::vector<::std::string> values);
-void set_path(::std::vector<::std::string> values);
-void write_stderr(::std::string text);
-void write_stdout(::std::string text);
+extern list<str> argv;
+extern list<str> path;
+extern int64 stderr;
+extern int64 stdout;
+
+void exit(int64 code);
+void set_argv(const object& values);
+void set_path(const object& values);
+void write_stderr(const str& text);
+void write_stdout(const str& text);
 
 }  // namespace pytra::std::sys
 

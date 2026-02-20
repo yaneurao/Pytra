@@ -1,28 +1,34 @@
 from __future__ import annotations
 
-import pytra.std.sys as _sys
-
-argv = _sys.argv
-path = _sys.path
-stderr = _sys.stderr
-stdout = _sys.stdout
+argv: list[str] = py_sys_argv()
+path: list[str] = py_sys_path()
+stderr: int = 1
+stdout: int = 1
 
 
 def exit(code: int = 0) -> None:
-    _sys.exit(code)
+    py_sys_exit(code)
 
 
-def set_argv(values: list[str]) -> None:
-    _sys.set_argv(values)
+def set_argv(values: object) -> None:
+    vals: list[str] = py_to_str_list_from_any(values)
+    argv.clear()
+    for v in vals:
+        argv.append(v)
+    py_sys_set_argv(argv)
 
 
-def set_path(values: list[str]) -> None:
-    _sys.set_path(values)
+def set_path(values: object) -> None:
+    vals: list[str] = py_to_str_list_from_any(values)
+    path.clear()
+    for v in vals:
+        path.append(v)
+    py_sys_set_path(path)
 
 
 def write_stderr(text: str) -> None:
-    _sys.write_stderr(text)
+    py_sys_write_stderr(text)
 
 
 def write_stdout(text: str) -> None:
-    _sys.write_stdout(text)
+    py_sys_write_stdout(text)
