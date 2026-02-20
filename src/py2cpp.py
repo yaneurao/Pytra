@@ -1894,7 +1894,13 @@ class CppEmitter(CodeEmitter):
                 filtered.append(s)
         if len(filtered) != 1:
             return False
-        k = str(filtered[0].get("kind", ""))
+        one = filtered[0]
+        k = str(one.get("kind", ""))
+        if k == "Assign":
+            tgt = self.any_to_dict_or_empty(one.get("target"))
+            # tuple assign は C++ で複数行へ展開されるため単文扱い不可
+            if self.any_to_str(tgt.get("kind")) == "Tuple":
+                return False
         return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:

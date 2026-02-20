@@ -44,15 +44,22 @@ def _int_from_hex4(hx: str) -> int:
     v1 = _hex_value(hx[1:2])
     v2 = _hex_value(hx[2:3])
     v3 = _hex_value(hx[3:4])
-    return (((v0 << 4) | v1) << 8) | ((v2 << 4) | v3)
+    return (v0 * 4096) + (v1 * 256) + (v2 * 16) + v3
 
 
 def _hex4(code: int) -> str:
-    v = code & 0xFFFF
-    p0 = _HEX_DIGITS[(v >> 12) & 0x0F]
-    p1 = _HEX_DIGITS[(v >> 8) & 0x0F]
-    p2 = _HEX_DIGITS[(v >> 4) & 0x0F]
-    p3 = _HEX_DIGITS[v & 0x0F]
+    v = code % 65536
+    d3 = v % 16
+    v = v // 16
+    d2 = v % 16
+    v = v // 16
+    d1 = v % 16
+    v = v // 16
+    d0 = v % 16
+    p0 = _HEX_DIGITS[d0 : d0 + 1]
+    p1 = _HEX_DIGITS[d1 : d1 + 1]
+    p2 = _HEX_DIGITS[d2 : d2 + 1]
+    p3 = _HEX_DIGITS[d3 : d3 + 1]
     return p0 + p1 + p2 + p3
 
 
@@ -343,6 +350,5 @@ def dumps(
     item_sep = ","
     key_sep = ":" if indent is None else ": "
     if separators is not None:
-        item_sep = separators[0]
-        key_sep = separators[1]
+        item_sep, key_sep = separators
     return _dump_json_value(obj, ensure_ascii, indent, item_sep, key_sep, 0)
