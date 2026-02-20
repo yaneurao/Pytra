@@ -1,5 +1,12 @@
 # TODO
 
+## 2026-02-21 完了: パススルー記法
+
+1. [x] トランスパイル時パススルー記法（`# Pytra::cpp` / `# Pytra::pass`）の仕様化と最小実装を完了した。
+   - [x] 仕様: 適用位置、インデント維持、複数ブロック連結、既存 docstring コメント変換との優先順位を `docs/spec-east.md` に明記。
+   - [x] 実装: EAST 保持形式（`leading_trivia` の comment text 利用）を定義し、C++ エミッタでそのまま展開できる最小経路を追加した。
+   - [x] 受け入れ条件: 最小 fixture（`test/fixtures/core/pass_through_comment.py`）で Python 実行に影響を与えず、C++ 出力に意図した行が入ることを unit test で確認。
+
 ## 2026-02-20 完了: 最優先（即時）
 
 1. [x] 未使用シンボル削除を「1シンボルずつ」進めた。
