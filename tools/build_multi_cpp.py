@@ -9,18 +9,14 @@ import sys
 from pathlib import Path
 
 
-RUNTIME_SRCS = [
-    "src/runtime/cpp/base/gc.cpp",
-    "src/runtime/cpp/base/io.cpp",
-    "src/runtime/cpp/base/bytes_util.cpp",
-    "src/runtime/cpp/pytra/runtime/png.cpp",
-    "src/runtime/cpp/pytra/runtime/gif.cpp",
-    "src/runtime/cpp/pytra/std/math.cpp",
-    "src/runtime/cpp/pytra/std/time.cpp",
-    "src/runtime/cpp/pytra/std/pathlib.cpp",
-    "src/runtime/cpp/pytra/std/dataclasses.cpp",
-    "src/runtime/cpp/pytra/std/sys.cpp",
-]
+def _runtime_cpp_sources() -> list[str]:
+    """runtime/cpp の C++ 実装ファイル一覧を返す（モジュール個別列挙を避ける）。"""
+    out: list[str] = []
+    for p in sorted(Path("src/runtime/cpp/base").glob("*.cpp")):
+        out.append(p.as_posix())
+    for p in sorted(Path("src/runtime/cpp/pytra").rglob("*.cpp")):
+        out.append(p.as_posix())
+    return out
 
 
 def _load_manifest(path: Path) -> dict[str, object]:
@@ -79,7 +75,7 @@ def main(argv: list[str]) -> int:
         "-I",
         include_dir,
         *module_sources,
-        *RUNTIME_SRCS,
+        *_runtime_cpp_sources(),
         "-o",
         args.output,
     ]
@@ -89,4 +85,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-

@@ -18,9 +18,6 @@
   - `cpp/runtime_calls.json`: 組み込み・`module.attr` 呼び出しマップ
   - `cpp/syntax.json`: 文テンプレート
 
-補足:
-- 既存 `src/runtime/cpp/runtime_call_map.json` は段階的に `src/profiles/cpp/runtime_calls.json` へ移行し、最終的に廃止する。
-
 ## 3. ロード順序
 
 1. `common/core.json`
@@ -91,7 +88,7 @@ EAST 演算子 -> 出力トークン。
 ### 4.3 `runtime_calls`
 
 - `builtin_call`: `len`, `print` など
-- `module_attr_call`: `math.sqrt` など
+- `module_attr_call`: `module.attr` 形式の呼び出し
 - `method_call`: `list.append` など
 
 ```json
@@ -102,8 +99,8 @@ EAST 演算子 -> 出力トークン。
       "print": "py_print"
     },
     "module_attr_call": {
-      "math": {
-        "sqrt": "py_math::sqrt"
+      "pytra.std.sys": {
+        "write_stdout": "py_sys_write_stdout"
       }
     },
     "method_call": {
@@ -194,6 +191,5 @@ src/pytra/runtime/cpp/hooks/cpp_hooks.py
 ## 7. 移行方針
 
 1. C++ から先行移行する。
-2. `runtime_call_map.json` の内容を `profiles/cpp/runtime_calls.json` へ移す。
-3. `py2cpp.py` 直書きマップを順次削除する。
-4. `BaseEmitter` を `CodeEmitter` へ改名し、`BaseEmitter = CodeEmitter` で互換維持する。
+2. `py2cpp.py` 直書きマップを順次削除する。
+3. `BaseEmitter` を `CodeEmitter` へ改名し、`BaseEmitter = CodeEmitter` で互換維持する。

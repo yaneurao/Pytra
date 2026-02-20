@@ -51,6 +51,16 @@ def normalize_stdout_for_compare(stdout_text: str) -> str:
     return "\n".join(out_lines)
 
 
+def runtime_cpp_sources() -> list[str]:
+    """runtime/cpp の C++ 実装ファイル一覧を返す（モジュール名の直書き禁止）。"""
+    out: list[str] = []
+    for p in sorted(Path("src/runtime/cpp/base").glob("*.cpp")):
+        out.append(p.as_posix())
+    for p in sorted(Path("src/runtime/cpp/pytra").rglob("*.cpp")):
+        out.append(p.as_posix())
+    return out
+
+
 def png_raw_rgb(path: Path) -> tuple[int, int, bytes]:
     b = path.read_bytes()
     if b[:8] != b"\x89PNG\r\n\x1a\n":
@@ -372,16 +382,7 @@ def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdou
             "-I",
             "src/runtime/cpp",
             str(cpp),
-            "src/runtime/cpp/pytra/runtime/png.cpp",
-            "src/runtime/cpp/pytra/runtime/gif.cpp",
-            "src/runtime/cpp/pytra/std/math.cpp",
-            "src/runtime/cpp/pytra/std/time.cpp",
-            "src/runtime/cpp/pytra/std/pathlib.cpp",
-            "src/runtime/cpp/pytra/std/dataclasses.cpp",
-            "src/runtime/cpp/pytra/std/sys.cpp",
-            "src/runtime/cpp/base/gc.cpp",
-            "src/runtime/cpp/base/io.cpp",
-            "src/runtime/cpp/base/bytes_util.cpp",
+            *runtime_cpp_sources(),
             "-o",
             str(exe),
         ]
