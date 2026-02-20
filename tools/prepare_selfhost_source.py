@@ -53,6 +53,7 @@ def _remove_import_line(text: str) -> str:
     targets = [
         "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n",
         "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n",
+        "from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks\n",
     ]
     out = text
     for target in targets:
@@ -283,6 +284,90 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             out = out[:i] + stub + out[j + 1 :]
 
     repl(
+        "def _python_module_exists_under(",
+        "\ndef _module_tail_to_cpp_header_path(",
+        (
+            "def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:\n"
+            "    pass\n"
+            "    _ = root_dir\n"
+            "    _ = module_tail\n"
+            "    return False\n\n"
+        ),
+    )
+
+    repl(
+        "def _module_tail_to_cpp_header_path(",
+        "\ndef _runtime_cpp_header_exists_for_module(",
+        (
+            "def _module_tail_to_cpp_header_path(module_tail: str) -> str:\n"
+            "    pass\n"
+            "    _ = module_tail\n"
+            "    return \"\"\n\n"
+        ),
+    )
+
+    repl(
+        "def _runtime_cpp_header_exists_for_module(",
+        "\ndef _make_user_error(",
+        (
+            "def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:\n"
+            "    pass\n"
+            "    _ = module_name_norm\n"
+            "    return False\n\n"
+        ),
+    )
+
+    repl(
+        "def _normalize_param_annotation(",
+        "\ndef _extract_function_arg_types_from_python_source(",
+        (
+            "def _normalize_param_annotation(ann: str) -> str:\n"
+            "    pass\n"
+            "    t = py_strip(ann)\n"
+            "    if t == \"\":\n"
+            "        return \"unknown\"\n"
+            "    return t\n\n"
+        ),
+    )
+
+    repl(
+        "def _extract_function_arg_types_from_python_source(",
+        "\ndef load_cpp_profile(",
+        (
+            "def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, list[str]]:\n"
+            "    pass\n"
+            "    _ = src_path\n"
+            "    out: dict[str, list[str]] = {}\n"
+            "    return out\n\n"
+        ),
+    )
+
+    repl(
+        "def load_cpp_profile(",
+        "\ndef load_cpp_bin_ops(",
+        (
+            "def load_cpp_profile() -> dict[str, Any]:\n"
+            "    pass\n"
+            "    out: dict[str, Any] = {}\n"
+            "    out[\"syntax\"] = {}\n"
+            "    out[\"runtime_calls\"] = {}\n"
+            "    return out\n\n"
+        ),
+    )
+
+    repl(
+        "def load_cpp_module_attr_call_map(",
+        "\ndef cpp_string_lit(",
+        (
+            "def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:\n"
+            "    pass\n"
+            "    _ = profile\n"
+            "    out: dict[str, dict[str, str]] = {}\n"
+            "    return out\n\n"
+        ),
+    )
+
+    repl(
         "def load_cpp_hooks(",
         "\ndef load_cpp_identifier_rules(",
         (
@@ -304,11 +389,52 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
 
     repl(
         "def _collect_import_modules(",
-        "\n\nLEGACY_MODULE_IMPORTS",
+        "\n\nNON_FILE_STANDARD_IMPORTS",
         (
             "def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:\n"
             "    pass\n"
             "    return []\n\n"
+        ),
+    )
+
+    repl(
+        "def _runtime_output_rel_tail(",
+        "\ndef _runtime_namespace_for_tail(",
+        (
+            "def _runtime_output_rel_tail(module_tail: str) -> str:\n"
+            "    pass\n"
+            "    _ = module_tail\n"
+            "    return \"\"\n\n"
+        ),
+    )
+
+    repl(
+        "def _runtime_namespace_for_tail(",
+        "\ndef _runtime_png_header_text(",
+        (
+            "def _runtime_namespace_for_tail(module_tail: str) -> str:\n"
+            "    pass\n"
+            "    _ = module_tail\n"
+            "    return \"\"\n\n"
+        ),
+    )
+
+    repl(
+        "def build_cpp_header_from_east(",
+        "\ndef _runtime_module_tail_from_source_path(",
+        (
+            "def build_cpp_header_from_east(\n"
+            "    east_module: dict[str, Any],\n"
+            "    top_namespace: str = \"\",\n"
+            "    source_path: Path = Path(\"\"),\n"
+            "    output_path: Path = Path(\"\"),\n"
+            ") -> str:\n"
+            "    pass\n"
+            "    _ = east_module\n"
+            "    _ = top_namespace\n"
+            "    _ = source_path\n"
+            "    _ = output_path\n"
+            "    return \"\"\n\n"
         ),
     )
 

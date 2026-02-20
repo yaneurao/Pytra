@@ -8,7 +8,7 @@
     "syntax.json"
   ],
   "hooks": {
-    "module": "pytra.runtime.cpp.hooks.cpp_hooks",
+    "module": "hooks.cpp.hooks.cpp_hooks",
     "factory": "build_cpp_hooks"
   }
 }

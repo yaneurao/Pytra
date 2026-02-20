@@ -2,8 +2,8 @@
 """Verify parity between Python canonical image runtimes and C++ runtimes.
 
 This script generates tiny PNG/GIF outputs with:
-- Python canonical implementations: src/pylib/png.py, src/pylib/gif.py
-- C++ runtimes: src/runtime/cpp/pytra/runtime/png.cpp, src/runtime/cpp/pytra/runtime/gif.cpp
+- Python canonical implementations: src/pytra/utils/png.py, src/pytra/utils/gif.py
+- C++ runtimes: src/runtime/cpp/pytra/utils/png.cpp, src/runtime/cpp/pytra/utils/gif.cpp
 
 It compares resulting bytes and exits non-zero on mismatch.
 """
@@ -21,8 +21,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _write_cpp_harness(path: Path) -> None:
     src = r'''
-#include "runtime/cpp/pytra/runtime/png.h"
-#include "runtime/cpp/pytra/runtime/gif.h"
+#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/pytra/utils/png.h"
+#include "runtime/cpp/pytra/utils/gif.h"
 
 #include <cstdint>
 #include <string>
@@ -33,19 +34,19 @@ int main(int argc, char** argv) {
     std::string out_png = argv[1];
     std::string out_gif = argv[2];
 
-    std::vector<std::uint8_t> png_pixels = {
+    bytes png_pixels = bytes(list<int64>{
         255, 0, 0,
         0, 255, 0,
         0, 0, 255,
         255, 255, 255,
-    };
-    pytra::png::write_rgb_png(out_png, 2, 2, png_pixels);
+    });
+    pytra::utils::png::write_rgb_png(str(out_png), 2, 2, png_pixels);
 
-    std::vector<std::uint8_t> frame0 = {0, 1, 2, 3};
-    std::vector<std::uint8_t> frame1 = {3, 2, 1, 0};
-    std::vector<std::vector<std::uint8_t>> frames = {frame0, frame1};
-    auto palette = pytra::gif::grayscale_palette();
-    pytra::gif::save_gif(out_gif, 2, 2, frames, palette, 4, 0);
+    bytes frame0 = bytes(list<int64>{0, 1, 2, 3});
+    bytes frame1 = bytes(list<int64>{3, 2, 1, 0});
+    list<bytes> frames = list<bytes>{frame0, frame1};
+    auto palette = pytra::utils::gif::grayscale_palette();
+    pytra::utils::gif::save_gif(str(out_gif), 2, 2, frames, palette, 4, 0);
     return 0;
 }
 '''
@@ -68,10 +69,11 @@ def _build_and_run_cpp(work: Path, out_png: Path, out_gif: Path) -> None:
         "-I",
         "src/runtime/cpp",
         str(harness),
-        "src/runtime/cpp/pytra/runtime/png.cpp",
-        "src/runtime/cpp/pytra/runtime/gif.cpp",
-        "src/runtime/cpp/base/io.cpp",
-        "src/runtime/cpp/base/bytes_util.cpp",
+        "src/runtime/cpp/pytra/utils/png.cpp",
+        "src/runtime/cpp/pytra/utils/gif.cpp",
+        "src/runtime/cpp/pytra/built_in/gc.cpp",
+        "src/runtime/cpp/pytra/built_in/io.cpp",
+        "src/runtime/cpp/pytra/built_in/bytes_util.cpp",
         "-o",
         str(exe),
     ]
@@ -87,7 +89,7 @@ def _run_python_canonical(out_png: Path, out_gif: Path) -> None:
     import sys
 
     sys.path.insert(0, str((ROOT / "src").resolve()))
-    from pytra.runtime import gif, png
+    from pytra.utils import gif, png
 
     png_pixels = bytearray(
         [

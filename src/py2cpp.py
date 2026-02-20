@@ -12,14 +12,14 @@ from pytra.std.typing import Any
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
 from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
 from pytra.compiler.east import convert_path, convert_source_to_east_with_backend
-from pytra.runtime.cpp.hooks.cpp_hooks import build_cpp_hooks
+from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
 from pytra.std.pathlib import Path
 from pytra.std import sys
 
 
-RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/runtime/std")
-RUNTIME_TRA_SOURCE_ROOT = Path("src/pytra/runtime")
+RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
+RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 
 
 def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
@@ -57,6 +57,23 @@ def _module_tail_to_cpp_header_path(module_tail: str) -> str:
             leaf = leaf[: len(leaf) - 5] + "-impl"
             parts[len(parts) - 1] = leaf
     return "/".join(parts) + ".h"
+
+
+def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
+    """`pytra.*` モジュールの runtime C++ ヘッダ実在有無を返す。"""
+    if module_name_norm.startswith("pytra.std."):
+        tail = module_name_norm[10:]
+        if tail == "":
+            return False
+        rel = _module_tail_to_cpp_header_path(tail)
+        return (Path("src/runtime/cpp/pytra/std") / rel).exists()
+    if module_name_norm.startswith("pytra.utils."):
+        tail = module_name_norm[12:]
+        if tail == "":
+            return False
+        rel = _module_tail_to_cpp_header_path(tail)
+        return (Path("src/runtime/cpp/pytra/utils") / rel).exists()
+    return False
 
 
 def _make_user_error(category: str, summary: str, details: list[str]) -> Exception:
@@ -125,7 +142,7 @@ def _parse_user_error(err_text: str) -> dict[str, Any]:
     out["details"] = details
     return out
 
-CPP_HEADER = """#include "runtime/cpp/py_runtime.h"
+CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 """
 
@@ -190,70 +207,7 @@ DEFAULT_AUG_BIN = {
 }
 
 def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
-    out: dict[str, dict[str, str]] = {}
-    out["pytra.runtime.png"] = {
-        "write_rgb_png": "pytra::png::write_rgb_png_py",
-    }
-    out["pytra.runtime.gif"] = {
-        "save_gif": "pytra::gif::save_gif_py",
-        "grayscale_palette": "pytra::gif::grayscale_palette_py",
-    }
-    out["os.path"] = {
-        "join": "py_os_path_join",
-        "dirname": "py_os_path_dirname",
-        "basename": "py_os_path_basename",
-        "splitext": "py_os_path_splitext",
-        "abspath": "py_os_path_abspath",
-        "exists": "py_os_path_exists",
-    }
-    out["glob"] = {
-        "glob": "py_glob_glob",
-    }
-    out["pytra.std.glob"] = {
-        "glob": "py_glob_glob",
-    }
-    out["time"] = {
-        "perf_counter": "perf_counter",
-    }
-    out["pytra.std.time"] = {
-        "perf_counter": "perf_counter",
-    }
-    out["pathlib"] = {
-        "Path": "Path",
-    }
-    out["pytra.std.pathlib"] = {
-        "Path": "Path",
-    }
-    out["sys"] = {
-        "set_argv": "py_sys_set_argv",
-        "set_path": "py_sys_set_path",
-        "write_stderr": "py_sys_write_stderr",
-        "write_stdout": "py_sys_write_stdout",
-        "exit": "py_sys_exit",
-    }
-    out["pytra.std.sys"] = {
-        "set_argv": "py_sys_set_argv",
-        "set_path": "py_sys_set_path",
-        "write_stderr": "py_sys_write_stderr",
-        "write_stdout": "py_sys_write_stdout",
-        "exit": "py_sys_exit",
-        "argv": "py_sys_argv()",
-        "path": "py_sys_path()",
-        "stderr": "py_sys_stderr()",
-        "stdout": "py_sys_stdout()",
-    }
-    out["pytra.std.os.path"] = {
-        "join": "py_os_path_join",
-        "dirname": "py_os_path_dirname",
-        "basename": "py_os_path_basename",
-        "splitext": "py_os_path_splitext",
-        "abspath": "py_os_path_abspath",
-        "exists": "py_os_path_exists",
-    }
-    out["pytra.std.argparse"] = {
-        "ArgumentParser": "py_argparse_argument_parser",
-    }
-    return out
+    return {}
 
 
 _DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = _default_cpp_module_attr_call_map()
@@ -296,6 +250,138 @@ def _looks_like_runtime_function_name(name: str) -> bool:
     if name.startswith("py_"):
         return True
     return False
+
+
+def _split_top_level_csv(text: str) -> list[str]:
+    """括弧ネストを考慮してカンマ区切りを分割する。"""
+    out: list[str] = []
+    cur = ""
+    depth_paren = 0
+    depth_brack = 0
+    depth_brace = 0
+    i = 0
+    while i < len(text):
+        ch = text[i : i + 1]
+        if ch == "(":
+            depth_paren += 1
+            cur += ch
+        elif ch == ")":
+            if depth_paren > 0:
+                depth_paren -= 1
+            cur += ch
+        elif ch == "[":
+            depth_brack += 1
+            cur += ch
+        elif ch == "]":
+            if depth_brack > 0:
+                depth_brack -= 1
+            cur += ch
+        elif ch == "{":
+            depth_brace += 1
+            cur += ch
+        elif ch == "}":
+            if depth_brace > 0:
+                depth_brace -= 1
+            cur += ch
+        elif ch == "," and depth_paren == 0 and depth_brack == 0 and depth_brace == 0:
+            out.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+        i += 1
+    tail = cur.strip()
+    if tail != "":
+        out.append(tail)
+    return out
+
+
+def _normalize_param_annotation(ann: str) -> str:
+    """関数引数注釈文字列を EAST 互換の粗い型名へ正規化する。"""
+    t = ann.strip()
+    if t == "":
+        return "unknown"
+    if "Any" in t:
+        return "Any"
+    if "object" in t:
+        return "object"
+    if t in {"int", "float", "str", "bool", "bytes", "bytearray"}:
+        return t
+    if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+        return t
+    return t
+
+
+def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, list[str]]:
+    """EAST 化に失敗するモジュール用の関数シグネチャ簡易抽出。"""
+    out: dict[str, list[str]] = {}
+    try:
+        text = src_path.read_text(encoding="utf-8")
+    except Exception:
+        return out
+    lines: list[str] = text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        if (len(line) - len(line.lstrip(" "))) == 0 and stripped.startswith("def "):
+            sig = stripped
+            j = i + 1
+            while (not sig.endswith(":")) and j < len(lines):
+                sig += " " + lines[j].strip()
+                j += 1
+            i = j - 1
+            if not sig.endswith(":"):
+                i += 1
+                continue
+            sig0 = sig[:-1].strip()
+            if not sig0.startswith("def "):
+                i += 1
+                continue
+            p0 = sig0.find("(")
+            if p0 < 0:
+                i += 1
+                continue
+            name = sig0[4:p0].strip()
+            if name == "":
+                i += 1
+                continue
+            depth = 0
+            p1 = -1
+            k = p0
+            while k < len(sig0):
+                ch = sig0[k : k + 1]
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                    if depth == 0:
+                        p1 = k
+                        break
+                k += 1
+            if p1 < 0:
+                i += 1
+                continue
+            params = sig0[p0 + 1 : p1]
+            arg_types: list[str] = []
+            parts = _split_top_level_csv(params)
+            p = 0
+            while p < len(parts):
+                prm = parts[p].strip()
+                p += 1
+                if prm == "" or prm.startswith("*"):
+                    continue
+                colon = prm.find(":")
+                if colon < 0:
+                    arg_types.append("unknown")
+                    continue
+                ann = prm[colon + 1 :]
+                eq = ann.find("=")
+                if eq >= 0:
+                    ann = ann[:eq]
+                arg_types.append(_normalize_param_annotation(ann))
+            out[name] = arg_types
+        i += 1
+    return out
 
 
 def load_cpp_profile() -> dict[str, Any]:
@@ -516,18 +602,23 @@ class CppEmitter(CodeEmitter):
             return module_name
         if module_name == "pytra.std":
             return "pytra.std"
-        if module_name.startswith("pytra.runtime."):
+        if module_name.startswith("pytra.utils."):
             return module_name
+        if module_name == "pytra.utils":
+            return "pytra.utils"
+        if module_name.startswith("pytra.runtime."):
+            # 旧互換: runtime 名は utils 名へ正規化する。
+            return "pytra.utils." + module_name[14:]
         if module_name == "pytra.runtime":
-            return "pytra.runtime"
+            return "pytra.utils"
         if module_name.startswith("pylib.tra."):
-            return "pytra.runtime." + module_name[10:]
+            return "pytra.utils." + module_name[10:]
         if module_name == "pylib.tra":
-            return "pytra.runtime"
+            return "pytra.utils"
         if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, module_name):
             return "pytra.std." + module_name
-        if _python_module_exists_under(RUNTIME_TRA_SOURCE_ROOT, module_name):
-            return "pytra.runtime." + module_name
+        if _python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, module_name):
+            return "pytra.utils." + module_name
         return module_name
 
     def _module_name_to_cpp_include(self, module_name: str) -> str:
@@ -535,12 +626,12 @@ class CppEmitter(CodeEmitter):
         module_name_norm = self._normalize_runtime_module_name(module_name)
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
-            if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail):
+            if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
                 return "pytra/std/" + _module_tail_to_cpp_header_path(tail)
-        if module_name_norm.startswith("pytra.runtime."):
-            tail = module_name_norm[14:]
-            if _python_module_exists_under(RUNTIME_TRA_SOURCE_ROOT, tail):
-                return "pytra/runtime/" + _module_tail_to_cpp_header_path(tail)
+        if module_name_norm.startswith("pytra.utils."):
+            tail = module_name_norm[12:]
+            if _python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
+                return "pytra/utils/" + _module_tail_to_cpp_header_path(tail)
         return ""
 
     def _module_name_to_cpp_namespace(self, module_name: str) -> str:
@@ -551,10 +642,10 @@ class CppEmitter(CodeEmitter):
             if tail != "":
                 return "pytra::std::" + tail.replace(".", "::")
             return ""
-        if module_name_norm.startswith("pytra.runtime."):
-            tail = module_name_norm[14:]
+        if module_name_norm.startswith("pytra.utils."):
+            tail = module_name_norm[12:]
             if tail != "":
-                return "pytra::runtime::" + tail.replace(".", "::")
+                return "pytra::utils::" + tail.replace(".", "::")
             return ""
         if module_name_norm.startswith("pytra."):
             tail = module_name_norm[6:]
@@ -566,10 +657,10 @@ class CppEmitter(CodeEmitter):
             tail = inc[10 : len(inc) - 2].replace("/", "::")
             if tail != "":
                 return "pytra::" + tail
-        if inc.startswith("pytra/runtime/") and inc.endswith(".h"):
-            tail = inc[14 : len(inc) - 2].replace("/", "::")
+        if inc.startswith("pytra/utils/") and inc.endswith(".h"):
+            tail = inc[12 : len(inc) - 2].replace("/", "::")
             if tail != "":
-                return "pytra::runtime::" + tail
+                return "pytra::utils::" + tail
         return ""
 
     def _collect_import_cpp_includes(self, body: list[dict[str, Any]]) -> list[str]:
@@ -601,12 +692,12 @@ class CppEmitter(CodeEmitter):
                         if sym_inc != "" and sym_inc not in seen:
                             seen.add(sym_inc)
                             includes.append(sym_inc)
-                if mod_name == "pytra.runtime":
+                if mod_name == "pytra.utils":
                     for ent in self._dict_stmt_list(stmt.get("names")):
                         sym = self.any_to_str(ent.get("name"))
                         if sym == "":
                             continue
-                        sym_inc = self._module_name_to_cpp_include("pytra.runtime." + sym)
+                        sym_inc = self._module_name_to_cpp_include("pytra.utils." + sym)
                         if sym_inc != "" and sym_inc not in seen:
                             seen.add(sym_inc)
                             includes.append(sym_inc)
@@ -721,12 +812,12 @@ class CppEmitter(CodeEmitter):
             if init_p.exists():
                 return init_p
             return None
-        if module_name_norm.startswith("pytra.runtime."):
-            tail = module_name_norm[14:].replace(".", "/")
-            p = RUNTIME_TRA_SOURCE_ROOT / (tail + ".py")
+        if module_name_norm.startswith("pytra.utils."):
+            tail = module_name_norm[12:].replace(".", "/")
+            p = RUNTIME_UTILS_SOURCE_ROOT / (tail + ".py")
             if p.exists():
                 return p
-            init_p = RUNTIME_TRA_SOURCE_ROOT / tail / "__init__.py"
+            init_p = RUNTIME_UTILS_SOURCE_ROOT / tail / "__init__.py"
             if init_p.exists():
                 return init_p
             return None
@@ -748,7 +839,10 @@ class CppEmitter(CodeEmitter):
         try:
             east_mod = load_east(src_path)
         except Exception:
+            fn_map = _extract_function_arg_types_from_python_source(src_path)
             self._module_fn_arg_type_cache[module_name_norm] = fn_map
+            if fn_name in fn_map:
+                return fn_map[fn_name]
             return []
         body_obj = east_mod.get("body")
         body: list[dict[str, Any]] = []
@@ -780,6 +874,8 @@ class CppEmitter(CodeEmitter):
                         j += 1
                     fn_map[name] = seq
             i += 1
+        if len(fn_map) == 0:
+            fn_map = _extract_function_arg_types_from_python_source(src_path)
         self._module_fn_arg_type_cache[module_name_norm] = fn_map
         if fn_name in fn_map:
             return fn_map[fn_name]
@@ -807,7 +903,7 @@ class CppEmitter(CodeEmitter):
                     arg_t_obj = self.get_expr_type(arg_nodes[i])
                     if isinstance(arg_t_obj, str):
                         arg_t = arg_t_obj
-                if self.is_any_like_type(tt) and not self.is_any_like_type(arg_t):
+                if self.is_any_like_type(tt) and (arg_t in {"", "unknown"} or not self.is_any_like_type(arg_t)):
                     if not a.startswith("make_object("):
                         a = f"make_object({a})"
             out.append(a)
@@ -829,19 +925,6 @@ class CppEmitter(CodeEmitter):
                     mapped = owner_map[symbol_name]
                     if mapped != "":
                         return mapped
-        if module_name_norm == "pytra.runtime.assertions" and symbol_name.startswith("py_assert_"):
-            return symbol_name
-        if module_name_norm in {"sys", "pytra.std.sys"}:
-            if symbol_name == "set_argv":
-                return "py_sys_set_argv"
-            if symbol_name == "set_path":
-                return "py_sys_set_path"
-            if symbol_name == "write_stderr":
-                return "py_sys_write_stderr"
-            if symbol_name == "write_stdout":
-                return "py_sys_write_stdout"
-            if symbol_name == "exit":
-                return "py_sys_exit"
         ns = self._module_name_to_cpp_namespace(module_name_norm)
         if ns != "":
             return f"{ns}::{symbol_name}"
@@ -945,9 +1028,9 @@ class CppEmitter(CodeEmitter):
                 pytra_args = self.function_arg_types.get("__pytra_main", default_args)
                 if isinstance(pytra_args, list) and len(pytra_args) >= 1:
                     if self.top_namespace != "":
-                        self.emit(f"{self.top_namespace}::__pytra_main(py_sys_argv());")
+                        self.emit(f"{self.top_namespace}::__pytra_main(py_runtime_argv());")
                     else:
-                        self.emit("__pytra_main(py_sys_argv());")
+                        self.emit("__pytra_main(py_runtime_argv());")
                 else:
                     if self.top_namespace != "":
                         self.emit(f"{self.top_namespace}::__pytra_main();")
@@ -2335,7 +2418,7 @@ class CppEmitter(CodeEmitter):
             fn_name = "min" if runtime_call == "py_min" else "max"
             return self.render_minmax(fn_name, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
         if runtime_call == "perf_counter":
-            return "perf_counter()"
+            return "pytra::std::time::perf_counter()"
         if runtime_call == "open":
             return f"open({', '.join(args)})"
         if runtime_call == "py_int_to_bytes":
@@ -2343,8 +2426,6 @@ class CppEmitter(CodeEmitter):
             length = args[0] if len(args) >= 1 else "0"
             byteorder = args[1] if len(args) >= 2 else '"little"'
             return f"py_int_to_bytes({owner}, {length}, {byteorder})"
-        if runtime_call == "grayscale_palette":
-            return "py_gif_grayscale_palette_list()"
         if runtime_call == "py_isdigit" and len(args) == 1:
             return f"py_isdigit({args[0]})"
         if runtime_call == "py_isalpha" and len(args) == 1:
@@ -2395,8 +2476,8 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "list.pop":
             owner = self.render_expr(fn.get("value"))
             if len(args) == 0:
-                return f"py_pop({owner})"
-            return f"py_pop({owner}, {args[0]})"
+                return f"{owner}.pop()"
+            return f"{owner}.pop({args[0]})"
         if runtime_call == "list.clear":
             owner = self.render_expr(fn.get("value"))
             return f"{owner}.clear()"
@@ -2443,11 +2524,7 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "dict.values":
             owner = self.render_expr(fn.get("value"))
             return f"py_dict_values({owner})"
-        if runtime_call != "" and (
-            self._is_std_runtime_call(runtime_call)
-            or runtime_call.startswith("py_os_path_")
-            or runtime_call == "py_glob_glob"
-        ):
+        if runtime_call != "" and (self._is_std_runtime_call(runtime_call) or runtime_call.startswith("py_")):
             return f"{runtime_call}({', '.join(args)})"
         if builtin_name == "bytes":
             return f"bytes({', '.join(args)})" if len(args) >= 1 else "bytes{}"
@@ -2568,7 +2645,7 @@ class CppEmitter(CodeEmitter):
             if raw in {"min", "max"} and len(args) >= 1:
                 return self.render_minmax(raw, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
             if raw == "perf_counter":
-                return "perf_counter()"
+                return "pytra::std::time::perf_counter()"
             if raw in {"Exception", "RuntimeError"}:
                 if len(args) == 0:
                     return '::std::runtime_error("error")'
@@ -3604,6 +3681,17 @@ def _header_cpp_type_from_east(east_t: str) -> str:
             i += 1
         if len(parts) == 2 and len(non_none) == 1:
             return "::std::optional<" + _header_cpp_type_from_east(non_none[0]) + ">"
+        folded: set[str] = set()
+        i = 0
+        while i < len(non_none):
+            p = non_none[i]
+            if p == "bytearray":
+                p = "bytes"
+            folded.add(p)
+            i += 1
+        if len(folded) == 1:
+            only = next(iter(folded))
+            return _header_cpp_type_from_east(only)
         return "object"
     if t.startswith("list[") and t.endswith("]"):
         inner = t[5:-1].strip()
@@ -3629,7 +3717,14 @@ def _header_cpp_type_from_east(east_t: str) -> str:
 
 def _header_guard_from_path(path: Path) -> str:
     """ヘッダパスから include guard を生成する。"""
-    src = str(path).upper()
+    src = str(path).replace("\\", "/")
+    prefix1 = "src/runtime/cpp/pytra/"
+    prefix2 = "runtime/cpp/pytra/"
+    if src.startswith(prefix1):
+        src = src[len(prefix1) :]
+    elif src.startswith(prefix2):
+        src = src[len(prefix2) :]
+    src = "PYTRA_" + src.upper()
     out = ""
     i = 0
     while i < len(src):
@@ -3637,6 +3732,8 @@ def _header_guard_from_path(path: Path) -> str:
         ok = ("A" <= ch <= "Z") or ("0" <= ch <= "9")
         out += ch if ok else "_"
         i += 1
+    while out.startswith("_"):
+        out = out[1:]
     if not out.endswith("_H"):
         out += "_H"
     return out
@@ -3785,12 +3882,17 @@ def build_cpp_header_from_east(
 
 
 def _runtime_module_tail_from_source_path(input_path: Path) -> str:
-    """`src/pytra/runtime/*.py` から `std/math_impl` 形式の tail を返す。"""
+    """`src/pytra/std` / `src/pytra/utils` から runtime tail を返す。"""
     src = str(input_path)
-    prefix = "src/pytra/runtime/"
-    if not src.startswith(prefix):
+    rel = ""
+    std_prefix = "src/pytra/std/"
+    utils_prefix = "src/pytra/utils/"
+    if src.startswith(std_prefix):
+        rel = "std/" + src[len(std_prefix) :]
+    elif src.startswith(utils_prefix):
+        rel = src[len(utils_prefix) :]
+    else:
         return ""
-    rel = src[len(prefix) :]
     if rel.endswith(".py"):
         rel = rel[: len(rel) - 3]
     if rel.endswith("/__init__"):
@@ -3798,8 +3900,13 @@ def _runtime_module_tail_from_source_path(input_path: Path) -> str:
     return rel
 
 
+def _is_runtime_emit_input_path(input_path: Path) -> bool:
+    """`--emit-runtime-cpp` 対象パスか（`src/pytra/std|utils` 配下）を返す。"""
+    return _runtime_module_tail_from_source_path(input_path) != ""
+
+
 def _runtime_output_rel_tail(module_tail: str) -> str:
-    """module tail（`std/math_impl` など）を runtime/cpp 相対パス tail へ写像する。"""
+    """module tail（`std/<name>_impl` など）を runtime/cpp 相対パス tail へ写像する。"""
     parts: list[str] = []
     cur = ""
     i = 0
@@ -3820,7 +3927,7 @@ def _runtime_output_rel_tail(module_tail: str) -> str:
     rel = "/".join(parts)
     if rel == "std" or rel.startswith("std/"):
         return rel
-    return "runtime/" + rel
+    return "utils/" + rel
 
 
 def _runtime_namespace_for_tail(module_tail: str) -> str:
@@ -3832,190 +3939,7 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
         return "pytra::std::" + rest
     if module_tail == "std":
         return "pytra::std"
-    return "pytra::runtime::" + module_tail.replace("/", "::")
-
-
-def _runtime_png_header_text(namespace_cpp: str) -> str:
-    """`pytra.runtime.png` 用の C++ ヘッダを返す。"""
-    out: list[str] = []
-    out.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
-    out.append("")
-    out.append("#ifndef PYTRA_CPP_MODULE_PNG_H")
-    out.append("#define PYTRA_CPP_MODULE_PNG_H")
-    out.append("")
-    out.append("#include <cstdint>")
-    out.append("#include <string>")
-    out.append("#include <vector>")
-    out.append("")
-    out.append("class str;")
-    out.append("template <class T>")
-    out.append("class list;")
-    out.append("")
-    out.append("namespace " + namespace_cpp + " {")
-    out.append("")
-    out.append("void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels);")
-    out.append("void write_rgb_png_py(")
-    out.append("    const str& path,")
-    out.append("    ::std::int64_t width,")
-    out.append("    ::std::int64_t height,")
-    out.append("    const list<::std::uint8_t>& pixels")
-    out.append(");")
-    out.append("")
-    out.append("}  // namespace " + namespace_cpp)
-    out.append("")
-    out.append("namespace pytra {")
-    out.append("namespace png = runtime::png;")
-    out.append("}")
-    out.append("")
-    out.append("#endif  // PYTRA_CPP_MODULE_PNG_H")
-    out.append("")
-    return "\n".join(out)
-
-
-def _runtime_png_cpp_text(namespace_cpp: str, impl_cpp: str) -> str:
-    """`pytra.runtime.png` 用の C++ 実装（bridge + 変換本体）を返す。"""
-    out: list[str] = []
-    out.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
-    out.append("")
-    out.append("#include \"runtime/cpp/pytra/runtime/png.h\"")
-    out.append("")
-    out.append("#include \"runtime/cpp/py_runtime.h\"")
-    out.append("")
-    out.append(impl_cpp)
-    out.append("")
-    out.append("namespace " + namespace_cpp + " {")
-    out.append("void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels) {")
-    out.append("    const bytes raw(pixels.begin(), pixels.end());")
-    out.append("    generated::write_rgb_png(str(path), int64(width), int64(height), raw);")
-    out.append("}")
-    out.append("")
-    out.append("void write_rgb_png_py(")
-    out.append("    const str& path,")
-    out.append("    ::std::int64_t width,")
-    out.append("    ::std::int64_t height,")
-    out.append("    const list<::std::uint8_t>& pixels")
-    out.append(") {")
-    out.append("    generated::write_rgb_png(path, int64(width), int64(height), pixels);")
-    out.append("}")
-    out.append("")
-    out.append("}  // namespace " + namespace_cpp)
-    out.append("")
-    return "\n".join(out)
-
-
-def _runtime_gif_header_text(namespace_cpp: str) -> str:
-    """`pytra.runtime.gif` 用の C++ ヘッダを返す。"""
-    out: list[str] = []
-    out.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
-    out.append("")
-    out.append("#ifndef PYTRA_CPP_MODULE_GIF_H")
-    out.append("#define PYTRA_CPP_MODULE_GIF_H")
-    out.append("")
-    out.append("#include <cstdint>")
-    out.append("#include <string>")
-    out.append("#include <vector>")
-    out.append("")
-    out.append("class str;")
-    out.append("template <class T>")
-    out.append("class list;")
-    out.append("")
-    out.append("namespace " + namespace_cpp + " {")
-    out.append("")
-    out.append("::std::vector<::std::uint8_t> grayscale_palette();")
-    out.append("list<::std::uint8_t> grayscale_palette_py();")
-    out.append("")
-    out.append("void save_gif(")
-    out.append("    const ::std::string& path,")
-    out.append("    int width,")
-    out.append("    int height,")
-    out.append("    const ::std::vector<::std::vector<::std::uint8_t>>& frames,")
-    out.append("    const ::std::vector<::std::uint8_t>& palette,")
-    out.append("    int delay_cs = 4,")
-    out.append("    int loop = 0")
-    out.append(");")
-    out.append("void save_gif_py(")
-    out.append("    const str& path,")
-    out.append("    ::std::int64_t width,")
-    out.append("    ::std::int64_t height,")
-    out.append("    const list<list<::std::uint8_t>>& frames,")
-    out.append("    const list<::std::uint8_t>& palette,")
-    out.append("    ::std::int64_t delay_cs = 4,")
-    out.append("    ::std::int64_t loop = 0")
-    out.append(");")
-    out.append("")
-    out.append("}  // namespace " + namespace_cpp)
-    out.append("")
-    out.append("namespace pytra {")
-    out.append("namespace gif = runtime::gif;")
-    out.append("}")
-    out.append("")
-    out.append("#endif  // PYTRA_CPP_MODULE_GIF_H")
-    out.append("")
-    return "\n".join(out)
-
-
-def _runtime_gif_cpp_text(namespace_cpp: str, impl_cpp: str) -> str:
-    """`pytra.runtime.gif` 用の C++ 実装（bridge + 変換本体）を返す。"""
-    out: list[str] = []
-    out.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
-    out.append("")
-    out.append("#include \"runtime/cpp/pytra/runtime/gif.h\"")
-    out.append("")
-    out.append("#include \"runtime/cpp/py_runtime.h\"")
-    out.append("")
-    out.append(impl_cpp)
-    out.append("")
-    out.append("namespace " + namespace_cpp + " {")
-    out.append("::std::vector<::std::uint8_t> grayscale_palette() {")
-    out.append("    const bytes raw = generated::grayscale_palette();")
-    out.append("    return ::std::vector<::std::uint8_t>(raw.begin(), raw.end());")
-    out.append("}")
-    out.append("")
-    out.append("list<::std::uint8_t> grayscale_palette_py() {")
-    out.append("    return generated::grayscale_palette();")
-    out.append("}")
-    out.append("")
-    out.append("void save_gif(")
-    out.append("    const ::std::string& path,")
-    out.append("    int width,")
-    out.append("    int height,")
-    out.append("    const ::std::vector<::std::vector<::std::uint8_t>>& frames,")
-    out.append("    const ::std::vector<::std::uint8_t>& palette,")
-    out.append("    int delay_cs,")
-    out.append("    int loop")
-    out.append(") {")
-    out.append("    list<bytes> frame_list{};")
-    out.append("    frame_list.reserve(frames.size());")
-    out.append("    for (const auto& fr : frames) {")
-    out.append("        frame_list.append(bytes(fr.begin(), fr.end()));")
-    out.append("    }")
-    out.append("    const bytes pal_bytes(palette.begin(), palette.end());")
-    out.append("    generated::save_gif(")
-    out.append("        str(path),")
-    out.append("        int64(width),")
-    out.append("        int64(height),")
-    out.append("        frame_list,")
-    out.append("        pal_bytes,")
-    out.append("        int64(delay_cs),")
-    out.append("        int64(loop)")
-    out.append("    );")
-    out.append("}")
-    out.append("")
-    out.append("void save_gif_py(")
-    out.append("    const str& path,")
-    out.append("    ::std::int64_t width,")
-    out.append("    ::std::int64_t height,")
-    out.append("    const list<list<::std::uint8_t>>& frames,")
-    out.append("    const list<::std::uint8_t>& palette,")
-    out.append("    ::std::int64_t delay_cs,")
-    out.append("    ::std::int64_t loop")
-    out.append(") {")
-    out.append("    generated::save_gif(path, int64(width), int64(height), frames, palette, int64(delay_cs), int64(loop));")
-    out.append("}")
-    out.append("")
-    out.append("}  // namespace " + namespace_cpp)
-    out.append("")
-    return "\n".join(out)
+    return "pytra::utils::" + module_tail.replace("/", "::")
 
 
 def dump_deps_text(east_module: dict[str, Any]) -> str:
@@ -4146,9 +4070,7 @@ def _is_known_non_user_import(module_name: str) -> bool:
         return True
     if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, module_name):
         return True
-    if _python_module_exists_under(RUNTIME_TRA_SOURCE_ROOT, module_name):
-        return True
-    if _python_module_exists_under(Path("src/pytra/std"), module_name):
+    if _python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, module_name):
         return True
     return False
 
@@ -4540,7 +4462,7 @@ def _write_multi_file_cpp(
         "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
         "#ifndef PYTRA_MULTI_PRELUDE_H\n"
         "#define PYTRA_MULTI_PRELUDE_H\n\n"
-        "#include \"runtime/cpp/py_runtime.h\"\n\n"
+        "#include \"runtime/cpp/pytra/built_in/py_runtime.h\"\n\n"
         "#endif  // PYTRA_MULTI_PRELUDE_H\n",
         encoding="utf-8",
     )
@@ -4619,7 +4541,7 @@ def _write_multi_file_cpp(
         )
         # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。
         cpp_txt = cpp_txt.replace(
-            '#include "runtime/cpp/py_runtime.h"',
+            '#include "runtime/cpp/pytra/built_in/py_runtime.h"',
             '#include "pytra_multi_prelude.h"',
             1,
         )
@@ -4922,7 +4844,7 @@ def main(argv: list[str]) -> int:
 
     cpp = ""
     try:
-        if input_txt.endswith(".py"):
+        if input_txt.endswith(".py") and not (emit_runtime_cpp and _is_runtime_emit_input_path(input_path)):
             analysis = _analyze_import_graph(input_path)
             _validate_import_graph_or_raise(analysis)
         east_module = load_east(input_path, parser_backend)
@@ -4943,7 +4865,7 @@ def main(argv: list[str]) -> int:
                 return 1
             module_tail = _runtime_module_tail_from_source_path(input_path)
             if module_tail == "":
-                print("error: --emit-runtime-cpp input must be under src/pytra/runtime/", file=sys.stderr)
+                print("error: --emit-runtime-cpp input must be under src/pytra/utils/ or src/pytra/std/", file=sys.stderr)
                 return 1
             if module_tail.endswith("_impl"):
                 print("skip: impl module is hand-written on C++ side: " + module_tail)
@@ -4952,55 +4874,31 @@ def main(argv: list[str]) -> int:
             if ns == "":
                 ns = _runtime_namespace_for_tail(module_tail)
             rel_tail = _runtime_output_rel_tail(module_tail)
-            cpp_out = Path("src/runtime/cpp/pytra") / (rel_tail + ".cpp")
-            hdr_out = Path("src/runtime/cpp/pytra") / (rel_tail + ".h")
+            out_root = Path("src/runtime/cpp/pytra")
+            cpp_out = out_root / (rel_tail + ".cpp")
+            hdr_out = out_root / (rel_tail + ".h")
             cpp_out.parent.mkdir(parents=True, exist_ok=True)
             hdr_out.parent.mkdir(parents=True, exist_ok=True)
-            cpp_txt_runtime = ""
-            hdr_txt_runtime = ""
-            if module_tail in {"png", "gif"}:
-                impl_ns = ns + "::generated"
-                impl_cpp = transpile_to_cpp(
-                    east_module,
-                    negative_index_mode,
-                    bounds_check_mode,
-                    floor_div_mode,
-                    mod_mode,
-                    int_width,
-                    str_index_mode,
-                    str_slice_mode,
-                    opt_level,
-                    impl_ns,
-                    False,
-                    {},
-                )
-                if module_tail == "png":
-                    cpp_txt_runtime = _runtime_png_cpp_text(ns, impl_cpp)
-                    hdr_txt_runtime = _runtime_png_header_text(ns)
-                else:
-                    cpp_txt_runtime = _runtime_gif_cpp_text(ns, impl_cpp)
-                    hdr_txt_runtime = _runtime_gif_header_text(ns)
-            else:
-                cpp_txt_runtime = transpile_to_cpp(
-                    east_module,
-                    negative_index_mode,
-                    bounds_check_mode,
-                    floor_div_mode,
-                    mod_mode,
-                    int_width,
-                    str_index_mode,
-                    str_slice_mode,
-                    opt_level,
-                    ns,
-                    False,
-                    {},
-                )
-                hdr_txt_runtime = build_cpp_header_from_east(
-                    east_module,
-                    top_namespace=ns,
-                    source_path=input_path,
-                    output_path=hdr_out,
-                )
+            cpp_txt_runtime = transpile_to_cpp(
+                east_module,
+                negative_index_mode,
+                bounds_check_mode,
+                floor_div_mode,
+                mod_mode,
+                int_width,
+                str_index_mode,
+                str_slice_mode,
+                opt_level,
+                ns,
+                False,
+                {},
+            )
+            hdr_txt_runtime = build_cpp_header_from_east(
+                east_module,
+                top_namespace=ns,
+                source_path=input_path,
+                output_path=hdr_out,
+            )
             cpp_out.write_text(cpp_txt_runtime, encoding="utf-8")
             hdr_out.write_text(hdr_txt_runtime, encoding="utf-8")
             print("generated: " + str(hdr_out))

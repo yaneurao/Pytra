@@ -54,7 +54,7 @@ def normalize_stdout_for_compare(stdout_text: str) -> str:
 def runtime_cpp_sources() -> list[str]:
     """runtime/cpp の C++ 実装ファイル一覧を返す（モジュール名の直書き禁止）。"""
     out: list[str] = []
-    for p in sorted(Path("src/runtime/cpp/base").glob("*.cpp")):
+    for p in sorted(Path("src/runtime/cpp/pytra/built_in").glob("*.cpp")):
         out.append(p.as_posix())
     for p in sorted(Path("src/runtime/cpp/pytra").rglob("*.cpp")):
         out.append(p.as_posix())

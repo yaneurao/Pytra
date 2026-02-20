@@ -23,9 +23,7 @@ class LanguageProfileTest(unittest.TestCase):
         self.assertIsInstance(runtime_calls, dict)
         module_attr_call = runtime_calls.get("module_attr_call") if isinstance(runtime_calls, dict) else None
         self.assertIsInstance(module_attr_call, dict)
-        math_map = module_attr_call.get("math") if isinstance(module_attr_call, dict) else None
-        self.assertIsInstance(math_map, dict)
-        self.assertEqual(math_map.get("sqrt"), "py_math::sqrt")
+        self.assertNotIn("math", module_attr_call)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ from pathlib import Path
 def _runtime_cpp_sources() -> list[str]:
     """runtime/cpp の C++ 実装ファイル一覧を返す（モジュール個別列挙を避ける）。"""
     out: list[str] = []
-    for p in sorted(Path("src/runtime/cpp/base").glob("*.cpp")):
+    for p in sorted(Path("src/runtime/cpp/pytra/built_in").glob("*.cpp")):
         out.append(p.as_posix())
     for p in sorted(Path("src/runtime/cpp/pytra").rglob("*.cpp")):
         out.append(p.as_posix())

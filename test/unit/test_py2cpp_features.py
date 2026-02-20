@@ -26,17 +26,22 @@ from src.py2cpp import (
 )
 
 CPP_RUNTIME_SRCS = [
-    "src/runtime/cpp/base/gc.cpp",
+    "src/runtime/cpp/pytra/built_in/gc.cpp",
     "src/runtime/cpp/pytra/std/pathlib.cpp",
     "src/runtime/cpp/pytra/std/time.cpp",
+    "src/runtime/cpp/pytra/std/time-impl.cpp",
     "src/runtime/cpp/pytra/std/math.cpp",
     "src/runtime/cpp/pytra/std/math-impl.cpp",
     "src/runtime/cpp/pytra/std/dataclasses.cpp",
+    "src/runtime/cpp/pytra/std/json.cpp",
+    "src/runtime/cpp/pytra/std/re.cpp",
     "src/runtime/cpp/pytra/std/sys.cpp",
-    "src/runtime/cpp/base/io.cpp",
-    "src/runtime/cpp/base/bytes_util.cpp",
-    "src/runtime/cpp/pytra/runtime/png.cpp",
-    "src/runtime/cpp/pytra/runtime/gif.cpp",
+    "src/runtime/cpp/pytra/std/typing.cpp",
+    "src/runtime/cpp/pytra/built_in/io.cpp",
+    "src/runtime/cpp/pytra/built_in/bytes_util.cpp",
+    "src/runtime/cpp/pytra/utils/png.cpp",
+    "src/runtime/cpp/pytra/utils/gif.cpp",
+    "src/runtime/cpp/pytra/utils/assertions.cpp",
 ]
 
 def find_fixture_case(stem: str) -> Path:
@@ -127,9 +132,22 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed.get("output"), "out.cpp")
 
     def test_parse_py2cpp_argv_emit_runtime_cpp(self) -> None:
-        parsed, err = parse_py2cpp_argv(["src/pytra/runtime/std/math.py", "--emit-runtime-cpp"])
+        parsed, err = parse_py2cpp_argv(["src/pytra/std/math.py", "--emit-runtime-cpp"])
         self.assertEqual(err, "")
         self.assertEqual(parsed.get("emit_runtime_cpp"), "1")
+
+    def test_list_pop_emits_method_call(self) -> None:
+        src = """def pop_last() -> int:
+    xs: list[int] = [1, 2, 3]
+    return xs.pop()
+"""
+        with tempfile.TemporaryDirectory() as td:
+            py_path = Path(td) / "case.py"
+            py_path.write_text(src, encoding="utf-8")
+            east = load_east(py_path)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("xs.pop()", cpp)
+        self.assertNotIn("py_pop(", cpp)
 
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
         src = """def main() -> None:
@@ -221,7 +239,7 @@ if __name__ == "__main__":
         self.assertIn("pytra::std::math::sqrt(9.0)", cpp)
 
     def test_pytra_runtime_import_emits_one_to_one_include(self) -> None:
-        src = """import pytra.runtime.png as png
+        src = """import pytra.utils.png as png
 
 def main() -> None:
     pixels: bytearray = bytearray(3)
@@ -235,11 +253,11 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "pytra/runtime/png.h"', cpp)
-        self.assertIn("pytra::png::write_rgb_png_py", cpp)
+        self.assertIn('#include "pytra/utils/png.h"', cpp)
+        self.assertIn("pytra::utils::png::write_rgb_png(", cpp)
 
     def test_from_pytra_runtime_import_png_emits_one_to_one_include(self) -> None:
-        src = """from pytra.runtime import png
+        src = """from pytra.utils import png
 
 def main() -> None:
     pixels: bytearray = bytearray(3)
@@ -253,11 +271,11 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "pytra/runtime/png.h"', cpp)
-        self.assertIn("pytra::png::write_rgb_png_py", cpp)
+        self.assertIn('#include "pytra/utils/png.h"', cpp)
+        self.assertIn("pytra::utils::png::write_rgb_png(", cpp)
 
     def test_from_pytra_runtime_import_gif_emits_one_to_one_include(self) -> None:
-        src = """from pytra.runtime import gif
+        src = """from pytra.utils import gif
 
 def main() -> None:
     frames: list[bytearray] = []
@@ -271,8 +289,8 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "pytra/runtime/gif.h"', cpp)
-        self.assertIn("pytra::gif::save_gif_py(", cpp)
+        self.assertIn('#include "pytra/utils/gif.h"', cpp)
+        self.assertIn("pytra::utils::gif::save_gif(", cpp)
 
     def test_from_pytra_std_time_import_perf_counter_resolves(self) -> None:
         src = """from pytra.std.time import perf_counter
@@ -290,7 +308,7 @@ if __name__ == "__main__":
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
         self.assertIn('#include "pytra/std/time.h"', cpp)
-        self.assertIn("perf_counter()", cpp)
+        self.assertIn("pytra::std::time::perf_counter()", cpp)
 
     def test_from_pytra_std_pathlib_import_path_resolves(self) -> None:
         src = """from pytra.std.pathlib import Path
@@ -313,7 +331,7 @@ if __name__ == "__main__":
     def test_dump_deps_text_lists_modules_and_symbols(self) -> None:
         src = """import math
 from pytra.std.json import loads as json_loads, dumps
-from pytra.runtime.png import write_rgb_png
+from pytra.utils.png import write_rgb_png
 
 def main() -> None:
     print(math.sqrt(4.0))
@@ -326,11 +344,11 @@ def main() -> None:
         self.assertIn("modules:", txt)
         self.assertIn("  - math", txt)
         self.assertIn("  - pytra.std.json", txt)
-        self.assertIn("  - pytra.runtime.png", txt)
+        self.assertIn("  - pytra.utils.png", txt)
         self.assertIn("symbols:", txt)
         self.assertIn("  - pytra.std.json.loads as json_loads", txt)
         self.assertIn("  - pytra.std.json.dumps", txt)
-        self.assertIn("  - pytra.runtime.png.write_rgb_png", txt)
+        self.assertIn("  - pytra.utils.png.write_rgb_png", txt)
 
     def test_cli_dump_deps_includes_user_module_graph(self) -> None:
         src_main = """import helper

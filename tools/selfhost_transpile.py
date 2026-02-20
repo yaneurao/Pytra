@@ -7,6 +7,7 @@ This is a transitional tool while selfhost `.py` parsing is not enabled yet.
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -41,17 +42,30 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as td:
         east_json = Path(td) / (input_path.stem + ".east.json")
+        env = dict(os.environ)
+        prev_py_path = env.get("PYTHONPATH", "")
+        src_path = str((ROOT / "src").resolve())
+        if prev_py_path == "":
+            env["PYTHONPATH"] = src_path
+        else:
+            env["PYTHONPATH"] = src_path + os.pathsep + prev_py_path
         conv = subprocess.run(
             [
                 sys.executable,
-                "src/pylib/east.py",
+                "-c",
+                (
+                    "import json,sys; "
+                    "from pytra.compiler.east import convert_path; "
+                    "from pytra.std.pathlib import Path; "
+                    "obj=convert_path(Path(sys.argv[1]), parser_backend='self_hosted'); "
+                    "obj=obj.get('east', obj) if isinstance(obj, dict) else obj; "
+                    "open(sys.argv[2],'w',encoding='utf-8').write(json.dumps(obj, ensure_ascii=False, indent=2))"
+                ),
                 str(input_path),
-                "--output",
                 str(east_json),
-                "--parser-backend",
-                "self_hosted",
             ],
             cwd=str(ROOT),
+            env=env,
         )
         if conv.returncode != 0:
             return int(conv.returncode)
