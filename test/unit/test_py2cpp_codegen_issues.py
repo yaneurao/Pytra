@@ -101,6 +101,24 @@ class Py2CppCodegenIssueTest(unittest.TestCase):
         self.assertIn("return *this;", cpp)
         self.assertNotIn("return self;", cpp)
 
+    def test_unknown_tuple_destructure_uses_auto_not_std_any(self) -> None:
+        src = """from pytra.std import os
+
+def f(p: str) -> None:
+    root, ext = os.path.splitext(p)
+    print(root, ext)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "tuple_unpack_auto.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+
+        self.assertIn("auto root = ::std::get<0>(", cpp)
+        self.assertIn("auto ext = ::std::get<1>(", cpp)
+        self.assertNotIn("::std::any root = ::std::get<0>(", cpp)
+        self.assertNotIn("::std::any ext = ::std::get<1>(", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()
