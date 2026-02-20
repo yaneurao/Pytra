@@ -7,6 +7,7 @@ Python 実行時は `list` を保持する軽量実装として振る舞い、
 from __future__ import annotations
 
 import sys as _host_sys
+from pytra.std.typing import Any
 
 argv: list[str] = []
 path: list[str] = []
@@ -27,15 +28,38 @@ def exit(code: int = 0) -> None:
         _host_sys.exit(code)
 
 
-def set_argv(values: list[str]) -> None:
+def _to_str_list_fallback(values: Any) -> list[str]:
+    try:
+        return py_to_str_list_from_object(values)
+    except NameError:
+        pass
+    out: list[str] = []
+    if isinstance(values, list):
+        src = list(values)
+        for v in src:
+            out.append(str(v))
+    return out
+
+
+def set_argv(values: Any) -> None:
+    vals: list[str] = []
+    try:
+        vals = py_to_str_list_from_any(values)
+    except NameError:
+        vals = _to_str_list_fallback(values)
     argv.clear()
-    for v in values:
+    for v in vals:
         argv.append(v)
 
 
-def set_path(values: list[str]) -> None:
+def set_path(values: Any) -> None:
+    vals: list[str] = []
+    try:
+        vals = py_to_str_list_from_any(values)
+    except NameError:
+        vals = _to_str_list_fallback(values)
     path.clear()
-    for v in values:
+    for v in vals:
         path.append(v)
 
 

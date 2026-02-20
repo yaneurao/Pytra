@@ -13,6 +13,12 @@
         "getcwd": "py_os_getcwd",
         "mkdir": "py_os_mkdir",
         "makedirs": "py_os_makedirs"
+      },
+      "pytra.std.glob": {
+        "glob": "py_glob_glob"
+      },
+      "pytra.std.argparse": {
+        "ArgumentParser": "::ArgumentParser"
       }
     }
   }
