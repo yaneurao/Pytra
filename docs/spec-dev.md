@@ -209,9 +209,11 @@
 - 対象: `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp`（自動生成）。
 - 前提: `src/pytra/runtime/png.py` / `src/pytra/runtime/gif.py` を正本とし、意味差を導入しない。
 - 生成手順:
-  - `python3 tools/generate_cpp_pylib_runtime.py`
+  - `python3 src/py2cpp.py src/pytra/runtime/png.py -o /tmp/png.cpp`
+  - `python3 src/py2cpp.py src/pytra/runtime/gif.py -o /tmp/gif.cpp`
   - 生成物は `src/runtime/cpp/pytra/runtime/png.cpp` / `src/runtime/cpp/pytra/runtime/gif.cpp` に直接出力される。
   - これら 2 ファイルの本体ロジックを手書きで追加してはならない。
+  - `tools/generate_cpp_pylib_runtime.py` は一括更新と `--check` 用の補助導線とする。
   - C++ namespace は生成元 Python ファイルのパスから自動導出する（ハードコードしない）。
     - 例: `src/pytra/runtime/gif.py` -> `pytra::runtime::gif`
     - 例: `src/pytra/runtime/png.py` -> `pytra::runtime::png`

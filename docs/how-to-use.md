@@ -49,7 +49,8 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - Python 側で import できるのは `src/pytra/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pytra.runtime import png`, `from pytra.runtime.gif import save_gif`, `from pytra.runtime.assertions import py_assert_eq`）。
 - `pytra` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
 - `src/runtime/cpp/pytra/runtime/*.cpp` は手書き固定ではなく、`src/pytra/runtime/*.py` をトランスパイラで変換して生成・更新する前提です。
-- 生成更新は `python3 tools/generate_cpp_pylib_runtime.py` で行います（CI では `--check` で検証します）。
+- `python3 src/py2cpp.py src/pytra/runtime/<mod>.py -o ...` を実行すると、`src/runtime/cpp/pytra/runtime/<mod>.h/.cpp` は自動更新されます。
+- `python3 tools/generate_cpp_pylib_runtime.py` は一括更新・整合確認（`--check`）用の補助コマンドです。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います（`modules/symbols` と `graph` を出力）。
 - `pytra` 名前空間は予約済みです。入力ファイルと同じディレクトリに `pytra.py` / `pytra/__init__.py` を置くことはできません。

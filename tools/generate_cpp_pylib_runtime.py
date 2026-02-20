@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -644,7 +645,9 @@ def transpile_to_cpp(source_rel: str) -> str:
     with tempfile.TemporaryDirectory() as tmp:
         out_cpp = Path(tmp) / "out.cpp"
         cmd = ["python3", "src/py2cpp.py", str(source), "--no-main", "-o", str(out_cpp)]
-        p = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
+        env = dict(os.environ)
+        env["PYTRA_SKIP_RUNTIME_AUTOGEN"] = "1"
+        p = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True, env=env)
         if p.returncode != 0:
             raise RuntimeError(f"failed: {' '.join(cmd)}\\n{p.stderr}")
         return out_cpp.read_text(encoding="utf-8")
