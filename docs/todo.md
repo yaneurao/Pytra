@@ -3,11 +3,11 @@
 ## 最優先（即時）
 
 1. [ ] 未使用シンボル削除を「1シンボルずつ」進める。
-   - [x] 対象リスト作成: `src/py2cpp.py` の候補として `_default_cpp_module_attr_call_map`, `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP`, `_deep_copy_str_map`, `CPP_RESERVED_WORDS`, `_copy_str_map`, `_map_get_str`、`src/runtime/cpp/pytra/built_in/py_runtime.h` の候補として `py_runtime_stderr`, `py_runtime_stdout` を抽出。
+   - [x] 対象リスト作成: `src/py2cpp.py` の候補として `_default_cpp_module_attr_call_map`, `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP`, `_deep_copy_str_map`, `CPP_RESERVED_WORDS`, `_copy_str_map`, `_map_get_str`、`src/runtime/cpp/pytra/built_in/py_runtime.h` の候補として `py_runtime_stderr`, `py_runtime_stdout`, `py_runtime_path` を抽出。
    - [x] 参照確認: `rg` で上記候補の参照を確認し、「未使用（空マップ生成専用 / 参照ゼロ定数 / 参照ゼロ関数）」「薄いラッパ（`dict(...)` / `dict.get` へ置換可能）」へ分類。
-   - [x] 1件削除: `_default_cpp_module_attr_call_map` / `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP` / `_deep_copy_str_map` / `CPP_RESERVED_WORDS` / `_copy_str_map` / `_map_get_str` / `py_runtime_stderr` / `py_runtime_stdout` を削除し、`load_cpp_module_attr_call_map` と `load_cpp_*_ops` を簡素化。
+   - [x] 1件削除: `_default_cpp_module_attr_call_map` / `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP` / `_deep_copy_str_map` / `CPP_RESERVED_WORDS` / `_copy_str_map` / `_map_get_str` / `py_runtime_stderr` / `py_runtime_stdout` / `py_runtime_path` を削除し、`load_cpp_module_attr_call_map` と `load_cpp_*_ops` を簡素化。
    - [x] 1件検証: `python3 tools/check_py2cpp_transpile.py` を実行し、`checked=103 ok=103 fail=0 skipped=5` を確認。
-   - [x] 1件コミット: 1シンボル削除ごとに独立コミットする（後戻り容易化）。: `a89f5a8`, `6d8261c`, `36ab6df`, `f5845ac`, `65cd733`, `938d69b`
+   - [x] 1件コミット: 1シンボル削除ごとに独立コミットする（後戻り容易化）。: `a89f5a8`, `6d8261c`, `36ab6df`, `f5845ac`, `65cd733`, `938d69b`, `c4e5619`
    - [ ] 影響反映: public API を消した場合は `docs/spec-runtime.md` / `docs/spec-dev.md` の該当記述を同コミットで更新する。
 2. [x] `src/runtime/cpp/pytra/built_in/py_runtime.h` の class / 関数に目的説明コメントを追加する。
    - [x] object ラッパクラス群、変換ヘルパ群、os.path/glob、dict 取得、演算互換、runtime 状態管理の各セクションに C++ コメントを追加済み。
