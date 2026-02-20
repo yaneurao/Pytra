@@ -555,6 +555,7 @@ class CppEmitter(CodeEmitter):
         self.reserved_words.add("main")
         self.import_modules: dict[str, str] = {}
         self.import_symbols: dict[str, dict[str, str]] = {}
+        self.import_symbol_modules: set[str] = set()
         self.module_namespace_map = module_namespace_map
         self.function_arg_types: dict[str, list[str]] = {}
         self.current_function_return_type: str = ""
@@ -664,6 +665,7 @@ class CppEmitter(CodeEmitter):
                                         seen.add(sym_inc)
                                         includes.append(sym_inc)
                     i += 1
+                includes.sort()
                 return includes
         for stmt in body:
             kind = self.any_to_str(stmt.get("kind"))
@@ -697,17 +699,38 @@ class CppEmitter(CodeEmitter):
                             continue
                         sym_inc = self._module_name_to_cpp_include("pytra.utils." + sym)
                         if sym_inc != "" and sym_inc not in seen:
-                                seen.add(sym_inc)
-                                includes.append(sym_inc)
+                            seen.add(sym_inc)
+                            includes.append(sym_inc)
+        includes.sort()
         return includes
 
     def _seed_import_maps_from_meta(self) -> None:
         """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
         meta_obj = self.doc.get("meta")
         meta = meta_obj if isinstance(meta_obj, dict) else {}
+        refs_obj = meta.get("qualified_symbol_refs")
+        refs = refs_obj if isinstance(refs_obj, list) else []
         bindings_obj = meta.get("import_bindings")
         bindings = bindings_obj if isinstance(bindings_obj, list) else []
         if len(bindings) > 0:
+            if len(refs) > 0:
+                r = 0
+                while r < len(refs):
+                    ref_item = refs[r]
+                    if isinstance(ref_item, dict):
+                        module_id_obj = ref_item.get("module_id")
+                        symbol_obj = ref_item.get("symbol")
+                        local_name_obj = ref_item.get("local_name")
+                        module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+                        symbol = symbol_obj if isinstance(symbol_obj, str) else ""
+                        local_name = local_name_obj if isinstance(local_name_obj, str) else ""
+                        if module_id != "" and symbol != "" and local_name != "":
+                            sym_ent: dict[str, str] = {}
+                            sym_ent["module"] = module_id
+                            sym_ent["name"] = symbol
+                            self.import_symbols[local_name] = sym_ent
+                            self.import_symbol_modules.add(module_id)
+                    r += 1
             i = 0
             while i < len(bindings):
                 item = bindings[i]
@@ -725,11 +748,12 @@ class CppEmitter(CodeEmitter):
                         continue
                     if binding_kind == "module":
                         self.import_modules[local_name] = module_id
-                    elif binding_kind == "symbol" and export_name != "":
+                    elif binding_kind == "symbol" and export_name != "" and len(refs) == 0:
                         sym_ent: dict[str, str] = {}
                         sym_ent["module"] = module_id
                         sym_ent["name"] = export_name
                         self.import_symbols[local_name] = sym_ent
+                        self.import_symbol_modules.add(module_id)
                 i += 1
             return
         import_modules_obj = meta.get("import_modules")
@@ -753,6 +777,7 @@ class CppEmitter(CodeEmitter):
             sym_ent["module"] = module
             sym_ent["name"] = name
             self.import_symbols[alias_obj] = sym_ent
+            self.import_symbol_modules.add(module)
 
     def _opt_ge(self, level: int) -> bool:
         """最適化レベルが指定値以上かを返す。"""
@@ -1668,11 +1693,13 @@ class CppEmitter(CodeEmitter):
                     sym_ent["module"] = mod
                     sym_ent["name"] = name
                     self.import_symbols[asname] = sym_ent
+                    self.import_symbol_modules.add(mod)
                 else:
                     sym_ent: dict[str, str] = {}
                     sym_ent["module"] = mod
                     sym_ent["name"] = name
                     self.import_symbols[name] = sym_ent
+                    self.import_symbol_modules.add(mod)
         return
 
     def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
@@ -3153,6 +3180,21 @@ class CppEmitter(CodeEmitter):
                 ns = self._module_name_to_cpp_namespace(base_module_name)
                 if ns != "":
                     return f"{ns}::{attr}"
+            if base_kind == "Name":
+                base_name = self.any_to_str(base_node.get("id"))
+                if (
+                    base_name != ""
+                    and not self.is_declared(base_name)
+                    and base_name not in self.import_modules
+                    and base_name in self.import_symbol_modules
+                ):
+                    src_obj = self.doc.get("source_path")
+                    src = src_obj if isinstance(src_obj, str) and src_obj != "" else "(input)"
+                    raise _make_user_error(
+                        "input_invalid",
+                        "from-import ではモジュール名は束縛されません。",
+                        [f"kind=missing_symbol file={src} import={base_name}.{attr}"],
+                    )
             bt = self.get_expr_type(expr_d.get("value"))
             if bt in self.ref_classes:
                 return f"{base}->{attr}"
@@ -4062,6 +4104,29 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
     return out
 
 
+def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, str]]:
+    """EAST `meta.qualified_symbol_refs` を正規化して返す（無い場合は空）。"""
+    out: list[dict[str, str]] = []
+    meta_obj = east_module.get("meta")
+    meta = meta_obj if isinstance(meta_obj, dict) else {}
+    refs_obj = meta.get("qualified_symbol_refs")
+    refs = refs_obj if isinstance(refs_obj, list) else []
+    i = 0
+    while i < len(refs):
+        item = refs[i]
+        if isinstance(item, dict):
+            module_id_obj = item.get("module_id")
+            symbol_obj = item.get("symbol")
+            local_name_obj = item.get("local_name")
+            module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+            symbol = symbol_obj if isinstance(symbol_obj, str) else ""
+            local_name = local_name_obj if isinstance(local_name_obj, str) else ""
+            if module_id != "" and symbol != "" and local_name != "":
+                out.append({"module_id": module_id, "symbol": symbol, "local_name": local_name})
+        i += 1
+    return out
+
+
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
     import_bindings = _meta_import_bindings(east_module)
@@ -4626,6 +4691,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         meta_obj: object = east.get("meta")
         meta = meta_obj if isinstance(meta_obj, dict) else {}
         import_bindings = _meta_import_bindings(east)
+        qualified_symbol_refs = _meta_qualified_symbol_refs(east)
         import_modules: dict[str, str] = {}
         import_symbols: dict[str, dict[str, str]] = {}
         if len(import_bindings) > 0:
@@ -4638,12 +4704,24 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 binding_kind = ent["binding_kind"]
                 if binding_kind == "module":
                     import_modules[local_name] = module_id
-                elif binding_kind == "symbol" and export_name != "":
+                elif binding_kind == "symbol" and export_name != "" and len(qualified_symbol_refs) == 0:
                     sym_ent: dict[str, str] = {}
                     sym_ent["module"] = module_id
                     sym_ent["name"] = export_name
                     import_symbols[local_name] = sym_ent
                 i += 1
+            if len(qualified_symbol_refs) > 0:
+                j = 0
+                while j < len(qualified_symbol_refs):
+                    ref = qualified_symbol_refs[j]
+                    module_id = ref["module_id"]
+                    symbol = ref["symbol"]
+                    local_name = ref["local_name"]
+                    sym_ent: dict[str, str] = {}
+                    sym_ent["module"] = module_id
+                    sym_ent["name"] = symbol
+                    import_symbols[local_name] = sym_ent
+                    j += 1
         else:
             import_modules_obj: object = meta.get("import_modules")
             import_symbols_obj: object = meta.get("import_symbols")

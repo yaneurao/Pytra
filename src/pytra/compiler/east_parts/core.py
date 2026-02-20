@@ -3900,6 +3900,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     # 互換メタデータは ImportBinding 正本から導出する。
     import_module_bindings = {}
     import_symbol_bindings = {}
+    qualified_symbol_refs: list[dict[str, str]] = []
     for binding in import_bindings:
         module_id_obj = binding.get("module_id")
         local_name_obj = binding.get("local_name")
@@ -3916,6 +3917,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             continue
         if binding_kind == "symbol" and export_name != "":
             import_symbol_bindings[local_name] = {"module": module_id, "name": export_name}
+            qualified_symbol_refs.append(
+                {
+                    "module_id": module_id,
+                    "symbol": export_name,
+                    "local_name": local_name,
+                }
+            )
 
     return {
         "kind": "Module",
@@ -3927,6 +3935,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         "meta": {
             "parser_backend": "self_hosted",
             "import_bindings": import_bindings,
+            "qualified_symbol_refs": qualified_symbol_refs,
             "import_modules": import_module_bindings,
             "import_symbols": import_symbol_bindings,
         },
