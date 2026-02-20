@@ -20,6 +20,7 @@ from src.py2cpp import (
     build_module_symbol_index,
     build_module_type_schema,
     dump_deps_text,
+    dump_deps_graph_text,
     load_cpp_module_attr_call_map,
     load_east,
     resolve_module_name,
@@ -411,6 +412,26 @@ def main() -> None:
         self.assertEqual(proc.returncode, 0, msg=proc.stderr)
         self.assertIn("graph:", proc.stdout)
         self.assertIn("main.py -> helper.py", proc.stdout)
+
+    def test_dump_deps_graph_and_build_map_are_consistent(self) -> None:
+        src_main = """import helper
+
+def main() -> None:
+    print(helper.f())
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            deps_txt = dump_deps_graph_text(main_py)
+            module_map = build_module_east_map(main_py)
+        self.assertIn("main.py -> helper.py", deps_txt)
+        self.assertEqual(set(module_map.keys()), {str(main_py), str(helper_py)})
 
     def test_cli_reports_input_invalid_for_missing_user_module(self) -> None:
         src_main = """import missing_mod
