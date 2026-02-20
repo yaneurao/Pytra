@@ -133,7 +133,7 @@
      - [x] `py_dict_get_default(..., list<object>{})` を全箇所削減する（selfhost compile logで追跡）。: `src/py2cpp.py` / `selfhost/py2cpp.cpp` を grep して残存なし（2026-02-20）。
    - [x] `split_*` / `is_*_type` の引数型を `str` に固定し、`py_slice(object,...)` 生成を消す。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
-   - [ ] `str|None`, `dict|None`, `list|None` の Union 処理を見直し、`std::optional<T>` 優先にする。
+   - [x] `str|None`, `dict|None`, `list|None` の Union 処理を見直し、`std::optional<T>` 優先にする。: 重複 Union（例: `list[int64]|None|None`）も `optional<...>` に正規化するよう更新し、`test/unit/test_cpp_type.py` を追加（2026-02-20）。
    - [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
    - [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
    - [ ] `py2cpp.py` で `nullopt` を default 値に渡している箇所を洗い出し、型ごとの既定値へ置換する。

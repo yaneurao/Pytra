@@ -3947,7 +3947,14 @@ class CppEmitter(CodeEmitter):
         if east_type.find("|") != -1:
             parts = self.split_union(east_type)
             if len(parts) >= 2:
-                non_none = [p for p in parts if p != "None"]
+                non_none: list[str] = []
+                has_none = False
+                for p in parts:
+                    if p == "None":
+                        has_none = True
+                        continue
+                    if p not in non_none:
+                        non_none.append(p)
                 if len(non_none) >= 1:
                     only_bytes = True
                     for p in non_none:
@@ -3958,8 +3965,10 @@ class CppEmitter(CodeEmitter):
                         return "bytes"
                 if any(self.is_any_like_type(p) for p in non_none):
                     return "object"
-                if len(parts) == 2 and len(non_none) == 1:
+                if has_none and len(non_none) == 1:
                     return f"::std::optional<{self._cpp_type_text(non_none[0])}>"
+                if (not has_none) and len(non_none) == 1:
+                    return self._cpp_type_text(non_none[0])
                 return "::std::any"
         if east_type in self.ref_classes:
             return f"rc<{east_type}>"
