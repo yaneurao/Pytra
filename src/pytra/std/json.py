@@ -202,6 +202,76 @@ def _escape_str(s: str, ensure_ascii: bool) -> str:
     return "".join(out)
 
 
+def _dump_json_list(
+    values: list[Any],
+    ensure_ascii: bool,
+    indent: int | None,
+    item_sep: str,
+    key_sep: str,
+    level: int,
+) -> str:
+    if len(values) == 0:
+        return "[]"
+    if indent is None:
+        dumped: list[str] = []
+        for x in values:
+            dumped.append(_dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level))
+        return "[" + item_sep.join(dumped) + "]"
+    inner: list[str] = []
+    for x in values:
+        inner.append(" " * (indent * (level + 1)) + _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1))
+    return "[\n" + ",\n".join(inner) + "\n" + (" " * (indent * level)) + "]"
+
+
+def _dump_json_dict(
+    values: dict[Any, Any],
+    ensure_ascii: bool,
+    indent: int | None,
+    item_sep: str,
+    key_sep: str,
+    level: int,
+) -> str:
+    if len(values) == 0:
+        return "{}"
+    if indent is None:
+        parts: list[str] = []
+        for k, x in values.items():
+            k_txt = _escape_str(str(k), ensure_ascii)
+            v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level)
+            parts.append(k_txt + key_sep + v_txt)
+        return "{" + item_sep.join(parts) + "}"
+    inner: list[str] = []
+    for k, x in values.items():
+        prefix = " " * (indent * (level + 1))
+        k_txt = _escape_str(str(k), ensure_ascii)
+        v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1)
+        inner.append(prefix + k_txt + key_sep + v_txt)
+    return "{\n" + ",\n".join(inner) + "\n" + (" " * (indent * level)) + "}"
+
+
+def _dump_json_value(
+    v: Any,
+    ensure_ascii: bool,
+    indent: int | None,
+    item_sep: str,
+    key_sep: str,
+    level: int,
+) -> str:
+    if v is None:
+        return "null"
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, str):
+        return _escape_str(v, ensure_ascii)
+    if isinstance(v, list):
+        return _dump_json_list(v, ensure_ascii, indent, item_sep, key_sep, level)
+    if isinstance(v, dict):
+        return _dump_json_dict(v, ensure_ascii, indent, item_sep, key_sep, level)
+    raise TypeError(f"json.dumps unsupported type: {type(v).__name__}")
+
+
 def dumps(
     obj: Any,
     *,
@@ -219,41 +289,4 @@ def dumps(
     else:
         item_sep, key_sep = separators
 
-    def _dump(v: Any, level: int) -> str:
-        if v is None:
-            return "null"
-        if isinstance(v, bool):
-            return "true" if v else "false"
-        if isinstance(v, (int, float)):
-            return str(v)
-        if isinstance(v, str):
-            return _escape_str(v, ensure_ascii)
-        if isinstance(v, list):
-            if len(v) == 0:
-                return "[]"
-            if indent is None:
-                return "[" + item_sep.join(_dump(x, level) for x in v) + "]"
-            inner = []
-            for x in v:
-                inner.append(" " * (indent * (level + 1)) + _dump(x, level + 1))
-            return "[\n" + ",\n".join(inner) + "\n" + (" " * (indent * level)) + "]"
-        if isinstance(v, dict):
-            if len(v) == 0:
-                return "{}"
-            if indent is None:
-                parts: list[str] = []
-                for k, x in v.items():
-                    parts.append(_escape_str(str(k), ensure_ascii) + key_sep + _dump(x, level))
-                return "{" + item_sep.join(parts) + "}"
-            inner = []
-            for k, x in v.items():
-                inner.append(
-                    " " * (indent * (level + 1))
-                    + _escape_str(str(k), ensure_ascii)
-                    + key_sep
-                    + _dump(x, level + 1)
-                )
-            return "{\n" + ",\n".join(inner) + "\n" + (" " * (indent * level)) + "}"
-        raise TypeError(f"json.dumps unsupported type: {type(v).__name__}")
-
-    return _dump(obj, 0)
+    return _dump_json_value(obj, ensure_ascii, indent, item_sep, key_sep, 0)

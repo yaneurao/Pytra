@@ -3839,10 +3839,9 @@ def _header_guard_from_path(path: Path) -> str:
 
 def build_cpp_header_from_east(
     east_module: dict[str, Any],
-    *,
-    top_namespace: str,
-    source_path: Path,
-    output_path: Path,
+    top_namespace: str = "",
+    source_path: Path = Path(""),
+    output_path: Path = Path(""),
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
     body_obj = east_module.get("body")
