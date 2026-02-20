@@ -24,12 +24,12 @@
          - [ ] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。
          - [x] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。: 現在は `.py` -> `not_implemented`、`.json` -> `input_invalid`、`--help` は `0` を確認済み。
        - [x] `src/py2cpp.py` の EAST 読み込み import を `pytra.compiler.east` facade から `pytra.compiler.east_parts.core` へ切り替えた（selfhost 時の動的 import 依存を削減）。
-       - [ ] `tools/build_selfhost.py` の現行失敗要因を段階解消する（`literal.join` 生成崩れ、`AUG_OPS/BIN_OPS` 未束縛、`parse_py2cpp_argv` 返り値の tuple 退化）。
+       - [x] `tools/build_selfhost.py` の現行失敗要因を段階解消する（`literal.join` 生成崩れ、`AUG_OPS/BIN_OPS` 未束縛、`parse_py2cpp_argv` 返り値の tuple 退化）。: 2026-02-20 時点で `python3 tools/build_selfhost.py` が再び green（`selfhost/py2cpp.out` 生成成功）。
          - [x] `CppEmitter._module_source_path_for_name` の selfhost 変換で `Path` が `float64` 退化する経路を除去する（`Path /` と `str + Path` を使わない）。: `Path` 合成を文字列経由へ変更し、`py_div(Path, str)` 発生を除去。
          - [x] `CppEmitter._module_function_arg_types` の `load_east` 依存を selfhost 最小モードで無効化する（`not_implemented` のままでもビルド通過を優先）。: runtime `.py` の関数シグネチャ抽出を source 解析経由のみに固定。
          - [x] `parse_py2cpp_argv` の返り値が tuple 退化する経路を修正し、`_dict_str_get(parsed, ...)` 呼び出しを常に `dict[str, str]` で通す。
-         - [ ] `", ".join(...)` / `" && ".join(...)` など literal `.join` が C++ 側で `char[]` 扱いになる箇所を全置換する（`sep` 変数経由または `py_join` 経由）。
-         - [ ] `BIN_OPS` / `AUG_OPS` / `CMP_OPS` の global 参照が selfhost で未束縛になる経路を切り分け、`CodeEmitter` 側 accessor 経由へ寄せる。
+         - [x] `", ".join(...)` / `" && ".join(...)` など literal `.join` が C++ 側で `char[]` 扱いになる箇所を全置換する（`sep` 変数経由または `py_join` 経由）。: `src/py2cpp.py` の結合処理を `_join_str_list(...)` 経由へ統一。
+         - [x] `BIN_OPS` / `AUG_OPS` / `CMP_OPS` の global 参照が selfhost で未束縛になる経路を切り分け、`CodeEmitter` 側 accessor 経由へ寄せる。: selfhost source 準備時に `BIN_OPS/CMP_OPS/AUG_OPS/AUG_BIN` を再束縛し、`dict_get_node` の `dict[str,str]` 取得経路を runtime へ追加。
        - [ ] `src/pytra/compiler/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
          - [x] bootstrap 専用コードを `src/pytra/compiler/east.py` facade 側へ隔離し、`east_parts.core` から除去する。
          - [x] `east_parts.core` の import を `pytra.std.*`（または同等 shim）に固定する。
