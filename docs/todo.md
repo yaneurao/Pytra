@@ -3,10 +3,10 @@
 ## 最優先（即時）
 
 1. [ ] 未使用シンボル削除を「1シンボルずつ」進める。
-   - [ ] 対象リスト作成: `src/runtime/cpp/pytra/built_in/py_runtime.h` と `src/py2cpp.py` の関数/補助関数を列挙し、`docs/todo.md` に候補一覧を作る。
-   - [ ] 参照確認: 各候補ごとに `rg <symbol>` で repo 全体の参照を確認し、「実使用」「互換レイヤ」「未使用」に分類する。
-   - [ ] 1件削除: 「未使用」1件だけを削除し、同時に代替呼び出し（例: helper -> method）へ置換する。
-   - [ ] 1件検証: 毎回 `python3 tools/check_py2cpp_transpile.py` を実行して回帰を確認する。
+   - [x] 対象リスト作成: `src/py2cpp.py` の候補として `_default_cpp_module_attr_call_map`, `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP`, `_deep_copy_str_map` を抽出。
+   - [x] 参照確認: `rg` で上記候補の参照を確認し、「未使用（定数空マップ生成のためだけに存在）」へ分類。
+   - [x] 1件削除: `_default_cpp_module_attr_call_map` / `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP` / `_deep_copy_str_map` を削除し、`load_cpp_module_attr_call_map` を空マップ初期化へ簡素化。
+   - [x] 1件検証: `python3 tools/check_py2cpp_transpile.py` を実行し、`checked=103 ok=103 fail=0 skipped=5` を確認。
    - [ ] 1件コミット: 1シンボル削除ごとに独立コミットする（後戻り容易化）。
    - [ ] 影響反映: public API を消した場合は `docs/spec-runtime.md` / `docs/spec-dev.md` の該当記述を同コミットで更新する。
 

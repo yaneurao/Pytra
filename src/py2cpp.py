@@ -206,11 +206,6 @@ DEFAULT_AUG_BIN = {
     "RShift": ">>",
 }
 
-def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
-    return {}
-
-
-_DEFAULT_CPP_MODULE_ATTR_CALL_MAP: dict[str, dict[str, str]] = _default_cpp_module_attr_call_map()
 CPP_RESERVED_WORDS: list[str] = [
     "alignas", "alignof", "asm", "auto", "break", "case", "catch", "char", "class", "const", "constexpr",
     "continue", "default", "delete", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if",
@@ -218,13 +213,6 @@ CPP_RESERVED_WORDS: list[str] = [
     "return", "short", "signed", "sizeof", "static", "struct", "switch", "template", "this", "throw", "try",
     "typedef", "typename", "union", "unsigned", "virtual", "void", "volatile", "while",
 ]
-
-def _deep_copy_str_map(v: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
-    out: dict[str, dict[str, str]] = {}
-    for k, inner in v.items():
-        out[k] = dict(inner)
-    return out
-
 
 def _copy_str_map(src: dict[str, str]) -> dict[str, str]:
     out: dict[str, str] = {}
@@ -467,7 +455,7 @@ def load_cpp_identifier_rules() -> tuple[set[str], str]:
 
 def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:
     """C++ の `module.attr(...)` -> ランタイム呼び出しマップを返す。"""
-    out = _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
+    out: dict[str, dict[str, str]] = {}
     if not isinstance(profile, dict):
         return out
     runtime_calls_obj = profile.get("runtime_calls")
