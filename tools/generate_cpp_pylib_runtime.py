@@ -289,12 +289,12 @@ def _std_typing_header_text() -> str:
 """
 
 
-def _extract_numeric_functions_from_transpiled(cpp_text: str) -> list[tuple[str, list[str]]]:
+def _extract_public_functions_from_transpiled(cpp_text: str) -> list[tuple[str, list[str]]]:
+    """py2cpp 出力からトップレベル関数の名前と引数名を抽出する。"""
     funcs: list[tuple[str, list[str]]] = []
+    seen: set[str] = set()
     for raw in cpp_text.splitlines():
         ln = raw.strip()
-        if not ln.startswith("float64 "):
-            continue
         if not ln.endswith("{"):
             continue
         head = ln[: len(ln) - 1].strip()
@@ -303,11 +303,13 @@ def _extract_numeric_functions_from_transpiled(cpp_text: str) -> list[tuple[str,
         if p0 < 0 or p1 < p0:
             continue
         sig = head[:p0].strip()
-        args_txt = head[p0 + 1 : p1].strip()
-        sig_parts = sig.split(" ")
-        if len(sig_parts) < 2:
+        if " " not in sig:
             continue
+        sig_parts = sig.split(" ")
         fn_name = sig_parts[-1].strip()
+        if fn_name == "" or fn_name in {"if", "while", "for", "switch"}:
+            continue
+        args_txt = head[p0 + 1 : p1].strip()
         params: list[str] = []
         if args_txt != "":
             for tok in args_txt.split(","):
@@ -316,11 +318,14 @@ def _extract_numeric_functions_from_transpiled(cpp_text: str) -> list[tuple[str,
                     continue
                 items = part.split(" ")
                 params.append(items[-1].strip())
-        funcs.append((fn_name, params))
+        if fn_name not in seen:
+            seen.add(fn_name)
+            funcs.append((fn_name, params))
     return funcs
 
 
-def _extract_numeric_constants_from_transpiled(cpp_text: str) -> list[tuple[str, str]]:
+def _extract_public_constants_from_transpiled(cpp_text: str) -> list[tuple[str, str]]:
+    """py2cpp 出力からトップレベル定数代入を抽出する。"""
     out: list[tuple[str, str]] = []
     for raw in cpp_text.splitlines():
         ln = raw.strip()
@@ -345,7 +350,7 @@ def _header_guard_from_target(target_h_rel: str) -> str:
     return txt
 
 
-def _std_numeric_header_text(
+def _std_auto_module_header_text(
     source_rel: str,
     target_h_rel: str,
     module_name: str,
@@ -388,7 +393,7 @@ def _std_numeric_header_text(
     return "\n".join(lines)
 
 
-def _std_numeric_cpp_text(
+def _std_auto_module_cpp_text(
     source_rel: str,
     target_h_rel: str,
     module_name: str,
@@ -439,7 +444,7 @@ def _std_numeric_cpp_text(
     return "\n".join(lines)
 
 
-def _discover_std_auto_numeric_modules() -> list[tuple[str, str, str, str]]:
+def _discover_std_auto_modules() -> list[tuple[str, str, str, str]]:
     out: list[tuple[str, str, str, str]] = []
     std_dir = ROOT / "src" / "pytra" / "runtime" / "std"
     skip = {"__init__", "time", "pathlib", "dataclasses", "sys", "json", "typing"}
@@ -830,16 +835,16 @@ def main() -> int:
     gif_impl = normalize_generated_impl_text(raw_gif, GIF_SOURCE)
     png_cpp = _png_wrapper_text(png_ns).replace("__PYTRA_PNG_IMPL__", _strip_runtime_include(png_impl).rstrip())
     gif_cpp = _gif_wrapper_text(gif_ns).replace("__PYTRA_GIF_IMPL__", _strip_runtime_include(gif_impl).rstrip())
-    auto_numeric_outputs: list[tuple[str, str]] = []
-    auto_numeric_mods = _discover_std_auto_numeric_modules()
-    for src_rel, h_rel, cpp_rel, mod_name in auto_numeric_mods:
+    auto_std_outputs: list[tuple[str, str]] = []
+    auto_std_mods = _discover_std_auto_modules()
+    for src_rel, h_rel, cpp_rel, mod_name in auto_std_mods:
         raw_mod = transpile_to_cpp(src_rel)
-        funcs = _extract_numeric_functions_from_transpiled(raw_mod)
-        consts = _extract_numeric_constants_from_transpiled(raw_mod)
-        h_txt = _std_numeric_header_text(src_rel, h_rel, mod_name, funcs, consts)
-        cpp_txt = _std_numeric_cpp_text(src_rel, h_rel, mod_name, funcs, consts)
-        auto_numeric_outputs.append((h_rel, h_txt))
-        auto_numeric_outputs.append((cpp_rel, cpp_txt))
+        funcs = _extract_public_functions_from_transpiled(raw_mod)
+        consts = _extract_public_constants_from_transpiled(raw_mod)
+        h_txt = _std_auto_module_header_text(src_rel, h_rel, mod_name, funcs, consts)
+        cpp_txt = _std_auto_module_cpp_text(src_rel, h_rel, mod_name, funcs, consts)
+        auto_std_outputs.append((h_rel, h_txt))
+        auto_std_outputs.append((cpp_rel, cpp_txt))
     outputs: list[tuple[str, str]] = [
         ("src/runtime/cpp/pytra/runtime/assertions.h", _runtime_assertions_header_text()),
         ("src/runtime/cpp/pytra/runtime/east.h", _runtime_east_header_text()),
@@ -858,7 +863,7 @@ def main() -> int:
         ("src/runtime/cpp/pytra/std/pathlib.h", _std_pathlib_header_text()),
         ("src/runtime/cpp/pytra/std/pathlib.cpp", _std_pathlib_cpp_text()),
     ]
-    outputs.extend(auto_numeric_outputs)
+    outputs.extend(auto_std_outputs)
     for target_rel, text in outputs:
         if write_or_check(target_rel, text.rstrip() + "\n", args.check):
             changed = True
