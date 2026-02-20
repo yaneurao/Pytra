@@ -3,11 +3,11 @@
 ## 最優先（即時）
 
 1. [ ] 未使用シンボル削除を「1シンボルずつ」進める。
-   - [x] 対象リスト作成: `src/py2cpp.py` の候補として `_default_cpp_module_attr_call_map`, `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP`, `_deep_copy_str_map`, `CPP_RESERVED_WORDS` を抽出。
-   - [x] 参照確認: `rg` で上記候補の参照を確認し、「未使用（空マップ生成専用 / 参照ゼロ定数）」へ分類。
-   - [x] 1件削除: `_default_cpp_module_attr_call_map` / `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP` / `_deep_copy_str_map` / `CPP_RESERVED_WORDS` を削除し、`load_cpp_module_attr_call_map` を空マップ初期化へ簡素化。
+   - [x] 対象リスト作成: `src/py2cpp.py` の候補として `_default_cpp_module_attr_call_map`, `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP`, `_deep_copy_str_map`, `CPP_RESERVED_WORDS`, `_copy_str_map` を抽出。
+   - [x] 参照確認: `rg` で上記候補の参照を確認し、「未使用（空マップ生成専用 / 参照ゼロ定数）」「薄いラッパ（`dict(...)` へ置換可能）」へ分類。
+   - [x] 1件削除: `_default_cpp_module_attr_call_map` / `_DEFAULT_CPP_MODULE_ATTR_CALL_MAP` / `_deep_copy_str_map` / `CPP_RESERVED_WORDS` / `_copy_str_map` を削除し、`load_cpp_module_attr_call_map` と `load_cpp_*_ops` を簡素化。
    - [x] 1件検証: `python3 tools/check_py2cpp_transpile.py` を実行し、`checked=103 ok=103 fail=0 skipped=5` を確認。
-   - [x] 1件コミット: 1シンボル削除ごとに独立コミットする（後戻り容易化）。: `a89f5a8`, `6d8261c`
+   - [x] 1件コミット: 1シンボル削除ごとに独立コミットする（後戻り容易化）。: `a89f5a8`, `6d8261c`, `36ab6df`
    - [ ] 影響反映: public API を消した場合は `docs/spec-runtime.md` / `docs/spec-dev.md` の該当記述を同コミットで更新する。
 
 ## 優先方針（2026-02-19 更新）
