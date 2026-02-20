@@ -87,7 +87,7 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertIn("opt-level: 2", txt)
 
     def test_parse_py2cpp_argv(self) -> None:
-        parsed, err = parse_py2cpp_argv(
+        parsed = parse_py2cpp_argv(
             [
                 "input.py",
                 "-o",
@@ -99,6 +99,7 @@ class Py2CppFeatureTest(unittest.TestCase):
                 "--dump-options",
             ]
         )
+        err = str(parsed.get("__error", ""))
         self.assertEqual(err, "")
         self.assertEqual(parsed.get("input"), "input.py")
         self.assertEqual(parsed.get("output"), "out.cpp")
@@ -107,35 +108,41 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed.get("dump_options"), "1")
 
     def test_parse_py2cpp_argv_accepts_positional_output(self) -> None:
-        parsed, err = parse_py2cpp_argv(["input.py", "out.cpp", "-O2"])
+        parsed = parse_py2cpp_argv(["input.py", "out.cpp", "-O2"])
+        err = str(parsed.get("__error", ""))
         self.assertEqual(err, "")
         self.assertEqual(parsed.get("input"), "input.py")
         self.assertEqual(parsed.get("output"), "out.cpp")
         self.assertEqual(parsed.get("opt_level_opt"), "2")
 
     def test_parse_py2cpp_argv_multi_file_flags(self) -> None:
-        parsed, err = parse_py2cpp_argv(["input.py", "--multi-file", "--output-dir", "out"])
+        parsed = parse_py2cpp_argv(["input.py", "--multi-file", "--output-dir", "out"])
+        err = str(parsed.get("__error", ""))
         self.assertEqual(err, "")
         self.assertEqual(parsed.get("single_file"), "0")
         self.assertEqual(parsed.get("output_dir"), "out")
         self.assertEqual(parsed.get("output_mode_explicit"), "1")
-        parsed2, err2 = parse_py2cpp_argv(["input.py", "--single-file"])
+        parsed2 = parse_py2cpp_argv(["input.py", "--single-file"])
+        err2 = str(parsed2.get("__error", ""))
         self.assertEqual(err2, "")
         self.assertEqual(parsed2.get("single_file"), "1")
         self.assertEqual(parsed2.get("output_mode_explicit"), "1")
-        parsed3, err3 = parse_py2cpp_argv(["input.py"])
+        parsed3 = parse_py2cpp_argv(["input.py"])
+        err3 = str(parsed3.get("__error", ""))
         self.assertEqual(err3, "")
         self.assertEqual(parsed3.get("single_file"), "0")
         self.assertEqual(parsed3.get("output_mode_explicit"), "0")
 
     def test_parse_py2cpp_argv_header_output(self) -> None:
-        parsed, err = parse_py2cpp_argv(["input.py", "--header-output", "out.h", "-o", "out.cpp"])
+        parsed = parse_py2cpp_argv(["input.py", "--header-output", "out.h", "-o", "out.cpp"])
+        err = str(parsed.get("__error", ""))
         self.assertEqual(err, "")
         self.assertEqual(parsed.get("header_output"), "out.h")
         self.assertEqual(parsed.get("output"), "out.cpp")
 
     def test_parse_py2cpp_argv_emit_runtime_cpp(self) -> None:
-        parsed, err = parse_py2cpp_argv(["src/pytra/std/math.py", "--emit-runtime-cpp"])
+        parsed = parse_py2cpp_argv(["src/pytra/std/math.py", "--emit-runtime-cpp"])
+        err = str(parsed.get("__error", ""))
         self.assertEqual(err, "")
         self.assertEqual(parsed.get("emit_runtime_cpp"), "1")
 
