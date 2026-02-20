@@ -1,5 +1,41 @@
 # TODO
 
+## 2026-02-20 完了: todo2 準拠タスク
+
+1. [x] `docs/todo2.md` の MUST を継続的に満たす（当時の最新版）。
+   - [x] `math` は `py2cpp.py` の一般ロジックで生成し、`math` 固有分岐を `py2cpp.py` / profile / tools に追加しない。
+   - [x] `src/pytra/std/math.py` -> `src/runtime/cpp/pytra/std/math.h/.cpp` の生成を `--emit-runtime-cpp` で確認済み。
+   - [x] `test/fixtures/stdlib/math_extended.py` の Python/C++ 実行一致を再確認済み。
+   - [x] `src/py2cpp.py` の `_default_cpp_module_attr_call_map` を空化し、`module.attr` は import 由来の汎用 namespace 解決へ統一した。
+   - [x] `src/py2cpp.py` から `png`/`gif` 固有分岐（専用 bridge 生成）を削除し、`--emit-runtime-cpp` の汎用生成フローへ統一した。
+   - [x] `src/py2cpp.py` から `math`/`png`/`gif` のモジュール名文字列直書きを除去した。
+   - [x] `src/pytra/std/sys.py` / `src/pytra/std/typing.py` を self_hosted で変換可能な形へ修正し、`--emit-runtime-cpp` 再生成後に `sys_extended` / `typing_extended` / `any_basic_runtime` を再確認済み。
+2. [x] `src/pytra/utils/std` と `src/pytra/std` の二重管理を解消する（`src/pytra/std` に統一）。
+3. [x] `src/runtime/cpp/pytra/built_in/` の位置づけ（Python 組み込み型の C++ 実装）をドキュメントへ明記する。
+4. [x] `src/runtime/cpp/pytra/built_in/containers.h` の分割（`str/path/list/dict/set`）を完了する。
+5. [x] `py_isdigit` / `py_isalpha` を `py_runtime.h` 直下から移し、`src/runtime/cpp/pytra/built_in/str.h` 側で提供する。
+6. [x] `src/pytra/utils/east.py` の要否を判断し、不要なら削除または配置見直しを行う。
+7. [x] 空ディレクトリだった `src/pytra/utils/std/` を削除する。
+8. [x] `src/pytra/runtime/cpp/` を `src/hooks/cpp/` へ移動する（import パス・ドキュメント・selfhost 影響を含めて整理）。
+9. [x] `src/runtime/cpp/base/` を `src/runtime/cpp/pytra/built_in/` へ改名し、参照・ドキュメントを移行する。
+10. [x] `src/pytra/utils/*.py` の `--emit-runtime-cpp` 生成先を `src/runtime/cpp/pytra/utils/` に統一する（`src/runtime/cpp/pytra/std/` と同じ体系）。
+    - [x] `src/pytra/utils/{png,gif,assertions}.py --emit-runtime-cpp` で `src/runtime/cpp/pytra/utils/*.h/.cpp` へ生成されることを確認。
+    - [x] `python3 tools/check_py2cpp_transpile.py`（`checked=103 ok=103 fail=0 skipped=5`）を再確認。
+    - [x] `python3 tools/verify_image_runtime_parity.py` が `True` を返すことを確認。
+11. [x] `src/runtime/cpp/py_runtime.h` から `pytra/std/math.h`, `pytra/utils/png.h`, `pytra/utils/gif.h` の直接 include を外し、import されたモジュール側でのみ include する設計へ移行する。
+    - [x] `py_runtime.h` の最小依存（built_in 基盤のみ）を定義する。
+    - [x] `src/py2cpp.py` 側で `math/png/gif` の include が必要ケースでのみ出力されることを確認する。
+12. [x] `src/runtime/cpp/py_runtime.h` の配置を見直し、`src/runtime/cpp/pytra/built_in/` 配下へ移す。
+    - [x] 既存 include パス互換（必要なら薄い forwarding header）を含めて移行方針を決める。
+    - [x] `src/py2cpp.py` のヘッダ参照とテスト/ドキュメントの参照先を統一する。
+    - [x] 互換 forwarding header は廃止し、`src/runtime/cpp/py_runtime.h` を削除した。
+13. [x] `py_runtime.h` にある `py_sys_*` 群を `src/runtime/cpp/pytra/std/sys.h/.cpp` へ移管する。
+    - [x] `py_runtime.h` から `py_sys_*` を削除し、`pytra.std.sys` import 時の `pytra::std::sys::*` へ統一した。
+    - [x] `test/fixtures/stdlib/sys_extended.py` と import 系 fixture で回帰を確認する。
+14. [x] `py_runtime.h` にある `perf_counter` を `src/runtime/cpp/pytra/std/time.h/.cpp` へ移管する。
+    - [x] `py_runtime.h` 直下から `perf_counter` を削除する。
+    - [x] `pytra.std.time` 経由のみで `perf_counter` を解決できることを確認する。
+
 ## 2026-02-20 完了: import 解決優先キュー
 
 1. [x] import 解決フェーズを最優先で完了した（`selfhost` より先）。
