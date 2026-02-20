@@ -96,7 +96,7 @@
    - [x] `render_expr` の `Call` 分岐を 200 行未満に縮退する（目標値を明示）。: 現在は helper 呼び出し中心で 20 行前後
    - [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。: `BinOp` / `Compare` / `UnaryOp` は専用 helper に分離済み
      - [x] `IfExp` の cast 適用ロジックを helper 化する。
-    - [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。: `Name` の予約語リネームは `CodeEmitter.rename_if_reserved(...)` へ移管済み
+     - [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。: `Name` は `CodeEmitter.render_name_ref(...)` へ移管済み（`Constant`/`Attribute` は未移管）。
    - [x] `Compare` 分岐を helper へ切り出す（`Contains` / chain compare / `is` 系）。
    - [x] `UnaryOp` と `BoolOp` の条件式特化ロジックを helper へ切り出す。: `UnaryOp` は `_render_unary_expr` へ分離、`BoolOp` は既存 `render_boolop` を継続利用
    - [x] `Subscript` / `SliceExpr` / `Concat` を helper 化し、`render_expr` 直書きを削減する。: `Subscript`/`SliceExpr` は `_render_subscript_expr` へ分離（`Concat` は既存 helper 経路）

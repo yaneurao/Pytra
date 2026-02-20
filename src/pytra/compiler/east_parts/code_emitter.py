@@ -227,6 +227,28 @@ class CodeEmitter:
             return f"{rename_prefix}{name}"
         return name
 
+    def render_name_ref(
+        self,
+        node_dict: dict[str, Any],
+        reserved_words: set[str],
+        rename_prefix: str,
+        renamed_symbols: dict[str, str],
+        default_name: str = "_",
+    ) -> str:
+        """Name ノードから識別子を取り出し、予約語衝突を避けて返す。"""
+        name = self.any_dict_get_str(node_dict, "id", "")
+        if name == "" and "id" in node_dict:
+            raw = node_dict["id"]
+            if raw is not None:
+                if not isinstance(raw, bool) and not isinstance(raw, int) and not isinstance(raw, float):
+                    if not isinstance(raw, dict) and not isinstance(raw, list) and not isinstance(raw, set):
+                        raw_txt = str(raw)
+                        if raw_txt not in {"", "None", "{}", "[]"}:
+                            name = raw_txt
+        if name == "":
+            name = default_name
+        return self.rename_if_reserved(name, reserved_words, rename_prefix, renamed_symbols)
+
     def any_dict_get(self, obj: dict[str, Any], key: str, default_value: Any) -> Any:
         """dict 風入力から key を取得し、失敗時は既定値を返す。"""
         if not isinstance(obj, dict):

@@ -158,6 +158,15 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.node_kind({"kind": "Call"}), "Call")
         self.assertEqual(em.node_kind({"kind": self._KindLike("Attribute")}), "Attribute")
         self.assertEqual(em.node_kind({"kind": 1}), "")
+        self.assertEqual(
+            em.render_name_ref({"kind": "Name", "id": "class"}, {"class"}, "py_", {}, "_"),
+            "py_class",
+        )
+        self.assertEqual(
+            em.render_name_ref({"kind": "Name", "id": self._KindLike("value")}, set(), "_", {}, "_"),
+            "value",
+        )
+        self.assertEqual(em.render_name_ref({}, set(), "_", {}, "_"), "_")
 
     def test_scope_and_expr_helpers(self) -> None:
         em = CodeEmitter({})

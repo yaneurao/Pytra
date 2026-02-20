@@ -3496,8 +3496,13 @@ class CppEmitter(CodeEmitter):
                 return hook_complex
 
         if kind == "Name":
-            name = str(expr_d.get("id", "_"))
-            return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+            return self.render_name_ref(
+                expr_d,
+                self.reserved_words,
+                self.rename_prefix,
+                self.renamed_symbols,
+                "_",
+            )
         if kind == "Constant":
             v = expr_d.get("value")
             raw_repr = self.any_to_str(expr_d.get("repr"))
