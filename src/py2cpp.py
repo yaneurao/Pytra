@@ -4294,7 +4294,9 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             dep_disp = mod
             if status == "user":
                 dep_path_obj = resolved.get("path")
-                dep_file = dep_path_obj if isinstance(dep_path_obj, Path) else None
+                dep_file: Path | None = None
+                if dep_path_obj is not None:
+                    dep_file = Path(str(dep_path_obj))
                 if dep_file is None:
                     i += 1
                     continue

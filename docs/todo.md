@@ -35,14 +35,14 @@
    - [ ] include は `ImportBinding` 由来で重複排除 + 安定ソートする。
 7. [ ] single-file / multi-file で同一 `module_namespace_map` を使用し、解決結果差分を禁止する。
    - [ ] forward 宣言/呼び出し解決ともに同じ map を使う。
-   - [ ] `--dump-deps` と通常変換で依存解決結果が一致することをテストで保証する。
+   - [x] `--dump-deps` と通常変換で依存解決結果が一致することをテストで保証する。
 8. [x] import エラーの詳細フォーマットを統一する。
    - [x] `input_invalid` の detail に `kind`, `file`, `import` を必ず含める。
    - [x] `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unsupported_import_form`。
 9. [ ] import 最小受け入れテストマトリクスを追加する。
    - [x] 正常: 4形式（`import` / `import as` / `from import` / `from import as`）。
    - [x] 異常: `import *`, 相対 import, モジュール未存在, シンボル未存在, 同名 alias 衝突。
-   - [ ] single/multi と `--dump-deps` で同じ解決結果になることを自動検証する。
+   - [x] single/multi と `--dump-deps` で同じ解決結果になることを自動検証する。
 10. [ ] 言語非依存 import IR の土台を追加する（後続 backend 共通化）。
    - [ ] `QualifiedSymbolRef(module_id, symbol, local_name)` を定義し、backend 手前で `Name(alias)` を正規化する。
    - [ ] backend には「解釈済み import 情報のみ」を渡し、言語側で import 意味解釈しない設計にする。
