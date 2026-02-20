@@ -40,10 +40,10 @@
     - 期待値: repo 直下に `import_pytra_runtime_png.png` が生成されない。
   - [x] 受け入れ条件: `test/unit/test_image_runtime_parity.py::test_runtime_parity_check_does_not_leak_png_to_repo_root` を追加して確認。
 
-- [ ] トランスパイル時パススルー記法（`# Pytra::cpp` / `# Pytra::pass`）の仕様化と最小実装を行う。
-  - [ ] 仕様: 適用位置、インデント維持、複数ブロック連結、既存 docstring コメント変換との優先順位を `docs/spec.md` か `docs/spec-east.md` に明記。
-  - [ ] 実装: EAST 保持形式を定義し、C++ エミッタでそのまま展開できる最小経路を追加する。
-  - [ ] 受け入れ条件: 最小 fixture（1件）で Python 実行に影響を与えず、C++ 出力に意図した行が入る。
+- [x] トランスパイル時パススルー記法（`# Pytra::cpp` / `# Pytra::pass`）の仕様化と最小実装を行う。
+  - [x] 仕様: 適用位置、インデント維持、複数ブロック連結、既存 docstring コメント変換との優先順位を `docs/spec-east.md` に明記。
+  - [x] 実装: EAST 保持形式（`leading_trivia` の comment text 利用）を定義し、C++ エミッタでそのまま展開できる最小経路を追加した。
+  - [x] 受け入れ条件: 最小 fixture（`test/fixtures/core/pass_through_comment.py`）で Python 実行に影響を与えず、C++ 出力に意図した行が入ることを unit test で確認。
 
 ## 最優先（2026-02-20 追加: py2cpp コード生成不具合）
 

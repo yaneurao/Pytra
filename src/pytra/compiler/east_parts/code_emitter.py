@@ -14,6 +14,7 @@ class CodeEmitter:
     indent: int
     tmp_id: int
     scope_stack: list[set[str]]
+    passthrough_cpp_block: bool
 
     def __init__(
         self,
@@ -38,6 +39,7 @@ class CodeEmitter:
         self.indent = 0
         self.tmp_id = 0
         self.scope_stack = self._root_scope_stack()
+        self.passthrough_cpp_block = False
 
     def _empty_lines(self) -> list[str]:
         """空の `list[str]` を返す。"""
@@ -698,16 +700,7 @@ class CodeEmitter:
         trivia = self.any_to_dict_list(stmt["leading_trivia"])
         if len(trivia) == 0:
             return
-        for item in trivia:
-            k = self.any_dict_get_str(item, "kind", "")
-            if k == "comment":
-                txt = self.any_dict_get_str(item, "text", "")
-                self.emit(self.comment_line_prefix() + txt)
-            elif k == "blank":
-                cnt = self.any_dict_get_int(item, "count", 1)
-                n = cnt if cnt > 0 else 1
-                for _ in range(n):
-                    self.emit("")
+        self._emit_trivia_items(trivia)
 
     def emit_module_leading_trivia(self) -> None:
         """モジュール先頭のコメント/空行 trivia を出力する。"""
@@ -716,10 +709,66 @@ class CodeEmitter:
         trivia = self.any_to_dict_list(self.doc["module_leading_trivia"])
         if len(trivia) == 0:
             return
+        self._emit_trivia_items(trivia)
+
+    def _parse_passthrough_comment(self, text: str) -> dict[str, str]:
+        """`# Pytra::cpp` / `# Pytra::pass` 記法を解釈して directive を返す。"""
+        out: dict[str, str] = {}
+        raw = self._trim_ws(text)
+        prefix = ""
+        if raw.startswith("Pytra::cpp"):
+            prefix = "Pytra::cpp"
+        elif raw.startswith("Pytra::pass"):
+            prefix = "Pytra::pass"
+        if prefix == "":
+            return out
+        rest = raw[len(prefix) :]
+        if rest.startswith(":"):
+            rest = rest[1:]
+        rest = self._trim_ws(rest)
+        if rest == "begin":
+            out["kind"] = "begin"
+            out["text"] = ""
+            return out
+        if rest == "end":
+            out["kind"] = "end"
+            out["text"] = ""
+            return out
+        out["kind"] = "line"
+        out["text"] = rest
+        return out
+
+    def _emit_trivia_items(self, trivia: list[dict[str, Any]]) -> None:
+        """trivia をコメント/空行/パススルー行として出力する。"""
         for item in trivia:
             k = self.any_dict_get_str(item, "kind", "")
             if k == "comment":
                 txt = self.any_dict_get_str(item, "text", "")
+                directive = self._parse_passthrough_comment(txt)
+                d_kind = self.any_dict_get_str(directive, "kind", "")
+                if self.passthrough_cpp_block:
+                    if d_kind == "end":
+                        self.passthrough_cpp_block = False
+                        continue
+                    if d_kind == "begin":
+                        continue
+                    if d_kind == "line":
+                        line_txt = self.any_dict_get_str(directive, "text", "")
+                        if line_txt != "":
+                            self.emit(line_txt)
+                        continue
+                    self.emit(txt)
+                    continue
+                if d_kind == "begin":
+                    self.passthrough_cpp_block = True
+                    continue
+                if d_kind == "end":
+                    continue
+                if d_kind == "line":
+                    line_txt = self.any_dict_get_str(directive, "text", "")
+                    if line_txt != "":
+                        self.emit(line_txt)
+                    continue
                 self.emit(self.comment_line_prefix() + txt)
             elif k == "blank":
                 cnt = self.any_dict_get_int(item, "count", 1)

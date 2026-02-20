@@ -107,6 +107,26 @@
 
 - `arg_types`, `return_type`, `arg_usage`, `renamed_symbols`
 
+### 5.1 `leading_trivia` による C++ パススルー記法
+
+- EAST では、パススルーは新ノードを増やさず、既存の `leading_trivia`（`kind: "comment"`）で保持する。
+- 解釈対象コメント:
+  - `# Pytra::cpp <C++行>`
+  - `# Pytra::cpp: <C++行>`
+  - `# Pytra::pass <C++行>`
+  - `# Pytra::pass: <C++行>`
+  - `# Pytra::cpp begin` ... `# Pytra::cpp end`
+  - `# Pytra::pass begin` ... `# Pytra::pass end`
+- 出力ルール（C++ エミッタ）:
+  - directive コメントは通常コメント化（`// ...`）せず、C++ 行としてそのまま出力する。
+  - `begin/end` ブロック中の通常コメントは、`#` を除いた本文を C++ 行として順序どおり出力する。
+  - 出力位置は `leading_trivia` が付いている文の直前で、文のインデントに合わせる。
+  - `blank` trivia は従来どおり空行として維持する。
+  - 同一 `leading_trivia` 内の複数 directive は記述順に連結して出力する。
+- 優先順位:
+  - `leading_trivia` の directive 解釈が最優先。
+  - 既存の docstring コメント変換（`"""..."""` -> `/* ... */`）とは独立で、互いに上書きしない。
+
 ## 6. 型システム
 
 ### 6.1 正規型

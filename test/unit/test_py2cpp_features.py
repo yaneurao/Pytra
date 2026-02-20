@@ -1338,6 +1338,24 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_pass_through_comment_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = find_fixture_case("pass_through_comment")
+            out_cpp = work / "pass_through_comment.cpp"
+            transpile(src_py, out_cpp)
+            txt = out_cpp.read_text(encoding="utf-8")
+            self.assertIn("int injected = x;", txt)
+            self.assertIn("injected += 1;", txt)
+            self.assertIn("int temp = x;", txt)
+            self.assertIn("temp += 1;", txt)
+            self.assertNotIn("// Pytra::cpp", txt)
+            self.assertNotIn("// Pytra::pass", txt)
+        out = self._compile_and_run_fixture("pass_through_comment")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
     def test_super_init_runtime(self) -> None:
         out = self._compile_and_run_fixture("super_init")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
