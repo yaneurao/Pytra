@@ -1,5 +1,4 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include "runtime/cpp/pytra/runtime/png.h"
 
@@ -9,7 +8,6 @@ namespace pytra::runtime::png {
 namespace generated {
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/png.py
-// command: python3 tools/generate_cpp_pylib_runtime.py
 
 
 

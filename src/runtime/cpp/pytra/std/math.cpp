@@ -1,28 +1,57 @@
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/runtime/std/math.py
-// generated-by: src/py2cpp.py
-// command: python3 tools/generate_cpp_pylib_runtime.py
+#include "runtime/cpp/py_runtime.h"
 
-#include <cmath>
-
-#include "runtime/cpp/pytra/std/math.h"
+#include "pytra/std/math-impl.h"
 
 namespace pytra::std::math {
 
-const double pi = 3.141592653589793;
-const double e = 2.718281828459045;
-
-double sqrt(double x) { return ::std::sqrt(x); }
-double sin(double x) { return ::std::sin(x); }
-double cos(double x) { return ::std::cos(x); }
-double tan(double x) { return ::std::tan(x); }
-double exp(double x) { return ::std::exp(x); }
-double log(double x) { return ::std::log(x); }
-double log10(double x) { return ::std::log10(x); }
-double fabs(double x) { return ::std::fabs(x); }
-double floor(double x) { return ::std::floor(x); }
-double ceil(double x) { return ::std::ceil(x); }
-double pow(double x, double y) { return ::std::pow(x, y); }
-
-
+    
+    
+    float64 pi = py_to_float64(pytra::std::math_impl::pi);
+    
+    float64 e = py_to_float64(pytra::std::math_impl::e);
+    
+    float64 sqrt(float64 x) {
+        return py_to_float64(pytra::std::math_impl::sqrt(x));
+    }
+    
+    float64 sin(float64 x) {
+        return py_to_float64(pytra::std::math_impl::sin(x));
+    }
+    
+    float64 cos(float64 x) {
+        return py_to_float64(pytra::std::math_impl::cos(x));
+    }
+    
+    float64 tan(float64 x) {
+        return py_to_float64(pytra::std::math_impl::tan(x));
+    }
+    
+    float64 exp(float64 x) {
+        return py_to_float64(pytra::std::math_impl::exp(x));
+    }
+    
+    float64 log(float64 x) {
+        return py_to_float64(pytra::std::math_impl::log(x));
+    }
+    
+    float64 log10(float64 x) {
+        return py_to_float64(pytra::std::math_impl::log10(x));
+    }
+    
+    float64 fabs(float64 x) {
+        return py_to_float64(pytra::std::math_impl::fabs(x));
+    }
+    
+    float64 floor(float64 x) {
+        return py_to_float64(pytra::std::math_impl::floor(x));
+    }
+    
+    float64 ceil(float64 x) {
+        return py_to_float64(pytra::std::math_impl::ceil(x));
+    }
+    
+    float64 pow(float64 x, float64 y) {
+        return py_to_float64(pytra::std::math_impl::pow(x, y));
+    }
+    
 }  // namespace pytra::std::math

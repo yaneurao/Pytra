@@ -1,5 +1,4 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include "runtime/cpp/pytra/runtime/gif.h"
 
@@ -9,7 +8,6 @@ namespace pytra::runtime::gif {
 namespace generated {
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/gif.py
-// command: python3 tools/generate_cpp_pylib_runtime.py
 
 
 

@@ -19,7 +19,6 @@ def run(cmd: list[str]) -> int:
 
 def main() -> int:
     steps: list[list[str]] = [
-        ["python3", "tools/generate_cpp_pylib_runtime.py", "--check"],
         ["python3", "tools/check_py2cpp_transpile.py"],
         ["python3", "test/unit/test_code_emitter.py"],
         ["python3", "test/unit/test_py2cpp_features.py"],

@@ -5,7 +5,7 @@
 
 - 回帰確認を短時間で繰り返せるようにする。
 - selfhost の調査・比較・ビルドを定型化する。
-- `src/pylib/` 正本から C++ ランタイム生成物を更新・検証する。
+- `src/pytra/` 正本から C++ ランタイム生成物を更新・検証する。
 
 ## 1. 日常運用で使うもの
 
@@ -37,11 +37,7 @@
 - `tools/selfhost_error_report.py`
   - 目的: selfhost エラー解析結果のレポートを整形出力する。
 
-## 3. ランタイム生成・言語間確認
-
-- `tools/generate_cpp_pylib_runtime.py`
-  - 目的: `src/pytra/runtime/*.py` から `src/runtime/cpp/pytra/runtime/*.h/.cpp` 生成物を更新・検証する。
-  - 主要オプション: `--check`
+## 3. 言語間確認
 - `tools/runtime_parity_check.py`
   - 目的: 複数ターゲット言語でのランタイム平準化チェックを実行する。
 

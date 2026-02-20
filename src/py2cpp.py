@@ -18,7 +18,6 @@ from pytra.std.pathlib import Path
 from pytra.std import sys
 
 
-RUNTIME_AUTOGEN_SKIP_ENV = "PYTRA_SKIP_RUNTIME_AUTOGEN"
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/runtime/std")
 RUNTIME_TRA_SOURCE_ROOT = Path("src/pytra/runtime")
 
@@ -35,6 +34,29 @@ def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
     if pkg_init.exists():
         return True
     return False
+
+
+def _module_tail_to_cpp_header_path(module_tail: str) -> str:
+    """`a.b.c_impl` を `a/b/c-impl.h` へ変換する。"""
+    path_tail = module_tail.replace(".", "/")
+    parts: list[str] = []
+    cur = ""
+    i = 0
+    while i < len(path_tail):
+        ch = path_tail[i : i + 1]
+        if ch == "/":
+            parts.append(cur)
+            cur = ""
+        else:
+            cur += ch
+        i += 1
+    parts.append(cur)
+    if len(parts) > 0:
+        leaf = parts[len(parts) - 1]
+        if leaf.endswith("_impl"):
+            leaf = leaf[: len(leaf) - 5] + "-impl"
+            parts[len(parts) - 1] = leaf
+    return "/".join(parts) + ".h"
 
 
 def _make_user_error(category: str, summary: str, details: list[str]) -> Exception:
@@ -498,11 +520,11 @@ class CppEmitter(CodeEmitter):
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
             if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail):
-                return "pytra/std/" + tail.replace(".", "/") + ".h"
+                return "pytra/std/" + _module_tail_to_cpp_header_path(tail)
         if module_name_norm.startswith("pytra.runtime."):
             tail = module_name_norm[14:]
             if _python_module_exists_under(RUNTIME_TRA_SOURCE_ROOT, tail):
-                return "pytra/runtime/" + tail.replace(".", "/") + ".h"
+                return "pytra/runtime/" + _module_tail_to_cpp_header_path(tail)
         return ""
 
     def _module_name_to_cpp_namespace(self, module_name: str) -> str:
@@ -3347,6 +3369,236 @@ def transpile_to_cpp(
     ).transpile()
 
 
+def _split_type_args(text: str) -> list[str]:
+    """`A[B,C[D]]` の `B,C[D]` をトップレベルで分割する。"""
+    out: list[str] = []
+    cur = ""
+    depth = 0
+    i = 0
+    while i < len(text):
+        ch = text[i : i + 1]
+        if ch == "[":
+            depth += 1
+            cur += ch
+        elif ch == "]":
+            if depth > 0:
+                depth -= 1
+            cur += ch
+        elif ch == "," and depth == 0:
+            part = cur.strip()
+            if part != "":
+                out.append(part)
+            cur = ""
+        else:
+            cur += ch
+        i += 1
+    tail = cur.strip()
+    if tail != "":
+        out.append(tail)
+    return out
+
+
+def _header_cpp_type_from_east(east_t: str) -> str:
+    """EAST 型名を runtime header 向け C++ 型名へ変換する。"""
+    t = east_t.strip()
+    if t == "":
+        return "::std::any"
+    prim: dict[str, str] = {
+        "int8": "::std::int8_t",
+        "uint8": "::std::uint8_t",
+        "int16": "::std::int16_t",
+        "uint16": "::std::uint16_t",
+        "int32": "::std::int32_t",
+        "uint32": "::std::uint32_t",
+        "int64": "::std::int64_t",
+        "uint64": "::std::uint64_t",
+        "float32": "float",
+        "float64": "double",
+        "bool": "bool",
+        "str": "::std::string",
+        "bytes": "::std::vector<::std::uint8_t>",
+        "bytearray": "::std::vector<::std::uint8_t>",
+        "None": "void",
+        "Any": "::std::any",
+        "object": "::std::any",
+        "unknown": "::std::any",
+    }
+    if t in prim:
+        return prim[t]
+    if "|" in t:
+        parts = _split_type_args(t.replace("|", ","))
+        non_none: list[str] = []
+        i = 0
+        while i < len(parts):
+            p = parts[i].strip()
+            if p != "None":
+                non_none.append(p)
+            i += 1
+        if len(parts) == 2 and len(non_none) == 1:
+            return "::std::optional<" + _header_cpp_type_from_east(non_none[0]) + ">"
+        return "::std::any"
+    if t.startswith("list[") and t.endswith("]"):
+        inner = t[5:-1].strip()
+        return "::std::vector<" + _header_cpp_type_from_east(inner) + ">"
+    if t.startswith("set[") and t.endswith("]"):
+        inner = t[4:-1].strip()
+        return "::std::unordered_set<" + _header_cpp_type_from_east(inner) + ">"
+    if t.startswith("dict[") and t.endswith("]"):
+        inner = _split_type_args(t[5:-1].strip())
+        if len(inner) == 2:
+            return "::std::unordered_map<" + _header_cpp_type_from_east(inner[0]) + ", " + _header_cpp_type_from_east(inner[1]) + ">"
+        return "::std::unordered_map<::std::string, ::std::any>"
+    if t.startswith("tuple[") and t.endswith("]"):
+        inner = _split_type_args(t[6:-1].strip())
+        vals: list[str] = []
+        i = 0
+        while i < len(inner):
+            vals.append(_header_cpp_type_from_east(inner[i]))
+            i += 1
+        return "::std::tuple<" + ", ".join(vals) + ">"
+    return t
+
+
+def _header_guard_from_path(path: Path) -> str:
+    """ヘッダパスから include guard を生成する。"""
+    src = str(path).upper()
+    out = ""
+    i = 0
+    while i < len(src):
+        ch = src[i : i + 1]
+        ok = ("A" <= ch <= "Z") or ("0" <= ch <= "9")
+        out += ch if ok else "_"
+        i += 1
+    if not out.endswith("_H"):
+        out += "_H"
+    return out
+
+
+def build_cpp_header_from_east(
+    east_module: dict[str, Any],
+    *,
+    top_namespace: str,
+    source_path: Path,
+    output_path: Path,
+) -> str:
+    """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
+    body_obj = east_module.get("body")
+    body: list[dict[str, Any]] = []
+    if isinstance(body_obj, list):
+        i = 0
+        while i < len(body_obj):
+            item = body_obj[i]
+            if isinstance(item, dict):
+                body.append(item)
+            i += 1
+
+    fn_lines: list[str] = []
+    var_lines: list[str] = []
+    used_types: set[str] = set()
+
+    i = 0
+    while i < len(body):
+        st = body[i]
+        kind = str(st.get("kind", ""))
+        if kind == "FunctionDef":
+            name = str(st.get("name", ""))
+            if name != "":
+                ret_t = str(st.get("return_type", "None"))
+                ret_cpp = _header_cpp_type_from_east(ret_t)
+                used_types.add(ret_cpp)
+                arg_types_obj = st.get("arg_types")
+                arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
+                arg_order_obj = st.get("arg_order")
+                arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
+                parts: list[str] = []
+                j = 0
+                while j < len(arg_order):
+                    an = arg_order[j]
+                    if isinstance(an, str):
+                        at_obj = arg_types.get(an)
+                        at = at_obj if isinstance(at_obj, str) else "Any"
+                        at_cpp = _header_cpp_type_from_east(at)
+                        used_types.add(at_cpp)
+                        parts.append(at_cpp + " " + an)
+                    j += 1
+                fn_lines.append(ret_cpp + " " + name + "(" + ", ".join(parts) + ");")
+        elif kind in {"Assign", "AnnAssign"}:
+            tgt_obj = st.get("target")
+            tgt = tgt_obj if isinstance(tgt_obj, dict) else {}
+            if str(tgt.get("kind", "")) != "Name":
+                i += 1
+                continue
+            name = str(tgt.get("id", ""))
+            if name == "":
+                i += 1
+                continue
+            decl_t = str(st.get("decl_type", ""))
+            if decl_t == "" or decl_t == "unknown":
+                decl_t = str(tgt.get("resolved_type", ""))
+            if decl_t == "" or decl_t == "unknown":
+                i += 1
+                continue
+            cpp_t = _header_cpp_type_from_east(decl_t)
+            used_types.add(cpp_t)
+            var_lines.append("extern " + cpp_t + " " + name + ";")
+        i += 1
+
+    includes: list[str] = []
+    if any("::std::any" in t for t in used_types):
+        includes.append("#include <any>")
+    if any("::std::int" in t or "::std::uint" in t for t in used_types):
+        includes.append("#include <cstdint>")
+    if any("::std::string" in t for t in used_types):
+        includes.append("#include <string>")
+    if any("::std::vector" in t for t in used_types):
+        includes.append("#include <vector>")
+    if any("::std::tuple" in t for t in used_types):
+        includes.append("#include <tuple>")
+    if any("::std::optional" in t for t in used_types):
+        includes.append("#include <optional>")
+    if any("::std::unordered_map" in t for t in used_types):
+        includes.append("#include <unordered_map>")
+    if any("::std::unordered_set" in t for t in used_types):
+        includes.append("#include <unordered_set>")
+
+    guard = _header_guard_from_path(output_path)
+    lines: list[str] = []
+    lines.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
+    lines.append("// source: " + str(source_path))
+    lines.append("// generated-by: src/py2cpp.py")
+    lines.append("")
+    lines.append("#ifndef " + guard)
+    lines.append("#define " + guard)
+    lines.append("")
+    k = 0
+    while k < len(includes):
+        lines.append(includes[k])
+        k += 1
+    if len(includes) > 0:
+        lines.append("")
+    ns = top_namespace.strip()
+    if ns != "":
+        lines.append("namespace " + ns + " {")
+        lines.append("")
+    k = 0
+    while k < len(var_lines):
+        lines.append(var_lines[k])
+        k += 1
+    if len(var_lines) > 0 and len(fn_lines) > 0:
+        lines.append("")
+    k = 0
+    while k < len(fn_lines):
+        lines.append(fn_lines[k])
+        k += 1
+    if ns != "":
+        lines.append("")
+        lines.append("}  // namespace " + ns)
+    lines.append("")
+    lines.append("#endif  // " + guard)
+    lines.append("")
+    return "\n".join(lines)
+
+
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
     body_obj: object = east_module.get("body")
@@ -4116,41 +4368,6 @@ def _dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str
     return default_value
 
 
-def _should_autogen_runtime_cpp(input_path: Path) -> bool:
-    """`src/pytra/runtime/*.py` 系の変換時に runtime/cpp 再生成を走らせるか判定する。"""
-    p = str(input_path)
-    if not p.endswith(".py"):
-        return False
-    return p.startswith("src/pytra/runtime/")
-
-
-def _run_runtime_cpp_autogen_if_needed(input_path: Path) -> None:
-    """必要時に `runtime/cpp/pytra/*` 自動生成を実行する。"""
-    if not _should_autogen_runtime_cpp(input_path):
-        return
-    import os
-    import subprocess
-    if str(os.environ.get(RUNTIME_AUTOGEN_SKIP_ENV, "")) == "1":
-        return
-
-    env = dict(os.environ)
-    env[RUNTIME_AUTOGEN_SKIP_ENV] = "1"
-    p = subprocess.run(
-        ["python3", "tools/generate_cpp_pylib_runtime.py"],
-        cwd=".",
-        capture_output=True,
-        text=True,
-        env=env,
-    )
-    if p.returncode != 0:
-        msg = p.stderr.strip()
-        if msg == "":
-            msg = p.stdout.strip()
-        if msg == "":
-            msg = "runtime C++ generation failed"
-        raise RuntimeError(msg)
-
-
 def _is_valid_cpp_namespace_name(ns: str) -> bool:
     """selfhost 安定性優先の簡易チェック。"""
     return True
@@ -4174,6 +4391,7 @@ def main(argv: list[str]) -> int:
         return 1
     input_txt = _dict_str_get(parsed, "input", "")
     output_txt = _dict_str_get(parsed, "output", "")
+    header_output_txt = _dict_str_get(parsed, "header_output", "")
     output_dir_txt = _dict_str_get(parsed, "output_dir", "")
     top_namespace_opt = _dict_str_get(parsed, "top_namespace_opt", "")
     negative_index_mode_opt = _dict_str_get(parsed, "negative_index_mode_opt", "")
@@ -4203,13 +4421,13 @@ def main(argv: list[str]) -> int:
 
     if show_help:
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 0
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 1
@@ -4315,6 +4533,16 @@ def main(argv: list[str]) -> int:
                 not no_main,
                 empty_ns,
             )
+            if header_output_txt != "":
+                hdr_path = Path(header_output_txt)
+                hdr_path.parent.mkdir(parents=True, exist_ok=True)
+                hdr_txt = build_cpp_header_from_east(
+                    east_module,
+                    top_namespace=top_namespace_opt,
+                    source_path=input_path,
+                    output_path=hdr_path,
+                )
+                hdr_path.write_text(hdr_txt, encoding="utf-8")
         else:
             module_east_map: dict[str, dict[str, Any]] = {}
             if input_txt.endswith(".py"):
@@ -4361,10 +4589,8 @@ def main(argv: list[str]) -> int:
         out_path = Path(output_txt)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(cpp, encoding="utf-8")
-        _run_runtime_cpp_autogen_if_needed(input_path)
     else:
         print(cpp)
-        _run_runtime_cpp_autogen_if_needed(input_path)
     return 0
 
 

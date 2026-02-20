@@ -1,9 +1,11 @@
+"""pytra.std.math_impl: native math backend shim."""
+
 from __future__ import annotations
 
-import pytra.std.math_impl as _m
+import math as _m
 
-pi: float = _m.pi
-e: float = _m.e
+pi = _m.pi
+e = _m.e
 
 
 def sqrt(x: float) -> float:

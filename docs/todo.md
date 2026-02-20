@@ -2,15 +2,14 @@
 
 ## 最優先（todo2 準拠）
 
-1. [ ] `docs/todo2.md` の MUST を実装優先で満たす（再定義版）。
-   - [ ] `src/runtime/cpp/pytra/` 配下はすべて `src/pytra/runtime/` から `py2cpp.py` 実行で生成される状態に統一する（手書き生成を禁止）。
-   - [x] `math` 固有の分岐・マップ・例外処理が `src/py2cpp.py` に残っていないことを確認し、残件を削除する。: `module.attr` 解決を `_module_name_to_cpp_namespace` / モジュール存在判定ベースへ汎用化。
-   - [x] `math` 固有の分岐・マップ・例外処理が `src/profiles/cpp/runtime_calls.json` に残っていないことを確認し、残件を削除する。: `module_attr_call` を空化。
-   - [x] `math` 固有の分岐・マップ・例外処理が生成補助スクリプト（`tools/`）に残っていないことを確認し、残件を削除する。: `math.cpp` 直書きリンクを全廃し `runtime/cpp` 自動列挙へ置換。
-   - [x] 「モジュール名ベタ書きなし」で module attribute call を解決できる汎用経路を `py2cpp.py` に実装する。: map 未命中時に namespace 解決で `module.attr(...)` を生成。
-   - [x] `src/pytra/runtime/std/math.py` から `src/runtime/cpp/pytra/std/math.h` / `math.cpp` を自動生成し、生成差分が再現可能であることを確認する。: `tools/generate_cpp_pylib_runtime.py` で再生成後 `--check` を通過。
-   - [x] `test/fixtures/stdlib/math_extended.py` を `py2cpp.py` で C++ 化し、コンパイル・実行まで通ることをゲート化する。: `PYTHONPATH=src python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_math_extended_runtime` を通過。
-   - [ ] 上記完了後に `docs/how-to-use.md` / `docs/spec-dev.md` / `docs/spec-runtime.md` を `todo2` 準拠内容へ同期する。
+1. [ ] `docs/todo2.md` の MUST を実装優先で満たす（最新版）。
+   - [x] `math` の生成方針を固定運用する: `src/pytra/runtime/std/math.py` を `py2cpp.py` で `math.h` / `math.cpp` へ変換し、不足するネイティブ処理のみ `math-impl.cpp` で補完する（`py2cpp.py` / profile へ `math` 固有分岐は追加しない）。: `--header-output` 追加 + `pytra.std.math_impl` 参照 + `runtime/cpp/pytra/std/math-impl.cpp` で補完。
+   - [x] `math` 固有の分岐・マップ・例外処理が `src/py2cpp.py` / `src/profiles/cpp/runtime_calls.json` / `tools/` に残っていないことを確認し、残件を削除する。
+   - [x] `tools/generate_cpp_pylib_runtime.py` を廃止し、`py2cpp.py` 以外の専用生成器を削除する。
+   - [ ] `src/runtime/cpp/pytra/` 配下の全生成物を、`src/pytra/runtime/` から `py2cpp.py` だけで再生成できる導線を実装する（手書き生成禁止）。
+   - [ ] 上記導線で `std` / `runtime` 全モジュールを再生成し、既存生成物との差分が安定することを確認する。
+   - [ ] `test/fixtures/stdlib/math_extended.py` を含む標準ライブラリ系ケースを、再生成後ランタイムで C++ 実行一致まで確認する。
+   - [ ] `docs/how-to-use.md` / `docs/spec-dev.md` / `docs/spec-runtime.md` を「`py2cpp.py` 単一生成器」前提へ完全同期する。
 
 ## 優先方針（2026-02-19 更新）
 

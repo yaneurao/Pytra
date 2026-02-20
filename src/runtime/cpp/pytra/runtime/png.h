@@ -1,5 +1,4 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_CPP_MODULE_PNG_H
 #define PYTRA_CPP_MODULE_PNG_H

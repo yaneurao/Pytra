@@ -30,6 +30,7 @@ CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/pytra/std/pathlib.cpp",
     "src/runtime/cpp/pytra/std/time.cpp",
     "src/runtime/cpp/pytra/std/math.cpp",
+    "src/runtime/cpp/pytra/std/math-impl.cpp",
     "src/runtime/cpp/pytra/std/dataclasses.cpp",
     "src/runtime/cpp/pytra/std/sys.cpp",
     "src/runtime/cpp/base/io.cpp",
@@ -119,6 +120,12 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed3.get("single_file"), "0")
         self.assertEqual(parsed3.get("output_mode_explicit"), "0")
 
+    def test_parse_py2cpp_argv_header_output(self) -> None:
+        parsed, err = parse_py2cpp_argv(["input.py", "--header-output", "out.h", "-o", "out.cpp"])
+        self.assertEqual(err, "")
+        self.assertEqual(parsed.get("header_output"), "out.h")
+        self.assertEqual(parsed.get("output"), "out.cpp")
+
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
         src = """def main() -> None:
     auto: int = 1
@@ -135,10 +142,10 @@ if __name__ == "__main__":
         self.assertIn("int64 py_auto = 1;", cpp)
         self.assertIn("py_print(py_auto);", cpp)
 
-    def test_runtime_call_map_for_math_is_loaded_from_json(self) -> None:
+    def test_runtime_call_map_for_math_is_not_hardcoded(self) -> None:
         mp = load_cpp_module_attr_call_map()
-        self.assertIn("math", mp)
-        self.assertEqual(mp["math"].get("sqrt"), "py_math::sqrt")
+        self.assertNotIn("math", mp)
+        self.assertNotIn("pytra.std.math", mp)
 
     def test_math_module_call_uses_runtime_call_map(self) -> None:
         src = """import math
@@ -155,7 +162,7 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("py_math::sqrt(9.0)", cpp)
+        self.assertIn("pytra::std::math::sqrt(9.0)", cpp)
 
     def test_from_import_symbol_uses_runtime_call_map(self) -> None:
         src = """from math import sqrt as msqrt
@@ -172,7 +179,7 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("py_math::sqrt(9.0)", cpp)
+        self.assertIn("pytra::std::math::sqrt(9.0)", cpp)
 
     def test_import_module_alias_uses_runtime_call_map(self) -> None:
         src = """import math as m
@@ -189,7 +196,7 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("py_math::sqrt(9.0)", cpp)
+        self.assertIn("pytra::std::math::sqrt(9.0)", cpp)
 
     def test_pytra_std_import_emits_one_to_one_include(self) -> None:
         src = """import pytra.std.math as math
@@ -206,7 +213,7 @@ if __name__ == "__main__":
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
         self.assertIn('#include "pytra/std/math.h"', cpp)
-        self.assertIn("py_math::sqrt(9.0)", cpp)
+        self.assertIn("pytra::std::math::sqrt(9.0)", cpp)
 
     def test_pytra_runtime_import_emits_one_to_one_include(self) -> None:
         src = """import pytra.runtime.png as png

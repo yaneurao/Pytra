@@ -1,6 +1,5 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/std/time.py
-// command: python3 tools/generate_cpp_pylib_runtime.py
 
 #include <chrono>
 

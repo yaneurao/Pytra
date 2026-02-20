@@ -15,6 +15,7 @@
   - `<mod>.h/.cpp` は常に再生成対象（手編集禁止）。
   - `*-impl.cpp` は手編集可能（再生成対象外）。
   - `<mod>.cpp` から `*-impl.cpp` の関数へ委譲する。
+  - 生成器は `src/py2cpp.py` のみを正とし、特定モジュール専用の生成スクリプトは追加しない。
 
 ### 2. include規約を固定する
 
@@ -50,10 +51,16 @@
 - 生成 `<mod>.h`:
   - 公開 API 宣言のみ
   - include guard / namespace 定義
+  - `py2cpp.py --header-output` で EAST から生成する（手編集しない）
 - 生成 `<mod>.cpp`:
   - `#include "<mod>.h"`
   - 必要なら `#include "<mod>-impl.cpp"` は行わず、関数宣言経由でリンク解決する
   - 変換された Python ロジック本体 + `*-impl` 呼び出し
+  - `py2cpp.py -o <mod>.cpp` で生成する（手編集しない）
+
+- 予約命名:
+  - Python モジュール名の末尾 `_impl` は C++ ヘッダパスで `-impl` に写像する。
+  - 例: `import pytra.std.math_impl` -> `#include "pytra/std/math-impl.h"`
 
 ### 6. テスト要件を仕様に含める
 
