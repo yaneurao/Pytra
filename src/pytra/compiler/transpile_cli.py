@@ -209,6 +209,7 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
         "dump_deps": "0",
         "dump_options": "0",
         "header_output": "",
+        "emit_runtime_cpp": "0",
         "help": "0",
     }
     i = 0
@@ -305,6 +306,8 @@ def parse_py2cpp_argv(argv: list[str]) -> tuple[dict[str, str], str]:
             if i >= len(argv):
                 return empty_parse_dict(), "missing value for --header-output"
             out["header_output"] = argv[i]
+        elif a == "--emit-runtime-cpp":
+            out["emit_runtime_cpp"] = "1"
         elif a.startswith("-"):
             return empty_parse_dict(), f"unknown option: {a}"
         else:

@@ -7,6 +7,7 @@
    - [x] `math` 固有の分岐・マップ・例外処理が `src/py2cpp.py` / `src/profiles/cpp/runtime_calls.json` / `tools/` に残っていないことを確認し、残件を削除する。
    - [x] `tools/generate_cpp_pylib_runtime.py` を廃止し、`py2cpp.py` 以外の専用生成器を削除する。
    - [ ] `src/runtime/cpp/pytra/` 配下の全生成物を、`src/pytra/runtime/` から `py2cpp.py` だけで再生成できる導線を実装する（手書き生成禁止）。
+     - [x] `py2cpp.py --emit-runtime-cpp` を追加し、`src/pytra/runtime/<mod>.py` から `src/runtime/cpp/pytra/<mod>.h/.cpp` を1コマンドで生成できるようにする（`_impl` は `-impl` ファイル名へ写像）。
    - [ ] 上記導線で `std` / `runtime` 全モジュールを再生成し、既存生成物との差分が安定することを確認する。
    - [ ] `test/fixtures/stdlib/math_extended.py` を含む標準ライブラリ系ケースを、再生成後ランタイムで C++ 実行一致まで確認する。
    - [ ] `docs/how-to-use.md` / `docs/spec-dev.md` / `docs/spec-runtime.md` を「`py2cpp.py` 単一生成器」前提へ完全同期する。

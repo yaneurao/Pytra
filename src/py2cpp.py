@@ -3599,6 +3599,54 @@ def build_cpp_header_from_east(
     return "\n".join(lines)
 
 
+def _runtime_module_tail_from_source_path(input_path: Path) -> str:
+    """`src/pytra/runtime/*.py` から `std/math_impl` 形式の tail を返す。"""
+    src = str(input_path)
+    prefix = "src/pytra/runtime/"
+    if not src.startswith(prefix):
+        return ""
+    rel = src[len(prefix) :]
+    if rel.endswith(".py"):
+        rel = rel[: len(rel) - 3]
+    if rel.endswith("/__init__"):
+        rel = rel[: len(rel) - 9]
+    return rel
+
+
+def _runtime_output_rel_tail(module_tail: str) -> str:
+    """module tail（`std/math_impl`）を runtime/cpp 相対パス tail へ写像する。"""
+    parts: list[str] = []
+    cur = ""
+    i = 0
+    while i < len(module_tail):
+        ch = module_tail[i : i + 1]
+        if ch == "/":
+            parts.append(cur)
+            cur = ""
+        else:
+            cur += ch
+        i += 1
+    parts.append(cur)
+    if len(parts) > 0:
+        leaf = parts[len(parts) - 1]
+        if leaf.endswith("_impl"):
+            leaf = leaf[: len(leaf) - 5] + "-impl"
+            parts[len(parts) - 1] = leaf
+    return "/".join(parts)
+
+
+def _runtime_namespace_for_tail(module_tail: str) -> str:
+    """runtime source tail から C++ namespace を導出する。"""
+    if module_tail == "":
+        return ""
+    if module_tail.startswith("std/"):
+        rest = module_tail[4:].replace("/", "::")
+        return "pytra::std::" + rest
+    if module_tail == "std":
+        return "pytra::std"
+    return "pytra::runtime::" + module_tail.replace("/", "::")
+
+
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
     body_obj: object = east_module.get("body")
@@ -4409,6 +4457,7 @@ def main(argv: list[str]) -> int:
     output_mode_explicit = _dict_str_get(parsed, "output_mode_explicit", "0") == "1"
     dump_deps = _dict_str_get(parsed, "dump_deps", "0") == "1"
     dump_options = _dict_str_get(parsed, "dump_options", "0") == "1"
+    emit_runtime_cpp = _dict_str_get(parsed, "emit_runtime_cpp", "0") == "1"
     show_help = _dict_str_get(parsed, "help", "0") == "1"
     negative_index_mode = ""
     bounds_check_mode = ""
@@ -4421,13 +4470,13 @@ def main(argv: list[str]) -> int:
 
     if show_help:
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 0
     if input_txt == "":
         print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
+            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
             file=sys.stderr,
         )
         return 1
@@ -4516,6 +4565,47 @@ def main(argv: list[str]) -> int:
                 out_path.write_text(dep_text, encoding="utf-8")
             else:
                 print(dep_text, end="")
+            return 0
+        if emit_runtime_cpp:
+            if not input_txt.endswith(".py"):
+                print("error: --emit-runtime-cpp requires .py input", file=sys.stderr)
+                return 1
+            module_tail = _runtime_module_tail_from_source_path(input_path)
+            if module_tail == "":
+                print("error: --emit-runtime-cpp input must be under src/pytra/runtime/", file=sys.stderr)
+                return 1
+            ns = top_namespace_opt
+            if ns == "":
+                ns = _runtime_namespace_for_tail(module_tail)
+            rel_tail = _runtime_output_rel_tail(module_tail)
+            cpp_out = Path("src/runtime/cpp/pytra") / (rel_tail + ".cpp")
+            hdr_out = Path("src/runtime/cpp/pytra") / (rel_tail + ".h")
+            cpp_out.parent.mkdir(parents=True, exist_ok=True)
+            hdr_out.parent.mkdir(parents=True, exist_ok=True)
+            cpp_txt_runtime = transpile_to_cpp(
+                east_module,
+                negative_index_mode,
+                bounds_check_mode,
+                floor_div_mode,
+                mod_mode,
+                int_width,
+                str_index_mode,
+                str_slice_mode,
+                opt_level,
+                ns,
+                False,
+                {},
+            )
+            hdr_txt_runtime = build_cpp_header_from_east(
+                east_module,
+                top_namespace=ns,
+                source_path=input_path,
+                output_path=hdr_out,
+            )
+            cpp_out.write_text(cpp_txt_runtime, encoding="utf-8")
+            hdr_out.write_text(hdr_txt_runtime, encoding="utf-8")
+            print("generated: " + str(hdr_out))
+            print("generated: " + str(cpp_out))
             return 0
         if single_file:
             empty_ns: dict[str, str] = {}
