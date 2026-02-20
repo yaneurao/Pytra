@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
-
 S = 1
 
 
 class Match:
     """Small match object compatible with group() usage in this repository."""
 
-    def __init__(self, text: str, groups: list[Any]) -> None:
+    def __init__(self, text: str, groups: list[str]) -> None:
         self._text = text
         self._groups = groups
 
-    def group(self, idx: int = 0) -> Any:
+    def group(self, idx: int = 0) -> str:
         if idx == 0:
             return self._text
         if idx < 0 or idx > len(self._groups):
@@ -25,29 +23,71 @@ class Match:
 def _is_ident(s: str) -> bool:
     if s == "":
         return False
-    if not (s[0].isalpha() or s[0] == "_"):
+    h = s[0:1]
+    is_head_alpha = ("a" <= h <= "z") or ("A" <= h <= "Z")
+    if not (is_head_alpha or h == "_"):
         return False
     for ch in s[1:]:
-        if not (ch.isalnum() or ch == "_"):
+        is_alpha = ("a" <= ch <= "z") or ("A" <= ch <= "Z")
+        is_digit = ("0" <= ch <= "9")
+        if not (is_alpha or is_digit or ch == "_"):
             return False
     return True
 
 
 def _is_dotted_ident(s: str) -> bool:
-    parts = s.split(".")
-    if len(parts) == 0:
+    if s == "":
         return False
-    for p in parts:
-        if not _is_ident(p):
-            return False
+    part = ""
+    for ch in s:
+        if ch == ".":
+            if not _is_ident(part):
+                return False
+            part = ""
+            continue
+        part += ch
+    if not _is_ident(part):
+        return False
+    if part == "":
+        return False
     return True
 
 
-def _strip_suffix_colon(s: str) -> str | None:
+def _strip_suffix_colon(s: str) -> str:
     t = s.rstrip()
-    if not t.endswith(":"):
-        return None
+    if len(t) == 0:
+        return ""
+    if t[-1:] != ":":
+        return ""
     return t[:-1]
+
+
+def _is_space_ch(ch: str) -> bool:
+    if ch == " ":
+        return True
+    if ch == "\t":
+        return True
+    if ch == "\r":
+        return True
+    if ch == "\n":
+        return True
+    return False
+
+
+def _is_alnum_or_underscore(ch: str) -> bool:
+    is_alpha = ("a" <= ch <= "z") or ("A" <= ch <= "Z")
+    is_digit = ("0" <= ch <= "9")
+    if is_alpha or is_digit:
+        return True
+    return ch == "_"
+
+
+def _skip_spaces(t: str, i: int) -> int:
+    while i < len(t):
+        if not _is_space_ch(t[i : i + 1]):
+            return i
+        i += 1
+    return i
 
 
 def match(pattern: str, text: str, flags: int = 0) -> Match | None:
@@ -66,37 +106,35 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     # ^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$
     if pattern == r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$":
         t = _strip_suffix_colon(text)
-        if t is None:
+        if t == "":
             return None
         i = 0
         if not t.startswith("def"):
             return None
         i = 3
-        if i >= len(t) or not t[i].isspace():
+        if i >= len(t) or not _is_space_ch(t[i : i + 1]):
             return None
-        while i < len(t) and t[i].isspace():
-            i += 1
+        i = _skip_spaces(t, i)
         j = i
-        while j < len(t) and (t[j].isalnum() or t[j] == "_"):
+        while j < len(t) and _is_alnum_or_underscore(t[j : j + 1]):
             j += 1
-        name = t[i:j]
+        name: str = t[i:j]
         if not _is_ident(name):
             return None
         k = j
-        while k < len(t) and t[k].isspace():
-            k += 1
-        if k >= len(t) or t[k] != "(":
+        k = _skip_spaces(t, k)
+        if k >= len(t) or t[k : k + 1] != "(":
             return None
-        r = t.rfind(")")
+        r: int = t.rfind(")")
         if r <= k:
             return None
-        args = t[k + 1 : r]
-        tail = t[r + 1 :].strip()
+        args: str = t[k + 1 : r]
+        tail: str = t[r + 1 :].strip()
         if tail == "":
-            return Match(text, [name, args, None])
+            return Match(text, [name, args, ""])
         if not tail.startswith("->"):
             return None
-        ret = tail[2:].strip()
+        ret: str = tail[2:].strip()
         if ret == "":
             return None
         return Match(text, [name, args, ret])
@@ -115,7 +153,7 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
             ann = rhs.strip()
             if ann == "":
                 return None
-            return Match(text, [name, ann, None])
+            return Match(text, [name, ann, ""])
         ann = rhs[:eq].strip()
         val = rhs[eq + 1 :].strip()
         if ann == "" or val == "":
@@ -124,32 +162,33 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
 
     # ^[A-Za-z_][A-Za-z0-9_]*$
     if pattern == r"^[A-Za-z_][A-Za-z0-9_]*$":
-        return Match(text, []) if _is_ident(text) else None
+        if _is_ident(text):
+            return Match(text, [])
+        return None
 
     # ^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$
     if pattern == r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$":
         t = _strip_suffix_colon(text)
-        if t is None:
+        if t == "":
             return None
         if not t.startswith("class"):
             return None
         i = 5
-        if i >= len(t) or not t[i].isspace():
+        if i >= len(t) or not _is_space_ch(t[i : i + 1]):
             return None
-        while i < len(t) and t[i].isspace():
-            i += 1
+        i = _skip_spaces(t, i)
         j = i
-        while j < len(t) and (t[j].isalnum() or t[j] == "_"):
+        while j < len(t) and _is_alnum_or_underscore(t[j : j + 1]):
             j += 1
-        name = t[i:j]
+        name: str = t[i:j]
         if not _is_ident(name):
             return None
-        tail = t[j:].strip()
+        tail: str = t[j:].strip()
         if tail == "":
-            return Match(text, [name, None])
+            return Match(text, [name, ""])
         if not (tail.startswith("(") and tail.endswith(")")):
             return None
-        base = tail[1:-1].strip()
+        base: str = tail[1:-1].strip()
         if not _is_ident(base):
             return None
         return Match(text, [name, base])
@@ -166,19 +205,19 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     if pattern == r"^\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)\]$":
         if not (text.startswith("[") and text.endswith("]")):
             return None
-        inner = text[1:-1].strip()
+        inner: str = text[1:-1].strip()
         m1 = " for "
         m2 = " in "
-        i = inner.find(m1)
+        i: int = inner.find(m1)
         if i < 0:
             return None
-        expr = inner[:i].strip()
-        rest = inner[i + len(m1) :]
-        j = rest.find(m2)
+        expr: str = inner[:i].strip()
+        rest: str = inner[i + len(m1) :]
+        j: int = rest.find(m2)
         if j < 0:
             return None
-        var = rest[:j].strip()
-        it = rest[j + len(m2) :].strip()
+        var: str = rest[:j].strip()
+        it: str = rest[j + len(m2) :].strip()
         if not _is_ident(expr) or not _is_ident(var) or it == "":
             return None
         return Match(text, [expr, var, it])
@@ -186,14 +225,14 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     # ^for\s+(.+)\s+in\s+(.+):$
     if pattern == r"^for\s+(.+)\s+in\s+(.+):$":
         t = _strip_suffix_colon(text)
-        if t is None or not t.startswith("for"):
+        if t == "" or not t.startswith("for"):
             return None
-        rest = t[3:].strip()
-        i = rest.find(" in ")
+        rest: str = t[3:].strip()
+        i: int = rest.find(" in ")
         if i < 0:
             return None
-        left = rest[:i].strip()
-        right = rest[i + 4 :].strip()
+        left: str = rest[:i].strip()
+        right: str = rest[i + 4 :].strip()
         if left == "" or right == "":
             return None
         return Match(text, [left, right])
@@ -201,14 +240,14 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     # ^with\s+(.+)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$
     if pattern == r"^with\s+(.+)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$":
         t = _strip_suffix_colon(text)
-        if t is None or not t.startswith("with"):
+        if t == "" or not t.startswith("with"):
             return None
-        rest = t[4:].strip()
-        i = rest.rfind(" as ")
+        rest: str = t[4:].strip()
+        i: int = rest.rfind(" as ")
         if i < 0:
             return None
-        expr = rest[:i].strip()
-        name = rest[i + 4 :].strip()
+        expr: str = rest[:i].strip()
+        name: str = rest[i + 4 :].strip()
         if expr == "" or not _is_ident(name):
             return None
         return Match(text, [expr, name])
@@ -216,14 +255,14 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     # ^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$
     if pattern == r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$":
         t = _strip_suffix_colon(text)
-        if t is None or not t.startswith("except"):
+        if t == "" or not t.startswith("except"):
             return None
-        rest = t[6:].strip()
-        i = rest.rfind(" as ")
+        rest: str = t[6:].strip()
+        i: int = rest.rfind(" as ")
         if i < 0:
             return None
-        exc = rest[:i].strip()
-        name = rest[i + 4 :].strip()
+        exc: str = rest[:i].strip()
+        name: str = rest[i + 4 :].strip()
         if exc == "" or not _is_ident(name):
             return None
         return Match(text, [exc, name])
@@ -231,9 +270,9 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     # ^except\s+(.+?)\s*:\s*$
     if pattern == r"^except\s+(.+?)\s*:\s*$":
         t = _strip_suffix_colon(text)
-        if t is None or not t.startswith("except"):
+        if t == "" or not t.startswith("except"):
             return None
-        rest = t[6:].strip()
+        rest: str = t[6:].strip()
         if rest == "":
             return None
         return Match(text, [rest])
@@ -243,8 +282,8 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
         c = text.find(":")
         if c <= 0:
             return None
-        target = text[:c].strip()
-        ann = text[c + 1 :].strip()
+        target: str = text[:c].strip()
+        ann: str = text[c + 1 :].strip()
         if ann == "" or not _is_dotted_ident(target):
             return None
         return Match(text, [target, ann])
@@ -254,13 +293,13 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
         c = text.find(":")
         if c <= 0:
             return None
-        target = text[:c].strip()
-        rhs = text[c + 1 :]
-        eq = rhs.find("=")
+        target: str = text[:c].strip()
+        rhs: str = text[c + 1 :]
+        eq: int = rhs.find("=")
         if eq < 0:
             return None
-        ann = rhs[:eq].strip()
-        expr = rhs[eq + 1 :].strip()
+        ann: str = rhs[:eq].strip()
+        expr: str = rhs[eq + 1 :].strip()
         if not _is_dotted_ident(target) or ann == "" or expr == "":
             return None
         return Match(text, [target, ann, expr])
@@ -277,26 +316,26 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
                 op_txt = op
         if op_pos < 0:
             return None
-        left = text[:op_pos].strip()
-        right = text[op_pos + len(op_txt) :].strip()
+        left: str = text[:op_pos].strip()
+        right: str = text[op_pos + len(op_txt) :].strip()
         if right == "" or not _is_dotted_ident(left):
             return None
         return Match(text, [left, op_txt, right])
 
     # ^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$
     if pattern == r"^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$":
-        eq = text.find("=")
+        eq: int = text.find("=")
         if eq < 0:
             return None
-        left = text[:eq]
-        right = text[eq + 1 :].strip()
+        left: str = text[:eq]
+        right: str = text[eq + 1 :].strip()
         if right == "":
             return None
-        c = left.find(",")
+        c: int = left.find(",")
         if c < 0:
             return None
-        a = left[:c].strip()
-        b = left[c + 1 :].strip()
+        a: str = left[:c].strip()
+        b: str = left[c + 1 :].strip()
         if not _is_ident(a) or not _is_ident(b):
             return None
         return Match(text, [a, b, right])
@@ -304,9 +343,9 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     # ^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$
     if pattern == r"^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$":
         t = _strip_suffix_colon(text)
-        if t is None:
+        if t == "":
             return None
-        rest = t.strip()
+        rest: str = t.strip()
         if not rest.startswith("if"):
             return None
         rest = rest[2:].strip()
@@ -324,22 +363,22 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     if pattern == r"^import\s+(.+)$":
         if not text.startswith("import"):
             return None
-        rest = text[6:].strip()
+        rest: str = text[6:].strip()
         if rest == "":
             return None
         return Match(text, [rest])
 
     # ^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$
     if pattern == r"^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$":
-        parts = text.split(" as ")
+        parts: list[str] = text.split(" as ")
         if len(parts) == 1:
-            name = parts[0].strip()
+            name: str = parts[0].strip()
             if not _is_dotted_ident(name):
                 return None
-            return Match(text, [name, None])
+            return Match(text, [name, ""])
         if len(parts) == 2:
-            name = parts[0].strip()
-            alias = parts[1].strip()
+            name: str = parts[0].strip()
+            alias: str = parts[1].strip()
             if not _is_dotted_ident(name) or not _is_ident(alias):
                 return None
             return Match(text, [name, alias])
@@ -349,27 +388,27 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     if pattern == r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$":
         if not text.startswith("from "):
             return None
-        rest = text[5:]
-        i = rest.find(" import ")
+        rest: str = text[5:]
+        i: int = rest.find(" import ")
         if i < 0:
             return None
-        mod = rest[:i].strip()
-        sym = rest[i + 8 :].strip()
+        mod: str = rest[:i].strip()
+        sym: str = rest[i + 8 :].strip()
         if not _is_dotted_ident(mod) or sym == "":
             return None
         return Match(text, [mod, sym])
 
     # ^([A-Za-z_][A-Za-z0-9_]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$
     if pattern == r"^([A-Za-z_][A-Za-z0-9_]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$":
-        parts = text.split(" as ")
+        parts: list[str] = text.split(" as ")
         if len(parts) == 1:
-            name = parts[0].strip()
+            name: str = parts[0].strip()
             if not _is_ident(name):
                 return None
-            return Match(text, [name, None])
+            return Match(text, [name, ""])
         if len(parts) == 2:
-            name = parts[0].strip()
-            alias = parts[1].strip()
+            name: str = parts[0].strip()
+            alias: str = parts[1].strip()
             if not _is_ident(name) or not _is_ident(alias):
                 return None
             return Match(text, [name, alias])
@@ -380,24 +419,24 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
         c = text.find(":")
         if c <= 0:
             return None
-        name = text[:c].strip()
-        rhs = text[c + 1 :]
-        eq = rhs.find("=")
+        name: str = text[:c].strip()
+        rhs: str = text[c + 1 :]
+        eq: int = rhs.find("=")
         if eq < 0:
             return None
-        ann = rhs[:eq].strip()
-        expr = rhs[eq + 1 :].strip()
+        ann: str = rhs[:eq].strip()
+        expr: str = rhs[eq + 1 :].strip()
         if not _is_ident(name) or ann == "" or expr == "":
             return None
         return Match(text, [name, ann, expr])
 
     # ^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$
     if pattern == r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$":
-        eq = text.find("=")
+        eq: int = text.find("=")
         if eq < 0:
             return None
-        name = text[:eq].strip()
-        expr = text[eq + 1 :].strip()
+        name: str = text[:eq].strip()
+        expr: str = text[eq + 1 :].strip()
         if not _is_ident(name) or expr == "":
             return None
         return Match(text, [name, expr])

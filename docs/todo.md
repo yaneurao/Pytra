@@ -2,18 +2,24 @@
 
 ## 最優先（2026-02-20 追加: todo2 優先TODO 反映）
 
-- [ ] `src/pytra/std/*.py` を `--emit-runtime-cpp` で再生成し、`src/runtime/cpp/pytra/std/` への反映を自動生成起点に統一する。
-  - [ ] 対象: 少なくとも `math.py`, `json.py`, `pathlib.py`, `re.py`, `sys.py`, `typing.py`, `dataclasses.py`, `time.py`, `glob.py`, `os.py`。
+- [x] `src/pytra/std/*.py` を `--emit-runtime-cpp` で再生成し、`src/runtime/cpp/pytra/std/` への反映を自動生成起点に統一する。
+  - [x] 対象: `math.py`, `json.py`, `pathlib.py`, `re.py`, `sys.py`, `typing.py`, `dataclasses.py`, `time.py`, `glob.py`, `os.py`。
   - [x] 進捗: `math/json/pathlib/re/sys/typing/dataclasses/time/glob/os` は self_hosted parser で EAST 変換可能。
   - [x] 進捗: `os.py --emit-runtime-cpp` の生成物（`src/runtime/cpp/pytra/std/os.cpp`）は単体コンパイル可能化した（`py_os_*` マップ + runtime helper 追加）。
   - [x] ブロッカー解消:
     - `pathlib.py` 再生成物の C++ 単体コンパイル失敗を解消（`class_storage_hint` 明示上書き + `pytra.std.pathlib` 実装整理 + `PyFile` の text `read/write` 拡張）。
     - `os.py` 再生成物の C++ 単体コンパイル失敗を解消（`src/runtime/cpp/pytra/std/os.cpp` は `g++ -std=c++17 -Isrc -Isrc/runtime/cpp -c` で通過）。
-  - [ ] 受け入れ条件:
+  - [x] 受け入れ条件:
     - [x] `python3 src/py2cpp.py src/pytra/std/math.py --emit-runtime-cpp` 後に `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp` が更新される。
     - [x] `python3 test/fixtures/stdlib/math_extended.py` と対応 C++ 実行結果が一致する。
     - [x] `python3 src/py2cpp.py src/pytra/std/pathlib.py --emit-runtime-cpp` 後の `src/runtime/cpp/pytra/std/pathlib.cpp` が単体コンパイルできる（`g++ -std=c++17 -Isrc -Isrc/runtime/cpp -c`）。
     - [x] `python3 src/py2cpp.py src/pytra/std/os.py --emit-runtime-cpp` 後の `src/runtime/cpp/pytra/std/os.cpp` が単体コンパイルできる（`g++ -std=c++17 -Isrc -Isrc/runtime/cpp -c`）。
+    - [x] 上記 10 モジュールを再生成後に `g++ -std=c++20 -Isrc -Isrc/runtime/cpp -c src/runtime/cpp/pytra/std/<module>.cpp` で全件単体コンパイル通過。
+
+- [ ] `test_py2cpp_features -k extended_runtime` の残り失敗 3 件を解消する。
+  - [ ] `argparse_extended_runtime`: `pytra::std::argparse` 解決（include/namespace と `dict.get` キー型）を修正する。
+  - [ ] `sys_extended_runtime`: `set_argv` / `set_path` への `std::any` 退化引数を型付きで渡すように修正する。
+  - [ ] `os_glob_extended_runtime`: 実行時 `SIGSEGV` の再現最小化と原因特定（path/glob runtime どちらかを切り分け）を行う。
 
 - [x] `enumerate()` 変換を拡張し、`start` 引数つきケースを回帰テストで固定する。
   - [x] 追加ケース: `enumerate(xs)`, `enumerate(xs, 1)`, `enumerate(xs, 5)`, タプル分解あり/なし（非分解は `pair` 受け取り）。

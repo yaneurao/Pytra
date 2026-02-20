@@ -68,7 +68,7 @@ namespace pytra::std::json {
         return p0 + p1 + p2 + p3;
     }
     
-    struct _JsonParser {
+    struct _JsonParser : public PyObj {
         inline static str text;
         inline static int64 n;
         inline static int64 i;
@@ -133,7 +133,7 @@ namespace pytra::std::json {
                     throw ValueError("invalid json object: missing ':'");
                 _JsonParser::i++;
                 this->_skip_ws();
-                out[key] = make_object(this->_parse_value());
+                out[py_to_string(key)] = make_object(this->_parse_value());
                 this->_skip_ws();
                 if (_JsonParser::i >= _JsonParser::n)
                     throw ValueError("invalid json object: unexpected end");
@@ -282,7 +282,7 @@ namespace pytra::std::json {
     };
     
     object loads(const str& text) {
-        return _JsonParser(text).parse();
+        return ::rc_new<_JsonParser>(text)->parse();
     }
     
     str _escape_str(const str& s, bool ensure_ascii) {
@@ -335,7 +335,7 @@ namespace pytra::std::json {
                 str dumped_txt = py_to_string(_dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level));
                 dumped.append(str(dumped_txt));
             }
-            return py_to_string("[" + item_sep.join(dumped) + "]");
+            return py_to_string("[" + str(item_sep).join(dumped) + "]");
         }
         int64 indent_i = py_to_int64(indent);
         list<str> inner = list<str>{};
@@ -359,7 +359,7 @@ namespace pytra::std::json {
                 str v_txt = py_to_string(_dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level));
                 parts.append(str(k_txt + key_sep + v_txt));
             }
-            return py_to_string("{" + item_sep.join(parts) + "}");
+            return py_to_string("{" + str(item_sep).join(parts) + "}");
         }
         int64 indent_i = py_to_int64(indent);
         list<str> inner = list<str>{};

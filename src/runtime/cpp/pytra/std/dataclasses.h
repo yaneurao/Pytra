@@ -1,13 +1,14 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/utils/std/dataclasses.py
+// source: src/pytra/std/dataclasses.py
 // generated-by: src/py2cpp.py
 
-#ifndef SRC_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
-#define SRC_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
+#ifndef PYTRA_STD_DATACLASSES_H
+#define PYTRA_STD_DATACLASSES_H
 
 namespace pytra::std::dataclasses {
 
+object dataclass(const object& _cls, bool init = true, bool repr = true, bool eq = true);
 
 }  // namespace pytra::std::dataclasses
 
-#endif  // SRC_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
+#endif  // PYTRA_STD_DATACLASSES_H

@@ -10,6 +10,8 @@
 
 namespace pytra::std::json {
 
+struct _JsonParser;
+
 extern str _EMPTY;
 extern str _COMMA_NL;
 extern str _HEX_DIGITS;

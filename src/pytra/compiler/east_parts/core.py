@@ -333,13 +333,14 @@ def _sh_parse_def_sig(
             arg_types[pn] = _sh_ann_to_type(pt)
             arg_order.append(pn)
             pdef = m_param.group(3)
-            if pdef is not None:
+            if pdef is not None and pdef != "":
                 default_txt = pdef.strip()
                 if default_txt != "":
                     arg_defaults[pn] = default_txt
+    ret_group = m_def.group(3)
     return {
         "name": m_def.group(1),
-        "ret": _sh_ann_to_type(m_def.group(3).strip()) if m_def.group(3) is not None else "None",
+        "ret": _sh_ann_to_type(ret_group.strip()) if ret_group not in {None, ""} else "None",
         "arg_types": arg_types,
         "arg_order": arg_order,
         "arg_defaults": arg_defaults,
@@ -3792,7 +3793,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         fty = _sh_ann_to_type(m_field.group(2))
                         field_types[fname] = fty
                         val_node = None
-                        if m_field.group(3) is not None:
+                        if m_field.group(3) not in {None, ""}:
                             fexpr_txt = m_field.group(3).strip()
                             fexpr_col = ln_txt.find(fexpr_txt)
                             val_node = parse_expr(fexpr_txt, ln_no=ln_no, col=fexpr_col, name_types={})

@@ -8,7 +8,7 @@ namespace pytra::std::os {
     
     
     
-    struct _PathModule {
+    struct _PathModule : public PyObj {
         str join(const str& a, const str& b) {
             return py_to_string(py_os_path_join(a, b));
         }
@@ -32,7 +32,7 @@ namespace pytra::std::os {
         }
     };
     
-    _PathModule path = _PathModule();
+    rc<_PathModule> path = ::rc_new<_PathModule>();
     
     str getcwd() {
         return py_to_string(py_os_getcwd());

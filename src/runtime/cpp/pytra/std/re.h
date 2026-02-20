@@ -1,15 +1,27 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/utils/std/re.py
+// source: src/pytra/std/re.py
 // generated-by: src/py2cpp.py
 
-#ifndef SRC_RUNTIME_CPP_PYTRA_STD_RE_H
-#define SRC_RUNTIME_CPP_PYTRA_STD_RE_H
+#ifndef PYTRA_STD_RE_H
+#define PYTRA_STD_RE_H
+
+#include <optional>
 
 namespace pytra::std::re {
 
-bool _is_space(const str& ch);
-str sub(const str& pattern, const str& repl, const str& text);
+struct Match;
+
+extern int64 S;
+
+bool _is_ident(const str& s);
+bool _is_dotted_ident(const str& s);
+str _strip_suffix_colon(const str& s);
+bool _is_space_ch(const str& ch);
+bool _is_alnum_or_underscore(const str& ch);
+int64 _skip_spaces(const str& t, int64 i);
+::std::optional<rc<Match>> match(const str& pattern, const str& text, int64 flags = 0);
+str sub(const str& pattern, const str& repl, const str& text, int64 flags = 0);
 
 }  // namespace pytra::std::re
 
-#endif  // SRC_RUNTIME_CPP_PYTRA_STD_RE_H
+#endif  // PYTRA_STD_RE_H

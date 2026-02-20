@@ -9,7 +9,7 @@ namespace pytra::std::glob {
     
     
     list<str> glob(const str& pattern) {
-        return static_cast<list<str>>(py_glob_glob(pattern));
+        return static_cast<list<str>>(pytra::std::glob::glob(pattern));
     }
     
 }  // namespace pytra::std::glob

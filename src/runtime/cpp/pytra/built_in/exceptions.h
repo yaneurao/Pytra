@@ -6,5 +6,6 @@
 using ValueError = ::std::runtime_error;
 using RuntimeError = ::std::runtime_error;
 using TypeError = ::std::runtime_error;
+using IndexError = ::std::runtime_error;
 
 #endif  // PYTRA_BUILT_IN_EXCEPTIONS_H

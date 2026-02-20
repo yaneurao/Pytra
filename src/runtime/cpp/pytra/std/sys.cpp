@@ -38,19 +38,11 @@ Python 実行時は `list` を保持する軽量実装として振る舞い、
         for (str v : values)
             argv.append(v);
     }
-
-    void set_argv(const ::std::any& values) {
-        set_argv(py_to_str_list_from_any(values));
-    }
     
     void set_path(const list<str>& values) {
         path.clear();
         for (str v : values)
             path.append(v);
-    }
-
-    void set_path(const ::std::any& values) {
-        set_path(py_to_str_list_from_any(values));
     }
     
     void write_stderr_impl(const str& text) {

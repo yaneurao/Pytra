@@ -64,6 +64,39 @@ static inline const list<object>* obj_to_list_ptr(const object& v);
 #include "dict.h"
 #include "set.h"
 
+inline list<str> str::split(const str& sep) const {
+    list<str> out = list<str>{};
+    const ::std::string& s = data_;
+    const ::std::string& token = sep.std();
+    if (token.empty()) {
+        out.append(*this);
+        return out;
+    }
+    ::std::size_t pos = 0;
+    while (true) {
+        ::std::size_t at = s.find(token, pos);
+        if (at == ::std::string::npos) {
+            out.append(str(s.substr(pos)));
+            break;
+        }
+        out.append(str(s.substr(pos, at - pos)));
+        pos = at + token.size();
+    }
+    return out;
+}
+
+inline str str::join(const list<str>& parts) const {
+    if (parts.empty()) return str("");
+    ::std::string out;
+    ::std::size_t i = 0;
+    while (i < parts.size()) {
+        if (i > 0) out += data_;
+        out += parts[i].std();
+        i += 1;
+    }
+    return str(out);
+}
+
 // Python の動的 object を C++ 側で保持するための最小ラッパクラス群。
 // 各 Py*Obj は値を保持するだけで、振る舞いは下のヘルパ関数側で提供する。
 class PyIntObj : public PyObj {
@@ -261,6 +294,17 @@ static inline bool operator!=(const object& lhs, const object& rhs) {
 template <class T>
 static inline int64 py_len(const T& v) {
     return static_cast<int64>(v.size());
+}
+
+template <class T>
+static inline int64 py_len(const ::std::optional<T>& v) {
+    if (!v.has_value()) return 0;
+    return py_len(*v);
+}
+
+template <::std::size_t N>
+static inline int64 py_len(const char (&)[N]) {
+    return N > 0 ? static_cast<int64>(N - 1) : 0;
 }
 
 static inline int64 py_len(const ::std::any& v) {
@@ -858,6 +902,10 @@ static inline str py_slice(const str& v, int64 lo, int64 up) {
     up = ::std::max<int64>(0, ::std::min<int64>(up, n));
     if (up < lo) up = lo;
     return v.substr(static_cast<::std::size_t>(lo), static_cast<::std::size_t>(up - lo));
+}
+
+static inline str py_slice(const str& v, int64 lo, const ::std::any& up) {
+    return py_slice(v, lo, py_to_int64(up));
 }
 
 template <class T>
@@ -1610,6 +1658,10 @@ static inline str py_at(const str& v, int64 idx) {
 static inline str py_slice(const ::std::any& v, int64 lo, int64 up) {
     if (const auto* s = ::std::any_cast<str>(&v)) return py_slice(*s, lo, up);
     return "";
+}
+
+static inline str py_slice(const ::std::any& v, int64 lo, const ::std::any& up) {
+    return py_slice(v, lo, py_to_int64(up));
 }
 
 // Path 読み書き・文字列メソッド互換ヘルパ。

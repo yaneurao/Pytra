@@ -2835,7 +2835,7 @@ class CppEmitter(CodeEmitter):
             return f"py_replace({owner}, {args[0]}, {args[1]})"
         if runtime_call == "py_join" and len(args) == 1:
             owner = self.render_expr(fn.get("value"))
-            return f"{owner}.join({args[0]})"
+            return f"str({owner}).join({args[0]})"
         if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
             if len(args) == 0:
                 return '::std::runtime_error("error")'
@@ -4264,11 +4264,23 @@ def _split_type_args(text: str) -> list[str]:
     return out
 
 
-def _header_cpp_type_from_east(east_t: str) -> str:
+def _header_cpp_type_from_east(
+    east_t: str,
+    ref_classes: set[str] | None = None,
+    class_names: set[str] | None = None,
+) -> str:
     """EAST 型名を runtime header 向け C++ 型名へ変換する。"""
+    if ref_classes is None:
+        ref_classes = set()
+    if class_names is None:
+        class_names = set()
     t: str = east_t.strip()
     if t == "":
         return "object"
+    if t in ref_classes:
+        return "rc<" + t + ">"
+    if t in class_names:
+        return t
     prim: dict[str, str] = {
         "int8": "int8",
         "uint8": "uint8",
@@ -4301,7 +4313,7 @@ def _header_cpp_type_from_east(east_t: str) -> str:
                 non_none.append(p)
             i += 1
         if len(parts) == 2 and len(non_none) == 1:
-            return "::std::optional<" + _header_cpp_type_from_east(non_none[0]) + ">"
+            return "::std::optional<" + _header_cpp_type_from_east(non_none[0], ref_classes, class_names) + ">"
         folded: list[str] = []
         i = 0
         while i < len(non_none):
@@ -4313,25 +4325,25 @@ def _header_cpp_type_from_east(east_t: str) -> str:
             i += 1
         if len(folded) == 1:
             only: str = folded[0]
-            return _header_cpp_type_from_east(only)
+            return _header_cpp_type_from_east(only, ref_classes, class_names)
         return "object"
     if t.startswith("list[") and t.endswith("]"):
         inner = t[5:-1].strip()
-        return "list<" + _header_cpp_type_from_east(inner) + ">"
+        return "list<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
     if t.startswith("set[") and t.endswith("]"):
         inner = t[4:-1].strip()
-        return "set<" + _header_cpp_type_from_east(inner) + ">"
+        return "set<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
     if t.startswith("dict[") and t.endswith("]"):
         inner = _split_type_args(t[5:-1].strip())
         if len(inner) == 2:
-            return "dict<" + _header_cpp_type_from_east(inner[0]) + ", " + _header_cpp_type_from_east(inner[1]) + ">"
+            return "dict<" + _header_cpp_type_from_east(inner[0], ref_classes, class_names) + ", " + _header_cpp_type_from_east(inner[1], ref_classes, class_names) + ">"
         return "dict<str, object>"
     if t.startswith("tuple[") and t.endswith("]"):
         inner = _split_type_args(t[6:-1].strip())
         vals: list[str] = []
         i = 0
         while i < len(inner):
-            vals.append(_header_cpp_type_from_east(inner[i]))
+            vals.append(_header_cpp_type_from_east(inner[i], ref_classes, class_names))
             i += 1
         sep = ", "
         return "::std::tuple<" + sep.join(vals) + ">"
@@ -4435,6 +4447,20 @@ def build_cpp_header_from_east(
     var_lines: list[str] = []
     used_types: set[str] = set()
     seen_classes: set[str] = set()
+    class_names: set[str] = set()
+    ref_classes: set[str] = set()
+
+    j = 0
+    while j < len(body):
+        st = body[j]
+        if str(st.get("kind", "")) == "ClassDef":
+            cls_name = str(st.get("name", ""))
+            if cls_name != "":
+                class_names.add(cls_name)
+                hint = str(st.get("class_storage_hint", "ref"))
+                if hint == "ref":
+                    ref_classes.add(cls_name)
+        j += 1
 
     by_value_types = {
         "bool",
@@ -4463,7 +4489,7 @@ def build_cpp_header_from_east(
             name = str(st.get("name", ""))
             if name != "":
                 ret_t = str(st.get("return_type", "None"))
-                ret_cpp = _header_cpp_type_from_east(ret_t)
+                ret_cpp = _header_cpp_type_from_east(ret_t, ref_classes, class_names)
                 used_types.add(ret_cpp)
                 arg_types_obj = st.get("arg_types")
                 arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
@@ -4478,7 +4504,7 @@ def build_cpp_header_from_east(
                     if isinstance(an, str):
                         at_obj = arg_types.get(an)
                         at = at_obj if isinstance(at_obj, str) else "Any"
-                        at_cpp = _header_cpp_type_from_east(at)
+                        at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
                         used_types.add(at_cpp)
                         param_txt = ""
                         if at_cpp in by_value_types:
@@ -4512,7 +4538,7 @@ def build_cpp_header_from_east(
             if decl_t == "" or decl_t == "unknown":
                 i += 1
                 continue
-            cpp_t = _header_cpp_type_from_east(decl_t)
+            cpp_t = _header_cpp_type_from_east(decl_t, ref_classes, class_names)
             used_types.add(cpp_t)
             var_lines.append("extern " + cpp_t + " " + name + ";")
         i += 1

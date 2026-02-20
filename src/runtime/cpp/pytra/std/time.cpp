@@ -1,5 +1,7 @@
 #include "runtime/cpp/pytra/built_in/py_runtime.h"
 
+#include "pytra/std/time.h"
+
 #include "pytra/std/time-impl.h"
 
 namespace pytra::std::time {

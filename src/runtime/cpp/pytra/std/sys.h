@@ -12,11 +12,9 @@ extern list<str> path;
 extern object stderr;
 extern object stdout;
 
-void exit(int64 code);
+void exit(int64 code = 0);
 void set_argv(const list<str>& values);
-void set_argv(const ::std::any& values);
 void set_path(const list<str>& values);
-void set_path(const ::std::any& values);
 void write_stderr_impl(const str& text);
 void write_stdout_impl(const str& text);
 void write_stderr(const str& text);

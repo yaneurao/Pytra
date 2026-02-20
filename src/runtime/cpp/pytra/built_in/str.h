@@ -212,6 +212,42 @@ public:
         return true;
     }
 
+    bool isspace() const {
+        if (data_.empty()) return false;
+        for (char ch : data_) {
+            if (!::std::isspace(static_cast<unsigned char>(ch))) return false;
+        }
+        return true;
+    }
+
+    bool startswith(const str& prefix) const {
+        if (prefix.size() > data_.size()) return false;
+        return data_.compare(0, prefix.size(), prefix.std()) == 0;
+    }
+
+    bool endswith(const str& suffix) const {
+        if (suffix.size() > data_.size()) return false;
+        return data_.compare(data_.size() - suffix.size(), suffix.size(), suffix.std()) == 0;
+    }
+
+    str lstrip() const {
+        ::std::size_t i = 0;
+        while (i < data_.size() && ::std::isspace(static_cast<unsigned char>(data_[i]))) i++;
+        return str(data_.substr(i));
+    }
+
+    str rstrip() const {
+        if (data_.empty()) return *this;
+        ::std::size_t i = data_.size();
+        while (i > 0 && ::std::isspace(static_cast<unsigned char>(data_[i - 1]))) i--;
+        return str(data_.substr(0, i));
+    }
+
+    str strip() const { return lstrip().rstrip(); }
+
+    list<str> split(const str& sep) const;
+    str join(const list<str>& parts) const;
+
     str lower() const {
         ::std::string out = data_;
         for (char& ch : out) {
