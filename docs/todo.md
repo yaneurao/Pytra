@@ -122,6 +122,7 @@
      - [x] `*_dict_stmt_list` 系引数を `expr.get(..., [])` ではなく `expr.get(...)` + helper 正規化へ統一する。: `dict.get(..., [])` 残存3件（`details`/`graph_adj`）を helper 経由へ置換（2026-02-20）。
    - [x] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
    - [x] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
+   - [x] `py2cpp.py` の `kind` 判定を `_node_kind_from_dict` / `_dict_any_kind` 経由へ統一し、`dict.get("kind")` 直参照を排除した（2026-02-20）。
    - [x] `hook_on_*` 系の `hooks` コンテナ型を selfhost で安定化する。
      - [x] `CodeEmitter` 側の hook 呼び出しを object receiver メソッド参照（`self.hooks.on_*`）から排除する。
      - [x] `selfhost/py2cpp.cpp` で `hooks` が `object` へ退化しないよう、`dict[str, Any]` を維持する初期化経路へ統一する。: `CodeEmitter.hooks` を `dict[str, Any]` へ固定し、`selfhost/py2cpp.cpp` で `inline static dict<str, object> hooks;` を確認（2026-02-20）。

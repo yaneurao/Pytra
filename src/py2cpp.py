@@ -178,6 +178,12 @@ def _dict_str_list_get(src: dict[str, list[str]], key: str) -> list[str]:
     return out
 
 
+def _dict_any_kind(src: dict[str, Any]) -> str:
+    """`dict` の `kind` を文字列として安全に取得する。"""
+    kind_obj = src.get("kind")
+    return kind_obj if isinstance(kind_obj, str) else ""
+
+
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 """
@@ -1080,7 +1086,7 @@ class CppEmitter(CodeEmitter):
                 if isinstance(s, dict):
                     body.append(s)
         for stmt in body:
-            if stmt.get("kind") == "ClassDef":
+            if self._node_kind_from_dict(stmt) == "ClassDef":
                 cls_name = str(stmt.get("name", ""))
                 if cls_name != "":
                     self.class_names.add(cls_name)
@@ -1092,7 +1098,7 @@ class CppEmitter(CodeEmitter):
                             if isinstance(s, dict):
                                 class_body.append(s)
                     for s in class_body:
-                        if s.get("kind") == "FunctionDef":
+                        if self._node_kind_from_dict(s) == "FunctionDef":
                             fn_name = str(s.get("name"))
                             mset.add(fn_name)
                     self.class_method_names[cls_name] = mset
@@ -1101,7 +1107,7 @@ class CppEmitter(CodeEmitter):
                     self.class_base[cls_name] = base
                     hint = str(stmt.get("class_storage_hint", "ref"))
                     self.class_storage_hints[cls_name] = hint if hint in {"value", "ref"} else "ref"
-            elif stmt.get("kind") == "FunctionDef":
+            elif self._node_kind_from_dict(stmt) == "FunctionDef":
                 fn_name = self.any_to_str(stmt.get("name"))
                 if fn_name != "":
                     fn_name = self.rename_if_reserved(fn_name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
@@ -1151,7 +1157,7 @@ class CppEmitter(CodeEmitter):
                 self.emit("")
             has_pytra_main = False
             for stmt in body:
-                if stmt.get("kind") == "FunctionDef" and self.any_to_str(stmt.get("name")) == "__pytra_main":
+                if self._node_kind_from_dict(stmt) == "FunctionDef" and self.any_to_str(stmt.get("name")) == "__pytra_main":
                     has_pytra_main = True
                     break
             self.emit("int main(int argc, char** argv) {")
@@ -1305,7 +1311,7 @@ class CppEmitter(CodeEmitter):
     def _one_char_str_const(self, node: Any) -> str:
         """1文字文字列定数ならその実文字を返す。"""
         nd = self.any_to_dict_or_empty(node)
-        if len(nd) == 0 or nd.get("kind") != "Constant":
+        if len(nd) == 0 or self._node_kind_from_dict(nd) != "Constant":
             return ""
         v = ""
         if "value" in nd:
@@ -1334,20 +1340,20 @@ class CppEmitter(CodeEmitter):
     def _str_index_char_access(self, node: Any) -> str:
         """str 添字アクセスを `at()` ベースの char 比較式へ変換する。"""
         nd = self.any_to_dict_or_empty(node)
-        if len(nd) == 0 or nd.get("kind") != "Subscript":
+        if len(nd) == 0 or self._node_kind_from_dict(nd) != "Subscript":
             return ""
         value_node: Any = nd.get("value")
         if self.get_expr_type(value_node) != "str":
             return ""
         sl: Any = nd.get("slice")
         sl_node = self.any_to_dict_or_empty(sl)
-        if len(sl_node) > 0 and sl_node.get("kind") == "Slice":
+        if len(sl_node) > 0 and self._node_kind_from_dict(sl_node) == "Slice":
             return ""
         if self.negative_index_mode != "off" and self._is_negative_const_index(sl):
             return ""
         base = self.render_expr(value_node)
         base_node = self.any_to_dict_or_empty(value_node)
-        if len(base_node) > 0 and base_node.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+        if len(base_node) > 0 and self._node_kind_from_dict(base_node) in {"BinOp", "BoolOp", "Compare", "IfExp"}:
             base = f"({base})"
         idx = self.render_expr(sl)
         return f"{base}.at({idx})"
@@ -1643,7 +1649,7 @@ class CppEmitter(CodeEmitter):
     def _render_lvalue_for_augassign(self, target_expr: Any) -> str:
         """AugAssign 向けに左辺を簡易レンダリングする。"""
         target_node = self.any_to_dict_or_empty(target_expr)
-        if target_node.get("kind") == "Name":
+        if self._node_kind_from_dict(target_node) == "Name":
             return str(target_node.get("id", "_"))
         return self.render_lvalue(target_expr)
 
@@ -1743,7 +1749,7 @@ class CppEmitter(CodeEmitter):
         target_expr_node = self.any_to_dict_or_empty(stmt.get("target"))
         target = self._render_lvalue_for_augassign(stmt.get("target"))
         declare = self.any_dict_get_int(stmt, "declare", 0) != 0
-        if declare and target_expr_node.get("kind") == "Name" and target not in self.current_scope():
+        if declare and self._node_kind_from_dict(target_expr_node) == "Name" and target not in self.current_scope():
             decl_t_raw = stmt.get("decl_type")
             decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
             inferred_t = self.get_expr_type(stmt.get("target"))
@@ -1959,7 +1965,7 @@ class CppEmitter(CodeEmitter):
     def _emit_expr_stmt(self, stmt: dict[str, Any]) -> None:
         value_node = self.any_to_dict_or_empty(stmt.get("value"))
         value_is_dict: bool = len(value_node) > 0
-        if value_is_dict and value_node.get("kind") == "Constant" and isinstance(value_node.get("value"), str):
+        if value_is_dict and self._node_kind_from_dict(value_node) == "Constant" and isinstance(value_node.get("value"), str):
             self.emit_block_comment(str(value_node.get("value")))
             return
         if value_is_dict and self._is_redundant_super_init_call(stmt.get("value")):
@@ -2005,7 +2011,7 @@ class CppEmitter(CodeEmitter):
     def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:
         finalbody = self._dict_stmt_list(stmt.get("finalbody"))
         handlers = self._dict_stmt_list(stmt.get("handlers"))
-        has_effective_finally = any(isinstance(s, dict) and s.get("kind") != "Pass" for s in finalbody)
+        has_effective_finally = any(isinstance(s, dict) and self._node_kind_from_dict(s) != "Pass" for s in finalbody)
         if has_effective_finally:
             self.emit("{")
             self.indent += 1
@@ -2068,9 +2074,9 @@ class CppEmitter(CodeEmitter):
         # C++ 側では宣言変数に落とすと未使用・型退化の温床になるため省略する。
         if self._is_reexport_assign(target, value):
             return
-        if target.get("kind") == "Tuple":
+        if self._node_kind_from_dict(target) == "Tuple":
             lhs_elems = self.any_dict_get_list(target, "elements")
-            if self._opt_ge(2) and isinstance(value, dict) and value.get("kind") == "Tuple":
+            if self._opt_ge(2) and isinstance(value, dict) and self._node_kind_from_dict(value) == "Tuple":
                 rhs_elems = self.any_dict_get_list(value, "elements")
                 if (
                     len(lhs_elems) == 2
@@ -2126,18 +2132,18 @@ class CppEmitter(CodeEmitter):
             d1 = self.get_expr_type(stmt.get("target"))
             d2 = self.get_expr_type(stmt.get("value"))
             picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
-            if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict) and value.get("kind") == "BinOp":
+            if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict) and self._node_kind_from_dict(value) == "BinOp":
                 lt0 = self.get_expr_type(value.get("left"))
                 rt0 = self.get_expr_type(value.get("right"))
                 lt = lt0 if isinstance(lt0, str) else ""
                 rt = rt0 if isinstance(rt0, str) else ""
                 left_node = self.any_to_dict_or_empty(value.get("left"))
                 right_node = self.any_to_dict_or_empty(value.get("right"))
-                if (lt == "" or lt == "unknown") and left_node.get("kind") == "Name":
+                if (lt == "" or lt == "unknown") and self._node_kind_from_dict(left_node) == "Name":
                     ln = self.any_to_str(left_node.get("id"))
                     if ln in self.declared_var_types:
                         lt = self.declared_var_types[ln]
-                if (rt == "" or rt == "unknown") and right_node.get("kind") == "Name":
+                if (rt == "" or rt == "unknown") and self._node_kind_from_dict(right_node) == "Name":
                     rn = self.any_to_str(right_node.get("id"))
                     if rn in self.declared_var_types:
                         rt = self.declared_var_types[rn]
@@ -2158,14 +2164,14 @@ class CppEmitter(CodeEmitter):
                 byte_val = self._byte_from_str_expr(stmt.get("value"))
                 if byte_val != "":
                     rval = str(byte_val)
-            if isinstance(value, dict) and value.get("kind") == "BoolOp" and picked != "bool":
+            if isinstance(value, dict) and self._node_kind_from_dict(value) == "BoolOp" and picked != "bool":
                 rval = self.render_boolop(stmt.get("value"), True)
             rval_t0 = self.get_expr_type(stmt.get("value"))
             rval_t = rval_t0 if isinstance(rval_t0, str) else ""
             if self._can_runtime_cast_target(picked) and self.is_any_like_type(rval_t):
                 rval = self.apply_cast(rval, picked)
             if self.is_any_like_type(picked):
-                if isinstance(value, dict) and value.get("kind") == "Constant" and value.get("value") is None:
+                if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
                     rval = "object{}"
                 elif not rval.startswith("make_object("):
                     rval = f"make_object({rval})"
@@ -2180,14 +2186,14 @@ class CppEmitter(CodeEmitter):
             byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
                 rval = str(byte_val)
-        if isinstance(value, dict) and value.get("kind") == "BoolOp" and t_target != "bool":
+        if isinstance(value, dict) and self._node_kind_from_dict(value) == "BoolOp" and t_target != "bool":
             rval = self.render_boolop(stmt.get("value"), True)
         rval_t0 = self.get_expr_type(stmt.get("value"))
         rval_t = rval_t0 if isinstance(rval_t0, str) else ""
         if self._can_runtime_cast_target(t_target) and self.is_any_like_type(rval_t):
             rval = self.apply_cast(rval, t_target)
         if self.is_any_like_type(t_target):
-            if isinstance(value, dict) and value.get("kind") == "Constant" and value.get("value") is None:
+            if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
                 rval = "object{}"
             elif not rval.startswith("make_object("):
                 rval = f"make_object({rval})"
@@ -2223,7 +2229,7 @@ class CppEmitter(CodeEmitter):
         node = self.any_to_dict_or_empty(expr)
         if len(node) == 0:
             return self.render_expr(expr)
-        if node.get("kind") != "Subscript":
+        if self._node_kind_from_dict(node) != "Subscript":
             return self.render_expr(expr)
         val = self.render_expr(node.get("value"))
         val_ty0 = self.get_expr_type(node.get("value"))
@@ -2256,12 +2262,12 @@ class CppEmitter(CodeEmitter):
         names: set[str] = set()
         if not isinstance(target, dict) or len(target) == 0:
             return names
-        if target.get("kind") == "Name":
+        if self._node_kind_from_dict(target) == "Name":
             names.add(str(target.get("id", "_")))
             return names
-        if target.get("kind") == "Tuple":
+        if self._node_kind_from_dict(target) == "Tuple":
             for e_dict in self._dict_stmt_list(target.get("elements")):
-                if e_dict.get("kind") == "Name":
+                if self._node_kind_from_dict(e_dict) == "Name":
                     names.add(str(e_dict.get("id", "_")))
         return names
 
@@ -2269,10 +2275,10 @@ class CppEmitter(CodeEmitter):
         """タプルターゲットへのアンパック代入を出力する。"""
         if not isinstance(target, dict) or len(target) == 0:
             return
-        if target.get("kind") != "Tuple":
+        if self._node_kind_from_dict(target) != "Tuple":
             return
         for i, e in enumerate(self.any_dict_get_list(target, "elements")):
-            if isinstance(e, dict) and e.get("kind") == "Name":
+            if isinstance(e, dict) and self._node_kind_from_dict(e) == "Name":
                 nm = self.render_expr(e)
                 self.emit(f"auto {nm} = ::std::get<{i}>({src});")
 
@@ -2339,7 +2345,7 @@ class CppEmitter(CodeEmitter):
         if len(target) == 0 or len(iter_expr) == 0:
             self.emit("/* invalid for */")
             return
-        if iter_expr.get("kind") == "RangeExpr":
+        if self._node_kind_from_dict(iter_expr) == "RangeExpr":
             pseudo: dict[str, Any] = {}
             pseudo["target"] = stmt.get("target")
             t_raw = stmt.get("target_type")
@@ -2359,7 +2365,7 @@ class CppEmitter(CodeEmitter):
         t1 = self.get_expr_type(stmt.get("target"))
         t_ty = self._cpp_type_text(t0 if t0 != "" else t1)
         target_names = self._target_bound_names(target)
-        unpack_tuple = target.get("kind") == "Tuple"
+        unpack_tuple = self._node_kind_from_dict(target) == "Tuple"
         if unpack_tuple:
             # tuple unpack emits extra binding lines before the loop body; keep braces for correctness.
             omit_braces = False
@@ -2560,7 +2566,7 @@ class CppEmitter(CodeEmitter):
         instance_field_defaults: dict[str, str] = {}
         consumed_assign_fields: set[str] = set()
         for s in class_body:
-            if s.get("kind") == "AnnAssign":
+            if self._node_kind_from_dict(s) == "AnnAssign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
                 if self.is_plain_name_expr(s.get("target")):
                     fname = str(texpr.get("id", ""))
@@ -2572,7 +2578,7 @@ class CppEmitter(CodeEmitter):
                             static_field_types[fname] = ann
                             if s.get("value") is not None:
                                 static_field_defaults[fname] = self.render_expr(s.get("value"))
-            elif is_enum_base and s.get("kind") == "Assign":
+            elif is_enum_base and self._node_kind_from_dict(s) == "Assign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
                 if self.is_name(s.get("target"), None):
                     fname = self.any_to_str(texpr.get("id"))
@@ -2593,7 +2599,7 @@ class CppEmitter(CodeEmitter):
         for k, v in self.current_class_fields.items():
             if isinstance(k, str) and isinstance(v, str) and k not in self.current_class_static_fields:
                 instance_fields[k] = v
-        has_init = any(s.get("kind") == "FunctionDef" and s.get("name") == "__init__" for s in class_body)
+        has_init = any(self._node_kind_from_dict(s) == "FunctionDef" and s.get("name") == "__init__" for s in class_body)
         for fname, fty in static_field_types.items():
             if fname in static_field_defaults:
                 self.emit(f"inline static {self._cpp_type_text(fty)} {fname} = {static_field_defaults[fname]};")
@@ -2620,9 +2626,9 @@ class CppEmitter(CodeEmitter):
             self.emit_block_close()
             self.emit("")
         for s in class_body:
-            if s.get("kind") == "FunctionDef":
+            if self._node_kind_from_dict(s) == "FunctionDef":
                 self.emit_function(s, True)
-            elif s.get("kind") == "AnnAssign":
+            elif self._node_kind_from_dict(s) == "AnnAssign":
                 t = self.cpp_type(s.get("annotation"))
                 target = self.render_expr(s.get("target"))
                 if self.is_plain_name_expr(s.get("target")) and target in self.current_class_fields:
@@ -2631,7 +2637,7 @@ class CppEmitter(CodeEmitter):
                     self.emit(f"{t} {target};")
                 else:
                     self.emit(f"{t} {target} = {self.render_expr(s.get('value'))};")
-            elif is_enum_base and s.get("kind") == "Assign":
+            elif is_enum_base and self._node_kind_from_dict(s) == "Assign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
                 skip_stmt = False
                 if self.is_name(s.get("target"), None):
@@ -2951,7 +2957,7 @@ class CppEmitter(CodeEmitter):
                 rhs: dict[str, Any] = {}
                 if len(arg_nodes) > 1:
                     rhs = self.any_to_dict_or_empty(arg_nodes[1])
-                if rhs.get("kind") == "Name":
+                if self._node_kind_from_dict(rhs) == "Name":
                     type_name = self.any_to_str(rhs.get("id"))
                 a0 = args[0]
                 if type_name == "dict":
@@ -3318,7 +3324,7 @@ class CppEmitter(CodeEmitter):
         operand = self.render_expr(operand_obj)
         op = self.any_to_str(expr.get("op"))
         if op == "Not":
-            if len(operand_expr) > 0 and operand_expr.get("kind") == "Compare":
+            if len(operand_expr) > 0 and self._node_kind_from_dict(operand_expr) == "Compare":
                 if self.any_dict_get_str(operand_expr, "lowered_kind", "") == "Contains":
                     container = self.render_expr(operand_expr.get("container"))
                     key = self.render_expr(operand_expr.get("key"))
@@ -3445,7 +3451,7 @@ class CppEmitter(CodeEmitter):
             return f"py_slice({val}, {lo}, {up})"
         sl: object = expr.get("slice")
         sl_node = self.any_to_dict_or_empty(sl)
-        if len(sl_node) > 0 and sl_node.get("kind") == "Slice":
+        if len(sl_node) > 0 and self._node_kind_from_dict(sl_node) == "Slice":
             lo = self.render_expr(sl_node.get("lower")) if sl_node.get("lower") is not None else "0"
             up = self.render_expr(sl_node.get("upper")) if sl_node.get("upper") is not None else f"py_len({val})"
             return f"py_slice({val}, {lo}, {up})"
@@ -3703,9 +3709,9 @@ class CppEmitter(CodeEmitter):
             if self.any_dict_get_str(expr_d, "lowered_kind", "") == "Concat":
                 parts: list[str] = []
                 for p in self._dict_stmt_list(expr_d.get("concat_parts")):
-                    if p.get("kind") == "literal":
+                    if self._node_kind_from_dict(p) == "literal":
                         parts.append(cpp_string_lit(str(p.get("value", ""))))
-                    elif p.get("kind") == "expr":
+                    elif self._node_kind_from_dict(p) == "expr":
                         val: object = p.get("value")
                         if val is None:
                             parts.append('""')
@@ -3721,7 +3727,7 @@ class CppEmitter(CodeEmitter):
                 return _join_str_list(" + ", parts)
             parts: list[str] = []
             for p in self._dict_stmt_list(expr_d.get("values")):
-                pk = p.get("kind")
+                pk = self._node_kind_from_dict(p)
                 if pk == "Constant":
                     parts.append(cpp_string_lit(str(p.get("value", ""))))
                 elif pk == "FormattedValue":
@@ -3761,10 +3767,10 @@ class CppEmitter(CodeEmitter):
                 if elt_t != "" and elt_t != "unknown":
                     out_t = self._cpp_type_text(f"list[{elt_t}]")
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
-            tuple_unpack = g_target.get("kind") == "Tuple"
+            tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
             iter_tmp = self.next_tmp("__it")
             rg = self.any_to_dict_or_empty(g.get("iter"))
-            if rg.get("kind") == "RangeExpr":
+            if self._node_kind_from_dict(rg) == "RangeExpr":
                 start = self.render_expr(rg.get("start"))
                 stop = self.render_expr(rg.get("stop"))
                 step = self.render_expr(rg.get("step"))
@@ -3785,7 +3791,7 @@ class CppEmitter(CodeEmitter):
                     target_elements = self.any_to_list(g_target.get("elements"))
                     for i, e in enumerate(target_elements):
                         e_node = self.any_to_dict_or_empty(e)
-                        if e_node.get("kind") == "Name":
+                        if self._node_kind_from_dict(e_node) == "Name":
                             nm = self.render_expr(e)
                             lines.append(f"        auto {nm} = ::std::get<{i}>({iter_tmp});")
                 else:
@@ -3823,14 +3829,14 @@ class CppEmitter(CodeEmitter):
             elt = self.render_expr(expr_d.get("elt"))
             out_t = self.cpp_type(expr_d.get("resolved_type"))
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
-            tuple_unpack = g_target.get("kind") == "Tuple"
+            tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
             iter_tmp = self.next_tmp("__it")
             if tuple_unpack:
                 lines.append(f"    for (auto {iter_tmp} : {it}) {{")
                 target_elements = self.any_to_list(g_target.get("elements"))
                 for i, e in enumerate(target_elements):
                     e_node = self.any_to_dict_or_empty(e)
-                    if e_node.get("kind") == "Name":
+                    if self._node_kind_from_dict(e_node) == "Name":
                         nm = self.render_expr(e)
                         lines.append(f"        auto {nm} = ::std::get<{i}>({iter_tmp});")
             else:
@@ -3869,14 +3875,14 @@ class CppEmitter(CodeEmitter):
             val = self.render_expr(expr_d.get("value"))
             out_t = self.cpp_type(expr_d.get("resolved_type"))
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
-            tuple_unpack = g_target.get("kind") == "Tuple"
+            tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
             iter_tmp = self.next_tmp("__it")
             if tuple_unpack:
                 lines.append(f"    for (auto {iter_tmp} : {it}) {{")
                 target_elements = self.any_to_list(g_target.get("elements"))
                 for i, e in enumerate(target_elements):
                     e_node = self.any_to_dict_or_empty(e)
-                    if e_node.get("kind") == "Name":
+                    if self._node_kind_from_dict(e_node) == "Name":
                         nm = self.render_expr(e)
                         lines.append(f"        auto {nm} = ::std::get<{i}>({iter_tmp});")
             else:
@@ -4011,7 +4017,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
         if isinstance(payload, dict):
             if payload.get("ok") is True and isinstance(payload.get("east"), dict):
                 return payload.get("east")
-            if payload.get("kind") == "Module":
+            if _dict_any_kind(payload) == "Module":
                 return payload
         raise _make_user_error(
             "input_invalid",
@@ -4634,7 +4640,7 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
         i = 0
         while i < len(body):
             stmt = body[i]
-            kind = stmt.get("kind")
+            kind = _dict_any_kind(stmt)
             if kind == "Import":
                 names_obj: object = stmt.get("names")
                 if isinstance(names_obj, list):
@@ -4704,8 +4710,7 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
     while i < len(body_obj):
         stmt = body_obj[i]
         if isinstance(stmt, dict):
-            kind_obj: object = stmt.get("kind")
-            kind = kind_obj if isinstance(kind_obj, str) else ""
+            kind = _dict_any_kind(stmt)
             if kind == "Import":
                 names_obj: object = stmt.get("names")
                 if isinstance(names_obj, list):
@@ -5020,8 +5025,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
         while i < len(body):
             st = body[i]
             if isinstance(st, dict):
-                kind_obj = st.get("kind")
-                kind = kind_obj if isinstance(kind_obj, str) else ""
+                kind = _dict_any_kind(st)
                 if kind == "FunctionDef" or kind == "ClassDef":
                     name_obj = st.get("name")
                     if isinstance(name_obj, str) and name_obj != "":
@@ -5032,14 +5036,14 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                     j = 0
                     while j < len(targets):
                         tgt = targets[j]
-                        if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                        if isinstance(tgt, dict) and _dict_any_kind(tgt) == "Name":
                             name_obj = tgt.get("id")
                             if isinstance(name_obj, str) and name_obj != "":
                                 exports.add(name_obj)
                         j += 1
                 elif kind == "AnnAssign":
                     tgt = st.get("target")
-                    if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                    if isinstance(tgt, dict) and _dict_any_kind(tgt) == "Name":
                         name_obj = tgt.get("id")
                         if isinstance(name_obj, str) and name_obj != "":
                             exports.add(name_obj)
@@ -5061,7 +5065,7 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
         i = 0
         while i < len(body):
             st = body[i]
-            if isinstance(st, dict) and st.get("kind") == "ImportFrom":
+            if isinstance(st, dict) and _dict_any_kind(st) == "ImportFrom":
                 mod_obj = st.get("module")
                 imported_mod = mod_obj if isinstance(mod_obj, str) else ""
                 if imported_mod in exports:
@@ -5125,8 +5129,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         i = 0
         while i < len(body):
             st = body[i]
-            kind_obj: object = st.get("kind")
-            kind = kind_obj if isinstance(kind_obj, str) else ""
+            kind = _dict_any_kind(st)
             if kind == "FunctionDef":
                 name_obj: object = st.get("name")
                 if isinstance(name_obj, str) and name_obj != "":
@@ -5142,14 +5145,14 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 while j < len(targets):
                     tgt = targets[j]
                     if isinstance(tgt, dict):
-                        if tgt.get("kind") == "Name":
+                        if _dict_any_kind(tgt) == "Name":
                             name_obj = tgt.get("id")
                             if isinstance(name_obj, str) and name_obj != "" and name_obj not in variables:
                                 variables.append(name_obj)
                     j += 1
             elif kind == "AnnAssign":
                 tgt = st.get("target")
-                if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                if isinstance(tgt, dict) and _dict_any_kind(tgt) == "Name":
                     name_obj = tgt.get("id")
                     if isinstance(name_obj, str) and name_obj != "" and name_obj not in variables:
                         variables.append(name_obj)
@@ -5224,8 +5227,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
         i = 0
         while i < len(body):
             st = body[i]
-            kind_obj: object = st.get("kind")
-            kind = kind_obj if isinstance(kind_obj, str) else ""
+            kind = _dict_any_kind(st)
             if kind == "FunctionDef":
                 name_obj: object = st.get("name")
                 if isinstance(name_obj, str) and name_obj != "":
