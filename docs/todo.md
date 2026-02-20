@@ -20,10 +20,10 @@
 2. [x] `ImportBinding` を import 情報の正本として導入・統一する。
    - [x] `module_id`, `export_name`, `local_name`, `binding_kind`, `source_file`, `source_line` を保持する。
    - [x] `meta.import_modules` / `meta.import_symbols` は `ImportBinding` から導出するだけにする。
-3. [ ] モジュール解決を `resolve_module_name(raw_name, root_dir)` に一本化する。
-   - [ ] `pytra.*` を予約名前空間として最優先解決する。
-   - [ ] `pytra.py` / `pytra/__init__.py` の衝突は `reserved_conflict` として `input_invalid` にする。
-   - [ ] 未解決は `missing_module` として `input_invalid` にする。
+3. [x] モジュール解決を `resolve_module_name(raw_name, root_dir)` に一本化する。
+   - [x] `pytra.*` を予約名前空間として最優先解決する。
+   - [x] `pytra.py` / `pytra/__init__.py` の衝突は `reserved_conflict` として `input_invalid` にする。
+   - [x] 未解決は `missing_module` として `input_invalid` にする。
 4. [x] `ExportTable` を追加し `from M import S` の事前検証を実装する。
    - [x] 公開対象: トップレベル `FunctionDef`, `ClassDef`, `Assign/AnnAssign(Name)`。
    - [x] 未定義シンボル import は `missing_symbol` として `input_invalid` にする。

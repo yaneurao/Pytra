@@ -4281,16 +4281,23 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
         i = 0
         while i < len(mods):
             mod = mods[i]
-            if mod.startswith("."):
+            resolved = resolve_module_name(mod, root)
+            status_obj = resolved.get("status")
+            status = status_obj if isinstance(status_obj, str) else "missing"
+            if status == "relative":
                 rel_item = cur_disp + ": " + mod
                 if rel_item not in relative_seen:
                     relative_seen.add(rel_item)
                     relative_imports.append(rel_item)
                 i += 1
                 continue
-            dep_file = _resolve_user_module_path(mod, root)
             dep_disp = mod
-            if dep_file is not None:
+            if status == "user":
+                dep_path_obj = resolved.get("path")
+                dep_file = dep_path_obj if isinstance(dep_path_obj, Path) else None
+                if dep_file is None:
+                    i += 1
+                    continue
                 dep_key = _path_key_for_graph(dep_file)
                 dep_disp = _rel_disp_for_graph(root, dep_file)
                 graph_adj[cur_key].append(dep_key)
@@ -4299,7 +4306,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 if dep_key not in queued and dep_key not in visited:
                     queued.add(dep_key)
                     queue.append(dep_file)
-            elif not _is_pytra_module_name(mod) and not _is_known_non_user_import(mod):
+            elif status == "missing":
                 miss = cur_disp + ": " + mod
                 if miss not in missing_seen:
                     missing_seen.add(miss)
@@ -4966,6 +4973,31 @@ def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | Non
     if cand_pkg.exists():
         return cand_pkg
     return None
+
+
+def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
+    """モジュール名を `user/pytra/known/missing/relative` に分類して解決する。"""
+    out: dict[str, Any] = {}
+    out["status"] = "missing"
+    out["module_id"] = raw_name
+    out["path"] = None
+    if raw_name.startswith("."):
+        out["status"] = "relative"
+        return out
+    if _is_pytra_module_name(raw_name):
+        out["status"] = "pytra"
+        return out
+    dep_file = _resolve_user_module_path(raw_name, root_dir)
+    if dep_file is not None:
+        out["status"] = "user"
+        out["path"] = dep_file
+        mod_id = _module_name_from_path(root_dir, dep_file)
+        out["module_id"] = mod_id if mod_id != "" else raw_name
+        return out
+    if _is_known_non_user_import(raw_name):
+        out["status"] = "known"
+        return out
+    return out
 
 
 def dump_deps_graph_text(entry_path: Path) -> str:

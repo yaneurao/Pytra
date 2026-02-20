@@ -22,6 +22,7 @@ from src.py2cpp import (
     dump_deps_text,
     load_cpp_module_attr_call_map,
     load_east,
+    resolve_module_name,
     transpile_to_cpp,
 )
 
@@ -618,6 +619,19 @@ def f() -> int:
         self.assertIn("C", idx[str(helper_py)]["classes"])
         self.assertEqual(idx[str(main_py)]["import_modules"].get("hp"), "helper")
         self.assertIn("HC", idx[str(main_py)]["import_symbols"])
+
+    def test_resolve_module_name_classifies_user_pytra_and_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "helper.py").write_text("x: int = 1\n", encoding="utf-8")
+            user_res = resolve_module_name("helper", root)
+            pytra_res = resolve_module_name("pytra.std.math", root)
+            miss_res = resolve_module_name("no_such_module", root)
+            rel_res = resolve_module_name(".helper", root)
+        self.assertEqual(user_res.get("status"), "user")
+        self.assertEqual(pytra_res.get("status"), "pytra")
+        self.assertEqual(miss_res.get("status"), "missing")
+        self.assertEqual(rel_res.get("status"), "relative")
 
     def test_build_module_type_schema_contains_function_and_class_types(self) -> None:
         src_main = """def run(v: int) -> int:
