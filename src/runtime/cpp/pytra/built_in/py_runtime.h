@@ -1683,10 +1683,6 @@ static inline void py_runtime_write_stdout(const str& text) {
     ::std::exit(static_cast<int>(code));
 }
 
-static inline ArgumentParser py_argparse_argument_parser(const str& description = "") {
-    return ArgumentParser(description);
-}
-
 template <class A, class B>
 static inline auto py_min(const A& a, const B& b) -> ::std::common_type_t<A, B> {
     using R = ::std::common_type_t<A, B>;
