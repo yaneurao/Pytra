@@ -1,9 +1,13 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/std/json.py
+// generated-by: src/py2cpp.py
 
-#ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_JSON_H
-#define PYTRA_RUNTIME_CPP_PYTRA_STD_JSON_H
+#ifndef SRC_RUNTIME_CPP_PYTRA_STD_JSON_H
+#define SRC_RUNTIME_CPP_PYTRA_STD_JSON_H
 
-// json runtime functions are provided via py_runtime helpers in current backend.
+namespace pytra::std::json {
 
-#endif
+
+}  // namespace pytra::std::json
+
+#endif  // SRC_RUNTIME_CPP_PYTRA_STD_JSON_H

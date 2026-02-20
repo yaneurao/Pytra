@@ -1,35 +1,22 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/std/sys.py
+// generated-by: src/py2cpp.py
 
-#ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_SYS_H
-#define PYTRA_RUNTIME_CPP_PYTRA_STD_SYS_H
+#ifndef SRC_RUNTIME_CPP_PYTRA_STD_SYS_H
+#define SRC_RUNTIME_CPP_PYTRA_STD_SYS_H
 
-#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
-namespace pytra::cpp_module {
+namespace pytra::std::sys {
 
-class SysPath {
-public:
-    void insert(int index, const ::std::string& value);
+void exit(::std::int64_t code);
+void set_argv(::std::vector<::std::string> values);
+void set_path(::std::vector<::std::string> values);
+void write_stderr(::std::string text);
+void write_stdout(::std::string text);
 
-private:
-    ::std::vector<::std::string> entries_;
-};
+}  // namespace pytra::std::sys
 
-class SysModule {
-public:
-    SysModule();
-    ~SysModule();
-
-    SysPath* path;
-};
-
-extern SysModule* sys;
-
-}  // namespace pytra::cpp_module
-
-using pytra::cpp_module::sys;
-
-#endif  // PYTRA_RUNTIME_CPP_PYTRA_STD_SYS_H
+#endif  // SRC_RUNTIME_CPP_PYTRA_STD_SYS_H

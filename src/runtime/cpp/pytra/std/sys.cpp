@@ -1,24 +1,33 @@
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/runtime/std/sys.py
+#include "runtime/cpp/py_runtime.h"
 
-#include "runtime/cpp/pytra/std/sys.h"
+#include "pytra/std/sys.h"
 
-namespace pytra::cpp_module {
+namespace pytra::std::sys {
 
-void SysPath::insert(int index, const ::std::string& value) {
-    if (index < 0 || static_cast<::std::size_t>(index) >= entries_.size()) {
-        entries_.push_back(value);
-        return;
+    
+    
+    
+    
+    
+    
+    void exit(int64 code) {
+        py_sys_exit(code);
     }
-    entries_.insert(entries_.begin() + index, value);
-}
-
-SysModule::SysModule() : path(new SysPath()) {}
-
-SysModule::~SysModule() {
-    delete path;
-}
-
-SysModule* sys = new SysModule();
-
-}  // namespace pytra::cpp_module
+    
+    void set_argv(const list<str>& values) {
+        py_sys_set_argv(values);
+    }
+    
+    void set_path(const list<str>& values) {
+        py_sys_set_path(values);
+    }
+    
+    void write_stderr(const str& text) {
+        py_sys_write_stderr(text);
+    }
+    
+    void write_stdout(const str& text) {
+        py_sys_write_stdout(text);
+    }
+    
+}  // namespace pytra::std::sys

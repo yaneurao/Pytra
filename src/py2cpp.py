@@ -1580,6 +1580,10 @@ class CppEmitter(CodeEmitter):
         if len(target) == 0 or len(value) == 0:
             self.emit("/* invalid assign */")
             return
+        # `X = imported.Y` / `X = imported` の純再エクスポートは
+        # C++ 側では宣言変数に落とすと未使用・型退化の温床になるため省略する。
+        if self._is_reexport_assign(target, value):
+            return
         if target.get("kind") == "Tuple":
             lhs_elems = self.any_dict_get_list(target, "elements")
             if self._opt_ge(2) and isinstance(value, dict) and value.get("kind") == "Tuple":
@@ -1685,6 +1689,31 @@ class CppEmitter(CodeEmitter):
             elif not rval.startswith("make_object("):
                 rval = f"make_object({rval})"
         self.emit(f"{texpr} = {rval};")
+
+    def _is_reexport_assign(self, target: dict[str, Any], value: dict[str, Any]) -> bool:
+        """`Name = imported_symbol` 形式の再エクスポート代入かを返す。"""
+        if len(self.scope_stack) != 1:
+            return False
+        if self.any_to_str(target.get("kind")) != "Name":
+            return False
+        kind = self.any_to_str(value.get("kind"))
+        if kind == "Name":
+            name = self.any_to_str(value.get("id"))
+            if name in self.import_modules:
+                return True
+            if name in self.import_symbols:
+                return True
+            return False
+        if kind == "Attribute":
+            owner = self.any_to_dict_or_empty(value.get("value"))
+            if self.any_to_str(owner.get("kind")) != "Name":
+                return False
+            owner_name = self.any_to_str(owner.get("id"))
+            if owner_name in self.import_modules:
+                return True
+            if owner_name in self.import_symbols:
+                return True
+        return False
 
     def render_lvalue(self, expr: Any) -> str:
         """左辺値文脈の式（添字代入含む）を C++ 文字列へ変換する。"""
@@ -3692,6 +3721,158 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
     return "pytra::runtime::" + module_tail.replace("/", "::")
 
 
+def _runtime_png_header_text(namespace_cpp: str) -> str:
+    """`pytra.runtime.png` 用の C++ ヘッダを返す。"""
+    return (
+        "// AUTO-GENERATED FILE. DO NOT EDIT.\n\n"
+        "#ifndef PYTRA_CPP_MODULE_PNG_H\n"
+        "#define PYTRA_CPP_MODULE_PNG_H\n\n"
+        "#include <cstdint>\n"
+        "#include <string>\n"
+        "#include <vector>\n\n"
+        "class str;\n"
+        "template <class T>\n"
+        "class list;\n\n"
+        "namespace " + namespace_cpp + " {\n\n"
+        "void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels);\n"
+        "void write_rgb_png_py(\n"
+        "    const str& path,\n"
+        "    ::std::int64_t width,\n"
+        "    ::std::int64_t height,\n"
+        "    const list<::std::uint8_t>& pixels\n"
+        ");\n\n"
+        "}  // namespace " + namespace_cpp + "\n\n"
+        "namespace pytra {\n"
+        "namespace png = runtime::png;\n"
+        "}\n\n"
+        "#endif  // PYTRA_CPP_MODULE_PNG_H\n"
+    )
+
+
+def _runtime_png_cpp_text(namespace_cpp: str, impl_cpp: str) -> str:
+    """`pytra.runtime.png` 用の C++ 実装（bridge + 変換本体）を返す。"""
+    return (
+        "// AUTO-GENERATED FILE. DO NOT EDIT.\n\n"
+        "#include \"runtime/cpp/pytra/runtime/png.h\"\n\n"
+        "#include \"runtime/cpp/py_runtime.h\"\n\n"
+        + impl_cpp
+        + "\n\nnamespace "
+        + namespace_cpp
+        + " {\n"
+        "void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels) {\n"
+        "    const bytes raw(pixels.begin(), pixels.end());\n"
+        "    generated::write_rgb_png(str(path), int64(width), int64(height), raw);\n"
+        "}\n\n"
+        "void write_rgb_png_py(\n"
+        "    const str& path,\n"
+        "    ::std::int64_t width,\n"
+        "    ::std::int64_t height,\n"
+        "    const list<::std::uint8_t>& pixels\n"
+        ") {\n"
+        "    generated::write_rgb_png(path, int64(width), int64(height), pixels);\n"
+        "}\n\n"
+        "}  // namespace " + namespace_cpp + "\n"
+    )
+
+
+def _runtime_gif_header_text(namespace_cpp: str) -> str:
+    """`pytra.runtime.gif` 用の C++ ヘッダを返す。"""
+    return (
+        "// AUTO-GENERATED FILE. DO NOT EDIT.\n\n"
+        "#ifndef PYTRA_CPP_MODULE_GIF_H\n"
+        "#define PYTRA_CPP_MODULE_GIF_H\n\n"
+        "#include <cstdint>\n"
+        "#include <string>\n"
+        "#include <vector>\n\n"
+        "class str;\n"
+        "template <class T>\n"
+        "class list;\n\n"
+        "namespace " + namespace_cpp + " {\n\n"
+        "::std::vector<::std::uint8_t> grayscale_palette();\n"
+        "list<::std::uint8_t> grayscale_palette_py();\n\n"
+        "void save_gif(\n"
+        "    const ::std::string& path,\n"
+        "    int width,\n"
+        "    int height,\n"
+        "    const ::std::vector<::std::vector<::std::uint8_t>>& frames,\n"
+        "    const ::std::vector<::std::uint8_t>& palette,\n"
+        "    int delay_cs = 4,\n"
+        "    int loop = 0\n"
+        ");\n"
+        "void save_gif_py(\n"
+        "    const str& path,\n"
+        "    ::std::int64_t width,\n"
+        "    ::std::int64_t height,\n"
+        "    const list<list<::std::uint8_t>>& frames,\n"
+        "    const list<::std::uint8_t>& palette,\n"
+        "    ::std::int64_t delay_cs = 4,\n"
+        "    ::std::int64_t loop = 0\n"
+        ");\n\n"
+        "}  // namespace " + namespace_cpp + "\n\n"
+        "namespace pytra {\n"
+        "namespace gif = runtime::gif;\n"
+        "}\n\n"
+        "#endif  // PYTRA_CPP_MODULE_GIF_H\n"
+    )
+
+
+def _runtime_gif_cpp_text(namespace_cpp: str, impl_cpp: str) -> str:
+    """`pytra.runtime.gif` 用の C++ 実装（bridge + 変換本体）を返す。"""
+    return (
+        "// AUTO-GENERATED FILE. DO NOT EDIT.\n\n"
+        "#include \"runtime/cpp/pytra/runtime/gif.h\"\n\n"
+        "#include \"runtime/cpp/py_runtime.h\"\n\n"
+        + impl_cpp
+        + "\n\nnamespace "
+        + namespace_cpp
+        + " {\n"
+        "::std::vector<::std::uint8_t> grayscale_palette() {\n"
+        "    const bytes raw = generated::grayscale_palette();\n"
+        "    return ::std::vector<::std::uint8_t>(raw.begin(), raw.end());\n"
+        "}\n\n"
+        "list<::std::uint8_t> grayscale_palette_py() {\n"
+        "    return generated::grayscale_palette();\n"
+        "}\n\n"
+        "void save_gif(\n"
+        "    const ::std::string& path,\n"
+        "    int width,\n"
+        "    int height,\n"
+        "    const ::std::vector<::std::vector<::std::uint8_t>>& frames,\n"
+        "    const ::std::vector<::std::uint8_t>& palette,\n"
+        "    int delay_cs,\n"
+        "    int loop\n"
+        ") {\n"
+        "    list<bytes> frame_list{};\n"
+        "    frame_list.reserve(frames.size());\n"
+        "    for (const auto& fr : frames) {\n"
+        "        frame_list.append(bytes(fr.begin(), fr.end()));\n"
+        "    }\n"
+        "    const bytes pal_bytes(palette.begin(), palette.end());\n"
+        "    generated::save_gif(\n"
+        "        str(path),\n"
+        "        int64(width),\n"
+        "        int64(height),\n"
+        "        frame_list,\n"
+        "        pal_bytes,\n"
+        "        int64(delay_cs),\n"
+        "        int64(loop)\n"
+        "    );\n"
+        "}\n\n"
+        "void save_gif_py(\n"
+        "    const str& path,\n"
+        "    ::std::int64_t width,\n"
+        "    ::std::int64_t height,\n"
+        "    const list<list<::std::uint8_t>>& frames,\n"
+        "    const list<::std::uint8_t>& palette,\n"
+        "    ::std::int64_t delay_cs,\n"
+        "    ::std::int64_t loop\n"
+        ") {\n"
+        "    generated::save_gif(path, int64(width), int64(height), frames, palette, int64(delay_cs), int64(loop));\n"
+        "}\n\n"
+        "}  // namespace " + namespace_cpp + "\n"
+    )
+
+
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
     body_obj: object = east_module.get("body")
@@ -4630,26 +4811,51 @@ def main(argv: list[str]) -> int:
             hdr_out = Path("src/runtime/cpp/pytra") / (rel_tail + ".h")
             cpp_out.parent.mkdir(parents=True, exist_ok=True)
             hdr_out.parent.mkdir(parents=True, exist_ok=True)
-            cpp_txt_runtime = transpile_to_cpp(
-                east_module,
-                negative_index_mode,
-                bounds_check_mode,
-                floor_div_mode,
-                mod_mode,
-                int_width,
-                str_index_mode,
-                str_slice_mode,
-                opt_level,
-                ns,
-                False,
-                {},
-            )
-            hdr_txt_runtime = build_cpp_header_from_east(
-                east_module,
-                top_namespace=ns,
-                source_path=input_path,
-                output_path=hdr_out,
-            )
+            cpp_txt_runtime = ""
+            hdr_txt_runtime = ""
+            if module_tail in {"png", "gif"}:
+                impl_ns = ns + "::generated"
+                impl_cpp = transpile_to_cpp(
+                    east_module,
+                    negative_index_mode,
+                    bounds_check_mode,
+                    floor_div_mode,
+                    mod_mode,
+                    int_width,
+                    str_index_mode,
+                    str_slice_mode,
+                    opt_level,
+                    impl_ns,
+                    False,
+                    {},
+                )
+                if module_tail == "png":
+                    cpp_txt_runtime = _runtime_png_cpp_text(ns, impl_cpp)
+                    hdr_txt_runtime = _runtime_png_header_text(ns)
+                else:
+                    cpp_txt_runtime = _runtime_gif_cpp_text(ns, impl_cpp)
+                    hdr_txt_runtime = _runtime_gif_header_text(ns)
+            else:
+                cpp_txt_runtime = transpile_to_cpp(
+                    east_module,
+                    negative_index_mode,
+                    bounds_check_mode,
+                    floor_div_mode,
+                    mod_mode,
+                    int_width,
+                    str_index_mode,
+                    str_slice_mode,
+                    opt_level,
+                    ns,
+                    False,
+                    {},
+                )
+                hdr_txt_runtime = build_cpp_header_from_east(
+                    east_module,
+                    top_namespace=ns,
+                    source_path=input_path,
+                    output_path=hdr_out,
+                )
             cpp_out.write_text(cpp_txt_runtime, encoding="utf-8")
             hdr_out.write_text(hdr_txt_runtime, encoding="utf-8")
             print("generated: " + str(hdr_out))

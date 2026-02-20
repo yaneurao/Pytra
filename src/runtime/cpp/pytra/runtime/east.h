@@ -1,9 +1,16 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/east.py
+// generated-by: src/py2cpp.py
 
-#ifndef PYTRA_RUNTIME_CPP_PYTRA_RUNTIME_EAST_H
-#define PYTRA_RUNTIME_CPP_PYTRA_RUNTIME_EAST_H
+#ifndef SRC_RUNTIME_CPP_PYTRA_RUNTIME_EAST_H
+#define SRC_RUNTIME_CPP_PYTRA_RUNTIME_EAST_H
 
-// EAST parser/runtime bridge is not linked in current selfhost stage.
+#include <string>
 
-#endif
+namespace pytra::runtime::east {
+
+::std::string runtime_note();
+
+}  // namespace pytra::runtime::east
+
+#endif  // SRC_RUNTIME_CPP_PYTRA_RUNTIME_EAST_H

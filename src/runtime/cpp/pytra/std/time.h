@@ -1,13 +1,14 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/std/time.py
+// generated-by: src/py2cpp.py
 
-#ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_TIME_H
-#define PYTRA_RUNTIME_CPP_PYTRA_STD_TIME_H
+#ifndef SRC_RUNTIME_CPP_PYTRA_STD_TIME_H
+#define SRC_RUNTIME_CPP_PYTRA_STD_TIME_H
 
-namespace pytra::cpp_module {
+namespace pytra::std::time {
 
 double perf_counter();
 
-}  // namespace pytra::cpp_module
+}  // namespace pytra::std::time
 
-#endif  // PYTRA_RUNTIME_CPP_PYTRA_STD_TIME_H
+#endif  // SRC_RUNTIME_CPP_PYTRA_STD_TIME_H

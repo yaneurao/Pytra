@@ -1,23 +1,13 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/std/dataclasses.py
+// generated-by: src/py2cpp.py
 
-#ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
-#define PYTRA_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
+#ifndef SRC_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
+#define SRC_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
 
-#include <type_traits>
+namespace pytra::std::dataclasses {
 
-namespace pytra::cpp_module::dataclasses {
 
-struct DataclassTag {};
+}  // namespace pytra::std::dataclasses
 
-template <typename T>
-constexpr T dataclass(T value) {
-    return value;
-}
-
-template <typename T>
-constexpr bool is_dataclass_v = ::std::is_base_of_v<DataclassTag, T>;
-
-}  // namespace pytra::cpp_module::dataclasses
-
-#endif  // PYTRA_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
+#endif  // SRC_RUNTIME_CPP_PYTRA_STD_DATACLASSES_H
