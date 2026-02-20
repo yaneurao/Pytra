@@ -8,7 +8,7 @@
    - [x] `math` 固有の分岐・マップ・例外処理が `src/profiles/cpp/runtime_calls.json` に残っていないことを確認し、残件を削除する。: `module_attr_call` を空化。
    - [x] `math` 固有の分岐・マップ・例外処理が生成補助スクリプト（`tools/`）に残っていないことを確認し、残件を削除する。: `math.cpp` 直書きリンクを全廃し `runtime/cpp` 自動列挙へ置換。
    - [x] 「モジュール名ベタ書きなし」で module attribute call を解決できる汎用経路を `py2cpp.py` に実装する。: map 未命中時に namespace 解決で `module.attr(...)` を生成。
-   - [ ] `src/pytra/runtime/std/math.py` から `src/runtime/cpp/pytra/std/math.h` / `math.cpp` を自動生成し、生成差分が再現可能であることを確認する。
+   - [x] `src/pytra/runtime/std/math.py` から `src/runtime/cpp/pytra/std/math.h` / `math.cpp` を自動生成し、生成差分が再現可能であることを確認する。: `tools/generate_cpp_pylib_runtime.py` で再生成後 `--check` を通過。
    - [x] `test/fixtures/stdlib/math_extended.py` を `py2cpp.py` で C++ 化し、コンパイル・実行まで通ることをゲート化する。: `PYTHONPATH=src python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_math_extended_runtime` を通過。
    - [ ] 上記完了後に `docs/how-to-use.md` / `docs/spec-dev.md` / `docs/spec-runtime.md` を `todo2` 準拠内容へ同期する。
 
