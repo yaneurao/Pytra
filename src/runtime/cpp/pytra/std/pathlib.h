@@ -1,13 +1,15 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/utils/std/pathlib.py
+// source: src/pytra/std/pathlib.py
 // generated-by: src/py2cpp.py
 
-#ifndef SRC_RUNTIME_CPP_PYTRA_STD_PATHLIB_H
-#define SRC_RUNTIME_CPP_PYTRA_STD_PATHLIB_H
+#ifndef PYTRA_STD_PATHLIB_H
+#define PYTRA_STD_PATHLIB_H
 
 namespace pytra::std::pathlib {
+
+struct Path;
 
 
 }  // namespace pytra::std::pathlib
 
-#endif  // SRC_RUNTIME_CPP_PYTRA_STD_PATHLIB_H
+#endif  // PYTRA_STD_PATHLIB_H

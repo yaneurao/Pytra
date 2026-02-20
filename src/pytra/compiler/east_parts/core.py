@@ -3745,6 +3745,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             field_types: dict[str, str] = {}
             class_body: list[dict[str, Any]] = []
             pending_method_decorators: list[str] = []
+            class_storage_hint_override = ""
             k = 0
             while k < len(class_block):
                 ln_no, ln_txt = class_block[k]
@@ -3773,6 +3774,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         k += 1
                     continue
                 if bind == cls_indent + 4:
+                    if s2.startswith("__pytra_class_storage_hint__") or s2.startswith("__pytra_storage_hint__"):
+                        parts = s2.split("=", 1)
+                        if len(parts) == 2:
+                            rhs = parts[1].strip()
+                            if rhs in {'"value"', "'value'"}:
+                                class_storage_hint_override = "value"
+                                k += 1
+                                continue
+                            if rhs in {'"ref"', "'ref'"}:
+                                class_storage_hint_override = "ref"
+                                k += 1
+                                continue
                     m_field = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", s2)
                     if m_field is not None:
                         fname = m_field.group(1)
@@ -3964,6 +3977,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     hint="Use field annotation or method definitions in class body.",
                 )
 
+            storage_hint_override = class_storage_hint_override
+
             cls_item = {
                 "kind": "ClassDef",
                 "name": cls_name,
@@ -3991,7 +4006,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             # conservative hint:
             # - classes with instance state / __del__ / inheritance should keep reference semantics
             # - stateless, non-inherited classes can be value candidates
-            if base in {"Enum", "IntEnum", "IntFlag"}:
+            if storage_hint_override != "":
+                cls_item["class_storage_hint"] = storage_hint_override
+            elif base in {"Enum", "IntEnum", "IntFlag"}:
                 cls_item["class_storage_hint"] = "value"
             elif len(instance_field_names) == 0 and not has_del and not isinstance(base, str):
                 cls_item["class_storage_hint"] = "value"

@@ -4018,6 +4018,10 @@ class CppEmitter(CodeEmitter):
         """正規化済み型名（str）を C++ 型名へマッピングする。"""
         if east_type == "":
             return "auto"
+        if east_type in self.ref_classes:
+            return f"rc<{east_type}>"
+        if east_type in self.class_names:
+            return east_type
         mapped = ""
         if east_type in self.type_map:
             mapped = self.type_map[east_type]
@@ -4051,10 +4055,6 @@ class CppEmitter(CodeEmitter):
                 if (not has_none) and len(non_none) == 1:
                     return self._cpp_type_text(non_none[0])
                 return "::std::any"
-        if east_type in self.ref_classes:
-            return f"rc<{east_type}>"
-        if east_type in self.class_names:
-            return east_type
         if east_type == "None":
             return "void"
         if east_type == "PyFile":

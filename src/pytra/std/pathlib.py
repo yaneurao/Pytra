@@ -6,40 +6,23 @@ from pytra.std import glob as py_glob
 from pytra.std import os
 
 
-class _PathParents:
-    def __init__(self, p: "Path") -> None:
-        self._path = p
-
-    def __getitem__(self, index: int) -> "Path":
-        if index < 0:
-            raise IndexError("negative index is not supported")
-        cur = self._path.parent
-        i = 0
-        while i < index:
-            cur = cur.parent
-            i += 1
-        return cur
-
-
 class Path:
-    def __init__(self, value: str | "Path") -> None:
-        if isinstance(value, Path):
-            self._value = value._value
-        else:
-            self._value = str(value)
+    __pytra_class_storage_hint__ = "value"
+
+    def __init__(self, value: str) -> None:
+        self._value = value
 
     def __str__(self) -> str:
         return self._value
 
     def __repr__(self) -> str:
-        return "Path(" + repr(self._value) + ")"
+        return "Path(" + self._value + ")"
 
     def __fspath__(self) -> str:
         return self._value
 
-    def __truediv__(self, rhs: str | "Path") -> "Path":
-        rhs_txt = str(rhs)
-        return Path(os.path.join(self._value, rhs_txt))
+    def __truediv__(self, rhs: str) -> "Path":
+        return Path(os.path.join(self._value, rhs))
 
     @property
     def parent(self) -> "Path":
@@ -49,8 +32,20 @@ class Path:
         return Path(parent_txt)
 
     @property
-    def parents(self) -> _PathParents:
-        return _PathParents(self)
+    def parents(self) -> list["Path"]:
+        out: list[Path] = []
+        current: str = os.path.dirname(self._value)
+        while True:
+            if current == "":
+                current = "."
+            out.append(Path(current))
+            next_current: str = os.path.dirname(current)
+            if next_current == "":
+                next_current = "."
+            if next_current == current:
+                break
+            current = next_current
+        return out
 
     @property
     def name(self) -> str:
@@ -58,11 +53,13 @@ class Path:
 
     @property
     def suffix(self) -> str:
-        return os.path.splitext(self.name)[1]
+        _, ext = os.path.splitext(os.path.basename(self._value))
+        return ext
 
     @property
     def stem(self) -> str:
-        return os.path.splitext(self.name)[0]
+        root, _ = os.path.splitext(os.path.basename(self._value))
+        return root
 
     def resolve(self) -> "Path":
         return Path(os.path.abspath(self._value))
@@ -74,11 +71,9 @@ class Path:
         if parents:
             os.makedirs(self._value, exist_ok=exist_ok)
             return
-        try:
-            os.mkdir(self._value)
-        except FileExistsError:
-            if not exist_ok:
-                raise
+        if exist_ok and os.path.exists(self._value):
+            return
+        os.mkdir(self._value)
 
     def read_text(self, encoding: str = "utf-8") -> str:
         with open(self._value, "r", encoding=encoding) as f:
@@ -89,8 +84,7 @@ class Path:
             return f.write(text)
 
     def glob(self, pattern: str) -> list["Path"]:
-        base = self._value
-        paths = py_glob.glob(os.path.join(base, pattern))
+        paths: list[str] = py_glob.glob(os.path.join(self._value, pattern))
         out: list[Path] = []
         for p in paths:
             out.append(Path(p))

@@ -2,6 +2,7 @@
 #define PYTRA_BUILT_IN_IO_H
 
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <type_traits>
 
@@ -21,9 +22,12 @@ public:
     bool is_open() const;
     void close();
 
-    template <class BytesLike>
+    ::std::size_t write(const ::std::string& text);
+    ::std::string read();
+
+    template <class BytesLike, class = ::std::enable_if_t<!::std::is_convertible_v<BytesLike, ::std::string>>>
     void write(const BytesLike& bytes_like) {
-        ensure_open();
+        ensure_writable();
         for (const auto& v : bytes_like) {
             ofs_.put(static_cast<char>(v));
         }
@@ -31,8 +35,13 @@ public:
 
 private:
     void ensure_open() const;
+    void ensure_writable() const;
+    void ensure_readable() const;
 
     ::std::ofstream ofs_;
+    ::std::ifstream ifs_;
+    bool readable_ = false;
+    bool writable_ = false;
 };
 
 PyFile open(const ::std::string& path, const ::std::string& mode);

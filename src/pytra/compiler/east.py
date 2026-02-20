@@ -12,7 +12,7 @@ if _bootstrap_src not in _bootstrap_sys.path:
 from pytra.std.pathlib import Path
 from pytra.std import sys
 
-src_root = Path(__file__).resolve().parents[2]
+src_root = Path(__file__).resolve().parent.parent
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 

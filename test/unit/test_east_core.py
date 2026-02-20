@@ -234,6 +234,27 @@ if __name__ == "__main__":
         bare = [r for r in returns if r.get("value") is None]
         self.assertGreaterEqual(len(bare), 1)
 
+    def test_class_storage_hint_override_is_supported(self) -> None:
+        src = """
+class Box:
+    __pytra_class_storage_hint__ = "value"
+
+    def __init__(self, x: int) -> None:
+        self.x = x
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        classes = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") == "Box"]
+        self.assertEqual(len(classes), 1)
+        cls = classes[0]
+        self.assertEqual(cls.get("class_storage_hint"), "value")
+        names = []
+        for st in cls.get("body", []):
+            if isinstance(st, dict) and st.get("kind") == "Assign":
+                tgt = st.get("target")
+                if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                    names.append(tgt.get("id"))
+        self.assertNotIn("__pytra_class_storage_hint__", names)
+
 
 if __name__ == "__main__":
     unittest.main()

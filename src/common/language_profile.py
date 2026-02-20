@@ -47,7 +47,7 @@ def _load_profile_with_includes(path: Path) -> dict[str, Any]:
 
 def load_language_profile(language: str) -> dict[str, Any]:
     """Load merged language profile by language name (e.g. cpp)."""
-    base = Path(__file__).resolve().parents[1] / "profiles"
+    base = Path(__file__).resolve().parent.parent / "profiles"
     common_core = base / "common" / "core.json"
     lang_profile = base / language / "profile.json"
 
