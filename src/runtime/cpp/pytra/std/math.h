@@ -3,8 +3,8 @@
 // generated-by: src/py2cpp.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
-#ifndef PYTRA_CPP_MODULE_MATH_H
-#define PYTRA_CPP_MODULE_MATH_H
+#ifndef SRC_RUNTIME_CPP_PYTRA_STD_MATH_H
+#define SRC_RUNTIME_CPP_PYTRA_STD_MATH_H
 
 #include <any>
 
@@ -41,4 +41,4 @@ namespace pytra {
 namespace math = core::math;
 }
 
-#endif  // PYTRA_CPP_MODULE_MATH_H
+#endif  // SRC_RUNTIME_CPP_PYTRA_STD_MATH_H

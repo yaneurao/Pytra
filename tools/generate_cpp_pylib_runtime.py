@@ -16,7 +16,6 @@ PNG_SOURCE = "src/pytra/runtime/png.py"
 GIF_SOURCE = "src/pytra/runtime/gif.py"
 ASSERTIONS_SOURCE = "src/pytra/runtime/assertions.py"
 EAST_SOURCE = "src/pytra/runtime/east.py"
-STD_MATH_SOURCE = "src/pytra/runtime/std/math.py"
 STD_TIME_SOURCE = "src/pytra/runtime/std/time.py"
 STD_PATHLIB_SOURCE = "src/pytra/runtime/std/pathlib.py"
 STD_DATACLASSES_SOURCE = "src/pytra/runtime/std/dataclasses.py"
@@ -290,7 +289,7 @@ def _std_typing_header_text() -> str:
 """
 
 
-def _extract_math_functions_from_transpiled(cpp_text: str) -> list[tuple[str, list[str]]]:
+def _extract_numeric_functions_from_transpiled(cpp_text: str) -> list[tuple[str, list[str]]]:
     funcs: list[tuple[str, list[str]]] = []
     for raw in cpp_text.splitlines():
         ln = raw.strip()
@@ -318,24 +317,54 @@ def _extract_math_functions_from_transpiled(cpp_text: str) -> list[tuple[str, li
                 items = part.split(" ")
                 params.append(items[-1].strip())
         funcs.append((fn_name, params))
-    if len(funcs) == 0:
-        raise RuntimeError("failed to extract math functions from py2cpp output")
     return funcs
 
 
-def _std_math_header_text(funcs: list[tuple[str, list[str]]]) -> str:
+def _extract_numeric_constants_from_transpiled(cpp_text: str) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    for raw in cpp_text.splitlines():
+        ln = raw.strip()
+        if not ln.startswith("std::any "):
+            continue
+        eq = ln.find("= make_object(")
+        if eq < 0:
+            continue
+        tail = ln[eq + len("= make_object(") :]
+        if not tail.endswith(");"):
+            continue
+        name = ln[len("std::any ") : eq].strip()
+        expr = tail[: len(tail) - 2].strip()
+        if name == "" or expr == "":
+            continue
+        out.append((name, expr))
+    return out
+
+
+def _header_guard_from_target(target_h_rel: str) -> str:
+    txt = target_h_rel.upper().replace("/", "_").replace(".", "_")
+    return txt
+
+
+def _std_numeric_header_text(
+    source_rel: str,
+    target_h_rel: str,
+    module_name: str,
+    funcs: list[tuple[str, list[str]]],
+    consts: list[tuple[str, str]],
+) -> str:
+    guard = _header_guard_from_target(target_h_rel)
     lines: list[str] = []
     lines.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
-    lines.append(f"// source: {STD_MATH_SOURCE}")
+    lines.append(f"// source: {source_rel}")
     lines.append("// generated-by: src/py2cpp.py")
     lines.append("// command: python3 tools/generate_cpp_pylib_runtime.py")
     lines.append("")
-    lines.append("#ifndef PYTRA_CPP_MODULE_MATH_H")
-    lines.append("#define PYTRA_CPP_MODULE_MATH_H")
+    lines.append(f"#ifndef {guard}")
+    lines.append(f"#define {guard}")
     lines.append("")
     lines.append("#include <any>")
     lines.append("")
-    lines.append("namespace pytra::core::math {")
+    lines.append(f"namespace pytra::core::{module_name} {{")
     lines.append("")
     for fn_name, params in funcs:
         ds = ", ".join([f"double {p}" for p in params])
@@ -345,32 +374,38 @@ def _std_math_header_text(funcs: list[tuple[str, list[str]]]) -> str:
             lines.append(f"double {fn_name}(const std::any& x);")
         elif len(params) == 2:
             lines.append(f"double {fn_name}(const std::any& x, const std::any& y);")
-    lines.append("extern const double pi;")
-    lines.append("extern const double e;")
+    for name, _expr in consts:
+        lines.append(f"extern const double {name};")
     lines.append("")
-    lines.append("}  // namespace pytra::core::math")
+    lines.append(f"}}  // namespace pytra::core::{module_name}")
     lines.append("")
     lines.append("namespace pytra {")
-    lines.append("namespace math = core::math;")
+    lines.append(f"namespace {module_name} = core::{module_name};")
     lines.append("}")
     lines.append("")
-    lines.append("#endif  // PYTRA_CPP_MODULE_MATH_H")
+    lines.append(f"#endif  // {guard}")
     lines.append("")
     return "\n".join(lines)
 
 
-def _std_math_cpp_text(funcs: list[tuple[str, list[str]]]) -> str:
+def _std_numeric_cpp_text(
+    source_rel: str,
+    target_h_rel: str,
+    module_name: str,
+    funcs: list[tuple[str, list[str]]],
+    consts: list[tuple[str, str]],
+) -> str:
     lines: list[str] = []
     lines.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
-    lines.append(f"// source: {STD_MATH_SOURCE}")
+    lines.append(f"// source: {source_rel}")
     lines.append("// generated-by: src/py2cpp.py")
     lines.append("// command: python3 tools/generate_cpp_pylib_runtime.py")
     lines.append("")
     lines.append("#include <cmath>")
     lines.append("")
-    lines.append('#include "runtime/cpp/pytra/std/math.h"')
+    lines.append(f'#include "{target_h_rel.replace("src/", "")}"')
     lines.append("")
-    lines.append("namespace pytra::core::math {")
+    lines.append(f"namespace pytra::core::{module_name} {{")
     lines.append("")
     lines.append("static double any_to_double(const std::any& v) {")
     lines.append("    if (const auto* p = std::any_cast<double>(&v)) return *p;")
@@ -385,8 +420,8 @@ def _std_math_cpp_text(funcs: list[tuple[str, list[str]]]) -> str:
     lines.append("    return 0.0;")
     lines.append("}")
     lines.append("")
-    lines.append("const double pi = 3.14159265358979323846;")
-    lines.append("const double e = 2.71828182845904523536;")
+    for name, expr in consts:
+        lines.append(f"const double {name} = {expr};")
     lines.append("")
     for fn_name, params in funcs:
         ds = ", ".join([f"double {p}" for p in params])
@@ -399,9 +434,24 @@ def _std_math_cpp_text(funcs: list[tuple[str, list[str]]]) -> str:
         elif len(params) == 2:
             lines.append(f"double {fn_name}(const std::any& x, const std::any& y) {{ return {fn_name}(any_to_double(x), any_to_double(y)); }}")
     lines.append("")
-    lines.append("}  // namespace pytra::core::math")
+    lines.append(f"}}  // namespace pytra::core::{module_name}")
     lines.append("")
     return "\n".join(lines)
+
+
+def _discover_std_auto_numeric_modules() -> list[tuple[str, str, str, str]]:
+    out: list[tuple[str, str, str, str]] = []
+    std_dir = ROOT / "src" / "pytra" / "runtime" / "std"
+    skip = {"__init__", "time", "pathlib", "dataclasses", "sys", "json", "typing"}
+    for p in sorted(std_dir.glob("*.py")):
+        stem = p.stem
+        if stem in skip:
+            continue
+        src_rel = p.relative_to(ROOT).as_posix()
+        h_rel = f"src/runtime/cpp/pytra/std/{stem}.h"
+        cpp_rel = f"src/runtime/cpp/pytra/std/{stem}.cpp"
+        out.append((src_rel, h_rel, cpp_rel, stem))
+    return out
 
 def _std_time_header_text() -> str:
     return """// AUTO-GENERATED FILE. DO NOT EDIT.
@@ -776,12 +826,20 @@ def main() -> int:
 
     raw_png = transpile_to_cpp(PNG_SOURCE)
     raw_gif = transpile_to_cpp(GIF_SOURCE)
-    raw_math = transpile_to_cpp(STD_MATH_SOURCE)
-    math_funcs = _extract_math_functions_from_transpiled(raw_math)
     png_impl = normalize_generated_impl_text(raw_png, PNG_SOURCE)
     gif_impl = normalize_generated_impl_text(raw_gif, GIF_SOURCE)
     png_cpp = _png_wrapper_text(png_ns).replace("__PYTRA_PNG_IMPL__", _strip_runtime_include(png_impl).rstrip())
     gif_cpp = _gif_wrapper_text(gif_ns).replace("__PYTRA_GIF_IMPL__", _strip_runtime_include(gif_impl).rstrip())
+    auto_numeric_outputs: list[tuple[str, str]] = []
+    auto_numeric_mods = _discover_std_auto_numeric_modules()
+    for src_rel, h_rel, cpp_rel, mod_name in auto_numeric_mods:
+        raw_mod = transpile_to_cpp(src_rel)
+        funcs = _extract_numeric_functions_from_transpiled(raw_mod)
+        consts = _extract_numeric_constants_from_transpiled(raw_mod)
+        h_txt = _std_numeric_header_text(src_rel, h_rel, mod_name, funcs, consts)
+        cpp_txt = _std_numeric_cpp_text(src_rel, h_rel, mod_name, funcs, consts)
+        auto_numeric_outputs.append((h_rel, h_txt))
+        auto_numeric_outputs.append((cpp_rel, cpp_txt))
     outputs: list[tuple[str, str]] = [
         ("src/runtime/cpp/pytra/runtime/assertions.h", _runtime_assertions_header_text()),
         ("src/runtime/cpp/pytra/runtime/east.h", _runtime_east_header_text()),
@@ -791,8 +849,6 @@ def main() -> int:
         ("src/runtime/cpp/pytra/runtime/gif.cpp", gif_cpp),
         ("src/runtime/cpp/pytra/std/json.h", _std_json_header_text()),
         ("src/runtime/cpp/pytra/std/typing.h", _std_typing_header_text()),
-        ("src/runtime/cpp/pytra/std/math.h", _std_math_header_text(math_funcs)),
-        ("src/runtime/cpp/pytra/std/math.cpp", _std_math_cpp_text(math_funcs)),
         ("src/runtime/cpp/pytra/std/time.h", _std_time_header_text()),
         ("src/runtime/cpp/pytra/std/time.cpp", _std_time_cpp_text()),
         ("src/runtime/cpp/pytra/std/dataclasses.h", _std_dataclasses_header_text()),
@@ -802,6 +858,7 @@ def main() -> int:
         ("src/runtime/cpp/pytra/std/pathlib.h", _std_pathlib_header_text()),
         ("src/runtime/cpp/pytra/std/pathlib.cpp", _std_pathlib_cpp_text()),
     ]
+    outputs.extend(auto_numeric_outputs)
     for target_rel, text in outputs:
         if write_or_check(target_rel, text.rstrip() + "\n", args.check):
             changed = True

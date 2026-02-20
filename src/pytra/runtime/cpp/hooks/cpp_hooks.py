@@ -65,6 +65,9 @@ def _looks_like_runtime_symbol(name: str) -> bool:
         return True
     if name.startswith("py_"):
         return True
+    ch0 = name[0:1]
+    if ch0 != "" and ((ch0 >= "0" and ch0 <= "9") or ch0 == "-" or ch0 == "+"):
+        return True
     return False
 
 

@@ -5,11 +5,14 @@
 1. [ ] `docs/todo2.md` の MUST を満たす。
    - [ ] `src/runtime/cpp/pytra/` 配下の全ファイルを `src/pytra/runtime/` から `py2cpp.py` により生成する構成へ統一する。
    - [ ] `src/runtime/cpp/pytra/std/*` の生成元・配置方針を `todo2.md` に合わせて再設計する（手書き/別経路生成を禁止）。
+   - [x] `math.h / math.cpp` 固有の生成処理を撤去する（`src/py2cpp.py`, `tools/generate_cpp_pylib_runtime.py` の専用分岐/専用関数を削除）。
+   - [x] `std/math` だけを特別扱いしない、汎用の `src/pytra/runtime/**/*.py -> runtime/cpp/pytra/**` 生成経路へ統一する。: `tools/generate_cpp_pylib_runtime.py` で `src/pytra/runtime/std/*.py` 自動検出（skip list 以外）へ変更済み。
+   - [ ] `runtime/cpp/pytra` 生成で「モジュール名ベタ書き分岐」が残っていないことを確認する（`math.h` / `math.cpp` を含む）。
    - [x] `src/runtime/cpp/pytra/runtime/assertions.h`, `src/runtime/cpp/pytra/runtime/east.h`, `src/runtime/cpp/pytra/std/json.h`, `src/runtime/cpp/pytra/std/typing.h` の手書きスタブを廃止し、生成物へ置換する。
    - [x] `python3 src/py2cpp.py src/pytra/runtime/<mod>.py -o ...` 実行だけで `src/runtime/cpp/pytra/` 全体が更新されることを検証する。
    - [x] `src/pytra/runtime/**/*.py` が self_hosted parser で受理されることを確認する（`import *` 廃止、引数型注釈不足の解消、`!r` 非対応回避）。
    - [x] `test/fixtures/stdlib/math_extended.py` 相当の C++ 実行検証を確認する（`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_math_extended_runtime`）。
-   - [x] `src/runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/runtime/std/math.py` を `src/py2cpp.py` で解釈した結果（関数シグネチャ抽出）から生成する。
+   - [x] `src/runtime/cpp/pytra/std/math.h` / `math.cpp` が `src/pytra/runtime/std/math.py` の parse 結果に基づいて生成されることを、固有処理なしで再検証する。: `python3 tools/generate_cpp_pylib_runtime.py --check` と `python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_math_extended_runtime` を通過。
    - [x] 上記完了後、関連ドキュメント（`docs/how-to-use.md`, `docs/spec-dev.md`, `docs/spec-runtime.md`）を同期する。
 
 ## 優先方針（2026-02-19 更新）

@@ -154,30 +154,34 @@ DEFAULT_AUG_BIN = {
 def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
     out["math"] = {
-        "sqrt": "py_math::sqrt",
-        "sin": "py_math::sin",
-        "cos": "py_math::cos",
-        "tan": "py_math::tan",
-        "exp": "py_math::exp",
-        "log": "py_math::log",
-        "log10": "py_math::log10",
-        "fabs": "py_math::fabs",
-        "floor": "py_math::floor",
-        "ceil": "py_math::ceil",
-        "pow": "py_math::pow",
+        "sqrt": "std::sqrt",
+        "sin": "std::sin",
+        "cos": "std::cos",
+        "tan": "std::tan",
+        "exp": "std::exp",
+        "log": "std::log",
+        "log10": "std::log10",
+        "fabs": "std::fabs",
+        "floor": "std::floor",
+        "ceil": "std::ceil",
+        "pow": "std::pow",
+        "pi": "3.14159265358979323846",
+        "e": "2.71828182845904523536",
     }
     out["pytra.std.math"] = {
-        "sqrt": "py_math::sqrt",
-        "sin": "py_math::sin",
-        "cos": "py_math::cos",
-        "tan": "py_math::tan",
-        "exp": "py_math::exp",
-        "log": "py_math::log",
-        "log10": "py_math::log10",
-        "fabs": "py_math::fabs",
-        "floor": "py_math::floor",
-        "ceil": "py_math::ceil",
-        "pow": "py_math::pow",
+        "sqrt": "std::sqrt",
+        "sin": "std::sin",
+        "cos": "std::cos",
+        "tan": "std::tan",
+        "exp": "std::exp",
+        "log": "std::log",
+        "log10": "std::log10",
+        "fabs": "std::fabs",
+        "floor": "std::floor",
+        "ceil": "std::ceil",
+        "pow": "std::pow",
+        "pi": "3.14159265358979323846",
+        "e": "2.71828182845904523536",
     }
     out["pytra.runtime.png"] = {
         "write_rgb_png": "pytra::png::write_rgb_png_py",
@@ -2765,11 +2769,6 @@ class CppEmitter(CodeEmitter):
                 return f"{base}::{attr}"
             base_module_name = self._resolve_imported_module_name(base)
             base_module_name = self._normalize_runtime_module_name(base_module_name)
-            if base_module_name in {"math", "pytra.std.math"}:
-                if attr == "pi":
-                    return "py_math::pi"
-                if attr == "e":
-                    return "py_math::e"
             if base_module_name in {"typing", "pytra.std.typing"}:
                 if attr in {
                     "Any",
