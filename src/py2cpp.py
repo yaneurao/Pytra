@@ -206,13 +206,6 @@ DEFAULT_AUG_BIN = {
     "RShift": ">>",
 }
 
-def _copy_str_map(src: dict[str, str]) -> dict[str, str]:
-    out: dict[str, str] = {}
-    for k, v in src.items():
-        out[k] = v
-    return out
-
-
 def _map_get_str(src: dict[str, str], key: str) -> str:
     """dict[str, str] から文字列値を安全に取得する。"""
     v = src.get(key)
@@ -385,22 +378,22 @@ def load_cpp_profile() -> dict[str, Any]:
 
 def load_cpp_bin_ops() -> dict[str, str]:
     """C++ 用二項演算子マップを返す。"""
-    return _copy_str_map(DEFAULT_BIN_OPS)
+    return dict(DEFAULT_BIN_OPS)
 
 
 def load_cpp_cmp_ops() -> dict[str, str]:
     """C++ 用比較演算子マップを返す。"""
-    return _copy_str_map(DEFAULT_CMP_OPS)
+    return dict(DEFAULT_CMP_OPS)
 
 
 def load_cpp_aug_ops() -> dict[str, str]:
     """C++ 用複合代入演算子マップを返す。"""
-    return _copy_str_map(DEFAULT_AUG_OPS)
+    return dict(DEFAULT_AUG_OPS)
 
 
 def load_cpp_aug_bin() -> dict[str, str]:
     """C++ 用複合代入分解時の演算子マップを返す。"""
-    return _copy_str_map(DEFAULT_AUG_BIN)
+    return dict(DEFAULT_AUG_BIN)
 
 
 def load_cpp_type_map() -> dict[str, str]:
