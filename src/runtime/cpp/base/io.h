@@ -10,7 +10,7 @@ namespace pytra::runtime::cpp::base {
 class PyFile {
 public:
     PyFile() = default;
-    PyFile(const std::string& path, const std::string& mode);
+    PyFile(const ::std::string& path, const ::std::string& mode);
     ~PyFile();
 
     PyFile(const PyFile&) = delete;
@@ -32,10 +32,10 @@ public:
 private:
     void ensure_open() const;
 
-    std::ofstream ofs_;
+    ::std::ofstream ofs_;
 };
 
-PyFile open(const std::string& path, const std::string& mode);
+PyFile open(const ::std::string& path, const ::std::string& mode);
 
 }  // namespace pytra::runtime::cpp::base
 

@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -71,12 +73,12 @@ class list;
 
 namespace {namespace_cpp} {{
 
-void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels);
+void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels);
 void write_rgb_png_py(
     const str& path,
-    std::int64_t width,
-    std::int64_t height,
-    const list<std::uint8_t>& pixels
+    ::std::int64_t width,
+    ::std::int64_t height,
+    const list<::std::uint8_t>& pixels
 );
 
 }}  // namespace {namespace_cpp}
@@ -106,26 +108,26 @@ class list;
 
 namespace {namespace_cpp} {{
 
-std::vector<std::uint8_t> grayscale_palette();
-list<std::uint8_t> grayscale_palette_py();
+::std::vector<::std::uint8_t> grayscale_palette();
+list<::std::uint8_t> grayscale_palette_py();
 
 void save_gif(
-    const std::string& path,
+    const ::std::string& path,
     int width,
     int height,
-    const std::vector<std::vector<std::uint8_t>>& frames,
-    const std::vector<std::uint8_t>& palette,
+    const ::std::vector<::std::vector<::std::uint8_t>>& frames,
+    const ::std::vector<::std::uint8_t>& palette,
     int delay_cs = 4,
     int loop = 0
 );
 void save_gif_py(
     const str& path,
-    std::int64_t width,
-    std::int64_t height,
-    const list<list<std::uint8_t>>& frames,
-    const list<std::uint8_t>& palette,
-    std::int64_t delay_cs = 4,
-    std::int64_t loop = 0
+    ::std::int64_t width,
+    ::std::int64_t height,
+    const list<list<::std::uint8_t>>& frames,
+    const list<::std::uint8_t>& palette,
+    ::std::int64_t delay_cs = 4,
+    ::std::int64_t loop = 0
 );
 
 }}  // namespace {namespace_cpp}
@@ -151,16 +153,16 @@ namespace generated {{
 __PYTRA_PNG_IMPL__
 }}  // namespace generated
 
-void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels) {{
+void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels) {{
     const bytes raw(pixels.begin(), pixels.end());
     generated::write_rgb_png(str(path), int64(width), int64(height), raw);
 }}
 
 void write_rgb_png_py(
     const str& path,
-    std::int64_t width,
-    std::int64_t height,
-    const list<std::uint8_t>& pixels
+    ::std::int64_t width,
+    ::std::int64_t height,
+    const list<::std::uint8_t>& pixels
 ) {{
     generated::write_rgb_png(path, int64(width), int64(height), pixels);
 }}
@@ -182,21 +184,21 @@ namespace generated {{
 __PYTRA_GIF_IMPL__
 }}  // namespace generated
 
-std::vector<std::uint8_t> grayscale_palette() {{
+::std::vector<::std::uint8_t> grayscale_palette() {{
     const bytes raw = generated::grayscale_palette();
-    return std::vector<std::uint8_t>(raw.begin(), raw.end());
+    return ::std::vector<::std::uint8_t>(raw.begin(), raw.end());
 }}
 
-list<std::uint8_t> grayscale_palette_py() {{
+list<::std::uint8_t> grayscale_palette_py() {{
     return generated::grayscale_palette();
 }}
 
 void save_gif(
-    const std::string& path,
+    const ::std::string& path,
     int width,
     int height,
-    const std::vector<std::vector<std::uint8_t>>& frames,
-    const std::vector<std::uint8_t>& palette,
+    const ::std::vector<::std::vector<::std::uint8_t>>& frames,
+    const ::std::vector<::std::uint8_t>& palette,
     int delay_cs,
     int loop
 ) {{
@@ -219,12 +221,12 @@ void save_gif(
 
 void save_gif_py(
     const str& path,
-    std::int64_t width,
-    std::int64_t height,
-    const list<list<std::uint8_t>>& frames,
-    const list<std::uint8_t>& palette,
-    std::int64_t delay_cs,
-    std::int64_t loop
+    ::std::int64_t width,
+    ::std::int64_t height,
+    const list<list<::std::uint8_t>>& frames,
+    const list<::std::uint8_t>& palette,
+    ::std::int64_t delay_cs,
+    ::std::int64_t loop
 ) {{
     generated::save_gif(path, int64(width), int64(height), frames, palette, int64(delay_cs), int64(loop));
 }}
@@ -329,7 +331,7 @@ def _extract_public_constants_from_transpiled(cpp_text: str) -> list[tuple[str, 
     out: list[tuple[str, str]] = []
     for raw in cpp_text.splitlines():
         ln = raw.strip()
-        if not ln.startswith("std::any "):
+        if (not ln.startswith("std::any ")) and (not ln.startswith("::std::any ")):
             continue
         eq = ln.find("= make_object(")
         if eq < 0:
@@ -337,11 +339,64 @@ def _extract_public_constants_from_transpiled(cpp_text: str) -> list[tuple[str, 
         tail = ln[eq + len("= make_object(") :]
         if not tail.endswith(");"):
             continue
-        name = ln[len("std::any ") : eq].strip()
+        prefix_len = len("std::any ")
+        if ln.startswith("::std::any "):
+            prefix_len = len("::std::any ")
+        name = ln[prefix_len:eq].strip()
         expr = tail[: len(tail) - 2].strip()
         if name == "" or expr == "":
             continue
         out.append((name, expr))
+    return out
+
+
+def _load_module_from_source(source_rel: str) -> object | None:
+    """`source_rel` の Python モジュールを一時名で読み込む。"""
+    src_path = ROOT / source_rel
+    if not src_path.exists():
+        return None
+    module_name = "_pytra_gen_" + source_rel.replace("/", "_").replace(".", "_")
+    spec = importlib.util.spec_from_file_location(module_name, src_path)
+    if spec is None or spec.loader is None:
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    src_root = str(ROOT / "src")
+    added = False
+    if src_root not in sys.path:
+        sys.path.insert(0, src_root)
+        added = True
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        if added and len(sys.path) > 0 and sys.path[0] == src_root:
+            sys.path.pop(0)
+    return mod
+
+
+def _python_value_to_cpp_literal(v: object) -> str:
+    """Python 値を C++ リテラルへ変換する（汎用）。"""
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, int) and not isinstance(v, bool):
+        return str(v)
+    if isinstance(v, float):
+        return repr(v)
+    return ""
+
+
+def _resolve_constant_exprs_from_source(source_rel: str, consts: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """抽出定数に対し、Python モジュール値が得られる場合はリテラルで上書きする。"""
+    mod = _load_module_from_source(source_rel)
+    if mod is None:
+        return consts
+    out: list[tuple[str, str]] = []
+    for name, expr in consts:
+        new_expr = expr
+        if hasattr(mod, name):
+            lit = _python_value_to_cpp_literal(getattr(mod, name))
+            if lit != "":
+                new_expr = lit
+        out.append((name, new_expr))
     return out
 
 
@@ -369,24 +424,20 @@ def _std_auto_module_header_text(
     lines.append("")
     lines.append("#include <any>")
     lines.append("")
-    lines.append(f"namespace pytra::core::{module_name} {{")
+    lines.append(f"namespace pytra::std::{module_name} {{")
     lines.append("")
     for fn_name, params in funcs:
         ds = ", ".join([f"double {p}" for p in params])
         lines.append(f"double {fn_name}({ds});")
     for fn_name, params in funcs:
         if len(params) == 1:
-            lines.append(f"double {fn_name}(const std::any& x);")
+            lines.append(f"double {fn_name}(const ::std::any& x);")
         elif len(params) == 2:
-            lines.append(f"double {fn_name}(const std::any& x, const std::any& y);")
+            lines.append(f"double {fn_name}(const ::std::any& x, const ::std::any& y);")
     for name, _expr in consts:
         lines.append(f"extern const double {name};")
     lines.append("")
-    lines.append(f"}}  // namespace pytra::core::{module_name}")
-    lines.append("")
-    lines.append("namespace pytra {")
-    lines.append(f"namespace {module_name} = core::{module_name};")
-    lines.append("}")
+    lines.append(f"}}  // namespace pytra::std::{module_name}")
     lines.append("")
     lines.append(f"#endif  // {guard}")
     lines.append("")
@@ -410,18 +461,18 @@ def _std_auto_module_cpp_text(
     lines.append("")
     lines.append(f'#include "{target_h_rel.replace("src/", "")}"')
     lines.append("")
-    lines.append(f"namespace pytra::core::{module_name} {{")
+    lines.append(f"namespace pytra::std::{module_name} {{")
     lines.append("")
-    lines.append("static double any_to_double(const std::any& v) {")
-    lines.append("    if (const auto* p = std::any_cast<double>(&v)) return *p;")
-    lines.append("    if (const auto* p = std::any_cast<float>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = std::any_cast<long long>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = std::any_cast<unsigned long long>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = std::any_cast<long>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = std::any_cast<unsigned long>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = std::any_cast<int>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = std::any_cast<unsigned>(&v)) return static_cast<double>(*p);")
-    lines.append("    if (const auto* p = std::any_cast<bool>(&v)) return *p ? 1.0 : 0.0;")
+    lines.append("static double any_to_double(const ::std::any& v) {")
+    lines.append("    if (const auto* p = ::std::any_cast<double>(&v)) return *p;")
+    lines.append("    if (const auto* p = ::std::any_cast<float>(&v)) return static_cast<double>(*p);")
+    lines.append("    if (const auto* p = ::std::any_cast<long long>(&v)) return static_cast<double>(*p);")
+    lines.append("    if (const auto* p = ::std::any_cast<unsigned long long>(&v)) return static_cast<double>(*p);")
+    lines.append("    if (const auto* p = ::std::any_cast<long>(&v)) return static_cast<double>(*p);")
+    lines.append("    if (const auto* p = ::std::any_cast<unsigned long>(&v)) return static_cast<double>(*p);")
+    lines.append("    if (const auto* p = ::std::any_cast<int>(&v)) return static_cast<double>(*p);")
+    lines.append("    if (const auto* p = ::std::any_cast<unsigned>(&v)) return static_cast<double>(*p);")
+    lines.append("    if (const auto* p = ::std::any_cast<bool>(&v)) return *p ? 1.0 : 0.0;")
     lines.append("    return 0.0;")
     lines.append("}")
     lines.append("")
@@ -431,15 +482,15 @@ def _std_auto_module_cpp_text(
     for fn_name, params in funcs:
         ds = ", ".join([f"double {p}" for p in params])
         call_args = ", ".join(params)
-        lines.append(f"double {fn_name}({ds}) {{ return std::{fn_name}({call_args}); }}")
+        lines.append(f"double {fn_name}({ds}) {{ return ::std::{fn_name}({call_args}); }}")
     lines.append("")
     for fn_name, params in funcs:
         if len(params) == 1:
-            lines.append(f"double {fn_name}(const std::any& x) {{ return {fn_name}(any_to_double(x)); }}")
+            lines.append(f"double {fn_name}(const ::std::any& x) {{ return {fn_name}(any_to_double(x)); }}")
         elif len(params) == 2:
-            lines.append(f"double {fn_name}(const std::any& x, const std::any& y) {{ return {fn_name}(any_to_double(x), any_to_double(y)); }}")
+            lines.append(f"double {fn_name}(const ::std::any& x, const ::std::any& y) {{ return {fn_name}(any_to_double(x), any_to_double(y)); }}")
     lines.append("")
-    lines.append(f"}}  // namespace pytra::core::{module_name}")
+    lines.append(f"}}  // namespace pytra::std::{module_name}")
     lines.append("")
     return "\n".join(lines)
 
@@ -488,8 +539,8 @@ def _std_time_cpp_text() -> str:
 namespace pytra::cpp_module {
 
 double perf_counter() {
-    using Clock = std::chrono::steady_clock;
-    using Seconds = std::chrono::duration<double>;
+    using Clock = ::std::chrono::steady_clock;
+    using Seconds = ::std::chrono::duration<double>;
     return Seconds(Clock::now().time_since_epoch()).count();
 }
 
@@ -517,7 +568,7 @@ constexpr T dataclass(T value) {
 }
 
 template <typename T>
-constexpr bool is_dataclass_v = std::is_base_of_v<DataclassTag, T>;
+constexpr bool is_dataclass_v = ::std::is_base_of_v<DataclassTag, T>;
 
 }  // namespace pytra::cpp_module::dataclasses
 
@@ -550,10 +601,10 @@ namespace pytra::cpp_module {
 
 class SysPath {
 public:
-    void insert(int index, const std::string& value);
+    void insert(int index, const ::std::string& value);
 
 private:
-    std::vector<std::string> entries_;
+    ::std::vector<::std::string> entries_;
 };
 
 class SysModule {
@@ -583,8 +634,8 @@ def _std_sys_cpp_text() -> str:
 
 namespace pytra::cpp_module {
 
-void SysPath::insert(int index, const std::string& value) {
-    if (index < 0 || static_cast<std::size_t>(index) >= entries_.size()) {
+void SysPath::insert(int index, const ::std::string& value) {
+    if (index < 0 || static_cast<::std::size_t>(index) >= entries_.size()) {
         entries_.push_back(value);
         return;
     }
@@ -634,7 +685,7 @@ private:
 class PathParentsProxy {
 public:
     explicit PathParentsProxy(const Path* owner) : owner_(owner) {}
-    Path operator[](std::size_t index) const;
+    Path operator[](::std::size_t index) const;
 
 private:
     const Path* owner_;
@@ -643,12 +694,12 @@ private:
 class Path {
 public:
     Path() : parent(this), parents(this) {}
-    explicit Path(const std::string& value) : path_(value), parent(this), parents(this) {}
+    explicit Path(const ::std::string& value) : path_(value), parent(this), parents(this) {}
     explicit Path(const char* value) : path_(value), parent(this), parents(this) {}
-    explicit Path(std::filesystem::path value)
-        : path_(std::move(value)), parent(this), parents(this) {}
+    explicit Path(::std::filesystem::path value)
+        : path_(::std::move(value)), parent(this), parents(this) {}
     Path(const Path& other) : path_(other.path_), parent(this), parents(this) {}
-    Path(Path&& other) noexcept : path_(std::move(other.path_)), parent(this), parents(this) {}
+    Path(Path&& other) noexcept : path_(::std::move(other.path_)), parent(this), parents(this) {}
 
     Path& operator=(const Path& other) {
         if (this != &other) {
@@ -659,20 +710,20 @@ public:
 
     Path& operator=(Path&& other) noexcept {
         if (this != &other) {
-            path_ = std::move(other.path_);
+            path_ = ::std::move(other.path_);
         }
         return *this;
     }
 
     Path resolve() const {
-        return Path(std::filesystem::absolute(path_));
+        return Path(::std::filesystem::absolute(path_));
     }
 
     bool exists() const {
-        return std::filesystem::exists(path_);
+        return ::std::filesystem::exists(path_);
     }
 
-    Path operator/(const std::string& rhs) const {
+    Path operator/(const ::std::string& rhs) const {
         return Path(path_ / rhs);
     }
 
@@ -680,58 +731,58 @@ public:
         return Path(path_ / rhs);
     }
 
-    std::string string() const {
+    ::std::string string() const {
         return path_.string();
     }
 
-    std::string read_text(const std::string& /*encoding*/ = "utf-8") const {
-        std::ifstream ifs(path_);
+    ::std::string read_text(const ::std::string& /*encoding*/ = "utf-8") const {
+        ::std::ifstream ifs(path_);
         if (!ifs) {
-            throw std::runtime_error("read_text failed: " + path_.string());
+            throw ::std::runtime_error("read_text failed: " + path_.string());
         }
-        std::ostringstream oss;
+        ::std::ostringstream oss;
         oss << ifs.rdbuf();
         return oss.str();
     }
 
-    void write_text(const std::string& content, const std::string& /*encoding*/ = "utf-8") const {
-        std::ofstream ofs(path_);
+    void write_text(const ::std::string& content, const ::std::string& /*encoding*/ = "utf-8") const {
+        ::std::ofstream ofs(path_);
         if (!ofs) {
-            throw std::runtime_error("write_text failed: " + path_.string());
+            throw ::std::runtime_error("write_text failed: " + path_.string());
         }
         ofs << content;
     }
 
     void mkdir(bool parents_flag = false, bool exist_ok = false) const {
-        std::error_code ec;
+        ::std::error_code ec;
         if (parents_flag) {
-            std::filesystem::create_directories(path_, ec);
+            ::std::filesystem::create_directories(path_, ec);
         } else {
-            std::filesystem::create_directory(path_, ec);
+            ::std::filesystem::create_directory(path_, ec);
         }
         if (!exist_ok && ec) {
-            throw std::runtime_error("mkdir failed: " + ec.message());
+            throw ::std::runtime_error("mkdir failed: " + ec.message());
         }
     }
 
     Path* operator->() { return this; }
     const Path* operator->() const { return this; }
 
-    std::string name() const {
+    ::std::string name() const {
         return path_.filename().string();
     }
 
-    std::string stem() const {
+    ::std::string stem() const {
         return path_.stem().string();
     }
 
-    const std::filesystem::path& raw_path() const { return path_; }
+    const ::std::filesystem::path& raw_path() const { return path_; }
 
     PathParentProxy parent;
     PathParentsProxy parents;
 
 private:
-    std::filesystem::path path_;
+    ::std::filesystem::path path_;
 };
 
 inline Path* PathParentProxy::operator->() const {
@@ -744,15 +795,15 @@ inline Path PathParentProxy::operator()() const {
     return Path(owner_->raw_path().parent_path());
 }
 
-inline Path PathParentsProxy::operator[](std::size_t index) const {
-    std::filesystem::path cur = owner_->raw_path();
-    for (std::size_t i = 0; i <= index; ++i) {
+inline Path PathParentsProxy::operator[](::std::size_t index) const {
+    ::std::filesystem::path cur = owner_->raw_path();
+    for (::std::size_t i = 0; i <= index; ++i) {
         cur = cur.parent_path();
     }
     return Path(cur);
 }
 
-inline std::string str(const Path& p) {
+inline ::std::string str(const Path& p) {
     return p.string();
 }
 
@@ -785,12 +836,15 @@ def transpile_to_cpp(source_rel: str) -> str:
 
 
 def normalize_generated_impl_text(text: str, source_rel: str) -> str:
+    text_norm = text.replace("::std::", "__PYTRA_STD_SENTINEL__")
+    text_norm = text_norm.replace("std::", "::std::")
+    text_norm = text_norm.replace("__PYTRA_STD_SENTINEL__", "::std::")
     banner = (
         "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
         f"// source: {source_rel}\n"
         "// command: python3 tools/generate_cpp_pylib_runtime.py\n\n"
     )
-    return banner + text.rstrip() + "\n"
+    return banner + text_norm.rstrip() + "\n"
 
 
 def _strip_runtime_include(text: str) -> str:
@@ -841,6 +895,7 @@ def main() -> int:
         raw_mod = transpile_to_cpp(src_rel)
         funcs = _extract_public_functions_from_transpiled(raw_mod)
         consts = _extract_public_constants_from_transpiled(raw_mod)
+        consts = _resolve_constant_exprs_from_source(src_rel, consts)
         h_txt = _std_auto_module_header_text(src_rel, h_rel, mod_name, funcs, consts)
         cpp_txt = _std_auto_module_cpp_text(src_rel, h_rel, mod_name, funcs, consts)
         auto_std_outputs.append((h_rel, h_txt))

@@ -9,8 +9,8 @@
 namespace pytra::cpp_module {
 
 double perf_counter() {
-    using Clock = std::chrono::steady_clock;
-    using Seconds = std::chrono::duration<double>;
+    using Clock = ::std::chrono::steady_clock;
+    using Seconds = ::std::chrono::duration<double>;
     return Seconds(Clock::now().time_since_epoch()).count();
 }
 

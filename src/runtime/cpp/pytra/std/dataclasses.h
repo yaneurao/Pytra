@@ -17,7 +17,7 @@ constexpr T dataclass(T value) {
 }
 
 template <typename T>
-constexpr bool is_dataclass_v = std::is_base_of_v<DataclassTag, T>;
+constexpr bool is_dataclass_v = ::std::is_base_of_v<DataclassTag, T>;
 
 }  // namespace pytra::cpp_module::dataclasses
 

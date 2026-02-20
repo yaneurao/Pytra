@@ -7,7 +7,7 @@
 
 namespace pytra::runtime::cpp::base {
 
-std::vector<std::uint8_t> int_to_bytes(std::int64_t value, std::int64_t length, const std::string& byteorder);
+::std::vector<::std::uint8_t> int_to_bytes(::std::int64_t value, ::std::int64_t length, const ::std::string& byteorder);
 
 }  // namespace pytra::runtime::cpp::base
 

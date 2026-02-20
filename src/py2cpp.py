@@ -511,7 +511,7 @@ class CppEmitter(CodeEmitter):
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
             if tail != "":
-                return "pytra::" + tail.replace(".", "::")
+                return "pytra::std::" + tail.replace(".", "::")
             return ""
         if module_name_norm.startswith("pytra.runtime."):
             tail = module_name_norm[14:]

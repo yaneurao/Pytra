@@ -16,7 +16,7 @@ void incref(PyObj* obj) noexcept {
     if (obj == nullptr) {
         return;
     }
-    obj->ref_count_.fetch_add(1, std::memory_order_relaxed);
+    obj->ref_count_.fetch_add(1, ::std::memory_order_relaxed);
 }
 
 void decref(PyObj* obj) noexcept {
@@ -27,7 +27,7 @@ void decref(PyObj* obj) noexcept {
     }
 
     // oldは減算前の値。old==1なら今回のdecrefで0になる。
-    const uint32_t old = obj->ref_count_.fetch_sub(1, std::memory_order_acq_rel);
+    const uint32_t old = obj->ref_count_.fetch_sub(1, ::std::memory_order_acq_rel);
     assert(old > 0 && "decref underflow");
 
     if (old == 1) {

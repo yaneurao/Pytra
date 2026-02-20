@@ -13,10 +13,10 @@ namespace pytra::cpp_module {
 
 class SysPath {
 public:
-    void insert(int index, const std::string& value);
+    void insert(int index, const ::std::string& value);
 
 private:
-    std::vector<std::string> entries_;
+    ::std::vector<::std::string> entries_;
 };
 
 class SysModule {

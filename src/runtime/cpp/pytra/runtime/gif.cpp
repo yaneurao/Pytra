@@ -146,21 +146,21 @@ void save_gif(const str& path, int64 width, int64 height, const list<bytes>& fra
 }
 }  // namespace generated
 
-std::vector<std::uint8_t> grayscale_palette() {
+::std::vector<::std::uint8_t> grayscale_palette() {
     const bytes raw = generated::grayscale_palette();
-    return std::vector<std::uint8_t>(raw.begin(), raw.end());
+    return ::std::vector<::std::uint8_t>(raw.begin(), raw.end());
 }
 
-list<std::uint8_t> grayscale_palette_py() {
+list<::std::uint8_t> grayscale_palette_py() {
     return generated::grayscale_palette();
 }
 
 void save_gif(
-    const std::string& path,
+    const ::std::string& path,
     int width,
     int height,
-    const std::vector<std::vector<std::uint8_t>>& frames,
-    const std::vector<std::uint8_t>& palette,
+    const ::std::vector<::std::vector<::std::uint8_t>>& frames,
+    const ::std::vector<::std::uint8_t>& palette,
     int delay_cs,
     int loop
 ) {
@@ -183,12 +183,12 @@ void save_gif(
 
 void save_gif_py(
     const str& path,
-    std::int64_t width,
-    std::int64_t height,
-    const list<list<std::uint8_t>>& frames,
-    const list<std::uint8_t>& palette,
-    std::int64_t delay_cs,
-    std::int64_t loop
+    ::std::int64_t width,
+    ::std::int64_t height,
+    const list<list<::std::uint8_t>>& frames,
+    const list<::std::uint8_t>& palette,
+    ::std::int64_t delay_cs,
+    ::std::int64_t loop
 ) {
     generated::save_gif(path, int64(width), int64(height), frames, palette, int64(delay_cs), int64(loop));
 }

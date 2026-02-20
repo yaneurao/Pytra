@@ -101,7 +101,7 @@ void write_rgb_png(const str& path, int64 width, int64 height, const bytes& pixe
     bytes raw = bytes(pixels);
     int64 expected = width * height * 3;
     if (py_len(raw) != expected)
-        throw ValueError("pixels length mismatch: got=" + std::to_string(py_len(raw)) + " expected=" + std::to_string(expected));
+        throw ValueError("pixels length mismatch: got=" + ::std::to_string(py_len(raw)) + " expected=" + ::std::to_string(expected));
     
     bytearray scanlines = bytearray{};
     int64 row_bytes = width * 3;
@@ -133,16 +133,16 @@ void write_rgb_png(const str& path, int64 width, int64 height, const bytes& pixe
 }
 }  // namespace generated
 
-void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels) {
+void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels) {
     const bytes raw(pixels.begin(), pixels.end());
     generated::write_rgb_png(str(path), int64(width), int64(height), raw);
 }
 
 void write_rgb_png_py(
     const str& path,
-    std::int64_t width,
-    std::int64_t height,
-    const list<std::uint8_t>& pixels
+    ::std::int64_t width,
+    ::std::int64_t height,
+    const list<::std::uint8_t>& pixels
 ) {
     generated::write_rgb_png(path, int64(width), int64(height), pixels);
 }

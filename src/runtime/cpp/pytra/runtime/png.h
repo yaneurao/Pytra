@@ -14,12 +14,12 @@ class list;
 
 namespace pytra::runtime::png {
 
-void write_rgb_png(const std::string& path, int width, int height, const std::vector<std::uint8_t>& pixels);
+void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels);
 void write_rgb_png_py(
     const str& path,
-    std::int64_t width,
-    std::int64_t height,
-    const list<std::uint8_t>& pixels
+    ::std::int64_t width,
+    ::std::int64_t height,
+    const list<::std::uint8_t>& pixels
 );
 
 }  // namespace pytra::runtime::png

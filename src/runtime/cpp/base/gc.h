@@ -28,7 +28,7 @@ public:
     virtual ~PyObj() = default;
 
     uint32_t ref_count() const noexcept {
-        return ref_count_.load(std::memory_order_acquire);
+        return ref_count_.load(::std::memory_order_acquire);
     }
 
     uint32_t type_id() const noexcept {
@@ -46,7 +46,7 @@ private:
     friend void incref(PyObj* obj) noexcept;
     friend void decref(PyObj* obj) noexcept;
 
-    std::atomic<uint32_t> ref_count_;
+    ::std::atomic<uint32_t> ref_count_;
     uint32_t type_id_;
 };
 
@@ -63,8 +63,8 @@ void decref(PyObj* obj) noexcept;
  */
 template <class T, class... Args>
 T* rc_new(Args&&... args) {
-    static_assert(std::is_base_of_v<PyObj, T>, "T must derive from PyObj");
-    return new T(std::forward<Args>(args)...);
+    static_assert(::std::is_base_of_v<PyObj, T>, "T must derive from PyObj");
+    return new T(::std::forward<Args>(args)...);
 }
 
 template <class T>
@@ -73,7 +73,7 @@ public:
     RcHandle() = default;
 
     explicit RcHandle(T* ptr, bool add_ref = true) : ptr_(ptr) {
-        static_assert(std::is_base_of_v<PyObj, T>, "T must derive from PyObj");
+        static_assert(::std::is_base_of_v<PyObj, T>, "T must derive from PyObj");
         if (ptr_ != nullptr && add_ref) {
             incref(ptr_);
         }
