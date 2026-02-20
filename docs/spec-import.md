@@ -43,7 +43,6 @@ namespace的なものを変数名のprefixとしてくっつけておくとい�
 
 ## 追記: 懸念事項
 
-- 参照先ドキュメント名は `docs/specruntime.md` ではなく `docs/spec-runtime.md`。
 - 現行仕様（`docs/spec-dev.md`）では `from module import *` は未対応。ここを先に対応対象にするか、`input_invalid` を維持するかを明示したほうがよい。
 - `#include` だけでは C++ 上の可視性制御はできないため、`from X import Y` の制約は変換器の名前解決で保証する必要がある。
 - `from X import Y` で許可するシンボル種別（関数/クラス/定数/変数）と、`X.Y` 参照の扱い（許可/不許可）を仕様で固定する必要がある。
