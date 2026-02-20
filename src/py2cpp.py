@@ -3566,6 +3566,108 @@ class CppEmitter(CodeEmitter):
         test_expr = self.render_expr(expr.get("test"))
         return f"({test_expr} ? {body} : {orelse})"
 
+    def _render_name_expr(self, expr_d: dict[str, Any]) -> str:
+        """Name ノードを C++ 式へ変換する。"""
+        name_txt = self.any_dict_get_str(expr_d, "id", "")
+        if name_txt == "self" and self.current_class_name is not None and not self.is_declared("self"):
+            return "*this"
+        return self.render_name_ref(
+            expr_d,
+            self.reserved_words,
+            self.rename_prefix,
+            self.renamed_symbols,
+            "_",
+        )
+
+    def _render_constant_expr(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        """Constant ノードを C++ リテラル式へ変換する。"""
+        v = expr_d.get("value")
+        raw_repr = self.any_to_str(expr_d.get("repr"))
+        if raw_repr != "" and not isinstance(v, bool) and v is not None and not isinstance(v, str):
+            return raw_repr
+        if isinstance(v, bool):
+            return "true" if str(v) == "True" else "false"
+        if v is None:
+            t = self.get_expr_type(expr)
+            if self.is_any_like_type(t):
+                return "make_object(1)"
+            return "::std::nullopt"
+        if isinstance(v, str):
+            v_txt: str = str(v)
+            if self.get_expr_type(expr) == "bytes":
+                raw = self.any_to_str(expr_d.get("repr"))
+                if raw != "":
+                    qpos = -1
+                    i = 0
+                    while i < len(raw):
+                        if raw[i] in {'"', "'"}:
+                            qpos = i
+                            break
+                        i += 1
+                    if qpos >= 0:
+                        return f"py_bytes_lit({raw[qpos:]})"
+                return f"bytes({cpp_string_lit(v_txt)})"
+            return cpp_string_lit(v_txt)
+        return str(v)
+
+    def _render_attribute_expr(self, expr_d: dict[str, Any]) -> str:
+        """Attribute ノードを C++ 式へ変換する。"""
+        owner_t = self.get_expr_type(expr_d.get("value"))
+        if self.is_forbidden_object_receiver_type(owner_t):
+            raise RuntimeError(
+                "object receiver method call / attribute access is forbidden by language constraints"
+            )
+        base = self.render_expr(expr_d.get("value"))
+        base_node = self.any_to_dict_or_empty(expr_d.get("value"))
+        base_kind = self._node_kind_from_dict(base_node)
+        if base_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            base = f"({base})"
+        attr = self.any_to_str(expr_d.get("attr"))
+        if base == "self" or base == "*this":
+            if self.current_class_name is not None and str(attr) in self.current_class_static_fields:
+                return f"{self.current_class_name}::{attr}"
+            return f"this->{attr}"
+        # Class-name qualified member access in EAST uses dot syntax.
+        # Emit C++ scope resolution for static members/methods.
+        if base in self.class_base or base in self.class_method_names:
+            return f"{base}::{attr}"
+        # import モジュールの属性参照は map -> namespace の順で解決する。
+        base_module_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(base))
+        if base_module_name != "":
+            owner_keys: list[str] = [base_module_name]
+            short = self._last_dotted_name(base_module_name)
+            if short != base_module_name and not base_module_name.startswith("pytra."):
+                owner_keys.append(short)
+            for owner_key in owner_keys:
+                if owner_key in self.module_attr_call_map:
+                    owner_map = self.module_attr_call_map[owner_key]
+                    if attr in owner_map:
+                        mapped = owner_map[attr]
+                        if mapped != "":
+                            return mapped
+            ns = self._module_name_to_cpp_namespace(base_module_name)
+            if ns != "":
+                return f"{ns}::{attr}"
+        if base_kind == "Name":
+            base_name = self.any_to_str(base_node.get("id"))
+            if (
+                base_name != ""
+                and not self.is_declared(base_name)
+                and base_name not in self.import_modules
+                and base_name in self.import_symbol_modules
+            ):
+                src_obj = self.doc.get("source_path")
+                src = src_obj if isinstance(src_obj, str) and src_obj != "" else "(input)"
+                raise _make_user_error(
+                    "input_invalid",
+                    "from-import ではモジュール名は束縛されません。",
+                    [f"kind=missing_symbol file={src} import={base_name}.{attr}"],
+                )
+        bt = self.get_expr_type(expr_d.get("value"))
+        if bt in self.ref_classes:
+            return f"{base}->{attr}"
+        return f"{base}.{attr}"
+
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
         expr_d = self.any_to_dict_or_empty(expr)
@@ -3581,101 +3683,11 @@ class CppEmitter(CodeEmitter):
                 return hook_complex
 
         if kind == "Name":
-            name_txt = self.any_dict_get_str(expr_d, "id", "")
-            if name_txt == "self" and self.current_class_name is not None and not self.is_declared("self"):
-                return "*this"
-            return self.render_name_ref(
-                expr_d,
-                self.reserved_words,
-                self.rename_prefix,
-                self.renamed_symbols,
-                "_",
-            )
+            return self._render_name_expr(expr_d)
         if kind == "Constant":
-            v = expr_d.get("value")
-            raw_repr = self.any_to_str(expr_d.get("repr"))
-            if raw_repr != "" and not isinstance(v, bool) and v is not None and not isinstance(v, str):
-                return raw_repr
-            if isinstance(v, bool):
-                return "true" if str(v) == "True" else "false"
-            if v is None:
-                t = self.get_expr_type(expr)
-                if self.is_any_like_type(t):
-                    return "make_object(1)"
-                return "::std::nullopt"
-            if isinstance(v, str):
-                v_txt: str = str(v)
-                if self.get_expr_type(expr) == "bytes":
-                    raw = self.any_to_str(expr_d.get("repr"))
-                    if raw != "":
-                        qpos = -1
-                        i = 0
-                        while i < len(raw):
-                            if raw[i] in {'"', "'"}:
-                                qpos = i
-                                break
-                            i += 1
-                        if qpos >= 0:
-                            return f"py_bytes_lit({raw[qpos:]})"
-                    return f"bytes({cpp_string_lit(v_txt)})"
-                return cpp_string_lit(v_txt)
-            return str(v)
+            return self._render_constant_expr(expr, expr_d)
         if kind == "Attribute":
-            owner_t = self.get_expr_type(expr_d.get("value"))
-            if self.is_forbidden_object_receiver_type(owner_t):
-                raise RuntimeError(
-                    "object receiver method call / attribute access is forbidden by language constraints"
-                )
-            base = self.render_expr(expr_d.get("value"))
-            base_node = self.any_to_dict_or_empty(expr_d.get("value"))
-            base_kind = self._node_kind_from_dict(base_node)
-            if base_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-                base = f"({base})"
-            attr = self.any_to_str(expr_d.get("attr"))
-            if base == "self" or base == "*this":
-                if self.current_class_name is not None and str(attr) in self.current_class_static_fields:
-                    return f"{self.current_class_name}::{attr}"
-                return f"this->{attr}"
-            # Class-name qualified member access in EAST uses dot syntax.
-            # Emit C++ scope resolution for static members/methods.
-            if base in self.class_base or base in self.class_method_names:
-                return f"{base}::{attr}"
-            # import モジュールの属性参照は map -> namespace の順で解決する。
-            base_module_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(base))
-            if base_module_name != "":
-                owner_keys: list[str] = [base_module_name]
-                short = self._last_dotted_name(base_module_name)
-                if short != base_module_name and not base_module_name.startswith("pytra."):
-                    owner_keys.append(short)
-                for owner_key in owner_keys:
-                    if owner_key in self.module_attr_call_map:
-                        owner_map = self.module_attr_call_map[owner_key]
-                        if attr in owner_map:
-                            mapped = owner_map[attr]
-                            if mapped != "":
-                                return mapped
-                ns = self._module_name_to_cpp_namespace(base_module_name)
-                if ns != "":
-                    return f"{ns}::{attr}"
-            if base_kind == "Name":
-                base_name = self.any_to_str(base_node.get("id"))
-                if (
-                    base_name != ""
-                    and not self.is_declared(base_name)
-                    and base_name not in self.import_modules
-                    and base_name in self.import_symbol_modules
-                ):
-                    src_obj = self.doc.get("source_path")
-                    src = src_obj if isinstance(src_obj, str) and src_obj != "" else "(input)"
-                    raise _make_user_error(
-                        "input_invalid",
-                        "from-import ではモジュール名は束縛されません。",
-                        [f"kind=missing_symbol file={src} import={base_name}.{attr}"],
-                    )
-            bt = self.get_expr_type(expr_d.get("value"))
-            if bt in self.ref_classes:
-                return f"{base}->{attr}"
-            return f"{base}.{attr}"
+            return self._render_attribute_expr(expr_d)
         if kind == "Call":
             call_parts: dict[str, Any] = self._prepare_call_parts(expr_d)
             fn = self.any_to_dict_or_empty(call_parts.get("fn"))
