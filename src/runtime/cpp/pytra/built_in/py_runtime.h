@@ -1660,10 +1660,6 @@ static inline void py_runtime_set_argv(const list<str>& values) {
     py_runtime_argv_storage() = values;
 }
 
-static inline void py_runtime_set_path(const list<str>& values) {
-    py_runtime_path_storage() = values;
-}
-
 static inline list<str> py_to_str_list_from_object(const object& obj) {
     list<str> out{};
     const list<object>* p = obj_to_list_ptr(obj);
