@@ -3543,6 +3543,9 @@ class CppEmitter(CodeEmitter):
                 return hook_complex
 
         if kind == "Name":
+            name_txt = self.any_dict_get_str(expr_d, "id", "")
+            if name_txt == "self" and self.current_class_name is not None and not self.is_declared("self"):
+                return "*this"
             return self.render_name_ref(
                 expr_d,
                 self.reserved_words,

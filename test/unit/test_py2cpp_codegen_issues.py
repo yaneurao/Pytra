@@ -87,6 +87,20 @@ class Py2CppCodegenIssueTest(unittest.TestCase):
             bad_lines.append(f"{line_no}: {line.strip()}")
         self.assertEqual([], bad_lines, "\n".join(bad_lines))
 
+    def test_method_bare_self_name_is_lowered_to_this_object(self) -> None:
+        src = """class Box:
+    def identity(self) -> "Box":
+        return self
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "bare_self.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return *this;", cpp)
+        self.assertNotIn("return self;", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()
