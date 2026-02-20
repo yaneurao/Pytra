@@ -16,9 +16,13 @@
 
 - [ ] 内包表記とラムダのテストを増やし、コード生成崩れを早期検知できるようにする。
   - [ ] 追加ケース: list/set/dict comprehension（if あり/なし）、lambda の即時呼び出し、lambda を変数へ代入して呼び出し。
+  - [x] 進捗: `lambda_immediate` / `comprehension_ifexp` fixture を追加し、対応 unit test を追加した。
+  - [ ] ブロッカー: `dict/set` comprehension は現在 C++ 生成で型不整合（`dict<int,...>` が `dict<str, object>` へ崩れる）を先に修正する必要がある。
   - [ ] 受け入れ条件: 追加した fixture が Python/C++ で一致し、`tools/check_py2cpp_transpile.py` が green。
 
 - [ ] `import_pytra_runtime_png.png` 誤生成の原因を特定し、再発防止テストを追加する。
+  - [x] 原因候補を特定: `tools/runtime_parity_check.py` が repo 直下 `cwd` で fixture 実行しており、画像出力が作業ツリーへ漏れる。
+  - [x] 暫定対策: `runtime_parity_check` を一時作業ディレクトリ実行へ変更し、`cwd` 由来の出力漏れを抑止。
   - [ ] 再現条件（入力ファイル・コマンド・期待値）を `docs/spec-import.md` または `docs/todo.md` のメモに残す。
   - [ ] 受け入れ条件: 不要 png が生成されないことを自動テスト（または検査スクリプト）で確認。
 

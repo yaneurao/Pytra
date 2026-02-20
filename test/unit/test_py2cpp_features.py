@@ -1262,6 +1262,12 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_comprehension_ifexp_runtime(self) -> None:
+        out = self._compile_and_run_fixture("comprehension_ifexp")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
     def test_comprehension_range_step_like_runtime(self) -> None:
         out = self._compile_and_run_fixture("comprehension_range_step_like")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
@@ -1294,6 +1300,12 @@ if __name__ == "__main__":
 
     def test_lambda_as_arg_runtime(self) -> None:
         out = self._compile_and_run_fixture("lambda_as_arg")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_lambda_immediate_runtime(self) -> None:
+        out = self._compile_and_run_fixture("lambda_immediate")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
