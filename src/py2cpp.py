@@ -4466,6 +4466,87 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
         )
 
 
+def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path) -> dict[str, set[str]]:
+    """ユーザーモジュールの公開シンボル表（関数/クラス/代入名）を構築する。"""
+    out: dict[str, set[str]] = {}
+    for mod_key, east in module_east_map.items():
+        mod_name = _module_name_from_path(root, Path(mod_key))
+        if mod_name == "":
+            continue
+        body_obj = east.get("body")
+        body = body_obj if isinstance(body_obj, list) else []
+        exports: set[str] = set()
+        i = 0
+        while i < len(body):
+            st = body[i]
+            if isinstance(st, dict):
+                kind_obj = st.get("kind")
+                kind = kind_obj if isinstance(kind_obj, str) else ""
+                if kind == "FunctionDef" or kind == "ClassDef":
+                    name_obj = st.get("name")
+                    if isinstance(name_obj, str) and name_obj != "":
+                        exports.add(name_obj)
+                elif kind == "Assign":
+                    targets_obj = st.get("targets")
+                    targets = targets_obj if isinstance(targets_obj, list) else []
+                    j = 0
+                    while j < len(targets):
+                        tgt = targets[j]
+                        if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                            name_obj = tgt.get("id")
+                            if isinstance(name_obj, str) and name_obj != "":
+                                exports.add(name_obj)
+                        j += 1
+                elif kind == "AnnAssign":
+                    tgt = st.get("target")
+                    if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                        name_obj = tgt.get("id")
+                        if isinstance(name_obj, str) and name_obj != "":
+                            exports.add(name_obj)
+            i += 1
+        out[mod_name] = exports
+    return out
+
+
+def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, Any]], root: Path) -> None:
+    """`from M import S` の `S` が `M` の公開シンボルに存在するか検証する。"""
+    exports = _module_export_table(module_east_map, root)
+    if len(exports) == 0:
+        return
+    details: list[str] = []
+    for mod_key, east in module_east_map.items():
+        file_disp = _rel_disp_for_graph(root, Path(mod_key))
+        body_obj = east.get("body")
+        body = body_obj if isinstance(body_obj, list) else []
+        i = 0
+        while i < len(body):
+            st = body[i]
+            if isinstance(st, dict) and st.get("kind") == "ImportFrom":
+                mod_obj = st.get("module")
+                imported_mod = mod_obj if isinstance(mod_obj, str) else ""
+                if imported_mod in exports:
+                    names_obj = st.get("names")
+                    names = names_obj if isinstance(names_obj, list) else []
+                    j = 0
+                    while j < len(names):
+                        ent = names[j]
+                        if isinstance(ent, dict):
+                            sym_obj = ent.get("name")
+                            sym = sym_obj if isinstance(sym_obj, str) else ""
+                            if sym != "" and sym not in exports[imported_mod]:
+                                details.append(
+                                    f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
+                                )
+                        j += 1
+            i += 1
+    if len(details) > 0:
+        raise _make_user_error(
+            "input_invalid",
+            "import 解決に失敗しました（未定義シンボル）。",
+            details,
+        )
+
+
 def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted") -> dict[str, dict[str, Any]]:
     """入口 + 依存ユーザーモジュールを個別に EAST 化して返す。"""
     analysis = _analyze_import_graph(entry_path)
@@ -4481,6 +4562,7 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
             east = load_east(p, parser_backend)
             out[str(p)] = east
         i += 1
+    _validate_from_import_symbols_or_raise(out, root=entry_path.parent)
     return out
 
 
@@ -4499,6 +4581,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 i += 1
         funcs: list[str] = []
         classes: list[str] = []
+        variables: list[str] = []
         i = 0
         while i < len(body):
             st = body[i]
@@ -4512,6 +4595,24 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 name_obj = st.get("name")
                 if isinstance(name_obj, str) and name_obj != "":
                     classes.append(name_obj)
+            elif kind == "Assign":
+                targets_obj = st.get("targets")
+                targets = targets_obj if isinstance(targets_obj, list) else []
+                j = 0
+                while j < len(targets):
+                    tgt = targets[j]
+                    if isinstance(tgt, dict):
+                        if tgt.get("kind") == "Name":
+                            name_obj = tgt.get("id")
+                            if isinstance(name_obj, str) and name_obj != "" and name_obj not in variables:
+                                variables.append(name_obj)
+                    j += 1
+            elif kind == "AnnAssign":
+                tgt = st.get("target")
+                if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                    name_obj = tgt.get("id")
+                    if isinstance(name_obj, str) and name_obj != "" and name_obj not in variables:
+                        variables.append(name_obj)
             i += 1
         meta_obj: object = east.get("meta")
         meta = meta_obj if isinstance(meta_obj, dict) else {}
@@ -4544,6 +4645,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         out[mod_path] = {
             "functions": funcs,
             "classes": classes,
+            "variables": variables,
             "import_bindings": import_bindings,
             "import_modules": import_modules,
             "import_symbols": import_symbols,
@@ -5048,10 +5150,16 @@ def main(argv: list[str]) -> int:
 
     cpp = ""
     try:
+        module_east_map_cache: dict[str, dict[str, Any]] = {}
         if input_txt.endswith(".py") and not (emit_runtime_cpp and _is_runtime_emit_input_path(input_path)):
             analysis = _analyze_import_graph(input_path)
             _validate_import_graph_or_raise(analysis)
-        east_module = load_east(input_path, parser_backend)
+            module_east_map_cache = build_module_east_map(input_path, parser_backend)
+        east_module: dict[str, Any]
+        if input_txt.endswith(".py") and str(input_path) in module_east_map_cache:
+            east_module = module_east_map_cache[str(input_path)]
+        else:
+            east_module = load_east(input_path, parser_backend)
         if dump_deps:
             dep_text = dump_deps_text(east_module)
             if input_txt.endswith(".py"):
@@ -5137,7 +5245,10 @@ def main(argv: list[str]) -> int:
         else:
             module_east_map: dict[str, dict[str, Any]] = {}
             if input_txt.endswith(".py"):
-                module_east_map = build_module_east_map(input_path, parser_backend)
+                if len(module_east_map_cache) > 0:
+                    module_east_map = module_east_map_cache
+                else:
+                    module_east_map = build_module_east_map(input_path, parser_backend)
             else:
                 module_east_map[str(input_path)] = east_module
             out_dir = Path(output_dir_txt) if output_dir_txt != "" else Path("out")

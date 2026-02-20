@@ -24,9 +24,9 @@
    - [ ] `pytra.*` を予約名前空間として最優先解決する。
    - [ ] `pytra.py` / `pytra/__init__.py` の衝突は `reserved_conflict` として `input_invalid` にする。
    - [ ] 未解決は `missing_module` として `input_invalid` にする。
-4. [ ] `ExportTable` を追加し `from M import S` の事前検証を実装する。
-   - [ ] 公開対象: トップレベル `FunctionDef`, `ClassDef`, `Assign/AnnAssign(Name)`。
-   - [ ] 未定義シンボル import は `missing_symbol` として `input_invalid` にする。
+4. [x] `ExportTable` を追加し `from M import S` の事前検証を実装する。
+   - [x] 公開対象: トップレベル `FunctionDef`, `ClassDef`, `Assign/AnnAssign(Name)`。
+   - [x] 未定義シンボル import は `missing_symbol` として `input_invalid` にする。
 5. [ ] 名前解決優先順位を固定し、同順位衝突を `duplicate_binding` で失敗させる。
    - [ ] 優先順位: ローカル変数 > 関数引数 > クラスメンバ > import symbol alias > import module alias > 組み込み。
    - [ ] `from M import S` のみ時に `M.T` を参照した場合は未束縛として `input_invalid` にする。

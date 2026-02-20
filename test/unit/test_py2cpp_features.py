@@ -542,6 +542,33 @@ def main() -> None:
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=duplicate_binding", proc.stderr)
 
+    def test_cli_reports_input_invalid_for_missing_import_symbol(self) -> None:
+        src_main = """from helper import missing_symbol
+
+def main() -> None:
+    print(1)
+"""
+        src_helper = """def present() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("kind=missing_symbol", proc.stderr)
+        self.assertIn("import=from helper import missing_symbol", proc.stderr)
+
     def test_build_module_east_map_collects_entry_and_user_deps(self) -> None:
         src_main = """import helper
 
