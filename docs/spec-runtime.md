@@ -7,6 +7,7 @@
   - `runtime/cpp/pytra/std/<mod>.cpp`
   - `runtime/cpp/pytra/runtime/<mod>.h`
   - `runtime/cpp/pytra/runtime/<mod>.cpp`
+  - `runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/runtime/std/math.py` を `src/py2cpp.py` で解釈した結果（関数シグネチャ）から生成する。
 - 手書き許可:
   - `runtime/cpp/pytra/std/<mod>-impl.cpp`
   - `runtime/cpp/pytra/runtime/<mod>-impl.cpp`

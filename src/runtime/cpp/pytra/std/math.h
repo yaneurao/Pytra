@@ -1,5 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/runtime/std/math.py
+// generated-by: src/py2cpp.py
 // command: python3 tools/generate_cpp_pylib_runtime.py
 
 #ifndef PYTRA_CPP_MODULE_MATH_H
@@ -12,8 +13,8 @@ namespace pytra::core::math {
 double sqrt(double x);
 double sin(double x);
 double cos(double x);
-double exp(double x);
 double tan(double x);
+double exp(double x);
 double log(double x);
 double log10(double x);
 double fabs(double x);
@@ -23,8 +24,8 @@ double pow(double x, double y);
 double sqrt(const std::any& x);
 double sin(const std::any& x);
 double cos(const std::any& x);
-double exp(const std::any& x);
 double tan(const std::any& x);
+double exp(const std::any& x);
 double log(const std::any& x);
 double log10(const std::any& x);
 double fabs(const std::any& x);

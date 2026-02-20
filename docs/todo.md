@@ -9,6 +9,7 @@
    - [x] `python3 src/py2cpp.py src/pytra/runtime/<mod>.py -o ...` 実行だけで `src/runtime/cpp/pytra/` 全体が更新されることを検証する。
    - [x] `src/pytra/runtime/**/*.py` が self_hosted parser で受理されることを確認する（`import *` 廃止、引数型注釈不足の解消、`!r` 非対応回避）。
    - [x] `test/fixtures/stdlib/math_extended.py` 相当の C++ 実行検証を確認する（`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_math_extended_runtime`）。
+   - [x] `src/runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/runtime/std/math.py` を `src/py2cpp.py` で解釈した結果（関数シグネチャ抽出）から生成する。
    - [x] 上記完了後、関連ドキュメント（`docs/how-to-use.md`, `docs/spec-dev.md`, `docs/spec-runtime.md`）を同期する。
 
 ## 優先方針（2026-02-19 更新）
@@ -48,8 +49,8 @@
      - [x] `png.write_rgb_png` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。: `CodeEmitter.hook_on_render_call` に実配線を追加し、`_render_special_runtime_call` 系分岐を削除済み。
      - [x] `gif.save_gif` の解決ロジックを `cpp_hooks.py` へ移し、`py2cpp.py` 側の分岐を削除する。: `runtime_call`/`Name`/`Attribute` の解決は `build_cpp_hooks()` 注入の `on_render_call` 側へ統一済み。
      - [x] 補足: `cpp_hooks.py` 側の `on_render_call` 追加は着手済み。`pytra.*` 名へ正規化する処理を追加済み。selfhost を壊さない hook 呼び出し経路（高階関数を使わない方式）を先に確定する。
-     - [ ] 置換ごとに `tools/check_py2cpp_transpile.py` を実行し、差分を確認する。
-   - [ ] 各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` の両方を必須ゲートにする。
+    - [x] 置換ごとに `tools/check_py2cpp_transpile.py` を実行し、差分を確認する。: 2026-02-20 時点で `checked=119 ok=119 fail=0 skipped=5` を確認。
+   - [x] 各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` の両方を必須ゲートにする。
      - [x] 上記 2 コマンド失敗時はコミット禁止ルールを `docs/spec-codex.md` に明記する。
 
 ## CodeEmitter 化（JSON + Hooks）
