@@ -12,7 +12,7 @@ from pytra.std.pathlib import Path
 from pytra.std import sys
 
 
-BorrowKind = str  # "value" | "readonly_ref" | "mutable_ref" | "move"
+BorrowKind = str
 INT_TYPES = {
     "int8",
     "uint8",
@@ -28,8 +28,6 @@ FLOAT_TYPES = {"float32", "float64"}
 
 @dataclass
 class EastBuildError(Exception):
-    """EAST generation error with contract fields."""
-
     kind: str
     message: str
     source_span: dict[str, int | None]
@@ -131,8 +129,6 @@ def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
 
 
 class _ShExprParser:
-    """self-hosted の式パーサ（再帰下降）。"""
-
     def __init__(
         self,
         text: str,

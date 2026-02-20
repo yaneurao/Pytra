@@ -55,6 +55,8 @@
        - [ ] `src/pytra/compiler/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
          - [x] bootstrap 専用コードを `src/pytra/compiler/east.py` facade 側へ隔離し、`east_parts.core` から除去する。
          - [x] `east_parts.core` の import を `pytra.std.*`（または同等 shim）に固定する。
+         - [x] `core.py` 先頭の self_hosted parser 未対応パターン（行内 `#` コメント / class docstring）を除去した。
+         - [ ] `core.py` 内のネスト `def`（例: `_tokenize` 内 `scan_string_token`）を self_hosted parser で扱える形へ段階分解する。
          - [ ] `tools/prepare_selfhost_source.py` の取り込み対象へ `east_parts.core` を段階追加する。
        - [ ] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
        - [ ] 上記生成物を `g++` でビルドして、実行結果が Python 実行と一致することを確認する。
@@ -101,7 +103,7 @@
    - [x] `UnaryOp` と `BoolOp` の条件式特化ロジックを helper へ切り出す。: `UnaryOp` は `_render_unary_expr` へ分離、`BoolOp` は既存 `render_boolop` を継続利用
    - [x] `Subscript` / `SliceExpr` / `Concat` を helper 化し、`render_expr` 直書きを削減する。: `Subscript`/`SliceExpr` は `_render_subscript_expr` へ分離（`Concat` は既存 helper 経路）
    - [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。: `If/While` は専用 helper に分離済み
-     - [ ] `syntax.if/elif/else`, `syntax.while`, `syntax.for_range`, `syntax.for_each` の最小テンプレート定義を profile へ追加する。
+     - [x] `syntax.if/elif/else`, `syntax.while`, `syntax.for_range`, `syntax.for_each` の最小テンプレート定義を profile へ追加する。: `src/py2cpp.py` で `if/while/for` ヘッダを `syntax_line(...)` 経由へ切替済み（2026-02-20）。
      - [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
    - [x] `For` / `AnnAssign` / `AugAssign` を helper 化して `emit_stmt` 本体を縮退する。: `For` は既存 `emit_for_each`/`emit_for_range`、`AnnAssign`/`AugAssign` は helper 分離済み
    - [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。: `open/close` helper は移管済み。`body` 側は `emit_scoped_stmt_list` / `emit_with_scope` / `emit_scoped_block` を導入し、`If/While/ForRange/FunctionDef` へ適用済み。`ClassDef` 本体適用を継続する。
