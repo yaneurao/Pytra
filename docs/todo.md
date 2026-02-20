@@ -75,6 +75,9 @@
    - [ ] `sample/py/01_mandelbrot.py` を selfhost 経路で `-o` 生成できるところまで回復する。
      - [x] 暫定ブリッジ `tools/selfhost_transpile.py` を追加し、`.py -> EAST JSON -> selfhost` で `test/fixtures/core/add.py` の生成を確認。
      - [x] 同ブリッジ経路で `sample/py/01_mandelbrot.py` の `-o` 生成を確認。
+     - [x] `src/py2cpp.py` の runtime モジュール解決を `pytra.compiler.*` まで拡張し、`_runtime_module_tail_from_source_path` / include / namespace の経路に `compiler/` を追加した。
+     - [ ] `src/pytra/compiler/east_parts/core.py --emit-runtime-cpp` 生成物（`runtime/cpp/pytra/compiler/east_parts/core.cpp`）を単体コンパイル可能化する。
+       - [ ] 現状ブロッカー: 生成 `core.cpp` に `std::any` 退化・`dict.update` 未対応・`Exception` 継承変換など複数のコード生成破綻が残る。
      - [ ] pure selfhost（中間 Python 呼び出しなし）で `.py -> -o` を通す。
       - [ ] `selfhost/py2cpp.out` 側に `load_east(.py)` の実処理を実装し、`not_implemented` を返さないようにする。
          - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。

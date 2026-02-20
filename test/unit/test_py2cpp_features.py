@@ -16,6 +16,9 @@ if str(ROOT / "src") not in sys.path:
 
 from src.pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options
 from src.py2cpp import (
+    _runtime_module_tail_from_source_path,
+    _runtime_namespace_for_tail,
+    _runtime_output_rel_tail,
     build_module_east_map,
     build_module_symbol_index,
     build_module_type_schema,
@@ -62,6 +65,23 @@ def transpile(input_py: Path, output_cpp: Path) -> None:
 
 
 class Py2CppFeatureTest(unittest.TestCase):
+    def test_runtime_module_tail_and_namespace_support_compiler_tree(self) -> None:
+        self.assertEqual(_runtime_module_tail_from_source_path(Path("src/pytra/std/math.py")), "std/math")
+        self.assertEqual(_runtime_module_tail_from_source_path(Path("src/pytra/utils/png.py")), "png")
+        self.assertEqual(
+            _runtime_module_tail_from_source_path(Path("src/pytra/compiler/east_parts/core.py")),
+            "compiler/east_parts/core",
+        )
+        self.assertEqual(_runtime_module_tail_from_source_path(Path("sample/py/01_mandelbrot.py")), "")
+
+        self.assertEqual(_runtime_output_rel_tail("std/math_impl"), "std/math-impl")
+        self.assertEqual(_runtime_output_rel_tail("json"), "utils/json")
+        self.assertEqual(_runtime_output_rel_tail("compiler/east_parts/core_impl"), "compiler/east_parts/core-impl")
+
+        self.assertEqual(_runtime_namespace_for_tail("std/math"), "pytra::std::math")
+        self.assertEqual(_runtime_namespace_for_tail("json"), "pytra::utils::json")
+        self.assertEqual(_runtime_namespace_for_tail("compiler/east_parts/core"), "pytra::compiler::east_parts::core")
+
     def test_preset_resolution_and_override(self) -> None:
         neg, bnd, fdiv, mod, iw, sidx, ssli, opt = resolve_codegen_options("native", "", "", "", "", "", "", "", "")
         self.assertEqual((neg, bnd, fdiv, mod, iw, sidx, ssli, opt), ("off", "off", "native", "native", "64", "native", "byte", "3"))

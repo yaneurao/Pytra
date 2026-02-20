@@ -341,6 +341,8 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "        return True\n"
             "    if module_name_norm.startswith(\"pytra.utils.\"):\n"
             "        return True\n"
+            "    if module_name_norm.startswith(\"pytra.compiler.\"):\n"
+            "        return True\n"
             "    return False\n\n"
         ),
     )
