@@ -206,14 +206,6 @@ DEFAULT_AUG_BIN = {
     "RShift": ">>",
 }
 
-CPP_RESERVED_WORDS: list[str] = [
-    "alignas", "alignof", "asm", "auto", "break", "case", "catch", "char", "class", "const", "constexpr",
-    "continue", "default", "delete", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if",
-    "inline", "int", "long", "namespace", "new", "operator", "private", "protected", "public", "register",
-    "return", "short", "signed", "sizeof", "static", "struct", "switch", "template", "this", "throw", "try",
-    "typedef", "typename", "union", "unsigned", "virtual", "void", "volatile", "while",
-]
-
 def _copy_str_map(src: dict[str, str]) -> dict[str, str]:
     out: dict[str, str] = {}
     for k, v in src.items():
