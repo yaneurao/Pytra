@@ -5,16 +5,12 @@
 #ifndef SRC_RUNTIME_CPP_PYTRA_RUNTIME_ASSERTIONS_H
 #define SRC_RUNTIME_CPP_PYTRA_RUNTIME_ASSERTIONS_H
 
-#include <any>
-#include <string>
-#include <vector>
-
 namespace pytra::runtime::assertions {
 
-bool py_assert_true(bool cond, ::std::string label);
-bool py_assert_eq(::std::any actual, ::std::any expected, ::std::string label);
-bool py_assert_all(::std::vector<bool> results, ::std::string label);
-bool py_assert_stdout(::std::vector<::std::string> expected_lines, ::std::any fn);
+bool py_assert_true(bool cond, const str& label);
+bool py_assert_eq(const object& actual, const object& expected, const str& label);
+bool py_assert_all(const list<bool>& results, const str& label);
+bool py_assert_stdout(const list<str>& expected_lines, const object& fn);
 
 }  // namespace pytra::runtime::assertions
 

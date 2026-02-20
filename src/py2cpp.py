@@ -250,27 +250,8 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "abspath": "py_os_path_abspath",
         "exists": "py_os_path_exists",
     }
-    out["pytra.std.re"] = {
-        "sub": "py_re_sub",
-    }
-    out["pytra.std.json"] = {
-        "dumps": "py_json_dumps",
-    }
     out["pytra.std.argparse"] = {
         "ArgumentParser": "py_argparse_argument_parser",
-    }
-    out["pytra.std.typing"] = {
-        "Any": "py_typing_token()",
-        "List": "py_typing_token()",
-        "Set": "py_typing_token()",
-        "Dict": "py_typing_token()",
-        "Tuple": "py_typing_token()",
-        "Iterable": "py_typing_token()",
-        "Optional": "py_typing_token()",
-        "Union": "py_typing_token()",
-        "Callable": "py_typing_token()",
-        "TypeAlias": "py_typing_token()",
-        "TypeVar": "py_typing_typevar",
     }
     return out
 
@@ -527,6 +508,7 @@ class CppEmitter(CodeEmitter):
         self.function_arg_types: dict[str, list[str]] = {}
         self.current_function_return_type: str = ""
         self.declared_var_types: dict[str, str] = {}
+        self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
 
     def _normalize_runtime_module_name(self, module_name: str) -> str:
         """旧 `pylib.*` 名を `pytra.*` 名へ正規化する。"""
@@ -725,6 +707,111 @@ class CppEmitter(CodeEmitter):
         if name in self.import_symbols:
             return self.import_symbols[name]
         out: dict[str, str] = {}
+        return out
+
+    def _module_source_path_for_name(self, module_name: str) -> Path | None:
+        """`pytra.*` モジュール名から runtime source `.py` パスを返す。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        if module_name_norm.startswith("pytra.std."):
+            tail = module_name_norm[10:].replace(".", "/")
+            p = RUNTIME_STD_SOURCE_ROOT / (tail + ".py")
+            if p.exists():
+                return p
+            init_p = RUNTIME_STD_SOURCE_ROOT / tail / "__init__.py"
+            if init_p.exists():
+                return init_p
+            return None
+        if module_name_norm.startswith("pytra.runtime."):
+            tail = module_name_norm[14:].replace(".", "/")
+            p = RUNTIME_TRA_SOURCE_ROOT / (tail + ".py")
+            if p.exists():
+                return p
+            init_p = RUNTIME_TRA_SOURCE_ROOT / tail / "__init__.py"
+            if init_p.exists():
+                return init_p
+            return None
+        return None
+
+    def _module_function_arg_types(self, module_name: str, fn_name: str) -> list[str]:
+        """モジュール関数の引数型列を返す（不明時は空 list）。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        if module_name_norm in self._module_fn_arg_type_cache:
+            fn_map = self._module_fn_arg_type_cache[module_name_norm]
+            if fn_name in fn_map:
+                return fn_map[fn_name]
+            return []
+        fn_map: dict[str, list[str]] = {}
+        src_path = self._module_source_path_for_name(module_name_norm)
+        if src_path is None:
+            self._module_fn_arg_type_cache[module_name_norm] = fn_map
+            return []
+        try:
+            east_mod = load_east(src_path)
+        except Exception:
+            self._module_fn_arg_type_cache[module_name_norm] = fn_map
+            return []
+        body_obj = east_mod.get("body")
+        body: list[dict[str, Any]] = []
+        if isinstance(body_obj, list):
+            i = 0
+            while i < len(body_obj):
+                item = body_obj[i]
+                if isinstance(item, dict):
+                    body.append(item)
+                i += 1
+        i = 0
+        while i < len(body):
+            st = body[i]
+            if self.any_to_str(st.get("kind")) == "FunctionDef":
+                name = self.any_to_str(st.get("name"))
+                if name != "":
+                    arg_types_obj = st.get("arg_types")
+                    arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
+                    arg_order_obj = st.get("arg_order")
+                    arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
+                    seq: list[str] = []
+                    j = 0
+                    while j < len(arg_order):
+                        an = arg_order[j]
+                        if isinstance(an, str):
+                            t_obj = arg_types.get(an)
+                            t = t_obj if isinstance(t_obj, str) else "unknown"
+                            seq.append(t)
+                        j += 1
+                    fn_map[name] = seq
+            i += 1
+        self._module_fn_arg_type_cache[module_name_norm] = fn_map
+        if fn_name in fn_map:
+            return fn_map[fn_name]
+        return []
+
+    def _coerce_args_for_module_function(
+        self,
+        module_name: str,
+        fn_name: str,
+        args: list[str],
+        arg_nodes: list[Any],
+    ) -> list[str]:
+        """モジュール関数シグネチャに基づいて引数を必要最小限で boxing する。"""
+        target_types = self._module_function_arg_types(module_name, fn_name)
+        if len(target_types) == 0:
+            return args
+        out: list[str] = []
+        i = 0
+        while i < len(args):
+            a = args[i]
+            if i < len(target_types):
+                tt = target_types[i]
+                arg_t = "unknown"
+                if i < len(arg_nodes):
+                    arg_t_obj = self.get_expr_type(arg_nodes[i])
+                    if isinstance(arg_t_obj, str):
+                        arg_t = arg_t_obj
+                if self.is_any_like_type(tt) and not self.is_any_like_type(arg_t):
+                    if not a.startswith("make_object("):
+                        a = f"make_object({a})"
+            out.append(a)
+            i += 1
         return out
 
     def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
@@ -2398,12 +2485,16 @@ class CppEmitter(CodeEmitter):
                     and _looks_like_runtime_function_name(mapped_runtime_txt)
                 ):
                     merged_args = self._merge_runtime_call_args(args, kw)
-                    return f"{mapped_runtime_txt}({', '.join(merged_args)})"
+                    call_args = merged_args
+                    if "::" in mapped_runtime_txt:
+                        call_args = self._coerce_args_for_module_function(imported_module, raw, merged_args, arg_nodes)
+                    return f"{mapped_runtime_txt}({', '.join(call_args)})"
                 imported_module_norm = self._normalize_runtime_module_name(imported_module)
                 if imported_module_norm in self.module_namespace_map:
                     ns = self.module_namespace_map[imported_module_norm]
                     if ns != "":
-                        return f"{ns}::{raw}({', '.join(args)})"
+                        call_args = self._coerce_args_for_module_function(imported_module, raw, args, arg_nodes)
+                        return f"{ns}::{raw}({', '.join(call_args)})"
             if raw == "range":
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
             if isinstance(raw, str) and raw in self.ref_classes:
@@ -2494,15 +2585,22 @@ class CppEmitter(CodeEmitter):
         return None
 
     def _render_call_module_method(
-        self, owner_mod: str, attr: str, args: list[str], kw: dict[str, str]
+        self,
+        owner_mod: str,
+        attr: str,
+        args: list[str],
+        kw: dict[str, str],
+        arg_nodes: list[Any],
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
         merged_args = self._merge_runtime_call_args(args, kw)
+        call_args = merged_args
         owner_mod_norm = self._normalize_runtime_module_name(owner_mod)
         if owner_mod_norm in self.module_namespace_map:
             ns = self.module_namespace_map[owner_mod_norm]
             if ns != "":
-                return f"{ns}::{attr}({', '.join(merged_args)})"
+                call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
+                return f"{ns}::{attr}({', '.join(call_args)})"
         owner_keys: list[str] = [owner_mod_norm]
         short = self._last_dotted_name(owner_mod_norm)
         # `pytra.*` は正規モジュール名で解決し、短縮名への暗黙フォールバックは使わない。
@@ -2514,12 +2612,15 @@ class CppEmitter(CodeEmitter):
                 if attr in owner_map:
                     mapped = owner_map[attr]
                     if mapped != "" and _looks_like_runtime_function_name(mapped):
-                        return f"{mapped}({', '.join(merged_args)})"
-        if owner_mod_norm in {"typing", "pytra.std.typing"} and attr == "TypeVar":
-            return "make_object(1)"
+                        if "::" in mapped:
+                            call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
+                        else:
+                            call_args = merged_args
+                        return f"{mapped}({', '.join(call_args)})"
         ns = self._module_name_to_cpp_namespace(owner_mod_norm)
         if ns != "":
-            return f"{ns}::{attr}({', '.join(merged_args)})"
+            call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
+            return f"{ns}::{attr}({', '.join(call_args)})"
         return None
 
     def _merge_runtime_call_args(self, args: list[str], kw: dict[str, str]) -> list[str]:
@@ -2573,6 +2674,8 @@ class CppEmitter(CodeEmitter):
         if owner_mod == "":
             owner_mod = self._cpp_expr_to_module_name(owner_expr)
         owner_mod = self._normalize_runtime_module_name(owner_mod)
+        arg_nodes_obj: object = expr.get("args")
+        arg_nodes = self.any_to_list(arg_nodes_obj)
         attr = self.any_to_str(fn.get("attr"))
         if attr == "":
             attr = str(fn.get("attr"))
@@ -2580,11 +2683,11 @@ class CppEmitter(CodeEmitter):
             return None
         module_rendered_txt = ""
         if owner_mod != "":
-            module_rendered = self._render_call_module_method(owner_mod, attr, args, kw)
+            module_rendered = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes)
             if isinstance(module_rendered, str):
                 module_rendered_txt = str(module_rendered)
         elif owner_expr.startswith("pytra."):
-            module_rendered = self._render_call_module_method(owner_expr, attr, args, kw)
+            module_rendered = self._render_call_module_method(owner_expr, attr, args, kw, arg_nodes)
             if isinstance(module_rendered, str):
                 module_rendered_txt = str(module_rendered)
         if module_rendered_txt != "":
@@ -2902,29 +3005,23 @@ class CppEmitter(CodeEmitter):
             # Emit C++ scope resolution for static members/methods.
             if base in self.class_base or base in self.class_method_names:
                 return f"{base}::{attr}"
-            base_module_name = self._resolve_imported_module_name(base)
-            base_module_name = self._normalize_runtime_module_name(base_module_name)
-            if base_module_name in {"typing", "pytra.std.typing"}:
-                if attr in {
-                    "Any",
-                    "List",
-                    "Set",
-                    "Dict",
-                    "Tuple",
-                    "Iterable",
-                    "Sequence",
-                    "Mapping",
-                    "Optional",
-                    "Union",
-                    "Callable",
-                    "TypeAlias",
-                }:
-                    return "make_object(1)"
-            if base_module_name in {"sys", "pytra.std.sys"}:
-                if attr == "argv":
-                    return "py_sys_argv()"
-                if attr == "path":
-                    return "py_sys_path()"
+            # import モジュールの属性参照は map -> namespace の順で解決する。
+            base_module_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(base))
+            if base_module_name != "":
+                owner_keys: list[str] = [base_module_name]
+                short = self._last_dotted_name(base_module_name)
+                if short != base_module_name and not base_module_name.startswith("pytra."):
+                    owner_keys.append(short)
+                for owner_key in owner_keys:
+                    if owner_key in self.module_attr_call_map:
+                        owner_map = self.module_attr_call_map[owner_key]
+                        if attr in owner_map:
+                            mapped = owner_map[attr]
+                            if mapped != "":
+                                return mapped
+                ns = self._module_name_to_cpp_namespace(base_module_name)
+                if ns != "":
+                    return f"{ns}::{attr}"
             bt = self.get_expr_type(expr_d.get("value"))
             if bt in self.ref_classes:
                 return f"{base}->{attr}"
@@ -3473,26 +3570,26 @@ def _header_cpp_type_from_east(east_t: str) -> str:
     """EAST 型名を runtime header 向け C++ 型名へ変換する。"""
     t = east_t.strip()
     if t == "":
-        return "::std::any"
+        return "object"
     prim: dict[str, str] = {
-        "int8": "::std::int8_t",
-        "uint8": "::std::uint8_t",
-        "int16": "::std::int16_t",
-        "uint16": "::std::uint16_t",
-        "int32": "::std::int32_t",
-        "uint32": "::std::uint32_t",
-        "int64": "::std::int64_t",
-        "uint64": "::std::uint64_t",
-        "float32": "float",
-        "float64": "double",
+        "int8": "int8",
+        "uint8": "uint8",
+        "int16": "int16",
+        "uint16": "uint16",
+        "int32": "int32",
+        "uint32": "uint32",
+        "int64": "int64",
+        "uint64": "uint64",
+        "float32": "float32",
+        "float64": "float64",
         "bool": "bool",
-        "str": "::std::string",
-        "bytes": "::std::vector<::std::uint8_t>",
-        "bytearray": "::std::vector<::std::uint8_t>",
+        "str": "str",
+        "bytes": "bytes",
+        "bytearray": "bytearray",
         "None": "void",
-        "Any": "::std::any",
-        "object": "::std::any",
-        "unknown": "::std::any",
+        "Any": "object",
+        "object": "object",
+        "unknown": "object",
     }
     if t in prim:
         return prim[t]
@@ -3507,18 +3604,18 @@ def _header_cpp_type_from_east(east_t: str) -> str:
             i += 1
         if len(parts) == 2 and len(non_none) == 1:
             return "::std::optional<" + _header_cpp_type_from_east(non_none[0]) + ">"
-        return "::std::any"
+        return "object"
     if t.startswith("list[") and t.endswith("]"):
         inner = t[5:-1].strip()
-        return "::std::vector<" + _header_cpp_type_from_east(inner) + ">"
+        return "list<" + _header_cpp_type_from_east(inner) + ">"
     if t.startswith("set[") and t.endswith("]"):
         inner = t[4:-1].strip()
-        return "::std::unordered_set<" + _header_cpp_type_from_east(inner) + ">"
+        return "set<" + _header_cpp_type_from_east(inner) + ">"
     if t.startswith("dict[") and t.endswith("]"):
         inner = _split_type_args(t[5:-1].strip())
         if len(inner) == 2:
-            return "::std::unordered_map<" + _header_cpp_type_from_east(inner[0]) + ", " + _header_cpp_type_from_east(inner[1]) + ">"
-        return "::std::unordered_map<::std::string, ::std::any>"
+            return "dict<" + _header_cpp_type_from_east(inner[0]) + ", " + _header_cpp_type_from_east(inner[1]) + ">"
+        return "dict<str, object>"
     if t.startswith("tuple[") and t.endswith("]"):
         inner = _split_type_args(t[6:-1].strip())
         vals: list[str] = []
@@ -3567,6 +3664,20 @@ def build_cpp_header_from_east(
     var_lines: list[str] = []
     used_types: set[str] = set()
 
+    by_value_types = {
+        "bool",
+        "int8",
+        "uint8",
+        "int16",
+        "uint16",
+        "int32",
+        "uint32",
+        "int64",
+        "uint64",
+        "float32",
+        "float64",
+    }
+
     i = 0
     while i < len(body):
         st = body[i]
@@ -3590,7 +3701,10 @@ def build_cpp_header_from_east(
                         at = at_obj if isinstance(at_obj, str) else "Any"
                         at_cpp = _header_cpp_type_from_east(at)
                         used_types.add(at_cpp)
-                        parts.append(at_cpp + " " + an)
+                        if at_cpp in by_value_types:
+                            parts.append(at_cpp + " " + an)
+                        else:
+                            parts.append("const " + at_cpp + "& " + an)
                     j += 1
                 fn_lines.append(ret_cpp + " " + name + "(" + ", ".join(parts) + ");")
         elif kind in {"Assign", "AnnAssign"}:
@@ -3723,154 +3837,185 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
 
 def _runtime_png_header_text(namespace_cpp: str) -> str:
     """`pytra.runtime.png` 用の C++ ヘッダを返す。"""
-    return (
-        "// AUTO-GENERATED FILE. DO NOT EDIT.\n\n"
-        "#ifndef PYTRA_CPP_MODULE_PNG_H\n"
-        "#define PYTRA_CPP_MODULE_PNG_H\n\n"
-        "#include <cstdint>\n"
-        "#include <string>\n"
-        "#include <vector>\n\n"
-        "class str;\n"
-        "template <class T>\n"
-        "class list;\n\n"
-        "namespace " + namespace_cpp + " {\n\n"
-        "void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels);\n"
-        "void write_rgb_png_py(\n"
-        "    const str& path,\n"
-        "    ::std::int64_t width,\n"
-        "    ::std::int64_t height,\n"
-        "    const list<::std::uint8_t>& pixels\n"
-        ");\n\n"
-        "}  // namespace " + namespace_cpp + "\n\n"
-        "namespace pytra {\n"
-        "namespace png = runtime::png;\n"
-        "}\n\n"
-        "#endif  // PYTRA_CPP_MODULE_PNG_H\n"
-    )
+    out: list[str] = []
+    out.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
+    out.append("")
+    out.append("#ifndef PYTRA_CPP_MODULE_PNG_H")
+    out.append("#define PYTRA_CPP_MODULE_PNG_H")
+    out.append("")
+    out.append("#include <cstdint>")
+    out.append("#include <string>")
+    out.append("#include <vector>")
+    out.append("")
+    out.append("class str;")
+    out.append("template <class T>")
+    out.append("class list;")
+    out.append("")
+    out.append("namespace " + namespace_cpp + " {")
+    out.append("")
+    out.append("void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels);")
+    out.append("void write_rgb_png_py(")
+    out.append("    const str& path,")
+    out.append("    ::std::int64_t width,")
+    out.append("    ::std::int64_t height,")
+    out.append("    const list<::std::uint8_t>& pixels")
+    out.append(");")
+    out.append("")
+    out.append("}  // namespace " + namespace_cpp)
+    out.append("")
+    out.append("namespace pytra {")
+    out.append("namespace png = runtime::png;")
+    out.append("}")
+    out.append("")
+    out.append("#endif  // PYTRA_CPP_MODULE_PNG_H")
+    out.append("")
+    return "\n".join(out)
 
 
 def _runtime_png_cpp_text(namespace_cpp: str, impl_cpp: str) -> str:
     """`pytra.runtime.png` 用の C++ 実装（bridge + 変換本体）を返す。"""
-    return (
-        "// AUTO-GENERATED FILE. DO NOT EDIT.\n\n"
-        "#include \"runtime/cpp/pytra/runtime/png.h\"\n\n"
-        "#include \"runtime/cpp/py_runtime.h\"\n\n"
-        + impl_cpp
-        + "\n\nnamespace "
-        + namespace_cpp
-        + " {\n"
-        "void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels) {\n"
-        "    const bytes raw(pixels.begin(), pixels.end());\n"
-        "    generated::write_rgb_png(str(path), int64(width), int64(height), raw);\n"
-        "}\n\n"
-        "void write_rgb_png_py(\n"
-        "    const str& path,\n"
-        "    ::std::int64_t width,\n"
-        "    ::std::int64_t height,\n"
-        "    const list<::std::uint8_t>& pixels\n"
-        ") {\n"
-        "    generated::write_rgb_png(path, int64(width), int64(height), pixels);\n"
-        "}\n\n"
-        "}  // namespace " + namespace_cpp + "\n"
-    )
+    out: list[str] = []
+    out.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
+    out.append("")
+    out.append("#include \"runtime/cpp/pytra/runtime/png.h\"")
+    out.append("")
+    out.append("#include \"runtime/cpp/py_runtime.h\"")
+    out.append("")
+    out.append(impl_cpp)
+    out.append("")
+    out.append("namespace " + namespace_cpp + " {")
+    out.append("void write_rgb_png(const ::std::string& path, int width, int height, const ::std::vector<::std::uint8_t>& pixels) {")
+    out.append("    const bytes raw(pixels.begin(), pixels.end());")
+    out.append("    generated::write_rgb_png(str(path), int64(width), int64(height), raw);")
+    out.append("}")
+    out.append("")
+    out.append("void write_rgb_png_py(")
+    out.append("    const str& path,")
+    out.append("    ::std::int64_t width,")
+    out.append("    ::std::int64_t height,")
+    out.append("    const list<::std::uint8_t>& pixels")
+    out.append(") {")
+    out.append("    generated::write_rgb_png(path, int64(width), int64(height), pixels);")
+    out.append("}")
+    out.append("")
+    out.append("}  // namespace " + namespace_cpp)
+    out.append("")
+    return "\n".join(out)
 
 
 def _runtime_gif_header_text(namespace_cpp: str) -> str:
     """`pytra.runtime.gif` 用の C++ ヘッダを返す。"""
-    return (
-        "// AUTO-GENERATED FILE. DO NOT EDIT.\n\n"
-        "#ifndef PYTRA_CPP_MODULE_GIF_H\n"
-        "#define PYTRA_CPP_MODULE_GIF_H\n\n"
-        "#include <cstdint>\n"
-        "#include <string>\n"
-        "#include <vector>\n\n"
-        "class str;\n"
-        "template <class T>\n"
-        "class list;\n\n"
-        "namespace " + namespace_cpp + " {\n\n"
-        "::std::vector<::std::uint8_t> grayscale_palette();\n"
-        "list<::std::uint8_t> grayscale_palette_py();\n\n"
-        "void save_gif(\n"
-        "    const ::std::string& path,\n"
-        "    int width,\n"
-        "    int height,\n"
-        "    const ::std::vector<::std::vector<::std::uint8_t>>& frames,\n"
-        "    const ::std::vector<::std::uint8_t>& palette,\n"
-        "    int delay_cs = 4,\n"
-        "    int loop = 0\n"
-        ");\n"
-        "void save_gif_py(\n"
-        "    const str& path,\n"
-        "    ::std::int64_t width,\n"
-        "    ::std::int64_t height,\n"
-        "    const list<list<::std::uint8_t>>& frames,\n"
-        "    const list<::std::uint8_t>& palette,\n"
-        "    ::std::int64_t delay_cs = 4,\n"
-        "    ::std::int64_t loop = 0\n"
-        ");\n\n"
-        "}  // namespace " + namespace_cpp + "\n\n"
-        "namespace pytra {\n"
-        "namespace gif = runtime::gif;\n"
-        "}\n\n"
-        "#endif  // PYTRA_CPP_MODULE_GIF_H\n"
-    )
+    out: list[str] = []
+    out.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
+    out.append("")
+    out.append("#ifndef PYTRA_CPP_MODULE_GIF_H")
+    out.append("#define PYTRA_CPP_MODULE_GIF_H")
+    out.append("")
+    out.append("#include <cstdint>")
+    out.append("#include <string>")
+    out.append("#include <vector>")
+    out.append("")
+    out.append("class str;")
+    out.append("template <class T>")
+    out.append("class list;")
+    out.append("")
+    out.append("namespace " + namespace_cpp + " {")
+    out.append("")
+    out.append("::std::vector<::std::uint8_t> grayscale_palette();")
+    out.append("list<::std::uint8_t> grayscale_palette_py();")
+    out.append("")
+    out.append("void save_gif(")
+    out.append("    const ::std::string& path,")
+    out.append("    int width,")
+    out.append("    int height,")
+    out.append("    const ::std::vector<::std::vector<::std::uint8_t>>& frames,")
+    out.append("    const ::std::vector<::std::uint8_t>& palette,")
+    out.append("    int delay_cs = 4,")
+    out.append("    int loop = 0")
+    out.append(");")
+    out.append("void save_gif_py(")
+    out.append("    const str& path,")
+    out.append("    ::std::int64_t width,")
+    out.append("    ::std::int64_t height,")
+    out.append("    const list<list<::std::uint8_t>>& frames,")
+    out.append("    const list<::std::uint8_t>& palette,")
+    out.append("    ::std::int64_t delay_cs = 4,")
+    out.append("    ::std::int64_t loop = 0")
+    out.append(");")
+    out.append("")
+    out.append("}  // namespace " + namespace_cpp)
+    out.append("")
+    out.append("namespace pytra {")
+    out.append("namespace gif = runtime::gif;")
+    out.append("}")
+    out.append("")
+    out.append("#endif  // PYTRA_CPP_MODULE_GIF_H")
+    out.append("")
+    return "\n".join(out)
 
 
 def _runtime_gif_cpp_text(namespace_cpp: str, impl_cpp: str) -> str:
     """`pytra.runtime.gif` 用の C++ 実装（bridge + 変換本体）を返す。"""
-    return (
-        "// AUTO-GENERATED FILE. DO NOT EDIT.\n\n"
-        "#include \"runtime/cpp/pytra/runtime/gif.h\"\n\n"
-        "#include \"runtime/cpp/py_runtime.h\"\n\n"
-        + impl_cpp
-        + "\n\nnamespace "
-        + namespace_cpp
-        + " {\n"
-        "::std::vector<::std::uint8_t> grayscale_palette() {\n"
-        "    const bytes raw = generated::grayscale_palette();\n"
-        "    return ::std::vector<::std::uint8_t>(raw.begin(), raw.end());\n"
-        "}\n\n"
-        "list<::std::uint8_t> grayscale_palette_py() {\n"
-        "    return generated::grayscale_palette();\n"
-        "}\n\n"
-        "void save_gif(\n"
-        "    const ::std::string& path,\n"
-        "    int width,\n"
-        "    int height,\n"
-        "    const ::std::vector<::std::vector<::std::uint8_t>>& frames,\n"
-        "    const ::std::vector<::std::uint8_t>& palette,\n"
-        "    int delay_cs,\n"
-        "    int loop\n"
-        ") {\n"
-        "    list<bytes> frame_list{};\n"
-        "    frame_list.reserve(frames.size());\n"
-        "    for (const auto& fr : frames) {\n"
-        "        frame_list.append(bytes(fr.begin(), fr.end()));\n"
-        "    }\n"
-        "    const bytes pal_bytes(palette.begin(), palette.end());\n"
-        "    generated::save_gif(\n"
-        "        str(path),\n"
-        "        int64(width),\n"
-        "        int64(height),\n"
-        "        frame_list,\n"
-        "        pal_bytes,\n"
-        "        int64(delay_cs),\n"
-        "        int64(loop)\n"
-        "    );\n"
-        "}\n\n"
-        "void save_gif_py(\n"
-        "    const str& path,\n"
-        "    ::std::int64_t width,\n"
-        "    ::std::int64_t height,\n"
-        "    const list<list<::std::uint8_t>>& frames,\n"
-        "    const list<::std::uint8_t>& palette,\n"
-        "    ::std::int64_t delay_cs,\n"
-        "    ::std::int64_t loop\n"
-        ") {\n"
-        "    generated::save_gif(path, int64(width), int64(height), frames, palette, int64(delay_cs), int64(loop));\n"
-        "}\n\n"
-        "}  // namespace " + namespace_cpp + "\n"
-    )
+    out: list[str] = []
+    out.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
+    out.append("")
+    out.append("#include \"runtime/cpp/pytra/runtime/gif.h\"")
+    out.append("")
+    out.append("#include \"runtime/cpp/py_runtime.h\"")
+    out.append("")
+    out.append(impl_cpp)
+    out.append("")
+    out.append("namespace " + namespace_cpp + " {")
+    out.append("::std::vector<::std::uint8_t> grayscale_palette() {")
+    out.append("    const bytes raw = generated::grayscale_palette();")
+    out.append("    return ::std::vector<::std::uint8_t>(raw.begin(), raw.end());")
+    out.append("}")
+    out.append("")
+    out.append("list<::std::uint8_t> grayscale_palette_py() {")
+    out.append("    return generated::grayscale_palette();")
+    out.append("}")
+    out.append("")
+    out.append("void save_gif(")
+    out.append("    const ::std::string& path,")
+    out.append("    int width,")
+    out.append("    int height,")
+    out.append("    const ::std::vector<::std::vector<::std::uint8_t>>& frames,")
+    out.append("    const ::std::vector<::std::uint8_t>& palette,")
+    out.append("    int delay_cs,")
+    out.append("    int loop")
+    out.append(") {")
+    out.append("    list<bytes> frame_list{};")
+    out.append("    frame_list.reserve(frames.size());")
+    out.append("    for (const auto& fr : frames) {")
+    out.append("        frame_list.append(bytes(fr.begin(), fr.end()));")
+    out.append("    }")
+    out.append("    const bytes pal_bytes(palette.begin(), palette.end());")
+    out.append("    generated::save_gif(")
+    out.append("        str(path),")
+    out.append("        int64(width),")
+    out.append("        int64(height),")
+    out.append("        frame_list,")
+    out.append("        pal_bytes,")
+    out.append("        int64(delay_cs),")
+    out.append("        int64(loop)")
+    out.append("    );")
+    out.append("}")
+    out.append("")
+    out.append("void save_gif_py(")
+    out.append("    const str& path,")
+    out.append("    ::std::int64_t width,")
+    out.append("    ::std::int64_t height,")
+    out.append("    const list<list<::std::uint8_t>>& frames,")
+    out.append("    const list<::std::uint8_t>& palette,")
+    out.append("    ::std::int64_t delay_cs,")
+    out.append("    ::std::int64_t loop")
+    out.append(") {")
+    out.append("    generated::save_gif(path, int64(width), int64(height), frames, palette, int64(delay_cs), int64(loop));")
+    out.append("}")
+    out.append("")
+    out.append("}  // namespace " + namespace_cpp)
+    out.append("")
+    return "\n".join(out)
 
 
 def dump_deps_text(east_module: dict[str, Any]) -> str:
