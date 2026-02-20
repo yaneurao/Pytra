@@ -772,7 +772,11 @@ class CodeEmitter:
         body = self._strip_outer_parens(body_raw)
         if body == "":
             # selfhost 経路で一部式レンダが空文字に崩れる場合の保険。
-            body = self._trim_ws(self.any_dict_get_str(expr_node, "repr", ""))
+            rep_obj: Any = None
+            if "repr" in expr_node:
+                rep_obj = expr_node["repr"]
+            rep_txt = self.any_to_str(rep_obj)
+            body = self._strip_outer_parens(self._trim_ws(rep_txt))
         if body == "":
             return "false"
         if t == "bool":

@@ -222,6 +222,28 @@ class CodeEmitterTest(unittest.TestCase):
         )
         self.assertEqual(em.render_cond(None), "false")
 
+        # Base CodeEmitter の render_expr は空文字を返すため、
+        # repr fallback 経路（selfhost 安定化用）をここで固定する。
+        em_base = CodeEmitter({})
+        self.assertEqual(
+            em_base.render_cond(
+                {
+                    "resolved_type": self._KindLike("str"),
+                    "repr": self._KindLike("xs"),
+                }
+            ),
+            "py_len(xs) != 0",
+        )
+        self.assertEqual(
+            em_base.render_cond(
+                {
+                    "resolved_type": self._KindLike("bool"),
+                    "repr": self._KindLike("(flag)"),
+                }
+            ),
+            "flag",
+        )
+
     def test_negative_index_and_super_helpers(self) -> None:
         em = CodeEmitter({})
         self.assertTrue(em._is_negative_const_index({"kind": "Constant", "value": -1}))

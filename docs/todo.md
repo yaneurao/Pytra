@@ -117,7 +117,7 @@
    - [ ] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
      - [x] `get_expr_type` は `resolved_type` の動的値フォールバックを追加し、selfhost 変換時の空文字化を抑制した（2026-02-20）。
      - [x] `_is_redundant_super_init_call` は `dict` 正規化と `kind` 取得の共通化（`_node_kind_from_dict`）で `Any/object` 境界でも安定化した（2026-02-20）。
-     - [ ] `render_cond` の同等整理（`optional<dict>` 境界の削減）を継続する。
+     - [x] `render_cond` の同等整理（`optional<dict>` 境界の削減）を実施した。: `repr` の動的値フォールバックと外側括弧除去を追加し、`test/unit/test_code_emitter.py` で回帰固定（2026-02-20）。
      - [ ] `render_expr` の先頭正規化で `expr_node` 再代入パターンを除去し、`object -> dict` を1回に固定する。
      - [ ] `*_dict_stmt_list` 系引数を `expr.get(..., [])` ではなく `expr.get(...)` + helper 正規化へ統一する。
    - [x] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
@@ -125,7 +125,7 @@
    - [ ] `hook_on_*` 系の `hooks` コンテナ型を selfhost で安定化する。
      - [x] `CodeEmitter` 側の hook 呼び出しを object receiver メソッド参照（`self.hooks.on_*`）から排除する。
      - [x] `selfhost/py2cpp.cpp` で `hooks` が `object` へ退化しないよう、`dict[str, Any]` を維持する初期化経路へ統一する。: `CodeEmitter.hooks` を `dict[str, Any]` へ固定し、`selfhost/py2cpp.cpp` で `inline static dict<str, object> hooks;` を確認（2026-02-20）。
-     - [ ] `fn(self, ...)` 呼び出しが C++ 側で無効式になる問題を、hook 無効化または型付き dispatcher で解消する。
+     - [x] `fn(self, ...)` 呼び出しが C++ 側で無効式になる問題を、selfhost 生成時 hook no-op 化で解消した。: `tools/prepare_selfhost_source.py` による置換後 `selfhost/py2cpp.cpp` で `hook_on_*` は `nullopt` 返却のみ（2026-02-20）。
    - [ ] `*_dict_get*` の default 引数を `str` / `int` / `list` 別 helper に分離し、`object` 強制変換を減らす。
      - [x] `any_dict_get_bool` / `any_dict_get_list` / `any_dict_get_dict` を追加する。
      - [ ] `py_dict_get_default(..., list<object>{})` を全箇所削減する（selfhost compile logで追跡）。
