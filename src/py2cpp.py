@@ -19,6 +19,22 @@ from pytra.std import sys
 
 
 RUNTIME_AUTOGEN_SKIP_ENV = "PYTRA_SKIP_RUNTIME_AUTOGEN"
+RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/runtime/std")
+RUNTIME_TRA_SOURCE_ROOT = Path("src/pytra/runtime")
+
+
+def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
+    """`root_dir` 配下に `module_tail` 相当の `.py` / package があるかを返す。"""
+    if module_tail == "":
+        return False
+    rel = module_tail.replace(".", "/")
+    mod_py = root_dir / (rel + ".py")
+    if mod_py.exists():
+        return True
+    pkg_init = root_dir / rel / "__init__.py"
+    if pkg_init.exists():
+        return True
+    return False
 
 
 def _make_user_error(category: str, summary: str, details: list[str]) -> Exception:
@@ -153,36 +169,6 @@ DEFAULT_AUG_BIN = {
 
 def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
-    out["math"] = {
-        "sqrt": "std::sqrt",
-        "sin": "std::sin",
-        "cos": "std::cos",
-        "tan": "std::tan",
-        "exp": "std::exp",
-        "log": "std::log",
-        "log10": "std::log10",
-        "fabs": "std::fabs",
-        "floor": "std::floor",
-        "ceil": "std::ceil",
-        "pow": "std::pow",
-        "pi": "3.14159265358979323846",
-        "e": "2.71828182845904523536",
-    }
-    out["pytra.std.math"] = {
-        "sqrt": "std::sqrt",
-        "sin": "std::sin",
-        "cos": "std::cos",
-        "tan": "std::tan",
-        "exp": "std::exp",
-        "log": "std::log",
-        "log10": "std::log10",
-        "fabs": "std::fabs",
-        "floor": "std::floor",
-        "ceil": "std::ceil",
-        "pow": "std::pow",
-        "pi": "3.14159265358979323846",
-        "e": "2.71828182845904523536",
-    }
     out["pytra.runtime.png"] = {
         "write_rgb_png": "pytra::png::write_rgb_png_py",
     }
@@ -276,9 +262,21 @@ def _looks_like_runtime_function_name(name: str) -> bool:
 
 
 def load_cpp_profile() -> dict[str, Any]:
-    """C++ 用 LanguageProfile を読み込む（失敗時は空 dict）。"""
+    """C++ 用 LanguageProfile を読み込む（失敗時は最小既定）。"""
     out: dict[str, Any] = {}
     out["syntax"] = {}
+    p = Path("src/profiles/cpp/runtime_calls.json")
+    if not p.exists():
+        return out
+    try:
+        txt = p.read_text(encoding="utf-8")
+        raw_obj = json.loads(txt)
+    except Exception:
+        return out
+    raw = raw_obj if isinstance(raw_obj, dict) else {}
+    runtime_calls_obj = raw.get("runtime_calls")
+    if isinstance(runtime_calls_obj, dict):
+        out["runtime_calls"] = runtime_calls_obj
     return out
 
 
@@ -346,8 +344,25 @@ def load_cpp_identifier_rules() -> tuple[set[str], str]:
 
 def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:
     """C++ の `module.attr(...)` -> ランタイム呼び出しマップを返す。"""
-    _ = profile
-    return _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
+    out = _deep_copy_str_map(_DEFAULT_CPP_MODULE_ATTR_CALL_MAP)
+    if not isinstance(profile, dict):
+        return out
+    runtime_calls_obj = profile.get("runtime_calls")
+    runtime_calls = runtime_calls_obj if isinstance(runtime_calls_obj, dict) else {}
+    module_attr_obj = runtime_calls.get("module_attr_call")
+    module_attr = module_attr_obj if isinstance(module_attr_obj, dict) else {}
+    for module_name, ent_obj in module_attr.items():
+        if not isinstance(module_name, str):
+            continue
+        ent = ent_obj if isinstance(ent_obj, dict) else {}
+        mapped: dict[str, str] = {}
+        for attr_name, runtime_name in ent.items():
+            if isinstance(attr_name, str) and isinstance(runtime_name, str):
+                if runtime_name != "":
+                    mapped[attr_name] = runtime_name
+        if len(mapped) > 0:
+            out[module_name] = mapped
+    return out
 
 
 BIN_OPS: dict[str, str] = load_cpp_bin_ops()
@@ -460,13 +475,21 @@ class CppEmitter(CodeEmitter):
     def _normalize_runtime_module_name(self, module_name: str) -> str:
         """旧 `pylib.*` 名を `pytra.*` 名へ正規化する。"""
         if module_name.startswith("pytra.std."):
-            return "pytra.std." + module_name[10:]
+            return module_name
         if module_name == "pytra.std":
             return "pytra.std"
+        if module_name.startswith("pytra.runtime."):
+            return module_name
+        if module_name == "pytra.runtime":
+            return "pytra.runtime"
         if module_name.startswith("pylib.tra."):
             return "pytra.runtime." + module_name[10:]
         if module_name == "pylib.tra":
             return "pytra.runtime"
+        if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, module_name):
+            return "pytra.std." + module_name
+        if _python_module_exists_under(RUNTIME_TRA_SOURCE_ROOT, module_name):
+            return "pytra.runtime." + module_name
         return module_name
 
     def _module_name_to_cpp_include(self, module_name: str) -> str:
@@ -474,33 +497,41 @@ class CppEmitter(CodeEmitter):
         module_name_norm = self._normalize_runtime_module_name(module_name)
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
-            std_cpp_modules = {"math", "time", "pathlib", "dataclasses", "sys", "json", "typing"}
-            if tail in std_cpp_modules:
+            if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail):
                 return "pytra/std/" + tail.replace(".", "/") + ".h"
         if module_name_norm.startswith("pytra.runtime."):
             tail = module_name_norm[14:]
-            runtime_cpp_modules = {"png", "gif", "assertions", "east"}
-            if tail in runtime_cpp_modules:
+            if _python_module_exists_under(RUNTIME_TRA_SOURCE_ROOT, tail):
                 return "pytra/runtime/" + tail.replace(".", "/") + ".h"
-        legacy_std: dict[str, str] = {
-            "math": "pytra/std/math.h",
-            "time": "pytra/std/time.h",
-            "pathlib": "pytra/std/pathlib.h",
-            "dataclasses": "pytra/std/dataclasses.h",
-            "sys": "pytra/std/sys.h",
-            "json": "pytra/std/json.h",
-            "typing": "pytra/std/typing.h",
-        }
-        if module_name_norm in legacy_std:
-            return legacy_std[module_name_norm]
-        legacy_runtime: dict[str, str] = {
-            "png": "pytra/runtime/png.h",
-            "gif": "pytra/runtime/gif.h",
-            "assertions": "pytra/runtime/assertions.h",
-            "east": "pytra/runtime/east.h",
-        }
-        if module_name_norm in legacy_runtime:
-            return legacy_runtime[module_name_norm]
+        return ""
+
+    def _module_name_to_cpp_namespace(self, module_name: str) -> str:
+        """Python import モジュール名を C++ namespace へ解決する。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        if module_name_norm.startswith("pytra.std."):
+            tail = module_name_norm[10:]
+            if tail != "":
+                return "pytra::" + tail.replace(".", "::")
+            return ""
+        if module_name_norm.startswith("pytra.runtime."):
+            tail = module_name_norm[14:]
+            if tail != "":
+                return "pytra::runtime::" + tail.replace(".", "::")
+            return ""
+        if module_name_norm.startswith("pytra."):
+            tail = module_name_norm[6:]
+            if tail != "":
+                return "pytra::" + tail.replace(".", "::")
+            return "pytra"
+        inc = self._module_name_to_cpp_include(module_name_norm)
+        if inc.startswith("pytra/std/") and inc.endswith(".h"):
+            tail = inc[10 : len(inc) - 2].replace("/", "::")
+            if tail != "":
+                return "pytra::" + tail
+        if inc.startswith("pytra/runtime/") and inc.endswith(".h"):
+            tail = inc[14 : len(inc) - 2].replace("/", "::")
+            if tail != "":
+                return "pytra::runtime::" + tail
         return ""
 
     def _collect_import_cpp_includes(self, body: list[dict[str, Any]]) -> list[str]:
@@ -660,6 +691,9 @@ class CppEmitter(CodeEmitter):
                 return "py_sys_write_stdout"
             if symbol_name == "exit":
                 return "py_sys_exit"
+        ns = self._module_name_to_cpp_namespace(module_name_norm)
+        if ns != "":
+            return f"{ns}::{symbol_name}"
         return None
 
     def transpile(self) -> str:
@@ -2390,6 +2424,9 @@ class CppEmitter(CodeEmitter):
                         return f"{mapped}({', '.join(merged_args)})"
         if owner_mod_norm in {"typing", "pytra.std.typing"} and attr == "TypeVar":
             return "make_object(1)"
+        ns = self._module_name_to_cpp_namespace(owner_mod_norm)
+        if ns != "":
+            return f"{ns}::{attr}({', '.join(merged_args)})"
         return None
 
     def _merge_runtime_call_args(self, args: list[str], kw: dict[str, str]) -> list[str]:
@@ -3420,24 +3457,24 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
     return out
 
 
-LEGACY_MODULE_IMPORTS: set[str] = {
+NON_FILE_STANDARD_IMPORTS: set[str] = {
     "__future__",
-    "math",
-    "time",
-    "pathlib",
-    "dataclasses",
-    "sys",
-    "typing",
-    "re",
-    "argparse",
-    "json",
     "os",
     "glob",
-    "enum",
-    "png",
-    "gif",
-    "assertions",
 }
+
+
+def _is_known_non_user_import(module_name: str) -> bool:
+    """依存グラフで「ユーザーファイル解決不要」とみなす import か判定する。"""
+    if module_name in NON_FILE_STANDARD_IMPORTS:
+        return True
+    if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, module_name):
+        return True
+    if _python_module_exists_under(RUNTIME_TRA_SOURCE_ROOT, module_name):
+        return True
+    if _python_module_exists_under(Path("src/pytra/std"), module_name):
+        return True
+    return False
 
 
 def _is_pytra_module_name(module_name: str) -> bool:
@@ -3523,7 +3560,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 if dep_key not in queued and dep_key not in visited:
                     queued.add(dep_key)
                     queue.append(dep_file)
-            elif not _is_pytra_module_name(mod) and mod not in LEGACY_MODULE_IMPORTS:
+            elif not _is_pytra_module_name(mod) and not _is_known_non_user_import(mod):
                 miss = cur_disp + ": " + mod
                 if miss not in missing_seen:
                     missing_seen.add(miss)

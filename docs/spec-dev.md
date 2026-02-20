@@ -140,11 +140,11 @@
 - `import pytra.runtime.gif` -> `#include "pytra/runtime/gif.h"`
 - GC は常時 `#include "runtime/cpp/base/gc.h"` を利用
 
-`math` などの `module.attr(...)` 呼び出しは、`LanguageProfile`（JSON）の設定で C++ ランタイム呼び出しへマップします。
+`module.attr(...)` 呼び出しは、`LanguageProfile`（JSON）の設定またはモジュール名→namespace 解決で C++ 側へ解決します。
 
-- 例: `"sqrt": "py_math::sqrt"`（`math.sqrt(...)` -> `py_math::sqrt(...)`）
-- 追加方法: `src/profiles/cpp/runtime_calls.json` の `runtime_calls.module_attr_call.<module>` に関数を追記
-- 起動時に profile JSON を読み込み、未定義項目は共通既定値で補完します。
+- 例: `runtime_calls.module_attr_call.pytra.std.sys.write_stdout -> py_sys_write_stdout`
+- map 未定義の場合は import モジュール名から C++ namespace を導出して `ns::attr(...)` へフォールバックします
+- 起動時に profile JSON を読み込み、未定義項目は共通既定値とフォールバック規則で補完します。
 
 補足:
 

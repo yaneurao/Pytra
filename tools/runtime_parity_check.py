@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""math/pathlib parity check across transpiler targets."""
+"""Runtime parity check across transpiler targets."""
 
 from __future__ import annotations
 
@@ -48,8 +48,19 @@ def find_case_path(case_stem: str) -> Path | None:
     return matches[0]
 
 
+def runtime_cpp_sources_shell() -> str:
+    """runtime/cpp の C++ 実装ファイルをシェル引数文字列で返す。"""
+    paths: list[str] = []
+    for p in sorted((ROOT / "src" / "runtime" / "cpp" / "base").glob("*.cpp")):
+        paths.append(shlex.quote(p.relative_to(ROOT).as_posix()))
+    for p in sorted((ROOT / "src" / "runtime" / "cpp" / "pytra").rglob("*.cpp")):
+        paths.append(shlex.quote(p.relative_to(ROOT).as_posix()))
+    return " ".join(paths)
+
+
 def build_targets(case_stem: str, case_path: Path) -> list[Target]:
     case_src = case_path.as_posix()
+    runtime_srcs = runtime_cpp_sources_shell()
     return [
         Target(
             name="cpp",
@@ -57,10 +68,7 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
             run_cmd=(
                 f"g++ -std=c++20 -O2 -I src test/transpile/cpp/{case_stem}.cpp "
                 "-I src/runtime/cpp "
-                "src/runtime/cpp/pytra/runtime/png.cpp src/runtime/cpp/pytra/runtime/gif.cpp src/runtime/cpp/pytra/std/math.cpp "
-                "src/runtime/cpp/pytra/std/time.cpp src/runtime/cpp/pytra/std/pathlib.cpp src/runtime/cpp/pytra/std/dataclasses.cpp "
-                "src/runtime/cpp/base/io.cpp src/runtime/cpp/base/bytes_util.cpp "
-                "src/runtime/cpp/base/gc.cpp "
+                f"{runtime_srcs} "
                 f"-o test/transpile/obj/{case_stem}_cpp.out && test/transpile/obj/{case_stem}_cpp.out"
             ),
             needs=("python", "g++"),
@@ -172,7 +180,7 @@ def check_case(case_stem: str) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run runtime parity checks for math/pathlib cases")
+    parser = argparse.ArgumentParser(description="Run runtime parity checks for stdlib/runtime cases")
     parser.add_argument(
         "cases",
         nargs="*",

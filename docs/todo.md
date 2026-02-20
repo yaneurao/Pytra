@@ -2,18 +2,15 @@
 
 ## 最優先（todo2 準拠）
 
-1. [ ] `docs/todo2.md` の MUST を満たす。
-   - [ ] `src/runtime/cpp/pytra/` 配下の全ファイルを `src/pytra/runtime/` から `py2cpp.py` により生成する構成へ統一する。
-   - [ ] `src/runtime/cpp/pytra/std/*` の生成元・配置方針を `todo2.md` に合わせて再設計する（手書き/別経路生成を禁止）。
-   - [x] `math.h / math.cpp` 固有の生成処理を撤去する（`src/py2cpp.py`, `tools/generate_cpp_pylib_runtime.py` の専用分岐/専用関数を削除）。
-   - [x] `std/math` だけを特別扱いしない、汎用の `src/pytra/runtime/**/*.py -> runtime/cpp/pytra/**` 生成経路へ統一する。: `tools/generate_cpp_pylib_runtime.py` で `src/pytra/runtime/std/*.py` 自動検出（skip list 以外）へ変更済み。
-   - [ ] `runtime/cpp/pytra` 生成で「モジュール名ベタ書き分岐」が残っていないことを確認する（`math.h` / `math.cpp` を含む）。
-   - [x] `src/runtime/cpp/pytra/runtime/assertions.h`, `src/runtime/cpp/pytra/runtime/east.h`, `src/runtime/cpp/pytra/std/json.h`, `src/runtime/cpp/pytra/std/typing.h` の手書きスタブを廃止し、生成物へ置換する。
-   - [x] `python3 src/py2cpp.py src/pytra/runtime/<mod>.py -o ...` 実行だけで `src/runtime/cpp/pytra/` 全体が更新されることを検証する。
-   - [x] `src/pytra/runtime/**/*.py` が self_hosted parser で受理されることを確認する（`import *` 廃止、引数型注釈不足の解消、`!r` 非対応回避）。
-   - [x] `test/fixtures/stdlib/math_extended.py` 相当の C++ 実行検証を確認する（`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_math_extended_runtime`）。
-   - [x] `src/runtime/cpp/pytra/std/math.h` / `math.cpp` が `src/pytra/runtime/std/math.py` の parse 結果に基づいて生成されることを、固有処理なしで再検証する。: `python3 tools/generate_cpp_pylib_runtime.py --check` と `python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_math_extended_runtime` を通過。
-   - [x] 上記完了後、関連ドキュメント（`docs/how-to-use.md`, `docs/spec-dev.md`, `docs/spec-runtime.md`）を同期する。
+1. [ ] `docs/todo2.md` の MUST を実装優先で満たす（再定義版）。
+   - [ ] `src/runtime/cpp/pytra/` 配下はすべて `src/pytra/runtime/` から `py2cpp.py` 実行で生成される状態に統一する（手書き生成を禁止）。
+   - [x] `math` 固有の分岐・マップ・例外処理が `src/py2cpp.py` に残っていないことを確認し、残件を削除する。: `module.attr` 解決を `_module_name_to_cpp_namespace` / モジュール存在判定ベースへ汎用化。
+   - [x] `math` 固有の分岐・マップ・例外処理が `src/profiles/cpp/runtime_calls.json` に残っていないことを確認し、残件を削除する。: `module_attr_call` を空化。
+   - [x] `math` 固有の分岐・マップ・例外処理が生成補助スクリプト（`tools/`）に残っていないことを確認し、残件を削除する。: `math.cpp` 直書きリンクを全廃し `runtime/cpp` 自動列挙へ置換。
+   - [x] 「モジュール名ベタ書きなし」で module attribute call を解決できる汎用経路を `py2cpp.py` に実装する。: map 未命中時に namespace 解決で `module.attr(...)` を生成。
+   - [ ] `src/pytra/runtime/std/math.py` から `src/runtime/cpp/pytra/std/math.h` / `math.cpp` を自動生成し、生成差分が再現可能であることを確認する。
+   - [x] `test/fixtures/stdlib/math_extended.py` を `py2cpp.py` で C++ 化し、コンパイル・実行まで通ることをゲート化する。: `PYTHONPATH=src python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_math_extended_runtime` を通過。
+   - [ ] 上記完了後に `docs/how-to-use.md` / `docs/spec-dev.md` / `docs/spec-runtime.md` を `todo2` 準拠内容へ同期する。
 
 ## 優先方針（2026-02-19 更新）
 
