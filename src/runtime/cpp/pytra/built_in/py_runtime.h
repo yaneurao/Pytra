@@ -1647,11 +1647,6 @@ static inline list<str>& py_runtime_argv_storage() {
     return v;
 }
 
-static inline list<str>& py_runtime_path_storage() {
-    static list<str> v{};
-    return v;
-}
-
 static inline list<str> py_runtime_argv() {
     return py_runtime_argv_storage();
 }
