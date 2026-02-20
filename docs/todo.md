@@ -114,7 +114,7 @@
 
 1. [ ] `CodeEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
    - [x] `any_dict_get` / `any_to_dict` / `any_to_list` / `any_to_str` の C++ 生成を確認し、`object.begin/end` 生成を消す。
-   - [ ] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
+   - [x] `render_cond` / `get_expr_type` / `_is_redundant_super_init_call` で `optional<dict>` 混入をなくす。
      - [x] `get_expr_type` は `resolved_type` の動的値フォールバックを追加し、selfhost 変換時の空文字化を抑制した（2026-02-20）。
      - [x] `_is_redundant_super_init_call` は `dict` 正規化と `kind` 取得の共通化（`_node_kind_from_dict`）で `Any/object` 境界でも安定化した（2026-02-20）。
      - [x] `render_cond` の同等整理（`optional<dict>` 境界の削減）を実施した。: `repr` の動的値フォールバックと外側括弧除去を追加し、`test/unit/test_code_emitter.py` で回帰固定（2026-02-20）。
@@ -122,7 +122,7 @@
      - [x] `*_dict_stmt_list` 系引数を `expr.get(..., [])` ではなく `expr.get(...)` + helper 正規化へ統一する。: `dict.get(..., [])` 残存3件（`details`/`graph_adj`）を helper 経由へ置換（2026-02-20）。
    - [x] `test/unit/test_code_emitter.py` に selfhost 境界ケース（`None`, `dict`, `list`, `str`）を追加する。
    - [x] `emit_leading_comments` / `emit_module_leading_trivia` で `Any` 経由をやめ、list[dict] 前提に統一する。
-   - [ ] `hook_on_*` 系の `hooks` コンテナ型を selfhost で安定化する。
+   - [x] `hook_on_*` 系の `hooks` コンテナ型を selfhost で安定化する。
      - [x] `CodeEmitter` 側の hook 呼び出しを object receiver メソッド参照（`self.hooks.on_*`）から排除する。
      - [x] `selfhost/py2cpp.cpp` で `hooks` が `object` へ退化しないよう、`dict[str, Any]` を維持する初期化経路へ統一する。: `CodeEmitter.hooks` を `dict[str, Any]` へ固定し、`selfhost/py2cpp.cpp` で `inline static dict<str, object> hooks;` を確認（2026-02-20）。
      - [x] `fn(self, ...)` 呼び出しが C++ 側で無効式になる問題を、selfhost 生成時 hook no-op 化で解消した。: `tools/prepare_selfhost_source.py` による置換後 `selfhost/py2cpp.cpp` で `hook_on_*` は `nullopt` 返却のみ（2026-02-20）。
