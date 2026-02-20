@@ -198,6 +198,27 @@ if __name__ == "__main__":
             cpp = transpile_to_cpp(east)
         self.assertIn("pytra::std::math::sqrt(9.0)", cpp)
 
+    def test_os_path_calls_use_runtime_helpers(self) -> None:
+        src = """from pytra.std import os
+
+def main() -> None:
+    p: str = os.path.join("a", "b.txt")
+    root, ext = os.path.splitext(p)
+    print(root, ext)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "os_path_calls.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("py_os_path_join(", cpp)
+        self.assertIn("py_os_path_splitext(", cpp)
+        self.assertNotIn("pytra::std::os::path::join(", cpp)
+        self.assertNotIn("pytra::std::os::path::splitext(", cpp)
+
     def test_from_import_symbol_uses_runtime_call_map(self) -> None:
         src = """from math import sqrt as msqrt
 
