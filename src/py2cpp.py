@@ -1704,6 +1704,8 @@ class CppEmitter(CodeEmitter):
         ret_t = self.current_function_return_type
         expr_t0 = self.get_expr_type(stmt.get("value"))
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
+        if self.is_any_like_type(ret_t) and (not self.is_any_like_type(expr_t)):
+            rv = self.render_expr_as_any(stmt.get("value"))
         if self._can_runtime_cast_target(ret_t) and self.is_any_like_type(expr_t):
             rv = self.apply_cast(rv, ret_t)
         self.emit(f"return {rv};")
@@ -2436,6 +2438,8 @@ class CppEmitter(CodeEmitter):
             if target == "int64":
                 return f"py_to_int64({args[0]})"
             return f"static_cast<{target}>({args[0]})"
+        if runtime_call == "static_cast" and len(args) == 2 and builtin_name == "int":
+            return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
         if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
             fn_name = "min" if runtime_call == "py_min" else "max"
             return self.render_minmax(fn_name, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
@@ -2666,6 +2670,12 @@ class CppEmitter(CodeEmitter):
                 if raw == "int" and target == "int64":
                     return f"py_to_int64({args[0]})"
                 return f"static_cast<{target}>({args[0]})"
+            if raw == "int" and len(args) == 2:
+                return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
+            if raw == "ord" and len(args) == 1:
+                return f"py_ord({args[0]})"
+            if raw == "chr" and len(args) == 1:
+                return f"py_chr({args[0]})"
             if raw in {"min", "max"} and len(args) >= 1:
                 return self.render_minmax(raw, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
             if raw == "perf_counter":
@@ -5296,6 +5306,13 @@ def main(argv: list[str]) -> int:
                 False,
                 runtime_ns_map,
             )
+            own_runtime_header = '#include "pytra/' + rel_tail + '.h"'
+            if own_runtime_header not in cpp_txt_runtime:
+                cpp_txt_runtime = cpp_txt_runtime.replace(
+                    '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n',
+                    '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n",
+                    1,
+                )
             hdr_txt_runtime = build_cpp_header_from_east(east_module, ns, input_path, hdr_out)
             cpp_out.write_text(cpp_txt_runtime, encoding="utf-8")
             hdr_out.write_text(hdr_txt_runtime, encoding="utf-8")
