@@ -570,44 +570,6 @@ static inline void py_print(const T& first, const Rest&... rest) {
     ::std::cout << ::std::endl;
 }
 
-static inline bool py_assert_true(bool cond, const str& label = "") {
-    if (cond) return true;
-    if (label != "") {
-        ::std::cout << "[assert_true] " << label << ": False" << ::std::endl;
-    } else {
-        ::std::cout << "[assert_true] False" << ::std::endl;
-    }
-    return false;
-}
-
-template <class A, class B>
-static inline bool py_assert_eq(const A& actual, const B& expected, const str& label = "") {
-    const bool ok = (actual == expected);
-    if (ok) return true;
-    if (label != "") {
-        ::std::cout << "[assert_eq] " << label << ": actual=" << py_to_string(actual)
-                  << ", expected=" << py_to_string(expected) << ::std::endl;
-    } else {
-        ::std::cout << "[assert_eq] actual=" << py_to_string(actual)
-                  << ", expected=" << py_to_string(expected) << ::std::endl;
-    }
-    return false;
-}
-
-static inline bool py_assert_all(const list<bool>& results, const str& label = "") {
-    for (bool v : results) {
-        if (!v) {
-            if (label != "") {
-                ::std::cout << "[assert_all] " << label << ": False" << ::std::endl;
-            } else {
-                ::std::cout << "[assert_all] False" << ::std::endl;
-            }
-            return false;
-        }
-    }
-    return true;
-}
-
 static inline str py_os_path_join(const str& a, const str& b) {
     if (a.empty()) return b;
     if (b.empty()) return a;
