@@ -10,7 +10,7 @@
      - [x] `py2cpp.py --emit-runtime-cpp` を追加し、`src/pytra/runtime/<mod>.py` から `src/runtime/cpp/pytra/<mod>.h/.cpp` を1コマンドで生成できるようにする（`_impl` は `-impl` ファイル名へ写像）。
    - [x] 上記導線で `std` / `runtime` 全モジュールを再生成し、既存生成物との差分が安定することを確認する。: `find src/pytra/runtime -name '*.py' ... | xargs py2cpp.py --emit-runtime-cpp` で再生成、`test/unit/test_py2cpp_features.py -k extended_runtime` を通過（2026-02-20）。
    - [x] `test/fixtures/stdlib/math_extended.py` を含む標準ライブラリ系ケースを、再生成後ランタイムで C++ 実行一致まで確認する。: `extended_runtime` 10件 `OK`、全体 `test/unit/test_py2cpp_features.py` 85件 `OK`（2026-02-20）。
-   - [ ] `docs/how-to-use.md` / `docs/spec-dev.md` / `docs/spec-runtime.md` を「`py2cpp.py` 単一生成器」前提へ完全同期する。
+   - [x] `docs/how-to-use.md` / `docs/spec-dev.md` / `docs/spec-runtime.md` を「`py2cpp.py` 単一生成器」前提へ完全同期する。: `emit-runtime-cpp` の bridge 方式（png/gif）と `json/typing/assertions/east` の `.cpp` 生成を反映（2026-02-20）。
 
 ## 優先方針（2026-02-19 更新）
 

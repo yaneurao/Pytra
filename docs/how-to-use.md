@@ -52,6 +52,8 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - `python3 src/py2cpp.py src/pytra/runtime/<mod>.py -o ... --header-output ...` で `*.cpp` / `*.h` を同時生成できます。
 - `python3 src/py2cpp.py src/pytra/runtime/<mod>.py --emit-runtime-cpp` を使うと、`src/runtime/cpp/pytra/...` の既定パスへ直接生成します。
 - 例: `src/pytra/runtime/std/math.py` -> `src/runtime/cpp/pytra/std/math.cpp` と `src/runtime/cpp/pytra/std/math.h`。
+- `src/pytra/runtime/png.py` / `src/pytra/runtime/gif.py` は bridge 方式で生成され、`runtime` 側の公開 API に型変換ラッパが付きます。
+- `src/pytra/runtime/std/json.py` / `src/pytra/runtime/std/typing.py` / `src/pytra/runtime/assertions.py` / `src/pytra/runtime/east.py` も `.h/.cpp` を生成します。
 - 不足するネイティブ処理は `*-impl.cpp`（例: `src/runtime/cpp/pytra/std/math-impl.cpp`）で補完します。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2cpp.py INPUT.py --dump-deps` を使います（`modules/symbols` と `graph` を出力）。

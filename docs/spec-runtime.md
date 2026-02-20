@@ -7,6 +7,8 @@
   - `runtime/cpp/pytra/std/<mod>.cpp`
   - `runtime/cpp/pytra/runtime/<mod>.h`
   - `runtime/cpp/pytra/runtime/<mod>.cpp`
+  - 例: `runtime/cpp/pytra/std/json.h/.cpp`, `runtime/cpp/pytra/std/typing.h/.cpp`,
+    `runtime/cpp/pytra/runtime/assertions.h/.cpp`, `runtime/cpp/pytra/runtime/east.h/.cpp`
   - `runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/runtime/std/math.py` を `src/py2cpp.py` で解釈した結果（関数シグネチャ）から生成する。
 - 手書き許可:
   - `runtime/cpp/pytra/std/<mod>-impl.cpp`
@@ -58,6 +60,9 @@
   - 必要なら `#include "<mod>-impl.cpp"` は行わず、関数宣言経由でリンク解決する
   - 変換された Python ロジック本体 + `*-impl` 呼び出し
   - `py2cpp.py -o <mod>.cpp` で生成する（手編集しない）
+  - `pytra.runtime.png` / `pytra.runtime.gif` は bridge 方式:
+    - 変換本体を `namespace ...::generated` に出力
+    - 公開 API (`write_rgb_png`, `save_gif`, `grayscale_palette`) は bridge 関数で型変換して公開
 
 - 予約命名:
   - Python モジュール名の末尾 `_impl` は C++ ヘッダパスで `-impl` に写像する。

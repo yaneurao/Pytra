@@ -162,10 +162,14 @@
 - `src/runtime/cpp/pytra/std/pathlib.h`, `src/runtime/cpp/pytra/std/pathlib.cpp`
 - `src/runtime/cpp/pytra/std/time.h`, `src/runtime/cpp/pytra/std/time.cpp`
 - `src/runtime/cpp/pytra/std/dataclasses.h`, `src/runtime/cpp/pytra/std/dataclasses.cpp`
+- `src/runtime/cpp/pytra/std/json.h`, `src/runtime/cpp/pytra/std/json.cpp`
+- `src/runtime/cpp/pytra/std/typing.h`, `src/runtime/cpp/pytra/std/typing.cpp`
 - `src/runtime/cpp/base/gc.h`, `src/runtime/cpp/base/gc.cpp`
 - `src/runtime/cpp/pytra/std/sys.h`, `src/runtime/cpp/pytra/std/sys.cpp`
 - `src/runtime/cpp/pytra/runtime/png.h`, `src/runtime/cpp/pytra/runtime/png.cpp`
 - `src/runtime/cpp/pytra/runtime/gif.h`, `src/runtime/cpp/pytra/runtime/gif.cpp`
+- `src/runtime/cpp/pytra/runtime/assertions.h`, `src/runtime/cpp/pytra/runtime/assertions.cpp`
+- `src/runtime/cpp/pytra/runtime/east.h`, `src/runtime/cpp/pytra/runtime/east.cpp`
 - `src/runtime/cpp/py_runtime.h`
 
 `src/runtime/cpp/py_runtime.h` のコンテナ方針:
