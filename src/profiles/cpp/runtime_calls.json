@@ -1,5 +1,19 @@
 {
   "runtime_calls": {
-    "module_attr_call": {}
+    "module_attr_call": {
+      "pytra.std.os.path": {
+        "join": "py_os_path_join",
+        "basename": "py_os_path_basename",
+        "dirname": "py_os_path_dirname",
+        "splitext": "py_os_path_splitext",
+        "abspath": "py_os_path_abspath",
+        "exists": "py_os_path_exists"
+      },
+      "pytra.std.os": {
+        "getcwd": "py_os_getcwd",
+        "mkdir": "py_os_mkdir",
+        "makedirs": "py_os_makedirs"
+      }
+    }
   }
 }

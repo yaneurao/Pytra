@@ -5,6 +5,7 @@
 - [ ] `src/pytra/std/*.py` を `--emit-runtime-cpp` で再生成し、`src/runtime/cpp/pytra/std/` への反映を自動生成起点に統一する。
   - [ ] 対象: 少なくとも `math.py`, `json.py`, `pathlib.py`, `re.py`, `sys.py`, `typing.py`, `dataclasses.py`, `time.py`, `glob.py`, `os.py`。
   - [x] 進捗: `math/json/pathlib/re/sys/typing/dataclasses/time/glob/os` は self_hosted parser で EAST 変換可能。
+  - [x] 進捗: `os.py --emit-runtime-cpp` の生成物（`src/runtime/cpp/pytra/std/os.cpp`）は単体コンパイル可能化した（`py_os_*` マップ + runtime helper 追加）。
   - [ ] ブロッカー:
     - `pathlib.py` 再生成物が C++ コンパイル失敗（class フィールド推論不足、`self` 参照、`from pytra.std import os` 解決不足）。
     - `os.py` 再生成物が C++ コンパイル失敗（`path` モジュール変数の初期化順序/参照解決崩れ）。

@@ -766,6 +766,28 @@ static inline bool py_os_path_exists(const object& p) {
     return py_os_path_exists(obj_to_str(p));
 }
 
+static inline str py_os_getcwd() {
+    return str(::std::filesystem::current_path().generic_string());
+}
+
+static inline void py_os_mkdir(const str& p) {
+    const ::std::filesystem::path target(p.std());
+    ::std::error_code ec;
+    const bool created = ::std::filesystem::create_directory(target, ec);
+    if (!created && !::std::filesystem::exists(target, ec)) {
+        throw ::std::runtime_error("mkdir failed: " + p.std());
+    }
+}
+
+static inline void py_os_makedirs(const str& p, bool exist_ok = false) {
+    const ::std::filesystem::path target(p.std());
+    ::std::error_code ec;
+    const bool created = ::std::filesystem::create_directories(target, ec);
+    if (!created && !exist_ok && !::std::filesystem::exists(target, ec)) {
+        throw ::std::runtime_error("makedirs failed: " + p.std());
+    }
+}
+
 static inline bool py_glob_match_simple(const str& text, const str& pattern) {
     const ::std::string s = text.std();
     const ::std::string p = pattern.std();

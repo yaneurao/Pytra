@@ -2119,9 +2119,12 @@ class CppEmitter(CodeEmitter):
                             decl_t_txt = tuple_elem_types[i]
                         else:
                             decl_t_txt = self.get_expr_type(elt)
-                        decl_t = self._cpp_type_text(decl_t_txt)
                         self.declare_in_current_scope(name)
                         self.declared_var_types[name] = decl_t_txt
+                        if decl_t_txt in {"", "unknown", "Any", "object"}:
+                            self.emit(f"auto {lhs} = ::std::get<{i}>({tmp});")
+                            continue
+                        decl_t = self._cpp_type_text(decl_t_txt)
                         self.emit(f"{decl_t} {lhs} = ::std::get<{i}>({tmp});")
                         continue
                 self.emit(f"{lhs} = ::std::get<{i}>({tmp});")
@@ -3594,7 +3597,7 @@ class CppEmitter(CodeEmitter):
             if base_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
                 base = f"({base})"
             attr = self.any_to_str(expr_d.get("attr"))
-            if base == "self":
+            if base == "self" or base == "*this":
                 if self.current_class_name is not None and str(attr) in self.current_class_static_fields:
                     return f"{self.current_class_name}::{attr}"
                 return f"this->{attr}"
@@ -4427,9 +4430,11 @@ def build_cpp_header_from_east(
                 body.append(item)
             i += 1
 
+    class_lines: list[str] = []
     fn_lines: list[str] = []
     var_lines: list[str] = []
     used_types: set[str] = set()
+    seen_classes: set[str] = set()
 
     by_value_types = {
         "bool",
@@ -4449,7 +4454,12 @@ def build_cpp_header_from_east(
     while i < len(body):
         st = body[i]
         kind = str(st.get("kind", ""))
-        if kind == "FunctionDef":
+        if kind == "ClassDef":
+            cls_name = str(st.get("name", ""))
+            if cls_name != "" and cls_name not in seen_classes:
+                class_lines.append("struct " + cls_name + ";")
+                seen_classes.add(cls_name)
+        elif kind == "FunctionDef":
             name = str(st.get("name", ""))
             if name != "":
                 ret_t = str(st.get("return_type", "None"))
@@ -4543,6 +4553,12 @@ def build_cpp_header_from_east(
     ns = top_namespace.strip()
     if ns != "":
         lines.append("namespace " + ns + " {")
+        lines.append("")
+    k = 0
+    while k < len(class_lines):
+        lines.append(class_lines[k])
+        k += 1
+    if len(class_lines) > 0:
         lines.append("")
     k = 0
     while k < len(var_lines):

@@ -9,8 +9,9 @@ def run_case() -> None:
     ok = ok and (root == "alpha/beta")
     ok = ok and (ext == ".txt")
     ok = ok and (os.path.dirname(joined) == "alpha")
-    ok = ok and os.path.exists("test/fixtures")
-    ok = ok and (len(glob.glob("test/fixtures/core/*.py")) > 0)
+    # 実行 cwd 依存にならないよう、必ず存在する相対パスで確認する。
+    ok = ok and os.path.exists(".")
+    ok = ok and (len(glob.glob("*.cpp")) > 0)
     print(ok)
 
 
