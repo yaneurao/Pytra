@@ -1671,10 +1671,6 @@ static inline list<str> py_to_str_list_from_any(const ::std::any& value) {
     return {};
 }
 
-static inline void py_runtime_set_argv(const ::std::any& values) {
-    py_runtime_set_argv(py_to_str_list_from_any(values));
-}
-
 static inline void py_runtime_write_stderr(const str& text) {
     ::std::cerr << text;
 }
