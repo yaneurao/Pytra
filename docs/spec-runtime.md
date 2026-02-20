@@ -32,6 +32,31 @@
   - 例: `import pytra.runtime.png` -> `#include "pytra/runtime/png.h"`。
   - コンパイル時は `src/runtime/cpp` を include ルート（`-I`）として渡す。
 
+#### 2.1 モジュール名変換ルール（自作モジュール向け）
+
+- namespace 変換:
+  - `pytra.std.<mod>` は `pytra::std::<mod>` に変換する（`.` を `::` へ変換）。
+  - `pytra.runtime.<mod>` は `pytra::runtime::<mod>` に変換する。
+- include 変換:
+  - `pytra.std.<mod>` は `pytra/std/<mod>.h` に変換する。
+  - `pytra.runtime.<mod>` は `pytra/runtime/<mod>.h` に変換する。
+- `_impl` 接尾辞の特別規則:
+  - include パスだけ `_impl` を `-impl` に写像する。
+  - namespace は `_impl` のまま維持する。
+
+例:
+- Python:
+  - `import pytra.std.math_impl as _m`
+  - `return _m.sqrt(x)`
+- 生成 C++:
+  - `#include "pytra/std/math-impl.h"`
+  - `return pytra::std::math_impl::sqrt(x);`
+
+この規則に従えば、ユーザー定義の native 実装も同じ方式で追加できる。
+- 例: `import pytra.std.foo_impl as _f` を使う場合
+  - include は `pytra/std/foo-impl.h`
+  - namespace は `pytra::std::foo_impl`
+
 ### 3. 自作モジュール import の生成仕様を追加する
 
 - `import mylib` / `from mylib import f` の場合:
