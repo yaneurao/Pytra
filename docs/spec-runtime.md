@@ -40,6 +40,10 @@
 - include パスは `.` を `/` に変換して `.h` を付ける。
 - 末尾が `_impl` のモジュールだけは、include パスで `_impl -> -impl` に写像する。
 - namespace は `_impl` のまま維持する（`-impl` にはしない）。
+- `.h` 出力は「モジュール単位」で作成される。
+  - 生成先: `runtime/cpp/pytra/std/<mod>.h` または `runtime/cpp/pytra/runtime/<mod>.h`
+  - モジュールのトップレベル関数は宣言になる（定義は `.cpp`）
+  - モジュールのトップレベル定数/変数は `extern` 宣言になる（実体は `.cpp`）
 
 例1: 標準モジュール（通常）
 
@@ -56,6 +60,15 @@ def now() -> float:
 double now() {
     return pytra::std::time::perf_counter();
 }
+```
+
+`pytra.std.time` 側の `.h` は次の形になる:
+
+```cpp
+// runtime/cpp/pytra/std/time.h
+namespace pytra::std::time {
+double perf_counter();
+}  // namespace pytra::std::time
 ```
 
 例2: ランタイムモジュール（通常）
@@ -107,6 +120,17 @@ def f(x: float) -> float:
 float64 f(float64 x) {
     return pytra::std::foo_impl::calc(x);
 }
+```
+
+定数を持つモジュールの `.h` は `extern` 宣言になる:
+
+```cpp
+// runtime/cpp/pytra/std/math.h
+namespace pytra::std::math {
+extern double pi;
+extern double e;
+double sqrt(double x);
+}  // namespace pytra::std::math
 ```
 
 #### 2.2 Python入力から `.h/.cpp` が生成される流れ（定数を含む）
