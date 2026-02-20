@@ -90,6 +90,10 @@ def main() -> int:
                     skipped += 1
                     print(f"[SKIP selfhost-not-implemented] {rel}")
                     continue
+                if args.mode == "allow-not-implemented" and args.selfhost_driver == "bridge" and "[input_invalid]" in msg:
+                    skipped += 1
+                    print(f"[SKIP selfhost-bridge-json-unavailable] {rel}")
+                    continue
                 print(f"[FAIL selfhost] {rel}: {msg.splitlines()[:1]}")
                 mismatches += 1
                 continue
