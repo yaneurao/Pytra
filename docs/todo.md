@@ -56,7 +56,7 @@
          - [x] bootstrap 専用コードを `src/pytra/compiler/east.py` facade 側へ隔離し、`east_parts.core` から除去する。
          - [x] `east_parts.core` の import を `pytra.std.*`（または同等 shim）に固定する。
          - [x] `core.py` 先頭の self_hosted parser 未対応パターン（行内 `#` コメント / class docstring）を除去した。
-         - [ ] `core.py` 内のネスト `def`（例: `_tokenize` 内 `scan_string_token`）を self_hosted parser で扱える形へ段階分解する。
+         - [x] `core.py` 内のネスト `def`（例: `_tokenize` 内 `scan_string_token`）を self_hosted parser で扱える形へ段階分解する。: `PYTHONPATH=src python3 -c 'from pytra.compiler.east_parts.core import convert_path; from pytra.std.pathlib import Path; convert_path(Path(\"src/pytra/compiler/east_parts/core.py\"))'` で `OK` を確認（2026-02-20）。
          - [ ] `tools/prepare_selfhost_source.py` の取り込み対象へ `east_parts.core` を段階追加する。
        - [ ] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
        - [ ] 上記生成物を `g++` でビルドして、実行結果が Python 実行と一致することを確認する。

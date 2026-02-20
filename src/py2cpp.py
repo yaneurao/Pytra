@@ -2319,7 +2319,7 @@ class CppEmitter(CodeEmitter):
             inc = f"--{tgt}"
         else:
             inc = f"{tgt} += {step}"
-        hdr = self.syntax_line(
+        hdr: str = self.syntax_line(
             "for_range_open",
             "for ({type} {target} = {start}; {cond}; {inc})",
             {"type": tgt_ty, "target": tgt, "start": start, "cond": cond, "inc": inc},
@@ -3715,14 +3715,30 @@ class CppEmitter(CodeEmitter):
                     key_t = inner[0]
                     val_t = inner[1]
             entries = self._dict_stmt_list(expr_d.get("entries"))
-            for kv in entries:
-                k = self.render_expr(kv.get("key"))
-                v = self.render_expr(kv.get("value"))
-                if self.is_any_like_type(key_t):
-                    k = f"make_object({k})"
-                if self.is_any_like_type(val_t):
-                    v = f"make_object({v})"
-                items.append(f"{{{k}, {v}}}")
+            if len(entries) > 0:
+                for kv in entries:
+                    k = self.render_expr(kv.get("key"))
+                    v = self.render_expr(kv.get("value"))
+                    if self.is_any_like_type(key_t):
+                        k = f"make_object({k})"
+                    if self.is_any_like_type(val_t):
+                        v = f"make_object({v})"
+                    items.append(f"{{{k}, {v}}}")
+            else:
+                keys = self._dict_stmt_list(expr_d.get("keys"))
+                vals = self._dict_stmt_list(expr_d.get("values"))
+                i = 0
+                while i < len(keys) and i < len(vals):
+                    key_node: Any = keys[i]
+                    val_node: Any = vals[i]
+                    k = self.render_expr(key_node)
+                    v = self.render_expr(val_node)
+                    if self.is_any_like_type(key_t):
+                        k = f"make_object({k})"
+                    if self.is_any_like_type(val_t):
+                        v = f"make_object({v})"
+                    items.append(f"{{{k}, {v}}}")
+                    i += 1
             return f"{t}{{{_join_str_list(', ', items)}}}"
         if kind == "Subscript":
             return self._render_subscript_expr(expr)

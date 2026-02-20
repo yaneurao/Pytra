@@ -25,6 +25,25 @@ INT_TYPES = {
 }
 FLOAT_TYPES = {"float32", "float64"}
 
+# `_sh_parse_expr_lowered` が参照する self-hosted 解析コンテキスト。
+_SH_FN_RETURNS: dict[str, str] = {}
+_SH_CLASS_METHOD_RETURNS: dict[str, dict[str, str]] = {}
+_SH_CLASS_BASE: dict[str, str | None] = {}
+
+
+def _sh_set_parse_context(
+    fn_returns: dict[str, str],
+    class_method_returns: dict[str, dict[str, str]],
+    class_base: dict[str, str | None],
+) -> None:
+    """式解析で使う関数戻り値/クラス情報のコンテキストを更新する。"""
+    _SH_FN_RETURNS.clear()
+    _SH_FN_RETURNS.update(fn_returns)
+    _SH_CLASS_METHOD_RETURNS.clear()
+    _SH_CLASS_METHOD_RETURNS.update(class_method_returns)
+    _SH_CLASS_BASE.clear()
+    _SH_CLASS_BASE.update(class_base)
+
 
 @dataclass
 class EastBuildError(Exception):
@@ -128,6 +147,701 @@ def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
     return out
 
 
+def _sh_scan_string_token(text: str, start: int, quote_pos: int, line_no: int, col_base: int) -> int:
+    """文字列リテラルの終端位置を走査して返す。"""
+    if quote_pos + 2 < len(text) and text[quote_pos : quote_pos + 3] in {"'''", '"""'}:
+        q3 = text[quote_pos : quote_pos + 3]
+        j = quote_pos + 3
+        while j + 2 < len(text):
+            if text[j : j + 3] == q3:
+                return j + 3
+            j += 1
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message="unterminated triple-quoted string literal in self_hosted parser",
+            source_span=_sh_span(line_no, col_base + start, col_base + len(text)),
+            hint="Close triple-quoted string with matching quote.",
+        )
+    q = text[quote_pos]
+    j = quote_pos + 1
+    while j < len(text):
+        if text[j] == "\\":
+            j += 2
+            continue
+        if text[j] == q:
+            return j + 1
+        j += 1
+    raise EastBuildError(
+        kind="unsupported_syntax",
+        message="unterminated string literal in self_hosted parser",
+        source_span=_sh_span(line_no, col_base + start, col_base + len(text)),
+        hint="Close string literal with matching quote.",
+    )
+
+
+def _sh_decode_py_string_body(text: str, raw_mode: bool) -> str:
+    """Python 文字列リテラル本体（引用符除去後）を簡易復号する。"""
+    if raw_mode:
+        return text
+    out = ""
+    i = 0
+    while i < len(text):
+        ch = text[i : i + 1]
+        if ch != "\\":
+            out += ch
+            i += 1
+            continue
+        i += 1
+        if i >= len(text):
+            out += "\\"
+            break
+        esc = text[i : i + 1]
+        i += 1
+        if esc == "n":
+            out += "\n"
+        elif esc == "r":
+            out += "\r"
+        elif esc == "t":
+            out += "\t"
+        elif esc == "b":
+            out += "\b"
+        elif esc == "f":
+            out += "\f"
+        elif esc == "v":
+            out += "\v"
+        elif esc == "a":
+            out += "\a"
+        elif esc in {'"', "'", "\\"}:
+            out += esc
+        elif esc == "x" and i + 1 < len(text):
+            hex2 = text[i : i + 2]
+            try:
+                out += chr(int(hex2, 16))
+                i += 2
+            except ValueError:
+                out += "x"
+        elif esc == "u" and i + 3 < len(text):
+            hex4 = text[i : i + 4]
+            try:
+                out += chr(int(hex4, 16))
+                i += 4
+            except ValueError:
+                out += "u"
+        else:
+            out += esc
+    return out
+
+
+def _sh_append_fstring_literal(values: list[dict[str, Any]], segment: str, span: dict[str, int], *, raw_mode: bool = False) -> None:
+    """f-string の生文字列片を Constant(str) ノードとして values に追加する。"""
+    lit = segment.replace("{{", "{").replace("}}", "}")
+    lit = _sh_decode_py_string_body(lit, raw_mode)
+    if lit == "":
+        return
+    values.append(
+        {
+            "kind": "Constant",
+            "source_span": span,
+            "resolved_type": "str",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": repr(lit),
+            "value": lit,
+        }
+    )
+
+
+def _sh_parse_def_sig(
+    ln_no: int,
+    ln: str,
+    *,
+    in_class: str | None = None,
+) -> dict[str, Any] | None:
+    """`def ...` 行から関数名・引数型・戻り型を抽出する。"""
+    ln_norm = re.sub(r"\s+", " ", ln.strip())
+    m_def = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", ln_norm)
+    if m_def is None:
+        return None
+    arg_types: dict[str, str] = {}
+    arg_order: list[str] = []
+    arg_defaults: dict[str, str] = {}
+    args_raw = m_def.group(2)
+    if args_raw.strip() != "":
+        # Supported:
+        # - name: Type
+        # - name: Type = default
+        # - "*" keyword-only marker
+        # Not supported:
+        # - "/" positional-only marker
+        # - *args / **kwargs
+        for p_txt, _off in _sh_split_args_with_offsets(args_raw):
+            p = p_txt.strip()
+            if p == "":
+                continue
+            if p == "*":
+                continue
+            if p == "/":
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message="self_hosted parser cannot parse positional-only marker '/' in parameter list",
+                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                    hint="Remove '/' from signature for now.",
+                )
+            if p.startswith("**"):
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse variadic kwargs parameter: {p_txt}",
+                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                    hint="Use explicit parameters instead of **kwargs.",
+                )
+            if p.startswith("*"):
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse variadic args parameter: {p_txt}",
+                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                    hint="Use explicit parameters instead of *args.",
+                )
+            if in_class is not None and p == "self":
+                arg_types["self"] = in_class
+                arg_order.append("self")
+                continue
+            m_param = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", p)
+            if m_param is None:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse parameter: {p_txt}",
+                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                    hint="Use `name: Type` style parameters.",
+                )
+            pn = m_param.group(1).strip()
+            pt = m_param.group(2).strip()
+            if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pn):
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse parameter name: {pn}",
+                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                    hint="Use valid identifier for parameter name.",
+                )
+            if pt == "":
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse parameter type: {p_txt}",
+                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                    hint="Use `name: Type` style parameters.",
+                )
+            arg_types[pn] = _sh_ann_to_type(pt)
+            arg_order.append(pn)
+            pdef = m_param.group(3)
+            if pdef is not None:
+                default_txt = pdef.strip()
+                if default_txt != "":
+                    arg_defaults[pn] = default_txt
+    return {
+        "name": m_def.group(1),
+        "ret": _sh_ann_to_type(m_def.group(3).strip()) if m_def.group(3) is not None else "None",
+        "arg_types": arg_types,
+        "arg_order": arg_order,
+        "arg_defaults": arg_defaults,
+    }
+
+
+def _sh_scan_logical_line_state(
+    txt: str,
+    *,
+    depth: int,
+    mode: str | None,
+) -> tuple[int, str | None]:
+    """論理行マージ用に括弧深度と文字列モードを更新する。"""
+    i = 0
+    while i < len(txt):
+        if mode in {"'''", '"""'}:
+            close = txt.find(mode, i)
+            if close < 0:
+                i = len(txt)
+                continue
+            i = close + 3
+            mode = None
+            continue
+        ch = txt[i]
+        if mode in {"'", '"'}:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == mode:
+                mode = None
+            i += 1
+            continue
+        if i + 2 < len(txt) and txt[i : i + 3] in {"'''", '"""'}:
+            mode = txt[i : i + 3]
+            i += 3
+            continue
+        if ch in {"'", '"'}:
+            mode = ch
+            i += 1
+            continue
+        if ch == "#":
+            break
+        if ch in {"(", "[", "{"}:
+            depth += 1
+        elif ch in {")", "]", "}"}:
+            depth -= 1
+        i += 1
+    return depth, mode
+
+
+def _sh_merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tuple[int, str]], dict[int, tuple[int, int]]]:
+    """物理行を論理行へマージし、開始行ごとの終了行情報も返す。"""
+    merged: list[tuple[int, str]] = []
+    merged_line_end: dict[int, tuple[int, int]] = {}
+    idx = 0
+    while idx < len(raw_lines):
+        start_no, start_txt = raw_lines[idx]
+        acc = start_txt
+        depth = 0
+        mode: str | None = None
+        depth, mode = _sh_scan_logical_line_state(start_txt, depth=depth, mode=mode)
+        end_no = start_no
+        end_txt = start_txt
+        while (depth > 0 or mode in {"'''", '"""'}) and idx + 1 < len(raw_lines):
+            idx += 1
+            next_no, next_txt = raw_lines[idx]
+            if mode in {"'''", '"""'}:
+                acc += "\n" + next_txt
+            else:
+                acc += " " + next_txt.strip()
+            depth, mode = _sh_scan_logical_line_state(next_txt, depth=depth, mode=mode)
+            end_no = next_no
+            end_txt = next_txt
+        merged.append((start_no, acc))
+        merged_line_end[start_no] = (end_no, len(end_txt))
+        idx += 1
+    return merged, merged_line_end
+
+
+def _sh_split_top_commas(txt: str) -> list[str]:
+    """文字列/括弧深度を考慮してトップレベルのカンマ分割を行う。"""
+    out: list[str] = []
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    start = 0
+    for i, ch in enumerate(txt):
+        if in_str is not None:
+            if esc:
+                esc = False
+                continue
+            if ch == "\\":
+                esc = True
+                continue
+            if ch == in_str:
+                in_str = None
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            continue
+        if ch in {"(", "[", "{"}:
+            depth += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            continue
+        if ch == "," and depth == 0:
+            out.append(txt[start:i].strip())
+            start = i + 1
+    tail = txt[start:].strip()
+    if tail != "":
+        out.append(tail)
+    return out
+
+
+def _sh_split_top_keyword(text: str, kw: str) -> int:
+    """トップレベルでキーワード出現位置を探す（未検出なら -1）。"""
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if in_str is not None:
+            if esc:
+                esc = False
+                i += 1
+                continue
+            if ch == "\\":
+                esc = True
+                i += 1
+                continue
+            if ch == in_str:
+                in_str = None
+            i += 1
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            i += 1
+            continue
+        if ch in {"(", "[", "{"}:
+            depth += 1
+            i += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            i += 1
+            continue
+        if depth == 0 and text.startswith(kw, i):
+            prev_ok = i == 0 or text[i - 1].isspace()
+            next_ok = (i + len(kw) >= len(text)) or text[i + len(kw)].isspace()
+            if prev_ok and next_ok:
+                return i
+        i += 1
+    return -1
+
+
+def _sh_split_top_plus(text: str) -> list[str]:
+    """トップレベルの `+` で式を分割する。"""
+    out: list[str] = []
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    start = 0
+    for i, ch in enumerate(text):
+        if in_str is not None:
+            if esc:
+                esc = False
+                continue
+            if ch == "\\":
+                esc = True
+                continue
+            if ch == in_str:
+                in_str = None
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            continue
+        if ch in {"(", "[", "{"}:
+            depth += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            continue
+        if ch == "+" and depth == 0:
+            out.append(text[start:i].strip())
+            start = i + 1
+    tail = text[start:].strip()
+    if tail != "":
+        out.append(tail)
+    return out
+
+
+def _sh_infer_item_type(node: dict[str, Any]) -> str:
+    """dict/list/set/range 由来の反復要素型を簡易推論する。"""
+    t = str(node.get("resolved_type", "unknown"))
+    if t == "range":
+        return "int64"
+    if t.startswith("list[") and t.endswith("]"):
+        return t[5:-1].strip() or "unknown"
+    if t.startswith("set[") and t.endswith("]"):
+        return t[4:-1].strip() or "unknown"
+    if t in {"bytes", "bytearray"}:
+        return "uint8"
+    if t == "str":
+        return "str"
+    return "unknown"
+
+
+def _sh_block_end_span(
+    body_lines: list[tuple[int, str]],
+    start_ln: int,
+    start_col: int,
+    fallback_end_col: int,
+    end_idx_exclusive: int,
+) -> dict[str, int]:
+    """複数行文の終端まで含む source_span を生成する。"""
+    if end_idx_exclusive > 0 and end_idx_exclusive - 1 < len(body_lines):
+        end_ln, end_txt = body_lines[end_idx_exclusive - 1]
+        return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": len(end_txt)}
+    return _sh_span(start_ln, start_col, fallback_end_col)
+
+
+def _sh_stmt_span(
+    merged_line_end: dict[int, tuple[int, int]],
+    start_ln: int,
+    start_col: int,
+    fallback_end_col: int,
+) -> dict[str, int]:
+    """単文の source_span を論理行終端まで含めて生成する。"""
+    end_ln, end_col = merged_line_end.get(start_ln, (start_ln, fallback_end_col))
+    return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": end_col}
+
+
+def _sh_push_stmt_with_trivia(
+    stmts: list[dict[str, Any]],
+    pending_leading_trivia: list[dict[str, Any]],
+    pending_blank_count: int,
+    stmt: dict[str, Any],
+) -> int:
+    """保留中 trivia を付与して文リストへ追加し、更新後 blank 数を返す。"""
+    if pending_blank_count > 0:
+        pending_leading_trivia.append({"kind": "blank", "count": pending_blank_count})
+        pending_blank_count = 0
+    if len(pending_leading_trivia) > 0:
+        stmt["leading_trivia"] = list(pending_leading_trivia)
+        comments = [x.get("text") for x in pending_leading_trivia if x.get("kind") == "comment" and isinstance(x.get("text"), str)]
+        if len(comments) > 0:
+            stmt["leading_comments"] = comments
+        pending_leading_trivia.clear()
+    stmts.append(stmt)
+    return pending_blank_count
+
+
+def _sh_collect_indented_block(
+    body_lines: list[tuple[int, str]],
+    start: int,
+    parent_indent: int,
+) -> tuple[list[tuple[int, str]], int]:
+    """指定インデント配下のブロック行を収集する。"""
+    out: list[tuple[int, str]] = []
+    j = start
+    while j < len(body_lines):
+        n_no, n_ln = body_lines[j]
+        if n_ln.strip() == "":
+            t = j + 1
+            while t < len(body_lines) and body_lines[t][1].strip() == "":
+                t += 1
+            if t >= len(body_lines):
+                break
+            t_ln = body_lines[t][1]
+            t_indent = len(t_ln) - len(t_ln.lstrip(" "))
+            if t_indent <= parent_indent:
+                break
+            out.append((n_no, n_ln))
+            j += 1
+            continue
+        n_indent = len(n_ln) - len(n_ln.lstrip(" "))
+        if n_indent <= parent_indent:
+            break
+        out.append((n_no, n_ln))
+        j += 1
+    return out, j
+
+
+def _sh_split_top_level_assign(text: str) -> tuple[str, str] | None:
+    """トップレベルの `=` を 1 つだけ持つ代入式を分割する。"""
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if in_str is not None:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == in_str:
+                if i + 2 < len(text) and text[i : i + 3] == in_str * 3:
+                    i += 2
+                else:
+                    in_str = None
+            i += 1
+            continue
+        if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
+            in_str = text[i]
+            i += 3
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            i += 1
+            continue
+        if ch == "#":
+            break
+        if ch in {"(", "[", "{"}:
+            depth += 1
+            i += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            i += 1
+            continue
+        if ch == "=" and depth == 0:
+            prev = text[i - 1] if i - 1 >= 0 else ""
+            nxt = text[i + 1] if i + 1 < len(text) else ""
+            if prev in {"!", "<", ">", "="} or nxt == "=":
+                i += 1
+                continue
+            lhs = text[:i].strip()
+            rhs = text[i + 1 :].strip()
+            if lhs != "" and rhs != "":
+                return lhs, rhs
+            return None
+        i += 1
+    return None
+
+
+def _sh_strip_inline_comment(text: str) -> str:
+    """文字列リテラル外の末尾コメントを除去する。"""
+    in_str: str | None = None
+    esc = False
+    for i, ch in enumerate(text):
+        if in_str is not None:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == in_str:
+                in_str = None
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            continue
+        if ch == "#":
+            return text[:i].rstrip()
+    return text
+
+
+def _sh_split_top_level_from(text: str) -> tuple[str, str] | None:
+    """トップレベルの `for ... in ...` を target/iter に分解する。"""
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if in_str is not None:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == in_str:
+                in_str = None
+            i += 1
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            i += 1
+            continue
+        if ch in {"(", "[", "{"}:
+            depth += 1
+            i += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            i += 1
+            continue
+        if depth == 0 and text.startswith(" from ", i):
+            lhs = text[:i].strip()
+            rhs = text[i + 6 :].strip()
+            if lhs != "" and rhs != "":
+                return lhs, rhs
+            return None
+        i += 1
+    return None
+
+
+def _sh_parse_if_tail(
+    *,
+    start_idx: int,
+    parent_indent: int,
+    body_lines: list[tuple[int, str]],
+    name_types: dict[str, str],
+    scope_label: str,
+) -> tuple[list[dict[str, Any]], int]:
+    """if/elif/else 連鎖の後続ブロックを再帰的に解析する。"""
+    if start_idx >= len(body_lines):
+        return [], start_idx
+    t_no, t_ln = body_lines[start_idx]
+    t_indent = len(t_ln) - len(t_ln.lstrip(" "))
+    t_s = t_ln.strip()
+    if t_indent != parent_indent:
+        return [], start_idx
+    if t_s == "else:":
+        else_block, k2 = _sh_collect_indented_block(body_lines, start_idx + 1, parent_indent)
+        if len(else_block) == 0:
+            raise EastBuildError(
+                kind="unsupported_syntax",
+                message=f"else body is missing in '{scope_label}'",
+                source_span=_sh_span(t_no, 0, len(t_ln)),
+                hint="Add indented else-body.",
+            )
+        return _sh_parse_stmt_block(else_block, name_types=dict(name_types), scope_label=scope_label), k2
+    if t_s.startswith("elif ") and t_s.endswith(":"):
+        cond_txt2 = t_s[len("elif ") : -1].strip()
+        cond_col2 = t_ln.find(cond_txt2)
+        cond_expr2 = _sh_parse_expr_lowered(cond_txt2, ln_no=t_no, col=cond_col2, name_types=dict(name_types))
+        elif_block, k2 = _sh_collect_indented_block(body_lines, start_idx + 1, parent_indent)
+        if len(elif_block) == 0:
+            raise EastBuildError(
+                kind="unsupported_syntax",
+                message=f"elif body is missing in '{scope_label}'",
+                source_span=_sh_span(t_no, 0, len(t_ln)),
+                hint="Add indented elif-body.",
+            )
+        nested_orelse, k3 = _sh_parse_if_tail(
+            start_idx=k2,
+            parent_indent=parent_indent,
+            body_lines=body_lines,
+            name_types=dict(name_types),
+            scope_label=scope_label,
+        )
+        return [
+            {
+                "kind": "If",
+                "source_span": _sh_block_end_span(body_lines, t_no, t_ln.find("elif "), len(t_ln), k3),
+                "test": cond_expr2,
+                "body": _sh_parse_stmt_block(elif_block, name_types=dict(name_types), scope_label=scope_label),
+                "orelse": nested_orelse,
+            }
+        ], k3
+    return [], start_idx
+
+
+def _sh_extract_leading_docstring(stmts: list[dict[str, Any]]) -> tuple[str | None, list[dict[str, Any]]]:
+    """先頭文が docstring の場合に抽出し、残り文リストを返す。"""
+    if len(stmts) == 0:
+        return None, stmts
+    first = stmts[0]
+    if not isinstance(first, dict) or first.get("kind") != "Expr":
+        return None, stmts
+    val = first.get("value")
+    if not isinstance(val, dict) or val.get("kind") != "Constant":
+        return None, stmts
+    s = val.get("value")
+    if not isinstance(s, str):
+        return None, stmts
+    return s, stmts[1:]
+
+
+def _sh_append_import_binding(
+    *,
+    import_bindings: list[dict[str, Any]],
+    import_binding_names: set[str],
+    module_id: str,
+    export_name: str,
+    local_name: str,
+    binding_kind: str,
+    source_file: str,
+    source_line: int,
+) -> None:
+    """import 情報の正本 `ImportBinding` を追加する。"""
+    if local_name in import_binding_names:
+        raise EastBuildError(
+            kind="unsupported_syntax",
+            message=f"duplicate import binding: {local_name}",
+            source_span=_sh_span(source_line, 0, 0),
+            hint="Rename alias to avoid duplicate imported names.",
+        )
+    import_binding_names.add(local_name)
+    import_bindings.append(
+        {
+            "module_id": module_id,
+            "export_name": export_name,
+            "local_name": local_name,
+            "binding_kind": binding_kind,
+            "source_file": source_file,
+            "source_line": source_line,
+        }
+    )
+
+
 class _ShExprParser:
     def __init__(
         self,
@@ -153,37 +867,6 @@ class _ShExprParser:
 
     def _tokenize(self, text: str) -> list[dict[str, Any]]:
         """式テキストを self-hosted 用トークン列へ変換する。"""
-        def scan_string_token(start: int, quote_pos: int) -> int:
-            """文字列リテラルの終端位置を走査して返す。"""
-            if quote_pos + 2 < len(text) and text[quote_pos : quote_pos + 3] in {"'''", '"""'}:
-                q3 = text[quote_pos : quote_pos + 3]
-                j = quote_pos + 3
-                while j + 2 < len(text):
-                    if text[j : j + 3] == q3:
-                        return j + 3
-                    j += 1
-                raise EastBuildError(
-                    kind="unsupported_syntax",
-                    message="unterminated triple-quoted string literal in self_hosted parser",
-                    source_span=_sh_span(self.line_no, self.col_base + start, self.col_base + len(text)),
-                    hint="Close triple-quoted string with matching quote.",
-                )
-            q = text[quote_pos]
-            j = quote_pos + 1
-            while j < len(text):
-                if text[j] == "\\":
-                    j += 2
-                    continue
-                if text[j] == q:
-                    return j + 1
-                j += 1
-            raise EastBuildError(
-                kind="unsupported_syntax",
-                message="unterminated string literal in self_hosted parser",
-                source_span=_sh_span(self.line_no, self.col_base + start, self.col_base + len(text)),
-                hint="Close string literal with matching quote.",
-            )
-
         out: list[dict[str, Any]] = []
         i = 0
         while i < len(text):
@@ -202,7 +885,7 @@ class _ShExprParser:
                     if all(c in "rRbBuUfF" for c in p2) and text[i + 2] in {"'", '"'}:
                         pref_len = 2
             if pref_len > 0:
-                end = scan_string_token(i, i + pref_len)
+                end = _sh_scan_string_token(text, i, i + pref_len, self.line_no, self.col_base)
                 out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
                 i = end
                 continue
@@ -251,12 +934,12 @@ class _ShExprParser:
                 i = j
                 continue
             if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
-                end = scan_string_token(i, i)
+                end = _sh_scan_string_token(text, i, i, self.line_no, self.col_base)
                 out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
                 i = end
                 continue
             if ch in {"'", '"'}:
-                end = scan_string_token(i, i)
+                end = _sh_scan_string_token(text, i, i, self.line_no, self.col_base)
                 out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
                 i = end
                 continue
@@ -1199,58 +1882,7 @@ class _ShExprParser:
             }
         if tok["k"] == "STR":
             self._eat("STR")
-            raw = tok["v"]
-            def decode_py_string_body(text: str, raw_mode: bool) -> str:
-                """Python 文字列リテラル本体（引用符除去後）を簡易復号する。"""
-                if raw_mode:
-                    return text
-                out = ""
-                i = 0
-                while i < len(text):
-                    ch = text[i : i + 1]
-                    if ch != "\\":
-                        out += ch
-                        i += 1
-                        continue
-                    i += 1
-                    if i >= len(text):
-                        out += "\\"
-                        break
-                    esc = text[i : i + 1]
-                    i += 1
-                    if esc == "n":
-                        out += "\n"
-                    elif esc == "r":
-                        out += "\r"
-                    elif esc == "t":
-                        out += "\t"
-                    elif esc == "b":
-                        out += "\b"
-                    elif esc == "f":
-                        out += "\f"
-                    elif esc == "v":
-                        out += "\v"
-                    elif esc == "a":
-                        out += "\a"
-                    elif esc in {'"', "'", "\\"}:
-                        out += esc
-                    elif esc == "x" and i + 1 < len(text):
-                        hex2 = text[i : i + 2]
-                        try:
-                            out += chr(int(hex2, 16))
-                            i += 2
-                        except ValueError:
-                            out += "x"
-                    elif esc == "u" and i + 3 < len(text):
-                        hex4 = text[i : i + 4]
-                        try:
-                            out += chr(int(hex4, 16))
-                            i += 4
-                        except ValueError:
-                            out += "u"
-                    else:
-                        out += esc
-                return out
+            raw: str = tok["v"]
             # Support prefixed literals (f/r/b/u/rf/fr...) in expression parser.
             p = 0
             while p < len(raw) and raw[p] in "rRbBuUfF":
@@ -1269,36 +1901,18 @@ class _ShExprParser:
                 values: list[dict[str, Any]] = []
                 is_raw = "r" in prefix
 
-                def push_lit(segment: str) -> None:
-                    """f-string の生文字列片を values へ追加する。"""
-                    lit = segment.replace("{{", "{").replace("}}", "}")
-                    lit = decode_py_string_body(lit, is_raw)
-                    if lit == "":
-                        return
-                    values.append(
-                        {
-                            "kind": "Constant",
-                            "source_span": self._node_span(tok["s"], tok["e"]),
-                            "resolved_type": "str",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": repr(lit),
-                            "value": lit,
-                        }
-                    )
-
                 i = 0
                 while i < len(body):
                     j = body.find("{", i)
                     if j < 0:
-                        push_lit(body[i:])
+                        _sh_append_fstring_literal(values, body[i:], self._node_span(tok["s"], tok["e"]), raw_mode=is_raw)
                         break
                     if j + 1 < len(body) and body[j + 1] == "{":
-                        push_lit(body[i : j + 1])
+                        _sh_append_fstring_literal(values, body[i : j + 1], self._node_span(tok["s"], tok["e"]), raw_mode=is_raw)
                         i = j + 2
                         continue
                     if j > i:
-                        push_lit(body[i:j])
+                        _sh_append_fstring_literal(values, body[i:j], self._node_span(tok["s"], tok["e"]), raw_mode=is_raw)
                     k = body.find("}", j + 1)
                     if k < 0:
                         raise EastBuildError(
@@ -1335,7 +1949,7 @@ class _ShExprParser:
             resolved_type = "str"
             if "b" in prefix and "f" not in prefix:
                 resolved_type = "bytes"
-            body = decode_py_string_body(body, "r" in prefix)
+            body = _sh_decode_py_string_body(body, "r" in prefix)
             return {
                 "kind": "Constant",
                 "source_span": self._node_span(tok["s"], tok["e"]),
@@ -1687,6 +2301,1113 @@ def _sh_parse_expr(
     return parser.parse()
 
 
+def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: dict[str, str]) -> dict[str, Any]:
+    """式文字列を EAST 式ノードへ変換する（簡易 lower を含む）。"""
+    raw = expr_txt
+    txt = raw.strip()
+
+    # lambda は if-expression より結合が弱いので、
+    # ここでの簡易 ifexp 分解を回避して self_hosted 式パーサへ委譲する。
+    if txt.startswith("lambda "):
+        return _sh_parse_expr(
+            txt,
+            line_no=ln_no,
+            col_base=col,
+            name_types=name_types,
+            fn_return_types=_SH_FN_RETURNS,
+            class_method_return_types=_SH_CLASS_METHOD_RETURNS,
+            class_base=_SH_CLASS_BASE,
+        )
+
+    # if-expression: a if cond else b
+    p_if = _sh_split_top_keyword(txt, "if")
+    p_else = _sh_split_top_keyword(txt, "else")
+    if p_if >= 0 and p_else > p_if:
+        body_txt = txt[:p_if].strip()
+        test_txt = txt[p_if + 2 : p_else].strip()
+        else_txt = txt[p_else + 4 :].strip()
+        body_node = _sh_parse_expr_lowered(body_txt, ln_no=ln_no, col=col + txt.find(body_txt), name_types=dict(name_types))
+        test_node = _sh_parse_expr_lowered(test_txt, ln_no=ln_no, col=col + txt.find(test_txt), name_types=dict(name_types))
+        else_node = _sh_parse_expr_lowered(else_txt, ln_no=ln_no, col=col + txt.rfind(else_txt), name_types=dict(name_types))
+        rt = body_node.get("resolved_type", "unknown")
+        if rt != else_node.get("resolved_type", "unknown"):
+            rt = "unknown"
+        return {
+            "kind": "IfExp",
+            "source_span": _sh_span(ln_no, col, col + len(raw)),
+            "resolved_type": rt,
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": txt,
+            "test": test_node,
+            "body": body_node,
+            "orelse": else_node,
+        }
+
+    # Normalize generator-arg any/all into list-comp form for self_hosted parser.
+    m_any_all = re.match(r"^(any|all)\((.+)\)$", txt, flags=re.S)
+    if m_any_all is not None:
+        fn_name = m_any_all.group(1)
+        inner_arg = m_any_all.group(2).strip()
+        if _sh_split_top_keyword(inner_arg, "for") > 0 and _sh_split_top_keyword(inner_arg, "in") > 0:
+            lc = _sh_parse_expr_lowered(f"[{inner_arg}]", ln_no=ln_no, col=col + txt.find(inner_arg), name_types=dict(name_types))
+            return {
+                "kind": "Call",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "func": {
+                    "kind": "Name",
+                    "source_span": _sh_span(ln_no, col, col + len(fn_name)),
+                    "resolved_type": "unknown",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": fn_name,
+                    "id": fn_name,
+                },
+                "args": [lc],
+                "keywords": [],
+            }
+
+    # Normalize single generator-argument calls into list-comp argument form.
+    # Example: ", ".join(f(x) for x in items) -> ", ".join([f(x) for x in items])
+    if txt.endswith(")"):
+        depth = 0
+        in_str: str | None = None
+        esc = False
+        open_idx = -1
+        close_idx = -1
+        for idx, ch in enumerate(txt):
+            if in_str is not None:
+                if esc:
+                    esc = False
+                elif ch == "\\":
+                    esc = True
+                elif ch == in_str:
+                    in_str = None
+                continue
+            if ch in {"'", '"'}:
+                in_str = ch
+                continue
+            if ch == "(":
+                if depth == 0 and open_idx < 0:
+                    open_idx = idx
+                depth += 1
+                continue
+            if ch == ")":
+                depth -= 1
+                if depth == 0:
+                    close_idx = idx
+                continue
+            if open_idx > 0 and close_idx == len(txt) - 1:
+                inner = txt[open_idx + 1 : close_idx].strip()
+                if _sh_split_top_commas(inner) == [inner] and _sh_split_top_keyword(inner, "for") > 0 and _sh_split_top_keyword(inner, "in") > 0:
+                    rewritten = txt[: open_idx + 1] + "[" + inner + "]" + txt[close_idx:]
+                    return _sh_parse_expr_lowered(rewritten, ln_no=ln_no, col=col, name_types=dict(name_types))
+
+    # Handle concatenation chains that include f-strings before generic parsing.
+    plus_parts = _sh_split_top_plus(txt)
+    if len(plus_parts) >= 2 and any(p.startswith("f\"") or p.startswith("f'") for p in plus_parts):
+        nodes = [_sh_parse_expr_lowered(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in plus_parts]
+        node = nodes[0]
+        for rhs in nodes[1:]:
+            node = {
+                "kind": "BinOp",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "left": node,
+                "op": "Add",
+                "right": rhs,
+            }
+        return node
+
+    # dict-comp support: {k: v for x in it} / {k: v for a, b in it}
+    if txt.startswith("{") and txt.endswith("}") and ":" in txt:
+        inner = txt[1:-1].strip()
+        p_for = _sh_split_top_keyword(inner, "for")
+        if p_for > 0:
+            head = inner[:p_for].strip()
+            tail = inner[p_for + 3 :].strip()
+            p_in = _sh_split_top_keyword(tail, "in")
+            if p_in <= 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"invalid dict comprehension in self_hosted parser: {txt}",
+                    source_span=_sh_span(ln_no, col, col + len(raw)),
+                    hint="Use `{key: value for item in iterable}` form.",
+                )
+            tgt_txt = tail[:p_in].strip()
+            iter_txt = tail[p_in + 2 :].strip()
+            p_if = _sh_split_top_keyword(iter_txt, "if")
+            if p_if >= 0:
+                iter_txt = iter_txt[:p_if].strip()
+            if ":" not in head:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"invalid dict comprehension pair in self_hosted parser: {txt}",
+                    source_span=_sh_span(ln_no, col, col + len(raw)),
+                    hint="Use `key: value` pair before `for`.",
+                )
+            ktxt, vtxt = head.split(":", 1)
+            ktxt = ktxt.strip()
+            vtxt = vtxt.strip()
+            target_node = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
+            comp_types = dict(name_types)
+            if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                comp_types[str(target_node.get("id", ""))] = "unknown"
+            elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
+                for e in target_node.get("elements", []):
+                    if isinstance(e, dict) and e.get("kind") == "Name":
+                        comp_types[str(e.get("id", ""))] = "unknown"
+            key_node = _sh_parse_expr_lowered(ktxt, ln_no=ln_no, col=col + txt.find(ktxt), name_types=dict(comp_types))
+            val_node = _sh_parse_expr_lowered(vtxt, ln_no=ln_no, col=col + txt.find(vtxt), name_types=dict(comp_types))
+            iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+            kt = str(key_node.get("resolved_type", "unknown"))
+            vt = str(val_node.get("resolved_type", "unknown"))
+            return {
+                "kind": "DictComp",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": f"dict[{kt},{vt}]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "key": key_node,
+                "value": val_node,
+                "generators": [
+                    {
+                        "target": target_node,
+                        "iter": iter_node,
+                        "ifs": [],
+                        "is_async": False,
+                    }
+                ],
+            }
+
+    # set-comp support: {x for x in it} / {x for a, b in it if cond}
+    if txt.startswith("{") and txt.endswith("}") and ":" not in txt:
+        inner = txt[1:-1].strip()
+        p_for = _sh_split_top_keyword(inner, "for")
+        if p_for > 0:
+            elt_txt = inner[:p_for].strip()
+            tail = inner[p_for + 3 :].strip()
+            p_in = _sh_split_top_keyword(tail, "in")
+            if p_in <= 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"invalid set comprehension in self_hosted parser: {txt}",
+                    source_span=_sh_span(ln_no, col, col + len(raw)),
+                    hint="Use `{elem for item in iterable}` form.",
+                )
+            tgt_txt = tail[:p_in].strip()
+            iter_and_if_txt = tail[p_in + 2 :].strip()
+            p_if = _sh_split_top_keyword(iter_and_if_txt, "if")
+            if p_if >= 0:
+                iter_txt = iter_and_if_txt[:p_if].strip()
+                if_txt = iter_and_if_txt[p_if + 2 :].strip()
+            else:
+                iter_txt = iter_and_if_txt
+                if_txt = ""
+            target_node = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
+            comp_types = dict(name_types)
+            if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                comp_types[str(target_node.get("id", ""))] = "unknown"
+            elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
+                for e in target_node.get("elements", []):
+                    if isinstance(e, dict) and e.get("kind") == "Name":
+                        comp_types[str(e.get("id", ""))] = "unknown"
+            elt_node = _sh_parse_expr_lowered(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
+            iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+            if_nodes: list[dict[str, Any]] = []
+            if if_txt != "":
+                if_nodes.append(_sh_parse_expr_lowered(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
+            return {
+                "kind": "SetComp",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": f"set[{elt_node.get('resolved_type', 'unknown')}]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "elt": elt_node,
+                "generators": [
+                    {
+                        "target": target_node,
+                        "iter": iter_node,
+                        "ifs": if_nodes,
+                        "is_async": False,
+                    }
+                ],
+            }
+
+    # dict literal: {"a": 1, "b": 2}
+    if txt.startswith("{") and txt.endswith("}") and ":" in txt:
+        inner = txt[1:-1].strip()
+        entries: list[dict[str, Any]] = []
+        if inner != "":
+            for part in _sh_split_top_commas(inner):
+                if ":" not in part:
+                    raise EastBuildError(
+                        kind="unsupported_syntax",
+                        message=f"invalid dict entry in self_hosted parser: {part}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `key: value` form in dict literals.",
+                    )
+                ktxt, vtxt = part.split(":", 1)
+                ktxt = ktxt.strip()
+                vtxt = vtxt.strip()
+                entries.append(
+                    {
+                        "key": _sh_parse_expr_lowered(ktxt, ln_no=ln_no, col=col + txt.find(ktxt), name_types=dict(name_types)),
+                        "value": _sh_parse_expr_lowered(vtxt, ln_no=ln_no, col=col + txt.find(vtxt), name_types=dict(name_types)),
+                    }
+                )
+        kt = "unknown"
+        vt = "unknown"
+        if len(entries) > 0:
+            first_key: dict[str, Any] = entries[0]["key"]
+            first_value: dict[str, Any] = entries[0]["value"]
+            kt = str(first_key.get("resolved_type", "unknown"))
+            vt = str(first_value.get("resolved_type", "unknown"))
+        return {
+            "kind": "Dict",
+            "source_span": _sh_span(ln_no, col, col + len(raw)),
+            "resolved_type": f"dict[{kt},{vt}]",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": txt,
+            "entries": entries,
+        }
+
+    # list-comp support: [expr for target in iter if cond]
+    if txt.startswith("[") and txt.endswith("]"):
+        inner = txt[1:-1].strip()
+        p_for = _sh_split_top_keyword(inner, "for")
+        if p_for > 0:
+            elt_txt = inner[:p_for].strip()
+            tail = inner[p_for + 3 :].strip()
+            p_in = _sh_split_top_keyword(tail, "in")
+            if p_in <= 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"invalid list comprehension in self_hosted parser: {txt}",
+                    source_span=_sh_span(ln_no, col, col + len(raw)),
+                    hint="Use `[elem for item in iterable]` form.",
+                )
+            tgt_txt = tail[:p_in].strip()
+            iter_and_if_txt = tail[p_in + 2 :].strip()
+            p_if = _sh_split_top_keyword(iter_and_if_txt, "if")
+            if p_if >= 0:
+                iter_txt = iter_and_if_txt[:p_if].strip()
+                if_txt = iter_and_if_txt[p_if + 2 :].strip()
+            else:
+                iter_txt = iter_and_if_txt
+                if_txt = ""
+            target_node = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
+            iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+            if (
+                isinstance(iter_node, dict)
+                and iter_node.get("kind") == "Call"
+                and isinstance(iter_node.get("func"), dict)
+                and iter_node.get("func", {}).get("kind") == "Name"
+                and iter_node.get("func", {}).get("id") == "range"
+            ):
+                rargs = list(iter_node.get("args", []))
+                if len(rargs) == 1:
+                    start_node = {
+                        "kind": "Constant",
+                        "source_span": _sh_span(ln_no, col, col),
+                        "resolved_type": "int64",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "0",
+                        "value": 0,
+                    }
+                    stop_node = rargs[0]
+                    step_node = {
+                        "kind": "Constant",
+                        "source_span": _sh_span(ln_no, col, col),
+                        "resolved_type": "int64",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "1",
+                        "value": 1,
+                    }
+                elif len(rargs) == 2:
+                    start_node = rargs[0]
+                    stop_node = rargs[1]
+                    step_node = {
+                        "kind": "Constant",
+                        "source_span": _sh_span(ln_no, col, col),
+                        "resolved_type": "int64",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "1",
+                        "value": 1,
+                    }
+                else:
+                    start_node = rargs[0]
+                    stop_node = rargs[1]
+                    step_node = rargs[2]
+                step_const = step_node.get("value") if isinstance(step_node, dict) else None
+                mode = "dynamic"
+                if step_const == 1:
+                    mode = "ascending"
+                elif step_const == -1:
+                    mode = "descending"
+                iter_node = {
+                    "kind": "RangeExpr",
+                    "source_span": iter_node.get("source_span"),
+                    "resolved_type": "range",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": iter_node.get("repr", "range(...)"),
+                    "start": start_node,
+                    "stop": stop_node,
+                    "step": step_node,
+                    "range_mode": mode,
+                }
+
+            item_t = _sh_infer_item_type(iter_node)
+            comp_types = dict(name_types)
+            if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                comp_types[str(target_node.get("id", ""))] = item_t
+            elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
+                for e in target_node.get("elements", []):
+                    if isinstance(e, dict) and e.get("kind") == "Name":
+                        comp_types[str(e.get("id", ""))] = "unknown"
+            elt_node = _sh_parse_expr_lowered(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
+            if_nodes: list[dict[str, Any]] = []
+            if if_txt != "":
+                if_nodes.append(_sh_parse_expr_lowered(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
+            elem_t = str(elt_node.get("resolved_type", "unknown"))
+            return {
+                "kind": "ListComp",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": f"list[{elem_t}]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "elt": elt_node,
+                "generators": [
+                    {
+                        "target": target_node,
+                        "iter": iter_node,
+                        "ifs": if_nodes,
+                        "is_async": False,
+                    }
+                ],
+            }
+
+    # Very simple list-comp support: [x for x in <iter>]
+    m_lc = re.match(r"^\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)\]$", txt)
+    if m_lc is not None:
+        elt_name = m_lc.group(1)
+        tgt_name = m_lc.group(2)
+        iter_txt = m_lc.group(3).strip()
+        iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
+        it_t = str(iter_node.get("resolved_type", "unknown"))
+        elem_t = "unknown"
+        if it_t.startswith("list[") and it_t.endswith("]"):
+            elem_t = it_t[5:-1]
+        elt_node = {
+            "kind": "Name",
+            "source_span": _sh_span(ln_no, col, col + len(elt_name)),
+            "resolved_type": elem_t if elt_name == tgt_name else "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": elt_name,
+            "id": elt_name,
+        }
+        return {
+            "kind": "ListComp",
+            "source_span": _sh_span(ln_no, col, col + len(raw)),
+            "resolved_type": f"list[{elem_t}]",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": txt,
+            "elt": elt_node,
+            "generators": [
+                {
+                    "target": {
+                        "kind": "Name",
+                        "source_span": _sh_span(ln_no, col, col + len(tgt_name)),
+                        "resolved_type": "unknown",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": tgt_name,
+                        "id": tgt_name,
+                    },
+                    "iter": iter_node,
+                    "ifs": [],
+                }
+            ],
+            "lowered_kind": "ListCompSimple",
+        }
+
+    if len(txt) >= 3 and txt[0] == "f" and txt[1] in {"'", '"'} and txt[-1] == txt[1]:
+        quote = txt[1]
+        inner = txt[2:-1]
+        values: list[dict[str, Any]] = []
+
+        i = 0
+        while i < len(inner):
+            j = inner.find("{", i)
+            if j < 0:
+                _sh_append_fstring_literal(values, inner[i:], _sh_span(ln_no, col, col + len(raw)))
+                break
+            if j + 1 < len(inner) and inner[j + 1] == "{":
+                _sh_append_fstring_literal(values, inner[i : j + 1], _sh_span(ln_no, col, col + len(raw)))
+                i = j + 2
+                continue
+            if j > i:
+                _sh_append_fstring_literal(values, inner[i:j], _sh_span(ln_no, col, col + len(raw)))
+            k = inner.find("}", j + 1)
+            if k < 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message="unterminated f-string placeholder in self_hosted parser",
+                    source_span=_sh_span(ln_no, col, col + len(raw)),
+                    hint="Close f-string placeholder with `}`.",
+                )
+            inner_expr = inner[j + 1 : k].strip()
+            values.append({"kind": "FormattedValue", "value": _sh_parse_expr_lowered(inner_expr, ln_no=ln_no, col=col, name_types=dict(name_types))})
+            i = k + 1
+        return {
+            "kind": "JoinedStr",
+            "source_span": _sh_span(ln_no, col, col + len(raw)),
+            "resolved_type": "str",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": txt,
+            "values": values,
+        }
+
+    tuple_parts = _sh_split_top_commas(txt)
+    if len(tuple_parts) >= 2:
+        elems = [_sh_parse_expr_lowered(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in tuple_parts]
+        elem_ts = [str(e.get("resolved_type", "unknown")) for e in elems]
+        return {
+            "kind": "Tuple",
+            "source_span": _sh_span(ln_no, col, col + len(raw)),
+            "resolved_type": "tuple[" + ", ".join(elem_ts) + "]",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": txt,
+            "elements": elems,
+        }
+
+    return _sh_parse_expr(
+        txt,
+        line_no=ln_no,
+        col_base=col,
+        name_types=name_types,
+        fn_return_types=_SH_FN_RETURNS,
+        class_method_return_types=_SH_CLASS_METHOD_RETURNS,
+        class_base=_SH_CLASS_BASE,
+    )
+
+def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
+    """インデントブロックを文単位で解析し、EAST 文リストを返す。"""
+    body_lines, merged_line_end = _sh_merge_logical_lines(body_lines)
+
+    stmts: list[dict[str, Any]] = []
+    pending_leading_trivia: list[dict[str, Any]] = []
+    pending_blank_count = 0
+
+    i = 0
+    while i < len(body_lines):
+        ln_no, ln_txt = body_lines[i]
+        indent = len(ln_txt) - len(ln_txt.lstrip(" "))
+        raw_s = ln_txt.strip()
+        s = _sh_strip_inline_comment(raw_s)
+
+        if raw_s == "":
+            pending_blank_count += 1
+            i += 1
+            continue
+        if raw_s.startswith("#"):
+            if pending_blank_count > 0:
+                pending_leading_trivia.append({"kind": "blank", "count": pending_blank_count})
+                pending_blank_count = 0
+            text = raw_s[1:]
+            if text.startswith(" "):
+                text = text[1:]
+            pending_leading_trivia.append({"kind": "comment", "text": text})
+            i += 1
+            continue
+        if s == "":
+            i += 1
+            continue
+
+        if s.startswith("if ") and s.endswith(":"):
+            cond_txt = s[len("if ") : -1].strip()
+            cond_col = ln_txt.find(cond_txt)
+            cond_expr = _sh_parse_expr_lowered(cond_txt, ln_no=ln_no, col=cond_col, name_types=dict(name_types))
+            then_block, j = _sh_collect_indented_block(body_lines, i + 1, indent)
+            if len(then_block) == 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"if body is missing in '{scope_label}'",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Add indented if-body.",
+                )
+            else_stmt_list, j = _sh_parse_if_tail(
+                start_idx=j,
+                parent_indent=indent,
+                body_lines=body_lines,
+                name_types=dict(name_types),
+                scope_label=scope_label,
+            )
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "If",
+                    "source_span": _sh_block_end_span(body_lines, ln_no, ln_txt.find("if "), len(ln_txt), j),
+                    "test": cond_expr,
+                    "body": _sh_parse_stmt_block(then_block, name_types=dict(name_types), scope_label=scope_label),
+                    "orelse": else_stmt_list,
+                }
+            )
+            i = j
+            continue
+
+        if s.startswith("for ") and s.endswith(":"):
+            m_for = re.match(r"^for\s+(.+)\s+in\s+(.+):$", s, flags=re.S)
+            if m_for is None:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse for statement: {s}",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Use `for target in iterable:` form.",
+                )
+            tgt_txt = m_for.group(1).strip()
+            iter_txt = m_for.group(2).strip()
+            tgt_col = ln_txt.find(tgt_txt)
+            iter_col = ln_txt.find(iter_txt)
+            target_expr = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=tgt_col, name_types=dict(name_types))
+            iter_expr = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=iter_col, name_types=dict(name_types))
+            body_block, j = _sh_collect_indented_block(body_lines, i + 1, indent)
+            if len(body_block) == 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"for body is missing in '{scope_label}'",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Add indented for-body.",
+                )
+            t_ty = "unknown"
+            i_ty = str(iter_expr.get("resolved_type", "unknown"))
+            if i_ty.startswith("list[") and i_ty.endswith("]"):
+                t_ty = i_ty[5:-1]
+            elif i_ty.startswith("tuple[") and i_ty.endswith("]"):
+                t_ty = "unknown"
+            elif i_ty.startswith("set[") and i_ty.endswith("]"):
+                t_ty = i_ty[4:-1]
+            elif i_ty == "str":
+                t_ty = "str"
+            elif i_ty in {"bytes", "bytearray"}:
+                t_ty = "uint8"
+            target_names: list[str] = []
+            if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                nm = str(target_expr.get("id", ""))
+                if nm != "":
+                    target_names.append(nm)
+            elif isinstance(target_expr, dict) and target_expr.get("kind") == "Tuple":
+                for e in target_expr.get("elements", []):
+                    if isinstance(e, dict) and e.get("kind") == "Name":
+                        nm = str(e.get("id", ""))
+                        if nm != "":
+                            target_names.append(nm)
+            if t_ty != "unknown":
+                for nm in target_names:
+                    name_types[nm] = t_ty
+            if (
+                isinstance(target_expr, dict)
+                and target_expr.get("kind") == "Name"
+                and
+                isinstance(iter_expr, dict)
+                and iter_expr.get("kind") == "Call"
+                and isinstance(iter_expr.get("func"), dict)
+                and iter_expr.get("func", {}).get("kind") == "Name"
+                and iter_expr.get("func", {}).get("id") == "range"
+            ):
+                rargs = list(iter_expr.get("args", []))
+                start_node: dict[str, Any]
+                stop_node: dict[str, Any]
+                step_node: dict[str, Any]
+                if len(rargs) == 1:
+                    start_node = {
+                        "kind": "Constant",
+                        "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
+                        "resolved_type": "int64",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "0",
+                        "value": 0,
+                    }
+                    stop_node = rargs[0]
+                    step_node = {
+                        "kind": "Constant",
+                        "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
+                        "resolved_type": "int64",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "1",
+                        "value": 1,
+                    }
+                elif len(rargs) == 2:
+                    start_node = rargs[0]
+                    stop_node = rargs[1]
+                    step_node = {
+                        "kind": "Constant",
+                        "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
+                        "resolved_type": "int64",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": "1",
+                        "value": 1,
+                    }
+                else:
+                    start_node = rargs[0]
+                    stop_node = rargs[1]
+                    step_node = rargs[2]
+                tgt = str(target_expr.get("id", ""))
+                if tgt != "":
+                    name_types[tgt] = "int64"
+                step_const = step_node.get("value") if isinstance(step_node, dict) else None
+                mode = "dynamic"
+                if step_const == 1:
+                    mode = "ascending"
+                elif step_const == -1:
+                    mode = "descending"
+                pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                    {
+                        "kind": "ForRange",
+                        "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                        "target": target_expr,
+                        "target_type": "int64",
+                        "start": start_node,
+                        "stop": stop_node,
+                        "step": step_node,
+                        "range_mode": mode,
+                        "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                        "orelse": [],
+                    }
+                )
+                i = j
+                continue
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "For",
+                    "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                    "target": target_expr,
+                    "target_type": t_ty,
+                    "iter": iter_expr,
+                    "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                    "orelse": [],
+                }
+            )
+            i = j
+            continue
+
+        if s.startswith("with ") and s.endswith(":"):
+            m_with = re.match(r"^with\s+(.+)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", s, flags=re.S)
+            if m_with is None:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse with statement: {s}",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Use `with expr as name:` form.",
+                )
+            ctx_txt = m_with.group(1).strip()
+            as_name = m_with.group(2).strip()
+            ctx_col = ln_txt.find(ctx_txt)
+            as_col = ln_txt.find(as_name, ctx_col + len(ctx_txt))
+            ctx_expr = _sh_parse_expr_lowered(ctx_txt, ln_no=ln_no, col=ctx_col, name_types=dict(name_types))
+            name_types[as_name] = str(ctx_expr.get("resolved_type", "unknown"))
+            body_block, j = _sh_collect_indented_block(body_lines, i + 1, indent)
+            if len(body_block) == 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"with body is missing in '{scope_label}'",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Add indented with-body.",
+                )
+            assign_stmt = {
+                "kind": "Assign",
+                "source_span": _sh_stmt_span(merged_line_end, ln_no, as_col, len(ln_txt)),
+                "target": {
+                    "kind": "Name",
+                    "source_span": _sh_span(ln_no, as_col, as_col + len(as_name)),
+                    "resolved_type": str(ctx_expr.get("resolved_type", "unknown")),
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": as_name,
+                    "id": as_name,
+                },
+                "value": ctx_expr,
+                "declare": True,
+                "declare_init": True,
+                "decl_type": str(ctx_expr.get("resolved_type", "unknown")),
+            }
+            close_expr = _sh_parse_expr_lowered(f"{as_name}.close()", ln_no=ln_no, col=as_col, name_types=dict(name_types))
+            try_stmt = {
+                "kind": "Try",
+                "source_span": _sh_block_end_span(body_lines, ln_no, ln_txt.find("with "), len(ln_txt), j),
+                "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                "handlers": [],
+                "orelse": [],
+                "finalbody": [{"kind": "Expr", "source_span": _sh_stmt_span(merged_line_end, ln_no, as_col, len(ln_txt)), "value": close_expr}],
+            }
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, assign_stmt)
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, try_stmt)
+            i = j
+            continue
+
+        if s.startswith("while ") and s.endswith(":"):
+            cond_txt = s[len("while ") : -1].strip()
+            cond_col = ln_txt.find(cond_txt)
+            cond_expr = _sh_parse_expr_lowered(cond_txt, ln_no=ln_no, col=cond_col, name_types=dict(name_types))
+            body_block, j = _sh_collect_indented_block(body_lines, i + 1, indent)
+            if len(body_block) == 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"while body is missing in '{scope_label}'",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Add indented while-body.",
+                )
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "While",
+                    "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                    "test": cond_expr,
+                    "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                    "orelse": [],
+                }
+            )
+            i = j
+            continue
+
+        if s == "try:":
+            try_body, j = _sh_collect_indented_block(body_lines, i + 1, indent)
+            if len(try_body) == 0:
+                raise EastBuildError(
+                    kind="unsupported_syntax",
+                    message=f"try body is missing in '{scope_label}'",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Add indented try-body.",
+                )
+            handlers: list[dict[str, Any]] = []
+            finalbody: list[dict[str, Any]] = []
+            while j < len(body_lines):
+                h_no, h_ln = body_lines[j]
+                h_s = h_ln.strip()
+                h_indent = len(h_ln) - len(h_ln.lstrip(" "))
+                if h_indent != indent:
+                    break
+                m_exc_as = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s, flags=re.S)
+                m_exc_plain = re.match(r"^except\s+(.+?)\s*:\s*$", h_s, flags=re.S)
+                if m_exc_as is not None or m_exc_plain is not None:
+                    if m_exc_as is not None:
+                        ex_type_txt = m_exc_as.group(1).strip()
+                        ex_name: str | None = m_exc_as.group(2)
+                    else:
+                        ex_type_txt = m_exc_plain.group(1).strip() if m_exc_plain is not None else "Exception"
+                        ex_name = None
+                    ex_type_col = h_ln.find(ex_type_txt)
+                    h_body, k = _sh_collect_indented_block(body_lines, j + 1, indent)
+                    handlers.append(
+                        {
+                            "kind": "ExceptHandler",
+                            "type": _sh_parse_expr_lowered(ex_type_txt, ln_no=h_no, col=ex_type_col, name_types=dict(name_types)),
+                            "name": ex_name,
+                            "body": _sh_parse_stmt_block(h_body, name_types=dict(name_types), scope_label=scope_label),
+                        }
+                    )
+                    j = k
+                    continue
+                if h_s == "finally:":
+                    f_body, k = _sh_collect_indented_block(body_lines, j + 1, indent)
+                    finalbody = _sh_parse_stmt_block(f_body, name_types=dict(name_types), scope_label=scope_label)
+                    j = k
+                    continue
+                break
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "Try",
+                    "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                    "body": _sh_parse_stmt_block(try_body, name_types=dict(name_types), scope_label=scope_label),
+                    "handlers": handlers,
+                    "orelse": [],
+                    "finalbody": finalbody,
+                }
+            )
+            i = j
+            continue
+
+        if s.startswith("raise "):
+            expr_txt = s[len("raise ") :].strip()
+            expr_col = ln_txt.find(expr_txt)
+            cause_expr = None
+            cause_split = _sh_split_top_level_from(expr_txt)
+            if cause_split is not None:
+                exc_txt, cause_txt = cause_split
+                expr_txt = exc_txt
+                expr_col = ln_txt.find(expr_txt)
+                cause_col = ln_txt.find(cause_txt)
+                cause_expr = _sh_parse_expr_lowered(cause_txt, ln_no=ln_no, col=cause_col, name_types=dict(name_types))
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "Raise",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, ln_txt.find("raise "), len(ln_txt)),
+                    "exc": _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                    "cause": cause_expr,
+                }
+            )
+            i += 1
+            continue
+
+        if s == "pass":
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Pass", "source_span": _sh_stmt_span(merged_line_end, ln_no, indent, indent + 4)})
+            i += 1
+            continue
+
+        if s == "return":
+            rcol = ln_txt.find("return")
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "Return",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, rcol, len(ln_txt)),
+                    "value": None,
+                }
+            )
+            i += 1
+            continue
+
+        if s.startswith("return "):
+            rcol = ln_txt.find("return ")
+            expr_txt = ln_txt[rcol + len("return ") :].strip()
+            expr_col = ln_txt.find(expr_txt, rcol + len("return "))
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "Return",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, rcol, len(ln_txt)),
+                    "value": _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                }
+            )
+            i += 1
+            continue
+
+        m_ann_decl = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*(.+)$", s)
+        if m_ann_decl is not None and "=" not in s:
+            target_txt = m_ann_decl.group(1)
+            ann = _sh_ann_to_type(m_ann_decl.group(2))
+            target_col = ln_txt.find(target_txt)
+            target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+            if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                name_types[str(target_expr.get("id", ""))] = ann
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "AnnAssign",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
+                    "target": target_expr,
+                    "annotation": ann,
+                    "value": None,
+                    "declare": True,
+                    "decl_type": ann,
+                }
+            )
+            i += 1
+            continue
+
+        m_ann = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
+        if m_ann is not None:
+            target_txt = m_ann.group(1)
+            ann = _sh_ann_to_type(m_ann.group(2))
+            expr_txt = m_ann.group(3).strip()
+            expr_col = ln_txt.find(expr_txt)
+            val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+            target_col = ln_txt.find(target_txt)
+            target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+            if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                name_types[str(target_expr.get("id", ""))] = ann
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "AnnAssign",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
+                    "target": target_expr,
+                    "annotation": ann,
+                    "value": val_expr,
+                    "declare": True,
+                    "decl_type": ann,
+                }
+            )
+            i += 1
+            continue
+
+        m_aug = re.match(
+            r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*(\+=|-=|\*=|/=|//=|%=|&=|\|=|\^=|<<=|>>=)\s*(.+)$",
+            s,
+        )
+        if m_aug is not None:
+            target_txt = m_aug.group(1)
+            op_map = {
+                "+=": "Add",
+                "-=": "Sub",
+                "*=": "Mult",
+                "/=": "Div",
+                "//=": "FloorDiv",
+                "%=": "Mod",
+                "&=": "BitAnd",
+                "|=": "BitOr",
+                "^=": "BitXor",
+                "<<=": "LShift",
+                ">>=": "RShift",
+            }
+            expr_txt = m_aug.group(3).strip()
+            expr_col = ln_txt.find(expr_txt)
+            target_col = ln_txt.find(target_txt)
+            target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+            val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+            target_ty = "unknown"
+            if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                target_ty = name_types.get(str(target_expr.get("id", "")), "unknown")
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "AugAssign",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
+                    "target": target_expr,
+                    "op": op_map[m_aug.group(2)],
+                    "value": val_expr,
+                    "declare": False,
+                    "decl_type": target_ty if target_ty != "unknown" else None,
+                }
+            )
+            i += 1
+            continue
+
+        m_tasg = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
+        if m_tasg is not None:
+            n1 = m_tasg.group(1)
+            n2 = m_tasg.group(2)
+            expr_txt = m_tasg.group(3).strip()
+            expr_col = ln_txt.find(expr_txt)
+            rhs = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+            c1 = ln_txt.find(n1)
+            c2 = ln_txt.find(n2, c1 + len(n1))
+            if (
+                isinstance(rhs, dict)
+                and rhs.get("kind") == "Tuple"
+                and len(rhs.get("elements", [])) == 2
+                and isinstance(rhs.get("elements")[0], dict)
+                and isinstance(rhs.get("elements")[1], dict)
+                and rhs.get("elements")[0].get("kind") == "Name"
+                and rhs.get("elements")[1].get("kind") == "Name"
+                and str(rhs.get("elements")[0].get("id", "")) == n2
+                and str(rhs.get("elements")[1].get("id", "")) == n1
+            ):
+                pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                    {
+                        "kind": "Swap",
+                        "source_span": _sh_stmt_span(merged_line_end, ln_no, c1, len(ln_txt)),
+                        "left": {
+                            "kind": "Name",
+                            "source_span": _sh_span(ln_no, c1, c1 + len(n1)),
+                            "resolved_type": name_types.get(n1, "unknown"),
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": n1,
+                            "id": n1,
+                        },
+                        "right": {
+                            "kind": "Name",
+                            "source_span": _sh_span(ln_no, c2, c2 + len(n2)),
+                            "resolved_type": name_types.get(n2, "unknown"),
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": n2,
+                            "id": n2,
+                        },
+                    }
+                )
+                i += 1
+                continue
+            target_expr = {
+                "kind": "Tuple",
+                "source_span": _sh_span(ln_no, c1, c2 + len(n2)),
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": f"{n1}, {n2}",
+                "elements": [
+                    {
+                        "kind": "Name",
+                        "source_span": _sh_span(ln_no, c1, c1 + len(n1)),
+                        "resolved_type": name_types.get(n1, "unknown"),
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": n1,
+                        "id": n1,
+                    },
+                    {
+                        "kind": "Name",
+                        "source_span": _sh_span(ln_no, c2, c2 + len(n2)),
+                        "resolved_type": name_types.get(n2, "unknown"),
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": n2,
+                        "id": n2,
+                    },
+                ],
+            }
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "Assign",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, c1, len(ln_txt)),
+                    "target": target_expr,
+                    "value": rhs,
+                    "declare": False,
+                    "decl_type": None,
+                }
+            )
+            i += 1
+            continue
+
+        asg_split = _sh_split_top_level_assign(s)
+        if asg_split is not None:
+            target_txt, expr_txt = asg_split
+            expr_col = ln_txt.find(expr_txt)
+            target_col = ln_txt.find(target_txt)
+            target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+            val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+            decl_type = val_expr.get("resolved_type", "unknown")
+            if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                nm = str(target_expr.get("id", ""))
+                if nm != "":
+                    name_types[nm] = str(decl_type)
+            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
+                {
+                    "kind": "Assign",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
+                    "target": target_expr,
+                    "value": val_expr,
+                    "declare": True,
+                    "declare_init": True,
+                    "decl_type": decl_type,
+                }
+            )
+            i += 1
+            continue
+
+        expr_col = len(ln_txt) - len(ln_txt.lstrip(" "))
+        expr_stmt = _sh_parse_expr_lowered(s, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
+        pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Expr", "source_span": _sh_stmt_span(merged_line_end, ln_no, expr_col, len(ln_txt)), "value": expr_stmt})
+        i += 1
+    return stmts
+
+
 def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
     """Python ソースを self-hosted パーサで EAST Module に変換する。"""
     lines = source.splitlines()
@@ -1704,166 +3425,6 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             leading_file_trivia.append({"kind": "comment", "text": text})
             continue
         break
-
-    def parse_def_sig(ln_no: int, ln: str, *, in_class: str | None = None) -> dict[str, Any] | None:
-        """`def ...` 行から関数名・引数型・戻り型を抽出する。"""
-        ln_norm = re.sub(r"\s+", " ", ln.strip())
-        m_def = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", ln_norm)
-        if m_def is None:
-            return None
-        arg_types: dict[str, str] = {}
-        arg_order: list[str] = []
-        arg_defaults: dict[str, str] = {}
-        args_raw = m_def.group(2)
-        if args_raw.strip() != "":
-            # Supported:
-            # - name: Type
-            # - name: Type = default
-            # - "*" keyword-only marker
-            # Not supported:
-            # - "/" positional-only marker
-            # - *args / **kwargs
-            for p_txt, _off in _sh_split_args_with_offsets(args_raw):
-                p = p_txt.strip()
-                if p == "":
-                    continue
-                if p == "*":
-                    continue
-                if p == "/":
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message="self_hosted parser cannot parse positional-only marker '/' in parameter list",
-                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                        hint="Remove '/' from signature for now.",
-                    )
-                if p.startswith("**"):
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"self_hosted parser cannot parse variadic kwargs parameter: {p_txt}",
-                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                        hint="Use explicit parameters instead of **kwargs.",
-                    )
-                if p.startswith("*"):
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"self_hosted parser cannot parse variadic args parameter: {p_txt}",
-                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                        hint="Use explicit parameters instead of *args.",
-                    )
-                if in_class is not None and p == "self":
-                    arg_types["self"] = in_class
-                    arg_order.append("self")
-                    continue
-                m_param = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", p)
-                if m_param is None:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"self_hosted parser cannot parse parameter: {p_txt}",
-                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                        hint="Use `name: Type` style parameters.",
-                    )
-                pn = m_param.group(1).strip()
-                pt = m_param.group(2).strip()
-                if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pn):
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"self_hosted parser cannot parse parameter name: {pn}",
-                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                        hint="Use valid identifier for parameter name.",
-                    )
-                if pt == "":
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"self_hosted parser cannot parse parameter type: {p_txt}",
-                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                        hint="Use `name: Type` style parameters.",
-                    )
-                arg_types[pn] = _sh_ann_to_type(pt)
-                arg_order.append(pn)
-                pdef = m_param.group(3)
-                if pdef is not None:
-                    default_txt = pdef.strip()
-                    if default_txt != "":
-                        arg_defaults[pn] = default_txt
-        return {
-            "name": m_def.group(1),
-            "ret": _sh_ann_to_type(m_def.group(3).strip()) if m_def.group(3) is not None else "None",
-            "arg_types": arg_types,
-            "arg_order": arg_order,
-            "arg_defaults": arg_defaults,
-        }
-
-    def merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tuple[int, str]], dict[int, tuple[int, int]]]:
-        """Merge physical lines into logical statements (paren/brace and triple-quoted string continuation)."""
-
-        def scan_line(
-            txt: str,
-            *,
-            depth: int,
-            mode: str | None,
-        ) -> tuple[int, str | None]:
-            """論理行マージ用に括弧深度と文字列モードを更新する。"""
-            i = 0
-            while i < len(txt):
-                if mode in {"'''", '"""'}:
-                    close = txt.find(mode, i)
-                    if close < 0:
-                        i = len(txt)
-                        continue
-                    i = close + 3
-                    mode = None
-                    continue
-                ch = txt[i]
-                if mode in {"'", '"'}:
-                    if ch == "\\":
-                        i += 2
-                        continue
-                    if ch == mode:
-                        mode = None
-                    i += 1
-                    continue
-                if i + 2 < len(txt) and txt[i : i + 3] in {"'''", '"""'}:
-                    mode = txt[i : i + 3]
-                    i += 3
-                    continue
-                if ch in {"'", '"'}:
-                    mode = ch
-                    i += 1
-                    continue
-                if ch == "#":
-                    break
-                if ch in {"(", "[", "{"}:
-                    depth += 1
-                elif ch in {")", "]", "}"}:
-                    depth -= 1
-                i += 1
-            return depth, mode
-
-        merged: list[tuple[int, str]] = []
-        merged_line_end: dict[int, tuple[int, int]] = {}
-        idx = 0
-        while idx < len(raw_lines):
-            start_no, start_txt = raw_lines[idx]
-            acc = start_txt
-            depth = 0
-            mode: str | None = None
-            depth, mode = scan_line(start_txt, depth=depth, mode=mode)
-            end_no = start_no
-            end_txt = start_txt
-            while (depth > 0 or mode in {"'''", '"""'}) and idx + 1 < len(raw_lines):
-                idx += 1
-                next_no, next_txt = raw_lines[idx]
-                if mode in {"'''", '"""'}:
-                    acc += "\n" + next_txt
-                else:
-                    acc += " " + next_txt.strip()
-                depth, mode = scan_line(next_txt, depth=depth, mode=mode)
-                end_no = next_no
-                end_txt = next_txt
-            merged.append((start_no, acc))
-            merged_line_end[start_no] = (end_no, len(end_txt))
-            idx += 1
-        return merged, merged_line_end
 
     class_method_return_types: dict[str, dict[str, str]] = {}
     class_base: dict[str, str | None] = {}
@@ -1886,1473 +3447,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             class_method_return_types.setdefault(cur_cls, {})
             continue
         if cur_cls is None:
-            sig = parse_def_sig(ln_no, ln)
+            sig = _sh_parse_def_sig(ln_no, ln)
             if sig is not None:
                 fn_returns[str(sig["name"])] = str(sig["ret"])
             continue
-        sig = parse_def_sig(ln_no, ln, in_class=cur_cls)
+        sig = _sh_parse_def_sig(ln_no, ln, in_class=cur_cls)
         if sig is not None:
             class_method_return_types[cur_cls][str(sig["name"])] = str(sig["ret"])
 
-    def split_top_commas(txt: str) -> list[str]:
-        """文字列/括弧深度を考慮してトップレベルのカンマ分割を行う。"""
-        out: list[str] = []
-        depth = 0
-        in_str: str | None = None
-        esc = False
-        start = 0
-        for i, ch in enumerate(txt):
-            if in_str is not None:
-                if esc:
-                    esc = False
-                    continue
-                if ch == "\\":
-                    esc = True
-                    continue
-                if ch == in_str:
-                    in_str = None
-                continue
-            if ch in {"'", '"'}:
-                in_str = ch
-                continue
-            if ch in {"(", "[", "{"}:
-                depth += 1
-                continue
-            if ch in {")", "]", "}"}:
-                depth -= 1
-                continue
-            if ch == "," and depth == 0:
-                out.append(txt[start:i].strip())
-                start = i + 1
-        tail = txt[start:].strip()
-        if tail != "":
-            out.append(tail)
-        return out
+    _sh_set_parse_context(fn_returns, class_method_return_types, class_base)
+    parse_expr = _sh_parse_expr_lowered
 
-    def parse_expr(expr_txt: str, *, ln_no: int, col: int, name_types: dict[str, str]) -> dict[str, Any]:
-        """式文字列を EAST 式ノードへ変換する（簡易 lower を含む）。"""
-        raw = expr_txt
-        txt = raw.strip()
-
-        # lambda は if-expression より結合が弱いので、
-        # ここでの簡易 ifexp 分解を回避して self_hosted 式パーサへ委譲する。
-        if txt.startswith("lambda "):
-            return _sh_parse_expr(
-                txt,
-                line_no=ln_no,
-                col_base=col,
-                name_types=name_types,
-                fn_return_types=fn_returns,
-                class_method_return_types=class_method_return_types,
-                class_base=class_base,
-            )
-
-        def split_top_keyword(text: str, kw: str) -> int:
-            """トップレベルでキーワード出現位置を探す（未検出なら -1）。"""
-            depth = 0
-            in_str: str | None = None
-            esc = False
-            i = 0
-            while i < len(text):
-                ch = text[i]
-                if in_str is not None:
-                    if esc:
-                        esc = False
-                        i += 1
-                        continue
-                    if ch == "\\":
-                        esc = True
-                        i += 1
-                        continue
-                    if ch == in_str:
-                        in_str = None
-                    i += 1
-                    continue
-                if ch in {"'", '"'}:
-                    in_str = ch
-                    i += 1
-                    continue
-                if ch in {"(", "[", "{"}:
-                    depth += 1
-                    i += 1
-                    continue
-                if ch in {")", "]", "}"}:
-                    depth -= 1
-                    i += 1
-                    continue
-                if depth == 0 and text.startswith(kw, i):
-                    prev_ok = i == 0 or text[i - 1].isspace()
-                    next_ok = (i + len(kw) >= len(text)) or text[i + len(kw)].isspace()
-                    if prev_ok and next_ok:
-                        return i
-                i += 1
-            return -1
-
-        # if-expression: a if cond else b
-        p_if = split_top_keyword(txt, "if")
-        p_else = split_top_keyword(txt, "else")
-        if p_if >= 0 and p_else > p_if:
-            body_txt = txt[:p_if].strip()
-            test_txt = txt[p_if + 2 : p_else].strip()
-            else_txt = txt[p_else + 4 :].strip()
-            body_node = parse_expr(body_txt, ln_no=ln_no, col=col + txt.find(body_txt), name_types=dict(name_types))
-            test_node = parse_expr(test_txt, ln_no=ln_no, col=col + txt.find(test_txt), name_types=dict(name_types))
-            else_node = parse_expr(else_txt, ln_no=ln_no, col=col + txt.rfind(else_txt), name_types=dict(name_types))
-            rt = body_node.get("resolved_type", "unknown")
-            if rt != else_node.get("resolved_type", "unknown"):
-                rt = "unknown"
-            return {
-                "kind": "IfExp",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": rt,
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "test": test_node,
-                "body": body_node,
-                "orelse": else_node,
-            }
-
-        # Normalize generator-arg any/all into list-comp form for self_hosted parser.
-        m_any_all = re.match(r"^(any|all)\((.+)\)$", txt, flags=re.S)
-        if m_any_all is not None:
-            fn_name = m_any_all.group(1)
-            inner_arg = m_any_all.group(2).strip()
-            if split_top_keyword(inner_arg, "for") > 0 and split_top_keyword(inner_arg, "in") > 0:
-                lc = parse_expr(f"[{inner_arg}]", ln_no=ln_no, col=col + txt.find(inner_arg), name_types=dict(name_types))
-                return {
-                    "kind": "Call",
-                    "source_span": _sh_span(ln_no, col, col + len(raw)),
-                    "resolved_type": "bool",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": txt,
-                    "func": {
-                        "kind": "Name",
-                        "source_span": _sh_span(ln_no, col, col + len(fn_name)),
-                        "resolved_type": "unknown",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": fn_name,
-                        "id": fn_name,
-                    },
-                    "args": [lc],
-                    "keywords": [],
-                }
-
-        # Normalize single generator-argument calls into list-comp argument form.
-        # Example: ", ".join(f(x) for x in items) -> ", ".join([f(x) for x in items])
-        if txt.endswith(")"):
-            depth = 0
-            in_str: str | None = None
-            esc = False
-            open_idx = -1
-            close_idx = -1
-            for idx, ch in enumerate(txt):
-                if in_str is not None:
-                    if esc:
-                        esc = False
-                    elif ch == "\\":
-                        esc = True
-                    elif ch == in_str:
-                        in_str = None
-                    continue
-                if ch in {"'", '"'}:
-                    in_str = ch
-                    continue
-                if ch == "(":
-                    if depth == 0 and open_idx < 0:
-                        open_idx = idx
-                    depth += 1
-                    continue
-                if ch == ")":
-                    depth -= 1
-                    if depth == 0:
-                        close_idx = idx
-                    continue
-            if open_idx > 0 and close_idx == len(txt) - 1:
-                inner = txt[open_idx + 1 : close_idx].strip()
-                if split_top_commas(inner) == [inner] and split_top_keyword(inner, "for") > 0 and split_top_keyword(inner, "in") > 0:
-                    rewritten = txt[: open_idx + 1] + "[" + inner + "]" + txt[close_idx:]
-                    return parse_expr(rewritten, ln_no=ln_no, col=col, name_types=dict(name_types))
-
-        def split_top_plus(text: str) -> list[str]:
-            """トップレベルの `+` で式を分割する。"""
-            out: list[str] = []
-            depth = 0
-            in_str: str | None = None
-            esc = False
-            start = 0
-            for i, ch in enumerate(text):
-                if in_str is not None:
-                    if esc:
-                        esc = False
-                        continue
-                    if ch == "\\":
-                        esc = True
-                        continue
-                    if ch == in_str:
-                        in_str = None
-                    continue
-                if ch in {"'", '"'}:
-                    in_str = ch
-                    continue
-                if ch in {"(", "[", "{"}:
-                    depth += 1
-                    continue
-                if ch in {")", "]", "}"}:
-                    depth -= 1
-                    continue
-                if ch == "+" and depth == 0:
-                    out.append(text[start:i].strip())
-                    start = i + 1
-            tail = text[start:].strip()
-            if tail != "":
-                out.append(tail)
-            return out
-
-        # Handle concatenation chains that include f-strings before generic parsing.
-        plus_parts = split_top_plus(txt)
-        if len(plus_parts) >= 2 and any(p.startswith("f\"") or p.startswith("f'") for p in plus_parts):
-            nodes = [parse_expr(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in plus_parts]
-            node = nodes[0]
-            for rhs in nodes[1:]:
-                node = {
-                    "kind": "BinOp",
-                    "source_span": _sh_span(ln_no, col, col + len(raw)),
-                    "resolved_type": "str",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": txt,
-                    "left": node,
-                    "op": "Add",
-                    "right": rhs,
-                }
-            return node
-
-        # dict-comp support: {k: v for x in it} / {k: v for a, b in it}
-        if txt.startswith("{") and txt.endswith("}") and ":" in txt:
-            inner = txt[1:-1].strip()
-            p_for = split_top_keyword(inner, "for")
-            if p_for > 0:
-                head = inner[:p_for].strip()
-                tail = inner[p_for + 3 :].strip()
-                p_in = split_top_keyword(tail, "in")
-                if p_in <= 0:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"invalid dict comprehension in self_hosted parser: {txt}",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Use `{key: value for item in iterable}` form.",
-                    )
-                tgt_txt = tail[:p_in].strip()
-                iter_txt = tail[p_in + 2 :].strip()
-                p_if = split_top_keyword(iter_txt, "if")
-                if p_if >= 0:
-                    iter_txt = iter_txt[:p_if].strip()
-                if ":" not in head:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"invalid dict comprehension pair in self_hosted parser: {txt}",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Use `key: value` pair before `for`.",
-                    )
-                ktxt, vtxt = head.split(":", 1)
-                ktxt = ktxt.strip()
-                vtxt = vtxt.strip()
-                target_node = parse_expr(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
-                comp_types = dict(name_types)
-                if isinstance(target_node, dict) and target_node.get("kind") == "Name":
-                    comp_types[str(target_node.get("id", ""))] = "unknown"
-                elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
-                    for e in target_node.get("elements", []):
-                        if isinstance(e, dict) and e.get("kind") == "Name":
-                            comp_types[str(e.get("id", ""))] = "unknown"
-                key_node = parse_expr(ktxt, ln_no=ln_no, col=col + txt.find(ktxt), name_types=dict(comp_types))
-                val_node = parse_expr(vtxt, ln_no=ln_no, col=col + txt.find(vtxt), name_types=dict(comp_types))
-                iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
-                kt = str(key_node.get("resolved_type", "unknown"))
-                vt = str(val_node.get("resolved_type", "unknown"))
-                return {
-                    "kind": "DictComp",
-                    "source_span": _sh_span(ln_no, col, col + len(raw)),
-                    "resolved_type": f"dict[{kt},{vt}]",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": txt,
-                    "key": key_node,
-                    "value": val_node,
-                    "generators": [
-                        {
-                            "target": target_node,
-                            "iter": iter_node,
-                            "ifs": [],
-                            "is_async": False,
-                        }
-                    ],
-                }
-
-        # set-comp support: {x for x in it} / {x for a, b in it if cond}
-        if txt.startswith("{") and txt.endswith("}") and ":" not in txt:
-            inner = txt[1:-1].strip()
-            p_for = split_top_keyword(inner, "for")
-            if p_for > 0:
-                elt_txt = inner[:p_for].strip()
-                tail = inner[p_for + 3 :].strip()
-                p_in = split_top_keyword(tail, "in")
-                if p_in <= 0:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"invalid set comprehension in self_hosted parser: {txt}",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Use `{elem for item in iterable}` form.",
-                    )
-                tgt_txt = tail[:p_in].strip()
-                iter_and_if_txt = tail[p_in + 2 :].strip()
-                p_if = split_top_keyword(iter_and_if_txt, "if")
-                if p_if >= 0:
-                    iter_txt = iter_and_if_txt[:p_if].strip()
-                    if_txt = iter_and_if_txt[p_if + 2 :].strip()
-                else:
-                    iter_txt = iter_and_if_txt
-                    if_txt = ""
-                target_node = parse_expr(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
-                comp_types = dict(name_types)
-                if isinstance(target_node, dict) and target_node.get("kind") == "Name":
-                    comp_types[str(target_node.get("id", ""))] = "unknown"
-                elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
-                    for e in target_node.get("elements", []):
-                        if isinstance(e, dict) and e.get("kind") == "Name":
-                            comp_types[str(e.get("id", ""))] = "unknown"
-                elt_node = parse_expr(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
-                iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
-                if_nodes: list[dict[str, Any]] = []
-                if if_txt != "":
-                    if_nodes.append(parse_expr(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
-                return {
-                    "kind": "SetComp",
-                    "source_span": _sh_span(ln_no, col, col + len(raw)),
-                    "resolved_type": f"set[{elt_node.get('resolved_type', 'unknown')}]",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": txt,
-                    "elt": elt_node,
-                    "generators": [
-                        {
-                            "target": target_node,
-                            "iter": iter_node,
-                            "ifs": if_nodes,
-                            "is_async": False,
-                        }
-                    ],
-                }
-
-        # dict literal: {"a": 1, "b": 2}
-        if txt.startswith("{") and txt.endswith("}") and ":" in txt:
-            inner = txt[1:-1].strip()
-            entries: list[dict[str, Any]] = []
-            if inner != "":
-                for part in split_top_commas(inner):
-                    if ":" not in part:
-                        raise EastBuildError(
-                            kind="unsupported_syntax",
-                            message=f"invalid dict entry in self_hosted parser: {part}",
-                            source_span=_sh_span(ln_no, col, col + len(raw)),
-                            hint="Use `key: value` form in dict literals.",
-                        )
-                    ktxt, vtxt = part.split(":", 1)
-                    ktxt = ktxt.strip()
-                    vtxt = vtxt.strip()
-                    entries.append(
-                        {
-                            "key": parse_expr(ktxt, ln_no=ln_no, col=col + txt.find(ktxt), name_types=dict(name_types)),
-                            "value": parse_expr(vtxt, ln_no=ln_no, col=col + txt.find(vtxt), name_types=dict(name_types)),
-                        }
-                    )
-            kt = "unknown"
-            vt = "unknown"
-            if len(entries) > 0:
-                kt = str(entries[0]["key"].get("resolved_type", "unknown"))
-                vt = str(entries[0]["value"].get("resolved_type", "unknown"))
-            return {
-                "kind": "Dict",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": f"dict[{kt},{vt}]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "entries": entries,
-            }
-
-        # list-comp support: [expr for target in iter if cond]
-        if txt.startswith("[") and txt.endswith("]"):
-            inner = txt[1:-1].strip()
-            p_for = split_top_keyword(inner, "for")
-            if p_for > 0:
-                elt_txt = inner[:p_for].strip()
-                tail = inner[p_for + 3 :].strip()
-                p_in = split_top_keyword(tail, "in")
-                if p_in <= 0:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"invalid list comprehension in self_hosted parser: {txt}",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Use `[elem for item in iterable]` form.",
-                    )
-                tgt_txt = tail[:p_in].strip()
-                iter_and_if_txt = tail[p_in + 2 :].strip()
-                p_if = split_top_keyword(iter_and_if_txt, "if")
-                if p_if >= 0:
-                    iter_txt = iter_and_if_txt[:p_if].strip()
-                    if_txt = iter_and_if_txt[p_if + 2 :].strip()
-                else:
-                    iter_txt = iter_and_if_txt
-                    if_txt = ""
-                target_node = parse_expr(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
-                iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
-                if (
-                    isinstance(iter_node, dict)
-                    and iter_node.get("kind") == "Call"
-                    and isinstance(iter_node.get("func"), dict)
-                    and iter_node.get("func", {}).get("kind") == "Name"
-                    and iter_node.get("func", {}).get("id") == "range"
-                ):
-                    rargs = list(iter_node.get("args", []))
-                    if len(rargs) == 1:
-                        start_node = {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, col, col),
-                            "resolved_type": "int64",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": "0",
-                            "value": 0,
-                        }
-                        stop_node = rargs[0]
-                        step_node = {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, col, col),
-                            "resolved_type": "int64",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": "1",
-                            "value": 1,
-                        }
-                    elif len(rargs) == 2:
-                        start_node = rargs[0]
-                        stop_node = rargs[1]
-                        step_node = {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, col, col),
-                            "resolved_type": "int64",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": "1",
-                            "value": 1,
-                        }
-                    else:
-                        start_node = rargs[0]
-                        stop_node = rargs[1]
-                        step_node = rargs[2]
-                    step_const = step_node.get("value") if isinstance(step_node, dict) else None
-                    mode = "dynamic"
-                    if step_const == 1:
-                        mode = "ascending"
-                    elif step_const == -1:
-                        mode = "descending"
-                    iter_node = {
-                        "kind": "RangeExpr",
-                        "source_span": iter_node.get("source_span"),
-                        "resolved_type": "range",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": iter_node.get("repr", "range(...)"),
-                        "start": start_node,
-                        "stop": stop_node,
-                        "step": step_node,
-                        "range_mode": mode,
-                    }
-
-                def infer_item_type(node: dict[str, Any]) -> str:
-                    """dict リテラルのキー/値型推論に使う簡易型解決。"""
-                    t = str(node.get("resolved_type", "unknown"))
-                    if t == "range":
-                        return "int64"
-                    if t.startswith("list[") and t.endswith("]"):
-                        return t[5:-1].strip() or "unknown"
-                    if t.startswith("set[") and t.endswith("]"):
-                        return t[4:-1].strip() or "unknown"
-                    if t in {"bytes", "bytearray"}:
-                        return "uint8"
-                    if t == "str":
-                        return "str"
-                    return "unknown"
-
-                item_t = infer_item_type(iter_node)
-                comp_types = dict(name_types)
-                if isinstance(target_node, dict) and target_node.get("kind") == "Name":
-                    comp_types[str(target_node.get("id", ""))] = item_t
-                elif isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
-                    for e in target_node.get("elements", []):
-                        if isinstance(e, dict) and e.get("kind") == "Name":
-                            comp_types[str(e.get("id", ""))] = "unknown"
-                elt_node = parse_expr(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
-                if_nodes: list[dict[str, Any]] = []
-                if if_txt != "":
-                    if_nodes.append(parse_expr(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
-                elem_t = str(elt_node.get("resolved_type", "unknown"))
-                return {
-                    "kind": "ListComp",
-                    "source_span": _sh_span(ln_no, col, col + len(raw)),
-                    "resolved_type": f"list[{elem_t}]",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": txt,
-                    "elt": elt_node,
-                    "generators": [
-                        {
-                            "target": target_node,
-                            "iter": iter_node,
-                            "ifs": if_nodes,
-                            "is_async": False,
-                        }
-                    ],
-                }
-
-        # Very simple list-comp support: [x for x in <iter>]
-        m_lc = re.match(r"^\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)\]$", txt)
-        if m_lc is not None:
-            elt_name = m_lc.group(1)
-            tgt_name = m_lc.group(2)
-            iter_txt = m_lc.group(3).strip()
-            iter_node = parse_expr(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
-            it_t = str(iter_node.get("resolved_type", "unknown"))
-            elem_t = "unknown"
-            if it_t.startswith("list[") and it_t.endswith("]"):
-                elem_t = it_t[5:-1]
-            elt_node = {
-                "kind": "Name",
-                "source_span": _sh_span(ln_no, col, col + len(elt_name)),
-                "resolved_type": elem_t if elt_name == tgt_name else "unknown",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": elt_name,
-                "id": elt_name,
-            }
-            return {
-                "kind": "ListComp",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": f"list[{elem_t}]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "elt": elt_node,
-                "generators": [
-                    {
-                        "target": {
-                            "kind": "Name",
-                            "source_span": _sh_span(ln_no, col, col + len(tgt_name)),
-                            "resolved_type": "unknown",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": tgt_name,
-                            "id": tgt_name,
-                        },
-                        "iter": iter_node,
-                        "ifs": [],
-                    }
-                ],
-                "lowered_kind": "ListCompSimple",
-            }
-
-        if len(txt) >= 3 and txt[0] == "f" and txt[1] in {"'", '"'} and txt[-1] == txt[1]:
-            quote = txt[1]
-            inner = txt[2:-1]
-            values: list[dict[str, Any]] = []
-
-            def push_lit(segment: str) -> None:
-                lit = segment.replace("{{", "{").replace("}}", "}")
-                if lit == "":
-                    return
-                values.append(
-                    {
-                        "kind": "Constant",
-                        "source_span": _sh_span(ln_no, col, col + len(raw)),
-                        "resolved_type": "str",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": repr(lit),
-                        "value": lit,
-                    }
-                )
-
-            i = 0
-            while i < len(inner):
-                j = inner.find("{", i)
-                if j < 0:
-                    push_lit(inner[i:])
-                    break
-                if j + 1 < len(inner) and inner[j + 1] == "{":
-                    push_lit(inner[i : j + 1])
-                    i = j + 2
-                    continue
-                if j > i:
-                    push_lit(inner[i:j])
-                k = inner.find("}", j + 1)
-                if k < 0:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message="unterminated f-string placeholder in self_hosted parser",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Close f-string placeholder with `}`.",
-                    )
-                inner_expr = inner[j + 1 : k].strip()
-                values.append({"kind": "FormattedValue", "value": parse_expr(inner_expr, ln_no=ln_no, col=col, name_types=dict(name_types))})
-                i = k + 1
-            return {
-                "kind": "JoinedStr",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": "str",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "values": values,
-            }
-
-        tuple_parts = split_top_commas(txt)
-        if len(tuple_parts) >= 2:
-            elems = [parse_expr(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in tuple_parts]
-            elem_ts = [str(e.get("resolved_type", "unknown")) for e in elems]
-            return {
-                "kind": "Tuple",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": "tuple[" + ", ".join(elem_ts) + "]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "elements": elems,
-            }
-
-        return _sh_parse_expr(
-            txt,
-            line_no=ln_no,
-            col_base=col,
-            name_types=name_types,
-            fn_return_types=fn_returns,
-            class_method_return_types=class_method_return_types,
-            class_base=class_base,
-        )
-
-    def parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
-        """インデントブロックを文単位で解析し、EAST 文リストを返す。"""
-        body_lines, merged_line_end = merge_logical_lines(body_lines)
-
-        stmts: list[dict[str, Any]] = []
-        pending_leading_trivia: list[dict[str, Any]] = []
-        pending_blank_count = 0
-
-        def block_end_span(start_ln: int, start_col: int, fallback_end_col: int, end_idx_exclusive: int) -> dict[str, int]:
-            """複数行文の終端まで含む source_span を生成する。"""
-            if end_idx_exclusive > 0 and end_idx_exclusive - 1 < len(body_lines):
-                end_ln, end_txt = body_lines[end_idx_exclusive - 1]
-                return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": len(end_txt)}
-            return _sh_span(start_ln, start_col, fallback_end_col)
-
-        def stmt_span(start_ln: int, start_col: int, fallback_end_col: int) -> dict[str, int]:
-            """単文の source_span を論理行終端まで含めて生成する。"""
-            end_ln, end_col = merged_line_end.get(start_ln, (start_ln, fallback_end_col))
-            return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": end_col}
-
-        def push_stmt(stmt: dict[str, Any]) -> None:
-            """保留中 trivia を付与して文リストへ追加する。"""
-            nonlocal pending_blank_count
-            if pending_blank_count > 0:
-                pending_leading_trivia.append({"kind": "blank", "count": pending_blank_count})
-                pending_blank_count = 0
-            if len(pending_leading_trivia) > 0:
-                stmt["leading_trivia"] = list(pending_leading_trivia)
-                comments = [x.get("text") for x in pending_leading_trivia if x.get("kind") == "comment" and isinstance(x.get("text"), str)]
-                if len(comments) > 0:
-                    stmt["leading_comments"] = comments
-                pending_leading_trivia.clear()
-            stmts.append(stmt)
-
-        def collect_indented_block(start: int, parent_indent: int) -> tuple[list[tuple[int, str]], int]:
-            """指定インデント配下のブロック行を収集する。"""
-            out: list[tuple[int, str]] = []
-            j = start
-            while j < len(body_lines):
-                n_no, n_ln = body_lines[j]
-                if n_ln.strip() == "":
-                    t = j + 1
-                    while t < len(body_lines) and body_lines[t][1].strip() == "":
-                        t += 1
-                    if t >= len(body_lines):
-                        break
-                    t_ln = body_lines[t][1]
-                    t_indent = len(t_ln) - len(t_ln.lstrip(" "))
-                    if t_indent <= parent_indent:
-                        break
-                    out.append((n_no, n_ln))
-                    j += 1
-                    continue
-                n_indent = len(n_ln) - len(n_ln.lstrip(" "))
-                if n_indent <= parent_indent:
-                    break
-                out.append((n_no, n_ln))
-                j += 1
-            return out, j
-
-        def split_top_level_assign(text: str) -> tuple[str, str] | None:
-            """トップレベルの `=` を 1 つだけ持つ代入式を分割する。"""
-            depth = 0
-            in_str: str | None = None
-            esc = False
-            i = 0
-            while i < len(text):
-                ch = text[i]
-                if in_str is not None:
-                    if esc:
-                        esc = False
-                    elif ch == "\\":
-                        esc = True
-                    elif ch == in_str:
-                        if i + 2 < len(text) and text[i : i + 3] == in_str * 3:
-                            i += 2
-                        else:
-                            in_str = None
-                    i += 1
-                    continue
-                if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
-                    in_str = text[i]
-                    i += 3
-                    continue
-                if ch in {"'", '"'}:
-                    in_str = ch
-                    i += 1
-                    continue
-                if ch == "#":
-                    break
-                if ch in {"(", "[", "{"}:
-                    depth += 1
-                    i += 1
-                    continue
-                if ch in {")", "]", "}"}:
-                    depth -= 1
-                    i += 1
-                    continue
-                if ch == "=" and depth == 0:
-                    prev = text[i - 1] if i - 1 >= 0 else ""
-                    nxt = text[i + 1] if i + 1 < len(text) else ""
-                    if prev in {"!", "<", ">", "="} or nxt == "=":
-                        i += 1
-                        continue
-                    lhs = text[:i].strip()
-                    rhs = text[i + 1 :].strip()
-                    if lhs != "" and rhs != "":
-                        return lhs, rhs
-                    return None
-                i += 1
-            return None
-
-        def strip_inline_comment(text: str) -> str:
-            """文字列リテラル外の末尾コメントを除去する。"""
-            in_str: str | None = None
-            esc = False
-            for i, ch in enumerate(text):
-                if in_str is not None:
-                    if esc:
-                        esc = False
-                    elif ch == "\\":
-                        esc = True
-                    elif ch == in_str:
-                        in_str = None
-                    continue
-                if ch in {"'", '"'}:
-                    in_str = ch
-                    continue
-                if ch == "#":
-                    return text[:i].rstrip()
-            return text
-
-        def split_top_level_from(text: str) -> tuple[str, str] | None:
-            """トップレベルの `for ... in ...` を target/iter に分解する。"""
-            depth = 0
-            in_str: str | None = None
-            esc = False
-            i = 0
-            while i < len(text):
-                ch = text[i]
-                if in_str is not None:
-                    if esc:
-                        esc = False
-                    elif ch == "\\":
-                        esc = True
-                    elif ch == in_str:
-                        in_str = None
-                    i += 1
-                    continue
-                if ch in {"'", '"'}:
-                    in_str = ch
-                    i += 1
-                    continue
-                if ch in {"(", "[", "{"}:
-                    depth += 1
-                    i += 1
-                    continue
-                if ch in {")", "]", "}"}:
-                    depth -= 1
-                    i += 1
-                    continue
-                if depth == 0 and text.startswith(" from ", i):
-                    lhs = text[:i].strip()
-                    rhs = text[i + 6 :].strip()
-                    if lhs != "" and rhs != "":
-                        return lhs, rhs
-                    return None
-                i += 1
-            return None
-
-        i = 0
-        while i < len(body_lines):
-            ln_no, ln_txt = body_lines[i]
-            indent = len(ln_txt) - len(ln_txt.lstrip(" "))
-            raw_s = ln_txt.strip()
-            s = strip_inline_comment(raw_s)
-
-            if raw_s == "":
-                pending_blank_count += 1
-                i += 1
-                continue
-            if raw_s.startswith("#"):
-                if pending_blank_count > 0:
-                    pending_leading_trivia.append({"kind": "blank", "count": pending_blank_count})
-                    pending_blank_count = 0
-                text = raw_s[1:]
-                if text.startswith(" "):
-                    text = text[1:]
-                pending_leading_trivia.append({"kind": "comment", "text": text})
-                i += 1
-                continue
-            if s == "":
-                i += 1
-                continue
-
-            if s.startswith("if ") and s.endswith(":"):
-                def parse_if_tail(start_idx: int, parent_indent: int) -> tuple[list[dict[str, Any]], int]:
-                    """if/elif/else 連鎖の後続ブロックを再帰的に解析する。"""
-                    if start_idx >= len(body_lines):
-                        return [], start_idx
-                    t_no, t_ln = body_lines[start_idx]
-                    t_indent = len(t_ln) - len(t_ln.lstrip(" "))
-                    t_s = t_ln.strip()
-                    if t_indent != parent_indent:
-                        return [], start_idx
-                    if t_s == "else:":
-                        else_block, k2 = collect_indented_block(start_idx + 1, parent_indent)
-                        if len(else_block) == 0:
-                            raise EastBuildError(
-                                kind="unsupported_syntax",
-                                message=f"else body is missing in '{scope_label}'",
-                                source_span=_sh_span(t_no, 0, len(t_ln)),
-                                hint="Add indented else-body.",
-                            )
-                        return parse_stmt_block(else_block, name_types=dict(name_types), scope_label=scope_label), k2
-                    if t_s.startswith("elif ") and t_s.endswith(":"):
-                        cond_txt2 = t_s[len("elif ") : -1].strip()
-                        cond_col2 = t_ln.find(cond_txt2)
-                        cond_expr2 = parse_expr(cond_txt2, ln_no=t_no, col=cond_col2, name_types=dict(name_types))
-                        elif_block, k2 = collect_indented_block(start_idx + 1, parent_indent)
-                        if len(elif_block) == 0:
-                            raise EastBuildError(
-                                kind="unsupported_syntax",
-                                message=f"elif body is missing in '{scope_label}'",
-                                source_span=_sh_span(t_no, 0, len(t_ln)),
-                                hint="Add indented elif-body.",
-                            )
-                        nested_orelse, k3 = parse_if_tail(k2, parent_indent)
-                        return [
-                            {
-                                "kind": "If",
-                                "source_span": block_end_span(t_no, t_ln.find("elif "), len(t_ln), k3),
-                                "test": cond_expr2,
-                                "body": parse_stmt_block(elif_block, name_types=dict(name_types), scope_label=scope_label),
-                                "orelse": nested_orelse,
-                            }
-                        ], k3
-                    return [], start_idx
-
-                cond_txt = s[len("if ") : -1].strip()
-                cond_col = ln_txt.find(cond_txt)
-                cond_expr = parse_expr(cond_txt, ln_no=ln_no, col=cond_col, name_types=dict(name_types))
-                then_block, j = collect_indented_block(i + 1, indent)
-                if len(then_block) == 0:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"if body is missing in '{scope_label}'",
-                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                        hint="Add indented if-body.",
-                    )
-                else_stmt_list, j = parse_if_tail(j, indent)
-                push_stmt(
-                    {
-                        "kind": "If",
-                        "source_span": block_end_span(ln_no, ln_txt.find("if "), len(ln_txt), j),
-                        "test": cond_expr,
-                        "body": parse_stmt_block(then_block, name_types=dict(name_types), scope_label=scope_label),
-                        "orelse": else_stmt_list,
-                    }
-                )
-                i = j
-                continue
-
-            if s.startswith("for ") and s.endswith(":"):
-                m_for = re.match(r"^for\s+(.+)\s+in\s+(.+):$", s, flags=re.S)
-                if m_for is None:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"self_hosted parser cannot parse for statement: {s}",
-                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                        hint="Use `for target in iterable:` form.",
-                    )
-                tgt_txt = m_for.group(1).strip()
-                iter_txt = m_for.group(2).strip()
-                tgt_col = ln_txt.find(tgt_txt)
-                iter_col = ln_txt.find(iter_txt)
-                target_expr = parse_expr(tgt_txt, ln_no=ln_no, col=tgt_col, name_types=dict(name_types))
-                iter_expr = parse_expr(iter_txt, ln_no=ln_no, col=iter_col, name_types=dict(name_types))
-                body_block, j = collect_indented_block(i + 1, indent)
-                if len(body_block) == 0:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"for body is missing in '{scope_label}'",
-                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                        hint="Add indented for-body.",
-                    )
-                t_ty = "unknown"
-                i_ty = str(iter_expr.get("resolved_type", "unknown"))
-                if i_ty.startswith("list[") and i_ty.endswith("]"):
-                    t_ty = i_ty[5:-1]
-                elif i_ty.startswith("tuple[") and i_ty.endswith("]"):
-                    t_ty = "unknown"
-                elif i_ty.startswith("set[") and i_ty.endswith("]"):
-                    t_ty = i_ty[4:-1]
-                elif i_ty == "str":
-                    t_ty = "str"
-                elif i_ty in {"bytes", "bytearray"}:
-                    t_ty = "uint8"
-                target_names: list[str] = []
-                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
-                    nm = str(target_expr.get("id", ""))
-                    if nm != "":
-                        target_names.append(nm)
-                elif isinstance(target_expr, dict) and target_expr.get("kind") == "Tuple":
-                    for e in target_expr.get("elements", []):
-                        if isinstance(e, dict) and e.get("kind") == "Name":
-                            nm = str(e.get("id", ""))
-                            if nm != "":
-                                target_names.append(nm)
-                if t_ty != "unknown":
-                    for nm in target_names:
-                        name_types[nm] = t_ty
-                if (
-                    isinstance(target_expr, dict)
-                    and target_expr.get("kind") == "Name"
-                    and
-                    isinstance(iter_expr, dict)
-                    and iter_expr.get("kind") == "Call"
-                    and isinstance(iter_expr.get("func"), dict)
-                    and iter_expr.get("func", {}).get("kind") == "Name"
-                    and iter_expr.get("func", {}).get("id") == "range"
-                ):
-                    rargs = list(iter_expr.get("args", []))
-                    start_node: dict[str, Any]
-                    stop_node: dict[str, Any]
-                    step_node: dict[str, Any]
-                    if len(rargs) == 1:
-                        start_node = {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
-                            "resolved_type": "int64",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": "0",
-                            "value": 0,
-                        }
-                        stop_node = rargs[0]
-                        step_node = {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
-                            "resolved_type": "int64",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": "1",
-                            "value": 1,
-                        }
-                    elif len(rargs) == 2:
-                        start_node = rargs[0]
-                        stop_node = rargs[1]
-                        step_node = {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
-                            "resolved_type": "int64",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": "1",
-                            "value": 1,
-                        }
-                    else:
-                        start_node = rargs[0]
-                        stop_node = rargs[1]
-                        step_node = rargs[2]
-                    tgt = str(target_expr.get("id", ""))
-                    if tgt != "":
-                        name_types[tgt] = "int64"
-                    step_const = step_node.get("value") if isinstance(step_node, dict) else None
-                    mode = "dynamic"
-                    if step_const == 1:
-                        mode = "ascending"
-                    elif step_const == -1:
-                        mode = "descending"
-                    push_stmt(
-                        {
-                            "kind": "ForRange",
-                            "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
-                            "target": target_expr,
-                            "target_type": "int64",
-                            "start": start_node,
-                            "stop": stop_node,
-                            "step": step_node,
-                            "range_mode": mode,
-                            "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
-                            "orelse": [],
-                        }
-                    )
-                    i = j
-                    continue
-                push_stmt(
-                    {
-                        "kind": "For",
-                        "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
-                        "target": target_expr,
-                        "target_type": t_ty,
-                        "iter": iter_expr,
-                        "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
-                        "orelse": [],
-                    }
-                )
-                i = j
-                continue
-
-            if s.startswith("with ") and s.endswith(":"):
-                m_with = re.match(r"^with\s+(.+)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", s, flags=re.S)
-                if m_with is None:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"self_hosted parser cannot parse with statement: {s}",
-                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                        hint="Use `with expr as name:` form.",
-                    )
-                ctx_txt = m_with.group(1).strip()
-                as_name = m_with.group(2).strip()
-                ctx_col = ln_txt.find(ctx_txt)
-                as_col = ln_txt.find(as_name, ctx_col + len(ctx_txt))
-                ctx_expr = parse_expr(ctx_txt, ln_no=ln_no, col=ctx_col, name_types=dict(name_types))
-                name_types[as_name] = str(ctx_expr.get("resolved_type", "unknown"))
-                body_block, j = collect_indented_block(i + 1, indent)
-                if len(body_block) == 0:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"with body is missing in '{scope_label}'",
-                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                        hint="Add indented with-body.",
-                    )
-                assign_stmt = {
-                    "kind": "Assign",
-                    "source_span": stmt_span(ln_no, as_col, len(ln_txt)),
-                    "target": {
-                        "kind": "Name",
-                        "source_span": _sh_span(ln_no, as_col, as_col + len(as_name)),
-                        "resolved_type": str(ctx_expr.get("resolved_type", "unknown")),
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": as_name,
-                        "id": as_name,
-                    },
-                    "value": ctx_expr,
-                    "declare": True,
-                    "declare_init": True,
-                    "decl_type": str(ctx_expr.get("resolved_type", "unknown")),
-                }
-                close_expr = parse_expr(f"{as_name}.close()", ln_no=ln_no, col=as_col, name_types=dict(name_types))
-                try_stmt = {
-                    "kind": "Try",
-                    "source_span": block_end_span(ln_no, ln_txt.find("with "), len(ln_txt), j),
-                    "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
-                    "handlers": [],
-                    "orelse": [],
-                    "finalbody": [{"kind": "Expr", "source_span": stmt_span(ln_no, as_col, len(ln_txt)), "value": close_expr}],
-                }
-                push_stmt(assign_stmt)
-                push_stmt(try_stmt)
-                i = j
-                continue
-
-            if s.startswith("while ") and s.endswith(":"):
-                cond_txt = s[len("while ") : -1].strip()
-                cond_col = ln_txt.find(cond_txt)
-                cond_expr = parse_expr(cond_txt, ln_no=ln_no, col=cond_col, name_types=dict(name_types))
-                body_block, j = collect_indented_block(i + 1, indent)
-                if len(body_block) == 0:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"while body is missing in '{scope_label}'",
-                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                        hint="Add indented while-body.",
-                    )
-                push_stmt(
-                    {
-                        "kind": "While",
-                        "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
-                        "test": cond_expr,
-                        "body": parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
-                        "orelse": [],
-                    }
-                )
-                i = j
-                continue
-
-            if s == "try:":
-                try_body, j = collect_indented_block(i + 1, indent)
-                if len(try_body) == 0:
-                    raise EastBuildError(
-                        kind="unsupported_syntax",
-                        message=f"try body is missing in '{scope_label}'",
-                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                        hint="Add indented try-body.",
-                    )
-                handlers: list[dict[str, Any]] = []
-                finalbody: list[dict[str, Any]] = []
-                while j < len(body_lines):
-                    h_no, h_ln = body_lines[j]
-                    h_s = h_ln.strip()
-                    h_indent = len(h_ln) - len(h_ln.lstrip(" "))
-                    if h_indent != indent:
-                        break
-                    m_exc_as = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s, flags=re.S)
-                    m_exc_plain = re.match(r"^except\s+(.+?)\s*:\s*$", h_s, flags=re.S)
-                    if m_exc_as is not None or m_exc_plain is not None:
-                        if m_exc_as is not None:
-                            ex_type_txt = m_exc_as.group(1).strip()
-                            ex_name: str | None = m_exc_as.group(2)
-                        else:
-                            ex_type_txt = m_exc_plain.group(1).strip() if m_exc_plain is not None else "Exception"
-                            ex_name = None
-                        ex_type_col = h_ln.find(ex_type_txt)
-                        h_body, k = collect_indented_block(j + 1, indent)
-                        handlers.append(
-                            {
-                                "kind": "ExceptHandler",
-                                "type": parse_expr(ex_type_txt, ln_no=h_no, col=ex_type_col, name_types=dict(name_types)),
-                                "name": ex_name,
-                                "body": parse_stmt_block(h_body, name_types=dict(name_types), scope_label=scope_label),
-                            }
-                        )
-                        j = k
-                        continue
-                    if h_s == "finally:":
-                        f_body, k = collect_indented_block(j + 1, indent)
-                        finalbody = parse_stmt_block(f_body, name_types=dict(name_types), scope_label=scope_label)
-                        j = k
-                        continue
-                    break
-                push_stmt(
-                    {
-                        "kind": "Try",
-                        "source_span": block_end_span(ln_no, 0, len(ln_txt), j),
-                        "body": parse_stmt_block(try_body, name_types=dict(name_types), scope_label=scope_label),
-                        "handlers": handlers,
-                        "orelse": [],
-                        "finalbody": finalbody,
-                    }
-                )
-                i = j
-                continue
-
-            if s.startswith("raise "):
-                expr_txt = s[len("raise ") :].strip()
-                expr_col = ln_txt.find(expr_txt)
-                cause_expr = None
-                cause_split = split_top_level_from(expr_txt)
-                if cause_split is not None:
-                    exc_txt, cause_txt = cause_split
-                    expr_txt = exc_txt
-                    expr_col = ln_txt.find(expr_txt)
-                    cause_col = ln_txt.find(cause_txt)
-                    cause_expr = parse_expr(cause_txt, ln_no=ln_no, col=cause_col, name_types=dict(name_types))
-                push_stmt(
-                    {
-                        "kind": "Raise",
-                        "source_span": stmt_span(ln_no, ln_txt.find("raise "), len(ln_txt)),
-                        "exc": parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
-                        "cause": cause_expr,
-                    }
-                )
-                i += 1
-                continue
-
-            if s == "pass":
-                push_stmt({"kind": "Pass", "source_span": stmt_span(ln_no, indent, indent + 4)})
-                i += 1
-                continue
-
-            if s == "return":
-                rcol = ln_txt.find("return")
-                push_stmt(
-                    {
-                        "kind": "Return",
-                        "source_span": stmt_span(ln_no, rcol, len(ln_txt)),
-                        "value": None,
-                    }
-                )
-                i += 1
-                continue
-
-            if s.startswith("return "):
-                rcol = ln_txt.find("return ")
-                expr_txt = ln_txt[rcol + len("return ") :].strip()
-                expr_col = ln_txt.find(expr_txt, rcol + len("return "))
-                push_stmt(
-                    {
-                        "kind": "Return",
-                        "source_span": stmt_span(ln_no, rcol, len(ln_txt)),
-                        "value": parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
-                    }
-                )
-                i += 1
-                continue
-
-            m_ann_decl = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*(.+)$", s)
-            if m_ann_decl is not None and "=" not in s:
-                target_txt = m_ann_decl.group(1)
-                ann = _sh_ann_to_type(m_ann_decl.group(2))
-                target_col = ln_txt.find(target_txt)
-                target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
-                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
-                    name_types[str(target_expr.get("id", ""))] = ann
-                push_stmt(
-                    {
-                        "kind": "AnnAssign",
-                        "source_span": stmt_span(ln_no, target_col, len(ln_txt)),
-                        "target": target_expr,
-                        "annotation": ann,
-                        "value": None,
-                        "declare": True,
-                        "decl_type": ann,
-                    }
-                )
-                i += 1
-                continue
-
-            m_ann = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
-            if m_ann is not None:
-                target_txt = m_ann.group(1)
-                ann = _sh_ann_to_type(m_ann.group(2))
-                expr_txt = m_ann.group(3).strip()
-                expr_col = ln_txt.find(expr_txt)
-                val_expr = parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
-                target_col = ln_txt.find(target_txt)
-                target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
-                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
-                    name_types[str(target_expr.get("id", ""))] = ann
-                push_stmt(
-                    {
-                        "kind": "AnnAssign",
-                        "source_span": stmt_span(ln_no, target_col, len(ln_txt)),
-                        "target": target_expr,
-                        "annotation": ann,
-                        "value": val_expr,
-                        "declare": True,
-                        "decl_type": ann,
-                    }
-                )
-                i += 1
-                continue
-
-            m_aug = re.match(
-                r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*(\+=|-=|\*=|/=|//=|%=|&=|\|=|\^=|<<=|>>=)\s*(.+)$",
-                s,
-            )
-            if m_aug is not None:
-                target_txt = m_aug.group(1)
-                op_map = {
-                    "+=": "Add",
-                    "-=": "Sub",
-                    "*=": "Mult",
-                    "/=": "Div",
-                    "//=": "FloorDiv",
-                    "%=": "Mod",
-                    "&=": "BitAnd",
-                    "|=": "BitOr",
-                    "^=": "BitXor",
-                    "<<=": "LShift",
-                    ">>=": "RShift",
-                }
-                expr_txt = m_aug.group(3).strip()
-                expr_col = ln_txt.find(expr_txt)
-                target_col = ln_txt.find(target_txt)
-                target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
-                val_expr = parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
-                target_ty = "unknown"
-                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
-                    target_ty = name_types.get(str(target_expr.get("id", "")), "unknown")
-                push_stmt(
-                    {
-                        "kind": "AugAssign",
-                        "source_span": stmt_span(ln_no, target_col, len(ln_txt)),
-                        "target": target_expr,
-                        "op": op_map[m_aug.group(2)],
-                        "value": val_expr,
-                        "declare": False,
-                        "decl_type": target_ty if target_ty != "unknown" else None,
-                    }
-                )
-                i += 1
-                continue
-
-            m_tasg = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
-            if m_tasg is not None:
-                n1 = m_tasg.group(1)
-                n2 = m_tasg.group(2)
-                expr_txt = m_tasg.group(3).strip()
-                expr_col = ln_txt.find(expr_txt)
-                rhs = parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
-                c1 = ln_txt.find(n1)
-                c2 = ln_txt.find(n2, c1 + len(n1))
-                if (
-                    isinstance(rhs, dict)
-                    and rhs.get("kind") == "Tuple"
-                    and len(rhs.get("elements", [])) == 2
-                    and isinstance(rhs.get("elements")[0], dict)
-                    and isinstance(rhs.get("elements")[1], dict)
-                    and rhs.get("elements")[0].get("kind") == "Name"
-                    and rhs.get("elements")[1].get("kind") == "Name"
-                    and str(rhs.get("elements")[0].get("id", "")) == n2
-                    and str(rhs.get("elements")[1].get("id", "")) == n1
-                ):
-                    push_stmt(
-                        {
-                            "kind": "Swap",
-                            "source_span": stmt_span(ln_no, c1, len(ln_txt)),
-                            "left": {
-                                "kind": "Name",
-                                "source_span": _sh_span(ln_no, c1, c1 + len(n1)),
-                                "resolved_type": name_types.get(n1, "unknown"),
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": n1,
-                                "id": n1,
-                            },
-                            "right": {
-                                "kind": "Name",
-                                "source_span": _sh_span(ln_no, c2, c2 + len(n2)),
-                                "resolved_type": name_types.get(n2, "unknown"),
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": n2,
-                                "id": n2,
-                            },
-                        }
-                    )
-                    i += 1
-                    continue
-                target_expr = {
-                    "kind": "Tuple",
-                    "source_span": _sh_span(ln_no, c1, c2 + len(n2)),
-                    "resolved_type": "unknown",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": f"{n1}, {n2}",
-                    "elements": [
-                        {
-                            "kind": "Name",
-                            "source_span": _sh_span(ln_no, c1, c1 + len(n1)),
-                            "resolved_type": name_types.get(n1, "unknown"),
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": n1,
-                            "id": n1,
-                        },
-                        {
-                            "kind": "Name",
-                            "source_span": _sh_span(ln_no, c2, c2 + len(n2)),
-                            "resolved_type": name_types.get(n2, "unknown"),
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": n2,
-                            "id": n2,
-                        },
-                    ],
-                }
-                push_stmt(
-                    {
-                        "kind": "Assign",
-                        "source_span": stmt_span(ln_no, c1, len(ln_txt)),
-                        "target": target_expr,
-                        "value": rhs,
-                        "declare": False,
-                        "decl_type": None,
-                    }
-                )
-                i += 1
-                continue
-
-            asg_split = split_top_level_assign(s)
-            if asg_split is not None:
-                target_txt, expr_txt = asg_split
-                expr_col = ln_txt.find(expr_txt)
-                target_col = ln_txt.find(target_txt)
-                target_expr = parse_expr(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
-                val_expr = parse_expr(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
-                decl_type = val_expr.get("resolved_type", "unknown")
-                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
-                    nm = str(target_expr.get("id", ""))
-                    if nm != "":
-                        name_types[nm] = str(decl_type)
-                push_stmt(
-                    {
-                        "kind": "Assign",
-                        "source_span": stmt_span(ln_no, target_col, len(ln_txt)),
-                        "target": target_expr,
-                        "value": val_expr,
-                        "declare": True,
-                        "declare_init": True,
-                        "decl_type": decl_type,
-                    }
-                )
-                i += 1
-                continue
-
-            expr_col = len(ln_txt) - len(ln_txt.lstrip(" "))
-            expr_stmt = parse_expr(s, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
-            push_stmt({"kind": "Expr", "source_span": stmt_span(ln_no, expr_col, len(ln_txt)), "value": expr_stmt})
-            i += 1
-        return stmts
-
-    def extract_leading_docstring(stmts: list[dict[str, Any]]) -> tuple[str | None, list[dict[str, Any]]]:
-        """先頭文が docstring の場合に抽出し、残り文リストを返す。"""
-        if len(stmts) == 0:
-            return None, stmts
-        first = stmts[0]
-        if not isinstance(first, dict) or first.get("kind") != "Expr":
-            return None, stmts
-        val = first.get("value")
-        if not isinstance(val, dict) or val.get("kind") != "Constant":
-            return None, stmts
-        s = val.get("value")
-        if not isinstance(s, str):
-            return None, stmts
-        return s, stmts[1:]
+    parse_stmt_block = _sh_parse_stmt_block
 
     body_items: list[dict[str, Any]] = []
     main_stmts: list[dict[str, Any]] = []
@@ -3363,35 +3469,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     first_item_attached = False
     pending_dataclass = False
 
-    def append_import_binding(
-        module_id: str,
-        export_name: str,
-        local_name: str,
-        binding_kind: str,
-        source_line: int,
-    ) -> None:
-        """import 情報の正本 `ImportBinding` を追加する。"""
-        if local_name in import_binding_names:
-            raise EastBuildError(
-                kind="unsupported_syntax",
-                message=f"duplicate import binding: {local_name}",
-                source_span=_sh_span(source_line, 0, 0),
-                hint="Rename alias to avoid duplicate imported names.",
-            )
-        import_binding_names.add(local_name)
-        import_bindings.append(
-            {
-                "module_id": module_id,
-                "export_name": export_name,
-                "local_name": local_name,
-                "binding_kind": binding_kind,
-                "source_file": filename,
-                "source_line": source_line,
-            }
-        )
-
     top_lines = list(enumerate(lines, start=1))
-    top_merged_lines, top_merged_end = merge_logical_lines(top_lines)
+    top_merged_lines, top_merged_end = _sh_merge_logical_lines(top_lines)
     top_merged_map = {ln_no: txt for ln_no, txt in top_merged_lines}
     i = 1
     while i <= len(lines):
@@ -3425,7 +3504,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             continue
         sig_line = ln
         sig_end_line = logical_end
-        sig = parse_def_sig(i, sig_line)
+        sig = _sh_parse_def_sig(i, sig_line)
         if sig is not None:
             fn_name = str(sig["name"])
             fn_ret = str(sig["ret"])
@@ -3453,7 +3532,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     hint="Add return or assignment statements in function body.",
                 )
             stmts = parse_stmt_block(block, name_types=dict(arg_types), scope_label=fn_name)
-            docstring, stmts = extract_leading_docstring(stmts)
+            docstring, stmts = _sh_extract_leading_docstring(stmts)
             arg_defaults: dict[str, Any] = {}
             for arg_name in arg_order:
                 if arg_name in arg_defaults_raw:
@@ -3521,7 +3600,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 mod_name = m_alias.group(1)
                 as_name = m_alias.group(2)
                 bind_name = as_name if isinstance(as_name, str) and as_name != "" else mod_name.split(".")[0]
-                append_import_binding(mod_name, "", bind_name, "module", i)
+                _sh_append_import_binding(
+                    import_bindings=import_bindings,
+                    import_binding_names=import_binding_names,
+                    module_id=mod_name,
+                    export_name="",
+                    local_name=bind_name,
+                    binding_kind="module",
+                    source_file=filename,
+                    source_line=i,
+                )
                 aliases.append({"name": mod_name, "asname": as_name})
             body_items.append(
                 {
@@ -3576,7 +3664,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 sym_name = m_alias.group(1)
                 as_name = m_alias.group(2)
                 bind_name = as_name if isinstance(as_name, str) and as_name != "" else sym_name
-                append_import_binding(mod_name, sym_name, bind_name, "symbol", i)
+                _sh_append_import_binding(
+                    import_bindings=import_bindings,
+                    import_binding_names=import_binding_names,
+                    module_id=mod_name,
+                    export_name=sym_name,
+                    local_name=bind_name,
+                    binding_kind="symbol",
+                    source_file=filename,
+                    source_line=i,
+                )
                 aliases.append({"name": sym_name, "asname": as_name})
             body_items.append(
                 {
@@ -3619,7 +3716,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_span=_sh_span(i, 0, len(ln)),
                     hint="Add field or method definitions.",
                 )
-            class_block, _class_line_end = merge_logical_lines(block)
+            class_block, _class_line_end = _sh_merge_logical_lines(block)
 
             field_types: dict[str, str] = {}
             class_body: list[dict[str, Any]] = []
@@ -3692,7 +3789,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             )
                             k += 1
                             continue
-                    sig = parse_def_sig(ln_no, ln_txt, in_class=cls_name)
+                    sig = _sh_parse_def_sig(ln_no, ln_txt, in_class=cls_name)
                     if sig is not None:
                         mname = str(sig["name"])
                         marg_types = dict(sig["arg_types"])
@@ -3733,7 +3830,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         for fnm, fty in field_types.items():
                             local_types[fnm] = fty
                         stmts = parse_stmt_block(method_block, name_types=local_types, scope_label=f"{cls_name}.{mname}")
-                        docstring, stmts = extract_leading_docstring(stmts)
+                        docstring, stmts = _sh_extract_leading_docstring(stmts)
                         marg_defaults: dict[str, Any] = {}
                         for arg_name in marg_order:
                             if arg_name in marg_defaults_raw:
@@ -3752,31 +3849,44 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             for st in stmts:
                                 if st.get("kind") == "Assign":
                                     tgt = st.get("target")
+                                    tgt_value = tgt.get("value") if isinstance(tgt, dict) else None
                                     if (
                                         isinstance(tgt, dict)
                                         and tgt.get("kind") == "Attribute"
-                                        and isinstance(tgt.get("value"), dict)
-                                        and tgt.get("value", {}).get("kind") == "Name"
-                                        and tgt.get("value", {}).get("id") == "self"
+                                        and isinstance(tgt_value, dict)
+                                        and tgt_value.get("kind") == "Name"
+                                        and tgt_value.get("id") == "self"
                                     ):
                                         fname = str(tgt.get("attr", ""))
                                         if fname != "":
-                                            t = st.get("decl_type") or (st.get("value") or {}).get("resolved_type")
+                                            st_value = st.get("value")
+                                            st_value_rt = st_value.get("resolved_type") if isinstance(st_value, dict) else None
+                                            t = st.get("decl_type") or st_value_rt
                                             if isinstance(t, str) and t != "":
                                                 field_types[fname] = t
                                 if st.get("kind") == "AnnAssign":
                                     tgt = st.get("target")
+                                    tgt_value = tgt.get("value") if isinstance(tgt, dict) else None
                                     if (
                                         isinstance(tgt, dict)
                                         and tgt.get("kind") == "Attribute"
-                                        and isinstance(tgt.get("value"), dict)
-                                        and tgt.get("value", {}).get("kind") == "Name"
-                                        and tgt.get("value", {}).get("id") == "self"
+                                        and isinstance(tgt_value, dict)
+                                        and tgt_value.get("kind") == "Name"
+                                        and tgt_value.get("id") == "self"
                                     ):
                                         fname = str(tgt.get("attr", ""))
                                         ann = st.get("annotation")
                                         if fname != "" and isinstance(ann, str) and ann != "":
                                             field_types[fname] = ann
+                        arg_index_map: dict[str, int] = {}
+                        arg_pos = 0
+                        while arg_pos < len(marg_order):
+                            arg_name = marg_order[arg_pos]
+                            arg_index_map[arg_name] = arg_pos
+                            arg_pos += 1
+                        arg_usage_map: dict[str, str] = {}
+                        for arg_name in marg_types.keys():
+                            arg_usage_map[arg_name] = "readonly"
                         class_body.append(
                             {
                                 "kind": "FunctionDef",
@@ -3791,9 +3901,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 "arg_types": marg_types,
                                 "arg_order": marg_order,
                                 "arg_defaults": marg_defaults,
-                                "arg_index": {n: i for i, n in enumerate(marg_order)},
+                                "arg_index": arg_index_map,
                                 "return_type": mret,
-                                "arg_usage": {n: "readonly" for n in marg_types.keys()},
+                                "arg_usage": arg_usage_map,
                                 "renamed_symbols": {},
                                 "docstring": docstring,
                                 "body": stmts,
