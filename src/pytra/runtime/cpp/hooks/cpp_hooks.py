@@ -50,6 +50,8 @@ def _infer_runtime_call_from_func_node(emitter: Any, func_node: dict[str, Any]) 
     if fn_kind == "Attribute":
         owner_expr = emitter.render_expr(func_node.get("value"))
         owner_mod = emitter._resolve_imported_module_name(owner_expr)
+        if owner_mod == "":
+            owner_mod = emitter._cpp_expr_to_module_name(owner_expr)
         owner_mod = emitter._normalize_runtime_module_name(owner_mod)
         attr = emitter.any_dict_get_str(func_node, "attr", "")
         if owner_mod != "" and attr != "":
@@ -131,6 +133,8 @@ def on_render_expr_kind(
         base_expr = "(" + base_expr + ")"
     owner_t = emitter.get_expr_type(expr_node.get("value"))
     base_mod = emitter._resolve_imported_module_name(base_expr)
+    if base_mod == "":
+        base_mod = emitter._cpp_expr_to_module_name(base_expr)
     base_mod = emitter._normalize_runtime_module_name(base_mod)
     attr = emitter.any_dict_get_str(expr_node, "attr", "")
     if owner_t == "Path":

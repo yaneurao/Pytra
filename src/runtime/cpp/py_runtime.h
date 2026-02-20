@@ -1780,8 +1780,65 @@ static inline void py_sys_write_stdout(const str& text) {
     ::std::cout << text;
 }
 
+static inline object py_sys_stderr() {
+    return make_object(int64(1));
+}
+
+static inline object py_sys_stdout() {
+    return make_object(int64(1));
+}
+
 [[noreturn]] static inline void py_sys_exit(int64 code = 0) {
     ::std::exit(static_cast<int>(code));
+}
+
+static inline str py_json_escape(const str& src) {
+    str out = "";
+    for (char ch : src) {
+        if (ch == '\\') out += "\\\\";
+        else if (ch == '"') out += "\\\"";
+        else if (ch == '\n') out += "\\n";
+        else if (ch == '\r') out += "\\r";
+        else if (ch == '\t') out += "\\t";
+        else out += str(1, ch);
+    }
+    return out;
+}
+
+static inline str py_json_dumps(const str& v) { return "\"" + py_json_escape(v) + "\""; }
+static inline str py_json_dumps(const char* v) { return py_json_dumps(str(v)); }
+static inline str py_json_dumps(bool v) { return v ? "true" : "false"; }
+static inline str py_json_dumps(int64 v) { return ::std::to_string(v); }
+static inline str py_json_dumps(int32 v) { return ::std::to_string(v); }
+static inline str py_json_dumps(uint64 v) { return ::std::to_string(v); }
+static inline str py_json_dumps(float64 v) { return ::std::to_string(v); }
+static inline str py_json_dumps(float32 v) { return ::std::to_string(v); }
+static inline str py_json_dumps(const object& v) { return dumps(v); }
+static inline str py_json_dumps(const ::std::any& v) {
+    if (const auto* p = ::std::any_cast<object>(&v)) return py_json_dumps(*p);
+    if (const auto* p = ::std::any_cast<str>(&v)) return py_json_dumps(*p);
+    if (const auto* p = ::std::any_cast<const char*>(&v)) return py_json_dumps(*p);
+    if (const auto* p = ::std::any_cast<bool>(&v)) return py_json_dumps(*p);
+    if (const auto* p = ::std::any_cast<int64>(&v)) return py_json_dumps(*p);
+    if (const auto* p = ::std::any_cast<int32>(&v)) return py_json_dumps(*p);
+    if (const auto* p = ::std::any_cast<uint64>(&v)) return py_json_dumps(*p);
+    if (const auto* p = ::std::any_cast<float64>(&v)) return py_json_dumps(*p);
+    if (const auto* p = ::std::any_cast<float32>(&v)) return py_json_dumps(*p);
+    return py_json_dumps(str(py_to_string(v)));
+}
+
+static inline str py_re_sub(const str& pattern, const str& repl, const str& text) { return sub(pattern, repl, text); }
+
+static inline object py_typing_token() {
+    return make_object(int64(1));
+}
+
+static inline object py_typing_typevar(const str&) {
+    return py_typing_token();
+}
+
+static inline ArgumentParser py_argparse_argument_parser(const str& description = "") {
+    return ArgumentParser(description);
 }
 
 static inline ::std::vector<uint8> py_u8_vector(const list<uint8>& src) {

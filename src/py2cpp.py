@@ -237,6 +237,40 @@ def _default_cpp_module_attr_call_map() -> dict[str, dict[str, str]]:
         "write_stderr": "py_sys_write_stderr",
         "write_stdout": "py_sys_write_stdout",
         "exit": "py_sys_exit",
+        "argv": "py_sys_argv()",
+        "path": "py_sys_path()",
+        "stderr": "py_sys_stderr()",
+        "stdout": "py_sys_stdout()",
+    }
+    out["pytra.std.os.path"] = {
+        "join": "py_os_path_join",
+        "dirname": "py_os_path_dirname",
+        "basename": "py_os_path_basename",
+        "splitext": "py_os_path_splitext",
+        "abspath": "py_os_path_abspath",
+        "exists": "py_os_path_exists",
+    }
+    out["pytra.std.re"] = {
+        "sub": "py_re_sub",
+    }
+    out["pytra.std.json"] = {
+        "dumps": "py_json_dumps",
+    }
+    out["pytra.std.argparse"] = {
+        "ArgumentParser": "py_argparse_argument_parser",
+    }
+    out["pytra.std.typing"] = {
+        "Any": "py_typing_token()",
+        "List": "py_typing_token()",
+        "Set": "py_typing_token()",
+        "Dict": "py_typing_token()",
+        "Tuple": "py_typing_token()",
+        "Iterable": "py_typing_token()",
+        "Optional": "py_typing_token()",
+        "Union": "py_typing_token()",
+        "Callable": "py_typing_token()",
+        "TypeAlias": "py_typing_token()",
+        "TypeVar": "py_typing_typevar",
     }
     return out
 
@@ -666,6 +700,12 @@ class CppEmitter(CodeEmitter):
                 child = sym["name"]
             if parent != "" and child != "":
                 return f"{parent}.{child}"
+        return ""
+
+    def _cpp_expr_to_module_name(self, expr: str) -> str:
+        """`pytra::std::x` 形式の C++ 式を `pytra.std.x` へ戻す。"""
+        if expr.startswith("pytra::"):
+            return expr.replace("::", ".")
         return ""
 
     def _last_dotted_name(self, name: str) -> str:
@@ -2501,6 +2541,8 @@ class CppEmitter(CodeEmitter):
         if owner.get("kind") in {"BinOp", "BoolOp", "Compare", "IfExp"}:
             owner_expr = f"({owner_expr})"
         owner_mod = self._resolve_imported_module_name(owner_expr)
+        if owner_mod == "":
+            owner_mod = self._cpp_expr_to_module_name(owner_expr)
         owner_mod = self._normalize_runtime_module_name(owner_mod)
         attr = self.any_to_str(fn.get("attr"))
         if attr == "":
