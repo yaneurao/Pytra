@@ -1691,15 +1691,6 @@ static inline ArgumentParser py_argparse_argument_parser(const str& description 
     return ArgumentParser(description);
 }
 
-static inline ::std::vector<::std::vector<uint8>> py_u8_matrix(const list<list<uint8>>& frames) {
-    ::std::vector<::std::vector<uint8>> out;
-    out.reserve(frames.size());
-    for (const auto& frame : frames) {
-        out.emplace_back(frame.begin(), frame.end());
-    }
-    return out;
-}
-
 template <class A, class B>
 static inline auto py_min(const A& a, const B& b) -> ::std::common_type_t<A, B> {
     using R = ::std::common_type_t<A, B>;
