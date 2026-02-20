@@ -64,7 +64,7 @@ static inline const list<object>* obj_to_list_ptr(const object& v);
 #include "dict.h"
 #include "set.h"
 
-inline list<str> str::split(const str& sep) const {
+inline list<str> str::split(const str& sep, int64 maxsplit) const {
     list<str> out = list<str>{};
     const ::std::string& s = data_;
     const ::std::string& token = sep.std();
@@ -73,7 +73,13 @@ inline list<str> str::split(const str& sep) const {
         return out;
     }
     ::std::size_t pos = 0;
+    int64 splits = 0;
+    const bool unlimited = maxsplit < 0;
     while (true) {
+        if (!unlimited && splits >= maxsplit) {
+            out.append(str(s.substr(pos)));
+            break;
+        }
         ::std::size_t at = s.find(token, pos);
         if (at == ::std::string::npos) {
             out.append(str(s.substr(pos)));
@@ -81,6 +87,49 @@ inline list<str> str::split(const str& sep) const {
         }
         out.append(str(s.substr(pos, at - pos)));
         pos = at + token.size();
+        splits += 1;
+    }
+    return out;
+}
+
+inline list<str> str::split(const str& sep) const {
+    return split(sep, -1);
+}
+
+inline list<str> str::splitlines() const {
+    list<str> out = list<str>{};
+    ::std::size_t i = 0;
+    const ::std::size_t n = data_.size();
+    while (i < n) {
+        ::std::size_t j = i;
+        while (j < n && data_[j] != '\n' && data_[j] != '\r') j += 1;
+        out.append(str(data_.substr(i, j - i)));
+        if (j < n && data_[j] == '\r' && j + 1 < n && data_[j + 1] == '\n') {
+            j += 2;
+        } else if (j < n) {
+            j += 1;
+        }
+        i = j;
+    }
+    if (n > 0) {
+        char last = data_[n - 1];
+        if (last == '\n' || last == '\r') out.append(str(""));
+    }
+    return out;
+}
+
+inline int64 str::count(const str& needle) const {
+    if (needle.empty()) {
+        return static_cast<int64>(data_.size() + 1);
+    }
+    int64 out = 0;
+    ::std::size_t pos = 0;
+    const ::std::string nn = needle.std();
+    while (true) {
+        ::std::size_t at = data_.find(nn, pos);
+        if (at == ::std::string::npos) break;
+        out += 1;
+        pos = at + nn.size();
     }
     return out;
 }
@@ -216,6 +265,34 @@ static inline object make_object(const dict<str, V>& values) {
     return object_new<PyDictObj>(::std::move(out));
 }
 
+template <class T>
+struct _py_is_optional : ::std::false_type {};
+
+template <class U>
+struct _py_is_optional<::std::optional<U>> : ::std::true_type {};
+
+template <class T>
+static inline object make_object(const T& v) {
+    if constexpr (::std::is_same_v<T, object>) {
+        return v;
+    } else if constexpr (::std::is_same_v<T, ::std::nullopt_t>) {
+        return object();
+    } else if constexpr (_py_is_optional<T>::value) {
+        if (!v.has_value()) return object();
+        return make_object(v.value());
+    } else if constexpr (::std::is_integral_v<T> && !::std::is_same_v<T, bool>) {
+        return object_new<PyIntObj>(static_cast<int64>(v));
+    } else if constexpr (::std::is_floating_point_v<T>) {
+        return object_new<PyFloatObj>(static_cast<float64>(v));
+    } else if constexpr (::std::is_same_v<T, bool>) {
+        return object_new<PyBoolObj>(v);
+    } else if constexpr (::std::is_convertible_v<T, str>) {
+        return object_new<PyStrObj>(str(v));
+    } else {
+        return object();
+    }
+}
+
 // Python object -> C++ 値の基本変換。
 static inline int64 obj_to_int64(const object& v) {
     if (!v) return 0;
@@ -284,12 +361,12 @@ static inline dict<str, object> obj_to_dict(const object& v) {
     return {};
 }
 
-static inline bool operator==(const object& lhs, const object& rhs) {
-    return lhs.get() == rhs.get();
-}
-
-static inline bool operator!=(const object& lhs, const object& rhs) {
-    return !(lhs == rhs);
+static inline int64 py_len(const object& v) {
+    if (!v) return 0;
+    if (const auto* p = py_obj_cast<PyStrObj>(v)) return static_cast<int64>(p->value.size());
+    if (const auto* d = obj_to_dict_ptr(v)) return static_cast<int64>(d->size());
+    if (const auto* lst = obj_to_list_ptr(v)) return static_cast<int64>(lst->size());
+    return 0;
 }
 
 // Python 組み込み相当の基本ユーティリティ（len / 文字列化）。
@@ -532,6 +609,10 @@ static inline int64 py_to_int64_base(const str& v, int64 base) {
     int b = static_cast<int>(base);
     if (b < 2 || b > 36) b = 10;
     return static_cast<int64>(::std::stoll(static_cast<::std::string>(v), nullptr, b));
+}
+
+static inline int64 py_to_int64_base(const ::std::string& v, int64 base) {
+    return py_to_int64_base(str(v), base);
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
@@ -928,6 +1009,34 @@ static inline const T& py_at(const list<T>& v, int64 idx) {
     return v[static_cast<::std::size_t>(idx)];
 }
 
+static inline object py_at(const object& v, int64 idx) {
+    if (const auto* lst = obj_to_list_ptr(v)) {
+        return py_at(*lst, idx);
+    }
+    if (const auto* s = py_obj_cast<PyStrObj>(v)) {
+        return make_object(s->value[idx]);
+    }
+    throw ::std::runtime_error("index access on non-indexable object");
+}
+
+template <::std::size_t I = 0, class... Ts>
+static inline object _py_tuple_at_impl(const ::std::tuple<Ts...>& tup, int64 idx) {
+    constexpr int64 N = static_cast<int64>(sizeof...(Ts));
+    if constexpr (I < sizeof...(Ts)) {
+        int64 cur = static_cast<int64>(I);
+        if (idx == cur || idx == (cur - N)) {
+            return make_object(::std::get<I>(tup));
+        }
+        return _py_tuple_at_impl<I + 1>(tup, idx);
+    }
+    throw ::std::out_of_range("tuple index out of range");
+}
+
+template <class... Ts>
+static inline object py_at(const ::std::tuple<Ts...>& tup, int64 idx) {
+    return _py_tuple_at_impl(tup, idx);
+}
+
 template <class Seq>
 static inline decltype(auto) py_at_bounds(Seq& v, int64 idx) {
     const int64 n = py_len(v);
@@ -1083,6 +1192,11 @@ static inline V py_dict_get_default(const dict<str, V>& d, const str& key, const
 }
 
 template <class V>
+static inline V py_dict_get_default(const dict<str, V>& d, const ::std::string& key, const V& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
+template <class V>
 static inline V py_dict_get_default(const ::std::optional<dict<str, V>>& d, const char* key, const V& defval) {
     if (!d.has_value()) {
         return defval;
@@ -1229,6 +1343,32 @@ static inline object py_dict_get_default(const ::std::optional<dict<str, object>
 }
 
 static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const str& key, const str& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
+template <class D>
+static inline D py_dict_get_default(const dict<str, object>& d, const char* key, const D& defval) {
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return defval;
+    }
+    if constexpr (::std::is_same_v<D, object>) {
+        return it->second;
+    } else if constexpr (::std::is_same_v<D, str>) {
+        return py_to_string(it->second);
+    } else {
+        if (auto q = py_object_try_cast<D>(it->second)) return *q;
+        return defval;
+    }
+}
+
+template <class D>
+static inline D py_dict_get_default(const dict<str, object>& d, const str& key, const D& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
+template <class D>
+static inline D py_dict_get_default(const dict<str, object>& d, const ::std::string& key, const D& defval) {
     return py_dict_get_default(d, key.c_str(), defval);
 }
 
@@ -1754,6 +1894,26 @@ static inline str py_lstrip(const str& s) {
     return s.substr(i);
 }
 
+static inline str py_lstrip(const str& s, const str& chars) {
+    return s.lstrip(chars);
+}
+
+static inline str py_lstrip(const object& s) {
+    return py_lstrip(str(py_to_string(s)));
+}
+
+static inline str py_lstrip(const object& s, const str& chars) {
+    return py_lstrip(str(py_to_string(s)), chars);
+}
+
+static inline str py_lstrip(const ::std::any& s) {
+    return py_lstrip(str(py_to_string(s)));
+}
+
+static inline str py_lstrip(const ::std::any& s, const str& chars) {
+    return py_lstrip(str(py_to_string(s)), chars);
+}
+
 static inline str py_rstrip(const str& s) {
     if (s.empty()) return s;
     ::std::size_t i = s.size();
@@ -1761,17 +1921,81 @@ static inline str py_rstrip(const str& s) {
     return s.substr(0, i);
 }
 
+static inline str py_rstrip(const str& s, const str& chars) {
+    return s.rstrip(chars);
+}
+
+static inline str py_rstrip(const object& s) {
+    return py_rstrip(str(py_to_string(s)));
+}
+
+static inline str py_rstrip(const object& s, const str& chars) {
+    return py_rstrip(str(py_to_string(s)), chars);
+}
+
+static inline str py_rstrip(const ::std::any& s) {
+    return py_rstrip(str(py_to_string(s)));
+}
+
+static inline str py_rstrip(const ::std::any& s, const str& chars) {
+    return py_rstrip(str(py_to_string(s)), chars);
+}
+
 static inline str py_strip(const str& s) {
     return py_rstrip(py_lstrip(s));
+}
+
+static inline str py_strip(const str& s, const str& chars) {
+    return s.strip(chars);
+}
+
+static inline str py_strip(const ::std::string& s) {
+    return py_strip(str(s));
+}
+
+static inline str py_strip(const ::std::string& s, const str& chars) {
+    return py_strip(str(s), chars);
+}
+
+static inline str py_strip(const object& s) {
+    return py_strip(str(py_to_string(s)));
+}
+
+static inline str py_strip(const object& s, const str& chars) {
+    return py_strip(str(py_to_string(s)), chars);
+}
+
+static inline str py_strip(const ::std::any& s) {
+    return py_strip(str(py_to_string(s)));
+}
+
+static inline str py_strip(const ::std::any& s, const str& chars) {
+    return py_strip(str(py_to_string(s)), chars);
 }
 
 static inline bool py_startswith(const str& s, const str& prefix) {
     return s.rfind(prefix, 0) == 0;
 }
 
+static inline bool py_startswith(const object& s, const str& prefix) {
+    return py_startswith(str(py_to_string(s)), prefix);
+}
+
+static inline bool py_startswith(const ::std::any& s, const str& prefix) {
+    return py_startswith(str(py_to_string(s)), prefix);
+}
+
 static inline bool py_endswith(const str& s, const str& suffix) {
     if (suffix.size() > s.size()) return false;
     return s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+static inline bool py_endswith(const object& s, const str& suffix) {
+    return py_endswith(str(py_to_string(s)), suffix);
+}
+
+static inline bool py_endswith(const ::std::any& s, const str& suffix) {
+    return py_endswith(str(py_to_string(s)), suffix);
 }
 
 static inline str py_replace(const str& s, const str& oldv, const str& newv) {
@@ -1783,6 +2007,14 @@ static inline str py_replace(const str& s, const str& oldv, const str& newv) {
         pos += newv.size();
     }
     return out;
+}
+
+static inline str py_replace(const object& s, const str& oldv, const str& newv) {
+    return py_replace(str(py_to_string(s)), oldv, newv);
+}
+
+static inline str py_replace(const ::std::any& s, const str& oldv, const str& newv) {
+    return py_replace(str(py_to_string(s)), oldv, newv);
 }
 
 // reversed / enumerate / tuple in 判定の互換実装。
@@ -1848,6 +2080,31 @@ static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::an
     return {};
 }
 
+template <class K, class V, class Q>
+static inline bool py_contains(const dict<K, V>& d, const Q& key) {
+    return d.find(static_cast<K>(key)) != d.end();
+}
+
+template <class V, class Q>
+static inline bool py_contains(const dict<str, V>& d, const Q& key) {
+    return d.find(str(py_to_string(key))) != d.end();
+}
+
+template <class T, class Q>
+static inline bool py_contains(const list<T>& values, const Q& key) {
+    return ::std::find(values.begin(), values.end(), key) != values.end();
+}
+
+template <class T, class Q>
+static inline bool py_contains(const set<T>& values, const Q& key) {
+    return values.find(static_cast<T>(key)) != values.end();
+}
+
+template <class Q>
+static inline bool py_contains(const str& values, const Q& key) {
+    return values.find(str(py_to_string(key))) != str::npos;
+}
+
 template <class Tup, class V>
 static inline bool py_tuple_contains(const Tup& tup, const V& value) {
     bool found = false;
@@ -1857,6 +2114,25 @@ static inline bool py_tuple_contains(const Tup& tup, const V& value) {
         },
         tup);
     return found;
+}
+
+template <class... Ts, class V>
+static inline bool py_contains(const ::std::tuple<Ts...>& values, const V& key) {
+    return py_tuple_contains(values, key);
+}
+
+template <class Q>
+static inline bool py_contains(const object& values, const Q& key) {
+    if (const auto* d = obj_to_dict_ptr(values)) {
+        return py_contains(*d, key);
+    }
+    if (const auto* lst = obj_to_list_ptr(values)) {
+        return py_contains(*lst, make_object(key));
+    }
+    if (const auto* s = py_obj_cast<PyStrObj>(values)) {
+        return py_contains(s->value, key);
+    }
+    return false;
 }
 
 // `/` / `//` / `%` の Python 互換セマンティクス（とくに負数時の扱い）を提供する。

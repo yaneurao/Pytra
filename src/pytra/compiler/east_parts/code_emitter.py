@@ -92,49 +92,57 @@ class CodeEmitter:
         func_node: dict[str, Any],
         rendered_args: list[str],
         rendered_kwargs: dict[str, str],
-    ) -> str | None:
+    ) -> str:
         """`on_render_call` フック。既定では何もしない。"""
         if "on_render_call" in self.hooks:
             fn = self.hooks["on_render_call"]
             if fn is not None:
-                return fn(self, call_node, func_node, rendered_args, rendered_kwargs)
-        return None
+                v = fn(self, call_node, func_node, rendered_args, rendered_kwargs)
+                if isinstance(v, str):
+                    return v
+        return ""
 
     def hook_on_render_binop(
         self,
         binop_node: dict[str, Any],
         left: str,
         right: str,
-    ) -> str | None:
+    ) -> str:
         """`on_render_binop` フック。既定では何もしない。"""
         if "on_render_binop" in self.hooks:
             fn = self.hooks["on_render_binop"]
             if fn is not None:
-                return fn(self, binop_node, left, right)
-        return None
+                v = fn(self, binop_node, left, right)
+                if isinstance(v, str):
+                    return v
+        return ""
 
     def hook_on_render_expr_kind(
         self,
         kind: str,
         expr_node: dict[str, Any],
-    ) -> str | None:
+    ) -> str:
         """`on_render_expr_kind` フック。既定では何もしない。"""
         if "on_render_expr_kind" in self.hooks:
             fn = self.hooks["on_render_expr_kind"]
             if fn is not None:
-                return fn(self, kind, expr_node)
-        return None
+                v = fn(self, kind, expr_node)
+                if isinstance(v, str):
+                    return v
+        return ""
 
     def hook_on_render_expr_complex(
         self,
         expr_node: dict[str, Any],
-    ) -> str | None:
+    ) -> str:
         """複雑式（JoinedStr/Lambda/Comp 系）用フック。既定では何もしない。"""
         if "on_render_expr_complex" in self.hooks:
             fn = self.hooks["on_render_expr_complex"]
             if fn is not None:
-                return fn(self, expr_node)
-        return None
+                v = fn(self, expr_node)
+                if isinstance(v, str):
+                    return v
+        return ""
 
     def syntax_text(self, key: str, default_value: str) -> str:
         """profile.syntax からテンプレート文字列を取得する。"""
@@ -540,7 +548,7 @@ class CodeEmitter:
 
     def is_indexable_sequence_type(self, t: str) -> bool:
         """添字アクセス可能なシーケンス型か判定する。"""
-        return t[:5] == "list[" or t == "str" or t == "bytes" or t == "bytearray"
+        return t[:5] == "list[" or t[:6] == "tuple[" or t == "str" or t == "bytes" or t == "bytearray"
 
     def _is_forbidden_object_receiver_type_text(self, s: str) -> bool:
         """object レシーバ禁止ルールに抵触する型文字列か判定する。"""

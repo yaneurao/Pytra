@@ -75,7 +75,7 @@ public:
     explicit RcHandle(T* ptr, bool add_ref = true) : ptr_(ptr) {
         static_assert(::std::is_base_of_v<PyObj, T>, "T must derive from PyObj");
         if (ptr_ != nullptr && add_ref) {
-            incref(ptr_);
+            incref(reinterpret_cast<PyObj*>(ptr_));
         }
     }
 
@@ -91,7 +91,7 @@ public:
 
     RcHandle(const RcHandle& other) : ptr_(other.ptr_) {
         if (ptr_ != nullptr) {
-            incref(ptr_);
+            incref(reinterpret_cast<PyObj*>(ptr_));
         }
     }
 
@@ -112,7 +112,7 @@ public:
             return *this;
         }
         if (ptr_ != nullptr) {
-            decref(ptr_);
+            decref(reinterpret_cast<PyObj*>(ptr_));
         }
         ptr_ = other.ptr_;
         other.ptr_ = nullptr;
@@ -121,7 +121,7 @@ public:
 
     ~RcHandle() {
         if (ptr_ != nullptr) {
-            decref(ptr_);
+            decref(reinterpret_cast<PyObj*>(ptr_));
             ptr_ = nullptr;
         }
     }
@@ -134,10 +134,10 @@ public:
      */
     void reset(T* ptr = nullptr, bool add_ref = true) {
         if (ptr != nullptr && add_ref) {
-            incref(ptr);
+            incref(reinterpret_cast<PyObj*>(ptr));
         }
         if (ptr_ != nullptr) {
-            decref(ptr_);
+            decref(reinterpret_cast<PyObj*>(ptr_));
         }
         ptr_ = ptr;
     }
@@ -152,6 +152,8 @@ public:
     T& operator*() const noexcept { return *ptr_; }
     T* operator->() const noexcept { return ptr_; }
     explicit operator bool() const noexcept { return ptr_ != nullptr; }
+    bool operator==(const RcHandle& other) const noexcept { return ptr_ == other.ptr_; }
+    bool operator!=(const RcHandle& other) const noexcept { return ptr_ != other.ptr_; }
 
 private:
     T* ptr_ = nullptr;

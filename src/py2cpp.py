@@ -188,7 +188,9 @@ def _dict_str_list_get(src: dict[str, list[str]], key: str) -> list[str]:
 def _dict_any_kind(src: dict[str, Any]) -> str:
     """`dict` の `kind` を文字列として安全に取得する。"""
     kind_obj = src.get("kind")
-    return kind_obj if isinstance(kind_obj, str) else ""
+    if isinstance(kind_obj, str):
+        return kind_obj
+    return ""
 
 
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
@@ -578,6 +580,7 @@ class CppEmitter(CodeEmitter):
     def __init__(
         self,
         east_doc: dict[str, Any],
+        module_namespace_map: dict[str, str],
         negative_index_mode: str = "const_only",
         bounds_check_mode: str = "off",
         floor_div_mode: str = "native",
@@ -588,7 +591,6 @@ class CppEmitter(CodeEmitter):
         opt_level: str = "2",
         top_namespace: str = "",
         emit_main: bool = True,
-        module_namespace_map: dict[str, str] = {},
     ) -> None:
         """変換設定とクラス解析用の状態を初期化する。"""
         profile = load_cpp_profile()
@@ -613,6 +615,7 @@ class CppEmitter(CodeEmitter):
         self.current_class_fields: dict[str, str] = {}
         self.current_class_static_fields: set[str] = set()
         self.class_method_names: dict[str, set[str]] = {}
+        self.class_method_arg_types: dict[str, dict[str, list[str]]] = {}
         self.class_base: dict[str, str] = {}
         self.class_names: set[str] = set()
         self.class_storage_hints: dict[str, str] = {}
@@ -632,9 +635,32 @@ class CppEmitter(CodeEmitter):
         self.import_symbol_modules: set[str] = set()
         self.module_namespace_map = module_namespace_map
         self.function_arg_types: dict[str, list[str]] = {}
+        self.function_return_types: dict[str, str] = {}
         self.current_function_return_type: str = ""
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
+
+    def get_expr_type(self, expr: Any) -> str:
+        """EAST 型に加えて現在スコープの推論型テーブルも参照する。"""
+        node_for_base = self.any_to_dict_or_empty(expr)
+        t = self.any_dict_get_str(node_for_base, "resolved_type", "")
+        if t != "":
+            t = self.normalize_type_name(t)
+        if t not in {"", "unknown"}:
+            return t
+        kind = self._node_kind_from_dict(node_for_base)
+        if kind == "Name":
+            nm = self.any_to_str(node_for_base.get("id"))
+            if nm in self.declared_var_types:
+                return self.normalize_type_name(self.declared_var_types[nm])
+        if kind == "Attribute":
+            owner = self.any_to_dict_or_empty(node_for_base.get("value"))
+            if self._node_kind_from_dict(owner) == "Name":
+                owner_name = self.any_to_str(owner.get("id"))
+                attr = self.any_to_str(node_for_base.get("attr"))
+                if owner_name == "self" and attr in self.current_class_fields:
+                    return self.normalize_type_name(self.current_class_fields[attr])
+        return ""
 
     def _normalize_runtime_module_name(self, module_name: str) -> str:
         """旧 `pylib.*` 名を `pytra.*` 名へ正規化する。"""
@@ -1117,6 +1143,7 @@ class CppEmitter(CodeEmitter):
                 if cls_name != "":
                     self.class_names.add(cls_name)
                     mset: set[str] = set()
+                    marg: dict[str, list[str]] = {}
                     class_body: list[dict[str, Any]] = []
                     raw_class_body = self.any_dict_get_list(stmt, "body")
                     if isinstance(raw_class_body, list):
@@ -1127,7 +1154,20 @@ class CppEmitter(CodeEmitter):
                         if self._node_kind_from_dict(s) == "FunctionDef":
                             fn_name = str(s.get("name"))
                             mset.add(fn_name)
+                            arg_types = self.any_to_dict_or_empty(s.get("arg_types"))
+                            arg_order = self.any_dict_get_list(s, "arg_order")
+                            ordered: list[str] = []
+                            ai = 0
+                            while ai < len(arg_order):
+                                raw_n = arg_order[ai]
+                                if isinstance(raw_n, str):
+                                    n = str(raw_n)
+                                    if n != "self" and n in arg_types:
+                                        ordered.append(self.any_to_str(arg_types.get(n)))
+                                ai += 1
+                            marg[fn_name] = ordered
                     self.class_method_names[cls_name] = mset
+                    self.class_method_arg_types[cls_name] = marg
                     base_raw = stmt.get("base")
                     base = str(base_raw) if isinstance(base_raw, str) else ""
                     self.class_base[cls_name] = base
@@ -1146,6 +1186,7 @@ class CppEmitter(CodeEmitter):
                             if n in arg_types:
                                 ordered.append(self.any_to_str(arg_types.get(n)))
                     self.function_arg_types[fn_name] = ordered
+                    self.function_return_types[fn_name] = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
 
         self.ref_classes = {name for name, hint in self.class_storage_hints.items() if hint == "ref"}
         changed = True
@@ -1362,6 +1403,50 @@ class CppEmitter(CodeEmitter):
                 return "\0"
             return ""
         return ""
+
+    def _const_int_literal(self, node: Any) -> int | None:
+        """整数定数ノードを `int` として返す（取得できない場合は None）。"""
+        nd = self.any_to_dict_or_empty(node)
+        if len(nd) == 0:
+            return None
+        kind = self._node_kind_from_dict(nd)
+        if kind == "Constant":
+            if "value" not in nd:
+                return None
+            val = nd["value"]
+            if isinstance(val, bool):
+                return None
+            if isinstance(val, int):
+                return int(val)
+            if isinstance(val, str):
+                txt = self.any_to_str(val)
+                if txt == "":
+                    return None
+                try:
+                    return int(txt)
+                except ValueError:
+                    return None
+            return None
+        if kind == "UnaryOp" and self.any_dict_get_str(nd, "op", "") == "USub":
+            opd = self.any_to_dict_or_empty(nd.get("operand"))
+            if self._node_kind_from_dict(opd) != "Constant":
+                return None
+            if "value" not in opd:
+                return None
+            oval = opd["value"]
+            if isinstance(oval, bool):
+                return None
+            if isinstance(oval, int):
+                return -int(oval)
+            if isinstance(oval, str):
+                txt = self.any_to_str(oval)
+                if txt == "":
+                    return None
+                try:
+                    return -int(txt)
+                except ValueError:
+                    return None
+        return None
 
     def _str_index_char_access(self, node: Any) -> str:
         """str 添字アクセスを `at()` ベースの char 比較式へ変換する。"""
@@ -1580,6 +1665,163 @@ class CppEmitter(CodeEmitter):
                         else:
                             out[nm] = ty
         return out
+
+    def _mark_mutated_param_from_target(self, target_obj: Any, params: set[str], out: set[str]) -> None:
+        """代入ターゲットから、破壊的変更対象の引数名を再帰的に抽出する。"""
+        tgt = self.any_to_dict_or_empty(target_obj)
+        tkind = self._node_kind_from_dict(tgt)
+        if tkind == "Name":
+            nm = self.any_to_str(tgt.get("id"))
+            if nm in params:
+                out.add(nm)
+            return
+        if tkind == "Subscript":
+            base = self.any_to_dict_or_empty(tgt.get("value"))
+            if self._node_kind_from_dict(base) == "Name":
+                nm = self.any_to_str(base.get("id"))
+                if nm in params:
+                    out.add(nm)
+            return
+        if tkind == "Attribute":
+            owner = self.any_to_dict_or_empty(tgt.get("value"))
+            if self._node_kind_from_dict(owner) == "Name":
+                nm = self.any_to_str(owner.get("id"))
+                if nm in params:
+                    out.add(nm)
+            return
+        if tkind == "Tuple":
+            elems = self.any_dict_get_list(tgt, "elements")
+            i = 0
+            while i < len(elems):
+                self._mark_mutated_param_from_target(elems[i], params, out)
+                i += 1
+
+    def _collect_mutated_params_from_stmt(self, stmt: dict[str, Any], params: set[str], out: set[str]) -> None:
+        """1文から「破壊的に使われる引数名」を再帰的に収集する。"""
+        kind = self._node_kind_from_dict(stmt)
+
+        if kind in {"Assign", "AnnAssign", "AugAssign"}:
+            self._mark_mutated_param_from_target(stmt.get("target"), params, out)
+        elif kind == "Swap":
+            lhs = self.any_to_dict_or_empty(stmt.get("lhs"))
+            rhs = self.any_to_dict_or_empty(stmt.get("rhs"))
+            if self._node_kind_from_dict(lhs) == "Name":
+                ln = self.any_to_str(lhs.get("id"))
+                if ln in params:
+                    out.add(ln)
+            if self._node_kind_from_dict(rhs) == "Name":
+                rn = self.any_to_str(rhs.get("id"))
+                if rn in params:
+                    out.add(rn)
+        elif kind == "Expr":
+            call = self.any_to_dict_or_empty(stmt.get("value"))
+            if self._node_kind_from_dict(call) == "Call":
+                fn = self.any_to_dict_or_empty(call.get("func"))
+                if self._node_kind_from_dict(fn) == "Attribute":
+                    owner = self.any_to_dict_or_empty(fn.get("value"))
+                    if self._node_kind_from_dict(owner) == "Name":
+                        nm = self.any_to_str(owner.get("id"))
+                        attr = self.any_to_str(fn.get("attr"))
+                        mutating_attrs = {
+                            "append",
+                            "extend",
+                            "insert",
+                            "pop",
+                            "clear",
+                            "remove",
+                            "discard",
+                            "add",
+                            "update",
+                            "setdefault",
+                            "sort",
+                            "reverse",
+                            "mkdir",
+                            "write",
+                            "write_text",
+                            "close",
+                        }
+                        if nm in params and attr in mutating_attrs:
+                            out.add(nm)
+
+        if kind == "If":
+            for s in self._dict_stmt_list(stmt.get("body")):
+                self._collect_mutated_params_from_stmt(s, params, out)
+            for s in self._dict_stmt_list(stmt.get("orelse")):
+                self._collect_mutated_params_from_stmt(s, params, out)
+            return
+        if kind == "While" or kind == "For":
+            for s in self._dict_stmt_list(stmt.get("body")):
+                self._collect_mutated_params_from_stmt(s, params, out)
+            for s in self._dict_stmt_list(stmt.get("orelse")):
+                self._collect_mutated_params_from_stmt(s, params, out)
+            return
+        if kind == "Try":
+            for s in self._dict_stmt_list(stmt.get("body")):
+                self._collect_mutated_params_from_stmt(s, params, out)
+            for h in self._dict_stmt_list(stmt.get("handlers")):
+                for s in self._dict_stmt_list(h.get("body")):
+                    self._collect_mutated_params_from_stmt(s, params, out)
+            for s in self._dict_stmt_list(stmt.get("orelse")):
+                self._collect_mutated_params_from_stmt(s, params, out)
+            for s in self._dict_stmt_list(stmt.get("finalbody")):
+                self._collect_mutated_params_from_stmt(s, params, out)
+            return
+
+    def _collect_mutated_params(self, body_stmts: list[dict[str, Any]], arg_names: list[str]) -> set[str]:
+        """関数本体から `mutable` 扱いすべき引数名を推定する。"""
+        params: set[str] = set()
+        i = 0
+        while i < len(arg_names):
+            params.add(arg_names[i])
+            i += 1
+        out: set[str] = set()
+        for st in body_stmts:
+            self._collect_mutated_params_from_stmt(st, params, out)
+        return out
+
+    def _render_param_default_expr(self, node: Any, east_target_t: str) -> str:
+        """関数引数既定値ノードを C++ 式へ変換する。"""
+        nd = self.any_to_dict_or_empty(node)
+        if len(nd) == 0:
+            return ""
+        kind = self._node_kind_from_dict(nd)
+        if kind == "Constant":
+            if "value" not in nd:
+                return ""
+            val = nd["value"]
+            if val is None:
+                return "::std::nullopt"
+            if isinstance(val, bool):
+                return "true" if val else "false"
+            if isinstance(val, int):
+                return str(val)
+            if isinstance(val, float):
+                return str(val)
+            if isinstance(val, str):
+                return cpp_string_lit(val)
+            return ""
+        if kind == "Name":
+            ident = self.any_to_str(nd.get("id"))
+            if ident == "None":
+                return "::std::nullopt"
+            if ident == "True":
+                return "true"
+            if ident == "False":
+                return "false"
+            return ""
+        if kind == "Tuple":
+            elems = self.any_dict_get_list(nd, "elements")
+            parts: list[str] = []
+            i = 0
+            while i < len(elems):
+                txt = self._render_param_default_expr(elems[i], "Any")
+                if txt == "":
+                    return ""
+                parts.append(txt)
+                i += 1
+            return "::std::make_tuple(" + _join_str_list(", ", parts) + ")"
+        _ = east_target_t
+        return ""
 
     def _merge_decl_types_for_branch_join(self, left_t: str, right_t: str) -> str:
         """if/else 合流時の宣言型候補をマージする。"""
@@ -2074,7 +2316,9 @@ class CppEmitter(CodeEmitter):
         self.emit("}")
         for h in handlers:
             name_raw = h.get("name")
-            name = name_raw if isinstance(name_raw, str) and name_raw != "" else "ex"
+            name = "ex"
+            if isinstance(name_raw, str) and name_raw != "":
+                name = name_raw
             self.emit(f"catch (const ::std::exception& {name}) {{")
             self.indent += 1
             self.emit_stmt_list(self._dict_stmt_list(h.get("body")))
@@ -2131,6 +2375,7 @@ class CppEmitter(CodeEmitter):
             tuple_elem_types: list[str] = []
             value_t = self.get_expr_type(stmt.get("value"))
             value_is_optional_tuple = False
+            rhs_is_tuple = False
             if isinstance(value_t, str):
                 tuple_type_text = ""
                 if value_t.startswith("tuple[") and value_t.endswith("]"):
@@ -2141,15 +2386,30 @@ class CppEmitter(CodeEmitter):
                             tuple_type_text = part
                             break
                 if tuple_type_text != "":
+                    rhs_is_tuple = True
                     tuple_elem_types = self.split_generic(tuple_type_text[6:-1])
                     if tuple_type_text != value_t:
                         value_is_optional_tuple = True
+            if not rhs_is_tuple:
+                value_node = self.any_to_dict_or_empty(stmt.get("value"))
+                if self._node_kind_from_dict(value_node) == "Call":
+                    fn_node = self.any_to_dict_or_empty(value_node.get("func"))
+                    fn_name = ""
+                    if self._node_kind_from_dict(fn_node) == "Name":
+                        fn_name = self.any_to_str(fn_node.get("id"))
+                    if fn_name != "":
+                        fn_name = self.rename_if_reserved(fn_name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+                        ret_t = self.function_return_types.get(fn_name, "")
+                        if ret_t.startswith("tuple[") and ret_t.endswith("]"):
+                            rhs_is_tuple = True
+                            tuple_elem_types = self.split_generic(ret_t[6:-1])
             if value_is_optional_tuple:
                 self.emit(f"auto {tmp} = *({value_expr});")
             else:
                 self.emit(f"auto {tmp} = {value_expr};")
             for i, elt in enumerate(self.any_dict_get_list(target, "elements")):
                 lhs = self.render_expr(elt)
+                rhs_item = f"::std::get<{i}>({tmp})" if rhs_is_tuple else f"py_at({tmp}, {i})"
                 if self.is_plain_name_expr(elt):
                     elt_dict = self.any_to_dict_or_empty(elt)
                     name = str(elt_dict.get("id", ""))
@@ -2162,19 +2422,27 @@ class CppEmitter(CodeEmitter):
                         self.declare_in_current_scope(name)
                         self.declared_var_types[name] = decl_t_txt
                         if decl_t_txt in {"", "unknown", "Any", "object"}:
-                            self.emit(f"auto {lhs} = ::std::get<{i}>({tmp});")
+                            self.emit(f"auto {lhs} = {rhs_item};")
                             continue
                         decl_t = self._cpp_type_text(decl_t_txt)
-                        self.emit(f"{decl_t} {lhs} = ::std::get<{i}>({tmp});")
+                        self.emit(f"{decl_t} {lhs} = {rhs_item};")
                         continue
-                self.emit(f"{lhs} = ::std::get<{i}>({tmp});")
+                self.emit(f"{lhs} = {rhs_item};")
             return
         texpr = self.render_lvalue(stmt.get("target"))
         if self.is_plain_name_expr(stmt.get("target")) and not self.is_declared(texpr):
-            d0 = str(stmt.get("decl_type", ""))
-            d1 = self.get_expr_type(stmt.get("target"))
-            d2 = self.get_expr_type(stmt.get("value"))
+            d0 = self.normalize_type_name(str(stmt.get("decl_type", "")))
+            d1 = self.normalize_type_name(self.get_expr_type(stmt.get("target")))
+            d2 = self.normalize_type_name(self.get_expr_type(stmt.get("value")))
+            if d0 == "unknown":
+                d0 = ""
+            if d1 == "unknown":
+                d1 = ""
+            if d2 == "unknown":
+                d2 = ""
             picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
+            if picked == "None":
+                picked = "Any"
             if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict) and self._node_kind_from_dict(value) == "BinOp":
                 lt0 = self.get_expr_type(value.get("left"))
                 rt0 = self.get_expr_type(value.get("right"))
@@ -2222,6 +2490,8 @@ class CppEmitter(CodeEmitter):
             return
         rval = self.render_expr(stmt.get("value"))
         t_target = self.get_expr_type(stmt.get("target"))
+        if t_target == "None":
+            t_target = "Any"
         if self.is_plain_name_expr(stmt.get("target")) and t_target in {"", "unknown"}:
             if texpr in self.declared_var_types:
                 t_target = self.declared_var_types[texpr]
@@ -2417,7 +2687,10 @@ class CppEmitter(CodeEmitter):
             pseudo: dict[str, Any] = {}
             pseudo["target"] = stmt.get("target")
             t_raw = stmt.get("target_type")
-            pseudo["target_type"] = t_raw if isinstance(t_raw, str) and t_raw != "" else "int64"
+            target_type_txt = "int64"
+            if isinstance(t_raw, str) and t_raw != "":
+                target_type_txt = t_raw
+            pseudo["target_type"] = target_type_txt
             pseudo["start"] = iter_expr.get("start")
             pseudo["stop"] = iter_expr.get("stop")
             pseudo["step"] = iter_expr.get("step")
@@ -2488,7 +2761,9 @@ class CppEmitter(CodeEmitter):
         ret = self.cpp_type(stmt.get("return_type"))
         arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
         arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
+        arg_defaults = self.any_to_dict_or_empty(stmt.get("arg_defaults"))
         arg_index = self.any_to_dict_or_empty(stmt.get("arg_index"))
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
         params: list[str] = []
         fn_scope: set[str] = set()
         arg_names: list[str] = []
@@ -2498,6 +2773,7 @@ class CppEmitter(CodeEmitter):
                 n = str(raw_n)
                 if n in arg_types:
                     arg_names.append(n)
+        mutated_params = self._collect_mutated_params(body_stmts, arg_names)
         for idx, n in enumerate(arg_names):
             t = self.any_to_str(arg_types.get(n))
             skip_self = in_class and idx == 0 and n == "self"
@@ -2505,17 +2781,24 @@ class CppEmitter(CodeEmitter):
             usage = self.any_to_str(arg_usage.get(n))
             if usage == "":
                 usage = "readonly"
+            if usage != "mutable" and n in mutated_params:
+                usage = "mutable"
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
             if skip_self:
                 pass
-            elif by_ref and usage == "mutable":
-                params.append(f"{ct}& {n}")
-                fn_scope.add(n)
-            elif by_ref:
-                params.append(f"const {ct}& {n}")
-                fn_scope.add(n)
             else:
-                params.append(f"{ct} {n}")
+                param_txt = ""
+                if by_ref and usage == "mutable":
+                    param_txt = f"{ct}& {n}"
+                elif by_ref:
+                    param_txt = f"const {ct}& {n}"
+                else:
+                    param_txt = f"{ct} {n}"
+                if n in arg_defaults:
+                    default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
+                    if default_txt != "":
+                        param_txt += f" = {default_txt}"
+                params.append(param_txt)
                 fn_scope.add(n)
         if in_class and name == "__init__" and self.current_class_name is not None:
             param_sep = ", "
@@ -2531,13 +2814,20 @@ class CppEmitter(CodeEmitter):
             params_txt = param_sep.join(params)
             self.emit_function_open(ret, str(emitted_name), params_txt)
         docstring = self.any_to_str(stmt.get("docstring"))
-        body_stmts = self._dict_stmt_list(stmt.get("body"))
         self.indent += 1
         self.scope_stack.append(set(fn_scope))
         prev_ret = self.current_function_return_type
         prev_decl_types = self.declared_var_types
         empty_decl_types: dict[str, str] = {}
         self.declared_var_types = empty_decl_types
+        i = 0
+        while i < len(arg_names):
+            an = arg_names[i]
+            if not (in_class and i == 0 and an == "self"):
+                at = self.any_to_str(arg_types.get(an))
+                if at != "":
+                    self.declared_var_types[an] = self.normalize_type_name(at)
+            i += 1
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
         if docstring != "":
             self.emit_block_comment(docstring)
@@ -2659,8 +2949,10 @@ class CppEmitter(CodeEmitter):
                         if is_dataclass:
                             instance_field_defaults[fname] = self.render_expr(s.get("value")) if s.get("value") is not None else instance_field_defaults.get(fname, "")
                         else:
-                            static_field_types[fname] = ann
+                            # クラス直下 `AnnAssign` は、値ありのみ static 扱い。
+                            # 値なしはインスタンスフィールド宣言（型ヒント）として扱う。
                             if s.get("value") is not None:
+                                static_field_types[fname] = ann
                                 static_field_defaults[fname] = self.render_expr(s.get("value"))
             elif is_enum_base and self._node_kind_from_dict(s) == "Assign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
@@ -2970,6 +3262,27 @@ class CppEmitter(CodeEmitter):
             if len(args) == 1:
                 return f"py_dict_get({owner}, {key_expr})"
             return ""
+        if runtime_call == "dict.pop":
+            owner_node = fn.get("value")
+            owner = self.render_expr(owner_node)
+            key_expr = args[0] if len(args) >= 1 else "/* missing */"
+            key_node: Any = None
+            if len(arg_nodes) >= 1:
+                key_node = arg_nodes[0]
+            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
+            if len(args) <= 1:
+                return f"{owner}.pop({key_expr})"
+            owner_t0 = self.get_expr_type(owner_node)
+            owner_t = owner_t0 if isinstance(owner_t0, str) else ""
+            val_t = "Any"
+            if owner_t.startswith("dict[") and owner_t.endswith("]"):
+                inner = self.split_generic(owner_t[5:-1])
+                if len(inner) == 2 and inner[1] != "":
+                    val_t = self.normalize_type_name(inner[1])
+            default_expr = args[1]
+            if default_expr in {"::std::nullopt", "std::nullopt"} and not self.is_any_like_type(val_t) and val_t != "None":
+                default_expr = self._cpp_type_text(val_t) + "()"
+            return f"({owner}.contains({key_expr}) ? {owner}.pop({key_expr}) : {default_expr})"
         if runtime_call == "dict.items":
             return self.render_expr(fn.get("value"))
         if runtime_call == "dict.keys":
@@ -2982,27 +3295,59 @@ class CppEmitter(CodeEmitter):
 
     def _render_runtime_call_str_ops(self, runtime_call: str, fn: dict[str, Any], args: list[str]) -> str:
         """`runtime_call` の文字列系処理（strip/startswith/replace/join など）を処理する。"""
-        if runtime_call == "py_isdigit" and len(args) == 1:
-            return f"py_isdigit({args[0]})"
-        if runtime_call == "py_isalpha" and len(args) == 1:
-            return f"py_isalpha({args[0]})"
-        if runtime_call == "py_strip" and len(args) == 0:
-            owner = self.render_expr(fn.get("value"))
-            return f"py_strip({owner})"
-        if runtime_call == "py_rstrip" and len(args) == 0:
-            owner = self.render_expr(fn.get("value"))
-            return f"py_rstrip({owner})"
-        if runtime_call == "py_startswith" and len(args) == 1:
-            owner = self.render_expr(fn.get("value"))
-            return f"py_startswith({owner}, {args[0]})"
-        if runtime_call == "py_endswith" and len(args) == 1:
-            owner = self.render_expr(fn.get("value"))
-            return f"py_endswith({owner}, {args[0]})"
+        owner_node = self.any_to_dict_or_empty(fn.get("value"))
+        owner = self.render_expr(fn.get("value"))
+        owner_kind = self._node_kind_from_dict(owner_node)
+        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            owner = f"({owner})"
+        if runtime_call == "py_isdigit":
+            if len(args) == 0:
+                return f"{owner}.isdigit()"
+            if len(args) == 1:
+                return f"{args[0]}.isdigit()"
+        if runtime_call == "py_isalpha":
+            if len(args) == 0:
+                return f"{owner}.isalpha()"
+            if len(args) == 1:
+                return f"{args[0]}.isalpha()"
+        if runtime_call == "py_strip":
+            if len(args) == 0:
+                return f"py_strip({owner})"
+            if len(args) == 1:
+                return f"{owner}.strip({args[0]})"
+        if runtime_call == "py_rstrip":
+            if len(args) == 0:
+                return f"py_rstrip({owner})"
+            if len(args) == 1:
+                return f"{owner}.rstrip({args[0]})"
+        if runtime_call == "py_lstrip":
+            if len(args) == 0:
+                return f"py_lstrip({owner})"
+            if len(args) == 1:
+                return f"{owner}.lstrip({args[0]})"
+        if runtime_call == "py_startswith":
+            if len(args) == 1:
+                return f"py_startswith({owner}, {args[0]})"
+            if len(args) == 2:
+                start = f"py_to_int64({args[1]})"
+                return f"py_startswith(py_slice({owner}, {start}, py_len({owner})), {args[0]})"
+            if len(args) >= 3:
+                start = f"py_to_int64({args[1]})"
+                end = f"py_to_int64({args[2]})"
+                return f"py_startswith(py_slice({owner}, {start}, {end}), {args[0]})"
+        if runtime_call == "py_endswith":
+            if len(args) == 1:
+                return f"py_endswith({owner}, {args[0]})"
+            if len(args) == 2:
+                start = f"py_to_int64({args[1]})"
+                return f"py_endswith(py_slice({owner}, {start}, py_len({owner})), {args[0]})"
+            if len(args) >= 3:
+                start = f"py_to_int64({args[1]})"
+                end = f"py_to_int64({args[2]})"
+                return f"py_endswith(py_slice({owner}, {start}, {end}), {args[0]})"
         if runtime_call == "py_replace" and len(args) == 2:
-            owner = self.render_expr(fn.get("value"))
             return f"py_replace({owner}, {args[0]}, {args[1]})"
         if runtime_call == "py_join" and len(args) == 1:
-            owner = self.render_expr(fn.get("value"))
             return f"str({owner}).join({args[0]})"
         return ""
 
@@ -3193,7 +3538,7 @@ class CppEmitter(CodeEmitter):
                 return f"Path({_join_str_list(', ', args)})"
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
-            attr_rendered = self._render_call_attribute(expr, fn, args, kw)
+            attr_rendered = self._render_call_attribute(expr, fn, args, kw, arg_nodes)
             if isinstance(attr_rendered, str):
                 attr_rendered_txt = str(attr_rendered)
             if attr_rendered_txt != "":
@@ -3266,6 +3611,20 @@ class CppEmitter(CodeEmitter):
         owner_types: list[str] = [owner_t]
         if self._contains_text(owner_t, "|"):
             owner_types = self.split_union(owner_t)
+        if attr in {"strip", "lstrip", "rstrip"}:
+            if len(args) == 0:
+                return f"py_{attr}({owner_expr})"
+            if len(args) == 1:
+                return f"py_{attr}({owner_expr}, {args[0]})"
+        if attr in {"startswith", "endswith"} and len(args) >= 1:
+            return f"py_{attr}({owner_expr}, {args[0]})"
+        if attr == "replace" and len(args) >= 2:
+            return f"py_replace({owner_expr}, {args[0]}, {args[1]})"
+        if "str" in owner_types:
+            if attr in {"isdigit", "isalpha", "isalnum", "isspace", "lower", "upper"} and len(args) == 0:
+                return f"{owner_expr}.{attr}()"
+            if attr in {"find", "rfind"}:
+                return f"{owner_expr}.{attr}({_join_str_list(', ', args)})"
         if owner_t == "unknown" and attr == "clear":
             return f"{owner_expr}.clear()"
         if attr == "append":
@@ -3296,6 +3655,7 @@ class CppEmitter(CodeEmitter):
         fn: dict[str, Any],
         args: list[str],
         kw: dict[str, str],
+        arg_nodes: list[Any],
     ) -> str | None:
         """Attribute 形式の呼び出しを module/object/fallback の順で処理する。"""
         owner_obj: object = fn.get("value")
@@ -3317,8 +3677,6 @@ class CppEmitter(CodeEmitter):
             if owner_mod == "" and owner_expr.startswith("pytra."):
                 owner_mod = owner_expr
             owner_mod = self._normalize_runtime_module_name(owner_mod)
-        arg_nodes_obj: object = expr.get("args")
-        arg_nodes = self.any_to_list(arg_nodes_obj)
         attr = self.any_to_str(fn.get("attr"))
         if attr == "":
             attr = str(fn.get("attr"))
@@ -3341,6 +3699,12 @@ class CppEmitter(CodeEmitter):
             object_rendered_txt = str(object_rendered)
         if object_rendered_txt != "":
             return object_rendered_txt
+        method_sig = self._class_method_sig(owner_t, attr)
+        if len(method_sig) > 0:
+            call_args = self._merge_runtime_call_args(args, kw)
+            call_args = self._coerce_args_for_class_method(owner_t, attr, call_args, arg_nodes)
+            fn_expr = self._render_attribute_expr(fn)
+            return f"{fn_expr}({_join_str_list(', ', call_args)})"
         return None
 
     def _coerce_call_arg(self, arg_txt: str, arg_node: Any, target_t: str) -> str:
@@ -3368,6 +3732,55 @@ class CppEmitter(CodeEmitter):
         if fn_name not in self.function_arg_types:
             return args
         sig = self.function_arg_types[fn_name]
+        out: list[str] = []
+        i = 0
+        while i < len(args):
+            a = args[i]
+            if i < len(sig):
+                n: Any = arg_nodes[i] if i < len(arg_nodes) else {}
+                out.append(self._coerce_call_arg(a, n, sig[i]))
+            else:
+                out.append(a)
+            i += 1
+        return out
+
+    def _class_method_sig(self, owner_t: str, method: str) -> list[str]:
+        """クラスメソッドの引数型シグネチャを返す。未知なら空配列。"""
+        t_norm = self.normalize_type_name(owner_t)
+        candidates: list[str] = []
+        if self._contains_text(t_norm, "|"):
+            candidates = self.split_union(t_norm)
+        elif t_norm != "":
+            candidates = [t_norm]
+        if self.current_class_name is not None and owner_t in {"", "unknown"}:
+            candidates.append(self.current_class_name)
+        i = 0
+        while i < len(candidates):
+            c = candidates[i]
+            if c in self.class_method_arg_types:
+                mm = self.class_method_arg_types[c]
+                if method in mm:
+                    return mm[method]
+            i += 1
+        if owner_t in {"", "unknown"} and self.current_class_name is not None:
+            mm: dict[str, list[str]] = {}
+            if self.current_class_name in self.class_method_arg_types:
+                mm = self.class_method_arg_types[self.current_class_name]
+            if method in mm:
+                return mm[method]
+        return []
+
+    def _coerce_args_for_class_method(
+        self,
+        owner_t: str,
+        method: str,
+        args: list[str],
+        arg_nodes: list[Any],
+    ) -> list[str]:
+        """クラスメソッド呼び出しに対して引数型を合わせる。"""
+        sig = self._class_method_sig(owner_t, method)
+        if len(sig) == 0:
+            return args
         out: list[str] = []
         i = 0
         while i < len(args):
@@ -3432,18 +3845,26 @@ class CppEmitter(CodeEmitter):
         if len(arg_nodes) > 0:
             first_arg = arg_nodes[0]
         kw: dict[str, str] = {}
+        kw_values: list[str] = []
+        kw_nodes: list[Any] = []
         for k in keywords:
             kd = self.any_to_dict_or_empty(k)
             if len(kd) > 0:
                 kw_name = self.any_to_str(kd.get("arg"))
                 if kw_name != "":
-                    kw[kw_name] = self.render_expr(kd.get("value"))
+                    kw_val_node: Any = kd.get("value")
+                    kw_val = self.render_expr(kw_val_node)
+                    kw[kw_name] = kw_val
+                    kw_values.append(kw_val)
+                    kw_nodes.append(kw_val_node)
         out: dict[str, Any] = {}
         out["fn"] = fn_obj
         out["fn_name"] = fn_name
         out["arg_nodes"] = arg_nodes
         out["args"] = args
         out["kw"] = kw
+        out["kw_values"] = kw_values
+        out["kw_nodes"] = kw_nodes
         out["first_arg"] = first_arg
         return out
 
@@ -3483,13 +3904,7 @@ class CppEmitter(CodeEmitter):
                     if op0 in inv:
                         return f"{left} {inv[op0]} {rhs}"
                     if op0 in {"In", "NotIn"}:
-                        rhs_type0 = self.get_expr_type(rhs_node0)
-                        rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
-                        found = ""
-                        if rhs_type.startswith("dict["):
-                            found = f"{rhs}.find({left}) != {rhs}.end()"
-                        else:
-                            found = f"::std::find({rhs}.begin(), {rhs}.end(), {left}) != {rhs}.end()"
+                        found = f"py_contains({rhs}, {left})"
                         return f"!({found})" if op0 == "In" else found
             return f"!({operand})"
         if op == "USub":
@@ -3503,13 +3918,7 @@ class CppEmitter(CodeEmitter):
         if self.any_dict_get_str(expr, "lowered_kind", "") == "Contains":
             container = self.render_expr(expr.get("container"))
             key = self.render_expr(expr.get("key"))
-            ctype0 = self.get_expr_type(expr.get("container"))
-            ctype = ctype0 if isinstance(ctype0, str) else ""
-            base = ""
-            if ctype.startswith("dict["):
-                base = f"{container}.find({key}) != {container}.end()"
-            else:
-                base = f"::std::find({container}.begin(), {container}.end(), {key}) != {container}.end()"
+            base = f"py_contains({container}, {key})"
             if self.any_to_bool(expr.get("negated")):
                 return f"!({base})"
             return base
@@ -3533,23 +3942,9 @@ class CppEmitter(CodeEmitter):
             if cop_txt != "":
                 cop = cop_txt
             if cop == "/* in */":
-                rhs_type0 = self.get_expr_type(rhs_node)
-                rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
-                if rhs_type.startswith("dict["):
-                    parts.append(f"{rhs}.find({cur}) != {rhs}.end()")
-                elif rhs_type.startswith("tuple["):
-                    parts.append(f"py_tuple_contains({rhs}, {cur})")
-                else:
-                    parts.append(f"::std::find({rhs}.begin(), {rhs}.end(), {cur}) != {rhs}.end()")
+                parts.append(f"py_contains({rhs}, {cur})")
             elif cop == "/* not in */":
-                rhs_type0 = self.get_expr_type(rhs_node)
-                rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
-                if rhs_type.startswith("dict["):
-                    parts.append(f"{rhs}.find({cur}) == {rhs}.end()")
-                elif rhs_type.startswith("tuple["):
-                    parts.append(f"!py_tuple_contains({rhs}, {cur})")
-                else:
-                    parts.append(f"::std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
+                parts.append(f"!py_contains({rhs}, {cur})")
             else:
                 opt_cmp = self._try_optimize_char_compare(
                     cur_node,
@@ -3586,9 +3981,41 @@ class CppEmitter(CodeEmitter):
             up = self.render_expr(sl_node.get("upper")) if sl_node.get("upper") is not None else f"py_len({val})"
             return f"py_slice({val}, {lo}, {up})"
         idx = self.render_expr(sl)
+        idx_ty0 = self.get_expr_type(sl)
+        idx_ty = idx_ty0 if isinstance(idx_ty0, str) else ""
+        idx_node = self.any_to_dict_or_empty(sl)
+        idx_is_str_key = idx_ty == "str" or (
+            self._node_kind_from_dict(idx_node) == "Constant" and isinstance(idx_node.get("value"), str)
+        )
+        idx_const = self._const_int_literal(sl)
+        idx_is_int = idx_const is not None or idx_ty in {
+            "int8",
+            "uint8",
+            "int16",
+            "uint16",
+            "int32",
+            "uint32",
+            "int64",
+            "uint64",
+        }
         if val_ty.startswith("dict["):
             idx = self._coerce_dict_key_expr(expr.get("value"), idx, sl)
             return f"py_dict_get({val}, {idx})"
+        if (val_ty in {"", "unknown"} or self.is_any_like_type(val_ty)) and idx_is_str_key:
+            return f"py_dict_get({val}, {idx})"
+        if (val_ty in {"", "unknown"} or self.is_any_like_type(val_ty)) and idx_is_int:
+            return f"py_at({val}, py_to_int64({idx}))"
+        if val_ty.startswith("tuple[") and val_ty.endswith("]"):
+            parts = self.split_generic(val_ty[6:-1])
+            if idx_const is None:
+                raise RuntimeError("dynamic tuple index is not supported in current C++ backend")
+            n_parts = len(parts)
+            idx_norm = int(idx_const)
+            if idx_norm < 0:
+                idx_norm += n_parts
+            if idx_norm < 0 or idx_norm >= n_parts:
+                raise RuntimeError("tuple index out of range in EAST -> C++ lowering")
+            return f"::std::get<{idx_norm}>({val})"
         if self.is_indexable_sequence_type(val_ty):
             idx_t0 = self.get_expr_type(sl)
             idx_t = idx_t0 if isinstance(idx_t0, str) else ""
@@ -3705,7 +4132,9 @@ class CppEmitter(CodeEmitter):
                 and base_name in self.import_symbol_modules
             ):
                 src_obj = self.doc.get("source_path")
-                src = src_obj if isinstance(src_obj, str) and src_obj != "" else "(input)"
+                src = "(input)"
+                if isinstance(src_obj, str) and src_obj != "":
+                    src = src_obj
                 raise _make_user_error(
                     "input_invalid",
                     "from-import ではモジュール名は束縛されません。",
@@ -3723,11 +4152,11 @@ class CppEmitter(CodeEmitter):
             return "/* none */"
         kind = self._node_kind_from_dict(expr_d)
         hook_kind = self.hook_on_render_expr_kind(kind, expr_d)
-        if isinstance(hook_kind, str) and hook_kind != "":
+        if hook_kind != "":
             return hook_kind
         if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
             hook_complex = self.hook_on_render_expr_complex(expr_d)
-            if isinstance(hook_complex, str) and hook_complex != "":
+            if hook_complex != "":
                 return hook_complex
 
         if kind == "Name":
@@ -3743,10 +4172,12 @@ class CppEmitter(CodeEmitter):
             arg_nodes = self.any_to_list(call_parts.get("arg_nodes"))
             args = [self.any_to_str(a) for a in self.any_to_list(call_parts.get("args"))]
             kw_raw = self.any_to_dict_or_empty(call_parts.get("kw"))
+            kw_values = [self.any_to_str(a) for a in self.any_to_list(call_parts.get("kw_values"))]
             kw: dict[str, str] = {}
             for k, v in kw_raw.items():
                 if isinstance(k, str):
                     kw[k] = self.any_to_str(v)
+            kw_nodes = self.any_to_list(call_parts.get("kw_nodes"))
             first_arg: object = call_parts.get("first_arg")
             fn_kind_for_call = self._node_kind_from_dict(fn)
             if fn_kind_for_call == "Attribute":
@@ -3774,8 +4205,21 @@ class CppEmitter(CodeEmitter):
                 name_or_attr_txt = str(name_or_attr)
             if name_or_attr_txt != "":
                 return name_or_attr_txt
-            args = self._coerce_args_for_known_function(fn_name, args, arg_nodes)
-            return self._render_call_fallback(fn_name, args)
+            merged_args = args
+            if len(kw_values) > 0:
+                merged_args = list(args)
+                i = 0
+                while i < len(kw_values):
+                    merged_args.append(kw_values[i])
+                    i += 1
+            merged_arg_nodes = list(arg_nodes)
+            if len(kw_nodes) > 0:
+                i = 0
+                while i < len(kw_nodes):
+                    merged_arg_nodes.append(kw_nodes[i])
+                    i += 1
+            merged_args = self._coerce_args_for_known_function(fn_name, merged_args, merged_arg_nodes)
+            return self._render_call_fallback(fn_name, merged_args)
         if kind == "RangeExpr":
             start = self.render_expr(expr_d.get("start"))
             stop = self.render_expr(expr_d.get("stop"))
@@ -3798,12 +4242,26 @@ class CppEmitter(CodeEmitter):
             if isinstance(rt, str) and rt.startswith("list[") and rt.endswith("]"):
                 elem_t = rt[5:-1].strip()
             parts: list[str] = []
+            ctor_elem = ""
+            ctor_mixed = False
             elements = self.any_to_list(expr_d.get("elements"))
             for e in elements:
                 rv = self.render_expr(e)
+                brace_pos = rv.find("{")
+                if brace_pos > 0:
+                    cand = rv[:brace_pos].strip()
+                    if cand.startswith("dict<") or cand.startswith("list<") or cand.startswith("set<"):
+                        if ctor_elem == "":
+                            ctor_elem = cand
+                        elif ctor_elem != cand:
+                            ctor_mixed = True
                 if self.is_any_like_type(elem_t):
                     rv = f"make_object({rv})"
                 parts.append(rv)
+            if t.startswith("list<") and ctor_elem != "" and not ctor_mixed:
+                expect_t = f"list<{ctor_elem}>"
+                if t != expect_t:
+                    t = expect_t
             sep = ", "
             items = sep.join(parts)
             return f"{t}{{{items}}}"
@@ -3847,6 +4305,19 @@ class CppEmitter(CodeEmitter):
                     val_t = inner[1]
             entries = self._dict_stmt_list(expr_d.get("entries"))
             if len(entries) == 0:
+                keys_raw = self.any_to_list(expr_d.get("keys"))
+                vals_raw = self.any_to_list(expr_d.get("values"))
+                n = len(keys_raw)
+                if len(vals_raw) < n:
+                    n = len(vals_raw)
+                i = 0
+                while i < n:
+                    ent: dict[str, Any] = {}
+                    ent["key"] = keys_raw[i]
+                    ent["value"] = vals_raw[i]
+                    entries.append(ent)
+                    i += 1
+            if len(entries) == 0:
                 return f"{t}{{}}"
             # resolved_type が空/不正確な場合は key/value ノードから最低限を再推定する。
             inferred_key = ""
@@ -3874,12 +4345,15 @@ class CppEmitter(CodeEmitter):
                 key_t = inferred_key
             if val_t in {"", "unknown"} and inferred_val != "" and not val_mixed:
                 val_t = inferred_val
-            if t in {"auto", "dict<str, str>", "dict<str, ::std::any>"}:
+            if val_mixed:
                 key_pick = key_t if key_t not in {"", "unknown"} and not key_mixed else "str"
-                if val_mixed:
-                    val_pick = "Any"
-                else:
-                    val_pick = val_t if val_t not in {"", "unknown"} else (inferred_val if inferred_val != "" else "str")
+                if key_pick == "str" and inferred_key != "" and not key_mixed:
+                    key_pick = inferred_key
+                t = f"dict<{self._cpp_type_text(key_pick)}, object>"
+                val_t = "Any"
+            elif t in {"auto", "dict<str, str>", "dict<str, ::std::any>"}:
+                key_pick = key_t if key_t not in {"", "unknown"} and not key_mixed else "str"
+                val_pick = val_t if val_t not in {"", "unknown"} else (inferred_val if inferred_val != "" else "str")
                 if self.is_any_like_type(val_pick):
                     t = f"dict<{self._cpp_type_text(key_pick)}, object>"
                     val_t = "Any"
@@ -3955,11 +4429,21 @@ class CppEmitter(CodeEmitter):
             it = self.render_expr(g.get("iter"))
             elt = self.render_expr(expr_d.get("elt"))
             out_t = self.cpp_type(expr_d.get("resolved_type"))
+            elt_t0 = self.get_expr_type(expr_d.get("elt"))
+            elt_t = elt_t0 if isinstance(elt_t0, str) else ""
+            expected_out_t = ""
+            if elt_t != "" and elt_t != "unknown":
+                expected_out_t = self._cpp_type_text(f"list[{elt_t}]")
             if out_t in {"list<object>", "object", "std::any", "::std::any", "auto"}:
-                elt_t0 = self.get_expr_type(expr_d.get("elt"))
-                elt_t = elt_t0 if isinstance(elt_t0, str) else ""
                 if elt_t != "" and elt_t != "unknown":
                     out_t = self._cpp_type_text(f"list[{elt_t}]")
+            elif expected_out_t != "" and out_t != expected_out_t:
+                out_t = expected_out_t
+            brace_pos = elt.find("{")
+            if brace_pos > 0:
+                elt_ctor = elt[:brace_pos].strip()
+                if elt_ctor.startswith("dict<") or elt_ctor.startswith("list<") or elt_ctor.startswith("set<"):
+                    out_t = f"list<{elt_ctor}>"
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
             iter_tmp = self.next_tmp("__it")
@@ -4022,11 +4506,16 @@ class CppEmitter(CodeEmitter):
             it = self.render_expr(g.get("iter"))
             elt = self.render_expr(expr_d.get("elt"))
             out_t = self.cpp_type(expr_d.get("resolved_type"))
+            elt_t0 = self.get_expr_type(expr_d.get("elt"))
+            elt_t = elt_t0 if isinstance(elt_t0, str) else ""
+            expected_out_t = ""
+            if elt_t != "" and elt_t != "unknown":
+                expected_out_t = self._cpp_type_text(f"set[{elt_t}]")
             if out_t in {"set<object>", "object", "std::any", "::std::any", "auto"}:
-                elt_t0 = self.get_expr_type(expr_d.get("elt"))
-                elt_t = elt_t0 if isinstance(elt_t0, str) else ""
                 if elt_t != "" and elt_t != "unknown":
                     out_t = self._cpp_type_text(f"set[{elt_t}]")
+            elif expected_out_t != "" and out_t != expected_out_t:
+                out_t = expected_out_t
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
             iter_tmp = self.next_tmp("__it")
@@ -4073,13 +4562,18 @@ class CppEmitter(CodeEmitter):
             key = self.render_expr(expr_d.get("key"))
             val = self.render_expr(expr_d.get("value"))
             out_t = self.cpp_type(expr_d.get("resolved_type"))
+            key_t0 = self.get_expr_type(expr_d.get("key"))
+            val_t0 = self.get_expr_type(expr_d.get("value"))
+            key_t = key_t0 if isinstance(key_t0, str) else ""
+            val_t = val_t0 if isinstance(val_t0, str) else ""
+            expected_out_t = ""
+            if key_t != "" and key_t != "unknown" and val_t != "" and val_t != "unknown":
+                expected_out_t = self._cpp_type_text(f"dict[{key_t},{val_t}]")
             if out_t in {"dict<str, object>", "object", "std::any", "::std::any", "auto"}:
-                key_t0 = self.get_expr_type(expr_d.get("key"))
-                val_t0 = self.get_expr_type(expr_d.get("value"))
-                key_t = key_t0 if isinstance(key_t0, str) else ""
-                val_t = val_t0 if isinstance(val_t0, str) else ""
                 if key_t != "" and key_t != "unknown" and val_t != "" and val_t != "unknown":
                     out_t = self._cpp_type_text(f"dict[{key_t},{val_t}]")
+            elif expected_out_t != "" and out_t != expected_out_t:
+                out_t = expected_out_t
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
             iter_tmp = self.next_tmp("__it")
@@ -4182,6 +4676,8 @@ class CppEmitter(CodeEmitter):
         if east_type.startswith("list[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[5:-1])
             if len(inner) == 1:
+                if inner[0] == "None":
+                    return "list<object>"
                 if inner[0] == "uint8":
                     return "bytearray"
                 if self.is_any_like_type(inner[0]):
@@ -4192,12 +4688,17 @@ class CppEmitter(CodeEmitter):
         if east_type.startswith("set[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[4:-1])
             if len(inner) == 1:
+                if inner[0] == "None":
+                    return "set<object>"
                 if inner[0] == "unknown":
                     return "set<str>"
                 return f"set<{self._cpp_type_text(inner[0])}>"
         if east_type.startswith("dict[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[5:-1])
             if len(inner) == 2:
+                if inner[1] == "None":
+                    key_t = inner[0] if inner[0] not in {"", "unknown"} else "str"
+                    return f"dict<{self._cpp_type_text(key_t)}, object>"
                 if self.is_any_like_type(inner[1]):
                     return f"dict<{self._cpp_type_text(inner[0] if inner[0] != 'unknown' else 'str')}, object>"
                 if inner[0] == "unknown" and inner[1] == "unknown":
@@ -4346,6 +4847,37 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
     )
 
 
+def _transpile_to_cpp_with_map(
+    east_module: dict[str, Any],
+    module_namespace_map: dict[str, str],
+    negative_index_mode: str = "const_only",
+    bounds_check_mode: str = "off",
+    floor_div_mode: str = "native",
+    mod_mode: str = "native",
+    int_width: str = "64",
+    str_index_mode: str = "native",
+    str_slice_mode: str = "byte",
+    opt_level: str = "2",
+    top_namespace: str = "",
+    emit_main: bool = True,
+    ) -> str:
+    """EAST Module を C++ ソース文字列へ変換する。"""
+    return CppEmitter(
+        east_module,
+        module_namespace_map,
+        negative_index_mode,
+        bounds_check_mode,
+        floor_div_mode,
+        mod_mode,
+        int_width,
+        str_index_mode,
+        str_slice_mode,
+        opt_level,
+        top_namespace,
+        emit_main,
+    ).transpile()
+
+
 def transpile_to_cpp(
     east_module: dict[str, Any],
     negative_index_mode: str = "const_only",
@@ -4358,11 +4890,12 @@ def transpile_to_cpp(
     opt_level: str = "2",
     top_namespace: str = "",
     emit_main: bool = True,
-    module_namespace_map: dict[str, str] = {},
 ) -> str:
-    """EAST Module を C++ ソース文字列へ変換する。"""
-    return CppEmitter(
+    """後方互換を維持した公開 API。"""
+    ns_map: dict[str, str] = {}
+    return _transpile_to_cpp_with_map(
         east_module,
+        ns_map,
         negative_index_mode,
         bounds_check_mode,
         floor_div_mode,
@@ -4373,8 +4906,7 @@ def transpile_to_cpp(
         opt_level,
         top_namespace,
         emit_main,
-        module_namespace_map,
-    ).transpile()
+    )
 
 
 def _split_type_args(text: str) -> list[str]:
@@ -4607,9 +5139,9 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
 
 def build_cpp_header_from_east(
     east_module: dict[str, Any],
+    source_path: Path,
+    output_path: Path,
     top_namespace: str = "",
-    source_path: Path = Path(""),
-    output_path: Path = Path(""),
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
     body_obj = east_module.get("body")
@@ -4691,13 +5223,10 @@ def build_cpp_header_from_east(
                             param_txt = at_cpp + " " + an
                         else:
                             param_txt = "const " + at_cpp + "& " + an
-                        if an in arg_defaults:
-                            default_node_obj = arg_defaults.get(an)
-                            default_node = default_node_obj if isinstance(default_node_obj, dict) else {}
-                            if len(default_node) > 0:
-                                default_txt = _header_render_default_expr(default_node, at)
-                                if default_txt != "":
-                                    param_txt += " = " + default_txt
+                        # NOTE:
+                        # 既定引数は `.cpp` 側の定義にのみ付与する。
+                        # ヘッダと定義の二重指定によるコンパイルエラーを避けるため、
+                        # 宣言側では既定値を埋め込まない。
                         parts.append(param_txt)
                     j += 1
                 sep = ", "
@@ -5622,7 +6151,6 @@ def _module_name_from_path(root: Path, module_path: Path) -> str:
 
 
 def _write_multi_file_cpp(
-    *,
     entry_path: Path,
     module_east_map: dict[str, dict[str, Any]],
     output_dir: Path,
@@ -5710,8 +6238,9 @@ def _write_multi_file_cpp(
         hdr_path.write_text(hdr_text, encoding="utf-8")
 
         is_entry = mod_key == entry_key
-        cpp_txt = transpile_to_cpp(
+        cpp_txt = _transpile_to_cpp_with_map(
             east,
+            module_ns_map,
             negative_index_mode,
             bounds_check_mode,
             floor_div_mode,
@@ -5722,7 +6251,6 @@ def _write_multi_file_cpp(
             opt_level,
             "pytra_mod_" + label,
             emit_main if is_entry else False,
-            module_ns_map,
         )
         # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。
         cpp_txt = cpp_txt.replace(
@@ -5735,6 +6263,7 @@ def _write_multi_file_cpp(
         meta = meta_obj if isinstance(meta_obj, dict) else {}
         type_emitter = CppEmitter(
             east,
+            {},
             negative_index_mode,
             bounds_check_mode,
             floor_div_mode,
@@ -5745,7 +6274,6 @@ def _write_multi_file_cpp(
             opt_level,
             "",
             False,
-            {},
         )
         import_modules_obj = meta.get("import_modules")
         import_modules = import_modules_obj if isinstance(import_modules_obj, dict) else {}
@@ -6096,8 +6624,9 @@ def main(argv: list[str]) -> int:
             cpp_out.parent.mkdir(parents=True, exist_ok=True)
             hdr_out.parent.mkdir(parents=True, exist_ok=True)
             runtime_ns_map: dict[str, str] = {}
-            cpp_txt_runtime: str = transpile_to_cpp(
+            cpp_txt_runtime: str = _transpile_to_cpp_with_map(
                 east_module,
+                runtime_ns_map,
                 negative_index_mode,
                 bounds_check_mode,
                 floor_div_mode,
@@ -6108,16 +6637,19 @@ def main(argv: list[str]) -> int:
                 opt_level,
                 ns,
                 False,
-                runtime_ns_map,
             )
             own_runtime_header = '#include "pytra/' + rel_tail + '.h"'
             if own_runtime_header not in cpp_txt_runtime:
+                old_runtime_include = '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n'
+                new_runtime_include = (
+                    '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
+                )
                 cpp_txt_runtime = cpp_txt_runtime.replace(
-                    '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n',
-                    '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n",
+                    old_runtime_include,
+                    new_runtime_include,
                     1,
                 )
-            hdr_txt_runtime = build_cpp_header_from_east(east_module, ns, input_path, hdr_out)
+            hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
             cpp_out.write_text(cpp_txt_runtime, encoding="utf-8")
             hdr_out.write_text(hdr_txt_runtime, encoding="utf-8")
             print("generated: " + str(hdr_out))
@@ -6125,8 +6657,9 @@ def main(argv: list[str]) -> int:
             return 0
         if single_file:
             empty_ns: dict[str, str] = {}
-            cpp = transpile_to_cpp(
+            cpp = _transpile_to_cpp_with_map(
                 east_module,
+                empty_ns,
                 negative_index_mode,
                 bounds_check_mode,
                 floor_div_mode,
@@ -6137,12 +6670,11 @@ def main(argv: list[str]) -> int:
                 opt_level,
                 top_namespace_opt,
                 not no_main,
-                empty_ns,
             )
             if header_output_txt != "":
                 hdr_path = Path(header_output_txt)
                 hdr_path.parent.mkdir(parents=True, exist_ok=True)
-                hdr_txt = build_cpp_header_from_east(east_module, top_namespace_opt, input_path, hdr_path)
+                hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt)
                 hdr_path.write_text(hdr_txt, encoding="utf-8")
         else:
             module_east_map: dict[str, dict[str, Any]] = {}
@@ -6157,23 +6689,26 @@ def main(argv: list[str]) -> int:
             if output_txt != "":
                 out_dir = Path(output_txt)
             mf = _write_multi_file_cpp(
-                entry_path=input_path,
-                module_east_map=module_east_map,
-                output_dir=out_dir,
-                negative_index_mode=negative_index_mode,
-                bounds_check_mode=bounds_check_mode,
-                floor_div_mode=floor_div_mode,
-                mod_mode=mod_mode,
-                int_width=int_width,
-                str_index_mode=str_index_mode,
-                str_slice_mode=str_slice_mode,
-                opt_level=opt_level,
-                top_namespace=top_namespace_opt,
-                emit_main=not no_main,
+                input_path,
+                module_east_map,
+                out_dir,
+                negative_index_mode,
+                bounds_check_mode,
+                floor_div_mode,
+                mod_mode,
+                int_width,
+                str_index_mode,
+                str_slice_mode,
+                opt_level,
+                top_namespace_opt,
+                not no_main,
             )
             msg = "multi-file output generated at: " + str(out_dir)
-            manifest_txt = mf.get("manifest")
-            if isinstance(manifest_txt, str) and manifest_txt != "":
+            manifest_obj: Any = mf.get("manifest")
+            manifest_txt = ""
+            if isinstance(manifest_obj, str):
+                manifest_txt = manifest_obj
+            if manifest_txt != "":
                 msg += "\nmanifest: " + manifest_txt + "\n"
             else:
                 msg += "\n"

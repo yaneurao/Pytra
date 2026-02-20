@@ -124,7 +124,7 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
 
 def _replace_load_east_for_selfhost(text: str) -> str:
     start_marker = "def load_east("
-    end_marker = "\ndef transpile_to_cpp("
+    end_marker = "\ndef _transpile_to_cpp_with_map("
     i = text.find(start_marker)
     j = text.find(end_marker)
     if i < 0 or j < 0 or j <= i:
@@ -512,15 +512,15 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
         (
             "def build_cpp_header_from_east(\n"
             "    east_module: dict[str, Any],\n"
+            "    source_path: Path,\n"
+            "    output_path: Path,\n"
             "    top_namespace: str = \"\",\n"
-            "    source_path: Path = Path(\"\"),\n"
-            "    output_path: Path = Path(\"\"),\n"
             ") -> str:\n"
             "    pass\n"
             "    _east = east_module\n"
-            "    _ns = top_namespace\n"
             "    _src = source_path\n"
             "    _out = output_path\n"
+            "    _ns = top_namespace\n"
             "    return \"\"\n\n"
         ),
     )
@@ -644,9 +644,9 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
             "        func_node: dict[str, Any],\n"
             "        rendered_args: list[str],\n"
             "        rendered_kwargs: dict[str, str],\n"
-            "    ) -> str | None:\n"
+            "    ) -> str:\n"
             "        pass\n"
-            "        return None\n"
+            "        return \"\"\n"
         ),
     )
     repl(
@@ -658,9 +658,9 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
             "        binop_node: dict[str, Any],\n"
             "        left: str,\n"
             "        right: str,\n"
-            "    ) -> str | None:\n"
+            "    ) -> str:\n"
             "        pass\n"
-            "        return None\n"
+            "        return \"\"\n"
         ),
     )
     repl(
@@ -671,9 +671,9 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
             "        self,\n"
             "        kind: str,\n"
             "        expr_node: dict[str, Any],\n"
-            "    ) -> str | None:\n"
+            "    ) -> str:\n"
             "        pass\n"
-            "        return None\n"
+            "        return \"\"\n"
         ),
     )
     repl(
@@ -683,9 +683,9 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
             "    def hook_on_render_expr_complex(\n"
             "        self,\n"
             "        expr_node: dict[str, Any],\n"
-            "    ) -> str | None:\n"
+            "    ) -> str:\n"
             "        pass\n"
-            "        return None\n"
+            "        return \"\"\n"
         ),
     )
     return out
@@ -700,8 +700,35 @@ def _replace_multi_file_helpers_for_selfhost(text: str) -> str:
     j = out.find(end)
     if i >= 0 and j > i:
         stub = (
-            "def _write_multi_file_cpp() -> dict[str, Any]:\n"
+            "def _write_multi_file_cpp(\n"
+            "    entry_path: Path,\n"
+            "    module_east_map: dict[str, dict[str, Any]],\n"
+            "    output_dir: Path,\n"
+            "    negative_index_mode: str,\n"
+            "    bounds_check_mode: str,\n"
+            "    floor_div_mode: str,\n"
+            "    mod_mode: str,\n"
+            "    int_width: str,\n"
+            "    str_index_mode: str,\n"
+            "    str_slice_mode: str,\n"
+            "    opt_level: str,\n"
+            "    top_namespace: str,\n"
+            "    emit_main: bool,\n"
+            ") -> dict[str, Any]:\n"
             "    pass\n"
+            "    _entry = entry_path\n"
+            "    _map = module_east_map\n"
+            "    _out_dir = output_dir\n"
+            "    _neg = negative_index_mode\n"
+            "    _bc = bounds_check_mode\n"
+            "    _fd = floor_div_mode\n"
+            "    _mod = mod_mode\n"
+            "    _iw = int_width\n"
+            "    _sim = str_index_mode\n"
+            "    _ssm = str_slice_mode\n"
+            "    _opt = opt_level\n"
+            "    _ns = top_namespace\n"
+            "    _em = emit_main\n"
             "    out: dict[str, Any] = {}\n"
             "    return out\n\n"
         )
