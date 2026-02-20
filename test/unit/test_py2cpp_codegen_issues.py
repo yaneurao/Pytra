@@ -73,6 +73,20 @@ class Py2CppCodegenIssueTest(unittest.TestCase):
         self.assertIn("item_sep", cpp)
         self.assertIn("key_sep", cpp)
 
+    def test_py2cpp_kind_lookup_is_centralized(self) -> None:
+        src_text = (ROOT / "src" / "py2cpp.py").read_text(encoding="utf-8")
+        bad_lines: list[str] = []
+        line_no = 0
+        for line in src_text.splitlines():
+            line_no += 1
+            if 'get("kind")' not in line:
+                continue
+            # `kind` は `_dict_any_kind` / `_node_kind_from_dict` 経由で扱う。
+            if 'src.get("kind")' in line:
+                continue
+            bad_lines.append(f"{line_no}: {line.strip()}")
+        self.assertEqual([], bad_lines, "\n".join(bad_lines))
+
 
 if __name__ == "__main__":
     unittest.main()
