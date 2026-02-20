@@ -1656,10 +1656,6 @@ static inline list<str> py_runtime_argv() {
     return py_runtime_argv_storage();
 }
 
-static inline list<str> py_runtime_path() {
-    return py_runtime_path_storage();
-}
-
 static inline void py_runtime_set_argv(const list<str>& values) {
     py_runtime_argv_storage() = values;
 }
