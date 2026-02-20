@@ -374,7 +374,7 @@ def load_cpp_type_map() -> dict[str, str]:
         "bytes": "bytes",
         "bytearray": "bytearray",
         "Path": "Path",
-        "Exception": "std::runtime_error",
+        "Exception": "::std::runtime_error",
         "Any": "object",
         "object": "object",
     }
@@ -667,7 +667,7 @@ class CppEmitter(CodeEmitter):
 
     def _is_std_runtime_call(self, runtime_call: str) -> bool:
         """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
-        return runtime_call[0:5] == "std::"
+        return runtime_call[0:5] == "std::" or runtime_call[0:7] == "::std::"
 
     def _contains_text(self, text: str, needle: str) -> bool:
         """`needle in text` 相当を selfhost でも安全に判定する。"""
@@ -927,7 +927,7 @@ class CppEmitter(CodeEmitter):
         if t == "bool":
             return f"py_bool_to_string({rendered})"
         if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}:
-            return f"std::to_string({rendered})"
+            return f"::std::to_string({rendered})"
         return f"py_to_string({rendered})"
 
     def render_expr_as_any(self, expr: Any) -> str:
@@ -1113,7 +1113,7 @@ class CppEmitter(CodeEmitter):
         if out_type != "":
             t = self._cpp_type_text(out_type)
         arg_nodes_safe: list[Any] = arg_nodes
-        if t in {"auto", "object", "std::any"}:
+        if t in {"auto", "object", "std::any", "::std::any"}:
             saw_float = False
             saw_int = False
             i = 0
@@ -1143,9 +1143,9 @@ class CppEmitter(CodeEmitter):
                 casted.append(self.apply_cast(a, t))
             else:
                 casted.append(f"static_cast<{t}>({a})")
-        call = f"std::{fn}<{t}>({casted[0]}, {casted[1]})"
+        call = f"::std::{fn}<{t}>({casted[0]}, {casted[1]})"
         for a in casted[2:]:
-            call = f"std::{fn}<{t}>({call}, {a})"
+            call = f"::std::{fn}<{t}>({call}, {a})"
         return call
 
     def _emit_if_stmt(self, stmt: dict[str, Any]) -> None:
@@ -1466,11 +1466,11 @@ class CppEmitter(CodeEmitter):
     def _emit_swap_stmt(self, stmt: dict[str, Any]) -> None:
         left = self.render_expr(stmt.get("left"))
         right = self.render_expr(stmt.get("right"))
-        self.emit(f"std::swap({left}, {right});")
+        self.emit(f"::std::swap({left}, {right});")
 
     def _emit_raise_stmt(self, stmt: dict[str, Any]) -> None:
         if not isinstance(stmt.get("exc"), dict):
-            self.emit('throw std::runtime_error("raise");')
+            self.emit('throw ::std::runtime_error("raise");')
         else:
             self.emit(f"throw {self.render_expr(stmt.get('exc'))};")
 
@@ -1551,7 +1551,7 @@ class CppEmitter(CodeEmitter):
         for h in handlers:
             name_raw = h.get("name")
             name = name_raw if isinstance(name_raw, str) and name_raw != "" else "ex"
-            self.emit(f"catch (const std::exception& {name}) {{")
+            self.emit(f"catch (const ::std::exception& {name}) {{")
             self.indent += 1
             self.emit_stmt_list(self._dict_stmt_list(h.get("body")))
             self.indent -= 1
@@ -1590,7 +1590,7 @@ class CppEmitter(CodeEmitter):
                     and self._expr_repr_eq(lhs_elems[0], rhs_elems[1])
                     and self._expr_repr_eq(lhs_elems[1], rhs_elems[0])
                 ):
-                    self.emit(f"std::swap({self.render_lvalue(lhs_elems[0])}, {self.render_lvalue(lhs_elems[1])});")
+                    self.emit(f"::std::swap({self.render_lvalue(lhs_elems[0])}, {self.render_lvalue(lhs_elems[1])});")
                     return
             tmp = self.next_tmp("__tuple")
             self.emit(f"auto {tmp} = {self.render_expr(stmt.get('value'))};")
@@ -1612,9 +1612,9 @@ class CppEmitter(CodeEmitter):
                         decl_t = self._cpp_type_text(decl_t_txt)
                         self.declare_in_current_scope(name)
                         self.declared_var_types[name] = decl_t_txt
-                        self.emit(f"{decl_t} {lhs} = std::get<{i}>({tmp});")
+                        self.emit(f"{decl_t} {lhs} = ::std::get<{i}>({tmp});")
                         continue
-                self.emit(f"{lhs} = std::get<{i}>({tmp});")
+                self.emit(f"{lhs} = ::std::get<{i}>({tmp});")
             return
         texpr = self.render_lvalue(stmt.get("target"))
         if self.is_plain_name_expr(stmt.get("target")) and not self.is_declared(texpr):
@@ -1742,7 +1742,7 @@ class CppEmitter(CodeEmitter):
         for i, e in enumerate(self.any_dict_get_list(target, "elements")):
             if isinstance(e, dict) and e.get("kind") == "Name":
                 nm = self.render_expr(e)
-                self.emit(f"auto {nm} = std::get<{i}>({src});")
+                self.emit(f"auto {nm} = ::std::get<{i}>({src});")
 
     def emit_for_range(self, stmt: dict[str, Any]) -> None:
         """ForRange ノードを C++ の for ループとして出力する。"""
@@ -2251,10 +2251,10 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "py_join" and len(args) == 1:
             owner = self.render_expr(fn.get("value"))
             return f"py_join({owner}, {args[0]})"
-        if runtime_call == "std::runtime_error":
+        if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
             if len(args) == 0:
-                return 'std::runtime_error("error")'
-            return f"std::runtime_error({args[0]})"
+                return '::std::runtime_error("error")'
+            return f"::std::runtime_error({args[0]})"
         if runtime_call == "Path":
             return f"Path({', '.join(args)})"
         if runtime_call == "list.append":
@@ -2286,10 +2286,10 @@ class CppEmitter(CodeEmitter):
             return f"{owner}.clear()"
         if runtime_call == "list.reverse":
             owner = self.render_expr(fn.get("value"))
-            return f"std::reverse({owner}.begin(), {owner}.end())"
+            return f"::std::reverse({owner}.begin(), {owner}.end())"
         if runtime_call == "list.sort":
             owner = self.render_expr(fn.get("value"))
-            return f"std::sort({owner}.begin(), {owner}.end())"
+            return f"::std::sort({owner}.begin(), {owner}.end())"
         if runtime_call == "set.add":
             owner = self.render_expr(fn.get("value"))
             a0 = args[0] if len(args) >= 1 else "/* missing */"
@@ -2451,8 +2451,8 @@ class CppEmitter(CodeEmitter):
                 return "perf_counter()"
             if raw in {"Exception", "RuntimeError"}:
                 if len(args) == 0:
-                    return 'std::runtime_error("error")'
-                return f"std::runtime_error({args[0]})"
+                    return '::std::runtime_error("error")'
+                return f"::std::runtime_error({args[0]})"
             if raw == "Path":
                 return f"Path({', '.join(args)})"
         if fn_kind == "Attribute":
@@ -2658,7 +2658,7 @@ class CppEmitter(CodeEmitter):
                     ctype = ctype0 if isinstance(ctype0, str) else ""
                     if ctype.startswith("dict["):
                         return f"{container}.find({key}) == {container}.end()"
-                    return f"std::find({container}.begin(), {container}.end(), {key}) == {container}.end()"
+                    return f"::std::find({container}.begin(), {container}.end(), {key}) == {container}.end()"
                 ops = self.any_to_str_list(operand_expr.get("ops"))
                 cmps = self._dict_stmt_list(operand_expr.get("comparators"))
                 if len(ops) == 1 and len(cmps) == 1:
@@ -2685,7 +2685,7 @@ class CppEmitter(CodeEmitter):
                         if rhs_type.startswith("dict["):
                             found = f"{rhs}.find({left}) != {rhs}.end()"
                         else:
-                            found = f"std::find({rhs}.begin(), {rhs}.end(), {left}) != {rhs}.end()"
+                            found = f"::std::find({rhs}.begin(), {rhs}.end(), {left}) != {rhs}.end()"
                         return f"!({found})" if op0 == "In" else found
             return f"!({operand})"
         if op == "USub":
@@ -2705,7 +2705,7 @@ class CppEmitter(CodeEmitter):
             if ctype.startswith("dict["):
                 base = f"{container}.find({key}) != {container}.end()"
             else:
-                base = f"std::find({container}.begin(), {container}.end(), {key}) != {container}.end()"
+                base = f"::std::find({container}.begin(), {container}.end(), {key}) != {container}.end()"
             if self.any_to_bool(expr.get("negated")):
                 return f"!({base})"
             return base
@@ -2736,7 +2736,7 @@ class CppEmitter(CodeEmitter):
                 elif rhs_type.startswith("tuple["):
                     parts.append(f"py_tuple_contains({rhs}, {cur})")
                 else:
-                    parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) != {rhs}.end()")
+                    parts.append(f"::std::find({rhs}.begin(), {rhs}.end(), {cur}) != {rhs}.end()")
             elif cop == "/* not in */":
                 rhs_type0 = self.get_expr_type(rhs_node)
                 rhs_type = rhs_type0 if isinstance(rhs_type0, str) else ""
@@ -2745,7 +2745,7 @@ class CppEmitter(CodeEmitter):
                 elif rhs_type.startswith("tuple["):
                     parts.append(f"!py_tuple_contains({rhs}, {cur})")
                 else:
-                    parts.append(f"std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
+                    parts.append(f"::std::find({rhs}.begin(), {rhs}.end(), {cur}) == {rhs}.end()")
             else:
                 opt_cmp = self._try_optimize_char_compare(
                     cur_node,
@@ -2754,10 +2754,10 @@ class CppEmitter(CodeEmitter):
                 )
                 if opt_cmp != "":
                     parts.append(opt_cmp)
-                elif op_name in {"Is", "IsNot"} and rhs == "std::nullopt":
+                elif op_name in {"Is", "IsNot"} and rhs in {"std::nullopt", "::std::nullopt"}:
                     prefix = "!" if op_name == "IsNot" else ""
                     parts.append(f"{prefix}py_is_none({cur})")
-                elif op_name in {"Is", "IsNot"} and cur == "std::nullopt":
+                elif op_name in {"Is", "IsNot"} and cur in {"std::nullopt", "::std::nullopt"}:
                     prefix = "!" if op_name == "IsNot" else ""
                     parts.append(f"{prefix}py_is_none({rhs})")
                 else:
@@ -2835,7 +2835,7 @@ class CppEmitter(CodeEmitter):
                 t = self.get_expr_type(expr)
                 if self.is_any_like_type(t):
                     return "make_object(1)"
-                return "std::nullopt"
+                return "::std::nullopt"
             if isinstance(v, str):
                 v_txt: str = str(v)
                 if self.get_expr_type(expr) == "bytes":
@@ -2986,7 +2986,7 @@ class CppEmitter(CodeEmitter):
                     item = self.apply_cast(item, target_t)
                 rendered_items.append(item)
             items = ", ".join(rendered_items)
-            return f"std::make_tuple({items})"
+            return f"::std::make_tuple({items})"
         if kind == "Set":
             t = self.cpp_type(expr_d.get("resolved_type"))
             elements = self.any_to_list(expr_d.get("elements"))
@@ -3071,7 +3071,7 @@ class CppEmitter(CodeEmitter):
             it = self.render_expr(g.get("iter"))
             elt = self.render_expr(expr_d.get("elt"))
             out_t = self.cpp_type(expr_d.get("resolved_type"))
-            if out_t in {"list<object>", "object", "std::any", "auto"}:
+            if out_t in {"list<object>", "object", "std::any", "::std::any", "auto"}:
                 elt_t0 = self.get_expr_type(expr_d.get("elt"))
                 elt_t = elt_t0 if isinstance(elt_t0, str) else ""
                 if elt_t != "" and elt_t != "unknown":
@@ -3103,7 +3103,7 @@ class CppEmitter(CodeEmitter):
                         e_node = self.any_to_dict_or_empty(e)
                         if e_node.get("kind") == "Name":
                             nm = self.render_expr(e)
-                            lines.append(f"        auto {nm} = std::get<{i}>({iter_tmp});")
+                            lines.append(f"        auto {nm} = ::std::get<{i}>({iter_tmp});")
                 else:
                     lines.append(f"    for (auto {tgt} : {it}) {{")
             ifs = self.any_to_list(g.get("ifs"))
@@ -3147,7 +3147,7 @@ class CppEmitter(CodeEmitter):
                     e_node = self.any_to_dict_or_empty(e)
                     if e_node.get("kind") == "Name":
                         nm = self.render_expr(e)
-                        lines.append(f"        auto {nm} = std::get<{i}>({iter_tmp});")
+                        lines.append(f"        auto {nm} = ::std::get<{i}>({iter_tmp});")
             else:
                 lines.append(f"    for (auto {tgt} : {it}) {{")
             ifs = self.any_to_list(g.get("ifs"))
@@ -3192,7 +3192,7 @@ class CppEmitter(CodeEmitter):
                     e_node = self.any_to_dict_or_empty(e)
                     if e_node.get("kind") == "Name":
                         nm = self.render_expr(e)
-                        lines.append(f"        auto {nm} = std::get<{i}>({iter_tmp});")
+                        lines.append(f"        auto {nm} = ::std::get<{i}>({iter_tmp});")
             else:
                 lines.append(f"    for (auto {tgt} : {it}) {{")
             ifs = self.any_to_list(g.get("ifs"))
@@ -3261,8 +3261,8 @@ class CppEmitter(CodeEmitter):
                 if any(self.is_any_like_type(p) for p in non_none):
                     return "object"
                 if len(parts) == 2 and len(non_none) == 1:
-                    return f"std::optional<{self._cpp_type_text(non_none[0])}>"
-                return "std::any"
+                    return f"::std::optional<{self._cpp_type_text(non_none[0])}>"
+                return "::std::any"
         if east_type in self.ref_classes:
             return f"rc<{east_type}>"
         if east_type in self.class_names:
@@ -3279,7 +3279,7 @@ class CppEmitter(CodeEmitter):
                 if self.is_any_like_type(inner[0]):
                     return "list<object>"
                 if inner[0] == "unknown":
-                    return "list<std::any>"
+                    return "list<::std::any>"
                 return f"list<{self._cpp_type_text(inner[0])}>"
         if east_type.startswith("set[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[4:-1])
@@ -3293,17 +3293,17 @@ class CppEmitter(CodeEmitter):
                 if self.is_any_like_type(inner[1]):
                     return f"dict<{self._cpp_type_text(inner[0] if inner[0] != 'unknown' else 'str')}, object>"
                 if inner[0] == "unknown" and inner[1] == "unknown":
-                    return "dict<str, std::any>"
+                    return "dict<str, ::std::any>"
                 if inner[0] == "unknown":
                     return f"dict<str, {self._cpp_type_text(inner[1])}>"
                 if inner[1] == "unknown":
-                    return f"dict<{self._cpp_type_text(inner[0])}, std::any>"
+                    return f"dict<{self._cpp_type_text(inner[0])}, ::std::any>"
                 return f"dict<{self._cpp_type_text(inner[0])}, {self._cpp_type_text(inner[1])}>"
         if east_type.startswith("tuple[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[6:-1])
-            return "std::tuple<" + ", ".join(self._cpp_type_text(x) for x in inner) + ">"
+            return "::std::tuple<" + ", ".join(self._cpp_type_text(x) for x in inner) + ">"
         if east_type == "unknown":
-            return "std::any"
+            return "::std::any"
         if east_type.startswith("callable["):
             return "auto"
         if east_type == "callable":
