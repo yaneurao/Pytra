@@ -133,6 +133,31 @@ def f(p: str) -> None:
         self.assertIn("str()", cpp)
         self.assertNotIn("int64 x = ::std::nullopt", cpp)
 
+    def test_list_constructor_same_typed_source_is_passthrough(self) -> None:
+        src = """def f(xs: list[int]) -> list[int]:
+    return list(xs)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "list_ctor_passthrough.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return xs;", cpp)
+        self.assertNotIn("return list(xs);", cpp)
+
+    def test_int_cast_from_str_uses_py_to_int64(self) -> None:
+        src = """def f(s: str) -> int:
+    return int(s)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "int_cast_str.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return py_to_int64(s);", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2332,10 +2332,16 @@ class CppEmitter(CodeEmitter):
                 has_effective_finally = True
                 break
         if has_effective_finally:
-            self.emit("{")
+            self.emit(self.syntax_text("scope_open", "{"))
             self.indent += 1
             gid = self.next_tmp("__finally")
-            self.emit(f"auto {gid} = py_make_scope_exit([&]() {{")
+            self.emit(
+                self.syntax_line(
+                    "scope_exit_open",
+                    "auto {guard} = py_make_scope_exit([&]() {",
+                    {"guard": gid},
+                )
+            )
             self.indent += 1
             self.emit_stmt_list(finalbody)
             self.indent -= 1
@@ -2346,7 +2352,7 @@ class CppEmitter(CodeEmitter):
                 self.indent -= 1
                 self.emit("}")
             return
-        self.emit("try {")
+        self.emit(self.syntax_text("try_open", "try {"))
         self.indent += 1
         self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
         self.indent -= 1
@@ -2356,7 +2362,13 @@ class CppEmitter(CodeEmitter):
             name = "ex"
             if isinstance(name_raw, str) and name_raw != "":
                 name = name_raw
-            self.emit(f"catch (const ::std::exception& {name}) {{")
+            self.emit(
+                self.syntax_line(
+                    "catch_open",
+                    "catch (const ::std::exception& {name}) {",
+                    {"name": name},
+                )
+            )
             self.indent += 1
             self.emit_stmt_list(self._dict_stmt_list(h.get("body")))
             self.indent -= 1
@@ -3265,6 +3277,86 @@ class CppEmitter(CodeEmitter):
             return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
         return ""
 
+    def _render_collection_constructor_call(
+        self,
+        raw: str,
+        expr: dict[str, Any],
+        args: list[str],
+        first_arg: Any,
+    ) -> str | None:
+        """`set/list/dict` コンストラクタ呼び出しの型依存分岐を共通化する。"""
+        if raw not in {"set", "list", "dict"}:
+            return None
+        t = self.cpp_type(expr.get("resolved_type"))
+        if len(args) == 0:
+            return f"{t}{{}}"
+        if len(args) != 1:
+            return None
+        at0 = self.get_expr_type(first_arg)
+        at = at0 if isinstance(at0, str) else ""
+        head = f"{raw}["
+        if at.startswith(head):
+            return args[0]
+        any_obj_t = "set<object>"
+        starts = "set<"
+        ctor_name = "set"
+        if raw == "list":
+            any_obj_t = "list<object>"
+            starts = "list<"
+            ctor_name = "list"
+        if raw == "dict":
+            any_obj_t = "dict<str, object>"
+            starts = "dict<"
+            ctor_name = "dict"
+        if t == any_obj_t and at in {"Any", "object"}:
+            return f"{t}({args[0]})"
+        if t.startswith(starts):
+            if t == any_obj_t and at not in {"Any", "object"}:
+                return args[0]
+            return f"{t}({args[0]})"
+        return f"{ctor_name}({args[0]})"
+
+    def _render_scalar_cast_builtin_call(
+        self,
+        raw: str,
+        expr: dict[str, Any],
+        args: list[str],
+        first_arg: Any,
+    ) -> str | None:
+        """`int/float/bool` の1引数キャスト呼び出しを共通化する。"""
+        if raw not in {"int", "float", "bool"}:
+            return None
+        if len(args) != 1:
+            return None
+        target = self.cpp_type(expr.get("resolved_type"))
+        arg_t = self.get_expr_type(first_arg)
+        numeric_t = {
+            "int8",
+            "uint8",
+            "int16",
+            "uint16",
+            "int32",
+            "uint32",
+            "int64",
+            "uint64",
+            "float32",
+            "float64",
+            "bool",
+        }
+        if raw == "bool" and self.is_any_like_type(arg_t):
+            return f"py_to_bool({args[0]})"
+        if raw == "float" and self.is_any_like_type(arg_t):
+            return f"py_to_float64({args[0]})"
+        if raw == "float" and arg_t == "str":
+            return f"py_to_float64({args[0]})"
+        if raw == "int" and target == "int64" and arg_t == "str":
+            return f"py_to_int64({args[0]})"
+        if raw == "int" and target == "int64" and arg_t in numeric_t:
+            return f"int64({args[0]})"
+        if raw == "int" and target == "int64":
+            return f"py_to_int64({args[0]})"
+        return f"static_cast<{target}>({args[0]})"
+
     def _render_call_name_or_attr(
         self,
         expr: dict[str, Any],
@@ -3355,54 +3447,9 @@ class CppEmitter(CodeEmitter):
                 if type_name == "bool":
                     return f"py_is_bool({a0})"
                 return "false"
-            if raw == "set" and len(args) == 0:
-                t = self.cpp_type(expr.get("resolved_type"))
-                return f"{t}{{}}"
-            if raw == "set" and len(args) == 1:
-                t = self.cpp_type(expr.get("resolved_type"))
-                at0 = self.get_expr_type(first_arg)
-                at = at0 if isinstance(at0, str) else ""
-                if at.startswith("set["):
-                    return args[0]
-                if t == "set<object>" and at in {"Any", "object"}:
-                    return f"{t}({args[0]})"
-                if t.startswith("set<"):
-                    if t == "set<object>" and at not in {"Any", "object"}:
-                        return args[0]
-                    return f"{t}({args[0]})"
-                return f"set({args[0]})"
-            if raw == "list" and len(args) == 0:
-                t = self.cpp_type(expr.get("resolved_type"))
-                return f"{t}{{}}"
-            if raw == "list" and len(args) == 1:
-                t = self.cpp_type(expr.get("resolved_type"))
-                at0 = self.get_expr_type(first_arg)
-                at = at0 if isinstance(at0, str) else ""
-                if at.startswith("list["):
-                    return args[0]
-                if t == "list<object>" and at in {"Any", "object"}:
-                    return f"{t}({args[0]})"
-                if t.startswith("list<"):
-                    if t == "list<object>" and at not in {"Any", "object"}:
-                        return args[0]
-                    return f"{t}({args[0]})"
-                return f"list({args[0]})"
-            if raw == "dict" and len(args) == 0:
-                t = self.cpp_type(expr.get("resolved_type"))
-                return f"{t}{{}}"
-            if raw == "dict" and len(args) == 1:
-                t = self.cpp_type(expr.get("resolved_type"))
-                at0 = self.get_expr_type(first_arg)
-                at = at0 if isinstance(at0, str) else ""
-                if at.startswith("dict["):
-                    return args[0]
-                if t == "dict<str, object>" and at in {"Any", "object"}:
-                    return f"{t}({args[0]})"
-                if t.startswith("dict<"):
-                    if t == "dict<str, object>" and at not in {"Any", "object"}:
-                        return args[0]
-                    return f"{t}({args[0]})"
-                return f"dict({args[0]})"
+            collection_ctor_rendered = self._render_collection_constructor_call(raw, expr, args, first_arg)
+            if collection_ctor_rendered is not None:
+                return collection_ctor_rendered
             if raw == "bytes":
                 return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
             if raw == "bytearray":
@@ -3410,23 +3457,9 @@ class CppEmitter(CodeEmitter):
             if raw == "str" and len(args) == 1:
                 src_expr = first_arg
                 return self.render_to_string(src_expr)
-            if raw in {"int", "float", "bool"} and len(args) == 1:
-                target = self.cpp_type(expr.get("resolved_type"))
-                arg_t = self.get_expr_type(first_arg)
-                numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
-                if raw == "bool" and self.is_any_like_type(arg_t):
-                    return f"py_to_bool({args[0]})"
-                if raw == "float" and self.is_any_like_type(arg_t):
-                    return f"py_to_float64({args[0]})"
-                if raw == "float" and arg_t == "str":
-                    return f"py_to_float64({args[0]})"
-                if raw == "int" and target == "int64" and arg_t == "str":
-                    return f"py_to_int64({args[0]})"
-                if raw == "int" and target == "int64" and arg_t in numeric_t:
-                    return f"int64({args[0]})"
-                if raw == "int" and target == "int64":
-                    return f"py_to_int64({args[0]})"
-                return f"static_cast<{target}>({args[0]})"
+            scalar_cast_rendered = self._render_scalar_cast_builtin_call(raw, expr, args, first_arg)
+            if scalar_cast_rendered is not None:
+                return scalar_cast_rendered
             if raw == "int" and len(args) == 2:
                 return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
             if raw == "ord" and len(args) == 1:
