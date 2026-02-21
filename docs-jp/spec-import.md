@@ -266,20 +266,17 @@ QualifiedSymbolRef
 - `from M import *` は展開しない。未対応構文として失敗させる。
 - 同名 alias 衝突は `duplicate_binding` として即時エラー。
 
-### 4. JavaScript（`src/py2js.py` + `src/common/js_ts_native_transpiler.py`）
+### 4. JavaScript（`src/py2js.py` + `src/hooks/js/emitter/js_emitter.py`）
 
 - 実装方式:
-- native AST 変換。`require(...)` ベースで runtime モジュールを読み込む。
-- import 解決は `_transpile_import` が担当。
+- EAST 変換。`py2js.py` は薄い CLI に限定し、出力処理は `JsEmitter` が担当。
+- import 解決は EAST `meta.import_bindings` を正本として処理する。
 - 具体実装:
-- `ImportBinding` から `const ... = require(...)` または分割代入を生成する。
-- `import math as m` -> `const m = require(.../math.js)`
-- `from time import perf_counter as pc` -> `const pc = perfCounter`
-- `from pathlib import Path as P` -> `const P = pathlib.Path`
-- `from pytra.utils.gif import save_gif as sg` -> `const { save_gif: sg } = require(.../gif_helper.js)`
-- 未使用 import の require を抑制するため、参照カウントに基づく遅延出力（使われた binding のみ出力）を導入する。
+- 通常モジュールは `import ... from "./a/b/c.js"` 形式へ変換する。
+- `browser` / `browser.widgets.dialog` は外部参照として扱い、import 本体を生成しない。
+- `from browser import window as win` は `win` を `window` 参照へ解決する。
 - エラー方針:
-- `_transpile_import` の unsupported 分岐を維持し、未対応 import を早期失敗させる。
+- 既存の禁止構文（例: `from M import *`）は frontend/EAST 側のエラー方針に従う。
 
 ### 5. TypeScript（`src/py2ts.py` + `src/common/js_ts_native_transpiler.py`）
 

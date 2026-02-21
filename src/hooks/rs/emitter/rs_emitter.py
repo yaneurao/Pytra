@@ -50,6 +50,12 @@ def _load_profile_piece(path: Path) -> dict[str, Any]:
 def load_rs_profile() -> dict[str, Any]:
     """Rust 用 profile を読み込む。"""
     profile_path = Path("src/profiles/rs/profile.json")
+    if not profile_path.exists():
+        this_file = str(__file__)
+        src_pos = this_file.rfind("/src/")
+        if src_pos >= 0:
+            src_root = this_file[: src_pos + 4]
+            profile_path = Path(src_root + "/profiles/rs/profile.json")
     profile_root = profile_path.parent
     meta = _load_profile_piece(profile_path)
     out: dict[str, Any] = {}
@@ -123,13 +129,6 @@ class RustEmitter(CodeEmitter):
 
     def _safe_name(self, name: str) -> str:
         return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
-
-    def _tuple_elements(self, tuple_node: dict[str, Any]) -> list[Any]:
-        """Tuple ノード要素を `elements` / `elts` 両対応で返す。"""
-        out = self.any_to_list(tuple_node.get("elements"))
-        if len(out) > 0:
-            return out
-        return self.any_to_list(tuple_node.get("elts"))
 
     def _module_id_to_rust_use_path(self, module_id: str) -> str:
         """Python 形式モジュール名を Rust `use` パスへ変換する。"""
@@ -617,7 +616,7 @@ class RustEmitter(CodeEmitter):
         if target_kind == "Name":
             body_scope.add(target_name)
         elif target_kind == "Tuple":
-            elts = self._tuple_elements(target_node)
+            elts = self.tuple_elements(target_node)
             parts: list[str] = []
             for elt in elts:
                 d = self.any_to_dict_or_empty(elt)
@@ -702,7 +701,7 @@ class RustEmitter(CodeEmitter):
             return
 
         if self.any_dict_get_str(target, "kind", "") == "Tuple":
-            names: list[Any] = self._tuple_elements(target)
+            names: list[Any] = self.tuple_elements(target)
             if len(names) == 2:
                 a = self.render_expr(names[0])
                 b = self.render_expr(names[1])
@@ -883,7 +882,7 @@ class RustEmitter(CodeEmitter):
                 rendered.append(self.render_expr(elt))
             return "vec![" + ", ".join(rendered) + "]"
         if kind == "Tuple":
-            elts: list[Any] = self._tuple_elements(expr_d)
+            elts: list[Any] = self.tuple_elements(expr_d)
             rendered = []
             for elt in elts:
                 rendered.append(self.render_expr(elt))

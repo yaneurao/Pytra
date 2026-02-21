@@ -327,6 +327,15 @@
 - 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
 - 現時点の到達点は「変換成功（transpile success）を優先」であり、Rust コンパイル互換・出力品質は段階的に改善する。
 
+### 5.3 EASTベース JavaScript 経路（段階移行）
+
+- `src/py2js.py` は CLI + 入出力の薄いオーケストレータに限定する。
+- JavaScript 固有の出力処理は `src/hooks/js/emitter/js_emitter.py`（`JsEmitter`）へ分離する。
+- `src/py2js.py` は `src/common/` に依存しない。
+- 言語固有差分は `src/profiles/js/` と `src/hooks/js/` に分離する。
+- `browser` / `browser.widgets.dialog` は外部提供ランタイム（ブラウザ環境）として扱い、`py2js` 側では import 本体を生成しない。
+- 変換可否のスモーク確認は `tools/check_py2js_transpile.py` を正本とする。
+
 ## 6. LanguageProfile / CodeEmitter
 
 - `CodeEmitter` は言語非依存の骨組み（ノード走査、スコープ管理、共通補助）を担当します。
@@ -353,6 +362,7 @@
 ## 8. 各ターゲットの実行モード注記
 
 - `py2rs.py`: ネイティブ変換モード（Python インタプリタ非依存）
-- `py2js.py` / `py2ts.py`: ネイティブ変換モード（Node.js ランタイム）
+- `py2js.py`: EAST ベース変換モード（ブラウザ runtime 外部参照）
+- `py2ts.py`: ネイティブ変換モード（Node.js ランタイム）
 - `py2go.py` / `py2java.py`: ネイティブ変換モード（Python インタプリタ非依存）
 - `py2swift.py` / `py2kotlin.py`: Node バックエンド実行モード（Python インタプリタ非依存）

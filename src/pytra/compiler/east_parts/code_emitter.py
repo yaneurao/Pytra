@@ -616,6 +616,13 @@ class CodeEmitter:
                 out.append(item)
         return out
 
+    def tuple_elements(self, tuple_node: dict[str, Any]) -> list[Any]:
+        """Tuple ノード要素を `elements` / `elts` 両対応で返す。"""
+        out = self.any_to_list(tuple_node.get("elements"))
+        if len(out) > 0:
+            return out
+        return self.any_to_list(tuple_node.get("elts"))
+
     def any_to_str(self, v: Any) -> str:
         """動的値を str に安全に変換する。変換不能なら空文字。"""
         if isinstance(v, str):

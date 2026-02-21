@@ -40,6 +40,7 @@
 2. [ ] `CodeEmitter` の責務拡張を先に実施する（py2rs実装より先）。
    - [ ] `py2cpp.py` と `py2rs.py` で共通化できる EAST ユーティリティ（型変換補助・import束縛・文/式ディスパッチ補助）を `src/pytra/compiler/east_parts/code_emitter.py` へ移す。
      - [x] import 束縛ローダ `load_import_bindings_from_meta()` を `CodeEmitter` へ移管。
+     - [x] tuple 要素取得（`elements`/`elts` 差分吸収）を `CodeEmitter.tuple_elements()` へ移管。
    - [x] 「共通化候補一覧」を作り、`py2cpp.py` から段階的に移管する（`docs-jp/code-emitter-dispatch-plan.md` 参照）。
 3. [x] Rust 固有処理の分離（最小雛形）
    - [x] `src/hooks/rs/` に Rust 用 hooks を追加。
@@ -66,10 +67,10 @@
 - 実施順: `py2js.py` → `py2cs.py` → `py2go.py` → `py2java.py` → `py2ts.py` → `py2swift.py` → `py2kotlin.py`
 - 共通ルール: 各 `py2xx.py` は薄いCLIに限定し、共通ロジックは `CodeEmitter` へ寄せる。
 
-1. [ ] `py2js.py` を EAST ベースへ移行する。
-   - [ ] `src/common/` 依存を撤去する。
-   - [ ] JS 固有処理を hook/profile へ分離する。
-   - [ ] `browser` / `browser.widgets.dialog` を外部参照（ブラウザ環境）として解決する。
+1. [x] `py2js.py` を EAST ベースへ移行する。
+   - [x] `src/common/` 依存を撤去する。
+   - [x] JS 固有処理を hook/profile へ分離する。
+   - [x] `browser` / `browser.widgets.dialog` を外部参照（ブラウザ環境）として解決する。
 2. [ ] `py2cs.py` を EAST ベースへ移行する。
    - [ ] `src/common/` 依存を撤去する。
    - [ ] C# 固有処理を hook/profile へ分離する。
