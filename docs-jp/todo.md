@@ -95,9 +95,10 @@
 7. [x] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
    - [x] `Function/Class` のヘッダ/終端出力を `syntax_line` / `syntax_text` へ寄せ、文字列直書き依存を削減した（selfhost互換のため呼び出しは `CppEmitter` 側ラッパで維持）。
    - [x] `_cpp_expr_to_module_name` を `CodeEmitter` 側へ移管し、hook 実装から共通 helper を参照する形に統一した。
-8. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
+8. [x] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
    - [x] 未再利用 helper `_dict_any_get_list` を削除し、`_dict_any_get_str_list` へ内包した。
    - [x] 単発 helper `_dict_str_list_get` を削除し、`_graph_cycle_dfs` 側へ内包した。
+   - [x] `src/py2cpp.py` / `src/pytra/compiler/east_parts/code_emitter.py` について repo 全体参照を監査し、単独未参照シンボルがないことを確認した（現時点の明確な削除候補なし）。
 
 ## P2: Any/object 境界の整理
 
