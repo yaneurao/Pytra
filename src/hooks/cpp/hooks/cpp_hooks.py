@@ -419,6 +419,11 @@ def on_render_expr_kind(
     expr_node: dict[str, Any],
 ) -> str | None:
     """式 kind 単位の出力フック。"""
+    if kind == "RangeExpr":
+        start = emitter.render_expr(expr_node.get("start"))
+        stop = emitter.render_expr(expr_node.get("stop"))
+        step = emitter.render_expr(expr_node.get("step"))
+        return "py_range(" + start + ", " + stop + ", " + step + ")"
     if kind == "Compare":
         if emitter.any_dict_get_str(expr_node, "lowered_kind", "") == "Contains":
             container = emitter.render_expr(expr_node.get("container"))

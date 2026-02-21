@@ -49,6 +49,17 @@ class _DummyEmitter:
 
 
 class CppHooksTest(unittest.TestCase):
+    def test_range_expr_render(self) -> None:
+        em = _DummyEmitter()
+        node = {
+            "kind": "RangeExpr",
+            "start": {"repr": "0"},
+            "stop": {"repr": "n"},
+            "step": {"repr": "1"},
+        }
+        rendered = on_render_expr_kind(em, "RangeExpr", node)
+        self.assertEqual(rendered, "py_range(0, n, 1)")
+
     def test_compare_contains_render(self) -> None:
         em = _DummyEmitter()
         node = {

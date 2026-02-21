@@ -61,6 +61,7 @@
    - [x] `render_expr(Call)` の `Call(Name)` import 経路を `_resolve_or_render_imported_symbol_name_call` へ抽出し、段階処理（import解決→ビルトイン→fallback）を明確化した。
 3. [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。
    - [x] `RangeExpr/BinOp/UnaryOp/BoolOp/Compare/IfExp` の分岐を `_render_operator_family_expr` へ集約し、`render_expr` 本体の分岐を削減した。
+   - [x] `RangeExpr` の C++ レンダ（`py_range(...)`）を `cpp_hooks.on_render_expr_kind(kind=RangeExpr)` へ抽出した（`py2cpp.py` 側フォールバックは残置）。
 4. [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
    - [ ] `CodeEmitter` 側の共通ディスパッチは selfhost C++ で静的束縛（非 virtual）により派生レンダへ到達しないため、別方式（hook 注入）で再設計する。
 5. [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。
