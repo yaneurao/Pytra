@@ -1,85 +1,86 @@
-# py2cpp サポートマトリクス（テスト準拠）
+# py2cpp Support Matrix (Test-Aligned)
 
-<a href="../docs-en/spec-py2cpp-support.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/spec-py2cpp-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-最終更新: 2026-02-21
+Last updated: 2026-02-21
 
-この文書は、`src/py2cpp.py` の言語機能サポート状況を「実装コード」と「実行テスト」の両方で確認できる粒度でまとめたものです。
+This document summarizes language-feature support status in `src/py2cpp.py` at a granularity verifiable through both implementation code and runtime tests.
 
-## ステータス定義
+## Status Definitions
 
-- `supported`: 現行でサポート。対応テストが green。
-- `partial`: 一部条件つきでサポート。制約あり。
-- `unsupported`: 現行で非対応。明示的にエラー化。
-- `not_yet_verified`: 仕様文書にはあるが、専用回帰テストが不足しており本表では未確定。
+- `supported`: supported in current implementation, with green corresponding tests.
+- `partial`: supported with conditions/limitations.
+- `unsupported`: unsupported in current implementation; explicitly errored.
+- `not_yet_verified`: described in spec docs, but not confirmed in this table due to insufficient dedicated regression tests.
 
-## コア構文・式
+## Core Syntax and Expressions
 
-| 機能 | ステータス | 現状 | 根拠 |
+| Feature | Status | Current State | Evidence |
 |---|---|---|---|
-| `enumerate(xs)` | supported | サポート済み。 | `src/py2cpp.py:3304`, `test/unit/test_py2cpp_features.py:1441`, `test/fixtures/strings/enumerate_basic.py:7` |
-| `enumerate(xs, 1)` / `enumerate(xs, start)` | supported | 第2引数つきサポート済み。`start` は `int64` へ変換される。 | `src/py2cpp.py:3306`, `test/fixtures/strings/enumerate_basic.py:17`, `test/fixtures/strings/enumerate_basic.py:21`, `test/unit/test_py2cpp_features.py:1441` |
-| `lambda` 基本（0引数/1引数/複数引数） | supported | サポート済み。 | `src/py2cpp.py:4296`, `test/unit/test_py2cpp_features.py:1259`, `test/fixtures/core/lambda_basic.py:8` |
-| `lambda` の外側変数キャプチャ | supported | サポート済み（`[&]` キャプチャ）。 | `src/py2cpp.py:4303`, `test/unit/test_py2cpp_features.py:1337`, `test/fixtures/core/lambda_capture_multiargs.py:7` |
-| `lambda` を引数として渡す | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1349`, `test/fixtures/core/lambda_as_arg.py:10` |
-| `lambda` の即時呼び出し | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1355`, `test/fixtures/core/lambda_immediate.py:5` |
-| `lambda` 内の三項演算子 | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1331`, `test/fixtures/core/lambda_ifexp.py:6` |
-| `x if cond else y`（IfExp） | supported | サポート済み。 | `src/py2cpp.py:3911`, `test/unit/test_py2cpp_features.py:964` |
-| `list` 内包表記 | partial | サポート済み。ただし generator は 1 個前提。 | `src/py2cpp.py:4304`, `src/py2cpp.py:4306`, `test/unit/test_py2cpp_features.py:1253`, `test/unit/test_py2cpp_features.py:1325` |
-| `set` 内包表記 | partial | サポート済み。ただし generator は 1 個前提。 | `src/py2cpp.py:4381`, `src/py2cpp.py:4383`, `test/unit/test_py2cpp_features.py:1307`, `test/fixtures/collections/comprehension_dict_set.py:6` |
-| `dict` 内包表記 | partial | サポート済み。ただし generator は 1 個前提。 | `src/py2cpp.py:4436`, `src/py2cpp.py:4438`, `test/unit/test_py2cpp_features.py:1307`, `test/fixtures/collections/comprehension_dict_set.py:7` |
-| 内包表記の `if` 条件 | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1253`, `test/unit/test_py2cpp_features.py:1301`, `test/fixtures/collections/comprehension_filter.py:7` |
-| 内包表記で `range(start, stop, step)` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1325`, `test/fixtures/collections/comprehension_range_step.py:6` |
-| ネスト内包（内包の中に内包） | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1295`, `test/fixtures/collections/comprehension_nested.py:6` |
-| `str` スライス | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1435`, `test/fixtures/strings/str_slice.py:1` |
-| 文字列の for-each | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1429`, `test/fixtures/strings/str_for_each.py:1` |
-| `bytes` / `bytearray` 基本操作 | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1241`, `test/unit/test_py2cpp_features.py:1247`, `test/fixtures/typing/bytes_basic.py:1`, `test/fixtures/typing/bytearray_basic.py:1` |
+| `enumerate(xs)` | supported | Supported. | `src/py2cpp.py:3304`, `test/unit/test_py2cpp_features.py:1441`, `test/fixtures/strings/enumerate_basic.py:7` |
+| `enumerate(xs, 1)` / `enumerate(xs, start)` | supported | Supported with second argument. `start` is converted to `int64`. | `src/py2cpp.py:3306`, `test/fixtures/strings/enumerate_basic.py:17`, `test/fixtures/strings/enumerate_basic.py:21`, `test/unit/test_py2cpp_features.py:1441` |
+| Basic `lambda` (0/1/multi args) | supported | Supported. | `src/py2cpp.py:4296`, `test/unit/test_py2cpp_features.py:1259`, `test/fixtures/core/lambda_basic.py:8` |
+| Outer-variable capture in `lambda` | supported | Supported (`[&]` capture). | `src/py2cpp.py:4303`, `test/unit/test_py2cpp_features.py:1337`, `test/fixtures/core/lambda_capture_multiargs.py:7` |
+| Passing `lambda` as argument | supported | Supported. | `test/unit/test_py2cpp_features.py:1349`, `test/fixtures/core/lambda_as_arg.py:10` |
+| Immediate `lambda` call | supported | Supported. | `test/unit/test_py2cpp_features.py:1355`, `test/fixtures/core/lambda_immediate.py:5` |
+| Ternary inside `lambda` | supported | Supported. | `test/unit/test_py2cpp_features.py:1331`, `test/fixtures/core/lambda_ifexp.py:6` |
+| `x if cond else y` (IfExp) | supported | Supported. | `src/py2cpp.py:3911`, `test/unit/test_py2cpp_features.py:964` |
+| `list` comprehension | partial | Supported, but assumes a single generator. | `src/py2cpp.py:4304`, `src/py2cpp.py:4306`, `test/unit/test_py2cpp_features.py:1253`, `test/unit/test_py2cpp_features.py:1325` |
+| `set` comprehension | partial | Supported, but assumes a single generator. | `src/py2cpp.py:4381`, `src/py2cpp.py:4383`, `test/unit/test_py2cpp_features.py:1307`, `test/fixtures/collections/comprehension_dict_set.py:6` |
+| `dict` comprehension | partial | Supported, but assumes a single generator. | `src/py2cpp.py:4436`, `src/py2cpp.py:4438`, `test/unit/test_py2cpp_features.py:1307`, `test/fixtures/collections/comprehension_dict_set.py:7` |
+| `if` condition in comprehension | supported | Supported. | `test/unit/test_py2cpp_features.py:1253`, `test/unit/test_py2cpp_features.py:1301`, `test/fixtures/collections/comprehension_filter.py:7` |
+| `range(start, stop, step)` in comprehension | supported | Supported. | `test/unit/test_py2cpp_features.py:1325`, `test/fixtures/collections/comprehension_range_step.py:6` |
+| Nested comprehension (comprehension inside comprehension) | supported | Supported. | `test/unit/test_py2cpp_features.py:1295`, `test/fixtures/collections/comprehension_nested.py:6` |
+| `str` slice | supported | Supported. | `test/unit/test_py2cpp_features.py:1435`, `test/fixtures/strings/str_slice.py:1` |
+| for-each over string | supported | Supported. | `test/unit/test_py2cpp_features.py:1429`, `test/fixtures/strings/str_for_each.py:1` |
+| Basic `bytes` / `bytearray` operations | supported | Supported. | `test/unit/test_py2cpp_features.py:1241`, `test/unit/test_py2cpp_features.py:1247`, `test/fixtures/typing/bytes_basic.py:1`, `test/fixtures/typing/bytearray_basic.py:1` |
 
-## import / モジュール解決
+## import / Module Resolution
 
-| 機能 | ステータス | 現状 | 根拠 |
+| Feature | Status | Current State | Evidence |
 |---|---|---|---|
-| `import M` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1385`, `test/fixtures/imports/import_math_module.py:3` |
-| `import M as A` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:259`, `test/fixtures/imports/import_pytra_runtime_png.py:3` |
-| `from M import S` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:242`, `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
-| `from M import S as A` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
-| 循環 import 検出 | unsupported | 検出して `input_invalid(kind=import_cycle)` で停止。 | `src/py2cpp.py:5734`, `test/unit/test_py2cpp_features.py:567` |
-| 相対 import（`from .m import x`） | unsupported | `input_invalid(kind=unsupported_import_form)`。 | `src/py2cpp.py:4693`, `test/unit/test_py2cpp_features.py:596` |
-| `from M import *` | unsupported | `input_invalid(kind=unsupported_import_form)`。 | `src/py2cpp.py:4686`, `test/unit/test_py2cpp_features.py:618` |
-| 未解決モジュール import | unsupported | `input_invalid(kind=missing_module)`。 | `test/unit/test_py2cpp_features.py:544` |
-| import 束縛重複 | unsupported | `input_invalid(kind=duplicate_binding)`。 | `test/unit/test_py2cpp_features.py:645`, `test/unit/test_py2cpp_features.py:675` |
-| `from M import S` 後の `M.T` 参照 | unsupported | `input_invalid(kind=missing_symbol)` 扱い。 | `test/unit/test_py2cpp_features.py:732` |
+| `import M` | supported | Supported. | `test/unit/test_py2cpp_features.py:1385`, `test/fixtures/imports/import_math_module.py:3` |
+| `import M as A` | supported | Supported. | `test/unit/test_py2cpp_features.py:259`, `test/fixtures/imports/import_pytra_runtime_png.py:3` |
+| `from M import S` | supported | Supported. | `test/unit/test_py2cpp_features.py:242`, `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
+| `from M import S as A` | supported | Supported. | `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
+| Circular import detection | unsupported | Detects and stops with `input_invalid(kind=import_cycle)`. | `src/py2cpp.py:5734`, `test/unit/test_py2cpp_features.py:567` |
+| Relative import (`from .m import x`) | unsupported | `input_invalid(kind=unsupported_import_form)`. | `src/py2cpp.py:4693`, `test/unit/test_py2cpp_features.py:596` |
+| `from M import *` | unsupported | `input_invalid(kind=unsupported_import_form)`. | `src/py2cpp.py:4686`, `test/unit/test_py2cpp_features.py:618` |
+| Unresolved module import | unsupported | `input_invalid(kind=missing_module)`. | `test/unit/test_py2cpp_features.py:544` |
+| Duplicate import binding | unsupported | `input_invalid(kind=duplicate_binding)`. | `test/unit/test_py2cpp_features.py:645`, `test/unit/test_py2cpp_features.py:675` |
+| Referencing `M.T` after `from M import S` | unsupported | Treated as `input_invalid(kind=missing_symbol)`. | `test/unit/test_py2cpp_features.py:732` |
 
-## OOP / 型 / ランタイム
+## OOP / Types / Runtime
 
-| 機能 | ステータス | 現状 | 根拠 |
+| Feature | Status | Current State | Evidence |
 |---|---|---|---|
-| `super().__init__()` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1379`, `test/fixtures/oop/super_init.py:1` |
-| `@dataclass` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1519`, `test/fixtures/stdlib/dataclasses_extended.py:1` |
-| `Enum` / `IntEnum` / `IntFlag` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1453`, `test/unit/test_py2cpp_features.py:1459`, `test/unit/test_py2cpp_features.py:1465` |
-| `Any` 系（基本） | supported | サポート済み（`Any`/`None`/混在 list/dict を回帰確認）。 | `test/unit/test_py2cpp_features.py:1265`, `test/unit/test_py2cpp_features.py:1271`, `test/unit/test_py2cpp_features.py:1277`, `test/unit/test_py2cpp_features.py:1289` |
-| `object` レシーバへの属性/メソッド呼び出し | unsupported | emit guard で拒否。 | `test/unit/test_py2cpp_features.py:1531` |
+| `super().__init__()` | supported | Supported. | `test/unit/test_py2cpp_features.py:1379`, `test/fixtures/oop/super_init.py:1` |
+| `@dataclass` | supported | Supported. | `test/unit/test_py2cpp_features.py:1519`, `test/fixtures/stdlib/dataclasses_extended.py:1` |
+| `Enum` / `IntEnum` / `IntFlag` | supported | Supported. | `test/unit/test_py2cpp_features.py:1453`, `test/unit/test_py2cpp_features.py:1459`, `test/unit/test_py2cpp_features.py:1465` |
+| `Any` family (basic) | supported | Supported (regression-checked for `Any`/`None`/mixed list-dict cases). | `test/unit/test_py2cpp_features.py:1265`, `test/unit/test_py2cpp_features.py:1271`, `test/unit/test_py2cpp_features.py:1277`, `test/unit/test_py2cpp_features.py:1289` |
+| Attribute/method call on `object` receiver | unsupported | Rejected by emit guard. | `test/unit/test_py2cpp_features.py:1531` |
 
-## CLI オプション由来の制約
+## Constraints From CLI Options
 
-| 機能 | ステータス | 現状 | 根拠 |
+| Feature | Status | Current State | Evidence |
 |---|---|---|---|
-| `--str-index-mode=codepoint` | unsupported | 現状は明示エラー。 | `src/pytra/compiler/transpile_cli.py:152`, `test/unit/test_py2cpp_features.py:1183` |
-| `--str-slice-mode=codepoint` | unsupported | 現状は明示エラー。 | `src/pytra/compiler/transpile_cli.py:154`, `src/py2cpp.py:6419` |
-| `--int-width=bigint` | unsupported | 変換実行では明示エラー。`--dump-options` での計画値表示のみ許可。 | `src/pytra/compiler/transpile_cli.py:144`, `test/unit/test_py2cpp_features.py:1167`, `src/py2cpp.py:6417` |
+| `--str-index-mode=codepoint` | unsupported | Explicit error at present. | `src/pytra/compiler/transpile_cli.py:152`, `test/unit/test_py2cpp_features.py:1183` |
+| `--str-slice-mode=codepoint` | unsupported | Explicit error at present. | `src/pytra/compiler/transpile_cli.py:154`, `src/py2cpp.py:6419` |
+| `--int-width=bigint` | unsupported | Explicit error in transpilation; only planning-value display is allowed in `--dump-options`. | `src/pytra/compiler/transpile_cli.py:144`, `test/unit/test_py2cpp_features.py:1167`, `src/py2cpp.py:6417` |
 
-## 未確定（本表で過剰断定しない項目）
+## Undetermined (Do Not Overstate In This Table)
 
-次は専用回帰テストの網羅が不足しており、現時点では `not_yet_verified` 扱いにします。
+The following still lack sufficient dedicated regression coverage, so they are treated as `not_yet_verified`:
 
-- 関数引数の default 値、`*args`、`**kwargs` の詳細な互換範囲
-- `yield` / generator expression の挙動
-- 例外階層の細かな互換（例: 複数 except 節の型パターン）
+- Detailed compatibility scope for function default arguments, `*args`, and `**kwargs`
+- Behavior of `yield` / generator expressions
+- Fine-grained exception hierarchy compatibility (e.g., type patterns in multiple except clauses)
 
-## 更新ルール
+## Update Rules
 
-- この表を更新するときは、対応行に「実行テストの根拠（`test/unit/...`）」を必ず追加する。
-- 「実装上は通るがテスト根拠がない」ものは `supported` にしない。
+- When updating this table, always add runtime-test evidence (`test/unit/...`) for each corresponding row.
+- Do not mark anything as `supported` if implementation appears to work but no test evidence exists.
+

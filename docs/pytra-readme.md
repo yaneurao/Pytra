@@ -1,77 +1,77 @@
-# Pytra 実装状況メモ
+# Pytra Implementation Status Notes
 
-<a href="../docs-en/pytra-readme.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/pytra-readme.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-このページは、`README.md` から分離した実装状況の詳細です。
+This page contains implementation-status details separated from `README.md`.
 
-## 実装済みの言語機能
+## Implemented Language Features
 
-- 変数代入（通常代入、型注釈付き代入、拡張代入の主要ケース）
-- 算術・ビット演算（`+ - * / // % ** & | ^ << >>`）
-- 比較演算（`== != < <= > >= in not in is is not` の主要ケース）
-- 論理演算（`and or not`）
-- 条件分岐（`if / elif / else`）
-- ループ（`while`、`for in <iterable>`、`for in range(...)`）
-- 例外（`try / except / finally`、`raise` の主要ケース）
-- 関数定義・関数呼び出し・戻り値
-- クラス定義（単一継承、`__init__`、class member、instance member）
-- `@dataclass` の基本変換
-- 文字列（f-string の主要ケース、`replace` など）
-- コンテナ（`list`, `dict`, `set`, `tuple` の主要ケース）
-- list/set comprehension の主要ケース
-- スライス（`a[b:c]`）
-- `if __name__ == "__main__":` ガード認識
-- EAST 変換（`src/pytra/compiler/east.py`）と EAST ベース C++ 変換（`src/py2cpp.py`）
+- Variable assignment (main cases for normal assignment, annotated assignment, and augmented assignment)
+- Arithmetic and bit operations (`+ - * / // % ** & | ^ << >>`)
+- Comparison operations (main cases for `== != < <= > >= in not in is is not`)
+- Logical operations (`and or not`)
+- Branching (`if / elif / else`)
+- Loops (`while`, `for in <iterable>`, `for in range(...)`)
+- Exceptions (main cases for `try / except / finally` and `raise`)
+- Function definition, function call, and return values
+- Class definition (single inheritance, `__init__`, class members, instance members)
+- Basic conversion for `@dataclass`
+- Strings (main f-string cases, `replace`, etc.)
+- Containers (main cases for `list`, `dict`, `set`, `tuple`)
+- Main cases of list/set comprehension
+- Slices (`a[b:c]`)
+- Recognition of `if __name__ == "__main__":` guard
+- EAST conversion (`src/pytra/compiler/east.py`) and EAST-based C++ conversion (`src/py2cpp.py`)
 
-## 実装済みの組み込み関数
+## Implemented Built-in Functions
 
 - `print`, `len`, `range`
 - `int`, `float`, `str`
 - `ord`, `bytes`, `bytearray`
 - `min`, `max`
-- `grayscale_palette`, `save_gif`, `write_rgb_png`（EAST/C++ ランタイム経由）
+- `grayscale_palette`, `save_gif`, `write_rgb_png` (via EAST/C++ runtime)
 
-## 対応module
+## Supported Modules
 
-Python標準ライブラリは「モジュール名だけ」でなく、対応関数を次のように限定します（未記載は未対応扱い）。
+For Python standard libraries, support is limited not only by module name but by specific functions below (unspecified items are unsupported).
 
 - `math`
-  - 共通対応（C++/C#/Rust/JS/TS/Go/Java）:
+  - Common support (C++/C#/Rust/JS/TS/Go/Java):
     - `sqrt`, `sin`, `cos`, `tan`, `exp`, `log`, `log10`, `fabs`, `floor`, `ceil`, `pow`
-    - 定数: `pi`, `e`
-  - 差分:
-    - Swift/Kotlin は Node バックエンド方式のため、実体は JS/TS 側 `math` 実装に依存します。
-    - C# は `System.Math` へ直接マッピングする設計です（専用 `math` ランタイムは未分離）。
+    - constants: `pi`, `e`
+  - Differences:
+    - Swift/Kotlin use the Node backend approach, so implementation depends on JS/TS-side `math`.
+    - C# is designed to map directly to `System.Math` (no dedicated separated `math` runtime).
 - `time`
   - `perf_counter`
 - `pathlib`
-  - 共通対応（C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）:
+  - Common support (C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin):
     - `Path(...)`, `pathlib.Path(...)`
-    - `Path / "child"`（パス連結）
+    - `Path / "child"` (path join)
     - `exists`, `resolve`, `parent`, `name`, `stem`
     - `read_text`, `write_text`, `mkdir(parents, exist_ok)`
-    - `str(Path)`（文字列化）
-  - 実装位置:
+    - `str(Path)` (string conversion)
+  - Implementation locations:
     - C++: `src/runtime/cpp/pytra/std/pathlib.h/.cpp`
-    - Rust: `src/rs_module/py_runtime.rs`（`PyPath`）
-    - C#: `src/cs_module/pathlib.cs`（`py_path`）
+    - Rust: `src/rs_module/py_runtime.rs` (`PyPath`)
+    - C#: `src/cs_module/pathlib.cs` (`py_path`)
     - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`
     - Go/Java: `src/go_module/py_runtime.go`, `src/java_module/PyRuntime.java`
-    - Swift/Kotlin: Node バックエンド方式のため、実体は JS ランタイム（`src/js_module/pathlib.js`）に依存
-  - 差分:
-    - Python `pathlib` の完全互換ではなく、Pytra の最小共通 API に限定しています。
-    - `read_text` / `write_text` の encoding 指定は UTF-8 固定です（引数は互換目的で受理するが無視される実装を含む）。
+    - Swift/Kotlin: because they use the Node backend approach, implementation depends on JS runtime (`src/js_module/pathlib.js`)
+  - Differences:
+    - This is not full Python `pathlib` compatibility; it is limited to Pytra's minimal common API.
+    - `read_text` / `write_text` encoding is fixed to UTF-8 (arguments may be accepted for compatibility but ignored in some implementations).
 - `dataclasses`
-  - `@dataclass` デコレータ（変換時展開）
-  - C++ ランタイム補助（最小）:
+  - `@dataclass` decorator (expanded at conversion time)
+  - C++ runtime helpers (minimal):
     - `dataclass(...)`, `DataclassTag`, `is_dataclass_v`
 - `ast`
-  - C++ 実装は廃止済み（self-hosted EAST パーサへ移行）。
+  - C++ implementation is removed (migrated to self-hosted EAST parser).
 
-- 自作ライブラリ:
+- Custom libraries:
   - `pytra.utils.png`
     - `write_rgb_png(path, width, height, pixels)`
   - `pytra.utils.gif`
@@ -79,38 +79,39 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - `grayscale_palette()`
   - `pytra.utils.assertions`
     - `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
-- ターゲット言語ごとのランタイム:
+- Per-target runtime locations:
   - `src/runtime/cpp`, `src/cs_module`, `src/rs_module`
   - `src/js_module`, `src/ts_module`
   - `src/go_module`, `src/java_module`
   - `src/swift_module`, `src/kotlin_module`
 
-## 作業中
+## In Progress
 
-- Go/Java の静的型反映強化（`any`/`Object` 退化の削減）
-- Go/Java の `bytes` / `bytearray` パス最適化
+- Strengthening static type reflection for Go/Java (reducing degradation to `any`/`Object`)
+- Optimizing `bytes` / `bytearray` paths for Go/Java
 
-## EAST 実装状況
+## EAST Implementation Status
 
 - `src/pytra/compiler/east.py`
-  - `test/fixtures` 32/32, `sample/py` 16/16 を EAST 変換可能
-  - `range(...)` は `ForRange` / `RangeExpr` へ正規化され、生の `Call(Name("range"))` は後段へ渡さない
+  - EAST conversion available for `test/fixtures` 32/32 and `sample/py` 16/16
+  - `range(...)` is normalized to `ForRange` / `RangeExpr`; raw `Call(Name("range"))` is not passed downstream
 - `src/py2cpp.py`
-  - `sample/py` 16/16 を `変換 -> コンパイル -> 実行` まで通過
-  - `append/extend/pop`, `perf_counter`, `min/max`, `save_gif` / `write_rgb_png` / `grayscale_palette` をランタイム連携
-- ベンチマーク
-  - 一覧/詳細は `sample/` 配下の最新計測結果を参照
+  - `sample/py` 16/16 passes through `transpile -> compile -> run`
+  - Runtime integration for `append/extend/pop`, `perf_counter`, `min/max`, `save_gif` / `write_rgb_png` / `grayscale_palette`
+- Benchmark
+  - See latest measurements under `sample/` for list/details
 
-## 未実装項目
+## Not Implemented
 
-- Python 構文の完全互換（現状はサブセット対応）
-- `a[b:c]` 以外のスライス構文
-- 標準ライブラリの網羅対応
-- 高度な型推論・制御フロー解析の一部
-- 動的 import / 動的型付けへの本格対応
+- Full Python syntax compatibility (currently subset support)
+- Slice forms other than `a[b:c]`
+- Comprehensive standard library coverage
+- Parts of advanced type inference and control-flow analysis
+- Full support for dynamic import / dynamic typing
 
-## 対応予定なし
+## Not Planned
 
-- Python 構文の完全一致互換
-- 循環参照・弱参照を含む高度 GC 互換
-- 全方位の動的実行機能（動的 import など）の完全再現
+- Full byte-for-byte compatibility with all Python syntax
+- Advanced GC compatibility including circular references and weak references
+- Full reproduction of all dynamic execution features (e.g., dynamic import)
+

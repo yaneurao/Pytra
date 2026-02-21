@@ -1,28 +1,27 @@
-# EAST仕様（実装準拠）
+# EAST Specification (Implementation-Aligned)
 
-<a href="../docs-en/spec-east.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/spec-east.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-この文書は `src/pytra/compiler/east.py` の現実装に合わせた EAST 仕様である。
+This document describes the EAST specification aligned with the current implementation in `src/pytra/compiler/east.py`.
 
-## 1. 目的
+## 1. Purpose
 
-- EAST(Extended AST) は Python AST から、言語非依存の意味注釈付き JSON を生成する中間表現である。
-- 型解決、cast情報、引数 readonly/mutable、mainガード分離を前段で確定させる。
-- Pythonにはastという抽象構文木を扱うモジュールがあるが、これだと元のソースコードのコメントなどを残してトランスパイルできないのでEASTという表現を考え、そしてこのためのparserをPythonで実装する。
+- EAST (Extended AST) is an intermediate representation that converts Python AST into language-agnostic JSON with semantic annotations.
+- Type resolution, cast information, readonly/mutable argument classification, and `main`-guard separation are fixed in this front-end stage.
+- Python's built-in `ast` module alone cannot preserve enough source context for practical transpilation workflows (for example, comment handling), so EAST and its Python parser are introduced.
 
+## 2. Input/Output
 
-## 2. 入出力
+### 2.1 Input
 
-### 2.1 入力
+- One UTF-8 Python source file.
 
-- UTF-8 の Python ソースファイル 1 つ。
+### 2.2 Output Format
 
-### 2.2 出力形式
-
-- 成功時
+- On success:
 
 ```json
 {
@@ -31,7 +30,7 @@
 }
 ```
 
-- 失敗時
+- On failure:
 
 ```json
 {
@@ -53,155 +52,158 @@
 ### 2.3 CLI
 
 - `python src/pytra/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
-- `--pretty`: 整形 JSON を出力。
-- `--human-output`: C++風の人間可読ビューを出力。
-- `python src/py2cpp.py <input.py|east.json> [-o output.cpp]`: EASTベースの C++ 生成器。
+- `--pretty`: outputs formatted JSON.
+- `--human-output`: outputs a C++-style human-readable view.
+- `python src/py2cpp.py <input.py|east.json> [-o output.cpp]`: EAST-based C++ generator.
 
-## 3. トップレベルEAST構造
+## 3. Top-Level EAST Structure
 
-`east` オブジェクトは以下を持つ。
+`east` object includes:
 
-- `kind`: 常に `Module`
-- `source_path`: 入力パス
-- `source_span`: モジュール span
-- `body`: 通常のトップレベル文
-- `main_guard_body`: `if __name__ == "__main__":` の本体
-- `renamed_symbols`: rename マップ
-- `meta.import_bindings`: import 正本（`ImportBinding[]`）
-- `meta.qualified_symbol_refs`: `from-import` の解決済み参照（`QualifiedSymbolRef[]`）
-- `meta.import_modules`: `import module [as alias]` の束縛情報（`alias -> module`）
-- `meta.import_symbols`: `from module import symbol [as alias]` の束縛情報（`alias -> {module,name}`）
+- `kind`: always `Module`
+- `source_path`: input path
+- `source_span`: module span
+- `body`: normal top-level statements
+- `main_guard_body`: body of `if __name__ == "__main__":`
+- `renamed_symbols`: rename map
+- `meta.import_bindings`: canonical import bindings (`ImportBinding[]`)
+- `meta.qualified_symbol_refs`: resolved `from-import` references (`QualifiedSymbolRef[]`)
+- `meta.import_modules`: binding info for `import module [as alias]` (`alias -> module`)
+- `meta.import_symbols`: binding info for `from module import symbol [as alias]` (`alias -> {module,name}`)
 
-`ImportBinding` は次を持つ。
+`ImportBinding` fields:
 
 - `module_id`
-- `export_name`（`import M` では空文字）
+- `export_name` (empty string for `import M`)
 - `local_name`
-- `binding_kind`（`module` / `symbol`）
+- `binding_kind` (`module` / `symbol`)
 - `source_file`
 - `source_line`
 
-`QualifiedSymbolRef` は次を持つ。
+`QualifiedSymbolRef` fields:
 
 - `module_id`
 - `symbol`
 - `local_name`
 
-## 4. 構文正規化
+## 4. Syntax Normalization
 
-- `if __name__ == "__main__":` は `main_guard_body` に分離。
-- 次は rename 対象。
-- 重複定義名
-- 予約名 `main`, `py_main`, `__pytra_main`
-- `FunctionDef`/`ClassDef` は `name`（rename後）と `original_name` を持つ。
-- `for ... in range(...)` は `ForRange` に正規化され、`start/stop/step/range_mode` を保持。
-- `range(...)` は EAST 構築段階で専用表現へ lower し、後段（`py2cpp.py` など）へ生の `Call(Name("range"), ...)` を渡さない。
-  - つまり、後段エミッタは Python 組み込み `range` の意味解釈を持たず、EAST の正規化済みノードのみを処理する。
-- `for` 以外の式位置 `range(...)` は `RangeExpr` へ lower する（`ListComp` 含む）。
+- `if __name__ == "__main__":` is extracted to `main_guard_body`.
+- Rename targets:
+  - duplicate definition names
+  - reserved names: `main`, `py_main`, `__pytra_main`
+- `FunctionDef` / `ClassDef` include both `name` (renamed) and `original_name`.
+- `for ... in range(...)` is normalized to `ForRange`, preserving `start/stop/step/range_mode`.
+- `range(...)` is lowered into dedicated EAST representation during EAST construction; raw `Call(Name("range"), ...)` is never passed to downstream emitters.
+  - Therefore downstream emitters (including `py2cpp.py`) do not interpret Python `range` semantics directly; they only process normalized EAST nodes.
+- `range(...)` outside `for` loops is lowered to `RangeExpr` (including inside `ListComp`).
 
-## 5. ノード共通属性
+## 5. Common Node Attributes
 
-式ノード（`_expr`）は以下を持つ。
+Expression nodes (`_expr`) include:
 
 - `kind`, `source_span`, `resolved_type`, `borrow_kind`, `casts`, `repr`
-- `resolved_type` は推論済み型文字列。
-- `borrow_kind` は `value | readonly_ref | mutable_ref`（`move` は未使用）。
-- 主要式は構造化子ノードを持つ（`left/right`, `args`, `elements`, `entries` など）。
+- `resolved_type` is the inferred type string.
+- `borrow_kind` is `value | readonly_ref | mutable_ref` (`move` currently unused).
+- Major expressions include structured child nodes (`left/right`, `args`, `elements`, `entries`, etc.).
 
-関数ノードは以下を持つ。
+Function nodes include:
 
 - `arg_types`, `return_type`, `arg_usage`, `renamed_symbols`
 
-### 5.1 `leading_trivia` による C++ パススルー記法
+### 5.1 C++ Pass-through Notation via `leading_trivia`
 
-- EAST では、パススルーは新ノードを増やさず、既存の `leading_trivia`（`kind: "comment"`）で保持する。
-- 解釈対象コメント:
-  - `# Pytra::cpp <C++行>`
-  - `# Pytra::cpp: <C++行>`
-  - `# Pytra::pass <C++行>`
-  - `# Pytra::pass: <C++行>`
+- EAST stores pass-through directives in existing `leading_trivia` (`kind: "comment"`) without introducing new node kinds.
+- Supported directives:
+  - `# Pytra::cpp <C++ line>`
+  - `# Pytra::cpp: <C++ line>`
+  - `# Pytra::pass <C++ line>`
+  - `# Pytra::pass: <C++ line>`
   - `# Pytra::cpp begin` ... `# Pytra::cpp end`
   - `# Pytra::pass begin` ... `# Pytra::pass end`
-- 出力ルール（C++ エミッタ）:
-  - directive コメントは通常コメント化（`// ...`）せず、C++ 行としてそのまま出力する。
-  - `begin/end` ブロック中の通常コメントは、`#` を除いた本文を C++ 行として順序どおり出力する。
-  - 出力位置は `leading_trivia` が付いている文の直前で、文のインデントに合わせる。
-  - `blank` trivia は従来どおり空行として維持する。
-  - 同一 `leading_trivia` 内の複数 directive は記述順に連結して出力する。
-- 優先順位:
-  - `leading_trivia` の directive 解釈が最優先。
-  - 既存の docstring コメント変換（`"""..."""` -> `/* ... */`）とは独立で、互いに上書きしない。
+- Output rules (C++ emitter):
+  - Directive comments are emitted as raw C++ lines, not converted into normal comments (`// ...`).
+  - Inside `begin/end` blocks, normal comments are emitted in order as C++ lines after removing leading `#`.
+  - Output position is immediately before the statement carrying that `leading_trivia`, matching the statement indentation.
+  - `blank` trivia remains blank lines.
+  - Multiple directives in one `leading_trivia` are concatenated in source order.
+- Priority:
+  - Directive interpretation in `leading_trivia` has highest priority.
+  - Existing docstring-to-comment conversion (`"""...""" -> /* ... */`) is independent and not overridden.
 
-## 6. 型システム
+## 6. Type System
 
-### 6.1 正規型
+### 6.1 Canonical Types
 
-- 整数型: `int8`, `uint8`, `int16`, `uint16`, `int32`, `uint32`, `int64`, `uint64`
-- 浮動小数型: `float32`, `float64`
-- 基本型: `bool`, `str`, `None`
-- 合成型: `list[T]`, `set[T]`, `dict[K,V]`, `tuple[T1,...]`
-- 拡張型: `Path`, `Exception`, クラス名
-- 補助型: `unknown`, `module`, `callable[float64]`
+- Integer types: `int8`, `uint8`, `int16`, `uint16`, `int32`, `uint32`, `int64`, `uint64`
+- Floating-point types: `float32`, `float64`
+- Primitive types: `bool`, `str`, `None`
+- Composite types: `list[T]`, `set[T]`, `dict[K,V]`, `tuple[T1,...]`
+- Extended types: `Path`, `Exception`, class names
+- Helper/meta types: `unknown`, `module`, `callable[float64]`
 
-### 6.2 注釈正規化
+### 6.2 Annotation Normalization
 
-- `int` は `int64` に正規化。
-- `float` は `float64` に正規化。
-- `byte` は `uint8` に正規化（1文字/1byte用途の注釈エイリアス）。
-- `float32/float64` はそのまま保持。
-- `any` / `object` は `Any` と同義に扱う（C++ 側では `object` = `rc<PyObj>`）。
-- `bytes` / `bytearray` は `list[uint8]` に正規化。
-- `pathlib.Path` は `Path` に正規化。
-- C++ ランタイムの `str` / `list` / `dict` / `set` / `bytes` / `bytearray` は、STL 継承ではなく wrapper（composition）として実装する。
+- `int` normalizes to `int64`.
+- `float` normalizes to `float64`.
+- `byte` normalizes to `uint8` (annotation alias for one-char/one-byte use).
+- `float32` / `float64` are preserved.
+- `any` / `object` are treated as equivalent to `Any` (in C++, `object` = `rc<PyObj>`).
+- `bytes` / `bytearray` normalize to `list[uint8]`.
+- `pathlib.Path` normalizes to `Path`.
+- C++ runtime `str` / `list` / `dict` / `set` / `bytes` / `bytearray` are implemented as wrappers (composition), not STL inheritance.
 
-## 7. 型推論ルール
+## 7. Type Inference Rules
 
-- `Name`: 型環境から解決。未解決は `inference_failure`。
+- `Name`: resolved from type environment; unresolved name raises `inference_failure`.
 - `Constant`:
-- 整数リテラルは `int64`
-- 実数リテラルは `float64`, 真偽 `bool`, 文字列 `str`, `None`
+  - integer literal -> `int64`
+  - floating literal -> `float64`
+  - boolean -> `bool`
+  - string -> `str`
+  - `None`
 - `List/Set/Dict`:
-- 非空は要素型単一化で推論
-- 空は通常 `inference_failure`
-- ただし `AnnAssign` で注釈付き空コンテナは注釈型を採用
-- `Tuple`: `tuple[...]` を構成。
+  - non-empty: inferred by element type unification
+  - empty: usually `inference_failure`
+  - exception: annotated empty containers in `AnnAssign` use annotation type
+- `Tuple`: becomes `tuple[...]`.
 - `BinOp`:
-- 数値演算 `+ - * % // /` を推論
-- 混在数値は `float32/float64` を含む型昇格を行い `casts` を付与
-- `Path / str` は `Path`
-- `str * int`, `list[T] * int` をサポート
-- ビット演算 `& | ^ << >>` は整数型として推論
-  - 注: `%` の Python/C++ 差異は EAST では吸収しない。
-  - EAST は `%` を演算子として保持し、生成器側が `--mod-mode`（`native` / `python`）に応じて出力を切り替える。
+  - numeric operators `+ - * % // /`
+  - mixed numerics perform promotion (including `float32/float64`) with `casts`
+  - `Path / str` -> `Path`
+  - supports `str * int` and `list[T] * int`
+  - bit operations `& | ^ << >>` infer integer types
+  - note: `%` Python/C++ semantic difference is not absorbed in EAST
+  - EAST preserves `%` as operator; generator switches by `--mod-mode` (`native` / `python`)
 - `Subscript`:
-- `list[T][i] -> T`
-- `dict[K,V][k] -> V`
-- `str[i] -> str`
-- `list/str` スライスは同型
-  - EAST 自体は `Subscript`/`Slice` を保持し、`str-index-mode` / `str-slice-mode` の意味論は生成器側で適用する。
-  - 現行 C++ 生成器では `byte` / `native` を実装済み、`codepoint` は未実装。
+  - `list[T][i] -> T`
+  - `dict[K,V][k] -> V`
+  - `str[i] -> str`
+  - `list/str` slice keeps same container type
+  - EAST keeps `Subscript` / `Slice`; generator applies `str-index-mode` / `str-slice-mode`
+  - current C++ generator implements `byte` / `native`; `codepoint` not implemented
 - `Call`:
-- 既知: `int`, `float`, `bool`, `str`, `bytes`, `bytearray`, `len`, `range`, `min`, `max`, `round`, `print`, `write_rgb_png`, `save_gif`, `grayscale_palette`, `perf_counter`, `Path`, `Exception`, `RuntimeError`
-- `float(...)`, `round(...)`, `perf_counter()`, `math.*` 主要関数は `float64`
-- `bytes(...)` / `bytearray(...)` は `list[uint8]`
-- クラスコンストラクタ/メソッドは事前収集した型情報で推論
-- `ListComp`: 単一ジェネレータのみ対応
-- `BoolOp` (`or`/`and`) は EAST 上では `kind: BoolOp` として保持する。
-  - C++ 生成時に、期待型が `bool` のときは真偽演算（`&&`/`||`）として出力する。
-  - 期待型が `bool` 以外のときは Python の値選択式として出力する。
+  - known: `int`, `float`, `bool`, `str`, `bytes`, `bytearray`, `len`, `range`, `min`, `max`, `round`, `print`, `write_rgb_png`, `save_gif`, `grayscale_palette`, `perf_counter`, `Path`, `Exception`, `RuntimeError`
+  - `float(...)`, `round(...)`, `perf_counter()`, and major `math.*` functions infer `float64`
+  - `bytes(...)` / `bytearray(...)` infer `list[uint8]`
+  - class constructors/methods infer from pre-collected class type info
+- `ListComp`: only single-generator form is supported.
+- `BoolOp` (`or` / `and`) is preserved as `kind: BoolOp` in EAST.
+  - When expected type is `bool`, C++ emits boolean ops (`&&` / `||`).
+  - Otherwise it emits Python-style value-selection form:
     - `a or b` -> `truthy(a) ? a : b`
     - `a and b` -> `truthy(a) ? b : a`
-  - 値選択の判定・出力は `src/py2cpp.py` 側で行い、EAST では追加ノードへ lower しない。
+  - Selection logic is handled by `src/py2cpp.py`; EAST does not lower this into new nodes.
 
-`range` について:
+About `range`:
 
-- 入力AST上で `Call(Name("range"), ...)` が現れても、最終EASTでは専用ノード（例: `ForRange` / `RangeExpr` 等）へ変換し、直接の `Call` として残さない。
-- `range` のまま残るケースは EAST 構築不備として扱い、後段で暗黙救済しない。
+- Even if input AST contains `Call(Name("range"), ...)`, final EAST converts it into dedicated nodes (`ForRange` / `RangeExpr`, etc.) and does not keep direct `Call` forms.
+- Leaving `range` as raw call in EAST is treated as an EAST construction defect; downstream layers do not perform implicit rescue.
 
-`lowered_kind: BuiltinCall` について:
+About `lowered_kind: BuiltinCall`:
 
-- EAST は `runtime_call` を付与して後段実装の分岐を削減する。
-- 実装済みの主要 runtime_call 例:
+- EAST attaches `runtime_call` to reduce downstream branching.
+- Implemented major `runtime_call` examples:
   - `py_print`, `py_len`, `py_to_string`, `static_cast`
   - `py_min`, `py_max`, `perf_counter`
   - `list.append`, `list.extend`, `list.pop`, `list.clear`, `list.reverse`, `list.sort`
@@ -209,14 +211,14 @@
   - `write_rgb_png`, `save_gif`, `grayscale_palette`
   - `py_isdigit`, `py_isalpha`
 
-`dict[str, Any]` の `.get(...).items()` について:
+For `.get(...).items()` on `dict[str, Any]`:
 
-- C++ 生成時は `dict[str, object]` を前提に、`Dict`/`List` リテラル値を `make_object(...)` で再帰変換して初期化する。
-- `.get(..., {})` で辞書既定値を与える場合は `dict[str, object]` へ正規化して扱う。
+- C++ generation assumes `dict[str, object]` and recursively converts `Dict`/`List` literal values via `make_object(...)` at initialization.
+- When `.get(..., {})` supplies dict default values, it is normalized and handled as `dict[str, object]`.
 
-## 8. cast仕様
+## 8. Cast Specification
 
-数値昇格時に `casts` を出力する。
+`casts` are emitted during numeric promotion.
 
 ```json
 {
@@ -227,89 +229,88 @@
 }
 ```
 
-## 9. 引数 readonly/mutable 判定
+## 9. Argument readonly/mutable Classification
 
-`ArgUsageAnalyzer` により `arg_usage` を付与する。
+`ArgUsageAnalyzer` attaches `arg_usage`.
 
-- `mutable` 条件
-- 引数自体への代入/拡張代入
-- 引数属性・添字への書き込み
-- 破壊的メソッド呼び出し（`append`, `extend`, `pop`, `write_text`, `mkdir` など）
-- 純粋組み込み以外への引数渡し
-- それ以外は `readonly`
+- `mutable` conditions:
+  - assignment/aug-assignment to argument itself
+  - writes to argument attributes/subscripts
+  - destructive method calls (`append`, `extend`, `pop`, `write_text`, `mkdir`, etc.)
+  - passing argument to non-pure builtins
+- all other cases are `readonly`
 
-`borrow_kind` はこの判定を反映する。
+`borrow_kind` reflects this classification.
 
-## 10. 対応文
+## 10. Supported Statements
 
 - `FunctionDef`, `ClassDef`, `Return`
 - `Assign`, `AnnAssign`, `AugAssign`
 - `Expr`, `If`, `For`, `ForRange`, `While`, `Try`, `Raise`
 - `Import`, `ImportFrom`, `Pass`, `Break`, `Continue`
 
-補足:
+Notes:
+- `Assign` currently supports single-target statement form.
+- Tuple assignment is supported (examples: `x, y = ...`, `a[i], a[j] = ...`).
+- For name targets, type environment is updated when RHS tuple type is known.
+- `from module import *` (wildcard import) is unsupported.
 
-- `Assign` は単一ターゲット文のみ。
-- タプル代入は対応（例: `x, y = ...`, `a[i], a[j] = ...`）。
-- 名前ターゲットについては RHS タプル型が分かる場合に型環境を更新。
-- `from module import *`（ワイルドカード import）は未対応。
+## 11. Pre-collection of Class Info
 
-## 11. クラス情報の事前収集
+Before generation, collect:
 
-生成前に以下を収集する。
+- class names
+- simple inheritance relations
+- method return types
+- field types (`AnnAssign` in class body / assignment analysis in `__init__`)
 
-- クラス名
-- 単純継承関係
-- メソッド戻り値型
-- フィールド型（クラス本体 `AnnAssign` / `__init__` 代入解析）
+## 12. Error Contract
 
-## 12. エラー契約
-
-`EastBuildError` は `kind`, `message`, `source_span`, `hint` を持つ。
+`EastBuildError` has `kind`, `message`, `source_span`, and `hint`.
 
 - `inference_failure`
 - `unsupported_syntax`
 - `semantic_conflict`
 
-`SyntaxError` も同形式に変換する。
+`SyntaxError` is converted into the same schema.
 
-## 13. 人間可読ビュー
+## 13. Human-readable View
 
-- `--human-output` で C++風擬似ソースを出力する。
-- 目的はレビュー容易化であり、C++としての厳密コンパイル性は保証しない。
-- EASTの `source_span`, `resolved_type`, `ForRange`, `renamed_symbols` 等を保持して可視化する。
+- `--human-output` emits C++-style pseudo source.
+- Goal is reviewability; strict C++ compilability is not guaranteed.
+- It visualizes EAST fields such as `source_span`, `resolved_type`, `ForRange`, and `renamed_symbols`.
 
-## 14. 既知の制約
+## 14. Known Limitations
 
-- Python全構文網羅ではない（Pytra対象サブセット）。
-- 高度なデータフロー解析（厳密エイリアス/副作用伝播）は未実装。
-- `borrow_kind=move` は未使用。
+- Not full Python syntax coverage (Pytra subset).
+- Advanced dataflow analysis (strict alias/effect propagation) is not implemented.
+- `borrow_kind=move` is currently unused.
 
-## 15. 検証状態
+## 15. Verification Status
 
-- `test/fixtures` 32/32 を `src/pytra/compiler/east.py` で変換可能（`ok: true`）
-- `sample/py` 16/16 を `src/pytra/compiler/east.py` で変換可能（`ok: true`）
-- `sample/py` 16/16 を `src/py2cpp.py` で「変換→コンパイル→実行」可能（`ok`）
+- `test/fixtures`: 32/32 convertible by `src/pytra/compiler/east.py` (`ok: true`)
+- `sample/py`: 16/16 convertible by `src/pytra/compiler/east.py` (`ok: true`)
+- `sample/py`: 16/16 pass "convert -> compile -> run" via `src/py2cpp.py` (`ok`)
 
-## 16. 段階導入計画（EAST移行）
+## 16. Phased Rollout Plan (EAST Migration)
 
-- Phase 1: EAST 生成器を先行実装し、型解決・rename・cast 明示を EAST 側へ集約する。
-- Phase 2: 各バックエンドは AST 直読み依存を減らし、EAST 入力前提へ段階移行する。
-- Phase 3: AST 直読み経路を廃止し、EAST を唯一の中間表現として運用する。
+- Phase 1: implement EAST generator first and centralize type resolution, rename, and cast materialization in EAST.
+- Phase 2: each backend gradually reduces direct AST dependency and migrates to EAST input.
+- Phase 3: retire direct-AST paths and operate EAST as the sole intermediate representation.
 
-補足:
-- 各フェーズの進行管理は `docs/todo.md` で行う。
-- 詳細な実装分担（emitter/profile/hooks）は `docs/spec-dev.md` に従う。
+Notes:
+- Progress tracking per phase is maintained in `docs/todo.md`.
+- Detailed implementation split (emitter/profile/hooks) follows `docs/spec-dev.md`.
 
-## 17. EAST導入の受け入れ基準
+## 17. Acceptance Criteria for EAST Adoption
 
-- 既存 `test/fixtures` が EAST 経由で変換可能であること。
-- 推論失敗時に、`kind` / `source_span` / `hint` を含むエラーを返すこと。
-- 仕様差分は文書化され、後段エミッタで暗黙救済しないこと（例: `range` の生 Call を残さない）。
-- 共通ランタイムケース（`math`, `pathlib` など）で、言語間の意味一致を維持できること。
+- Existing `test/fixtures` must be convertible through EAST path.
+- On inference failure, error must include `kind` / `source_span` / `hint`.
+- Spec differences must be documented; downstream emitters must not perform implicit rescue (example: never leave raw `range` calls).
+- For common runtime cases (`math`, `pathlib`, etc.), semantic consistency across languages must be preserved.
 
-## 18. 将来拡張（方針）
+## 18. Future Extensions (Policy)
 
-- `borrow_kind` は現状 `value | readonly_ref | mutable_ref` を使用し、`move` は未使用。
-- 将来的には Rust 向けの参照注釈（`&` / `&mut` 相当）へ接続可能な表現を維持する。
-  - ただし、Rust 固有の最終判断（所有権・ライフタイム詳細）はバックエンド責務とする。
+- Current `borrow_kind` values in use are `value | readonly_ref | mutable_ref`; `move` remains unused.
+- Future Rust-oriented reference annotations (`&` / `&mut` equivalents) can be connected to this representation.
+  - Final Rust-specific decisions (ownership/lifetime details) remain backend responsibility.

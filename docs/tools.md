@@ -1,53 +1,55 @@
-# `tools/` スクリプト一覧
+# `tools/` Script Index
 
-<a href="../docs-en/tools.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/tools.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-`tools/` は、Pytra の開発運用を自動化するための補助スクリプト群です。  
-目的は次の 3 つです。
+`tools/` is a set of helper scripts that automates Pytra development operations.  
+Its goals are:
 
-- 回帰確認を短時間で繰り返せるようにする。
-- selfhost の調査・比較・ビルドを定型化する。
-- `src/pytra/` 正本から C++ ランタイム生成物を更新・検証する。
+- Enable quick, repeatable regression checks.
+- Standardize selfhost investigation, comparison, and build workflows.
+- Update and validate generated C++ runtime artifacts from the `src/pytra/` source of truth.
 
-## 1. 日常運用で使うもの
+## 1. Daily Operations
 
 - `tools/run_local_ci.py`
-  - 目的: ローカル最小 CI（transpile 回帰 + unit + selfhost build + diff）を一括実行する。
+  - Purpose: Run minimal local CI in one pass (transpile regressions + unit tests + selfhost build + diff).
 - `tools/check_py2cpp_transpile.py`
-  - 目的: `test/fixtures/` を `py2cpp.py` で一括変換し、失敗ケースを検出する。
+  - Purpose: Batch-transpile `test/fixtures/` with `py2cpp.py` and detect failures.
 - `tools/verify_sample_outputs.py`
-  - 目的: `sample/py` の Python 実行結果と C++ 実行結果（stdout/画像）を比較する。
-  - 主要オプション: `--samples`, `--compile-flags`, `--ignore-stdout`
+  - Purpose: Compare Python and C++ execution results for `sample/py` (`stdout`/images).
+  - Main options: `--samples`, `--compile-flags`, `--ignore-stdout`
 - `tools/verify_image_runtime_parity.py`
-  - 目的: 画像ランタイム（PNG/GIF）の Python 正本と C++ 側の一致を確認する。
+  - Purpose: Verify parity between Python source-of-truth image runtime (PNG/GIF) and C++ side.
 
-## 2. selfhost 関連
+## 2. Selfhost Related
 
 - `tools/build_selfhost.py`
-  - 目的: selfhost 用 `selfhost/py2cpp.out` を生成する。
+  - Purpose: Build `selfhost/py2cpp.out` for selfhost.
 - `tools/prepare_selfhost_source.py`
-  - 目的: `CodeEmitter` などを selfhost 用ソースへ展開し、自己完結化する。
+  - Purpose: Expand `CodeEmitter` and related pieces into selfhost-ready source for self-contained execution.
 - `tools/selfhost_transpile.py`
-  - 目的: 暫定ブリッジとして `.py -> EAST JSON -> selfhost` 経路を実行する。
+  - Purpose: Run `.py -> EAST JSON -> selfhost` path as a temporary bridge.
 - `tools/check_selfhost_cpp_diff.py`
-  - 目的: Python 版と selfhost 版の生成 C++ 差分を比較する。
-  - 主要オプション: `--mode allow-not-implemented`, `--show-diff`, `--selfhost-driver`
+  - Purpose: Compare generated C++ diffs between Python and selfhost versions.
+  - Main options: `--mode allow-not-implemented`, `--show-diff`, `--selfhost-driver`
 - `tools/summarize_selfhost_errors.py`
-  - 目的: selfhost ビルドログのエラーをカテゴリ別に集計する。
+  - Purpose: Aggregate selfhost build errors by category.
 - `tools/selfhost_error_hotspots.py`
-  - 目的: エラー集中箇所を関数単位で集約する。
+  - Purpose: Aggregate error hotspots by function.
 - `tools/selfhost_error_report.py`
-  - 目的: selfhost エラー解析結果のレポートを整形出力する。
+  - Purpose: Format and output reports from selfhost error analyses.
 
-## 3. 言語間確認
+## 3. Cross-Language Verification
+
 - `tools/runtime_parity_check.py`
-  - 目的: 複数ターゲット言語でのランタイム平準化チェックを実行する。
+  - Purpose: Run runtime normalization/parity checks across multiple target languages.
 
-## 4. 更新ルール
+## 4. Update Rules
 
-- `tools/` に新しいスクリプトを追加した場合は、この `docs/tools.md` を同時に更新します。
-- スクリプトの目的は「何を自動化するために存在するか」を 1 行で明記します。
-- 破壊的変更（引数仕様の変更、廃止、統合）がある場合は、`docs/how-to-use.md` の関連コマンド例も同期更新します。
+- When adding a new script under `tools/`, update this `docs/tools.md` at the same time.
+- For each script, explicitly state in one line what automation purpose it serves.
+- If there are breaking changes (argument changes, deprecations, consolidation), synchronize related command examples in `docs/how-to-use.md`.
+

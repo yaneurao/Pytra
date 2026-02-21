@@ -39,7 +39,7 @@ Python から C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin への変�
 
 ## 実行速度の比較
 
-Pythonで書かれた[サンプルコード](docs/sample-code.md)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒）
+Pythonで書かれた[サンプルコード](docs-jp/sample-code.md)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒）
 
 |No.|内容|Python| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
@@ -515,14 +515,14 @@ if __name__ == "__main__":
 
 利用時によく参照する順で、関連ドキュメントをまとめています。
 
-- まず使い方を確認する: [使い方ガイド](docs/how-to-use.md)
-- 開発補助スクリプト一覧を確認する: [ツール一覧](docs/tools.md)
-- オプション設計（性能/互換性トレードオフ）を確認する: [オプション仕様](docs/spec-options.md)
-- ランタイム配置と include 規約を確認する: [ランタイム仕様](docs/spec-runtime.md)
-- 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](docs/pytra-readme.md)
-- サンプル一覧と概要を確認する: [サンプルコード案内](docs/sample-code.md)
-- 仕様・制約・構成・運用ルールを確認する: [仕様書トップ](docs/spec.md)
-- 開発の動機と設計理念: [開発思想](docs/philosophy.md)
+- まず使い方を確認する: [使い方ガイド](docs-jp/how-to-use.md)
+- 開発補助スクリプト一覧を確認する: [ツール一覧](docs-jp/tools.md)
+- オプション設計（性能/互換性トレードオフ）を確認する: [オプション仕様](docs-jp/spec-options.md)
+- ランタイム配置と include 規約を確認する: [ランタイム仕様](docs-jp/spec-runtime.md)
+- 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](docs-jp/pytra-readme.md)
+- サンプル一覧と概要を確認する: [サンプルコード案内](docs-jp/sample-code.md)
+- 仕様・制約・構成・運用ルールを確認する: [仕様書トップ](docs-jp/spec.md)
+- 開発の動機と設計理念: [開発思想](docs-jp/philosophy.md)
 
 ## ライセンス
 

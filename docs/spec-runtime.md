@@ -1,65 +1,64 @@
-# ランタイムの仕様について
+# Runtime Specification
 
-<a href="../docs-en/spec-runtime.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/spec-runtime.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-### 1. 生成物と手書き実装の責務分離を明文化する
+### 1. Clarify Responsibility Split Between Generated Artifacts and Handwritten Implementations
 
-- 自動生成:
+- Auto-generated:
   - `runtime/cpp/pytra/std/<mod>.h`
   - `runtime/cpp/pytra/std/<mod>.cpp`
   - `runtime/cpp/pytra/utils/<mod>.h`
   - `runtime/cpp/pytra/utils/<mod>.cpp`
-  - 例: `runtime/cpp/pytra/std/json.h/.cpp`, `runtime/cpp/pytra/std/typing.h/.cpp`,
-    `runtime/cpp/pytra/utils/assertions.h/.cpp`
-  - `runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/std/math.py` を `src/py2cpp.py` で解釈した結果（関数シグネチャ）から生成する。
-- 手書き許可:
+  - Examples: `runtime/cpp/pytra/std/json.h/.cpp`, `runtime/cpp/pytra/std/typing.h/.cpp`, `runtime/cpp/pytra/utils/assertions.h/.cpp`
+  - `runtime/cpp/pytra/std/math.h` / `math.cpp` is generated from function signatures interpreted from `src/pytra/std/math.py` by `src/py2cpp.py`.
+- Handwritten allowed:
   - `runtime/cpp/pytra/std/<mod>-impl.cpp`
   - `runtime/cpp/pytra/utils/<mod>-impl.cpp`
-- ルール:
-  - `<mod>.h/.cpp` は常に再生成対象（手編集禁止）。
-  - `*-impl.cpp` は手編集可能（再生成対象外）。
-  - `<mod>.cpp` から `*-impl.cpp` の関数へ委譲する。
-  - 生成器は `src/py2cpp.py` のみを正とし、特定モジュール専用の生成スクリプトは追加しない。
-  - 既定出力先への生成は `py2cpp.py --emit-runtime-cpp` を使う。
+- Rules:
+  - `<mod>.h/.cpp` are always regeneration targets (no manual edits).
+  - `*-impl.cpp` is manually editable (excluded from regeneration).
+  - `<mod>.cpp` delegates to functions in `*-impl.cpp`.
+  - `src/py2cpp.py` is the single source-of-truth generator. Do not add per-module ad-hoc generators.
+  - Use `py2cpp.py --emit-runtime-cpp` for generation to default runtime locations.
 
-### 2. include規約を固定する
+### 2. Fix Include Conventions
 
-- 生成コード側で import に対応して出力する include は次で固定する。
+- Includes emitted for imports are fixed as follows:
   - `from pytra.std.glob import glob` -> `#include "pytra/std/glob.h"`
   - `from pytra.utils.gif import save_gif` -> `#include "pytra/utils/gif.h"`
-- トランスパイラが include パスを 1 方式に固定し、旧配置との混在を禁止する。
-- ルール追加:
-  - Python の import 名と C++ include パスは 1 対 1 対応にする。
-  - 例: `import pytra.std.math` -> `#include "pytra/std/math.h"`。
-  - 例: `import pytra.utils.png` -> `#include "pytra/utils/png.h"`。
-  - コンパイル時は `src/runtime/cpp` を include ルート（`-I`）として渡す。
-  - 組み込み基盤ヘッダは `runtime/cpp/pytra/built_in/py_runtime.h` を正本とする。
-  - `runtime/cpp/pytra/built_in/*.h` の相互 include は同一ディレクトリ相対（例: `#include "str.h"`）で記述する。
+- Transpiler must fix include paths to one convention and disallow mixing with legacy layouts.
+- Additional rules:
+  - Python import names and C++ include paths must be one-to-one.
+  - Example: `import pytra.std.math` -> `#include "pytra/std/math.h"`
+  - Example: `import pytra.utils.png` -> `#include "pytra/utils/png.h"`
+  - Pass `src/runtime/cpp` as include root (`-I`) at compile time.
+  - Canonical built-in foundation header: `runtime/cpp/pytra/built_in/py_runtime.h`
+  - Mutual includes inside `runtime/cpp/pytra/built_in/*.h` must be same-directory relative (example: `#include "str.h"`).
 
-#### 2.0 built_in ヘッダの guard ルール
+#### 2.0 Guard Rule for `built_in` Headers
 
-- `runtime/cpp/pytra/built_in/*.h` の include guard は、`runtime/cpp/pytra/` 以降の相対パスから生成する。
-  - 変換規則: `/` と `.` と `-` を `_` に置換し、英大文字化し、先頭に `PYTRA_` を付ける。
-  - 例: `runtime/cpp/pytra/built_in/list.h` -> `PYTRA_BUILT_IN_LIST_H`
-  - 例: `runtime/cpp/pytra/built_in/py_runtime.h` -> `PYTRA_BUILT_IN_PY_RUNTIME_H`
+- Include guards in `runtime/cpp/pytra/built_in/*.h` must be derived from relative paths under `runtime/cpp/pytra/`.
+  - Conversion rule: replace `/`, `.`, `-` with `_`, uppercase, and prepend `PYTRA_`.
+  - Example: `runtime/cpp/pytra/built_in/list.h` -> `PYTRA_BUILT_IN_LIST_H`
+  - Example: `runtime/cpp/pytra/built_in/py_runtime.h` -> `PYTRA_BUILT_IN_PY_RUNTIME_H`
 
-#### 2.1 モジュール名変換ルール（自作モジュール向け）
+#### 2.1 Module Name Mapping Rules (for User Modules)
 
-基本ルール:
-- `pytra.std.<mod>` は `pytra::std::<mod>` に対応する。
-- `pytra.utils.<mod>` は `pytra::utils::<mod>` に対応する。
-- include パスは `.` を `/` に変換して `.h` を付ける。
-- 末尾が `_impl` のモジュールだけは、include パスで `_impl -> -impl` に写像する。
-- namespace は `_impl` のまま維持する（`-impl` にはしない）。
-- `.h` 出力は「モジュール単位」で作成される。
-  - 生成先: `runtime/cpp/pytra/std/<mod>.h` または `runtime/cpp/pytra/utils/<mod>.h`
-  - モジュールのトップレベル関数は宣言になる（定義は `.cpp`）
-  - モジュールのトップレベル定数/変数は `extern` 宣言になる（実体は `.cpp`）
+Base rules:
+- `pytra.std.<mod>` maps to `pytra::std::<mod>`.
+- `pytra.utils.<mod>` maps to `pytra::utils::<mod>`.
+- Include paths are derived by replacing `.` with `/` and appending `.h`.
+- Only modules ending with `_impl` map `_impl -> -impl` in include paths.
+- Namespace keeps `_impl` unchanged (never `-impl`).
+- `.h` output is generated per module.
+  - Output: `runtime/cpp/pytra/std/<mod>.h` or `runtime/cpp/pytra/utils/<mod>.h`
+  - Top-level module functions become declarations (`.cpp` has definitions).
+  - Top-level module constants/variables become `extern` declarations (`.cpp` has storage definitions).
 
-例1: 標準モジュール（通常）
+Example 1: standard module (normal)
 
 ```python
 import pytra.std.time as t
@@ -76,7 +75,7 @@ double now() {
 }
 ```
 
-`pytra.std.time` 側の `.h` は次の形になる:
+`pytra.std.time` header shape:
 
 ```cpp
 // runtime/cpp/pytra/std/time.h
@@ -85,7 +84,7 @@ double perf_counter();
 }  // namespace pytra::std::time
 ```
 
-例2: ランタイムモジュール（通常）
+Example 2: runtime module (normal)
 
 ```python
 import pytra.utils.png as png
@@ -102,7 +101,7 @@ void save(const str& path, int64 w, int64 h, const bytes& pixels) {
 }
 ```
 
-例3: `_impl` 付きモジュール（特別規則）
+Example 3: `_impl` module (special rule)
 
 ```python
 import pytra.std.math_impl as _m
@@ -112,14 +111,14 @@ def root(x: float) -> float:
 ```
 
 ```cpp
-#include "pytra/std/math-impl.h"  // include は -impl
+#include "pytra/std/math-impl.h"  // include uses -impl
 
 float64 root(float64 x) {
-    return pytra::std::math_impl::sqrt(x);  // namespace は _impl
+    return pytra::std::math_impl::sqrt(x);  // namespace keeps _impl
 }
 ```
 
-例4: ユーザー定義 native モジュールを追加する場合
+Example 4: adding user-defined native module
 
 ```python
 import pytra.std.foo_impl as _f
@@ -136,7 +135,7 @@ float64 f(float64 x) {
 }
 ```
 
-定数を持つモジュールの `.h` は `extern` 宣言になる:
+Module with constants has `extern` declarations in `.h`:
 
 ```cpp
 // runtime/cpp/pytra/std/math.h
@@ -147,9 +146,9 @@ double sqrt(double x);
 }  // namespace pytra::std::math
 ```
 
-#### 2.2 Python入力から `.h/.cpp` が生成される流れ（定数を含む）
+#### 2.2 `.h/.cpp` Generation Flow from Python Input (Including Constants)
 
-次の Python を入力として `py2cpp.py` を実行すると、`.h` と `.cpp` の両方が生成される。
+When the following Python module is passed to `py2cpp.py`, both `.h` and `.cpp` are generated.
 
 ```python
 # src/pytra/std/math.py
@@ -162,20 +161,20 @@ def sqrt(x: float) -> float:
     return _m.sqrt(x)
 ```
 
-生成コマンド（例）:
+Generation commands (examples):
 
 ```bash
-# 既定パスへ直接生成
+# Generate directly into default runtime path
 python3 src/py2cpp.py src/pytra/std/math.py --emit-runtime-cpp
 
-# 任意パスへ生成
+# Generate to arbitrary path
 python3 src/py2cpp.py src/pytra/std/math.py \
   -o /tmp/math.cpp \
   --header-output /tmp/math.h \
   --top-namespace pytra::std::math
 ```
 
-生成 `.h` の例（定数宣言 + 関数宣言）:
+Generated `.h` example (constant declarations + function declarations):
 
 ```cpp
 namespace pytra::std::math {
@@ -188,7 +187,7 @@ double sqrt(double x);
 }  // namespace pytra::std::math
 ```
 
-生成 `.cpp` の例（定数定義 + 関数定義）:
+Generated `.cpp` example (constant definitions + function definitions):
 
 ```cpp
 #include "pytra/std/math-impl.h"
@@ -205,93 +204,91 @@ float64 sqrt(float64 x) {
 }  // namespace pytra::std::math
 ```
 
-要点:
-- Python のモジュール変数代入（`pi = _m.pi`）は、C++ 側では
-  - `.h`: `extern` 宣言
-  - `.cpp`: 実体定義
-  として出力される。
-- import 先が `_impl` の場合、include は `-impl.h`、namespace は `_impl` のままになる。
+Key points:
+- Python module variable assignment (`pi = _m.pi`) is emitted as:
+  - `.h`: `extern` declaration
+  - `.cpp`: storage definition
+- If import target is `_impl`, include uses `-impl.h` while namespace remains `_impl`.
 
-### 3. 自作モジュール import の生成仕様を追加する
+### 3. Add Generation Spec for User Module Imports
 
-- `import mylib` / `from mylib import f` の場合:
-  - `mylib.py` -> `mylib.h` / `mylib.cpp` を生成する。
-- 依存解決:
-  - import グラフを先に構築し、トポロジカル順で生成する。
-  - 循環 import はエラー（`input_invalid`）とする。
-- 名前衝突:
-  - `pytra.*` と同名のユーザーモジュールは禁止（`input_invalid`）。
+- For `import mylib` / `from mylib import f`:
+  - Generate `mylib.py` -> `mylib.h` / `mylib.cpp`.
+- Dependency resolution:
+  - Build import graph first, then generate in topological order.
+  - Circular import is an error (`input_invalid`).
+- Name conflict:
+  - User modules colliding with `pytra.*` names are forbidden (`input_invalid`).
 
-### 4. `*-impl.cpp` のABI境界を固定する
+### 4. Fix ABI Boundary of `*-impl.cpp`
 
-- `*-impl.cpp` に置く関数は C++ 依存の最小 primitive だけに限定する。
-  - 例: filesystem, regex, clock, process, OS API
-- それ以外のロジック（整形・変換・検証）は Python 側 (`src/pytra/utils/*.py`) に残す。
-- これにより、言語間差異を `*-impl` 層へ閉じ込める。
+- Functions in `*-impl.cpp` must be limited to C++-dependent minimal primitives.
+  - Examples: filesystem, regex, clock, process, OS APIs
+- All other logic (formatting, conversion, validation) remains in Python source-of-truth (`src/pytra/utils/*.py`).
+- This confines cross-language differences to the `*-impl` layer.
 
-### 5. 生成テンプレートの最小ルール
+### 5. Minimal Rules for Generation Templates
 
-- 生成 `<mod>.h`:
-  - 公開 API 宣言のみ
-  - include guard / namespace 定義
-  - `py2cpp.py --header-output` で EAST から生成する（手編集しない）
-- 生成 `<mod>.cpp`:
+- Generated `<mod>.h`:
+  - Public API declarations only
+  - Include guard and namespace definitions
+  - Generated from EAST via `py2cpp.py --header-output` (no manual edits)
+- Generated `<mod>.cpp`:
   - `#include "<mod>.h"`
-  - 必要なら `#include "<mod>-impl.cpp"` は行わず、関数宣言経由でリンク解決する
-  - 変換された Python ロジック本体 + `*-impl` 呼び出し
-  - `py2cpp.py -o <mod>.cpp` で生成する（手編集しない）
-  - `pytra.utils.png` / `pytra.utils.gif` は bridge 方式:
-    - 変換本体を `namespace ...::generated` に出力
-    - 公開 API (`write_rgb_png`, `save_gif`, `grayscale_palette`) は bridge 関数で型変換して公開
+  - Do not include `#include "<mod>-impl.cpp"`; use link-time resolution via declarations
+  - Contains transpiled Python logic and `*-impl` calls
+  - Generated with `py2cpp.py -o <mod>.cpp` (no manual edits)
+  - `pytra.utils.png` / `pytra.utils.gif` use bridge style:
+    - Transpiled body goes under `namespace ...::generated`
+    - Public APIs (`write_rgb_png`, `save_gif`, `grayscale_palette`) are exposed through bridge wrappers with type conversion
 
-- 予約命名:
-  - Python モジュール名の末尾 `_impl` は C++ ヘッダパスで `-impl` に写像する。
-  - 例: `import pytra.std.math_impl` -> `#include "pytra/std/math-impl.h"`
+- Reserved naming:
+  - If Python module name ends with `_impl`, map to `-impl` in C++ header path.
+  - Example: `import pytra.std.math_impl` -> `#include "pytra/std/math-impl.h"`
 
-### 6. テスト要件を仕様に含める
+### 6. Include Test Requirements in Specification
 
-- 各モジュールで最低限次を満たすこと:
-  1. Python実行結果と C++ 実行結果が一致する
-  2. `runtime/cpp/pytra/std` と `runtime/cpp/pytra/utils` に対応する import 形式（`import` / `from ... import ...`）の両方が通る
-  3. 生成物を削除して再生成しても差分が安定する（再現可能）
+Each module must satisfy at least:
+1. Python execution result matches C++ execution result.
+2. Both import forms pass for modules under `runtime/cpp/pytra/std` and `runtime/cpp/pytra/utils` (`import` and `from ... import ...`).
+3. Outputs are stable when regenerated from scratch (reproducibility).
 
-### 7. 将来の多言語展開を見据えた命名
+### 7. Naming for Future Multi-language Expansion
 
-- C++ 固有名（`-impl.cpp`）の概念は維持しつつ、他言語では同等の役割名に置換する。
-  - 例: `-impl.cs`, `-impl.rs` など
-- 仕様文書では「ネイティブ実装層（impl層）」として抽象名で定義する。
+- Keep C++-specific concept (`-impl.cpp`) and map to equivalent layer names in other languages.
+  - Example: `-impl.cs`, `-impl.rs`
+- In specification text, define this as an abstract "native implementation layer (impl layer)".
 
-### 8. 現行配置の固定
+### 8. Fix Current Layout as Canonical
 
-- C++ ランタイム実体は `runtime/cpp/pytra/std/*` と `runtime/cpp/pytra/utils/*` を正とする。
-- include は現時点で上記パスを直接参照する方式に固定する。
-- 将来レイアウト変更を行う場合は、本仕様を先に更新してから実装変更する。
+- Canonical C++ runtime implementation location is `runtime/cpp/pytra/std/*` and `runtime/cpp/pytra/utils/*`.
+- Includes are fixed to reference these paths directly for now.
+- If layout is changed in the future, update this spec first, then implementation.
 
-### 9. 命名方針
+### 9. Naming Policy
 
-- ライブラリ階層は次の2系統に統一する。
-  - `pytra.std`: Python 標準ライブラリ代替
-  - `pytra.utils`: Pytra 固有ランタイム補助
-- `utils` のような汎用名は使わず、責務が読める名前を優先する。
+- Library hierarchy is unified into two families:
+  - `pytra.std`: replacement for Python standard library
+  - `pytra.utils`: Pytra-specific runtime helpers
+- Avoid ambiguous names like plain `utils`; prefer names that describe responsibility.
 
-### 10. `pytra.*` モジュール変換方針（無視禁止）
+### 10. Conversion Policy for `pytra.*` Modules (Do Not Ignore)
 
-- `pytra.std.*` / `pytra.utils.*` は通常の Python モジュールとして扱う。
-  - `import` / モジュール変数代入 / 関数本体を「フォルダ名だけで」無視してはならない。
-  - 例: `pi = _m.pi`、`def sqrt(...): return _m.sqrt(...)` は意味を持つ記述として扱う。
-- ネイティブ実装への差し替えは、明示的境界でのみ許可する。
-  - 生成物（例: `runtime/cpp/pytra/std/math.h/.cpp`）から手書き実装（例: `py_math.h/.cpp` または `*-impl.cpp`）へ委譲する。
-  - 暗黙ルール（「このフォルダ配下は関数宣言以外を無視」など）は禁止する。
-- 公式モジュールとユーザー自作モジュールには同じ変換ルールを適用する。
-  - 公式のみ特別扱いして、ユーザー側で同等構成を再現不能にしてはならない。
+- Treat `pytra.std.*` / `pytra.utils.*` as normal Python modules.
+  - Do not ignore `import`, module variable assignments, or function bodies by folder-name heuristics.
+  - Example: `pi = _m.pi` and `def sqrt(...): return _m.sqrt(...)` are semantically meaningful.
+- Replacement with native implementation is allowed only at explicit boundaries.
+  - Delegate generated artifacts (example: `runtime/cpp/pytra/std/math.h/.cpp`) to handwritten implementations (`py_math.h/.cpp` or `*-impl.cpp`).
+  - Implicit rules such as "ignore everything except function signatures in this folder" are prohibited.
+- Apply identical conversion rules to official modules and user-authored modules.
+  - Official modules must not be special-cased in ways users cannot reproduce.
 
-### 11. C++ 側の定数/関数の受け皿
+### 11. C++ Mapping for Constants and Functions
 
-- C++ 生成側では、Python 側モジュール定義を保持したまま、必要に応じてネイティブ関数へマップする。
-- 例（`pytra.std.math`）:
-  - `pi = _m.pi` は
+- C++ generation keeps Python module definitions and maps to native functions where required.
+- Example (`pytra.std.math`):
+  - `pi = _m.pi` maps to:
     - `.h`: `extern double pi;`
     - `.cpp`: `float64 pi = py_to_float64(pytra::std::math_impl::pi);`
-    のように宣言/定義へ分離して受ける。
-  - `return _m.sqrt(x)` は `pytra::std::math_impl::sqrt(x)` 呼び出しで受ける。
-- 上記マップ先（`pytra::std::<name>_impl::*`）は手書き実装として事前に提供し、生成コードはそれを参照する。
+  - `return _m.sqrt(x)` maps to `pytra::std::math_impl::sqrt(x)`.
+- Provide mapping targets (`pytra::std::<name>_impl::*`) as handwritten implementations in advance; generated code references them.

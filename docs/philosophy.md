@@ -1,64 +1,64 @@
-# 開発思想
+# Development Philosophy
 
-<a href="../docs-en/philosophy.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/philosophy.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-Pytra は、「1つのロジックを複数言語で無理なく運用する」ことを目的にしたトランスパイラです。
+Pytra is a transpiler designed for running one logic base across multiple languages without unnecessary friction.
 
-マルチプラットフォーム開発では、用途ごとに採用言語が分かれるのが一般的です。  
-このとき同じ仕様を複数言語で再実装・再保守すると、コストだけでなく仕様差分やバグ混入のリスクが増えます。  
-Pytra は、この重複を減らすために「コアロジックを Python で書き、必要な言語へ変換する」という方針を取ります。
+In multi-platform development, different languages are typically chosen for different use cases.  
+When the same specification is reimplemented and maintained in multiple languages, costs increase, and so do risks of spec drift and bug injection.  
+To reduce this duplication, Pytra takes the approach: write core logic in Python, then transpile to the required languages.
 
-## なぜ Python AST だけでは不十分か
+## Why Python AST Alone Is Not Enough
 
-Python 標準の `ast` は構文木として有用ですが、実運用向けトランスパイルでは情報が不足します。
-主な不足点は次の通りです。
+Python's standard `ast` is useful as a syntax tree, but it lacks information needed for practical transpilation.
+Main gaps include:
 
-- コメント・空行・元のレイアウト情報を保持しないため、変換後コードを「元コードに近い形」で再現しにくい。
-- 型注釈が省略された箇所の推論結果や、必要な cast 情報を標準 AST 自体は保持しない。
-- `range` 正規化、名前衝突回避、main ガード抽出などの前処理を各バックエンドに重複実装しやすい。
-- 引数の読み取り専用性（readonly/mutable）など、最適化に効く意味情報を共通データとして渡しにくい。
+- It does not retain comments, blank lines, or original layout information, making it hard to reproduce output close to source code.
+- Standard AST itself does not retain inferred types for omitted annotations, or required cast information.
+- Preprocessing such as `range` normalization, name-collision avoidance, and main-guard extraction tends to be duplicated across backends.
+- Semantic information useful for optimization (such as readonly/mutable argument semantics) is hard to pass as shared data.
 
-これらを各言語バックエンドで個別に補うと、前処理実装が分散し、挙動差分と保守コストが増えます。  
-Pytra はこの問題を避けるため、AST の後段で共通の意味付けを確定する層を導入しています。
+If each language backend fills these gaps independently, preprocessing logic fragments, and behavior divergence plus maintenance cost increase.  
+To avoid this, Pytra introduces a layer that finalizes shared semantics after AST.
 
-## EAST中心設計
+## EAST-Centric Design
 
-EAST（Extended AST）は、このPytraのために設計した拡張抽象構文木です。  
-既存の一般規格を採用したものではなく、上記の不足を補うために定義しています。
+EAST (Extended AST) is an extended abstract syntax tree designed specifically for Pytra.  
+It is not an adopted general standard; it is defined to fill the gaps above.
 
-EAST は Python AST を置き換えるものではなく、AST の後段で意味情報を補完する層です。
+EAST does not replace Python AST. It is a post-AST layer that enriches semantic information.
 
-- 共通化: 型推論、cast 明示、`range` 正規化、名前衝突回避などを EAST 構築段階で確定する。
-- 責務分離: バックエンド（C++ など）は「EAST を対象言語へ写像する責務」に集中する。
-- 安全性: 推論が一意に確定しない場合は曖昧に生成せず、エラーとして停止する。
-- 保守性: 変換後コードは元ソースの意図（名前・コメント・空行・構造）をなるべく維持する。
+- Commonization: Finalize type inference, explicit casts, `range` normalization, name-collision avoidance, etc. during EAST construction.
+- Separation of responsibilities: Backends (e.g., C++) focus on mapping EAST into target languages.
+- Safety: If inference cannot be determined uniquely, stop with an error instead of generating ambiguous output.
+- Maintainability: Keep source intent (names, comments, blank lines, structure) as much as possible in generated code.
 
-この方針により、言語ごとの差分実装を減らし、仕様整合と性能改善を同時に進めます。
+This policy reduces language-specific diff implementations and enables both specification consistency and performance improvements.
 
-EAST の実装準拠仕様は [EAST仕様（実装準拠）](spec-east.md) を参照してください。
+For implementation-aligned EAST details, see [EAST Specification (Implementation-Aligned)](spec-east.md).
 
-## 重視していること
+## What We Prioritize
 
-- 可読性: 変換後コードが読めることを重視し、変数名・コメント・空行・構造をなるべく維持する。
-- 性能: Python 実装を C++/Rust などへ変換し、実運用で使える速度に近づける。
-- 検証容易性: Python 実行結果と変換先実行結果を比較しやすい構成を優先する。
-- 拡張性: EAST を介して、段階的に対応構文・最適化・対応言語を増やせるようにする。
+- Readability: Generated code should stay readable, preserving variable names, comments, blank lines, and structure as much as possible.
+- Performance: Transpile Python implementations to C++/Rust, etc., to approach practical runtime speed.
+- Ease of verification: Prioritize structures that make Python output vs. transpiled output comparisons easy.
+- Extensibility: Through EAST, make it possible to incrementally expand supported syntax, optimizations, and target languages.
 
-## 性能に対する姿勢
+## Performance Stance
 
-Pytra は「Pythonで書いたら遅いまま」ではなく、必要に応じてネイティブ実行系へ寄せることを狙っています。  
-最終的には、C++ で手書きした実装に近い性能を出せる変換品質を目標にしています。
+Pytra is not "Python stays slow forever"; it is designed to move toward native execution when needed.  
+The ultimate target is transpilation quality close to handwritten C++ performance.
 
-ただし、速度だけを優先して可読性や追跡可能性を失う設計は避けます。  
-運用・保守・デバッグを継続できることを前提に、段階的に最適化を進めます。
+However, designs that sacrifice readability or traceability only for speed are avoided.  
+Optimization is advanced incrementally, assuming long-term operation, maintenance, and debugging.
 
-## 開発・運用の基本方針
+## Basic Development/Operation Policy
 
-- まず正しく動くことを優先し、その後に最適化を適用する。
-- 変換ルールはできるだけ明示し、挙動の再現性を高める。
-- selfhost（トランスパイラ自身の変換）を通じて、設計の弱点を継続的に洗い出す。
+- Prioritize correctness first, then apply optimizations.
+- Make transpilation rules as explicit as possible to improve reproducibility.
+- Use selfhost (transpiling the transpiler itself) to continuously expose design weaknesses.
 
-この思想により、Pytra は単なるコード生成器ではなく、複数言語運用における実務的な土台を目指します。
+With this philosophy, Pytra aims to be not just a code generator, but a practical foundation for multi-language operations.

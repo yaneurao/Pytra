@@ -1,17 +1,17 @@
-# 目的
+# Purpose
 
-<a href="../docs-en/spec-questions.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/spec-questions.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-このドキュメントは、Codexによる作業上の質問・疑問・仕様上の懸念事項を書いておくものである。
-ここに書いておくと、人間が定期的に確認し、その内容について検討し、適切な指示を行う。
-このドキュメントはCodexが自由に編集して良い。
+This document is for recording work-related questions, uncertainties, and specification concerns during Codex tasks.
+When written here, humans can review the content periodically, discuss it, and provide appropriate instructions.
+Codex may edit this document freely.
 
-## 質問欄
+## Questions
 
-## 疑問欄
+## Uncertainties
 
-## 懸念事項
+## Concerns
 

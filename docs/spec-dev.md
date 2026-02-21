@@ -1,142 +1,142 @@
-# 実装仕様（Pytra）
+# Implementation Specification (Pytra)
 
-<a href="../docs-en/spec-dev.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/spec-dev.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-このドキュメントは、トランスパイラの実装方針・構成・変換仕様をまとめた仕様です。
+This document summarizes transpiler implementation policy, structure, and conversion rules.
 
-## 1. リポジトリ構成
+## 1. Repository Layout
 
 - `src/`
   - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`
-  - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
-  - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
-  - `profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
-  - `runtime/cpp/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: 各ターゲット言語向けランタイム補助
-  - `pytra/`: Python 側の共通ライブラリ（正式）
-- `test/`: `py`（入力）と各ターゲット言語の変換結果
-- `sample/`: 実用サンプル入力と各言語変換結果
-- `docs/`: 仕様・使い方・実装状況
+  - Place only transpiler entry scripts (`py2*.py`) directly under `src/`.
+  - `common/`: shared base implementations and utilities used across multiple languages
+  - `profiles/`: language-difference JSON for `CodeEmitter` (types/operators/runtime-call/syntax)
+  - `runtime/cpp/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: runtime helpers for each target language
+  - `pytra/`: canonical Python-side shared library
+- `test/`: `py` inputs and converted outputs for each target language
+- `sample/`: practical sample inputs and converted outputs for each language
+- `docs/`: specifications, usage guides, and implementation status
 
-### 1.1 `src/pytra/` 公開API（実装基準）
+### 1.1 `src/pytra/` Public API (Implementation Baseline)
 
-`src/pytra/` は selfhost を含む共通 Python ライブラリの正本です。  
-`_` で始まる名前は内部実装扱いとし、以下を公開APIとして扱います。
+`src/pytra/` is the source of truth for shared Python libraries including selfhost.
+Names starting with `_` are treated as internal. The following are public APIs.
 
-- トランスパイル対象コードでの標準モジュール直接 import は禁止します。
-- import は `pytra.*` とユーザー自作モジュール（`.py`）を許可します。
+- Direct import of standard library modules from transpiled code is forbidden.
+- Allowed imports are `pytra.*` and user-authored modules (`.py`).
 
 - `pytra.utils.assertions`
-  - 関数: `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
+  - Functions: `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - `pytra.std.pathlib`
   - class: `Path`
-  - メンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve`, `exists`, `mkdir`, `read_text`, `write_text`, `glob`, `cwd`
+  - Members: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve`, `exists`, `mkdir`, `read_text`, `write_text`, `glob`, `cwd`
 - `pytra.std.json`
-  - 関数: `loads`, `dumps`
+  - Functions: `loads`, `dumps`
 - `pytra.std.sys`
-  - 変数: `argv`, `path`, `stderr`, `stdout`
-  - 関数: `exit`, `set_argv`, `set_path`, `write_stderr`, `write_stdout`
+  - Variables: `argv`, `path`, `stderr`, `stdout`
+  - Functions: `exit`, `set_argv`, `set_path`, `write_stderr`, `write_stdout`
 - `pytra.std.typing`
-  - 型名: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
-  - 関数: `TypeVar`
+  - Type names: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
+  - Functions: `TypeVar`
 - `pytra.std.os`
-  - 変数: `path`（`join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`）
-  - 関数: `getcwd`, `mkdir`, `makedirs`
+  - Variable: `path` (`join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`)
+  - Functions: `getcwd`, `mkdir`, `makedirs`
 - `pytra.std.glob`
-  - 関数: `glob`
+  - Function: `glob`
 - `pytra.std.argparse`
-  - クラス: `ArgumentParser`, `Namespace`
-  - 関数: `ArgumentParser.add_argument`, `ArgumentParser.parse_args`
+  - Classes: `ArgumentParser`, `Namespace`
+  - Functions: `ArgumentParser.add_argument`, `ArgumentParser.parse_args`
 - `pytra.std.re`
-  - 定数: `S`
-  - クラス: `Match`
-  - 関数: `match`, `sub`
+  - Constant: `S`
+  - Class: `Match`
+  - Functions: `match`, `sub`
 - `pytra.std.dataclasses`
-  - デコレータ: `dataclass`
+  - Decorator: `dataclass`
 - `pytra.std.enum`
-  - クラス: `Enum`, `IntEnum`, `IntFlag`
+  - Classes: `Enum`, `IntEnum`, `IntFlag`
 - `pytra.utils.png`
-  - 関数: `write_rgb_png`
+  - Function: `write_rgb_png`
 - `pytra.utils.gif`
-  - 関数: `grayscale_palette`, `save_gif`
+  - Functions: `grayscale_palette`, `save_gif`
 - `pytra.compiler.east`
-  - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
-  - 関数: `convert_source_to_east`, `convert_source_to_east_self_hosted`, `convert_source_to_east_with_backend`, `convert_path`, `render_east_human_cpp`, `main`
+  - Classes/constants: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
+  - Functions: `convert_source_to_east`, `convert_source_to_east_self_hosted`, `convert_source_to_east_with_backend`, `convert_path`, `render_east_human_cpp`, `main`
 - `pytra.compiler.east_parts.east_io`
-  - 関数: `extract_module_leading_trivia`, `load_east_from_path`
+  - Functions: `extract_module_leading_trivia`, `load_east_from_path`
 
-### enum サポート（現状）
+### Current enum Support
 
-- 入力側は `from pytra.std.enum import Enum, IntEnum, IntFlag` を使用します（標準 `enum` は使用不可）。
-- `Enum` / `IntEnum` / `IntFlag` のクラス本体は `NAME = expr` 形式のメンバー定義をサポートします。
-- C++ 生成では `enum class` へ lower します。
-  - `IntEnum` / `IntFlag` には `int64` との比較演算子を補助生成します。
-  - `IntFlag` には `|`, `&`, `^`, `~` の演算子を補助生成します。
+- Input side uses `from pytra.std.enum import Enum, IntEnum, IntFlag` (standard `enum` module is not allowed).
+- Class bodies of `Enum` / `IntEnum` / `IntFlag` support `NAME = expr` member definitions.
+- C++ lowering uses `enum class`.
+  - `IntEnum` / `IntFlag` generate helper comparison operators with `int64`.
+  - `IntFlag` generates helper operators for `|`, `&`, `^`, `~`.
 
-## 2. C# 変換仕様（`py2cs.py`）
+## 2. C# Conversion Spec (`py2cs.py`)
 
-- Python AST を解析し、`Program` クラスを持つ C# コードを生成します。
-- `import` / `from ... import ...` は `using` へ変換します。
-- 主な型対応:
+- Parses Python AST and generates C# code with a `Program` class.
+- Converts `import` / `from ... import ...` into `using`.
+- Main type mapping:
   - `int -> int`
   - `float -> double`
   - `str -> string`
   - `bool -> bool`
-  - `None -> void`（戻り値注釈時）
-- class member は `public static` に変換します。
-- `__init__` で初期化される `self` 属性はインスタンスメンバーとして生成します。
+  - `None -> void` (for return annotation)
+- Class members are emitted as `public static`.
+- `self` attributes initialized in `__init__` are generated as instance members.
 
-## 3. C++ 変換仕様（`py2cpp.py`）
+## 3. C++ Conversion Spec (`py2cpp.py`)
 
-- Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
-- 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は `docs/spec-py2cpp-support.md` を正として管理します。
-- 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
-- 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/pytra/built_in/py_runtime.h` 側を利用します。
-- `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
-  - C++ 側で必要な処理は、これら Python 正本のトランスパイル結果を利用します。
-- class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
-- class member は `inline static` として生成します。
-- `@dataclass` はフィールド定義とコンストラクタ生成を行います。
-- `raise` / `try` / `except` / `while` をサポートします。
-- list/str 添字境界チェックは `--bounds-check-mode` で制御します。
-  - `off`（既定）: 通常の `[]` アクセスを生成します。
-  - `always`: 実行時チェック付きの `py_at_bounds` を生成します。
-  - `debug`: デバッグビルド時のみチェックする `py_at_bounds_debug` を生成します。
-- `//`（floor division）は `--floor-div-mode` で制御します。
-  - `native`（既定）: C++ の `/` をそのまま生成します。
-  - `python`: Python 準拠の floor division になるように `py_floordiv` を生成します。
-- `%`（剰余）は `--mod-mode` で制御します。
-  - `native`（既定）: C++ の `%` をそのまま生成します。
-  - `python`: Python 準拠の剰余意味論になるようにランタイム補助を挟みます。
-- `int` 相当の出力幅は `--int-width` で制御します。
-  - `64`（既定）: `int64`/`uint64` を出力します。
-  - `32`: `int32`/`uint32` を出力します。
-  - `bigint`: 未実装（指定時エラー）。
-- 文字列添字/スライスは次で制御します。
-  - `--str-index-mode {byte,native}`（`codepoint` は未実装）
-  - `--str-slice-mode {byte}`（`codepoint` は未実装）
-  - 現行の `byte` / `native` では、`str[i]` の返り値型は `str`（1文字）です。
-  - 添字境界外挙動は `--bounds-check-mode` に従います（`off`/`always`/`debug`）。
-- 生成コード最適化は `-O0`〜`-O3` で制御します。
-  - `-O0`: 最適化なし（デバッグ/差分調査向け）
-  - `-O1`: 軽量最適化
-  - `-O2`: 中程度の最適化
-  - `-O3`（既定）: 積極最適化
-- 生成 C++ のトップ namespace は `--top-namespace NS` で指定できます。
-  - 未指定時（既定）はトップ namespace なし。
-  - 指定時は `main` をグローバルに残し、`NS::__pytra_main(...)` を呼び出します。
-- list/str の負数添字（例: `a[-1]`）は `--negative-index-mode` で制御します。
-  - デフォルトは `const_only`（定数の負数添字のみ Python 互換処理を有効化）。
-  - `always`: すべての添字アクセスで Python 互換の負数添字処理を有効化。
-  - `off`: Python 互換の負数添字処理を行わず、通常の `[]` を生成。
-- PNG 画像の一致判定は、ファイルバイト列の完全一致を基準とします。
-- GIF 画像の一致判定も、ファイルバイト列の完全一致を基準とします。
+- Parses Python AST and generates a single `.cpp` (with required includes).
+- Detailed support granularity (`enumerate(start)`, `lambda`, comprehensions, etc.) is managed in `docs/spec-py2cpp-support.md`.
+- Generated code uses runtime helpers under `src/runtime/cpp/`.
+- Helper functions are not inlined into generated `.cpp`; use `runtime/cpp/pytra/built_in/py_runtime.h`.
+- Not only `json`: standard-library-equivalent features use `src/pytra/std/*.py` as source of truth, and should not be reimplemented independently in `runtime/cpp`.
+  - C++ side should use transpiled results of these Python source modules.
+- Classes are emitted as C++ classes inheriting `pytra::gc::PyObj` (except exception classes).
+- Class members are emitted as `inline static`.
+- `@dataclass` generates field definitions and constructors.
+- Supports `raise` / `try` / `except` / `while`.
+- list/string bounds checks are controlled by `--bounds-check-mode`.
+  - `off` (default): normal `[]` access
+  - `always`: runtime-checked `py_at_bounds`
+  - `debug`: debug-build-only checked `py_at_bounds_debug`
+- `//` floor division is controlled by `--floor-div-mode`.
+  - `native` (default): emit C++ `/` directly
+  - `python`: emit `py_floordiv` to follow Python floor-division semantics
+- `%` modulo is controlled by `--mod-mode`.
+  - `native` (default): emit C++ `%` directly
+  - `python`: insert runtime helper for Python modulo semantics
+- Output integer width is controlled by `--int-width`.
+  - `64` (default): `int64`/`uint64`
+  - `32`: `int32`/`uint32`
+  - `bigint`: not implemented (error if specified)
+- String index/slice is controlled by:
+  - `--str-index-mode {byte,native}` (`codepoint` not implemented)
+  - `--str-slice-mode {byte}` (`codepoint` not implemented)
+  - Current `byte` / `native` return type of `str[i]` is `str` (single-character string)
+  - Out-of-range behavior follows `--bounds-check-mode` (`off`/`always`/`debug`)
+- Generation optimization level is controlled by `-O0` to `-O3`.
+  - `-O0`: no optimization (debug/diff investigation)
+  - `-O1`: light optimization
+  - `-O2`: medium optimization
+  - `-O3` (default): aggressive optimization
+- Top namespace for generated C++ can be set with `--top-namespace NS`.
+  - Omitted (default): no top namespace
+  - With namespace: keep `main` global and call `NS::__pytra_main(...)`
+- Negative indexing for list/string (example: `a[-1]`) is controlled by `--negative-index-mode`.
+  - default `const_only`: enable Python-compatible handling only for constant negative indexes
+  - `always`: enable Python-compatible handling for all index accesses
+  - `off`: disable Python-compatible negative-index handling and emit plain `[]`
+- PNG identity check criterion is exact byte-for-byte file equality.
+- GIF identity check criterion is also exact byte-for-byte file equality.
 
-### 3.1 import と `runtime/cpp` 対応
+### 3.1 import and `runtime/cpp` Mapping
 
-`py2cpp.py` は import 文に応じて include を生成します。
+`py2cpp.py` emits includes according to import statements.
 
 - `import pytra.std.math` -> `#include "pytra/std/math.h"`
 - `import pytra.std.pathlib` -> `#include "pytra/std/pathlib.h"`
@@ -144,28 +144,28 @@
 - `from pytra.std.dataclasses import dataclass` -> `#include "pytra/std/dataclasses.h"`
 - `import pytra.utils.png` -> `#include "pytra/utils/png.h"`
 - `import pytra.utils.gif` -> `#include "pytra/utils/gif.h"`
-- GC は常時 `#include "runtime/cpp/pytra/built_in/gc.h"` を利用
+- GC always uses `#include "runtime/cpp/pytra/built_in/gc.h"`
 
-`module.attr(...)` 呼び出しは、`LanguageProfile`（JSON）の設定またはモジュール名→namespace 解決で C++ 側へ解決します。
+`module.attr(...)` calls are resolved to C++ side by `LanguageProfile` (JSON) mapping or module-name-to-namespace fallback.
 
-- 例: `runtime_calls.module_attr_call.pytra.std.sys.write_stdout -> pytra::std::sys::write_stdout`
-- map 未定義の場合は import モジュール名から C++ namespace を導出して `ns::attr(...)` へフォールバックします
-- 起動時に profile JSON を読み込み、未定義項目は共通既定値とフォールバック規則で補完します。
+- Example: `runtime_calls.module_attr_call.pytra.std.sys.write_stdout -> pytra::std::sys::write_stdout`
+- If mapping is undefined, derive C++ namespace from imported module and fall back to `ns::attr(...)`.
+- At startup, profile JSON is loaded; undefined fields are filled by common defaults and fallback rules.
 
-補足:
+Notes:
 
-- import 情報の正本は EAST の `meta.import_bindings` です（`ImportBinding[]`）。
-- `from module import symbol` は EAST の `meta.qualified_symbol_refs`（`QualifiedSymbolRef[]`）へ正規化し、backend 手前で alias 解決を完了させます。
-- `meta.import_modules` / `meta.import_symbols` は互換用途として残し、正本から導出します。
-- `import module as alias` は `alias.attr(...)` を `module.attr(...)` として解決します。
-- `from module import *` は未対応です。
-- 相対 import（`from .mod import x`）は現状未対応です。検出時は `input_invalid` として終了します。
-- `pytra` 名前空間は予約です。入力ルート配下の `pytra.py` / `pytra/__init__.py` は衝突として `input_invalid` を返します。
-- ユーザーモジュール探索は「入力ファイルの親ディレクトリ基準」で行います（`foo.bar` -> `foo/bar.py` または `foo/bar/__init__.py`）。
-- 未解決ユーザーモジュール import と循環 import は `input_invalid` で早期エラーにします。
-- `from M import S` のみがある状態で `M.T` を参照した場合、`M` は束縛されないため `input_invalid`（`kind=missing_symbol`）として扱います。
+- Canonical import source is EAST `meta.import_bindings` (`ImportBinding[]`).
+- `from module import symbol` is normalized into EAST `meta.qualified_symbol_refs` (`QualifiedSymbolRef[]`), with alias resolution completed before backend.
+- `meta.import_modules` / `meta.import_symbols` remain for compatibility and are derived from canonical data.
+- `import module as alias` resolves `alias.attr(...)` as `module.attr(...)`.
+- `from module import *` is unsupported.
+- Relative import (`from .mod import x`) is currently unsupported; detection returns `input_invalid`.
+- `pytra` namespace is reserved. `pytra.py` / `pytra/__init__.py` under input root is treated as conflict and returns `input_invalid`.
+- User module lookup is relative to input file parent directory (`foo.bar` -> `foo/bar.py` or `foo/bar/__init__.py`).
+- Unresolved user-module import and circular import fail early with `input_invalid`.
+- If only `from M import S` exists, then referencing `M.T` is `input_invalid` (`kind=missing_symbol`) because `M` is not bound.
 
-主な補助モジュール実装:
+Main helper module implementations:
 
 - `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp`
 - `src/runtime/cpp/pytra/std/pathlib.h`, `src/runtime/cpp/pytra/std/pathlib.cpp`
@@ -180,147 +180,147 @@
 - `src/runtime/cpp/pytra/utils/assertions.h`, `src/runtime/cpp/pytra/utils/assertions.cpp`
 - `src/runtime/cpp/pytra/built_in/py_runtime.h`
 
-`src/runtime/cpp/pytra/built_in/` の位置づけ:
+Role of `src/runtime/cpp/pytra/built_in/`:
 
-- Python 組み込み型/基盤機能の C++ 実装を置く共通層です。
-- 例: GC、I/O、bytes 補助、コンテナ/文字列ラッパ。
-- 言語固有モジュール (`src/runtime/cpp/pytra/std/*`, `src/runtime/cpp/pytra/utils/*`) から再利用されます。
-- `py_runtime.h` は `str/path/list/dict/set` を直接 include します（`containers.h` は廃止）。
-- `built_in` 配下ヘッダの include guard は相対パス由来の `PYTRA_BUILT_IN_*` 命名で統一します。
+- Common layer implementing Python built-in types and foundational features in C++.
+- Examples: GC, I/O, bytes helpers, container/string wrappers.
+- Reused by language-specific modules (`src/runtime/cpp/pytra/std/*`, `src/runtime/cpp/pytra/utils/*`).
+- `py_runtime.h` directly includes `str/path/list/dict/set` (`containers.h` removed).
+- Include guards in `built_in` headers are unified with relative-path-derived `PYTRA_BUILT_IN_*` naming.
 
-`src/runtime/cpp/pytra/built_in/py_runtime.h` のコンテナ方針:
+Container policy in `src/runtime/cpp/pytra/built_in/py_runtime.h`:
 
-- `list<T>`: `std::vector<T>` ラッパー（`append`, `extend`, `pop` を提供）
-- `dict<K, V>`: `std::unordered_map<K,V>` ラッパー（`get`, `keys`, `values`, `items` を提供）
-- `set<T>`: `std::unordered_set<T>` ラッパー（`add`, `discard`, `remove` を提供）
-- `str`, `list`, `dict`, `set`, `bytes`, `bytearray` は「標準コンテナ継承」ではなく、Python 互換 API を持つ wrapper として扱う。
+- `list<T>`: wrapper over `std::vector<T>` (provides `append`, `extend`, `pop`)
+- `dict<K, V>`: wrapper over `std::unordered_map<K,V>` (provides `get`, `keys`, `values`, `items`)
+- `set<T>`: wrapper over `std::unordered_set<T>` (provides `add`, `discard`, `remove`)
+- `str`, `list`, `dict`, `set`, `bytes`, and `bytearray` are wrappers with Python-compatible APIs, not standard-container inheritance.
 
-制約:
+Constraints:
 
-- Python 側で import するモジュールは、原則として各ターゲット言語ランタイムにも対応実装を用意する必要があります。
-- 生成コードで使う補助関数は、各言語のランタイムモジュールへ集約し、生成コードへの重複定義を避けます。
-- `object` 型値（`Any` 由来を含む）への属性アクセス・メソッド呼び出しは、言語制約として未許可（禁止）とします。
-  - EAST/emit 時に `object` レシーバのメソッド呼び出しを許容しない前提で実装すること。
+- Python modules imported by input should generally have corresponding runtime implementations in each target language.
+- Helper functions used by generated code should be centralized into runtime modules of each language to avoid duplicate definitions in generated output.
+- Attribute access or method calls on `object` values (including `Any`-origin values) are disallowed by language policy.
+  - EAST/emit path must assume method calls on `object` receivers are not allowed.
 
-### 3.2 関数引数の受け渡し方針
+### 3.2 Function Argument Passing Policy
 
-- コピーコストが高い型（`string`, `vector<...>`, `unordered_map<...>`, `unordered_set<...>`, `tuple<...>`）は、関数内で直接変更されない場合に `const T&` で受けます。
-- 引数の直接変更が検出された場合は値渡し（または非 const）を維持します。
-- 直接変更判定は、代入・拡張代入・`del`・破壊的メソッド呼び出し（`append`, `extend`, `insert`, `pop` など）を対象に行います。
+- Expensive-to-copy types (`string`, `vector<...>`, `unordered_map<...>`, `unordered_set<...>`, `tuple<...>`) are passed as `const T&` when not directly mutated in function body.
+- If direct mutation of the argument is detected, keep pass-by-value (or non-const).
+- Mutation detection covers assignment, augmented assignment, `del`, and destructive method calls (`append`, `extend`, `insert`, `pop`, etc.).
 
-### 3.3 画像系ランタイム（PNG/GIF）方針
+### 3.3 Image Runtime Policy (PNG/GIF)
 
-- `png` / `gif` は Python 側（`src/pytra/utils/`）を正本実装とします。
-- 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
-- 言語別に手書きするのは、性能・I/O 都合で必要な最小範囲に限定します。
-- 言語間一致は「生成ファイルのバイト列完全一致」を主判定とします。
-- `src/pytra/utils/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
-- 受け入れ基準:
-  - 置換作業中は、同一入力に対して `src/pytra/utils/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
-  - C++ では `tools/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
+- `png` / `gif` use Python side (`src/pytra/utils/`) as source-of-truth implementation.
+- `*_module` implementations in each language should, in principle, use transpiled artifacts from that source-of-truth Python implementation.
+- Handwritten language-specific code should be minimized to required scope for performance/I/O reasons.
+- Cross-language consistency is primarily judged by exact byte equality of generated files.
+- `src/pytra/utils/png.py` uses pure Python implementation independent of `binascii` / `zlib` / `struct` (CRC32/Adler32/DEFLATE stored block).
+- Acceptance criteria:
+  - During replacement work, output bytes from `src/pytra/utils/*.py` and each language runtime output must match for identical input.
+  - In C++, run `tools/verify_image_runtime_parity.py` and confirm minimal PNG/GIF parity.
 
-### 3.4 Python 補助ライブラリ命名
+### 3.4 Python Helper Library Naming
 
-- 旧 `pylib.runtime` 互換名は廃止済みで、`pytra.utils.assertions` を正とします。
-- テスト補助関数（`py_assert_*`）は `from pytra.utils.assertions import ...` で利用します。
+- Legacy compatibility name `pylib.runtime` has been removed; canonical name is `pytra.utils.assertions`.
+- Test helper functions (`py_assert_*`) must be used via `from pytra.utils.assertions import ...`.
 
-### 3.5 画像ランタイム最適化ポリシー（py2cpp）
+### 3.5 Image Runtime Optimization Policy (`py2cpp`)
 
-- 対象: `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp`（自動生成）。
-- 前提: `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` を正本とし、意味差を導入しない。
-- 生成手順:
+- Target files: `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` (auto-generated).
+- Preconditions: keep `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` as source-of-truth, and do not introduce semantic differences.
+- Generation steps:
   - `python3 src/py2cpp.py src/pytra/utils/png.py -o /tmp/png.cpp`
   - `python3 src/py2cpp.py src/pytra/utils/gif.py -o /tmp/gif.cpp`
-  - 生成物は `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` に直接出力される。
-  - これら 2 ファイルの本体ロジックを手書きで追加してはならない。
-  - C++ namespace は生成元 Python ファイルのパスから自動導出する（ハードコードしない）。
-    - 例: `src/pytra/utils/gif.py` -> `pytra::utils::gif`
-    - 例: `src/pytra/utils/png.py` -> `pytra::utils::png`
-- 許容する最適化:
-  - ループ展開・`reserve` 追加・一時バッファ削減など、出力バイト列を変えない最適化。
-  - 例外メッセージ変更を伴わない境界チェックの軽量化。
-- 原則禁止:
-  - 画像出力仕様を変える最適化（PNG chunk 構成、GIF 制御ブロック、色テーブル順など）。
-  - Python 正本と異なる既定値・フォーマット・丸め方への変更。
-- 受け入れ条件:
-  - 変更後に `python3 tools/verify_image_runtime_parity.py` が `True` を返すこと。
-  - `test/unit/test_image_runtime_parity.py` と `test/unit/test_py2cpp_features.py` を通過すること。
+  - Artifacts are output directly to `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp`.
+  - Do not add handwritten core logic to these two files.
+  - Derive C++ namespace automatically from source Python path (no hardcoding).
+    - Example: `src/pytra/utils/gif.py` -> `pytra::utils::gif`
+    - Example: `src/pytra/utils/png.py` -> `pytra::utils::png`
+- Allowed optimizations:
+  - loop unrolling, `reserve` additions, temporary buffer reduction, etc., as long as output bytes are unchanged
+  - lightweight bounds-check optimizations that do not change exception messages
+- Disallowed by default:
+  - optimizations that change image output format/spec behavior (PNG chunk layout, GIF control blocks, color-table order, etc.)
+  - changes to defaults/format/rounding that diverge from Python source-of-truth
+- Acceptance criteria:
+  - `python3 tools/verify_image_runtime_parity.py` returns `True` after change.
+  - `test/unit/test_image_runtime_parity.py` and `test/unit/test_py2cpp_features.py` pass.
 
-## 4. 検証手順（C++）
+## 4. Verification Procedure (C++)
 
-1. Python 版トランスパイラで `test/fixtures` を `test/transpile/cpp` へ変換
-2. 生成 C++ を `test/transpile/obj/` にコンパイル
-3. 実行結果を Python 実行結果と比較
-4. セルフホスティング検証時は自己変換実行ファイルで `test/fixtures` -> `test/transpile/cpp2` を生成
-5. `test/transpile/cpp` と `test/transpile/cpp2` の一致を確認
+1. Convert `test/fixtures` to `test/transpile/cpp` with Python transpiler.
+2. Compile generated C++ into `test/transpile/obj/`.
+3. Compare runtime results against Python execution results.
+4. For selfhost verification, use self-converted executable to generate `test/fixtures` -> `test/transpile/cpp2`.
+5. Confirm consistency between `test/transpile/cpp` and `test/transpile/cpp2`.
 
-### 4.1 selfhost 検証のゴール条件
+### 4.1 Goal Conditions for selfhost Verification
 
-- 必須条件:
-  - `selfhost/py2cpp.py` から生成した `selfhost/py2cpp.cpp` がコンパイル成功する。
-  - その実行ファイルで `sample/py/01_mandelbrot.py` を C++ へ変換できる。
-- 推奨確認:
-  - `src/py2cpp.py` 生成版と `selfhost` 生成版の C++ ソース差分を確認する（差分自体は許容）。
-  - 変換後 C++ をコンパイル・実行し、Python 実行結果と一致することを確認する。
+- Required:
+  - `selfhost/py2cpp.cpp` generated from `selfhost/py2cpp.py` compiles successfully.
+  - That executable can convert `sample/py/01_mandelbrot.py` to C++.
+- Recommended checks:
+  - Check source diff between version generated by `src/py2cpp.py` and version generated by `selfhost` (diff itself is allowed).
+  - Compile/run converted C++ and confirm it matches Python runtime output.
 
-### 4.2 一致判定条件（selfhost / 通常比較）
+### 4.2 Consistency Criteria (selfhost / normal comparison)
 
-- ソース一致:
-  - 生成 C++ の全文一致は「参考指標」であり、必須条件ではない。
-- 実行一致:
-  - 同じ入力に対して、Python 実行結果と生成 C++ 実行結果が一致することを必須とする。
-- 画像一致:
-  - PNG/GIF ともに、出力ファイルのバイト列完全一致を必須とする。
+- Source-level equality:
+  - Full textual equality of generated C++ is a reference metric, not a requirement.
+- Runtime equality:
+  - For same input, Python runtime result and generated C++ runtime result must match.
+- Image equality:
+  - For both PNG and GIF, exact byte equality of output files is required.
 
-## 5. EASTベース C++ 経路
+## 5. EAST-based C++ Path
 
-- `src/pytra/compiler/east.py`: Python -> EAST JSON（正本）
-- `src/pytra/compiler/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
-- `src/pytra/compiler/east_parts/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
+- `src/pytra/compiler/east.py`: Python -> EAST JSON (canonical)
+- `src/pytra/compiler/east_parts/east_io.py`: load EAST from `.py/.json` and supplement leading trivia (canonical)
+- `src/pytra/compiler/east_parts/code_emitter.py`: common base utilities for multi-language emitters (node predicates/type-string helpers/`Any` safe conversion)
 - `src/py2cpp.py`: EAST JSON -> C++
-- `src/runtime/cpp/pytra/built_in/py_runtime.h`: C++ ランタイム集約
-- 責務分離:
-  - `range(...)` の意味解釈は EAST 構築側で完了させる
-  - `src/py2cpp.py` は正規化済み EAST を文字列化する
-  - 言語非依存の補助ロジックは `CodeEmitter` 側へ段階的に集約する
-- 出力構成方針:
-  - 最終ゴールは「モジュール単位の複数ファイル出力（`.h/.cpp`）」とする。
-  - 単一 `.cpp` 出力は移行期間の互換経路として扱う。
+- `src/runtime/cpp/pytra/built_in/py_runtime.h`: consolidated C++ runtime
+- Responsibility separation:
+  - `range(...)` semantics are fully resolved during EAST build
+  - `src/py2cpp.py` stringifies normalized EAST
+  - language-agnostic helper logic is progressively centralized into `CodeEmitter`
+- Output structure policy:
+  - final goal is module-level multi-file output (`.h/.cpp`)
+  - single `.cpp` output is treated as compatibility path during migration
 
-### 5.1 CodeEmitter テスト方針
+### 5.1 CodeEmitter Test Policy
 
-- `src/pytra/compiler/east_parts/code_emitter.py` の回帰は `test/unit/test_code_emitter.py` で担保します。
-- 主対象:
-  - 出力バッファ操作（`emit`, `emit_stmt_list`, `next_tmp`）
-  - 動的入力安全化（`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`）
-  - ノード判定（`is_name`, `is_call`, `is_attr`, `get_expr_type`）
-  - 型文字列補助（`split_generic`, `split_union`, `normalize_type_name`, `is_*_type`）
-- `CodeEmitter` に機能追加・仕様変更した場合は、同ファイルへ対応テストを追加してから利用側エミッタへ展開します。
+- Regression coverage for `src/pytra/compiler/east_parts/code_emitter.py` is provided by `test/unit/test_code_emitter.py`.
+- Main targets:
+  - output buffer ops (`emit`, `emit_stmt_list`, `next_tmp`)
+  - dynamic-input safety (`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`)
+  - node predicates (`is_name`, `is_call`, `is_attr`, `get_expr_type`)
+  - type-string helpers (`split_generic`, `split_union`, `normalize_type_name`, `is_*_type`)
+- When adding/changing `CodeEmitter` behavior, add/update tests in that file before rolling out changes to downstream emitters.
 
 ## 6. LanguageProfile / CodeEmitter
 
-- `CodeEmitter` は言語非依存の骨組み（ノード走査、スコープ管理、共通補助）を担当します。
-- 言語固有差分は `LanguageProfile` JSON に定義します。
-  - 型マップ
-  - 演算子マップ
-  - runtime call マップ
-  - 構文テンプレート
-- JSON だけで表現しにくい例外ケースは `hooks` で処理します。
-- 詳細スキーマは `docs/spec-language-profile.md` を正本とします。
+- `CodeEmitter` handles language-agnostic skeleton responsibilities (node traversal, scope management, shared helper logic).
+- Language-specific differences are defined in `LanguageProfile` JSON.
+  - type mappings
+  - operator mappings
+  - runtime-call mappings
+  - syntax templates
+- Cases hard to express in JSON are handled by `hooks`.
+- Canonical detailed schema is `docs/spec-language-profile.md`.
 
-## 7. 実装上の共通ルール
+## 7. Common Implementation Rules
 
-- `src/common/` には言語非依存で再利用される処理のみを配置します。
-- 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/common/` に置きません。
-- CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/pytra/compiler/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。
-- selfhost 対象コードでは、動的 import（`try/except ImportError` による分岐 import や `importlib`）を避け、静的 import のみを使用します。
-- class 名・関数名・メンバー変数名には、日本語コメント（用途説明）を付与します。
-- 標準ライブラリ対応の記載は、モジュール名だけでなく関数単位で明記します。
-- ドキュメント未記載の関数は未対応扱いです。
+- Put only language-agnostic reusable logic in `src/common/`.
+- Do not put language-specific specs (type mapping, keywords, runtime symbol names, etc.) into `src/common/`.
+- Consolidate common CLI args (`input`/`output`/`--negative-index-mode`/`--parser-backend`, etc.) into `src/pytra/compiler/transpile_cli.py` and reuse them from each `py2*.py` `main()`.
+- In selfhost-target code, avoid dynamic imports (`try/except ImportError` split imports, `importlib`) and use only static imports.
+- Add Japanese comments (purpose explanations) to class names, function names, and member variable names.
+- For standard-library compatibility documentation, specify function-level support, not only module names.
+- Functions not documented are treated as unsupported.
 
-## 8. 各ターゲットの実行モード注記
+## 8. Notes on Execution Modes by Target
 
-- `py2rs.py`: ネイティブ変換モード（Python インタプリタ非依存）
-- `py2js.py` / `py2ts.py`: ネイティブ変換モード（Node.js ランタイム）
-- `py2go.py` / `py2java.py`: ネイティブ変換モード（Python インタプリタ非依存）
-- `py2swift.py` / `py2kotlin.py`: Node バックエンド実行モード（Python インタプリタ非依存）
+- `py2rs.py`: native conversion mode (independent of Python interpreter at runtime)
+- `py2js.py` / `py2ts.py`: native conversion mode (Node.js runtime)
+- `py2go.py` / `py2java.py`: native conversion mode (independent of Python interpreter at runtime)
+- `py2swift.py` / `py2kotlin.py`: Node-backend execution mode (independent of Python interpreter at runtime)

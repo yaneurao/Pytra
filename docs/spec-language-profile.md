@@ -1,40 +1,40 @@
-# LanguageProfile 仕様（CodeEmitter）
+# LanguageProfile Specification (CodeEmitter)
 
-<a href="../docs-en/spec-language-profile.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/spec-language-profile.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-このドキュメントは、`CodeEmitter` で利用する言語プロファイル JSON の仕様を定義します。
+This document defines the language-profile JSON specification used by `CodeEmitter`.
 
-## 1. 目的
+## 1. Purpose
 
-- 言語固有差分（型、演算子、ランタイム呼び出し、構文テンプレート）を Python コードから分離する。
-- `py2cpp.py` などの各トランスパイラ本体を薄くし、共通化を進める。
-- 例外的な変換のみ `hooks` で扱い、通常ケースは JSON 設定で処理する。
+- Separate language-specific differences (types, operators, runtime calls, syntax templates) from Python code.
+- Thin transpiler entry implementations such as `py2cpp.py` and increase shared components.
+- Handle only exceptional conversions in `hooks`, and process normal cases via JSON configuration.
 
-## 2. 配置
+## 2. Placement
 
 - `src/profiles/`
-  - `common/core.json`: 全言語共通の既定値
-  - `cpp/profile.json`: C++ 向け統合プロファイル（エントリ）
-  - `cpp/types.json`: 型マップ
-  - `cpp/operators.json`: 演算子マップ
-  - `cpp/runtime_calls.json`: 組み込み・`module.attr` 呼び出しマップ
-  - `cpp/syntax.json`: 文テンプレート
+  - `common/core.json`: shared defaults for all languages
+  - `cpp/profile.json`: integrated profile for C++ (entry)
+  - `cpp/types.json`: type map
+  - `cpp/operators.json`: operator map
+  - `cpp/runtime_calls.json`: built-in / `module.attr` call map
+  - `cpp/syntax.json`: statement templates
 
-## 3. ロード順序
+## 3. Load Order
 
 1. `common/core.json`
-2. `<lang>/profile.json` の `include` 順
-3. `<lang>/profile.json` 本体
-4. CLI 上書き（必要時）
+2. `include` order in `<lang>/profile.json`
+3. body of `<lang>/profile.json`
+4. CLI overrides (if needed)
 
-後勝ちマージを原則とします。
+Last-write-wins merge is the default rule.
 
-## 4. スキーマ（v1）
+## 4. Schema (v1)
 
-`profile.json` の最小例:
+Minimal `profile.json` example:
 
 ```json
 {
@@ -55,7 +55,7 @@
 
 ### 4.1 `types`
 
-EAST 型名 -> 出力言語型名。
+EAST type name -> output language type name.
 
 ```json
 {
@@ -78,7 +78,7 @@ EAST 型名 -> 出力言語型名。
 
 ### 4.2 `operators`
 
-EAST 演算子 -> 出力トークン。
+EAST operator -> output token.
 
 ```json
 {
@@ -92,9 +92,9 @@ EAST 演算子 -> 出力トークン。
 
 ### 4.3 `runtime_calls`
 
-- `builtin_call`: `len`, `print` など
-- `module_attr_call`: `module.attr` 形式の呼び出し
-- `method_call`: `list.append` など
+- `builtin_call`: `len`, `print`, etc.
+- `module_attr_call`: calls in `module.attr` form
+- `method_call`: `list.append`, etc.
 
 ```json
 {
@@ -118,7 +118,7 @@ EAST 演算子 -> 出力トークン。
 
 ### 4.4 `syntax`
 
-文テンプレートと構文スイッチ。
+Statement templates and syntax switches.
 
 ```json
 {
@@ -134,7 +134,7 @@ EAST 演算子 -> 出力トークン。
 
 ### 4.5 `syntax.identifiers`
 
-予約語回避、接頭辞、識別子規則。
+Reserved-word avoidance, prefixes, and identifier rules.
 
 ```json
 {
@@ -149,7 +149,7 @@ EAST 演算子 -> 出力トークン。
 
 ### 4.6 `hooks`
 
-profile で表現しにくい分岐だけを hooks へ寄せます。
+Move only branches hard to express in profiles into hooks.
 
 ```json
 {
@@ -160,41 +160,42 @@ profile で表現しにくい分岐だけを hooks へ寄せます。
 }
 ```
 
-`module` は言語固有側（例: `src/hooks/cpp/hooks/`）に配置し、`src/common/` へは置きません。
+Place `module` under language-specific side (e.g., `src/hooks/cpp/hooks/`), not under `src/common/`.
 
-## 5. Hooks 仕様
+## 5. Hooks Specification
 
-`profile.hooks` は JSON で表現しにくい分岐のみ担当します。
+`profile.hooks` handles only branches that are hard to express in JSON.
 
-selfhost 制約:
-- hooks API は `dict[str, Any]` / `list[str]` / `str` / `bool` を中心に扱い、`callable` 型注釈に依存しません。
-- `CodeEmitter` 側はフックを「辞書から取り出して呼ぶ」方式で扱い、型注釈由来の selfhost 変換詰まりを避けます。
+Selfhost constraints:
+- hooks API mainly uses `dict[str, Any]` / `list[str]` / `str` / `bool`, and does not depend on `callable` type annotations.
+- `CodeEmitter` handles hooks by “fetching from dict and calling,” avoiding selfhost conversion stalls derived from type annotations.
 
 - `on_emit_stmt(emitter, stmt)`:
-  - `True` を返すと既定の文出力をスキップ
+  - If it returns `True`, skip default statement emission.
 - `on_render_call(emitter, call_node, func_node, rendered_args, rendered_kwargs)`
 - `on_render_binop(emitter, binop_node, left, right)`
 
-戻り値:
-- `None`: 既定ロジック継続
-- `str`: その文字列を採用
+Return values:
+- `None`: continue default logic
+- `str`: adopt that string as output
 
-### 5.1 実装位置（C++）
+### 5.1 Implementation Location (C++)
 
 ```text
 src/hooks/cpp/hooks/cpp_hooks.py
 ```
 
-## 6. 妥当性ルール
+## 6. Validation Rules
 
-- `schema_version` は必須（現行 `1`）。
-- `language` は必須。
-- `include` は相対パスのみ許可。
-- 未知キーは警告（エラーにはしない）。
-- 必須キー欠落は起動時エラー。
+- `schema_version` is required (current: `1`).
+- `language` is required.
+- `include` allows relative paths only.
+- Unknown keys are warnings (not errors).
+- Missing required keys cause startup errors.
 
-## 7. 移行方針
+## 7. Migration Policy
 
-1. C++ から先行移行する。
-2. `py2cpp.py` 直書きマップを順次削除する。
-3. `BaseEmitter` を `CodeEmitter` へ改名し、`BaseEmitter = CodeEmitter` で互換維持する。
+1. Migrate C++ first.
+2. Remove hardcoded maps in `py2cpp.py` in stages.
+3. Rename `BaseEmitter` to `CodeEmitter` while keeping compatibility with `BaseEmitter = CodeEmitter`.
+

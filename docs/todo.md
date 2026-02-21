@@ -1,48 +1,49 @@
-# TODO（未完了）
+# TODO (Open)
 
-<a href="../docs-en/todo.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/todo.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-最終更新: 2026-02-21
+Last updated: 2026-02-21
 
-## P0: selfhost 安定化
+## P0: Selfhost Stabilization
 
-1. [ ] selfhost `.py` 経路の段階回復を完了する。
-2. [ ] `selfhost/py2cpp.out` の最小実行パスを安定化する（入力・生成・実行の一連を常時再現可能にする）。
-3. [ ] selfhost コンパイルエラーを段階的にゼロ化する（再発時の即時検知手順込み）。
-4. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
+1. [ ] Complete staged recovery of the selfhost `.py` path.
+2. [ ] Stabilize the minimal execution path of `selfhost/py2cpp.out` (ensure input/generation/execution can always be reproduced end-to-end).
+3. [ ] Reduce selfhost compile errors to zero in stages (including immediate re-detection procedures on regression).
+4. [ ] Continue cleanup of selfhost-only stubs in `tools/prepare_selfhost_source.py`.
 
-## P1: CodeEmitter / Hooks 移管
+## P1: CodeEmitter / Hooks Migration
 
-1. [ ] フック注入 (`EmitterHooks`) を実装する。
-2. [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。
-3. [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
+1. [ ] Implement hook injection (`EmitterHooks`).
+2. [ ] Gradually split the large branches in `render_expr(Call/BinOp/Compare)` into hooks + helpers.
+3. [ ] Move only profile-hard-to-express cases to hooks (leave no condition branches in `py2cpp.py`).
 
-## P1: py2cpp 縮退（行数削減）
+## P1: py2cpp Reduction (Line Count Reduction)
 
-1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
-2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
-3. [ ] `dict.get/list.* / set.*` 呼び出し解決を runtime-call map + hook へ移して `py2cpp.py` 直書きを削減する。
-4. [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。
-5. [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
-6. [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。
-7. [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
-8. [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
-9. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
+1. [ ] Move remaining unmigrated logic from `src/py2cpp.py` into `CodeEmitter`, reducing line count in stages.
+2. [ ] Split `render_expr` `Call` branches (builtin/module/method) by feature and migrate to `CodeEmitter` helpers.
+3. [ ] Move `dict.get/list.* / set.*` call resolution to runtime-call map + hook, reducing direct hardcoding in `py2cpp.py`.
+4. [ ] Split arithmetic/comparison/type-conversion branches in `render_expr` into independent functions, switchable via profile/hooks.
+5. [ ] Move base rendering of `Constant(Name/Attribute)` to shared `CodeEmitter`.
+6. [ ] Template control-flow branches in `emit_stmt` and move them to `CodeEmitter.syntax_*`.
+7. [ ] Override only C++-specific differences (brace omission, range-mode, etc.) in hooks.
+8. [ ] Move shared templates for `FunctionDef` / `ClassDef` (`open/body/close`) into `CodeEmitter`.
+9. [ ] Continue cleaning up unused functions (move detailed tasks into higher-priority sections as needed).
 
-## P2: Any/object 境界の整理
+## P2: Any/object Boundary Cleanup
 
-1. [ ] `CodeEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
-2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
-3. [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
-4. [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
-5. [ ] `py2cpp.py` で `nullopt` を default 値に渡している箇所を洗い出し、型ごとの既定値へ置換する。
-6. [ ] `std::any` を経由する経路（selfhost 変換由来）をログベースでリスト化し、順次削除する。
-7. [ ] 上位3関数ごとにパッチを分けて改善し、毎回 `check_py2cpp_transpile.py` を通す。
+1. [ ] Gradually migrate `CodeEmitter` `Any/dict` boundaries to implementations that stay stable under selfhost.
+2. [ ] Minimize fallback to `object` in `cpp_type` and expression rendering.
+3. [ ] Separate routes where `Any -> object` is required from routes where it is not, and reduce excessive `make_object(...)` insertion.
+4. [ ] Clean up places where default arguments for `py_dict_get_default` / `dict_get_node` become `object`-mandatory.
+5. [ ] Identify places in `py2cpp.py` that pass `nullopt` as default values and replace them with type-specific defaults.
+6. [ ] Log and list routes that go through `std::any` (from selfhost conversion), then remove them incrementally.
+7. [ ] Improve in patches grouped per top 3 functions, and run `check_py2cpp_transpile.py` each time.
 
-## 補助メモ
+## Notes
 
-- 完了済みタスクと過去ログは `docs/todo-old.md` に移管済み。
-- 今後 `docs/todo.md` は未完了タスクのみを保持する。
+- Completed tasks and historical logs have been moved to `docs/todo-old.md`.
+- Going forward, `docs/todo.md` keeps only unfinished tasks.
+

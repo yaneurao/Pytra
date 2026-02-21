@@ -1,116 +1,116 @@
-# トランスパイルオプション仕様（案）
+# Transpile Option Specification (Draft)
 
-<a href="../docs-en/spec-options.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../docs-jp/spec-options.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
 
-この文書は、Pytra のオプション設計を整理するためのドラフトです。  
-目的は「Python 互換性」と「生成コード性能」のトレードオフを、利用者が明示的に選べるようにすることです。
+This document is a draft for organizing Pytra option design.  
+Its purpose is to let users explicitly choose trade-offs between "Python compatibility" and "generated-code performance."
 
-## 1. 設計方針
+## 1. Design Policy
 
-- 既定値は `native` 寄り（性能優先）とする。
-- Python 互換性を重視する場合は、`balanced` / `python` プリセットや個別オプションで明示的に opt-in する。
-- オプションは段階導入する。
-  - Phase 1: `py2cpp.py` 先行
-  - Phase 2: 共通 CLI（`src/pytra/compiler/transpile_cli.py`）へ集約
-  - Phase 3: LanguageProfile で言語別既定値を切替可能にする
+- Defaults should be `native`-oriented (performance-first).
+- When compatibility is prioritized, explicitly opt in via `balanced` / `python` presets or individual options.
+- Introduce options in phases:
+  - Phase 1: `py2cpp.py` first
+  - Phase 2: consolidate into common CLI (`src/pytra/compiler/transpile_cli.py`)
+  - Phase 3: make language-specific defaults switchable via LanguageProfile
 
-## 2. 実装済みオプション（現状）
+## 2. Implemented Options (Current)
 
-`py2cpp.py` で有効:
+Enabled in `py2cpp.py`:
 
 - `--negative-index-mode {always,const_only,off}`
-  - `always`: 負数添字を常に Python 互換で処理
-  - `const_only`: 定数負数添字のみ Python 互換（現行デフォルト）
-  - `off`: Python 互換処理を行わない
+  - `always`: always process negative indices with Python-compatible behavior
+  - `const_only`: Python-compatible behavior only for constant negative indices (current default)
+  - `off`: do not apply Python-compatible behavior
 - `--bounds-check-mode {always,debug,off}`
-  - `always`: 添字アクセスを常時チェック
-  - `debug`: `NDEBUG` 無効時のみチェック
-  - `off`: チェックしない（現行デフォルト）
+  - `always`: always check index access
+  - `debug`: check only when `NDEBUG` is disabled
+  - `off`: no checks (current default)
 - `--floor-div-mode {python,native}`
-  - `python`: `py_floordiv` により Python 準拠
-  - `native`: C++ `/` をそのまま利用（現行デフォルト）
+  - `python`: Python-compatible via `py_floordiv`
+  - `native`: use C++ `/` directly (current default)
 - `--mod-mode {python,native}`
-  - `python`: `py_mod` により Python 準拠
-  - `native`: C++ `%` をそのまま利用（現行デフォルト）
+  - `python`: Python-compatible via `py_mod`
+  - `native`: use C++ `%` directly (current default)
 - `--int-width {32,64,bigint}`
-  - `32`/`64` は実装済み
-  - `bigint` は未実装（指定時はエラー）
+  - `32`/`64` are implemented
+  - `bigint` is not implemented yet (error if specified)
 - `--str-index-mode {byte,codepoint,native}`
-  - `byte`/`native` は利用可能
-  - `codepoint` は未実装（指定時はエラー）
+  - `byte`/`native` are available
+  - `codepoint` is not implemented yet (error if specified)
 - `--str-slice-mode {byte,codepoint}`
-  - `byte` は利用可能
-  - `codepoint` は未実装（指定時はエラー）
+  - `byte` is available
+  - `codepoint` is not implemented yet (error if specified)
 - `-O0` / `-O1` / `-O2` / `-O3`
-  - 生成コード最適化レベル
-  - `-O0`: 最適化なし（読みやすさ/調査優先）
-  - `-O1`: 軽量最適化
-  - `-O2`: 中程度の最適化
-  - `-O3`: 積極最適化（既定）
+  - Generated code optimization level
+  - `-O0`: no optimization (readability/investigation first)
+  - `-O1`: light optimization
+  - `-O2`: medium optimization
+  - `-O3`: aggressive optimization (default)
 - `--parser-backend {self_hosted,cpython}`
-  - EAST 生成バックエンド選択
+  - Select EAST generation backend
 - `--no-main`
-  - `main` 関数を生成しない
+  - Do not generate `main` function
 - `--dump-deps`
-  - 依存情報を出力
+  - Output dependency information
 - `--preset {native,balanced,python}`
-  - 互換性/性能バランスの設定セットを一括適用
-  - その後に個別指定したオプションが優先される
+  - Apply a bundled compatibility/performance setting set
+  - Individually specified options after that take precedence
 - `--dump-options`
-  - 解決済みオプションを出力
+  - Output resolved options
 - `--top-namespace NS`
-  - `NS` を指定した場合、生成 C++ 本文を `namespace NS { ... }` で包む
-  - `main` はグローバルに残し、`NS::__pytra_main(...)` を呼び出す
-  - 未指定時（既定）はトップ namespace なし
+  - If `NS` is specified, wrap generated C++ body in `namespace NS { ... }`
+  - Keep `main` global, calling `NS::__pytra_main(...)`
+  - If omitted (default), no top namespace
 - `--single-file` / `--multi-file`
-  - `--multi-file`（既定）: モジュール単位で `out/include`, `out/src` と `manifest.json` を出力
-  - `--single-file`: 従来の単一 `.cpp` 出力
-  - 互換措置として、`-o xxx.cpp` 指定時は `--single-file` が暗黙適用されます（明示モード指定がない場合）。
+  - `--multi-file` (default): output `out/include`, `out/src`, and `manifest.json` per module
+  - `--single-file`: legacy single `.cpp` output
+  - For compatibility, specifying `-o xxx.cpp` implicitly enables `--single-file` when no explicit mode is set.
 - `--output-dir DIR`
-  - `--multi-file` 時の出力ディレクトリ（未指定時は `out`）
+  - Output directory for `--multi-file` (`out` if omitted)
 
-## 3. 追加候補オプション
+## 3. Candidate Additional Options
 
-### 3.1 互換性/安全性
+### 3.1 Compatibility/Safety
 
 - `--any-cast-mode {checked,unchecked}`
-  - `Any/object` からの取り出しを実行時検証するか
+  - Whether to runtime-check extraction from `Any/object`
 
-### 3.2 文字列仕様
+### 3.2 String Specification
 
 - `--str-index-mode {byte,codepoint,native}`
-  - str型の文字の実体
-  - `byte`: 1 byte 単位（高速、現行実装寄り）
-  - `codepoint`: Unicode 1 文字単位（Python 互換寄り）
-  - `native` : ターゲット言語の string に相当するものを(wrapして)そのまま使う。
+  - Concrete string character model
+  - `byte`: 1-byte units (fast, current-implementation-oriented)
+  - `codepoint`: Unicode character units (Python-compatibility-oriented)
+  - `native`: use wrapped target-language string representation directly
 - `--str-slice-mode {byte,codepoint}`
-  - slice の意味論も同様に揃える
+  - Align slice semantics similarly
 
-### 3.3 数値仕様
+### 3.3 Numeric Specification
 
 - `--int-width=bigint`
-  - 多倍長整数（Python 互換寄り、実装コスト高）
-  - 現時点では未実装
+  - Arbitrary-precision integer (Python-compatibility-oriented, high implementation cost)
+  - Currently not implemented
 
-### 3.4 生成コード形態
+### 3.4 Generated Code Form
 
 - `--emit-layout {single,split}`
-  - `single`: 単一ファイルに変換される。
-  - `split`: モジュール分割出力
+  - `single`: single-file output
+  - `split`: module-split output
 - `--runtime-linkage {header,static,shared}`
-  - ランタイム補助の組み込み形態
+  - Runtime helper linkage form
 
-## 4. プリセット案
+## 4. Preset Proposal
 
-- 方針:
-  - デフォルトは `native` 系を選び、C++ 変換時の性能を優先する。
-  - 互換性を重視する場合は `python` 系を選ぶ。
-  - `--preset` と個別オプションを併用した場合は、個別オプションを優先する。
+- Policy:
+  - Choose `native` defaults to prioritize C++ conversion performance.
+  - Choose `python` presets when compatibility is prioritized.
+  - When using both `--preset` and individual options, individual options take precedence.
 
-- `--preset native`（デフォルト候補）
+- `--preset native` (default candidate)
   - `negative-index-mode=off`
   - `bounds-check-mode=off`
   - `floor-div-mode=native`
@@ -137,32 +137,32 @@
   - `mod-mode=python`
   - `str-index-mode=codepoint`
   - `str-slice-mode=codepoint`
-  - `int-width=bigint`（実装完了後）
+  - `int-width=bigint` (after implementation)
   - `-O0`
 
+## 5. Introduction Priority (Proposal)
 
-## 5. 導入優先順位（提案）
+1. Add `int-width=bigint` to make integer model explicit
+2. Introduce `str-index-mode` to make string compatibility selectable
+3. Add `preset` to reduce operation cost
+4. Implement detailed `int-overflow` behavior and `emit-layout=split` in stages
 
-1. `int-width=bigint` を追加し、整数モデルを明示化
-2. `str-index-mode` を導入し、文字列互換性を選択可能化
-3. `preset` を追加して運用コストを下げる
-4. `int-overflow` 詳細動作や `emit-layout=split` を段階実装
+## 6. Notes
 
-## 6. 補足
+- Must stay consistent with existing specification (`docs/spec-dev.md`), so update both simultaneously when introducing options.
+- For potentially breaking items (`int-width`, `str-index-mode`), provide at least one-release migration period before changing defaults.
 
-- 既存仕様（`docs/spec-dev.md`）との整合が必要なため、導入時は必ず同時更新する。
-- 破壊的変更になり得る項目（`int-width`, `str-index-mode`）は、デフォルト変更前に 1 リリース以上の移行期間を設ける。
+### 6.1 Specification Consistency Check Procedure
 
-### 6.1 仕様整合チェック手順
+When adding/changing options, update all of the following at the same time:
 
-オプションを追加・変更したときは、次を同時に更新する。
+1. `docs/spec-options.md` (option definitions, defaults, presets)
+2. `docs/spec-dev.md` (implementation specification and CLI reflection)
+3. `docs/spec-east.md` (responsibility boundary between EAST side and generator side)
+4. `docs/how-to-use.md` (usage examples)
 
-1. `docs/spec-options.md`（オプション定義・既定値・preset）
-2. `docs/spec-dev.md`（実装仕様と CLI 反映）
-3. `docs/spec-east.md`（EAST 側と生成器側の責務境界）
-4. `docs/how-to-use.md`（利用例）
+After updates, verify:
 
-更新後は次を確認する。
+1. output of `python src/py2cpp.py INPUT.py --dump-options` matches specification
+2. relevant option regressions in `test/unit/test_py2cpp_features.py` pass
 
-1. `python src/py2cpp.py INPUT.py --dump-options` の出力が仕様通りであること
-2. `test/unit/test_py2cpp_features.py` の該当オプション回帰が通ること
