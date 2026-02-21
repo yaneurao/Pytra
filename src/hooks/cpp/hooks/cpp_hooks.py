@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytra.std.typing import Any
+from pytra.compiler.east_parts.code_emitter import EmitterHooks
 
 
 def _render_owner_expr(emitter: Any, func_node: dict[str, Any]) -> str:
@@ -374,7 +375,7 @@ def on_render_expr_kind(
 
 def build_cpp_hooks() -> dict[str, Any]:
     """C++ エミッタへ注入する hooks dict を構築する。"""
-    hooks: dict[str, Any] = {}
-    hooks["on_render_call"] = on_render_call
-    hooks["on_render_expr_kind"] = on_render_expr_kind
-    return hooks
+    hooks = EmitterHooks()
+    hooks.add("on_render_call", on_render_call)
+    hooks.add("on_render_expr_kind", on_render_expr_kind)
+    return hooks.to_dict()
