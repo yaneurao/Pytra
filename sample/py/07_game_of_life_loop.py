@@ -52,12 +52,7 @@ def run_07_game_of_life_loop() -> None:
     out_path = "sample/out/07_game_of_life_loop.gif"
 
     start = perf_counter()
-    grid: list[list[int]] = []
-    for _ in range(h):
-        row: list[int] = []
-        for _ in range(w):
-            row.append(0)
-        grid.append(row)
+    grid: list[list[int]] = [[0] * w for _ in range(h)]
 
     # Lay down sparse noise so the whole field is less likely to stabilize too early.
     # Avoid large integer literals so all transpilers handle the expression consistently.
