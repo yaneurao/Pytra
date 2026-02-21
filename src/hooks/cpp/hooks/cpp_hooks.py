@@ -73,6 +73,210 @@ def _looks_like_runtime_symbol(name: str) -> bool:
     return False
 
 
+def _render_runtime_call_list_ops(
+    emitter: Any,
+    runtime_call: str,
+    call_node: dict[str, Any],
+    func_node: dict[str, Any],
+    rendered_args: list[str],
+) -> str:
+    """`runtime_call` の list 系（append/extend/pop/clear/reverse/sort）を処理する。"""
+    if runtime_call == "list.append":
+        owner_node: object = func_node.get("value")
+        owner = emitter.render_expr(owner_node)
+        a0 = rendered_args[0] if len(rendered_args) >= 1 else "/* missing */"
+        owner_t0 = emitter.get_expr_type(owner_node)
+        owner_t = owner_t0 if isinstance(owner_t0, str) else ""
+        if owner_t == "bytearray":
+            a0 = "static_cast<uint8>(py_to_int64(" + a0 + "))"
+        if owner_t.startswith("list[") and owner_t.endswith("]"):
+            inner_t = owner_t[5:-1].strip()
+            if inner_t != "" and not emitter.is_any_like_type(inner_t):
+                if inner_t == "uint8":
+                    a0 = "static_cast<uint8>(py_to_int64(" + a0 + "))"
+                else:
+                    a0 = emitter._cpp_type_text(inner_t) + "(" + a0 + ")"
+        return owner + ".append(" + a0 + ")"
+    if runtime_call == "list.extend":
+        owner = emitter.render_expr(func_node.get("value"))
+        a0 = rendered_args[0] if len(rendered_args) >= 1 else "{}"
+        return owner + ".insert(" + owner + ".end(), " + a0 + ".begin(), " + a0 + ".end())"
+    if runtime_call == "list.pop":
+        owner = emitter.render_expr(func_node.get("value"))
+        if len(rendered_args) == 0:
+            return owner + ".pop()"
+        return owner + ".pop(" + rendered_args[0] + ")"
+    if runtime_call == "list.clear":
+        owner = emitter.render_expr(func_node.get("value"))
+        return owner + ".clear()"
+    if runtime_call == "list.reverse":
+        owner = emitter.render_expr(func_node.get("value"))
+        return "::std::reverse(" + owner + ".begin(), " + owner + ".end())"
+    if runtime_call == "list.sort":
+        owner = emitter.render_expr(func_node.get("value"))
+        return "::std::sort(" + owner + ".begin(), " + owner + ".end())"
+    return ""
+
+
+def _render_runtime_call_set_ops(
+    emitter: Any,
+    runtime_call: str,
+    func_node: dict[str, Any],
+    rendered_args: list[str],
+) -> str:
+    """`runtime_call` の set 系（add/discard/remove/clear）を処理する。"""
+    if runtime_call == "set.add":
+        owner = emitter.render_expr(func_node.get("value"))
+        a0 = rendered_args[0] if len(rendered_args) >= 1 else "/* missing */"
+        return owner + ".insert(" + a0 + ")"
+    if runtime_call in {"set.discard", "set.remove"}:
+        owner = emitter.render_expr(func_node.get("value"))
+        a0 = rendered_args[0] if len(rendered_args) >= 1 else "/* missing */"
+        return owner + ".erase(" + a0 + ")"
+    if runtime_call == "set.clear":
+        owner = emitter.render_expr(func_node.get("value"))
+        return owner + ".clear()"
+    return ""
+
+
+def _render_runtime_call_dict_ops(
+    emitter: Any,
+    runtime_call: str,
+    call_node: dict[str, Any],
+    func_node: dict[str, Any],
+    rendered_args: list[str],
+) -> str:
+    """`runtime_call` の dict 系（get/pop/items/keys/values）を処理する。"""
+    if runtime_call == "dict.get":
+        owner_node: object = func_node.get("value")
+        owner = emitter.render_expr(owner_node)
+        owner_t = emitter.get_expr_type(owner_node)
+        owner_value_t = ""
+        if owner_t.startswith("dict[") and owner_t.endswith("]"):
+            owner_inner = emitter.split_generic(owner_t[5:-1])
+            if len(owner_inner) == 2:
+                owner_value_t = emitter.normalize_type_name(owner_inner[1])
+        objectish_owner = emitter.is_any_like_type(owner_t) or emitter.is_any_like_type(owner_value_t)
+        key_expr = rendered_args[0] if len(rendered_args) >= 1 else "/* missing */"
+        arg_nodes = emitter.any_to_list(call_node.get("args"))
+        key_node: Any = None
+        if len(arg_nodes) >= 1:
+            key_node = arg_nodes[0]
+        if not objectish_owner:
+            key_expr = emitter._coerce_dict_key_expr(owner_node, key_expr, key_node)
+        if len(rendered_args) >= 2:
+            out_t = emitter.any_to_str(call_node.get("resolved_type"))
+            if objectish_owner and out_t == "bool":
+                return "dict_get_bool(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
+            if objectish_owner and out_t == "str":
+                return "dict_get_str(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
+            if objectish_owner and out_t.startswith("list["):
+                return "dict_get_list(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
+            if objectish_owner and (emitter.is_any_like_type(out_t) or out_t == "object"):
+                return "dict_get_node(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
+            if not objectish_owner:
+                return owner + ".get(" + key_expr + ", " + rendered_args[1] + ")"
+            return "py_dict_get_default(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
+        if len(rendered_args) == 1:
+            return "py_dict_get_maybe(" + owner + ", " + key_expr + ")"
+        return ""
+    if runtime_call == "dict.pop":
+        owner_node = func_node.get("value")
+        owner = emitter.render_expr(owner_node)
+        key_expr = rendered_args[0] if len(rendered_args) >= 1 else "/* missing */"
+        arg_nodes = emitter.any_to_list(call_node.get("args"))
+        key_node: Any = None
+        if len(arg_nodes) >= 1:
+            key_node = arg_nodes[0]
+        key_expr = emitter._coerce_dict_key_expr(owner_node, key_expr, key_node)
+        if len(rendered_args) <= 1:
+            return owner + ".pop(" + key_expr + ")"
+        owner_t0 = emitter.get_expr_type(owner_node)
+        owner_t = owner_t0 if isinstance(owner_t0, str) else ""
+        val_t = "Any"
+        if owner_t.startswith("dict[") and owner_t.endswith("]"):
+            inner = emitter.split_generic(owner_t[5:-1])
+            if len(inner) == 2 and inner[1] != "":
+                val_t = emitter.normalize_type_name(inner[1])
+        default_expr = rendered_args[1]
+        if default_expr in {"::std::nullopt", "std::nullopt"} and not emitter.is_any_like_type(val_t) and val_t != "None":
+            default_expr = emitter._cpp_type_text(val_t) + "()"
+        return "(" + owner + ".contains(" + key_expr + ") ? " + owner + ".pop(" + key_expr + ") : " + default_expr + ")"
+    if runtime_call == "dict.items":
+        return emitter.render_expr(func_node.get("value"))
+    if runtime_call == "dict.keys":
+        owner = emitter.render_expr(func_node.get("value"))
+        return "py_dict_keys(" + owner + ")"
+    if runtime_call == "dict.values":
+        owner = emitter.render_expr(func_node.get("value"))
+        return "py_dict_values(" + owner + ")"
+    return ""
+
+
+def _render_runtime_call_str_ops(
+    emitter: Any,
+    runtime_call: str,
+    func_node: dict[str, Any],
+    rendered_args: list[str],
+) -> str:
+    """`runtime_call` の文字列系（strip/startswith/replace/join など）を処理する。"""
+    owner_node = emitter.any_to_dict_or_empty(func_node.get("value"))
+    owner = emitter.render_expr(func_node.get("value"))
+    owner_kind = emitter._node_kind_from_dict(owner_node)
+    if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+        owner = "(" + owner + ")"
+    if runtime_call == "py_isdigit":
+        if len(rendered_args) == 0:
+            return owner + ".isdigit()"
+        if len(rendered_args) == 1:
+            return rendered_args[0] + ".isdigit()"
+    if runtime_call == "py_isalpha":
+        if len(rendered_args) == 0:
+            return owner + ".isalpha()"
+        if len(rendered_args) == 1:
+            return rendered_args[0] + ".isalpha()"
+    if runtime_call == "py_strip":
+        if len(rendered_args) == 0:
+            return "py_strip(" + owner + ")"
+        if len(rendered_args) == 1:
+            return owner + ".strip(" + rendered_args[0] + ")"
+    if runtime_call == "py_rstrip":
+        if len(rendered_args) == 0:
+            return "py_rstrip(" + owner + ")"
+        if len(rendered_args) == 1:
+            return owner + ".rstrip(" + rendered_args[0] + ")"
+    if runtime_call == "py_lstrip":
+        if len(rendered_args) == 0:
+            return "py_lstrip(" + owner + ")"
+        if len(rendered_args) == 1:
+            return owner + ".lstrip(" + rendered_args[0] + ")"
+    if runtime_call == "py_startswith":
+        if len(rendered_args) == 1:
+            return "py_startswith(" + owner + ", " + rendered_args[0] + ")"
+        if len(rendered_args) == 2:
+            start = "py_to_int64(" + rendered_args[1] + ")"
+            return "py_startswith(py_slice(" + owner + ", " + start + ", py_len(" + owner + ")), " + rendered_args[0] + ")"
+        if len(rendered_args) >= 3:
+            start = "py_to_int64(" + rendered_args[1] + ")"
+            end = "py_to_int64(" + rendered_args[2] + ")"
+            return "py_startswith(py_slice(" + owner + ", " + start + ", " + end + "), " + rendered_args[0] + ")"
+    if runtime_call == "py_endswith":
+        if len(rendered_args) == 1:
+            return "py_endswith(" + owner + ", " + rendered_args[0] + ")"
+        if len(rendered_args) == 2:
+            start = "py_to_int64(" + rendered_args[1] + ")"
+            return "py_endswith(py_slice(" + owner + ", " + start + ", py_len(" + owner + ")), " + rendered_args[0] + ")"
+        if len(rendered_args) >= 3:
+            start = "py_to_int64(" + rendered_args[1] + ")"
+            end = "py_to_int64(" + rendered_args[2] + ")"
+            return "py_endswith(py_slice(" + owner + ", " + start + ", " + end + "), " + rendered_args[0] + ")"
+    if runtime_call == "py_replace" and len(rendered_args) == 2:
+        return "py_replace(" + owner + ", " + rendered_args[0] + ", " + rendered_args[1] + ")"
+    if runtime_call == "py_join" and len(rendered_args) == 1:
+        return "str(" + owner + ").join(" + rendered_args[0] + ")"
+    return ""
+
+
 def on_render_call(
     emitter: Any,
     call_node: dict[str, Any],
@@ -84,6 +288,18 @@ def on_render_call(
     runtime_call = emitter.any_dict_get_str(call_node, "runtime_call", "")
     if runtime_call == "":
         runtime_call = _infer_runtime_call_from_func_node(emitter, func_node)
+    list_ops = _render_runtime_call_list_ops(emitter, runtime_call, call_node, func_node, rendered_args)
+    if list_ops != "":
+        return list_ops
+    set_ops = _render_runtime_call_set_ops(emitter, runtime_call, func_node, rendered_args)
+    if set_ops != "":
+        return set_ops
+    dict_ops = _render_runtime_call_dict_ops(emitter, runtime_call, call_node, func_node, rendered_args)
+    if dict_ops != "":
+        return dict_ops
+    str_ops = _render_runtime_call_str_ops(emitter, runtime_call, func_node, rendered_args)
+    if str_ops != "":
+        return str_ops
     if runtime_call == "std::filesystem::create_directories":
         owner = _render_owner_expr(emitter, func_node)
         parents = rendered_kwargs.get("parents", "false")
