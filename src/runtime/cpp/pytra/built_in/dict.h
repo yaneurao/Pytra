@@ -3,6 +3,9 @@
 
 #include "container_common.h"
 
+template <class T>
+object make_object(const T& v);
+
 template <class K, class V>
 class dict {
 public:
@@ -13,17 +16,53 @@ public:
 
     dict() = default;
     dict(::std::initializer_list<value_type> init) : data_(init) {}
-    template <class KK = K, class VV = V, ::std::enable_if_t<::std::is_same_v<KK, str> && ::std::is_same_v<VV, object>, int> = 0>
-    dict(const object& v) : data_(obj_to_dict(v)) {}
+    template <
+        class KK,
+        class VV,
+        ::std::enable_if_t<
+            ::std::is_constructible_v<K, KK> &&
+            ::std::is_constructible_v<V, VV>, int> = 0>
+    dict(::std::initializer_list<::std::pair<KK, VV>> init) {
+        for (const auto& kv : init) {
+            data_[K(kv.first)] = _convert_value(V(kv.second));
+        }
+    }
+    template <class KK = K, ::std::enable_if_t<::std::is_same_v<KK, str>, int> = 0>
+    dict(const object& v) {
+        const dict<str, object> src = obj_to_dict(v);
+        for (const auto& kv : src) {
+            data_[kv.first] = _convert_value(kv.second);
+        }
+    }
 
     template <class It>
     dict(It first, It last) : data_(first, last) {}
 
+    template <class U, ::std::enable_if_t<!::std::is_same_v<U, V>, int> = 0>
+    dict(const dict<K, U>& other) {
+        for (const auto& kv : other) {
+            data_[kv.first] = _convert_value(kv.second);
+        }
+    }
+
     operator const base_type&() const { return data_; }  // NOLINT(google-explicit-constructor)
     operator base_type&() { return data_; }              // NOLINT(google-explicit-constructor)
-    template <class KK = K, class VV = V, ::std::enable_if_t<::std::is_same_v<KK, str> && ::std::is_same_v<VV, object>, int> = 0>
+    template <class KK = K, ::std::enable_if_t<::std::is_same_v<KK, str>, int> = 0>
     dict& operator=(const object& v) {
-        data_ = obj_to_dict(v);
+        data_.clear();
+        const dict<str, object> src = obj_to_dict(v);
+        for (const auto& kv : src) {
+            data_[kv.first] = _convert_value(kv.second);
+        }
+        return *this;
+    }
+
+    template <class U, ::std::enable_if_t<!::std::is_same_v<U, V>, int> = 0>
+    dict& operator=(const dict<K, U>& other) {
+        data_.clear();
+        for (const auto& kv : other) {
+            data_[kv.first] = _convert_value(kv.second);
+        }
         return *this;
     }
 
@@ -86,6 +125,44 @@ public:
         return it->second;
     }
 
+    V pop(const K& key) {
+        auto it = data_.find(key);
+        if (it == data_.end()) {
+            throw ::std::out_of_range("dict.pop missing key");
+        }
+        V out = it->second;
+        data_.erase(it);
+        return out;
+    }
+
+    V pop(const K& key, const V& default_value) {
+        auto it = data_.find(key);
+        if (it == data_.end()) {
+            return default_value;
+        }
+        V out = it->second;
+        data_.erase(it);
+        return out;
+    }
+
+    V& setdefault(const K& key) {
+        auto it = data_.find(key);
+        if (it == data_.end()) {
+            auto inserted = data_.insert(::std::make_pair(key, V{}));
+            return inserted.first->second;
+        }
+        return it->second;
+    }
+
+    V& setdefault(const K& key, const V& default_value) {
+        auto it = data_.find(key);
+        if (it == data_.end()) {
+            auto inserted = data_.insert(::std::make_pair(key, default_value));
+            return inserted.first->second;
+        }
+        return it->second;
+    }
+
     list<K> keys() const {
         list<K> out{};
         out.reserve(data_.size());
@@ -108,6 +185,17 @@ public:
     }
 
 private:
+    template <class U>
+    static V _convert_value(const U& value) {
+        if constexpr (::std::is_same_v<V, object>) {
+            return make_object(value);
+        } else if constexpr (::std::is_same_v<U, object> && ::std::is_same_v<V, str>) {
+            return str(value);
+        } else {
+            return static_cast<V>(value);
+        }
+    }
+
     base_type data_;
 };
 

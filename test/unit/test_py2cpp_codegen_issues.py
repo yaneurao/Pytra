@@ -43,7 +43,7 @@ class Py2CppCodegenIssueTest(unittest.TestCase):
         self.assertNotIn("str key_sep = \":\";", cpp)
         self.assertNotIn("str item_sep = \";\";", cpp)
         self.assertNotIn("str key_sep = \"=\";", cpp)
-        self.assertIn("return py_to_string(item_sep + key_sep);", cpp)
+        self.assertIn("return item_sep + key_sep;", cpp)
 
     def test_optional_tuple_destructure_keeps_str_type(self) -> None:
         src = """def dump_like(indent: int | None, separators: tuple[str, str] | None) -> str:
@@ -114,10 +114,10 @@ def f(p: str) -> None:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
 
-        self.assertIn("auto root = ::std::get<0>(", cpp)
-        self.assertIn("auto ext = ::std::get<1>(", cpp)
-        self.assertNotIn("::std::any root = ::std::get<0>(", cpp)
-        self.assertNotIn("::std::any ext = ::std::get<1>(", cpp)
+        self.assertIn("auto root = py_at(", cpp)
+        self.assertIn("auto ext = py_at(", cpp)
+        self.assertNotIn("::std::any root =", cpp)
+        self.assertNotIn("::std::any ext =", cpp)
 
 
 if __name__ == "__main__":

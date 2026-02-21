@@ -1062,10 +1062,12 @@ class CppEmitter(CodeEmitter):
     def _module_function_arg_types(self, module_name: str, fn_name: str) -> list[str]:
         """モジュール関数の引数型列を返す（不明時は空 list）。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
-        if module_name_norm in self._module_fn_arg_type_cache:
-            fn_map = self._module_fn_arg_type_cache[module_name_norm]
-            if fn_name in fn_map:
-                return fn_map[fn_name]
+        cached = self._module_fn_arg_type_cache.get(module_name_norm)
+        if isinstance(cached, dict):
+            fn_map = cached
+            sig = fn_map.get(fn_name)
+            if isinstance(sig, list):
+                return sig
             return []
         fn_map: dict[str, list[str]] = {}
         src_path: Path = self._module_source_path_for_name(module_name_norm)
@@ -1074,8 +1076,9 @@ class CppEmitter(CodeEmitter):
             return []
         fn_map = _extract_function_arg_types_from_python_source(src_path)
         self._module_fn_arg_type_cache[module_name_norm] = fn_map
-        if fn_name in fn_map:
-            return fn_map[fn_name]
+        sig = fn_map.get(fn_name)
+        if isinstance(sig, list):
+            return sig
         return []
 
     def _coerce_args_for_module_function(
@@ -3241,7 +3244,12 @@ class CppEmitter(CodeEmitter):
             owner_node: object = fn.get("value")
             owner = self.render_expr(owner_node)
             owner_t = self.get_expr_type(owner_node)
-            objectish_owner = self.is_any_like_type(owner_t)
+            owner_value_t = ""
+            if owner_t.startswith("dict[") and owner_t.endswith("]"):
+                owner_inner = self.split_generic(owner_t[5:-1])
+                if len(owner_inner) == 2:
+                    owner_value_t = self.normalize_type_name(owner_inner[1])
+            objectish_owner = self.is_any_like_type(owner_t) or self.is_any_like_type(owner_value_t)
             key_expr = args[0] if len(args) >= 1 else "/* missing */"
             key_node: Any = None
             if len(arg_nodes) >= 1:
@@ -3260,7 +3268,7 @@ class CppEmitter(CodeEmitter):
                     return f"dict_get_node({owner}, {key_expr}, {args[1]})"
                 return f"py_dict_get_default({owner}, {key_expr}, {args[1]})"
             if len(args) == 1:
-                return f"py_dict_get({owner}, {key_expr})"
+                return f"py_dict_get_maybe({owner}, {key_expr})"
             return ""
         if runtime_call == "dict.pop":
             owner_node = fn.get("value")
@@ -4750,11 +4758,15 @@ class CppEmitter(CodeEmitter):
 
 def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
-    if input_path.suffix == ".json":
-        payload = json.loads(input_path.read_text(encoding="utf-8"))
-        if isinstance(payload, dict):
-            if payload.get("ok") is True and isinstance(payload.get("east"), dict):
-                return payload.get("east")
+    input_txt = str(input_path)
+    if input_txt.endswith(".json"):
+        payload_any = json.loads(input_path.read_text(encoding="utf-8"))
+        if isinstance(payload_any, dict):
+            payload = payload_any
+            ok_obj = payload.get("ok")
+            east_obj = payload.get("east")
+            if isinstance(ok_obj, bool) and ok_obj and isinstance(east_obj, dict):
+                return east_obj
             if _dict_any_kind(payload) == "Module":
                 return payload
         raise _make_user_error(
@@ -4762,12 +4774,15 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
             "EAST JSON の形式が不正です。",
             ["期待形式: {'ok': true, 'east': {...}} または {'kind': 'Module', ...}"],
         )
+    source_text: str = ""
+    east_any: Any = None
+    msg: str = ""
     try:
         source_text = input_path.read_text(encoding="utf-8")
         if parser_backend == "self_hosted":
-            east = convert_path(input_path)
+            east_any = convert_path(input_path, parser_backend)
         else:
-            east = convert_source_to_east_with_backend(source_text, str(input_path), parser_backend=parser_backend)
+            east_any = convert_source_to_east_with_backend(source_text, input_txt, parser_backend=parser_backend)
     except SyntaxError as ex:
         msg = str(ex)
         raise _make_user_error(
@@ -4792,39 +4807,23 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
                     ) from ex
             raise ex
         msg = str(ex)
-        msg_attr = getattr(ex, "message", None)
-        if msg == "" and isinstance(msg_attr, str):
-            msg = msg_attr
-        source_line = ""
-        source_span_obj = getattr(ex, "source_span", None)
-        if isinstance(source_span_obj, dict):
-            line_obj = source_span_obj.get("lineno")
-            line_no = line_obj if isinstance(line_obj, int) else 0
-            if line_no > 0:
-                src_lines = source_text.splitlines()
-                idx = line_no - 1
-                if idx >= 0 and idx < len(src_lines):
-                    source_line = src_lines[idx].strip()
         if "from-import wildcard is not supported" in msg:
-            import_txt = source_line if source_line != "" else "from ... import *"
             raise _make_user_error(
                 "input_invalid",
                 "import 構文が未対応です。",
-                [f"kind=unsupported_import_form file={input_path} import={import_txt}"],
+                [f"kind=unsupported_import_form file={input_path} import=from ... import *"],
             ) from ex
         if "relative import is not supported" in msg:
-            import_txt = source_line if source_line != "" else "from .module import symbol"
             raise _make_user_error(
                 "input_invalid",
                 "import 構文が未対応です。",
-                [f"kind=unsupported_import_form file={input_path} import={import_txt}"],
+                [f"kind=unsupported_import_form file={input_path} import=from .module import symbol"],
             ) from ex
         if "duplicate import binding:" in msg:
-            import_txt = source_line if source_line != "" else msg
             raise _make_user_error(
                 "input_invalid",
                 "import 束縛が重複しています。",
-                [f"kind=duplicate_binding file={input_path} import={import_txt}"],
+                [f"kind=duplicate_binding file={input_path} import={msg}"],
             ) from ex
         category = "not_implemented"
         summary = "この構文はまだ実装されていません。"
@@ -4838,8 +4837,8 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
             category = "unsupported_by_design"
             summary = "この構文は言語仕様上サポート対象外です。"
         raise _make_user_error(category, summary, [msg]) from ex
-    if isinstance(east, dict):
-        return east
+    if isinstance(east_any, dict):
+        return east_any
     raise _make_user_error(
         "input_invalid",
         "EAST の生成に失敗しました。",

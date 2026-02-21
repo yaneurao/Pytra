@@ -72,7 +72,7 @@
    - [x] `tools/prepare_selfhost_source.py` に取り込み可能な関数群を「安全（selfhost通過済み）」と「要分割」に分ける。
      - 安全（通過済み）: `CodeEmitter` 本体、`transpile_cli` の関数群（`parse_py2cpp_argv` など）、main差し替え
      - 要分割: `src/pytra/compiler/east.py` facade 経由の import 連鎖、`east_parts.core` 全量取り込み（サイズ過大かつ selfhost 変換コスト高）
-   - [ ] `sample/py/01_mandelbrot.py` を selfhost 経路で `-o` 生成できるところまで回復する。
+   - [x] `sample/py/01_mandelbrot.py` を selfhost 経路で `-o` 生成できるところまで回復する。
      - [x] 暫定ブリッジ `tools/selfhost_transpile.py` を追加し、`.py -> EAST JSON -> selfhost` で `test/fixtures/core/add.py` の生成を確認。
      - [x] 同ブリッジ経路で `sample/py/01_mandelbrot.py` の `-o` 生成を確認。
      - [x] `src/py2cpp.py` の runtime モジュール解決を `pytra.compiler.*` まで拡張し、`_runtime_module_tail_from_source_path` / include / namespace の経路に `compiler/` を追加した。
@@ -82,16 +82,16 @@
         - [x] ブロッカーA: `Call(...).attr()` が `ns::func(...)::attr()` へ誤解決されるケースは、`re.strip_group(...)` 導入と call/attribute 解決見直しで解消した。
       - [x] ブロッカーB: `core.py` 内の mutable 引数/ローカルが `const` 扱いで生成される経路を解消した（`list.append`/`dict[...] =` が通る）。
       - [x] ブロッカーC: self_hosted parser 本体の不整合（keyword-only 呼び出し、tuple 要素アクセス、`lstrip(" ")` 等）を潰し、`core.cpp` 単体 `g++ -c` を通した。
-     - [ ] pure selfhost（中間 Python 呼び出しなし）で `.py -> -o` を通す。
-      - [ ] `selfhost/py2cpp.out` 側に `load_east(.py)` の実処理を実装し、`not_implemented` を返さないようにする。
-         - [ ] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。
-         - [ ] selfhost 最小モードの `load_east(.json)` を復活させ、`tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` を再び通す（`std::any` 退化を回避した実装にする）。
+     - [x] pure selfhost（中間 Python 呼び出しなし）で `.py -> -o` を通す。
+      - [x] `selfhost/py2cpp.out` 側に `load_east(.py)` の実処理を実装し、`not_implemented` を返さないようにする。
+         - [x] `load_east(.py)` を `load_east_from_path(..., parser_backend="self_hosted")` ベースに置換する。
+         - [x] selfhost 最小モードの `load_east(.json)` を復活させ、`tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` を再び通す（`std::any` 退化を回避した実装にする）。
            - [x] `.json` 読み込み自体は復活し、`bridge-json-unavailable` skip は解消した（2026-02-20）。
            - [x] `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` の既定ケースで `mismatches=0` を達成する。: `test/fixtures/core/add.py`, `test/fixtures/control/if_else.py`, `test/fixtures/collections/comprehension_filter.py`, `sample/py/01_mandelbrot.py` で `mismatches=0` を確認済み（2026-02-20）。
            - [x] 暫定措置: `check_selfhost_cpp_diff --mode allow-not-implemented --selfhost-driver bridge` では `[input_invalid]` を skip 扱いにした（本タスク完了時に戻す）。
            - [x] `src/pytra/std/json.py` を C++ へ安全に生成できるサブセットへ段階分割し、`runtime/cpp/pytra/std/json.cpp` の selfhost ビルドエラー（`ord/chr` / 文字列 `.begin()` / optional tuple 展開など）を解消する。: `json.cpp` 単体コンパイル通過、`json_extended` の Python/C++ 出力一致を確認済み（2026-02-20）。
          - [x] 置換後に `--help` / `.json` 入力の既存経路が壊れないことを確認する。: `./selfhost/py2cpp.out --help` と `./selfhost/py2cpp.out <EAST.json> -o out.cpp` を確認済み（2026-02-20）。
-         - [x] `.py` 入力失敗時のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。: 現在は `.py` -> `not_implemented`、`.json` -> `input_invalid`、`--help` は `0` を確認済み。
+         - [x] `.py` / `.json` 入力のエラー分類を `user_syntax_error` / `input_invalid` / `not_implemented` で再点検する。: 2026-02-21 時点で `.py` / `.json` とも実処理に到達し、`--help` は `0` を確認。
        - [x] `src/py2cpp.py` の EAST 読み込み import を `pytra.compiler.east` facade から `pytra.compiler.east_parts.core` へ切り替えた（selfhost 時の動的 import 依存を削減）。
        - [x] `tools/build_selfhost.py` の現行失敗要因を段階解消する（`literal.join` 生成崩れ、`AUG_OPS/BIN_OPS` 未束縛、`parse_py2cpp_argv` 返り値の tuple 退化）。: 2026-02-20 時点で `python3 tools/build_selfhost.py` が再び green（`selfhost/py2cpp.out` 生成成功）。
          - [x] `CppEmitter._module_source_path_for_name` の selfhost 変換で `Path` が `float64` 退化する経路を除去する（`Path /` と `str + Path` を使わない）。: `Path` 合成を文字列経由へ変更し、`py_div(Path, str)` 発生を除去。
@@ -105,7 +105,7 @@
          - [x] `core.py` 先頭の self_hosted parser 未対応パターン（行内 `#` コメント / class docstring）を除去した。
          - [x] `core.py` 内のネスト `def`（例: `_tokenize` 内 `scan_string_token`）を self_hosted parser で扱える形へ段階分解する。: `PYTHONPATH=src python3 -c 'from pytra.compiler.east_parts.core import convert_path; from pytra.std.pathlib import Path; convert_path(Path(\"src/pytra/compiler/east_parts/core.py\"))'` で `OK` を確認（2026-02-20）。
          - [ ] `tools/prepare_selfhost_source.py` の取り込み対象へ `east_parts.core` を段階追加する。
-       - [ ] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
+       - [x] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
        - [ ] 上記生成物を `g++` でビルドして、実行結果が Python 実行と一致することを確認する。
 3. [ ] CodeEmitter hook 移管の再開（selfhostを壊さない手順）
    - [x] `CodeEmitter` に hooks 辞書呼び出しを導入する前に、selfhost非対応構文（`callable` など）を使わない制約版APIを定義する。
@@ -204,20 +204,20 @@
 4. [ ] `selfhost/py2cpp.out` を生成し、最小実行を通す。
    - [x] `tools/build_selfhost.py` を追加し、runtime `.cpp` を含めて `selfhost/py2cpp.out` を生成できるようにする。
    - [x] `selfhost/py2cpp.out` は `__pytra_main(argv)` を実行する状態まで接続する（no-op ではない）。
-   - [ ] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
-     - [ ] 引数パース互換（`INPUT OUTPUT` 形式）と `-o` 形式の両方で通ることを確認する。
+   - [x] `./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp` を成功させる。
+     - [x] 引数パース互換（`INPUT OUTPUT` 形式）と `-o` 形式の両方で通ることを確認する。
        - [x] `argv[0]` 混入で `unexpected extra argument` になる不具合を修正し、`-o` 形式で `not_implemented` まで到達することを確認する（2026-02-19）。
       - [x] `parse_py2cpp_argv` が `INPUT OUTPUT` 形式（`-o` 省略）を受理するように実装した（2026-02-19）。
       - [x] 失敗時に `user_syntax_error` / `input_invalid` / `not_implemented` の分類が維持されることを確認する。: selfhost 実行で `.py` と `.json` の分類を確認済み（2026-02-19）。
    - [x] `./selfhost/py2cpp.out --help` を通す。
-   - [ ] `./selfhost/py2cpp.out INPUT.py -o OUT.cpp` を通す。
+   - [x] `./selfhost/py2cpp.out INPUT.py -o OUT.cpp` を通す。
    - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
-   - [ ] `test/fixtures/arithmetic/add.py`（軽量ケース）でも selfhost 変換を実行し、最小成功ケースを確立する。
+   - [x] `test/fixtures/core/add.py`（軽量ケース）でも selfhost 変換を実行し、最小成功ケースを確立する。: C++ 実行出力 `True` が `PYTHONPATH=src python3 test/fixtures/core/add.py` と一致（2026-02-21）。
    - [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
      - [x] `load_east` を `.json` `input_invalid` / `.py` `not_implemented` に分割した（selfhost 最小モード）。
      - [x] selfhost parser 非対応のネスト関数を含む補助関数（import graph / multi-file）の一部をスタブへ置換した。
      - [ ] `Path`/`json` 操作の型退化で C++ 生成が崩れる箇所を段階的に縮退し、`tools/build_selfhost.py` を再 green 化する。
-      - [x] `tools/build_selfhost.py` は再度 green（`selfhost/py2cpp.out` 生成成功）へ回復した。現在の制約: selfhost 実行時の `.py` 入力は `not_implemented`。
+      - [x] `tools/build_selfhost.py` は再度 green（`selfhost/py2cpp.out` 生成成功）へ回復した。2026-02-21 時点で `.py` 入力も実処理で変換可能。
       - [x] 暫定運用: `tools/build_selfhost.py` は `cpp/pytra/compiler/*` をリンク対象から除外し、未使用の compiler runtime 由来リンク失敗を回避している（`.py` 入力実装時に再有効化）。
 5. [ ] selfhost 版と Python 版の変換結果一致検証を自動化する。
    - [x] 比較対象ケース（`test/fixtures` 代表 + `sample/py` 代表）を決める。: `test/fixtures/core/add.py`, `test/fixtures/control/if_else.py`, `sample/py/01_mandelbrot.py`
@@ -274,6 +274,11 @@
   14. selfhost 生成 C++ の `print(...)` 残留を暫定修正し、フォールバックでも `py_print(...)` を出力するようにした。
   15. `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` の `sample/py/01_mandelbrot.py` 差分を解消（引数順崩れ/`png.write_rgb_png` 残留/浮動小数リテラル差分を修正）。
   16. `test/fixtures/collections/comprehension_filter.py` の selfhost 差分を解消（内包表現 `if` 条件崩れと `list[bool]` 初期化型崩れを修正）。
+- 更新（2026-02-21 selfhost 進捗）:
+  1. `selfhost/py2cpp.out` で `.py` / `.json` の両入力が実処理で通ることを確認（`--help` は終了コード `0` 維持）。
+  2. `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` は既定ケースで `mismatches=0` を再確認。
+  3. selfhost 直実行で `test/fixtures` は expected-fail 除外 `91/91` 変換成功（enum 4件の class 解析失敗を解消）。
+  4. `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` と `INPUT OUTPUT` 形式の両方で生成成功を確認。
   17. `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` の既定ケースで `mismatches=0` を確認。
   2. `g++` コンパイルエラーは `total_errors=72`（`<=100` 維持）を確認。
   3. 現在の上位は `__pytra_main`（import/runtime 参照境界）と `emit_class` / `emit_assign` の `Any` 境界由来の型不整合。

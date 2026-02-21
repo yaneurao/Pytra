@@ -168,25 +168,25 @@ namespace pytra::std::re {
         
         // ^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*([^=]+?)(?:\\s*=\\s*(.+))?$") {
-            ::std::any c = make_object(text.find(":"));
+            int64 c = text.find(":");
             if (c <= 0)
                 return ::std::nullopt;
-            ::std::any name = make_object(py_strip(py_slice(text, 0, c)));
-            if (!(_is_ident(py_to_string(name))))
+            str name = py_strip(py_slice(text, 0, c));
+            if (!(_is_ident(name)))
                 return ::std::nullopt;
             str rhs = py_slice(text, c + 1, py_len(text));
-            ::std::any eq = make_object(rhs.find("="));
+            int64 eq = rhs.find("=");
             if (eq < 0) {
-                ::std::any ann = make_object(py_strip(rhs));
+                str ann = py_strip(rhs);
                 if (ann == "")
                     return ::std::nullopt;
-                return ::rc_new<Match>(text, list<object>{make_object(name), make_object(ann), make_object("")});
+                return ::rc_new<Match>(text, list<str>{name, ann, ""});
             }
-            ::std::any ann = make_object(py_strip(py_slice(rhs, 0, eq)));
-            ::std::any val = make_object(py_strip(py_slice(rhs, eq + 1, py_len(rhs))));
+            str ann = py_strip(py_slice(rhs, 0, eq));
+            str val = py_strip(py_slice(rhs, eq + 1, py_len(rhs)));
             if ((ann == "") || (val == ""))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, list<object>{make_object(name), make_object(ann), make_object(val)});
+            return ::rc_new<Match>(text, list<str>{name, ann, val});
         }
         
         // ^[A-Za-z_][A-Za-z0-9_]*$

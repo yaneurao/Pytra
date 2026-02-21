@@ -38,9 +38,6 @@ def runtime_cpp_sources() -> list[str]:
         # 互換レイヤ（std/pylib）は新実体（pytra/*）と二重定義になるため除外する。
         if rel.startswith("cpp/std/") or rel.startswith("cpp/pylib/"):
             continue
-        # selfhost の現状では `.py` -> EAST 直変換を未使用のため compiler runtime はリンク対象から外す。
-        if rel.startswith("cpp/pytra/compiler/"):
-            continue
         out.append(str(p))
     return out
 

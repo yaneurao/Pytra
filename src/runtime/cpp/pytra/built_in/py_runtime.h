@@ -17,6 +17,7 @@
 #include <string>
 #include <type_traits>
 #include <tuple>
+#include <typeinfo>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -1096,7 +1097,46 @@ static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
             static const V k_empty_value{};
             return k_empty_value;
         }
-        throw ::std::out_of_range(::std::string("dict key not found: ") + key);
+        str keys_txt = "";
+        bool first = true;
+        for (const auto& kv : d) {
+            if (!first) keys_txt += ", ";
+            keys_txt += kv.first;
+            first = false;
+        }
+        throw ::std::out_of_range(
+            ::std::string("dict key not found: ")
+            + key
+            + " available_keys=["
+            + keys_txt.c_str()
+            + "] value_type="
+            + typeid(V).name());
+    }
+    return it->second;
+}
+
+template <class V>
+static inline const V& py_dict_get(const dict<str, V>& d, const str& key) {
+    auto it = d.find(key);
+    if (it == d.end()) {
+        if (key == str("lowered_kind")) {
+            static const V k_empty_value{};
+            return k_empty_value;
+        }
+        str keys_txt = "";
+        bool first = true;
+        for (const auto& kv : d) {
+            if (!first) keys_txt += ", ";
+            keys_txt += kv.first;
+            first = false;
+        }
+        throw ::std::out_of_range(
+            ::std::string("dict key not found: ")
+            + key.c_str()
+            + " available_keys=["
+            + keys_txt.c_str()
+            + "] value_type="
+            + typeid(V).name());
     }
     return it->second;
 }
@@ -1123,7 +1163,38 @@ static inline V py_dict_get(const ::std::optional<dict<str, V>>& d, const char* 
 static inline object py_dict_get(const dict<str, object>& d, const char* key) {
     auto it = d.find(str(key));
     if (it == d.end()) {
-        throw ::std::out_of_range(::std::string("dict key not found: ") + key);
+        str kind = "";
+        auto kind_it = d.find(str("kind"));
+        if (kind_it != d.end()) {
+            kind = obj_to_str(kind_it->second);
+        }
+        str keys_txt = "";
+        bool first = true;
+        for (const auto& kv : d) {
+            if (!first) {
+                keys_txt += ", ";
+            }
+            keys_txt += kv.first;
+            first = false;
+        }
+        auto caller_addr0 = reinterpret_cast<::std::uintptr_t>(__builtin_return_address(0));
+        auto caller_addr1 = reinterpret_cast<::std::uintptr_t>(__builtin_return_address(1));
+        auto caller_addr2 = reinterpret_cast<::std::uintptr_t>(__builtin_return_address(2));
+        ::std::ostringstream caller_hex0;
+        caller_hex0 << ::std::hex << caller_addr0;
+        ::std::ostringstream caller_hex1;
+        caller_hex1 << ::std::hex << caller_addr1;
+        ::std::ostringstream caller_hex2;
+        caller_hex2 << ::std::hex << caller_addr2;
+        throw ::std::out_of_range(
+            ::std::string("dict key not found: ")
+            + key
+            + " kind=" + py_to_string(kind)
+            + " keys=[" + py_to_string(keys_txt) + "]"
+            + " caller0=0x" + caller_hex0.str()
+            + " caller1=0x" + caller_hex1.str()
+            + " caller2=0x" + caller_hex2.str()
+        );
     }
     return it->second;
 }
@@ -1158,6 +1229,85 @@ static inline ::std::any py_dict_get(const ::std::any& obj, const char* key) {
         }
     }
     throw ::std::runtime_error("py_dict_get on non-dict any");
+}
+
+// `dict.get(key)`（default 省略）相当。未キー時は Python の `None` 相当（object{}）を返す。
+template <class K, class V>
+static inline object py_dict_get_maybe(const dict<K, V>& d, const K& key) {
+    auto it = d.find(key);
+    if (it == d.end()) {
+        return object{};
+    }
+    return make_object(it->second);
+}
+
+template <class V>
+static inline object py_dict_get_maybe(const dict<str, V>& d, const char* key) {
+    return py_dict_get_maybe(d, str(key));
+}
+
+template <class V>
+static inline object py_dict_get_maybe(const dict<str, V>& d, const str& key) {
+    auto it = d.find(key);
+    if (it == d.end()) {
+        return object{};
+    }
+    return make_object(it->second);
+}
+
+template <class V>
+static inline object py_dict_get_maybe(const dict<str, V>& d, const ::std::string& key) {
+    return py_dict_get_maybe(d, str(key));
+}
+
+template <class K, class V>
+static inline object py_dict_get_maybe(const ::std::optional<dict<K, V>>& d, const K& key) {
+    if (!d.has_value()) {
+        return object{};
+    }
+    return py_dict_get_maybe(*d, key);
+}
+
+template <class V>
+static inline object py_dict_get_maybe(const ::std::optional<dict<str, V>>& d, const char* key) {
+    if (!d.has_value()) {
+        return object{};
+    }
+    return py_dict_get_maybe(*d, key);
+}
+
+template <class V>
+static inline object py_dict_get_maybe(const ::std::optional<dict<str, V>>& d, const str& key) {
+    if (!d.has_value()) {
+        return object{};
+    }
+    return py_dict_get_maybe(*d, key);
+}
+
+static inline object py_dict_get_maybe(const object& obj, const char* key) {
+    if (const auto* p = obj_to_dict_ptr(obj)) {
+        return py_dict_get_maybe(*p, key);
+    }
+    return object{};
+}
+
+static inline object py_dict_get_maybe(const object& obj, const str& key) {
+    if (const auto* p = obj_to_dict_ptr(obj)) {
+        return py_dict_get_maybe(*p, key);
+    }
+    return object{};
+}
+
+static inline object py_dict_get_maybe(const ::std::any& obj, const char* key) {
+    if (const auto* p = ::std::any_cast<dict<str, object>>(&obj)) {
+        return py_dict_get_maybe(*p, key);
+    }
+    if (const auto* p = ::std::any_cast<dict<str, ::std::any>>(&obj)) {
+        auto it = p->find(str(key));
+        if (it == p->end()) return object{};
+        return make_object(it->second);
+    }
+    return object{};
 }
 
 template <class K, class V>
@@ -1492,6 +1642,16 @@ static inline object dict_get_node(
     return py_dict_get_default(d, key, defval);
 }
 
+template <class D>
+static inline D dict_get_node(const dict<str, object>& d, const char* key, const D& defval) {
+    return py_dict_get_default(d, key, defval);
+}
+
+template <class D>
+static inline D dict_get_node(const dict<str, object>& d, const str& key, const D& defval) {
+    return py_dict_get_default(d, key.c_str(), defval);
+}
+
 static inline str dict_get_node(const dict<str, str>& d, const str& key, const str& defval = "") {
     if (d.find(key) != d.end()) {
         return py_dict_get(d, key);
@@ -1634,10 +1794,35 @@ static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(b
 // selfhost 由来の `std::any` 比較式をそのまま通すための演算子補助。
 static inline bool operator==(const ::std::any& lhs, const char* rhs) {
     if (const auto* p = ::std::any_cast<str>(&lhs)) return *p == str(rhs);
+    if (const auto* p = ::std::any_cast<object>(&lhs)) return obj_to_str(*p) == str(rhs);
     return false;
 }
 
 static inline bool operator!=(const ::std::any& lhs, const char* rhs) {
+    return !(lhs == rhs);
+}
+
+static inline bool operator==(const object& lhs, const char* rhs) {
+    return obj_to_str(lhs) == str(rhs);
+}
+
+static inline bool operator==(const char* lhs, const object& rhs) {
+    return str(lhs) == obj_to_str(rhs);
+}
+
+static inline bool operator==(const object& lhs, const str& rhs) {
+    return obj_to_str(lhs) == rhs;
+}
+
+static inline bool operator==(const str& lhs, const object& rhs) {
+    return lhs == obj_to_str(rhs);
+}
+
+static inline bool operator!=(const object& lhs, const char* rhs) {
+    return !(lhs == rhs);
+}
+
+static inline bool operator!=(const char* lhs, const object& rhs) {
     return !(lhs == rhs);
 }
 

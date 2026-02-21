@@ -746,7 +746,6 @@ def main() -> int:
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
     out = _replace_dump_options_for_selfhost(out)
     out = _patch_code_emitter_hooks_for_selfhost(out)
-    out = _replace_load_east_for_selfhost(out)
     out = _replace_multi_file_helpers_for_selfhost(out)
     out = _replace_import_graph_helpers_for_selfhost(out)
     out = _replace_misc_heavy_helpers_for_selfhost(out)
