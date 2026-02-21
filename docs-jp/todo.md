@@ -39,7 +39,7 @@
    - [x] `src/common/` と `src/rs_module/` には依存しない。
 2. [ ] `CodeEmitter` の責務拡張を先に実施する（py2rs実装より先）。
    - [ ] `py2cpp.py` と `py2rs.py` で共通化できる EAST ユーティリティ（型変換補助・import束縛・文/式ディスパッチ補助）を `src/pytra/compiler/east_parts/code_emitter.py` へ移す。
-   - [ ] 「共通化候補一覧」を作り、`py2cpp.py` から段階的に移管する。
+   - [x] 「共通化候補一覧」を作り、`py2cpp.py` から段階的に移管する（`docs-jp/code-emitter-dispatch-plan.md` 参照）。
 3. [x] Rust 固有処理の分離（最小雛形）
    - [x] `src/hooks/rs/` に Rust 用 hooks を追加。
    - [x] `src/profiles/rs/` に Rust 用 profile（syntax/runtime call map 等）を追加。
