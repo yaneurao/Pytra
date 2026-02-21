@@ -3519,13 +3519,13 @@ class CppEmitter(CodeEmitter):
         if attr == "":
             return None
         if owner_mod != "":
-            module_rendered = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes)
-            if module_rendered is not None and module_rendered != "":
-                return module_rendered
-        elif owner_expr.startswith("pytra."):
-            module_rendered = self._render_call_module_method(owner_expr, attr, args, kw, arg_nodes)
-            if module_rendered is not None and module_rendered != "":
-                return module_rendered
+            module_rendered_1 = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes)
+            if module_rendered_1 is not None and module_rendered_1 != "":
+                return module_rendered_1
+        if owner_mod == "" and owner_expr.startswith("pytra."):
+            module_rendered_2 = self._render_call_module_method(owner_expr, attr, args, kw, arg_nodes)
+            if module_rendered_2 is not None and module_rendered_2 != "":
+                return module_rendered_2
         object_rendered = self._render_call_object_method(owner_t, owner_expr, attr, args)
         if object_rendered is not None and object_rendered != "":
             return object_rendered

@@ -47,6 +47,8 @@
 ## P2: Any/object 境界の整理
 
 1. [ ] `CodeEmitter` の `Any/dict` 境界を selfhost で崩れない実装へ段階移行する。
+   - [x] `CppEmitter._render_call_attribute` の module/object 呼び出し中間値を branch-local 化し、selfhost 生成 C++ で `object` へ退避しない形に修正した。
+   - [x] 上記修正後も `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で `mismatches=0` を確認した。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
 3. [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
 4. [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
