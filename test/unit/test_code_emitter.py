@@ -132,6 +132,8 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.any_to_list(None), [])
         self.assertEqual(em.any_to_list({"x": 1}), [])
         self.assertEqual(em.any_to_dict_list([{"x": 1}, None, {"y": 2}]), [{"x": 1}, {"y": 2}])
+        self.assertEqual(em.any_to_str_dict_or_empty({"a": "b", "c": 1}), {"a": "b", "c": ""})
+        self.assertEqual(em.any_to_str_dict_or_empty(None), {})
 
         self.assertEqual(em.any_dict_get_str({"x": "ok"}, "x", "ng"), "ok")
         self.assertEqual(em.any_dict_get_str({"x": 1}, "x", "ng"), "ng")

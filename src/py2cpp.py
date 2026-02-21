@@ -4313,9 +4313,9 @@ class CppEmitter(CodeEmitter):
             fn = self.any_to_dict_or_empty(call_ctx.get("fn"))
             fn_name = self.any_to_str(call_ctx.get("fn_name"))
             arg_nodes = self.any_to_list(call_ctx.get("arg_nodes"))
-            args = [self.any_to_str(a) for a in self.any_to_list(call_ctx.get("args"))]
-            kw = self.any_to_dict_or_empty(call_ctx.get("kw"))
-            kw_values = [self.any_to_str(a) for a in self.any_to_list(call_ctx.get("kw_values"))]
+            args = self.any_to_str_list(call_ctx.get("args"))
+            kw = self.any_to_str_dict_or_empty(call_ctx.get("kw"))
+            kw_values = self.any_to_str_list(call_ctx.get("kw_values"))
             kw_nodes = self.any_to_list(call_ctx.get("kw_nodes"))
             first_arg: object = call_ctx.get("first_arg")
             self.validate_call_receiver_or_raise(fn)
