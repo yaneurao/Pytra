@@ -114,6 +114,7 @@
 2. [ ] `src/pytra/compiler/east_parts/code_emitter.py` で同様に平易化されている箇所を段階的に Python らしい記述へ戻す。
    - [x] `merge_call_args` / `merge_call_kw_values` / `merge_call_arg_nodes` の冗長な while ループ実装を、`list(...)` + `for` ベースの簡潔な実装へ置換した（`dict` 直接反復は selfhost 崩れのため `kw.items()` 経由で keys を収集）。
    - [x] `unpack_prepared_call_parts` の `args/kw_values` 変換ループを index `while` から `for` へ置換し、selfhost 差分を保ったまま可読性を改善した。
+   - [x] `normalize_type_name` / `_resolve_imported_symbol` / `_prepare_call_parts` の単純走査ループを `for` ベースへ置換し、selfhost 差分を維持したまま冗長な index 管理を削減した。
 3. [ ] `sample/` のコードについても、selfhost 都合の書き方が残っている箇所を通常の Python らしい表現へ順次戻す。
 4. [ ] 上記の戻し作業は低優先で進め、各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` を通して回帰を防ぐ。
 

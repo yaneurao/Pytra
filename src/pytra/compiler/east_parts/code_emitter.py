@@ -686,10 +686,8 @@ class CodeEmitter:
             parts = self.split_union(s)
             if len(parts) > 1:
                 out_parts: list[str] = []
-                i = 0
-                while i < len(parts):
-                    out_parts.append(self.normalize_type_name(parts[i]))
-                    i += 1
+                for part in parts:
+                    out_parts.append(self.normalize_type_name(part))
                 return "|".join(out_parts)
         if s.startswith("list[") and s.endswith("]"):
             inner = s[5:-1]
@@ -703,10 +701,8 @@ class CodeEmitter:
             inner = s[6:-1]
             elems = self.split_generic(inner)
             out_elems: list[str] = []
-            i = 0
-            while i < len(elems):
-                out_elems.append(self.normalize_type_name(elems[i]))
-                i += 1
+            for elem in elems:
+                out_elems.append(self.normalize_type_name(elem))
             return "tuple[" + ", ".join(out_elems) + "]"
         if s.startswith("dict[") and s.endswith("]"):
             inner = s[5:-1]
@@ -953,9 +949,7 @@ class CodeEmitter:
 
         meta = self.any_to_dict_or_empty(self.doc.get("meta"))
         refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
-        i = 0
-        while i < len(refs):
-            ref = refs[i]
+        for ref in refs:
             local_name = self.any_to_str(ref.get("local_name"))
             if local_name == name:
                 module_id = self.any_to_str(ref.get("module_id"))
@@ -965,12 +959,9 @@ class CodeEmitter:
                     out_ref["module"] = module_id
                     out_ref["name"] = symbol
                     return out_ref
-            i += 1
 
         binds = self.any_to_dict_list(meta.get("import_bindings"))
-        i = 0
-        while i < len(binds):
-            ent = binds[i]
+        for ent in binds:
             if self.any_to_str(ent.get("binding_kind")) == "symbol":
                 local_name = self.any_to_str(ent.get("local_name"))
                 if local_name == name:
@@ -981,7 +972,6 @@ class CodeEmitter:
                         out_bind["module"] = module_id
                         out_bind["name"] = export_name
                         return out_bind
-            i += 1
         out: dict[str, str] = {}
         return out
 
@@ -1334,10 +1324,8 @@ class CodeEmitter:
         arg_nodes_obj: object = self.any_dict_get_list(expr, "args")
         arg_nodes = self.any_to_list(arg_nodes_obj)
         args: list[str] = []
-        i = 0
-        while i < len(arg_nodes):
-            args.append(self.render_expr(arg_nodes[i]))
-            i += 1
+        for arg_node in arg_nodes:
+            args.append(self.render_expr(arg_node))
         keywords_obj: object = self.any_dict_get_list(expr, "keywords")
         keywords = self.any_to_list(keywords_obj)
         first_arg: object = expr
