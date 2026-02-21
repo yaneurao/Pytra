@@ -817,26 +817,15 @@ class CSharpEmitter(CodeEmitter):
         left = self.render_expr(expr.get("left"))
         ops = self.any_to_str_list(expr.get("ops"))
         comps = self.any_to_list(expr.get("comparators"))
-        if len(ops) == 0 or len(comps) == 0:
-            return "false"
-        terms: list[str] = []
-        cur_left = left
-        i = 0
-        while i < len(ops) and i < len(comps):
-            op = ops[i]
-            right = self.render_expr(comps[i])
-            if op == "In":
-                terms.append("(" + right + ".Contains(" + cur_left + "))")
-            elif op == "NotIn":
-                terms.append("(!" + right + ".Contains(" + cur_left + "))")
-            else:
-                op_txt = self.cmp_ops.get(op, "==")
-                terms.append("(" + cur_left + " " + op_txt + " " + right + ")")
-            cur_left = right
-            i += 1
-        if len(terms) == 1:
-            return terms[0]
-        return "(" + " && ".join(terms) + ")"
+        return self.render_compare_chain_common(
+            left,
+            ops,
+            comps,
+            self.cmp_ops,
+            empty_literal="false",
+            in_pattern="{right}.Contains({left})",
+            not_in_pattern="!{right}.Contains({left})",
+        )
 
     def _render_len_call(self, arg_expr: str, arg_node: Any) -> str:
         """len(x) を C# 式へ変換する。"""

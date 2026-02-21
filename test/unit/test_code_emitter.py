@@ -300,6 +300,25 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.render_boolop_common(vals, "Or"), "(a || b)")
         self.assertEqual(em.render_boolop_common([], "And"), "false")
 
+    def test_render_compare_chain_common(self) -> None:
+        em = _DummyEmitter({})
+        comps = [{"repr": "b"}, {"repr": "c"}]
+        cmp_map = {"Lt": "<", "Eq": "=="}
+        self.assertEqual(
+            em.render_compare_chain_common("a", ["Lt", "Eq"], comps, cmp_map),
+            "((a < b) && (b == c))",
+        )
+        self.assertEqual(
+            em.render_compare_chain_common(
+                "x",
+                ["In"],
+                [{"repr": "ys"}],
+                cmp_map,
+                in_pattern="{right}.contains({left})",
+            ),
+            "(ys.contains(x))",
+        )
+
     def test_import_resolution_helpers(self) -> None:
         em = CodeEmitter(
             {

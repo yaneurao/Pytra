@@ -558,21 +558,7 @@ class JsEmitter(CodeEmitter):
         left = self.render_expr(expr.get("left"))
         ops = self.any_to_str_list(expr.get("ops"))
         comps = self.any_to_list(expr.get("comparators"))
-        if len(ops) == 0 or len(comps) == 0:
-            return "false"
-        terms: list[str] = []
-        cur_left = left
-        i = 0
-        while i < len(ops) and i < len(comps):
-            op = ops[i]
-            right = self.render_expr(comps[i])
-            op_txt = self.cmp_ops.get(op, "===")
-            terms.append("(" + cur_left + " " + op_txt + " " + right + ")")
-            cur_left = right
-            i += 1
-        if len(terms) == 1:
-            return terms[0]
-        return "(" + " && ".join(terms) + ")"
+        return self.render_compare_chain_common(left, ops, comps, self.cmp_ops, empty_literal="false")
 
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """組み込み関数呼び出しを JavaScript 式へ変換する。"""

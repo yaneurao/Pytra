@@ -45,3 +45,4 @@
 ## 進捗メモ（2026-02-22）
 
 - `CodeEmitter.render_boolop_common()` を追加し、`py2rs` / `py2js` / `py2cs` の `BoolOp` 生成を共通化した。
+- `CodeEmitter.render_compare_chain_common()` を追加し、`py2rs` / `py2js` / `py2cs` の `Compare` 連鎖生成を共通化した。

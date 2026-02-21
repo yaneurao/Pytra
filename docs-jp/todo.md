@@ -42,18 +42,19 @@
      - [x] import 束縛ローダ `load_import_bindings_from_meta()` を `CodeEmitter` へ移管。
      - [x] tuple 要素取得（`elements`/`elts` 差分吸収）を `CodeEmitter.tuple_elements()` へ移管。
      - [x] `BoolOp` 共通描画 `render_boolop_common()` を `CodeEmitter` へ移管し、`py2rs/py2js/py2cs` で利用する。
+     - [x] `Compare` 連鎖共通描画 `render_compare_chain_common()` を `CodeEmitter` へ移管し、`py2rs/py2js/py2cs` で利用する。
    - [x] 「共通化候補一覧」を作り、`py2cpp.py` から段階的に移管する（`docs-jp/code-emitter-dispatch-plan.md` 参照）。
 3. [x] Rust 固有処理の分離（最小雛形）
    - [x] `src/hooks/rs/` に Rust 用 hooks を追加。
    - [x] `src/profiles/rs/` に Rust 用 profile（syntax/runtime call map 等）を追加。
-4. [ ] `py2rs.py` の EAST ベース再実装（段階的）。
+4. [x] `py2rs.py` の EAST ベース再実装（段階的）。
    - [x] 最小版: EAST（`.py/.json`）読み込み→CodeEmitter経由で Rust 出力。
    - [x] 第2段: `test/fixtures/core` の基本ケースが通る範囲まで拡張（transpile 成功）。
-   - [ ] 第3段: import / class / collections の変換品質を段階追加（出力品質・コンパイル互換を改善）。
+   - [x] 第3段: import / class / collections の変換品質を段階追加（出力品質・コンパイル互換を改善）。
    - [x] import 束縛を `use ...;` に変換（`meta.import_bindings` 優先）。
    - [x] `for (k, v) in dict.items()` 形の tuple ターゲットを生成。
    - [x] `dict[str, Any]` のような注釈でも、値側に具体型がある場合は宣言型を具体化。
-   - [ ] class / Any / dict 連携の型整合（Rustコンパイル互換）を改善。
+   - [x] class / Any / dict 連携の型整合（Rustコンパイル互換）を改善。
      - [x] Rust `Dict` 式で `entries` 形式を正しく展開し、要素脱落（`BTreeMap::from([])`）を修正。
      - [x] Rust `class` 出力に `#[derive(Clone, Debug)]` を付与し、`dict/items/clone` 経路のコンパイル互換を改善。
      - [x] `Any/object` 用に `PyAny` 最小ランタイム（`py_any_as_dict/py_any_to_i64/py_any_to_string` 等）を生成し、`dict[str, Any]` の `get/items/str/int/bool` 連携を改善。

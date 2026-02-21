@@ -770,6 +770,41 @@ class CodeEmitter:
             return empty_literal
         return "(" + (" " + mapped + " ").join(rendered) + ")"
 
+    def render_compare_chain_common(
+        self,
+        left_expr: str,
+        ops: list[str],
+        comparators: list[Any],
+        cmp_map: dict[str, str],
+        *,
+        empty_literal: str = "false",
+        in_pattern: str = "",
+        not_in_pattern: str = "",
+    ) -> str:
+        """比較連鎖（`a < b < c`）の共通描画を行う。"""
+        if len(ops) == 0 or len(comparators) == 0:
+            return empty_literal
+        terms: list[str] = []
+        cur_left = left_expr
+        i = 0
+        while i < len(ops) and i < len(comparators):
+            op = ops[i]
+            right = self.render_expr(comparators[i])
+            if op == "In" and in_pattern != "":
+                term = in_pattern.replace("{left}", cur_left).replace("{right}", right)
+                terms.append("(" + term + ")")
+            elif op == "NotIn" and not_in_pattern != "":
+                term = not_in_pattern.replace("{left}", cur_left).replace("{right}", right)
+                terms.append("(" + term + ")")
+            else:
+                op_txt = cmp_map.get(op, "==")
+                terms.append("(" + cur_left + " " + op_txt + " " + right + ")")
+            cur_left = right
+            i += 1
+        if len(terms) == 1:
+            return terms[0]
+        return "(" + " && ".join(terms) + ")"
+
     def normalize_type_name(self, t: str) -> str:
         """型名エイリアスを内部表現へ正規化する。"""
         if not isinstance(t, str):
