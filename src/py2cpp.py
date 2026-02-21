@@ -3729,15 +3729,12 @@ class CppEmitter(CodeEmitter):
         arg_nodes: list[Any],
     ) -> str | None:
         """Attribute 形式の呼び出しを module/object/fallback の順で処理する。"""
-        owner_obj: object = fn.get("value")
-        owner_rendered = self.render_expr(owner_obj)
-        owner_ctx = self.resolve_attribute_owner_context(owner_obj, owner_rendered)
-        owner = self.any_to_dict_or_empty(owner_ctx.get("node"))
-        owner_kind = self._node_kind_from_dict(owner)
-        owner_expr = self.any_dict_get_str(owner_ctx, "expr", "")
-        owner_mod = self._normalize_runtime_module_name(self.any_dict_get_str(owner_ctx, "module", ""))
-        owner_t = self.resolve_attribute_owner_type(owner_obj, owner, self.declared_var_types)
-        attr = self.attr_name(fn)
+        _ = expr
+        attr_ctx = self._resolve_call_attribute_context(fn)
+        owner_expr = self.any_dict_get_str(attr_ctx, "owner_expr", "")
+        owner_mod = self.any_dict_get_str(attr_ctx, "owner_mod", "")
+        owner_t = self.any_dict_get_str(attr_ctx, "owner_type", "")
+        attr = self.any_dict_get_str(attr_ctx, "attr", "")
         if attr == "":
             return None
         if owner_mod != "":
@@ -3751,6 +3748,23 @@ class CppEmitter(CodeEmitter):
         if class_rendered is not None and class_rendered != "":
             return class_rendered
         return None
+
+    def _resolve_call_attribute_context(self, fn: dict[str, Any]) -> dict[str, str]:
+        """`Call(Attribute)` の owner/module/type/attr 解決をまとめて返す。"""
+        owner_obj: object = fn.get("value")
+        owner_rendered = self.render_expr(owner_obj)
+        owner_ctx = self.resolve_attribute_owner_context(owner_obj, owner_rendered)
+        owner = self.any_to_dict_or_empty(owner_ctx.get("node"))
+        owner_expr = self.any_dict_get_str(owner_ctx, "expr", "")
+        owner_mod = self._normalize_runtime_module_name(self.any_dict_get_str(owner_ctx, "module", ""))
+        owner_t = self.resolve_attribute_owner_type(owner_obj, owner, self.declared_var_types)
+        attr = self.attr_name(fn)
+        out: dict[str, str] = {}
+        out["owner_expr"] = owner_expr
+        out["owner_mod"] = owner_mod
+        out["owner_type"] = owner_t
+        out["attr"] = attr
+        return out
 
     def _coerce_call_arg(self, arg_txt: str, arg_node: Any, target_t: str) -> str:
         """関数シグネチャに合わせて引数を必要最小限キャストする。"""
