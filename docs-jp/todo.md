@@ -60,6 +60,7 @@
    - [x] `for` ブロック開始行（`hdr + " {"`）を `for_open_block` テンプレートへ移管した。
    - [x] `pass/break/continue` の文生成を `syntax.json`（`pass_stmt` / `break_stmt` / `continue_stmt`）経由へ移管した。
    - [x] `swap` / `raise` の文生成を `syntax.json`（`swap_stmt` / `raise_default` / `raise_expr`）経由へ移管した。
+   - [x] `Expr` / `Return` の文生成を `syntax.json`（`expr_stmt` / `return_void` / `return_value`）経由へ移管した。
 6. [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
 7. [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
 8. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
