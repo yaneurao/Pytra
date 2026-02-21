@@ -26,6 +26,13 @@
 7. [x] `tools/prepare_selfhost_source.py` の `load_cpp_profile` スタブを解除した。
    - [x] `src/py2cpp.py` の `load_cpp_profile()` を selfhost で壊れない形（`raw_obj` 先行宣言）へ調整した。
    - [x] `python3 tools/build_selfhost.py` / `python3 tools/build_selfhost_stage2.py --skip-stage1-build` / 差分チェック2系統で回帰なしを確認した。
+8. [x] `tools/prepare_selfhost_source.py` の `load_cpp_module_attr_call_map` スタブを解除した。
+   - [x] `src/py2cpp.py` の `load_cpp_module_attr_call_map()` シグネチャを `dict[str, Any]` 既定値形式に揃え、selfhost 2段変換で `optional.get` 崩れを回避した。
+   - [x] `python3 tools/build_selfhost.py` / `python3 tools/build_selfhost_stage2.py --skip-stage1-build` / 差分チェック2系統で回帰なしを確認した。
+9. [x] `tools/prepare_selfhost_source.py` の import メタ系スタブを解除した。
+   - [x] `_meta_import_bindings` / `_meta_qualified_symbol_refs` / `dump_deps_text` / `_collect_import_modules` の selfhost スタブ置換を削除した。
+   - [x] `src/py2cpp.py` 側で `object -> str` の三項演算子を明示 `if` 代入へ置換し、stage2 C++ の型崩れを解消した。
+   - [x] `python3 tools/build_selfhost.py` / `python3 tools/build_selfhost_stage2.py --skip-stage1-build` / 差分チェック2系統で回帰なしを確認した。
 
 ## 2026-02-21 完了: selfhost 直変換 Compare 崩れ補正
 

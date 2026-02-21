@@ -9,7 +9,7 @@
 
 ## P0: selfhost 安定化
 
-1. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する（import-graph / multi-file / `load_cpp_hooks` / `load_cpp_module_attr_call_map` 周辺）。
+1. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する（import-graph / multi-file / `load_cpp_hooks` 周辺）。
 
 ## P1: CodeEmitter / Hooks 移管
 
