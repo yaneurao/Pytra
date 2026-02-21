@@ -8,9 +8,8 @@
 
 ## 実行順（上から着手）
 
-1. `P1-B: import / module 解決（Yanesdk必須）`
-2. `P3: py2rs（EAST移行）を CodeEmitter 中心で再設計`
-3. `P4: 他言語トランスパイラの EAST 移行`
+1. `P3: py2rs（EAST移行）を CodeEmitter 中心で再設計`
+2. `P4: 他言語トランスパイラの EAST 移行`
 
 ## Yanesdk 再調査メモ（2026-02-22）
 
@@ -29,17 +28,6 @@
 - 正本ファイル運用:
   - `yanesdk.py` は `Yanesdk/yanesdk/yanesdk.py` を正本として扱う。
   - `Yanesdk/docs/*/yanesdk.py` は重複コピーとして扱い、解析・修正の基準にしない。
-
-## P1-B: import / module 解決（Yanesdk必須）
-
-1. [x] `math` / `random` / `timeit` / `traceback` / `enum` / `typing` の取り扱い方針を統一する。
-   - [x] `random` / `timeit` / `traceback` shim を `src/pytra/std/` に追加した。
-   - [x] 非修飾 import（例: `import random`）は `pytra.std.random` に正規化できる状態にした。
-2. [x] `browser` / `browser.widgets.dialog` の `py2cpp` 側方針を確定する。
-   - [x] `src/pytra/utils/browser/` shim を追加し、`missing_module` を解消した。
-   - [x] `tools/check_yanesdk_py2cpp_smoke.py` で `library 1本 + game 7本` の smoke を自動化した。
-3. [ ] `py2js` 側の `browser` 取り扱いを外部参照方式へ仕様化し、実装へ反映する。
-4. [x] `docs/*/yanesdk.py` の重複配置方針（除外運用）を import 仕様書へ明文化する。
 
 ## P3: py2rs（EAST移行）を CodeEmitter 中心で再設計（Yanesdk対応後）
 
@@ -75,6 +63,7 @@
 1. [ ] `py2js.py` を EAST ベースへ移行する。
    - [ ] `src/common/` 依存を撤去する。
    - [ ] JS 固有処理を hook/profile へ分離する。
+   - [ ] `browser` / `browser.widgets.dialog` を外部参照（ブラウザ環境）として解決する。
 2. [ ] `py2cs.py` を EAST ベースへ移行する。
    - [ ] `src/common/` 依存を撤去する。
    - [ ] C# 固有処理を hook/profile へ分離する。

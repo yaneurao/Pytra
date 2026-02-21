@@ -32,6 +32,17 @@
 2. [x] `tools/check_py2cpp_transpile.py` に Yanesdk 縮小ケース群（`--check-yanesdk-smoke`）を追加した。
 3. [x] `Yanesdk` 実ファイル smoke テストを追加した（`tools/check_yanesdk_py2cpp_smoke.py`）。
 
+## 2026-02-22 完了: P1-B import / module 解決（Yanesdk必須）
+
+1. [x] `math` / `random` / `timeit` / `traceback` / `enum` / `typing` の取り扱い方針を統一した。
+   - [x] `src/pytra/std/random.py` / `src/pytra/std/timeit.py` / `src/pytra/std/traceback.py` を追加した。
+   - [x] 非修飾 import（`import random` など）を `pytra.std.*` 正規化で解決できる状態にした。
+2. [x] `browser` / `browser.widgets.dialog` の `py2cpp` 側方針を確定した。
+   - [x] `src/pytra/utils/browser/` と `src/pytra/utils/browser/widgets/dialog.py` shim を追加した。
+   - [x] canonical 対象（`library 1本 + game 7本`）の `py2cpp` smoke を `checked=8 ok=8 fail=0` で確認した。
+3. [x] import 仕様書へ重複配置除外ルールを明文化した。
+   - [x] `docs-jp/spec-import.md` に `Yanesdk/docs/*/yanesdk.py` を重複コピーとして除外運用するルールを追記した。
+
 ## 2026-02-22 完了: P0-URGENT selfhost stage2 三項演算子破損（`(? : )`）修正
 
 1. [x] 再現手順を固定し、`tools/build_selfhost.py` + `tools/build_selfhost_stage2.py` のフル再生成で検証する運用に統一した。
