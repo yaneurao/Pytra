@@ -970,6 +970,29 @@ class CodeEmitter:
             return f"{parent_fb}.{child_fb}"
         return ""
 
+    def load_import_bindings_from_meta(self, meta: dict[str, Any]) -> None:
+        """`meta.import_bindings` から import 解決テーブルを初期化する。"""
+        self.import_modules = {}
+        self.import_symbols = {}
+        binds = self.any_to_dict_list(meta.get("import_bindings"))
+        i = 0
+        while i < len(binds):
+            ent = binds[i]
+            binding_kind = self.any_to_str(ent.get("binding_kind"))
+            local_name = self.any_to_str(ent.get("local_name"))
+            module_id = self.any_to_str(ent.get("module_id"))
+            if binding_kind == "module":
+                if local_name != "" and module_id != "":
+                    self.import_modules[local_name] = module_id
+            elif binding_kind == "symbol":
+                export_name = self.any_to_str(ent.get("export_name"))
+                if local_name != "" and module_id != "" and export_name != "":
+                    sym: dict[str, str] = {}
+                    sym["module"] = module_id
+                    sym["name"] = export_name
+                    self.import_symbols[local_name] = sym
+            i += 1
+
     def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
         """from-import で束縛された識別子を返す（無ければ空 dict）。"""
         if name in self.import_symbols:

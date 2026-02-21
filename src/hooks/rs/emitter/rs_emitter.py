@@ -200,28 +200,6 @@ class RustEmitter(CodeEmitter):
             return "()"
         return t
 
-    def _emit_import_bindings(self, meta: dict[str, Any]) -> None:
-        """EAST meta から import 束縛表を読み込み、解決テーブルへ反映する。"""
-        self.import_modules = {}
-        self.import_symbols = {}
-        binds = self.any_to_dict_list(meta.get("import_bindings"))
-        i = 0
-        while i < len(binds):
-            ent = binds[i]
-            binding_kind = self.any_to_str(ent.get("binding_kind"))
-            local_name = self.any_to_str(ent.get("local_name"))
-            module_id = self.any_to_str(ent.get("module_id"))
-            if binding_kind == "module" and local_name != "" and module_id != "":
-                self.import_modules[local_name] = module_id
-            if binding_kind == "symbol":
-                export_name = self.any_to_str(ent.get("export_name"))
-                if local_name != "" and module_id != "" and export_name != "":
-                    sym: dict[str, str] = {}
-                    sym["module"] = module_id
-                    sym["name"] = export_name
-                    self.import_symbols[local_name] = sym
-            i += 1
-
     def transpile(self) -> str:
         """モジュール全体を Rust ソースへ変換する。"""
         self.lines = []
@@ -231,7 +209,7 @@ class RustEmitter(CodeEmitter):
         module = self.doc
         body = self._dict_stmt_list(module.get("body"))
         meta = self.any_to_dict_or_empty(module.get("meta"))
-        self._emit_import_bindings(meta)
+        self.load_import_bindings_from_meta(meta)
         self.emit_module_leading_trivia()
 
         self.class_names = set()
