@@ -648,7 +648,7 @@ def load_cpp_identifier_rules() -> tuple[set[str], str]:
     return reserved, "py_"
 
 
-def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:
+def load_cpp_module_attr_call_map(profile: dict[str, Any] = {}) -> dict[str, dict[str, str]]:
     """C++ の `module.attr(...)` -> ランタイム呼び出しマップを返す。"""
     out: dict[str, dict[str, str]] = {}
     if not isinstance(profile, dict):
@@ -5826,10 +5826,18 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
             export_name_obj: object = item.get("export_name")
             local_name_obj: object = item.get("local_name")
             binding_kind_obj: object = item.get("binding_kind")
-            module_id = module_id_obj if isinstance(module_id_obj, str) else ""
-            export_name = export_name_obj if isinstance(export_name_obj, str) else ""
-            local_name = local_name_obj if isinstance(local_name_obj, str) else ""
-            binding_kind = binding_kind_obj if isinstance(binding_kind_obj, str) else ""
+            module_id = ""
+            if isinstance(module_id_obj, str):
+                module_id = module_id_obj
+            export_name = ""
+            if isinstance(export_name_obj, str):
+                export_name = export_name_obj
+            local_name = ""
+            if isinstance(local_name_obj, str):
+                local_name = local_name_obj
+            binding_kind = ""
+            if isinstance(binding_kind_obj, str):
+                binding_kind = binding_kind_obj
             if module_id != "" and local_name != "" and binding_kind in {"module", "symbol"}:
                 ent: dict[str, str] = {}
                 ent["module_id"] = module_id
@@ -5860,9 +5868,15 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
             module_id_obj: object = item.get("module_id")
             symbol_obj: object = item.get("symbol")
             local_name_obj: object = item.get("local_name")
-            module_id = module_id_obj if isinstance(module_id_obj, str) else ""
-            symbol = symbol_obj if isinstance(symbol_obj, str) else ""
-            local_name = local_name_obj if isinstance(local_name_obj, str) else ""
+            module_id = ""
+            if isinstance(module_id_obj, str):
+                module_id = module_id_obj
+            symbol = ""
+            if isinstance(symbol_obj, str):
+                symbol = symbol_obj
+            local_name = ""
+            if isinstance(local_name_obj, str):
+                local_name = local_name_obj
             if module_id != "" and symbol != "" and local_name != "":
                 ent: dict[str, str] = {}
                 ent["module_id"] = module_id
@@ -5914,36 +5928,47 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
         i = 0
         while i < len(body):
             stmt = body[i]
-            kind = _dict_any_kind(stmt)
+            stmt_dict: dict[str, Any] = stmt
+            kind = _dict_any_kind(stmt_dict)
             if kind == "Import":
-                names_obj: object = stmt.get("names")
+                names_obj: object = stmt_dict.get("names")
                 if isinstance(names_obj, list):
                     j = 0
                     while j < len(names_obj):
                         ent = names_obj[j]
                         if isinstance(ent, dict):
-                            mod_name_obj: object = ent.get("name")
-                            mod_name = mod_name_obj if isinstance(mod_name_obj, str) else ""
+                            ent_dict: dict[str, Any] = ent
+                            mod_name_obj: object = ent_dict.get("name")
+                            mod_name = ""
+                            if isinstance(mod_name_obj, str):
+                                mod_name = mod_name_obj
                             if mod_name != "" and mod_name not in module_seen:
                                 module_seen.add(mod_name)
                                 modules.append(mod_name)
                         j += 1
             elif kind == "ImportFrom":
-                mod_obj: object = stmt.get("module")
-                mod_name = mod_obj if isinstance(mod_obj, str) else ""
+                mod_obj: object = stmt_dict.get("module")
+                mod_name = ""
+                if isinstance(mod_obj, str):
+                    mod_name = mod_obj
                 if mod_name != "" and mod_name not in module_seen:
                     module_seen.add(mod_name)
                     modules.append(mod_name)
-                names_obj = stmt.get("names")
+                names_obj = stmt_dict.get("names")
                 if isinstance(names_obj, list):
                     j = 0
                     while j < len(names_obj):
                         ent = names_obj[j]
                         if isinstance(ent, dict):
-                            sym_obj: object = ent.get("name")
-                            alias_obj: object = ent.get("asname")
-                            sym_name = sym_obj if isinstance(sym_obj, str) else ""
-                            alias = alias_obj if isinstance(alias_obj, str) else ""
+                            ent_dict = ent
+                            sym_obj: object = ent_dict.get("name")
+                            alias_obj: object = ent_dict.get("asname")
+                            sym_name = ""
+                            if isinstance(sym_obj, str):
+                                sym_name = sym_obj
+                            alias = ""
+                            if isinstance(alias_obj, str):
+                                alias = alias_obj
                             if sym_name != "":
                                 label = mod_name + "." + sym_name
                                 if alias != "":
@@ -5984,23 +6009,29 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
     while i < len(body_obj):
         stmt = body_obj[i]
         if isinstance(stmt, dict):
-            kind = _dict_any_kind(stmt)
+            stmt_dict: dict[str, Any] = stmt
+            kind = _dict_any_kind(stmt_dict)
             if kind == "Import":
-                names_obj: object = stmt.get("names")
+                names_obj: object = stmt_dict.get("names")
                 if isinstance(names_obj, list):
                     j = 0
                     while j < len(names_obj):
                         ent = names_obj[j]
                         if isinstance(ent, dict):
-                            name_obj: object = ent.get("name")
-                            name = name_obj if isinstance(name_obj, str) else ""
+                            ent_dict: dict[str, Any] = ent
+                            name_obj: object = ent_dict.get("name")
+                            name = ""
+                            if isinstance(name_obj, str):
+                                name = name_obj
                             if name != "" and name not in seen:
                                 seen.add(name)
                                 out.append(name)
                         j += 1
             elif kind == "ImportFrom":
-                mod_obj: object = stmt.get("module")
-                mod = mod_obj if isinstance(mod_obj, str) else ""
+                mod_obj: object = stmt_dict.get("module")
+                mod = ""
+                if isinstance(mod_obj, str):
+                    mod = mod_obj
                 if mod != "" and mod not in seen:
                     seen.add(mod)
                     out.append(mod)

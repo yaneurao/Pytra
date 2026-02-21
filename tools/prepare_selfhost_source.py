@@ -268,23 +268,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
     )
 
     repl(
-        "def load_cpp_module_attr_call_map(",
-        "\ndef cpp_string_lit(",
-        (
-            "def load_cpp_module_attr_call_map(profile: dict[str, Any] | None = None) -> dict[str, dict[str, str]]:\n"
-            "    pass\n"
-            "    _ = profile\n"
-            "    out: dict[str, dict[str, str]] = {}\n"
-            "    out[\"pytra.std.sys\"] = {\"argv\": \"py_runtime_argv()\"}\n"
-            "    return out\n\n"
-            "BIN_OPS: dict[str, str] = load_cpp_bin_ops()\n"
-            "CMP_OPS: dict[str, str] = load_cpp_cmp_ops()\n"
-            "AUG_OPS: dict[str, str] = load_cpp_aug_ops()\n"
-            "AUG_BIN: dict[str, str] = load_cpp_aug_bin()\n\n"
-        ),
-    )
-
-    repl(
         "def load_cpp_hooks(",
         "\ndef load_cpp_identifier_rules(",
         (
@@ -293,26 +276,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "    _ = profile\n"
             "    out: dict[str, Any] = {}\n"
             "    return out\n\n"
-        ),
-    )
-
-    repl(
-        "def dump_deps_text(",
-        "\ndef _collect_import_modules(",
-        (
-            "def dump_deps_text(east_module: dict[str, Any]) -> str:\n"
-            "    pass\n"
-            "    return \"modules:\\n  (selfhost minimal mode)\\nsymbols:\\n  (selfhost minimal mode)\\n\"\n\n"
-        ),
-    )
-
-    repl(
-        "def _collect_import_modules(",
-        "\n\nNON_FILE_STANDARD_IMPORTS",
-        (
-            "def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:\n"
-            "    pass\n"
-            "    return []\n\n"
         ),
     )
 
@@ -335,28 +298,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "    pass\n"
             "    _ = module_tail\n"
             "    return \"\"\n\n"
-        ),
-    )
-
-    repl(
-        "def _meta_import_bindings(",
-        "\ndef _meta_qualified_symbol_refs(",
-        (
-            "def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:\n"
-            "    pass\n"
-            "    _meta_ignored = east_module\n"
-            "    return []\n\n"
-        ),
-    )
-
-    repl(
-        "def _meta_qualified_symbol_refs(",
-        "\ndef dump_deps_text(",
-        (
-            "def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, str]]:\n"
-            "    pass\n"
-            "    _meta_ignored = east_module\n"
-            "    return []\n\n"
         ),
     )
 
