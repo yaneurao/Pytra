@@ -326,6 +326,20 @@ class CodeEmitterTest(unittest.TestCase):
             declared,
         )
         self.assertEqual(owner_t, "list[int64]")
+        call_ctx = em.resolve_call_attribute_context(
+            {"kind": "Name", "id": "items", "repr": "items"},
+            "items",
+            {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "items", "repr": "items"},
+                "attr": "append",
+            },
+            declared,
+        )
+        self.assertEqual(call_ctx.get("owner_expr"), "items")
+        self.assertEqual(call_ctx.get("owner_mod"), "")
+        self.assertEqual(call_ctx.get("owner_type"), "list[int64]")
+        self.assertEqual(call_ctx.get("attr"), "append")
         owner_t_unknown = em.resolve_attribute_owner_type(
             {"kind": "Name", "id": "x", "resolved_type": "unknown"},
             {"kind": "Name", "id": "x"},

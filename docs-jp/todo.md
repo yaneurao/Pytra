@@ -36,6 +36,7 @@
    - [x] call/attribute 周辺の `module.attr` runtime lookup を helper 化し、`render_call`/`render_attribute`/hooks から共通利用するよう整理した。
    - [x] `obj.append(...)` の C++ 固有型変換分岐を `_render_append_call_object_method` へ分離し、`_render_call_object_method` 本体を縮退した。
    - [x] Attribute owner の `kind/type/module/attr` 解決を `CodeEmitter` helper（`resolve_attribute_owner_context` / `resolve_attribute_owner_type` / `attr_name`）へ移管し、`_render_call_attribute` / `_render_attribute_expr` の重複ロジックを削減した（selfhost の静的束縛回避のため `owner_expr` は呼び出し側で先に描画して渡す形にした）。
+   - [x] `Call(Attribute)` 前処理 helper（`resolve_call_attribute_context`）を `CodeEmitter` 側へ移管し、`py2cpp.py` の `_resolve_call_attribute_context` を削除した。
    - [x] `Call(Name)` の `set/list/dict` コンストラクタ分岐と `int/float/bool` キャスト分岐を helper（`_render_collection_constructor_call` / `_render_scalar_cast_builtin_call`）へ切り出し、`_render_call_name_or_attr` 本体の重複を削減した。
    - [x] `Call(Name)` の `print/len/reversed/enumerate/any/all/isinstance` 分岐を helper（`_render_simple_name_builtin_call` / `_render_isinstance_name_call`）へ切り出し、`_render_call_name_or_attr` の条件分岐を縮退した。
    - [x] `Class.method(...)` 分岐を `_render_call_class_method` として切り出し、`_render_call_attribute` の class-method 経路を分離した。

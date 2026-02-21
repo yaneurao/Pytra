@@ -1047,6 +1047,27 @@ class CodeEmitter:
         out["module"] = owner_module
         return out
 
+    def resolve_call_attribute_context(
+        self,
+        owner_obj: Any,
+        owner_rendered: str,
+        fn_node: dict[str, Any],
+        declared_var_types: dict[str, str],
+    ) -> dict[str, str]:
+        """`Call(Attribute)` の owner/module/type/attr 解決をまとめて返す。"""
+        owner_ctx = self.resolve_attribute_owner_context(owner_obj, owner_rendered)
+        owner = self.any_to_dict_or_empty(owner_ctx.get("node"))
+        owner_expr = self.any_dict_get_str(owner_ctx, "expr", "")
+        owner_mod = self.any_dict_get_str(owner_ctx, "module", "")
+        owner_t = self.resolve_attribute_owner_type(owner_obj, owner, declared_var_types)
+        attr = self.attr_name(fn_node)
+        out: dict[str, str] = {}
+        out["owner_expr"] = owner_expr
+        out["owner_mod"] = owner_mod
+        out["owner_type"] = owner_t
+        out["attr"] = attr
+        return out
+
     def _can_runtime_cast_target(self, target_t: str) -> bool:
         """実行時キャストを安全に適用できる型か判定する。"""
         if target_t == "" or target_t in {"unknown", "Any", "object"}:
