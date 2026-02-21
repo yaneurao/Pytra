@@ -817,17 +817,7 @@ class CodeEmitter:
 
     def _strip_outer_parens(self, text: str) -> str:
         """式全体を囲う不要な最外括弧を安全に取り除く。"""
-        s: str = text
-        while len(s) > 0:
-            ch = s[0:1]
-            if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
-                break
-            s = s[1:]
-        while len(s) > 0:
-            ch = s[-1:]
-            if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
-                break
-            s = s[:-1]
+        s: str = self._trim_ws(text)
 
         while len(s) >= 2 and s.startswith("(") and s.endswith(")"):
             depth = 0
@@ -863,16 +853,7 @@ class CodeEmitter:
                 i += 1
             if wrapped and depth == 0:
                 s = s[1:-1]
-                while len(s) > 0:
-                    ch = s[0:1]
-                    if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
-                        break
-                    s = s[1:]
-                while len(s) > 0:
-                    ch = s[-1:]
-                    if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
-                        break
-                    s = s[:-1]
+                s = self._trim_ws(s)
                 continue
             break
         return s
@@ -894,18 +875,7 @@ class CodeEmitter:
 
     def _trim_ws(self, text: str) -> str:
         """先頭末尾の空白を除いた文字列を返す。"""
-        s = text
-        while len(s) > 0:
-            ch = s[0:1]
-            if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
-                break
-            s = s[1:]
-        while len(s) > 0:
-            ch = s[-1:]
-            if ch not in {" ", "\t", "\n", "\r", "\f", "\v"}:
-                break
-            s = s[:-1]
-        return s
+        return text.strip()
 
     def _contains_text(self, text: str, needle: str) -> bool:
         """`needle in text` 相当を selfhost でも安全に判定する。"""
