@@ -30,9 +30,7 @@ class StmtNode:
 
 def tokenize(lines: list[str]) -> list[Token]:
     tokens: list[Token] = []
-    line_index: int = 0
-    while line_index < len(lines):
-        source: str = lines[line_index]
+    for line_index, source in enumerate(lines):
         i: int = 0
         n: int = len(source)
         while i < n:
@@ -101,7 +99,6 @@ def tokenize(lines: list[str]) -> list[Token]:
             raise RuntimeError("tokenize error at line=" + str(line_index) + " pos=" + str(i) + " ch=" + ch)
 
         tokens.append(Token("NEWLINE", "", n))
-        line_index += 1
 
     tokens.append(Token("EOF", "", len(lines)))
     return tokens

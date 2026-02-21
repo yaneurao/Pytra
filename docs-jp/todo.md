@@ -121,6 +121,7 @@
    - [x] `normalize_type_name` / `_resolve_imported_symbol` / `_prepare_call_parts` の単純走査ループを `for` ベースへ置換し、selfhost 差分を維持したまま冗長な index 管理を削減した。
    - [x] `_strip_outer_parens` の前後空白トリムを `_trim_ws` 共通化し、`_trim_ws` 実装を `text.strip()` へ簡潔化した（`is_declared` の逆走査は selfhost 互換のため index `while` 維持）。
 3. [ ] `sample/` のコードについても、selfhost 都合の書き方が残っている箇所を通常の Python らしい表現へ順次戻す。
+   - [x] `sample/py/15_mini_language_interpreter.py` の `tokenize()` で、行走査を index `while` から `enumerate` ベースの `for` へ置換した。
 4. [ ] 上記の戻し作業は低優先で進め、各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` を通して回帰を防ぐ。
 
 ## 補助メモ
