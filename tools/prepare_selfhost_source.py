@@ -109,6 +109,12 @@ def _extract_support_blocks() -> str:
         "        i += 1\n"
         "    return False\n\n"
     )
+    parts.append(
+        "def build_cpp_hooks() -> dict[str, Any]:\n"
+        "    pass\n"
+        "    out: dict[str, Any] = {}\n"
+        "    return out\n\n"
+    )
     return "\n".join(parts)
 
 
@@ -264,38 +270,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "        out[\"py_assert_all\"] = [\"list[bool]\", \"str\"]\n"
             "        out[\"py_assert_true\"] = [\"bool\", \"str\"]\n"
             "    return out\n\n"
-        ),
-    )
-
-    repl(
-        "def load_cpp_hooks(",
-        "\ndef load_cpp_identifier_rules(",
-        (
-            "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:\n"
-            "    pass\n"
-            "    _ = profile\n"
-            "    out: dict[str, Any] = {}\n"
-            "    return out\n\n"
-        ),
-    )
-
-    repl(
-        "def _rel_disp_for_graph(",
-        "\ndef _analyze_import_graph(",
-        (
-            "def _rel_disp_for_graph(base: Path, p: Path) -> str:\n"
-            "    pass\n"
-            "    return str(p)\n\n"
-        ),
-    )
-
-    repl(
-        "def _validate_import_graph_or_raise(",
-        "\ndef _module_export_table(",
-        (
-            "def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:\n"
-            "    pass\n"
-            "    return\n\n"
         ),
     )
 

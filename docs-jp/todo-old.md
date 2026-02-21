@@ -61,6 +61,20 @@
    - [x] `python3 tools/check_selfhost_stage2_cpp_diff.py --skip-build --mode allow-not-implemented`
    - [x] `python3 tools/check_py2cpp_transpile.py`（`checked=108 ok=108 fail=0 skipped=5`）
 
+## 2026-02-21 完了: selfhost スタブ整理（load_cpp_hooks）
+
+1. [x] `tools/prepare_selfhost_source.py` から `load_cpp_hooks` 専用スタブを削除した。
+   - [x] `support_blocks` に `build_cpp_hooks()` の selfhost 最小実装（空 dict 返却）を追加し、`load_cpp_hooks` が未定義参照にならないようにした。
+2. [x] import-graph 補助の selfhost 安全化を部分適用した。
+   - [x] `src/py2cpp.py` の `_graph_cycle_dfs` で `list + list` 連結を明示 append へ置換した。
+   - [x] `src/py2cpp.py` の `_validate_import_graph_or_raise` で `str.find` 前に明示 `str(...)` 変換を入れ、object 型崩れを回避した。
+3. [x] 回帰検証を実施した。
+   - [x] `python3 tools/build_selfhost.py`
+   - [x] `python3 tools/build_selfhost_stage2.py --skip-stage1-build`
+   - [x] `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+   - [x] `python3 tools/check_selfhost_stage2_cpp_diff.py --skip-build --mode allow-not-implemented`
+   - [x] `python3 tools/check_py2cpp_transpile.py`（`checked=108 ok=108 fail=0 skipped=5`）
+
 ## 2026-02-21 完了: selfhost 直変換 Compare 崩れ補正
 
 1. [x] selfhost 直変換で `in/not in` 比較が生の `k in d` へ崩れる回帰を修正した。

@@ -468,20 +468,9 @@ def _normalize_param_annotation(ann: str) -> str:
     return t
 
 
-def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, list[str]]:
-    """EAST 化に失敗するモジュール用の関数シグネチャ簡易抽出。"""
-    sigs = _extract_function_signatures_from_python_source(src_path)
-    out: dict[str, list[str]] = {}
-    for fn_name in sigs:
-        sig = sigs[fn_name]
-        arg_types_obj = sig.get("arg_types")
-        if isinstance(arg_types_obj, list):
-            out[fn_name] = arg_types_obj
-    return out
-
-
 def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str, dict[str, list[str]]]:
     """`def` シグネチャから引数型とデフォルト値（テキスト）を抽出する。"""
+    text = ""
     try:
         text = src_path.read_text(encoding="utf-8")
     except Exception:
@@ -494,16 +483,16 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
         line = lines[i]
         stripped = line.strip()
         if (len(line) - len(line.lstrip(" "))) == 0 and stripped.startswith("def "):
-            sig = stripped
+            sig_text = stripped
             j = i + 1
-            while (not sig.endswith(":")) and j < len(lines):
-                sig += " " + lines[j].strip()
+            while (not sig_text.endswith(":")) and j < len(lines):
+                sig_text += " " + lines[j].strip()
                 j += 1
             i = j - 1
-            if not sig.endswith(":"):
+            if not sig_text.endswith(":"):
                 i += 1
                 continue
-            sig0 = sig[:-1].strip()
+            sig0 = sig_text[:-1].strip()
             if not sig0.startswith("def "):
                 i += 1
                 continue
@@ -554,12 +543,24 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
                 ann = prm[colon + 1 :]
                 arg_types.append(_normalize_param_annotation(ann))
                 arg_defaults.append(default_txt)
-            sig: dict[str, list[str]] = {}
-            sig["arg_types"] = arg_types
-            sig["arg_defaults"] = arg_defaults
-            sig_map[name] = sig
+            sig_ent: dict[str, list[str]] = {}
+            sig_ent["arg_types"] = arg_types
+            sig_ent["arg_defaults"] = arg_defaults
+            sig_map[name] = sig_ent
         i += 1
     return sig_map
+
+
+def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, list[str]]:
+    """EAST 化に失敗するモジュール用の関数シグネチャ簡易抽出。"""
+    sigs = _extract_function_signatures_from_python_source(src_path)
+    out: dict[str, list[str]] = {}
+    for fn_name in sigs:
+        sig = sigs[fn_name]
+        arg_types_obj = sig.get("arg_types")
+        if isinstance(arg_types_obj, list):
+            out[fn_name] = arg_types_obj
+    return out
 
 
 def load_cpp_profile() -> dict[str, Any]:
@@ -629,7 +630,12 @@ def load_cpp_type_map() -> dict[str, str]:
 def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
     """C++ 用 hooks 設定を返す。"""
     _ = profile
-    hooks = build_cpp_hooks()
+    hooks: Any = {}
+    try:
+        hooks = build_cpp_hooks()
+    except Exception:
+        out0: dict[str, Any] = {}
+        return out0
     if isinstance(hooks, dict):
         return hooks
     out: dict[str, Any] = {}
@@ -6103,7 +6109,12 @@ def _graph_cycle_dfs(
             while j >= 0 and stack[j] != nxt:
                 j -= 1
             if j >= 0:
-                nodes = stack[j:] + [nxt]
+                nodes: list[str] = []
+                m = j
+                while m < len(stack):
+                    nodes.append(stack[m])
+                    m += 1
+                nodes.append(nxt)
                 disp_nodes: list[str] = []
                 k = 0
                 while k < len(nodes):
@@ -6289,13 +6300,14 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     while i < len(relative):
         v = relative[i]
         if isinstance(v, str) and v != "":
-            file_part = v
-            mod_part = v
+            v_txt = str(v)
+            file_part = v_txt
+            mod_part = v_txt
             sep = ": "
-            if sep in v:
-                pos = v.find(sep)
-                file_part = v[:pos]
-                mod_part = v[pos + len(sep) :]
+            if sep in v_txt:
+                pos = v_txt.find(sep)
+                file_part = v_txt[:pos]
+                mod_part = v_txt[pos + len(sep) :]
             details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
         i += 1
 
@@ -6305,13 +6317,14 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     while i < len(missing):
         v = missing[i]
         if isinstance(v, str) and v != "":
-            file_part = v
-            mod_part = v
+            v_txt = str(v)
+            file_part = v_txt
+            mod_part = v_txt
             sep = ": "
-            if sep in v:
-                pos = v.find(sep)
-                file_part = v[:pos]
-                mod_part = v[pos + len(sep) :]
+            if sep in v_txt:
+                pos = v_txt.find(sep)
+                file_part = v_txt[:pos]
+                mod_part = v_txt[pos + len(sep) :]
             details.append(f"kind=missing_module file={file_part} import={mod_part}")
         i += 1
 
