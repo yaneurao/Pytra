@@ -3859,8 +3859,8 @@ class CppEmitter(CodeEmitter):
             call_args = self._coerce_py_assert_args(fn_name, args, [])
             return f"pytra::utils::assertions::{fn_name}({_join_str_list(', ', call_args)})"
         append_fallback_rendered = self._render_append_fallback_call(fn_name, args)
-        if append_fallback_rendered is not None:
-            return append_fallback_rendered
+        if append_fallback_rendered is not None and append_fallback_rendered != "":
+            return str(append_fallback_rendered)
         if fn_name == "print":
             return f"py_print({_join_str_list(', ', args)})"
         return f"{fn_name}({_join_str_list(', ', args)})"
