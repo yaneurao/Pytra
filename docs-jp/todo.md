@@ -101,7 +101,8 @@
    - [x] 単発 helper `_dict_str_list_get` を削除し、`_graph_cycle_dfs` 側へ内包した。
    - [x] `src/py2cpp.py` / `src/pytra/compiler/east_parts/code_emitter.py` について repo 全体参照を監査し、単独未参照シンボルがないことを確認した（現時点の明確な削除候補なし）。
 9. [ ] `CodeEmitter` 側の共通ディスパッチを再設計する（selfhost C++ の静的束縛制約を回避）。
-   - [ ] 非 virtual 前提でも派生レンダへ到達できる hook 注入ベースの経路を設計し、`render_expr` / `emit_stmt` の段階的置換計画を作成する。
+   - [x] 非 virtual 前提でも派生レンダへ到達できる hook 注入ベースの経路を設計し、`render_expr` / `emit_stmt` の段階的置換計画を `docs-jp/code-emitter-dispatch-plan.md` に作成した。
+   - [ ] 計画に沿って hook 注入点を増やし、`render_expr` / `emit_stmt` の fallback 分岐を段階的に縮退する。
 
 ## P2: Any/object 境界の整理
 
