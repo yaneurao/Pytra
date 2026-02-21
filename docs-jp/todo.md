@@ -15,6 +15,7 @@
 2. [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。
    - [x] `BinOp` の C++ 固有分岐（`Div/FloorDiv/Mod/Mult`）を `cpp_hooks.on_render_binop` へ抽出した（selfhost 互換のため `py2cpp.py` に同等フォールバックを残置）。
    - [x] `module.attr` の runtime 解決ロジックを `CppEmitter._lookup_module_attr_runtime_call` へ一本化し、`py2cpp.py` / `cpp_hooks.py` の重複分岐を削減した。
+   - [x] `Compare(lowered_kind=Contains)` の C++ 固有分岐を `cpp_hooks.on_render_expr_kind(kind=Compare)` へ抽出した（selfhost 互換のため `py2cpp.py` 側フォールバックは残置）。
 3. [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
 
 ## P1: py2cpp 縮退（行数削減）
@@ -74,6 +75,7 @@
    - [x] 上記修正後も `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で `mismatches=0` を確認した。
    - [x] `dict[str, str]` 変換ヘルパ（`CodeEmitter.any_to_str_dict_or_empty`）を追加し、`render_expr(Call)` の `kw` 展開で共通利用するようにした。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
+   - [x] モジュール関数引数の boxing 判定で、`arg_node` 側型が unknown の場合に描画済み式（例: `x`, `(x)`）から `declared_var_types` を参照して型補完する helper（`_infer_rendered_arg_type`）を追加し、不要な `make_object(...)` を抑制した。
 3. [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
    - [x] Any/object 向け boxing 判定を `_box_expr_for_any` へ集約し、`List`/`Dict` リテラル生成で「既に object/Any の式」を二重に `make_object(...)` しないようにした。
    - [x] `Constant(None)` の Any/object 経路を `make_object(1)` から `object{}` へ修正し、`None` の表現を統一した。

@@ -1149,6 +1149,17 @@ class CppEmitter(CodeEmitter):
             return sig
         return []
 
+    def _infer_rendered_arg_type(self, rendered_arg: str, arg_type: str) -> str:
+        """ノード型が unknown のとき、描画済み式から型ヒントを補完する。"""
+        if arg_type not in {"", "unknown"}:
+            return arg_type
+        text = self._strip_outer_parens(rendered_arg.strip())
+        if text in self.declared_var_types:
+            declared_t = self.normalize_type_name(self.declared_var_types[text])
+            if declared_t != "":
+                return declared_t
+        return arg_type
+
     def _coerce_args_for_module_function(
         self,
         module_name: str,
@@ -1171,6 +1182,7 @@ class CppEmitter(CodeEmitter):
                     arg_t_obj = self.get_expr_type(arg_nodes[i])
                     if isinstance(arg_t_obj, str):
                         arg_t = arg_t_obj
+                arg_t = self._infer_rendered_arg_type(a, arg_t)
                 arg_is_unknown = arg_t == "" or arg_t == "unknown"
                 if self.is_any_like_type(tt) and (arg_is_unknown or not self.is_any_like_type(arg_t)):
                     if not self._is_boxed_object_expr(a):
@@ -1202,6 +1214,7 @@ class CppEmitter(CodeEmitter):
                     at = self.get_expr_type(nodes[i])
                     if isinstance(at, str):
                         arg_t = at
+                arg_t = self._infer_rendered_arg_type(a, arg_t)
                 if not self.is_any_like_type(arg_t):
                     a = f"make_object({a})"
             out.append(a)

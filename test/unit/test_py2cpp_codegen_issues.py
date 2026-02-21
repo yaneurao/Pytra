@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2cpp import load_east, transpile_to_cpp
+from src.py2cpp import CppEmitter, load_cpp_profile, load_east, transpile_to_cpp
 
 
 class Py2CppCodegenIssueTest(unittest.TestCase):
@@ -240,6 +240,13 @@ def f(x: object) -> None:
 
         self.assertIn("py_assert_eq(x, x);", cpp)
         self.assertNotIn("py_assert_eq(make_object(x), make_object(x))", cpp)
+
+    def test_infer_rendered_arg_type_uses_declared_var_type(self) -> None:
+        em = CppEmitter({}, load_cpp_profile(), {})
+        em.declared_var_types["x"] = "object"
+        self.assertEqual(em._infer_rendered_arg_type("x", "unknown"), "object")
+        self.assertEqual(em._infer_rendered_arg_type("(x)", ""), "object")
+        self.assertEqual(em._infer_rendered_arg_type("x", "int64"), "int64")
 
 
 if __name__ == "__main__":
