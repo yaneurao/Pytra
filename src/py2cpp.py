@@ -3662,6 +3662,43 @@ class CppEmitter(CodeEmitter):
             return f"py_print({_join_str_list(', ', args)})"
         return f"{fn_name}({_join_str_list(', ', args)})"
 
+    def _render_call_expr_from_context(
+        self,
+        expr_d: dict[str, Any],
+        fn: dict[str, Any],
+        fn_name: str,
+        args: list[str],
+        kw: dict[str, str],
+        arg_nodes: list[Any],
+        kw_values: list[str],
+        kw_nodes: list[Any],
+        first_arg: object,
+    ) -> str:
+        """`Call` ノードの描画本体（前処理済みコンテキスト版）。"""
+        self.validate_call_receiver_or_raise(fn)
+        hook_call = self.hook_on_render_call(expr_d, fn, args, kw)
+        hook_call_txt = ""
+        if isinstance(hook_call, str):
+            hook_call_txt = str(hook_call)
+        if hook_call_txt != "":
+            return hook_call_txt
+        lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
+        has_runtime_call = self.any_dict_has(expr_d, "runtime_call")
+        if lowered_kind == "BuiltinCall" or has_runtime_call:
+            builtin_rendered: str = self._render_builtin_call(expr_d, fn, args, kw, arg_nodes, first_arg)
+            if builtin_rendered != "":
+                return builtin_rendered
+        name_or_attr = self._render_call_name_or_attr(expr_d, fn, fn_name, args, kw, arg_nodes, first_arg)
+        name_or_attr_txt = ""
+        if isinstance(name_or_attr, str):
+            name_or_attr_txt = str(name_or_attr)
+        if name_or_attr_txt != "":
+            return name_or_attr_txt
+        merged_args = self.merge_call_kw_values(args, kw_values)
+        merged_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
+        merged_args = self._coerce_args_for_known_function(fn_name, merged_args, merged_arg_nodes)
+        return self._render_call_fallback(fn_name, merged_args)
+
     def _prepare_call_parts(
         self,
         expr: dict[str, Any],
@@ -4318,29 +4355,17 @@ class CppEmitter(CodeEmitter):
             kw_values = self.any_to_str_list(call_ctx.get("kw_values"))
             kw_nodes = self.any_to_list(call_ctx.get("kw_nodes"))
             first_arg: object = call_ctx.get("first_arg")
-            self.validate_call_receiver_or_raise(fn)
-            hook_call = self.hook_on_render_call(expr_d, fn, args, kw)
-            hook_call_txt = ""
-            if isinstance(hook_call, str):
-                hook_call_txt = str(hook_call)
-            if hook_call_txt != "":
-                return hook_call_txt
-            lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
-            has_runtime_call = self.any_dict_has(expr_d, "runtime_call")
-            if lowered_kind == "BuiltinCall" or has_runtime_call:
-                builtin_rendered: str = self._render_builtin_call(expr_d, fn, args, kw, arg_nodes, first_arg)
-                if builtin_rendered != "":
-                    return builtin_rendered
-            name_or_attr = self._render_call_name_or_attr(expr_d, fn, fn_name, args, kw, arg_nodes, first_arg)
-            name_or_attr_txt = ""
-            if isinstance(name_or_attr, str):
-                name_or_attr_txt = str(name_or_attr)
-            if name_or_attr_txt != "":
-                return name_or_attr_txt
-            merged_args = self.merge_call_kw_values(args, kw_values)
-            merged_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
-            merged_args = self._coerce_args_for_known_function(fn_name, merged_args, merged_arg_nodes)
-            return self._render_call_fallback(fn_name, merged_args)
+            return self._render_call_expr_from_context(
+                expr_d,
+                fn,
+                fn_name,
+                args,
+                kw,
+                arg_nodes,
+                kw_values,
+                kw_nodes,
+                first_arg,
+            )
         if kind == "RangeExpr":
             start = self.render_expr(expr_d.get("start"))
             stop = self.render_expr(expr_d.get("stop"))
