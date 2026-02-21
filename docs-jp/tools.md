@@ -27,7 +27,9 @@
 ## 2. selfhost 関連
 
 - `tools/build_selfhost.py`
-  - 目的: selfhost 用 `selfhost/py2cpp.out` を生成する。
+  - 目的: selfhost 用 `selfhost/py2cpp.out` を生成する（生成 C++ への手動 main パッチなし）。
+- `tools/build_selfhost_stage2.py`
+  - 目的: `selfhost/py2cpp.out` で `selfhost/py2cpp.py` を再変換し、2段自己変換バイナリ `selfhost/py2cpp_stage2.out` を生成する。
 - `tools/prepare_selfhost_source.py`
   - 目的: `CodeEmitter` などを selfhost 用ソースへ展開し、自己完結化する。
 - `tools/selfhost_transpile.py`
@@ -35,6 +37,9 @@
 - `tools/check_selfhost_cpp_diff.py`
   - 目的: Python 版と selfhost 版の生成 C++ 差分を比較する。
   - 主要オプション: `--mode allow-not-implemented`, `--show-diff`, `--selfhost-driver`
+- `tools/check_selfhost_stage2_cpp_diff.py`
+  - 目的: Python 版と 2段自己変換版（`selfhost/py2cpp_stage2.out`）の生成 C++ 差分を比較する。
+  - 主要オプション: `--skip-build`, `--mode`, `--show-diff`
 - `tools/summarize_selfhost_errors.py`
   - 目的: selfhost ビルドログのエラーをカテゴリ別に集計する。
 - `tools/selfhost_error_hotspots.py`

@@ -33,6 +33,15 @@ def main() -> int:
             "test/fixtures/control/if_else.py",
             "sample/py/01_mandelbrot.py",
         ],
+        [
+            "python3",
+            "tools/check_selfhost_stage2_cpp_diff.py",
+            "--mode",
+            "allow-not-implemented",
+            "--cases",
+            "test/fixtures/core/add.py",
+            "test/fixtures/control/if_else.py",
+        ],
     ]
     for step in steps:
         rc = run(step)

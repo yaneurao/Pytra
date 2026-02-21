@@ -101,6 +101,10 @@ def main() -> int:
                 print(f"[FAIL selfhost] {rel}: {msg.splitlines()[:1]}")
                 mismatches += 1
                 continue
+            if not out_sh.exists():
+                print(f"[FAIL selfhost] {rel}: output file was not generated ({out_sh})")
+                mismatches += 1
+                continue
 
             a = out_py.read_text(encoding="utf-8").splitlines()
             b = out_sh.read_text(encoding="utf-8").splitlines()

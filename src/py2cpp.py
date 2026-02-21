@@ -1244,6 +1244,22 @@ class CppEmitter(CodeEmitter):
             i += 1
         return out
 
+    def _coerce_py_assert_args(self, fn_name: str, args: list[str]) -> list[str]:
+        """`py_assert_*` 呼び出しで object 引数が必要な位置を boxing する。"""
+        out: list[str] = []
+        i = 0
+        while i < len(args):
+            a = args[i]
+            if fn_name == "py_assert_stdout":
+                if i == 1 and not a.startswith("make_object("):
+                    a = f"make_object({a})"
+            elif fn_name == "py_assert_eq":
+                if i < 2 and not a.startswith("make_object("):
+                    a = f"make_object({a})"
+            out.append(a)
+            i += 1
+        return out
+
     def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
         """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
@@ -3433,26 +3449,19 @@ class CppEmitter(CodeEmitter):
                     call_args: list[str] = merged_args
                     if self._contains_text(mapped_runtime_txt, "::"):
                         call_args = self._coerce_args_for_module_function(imported_module, raw, merged_args, arg_nodes)
+                    if raw.startswith("py_assert_"):
+                        call_args = self._coerce_py_assert_args(raw, call_args)
                     return f"{mapped_runtime_txt}({_join_str_list(', ', call_args)})"
                 imported_module_norm = self._normalize_runtime_module_name(imported_module)
                 if imported_module_norm in self.module_namespace_map:
                     ns = self.module_namespace_map[imported_module_norm]
                     if ns != "":
                         call_args: list[str] = self._coerce_args_for_module_function(imported_module, raw, args, arg_nodes)
+                        if raw.startswith("py_assert_"):
+                            call_args = self._coerce_py_assert_args(raw, call_args)
                         return f"{ns}::{raw}({_join_str_list(', ', call_args)})"
             if raw.startswith("py_assert_"):
-                call_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    a = args[i]
-                    if raw == "py_assert_stdout":
-                        if i == 1 and not a.startswith("make_object("):
-                            a = f"make_object({a})"
-                    elif raw == "py_assert_eq":
-                        if i < 2 and not a.startswith("make_object("):
-                            a = f"make_object({a})"
-                    call_args.append(a)
-                    i += 1
+                call_args = self._coerce_py_assert_args(raw, args)
                 return f"pytra::utils::assertions::{raw}({_join_str_list(', ', call_args)})"
             if raw == "range":
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
@@ -3858,18 +3867,7 @@ class CppEmitter(CodeEmitter):
             if ty in fn_map:
                 return f"{fn_map[ty]}({args[0]})"
         if fn_name.startswith("py_assert_"):
-            call_args: list[str] = []
-            i = 0
-            while i < len(args):
-                a = args[i]
-                if fn_name == "py_assert_stdout":
-                    if i == 1 and not a.startswith("make_object("):
-                        a = f"make_object({a})"
-                elif fn_name == "py_assert_eq":
-                    if i < 2 and not a.startswith("make_object("):
-                        a = f"make_object({a})"
-                call_args.append(a)
-                i += 1
+            call_args = self._coerce_py_assert_args(fn_name, args)
             return f"pytra::utils::assertions::{fn_name}({_join_str_list(', ', call_args)})"
         if fn_name.endswith(".append") and len(args) == 1:
             owner_expr = fn_name[: len(fn_name) - 7]

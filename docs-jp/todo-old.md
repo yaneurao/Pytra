@@ -4,6 +4,23 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+## 2026-02-21 完了: selfhost stage2 実行導線と差分検証の安定化
+
+1. [x] selfhost `.py` 経路の段階回復を完了した。
+   - [x] `tools/build_selfhost.py` から手動 `main()` パッチ処理を削除し、生成コードそのままで `selfhost/py2cpp.out` を生成できるようにした。
+   - [x] `tools/prepare_selfhost_source.py` の末尾 main-guard 置換を調整し、`selfhost/py2cpp.py` から `main()` 呼び出しが保持されるようにした。
+2. [x] 2段自己変換バイナリ（`selfhost/py2cpp_stage2.out`）の最小実行パスを安定化した。
+   - [x] `tools/build_selfhost_stage2.py` を追加し、`selfhost -> selfhost_selfhost` のビルド導線を自動化した。
+   - [x] `python3 tools/verify_selfhost_end_to_end.py --skip-build --selfhost-bin selfhost/py2cpp_stage2.out` で `failures=0` を確認した。
+3. [x] 2段自己変換バイナリの出力差分（`make_object` 揺れ）を解消した。
+   - [x] `src/py2cpp.py` に `_coerce_py_assert_args` を追加し、`py_assert_*` 呼び出しで object 引数 boxing を経路依存なく統一した。
+   - [x] `python3 tools/check_selfhost_stage2_cpp_diff.py --skip-build --mode allow-not-implemented` で `mismatches=0 skipped=0` を確認した。
+4. [x] `selfhost_selfhost` 向けの自動差分検証導線を追加した。
+   - [x] `tools/check_selfhost_stage2_cpp_diff.py` を追加（`check_selfhost_cpp_diff.py` ラッパ）。
+   - [x] `tools/run_local_ci.py` に stage2 差分検証ステップを追加した。
+5. [x] selfhost 差分検証の失敗時にトレースバックで落ちないよう改善した。
+   - [x] `tools/check_selfhost_cpp_diff.py` で「selfhost 出力ファイル未生成」を `FAIL selfhost` として扱うガードを追加した。
+
 ## 2026-02-21 完了: selfhost 直変換 Compare 崩れ補正
 
 1. [x] selfhost 直変換で `in/not in` 比較が生の `k in d` へ崩れる回帰を修正した。

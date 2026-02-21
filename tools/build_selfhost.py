@@ -13,7 +13,6 @@ from __future__ import annotations
 import shutil
 import subprocess
 import sys
-import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,29 +40,6 @@ def runtime_cpp_sources() -> list[str]:
         out.append(str(p))
     return out
 
-
-def patch_cpp_main_to_call_pytra_main(cpp_path: Path) -> None:
-    text = cpp_path.read_text(encoding="utf-8")
-    new_main = (
-        "int main(int argc, char** argv) {\n"
-        "    pytra_configure_from_argv(argc, argv);\n"
-        "    list<str> __args = list<str>{};\n"
-        "    int i = 1;\n"
-        "    while (i < argc) {\n"
-        "        __args.append(str(argv[i]));\n"
-        "        i += 1;\n"
-        "    }\n"
-        "    return static_cast<int>(__pytra_main(__args));\n"
-        "}\n"
-    )
-    # 生成コードの main 本体が変化しても差し替えられるよう、関数単位で置換する。
-    pattern = re.compile(r"int main\(int argc, char\*\* argv\) \{\n(?:.|\n)*?\n\}\n$", re.M)
-    text, n = pattern.subn(new_main, text, count=1)
-    if n == 0:
-        raise RuntimeError("failed to patch generated selfhost main()")
-    cpp_path.write_text(text, encoding="utf-8")
-
-
 def main() -> int:
     run(["python3", "tools/prepare_selfhost_source.py"]) 
 
@@ -73,7 +49,6 @@ def main() -> int:
     shutil.copytree(SRC_RUNTIME, SELFHOST_RUNTIME, dirs_exist_ok=True)
 
     run(["python3", "src/py2cpp.py", "selfhost/py2cpp.py", "-o", str(CPP_OUT)])
-    patch_cpp_main_to_call_pytra_main(CPP_OUT)
 
     cpp_sources = runtime_cpp_sources()
     cmd = [

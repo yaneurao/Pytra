@@ -9,12 +9,8 @@
 
 ## P0: selfhost 安定化
 
-1. [ ] selfhost `.py` 経路の段階回復を完了する。
-2. [ ] 2段自己変換バイナリ（`selfhost_selfhost`）での最小実行パスを安定化する（現状: 生成物の `main()` が `py_main` を呼ばないため手動パッチが必要）。
-3. [ ] 2段自己変換バイナリの出力差分を解消する（現状: `test/fixtures/core/*` で `make_object` 挿入差分が残る）。
-4. [ ] `selfhost_selfhost` 向けに `check_selfhost_cpp_diff` 相当の自動検証導線を追加する（手動パッチ依存を排除）。
-5. [ ] selfhost コンパイルエラーを段階的にゼロ化する（再発時の即時検知手順込み）。
-6. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
+1. [ ] selfhost コンパイルエラー再発を即時検知できるように、`run_local_ci.py` の selfhost ケースを段階的に拡張する。
+2. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する（`load_cpp_profile` / import-graph / multi-file 周辺）。
 
 ## P1: CodeEmitter / Hooks 移管
 

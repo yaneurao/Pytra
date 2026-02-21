@@ -122,14 +122,6 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
     return prefix.rstrip() + "\n\n" + support_blocks + "\n" + base_class_text + "\n" + suffix
 
 
-def _strip_main_guard(text: str) -> str:
-    marker = '\nif __name__ == "__main__":\n'
-    i = text.find(marker)
-    if i < 0:
-        return text
-    return text[:i].rstrip() + "\n"
-
-
 def _replace_dump_options_for_selfhost(text: str) -> str:
     start_marker = "def dump_codegen_options_text("
     end_marker = "\ndef empty_parse_dict("
@@ -204,8 +196,9 @@ def _patch_selfhost_exception_paths(text: str) -> str:
 
 
 def _patch_main_guard_for_selfhost(text: str) -> str:
+    """selfhost 用に末尾 main guard を self-host parser で安定な形へ置換する。"""
     old = 'if __name__ == "__main__":\n    sys.exit(main(list(sys.argv[1:])))\n'
-    new = 'if __name__ == "__main__":\n    pass\n'
+    new = 'if __name__ == "__main__":\n    main(list(sys.argv[1:]))\n'
     return text.replace(old, new)
 
 
@@ -274,7 +267,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
         ),
     )
 
-
     repl(
         "def load_cpp_profile(",
         "\ndef load_cpp_bin_ops(",
@@ -296,6 +288,7 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "    pass\n"
             "    _ = profile\n"
             "    out: dict[str, dict[str, str]] = {}\n"
+            "    out[\"pytra.std.sys\"] = {\"argv\": \"py_runtime_argv()\"}\n"
             "    return out\n\n"
             "BIN_OPS: dict[str, str] = load_cpp_bin_ops()\n"
             "CMP_OPS: dict[str, str] = load_cpp_cmp_ops()\n"
@@ -646,7 +639,6 @@ def main() -> int:
     out = _replace_import_graph_helpers_for_selfhost(out)
     out = _replace_misc_heavy_helpers_for_selfhost(out)
     out = _patch_main_guard_for_selfhost(out)
-    out = _strip_main_guard(out)
     out = _patch_selfhost_exception_paths(out)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)

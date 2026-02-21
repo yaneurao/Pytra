@@ -19,6 +19,9 @@
       },
       "pytra.std.argparse": {
         "ArgumentParser": "::ArgumentParser"
+      },
+      "pytra.std.sys": {
+        "argv": "py_runtime_argv()"
       }
     }
   }
