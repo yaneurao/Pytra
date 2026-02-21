@@ -15,6 +15,18 @@
    - [x] `test/unit/test_py2cs_smoke.py` を追加した。
    - [x] `tools/check_py2cs_transpile.py` を追加し、`checked=117 ok=117 fail=0 skipped=5` を確認した。
 
+## 2026-02-22 完了: `docs-jp/todo.md` の P3/P4 一式消化
+
+1. [x] `P3: py2rs（EAST移行）を CodeEmitter 中心で再設計` を完了した。
+   - [x] `CodeEmitter` への共通化（`render_boolop_common` / `render_compare_chain_common` / `load_profile_with_includes` / `quote_string_literal`）を実施した。
+   - [x] `py2rs` を EAST ベースで安定運用し、`tools/check_py2rs_transpile.py` で `checked=117 ok=117 fail=0 skipped=5` を確認した。
+2. [x] `P4: 他言語トランスパイラの EAST 移行` を完了した。
+   - [x] `py2go` / `py2java` / `py2ts` / `py2swift` / `py2kotlin` を EAST ベース CLI + preview emitter へ移行した。
+   - [x] 各言語の smoke test と一括 transpile check を追加した。
+3. [x] 言語横断回帰を追加した。
+   - [x] `test/unit/test_error_classification_cross_lang.py` を追加し、`load_east` のエラー分類メッセージ整合を固定化した。
+4. [x] `docs-jp/todo.md` を未完了専用の最小構成に整理した。
+
 ## 2026-02-22 完了: P0 Yanesdk（library + game）を py2cpp で通す最短経路
 
 1. [x] `Yanesdk` 向け前処理方針を確定した。
