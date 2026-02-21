@@ -9,11 +9,10 @@ from pytra.runtime.gif import grayscale_palette, save_gif
 
 def capture(grid: list[list[int]], w: int, h: int) -> bytes:
     frame = bytearray(w * h)
-    i = 0
     for y in range(h):
+        row_base = y * w
         for x in range(w):
-            frame[i] = 255 if grid[y][x] else 0
-            i += 1
+            frame[row_base + x] = 255 if grid[y][x] else 0
     return bytes(frame)
 
 

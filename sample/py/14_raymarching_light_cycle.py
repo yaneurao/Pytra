@@ -53,13 +53,12 @@ def run_14_raymarching_light_cycle() -> None:
         light_x = 0.75 * math.cos(a)
         light_y = 0.55 * math.sin(a * 1.2)
 
-        i = 0
         for y in range(h):
+            row_base = y * w
             py = (y / (h - 1)) * 2.0 - 1.0
             for x in range(w):
                 px = (x / (w - 1)) * 2.0 - 1.0
-                frame[i] = scene(px, py, light_x, light_y)
-                i += 1
+                frame[row_base + x] = scene(px, py, light_x, light_y)
 
         frames.append(bytes(frame))
 

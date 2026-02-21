@@ -155,8 +155,8 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
     aspect = width / height
     fov = 1.25
 
-    i = 0
     for py in range(height):
+        row_base = py * width
         sy = 1.0 - (2.0 * (py + 0.5) / height)
         for px in range(width):
             sx = (2.0 * (px + 0.5) / width - 1.0) * aspect
@@ -284,8 +284,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
             r = math.sqrt(clamp01(r))
             g = math.sqrt(clamp01(g))
             b = math.sqrt(clamp01(b))
-            frame[i] = quantize_332(r, g, b)
-            i += 1
+            frame[row_base + px] = quantize_332(r, g, b)
 
     return bytes(frame)
 

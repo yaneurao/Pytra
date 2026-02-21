@@ -125,6 +125,7 @@
    - [x] `sample/py/15_mini_language_interpreter.py` の `tokenize()` で、行走査を index `while` から `enumerate` ベースの `for` へ置換した。
    - [x] `sample/py/15_mini_language_interpreter.py` の `parse_add()` / `parse_mul()` で、`done` フラグ式ループを `while True ... break` へ置換した。
    - [x] `sample/py/09_fire_simulation.py` / `sample/py/10_plasma_effect.py` のフレーム書き込みで、手動インデックス加算（`i += 1`）を `row_base + x` 形式へ置換した。
+   - [x] `sample/py/08_langtons_ant.py` / `sample/py/14_raymarching_light_cycle.py` / `sample/py/16_glass_sculpture_chaos.py` のフレーム書き込みで、手動インデックス加算（`i += 1`）を `row_base + x` 形式へ置換した。
 4. [ ] 上記の戻し作業は低優先で進め、各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` を通して回帰を防ぐ。
 
 ## 補助メモ
