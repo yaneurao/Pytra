@@ -63,6 +63,7 @@
    - [x] `isinstance` 変換の型マップ分岐（`Call(Name)` / fallback）を `_render_isinstance_type_check` へ統合し、`Call` 分岐の重複を削減した。
    - [x] `module.method(...)` の namespace 呼び出し重複を `_render_call_module_method_with_namespace` へ統合し、`_render_call_module_method` の重複分岐を削減した。
    - [x] `Call(Attribute)` の object/class 分岐を `_render_call_attribute_non_module` へ切り出し、`_render_call_attribute` 本体を module 解決 + dispatch へ縮退した。
+   - [x] `from-import` 解決と `module.method(...)` の namespace 呼び出しを `_render_namespaced_module_call` へ統合し、call/attribute 周辺の重複分岐を追加削減した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [x] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
@@ -91,6 +92,7 @@
    - [x] `Function/Class` のヘッダ/終端出力を `syntax_line` / `syntax_text` へ寄せ、文字列直書き依存を削減した（selfhost互換のため呼び出しは `CppEmitter` 側ラッパで維持）。
    - [x] `_cpp_expr_to_module_name` を `CodeEmitter` 側へ移管し、hook 実装から共通 helper を参照する形に統一した。
 8. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
+   - [x] 未再利用 helper `_dict_any_get_list` を削除し、`_dict_any_get_str_list` へ内包した。
 
 ## P2: Any/object 境界の整理
 

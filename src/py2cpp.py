@@ -235,18 +235,6 @@ def _parse_user_error(err_text: str) -> dict[str, Any]:
     return out
 
 
-def _dict_any_get_list(src: dict[str, Any], key: str) -> list[Any]:
-    """`dict[str, Any]` から list を安全に取得する。"""
-    if key not in src:
-        out0: list[Any] = []
-        return out0
-    value = src[key]
-    if isinstance(value, list):
-        return value
-    out1: list[Any] = []
-    return out1
-
-
 def _dict_any_get(src: dict[str, Any], key: str) -> Any:
     """`dict[str, Any]` から値を安全に取得する（未定義時は `None`）。"""
     if key in src:
@@ -265,7 +253,10 @@ def _dict_any_get_str(src: dict[str, Any], key: str, default_value: str = "") ->
 def _dict_any_get_str_list(src: dict[str, Any], key: str) -> list[str]:
     """`dict[str, Any]` の list 値を `list[str]` として取得する。"""
     out: list[str] = []
-    raw = _dict_any_get_list(src, key)
+    raw_any = _dict_any_get(src, key)
+    raw: list[Any] = []
+    if isinstance(raw_any, list):
+        raw = raw_any
     for item in raw:
         if isinstance(item, str):
             out.append(item)
@@ -3551,12 +3542,15 @@ class CppEmitter(CodeEmitter):
             return f"{mapped_runtime_txt}({_join_str_list(', ', call_args)})", raw
         imported_module_norm = self._normalize_runtime_module_name(imported_module)
         if imported_module_norm in self.module_namespace_map:
-            ns = self.module_namespace_map[imported_module_norm]
-            if ns != "":
-                call_args = self._coerce_args_for_module_function(imported_module, raw, args, arg_nodes)
-                if raw.startswith("py_assert_"):
-                    call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
-                return f"{ns}::{raw}({_join_str_list(', ', call_args)})", raw
+            namespaced = self._render_namespaced_module_call(
+                imported_module,
+                self.module_namespace_map[imported_module_norm],
+                raw,
+                args,
+                arg_nodes,
+            )
+            if namespaced is not None:
+                return namespaced, raw
         return None, raw
 
     def _render_misc_name_builtin_call(
@@ -3686,10 +3680,23 @@ class CppEmitter(CodeEmitter):
         arg_nodes: list[Any],
     ) -> str | None:
         """`namespace::func(...)` 形式の module call を共通描画する。"""
-        if ns_name == "":
+        return self._render_namespaced_module_call(owner_mod, ns_name, attr, merged_args, arg_nodes)
+
+    def _render_namespaced_module_call(
+        self,
+        module_name: str,
+        namespace_name: str,
+        func_name: str,
+        rendered_args: list[str],
+        arg_nodes: list[Any],
+    ) -> str | None:
+        """`namespace::func(...)` 呼び出しを描画する共通 helper。"""
+        if namespace_name == "":
             return None
-        call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
-        return f"{ns_name}::{attr}({_join_str_list(', ', call_args)})"
+        call_args = self._coerce_args_for_module_function(module_name, func_name, rendered_args, arg_nodes)
+        if func_name.startswith("py_assert_"):
+            call_args = self._coerce_py_assert_args(func_name, call_args, arg_nodes)
+        return f"{namespace_name}::{func_name}({_join_str_list(', ', call_args)})"
 
     def _render_call_class_method(
         self,
