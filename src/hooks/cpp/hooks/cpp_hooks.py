@@ -149,11 +149,29 @@ def _render_runtime_call_dict_ops(
         if not objectish_owner:
             key_expr = emitter._coerce_dict_key_expr(owner_node, key_expr, key_node)
         if len(rendered_args) >= 2:
-            out_t = emitter.any_to_str(call_node.get("resolved_type"))
+            out_t = emitter.normalize_type_name(emitter.any_to_str(call_node.get("resolved_type")))
+            int_out_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+            float_out_types = {"float32", "float64"}
+            default_t = ""
+            default_node: Any = None
+            if len(arg_nodes) >= 2:
+                default_node = arg_nodes[1]
+            if default_node is not None:
+                default_t = emitter.normalize_type_name(emitter.get_expr_type(default_node))
             if objectish_owner and out_t == "bool":
                 return "dict_get_bool(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
             if objectish_owner and out_t == "str":
                 return "dict_get_str(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
+            if objectish_owner and out_t in int_out_types:
+                cast_t = emitter._cpp_type_text(out_t)
+                return "static_cast<" + cast_t + ">(dict_get_int(" + owner + ", " + key_expr + ", py_to_int64(" + rendered_args[1] + ")))"
+            if objectish_owner and out_t in float_out_types:
+                cast_t = emitter._cpp_type_text(out_t)
+                return "static_cast<" + cast_t + ">(dict_get_float(" + owner + ", " + key_expr + ", py_to_float64(" + rendered_args[1] + ")))"
+            if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in int_out_types:
+                return "dict_get_int(" + owner + ", " + key_expr + ", py_to_int64(" + rendered_args[1] + "))"
+            if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in float_out_types:
+                return "dict_get_float(" + owner + ", " + key_expr + ", py_to_float64(" + rendered_args[1] + "))"
             if objectish_owner and out_t.startswith("list["):
                 return "dict_get_list(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
             if objectish_owner and (emitter.is_any_like_type(out_t) or out_t == "object"):
