@@ -3480,20 +3480,21 @@ class CppEmitter(CodeEmitter):
             return "false"
         type_name = self.any_to_str(rhs.get("id"))
         a0 = args[0]
-        if type_name == "dict":
-            return f"py_is_dict({a0})"
-        if type_name == "list":
-            return f"py_is_list({a0})"
-        if type_name == "set":
-            return f"py_is_set({a0})"
-        if type_name == "str":
-            return f"py_is_str({a0})"
-        if type_name == "int":
-            return f"py_is_int({a0})"
-        if type_name == "float":
-            return f"py_is_float({a0})"
-        if type_name == "bool":
-            return f"py_is_bool({a0})"
+        return self._render_isinstance_type_check(a0, type_name)
+
+    def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
+        """`isinstance(x, T)` の `T` に対応する runtime 判定式を返す。"""
+        fn_map = {
+            "str": "py_is_str",
+            "list": "py_is_list",
+            "dict": "py_is_dict",
+            "set": "py_is_set",
+            "int": "py_is_int",
+            "float": "py_is_float",
+            "bool": "py_is_bool",
+        }
+        if type_name in fn_map:
+            return f"{fn_map[type_name]}({value_expr})"
         return "false"
 
     def _render_simple_name_builtin_call(self, raw: str, args: list[str]) -> str | None:
@@ -3833,17 +3834,7 @@ class CppEmitter(CodeEmitter):
             return f"py_len({args[0]})"
         if fn_name == "isinstance" and len(args) == 2:
             ty = args[1].strip()
-            fn_map = {
-                "str": "py_is_str",
-                "list": "py_is_list",
-                "dict": "py_is_dict",
-                "set": "py_is_set",
-                "int": "py_is_int",
-                "float": "py_is_float",
-                "bool": "py_is_bool",
-            }
-            if ty in fn_map:
-                return f"{fn_map[ty]}({args[0]})"
+            return self._render_isinstance_type_check(args[0], ty)
         if fn_name.startswith("py_assert_"):
             call_args = self._coerce_py_assert_args(fn_name, args, [])
             return f"pytra::utils::assertions::{fn_name}({_join_str_list(', ', call_args)})"
