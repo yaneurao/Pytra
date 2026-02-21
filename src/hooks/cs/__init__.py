@@ -1,0 +1,2 @@
+"""C# hooks/emitter package."""
+

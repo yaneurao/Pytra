@@ -246,6 +246,10 @@ class RustEmitter(CodeEmitter):
         if self.is_any_like_type(d):
             return v
         if self._contains_text(d, "Any"):
+            # `dict[str, Any]` などのコンテナ注釈は、Rust 側の型整合を優先して
+            # 宣言型を保持する。値側推論で過度に具体化すると、混在値辞書が壊れる。
+            if d.startswith("dict[") or d.startswith("list[") or d.startswith("tuple["):
+                return d
             if d.startswith("dict[") and v.startswith("dict["):
                 return v
             if d.startswith("list[") and v.startswith("list["):
@@ -371,6 +375,7 @@ class RustEmitter(CodeEmitter):
                 norm_field_types[key] = self.normalize_type_name(self.any_to_str(val))
         self.class_field_types[class_name] = norm_field_types
 
+        self.emit("#[derive(Clone, Debug)]")
         if len(norm_field_types) == 0:
             self.emit(f"struct {class_name};")
         else:
@@ -890,13 +895,21 @@ class RustEmitter(CodeEmitter):
                 return "(" + rendered[0] + ",)"
             return "(" + ", ".join(rendered) + ")"
         if kind == "Dict":
-            keys = self.any_to_list(expr_d.get("keys"))
-            vals = self.any_to_list(expr_d.get("values"))
             pairs: list[str] = []
-            i = 0
-            while i < len(keys) and i < len(vals):
-                pairs.append("(" + self.render_expr(keys[i]) + ", " + self.render_expr(vals[i]) + ")")
-                i += 1
+            entries = self.any_to_list(expr_d.get("entries"))
+            if len(entries) > 0:
+                i = 0
+                while i < len(entries):
+                    ent = self.any_to_dict_or_empty(entries[i])
+                    pairs.append("(" + self.render_expr(ent.get("key")) + ", " + self.render_expr(ent.get("value")) + ")")
+                    i += 1
+            else:
+                keys = self.any_to_list(expr_d.get("keys"))
+                vals = self.any_to_list(expr_d.get("values"))
+                i = 0
+                while i < len(keys) and i < len(vals):
+                    pairs.append("(" + self.render_expr(keys[i]) + ", " + self.render_expr(vals[i]) + ")")
+                    i += 1
             return "::std::collections::BTreeMap::from([" + ", ".join(pairs) + "])"
         if kind == "Subscript":
             owner = self.render_expr(expr_d.get("value"))

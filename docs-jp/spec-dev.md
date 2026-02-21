@@ -93,16 +93,12 @@
 
 ## 2. C# 変換仕様（`py2cs.py`）
 
-- Python AST を解析し、`Program` クラスを持つ C# コードを生成します。
-- `import` / `from ... import ...` は `using` へ変換します。
-- 主な型対応:
-  - `int -> int`
-  - `float -> double`
-  - `str -> string`
-  - `bool -> bool`
-  - `None -> void`（戻り値注釈時）
-- class member は `public static` に変換します。
-- `__init__` で初期化される `self` 属性はインスタンスメンバーとして生成します。
+- EAST ベースで変換します（`.py/.json -> EAST -> C#`）。
+- `py2cs.py` は CLI + 入出力の薄いオーケストレータに限定します。
+- C# 固有ロジックは `src/hooks/cs/emitter/cs_emitter.py` に分離します。
+- 言語差分は `src/profiles/cs/*.json`（`types/operators/runtime_calls/syntax`）で管理します。
+- `import` / `from ... import ...` は EAST `meta.import_bindings` を正本として `using` 行へ変換します。
+- 主要型は `src/profiles/cs/types.json` を通して変換します（例: `int64 -> long`, `float64 -> double`, `str -> string`）。
 
 ## 3. C++ 変換仕様（`py2cpp.py`）
 

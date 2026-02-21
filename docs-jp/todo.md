@@ -49,10 +49,12 @@
    - [x] 最小版: EAST（`.py/.json`）読み込み→CodeEmitter経由で Rust 出力。
    - [x] 第2段: `test/fixtures/core` の基本ケースが通る範囲まで拡張（transpile 成功）。
    - [ ] 第3段: import / class / collections の変換品質を段階追加（出力品質・コンパイル互換を改善）。
-     - [x] import 束縛を `use ...;` に変換（`meta.import_bindings` 優先）。
-     - [x] `for (k, v) in dict.items()` 形の tuple ターゲットを生成。
-     - [x] `dict[str, Any]` のような注釈でも、値側に具体型がある場合は宣言型を具体化。
-     - [ ] class / Any / dict 連携の型整合（Rustコンパイル互換）を改善。
+   - [x] import 束縛を `use ...;` に変換（`meta.import_bindings` 優先）。
+   - [x] `for (k, v) in dict.items()` 形の tuple ターゲットを生成。
+   - [x] `dict[str, Any]` のような注釈でも、値側に具体型がある場合は宣言型を具体化。
+   - [ ] class / Any / dict 連携の型整合（Rustコンパイル互換）を改善。
+     - [x] Rust `Dict` 式で `entries` 形式を正しく展開し、要素脱落（`BTreeMap::from([])`）を修正。
+     - [x] Rust `class` 出力に `#[derive(Clone, Debug)]` を付与し、`dict/items/clone` 経路のコンパイル互換を改善。
 5. [ ] 検証と回帰テスト。
    - [x] `test/unit/` に py2rs 向け最小テストを追加（読み込み・文法・出力スモーク）。
    - [x] `tools/check_py2rs_transpile.py` を追加（fixtures/sample 一括トランスパイル確認）。
@@ -71,9 +73,10 @@
    - [x] `src/common/` 依存を撤去する。
    - [x] JS 固有処理を hook/profile へ分離する。
    - [x] `browser` / `browser.widgets.dialog` を外部参照（ブラウザ環境）として解決する。
-2. [ ] `py2cs.py` を EAST ベースへ移行する。
-   - [ ] `src/common/` 依存を撤去する。
-   - [ ] C# 固有処理を hook/profile へ分離する。
+2. [x] `py2cs.py` を EAST ベースへ移行する。
+   - [x] `src/common/` 依存を撤去する。
+   - [x] C# 固有処理を hook/profile へ分離する（`src/hooks/cs/`, `src/profiles/cs/` 追加）。
+   - [x] `test/unit/test_py2cs_smoke.py` / `tools/check_py2cs_transpile.py` を追加して回帰確認を自動化する。
 3. [ ] `py2go.py` / `py2java.py` を EAST ベースへ移行する。
 4. [ ] `py2ts.py` / `py2swift.py` / `py2kotlin.py` を EAST ベースへ移行する。
 5. [ ] 言語横断の回帰テストを追加する。

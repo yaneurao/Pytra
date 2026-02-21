@@ -95,6 +95,20 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn(".clone().into_iter()", rust)
         self.assertNotIn(".items()", rust)
 
+    def test_class_struct_has_clone_debug_derive(self) -> None:
+        fixture = find_fixture_case("class_instance")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("#[derive(Clone, Debug)]", rust)
+        self.assertIn("struct Box100 {", rust)
+
+    def test_dict_entries_literal_is_not_dropped(self) -> None:
+        fixture = find_fixture_case("any_dict_items")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("BTreeMap::from([(", rust)
+        self.assertIn("\"meta\"", rust)
+
     def test_py2rs_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2rs.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)

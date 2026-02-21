@@ -128,15 +128,13 @@ rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
 <summary>C#</summary>
 
 ```bash
-python src/py2cs.py test/fixtures/collections/iterable.py test/transpile/cs/iterable.cs
-mcs -out:test/transpile/obj/iterable.exe \
-  test/transpile/cs/iterable.cs \
-  src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs src/cs_module/pathlib.cs
-mono test/transpile/obj/iterable.exe
+python src/py2cs.py test/fixtures/collections/iterable.py -o test/transpile/cs/iterable.cs
+python3 tools/check_py2cs_transpile.py
 ```
 
 補足:
-- 生成コードで利用するランタイム実装（`src/cs_module/*.cs`）を一緒にコンパイルしてください。
+- `py2cs.py` は EAST ベースの変換器です（`.py/.json -> EAST -> C#`）。
+- C# 出力品質の段階改善は `docs-jp/todo.md` を参照してください。
 
 </details>
 
@@ -375,7 +373,7 @@ table = {}               # key/value 型が不明
 - 基本型: `int -> long`, `float -> double`, `float32 -> float`, `str -> string`, `bool -> bool`
 - 固定幅整数: `int8 -> sbyte`, `uint8 -> byte`, `int16 -> short`, `uint16 -> ushort`, `int32 -> int`, `uint32 -> uint`, `int64 -> long`, `uint64 -> ulong`
 - バイト列: `bytes` / `bytearray` -> `List<byte>`
-- コンテナ: `list[T] -> List<T>`, `dict[K, V] -> Dictionary<K, V>`, `set[T] -> HashSet<T>`, `tuple[...] -> Tuple<...>`
+- コンテナ: `list[T] -> List<T>`, `dict[K, V] -> Dictionary<K, V>`, `set[T] -> HashSet<T>`, `tuple[...] -> (T1, T2, ...)`
 
 </details>
 

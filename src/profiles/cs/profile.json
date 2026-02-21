@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "language": "cs",
+  "include": [
+    "types.json",
+    "operators.json",
+    "runtime_calls.json",
+    "syntax.json"
+  ],
+  "hooks": {
+    "module": "hooks.cs.hooks.cs_hooks",
+    "factory": "build_cs_hooks"
+  }
+}

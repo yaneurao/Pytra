@@ -1,0 +1,21 @@
+{
+  "types": {
+    "int8": "sbyte",
+    "uint8": "byte",
+    "int16": "short",
+    "uint16": "ushort",
+    "int32": "int",
+    "uint32": "uint",
+    "int64": "long",
+    "uint64": "ulong",
+    "float32": "float",
+    "float64": "double",
+    "bool": "bool",
+    "str": "string",
+    "bytes": "List<byte>",
+    "bytearray": "List<byte>",
+    "Any": "object",
+    "object": "object",
+    "None": "void"
+  }
+}

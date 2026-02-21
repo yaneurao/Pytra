@@ -239,32 +239,27 @@ QualifiedSymbolRef
 ### 2. Rust（`src/py2rs.py`）
 
 - 実装方式:
-- native AST 変換。現状の `Import/ImportFrom` はモジュール先頭で読み飛ばしている。
-- 呼び出し解決は式側で行う（例: `math.sqrt`, `pathlib.Path`, `perf_counter`）。
+- EAST 変換。`py2rs.py` は薄い CLI、実出力は `src/hooks/rs/emitter/rs_emitter.py` が担当。
+- import 解決は EAST `meta.import_bindings` を正本として `use ...;` 行へ変換する。
 - 具体実装:
-- import 解析だけは先行実施し、`alias -> canonical symbol` を内部テーブル化する。
-- 例:
-- `from time import perf_counter as pc` は `pc()` を `perf_counter()` へ正規化して既存実装へ渡す。
-- `from pathlib import Path as P` は `P(...)` を `Path(...)` 扱いへ正規化する。
-- `from math import sqrt as s` は `s(x)` を `math_sqrt(...)` へ落とす。
-- runtime 連携は既存通り `py_runtime` を使い、使用シンボルのみ `use py_runtime::{...}` で導入する。
+- `binding_kind=module/symbol` を使って `use crate::a::b` / `use crate::a::b::sym` を生成する。
+- `as` 付き import は Rust 側でも `as` へ正規化する。
+- `typing` / `__future__` は import 出力対象から除外する。
 - エラー方針:
 - `from M import *` と相対 import は `TranspileError`（上位で `input_invalid` 同等）に統一。
 
 ### 3. C#（`src/py2cs.py`）
 
 - 実装方式:
-- import を `using` 行へ変換し、式側は `Pytra.CsModule.py_runtime.*` や `System.Math` へマップする。
-- `_using_lines_from_import` と `_map_python_module` が import 入口。
+- EAST 変換。`py2cs.py` は薄い CLI、実出力は `src/hooks/cs/emitter/cs_emitter.py` が担当。
+- import 解決は EAST `meta.import_bindings` を正本として `using` 行へ変換する。
 - 具体実装:
-- `ImportBinding` から `using` を生成する。
-- `import math as m` -> `using m = System;`
-- `from pathlib import Path as P` -> `using P = System.IO.Path;` ではなく、Pytra 方針に合わせ `pathlib.Path` 相当の runtime 経路へ統一する。
-- `typing` は既存 `typing_aliases` 経路を維持し、from-import 名を型解決テーブルへ登録する。
-- `py_module`/`pylib` 系は既存互換を維持しつつ、段階的に `pytra.*` 名へ収束させる。
+- `binding_kind=module/symbol` を使って `using ns;` / `using alias = ns.sym;` を生成する。
+- `typing` / `__future__` / `browser*` は using 出力対象から除外する。
+- C# 固有の文・式変換は profile/hook（`src/profiles/cs/*`, `src/hooks/cs/*`）で管理する。
 - エラー方針:
-- `from M import *` は展開しない。未対応構文として失敗させる。
-- 同名 alias 衝突は `duplicate_binding` として即時エラー。
+- `from M import *` は展開しない。frontend の禁止構文として失敗させる。
+- 相対 import や未解決 import は frontend 側の `input_invalid` 方針に従う。
 
 ### 4. JavaScript（`src/py2js.py` + `src/hooks/js/emitter/js_emitter.py`）
 

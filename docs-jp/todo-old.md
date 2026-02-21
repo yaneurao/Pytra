@@ -4,6 +4,17 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+## 2026-02-22 完了: P4 `py2cs.py` EAST 移行
+
+1. [x] `src/py2cs.py` を EAST ベースの薄い CLI へ置換した。
+   - [x] `src/common/` 依存を撤去した。
+2. [x] C# 固有処理を hook/profile へ分離した。
+   - [x] `src/hooks/cs/`（`emitter` / `hooks`）を追加した。
+   - [x] `src/profiles/cs/`（`types` / `operators` / `runtime_calls` / `syntax`）を追加した。
+3. [x] 回帰確認導線を追加した。
+   - [x] `test/unit/test_py2cs_smoke.py` を追加した。
+   - [x] `tools/check_py2cs_transpile.py` を追加し、`checked=117 ok=117 fail=0 skipped=5` を確認した。
+
 ## 2026-02-22 完了: P0 Yanesdk（library + game）を py2cpp で通す最短経路
 
 1. [x] `Yanesdk` 向け前処理方針を確定した。

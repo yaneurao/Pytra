@@ -1,0 +1,9 @@
+{
+  "runtime_calls": {
+    "name_call": {
+      "print": "Console.WriteLine",
+      "len": "len"
+    },
+    "module_attr_call": {}
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "operators": {
+    "binop": {
+      "Add": "+",
+      "Sub": "-",
+      "Mult": "*",
+      "Div": "/",
+      "FloorDiv": "/",
+      "Mod": "%",
+      "BitAnd": "&",
+      "BitOr": "|",
+      "BitXor": "^",
+      "LShift": "<<",
+      "RShift": ">>"
+    },
+    "cmp": {
+      "Eq": "==",
+      "NotEq": "!=",
+      "Lt": "<",
+      "LtE": "<=",
+      "Gt": ">",
+      "GtE": ">=",
+      "Is": "==",
+      "IsNot": "!="
+    },
+    "aug": {
+      "Add": "+=",
+      "Sub": "-=",
+      "Mult": "*=",
+      "Div": "/=",
+      "FloorDiv": "/=",
+      "Mod": "%=",
+      "BitAnd": "&=",
+      "BitOr": "|=",
+      "BitXor": "^=",
+      "LShift": "<<=",
+      "RShift": ">>="
+    }
+  }
+}
