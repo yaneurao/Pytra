@@ -8,6 +8,10 @@
 This file is a historical archive migrated from prior `docs/todo.md` states.
 Completed items are kept for traceability. Active items were later moved to the current `docs/todo.md`.
 
+## 2026-02-21 Completed: py2cpp Call-Branch Hook Migration
+
+1. [x] Moved `dict.get/list.* / set.*` call resolution from `src/py2cpp.py` direct branches to runtime-call hook handling (`src/hooks/cpp/hooks/cpp_hooks.py`), reducing `py2cpp.py` hardcoding.
+
 ## 2026-02-21 Completed: Pass-through Notation
 
 1. [x] Specified and minimally implemented transpile-time pass-through notation (`# Pytra::cpp` / `# Pytra::pass`).
@@ -478,4 +482,3 @@ Historical notes preserved in this archive reported:
 - build and diff script additions (`summarize_selfhost_errors`, `selfhost_error_hotspots`, `run_local_ci`)
 - evolution from temporary `.py` bridge operation to direct selfhost `.py`/`.json` handling
 - periodic confirmations that representative `check_selfhost_cpp_diff` cases reached `mismatches=0`
-

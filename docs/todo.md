@@ -24,13 +24,12 @@ Last updated: 2026-02-21
 
 1. [ ] Move remaining unmigrated logic from `src/py2cpp.py` into `CodeEmitter`, reducing line count in stages.
 2. [ ] Split `render_expr` `Call` branches (builtin/module/method) by feature and migrate to `CodeEmitter` helpers.
-3. [ ] Move `dict.get/list.* / set.*` call resolution to runtime-call map + hook, reducing direct hardcoding in `py2cpp.py`.
-4. [ ] Split arithmetic/comparison/type-conversion branches in `render_expr` into independent functions, switchable via profile/hooks.
-5. [ ] Move base rendering of `Constant(Name/Attribute)` to shared `CodeEmitter`.
-6. [ ] Template control-flow branches in `emit_stmt` and move them to `CodeEmitter.syntax_*`.
-7. [ ] Override only C++-specific differences (brace omission, range-mode, etc.) in hooks.
-8. [ ] Move shared templates for `FunctionDef` / `ClassDef` (`open/body/close`) into `CodeEmitter`.
-9. [ ] Continue cleaning up unused functions (move detailed tasks into higher-priority sections as needed).
+3. [ ] Split arithmetic/comparison/type-conversion branches in `render_expr` into independent functions, switchable via profile/hooks.
+4. [ ] Move base rendering of `Constant(Name/Attribute)` to shared `CodeEmitter`.
+5. [ ] Template control-flow branches in `emit_stmt` and move them to `CodeEmitter.syntax_*`.
+6. [ ] Override only C++-specific differences (brace omission, range-mode, etc.) in hooks.
+7. [ ] Move shared templates for `FunctionDef` / `ClassDef` (`open/body/close`) into `CodeEmitter`.
+8. [ ] Continue cleaning up unused functions (move detailed tasks into higher-priority sections as needed).
 
 ## P2: Any/object Boundary Cleanup
 
@@ -46,4 +45,3 @@ Last updated: 2026-02-21
 
 - Completed tasks and historical logs have been moved to `docs/todo-old.md`.
 - Going forward, `docs/todo.md` keeps only unfinished tasks.
-
