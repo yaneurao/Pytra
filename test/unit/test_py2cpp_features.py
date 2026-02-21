@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
@@ -13,6 +14,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+
+# Subprocess timeouts for py2cpp feature tests.
+# Override with env vars when longer runs are needed on slower machines.
+PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOUT_SEC", "120"))
+PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
+PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
 from src.pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options
 from src.py2cpp import (
@@ -65,6 +72,57 @@ def transpile(input_py: Path, output_cpp: Path) -> None:
 
 
 class Py2CppFeatureTest(unittest.TestCase):
+    _selected_test_methods: list[str] = []
+    _progress_total: int = 0
+    _progress_index: int = 0
+
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+        if methodName.startswith("test_"):
+            self.__class__._selected_test_methods.append(methodName)
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        seen: set[str] = set()
+        deduped: list[str] = []
+        for name in cls._selected_test_methods:
+            if name not in seen:
+                seen.add(name)
+                deduped.append(name)
+        cls._selected_test_methods = deduped
+        cls._progress_total = len(deduped)
+        cls._progress_index = 0
+
+    def setUp(self) -> None:
+        super().setUp()
+        cls = self.__class__
+        cls._progress_index += 1
+        total_txt = str(cls._progress_total) if cls._progress_total > 0 else "?"
+        print(f"[{cls._progress_index}/{total_txt}] {self.id()}", flush=True)
+
+    def _run_subprocess_with_timeout(
+        self,
+        args: list[str],
+        *,
+        cwd: Path,
+        timeout_sec: float,
+        label: str,
+    ) -> subprocess.CompletedProcess[str]:
+        try:
+            return subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=timeout_sec)
+        except subprocess.TimeoutExpired as ex:
+            out_obj = ex.stdout
+            err_obj = ex.stderr
+            out_txt = out_obj if isinstance(out_obj, str) else ""
+            err_txt = err_obj if isinstance(err_obj, str) else ""
+            self.fail(
+                f"{label} timed out after {timeout_sec:.1f}s: {' '.join(args)}\n"
+                f"stdout:\n{out_txt}\n"
+                f"stderr:\n{err_txt}"
+            )
+            raise AssertionError("unreachable")
+
     def test_runtime_module_tail_and_namespace_support_compiler_tree(self) -> None:
         self.assertEqual(_runtime_module_tail_from_source_path(Path("src/pytra/std/math.py")), "std/math")
         self.assertEqual(_runtime_module_tail_from_source_path(Path("src/pytra/utils/png.py")), "png")
@@ -1020,8 +1078,10 @@ if __name__ == "__main__":
             src_py = find_fixture_case(stem)
             out_cpp = work / f"{stem}.cpp"
             out_exe = work / f"{stem}.out"
+            print(f"  [fixture:{stem}] transpile", flush=True)
             transpile(src_py, out_cpp)
-            comp = subprocess.run(
+            print(f"  [fixture:{stem}] compile", flush=True)
+            comp = self._run_subprocess_with_timeout(
                 [
                     "g++",
                     "-std=c++20",
@@ -1036,13 +1096,19 @@ if __name__ == "__main__":
                     str(out_exe),
                 ],
                 cwd=ROOT,
-                capture_output=True,
-                text=True,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label=f"compile fixture {stem}",
             )
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
             # fixture が相対パスで画像を書いてもリポジトリ直下を汚さないように、
             # 実行時の cwd は一時ディレクトリに固定する。
-            run = subprocess.run([str(out_exe)], cwd=work, capture_output=True, text=True)
+            print(f"  [fixture:{stem}] run", flush=True)
+            run = self._run_subprocess_with_timeout(
+                [str(out_exe)],
+                cwd=work,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label=f"run fixture {stem}",
+            )
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             return run.stdout.replace("\r\n", "\n")
 
@@ -1132,21 +1198,26 @@ if __name__ == "__main__":
             exe = out_dir / "app.out"
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
-            tr = subprocess.run(
+            tr = self._run_subprocess_with_timeout(
                 ["python3", "src/py2cpp.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
-                capture_output=True,
-                text=True,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile multi-file sample",
             )
             self.assertEqual(tr.returncode, 0, msg=tr.stderr)
-            bd = subprocess.run(
+            bd = self._run_subprocess_with_timeout(
                 ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
                 cwd=ROOT,
-                capture_output=True,
-                text=True,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="build multi-file sample",
             )
             self.assertEqual(bd.returncode, 0, msg=bd.stderr)
-            rn = subprocess.run([str(exe)], cwd=ROOT, capture_output=True, text=True)
+            rn = self._run_subprocess_with_timeout(
+                [str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run multi-file sample",
+            )
             self.assertEqual(rn.returncode, 0, msg=rn.stderr)
             self.assertIn("1", rn.stdout)
 
