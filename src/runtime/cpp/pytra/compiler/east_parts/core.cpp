@@ -3454,7 +3454,10 @@ namespace pytra::compiler::east_parts::core {
                     str sym_name = ::std::get<0>(__tuple_61);
                     str as_name_txt = ::std::get<1>(__tuple_61);
                     auto bind_name = (as_name_txt != "" ? as_name_txt : sym_name);
-                    _sh_append_import_binding(import_bindings, import_binding_names, mod_name, sym_name, bind_name, "symbol", filename, i);
+                    // `Enum/IntEnum/IntFlag` は class 定義の lowering で吸収されるため、
+                    // 依存ヘッダ解決用の ImportBinding には積まない。
+                    if (!((mod_name == "pytra.std.enum") && (py_contains(set<str>{"Enum", "IntEnum", "IntFlag"}, sym_name))))
+                        _sh_append_import_binding(import_bindings, import_binding_names, mod_name, sym_name, bind_name, "symbol", filename, i);
                     dict<str, ::std::optional<str>> alias_item = dict<str, object>{{"name", make_object(sym_name)}, {"asname", make_object(::std::nullopt)}};
                     if (as_name_txt != "")
                         alias_item[py_to_string("asname")] = as_name_txt;

@@ -14,7 +14,6 @@ from pytra.std import sys
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
 # selfhost 生成コードでは値として生成しない。
-BorrowKind = str
 INT_TYPES = {
     "int8",
     "uint8",
@@ -4076,19 +4075,22 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         message=f"unsupported from-import clause: {part}",
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Use `from module import name` or `... as alias`.",
-                    )
+                )
                 sym_name, as_name_txt = parsed_alias
                 bind_name = as_name_txt if as_name_txt != "" else sym_name
-                _sh_append_import_binding(
-                    import_bindings=import_bindings,
-                    import_binding_names=import_binding_names,
-                    module_id=mod_name,
-                    export_name=sym_name,
-                    local_name=bind_name,
-                    binding_kind="symbol",
-                    source_file=filename,
-                    source_line=i,
-                )
+                # `Enum/IntEnum/IntFlag` は class 定義の lowering で吸収されるため、
+                # 依存ヘッダ解決用の ImportBinding には積まない。
+                if not (mod_name == "pytra.std.enum" and sym_name in {"Enum", "IntEnum", "IntFlag"}):
+                    _sh_append_import_binding(
+                        import_bindings=import_bindings,
+                        import_binding_names=import_binding_names,
+                        module_id=mod_name,
+                        export_name=sym_name,
+                        local_name=bind_name,
+                        binding_kind="symbol",
+                        source_file=filename,
+                        source_line=i,
+                    )
                 alias_item: dict[str, str | None] = {"name": sym_name, "asname": None}
                 if as_name_txt != "":
                     alias_item["asname"] = as_name_txt

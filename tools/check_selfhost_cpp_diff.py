@@ -16,6 +16,8 @@ DEFAULT_CASES = [
     "test/fixtures/core/add.py",
     "test/fixtures/control/if_else.py",
     "test/fixtures/collections/comprehension_filter.py",
+    "test/fixtures/typing/enum_basic.py",
+    "test/fixtures/stdlib/enum_extended.py",
     "sample/py/01_mandelbrot.py",
 ]
 
