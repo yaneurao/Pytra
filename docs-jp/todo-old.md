@@ -4,6 +4,18 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+## 2026-02-21 完了: selfhost 直変換の型正規化回帰修正
+
+1. [x] selfhost 直変換で `list[int]` が `list<int>` と出力される回帰を修正した。
+   - [x] `src/pytra/compiler/east_parts/core.py` の `_sh_ann_to_type` から正規表現依存を除去し、汎用のブラケット分解ロジックへ置換した。
+   - [x] `src/runtime/cpp/pytra/compiler/east_parts/core.cpp` の同ロジックも同期修正した（`re` マッチ不要化）。
+   - [x] `tools/prepare_selfhost_source.py` で `_normalize_param_annotation` の selfhost 専用 no-op 置換を削除し、本実装を使うようにした。
+2. [x] selfhost 差分検証を green 化した。
+   - [x] `python3 tools/check_selfhost_cpp_diff.py --selfhost-driver direct` で `mismatches=0` を確認。
+3. [x] selfhost E2E 検証を追加・確認した。
+   - [x] `tools/verify_selfhost_end_to_end.py` を追加（`.py -> selfhost変換 -> C++コンパイル -> 実行 -> Python標準出力比較`）。
+   - [x] `python3 tools/verify_selfhost_end_to_end.py --skip-build` で `failures=0` を確認。
+
 
 ## 2026-02-21 完了: py2cpp Call 分岐の hook 移管
 

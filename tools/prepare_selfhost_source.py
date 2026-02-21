@@ -258,19 +258,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             out = out[:i] + stub + out[j + 1 :]
 
     repl(
-        "def _normalize_param_annotation(",
-        "\ndef _extract_function_arg_types_from_python_source(",
-        (
-            "def _normalize_param_annotation(ann: str) -> str:\n"
-            "    pass\n"
-            "    t = py_strip(ann)\n"
-            "    if t == \"\":\n"
-            "        return \"unknown\"\n"
-            "    return t\n\n"
-        ),
-    )
-
-    repl(
         "def _extract_function_arg_types_from_python_source(",
         "\ndef load_cpp_profile(",
         (
