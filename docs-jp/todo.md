@@ -76,6 +76,9 @@
    - [x] `RangeExpr/BinOp/UnaryOp/BoolOp/Compare/IfExp` の分岐を `_render_operator_family_expr` へ集約し、`render_expr` 本体の分岐を削減した。
    - [x] `RangeExpr` の C++ レンダ（`py_range(...)`）を `cpp_hooks.on_render_expr_kind(kind=RangeExpr)` へ抽出した（`py2cpp.py` 側フォールバックは残置）。
 4. [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
+   - [x] `Name` の基本レンダ（予約語回避 + `self` 置換）を `CodeEmitter.render_name_expr_common` へ移管した。
+   - [x] `Constant` の非文字列系レンダ（`bool`/`None`/数値）を `CodeEmitter.render_constant_non_string_common` へ移管した。
+   - [ ] `Attribute` の基本レンダの共通化方針を詰める（selfhost 静的束縛制約を満たす形）。
    - [ ] `CodeEmitter` 側の共通ディスパッチは selfhost C++ で静的束縛（非 virtual）により派生レンダへ到達しないため、別方式（hook 注入）で再設計する。
 5. [x] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。
    - [x] `try/catch/finally(scope guard)` の開始行（`scope_open` / `scope_exit_open` / `try_open` / `catch_open`）を `syntax.json` + `syntax_line` 経由へ移管した。

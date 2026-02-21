@@ -416,6 +416,52 @@ class CodeEmitter:
             name = default_name
         return self.rename_if_reserved(name, reserved_words, rename_prefix, renamed_symbols)
 
+    def render_name_expr_common(
+        self,
+        expr_d: dict[str, Any],
+        reserved_words: set[str],
+        rename_prefix: str,
+        renamed_symbols: dict[str, str],
+        default_name: str = "_",
+        rewrite_self: bool = False,
+        self_is_declared: bool = True,
+        self_rendered: str = "*this",
+    ) -> str:
+        """Name ノードの共通描画（予約語回避 + 任意の self 置換）を行う。"""
+        name_txt = self.any_dict_get_str(expr_d, "id", "")
+        if rewrite_self and name_txt == "self" and not self_is_declared:
+            return self_rendered
+        return self.render_name_ref(
+            expr_d,
+            reserved_words,
+            rename_prefix,
+            renamed_symbols,
+            default_name,
+        )
+
+    def render_constant_non_string_common(
+        self,
+        expr: Any,
+        expr_d: dict[str, Any],
+        none_non_any_literal: str,
+        none_any_literal: str,
+    ) -> tuple[bool, str]:
+        """Constant ノードのうち非文字列系（bool/None/数値など）を共通描画する。"""
+        v = expr_d.get("value")
+        raw_repr = self.any_to_str(expr_d.get("repr"))
+        if raw_repr != "" and not isinstance(v, bool) and v is not None and not isinstance(v, str):
+            return True, raw_repr
+        if isinstance(v, bool):
+            return True, ("true" if str(v) == "True" else "false")
+        if v is None:
+            t = self.get_expr_type(expr)
+            if self.is_any_like_type(t):
+                return True, none_any_literal
+            return True, none_non_any_literal
+        if isinstance(v, str):
+            return False, ""
+        return True, str(v)
+
     def any_dict_get(self, obj: dict[str, Any], key: str, default_value: Any) -> Any:
         """dict 風入力から key を取得し、失敗時は既定値を返す。"""
         if not isinstance(obj, dict):

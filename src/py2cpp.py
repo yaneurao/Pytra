@@ -4505,29 +4505,28 @@ class CppEmitter(CodeEmitter):
             rep_like = self._render_repr_expr(name_txt)
             if rep_like != "" and rep_like != name_txt:
                 return rep_like
-        if name_txt == "self" and self.current_class_name is not None and not self.is_declared("self"):
-            return "*this"
-        return self.render_name_ref(
+        return self.render_name_expr_common(
             expr_d,
             self.reserved_words,
             self.rename_prefix,
             self.renamed_symbols,
             "_",
+            rewrite_self=self.current_class_name is not None,
+            self_is_declared=self.is_declared("self"),
+            self_rendered="*this",
         )
 
     def _render_constant_expr(self, expr: Any, expr_d: dict[str, Any]) -> str:
         """Constant ノードを C++ リテラル式へ変換する。"""
         v = expr_d.get("value")
-        raw_repr = self.any_to_str(expr_d.get("repr"))
-        if raw_repr != "" and not isinstance(v, bool) and v is not None and not isinstance(v, str):
-            return raw_repr
-        if isinstance(v, bool):
-            return "true" if str(v) == "True" else "false"
-        if v is None:
-            t = self.get_expr_type(expr)
-            if self.is_any_like_type(t):
-                return "object{}"
-            return "::std::nullopt"
+        common_handled, common_non_str = self.render_constant_non_string_common(
+            expr,
+            expr_d,
+            none_non_any_literal="::std::nullopt",
+            none_any_literal="object{}",
+        )
+        if common_handled:
+            return common_non_str
         if isinstance(v, str):
             v_txt: str = str(v)
             if self.get_expr_type(expr) == "bytes":
