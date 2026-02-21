@@ -172,6 +172,34 @@ def f(p: str) -> None:
         self.assertIn("dict_get_int(", cpp)
         self.assertNotIn("py_dict_get_default(", cpp)
 
+    def test_none_constant_for_any_like_uses_object_empty(self) -> None:
+        src = """def f() -> object:
+    x: object = None
+    return x
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "none_object.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("object x = object{};", cpp)
+        self.assertNotIn("make_object(1)", cpp)
+
+    def test_list_any_object_element_is_not_double_boxed(self) -> None:
+        src = """def f() -> list[object]:
+    x: object = None
+    return [x]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "list_any_object.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("list<object>{x}", cpp)
+        self.assertNotIn("make_object(x)", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()
