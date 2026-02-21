@@ -48,11 +48,13 @@
 4. [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
 5. [ ] `py2cpp.py` で `nullopt` を default 値に渡している箇所を洗い出し、型ごとの既定値へ置換する。
 6. [ ] `std::any` を経由する経路（selfhost 変換由来）をログベースでリスト化し、順次削除する。
+   - [x] `unknown` / 混在 `Union` / `list[unknown]` / `dict[..., unknown]` の既定マッピングを `::std::any` から `object` 系へ寄せた（`_cpp_type_text`）。
 7. [ ] 上位3関数ごとにパッチを分けて改善し、毎回 `check_py2cpp_transpile.py` を通す。
 
 ## P3: 低優先（可読性・Pythonらしさの回復）
 
-1. [ ] `src/py2cpp.py` の selfhost 都合で平易化している実装を棚卸しし、一般的な Python 風の書き方へ戻す候補一覧を作る。
+1. [x] `src/py2cpp.py` の selfhost 都合で平易化している実装を棚卸しし、一般的な Python 風の書き方へ戻す候補一覧を作る。
+   - [x] 候補一覧を `docs-jp/pythonic-backlog.md` に作成した。
 2. [ ] `src/pytra/compiler/east_parts/code_emitter.py` で同様に平易化されている箇所を段階的に Python らしい記述へ戻す。
 3. [ ] `sample/` のコードについても、selfhost 都合の書き方が残っている箇所を通常の Python らしい表現へ順次戻す。
 4. [ ] 上記の戻し作業は低優先で進め、各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` を通して回帰を防ぐ。

@@ -4828,7 +4828,7 @@ class CppEmitter(CodeEmitter):
                     return f"::std::optional<{self._cpp_type_text(non_none[0])}>"
                 if (not has_none) and len(non_none) == 1:
                     return self._cpp_type_text(non_none[0])
-                return "::std::any"
+                return "object"
         if east_type == "None":
             return "void"
         if east_type == "PyFile":
@@ -4843,7 +4843,7 @@ class CppEmitter(CodeEmitter):
                 if self.is_any_like_type(inner[0]):
                     return "list<object>"
                 if inner[0] == "unknown":
-                    return "list<::std::any>"
+                    return "list<object>"
                 return f"list<{self._cpp_type_text(inner[0])}>"
         if east_type.startswith("set[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[4:-1])
@@ -4862,11 +4862,11 @@ class CppEmitter(CodeEmitter):
                 if self.is_any_like_type(inner[1]):
                     return f"dict<{self._cpp_type_text(inner[0] if inner[0] != 'unknown' else 'str')}, object>"
                 if inner[0] == "unknown" and inner[1] == "unknown":
-                    return "dict<str, ::std::any>"
+                    return "dict<str, object>"
                 if inner[0] == "unknown":
                     return f"dict<str, {self._cpp_type_text(inner[1])}>"
                 if inner[1] == "unknown":
-                    return f"dict<{self._cpp_type_text(inner[0])}, ::std::any>"
+                    return f"dict<{self._cpp_type_text(inner[0])}, object>"
                 return f"dict<{self._cpp_type_text(inner[0])}, {self._cpp_type_text(inner[1])}>"
         if east_type.startswith("tuple[") and east_type.endswith("]"):
             inner = self.split_generic(east_type[6:-1])
@@ -4876,7 +4876,7 @@ class CppEmitter(CodeEmitter):
             sep = ", "
             return "::std::tuple<" + sep.join(inner_cpp) + ">"
         if east_type == "unknown":
-            return "::std::any"
+            return "object"
         if east_type.startswith("callable["):
             return "auto"
         if east_type == "callable":
