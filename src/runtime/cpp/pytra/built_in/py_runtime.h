@@ -493,6 +493,10 @@ struct ArgumentParser {
         list<str> names;
         str dest;
         bool takes_value;
+        bool store_true;
+        list<str> choices;
+        bool has_default;
+        object default_value;
     };
 
     str _description;
@@ -508,6 +512,10 @@ struct ArgumentParser {
             sp.names = list<str>{a0};
             sp.dest = (n0.size() > 2 && n0[0] == '-' && n0[1] == '-') ? str(n0.substr(2)) : a0;
             sp.takes_value = false;
+            sp.store_true = false;
+            sp.choices = list<str>{};
+            sp.has_default = false;
+            sp.default_value = object{};
             _options.append(sp);
             return;
         }
@@ -517,6 +525,19 @@ struct ArgumentParser {
     void add_argument(const str& a0, const str& a1) {
         const ::std::string n0 = py_to_string(a0);
         const ::std::string n1 = py_to_string(a1);
+        if ((!n0.empty() && n0[0] == '-') && n1 == "store_true") {
+            _OptSpec sp{};
+            sp.names = list<str>{a0};
+            if (n0.size() > 2 && n0[0] == '-' && n0[1] == '-') sp.dest = str(n0.substr(2));
+            else sp.dest = a0;
+            sp.takes_value = false;
+            sp.store_true = true;
+            sp.choices = list<str>{};
+            sp.has_default = false;
+            sp.default_value = object{};
+            _options.append(sp);
+            return;
+        }
         if ((!n0.empty() && n0[0] == '-') || (!n1.empty() && n1[0] == '-')) {
             _OptSpec sp{};
             sp.names = list<str>{a0, a1};
@@ -524,6 +545,10 @@ struct ArgumentParser {
             else if (!n0.empty() && n0.size() > 2 && n0[0] == '-' && n0[1] == '-') sp.dest = str(n0.substr(2));
             else sp.dest = a1;
             sp.takes_value = true;
+            sp.store_true = false;
+            sp.choices = list<str>{};
+            sp.has_default = false;
+            sp.default_value = object{};
             _options.append(sp);
             return;
         }
@@ -531,10 +556,27 @@ struct ArgumentParser {
         _positionals.append(a1);
     }
 
+    void add_argument(const str& a0, const str& a1, const list<str>& choices, const str& default_value) {
+        const ::std::string n0 = py_to_string(a0);
+        const ::std::string n1 = py_to_string(a1);
+        _OptSpec sp{};
+        sp.names = list<str>{a0, a1};
+        if (!n1.empty() && n1.size() > 2 && n1[0] == '-' && n1[1] == '-') sp.dest = str(n1.substr(2));
+        else if (!n0.empty() && n0.size() > 2 && n0[0] == '-' && n0[1] == '-') sp.dest = str(n0.substr(2));
+        else sp.dest = a1;
+        sp.takes_value = true;
+        sp.store_true = false;
+        sp.choices = choices;
+        sp.has_default = true;
+        sp.default_value = make_object(default_value);
+        _options.append(sp);
+    }
+
     dict<str, object> parse_args(const list<str>& argv) const {
         dict<str, object> out{};
         for (const _OptSpec& sp : _options) {
-            if (sp.takes_value) out[sp.dest] = object{};
+            if (sp.has_default) out[sp.dest] = sp.default_value;
+            else if (sp.takes_value) out[sp.dest] = object{};
             else out[sp.dest] = make_object(false);
         }
         int64 pos_i = 0;
@@ -556,7 +598,18 @@ struct ArgumentParser {
                 if (hit == nullptr) throw ::std::runtime_error("argparse: unknown option");
                 if (hit->takes_value) {
                     if (i + 1 >= py_len(argv)) throw ::std::runtime_error("argparse: missing option value");
-                    out[hit->dest] = make_object(argv[i + 1]);
+                    const str val = argv[i + 1];
+                    if (py_len(hit->choices) > 0) {
+                        bool ok = false;
+                        for (const str& choice : hit->choices) {
+                            if (choice == val) {
+                                ok = true;
+                                break;
+                            }
+                        }
+                        if (!ok) throw ::std::runtime_error("argparse: invalid choice");
+                    }
+                    out[hit->dest] = make_object(val);
                     i += 2;
                 } else {
                     out[hit->dest] = make_object(true);

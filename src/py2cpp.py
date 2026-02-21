@@ -32,11 +32,14 @@ def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
     """`root_dir` 配下に `module_tail` 相当の `.py` / package があるかを返す。"""
     if module_tail == "":
         return False
+    root_txt = str(root_dir)
+    if root_txt.endswith("/"):
+        root_txt = root_txt[:-1]
     rel = module_tail.replace(".", "/")
-    mod_py = root_dir / (rel + ".py")
+    mod_py = Path(root_txt + "/" + rel + ".py")
     if mod_py.exists():
         return True
-    pkg_init = root_dir / rel / "__init__.py"
+    pkg_init = Path(root_txt + "/" + rel + "/__init__.py")
     if pkg_init.exists():
         return True
     return False
@@ -67,24 +70,25 @@ def _module_tail_to_cpp_header_path(module_tail: str) -> str:
 
 def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     """`pytra.*` モジュールの runtime C++ ヘッダ実在有無を返す。"""
+    base_txt = "src/runtime/cpp/pytra"
     if module_name_norm.startswith("pytra.std."):
         tail = module_name_norm[10:]
         if tail == "":
             return False
         rel = _module_tail_to_cpp_header_path(tail)
-        return (Path("src/runtime/cpp/pytra/std") / rel).exists()
+        return Path(base_txt + "/std/" + rel).exists()
     if module_name_norm.startswith("pytra.utils."):
         tail = module_name_norm[12:]
         if tail == "":
             return False
         rel = _module_tail_to_cpp_header_path(tail)
-        return (Path("src/runtime/cpp/pytra/utils") / rel).exists()
+        return Path(base_txt + "/utils/" + rel).exists()
     if module_name_norm.startswith("pytra.compiler."):
         tail = module_name_norm[15:]
         if tail == "":
             return False
         rel = _module_tail_to_cpp_header_path(tail)
-        return (Path("src/runtime/cpp/pytra/compiler") / rel).exists()
+        return Path(base_txt + "/compiler/" + rel).exists()
     return False
 
 
@@ -175,6 +179,36 @@ def _dict_any_get_str_list(src: dict[str, Any], key: str) -> list[str]:
         if isinstance(item, str):
             out.append(item)
     return out
+
+
+def _first_import_detail_line(source_text: str, kind: str) -> str:
+    """import エラー表示向けに、入力コードから該当 import 行を抜き出す。"""
+    lines = source_text.splitlines()
+    i = 0
+    while i < len(lines):
+        raw = lines[i]
+        line = raw
+        hash_pos = line.find("#")
+        if hash_pos >= 0:
+            line = line[:hash_pos]
+        line = line.strip()
+        if line == "":
+            i += 1
+            continue
+        if kind == "wildcard":
+            if line.startswith("from ") and " import " in line and line.endswith("*"):
+                parts = line.split()
+                if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import" and parts[3] == "*":
+                    return "from " + parts[1] + " import *"
+        if kind == "relative":
+            if line.startswith("from .") and " import " in line:
+                parts = line.split()
+                if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import":
+                    return "from " + parts[1] + " import " + parts[3]
+        i += 1
+    if kind == "wildcard":
+        return "from ... import *"
+    return "from .module import symbol"
 
 
 def _dict_str_list_get(src: dict[str, list[str]], key: str) -> list[str]:
@@ -2608,16 +2642,50 @@ class CppEmitter(CodeEmitter):
                     names.add(str(e_dict.get("id", "_")))
         return names
 
-    def _emit_target_unpack(self, target: dict[str, Any], src: str) -> None:
+    def _emit_target_unpack(self, target: dict[str, Any], src: str, iter_expr: dict[str, Any]) -> None:
         """タプルターゲットへのアンパック代入を出力する。"""
         if not isinstance(target, dict) or len(target) == 0:
             return
         if self._node_kind_from_dict(target) != "Tuple":
             return
+        elem_types: list[str] = []
+        iter_node: dict[str, Any] = iter_expr
+        if len(iter_node) > 0:
+            iter_kind: str = self._node_kind_from_dict(iter_node)
+            iter_t: str = self.any_dict_get_str(iter_node, "resolved_type", "")
+            if iter_t[0:5] == "list[" and iter_t[-1:] == "]":
+                inner_txt: str = iter_t[5 : len(iter_t) - 1]
+                if inner_txt[0:6] == "tuple[" and inner_txt[-1:] == "]":
+                    elem_types = self.split_generic(inner_txt[6 : len(inner_txt) - 1])
+            elif iter_t[0:4] == "set[" and iter_t[-1:] == "]":
+                inner_txt: str = iter_t[4 : len(iter_t) - 1]
+                if inner_txt[0:6] == "tuple[" and inner_txt[-1:] == "]":
+                    elem_types = self.split_generic(inner_txt[6 : len(inner_txt) - 1])
+            elif iter_kind == "Call":
+                runtime_call: str = self.any_dict_get_str(iter_node, "runtime_call", "")
+                if runtime_call == "dict.items":
+                    fn_node = self.any_to_dict_or_empty(iter_node.get("func"))
+                    owner_obj = fn_node.get("value")
+                    owner_t: str = self.get_expr_type(owner_obj)
+                    if owner_t[0:5] == "dict[" and owner_t[-1:] == "]":
+                        dict_inner_parts: list[str] = self.split_generic(owner_t[5 : len(owner_t) - 1])
+                        if len(dict_inner_parts) == 2:
+                            elem_types = [self.normalize_type_name(dict_inner_parts[0]), self.normalize_type_name(dict_inner_parts[1])]
         for i, e in enumerate(self.any_dict_get_list(target, "elements")):
             if isinstance(e, dict) and self._node_kind_from_dict(e) == "Name":
                 nm = self.render_expr(e)
-                self.emit(f"auto {nm} = ::std::get<{i}>({src});")
+                decl_t: str = ""
+                if i < len(elem_types):
+                    decl_t = self.normalize_type_name(elem_types[i])
+                if decl_t == "":
+                    decl_t = self.normalize_type_name(self.get_expr_type(e))
+                if decl_t in {"", "unknown"}:
+                    decl_t = "object"
+                self.declared_var_types[nm] = decl_t
+                if self.is_any_like_type(decl_t):
+                    self.emit(f"auto {nm} = ::std::get<{i}>({src});")
+                else:
+                    self.emit(f"{self._cpp_type_text(decl_t)} {nm} = ::std::get<{i}>({src});")
 
     def emit_for_range(self, stmt: dict[str, Any]) -> None:
         """ForRange ノードを C++ の for ループとして出力する。"""
@@ -2741,7 +2809,7 @@ class CppEmitter(CodeEmitter):
             self.indent += 1
             self.scope_stack.append(set(target_names))
             if unpack_tuple:
-                self._emit_target_unpack(target, iter_tmp)
+                self._emit_target_unpack(target, iter_tmp, iter_expr)
             self.emit_stmt(body_stmts[0])
             self.scope_stack.pop()
             self.indent -= 1
@@ -2751,7 +2819,7 @@ class CppEmitter(CodeEmitter):
         self.indent += 1
         self.scope_stack.append(set(target_names))
         if unpack_tuple:
-            self._emit_target_unpack(target, iter_tmp)
+            self._emit_target_unpack(target, iter_tmp, iter_expr)
         self.emit_stmt_list(body_stmts)
         self.scope_stack.pop()
         self.indent -= 1
@@ -3113,18 +3181,6 @@ class CppEmitter(CodeEmitter):
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
-        list_ops = self._render_runtime_call_list_ops(runtime_call, fn, args)
-        if list_ops != "":
-            return list_ops
-        set_ops = self._render_runtime_call_set_ops(runtime_call, fn, args)
-        if set_ops != "":
-            return set_ops
-        dict_ops = self._render_runtime_call_dict_ops(runtime_call, expr, fn, args, arg_nodes)
-        if dict_ops != "":
-            return dict_ops
-        str_ops = self._render_runtime_call_str_ops(runtime_call, fn, args)
-        if str_ops != "":
-            return str_ops
         if runtime_call == "py_print":
             return f"py_print({_join_str_list(', ', args)})"
         if runtime_call == "py_len" and len(args) == 1:
@@ -3177,186 +3233,6 @@ class CppEmitter(CodeEmitter):
             return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
         if builtin_name == "bytearray":
             return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
-        return ""
-
-    def _render_runtime_call_list_ops(self, runtime_call: str, fn: dict[str, Any], args: list[str]) -> str:
-        """`runtime_call` の list 系（append/extend/pop/clear/reverse/sort）を処理する。"""
-        if runtime_call == "list.append":
-            owner = self.render_expr(fn.get("value"))
-            a0 = args[0] if len(args) >= 1 else "/* missing */"
-            owner_t0 = self.get_expr_type(fn.get("value"))
-            owner_t = owner_t0 if isinstance(owner_t0, str) else ""
-            if owner_t == "bytearray":
-                a0 = f"static_cast<uint8>(py_to_int64({a0}))"
-            if owner_t.startswith("list[") and owner_t.endswith("]"):
-                inner_t: str = owner_t[5:-1].strip()
-                if inner_t != "" and not self.is_any_like_type(inner_t):
-                    if inner_t == "uint8":
-                        a0 = f"static_cast<uint8>(py_to_int64({a0}))"
-                    else:
-                        a0 = f"{self._cpp_type_text(inner_t)}({a0})"
-            return f"{owner}.append({a0})"
-        if runtime_call == "list.extend":
-            owner = self.render_expr(fn.get("value"))
-            a0 = args[0] if len(args) >= 1 else "{}"
-            return f"{owner}.insert({owner}.end(), {a0}.begin(), {a0}.end())"
-        if runtime_call == "list.pop":
-            owner = self.render_expr(fn.get("value"))
-            if len(args) == 0:
-                return f"{owner}.pop()"
-            return f"{owner}.pop({args[0]})"
-        if runtime_call == "list.clear":
-            owner = self.render_expr(fn.get("value"))
-            return f"{owner}.clear()"
-        if runtime_call == "list.reverse":
-            owner = self.render_expr(fn.get("value"))
-            return f"::std::reverse({owner}.begin(), {owner}.end())"
-        if runtime_call == "list.sort":
-            owner = self.render_expr(fn.get("value"))
-            return f"::std::sort({owner}.begin(), {owner}.end())"
-        return ""
-
-    def _render_runtime_call_set_ops(self, runtime_call: str, fn: dict[str, Any], args: list[str]) -> str:
-        """`runtime_call` の set 系（add/discard/remove/clear）を処理する。"""
-        if runtime_call == "set.add":
-            owner = self.render_expr(fn.get("value"))
-            a0 = args[0] if len(args) >= 1 else "/* missing */"
-            return f"{owner}.insert({a0})"
-        if runtime_call in {"set.discard", "set.remove"}:
-            owner = self.render_expr(fn.get("value"))
-            a0 = args[0] if len(args) >= 1 else "/* missing */"
-            return f"{owner}.erase({a0})"
-        if runtime_call == "set.clear":
-            owner = self.render_expr(fn.get("value"))
-            return f"{owner}.clear()"
-        return ""
-
-    def _render_runtime_call_dict_ops(
-        self,
-        runtime_call: str,
-        expr: dict[str, Any],
-        fn: dict[str, Any],
-        args: list[str],
-        arg_nodes: list[Any],
-    ) -> str:
-        """`runtime_call` の dict 系（get/items/keys/values）を処理する。"""
-        if runtime_call == "dict.get":
-            owner_node: object = fn.get("value")
-            owner = self.render_expr(owner_node)
-            owner_t = self.get_expr_type(owner_node)
-            owner_value_t = ""
-            if owner_t.startswith("dict[") and owner_t.endswith("]"):
-                owner_inner = self.split_generic(owner_t[5:-1])
-                if len(owner_inner) == 2:
-                    owner_value_t = self.normalize_type_name(owner_inner[1])
-            objectish_owner = self.is_any_like_type(owner_t) or self.is_any_like_type(owner_value_t)
-            key_expr = args[0] if len(args) >= 1 else "/* missing */"
-            key_node: Any = None
-            if len(arg_nodes) >= 1:
-                key_node = arg_nodes[0]
-            if not objectish_owner:
-                key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
-            if len(args) >= 2:
-                out_t = self.any_to_str(expr.get("resolved_type"))
-                if objectish_owner and out_t == "bool":
-                    return f"dict_get_bool({owner}, {key_expr}, {args[1]})"
-                if objectish_owner and out_t == "str":
-                    return f"dict_get_str({owner}, {key_expr}, {args[1]})"
-                if objectish_owner and out_t.startswith("list["):
-                    return f"dict_get_list({owner}, {key_expr}, {args[1]})"
-                if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
-                    return f"dict_get_node({owner}, {key_expr}, {args[1]})"
-                return f"py_dict_get_default({owner}, {key_expr}, {args[1]})"
-            if len(args) == 1:
-                return f"py_dict_get_maybe({owner}, {key_expr})"
-            return ""
-        if runtime_call == "dict.pop":
-            owner_node = fn.get("value")
-            owner = self.render_expr(owner_node)
-            key_expr = args[0] if len(args) >= 1 else "/* missing */"
-            key_node: Any = None
-            if len(arg_nodes) >= 1:
-                key_node = arg_nodes[0]
-            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
-            if len(args) <= 1:
-                return f"{owner}.pop({key_expr})"
-            owner_t0 = self.get_expr_type(owner_node)
-            owner_t = owner_t0 if isinstance(owner_t0, str) else ""
-            val_t = "Any"
-            if owner_t.startswith("dict[") and owner_t.endswith("]"):
-                inner = self.split_generic(owner_t[5:-1])
-                if len(inner) == 2 and inner[1] != "":
-                    val_t = self.normalize_type_name(inner[1])
-            default_expr = args[1]
-            if default_expr in {"::std::nullopt", "std::nullopt"} and not self.is_any_like_type(val_t) and val_t != "None":
-                default_expr = self._cpp_type_text(val_t) + "()"
-            return f"({owner}.contains({key_expr}) ? {owner}.pop({key_expr}) : {default_expr})"
-        if runtime_call == "dict.items":
-            return self.render_expr(fn.get("value"))
-        if runtime_call == "dict.keys":
-            owner = self.render_expr(fn.get("value"))
-            return f"py_dict_keys({owner})"
-        if runtime_call == "dict.values":
-            owner = self.render_expr(fn.get("value"))
-            return f"py_dict_values({owner})"
-        return ""
-
-    def _render_runtime_call_str_ops(self, runtime_call: str, fn: dict[str, Any], args: list[str]) -> str:
-        """`runtime_call` の文字列系処理（strip/startswith/replace/join など）を処理する。"""
-        owner_node = self.any_to_dict_or_empty(fn.get("value"))
-        owner = self.render_expr(fn.get("value"))
-        owner_kind = self._node_kind_from_dict(owner_node)
-        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-            owner = f"({owner})"
-        if runtime_call == "py_isdigit":
-            if len(args) == 0:
-                return f"{owner}.isdigit()"
-            if len(args) == 1:
-                return f"{args[0]}.isdigit()"
-        if runtime_call == "py_isalpha":
-            if len(args) == 0:
-                return f"{owner}.isalpha()"
-            if len(args) == 1:
-                return f"{args[0]}.isalpha()"
-        if runtime_call == "py_strip":
-            if len(args) == 0:
-                return f"py_strip({owner})"
-            if len(args) == 1:
-                return f"{owner}.strip({args[0]})"
-        if runtime_call == "py_rstrip":
-            if len(args) == 0:
-                return f"py_rstrip({owner})"
-            if len(args) == 1:
-                return f"{owner}.rstrip({args[0]})"
-        if runtime_call == "py_lstrip":
-            if len(args) == 0:
-                return f"py_lstrip({owner})"
-            if len(args) == 1:
-                return f"{owner}.lstrip({args[0]})"
-        if runtime_call == "py_startswith":
-            if len(args) == 1:
-                return f"py_startswith({owner}, {args[0]})"
-            if len(args) == 2:
-                start = f"py_to_int64({args[1]})"
-                return f"py_startswith(py_slice({owner}, {start}, py_len({owner})), {args[0]})"
-            if len(args) >= 3:
-                start = f"py_to_int64({args[1]})"
-                end = f"py_to_int64({args[2]})"
-                return f"py_startswith(py_slice({owner}, {start}, {end}), {args[0]})"
-        if runtime_call == "py_endswith":
-            if len(args) == 1:
-                return f"py_endswith({owner}, {args[0]})"
-            if len(args) == 2:
-                start = f"py_to_int64({args[1]})"
-                return f"py_endswith(py_slice({owner}, {start}, py_len({owner})), {args[0]})"
-            if len(args) >= 3:
-                start = f"py_to_int64({args[1]})"
-                end = f"py_to_int64({args[2]})"
-                return f"py_endswith(py_slice({owner}, {start}, {end}), {args[0]})"
-        if runtime_call == "py_replace" and len(args) == 2:
-            return f"py_replace({owner}, {args[0]}, {args[1]})"
-        if runtime_call == "py_join" and len(args) == 1:
-            return f"str({owner}).join({args[0]})"
         return ""
 
     def _render_call_name_or_attr(
@@ -4808,16 +4684,18 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
             raise ex
         msg = str(ex)
         if "from-import wildcard is not supported" in msg:
+            label = _first_import_detail_line(source_text, "wildcard")
             raise _make_user_error(
                 "input_invalid",
                 "import 構文が未対応です。",
-                [f"kind=unsupported_import_form file={input_path} import=from ... import *"],
+                [f"kind=unsupported_import_form file={input_path} import={label}"],
             ) from ex
         if "relative import is not supported" in msg:
+            label = _first_import_detail_line(source_text, "relative")
             raise _make_user_error(
                 "input_invalid",
                 "import 構文が未対応です。",
-                [f"kind=unsupported_import_form file={input_path} import=from .module import symbol"],
+                [f"kind=unsupported_import_form file={input_path} import={label}"],
             ) from ex
         if "duplicate import binding:" in msg:
             raise _make_user_error(

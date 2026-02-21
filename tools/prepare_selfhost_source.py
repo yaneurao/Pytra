@@ -122,59 +122,6 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
     return prefix.rstrip() + "\n\n" + support_blocks + "\n" + base_class_text + "\n" + suffix
 
 
-def _replace_load_east_for_selfhost(text: str) -> str:
-    start_marker = "def load_east("
-    end_marker = "\ndef _transpile_to_cpp_with_map("
-    i = text.find(start_marker)
-    j = text.find(end_marker)
-    if i < 0 or j < 0 or j <= i:
-        raise RuntimeError("load_east block not found")
-    stub = (
-        "def load_east(input_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, Any]:\n"
-        "    _ = parser_backend\n"
-        "    input_txt = str(input_path)\n"
-        "    if input_txt.endswith(\".json\"):\n"
-        "        raw_txt: str = \"\"\n"
-        "        try:\n"
-        "            raw_txt = input_path.read_text(encoding=\"utf-8\")\n"
-        "        except Exception:\n"
-        "            raise _make_user_error(\n"
-        "                \"input_invalid\",\n"
-        "                \"EAST JSON の読み込みに失敗しました。\",\n"
-        "                [\"input file read failed\"],\n"
-        "            )\n"
-        "        parsed: Any = None\n"
-        "        try:\n"
-        "            parsed = json.loads(raw_txt)\n"
-        "        except Exception:\n"
-        "            raise _make_user_error(\n"
-        "                \"input_invalid\",\n"
-        "                \"EAST JSON の形式が不正です。\",\n"
-        "                [\"json parse failed\"],\n"
-        "            )\n"
-        "        if isinstance(parsed, dict):\n"
-        "            return parsed\n"
-        "        raise _make_user_error(\n"
-        "            \"input_invalid\",\n"
-        "            \"EAST JSON のトップレベルは object である必要があります。\",\n"
-        "            [\"top-level must be dict\"],\n"
-        "        )\n"
-        "    if input_txt.endswith(\".py\"):\n"
-        "        raise _make_user_error(\n"
-        "            \"not_implemented\",\n"
-        "            \"selfhost での .py 入力は未実装です。\",\n"
-        "            [\"use EAST JSON input for now\"],\n"
-        "        )\n"
-        "    details: list[str] = [\"unsupported input extension\"]\n"
-        "    raise _make_user_error(\n"
-        "        \"input_invalid\",\n"
-        "        \"入力拡張子が未対応です。\",\n"
-        "        details,\n"
-        "    )\n\n"
-    )
-    return text[:i] + stub + text[j + 1 :]
-
-
 def _strip_main_guard(text: str) -> str:
     marker = '\nif __name__ == "__main__":\n'
     i = text.find(marker)
@@ -309,44 +256,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
         j = out.find(end_marker)
         if i >= 0 and j > i:
             out = out[:i] + stub + out[j + 1 :]
-
-    repl(
-        "def _python_module_exists_under(",
-        "\ndef _module_tail_to_cpp_header_path(",
-        (
-            "def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:\n"
-            "    pass\n"
-            "    _ = root_dir\n"
-            "    return module_tail != \"\"\n\n"
-        ),
-    )
-
-    repl(
-        "def _module_tail_to_cpp_header_path(",
-        "\ndef _runtime_cpp_header_exists_for_module(",
-        (
-            "def _module_tail_to_cpp_header_path(module_tail: str) -> str:\n"
-            "    pass\n"
-            "    return module_tail + \".h\"\n\n"
-        ),
-    )
-
-    repl(
-        "def _runtime_cpp_header_exists_for_module(",
-        "\ndef _make_user_error(",
-        (
-            "def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:\n"
-            "    pass\n"
-            "    if module_name_norm.startswith(\"pytra.std.\"):\n"
-            "        return True\n"
-            "    if module_name_norm.startswith(\"pytra.utils.\"):\n"
-            "        return True\n"
-            "    if module_name_norm.startswith(\"pytra.compiler.\"):\n"
-            "        return True\n"
-            "    return False\n\n"
-        ),
-    )
-
 
     repl(
         "def _normalize_param_annotation(",
