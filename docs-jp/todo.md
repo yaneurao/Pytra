@@ -46,6 +46,7 @@
    - [x] `Call(Name)` の残りビルトイン分岐（`bytes/bytearray/str/int(base)/ord/chr/min/max/perf_counter/Path/Exception`）を helper（`_render_misc_name_builtin_call`）へ分離した。
    - [x] `_render_call_fallback` の `*.append` 分岐を helper（`_render_append_fallback_call`）へ分離し、`_render_append_call_object_method` と型変換ロジックを共通化した。
    - [x] `Call(Attribute)` owner 解決前処理（owner/module/type/attr）を helper（`_resolve_call_attribute_context`）へ分離し、`_render_call_attribute` 本体を縮退した。
+   - [x] `Call(Attribute)` の object-method 分岐に hook（`on_render_object_method`）を追加し、`_render_call_attribute` から hook 優先で描画できるようにした（selfhost 互換のため `_render_call_object_method` フォールバックは残置）。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
@@ -65,6 +66,7 @@
    - [x] `swap` / `raise` の文生成を `syntax.json`（`swap_stmt` / `raise_default` / `raise_expr`）経由へ移管した。
    - [x] `Expr` / `Return` の文生成を `syntax.json`（`expr_stmt` / `return_void` / `return_value`）経由へ移管した。
 6. [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
+   - [x] object-method（`strip/lstrip/rstrip/startswith/endswith/replace/find/rfind/...`）の C++ 固有分岐用 hook（`cpp_hooks.on_render_object_method`）を追加し、段階的に `py2cpp.py` 本体から分離する導線を作成した。
 7. [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
 8. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
 

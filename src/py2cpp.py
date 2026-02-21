@@ -3754,6 +3754,9 @@ class CppEmitter(CodeEmitter):
             module_rendered_1 = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes)
             if module_rendered_1 is not None and module_rendered_1 != "":
                 return module_rendered_1
+        hook_object_rendered = self.hook_on_render_object_method(owner_t, owner_expr, attr, args)
+        if isinstance(hook_object_rendered, str) and hook_object_rendered != "":
+            return hook_object_rendered
         object_rendered = self._render_call_object_method(owner_t, owner_expr, attr, args)
         if object_rendered is not None and object_rendered != "":
             return object_rendered

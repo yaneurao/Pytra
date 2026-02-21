@@ -260,7 +260,7 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     )
     repl(
         "    def hook_on_render_call(",
-        "\n    def hook_on_render_binop(",
+        "\n    def hook_on_render_object_method(",
         (
             "    def hook_on_render_call(\n"
             "        self,\n"
@@ -268,6 +268,21 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
             "        func_node: dict[str, Any],\n"
             "        rendered_args: list[str],\n"
             "        rendered_kwargs: dict[str, str],\n"
+            "    ) -> str:\n"
+            "        pass\n"
+            "        return \"\"\n"
+        ),
+    )
+    repl(
+        "    def hook_on_render_object_method(",
+        "\n    def hook_on_render_binop(",
+        (
+            "    def hook_on_render_object_method(\n"
+            "        self,\n"
+            "        owner_type: str,\n"
+            "        owner_expr: str,\n"
+            "        attr: str,\n"
+            "        rendered_args: list[str],\n"
             "    ) -> str:\n"
             "        pass\n"
             "        return \"\"\n"

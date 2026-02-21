@@ -232,6 +232,22 @@ class CodeEmitter:
                     return v
         return ""
 
+    def hook_on_render_object_method(
+        self,
+        owner_type: str,
+        owner_expr: str,
+        attr: str,
+        rendered_args: list[str],
+    ) -> str:
+        """`on_render_object_method` フック。既定では何もしない。"""
+        if "on_render_object_method" in self.hooks:
+            fn = self.hooks["on_render_object_method"]
+            if fn is not None:
+                v = fn(self, owner_type, owner_expr, attr, rendered_args)
+                if isinstance(v, str):
+                    return v
+        return ""
+
     def hook_on_render_binop(
         self,
         binop_node: dict[str, Any],

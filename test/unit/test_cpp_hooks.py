@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.hooks.cpp.hooks.cpp_hooks import on_render_expr_kind
+from src.hooks.cpp.hooks.cpp_hooks import on_render_expr_kind, on_render_object_method
 
 
 class _DummyEmitter:
@@ -32,6 +32,20 @@ class _DummyEmitter:
 
     def any_to_bool(self, obj: Any) -> bool:
         return bool(obj)
+
+    def _contains_text(self, text: str, needle: str) -> bool:
+        return needle in text
+
+    def split_union(self, text: str) -> list[str]:
+        parts = text.split("|")
+        out: list[str] = []
+        i = 0
+        while i < len(parts):
+            p = parts[i].strip()
+            if p != "":
+                out.append(p)
+            i += 1
+        return out
 
 
 class CppHooksTest(unittest.TestCase):
@@ -58,6 +72,11 @@ class CppHooksTest(unittest.TestCase):
         }
         rendered = on_render_expr_kind(em, "Compare", node)
         self.assertEqual(rendered, "!(py_contains(xs, x))")
+
+    def test_object_method_str_strip_render(self) -> None:
+        em = _DummyEmitter()
+        rendered = on_render_object_method(em, "str", "s", "strip", [])
+        self.assertEqual(rendered, "py_strip(s)")
 
 
 if __name__ == "__main__":

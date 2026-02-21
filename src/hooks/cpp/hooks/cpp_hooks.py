@@ -336,6 +336,34 @@ def on_render_call(
     return None
 
 
+def on_render_object_method(
+    emitter: Any,
+    owner_type: str,
+    owner_expr: str,
+    attr: str,
+    rendered_args: list[str],
+) -> str | None:
+    """obj.method(...) の C++ 固有分岐を処理する。"""
+    owner_types: list[str] = [owner_type]
+    if emitter._contains_text(owner_type, "|"):
+        owner_types = emitter.split_union(owner_type)
+    if attr in {"strip", "lstrip", "rstrip"}:
+        if len(rendered_args) == 0:
+            return "py_" + attr + "(" + owner_expr + ")"
+        if len(rendered_args) == 1:
+            return "py_" + attr + "(" + owner_expr + ", " + rendered_args[0] + ")"
+    if attr in {"startswith", "endswith"} and len(rendered_args) >= 1:
+        return "py_" + attr + "(" + owner_expr + ", " + rendered_args[0] + ")"
+    if attr == "replace" and len(rendered_args) >= 2:
+        return "py_replace(" + owner_expr + ", " + rendered_args[0] + ", " + rendered_args[1] + ")"
+    if "str" in owner_types:
+        if attr in {"isdigit", "isalpha", "isalnum", "isspace", "lower", "upper"} and len(rendered_args) == 0:
+            return owner_expr + "." + attr + "()"
+        if attr in {"find", "rfind"}:
+            return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
+    return None
+
+
 def on_render_binop(
     emitter: Any,
     binop_node: dict[str, Any],
@@ -436,6 +464,7 @@ def build_cpp_hooks() -> dict[str, Any]:
     """C++ エミッタへ注入する hooks dict を構築する。"""
     hooks = EmitterHooks()
     hooks.add("on_render_call", on_render_call)
+    hooks.add("on_render_object_method", on_render_object_method)
     hooks.add("on_render_binop", on_render_binop)
     hooks.add("on_render_expr_kind", on_render_expr_kind)
     return hooks.to_dict()
