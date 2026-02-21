@@ -278,6 +278,57 @@ class Color(Enum):
         self.assertIn("RED", members)
         self.assertIn("BLUE", members)
 
+    def test_parser_accepts_bom_line_continuation_and_pow(self) -> None:
+        src = """\ufefffrom pytra.std import math
+
+def main() -> None:
+    x: int = 1 + \\
+        2
+    y: float = math.sqrt(float(x ** 2))
+    print(x, y)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        binops = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "BinOp"]
+        has_pow = any(b.get("op") == "Pow" for b in binops)
+        self.assertTrue(has_pow)
+
+    def test_parser_accepts_top_level_expr_class_pass_nested_def_and_tuple_trailing_comma(self) -> None:
+        src = """
+class E:
+    X = 0,
+    pass
+
+def outer() -> int:
+    def inner(x: int) -> int:
+        return x + 1
+    return inner(2)
+
+print(outer())
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        classes = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") == "E"]
+        self.assertEqual(len(classes), 1)
+        tuples = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Tuple"]
+        self.assertGreaterEqual(len(tuples), 1)
+        nested_fns = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "inner"
+        ]
+        self.assertEqual(len(nested_fns), 1)
+        exprs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Expr"]
+        self.assertGreaterEqual(len(exprs), 1)
+
+    def test_trailing_semicolon_is_rejected(self) -> None:
+        src = """
+def main() -> None:
+    x: int = 1;
+    print(x)
+"""
+        with self.assertRaises((EastBuildError, RuntimeError)) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("statement terminator", str(cm.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

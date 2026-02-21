@@ -191,9 +191,13 @@ def _sh_parse_typed_binding(text: str, *, allow_dotted_name: bool = False) -> tu
         name_parts = name_txt.split(".")
         if len(name_parts) == 0:
             return None
+        norm_parts: list[str] = []
         for seg in name_parts:
-            if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", seg) is None:
+            seg_norm = seg.strip()
+            if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", seg_norm) is None:
                 return None
+            norm_parts.append(seg_norm)
+        name_txt = ".".join(norm_parts)
     else:
         if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name_txt) is None:
             return None
@@ -224,6 +228,13 @@ def _sh_is_identifier(text: str) -> bool:
             return False
         i += 1
     return True
+
+
+def _sh_strip_utf8_bom(source: str) -> str:
+    """UTF-8 BOM を先頭から除去する。"""
+    if source.startswith("\ufeff"):
+        return source[1:]
+    return source
 
 
 def _sh_is_dotted_identifier(text: str) -> bool:
@@ -572,6 +583,19 @@ def _sh_scan_logical_line_state(
     return depth, mode_cur
 
 
+def _sh_has_explicit_line_continuation(txt: str) -> bool:
+    """行末 `\\` による明示継続かを返す（文字列/コメント外のみ）。"""
+    body = _sh_strip_inline_comment(txt).rstrip()
+    if body == "":
+        return False
+    backslashes = 0
+    i = len(body) - 1
+    while i >= 0 and body[i] == "\\":
+        backslashes += 1
+        i -= 1
+    return (backslashes % 2) == 1
+
+
 def _sh_merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tuple[int, str]], dict[int, tuple[int, int]]]:
     """物理行を論理行へマージし、開始行ごとの終了行情報も返す。"""
     merged: list[tuple[int, str]] = []
@@ -583,16 +607,27 @@ def _sh_merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tupl
         depth = 0
         mode = ""
         depth, mode = _sh_scan_logical_line_state(start_txt, depth, mode)
+        explicit_cont = _sh_has_explicit_line_continuation(start_txt)
         end_no = start_no
         end_txt = start_txt
-        while (depth > 0 or mode in {"'''", '"""'}) and idx + 1 < len(raw_lines):
+        while (depth > 0 or mode in {"'''", '"""'} or explicit_cont) and idx + 1 < len(raw_lines):
             idx += 1
             next_no, next_txt = raw_lines[idx]
             if mode in {"'''", '"""'}:
                 acc += "\n" + next_txt
             else:
-                acc += " " + next_txt.strip()
+                left_txt = acc.rstrip()
+                if explicit_cont:
+                    bs_count = 0
+                    j = len(left_txt) - 1
+                    while j >= 0 and left_txt[j] == "\\":
+                        bs_count += 1
+                        j -= 1
+                    if (bs_count % 2) == 1:
+                        left_txt = left_txt[:-1].rstrip()
+                acc = left_txt + " " + next_txt.strip()
             depth, mode = _sh_scan_logical_line_state(next_txt, depth, mode)
+            explicit_cont = _sh_has_explicit_line_continuation(next_txt)
             end_no = next_no
             end_txt = next_txt
         merged.append((start_no, acc))
@@ -931,6 +966,18 @@ def _sh_strip_inline_comment(text: str) -> str:
     return text
 
 
+def _sh_raise_if_trailing_stmt_terminator(text: str, *, line_no: int, line_text: str) -> None:
+    """文末 `;` を検出したらエラーにする。"""
+    out = text.rstrip()
+    if out.endswith(";"):
+        raise _make_east_build_error(
+            kind="input_invalid",
+            message="self_hosted parser does not accept statement terminator ';'",
+            source_span=_sh_span(line_no, 0, len(line_text)),
+            hint="Remove trailing ';' from the statement.",
+        )
+
+
 def _sh_split_top_level_from(text: str) -> tuple[str, str] | None:
     """トップレベルの `for ... in ...` を target/iter に分解する。"""
     depth = 0
@@ -1080,7 +1127,8 @@ def _sh_parse_if_tail(
         return [], start_idx
     t_no, t_ln = body_lines[start_idx]
     t_indent = len(t_ln) - len(t_ln.lstrip(" "))
-    t_s = t_ln.strip()
+    t_s = _sh_strip_inline_comment(t_ln.strip())
+    _sh_raise_if_trailing_stmt_terminator(t_s, line_no=t_no, line_text=t_ln)
     if t_indent != parent_indent:
         return [], start_idx
     if t_s == "else:":
@@ -1283,7 +1331,7 @@ class _ShExprParser:
                 out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
                 i = end
                 continue
-            if i + 1 < len(text) and text[i : i + 2] in {"<=", ">=", "==", "!=", "//", "<<", ">>"}:
+            if i + 1 < len(text) and text[i : i + 2] in {"<=", ">=", "==", "!=", "//", "<<", ">>", "**"}:
                 out.append({"k": text[i : i + 2], "v": text[i : i + 2], "s": i, "e": i + 2})
                 i += 2
                 continue
@@ -1609,6 +1657,15 @@ class _ShExprParser:
             node = self._make_bin(node, op_tok["k"], right)
         return node
 
+    def _parse_power(self) -> dict[str, Any]:
+        """べき乗（`**`）を右結合で解析する。"""
+        node = self._parse_postfix()
+        if self._cur()["k"] == "**":
+            op_tok = self._eat("**")
+            right = self._parse_unary()
+            node = self._make_bin(node, op_tok["k"], right)
+        return node
+
     def _parse_unary(self) -> dict[str, Any]:
         """単項演算（`+` / `-`）を解析する。"""
         if self._cur()["k"] in {"+", "-"}:
@@ -1627,7 +1684,7 @@ class _ShExprParser:
                 "op": "USub" if tok["k"] == "-" else "UAdd",
                 "operand": operand,
             }
-        return self._parse_postfix()
+        return self._parse_power()
 
     def _lookup_method_return(self, cls_name: str, method: str) -> str:
         """クラス継承を辿ってメソッド戻り型を解決する。"""
@@ -2152,6 +2209,7 @@ class _ShExprParser:
             "+": "Add",
             "-": "Sub",
             "*": "Mult",
+            "**": "Pow",
             "/": "Div",
             "//": "FloorDiv",
             "%": "Mod",
@@ -2180,6 +2238,12 @@ class _ShExprParser:
             or (lt == "str" and rt == "str")
         ):
             out_t = "bytes" if (lt in {"bytes", "bytearray"} and rt in {"bytes", "bytearray"}) else "str"
+        elif op_sym == "**" and lt in {"int64", "float64"} and rt in {"int64", "float64"}:
+            out_t = "float64"
+            if lt == "int64":
+                casts.append({"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+            if rt == "int64":
+                casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
         elif lt == rt and lt in {"int64", "float64"}:
             out_t = lt
         elif lt in {"int64", "float64"} and rt in {"int64", "float64"}:
@@ -2365,6 +2429,37 @@ class _ShExprParser:
                     "elements": [],
                 }
             first = self._parse_ifexp()
+            if self._cur()["k"] == "NAME" and self._cur()["v"] == "for":
+                self._eat("NAME")
+                target = self._parse_comp_target()
+                in_tok = self._eat("NAME")
+                if in_tok["v"] != "in":
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="expected 'in' in generator expression",
+                        source_span=self._node_span(in_tok["s"], in_tok["e"]),
+                        hint="Use `(expr for x in iterable)` syntax.",
+                    )
+                iter_expr = self._parse_ifexp()
+                ifs: list[dict[str, Any]] = []
+                while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
+                    self._eat("NAME")
+                    ifs.append(self._parse_ifexp())
+                r = self._eat(")")
+                end_node = ifs[-1] if len(ifs) > 0 else iter_expr
+                s = l["s"]
+                e = int(end_node["source_span"]["end_col"]) - self.col_base
+                return {
+                    "kind": "ListComp",
+                    "source_span": self._node_span(s, r["e"]),
+                    "resolved_type": f"list[{first.get('resolved_type', 'unknown')}]",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": self._src_slice(s, r["e"]),
+                    "elt": first,
+                    "generators": [{"target": target, "iter": iter_expr, "ifs": ifs, "is_async": False}],
+                    "lowered_kind": "GeneratorArg",
+                }
             if self._cur()["k"] == ",":
                 elements = [first]
                 while self._cur()["k"] == ",":
@@ -3147,7 +3242,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         }
 
     tuple_parts = _sh_split_top_commas(txt)
-    if len(tuple_parts) >= 2:
+    if len(tuple_parts) >= 2 or (len(tuple_parts) == 1 and txt.endswith(",")):
         elems = [_sh_parse_expr_lowered(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in tuple_parts]
         elem_ts = [str(e.get("resolved_type", "unknown")) for e in elems]
         return {
@@ -3184,6 +3279,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
         indent = len(ln_txt) - len(ln_txt.lstrip(" "))
         raw_s = ln_txt.strip()
         s = _sh_strip_inline_comment(raw_s)
+        _sh_raise_if_trailing_stmt_terminator(s, line_no=ln_no, line_text=ln_txt)
 
         if raw_s == "":
             pending_blank_count += 1
@@ -3201,6 +3297,73 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             continue
         if s == "":
             i += 1
+            continue
+
+        sig = _sh_parse_def_sig(ln_no, s)
+        if sig is not None:
+            fn_name = str(sig["name"])
+            fn_ret = str(sig["ret"])
+            arg_types: dict[str, str] = dict(sig["arg_types"])
+            arg_order: list[str] = list(sig["arg_order"])
+            arg_defaults_raw_obj: Any = sig.get("arg_defaults")
+            arg_defaults_raw: dict[str, Any] = arg_defaults_raw_obj if isinstance(arg_defaults_raw_obj, dict) else {}
+            fn_block, j = _sh_collect_indented_block(body_lines, i + 1, indent)
+            if len(fn_block) == 0:
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser requires non-empty nested function body '{fn_name}'",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Add nested function statements.",
+                )
+            fn_scope_types: dict[str, str] = dict(name_types)
+            for arg_name, arg_ty in arg_types.items():
+                fn_scope_types[arg_name] = arg_ty
+            fn_stmts = _sh_parse_stmt_block(fn_block, name_types=fn_scope_types, scope_label=f"{scope_label}.{fn_name}")
+            docstring, fn_stmts = _sh_extract_leading_docstring(fn_stmts)
+            arg_defaults: dict[str, Any] = {}
+            arg_index_map: dict[str, int] = {}
+            arg_usage_map: dict[str, str] = {}
+            for arg_pos, arg_name in enumerate(arg_order):
+                arg_index_map[arg_name] = int(arg_pos)
+                arg_usage_map[arg_name] = "readonly"
+                if arg_name in arg_defaults_raw:
+                    default_obj: Any = arg_defaults_raw[arg_name]
+                    default_txt: str = str(default_obj).strip()
+                    if default_txt != "":
+                        default_col = ln_txt.find(default_txt)
+                        if default_col < 0:
+                            default_col = 0
+                        arg_defaults[arg_name] = _sh_parse_expr_lowered(
+                            default_txt,
+                            ln_no=ln_no,
+                            col=default_col,
+                            name_types=dict(name_types),
+                        )
+            callable_parts: list[str] = []
+            for arg_name in arg_order:
+                callable_parts.append(arg_types.get(arg_name, "unknown"))
+            name_types[fn_name] = "callable[" + ", ".join(callable_parts) + "->" + fn_ret + "]"
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                {
+                    "kind": "FunctionDef",
+                    "name": fn_name,
+                    "original_name": fn_name,
+                    "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                    "arg_types": arg_types,
+                    "arg_order": arg_order,
+                    "arg_defaults": arg_defaults,
+                    "arg_index": arg_index_map,
+                    "return_type": fn_ret,
+                    "arg_usage": arg_usage_map,
+                    "renamed_symbols": {},
+                    "docstring": docstring,
+                    "body": fn_stmts,
+                },
+            )
+            i = j
             continue
 
         if s.startswith("if ") and s.endswith(":"):
@@ -3790,6 +3953,7 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
 
 def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
     """Python ソースを self-hosted パーサで EAST Module に変換する。"""
+    source = _sh_strip_utf8_bom(source)
     lines = source.splitlines()
     leading_file_comments: list[str] = []
     leading_file_trivia: list[dict[str, Any]] = []
@@ -3813,13 +3977,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     cur_cls: str | None = None
     cur_cls_indent = 0
     for ln_no, ln in enumerate(lines, start=1):
-        s = ln.strip()
+        s = _sh_strip_inline_comment(ln.strip())
         if s == "":
             continue
         indent = len(ln) - len(ln.lstrip(" "))
         if cur_cls is not None and indent <= cur_cls_indent and not s.startswith("#"):
             cur_cls = None
-        cls_hdr = _sh_parse_class_header(ln)
+        cls_hdr = _sh_parse_class_header(s)
         if cls_hdr is not None:
             cur_cls_name, cur_base = cls_hdr
             cur_cls = cur_cls_name
@@ -3833,12 +3997,12 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 class_method_return_types[cur_cls_name] = empty_methods
             continue
         if cur_cls is None:
-            sig = _sh_parse_def_sig(ln_no, ln)
+            sig = _sh_parse_def_sig(ln_no, s)
             if sig is not None:
                 fn_returns[str(sig["name"])] = str(sig["ret"])
             continue
         cur_cls_name: str = cur_cls
-        sig = _sh_parse_def_sig(ln_no, ln, in_class=cur_cls_name)
+        sig = _sh_parse_def_sig(ln_no, s, in_class=cur_cls_name)
         if sig is not None:
             methods: dict[str, str] = class_method_return_types[cur_cls_name]
             methods[str(sig["name"])] = str(sig["ret"])
@@ -3870,7 +4034,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         ln: str = str(ln_obj)
         logical_end_pair = top_merged_end.get(i, (i, len(lines[i - 1])))
         logical_end = int(logical_end_pair[0])
-        s = ln.strip()
+        raw_s = ln.strip()
+        s = _sh_strip_inline_comment(raw_s)
+        _sh_raise_if_trailing_stmt_terminator(s, line_no=i, line_text=ln)
         if s == "" or s.startswith("#"):
             i += 1
             continue
@@ -3878,7 +4044,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i += 1
             continue
 
-        ln_main = ln.strip()
+        ln_main = s
         is_main_guard = False
         if ln_main.startswith("if ") and ln_main.endswith(":"):
             cond = ln_main[3:-1].strip()
@@ -3906,7 +4072,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             main_stmts = _sh_parse_stmt_block(block, name_types=main_name_types, scope_label="__main__")
             i = j
             continue
-        sig_line: str = ln
+        sig_line: str = s
         sig_end_line = logical_end
         sig = _sh_parse_def_sig(i, sig_line)
         if sig is not None:
@@ -4054,12 +4220,28 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             mod_name = re.strip_group(m_import_from, 1)
             names_txt = re.strip_group(m_import_from, 2)
             if names_txt == "*":
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message="from-import wildcard is not supported",
-                    source_span=_sh_span(i, 0, len(ln)),
-                    hint="Import explicit symbol names instead of '*'.",
+                wildcard_local = "__wildcard__" + mod_name.replace(".", "_")
+                _sh_append_import_binding(
+                    import_bindings=import_bindings,
+                    import_binding_names=import_binding_names,
+                    module_id=mod_name,
+                    export_name="*",
+                    local_name=wildcard_local,
+                    binding_kind="wildcard",
+                    source_file=filename,
+                    source_line=i,
                 )
+                body_items.append(
+                    {
+                        "kind": "ImportFrom",
+                        "source_span": _sh_span(i, 0, len(ln)),
+                        "module": mod_name,
+                        "names": [{"name": "*", "asname": None}],
+                        "level": 0,
+                    }
+                )
+                i = logical_end + 1
+                continue
             raw_parts: list[str] = []
             for p in names_txt.split(","):
                 p2: str = p.strip()
@@ -4116,7 +4298,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i += 1
             continue
 
-        cls_hdr = _sh_parse_class_header(ln)
+        cls_hdr = _sh_parse_class_header(s)
         if cls_hdr is not None:
             cls_name, base = cls_hdr
             base_name = base
@@ -4178,6 +4360,15 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         k += 1
                     continue
                 if bind == cls_indent + 4:
+                    if s2 == "pass":
+                        class_body.append(
+                            {
+                                "kind": "Pass",
+                                "source_span": _sh_span(ln_no, 0, len(ln_txt)),
+                            }
+                        )
+                        k += 1
+                        continue
                     if s2.startswith("__pytra_class_storage_hint__") or s2.startswith("__pytra_storage_hint__"):
                         parts = s2.split("=", 1)
                         if len(parts) == 2:
@@ -4221,6 +4412,40 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         )
                         k += 1
                         continue
+                    class_assign = _sh_split_top_level_assign(s2)
+                    if class_assign is not None:
+                        fname, fexpr_txt = class_assign
+                        fname = fname.strip()
+                        fexpr_txt = fexpr_txt.strip()
+                        if _sh_is_identifier(fname) and fexpr_txt != "":
+                            name_col = ln_txt.find(fname)
+                            if name_col < 0:
+                                name_col = 0
+                            expr_col = ln_txt.find(fexpr_txt, name_col + len(fname))
+                            if expr_col < 0:
+                                expr_col = name_col + len(fname) + 1
+                            val_node = _sh_parse_expr_lowered(fexpr_txt, ln_no=ln_no, col=expr_col, name_types={})
+                            class_body.append(
+                                {
+                                    "kind": "Assign",
+                                    "source_span": _sh_span(ln_no, name_col, len(ln_txt)),
+                                    "target": {
+                                        "kind": "Name",
+                                        "source_span": _sh_span(ln_no, name_col, name_col + len(fname)),
+                                        "resolved_type": str(val_node.get("resolved_type", "unknown")),
+                                        "borrow_kind": "value",
+                                        "casts": [],
+                                        "repr": fname,
+                                        "id": fname,
+                                    },
+                                    "value": val_node,
+                                    "declare": True,
+                                    "declare_init": True,
+                                    "decl_type": str(val_node.get("resolved_type", "unknown")),
+                                }
+                            )
+                            k += 1
+                            continue
                     if is_enum_base:
                         enum_assign = _sh_split_top_level_assign(s2)
                         if enum_assign is not None:
@@ -4258,7 +4483,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             )
                             k += 1
                             continue
-                    sig = _sh_parse_def_sig(ln_no, ln_txt, in_class=cls_name)
+                    sig = _sh_parse_def_sig(ln_no, s2, in_class=cls_name)
                     if sig is not None:
                         mname = str(sig["name"])
                         marg_types: dict[str, str] = dict(sig["arg_types"])
@@ -4545,12 +4770,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = logical_end + 1
             continue
 
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message=f"self_hosted parser cannot parse top-level statement: {s}",
-            source_span=_sh_span(i, 0, len(ln)),
-            hint="Use def/class/top-level typed assignment/main guard.",
+        expr_col = len(ln) - len(ln.lstrip(" "))
+        body_items.append(
+            {
+                "kind": "Expr",
+                "source_span": _sh_span(i, expr_col, len(ln)),
+                "value": _sh_parse_expr_lowered(s, ln_no=i, col=expr_col, name_types={}),
+            }
         )
+        i = logical_end + 1
+        continue
 
     renamed_symbols: dict[str, str] = {}
     for item in body_items:

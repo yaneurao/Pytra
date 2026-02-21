@@ -33,6 +33,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - `@dataclass` を付けた class は dataclass として扱い、フィールドとコンストラクタを生成します。
 - `import` / `from ... import ...` をサポートします。
 - `from ... import *`（ワイルドカード import）はサポート対象外です。
+- 文末セミコロン（`;`）はサポート対象外です（self_hosted parser では入力エラーとして扱います）。
 - トランスパイル対象コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の直接 import は禁止です。
 - import 可能なのは `src/pytra/` 配下のモジュールと、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。

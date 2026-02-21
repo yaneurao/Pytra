@@ -4,6 +4,22 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+## 2026-02-22 完了: P0-URGENT selfhost stage2 三項演算子破損（`(? : )`）修正
+
+1. [x] 再現手順を固定し、`tools/build_selfhost.py` + `tools/build_selfhost_stage2.py` のフル再生成で検証する運用に統一した。
+2. [x] 最小再現 fixture を追加した。
+   - [x] `test/fixtures/control/ifexp_ternary_regression.py`
+3. [x] `py2cpp.py` 側の if 式（`a if cond else b`）生成を調査し、selfhost 時に `render_expr` 静的束縛で `(? : )` が出る経路を特定した。
+4. [x] C++ 生成を修正し、if 式専用経路（`_render_ifexp_expr`）を明示した。
+5. [x] 回帰テストを追加した。
+   - [x] `test/unit/test_py2cpp_codegen_issues.py` の `test_ifexp_ternary_is_rendered_in_all_expression_positions`
+6. [x] `selfhost/py2cpp.out` で `py2cpp.py` 再変換後、stage2 バイナリ生成を確認した。
+   - [x] `python3 tools/build_selfhost.py`
+   - [x] `python3 tools/build_selfhost_stage2.py`
+7. [x] stage2 バイナリで `sample/py` 全件を変換・コンパイル・実行し、Python 出力一致（実行時間行は除外）を確認した。
+   - [x] `python3 tools/verify_selfhost_end_to_end.py --skip-build --selfhost-bin selfhost/py2cpp_stage2.out --cases sample/py/*.py`
+   - [x] 結果: `failures=0`
+
 ## 2026-02-21 完了: CodeEmitter / Hooks 移管タスク一式（docs-jp/todo.md から移管）
 
 1. [x] P1 `CodeEmitter / Hooks` 移管（hook 注入・helper 抽出・profile/hook 優先化）を完了。
