@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
@@ -318,6 +319,33 @@ class CodeEmitterTest(unittest.TestCase):
             ),
             "(ys.contains(x))",
         )
+
+    def test_string_literal_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.escape_string_for_literal("a\"b\\c\nd"), "a\\\"b\\\\c\\nd")
+        self.assertEqual(em.quote_string_literal("abc"), "\"abc\"")
+        self.assertEqual(em.quote_string_literal("a\nb"), "\"a\\nb\"")
+
+    def test_load_profile_with_includes(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src = root / "src"
+            prof_dir = src / "profiles" / "x"
+            prof_dir.mkdir(parents=True, exist_ok=True)
+            (prof_dir / "types.json").write_text('{"types":{"int64":"long"}}', encoding="utf-8")
+            (prof_dir / "operators.json").write_text('{"operators":{"binop":{"Add":"+"}}}', encoding="utf-8")
+            (prof_dir / "profile.json").write_text(
+                '{"include":["types.json","operators.json"],"syntax":{"expr_stmt":"{expr};"}}',
+                encoding="utf-8",
+            )
+            fake_anchor = str(src / "hooks" / "x" / "emitter.py")
+            merged = CodeEmitter.load_profile_with_includes(
+                "src/profiles/x/profile.json",
+                anchor_file=fake_anchor,
+            )
+            self.assertEqual(merged.get("types"), {"int64": "long"})
+            self.assertEqual(merged.get("operators"), {"binop": {"Add": "+"}})
+            self.assertEqual(merged.get("syntax"), {"expr_stmt": "{expr};"})
 
     def test_import_resolution_helpers(self) -> None:
         em = CodeEmitter(

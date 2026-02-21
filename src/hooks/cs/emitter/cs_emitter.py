@@ -6,76 +6,14 @@ from pytra.std.typing import Any
 
 from hooks.cs.hooks.cs_hooks import build_cs_hooks
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.std import json
-from pytra.std.pathlib import Path
-
-
-def cs_string_lit(text: str) -> str:
-    """C# の文字列リテラルへエスケープ変換する。"""
-    out = "\""
-    i = 0
-    while i < len(text):
-        ch = text[i : i + 1]
-        if ch == "\\":
-            out += "\\\\"
-        elif ch == "\"":
-            out += "\\\""
-        elif ch == "\n":
-            out += "\\n"
-        elif ch == "\r":
-            out += "\\r"
-        elif ch == "\t":
-            out += "\\t"
-        else:
-            out += ch
-        i += 1
-    out += "\""
-    return out
-
-
-def _load_profile_piece(path: Path) -> dict[str, Any]:
-    """JSON プロファイル断片を読み込む。失敗時は空 dict。"""
-    if not path.exists():
-        return {}
-    try:
-        txt = path.read_text(encoding="utf-8")
-        raw = json.loads(txt)
-    except Exception:
-        return {}
-    if isinstance(raw, dict):
-        return raw
-    return {}
 
 
 def load_cs_profile() -> dict[str, Any]:
     """C# 用 profile を読み込む。"""
-    profile_path = Path("src/profiles/cs/profile.json")
-    if not profile_path.exists():
-        this_file = str(__file__)
-        src_pos = this_file.rfind("/src/")
-        if src_pos >= 0:
-            src_root = this_file[: src_pos + 4]
-            profile_path = Path(src_root + "/profiles/cs/profile.json")
-    profile_root = profile_path.parent
-    meta = _load_profile_piece(profile_path)
-    out: dict[str, Any] = {}
-    includes_obj = meta.get("include")
-    includes: list[str] = []
-    if isinstance(includes_obj, list):
-        for item in includes_obj:
-            if isinstance(item, str) and item != "":
-                includes.append(item)
-    i = 0
-    while i < len(includes):
-        rel = includes[i]
-        piece = _load_profile_piece(profile_root / rel)
-        for key, val in piece.items():
-            out[key] = val
-        i += 1
-    for key, val in meta.items():
-        if key != "include":
-            out[key] = val
-    return out
+    return CodeEmitter.load_profile_with_includes(
+        "src/profiles/cs/profile.json",
+        anchor_file=__file__,
+    )
 
 
 def load_cs_hooks(profile: dict[str, Any]) -> dict[str, Any]:
@@ -951,7 +889,7 @@ class CSharpEmitter(CodeEmitter):
             tag, non_str = self.render_constant_non_string_common(expr, expr_d, "null", "null")
             if tag == "1":
                 return non_str
-            return cs_string_lit(self.any_to_str(expr_d.get("value")))
+            return self.quote_string_literal(self.any_to_str(expr_d.get("value")))
 
         if kind == "Attribute":
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))

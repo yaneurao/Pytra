@@ -6,76 +6,14 @@ from pytra.std.typing import Any
 
 from hooks.js.hooks.js_hooks import build_js_hooks
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.std import json
-from pytra.std.pathlib import Path
-
-
-def js_string_lit(text: str) -> str:
-    """JavaScript の文字列リテラルへエスケープ変換する。"""
-    out = "\""
-    i = 0
-    while i < len(text):
-        ch = text[i : i + 1]
-        if ch == "\\":
-            out += "\\\\"
-        elif ch == "\"":
-            out += "\\\""
-        elif ch == "\n":
-            out += "\\n"
-        elif ch == "\r":
-            out += "\\r"
-        elif ch == "\t":
-            out += "\\t"
-        else:
-            out += ch
-        i += 1
-    out += "\""
-    return out
-
-
-def _load_profile_piece(path: Path) -> dict[str, Any]:
-    """JSON プロファイル断片を読み込む。失敗時は空 dict。"""
-    if not path.exists():
-        return {}
-    try:
-        txt = path.read_text(encoding="utf-8")
-        raw = json.loads(txt)
-    except Exception:
-        return {}
-    if isinstance(raw, dict):
-        return raw
-    return {}
 
 
 def load_js_profile() -> dict[str, Any]:
     """JavaScript 用 profile を読み込む。"""
-    profile_path = Path("src/profiles/js/profile.json")
-    if not profile_path.exists():
-        this_file = str(__file__)
-        src_pos = this_file.rfind("/src/")
-        if src_pos >= 0:
-            src_root = this_file[: src_pos + 4]
-            profile_path = Path(src_root + "/profiles/js/profile.json")
-    profile_root = profile_path.parent
-    meta = _load_profile_piece(profile_path)
-    out: dict[str, Any] = {}
-    includes_obj = meta.get("include")
-    includes: list[str] = []
-    if isinstance(includes_obj, list):
-        for item in includes_obj:
-            if isinstance(item, str) and item != "":
-                includes.append(item)
-    i = 0
-    while i < len(includes):
-        rel = includes[i]
-        piece = _load_profile_piece(profile_root / rel)
-        for key, val in piece.items():
-            out[key] = val
-        i += 1
-    for key, val in meta.items():
-        if key != "include":
-            out[key] = val
-    return out
+    return CodeEmitter.load_profile_with_includes(
+        "src/profiles/js/profile.json",
+        anchor_file=__file__,
+    )
 
 
 def load_js_hooks(profile: dict[str, Any]) -> dict[str, Any]:
@@ -169,7 +107,7 @@ class JsEmitter(CodeEmitter):
                 if binding_kind == "module" and local_name != "":
                     leaf = self._last_dotted_name(module_id)
                     alias = local_name if local_name != leaf else leaf
-                    _add("import * as " + self._safe_name(alias) + " from " + js_string_lit(module_path) + ";")
+                    _add("import * as " + self._safe_name(alias) + " from " + self.quote_string_literal(module_path) + ";")
                 elif binding_kind == "symbol" and export_name != "":
                     if local_name != "" and local_name != export_name:
                         _add(
@@ -178,11 +116,11 @@ class JsEmitter(CodeEmitter):
                             + " as "
                             + self._safe_name(local_name)
                             + " } from "
-                            + js_string_lit(module_path)
+                            + self.quote_string_literal(module_path)
                             + ";"
                         )
                     else:
-                        _add("import { " + export_name + " } from " + js_string_lit(module_path) + ";")
+                        _add("import { " + export_name + " } from " + self.quote_string_literal(module_path) + ";")
                 i += 1
             return out
 
@@ -204,7 +142,7 @@ class JsEmitter(CodeEmitter):
                     asname = self.any_to_str(ent.get("asname"))
                     leaf = self._last_dotted_name(module_id)
                     alias = asname if asname != "" else leaf
-                    _add("import * as " + self._safe_name(alias) + " from " + js_string_lit(module_path) + ";")
+                    _add("import * as " + self._safe_name(alias) + " from " + self.quote_string_literal(module_path) + ";")
             elif kind == "ImportFrom":
                 module_id = self.any_to_str(stmt.get("module"))
                 if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
@@ -222,9 +160,9 @@ class JsEmitter(CodeEmitter):
                     if module_path == "":
                         continue
                     if asname != "" and asname != name:
-                        _add("import { " + name + " as " + self._safe_name(asname) + " } from " + js_string_lit(module_path) + ";")
+                        _add("import { " + name + " as " + self._safe_name(asname) + " } from " + self.quote_string_literal(module_path) + ";")
                     else:
-                        _add("import { " + name + " } from " + js_string_lit(module_path) + ";")
+                        _add("import { " + name + " } from " + self.quote_string_literal(module_path) + ";")
         return out
 
     def transpile(self) -> str:
@@ -678,7 +616,7 @@ class JsEmitter(CodeEmitter):
             if tag == "1":
                 return non_str
             val = self.any_to_str(expr_d.get("value"))
-            return js_string_lit(val)
+            return self.quote_string_literal(val)
         if kind == "Attribute":
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner_expr = self.render_expr(owner_node)
@@ -741,7 +679,7 @@ class JsEmitter(CodeEmitter):
                 key_kind = self.any_dict_get_str(key_node, "kind", "")
                 if key_kind == "Constant":
                     key_val = self.any_to_str(key_node.get("value"))
-                    parts.append(js_string_lit(key_val) + ": " + self.render_expr(val_node))
+                    parts.append(self.quote_string_literal(key_val) + ": " + self.render_expr(val_node))
                 else:
                     key_expr = self.render_expr(key_node)
                     parts.append("[" + key_expr + "]: " + self.render_expr(val_node))

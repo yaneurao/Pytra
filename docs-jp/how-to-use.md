@@ -173,7 +173,8 @@ go run test/transpile/go/iterable.go
 ```
 
 補足:
-- `sample/py` の一部で使う `pylib` API は、Go 側ランタイム拡張が必要なケースがあります（最新状況は `docs-jp/todo.md` を参照）。
+- `py2go.py` は EAST ベースのプレビュー出力です（専用 GoEmitter へ段階移行中）。
+- 現在の出力は最小 `main` と中間コードコメントを含む形式で、実行互換は保証しません。
 
 </details>
 
@@ -187,7 +188,8 @@ java -cp test/transpile/java iterable
 ```
 
 補足:
-- `sample/py` の一部で使う `pylib` API は、Java 側ランタイム拡張が必要なケースがあります（最新状況は `docs-jp/todo.md` を参照）。
+- `py2java.py` は EAST ベースのプレビュー出力です（専用 JavaEmitter へ段階移行中）。
+- 現在の出力は最小 `Main` クラスと中間コードコメントを含む形式で、実行互換は保証しません。
 
 </details>
 
