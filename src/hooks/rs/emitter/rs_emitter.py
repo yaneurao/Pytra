@@ -236,6 +236,25 @@ class RustEmitter(CodeEmitter):
             return f"{t}::new()"
         return "Default::default()"
 
+    def _refine_decl_type_from_value(self, declared_type: str, value_node: Any) -> str:
+        """`Any` を含む宣言型より値側の具体型が有用なら値側を優先する。"""
+        d = self.normalize_type_name(declared_type)
+        if d == "":
+            return self.get_expr_type(value_node)
+        v = self.normalize_type_name(self.get_expr_type(value_node))
+        if v == "":
+            return d
+        if self.is_any_like_type(d):
+            return v
+        if self._contains_text(d, "Any"):
+            if d.startswith("dict[") and v.startswith("dict["):
+                return v
+            if d.startswith("list[") and v.startswith("list["):
+                return v
+            if d.startswith("tuple[") and v.startswith("tuple["):
+                return v
+        return d
+
     def _rust_type(self, east_type: str) -> str:
         """EAST 型名を Rust 型名へ変換する。"""
         t = self.normalize_type_name(east_type)
@@ -642,6 +661,8 @@ class RustEmitter(CodeEmitter):
         t_east = ann if ann != "" else decl_t
         if t_east == "":
             t_east = self.get_expr_type(stmt.get("value"))
+        else:
+            t_east = self._refine_decl_type_from_value(t_east, stmt.get("value"))
         t = self._rust_type(t_east)
         self.declare_in_current_scope(name_raw)
         self.declared_var_types[name_raw] = self.normalize_type_name(t_east)

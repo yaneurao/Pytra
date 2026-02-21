@@ -50,6 +50,7 @@
    - [ ] 第3段: import / class / collections の変換品質を段階追加（出力品質・コンパイル互換を改善）。
      - [x] import 束縛を `use ...;` に変換（`meta.import_bindings` 優先）。
      - [x] `for (k, v) in dict.items()` 形の tuple ターゲットを生成。
+     - [x] `dict[str, Any]` のような注釈でも、値側に具体型がある場合は宣言型を具体化。
      - [ ] class / Any / dict 連携の型整合（Rustコンパイル互換）を改善。
 5. [ ] 検証と回帰テスト。
    - [x] `test/unit/` に py2rs 向け最小テストを追加（読み込み・文法・出力スモーク）。
