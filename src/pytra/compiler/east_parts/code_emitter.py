@@ -80,6 +80,11 @@ class CodeEmitter:
         """式ノード出力フック。派生クラス側で実装する。"""
         return ""
 
+    def apply_cast(self, rendered_expr: str, to_type: str) -> str:
+        """式へ型キャストを適用する。既定実装は何も変更しない。"""
+        _ = to_type
+        return rendered_expr
+
     def emit(self, line: str = "") -> None:
         """現在のインデントで1行を出力バッファへ追加する。"""
         self.lines.append(("    " * self.indent) + line)
@@ -943,6 +948,79 @@ class CodeEmitter:
                         return False
         return False
 
+    def _one_char_str_const(self, node: Any) -> str:
+        """1文字文字列定数ならその実文字を返す。"""
+        nd = self.any_to_dict_or_empty(node)
+        if len(nd) == 0 or self._node_kind_from_dict(nd) != "Constant":
+            return ""
+        v = ""
+        if "value" in nd:
+            v = self.any_to_str(nd["value"])
+        if v == "":
+            return ""
+        if len(v) == 1:
+            return v
+        if len(v) == 2 and v[0:1] == "\\":
+            c = v[1:2]
+            if c == "n":
+                return "\n"
+            if c == "r":
+                return "\r"
+            if c == "t":
+                return "\t"
+            if c == "\\":
+                return "\\"
+            if c == "'":
+                return "'"
+            if c == "0":
+                return "\0"
+            return ""
+        return ""
+
+    def _const_int_literal(self, node: Any) -> int | None:
+        """整数定数ノードを `int` として返す（取得できない場合は None）。"""
+        nd = self.any_to_dict_or_empty(node)
+        if len(nd) == 0:
+            return None
+        kind = self._node_kind_from_dict(nd)
+        if kind == "Constant":
+            if "value" not in nd:
+                return None
+            val = nd["value"]
+            if isinstance(val, bool):
+                return None
+            if isinstance(val, int):
+                return int(val)
+            if isinstance(val, str):
+                txt = self.any_to_str(val)
+                if txt == "":
+                    return None
+                try:
+                    return int(txt)
+                except ValueError:
+                    return None
+            return None
+        if kind == "UnaryOp" and self.any_dict_get_str(nd, "op", "") == "USub":
+            opd = self.any_to_dict_or_empty(nd.get("operand"))
+            if self._node_kind_from_dict(opd) != "Constant":
+                return None
+            if "value" not in opd:
+                return None
+            oval = opd["value"]
+            if isinstance(oval, bool):
+                return None
+            if isinstance(oval, int):
+                return -int(oval)
+            if isinstance(oval, str):
+                txt = self.any_to_str(oval)
+                if txt == "":
+                    return None
+                try:
+                    return -int(txt)
+                except ValueError:
+                    return None
+        return None
+
     def _is_redundant_super_init_call(self, expr: Any) -> bool:
         """暗黙基底 ctor 呼び出しと等価な super().__init__ かを判定する。"""
         expr_dict = self.any_to_dict_or_empty(expr)
@@ -964,6 +1042,61 @@ class CodeEmitter:
         args = self.any_to_list(expr_dict.get("args"))
         kws = self.any_to_list(expr_dict.get("keywords"))
         return len(args) == 0 and len(kws) == 0
+
+    def _prepare_call_parts(
+        self,
+        expr: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Call ノードの前処理（func/args/kw 展開）を共通化する。"""
+        fn_obj: object = expr.get("func")
+        fn = self.any_to_dict_or_empty(fn_obj)
+        fn_name = self.render_expr(fn_obj)
+        arg_nodes_obj: object = self.any_dict_get_list(expr, "args")
+        arg_nodes = self.any_to_list(arg_nodes_obj)
+        args = [self.render_expr(a) for a in arg_nodes]
+        keywords_obj: object = self.any_dict_get_list(expr, "keywords")
+        keywords = self.any_to_list(keywords_obj)
+        first_arg: object = expr
+        if len(arg_nodes) > 0:
+            first_arg = arg_nodes[0]
+        kw: dict[str, str] = {}
+        kw_values: list[str] = []
+        kw_nodes: list[Any] = []
+        for k in keywords:
+            kd = self.any_to_dict_or_empty(k)
+            if len(kd) > 0:
+                kw_name = self.any_to_str(kd.get("arg"))
+                if kw_name != "":
+                    kw_val_node: Any = kd.get("value")
+                    kw_val = self.render_expr(kw_val_node)
+                    kw[kw_name] = kw_val
+                    kw_values.append(kw_val)
+                    kw_nodes.append(kw_val_node)
+        out: dict[str, Any] = {}
+        out["fn"] = fn_obj
+        out["fn_name"] = fn_name
+        out["arg_nodes"] = arg_nodes
+        out["args"] = args
+        out["kw"] = kw
+        out["kw_values"] = kw_values
+        out["kw_nodes"] = kw_nodes
+        out["first_arg"] = first_arg
+        return out
+
+    def _render_ifexp_expr(self, expr: dict[str, Any]) -> str:
+        """IfExp（三項演算）を式へ変換する。"""
+        body = self.render_expr(expr.get("body"))
+        orelse = self.render_expr(expr.get("orelse"))
+        casts = self._dict_stmt_list(expr.get("casts"))
+        for c in casts:
+            on = self.any_to_str(c.get("on"))
+            to_t = self.any_to_str(c.get("to"))
+            if on == "body":
+                body = self.apply_cast(body, to_t)
+            elif on == "orelse":
+                orelse = self.apply_cast(orelse, to_t)
+        test_expr = self.render_expr(expr.get("test"))
+        return f"({test_expr} ? {body} : {orelse})"
 
     def render_cond(self, expr: Any) -> str:
         """条件式文脈向けに式を真偽値へ正規化して出力する。"""

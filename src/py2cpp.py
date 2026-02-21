@@ -1563,79 +1563,6 @@ class CppEmitter(CodeEmitter):
             return 7
         return 0
 
-    def _one_char_str_const(self, node: Any) -> str:
-        """1文字文字列定数ならその実文字を返す。"""
-        nd = self.any_to_dict_or_empty(node)
-        if len(nd) == 0 or self._node_kind_from_dict(nd) != "Constant":
-            return ""
-        v = ""
-        if "value" in nd:
-            v = self.any_to_str(nd["value"])
-        if v == "":
-            return ""
-        if len(v) == 1:
-            return v
-        if len(v) == 2 and v[0:1] == "\\":
-            c = v[1:2]
-            if c == "n":
-                return "\n"
-            if c == "r":
-                return "\r"
-            if c == "t":
-                return "\t"
-            if c == "\\":
-                return "\\"
-            if c == "'":
-                return "'"
-            if c == "0":
-                return "\0"
-            return ""
-        return ""
-
-    def _const_int_literal(self, node: Any) -> int | None:
-        """整数定数ノードを `int` として返す（取得できない場合は None）。"""
-        nd = self.any_to_dict_or_empty(node)
-        if len(nd) == 0:
-            return None
-        kind = self._node_kind_from_dict(nd)
-        if kind == "Constant":
-            if "value" not in nd:
-                return None
-            val = nd["value"]
-            if isinstance(val, bool):
-                return None
-            if isinstance(val, int):
-                return int(val)
-            if isinstance(val, str):
-                txt = self.any_to_str(val)
-                if txt == "":
-                    return None
-                try:
-                    return int(txt)
-                except ValueError:
-                    return None
-            return None
-        if kind == "UnaryOp" and self.any_dict_get_str(nd, "op", "") == "USub":
-            opd = self.any_to_dict_or_empty(nd.get("operand"))
-            if self._node_kind_from_dict(opd) != "Constant":
-                return None
-            if "value" not in opd:
-                return None
-            oval = opd["value"]
-            if isinstance(oval, bool):
-                return None
-            if isinstance(oval, int):
-                return -int(oval)
-            if isinstance(oval, str):
-                txt = self.any_to_str(oval)
-                if txt == "":
-                    return None
-                try:
-                    return -int(txt)
-                except ValueError:
-                    return None
-        return None
-
     def _str_index_char_access(self, node: Any) -> str:
         """str 添字アクセスを `at()` ベースの char 比較式へ変換する。"""
         nd = self.any_to_dict_or_empty(node)
@@ -4402,21 +4329,6 @@ class CppEmitter(CodeEmitter):
                 idx = f"py_to_int64({idx})"
             return self._render_sequence_index(val, idx, sl)
         return f"{val}[{idx}]"
-
-    def _render_ifexp_expr(self, expr: dict[str, Any]) -> str:
-        """IfExp（三項演算）を C++ 式へ変換する。"""
-        body = self.render_expr(expr.get("body"))
-        orelse = self.render_expr(expr.get("orelse"))
-        casts = self._dict_stmt_list(expr.get("casts"))
-        for c in casts:
-            on = self.any_to_str(c.get("on"))
-            to_t = self.any_to_str(c.get("to"))
-            if on == "body":
-                body = self.apply_cast(body, to_t)
-            elif on == "orelse":
-                orelse = self.apply_cast(orelse, to_t)
-        test_expr = self.render_expr(expr.get("test"))
-        return f"({test_expr} ? {body} : {orelse})"
 
     def _render_name_expr(self, expr_d: dict[str, Any]) -> str:
         """Name ノードを C++ 式へ変換する。"""

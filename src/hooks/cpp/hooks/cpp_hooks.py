@@ -335,6 +335,55 @@ def on_render_call(
     return None
 
 
+def on_render_binop(
+    emitter: Any,
+    binop_node: dict[str, Any],
+    left: str,
+    right: str,
+) -> str | None:
+    """BinOp の C++ 固有分岐を処理する。"""
+    op_name = emitter.any_to_str(binop_node.get("op"))
+    casts = emitter.any_to_list(binop_node.get("casts"))
+
+    if op_name == "Div":
+        lt0 = emitter.get_expr_type(binop_node.get("left"))
+        rt0 = emitter.get_expr_type(binop_node.get("right"))
+        lt = lt0 if isinstance(lt0, str) else ""
+        rt = rt0 if isinstance(rt0, str) else ""
+        if lt == "Path" and rt in {"str", "Path"}:
+            return left + " / " + right
+        if len(casts) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
+            return left + " / " + right
+        return "py_div(" + left + ", " + right + ")"
+
+    if op_name == "FloorDiv":
+        if emitter.floor_div_mode == "python":
+            return "py_floordiv(" + left + ", " + right + ")"
+        return left + " / " + right
+
+    if op_name == "Mod":
+        if emitter.mod_mode == "python":
+            return "py_mod(" + left + ", " + right + ")"
+        return left + " % " + right
+
+    if op_name == "Mult":
+        lt0 = emitter.get_expr_type(binop_node.get("left"))
+        rt0 = emitter.get_expr_type(binop_node.get("right"))
+        lt = lt0 if isinstance(lt0, str) else ""
+        rt = rt0 if isinstance(rt0, str) else ""
+        int_types = {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}
+        if lt.startswith("list[") and rt in int_types:
+            return "py_repeat(" + left + ", " + right + ")"
+        if rt.startswith("list[") and lt in int_types:
+            return "py_repeat(" + right + ", " + left + ")"
+        if lt == "str" and rt in int_types:
+            return "py_repeat(" + left + ", " + right + ")"
+        if rt == "str" and lt in int_types:
+            return "py_repeat(" + right + ", " + left + ")"
+
+    return None
+
+
 def on_render_expr_kind(
     emitter: Any,
     kind: str,
@@ -377,5 +426,6 @@ def build_cpp_hooks() -> dict[str, Any]:
     """C++ エミッタへ注入する hooks dict を構築する。"""
     hooks = EmitterHooks()
     hooks.add("on_render_call", on_render_call)
+    hooks.add("on_render_binop", on_render_binop)
     hooks.add("on_render_expr_kind", on_render_expr_kind)
     return hooks.to_dict()

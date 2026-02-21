@@ -66,6 +66,16 @@ class _HookedEmitter(_DummyEmitter):
             return "complex_expr()"
         return None
 
+    def hook_on_render_binop(
+        self,
+        binop_node: dict[str, Any],
+        left: str,
+        right: str,
+    ) -> Any:
+        if binop_node.get("kind") == "BinOp":
+            return f"hooked_binop({left}, {right})"
+        return None
+
 
 class CodeEmitterTest(unittest.TestCase):
     class _KindLike:
@@ -328,6 +338,59 @@ class CodeEmitterTest(unittest.TestCase):
         }
         self.assertFalse(em._is_redundant_super_init_call(not_super))
 
+    def test_literal_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em._one_char_str_const({"kind": "Constant", "value": "a"}), "a")
+        self.assertEqual(em._one_char_str_const({"kind": "Constant", "value": "\\n"}), "\n")
+        self.assertEqual(em._one_char_str_const({"kind": "Constant", "value": "ab"}), "")
+        self.assertEqual(em._const_int_literal({"kind": "Constant", "value": 12}), 12)
+        self.assertEqual(
+            em._const_int_literal(
+                {
+                    "kind": "UnaryOp",
+                    "op": "USub",
+                    "operand": {"kind": "Constant", "value": 7},
+                }
+            ),
+            -7,
+        )
+        self.assertIsNone(em._const_int_literal({"kind": "Constant", "value": "x"}))
+
+    def test_prepare_call_parts_and_ifexp_helpers(self) -> None:
+        class _CastEmitter(_DummyEmitter):
+            def apply_cast(self, rendered_expr: str, to_type: str) -> str:
+                return f"cast<{to_type}>({rendered_expr})"
+
+        em = _CastEmitter({})
+        call_node = {
+            "kind": "Call",
+            "func": {"kind": "Name", "repr": "fn"},
+            "args": [{"kind": "Name", "repr": "a"}],
+            "keywords": [
+                {"arg": "k", "value": {"kind": "Name", "repr": "b"}},
+            ],
+        }
+        parts = em._prepare_call_parts(call_node)
+        self.assertEqual(parts.get("fn_name"), "fn")
+        self.assertEqual(parts.get("args"), ["a"])
+        self.assertEqual(parts.get("kw_values"), ["b"])
+        self.assertEqual(parts.get("kw"), {"k": "b"})
+
+        ifexp = {
+            "kind": "IfExp",
+            "test": {"kind": "Name", "repr": "cond"},
+            "body": {"kind": "Name", "repr": "x"},
+            "orelse": {"kind": "Name", "repr": "y"},
+            "casts": [
+                {"on": "body", "to": "int64"},
+                {"on": "orelse", "to": "str"},
+            ],
+        }
+        self.assertEqual(
+            em._render_ifexp_expr(ifexp),
+            "(cond ? cast<int64>(x) : cast<str>(y))",
+        )
+
     def test_split_helpers(self) -> None:
         em = CodeEmitter({})
         self.assertEqual(em.split_generic(""), [])
@@ -465,6 +528,8 @@ class CodeEmitterTest(unittest.TestCase):
             {},
         )
         self.assertEqual(hook_call, "hooked_call()")
+        hook_binop = em.hook_on_render_binop({"kind": "BinOp"}, "x", "y")
+        self.assertEqual(hook_binop, "hooked_binop(x, y)")
         hook_expr = em.hook_on_render_expr_kind("MagicExpr", {"kind": "MagicExpr"})
         self.assertEqual(hook_expr, "magic_expr()")
         hook_complex = em.hook_on_render_expr_complex({"kind": "JoinedStr"})
@@ -499,10 +564,20 @@ class CodeEmitterTest(unittest.TestCase):
             calls.append("render_expr_complex")
             return "dict_hook_complex()"
 
+        def on_render_binop(
+            _em: CodeEmitter,
+            _binop_node: dict[str, Any],
+            _left: str,
+            _right: str,
+        ) -> Any:
+            calls.append("render_binop")
+            return "dict_hook_binop()"
+
         hooks: dict[str, Any] = {
             "on_emit_stmt": on_emit_stmt,
             "on_emit_stmt_kind": on_emit_stmt_kind,
             "on_render_call": on_render_call,
+            "on_render_binop": on_render_binop,
             "on_render_expr_kind": on_render_expr_kind,
             "on_render_expr_complex": on_render_expr_complex,
         }
@@ -512,6 +587,10 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(
             em.hook_on_render_call({"kind": "Call"}, {"kind": "Name"}, [], {}),
             "dict_hook_call()",
+        )
+        self.assertEqual(
+            em.hook_on_render_binop({"kind": "BinOp"}, "l", "r"),
+            "dict_hook_binop()",
         )
         self.assertEqual(
             em.hook_on_render_expr_kind("MagicExpr", {"kind": "MagicExpr"}),
@@ -524,6 +603,7 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertIn("emit_stmt:Pass", calls)
         self.assertIn("emit_stmt_kind:Return", calls)
         self.assertIn("render_call", calls)
+        self.assertIn("render_binop", calls)
         self.assertIn("render_expr_kind:MagicExpr", calls)
         self.assertIn("render_expr_complex", calls)
 

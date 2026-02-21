@@ -13,6 +13,7 @@
    - [x] `CodeEmitter` 共通モジュールに `EmitterHooks` コンテナを追加した。
    - [x] `build_cpp_hooks()` を `EmitterHooks` 経由の組み立てへ移行した（最終出力は従来どおり dict）。
 2. [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。
+   - [x] `BinOp` の C++ 固有分岐（`Div/FloorDiv/Mod/Mult`）を `cpp_hooks.on_render_binop` へ抽出した（selfhost 互換のため `py2cpp.py` に同等フォールバックを残置）。
 3. [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
 
 ## P1: py2cpp 縮退（行数削減）
@@ -20,6 +21,8 @@
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
    - [x] `args + kw` 結合ロジックを `CodeEmitter.merge_call_args` へ移管し、`py2cpp.py` 側の重複実装を削除した。
    - [x] `list[dict]` 抽出ヘルパ（`_dict_stmt_list`）を `CodeEmitter` 側へ移管し、`py2cpp.py` 側の重複実装を削除した。
+   - [x] `Call` 前処理（`_prepare_call_parts`）を `CodeEmitter` 側へ追加した（selfhost 互換のため `py2cpp.py` 側フォールバックは当面残置）。
+   - [x] `IfExp` 共通レンダ（`_render_ifexp_expr`）と定数解析ヘルパ（`_one_char_str_const`, `_const_int_literal`）を `CodeEmitter` 側へ移管した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `render_expr(Call)` 末尾の `kw_values/kw_nodes` マージ処理を `_merge_call_kw_values` / `_merge_call_arg_nodes` へ分離した。
