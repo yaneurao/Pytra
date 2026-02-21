@@ -185,6 +185,17 @@ class CodeEmitter:
         out["first_arg"] = first_arg
         return out
 
+    def validate_call_receiver_or_raise(self, fn_node: dict[str, Any]) -> None:
+        """`obj.method(...)` の object レシーバ禁止ルールを検証する。"""
+        if self._node_kind_from_dict(fn_node) != "Attribute":
+            return
+        owner_node: object = fn_node.get("value")
+        owner_t = self.get_expr_type(owner_node)
+        if self.is_forbidden_object_receiver_type(owner_t):
+            raise RuntimeError(
+                "object receiver method call is forbidden by language constraints"
+            )
+
     def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:
         """`on_emit_stmt` フック。既定では何もしない。"""
         if "on_emit_stmt" in self.hooks:

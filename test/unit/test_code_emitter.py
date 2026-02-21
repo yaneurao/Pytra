@@ -307,6 +307,25 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertTrue(em._is_std_runtime_call("::std::abs"))
         self.assertFalse(em._is_std_runtime_call("py_len"))
 
+    def test_validate_call_receiver_or_raise(self) -> None:
+        em = CodeEmitter({})
+        em.validate_call_receiver_or_raise({"kind": "Name", "id": "f"})
+        em.validate_call_receiver_or_raise(
+            {
+                "kind": "Attribute",
+                "attr": "append",
+                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            }
+        )
+        with self.assertRaises(RuntimeError):
+            em.validate_call_receiver_or_raise(
+                {
+                    "kind": "Attribute",
+                    "attr": "append",
+                    "value": {"kind": "Name", "id": "v", "resolved_type": "object"},
+                }
+            )
+
     def test_trivia_and_cond_helpers(self) -> None:
         em = _DummyEmitter(
             {

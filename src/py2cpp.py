@@ -4318,14 +4318,7 @@ class CppEmitter(CodeEmitter):
             kw_values = [self.any_to_str(a) for a in self.any_to_list(call_ctx.get("kw_values"))]
             kw_nodes = self.any_to_list(call_ctx.get("kw_nodes"))
             first_arg: object = call_ctx.get("first_arg")
-            fn_kind_for_call = self._node_kind_from_dict(fn)
-            if fn_kind_for_call == "Attribute":
-                owner_node: object = fn.get("value")
-                owner_t = self.get_expr_type(owner_node)
-                if self.is_forbidden_object_receiver_type(owner_t):
-                    raise RuntimeError(
-                        "object receiver method call is forbidden by language constraints"
-                    )
+            self.validate_call_receiver_or_raise(fn)
             hook_call = self.hook_on_render_call(expr_d, fn, args, kw)
             hook_call_txt = ""
             if isinstance(hook_call, str):
