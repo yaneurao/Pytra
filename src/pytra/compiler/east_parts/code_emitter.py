@@ -150,6 +150,41 @@ class CodeEmitter:
             i += 1
         return out
 
+    def unpack_prepared_call_parts(self, call_parts: dict[str, Any]) -> dict[str, Any]:
+        """`_prepare_call_parts` 結果を型付きの扱いやすい形へ変換する。"""
+        fn = self.any_to_dict_or_empty(call_parts.get("fn"))
+        fn_name = self.any_to_str(call_parts.get("fn_name"))
+        arg_nodes = self.any_to_list(call_parts.get("arg_nodes"))
+        args_raw = self.any_to_list(call_parts.get("args"))
+        args: list[str] = []
+        i = 0
+        while i < len(args_raw):
+            args.append(self.any_to_str(args_raw[i]))
+            i += 1
+        kw_raw = self.any_to_dict_or_empty(call_parts.get("kw"))
+        kw_values_raw = self.any_to_list(call_parts.get("kw_values"))
+        kw_values: list[str] = []
+        i = 0
+        while i < len(kw_values_raw):
+            kw_values.append(self.any_to_str(kw_values_raw[i]))
+            i += 1
+        kw: dict[str, str] = {}
+        for k, v in kw_raw.items():
+            if isinstance(k, str):
+                kw[k] = self.any_to_str(v)
+        kw_nodes = self.any_to_list(call_parts.get("kw_nodes"))
+        first_arg = call_parts.get("first_arg")
+        out: dict[str, Any] = {}
+        out["fn"] = fn
+        out["fn_name"] = fn_name
+        out["arg_nodes"] = arg_nodes
+        out["args"] = args
+        out["kw"] = kw
+        out["kw_values"] = kw_values
+        out["kw_nodes"] = kw_nodes
+        out["first_arg"] = first_arg
+        return out
+
     def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:
         """`on_emit_stmt` フック。既定では何もしない。"""
         if "on_emit_stmt" in self.hooks:

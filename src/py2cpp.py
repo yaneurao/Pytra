@@ -4309,18 +4309,15 @@ class CppEmitter(CodeEmitter):
             return self._render_attribute_expr(expr_d)
         if kind == "Call":
             call_parts: dict[str, Any] = self._prepare_call_parts(expr_d)
-            fn = self.any_to_dict_or_empty(call_parts.get("fn"))
-            fn_name = self.any_to_str(call_parts.get("fn_name"))
-            arg_nodes = self.any_to_list(call_parts.get("arg_nodes"))
-            args = [self.any_to_str(a) for a in self.any_to_list(call_parts.get("args"))]
-            kw_raw = self.any_to_dict_or_empty(call_parts.get("kw"))
-            kw_values = [self.any_to_str(a) for a in self.any_to_list(call_parts.get("kw_values"))]
-            kw: dict[str, str] = {}
-            for k, v in kw_raw.items():
-                if isinstance(k, str):
-                    kw[k] = self.any_to_str(v)
-            kw_nodes = self.any_to_list(call_parts.get("kw_nodes"))
-            first_arg: object = call_parts.get("first_arg")
+            call_ctx = self.unpack_prepared_call_parts(call_parts)
+            fn = self.any_to_dict_or_empty(call_ctx.get("fn"))
+            fn_name = self.any_to_str(call_ctx.get("fn_name"))
+            arg_nodes = self.any_to_list(call_ctx.get("arg_nodes"))
+            args = [self.any_to_str(a) for a in self.any_to_list(call_ctx.get("args"))]
+            kw = self.any_to_dict_or_empty(call_ctx.get("kw"))
+            kw_values = [self.any_to_str(a) for a in self.any_to_list(call_ctx.get("kw_values"))]
+            kw_nodes = self.any_to_list(call_ctx.get("kw_nodes"))
+            first_arg: object = call_ctx.get("first_arg")
             fn_kind_for_call = self._node_kind_from_dict(fn)
             if fn_kind_for_call == "Attribute":
                 owner_node: object = fn.get("value")

@@ -35,6 +35,7 @@
    - [x] call/attribute 周辺の `module.attr` runtime lookup を helper 化し、`render_call`/`render_attribute`/hooks から共通利用するよう整理した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
+   - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
    - [x] `render_expr(Call)` 末尾の `kw_values/kw_nodes` マージ処理を `_merge_call_kw_values` / `_merge_call_arg_nodes` へ分離した。
    - [x] 上記 helper を `CodeEmitter.merge_call_kw_values` / `CodeEmitter.merge_call_arg_nodes` へ移管した。
 3. [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。

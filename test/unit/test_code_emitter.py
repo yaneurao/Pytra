@@ -165,6 +165,25 @@ class CodeEmitterTest(unittest.TestCase):
             em._dict_stmt_list([{"x": 1}, 2, "s", {"y": 2}]),
             [{"x": 1}, {"y": 2}],
         )
+        unpacked = em.unpack_prepared_call_parts(
+            {
+                "fn": {"kind": "Name", "id": "f"},
+                "fn_name": "f",
+                "arg_nodes": [{"kind": "Name", "id": "x"}],
+                "args": ["x"],
+                "kw": {"k": "v"},
+                "kw_values": ["v"],
+                "kw_nodes": [{"kind": "Constant", "value": 1}],
+                "first_arg": {"kind": "Name", "id": "x"},
+            }
+        )
+        self.assertEqual(unpacked.get("fn"), {"kind": "Name", "id": "f"})
+        self.assertEqual(unpacked.get("fn_name"), "f")
+        self.assertEqual(unpacked.get("arg_nodes"), [{"kind": "Name", "id": "x"}])
+        self.assertEqual(unpacked.get("args"), ["x"])
+        self.assertEqual(unpacked.get("kw"), {"k": "v"})
+        self.assertEqual(unpacked.get("kw_values"), ["v"])
+        self.assertEqual(unpacked.get("kw_nodes"), [{"kind": "Constant", "value": 1}])
 
     def test_node_helpers(self) -> None:
         em = CodeEmitter({})
