@@ -3766,22 +3766,29 @@ class CppEmitter(CodeEmitter):
             return f"{self._cpp_type_text(target_t)}({arg_txt})"
         return arg_txt
 
+    def _coerce_args_by_signature(
+        self,
+        args: list[str],
+        arg_nodes: list[Any],
+        sig: list[str],
+    ) -> list[str]:
+        """シグネチャ配列に基づいて引数列を順序保持でキャストする。"""
+        if len(sig) == 0:
+            return args
+        out: list[str] = []
+        for i, arg_txt in enumerate(args):
+            if i < len(sig):
+                node: Any = arg_nodes[i] if i < len(arg_nodes) else {}
+                out.append(self._coerce_call_arg(arg_txt, node, sig[i]))
+            else:
+                out.append(arg_txt)
+        return out
+
     def _coerce_args_for_known_function(self, fn_name: str, args: list[str], arg_nodes: list[Any]) -> list[str]:
         """既知関数呼び出しに対して引数型を合わせる。"""
         if fn_name not in self.function_arg_types:
             return args
-        sig = self.function_arg_types[fn_name]
-        out: list[str] = []
-        i = 0
-        while i < len(args):
-            a = args[i]
-            if i < len(sig):
-                n: Any = arg_nodes[i] if i < len(arg_nodes) else {}
-                out.append(self._coerce_call_arg(a, n, sig[i]))
-            else:
-                out.append(a)
-            i += 1
-        return out
+        return self._coerce_args_by_signature(args, arg_nodes, self.function_arg_types[fn_name])
 
     def _class_method_sig(self, owner_t: str, method: str) -> list[str]:
         """クラスメソッドの引数型シグネチャを返す。未知なら空配列。"""
@@ -3818,19 +3825,7 @@ class CppEmitter(CodeEmitter):
     ) -> list[str]:
         """クラスメソッド呼び出しに対して引数型を合わせる。"""
         sig = self._class_method_sig(owner_t, method)
-        if len(sig) == 0:
-            return args
-        out: list[str] = []
-        i = 0
-        while i < len(args):
-            a = args[i]
-            if i < len(sig):
-                n: Any = arg_nodes[i] if i < len(arg_nodes) else {}
-                out.append(self._coerce_call_arg(a, n, sig[i]))
-            else:
-                out.append(a)
-            i += 1
-        return out
+        return self._coerce_args_by_signature(args, arg_nodes, sig)
 
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
         """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
