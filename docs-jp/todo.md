@@ -41,6 +41,7 @@
    - [x] `render_expr(Call)` 末尾の `kw_values/kw_nodes` マージ処理を `_merge_call_kw_values` / `_merge_call_arg_nodes` へ分離した。
    - [x] 上記 helper を `CodeEmitter.merge_call_kw_values` / `CodeEmitter.merge_call_arg_nodes` へ移管した。
 3. [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。
+   - [x] `RangeExpr/BinOp/UnaryOp/BoolOp/Compare/IfExp` の分岐を `_render_operator_family_expr` へ集約し、`render_expr` 本体の分岐を削減した。
 4. [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
    - [ ] `CodeEmitter` 側の共通ディスパッチは selfhost C++ で静的束縛（非 virtual）により派生レンダへ到達しないため、別方式（hook 注入）で再設計する。
 5. [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。

@@ -3699,6 +3699,30 @@ class CppEmitter(CodeEmitter):
         merged_args = self._coerce_args_for_known_function(fn_name, merged_args, merged_arg_nodes)
         return self._render_call_fallback(fn_name, merged_args)
 
+    def _render_operator_family_expr(
+        self,
+        kind: str,
+        expr: Any,
+        expr_d: dict[str, Any],
+    ) -> str:
+        """算術/比較/条件演算系ノードをまとめて描画する。"""
+        if kind == "RangeExpr":
+            start = self.render_expr(expr_d.get("start"))
+            stop = self.render_expr(expr_d.get("stop"))
+            step = self.render_expr(expr_d.get("step"))
+            return f"py_range({start}, {stop}, {step})"
+        if kind == "BinOp":
+            return self._render_binop_expr(expr_d)
+        if kind == "UnaryOp":
+            return self._render_unary_expr(expr_d)
+        if kind == "BoolOp":
+            return self.render_boolop(expr, False)
+        if kind == "Compare":
+            return self._render_compare_expr(expr_d)
+        if kind == "IfExp":
+            return self._render_ifexp_expr(expr_d)
+        return ""
+
     def _prepare_call_parts(
         self,
         expr: dict[str, Any],
@@ -4366,21 +4390,9 @@ class CppEmitter(CodeEmitter):
                 kw_nodes,
                 first_arg,
             )
-        if kind == "RangeExpr":
-            start = self.render_expr(expr_d.get("start"))
-            stop = self.render_expr(expr_d.get("stop"))
-            step = self.render_expr(expr_d.get("step"))
-            return f"py_range({start}, {stop}, {step})"
-        if kind == "BinOp":
-            return self._render_binop_expr(expr_d)
-        if kind == "UnaryOp":
-            return self._render_unary_expr(expr_d)
-        if kind == "BoolOp":
-            return self.render_boolop(expr, False)
-        if kind == "Compare":
-            return self._render_compare_expr(expr_d)
-        if kind == "IfExp":
-            return self._render_ifexp_expr(expr_d)
+        op_rendered = self._render_operator_family_expr(kind, expr, expr_d)
+        if op_rendered != "":
+            return op_rendered
         if kind == "List":
             t = self.cpp_type(expr_d.get("resolved_type"))
             elem_t = ""
