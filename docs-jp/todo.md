@@ -16,6 +16,7 @@
    - [x] `BinOp` の C++ 固有分岐（`Div/FloorDiv/Mod/Mult`）を `cpp_hooks.on_render_binop` へ抽出した（selfhost 互換のため `py2cpp.py` に同等フォールバックを残置）。
    - [x] `module.attr` の runtime 解決ロジックを `CppEmitter._lookup_module_attr_runtime_call` へ一本化し、`py2cpp.py` / `cpp_hooks.py` の重複分岐を削減した。
    - [x] `Compare(lowered_kind=Contains)` の C++ 固有分岐を `cpp_hooks.on_render_expr_kind(kind=Compare)` へ抽出した（selfhost 互換のため `py2cpp.py` 側フォールバックは残置）。
+   - [x] `Call(Attribute)` の object-method 特殊処理フォールバック（`_render_call_object_method`）を削除し、hook 優先の経路へ一本化した。
 3. [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
 
 ## P1: py2cpp 縮退（行数削減）
@@ -49,9 +50,10 @@
    - [x] `Call(Name)` の残りビルトイン分岐（`bytes/bytearray/str/int(base)/ord/chr/min/max/perf_counter/Path/Exception`）を helper（`_render_misc_name_builtin_call`）へ分離した。
    - [x] `_render_call_fallback` の `*.append` 分岐を helper（`_render_append_fallback_call`）へ分離し、`_render_append_call_object_method` と型変換ロジックを共通化した。
    - [x] `Call(Attribute)` owner 解決前処理（owner/module/type/attr）を helper（`_resolve_call_attribute_context`）へ分離し、`_render_call_attribute` 本体を縮退した。
-   - [x] `Call(Attribute)` の object-method 分岐に hook（`on_render_object_method`）を追加し、`_render_call_attribute` から hook 優先で描画できるようにした（selfhost 互換のため `_render_call_object_method` フォールバックは残置）。
-   - [x] `Call(Attribute)` の module-method 分岐に hook（`on_render_module_method`）を追加し、`_render_call_module_method` から hook 優先で描画できるようにした（selfhost 互換のため `py2cpp.py` 側フォールバックは残置）。
-   - [x] `_render_call_object_method` の文字列系分岐を helper（`_render_string_object_method`）へ分離し、本体の条件分岐を縮退した。
+   - [x] `Call(Attribute)` の object-method 分岐に hook（`on_render_object_method`）を追加し、`_render_call_attribute` から hook 優先で描画できるようにした（`_render_call_object_method` フォールバックは削除済み）。
+   - [x] `Call(Attribute)` の module-method 分岐に hook（`on_render_module_method`）を追加し、`_render_call_module_method` は hook 優先 + 最小フォールバック（namespace 解決のみ）へ縮退した。
+   - [x] `Call(Attribute)` の C++ 固有 object-method 分岐を `cpp_hooks.py` 側へ集約し、`py2cpp.py` から文字列系専用 helper（`_render_string_object_method`）を削除した。
+   - [x] `BuiltinCall` の direct runtime 分岐（`py_print/py_len/py_to_string/py_min|max/perf_counter/open/py_join/...`）を `cpp_hooks.on_render_call` へ追加し、`py2cpp.py` 側は selfhost（hooks stub）向けフォールバックとして維持した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
@@ -111,6 +113,7 @@
    - [x] 候補一覧を `docs-jp/pythonic-backlog.md` に作成した。
 2. [ ] `src/pytra/compiler/east_parts/code_emitter.py` で同様に平易化されている箇所を段階的に Python らしい記述へ戻す。
    - [x] `merge_call_args` / `merge_call_kw_values` / `merge_call_arg_nodes` の冗長な while ループ実装を、`list(...)` + `for` ベースの簡潔な実装へ置換した（`dict` 直接反復は selfhost 崩れのため `kw.items()` 経由で keys を収集）。
+   - [x] `unpack_prepared_call_parts` の `args/kw_values` 変換ループを index `while` から `for` へ置換し、selfhost 差分を保ったまま可読性を改善した。
 3. [ ] `sample/` のコードについても、selfhost 都合の書き方が残っている箇所を通常の Python らしい表現へ順次戻す。
 4. [ ] 上記の戻し作業は低優先で進め、各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` を通して回帰を防ぐ。
 

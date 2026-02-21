@@ -3249,6 +3249,10 @@ class CppEmitter(CodeEmitter):
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
         owner_expr = self._render_builtin_call_owner_expr(expr, fn)
+        if runtime_call == "static_cast":
+            static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, args, first_arg)
+            if static_cast_rendered is not None:
+                return str(static_cast_rendered)
         if runtime_call == "py_print":
             return f"py_print({_join_str_list(', ', args)})"
         if runtime_call == "py_len" and len(args) == 1:
@@ -3256,10 +3260,6 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "py_to_string" and len(args) == 1:
             src_expr = first_arg
             return self.render_to_string(src_expr)
-        if runtime_call == "static_cast":
-            static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, args, first_arg)
-            if static_cast_rendered is not None:
-                return str(static_cast_rendered)
         if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
             fn_name = "min" if runtime_call == "py_min" else "max"
             return self.render_minmax(fn_name, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
@@ -3630,66 +3630,16 @@ class CppEmitter(CodeEmitter):
         if isinstance(hook_rendered, str) and hook_rendered != "":
             return hook_rendered
         merged_args = self.merge_call_args(args, kw)
-        call_args = merged_args
         owner_mod_norm = self._normalize_runtime_module_name(owner_mod)
         if owner_mod_norm in self.module_namespace_map:
             ns = self.module_namespace_map[owner_mod_norm]
             if ns != "":
                 call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
                 return f"{ns}::{attr}({_join_str_list(', ', call_args)})"
-        mapped = self._lookup_module_attr_runtime_call(owner_mod_norm, attr)
-        if mapped != "" and _looks_like_runtime_function_name(mapped):
-            if self._contains_text(mapped, "::"):
-                call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
-            else:
-                call_args = merged_args
-            return f"{mapped}({_join_str_list(', ', call_args)})"
         ns = self._module_name_to_cpp_namespace(owner_mod_norm)
         if ns != "":
             call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
             return f"{ns}::{attr}({_join_str_list(', ', call_args)})"
-        return None
-
-    def _render_call_object_method(
-        self, owner_t: str, owner_expr: str, attr: str, args: list[str]
-    ) -> str | None:
-        """obj.method(...) 呼び出しのうち、型依存の特殊ケースを処理する。"""
-        owner_types: list[str] = [owner_t]
-        if self._contains_text(owner_t, "|"):
-            owner_types = self.split_union(owner_t)
-        string_method_rendered = self._render_string_object_method(owner_types, owner_expr, attr, args)
-        if string_method_rendered is not None:
-            return string_method_rendered
-        if owner_t == "unknown" and attr == "clear":
-            return f"{owner_expr}.clear()"
-        if attr == "append":
-            append_rendered = self._render_append_call_object_method(owner_types, owner_expr, args)
-            if append_rendered is not None:
-                return append_rendered
-        return None
-
-    def _render_string_object_method(
-        self,
-        owner_types: list[str],
-        owner_expr: str,
-        attr: str,
-        args: list[str],
-    ) -> str | None:
-        """文字列系 object method の特殊処理を描画する。"""
-        if attr in {"strip", "lstrip", "rstrip"}:
-            if len(args) == 0:
-                return f"py_{attr}({owner_expr})"
-            if len(args) == 1:
-                return f"py_{attr}({owner_expr}, {args[0]})"
-        if attr in {"startswith", "endswith"} and len(args) >= 1:
-            return f"py_{attr}({owner_expr}, {args[0]})"
-        if attr == "replace" and len(args) >= 2:
-            return f"py_replace({owner_expr}, {args[0]}, {args[1]})"
-        if "str" in owner_types:
-            if attr in {"isdigit", "isalpha", "isalnum", "isspace", "lower", "upper"} and len(args) == 0:
-                return f"{owner_expr}.{attr}()"
-            if attr in {"find", "rfind"}:
-                return f"{owner_expr}.{attr}({_join_str_list(', ', args)})"
         return None
 
     def _render_call_class_method(
@@ -3764,9 +3714,6 @@ class CppEmitter(CodeEmitter):
         hook_object_rendered = self.hook_on_render_object_method(owner_t, owner_expr, attr, args)
         if isinstance(hook_object_rendered, str) and hook_object_rendered != "":
             return hook_object_rendered
-        object_rendered = self._render_call_object_method(owner_t, owner_expr, attr, args)
-        if object_rendered is not None and object_rendered != "":
-            return object_rendered
         class_rendered = self._render_call_class_method(owner_t, attr, fn, args, kw, arg_nodes)
         if class_rendered is not None and class_rendered != "":
             return class_rendered

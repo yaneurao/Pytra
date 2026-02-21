@@ -137,17 +137,13 @@ class CodeEmitter:
         arg_nodes = self.any_to_list(call_parts.get("arg_nodes"))
         args_raw = self.any_to_list(call_parts.get("args"))
         args: list[str] = []
-        i = 0
-        while i < len(args_raw):
-            args.append(self.any_to_str(args_raw[i]))
-            i += 1
+        for item in args_raw:
+            args.append(self.any_to_str(item))
         kw_raw = self.any_to_dict_or_empty(call_parts.get("kw"))
         kw_values_raw = self.any_to_list(call_parts.get("kw_values"))
         kw_values: list[str] = []
-        i = 0
-        while i < len(kw_values_raw):
-            kw_values.append(self.any_to_str(kw_values_raw[i]))
-            i += 1
+        for item in kw_values_raw:
+            kw_values.append(self.any_to_str(item))
         kw: dict[str, str] = {}
         for k, v in kw_raw.items():
             if isinstance(k, str):

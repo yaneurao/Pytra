@@ -279,6 +279,83 @@ def _render_runtime_call_str_ops(
     return ""
 
 
+def _resolve_runtime_owner_expr(
+    emitter: Any,
+    call_node: dict[str, Any],
+    func_node: dict[str, Any],
+) -> str:
+    """BuiltinCall の owner 式（`obj.method` 側）を解決する。"""
+    if emitter.any_dict_get_str(func_node, "kind", "") != "Attribute":
+        return ""
+    runtime_owner_obj: object = call_node.get("runtime_owner")
+    runtime_owner_node = emitter.any_to_dict_or_empty(runtime_owner_obj)
+    if len(runtime_owner_node) > 0:
+        return emitter.render_expr(runtime_owner_obj)
+    return _render_owner_expr(emitter, func_node)
+
+
+def _render_runtime_call_direct_builtin(
+    emitter: Any,
+    runtime_call: str,
+    call_node: dict[str, Any],
+    func_node: dict[str, Any],
+    rendered_args: list[str],
+) -> str:
+    """BuiltinCall の汎用 runtime_call（py_/std:: 直接呼び出し）を処理する。"""
+    if runtime_call == "py_print":
+        return "py_print(" + ", ".join(rendered_args) + ")"
+    if runtime_call == "py_len" and len(rendered_args) == 1:
+        return "py_len(" + rendered_args[0] + ")"
+    if runtime_call == "py_to_string" and len(rendered_args) == 1:
+        arg_nodes = emitter.any_to_list(call_node.get("args"))
+        src_expr: object = call_node
+        if len(arg_nodes) > 0:
+            src_expr = arg_nodes[0]
+        return emitter.render_to_string(src_expr)
+    if runtime_call in {"py_min", "py_max"} and len(rendered_args) >= 1:
+        fn_name = "min" if runtime_call == "py_min" else "max"
+        arg_nodes = emitter.any_to_list(call_node.get("args"))
+        resolved_type = emitter.any_to_str(call_node.get("resolved_type"))
+        return emitter.render_minmax(fn_name, rendered_args, resolved_type, arg_nodes)
+    if runtime_call == "perf_counter":
+        return "pytra::std::time::perf_counter()"
+    if runtime_call == "open":
+        return "open(" + ", ".join(rendered_args) + ")"
+    if runtime_call == "py_int_to_bytes":
+        owner = emitter.render_expr(func_node.get("value"))
+        length = rendered_args[0] if len(rendered_args) >= 1 else "0"
+        byteorder = rendered_args[1] if len(rendered_args) >= 2 else '"little"'
+        return "py_int_to_bytes(" + owner + ", " + length + ", " + byteorder + ")"
+    if runtime_call == "py_join" and len(rendered_args) == 1:
+        owner = _resolve_runtime_owner_expr(emitter, call_node, func_node)
+        if owner != "":
+            return "str(" + owner + ").join(" + rendered_args[0] + ")"
+    if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
+        if len(rendered_args) == 0:
+            return '::std::runtime_error("error")'
+        return "::std::runtime_error(" + rendered_args[0] + ")"
+    if runtime_call == "Path":
+        return "Path(" + ", ".join(rendered_args) + ")"
+    if runtime_call in {"std::filesystem::exists", "::std::filesystem::exists"}:
+        owner = _resolve_runtime_owner_expr(emitter, call_node, func_node)
+        if owner != "" and len(rendered_args) == 0:
+            return runtime_call + "(" + owner + ")"
+    if runtime_call == "py_replace":
+        owner = _resolve_runtime_owner_expr(emitter, call_node, func_node)
+        if owner != "" and len(rendered_args) >= 2:
+            return "py_replace(" + owner + ", " + rendered_args[0] + ", " + rendered_args[1] + ")"
+    if runtime_call in {"py_startswith", "py_endswith", "py_find", "py_rfind"}:
+        owner = _resolve_runtime_owner_expr(emitter, call_node, func_node)
+        if owner != "" and len(rendered_args) >= 1:
+            return runtime_call + "(" + owner + ", " + ", ".join(rendered_args) + ")"
+    if runtime_call != "" and (emitter._is_std_runtime_call(runtime_call) or runtime_call.startswith("py_")):
+        owner = _resolve_runtime_owner_expr(emitter, call_node, func_node)
+        if owner != "" and runtime_call.startswith("py_") and len(rendered_args) == 0:
+            return runtime_call + "(" + owner + ")"
+        return runtime_call + "(" + ", ".join(rendered_args) + ")"
+    return ""
+
+
 def on_render_call(
     emitter: Any,
     call_node: dict[str, Any],
@@ -290,6 +367,9 @@ def on_render_call(
     runtime_call = emitter.any_dict_get_str(call_node, "runtime_call", "")
     if runtime_call == "":
         runtime_call = _infer_runtime_call_from_func_node(emitter, func_node)
+    direct = _render_runtime_call_direct_builtin(emitter, runtime_call, call_node, func_node, rendered_args)
+    if direct != "":
+        return direct
     list_ops = _render_runtime_call_list_ops(emitter, runtime_call, call_node, func_node, rendered_args)
     if list_ops != "":
         return list_ops
