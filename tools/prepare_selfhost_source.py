@@ -280,50 +280,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
     )
 
     repl(
-        "def _runtime_output_rel_tail(",
-        "\ndef _runtime_namespace_for_tail(",
-        (
-            "def _runtime_output_rel_tail(module_tail: str) -> str:\n"
-            "    pass\n"
-            "    _ = module_tail\n"
-            "    return \"\"\n\n"
-        ),
-    )
-
-    repl(
-        "def _runtime_namespace_for_tail(",
-        "\ndef _runtime_png_header_text(",
-        (
-            "def _runtime_namespace_for_tail(module_tail: str) -> str:\n"
-            "    pass\n"
-            "    _ = module_tail\n"
-            "    return \"\"\n\n"
-        ),
-    )
-
-    repl(
-        "def _header_cpp_type_from_east(",
-        "\ndef _header_guard_from_path(",
-        (
-            "def _header_cpp_type_from_east(east_t: str) -> str:\n"
-            "    pass\n"
-            "    _east_t = east_t\n"
-            "    return \"object\"\n\n"
-        ),
-    )
-
-    repl(
-        "def _header_guard_from_path(",
-        "\ndef build_cpp_header_from_east(",
-        (
-            "def _header_guard_from_path(path: Path) -> str:\n"
-            "    pass\n"
-            "    _path = path\n"
-            "    return \"PYTRA_SELFHOST_DUMMY_H\"\n\n"
-        ),
-    )
-
-    repl(
         "def build_cpp_header_from_east(",
         "\ndef _runtime_module_tail_from_source_path(",
         (
@@ -354,38 +310,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
     )
 
     repl(
-        "def build_module_symbol_index(",
-        "\ndef build_module_type_schema(",
-        (
-            "def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:\n"
-            "    pass\n"
-            "    out: dict[str, dict[str, Any]] = {}\n"
-            "    return out\n\n"
-        ),
-    )
-
-    repl(
-        "def build_module_type_schema(",
-        "\ndef _sanitize_module_label(",
-        (
-            "def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:\n"
-            "    pass\n"
-            "    out: dict[str, dict[str, Any]] = {}\n"
-            "    return out\n\n"
-        ),
-    )
-
-    repl(
-        "def _module_name_from_path(",
-        "\ndef _write_multi_file_cpp(",
-        (
-            "def _module_name_from_path(root: Path, module_path: Path) -> str:\n"
-            "    pass\n"
-            "    return \"\"\n\n"
-        ),
-    )
-
-    repl(
         "def _rel_disp_for_graph(",
         "\ndef _analyze_import_graph(",
         (
@@ -402,16 +326,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
             "def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:\n"
             "    pass\n"
             "    return\n\n"
-        ),
-    )
-
-    repl(
-        "def _resolve_user_module_path(",
-        "\ndef dump_deps_graph_text(",
-        (
-            "def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:\n"
-            "    pass\n"
-            "    return None\n\n"
         ),
     )
 
