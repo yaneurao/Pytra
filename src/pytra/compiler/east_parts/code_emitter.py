@@ -795,12 +795,10 @@ class CodeEmitter:
 
     def is_declared(self, name: str) -> bool:
         """指定名がどこかの有効スコープで宣言済みか判定する。"""
-        i = len(self.scope_stack) - 1
-        while i >= 0:
+        for i in range(len(self.scope_stack) - 1, -1, -1):
             scope: set[str] = self.scope_stack[i]
             if name in scope:
                 return True
-            i -= 1
         return False
 
     def _is_identifier_expr(self, text: str) -> bool:
@@ -825,10 +823,7 @@ class CodeEmitter:
             esc = False
             quote = ""
             wrapped = True
-            i = 0
-            n = len(s)
-            while i < n:
-                ch = s[i : i + 1]
+            for i, ch in enumerate(s):
                 if in_str:
                     if esc:
                         esc = False
@@ -836,12 +831,10 @@ class CodeEmitter:
                         esc = True
                     elif ch == quote:
                         in_str = False
-                    i += 1
                     continue
                 if ch == "'" or ch == '"':
                     in_str = True
                     quote = ch
-                    i += 1
                     continue
                 if ch == "(":
                     depth += 1
@@ -850,7 +843,6 @@ class CodeEmitter:
                     if depth == 0 and i != len(s) - 1:
                         wrapped = False
                         break
-                i += 1
             if wrapped and depth == 0:
                 s = s[1:-1]
                 s = self._trim_ws(s)
@@ -886,13 +878,9 @@ class CodeEmitter:
     def _last_dotted_name(self, name: str) -> str:
         """`a.b.c` の末尾要素 `c` を返す。"""
         last = name
-        i = 0
-        n = len(name)
-        while i < n:
-            ch = name[i : i + 1]
+        for i, ch in enumerate(name):
             if ch == ".":
                 last = name[i + 1 :]
-            i += 1
         return last
 
     def _opt_ge(self, level: int) -> bool:

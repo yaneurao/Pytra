@@ -27,8 +27,8 @@ def julia_palette() -> bytes:
 
 def render_frame(width: int, height: int, cr: float, ci: float, max_iter: int, phase: int) -> bytes:
     frame = bytearray(width * height)
-    idx = 0
     for y in range(height):
+        row_base = y * width
         zy0 = -1.2 + 2.4 * (y / (height - 1))
         for x in range(width):
             zx = -1.8 + 3.6 * (x / (width - 1))
@@ -43,12 +43,11 @@ def render_frame(width: int, height: int, cr: float, ci: float, max_iter: int, p
                 zx = zx2 - zy2 + cr
                 i += 1
             if i >= max_iter:
-                frame[idx] = 0
+                frame[row_base + x] = 0
             else:
                 # Add a small frame phase so colors flow smoothly.
                 color_index = 1 + (((i * 224) // max_iter + phase) % 255)
-                frame[idx] = color_index
-            idx += 1
+                frame[row_base + x] = color_index
     return bytes(frame)
 
 

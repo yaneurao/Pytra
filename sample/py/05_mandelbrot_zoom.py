@@ -9,8 +9,8 @@ from pytra.runtime.gif import grayscale_palette, save_gif
 
 def render_frame(width: int, height: int, center_x: float, center_y: float, scale: float, max_iter: int) -> bytes:
     frame = bytearray(width * height)
-    idx = 0
     for y in range(height):
+        row_base = y * width
         cy = center_y + (y - height * 0.5) * scale
         for x in range(width):
             cx = center_x + (x - width * 0.5) * scale
@@ -25,8 +25,7 @@ def render_frame(width: int, height: int, center_x: float, center_y: float, scal
                 zy = 2.0 * zx * zy + cy
                 zx = zx2 - zy2 + cx
                 i += 1
-            frame[idx] = int((255.0 * i) / max_iter)
-            idx += 1
+            frame[row_base + x] = int((255.0 * i) / max_iter)
     return bytes(frame)
 
 

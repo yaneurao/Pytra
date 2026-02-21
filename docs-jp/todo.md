@@ -120,7 +120,8 @@
    - [x] `merge_call_args` / `merge_call_kw_values` / `merge_call_arg_nodes` の冗長な while ループ実装を、`list(...)` + `for` ベースの簡潔な実装へ置換した（`dict` 直接反復は selfhost 崩れのため `kw.items()` 経由で keys を収集）。
    - [x] `unpack_prepared_call_parts` の `args/kw_values` 変換ループを index `while` から `for` へ置換し、selfhost 差分を保ったまま可読性を改善した。
    - [x] `normalize_type_name` / `_resolve_imported_symbol` / `_prepare_call_parts` の単純走査ループを `for` ベースへ置換し、selfhost 差分を維持したまま冗長な index 管理を削減した。
-   - [x] `_strip_outer_parens` の前後空白トリムを `_trim_ws` 共通化し、`_trim_ws` 実装を `text.strip()` へ簡潔化した（`is_declared` の逆走査は selfhost 互換のため index `while` 維持）。
+   - [x] `_strip_outer_parens` の前後空白トリムを `_trim_ws` 共通化し、`_trim_ws` 実装を `text.strip()` へ簡潔化した（同時に `is_declared` の逆走査も `range(..., -1, -1)` 形式へ置換した）。
+   - [x] `_strip_outer_parens` の字句走査と `_last_dotted_name` の末尾要素抽出を `enumerate` ベースへ置換し、インデックス手動更新を削減した。
 3. [ ] `sample/` のコードについても、selfhost 都合の書き方が残っている箇所を通常の Python らしい表現へ順次戻す。
    - [x] `sample/py/15_mini_language_interpreter.py` の `tokenize()` で、行走査を index `while` から `enumerate` ベースの `for` へ置換した。
    - [x] `sample/py/15_mini_language_interpreter.py` の `parse_add()` / `parse_mul()` で、`done` フラグ式ループを `while True ... break` へ置換した。
@@ -129,6 +130,7 @@
    - [x] `sample/py/08_langtons_ant.py` のグリッド初期化を二重 `for` からリスト内包表記（`[[0] * w for _ in range(h)]`）へ置換した。
    - [x] `sample/py/15_mini_language_interpreter.py` の `new_expr_nodes()` で空 list 生成を簡潔化した。
    - [x] `sample/py/07_game_of_life_loop.py` のグリッド初期化を二重 `for` からリスト内包表記（`[[0] * w for _ in range(h)]`）へ置換した。
+   - [x] `sample/py/05_mandelbrot_zoom.py` / `sample/py/06_julia_parameter_sweep.py` のフレーム書き込みで、手動インデックス加算（`idx += 1`）を `row_base + x` 形式へ置換した。
 4. [ ] 上記の戻し作業は低優先で進め、各ステップで `tools/build_selfhost.py` と `tools/check_py2cpp_transpile.py` を通して回帰を防ぐ。
 
 ## 補助メモ
