@@ -55,6 +55,7 @@
 5. [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。
    - [x] `try/catch/finally(scope guard)` の開始行（`scope_open` / `scope_exit_open` / `try_open` / `catch_open`）を `syntax.json` + `syntax_line` 経由へ移管した。
    - [x] `for` ブロック開始行（`hdr + " {"`）を `for_open_block` テンプレートへ移管した。
+   - [x] `pass/break/continue` の文生成を `syntax.json`（`pass_stmt` / `break_stmt` / `continue_stmt`）経由へ移管した。
 6. [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
 7. [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
 8. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。

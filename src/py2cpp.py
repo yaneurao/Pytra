@@ -2250,15 +2250,15 @@ class CppEmitter(CodeEmitter):
 
     def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
         _ = stmt
-        self.emit("/* pass */")
+        self.emit(self.syntax_text("pass_stmt", "/* pass */"))
 
     def _emit_break_stmt(self, stmt: dict[str, Any]) -> None:
         _ = stmt
-        self.emit("break;")
+        self.emit(self.syntax_text("break_stmt", "break;"))
 
     def _emit_continue_stmt(self, stmt: dict[str, Any]) -> None:
         _ = stmt
-        self.emit("continue;")
+        self.emit(self.syntax_text("continue_stmt", "continue;"))
 
     def _emit_swap_stmt(self, stmt: dict[str, Any]) -> None:
         left = self.render_expr(stmt.get("left"))
