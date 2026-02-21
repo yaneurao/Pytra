@@ -504,6 +504,15 @@ class CodeEmitter:
                 out.append(s)
         return out
 
+    def any_to_str_dict_or_empty(self, v: Any) -> dict[str, str]:
+        """動的値を `dict[str, str]` へ安全に変換する。"""
+        out: dict[str, str] = {}
+        raw = self.any_to_dict_or_empty(v)
+        for k, val in raw.items():
+            if isinstance(k, str):
+                out[k] = self.any_to_str(val)
+        return out
+
     def any_to_dict_list(self, v: Any) -> list[dict[str, Any]]:
         """動的値を `list[dict]` へ安全に変換する。"""
         out: list[dict[str, Any]] = []
