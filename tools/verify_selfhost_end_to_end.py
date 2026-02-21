@@ -24,6 +24,7 @@ BUILD_SELFHOST = ROOT / "tools" / "build_selfhost.py"
 
 DEFAULT_CASES = [
     "test/fixtures/core/add.py",
+    "test/fixtures/core/str_join_method.py",
     "test/fixtures/control/if_else.py",
     "sample/py/04_monte_carlo_pi.py",
 ]

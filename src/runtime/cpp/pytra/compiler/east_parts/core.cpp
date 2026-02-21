@@ -1983,6 +1983,7 @@ namespace pytra::compiler::east_parts::core {
                                                                         payload[py_to_string("lowered_kind")] = make_object("BuiltinCall");
                                                                         payload[py_to_string("builtin_name")] = make_object(attr);
                                                                         payload[py_to_string("runtime_call")] = make_object(rc);
+                                                                        payload[py_to_string("runtime_owner")] = make_object(owner);
                                                                     }
                                                                 } else {
                                                                     if (owner_t == "Path") {

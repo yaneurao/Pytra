@@ -10,9 +10,12 @@
 ## P0: selfhost 安定化
 
 1. [ ] selfhost `.py` 経路の段階回復を完了する。
-2. [ ] `selfhost/py2cpp.out` の最小実行パスを安定化する（入力・生成・実行の一連を常時再現可能にする）。
-3. [ ] selfhost コンパイルエラーを段階的にゼロ化する（再発時の即時検知手順込み）。
-4. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
+2. [ ] `selfhost/py2cpp.out selfhost/py2cpp.py -o /tmp/selfhost_selfhost.cpp` を通し、2段自己変換の入口を安定化する。
+3. [ ] 2段自己変換で未lowerのまま残る式（`in/not in`, `isinstance`, `len`, スライス）を段階的に解消する。
+4. [ ] `selfhost/py2cpp.out` が生成した `selfhost_selfhost.cpp` を `g++` でコンパイル可能にする（まず最初の 20 エラーをゼロ化）。
+5. [ ] `selfhost/py2cpp.out` の最小実行パスを安定化する（入力・生成・実行の一連を常時再現可能にする）。
+6. [ ] selfhost コンパイルエラーを段階的にゼロ化する（再発時の即時検知手順込み）。
+7. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
 
 ## P1: CodeEmitter / Hooks 移管
 

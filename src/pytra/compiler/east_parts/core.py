@@ -1923,6 +1923,7 @@ class _ShExprParser:
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
+                            payload["runtime_owner"] = owner
                     elif owner_t == "Path":
                         path_map = {
                             "mkdir": "std::filesystem::create_directories",
