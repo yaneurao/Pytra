@@ -25,6 +25,13 @@
 - `pytra.std.pathlib`（`pathlib` 代替）
   - class: `Path`
   - `Path` の主なメンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve()`, `exists()`, `mkdir(parents=False, exist_ok=False)`, `read_text()`, `write_text()`, `glob()`, `cwd()`
+- `pytra.std.math`（`math` 代替）
+  - 定数: `pi`, `e`
+  - 関数: `sqrt`, `sin`, `cos`, `tan`, `exp`, `log`, `log10`, `fabs`, `floor`, `ceil`, `pow`
+- `pytra.std.time`（`time` 代替・最小実装）
+  - 関数: `perf_counter()`
+- `pytra.std.timeit`（`timeit` 代替・最小実装）
+  - 関数: `default_timer()`
 - `pytra.std.json`（`json` 代替）
   - 関数: `loads(text)`, `dumps(obj, ensure_ascii=True, indent=None, separators=None)`
 - `pytra.std.sys`（`sys` 代替）
@@ -51,6 +58,10 @@
 - `pytra.std.enum`（`enum` 代替・最小実装）
   - class: `Enum`, `IntEnum`, `IntFlag`
   - 制約: クラス本体のメンバーは `NAME = expr` 形式を使用してください。
+- `pytra.std.random`（`random` 代替・最小実装）
+  - 関数: `seed(value)`, `random()`, `randint(a, b)`
+- `pytra.std.traceback`（`traceback` 代替・最小実装）
+  - 関数: `format_exc()`
 
 ## 2. Pytra独自モジュール
 
@@ -60,6 +71,10 @@
   - 関数: `write_rgb_png(path, width, height, pixels)`
 - `pytra.utils.gif`
   - 関数: `grayscale_palette()`, `save_gif(path, width, height, frames, palette, delay_cs=4, loop=0)`
+- `pytra.utils.browser`
+  - 変数/クラス: `document`, `window`, `DOMEvent`, `Element`, `CanvasRenderingContext`
+- `pytra.utils.browser.widgets.dialog`
+  - クラス: `Dialog`, `EntryDialog`, `InfoDialog`
 - `pytra.compiler.east`
   - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
   - 関数: `convert_source_to_east(...)`, `convert_source_to_east_self_hosted(...)`, `convert_source_to_east_with_backend(...)`, `convert_path(...)`, `render_east_human_cpp(...)`, `main()`

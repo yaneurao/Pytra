@@ -4881,7 +4881,7 @@ class CppEmitter(CodeEmitter):
         if val_ty.startswith("tuple[") and val_ty.endswith("]"):
             parts = self.split_generic(val_ty[6:-1])
             if idx_const is None:
-                raise RuntimeError("dynamic tuple index is not supported in current C++ backend")
+                return f"py_at({val}, py_to_int64({idx}))"
             n_parts = len(parts)
             idx_norm = int(idx_const)
             if idx_norm < 0:
@@ -6626,6 +6626,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     graph_keys: list[str] = []
     key_to_disp: dict[str, str] = {}
     key_to_path: dict[str, Path] = {}
+    module_id_map: dict[str, str] = {}
 
     reserved_conflicts: list[str] = []
     if (root / "pytra.py").exists():
@@ -6642,6 +6643,8 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
         visited_order.append(cur_key)
         key_to_path[cur_key] = cur_path
         key_to_disp[cur_key] = _rel_disp_for_graph(root, cur_path)
+        if cur_key not in module_id_map:
+            module_id_map[cur_key] = _module_name_from_path(root, cur_path)
         east_cur: dict[str, Any] = {}
         try:
             east_cur = load_east(cur_path)
@@ -6652,61 +6655,17 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             graph_adj[cur_key] = []
             graph_keys.append(cur_key)
         cur_disp = key_to_disp[cur_key]
+        search_root = Path(_path_parent_text(cur_path))
         i = 0
         while i < len(mods):
             mod = mods[i]
-            status = "missing"
+            resolved = resolve_module_name(mod, search_root)
+            status = _dict_any_get_str(resolved, "status")
             dep_file = Path("")
-            if mod.startswith("."):
-                status = "relative"
-            elif _is_pytra_module_name(mod):
-                status = "pytra"
-            else:
-                rel = mod.replace(".", "/")
-                parts = mod.split(".")
-                leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
-                cur_dir = str(root)
-                if cur_dir == "":
-                    cur_dir = "."
-                seen_dirs: set[str] = set()
-                best_path = ""
-                best_rank = -1
-                best_distance = 1000000000
-                distance = 0
-                while cur_dir not in seen_dirs:
-                    seen_dirs.add(cur_dir)
-                    prefix = cur_dir
-                    if prefix != "" and not prefix.endswith("/"):
-                        prefix += "/"
-                    cand_init = prefix + rel + "/__init__.py"
-                    cand_named = ""
-                    if leaf != "":
-                        cand_named = prefix + rel + "/" + leaf + ".py"
-                    cand_flat = prefix + rel + ".py"
-                    candidates: list[tuple[str, int]] = []
-                    candidates.append((cand_init, 3))
-                    if cand_named != "":
-                        candidates.append((cand_named, 2))
-                    candidates.append((cand_flat, 1))
-                    ci = 0
-                    while ci < len(candidates):
-                        path_txt, rank = candidates[ci]
-                        if Path(path_txt).exists():
-                            if rank > best_rank or (rank == best_rank and distance < best_distance):
-                                best_path = path_txt
-                                best_rank = rank
-                                best_distance = distance
-                        ci += 1
-                    parent_dir = _path_parent_text(Path(cur_dir))
-                    if parent_dir == cur_dir:
-                        break
-                    cur_dir = parent_dir if parent_dir != "" else "."
-                    distance += 1
-                if best_path != "":
-                    dep_file = Path(best_path)
-                    status = "user"
-                elif _is_known_non_user_import(mod):
-                    status = "known"
+            dep_obj = resolved.get("path")
+            if isinstance(dep_obj, Path):
+                dep_file = dep_obj
+            resolved_mod_id = _dict_any_get_str(resolved, "module_id")
             if status == "relative":
                 rel_item = cur_disp + ": " + mod
                 if rel_item not in relative_seen:
@@ -6721,6 +6680,9 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                     continue
                 dep_key = _path_key_for_graph(dep_file)
                 dep_disp = _rel_disp_for_graph(root, dep_file)
+                module_id = resolved_mod_id if resolved_mod_id != "" else mod
+                if dep_key not in module_id_map or module_id_map[dep_key] == "":
+                    module_id_map[dep_key] = module_id
                 cur_adj: list[str] = []
                 if cur_key in graph_adj:
                     cur_adj_obj = graph_adj[cur_key]
@@ -6767,6 +6729,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     out["relative_imports"] = relative_imports
     out["reserved_conflicts"] = reserved_conflicts
     out["cycles"] = cycles
+    out["module_id_map"] = module_id_map
     user_module_files: list[str] = []
     visited_keys: list[str] = []
     i = 0
@@ -6893,19 +6856,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
     out: dict[str, set[str]] = {}
     for mod_key, east in module_east_map.items():
         mod_path = Path(mod_key)
-        root_txt = str(root)
-        path_txt = str(mod_path)
-        if root_txt != "" and not root_txt.endswith("/"):
-            root_txt += "/"
-        rel = path_txt
-        if root_txt != "" and path_txt.startswith(root_txt):
-            rel = path_txt[len(root_txt) :]
-        if rel.endswith(".py"):
-            rel = rel[:-3]
-        rel = rel.replace("/", ".")
-        if rel.endswith(".__init__"):
-            rel = rel[: -9]
-        mod_name = rel
+        mod_name = _module_id_from_east(root, mod_path, east)
         if mod_name == "":
             continue
         body_obj = east.get("body")
@@ -6927,8 +6878,14 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                 if name_txt != "":
                     exports.add(name_txt)
             elif kind == "Assign":
+                targets: list[Any] = []
                 targets_obj = st.get("targets")
-                targets = targets_obj if isinstance(targets_obj, list) else []
+                if isinstance(targets_obj, list):
+                    targets = targets_obj
+                else:
+                    tgt_obj = st.get("target")
+                    if isinstance(tgt_obj, dict):
+                        targets = [tgt_obj]
                 j = 0
                 while j < len(targets):
                     tgt_obj = targets[j]
@@ -7004,16 +6961,27 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
     _validate_import_graph_or_raise(analysis)
     files_obj = analysis.get("user_module_files")
     files: list[str] = files_obj if isinstance(files_obj, list) else []
+    module_id_map_obj = analysis.get("module_id_map")
+    module_id_map: dict[str, Any] = module_id_map_obj if isinstance(module_id_map_obj, dict) else {}
     out: dict[str, dict[str, Any]] = {}
+    root_dir = Path(_path_parent_text(entry_path))
     i = 0
     while i < len(files):
         f = files[i]
         if isinstance(f, str):
             p = Path(f)
             east = load_east(p, parser_backend)
+            meta_obj = east.get("meta")
+            meta = meta_obj if isinstance(meta_obj, dict) else {}
+            module_id_obj = module_id_map.get(str(p))
+            module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+            if module_id == "":
+                module_id = _module_name_from_path(root_dir, p)
+            if module_id != "":
+                meta["module_id"] = module_id
+            east["meta"] = meta
             out[str(p)] = east
         i += 1
-    root_dir = Path(_path_parent_text(entry_path))
     _validate_from_import_symbols_or_raise(out, root=root_dir)
     return out
 
@@ -7047,8 +7015,14 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 if name_txt != "":
                     classes.append(name_txt)
             elif kind == "Assign":
+                targets: list[Any] = []
                 targets_obj = st.get("targets")
-                targets = targets_obj if isinstance(targets_obj, list) else []
+                if isinstance(targets_obj, list):
+                    targets = targets_obj
+                else:
+                    tgt_obj = st.get("target")
+                    if isinstance(tgt_obj, dict):
+                        targets = [tgt_obj]
                 j = 0
                 while j < len(targets):
                     tgt_obj = targets[j]
@@ -7210,17 +7184,37 @@ def _module_rel_label(root: Path, module_path: Path) -> str:
 def _module_name_from_path(root: Path, module_path: Path) -> str:
     root_txt = str(root)
     path_txt = str(module_path)
+    in_root = False
     if root_txt != "" and not root_txt.endswith("/"):
         root_txt += "/"
     rel = path_txt
     if root_txt != "" and path_txt.startswith(root_txt):
         rel = path_txt[len(root_txt) :]
+        in_root = True
     if rel.endswith(".py"):
         rel = rel[:-3]
     rel = rel.replace("/", ".")
     if rel.endswith(".__init__"):
         rel = rel[: -9]
+    # root 配下外のファイルは import 文字列側で module_id を持つ想定だが、
+    # フォールバック時は `pkg/module.py -> module` を返して破綻を避ける。
+    if not in_root:
+        stem = module_path.stem
+        if stem == "__init__":
+            stem = module_path.parent.name
+        rel = stem
     return rel
+
+
+def _module_id_from_east(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:
+    """EAST `meta.module_id` を優先し、無い場合はパス由来名へフォールバックする。"""
+    meta_obj = east_doc.get("meta")
+    meta = meta_obj if isinstance(meta_obj, dict) else {}
+    module_id_obj = meta.get("module_id")
+    module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+    if module_id != "":
+        return module_id
+    return _module_name_from_path(root, module_path)
 
 
 def _inject_after_includes_block(cpp_text: str, block: str) -> str:
@@ -7272,13 +7266,17 @@ def _write_multi_file_cpp(
     _sort_str_list_in_place(files)
     module_ns_map: dict[str, str] = {}
     module_label_map: dict[str, str] = {}
+    module_name_by_key: dict[str, str] = {}
     i = 0
     while i < len(files):
         mod_key = files[i]
         mod_path = Path(mod_key)
+        east_obj0 = module_east_map.get(mod_key)
+        east0 = east_obj0 if isinstance(east_obj0, dict) else {}
         label = _module_rel_label(root, mod_path)
         module_label_map[mod_key] = label
-        mod_name = _module_name_from_path(root, mod_path)
+        mod_name = _module_id_from_east(root, mod_path, east0)
+        module_name_by_key[mod_key] = mod_name
         if mod_name != "":
             module_ns_map[mod_name] = "pytra_mod_" + label
         i += 1
@@ -7373,7 +7371,11 @@ def _write_multi_file_cpp(
             target_ns = module_ns_map[mod_name]
             target_key = ""
             for k2, p2 in module_east_map.items():
-                if _module_name_from_path(root, Path(k2)) == mod_name:
+                _ = p2
+                target_mod_name = ""
+                if k2 in module_name_by_key:
+                    target_mod_name = module_name_by_key[k2]
+                if target_mod_name == mod_name:
                     target_key = k2
                     break
             if target_key == "":
@@ -7513,8 +7515,8 @@ def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
     if str(dep_file) != "":
         out["status"] = "user"
         out["path"] = dep_file
-        mod_id = _module_name_from_path(root_dir, dep_file)
-        out["module_id"] = mod_id if mod_id != "" else raw_name
+        # import 文字列を module_id の正本として扱う（探索パス由来の見かけに引きずられない）。
+        out["module_id"] = raw_name
         return out
     if _is_known_non_user_import(raw_name):
         out["status"] = "known"

@@ -23,6 +23,7 @@ PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC"
 
 from src.pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options
 from src.py2cpp import (
+    _analyze_import_graph,
     _runtime_module_tail_from_source_path,
     _runtime_namespace_for_tail,
     _runtime_output_rel_tail,
@@ -922,6 +923,70 @@ def f() -> int:
         self.assertEqual(res.get("status"), "user")
         self.assertEqual(Path(str(res.get("path", ""))).name, "yanesdk.py")
         self.assertIn("/yanesdk/yanesdk.py", str(res.get("path", "")).replace("\\", "/"))
+
+    def test_resolve_module_name_recognizes_std_and_utils_shims(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            random_res = resolve_module_name("random", root)
+            timeit_res = resolve_module_name("timeit", root)
+            traceback_res = resolve_module_name("traceback", root)
+            browser_res = resolve_module_name("browser", root)
+            browser_dialog_res = resolve_module_name("browser.widgets.dialog", root)
+        self.assertEqual(random_res.get("status"), "known")
+        self.assertEqual(timeit_res.get("status"), "known")
+        self.assertEqual(traceback_res.get("status"), "known")
+        self.assertEqual(browser_res.get("status"), "known")
+        self.assertEqual(browser_dialog_res.get("status"), "known")
+
+    def test_analyze_import_graph_resolves_from_importer_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            docs_dir = root / "docs" / "scene"
+            docs_dir.mkdir(parents=True, exist_ok=True)
+            main_py = docs_dir / "main.py"
+            pkg_dir = root / "yanesdk"
+            pkg_dir.mkdir(parents=True, exist_ok=True)
+            (pkg_dir / "yanesdk.py").write_text("import browser\n", encoding="utf-8")
+            (pkg_dir / "browser.py").write_text("x: int = 1\n", encoding="utf-8")
+            main_py.write_text("import yanesdk\n", encoding="utf-8")
+            graph = _analyze_import_graph(main_py)
+        missing = graph.get("missing_modules")
+        self.assertEqual([], missing)
+        module_id_map_obj = graph.get("module_id_map")
+        module_id_map = module_id_map_obj if isinstance(module_id_map_obj, dict) else {}
+        yanesdk_key = str(pkg_dir / "yanesdk.py")
+        browser_key = str(pkg_dir / "browser.py")
+        self.assertEqual(module_id_map.get(yanesdk_key), "yanesdk")
+        self.assertEqual(module_id_map.get(browser_key), "browser")
+
+    def test_build_module_east_map_sets_module_id_from_import_name(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            docs_dir = root / "docs" / "scene"
+            docs_dir.mkdir(parents=True, exist_ok=True)
+            main_py = docs_dir / "main.py"
+            pkg_dir = root / "yanesdk"
+            pkg_dir.mkdir(parents=True, exist_ok=True)
+            dep_py = pkg_dir / "yanesdk.py"
+            dep_py.write_text("x: int = 1\n", encoding="utf-8")
+            main_py.write_text("import yanesdk\n", encoding="utf-8")
+            mp = build_module_east_map(main_py)
+        dep_east = mp.get(str(dep_py))
+        self.assertIsInstance(dep_east, dict)
+        meta = dep_east.get("meta") if isinstance(dep_east, dict) else {}
+        self.assertIsInstance(meta, dict)
+        self.assertEqual(meta.get("module_id"), "yanesdk")
+
+    def test_from_import_symbol_accepts_assign_target_form_exports(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            helper_py.write_text("X = 1\n", encoding="utf-8")
+            main_py.write_text("from helper import X\n", encoding="utf-8")
+            mp = build_module_east_map(main_py)
+        self.assertIn(str(main_py), mp)
+        self.assertIn(str(helper_py), mp)
 
     def test_build_module_type_schema_contains_function_and_class_types(self) -> None:
         src_main = """def run(v: int) -> int:

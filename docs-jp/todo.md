@@ -8,25 +8,19 @@
 
 ## 実行順（上から着手）
 
-1. `P0: Yanesdk（library + game）を py2cpp で通す最短経路`
-2. `P1-B: import / module 解決（Yanesdk必須）`
-3. `P2: 受け入れテスト追加（Yanesdk由来）`
-4. `P3: py2rs（EAST移行）を CodeEmitter 中心で再設計`
-5. `P4: 他言語トランスパイラの EAST 移行`
+1. `P1-B: import / module 解決（Yanesdk必須）`
+2. `P3: py2rs（EAST移行）を CodeEmitter 中心で再設計`
+3. `P4: 他言語トランスパイラの EAST 移行`
 
 ## Yanesdk 再調査メモ（2026-02-22）
 
 - 調査対象: `Yanesdk/` 配下の `.py` 16ファイル（library 8 / game 7 / browser-shim 1）
 - 現状結果（2026-02-22）:
-  - EAST 変換（`convert_path`）成功 `9/16`、失敗 `7/16`
-  - `py2cpp.py` 変換成功 `1/16`、失敗 `15/16`
-- EAST 失敗の主因:
-  - `docs/*/yanesdk.py`（重複コピー）: 文末 `;` が残っており、仕様どおり `input_invalid` で失敗（7件）。
-  - 本体ゲームコード（`docs/*/*.py`）は EAST 変換を通過。
-- py2cpp 失敗の主因:
-  - canonical 正本（`Yanesdk/yanesdk/yanesdk.py`）への解決は通るようになった。
-  - 現在は `Yanesdk/yanesdk/yanesdk.py` 内の `browser` / `browser.widgets.dialog` / `traceback` / `random` / `timeit` が `missing_module` で失敗。
-  - 次段は `P1-B` のモジュール解決方針（shim / 外部参照 / `pytra.std.*` 移行）を確定して実装する。
+  - EAST 変換（`convert_path`）成功 `9/16`、失敗 `7/16`（`docs/*/yanesdk.py` の文末 `;`）。
+  - canonical 対象（`library 1本 + game 7本`）の `py2cpp.py` 変換は `8/8` 成功。
+- `py2cpp` で通す対象:
+  - `Yanesdk/yanesdk/yanesdk.py`（正本 library）
+  - `Yanesdk/docs/*/*.py` のゲーム本体（`yanesdk.py` 重複コピーは除外）
 - `;` について:
   - `Yanesdk` 側の文法誤りとして扱う。self_hosted parser では受理しない（サポート対象外）。
 - `browser` / `browser.widgets.dialog` について:
@@ -36,38 +30,16 @@
   - `yanesdk.py` は `Yanesdk/yanesdk/yanesdk.py` を正本として扱う。
   - `Yanesdk/docs/*/yanesdk.py` は重複コピーとして扱い、解析・修正の基準にしない。
 
-## P0: Yanesdk（library + game）を py2cpp で通す最短経路
-
-1. [ ] `Yanesdk` 向けの前処理方針を確定する（Pytra本体対応 vs Yanesdk側の機械変換）。
-   - [ ] `from yanesdk import *` の扱いを決める（Pytraでサポートするか、明示 import へ機械変換するか）。
-   - [ ] `# type:ignore`（import行・def行末）の扱いを決める（tokenizerで無視するか、前処理で除去するか）。
-2. [ ] `Yanesdk` を再利用するため、`docs/*/yanesdk.py` の重複配置を整理する（`Yanesdk/yanesdk/` への一本化）。
-   - [x] `py2cpp` 調査・smoke テストでは `Yanesdk/yanesdk/yanesdk.py` を常に優先する。
-3. [ ] 成功条件を明文化する（少なくとも `library 1本 + game 7本` が `py2cpp.py` を通る）。
-
 ## P1-B: import / module 解決（Yanesdk必須）
 
-1. [ ] `math` / `random` / `timeit` / `traceback` / `enum` / `typing` の取り扱い方針を統一する。
-   - [ ] `pytra.std.*` へ寄せる移行ルールを定義する（自動変換 or ソース修正）。
-2. [ ] `browser` / `browser.widgets.dialog` の扱いを backend 別に明確化する。
-   - [ ] `py2js` では Brython/ブラウザ提供オブジェクトへの外部参照として解決する（モジュール変換対象にしない）。
-   - [ ] `py2cpp` 調査時は `missing_module` を許容するか、検証用 shim を使うかを方針化する。
-
-## P2: 受け入れテスト追加（Yanesdk由来）
-
-1. [ ] 以下の最小 fixture を `test/fixtures/` に追加する。
-   - [ ] BOM付き `from ... import ...`
-   - [ ] `# type:ignore` 付き `from-import`
-   - [ ] `**`
-   - [ ] `\` 行継続
-   - [ ] トップレベル式文
-   - [ ] class body `pass`
-   - [ ] `yield`
-   - [ ] nested `def`
-   - [ ] `obj. attr`
-   - [ ] class 内 `X = 0,`
-2. [ ] `tools/check_py2cpp_transpile.py` に Yanesdk 縮小ケース群を段階追加する。
-3. [ ] `Yanesdk` 実ファイルを使った smoke テスト（library 1本 + game 1本）を追加する。
+1. [x] `math` / `random` / `timeit` / `traceback` / `enum` / `typing` の取り扱い方針を統一する。
+   - [x] `random` / `timeit` / `traceback` shim を `src/pytra/std/` に追加した。
+   - [x] 非修飾 import（例: `import random`）は `pytra.std.random` に正規化できる状態にした。
+2. [x] `browser` / `browser.widgets.dialog` の `py2cpp` 側方針を確定する。
+   - [x] `src/pytra/utils/browser/` shim を追加し、`missing_module` を解消した。
+   - [x] `tools/check_yanesdk_py2cpp_smoke.py` で `library 1本 + game 7本` の smoke を自動化した。
+3. [ ] `py2js` 側の `browser` 取り扱いを外部参照方式へ仕様化し、実装へ反映する。
+4. [ ] `docs/*/yanesdk.py` の重複配置方針（除外運用）を import 仕様書へ明文化する。
 
 ## P3: py2rs（EAST移行）を CodeEmitter 中心で再設計（Yanesdk対応後）
 

@@ -32,9 +32,12 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - class 本体で宣言されたメンバーは class member（C# では `static`、C++ では `inline static`）として扱います。
 - `@dataclass` を付けた class は dataclass として扱い、フィールドとコンストラクタを生成します。
 - `import` / `from ... import ...` をサポートします。
-- `from ... import *`（ワイルドカード import）はサポート対象外です。
+- `from ... import *`（ワイルドカード import）をサポートします（相対 import は未対応）。
 - 文末セミコロン（`;`）はサポート対象外です（self_hosted parser では入力エラーとして扱います）。
-- トランスパイル対象コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の直接 import は禁止です。
+- `# type:ignore` はコメントとして扱い、構文/意味解釈には使いません。
+- トランスパイル対象コードでは、Python 標準モジュールの直接 import は原則非推奨です。
+  - 推奨は `pytra.std.*` の明示 import です。
+  - ただし `math` / `random` / `timeit` / `traceback` / `typing` / `enum` など、`pytra.std.*` に対応 shim がある一部モジュールは正規化して扱えます。
 - import 可能なのは `src/pytra/` 配下のモジュールと、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
 - `object` 型（`Any` 由来を含む）に対する属性アクセス・メソッド呼び出しは禁止です。
