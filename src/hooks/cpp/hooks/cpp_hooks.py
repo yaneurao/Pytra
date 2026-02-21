@@ -391,6 +391,15 @@ def on_render_expr_kind(
     expr_node: dict[str, Any],
 ) -> str | None:
     """式 kind 単位の出力フック。"""
+    if kind == "Compare":
+        if emitter.any_dict_get_str(expr_node, "lowered_kind", "") == "Contains":
+            container = emitter.render_expr(expr_node.get("container"))
+            key = emitter.render_expr(expr_node.get("key"))
+            base = "py_contains(" + container + ", " + key + ")"
+            if emitter.any_to_bool(expr_node.get("negated")):
+                return "!(" + base + ")"
+            return base
+        return None
     if kind != "Attribute":
         return None
     owner_node = emitter.any_to_dict_or_empty(expr_node.get("value"))
