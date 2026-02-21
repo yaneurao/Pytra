@@ -28,6 +28,37 @@ def _join_str_list(sep: str, items: list[str]) -> str:
     return sep.join(items)
 
 
+def _split_infix_once(text: str, sep: str) -> tuple[str, str, bool]:
+    """`text` を最初の `sep` で1回だけ分割する。見つからない場合は失敗を返す。"""
+    if sep == "":
+        return "", "", False
+    n = len(text)
+    m = len(sep)
+    i = 0
+    while i + m <= n:
+        matched = True
+        j = 0
+        while j < m:
+            if text[i + j] != sep[j]:
+                matched = False
+                break
+            j += 1
+        if matched:
+            left = ""
+            k = 0
+            while k < i:
+                left += text[k]
+                k += 1
+            right = ""
+            k = i + m
+            while k < n:
+                right += text[k]
+                k += 1
+            return left, right, True
+        i += 1
+    return "", "", False
+
+
 def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
     """`root_dir` 配下に `module_tail` 相当の `.py` / package があるかを返す。"""
     if module_tail == "":
@@ -1933,6 +1964,9 @@ class CppEmitter(CodeEmitter):
         body_stmts = self._dict_stmt_list(stmt.get("body"))
         else_stmts = self._dict_stmt_list(stmt.get("orelse"))
         cond_txt = self.render_cond(stmt.get("test"))
+        cond_fix = self._render_repr_expr(cond_txt)
+        if cond_fix != "":
+            cond_txt = cond_fix
         if cond_txt == "":
             test_node = self.any_to_dict_or_empty(stmt.get("test"))
             cond_txt = self.any_dict_get_str(test_node, "repr", "")
@@ -1959,6 +1993,9 @@ class CppEmitter(CodeEmitter):
     def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
         """While ノードを出力する。"""
         cond_txt = self.render_cond(stmt.get("test"))
+        cond_fix = self._render_repr_expr(cond_txt)
+        if cond_fix != "":
+            cond_txt = cond_fix
         if cond_txt == "":
             test_node = self.any_to_dict_or_empty(stmt.get("test"))
             cond_txt = self.any_dict_get_str(test_node, "repr", "")
@@ -3200,6 +3237,14 @@ class CppEmitter(CodeEmitter):
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
+        owner_expr = ""
+        if self._node_kind_from_dict(fn) == "Attribute":
+            runtime_owner_obj = expr.get("runtime_owner")
+            runtime_owner_node = self.any_to_dict_or_empty(runtime_owner_obj)
+            if len(runtime_owner_node) > 0:
+                owner_expr = self.render_expr(runtime_owner_obj)
+            else:
+                owner_expr = self.render_expr(fn.get("value"))
         if runtime_call == "py_print":
             return f"py_print({_join_str_list(', ', args)})"
         if runtime_call == "py_len" and len(args) == 1:
@@ -3256,7 +3301,15 @@ class CppEmitter(CodeEmitter):
             return f"::std::runtime_error({args[0]})"
         if runtime_call == "Path":
             return f"Path({_join_str_list(', ', args)})"
+        if runtime_call in {"std::filesystem::exists", "::std::filesystem::exists"} and owner_expr != "" and len(args) == 0:
+            return f"{runtime_call}({owner_expr})"
+        if runtime_call == "py_replace" and owner_expr != "" and len(args) >= 2:
+            return f"py_replace({owner_expr}, {args[0]}, {args[1]})"
+        if runtime_call in {"py_startswith", "py_endswith", "py_find", "py_rfind"} and owner_expr != "" and len(args) >= 1:
+            return f"{runtime_call}({owner_expr}, {_join_str_list(', ', args)})"
         if runtime_call != "" and (self._is_std_runtime_call(runtime_call) or runtime_call.startswith("py_")):
+            if owner_expr != "" and runtime_call.startswith("py_") and len(args) == 0:
+                return f"{runtime_call}({owner_expr})"
             return f"{runtime_call}({_join_str_list(', ', args)})"
         if builtin_name == "bytes":
             return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
@@ -3708,6 +3761,21 @@ class CppEmitter(CodeEmitter):
 
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
         """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
+        if fn_name == "len" and len(args) == 1:
+            return f"py_len({args[0]})"
+        if fn_name == "isinstance" and len(args) == 2:
+            ty = args[1].strip()
+            fn_map = {
+                "str": "py_is_str",
+                "list": "py_is_list",
+                "dict": "py_is_dict",
+                "set": "py_is_set",
+                "int": "py_is_int",
+                "float": "py_is_float",
+                "bool": "py_is_bool",
+            }
+            if ty in fn_map:
+                return f"{fn_map[ty]}({args[0]})"
         if fn_name.startswith("py_assert_"):
             call_args: list[str] = []
             i = 0
@@ -3839,6 +3907,18 @@ class CppEmitter(CodeEmitter):
         ops = self.any_to_str_list(expr.get("ops"))
         if len(ops) == 0:
             rep = self.any_dict_get_str(expr, "repr", "")
+            lhs, rhs, ok = _split_infix_once(rep, " not in ")
+            if ok:
+                lhs = self._trim_ws(lhs)
+                rhs = self._trim_ws(rhs)
+                if lhs != "" and rhs != "":
+                    return f"!py_contains({rhs}, {lhs})"
+            lhs, rhs, ok = _split_infix_once(rep, " in ")
+            if ok:
+                lhs = self._trim_ws(lhs)
+                rhs = self._trim_ws(rhs)
+                if lhs != "" and rhs != "":
+                    return f"py_contains({rhs}, {lhs})"
             if rep != "":
                 return rep
             return "true"
@@ -3877,6 +3957,246 @@ class CppEmitter(CodeEmitter):
             cur = rhs
             cur_node = rhs_node
         return _join_str_list(" && ", parts) if len(parts) > 0 else "true"
+
+    def _split_call_repr(self, text: str) -> tuple[str, list[str], bool]:
+        """`fn(arg0, ...)` 形式の文字列を分解する。"""
+        t = self._trim_ws(text)
+        if t == "" or not t.endswith(")"):
+            return "", [], False
+        p0 = t.find("(")
+        if p0 <= 0:
+            return "", [], False
+        depth = 0
+        i = p0
+        n = len(t)
+        while i < n:
+            ch = t[i : i + 1]
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0 and i != n - 1:
+                    return "", [], False
+                if depth < 0:
+                    return "", [], False
+            i += 1
+        if depth != 0:
+            return "", [], False
+        fn = self._trim_ws(t[:p0])
+        inner = self._trim_ws(t[p0 + 1 : n - 1])
+        args: list[str] = []
+        if inner != "":
+            args = _split_top_level_csv(inner)
+        return fn, args, True
+
+    def _split_top_level_infix_text(self, text: str, sep: str) -> list[str]:
+        """括弧/クォート外の `sep` で文字列を分割する。"""
+        if sep == "":
+            return []
+        parts: list[str] = []
+        cur = ""
+        n = len(text)
+        m = len(sep)
+        i = 0
+        depth_paren = 0
+        depth_brack = 0
+        depth_brace = 0
+        quote = ""
+        while i < n:
+            ch = text[i : i + 1]
+            if quote != "":
+                cur += ch
+                if ch == quote and (i == 0 or text[i - 1 : i] != "\\"):
+                    quote = ""
+                i += 1
+                continue
+            if ch == "'" or ch == '"':
+                quote = ch
+                cur += ch
+                i += 1
+                continue
+            if ch == "(":
+                depth_paren += 1
+                cur += ch
+                i += 1
+                continue
+            if ch == ")":
+                if depth_paren > 0:
+                    depth_paren -= 1
+                cur += ch
+                i += 1
+                continue
+            if ch == "[":
+                depth_brack += 1
+                cur += ch
+                i += 1
+                continue
+            if ch == "]":
+                if depth_brack > 0:
+                    depth_brack -= 1
+                cur += ch
+                i += 1
+                continue
+            if ch == "{":
+                depth_brace += 1
+                cur += ch
+                i += 1
+                continue
+            if ch == "}":
+                if depth_brace > 0:
+                    depth_brace -= 1
+                cur += ch
+                i += 1
+                continue
+            if depth_paren == 0 and depth_brack == 0 and depth_brace == 0 and text[i : i + m] == sep:
+                parts.append(self._trim_ws(cur))
+                cur = ""
+                i += m
+                continue
+            cur += ch
+            i += 1
+        tail = self._trim_ws(cur)
+        if tail != "":
+            parts.append(tail)
+        if len(parts) >= 2:
+            return parts
+        return []
+
+    def _render_set_literal_repr(self, text: str) -> str:
+        """`{\"a\", ...}` 形式の repr を `set<str>{...}` へ変換する。"""
+        t = self._trim_ws(text)
+        if len(t) < 2 or t[:1] != "{" or t[-1:] != "}":
+            return ""
+        inner = self._trim_ws(t[1:-1])
+        if inner == "":
+            return "set<str>{}"
+        items = _split_top_level_csv(inner)
+        out_items: list[str] = []
+        for item in items:
+            token = self._trim_ws(item)
+            if len(token) >= 2 and token[:1] == '"' and token[-1:] == '"':
+                out_items.append(cpp_string_lit(token[1:-1]))
+                continue
+            if len(token) >= 2 and token[:1] == "'" and token[-1:] == "'":
+                out_items.append(cpp_string_lit(token[1:-1]))
+                continue
+            return ""
+        return f"set<str>{{{_join_str_list(', ', out_items)}}}"
+
+    def _render_repr_expr(self, rep: str) -> str:
+        """repr 生文字列を最小限 C++ 式へ補正する。"""
+        t = self._trim_ws(rep)
+        if t == "":
+            return ""
+
+        or_parts = self._split_top_level_infix_text(t, " or ")
+        if len(or_parts) >= 2:
+            rendered: list[str] = []
+            for p in or_parts:
+                c = self._render_repr_expr(p)
+                if c != "":
+                    rendered.append(c)
+                else:
+                    rendered.append(self._trim_ws(p))
+            wrapped = [f"({c})" for c in rendered]
+            return _join_str_list(" || ", wrapped)
+
+        and_parts = self._split_top_level_infix_text(t, " and ")
+        if len(and_parts) >= 2:
+            rendered: list[str] = []
+            for p in and_parts:
+                c = self._render_repr_expr(p)
+                if c != "":
+                    rendered.append(c)
+                else:
+                    rendered.append(self._trim_ws(p))
+            wrapped = [f"({c})" for c in rendered]
+            return _join_str_list(" && ", wrapped)
+
+        if t.startswith("not "):
+            inner = self._trim_ws(t[4:])
+            inner_cpp = self._render_repr_expr(inner)
+            if inner_cpp == "":
+                inner_cpp = inner
+            return f"!({inner_cpp})"
+
+        not_in_parts = self._split_top_level_infix_text(t, " not in ")
+        if len(not_in_parts) == 2:
+            lhs = not_in_parts[0]
+            rhs = not_in_parts[1]
+            lhs_cpp = self._render_repr_expr(lhs)
+            if lhs_cpp == "":
+                lhs_cpp = self._trim_ws(lhs)
+            rhs_cpp = self._render_repr_expr(rhs)
+            if rhs_cpp == "":
+                rhs_cpp = self._trim_ws(rhs)
+            rhs_set = self._render_set_literal_repr(rhs_cpp)
+            if rhs_set != "":
+                rhs_cpp = rhs_set
+            return f"!py_contains({rhs_cpp}, {lhs_cpp})"
+
+        in_parts = self._split_top_level_infix_text(t, " in ")
+        if len(in_parts) == 2:
+            lhs = in_parts[0]
+            rhs = in_parts[1]
+            lhs_cpp = self._render_repr_expr(lhs)
+            if lhs_cpp == "":
+                lhs_cpp = self._trim_ws(lhs)
+            rhs_cpp = self._render_repr_expr(rhs)
+            if rhs_cpp == "":
+                rhs_cpp = self._trim_ws(rhs)
+            rhs_set = self._render_set_literal_repr(rhs_cpp)
+            if rhs_set != "":
+                rhs_cpp = rhs_set
+            return f"py_contains({rhs_cpp}, {lhs_cpp})"
+
+        fn_name, fn_args, call_ok = self._split_call_repr(t)
+        if call_ok:
+            if fn_name == "len" and len(fn_args) == 1:
+                arg0 = self._render_repr_expr(fn_args[0])
+                if arg0 == "":
+                    arg0 = self._trim_ws(fn_args[0])
+                return f"py_len({arg0})"
+            if fn_name == "isinstance" and len(fn_args) == 2:
+                arg0 = self._render_repr_expr(fn_args[0])
+                if arg0 == "":
+                    arg0 = self._trim_ws(fn_args[0])
+                ty = self._trim_ws(fn_args[1])
+                fn_map = {
+                    "str": "py_is_str",
+                    "list": "py_is_list",
+                    "dict": "py_is_dict",
+                    "set": "py_is_set",
+                    "int": "py_is_int",
+                    "float": "py_is_float",
+                    "bool": "py_is_bool",
+                }
+                if ty in fn_map:
+                    return f"{fn_map[ty]}({arg0})"
+
+        if t.endswith("]"):
+            p: int64 = t.find("[")
+            if p > 0:
+                base = self._trim_ws(t[:p])
+                body = self._trim_ws(t[p + 1 : -1])
+                lo, hi, has_colon = _split_infix_once(body, ":")
+                if has_colon:
+                    base_cpp = self._render_repr_expr(base)
+                    if base_cpp == "":
+                        base_cpp = base
+                    lo_cpp = self._render_repr_expr(lo)
+                    if lo_cpp == "":
+                        lo_cpp = self._trim_ws(lo)
+                    hi_cpp = self._render_repr_expr(hi)
+                    if hi_cpp == "":
+                        hi_cpp = self._trim_ws(hi)
+                    if lo_cpp == "":
+                        lo_cpp = "0"
+                    if hi_cpp == "":
+                        hi_cpp = f"py_len({base_cpp})"
+                    return f"py_slice({base_cpp}, {lo_cpp}, {hi_cpp})"
+
+        return t
 
     def _render_subscript_expr(self, expr: dict[str, Any]) -> str:
         """Subscript/Slice 式を C++ 式へ変換する。"""
@@ -3955,6 +4275,10 @@ class CppEmitter(CodeEmitter):
     def _render_name_expr(self, expr_d: dict[str, Any]) -> str:
         """Name ノードを C++ 式へ変換する。"""
         name_txt = self.any_dict_get_str(expr_d, "id", "")
+        if name_txt != "":
+            rep_like = self._render_repr_expr(name_txt)
+            if rep_like != "" and rep_like != name_txt:
+                return rep_like
         if name_txt == "self" and self.current_class_name is not None and not self.is_declared("self"):
             return "*this"
         return self.render_name_ref(
@@ -4523,6 +4847,9 @@ class CppEmitter(CodeEmitter):
 
         rep = self.any_to_str(expr_d.get("repr"))
         if rep != "":
+            rep_rendered = self._render_repr_expr(rep)
+            if rep_rendered != "":
+                return rep_rendered
             return rep
         return f"/* unsupported expr: {kind} */"
 

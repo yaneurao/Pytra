@@ -4,6 +4,16 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+## 2026-02-21 完了: selfhost 直変換 Compare 崩れ補正
+
+1. [x] selfhost 直変換で `in/not in` 比較が生の `k in d` へ崩れる回帰を修正した。
+   - [x] `src/py2cpp.py` に `repr` 由来の式補正（`in/not in`, `len`, `isinstance`, `slice`, `and/or/not`）を追加した。
+   - [x] `src/py2cpp.py` の `runtime_owner` 欠落補正を追加し、`py_replace` / `std::filesystem::exists` などの owner 引数脱落を復旧した。
+2. [x] selfhost 差分検証を再度 green 化した。
+   - [x] `python3 tools/check_selfhost_cpp_diff.py --selfhost-driver direct` で `mismatches=0` を確認。
+3. [x] 通常トランスパイルの回帰確認を実施した。
+   - [x] `python3 tools/check_py2cpp_transpile.py` で `checked=108 ok=108 fail=0 skipped=5` を確認。
+
 ## 2026-02-21 完了: selfhost 直変換の型正規化回帰修正
 
 1. [x] selfhost 直変換で `list[int]` が `list<int>` と出力される回帰を修正した。
