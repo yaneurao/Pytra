@@ -822,6 +822,24 @@ class CodeEmitter:
             s = s[:-1]
         return s
 
+    def _contains_text(self, text: str, needle: str) -> bool:
+        """`needle in text` 相当を selfhost でも安全に判定する。"""
+        if needle == "":
+            return True
+        return text.find(needle) >= 0
+
+    def _last_dotted_name(self, name: str) -> str:
+        """`a.b.c` の末尾要素 `c` を返す。"""
+        last = name
+        i = 0
+        n = len(name)
+        while i < n:
+            ch = name[i : i + 1]
+            if ch == ".":
+                last = name[i + 1 :]
+            i += 1
+        return last
+
     def comment_line_prefix(self) -> str:
         """単行コメント出力時の接頭辞を返す。"""
         return "// "

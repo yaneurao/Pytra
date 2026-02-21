@@ -16,23 +16,6 @@ def _render_owner_expr(emitter: Any, func_node: dict[str, Any]) -> str:
     return owner_expr
 
 
-def _lookup_module_attr_runtime_call(emitter: Any, module_name: str, attr: str) -> str:
-    """`module.attr` から runtime_call 名を引く（pytra.* は短縮名フォールバックしない）。"""
-    module_name_norm = emitter._normalize_runtime_module_name(module_name)
-    keys: list[str] = [module_name_norm]
-    short = emitter._last_dotted_name(module_name_norm)
-    if short != module_name_norm and not module_name_norm.startswith("pytra."):
-        keys.append(short)
-    for key in keys:
-        if key in emitter.module_attr_call_map:
-            owner_map = emitter.module_attr_call_map[key]
-            if attr in owner_map:
-                mapped = owner_map[attr]
-                if isinstance(mapped, str) and mapped != "":
-                    return mapped
-    return ""
-
-
 def _infer_runtime_call_from_func_node(emitter: Any, func_node: dict[str, Any]) -> str:
     """Call ノードの func から runtime_call を推定する。"""
     fn_kind = emitter.any_dict_get_str(func_node, "kind", "")
@@ -56,7 +39,7 @@ def _infer_runtime_call_from_func_node(emitter: Any, func_node: dict[str, Any]) 
         owner_mod = emitter._normalize_runtime_module_name(owner_mod)
         attr = emitter.any_dict_get_str(func_node, "attr", "")
         if owner_mod != "" and attr != "":
-            return _lookup_module_attr_runtime_call(emitter, owner_mod, attr)
+            return emitter._lookup_module_attr_runtime_call(owner_mod, attr)
     return ""
 
 
@@ -412,7 +395,7 @@ def on_render_expr_kind(
             return base_expr + ".parent()"
     mapped = ""
     if owner_kind in {"Name", "Attribute"} and attr != "":
-        mapped = _lookup_module_attr_runtime_call(emitter, base_mod, attr)
+        mapped = emitter._lookup_module_attr_runtime_call(base_mod, attr)
     if _looks_like_runtime_symbol(mapped):
         return mapped
     if base_mod != "" and attr != "":

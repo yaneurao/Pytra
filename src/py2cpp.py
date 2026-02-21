@@ -1103,12 +1103,6 @@ class CppEmitter(CodeEmitter):
         """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
         return runtime_call[0:5] == "std::" or runtime_call[0:7] == "::std::"
 
-    def _contains_text(self, text: str, needle: str) -> bool:
-        """`needle in text` 相当を selfhost でも安全に判定する。"""
-        if needle == "":
-            return True
-        return text.find(needle) >= 0
-
     def _resolve_imported_module_name(self, name: str) -> str:
         """import で束縛された識別子名を実モジュール名へ解決する。"""
         if self.is_declared(name):
@@ -1134,18 +1128,6 @@ class CppEmitter(CodeEmitter):
         if expr.startswith("pytra::"):
             return expr.replace("::", ".")
         return ""
-
-    def _last_dotted_name(self, name: str) -> str:
-        """`a.b.c` の末尾要素 `c` を返す。"""
-        last = name
-        i = 0
-        n = len(name)
-        while i < n:
-            ch = name[i : i + 1]
-            if ch == ".":
-                last = name[i + 1 :]
-            i += 1
-        return last
 
     def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
         """from-import で束縛された識別子を返す（無ければ空 dict）。"""
@@ -1281,8 +1263,8 @@ class CppEmitter(CodeEmitter):
             i += 1
         return out
 
-    def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
-        """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
+    def _lookup_module_attr_runtime_call(self, module_name: str, attr: str) -> str:
+        """`module.attr` から runtime_call 名を引く（pytra.* は短縮名フォールバックしない）。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
         owner_keys: list[str] = [module_name_norm]
         short_name = self._last_dotted_name(module_name_norm)
@@ -1292,10 +1274,18 @@ class CppEmitter(CodeEmitter):
         for owner_key in owner_keys:
             if owner_key in self.module_attr_call_map:
                 owner_map = self.module_attr_call_map[owner_key]
-                if symbol_name in owner_map:
-                    mapped = owner_map[symbol_name]
+                if attr in owner_map:
+                    mapped = owner_map[attr]
                     if mapped != "":
                         return mapped
+        return ""
+
+    def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
+        """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        mapped = self._lookup_module_attr_runtime_call(module_name_norm, symbol_name)
+        if mapped != "":
+            return mapped
         ns = self._module_name_to_cpp_namespace(module_name_norm)
         if ns != "":
             return f"{ns}::{symbol_name}"
@@ -3513,22 +3503,13 @@ class CppEmitter(CodeEmitter):
             if ns != "":
                 call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
                 return f"{ns}::{attr}({_join_str_list(', ', call_args)})"
-        owner_keys: list[str] = [owner_mod_norm]
-        short_name = self._last_dotted_name(owner_mod_norm)
-        # `pytra.*` は正規モジュール名で解決し、短縮名への暗黙フォールバックは使わない。
-        if short_name != owner_mod_norm and not owner_mod_norm.startswith("pytra."):
-            owner_keys.append(short_name)
-        for owner_key in owner_keys:
-            if owner_key in self.module_attr_call_map:
-                owner_map = self.module_attr_call_map[owner_key]
-                if attr in owner_map:
-                    mapped = owner_map[attr]
-                    if mapped != "" and _looks_like_runtime_function_name(mapped):
-                        if self._contains_text(mapped, "::"):
-                            call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
-                        else:
-                            call_args = merged_args
-                        return f"{mapped}({_join_str_list(', ', call_args)})"
+        mapped = self._lookup_module_attr_runtime_call(owner_mod_norm, attr)
+        if mapped != "" and _looks_like_runtime_function_name(mapped):
+            if self._contains_text(mapped, "::"):
+                call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
+            else:
+                call_args = merged_args
+            return f"{mapped}({_join_str_list(', ', call_args)})"
         ns = self._module_name_to_cpp_namespace(owner_mod_norm)
         if ns != "":
             call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
@@ -4360,17 +4341,9 @@ class CppEmitter(CodeEmitter):
         if base_kind in {"Name", "Attribute"}:
             base_module_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(base))
         if base_module_name != "":
-            owner_keys: list[str] = [base_module_name]
-            short_name = self._last_dotted_name(base_module_name)
-            if short_name != base_module_name and not base_module_name.startswith("pytra."):
-                owner_keys.append(short_name)
-            for owner_key in owner_keys:
-                if owner_key in self.module_attr_call_map:
-                    owner_map = self.module_attr_call_map[owner_key]
-                    if attr in owner_map:
-                        mapped = owner_map[attr]
-                        if mapped != "":
-                            return mapped
+            mapped = self._lookup_module_attr_runtime_call(base_module_name, attr)
+            if mapped != "":
+                return mapped
             ns = self._module_name_to_cpp_namespace(base_module_name)
             if ns != "":
                 return f"{ns}::{attr}"

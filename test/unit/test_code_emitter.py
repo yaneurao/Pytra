@@ -220,6 +220,10 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertFalse(em.is_plain_name_expr({"kind": "Call"}))
         self.assertTrue(em._expr_repr_eq({"repr": "a + b "}, {"repr": "a + b"}))
         self.assertFalse(em._expr_repr_eq({"repr": "a + b"}, {"repr": "a - b"}))
+        self.assertTrue(em._contains_text("abcdef", "cd"))
+        self.assertFalse(em._contains_text("abcdef", "xy"))
+        self.assertEqual(em._last_dotted_name("a.b.c"), "c")
+        self.assertEqual(em._last_dotted_name("name"), "name")
 
     def test_trivia_and_cond_helpers(self) -> None:
         em = _DummyEmitter(
