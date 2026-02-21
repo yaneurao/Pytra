@@ -1173,23 +1173,36 @@ class CppEmitter(CodeEmitter):
                         arg_t = arg_t_obj
                 arg_is_unknown = arg_t == "" or arg_t == "unknown"
                 if self.is_any_like_type(tt) and (arg_is_unknown or not self.is_any_like_type(arg_t)):
-                    if not a.startswith("make_object("):
+                    if not self._is_boxed_object_expr(a):
                         a = f"make_object({a})"
             out.append(a)
             i += 1
         return out
 
-    def _coerce_py_assert_args(self, fn_name: str, args: list[str]) -> list[str]:
+    def _coerce_py_assert_args(
+        self,
+        fn_name: str,
+        args: list[str],
+        arg_nodes: list[Any],
+    ) -> list[str]:
         """`py_assert_*` 呼び出しで object 引数が必要な位置を boxing する。"""
         out: list[str] = []
         i = 0
+        nodes = arg_nodes
         while i < len(args):
             a = args[i]
+            needs_object = False
             if fn_name == "py_assert_stdout":
-                if i == 1 and not a.startswith("make_object("):
-                    a = f"make_object({a})"
+                needs_object = i == 1
             elif fn_name == "py_assert_eq":
-                if i < 2 and not a.startswith("make_object("):
+                needs_object = i < 2
+            if needs_object and not self._is_boxed_object_expr(a):
+                arg_t = ""
+                if i < len(nodes):
+                    at = self.get_expr_type(nodes[i])
+                    if isinstance(at, str):
+                        arg_t = at
+                if not self.is_any_like_type(arg_t):
                     a = f"make_object({a})"
             out.append(a)
             i += 1
@@ -2029,7 +2042,7 @@ class CppEmitter(CodeEmitter):
         if self.is_any_like_type(ann_t_str) and val_is_dict:
             if val_kind == "Constant" and val.get("value") is None:
                 rendered_val = "object{}"
-            elif not rendered_val.startswith("make_object("):
+            elif not self._is_boxed_object_expr(rendered_val):
                 rendered_val = f"make_object({rendered_val})"
         declare = self.any_dict_get_int(stmt, "declare", 1) != 0
         already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
@@ -2263,13 +2276,25 @@ class CppEmitter(CodeEmitter):
     def _emit_swap_stmt(self, stmt: dict[str, Any]) -> None:
         left = self.render_expr(stmt.get("left"))
         right = self.render_expr(stmt.get("right"))
-        self.emit(f"::std::swap({left}, {right});")
+        self.emit(
+            self.syntax_line(
+                "swap_stmt",
+                "::std::swap({left}, {right});",
+                {"left": left, "right": right},
+            )
+        )
 
     def _emit_raise_stmt(self, stmt: dict[str, Any]) -> None:
         if not isinstance(stmt.get("exc"), dict):
-            self.emit('throw ::std::runtime_error("raise");')
+            self.emit(self.syntax_text("raise_default", 'throw ::std::runtime_error("raise");'))
         else:
-            self.emit(f"throw {self.render_expr(stmt.get('exc'))};")
+            self.emit(
+                self.syntax_line(
+                    "raise_expr",
+                    "throw {exc};",
+                    {"exc": self.render_expr(stmt.get("exc"))},
+                )
+            )
 
     def _emit_function_stmt(self, stmt: dict[str, Any]) -> None:
         self.emit_function(stmt, False)
@@ -2533,7 +2558,7 @@ class CppEmitter(CodeEmitter):
             if self.is_any_like_type(picked):
                 if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
                     rval = "object{}"
-                elif not rval.startswith("make_object("):
+                elif not self._is_boxed_object_expr(rval):
                     rval = f"make_object({rval})"
             self.emit(f"{dtype} {texpr} = {rval};")
             return
@@ -2557,7 +2582,7 @@ class CppEmitter(CodeEmitter):
         if self.is_any_like_type(t_target):
             if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
                 rval = "object{}"
-            elif not rval.startswith("make_object("):
+            elif not self._is_boxed_object_expr(rval):
                 rval = f"make_object({rval})"
         self.emit(f"{texpr} = {rval};")
 
@@ -2635,7 +2660,7 @@ class CppEmitter(CodeEmitter):
         if key_t in {"", "unknown"}:
             return key_expr
         if self.is_any_like_type(key_t):
-            if key_expr.startswith("make_object("):
+            if self._is_boxed_object_expr(key_expr):
                 return key_expr
             return f"make_object({key_expr})"
         return self.apply_cast(key_expr, key_t)
@@ -3451,6 +3476,87 @@ class CppEmitter(CodeEmitter):
             return f"py_all({args[0]})"
         return None
 
+    def _resolve_or_render_imported_symbol_name_call(
+        self,
+        raw_name: str,
+        args: list[str],
+        kw: dict[str, str],
+        arg_nodes: list[Any],
+    ) -> tuple[str | None, str]:
+        """`Call(Name)` で import 済みシンボルを解決し、必要なら直接呼び出しへ変換する。"""
+        raw = raw_name
+        imported_module = ""
+        if raw != "" and not self.is_declared(raw):
+            resolved = self._resolve_imported_symbol(raw)
+            imported_module = resolved["module"] if "module" in resolved else ""
+            resolved_name = resolved["name"] if "name" in resolved else ""
+            if resolved_name != "":
+                raw = resolved_name
+        if raw == "" or imported_module == "":
+            return None, raw
+        mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
+        mapped_runtime_txt = ""
+        if mapped_runtime is not None:
+            mapped_runtime_txt = str(mapped_runtime)
+        if (
+            mapped_runtime_txt != ""
+            and mapped_runtime_txt not in {"perf_counter", "Path"}
+            and _looks_like_runtime_function_name(mapped_runtime_txt)
+        ):
+            merged_args = self.merge_call_args(args, kw)
+            call_args: list[str] = merged_args
+            if self._contains_text(mapped_runtime_txt, "::"):
+                call_args = self._coerce_args_for_module_function(imported_module, raw, merged_args, arg_nodes)
+            if raw.startswith("py_assert_"):
+                call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
+            return f"{mapped_runtime_txt}({_join_str_list(', ', call_args)})", raw
+        imported_module_norm = self._normalize_runtime_module_name(imported_module)
+        if imported_module_norm in self.module_namespace_map:
+            ns = self.module_namespace_map[imported_module_norm]
+            if ns != "":
+                call_args = self._coerce_args_for_module_function(imported_module, raw, args, arg_nodes)
+                if raw.startswith("py_assert_"):
+                    call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
+                return f"{ns}::{raw}({_join_str_list(', ', call_args)})", raw
+        return None, raw
+
+    def _render_misc_name_builtin_call(
+        self,
+        raw: str,
+        expr: dict[str, Any],
+        args: list[str],
+        arg_nodes: list[Any],
+        first_arg: Any,
+    ) -> str | None:
+        """`Call(Name)` の残りビルトイン分岐を処理する。"""
+        if raw == "bytes":
+            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
+        if raw == "bytearray":
+            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
+        if raw == "str" and len(args) == 1:
+            src_expr = first_arg
+            return self.render_to_string(src_expr)
+        scalar_cast_rendered = self._render_scalar_cast_builtin_call(raw, expr, args, first_arg)
+        if scalar_cast_rendered is not None:
+            return scalar_cast_rendered
+        if raw == "int" and len(args) == 2:
+            return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
+        if raw == "ord" and len(args) == 1:
+            return f"py_ord({args[0]})"
+        if raw == "chr" and len(args) == 1:
+            return f"py_chr({args[0]})"
+        if raw in {"min", "max"} and len(args) >= 1:
+            return self.render_minmax(raw, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
+        if raw == "perf_counter":
+            return "pytra::std::time::perf_counter()"
+        if raw in {"Exception", "RuntimeError"}:
+            if len(args) == 0:
+                return '::std::runtime_error("error")'
+            return f"::std::runtime_error({args[0]})"
+        if raw == "Path":
+            return f"Path({_join_str_list(', ', args)})"
+        return None
+
     def _render_call_name_or_attr(
         self,
         expr: dict[str, Any],
@@ -3465,40 +3571,11 @@ class CppEmitter(CodeEmitter):
         fn_kind = self._node_kind_from_dict(fn)
         if fn_kind == "Name":
             raw = self.any_to_str(fn.get("id"))
-            imported_module = ""
-            if raw != "" and not self.is_declared(raw):
-                resolved = self._resolve_imported_symbol(raw)
-                imported_module = resolved["module"] if "module" in resolved else ""
-                resolved_name = resolved["name"] if "name" in resolved else ""
-                if resolved_name != "":
-                    raw = resolved_name
-            if raw != "" and imported_module != "":
-                mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
-                mapped_runtime_txt = ""
-                if mapped_runtime is not None:
-                    mapped_runtime_txt = str(mapped_runtime)
-                if (
-                    mapped_runtime_txt != ""
-                    and mapped_runtime_txt not in {"perf_counter", "Path"}
-                    and _looks_like_runtime_function_name(mapped_runtime_txt)
-                ):
-                    merged_args = self.merge_call_args(args, kw)
-                    call_args: list[str] = merged_args
-                    if self._contains_text(mapped_runtime_txt, "::"):
-                        call_args = self._coerce_args_for_module_function(imported_module, raw, merged_args, arg_nodes)
-                    if raw.startswith("py_assert_"):
-                        call_args = self._coerce_py_assert_args(raw, call_args)
-                    return f"{mapped_runtime_txt}({_join_str_list(', ', call_args)})"
-                imported_module_norm = self._normalize_runtime_module_name(imported_module)
-                if imported_module_norm in self.module_namespace_map:
-                    ns = self.module_namespace_map[imported_module_norm]
-                    if ns != "":
-                        call_args: list[str] = self._coerce_args_for_module_function(imported_module, raw, args, arg_nodes)
-                        if raw.startswith("py_assert_"):
-                            call_args = self._coerce_py_assert_args(raw, call_args)
-                        return f"{ns}::{raw}({_join_str_list(', ', call_args)})"
+            imported_rendered, raw = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes)
+            if imported_rendered is not None:
+                return imported_rendered
             if raw.startswith("py_assert_"):
-                call_args = self._coerce_py_assert_args(raw, args)
+                call_args = self._coerce_py_assert_args(raw, args, arg_nodes)
                 return f"pytra::utils::assertions::{raw}({_join_str_list(', ', call_args)})"
             if raw == "range":
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
@@ -3514,32 +3591,9 @@ class CppEmitter(CodeEmitter):
             collection_ctor_rendered = self._render_collection_constructor_call(raw, expr, args, first_arg)
             if collection_ctor_rendered is not None:
                 return collection_ctor_rendered
-            if raw == "bytes":
-                return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
-            if raw == "bytearray":
-                return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
-            if raw == "str" and len(args) == 1:
-                src_expr = first_arg
-                return self.render_to_string(src_expr)
-            scalar_cast_rendered = self._render_scalar_cast_builtin_call(raw, expr, args, first_arg)
-            if scalar_cast_rendered is not None:
-                return scalar_cast_rendered
-            if raw == "int" and len(args) == 2:
-                return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
-            if raw == "ord" and len(args) == 1:
-                return f"py_ord({args[0]})"
-            if raw == "chr" and len(args) == 1:
-                return f"py_chr({args[0]})"
-            if raw in {"min", "max"} and len(args) >= 1:
-                return self.render_minmax(raw, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
-            if raw == "perf_counter":
-                return "pytra::std::time::perf_counter()"
-            if raw in {"Exception", "RuntimeError"}:
-                if len(args) == 0:
-                    return '::std::runtime_error("error")'
-                return f"::std::runtime_error({args[0]})"
-            if raw == "Path":
-                return f"Path({_join_str_list(', ', args)})"
+            misc_builtin_rendered = self._render_misc_name_builtin_call(raw, expr, args, arg_nodes, first_arg)
+            if misc_builtin_rendered is not None:
+                return misc_builtin_rendered
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw, arg_nodes)
@@ -3790,7 +3844,7 @@ class CppEmitter(CodeEmitter):
             if ty in fn_map:
                 return f"{fn_map[ty]}({args[0]})"
         if fn_name.startswith("py_assert_"):
-            call_args = self._coerce_py_assert_args(fn_name, args)
+            call_args = self._coerce_py_assert_args(fn_name, args, [])
             return f"pytra::utils::assertions::{fn_name}({_join_str_list(', ', call_args)})"
         if fn_name.endswith(".append") and len(args) == 1:
             owner_expr = fn_name[: len(fn_name) - 7]
@@ -4029,11 +4083,17 @@ class CppEmitter(CodeEmitter):
             cur_node = rhs_node
         return _join_str_list(" && ", parts) if len(parts) > 0 else "true"
 
+    def _is_boxed_object_expr(self, expr_txt: str) -> bool:
+        """式が既に object boxing 済みなら True を返す。"""
+        if expr_txt.startswith("make_object("):
+            return True
+        if expr_txt == "object{}":
+            return True
+        return False
+
     def _box_expr_for_any(self, expr_txt: str, source_node: Any) -> str:
         """Any/object 向けの boxing を必要時のみ適用する。"""
-        if expr_txt.startswith("make_object("):
-            return expr_txt
-        if expr_txt == "object{}":
+        if self._is_boxed_object_expr(expr_txt):
             return expr_txt
         src_t = self.get_expr_type(source_node)
         if self.is_any_like_type(src_t):

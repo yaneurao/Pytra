@@ -41,6 +41,8 @@
    - [x] `_render_builtin_call` の owner 付き runtime 分岐（`exists/replace/startswith...` と共通 `py_/std` 呼び出し）を helper（`_render_builtin_call_owner_expr` / `_render_builtin_call_owner_runtime`）へ分離した。
    - [x] `_render_builtin_call` の `runtime_call=static_cast` 分岐を helper（`_render_builtin_static_cast_call`）へ分離し、本体の条件分岐を削減した。
    - [x] `_render_builtin_call` の `runtime_call=py_join` 分岐を helper（`_render_builtin_join_call`）へ分離し、owner 再解決ロジックを削除した。
+   - [x] `Call(Name)` の import 解決 + runtime/namespace 呼び出し分岐を helper（`_resolve_or_render_imported_symbol_name_call`）へ分離し、`_render_call_name_or_attr` 本体の分岐を削減した。
+   - [x] `Call(Name)` の残りビルトイン分岐（`bytes/bytearray/str/int(base)/ord/chr/min/max/perf_counter/Path/Exception`）を helper（`_render_misc_name_builtin_call`）へ分離した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
@@ -48,6 +50,7 @@
    - [x] `render_expr(Call)` 本体を `_render_call_expr_from_context` へ分離し、hook/builtin/name-or-attr/fallback の段階処理を独立関数化した。
    - [x] `render_expr(Call)` 末尾の `kw_values/kw_nodes` マージ処理を `_merge_call_kw_values` / `_merge_call_arg_nodes` へ分離した。
    - [x] 上記 helper を `CodeEmitter.merge_call_kw_values` / `CodeEmitter.merge_call_arg_nodes` へ移管した。
+   - [x] `render_expr(Call)` の `Call(Name)` import 経路を `_resolve_or_render_imported_symbol_name_call` へ抽出し、段階処理（import解決→ビルトイン→fallback）を明確化した。
 3. [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。
    - [x] `RangeExpr/BinOp/UnaryOp/BoolOp/Compare/IfExp` の分岐を `_render_operator_family_expr` へ集約し、`render_expr` 本体の分岐を削減した。
 4. [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
@@ -56,6 +59,7 @@
    - [x] `try/catch/finally(scope guard)` の開始行（`scope_open` / `scope_exit_open` / `try_open` / `catch_open`）を `syntax.json` + `syntax_line` 経由へ移管した。
    - [x] `for` ブロック開始行（`hdr + " {"`）を `for_open_block` テンプレートへ移管した。
    - [x] `pass/break/continue` の文生成を `syntax.json`（`pass_stmt` / `break_stmt` / `continue_stmt`）経由へ移管した。
+   - [x] `swap` / `raise` の文生成を `syntax.json`（`swap_stmt` / `raise_default` / `raise_expr`）経由へ移管した。
 6. [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
 7. [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
 8. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
@@ -70,6 +74,8 @@
 3. [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
    - [x] Any/object 向け boxing 判定を `_box_expr_for_any` へ集約し、`List`/`Dict` リテラル生成で「既に object/Any の式」を二重に `make_object(...)` しないようにした。
    - [x] `Constant(None)` の Any/object 経路を `make_object(1)` から `object{}` へ修正し、`None` の表現を統一した。
+   - [x] boxing 済み判定 helper（`_is_boxed_object_expr`）を追加し、`_coerce_args_for_module_function` / `_coerce_py_assert_args` / Assign/AnnAssign / dict key coercion で `object{}` の再 boxing を抑止した。
+   - [x] `py_assert_*` の object 引数 boxing をノード型付き（`arg_nodes`）で判定し、`object/Any` 引数への不要な `make_object(...)` を回避した。
 4. [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
    - [x] `dict.get` の object 系 owner 経路で、`resolved_type` または既定値型が数値（int/float）なら `dict_get_int` / `dict_get_float` を優先し、`py_dict_get_default`/`dict_get_node` の汎用 object 経路を減らした。
 5. [ ] `py2cpp.py` で `nullopt` を default 値に渡している箇所を洗い出し、型ごとの既定値へ置換する。

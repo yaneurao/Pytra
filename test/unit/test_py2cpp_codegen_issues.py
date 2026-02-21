@@ -158,6 +158,32 @@ def f(p: str) -> None:
 
         self.assertIn("return py_to_int64(s);", cpp)
 
+    def test_int_cast_with_base_uses_py_to_int64_base(self) -> None:
+        src = """def f(s: str) -> int:
+    return int(s, 16)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "int_cast_base.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return py_to_int64_base(s, py_to_int64(16));", cpp)
+
+    def test_from_import_symbol_call_uses_runtime_namespace(self) -> None:
+        src = """from pytra.std.time import perf_counter
+
+def f() -> float:
+    return perf_counter()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "from_import_symbol_call.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return pytra::std::time::perf_counter();", cpp)
+
     def test_dict_get_on_object_value_dict_int_uses_typed_wrapper(self) -> None:
         src = """def f(d: dict[str, object]) -> int:
     x: int = d.get("k", 3)
@@ -199,6 +225,21 @@ def f(p: str) -> None:
 
         self.assertIn("list<object>{x}", cpp)
         self.assertNotIn("make_object(x)", cpp)
+
+    def test_py_assert_eq_with_object_args_does_not_rebox(self) -> None:
+        src = """from pytra.utils.assertions import py_assert_eq
+
+def f(x: object) -> None:
+    py_assert_eq(x, x)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "py_assert_eq_object.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("py_assert_eq(x, x);", cpp)
+        self.assertNotIn("py_assert_eq(make_object(x), make_object(x))", cpp)
 
 
 if __name__ == "__main__":
