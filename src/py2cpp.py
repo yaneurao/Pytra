@@ -1539,7 +1539,7 @@ class CppEmitter(CodeEmitter):
         if out_type != "":
             t = self._cpp_type_text(out_type)
         arg_nodes_safe: list[Any] = arg_nodes
-        if t in {"auto", "object", "std::any", "::std::any"}:
+        if t in {"auto", "object"}:
             saw_float = False
             saw_int = False
             i = 0
@@ -4500,7 +4500,7 @@ class CppEmitter(CodeEmitter):
                     key_pick = inferred_key
                 t = f"dict<{self._cpp_type_text(key_pick)}, object>"
                 val_t = "Any"
-            elif t in {"auto", "dict<str, str>", "dict<str, ::std::any>"}:
+            elif t in {"auto", "dict<str, str>", "dict<str, object>"}:
                 key_pick = key_t if key_t not in {"", "unknown"} and not key_mixed else "str"
                 val_pick = val_t if val_t not in {"", "unknown"} else (inferred_val if inferred_val != "" else "str")
                 if self.is_any_like_type(val_pick):
@@ -4583,7 +4583,7 @@ class CppEmitter(CodeEmitter):
             expected_out_t = ""
             if elt_t != "" and elt_t != "unknown":
                 expected_out_t = self._cpp_type_text(f"list[{elt_t}]")
-            out_is_dynamic = out_t == "list<object>" or out_t == "object" or out_t == "std::any" or out_t == "::std::any" or out_t == "auto"
+            out_is_dynamic = out_t == "list<object>" or out_t == "object" or out_t == "auto"
             if out_is_dynamic:
                 if elt_t != "" and elt_t != "unknown":
                     out_t = self._cpp_type_text(f"list[{elt_t}]")
@@ -4661,7 +4661,7 @@ class CppEmitter(CodeEmitter):
             expected_out_t = ""
             if elt_t != "" and elt_t != "unknown":
                 expected_out_t = self._cpp_type_text(f"set[{elt_t}]")
-            out_is_dynamic = out_t == "set<object>" or out_t == "object" or out_t == "std::any" or out_t == "::std::any" or out_t == "auto"
+            out_is_dynamic = out_t == "set<object>" or out_t == "object" or out_t == "auto"
             if out_is_dynamic:
                 if elt_t != "" and elt_t != "unknown":
                     out_t = self._cpp_type_text(f"set[{elt_t}]")
@@ -4720,7 +4720,7 @@ class CppEmitter(CodeEmitter):
             expected_out_t = ""
             if key_t != "" and key_t != "unknown" and val_t != "" and val_t != "unknown":
                 expected_out_t = self._cpp_type_text(f"dict[{key_t},{val_t}]")
-            out_is_dynamic = out_t == "dict<str, object>" or out_t == "object" or out_t == "std::any" or out_t == "::std::any" or out_t == "auto"
+            out_is_dynamic = out_t == "dict<str, object>" or out_t == "object" or out_t == "auto"
             if out_is_dynamic:
                 if key_t != "" and key_t != "unknown" and val_t != "" and val_t != "unknown":
                     out_t = self._cpp_type_text(f"dict[{key_t},{val_t}]")
