@@ -17,6 +17,7 @@
    - [x] `module.attr` の runtime 解決ロジックを `CppEmitter._lookup_module_attr_runtime_call` へ一本化し、`py2cpp.py` / `cpp_hooks.py` の重複分岐を削減した。
    - [x] `Compare(lowered_kind=Contains)` の C++ 固有分岐を `cpp_hooks.on_render_expr_kind(kind=Compare)` へ抽出した（selfhost 互換のため `py2cpp.py` 側フォールバックは残置）。
    - [x] `Call(Attribute)` の object-method 特殊処理フォールバック（`_render_call_object_method`）を削除し、hook 優先の経路へ一本化した。
+   - [x] `Call(Attribute)` の class-method 分岐に hook（`on_render_class_method`）を追加し、`_render_call_attribute` から hook 優先で描画できる導線を追加した（selfhost 互換のため `py2cpp.py` 側フォールバックは維持）。
 3. [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
 
 ## P1: py2cpp 縮退（行数削減）
@@ -52,6 +53,7 @@
    - [x] `_render_call_fallback` の `*.append` 分岐を helper（`_render_append_fallback_call`）へ分離し、`_render_append_call_object_method` と型変換ロジックを共通化した。
    - [x] `Call(Attribute)` owner 解決前処理（owner/module/type/attr）を helper（`_resolve_call_attribute_context`）へ分離し、`_render_call_attribute` 本体を縮退した。
    - [x] `Call(Attribute)` の object-method 分岐に hook（`on_render_object_method`）を追加し、`_render_call_attribute` から hook 優先で描画できるようにした（`_render_call_object_method` フォールバックは削除済み）。
+   - [x] `Call(Attribute)` の class-method 分岐に hook（`on_render_class_method`）を追加し、`cpp_hooks.py` 側に C++ 固有の class-method レンダ経路を分離した（`py2cpp.py` 側フォールバックは selfhost 互換のため維持）。
    - [x] `Call(Attribute)` の module-method 分岐に hook（`on_render_module_method`）を追加し、`_render_call_module_method` は hook 優先 + 最小フォールバック（namespace 解決のみ）へ縮退した。
    - [x] `Call(Attribute)` の C++ 固有 object-method 分岐を `cpp_hooks.py` 側へ集約し、`py2cpp.py` から文字列系専用 helper（`_render_string_object_method`）を削除した。
    - [x] `BuiltinCall` の direct runtime 分岐（`py_print/py_len/py_to_string/py_min|max/perf_counter/open/py_join/...`）を `cpp_hooks.on_render_call` へ追加し、`py2cpp.py` 側は selfhost（hooks stub）向けフォールバックとして維持した。

@@ -13,7 +13,12 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.hooks.cpp.hooks.cpp_hooks import on_render_expr_kind, on_render_module_method, on_render_object_method
+from src.hooks.cpp.hooks.cpp_hooks import (
+    on_render_class_method,
+    on_render_expr_kind,
+    on_render_module_method,
+    on_render_object_method,
+)
 
 
 class _DummyEmitter:
@@ -91,6 +96,35 @@ class _DummyEmitter:
             return owner_expr + ".append(" + rendered_args[0] + ")"
         return None
 
+    def _class_method_sig(self, owner_t: str, method: str) -> list[str]:
+        if owner_t == "MathUtil" and method == "twice":
+            return ["int64"]
+        return []
+
+    def _coerce_args_for_class_method(
+        self,
+        owner_t: str,
+        method: str,
+        args: list[str],
+        arg_nodes: list[Any],
+    ) -> list[str]:
+        _ = owner_t
+        _ = method
+        _ = arg_nodes
+        return args
+
+    def _render_attribute_expr(self, expr_d: dict[str, Any]) -> str:
+        owner = self.any_dict_get_str(self.any_to_dict_or_empty(expr_d.get("value")), "id", "")
+        attr = self.any_dict_get_str(expr_d, "attr", "")
+        if owner != "" and attr != "":
+            return owner + "::" + attr
+        return "<?>::<?>"
+
+    def any_to_dict_or_empty(self, value: Any) -> dict[str, Any]:
+        if isinstance(value, dict):
+            return value
+        return {}
+
 
 class CppHooksTest(unittest.TestCase):
     def test_range_expr_render(self) -> None:
@@ -152,6 +186,16 @@ class CppHooksTest(unittest.TestCase):
         em = _DummyEmitter()
         rendered = on_render_module_method(em, "pytra.std.math", "pow", ["x", "y"], {}, [])
         self.assertEqual(rendered, "pytra::std::math::pow(x, y)")
+
+    def test_class_method_render(self) -> None:
+        em = _DummyEmitter()
+        func = {
+            "kind": "Attribute",
+            "value": {"kind": "Name", "id": "MathUtil"},
+            "attr": "twice",
+        }
+        rendered = on_render_class_method(em, "MathUtil", "twice", func, ["x"], {}, [])
+        self.assertEqual(rendered, "MathUtil::twice(x)")
 
 
 if __name__ == "__main__":

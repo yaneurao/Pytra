@@ -77,6 +77,22 @@ class _HookedEmitter(_DummyEmitter):
             return "hooked_object_method()"
         return None
 
+    def hook_on_render_class_method(
+        self,
+        owner_type: str,
+        attr: str,
+        func_node: dict[str, Any],
+        rendered_args: list[str],
+        rendered_kwargs: dict[str, str],
+        arg_nodes: list[Any],
+    ) -> Any:
+        _ = func_node
+        _ = rendered_kwargs
+        _ = arg_nodes
+        if owner_type == "Cls" and attr == "make" and rendered_args == ["x"]:
+            return "hooked_class_method(x)"
+        return None
+
     def hook_on_render_expr_kind(
         self,
         kind: str,
@@ -734,6 +750,15 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(hook_mod, "hooked_module_method(x)")
         hook_obj = em.hook_on_render_object_method("str", "s", "strip", [])
         self.assertEqual(hook_obj, "hooked_object_method()")
+        hook_cls = em.hook_on_render_class_method(
+            "Cls",
+            "make",
+            {"kind": "Attribute", "value": {"kind": "Name", "id": "Cls"}, "attr": "make"},
+            ["x"],
+            {},
+            [],
+        )
+        self.assertEqual(hook_cls, "hooked_class_method(x)")
         hook_binop = em.hook_on_render_binop({"kind": "BinOp"}, "x", "y")
         self.assertEqual(hook_binop, "hooked_binop(x, y)")
         hook_expr = em.hook_on_render_expr_kind("MagicExpr", {"kind": "MagicExpr"})
@@ -783,6 +808,18 @@ class CodeEmitterTest(unittest.TestCase):
             calls.append("render_object_method")
             return "dict_hook_object_method()"
 
+        def on_render_class_method(
+            _em: CodeEmitter,
+            _owner_type: str,
+            _attr: str,
+            _func_node: dict[str, Any],
+            _rendered_args: list[str],
+            _rendered_kwargs: dict[str, str],
+            _arg_nodes: list[Any],
+        ) -> Any:
+            calls.append("render_class_method")
+            return "dict_hook_class_method()"
+
         def on_render_expr_kind(_em: CodeEmitter, kind: str, _expr_node: dict[str, Any]) -> Any:
             calls.append("render_expr_kind:" + kind)
             return "dict_hook_expr()"
@@ -806,6 +843,7 @@ class CodeEmitterTest(unittest.TestCase):
             "on_render_call": on_render_call,
             "on_render_module_method": on_render_module_method,
             "on_render_object_method": on_render_object_method,
+            "on_render_class_method": on_render_class_method,
             "on_render_binop": on_render_binop,
             "on_render_expr_kind": on_render_expr_kind,
             "on_render_expr_complex": on_render_expr_complex,
@@ -826,6 +864,17 @@ class CodeEmitterTest(unittest.TestCase):
             "dict_hook_object_method()",
         )
         self.assertEqual(
+            em.hook_on_render_class_method(
+                "Cls",
+                "make",
+                {"kind": "Attribute", "value": {"kind": "Name", "id": "Cls"}, "attr": "make"},
+                ["x"],
+                {},
+                [],
+            ),
+            "dict_hook_class_method()",
+        )
+        self.assertEqual(
             em.hook_on_render_binop({"kind": "BinOp"}, "l", "r"),
             "dict_hook_binop()",
         )
@@ -842,6 +891,7 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertIn("render_call", calls)
         self.assertIn("render_module_method", calls)
         self.assertIn("render_object_method", calls)
+        self.assertIn("render_class_method", calls)
         self.assertIn("render_binop", calls)
         self.assertIn("render_expr_kind:MagicExpr", calls)
         self.assertIn("render_expr_complex", calls)

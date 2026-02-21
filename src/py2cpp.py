@@ -3738,6 +3738,9 @@ class CppEmitter(CodeEmitter):
         hook_object_rendered = self.hook_on_render_object_method(owner_t, owner_expr, attr, args)
         if isinstance(hook_object_rendered, str) and hook_object_rendered != "":
             return hook_object_rendered
+        hook_class_rendered = self.hook_on_render_class_method(owner_t, attr, fn, args, kw, arg_nodes)
+        if isinstance(hook_class_rendered, str) and hook_class_rendered != "":
+            return hook_class_rendered
         class_rendered = self._render_call_class_method(owner_t, attr, fn, args, kw, arg_nodes)
         if class_rendered is not None and class_rendered != "":
             return class_rendered

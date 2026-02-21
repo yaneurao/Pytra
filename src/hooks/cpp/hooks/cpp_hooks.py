@@ -481,6 +481,25 @@ def on_render_object_method(
     return None
 
 
+def on_render_class_method(
+    emitter: Any,
+    owner_type: str,
+    attr: str,
+    func_node: dict[str, Any],
+    rendered_args: list[str],
+    rendered_kwargs: dict[str, str],
+    arg_nodes: list[Any],
+) -> str | None:
+    """`Class.method(...)` の C++ 固有分岐を処理する。"""
+    method_sig = emitter._class_method_sig(owner_type, attr)
+    if len(method_sig) == 0:
+        return None
+    call_args = emitter.merge_call_args(rendered_args, rendered_kwargs)
+    call_args = emitter._coerce_args_for_class_method(owner_type, attr, call_args, arg_nodes)
+    fn_expr = emitter._render_attribute_expr(func_node)
+    return fn_expr + "(" + ", ".join(call_args) + ")"
+
+
 def on_render_binop(
     emitter: Any,
     binop_node: dict[str, Any],
@@ -588,6 +607,7 @@ def build_cpp_hooks() -> dict[str, Any]:
     hooks.add("on_render_call", on_render_call)
     hooks.add("on_render_module_method", on_render_module_method)
     hooks.add("on_render_object_method", on_render_object_method)
+    hooks.add("on_render_class_method", on_render_class_method)
     hooks.add("on_render_binop", on_render_binop)
     hooks.add("on_render_expr_kind", on_render_expr_kind)
     return hooks.to_dict()
