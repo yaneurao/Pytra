@@ -22,7 +22,7 @@
 
 ## P1: py2cpp 縮退（行数削減）
 
-1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
+1. [x] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
    - [x] `args + kw` 結合ロジックを `CodeEmitter.merge_call_args` へ移管し、`py2cpp.py` 側の重複実装を削除した。
    - [x] `list[dict]` 抽出ヘルパ（`_dict_stmt_list`）を `CodeEmitter` 側へ移管し、`py2cpp.py` 側の重複実装を削除した。
    - [x] `Call` 前処理（`_prepare_call_parts`）を `CodeEmitter` 側へ移管し、selfhost-safe 化した（互換維持のため `py2cpp.py` 側フォールバックは残置）。
@@ -66,7 +66,7 @@
    - [x] `from-import` 解決と `module.method(...)` の namespace 呼び出しを `_render_namespaced_module_call` へ統合し、call/attribute 周辺の重複分岐を追加削減した。
    - [x] `Attribute` 式の self/class/module 基本分岐を `CodeEmitter` helper（`render_attribute_self_or_class_access` / `render_attribute_module_access`）へ抽出し、`py2cpp.py` と `cpp_hooks.py` の重複を追加削減した。
    - [x] `cpp_hooks.on_render_module_method` でも `CppEmitter._render_namespaced_module_call` を優先利用し、hooks 側の namespace 分岐重複を削減した。
-   - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
+   - [x] call/attribute 周辺の C++ 固有分岐を helper/hook 化し、`py2cpp.py` 本体と `cpp_hooks.py` の重複分岐を段階的に削減した（残課題は profile 化 / 共通ディスパッチ再設計へ移管）。
 2. [x] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
    - [x] object レシーバ禁止検証を `CodeEmitter.validate_call_receiver_or_raise` へ移管し、`py2cpp.py` 側の `Call(Attribute)` 直書き分岐を削減した。
