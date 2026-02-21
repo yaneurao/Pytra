@@ -1,4 +1,4 @@
-# 12: バブルソートの途中状態をGIF出力するサンプル。
+# 12: Sample that outputs intermediate states of bubble sort as a GIF.
 
 from __future__ import annotations
 

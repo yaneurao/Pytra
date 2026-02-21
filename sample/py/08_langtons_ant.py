@@ -1,4 +1,4 @@
-# 08: ラングトンのアリの軌跡をGIF出力するサンプル。
+# 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
 from __future__ import annotations
 

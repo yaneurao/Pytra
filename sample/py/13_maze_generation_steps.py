@@ -1,4 +1,4 @@
-# 13: DFS迷路生成の進行状況をGIF出力するサンプル。
+# 13: Sample that outputs DFS maze-generation progress as a GIF.
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def capture(grid: list[list[int]], w: int, h: int, scale: int) -> bytes:
 
 
 def run_13_maze_generation_steps() -> None:
-    # 実行時間を十分に確保するため、迷路サイズと描画解像度を上げる。
+    # Increase maze size and render resolution to ensure sufficient runtime.
     cell_w = 89
     cell_h = 67
     scale = 5

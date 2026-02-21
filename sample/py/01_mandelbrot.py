@@ -1,12 +1,12 @@
-# 01: マンデルブロ集合を PNG 画像として出力するサンプルです。
-# 将来のトランスパイルを意識して、構文はなるべく素直に書いています。
+# 01: Sample that outputs the Mandelbrot set as a PNG image.
+# Syntax is kept straightforward with future transpilation in mind.
 
 from time import perf_counter
 from pytra.runtime import png
 
 
 def escape_count(cx: float, cy: float, max_iter: int) -> int:
-    """1点 (cx, cy) の発散までの反復回数を返す。"""
+    """Return the iteration count until divergence for one point (cx, cy)."""
     x: float = 0.0
     y: float = 0.0
     for i in range(max_iter):
@@ -20,11 +20,11 @@ def escape_count(cx: float, cy: float, max_iter: int) -> int:
 
 
 def color_map(iter_count: int, max_iter: int) -> tuple[int, int, int]:
-    """反復回数を RGB に変換する。"""
+    """Convert an iteration count to RGB."""
     if iter_count >= max_iter:
         return (0, 0, 0)
 
-    # 簡単なグラデーション（青系 -> 黄系）
+    # Simple gradient (blue -> yellow)
     t: float = iter_count / max_iter
     r: int = int(255.0 * (t * t))
     g: int = int(255.0 * t)
@@ -41,7 +41,7 @@ def render_mandelbrot(
     y_min: float,
     y_max: float,
 ) -> bytearray:
-    """マンデルブロ画像の RGB バイト列を生成する。"""
+    """Generate RGB bytes for a Mandelbrot image."""
     pixels: bytearray = bytearray()
 
     for y in range(height):

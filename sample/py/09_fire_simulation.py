@@ -1,4 +1,4 @@
-# 09: 簡易ファイアエフェクトをGIF出力するサンプル。
+# 09: Sample that outputs a simple fire effect as a GIF.
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
-# 02: 球のみのミニレイトレーサを実行し、PNG画像を出力するサンプルです。
-# トランスパイル互換のため、依存モジュールは最小限（timeのみ）にしています。
+# 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
+# Dependencies are kept minimal (time only) for transpilation compatibility.
 
 import math
 from pytra.runtime import png
@@ -15,7 +15,7 @@ def clamp01(v: float) -> float:
 
 
 def hit_sphere(ox: float, oy: float, oz: float, dx: float, dy: float, dz: float, cx: float, cy: float, cz: float, r: float) -> float:
-    """レイと球の交差距離t（交差しない場合は-1）を返す。"""
+    """Return ray-sphere intersection distance t (-1 if there is no hit)."""
     lx: float = ox - cx
     ly: float = oy - cy
     lz: float = oz - cz
@@ -42,12 +42,12 @@ def hit_sphere(ox: float, oy: float, oz: float, dx: float, dy: float, dz: float,
 def render(width: int, height: int, aa: int) -> bytearray:
     pixels: bytearray = bytearray()
 
-    # カメラ原点
+    # Camera origin
     ox: float = 0.0
     oy: float = 0.0
     oz: float = -3.0
 
-    # ライト方向（正規化済み）
+    # Light direction (normalized)
     lx: float = -0.4
     ly: float = 0.8
     lz: float = -0.45

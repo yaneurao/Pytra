@@ -1,4 +1,4 @@
-# 16: ガラス彫刻のカオス回転をレイトレーシングで描き、GIF出力するサンプル。
+# 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def reflect(ix: float, iy: float, iz: float, nx: float, ny: float, nz: float) ->
 
 
 def refract(ix: float, iy: float, iz: float, nx: float, ny: float, nz: float, eta: float) -> tuple[float, float, float]:
-    # IOR 由来の簡易屈折。全反射時は反射方向を返す。
+    # Simple IOR-based refraction. Return reflection direction on total internal reflection.
     cosi = -dot(ix, iy, iz, nx, ny, nz)
     sint2 = eta * eta * (1.0 - cosi * cosi)
     if sint2 > 1.0:
@@ -53,7 +53,7 @@ def schlick(cos_theta: float, f0: float) -> float:
 
 
 def sky_color(dx: float, dy: float, dz: float, tphase: float) -> tuple[float, float, float]:
-    # 上空グラデーション + ネオン帯
+    # Sky gradient + neon band
     t = 0.5 * (dy + 1.0)
     r = 0.06 + 0.20 * t
     g = 0.10 + 0.25 * t
@@ -96,7 +96,7 @@ def sphere_intersect(
 
 
 def palette_332() -> bytes:
-    # 3-3-2 量子化パレット。量子化処理が軽く、トランスパイル後も高速。
+    # 3-3-2 quantized palette. Lightweight quantization that stays fast after transpilation.
     p = bytearray(256 * 3)
     for i in range(256):
         r = (i >> 5) & 7
@@ -119,7 +119,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
     t = frame_id / frames_n
     tphase = 2.0 * math.pi * t
 
-    # カメラはゆっくり周回
+    # Camera slowly orbits.
     cam_r = 3.0
     cam_x = cam_r * math.cos(tphase * 0.9)
     cam_y = 1.1 + 0.25 * math.sin(tphase * 0.6)
@@ -136,7 +136,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
         right_x * fwd_y - right_y * fwd_x,
     )
 
-    # 動くガラス彫刻（3球）と発光球
+    # Moving glass sculpture (3 spheres) and an emissive sphere.
     s0x = 0.9 * math.cos(1.3 * tphase)
     s0y = 0.15 + 0.35 * math.sin(1.7 * tphase)
     s0z = 0.9 * math.sin(1.3 * tphase)
@@ -165,14 +165,14 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
             rz = fwd_z + fov * (sx * right_z + sy * up_z)
             dx, dy, dz = normalize(rx, ry, rz)
 
-            # 最短ヒットを探索
+            # Search for the nearest hit.
             best_t = 1e9
             hit_kind = 0  # 0:sky, 1:floor, 2/3/4:glass sphere
             r = 0.0
             g = 0.0
             b = 0.0
 
-            # 床平面 y=-1.2
+            # Floor plane y=-1.2
             if dy < -1e-6:
                 tf = (-1.2 - cam_y) / dy
                 if tf > 1e-4 and tf < best_t:
@@ -203,7 +203,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
                 base_r = 0.10 if checker == 0 else 0.04
                 base_g = 0.11 if checker == 0 else 0.05
                 base_b = 0.13 if checker == 0 else 0.08
-                # 発光球の寄与
+                # Emissive sphere contribution.
                 lxv = lx - hx
                 lyv = ly - (-1.2)
                 lzv = lz - hz
@@ -239,7 +239,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
                 hz = cam_z + best_t * dz
                 nx, ny, nz = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad)
 
-                # 簡易ガラスシェーディング（反射+屈折+光源ハイライト）
+                # Simple glass shading (reflection + refraction + light highlights).
                 rdx, rdy, rdz = reflect(dx, dy, dz, nx, ny, nz)
                 tdx, tdy, tdz = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45)
                 sr, sg, sb = sky_color(rdx, rdy, rdz, tphase)
@@ -266,7 +266,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
                 g += 0.18 * ndotl + 0.60 * spec + 0.35 * glow
                 b += 0.26 * ndotl + 1.00 * spec + 0.65 * glow
 
-                # 球ごとに僅かな色味差
+                # Slight tint variation per sphere.
                 if hit_kind == 2:
                     r *= 0.95
                     g *= 1.05
@@ -280,7 +280,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
                     g *= 1.10
                     b *= 0.95
 
-            # やや強めのトーンマップ
+            # Slightly stronger tone mapping.
             r = math.sqrt(clamp01(r))
             g = math.sqrt(clamp01(g))
             b = math.sqrt(clamp01(b))

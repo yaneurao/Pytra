@@ -1,5 +1,5 @@
-# 03: ジュリア集合を PNG 形式で出力するサンプルです。
-# トランスパイル互換を意識し、単純なループ中心で実装しています。
+# 03: Sample that outputs a Julia set as a PNG image.
+# Implemented with simple loop-centric logic for transpilation compatibility.
 
 from time import perf_counter
 from pytra.runtime import png

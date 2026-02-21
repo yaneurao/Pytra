@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from time import perf_counter
 
 
-# 字句解析用トークン。
+# Tokens for lexical analysis.
 @dataclass
 class Token:
     kind: str
@@ -10,23 +10,23 @@ class Token:
     pos: int
 
 
-# 式ノード。kind で実体を識別する。
+# Expression node. `kind` identifies the concrete variant.
 @dataclass
 class ExprNode:
     kind: str        # "lit" | "var" | "bin" | "neg"
-    value: int       # lit の値
-    name: str        # var の名前
-    op: str          # bin の演算子
-    left: int        # 子ノード index
-    right: int       # 子ノード index
+    value: int       # value for `lit`
+    name: str        # name for `var`
+    op: str          # operator for `bin`
+    left: int        # child node index
+    right: int       # child node index
 
 
-# 文ノード。kind で実体を識別する。
+# Statement node. `kind` identifies the concrete variant.
 @dataclass
 class StmtNode:
     kind: str        # "let" | "assign" | "print"
-    name: str        # 変数名（print では未使用）
-    expr_index: int  # 式ノード index
+    name: str        # variable name (unused for `print`)
+    expr_index: int  # expression node index
 
 def tokenize(lines: list[str]) -> list[Token]:
     tokens: list[Token] = []
@@ -250,7 +250,7 @@ def eval_expr(expr_index: int, expr_nodes: list[ExprNode], env: dict[str, int]) 
         if node.op == "/":
             if rhs == 0:
                 raise RuntimeError("division by zero")
-            # ミニ言語では整数除算を採用する。
+            # The mini-language uses integer division.
             return lhs // rhs
         raise RuntimeError("unknown operator: " + node.op)
 
@@ -290,11 +290,11 @@ def execute(stmts: list[StmtNode], expr_nodes: list[ExprNode], trace: bool) -> i
 def build_benchmark_source(var_count: int, loops: int) -> list[str]:
     lines: list[str] = []
 
-    # 初期変数を宣言。
+    # Declare initial variables.
     for i in range(var_count):
         lines.append("let v" + str(i) + " = " + str(i + 1))
 
-    # 算術式を大量に評価させる。
+    # Force evaluation of many arithmetic expressions.
     for i in range(loops):
         x: int = i % var_count
         y: int = (i + 3) % var_count
@@ -306,7 +306,7 @@ def build_benchmark_source(var_count: int, loops: int) -> list[str]:
         if i % 97 == 0:
             lines.append("print v" + str(x))
 
-    # 最終値をまとめて出力。
+    # Print final values together.
     lines.append("print (v0 + v1 + v2 + v3)")
     return lines
 

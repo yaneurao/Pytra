@@ -1,5 +1,5 @@
-# 04: 整数演算のみで大きなグリッドを走査し、チェックサムを計算するサンプルです。
-# 浮動小数点誤差の影響を避け、言語間で比較しやすいベンチマークにします。
+# 04: Sample that scans a large grid using integer arithmetic only and computes a checksum.
+# It avoids floating-point error effects, making cross-language comparisons easier.
 
 from time import perf_counter
 

@@ -1,4 +1,4 @@
-# 14: 簡易レイマーチ風の光源移動シーンをGIF出力するサンプル。
+# 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
 
 from __future__ import annotations
 

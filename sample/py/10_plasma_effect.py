@@ -1,4 +1,4 @@
-# 10: プラズマエフェクトをGIF出力するサンプル。
+# 10: Sample that outputs a plasma effect as a GIF.
 
 from __future__ import annotations
 

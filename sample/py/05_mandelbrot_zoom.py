@@ -1,4 +1,4 @@
-# 05: マンデルブロ集合ズームをアニメーションGIFとして出力するサンプル。
+# 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 
 from __future__ import annotations
 

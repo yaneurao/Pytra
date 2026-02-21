@@ -1,4 +1,4 @@
-# 06: ジュリア集合のパラメータを回してGIF出力するサンプル。
+# 06: Sample that sweeps Julia-set parameters and outputs a GIF.
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pytra.runtime.gif import save_gif
 
 
 def julia_palette() -> bytes:
-    # 先頭色は集合内部用に黒固定、残りは高彩度グラデーションを作る。
+    # Keep index 0 black for points inside the set; build a high-saturation gradient for the rest.
     palette = bytearray(256 * 3)
     palette[0] = 0
     palette[1] = 0
@@ -45,7 +45,7 @@ def render_frame(width: int, height: int, cr: float, ci: float, max_iter: int, p
             if i >= max_iter:
                 frame[idx] = 0
             else:
-                # フレーム位相を少し加えて色が滑らかに流れるようにする。
+                # Add a small frame phase so colors flow smoothly.
                 color_index = 1 + (((i * 224) // max_iter + phase) % 255)
                 frame[idx] = color_index
             idx += 1
@@ -61,13 +61,13 @@ def run_06_julia_parameter_sweep() -> None:
 
     start = perf_counter()
     frames: list[bytes] = []
-    # 既知の見栄えが良い近傍を楕円軌道で巡回し、単調な白飛びを抑える。
+    # Orbit an ellipse around a known visually good region to reduce flat blown highlights.
     center_cr = -0.745
     center_ci = 0.186
     radius_cr = 0.12
     radius_ci = 0.10
-    # GitHub上のサムネイルで暗く見えないよう、開始位置と色位相にオフセットを入れる。
-    # 赤みが強い色域から始まるように調整する。
+    # Add start and phase offsets so GitHub thumbnails do not appear too dark.
+    # Tune it to start in a red-leaning color range.
     start_offset = 20
     phase_offset = 180
     for i in range(frames_n):

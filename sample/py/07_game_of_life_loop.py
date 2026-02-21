@@ -1,4 +1,4 @@
-# 07: Game of Life の進化をGIF出力するサンプル。
+# 07: Sample that outputs Game of Life evolution as a GIF.
 
 from __future__ import annotations
 
@@ -59,15 +59,15 @@ def run_07_game_of_life_loop() -> None:
             row.append(0)
         grid.append(row)
 
-    # 疎なノイズを敷いて、全体が早期に固定化しにくい土台を作る。
-    # 大きな整数リテラルを使わない式にして、各トランスパイラで同一に扱えるようにする。
+    # Lay down sparse noise so the whole field is less likely to stabilize too early.
+    # Avoid large integer literals so all transpilers handle the expression consistently.
     for y in range(h):
         for x in range(w):
             noise = (x * 37 + y * 73 + (x * y) % 19 + (x + y) % 11) % 97
             if noise < 3:
                 grid[y][x] = 1
 
-    # 代表的な長寿命パターンを複数配置する。
+    # Place multiple well-known long-lived patterns.
     glider = [
         [0, 1, 0],
         [0, 0, 1],

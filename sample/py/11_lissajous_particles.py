@@ -1,4 +1,4 @@
-# 11: リサージュ運動する粒子をGIF出力するサンプル。
+# 11: Sample that outputs Lissajous-motion particles as a GIF.
 
 from __future__ import annotations
 
