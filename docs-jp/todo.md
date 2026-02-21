@@ -19,6 +19,9 @@
   - library 側の追加不足: nested `def`（関数内関数）, `;`, `self. attr` 形式の属性参照
   - game 側の追加不足: Enum 風 `X = 0,`（末尾`,`付き代入）, nested `def`（例: `lifegame.py` 内 `def pset(...)`）
   - import 解決不足（最小プローブで確認）: `math` / `random` / `timeit` / `traceback` / `browser` が `missing_module`
+- `browser` / `browser.widgets.dialog` について:
+  - Brython が提供する薄い wrapper であり、最終的には JavaScript 側の `document/window/canvas` などへ直接接続して動かす前提。
+  - そのため `py2js` では「モジュール本体を変換する」のではなく「外部提供ランタイム（ブラウザ環境）への参照」として扱う方針にする。
 
 ## P0: Yanesdk（library + game）を py2cpp で通す最短経路
 
@@ -45,8 +48,9 @@
 
 1. [ ] `math` / `random` / `timeit` / `traceback` / `enum` / `typing` の取り扱い方針を統一する。
    - [ ] `pytra.std.*` へ寄せる移行ルールを定義する（自動変換 or ソース修正）。
-2. [ ] `browser` / `browser.widgets.dialog` を Pytra のランタイムモジュールとして定義する。
-   - [ ] 最低限 `Yanesdk/yanesdk/browser.py` 相当の API を import 解決できる形にする。
+2. [ ] `browser` / `browser.widgets.dialog` の扱いを backend 別に明確化する。
+   - [ ] `py2js` では Brython/ブラウザ提供オブジェクトへの外部参照として解決する（モジュール変換対象にしない）。
+   - [ ] `py2cpp` 調査時は `missing_module` を許容するか、検証用 shim を使うかを方針化する。
 
 ## P2: 受け入れテスト追加（Yanesdk由来）
 
