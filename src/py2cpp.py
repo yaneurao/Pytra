@@ -3466,7 +3466,7 @@ class CppEmitter(CodeEmitter):
                     and mapped_runtime_txt not in {"perf_counter", "Path"}
                     and _looks_like_runtime_function_name(mapped_runtime_txt)
                 ):
-                    merged_args = self._merge_runtime_call_args(args, kw)
+                    merged_args = self.merge_call_args(args, kw)
                     call_args: list[str] = merged_args
                     if self._contains_text(mapped_runtime_txt, "::"):
                         call_args = self._coerce_args_for_module_function(imported_module, raw, merged_args, arg_nodes)
@@ -3631,7 +3631,7 @@ class CppEmitter(CodeEmitter):
         arg_nodes: list[Any],
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
-        merged_args = self._merge_runtime_call_args(args, kw)
+        merged_args = self.merge_call_args(args, kw)
         call_args = merged_args
         owner_mod_norm = self._normalize_runtime_module_name(owner_mod)
         if owner_mod_norm in self.module_namespace_map:
@@ -3660,26 +3660,6 @@ class CppEmitter(CodeEmitter):
             call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
             return f"{ns}::{attr}({_join_str_list(', ', call_args)})"
         return None
-
-    def _merge_runtime_call_args(self, args: list[str], kw: dict[str, str]) -> list[str]:
-        """runtime 呼び出し用に `args + keyword values` を並べた引数列を返す。"""
-        if len(kw) == 0:
-            return args
-        out: list[str] = []
-        i = 0
-        while i < len(args):
-            out.append(args[i])
-            i += 1
-        kw_keys: list[str] = []
-        for key in kw:
-            if isinstance(key, str):
-                kw_keys.append(key)
-        k = 0
-        while k < len(kw_keys):
-            key = kw_keys[k]
-            out.append(kw[key])
-            k += 1
-        return out
 
     def _render_call_object_method(
         self, owner_t: str, owner_expr: str, attr: str, args: list[str]
@@ -3778,7 +3758,7 @@ class CppEmitter(CodeEmitter):
             return object_rendered_txt
         method_sig = self._class_method_sig(owner_t, attr)
         if len(method_sig) > 0:
-            call_args = self._merge_runtime_call_args(args, kw)
+            call_args = self.merge_call_args(args, kw)
             call_args = self._coerce_args_for_class_method(owner_t, attr, call_args, arg_nodes)
             fn_expr = self._render_attribute_expr(fn)
             return f"{fn_expr}({_join_str_list(', ', call_args)})"

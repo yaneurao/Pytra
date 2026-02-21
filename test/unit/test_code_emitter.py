@@ -136,6 +136,14 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.any_dict_get_dict({"x": {"k": 1}}, "x"), {"k": 1})
         self.assertEqual(em.any_dict_get_dict({"x": 3}, "x"), {})
 
+    def test_merge_call_args(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.merge_call_args(["a", "b"], {}), ["a", "b"])
+        self.assertEqual(
+            em.merge_call_args(["a"], {"k1": "x", "k2": "y"}),
+            ["a", "x", "y"],
+        )
+
     def test_node_helpers(self) -> None:
         em = CodeEmitter({})
         self.assertTrue(em.is_name({"kind": "Name", "id": "x"}))

@@ -66,6 +66,26 @@ class CodeEmitter:
         for stmt in stmts:
             self.emit_stmt(stmt)  # type: ignore[attr-defined]
 
+    def merge_call_args(self, args: list[str], kw: dict[str, str]) -> list[str]:
+        """`args + keyword values` の結合結果を返す。"""
+        if len(kw) == 0:
+            return args
+        out: list[str] = []
+        i = 0
+        while i < len(args):
+            out.append(args[i])
+            i += 1
+        kw_keys: list[str] = []
+        for key in kw:
+            if isinstance(key, str):
+                kw_keys.append(key)
+        k = 0
+        while k < len(kw_keys):
+            key = kw_keys[k]
+            out.append(kw[key])
+            k += 1
+        return out
+
     def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:
         """`on_emit_stmt` フック。既定では何もしない。"""
         if "on_emit_stmt" in self.hooks:
