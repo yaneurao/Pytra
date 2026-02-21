@@ -454,6 +454,35 @@ def on_render_call(
     return None
 
 
+def on_emit_stmt_kind(
+    emitter: Any,
+    kind: str,
+    stmt: dict[str, Any],
+) -> bool | None:
+    """stmt kind 単位の出力フック。terminal 文の処理を先行させる。"""
+    if kind in {"Expr", "Return", "Pass", "Break", "Continue", "Import", "ImportFrom"}:
+        emitter.emit_leading_comments(stmt)
+    if kind == "Expr":
+        emitter._emit_expr_stmt(stmt)
+        return True
+    if kind == "Return":
+        emitter._emit_return_stmt(stmt)
+        return True
+    if kind == "Pass":
+        emitter._emit_pass_stmt(stmt)
+        return True
+    if kind == "Break":
+        emitter._emit_break_stmt(stmt)
+        return True
+    if kind == "Continue":
+        emitter._emit_continue_stmt(stmt)
+        return True
+    if kind == "Import" or kind == "ImportFrom":
+        emitter._emit_noop_stmt(stmt)
+        return True
+    return None
+
+
 def on_render_module_method(
     emitter: Any,
     module_name: str,
@@ -615,6 +644,15 @@ def on_render_expr_kind(
                 return "!(" + base + ")"
             return base
         return None
+    return None
+
+
+def on_render_expr_leaf(
+    emitter: Any,
+    kind: str,
+    expr_node: dict[str, Any],
+) -> str | None:
+    """leaf 式（Name/Constant/Attribute）向けの出力フック。"""
     if kind != "Attribute":
         return None
     base_raw = emitter.render_expr(expr_node.get("value"))
@@ -656,13 +694,33 @@ def on_render_expr_kind(
     return None
 
 
+def on_render_expr_complex(
+    emitter: Any,
+    expr_node: dict[str, Any],
+) -> str | None:
+    """複雑式（JoinedStr/Lambda など）向けの出力フック。"""
+    kind = emitter.any_dict_get_str(expr_node, "kind", "")
+    if kind == "JoinedStr":
+        render_joined = getattr(emitter, "_render_joinedstr_expr", None)
+        if callable(render_joined):
+            return render_joined(expr_node)
+    if kind == "Lambda":
+        render_lambda = getattr(emitter, "_render_lambda_expr", None)
+        if callable(render_lambda):
+            return render_lambda(expr_node)
+    return None
+
+
 def build_cpp_hooks() -> dict[str, Any]:
     """C++ エミッタへ注入する hooks dict を構築する。"""
     hooks = EmitterHooks()
+    hooks.add("on_emit_stmt_kind", on_emit_stmt_kind)
     hooks.add("on_render_call", on_render_call)
     hooks.add("on_render_module_method", on_render_module_method)
     hooks.add("on_render_object_method", on_render_object_method)
     hooks.add("on_render_class_method", on_render_class_method)
     hooks.add("on_render_binop", on_render_binop)
     hooks.add("on_render_expr_kind", on_render_expr_kind)
+    hooks.add("on_render_expr_leaf", on_render_expr_leaf)
+    hooks.add("on_render_expr_complex", on_render_expr_complex)
     return hooks.to_dict()

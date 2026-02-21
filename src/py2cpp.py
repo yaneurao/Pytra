@@ -4592,6 +4592,54 @@ class CppEmitter(CodeEmitter):
             return f"{base}->{attr}"
         return f"{base}.{attr}"
 
+    def _render_joinedstr_expr(self, expr_d: dict[str, Any]) -> str:
+        """JoinedStr（f-string）ノードを C++ の文字列連結式へ変換する。"""
+        if self.any_dict_get_str(expr_d, "lowered_kind", "") == "Concat":
+            parts: list[str] = []
+            for p in self._dict_stmt_list(expr_d.get("concat_parts")):
+                if self._node_kind_from_dict(p) == "literal":
+                    parts.append(cpp_string_lit(self.any_dict_get_str(p, "value", "")))
+                elif self._node_kind_from_dict(p) == "expr":
+                    val: object = p.get("value")
+                    if val is None:
+                        parts.append('""')
+                    else:
+                        vtxt = self.render_expr(val)
+                        vty = self.get_expr_type(val)
+                        if vty == "str":
+                            parts.append(vtxt)
+                        else:
+                            parts.append(self.render_to_string(val))
+            if len(parts) == 0:
+                return '""'
+            return _join_str_list(" + ", parts)
+        parts: list[str] = []
+        for p in self._dict_stmt_list(expr_d.get("values")):
+            pk = self._node_kind_from_dict(p)
+            if pk == "Constant":
+                parts.append(cpp_string_lit(self.any_dict_get_str(p, "value", "")))
+            elif pk == "FormattedValue":
+                v: object = p.get("value")
+                vtxt = self.render_expr(v)
+                vty = self.get_expr_type(v)
+                if vty == "str":
+                    parts.append(vtxt)
+                else:
+                    parts.append(self.render_to_string(v))
+        if len(parts) == 0:
+            return '""'
+        return _join_str_list(" + ", parts)
+
+    def _render_lambda_expr(self, expr_d: dict[str, Any]) -> str:
+        """Lambda ノードを C++ のラムダ式へ変換する。"""
+        arg_texts: list[str] = []
+        for a in self._dict_stmt_list(expr_d.get("args")):
+            nm = self.any_to_str(a.get("arg")).strip()
+            if nm != "":
+                arg_texts.append(f"auto {nm}")
+        body_expr = self.render_expr(expr_d.get("body"))
+        return f"[&]({_join_str_list(', ', arg_texts)}) {{ return {body_expr}; }}"
+
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
         expr_d = self.any_to_dict_or_empty(expr)
@@ -4605,6 +4653,10 @@ class CppEmitter(CodeEmitter):
             hook_complex = self.hook_on_render_expr_complex(expr_d)
             if hook_complex != "":
                 return hook_complex
+        if kind in {"Name", "Constant", "Attribute"}:
+            hook_leaf = self.hook_on_render_expr_leaf(kind, expr_d)
+            if hook_leaf != "":
+                return hook_leaf
 
         if kind == "Name":
             return self._render_name_expr(expr_d)
@@ -4776,49 +4828,9 @@ class CppEmitter(CodeEmitter):
         if kind == "Subscript":
             return self._render_subscript_expr(expr)
         if kind == "JoinedStr":
-            if self.any_dict_get_str(expr_d, "lowered_kind", "") == "Concat":
-                parts: list[str] = []
-                for p in self._dict_stmt_list(expr_d.get("concat_parts")):
-                    if self._node_kind_from_dict(p) == "literal":
-                        parts.append(cpp_string_lit(self.any_dict_get_str(p, "value", "")))
-                    elif self._node_kind_from_dict(p) == "expr":
-                        val: object = p.get("value")
-                        if val is None:
-                            parts.append('""')
-                        else:
-                            vtxt = self.render_expr(val)
-                            vty = self.get_expr_type(val)
-                            if vty == "str":
-                                parts.append(vtxt)
-                            else:
-                                parts.append(self.render_to_string(val))
-                if len(parts) == 0:
-                    return '""'
-                return _join_str_list(" + ", parts)
-            parts: list[str] = []
-            for p in self._dict_stmt_list(expr_d.get("values")):
-                pk = self._node_kind_from_dict(p)
-                if pk == "Constant":
-                    parts.append(cpp_string_lit(self.any_dict_get_str(p, "value", "")))
-                elif pk == "FormattedValue":
-                    v: object = p.get("value")
-                    vtxt = self.render_expr(v)
-                    vty = self.get_expr_type(v)
-                    if vty == "str":
-                        parts.append(vtxt)
-                    else:
-                        parts.append(self.render_to_string(v))
-            if len(parts) == 0:
-                return '""'
-            return _join_str_list(" + ", parts)
+            return self._render_joinedstr_expr(expr_d)
         if kind == "Lambda":
-            arg_texts: list[str] = []
-            for a in self._dict_stmt_list(expr_d.get("args")):
-                nm = self.any_to_str(a.get("arg")).strip()
-                if nm != "":
-                    arg_texts.append(f"auto {nm}")
-            body_expr = self.render_expr(expr_d.get("body"))
-            return f"[&]({_join_str_list(', ', arg_texts)}) {{ return {body_expr}; }}"
+            return self._render_lambda_expr(expr_d)
         if kind == "ListComp":
             gens = self.any_to_list(expr_d.get("generators"))
             if len(gens) != 1:

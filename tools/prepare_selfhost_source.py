@@ -337,9 +337,22 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     )
     repl(
         "    def hook_on_render_expr_kind(",
-        "\n    def hook_on_render_expr_complex(",
+        "\n    def hook_on_render_expr_leaf(",
         (
             "    def hook_on_render_expr_kind(\n"
+            "        self,\n"
+            "        kind: str,\n"
+            "        expr_node: dict[str, Any],\n"
+            "    ) -> str:\n"
+            "        pass\n"
+            "        return \"\"\n"
+        ),
+    )
+    repl(
+        "    def hook_on_render_expr_leaf(",
+        "\n    def hook_on_render_expr_complex(",
+        (
+            "    def hook_on_render_expr_leaf(\n"
             "        self,\n"
             "        kind: str,\n"
             "        expr_node: dict[str, Any],\n"

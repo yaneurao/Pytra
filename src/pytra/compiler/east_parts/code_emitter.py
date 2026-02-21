@@ -288,6 +288,20 @@ class CodeEmitter:
                     return v
         return ""
 
+    def hook_on_render_expr_leaf(
+        self,
+        kind: str,
+        expr_node: dict[str, Any],
+    ) -> str:
+        """`Name/Constant/Attribute` などの leaf 式向けフック。"""
+        if "on_render_expr_leaf" in self.hooks:
+            fn = self.hooks["on_render_expr_leaf"]
+            if fn is not None:
+                v = fn(self, kind, expr_node)
+                if isinstance(v, str):
+                    return v
+        return ""
+
     def hook_on_render_expr_complex(
         self,
         expr_node: dict[str, Any],
