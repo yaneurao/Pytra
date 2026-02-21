@@ -244,9 +244,9 @@ def f(x: object) -> None:
     def test_infer_rendered_arg_type_uses_declared_var_type(self) -> None:
         em = CppEmitter({}, load_cpp_profile(), {})
         em.declared_var_types["x"] = "object"
-        self.assertEqual(em._infer_rendered_arg_type("x", "unknown"), "object")
-        self.assertEqual(em._infer_rendered_arg_type("(x)", ""), "object")
-        self.assertEqual(em._infer_rendered_arg_type("x", "int64"), "int64")
+        self.assertEqual(em.infer_rendered_arg_type("x", "unknown", em.declared_var_types), "object")
+        self.assertEqual(em.infer_rendered_arg_type("(x)", "", em.declared_var_types), "object")
+        self.assertEqual(em.infer_rendered_arg_type("x", "int64", em.declared_var_types), "int64")
 
 
 if __name__ == "__main__":

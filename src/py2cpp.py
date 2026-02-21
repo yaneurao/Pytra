@@ -1149,17 +1149,6 @@ class CppEmitter(CodeEmitter):
             return sig
         return []
 
-    def _infer_rendered_arg_type(self, rendered_arg: str, arg_type: str) -> str:
-        """ノード型が unknown のとき、描画済み式から型ヒントを補完する。"""
-        if arg_type not in {"", "unknown"}:
-            return arg_type
-        text = self._strip_outer_parens(rendered_arg.strip())
-        if text in self.declared_var_types:
-            declared_t = self.normalize_type_name(self.declared_var_types[text])
-            if declared_t != "":
-                return declared_t
-        return arg_type
-
     def _coerce_args_for_module_function(
         self,
         module_name: str,
@@ -1182,10 +1171,10 @@ class CppEmitter(CodeEmitter):
                     arg_t_obj = self.get_expr_type(arg_nodes[i])
                     if isinstance(arg_t_obj, str):
                         arg_t = arg_t_obj
-                arg_t = self._infer_rendered_arg_type(a, arg_t)
+                arg_t = self.infer_rendered_arg_type(a, arg_t, self.declared_var_types)
                 arg_is_unknown = arg_t == "" or arg_t == "unknown"
                 if self.is_any_like_type(tt) and (arg_is_unknown or not self.is_any_like_type(arg_t)):
-                    if not self._is_boxed_object_expr(a):
+                    if not self.is_boxed_object_expr(a):
                         a = f"make_object({a})"
             out.append(a)
             i += 1
@@ -1208,13 +1197,13 @@ class CppEmitter(CodeEmitter):
                 needs_object = i == 1
             elif fn_name == "py_assert_eq":
                 needs_object = i < 2
-            if needs_object and not self._is_boxed_object_expr(a):
+            if needs_object and not self.is_boxed_object_expr(a):
                 arg_t = ""
                 if i < len(nodes):
                     at = self.get_expr_type(nodes[i])
                     if isinstance(at, str):
                         arg_t = at
-                arg_t = self._infer_rendered_arg_type(a, arg_t)
+                arg_t = self.infer_rendered_arg_type(a, arg_t, self.declared_var_types)
                 if not self.is_any_like_type(arg_t):
                     a = f"make_object({a})"
             out.append(a)
@@ -2055,7 +2044,7 @@ class CppEmitter(CodeEmitter):
         if self.is_any_like_type(ann_t_str) and val_is_dict:
             if val_kind == "Constant" and val.get("value") is None:
                 rendered_val = "object{}"
-            elif not self._is_boxed_object_expr(rendered_val):
+            elif not self.is_boxed_object_expr(rendered_val):
                 rendered_val = f"make_object({rendered_val})"
         declare = self.any_dict_get_int(stmt, "declare", 1) != 0
         already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
@@ -2583,7 +2572,7 @@ class CppEmitter(CodeEmitter):
             if self.is_any_like_type(picked):
                 if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
                     rval = "object{}"
-                elif not self._is_boxed_object_expr(rval):
+                elif not self.is_boxed_object_expr(rval):
                     rval = f"make_object({rval})"
             self.emit(f"{dtype} {texpr} = {rval};")
             return
@@ -2607,7 +2596,7 @@ class CppEmitter(CodeEmitter):
         if self.is_any_like_type(t_target):
             if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
                 rval = "object{}"
-            elif not self._is_boxed_object_expr(rval):
+            elif not self.is_boxed_object_expr(rval):
                 rval = f"make_object({rval})"
         self.emit(f"{texpr} = {rval};")
 
@@ -2685,7 +2674,7 @@ class CppEmitter(CodeEmitter):
         if key_t in {"", "unknown"}:
             return key_expr
         if self.is_any_like_type(key_t):
-            if self._is_boxed_object_expr(key_expr):
+            if self.is_boxed_object_expr(key_expr):
                 return key_expr
             return f"make_object({key_expr})"
         return self.apply_cast(key_expr, key_t)
@@ -3665,6 +3654,25 @@ class CppEmitter(CodeEmitter):
         owner_types: list[str] = [owner_t]
         if self._contains_text(owner_t, "|"):
             owner_types = self.split_union(owner_t)
+        string_method_rendered = self._render_string_object_method(owner_types, owner_expr, attr, args)
+        if string_method_rendered is not None:
+            return string_method_rendered
+        if owner_t == "unknown" and attr == "clear":
+            return f"{owner_expr}.clear()"
+        if attr == "append":
+            append_rendered = self._render_append_call_object_method(owner_types, owner_expr, args)
+            if append_rendered is not None:
+                return append_rendered
+        return None
+
+    def _render_string_object_method(
+        self,
+        owner_types: list[str],
+        owner_expr: str,
+        attr: str,
+        args: list[str],
+    ) -> str | None:
+        """文字列系 object method の特殊処理を描画する。"""
         if attr in {"strip", "lstrip", "rstrip"}:
             if len(args) == 0:
                 return f"py_{attr}({owner_expr})"
@@ -3679,12 +3687,6 @@ class CppEmitter(CodeEmitter):
                 return f"{owner_expr}.{attr}()"
             if attr in {"find", "rfind"}:
                 return f"{owner_expr}.{attr}({_join_str_list(', ', args)})"
-        if owner_t == "unknown" and attr == "clear":
-            return f"{owner_expr}.clear()"
-        if attr == "append":
-            append_rendered = self._render_append_call_object_method(owner_types, owner_expr, args)
-            if append_rendered is not None:
-                return append_rendered
         return None
 
     def _render_call_class_method(
@@ -4114,17 +4116,9 @@ class CppEmitter(CodeEmitter):
             cur_node = rhs_node
         return _join_str_list(" && ", parts) if len(parts) > 0 else "true"
 
-    def _is_boxed_object_expr(self, expr_txt: str) -> bool:
-        """式が既に object boxing 済みなら True を返す。"""
-        if expr_txt.startswith("make_object("):
-            return True
-        if expr_txt == "object{}":
-            return True
-        return False
-
     def _box_expr_for_any(self, expr_txt: str, source_node: Any) -> str:
         """Any/object 向けの boxing を必要時のみ適用する。"""
-        if self._is_boxed_object_expr(expr_txt):
+        if self.is_boxed_object_expr(expr_txt):
             return expr_txt
         src_t = self.get_expr_type(source_node)
         if self.is_any_like_type(src_t):
