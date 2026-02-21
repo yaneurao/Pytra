@@ -2327,13 +2327,19 @@ class CppEmitter(CodeEmitter):
             else:
                 self.emit(f"/* omitted bare identifier expression: {rendered} */")
             return
-        self.emit(rendered + ";")
+        self.emit(
+            self.syntax_line(
+                "expr_stmt",
+                "{expr};",
+                {"expr": rendered},
+            )
+        )
 
     def _emit_return_stmt(self, stmt: dict[str, Any]) -> None:
         value_node = self.any_to_dict_or_empty(stmt.get("value"))
         v_is_dict: bool = len(value_node) > 0
         if not v_is_dict:
-            self.emit("return;")
+            self.emit(self.syntax_text("return_void", "return;"))
             return
         rv = self.render_expr(stmt.get("value"))
         ret_t = self.current_function_return_type
@@ -2343,7 +2349,13 @@ class CppEmitter(CodeEmitter):
             rv = self.render_expr_as_any(stmt.get("value"))
         if self._can_runtime_cast_target(ret_t) and self.is_any_like_type(expr_t):
             rv = self.apply_cast(rv, ret_t)
-        self.emit(f"return {rv};")
+        self.emit(
+            self.syntax_line(
+                "return_value",
+                "return {value};",
+                {"value": rv},
+            )
+        )
 
     def _emit_assign_stmt(self, stmt: dict[str, Any]) -> None:
         self.emit_assign(stmt)
