@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "language": "rs",
+  "include": [
+    "types.json",
+    "operators.json",
+    "runtime_calls.json",
+    "syntax.json"
+  ],
+  "hooks": {
+    "module": "hooks.rs.hooks.rs_hooks",
+    "factory": "build_rs_hooks"
+  }
+}

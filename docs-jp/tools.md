@@ -19,6 +19,8 @@
 - `tools/check_py2cpp_transpile.py`
   - 目的: `test/fixtures/` を `py2cpp.py` で一括変換し、失敗ケースを検出する。
   - 主要オプション: `--check-yanesdk-smoke`（Yanesdk の縮小ケースを同時確認）
+- `tools/check_py2rs_transpile.py`
+  - 目的: `test/fixtures/` と `sample/py` を `py2rs.py` で一括変換し、失敗ケースを検出する。
 - `tools/check_yanesdk_py2cpp_smoke.py`
   - 目的: Yanesdk canonical 対象（`library 1本 + game 7本`）が `py2cpp.py` を通るか確認する。
 - `tools/verify_sample_outputs.py`

@@ -1,0 +1,9 @@
+{
+  "runtime_calls": {
+    "name_call": {
+      "print": "print",
+      "len": "len"
+    },
+    "module_attr_call": {}
+  }
+}

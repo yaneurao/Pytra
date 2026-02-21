@@ -291,6 +291,7 @@ python3 tools/check_selfhost_cpp_diff.py --show-diff
 
 ```bash
 python3 tools/check_py2cpp_transpile.py
+python3 tools/check_py2rs_transpile.py
 ```
 
 補足:

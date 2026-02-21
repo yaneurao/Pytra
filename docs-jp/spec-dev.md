@@ -318,6 +318,14 @@
   - 型文字列補助（`split_generic`, `split_union`, `normalize_type_name`, `is_*_type`）
 - `CodeEmitter` に機能追加・仕様変更した場合は、同ファイルへ対応テストを追加してから利用側エミッタへ展開します。
 
+### 5.2 EASTベース Rust 経路（段階移行）
+
+- `src/py2rs.py` は EAST（`.py/.json`）入力を `CodeEmitter` 経由で Rust へ変換する。
+- `src/py2rs.py` は `src/common/` / `src/rs_module/` に依存しない。
+- 言語固有差分は `src/profiles/rs/` と `src/hooks/rs/` に分離する。
+- 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
+- 現時点の到達点は「変換成功（transpile success）を優先」であり、Rust コンパイル互換・出力品質は段階的に改善する。
+
 ## 6. LanguageProfile / CodeEmitter
 
 - `CodeEmitter` は言語非依存の骨組み（ノード走査、スコープ管理、共通補助）を担当します。

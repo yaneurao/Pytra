@@ -1,1403 +1,881 @@
 #!/usr/bin/env python3
-# Python -> Rust の変換器。
-# native 変換（サブセット）専用。未対応構文は TranspileError で失敗します。
+"""EAST -> Rust transpiler."""
 
 from __future__ import annotations
 
-import argparse
-import ast
-import os
-from pathlib import Path
-import sys
+from pytra.std.typing import Any
 
-try:
-    from common.base_transpiler import BaseTranspiler, TranspileError
-    from common.transpile_shared import Scope
-except ModuleNotFoundError:
-    from src.common.base_transpiler import BaseTranspiler, TranspileError
-    from src.common.transpile_shared import Scope
+from hooks.rs.hooks.rs_hooks import build_rs_hooks
+from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from pytra.compiler.east_parts.core import convert_path
+from pytra.compiler.transpile_cli import add_common_transpile_args
+from pytra.std import argparse
+from pytra.std import json
+from pytra.std.pathlib import Path
+from pytra.std import sys
 
 
-class RustTranspiler(BaseTranspiler):
-    """Python AST を Rust コードへ変換するトランスパイラ本体。"""
-
-    RUST_RESERVED_WORDS = {
-        "as", "break", "const", "continue", "crate", "else", "enum", "extern", "false", "fn",
-        "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub", "ref",
-        "return", "self", "Self", "static", "struct", "super", "trait", "true", "type", "unsafe",
-        "use", "where", "while", "async", "await", "dyn",
-    }
-
-    def __init__(self) -> None:
-        """変換器の内部状態を初期化する。"""
-        super().__init__(temp_prefix="__pytra")
-        # 関数スコープごとの簡易型環境（Name -> Rust型）を保持する。
-        self.type_env_stack: list[dict[str, str]] = []
-        # モジュール内クラス名集合。コンストラクタ呼び出し判定に使う。
-        self.class_names: set[str] = set()
-        # モジュール内クラス定義。継承時のメソッド解決に使う。
-        self.class_defs: dict[str, ast.ClassDef] = {}
-        # クラス変換中のコンテキスト名。
-        self.current_class_name: str | None = None
-        # self 参照をどの変数名へ展開するか（メソッド: self / コンストラクタ生成中: self_obj）。
-        self.self_alias_stack: list[str] = ["self"]
-        # クラスごとのフィールド型情報。
-        self.class_field_types: dict[str, dict[str, str]] = {}
-        # 関数名 -> 引数型リスト（注釈から取得）。
-        self.function_param_types: dict[str, list[str]] = {}
-        # 関数名 -> 引数借用モード（"value" | "ref" | "ref_mut"）。
-        self.function_param_modes: dict[str, list[str]] = {}
-        # 現在変換中の関数における引数借用モード（Name -> mode）。
-        self.param_borrow_mode_stack: list[dict[str, str]] = []
-
-    def _ident(self, name: str) -> str:
-        """Rust 予約語と衝突する識別子を raw identifier 化する。"""
-        if name in self.RUST_RESERVED_WORDS:
-            return f"r#{name}"
-        return name
-
-    def transpile_module(self, module: ast.Module) -> str:
-        """モジュール全体を Rust ソースへ変換する。"""
-        function_defs: list[str] = []
-        class_defs: list[str] = []
-        main_stmts: list[ast.stmt] = []
-        has_user_main = False
-
-        self.class_names = {stmt.name for stmt in module.body if isinstance(stmt, ast.ClassDef)}
-        self.class_defs = {stmt.name: stmt for stmt in module.body if isinstance(stmt, ast.ClassDef)}
-        self._collect_function_signatures(module)
-
-        for stmt in module.body:
-            if isinstance(stmt, (ast.Import, ast.ImportFrom)):
-                # Rust native モードでは import は無視。必要なら embed 側に倒す。
-                continue
-            if isinstance(stmt, ast.ClassDef):
-                class_defs.append(self.transpile_class(stmt))
-                continue
-            if isinstance(stmt, ast.FunctionDef):
-                if stmt.name == "main":
-                    has_user_main = True
-                function_defs.append(self.transpile_function(stmt))
-                continue
-            if self._is_main_guard(stmt):
-                main_stmts.extend(stmt.body)
-                continue
-            main_stmts.append(stmt)
-
-        parts: list[str] = []
-        parts.extend(
-            [
-                "// このファイルは自動生成です（native Rust mode）。",
-                "",
-            ]
-        )
-        for cls in class_defs:
-            parts.append(cls)
-            parts.append("")
-        for fn in function_defs:
-            parts.append(fn)
-            parts.append("")
-
-        if not has_user_main:
-            main_lines = self.transpile_statements(main_stmts, Scope(declared=set()))
-            parts.append("fn main() {")
-            parts.extend(self._indent_block(main_lines))
-            parts.append("}")
-            parts.append("")
-        return "\n".join(parts)
-
-    def _collect_function_signatures(self, module: ast.Module) -> None:
-        """モジュール内関数の引数型と借用モードを事前収集する。"""
-        self.function_param_types = {}
-        self.function_param_modes = {}
-        for stmt in module.body:
-            if not isinstance(stmt, ast.FunctionDef):
-                continue
-            types: list[str] = []
-            for arg in stmt.args.args:
-                if arg.annotation is None:
-                    raise TranspileError(f"function '{stmt.name}' arg '{arg.arg}' requires annotation")
-                types.append(self._map_annotation(arg.annotation))
-            self.function_param_types[stmt.name] = types
-            self.function_param_modes[stmt.name] = self._infer_function_param_modes(stmt, types)
-
-    def _infer_function_param_modes(self, fn: ast.FunctionDef, param_types: list[str]) -> list[str]:
-        """関数引数ごとの借用モードを推論する。"""
-        param_names = [arg.arg for arg in fn.args.args]
-        rebound_names: set[str] = set()
-        container_mut_names: set[str] = set()
-
-        def mark_rebound_target(target: ast.expr) -> None:
-            if isinstance(target, ast.Name) and target.id in param_names:
-                rebound_names.add(target.id)
-                return
-            if isinstance(target, ast.Tuple):
-                for elt in target.elts:
-                    mark_rebound_target(elt)
-
-        def mark_container_mut_target(target: ast.expr) -> None:
-            if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name) and target.value.id in param_names:
-                container_mut_names.add(target.value.id)
-            if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) and target.value.id in param_names:
-                container_mut_names.add(target.value.id)
-
-        for node in ast.walk(fn):
-            if isinstance(node, ast.Assign):
-                for tgt in node.targets:
-                    mark_rebound_target(tgt)
-                    mark_container_mut_target(tgt)
-            elif isinstance(node, ast.AnnAssign):
-                mark_rebound_target(node.target)
-                mark_container_mut_target(node.target)
-            elif isinstance(node, ast.AugAssign):
-                mark_rebound_target(node.target)
-                mark_container_mut_target(node.target)
-            elif isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
-                    base_name = node.func.value.id
-                    if base_name in param_names and node.func.attr in {
-                        "append", "pop", "insert", "clear", "remove", "update", "extend", "sort", "reverse",
-                        "add", "discard", "setdefault",
-                    }:
-                        container_mut_names.add(base_name)
-
-        modes: list[str] = []
-        for i, name in enumerate(param_names):
-            ty = param_types[i]
-            if not self._is_heap_like_type(ty):
-                modes.append("value")
-                continue
-            if name in rebound_names:
-                modes.append("value")
-                continue
-            if name in container_mut_names:
-                modes.append("ref_mut")
-                continue
-            modes.append("ref")
-        return modes
-
-    def _is_heap_like_type(self, rust_type: str) -> bool:
-        """所有権コストの高い型かを判定する。"""
-        return (
-            rust_type == "String"
-            or rust_type.startswith("Vec<")
-            or rust_type.startswith("std::collections::HashMap<")
-            or rust_type.startswith("std::collections::HashSet<")
-        )
-
-    def transpile_class(self, cls: ast.ClassDef) -> str:
-        """Python class を Rust の `struct + impl` へ変換する。"""
-        base_methods: list[ast.FunctionDef] = []
-        if len(cls.bases) > 1:
-            raise TranspileError("multiple inheritance is not supported")
-        if len(cls.bases) == 1:
-            if not isinstance(cls.bases[0], ast.Name):
-                raise TranspileError("base class must be a simple name")
-            base_name = cls.bases[0].id
-            if base_name not in self.class_defs:
-                raise TranspileError(f"base class '{base_name}' is not found in module")
-            base_cls = self.class_defs[base_name]
-            for node in base_cls.body:
-                if isinstance(node, ast.FunctionDef) and node.name != "__init__":
-                    base_methods.append(node)
-
-        field_types: dict[str, str] = {}
-        field_defaults: dict[str, str] = {}
-        methods: list[ast.FunctionDef] = []
-        init_method: ast.FunctionDef | None = None
-        is_dataclass = any(
-            (isinstance(d, ast.Name) and d.id == "dataclass")
-            or (isinstance(d, ast.Attribute) and d.attr == "dataclass")
-            for d in cls.decorator_list
-        )
-
-        for stmt in cls.body:
-            if isinstance(stmt, ast.FunctionDef):
-                if stmt.name == "__init__":
-                    init_method = stmt
-                else:
-                    methods.append(stmt)
-            elif isinstance(stmt, ast.AnnAssign):
-                if not isinstance(stmt.target, ast.Name):
-                    raise TranspileError("class field declaration target must be name")
-                name = stmt.target.id
-                field_types[name] = self._map_annotation(stmt.annotation)
-                if stmt.value is not None:
-                    field_defaults[name] = self.transpile_expr(stmt.value)
-            elif isinstance(stmt, ast.Assign):
-                if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
-                    raise TranspileError("class static assignment must be a simple name assignment")
-                name = stmt.targets[0].id
-                if name not in field_types:
-                    inferred = self._expr_type(stmt.value)
-                    field_types[name] = inferred if inferred is not None else "i64"
-                field_defaults[name] = self.transpile_expr(stmt.value)
-            elif isinstance(stmt, ast.Pass):
-                continue
-            else:
-                raise TranspileError(f"unsupported class member: {type(stmt).__name__}")
-
-        if init_method is not None:
-            for stmt in init_method.body:
-                if isinstance(stmt, ast.Assign):
-                    if len(stmt.targets) == 1 and isinstance(stmt.targets[0], ast.Attribute):
-                        attr = stmt.targets[0]
-                        if isinstance(attr.value, ast.Name) and attr.value.id == "self":
-                            name = attr.attr
-                            if name not in field_types:
-                                inferred = self._expr_type(stmt.value)
-                                field_types[name] = inferred if inferred is not None else "i64"
-                if isinstance(stmt, ast.AnnAssign):
-                    if isinstance(stmt.target, ast.Attribute):
-                        attr = stmt.target
-                        if isinstance(attr.value, ast.Name) and attr.value.id == "self":
-                            field_types[attr.attr] = self._map_annotation(stmt.annotation)
-
-        for name, ty in list(field_types.items()):
-            if name not in field_defaults:
-                field_defaults[name] = self._default_value_for_type(ty)
-        self.class_field_types[cls.name] = dict(field_types)
-
-        struct_lines = [f"#[derive(Clone)]", f"struct {cls.name} {{"] + [f"    {name}: {field_types[name]}," for name in field_types] + ["}"]
-
-        impl_lines: list[str] = [f"impl {cls.name} {{"]
-        ctor_lines = self._transpile_class_constructor(cls.name, field_types, field_defaults, init_method, is_dataclass)
-        impl_lines.extend(self._indent_block(ctor_lines))
-        own_method_names = {m.name for m in methods}
-        inherited_methods = [m for m in base_methods if m.name not in own_method_names]
-        prev_class = self.current_class_name
-        self.current_class_name = cls.name
-        try:
-            for method in methods + inherited_methods:
-                impl_lines.append("")
-                impl_lines.extend(self._indent_block(self._transpile_method(method).splitlines()))
-        finally:
-            self.current_class_name = prev_class
-        impl_lines.append("}")
-        return "\n".join(struct_lines + [""] + impl_lines)
-
-    def _transpile_class_constructor(
-        self,
-        class_name: str,
-        field_types: dict[str, str],
-        field_defaults: dict[str, str],
-        init_method: ast.FunctionDef | None,
-        is_dataclass: bool,
-    ) -> list[str]:
-        """クラス用コンストラクタ `new(...)` を生成する。"""
-        params: list[str] = []
-        init_lines: list[str] = []
-        declared = set()
-        type_env: dict[str, str] = {}
-        if init_method is not None:
-            for arg in init_method.args.args[1:]:
-                if arg.annotation is None:
-                    raise TranspileError(f"constructor arg '{arg.arg}' requires annotation")
-                ty = self._map_annotation(arg.annotation)
-                params.append(f"{self._ident(arg.arg)}: {ty}")
-                declared.add(arg.arg)
-                type_env[arg.arg] = ty
-        elif is_dataclass:
-            # dataclass はデフォルト値なしフィールドのみ引数化する。
-            for name, ty in field_types.items():
-                has_default = name in field_defaults and field_defaults[name] != self._default_value_for_type(ty)
-                if has_default:
-                    continue
-                params.append(f"{self._ident(name)}: {ty}")
-                declared.add(name)
-                type_env[name] = ty
-
-        init_lines.append("let mut self_obj = Self {")
-        for name in field_types:
-            init_lines.append(f"    {name}: {field_defaults[name]},")
-        init_lines.append("};")
-
-        self.type_env_stack.append(type_env)
-        prev_class = self.current_class_name
-        self.current_class_name = class_name
-        self.self_alias_stack.append("self_obj")
-        try:
-            if init_method is not None:
-                init_lines.extend(self.transpile_statements(init_method.body, Scope(declared=set(declared))))
-            elif is_dataclass:
-                for name in field_types:
-                    if name in declared:
-                        init_lines.append(f"self_obj.{name} = {self._ident(name)};")
-            init_lines.append("self_obj")
-        finally:
-            self.current_class_name = prev_class
-            self.type_env_stack.pop()
-            self.self_alias_stack.pop()
-        return [f"fn new({', '.join(params)}) -> Self {{"] + self._indent_block(init_lines) + ["}"]
-
-    def _transpile_method(self, fn: ast.FunctionDef) -> str:
-        """クラスメソッドを Rust `impl` メソッドへ変換する。"""
-        if len(fn.args.args) == 0 or fn.args.args[0].arg != "self":
-            raise TranspileError("method must have self as first argument")
-        self_param = "&mut self"
-        params: list[str] = [self_param]
-        declared = {"self"}
-        type_env: dict[str, str] = {}
-        for arg in fn.args.args[1:]:
-            if arg.annotation is None:
-                raise TranspileError(f"method '{fn.name}' arg '{arg.arg}' requires annotation")
-            ty = self._map_annotation(arg.annotation)
-            params.append(f"mut {self._ident(arg.arg)}: {ty}")
-            declared.add(arg.arg)
-            type_env[arg.arg] = ty
-        ret = "()" if fn.returns is None else self._map_annotation(fn.returns)
-        self.type_env_stack.append(type_env)
-        self.self_alias_stack.append("self")
-        try:
-            body = self.transpile_statements(fn.body, Scope(declared=declared))
-        finally:
-            self.self_alias_stack.pop()
-            self.type_env_stack.pop()
-        lines = [f"fn {self._ident(fn.name)}({', '.join(params)}) -> {ret} {{"] + self._indent_block(body) + ["}"]
-        return "\n".join(lines)
-
-    def _method_mutates_self(self, fn: ast.FunctionDef) -> bool:
-        """メソッドが `self.<field>` を更新するかを判定する。"""
-        for node in ast.walk(fn):
-            if isinstance(node, ast.Assign):
-                for tgt in node.targets:
-                    if isinstance(tgt, ast.Attribute) and isinstance(tgt.value, ast.Name) and tgt.value.id == "self":
-                        return True
-            if isinstance(node, ast.AnnAssign):
-                tgt = node.target
-                if isinstance(tgt, ast.Attribute) and isinstance(tgt.value, ast.Name) and tgt.value.id == "self":
-                    return True
-            if isinstance(node, ast.AugAssign):
-                tgt = node.target
-                if isinstance(tgt, ast.Attribute) and isinstance(tgt.value, ast.Name) and tgt.value.id == "self":
-                    return True
-        return False
-
-    def transpile_function(self, fn: ast.FunctionDef) -> str:
-        """関数定義を Rust の `fn` へ変換する。"""
-        params: list[str] = []
-        declared = set()
-        type_env: dict[str, str] = {}
-        param_modes = self.function_param_modes.get(fn.name, [])
-        borrow_mode_env: dict[str, str] = {}
-        for i, arg in enumerate(fn.args.args):
-            if arg.annotation is None:
-                raise TranspileError(f"function '{fn.name}' arg '{arg.arg}' requires annotation")
-            rust_type = self._map_annotation(arg.annotation)
-            mode = param_modes[i] if i < len(param_modes) else "value"
-            borrow_mode_env[arg.arg] = mode
-            if mode == "ref":
-                params.append(f"{self._ident(arg.arg)}: &{rust_type}")
-            elif mode == "ref_mut":
-                params.append(f"{self._ident(arg.arg)}: &mut {rust_type}")
-            else:
-                params.append(f"mut {self._ident(arg.arg)}: {rust_type}")
-            declared.add(arg.arg)
-            type_env[arg.arg] = rust_type
-
-        ret = "()" if fn.returns is None else self._map_annotation(fn.returns)
-        self.type_env_stack.append(type_env)
-        self.param_borrow_mode_stack.append(borrow_mode_env)
-        try:
-            body = self.transpile_statements(fn.body, Scope(declared=declared))
-            lines = [f"fn {self._ident(fn.name)}({', '.join(params)}) -> {ret} {{"] + self._indent_block(body) + ["}"]
-            return "\n".join(lines)
-        finally:
-            self.param_borrow_mode_stack.pop()
-            self.type_env_stack.pop()
-
-    def transpile_statements(self, stmts: list[ast.stmt], scope: Scope) -> list[str]:
-        """文ノード列を Rust 文列へ変換する。"""
-        out: list[str] = []
-        for stmt in stmts:
-            if isinstance(stmt, ast.Pass):
-                continue
-            if isinstance(stmt, ast.Return):
-                if stmt.value is None:
-                    out.append("return;")
-                else:
-                    out.append(f"return {self.transpile_expr(stmt.value)};")
-                continue
-            if isinstance(stmt, ast.Expr):
-                if isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str):
-                    continue
-                out.append(f"{self.transpile_expr(stmt.value)};")
-                continue
-            if isinstance(stmt, ast.AnnAssign):
-                if isinstance(stmt.target, ast.Attribute):
-                    attr = stmt.target
-                    if not (isinstance(attr.value, ast.Name) and attr.value.id == "self"):
-                        raise TranspileError("annotated assignment target must be name or self attribute")
-                    value = self._default_value_for_type(self._map_annotation(stmt.annotation)) if stmt.value is None else self.transpile_expr(stmt.value)
-                    self_alias = self.self_alias_stack[-1]
-                    if self._field_type_of_current_class(attr.attr) == "Vec<u8>":
-                        out.append(f"{self_alias}.{attr.attr} = ({value}) as u8;")
-                    else:
-                        out.append(f"{self_alias}.{attr.attr} = {value};")
-                else:
-                    if not isinstance(stmt.target, ast.Name):
-                        raise TranspileError("annotated assignment target must be name")
-                    name = stmt.target.id
-                    name_id = self._ident(name)
-                    rty = self._map_annotation(stmt.annotation)
-                    if stmt.value is None:
-                        out.append(f"let mut {name_id}: {rty};")
-                    else:
-                        out.append(f"let mut {name_id}: {rty} = {self.transpile_expr(stmt.value)};")
-                    scope.declared.add(name)
-                    if len(self.type_env_stack) > 0:
-                        self.type_env_stack[-1][name] = rty
-                continue
-            if isinstance(stmt, ast.Assign):
-                if len(stmt.targets) != 1:
-                    raise TranspileError("only single assignment target is supported")
-                target = stmt.targets[0]
-                if isinstance(target, ast.Tuple):
-                    temp_values: list[str] = []
-                    if isinstance(stmt.value, ast.Tuple):
-                        if len(target.elts) != len(stmt.value.elts):
-                            raise TranspileError("tuple assignment requires tuple value with same arity")
-                        for i, src in enumerate(stmt.value.elts):
-                            temp_name = self._new_temp(f"tuple_{i}")
-                            temp_values.append(temp_name)
-                            out.append(f"let {temp_name} = {self.transpile_expr(src)};")
-                    else:
-                        tuple_temp = self._new_temp("tuple_rhs")
-                        out.append(f"let {tuple_temp} = {self.transpile_expr(stmt.value)};")
-                        for i in range(len(target.elts)):
-                            temp_values.append(f"{tuple_temp}.{i}")
-                    for i, dst in enumerate(target.elts):
-                        if not isinstance(dst, ast.Name):
-                            raise TranspileError("tuple assignment target must contain only names")
-                        name = dst.id
-                        name_id = self._ident(name)
-                        val = temp_values[i]
-                        if name in scope.declared:
-                            out.append(f"{name_id} = {val};")
-                        else:
-                            out.append(f"let mut {name_id} = {val};")
-                            scope.declared.add(name)
-                    continue
-                if not isinstance(target, ast.Name):
-                    if isinstance(target, ast.Attribute):
-                        if isinstance(target.value, ast.Name) and target.value.id == "self":
-                            self_alias = self.self_alias_stack[-1]
-                            rhs = self.transpile_expr(stmt.value)
-                            if self._field_type_of_current_class(target.attr) == "Vec<u8>":
-                                out.append(f"{self_alias}.{target.attr} = ({rhs}) as u8;")
-                            else:
-                                out.append(f"{self_alias}.{target.attr} = {rhs};")
-                            continue
-                        out.append(f"{self.transpile_expr(target)} = {self.transpile_expr(stmt.value)};")
-                        continue
-                    if isinstance(target, ast.Subscript):
-                        rhs = self.transpile_expr(stmt.value)
-                        if self._is_hashmap_subscript_target(target):
-                            base_expr = self.transpile_expr(target.value)
-                            key_expr = self.transpile_expr(target.slice)
-                            temp_rhs = self._new_temp("insert_val")
-                            out.append(f"let {temp_rhs} = {rhs};")
-                            out.append(f"{base_expr}.insert({key_expr}, {temp_rhs});")
-                        elif self._is_u8_subscript_target(target):
-                            target_expr = self._transpile_subscript_lvalue(target)
-                            out.append(f"{target_expr} = ({rhs}) as u8;")
-                        else:
-                            target_expr = self._transpile_subscript_lvalue(target)
-                            out.append(f"{target_expr} = {rhs};")
-                        continue
-                    raise TranspileError("only simple assignment is supported")
-                name = target.id
-                name_id = self._ident(name)
-                val = self.transpile_expr(stmt.value)
-                if name in scope.declared:
-                    out.append(f"{name_id} = {val};")
-                else:
-                    out.append(f"let mut {name_id} = {val};")
-                    scope.declared.add(name)
-                    inferred = self._expr_type(stmt.value)
-                    if inferred is not None and len(self.type_env_stack) > 0:
-                        self.type_env_stack[-1][name] = inferred
-                continue
-            if isinstance(stmt, ast.AugAssign):
-                op = self._binop(stmt.op)
-                if isinstance(stmt.target, ast.Name):
-                    name_id = self._ident(stmt.target.id)
-                    out.append(f"{name_id} = {name_id} {op} {self.transpile_expr(stmt.value)};")
-                    continue
-                if isinstance(stmt.target, ast.Attribute):
-                    target_expr = self.transpile_expr(stmt.target)
-                    out.append(f"{target_expr} = {target_expr} {op} {self.transpile_expr(stmt.value)};")
-                    continue
-                if isinstance(stmt.target, ast.Subscript):
-                    target_expr = self._transpile_subscript_lvalue(stmt.target)
-                    rhs = self.transpile_expr(stmt.value)
-                    if self._is_u8_subscript_target(stmt.target):
-                        out.append(f"{target_expr} = ({target_expr} {op} {rhs}) as u8;")
-                    else:
-                        out.append(f"{target_expr} = {target_expr} {op} {rhs};")
-                    continue
-                raise TranspileError("augassign target must be name, attribute or subscript")
-                continue
-            if isinstance(stmt, ast.If):
-                out.extend(self._transpile_if(stmt, scope))
-                continue
-            if isinstance(stmt, ast.While):
-                out.append(f"while py_bool(&({self.transpile_expr(stmt.test)})) {{")
-                out.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))))
-                out.append("}")
-                if stmt.orelse:
-                    raise TranspileError("while-else is not supported")
-                continue
-            if isinstance(stmt, ast.For):
-                out.extend(self._transpile_for(stmt, scope))
-                continue
-            if isinstance(stmt, ast.Try):
-                out.extend(self._transpile_try(stmt, scope))
-                continue
-            if isinstance(stmt, ast.Raise):
-                if stmt.exc is None:
-                    out.append('panic!("raise");')
-                else:
-                    out.append(f'panic!("{{}}", {self.transpile_expr(stmt.exc)});')
-                continue
-            if isinstance(stmt, ast.Break):
-                out.append("break;")
-                continue
-            if isinstance(stmt, ast.Continue):
-                out.append("continue;")
-                continue
-            raise TranspileError(f"unsupported statement: {type(stmt).__name__}")
-        return out
-
-    def _transpile_if(self, stmt: ast.If, scope: Scope) -> list[str]:
-        """if/else 文を Rust の `if` 構文へ変換する。"""
-        lines: list[str] = [f"if {self.transpile_expr(stmt.test)} {{"]
-        lines[0] = f"if py_bool(&({self.transpile_expr(stmt.test)})) {{"
-        lines.extend(self._indent_block(self.transpile_statements(stmt.body, Scope(declared=set(scope.declared)))))
-        if stmt.orelse:
-            lines.append("} else {")
-            lines.extend(self._indent_block(self.transpile_statements(stmt.orelse, Scope(declared=set(scope.declared)))))
-        lines.append("}")
-        return lines
-
-    def _transpile_for(self, stmt: ast.For, scope: Scope) -> list[str]:
-        """for 文を `range` または iterable ループへ変換する。"""
-        if not isinstance(stmt.target, ast.Name):
-            raise TranspileError("for target must be name")
-        name = stmt.target.id
-        name_id = self._ident(name)
-        rng = self._parse_range_args(stmt.iter, argc_error="range arg count > 3 is not supported")
-        if rng is None:
-            lines = [f"for {name_id} in ({self.transpile_expr(stmt.iter)}).clone() {{"]
-            body_scope = Scope(declared=set(scope.declared))
-            body_scope.declared.add(name)
-            prev_type = None
-            has_env = len(self.type_env_stack) > 0
-            if has_env:
-                env = self.type_env_stack[-1]
-                prev_type = env.get(name)
-                iter_ty = self._expr_type(stmt.iter)
-                if iter_ty is not None and iter_ty.startswith("Vec<") and iter_ty.endswith(">"):
-                    env[name] = iter_ty[4:-1]
-            lines.extend(self._indent_block(self.transpile_statements(stmt.body, body_scope)))
-            if has_env:
-                env = self.type_env_stack[-1]
-                if prev_type is None:
-                    env.pop(name, None)
-                else:
-                    env[name] = prev_type
-            lines.append("}")
-            if stmt.orelse:
-                raise TranspileError("for-else is not supported")
-            return lines
-        start, stop, step = rng
-        lines: list[str] = []
-        if step == "1":
-            lines.append(f"for {name_id} in ({start})..({stop}) {{")
-            body_scope = Scope(declared=set(scope.declared))
-            body_scope.declared.add(name)
-            prev_type = None
-            has_env = len(self.type_env_stack) > 0
-            if has_env:
-                env = self.type_env_stack[-1]
-                prev_type = env.get(name)
-                env[name] = "i64"
-            lines.extend(self._indent_block(self.transpile_statements(stmt.body, body_scope)))
-            if has_env:
-                env = self.type_env_stack[-1]
-                if prev_type is None:
-                    env.pop(name, None)
-                else:
-                    env[name] = prev_type
-            lines.append("}")
+def rust_string_lit(text: str) -> str:
+    """Rust の文字列リテラルへエスケープ変換する。"""
+    out = "\""
+    i = 0
+    while i < len(text):
+        ch = text[i : i + 1]
+        if ch == "\\":
+            out += "\\\\"
+        elif ch == "\"":
+            out += "\\\""
+        elif ch == "\n":
+            out += "\\n"
+        elif ch == "\r":
+            out += "\\r"
+        elif ch == "\t":
+            out += "\\t"
         else:
-            i_name = self._new_temp("i")
-            lines.append(f"let mut {i_name} = {start};")
-            lines.append(f"while (({step}) > 0 && {i_name} < ({stop})) || (({step}) < 0 && {i_name} > ({stop})) {{")
-            lines.append(f"{self.INDENT}let {name_id} = {i_name};")
-            body_scope = Scope(declared=set(scope.declared))
-            body_scope.declared.add(name)
-            prev_type = None
-            has_env = len(self.type_env_stack) > 0
-            if has_env:
-                env = self.type_env_stack[-1]
-                prev_type = env.get(name)
-                env[name] = "i64"
-            lines.extend(self._indent_block(self.transpile_statements(stmt.body, body_scope)))
-            if has_env:
-                env = self.type_env_stack[-1]
-                if prev_type is None:
-                    env.pop(name, None)
-                else:
-                    env[name] = prev_type
-            lines.append(f"{self.INDENT}{i_name} += ({step});")
-            lines.append("}")
-        if stmt.orelse:
-            raise TranspileError("for-else is not supported")
-        return lines
+            out += ch
+        i += 1
+    out += "\""
+    return out
 
-    def _transpile_try(self, stmt: ast.Try, scope: Scope) -> list[str]:
-        """限定パターンの try/except/finally を Rust 条件分岐へ変換する。"""
-        # 現状は case19 相当の典型パターンを native 対応する。
-        # try:
-        #   if cond: raise Exception(...)
-        #   return ok
-        # except Exception as ex:
-        #   return ng
-        # finally: pass
-        if len(stmt.handlers) != 1:
-            raise TranspileError("only single except handler is supported")
-        if stmt.orelse:
-            raise TranspileError("try-else is not supported")
-        if any(not isinstance(s, ast.Pass) for s in stmt.finalbody):
-            raise TranspileError("finally with statements is not supported")
 
-        handler = stmt.handlers[0]
-        if handler.type is not None and not (
-            isinstance(handler.type, ast.Name) and handler.type.id == "Exception"
-        ):
-            raise TranspileError("only except Exception is supported")
+def _load_profile_piece(path: Path) -> dict[str, Any]:
+    """JSON プロファイル断片を読み込む。失敗時は空 dict。"""
+    if not path.exists():
+        return {}
+    try:
+        txt = path.read_text(encoding="utf-8")
+        raw = json.loads(txt)
+    except Exception:
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    return {}
 
-        if len(stmt.body) != 2:
-            raise TranspileError("unsupported try body pattern")
-        first, second = stmt.body[0], stmt.body[1]
-        if not isinstance(first, ast.If):
-            raise TranspileError("unsupported try body pattern")
-        if first.orelse:
-            raise TranspileError("unsupported try-if else block")
-        if len(first.body) != 1 or not isinstance(first.body[0], ast.Raise):
-            raise TranspileError("unsupported raise pattern")
-        if not isinstance(second, ast.Return) or second.value is None:
-            raise TranspileError("try success path must end with return value")
-        if len(handler.body) != 1 or not isinstance(handler.body[0], ast.Return) or handler.body[0].value is None:
-            raise TranspileError("except path must end with return value")
 
-        cond = self.transpile_expr(first.test)
-        ok_expr = self.transpile_expr(second.value)
-        ng_expr = self.transpile_expr(handler.body[0].value)
-        return [f"if py_bool(&({cond})) {{", f"{self.INDENT}return {ng_expr};", "} else {", f"{self.INDENT}return {ok_expr};", "}"]
+def load_rs_profile() -> dict[str, Any]:
+    """Rust 用 profile を読み込む。"""
+    profile_path = Path("src/profiles/rs/profile.json")
+    profile_root = profile_path.parent
+    meta = _load_profile_piece(profile_path)
+    out: dict[str, Any] = {}
+    includes_obj = meta.get("include")
+    includes: list[str] = []
+    if isinstance(includes_obj, list):
+        for item in includes_obj:
+            if isinstance(item, str) and item != "":
+                includes.append(item)
+    i = 0
+    while i < len(includes):
+        rel = includes[i]
+        piece = _load_profile_piece(profile_root / rel)
+        for key, val in piece.items():
+            out[key] = val
+        i += 1
+    for key, val in meta.items():
+        if key != "include":
+            out[key] = val
+    return out
 
-    def transpile_expr(self, expr: ast.expr) -> str:
-        """式ノードを Rust 式文字列へ変換する。"""
-        if isinstance(expr, ast.Name):
-            if expr.id == "True":
-                return "true"
-            if expr.id == "False":
-                return "false"
-            return self._ident(expr.id)
-        if isinstance(expr, ast.Attribute):
-            if isinstance(expr.value, ast.Name) and expr.value.id == "self":
-                self_alias = self.self_alias_stack[-1]
-                return f"{self_alias}.{expr.attr}"
-            if isinstance(expr.value, ast.Name) and expr.value.id == "math":
-                if expr.attr == "pi":
-                    return "std::f64::consts::PI"
-                return f"math_{expr.attr}"
-            if self._expr_type(expr.value) == "py_runtime::PyPath":
-                obj = self.transpile_expr(expr.value)
-                if expr.attr == "parent":
-                    return f"{obj}.parent()"
-                if expr.attr == "name":
-                    return f"{obj}.name()"
-                if expr.attr == "stem":
-                    return f"{obj}.stem()"
-            return f"{self.transpile_expr(expr.value)}.{expr.attr}"
-        if isinstance(expr, ast.Constant):
-            if isinstance(expr.value, bool):
-                return "true" if expr.value else "false"
-            if isinstance(expr.value, int):
-                return str(expr.value)
-            if isinstance(expr.value, float):
-                return repr(expr.value)
-            if isinstance(expr.value, str):
-                return self._escape_str(expr.value)
-            if expr.value is None:
-                return "()"
-            raise TranspileError(f"unsupported constant: {expr.value!r}")
-        if isinstance(expr, ast.BinOp):
-            l = self.transpile_expr(expr.left)
-            r = self.transpile_expr(expr.right)
-            lt = self._expr_type(expr.left)
-            rt = self._expr_type(expr.right)
-            if isinstance(expr.op, ast.Div) and lt == "py_runtime::PyPath":
-                return f"(({l}) / ({r}))"
-            if isinstance(expr.op, ast.Add):
-                if lt == "String" or rt == "String":
-                    return f"format!(\"{{}}{{}}\", {l}, {r})"
-            if isinstance(expr.op, ast.FloorDiv):
-                return f"(({l}) / ({r}))"
-            if isinstance(expr.op, ast.Div):
-                return f"((( {l} ) as f64) / (( {r} ) as f64))"
-            if (lt in {"f64", "f32"} and rt in {"i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8"}) or (
-                rt in {"f64", "f32"} and lt in {"i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8"}
-            ):
-                return f"(((( {l} ) as f64) {self._binop(expr.op)} (( {r} ) as f64)))"
-            return f"(({l}) {self._binop(expr.op)} ({r}))"
-        if isinstance(expr, ast.UnaryOp):
-            return f"({self._unaryop(expr.op)}{self.transpile_expr(expr.operand)})"
-        if isinstance(expr, ast.BoolOp):
-            op = "&&" if isinstance(expr.op, ast.And) else "||"
-            return "(" + f" {op} ".join(self.transpile_expr(v) for v in expr.values) + ")"
-        if isinstance(expr, ast.Compare):
-            return self._transpile_compare(expr)
-        if isinstance(expr, ast.Call):
-            return self._transpile_call(expr)
-        if isinstance(expr, ast.IfExp):
-            return f"(if py_bool(&({self.transpile_expr(expr.test)})) {{ {self.transpile_expr(expr.body)} }} else {{ {self.transpile_expr(expr.orelse)} }})"
-        if isinstance(expr, ast.JoinedStr):
-            return self._transpile_joined_str(expr)
-        if isinstance(expr, ast.List):
-            values = ", ".join(self.transpile_expr(v) for v in expr.elts)
-            return f"vec![{values}]"
-        if isinstance(expr, ast.Tuple):
-            values = ", ".join(self.transpile_expr(v) for v in expr.elts)
-            if len(expr.elts) == 1:
-                return f"({values},)"
-            return f"({values})"
-        if isinstance(expr, ast.Dict):
-            if any(k is None for k in expr.keys):
-                raise TranspileError("dict unpacking is not supported")
-            pairs: list[str] = []
-            for k, v in zip(expr.keys, expr.values):
-                key_expr = self.transpile_expr(k)  # type: ignore[arg-type]
-                val_expr = self.transpile_expr(v)
-                pairs.append(f"({key_expr}, {val_expr})")
-            return f"std::collections::HashMap::from([{', '.join(pairs)}])"
-        if isinstance(expr, ast.Subscript):
-            value_expr = self.transpile_expr(expr.value)
-            if isinstance(expr.slice, ast.Slice):
-                start_expr = "None" if expr.slice.lower is None else f"Some({self.transpile_expr(expr.slice.lower)})"
-                end_expr = "None" if expr.slice.upper is None else f"Some({self.transpile_expr(expr.slice.upper)})"
-                return f"py_slice(&({value_expr}), {start_expr}, {end_expr})"
-            index_expr = self.transpile_expr(expr.slice)
-            base_ty = self._expr_type(expr.value)
-            if base_ty is not None and base_ty.startswith("std::collections::HashMap<"):
-                read_expr = f"({value_expr})[&({index_expr})]"
-                val_ty = self._expr_type(expr)
-                if (
-                    isinstance(expr.ctx, ast.Load)
-                    and val_ty is not None
-                    and not self._is_copy_type(val_ty)
-                    and not self._is_borrow_friendly_container_type(val_ty)
-                ):
-                    return f"({read_expr}).clone()"
-                return read_expr
-            read_expr = f"({value_expr})[{index_expr} as usize]"
-            val_ty = self._expr_type(expr)
-            if (
-                isinstance(expr.ctx, ast.Load)
-                and val_ty is not None
-                and not self._is_copy_type(val_ty)
-                and not self._is_borrow_friendly_container_type(val_ty)
-            ):
-                return f"({read_expr}).clone()"
-            return read_expr
-        if isinstance(expr, ast.ListComp):
-            return self._transpile_list_comp(expr)
-        raise TranspileError(f"unsupported expression: {type(expr).__name__}")
 
-    def _transpile_call(self, call: ast.Call) -> str:
-        """関数呼び出し式を Rust へ変換する。"""
-        if any(kw.arg is None for kw in call.keywords):
-            raise TranspileError("**kwargs is not supported")
-        arg_nodes = list(call.args) + [kw.value for kw in call.keywords]
-        args = [self.transpile_expr(a) for a in arg_nodes]
-        if isinstance(call.func, ast.Name):
-            fn = call.func.id
-            if fn in self.class_names:
-                call_args = [self._prepare_call_arg(node, arg) for node, arg in zip(arg_nodes, args)]
-                return f"{fn}::new({', '.join(call_args)})"
-            if fn == "Path" and len(args) == 1:
-                return f"py_runtime::PyPath::new(&(format!(\"{{}}\", {args[0]})))"
-            if fn == "bytearray":
-                if len(args) == 0:
-                    return "Vec::<u8>::new()"
-                if len(args) == 1:
-                    return f"vec![0u8; ({args[0]}) as usize]"
-                raise TranspileError("bytearray() supports at most one argument")
-            if fn == "bytes":
-                if len(args) == 1:
-                    return f"({args[0]}).clone()"
-                raise TranspileError("bytes() supports one argument")
-            if fn == "print":
-                if len(args) == 0:
-                    return 'println!("")'
-                if len(args) == 1:
-                    return f"py_print({args[0]})"
-                # 複数引数は format! で空白区切り表示
-                fmt = " ".join(["{}"] * len(args))
-                return f'println!("{fmt}", {", ".join(args)})'
-            if fn == "len" and len(args) == 1:
-                return f"(py_len({self._borrow_shared_expr(arg_nodes[0], args[0])}) as i64)"
-            if fn == "int" and len(args) == 1:
-                return f"(({args[0]}) as i64)"
-            if fn == "float" and len(args) == 1:
-                return f"(({args[0]}) as f64)"
-            if fn == "str" and len(args) == 1:
-                return f"format!(\"{{}}\", {args[0]})"
-            if fn == "RuntimeError" and len(args) == 1:
-                return args[0]
-            if fn == "ord" and len(args) == 1:
-                return f"(({args[0]}).chars().next().unwrap() as i64)"
-            if fn == "max" and len(args) == 2:
-                return f"(if ({args[0]}) > ({args[1]}) {{ {args[0]} }} else {{ {args[1]} }})"
-            if fn == "min" and len(args) == 2:
-                return f"(if ({args[0]}) < ({args[1]}) {{ {args[0]} }} else {{ {args[1]} }})"
-            if fn == "save_gif":
-                if len(args) != 7:
-                    raise TranspileError("save_gif requires 7 arguments")
-                return f"py_save_gif(&({args[0]}), {args[1]}, {args[2]}, &({args[3]}), &({args[4]}), {args[5]}, {args[6]})"
-            if fn == "grayscale_palette" and len(args) == 0:
-                return "py_grayscale_palette()"
-            if fn == "perf_counter" and len(args) == 0:
-                return "perf_counter()"
-            if fn == "range":
-                raise TranspileError("range() should be used only in for")
-            if fn in self.function_param_modes:
-                modes = self.function_param_modes.get(fn, [])
-                call_args = [
-                    self._prepare_user_function_call_arg(node, arg, modes[i] if i < len(modes) else "value")
-                    for i, (node, arg) in enumerate(zip(arg_nodes, args))
-                ]
-            else:
-                call_args = [self._prepare_call_arg(node, arg) for node, arg in zip(arg_nodes, args)]
-            return f"{self._ident(fn)}({', '.join(call_args)})"
-        if isinstance(call.func, ast.Attribute):
-            if (
-                isinstance(call.func.value, ast.Name)
-                and call.func.value.id == "pathlib"
-                and call.func.attr == "Path"
-                and len(args) == 1
-            ):
-                return f"py_runtime::PyPath::new(&(format!(\"{{}}\", {args[0]})))"
-            if isinstance(call.func.value, ast.Name) and call.func.value.id == "math":
-                casted = [f"(({a}) as f64)" for a in args]
-                args_joined = ", ".join(casted)
-                return f"math_{call.func.attr}({args_joined})"
-            if isinstance(call.func.value, ast.Name) and call.func.value.id == "png_helper":
-                if call.func.attr == "write_rgb_png":
-                    if len(args) != 4:
-                        raise TranspileError("write_rgb_png requires 4 arguments")
-                    return f"py_write_rgb_png(&({args[0]}), {args[1]}, {args[2]}, &({args[3]}))"
-            if isinstance(call.func.value, ast.Name) and call.func.value.id == "self":
-                obj = self.self_alias_stack[-1]
-            else:
-                obj = self.transpile_expr(call.func.value)
-            method = call.func.attr
-            if method == "append" and len(args) == 1:
-                val = args[0]
-                obj_type = self._expr_type(call.func.value)
-                if obj_type == "Vec<u8>":
-                    return f"{obj}.push(({val}) as u8)"
-                return f"{obj}.push({val})"
-            if method == "pop" and len(args) == 0:
-                return f"{obj}.pop().unwrap()"
-            if method == "isdigit" and len(args) == 0:
-                return f"py_isdigit(&({obj}))"
-            if method == "isalpha" and len(args) == 0:
-                return f"py_isalpha(&({obj}))"
-            obj_type = self._expr_type(call.func.value)
-            if obj_type == "py_runtime::PyPath":
-                if method == "resolve" and len(args) == 0:
-                    return f"{obj}.resolve()"
-                if method == "exists" and len(args) == 0:
-                    return f"{obj}.exists()"
-                if method == "read_text":
-                    return f"{obj}.read_text()"
-                if method == "write_text" and len(args) >= 1:
-                    return f"{obj}.write_text(&(format!(\"{{}}\", {args[0]})))"
-                if method == "mkdir":
-                    parents = args[0] if len(args) >= 1 else "false"
-                    exist_ok = args[1] if len(args) >= 2 else "false"
-                    return f"{obj}.mkdir({parents}, {exist_ok})"
-                if method == "name" and len(args) == 0:
-                    return f"{obj}.name()"
-                if method == "stem" and len(args) == 0:
-                    return f"{obj}.stem()"
-                if method == "parent" and len(args) == 0:
-                    return f"{obj}.parent()"
-            return f"{obj}.{self._ident(method)}({', '.join(args)})"
-        raise TranspileError("only direct calls are supported")
+def load_rs_hooks(profile: dict[str, Any]) -> dict[str, Any]:
+    """Rust 用 hook を読み込む。"""
+    _ = profile
+    hooks = build_rs_hooks()
+    if isinstance(hooks, dict):
+        return hooks
+    return {}
 
-    def _prepare_call_arg(self, node: ast.expr, rendered: str) -> str:
-        """関数引数でムーブを避けるため、必要時のみ clone した式を返す。"""
-        ty = self._expr_type(node)
-        if ty is None:
-            return rendered
-        if self._is_heap_like_type(ty) and self._needs_clone_for_call_arg(node):
-            return f"({rendered}).clone()"
-        return rendered
 
-    def _needs_clone_for_call_arg(self, node: ast.expr) -> bool:
-        """関数呼び出し引数が clone 必須かを返す。
+class RustEmitter(CodeEmitter):
+    """EAST を Rust ソースへ変換する最小エミッタ。"""
 
-        既に一時オブジェクトとして生成される式（文字列リテラル、f-string、関数戻り値など）は
-        所有権をそのまま渡せるため clone しない。
-        """
-        if isinstance(node, (ast.Constant, ast.JoinedStr, ast.BinOp, ast.Call, ast.List, ast.Tuple, ast.Dict, ast.ListComp)):
-            return False
-        # 変数参照や属性参照、添字参照は既存値の再利用が多いため clone を維持する。
-        return True
+    def __init__(self, east_doc: dict[str, Any]) -> None:
+        profile = load_rs_profile()
+        hooks = load_rs_hooks(profile)
+        self.init_base_state(east_doc, profile, hooks)
+        raw_types = self.any_to_dict_or_empty(profile.get("types"))
+        nested_types = self.any_to_dict_or_empty(raw_types.get("types"))
+        if len(nested_types) > 0:
+            self.type_map = self.any_to_str_dict_or_empty(nested_types)
+        else:
+            self.type_map = self.any_to_str_dict_or_empty(raw_types)
+        operators = self.any_to_dict_or_empty(profile.get("operators"))
+        self.bin_ops = self.any_to_str_dict_or_empty(operators.get("binop"))
+        self.cmp_ops = self.any_to_str_dict_or_empty(operators.get("cmp"))
+        self.aug_ops = self.any_to_str_dict_or_empty(operators.get("aug"))
+        syntax = self.any_to_dict_or_empty(profile.get("syntax"))
+        identifiers = self.any_to_dict_or_empty(syntax.get("identifiers"))
+        self.reserved_words: set[str] = set(self.any_to_str_list(identifiers.get("reserved_words")))
+        self.rename_prefix = self.any_to_str(identifiers.get("rename_prefix"))
+        if self.rename_prefix == "":
+            self.rename_prefix = "py_"
+        self.function_return_types: dict[str, str] = {}
+        self.class_names: set[str] = set()
+        self.class_field_types: dict[str, dict[str, str]] = {}
+        self.declared_var_types: dict[str, str] = {}
 
-    def _current_param_borrow_mode(self, name: str) -> str | None:
-        """現在の関数コンテキストで、引数名の借用モードを返す。"""
-        if len(self.param_borrow_mode_stack) == 0:
-            return None
-        return self.param_borrow_mode_stack[-1].get(name)
+    def get_expr_type(self, expr: Any) -> str:
+        """解決済み型 + ローカル宣言テーブルで式型を返す。"""
+        t = super().get_expr_type(expr)
+        if t not in {"", "unknown"}:
+            return t
+        node = self.any_to_dict_or_empty(expr)
+        if self.any_dict_get_str(node, "kind", "") == "Name":
+            name = self.any_dict_get_str(node, "id", "")
+            if name in self.declared_var_types:
+                return self.normalize_type_name(self.declared_var_types[name])
+        return t
 
-    def _borrow_shared_expr(self, node: ast.expr, rendered: str) -> str:
-        """読み取り用途の参照式を作る（既に参照なら二重参照を避ける）。"""
-        if isinstance(node, ast.Name):
-            mode = self._current_param_borrow_mode(node.id)
-            if mode == "ref" or mode == "ref_mut":
-                return self._ident(node.id)
-        return f"&({rendered})"
+    def _safe_name(self, name: str) -> str:
+        return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
 
-    def _prepare_user_function_call_arg(self, node: ast.expr, rendered: str, mode: str) -> str:
-        """ユーザー関数呼び出し向けに、推論済み借用モードへ引数式を整形する。"""
-        if mode == "value":
-            return self._prepare_call_arg(node, rendered)
-
-        if mode == "ref":
-            if isinstance(node, ast.Name):
-                current_mode = self._current_param_borrow_mode(node.id)
-                if current_mode == "ref":
-                    return self._ident(node.id)
-                if current_mode == "ref_mut":
-                    return f"&*{self._ident(node.id)}"
-                return f"&({self._ident(node.id)})"
-            return f"&({rendered})"
-
-        if mode == "ref_mut":
-            if isinstance(node, ast.Name):
-                current_mode = self._current_param_borrow_mode(node.id)
-                if current_mode == "ref_mut":
-                    return f"&mut *{self._ident(node.id)}"
-                if current_mode == "value" or current_mode is None:
-                    return f"&mut {self._ident(node.id)}"
-                raise TranspileError(f"cannot pass shared reference '{node.id}' as mutable reference")
-            if isinstance(node, ast.Attribute):
-                if isinstance(node.value, ast.Name) and node.value.id == "self":
-                    self_alias = self.self_alias_stack[-1]
-                    return f"&mut {self_alias}.{node.attr}"
-                return f"&mut ({self.transpile_expr(node)})"
-            if isinstance(node, ast.Subscript):
-                return f"&mut {self._transpile_subscript_lvalue(node)}"
-            raise TranspileError("mutable reference argument must be a mutable lvalue")
-
-        raise TranspileError(f"unknown argument borrow mode: {mode}")
-
-    def _map_annotation(self, ann: ast.expr) -> str:
-        """Python 型注釈を Rust 型へ変換する。"""
-        if isinstance(ann, ast.Name):
-            mapping = {
-                "int": "i64",
-                "int8": "i8",
-                "uint8": "u8",
-                "int16": "i16",
-                "uint16": "u16",
-                "int32": "i32",
-                "uint32": "u32",
-                "int64": "i64",
-                "uint64": "u64",
-                "float": "f64",
-                "float32": "f32",
-                "str": "String",
-                "bytes": "Vec<u8>",
-                "bytearray": "Vec<u8>",
-                "bool": "bool",
-                "None": "()",
-                "Path": "py_runtime::PyPath",
-            }
-            if ann.id in mapping:
-                return mapping[ann.id]
-            return ann.id
-        if isinstance(ann, ast.Subscript):
-            if isinstance(ann.value, ast.Name):
-                base = ann.value.id
-            else:
-                raise TranspileError(f"unsupported annotation: {ast.dump(ann)}")
-            if base in {"list", "List"}:
-                return f"Vec<{self._map_annotation(ann.slice)}>"
-            if base in {"set", "Set"}:
-                return f"std::collections::HashSet<{self._map_annotation(ann.slice)}>"
-            if base in {"dict", "Dict"}:
-                if not isinstance(ann.slice, ast.Tuple) or len(ann.slice.elts) != 2:
-                    raise TranspileError("dict annotation requires two type parameters")
-                kt = self._map_annotation(ann.slice.elts[0])
-                vt = self._map_annotation(ann.slice.elts[1])
-                return f"std::collections::HashMap<{kt}, {vt}>"
-            if base in {"tuple", "Tuple"}:
-                if isinstance(ann.slice, ast.Tuple):
-                    items = [self._map_annotation(e) for e in ann.slice.elts]
-                    if len(items) == 1:
-                        return f"({items[0]},)"
-                    return f"({', '.join(items)})"
-                item = self._map_annotation(ann.slice)
-                return f"({item},)"
-            raise TranspileError(f"unsupported generic annotation base: {base}")
-        if isinstance(ann, ast.Constant) and ann.value is None:
-            return "()"
-        raise TranspileError(f"unsupported annotation: {ast.dump(ann)}")
-
-    def _binop(self, op: ast.operator) -> str:
-        mapping = {
-            ast.Add: "+",
-            ast.Sub: "-",
-            ast.Mult: "*",
-            ast.Div: "/",
-            ast.Mod: "%",
-            ast.Pow: "^",
-            ast.BitOr: "|",
-            ast.BitAnd: "&",
-            ast.BitXor: "^",
-            ast.LShift: "<<",
-            ast.RShift: ">>",
-        }
-        for k, v in mapping.items():
-            if isinstance(op, k):
-                return v
-        raise TranspileError(f"unsupported binop: {type(op).__name__}")
-
-    def _cmpop(self, op: ast.cmpop) -> str:
-        mapping = {
-            ast.Eq: "==",
-            ast.NotEq: "!=",
-            ast.Lt: "<",
-            ast.LtE: "<=",
-            ast.Gt: ">",
-            ast.GtE: ">=",
-        }
-        for k, v in mapping.items():
-            if isinstance(op, k):
-                return v
-        raise TranspileError(f"unsupported compare op: {type(op).__name__}")
-
-    def _unaryop(self, op: ast.unaryop) -> str:
-        """単項演算子ノードを Rust 演算子へ変換する。"""
-        if isinstance(op, ast.USub):
-            return "-"
-        if isinstance(op, ast.UAdd):
-            return "+"
-        if isinstance(op, ast.Not):
-            return "!"
-        raise TranspileError(f"unsupported unary op: {type(op).__name__}")
-
-    def _escape_str(self, value: str) -> str:
-        """Python 文字列リテラルを Rust 文字列式へエスケープして変換する。"""
-        esc = (
-            value.replace("\\", "\\\\")
-            .replace('"', '\\"')
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
-        )
-        return f"\"{esc}\".to_string()"
-
-    def _transpile_joined_str(self, expr: ast.JoinedStr) -> str:
-        """f-string を Rust の format! 呼び出しへ変換する。"""
-        format_parts: list[str] = []
-        arg_parts: list[str] = []
-        for value in expr.values:
-            if isinstance(value, ast.Constant) and isinstance(value.value, str):
-                format_parts.append(value.value.replace("{", "{{").replace("}", "}}"))
-                continue
-            if isinstance(value, ast.FormattedValue):
-                format_parts.append("{}")
-                arg_parts.append(self.transpile_expr(value.value))
-                continue
-            raise TranspileError("unsupported f-string part")
-        fmt = "".join(format_parts).replace('"', '\\"')
-        if len(arg_parts) == 0:
-            return f"\"{fmt}\".to_string()"
-        return f"format!(\"{fmt}\", {', '.join(arg_parts)})"
-
-    def _transpile_compare(self, expr: ast.Compare) -> str:
-        """比較式を Rust 式へ変換する。"""
-        if len(expr.ops) != 1 or len(expr.comparators) != 1:
-            raise TranspileError("chained comparison is not supported")
-        l = self.transpile_expr(expr.left)
-        r = self.transpile_expr(expr.comparators[0])
-        lt = self._expr_type(expr.left)
-        rt = self._expr_type(expr.comparators[0])
-        op = expr.ops[0]
-        if isinstance(op, ast.In):
-            return f"py_in({self._borrow_shared_expr(expr.comparators[0], r)}, {self._borrow_shared_expr(expr.left, l)})"
-        if isinstance(op, ast.NotIn):
-            return f"!py_in({self._borrow_shared_expr(expr.comparators[0], r)}, {self._borrow_shared_expr(expr.left, l)})"
-        numeric = {"i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8", "f64", "f32"}
-        if lt in numeric and rt in numeric and lt != rt:
-            return f"(((( {l} ) as f64) {self._cmpop(op)} (( {r} ) as f64)))"
-        return f"(({l}) {self._cmpop(op)} ({r}))"
-
-    def _transpile_list_comp(self, expr: ast.ListComp) -> str:
-        """単純な list comprehension を Rust ブロック式へ変換する。"""
-        if len(expr.generators) != 1:
-            raise TranspileError("only single-generator list comprehension is supported")
-        gen = expr.generators[0]
-        if gen.is_async:
-            raise TranspileError("async comprehension is not supported")
-        if not isinstance(gen.target, ast.Name):
-            raise TranspileError("list comprehension target must be name")
-        loop_name = gen.target.id
-        iter_expr = self.transpile_expr(gen.iter)
-        out_name = self._new_temp("listcomp")
-        lines: list[str] = [f"let mut {out_name} = Vec::new();", f"for {loop_name} in ({iter_expr}).clone() {{"]
-        for cond in gen.ifs:
-            lines.append(f"{self.INDENT}if !({self.transpile_expr(cond)}) {{ continue; }}")
-        lines.append(f"{self.INDENT}{out_name}.push({self.transpile_expr(expr.elt)});")
-        lines.append("}")
-        lines.append(out_name)
-        return "{ " + " ".join(lines) + " }"
-
-    def _expr_type(self, expr: ast.expr) -> str | None:
-        """式の推定 Rust 型を返す（不明なら None）。"""
-        if isinstance(expr, ast.Constant):
-            if isinstance(expr.value, str):
-                return "String"
-            if isinstance(expr.value, bool):
-                return "bool"
-            if isinstance(expr.value, int):
-                return "i64"
-            if isinstance(expr.value, float):
-                return "f64"
-        if isinstance(expr, ast.Name):
-            if len(self.type_env_stack) == 0:
-                return None
-            return self.type_env_stack[-1].get(expr.id)
-        if isinstance(expr, ast.Attribute):
-            if isinstance(expr.value, ast.Name) and expr.value.id == "self":
-                return self._field_type_of_current_class(expr.attr)
-            if isinstance(expr.value, ast.Name) and len(self.type_env_stack) > 0:
-                base_ty = self.type_env_stack[-1].get(expr.value.id)
-                if base_ty is not None:
-                    field_ty = self.class_field_types.get(base_ty, {}).get(expr.attr)
-                    if field_ty is not None:
-                        return field_ty
-            base_ty2 = self._expr_type(expr.value)
-            if base_ty2 == "py_runtime::PyPath" and expr.attr == "parent":
-                return "py_runtime::PyPath"
-            return None
-        if isinstance(expr, ast.Subscript):
-            base_ty = self._expr_type(expr.value)
-            if base_ty is None:
-                return None
-            if base_ty.startswith("Vec<") and base_ty.endswith(">"):
-                return base_ty[4:-1]
-            if base_ty.startswith("std::collections::HashMap<") and base_ty.endswith(">"):
-                inside = base_ty[len("std::collections::HashMap<") : -1]
-                parts = inside.split(", ")
-                if len(parts) == 2:
-                    return parts[1]
-            return None
-        if isinstance(expr, ast.JoinedStr):
-            return "String"
-        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Add):
-            lt = self._expr_type(expr.left)
-            rt = self._expr_type(expr.right)
-            if lt == "String" or rt == "String":
-                return "String"
-        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Div):
-            lt = self._expr_type(expr.left)
-            if lt == "py_runtime::PyPath":
-                return "py_runtime::PyPath"
-        if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Div):
-            return "f64"
-        if isinstance(expr, ast.BinOp):
-            lt = self._expr_type(expr.left)
-            rt = self._expr_type(expr.right)
-            if lt in {"f64", "f32"} or rt in {"f64", "f32"}:
-                return "f64"
-            ints = {"i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8"}
-            if lt in ints and rt in ints:
-                return "i64"
-        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
-            if expr.func.id == "Path":
-                return "py_runtime::PyPath"
-            if expr.func.id in self.class_names:
-                return expr.func.id
-            if expr.func.id == "str":
-                return "String"
-            if expr.func.id == "float":
-                return "f64"
-            if expr.func.id == "int":
-                return "i64"
-            if expr.func.id in {"bytearray", "bytes", "grayscale_palette"}:
-                return "Vec<u8>"
-        if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute):
-            if (
-                isinstance(expr.func.value, ast.Name)
-                and expr.func.value.id == "pathlib"
-                and expr.func.attr == "Path"
-            ):
-                return "py_runtime::PyPath"
-            obj_ty = self._expr_type(expr.func.value)
-            if obj_ty == "py_runtime::PyPath":
-                if expr.func.attr in {"resolve", "parent"}:
-                    return "py_runtime::PyPath"
-                if expr.func.attr in {"name", "stem", "read_text"}:
-                    return "String"
-                if expr.func.attr == "exists":
-                    return "bool"
-                if expr.func.attr in {"write_text", "mkdir"}:
-                    return "()"
-        return None
-
-    def _default_value_for_type(self, rust_type: str) -> str:
-        """Rust 型名からデフォルト値式を返す。"""
-        if rust_type == "String":
-            return "String::new()"
-        if rust_type.startswith("Vec<"):
-            return "Vec::new()"
-        if rust_type.startswith("std::collections::HashMap<"):
-            return "std::collections::HashMap::new()"
-        if rust_type.startswith("std::collections::HashSet<"):
-            return "std::collections::HashSet::new()"
-        if rust_type == "bool":
-            return "false"
-        if rust_type in {"f64", "f32"}:
-            return "0.0"
-        if rust_type == "()":
-            return "()"
-        if rust_type.startswith("i") or rust_type.startswith("u"):
+    def _infer_default_for_type(self, east_type: str) -> str:
+        """型ごとの既定値（Rust）を返す。"""
+        t = self.normalize_type_name(east_type)
+        if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
             return "0"
-        if rust_type in self.class_names:
-            return f"{rust_type}::new()"
+        if t in {"float32", "float64"}:
+            return "0.0"
+        if t == "bool":
+            return "false"
+        if t == "str":
+            return "String::new()"
+        if t == "bytes" or t == "bytearray" or t.startswith("list["):
+            return "Vec::new()"
+        if t.startswith("set["):
+            return "::std::collections::BTreeSet::new()"
+        if t.startswith("dict["):
+            return "::std::collections::BTreeMap::new()"
+        if t.startswith("tuple["):
+            return "()"
+        if t == "None":
+            return "()"
+        if t.startswith("Option[") and t.endswith("]"):
+            return "None"
+        if t in self.class_names:
+            return f"{t}::new()"
         return "Default::default()"
 
-    def _field_type_of_current_class(self, field_name: str) -> str | None:
-        """現在変換中クラスのフィールド型を返す。"""
-        if self.current_class_name is None:
-            return None
-        return self.class_field_types.get(self.current_class_name, {}).get(field_name)
+    def _rust_type(self, east_type: str) -> str:
+        """EAST 型名を Rust 型名へ変換する。"""
+        t = self.normalize_type_name(east_type)
+        if t == "":
+            return "i64"
+        if t in self.type_map:
+            mapped = self.type_map[t]
+            if mapped != "":
+                return mapped
+        if t.startswith("list[") and t.endswith("]"):
+            inner = t[5:-1].strip()
+            return f"Vec<{self._rust_type(inner)}>"
+        if t.startswith("set[") and t.endswith("]"):
+            inner = t[4:-1].strip()
+            return f"::std::collections::BTreeSet<{self._rust_type(inner)}>"
+        if t.startswith("dict[") and t.endswith("]"):
+            parts = self.split_generic(t[5:-1].strip())
+            if len(parts) == 2:
+                return (
+                    "::std::collections::BTreeMap<"
+                    + self._rust_type(parts[0])
+                    + ", "
+                    + self._rust_type(parts[1])
+                    + ">"
+                )
+        if t.startswith("tuple[") and t.endswith("]"):
+            parts = self.split_generic(t[6:-1].strip())
+            rendered: list[str] = []
+            for part in parts:
+                rendered.append(self._rust_type(part))
+            if len(rendered) == 1:
+                return f"({rendered[0]},)"
+            return "(" + ", ".join(rendered) + ")"
+        if t.find("|") >= 0:
+            parts = self.split_union(t)
+            non_none: list[str] = []
+            has_none = False
+            for part in parts:
+                if part == "None":
+                    has_none = True
+                else:
+                    non_none.append(part)
+            if has_none and len(non_none) == 1:
+                return f"Option<{self._rust_type(non_none[0])}>"
+            return "String"
+        if t == "None":
+            return "()"
+        return t
 
-    def _is_u8_subscript_target(self, sub: ast.Subscript) -> bool:
-        """添字代入先が Vec<u8> かを推定する。"""
-        base = sub.value
-        while isinstance(base, ast.Subscript):
-            base = base.value
-        ty = self._expr_type(base)
-        return ty == "Vec<u8>"
+    def _emit_import_bindings(self, meta: dict[str, Any]) -> None:
+        """EAST meta から import 束縛表を読み込み、解決テーブルへ反映する。"""
+        self.import_modules = {}
+        self.import_symbols = {}
+        binds = self.any_to_dict_list(meta.get("import_bindings"))
+        i = 0
+        while i < len(binds):
+            ent = binds[i]
+            binding_kind = self.any_to_str(ent.get("binding_kind"))
+            local_name = self.any_to_str(ent.get("local_name"))
+            module_id = self.any_to_str(ent.get("module_id"))
+            if binding_kind == "module" and local_name != "" and module_id != "":
+                self.import_modules[local_name] = module_id
+            if binding_kind == "symbol":
+                export_name = self.any_to_str(ent.get("export_name"))
+                if local_name != "" and module_id != "" and export_name != "":
+                    sym: dict[str, str] = {}
+                    sym["module"] = module_id
+                    sym["name"] = export_name
+                    self.import_symbols[local_name] = sym
+            i += 1
 
-    def _is_hashmap_subscript_target(self, sub: ast.Subscript) -> bool:
-        """添字代入先が HashMap かを推定する。"""
-        base = sub.value
-        while isinstance(base, ast.Subscript):
-            base = base.value
-        ty = self._expr_type(base)
-        return ty is not None and ty.startswith("std::collections::HashMap<")
+    def transpile(self) -> str:
+        """モジュール全体を Rust ソースへ変換する。"""
+        self.lines = []
+        self.scope_stack = [set()]
+        self.declared_var_types = {}
 
-    def _is_copy_type(self, rust_type: str) -> bool:
-        """Rust の Copy 扱いにできるプリミティブ型かを返す。"""
-        return rust_type in {"bool", "i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8", "f64", "f32", "()"}
+        module = self.doc
+        body = self._dict_stmt_list(module.get("body"))
+        meta = self.any_to_dict_or_empty(module.get("meta"))
+        self._emit_import_bindings(meta)
+        self.emit_module_leading_trivia()
 
-    def _is_borrow_friendly_container_type(self, rust_type: str) -> bool:
-        """添字アクセスで clone せず借用を維持してよいコンテナ型かを返す。"""
-        return (
-            rust_type.startswith("Vec<")
-            or rust_type.startswith("std::collections::HashMap<")
-            or rust_type.startswith("std::collections::HashSet<")
+        self.class_names = set()
+        self.function_return_types = {}
+        for stmt in body:
+            kind = self.any_dict_get_str(stmt, "kind", "")
+            if kind == "ClassDef":
+                class_name = self.any_to_str(stmt.get("name"))
+                if class_name != "":
+                    self.class_names.add(class_name)
+            if kind == "FunctionDef":
+                fn_name = self.any_to_str(stmt.get("name"))
+                ret_type = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
+                if fn_name != "":
+                    self.function_return_types[fn_name] = ret_type
+
+        top_level_stmts: list[dict[str, Any]] = []
+        for stmt in body:
+            kind = self.any_dict_get_str(stmt, "kind", "")
+            if kind == "Import" or kind == "ImportFrom":
+                continue
+            if kind == "FunctionDef":
+                self.emit_leading_comments(stmt)
+                self._emit_function(stmt, in_class=None)
+                self.emit("")
+                continue
+            if kind == "ClassDef":
+                self.emit_leading_comments(stmt)
+                self._emit_class(stmt)
+                self.emit("")
+                continue
+            top_level_stmts.append(stmt)
+
+        main_guard_body = self._dict_stmt_list(module.get("main_guard_body"))
+        should_emit_main = len(main_guard_body) > 0 or len(top_level_stmts) > 0
+        if should_emit_main:
+            self.emit("fn main() {")
+            scope: set[str] = set()
+            self.emit_scoped_stmt_list(top_level_stmts + main_guard_body, scope)
+            self.emit("}")
+
+        return "\n".join(self.lines) + ("\n" if len(self.lines) > 0 else "")
+
+    def _emit_class(self, stmt: dict[str, Any]) -> None:
+        """ClassDef を最小構成の `struct + impl` として出力する。"""
+        class_name = self._safe_name(self.any_to_str(stmt.get("name")))
+        field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
+        norm_field_types: dict[str, str] = {}
+        for key, val in field_types.items():
+            if isinstance(key, str):
+                norm_field_types[key] = self.normalize_type_name(self.any_to_str(val))
+        self.class_field_types[class_name] = norm_field_types
+
+        if len(norm_field_types) == 0:
+            self.emit(f"struct {class_name};")
+        else:
+            self.emit(f"struct {class_name} {{")
+            self.indent += 1
+            for name, t in norm_field_types.items():
+                self.emit(f"{self._safe_name(name)}: {self._rust_type(t)},")
+            self.indent -= 1
+            self.emit("}")
+
+        self.emit(f"impl {class_name} {{")
+        self.indent += 1
+        self._emit_constructor(class_name, stmt, norm_field_types)
+        members = self._dict_stmt_list(stmt.get("body"))
+        for member in members:
+            if self.any_dict_get_str(member, "kind", "") != "FunctionDef":
+                continue
+            name = self.any_to_str(member.get("name"))
+            if name == "__init__":
+                continue
+            self.emit("")
+            self._emit_function(member, in_class=class_name)
+        self.indent -= 1
+        self.emit("}")
+
+    def _emit_constructor(self, class_name: str, cls: dict[str, Any], field_types: dict[str, str]) -> None:
+        """`__init__` から `new` を生成する。"""
+        init_fn: dict[str, Any] | None = None
+        body = self._dict_stmt_list(cls.get("body"))
+        for member in body:
+            if self.any_dict_get_str(member, "kind", "") == "FunctionDef" and self.any_to_str(member.get("name")) == "__init__":
+                init_fn = member
+                break
+
+        arg_items: list[str] = []
+        init_scope: set[str] = set()
+        if init_fn is not None:
+            arg_order = self.any_to_str_list(init_fn.get("arg_order"))
+            arg_types = self.any_to_dict_or_empty(init_fn.get("arg_types"))
+            for arg_name in arg_order:
+                if arg_name == "self":
+                    continue
+                arg_type = self._rust_type(self.any_to_str(arg_types.get(arg_name)))
+                safe = self._safe_name(arg_name)
+                arg_items.append(f"{safe}: {arg_type}")
+                init_scope.add(arg_name)
+
+        args_text = ", ".join(arg_items)
+        self.emit(f"fn new({args_text}) -> Self {{")
+        self.indent += 1
+
+        field_values: dict[str, str] = {}
+        for field_name, field_t in field_types.items():
+            field_values[field_name] = self._infer_default_for_type(field_t)
+
+        if init_fn is not None:
+            init_body = self._dict_stmt_list(init_fn.get("body"))
+            for stmt in init_body:
+                if self.any_dict_get_str(stmt, "kind", "") == "Assign":
+                    target = self.any_to_dict_or_empty(stmt.get("target"))
+                    if len(target) == 0:
+                        targets = self._dict_stmt_list(stmt.get("targets"))
+                        if len(targets) > 0:
+                            target = targets[0]
+                    if self.any_dict_get_str(target, "kind", "") != "Attribute":
+                        continue
+                    owner = self.any_to_dict_or_empty(target.get("value"))
+                    if self.any_dict_get_str(owner, "kind", "") != "Name":
+                        continue
+                    if self.any_to_str(owner.get("id")) != "self":
+                        continue
+                    field_name = self.any_to_str(target.get("attr"))
+                    if field_name == "":
+                        continue
+                    field_values[field_name] = self.render_expr(stmt.get("value"))
+
+        if len(field_types) == 0:
+            if len(init_scope) > 0:
+                args_names: list[str] = []
+                for arg_name in init_scope:
+                    args_names.append(self._safe_name(arg_name))
+                self.emit("let _ = (" + ", ".join(args_names) + ");")
+            self.emit("Self")
+        else:
+            self.emit("Self {")
+            self.indent += 1
+            for field_name in field_types.keys():
+                safe = self._safe_name(field_name)
+                self.emit(f"{safe}: {field_values.get(field_name, 'Default::default()')},")
+            self.indent -= 1
+            self.emit("}")
+
+        self.indent -= 1
+        self.emit("}")
+
+    def _emit_function(self, fn: dict[str, Any], in_class: str | None) -> None:
+        """FunctionDef を Rust 関数として出力する。"""
+        fn_name_raw = self.any_to_str(fn.get("name"))
+        fn_name = self._safe_name(fn_name_raw)
+        arg_order = self.any_to_str_list(fn.get("arg_order"))
+        arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
+        args_text_list: list[str] = []
+        scope_names: set[str] = set()
+
+        if in_class is not None:
+            if len(arg_order) > 0 and arg_order[0] == "self":
+                args_text_list.append("&self")
+                scope_names.add("self")
+                arg_order = arg_order[1:]
+
+        for arg_name in arg_order:
+            safe = self._safe_name(arg_name)
+            arg_t = self._rust_type(self.any_to_str(arg_types.get(arg_name)))
+            args_text_list.append(f"{safe}: {arg_t}")
+            scope_names.add(arg_name)
+            self.declared_var_types[arg_name] = self.normalize_type_name(self.any_to_str(arg_types.get(arg_name)))
+
+        ret_t_east = self.normalize_type_name(self.any_to_str(fn.get("return_type")))
+        ret_t = self._rust_type(ret_t_east)
+        ret_txt = ""
+        if ret_t != "()":
+            ret_txt = " -> " + ret_t
+        line = self.syntax_line(
+            "function_open",
+            "fn {name}({args}){ret_txt} {",
+            {"name": fn_name, "args": ", ".join(args_text_list), "ret_txt": ret_txt},
+        )
+        self.emit(line)
+
+        body = self._dict_stmt_list(fn.get("body"))
+        self.emit_scoped_stmt_list(body, scope_names)
+        self.emit("}")
+
+    def emit_stmt(self, stmt: dict[str, Any]) -> None:
+        """文ノードを Rust へ出力する。"""
+        self.emit_leading_comments(stmt)
+        hooked = self.hook_on_emit_stmt(stmt)
+        if hooked is True:
+            return
+        kind = self.any_dict_get_str(stmt, "kind", "")
+        hooked_kind = self.hook_on_emit_stmt_kind(kind, stmt)
+        if hooked_kind is True:
+            return
+
+        if kind == "Pass":
+            self.emit(self.syntax_text("pass_stmt", "// pass"))
+            return
+        if kind == "Break":
+            self.emit(self.syntax_text("break_stmt", "break;"))
+            return
+        if kind == "Continue":
+            self.emit(self.syntax_text("continue_stmt", "continue;"))
+            return
+        if kind == "Expr":
+            expr_txt = self.render_expr(stmt.get("value"))
+            self.emit(self.syntax_line("expr_stmt", "{expr};", {"expr": expr_txt}))
+            return
+        if kind == "Return":
+            if stmt.get("value") is None:
+                self.emit(self.syntax_text("return_void", "return;"))
+            else:
+                val = self.render_expr(stmt.get("value"))
+                self.emit(self.syntax_line("return_value", "return {value};", {"value": val}))
+            return
+        if kind == "AnnAssign":
+            self._emit_annassign(stmt)
+            return
+        if kind == "Assign":
+            self._emit_assign(stmt)
+            return
+        if kind == "AugAssign":
+            self._emit_augassign(stmt)
+            return
+        if kind == "If":
+            self._emit_if(stmt)
+            return
+        if kind == "While":
+            self._emit_while(stmt)
+            return
+        if kind == "ForRange":
+            self._emit_for_range(stmt)
+            return
+        if kind == "For":
+            self._emit_for(stmt)
+            return
+        if kind == "Import" or kind == "ImportFrom":
+            return
+
+        # 未対応文はコメント化して処理継続する。
+        self.emit("// unsupported stmt: " + kind)
+
+    def _emit_if(self, stmt: dict[str, Any]) -> None:
+        cond = self.render_cond(stmt.get("test"))
+        self.emit(self.syntax_line("if_open", "if {cond} {", {"cond": cond}))
+        body = self._dict_stmt_list(stmt.get("body"))
+        self.emit_scoped_stmt_list(body, set())
+        orelse = self._dict_stmt_list(stmt.get("orelse"))
+        if len(orelse) == 0:
+            self.emit(self.syntax_text("block_close", "}"))
+            return
+        self.emit(self.syntax_text("else_open", "} else {"))
+        self.emit_scoped_stmt_list(orelse, set())
+        self.emit(self.syntax_text("block_close", "}"))
+
+    def _emit_while(self, stmt: dict[str, Any]) -> None:
+        cond = self.render_cond(stmt.get("test"))
+        self.emit(self.syntax_line("while_open", "while {cond} {", {"cond": cond}))
+        body = self._dict_stmt_list(stmt.get("body"))
+        self.emit_scoped_stmt_list(body, set())
+        self.emit(self.syntax_text("block_close", "}"))
+
+    def _emit_for_range(self, stmt: dict[str, Any]) -> None:
+        target_node = self.any_to_dict_or_empty(stmt.get("target"))
+        target = self._safe_name(self.any_dict_get_str(target_node, "id", "_i"))
+        target_type = self._rust_type(self.any_to_str(stmt.get("target_type")))
+        start = self.render_expr(stmt.get("start"))
+        stop = self.render_expr(stmt.get("stop"))
+        step = self.render_expr(stmt.get("step"))
+        range_mode = self.any_to_str(stmt.get("range_mode"))
+
+        self.emit(f"let mut {target}: {target_type} = {start};")
+        cond = f"{target} < {stop}"
+        if range_mode == "descending":
+            cond = f"{target} > {stop}"
+        self.emit(self.syntax_line("for_range_open", "while {cond} {", {"cond": cond}))
+        body_scope: set[str] = set()
+        body_scope.add(self.any_dict_get_str(target_node, "id", target))
+        body = self._dict_stmt_list(stmt.get("body"))
+        self.indent += 1
+        self.scope_stack.append(body_scope)
+        self.emit_stmt_list(body)
+        self.emit(f"{target} += {step};")
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit(self.syntax_text("block_close", "}"))
+
+    def _emit_for(self, stmt: dict[str, Any]) -> None:
+        target_node = self.any_to_dict_or_empty(stmt.get("target"))
+        target_name = self.any_dict_get_str(target_node, "id", "_it")
+        target = self._safe_name(target_name)
+        iter_node = stmt.get("iter")
+        iter_expr = self.render_expr(iter_node)
+        iter_type = self.get_expr_type(iter_node)
+        if iter_type == "str":
+            iter_expr = iter_expr + ".chars()"
+        elif iter_type.startswith("list[") or iter_type.startswith("set[") or iter_type.startswith("dict["):
+            iter_expr = "(" + iter_expr + ").clone()"
+
+        self.emit(self.syntax_line("for_open", "for {target} in {iter} {", {"target": target, "iter": iter_expr}))
+        body_scope: set[str] = set()
+        body_scope.add(target_name)
+        body = self._dict_stmt_list(stmt.get("body"))
+        self.emit_scoped_stmt_list(body, body_scope)
+        self.emit(self.syntax_text("block_close", "}"))
+
+    def _emit_annassign(self, stmt: dict[str, Any]) -> None:
+        target = self.any_to_dict_or_empty(stmt.get("target"))
+        target_kind = self.any_dict_get_str(target, "kind", "")
+        if target_kind != "Name":
+            t = self.render_expr(target)
+            v = self.render_expr(stmt.get("value"))
+            self.emit(self.syntax_line("annassign_assign", "{target} = {value};", {"target": t, "value": v}))
+            return
+
+        name_raw = self.any_dict_get_str(target, "id", "_")
+        name = self._safe_name(name_raw)
+        ann = self.any_to_str(stmt.get("annotation"))
+        decl_t = self.any_to_str(stmt.get("decl_type"))
+        t_east = ann if ann != "" else decl_t
+        if t_east == "":
+            t_east = self.get_expr_type(stmt.get("value"))
+        t = self._rust_type(t_east)
+        self.declare_in_current_scope(name_raw)
+        self.declared_var_types[name_raw] = self.normalize_type_name(t_east)
+
+        value_obj = stmt.get("value")
+        if value_obj is None:
+            self.emit(self.syntax_line("annassign_decl_noinit", "let mut {target}: {type};", {"target": name, "type": t}))
+            return
+        value = self.render_expr(value_obj)
+        self.emit(
+            self.syntax_line(
+                "annassign_decl_init",
+                "let mut {target}: {type} = {value};",
+                {"target": name, "type": t, "value": value},
+            )
         )
 
-    def _transpile_subscript_lvalue(self, sub: ast.Subscript) -> str:
-        """添字代入左辺を clone なしで Rust の可変参照式へ変換する。"""
-        if isinstance(sub.slice, ast.Slice):
-            raise TranspileError("slice assignment is not supported")
-        index_expr = self.transpile_expr(sub.slice)
-        if isinstance(sub.value, ast.Subscript):
-            value_expr = self._transpile_subscript_lvalue(sub.value)
-        else:
-            value_expr = self.transpile_expr(sub.value)
-        base_ty = self._expr_type(sub.value)
-        if base_ty is not None and base_ty.startswith("std::collections::HashMap<"):
-            return f"({value_expr})[&({index_expr})]"
-        return f"({value_expr})[{index_expr} as usize]"
+    def _emit_assign(self, stmt: dict[str, Any]) -> None:
+        target = self.any_to_dict_or_empty(stmt.get("target"))
+        if len(target) == 0:
+            targets = self._dict_stmt_list(stmt.get("targets"))
+            if len(targets) > 0:
+                target = targets[0]
+        value = self.render_expr(stmt.get("value"))
+        if self.any_dict_get_str(target, "kind", "") == "Name":
+            name_raw = self.any_dict_get_str(target, "id", "_")
+            name = self._safe_name(name_raw)
+            declare = self.any_dict_get_bool(stmt, "declare", False)
+            if declare and not self.is_declared(name_raw):
+                self.declare_in_current_scope(name_raw)
+                t = self.get_expr_type(stmt.get("value"))
+                if t != "":
+                    self.declared_var_types[name_raw] = t
+                self.emit(self.syntax_line("assign_decl_init", "let mut {target} = {value};", {"target": name, "value": value}))
+                return
+            self.emit(self.syntax_line("assign_set", "{target} = {value};", {"target": name, "value": value}))
+            return
 
-def _runtime_path_literal(output_path: Path) -> str:
-    runtime_path = (Path(__file__).resolve().parent / "rs_module" / "py_runtime.rs").resolve()
-    rel = os.path.relpath(runtime_path, output_path.parent.resolve())
-    return rel.replace("\\", "/")
+        if self.any_dict_get_str(target, "kind", "") == "Tuple":
+            names = self._dict_stmt_list(target.get("elts"))
+            if len(names) == 2:
+                a = self.render_expr(names[0])
+                b = self.render_expr(names[1])
+                tmp = self.next_tmp("__tmp")
+                self.emit(f"let {tmp} = {value};")
+                self.emit(f"{a} = {tmp}.0;")
+                self.emit(f"{b} = {tmp}.1;")
+                return
+
+        rendered_target = self.render_expr(target)
+        self.emit(self.syntax_line("assign_set", "{target} = {value};", {"target": rendered_target, "value": value}))
+
+    def _emit_augassign(self, stmt: dict[str, Any]) -> None:
+        target = self.render_expr(stmt.get("target"))
+        value = self.render_expr(stmt.get("value"))
+        op = self.any_to_str(stmt.get("op"))
+        mapped = self.aug_ops.get(op, "")
+        if mapped == "":
+            mapped = "+="
+        self.emit(self.syntax_line("augassign_apply", "{target} {op} {value};", {"target": target, "op": mapped, "value": value}))
+
+    def _render_compare(self, expr: dict[str, Any]) -> str:
+        left = self.render_expr(expr.get("left"))
+        ops = self.any_to_str_list(expr.get("ops"))
+        comps = self.any_to_list(expr.get("comparators"))
+        if len(ops) == 0 or len(comps) == 0:
+            return "false"
+        terms: list[str] = []
+        cur_left = left
+        i = 0
+        while i < len(ops) and i < len(comps):
+            op = ops[i]
+            right = self.render_expr(comps[i])
+            op_txt = self.cmp_ops.get(op, "==")
+            terms.append(f"({cur_left} {op_txt} {right})")
+            cur_left = right
+            i += 1
+        if len(terms) == 1:
+            return terms[0]
+        return "(" + " && ".join(terms) + ")"
+
+    def _render_call(self, expr: dict[str, Any]) -> str:
+        parts = self.unpack_prepared_call_parts(self._prepare_call_parts(expr))
+        fn_node = self.any_to_dict_or_empty(parts.get("fn"))
+        fn_kind = self.any_dict_get_str(fn_node, "kind", "")
+        args = self.any_to_list(parts.get("args"))
+        arg_nodes = self.any_to_list(parts.get("arg_nodes"))
+
+        rendered_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_args.append(self.any_to_str(args[i]))
+            i += 1
+
+        if fn_kind == "Name":
+            fn_name_raw = self.any_dict_get_str(fn_node, "id", "")
+            fn_name = self._safe_name(fn_name_raw)
+            if fn_name_raw in self.class_names:
+                return f"{fn_name_raw}::new(" + ", ".join(rendered_args) + ")"
+            if fn_name_raw == "print":
+                if len(rendered_args) == 0:
+                    return "println!(\"\")"
+                if len(rendered_args) == 1:
+                    return "println!(\"{}\", " + rendered_args[0] + ")"
+                return "println!(\"{:?}\", (" + ", ".join(rendered_args) + "))"
+            if fn_name_raw == "len" and len(rendered_args) == 1:
+                arg_type = self.get_expr_type(arg_nodes[0] if len(arg_nodes) > 0 else None)
+                if arg_type.startswith("dict["):
+                    return rendered_args[0] + ".len() as i64"
+                return rendered_args[0] + ".len() as i64"
+            if fn_name_raw == "str" and len(rendered_args) == 1:
+                return rendered_args[0] + ".to_string()"
+            if fn_name_raw == "int" and len(rendered_args) == 1:
+                return rendered_args[0] + " as i64"
+            if fn_name_raw == "float" and len(rendered_args) == 1:
+                return rendered_args[0] + " as f64"
+            if fn_name_raw == "bool" and len(rendered_args) == 1:
+                return "(" + rendered_args[0] + " != 0)"
+            return fn_name + "(" + ", ".join(rendered_args) + ")"
+
+        if fn_kind == "Attribute":
+            owner_expr = self.render_expr(fn_node.get("value"))
+            attr = self._safe_name(self.any_dict_get_str(fn_node, "attr", ""))
+            return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
+
+        fn_expr = self.render_expr(fn_node)
+        return fn_expr + "(" + ", ".join(rendered_args) + ")"
+
+    def render_expr(self, expr: Any) -> str:
+        """式ノードを Rust へ描画する。"""
+        expr_d = self.any_to_dict_or_empty(expr)
+        if len(expr_d) == 0:
+            return "()"
+        kind = self.any_dict_get_str(expr_d, "kind", "")
+
+        hook_leaf = self.hook_on_render_expr_leaf(kind, expr_d)
+        if hook_leaf != "":
+            return hook_leaf
+
+        if kind == "Name":
+            name = self.any_dict_get_str(expr_d, "id", "_")
+            return self._safe_name(name)
+        if kind == "Constant":
+            tag, non_str = self.render_constant_non_string_common(expr, expr_d, "()", "()")
+            if tag == "1":
+                return non_str
+            val = self.any_to_str(expr_d.get("value"))
+            return rust_string_lit(val)
+        if kind == "Attribute":
+            owner = self.render_expr(expr_d.get("value"))
+            attr = self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
+            return owner + "." + attr
+        if kind == "UnaryOp":
+            op = self.any_dict_get_str(expr_d, "op", "")
+            right = self.render_expr(expr_d.get("operand"))
+            if op == "USub":
+                return "(-" + right + ")"
+            if op == "Not":
+                return "(!" + right + ")"
+            return right
+        if kind == "BinOp":
+            left_node = self.any_to_dict_or_empty(expr_d.get("left"))
+            right_node = self.any_to_dict_or_empty(expr_d.get("right"))
+            left = self._wrap_for_binop_operand(self.render_expr(left_node), left_node, self.any_dict_get_str(expr_d, "op", ""), is_right=False)
+            right = self._wrap_for_binop_operand(self.render_expr(right_node), right_node, self.any_dict_get_str(expr_d, "op", ""), is_right=True)
+            custom = self.hook_on_render_binop(expr_d, left, right)
+            if custom != "":
+                return custom
+            op = self.any_to_str(expr_d.get("op"))
+            mapped = self.bin_ops.get(op, "+")
+            return "(" + left + " " + mapped + " " + right + ")"
+        if kind == "Compare":
+            return self._render_compare(expr_d)
+        if kind == "BoolOp":
+            op = self.any_to_str(expr_d.get("op"))
+            mapped = "&&"
+            if op == "Or":
+                mapped = "||"
+            vals = self.any_to_list(expr_d.get("values"))
+            rendered: list[str] = []
+            for val in vals:
+                rendered.append(self.render_expr(val))
+            if len(rendered) == 0:
+                return "false"
+            return "(" + (" " + mapped + " ").join(rendered) + ")"
+        if kind == "Call":
+            call_hook = self.hook_on_render_call(expr_d, self.any_to_dict_or_empty(expr_d.get("func")), [], {})
+            if call_hook != "":
+                return call_hook
+            return self._render_call(expr_d)
+        if kind == "IfExp":
+            return self._render_ifexp_expr(expr_d)
+        if kind == "List":
+            elts = self.any_to_list(expr_d.get("elts"))
+            rendered: list[str] = []
+            for elt in elts:
+                rendered.append(self.render_expr(elt))
+            return "vec![" + ", ".join(rendered) + "]"
+        if kind == "Tuple":
+            elts = self.any_to_list(expr_d.get("elts"))
+            rendered = []
+            for elt in elts:
+                rendered.append(self.render_expr(elt))
+            if len(rendered) == 1:
+                return "(" + rendered[0] + ",)"
+            return "(" + ", ".join(rendered) + ")"
+        if kind == "Dict":
+            keys = self.any_to_list(expr_d.get("keys"))
+            vals = self.any_to_list(expr_d.get("values"))
+            pairs: list[str] = []
+            i = 0
+            while i < len(keys) and i < len(vals):
+                pairs.append("(" + self.render_expr(keys[i]) + ", " + self.render_expr(vals[i]) + ")")
+                i += 1
+            return "::std::collections::BTreeMap::from([" + ", ".join(pairs) + "])"
+        if kind == "Subscript":
+            owner = self.render_expr(expr_d.get("value"))
+            idx = self.render_expr(expr_d.get("slice"))
+            return owner + "[" + idx + " as usize]"
+        if kind == "Lambda":
+            args = self.any_to_list(self.any_to_dict_or_empty(expr_d.get("args")).get("args"))
+            names: list[str] = []
+            for arg in args:
+                names.append(self._safe_name(self.any_to_str(self.any_to_dict_or_empty(arg).get("arg"))))
+            body = self.render_expr(expr_d.get("body"))
+            return "|" + ", ".join(names) + "| " + body
+
+        hook_complex = self.hook_on_render_expr_complex(expr_d)
+        if hook_complex != "":
+            return hook_complex
+        return self.any_to_str(expr_d.get("repr"))
+
+    def render_cond(self, expr: Any) -> str:
+        """条件式向け描画（数値等を bool 条件へ寄せる）。"""
+        node = self.any_to_dict_or_empty(expr)
+        if len(node) == 0:
+            return "false"
+        t = self.get_expr_type(expr)
+        rendered = self._strip_outer_parens(self.render_expr(expr))
+        if rendered == "":
+            return "false"
+        if t == "bool":
+            return rendered
+        if t == "str":
+            return "!" + rendered + ".is_empty()"
+        if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+            return rendered + ".len() != 0"
+        if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}:
+            return rendered + " != 0"
+        return rendered
 
 
-def transpile_file_native(input_path: Path, output_path: Path) -> None:
-    source = input_path.read_text(encoding="utf-8")
-    tree = ast.parse(source, filename=str(input_path))
-    runtime_rel = _runtime_path_literal(output_path)
-    rust_body = RustTranspiler().transpile_module(tree)
-    runtime_symbols = [
-        "math_cos",
-        "math_tan",
-        "math_exp",
-        "math_log",
-        "math_log10",
-        "math_fabs",
-        "math_floor",
-        "math_ceil",
-        "math_pow",
-        "math_sin",
-        "math_sqrt",
-        "perf_counter",
-        "py_bool",
-        "py_grayscale_palette",
-        "py_in",
-        "py_isalpha",
-        "py_isdigit",
-        "py_len",
-        "py_print",
-        "py_save_gif",
-        "py_slice",
-        "py_write_rgb_png",
-    ]
-    used_symbols = [name for name in runtime_symbols if f"{name}(" in rust_body]
-    use_line = ""
-    if used_symbols:
-        use_line = "use py_runtime::{" + ", ".join(used_symbols) + "};\n\n"
-    rust = (
-        f'#[path = "{runtime_rel}"]\n'
-        "mod py_runtime;\n"
-        + use_line
-        + rust_body
-    )
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(rust, encoding="utf-8")
+def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
+    """`.py` / `.json` を EAST ドキュメントへ読み込む。"""
+    suffix = input_path.suffix.lower()
+    if suffix == ".json":
+        txt = input_path.read_text(encoding="utf-8")
+        doc = json.loads(txt)
+        if isinstance(doc, dict):
+            return doc
+        raise RuntimeError("EAST json root must be object")
+    if suffix == ".py":
+        return convert_path(input_path, parser_backend=parser_backend)
+    raise RuntimeError("input must be .py or .json")
+
+
+def transpile_to_rust(east_doc: dict[str, Any]) -> str:
+    """EAST ドキュメントを Rust コードへ変換する。"""
+    emitter = RustEmitter(east_doc)
+    return emitter.transpile()
+
+
+def _default_output_path(input_path: Path) -> Path:
+    """入力パスから既定の `.rs` 出力先を決定する。"""
+    out = str(input_path)
+    if out.endswith(".py"):
+        out = out[:-3] + ".rs"
+    elif out.endswith(".json"):
+        out = out[:-5] + ".rs"
+    else:
+        out = out + ".rs"
+    return Path(out)
+
+
+def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str:
+    """argparse(dict) から文字列値を取り出す。"""
+    if key not in args:
+        return default_value
+    val = args[key]
+    if isinstance(val, str):
+        return val
+    return default_value
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Transpile Python to Rust")
-    parser.add_argument("input", help="input Python file")
-    parser.add_argument("output", help="output Rust file")
+    """CLI 入口。"""
+    parser = argparse.ArgumentParser(description="Pytra EAST -> Rust transpiler")
+    add_common_transpile_args(parser, parser_backends=["self_hosted"])
     args = parser.parse_args()
+    if not isinstance(args, dict):
+        raise RuntimeError("argparse result must be dict")
 
-    input_path = Path(args.input)
-    output_path = Path(args.output)
+    input_path = Path(_arg_get_str(args, "input"))
+    output_text = _arg_get_str(args, "output")
+    output_path = Path(output_text) if output_text != "" else _default_output_path(input_path)
+    parser_backend = _arg_get_str(args, "parser_backend")
+    if parser_backend == "":
+        parser_backend = "self_hosted"
 
-    try:
-        transpile_file_native(input_path, output_path)
-    except Exception as exc:  # noqa: BLE001
-        print(f"error: {exc}", file=sys.stderr)
-        return 1
+    east = load_east(input_path, parser_backend=parser_backend)
+    rust_src = transpile_to_rust(east)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(rust_src, encoding="utf-8")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

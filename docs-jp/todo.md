@@ -36,23 +36,24 @@
 
 1. [ ] 方針固定: `py2rs.py` は「CLI + 入出力 + 依存解決」の薄いオーケストレータに限定する。
    - [ ] `py2rs.py` に Rust 固有の式/文変換ロジックを増やさない。
-   - [ ] `src/common/` と `src/rs_module/` には依存しない。
+   - [x] `src/common/` と `src/rs_module/` には依存しない。
 2. [ ] `CodeEmitter` の責務拡張を先に実施する（py2rs実装より先）。
    - [ ] `py2cpp.py` と `py2rs.py` で共通化できる EAST ユーティリティ（型変換補助・import束縛・文/式ディスパッチ補助）を `src/pytra/compiler/east_parts/code_emitter.py` へ移す。
    - [ ] 「共通化候補一覧」を作り、`py2cpp.py` から段階的に移管する。
-3. [ ] Rust 固有処理は hook/profile へ分離する。
-   - [ ] `src/hooks/rs/` に Rust 用 hooks を追加し、言語固有分岐を hook で吸収する。
-   - [ ] `src/profiles/rs/` に Rust 用 profile（syntax/runtime call map 等）を追加する。
+3. [x] Rust 固有処理の分離（最小雛形）
+   - [x] `src/hooks/rs/` に Rust 用 hooks を追加。
+   - [x] `src/profiles/rs/` に Rust 用 profile（syntax/runtime call map 等）を追加。
 4. [ ] `py2rs.py` の EAST ベース再実装（段階的）。
-   - [ ] 最小版: EAST（`.py/.json`）読み込み→CodeEmitter経由で Rust 出力。
-   - [ ] 第2段: `test/fixtures/core` の基本ケースが通る範囲まで拡張。
-   - [ ] 第3段: import / class / collections などを段階追加。
+   - [x] 最小版: EAST（`.py/.json`）読み込み→CodeEmitter経由で Rust 出力。
+   - [x] 第2段: `test/fixtures/core` の基本ケースが通る範囲まで拡張（transpile 成功）。
+   - [ ] 第3段: import / class / collections の変換品質を段階追加（出力品質・コンパイル互換を改善）。
 5. [ ] 検証と回帰テスト。
-   - [ ] `test/unit/` に py2rs 向け最小テストを追加（読み込み・文法・出力スモーク）。
+   - [x] `test/unit/` に py2rs 向け最小テストを追加（読み込み・文法・出力スモーク）。
+   - [x] `tools/check_py2rs_transpile.py` を追加（fixtures/sample 一括トランスパイル確認）。
    - [ ] `py2cpp.py` 側の既存挙動を壊していないことを回帰確認する。
 6. [ ] 運用ルール（今回の指示反映）。
    - [ ] 「py2rs と py2cpp の共通コードは CodeEmitter に移す」を実装ルールとして明文化する。
-   - [ ] 途中で `py2rs.py` が壊れていても、段階コミット可（ただし方針違反は不可）。
+   - [x] 途中で `py2rs.py` が壊れていても、段階コミット可（ただし方針違反は不可）。
 
 ## P4: 他言語トランスパイラの EAST 移行（py2rs の後）
 
