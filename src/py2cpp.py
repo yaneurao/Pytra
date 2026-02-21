@@ -5607,7 +5607,9 @@ def build_cpp_header_from_east(
                     an = arg_order[j]
                     if isinstance(an, str):
                         at_obj = arg_types.get(an)
-                        at = at_obj if isinstance(at_obj, str) else "Any"
+                        at = "Any"
+                        if isinstance(at_obj, str):
+                            at = at_obj
                         at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
                         used_types.add(at_cpp)
                         param_txt = ""
@@ -6333,38 +6335,57 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
     """ユーザーモジュールの公開シンボル表（関数/クラス/代入名）を構築する。"""
     out: dict[str, set[str]] = {}
     for mod_key, east in module_east_map.items():
-        mod_name = _module_name_from_path(root, Path(mod_key))
+        mod_path = Path(mod_key)
+        root_txt = str(root)
+        path_txt = str(mod_path)
+        if root_txt != "" and not root_txt.endswith("/"):
+            root_txt += "/"
+        rel = path_txt
+        if root_txt != "" and path_txt.startswith(root_txt):
+            rel = path_txt[len(root_txt) :]
+        if rel.endswith(".py"):
+            rel = rel[:-3]
+        rel = rel.replace("/", ".")
+        if rel.endswith(".__init__"):
+            rel = rel[: -9]
+        mod_name = rel
         if mod_name == "":
             continue
         body_obj = east.get("body")
-        body = body_obj if isinstance(body_obj, list) else []
+        body: list[dict[str, Any]] = []
+        if isinstance(body_obj, list):
+            i = 0
+            while i < len(body_obj):
+                item = body_obj[i]
+                if isinstance(item, dict):
+                    body.append(item)
+                i += 1
         exports: set[str] = set()
         i = 0
         while i < len(body):
             st = body[i]
-            if isinstance(st, dict):
-                kind = _dict_any_kind(st)
-                if kind == "FunctionDef" or kind == "ClassDef":
-                    name_obj = st.get("name")
-                    if isinstance(name_obj, str) and name_obj != "":
-                        exports.add(name_obj)
-                elif kind == "Assign":
-                    targets_obj = st.get("targets")
-                    targets = targets_obj if isinstance(targets_obj, list) else []
-                    j = 0
-                    while j < len(targets):
-                        tgt = targets[j]
-                        if isinstance(tgt, dict) and _dict_any_kind(tgt) == "Name":
-                            name_obj = tgt.get("id")
-                            if isinstance(name_obj, str) and name_obj != "":
-                                exports.add(name_obj)
-                        j += 1
-                elif kind == "AnnAssign":
-                    tgt = st.get("target")
-                    if isinstance(tgt, dict) and _dict_any_kind(tgt) == "Name":
-                        name_obj = tgt.get("id")
-                        if isinstance(name_obj, str) and name_obj != "":
-                            exports.add(name_obj)
+            kind = _dict_any_kind(st)
+            if kind == "FunctionDef" or kind == "ClassDef":
+                name_txt = _dict_any_get_str(st, "name")
+                if name_txt != "":
+                    exports.add(name_txt)
+            elif kind == "Assign":
+                targets_obj = st.get("targets")
+                targets = targets_obj if isinstance(targets_obj, list) else []
+                j = 0
+                while j < len(targets):
+                    tgt_obj = targets[j]
+                    if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
+                        name_txt = _dict_any_get_str(tgt_obj, "id")
+                        if name_txt != "":
+                            exports.add(name_txt)
+                    j += 1
+            elif kind == "AnnAssign":
+                tgt_obj = st.get("target")
+                if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
+                    name_txt = _dict_any_get_str(tgt_obj, "id")
+                    if name_txt != "":
+                        exports.add(name_txt)
             i += 1
         out[mod_name] = exports
     return out
@@ -6379,13 +6400,22 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
     for mod_key, east in module_east_map.items():
         file_disp = _rel_disp_for_graph(root, Path(mod_key))
         body_obj = east.get("body")
-        body = body_obj if isinstance(body_obj, list) else []
+        body: list[dict[str, Any]] = []
+        if isinstance(body_obj, list):
+            i = 0
+            while i < len(body_obj):
+                item = body_obj[i]
+                if isinstance(item, dict):
+                    body.append(item)
+                i += 1
         i = 0
         while i < len(body):
             st = body[i]
-            if isinstance(st, dict) and _dict_any_kind(st) == "ImportFrom":
+            if _dict_any_kind(st) == "ImportFrom":
                 mod_obj = st.get("module")
-                imported_mod = mod_obj if isinstance(mod_obj, str) else ""
+                imported_mod = ""
+                if isinstance(mod_obj, str):
+                    imported_mod = mod_obj
                 if imported_mod in exports:
                     names_obj = st.get("names")
                     names = names_obj if isinstance(names_obj, list) else []
@@ -6393,8 +6423,7 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
                     while j < len(names):
                         ent = names[j]
                         if isinstance(ent, dict):
-                            sym_obj = ent.get("name")
-                            sym = sym_obj if isinstance(sym_obj, str) else ""
+                            sym = _dict_any_get_str(ent, "name")
                             if sym != "" and sym not in exports[imported_mod]:
                                 details.append(
                                     f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
@@ -6424,7 +6453,8 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
             east = load_east(p, parser_backend)
             out[str(p)] = east
         i += 1
-    _validate_from_import_symbols_or_raise(out, root=entry_path.parent)
+    root_dir = Path(_path_parent_text(entry_path))
+    _validate_from_import_symbols_or_raise(out, root=root_dir)
     return out
 
 

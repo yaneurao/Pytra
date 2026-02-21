@@ -44,9 +44,13 @@
    - [x] `_module_name_from_path`
    - [x] `build_module_symbol_index`
    - [x] `build_module_type_schema`
+   - [x] `build_cpp_header_from_east`
+   - [x] `build_module_east_map`
 3. [x] selfhost 安全化のために import 解決補助実装を修正した。
    - [x] `src/py2cpp.py` の `_resolve_user_module_path` を `Path | None` から「未解決は `Path(\"\")`」に変更した。
    - [x] `src/py2cpp.py` の `_resolve_user_module_path` で `Path / "..."` 依存を外し、文字列結合 + `Path(...)` へ変更した。
+   - [x] `src/py2cpp.py` の `_module_export_table` / `_validate_from_import_symbols_or_raise` を `list[dict]` 固定 + helper 経由参照へ置換した。
+   - [x] `src/py2cpp.py` の `build_module_east_map` で `entry_path.parent` 依存を外し、`Path(_path_parent_text(...))` へ置換した。
 4. [x] `build_module_symbol_index` / `build_module_type_schema` を selfhost 安全な代入形式へリライトした。
    - [x] 三項演算子・dict リテラル初期化を明示代入へ置換した。
    - [x] `dict.get(...)` の直接参照を `_dict_any_get_str` など補助関数経由に寄せた。

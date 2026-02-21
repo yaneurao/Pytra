@@ -12,10 +12,8 @@
 1. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
    - [ ] `load_cpp_hooks` スタブを除去する（hooks 同梱または等価の汎用手段で対応）。
    - [ ] import-graph 系スタブ（`_analyze_import_graph` / `_format_import_graph_report` / `_validate_import_graph_or_raise` / `_rel_disp_for_graph`）を除去する。
-   - [ ] `build_module_east_map` スタブを除去する。
    - [ ] multi-file 系スタブ（`_write_multi_file_cpp`）を除去する。
    - [ ] `_extract_function_arg_types_from_python_source` スタブを除去する。
-   - [ ] `build_cpp_header_from_east` スタブを除去する。
 2. [ ] 上記の各段階で `build_selfhost` / `build_selfhost_stage2` / 差分チェック2系統を green 維持する。
 
 ## P1: CodeEmitter / Hooks 移管
