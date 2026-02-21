@@ -52,6 +52,20 @@ class _HookedEmitter(_DummyEmitter):
             return "hooked_call()"
         return None
 
+    def hook_on_render_module_method(
+        self,
+        module_name: str,
+        attr: str,
+        rendered_args: list[str],
+        rendered_kwargs: dict[str, str],
+        arg_nodes: list[Any],
+    ) -> Any:
+        if module_name == "pytra.std.math" and attr == "sqrt":
+            _ = rendered_kwargs
+            _ = arg_nodes
+            return "hooked_module_method(" + ",".join(rendered_args) + ")"
+        return None
+
     def hook_on_render_object_method(
         self,
         owner_type: str,
@@ -716,6 +730,8 @@ class CodeEmitterTest(unittest.TestCase):
             {},
         )
         self.assertEqual(hook_call, "hooked_call()")
+        hook_mod = em.hook_on_render_module_method("pytra.std.math", "sqrt", ["x"], {}, [])
+        self.assertEqual(hook_mod, "hooked_module_method(x)")
         hook_obj = em.hook_on_render_object_method("str", "s", "strip", [])
         self.assertEqual(hook_obj, "hooked_object_method()")
         hook_binop = em.hook_on_render_binop({"kind": "BinOp"}, "x", "y")
@@ -745,6 +761,17 @@ class CodeEmitterTest(unittest.TestCase):
         ) -> Any:
             calls.append("render_call")
             return "dict_hook_call()"
+
+        def on_render_module_method(
+            _em: CodeEmitter,
+            _module_name: str,
+            _attr: str,
+            _rendered_args: list[str],
+            _rendered_kwargs: dict[str, str],
+            _arg_nodes: list[Any],
+        ) -> Any:
+            calls.append("render_module_method")
+            return "dict_hook_module_method()"
 
         def on_render_object_method(
             _em: CodeEmitter,
@@ -777,6 +804,7 @@ class CodeEmitterTest(unittest.TestCase):
             "on_emit_stmt": on_emit_stmt,
             "on_emit_stmt_kind": on_emit_stmt_kind,
             "on_render_call": on_render_call,
+            "on_render_module_method": on_render_module_method,
             "on_render_object_method": on_render_object_method,
             "on_render_binop": on_render_binop,
             "on_render_expr_kind": on_render_expr_kind,
@@ -788,6 +816,10 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(
             em.hook_on_render_call({"kind": "Call"}, {"kind": "Name"}, [], {}),
             "dict_hook_call()",
+        )
+        self.assertEqual(
+            em.hook_on_render_module_method("pytra.std.math", "sqrt", ["x"], {}, []),
+            "dict_hook_module_method()",
         )
         self.assertEqual(
             em.hook_on_render_object_method("str", "s", "strip", []),
@@ -808,6 +840,7 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertIn("emit_stmt:Pass", calls)
         self.assertIn("emit_stmt_kind:Return", calls)
         self.assertIn("render_call", calls)
+        self.assertIn("render_module_method", calls)
         self.assertIn("render_object_method", calls)
         self.assertIn("render_binop", calls)
         self.assertIn("render_expr_kind:MagicExpr", calls)

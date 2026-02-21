@@ -232,6 +232,23 @@ class CodeEmitter:
                     return v
         return ""
 
+    def hook_on_render_module_method(
+        self,
+        module_name: str,
+        attr: str,
+        rendered_args: list[str],
+        rendered_kwargs: dict[str, str],
+        arg_nodes: list[Any],
+    ) -> str:
+        """`on_render_module_method` フック。既定では何もしない。"""
+        if "on_render_module_method" in self.hooks:
+            fn = self.hooks["on_render_module_method"]
+            if fn is not None:
+                v = fn(self, module_name, attr, rendered_args, rendered_kwargs, arg_nodes)
+                if isinstance(v, str):
+                    return v
+        return ""
+
     def hook_on_render_object_method(
         self,
         owner_type: str,
@@ -1103,6 +1120,12 @@ class CodeEmitter:
     def _is_std_runtime_call(self, runtime_call: str) -> bool:
         """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
         return runtime_call[0:5] == "std::" or runtime_call[0:7] == "::std::"
+
+    def _cpp_expr_to_module_name(self, expr: str) -> str:
+        """`pytra::std::x` 形式の C++ 式を `pytra.std.x` へ戻す。"""
+        if expr.startswith("pytra::"):
+            return expr.replace("::", ".")
+        return ""
 
     def comment_line_prefix(self) -> str:
         """単行コメント出力時の接頭辞を返す。"""
