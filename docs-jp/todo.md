@@ -9,7 +9,9 @@
 
 ## P1: CodeEmitter / Hooks 移管
 
-1. [ ] フック注入 (`EmitterHooks`) を実装する。
+1. [x] フック注入 (`EmitterHooks`) を実装する。
+   - [x] `CodeEmitter` 共通モジュールに `EmitterHooks` コンテナを追加した。
+   - [x] `build_cpp_hooks()` を `EmitterHooks` 経由の組み立てへ移行した（最終出力は従来どおり dict）。
 2. [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。
 3. [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
 

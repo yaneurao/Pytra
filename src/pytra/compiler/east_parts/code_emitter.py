@@ -5,6 +5,28 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 
+class EmitterHooks:
+    """CodeEmitter へ注入する hook 関数を保持する薄いコンテナ。"""
+
+    hooks: dict[str, Any]
+
+    def __init__(self) -> None:
+        self.hooks = {}
+
+    def add(self, name: str, fn: Any) -> None:
+        """hook を登録する。空名は無視する。"""
+        if name == "":
+            return
+        self.hooks[name] = fn
+
+    def to_dict(self) -> dict[str, Any]:
+        """CodeEmitter へ渡せる dict 形式へ変換する。"""
+        out: dict[str, Any] = {}
+        for key, val in self.hooks.items():
+            out[key] = val
+        return out
+
+
 class CodeEmitter:
     """EAST -> 各言語のコード生成で共通利用する最小基底クラス。"""
     doc: dict[str, Any]

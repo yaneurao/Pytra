@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pytra.compiler.east_parts.code_emitter import CodeEmitter
+from src.pytra.compiler.east_parts.code_emitter import CodeEmitter, EmitterHooks
 
 
 class _DummyEmitter(CodeEmitter):
@@ -518,6 +518,16 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertIn("render_call", calls)
         self.assertIn("render_expr_kind:MagicExpr", calls)
         self.assertIn("render_expr_complex", calls)
+
+    def test_emitter_hooks_container(self) -> None:
+        hooks = EmitterHooks()
+        hooks.add("", None)
+        hooks.add("on_render_call", "fn1")
+        hooks.add("on_render_expr_kind", "fn2")
+        out = hooks.to_dict()
+        self.assertNotIn("", out)
+        self.assertEqual(out.get("on_render_call"), "fn1")
+        self.assertEqual(out.get("on_render_expr_kind"), "fn2")
 
 
 if __name__ == "__main__":
