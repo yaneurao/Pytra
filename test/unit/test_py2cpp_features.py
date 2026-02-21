@@ -908,6 +908,21 @@ def f() -> int:
         self.assertEqual(miss_res.get("status"), "missing")
         self.assertEqual(rel_res.get("status"), "relative")
 
+    def test_resolve_module_name_prefers_named_package_module_over_local_flat_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            docs_dir = root / "docs" / "scene"
+            docs_dir.mkdir(parents=True, exist_ok=True)
+            (docs_dir / "yanesdk.py").write_text("x: int = 1\n", encoding="utf-8")
+            pkg_dir = root / "yanesdk"
+            pkg_dir.mkdir(parents=True, exist_ok=True)
+            canonical = pkg_dir / "yanesdk.py"
+            canonical.write_text("y: int = 2\n", encoding="utf-8")
+            res = resolve_module_name("yanesdk", docs_dir)
+        self.assertEqual(res.get("status"), "user")
+        self.assertEqual(Path(str(res.get("path", ""))).name, "yanesdk.py")
+        self.assertIn("/yanesdk/yanesdk.py", str(res.get("path", "")).replace("\\", "/"))
+
     def test_build_module_type_schema_contains_function_and_class_types(self) -> None:
         src_main = """def run(v: int) -> int:
     return v + 1

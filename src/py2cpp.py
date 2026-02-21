@@ -6663,19 +6663,50 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 status = "pytra"
             else:
                 rel = mod.replace(".", "/")
-                root_txt = str(root)
-                sep = "" if root_txt.endswith("/") or root_txt == "" else "/"
-                cand_py = Path(root_txt + sep + rel + ".py")
-                if cand_py.exists():
-                    dep_file = cand_py
+                parts = mod.split(".")
+                leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
+                cur_dir = str(root)
+                if cur_dir == "":
+                    cur_dir = "."
+                seen_dirs: set[str] = set()
+                best_path = ""
+                best_rank = -1
+                best_distance = 1000000000
+                distance = 0
+                while cur_dir not in seen_dirs:
+                    seen_dirs.add(cur_dir)
+                    prefix = cur_dir
+                    if prefix != "" and not prefix.endswith("/"):
+                        prefix += "/"
+                    cand_init = prefix + rel + "/__init__.py"
+                    cand_named = ""
+                    if leaf != "":
+                        cand_named = prefix + rel + "/" + leaf + ".py"
+                    cand_flat = prefix + rel + ".py"
+                    candidates: list[tuple[str, int]] = []
+                    candidates.append((cand_init, 3))
+                    if cand_named != "":
+                        candidates.append((cand_named, 2))
+                    candidates.append((cand_flat, 1))
+                    ci = 0
+                    while ci < len(candidates):
+                        path_txt, rank = candidates[ci]
+                        if Path(path_txt).exists():
+                            if rank > best_rank or (rank == best_rank and distance < best_distance):
+                                best_path = path_txt
+                                best_rank = rank
+                                best_distance = distance
+                        ci += 1
+                    parent_dir = _path_parent_text(Path(cur_dir))
+                    if parent_dir == cur_dir:
+                        break
+                    cur_dir = parent_dir if parent_dir != "" else "."
+                    distance += 1
+                if best_path != "":
+                    dep_file = Path(best_path)
                     status = "user"
-                else:
-                    cand_pkg = Path(root_txt + sep + rel + "/__init__.py")
-                    if cand_pkg.exists():
-                        dep_file = cand_pkg
-                        status = "user"
-                    elif _is_known_non_user_import(mod):
-                        status = "known"
+                elif _is_known_non_user_import(mod):
+                    status = "known"
             if status == "relative":
                 rel_item = cur_disp + ": " + mod
                 if rel_item not in relative_seen:
@@ -7411,18 +7442,58 @@ def _write_multi_file_cpp(
 
 
 def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
-    """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する（未解決は空 Path）。"""
+    """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する（未解決は空 Path）。
+
+    解決時は `search_root` から親ディレクトリへ遡りながら候補を探索し、
+    候補が複数ある場合は次の優先順位で選ぶ。
+    1) `<mod>/__init__.py`
+    2) `<mod>/<leaf>.py`（例: `yanesdk/yanesdk.py`）
+    3) `<mod>.py`
+    """
     if module_name.startswith("pytra.") or module_name == "pytra":
         return Path("")
     rel = module_name.replace(".", "/")
-    root_txt = str(search_root)
-    sep = "" if root_txt.endswith("/") or root_txt == "" else "/"
-    cand_py = Path(root_txt + sep + rel + ".py")
-    if cand_py.exists():
-        return cand_py
-    cand_pkg = Path(root_txt + sep + rel + "/__init__.py")
-    if cand_pkg.exists():
-        return cand_pkg
+    parts = module_name.split(".")
+    leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
+    cur_dir = str(search_root)
+    if cur_dir == "":
+        cur_dir = "."
+    seen_dirs: set[str] = set()
+    best_path = ""
+    best_rank = -1
+    best_distance = 1000000000
+    distance = 0
+    while cur_dir not in seen_dirs:
+        seen_dirs.add(cur_dir)
+        prefix = cur_dir
+        if prefix != "" and not prefix.endswith("/"):
+            prefix += "/"
+        cand_init = prefix + rel + "/__init__.py"
+        cand_named = ""
+        if leaf != "":
+            cand_named = prefix + rel + "/" + leaf + ".py"
+        cand_flat = prefix + rel + ".py"
+        candidates: list[tuple[str, int]] = []
+        candidates.append((cand_init, 3))
+        if cand_named != "":
+            candidates.append((cand_named, 2))
+        candidates.append((cand_flat, 1))
+        i = 0
+        while i < len(candidates):
+            path_txt, rank = candidates[i]
+            if Path(path_txt).exists():
+                if rank > best_rank or (rank == best_rank and distance < best_distance):
+                    best_path = path_txt
+                    best_rank = rank
+                    best_distance = distance
+            i += 1
+        parent_dir = _path_parent_text(Path(cur_dir))
+        if parent_dir == cur_dir:
+            break
+        cur_dir = parent_dir if parent_dir != "" else "."
+        distance += 1
+    if best_path != "":
+        return Path(best_path)
     return Path("")
 
 

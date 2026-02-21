@@ -336,6 +336,21 @@ def gen(n: int) -> int:
         yields = [n for n in _walk(fn.get("body", [])) if isinstance(n, dict) and n.get("kind") == "Yield"]
         self.assertGreaterEqual(len(yields), 1)
 
+    def test_single_line_for_with_yield_is_parsed(self) -> None:
+        src = """
+def gen() -> int:
+    for _ in range(3): yield 1
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "gen"]
+        self.assertEqual(len(funcs), 1)
+        fn = funcs[0]
+        self.assertEqual(fn.get("is_generator"), 1)
+        for_ranges = [n for n in _walk(fn.get("body", [])) if isinstance(n, dict) and n.get("kind") == "ForRange"]
+        self.assertEqual(len(for_ranges), 1)
+        yields = [n for n in _walk(for_ranges[0].get("body", [])) if isinstance(n, dict) and n.get("kind") == "Yield"]
+        self.assertEqual(len(yields), 1)
+
     def test_trailing_semicolon_is_rejected(self) -> None:
         src = """
 def main() -> None:

@@ -18,15 +18,15 @@
 
 - 調査対象: `Yanesdk/` 配下の `.py` 16ファイル（library 8 / game 7 / browser-shim 1）
 - 現状結果（2026-02-22）:
-  - EAST 変換（`convert_path`）成功 `7/16`、失敗 `9/16`
+  - EAST 変換（`convert_path`）成功 `9/16`、失敗 `7/16`
   - `py2cpp.py` 変換成功 `1/16`、失敗 `15/16`
 - EAST 失敗の主因:
-  - `docs/*/yanesdk.py`（重複コピー）: 文末 `;` が残っており、仕様どおり `input_invalid` で失敗。
-  - `block-sushi.py`: `for ...: yield ...` の単行 suite 未対応で失敗。
-  - `sakeru.py`: `else:` が文として消費されず式パースに落ちるケースが残存（`expected token EOF, got :`）。
+  - `docs/*/yanesdk.py`（重複コピー）: 文末 `;` が残っており、仕様どおり `input_invalid` で失敗（7件）。
+  - 本体ゲームコード（`docs/*/*.py`）は EAST 変換を通過。
 - py2cpp 失敗の主因:
-  - `from yanesdk import *` が同ディレクトリの `yanesdk.py` 重複コピー（`;` 含む）へ解決され、依存解決で失敗。
-  - canonical 正本（`Yanesdk/yanesdk/yanesdk.py`）優先解決と、`import *` 方針整理が未完了。
+  - canonical 正本（`Yanesdk/yanesdk/yanesdk.py`）への解決は通るようになった。
+  - 現在は `Yanesdk/yanesdk/yanesdk.py` 内の `browser` / `browser.widgets.dialog` / `traceback` / `random` / `timeit` が `missing_module` で失敗。
+  - 次段は `P1-B` のモジュール解決方針（shim / 外部参照 / `pytra.std.*` 移行）を確定して実装する。
 - `;` について:
   - `Yanesdk` 側の文法誤りとして扱う。self_hosted parser では受理しない（サポート対象外）。
 - `browser` / `browser.widgets.dialog` について:
