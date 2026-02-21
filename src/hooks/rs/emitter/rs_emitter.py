@@ -124,6 +124,91 @@ class RustEmitter(CodeEmitter):
     def _safe_name(self, name: str) -> str:
         return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
 
+    def _tuple_elements(self, tuple_node: dict[str, Any]) -> list[Any]:
+        """Tuple ノード要素を `elements` / `elts` 両対応で返す。"""
+        out = self.any_to_list(tuple_node.get("elements"))
+        if len(out) > 0:
+            return out
+        return self.any_to_list(tuple_node.get("elts"))
+
+    def _module_id_to_rust_use_path(self, module_id: str) -> str:
+        """Python 形式モジュール名を Rust `use` パスへ変換する。"""
+        if module_id == "":
+            return ""
+        return "crate::" + module_id.replace(".", "::")
+
+    def _collect_use_lines(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
+        """import 情報を Rust `use` 行へ変換する。"""
+        out: list[str] = []
+        seen: set[str] = set()
+
+        def _add(line: str) -> None:
+            if line == "" or line in seen:
+                return
+            seen.add(line)
+            out.append(line)
+
+        bindings = self.any_to_dict_list(meta.get("import_bindings"))
+        if len(bindings) > 0:
+            i = 0
+            while i < len(bindings):
+                ent = bindings[i]
+                binding_kind = self.any_to_str(ent.get("binding_kind"))
+                module_id = self.any_to_str(ent.get("module_id"))
+                local_name = self.any_to_str(ent.get("local_name"))
+                export_name = self.any_to_str(ent.get("export_name"))
+                if module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
+                    i += 1
+                    continue
+                base_path = self._module_id_to_rust_use_path(module_id)
+                if binding_kind == "module" and base_path != "":
+                    line = "use " + base_path
+                    leaf = self._last_dotted_name(module_id)
+                    if local_name != "" and local_name != leaf:
+                        line += " as " + self._safe_name(local_name)
+                    _add(line + ";")
+                elif binding_kind == "symbol" and base_path != "" and export_name != "":
+                    line = "use " + base_path + "::" + export_name
+                    if local_name != "" and local_name != export_name:
+                        line += " as " + self._safe_name(local_name)
+                    _add(line + ";")
+                i += 1
+            return out
+
+        for stmt in body:
+            kind = self.any_dict_get_str(stmt, "kind", "")
+            if kind == "Import":
+                for ent in self._dict_stmt_list(stmt.get("names")):
+                    module_id = self.any_to_str(ent.get("name"))
+                    if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
+                        continue
+                    base_path = self._module_id_to_rust_use_path(module_id)
+                    if base_path == "":
+                        continue
+                    asname = self.any_to_str(ent.get("asname"))
+                    line = "use " + base_path
+                    leaf = self._last_dotted_name(module_id)
+                    if asname != "" and asname != leaf:
+                        line += " as " + self._safe_name(asname)
+                    _add(line + ";")
+            elif kind == "ImportFrom":
+                module_id = self.any_to_str(stmt.get("module"))
+                if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
+                    continue
+                base_path = self._module_id_to_rust_use_path(module_id)
+                if base_path == "":
+                    continue
+                for ent in self._dict_stmt_list(stmt.get("names")):
+                    name = self.any_to_str(ent.get("name"))
+                    if name == "":
+                        continue
+                    asname = self.any_to_str(ent.get("asname"))
+                    line = "use " + base_path + "::" + name
+                    if asname != "" and asname != name:
+                        line += " as " + self._safe_name(asname)
+                    _add(line + ";")
+        return out
+
     def _infer_default_for_type(self, east_type: str) -> str:
         """型ごとの既定値（Rust）を返す。"""
         t = self.normalize_type_name(east_type)
@@ -211,6 +296,11 @@ class RustEmitter(CodeEmitter):
         meta = self.any_to_dict_or_empty(module.get("meta"))
         self.load_import_bindings_from_meta(meta)
         self.emit_module_leading_trivia()
+        use_lines = self._collect_use_lines(body, meta)
+        for line in use_lines:
+            self.emit(line)
+        if len(use_lines) > 0:
+            self.emit("")
 
         self.class_names = set()
         self.function_return_types = {}
@@ -503,6 +593,26 @@ class RustEmitter(CodeEmitter):
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
         target_name = self.any_dict_get_str(target_node, "id", "_it")
         target = self._safe_name(target_name)
+        body_scope: set[str] = set()
+        target_kind = self.any_dict_get_str(target_node, "kind", "")
+        if target_kind == "Name":
+            body_scope.add(target_name)
+        elif target_kind == "Tuple":
+            elts = self._tuple_elements(target_node)
+            parts: list[str] = []
+            for elt in elts:
+                d = self.any_to_dict_or_empty(elt)
+                if self.any_dict_get_str(d, "kind", "") == "Name":
+                    name = self.any_dict_get_str(d, "id", "_")
+                    parts.append(self._safe_name(name))
+                    body_scope.add(name)
+                else:
+                    parts.append("_")
+            if len(parts) == 1:
+                target = "(" + parts[0] + ",)"
+            elif len(parts) > 1:
+                target = "(" + ", ".join(parts) + ")"
+
         iter_node = stmt.get("iter")
         iter_expr = self.render_expr(iter_node)
         iter_type = self.get_expr_type(iter_node)
@@ -512,8 +622,6 @@ class RustEmitter(CodeEmitter):
             iter_expr = "(" + iter_expr + ").clone()"
 
         self.emit(self.syntax_line("for_open", "for {target} in {iter} {", {"target": target, "iter": iter_expr}))
-        body_scope: set[str] = set()
-        body_scope.add(target_name)
         body = self._dict_stmt_list(stmt.get("body"))
         self.emit_scoped_stmt_list(body, body_scope)
         self.emit(self.syntax_text("block_close", "}"))
@@ -573,7 +681,7 @@ class RustEmitter(CodeEmitter):
             return
 
         if self.any_dict_get_str(target, "kind", "") == "Tuple":
-            names = self._dict_stmt_list(target.get("elts"))
+            names: list[Any] = self._tuple_elements(target)
             if len(names) == 2:
                 a = self.render_expr(names[0])
                 b = self.render_expr(names[1])
@@ -656,7 +764,28 @@ class RustEmitter(CodeEmitter):
 
         if fn_kind == "Attribute":
             owner_expr = self.render_expr(fn_node.get("value"))
-            attr = self._safe_name(self.any_dict_get_str(fn_node, "attr", ""))
+            owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
+            owner_type = self.get_expr_type(owner_node)
+            attr_raw = self.any_dict_get_str(fn_node, "attr", "")
+            attr = self._safe_name(attr_raw)
+            if attr_raw == "items" and len(rendered_args) == 0:
+                return "(" + owner_expr + ").clone().into_iter()"
+            if attr_raw == "keys" and len(rendered_args) == 0:
+                return "(" + owner_expr + ").keys().cloned()"
+            if attr_raw == "values" and len(rendered_args) == 0:
+                return "(" + owner_expr + ").values().cloned()"
+            if owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}:
+                if attr_raw == "append" and len(rendered_args) == 1:
+                    return owner_expr + ".push(" + rendered_args[0] + ")"
+                if attr_raw == "pop" and len(rendered_args) == 0:
+                    return owner_expr + ".pop().unwrap_or_default()"
+                if attr_raw == "clear" and len(rendered_args) == 0:
+                    return owner_expr + ".clear()"
+            if owner_type.startswith("dict["):
+                if attr_raw == "get" and len(rendered_args) == 1:
+                    return owner_expr + ".get(&" + rendered_args[0] + ").cloned().unwrap_or_default()"
+                if attr_raw == "get" and len(rendered_args) >= 2:
+                    return owner_expr + ".get(&" + rendered_args[0] + ").cloned().unwrap_or(" + rendered_args[1] + ")"
             return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
 
         fn_expr = self.render_expr(fn_node)
@@ -733,7 +862,7 @@ class RustEmitter(CodeEmitter):
                 rendered.append(self.render_expr(elt))
             return "vec![" + ", ".join(rendered) + "]"
         if kind == "Tuple":
-            elts = self.any_to_list(expr_d.get("elts"))
+            elts: list[Any] = self._tuple_elements(expr_d)
             rendered = []
             for elt in elts:
                 rendered.append(self.render_expr(elt))

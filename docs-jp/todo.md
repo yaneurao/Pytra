@@ -48,12 +48,15 @@
    - [x] 最小版: EAST（`.py/.json`）読み込み→CodeEmitter経由で Rust 出力。
    - [x] 第2段: `test/fixtures/core` の基本ケースが通る範囲まで拡張（transpile 成功）。
    - [ ] 第3段: import / class / collections の変換品質を段階追加（出力品質・コンパイル互換を改善）。
+     - [x] import 束縛を `use ...;` に変換（`meta.import_bindings` 優先）。
+     - [x] `for (k, v) in dict.items()` 形の tuple ターゲットを生成。
+     - [ ] class / Any / dict 連携の型整合（Rustコンパイル互換）を改善。
 5. [ ] 検証と回帰テスト。
    - [x] `test/unit/` に py2rs 向け最小テストを追加（読み込み・文法・出力スモーク）。
    - [x] `tools/check_py2rs_transpile.py` を追加（fixtures/sample 一括トランスパイル確認）。
-   - [ ] `py2cpp.py` 側の既存挙動を壊していないことを回帰確認する。
+   - [x] `py2cpp.py` 側の既存挙動を壊していないことを回帰確認する（`tools/check_py2cpp_transpile.py`）。
 6. [ ] 運用ルール（今回の指示反映）。
-   - [ ] 「py2rs と py2cpp の共通コードは CodeEmitter に移す」を実装ルールとして明文化する。
+   - [x] 「py2rs と py2cpp の共通コードは CodeEmitter に移す」を実装ルールとして明文化する（`docs-jp/spec-dev.md`）。
    - [x] 途中で `py2rs.py` が壊れていても、段階コミット可（ただし方針違反は不可）。
 
 ## P4: 他言語トランスパイラの EAST 移行（py2rs の後）
