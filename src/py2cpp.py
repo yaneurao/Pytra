@@ -3217,27 +3217,10 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "py_to_string" and len(args) == 1:
             src_expr = first_arg
             return self.render_to_string(src_expr)
-        if runtime_call == "static_cast" and len(args) == 1:
-            target = self.cpp_type(expr.get("resolved_type"))
-            arg_t = self.get_expr_type(first_arg)
-            numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
-            if target == "int64" and arg_t == "str":
-                return f"py_to_int64({args[0]})"
-            if target in {"float64", "float32"} and arg_t == "str":
-                return f"py_to_float64({args[0]})"
-            if target == "int64" and arg_t in numeric_t:
-                return f"int64({args[0]})"
-            if target == "int64" and self.is_any_like_type(arg_t):
-                return f"py_to_int64({args[0]})"
-            if target in {"float64", "float32"} and self.is_any_like_type(arg_t):
-                return f"py_to_float64({args[0]})"
-            if target == "bool" and self.is_any_like_type(arg_t):
-                return f"py_to_bool({args[0]})"
-            if target == "int64":
-                return f"py_to_int64({args[0]})"
-            return f"static_cast<{target}>({args[0]})"
-        if runtime_call == "static_cast" and len(args) == 2 and builtin_name == "int":
-            return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
+        if runtime_call == "static_cast":
+            static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, args, first_arg)
+            if static_cast_rendered is not None:
+                return str(static_cast_rendered)
         if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
             fn_name = "min" if runtime_call == "py_min" else "max"
             return self.render_minmax(fn_name, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
@@ -3302,6 +3285,37 @@ class CppEmitter(CodeEmitter):
             if owner_expr != "" and runtime_call.startswith("py_") and len(args) == 0:
                 return f"{runtime_call}({owner_expr})"
             return f"{runtime_call}({_join_str_list(', ', args)})"
+        return None
+
+    def _render_builtin_static_cast_call(
+        self,
+        expr: dict[str, Any],
+        builtin_name: str,
+        args: list[str],
+        first_arg: Any,
+    ) -> str | None:
+        """BuiltinCall の `runtime_call=static_cast` 分岐を描画する。"""
+        if len(args) == 1:
+            target = self.cpp_type(expr.get("resolved_type"))
+            arg_t = self.get_expr_type(first_arg)
+            numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            if target == "int64" and arg_t == "str":
+                return f"py_to_int64({args[0]})"
+            if target in {"float64", "float32"} and arg_t == "str":
+                return f"py_to_float64({args[0]})"
+            if target == "int64" and arg_t in numeric_t:
+                return f"int64({args[0]})"
+            if target == "int64" and self.is_any_like_type(arg_t):
+                return f"py_to_int64({args[0]})"
+            if target in {"float64", "float32"} and self.is_any_like_type(arg_t):
+                return f"py_to_float64({args[0]})"
+            if target == "bool" and self.is_any_like_type(arg_t):
+                return f"py_to_bool({args[0]})"
+            if target == "int64":
+                return f"py_to_int64({args[0]})"
+            return f"static_cast<{target}>({args[0]})"
+        if len(args) == 2 and builtin_name == "int":
+            return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
         return None
 
     def _render_collection_constructor_call(
