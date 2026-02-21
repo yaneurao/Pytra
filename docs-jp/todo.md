@@ -43,6 +43,7 @@
    - [x] `_render_builtin_call` の `runtime_call=py_join` 分岐を helper（`_render_builtin_join_call`）へ分離し、owner 再解決ロジックを削除した。
    - [x] `Call(Name)` の import 解決 + runtime/namespace 呼び出し分岐を helper（`_resolve_or_render_imported_symbol_name_call`）へ分離し、`_render_call_name_or_attr` 本体の分岐を削減した。
    - [x] `Call(Name)` の残りビルトイン分岐（`bytes/bytearray/str/int(base)/ord/chr/min/max/perf_counter/Path/Exception`）を helper（`_render_misc_name_builtin_call`）へ分離した。
+   - [x] `_render_call_fallback` の `*.append` 分岐を helper（`_render_append_fallback_call`）へ分離し、`_render_append_call_object_method` と型変換ロジックを共通化した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
