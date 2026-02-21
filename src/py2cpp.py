@@ -1069,28 +1069,34 @@ class CppEmitter(CodeEmitter):
         self.emit("/* " + text + " */")
 
     def emit_function_open(self, ret: str, name: str, args: str) -> None:
-        """C++ 関数ヘッダを直接出力する（selfhost の syntax_line 崩れ回避）。"""
-        self.emit(f"{ret} {name}({args}) {{")
+        """C++ 関数ヘッダを profile テンプレート経由で出力する。"""
+        self.emit(
+            self.syntax_line(
+                "function_open",
+                "{ret} {name}({args}) {",
+                {"ret": ret, "name": name, "args": args},
+            )
+        )
 
     def emit_ctor_open(self, name: str, args: str) -> None:
-        """C++ コンストラクタヘッダを直接出力する。"""
-        self.emit(f"{name}({args}) {{")
+        """C++ コンストラクタヘッダを profile テンプレート経由で出力する。"""
+        self.emit(self.syntax_line("ctor_open", "{name}({args}) {", {"name": name, "args": args}))
 
     def emit_dtor_open(self, name: str) -> None:
-        """C++ デストラクタヘッダを直接出力する。"""
-        self.emit(f"~{name}() {{")
+        """C++ デストラクタヘッダを profile テンプレート経由で出力する。"""
+        self.emit(self.syntax_line("dtor_open", "~{name}() {", {"name": name}))
 
     def emit_class_open(self, name: str, base_txt: str) -> None:
-        """C++ クラス（struct）ヘッダを直接出力する。"""
-        self.emit(f"struct {name}{base_txt} {{")
+        """C++ クラス（struct）ヘッダを profile テンプレート経由で出力する。"""
+        self.emit(self.syntax_line("class_open", "struct {name}{base_txt} {", {"name": name, "base_txt": base_txt}))
 
     def emit_class_close(self) -> None:
-        """C++ クラス終端を出力する。"""
-        self.emit("};")
+        """C++ クラス終端を profile テンプレート経由で出力する。"""
+        self.emit(self.syntax_text("class_close", "};"))
 
     def emit_block_close(self) -> None:
-        """C++ ブロック終端を出力する。"""
-        self.emit("}")
+        """C++ ブロック終端を profile テンプレート経由で出力する。"""
+        self.emit(self.syntax_text("block_close", "}"))
 
     def _cpp_expr_to_module_name(self, expr: str) -> str:
         """`pytra::std::x` 形式の C++ 式を `pytra.std.x` へ戻す。"""

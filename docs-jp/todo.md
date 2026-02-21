@@ -70,9 +70,11 @@
    - [x] `pass/break/continue` の文生成を `syntax.json`（`pass_stmt` / `break_stmt` / `continue_stmt`）経由へ移管した。
    - [x] `swap` / `raise` の文生成を `syntax.json`（`swap_stmt` / `raise_default` / `raise_expr`）経由へ移管した。
    - [x] `Expr` / `Return` の文生成を `syntax.json`（`expr_stmt` / `return_void` / `return_value`）経由へ移管した。
+   - [x] `Function/Class/Block` open/close 出力（`emit_function_open` / `emit_ctor_open` / `emit_dtor_open` / `emit_class_open` / `emit_class_close` / `emit_block_close`）を `syntax_line` / `syntax_text` 経由へ統一した。
 6. [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
    - [x] object-method（`strip/lstrip/rstrip/startswith/endswith/replace/find/rfind/...`）の C++ 固有分岐用 hook（`cpp_hooks.on_render_object_method`）を追加し、段階的に `py2cpp.py` 本体から分離する導線を作成した。
 7. [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
+   - [x] `Function/Class` のヘッダ/終端出力を `syntax_line` / `syntax_text` へ寄せ、文字列直書き依存を削減した（selfhost互換のため呼び出しは `CppEmitter` 側ラッパで維持）。
 8. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
 
 ## P2: Any/object 境界の整理
