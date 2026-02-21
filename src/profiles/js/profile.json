@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "language": "js",
+  "include": [
+    "types.json",
+    "operators.json",
+    "runtime_calls.json",
+    "syntax.json"
+  ],
+  "hooks": {
+    "module": "hooks.js.hooks.js_hooks",
+    "factory": "build_js_hooks"
+  }
+}

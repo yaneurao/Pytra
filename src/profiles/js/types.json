@@ -1,0 +1,21 @@
+{
+  "types": {
+    "int8": "number",
+    "uint8": "number",
+    "int16": "number",
+    "uint16": "number",
+    "int32": "number",
+    "uint32": "number",
+    "int64": "number",
+    "uint64": "number",
+    "float32": "number",
+    "float64": "number",
+    "bool": "boolean",
+    "str": "string",
+    "bytes": "Array<number>",
+    "bytearray": "Array<number>",
+    "Any": "any",
+    "object": "any",
+    "None": "null"
+  }
+}

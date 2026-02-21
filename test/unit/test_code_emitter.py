@@ -287,6 +287,12 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em._last_dotted_name("a.b.c"), "c")
         self.assertEqual(em._last_dotted_name("name"), "name")
 
+    def test_tuple_elements_supports_both_fields(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.tuple_elements({"elements": [1, 2]}), [1, 2])
+        self.assertEqual(em.tuple_elements({"elts": [3, 4]}), [3, 4])
+        self.assertEqual(em.tuple_elements({}), [])
+
     def test_import_resolution_helpers(self) -> None:
         em = CodeEmitter(
             {

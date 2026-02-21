@@ -144,12 +144,12 @@ mono test/transpile/obj/iterable.exe
 <summary>JavaScript</summary>
 
 ```bash
-python src/py2js.py test/fixtures/collections/iterable.py test/transpile/js/iterable.js
+python src/py2js.py test/fixtures/collections/iterable.py -o test/transpile/js/iterable.js
 node test/transpile/js/iterable.js
 ```
 
 補足:
-- `import` を使う場合は `src/js_module/` に対応ランタイム実装が必要です。
+- `browser` / `browser.widgets.dialog` は外部参照として扱われ、`py2js.py` は import 本体を生成しません。
 
 </details>
 
@@ -292,6 +292,7 @@ python3 tools/check_selfhost_cpp_diff.py --show-diff
 ```bash
 python3 tools/check_py2cpp_transpile.py
 python3 tools/check_py2rs_transpile.py
+python3 tools/check_py2js_transpile.py
 ```
 
 補足:
