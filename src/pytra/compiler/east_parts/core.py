@@ -109,11 +109,15 @@ def _sh_ann_to_type(ann: str) -> str:
         txt = txt[1:-1].strip()
     if txt in mapping:
         return mapping[txt]
-    m: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\[(.*)\]$", txt)
-    if m is None:
+    lb = txt.find("[")
+    if lb <= 0 or not txt.endswith("]"):
         return txt
-    head: str = re.group(m, 1)
-    inner: str = re.strip_group(m, 2)
+    head: str = txt[:lb].strip()
+    if not _sh_is_identifier(head):
+        return txt
+    inner: str = txt[lb + 1 : -1].strip()
+    if inner == "":
+        return txt
     parts: list[str] = []
     depth = 0
     start = 0
@@ -121,7 +125,8 @@ def _sh_ann_to_type(ann: str) -> str:
         if ch == "[":
             depth += 1
         elif ch == "]":
-            depth -= 1
+            if depth > 0:
+                depth -= 1
         elif ch == "," and depth == 0:
             parts.append(inner[start:i].strip())
             start = i + 1

@@ -94,11 +94,15 @@ namespace pytra::compiler::east_parts::core {
             txt = py_strip(py_slice(txt, 1, -1));
         if (py_contains(mapping, txt))
             return py_dict_get(mapping, py_to_string(txt));
-        ::std::optional<rc<pytra::std::re::Match>> m = pytra::std::re::match("^([A-Za-z_][A-Za-z0-9_]*)\\[(.*)\\]$", txt);
-        if (py_is_none(m))
+        int64 lb = txt.find("[");
+        if ((lb <= 0) || (!(py_endswith(txt, "]"))))
             return txt;
-        str head = pytra::std::re::group(m, 1);
-        str inner = pytra::std::re::strip_group(m, 2);
+        str head = py_strip(py_slice(txt, 0, lb));
+        if (!(_sh_is_identifier(head)))
+            return txt;
+        str inner = py_strip(py_slice(txt, lb + 1, -1));
+        if (inner == "")
+            return txt;
         list<str> parts = list<str>{};
         int64 depth = 0;
         int64 start = 0;
@@ -109,7 +113,8 @@ namespace pytra::compiler::east_parts::core {
                 depth++;
             } else {
                 if (ch == "]") {
-                    depth--;
+                    if (depth > 0)
+                        depth--;
                 } else {
                     if ((ch == ",") && (depth == 0)) {
                         parts.append(str(py_strip(py_slice(inner, start, i))));

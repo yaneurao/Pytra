@@ -513,13 +513,50 @@ class CodeEmitter:
         """型名エイリアスを内部表現へ正規化する。"""
         if not isinstance(t, str):
             return ""
-        s = str(t)
+        s = str(t).strip()
+        if s == "":
+            return ""
+        if s == "int":
+            return "int64"
+        if s == "float":
+            return "float64"
         if s == "byte":
             return "uint8"
         if s == "any":
             return "Any"
         if s == "object":
             return "object"
+        if s.find("|") != -1:
+            parts = self.split_union(s)
+            if len(parts) > 1:
+                out_parts: list[str] = []
+                i = 0
+                while i < len(parts):
+                    out_parts.append(self.normalize_type_name(parts[i]))
+                    i += 1
+                return "|".join(out_parts)
+        if s.startswith("list[") and s.endswith("]"):
+            inner = s[5:-1]
+            inner_norm = self.normalize_type_name(inner)
+            return "list[" + inner_norm + "]"
+        if s.startswith("set[") and s.endswith("]"):
+            inner = s[4:-1]
+            inner_norm = self.normalize_type_name(inner)
+            return "set[" + inner_norm + "]"
+        if s.startswith("tuple[") and s.endswith("]"):
+            inner = s[6:-1]
+            elems = self.split_generic(inner)
+            out_elems: list[str] = []
+            i = 0
+            while i < len(elems):
+                out_elems.append(self.normalize_type_name(elems[i]))
+                i += 1
+            return "tuple[" + ", ".join(out_elems) + "]"
+        if s.startswith("dict[") and s.endswith("]"):
+            inner = s[5:-1]
+            elems = self.split_generic(inner)
+            if len(elems) == 2:
+                return "dict[" + self.normalize_type_name(elems[0]) + ", " + self.normalize_type_name(elems[1]) + "]"
         return s
 
     def is_any_like_type(self, t: str) -> bool:
