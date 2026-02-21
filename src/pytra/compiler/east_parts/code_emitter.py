@@ -840,6 +840,16 @@ class CodeEmitter:
             i += 1
         return last
 
+    def _opt_ge(self, level: int) -> bool:
+        """最適化レベルが指定値以上かを返す。"""
+        cur = 3
+        opt_obj: Any = None
+        if "opt_level" in self.__dict__:
+            opt_obj = self.__dict__["opt_level"]
+        if isinstance(opt_obj, str) and opt_obj in {"0", "1", "2", "3"}:
+            cur = int(opt_obj)
+        return cur >= level
+
     def comment_line_prefix(self) -> str:
         """単行コメント出力時の接頭辞を返す。"""
         return "// "
