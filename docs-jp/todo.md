@@ -57,6 +57,7 @@
    - [x] `Call(Attribute)` の module-method 分岐に hook（`on_render_module_method`）を追加し、`_render_call_module_method` は hook 優先 + 最小フォールバック（namespace 解決のみ）へ縮退した。
    - [x] `Call(Attribute)` の C++ 固有 object-method 分岐を `cpp_hooks.py` 側へ集約し、`py2cpp.py` から文字列系専用 helper（`_render_string_object_method`）を削除した。
    - [x] `BuiltinCall` の direct runtime 分岐（`py_print/py_len/py_to_string/py_min|max/perf_counter/open/py_join/...`）を `cpp_hooks.on_render_call` へ追加し、`py2cpp.py` 側は selfhost（hooks stub）向けフォールバックとして維持した。
+   - [x] `module.method(...)` namespace 解決 helper の `CodeEmitter` 移管を検証し、selfhost C++ の静的束縛で派生専用メソッド呼び出しが崩れることを確認したため、共通化は見送り（`py2cpp.py` / `cpp_hooks.py` 側の局所実装を維持）とした。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
