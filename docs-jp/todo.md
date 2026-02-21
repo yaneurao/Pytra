@@ -113,7 +113,8 @@
 6. [x] `std::any` を経由する経路（selfhost 変換由来）をログベースでリスト化し、順次削除する。
    - [x] `unknown` / 混在 `Union` / `list[unknown]` / `dict[..., unknown]` の既定マッピングを `::std::any` から `object` 系へ寄せた（`_cpp_type_text`）。
    - [x] `render_minmax` / 内包表現の動的型判定で `std::any` 依存判定を削減し、`object`/`auto` 判定へ寄せた。
-7. [ ] 上位3関数ごとにパッチを分けて改善し、毎回 `check_py2cpp_transpile.py` を通す。
+7. [x] 上位3関数ごとにパッチを分けて改善し、毎回 `check_py2cpp_transpile.py` を通す。
+   - [x] 直近の `py2cpp.py`/`code_emitter.py` リファクタ（引数強制統合・isinstance統合・module call helper 化）で、各ステップごとに `test/unit/test_py2cpp_codegen_issues.py` / `tools/check_py2cpp_transpile.py` / `tools/build_selfhost.py` / `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を実行して回帰なしを確認した。
 
 ## P3: 低優先（可読性・Pythonらしさの回復）
 
