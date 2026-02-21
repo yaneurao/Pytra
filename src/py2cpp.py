@@ -4021,7 +4021,7 @@ class CppEmitter(CodeEmitter):
                     src = src_obj
                 raise _make_user_error(
                     "input_invalid",
-                    "from-import ではモジュール名は束縛されません。",
+                    "Module names are not bound by from-import statements.",
                     [f"kind=missing_symbol file={src} import={base_name}.{attr}"],
                 )
         bt = self.get_expr_type(expr_d.get("value"))
@@ -4647,8 +4647,8 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
                 return payload
         raise _make_user_error(
             "input_invalid",
-            "EAST JSON の形式が不正です。",
-            ["期待形式: {'ok': true, 'east': {...}} または {'kind': 'Module', ...}"],
+            "Invalid EAST JSON format.",
+            ["expected: {'ok': true, 'east': {...}} or {'kind': 'Module', ...}"],
         )
     source_text: str = ""
     east_any: Any = None
@@ -4663,7 +4663,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
         msg = str(ex)
         raise _make_user_error(
             "user_syntax_error",
-            "Python の文法エラーです。",
+            "Python syntax error.",
             [msg],
         ) from ex
     except Exception as ex:
@@ -4678,7 +4678,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
                 if first == "":
                     raise _make_user_error(
                         "user_syntax_error",
-                        "Python の文法エラーです。",
+                        "Python syntax error.",
                         [],
                     ) from ex
             raise ex
@@ -4687,40 +4687,40 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
             label = _first_import_detail_line(source_text, "wildcard")
             raise _make_user_error(
                 "input_invalid",
-                "import 構文が未対応です。",
+                "Unsupported import syntax.",
                 [f"kind=unsupported_import_form file={input_path} import={label}"],
             ) from ex
         if "relative import is not supported" in msg:
             label = _first_import_detail_line(source_text, "relative")
             raise _make_user_error(
                 "input_invalid",
-                "import 構文が未対応です。",
+                "Unsupported import syntax.",
                 [f"kind=unsupported_import_form file={input_path} import={label}"],
             ) from ex
         if "duplicate import binding:" in msg:
             raise _make_user_error(
                 "input_invalid",
-                "import 束縛が重複しています。",
+                "Duplicate import binding.",
                 [f"kind=duplicate_binding file={input_path} import={msg}"],
             ) from ex
         category = "not_implemented"
-        summary = "この構文はまだ実装されていません。"
+        summary = "This syntax is not implemented yet."
         if msg == "":
             category = "user_syntax_error"
-            summary = "Python の文法エラーです。"
+            summary = "Python syntax error."
         if ("cannot parse" in msg) or ("unexpected token" in msg) or ("invalid syntax" in msg):
             category = "user_syntax_error"
-            summary = "Python の文法エラーです。"
+            summary = "Python syntax error."
         if "forbidden by language constraints" in msg:
             category = "unsupported_by_design"
-            summary = "この構文は言語仕様上サポート対象外です。"
+            summary = "This syntax is unsupported by language design."
         raise _make_user_error(category, summary, [msg]) from ex
     if isinstance(east_any, dict):
         return east_any
     raise _make_user_error(
         "input_invalid",
-        "EAST の生成に失敗しました。",
-        ["EAST ルートが dict ではありません。"],
+        "Failed to build EAST.",
+        ["EAST root must be a dict."],
     )
 
 
@@ -5736,7 +5736,7 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     if len(details) > 0:
         raise _make_user_error(
             "input_invalid",
-            "import 解決に失敗しました（未解決/衝突/循環）。",
+            "Failed to resolve imports (missing/conflict/cycle).",
             details,
         )
 
@@ -5816,7 +5816,7 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
     if len(details) > 0:
         raise _make_user_error(
             "input_invalid",
-            "import 解決に失敗しました（未定義シンボル）。",
+            "Failed to resolve imports (missing symbols).",
             details,
         )
 
@@ -6290,24 +6290,24 @@ def print_user_error(err_text: str) -> None:
     cat = str(parsed_err.get("category", ""))
     details = _dict_any_get_str_list(parsed_err, "details")
     if cat == "":
-        print("error: 変換に失敗しました。", file=sys.stderr)
-        print("[transpile_error] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
+        print("error: transpilation failed.", file=sys.stderr)
+        print("[transpile_error] check your input code and support status.", file=sys.stderr)
         return
     if cat == "user_syntax_error":
-        print("error: 入力 Python の文法エラーです。", file=sys.stderr)
-        print("[user_syntax_error] 構文を修正してください。", file=sys.stderr)
+        print("error: input Python has a syntax error.", file=sys.stderr)
+        print("[user_syntax_error] fix the syntax.", file=sys.stderr)
     elif cat == "unsupported_by_design":
-        print("error: 言語仕様上サポート対象外の構文です。", file=sys.stderr)
-        print("[unsupported_by_design] 仕様に沿った書き方へ変更してください。", file=sys.stderr)
+        print("error: this syntax is unsupported by language design.", file=sys.stderr)
+        print("[unsupported_by_design] rewrite it using a supported form.", file=sys.stderr)
     elif cat == "not_implemented":
-        print("error: まだ未実装の構文です。", file=sys.stderr)
-        print("[not_implemented] TODO の実装状況を確認してください。", file=sys.stderr)
+        print("error: this syntax is not implemented yet.", file=sys.stderr)
+        print("[not_implemented] check TODO implementation status.", file=sys.stderr)
     elif cat == "input_invalid":
-        print("error: 入力ファイル形式が不正です。", file=sys.stderr)
-        print("[input_invalid] .py か正しい EAST JSON を指定してください。", file=sys.stderr)
+        print("error: invalid input file format.", file=sys.stderr)
+        print("[input_invalid] provide .py or valid EAST JSON.", file=sys.stderr)
     else:
-        print("error: 変換に失敗しました。", file=sys.stderr)
-        print(f"[{cat}] 入力コードまたはサポート状況を確認してください。", file=sys.stderr)
+        print("error: transpilation failed.", file=sys.stderr)
+        print(f"[{cat}] check your input code and support status.", file=sys.stderr)
     for line in details:
         if line != "":
             print(line, file=sys.stderr)
@@ -6597,8 +6597,8 @@ def main(argv: list[str]) -> int:
         if cat != "":
             print_user_error(str(ex))
             return 1
-        print("error: 変換中に内部エラーが発生しました。", file=sys.stderr)
-        print("[internal_error] バグの可能性があります。再現コードを添えて報告してください。", file=sys.stderr)
+        print("error: internal error occurred during transpilation.", file=sys.stderr)
+        print("[internal_error] this may be a bug; report it with a reproducible case.", file=sys.stderr)
         return 1
 
     if output_txt != "":

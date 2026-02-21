@@ -66,13 +66,13 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
         if not isinstance(payload, dict):
             raise UserFacingError(
                 category="input_invalid",
-                summary="EAST JSON の形式が不正です。",
-                details=["期待形式: dict ルートの JSON"],
+                summary="Invalid EAST JSON format.",
+                details=["expected: dict-root JSON"],
             )
         if payload.get("ok") is False:
             raise UserFacingError(
                 category="east_error",
-                summary="EAST JSON にエラー情報が含まれています。",
+                summary="EAST JSON contains an error payload.",
                 details=[f"error: {payload.get('error')}"],
             )
         if payload.get("ok") is True and isinstance(payload.get("east"), dict):
@@ -81,8 +81,8 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
             return payload
         raise UserFacingError(
             category="input_invalid",
-            summary="EAST JSON の構造が不正です。",
-            details=["期待形式: {'ok': true, 'east': {...}} または {'kind': 'Module', ...}"],
+            summary="Invalid EAST JSON structure.",
+            details=["expected: {'ok': true, 'east': {...}} or {'kind': 'Module', ...}"],
         )
 
     try:
@@ -111,18 +111,18 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
             if _is_user_syntax_error(exc):
                 raise UserFacingError(
                     category="user_syntax_error",
-                    summary="Python の文法エラーです。",
+                    summary="Python syntax error.",
                     details=details,
                 ) from exc
             if _is_unsupported_by_design(exc):
                 raise UserFacingError(
                     category="unsupported_by_design",
-                    summary="この構文は言語仕様上サポート対象外です。",
+                    summary="This syntax is unsupported by language design.",
                     details=details,
                 ) from exc
             raise UserFacingError(
                 category="not_implemented",
-                summary="この構文はまだ実装されていません。",
+                summary="This syntax is not implemented yet.",
                 details=details,
             ) from exc
         else:
@@ -140,7 +140,7 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
                 details.append(f"source: {txt.rstrip()}")
             raise UserFacingError(
                 category="user_syntax_error",
-                summary="Python の文法エラーです。",
+                summary="Python syntax error.",
                 details=details,
             ) from exc
 

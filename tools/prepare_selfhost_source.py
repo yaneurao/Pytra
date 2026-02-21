@@ -189,13 +189,13 @@ def _patch_selfhost_exception_paths(text: str) -> str:
     )
     out = out.replace(old2, new2, 1)
     old3 = (
-        "        print(\"error: 変換中に内部エラーが発生しました。\", file=sys.stderr)\n"
-        "        print(\"[internal_error] バグの可能性があります。再現コードを添えて報告してください。\", file=sys.stderr)\n"
+        "        print(\"error: internal error occurred during transpilation.\", file=sys.stderr)\n"
+        "        print(\"[internal_error] this may be a bug; report it with a reproducible case.\", file=sys.stderr)\n"
         "        return 1\n"
     )
     new3 = (
-        "        print(\"error: 変換中に内部エラーが発生しました。\", file=sys.stderr)\n"
-        "        print(\"[internal_error] バグの可能性があります。再現コードを添えて報告してください。\", file=sys.stderr)\n"
+        "        print(\"error: internal error occurred during transpilation.\", file=sys.stderr)\n"
+        "        print(\"[internal_error] this may be a bug; report it with a reproducible case.\", file=sys.stderr)\n"
         "        print(str(ex), file=sys.stderr)\n"
         "        return 1\n"
     )
