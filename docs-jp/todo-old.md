@@ -5,6 +5,10 @@
 </a>
 
 
+## 2026-02-21 完了: py2cpp Call 分岐の hook 移管
+
+1. [x] `dict.get/list.* / set.*` 呼び出し解決を `src/py2cpp.py` の直書き分岐から `src/hooks/cpp/hooks/cpp_hooks.py` の runtime-call hook 側へ移し、`py2cpp.py` のハードコードを削減した。
+
 ## 2026-02-21 完了: パススルー記法
 
 1. [x] トランスパイル時パススルー記法（`# Pytra::cpp` / `# Pytra::pass`）の仕様化と最小実装を完了した。
