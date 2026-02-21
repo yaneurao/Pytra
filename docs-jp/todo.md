@@ -38,6 +38,7 @@
    - [x] `Call(Name)` の `set/list/dict` コンストラクタ分岐と `int/float/bool` キャスト分岐を helper（`_render_collection_constructor_call` / `_render_scalar_cast_builtin_call`）へ切り出し、`_render_call_name_or_attr` 本体の重複を削減した。
    - [x] `Call(Name)` の `print/len/reversed/enumerate/any/all/isinstance` 分岐を helper（`_render_simple_name_builtin_call` / `_render_isinstance_name_call`）へ切り出し、`_render_call_name_or_attr` の条件分岐を縮退した。
    - [x] `Class.method(...)` 分岐を `_render_call_class_method` として切り出し、`_render_call_attribute` の class-method 経路を分離した。
+   - [x] `_render_builtin_call` の owner 付き runtime 分岐（`exists/replace/startswith...` と共通 `py_/std` 呼び出し）を helper（`_render_builtin_call_owner_expr` / `_render_builtin_call_owner_runtime`）へ分離した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。

@@ -3209,14 +3209,7 @@ class CppEmitter(CodeEmitter):
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
-        owner_expr = ""
-        if self._node_kind_from_dict(fn) == "Attribute":
-            runtime_owner_obj = expr.get("runtime_owner")
-            runtime_owner_node = self.any_to_dict_or_empty(runtime_owner_obj)
-            if len(runtime_owner_node) > 0:
-                owner_expr = self.render_expr(runtime_owner_obj)
-            else:
-                owner_expr = self.render_expr(fn.get("value"))
+        owner_expr = self._render_builtin_call_owner_expr(expr, fn)
         if runtime_call == "py_print":
             return f"py_print({_join_str_list(', ', args)})"
         if runtime_call == "py_len" and len(args) == 1:
@@ -3273,6 +3266,32 @@ class CppEmitter(CodeEmitter):
             return f"::std::runtime_error({args[0]})"
         if runtime_call == "Path":
             return f"Path({_join_str_list(', ', args)})"
+        owner_runtime_rendered = self._render_builtin_call_owner_runtime(runtime_call, owner_expr, args)
+        if owner_runtime_rendered is not None:
+            return str(owner_runtime_rendered)
+        if builtin_name == "bytes":
+            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
+        if builtin_name == "bytearray":
+            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
+        return ""
+
+    def _render_builtin_call_owner_expr(self, expr: dict[str, Any], fn: dict[str, Any]) -> str:
+        """BuiltinCall の owner 式（`obj.method` 側）を解決する。"""
+        if self._node_kind_from_dict(fn) != "Attribute":
+            return ""
+        runtime_owner_obj = expr.get("runtime_owner")
+        runtime_owner_node = self.any_to_dict_or_empty(runtime_owner_obj)
+        if len(runtime_owner_node) > 0:
+            return self.render_expr(runtime_owner_obj)
+        return self.render_expr(fn.get("value"))
+
+    def _render_builtin_call_owner_runtime(
+        self,
+        runtime_call: str,
+        owner_expr: str,
+        args: list[str],
+    ) -> str | None:
+        """BuiltinCall の owner 付き runtime_call 分岐を描画する。"""
         if runtime_call in {"std::filesystem::exists", "::std::filesystem::exists"} and owner_expr != "" and len(args) == 0:
             return f"{runtime_call}({owner_expr})"
         if runtime_call == "py_replace" and owner_expr != "" and len(args) >= 2:
@@ -3283,11 +3302,7 @@ class CppEmitter(CodeEmitter):
             if owner_expr != "" and runtime_call.startswith("py_") and len(args) == 0:
                 return f"{runtime_call}({owner_expr})"
             return f"{runtime_call}({_join_str_list(', ', args)})"
-        if builtin_name == "bytes":
-            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
-        if builtin_name == "bytearray":
-            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
-        return ""
+        return None
 
     def _render_collection_constructor_call(
         self,
