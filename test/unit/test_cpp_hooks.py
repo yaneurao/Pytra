@@ -13,12 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.hooks.cpp.hooks.cpp_hooks import (
-    on_render_class_method,
-    on_render_expr_kind,
-    on_render_module_method,
-    on_render_object_method,
-)
+from src.hooks.cpp.hooks.cpp_hooks import on_render_call, on_render_class_method, on_render_expr_kind, on_render_module_method, on_render_object_method
 
 
 class _DummyEmitter:
@@ -42,6 +37,31 @@ class _DummyEmitter:
 
     def any_to_bool(self, obj: Any) -> bool:
         return bool(obj)
+
+    def any_to_list(self, value: Any) -> list[Any]:
+        if isinstance(value, list):
+            return value
+        return []
+
+    def cpp_type(self, type_node: Any) -> str:
+        if isinstance(type_node, str):
+            if type_node == "int64":
+                return "int64"
+            if type_node == "float64":
+                return "float64"
+            if type_node == "bool":
+                return "bool"
+        return "auto"
+
+    def get_expr_type(self, expr: Any) -> str:
+        if isinstance(expr, dict):
+            t = expr.get("resolved_type")
+            if isinstance(t, str):
+                return t
+        return ""
+
+    def is_any_like_type(self, t: str) -> bool:
+        return t in {"Any", "object", "unknown"}
 
     def _contains_text(self, text: str, needle: str) -> bool:
         return needle in text
@@ -127,6 +147,31 @@ class _DummyEmitter:
 
 
 class CppHooksTest(unittest.TestCase):
+    def test_on_render_call_static_cast_single_arg(self) -> None:
+        em = _DummyEmitter()
+        call_node = {
+            "kind": "Call",
+            "runtime_call": "static_cast",
+            "resolved_type": "int64",
+            "args": [{"kind": "Name", "id": "x", "resolved_type": "str"}],
+        }
+        func_node = {"kind": "Name", "id": "int"}
+        rendered = on_render_call(em, call_node, func_node, ["x"], {})
+        self.assertEqual(rendered, "py_to_int64(x)")
+
+    def test_on_render_call_static_cast_int_base(self) -> None:
+        em = _DummyEmitter()
+        call_node = {
+            "kind": "Call",
+            "runtime_call": "static_cast",
+            "builtin_name": "int",
+            "resolved_type": "int64",
+            "args": [{"kind": "Name", "id": "s", "resolved_type": "str"}, {"kind": "Constant", "value": 16}],
+        }
+        func_node = {"kind": "Name", "id": "int"}
+        rendered = on_render_call(em, call_node, func_node, ["s", "16"], {})
+        self.assertEqual(rendered, "py_to_int64_base(s, py_to_int64(16))")
+
     def test_range_expr_render(self) -> None:
         em = _DummyEmitter()
         node = {

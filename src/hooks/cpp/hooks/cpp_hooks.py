@@ -302,6 +302,44 @@ def _render_runtime_call_direct_builtin(
     rendered_args: list[str],
 ) -> str:
     """BuiltinCall の汎用 runtime_call（py_/std:: 直接呼び出し）を処理する。"""
+    if runtime_call == "static_cast":
+        if len(rendered_args) == 1:
+            target = emitter.cpp_type(call_node.get("resolved_type"))
+            arg_nodes = emitter.any_to_list(call_node.get("args"))
+            first_arg: object = call_node
+            if len(arg_nodes) > 0:
+                first_arg = arg_nodes[0]
+            arg_t = emitter.get_expr_type(first_arg)
+            numeric_t = {
+                "int8",
+                "uint8",
+                "int16",
+                "uint16",
+                "int32",
+                "uint32",
+                "int64",
+                "uint64",
+                "float32",
+                "float64",
+                "bool",
+            }
+            if target == "int64" and arg_t == "str":
+                return "py_to_int64(" + rendered_args[0] + ")"
+            if target in {"float64", "float32"} and arg_t == "str":
+                return "py_to_float64(" + rendered_args[0] + ")"
+            if target == "int64" and arg_t in numeric_t:
+                return "int64(" + rendered_args[0] + ")"
+            if target == "int64" and emitter.is_any_like_type(arg_t):
+                return "py_to_int64(" + rendered_args[0] + ")"
+            if target in {"float64", "float32"} and emitter.is_any_like_type(arg_t):
+                return "py_to_float64(" + rendered_args[0] + ")"
+            if target == "bool" and emitter.is_any_like_type(arg_t):
+                return "py_to_bool(" + rendered_args[0] + ")"
+            if target == "int64":
+                return "py_to_int64(" + rendered_args[0] + ")"
+            return "static_cast<" + target + ">(" + rendered_args[0] + ")"
+        if len(rendered_args) == 2 and emitter.any_dict_get_str(call_node, "builtin_name", "") == "int":
+            return "py_to_int64_base(" + rendered_args[0] + ", py_to_int64(" + rendered_args[1] + "))"
     if runtime_call == "py_print":
         return "py_print(" + ", ".join(rendered_args) + ")"
     if runtime_call == "py_len" and len(rendered_args) == 1:
