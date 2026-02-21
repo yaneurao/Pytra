@@ -10,7 +10,7 @@
 ## P0: selfhost 安定化
 
 1. [ ] selfhost `.py` 経路の段階回復を完了する。
-2. [ ] 2段自己変換の先頭エラー群を段階消去する（現状: `len(...)` の生残り）。
+2. [ ] 2段自己変換の先頭エラー群を段階消去する（現状: 連鎖比較 `\"a\" <= c <= \"z\"` / slice 記法 `s[:1]` / Python論理演算子 `or/not/in` の生残り）。
 3. [ ] 2段自己変換の `CodeEmitter` 由来生式（`is None` / `is not None` / slice / `self.` 生呼び出し）を段階的に lower する。
 4. [ ] `selfhost/py2cpp.out` が生成した `selfhost_selfhost.cpp` を `g++` でコンパイル可能にする（まず最初の 20 エラーをゼロ化）。
 5. [ ] `selfhost/py2cpp.out` の最小実行パスを安定化する（入力・生成・実行の一連を常時再現可能にする）。

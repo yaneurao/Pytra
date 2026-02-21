@@ -13,6 +13,9 @@
    - [x] `python3 tools/check_selfhost_cpp_diff.py --selfhost-driver direct` で `mismatches=0` を確認。
 3. [x] 通常トランスパイルの回帰確認を実施した。
    - [x] `python3 tools/check_py2cpp_transpile.py` で `checked=108 ok=108 fail=0 skipped=5` を確認。
+4. [x] selfhost 2段自己変換の先頭エラー群（`len(...)` 未解決）を解消する下地を追加した。
+   - [x] `src/runtime/cpp/pytra/built_in/py_runtime.h` に `len(...) -> py_len(...)` 互換エイリアスを追加した。
+   - [x] `src/runtime/cpp/pytra/built_in/py_runtime.h` に `object` と `std::nullopt` の比較演算子を追加した。
 
 ## 2026-02-21 完了: selfhost 直変換の型正規化回帰修正
 

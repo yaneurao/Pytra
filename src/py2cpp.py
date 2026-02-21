@@ -4062,6 +4062,31 @@ class CppEmitter(CodeEmitter):
             return parts
         return []
 
+    def _replace_all_text(self, text: str, old: str, new_txt: str) -> str:
+        """`text` 内の `old` をすべて `new` へ置換する（selfhost 安定化用）。"""
+        if old == "":
+            return text
+        out = ""
+        n = len(text)
+        m = len(old)
+        i = 0
+        while i < n:
+            if i + m <= n:
+                matched = True
+                j = 0
+                while j < m:
+                    if text[i + j] != old[j]:
+                        matched = False
+                        break
+                    j += 1
+                if matched:
+                    out += new_txt
+                    i += m
+                    continue
+            out += text[i]
+            i += 1
+        return out
+
     def _render_set_literal_repr(self, text: str) -> str:
         """`{\"a\", ...}` 形式の repr を `set<str>{...}` へ変換する。"""
         t = self._trim_ws(text)
@@ -4195,8 +4220,11 @@ class CppEmitter(CodeEmitter):
                     if hi_cpp == "":
                         hi_cpp = f"py_len({base_cpp})"
                     return f"py_slice({base_cpp}, {lo_cpp}, {hi_cpp})"
-
-        return t
+        out = t
+        out = self._replace_all_text(out, " is not None", " != ::std::nullopt")
+        out = self._replace_all_text(out, " is None", " == ::std::nullopt")
+        out = self._replace_all_text(out, "self.", "this->")
+        return out
 
     def _render_subscript_expr(self, expr: dict[str, Any]) -> str:
         """Subscript/Slice 式を C++ 式へ変換する。"""

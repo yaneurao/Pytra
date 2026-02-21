@@ -402,6 +402,12 @@ static inline int64 py_len(const ::std::any& v) {
     return 0;
 }
 
+// selfhost 段階で一時的に残る `len(x)` を受ける互換エイリアス。
+template <class T>
+static inline int64 len(const T& v) {
+    return py_len(v);
+}
+
 static inline ::std::string py_to_string(const object& v);
 
 template <class T>
@@ -1843,6 +1849,12 @@ static inline bool py_is_int(const ::std::any& v) {
 }
 static inline bool py_is_float(const ::std::any& v) { return v.type() == typeid(float32) || v.type() == typeid(float64); }
 static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(bool); }
+
+// selfhost 由来の `obj == std::nullopt` 比較（None 判定）互換。
+static inline bool operator==(const object& lhs, const ::std::nullopt_t&) { return !lhs; }
+static inline bool operator!=(const object& lhs, const ::std::nullopt_t&) { return !!lhs; }
+static inline bool operator==(const ::std::nullopt_t&, const object& rhs) { return !rhs; }
+static inline bool operator!=(const ::std::nullopt_t&, const object& rhs) { return !!rhs; }
 
 // selfhost 由来の `std::any` 比較式をそのまま通すための演算子補助。
 static inline bool operator==(const ::std::any& lhs, const char* rhs) {
