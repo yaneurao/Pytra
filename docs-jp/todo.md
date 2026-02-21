@@ -8,12 +8,11 @@
 
 ## 実行順（上から着手）
 
-1. `P1-A: self_hosted parser / tokenizer 拡張（Yanesdk必須）`
-2. `P0: Yanesdk（library + game）を py2cpp で通す最短経路`
-3. `P1-B: import / module 解決（Yanesdk必須）`
-4. `P2: 受け入れテスト追加（Yanesdk由来）`
-5. `P3: py2rs（EAST移行）を CodeEmitter 中心で再設計`
-6. `P4: 他言語トランスパイラの EAST 移行`
+1. `P0: Yanesdk（library + game）を py2cpp で通す最短経路`
+2. `P1-B: import / module 解決（Yanesdk必須）`
+3. `P2: 受け入れテスト追加（Yanesdk由来）`
+4. `P3: py2rs（EAST移行）を CodeEmitter 中心で再設計`
+5. `P4: 他言語トランスパイラの EAST 移行`
 
 ## Yanesdk 再調査メモ（2026-02-21）
 
@@ -36,19 +35,6 @@
 - 正本ファイル運用:
   - `yanesdk.py` は `Yanesdk/yanesdk/yanesdk.py` を正本として扱う。
   - `Yanesdk/docs/*/yanesdk.py` は重複コピーとして扱い、解析・修正の基準にしない。
-
-## P1-A: self_hosted parser / tokenizer 拡張（Yanesdk必須）
-
-1. [x] UTF-8 BOM（`\ufeff`）を先頭トークンとして許容する。
-2. [x] バックスラッシュ継続行（`\`）を字句解析で扱えるようにする。
-3. [x] べき乗演算子 `**` の構文解析と EAST 生成を追加する。
-4. [x] トップレベル式文（module body の `Expr`）を受理する。
-5. [x] class body の `pass` を受理する。
-6. [ ] `yield` / generator 構文を受理する（最小は `yield` 単体）。
-7. [x] 関数内関数定義（nested `def`）を受理する。
-8. [x] `obj. attr`（dot 前後に空白あり）を属性参照として受理する。
-9. [x] class 内の末尾`,`付き代入（例: `X = 0,`）を tuple 代入として受理する（仕様固定）。
-10. [x] 文末 `;` は受理しない（Yanesdk 側の文法誤りとして扱う）ことをエラー仕様へ明記する。
 
 ## P0: Yanesdk（library + game）を py2cpp で通す最短経路
 

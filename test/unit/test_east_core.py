@@ -319,6 +319,23 @@ print(outer())
         exprs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Expr"]
         self.assertGreaterEqual(len(exprs), 1)
 
+    def test_yield_is_parsed_as_generator_function(self) -> None:
+        src = """
+def gen(n: int) -> int:
+    i: int = 0
+    while i < n:
+        yield i
+        i += 1
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "gen"]
+        self.assertEqual(len(funcs), 1)
+        fn = funcs[0]
+        self.assertEqual(fn.get("is_generator"), 1)
+        self.assertEqual(fn.get("return_type"), "list[int64]")
+        yields = [n for n in _walk(fn.get("body", [])) if isinstance(n, dict) and n.get("kind") == "Yield"]
+        self.assertGreaterEqual(len(yields), 1)
+
     def test_trailing_semicolon_is_rejected(self) -> None:
         src = """
 def main() -> None:

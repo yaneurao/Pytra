@@ -20,6 +20,25 @@
    - [x] `python3 tools/verify_selfhost_end_to_end.py --skip-build --selfhost-bin selfhost/py2cpp_stage2.out --cases sample/py/*.py`
    - [x] 結果: `failures=0`
 
+## 2026-02-22 完了: P1-A self_hosted parser / tokenizer 拡張（Yanesdk必須）
+
+1. [x] UTF-8 BOM（`\ufeff`）を先頭トークンとして許容した。
+2. [x] バックスラッシュ継続行（`\`）を字句解析で扱えるようにした。
+3. [x] べき乗演算子 `**` の構文解析と EAST 生成を追加した。
+4. [x] トップレベル式文（module body の `Expr`）を受理した。
+5. [x] class body の `pass` を受理した。
+6. [x] `yield` / generator 構文（最小）を受理した。
+   - [x] `Yield` ノードを追加し、関数内 `yield` を `is_generator` と `list[...]` 戻り型へ反映した。
+   - [x] C++ 生成で `yield` を `list` への `append` + `return` に lower する最小経路を実装した。
+7. [x] 関数内関数定義（nested `def`）を受理した。
+8. [x] `obj. attr`（dot 前後に空白あり）を属性参照として受理した。
+9. [x] class 内の末尾`,`付き代入（例: `X = 0,`）を tuple 代入として受理した。
+10. [x] 文末 `;` は受理しない仕様へ変更し、エラー化した。
+    - [x] `docs-jp/spec-user.md` に「文末 `;` 非対応」を追記した。
+11. [x] 回帰テストを追加した。
+    - [x] `test/unit/test_east_core.py` に BOM/継続行/`**`/top-level Expr/class `pass`/nested def/tuple末尾`,`/`yield`/`;` 拒否のテストを追加。
+    - [x] `test/fixtures/control/yield_generator_min.py` を追加し、Python/C++ 実行一致（`True`）を確認。
+
 ## 2026-02-21 完了: CodeEmitter / Hooks 移管タスク一式（docs-jp/todo.md から移管）
 
 1. [x] P1 `CodeEmitter / Hooks` 移管（hook 注入・helper 抽出・profile/hook 優先化）を完了。

@@ -101,6 +101,25 @@ def make_token() -> Token:
         self.assertIn("Token(str kind, str text, int64 pos)", cpp)
         self.assertIn("::rc_new<Token>(\"IDENT\", \"name\", 3)", cpp)
 
+    def test_yield_function_is_lowered_to_list_accumulation(self) -> None:
+        src = """def gen(n: int) -> int:
+    i: int = 0
+    while i < n:
+        yield i
+        i += 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "yield_gen.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("list<int64> gen(int64 n)", cpp)
+        self.assertIn("list<int64> __yield_values", cpp)
+        self.assertIn("__yield_values", cpp)
+        self.assertIn(".append(i);", cpp)
+        self.assertIn("return __yield_values", cpp)
+
     def test_optional_tuple_destructure_keeps_str_type(self) -> None:
         src = """def dump_like(indent: int | None, separators: tuple[str, str] | None) -> str:
     if separators is None:
