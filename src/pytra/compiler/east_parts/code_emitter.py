@@ -1073,6 +1073,40 @@ class CodeEmitter:
         out["attr"] = attr
         return out
 
+    def render_attribute_self_or_class_access(
+        self,
+        base: str,
+        attr: str,
+        current_class_name: str | None,
+        current_class_static_fields: set[str],
+        class_base: dict[str, str],
+        class_method_names: dict[str, set[str]],
+    ) -> str:
+        """`self.x` / `Class.x` の基本変換を共通処理する。"""
+        if base == "self" or base == "*this":
+            if current_class_name is not None and attr in current_class_static_fields:
+                return f"{current_class_name}::{attr}"
+            return f"this->{attr}"
+        if base in class_base or base in class_method_names:
+            return f"{base}::{attr}"
+        return ""
+
+    def render_attribute_module_access(
+        self,
+        base_module_name: str,
+        attr: str,
+        mapped_runtime: str,
+        namespace_name: str,
+    ) -> str:
+        """`module.attr` の基本変換（runtime map / namespace）を共通処理する。"""
+        if base_module_name == "" or attr == "":
+            return ""
+        if mapped_runtime != "":
+            return mapped_runtime
+        if namespace_name != "":
+            return f"{namespace_name}::{attr}"
+        return ""
+
     def _can_runtime_cast_target(self, target_t: str) -> bool:
         """実行時キャストを安全に適用できる型か判定する。"""
         if target_t == "" or target_t in {"unknown", "Any", "object"}:

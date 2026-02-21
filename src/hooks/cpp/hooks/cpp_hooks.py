@@ -609,17 +609,27 @@ def on_render_expr_kind(
         return None
     if kind != "Attribute":
         return None
-    owner_node = emitter.any_to_dict_or_empty(expr_node.get("value"))
-    base_expr = emitter.render_expr(expr_node.get("value"))
-    owner_kind = emitter.any_dict_get_str(owner_node, "kind", "")
-    if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-        base_expr = "(" + base_expr + ")"
+    base_raw = emitter.render_expr(expr_node.get("value"))
+    owner_ctx = emitter.resolve_attribute_owner_context(expr_node.get("value"), base_raw)
+    owner_node = emitter.any_to_dict_or_empty(owner_ctx.get("node"))
+    owner_kind = emitter.any_dict_get_str(owner_ctx, "kind", "")
+    base_expr = emitter.any_dict_get_str(owner_ctx, "expr", "")
+    attr = emitter.attr_name(expr_node)
+    direct_self_or_class = emitter.render_attribute_self_or_class_access(
+        base_expr,
+        attr,
+        emitter.current_class_name,
+        emitter.current_class_static_fields,
+        emitter.class_base,
+        emitter.class_method_names,
+    )
+    if direct_self_or_class != "":
+        return direct_self_or_class
     owner_t = emitter.get_expr_type(expr_node.get("value"))
-    base_mod = emitter._resolve_imported_module_name(base_expr)
+    base_mod = emitter.any_dict_get_str(owner_ctx, "module", "")
     if base_mod == "":
-        base_mod = emitter._cpp_expr_to_module_name(base_expr)
+        base_mod = emitter._cpp_expr_to_module_name(base_raw)
     base_mod = emitter._normalize_runtime_module_name(base_mod)
-    attr = emitter.any_dict_get_str(expr_node, "attr", "")
     if owner_t == "Path":
         if attr == "name":
             return base_expr + ".name()"
@@ -630,12 +640,11 @@ def on_render_expr_kind(
     mapped = ""
     if owner_kind in {"Name", "Attribute"} and attr != "":
         mapped = emitter._lookup_module_attr_runtime_call(base_mod, attr)
-    if _looks_like_runtime_symbol(mapped):
-        return mapped
-    if base_mod != "" and attr != "":
-        ns = emitter._module_name_to_cpp_namespace(base_mod)
-        if isinstance(ns, str) and ns != "":
-            return ns + "::" + attr
+    if _looks_like_runtime_symbol(mapped) or (base_mod != "" and attr != ""):
+        ns = emitter._module_name_to_cpp_namespace(base_mod) if base_mod != "" else ""
+        direct_module = emitter.render_attribute_module_access(base_mod, attr, mapped, ns)
+        if direct_module != "":
+            return direct_module
     return None
 
 

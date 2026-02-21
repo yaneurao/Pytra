@@ -4552,23 +4552,24 @@ class CppEmitter(CodeEmitter):
         base_node = self.any_to_dict_or_empty(base_ctx.get("node"))
         base_kind = self._node_kind_from_dict(base_node)
         attr = self.attr_name(expr_d)
-        if base == "self" or base == "*this":
-            if self.current_class_name is not None and str(attr) in self.current_class_static_fields:
-                return f"{self.current_class_name}::{attr}"
-            return f"this->{attr}"
-        # Class-name qualified member access in EAST uses dot syntax.
-        # Emit C++ scope resolution for static members/methods.
-        if base in self.class_base or base in self.class_method_names:
-            return f"{base}::{attr}"
+        direct_self_or_class = self.render_attribute_self_or_class_access(
+            base,
+            attr,
+            self.current_class_name,
+            self.current_class_static_fields,
+            self.class_base,
+            self.class_method_names,
+        )
+        if direct_self_or_class != "":
+            return direct_self_or_class
         # import モジュールの属性参照は map -> namespace の順で解決する。
         base_module_name = self._normalize_runtime_module_name(self.any_dict_get_str(base_ctx, "module", ""))
         if base_module_name != "":
             mapped = self._lookup_module_attr_runtime_call(base_module_name, attr)
-            if mapped != "":
-                return mapped
             ns = self._module_name_to_cpp_namespace(base_module_name)
-            if ns != "":
-                return f"{ns}::{attr}"
+            direct_module = self.render_attribute_module_access(base_module_name, attr, mapped, ns)
+            if direct_module != "":
+                return direct_module
         if base_kind == "Name":
             base_name = self.any_to_str(base_node.get("id"))
             if (

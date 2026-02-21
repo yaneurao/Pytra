@@ -64,6 +64,7 @@
    - [x] `module.method(...)` の namespace 呼び出し重複を `_render_call_module_method_with_namespace` へ統合し、`_render_call_module_method` の重複分岐を削減した。
    - [x] `Call(Attribute)` の object/class 分岐を `_render_call_attribute_non_module` へ切り出し、`_render_call_attribute` 本体を module 解決 + dispatch へ縮退した。
    - [x] `from-import` 解決と `module.method(...)` の namespace 呼び出しを `_render_namespaced_module_call` へ統合し、call/attribute 周辺の重複分岐を追加削減した。
+   - [x] `Attribute` 式の self/class/module 基本分岐を `CodeEmitter` helper（`render_attribute_self_or_class_access` / `render_attribute_module_access`）へ抽出し、`py2cpp.py` と `cpp_hooks.py` の重複を追加削減した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [x] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
@@ -75,12 +76,11 @@
 3. [x] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。
    - [x] `RangeExpr/BinOp/UnaryOp/BoolOp/Compare/IfExp` の分岐を `_render_operator_family_expr` へ集約し、`render_expr` 本体の分岐を削減した。
    - [x] `RangeExpr` の C++ レンダ（`py_range(...)`）を `cpp_hooks.on_render_expr_kind(kind=RangeExpr)` へ抽出した（`py2cpp.py` 側フォールバックは残置）。
-4. [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
+4. [x] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
    - [x] `Name` の基本レンダ（予約語回避 + `self` 置換）を `CodeEmitter.render_name_expr_common` へ移管した。
    - [x] `Constant` の非文字列系レンダ（`bool`/`None`/数値）を `CodeEmitter.render_constant_non_string_common` へ移管した。
    - [x] selfhost C++ での bool 判定崩れを避けるため、`render_constant_non_string_common` は handled フラグを `"0"/"1"` 文字列で返す方式へ調整した。
-   - [ ] `Attribute` の基本レンダの共通化方針を詰める（selfhost 静的束縛制約を満たす形）。
-   - [ ] `CodeEmitter` 側の共通ディスパッチは selfhost C++ で静的束縛（非 virtual）により派生レンダへ到達しないため、別方式（hook 注入）で再設計する。
+   - [x] `Attribute` の基本レンダ（self/class/module）の共通 helper 化を実施した（`resolve_*` + `render_attribute_*` を利用）。
 5. [x] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。
    - [x] `try/catch/finally(scope guard)` の開始行（`scope_open` / `scope_exit_open` / `try_open` / `catch_open`）を `syntax.json` + `syntax_line` 経由へ移管した。
    - [x] `for` ブロック開始行（`hdr + " {"`）を `for_open_block` テンプレートへ移管した。
@@ -99,6 +99,8 @@
    - [x] 未再利用 helper `_dict_any_get_list` を削除し、`_dict_any_get_str_list` へ内包した。
    - [x] 単発 helper `_dict_str_list_get` を削除し、`_graph_cycle_dfs` 側へ内包した。
    - [x] `src/py2cpp.py` / `src/pytra/compiler/east_parts/code_emitter.py` について repo 全体参照を監査し、単独未参照シンボルがないことを確認した（現時点の明確な削除候補なし）。
+9. [ ] `CodeEmitter` 側の共通ディスパッチを再設計する（selfhost C++ の静的束縛制約を回避）。
+   - [ ] 非 virtual 前提でも派生レンダへ到達できる hook 注入ベースの経路を設計し、`render_expr` / `emit_stmt` の段階的置換計画を作成する。
 
 ## P2: Any/object 境界の整理
 
