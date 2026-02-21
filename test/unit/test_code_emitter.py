@@ -293,6 +293,13 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.tuple_elements({"elts": [3, 4]}), [3, 4])
         self.assertEqual(em.tuple_elements({}), [])
 
+    def test_render_boolop_common(self) -> None:
+        em = _DummyEmitter({})
+        vals = [{"repr": "a"}, {"repr": "b"}]
+        self.assertEqual(em.render_boolop_common(vals, "And"), "(a && b)")
+        self.assertEqual(em.render_boolop_common(vals, "Or"), "(a || b)")
+        self.assertEqual(em.render_boolop_common([], "And"), "false")
+
     def test_import_resolution_helpers(self) -> None:
         em = CodeEmitter(
             {

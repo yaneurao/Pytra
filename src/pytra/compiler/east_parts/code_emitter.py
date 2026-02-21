@@ -750,6 +750,26 @@ class CodeEmitter:
             out.append(tail)
         return out
 
+    def render_boolop_common(
+        self,
+        values: list[Any],
+        op: str,
+        *,
+        and_token: str = "&&",
+        or_token: str = "||",
+        empty_literal: str = "false",
+    ) -> str:
+        """`BoolOp`（And/Or）の共通描画を行う。"""
+        mapped = and_token
+        if op == "Or":
+            mapped = or_token
+        rendered: list[str] = []
+        for val in values:
+            rendered.append(self.render_expr(val))
+        if len(rendered) == 0:
+            return empty_literal
+        return "(" + (" " + mapped + " ").join(rendered) + ")"
+
     def normalize_type_name(self, t: str) -> str:
         """型名エイリアスを内部表現へ正規化する。"""
         if not isinstance(t, str):

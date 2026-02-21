@@ -41,6 +41,7 @@
    - [ ] `py2cpp.py` と `py2rs.py` で共通化できる EAST ユーティリティ（型変換補助・import束縛・文/式ディスパッチ補助）を `src/pytra/compiler/east_parts/code_emitter.py` へ移す。
      - [x] import 束縛ローダ `load_import_bindings_from_meta()` を `CodeEmitter` へ移管。
      - [x] tuple 要素取得（`elements`/`elts` 差分吸収）を `CodeEmitter.tuple_elements()` へ移管。
+     - [x] `BoolOp` 共通描画 `render_boolop_common()` を `CodeEmitter` へ移管し、`py2rs/py2js/py2cs` で利用する。
    - [x] 「共通化候補一覧」を作り、`py2cpp.py` から段階的に移管する（`docs-jp/code-emitter-dispatch-plan.md` 参照）。
 3. [x] Rust 固有処理の分離（最小雛形）
    - [x] `src/hooks/rs/` に Rust 用 hooks を追加。

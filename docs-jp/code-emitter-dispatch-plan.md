@@ -41,3 +41,7 @@
 - 優先 C（最後）
   - 言語別ランタイム関数へのルーティング（profile + hooks）
   - 文字列/配列の細かい最適化（演算子簡約・括弧削減）
+
+## 進捗メモ（2026-02-22）
+
+- `CodeEmitter.render_boolop_common()` を追加し、`py2rs` / `py2js` / `py2cs` の `BoolOp` 生成を共通化した。

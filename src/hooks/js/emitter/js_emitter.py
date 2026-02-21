@@ -722,17 +722,9 @@ class JsEmitter(CodeEmitter):
         if kind == "Compare":
             return self._render_compare(expr_d)
         if kind == "BoolOp":
-            op = self.any_to_str(expr_d.get("op"))
-            mapped = "&&"
-            if op == "Or":
-                mapped = "||"
             vals = self.any_to_list(expr_d.get("values"))
-            rendered: list[str] = []
-            for val in vals:
-                rendered.append(self.render_expr(val))
-            if len(rendered) == 0:
-                return "false"
-            return "(" + (" " + mapped + " ").join(rendered) + ")"
+            op = self.any_to_str(expr_d.get("op"))
+            return self.render_boolop_common(vals, op, and_token="&&", or_token="||", empty_literal="false")
         if kind == "Call":
             hook = self.hook_on_render_call(expr_d, self.any_to_dict_or_empty(expr_d.get("func")), [], {})
             if hook != "":
