@@ -280,36 +280,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
     )
 
     repl(
-        "def build_cpp_header_from_east(",
-        "\ndef _runtime_module_tail_from_source_path(",
-        (
-            "def build_cpp_header_from_east(\n"
-            "    east_module: dict[str, Any],\n"
-            "    source_path: Path,\n"
-            "    output_path: Path,\n"
-            "    top_namespace: str = \"\",\n"
-            ") -> str:\n"
-            "    pass\n"
-            "    _east = east_module\n"
-            "    _src = source_path\n"
-            "    _out = output_path\n"
-            "    _ns = top_namespace\n"
-            "    return \"\"\n\n"
-        ),
-    )
-
-    repl(
-        "def build_module_east_map(",
-        "\ndef build_module_symbol_index(",
-        (
-            "def build_module_east_map(entry_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, dict[str, Any]]:\n"
-            "    pass\n"
-            "    out: dict[str, dict[str, Any]] = {}\n"
-            "    return out\n\n"
-        ),
-    )
-
-    repl(
         "def _rel_disp_for_graph(",
         "\ndef _analyze_import_graph(",
         (
@@ -321,7 +291,7 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
 
     repl(
         "def _validate_import_graph_or_raise(",
-        "\ndef build_module_east_map(",
+        "\ndef _module_export_table(",
         (
             "def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:\n"
             "    pass\n"
