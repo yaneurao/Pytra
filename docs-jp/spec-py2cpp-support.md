@@ -5,7 +5,7 @@
 </a>
 
 
-最終更新: 2026-02-21
+最終更新: 2026-02-22
 
 この文書は、`src/py2cpp.py` の言語機能サポート状況を「実装コード」と「実行テスト」の両方で確認できる粒度でまとめたものです。
 
@@ -48,7 +48,7 @@
 | `from M import S as A` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
 | 循環 import 検出 | unsupported | 検出して `input_invalid(kind=import_cycle)` で停止。 | `src/py2cpp.py:5734`, `test/unit/test_py2cpp_features.py:567` |
 | 相対 import（`from .m import x`） | unsupported | `input_invalid(kind=unsupported_import_form)`。 | `src/py2cpp.py:4693`, `test/unit/test_py2cpp_features.py:596` |
-| `from M import *` | unsupported | `input_invalid(kind=unsupported_import_form)`。 | `src/py2cpp.py:4686`, `test/unit/test_py2cpp_features.py:618` |
+| `from M import *` | partial | wildcard import を受理して変換継続。静的な公開シンボル検証は限定的。 | `src/pytra/compiler/east_parts/core.py:4427`, `src/py2cpp.py:6322`, `tools/check_yanesdk_py2cpp_smoke.py:1` |
 | 未解決モジュール import | unsupported | `input_invalid(kind=missing_module)`。 | `test/unit/test_py2cpp_features.py:544` |
 | import 束縛重複 | unsupported | `input_invalid(kind=duplicate_binding)`。 | `test/unit/test_py2cpp_features.py:645`, `test/unit/test_py2cpp_features.py:675` |
 | `from M import S` 後の `M.T` 参照 | unsupported | `input_invalid(kind=missing_symbol)` 扱い。 | `test/unit/test_py2cpp_features.py:732` |

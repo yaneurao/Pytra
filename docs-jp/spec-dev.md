@@ -25,7 +25,8 @@
 `src/pytra/` は selfhost を含む共通 Python ライブラリの正本です。  
 `_` で始まる名前は内部実装扱いとし、以下を公開APIとして扱います。
 
-- トランスパイル対象コードでの標準モジュール直接 import は禁止します。
+- トランスパイル対象コードでの標準モジュール直接 import は原則非推奨とし、`pytra.std.*` 明示 import を推奨します。
+- 互換 shim が存在する標準モジュール（`math` / `random` / `timeit` / `traceback` / `typing` / `enum` など）は、変換時に `pytra.std.*` へ正規化可能です。
 - import は `pytra.*` とユーザー自作モジュール（`.py`）を許可します。
 
 - `pytra.utils.assertions`
@@ -41,6 +42,17 @@
 - `pytra.std.typing`
   - 型名: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar`
+- `pytra.std.math`
+  - 定数: `pi`, `e`
+  - 関数: `sqrt`, `sin`, `cos`, `tan`, `exp`, `log`, `log10`, `fabs`, `floor`, `ceil`, `pow`
+- `pytra.std.time`
+  - 関数: `perf_counter`
+- `pytra.std.timeit`
+  - 関数: `default_timer`
+- `pytra.std.random`
+  - 関数: `seed`, `random`, `randint`
+- `pytra.std.traceback`
+  - 関数: `format_exc`
 - `pytra.std.os`
   - 変数: `path`（`join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`）
   - 関数: `getcwd`, `mkdir`, `makedirs`
@@ -61,6 +73,10 @@
   - 関数: `write_rgb_png`
 - `pytra.utils.gif`
   - 関数: `grayscale_palette`, `save_gif`
+- `pytra.utils.browser`
+  - 変数/クラス: `document`, `window`, `DOMEvent`, `Element`, `CanvasRenderingContext`
+- `pytra.utils.browser.widgets.dialog`
+  - クラス: `Dialog`, `EntryDialog`, `InfoDialog`
 - `pytra.compiler.east`
   - クラス/定数: `EastBuildError`, `BorrowKind`, `INT_TYPES`, `FLOAT_TYPES`
   - 関数: `convert_source_to_east`, `convert_source_to_east_self_hosted`, `convert_source_to_east_with_backend`, `convert_path`, `render_east_human_cpp`, `main`
@@ -158,7 +174,7 @@
 - `from module import symbol` は EAST の `meta.qualified_symbol_refs`（`QualifiedSymbolRef[]`）へ正規化し、backend 手前で alias 解決を完了させます。
 - `meta.import_modules` / `meta.import_symbols` は互換用途として残し、正本から導出します。
 - `import module as alias` は `alias.attr(...)` を `module.attr(...)` として解決します。
-- `from module import *` は未対応です。
+- `from module import *` は `binding_kind=wildcard` として保持し、変換を継続します。
 - 相対 import（`from .mod import x`）は現状未対応です。検出時は `input_invalid` として終了します。
 - `pytra` 名前空間は予約です。入力ルート配下の `pytra.py` / `pytra/__init__.py` は衝突として `input_invalid` を返します。
 - ユーザーモジュール探索は「入力ファイルの親ディレクトリ基準」で行います（`foo.bar` -> `foo/bar.py` または `foo/bar/__init__.py`）。
@@ -168,6 +184,9 @@
 主な補助モジュール実装:
 
 - `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp`
+- `src/runtime/cpp/pytra/std/random.h`, `src/runtime/cpp/pytra/std/random.cpp`
+- `src/runtime/cpp/pytra/std/timeit.h`, `src/runtime/cpp/pytra/std/timeit.cpp`
+- `src/runtime/cpp/pytra/std/traceback.h`, `src/runtime/cpp/pytra/std/traceback.cpp`
 - `src/runtime/cpp/pytra/std/pathlib.h`, `src/runtime/cpp/pytra/std/pathlib.cpp`
 - `src/runtime/cpp/pytra/std/time.h`, `src/runtime/cpp/pytra/std/time.cpp`
 - `src/runtime/cpp/pytra/std/dataclasses.h`, `src/runtime/cpp/pytra/std/dataclasses.cpp`
@@ -178,6 +197,8 @@
 - `src/runtime/cpp/pytra/utils/png.h`, `src/runtime/cpp/pytra/utils/png.cpp`
 - `src/runtime/cpp/pytra/utils/gif.h`, `src/runtime/cpp/pytra/utils/gif.cpp`
 - `src/runtime/cpp/pytra/utils/assertions.h`, `src/runtime/cpp/pytra/utils/assertions.cpp`
+- `src/runtime/cpp/pytra/utils/browser.h`, `src/runtime/cpp/pytra/utils/browser.cpp`
+- `src/runtime/cpp/pytra/utils/browser/widgets/dialog.h`, `src/runtime/cpp/pytra/utils/browser/widgets/dialog.cpp`
 - `src/runtime/cpp/pytra/built_in/py_runtime.h`
 
 `src/runtime/cpp/pytra/built_in/` の位置づけ:

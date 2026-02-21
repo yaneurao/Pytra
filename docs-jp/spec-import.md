@@ -48,7 +48,7 @@ namespace的なものを変数名のprefixとしてくっつけておくとい�
 
 ## 追記: 懸念事項
 
-- 現行仕様（`docs-jp/spec-dev.md`）では `from module import *` は未対応。ここを先に対応対象にするか、`input_invalid` を維持するかを明示したほうがよい。
+- 現行 `py2cpp` では `from module import *` は受理済み（`binding_kind=wildcard`）で、相対 import は未対応。
 - `#include` だけでは C++ 上の可視性制御はできないため、`from X import Y` の制約は変換器の名前解決で保証する必要がある。
 - `from X import Y` で許可するシンボル種別（関数/クラス/定数/変数）と、`X.Y` 参照の扱い（許可/不許可）を仕様で固定する必要がある。
 - import 名とローカル変数名が衝突したときの優先順位（ローカル/引数/import alias/builtin）を明文化しないと、ターゲット言語ごとに挙動差が出る。
@@ -62,7 +62,7 @@ namespace的なものを変数名のprefixとしてくっつけておくとい�
 - `import M as A`
 - `from M import S`
 - `from M import S as A`
-- 第一段階では `from M import *` は未対応として `input_invalid` を維持する。
+- 第一段階では `from M import *` を受理し、`ImportBinding(binding_kind=wildcard)` として保持する。
 - 第一段階では相対 import（`from .m import x`）も未対応として `input_invalid` を維持する。
 
 ### 1. 依存解析フェーズの入力データ構造を固定する
@@ -157,7 +157,7 @@ auto x = pytra_mod_foo__bar::add(1, 2);
 - `import M` / `import M as A` / `from M import S` / `from M import S as A`
 - 同名 symbol が別モジュールに存在しても完全修飾で衝突しないこと
 - 異常系:
-- `from M import *`（第一段階では `input_invalid`）
+- `from M import *`（受理。`binding_kind=wildcard` として保持）
 - `from .m import x`（第一段階では `input_invalid`）
 - 存在しないモジュール/シンボル
 - 同名 alias 重複
@@ -227,7 +227,7 @@ QualifiedSymbolRef
 - `from M import S as A` は `A` を直接出力せず、参照時に `ns_of(M)::S` へ正規化する。
 - single-file / multi-file で同一の `module_namespace_map` を使い、解決規則差を作らない。
 - エラー方針:
-- `from M import *`、相対 import、未解決モジュール、未解決シンボル、同名重複は `input_invalid`。
+- 相対 import、未解決モジュール、未解決シンボル、同名重複は `input_invalid`。
 
 ### 2. Rust（`src/py2rs.py`）
 

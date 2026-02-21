@@ -67,10 +67,29 @@ def main() -> int:
         action="store_true",
         help="also run --multi-file check for sample files that contain import/from",
     )
+    ap.add_argument(
+        "--check-yanesdk-smoke",
+        action="store_true",
+        help="also run reduced Yanesdk smoke cases (library + one game) when sources exist",
+    )
     args = ap.parse_args()
 
     fixture_files = sorted((ROOT / "test" / "fixtures").rglob("*.py"))
     sample_files = sorted((ROOT / "sample" / "py").glob("*.py"))
+    yanesdk_files: list[Path] = []
+    if args.check_yanesdk_smoke:
+        lib = ROOT / "Yanesdk" / "yanesdk" / "yanesdk.py"
+        if lib.exists():
+            yanesdk_files.append(lib)
+        docs_games: list[Path] = []
+        docs_root = ROOT / "Yanesdk" / "docs"
+        if docs_root.exists():
+            for p in sorted(docs_root.rglob("*.py")):
+                if p.name == "yanesdk.py":
+                    continue
+                docs_games.append(p)
+        if len(docs_games) > 0:
+            yanesdk_files.append(docs_games[0])
     expected_fails = set() if args.include_expected_failures else DEFAULT_EXPECTED_FAILS
 
     fails: list[tuple[str, str]] = []
@@ -79,7 +98,7 @@ def main() -> int:
     total = 0
     with tempfile.TemporaryDirectory() as tmpdir:
         out = Path(tmpdir) / "out.cpp"
-        for src in fixture_files + sample_files:
+        for src in fixture_files + sample_files + yanesdk_files:
             rel = str(src.relative_to(ROOT))
             if rel in expected_fails:
                 skipped += 1

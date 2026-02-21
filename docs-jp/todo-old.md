@@ -4,6 +4,34 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+## 2026-02-22 完了: P0 Yanesdk（library + game）を py2cpp で通す最短経路
+
+1. [x] `Yanesdk` 向け前処理方針を確定した。
+   - [x] `from yanesdk import *` は wildcard import として受理し、変換器側で import メタを保持する方針にした。
+   - [x] `# type:ignore` はコメントとして無視する方針にした（前処理での除去は不要）。
+2. [x] `Yanesdk/docs/*/yanesdk.py` 重複配置の扱いを確定した。
+   - [x] 調査/変換は canonical 正本 `Yanesdk/yanesdk/yanesdk.py` を優先する。
+   - [x] 重複コピーは source を変更せず除外運用とした。
+3. [x] 成功条件を達成した。
+   - [x] `library 1本 + game 7本` が `py2cpp.py` を通ることを確認。
+   - [x] `tools/check_yanesdk_py2cpp_smoke.py` を追加し、`checked=8 ok=8 fail=0` を確認。
+
+## 2026-02-22 完了: P2 受け入れテスト追加（Yanesdk由来）
+
+1. [x] 最小 fixture を追加・充足した。
+   - [x] BOM付き `from ... import ...` (`test/fixtures/imports/bom_from_import.py`)
+   - [x] `# type:ignore` 付き `from-import` (`test/fixtures/imports/type_ignore_from_import.py`)
+   - [x] `**`（既存）
+   - [x] `\` 行継続（既存）
+   - [x] トップレベル式文（既存）
+   - [x] class body `pass` (`test/fixtures/core/class_body_pass.py`)
+   - [x] `yield`（既存）
+   - [x] nested `def`（既存）
+   - [x] `obj. attr` (`test/fixtures/core/obj_attr_space.py`)
+   - [x] class 内 `X = 0,` (`test/fixtures/core/class_tuple_assign.py`)
+2. [x] `tools/check_py2cpp_transpile.py` に Yanesdk 縮小ケース群（`--check-yanesdk-smoke`）を追加した。
+3. [x] `Yanesdk` 実ファイル smoke テストを追加した（`tools/check_yanesdk_py2cpp_smoke.py`）。
+
 ## 2026-02-22 完了: P0-URGENT selfhost stage2 三項演算子破損（`(? : )`）修正
 
 1. [x] 再現手順を固定し、`tools/build_selfhost.py` + `tools/build_selfhost_stage2.py` のフル再生成で検証する運用に統一した。

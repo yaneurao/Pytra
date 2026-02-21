@@ -259,6 +259,19 @@ def f() -> float:
 
         self.assertIn("return pytra::std::time::perf_counter();", cpp)
 
+    def test_dynamic_tuple_index_falls_back_to_py_at(self) -> None:
+        src = """def pick(i: int) -> object:
+    t: tuple[int, int, int] = (10, 20, 30)
+    return t[i]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "tuple_dynamic_index.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("py_at(t, py_to_int64(i))", cpp)
+
     def test_dict_get_on_object_value_dict_int_uses_typed_wrapper(self) -> None:
         src = """def f(d: dict[str, object]) -> int:
     x: int = d.get("k", 3)
