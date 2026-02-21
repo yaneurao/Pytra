@@ -50,6 +50,7 @@
    - [x] `_render_call_fallback` の `*.append` 分岐を helper（`_render_append_fallback_call`）へ分離し、`_render_append_call_object_method` と型変換ロジックを共通化した。
    - [x] `Call(Attribute)` owner 解決前処理（owner/module/type/attr）を helper（`_resolve_call_attribute_context`）へ分離し、`_render_call_attribute` 本体を縮退した。
    - [x] `Call(Attribute)` の object-method 分岐に hook（`on_render_object_method`）を追加し、`_render_call_attribute` から hook 優先で描画できるようにした（selfhost 互換のため `_render_call_object_method` フォールバックは残置）。
+   - [x] `Call(Attribute)` の module-method 分岐に hook（`on_render_module_method`）を追加し、`_render_call_module_method` から hook 優先で描画できるようにした（selfhost 互換のため `py2cpp.py` 側フォールバックは残置）。
    - [x] `_render_call_object_method` の文字列系分岐を helper（`_render_string_object_method`）へ分離し、本体の条件分岐を縮退した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
@@ -73,8 +74,10 @@
    - [x] `Function/Class/Block` open/close 出力（`emit_function_open` / `emit_ctor_open` / `emit_dtor_open` / `emit_class_open` / `emit_class_close` / `emit_block_close`）を `syntax_line` / `syntax_text` 経由へ統一した。
 6. [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
    - [x] object-method（`strip/lstrip/rstrip/startswith/endswith/replace/find/rfind/...`）の C++ 固有分岐用 hook（`cpp_hooks.on_render_object_method`）を追加し、段階的に `py2cpp.py` 本体から分離する導線を作成した。
+   - [x] module-method（`module.func(...)` 解決）の C++ 固有分岐用 hook（`cpp_hooks.on_render_module_method`）を追加し、段階的に `py2cpp.py` 本体から分離する導線を作成した。
 7. [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
    - [x] `Function/Class` のヘッダ/終端出力を `syntax_line` / `syntax_text` へ寄せ、文字列直書き依存を削減した（selfhost互換のため呼び出しは `CppEmitter` 側ラッパで維持）。
+   - [x] `_cpp_expr_to_module_name` を `CodeEmitter` 側へ移管し、hook 実装から共通 helper を参照する形に統一した。
 8. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
 
 ## P2: Any/object 境界の整理

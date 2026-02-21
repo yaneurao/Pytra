@@ -336,6 +336,37 @@ def on_render_call(
     return None
 
 
+def on_render_module_method(
+    emitter: Any,
+    module_name: str,
+    attr: str,
+    rendered_args: list[str],
+    rendered_kwargs: dict[str, str],
+    arg_nodes: list[Any],
+) -> str | None:
+    """module.method(...) の C++ 固有分岐を処理する。"""
+    merged_args = emitter.merge_call_args(rendered_args, rendered_kwargs)
+    call_args = merged_args
+    owner_mod_norm = emitter._normalize_runtime_module_name(module_name)
+    if owner_mod_norm in emitter.module_namespace_map:
+        ns = emitter.module_namespace_map[owner_mod_norm]
+        if ns != "":
+            call_args = emitter._coerce_args_for_module_function(module_name, attr, merged_args, arg_nodes)
+            return ns + "::" + attr + "(" + ", ".join(call_args) + ")"
+    mapped = emitter._lookup_module_attr_runtime_call(owner_mod_norm, attr)
+    if mapped != "" and _looks_like_runtime_symbol(mapped):
+        if emitter._contains_text(mapped, "::"):
+            call_args = emitter._coerce_args_for_module_function(module_name, attr, merged_args, arg_nodes)
+        else:
+            call_args = merged_args
+        return mapped + "(" + ", ".join(call_args) + ")"
+    ns = emitter._module_name_to_cpp_namespace(owner_mod_norm)
+    if ns != "":
+        call_args = emitter._coerce_args_for_module_function(module_name, attr, merged_args, arg_nodes)
+        return ns + "::" + attr + "(" + ", ".join(call_args) + ")"
+    return None
+
+
 def on_render_object_method(
     emitter: Any,
     owner_type: str,
@@ -469,6 +500,7 @@ def build_cpp_hooks() -> dict[str, Any]:
     """C++ エミッタへ注入する hooks dict を構築する。"""
     hooks = EmitterHooks()
     hooks.add("on_render_call", on_render_call)
+    hooks.add("on_render_module_method", on_render_module_method)
     hooks.add("on_render_object_method", on_render_object_method)
     hooks.add("on_render_binop", on_render_binop)
     hooks.add("on_render_expr_kind", on_render_expr_kind)

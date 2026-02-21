@@ -1098,12 +1098,6 @@ class CppEmitter(CodeEmitter):
         """C++ ブロック終端を profile テンプレート経由で出力する。"""
         self.emit(self.syntax_text("block_close", "}"))
 
-    def _cpp_expr_to_module_name(self, expr: str) -> str:
-        """`pytra::std::x` 形式の C++ 式を `pytra.std.x` へ戻す。"""
-        if expr.startswith("pytra::"):
-            return expr.replace("::", ".")
-        return ""
-
     def _module_source_path_for_name(self, module_name: str) -> Path:
         """`pytra.*` モジュール名から runtime source `.py` パスを返す（未解決時は空 Path）。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
@@ -3632,6 +3626,9 @@ class CppEmitter(CodeEmitter):
         arg_nodes: list[Any],
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
+        hook_rendered = self.hook_on_render_module_method(owner_mod, attr, args, kw, arg_nodes)
+        if isinstance(hook_rendered, str) and hook_rendered != "":
+            return hook_rendered
         merged_args = self.merge_call_args(args, kw)
         call_args = merged_args
         owner_mod_norm = self._normalize_runtime_module_name(owner_mod)
