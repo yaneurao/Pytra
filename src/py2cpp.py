@@ -3575,6 +3575,24 @@ class CppEmitter(CodeEmitter):
                 return append_rendered
         return None
 
+    def _render_call_class_method(
+        self,
+        owner_t: str,
+        attr: str,
+        fn: dict[str, Any],
+        args: list[str],
+        kw: dict[str, str],
+        arg_nodes: list[Any],
+    ) -> str | None:
+        """`Class.method(...)` 分岐を処理する。"""
+        method_sig = self._class_method_sig(owner_t, attr)
+        if len(method_sig) == 0:
+            return None
+        call_args = self.merge_call_args(args, kw)
+        call_args = self._coerce_args_for_class_method(owner_t, attr, call_args, arg_nodes)
+        fn_expr = self._render_attribute_expr(fn)
+        return f"{fn_expr}({_join_str_list(', ', call_args)})"
+
     def _render_append_call_object_method(
         self,
         owner_types: list[str],
@@ -3630,12 +3648,9 @@ class CppEmitter(CodeEmitter):
         object_rendered = self._render_call_object_method(owner_t, owner_expr, attr, args)
         if object_rendered is not None and object_rendered != "":
             return object_rendered
-        method_sig = self._class_method_sig(owner_t, attr)
-        if len(method_sig) > 0:
-            call_args = self.merge_call_args(args, kw)
-            call_args = self._coerce_args_for_class_method(owner_t, attr, call_args, arg_nodes)
-            fn_expr = self._render_attribute_expr(fn)
-            return f"{fn_expr}({_join_str_list(', ', call_args)})"
+        class_rendered = self._render_call_class_method(owner_t, attr, fn, args, kw, arg_nodes)
+        if class_rendered is not None and class_rendered != "":
+            return class_rendered
         return None
 
     def _coerce_call_arg(self, arg_txt: str, arg_node: Any, target_t: str) -> str:
