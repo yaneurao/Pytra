@@ -464,10 +464,14 @@ def on_render_module_method(
 ) -> str | None:
     """module.method(...) の C++ 固有分岐を処理する。"""
     merged_args = emitter.merge_call_args(rendered_args, rendered_kwargs)
-    call_args = merged_args
     owner_mod_norm = emitter._normalize_runtime_module_name(module_name)
+    render_namespaced = getattr(emitter, "_render_namespaced_module_call", None)
     if owner_mod_norm in emitter.module_namespace_map:
         ns = emitter.module_namespace_map[owner_mod_norm]
+        if callable(render_namespaced):
+            rendered = render_namespaced(module_name, ns, attr, merged_args, arg_nodes)
+            if isinstance(rendered, str) and rendered != "":
+                return rendered
         if ns != "":
             call_args = emitter._coerce_args_for_module_function(module_name, attr, merged_args, arg_nodes)
             return ns + "::" + attr + "(" + ", ".join(call_args) + ")"
@@ -479,6 +483,10 @@ def on_render_module_method(
             call_args = merged_args
         return mapped + "(" + ", ".join(call_args) + ")"
     ns = emitter._module_name_to_cpp_namespace(owner_mod_norm)
+    if callable(render_namespaced):
+        rendered = render_namespaced(module_name, ns, attr, merged_args, arg_nodes)
+        if isinstance(rendered, str) and rendered != "":
+            return rendered
     if ns != "":
         call_args = emitter._coerce_args_for_module_function(module_name, attr, merged_args, arg_nodes)
         return ns + "::" + attr + "(" + ", ".join(call_args) + ")"

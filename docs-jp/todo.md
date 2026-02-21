@@ -65,6 +65,7 @@
    - [x] `Call(Attribute)` の object/class 分岐を `_render_call_attribute_non_module` へ切り出し、`_render_call_attribute` 本体を module 解決 + dispatch へ縮退した。
    - [x] `from-import` 解決と `module.method(...)` の namespace 呼び出しを `_render_namespaced_module_call` へ統合し、call/attribute 周辺の重複分岐を追加削減した。
    - [x] `Attribute` 式の self/class/module 基本分岐を `CodeEmitter` helper（`render_attribute_self_or_class_access` / `render_attribute_module_access`）へ抽出し、`py2cpp.py` と `cpp_hooks.py` の重複を追加削減した。
+   - [x] `cpp_hooks.on_render_module_method` でも `CppEmitter._render_namespaced_module_call` を優先利用し、hooks 側の namespace 分岐重複を削減した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [x] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
