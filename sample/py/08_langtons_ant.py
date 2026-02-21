@@ -23,12 +23,7 @@ def run_08_langtons_ant() -> None:
 
     start = perf_counter()
 
-    grid: list[list[int]] = []
-    for gy in range(h):
-        row: list[int] = []
-        for gx in range(w):
-            row.append(0)
-        grid.append(row)
+    grid: list[list[int]] = [[0] * w for _ in range(h)]
     x = w // 2
     y = h // 2
     d = 0

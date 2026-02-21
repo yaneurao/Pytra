@@ -106,8 +106,7 @@ def tokenize(lines: list[str]) -> list[Token]:
 
 class Parser:
     def new_expr_nodes(self) -> list[ExprNode]:
-        nodes: list[ExprNode] = []
-        return nodes
+        return []
 
     def __init__(self, tokens: list[Token]) -> None:
         self.tokens: list[Token] = tokens
