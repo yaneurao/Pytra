@@ -1092,10 +1092,6 @@ class CppEmitter(CodeEmitter):
         """C++ ブロック終端を出力する。"""
         self.emit("}")
 
-    def _is_std_runtime_call(self, runtime_call: str) -> bool:
-        """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
-        return runtime_call[0:5] == "std::" or runtime_call[0:7] == "::std::"
-
     def _cpp_expr_to_module_name(self, expr: str) -> str:
         """`pytra::std::x` 形式の C++ 式を `pytra.std.x` へ戻す。"""
         if expr.startswith("pytra::"):
