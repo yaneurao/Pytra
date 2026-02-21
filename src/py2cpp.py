@@ -3657,15 +3657,39 @@ class CppEmitter(CodeEmitter):
         merged_args = self.merge_call_args(args, kw)
         owner_mod_norm = self._normalize_runtime_module_name(owner_mod)
         if owner_mod_norm in self.module_namespace_map:
-            ns = self.module_namespace_map[owner_mod_norm]
-            if ns != "":
-                call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
-                return f"{ns}::{attr}({_join_str_list(', ', call_args)})"
-        ns = self._module_name_to_cpp_namespace(owner_mod_norm)
-        if ns != "":
-            call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
-            return f"{ns}::{attr}({_join_str_list(', ', call_args)})"
+            mapped = self._render_call_module_method_with_namespace(
+                owner_mod,
+                attr,
+                self.module_namespace_map[owner_mod_norm],
+                merged_args,
+                arg_nodes,
+            )
+            if mapped is not None:
+                return mapped
+        fallback = self._render_call_module_method_with_namespace(
+            owner_mod,
+            attr,
+            self._module_name_to_cpp_namespace(owner_mod_norm),
+            merged_args,
+            arg_nodes,
+        )
+        if fallback is not None:
+            return fallback
         return None
+
+    def _render_call_module_method_with_namespace(
+        self,
+        owner_mod: str,
+        attr: str,
+        ns_name: str,
+        merged_args: list[str],
+        arg_nodes: list[Any],
+    ) -> str | None:
+        """`namespace::func(...)` 形式の module call を共通描画する。"""
+        if ns_name == "":
+            return None
+        call_args = self._coerce_args_for_module_function(owner_mod, attr, merged_args, arg_nodes)
+        return f"{ns_name}::{attr}({_join_str_list(', ', call_args)})"
 
     def _render_call_class_method(
         self,

@@ -61,6 +61,7 @@
    - [x] `module.method(...)` namespace 解決 helper の `CodeEmitter` 移管を検証し、selfhost C++ の静的束縛で派生専用メソッド呼び出しが崩れることを確認したため、共通化は見送り（`py2cpp.py` / `cpp_hooks.py` 側の局所実装を維持）とした。
    - [x] 引数型強制の重複ロジック（`_coerce_args_for_known_function` / `_coerce_args_for_class_method`）を `_coerce_args_by_signature` へ統合し、`Call` 系分岐の重複を削減した。
    - [x] `isinstance` 変換の型マップ分岐（`Call(Name)` / fallback）を `_render_isinstance_type_check` へ統合し、`Call` 分岐の重複を削減した。
+   - [x] `module.method(...)` の namespace 呼び出し重複を `_render_call_module_method_with_namespace` へ統合し、`_render_call_module_method` の重複分岐を削減した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [x] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
