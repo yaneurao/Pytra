@@ -1,4 +1,4 @@
-# このファイルは `test/fixtures/typing/any_none.py` のテスト/実装コードです。
+# This file contains test/implementation code for `test/fixtures/typing/any_none.py`.
 
 from typing import Any
 from pytra.utils.assertions import py_assert_all, py_assert_eq, py_assert_true

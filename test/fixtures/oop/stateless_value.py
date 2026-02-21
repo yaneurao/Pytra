@@ -1,4 +1,4 @@
-# 値型最適化候補のテスト（インスタンス状態なし）。
+# Test candidate for value-type optimization (no instance state).
 
 
 from pytra.utils.assertions import py_assert_stdout

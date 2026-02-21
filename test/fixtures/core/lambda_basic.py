@@ -1,4 +1,4 @@
-# このファイルは `test/fixtures/core/lambda_basic.py` のテストコードです。
+# This file contains test code for `test/fixtures/core/lambda_basic.py`.
 
 from pytra.utils.assertions import py_assert_all, py_assert_eq
 

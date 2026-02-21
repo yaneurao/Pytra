@@ -1,5 +1,5 @@
-# このファイルは `test/fixtures/gc_reassign.py` のテスト/実装コードです。
-# a = b の再代入で参照が切れたオブジェクトが破棄されることを確認します。
+# This file contains test/implementation code for `test/fixtures/gc_reassign.py`.
+# Verify that reassignment `a = b` destroys the object whose reference was dropped.
 
 
 from pytra.utils.assertions import py_assert_stdout

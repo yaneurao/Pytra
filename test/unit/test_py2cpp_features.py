@@ -1,4 +1,4 @@
-"""py2cpp の主要互換機能を実行レベルで確認する回帰テスト。"""
+"""Regression tests that verify major py2cpp compatibility features at runtime."""
 
 from __future__ import annotations
 
@@ -1100,8 +1100,8 @@ if __name__ == "__main__":
                 label=f"compile fixture {stem}",
             )
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
-            # fixture が相対パスで画像を書いてもリポジトリ直下を汚さないように、
-            # 実行時の cwd は一時ディレクトリに固定する。
+            # Keep repository root clean even if a fixture writes images with relative paths,
+            # by fixing runtime cwd to a temporary directory.
             print(f"  [fixture:{stem}] run", flush=True)
             run = self._run_subprocess_with_timeout(
                 [str(out_exe)],

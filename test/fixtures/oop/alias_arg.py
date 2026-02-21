@@ -1,5 +1,5 @@
-# 同一インスタンス共有のテスト。
-# 参照セマンティクスが壊れると a,b の値が一致しない。
+# Test for sharing the same instance.
+# If reference semantics break, values in a and b diverge.
 
 
 from pytra.utils.assertions import py_assert_stdout

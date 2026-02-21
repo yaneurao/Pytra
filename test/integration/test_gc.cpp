@@ -1,6 +1,6 @@
-// このファイルは `test/test_gc.cpp` のテスト/実装コードです。
-// 読み手が責務を把握しやすいように、日本語コメントを追記しています。
-// 変更時は、スレッド安全性と参照カウント整合性を必ず確認してください。
+// This file contains test/implementation code for `test/test_gc.cpp`.
+// Additional comments are included to make responsibilities easier to understand.
+// When modifying this file, always verify thread safety and reference-count consistency.
 
 #include <atomic>
 #include <cassert>
@@ -12,7 +12,7 @@
 
 namespace gc = pytra::gc;
 
-// 単純な参照対象オブジェクト。デストラクト回数を検証しやすくする。
+// Simple referenced object used to validate destructor call counts.
 struct TestLeaf : public gc::PyObj {
     static std::atomic<int> destroyed;
 
@@ -34,7 +34,7 @@ struct TestPair : public gc::PyObj {
 
     ~TestPair() override { destroyed.fetch_add(1, std::memory_order_relaxed); }
 
-    // 親オブジェクトが破棄される際に、子参照をdecrefして連鎖解放する。
+    // When the parent object is destroyed, decref child references to trigger chained release.
     void rc_release_refs() override {
         gc::decref(left);
         gc::decref(right);
@@ -106,7 +106,7 @@ void test_multithread_atomic_rc() {
     std::vector<std::thread> threads;
     threads.reserve(kThreads);
 
-    // 複数スレッドで同じオブジェクトをincref/decrefし、原子性を確認する。
+    // Increment/decrement references to the same object from multiple threads to verify atomicity.
     for (int t = 0; t < kThreads; ++t) {
         threads.emplace_back([shared]() {
             for (int i = 0; i < kIters; ++i) {

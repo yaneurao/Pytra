@@ -1,4 +1,4 @@
-"""CppEmitter.cpp_type/_cpp_type_text の回帰テスト。"""
+"""Regression tests for CppEmitter.cpp_type/_cpp_type_text."""
 
 from __future__ import annotations
 

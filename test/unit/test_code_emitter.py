@@ -1,4 +1,4 @@
-"""CodeEmitter の共通ユーティリティ回帰テスト。"""
+"""Regression tests for shared CodeEmitter utilities."""
 
 from __future__ import annotations
 
@@ -231,8 +231,8 @@ class CodeEmitterTest(unittest.TestCase):
         )
         self.assertEqual(em.render_cond(None), "false")
 
-        # Base CodeEmitter の render_expr は空文字を返すため、
-        # repr fallback 経路（selfhost 安定化用）をここで固定する。
+        # Base CodeEmitter.render_expr returns an empty string, so
+        # lock the repr-fallback path here (for selfhost stabilization).
         em_base = CodeEmitter({})
         self.assertEqual(
             em_base.render_cond(
