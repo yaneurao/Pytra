@@ -3233,16 +3233,10 @@ class CppEmitter(CodeEmitter):
             length = args[0] if len(args) >= 1 else "0"
             byteorder = args[1] if len(args) >= 2 else '"little"'
             return f"py_int_to_bytes({owner}, {length}, {byteorder})"
-        if runtime_call == "py_join" and len(args) == 1:
-            owner = ""
-            owner_obj = expr.get("runtime_owner")
-            owner_node = self.any_to_dict_or_empty(owner_obj)
-            if len(owner_node) > 0:
-                owner = self.render_expr(owner_obj)
-            elif self._node_kind_from_dict(fn) == "Attribute":
-                owner = self.render_expr(fn.get("value"))
-            if owner != "":
-                return f"str({owner}).join({args[0]})"
+        if runtime_call == "py_join":
+            join_rendered = self._render_builtin_join_call(owner_expr, args)
+            if join_rendered is not None:
+                return str(join_rendered)
         if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
             if len(args) == 0:
                 return '::std::runtime_error("error")'
@@ -3317,6 +3311,16 @@ class CppEmitter(CodeEmitter):
         if len(args) == 2 and builtin_name == "int":
             return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
         return None
+
+    def _render_builtin_join_call(
+        self,
+        owner_expr: str,
+        args: list[str],
+    ) -> str | None:
+        """BuiltinCall の `runtime_call=py_join` 分岐を描画する。"""
+        if len(args) != 1 or owner_expr == "":
+            return None
+        return f"str({owner_expr}).join({args[0]})"
 
     def _render_collection_constructor_call(
         self,
