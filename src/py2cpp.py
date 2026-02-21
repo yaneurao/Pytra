@@ -3652,36 +3652,6 @@ class CppEmitter(CodeEmitter):
             return f"{ns}::{attr}({_join_str_list(', ', call_args)})"
         return None
 
-    def _merge_call_kw_values(self, args: list[str], kw_values: list[str]) -> list[str]:
-        """`Call` ノード用に `args + kw_values` を順序保持で結合する。"""
-        out: list[str] = []
-        i = 0
-        while i < len(args):
-            out.append(args[i])
-            i += 1
-        if len(kw_values) == 0:
-            return out
-        i = 0
-        while i < len(kw_values):
-            out.append(kw_values[i])
-            i += 1
-        return out
-
-    def _merge_call_arg_nodes(self, arg_nodes: list[Any], kw_nodes: list[Any]) -> list[Any]:
-        """`Call` ノード用に位置引数ノードとキーワード値ノードを結合する。"""
-        out: list[Any] = []
-        i = 0
-        while i < len(arg_nodes):
-            out.append(arg_nodes[i])
-            i += 1
-        if len(kw_nodes) == 0:
-            return out
-        i = 0
-        while i < len(kw_nodes):
-            out.append(kw_nodes[i])
-            i += 1
-        return out
-
     def _render_call_object_method(
         self, owner_t: str, owner_expr: str, attr: str, args: list[str]
     ) -> str | None:
@@ -4618,8 +4588,8 @@ class CppEmitter(CodeEmitter):
                 name_or_attr_txt = str(name_or_attr)
             if name_or_attr_txt != "":
                 return name_or_attr_txt
-            merged_args = self._merge_call_kw_values(args, kw_values)
-            merged_arg_nodes = self._merge_call_arg_nodes(arg_nodes, kw_nodes)
+            merged_args = self.merge_call_kw_values(args, kw_values)
+            merged_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
             merged_args = self._coerce_args_for_known_function(fn_name, merged_args, merged_arg_nodes)
             return self._render_call_fallback(fn_name, merged_args)
         if kind == "RangeExpr":

@@ -108,6 +108,36 @@ class CodeEmitter:
             k += 1
         return out
 
+    def merge_call_kw_values(self, args: list[str], kw_values: list[str]) -> list[str]:
+        """`args + kw_values` を順序保持で結合する。"""
+        out: list[str] = []
+        i = 0
+        while i < len(args):
+            out.append(args[i])
+            i += 1
+        if len(kw_values) == 0:
+            return out
+        i = 0
+        while i < len(kw_values):
+            out.append(kw_values[i])
+            i += 1
+        return out
+
+    def merge_call_arg_nodes(self, arg_nodes: list[Any], kw_nodes: list[Any]) -> list[Any]:
+        """位置引数ノードとキーワード値ノードを順序保持で結合する。"""
+        out: list[Any] = []
+        i = 0
+        while i < len(arg_nodes):
+            out.append(arg_nodes[i])
+            i += 1
+        if len(kw_nodes) == 0:
+            return out
+        i = 0
+        while i < len(kw_nodes):
+            out.append(kw_nodes[i])
+            i += 1
+        return out
+
     def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:
         """`on_emit_stmt` フック。既定では何もしない。"""
         if "on_emit_stmt" in self.hooks:

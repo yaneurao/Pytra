@@ -144,6 +144,14 @@ class CodeEmitterTest(unittest.TestCase):
             ["a", "x", "y"],
         )
         self.assertEqual(
+            em.merge_call_kw_values(["a"], ["x", "y"]),
+            ["a", "x", "y"],
+        )
+        self.assertEqual(
+            em.merge_call_arg_nodes([{"k": 1}], ["n1", "n2"]),
+            [{"k": 1}, "n1", "n2"],
+        )
+        self.assertEqual(
             em._dict_stmt_list([{"x": 1}, 2, "s", {"y": 2}]),
             [{"x": 1}, {"y": 2}],
         )
