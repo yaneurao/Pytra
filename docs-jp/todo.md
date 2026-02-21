@@ -74,6 +74,7 @@
    - [x] `Function/Class/Block` open/close 出力（`emit_function_open` / `emit_ctor_open` / `emit_dtor_open` / `emit_class_open` / `emit_class_close` / `emit_block_close`）を `syntax_line` / `syntax_text` 経由へ統一した。
 6. [ ] C++ 固有差分（brace省略や range-mode）だけ hook 側で上書きする。
    - [x] object-method（`strip/lstrip/rstrip/startswith/endswith/replace/find/rfind/...`）の C++ 固有分岐用 hook（`cpp_hooks.on_render_object_method`）を追加し、段階的に `py2cpp.py` 本体から分離する導線を作成した。
+   - [x] object-method hook に `clear` / `append` 経路を追加し、`py2cpp.py` 側フォールバック依存を追加で縮退した（selfhost 互換のためフォールバックは残置）。
    - [x] module-method（`module.func(...)` 解決）の C++ 固有分岐用 hook（`cpp_hooks.on_render_module_method`）を追加し、段階的に `py2cpp.py` 本体から分離する導線を作成した。
 7. [ ] `FunctionDef` / `ClassDef` の共通テンプレート（open/body/close）を `CodeEmitter` 側に寄せる。
    - [x] `Function/Class` のヘッダ/終端出力を `syntax_line` / `syntax_text` へ寄せ、文字列直書き依存を削減した（selfhost互換のため呼び出しは `CppEmitter` 側ラッパで維持）。

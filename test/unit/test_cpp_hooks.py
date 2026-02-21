@@ -83,6 +83,14 @@ class _DummyEmitter:
             return "my::mod"
         return ""
 
+    def _render_append_call_object_method(
+        self, owner_types: list[str], owner_expr: str, rendered_args: list[str]
+    ) -> str | None:
+        _ = owner_types
+        if len(rendered_args) == 1:
+            return owner_expr + ".append(" + rendered_args[0] + ")"
+        return None
+
 
 class CppHooksTest(unittest.TestCase):
     def test_range_expr_render(self) -> None:
@@ -124,6 +132,16 @@ class CppHooksTest(unittest.TestCase):
         em = _DummyEmitter()
         rendered = on_render_object_method(em, "str", "s", "strip", [])
         self.assertEqual(rendered, "py_strip(s)")
+
+    def test_object_method_unknown_clear_render(self) -> None:
+        em = _DummyEmitter()
+        rendered = on_render_object_method(em, "unknown", "xs", "clear", [])
+        self.assertEqual(rendered, "xs.clear()")
+
+    def test_object_method_append_render(self) -> None:
+        em = _DummyEmitter()
+        rendered = on_render_object_method(em, "list[int64]", "xs", "append", ["x"])
+        self.assertEqual(rendered, "xs.append(x)")
 
     def test_module_method_prefers_namespace_map(self) -> None:
         em = _DummyEmitter()

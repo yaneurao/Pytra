@@ -378,6 +378,12 @@ def on_render_object_method(
     owner_types: list[str] = [owner_type]
     if emitter._contains_text(owner_type, "|"):
         owner_types = emitter.split_union(owner_type)
+    if owner_type == "unknown" and attr == "clear":
+        return owner_expr + ".clear()"
+    if attr == "append":
+        append_rendered = emitter._render_append_call_object_method(owner_types, owner_expr, rendered_args)
+        if isinstance(append_rendered, str) and append_rendered != "":
+            return append_rendered
     if attr in {"strip", "lstrip", "rstrip"}:
         if len(rendered_args) == 0:
             return "py_" + attr + "(" + owner_expr + ")"
