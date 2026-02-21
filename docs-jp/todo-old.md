@@ -68,7 +68,11 @@
 2. [x] import-graph 補助の selfhost 安全化を部分適用した。
    - [x] `src/py2cpp.py` の `_graph_cycle_dfs` で `list + list` 連結を明示 append へ置換した。
    - [x] `src/py2cpp.py` の `_validate_import_graph_or_raise` で `str.find` 前に明示 `str(...)` 変換を入れ、object 型崩れを回避した。
-3. [x] 回帰検証を実施した。
+   - [x] `tools/prepare_selfhost_source.py` で `_format_import_graph_report` のスタブ置換を除去し、selfhost 側で実実装を使うようにした（`_format_graph_list_section` は同時に同梱）。
+3. [x] `tools/prepare_selfhost_source.py` で `_extract_function_arg_types_from_python_source` スタブを除去した。
+   - [x] `src/py2cpp.py` の `_extract_function_signatures_from_python_source` を selfhost 変換で壊れにくい実装へ修正（変数衝突回避、明示初期化）。
+   - [x] `src/py2cpp.py` の `_extract_function_arg_types_from_python_source` を `dict.keys()` 反復の型崩れに耐える形へ修正。
+4. [x] 回帰検証を実施した。
    - [x] `python3 tools/build_selfhost.py`
    - [x] `python3 tools/build_selfhost_stage2.py --skip-stage1-build`
    - [x] `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`

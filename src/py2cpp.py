@@ -555,11 +555,25 @@ def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, 
     """EAST 化に失敗するモジュール用の関数シグネチャ簡易抽出。"""
     sigs = _extract_function_signatures_from_python_source(src_path)
     out: dict[str, list[str]] = {}
-    for fn_name in sigs:
-        sig = sigs[fn_name]
-        arg_types_obj = sig.get("arg_types")
+    fn_names_obj = sigs.keys()
+    fn_names: list[str] = []
+    if isinstance(fn_names_obj, list):
+        j = 0
+        while j < len(fn_names_obj):
+            name_obj = fn_names_obj[j]
+            if isinstance(name_obj, str):
+                fn_names.append(name_obj)
+            j += 1
+    i = 0
+    while i < len(fn_names):
+        fn_name_obj = fn_names[i]
+        i += 1
+        sig_obj = sigs.get(fn_name_obj)
+        if not isinstance(sig_obj, dict):
+            continue
+        arg_types_obj = sig_obj.get("arg_types")
         if isinstance(arg_types_obj, list):
-            out[fn_name] = arg_types_obj
+            out[fn_name_obj] = arg_types_obj
     return out
 
 

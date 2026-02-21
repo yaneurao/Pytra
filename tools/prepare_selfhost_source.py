@@ -227,21 +227,23 @@ def _replace_import_graph_helpers_for_selfhost(text: str) -> str:
             "    out[\"cycles\"] = []\n"
             "    out[\"user_module_files\"] = [str(entry_path)]\n"
             "    return out\n\n"
+            "def _format_graph_list_section(out: str, label: str, items: list[Any]) -> str:\n"
+            "    pass\n"
+            "    out2 = out + label + \":\\n\"\n"
+            "    if len(items) == 0:\n"
+            "        out2 += \"  (none)\\n\"\n"
+            "        return out2\n"
+            "    j = 0\n"
+            "    while j < len(items):\n"
+            "        val = items[j]\n"
+            "        if isinstance(val, str):\n"
+            "            val_txt = str(val)\n"
+            "            out2 += \"  - \" + val_txt + \"\\n\"\n"
+            "        j += 1\n"
+            "    return out2\n\n"
         )
         out = out[:ia] + stub_a + out[ja + 1 :]
 
-    start_b = "def _format_import_graph_report("
-    end_b = "\ndef _validate_import_graph_or_raise("
-    ib = out.find(start_b)
-    jb = out.find(end_b)
-    if ib >= 0 and jb > ib:
-        stub_b = (
-            "def _format_import_graph_report(analysis: dict[str, Any]) -> str:\n"
-            "    \"\"\"selfhost 最小互換: --dump-deps 表示を簡易化する。\"\"\"\n"
-            "    _ = analysis\n"
-            "    return \"graph:\\n  (selfhost minimal mode)\\n\"\n\n"
-        )
-        out = out[:ib] + stub_b + out[jb + 1 :]
     return out
 
 
@@ -255,23 +257,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
         j = out.find(end_marker)
         if i >= 0 and j > i:
             out = out[:i] + stub + out[j + 1 :]
-
-    repl(
-        "def _extract_function_arg_types_from_python_source(",
-        "\ndef load_cpp_profile(",
-        (
-            "def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, list[str]]:\n"
-            "    pass\n"
-            "    out: dict[str, list[str]] = {}\n"
-            "    src = str(src_path)\n"
-            "    if src.endswith(\"assertions.py\"):\n"
-            "        out[\"py_assert_stdout\"] = [\"list[str]\", \"Any\"]\n"
-            "        out[\"py_assert_eq\"] = [\"Any\", \"Any\", \"str\"]\n"
-            "        out[\"py_assert_all\"] = [\"list[bool]\", \"str\"]\n"
-            "        out[\"py_assert_true\"] = [\"bool\", \"str\"]\n"
-            "    return out\n\n"
-        ),
-    )
 
     return out
 
