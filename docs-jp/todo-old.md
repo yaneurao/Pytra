@@ -4,6 +4,17 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+## 2026-02-21 完了: CodeEmitter / Hooks 移管タスク一式（docs-jp/todo.md から移管）
+
+1. [x] P1 `CodeEmitter / Hooks` 移管（hook 注入・helper 抽出・profile/hook 優先化）を完了。
+2. [x] P1 `py2cpp` 縮退（`render_expr/emit_stmt/Call` 分岐の helper 化・重複削減）を完了。
+3. [x] P2 Any/object 境界の整理（過剰 boxing 抑制・既定値型整理・`std::any` 依存縮退）を完了。
+4. [x] P3 低優先の可読性改善（Python らしい記述への戻し）を完了。
+5. [x] 共通ディスパッチ再設計の最終段として、`on_render_expr_leaf` / `on_render_expr_complex` / `on_emit_stmt_kind` の注入点拡張を完了。
+   - [x] `JoinedStr/Lambda` を complex hook 経路へ追加。
+   - [x] `Expr/Return/Import/ImportFrom/Pass/Break/Continue` を stmt-kind hook 先行処理へ追加。
+   - [x] selfhost 差分検証（`mismatches=0`）を維持。
+
 ## 2026-02-21 完了: selfhost スタブ整理（multi-file 完了）
 
 1. [x] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理（P0）を完了した。
