@@ -5365,14 +5365,10 @@ def _split_top_level_union(text: str) -> list[str]:
 
 def _header_cpp_type_from_east(
     east_t: str,
-    ref_classes: set[str] | None = None,
-    class_names: set[str] | None = None,
+    ref_classes: set[str],
+    class_names: set[str],
 ) -> str:
     """EAST 型名を runtime header 向け C++ 型名へ変換する。"""
-    if ref_classes is None:
-        ref_classes = set()
-    if class_names is None:
-        class_names = set()
     t: str = east_t.strip()
     if t == "":
         return "object"
@@ -5458,9 +5454,9 @@ def _header_cpp_type_from_east(
     return t
 
 
-def _header_guard_from_path(path: Path) -> str:
+def _header_guard_from_path(path: str) -> str:
     """ヘッダパスから include guard を生成する。"""
-    src = str(path).replace("\\", "/")
+    src = path.replace("\\", "/")
     prefix1 = "src/runtime/cpp/pytra/"
     prefix2 = "runtime/cpp/pytra/"
     if src.startswith(prefix1):
@@ -5691,7 +5687,7 @@ def build_cpp_header_from_east(
     if has_std_uset:
         includes.append("#include <unordered_set>")
 
-    guard = _header_guard_from_path(output_path)
+    guard = _header_guard_from_path(str(output_path))
     lines: list[str] = []
     lines.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
     lines.append("// source: " + str(source_path))
@@ -6081,6 +6077,46 @@ def _rel_disp_for_graph(base: Path, p: Path) -> str:
     return p_txt
 
 
+def _graph_cycle_dfs(
+    key: str,
+    graph_adj: dict[str, list[str]],
+    key_to_disp: dict[str, str],
+    color: dict[str, int],
+    stack: list[str],
+    cycles: list[str],
+    cycle_seen: set[str],
+) -> None:
+    """import graph DFS で循環参照を収集する。"""
+    color[key] = 1
+    stack.append(key)
+    nxts = _dict_str_list_get(graph_adj, key)
+    i = 0
+    while i < len(nxts):
+        nxt = nxts[i]
+        c = color.get(nxt, 0)
+        if c == 0:
+            _graph_cycle_dfs(nxt, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
+        elif c == 1:
+            j = len(stack) - 1
+            while j >= 0 and stack[j] != nxt:
+                j -= 1
+            if j >= 0:
+                nodes = stack[j:] + [nxt]
+                disp_nodes: list[str] = []
+                k = 0
+                while k < len(nodes):
+                    dk = nodes[k]
+                    disp_nodes.append(key_to_disp.get(dk, dk))
+                    k += 1
+                cycle_txt = _join_str_list(" -> ", disp_nodes)
+                if cycle_txt not in cycle_seen:
+                    cycle_seen.add(cycle_txt)
+                    cycles.append(cycle_txt)
+        i += 1
+    stack.pop()
+    color[key] = 2
+
+
 def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
     root = entry_path.parent
@@ -6165,42 +6201,12 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     color: dict[str, int] = {}
     stack: list[str] = []
 
-    def _dfs(key: str) -> None:
-        color[key] = 1
-        stack.append(key)
-        nxts = _dict_str_list_get(graph_adj, key)
-        i = 0
-        while i < len(nxts):
-            nxt = nxts[i]
-            c = color.get(nxt, 0)
-            if c == 0:
-                _dfs(nxt)
-            elif c == 1:
-                j = len(stack) - 1
-                while j >= 0 and stack[j] != nxt:
-                    j -= 1
-                if j >= 0:
-                    nodes = stack[j:] + [nxt]
-                    disp_nodes: list[str] = []
-                    k = 0
-                    while k < len(nodes):
-                        dk = nodes[k]
-                        disp_nodes.append(key_to_disp.get(dk, dk))
-                        k += 1
-                    cycle_txt = _join_str_list(" -> ", disp_nodes)
-                    if cycle_txt not in cycle_seen:
-                        cycle_seen.add(cycle_txt)
-                        cycles.append(cycle_txt)
-            i += 1
-        stack.pop()
-        color[key] = 2
-
     keys = list(graph_adj.keys())
     i = 0
     while i < len(keys):
         k = keys[i]
         if color.get(k, 0) == 0:
-            _dfs(k)
+            _graph_cycle_dfs(k, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
         i += 1
 
     out: dict[str, Any] = {}
@@ -6219,6 +6225,21 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     return out
 
 
+def _format_graph_list_section(out: str, label: str, items: list[Any]) -> str:
+    """依存解析レポートの1セクションを追記して返す。"""
+    out2 = out + label + ":\n"
+    if len(items) == 0:
+        out2 += "  (none)\n"
+        return out2
+    j = 0
+    while j < len(items):
+        val = items[j]
+        if isinstance(val, str):
+            out2 += "  - " + val + "\n"
+        j += 1
+    return out2
+
+
 def _format_import_graph_report(analysis: dict[str, Any]) -> str:
     """依存解析結果を `--dump-deps` 向けテキストへ整形する。"""
     edges_obj = analysis.get("edges")
@@ -6233,26 +6254,18 @@ def _format_import_graph_report(analysis: dict[str, Any]) -> str:
             if isinstance(item, str):
                 out += "  - " + item + "\n"
             i += 1
-
-    def _append_list_section(label: str, key: str) -> None:
-        nonlocal out
-        items_obj = analysis.get(key)
-        items: list[str] = items_obj if isinstance(items_obj, list) else []
-        out += label + ":\n"
-        if len(items) == 0:
-            out += "  (none)\n"
-        else:
-            j = 0
-            while j < len(items):
-                val = items[j]
-                if isinstance(val, str):
-                    out += "  - " + val + "\n"
-                j += 1
-
-    _append_list_section("cycles", "cycles")
-    _append_list_section("missing", "missing_modules")
-    _append_list_section("relative", "relative_imports")
-    _append_list_section("reserved", "reserved_conflicts")
+    cycles_obj = analysis.get("cycles")
+    cycles: list[Any] = cycles_obj if isinstance(cycles_obj, list) else []
+    out = _format_graph_list_section(out, "cycles", cycles)
+    missing_obj = analysis.get("missing_modules")
+    missing: list[Any] = missing_obj if isinstance(missing_obj, list) else []
+    out = _format_graph_list_section(out, "missing", missing)
+    relative_obj = analysis.get("relative_imports")
+    relative: list[Any] = relative_obj if isinstance(relative_obj, list) else []
+    out = _format_graph_list_section(out, "relative", relative)
+    reserved_obj = analysis.get("reserved_conflicts")
+    reserved: list[Any] = reserved_obj if isinstance(reserved_obj, list) else []
+    out = _format_graph_list_section(out, "reserved", reserved)
     return out
 
 
@@ -6436,34 +6449,36 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
             st = body[i]
             kind = _dict_any_kind(st)
             if kind == "FunctionDef":
-                name_obj: object = st.get("name")
-                if isinstance(name_obj, str) and name_obj != "":
-                    funcs.append(name_obj)
+                name_txt = _dict_any_get_str(st, "name")
+                if name_txt != "":
+                    funcs.append(name_txt)
             elif kind == "ClassDef":
-                name_obj = st.get("name")
-                if isinstance(name_obj, str) and name_obj != "":
-                    classes.append(name_obj)
+                name_txt = _dict_any_get_str(st, "name")
+                if name_txt != "":
+                    classes.append(name_txt)
             elif kind == "Assign":
                 targets_obj = st.get("targets")
                 targets = targets_obj if isinstance(targets_obj, list) else []
                 j = 0
                 while j < len(targets):
-                    tgt = targets[j]
-                    if isinstance(tgt, dict):
-                        if _dict_any_kind(tgt) == "Name":
-                            name_obj = tgt.get("id")
-                            if isinstance(name_obj, str) and name_obj != "" and name_obj not in variables:
-                                variables.append(name_obj)
+                    tgt_obj = targets[j]
+                    if isinstance(tgt_obj, dict):
+                        if _dict_any_kind(tgt_obj) == "Name":
+                            name_txt = _dict_any_get_str(tgt_obj, "id")
+                            if name_txt != "" and name_txt not in variables:
+                                variables.append(name_txt)
                     j += 1
             elif kind == "AnnAssign":
-                tgt = st.get("target")
-                if isinstance(tgt, dict) and _dict_any_kind(tgt) == "Name":
-                    name_obj = tgt.get("id")
-                    if isinstance(name_obj, str) and name_obj != "" and name_obj not in variables:
-                        variables.append(name_obj)
+                tgt_obj = st.get("target")
+                if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
+                    name_txt = _dict_any_get_str(tgt_obj, "id")
+                    if name_txt != "" and name_txt not in variables:
+                        variables.append(name_txt)
             i += 1
         meta_obj: object = east.get("meta")
-        meta = meta_obj if isinstance(meta_obj, dict) else {}
+        meta: dict[str, Any] = {}
+        if isinstance(meta_obj, dict):
+            meta = meta_obj
         import_bindings = _meta_import_bindings(east)
         qualified_symbol_refs = _meta_qualified_symbol_refs(east)
         import_modules: dict[str, str] = {}
@@ -6499,18 +6514,22 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         else:
             import_modules_obj: object = meta.get("import_modules")
             import_symbols_obj: object = meta.get("import_symbols")
-            import_modules_obj2 = import_modules_obj if isinstance(import_modules_obj, dict) else {}
-            import_symbols_obj2 = import_symbols_obj if isinstance(import_symbols_obj, dict) else {}
+            import_modules_obj2: dict[str, Any] = {}
+            if isinstance(import_modules_obj, dict):
+                import_modules_obj2 = import_modules_obj
+            import_symbols_obj2: dict[str, Any] = {}
+            if isinstance(import_symbols_obj, dict):
+                import_symbols_obj2 = import_symbols_obj
             import_modules = dict(import_modules_obj2)
             import_symbols = dict(import_symbols_obj2)
-        out[mod_path] = {
-            "functions": funcs,
-            "classes": classes,
-            "variables": variables,
-            "import_bindings": import_bindings,
-            "import_modules": import_modules,
-            "import_symbols": import_symbols,
-        }
+        mod_ent: dict[str, Any] = {}
+        mod_ent["functions"] = funcs
+        mod_ent["classes"] = classes
+        mod_ent["variables"] = variables
+        mod_ent["import_bindings"] = import_bindings
+        mod_ent["import_modules"] = import_modules
+        mod_ent["import_symbols"] = import_symbols
+        out[mod_path] = mod_ent
     return out
 
 
@@ -6541,16 +6560,27 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                     arg_order_obj: object = st.get("arg_order")
                     arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
                     ret_obj: object = st.get("return_type")
-                    ret_type = ret_obj if isinstance(ret_obj, str) else "None"
-                    fn_schema[name_obj] = {"arg_types": arg_types, "arg_order": arg_order, "return_type": ret_type}
+                    ret_type = "None"
+                    if isinstance(ret_obj, str):
+                        ret_type = ret_obj
+                    fn_ent: dict[str, Any] = {}
+                    fn_ent["arg_types"] = arg_types
+                    fn_ent["arg_order"] = arg_order
+                    fn_ent["return_type"] = ret_type
+                    fn_schema[name_obj] = fn_ent
             elif kind == "ClassDef":
                 name_obj = st.get("name")
                 if isinstance(name_obj, str) and name_obj != "":
                     fields_obj: object = st.get("field_types")
                     fields = fields_obj if isinstance(fields_obj, dict) else {}
-                    cls_schema[name_obj] = {"field_types": fields}
+                    cls_ent: dict[str, Any] = {}
+                    cls_ent["field_types"] = fields
+                    cls_schema[name_obj] = cls_ent
             i += 1
-        out[mod_path] = {"functions": fn_schema, "classes": cls_schema}
+        mod_ent: dict[str, Any] = {}
+        mod_ent["functions"] = fn_schema
+        mod_ent["classes"] = cls_schema
+        out[mod_path] = mod_ent
     return out
 
 
@@ -6815,18 +6845,20 @@ def _write_multi_file_cpp(
     return manifest
 
 
-def _resolve_user_module_path(module_name: str, search_root: Path) -> Path | None:
-    """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する。"""
+def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
+    """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する（未解決は空 Path）。"""
     if module_name.startswith("pytra.") or module_name == "pytra":
-        return None
+        return Path("")
     rel = module_name.replace(".", "/")
-    cand_py = search_root / (rel + ".py")
+    root_txt = str(search_root)
+    sep = "" if root_txt.endswith("/") or root_txt == "" else "/"
+    cand_py = Path(root_txt + sep + rel + ".py")
     if cand_py.exists():
         return cand_py
-    cand_pkg = search_root / rel / "__init__.py"
+    cand_pkg = Path(root_txt + sep + rel + "/__init__.py")
     if cand_pkg.exists():
         return cand_pkg
-    return None
+    return Path("")
 
 
 def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
@@ -6842,7 +6874,7 @@ def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
         out["status"] = "pytra"
         return out
     dep_file = _resolve_user_module_path(raw_name, root_dir)
-    if dep_file is not None:
+    if str(dep_file) != "":
         out["status"] = "user"
         out["path"] = dep_file
         mod_id = _module_name_from_path(root_dir, dep_file)

@@ -34,6 +34,29 @@
    - [x] `src/py2cpp.py` 側で `object -> str` の三項演算子を明示 `if` 代入へ置換し、stage2 C++ の型崩れを解消した。
    - [x] `python3 tools/build_selfhost.py` / `python3 tools/build_selfhost_stage2.py --skip-stage1-build` / 差分チェック2系統で回帰なしを確認した。
 
+## 2026-02-21 完了: selfhost スタブ整理（追加）
+
+1. [x] `build_cpp_header_from_east` で使用するヘッダ補助関数の selfhost 崩れを解消した。
+   - [x] `src/py2cpp.py` の `_header_cpp_type_from_east` を `None` 既定値依存から外し、set 引数を必須化した。
+   - [x] `src/py2cpp.py` の `_header_guard_from_path` を文字列入力化し、`Path -> str` 変換時の overload 曖昧性を回避した。
+2. [x] `tools/prepare_selfhost_source.py` で以下スタブを除去した。
+   - [x] `_resolve_user_module_path`
+   - [x] `_module_name_from_path`
+   - [x] `build_module_symbol_index`
+   - [x] `build_module_type_schema`
+3. [x] selfhost 安全化のために import 解決補助実装を修正した。
+   - [x] `src/py2cpp.py` の `_resolve_user_module_path` を `Path | None` から「未解決は `Path(\"\")`」に変更した。
+   - [x] `src/py2cpp.py` の `_resolve_user_module_path` で `Path / "..."` 依存を外し、文字列結合 + `Path(...)` へ変更した。
+4. [x] `build_module_symbol_index` / `build_module_type_schema` を selfhost 安全な代入形式へリライトした。
+   - [x] 三項演算子・dict リテラル初期化を明示代入へ置換した。
+   - [x] `dict.get(...)` の直接参照を `_dict_any_get_str` など補助関数経由に寄せた。
+5. [x] 回帰検証を実施した。
+   - [x] `python3 tools/build_selfhost.py`
+   - [x] `python3 tools/build_selfhost_stage2.py --skip-stage1-build`
+   - [x] `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+   - [x] `python3 tools/check_selfhost_stage2_cpp_diff.py --skip-build --mode allow-not-implemented`
+   - [x] `python3 tools/check_py2cpp_transpile.py`（`checked=108 ok=108 fail=0 skipped=5`）
+
 ## 2026-02-21 完了: selfhost 直変換 Compare 崩れ補正
 
 1. [x] selfhost 直変換で `in/not in` 比較が生の `k in d` へ崩れる回帰を修正した。
