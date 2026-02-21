@@ -616,7 +616,10 @@ def _sh_merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tupl
             if mode in {"'''", '"""'}:
                 acc += "\n" + next_txt
             else:
-                left_txt = acc.rstrip()
+                # Merge continuation lines after stripping per-line inline comments.
+                # (Stripping only after full merge loses code that appears after
+                # comment-bearing continuation lines.)
+                left_txt = _sh_strip_inline_comment(acc).rstrip()
                 if explicit_cont:
                     bs_count = 0
                     j = len(left_txt) - 1
@@ -625,7 +628,8 @@ def _sh_merge_logical_lines(raw_lines: list[tuple[int, str]]) -> tuple[list[tupl
                         j -= 1
                     if (bs_count % 2) == 1:
                         left_txt = left_txt[:-1].rstrip()
-                acc = left_txt + " " + next_txt.strip()
+                right_txt = _sh_strip_inline_comment(next_txt).strip()
+                acc = left_txt + " " + right_txt
             depth, mode = _sh_scan_logical_line_state(next_txt, depth, mode)
             explicit_cont = _sh_has_explicit_line_continuation(next_txt)
             end_no = next_no
@@ -880,6 +884,9 @@ def _sh_collect_indented_block(
             t_ln = body_lines[t][1]
             t_indent = len(t_ln) - len(t_ln.lstrip(" "))
             if t_indent <= parent_indent:
+                # Blank lines right before dedent/elif/else should not pin j on
+                # the blank line; advance to the next logical statement.
+                j = t
                 break
             out.append((n_no, n_ln))
             j += 1
@@ -1056,6 +1063,49 @@ def _sh_split_top_level_in(text: str) -> tuple[str, str] | None:
     return None
 
 
+def _sh_split_top_level_colon(text: str) -> tuple[str, str] | None:
+    """トップレベルの `head: tail` を 1 箇所分割する。"""
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if in_str is not None:
+            if esc:
+                esc = False
+                i += 1
+                continue
+            if ch == "\\":
+                esc = True
+                i += 1
+                continue
+            if ch == in_str:
+                in_str = None
+            i += 1
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            i += 1
+            continue
+        if ch in {"(", "[", "{"}:
+            depth += 1
+            i += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            i += 1
+            continue
+        if ch == ":" and depth == 0:
+            lhs = text[:i].strip()
+            rhs = text[i + 1 :].strip()
+            if lhs != "" and rhs != "":
+                return lhs, rhs
+            return None
+        i += 1
+    return None
+
+
 def _sh_split_top_level_as(text: str) -> tuple[str, str] | None:
     """トップレベルの `lhs as rhs` を分割する。"""
     pos = _sh_split_top_keyword(text, "as")
@@ -1125,14 +1175,27 @@ def _sh_parse_if_tail(
     """if/elif/else 連鎖の後続ブロックを再帰的に解析する。"""
     if start_idx >= len(body_lines):
         return [], start_idx
-    t_no, t_ln = body_lines[start_idx]
+    idx = start_idx
+    while idx < len(body_lines):
+        t_no, t_ln = body_lines[idx]
+        t_indent = len(t_ln) - len(t_ln.lstrip(" "))
+        if t_indent != parent_indent:
+            return [], idx
+        t_s = _sh_strip_inline_comment(t_ln.strip())
+        _sh_raise_if_trailing_stmt_terminator(t_s, line_no=t_no, line_text=t_ln)
+        if t_s == "":
+            idx += 1
+            continue
+        break
+    if idx >= len(body_lines):
+        return [], idx
+    t_no, t_ln = body_lines[idx]
     t_indent = len(t_ln) - len(t_ln.lstrip(" "))
     t_s = _sh_strip_inline_comment(t_ln.strip())
-    _sh_raise_if_trailing_stmt_terminator(t_s, line_no=t_no, line_text=t_ln)
     if t_indent != parent_indent:
-        return [], start_idx
+        return [], idx
     if t_s == "else:":
-        else_block, k2 = _sh_collect_indented_block(body_lines, start_idx + 1, parent_indent)
+        else_block, k2 = _sh_collect_indented_block(body_lines, idx + 1, parent_indent)
         if len(else_block) == 0:
             raise _make_east_build_error(
                 kind="unsupported_syntax",
@@ -1145,7 +1208,7 @@ def _sh_parse_if_tail(
         cond_txt2 = t_s[len("elif ") : -1].strip()
         cond_col2 = t_ln.find(cond_txt2)
         cond_expr2 = _sh_parse_expr_lowered(cond_txt2, ln_no=t_no, col=cond_col2, name_types=dict(name_types))
-        elif_block, k2 = _sh_collect_indented_block(body_lines, start_idx + 1, parent_indent)
+        elif_block, k2 = _sh_collect_indented_block(body_lines, idx + 1, parent_indent)
         if len(elif_block) == 0:
             raise _make_east_build_error(
                 kind="unsupported_syntax",
@@ -1170,7 +1233,7 @@ def _sh_parse_if_tail(
         }
         elif_items.append(elif_item)
         return elif_items, k3
-    return [], start_idx
+    return [], idx
 
 
 def _sh_extract_leading_docstring(stmts: list[dict[str, Any]]) -> tuple[str | None, list[dict[str, Any]]]:
@@ -3472,8 +3535,24 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             i = j
             continue
 
-        if s.startswith("for ") and s.endswith(":"):
-            for_head = s[len("for ") : -1].strip()
+        if s.startswith("for "):
+            for_full = s[len("for ") :].strip()
+            for_head = ""
+            inline_stmt_text = ""
+            if for_full.endswith(":"):
+                for_head = for_full[:-1].strip()
+            else:
+                split_colon = _sh_split_top_level_colon(for_full)
+                if split_colon is not None:
+                    for_head = split_colon[0]
+                    inline_stmt_text = split_colon[1]
+            if for_head == "":
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse for statement: {s}",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Use `for target in iterable:` form.",
+                )
             split_for = _sh_split_top_level_in(for_head)
             if split_for is None:
                 raise _make_east_build_error(
@@ -3487,14 +3566,19 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             iter_col = ln_txt.find(iter_txt)
             target_expr = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=tgt_col, name_types=dict(name_types))
             iter_expr = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=iter_col, name_types=dict(name_types))
-            body_block, j = _sh_collect_indented_block(body_lines, i + 1, indent)
-            if len(body_block) == 0:
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"for body is missing in '{scope_label}'",
-                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                    hint="Add indented for-body.",
-                )
+            body_block: list[tuple[int, str]] = []
+            j = i + 1
+            if inline_stmt_text != "":
+                body_block.append((ln_no, " " * (indent + 4) + inline_stmt_text))
+            else:
+                body_block, j = _sh_collect_indented_block(body_lines, i + 1, indent)
+                if len(body_block) == 0:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"for body is missing in '{scope_label}'",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Add indented for-body.",
+                    )
             t_ty = "unknown"
             i_ty = str(iter_expr.get("resolved_type", "unknown"))
             if i_ty.startswith("list[") and i_ty.endswith("]"):
