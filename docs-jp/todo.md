@@ -42,7 +42,7 @@
    - [ ] `from yanesdk import *` の扱いを決める（Pytraでサポートするか、明示 import へ機械変換するか）。
    - [ ] `# type:ignore`（import行・def行末）の扱いを決める（tokenizerで無視するか、前処理で除去するか）。
 2. [ ] `Yanesdk` を再利用するため、`docs/*/yanesdk.py` の重複配置を整理する（`Yanesdk/yanesdk/` への一本化）。
-   - [ ] `py2cpp` 調査・smoke テストでは `Yanesdk/yanesdk/yanesdk.py` を常に優先する。
+   - [x] `py2cpp` 調査・smoke テストでは `Yanesdk/yanesdk/yanesdk.py` を常に優先する。
 3. [ ] 成功条件を明文化する（少なくとも `library 1本 + game 7本` が `py2cpp.py` を通る）。
 
 ## P1-B: import / module 解決（Yanesdk必須）
