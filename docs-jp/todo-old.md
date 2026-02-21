@@ -74,7 +74,10 @@
 3. [x] `tools/prepare_selfhost_source.py` で `_extract_function_arg_types_from_python_source` スタブを除去した。
    - [x] `src/py2cpp.py` の `_extract_function_signatures_from_python_source` を selfhost 変換で壊れにくい実装へ修正（変数衝突回避、明示初期化）。
    - [x] `src/py2cpp.py` の `_extract_function_arg_types_from_python_source` を `dict.keys()` 反復の型崩れに耐える形へ修正。
-4. [x] 回帰検証を実施した。
+4. [x] multi-file スタブ除去の前段として parser 非対応要素を整理した。
+   - [x] `src/py2cpp.py` の `_write_multi_file_cpp` 内ネスト関数 `_inject_after_includes` をトップレベル helper (`_inject_after_includes_block`) へ移動した。
+   - [x] `src/py2cpp.py` の `prelude_txt` / `hdr_text` を multi-line literal 連結から逐次 `+=` へ変更した。
+5. [x] 回帰検証を実施した。
    - [x] `python3 tools/build_selfhost.py`
    - [x] `python3 tools/build_selfhost_stage2.py --skip-stage1-build`
    - [x] `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`

@@ -6724,6 +6724,18 @@ def _module_name_from_path(root: Path, module_path: Path) -> str:
     return rel
 
 
+def _inject_after_includes_block(cpp_text: str, block: str) -> str:
+    """先頭 include 群の直後に block を差し込む。"""
+    if block == "":
+        return cpp_text
+    pos = cpp_text.find("\n\n")
+    if pos < 0:
+        return cpp_text + "\n" + block + "\n"
+    head = cpp_text[: pos + 2]
+    tail = cpp_text[pos + 2 :]
+    return head + block + "\n" + tail
+
+
 def _write_multi_file_cpp(
     entry_path: Path,
     module_east_map: dict[str, dict[str, Any]],
@@ -6745,14 +6757,12 @@ def _write_multi_file_cpp(
     include_dir.mkdir(parents=True, exist_ok=True)
     src_dir.mkdir(parents=True, exist_ok=True)
     prelude_hdr = include_dir / "pytra_multi_prelude.h"
-    prelude_hdr.write_text(
-        "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
-        "#ifndef PYTRA_MULTI_PRELUDE_H\n"
-        "#define PYTRA_MULTI_PRELUDE_H\n\n"
-        "#include \"runtime/cpp/pytra/built_in/py_runtime.h\"\n\n"
-        "#endif  // PYTRA_MULTI_PRELUDE_H\n",
-        encoding="utf-8",
-    )
+    prelude_txt = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
+    prelude_txt += "#ifndef PYTRA_MULTI_PRELUDE_H\n"
+    prelude_txt += "#define PYTRA_MULTI_PRELUDE_H\n\n"
+    prelude_txt += "#include \"runtime/cpp/pytra/built_in/py_runtime.h\"\n\n"
+    prelude_txt += "#endif  // PYTRA_MULTI_PRELUDE_H\n"
+    prelude_hdr.write_text(prelude_txt, encoding="utf-8")
 
     root = entry_path.parent
     entry_key = str(entry_path)
@@ -6775,16 +6785,6 @@ def _write_multi_file_cpp(
     symbol_index = build_module_symbol_index(module_east_map)
     type_schema = build_module_type_schema(module_east_map)
 
-    def _inject_after_includes(cpp_text: str, block: str) -> str:
-        if block == "":
-            return cpp_text
-        pos = cpp_text.find("\n\n")
-        if pos < 0:
-            return cpp_text + "\n" + block + "\n"
-        head = cpp_text[: pos + 2]
-        tail = cpp_text[pos + 2 :]
-        return head + block + "\n" + tail
-
     manifest: dict[str, Any] = {}
     manifest["entry"] = entry_key
     manifest["include_dir"] = str(include_dir)
@@ -6800,15 +6800,13 @@ def _write_multi_file_cpp(
         hdr_path = include_dir / (label + ".h")
         cpp_path = src_dir / (label + ".cpp")
         guard = "PYTRA_MULTI_" + _sanitize_module_label(label).upper() + "_H"
-        hdr_text = (
-            "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
-            "#ifndef " + guard + "\n"
-            "#define " + guard + "\n\n"
-            "namespace pytra_multi {\n"
-            "void module_" + label + "();\n"
-            "}  // namespace pytra_multi\n\n"
-            "#endif  // " + guard + "\n"
-        )
+        hdr_text = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
+        hdr_text += "#ifndef " + guard + "\n"
+        hdr_text += "#define " + guard + "\n\n"
+        hdr_text += "namespace pytra_multi {\n"
+        hdr_text += "void module_" + label + "();\n"
+        hdr_text += "}  // namespace pytra_multi\n\n"
+        hdr_text += "#endif  // " + guard + "\n"
         hdr_path.write_text(hdr_text, encoding="utf-8")
 
         is_entry = mod_key == entry_key
@@ -6913,7 +6911,7 @@ def _write_multi_file_cpp(
                 fwd_lines.extend(fn_decls)
                 fwd_lines.append("}  // namespace " + target_ns)
         if len(fwd_lines) > 0:
-            cpp_txt = _inject_after_includes(cpp_txt, _join_str_list("\n", fwd_lines))
+            cpp_txt = _inject_after_includes_block(cpp_txt, _join_str_list("\n", fwd_lines))
         cpp_path.write_text(cpp_txt, encoding="utf-8")
 
         modules_obj = manifest.get("modules")
