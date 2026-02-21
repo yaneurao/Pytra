@@ -169,8 +169,7 @@ class Parser:
 
     def parse_add(self) -> int:
         left: int = self.parse_mul()
-        done: bool = False
-        while not done:
+        while True:
             if self.match("PLUS"):
                 right: int = self.parse_mul()
                 left = self.add_expr(ExprNode("bin", 0, "", "+", left, right))
@@ -179,13 +178,12 @@ class Parser:
                 right = self.parse_mul()
                 left = self.add_expr(ExprNode("bin", 0, "", "-", left, right))
                 continue
-            done = True
+            break
         return left
 
     def parse_mul(self) -> int:
         left: int = self.parse_unary()
-        done: bool = False
-        while not done:
+        while True:
             if self.match("STAR"):
                 right: int = self.parse_unary()
                 left = self.add_expr(ExprNode("bin", 0, "", "*", left, right))
@@ -194,7 +192,7 @@ class Parser:
                 right = self.parse_unary()
                 left = self.add_expr(ExprNode("bin", 0, "", "/", left, right))
                 continue
-            done = True
+            break
         return left
 
     def parse_unary(self) -> int:
