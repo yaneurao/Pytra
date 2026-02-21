@@ -1096,68 +1096,11 @@ class CppEmitter(CodeEmitter):
         """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
         return runtime_call[0:5] == "std::" or runtime_call[0:7] == "::std::"
 
-    def _resolve_imported_module_name(self, name: str) -> str:
-        """import で束縛された識別子名を実モジュール名へ解決する。"""
-        if self.is_declared(name):
-            return ""
-        if name in self.import_modules:
-            mod_name = self.import_modules[name]
-            if mod_name != "":
-                return mod_name
-        if name in self.import_symbols:
-            sym = self.import_symbols[name]
-            parent = ""
-            child = ""
-            if "module" in sym:
-                parent = sym["module"]
-            if "name" in sym:
-                child = sym["name"]
-            if parent != "" and child != "":
-                return f"{parent}.{child}"
-        return ""
-
     def _cpp_expr_to_module_name(self, expr: str) -> str:
         """`pytra::std::x` 形式の C++ 式を `pytra.std.x` へ戻す。"""
         if expr.startswith("pytra::"):
             return expr.replace("::", ".")
         return ""
-
-    def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
-        """from-import で束縛された識別子を返す（無ければ空 dict）。"""
-        if name in self.import_symbols:
-            return self.import_symbols[name]
-        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
-        refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
-        i = 0
-        while i < len(refs):
-            ref = refs[i]
-            local_name = self.any_to_str(ref.get("local_name"))
-            if local_name == name:
-                module_id = self.any_to_str(ref.get("module_id"))
-                symbol = self.any_to_str(ref.get("symbol"))
-                if module_id != "" and symbol != "":
-                    out_ref: dict[str, str] = {}
-                    out_ref["module"] = module_id
-                    out_ref["name"] = symbol
-                    return out_ref
-            i += 1
-        binds = self.any_to_dict_list(meta.get("import_bindings"))
-        i = 0
-        while i < len(binds):
-            ent = binds[i]
-            if self.any_to_str(ent.get("binding_kind")) == "symbol":
-                local_name = self.any_to_str(ent.get("local_name"))
-                if local_name == name:
-                    module_id = self.any_to_str(ent.get("module_id"))
-                    export_name = self.any_to_str(ent.get("export_name"))
-                    if module_id != "" and export_name != "":
-                        out_bind: dict[str, str] = {}
-                        out_bind["module"] = module_id
-                        out_bind["name"] = export_name
-                        return out_bind
-            i += 1
-        out: dict[str, str] = {}
-        return out
 
     def _module_source_path_for_name(self, module_name: str) -> Path:
         """`pytra.*` モジュール名から runtime source `.py` パスを返す（未解決時は空 Path）。"""
