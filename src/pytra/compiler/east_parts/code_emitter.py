@@ -37,6 +37,9 @@ class CodeEmitter:
     tmp_id: int
     scope_stack: list[set[str]]
     passthrough_cpp_block: bool
+    opt_level: str
+    import_modules: dict[str, str]
+    import_symbols: dict[str, dict[str, str]]
 
     def __init__(
         self,
@@ -62,6 +65,9 @@ class CodeEmitter:
         self.tmp_id = 0
         self.scope_stack = self._root_scope_stack()
         self.passthrough_cpp_block = False
+        self.opt_level = "2"
+        self.import_modules = {}
+        self.import_symbols = {}
 
     def _empty_lines(self) -> list[str]:
         """空の `list[str]` を返す。"""
@@ -103,9 +109,8 @@ class CodeEmitter:
             out.append(args[i])
             i += 1
         kw_keys: list[str] = []
-        for key in kw:
-            if isinstance(key, str):
-                kw_keys.append(key)
+        for key, _ in kw.items():
+            kw_keys.append(key)
         k = 0
         while k < len(kw_keys):
             key = kw_keys[k]
@@ -843,49 +848,42 @@ class CodeEmitter:
     def _opt_ge(self, level: int) -> bool:
         """最適化レベルが指定値以上かを返す。"""
         cur = 3
-        opt_obj: Any = None
-        if "opt_level" in self.__dict__:
-            opt_obj = self.__dict__["opt_level"]
-        if isinstance(opt_obj, str) and opt_obj in {"0", "1", "2", "3"}:
-            cur = int(opt_obj)
+        if self.opt_level in {"0", "1", "2", "3"}:
+            cur = int(self.opt_level)
         return cur >= level
 
     def _resolve_imported_module_name(self, name: str) -> str:
         """import で束縛された識別子名を実モジュール名へ解決する。"""
         if self.is_declared(name):
             return ""
-        modules_any: Any = {}
-        if "import_modules" in self.__dict__:
-            modules_any = self.__dict__["import_modules"]
-        import_modules = self.any_to_dict_or_empty(modules_any)
-        if name in import_modules:
-            mod_name = self.any_to_str(import_modules[name])
+        if name in self.import_modules:
+            mod_name = self.import_modules[name]
             if mod_name != "":
                 return mod_name
 
-        symbols_any: Any = {}
-        if "import_symbols" in self.__dict__:
-            symbols_any = self.__dict__["import_symbols"]
-        import_symbols = self.any_to_dict_or_empty(symbols_any)
-        if name in import_symbols:
-            sym = self.any_to_dict_or_empty(import_symbols[name])
-            parent = self.any_to_str(sym.get("module"))
-            child = self.any_to_str(sym.get("name"))
+        if name in self.import_symbols:
+            sym = self.import_symbols[name]
+            parent = ""
+            child = ""
+            if "module" in sym:
+                parent = sym["module"]
+            if "name" in sym:
+                child = sym["name"]
             if parent != "" and child != "":
                 return f"{parent}.{child}"
         return ""
 
     def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
         """from-import で束縛された識別子を返す（無ければ空 dict）。"""
-        symbols_any: Any = {}
-        if "import_symbols" in self.__dict__:
-            symbols_any = self.__dict__["import_symbols"]
-        import_symbols = self.any_to_dict_or_empty(symbols_any)
-        if name in import_symbols:
-            sym0 = self.any_to_dict_or_empty(import_symbols[name])
+        if name in self.import_symbols:
+            sym0 = self.import_symbols[name]
             out0: dict[str, str] = {}
-            mod0 = self.any_to_str(sym0.get("module"))
-            nm0 = self.any_to_str(sym0.get("name"))
+            mod0 = ""
+            nm0 = ""
+            if "module" in sym0:
+                mod0 = sym0["module"]
+            if "name" in sym0:
+                nm0 = sym0["name"]
             if mod0 != "":
                 out0["module"] = mod0
             if nm0 != "":
@@ -1165,11 +1163,14 @@ class CodeEmitter:
     ) -> dict[str, Any]:
         """Call ノードの前処理（func/args/kw 展開）を共通化する。"""
         fn_obj: object = expr.get("func")
-        fn = self.any_to_dict_or_empty(fn_obj)
         fn_name = self.render_expr(fn_obj)
         arg_nodes_obj: object = self.any_dict_get_list(expr, "args")
         arg_nodes = self.any_to_list(arg_nodes_obj)
-        args = [self.render_expr(a) for a in arg_nodes]
+        args: list[str] = []
+        i = 0
+        while i < len(arg_nodes):
+            args.append(self.render_expr(arg_nodes[i]))
+            i += 1
         keywords_obj: object = self.any_dict_get_list(expr, "keywords")
         keywords = self.any_to_list(keywords_obj)
         first_arg: object = expr

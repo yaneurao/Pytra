@@ -3028,7 +3028,7 @@ class CppEmitter(CodeEmitter):
             self.emit(f"{name}({_join_str_list(', ', params)}) {{")
             self.indent += 1
             self.scope_stack.append(set())
-            for fname in instance_fields.keys():
+            for fname, _ in instance_fields.items():
                 self.emit(f"this->{fname} = {fname};")
             self.scope_stack.pop()
             self.indent -= 1
@@ -3667,46 +3667,6 @@ class CppEmitter(CodeEmitter):
         if fn_name == "print":
             return f"py_print({_join_str_list(', ', args)})"
         return f"{fn_name}({_join_str_list(', ', args)})"
-
-    def _prepare_call_parts(
-        self,
-        expr: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Call ノードの前処理（func/args/kw 展開）を共通化する。"""
-        fn_obj: object = expr.get("func")
-        fn = self.any_to_dict_or_empty(fn_obj)
-        fn_name = self.render_expr(fn_obj)
-        arg_nodes_obj: object = self.any_dict_get_list(expr, "args")
-        arg_nodes = self.any_to_list(arg_nodes_obj)
-        args = [self.render_expr(a) for a in arg_nodes]
-        keywords_obj: object = self.any_dict_get_list(expr, "keywords")
-        keywords = self.any_to_list(keywords_obj)
-        first_arg: object = expr
-        if len(arg_nodes) > 0:
-            first_arg = arg_nodes[0]
-        kw: dict[str, str] = {}
-        kw_values: list[str] = []
-        kw_nodes: list[Any] = []
-        for k in keywords:
-            kd = self.any_to_dict_or_empty(k)
-            if len(kd) > 0:
-                kw_name = self.any_to_str(kd.get("arg"))
-                if kw_name != "":
-                    kw_val_node: Any = kd.get("value")
-                    kw_val = self.render_expr(kw_val_node)
-                    kw[kw_name] = kw_val
-                    kw_values.append(kw_val)
-                    kw_nodes.append(kw_val_node)
-        out: dict[str, Any] = {}
-        out["fn"] = fn_obj
-        out["fn_name"] = fn_name
-        out["arg_nodes"] = arg_nodes
-        out["args"] = args
-        out["kw"] = kw
-        out["kw_values"] = kw_values
-        out["kw_nodes"] = kw_nodes
-        out["first_arg"] = first_arg
-        return out
 
     def _render_unary_expr(self, expr: dict[str, Any]) -> str:
         """UnaryOp ノードを C++ 式へ変換する。"""
