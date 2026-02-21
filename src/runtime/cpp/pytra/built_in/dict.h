@@ -112,7 +112,7 @@ public:
     V get(const K& key) const {
         auto it = data_.find(key);
         if (it == data_.end()) {
-            throw ::std::out_of_range("dict.get missing key");
+            return V{};
         }
         return it->second;
     }

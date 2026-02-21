@@ -10,12 +10,11 @@
 ## P0: selfhost 安定化
 
 1. [ ] selfhost `.py` 経路の段階回復を完了する。
-2. [ ] 2段自己変換の先頭エラー群を段階消去する（現状: 連鎖比較 `\"a\" <= c <= \"z\"` / slice 記法 `s[:1]` / Python論理演算子 `or/not/in` の生残り）。
-3. [ ] 2段自己変換の `CodeEmitter` 由来生式（`is None` / `is not None` / slice / `self.` 生呼び出し）を段階的に lower する。
-4. [ ] `selfhost/py2cpp.out` が生成した `selfhost_selfhost.cpp` を `g++` でコンパイル可能にする（まず最初の 20 エラーをゼロ化）。
-5. [ ] `selfhost/py2cpp.out` の最小実行パスを安定化する（入力・生成・実行の一連を常時再現可能にする）。
-6. [ ] selfhost コンパイルエラーを段階的にゼロ化する（再発時の即時検知手順込み）。
-7. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
+2. [ ] 2段自己変換バイナリ（`selfhost_selfhost`）での最小実行パスを安定化する（現状: 生成物の `main()` が `py_main` を呼ばないため手動パッチが必要）。
+3. [ ] 2段自己変換バイナリの出力差分を解消する（現状: `test/fixtures/core/*` で `make_object` 挿入差分が残る）。
+4. [ ] `selfhost_selfhost` 向けに `check_selfhost_cpp_diff` 相当の自動検証導線を追加する（手動パッチ依存を排除）。
+5. [ ] selfhost コンパイルエラーを段階的にゼロ化する（再発時の即時検知手順込み）。
+6. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
 
 ## P1: CodeEmitter / Hooks 移管
 

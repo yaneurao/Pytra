@@ -570,24 +570,29 @@ class CodeEmitter:
             parts = self.split_union(s)
             if len(parts) == 1 and parts[0] == s:
                 return False
-            return any(self.is_any_like_type(p) for p in parts if p != "None" and p != s)
+            for p in parts:
+                if p == "None" or p == s:
+                    continue
+                if self.is_any_like_type(p):
+                    return True
+            return False
         return False
 
     def is_list_type(self, t: str) -> bool:
         """型文字列が list[...] かを返す。"""
-        return t[:5] == "list["
+        return t.startswith("list[")
 
     def is_set_type(self, t: str) -> bool:
         """型文字列が set[...] かを返す。"""
-        return t[:4] == "set["
+        return t.startswith("set[")
 
     def is_dict_type(self, t: str) -> bool:
         """型文字列が dict[...] かを返す。"""
-        return t[:5] == "dict["
+        return t.startswith("dict[")
 
     def is_indexable_sequence_type(self, t: str) -> bool:
         """添字アクセス可能なシーケンス型か判定する。"""
-        return t[:5] == "list[" or t[:6] == "tuple[" or t == "str" or t == "bytes" or t == "bytearray"
+        return t.startswith("list[") or t.startswith("tuple[") or t == "str" or t == "bytes" or t == "bytearray"
 
     def _is_forbidden_object_receiver_type_text(self, s: str) -> bool:
         """object レシーバ禁止ルールに抵触する型文字列か判定する。"""
@@ -633,10 +638,10 @@ class CodeEmitter:
         if len(text) == 0:
             return False
         c0 = text[0:1]
-        if not (c0 == "_" or ("a" <= c0 <= "z") or ("A" <= c0 <= "Z")):
+        if not (c0 == "_" or (c0 >= "a" and c0 <= "z") or (c0 >= "A" and c0 <= "Z")):
             return False
         for ch in text[1:]:
-            if not (ch == "_" or ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9")):
+            if not (ch == "_" or (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9")):
                 return False
         return True
 
@@ -654,7 +659,7 @@ class CodeEmitter:
                 break
             s = s[:-1]
 
-        while len(s) >= 2 and s[:1] == "(" and s[-1:] == ")":
+        while len(s) >= 2 and s.startswith("(") and s.endswith(")"):
             depth = 0
             in_str = False
             esc = False
@@ -899,6 +904,6 @@ class CodeEmitter:
             return "false"
         if t == "bool":
             return body
-        if t == "str" or t[:5] == "list[" or t[:5] == "dict[" or t[:4] == "set[" or t[:6] == "tuple[":
+        if t == "str" or t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
             return self.truthy_len_expr(body)
         return body

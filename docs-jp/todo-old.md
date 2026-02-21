@@ -17,6 +17,18 @@
    - [x] `src/runtime/cpp/pytra/built_in/py_runtime.h` に `len(...) -> py_len(...)` 互換エイリアスを追加した。
    - [x] `src/runtime/cpp/pytra/built_in/py_runtime.h` に `object` と `std::nullopt` の比較演算子を追加した。
 
+## 2026-02-21 完了: selfhost 2段自己変換の先頭クラスタ解消
+
+1. [x] 2段自己変換の先頭エラー群（連鎖比較 / slice / `or/not/in` 生残り）を解消した。
+   - [x] `src/pytra/compiler/east_parts/code_emitter.py` で selfhost 崩れしやすい判定式（chain compare, `t[:N]`）を `startswith` / 明示比較へ置換した。
+   - [x] `src/py2cpp.py` に `render_cond` 上書きと repr 補正強化（chain compare, `is True/False`, slice）を追加した。
+2. [x] `selfhost/py2cpp.out` が生成する `selfhost_selfhost.cpp` の `g++` コンパイルを green 化した。
+   - [x] `dict.get(..., "literal")` 崩れを避けるため、`src/py2cpp.py` の `dict[str, Any]` 参照を `_dict_any_get_*` 系へ寄せた。
+   - [x] `list.sort()` 崩れを避けるため、`src/py2cpp.py` に `_sort_str_list_in_place` を追加し、`sort()` 呼び出しを置換した。
+   - [x] `src/runtime/cpp/pytra/built_in/list.h` に `list.sort()` を追加した。
+3. [x] selfhost 実行時クラッシュ要因を縮退した。
+   - [x] `src/runtime/cpp/pytra/built_in/dict.h` の `dict.get(key)` を Python 互換（missing で既定値返却）へ調整した。
+
 ## 2026-02-21 完了: selfhost 直変換の型正規化回帰修正
 
 1. [x] selfhost 直変換で `list[int]` が `list<int>` と出力される回帰を修正した。

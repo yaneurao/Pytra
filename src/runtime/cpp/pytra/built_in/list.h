@@ -1,6 +1,8 @@
 #ifndef PYTRA_BUILT_IN_LIST_H
 #define PYTRA_BUILT_IN_LIST_H
 
+#include <algorithm>
+
 #include "container_common.h"
 
 template <class T>
@@ -122,6 +124,7 @@ public:
 
     void append(const T& value) { data_.push_back(value); }
     void append(T&& value) { data_.push_back(::std::move(value)); }
+    void sort() { ::std::sort(data_.begin(), data_.end()); }
 
     template <class U>
     void extend(const U& values) {
