@@ -73,8 +73,7 @@ class CodeEmitter:
 
     def _empty_lines(self) -> list[str]:
         """空の `list[str]` を返す。"""
-        out: list[str] = []
-        return out
+        return []
 
     def _root_scope_stack(self) -> list[set[str]]:
         """最上位 1 スコープだけを持つ初期スコープスタックを返す。"""
@@ -105,49 +104,30 @@ class CodeEmitter:
         """`args + keyword values` の結合結果を返す。"""
         if len(kw) == 0:
             return args
-        out: list[str] = []
-        i = 0
-        while i < len(args):
-            out.append(args[i])
-            i += 1
+        out: list[str] = list(args)
         kw_keys: list[str] = []
         for key, _ in kw.items():
             kw_keys.append(key)
-        k = 0
-        while k < len(kw_keys):
-            key = kw_keys[k]
+        for key in kw_keys:
             out.append(kw[key])
-            k += 1
         return out
 
     def merge_call_kw_values(self, args: list[str], kw_values: list[str]) -> list[str]:
         """`args + kw_values` を順序保持で結合する。"""
-        out: list[str] = []
-        i = 0
-        while i < len(args):
-            out.append(args[i])
-            i += 1
+        out: list[str] = list(args)
         if len(kw_values) == 0:
             return out
-        i = 0
-        while i < len(kw_values):
-            out.append(kw_values[i])
-            i += 1
+        for val in kw_values:
+            out.append(val)
         return out
 
     def merge_call_arg_nodes(self, arg_nodes: list[Any], kw_nodes: list[Any]) -> list[Any]:
         """位置引数ノードとキーワード値ノードを順序保持で結合する。"""
-        out: list[Any] = []
-        i = 0
-        while i < len(arg_nodes):
-            out.append(arg_nodes[i])
-            i += 1
+        out: list[Any] = list(arg_nodes)
         if len(kw_nodes) == 0:
             return out
-        i = 0
-        while i < len(kw_nodes):
-            out.append(kw_nodes[i])
-            i += 1
+        for node in kw_nodes:
+            out.append(node)
         return out
 
     def unpack_prepared_call_parts(self, call_parts: dict[str, Any]) -> dict[str, Any]:
