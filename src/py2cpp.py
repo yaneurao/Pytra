@@ -3760,6 +3760,19 @@ class CppEmitter(CodeEmitter):
             module_rendered_1 = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes)
             if module_rendered_1 is not None and module_rendered_1 != "":
                 return module_rendered_1
+        return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, arg_nodes)
+
+    def _render_call_attribute_non_module(
+        self,
+        owner_t: str,
+        owner_expr: str,
+        attr: str,
+        fn: dict[str, Any],
+        args: list[str],
+        kw: dict[str, str],
+        arg_nodes: list[Any],
+    ) -> str | None:
+        """`Call(Attribute)` の object/class 系分岐（非 module）を処理する。"""
         hook_object_rendered = self.hook_on_render_object_method(owner_t, owner_expr, attr, args)
         if isinstance(hook_object_rendered, str) and hook_object_rendered != "":
             return hook_object_rendered

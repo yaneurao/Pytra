@@ -62,6 +62,7 @@
    - [x] 引数型強制の重複ロジック（`_coerce_args_for_known_function` / `_coerce_args_for_class_method`）を `_coerce_args_by_signature` へ統合し、`Call` 系分岐の重複を削減した。
    - [x] `isinstance` 変換の型マップ分岐（`Call(Name)` / fallback）を `_render_isinstance_type_check` へ統合し、`Call` 分岐の重複を削減した。
    - [x] `module.method(...)` の namespace 呼び出し重複を `_render_call_module_method_with_namespace` へ統合し、`_render_call_module_method` の重複分岐を削減した。
+   - [x] `Call(Attribute)` の object/class 分岐を `_render_call_attribute_non_module` へ切り出し、`_render_call_attribute` 本体を module 解決 + dispatch へ縮退した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [x] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
