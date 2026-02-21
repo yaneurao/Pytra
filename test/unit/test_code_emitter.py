@@ -253,6 +253,28 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em._resolve_imported_symbol("bg"), {"module": "m.b", "name": "g"})
         self.assertEqual(em._resolve_imported_symbol("none"), {})
 
+    def test_imported_module_name_fallback_via_meta(self) -> None:
+        em = CodeEmitter(
+            {
+                "meta": {
+                    "qualified_symbol_refs": [
+                        {"module_id": "pytra.runtime", "symbol": "png", "local_name": "png"},
+                    ],
+                    "import_bindings": [
+                        {
+                            "module_id": "pytra.std",
+                            "export_name": "math",
+                            "local_name": "m",
+                            "binding_kind": "symbol",
+                        },
+                    ],
+                }
+            }
+        )
+        self.assertEqual(em.import_symbols, {})
+        self.assertEqual(em._resolve_imported_module_name("png"), "pytra.runtime.png")
+        self.assertEqual(em._resolve_imported_module_name("m"), "pytra.std.math")
+
     def test_can_runtime_cast_target(self) -> None:
         em = CodeEmitter({})
         self.assertFalse(em._can_runtime_cast_target(""))

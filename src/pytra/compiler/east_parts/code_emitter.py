@@ -66,8 +66,10 @@ class CodeEmitter:
         self.scope_stack = self._root_scope_stack()
         self.passthrough_cpp_block = False
         self.opt_level = "2"
-        self.import_modules = {}
-        self.import_symbols = {}
+        import_modules: dict[str, str] = {}
+        import_symbols: dict[str, dict[str, str]] = {}
+        self.import_modules = import_modules
+        self.import_symbols = import_symbols
 
     def _empty_lines(self) -> list[str]:
         """空の `list[str]` を返す。"""
@@ -854,8 +856,6 @@ class CodeEmitter:
 
     def _resolve_imported_module_name(self, name: str) -> str:
         """import で束縛された識別子名を実モジュール名へ解決する。"""
-        if self.is_declared(name):
-            return ""
         if name in self.import_modules:
             mod_name = self.import_modules[name]
             if mod_name != "":
@@ -863,14 +863,15 @@ class CodeEmitter:
 
         if name in self.import_symbols:
             sym = self.import_symbols[name]
-            parent = ""
-            child = ""
-            if "module" in sym:
-                parent = sym["module"]
-            if "name" in sym:
-                child = sym["name"]
+            parent = sym.get("module", "")
+            child = sym.get("name", "")
             if parent != "" and child != "":
                 return f"{parent}.{child}"
+        sym_fallback = self._resolve_imported_symbol(name)
+        parent_fb = sym_fallback.get("module", "")
+        child_fb = sym_fallback.get("name", "")
+        if parent_fb != "" and child_fb != "":
+            return f"{parent_fb}.{child_fb}"
         return ""
 
     def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
@@ -878,12 +879,8 @@ class CodeEmitter:
         if name in self.import_symbols:
             sym0 = self.import_symbols[name]
             out0: dict[str, str] = {}
-            mod0 = ""
-            nm0 = ""
-            if "module" in sym0:
-                mod0 = sym0["module"]
-            if "name" in sym0:
-                nm0 = sym0["name"]
+            mod0 = sym0.get("module", "")
+            nm0 = sym0.get("name", "")
             if mod0 != "":
                 out0["module"] = mod0
             if nm0 != "":

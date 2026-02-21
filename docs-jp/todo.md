@@ -22,13 +22,14 @@
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
    - [x] `args + kw` 結合ロジックを `CodeEmitter.merge_call_args` へ移管し、`py2cpp.py` 側の重複実装を削除した。
    - [x] `list[dict]` 抽出ヘルパ（`_dict_stmt_list`）を `CodeEmitter` 側へ移管し、`py2cpp.py` 側の重複実装を削除した。
-   - [x] `Call` 前処理（`_prepare_call_parts`）を `CodeEmitter` 側へ移管し、selfhost-safe 化のうえ `py2cpp.py` 側フォールバックを削除した。
+   - [x] `Call` 前処理（`_prepare_call_parts`）を `CodeEmitter` 側へ移管し、selfhost-safe 化した（互換維持のため `py2cpp.py` 側フォールバックは残置）。
    - [x] `IfExp` 共通レンダ（`_render_ifexp_expr`）と定数解析ヘルパ（`_one_char_str_const`, `_const_int_literal`）を `CodeEmitter` 側へ移管した。
    - [x] `BinOp` の優先順位/括弧補完ヘルパ（`_binop_precedence`, `_wrap_for_binop_operand`）を `CodeEmitter` 側へ移管した。
    - [x] 文字列探索/末尾セグメント抽出ヘルパ（`_contains_text`, `_last_dotted_name`）を `CodeEmitter` 側へ移管した。
    - [x] 最適化レベル判定ヘルパ（`_opt_ge`）を `CodeEmitter` 側へ移管した。
    - [x] import 解決ヘルパ（`_resolve_imported_module_name`, `_resolve_imported_symbol`）を `CodeEmitter` 側へ移管した。
    - [x] 上記 import 解決ヘルパは selfhost-safe 化（`__dict__` 非依存・型付き dict 直接参照）を完了した。
+   - [x] import 解決ヘルパに `meta` 由来フォールバックを追加し、selfhost で `from X import Y` 由来の `Y.attr(...)` が未解決になる差分を解消した（`tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で `mismatches=0`）。
    - [x] 実行時キャスト対象判定（`_can_runtime_cast_target`）を `CodeEmitter` 側へ移管した。
    - [x] `std::` runtime 判定ヘルパ（`_is_std_runtime_call`）を `CodeEmitter` 側へ移管した。
    - [x] call/attribute 周辺の `module.attr` runtime lookup を helper 化し、`render_call`/`render_attribute`/hooks から共通利用するよう整理した。
