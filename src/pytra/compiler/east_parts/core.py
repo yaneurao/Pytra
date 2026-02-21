@@ -1189,6 +1189,72 @@ def _sh_extract_leading_docstring(stmts: list[dict[str, Any]]) -> tuple[str | No
     return s, stmts[1:]
 
 
+def _sh_collect_yield_value_types(stmts: list[dict[str, Any]]) -> list[str]:
+    """文リストから yield 値型を再帰収集する（入れ子関数/クラスは除外）。"""
+    out: list[str] = []
+    for st in stmts:
+        if not isinstance(st, dict):
+            continue
+        kind = str(st.get("kind", ""))
+        if kind == "Yield":
+            val = st.get("value")
+            if isinstance(val, dict):
+                t_val = val.get("resolved_type", "unknown")
+                if isinstance(t_val, str) and t_val != "":
+                    out.append(t_val)
+                else:
+                    out.append("unknown")
+            else:
+                out.append("None")
+            continue
+        if kind in {"FunctionDef", "ClassDef"}:
+            continue
+        if kind in {"If", "While", "For", "ForRange"}:
+            body_obj: Any = st.get("body")
+            body_list: list[dict[str, Any]] = body_obj if isinstance(body_obj, list) else []
+            out.extend(_sh_collect_yield_value_types(body_list))
+            orelse_obj: Any = st.get("orelse")
+            orelse_list: list[dict[str, Any]] = orelse_obj if isinstance(orelse_obj, list) else []
+            out.extend(_sh_collect_yield_value_types(orelse_list))
+            continue
+        if kind == "Try":
+            body_obj = st.get("body")
+            body_list = body_obj if isinstance(body_obj, list) else []
+            out.extend(_sh_collect_yield_value_types(body_list))
+            orelse_obj = st.get("orelse")
+            orelse_list = orelse_obj if isinstance(orelse_obj, list) else []
+            out.extend(_sh_collect_yield_value_types(orelse_list))
+            final_obj = st.get("finalbody")
+            final_list = final_obj if isinstance(final_obj, list) else []
+            out.extend(_sh_collect_yield_value_types(final_list))
+            handlers_obj: Any = st.get("handlers")
+            handlers: list[dict[str, Any]] = handlers_obj if isinstance(handlers_obj, list) else []
+            for h in handlers:
+                if not isinstance(h, dict):
+                    continue
+                h_body_obj: Any = h.get("body")
+                h_body: list[dict[str, Any]] = h_body_obj if isinstance(h_body_obj, list) else []
+                out.extend(_sh_collect_yield_value_types(h_body))
+    return out
+
+
+def _sh_make_generator_return_type(declared_ret: str, yield_types: list[str]) -> tuple[str, str]:
+    """yield 検出時の関数戻り型（list[...]）と要素型を決定する。"""
+    elem = "unknown"
+    if declared_ret != "" and declared_ret != "None":
+        elem = declared_ret
+    for yt in yield_types:
+        if yt in {"", "unknown", "None"}:
+            continue
+        if elem == "unknown":
+            elem = yt
+            continue
+        if elem != yt:
+            elem = "Any"
+            break
+    return "list[" + elem + "]", elem
+
+
 def _sh_append_import_binding(
     *,
     import_bindings: list[dict[str, Any]],
@@ -3320,6 +3386,12 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 fn_scope_types[arg_name] = arg_ty
             fn_stmts = _sh_parse_stmt_block(fn_block, name_types=fn_scope_types, scope_label=f"{scope_label}.{fn_name}")
             docstring, fn_stmts = _sh_extract_leading_docstring(fn_stmts)
+            yield_types = _sh_collect_yield_value_types(fn_stmts)
+            is_generator = len(yield_types) > 0
+            fn_ret_effective = fn_ret
+            yield_value_type = "unknown"
+            if is_generator:
+                fn_ret_effective, yield_value_type = _sh_make_generator_return_type(fn_ret, yield_types)
             arg_defaults: dict[str, Any] = {}
             arg_index_map: dict[str, int] = {}
             arg_usage_map: dict[str, str] = {}
@@ -3342,7 +3414,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             callable_parts: list[str] = []
             for arg_name in arg_order:
                 callable_parts.append(arg_types.get(arg_name, "unknown"))
-            name_types[fn_name] = "callable[" + ", ".join(callable_parts) + "->" + fn_ret + "]"
+            name_types[fn_name] = "callable[" + ", ".join(callable_parts) + "->" + fn_ret_effective + "]"
+            _SH_FN_RETURNS[fn_name] = fn_ret_effective
             pending_blank_count = _sh_push_stmt_with_trivia(
                 stmts,
                 pending_leading_trivia,
@@ -3356,11 +3429,13 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "arg_order": arg_order,
                     "arg_defaults": arg_defaults,
                     "arg_index": arg_index_map,
-                    "return_type": fn_ret,
+                    "return_type": fn_ret_effective,
                     "arg_usage": arg_usage_map,
                     "renamed_symbols": {},
                     "docstring": docstring,
                     "body": fn_stmts,
+                    "is_generator": 1 if is_generator else 0,
+                    "yield_value_type": yield_value_type,
                 },
             )
             i = j
@@ -3728,6 +3803,38 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "source_span": _sh_stmt_span(merged_line_end, ln_no, rcol, len(ln_txt)),
                     "value": _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
                 }
+            )
+            i += 1
+            continue
+
+        if s == "yield":
+            ycol = ln_txt.find("yield")
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                {
+                    "kind": "Yield",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, ycol, len(ln_txt)),
+                    "value": None,
+                },
+            )
+            i += 1
+            continue
+
+        if s.startswith("yield "):
+            ycol = ln_txt.find("yield ")
+            expr_txt = ln_txt[ycol + len("yield ") :].strip()
+            expr_col = ln_txt.find(expr_txt, ycol + len("yield "))
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                {
+                    "kind": "Yield",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, ycol, len(ln_txt)),
+                    "value": _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                },
             )
             i += 1
             continue
@@ -4103,6 +4210,12 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
             stmts = _sh_parse_stmt_block(block, name_types=dict(arg_types), scope_label=fn_name)
             docstring, stmts = _sh_extract_leading_docstring(stmts)
+            yield_types = _sh_collect_yield_value_types(stmts)
+            is_generator = len(yield_types) > 0
+            fn_ret_effective = fn_ret
+            yield_value_type = "unknown"
+            if is_generator:
+                fn_ret_effective, yield_value_type = _sh_make_generator_return_type(fn_ret, yield_types)
             arg_defaults: dict[str, Any] = {}
             arg_index_map: dict[str, int] = {}
             for arg_pos, arg_name in enumerate(arg_order):
@@ -4133,14 +4246,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "arg_order": arg_order,
                 "arg_defaults": arg_defaults,
                 "arg_index": arg_index_map,
-                "return_type": fn_ret,
+                "return_type": fn_ret_effective,
                 "arg_usage": arg_usage_map,
                 "renamed_symbols": {},
                 "leading_comments": [],
                 "leading_trivia": [],
                 "docstring": docstring,
                 "body": stmts,
+                "is_generator": 1 if is_generator else 0,
+                "yield_value_type": yield_value_type,
             }
+            fn_returns[fn_name] = fn_ret_effective
+            _SH_FN_RETURNS[fn_name] = fn_ret_effective
             if not first_item_attached:
                 item["leading_comments"] = list(leading_file_comments)
                 item["leading_trivia"] = list(leading_file_trivia)
@@ -4530,6 +4647,12 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             local_types[fnm] = fty
                         stmts = _sh_parse_stmt_block(method_block, name_types=local_types, scope_label=f"{cls_name}.{mname}")
                         docstring, stmts = _sh_extract_leading_docstring(stmts)
+                        yield_types = _sh_collect_yield_value_types(stmts)
+                        is_generator = len(yield_types) > 0
+                        mret_effective = mret
+                        yield_value_type = "unknown"
+                        if is_generator:
+                            mret_effective, yield_value_type = _sh_make_generator_return_type(mret, yield_types)
                         marg_defaults: dict[str, Any] = {}
                         for arg_name in marg_order:
                             if arg_name in marg_defaults_raw:
@@ -4601,6 +4724,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         arg_usage_map: dict[str, str] = {}
                         for arg_name in marg_types.keys():
                             arg_usage_map[arg_name] = "readonly"
+                        if cls_name in class_method_return_types:
+                            methods_map = class_method_return_types[cls_name]
+                            methods_map[mname] = mret_effective
+                            class_method_return_types[cls_name] = methods_map
+                        if cls_name in _SH_CLASS_METHOD_RETURNS:
+                            methods_map2 = _SH_CLASS_METHOD_RETURNS[cls_name]
+                            methods_map2[mname] = mret_effective
+                            _SH_CLASS_METHOD_RETURNS[cls_name] = methods_map2
                         class_body.append(
                             {
                                 "kind": "FunctionDef",
@@ -4616,12 +4747,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 "arg_order": marg_order,
                                 "arg_defaults": marg_defaults,
                                 "arg_index": arg_index_map,
-                                "return_type": mret,
+                                "return_type": mret_effective,
                                 "arg_usage": arg_usage_map,
                                 "renamed_symbols": {},
                                 "decorators": list(pending_method_decorators),
                                 "docstring": docstring,
                                 "body": stmts,
+                                "is_generator": 1 if is_generator else 0,
+                                "yield_value_type": yield_value_type,
                             }
                         )
                         pending_method_decorators = []

@@ -791,6 +791,9 @@ class CppEmitter(CodeEmitter):
         self.function_arg_types: dict[str, list[str]] = {}
         self.function_return_types: dict[str, str] = {}
         self.current_function_return_type: str = ""
+        self.current_function_is_generator: bool = False
+        self.current_function_yield_buffer: str = ""
+        self.current_function_yield_type: str = "unknown"
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
 
@@ -2207,6 +2210,9 @@ class CppEmitter(CodeEmitter):
         if kind == "Continue":
             self._emit_continue_stmt(stmt)
             return
+        if kind == "Yield":
+            self._emit_yield_stmt(stmt)
+            return
         if kind == "Import" or kind == "ImportFrom":
             self._emit_noop_stmt(stmt)
             return
@@ -2424,6 +2430,13 @@ class CppEmitter(CodeEmitter):
         )
 
     def _emit_return_stmt(self, stmt: dict[str, Any]) -> None:
+        if self.current_function_is_generator:
+            buf = self.current_function_yield_buffer
+            if buf == "":
+                self.emit("/* invalid generator return */")
+                return
+            self.emit(f"return {buf};")
+            return
         value_node = self.any_to_dict_or_empty(stmt.get("value"))
         v_is_dict: bool = len(value_node) > 0
         if not v_is_dict:
@@ -2444,6 +2457,31 @@ class CppEmitter(CodeEmitter):
                 {"value": rv},
             )
         )
+
+    def _emit_yield_stmt(self, stmt: dict[str, Any]) -> None:
+        if not self.current_function_is_generator or self.current_function_yield_buffer == "":
+            self.emit("/* unsupported yield outside generator */")
+            return
+        buf = self.current_function_yield_buffer
+        value_node = self.any_to_dict_or_empty(stmt.get("value"))
+        if len(value_node) == 0:
+            yty = self.current_function_yield_type
+            default_expr = "object()"
+            if yty in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+                default_expr = "0"
+            elif yty in {"float32", "float64"}:
+                default_expr = "0.0"
+            elif yty == "bool":
+                default_expr = "false"
+            elif yty == "str":
+                default_expr = "str()"
+            self.emit(f"{buf}.append({default_expr});")
+            return
+        yv = self.render_expr(stmt.get("value"))
+        yv_t = self.get_expr_type(stmt.get("value"))
+        if self.current_function_yield_type not in {"", "unknown", "Any", "object"} and self.is_any_like_type(yv_t):
+            yv = self.apply_cast(yv, self.current_function_yield_type)
+        self.emit(f"{buf}.append({yv});")
 
     def _emit_assign_stmt(self, stmt: dict[str, Any]) -> None:
         self.emit_assign(stmt)
@@ -3044,7 +3082,15 @@ class CppEmitter(CodeEmitter):
         """関数定義ノードを C++ 関数として出力する。"""
         name = self.any_dict_get_str(stmt, "name", "fn")
         emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
+        is_generator = self.any_dict_get_int(stmt, "is_generator", 0) != 0
+        yield_value_type = self.any_to_str(stmt.get("yield_value_type"))
         ret = self.cpp_type(stmt.get("return_type"))
+        if is_generator:
+            elem_type_for_cpp = yield_value_type
+            if elem_type_for_cpp in {"", "unknown"}:
+                elem_type_for_cpp = "Any"
+            elem_cpp = self._cpp_type_text(elem_type_for_cpp)
+            ret = f"list<{elem_cpp}>"
         arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
         arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
         arg_defaults = self.any_to_dict_or_empty(stmt.get("arg_defaults"))
@@ -3103,6 +3149,9 @@ class CppEmitter(CodeEmitter):
         self.indent += 1
         self.scope_stack.append(set(fn_scope))
         prev_ret = self.current_function_return_type
+        prev_is_gen = self.current_function_is_generator
+        prev_yield_buf = self.current_function_yield_buffer
+        prev_yield_ty = self.current_function_yield_type
         prev_decl_types = self.declared_var_types
         empty_decl_types: dict[str, str] = {}
         self.declared_var_types = empty_decl_types
@@ -3115,10 +3164,24 @@ class CppEmitter(CodeEmitter):
                     self.declared_var_types[an] = self.normalize_type_name(at)
             i += 1
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
+        self.current_function_is_generator = is_generator
+        self.current_function_yield_type = yield_value_type if yield_value_type != "" else "Any"
+        self.current_function_yield_buffer = self.next_tmp("__yield_values") if is_generator else ""
         if docstring != "":
             self.emit_block_comment(docstring)
+        if is_generator:
+            yield_elem_ty = self.current_function_yield_type
+            if yield_elem_ty in {"", "unknown"}:
+                yield_elem_ty = "Any"
+            yield_elem_cpp = self._cpp_type_text(yield_elem_ty)
+            self.emit(f"list<{yield_elem_cpp}> {self.current_function_yield_buffer} = list<{yield_elem_cpp}>{{}};")
         self.emit_stmt_list(body_stmts)
+        if is_generator and self.current_function_yield_buffer != "":
+            self.emit(f"return {self.current_function_yield_buffer};")
         self.current_function_return_type = prev_ret
+        self.current_function_is_generator = prev_is_gen
+        self.current_function_yield_buffer = prev_yield_buf
+        self.current_function_yield_type = prev_yield_ty
         self.declared_var_types = prev_decl_types
         self.scope_stack.pop()
         self.indent -= 1
