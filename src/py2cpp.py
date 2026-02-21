@@ -2753,7 +2753,13 @@ class CppEmitter(CodeEmitter):
             self.indent -= 1
             return
 
-        self.emit(hdr + " {")
+        self.emit(
+            self.syntax_line(
+                "for_open_block",
+                "{header} {",
+                {"header": hdr},
+            )
+        )
         scope_names: set[str] = set()
         scope_names.add(tgt)
         self.emit_scoped_stmt_list(body_stmts, scope_names)
@@ -2827,7 +2833,13 @@ class CppEmitter(CodeEmitter):
             self.indent -= 1
             return
 
-        self.emit(hdr + " {")
+        self.emit(
+            self.syntax_line(
+                "for_open_block",
+                "{header} {",
+                {"header": hdr},
+            )
+        )
         self.indent += 1
         self.scope_stack.append(set(target_names))
         if unpack_tuple:
@@ -3357,6 +3369,55 @@ class CppEmitter(CodeEmitter):
             return f"py_to_int64({args[0]})"
         return f"static_cast<{target}>({args[0]})"
 
+    def _render_isinstance_name_call(
+        self,
+        args: list[str],
+        arg_nodes: list[Any],
+    ) -> str | None:
+        """`isinstance(x, T)` の Name 呼び出し分岐を描画する。"""
+        if len(args) != 2:
+            return None
+        rhs: dict[str, Any] = {}
+        if len(arg_nodes) > 1:
+            rhs = self.any_to_dict_or_empty(arg_nodes[1])
+        if self._node_kind_from_dict(rhs) != "Name":
+            return "false"
+        type_name = self.any_to_str(rhs.get("id"))
+        a0 = args[0]
+        if type_name == "dict":
+            return f"py_is_dict({a0})"
+        if type_name == "list":
+            return f"py_is_list({a0})"
+        if type_name == "set":
+            return f"py_is_set({a0})"
+        if type_name == "str":
+            return f"py_is_str({a0})"
+        if type_name == "int":
+            return f"py_is_int({a0})"
+        if type_name == "float":
+            return f"py_is_float({a0})"
+        if type_name == "bool":
+            return f"py_is_bool({a0})"
+        return "false"
+
+    def _render_simple_name_builtin_call(self, raw: str, args: list[str]) -> str | None:
+        """Name 呼び出しの単純ビルトイン分岐を描画する。"""
+        if raw == "print":
+            return f"py_print({_join_str_list(', ', args)})"
+        if raw == "len" and len(args) == 1:
+            return f"py_len({args[0]})"
+        if raw == "reversed" and len(args) == 1:
+            return f"py_reversed({args[0]})"
+        if raw == "enumerate" and len(args) == 1:
+            return f"py_enumerate({args[0]})"
+        if raw == "enumerate" and len(args) >= 2:
+            return f"py_enumerate({args[0]}, py_to_int64({args[1]}))"
+        if raw == "any" and len(args) == 1:
+            return f"py_any({args[0]})"
+        if raw == "all" and len(args) == 1:
+            return f"py_all({args[0]})"
+        return None
+
     def _render_call_name_or_attr(
         self,
         expr: dict[str, Any],
@@ -3410,43 +3471,13 @@ class CppEmitter(CodeEmitter):
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
             if isinstance(raw, str) and raw in self.ref_classes:
                 return f"::rc_new<{raw}>({_join_str_list(', ', args)})"
-            if raw == "print":
-                return f"py_print({_join_str_list(', ', args)})"
-            if raw == "len" and len(args) == 1:
-                return f"py_len({args[0]})"
-            if raw == "reversed" and len(args) == 1:
-                return f"py_reversed({args[0]})"
-            if raw == "enumerate" and len(args) == 1:
-                return f"py_enumerate({args[0]})"
-            if raw == "enumerate" and len(args) >= 2:
-                return f"py_enumerate({args[0]}, py_to_int64({args[1]}))"
-            if raw == "any" and len(args) == 1:
-                return f"py_any({args[0]})"
-            if raw == "all" and len(args) == 1:
-                return f"py_all({args[0]})"
-            if raw == "isinstance" and len(args) == 2:
-                type_name = ""
-                rhs: dict[str, Any] = {}
-                if len(arg_nodes) > 1:
-                    rhs = self.any_to_dict_or_empty(arg_nodes[1])
-                if self._node_kind_from_dict(rhs) == "Name":
-                    type_name = self.any_to_str(rhs.get("id"))
-                a0 = args[0]
-                if type_name == "dict":
-                    return f"py_is_dict({a0})"
-                if type_name == "list":
-                    return f"py_is_list({a0})"
-                if type_name == "set":
-                    return f"py_is_set({a0})"
-                if type_name == "str":
-                    return f"py_is_str({a0})"
-                if type_name == "int":
-                    return f"py_is_int({a0})"
-                if type_name == "float":
-                    return f"py_is_float({a0})"
-                if type_name == "bool":
-                    return f"py_is_bool({a0})"
-                return "false"
+            simple_builtin_rendered = self._render_simple_name_builtin_call(raw, args)
+            if simple_builtin_rendered is not None:
+                return simple_builtin_rendered
+            if raw == "isinstance":
+                isinstance_rendered = self._render_isinstance_name_call(args, arg_nodes)
+                if isinstance_rendered is not None:
+                    return isinstance_rendered
             collection_ctor_rendered = self._render_collection_constructor_call(raw, expr, args, first_arg)
             if collection_ctor_rendered is not None:
                 return collection_ctor_rendered

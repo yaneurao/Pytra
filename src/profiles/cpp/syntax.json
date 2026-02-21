@@ -16,6 +16,7 @@
     "for_each_unpack_open": "for (auto {iter_tmp} : {iter})",
     "for_each_auto_ref_open": "for (auto& {target} : {iter})",
     "for_each_typed_open": "for ({type} {target} : {iter})",
+    "for_open_block": "{header} {",
     "annassign_member_noinit": "{target};",
     "annassign_member_init": "{target} = {value};",
     "annassign_decl_noinit": "{type} {target};",
