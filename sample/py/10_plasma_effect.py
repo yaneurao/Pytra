@@ -19,8 +19,8 @@ def run_10_plasma_effect() -> None:
 
     for t in range(frames_n):
         frame = bytearray(w * h)
-        i = 0
         for y in range(h):
+            row_base = y * w
             for x in range(w):
                 dx = x - 160
                 dy = y - 120
@@ -35,8 +35,7 @@ def run_10_plasma_effect() -> None:
                     c = 0
                 if c > 255:
                     c = 255
-                frame[i] = c
-                i += 1
+                frame[row_base + x] = c
         frames.append(bytes(frame))
 
     save_gif(out_path, w, h, frames, grayscale_palette(), delay_cs=3, loop=0)

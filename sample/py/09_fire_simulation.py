@@ -58,11 +58,10 @@ def run_09_fire_simulation() -> None:
                 heat[y - 1][x] = nv if nv > 0 else 0
 
         frame = bytearray(w * h)
-        i = 0
         for yy in range(h):
+            row_base = yy * w
             for xx in range(w):
-                frame[i] = heat[yy][xx]
-                i += 1
+                frame[row_base + xx] = heat[yy][xx]
         frames.append(bytes(frame))
 
     save_gif(out_path, w, h, frames, fire_palette(), delay_cs=4, loop=0)
