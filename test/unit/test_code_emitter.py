@@ -262,6 +262,9 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertFalse(em._can_runtime_cast_target("int64|None"))
         self.assertTrue(em._can_runtime_cast_target("int64"))
         self.assertTrue(em._can_runtime_cast_target("float64"))
+        self.assertTrue(em._is_std_runtime_call("std::sqrt"))
+        self.assertTrue(em._is_std_runtime_call("::std::abs"))
+        self.assertFalse(em._is_std_runtime_call("py_len"))
 
     def test_trivia_and_cond_helpers(self) -> None:
         em = _DummyEmitter(

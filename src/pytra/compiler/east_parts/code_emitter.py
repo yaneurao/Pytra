@@ -934,6 +934,10 @@ class CodeEmitter:
             return False
         return True
 
+    def _is_std_runtime_call(self, runtime_call: str) -> bool:
+        """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
+        return runtime_call[0:5] == "std::" or runtime_call[0:7] == "::std::"
+
     def comment_line_prefix(self) -> str:
         """単行コメント出力時の接頭辞を返す。"""
         return "// "

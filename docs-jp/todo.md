@@ -29,6 +29,7 @@
    - [x] 最適化レベル判定ヘルパ（`_opt_ge`）を `CodeEmitter` 側へ移管した。
    - [x] import 解決ヘルパ（`_resolve_imported_module_name`, `_resolve_imported_symbol`）を `CodeEmitter` 側へ移管した。
    - [x] 実行時キャスト対象判定（`_can_runtime_cast_target`）を `CodeEmitter` 側へ移管した。
+   - [x] `std::` runtime 判定ヘルパ（`_is_std_runtime_call`）を `CodeEmitter` 側へ移管した。
    - [x] call/attribute 周辺の `module.attr` runtime lookup を helper 化し、`render_call`/`render_attribute`/hooks から共通利用するよう整理した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
