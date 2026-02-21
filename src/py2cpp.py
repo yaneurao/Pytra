@@ -3506,25 +3506,37 @@ class CppEmitter(CodeEmitter):
         if owner_t == "unknown" and attr == "clear":
             return f"{owner_expr}.clear()"
         if attr == "append":
-            a0 = args[0] if len(args) >= 1 else "/* missing */"
-            if "bytearray" in owner_types:
+            append_rendered = self._render_append_call_object_method(owner_types, owner_expr, args)
+            if append_rendered is not None:
+                return append_rendered
+        return None
+
+    def _render_append_call_object_method(
+        self,
+        owner_types: list[str],
+        owner_expr: str,
+        args: list[str],
+    ) -> str | None:
+        """`obj.append(...)` の型依存特殊処理を描画する。"""
+        a0 = args[0] if len(args) >= 1 else "/* missing */"
+        if "bytearray" in owner_types:
+            a0 = f"static_cast<uint8>(py_to_int64({a0}))"
+            return f"{owner_expr}.append({a0})"
+        list_owner_t = ""
+        i = 0
+        while i < len(owner_types):
+            t = owner_types[i]
+            if t.startswith("list[") and t.endswith("]"):
+                list_owner_t = t
+                break
+            i += 1
+        if list_owner_t != "":
+            inner_t: str = list_owner_t[5:-1].strip()
+            if inner_t == "uint8":
                 a0 = f"static_cast<uint8>(py_to_int64({a0}))"
-                return f"{owner_expr}.append({a0})"
-            list_owner_t = ""
-            i = 0
-            while i < len(owner_types):
-                t = owner_types[i]
-                if t.startswith("list[") and t.endswith("]"):
-                    list_owner_t = t
-                    break
-                i += 1
-            if list_owner_t != "":
-                inner_t: str = list_owner_t[5:-1].strip()
-                if inner_t == "uint8":
-                    a0 = f"static_cast<uint8>(py_to_int64({a0}))"
-                elif inner_t != "" and not self.is_any_like_type(inner_t):
-                    a0 = f"{self._cpp_type_text(inner_t)}({a0})"
-                return f"{owner_expr}.append({a0})"
+            elif inner_t != "" and not self.is_any_like_type(inner_t):
+                a0 = f"{self._cpp_type_text(inner_t)}({a0})"
+            return f"{owner_expr}.append({a0})"
         return None
 
     def _render_call_attribute(
