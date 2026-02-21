@@ -1764,6 +1764,48 @@ class CppEmitter(CodeEmitter):
             self._collect_mutated_params_from_stmt(st, params, out)
         return out
 
+    def _allows_none_default(self, east_t: str) -> bool:
+        """型が `None` 既定値（optional）を許容するか判定する。"""
+        t = self.normalize_type_name(east_t)
+        if t == "None":
+            return True
+        if t.startswith("optional[") and t.endswith("]"):
+            return True
+        if self._contains_text(t, "|"):
+            parts = self.split_union(t)
+            i = 0
+            while i < len(parts):
+                if parts[i] == "None":
+                    return True
+                i += 1
+        return False
+
+    def _none_default_expr_for_type(self, east_t: str) -> str:
+        """`None` 既定値を C++ 側の型別既定値へ変換する。"""
+        t = self.normalize_type_name(east_t)
+        if t in {"", "unknown", "Any", "object"}:
+            return "object{}"
+        if self._allows_none_default(t):
+            return "::std::nullopt"
+        if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+            return "0"
+        if t in {"float32", "float64"}:
+            return "0.0"
+        if t == "bool":
+            return "false"
+        if t == "str":
+            return "str()"
+        if t == "bytes":
+            return "bytes()"
+        if t == "bytearray":
+            return "bytearray()"
+        if t == "Path":
+            return "Path()"
+        cpp_t = self._cpp_type_text(t)
+        if cpp_t.startswith("::std::optional<"):
+            return "::std::nullopt"
+        return cpp_t + "{}"
+
     def _render_param_default_expr(self, node: Any, east_target_t: str) -> str:
         """関数引数既定値ノードを C++ 式へ変換する。"""
         nd = self.any_to_dict_or_empty(node)
@@ -1775,7 +1817,7 @@ class CppEmitter(CodeEmitter):
                 return ""
             val = nd["value"]
             if val is None:
-                return "::std::nullopt"
+                return self._none_default_expr_for_type(east_target_t)
             if isinstance(val, bool):
                 return "true" if val else "false"
             if isinstance(val, int):
@@ -1788,7 +1830,7 @@ class CppEmitter(CodeEmitter):
         if kind == "Name":
             ident = self.any_to_str(nd.get("id"))
             if ident == "None":
-                return "::std::nullopt"
+                return self._none_default_expr_for_type(east_target_t)
             if ident == "True":
                 return "true"
             if ident == "False":
@@ -5247,13 +5289,55 @@ def _header_guard_from_path(path: str) -> str:
     return out
 
 
+def _header_allows_none_default(east_t: str) -> bool:
+    """ヘッダ既定値で `None`（optional）を許容する型か判定する。"""
+    txt = east_t.strip()
+    if txt.startswith("optional[") and txt.endswith("]"):
+        return True
+    if "|" in txt:
+        parts = txt.split("|")
+        i = 0
+        while i < len(parts):
+            if parts[i].strip() == "None":
+                return True
+            i += 1
+    return txt == "None"
+
+
+def _header_none_default_expr_for_type(east_t: str) -> str:
+    """ヘッダ既定値で `None` を型別既定値へ変換する。"""
+    txt = east_t.strip()
+    if txt in {"", "unknown", "Any", "object"}:
+        return "object{}"
+    if _header_allows_none_default(txt):
+        return "::std::nullopt"
+    if txt in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+        return "0"
+    if txt in {"float32", "float64"}:
+        return "0.0"
+    if txt == "bool":
+        return "false"
+    if txt == "str":
+        return "str()"
+    if txt == "bytes":
+        return "bytes()"
+    if txt == "bytearray":
+        return "bytearray()"
+    if txt == "Path":
+        return "Path()"
+    cpp_t = _header_cpp_type_from_east(txt, set(), set())
+    if cpp_t.startswith("::std::optional<"):
+        return "::std::nullopt"
+    return cpp_t + "{}"
+
+
 def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str:
     """EAST の既定値ノードを C++ ヘッダ宣言用の式文字列へ変換する。"""
     kind = _dict_any_get_str(node, "kind")
     if kind == "Constant":
         val = node.get("value")
         if val is None:
-            return "::std::nullopt"
+            return _header_none_default_expr_for_type(east_target_t)
         if isinstance(val, bool):
             return "true" if val else "false"
         if isinstance(val, int):
@@ -5267,7 +5351,7 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
     if kind == "Name":
         ident = _dict_any_get_str(node, "id")
         if ident == "None":
-            return "::std::nullopt"
+            return _header_none_default_expr_for_type(east_target_t)
         if ident == "True":
             return "true"
         if ident == "False":
