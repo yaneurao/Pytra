@@ -3795,8 +3795,10 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
 
         if s.startswith("return "):
             rcol = ln_txt.find("return ")
-            expr_txt = ln_txt[rcol + len("return ") :].strip()
-            expr_col = ln_txt.find(expr_txt, rcol + len("return "))
+            expr_txt = s[len("return ") :].strip()
+            expr_col = ln_txt.find(expr_txt)
+            if expr_col < 0:
+                expr_col = rcol + len("return ")
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
                 {
                     "kind": "Return",
@@ -3824,8 +3826,10 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
 
         if s.startswith("yield "):
             ycol = ln_txt.find("yield ")
-            expr_txt = ln_txt[ycol + len("yield ") :].strip()
-            expr_col = ln_txt.find(expr_txt, ycol + len("yield "))
+            expr_txt = s[len("yield ") :].strip()
+            expr_col = ln_txt.find(expr_txt)
+            if expr_col < 0:
+                expr_col = ycol + len("yield ")
             pending_blank_count = _sh_push_stmt_with_trivia(
                 stmts,
                 pending_leading_trivia,

@@ -14,19 +14,19 @@
 4. `P3: py2rs（EAST移行）を CodeEmitter 中心で再設計`
 5. `P4: 他言語トランスパイラの EAST 移行`
 
-## Yanesdk 再調査メモ（2026-02-21）
+## Yanesdk 再調査メモ（2026-02-22）
 
 - 調査対象: `Yanesdk/` 配下の `.py` 16ファイル（library 8 / game 7 / browser-shim 1）
-- 現状結果: `py2cpp.py` 変換成功 `0/16`、失敗 `16/16`
-- 役割別の初回失敗:
-  - library（`*/yanesdk.py`）: `from ... import ... # type:ignore` が from-import 句として未対応（8/8）
-  - game（`docs/*/*.py` のゲーム本体）: `from yanesdk import *`（BOM付き）が先頭で失敗（7/7）
-  - browser-shim（`Yanesdk/yanesdk/browser.py`）: `class ...: pass` 未対応（1/1）
-- 先頭ブロッカーを外した追加判明（代表ファイルで確認）:
-  - 共通 parser/tokenizer 不足: `**`, `\` 継続行, class `pass`, トップレベル式文
-  - library 側の追加不足: nested `def`（関数内関数）, `self. attr` 形式の属性参照
-  - game 側の追加不足: Enum 風 `X = 0,`（末尾`,`付き代入）, nested `def`（例: `lifegame.py` 内 `def pset(...)`）
-  - import 解決不足（最小プローブで確認）: `math` / `random` / `timeit` / `traceback` / `browser` が `missing_module`
+- 現状結果（2026-02-22）:
+  - EAST 変換（`convert_path`）成功 `7/16`、失敗 `9/16`
+  - `py2cpp.py` 変換成功 `1/16`、失敗 `15/16`
+- EAST 失敗の主因:
+  - `docs/*/yanesdk.py`（重複コピー）: 文末 `;` が残っており、仕様どおり `input_invalid` で失敗。
+  - `block-sushi.py`: `for ...: yield ...` の単行 suite 未対応で失敗。
+  - `sakeru.py`: `else:` が文として消費されず式パースに落ちるケースが残存（`expected token EOF, got :`）。
+- py2cpp 失敗の主因:
+  - `from yanesdk import *` が同ディレクトリの `yanesdk.py` 重複コピー（`;` 含む）へ解決され、依存解決で失敗。
+  - canonical 正本（`Yanesdk/yanesdk/yanesdk.py`）優先解決と、`import *` 方針整理が未完了。
 - `;` について:
   - `Yanesdk` 側の文法誤りとして扱う。self_hosted parser では受理しない（サポート対象外）。
 - `browser` / `browser.widgets.dialog` について:
