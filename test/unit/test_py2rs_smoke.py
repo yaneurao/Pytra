@@ -80,6 +80,21 @@ class Py2RsSmokeTest(unittest.TestCase):
             txt = out_rs.read_text(encoding="utf-8")
             self.assertIn("fn abs_like", txt)
 
+    def test_imports_emit_use_lines(self) -> None:
+        fixture = find_fixture_case("from_pytra_std_import_math")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("use crate::pytra::std::math::floor;", rust)
+        self.assertIn("use crate::pytra::std::math::sqrt as msqrt;", rust)
+
+    def test_for_tuple_target_and_dict_items_quality(self) -> None:
+        fixture = find_fixture_case("dict_get_items")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("for (_k, v) in", rust)
+        self.assertIn(".clone().into_iter()", rust)
+        self.assertNotIn(".items()", rust)
+
     def test_py2rs_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2rs.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
@@ -88,4 +103,3 @@ class Py2RsSmokeTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
