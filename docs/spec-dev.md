@@ -1,5 +1,10 @@
 # 実装仕様（Pytra）
 
+<a href="../docs-en/spec-dev.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 このドキュメントは、トランスパイラの実装方針・構成・変換仕様をまとめた仕様です。
 
 ## 1. リポジトリ構成

@@ -1,5 +1,10 @@
 # TODO
 
+<a href="../docs-en/todo-old.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 ## 2026-02-21 完了: パススルー記法
 
 1. [x] トランスパイル時パススルー記法（`# Pytra::cpp` / `# Pytra::pass`）の仕様化と最小実装を完了した。

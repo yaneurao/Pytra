@@ -1,5 +1,10 @@
 # About Sample Code
 
+<a href="../docs/sample-code.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 ## 1. Purpose
 
 `sample/` is a directory for transpiling practical Python samples into each target language and comparing execution results and runtime.

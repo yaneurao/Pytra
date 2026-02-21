@@ -1,5 +1,10 @@
 # Import Specification
 
+<a href="../docs/spec-import.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 Read `docs/spec-runtime.md` first.
 
 This document defines how syntax like the following is converted in `py2cpp.py`.

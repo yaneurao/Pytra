@@ -1,5 +1,10 @@
 # TODO（未完了）
 
+<a href="../docs-en/todo.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 最終更新: 2026-02-21
 
 ## P0: selfhost 安定化

@@ -1,5 +1,10 @@
 # サンプルコードについて
 
+<a href="../docs-en/sample-code.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 ## 1. 目的
 
 `sample/` は、実用寄りの Python サンプルを各言語へトランスパイルし、実行結果と実行時間を比較するためのディレクトリです。

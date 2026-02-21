@@ -1,5 +1,10 @@
 # 利用仕様（Pytra）
 
+<a href="../docs-en/spec-user.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 このドキュメントは、Pytra の利用方法と入力制約をまとめた仕様です。
 
 ## 1. 目的

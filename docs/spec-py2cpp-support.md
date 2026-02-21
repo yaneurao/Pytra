@@ -1,5 +1,10 @@
 # py2cpp サポートマトリクス（テスト準拠）
 
+<a href="../docs-en/spec-py2cpp-support.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 最終更新: 2026-02-21
 
 この文書は、`src/py2cpp.py` の言語機能サポート状況を「実装コード」と「実行テスト」の両方で確認できる粒度でまとめたものです。

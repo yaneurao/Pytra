@@ -1,5 +1,10 @@
 # LanguageProfile 仕様（CodeEmitter）
 
+<a href="../docs-en/spec-language-profile.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 このドキュメントは、`CodeEmitter` で利用する言語プロファイル JSON の仕様を定義します。
 
 ## 1. 目的

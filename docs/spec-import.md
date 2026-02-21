@@ -1,5 +1,10 @@
 # importの仕様
 
+<a href="../docs-en/spec-import.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 まず、docs/spec-runtime.md も読むこと。
 
 ```Python

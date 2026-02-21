@@ -1,5 +1,10 @@
 # TODO (Open)
 
+<a href="../docs/todo.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 Last updated: 2026-02-21
 
 ## P0: Selfhost Stabilization

@@ -1,5 +1,10 @@
 # このファイルについて
 
+<a href="../docs-en/todo2.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 このファイルは、編集しないでください。
 
 # 最優先TODO

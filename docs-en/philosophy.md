@@ -1,5 +1,10 @@
 # Development Philosophy
 
+<a href="../docs/philosophy.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 Pytra is a transpiler designed for running one logic base across multiple languages without unnecessary friction.
 
 In multi-platform development, different languages are typically chosen for different use cases.  
@@ -33,7 +38,7 @@ EAST does not replace Python AST. It is a post-AST layer that enriches semantic 
 
 This policy reduces language-specific diff implementations and enables both specification consistency and performance improvements.
 
-For implementation-aligned EAST details, see [`spec-east.md`](spec-east.md).
+For implementation-aligned EAST details, see [EAST Specification (Implementation-Aligned)](spec-east.md).
 
 ## What We Prioritize
 
@@ -57,4 +62,3 @@ Optimization is advanced incrementally, assuming long-term operation, maintenanc
 - Use selfhost (transpiling the transpiler itself) to continuously expose design weaknesses.
 
 With this philosophy, Pytra aims to be not just a code generator, but a practical foundation for multi-language operations.
-

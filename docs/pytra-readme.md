@@ -1,5 +1,10 @@
 # Pytra 実装状況メモ
 
+<a href="../docs-en/pytra-readme.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 このページは、`README.md` から分離した実装状況の詳細です。
 
 ## 実装済みの言語機能

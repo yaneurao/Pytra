@@ -1,5 +1,10 @@
 # Pytra Implementation Status Notes
 
+<a href="../docs/pytra-readme.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 This page contains implementation-status details separated from `README.md`.
 
 ## Implemented Language Features
