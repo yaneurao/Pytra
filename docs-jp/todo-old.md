@@ -23,6 +23,9 @@
 6. [x] `run_local_ci.py` の selfhost 差分チェック対象を既定ケース（8件）へ拡張した。
    - [x] `tools/check_selfhost_cpp_diff.py` の `--cases` 指定を外し、既定ケースで実行するようにした。
    - [x] `tools/check_selfhost_stage2_cpp_diff.py` も同様に既定ケースで実行するようにした。
+7. [x] `tools/prepare_selfhost_source.py` の `load_cpp_profile` スタブを解除した。
+   - [x] `src/py2cpp.py` の `load_cpp_profile()` を selfhost で壊れない形（`raw_obj` 先行宣言）へ調整した。
+   - [x] `python3 tools/build_selfhost.py` / `python3 tools/build_selfhost_stage2.py --skip-stage1-build` / 差分チェック2系統で回帰なしを確認した。
 
 ## 2026-02-21 完了: selfhost 直変換 Compare 崩れ補正
 

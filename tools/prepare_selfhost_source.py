@@ -268,19 +268,6 @@ def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
     )
 
     repl(
-        "def load_cpp_profile(",
-        "\ndef load_cpp_bin_ops(",
-        (
-            "def load_cpp_profile() -> dict[str, Any]:\n"
-            "    pass\n"
-            "    out: dict[str, Any] = {}\n"
-            "    out[\"syntax\"] = {}\n"
-            "    out[\"runtime_calls\"] = {}\n"
-            "    return out\n\n"
-        ),
-    )
-
-    repl(
         "def load_cpp_module_attr_call_map(",
         "\ndef cpp_string_lit(",
         (

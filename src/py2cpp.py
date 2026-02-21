@@ -569,6 +569,7 @@ def load_cpp_profile() -> dict[str, Any]:
     p = Path("src/profiles/cpp/runtime_calls.json")
     if not p.exists():
         return out
+    raw_obj: Any = {}
     try:
         txt = p.read_text(encoding="utf-8")
         raw_obj = json.loads(txt)
