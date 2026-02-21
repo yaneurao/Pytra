@@ -56,11 +56,12 @@
    - [ ] class / Any / dict 連携の型整合（Rustコンパイル互換）を改善。
      - [x] Rust `Dict` 式で `entries` 形式を正しく展開し、要素脱落（`BTreeMap::from([])`）を修正。
      - [x] Rust `class` 出力に `#[derive(Clone, Debug)]` を付与し、`dict/items/clone` 経路のコンパイル互換を改善。
-5. [ ] 検証と回帰テスト。
+     - [x] `Any/object` 用に `PyAny` 最小ランタイム（`py_any_as_dict/py_any_to_i64/py_any_to_string` 等）を生成し、`dict[str, Any]` の `get/items/str/int/bool` 連携を改善。
+5. [x] 検証と回帰テスト。
    - [x] `test/unit/` に py2rs 向け最小テストを追加（読み込み・文法・出力スモーク）。
    - [x] `tools/check_py2rs_transpile.py` を追加（fixtures/sample 一括トランスパイル確認）。
    - [x] `py2cpp.py` 側の既存挙動を壊していないことを回帰確認する（`tools/check_py2cpp_transpile.py`）。
-6. [ ] 運用ルール（今回の指示反映）。
+6. [x] 運用ルール（今回の指示反映）。
    - [x] 「py2rs と py2cpp の共通コードは CodeEmitter に移す」を実装ルールとして明文化する（`docs-jp/spec-dev.md`）。
    - [x] 途中で `py2rs.py` が壊れていても、段階コミット可（ただし方針違反は不可）。
 

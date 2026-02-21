@@ -114,6 +114,7 @@ class RustEmitter(CodeEmitter):
         self.class_names: set[str] = set()
         self.class_field_types: dict[str, dict[str, str]] = {}
         self.declared_var_types: dict[str, str] = {}
+        self.uses_pyany: bool = False
 
     def get_expr_type(self, expr: Any) -> str:
         """解決済み型 + ローカル宣言テーブルで式型を返す。"""
@@ -129,6 +130,172 @@ class RustEmitter(CodeEmitter):
 
     def _safe_name(self, name: str) -> str:
         return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
+
+    def _doc_mentions_any(self, node: Any) -> bool:
+        """EAST 全体に `Any/object` 型が含まれるかを粗く判定する。"""
+        if isinstance(node, dict):
+            for _k, v in node.items():
+                if self._doc_mentions_any(v):
+                    return True
+            return False
+        if isinstance(node, list):
+            for item in node:
+                if self._doc_mentions_any(item):
+                    return True
+            return False
+        if isinstance(node, str):
+            t = self.normalize_type_name(node)
+            if t == "Any" or t == "object":
+                return True
+            if self._contains_text(t, "Any") or self._contains_text(t, "object"):
+                return True
+        return False
+
+    def _is_any_type(self, east_type: str) -> bool:
+        t = self.normalize_type_name(east_type)
+        return t == "Any" or t == "object"
+
+    def _is_int_type(self, east_type: str) -> bool:
+        t = self.normalize_type_name(east_type)
+        return t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+
+    def _is_float_type(self, east_type: str) -> bool:
+        t = self.normalize_type_name(east_type)
+        return t in {"float32", "float64"}
+
+    def _dict_key_value_types(self, east_type: str) -> tuple[str, str]:
+        t = self.normalize_type_name(east_type)
+        if not t.startswith("dict[") or not t.endswith("]"):
+            return "", ""
+        parts = self.split_generic(t[5:-1].strip())
+        if len(parts) != 2:
+            return "", ""
+        return self.normalize_type_name(parts[0]), self.normalize_type_name(parts[1])
+
+    def _is_dict_with_any_value(self, east_type: str) -> bool:
+        key_t, val_t = self._dict_key_value_types(east_type)
+        _ = key_t
+        return self._is_any_type(val_t)
+
+    def _dict_get_owner_value_type(self, call_node: Any) -> str:
+        """`dict.get(...)` 呼び出しなら owner の value 型を返す。"""
+        call_d = self.any_to_dict_or_empty(call_node)
+        if self.any_dict_get_str(call_d, "kind", "") != "Call":
+            return ""
+        fn = self.any_to_dict_or_empty(call_d.get("func"))
+        if self.any_dict_get_str(fn, "kind", "") != "Attribute":
+            return ""
+        if self.any_dict_get_str(fn, "attr", "") != "get":
+            return ""
+        owner = self.any_to_dict_or_empty(fn.get("value"))
+        owner_t = self.normalize_type_name(self.get_expr_type(owner))
+        if owner_t.startswith("dict["):
+            _key_t, val_t = self._dict_key_value_types(owner_t)
+            return val_t
+        return ""
+
+    def _dict_items_owner_type(self, call_node: Any) -> str:
+        """`dict.items()` 呼び出しなら owner の dict 型を返す。"""
+        call_d = self.any_to_dict_or_empty(call_node)
+        if self.any_dict_get_str(call_d, "kind", "") != "Call":
+            return ""
+        fn = self.any_to_dict_or_empty(call_d.get("func"))
+        if self.any_dict_get_str(fn, "kind", "") != "Attribute":
+            return ""
+        if self.any_dict_get_str(fn, "attr", "") != "items":
+            return ""
+        owner = self.any_to_dict_or_empty(fn.get("value"))
+        owner_t = self.normalize_type_name(self.get_expr_type(owner))
+        if owner_t.startswith("dict["):
+            return owner_t
+        return ""
+
+    def _emit_pyany_runtime(self) -> None:
+        """Any/object 用の最小ランタイム（PyAny）を出力する。"""
+        self.emit("#[derive(Clone, Debug, Default)]")
+        self.emit("enum PyAny {")
+        self.indent += 1
+        self.emit("Int(i64),")
+        self.emit("Float(f64),")
+        self.emit("Bool(bool),")
+        self.emit("Str(String),")
+        self.emit("Dict(::std::collections::BTreeMap<String, PyAny>),")
+        self.emit("List(Vec<PyAny>),")
+        self.emit("#[default]")
+        self.emit("None,")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_any_as_dict(v: PyAny) -> ::std::collections::BTreeMap<String, PyAny> {")
+        self.indent += 1
+        self.emit("match v {")
+        self.indent += 1
+        self.emit("PyAny::Dict(d) => d,")
+        self.emit("_ => ::std::collections::BTreeMap::new(),")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_any_to_i64(v: &PyAny) -> i64 {")
+        self.indent += 1
+        self.emit("match v {")
+        self.indent += 1
+        self.emit("PyAny::Int(n) => *n,")
+        self.emit("PyAny::Float(f) => *f as i64,")
+        self.emit("PyAny::Bool(b) => if *b { 1 } else { 0 },")
+        self.emit("PyAny::Str(s) => s.parse::<i64>().unwrap_or(0),")
+        self.emit("_ => 0,")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_any_to_f64(v: &PyAny) -> f64 {")
+        self.indent += 1
+        self.emit("match v {")
+        self.indent += 1
+        self.emit("PyAny::Int(n) => *n as f64,")
+        self.emit("PyAny::Float(f) => *f,")
+        self.emit("PyAny::Bool(b) => if *b { 1.0 } else { 0.0 },")
+        self.emit("PyAny::Str(s) => s.parse::<f64>().unwrap_or(0.0),")
+        self.emit("_ => 0.0,")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_any_to_bool(v: &PyAny) -> bool {")
+        self.indent += 1
+        self.emit("match v {")
+        self.indent += 1
+        self.emit("PyAny::Int(n) => *n != 0,")
+        self.emit("PyAny::Float(f) => *f != 0.0,")
+        self.emit("PyAny::Bool(b) => *b,")
+        self.emit("PyAny::Str(s) => !s.is_empty(),")
+        self.emit("PyAny::Dict(d) => !d.is_empty(),")
+        self.emit("PyAny::List(xs) => !xs.is_empty(),")
+        self.emit("PyAny::None => false,")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_any_to_string(v: &PyAny) -> String {")
+        self.indent += 1
+        self.emit("match v {")
+        self.indent += 1
+        self.emit("PyAny::Int(n) => n.to_string(),")
+        self.emit("PyAny::Float(f) => f.to_string(),")
+        self.emit("PyAny::Bool(b) => b.to_string(),")
+        self.emit("PyAny::Str(s) => s.clone(),")
+        self.emit("PyAny::Dict(d) => format!(\"{:?}\", d),")
+        self.emit("PyAny::List(xs) => format!(\"{:?}\", xs),")
+        self.emit("PyAny::None => String::new(),")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
 
     def _module_id_to_rust_use_path(self, module_id: str) -> str:
         """Python 形式モジュール名を Rust `use` パスへ変換する。"""
@@ -211,6 +378,9 @@ class RustEmitter(CodeEmitter):
     def _infer_default_for_type(self, east_type: str) -> str:
         """型ごとの既定値（Rust）を返す。"""
         t = self.normalize_type_name(east_type)
+        if self._is_any_type(t):
+            self.uses_pyany = True
+            return "PyAny::None"
         if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
             return "0"
         if t in {"float32", "float64"}:
@@ -263,6 +433,9 @@ class RustEmitter(CodeEmitter):
         t = self.normalize_type_name(east_type)
         if t == "":
             return "i64"
+        if self._is_any_type(t):
+            self.uses_pyany = True
+            return "PyAny"
         if t in self.type_map:
             mapped = self.type_map[t]
             if mapped != "":
@@ -293,13 +466,19 @@ class RustEmitter(CodeEmitter):
             return "(" + ", ".join(rendered) + ")"
         if t.find("|") >= 0:
             parts = self.split_union(t)
+            any_like = False
             non_none: list[str] = []
             has_none = False
             for part in parts:
                 if part == "None":
                     has_none = True
+                elif self._is_any_type(part):
+                    any_like = True
                 else:
                     non_none.append(part)
+            if any_like:
+                self.uses_pyany = True
+                return "PyAny"
             if has_none and len(non_none) == 1:
                 return f"Option<{self._rust_type(non_none[0])}>"
             return "String"
@@ -312,6 +491,7 @@ class RustEmitter(CodeEmitter):
         self.lines = []
         self.scope_stack = [set()]
         self.declared_var_types = {}
+        self.uses_pyany = self._doc_mentions_any(self.doc)
 
         module = self.doc
         body = self._dict_stmt_list(module.get("body"))
@@ -322,6 +502,9 @@ class RustEmitter(CodeEmitter):
         for line in use_lines:
             self.emit(line)
         if len(use_lines) > 0:
+            self.emit("")
+        if self.uses_pyany:
+            self._emit_pyany_runtime()
             self.emit("")
 
         self.class_names = set()
@@ -637,17 +820,140 @@ class RustEmitter(CodeEmitter):
                 target = "(" + ", ".join(parts) + ")"
 
         iter_node = stmt.get("iter")
+        iter_d = self.any_to_dict_or_empty(iter_node)
         iter_expr = self.render_expr(iter_node)
         iter_type = self.get_expr_type(iter_node)
+        iter_is_attr_view = False
+        if self.any_dict_get_str(iter_d, "kind", "") == "Call":
+            fn_d = self.any_to_dict_or_empty(iter_d.get("func"))
+            if self.any_dict_get_str(fn_d, "kind", "") == "Attribute":
+                attr_name = self.any_dict_get_str(fn_d, "attr", "")
+                if attr_name == "items" or attr_name == "keys" or attr_name == "values":
+                    iter_is_attr_view = True
+        if iter_type == "" or iter_type == "unknown":
+            iter_type = self._dict_items_owner_type(iter_node)
+        iter_key_t = ""
+        iter_val_t = ""
+        if iter_type.startswith("dict["):
+            iter_key_t, iter_val_t = self._dict_key_value_types(iter_type)
         if iter_type == "str":
             iter_expr = iter_expr + ".chars()"
-        elif iter_type.startswith("list[") or iter_type.startswith("set[") or iter_type.startswith("dict["):
+        elif (
+            iter_type.startswith("list[")
+            or iter_type.startswith("set[")
+            or iter_type.startswith("dict[")
+        ) and not iter_is_attr_view:
             iter_expr = "(" + iter_expr + ").clone()"
+
+        if target_kind == "Tuple":
+            elts = self.tuple_elements(target_node)
+            if len(elts) >= 2 and iter_key_t != "" and iter_val_t != "":
+                k_node = self.any_to_dict_or_empty(elts[0])
+                v_node = self.any_to_dict_or_empty(elts[1])
+                if self.any_dict_get_str(k_node, "kind", "") == "Name":
+                    self.declared_var_types[self.any_dict_get_str(k_node, "id", "")] = iter_key_t
+                if self.any_dict_get_str(v_node, "kind", "") == "Name":
+                    self.declared_var_types[self.any_dict_get_str(v_node, "id", "")] = iter_val_t
 
         self.emit(self.syntax_line("for_open", "for {target} in {iter} {", {"target": target, "iter": iter_expr}))
         body = self._dict_stmt_list(stmt.get("body"))
         self.emit_scoped_stmt_list(body, body_scope)
         self.emit(self.syntax_text("block_close", "}"))
+
+    def _render_as_pyany(self, expr: Any) -> str:
+        """式を `PyAny` へ昇格する。"""
+        expr_d = self.any_to_dict_or_empty(expr)
+        kind = self.any_dict_get_str(expr_d, "kind", "")
+        rendered = self.render_expr(expr)
+        src_t = self.normalize_type_name(self.get_expr_type(expr))
+        self.uses_pyany = True
+        if src_t == "PyAny" or self._is_any_type(src_t):
+            return rendered
+        if kind == "Dict":
+            return "PyAny::Dict(" + self._render_dict_expr(expr_d, force_any_values=True) + ")"
+        if kind == "List":
+            items = self.any_to_list(expr_d.get("elts"))
+            vals: list[str] = []
+            for item in items:
+                vals.append(self._render_as_pyany(item))
+            return "PyAny::List(vec![" + ", ".join(vals) + "])"
+        if self._is_int_type(src_t):
+            return "PyAny::Int((" + rendered + ") as i64)"
+        if self._is_float_type(src_t):
+            return "PyAny::Float((" + rendered + ") as f64)"
+        if src_t == "bool":
+            return "PyAny::Bool(" + rendered + ")"
+        if src_t == "str":
+            return "PyAny::Str((" + rendered + ").to_string())"
+        if src_t == "None":
+            return "PyAny::None"
+        return "PyAny::Str(format!(\"{:?}\", " + rendered + "))"
+
+    def _render_dict_expr(self, expr_d: dict[str, Any], *, force_any_values: bool = False) -> str:
+        """Dict リテラルを Rust `BTreeMap::from([...])` へ描画する。"""
+        dict_t = self.normalize_type_name(self.get_expr_type(expr_d))
+        key_t = ""
+        val_t = ""
+        if dict_t.startswith("dict[") and dict_t.endswith("]"):
+            key_t, val_t = self._dict_key_value_types(dict_t)
+        if force_any_values:
+            val_t = "Any"
+
+        pairs: list[str] = []
+        entries = self.any_to_list(expr_d.get("entries"))
+        if len(entries) > 0:
+            i = 0
+            while i < len(entries):
+                ent = self.any_to_dict_or_empty(entries[i])
+                key_node = ent.get("key")
+                val_node = ent.get("value")
+                key_txt = self.render_expr(key_node)
+                if key_t == "str":
+                    key_txt = "(" + key_txt + ").to_string()"
+                val_txt = self.render_expr(val_node)
+                if self._is_any_type(val_t):
+                    val_txt = self._render_as_pyany(val_node)
+                pairs.append("(" + key_txt + ", " + val_txt + ")")
+                i += 1
+        else:
+            keys = self.any_to_list(expr_d.get("keys"))
+            vals = self.any_to_list(expr_d.get("values"))
+            i = 0
+            while i < len(keys) and i < len(vals):
+                key_node = keys[i]
+                val_node = vals[i]
+                key_txt = self.render_expr(key_node)
+                if key_t == "str":
+                    key_txt = "(" + key_txt + ").to_string()"
+                val_txt = self.render_expr(val_node)
+                if self._is_any_type(val_t):
+                    val_txt = self._render_as_pyany(val_node)
+                pairs.append("(" + key_txt + ", " + val_txt + ")")
+                i += 1
+        return "::std::collections::BTreeMap::from([" + ", ".join(pairs) + "])"
+
+    def _render_value_for_decl_type(self, value_obj: Any, target_type: str) -> str:
+        """宣言型に合わせて右辺式を補正する。"""
+        t = self.normalize_type_name(target_type)
+        value_d = self.any_to_dict_or_empty(value_obj)
+        value_kind = self.any_dict_get_str(value_d, "kind", "")
+        if self._is_any_type(t):
+            return self._render_as_pyany(value_obj)
+        if self._is_dict_with_any_value(t):
+            if value_kind == "Dict":
+                return self._render_dict_expr(value_d, force_any_values=True)
+            rendered = self.render_expr(value_obj)
+            src_t = self.normalize_type_name(self.get_expr_type(value_obj))
+            if self._is_any_type(src_t):
+                self.uses_pyany = True
+                return "py_any_as_dict(" + rendered + ")"
+            if value_kind == "Call":
+                owner_val_t = self._dict_get_owner_value_type(value_obj)
+                if self._is_any_type(owner_val_t):
+                    self.uses_pyany = True
+                    return "py_any_as_dict(" + rendered + ")"
+            return rendered
+        return self.render_expr(value_obj)
 
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))
@@ -675,7 +981,7 @@ class RustEmitter(CodeEmitter):
         if value_obj is None:
             self.emit(self.syntax_line("annassign_decl_noinit", "let mut {target}: {type};", {"target": name, "type": t}))
             return
-        value = self.render_expr(value_obj)
+        value = self._render_value_for_decl_type(value_obj, t_east)
         self.emit(
             self.syntax_line(
                 "annassign_decl_init",
@@ -720,12 +1026,26 @@ class RustEmitter(CodeEmitter):
         self.emit(self.syntax_line("assign_set", "{target} = {value};", {"target": rendered_target, "value": value}))
 
     def _emit_augassign(self, stmt: dict[str, Any]) -> None:
-        target = self.render_expr(stmt.get("target"))
-        value = self.render_expr(stmt.get("value"))
+        target_obj = stmt.get("target")
+        value_obj = stmt.get("value")
+        target = self.render_expr(target_obj)
+        value = self.render_expr(value_obj)
         op = self.any_to_str(stmt.get("op"))
         mapped = self.aug_ops.get(op, "")
         if mapped == "":
             mapped = "+="
+        target_t = self.normalize_type_name(self.get_expr_type(target_obj))
+        value_t = self.normalize_type_name(self.get_expr_type(value_obj))
+        if self._is_any_type(value_t):
+            self.uses_pyany = True
+            if self._is_int_type(target_t):
+                value = "py_any_to_i64(&" + value + ")"
+            elif self._is_float_type(target_t):
+                value = "py_any_to_f64(&" + value + ")"
+            elif target_t == "bool":
+                value = "py_any_to_bool(&" + value + ")"
+            elif target_t == "str" and mapped == "+=":
+                value = "py_any_to_string(&" + value + ")"
         self.emit(self.syntax_line("augassign_apply", "{target} {op} {value};", {"target": target, "op": mapped, "value": value}))
 
     def _render_compare(self, expr: dict[str, Any]) -> str:
@@ -778,12 +1098,40 @@ class RustEmitter(CodeEmitter):
                     return rendered_args[0] + ".len() as i64"
                 return rendered_args[0] + ".len() as i64"
             if fn_name_raw == "str" and len(rendered_args) == 1:
+                arg_t = self.normalize_type_name(self.get_expr_type(arg_nodes[0] if len(arg_nodes) > 0 else None))
+                arg_any = self._is_any_type(arg_t)
+                if not arg_any and len(arg_nodes) > 0 and (arg_t == "" or arg_t == "unknown"):
+                    arg_any = self._is_any_type(self._dict_get_owner_value_type(arg_nodes[0]))
+                if arg_any:
+                    self.uses_pyany = True
+                    return "py_any_to_string(&" + rendered_args[0] + ")"
                 return rendered_args[0] + ".to_string()"
             if fn_name_raw == "int" and len(rendered_args) == 1:
+                arg_t = self.normalize_type_name(self.get_expr_type(arg_nodes[0] if len(arg_nodes) > 0 else None))
+                arg_any = self._is_any_type(arg_t)
+                if not arg_any and len(arg_nodes) > 0 and (arg_t == "" or arg_t == "unknown"):
+                    arg_any = self._is_any_type(self._dict_get_owner_value_type(arg_nodes[0]))
+                if arg_any:
+                    self.uses_pyany = True
+                    return "py_any_to_i64(&" + rendered_args[0] + ")"
                 return rendered_args[0] + " as i64"
             if fn_name_raw == "float" and len(rendered_args) == 1:
+                arg_t = self.normalize_type_name(self.get_expr_type(arg_nodes[0] if len(arg_nodes) > 0 else None))
+                arg_any = self._is_any_type(arg_t)
+                if not arg_any and len(arg_nodes) > 0 and (arg_t == "" or arg_t == "unknown"):
+                    arg_any = self._is_any_type(self._dict_get_owner_value_type(arg_nodes[0]))
+                if arg_any:
+                    self.uses_pyany = True
+                    return "py_any_to_f64(&" + rendered_args[0] + ")"
                 return rendered_args[0] + " as f64"
             if fn_name_raw == "bool" and len(rendered_args) == 1:
+                arg_t = self.normalize_type_name(self.get_expr_type(arg_nodes[0] if len(arg_nodes) > 0 else None))
+                arg_any = self._is_any_type(arg_t)
+                if not arg_any and len(arg_nodes) > 0 and (arg_t == "" or arg_t == "unknown"):
+                    arg_any = self._is_any_type(self._dict_get_owner_value_type(arg_nodes[0]))
+                if arg_any:
+                    self.uses_pyany = True
+                    return "py_any_to_bool(&" + rendered_args[0] + ")"
                 return "(" + rendered_args[0] + " != 0)"
             return fn_name + "(" + ", ".join(rendered_args) + ")"
 
@@ -807,10 +1155,15 @@ class RustEmitter(CodeEmitter):
                 if attr_raw == "clear" and len(rendered_args) == 0:
                     return owner_expr + ".clear()"
             if owner_type.startswith("dict["):
+                _k_t, owner_val_t = self._dict_key_value_types(owner_type)
                 if attr_raw == "get" and len(rendered_args) == 1:
                     return owner_expr + ".get(&" + rendered_args[0] + ").cloned().unwrap_or_default()"
                 if attr_raw == "get" and len(rendered_args) >= 2:
-                    return owner_expr + ".get(&" + rendered_args[0] + ").cloned().unwrap_or(" + rendered_args[1] + ")"
+                    default_txt = rendered_args[1]
+                    if self._is_any_type(owner_val_t) and len(arg_nodes) >= 2:
+                        self.uses_pyany = True
+                        default_txt = self._render_as_pyany(arg_nodes[1])
+                    return owner_expr + ".get(&" + rendered_args[0] + ").cloned().unwrap_or(" + default_txt + ")"
             return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
 
         fn_expr = self.render_expr(fn_node)
@@ -887,22 +1240,7 @@ class RustEmitter(CodeEmitter):
                 return "(" + rendered[0] + ",)"
             return "(" + ", ".join(rendered) + ")"
         if kind == "Dict":
-            pairs: list[str] = []
-            entries = self.any_to_list(expr_d.get("entries"))
-            if len(entries) > 0:
-                i = 0
-                while i < len(entries):
-                    ent = self.any_to_dict_or_empty(entries[i])
-                    pairs.append("(" + self.render_expr(ent.get("key")) + ", " + self.render_expr(ent.get("value")) + ")")
-                    i += 1
-            else:
-                keys = self.any_to_list(expr_d.get("keys"))
-                vals = self.any_to_list(expr_d.get("values"))
-                i = 0
-                while i < len(keys) and i < len(vals):
-                    pairs.append("(" + self.render_expr(keys[i]) + ", " + self.render_expr(vals[i]) + ")")
-                    i += 1
-            return "::std::collections::BTreeMap::from([" + ", ".join(pairs) + "])"
+            return self._render_dict_expr(expr_d, force_any_values=False)
         if kind == "Subscript":
             owner = self.render_expr(expr_d.get("value"))
             idx = self.render_expr(expr_d.get("slice"))

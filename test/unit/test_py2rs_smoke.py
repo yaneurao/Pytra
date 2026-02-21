@@ -108,6 +108,10 @@ class Py2RsSmokeTest(unittest.TestCase):
         rust = transpile_to_rust(east)
         self.assertIn("BTreeMap::from([(", rust)
         self.assertIn("\"meta\"", rust)
+        self.assertIn("enum PyAny", rust)
+        self.assertIn("py_any_as_dict(", rust)
+        self.assertIn("py_any_to_i64(&v)", rust)
+        self.assertIn("py_any_to_string(&", rust)
 
     def test_py2rs_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2rs.py").read_text(encoding="utf-8")
