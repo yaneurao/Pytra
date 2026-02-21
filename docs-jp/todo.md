@@ -39,7 +39,7 @@
    - [x] `src/pytra/utils/browser/` shim を追加し、`missing_module` を解消した。
    - [x] `tools/check_yanesdk_py2cpp_smoke.py` で `library 1本 + game 7本` の smoke を自動化した。
 3. [ ] `py2js` 側の `browser` 取り扱いを外部参照方式へ仕様化し、実装へ反映する。
-4. [ ] `docs/*/yanesdk.py` の重複配置方針（除外運用）を import 仕様書へ明文化する。
+4. [x] `docs/*/yanesdk.py` の重複配置方針（除外運用）を import 仕様書へ明文化する。
 
 ## P3: py2rs（EAST移行）を CodeEmitter 中心で再設計（Yanesdk対応後）
 

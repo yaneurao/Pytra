@@ -7,6 +7,13 @@
 
 まず、docs-jp/spec-runtime.md も読むこと。
 
+## Yanesdk 重複配置の扱い（運用ルール）
+
+- `Yanesdk/yanesdk/yanesdk.py` を正本とする。
+- `Yanesdk/docs/*/yanesdk.py` は重複コピーとして扱い、import 解決・回帰判定の基準にしない。
+- `py2cpp` の smoke 検証では、library は正本 1 本、game は `Yanesdk/docs/*/*.py`（`yanesdk.py` を除外）を対象にする。
+- 重複コピー側に残る文末 `;` などの文法誤りは、self_hosted parser では入力エラー（`input_invalid`）とする。
+
 ```Python
 from X import Y
 ```
