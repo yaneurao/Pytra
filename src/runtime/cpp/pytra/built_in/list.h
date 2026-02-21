@@ -122,16 +122,6 @@ public:
 
     void append(const T& value) { data_.push_back(value); }
     void append(T&& value) { data_.push_back(::std::move(value)); }
-    template <
-        class A,
-        class U = T,
-        ::std::enable_if_t<!::std::is_same_v<U, ::std::any> && ::std::is_same_v<::std::decay_t<A>, ::std::any>, int> = 0>
-    void append(A&& value) {
-        const ::std::any& any_value = value;
-        if (const auto* p = ::std::any_cast<U>(&any_value)) {
-            data_.push_back(*p);
-        }
-    }
 
     template <class U>
     void extend(const U& values) {

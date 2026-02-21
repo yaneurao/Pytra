@@ -211,7 +211,7 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 """
-        with self.assertRaises(EastBuildError):
+        with self.assertRaises((EastBuildError, RuntimeError)):
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
 
     def test_bare_return_is_parsed_as_return_stmt(self) -> None:
@@ -254,6 +254,29 @@ class Box:
                 if isinstance(tgt, dict) and tgt.get("kind") == "Name":
                     names.append(tgt.get("id"))
         self.assertNotIn("__pytra_class_storage_hint__", names)
+
+    def test_enum_members_are_parsed_in_class_body(self) -> None:
+        src = """
+from pytra.std.enum import Enum
+
+class Color(Enum):
+    RED = 1
+    BLUE = 2
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        classes = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") == "Color"]
+        self.assertEqual(len(classes), 1)
+        cls = classes[0]
+        self.assertEqual(cls.get("base"), "Enum")
+        self.assertEqual(cls.get("class_storage_hint"), "value")
+        members: list[str] = []
+        for st in cls.get("body", []):
+            if isinstance(st, dict) and st.get("kind") == "Assign":
+                tgt = st.get("target")
+                if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                    members.append(str(tgt.get("id", "")))
+        self.assertIn("RED", members)
+        self.assertIn("BLUE", members)
 
 
 if __name__ == "__main__":

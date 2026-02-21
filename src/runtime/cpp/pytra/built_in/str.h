@@ -119,24 +119,54 @@ public:
         return str(data_.substr(pos, count));
     }
 
-    ::std::size_t find(const str& needle, ::std::size_t pos = 0) const {
-        return data_.find(needle.data_, pos);
+    int64 find(const str& needle, int64 pos = 0) const {
+        ::std::size_t start = 0;
+        if (pos > 0) {
+            start = static_cast<::std::size_t>(pos);
+        }
+        ::std::size_t at = data_.find(needle.data_, start);
+        if (at == ::std::string::npos) return -1;
+        return static_cast<int64>(at);
     }
 
-    ::std::size_t find(const char* needle, ::std::size_t pos = 0) const {
-        return data_.find(needle, pos);
+    int64 find(const char* needle, int64 pos = 0) const {
+        ::std::size_t start = 0;
+        if (pos > 0) {
+            start = static_cast<::std::size_t>(pos);
+        }
+        ::std::size_t at = data_.find(needle, start);
+        if (at == ::std::string::npos) return -1;
+        return static_cast<int64>(at);
     }
 
-    ::std::size_t find(char needle, ::std::size_t pos = 0) const {
-        return data_.find(needle, pos);
+    int64 find(char needle, int64 pos = 0) const {
+        ::std::size_t start = 0;
+        if (pos > 0) {
+            start = static_cast<::std::size_t>(pos);
+        }
+        ::std::size_t at = data_.find(needle, start);
+        if (at == ::std::string::npos) return -1;
+        return static_cast<int64>(at);
     }
 
-    ::std::size_t rfind(const str& needle, ::std::size_t pos = ::std::string::npos) const {
-        return data_.rfind(needle.data_, pos);
+    int64 rfind(const str& needle, int64 pos = -1) const {
+        ::std::size_t start = ::std::string::npos;
+        if (pos >= 0) {
+            start = static_cast<::std::size_t>(pos);
+        }
+        ::std::size_t at = data_.rfind(needle.data_, start);
+        if (at == ::std::string::npos) return -1;
+        return static_cast<int64>(at);
     }
 
-    ::std::size_t rfind(const char* needle, ::std::size_t pos = ::std::string::npos) const {
-        return data_.rfind(needle, pos);
+    int64 rfind(const char* needle, int64 pos = -1) const {
+        ::std::size_t start = ::std::string::npos;
+        if (pos >= 0) {
+            start = static_cast<::std::size_t>(pos);
+        }
+        ::std::size_t at = data_.rfind(needle, start);
+        if (at == ::std::string::npos) return -1;
+        return static_cast<int64>(at);
     }
 
     int compare(const str& other) const { return data_.compare(other.data_); }
@@ -165,16 +195,34 @@ public:
         return str(::std::move(out));
     }
 
-    ::std::size_t find_last_of(char ch, ::std::size_t pos = ::std::string::npos) const {
-        return data_.find_last_of(ch, pos);
+    int64 find_last_of(char ch, int64 pos = -1) const {
+        ::std::size_t start = ::std::string::npos;
+        if (pos >= 0) {
+            start = static_cast<::std::size_t>(pos);
+        }
+        ::std::size_t at = data_.find_last_of(ch, start);
+        if (at == ::std::string::npos) return -1;
+        return static_cast<int64>(at);
     }
 
-    ::std::size_t find_last_of(const str& chars, ::std::size_t pos = ::std::string::npos) const {
-        return data_.find_last_of(chars.data_, pos);
+    int64 find_last_of(const str& chars, int64 pos = -1) const {
+        ::std::size_t start = ::std::string::npos;
+        if (pos >= 0) {
+            start = static_cast<::std::size_t>(pos);
+        }
+        ::std::size_t at = data_.find_last_of(chars.data_, start);
+        if (at == ::std::string::npos) return -1;
+        return static_cast<int64>(at);
     }
 
-    ::std::size_t find_last_of(const char* chars, ::std::size_t pos = ::std::string::npos) const {
-        return data_.find_last_of(chars, pos);
+    int64 find_last_of(const char* chars, int64 pos = -1) const {
+        ::std::size_t start = ::std::string::npos;
+        if (pos >= 0) {
+            start = static_cast<::std::size_t>(pos);
+        }
+        ::std::size_t at = data_.find_last_of(chars, start);
+        if (at == ::std::string::npos) return -1;
+        return static_cast<int64>(at);
     }
 
     template <class T>
@@ -236,6 +284,13 @@ public:
         return str(data_.substr(i));
     }
 
+    str lstrip(const str& chars) const {
+        if (chars.empty()) return *this;
+        ::std::size_t i = 0;
+        while (i < data_.size() && chars.find(data_[i]) != str::npos) i++;
+        return str(data_.substr(i));
+    }
+
     str rstrip() const {
         if (data_.empty()) return *this;
         ::std::size_t i = data_.size();
@@ -243,9 +298,22 @@ public:
         return str(data_.substr(0, i));
     }
 
+    str rstrip(const str& chars) const {
+        if (chars.empty()) return *this;
+        if (data_.empty()) return *this;
+        ::std::size_t i = data_.size();
+        while (i > 0 && chars.find(data_[i - 1]) != str::npos) i--;
+        return str(data_.substr(0, i));
+    }
+
     str strip() const { return lstrip().rstrip(); }
 
+    str strip(const str& chars) const { return lstrip(chars).rstrip(chars); }
+
     list<str> split(const str& sep) const;
+    list<str> split(const str& sep, int64 maxsplit) const;
+    list<str> splitlines() const;
+    int64 count(const str& needle) const;
     str join(const list<str>& parts) const;
 
     str lower() const {

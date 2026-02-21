@@ -14,6 +14,7 @@ from pytra.std import sys
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
 # selfhost 生成コードでは値として生成しない。
+BorrowKind = str
 INT_TYPES = {
     "int8",
     "uint8",
@@ -76,9 +77,11 @@ class EastBuildError(Exception):
         return out
 
 
-def _make_east_build_error(kind: str, message: str, source_span: dict[str, Any], hint: str) -> EastBuildError:
-    """self-hosted 生成で引数欠落しないよう、例外生成を関数経由に統一する。"""
-    return EastBuildError(kind, message, source_span, hint)
+def _make_east_build_error(kind: str, message: str, source_span: dict[str, Any], hint: str) -> RuntimeError:
+    """self-hosted 生成で投げる例外を std::exception 互換（RuntimeError）に統一する。"""
+    src_line = int(source_span.get("lineno", 0))
+    src_col = int(source_span.get("col", 0))
+    return RuntimeError(f"{kind}: {message} at {src_line}:{src_col} hint={hint}")
 
 
 def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:
@@ -166,6 +169,142 @@ def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
     if tail.strip() != "":
         out.append((tail.strip(), start + (len(tail) - len(tail.lstrip()))))
     return out
+
+
+def _sh_parse_typed_binding(text: str, *, allow_dotted_name: bool = False) -> tuple[str, str, str] | None:
+    """`name: Type` / `name: Type = expr` を手書きパースし、(name, type, default) を返す。"""
+    raw = text.strip()
+    if raw == "":
+        return None
+    colon = raw.find(":")
+    if colon <= 0:
+        return None
+    name_txt = raw[:colon].strip()
+    ann_txt = raw[colon + 1 :].strip()
+    if ann_txt == "":
+        return None
+    if allow_dotted_name:
+        name_parts = name_txt.split(".")
+        if len(name_parts) == 0:
+            return None
+        for seg in name_parts:
+            if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", seg) is None:
+                return None
+    else:
+        if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name_txt) is None:
+            return None
+    default_txt = ""
+    split_ann = _sh_split_top_level_assign(ann_txt)
+    if split_ann is not None:
+        ann_lhs, ann_rhs = split_ann
+        ann_txt = ann_lhs.strip()
+        default_txt = ann_rhs.strip()
+    if ann_txt == "":
+        return None
+    return name_txt, ann_txt, default_txt
+
+
+def _sh_is_identifier(text: str) -> bool:
+    """ASCII 識別子（先頭英字/`_`）かを返す。"""
+    if text == "":
+        return False
+    c0 = text[0:1]
+    is_head = ("A" <= c0 <= "Z") or ("a" <= c0 <= "z") or c0 == "_"
+    if not is_head:
+        return False
+    i = 1
+    while i < len(text):
+        ch = text[i : i + 1]
+        is_body = ("A" <= ch <= "Z") or ("a" <= ch <= "z") or ("0" <= ch <= "9") or ch == "_"
+        if not is_body:
+            return False
+        i += 1
+    return True
+
+
+def _sh_is_dotted_identifier(text: str) -> bool:
+    """`a.b.c` 形式の識別子列かを返す。"""
+    if text.strip() == "":
+        return False
+    parts = text.split(".")
+    if len(parts) == 0:
+        return False
+    for seg in parts:
+        if not _sh_is_identifier(seg):
+            return False
+    return True
+
+
+def _sh_parse_import_alias(text: str, *, allow_dotted_name: bool) -> tuple[str, str] | None:
+    """`name` / `name as alias` を手書きパースして (name, alias_or_empty) を返す。"""
+    raw = text.strip()
+    if raw == "":
+        return None
+    name_txt = raw
+    alias_txt = ""
+    as_split = _sh_split_top_level_as(raw)
+    if as_split is not None:
+        name_txt, alias_txt = as_split
+        name_txt = name_txt.strip()
+        alias_txt = alias_txt.strip()
+    if name_txt == "":
+        return None
+    if allow_dotted_name:
+        if not _sh_is_dotted_identifier(name_txt):
+            return None
+    else:
+        if not _sh_is_identifier(name_txt):
+            return None
+    if alias_txt != "" and not _sh_is_identifier(alias_txt):
+        return None
+    return name_txt, alias_txt
+
+
+def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
+    """`target <op>= expr` をトップレベルで分解して返す。"""
+    raw = text.strip()
+    if raw == "":
+        return None
+    ops = ["<<=", ">>=", "//=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^="]
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    i = 0
+    while i < len(raw):
+        ch = raw[i]
+        if in_str is not None:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == in_str:
+                in_str = None
+            i += 1
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            i += 1
+            continue
+        if ch in {"(", "[", "{"}:
+            depth += 1
+            i += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            i += 1
+            continue
+        if depth == 0:
+            for op in ops:
+                if raw[i : i + len(op)] == op:
+                    left = raw[:i].strip()
+                    right = raw[i + len(op) :].strip()
+                    if left == "" or right == "":
+                        return None
+                    if not _sh_is_dotted_identifier(left):
+                        return None
+                    return left, op, right
+        i += 1
+    return None
 
 
 def _sh_scan_string_token(text: str, start: int, quote_pos: int, line_no: int, col_base: int) -> int:
@@ -278,13 +417,37 @@ def _sh_parse_def_sig(
 ) -> dict[str, Any] | None:
     """`def ...` 行から関数名・引数型・戻り型を抽出する。"""
     ln_norm: str = re.sub(r"\s+", " ", ln.strip())
-    m_def: re.Match | None = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", ln_norm)
-    if m_def is None:
+    if not ln_norm.startswith("def ") or not ln_norm.endswith(":"):
+        return None
+    head = ln_norm[4:-1].strip()
+    lp = head.find("(")
+    rp = head.rfind(")")
+    if lp <= 0 or rp < lp:
+        return None
+    fn_name = ""
+    args_raw: str = ""
+    ret_group: str = ""
+    fn_name = head[:lp].strip()
+    if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", fn_name) is None:
+        return None
+    args_raw = head[lp + 1 : rp]
+    tail = head[rp + 1 :].strip()
+    if tail == "":
+        ret_group = ""
+    elif tail.startswith("->"):
+        ret_group = tail[2:].strip()
+        if ret_group == "":
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message="self_hosted parser cannot parse return annotation in function signature",
+                source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                hint="Use `def name(args) -> Type:` style signature.",
+            )
+    else:
         return None
     arg_types: dict[str, str] = {}
     arg_order: list[str] = []
     arg_defaults: dict[str, str] = {}
-    args_raw: str = re.group(m_def, 2)
     if args_raw.strip() != "":
         # Supported:
         # - name: Type
@@ -323,16 +486,15 @@ def _sh_parse_def_sig(
                 arg_types["self"] = in_class
                 arg_order.append("self")
                 continue
-            m_param: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", p)
-            if m_param is None:
+            parsed_param = _sh_parse_typed_binding(p, allow_dotted_name=False)
+            if parsed_param is None:
                 raise _make_east_build_error(
                     kind="unsupported_syntax",
                     message=f"self_hosted parser cannot parse parameter: {p_txt}",
                     source_span=_sh_span(ln_no, 0, len(ln_norm)),
                     hint="Use `name: Type` style parameters.",
                 )
-            pn: str = re.strip_group(m_param, 1)
-            pt: str = re.strip_group(m_param, 2)
+            pn, pt, pdef = parsed_param
             if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pn):
                 raise _make_east_build_error(
                     kind="unsupported_syntax",
@@ -349,14 +511,12 @@ def _sh_parse_def_sig(
                 )
             arg_types[pn] = _sh_ann_to_type(pt)
             arg_order.append(pn)
-            pdef: str = re.group(m_param, 3)
             if pdef != "":
                 default_txt = pdef.strip()
                 if default_txt != "":
                     arg_defaults[pn] = default_txt
-    ret_group: str = re.group(m_def, 3)
     out_sig: dict[str, Any] = {}
-    out_sig["name"] = re.group(m_def, 1)
+    out_sig["name"] = fn_name
     out_sig["ret"] = _sh_ann_to_type(ret_group.strip()) if ret_group != "" else "None"
     out_sig["arg_types"] = arg_types
     out_sig["arg_order"] = arg_order
@@ -645,6 +805,7 @@ def _sh_push_stmt_with_trivia(
     stmt: dict[str, Any],
 ) -> int:
     """保留中 trivia を付与して文リストへ追加し、更新後 blank 数を返す。"""
+    stmt_copy: dict[str, Any] = dict(stmt)
     if pending_blank_count > 0:
         blank_item: dict[str, Any] = {}
         blank_item["kind"] = "blank"
@@ -652,12 +813,12 @@ def _sh_push_stmt_with_trivia(
         pending_leading_trivia.append(blank_item)
         pending_blank_count = 0
     if len(pending_leading_trivia) > 0:
-        stmt["leading_trivia"] = list(pending_leading_trivia)
+        stmt_copy["leading_trivia"] = list(pending_leading_trivia)
         comments = [x.get("text") for x in pending_leading_trivia if x.get("kind") == "comment" and isinstance(x.get("text"), str)]
         if len(comments) > 0:
-            stmt["leading_comments"] = comments
+            stmt_copy["leading_comments"] = comments
         pending_leading_trivia.clear()
-    stmts.append(stmt)
+    stmts.append(stmt_copy)
     return pending_blank_count
 
 
@@ -803,6 +964,103 @@ def _sh_split_top_level_from(text: str) -> tuple[str, str] | None:
             return None
         i += 1
     return None
+
+
+def _sh_split_top_level_in(text: str) -> tuple[str, str] | None:
+    """トップレベルの `target in iter` を target/iter に分割する。"""
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if in_str is not None:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == in_str:
+                in_str = None
+            i += 1
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            i += 1
+            continue
+        if ch in {"(", "[", "{"}:
+            depth += 1
+            i += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            i += 1
+            continue
+        if depth == 0 and text[i:].startswith(" in "):
+            lhs = text[:i].strip()
+            rhs = text[i + 4 :].strip()
+            if lhs != "" and rhs != "":
+                return lhs, rhs
+            return None
+        i += 1
+    return None
+
+
+def _sh_split_top_level_as(text: str) -> tuple[str, str] | None:
+    """トップレベルの `lhs as rhs` を分割する。"""
+    pos = _sh_split_top_keyword(text, "as")
+    if pos < 0:
+        return None
+    lhs = text[:pos].strip()
+    rhs = text[pos + 2 :].strip()
+    if lhs == "" or rhs == "":
+        return None
+    return lhs, rhs
+
+
+def _sh_parse_except_clause(header_text: str) -> tuple[str, str | None] | None:
+    """`except <Type> [as <name>]:` を手書きパースする。"""
+    raw = header_text.strip()
+    if not raw.startswith("except") or not raw.endswith(":"):
+        return None
+    inner = raw[len("except") : -1].strip()
+    if inner == "":
+        return "Exception", None
+    as_split = _sh_split_top_level_as(inner)
+    if as_split is None:
+        return inner, None
+    ex_type_txt, ex_name_txt = as_split
+    if ex_type_txt.strip() == "":
+        return None
+    if not _sh_is_identifier(ex_name_txt.strip()):
+        return None
+    return ex_type_txt.strip(), ex_name_txt.strip()
+
+
+def _sh_parse_class_header(ln: str) -> tuple[str, str] | None:
+    """`class Name:` / `class Name(Base):` を簡易解析する。"""
+    s = ln.strip()
+    if not s.startswith("class ") or not s.endswith(":"):
+        return None
+    head = s[len("class ") : -1].strip()
+    if head == "":
+        return None
+    lp = head.find("(")
+    if lp < 0:
+        if not _sh_is_identifier(head):
+            return None
+        return head, ""
+    rp = head.rfind(")")
+    if rp < 0 or rp < lp:
+        return None
+    if head[rp + 1 :].strip() != "":
+        return None
+    cls_name = head[:lp].strip()
+    base_name = head[lp + 1 : rp].strip()
+    if not _sh_is_identifier(cls_name):
+        return None
+    if not _sh_is_identifier(base_name):
+        return None
+    return cls_name, base_name
 
 
 def _sh_parse_if_tail(
@@ -1656,8 +1914,8 @@ class _ShExprParser:
                             "isdigit": "py_isdigit",
                             "isalpha": "py_isalpha",
                         }
-                        rc = str_map.get(attr)
-                        if rc is not None:
+                        if attr in str_map:
+                            rc = str_map[attr]
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
@@ -1671,8 +1929,8 @@ class _ShExprParser:
                             "name": "path_name",
                             "stem": "path_stem",
                         }
-                        rc = path_map.get(attr)
-                        if rc is not None:
+                        if attr in path_map:
+                            rc = path_map[attr]
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
@@ -1680,8 +1938,8 @@ class _ShExprParser:
                         int_map = {
                             "to_bytes": "py_int_to_bytes",
                         }
-                        rc = int_map.get(attr)
-                        if rc is not None:
+                        if attr in int_map:
+                            rc = int_map[attr]
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
@@ -1694,8 +1952,8 @@ class _ShExprParser:
                             "reverse": "list.reverse",
                             "sort": "list.sort",
                         }
-                        rc = list_map.get(attr)
-                        if rc is not None:
+                        if attr in list_map:
+                            rc = list_map[attr]
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
@@ -1706,8 +1964,8 @@ class _ShExprParser:
                             "remove": "set.remove",
                             "clear": "set.clear",
                         }
-                        rc = set_map.get(attr)
-                        if rc is not None:
+                        if attr in set_map:
+                            rc = set_map[attr]
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
@@ -1719,8 +1977,8 @@ class _ShExprParser:
                             "keys": "dict.keys",
                             "values": "dict.values",
                         }
-                        rc = dict_map.get(attr)
-                        if rc is not None:
+                        if attr in dict_map:
+                            rc = dict_map[attr]
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
@@ -1736,8 +1994,8 @@ class _ShExprParser:
                             "isdigit": "py_isdigit",
                             "isalpha": "py_isalpha",
                         }
-                        rc = unknown_map.get(attr)
-                        if rc is not None:
+                        if attr in unknown_map:
+                            rc = unknown_map[attr]
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
@@ -2907,7 +3165,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         class_base=_SH_CLASS_BASE,
     )
 
-def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
+def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
     """インデントブロックを文単位で解析し、EAST 文リストを返す。"""
     body_lines, merged_line_end = _sh_merge_logical_lines(body_lines)
 
@@ -2972,16 +3230,16 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             continue
 
         if s.startswith("for ") and s.endswith(":"):
-            m_for: re.Match | None = re.match(r"^for\s+(.+)\s+in\s+(.+):$", s, flags=re.S)
-            if m_for is None:
+            for_head = s[len("for ") : -1].strip()
+            split_for = _sh_split_top_level_in(for_head)
+            if split_for is None:
                 raise _make_east_build_error(
                     kind="unsupported_syntax",
                     message=f"self_hosted parser cannot parse for statement: {s}",
                     source_span=_sh_span(ln_no, 0, len(ln_txt)),
                     hint="Use `for target in iterable:` form.",
                 )
-            tgt_txt = re.strip_group(m_for, 1)
-            iter_txt = re.strip_group(m_for, 2)
+            tgt_txt, iter_txt = split_for
             tgt_col = ln_txt.find(tgt_txt)
             iter_col = ln_txt.find(iter_txt)
             target_expr = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=tgt_col, name_types=dict(name_types))
@@ -3211,16 +3469,14 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                 h_indent = len(h_ln) - len(h_ln.lstrip(" "))
                 if h_indent != indent:
                     break
-                m_exc_as: re.Match | None = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", h_s, flags=re.S)
-                m_exc_plain: re.Match | None = re.match(r"^except\s+(.+?)\s*:\s*$", h_s, flags=re.S)
-                if m_exc_as is not None or m_exc_plain is not None:
-                    if m_exc_as is not None:
-                        ex_type_txt = re.strip_group(m_exc_as, 1)
-                        ex_name: str | None = re.group(m_exc_as, 2)
-                    else:
-                        ex_type_txt = re.strip_group(m_exc_plain, 1) if m_exc_plain is not None else "Exception"
-                        ex_name = None
+                exc_clause = _sh_parse_except_clause(h_s)
+                if exc_clause is not None:
+                    ex_type_txt, ex_name = exc_clause
                     ex_type_col = h_ln.find(ex_type_txt)
+                    if ex_type_col < 0:
+                        ex_type_col = h_ln.find("except")
+                        if ex_type_col < 0:
+                            ex_type_col = 0
                     h_body, k = _sh_collect_indented_block(body_lines, j + 1, indent)
                     handlers.append(
                         {
@@ -3308,10 +3564,15 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             i += 1
             continue
 
-        m_ann_decl: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*(.+)$", s)
-        if m_ann_decl is not None and "=" not in s:
-            target_txt = re.group(m_ann_decl, 1)
-            ann = _sh_ann_to_type(re.group(m_ann_decl, 2))
+        parsed_typed = _sh_parse_typed_binding(s, allow_dotted_name=True)
+        if parsed_typed is not None:
+            typed_target, typed_ann, typed_default = parsed_typed
+        else:
+            typed_target, typed_ann, typed_default = "", "", ""
+        if parsed_typed is not None and typed_default == "":
+            target_txt = typed_target
+            ann_txt = typed_ann
+            ann = _sh_ann_to_type(ann_txt)
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
@@ -3330,11 +3591,11 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             i += 1
             continue
 
-        m_ann: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
-        if m_ann is not None:
-            target_txt = re.group(m_ann, 1)
-            ann = _sh_ann_to_type(re.group(m_ann, 2))
-            expr_txt = re.strip_group(m_ann, 3)
+        if parsed_typed is not None and typed_default != "":
+            target_txt = typed_target
+            ann_txt = typed_ann
+            expr_txt = typed_default
+            ann = _sh_ann_to_type(ann_txt)
             expr_col = ln_txt.find(expr_txt)
             val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
             target_col = ln_txt.find(target_txt)
@@ -3355,12 +3616,9 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
             i += 1
             continue
 
-        m_aug: re.Match | None = re.match(
-            r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*(\+=|-=|\*=|/=|//=|%=|&=|\|=|\^=|<<=|>>=)\s*(.+)$",
-            s,
-        )
-        if m_aug is not None:
-            target_txt = re.group(m_aug, 1)
+        parsed_aug = _sh_parse_augassign(s)
+        if parsed_aug is not None:
+            target_txt, aug_op, expr_txt = parsed_aug
             op_map = {
                 "+=": "Add",
                 "-=": "Sub",
@@ -3374,7 +3632,6 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                 "<<=": "LShift",
                 ">>=": "RShift",
             }
-            expr_txt = re.strip_group(m_aug, 3)
             expr_col = ln_txt.find(expr_txt)
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
@@ -3390,7 +3647,7 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
                     "kind": "AugAssign",
                     "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
                     "target": target_expr,
-                    "op": op_map[re.group(m_aug, 2)],
+                    "op": op_map[aug_op],
                     "value": val_expr,
                     "declare": False,
                     "decl_type": decl_type,
@@ -3519,6 +3776,13 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
     return stmts
 
 
+def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
+    """読み取り専用引数で受け取り、mutable 実体へコピーを渡す。"""
+    body_lines_copy: list[tuple[int, str]] = list(body_lines)
+    name_types_copy: dict[str, str] = dict(name_types)
+    return _sh_parse_stmt_block_mutable(body_lines_copy, name_types=name_types_copy, scope_label=scope_label)
+
+
 def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
     """Python ソースを self-hosted パーサで EAST Module に変換する。"""
     lines = source.splitlines()
@@ -3550,12 +3814,15 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         indent = len(ln) - len(ln.lstrip(" "))
         if cur_cls is not None and indent <= cur_cls_indent and not s.startswith("#"):
             cur_cls = None
-        m_cls: re.Match | None = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", ln)
-        if m_cls is not None:
-            cur_cls_name: str = re.group(m_cls, 1)
+        cls_hdr = _sh_parse_class_header(ln)
+        if cls_hdr is not None:
+            cur_cls_name, cur_base = cls_hdr
             cur_cls = cur_cls_name
             cur_cls_indent = indent
-            class_base[cur_cls_name] = re.group(m_cls, 2)
+            if cur_base != "":
+                class_base[cur_cls_name] = cur_base
+            else:
+                class_base[cur_cls_name] = None
             if cur_cls_name not in class_method_return_types:
                 empty_methods: dict[str, str] = {}
                 class_method_return_types[cur_cls_name] = empty_methods
@@ -3606,8 +3873,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i += 1
             continue
 
-        m_main: re.Match | None = re.match(r"^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$", ln)
-        if m_main is not None:
+        ln_main = ln.strip()
+        is_main_guard = False
+        if ln_main.startswith("if ") and ln_main.endswith(":"):
+            cond = ln_main[3:-1].strip()
+            if cond in {
+                "__name__ == \"__main__\"",
+                "__name__ == '__main__'",
+                "\"__main__\" == __name__",
+                "'__main__' == __name__",
+            }:
+                is_main_guard = True
+        if is_main_guard:
             block: list[tuple[int, str]] = []
             j = i + 1
             while j <= len(lines):
@@ -3722,17 +3999,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
             aliases: list[dict[str, str | None]] = []
             for part in raw_parts:
-                m_alias: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$", part)
-                if m_alias is None:
+                parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=True)
+                if parsed_alias is None:
                     raise _make_east_build_error(
                         kind="unsupported_syntax",
                         message=f"unsupported import clause: {part}",
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Use `import module` or `import module as alias` form.",
                     )
-                mod_name = re.group(m_alias, 1)
-                as_name = re.group(m_alias, 2)
-                bind_name = as_name if isinstance(as_name, str) and as_name != "" else mod_name.split(".")[0]
+                mod_name, as_name_txt = parsed_alias
+                bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
                 _sh_append_import_binding(
                     import_bindings=import_bindings,
                     import_binding_names=import_binding_names,
@@ -3743,7 +4019,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_file=filename,
                     source_line=i,
                 )
-                aliases.append({"name": mod_name, "asname": as_name})
+                alias_item: dict[str, str | None] = {"name": mod_name, "asname": None}
+                if as_name_txt != "":
+                    alias_item["asname"] = as_name_txt
+                aliases.append(alias_item)
             body_items.append(
                 {
                     "kind": "Import",
@@ -3790,17 +4069,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
             aliases: list[dict[str, str | None]] = []
             for part in raw_parts:
-                m_alias: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$", part)
-                if m_alias is None:
+                parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
+                if parsed_alias is None:
                     raise _make_east_build_error(
                         kind="unsupported_syntax",
                         message=f"unsupported from-import clause: {part}",
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Use `from module import name` or `... as alias`.",
                     )
-                sym_name = re.group(m_alias, 1)
-                as_name = re.group(m_alias, 2)
-                bind_name = as_name if isinstance(as_name, str) and as_name != "" else sym_name
+                sym_name, as_name_txt = parsed_alias
+                bind_name = as_name_txt if as_name_txt != "" else sym_name
                 _sh_append_import_binding(
                     import_bindings=import_bindings,
                     import_binding_names=import_binding_names,
@@ -3811,7 +4089,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_file=filename,
                     source_line=i,
                 )
-                aliases.append({"name": sym_name, "asname": as_name})
+                alias_item: dict[str, str | None] = {"name": sym_name, "asname": None}
+                if as_name_txt != "":
+                    alias_item["asname"] = as_name_txt
+                aliases.append(alias_item)
             body_items.append(
                 {
                     "kind": "ImportFrom",
@@ -3827,11 +4108,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i += 1
             continue
 
-        m_cls: re.Match | None = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", ln)
-        if m_cls is not None:
-            cls_name = re.group(m_cls, 1)
-            base = re.group(m_cls, 2)
-            is_enum_base = base in {"Enum", "IntEnum", "IntFlag"}
+        cls_hdr = _sh_parse_class_header(ln)
+        if cls_hdr is not None:
+            cls_name, base = cls_hdr
+            base_name = base
+            is_enum_base = base_name in {"Enum", "IntEnum", "IntFlag"}
             cls_indent = len(ln) - len(ln.lstrip(" "))
             block: list[tuple[int, str]] = []
             j = i + 1
@@ -3901,14 +4182,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 class_storage_hint_override = "ref"
                                 k += 1
                                 continue
-                    m_field: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)(?:\s*=\s*(.+))?$", s2)
-                    if m_field is not None:
-                        fname = re.group(m_field, 1)
-                        fty = _sh_ann_to_type(re.group(m_field, 2))
+                    parsed_field = _sh_parse_typed_binding(s2, allow_dotted_name=False)
+                    if parsed_field is not None:
+                        fname, fty_txt, fdefault = parsed_field
+                        fty = _sh_ann_to_type(fty_txt)
                         field_types[fname] = fty
                         val_node: dict[str, Any] | None = None
-                        if re.group(m_field, 3) != "":
-                            fexpr_txt = re.strip_group(m_field, 3)
+                        if fdefault != "":
+                            fexpr_txt = fdefault.strip()
                             fexpr_col = ln_txt.find(fexpr_txt)
                             val_node = _sh_parse_expr_lowered(fexpr_txt, ln_no=ln_no, col=fexpr_col, name_types={})
                         class_body.append(
@@ -3933,12 +4214,20 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         k += 1
                         continue
                     if is_enum_base:
-                        m_enum_assign: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s2)
-                        if m_enum_assign is not None:
-                            fname = re.group(m_enum_assign, 1)
-                            fexpr_txt = re.strip_group(m_enum_assign, 2)
+                        enum_assign = _sh_split_top_level_assign(s2)
+                        if enum_assign is not None:
+                            fname, fexpr_txt = enum_assign
+                            fname = fname.strip()
+                            fexpr_txt = fexpr_txt.strip()
+                            if not _sh_is_identifier(fname) or fexpr_txt == "":
+                                k += 1
+                                continue
                             name_col = ln_txt.find(fname)
+                            if name_col < 0:
+                                name_col = 0
                             expr_col = ln_txt.find(fexpr_txt, name_col + len(fname))
+                            if expr_col < 0:
+                                expr_col = name_col + len(fname) + 1
                             val_node = _sh_parse_expr_lowered(fexpr_txt, ln_no=ln_no, col=expr_col, name_types={})
                             class_body.append(
                                 {
@@ -4113,13 +4402,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
 
             storage_hint_override = class_storage_hint_override
+            base_value: str | None = None
+            if base != "":
+                base_value = base
 
             cls_item: dict[str, Any] = {
                 "kind": "ClassDef",
                 "name": cls_name,
                 "original_name": cls_name,
                 "source_span": {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
-                "base": base,
+                "base": base_value,
                 "dataclass": pending_dataclass,
                 "field_types": field_types,
                 "body": class_body,
@@ -4146,9 +4438,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             # - stateless, non-inherited classes can be value candidates
             if storage_hint_override != "":
                 cls_item["class_storage_hint"] = storage_hint_override
-            elif base in {"Enum", "IntEnum", "IntFlag"}:
+            elif base_name in {"Enum", "IntEnum", "IntFlag"}:
                 cls_item["class_storage_hint"] = "value"
-            elif len(instance_field_names) == 0 and not has_del and not isinstance(base, str):
+            elif len(instance_field_names) == 0 and not has_del and base == "":
                 cls_item["class_storage_hint"] = "value"
             else:
                 cls_item["class_storage_hint"] = "ref"
@@ -4161,11 +4453,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = j
             continue
 
-        m_ann_top: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s, flags=re.S)
-        if m_ann_top is not None:
-            name = re.group(m_ann_top, 1)
-            ann = _sh_ann_to_type(re.group(m_ann_top, 2))
-            expr_txt = re.strip_group(m_ann_top, 3)
+        parsed_top_typed = _sh_parse_typed_binding(s, allow_dotted_name=False)
+        if parsed_top_typed is not None:
+            top_name, top_ann, top_default = parsed_top_typed
+        else:
+            top_name, top_ann, top_default = "", "", ""
+        if parsed_top_typed is not None and top_default != "":
+            name = top_name
+            ann_txt = top_ann
+            expr_txt = top_default
+            ann = _sh_ann_to_type(ann_txt)
             expr_col = ln.find(expr_txt)
             body_items.append(
                 {
@@ -4189,10 +4486,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = logical_end + 1
             continue
 
-        asg_top: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s, flags=re.S)
+        asg_top = _sh_split_top_level_assign(s)
         if asg_top is not None:
-            name = re.group(asg_top, 1)
-            expr_txt = re.strip_group(asg_top, 2)
+            asg_left, asg_right = asg_top
+            name = asg_left.strip()
+            if not _sh_is_identifier(name):
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser cannot parse top-level statement: {s}",
+                    source_span=_sh_span(i, 0, len(ln)),
+                    hint="Use def/class/top-level typed assignment/main guard.",
+                )
+            expr_txt = asg_right.strip()
             expr_col = ln.find(expr_txt)
             if expr_col < 0:
                 expr_col = 0
