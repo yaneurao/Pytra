@@ -208,45 +208,6 @@ def _patch_main_guard_for_selfhost(text: str) -> str:
     return text.replace(old, new)
 
 
-def _replace_import_graph_helpers_for_selfhost(text: str) -> str:
-    """selfhost parser 非対応のネスト関数を含むヘルパを簡易実装へ置換する。"""
-    out = text
-    start_a = "def _analyze_import_graph("
-    end_a = "\ndef _format_import_graph_report("
-    ia = out.find(start_a)
-    ja = out.find(end_a)
-    if ia >= 0 and ja > ia:
-        stub_a = (
-            "def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:\n"
-            "    \"\"\"selfhost 最小互換: 依存グラフ解析は簡易結果を返す。\"\"\"\n"
-            "    out: dict[str, Any] = {}\n"
-            "    out[\"edges\"] = []\n"
-            "    out[\"missing_modules\"] = []\n"
-            "    out[\"relative_imports\"] = []\n"
-            "    out[\"reserved_conflicts\"] = []\n"
-            "    out[\"cycles\"] = []\n"
-            "    out[\"user_module_files\"] = [str(entry_path)]\n"
-            "    return out\n\n"
-            "def _format_graph_list_section(out: str, label: str, items: list[Any]) -> str:\n"
-            "    pass\n"
-            "    out2 = out + label + \":\\n\"\n"
-            "    if len(items) == 0:\n"
-            "        out2 += \"  (none)\\n\"\n"
-            "        return out2\n"
-            "    j = 0\n"
-            "    while j < len(items):\n"
-            "        val = items[j]\n"
-            "        if isinstance(val, str):\n"
-            "            val_txt = str(val)\n"
-            "            out2 += \"  - \" + val_txt + \"\\n\"\n"
-            "        j += 1\n"
-            "    return out2\n\n"
-        )
-        out = out[:ia] + stub_a + out[ja + 1 :]
-
-    return out
-
-
 def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
     """selfhost で型崩れしやすい重い補助関数を最小スタブへ置換する。"""
     out = text
@@ -407,7 +368,6 @@ def main() -> int:
     out = _replace_dump_options_for_selfhost(out)
     out = _patch_code_emitter_hooks_for_selfhost(out)
     out = _replace_multi_file_helpers_for_selfhost(out)
-    out = _replace_import_graph_helpers_for_selfhost(out)
     out = _replace_misc_heavy_helpers_for_selfhost(out)
     out = _patch_main_guard_for_selfhost(out)
     out = _patch_selfhost_exception_paths(out)

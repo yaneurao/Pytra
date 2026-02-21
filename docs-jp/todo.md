@@ -11,7 +11,7 @@
 
 1. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
    - [x] `load_cpp_hooks` スタブを除去する（`build_cpp_hooks` の selfhost 用最小実装を support block に追加）。
-   - [ ] import-graph 系スタブ（`_analyze_import_graph`）を除去する。
+   - [x] import-graph 系スタブ（`_analyze_import_graph`）を除去する。
    - [ ] multi-file 系スタブ（`_write_multi_file_cpp`）を除去する。
    - [x] `_extract_function_arg_types_from_python_source` スタブを除去する。
 2. [ ] 上記の各段階で `build_selfhost` / `build_selfhost_stage2` / 差分チェック2系統を green 維持する。

@@ -6146,10 +6146,11 @@ def _graph_cycle_dfs(
 
 def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
-    root = entry_path.parent
+    root = Path(_path_parent_text(entry_path))
     queue: list[Path] = [entry_path]
     queued: set[str] = {_path_key_for_graph(entry_path)}
     visited: set[str] = set()
+    visited_order: list[str] = []
     edges: list[str] = []
     edge_seen: set[str] = set()
     missing_modules: list[str] = []
@@ -6157,6 +6158,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     relative_imports: list[str] = []
     relative_seen: set[str] = set()
     graph_adj: dict[str, list[str]] = {}
+    graph_keys: list[str] = []
     key_to_disp: dict[str, str] = {}
     key_to_path: dict[str, Path] = {}
 
@@ -6172,8 +6174,10 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
         if cur_key in visited:
             continue
         visited.add(cur_key)
+        visited_order.append(cur_key)
         key_to_path[cur_key] = cur_path
         key_to_disp[cur_key] = _rel_disp_for_graph(root, cur_path)
+        east_cur: dict[str, Any] = {}
         try:
             east_cur = load_east(cur_path)
         except Exception:
@@ -6181,13 +6185,32 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
         mods = _collect_import_modules(east_cur)
         if cur_key not in graph_adj:
             graph_adj[cur_key] = []
+            graph_keys.append(cur_key)
         cur_disp = key_to_disp[cur_key]
         i = 0
         while i < len(mods):
             mod = mods[i]
-            resolved = resolve_module_name(mod, root)
-            status_obj = resolved.get("status")
-            status = status_obj if isinstance(status_obj, str) else "missing"
+            status = "missing"
+            dep_file = Path("")
+            if mod.startswith("."):
+                status = "relative"
+            elif _is_pytra_module_name(mod):
+                status = "pytra"
+            else:
+                rel = mod.replace(".", "/")
+                root_txt = str(root)
+                sep = "" if root_txt.endswith("/") or root_txt == "" else "/"
+                cand_py = Path(root_txt + sep + rel + ".py")
+                if cand_py.exists():
+                    dep_file = cand_py
+                    status = "user"
+                else:
+                    cand_pkg = Path(root_txt + sep + rel + "/__init__.py")
+                    if cand_pkg.exists():
+                        dep_file = cand_pkg
+                        status = "user"
+                    elif _is_known_non_user_import(mod):
+                        status = "known"
             if status == "relative":
                 rel_item = cur_disp + ": " + mod
                 if rel_item not in relative_seen:
@@ -6197,16 +6220,18 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 continue
             dep_disp = mod
             if status == "user":
-                dep_path_obj = resolved.get("path")
-                dep_file: Path | None = None
-                if dep_path_obj is not None:
-                    dep_file = Path(str(dep_path_obj))
-                if dep_file is None:
+                if str(dep_file) == "":
                     i += 1
                     continue
                 dep_key = _path_key_for_graph(dep_file)
                 dep_disp = _rel_disp_for_graph(root, dep_file)
-                graph_adj[cur_key].append(dep_key)
+                cur_adj: list[str] = []
+                if cur_key in graph_adj:
+                    cur_adj_obj = graph_adj[cur_key]
+                    if isinstance(cur_adj_obj, list):
+                        cur_adj = cur_adj_obj
+                cur_adj.append(dep_key)
+                graph_adj[cur_key] = cur_adj
                 key_to_path[dep_key] = dep_file
                 key_to_disp[dep_key] = dep_disp
                 if dep_key not in queued and dep_key not in visited:
@@ -6228,7 +6253,11 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     color: dict[str, int] = {}
     stack: list[str] = []
 
-    keys = list(graph_adj.keys())
+    keys: list[str] = []
+    i = 0
+    while i < len(graph_keys):
+        keys.append(graph_keys[i])
+        i += 1
     i = 0
     while i < len(keys):
         k = keys[i]
@@ -6243,7 +6272,11 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     out["reserved_conflicts"] = reserved_conflicts
     out["cycles"] = cycles
     user_module_files: list[str] = []
-    visited_keys = list(visited)
+    visited_keys: list[str] = []
+    i = 0
+    while i < len(visited_order):
+        visited_keys.append(visited_order[i])
+        i += 1
     _sort_str_list_in_place(visited_keys)
     for key in visited_keys:
         if key in key_to_path:
@@ -6262,7 +6295,8 @@ def _format_graph_list_section(out: str, label: str, items: list[Any]) -> str:
     while j < len(items):
         val = items[j]
         if isinstance(val, str):
-            out2 += "  - " + val + "\n"
+            val_txt = str(val)
+            out2 += "  - " + val_txt + "\n"
         j += 1
     return out2
 
