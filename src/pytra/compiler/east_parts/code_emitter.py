@@ -445,22 +445,22 @@ class CodeEmitter:
         expr_d: dict[str, Any],
         none_non_any_literal: str,
         none_any_literal: str,
-    ) -> tuple[bool, str]:
+    ) -> tuple[str, str]:
         """Constant ノードのうち非文字列系（bool/None/数値など）を共通描画する。"""
         v = expr_d.get("value")
         raw_repr = self.any_to_str(expr_d.get("repr"))
         if raw_repr != "" and not isinstance(v, bool) and v is not None and not isinstance(v, str):
-            return True, raw_repr
+            return "1", raw_repr
         if isinstance(v, bool):
-            return True, ("true" if str(v) == "True" else "false")
+            return "1", ("true" if str(v) == "True" else "false")
         if v is None:
             t = self.get_expr_type(expr)
             if self.is_any_like_type(t):
-                return True, none_any_literal
-            return True, none_non_any_literal
+                return "1", none_any_literal
+            return "1", none_non_any_literal
         if isinstance(v, str):
-            return False, ""
-        return True, str(v)
+            return "0", ""
+        return "1", str(v)
 
     def any_dict_get(self, obj: dict[str, Any], key: str, default_value: Any) -> Any:
         """dict 風入力から key を取得し、失敗時は既定値を返す。"""

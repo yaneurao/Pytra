@@ -78,6 +78,7 @@
 4. [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
    - [x] `Name` の基本レンダ（予約語回避 + `self` 置換）を `CodeEmitter.render_name_expr_common` へ移管した。
    - [x] `Constant` の非文字列系レンダ（`bool`/`None`/数値）を `CodeEmitter.render_constant_non_string_common` へ移管した。
+   - [x] selfhost C++ での bool 判定崩れを避けるため、`render_constant_non_string_common` は handled フラグを `"0"/"1"` 文字列で返す方式へ調整した。
    - [ ] `Attribute` の基本レンダの共通化方針を詰める（selfhost 静的束縛制約を満たす形）。
    - [ ] `CodeEmitter` 側の共通ディスパッチは selfhost C++ で静的束縛（非 virtual）により派生レンダへ到達しないため、別方式（hook 注入）で再設計する。
 5. [x] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。
@@ -96,6 +97,7 @@
    - [x] `_cpp_expr_to_module_name` を `CodeEmitter` 側へ移管し、hook 実装から共通 helper を参照する形に統一した。
 8. [ ] 未使用関数の掃除を継続する（詳細タスクは最優先側へ移動しながら管理）。
    - [x] 未再利用 helper `_dict_any_get_list` を削除し、`_dict_any_get_str_list` へ内包した。
+   - [x] 単発 helper `_dict_str_list_get` を削除し、`_graph_cycle_dfs` 側へ内包した。
 
 ## P2: Any/object 境界の整理
 

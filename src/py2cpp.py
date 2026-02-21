@@ -312,14 +312,6 @@ def _first_import_detail_line(source_text: str, kind: str) -> str:
     return "from .module import symbol"
 
 
-def _dict_str_list_get(src: dict[str, list[str]], key: str) -> list[str]:
-    """`dict[str, list[str]]` から `list[str]` を安全に取得する。"""
-    if key in src:
-        return src[key]
-    out: list[str] = []
-    return out
-
-
 def _dict_any_kind(src: dict[str, Any]) -> str:
     """`dict` の `kind` を文字列として安全に取得する。"""
     return _dict_any_get_str(src, "kind")
@@ -4519,12 +4511,14 @@ class CppEmitter(CodeEmitter):
     def _render_constant_expr(self, expr: Any, expr_d: dict[str, Any]) -> str:
         """Constant ノードを C++ リテラル式へ変換する。"""
         v = expr_d.get("value")
-        common_handled, common_non_str = self.render_constant_non_string_common(
+        common_pair = self.render_constant_non_string_common(
             expr,
             expr_d,
             none_non_any_literal="::std::nullopt",
             none_any_literal="object{}",
         )
+        common_handled = str(common_pair[0]) == "1"
+        common_non_str = str(common_pair[1])
         if common_handled:
             return common_non_str
         if isinstance(v, str):
@@ -6148,7 +6142,9 @@ def _graph_cycle_dfs(
     """import graph DFS で循環参照を収集する。"""
     color[key] = 1
     stack.append(key)
-    nxts = _dict_str_list_get(graph_adj, key)
+    nxts: list[str] = []
+    if key in graph_adj:
+        nxts = graph_adj[key]
     i = 0
     while i < len(nxts):
         nxt = nxts[i]
