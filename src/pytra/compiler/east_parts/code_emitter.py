@@ -1076,6 +1076,30 @@ class CodeEmitter:
             return False
         return True
 
+    def is_boxed_object_expr(self, expr_txt: str) -> bool:
+        """式が既に object boxing 済みなら True を返す。"""
+        if expr_txt.startswith("make_object("):
+            return True
+        if expr_txt == "object{}":
+            return True
+        return False
+
+    def infer_rendered_arg_type(
+        self,
+        rendered_arg: str,
+        arg_type: str,
+        declared_var_types: dict[str, str],
+    ) -> str:
+        """ノード型が unknown のとき、描画済み式から型ヒントを補完する。"""
+        if arg_type not in {"", "unknown"}:
+            return arg_type
+        text = self._strip_outer_parens(rendered_arg.strip())
+        if text in declared_var_types:
+            declared_t = self.normalize_type_name(declared_var_types[text])
+            if declared_t != "":
+                return declared_t
+        return arg_type
+
     def _is_std_runtime_call(self, runtime_call: str) -> bool:
         """`std::` 直呼び出しとして扱う runtime_call か判定する。"""
         return runtime_call[0:5] == "std::" or runtime_call[0:7] == "::std::"

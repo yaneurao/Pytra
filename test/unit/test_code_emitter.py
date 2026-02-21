@@ -356,6 +356,17 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertFalse(em._can_runtime_cast_target("int64|None"))
         self.assertTrue(em._can_runtime_cast_target("int64"))
         self.assertTrue(em._can_runtime_cast_target("float64"))
+        self.assertTrue(em.is_boxed_object_expr("make_object(x)"))
+        self.assertTrue(em.is_boxed_object_expr("object{}"))
+        self.assertFalse(em.is_boxed_object_expr("x"))
+        self.assertEqual(
+            em.infer_rendered_arg_type("(x)", "unknown", {"x": "list[int64]"}),
+            "list[int64]",
+        )
+        self.assertEqual(
+            em.infer_rendered_arg_type("x", "int64", {"x": "list[int64]"}),
+            "int64",
+        )
         self.assertTrue(em._is_std_runtime_call("std::sqrt"))
         self.assertTrue(em._is_std_runtime_call("::std::abs"))
         self.assertFalse(em._is_std_runtime_call("py_len"))

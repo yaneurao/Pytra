@@ -37,6 +37,8 @@
    - [x] `obj.append(...)` の C++ 固有型変換分岐を `_render_append_call_object_method` へ分離し、`_render_call_object_method` 本体を縮退した。
    - [x] Attribute owner の `kind/type/module/attr` 解決を `CodeEmitter` helper（`resolve_attribute_owner_context` / `resolve_attribute_owner_type` / `attr_name`）へ移管し、`_render_call_attribute` / `_render_attribute_expr` の重複ロジックを削減した（selfhost の静的束縛回避のため `owner_expr` は呼び出し側で先に描画して渡す形にした）。
    - [x] `Call(Attribute)` 前処理 helper（`resolve_call_attribute_context`）を `CodeEmitter` 側へ移管し、`py2cpp.py` の `_resolve_call_attribute_context` を削除した。
+   - [x] Any boxing 判定 helper（`is_boxed_object_expr`）を `CodeEmitter` 側へ移管し、`py2cpp.py` 側の重複実装（`_is_boxed_object_expr`）を削除した。
+   - [x] 描画済み引数の型補完 helper（`infer_rendered_arg_type`）を `CodeEmitter` 側へ移管し、`py2cpp.py` 側の重複実装（`_infer_rendered_arg_type`）を削除した。
    - [x] `Call(Name)` の `set/list/dict` コンストラクタ分岐と `int/float/bool` キャスト分岐を helper（`_render_collection_constructor_call` / `_render_scalar_cast_builtin_call`）へ切り出し、`_render_call_name_or_attr` 本体の重複を削減した。
    - [x] `Call(Name)` の `print/len/reversed/enumerate/any/all/isinstance` 分岐を helper（`_render_simple_name_builtin_call` / `_render_isinstance_name_call`）へ切り出し、`_render_call_name_or_attr` の条件分岐を縮退した。
    - [x] `Class.method(...)` 分岐を `_render_call_class_method` として切り出し、`_render_call_attribute` の class-method 経路を分離した。
@@ -48,6 +50,7 @@
    - [x] `_render_call_fallback` の `*.append` 分岐を helper（`_render_append_fallback_call`）へ分離し、`_render_append_call_object_method` と型変換ロジックを共通化した。
    - [x] `Call(Attribute)` owner 解決前処理（owner/module/type/attr）を helper（`_resolve_call_attribute_context`）へ分離し、`_render_call_attribute` 本体を縮退した。
    - [x] `Call(Attribute)` の object-method 分岐に hook（`on_render_object_method`）を追加し、`_render_call_attribute` から hook 優先で描画できるようにした（selfhost 互換のため `_render_call_object_method` フォールバックは残置）。
+   - [x] `_render_call_object_method` の文字列系分岐を helper（`_render_string_object_method`）へ分離し、本体の条件分岐を縮退した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。
@@ -77,6 +80,7 @@
    - [x] `CppEmitter._render_call_attribute` の module/object 呼び出し中間値を branch-local 化し、selfhost 生成 C++ で `object` へ退避しない形に修正した。
    - [x] 上記修正後も `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で `mismatches=0` を確認した。
    - [x] `dict[str, str]` 変換ヘルパ（`CodeEmitter.any_to_str_dict_or_empty`）を追加し、`render_expr(Call)` の `kw` 展開で共通利用するようにした。
+   - [x] `is_boxed_object_expr` / `infer_rendered_arg_type` を `CodeEmitter` 側へ移管し、Any/object 境界ロジックを基底へ集約した。
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
    - [x] モジュール関数引数の boxing 判定で、`arg_node` 側型が unknown の場合に描画済み式（例: `x`, `(x)`）から `declared_var_types` を参照して型補完する helper（`_infer_rendered_arg_type`）を追加し、不要な `make_object(...)` を抑制した。
 3. [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
