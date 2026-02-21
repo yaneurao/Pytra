@@ -1678,6 +1678,24 @@ static inline str dict_get_str(const ::std::optional<dict<str, object>>& d, cons
     return py_to_string(py_dict_get_default(d, key, make_object(defval)));
 }
 
+// object 系 dict.get で数値既定値を使うとき、object 経由の戻り値を
+// 直接数値へ落として py_dict_get_default 直呼び出しを避ける。
+static inline int64 dict_get_int(const object& obj, const char* key, int64 defval) {
+    return py_to_int64(py_dict_get_default(obj, key, make_object(defval)));
+}
+
+static inline int64 dict_get_int(const ::std::optional<dict<str, object>>& d, const char* key, int64 defval) {
+    return py_to_int64(py_dict_get_default(d, key, make_object(defval)));
+}
+
+static inline float64 dict_get_float(const object& obj, const char* key, float64 defval) {
+    return py_to_float64(py_dict_get_default(obj, key, make_object(defval)));
+}
+
+static inline float64 dict_get_float(const ::std::optional<dict<str, object>>& d, const char* key, float64 defval) {
+    return py_to_float64(py_dict_get_default(d, key, make_object(defval)));
+}
+
 static inline list<object> dict_get_list(
     const object& obj, const char* key, const list<object>& defval = list<object>{}) {
     object got = py_dict_get_default(obj, key, make_object(defval));

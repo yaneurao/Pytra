@@ -66,6 +66,7 @@
 2. [ ] `cpp_type` と式レンダリングで `object` 退避を最小化する。
 3. [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
 4. [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
+   - [x] `dict.get` の object 系 owner 経路で、`resolved_type` または既定値型が数値（int/float）なら `dict_get_int` / `dict_get_float` を優先し、`py_dict_get_default`/`dict_get_node` の汎用 object 経路を減らした。
 5. [ ] `py2cpp.py` で `nullopt` を default 値に渡している箇所を洗い出し、型ごとの既定値へ置換する。
    - [x] 関数引数既定値（`_render_param_default_expr` / `_header_render_default_expr`）で `None` を一律 `::std::nullopt` にしていた処理を型別既定値へ変更した（`int -> 0`, `float -> 0.0`, `str -> str()`, `Any/object -> object{}` など）。
    - [x] 既存 optional 型（`optional[...]` / `| None`）は `::std::nullopt` を維持するようにした。
