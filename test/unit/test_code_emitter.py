@@ -422,6 +422,10 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(right_same_prec, "(a - b)")
         no_wrap = em._wrap_for_binop_operand("x", {"kind": "Name", "id": "x"}, "Add")
         self.assertEqual(no_wrap, "x")
+        self.assertTrue(em._opt_ge(2))
+        em.opt_level = "1"
+        self.assertTrue(em._opt_ge(1))
+        self.assertFalse(em._opt_ge(2))
 
     def test_type_helpers(self) -> None:
         em = CodeEmitter({})

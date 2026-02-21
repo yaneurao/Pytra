@@ -1064,13 +1064,6 @@ class CppEmitter(CodeEmitter):
                 self.import_modules[local_name] = module_id
         return
 
-    def _opt_ge(self, level: int) -> bool:
-        """最適化レベルが指定値以上かを返す。"""
-        cur = 3
-        if self.opt_level in {"0", "1", "2", "3"}:
-            cur = int(self.opt_level)
-        return cur >= level
-
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
         self.emit("/* " + text + " */")
