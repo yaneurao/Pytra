@@ -402,6 +402,14 @@ class CodeEmitter:
                 out.append(item)
         return out
 
+    def _dict_stmt_list(self, raw: Any) -> list[dict[str, Any]]:
+        """動的値から `list[dict]` を安全に取り出す。"""
+        out: list[dict[str, Any]] = []
+        for item in self.any_to_list(raw):
+            if isinstance(item, dict):
+                out.append(item)
+        return out
+
     def any_to_str(self, v: Any) -> str:
         """動的値を str に安全に変換する。変換不能なら空文字。"""
         if isinstance(v, str):

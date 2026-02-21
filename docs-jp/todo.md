@@ -17,6 +17,7 @@
 
 1. [ ] `src/py2cpp.py` の未移行ロジックを `CodeEmitter` 側へ移し、行数を段階的に削減する。
    - [x] `args + kw` 結合ロジックを `CodeEmitter.merge_call_args` へ移管し、`py2cpp.py` 側の重複実装を削除した。
+   - [x] `list[dict]` 抽出ヘルパ（`_dict_stmt_list`）を `CodeEmitter` 側へ移管し、`py2cpp.py` 側の重複実装を削除した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
 3. [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。

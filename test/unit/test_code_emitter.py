@@ -143,6 +143,10 @@ class CodeEmitterTest(unittest.TestCase):
             em.merge_call_args(["a"], {"k1": "x", "k2": "y"}),
             ["a", "x", "y"],
         )
+        self.assertEqual(
+            em._dict_stmt_list([{"x": 1}, 2, "s", {"y": 2}]),
+            [{"x": 1}, {"y": 2}],
+        )
 
     def test_node_helpers(self) -> None:
         em = CodeEmitter({})

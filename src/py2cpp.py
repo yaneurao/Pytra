@@ -1547,15 +1547,6 @@ class CppEmitter(CodeEmitter):
             return self.truthy_len_expr(body)
         return body
 
-    def _dict_stmt_list(self, raw: Any) -> list[dict[str, Any]]:
-        """動的値から `list[dict]` を安全に取り出す。"""
-        out: list[dict[str, Any]] = []
-        items = self.any_to_list(raw)
-        for item in items:
-            if isinstance(item, dict):
-                out.append(item)
-        return out
-
     def _binop_precedence(self, op_name: str) -> int:
         """二項演算子の優先順位を返す。"""
         if op_name in {"Mult", "Div", "FloorDiv", "Mod"}:
