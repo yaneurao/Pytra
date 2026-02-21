@@ -34,8 +34,8 @@
 - 着手条件: 本セクションは `P0/P1-A/P1-B/P2` が完了するまで着手しない。
 - 優先順: `Yanesdk` の構文サポートと import 解決を先に完了し、その後に `py2rs` へ着手する。
 
-1. [ ] 方針固定: `py2rs.py` は「CLI + 入出力 + 依存解決」の薄いオーケストレータに限定する。
-   - [ ] `py2rs.py` に Rust 固有の式/文変換ロジックを増やさない。
+1. [x] 方針固定: `py2rs.py` は「CLI + 入出力 + 依存解決」の薄いオーケストレータに限定する。
+   - [x] Rust 固有の式/文変換ロジックは `src/hooks/rs/emitter/rs_emitter.py` へ分離する。
    - [x] `src/common/` と `src/rs_module/` には依存しない。
 2. [ ] `CodeEmitter` の責務拡張を先に実施する（py2rs実装より先）。
    - [ ] `py2cpp.py` と `py2rs.py` で共通化できる EAST ユーティリティ（型変換補助・import束縛・文/式ディスパッチ補助）を `src/pytra/compiler/east_parts/code_emitter.py` へ移す。

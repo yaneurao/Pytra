@@ -320,7 +320,8 @@
 
 ### 5.2 EASTベース Rust 経路（段階移行）
 
-- `src/py2rs.py` は EAST（`.py/.json`）入力を `CodeEmitter` 経由で Rust へ変換する。
+- `src/py2rs.py` は CLI + 入出力の薄いオーケストレータに限定する。
+- Rust 固有の出力処理は `src/hooks/rs/emitter/rs_emitter.py`（`RustEmitter`）へ分離する。
 - `src/py2rs.py` は `src/common/` / `src/rs_module/` に依存しない。
 - 言語固有差分は `src/profiles/rs/` と `src/hooks/rs/` に分離する。
 - 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
