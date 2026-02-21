@@ -304,7 +304,9 @@ class CodeEmitter:
             return default_value
         v = obj[key]
         if isinstance(v, bool):
-            return 1 if v else 0
+            if bool(v):
+                return 1
+            return 0
         if isinstance(v, int):
             return int(v)
         return default_value

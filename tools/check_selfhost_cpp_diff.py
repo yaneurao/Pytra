@@ -19,6 +19,7 @@ DEFAULT_CASES = [
     "test/fixtures/typing/enum_basic.py",
     "test/fixtures/stdlib/enum_extended.py",
     "sample/py/01_mandelbrot.py",
+    "sample/py/04_monte_carlo_pi.py",
 ]
 
 

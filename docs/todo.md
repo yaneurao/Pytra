@@ -99,12 +99,12 @@
          - [x] `parse_py2cpp_argv` の返り値が tuple 退化する経路を修正し、`_dict_str_get(parsed, ...)` 呼び出しを常に `dict[str, str]` で通す。
          - [x] `", ".join(...)` / `" && ".join(...)` など literal `.join` が C++ 側で `char[]` 扱いになる箇所を全置換する（`sep` 変数経由または `py_join` 経由）。: `src/py2cpp.py` の結合処理を `_join_str_list(...)` 経由へ統一。
          - [x] `BIN_OPS` / `AUG_OPS` / `CMP_OPS` の global 参照が selfhost で未束縛になる経路を切り分け、`CodeEmitter` 側 accessor 経由へ寄せる。: selfhost source 準備時に `BIN_OPS/CMP_OPS/AUG_OPS/AUG_BIN` を再束縛し、`dict_get_node` の `dict[str,str]` 取得経路を runtime へ追加。
-       - [ ] `src/pytra/compiler/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
+       - [x] `src/pytra/compiler/east_parts/core.py` の selfhost 非対応構文（bootstrap/path 操作）を切り離して取り込み可能にする。
          - [x] bootstrap 専用コードを `src/pytra/compiler/east.py` facade 側へ隔離し、`east_parts.core` から除去する。
          - [x] `east_parts.core` の import を `pytra.std.*`（または同等 shim）に固定する。
          - [x] `core.py` 先頭の self_hosted parser 未対応パターン（行内 `#` コメント / class docstring）を除去した。
          - [x] `core.py` 内のネスト `def`（例: `_tokenize` 内 `scan_string_token`）を self_hosted parser で扱える形へ段階分解する。: `PYTHONPATH=src python3 -c 'from pytra.compiler.east_parts.core import convert_path; from pytra.std.pathlib import Path; convert_path(Path(\"src/pytra/compiler/east_parts/core.py\"))'` で `OK` を確認（2026-02-20）。
-         - [ ] `tools/prepare_selfhost_source.py` の取り込み対象へ `east_parts.core` を段階追加する。
+         - [x] `tools/prepare_selfhost_source.py` の取り込み対象へ `east_parts.core` を段階追加する。: 現行は `runtime/cpp/pytra/compiler/east_parts/core.cpp` を selfhost ビルドへ同時リンクする経路で稼働。
        - [x] `tools/selfhost_transpile.py` を使わず `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` が成功することを確認する。
        - [ ] 上記生成物を `g++` でビルドして、実行結果が Python 実行と一致することを確認する。
 3. [ ] CodeEmitter hook 移管の再開（selfhostを壊さない手順）
@@ -211,7 +211,7 @@
       - [x] 失敗時に `user_syntax_error` / `input_invalid` / `not_implemented` の分類が維持されることを確認する。: selfhost 実行で `.py` と `.json` の分類を確認済み（2026-02-19）。
    - [x] `./selfhost/py2cpp.out --help` を通す。
    - [x] `./selfhost/py2cpp.out INPUT.py -o OUT.cpp` を通す。
-   - [ ] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。
+   - [x] 出力された C++ をコンパイル・実行し、Python 実行結果と一致確認する。: `sample/py/04_monte_carlo_pi.py` を selfhost 変換後にコンパイル実行し、`pixels` / `checksum` が Python 実行結果と一致（2026-02-21）。
    - [x] `test/fixtures/core/add.py`（軽量ケース）でも selfhost 変換を実行し、最小成功ケースを確立する。: C++ 実行出力 `True` が `PYTHONPATH=src python3 test/fixtures/core/add.py` と一致（2026-02-21）。
    - [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
      - [x] `load_east` を `.json` `input_invalid` / `.py` `not_implemented` に分割した（selfhost 最小モード）。
@@ -279,6 +279,7 @@
   2. `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` は既定ケースで `mismatches=0` を再確認。
   3. selfhost 直実行で `test/fixtures` は expected-fail 除外 `91/91` 変換成功（enum 4件の class 解析失敗を解消）。
   4. `./selfhost/py2cpp.out sample/py/01_mandelbrot.py -o /tmp/out.cpp` と `INPUT OUTPUT` 形式の両方で生成成功を確認。
+  5. `sample/py/04_monte_carlo_pi.py` で selfhost 出力差分（`row_sum += ...` が再宣言化）を修正し、`CodeEmitter.any_dict_get_int` の bool 分岐を selfhost 安全な if 文へ変更した。
   17. `tools/check_selfhost_cpp_diff.py --selfhost-driver bridge` の既定ケースで `mismatches=0` を確認。
   2. `g++` コンパイルエラーは `total_errors=72`（`<=100` 維持）を確認。
   3. 現在の上位は `__pytra_main`（import/runtime 参照境界）と `emit_class` / `emit_assign` の `Any` 境界由来の型不整合。
