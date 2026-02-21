@@ -26,6 +26,7 @@ DEFAULT_CASES = [
     "test/fixtures/core/add.py",
     "test/fixtures/core/str_join_method.py",
     "test/fixtures/control/if_else.py",
+    "test/fixtures/control/ifexp_ternary_regression.py",
     "sample/py/04_monte_carlo_pi.py",
 ]
 
@@ -69,8 +70,8 @@ def _normalize_stdout(text: str, ignore_prefixes: list[str]) -> str:
 
 
 def _ignore_prefixes_for_case(rel: str) -> list[str]:
-    if rel.endswith("sample/py/04_monte_carlo_pi.py"):
-        return ["elapsed_sec:"]
+    if rel.startswith("sample/py/"):
+        return ["elapsed_sec:", "elapsed:", "time_sec:"]
     return []
 
 

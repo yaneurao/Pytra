@@ -29,6 +29,14 @@ def _join_str_list(sep: str, items: list[str]) -> str:
     return sep.join(items)
 
 
+def _replace_first(text: str, old: str, replacement: str) -> str:
+    """`text` 内の最初の `old` だけを `replacement` に置換する。"""
+    pos = text.find(old)
+    if pos < 0:
+        return text
+    return text[:pos] + replacement + text[pos + len(old) :]
+
+
 def _sort_str_list_in_place(items: list[str]) -> None:
     """selfhost 安定化用: list[str] を昇順ソートする（依存最小の挿入ソート）。"""
     i = 1
@@ -761,6 +769,7 @@ class CppEmitter(CodeEmitter):
         self.current_class_static_fields: set[str] = set()
         self.class_method_names: dict[str, set[str]] = {}
         self.class_method_arg_types: dict[str, dict[str, list[str]]] = {}
+        self.class_method_arg_names: dict[str, dict[str, list[str]]] = {}
         self.class_base: dict[str, str] = {}
         self.class_names: set[str] = set()
         self.class_storage_hints: dict[str, str] = {}
@@ -784,6 +793,30 @@ class CppEmitter(CodeEmitter):
         self.current_function_return_type: str = ""
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
+
+    def current_scope_names(self) -> set[str]:
+        """現在スコープの識別子集合を返す（selfhost では CppEmitter 側を正とする）。"""
+        if len(self.scope_stack) == 0:
+            self.scope_stack.append(set())
+        return self.scope_stack[len(self.scope_stack) - 1]
+
+    def declare_in_current_scope(self, name: str) -> None:
+        """現在スコープへ識別子を追加する。"""
+        if name == "":
+            return
+        scope = self.current_scope_names()
+        scope.add(name)
+        self.scope_stack[len(self.scope_stack) - 1] = scope
+
+    def is_declared(self, name: str) -> bool:
+        """現在の可視スコープで識別子が宣言済みかを返す。"""
+        i = len(self.scope_stack) - 1
+        while i >= 0:
+            scope = self.scope_stack[i]
+            if name in scope:
+                return True
+            i -= 1
+        return False
 
     def get_expr_type(self, expr: Any) -> str:
         """EAST 型に加えて現在スコープの推論型テーブルも参照する。"""
@@ -1238,6 +1271,7 @@ class CppEmitter(CodeEmitter):
                     self.class_names.add(cls_name)
                     mset: set[str] = set()
                     marg: dict[str, list[str]] = {}
+                    marg_names: dict[str, list[str]] = {}
                     class_body: list[dict[str, Any]] = []
                     raw_class_body = self.any_dict_get_list(stmt, "body")
                     if isinstance(raw_class_body, list):
@@ -1251,17 +1285,22 @@ class CppEmitter(CodeEmitter):
                             arg_types = self.any_to_dict_or_empty(s.get("arg_types"))
                             arg_order = self.any_dict_get_list(s, "arg_order")
                             ordered: list[str] = []
+                            ordered_names: list[str] = []
                             ai = 0
                             while ai < len(arg_order):
                                 raw_n = arg_order[ai]
                                 if isinstance(raw_n, str):
                                     n = str(raw_n)
-                                    if n != "self" and n in arg_types:
-                                        ordered.append(self.any_to_str(arg_types.get(n)))
+                                    if n != "self":
+                                        ordered_names.append(n)
+                                        if n in arg_types:
+                                            ordered.append(self.any_to_str(arg_types.get(n)))
                                 ai += 1
                             marg[fn_name] = ordered
+                            marg_names[fn_name] = ordered_names
                     self.class_method_names[cls_name] = mset
                     self.class_method_arg_types[cls_name] = marg
+                    self.class_method_arg_names[cls_name] = marg_names
                     base_raw = stmt.get("base")
                     base = str(base_raw) if isinstance(base_raw, str) else ""
                     self.class_base[cls_name] = base
@@ -2281,7 +2320,71 @@ class CppEmitter(CodeEmitter):
                 )
             )
 
+    def _emit_local_function_stmt(self, stmt: dict[str, Any]) -> None:
+        """ローカル関数定義をラムダ変数へ lowering して出力する。"""
+        name = self.any_dict_get_str(stmt, "name", "fn")
+        emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
+        ret = self.cpp_type(stmt.get("return_type"))
+        arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
+        arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
+        arg_defaults = self.any_to_dict_or_empty(stmt.get("arg_defaults"))
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        params: list[str] = []
+        arg_names: list[str] = []
+        raw_order = self.any_dict_get_list(stmt, "arg_order")
+        for raw_n in raw_order:
+            if isinstance(raw_n, str) and raw_n != "" and raw_n in arg_types:
+                arg_names.append(str(raw_n))
+        mutated_params = self._collect_mutated_params(body_stmts, arg_names)
+        fn_scope: set[str] = set()
+        for n in arg_names:
+            t = self.any_to_str(arg_types.get(n))
+            ct = self._cpp_type_text(t)
+            usage = self.any_to_str(arg_usage.get(n))
+            if usage == "":
+                usage = "readonly"
+            if usage != "mutable" and n in mutated_params:
+                usage = "mutable"
+            by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            param_txt = ""
+            if by_ref and usage == "mutable":
+                param_txt = f"{ct}& {n}"
+            elif by_ref:
+                param_txt = f"const {ct}& {n}"
+            else:
+                param_txt = f"{ct} {n}"
+            if n in arg_defaults:
+                default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
+                if default_txt != "":
+                    param_txt += f" = {default_txt}"
+            params.append(param_txt)
+            fn_scope.add(n)
+        params_txt = ", ".join(params)
+        self.emit(f"auto {emitted_name} = [&]({params_txt}) -> {ret} {{")
+        self.indent += 1
+        self.scope_stack.append(set(fn_scope))
+        prev_ret = self.current_function_return_type
+        prev_decl_types = self.declared_var_types
+        self.declared_var_types = {}
+        for an in arg_names:
+            at = self.any_to_str(arg_types.get(an))
+            if at != "":
+                self.declared_var_types[an] = self.normalize_type_name(at)
+        self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
+        docstring = self.any_to_str(stmt.get("docstring"))
+        if docstring != "":
+            self.emit_block_comment(docstring)
+        self.emit_stmt_list(body_stmts)
+        self.current_function_return_type = prev_ret
+        self.declared_var_types = prev_decl_types
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit("};")
+
     def _emit_function_stmt(self, stmt: dict[str, Any]) -> None:
+        if len(self.scope_stack) > 1:
+            self._emit_local_function_stmt(stmt)
+            return
         self.emit_function(stmt, False)
 
     def _emit_class_stmt(self, stmt: dict[str, Any]) -> None:
@@ -2431,6 +2534,32 @@ class CppEmitter(CodeEmitter):
             return
         if self._node_kind_from_dict(target) == "Tuple":
             lhs_elems = self.any_dict_get_list(target, "elements")
+            if len(lhs_elems) == 0:
+                fallback_names = self._fallback_tuple_target_names_from_repr(target)
+                if len(fallback_names) == 0:
+                    stmt_repr = self.any_dict_get_str(stmt, "repr", "")
+                    if stmt_repr != "":
+                        eq_pos = stmt_repr.find("=")
+                        lhs_txt = stmt_repr
+                        if eq_pos >= 0:
+                            lhs_txt = stmt_repr[:eq_pos]
+                        pseudo_target: dict[str, Any] = {}
+                        pseudo_target["repr"] = lhs_txt
+                        fallback_names = self._fallback_tuple_target_names_from_repr(pseudo_target)
+                if len(fallback_names) > 0:
+                    recovered: list[Any] = []
+                    fi = 0
+                    while fi < len(fallback_names):
+                        nm = fallback_names[fi]
+                        rec: dict[str, Any] = {}
+                        rec["kind"] = "Name"
+                        rec["id"] = nm
+                        rec["resolved_type"] = "unknown"
+                        rec["repr"] = nm
+                        rec_any: Any = rec
+                        recovered.append(rec_any)
+                        fi += 1
+                    lhs_elems = recovered
             if self._opt_ge(2) and isinstance(value, dict) and self._node_kind_from_dict(value) == "Tuple":
                 rhs_elems = self.any_dict_get_list(value, "elements")
                 if (
@@ -2478,7 +2607,7 @@ class CppEmitter(CodeEmitter):
                 self.emit(f"auto {tmp} = *({value_expr});")
             else:
                 self.emit(f"auto {tmp} = {value_expr};")
-            for i, elt in enumerate(self.any_dict_get_list(target, "elements")):
+            for i, elt in enumerate(lhs_elems):
                 lhs = self.render_expr(elt)
                 rhs_item = f"::std::get<{i}>({tmp})" if rhs_is_tuple else f"py_at({tmp}, {i})"
                 if self.is_plain_name_expr(elt):
@@ -2607,6 +2736,46 @@ class CppEmitter(CodeEmitter):
             if owner_name in self.import_symbols:
                 return True
         return False
+
+    def _fallback_tuple_target_names_from_repr(self, target: dict[str, Any]) -> list[str]:
+        """selfhost で tuple target 要素が欠落したとき、repr から簡易復元する。"""
+        out: list[str] = []
+        repr_txt = self.any_dict_get_str(target, "repr", "")
+        if repr_txt == "" or "," not in repr_txt:
+            return out
+        parts: list[str] = []
+        cur = ""
+        i = 0
+        while i < len(repr_txt):
+            ch = repr_txt[i : i + 1]
+            if ch == ",":
+                parts.append(cur.strip())
+                cur = ""
+            else:
+                cur += ch
+            i += 1
+        parts.append(cur.strip())
+        j = 0
+        while j < len(parts):
+            nm = parts[j]
+            if nm != "":
+                ok = True
+                k = 0
+                while k < len(nm):
+                    c = nm[k : k + 1]
+                    if k == 0:
+                        if not (c == "_" or c.isalpha()):
+                            ok = False
+                            break
+                    else:
+                        if not (c == "_" or c.isalnum()):
+                            ok = False
+                            break
+                    k += 1
+                if ok:
+                    out.append(nm)
+            j += 1
+        return out
 
     def render_lvalue(self, expr: Any) -> str:
         """左辺値文脈の式（添字代入含む）を C++ 文字列へ変換する。"""
@@ -3055,6 +3224,8 @@ class CppEmitter(CodeEmitter):
         static_field_types: dict[str, str] = {}
         static_field_defaults: dict[str, str] = {}
         instance_field_defaults: dict[str, str] = {}
+        field_decl_order: list[str] = []
+        static_field_order: list[str] = []
         consumed_assign_fields: set[str] = set()
         for s in class_body:
             if self._node_kind_from_dict(s) == "AnnAssign":
@@ -3063,6 +3234,12 @@ class CppEmitter(CodeEmitter):
                     fname = self.any_dict_get_str(texpr, "id", "")
                     ann = self.any_to_str(s.get("annotation"))
                     if ann != "":
+                        if fname != "" and fname not in field_decl_order:
+                            field_decl_order.append(fname)
+                        if fname != "":
+                            cur_t = self.current_class_fields.get(fname, "")
+                            if not isinstance(cur_t, str) or cur_t == "" or cur_t == "unknown":
+                                self.current_class_fields[fname] = ann
                         if is_dataclass:
                             instance_field_defaults[fname] = self.render_expr(s.get("value")) if s.get("value") is not None else instance_field_defaults.get(fname, "")
                         else:
@@ -3070,6 +3247,8 @@ class CppEmitter(CodeEmitter):
                             # 値なしはインスタンスフィールド宣言（型ヒント）として扱う。
                             if s.get("value") is not None:
                                 static_field_types[fname] = ann
+                                if fname not in static_field_order:
+                                    static_field_order.append(fname)
                                 static_field_defaults[fname] = self.render_expr(s.get("value"))
             elif is_enum_base and self._node_kind_from_dict(s) == "Assign":
                 texpr = self.any_to_dict_or_empty(s.get("target"))
@@ -3081,6 +3260,8 @@ class CppEmitter(CodeEmitter):
                         if ann == "" or ann == "unknown":
                             ann = "int64" if base in {"IntEnum", "IntFlag"} else "int64"
                         static_field_types[fname] = ann
+                        if fname not in static_field_order:
+                            static_field_order.append(fname)
                         if s.get("value") is not None:
                             static_field_defaults[fname] = self.render_expr(s.get("value"))
                         consumed_assign_fields.add(fname)
@@ -3088,27 +3269,64 @@ class CppEmitter(CodeEmitter):
         for k, _ in static_field_types.items():
             if isinstance(k, str) and k != "":
                 self.current_class_static_fields.add(k)
-        instance_fields: dict[str, str] = {}
+        instance_fields_ordered: list[tuple[str, str]] = []
+        seen_instance_fields: set[str] = set()
+        for fname in field_decl_order:
+            if fname in self.current_class_static_fields:
+                continue
+            fty_any = self.current_class_fields.get(fname, "")
+            if not isinstance(fty_any, str):
+                continue
+            if fname in seen_instance_fields:
+                continue
+            instance_fields_ordered.append((fname, fty_any))
+            seen_instance_fields.add(fname)
+        remaining_instance_keys: list[str] = []
         for k, v in self.current_class_fields.items():
-            if isinstance(k, str) and isinstance(v, str) and k not in self.current_class_static_fields:
-                instance_fields[k] = v
+            if (
+                isinstance(k, str)
+                and isinstance(v, str)
+                and k not in self.current_class_static_fields
+                and k not in seen_instance_fields
+            ):
+                remaining_instance_keys.append(k)
+        _sort_str_list_in_place(remaining_instance_keys)
+        for fname in remaining_instance_keys:
+            fty_fallback = self.current_class_fields.get(fname, "")
+            if isinstance(fty_fallback, str):
+                instance_fields_ordered.append((fname, fty_fallback))
+                seen_instance_fields.add(fname)
         has_init = False
         for s in class_body:
             if self._node_kind_from_dict(s) == "FunctionDef" and s.get("name") == "__init__":
                 has_init = True
                 break
-        for fname, fty in static_field_types.items():
+        static_emit_names: list[str] = []
+        for fname in static_field_order:
+            if fname in static_field_types and fname not in static_emit_names:
+                static_emit_names.append(fname)
+        extra_static_names: list[str] = []
+        for fname, _ in static_field_types.items():
+            if fname not in static_emit_names:
+                extra_static_names.append(fname)
+        _sort_str_list_in_place(extra_static_names)
+        for fname in extra_static_names:
+            static_emit_names.append(fname)
+        for fname in static_emit_names:
+            fty = static_field_types.get(fname, "")
+            if not isinstance(fty, str) or fty == "":
+                continue
             if fname in static_field_defaults:
                 self.emit(f"inline static {self._cpp_type_text(fty)} {fname} = {static_field_defaults[fname]};")
             else:
                 self.emit(f"inline static {self._cpp_type_text(fty)} {fname};")
-        for fname, fty in instance_fields.items():
+        for fname, fty in instance_fields_ordered:
             self.emit(f"{self._cpp_type_text(fty)} {fname};")
-        if len(static_field_types) > 0 or len(instance_fields) > 0:
+        if len(static_emit_names) > 0 or len(instance_fields_ordered) > 0:
             self.emit("")
-        if len(instance_fields) > 0 and not has_init:
+        if len(instance_fields_ordered) > 0 and not has_init:
             params: list[str] = []
-            for fname, fty in instance_fields.items():
+            for fname, fty in instance_fields_ordered:
                 p = f"{self._cpp_type_text(fty)} {fname}"
                 if fname in instance_field_defaults and instance_field_defaults[fname] != "":
                     p += f" = {instance_field_defaults[fname]}"
@@ -3116,7 +3334,7 @@ class CppEmitter(CodeEmitter):
             self.emit(f"{name}({_join_str_list(', ', params)}) {{")
             self.indent += 1
             self.scope_stack.append(set())
-            for fname, _ in instance_fields.items():
+            for fname, _ in instance_fields_ordered:
                 self.emit(f"this->{fname} = {fname};")
             self.scope_stack.pop()
             self.indent -= 1
@@ -3596,7 +3814,9 @@ class CppEmitter(CodeEmitter):
         fn_kind = self._node_kind_from_dict(fn)
         if fn_kind == "Name":
             raw = self.any_to_str(fn.get("id"))
-            imported_rendered, raw = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes)
+            resolved = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes)
+            imported_rendered = resolved[0]
+            raw = resolved[1]
             if imported_rendered is not None:
                 return imported_rendered
             if raw.startswith("py_assert_"):
@@ -3605,7 +3825,11 @@ class CppEmitter(CodeEmitter):
             if raw == "range":
                 raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
             if isinstance(raw, str) and raw in self.ref_classes:
-                return f"::rc_new<{raw}>({_join_str_list(', ', args)})"
+                ctor_args = args
+                if len(kw) > 0:
+                    ctor_arg_names = self._class_method_name_sig(raw, "__init__")
+                    ctor_args = self._merge_args_with_kw_by_name(args, kw, ctor_arg_names)
+                return f"::rc_new<{raw}>({_join_str_list(', ', ctor_args)})"
             simple_builtin_rendered = self._render_simple_name_builtin_call(raw, args)
             if simple_builtin_rendered is not None:
                 return simple_builtin_rendered
@@ -3748,11 +3972,18 @@ class CppEmitter(CodeEmitter):
         _ = expr
         owner_obj = fn.get("value")
         owner_rendered = self.render_expr(owner_obj)
-        attr_ctx = self.resolve_call_attribute_context(owner_obj, owner_rendered, fn, self.declared_var_types)
-        owner_expr = self.any_dict_get_str(attr_ctx, "owner_expr", "")
-        owner_mod = self._normalize_runtime_module_name(self.any_dict_get_str(attr_ctx, "owner_mod", ""))
-        owner_t = self.any_dict_get_str(attr_ctx, "owner_type", "")
-        attr = self.any_dict_get_str(attr_ctx, "attr", "")
+        owner_ctx = self._resolve_attribute_owner_context_local(owner_obj, owner_rendered)
+        owner_expr = self.any_dict_get_str(owner_ctx, "expr", "")
+        owner_mod = self._normalize_runtime_module_name(self.any_dict_get_str(owner_ctx, "module", ""))
+        owner_node = self.any_to_dict_or_empty(owner_ctx.get("node"))
+        owner_t = self.get_expr_type(owner_obj)
+        if self._node_kind_from_dict(owner_node) == "Name":
+            owner_name = self.any_to_str(owner_node.get("id"))
+            if owner_name in self.declared_var_types:
+                declared_owner_t = self.declared_var_types[owner_name]
+                if declared_owner_t not in {"", "unknown"}:
+                    owner_t = declared_owner_t
+        attr = self.attr_name(fn)
         if attr == "":
             return None
         if owner_mod != "":
@@ -3760,6 +3991,51 @@ class CppEmitter(CodeEmitter):
             if module_rendered_1 is not None and module_rendered_1 != "":
                 return module_rendered_1
         return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, arg_nodes)
+
+    def _resolve_imported_module_name_local(self, name: str) -> str:
+        """import 束縛名からモジュール名を CppEmitter 側の状態で解決する。"""
+        if name in self.import_modules:
+            mod_name = self.import_modules[name]
+            if mod_name != "":
+                return mod_name
+        if name in self.import_symbols:
+            sym = self.import_symbols[name]
+            parent = sym["module"] if "module" in sym else ""
+            child = sym["name"] if "name" in sym else ""
+            if parent != "" and child != "":
+                return parent + "." + child
+        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
+        i = 0
+        while i < len(refs):
+            ref = refs[i]
+            local_name = self.any_to_str(ref.get("local_name"))
+            if local_name == name:
+                module_id = self.any_to_str(ref.get("module_id"))
+                symbol = self.any_to_str(ref.get("symbol"))
+                if module_id != "" and symbol != "":
+                    return module_id + "." + symbol
+            i += 1
+        return ""
+
+    def _resolve_attribute_owner_context_local(self, owner_obj: Any, owner_expr: str) -> dict[str, Any]:
+        """Attribute owner の kind/expr/module を CppEmitter 側で解決する。"""
+        owner_node = self.any_to_dict_or_empty(owner_obj)
+        owner_kind = self._node_kind_from_dict(owner_node)
+        wrapped_owner_expr = owner_expr
+        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            wrapped_owner_expr = f"({owner_expr})"
+        owner_module = ""
+        if owner_kind in {"Name", "Attribute"}:
+            owner_module = self._resolve_imported_module_name_local(owner_expr)
+            if owner_module == "" and owner_expr.startswith("pytra."):
+                owner_module = owner_expr
+        out: dict[str, Any] = {}
+        out["node"] = owner_node
+        out["kind"] = owner_kind
+        out["expr"] = wrapped_owner_expr
+        out["module"] = owner_module
+        return out
 
     def _render_call_attribute_non_module(
         self,
@@ -3853,6 +4129,52 @@ class CppEmitter(CodeEmitter):
                 return mm[method]
         return []
 
+    def _class_method_name_sig(self, owner_t: str, method: str) -> list[str]:
+        """クラスメソッドの引数名シグネチャを返す。未知なら空配列。"""
+        t_norm = self.normalize_type_name(owner_t)
+        candidates: list[str] = []
+        if self._contains_text(t_norm, "|"):
+            candidates = self.split_union(t_norm)
+        elif t_norm != "":
+            candidates = [t_norm]
+        if self.current_class_name is not None and owner_t in {"", "unknown"}:
+            candidates.append(self.current_class_name)
+        i = 0
+        while i < len(candidates):
+            c = candidates[i]
+            if c in self.class_method_arg_names:
+                mm = self.class_method_arg_names[c]
+                if method in mm:
+                    return mm[method]
+            i += 1
+        if owner_t in {"", "unknown"} and self.current_class_name is not None:
+            mm2: dict[str, list[str]] = {}
+            if self.current_class_name in self.class_method_arg_names:
+                mm2 = self.class_method_arg_names[self.current_class_name]
+            if method in mm2:
+                return mm2[method]
+        return []
+
+    def _merge_args_with_kw_by_name(self, args: list[str], kw: dict[str, str], arg_names: list[str]) -> list[str]:
+        """位置引数+キーワード引数を、引数名順に 1 本化する。"""
+        out: list[str] = []
+        i = 0
+        while i < len(args):
+            out.append(args[i])
+            i += 1
+        used_kw: set[str] = set()
+        j = len(out)
+        while j < len(arg_names):
+            nm = arg_names[j]
+            if nm in kw:
+                out.append(kw[nm])
+                used_kw.add(nm)
+            j += 1
+        for nm, val in kw.items():
+            if nm not in used_kw:
+                out.append(val)
+        return out
+
     def _coerce_args_for_class_method(
         self,
         owner_t: str,
@@ -3933,6 +4255,28 @@ class CppEmitter(CodeEmitter):
         merged_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
         merged_args = self._coerce_args_for_known_function(fn_name, merged_args, merged_arg_nodes)
         return self._render_call_fallback(fn_name, merged_args)
+
+    def _render_ifexp_expr(self, expr: dict[str, Any]) -> str:
+        """IfExp（三項演算）を式へ変換する。
+
+        NOTE:
+        C++ selfhost では、基底 CodeEmitter 側の同名メソッドをそのまま使うと
+        `render_expr` が静的束縛で基底実装（空文字返却）へ落ちる。
+        CppEmitter 側で明示オーバーライドして、IfExp の各部分式が
+        `CppEmitter.render_expr` を通るようにする。
+        """
+        body = self.render_expr(expr.get("body"))
+        orelse = self.render_expr(expr.get("orelse"))
+        casts = self._dict_stmt_list(expr.get("casts"))
+        for c in casts:
+            on = self.any_to_str(c.get("on"))
+            to_t = self.any_to_str(c.get("to"))
+            if on == "body":
+                body = self.apply_cast(body, to_t)
+            elif on == "orelse":
+                orelse = self.apply_cast(orelse, to_t)
+        test_expr = self.render_expr(expr.get("test"))
+        return f"({test_expr} ? {body} : {orelse})"
 
     def _render_operator_family_expr(
         self,
@@ -4523,6 +4867,19 @@ class CppEmitter(CodeEmitter):
             return common_non_str
         if isinstance(v, str):
             v_txt: str = str(v)
+            v_ty = self.get_expr_type(expr)
+            if v_ty in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+                try:
+                    int(v_txt)
+                    return v_txt
+                except Exception:
+                    pass
+            if v_ty in {"float32", "float64"}:
+                try:
+                    float(v_txt)
+                    return v_txt
+                except Exception:
+                    pass
             if self.get_expr_type(expr) == "bytes":
                 raw = self.any_to_str(expr_d.get("repr"))
                 if raw != "":
@@ -4547,7 +4904,7 @@ class CppEmitter(CodeEmitter):
                 "object receiver method call / attribute access is forbidden by language constraints"
             )
         base_rendered = self.render_expr(expr_d.get("value"))
-        base_ctx = self.resolve_attribute_owner_context(expr_d.get("value"), base_rendered)
+        base_ctx = self._resolve_attribute_owner_context_local(expr_d.get("value"), base_rendered)
         base = self.any_dict_get_str(base_ctx, "expr", "")
         base_node = self.any_to_dict_or_empty(base_ctx.get("node"))
         base_kind = self._node_kind_from_dict(base_node)
@@ -5559,8 +5916,7 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
         if isinstance(val, float):
             return str(val)
         if isinstance(val, str):
-            escaped = val.replace("\\", "\\\\").replace('"', '\\"')
-            return '"' + escaped + '"'
+            return cpp_string_lit(val)
         return ""
     if kind == "Name":
         ident = _dict_any_get_str(node, "id")
@@ -5900,7 +6256,7 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
             binding_kind = ""
             if isinstance(binding_kind_obj, str):
                 binding_kind = binding_kind_obj
-            if module_id != "" and local_name != "" and binding_kind in {"module", "symbol"}:
+            if module_id != "" and local_name != "" and binding_kind in {"module", "symbol", "wildcard"}:
                 ent: dict[str, str] = {}
                 ent["module_id"] = module_id
                 ent["export_name"] = export_name
@@ -6531,6 +6887,9 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
                         ent = names[j]
                         if isinstance(ent, dict):
                             sym = _dict_any_get_str(ent, "name")
+                            if sym == "*":
+                                j += 1
+                                continue
                             if sym != "" and sym not in exports[imported_mod]:
                                 details.append(
                                     f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
@@ -6878,10 +7237,10 @@ def _write_multi_file_cpp(
             emit_main if is_entry else False,
         )
         # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。
-        cpp_txt = cpp_txt.replace(
+        cpp_txt = _replace_first(
+            cpp_txt,
             '#include "runtime/cpp/pytra/built_in/py_runtime.h"',
             '#include "pytra_multi_prelude.h"',
-            1,
         )
         # ユーザーモジュール import 呼び出しを解決するため、参照先関数の前方宣言を補う。
         meta_obj = east.get("meta")
@@ -7272,10 +7631,10 @@ def main(argv: list[str]) -> int:
                 new_runtime_include = (
                     '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
                 )
-                cpp_txt_runtime = cpp_txt_runtime.replace(
+                cpp_txt_runtime = _replace_first(
+                    cpp_txt_runtime,
                     old_runtime_include,
                     new_runtime_include,
-                    1,
                 )
             hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
             _write_text_file(cpp_out, cpp_txt_runtime)

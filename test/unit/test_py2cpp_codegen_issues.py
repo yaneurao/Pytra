@@ -45,6 +45,62 @@ class Py2CppCodegenIssueTest(unittest.TestCase):
         self.assertNotIn("str key_sep = \"=\";", cpp)
         self.assertIn("return item_sep + key_sep;", cpp)
 
+    def test_ifexp_ternary_is_rendered_in_all_expression_positions(self) -> None:
+        src = """def pick(flag: bool) -> int:
+    x: int = 10 if flag else 20
+    return x if flag else (x + 1)
+
+def passthrough(v: int) -> int:
+    return v
+
+def as_arg(flag: bool) -> int:
+    return passthrough(30 if flag else 40)
+
+def as_list(flag: bool) -> list[int]:
+    return [1 if flag else 2, 3]
+
+def as_dict(flag: bool) -> dict[str, int]:
+    return {"k": (5 if flag else 7)}
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "ifexp_regression.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertNotIn("( ?  : )", cpp)
+        self.assertIn("? 10 : 20", cpp)
+        self.assertIn("? x : x + 1", cpp)
+        self.assertIn("passthrough((flag ? 30 : 40))", cpp)
+        self.assertIn("list<int64>{(flag ? 1 : 2), 3}", cpp)
+        self.assertIn("dict<str, int64>{{\"k\", (flag ? 5 : 7)}}", cpp)
+
+    def test_dataclass_field_order_is_preserved_in_class_layout_and_ctor(self) -> None:
+        src = """from dataclasses import dataclass
+
+@dataclass
+class Token:
+    kind: str
+    text: str
+    pos: int
+
+def make_token() -> Token:
+    return Token("IDENT", "name", 3)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dataclass_field_order.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        i_kind = cpp.find("str kind;")
+        i_text = cpp.find("str text;")
+        i_pos = cpp.find("int64 pos;")
+        self.assertTrue(i_kind >= 0 and i_text >= 0 and i_pos >= 0)
+        self.assertTrue(i_kind < i_text < i_pos)
+        self.assertIn("Token(str kind, str text, int64 pos)", cpp)
+        self.assertIn("::rc_new<Token>(\"IDENT\", \"name\", 3)", cpp)
+
     def test_optional_tuple_destructure_keeps_str_type(self) -> None:
         src = """def dump_like(indent: int | None, separators: tuple[str, str] | None) -> str:
     if separators is None:
