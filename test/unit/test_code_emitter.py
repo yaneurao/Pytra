@@ -253,6 +253,16 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em._resolve_imported_symbol("bg"), {"module": "m.b", "name": "g"})
         self.assertEqual(em._resolve_imported_symbol("none"), {})
 
+    def test_can_runtime_cast_target(self) -> None:
+        em = CodeEmitter({})
+        self.assertFalse(em._can_runtime_cast_target(""))
+        self.assertFalse(em._can_runtime_cast_target("unknown"))
+        self.assertFalse(em._can_runtime_cast_target("Any"))
+        self.assertFalse(em._can_runtime_cast_target("object"))
+        self.assertFalse(em._can_runtime_cast_target("int64|None"))
+        self.assertTrue(em._can_runtime_cast_target("int64"))
+        self.assertTrue(em._can_runtime_cast_target("float64"))
+
     def test_trivia_and_cond_helpers(self) -> None:
         em = _DummyEmitter(
             {

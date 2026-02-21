@@ -926,6 +926,14 @@ class CodeEmitter:
         out: dict[str, str] = {}
         return out
 
+    def _can_runtime_cast_target(self, target_t: str) -> bool:
+        """実行時キャストを安全に適用できる型か判定する。"""
+        if target_t == "" or target_t in {"unknown", "Any", "object"}:
+            return False
+        if self._contains_text(target_t, "|") or self._contains_text(target_t, "Any") or self._contains_text(target_t, "None"):
+            return False
+        return True
+
     def comment_line_prefix(self) -> str:
         """単行コメント出力時の接頭辞を返す。"""
         return "// "

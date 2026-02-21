@@ -1393,14 +1393,6 @@ class CppEmitter(CodeEmitter):
             return rendered_expr
         return f"static_cast<{cast_cpp}>({rendered_expr})"
 
-    def _can_runtime_cast_target(self, target_t: str) -> bool:
-        """実行時キャストを安全に適用できる型か判定する。"""
-        if target_t == "" or target_t in {"unknown", "Any", "object"}:
-            return False
-        if self._contains_text(target_t, "|") or self._contains_text(target_t, "Any") or self._contains_text(target_t, "None"):
-            return False
-        return True
-
     def render_to_string(self, expr: Any) -> str:
         """式を文字列化する（型に応じて最適な変換関数を選ぶ）。"""
         rendered = self.render_expr(expr)
