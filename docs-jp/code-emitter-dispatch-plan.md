@@ -26,3 +26,18 @@
 - Python 実行パス: `hooks` 有効時に既存ケースのコード生成結果が不変。
 - selfhost 実行パス: `mismatches=0` を維持。
 - `py2cpp.py` の `render_expr` / `emit_stmt` 本体分岐が段階的に短くなる。
+
+## py2cpp / py2rs 共通化候補（2026-02-22）
+
+- 優先 A（まず `CodeEmitter` へ移す）
+  - `If` / `While` / `ForRange` / `For` の文スケルトン生成（開閉ブロック + scope push/pop）
+  - `Assign` / `AnnAssign` / `AugAssign` の「宣言判定 + 代入先レンダ」共通骨格
+  - `Compare` / `BoolOp` / `IfExp` の式組み立て
+  - import 束縛テーブル読み込み（`meta.import_bindings` 反映）
+- 優先 B（次段）
+  - 型名正規化 + 言語型への最終写像 (`normalize_type_name` 後段)
+  - `Call` 前処理（`_prepare_call_parts` 結果の共通利用）
+  - `Tuple` 代入の一時変数 lower
+- 優先 C（最後）
+  - 言語別ランタイム関数へのルーティング（profile + hooks）
+  - 文字列/配列の細かい最適化（演算子簡約・括弧削減）
