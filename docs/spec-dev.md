@@ -86,6 +86,7 @@
 ## 3. C++ 変換仕様（`py2cpp.py`）
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
+- 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は `docs/spec-py2cpp-support.md` を正として管理します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
 - 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/pytra/built_in/py_runtime.h` 側を利用します。
 - `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
