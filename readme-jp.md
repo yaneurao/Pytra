@@ -1,68 +1,70 @@
-# What is Pytra?
+# Pytraとは何？
 
-> Canonical README entry point on GitHub: [readme.md](readme.md)
+> 英語版 README: [readme.md](readme.md)
 
-Pytra is a collection of transpilers that convert programs written in a subset of Python into multiple target languages.
+Pytra は、Pythonのサブセットで書かれたプログラムを様々な言語に変換するためのトランスパイラ群です。
 
-## Features
+## 特徴
 
-It supports transpilation from Python to C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin.
+Python から C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin への変換に対応しています。
 
-Because the source language is a subset of Python, your original code can still run in a normal Python environment.  
-That means you can keep your usual development workflow (including completion and debugging), and transpile only when needed.
+変換元は Python のサブセットなので、元コードは通常の Python 環境でも実行できます。  
+そのため、普段どおりの開発体験（補完やデバッグを含む）で実装しながら、必要に応じて各言語へ変換できます。
 
-The transpiler itself is also implemented in Python, making it relatively easy to extend and customize.
+トランスパイラ本体も Python で実装しており、拡張・改造しやすい構成です。
 
-In addition, the transpiler's own source code can be transpiled by this transpiler.  
-For example, you can transpile it to C++ and run that for faster transpilation throughput.  
-This **self-hosting capability** is a major advantage for reducing implementation dependencies and continuously validating the quality of the transpiler itself.
+さらに、トランスパイラ自身のソースコードも本トランスパイラで他言語へ変換できます。  
+例えば C++ へ変換して実行し、変換処理を高速化するといった使い方も可能です。  
+このように、**セルフホスティング可能**であることは、処理系依存の低減や、変換器自身の品質検証を継続しやすい点で大きなメリットです。
 
-This project also prioritizes readability of generated code. It aims to preserve the original source structure and intent (comments, function layout, control flow) as much as possible when converting to target languages.  
-This **output that stays very close to the original source** makes code reviews, diff inspection, and debugging easier.
+また、本トランスパイラは変換後の可読性を重視しており、元のソースコードの構造や意図（コメント・関数構成・制御フロー）をなるべく崩さずに対象言語へ変換することを特徴としています。  
+この **変換元ソースコードに極めて近い出力** により、コードレビュー、差分確認、デバッグがしやすくなります。
 
-The following points are also considered practical advantages:
+加えて、次の点も実運用上のメリットとして重視しています。
 
-- A single Python codebase can be deployed to multiple languages, which helps reduce spec drift and duplicate implementations.
-- It is easy to compare Python execution with target-language execution, making performance optimization (especially via C++/Rust) more straightforward.
-- Python code is first normalized into an internal intermediate representation (EAST), then transpiled per target language, which makes staged feature expansion easier.
-- It does not depend on Python's standard `ast`, enabling self-hosting (transpiling the transpiler itself).
-- The transpilation input still follows standard Python syntax, so it works well with existing tools such as VS Code.
-- When transpiling to C++, the design targets execution speed close to native code.
+- 1つの Python コードベースから複数言語へ展開できるため、仕様差分や重複実装を減らしやすい。
+- Python 実行と各ターゲット実行を比較しやすく、性能改善（特に C++/Rust 化）を進めやすい。
+- Python をいったん内部の中間表現（EAST）へ正規化してから各言語へ変換するため、段階的な機能拡張を行いやすい。
+- Python 標準 `ast` への依存を廃しており、セルフホスティング（トランスパイラ自身を自分で変換）が可能。
+- 変換対象の Python コードは標準 Python の文法を前提としているため、VS Code など既存ツールで開発しやすい。
+- C++ へ変換した場合は、ネイティブコードに近い実行速度を狙える設計になっている。
 
-WARNING: This project is still under active development and may be far from production-ready. Review sample code first and use at your own risk.
+⚠ まだ開発途上にあり、実用にほど遠いかもしれません。サンプルコードなどを確認してから自己責任において、ご利用ください。
 
-WARNING: Do not expect entire Python applications to be portable as-is. A realistic expectation is: if the core logic you wrote in Python transpiles well, that is a good outcome.
+⚠ Pythonで書いたプログラム丸ごとを移植できることは期待しないでください。「Pythonで書いたコアコードが上手く変換されたらラッキーだな」ぐらいの温度感でお使いください。
 
-## Runtime Performance Comparison
 
-Execution times for [sample programs](docs/sample-code.md) written in Python and their transpiled versions (unit: seconds).
 
-|No.|Workload|Python| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
+## 実行速度の比較
+
+Pythonで書かれた[サンプルコード](docs/sample-code.md)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒）
+
+|No.|内容|Python| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
-|01 |Mandelbrot set (PNG)|16.338|0.748|0.719|2.549|1.519|1.489|0.829|9.224|1.481|1.489|
-|02 |Simple sphere ray tracer (PNG)|5.300|0.176|0.155|0.865|0.436|0.460|0.413|6.554|0.441|0.439|
-|03 |Julia set (PNG)|13.320|0.808|0.675|3.395|1.816|1.834|1.118|3.983|1.731|1.782|
-|04 |Pi approximation by Monte Carlo|0.327|0.007|0.197|0.601|2.118|2.153|0.360|3.145|2.153|2.154|
-|05 |Mandelbrot zoom (GIF)|14.615|0.533|0.539|2.694|1.193|1.243|0.623|3.016|1.256|1.229|
-|06 |Julia parameter sweep (GIF)|9.706|0.377|0.387|1.929|0.981|0.997|0.503|3.708|1.002|0.996|
-|07 |Game of Life (GIF)|13.576|0.793|0.722|3.272|2.750|2.949|1.682|4.727|2.808|2.853|
-|08 |Langton's Ant (GIF)|7.469|0.498|0.453|2.233|1.946|2.145|0.967|2.004|2.205|2.049|
-|09 |Flame simulation (GIF)|13.829|0.670|0.607|6.488|2.480|2.525|2.692|3.483|2.546|2.534|
-|10 |Plasma effect (GIF)|7.431|0.679|0.529|2.356|1.539|2.156|0.887|2.636|1.519|1.512|
-|11 |Lissajous particles (GIF)|5.214|0.374|0.343|0.754|1.535|1.598|0.439|0.759|1.576|1.594|
-|12 |Sorting visualization (GIF)|11.402|0.742|0.684|1.852|3.098|3.249|1.186|2.537|3.248|3.136|
-|13 |Maze generation steps (GIF)|4.879|0.298|0.274|0.946|1.069|1.162|0.505|0.859|1.091|1.086|
-|14 |Simple ray marching (GIF)|3.103|0.161|0.149|0.467|0.505|0.761|0.288|0.798|0.533|0.520|
-|15 |Mini-language interpreter|2.415|0.254|0.789|1.035|0.509|0.465|3.261|1.984|0.524|0.512|
-|16 |Chaos rotation of glass sculpture (GIF)|7.352|0.258|0.231|1.289|0.940|1.105|3.014|4.025|0.977|0.991|
+|01 |マンデルブロ集合（PNG）|16.338|0.748|0.719|2.549|1.519|1.489|0.829|9.224|1.481|1.489|
+|02 |球の簡易レイトレーサ（PNG）|5.300|0.176|0.155|0.865|0.436|0.460|0.413|6.554|0.441|0.439|
+|03 |ジュリア集合（PNG）|13.320|0.808|0.675|3.395|1.816|1.834|1.118|3.983|1.731|1.782|
+|04 |モンテカルロ法で円周率近似|0.327|0.007|0.197|0.601|2.118|2.153|0.360|3.145|2.153|2.154|
+|05 |マンデルブロズーム（GIF）|14.615|0.533|0.539|2.694|1.193|1.243|0.623|3.016|1.256|1.229|
+|06 |ジュリア集合パラメータ掃引（GIF）|9.706|0.377|0.387|1.929|0.981|0.997|0.503|3.708|1.002|0.996|
+|07 |ライフゲーム（GIF）|13.576|0.793|0.722|3.272|2.750|2.949|1.682|4.727|2.808|2.853|
+|08 |ラングトンのアリ（GIF）|7.469|0.498|0.453|2.233|1.946|2.145|0.967|2.004|2.205|2.049|
+|09 |炎シミュレーション（GIF）|13.829|0.670|0.607|6.488|2.480|2.525|2.692|3.483|2.546|2.534|
+|10 |プラズマエフェクト（GIF）|7.431|0.679|0.529|2.356|1.539|2.156|0.887|2.636|1.519|1.512|
+|11 |リサージュ粒子（GIF）|5.214|0.374|0.343|0.754|1.535|1.598|0.439|0.759|1.576|1.594|
+|12 |ソート可視化（GIF）|11.402|0.742|0.684|1.852|3.098|3.249|1.186|2.537|3.248|3.136|
+|13 |迷路生成ステップ（GIF）|4.879|0.298|0.274|0.946|1.069|1.162|0.505|0.859|1.091|1.086|
+|14 |簡易レイマーチング（GIF）|3.103|0.161|0.149|0.467|0.505|0.761|0.288|0.798|0.533|0.520|
+|15 |ミニ言語インタプリタ |2.415|0.254|0.789|1.035|0.509|0.465|3.261|1.984|0.524|0.512|
+|16 |ガラス彫刻のカオス回転（GIF）|7.352|0.258|0.231|1.289|0.940|1.105|3.014|4.025|0.977|0.991|
 
 ![06_julia_parameter_sweep](images/06_julia_parameter_sweep.gif)
 
 <details>
-<summary>Sample code: 06_julia_parameter_sweep.py</summary>
+<summary>サンプルコード : 06_julia_parameter_sweep.py</summary>
 
 ```python
-# 06: Sweep Julia-set parameters and output an animated GIF.
+# 06: ジュリア集合のパラメータを回してGIF出力するサンプル。
 
 from __future__ import annotations
 
@@ -73,7 +75,7 @@ from pylib.tra.gif import save_gif
 
 
 def julia_palette() -> bytes:
-    # Keep index 0 black for points inside the set; use vivid gradients for the rest.
+    # 先頭色は集合内部用に黒固定、残りは高彩度グラデーションを作る。
     palette = bytearray(256 * 3)
     palette[0] = 0
     palette[1] = 0
@@ -109,7 +111,7 @@ def render_frame(width: int, height: int, cr: float, ci: float, max_iter: int, p
             if i >= max_iter:
                 frame[idx] = 0
             else:
-                # Add frame phase so color flow stays smooth across frames.
+                # フレーム位相を少し加えて色が滑らかに流れるようにする。
                 color_index = 1 + (((i * 224) // max_iter + phase) % 255)
                 frame[idx] = color_index
             idx += 1
@@ -125,13 +127,13 @@ def run_06_julia_parameter_sweep() -> None:
 
     start = perf_counter()
     frames: list[bytes] = []
-    # Circle around a known good region using an elliptical path to avoid flat blown-out frames.
+    # 既知の見栄えが良い近傍を楕円軌道で巡回し、単調な白飛びを抑える。
     center_cr = -0.745
     center_ci = 0.186
     radius_cr = 0.12
     radius_ci = 0.10
-    # Add offsets so GitHub thumbnails do not look too dark.
-    # Tuned to start from a red-leaning color region.
+    # GitHub上のサムネイルで暗く見えないよう、開始位置と色位相にオフセットを入れる。
+    # 赤みが強い色域から始まるように調整する。
     start_offset = 20
     phase_offset = 180
     for i in range(frames_n):
@@ -155,7 +157,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin)</summary>
+<summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin）</summary>
 
 - C++: [View full code](sample/cpp/06_julia_parameter_sweep.cpp)
 - Rust: [View full code](sample/rs/06_julia_parameter_sweep.rs)
@@ -174,10 +176,10 @@ if __name__ == "__main__":
 ![16_glass_sculpture_chaos](images/16_glass_sculpture_chaos.gif)
 
 <details>
-<summary>Sample code: 16_glass_sculpture_chaos.py</summary>
+<summary>サンプルコード : 16_glass_sculpture_chaos.py</summary>
 
 ```python
-# 16: Render chaotic rotation of glass sculptures with ray tracing and output a GIF.
+# 16: ガラス彫刻のカオス回転をレイトレーシングで描き、GIF出力するサンプル。
 
 from __future__ import annotations
 
@@ -216,7 +218,7 @@ def reflect(ix: float, iy: float, iz: float, nx: float, ny: float, nz: float) ->
 
 
 def refract(ix: float, iy: float, iz: float, nx: float, ny: float, nz: float, eta: float) -> tuple[float, float, float]:
-    # Simple IOR-based refraction. Falls back to reflection for total internal reflection.
+    # IOR 由来の簡易屈折。全反射時は反射方向を返す。
     cosi = -dot(ix, iy, iz, nx, ny, nz)
     sint2 = eta * eta * (1.0 - cosi * cosi)
     if sint2 > 1.0:
@@ -232,7 +234,7 @@ def schlick(cos_theta: float, f0: float) -> float:
 
 
 def sky_color(dx: float, dy: float, dz: float, tphase: float) -> tuple[float, float, float]:
-    # Sky gradient plus neon banding.
+    # 上空グラデーション + ネオン帯
     t = 0.5 * (dy + 1.0)
     r = 0.06 + 0.20 * t
     g = 0.10 + 0.25 * t
@@ -275,7 +277,7 @@ def sphere_intersect(
 
 
 def palette_332() -> bytes:
-    # 3-3-2 quantized palette: lightweight quantization and fast after transpilation.
+    # 3-3-2 量子化パレット。量子化処理が軽く、トランスパイル後も高速。
     p = bytearray(256 * 3)
     for i in range(256):
         r = (i >> 5) & 7
@@ -298,7 +300,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
     t = frame_id / frames_n
     tphase = 2.0 * math.pi * t
 
-    # Camera slowly orbits the scene.
+    # カメラはゆっくり周回
     cam_r = 3.0
     cam_x = cam_r * math.cos(tphase * 0.9)
     cam_y = 1.1 + 0.25 * math.sin(tphase * 0.6)
@@ -315,7 +317,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
         right_x * fwd_y - right_y * fwd_x,
     )
 
-    # Moving glass sculpture (3 spheres) and an emissive light sphere.
+    # 動くガラス彫刻（3球）と発光球
     s0x = 0.9 * math.cos(1.3 * tphase)
     s0y = 0.15 + 0.35 * math.sin(1.7 * tphase)
     s0z = 0.9 * math.sin(1.3 * tphase)
@@ -344,14 +346,14 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
             rz = fwd_z + fov * (sx * right_z + sy * up_z)
             dx, dy, dz = normalize(rx, ry, rz)
 
-            # Search nearest hit.
+            # 最短ヒットを探索
             best_t = 1e9
-            hit_kind = 0  # 0: sky, 1: floor, 2/3/4: glass spheres
+            hit_kind = 0  # 0:sky, 1:floor, 2/3/4:glass sphere
             r = 0.0
             g = 0.0
             b = 0.0
 
-            # Floor plane y=-1.2
+            # 床平面 y=-1.2
             if dy < -1e-6:
                 tf = (-1.2 - cam_y) / dy
                 if tf > 1e-4 and tf < best_t:
@@ -382,7 +384,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
                 base_r = 0.10 if checker == 0 else 0.04
                 base_g = 0.11 if checker == 0 else 0.05
                 base_b = 0.13 if checker == 0 else 0.08
-                # Emissive sphere contribution
+                # 発光球の寄与
                 lxv = lx - hx
                 lyv = ly - (-1.2)
                 lzv = lz - hz
@@ -418,7 +420,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
                 hz = cam_z + best_t * dz
                 nx, ny, nz = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad)
 
-                # Simplified glass shading (reflection + refraction + light highlight)
+                # 簡易ガラスシェーディング（反射+屈折+光源ハイライト）
                 rdx, rdy, rdz = reflect(dx, dy, dz, nx, ny, nz)
                 tdx, tdy, tdz = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45)
                 sr, sg, sb = sky_color(rdx, rdy, rdz, tphase)
@@ -445,7 +447,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
                 g += 0.18 * ndotl + 0.60 * spec + 0.35 * glow
                 b += 0.26 * ndotl + 1.00 * spec + 0.65 * glow
 
-                # Slight per-sphere tint variation.
+                # 球ごとに僅かな色味差
                 if hit_kind == 2:
                     r *= 0.95
                     g *= 1.05
@@ -459,7 +461,7 @@ def render_frame(width: int, height: int, frame_id: int, frames_n: int) -> bytes
                     g *= 1.10
                     b *= 0.95
 
-            # Slightly stronger tone mapping.
+            # やや強めのトーンマップ
             r = math.sqrt(clamp01(r))
             g = math.sqrt(clamp01(g))
             b = math.sqrt(clamp01(b))
@@ -493,7 +495,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin)</summary>
+<summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin）</summary>
 
 - C++: [View full code](sample/cpp/16_glass_sculpture_chaos.cpp)
 - Rust: [View full code](sample/rs/16_glass_sculpture_chaos.rs)
@@ -507,19 +509,19 @@ if __name__ == "__main__":
 
 </details>
 
-## Documentation
+## ドキュメント
 
-The related documents are listed below in the order they are most frequently referenced during usage.
+利用時によく参照する順で、関連ドキュメントをまとめています。
 
-- Start with usage instructions: [docs/how-to-use.md](docs/how-to-use.md)
-- Check the developer utility script list: [docs/tools.md](docs/tools.md)
-- Review option design (performance/compatibility trade-offs): [docs/spec-options.md](docs/spec-options.md)
-- Review runtime layout and include conventions: [docs/spec-runtime.md](docs/spec-runtime.md)
-- Check implemented / unimplemented / out-of-scope items: [docs/pytra-readme.md](docs/pytra-readme.md)
-- Browse sample list and overview: [docs/sample-code.md](docs/sample-code.md)
-- Review specs, constraints, architecture, and operational rules: [docs/spec.md](docs/spec.md)
-- Motivation and design philosophy: [docs/philosophy.md](docs/philosophy.md)
+- まず使い方を確認する: [docs/how-to-use.md](docs/how-to-use.md)
+- 開発補助スクリプト一覧を確認する: [docs/tools.md](docs/tools.md)
+- オプション設計（性能/互換性トレードオフ）を確認する: [docs/spec-options.md](docs/spec-options.md)
+- ランタイム配置と include 規約を確認する: [docs/spec-runtime.md](docs/spec-runtime.md)
+- 実装済み項目・未実装項目・対応予定なしを確認する: [docs/pytra-readme.md](docs/pytra-readme.md)
+- サンプル一覧と概要を確認する: [docs/sample-code.md](docs/sample-code.md)
+- 仕様・制約・構成・運用ルールを確認する: [docs/spec.md](docs/spec.md)
+- 開発の動機と設計理念: [docs/philosophy.md](docs/philosophy.md)
 
-## License
+## ライセンス
 
 MIT License
