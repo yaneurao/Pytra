@@ -59,6 +59,8 @@
 3. [ ] `Any -> object` が必要な経路と不要な経路を分離し、`make_object(...)` の過剰挿入を減らす。
 4. [ ] `py_dict_get_default` / `dict_get_node` の既定値引数が `object` 必須になる箇所を整理する。
 5. [ ] `py2cpp.py` で `nullopt` を default 値に渡している箇所を洗い出し、型ごとの既定値へ置換する。
+   - [x] 関数引数既定値（`_render_param_default_expr` / `_header_render_default_expr`）で `None` を一律 `::std::nullopt` にしていた処理を型別既定値へ変更した（`int -> 0`, `float -> 0.0`, `str -> str()`, `Any/object -> object{}` など）。
+   - [x] 既存 optional 型（`optional[...]` / `| None`）は `::std::nullopt` を維持するようにした。
 6. [ ] `std::any` を経由する経路（selfhost 変換由来）をログベースでリスト化し、順次削除する。
    - [x] `unknown` / 混在 `Union` / `list[unknown]` / `dict[..., unknown]` の既定マッピングを `::std::any` から `object` 系へ寄せた（`_cpp_type_text`）。
    - [x] `render_minmax` / 内包表現の動的型判定で `std::any` 依存判定を削減し、`object`/`auto` 判定へ寄せた。

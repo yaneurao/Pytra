@@ -119,6 +119,20 @@ def f(p: str) -> None:
         self.assertNotIn("::std::any root =", cpp)
         self.assertNotIn("::std::any ext =", cpp)
 
+    def test_none_default_for_non_optional_param_uses_typed_default(self) -> None:
+        src = """def f(x: int = None, y: str = None) -> int:
+    return x
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "typed_default.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+
+        self.assertIn("int64 x = 0", cpp)
+        self.assertIn("str()", cpp)
+        self.assertNotIn("int64 x = ::std::nullopt", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()
