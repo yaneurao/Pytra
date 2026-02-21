@@ -3549,37 +3549,20 @@ class CppEmitter(CodeEmitter):
     ) -> str | None:
         """Attribute 形式の呼び出しを module/object/fallback の順で処理する。"""
         owner_obj: object = fn.get("value")
-        owner = self.any_to_dict_or_empty(owner_obj)
-        owner_t = self.get_expr_type(owner_obj)
+        owner_rendered = self.render_expr(owner_obj)
+        owner_ctx = self.resolve_attribute_owner_context(owner_obj, owner_rendered)
+        owner = self.any_to_dict_or_empty(owner_ctx.get("node"))
         owner_kind = self._node_kind_from_dict(owner)
-        if owner_kind == "Name":
-            owner_name = self.any_to_str(owner.get("id"))
-            if owner_name in self.declared_var_types:
-                declared_owner_t = self.declared_var_types[owner_name]
-                if declared_owner_t not in {"", "unknown"}:
-                    owner_t = declared_owner_t
-        owner_expr = self.render_expr(owner_obj)
-        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-            owner_expr = f"({owner_expr})"
-        owner_mod = ""
-        if owner_kind in {"Name", "Attribute"}:
-            owner_mod = self._resolve_imported_module_name(owner_expr)
-            if owner_mod == "" and owner_expr.startswith("pytra."):
-                owner_mod = owner_expr
-            owner_mod = self._normalize_runtime_module_name(owner_mod)
-        attr = self.any_to_str(fn.get("attr"))
-        if attr == "":
-            attr = str(fn.get("attr"))
+        owner_expr = self.any_dict_get_str(owner_ctx, "expr", "")
+        owner_mod = self._normalize_runtime_module_name(self.any_dict_get_str(owner_ctx, "module", ""))
+        owner_t = self.resolve_attribute_owner_type(owner_obj, owner, self.declared_var_types)
+        attr = self.attr_name(fn)
         if attr == "":
             return None
         if owner_mod != "":
             module_rendered_1 = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes)
             if module_rendered_1 is not None and module_rendered_1 != "":
                 return module_rendered_1
-        if owner_mod == "" and owner_expr.startswith("pytra."):
-            module_rendered_2 = self._render_call_module_method(owner_expr, attr, args, kw, arg_nodes)
-            if module_rendered_2 is not None and module_rendered_2 != "":
-                return module_rendered_2
         object_rendered = self._render_call_object_method(owner_t, owner_expr, attr, args)
         if object_rendered is not None and object_rendered != "":
             return object_rendered
@@ -4355,12 +4338,12 @@ class CppEmitter(CodeEmitter):
             raise RuntimeError(
                 "object receiver method call / attribute access is forbidden by language constraints"
             )
-        base = self.render_expr(expr_d.get("value"))
-        base_node = self.any_to_dict_or_empty(expr_d.get("value"))
+        base_rendered = self.render_expr(expr_d.get("value"))
+        base_ctx = self.resolve_attribute_owner_context(expr_d.get("value"), base_rendered)
+        base = self.any_dict_get_str(base_ctx, "expr", "")
+        base_node = self.any_to_dict_or_empty(base_ctx.get("node"))
         base_kind = self._node_kind_from_dict(base_node)
-        if base_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-            base = f"({base})"
-        attr = self.any_to_str(expr_d.get("attr"))
+        attr = self.attr_name(expr_d)
         if base == "self" or base == "*this":
             if self.current_class_name is not None and str(attr) in self.current_class_static_fields:
                 return f"{self.current_class_name}::{attr}"
@@ -4370,9 +4353,7 @@ class CppEmitter(CodeEmitter):
         if base in self.class_base or base in self.class_method_names:
             return f"{base}::{attr}"
         # import モジュールの属性参照は map -> namespace の順で解決する。
-        base_module_name = ""
-        if base_kind in {"Name", "Attribute"}:
-            base_module_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(base))
+        base_module_name = self._normalize_runtime_module_name(self.any_dict_get_str(base_ctx, "module", ""))
         if base_module_name != "":
             mapped = self._lookup_module_attr_runtime_call(base_module_name, attr)
             if mapped != "":

@@ -34,6 +34,7 @@
    - [x] `std::` runtime 判定ヘルパ（`_is_std_runtime_call`）を `CodeEmitter` 側へ移管した。
    - [x] call/attribute 周辺の `module.attr` runtime lookup を helper 化し、`render_call`/`render_attribute`/hooks から共通利用するよう整理した。
    - [x] `obj.append(...)` の C++ 固有型変換分岐を `_render_append_call_object_method` へ分離し、`_render_call_object_method` 本体を縮退した。
+   - [x] Attribute owner の `kind/type/module/attr` 解決を `CodeEmitter` helper（`resolve_attribute_owner_context` / `resolve_attribute_owner_type` / `attr_name`）へ移管し、`_render_call_attribute` / `_render_attribute_expr` の重複ロジックを削減した（selfhost の静的束縛回避のため `owner_expr` は呼び出し側で先に描画して渡す形にした）。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `call_parts` 展開処理（`fn/fn_name/args/kw/first_arg`）を `CodeEmitter.unpack_prepared_call_parts` へ移管した。

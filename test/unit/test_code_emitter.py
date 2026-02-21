@@ -296,6 +296,32 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em._resolve_imported_module_name("png"), "pytra.runtime.png")
         self.assertEqual(em._resolve_imported_module_name("m"), "pytra.std.math")
 
+    def test_attribute_owner_context_and_type_helpers(self) -> None:
+        em = _DummyEmitter({})
+        em.import_modules = {"png": "pytra.runtime.png"}
+        owner_ctx = em.resolve_attribute_owner_context(
+            {"kind": "Name", "id": "png", "repr": "png"},
+            "png",
+        )
+        self.assertEqual(owner_ctx.get("kind"), "Name")
+        self.assertEqual(owner_ctx.get("expr"), "png")
+        self.assertEqual(owner_ctx.get("module"), "pytra.runtime.png")
+        self.assertEqual(em.attr_name({"kind": "Attribute", "attr": "write_rgb_png"}), "write_rgb_png")
+        self.assertEqual(em.attr_name({"kind": "Attribute", "attr": None}), "")
+        declared = {"items": "list[int64]"}
+        owner_t = em.resolve_attribute_owner_type(
+            {"kind": "Name", "id": "items", "resolved_type": "unknown"},
+            {"kind": "Name", "id": "items"},
+            declared,
+        )
+        self.assertEqual(owner_t, "list[int64]")
+        owner_t_unknown = em.resolve_attribute_owner_type(
+            {"kind": "Name", "id": "x", "resolved_type": "unknown"},
+            {"kind": "Name", "id": "x"},
+            {"x": "unknown"},
+        )
+        self.assertEqual(owner_t_unknown, "unknown")
+
     def test_can_runtime_cast_target(self) -> None:
         em = CodeEmitter({})
         self.assertFalse(em._can_runtime_cast_target(""))

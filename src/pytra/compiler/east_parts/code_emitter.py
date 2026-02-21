@@ -976,6 +976,61 @@ class CodeEmitter:
         out: dict[str, str] = {}
         return out
 
+    def attr_name(self, attr_node: dict[str, Any]) -> str:
+        """Attribute ノードから属性名を安全に取り出す。"""
+        attr = self.any_to_str(attr_node.get("attr"))
+        if attr != "":
+            return attr
+        raw = attr_node.get("attr")
+        if raw is None:
+            return ""
+        if isinstance(raw, bool) or isinstance(raw, int) or isinstance(raw, float):
+            return ""
+        if isinstance(raw, dict) or isinstance(raw, list) or isinstance(raw, set):
+            return ""
+        text = str(raw)
+        if text in {"", "None", "{}", "[]"}:
+            return ""
+        return text
+
+    def resolve_attribute_owner_type(
+        self,
+        owner_obj: Any,
+        owner_node: dict[str, Any],
+        declared_var_types: dict[str, str],
+    ) -> str:
+        """Attribute owner の型を解決し、必要なら宣言型で上書きする。"""
+        owner_t = self.get_expr_type(owner_obj)
+        if self._node_kind_from_dict(owner_node) != "Name":
+            return owner_t
+        owner_name = self.any_dict_get_str(owner_node, "id", "")
+        if owner_name == "":
+            return owner_t
+        if owner_name in declared_var_types:
+            declared_owner_t = declared_var_types[owner_name]
+            if declared_owner_t not in {"", "unknown"}:
+                return declared_owner_t
+        return owner_t
+
+    def resolve_attribute_owner_context(self, owner_obj: Any, owner_expr: str) -> dict[str, Any]:
+        """Attribute owner の kind/expr/module をまとめて解決する。"""
+        owner_node = self.any_to_dict_or_empty(owner_obj)
+        owner_kind = self._node_kind_from_dict(owner_node)
+        wrapped_owner_expr = owner_expr
+        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            wrapped_owner_expr = f"({owner_expr})"
+        owner_module = ""
+        if owner_kind in {"Name", "Attribute"}:
+            owner_module = self._resolve_imported_module_name(owner_expr)
+            if owner_module == "" and owner_expr.startswith("pytra."):
+                owner_module = owner_expr
+        out: dict[str, Any] = {}
+        out["node"] = owner_node
+        out["kind"] = owner_kind
+        out["expr"] = wrapped_owner_expr
+        out["module"] = owner_module
+        return out
+
     def _can_runtime_cast_target(self, target_t: str) -> bool:
         """実行時キャストを安全に適用できる型か判定する。"""
         if target_t == "" or target_t in {"unknown", "Any", "object"}:
