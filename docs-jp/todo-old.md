@@ -20,6 +20,9 @@
    - [x] `tools/run_local_ci.py` に stage2 差分検証ステップを追加した。
 5. [x] selfhost 差分検証の失敗時にトレースバックで落ちないよう改善した。
    - [x] `tools/check_selfhost_cpp_diff.py` で「selfhost 出力ファイル未生成」を `FAIL selfhost` として扱うガードを追加した。
+6. [x] `run_local_ci.py` の selfhost 差分チェック対象を既定ケース（8件）へ拡張した。
+   - [x] `tools/check_selfhost_cpp_diff.py` の `--cases` 指定を外し、既定ケースで実行するようにした。
+   - [x] `tools/check_selfhost_stage2_cpp_diff.py` も同様に既定ケースで実行するようにした。
 
 ## 2026-02-21 完了: selfhost 直変換 Compare 崩れ補正
 

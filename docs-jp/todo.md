@@ -9,8 +9,7 @@
 
 ## P0: selfhost 安定化
 
-1. [ ] selfhost コンパイルエラー再発を即時検知できるように、`run_local_ci.py` の selfhost ケースを段階的に拡張する。
-2. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する（`load_cpp_profile` / import-graph / multi-file 周辺）。
+1. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する（`load_cpp_profile` / import-graph / multi-file 周辺）。
 
 ## P1: CodeEmitter / Hooks 移管
 
