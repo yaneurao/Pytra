@@ -1,4 +1,4 @@
-# case30: スライス構文 a[b:c] の基本テスト（stepなし）。
+# case30: Basic test for slice syntax a[b:c] (no step).
 
 
 from pytra.utils.assertions import py_assert_stdout

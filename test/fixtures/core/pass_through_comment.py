@@ -1,4 +1,4 @@
-"""Pytra comment passthrough (`# Pytra::cpp` / `# Pytra::pass`) の最小ケース。"""
+"""Minimal case for Pytra comment passthrough (`# Pytra::cpp` / `# Pytra::pass`)."""
 
 from pytra.utils.assertions import py_assert_true
 

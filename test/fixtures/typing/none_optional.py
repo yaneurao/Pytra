@@ -1,4 +1,4 @@
-# このファイルは `test/fixtures/none_optional.py` のテスト/実装コードです。
+# This file contains test/implementation code for `test/fixtures/none_optional.py`.
 
 
 from pytra.utils.assertions import py_assert_all, py_assert_eq, py_assert_true

@@ -1,4 +1,4 @@
-"""pytra.std.dataclasses の最小互換テスト。"""
+"""Minimal compatibility tests for pytra.std.dataclasses."""
 
 from __future__ import annotations
 

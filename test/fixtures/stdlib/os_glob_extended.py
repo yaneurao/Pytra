@@ -9,7 +9,7 @@ def run_case() -> None:
     ok = ok and (root == "alpha/beta")
     ok = ok and (ext == ".txt")
     ok = ok and (os.path.dirname(joined) == "alpha")
-    # 実行 cwd 依存にならないよう、必ず存在する相対パスで確認する。
+    # Use a guaranteed existing relative path to avoid dependency on runtime cwd.
     ok = ok and os.path.exists(".")
     ok = ok and (len(glob.glob("*.cpp")) > 0)
     print(ok)

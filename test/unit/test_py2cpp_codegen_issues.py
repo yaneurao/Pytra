@@ -1,4 +1,4 @@
-"""py2cpp の既知コード生成不具合を最小ケースで固定する回帰テスト。"""
+"""Regression tests that pin known py2cpp codegen issues with minimal cases."""
 
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ class Py2CppCodegenIssueTest(unittest.TestCase):
             line_no += 1
             if 'get("kind")' not in line:
                 continue
-            # `kind` は `_dict_any_kind` / `_node_kind_from_dict` 経由で扱う。
+            # Handle `kind` via `_dict_any_kind` / `_node_kind_from_dict`.
             if 'src.get("kind")' in line:
                 continue
             bad_lines.append(f"{line_no}: {line.strip()}")

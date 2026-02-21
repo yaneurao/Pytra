@@ -1,4 +1,4 @@
-"""EAST 変換器（self_hosted）の単体回帰テスト。"""
+"""Unit regression tests for the self_hosted EAST converter."""
 
 from __future__ import annotations
 

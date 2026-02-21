@@ -1,4 +1,4 @@
-"""pytra.std.enum の最小互換テスト。"""
+"""Minimal compatibility tests for pytra.std.enum."""
 
 from __future__ import annotations
 

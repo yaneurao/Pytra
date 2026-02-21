@@ -1,4 +1,4 @@
-# このファイルは `test/fixtures/reversed_enumerate.py` のテスト/実装コードです。
+# This file contains test/implementation code for `test/fixtures/reversed_enumerate.py`.
 
 
 from pytra.utils.assertions import py_assert_all, py_assert_eq
