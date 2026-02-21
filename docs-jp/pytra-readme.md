@@ -43,7 +43,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - `sqrt`, `sin`, `cos`, `tan`, `exp`, `log`, `log10`, `fabs`, `floor`, `ceil`, `pow`
     - 定数: `pi`, `e`
   - 差分:
-    - Swift/Kotlin は Node バックエンド方式のため、実体は JS/TS 側 `math` 実装に依存します。
+    - Swift/Kotlin は preview emitter 段階のため、現状は C# ベース中間出力をコメント埋め込みで保持します。
     - C# は `System.Math` へ直接マッピングする設計です（専用 `math` ランタイムは未分離）。
 - `time`
   - `perf_counter`
@@ -60,7 +60,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - C#: `src/cs_module/pathlib.cs`（`py_path`）
     - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`
     - Go/Java: `src/go_module/py_runtime.go`, `src/java_module/PyRuntime.java`
-    - Swift/Kotlin: Node バックエンド方式のため、実体は JS ランタイム（`src/js_module/pathlib.js`）に依存
+    - Swift/Kotlin: preview emitter（最小エントリ + 中間コードコメント形式）
   - 差分:
     - Python `pathlib` の完全互換ではなく、Pytra の最小共通 API に限定しています。
     - `read_text` / `write_text` の encoding 指定は UTF-8 固定です（引数は互換目的で受理するが無視される実装を含む）。

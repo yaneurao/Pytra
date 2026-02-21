@@ -87,9 +87,13 @@
    - [x] `hooks/go` / `hooks/java` に EAST ベースの preview エミッタを追加。
    - [x] `test/unit/test_py2go_smoke.py` / `test/unit/test_py2java_smoke.py` を追加。
    - [x] `tools/check_py2go_transpile.py` / `tools/check_py2java_transpile.py` を追加して一括回帰を自動化。
-4. [ ] `py2ts.py` / `py2swift.py` / `py2kotlin.py` を EAST ベースへ移行する。
-5. [ ] 言語横断の回帰テストを追加する。
-   - [ ] 「EAST入力が同一なら、未対応時のエラー分類も各言語で同様」を確認するテストを追加する。
+4. [x] `py2ts.py` / `py2swift.py` / `py2kotlin.py` を EAST ベースへ移行する。
+   - [x] `src/common/js_ts_native_transpiler.py` / `src/common/swift_kotlin_node_transpiler.py` 依存を撤去し、EAST 入力（`.py/.json`）を受ける薄い CLI へ移行。
+   - [x] `hooks/ts` / `hooks/swift` / `hooks/kotlin` に EAST ベース preview エミッタを追加。
+   - [x] `test/unit/test_py2ts_smoke.py` / `test/unit/test_py2swift_smoke.py` / `test/unit/test_py2kotlin_smoke.py` を追加。
+   - [x] `tools/check_py2ts_transpile.py` / `tools/check_py2swift_transpile.py` / `tools/check_py2kotlin_transpile.py` を追加。
+5. [x] 言語横断の回帰テストを追加する。
+   - [x] 「EAST入力が同一なら、未対応時のエラー分類も各言語で同様」を確認するテストを追加する（`test/unit/test_error_classification_cross_lang.py`）。
 
 ## 補足
 

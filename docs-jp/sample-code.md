@@ -38,7 +38,8 @@
 - Kotlin: `kotlinc -include-runtime` でビルドした `jar`
 
 注:
-- `py2swift.py` / `py2kotlin.py` は現在 Node バックエンド方式で、実行時に `node` を使用します（`python3` は呼び出しません）。
+- `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` は現在 preview emitter 段階です。
+- これら4言語は最小エントリ + 中間コードコメント形式のため、実行結果比較の対象外です。
 
 ## 4. 実行時の注意
 

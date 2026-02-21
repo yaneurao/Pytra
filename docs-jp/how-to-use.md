@@ -160,7 +160,8 @@ npx tsx test/transpile/ts/iterable.ts
 ```
 
 補足:
-- `import` を使う場合は `src/ts_module/` に対応ランタイム実装が必要です。
+- `py2ts.py` は EAST ベースのプレビュー出力です（専用 TSEmitter へ段階移行中）。
+- 現在の出力は JavaScript 互換コードをベースにした TypeScript です。
 
 </details>
 
@@ -203,7 +204,8 @@ swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.
 ```
 
 補足:
-- `py2swift.py` は Node バックエンド実行モードです（実行時に `node` を利用）。
+- `py2swift.py` は EAST ベースのプレビュー出力です（専用 SwiftEmitter へ段階移行中）。
+- 現在の出力は最小 `main` と中間コードコメントを含む形式で、実行互換は保証しません。
 
 </details>
 
@@ -217,7 +219,8 @@ java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
 ```
 
 補足:
-- `py2kotlin.py` は Node バックエンド実行モードです（実行時に `node` を利用）。
+- `py2kotlin.py` は EAST ベースのプレビュー出力です（専用 KotlinEmitter へ段階移行中）。
+- 現在の出力は最小 `main` と中間コードコメントを含む形式で、実行互換は保証しません。
 
 </details>
 
@@ -409,8 +412,8 @@ table = {}               # key/value 型が不明
 <details>
 <summary>Swift / Kotlin</summary>
 
-- 現状は Node バックエンド実行方式のため、型変換仕様は実質 JavaScript 側の型表現に準拠します。
-- そのため、数値は `number` 相当、`bytes` / `bytearray` は `number[]` 相当で扱われます。
+- 現状は EAST ベース preview emitter 段階です（専用 Swift/Kotlin emitter を実装中）。
+- そのため、生成コードは最小エントリ + 中間コードコメント形式で、実行互換は保証しません。
 
 </details>
 

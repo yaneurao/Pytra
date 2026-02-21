@@ -359,6 +359,6 @@
 
 - `py2rs.py`: ネイティブ変換モード（Python インタプリタ非依存）
 - `py2js.py`: EAST ベース変換モード（ブラウザ runtime 外部参照）
-- `py2ts.py`: ネイティブ変換モード（Node.js ランタイム）
+- `py2ts.py`: EAST ベースプレビューモード（JS 互換出力）
 - `py2go.py` / `py2java.py`: EAST ベースプレビューモード（専用 Emitter へ段階移行中）
-- `py2swift.py` / `py2kotlin.py`: Node バックエンド実行モード（Python インタプリタ非依存）
+- `py2swift.py` / `py2kotlin.py`: EAST ベースプレビューモード（専用 Emitter へ段階移行中）

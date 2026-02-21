@@ -273,68 +273,56 @@ QualifiedSymbolRef
 - エラー方針:
 - 既存の禁止構文（例: `from M import *`）は frontend/EAST 側のエラー方針に従う。
 
-### 5. TypeScript（`src/py2ts.py` + `src/common/js_ts_native_transpiler.py`）
+### 5. TypeScript（`src/py2ts.py` + `src/hooks/ts/emitter/ts_emitter.py`）
 
 - 実装方式:
-- JS と同一ロジック（runtime 拡張子のみ `.ts`）。
+- EAST 変換。`py2ts.py` は薄い CLI、実出力は `TSEmitter`（preview）が担当。
+- import 解決は EAST `meta.import_bindings` を正本とし、現状は JS 互換出力をそのまま利用する。
 - 具体実装:
-- import 解決は JS と同じ `ImportBinding` を使う。
-- 出力文は `require` を維持し、実行ランタイム（tsx）互換を優先する。
-- 型情報を壊さないため、必要に応じて import alias に最小型注釈を付ける（将来拡張）。
+- profile/hook は `src/hooks/ts/`（内部では JS profile を再利用）。
+- 出力は TypeScript 拡張子だが、現段階では JavaScript 互換コードを優先する。
 - エラー方針:
-- JS と同一。未対応 import は変換エラーで停止。
+- `py2js` と同一。未対応 import は frontend/EAST 側で停止する。
 
-### 6. Go（`src/py2go.py` + `src/common/go_java_native_transpiler.py`）
+### 6. Go（`src/py2go.py` + `src/hooks/go/emitter/go_emitter.py`）
 
 - 実装方式:
-- native AST 変換。Go 側 import 文は runtime テンプレートに内包し、Python import 文は本体で出力しない。
-- 関数/メソッド解決は `_transpile_call` が担当（`math.*`, `pathlib.Path`, `perf_counter`, `save_gif` など）。
+- EAST 変換。`py2go.py` は薄い CLI、実出力は Go preview emitter が担当。
 - 具体実装:
-- import 文を捨てる前に `ImportBinding` だけ収集し、alias 正規化へ使う。
-- `from time import perf_counter as pc` は `pc()` を `pyPerfCounter()` へ解決。
-- `from pathlib import Path as P` は `P("x")` を `pyPathNew(...)` へ解決。
-- `from math import sqrt as s` は `s(x)` を `math.Sqrt(pyToFloat(x))` へ解決。
-- `png/gif` は `pyWriteRGBPNG` / `pySaveGIF` / `pyGrayscalePalette` へ統一解決する。
+- import 解決は EAST `meta.import_bindings` を正本として処理する（内部の lower は C# ベース preview を使用）。
+- 生成コードは最小 `main` + 中間コードコメント形式で、段階移行中の暫定実装。
 - エラー方針:
-- alias 重複や未定義 symbol を Go 生成前に検出し、`input_invalid` で落とす。
+- 未対応構文は frontend/EAST 側で停止し、Go 出力へ進ませない。
 
-### 7. Java（`src/py2java.py` + `src/common/go_java_native_transpiler.py`）
+### 7. Java（`src/py2java.py` + `src/hooks/java/emitter/java_emitter.py`）
 
 - 実装方式:
-- Go と同一の共通トランスパイラを使用。Java 側 runtime は `PyRuntime.java`。
-- Python import は Java import 文へ直接は展開せず、`PyRuntime.*` 呼び出しへ落とす。
+- EAST 変換。`py2java.py` は薄い CLI、実出力は Java preview emitter が担当。
 - 具体実装:
-- Go と同様に `ImportBinding` で alias 正規化を先に実施。
-- `from time import perf_counter as pc` -> `PyRuntime.pyPerfCounter()`
-- `from pathlib import Path as P` -> `PyRuntime.pyPathNew(...)`
-- `from math import sin as s` -> `PyRuntime.pyMathSin(...)`
-- module attribute 呼び出しは `PyRuntime` の明示メソッドへ寄せ、曖昧な `Object` メソッド呼び出しを禁止する。
+- import 解決は EAST `meta.import_bindings` を正本として処理する（内部の lower は C# ベース preview を使用）。
+- 生成コードは最小 `Main` クラス + 中間コードコメント形式で、段階移行中の暫定実装。
 - エラー方針:
-- 解決不能メソッドは現状 `TranspileError("cannot resolve method call: ...")`。import 解決段階で事前検出してメッセージを統一する。
+- 未対応構文は frontend/EAST 側で停止し、Java 出力へ進ませない。
 
-### 8. Swift（`src/py2swift.py` + `src/common/swift_kotlin_node_transpiler.py`）
+### 8. Swift（`src/py2swift.py` + `src/hooks/swift/emitter/swift_emitter.py`）
 
 - 実装方式:
-- Node バックエンド方式。Python -> JS へ変換し、JS を Base64 埋め込みした Swift を生成する。
-- import 意味論は Swift 側ではなく JS 変換側（`JsTsNativeTranspiler`）が正本。
+- EAST 変換。`py2swift.py` は薄い CLI、実出力は Swift preview emitter が担当。
 - 具体実装:
-- Swift 固有では import 解決ロジックを持たない。
-- 変換時は JS 生成段階で `ImportBinding` を解決し、その結果を埋め込む。
-- Swift runtime は「埋め込み JS を実行する責務」のみに限定する。
+- import 解決は EAST `meta.import_bindings` を正本として処理する（内部の lower は C# ベース preview を使用）。
+- 生成コードは最小 `main` + 中間コードコメント形式で、段階移行中の暫定実装。
 - エラー方針:
-- import エラーは JS 変換時点で停止し、Swift 側へは進ませない（エラー源を一意化）。
+- 未対応構文は frontend/EAST 側で停止し、Swift 出力へ進ませない。
 
-### 9. Kotlin（`src/py2kotlin.py` + `src/common/swift_kotlin_node_transpiler.py`）
+### 9. Kotlin（`src/py2kotlin.py` + `src/hooks/kotlin/emitter/kotlin_emitter.py`）
 
 - 実装方式:
-- Swift と同じ Node バックエンド方式（内部 JS を Kotlin へ埋め込み実行）。
-- import 意味論の正本は JS 変換側。
+- EAST 変換。`py2kotlin.py` は薄い CLI、実出力は Kotlin preview emitter が担当。
 - 具体実装:
-- Kotlin 側は class 名生成と実行エントリのみを担当し、import 解決を持たない。
-- JS 側で解決済みの `ImportBinding` 結果をそのまま埋め込む。
-- Kotlin runtime は `PyRuntime.runEmbeddedNode(...)` 呼び出し専用に保つ。
+- import 解決は EAST `meta.import_bindings` を正本として処理する（内部の lower は C# ベース preview を使用）。
+- 生成コードは最小 `main` + 中間コードコメント形式で、段階移行中の暫定実装。
 - エラー方針:
-- Swift と同様に JS 変換で import エラーを止め、Kotlin 生成は行わない。
+- 未対応構文は frontend/EAST 側で停止し、Kotlin 出力へ進ませない。
 
 ### 10. 言語別実装の統合順序（推奨）
 
