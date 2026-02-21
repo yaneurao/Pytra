@@ -3858,24 +3858,28 @@ class CppEmitter(CodeEmitter):
         if fn_name.startswith("py_assert_"):
             call_args = self._coerce_py_assert_args(fn_name, args, [])
             return f"pytra::utils::assertions::{fn_name}({_join_str_list(', ', call_args)})"
-        if fn_name.endswith(".append") and len(args) == 1:
-            owner_expr = fn_name[: len(fn_name) - 7]
-            a0 = args[0]
-            owner_t = ""
-            if owner_expr in self.declared_var_types:
-                owner_t = self.declared_var_types[owner_expr]
-            if owner_t == "bytearray":
-                a0 = f"static_cast<uint8>(py_to_int64({a0}))"
-            elif owner_t.startswith("list[") and owner_t.endswith("]"):
-                inner_t = owner_t[5:-1].strip()
-                if inner_t == "uint8":
-                    a0 = f"static_cast<uint8>(py_to_int64({a0}))"
-                elif inner_t != "" and not self.is_any_like_type(inner_t):
-                    a0 = f"{self._cpp_type_text(inner_t)}({a0})"
-            return f"{owner_expr}.append({a0})"
+        append_fallback_rendered = self._render_append_fallback_call(fn_name, args)
+        if append_fallback_rendered is not None:
+            return append_fallback_rendered
         if fn_name == "print":
             return f"py_print({_join_str_list(', ', args)})"
         return f"{fn_name}({_join_str_list(', ', args)})"
+
+    def _render_append_fallback_call(self, fn_name: str, args: list[str]) -> str | None:
+        """`obj.append(...)` の fallback 文字列呼び出しを型付き helper 経由で処理する。"""
+        if not fn_name.endswith(".append") or len(args) != 1:
+            return None
+        owner_expr = fn_name[: len(fn_name) - 7]
+        owner_t = ""
+        if owner_expr in self.declared_var_types:
+            owner_t = self.declared_var_types[owner_expr]
+        owner_types: list[str] = [owner_t]
+        if self._contains_text(owner_t, "|"):
+            owner_types = self.split_union(owner_t)
+        rendered = self._render_append_call_object_method(owner_types, owner_expr, args)
+        if rendered is not None:
+            return rendered
+        return f"{owner_expr}.append({args[0]})"
 
     def _render_call_expr_from_context(
         self,
