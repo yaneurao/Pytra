@@ -4,6 +4,26 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+## 2026-02-21 完了: selfhost スタブ整理（multi-file 完了）
+
+1. [x] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理（P0）を完了した。
+   - [x] `load_cpp_hooks` スタブを除去し、`build_cpp_hooks` の selfhost 最小実装（空 dict）を support block へ追加した。
+   - [x] import-graph 系スタブ（`_analyze_import_graph`）を除去し、実装側を selfhost-safe に置換した。
+   - [x] `_extract_function_arg_types_from_python_source` スタブを除去し、本実装を selfhost-safe に修正した。
+   - [x] multi-file 系スタブ（`_write_multi_file_cpp`）を除去し、`tools/prepare_selfhost_source.py` 側の置換処理自体も削除した。
+2. [x] `_write_multi_file_cpp` の selfhost 崩れを修正した。
+   - [x] `_inject_after_includes` をトップレベル helper（`_inject_after_includes_block`）へ分離した。
+   - [x] `prelude_txt` / `hdr_text` の multi-line 連結を段階的 `+=` に置換した。
+   - [x] `dict.keys()` / dict 値アクセス由来の `object` 化を避けるため、`items()` の型付き収集 + 明示 `if` 代入へ置換した。
+   - [x] manifest 生成を `append(dict literal)` から明示エントリ構築に置換し、`json.dumps` 呼び出し前の boxing 崩れを回避した。
+   - [x] `Path.mkdir` / `Path.write_text` 呼び出しを selfhost-safe helper（`_mkdirs_for_cli` / `_write_text_file`）へ統一した。
+3. [x] 回帰検証を green で確認した。
+   - [x] `python3 tools/build_selfhost.py`
+   - [x] `python3 tools/build_selfhost_stage2.py --skip-stage1-build`
+   - [x] `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+   - [x] `python3 tools/check_selfhost_stage2_cpp_diff.py --skip-build --mode allow-not-implemented`
+   - [x] `python3 tools/check_py2cpp_transpile.py`（`checked=108 ok=108 fail=0 skipped=5`）
+
 ## 2026-02-21 完了: selfhost stage2 実行導線と差分検証の安定化
 
 1. [x] selfhost `.py` 経路の段階回復を完了した。

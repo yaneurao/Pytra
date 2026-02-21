@@ -18,8 +18,11 @@ SRC_TRANSPILE_CLI = ROOT / "src" / "pytra" / "compiler" / "transpile_cli.py"
 
 
 def _extract_code_emitter_class(text: str) -> str:
-    marker = "class CodeEmitter:"
+    marker = "class EmitterHooks:"
     i = text.find(marker)
+    if i < 0:
+        marker = "class CodeEmitter:"
+        i = text.find(marker)
     if i < 0:
         raise RuntimeError("CodeEmitter class not found")
     return text[i:].rstrip() + "\n"
@@ -312,51 +315,6 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     return out
 
 
-def _replace_multi_file_helpers_for_selfhost(text: str) -> str:
-    """selfhost parser 非対応のネスト関数を含む multi-file 出力ヘルパを置換する。"""
-    out = text
-    start = "def _write_multi_file_cpp("
-    end = "\ndef _resolve_user_module_path("
-    i = out.find(start)
-    j = out.find(end)
-    if i >= 0 and j > i:
-        stub = (
-            "def _write_multi_file_cpp(\n"
-            "    entry_path: Path,\n"
-            "    module_east_map: dict[str, dict[str, Any]],\n"
-            "    output_dir: Path,\n"
-            "    negative_index_mode: str,\n"
-            "    bounds_check_mode: str,\n"
-            "    floor_div_mode: str,\n"
-            "    mod_mode: str,\n"
-            "    int_width: str,\n"
-            "    str_index_mode: str,\n"
-            "    str_slice_mode: str,\n"
-            "    opt_level: str,\n"
-            "    top_namespace: str,\n"
-            "    emit_main: bool,\n"
-            ") -> dict[str, Any]:\n"
-            "    pass\n"
-            "    _entry = entry_path\n"
-            "    _map = module_east_map\n"
-            "    _out_dir = output_dir\n"
-            "    _neg = negative_index_mode\n"
-            "    _bc = bounds_check_mode\n"
-            "    _fd = floor_div_mode\n"
-            "    _mod = mod_mode\n"
-            "    _iw = int_width\n"
-            "    _sim = str_index_mode\n"
-            "    _ssm = str_slice_mode\n"
-            "    _opt = opt_level\n"
-            "    _ns = top_namespace\n"
-            "    _em = emit_main\n"
-            "    out: dict[str, Any] = {}\n"
-            "    return out\n\n"
-        )
-        out = out[:i] + stub + out[j + 1 :]
-    return out
-
-
 def main() -> int:
     py2cpp_text = SRC_PY2CPP.read_text(encoding="utf-8")
     base_text = SRC_BASE.read_text(encoding="utf-8")
@@ -367,7 +325,6 @@ def main() -> int:
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
     out = _replace_dump_options_for_selfhost(out)
     out = _patch_code_emitter_hooks_for_selfhost(out)
-    out = _replace_multi_file_helpers_for_selfhost(out)
     out = _replace_misc_heavy_helpers_for_selfhost(out)
     out = _patch_main_guard_for_selfhost(out)
     out = _patch_selfhost_exception_paths(out)

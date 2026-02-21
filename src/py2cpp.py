@@ -6754,20 +6754,22 @@ def _write_multi_file_cpp(
     """モジュールごとに `.h/.cpp` を `out/include`, `out/src` へ出力する。"""
     include_dir = output_dir / "include"
     src_dir = output_dir / "src"
-    include_dir.mkdir(parents=True, exist_ok=True)
-    src_dir.mkdir(parents=True, exist_ok=True)
+    _mkdirs_for_cli(str(include_dir))
+    _mkdirs_for_cli(str(src_dir))
     prelude_hdr = include_dir / "pytra_multi_prelude.h"
     prelude_txt = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
     prelude_txt += "#ifndef PYTRA_MULTI_PRELUDE_H\n"
     prelude_txt += "#define PYTRA_MULTI_PRELUDE_H\n\n"
     prelude_txt += "#include \"runtime/cpp/pytra/built_in/py_runtime.h\"\n\n"
     prelude_txt += "#endif  // PYTRA_MULTI_PRELUDE_H\n"
-    prelude_hdr.write_text(prelude_txt, encoding="utf-8")
+    _write_text_file(prelude_hdr, prelude_txt)
 
-    root = entry_path.parent
+    root = Path(_path_parent_text(entry_path))
     entry_key = str(entry_path)
-    files_obj = module_east_map.keys()
-    files = list(files_obj)
+    files: list[str] = []
+    for mod_key, _mod_east in module_east_map.items():
+        if isinstance(mod_key, str):
+            files.append(mod_key)
     _sort_str_list_in_place(files)
     module_ns_map: dict[str, str] = {}
     module_label_map: dict[str, str] = {}
@@ -6782,21 +6784,26 @@ def _write_multi_file_cpp(
             module_ns_map[mod_name] = "pytra_mod_" + label
         i += 1
 
-    symbol_index = build_module_symbol_index(module_east_map)
     type_schema = build_module_type_schema(module_east_map)
 
     manifest: dict[str, Any] = {}
     manifest["entry"] = entry_key
     manifest["include_dir"] = str(include_dir)
     manifest["src_dir"] = str(src_dir)
-    manifest["modules"] = []
+    manifest_modules: list[dict[str, Any]] = []
 
     i = 0
     while i < len(files):
         mod_key = files[i]
-        east = module_east_map[mod_key]
+        east_obj = module_east_map.get(mod_key)
+        if not isinstance(east_obj, dict):
+            i += 1
+            continue
+        east = east_obj
         mod_path = Path(mod_key)
-        label = module_label_map[mod_key]
+        label = ""
+        if mod_key in module_label_map:
+            label = module_label_map[mod_key]
         hdr_path = include_dir / (label + ".h")
         cpp_path = src_dir / (label + ".cpp")
         guard = "PYTRA_MULTI_" + _sanitize_module_label(label).upper() + "_H"
@@ -6807,7 +6814,7 @@ def _write_multi_file_cpp(
         hdr_text += "void module_" + label + "();\n"
         hdr_text += "}  // namespace pytra_multi\n\n"
         hdr_text += "#endif  // " + guard + "\n"
-        hdr_path.write_text(hdr_text, encoding="utf-8")
+        _write_text_file(hdr_path, hdr_text)
 
         is_entry = mod_key == entry_key
         cpp_txt = _transpile_to_cpp_with_map(
@@ -6883,7 +6890,9 @@ def _write_multi_file_cpp(
                     continue
                 sig = sig_obj if isinstance(sig_obj, dict) else {}
                 ret_obj = sig.get("return_type")
-                ret_t = ret_obj if isinstance(ret_obj, str) else "None"
+                ret_t = "None"
+                if isinstance(ret_obj, str):
+                    ret_t = ret_obj
                 if ret_t == "None":
                     ret_cpp = "void"
                 else:
@@ -6900,7 +6909,9 @@ def _write_multi_file_cpp(
                         j += 1
                         continue
                     at_obj = arg_types.get(an)
-                    at = at_obj if isinstance(at_obj, str) else "object"
+                    at = "object"
+                    if isinstance(at_obj, str):
+                        at = at_obj
                     at_cpp = type_emitter._cpp_type_text(at)
                     parts.append(at_cpp + " " + an)
                     j += 1
@@ -6912,24 +6923,21 @@ def _write_multi_file_cpp(
                 fwd_lines.append("}  // namespace " + target_ns)
         if len(fwd_lines) > 0:
             cpp_txt = _inject_after_includes_block(cpp_txt, _join_str_list("\n", fwd_lines))
-        cpp_path.write_text(cpp_txt, encoding="utf-8")
+        _write_text_file(cpp_path, cpp_txt)
 
-        modules_obj = manifest.get("modules")
-        modules = modules_obj if isinstance(modules_obj, list) else []
-        modules.append(
-            {
-                "module": mod_key,
-                "label": label,
-                "header": str(hdr_path),
-                "source": str(cpp_path),
-                "is_entry": is_entry,
-            }
-        )
-        manifest["modules"] = modules
+        mod_ent: dict[str, Any] = {}
+        mod_ent["module"] = mod_key
+        mod_ent["label"] = label
+        mod_ent["header"] = str(hdr_path)
+        mod_ent["source"] = str(cpp_path)
+        mod_ent["is_entry"] = is_entry
+        manifest_modules.append(mod_ent)
         i += 1
 
+    manifest["modules"] = manifest_modules
     manifest_path = output_dir / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    manifest_obj: Any = manifest
+    _write_text_file(manifest_path, json.dumps(manifest_obj, ensure_ascii=False, indent=2))
     manifest["manifest"] = str(manifest_path)
     return manifest
 

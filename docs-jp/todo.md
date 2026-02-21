@@ -7,19 +7,6 @@
 
 最終更新: 2026-02-21
 
-## P0: selfhost 安定化
-
-1. [ ] `tools/prepare_selfhost_source.py` の selfhost 専用スタブ整理を継続する。
-   - [x] `load_cpp_hooks` スタブを除去する（`build_cpp_hooks` の selfhost 用最小実装を support block に追加）。
-   - [x] import-graph 系スタブ（`_analyze_import_graph`）を除去する。
-   - [ ] multi-file 系スタブ（`_write_multi_file_cpp`）を除去する。
-     - [x] `_write_multi_file_cpp` 内ネスト関数（`_inject_after_includes`）をトップレベル helper 化した。
-     - [x] selfhost parser 非対応だった multi-line 文字列連結（`prelude_txt` / `hdr_text`）を段階的に書き換えた。
-     - [ ] `dict.keys()` / dict 値アクセス由来の `list<object>` 化と `str` 既定値三項演算子を selfhost-safe に置換する。
-     - [ ] manifest 生成 (`modules.append({...})`, `json.dumps(manifest, ...)`) の object boxing 崩れを修正する。
-   - [x] `_extract_function_arg_types_from_python_source` スタブを除去する。
-2. [ ] 上記の各段階で `build_selfhost` / `build_selfhost_stage2` / 差分チェック2系統を green 維持する。
-
 ## P1: CodeEmitter / Hooks 移管
 
 1. [ ] フック注入 (`EmitterHooks`) を実装する。
