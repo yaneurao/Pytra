@@ -1,5 +1,10 @@
 # Codex Operation Specification (Pytra)
 
+<a href="../docs/spec-codex.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 This document defines operation rules that Codex follows while working.
 
 ## 1. Startup Checks

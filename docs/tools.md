@@ -1,5 +1,10 @@
 # `tools/` スクリプト一覧
 
+<a href="../docs-en/tools.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 `tools/` は、Pytra の開発運用を自動化するための補助スクリプト群です。  
 目的は次の 3 つです。
 

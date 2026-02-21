@@ -1,5 +1,10 @@
 # `tools/` Script Index
 
+<a href="../docs/tools.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 `tools/` is a set of helper scripts that automates Pytra development operations.  
 Its goals are:
 

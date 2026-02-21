@@ -1,5 +1,10 @@
 # 開発思想
 
+<a href="../docs-en/philosophy.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 Pytra は、「1つのロジックを複数言語で無理なく運用する」ことを目的にしたトランスパイラです。
 
 マルチプラットフォーム開発では、用途ごとに採用言語が分かれるのが一般的です。  
@@ -33,7 +38,7 @@ EAST は Python AST を置き換えるものではなく、AST の後段で意�
 
 この方針により、言語ごとの差分実装を減らし、仕様整合と性能改善を同時に進めます。
 
-EAST の実装準拠仕様は [`spec-east.md`](spec-east.md) を参照してください。
+EAST の実装準拠仕様は [EAST仕様（実装準拠）](spec-east.md) を参照してください。
 
 ## 重視していること
 

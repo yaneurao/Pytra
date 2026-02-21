@@ -1,5 +1,10 @@
 # Codex 向け運用仕様（Pytra）
 
+<a href="../docs-en/spec-codex.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 このドキュメントは、Codex が作業時に従う運用ルールです。
 
 ## 1. 起動時チェック

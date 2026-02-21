@@ -1,5 +1,10 @@
 # py2cpp Support Matrix (Test-Aligned)
 
+<a href="../docs/spec-py2cpp-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 Last updated: 2026-02-21
 
 This document summarizes language-feature support status in `src/py2cpp.py` at a granularity verifiable through both implementation code and runtime tests.

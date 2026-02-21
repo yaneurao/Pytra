@@ -1,5 +1,10 @@
 # EAST仕様（実装準拠）
 
+<a href="../docs-en/spec-east.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 この文書は `src/pytra/compiler/east.py` の現実装に合わせた EAST 仕様である。
 
 ## 1. 目的

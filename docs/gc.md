@@ -1,5 +1,10 @@
 # GCの仕様について
 
+<a href="../docs-en/gc.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 PythonからC++のコードに変換するときに、メモリ管理が必要となる。
 本プロジェクトでは **参照カウント（RC: Reference Counting）方式** を採用する。
 

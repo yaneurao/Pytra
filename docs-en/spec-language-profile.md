@@ -1,5 +1,10 @@
 # LanguageProfile Specification (CodeEmitter)
 
+<a href="../docs/spec-language-profile.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 This document defines the language-profile JSON specification used by `CodeEmitter`.
 
 ## 1. Purpose

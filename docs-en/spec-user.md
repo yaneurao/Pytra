@@ -1,5 +1,10 @@
 # User Specification (Pytra)
 
+<a href="../docs/spec-user.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 This document summarizes usage and input constraints for Pytra.
 
 ## 1. Purpose

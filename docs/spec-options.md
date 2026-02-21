@@ -1,5 +1,10 @@
 # トランスパイルオプション仕様（案）
 
+<a href="../docs-en/spec-options.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 この文書は、Pytra のオプション設計を整理するためのドラフトです。  
 目的は「Python 互換性」と「生成コード性能」のトレードオフを、利用者が明示的に選べるようにすることです。
 

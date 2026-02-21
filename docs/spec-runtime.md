@@ -1,5 +1,10 @@
 # ランタイムの仕様について
 
+<a href="../docs-en/spec-runtime.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 ### 1. 生成物と手書き実装の責務分離を明文化する
 
 - 自動生成:

@@ -1,5 +1,10 @@
 # Implementation Specification (Pytra)
 
+<a href="../docs/spec-dev.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 This document summarizes transpiler implementation policy, structure, and conversion rules.
 
 ## 1. Repository Layout

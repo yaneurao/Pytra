@@ -1,5 +1,10 @@
 # Usage Guide
 
+<a href="../docs/how-to-use.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+</a>
+
+
 ## Command Prerequisites by OS
 
 Command examples in this document are written for POSIX shells (`bash` / `zsh`).
@@ -24,9 +29,9 @@ For Windows, rewrite commands as follows.
   - Modules under `src/pytra/` (`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`)
   - User-authored `.py` modules
 - User module import is valid by specification, but multi-file dependency resolution is still being implemented in phases.
-- See [`pylib-modules.md`](pylib-modules.md) for supported modules and APIs.
-- See [`spec-options.md`](spec-options.md) for option policy and candidates.
-- See [`tools.md`](tools.md) for helper script purposes.
+- See [Module Index](pylib-modules.md) for supported modules and APIs.
+- See [Option Specification](spec-options.md) for option policy and candidates.
+- See [Tools Guide](tools.md) for helper script purposes.
 
 ## Transpiler Usage
 

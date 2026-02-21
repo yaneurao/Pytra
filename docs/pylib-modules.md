@@ -1,5 +1,10 @@
 # `src/pytra/` モジュール一覧
 
+<a href="../docs-en/pylib-modules.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
 このページは、`src/pytra/` のサポート済みモジュールと公開 API 一覧です。  
 `_` で始まる名前は内部実装扱いで、サポート対象外です。
 ここに未記載の関数/クラスを呼び出した場合、変換時エラーまたは変換先コンパイルエラーになる可能性があります。
