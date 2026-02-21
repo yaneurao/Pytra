@@ -3253,6 +3253,34 @@ class CppEmitter(CodeEmitter):
             static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, args, first_arg)
             if static_cast_rendered is not None:
                 return str(static_cast_rendered)
+        runtime_fallback = self._render_builtin_runtime_fallback(
+            runtime_call,
+            expr,
+            fn,
+            args,
+            arg_nodes,
+            first_arg,
+            owner_expr,
+        )
+        if runtime_fallback is not None:
+            return str(runtime_fallback)
+        if builtin_name == "bytes":
+            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
+        if builtin_name == "bytearray":
+            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
+        return ""
+
+    def _render_builtin_runtime_fallback(
+        self,
+        runtime_call: str,
+        expr: dict[str, Any],
+        fn: dict[str, Any],
+        args: list[str],
+        arg_nodes: list[Any],
+        first_arg: Any,
+        owner_expr: str,
+    ) -> str | None:
+        """hooks 無効時に BuiltinCall の runtime 分岐を描画する。"""
         if runtime_call == "py_print":
             return f"py_print({_join_str_list(', ', args)})"
         if runtime_call == "py_len" and len(args) == 1:
@@ -3285,11 +3313,7 @@ class CppEmitter(CodeEmitter):
         owner_runtime_rendered = self._render_builtin_call_owner_runtime(runtime_call, owner_expr, args)
         if owner_runtime_rendered is not None:
             return str(owner_runtime_rendered)
-        if builtin_name == "bytes":
-            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
-        if builtin_name == "bytearray":
-            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
-        return ""
+        return None
 
     def _render_builtin_call_owner_expr(self, expr: dict[str, Any], fn: dict[str, Any]) -> str:
         """BuiltinCall の owner 式（`obj.method` 側）を解決する。"""

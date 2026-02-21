@@ -46,6 +46,7 @@
    - [x] `_render_builtin_call` の owner 付き runtime 分岐（`exists/replace/startswith...` と共通 `py_/std` 呼び出し）を helper（`_render_builtin_call_owner_expr` / `_render_builtin_call_owner_runtime`）へ分離した。
    - [x] `_render_builtin_call` の `runtime_call=static_cast` 分岐を helper（`_render_builtin_static_cast_call`）へ分離し、本体の条件分岐を削減した。
    - [x] `_render_builtin_call` の `runtime_call=py_join` 分岐を helper（`_render_builtin_join_call`）へ分離し、owner 再解決ロジックを削除した。
+   - [x] `_render_builtin_call` の runtime 分岐（`py_print/py_len/py_to_string/...`）を helper（`_render_builtin_runtime_fallback`）へ抽出し、本体を dispatch + constructor 分岐へ縮退した。
    - [x] `Call(Name)` の import 解決 + runtime/namespace 呼び出し分岐を helper（`_resolve_or_render_imported_symbol_name_call`）へ分離し、`_render_call_name_or_attr` 本体の分岐を削減した。
    - [x] `Call(Name)` の残りビルトイン分岐（`bytes/bytearray/str/int(base)/ord/chr/min/max/perf_counter/Path/Exception`）を helper（`_render_misc_name_builtin_call`）へ分離した。
    - [x] `_render_call_fallback` の `*.append` 分岐を helper（`_render_append_fallback_call`）へ分離し、`_render_append_call_object_method` と型変換ロジックを共通化した。
