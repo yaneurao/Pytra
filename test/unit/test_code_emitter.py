@@ -404,6 +404,21 @@ class CodeEmitterTest(unittest.TestCase):
             ["list[int64|str]", "dict[str, list[int64|str]]", "None"],
         )
 
+    def test_binop_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em._binop_precedence("Mult"), 12)
+        self.assertEqual(em._binop_precedence("Add"), 11)
+        self.assertEqual(em._binop_precedence("BitOr"), 7)
+        self.assertEqual(em._binop_precedence("Unknown"), 0)
+
+        child = {"kind": "BinOp", "op": "Add"}
+        wrapped = em._wrap_for_binop_operand("a + b", child, "Mult")
+        self.assertEqual(wrapped, "(a + b)")
+        right_same_prec = em._wrap_for_binop_operand("a - b", {"kind": "BinOp", "op": "Sub"}, "Sub", True)
+        self.assertEqual(right_same_prec, "(a - b)")
+        no_wrap = em._wrap_for_binop_operand("x", {"kind": "Name", "id": "x"}, "Add")
+        self.assertEqual(no_wrap, "x")
+
     def test_type_helpers(self) -> None:
         em = CodeEmitter({})
         self.assertEqual(em.normalize_type_name("byte"), "uint8")

@@ -1098,6 +1098,50 @@ class CodeEmitter:
         test_expr = self.render_expr(expr.get("test"))
         return f"({test_expr} ? {body} : {orelse})"
 
+    def _binop_precedence(self, op_name: str) -> int:
+        """二項演算子の優先順位を返す。"""
+        if op_name in {"Mult", "Div", "FloorDiv", "Mod"}:
+            return 12
+        if op_name in {"Add", "Sub"}:
+            return 11
+        if op_name in {"LShift", "RShift"}:
+            return 10
+        if op_name == "BitAnd":
+            return 9
+        if op_name == "BitXor":
+            return 8
+        if op_name == "BitOr":
+            return 7
+        return 0
+
+    def _wrap_for_binop_operand(
+        self,
+        rendered: str,
+        operand_expr: dict[str, Any],
+        parent_op: str,
+        is_right: bool = False,
+    ) -> str:
+        """二項演算の結合順を壊さないため必要時に括弧を補う。"""
+        if len(operand_expr) == 0:
+            return rendered
+        kind = self.any_dict_get_str(operand_expr, "kind", "")
+        if kind in {"IfExp", "BoolOp", "Compare"}:
+            return f"({rendered})"
+        if kind != "BinOp":
+            return rendered
+
+        child_op = self.any_dict_get_str(operand_expr, "op", "")
+        parent_prec = self._binop_precedence(parent_op)
+        child_prec = self._binop_precedence(child_op)
+        if child_prec < parent_prec:
+            return f"({rendered})"
+        # Keep explicit grouping for multiplication with a division subtree, e.g. a * (b / c).
+        if parent_op == "Mult" and child_op in {"Div", "FloorDiv"}:
+            return f"({rendered})"
+        if is_right and child_prec == parent_prec and parent_op in {"Sub", "Div", "FloorDiv", "Mod", "LShift", "RShift"}:
+            return f"({rendered})"
+        return rendered
+
     def render_cond(self, expr: Any) -> str:
         """条件式文脈向けに式を真偽値へ正規化して出力する。"""
         expr_node = self.any_to_dict_or_empty(expr)
