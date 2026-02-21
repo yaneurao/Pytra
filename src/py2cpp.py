@@ -4029,6 +4029,17 @@ class CppEmitter(CodeEmitter):
             cur_node = rhs_node
         return _join_str_list(" && ", parts) if len(parts) > 0 else "true"
 
+    def _box_expr_for_any(self, expr_txt: str, source_node: Any) -> str:
+        """Any/object 向けの boxing を必要時のみ適用する。"""
+        if expr_txt.startswith("make_object("):
+            return expr_txt
+        if expr_txt == "object{}":
+            return expr_txt
+        src_t = self.get_expr_type(source_node)
+        if self.is_any_like_type(src_t):
+            return expr_txt
+        return f"make_object({expr_txt})"
+
     def _split_call_repr(self, text: str) -> tuple[str, list[str], bool]:
         """`fn(arg0, ...)` 形式の文字列を分解する。"""
         t = self._trim_ws(text)
@@ -4423,7 +4434,7 @@ class CppEmitter(CodeEmitter):
         if v is None:
             t = self.get_expr_type(expr)
             if self.is_any_like_type(t):
-                return "make_object(1)"
+                return "object{}"
             return "::std::nullopt"
         if isinstance(v, str):
             v_txt: str = str(v)
@@ -4561,7 +4572,7 @@ class CppEmitter(CodeEmitter):
                         elif ctor_elem != cand:
                             ctor_mixed = True
                 if self.is_any_like_type(elem_t):
-                    rv = f"make_object({rv})"
+                    rv = self._box_expr_for_any(rv, e)
                 parts.append(rv)
             if t.startswith("list<") and ctor_elem != "" and not ctor_mixed:
                 expect_t = f"list<{ctor_elem}>"
@@ -4671,9 +4682,9 @@ class CppEmitter(CodeEmitter):
                 k = self.render_expr(key_node)
                 v = self.render_expr(val_node)
                 if self.is_any_like_type(key_t):
-                    k = f"make_object({k})"
+                    k = self._box_expr_for_any(k, key_node)
                 if self.is_any_like_type(val_t):
-                    v = f"make_object({v})"
+                    v = self._box_expr_for_any(v, val_node)
                 items.append(f"{{{k}, {v}}}")
             return f"{t}{{{_join_str_list(', ', items)}}}"
         if kind == "Subscript":
