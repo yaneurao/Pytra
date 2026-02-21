@@ -1,6 +1,8 @@
 # What is Pytra?
 
-> Japanese(日本語) README: [readme-jp.md](readme-jp.md)
+<a href="readme-jp.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/README-日本語-2563EB?style=flat-square">
+</a>
 
 Pytra is a collection of transpilers that convert programs written in a subset of Python into multiple target languages.
 
@@ -511,14 +513,14 @@ if __name__ == "__main__":
 
 The related documents are listed below in the order they are most frequently referenced during usage.
 
-- Start with usage instructions: [docs/how-to-use.md](docs/how-to-use.md)
-- Check the developer utility script list: [docs/tools.md](docs/tools.md)
-- Review option design (performance/compatibility trade-offs): [docs/spec-options.md](docs/spec-options.md)
-- Review runtime layout and include conventions: [docs/spec-runtime.md](docs/spec-runtime.md)
-- Check implemented / unimplemented / out-of-scope items: [docs/pytra-readme.md](docs/pytra-readme.md)
-- Browse sample list and overview: [docs/sample-code.md](docs/sample-code.md)
-- Review specs, constraints, architecture, and operational rules: [docs/spec.md](docs/spec.md)
-- Motivation and design philosophy: [docs/philosophy.md](docs/philosophy.md)
+- Start with usage instructions: [Usage Guide](docs-en/how-to-use.md)
+- Check the developer utility script list: [Tools](docs-en/tools.md)
+- Review option design (performance/compatibility trade-offs): [Options Specification](docs-en/spec-options.md)
+- Review runtime layout and include conventions: [Runtime Specification](docs-en/spec-runtime.md)
+- Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](docs-en/pytra-readme.md)
+- Browse sample list and overview: [Sample Code Guide](docs-en/sample-code.md)
+- Review specs, constraints, architecture, and operational rules: [Specification Index](docs-en/spec.md)
+- Motivation and design philosophy: [Development Philosophy](docs-en/philosophy.md)
 
 ## License
 

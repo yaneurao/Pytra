@@ -1,6 +1,8 @@
 # Pytraとは何？
 
-> 英語版 README: [readme.md](readme.md)
+<a href="readme.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/README-English-2563EB?style=flat-square">
+</a>
 
 Pytra は、Pythonのサブセットで書かれたプログラムを様々な言語に変換するためのトランスパイラ群です。
 
@@ -513,14 +515,14 @@ if __name__ == "__main__":
 
 利用時によく参照する順で、関連ドキュメントをまとめています。
 
-- まず使い方を確認する: [docs/how-to-use.md](docs/how-to-use.md)
-- 開発補助スクリプト一覧を確認する: [docs/tools.md](docs/tools.md)
-- オプション設計（性能/互換性トレードオフ）を確認する: [docs/spec-options.md](docs/spec-options.md)
-- ランタイム配置と include 規約を確認する: [docs/spec-runtime.md](docs/spec-runtime.md)
-- 実装済み項目・未実装項目・対応予定なしを確認する: [docs/pytra-readme.md](docs/pytra-readme.md)
-- サンプル一覧と概要を確認する: [docs/sample-code.md](docs/sample-code.md)
-- 仕様・制約・構成・運用ルールを確認する: [docs/spec.md](docs/spec.md)
-- 開発の動機と設計理念: [docs/philosophy.md](docs/philosophy.md)
+- まず使い方を確認する: [使い方ガイド](docs/how-to-use.md)
+- 開発補助スクリプト一覧を確認する: [ツール一覧](docs/tools.md)
+- オプション設計（性能/互換性トレードオフ）を確認する: [オプション仕様](docs/spec-options.md)
+- ランタイム配置と include 規約を確認する: [ランタイム仕様](docs/spec-runtime.md)
+- 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](docs/pytra-readme.md)
+- サンプル一覧と概要を確認する: [サンプルコード案内](docs/sample-code.md)
+- 仕様・制約・構成・運用ルールを確認する: [仕様書トップ](docs/spec.md)
+- 開発の動機と設計理念: [開発思想](docs/philosophy.md)
 
 ## ライセンス
 
