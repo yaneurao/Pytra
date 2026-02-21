@@ -850,6 +850,82 @@ class CodeEmitter:
             cur = int(opt_obj)
         return cur >= level
 
+    def _resolve_imported_module_name(self, name: str) -> str:
+        """import で束縛された識別子名を実モジュール名へ解決する。"""
+        if self.is_declared(name):
+            return ""
+        modules_any: Any = {}
+        if "import_modules" in self.__dict__:
+            modules_any = self.__dict__["import_modules"]
+        import_modules = self.any_to_dict_or_empty(modules_any)
+        if name in import_modules:
+            mod_name = self.any_to_str(import_modules[name])
+            if mod_name != "":
+                return mod_name
+
+        symbols_any: Any = {}
+        if "import_symbols" in self.__dict__:
+            symbols_any = self.__dict__["import_symbols"]
+        import_symbols = self.any_to_dict_or_empty(symbols_any)
+        if name in import_symbols:
+            sym = self.any_to_dict_or_empty(import_symbols[name])
+            parent = self.any_to_str(sym.get("module"))
+            child = self.any_to_str(sym.get("name"))
+            if parent != "" and child != "":
+                return f"{parent}.{child}"
+        return ""
+
+    def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
+        """from-import で束縛された識別子を返す（無ければ空 dict）。"""
+        symbols_any: Any = {}
+        if "import_symbols" in self.__dict__:
+            symbols_any = self.__dict__["import_symbols"]
+        import_symbols = self.any_to_dict_or_empty(symbols_any)
+        if name in import_symbols:
+            sym0 = self.any_to_dict_or_empty(import_symbols[name])
+            out0: dict[str, str] = {}
+            mod0 = self.any_to_str(sym0.get("module"))
+            nm0 = self.any_to_str(sym0.get("name"))
+            if mod0 != "":
+                out0["module"] = mod0
+            if nm0 != "":
+                out0["name"] = nm0
+            return out0
+
+        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
+        i = 0
+        while i < len(refs):
+            ref = refs[i]
+            local_name = self.any_to_str(ref.get("local_name"))
+            if local_name == name:
+                module_id = self.any_to_str(ref.get("module_id"))
+                symbol = self.any_to_str(ref.get("symbol"))
+                if module_id != "" and symbol != "":
+                    out_ref: dict[str, str] = {}
+                    out_ref["module"] = module_id
+                    out_ref["name"] = symbol
+                    return out_ref
+            i += 1
+
+        binds = self.any_to_dict_list(meta.get("import_bindings"))
+        i = 0
+        while i < len(binds):
+            ent = binds[i]
+            if self.any_to_str(ent.get("binding_kind")) == "symbol":
+                local_name = self.any_to_str(ent.get("local_name"))
+                if local_name == name:
+                    module_id = self.any_to_str(ent.get("module_id"))
+                    export_name = self.any_to_str(ent.get("export_name"))
+                    if module_id != "" and export_name != "":
+                        out_bind: dict[str, str] = {}
+                        out_bind["module"] = module_id
+                        out_bind["name"] = export_name
+                        return out_bind
+            i += 1
+        out: dict[str, str] = {}
+        return out
+
     def comment_line_prefix(self) -> str:
         """単行コメント出力時の接頭辞を返す。"""
         return "// "

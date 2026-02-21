@@ -225,6 +225,34 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em._last_dotted_name("a.b.c"), "c")
         self.assertEqual(em._last_dotted_name("name"), "name")
 
+    def test_import_resolution_helpers(self) -> None:
+        em = CodeEmitter(
+            {
+                "meta": {
+                    "qualified_symbol_refs": [
+                        {"module_id": "m.a", "symbol": "f", "local_name": "af"},
+                    ],
+                    "import_bindings": [
+                        {
+                            "module_id": "m.b",
+                            "export_name": "g",
+                            "local_name": "bg",
+                            "binding_kind": "symbol",
+                        },
+                    ],
+                }
+            }
+        )
+        em.import_modules = {"m": "pkg.mod"}
+        em.import_symbols = {"s": {"module": "pkg.sym", "name": "fn"}}
+        self.assertEqual(em._resolve_imported_module_name("m"), "pkg.mod")
+        self.assertEqual(em._resolve_imported_module_name("s"), "pkg.sym.fn")
+        self.assertEqual(em._resolve_imported_module_name("x"), "")
+        self.assertEqual(em._resolve_imported_symbol("s"), {"module": "pkg.sym", "name": "fn"})
+        self.assertEqual(em._resolve_imported_symbol("af"), {"module": "m.a", "name": "f"})
+        self.assertEqual(em._resolve_imported_symbol("bg"), {"module": "m.b", "name": "g"})
+        self.assertEqual(em._resolve_imported_symbol("none"), {})
+
     def test_trivia_and_cond_helpers(self) -> None:
         em = _DummyEmitter(
             {
