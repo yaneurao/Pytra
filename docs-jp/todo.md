@@ -22,6 +22,7 @@
    - [x] `list[dict]` 抽出ヘルパ（`_dict_stmt_list`）を `CodeEmitter` 側へ移管し、`py2cpp.py` 側の重複実装を削除した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
+   - [x] `render_expr(Call)` 末尾の `kw_values/kw_nodes` マージ処理を `_merge_call_kw_values` / `_merge_call_arg_nodes` へ分離した。
 3. [ ] `render_expr` の算術/比較/型変換分岐を独立関数へ分割し、profile/hook 経由で切替可能にする。
 4. [ ] `Constant(Name/Attribute)` の基本レンダを `CodeEmitter` 共通へ移す。
 5. [ ] `emit_stmt` の制御構文分岐をテンプレート化して `CodeEmitter.syntax_*` へ寄せる。
