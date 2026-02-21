@@ -3240,6 +3240,16 @@ class CppEmitter(CodeEmitter):
             length = args[0] if len(args) >= 1 else "0"
             byteorder = args[1] if len(args) >= 2 else '"little"'
             return f"py_int_to_bytes({owner}, {length}, {byteorder})"
+        if runtime_call == "py_join" and len(args) == 1:
+            owner = ""
+            owner_obj = expr.get("runtime_owner")
+            owner_node = self.any_to_dict_or_empty(owner_obj)
+            if len(owner_node) > 0:
+                owner = self.render_expr(owner_obj)
+            elif self._node_kind_from_dict(fn) == "Attribute":
+                owner = self.render_expr(fn.get("value"))
+            if owner != "":
+                return f"str({owner}).join({args[0]})"
         if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
             if len(args) == 0:
                 return '::std::runtime_error("error")'

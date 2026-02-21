@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PY2CPP = ROOT / "src" / "py2cpp.py"
 DEFAULT_CASES = [
     "test/fixtures/core/add.py",
+    "test/fixtures/core/str_join_method.py",
     "test/fixtures/control/if_else.py",
     "test/fixtures/collections/comprehension_filter.py",
     "test/fixtures/typing/enum_basic.py",

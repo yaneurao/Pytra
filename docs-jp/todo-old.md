@@ -15,6 +15,10 @@
 3. [x] selfhost E2E 検証を追加・確認した。
    - [x] `tools/verify_selfhost_end_to_end.py` を追加（`.py -> selfhost変換 -> C++コンパイル -> 実行 -> Python標準出力比較`）。
    - [x] `python3 tools/verify_selfhost_end_to_end.py --skip-build` で `failures=0` を確認。
+4. [x] selfhost 直変換で `sep.join(items)` が `py_join(items)` に崩れる回帰を修正した。
+   - [x] `src/pytra/compiler/east_parts/core.py` / `src/runtime/cpp/pytra/compiler/east_parts/core.cpp` で `runtime_owner` を保持するようにした。
+   - [x] `src/py2cpp.py` の `runtime_call == "py_join"` 分岐で `runtime_owner` を優先利用するようにした。
+   - [x] `test/fixtures/core/str_join_method.py` を追加し、`tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` の既定ケースへ組み込んだ。
 
 
 ## 2026-02-21 完了: py2cpp Call 分岐の hook 移管
