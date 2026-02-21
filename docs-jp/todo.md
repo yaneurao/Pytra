@@ -14,6 +14,7 @@
    - [x] `build_cpp_hooks()` を `EmitterHooks` 経由の組み立てへ移行した（最終出力は従来どおり dict）。
 2. [ ] `render_expr(Call/BinOp/Compare)` の巨大分岐を hooks + helper へ段階分離する。
    - [x] `BinOp` の C++ 固有分岐（`Div/FloorDiv/Mod/Mult`）を `cpp_hooks.on_render_binop` へ抽出した（selfhost 互換のため `py2cpp.py` に同等フォールバックを残置）。
+   - [x] `module.attr` の runtime 解決ロジックを `CppEmitter._lookup_module_attr_runtime_call` へ一本化し、`py2cpp.py` / `cpp_hooks.py` の重複分岐を削減した。
 3. [ ] profile で表現しにくいケースのみ hooks 側へ寄せる（`py2cpp.py` に条件分岐を残さない）。
 
 ## P1: py2cpp 縮退（行数削減）
@@ -24,6 +25,8 @@
    - [x] `Call` 前処理（`_prepare_call_parts`）を `CodeEmitter` 側へ追加した（selfhost 互換のため `py2cpp.py` 側フォールバックは当面残置）。
    - [x] `IfExp` 共通レンダ（`_render_ifexp_expr`）と定数解析ヘルパ（`_one_char_str_const`, `_const_int_literal`）を `CodeEmitter` 側へ移管した。
    - [x] `BinOp` の優先順位/括弧補完ヘルパ（`_binop_precedence`, `_wrap_for_binop_operand`）を `CodeEmitter` 側へ移管した。
+   - [x] 文字列探索/末尾セグメント抽出ヘルパ（`_contains_text`, `_last_dotted_name`）を `CodeEmitter` 側へ移管した。
+   - [x] call/attribute 周辺の `module.attr` runtime lookup を helper 化し、`render_call`/`render_attribute`/hooks から共通利用するよう整理した。
    - [ ] call/attribute 周辺の C++ 固有分岐をさらに helper/hook 化して `py2cpp.py` 本体行数を削減する。
 2. [ ] `render_expr` の `Call` 分岐（builtin/module/method）を機能単位に分割し、`CodeEmitter` helper へ移す。
    - [x] `render_expr(Call)` 末尾の `kw_values/kw_nodes` マージ処理を `_merge_call_kw_values` / `_merge_call_arg_nodes` へ分離した。
