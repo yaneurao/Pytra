@@ -1,50 +1,78 @@
 #!/usr/bin/env python3
-"""Python -> Java 変換 CLI。"""
+"""EAST -> Java transpiler CLI."""
 
 from __future__ import annotations
 
-import argparse
-from pathlib import Path
-import sys
+from pytra.std.typing import Any
 
-try:
-    from common.go_java_native_transpiler import GoJavaConfig, GoJavaNativeTranspiler
-except ModuleNotFoundError:
-    from src.common.go_java_native_transpiler import GoJavaConfig, GoJavaNativeTranspiler
+from hooks.java.emitter.java_emitter import load_java_profile, transpile_to_java
+from pytra.compiler.east_parts.core import convert_path
+from pytra.compiler.transpile_cli import add_common_transpile_args
+from pytra.std import argparse
+from pytra.std import json
+from pytra.std.pathlib import Path
+from pytra.std import sys
 
 
-def transpile(input_path: str, output_path: str) -> None:
-    """Python ファイルを Java コードへ変換する。"""
-    in_path = Path(input_path)
-    out_path = Path(output_path)
-    this_dir = Path(__file__).resolve().parent
-    transpiler = GoJavaNativeTranspiler(
-        GoJavaConfig(
-            language_name="Java",
-            target="java",
-            file_header="// このファイルは自動生成です（Python -> Java native mode）。",
-            runtime_template_path=this_dir / "java_module" / "PyRuntime.java",
-        )
-    )
-    code = transpiler.transpile_path(in_path, out_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(code, encoding="utf-8")
+def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
+    """`.py` / `.json` を EAST ドキュメントへ読み込む。"""
+    suffix = input_path.suffix.lower()
+    if suffix == ".json":
+        txt = input_path.read_text(encoding="utf-8")
+        doc = json.loads(txt)
+        if isinstance(doc, dict):
+            return doc
+        raise RuntimeError("EAST json root must be object")
+    if suffix == ".py":
+        return convert_path(input_path, parser_backend=parser_backend)
+    raise RuntimeError("input must be .py or .json")
+
+
+def _default_output_path(input_path: Path) -> Path:
+    """入力パスから既定の `.java` 出力先を決定する。"""
+    out = str(input_path)
+    if out.endswith(".py"):
+        out = out[:-3] + ".java"
+    elif out.endswith(".json"):
+        out = out[:-5] + ".java"
+    else:
+        out = out + ".java"
+    return Path(out)
+
+
+def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str:
+    """argparse(dict) から文字列値を取り出す。"""
+    if key not in args:
+        return default_value
+    val = args[key]
+    if isinstance(val, str):
+        return val
+    return default_value
 
 
 def main() -> int:
-    """CLI エントリポイント。"""
-    parser = argparse.ArgumentParser(description="Transpile Python source to Java")
-    parser.add_argument("input", help="Input Python file")
-    parser.add_argument("output", help="Output Java file")
+    """CLI 入口。"""
+    parser = argparse.ArgumentParser(description="Pytra EAST -> Java transpiler")
+    add_common_transpile_args(parser, parser_backends=["self_hosted"])
     args = parser.parse_args()
+    if not isinstance(args, dict):
+        raise RuntimeError("argparse result must be dict")
 
-    try:
-        transpile(args.input, args.output)
-    except Exception as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 1
+    input_path = Path(_arg_get_str(args, "input"))
+    output_text = _arg_get_str(args, "output")
+    output_path = Path(output_text) if output_text != "" else _default_output_path(input_path)
+    parser_backend = _arg_get_str(args, "parser_backend")
+    if parser_backend == "":
+        parser_backend = "self_hosted"
+
+    east = load_east(input_path, parser_backend=parser_backend)
+    java_src = transpile_to_java(east)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(java_src, encoding="utf-8")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    _ = load_java_profile
+    sys.exit(main())
+

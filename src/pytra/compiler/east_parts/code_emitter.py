@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pytra.std.typing import Any
+from pytra.std import json
+from pytra.std.pathlib import Path
 
 
 class EmitterHooks:
@@ -78,6 +80,100 @@ class CodeEmitter:
     def _root_scope_stack(self) -> list[set[str]]:
         """最上位 1 スコープだけを持つ初期スコープスタックを返す。"""
         return [set()]
+
+    @staticmethod
+    def escape_string_for_literal(text: str) -> str:
+        """C 系言語向けの最小文字列エスケープを返す。"""
+        out = ""
+        i = 0
+        while i < len(text):
+            ch = text[i : i + 1]
+            if ch == "\\":
+                out += "\\\\"
+            elif ch == "\"":
+                out += "\\\""
+            elif ch == "\n":
+                out += "\\n"
+            elif ch == "\r":
+                out += "\\r"
+            elif ch == "\t":
+                out += "\\t"
+            else:
+                out += ch
+            i += 1
+        return out
+
+    @classmethod
+    def quote_string_literal(cls, text: str, quote: str = "\"") -> str:
+        """エスケープ済み文字列を引用符で囲んで返す。"""
+        q = quote
+        if q == "":
+            q = "\""
+        return q + cls.escape_string_for_literal(text) + q
+
+    @staticmethod
+    def _load_json_dict(path: Path) -> dict[str, Any]:
+        """JSON ファイルを辞書として読み込む。失敗時は空辞書。"""
+        if not path.exists():
+            return {}
+        try:
+            txt = path.read_text(encoding="utf-8")
+            raw = json.loads(txt)
+        except Exception:
+            return {}
+        if isinstance(raw, dict):
+            return raw
+        return {}
+
+    @staticmethod
+    def _resolve_src_root(anchor_file: str) -> str:
+        """`.../src/...` パスから `.../src` ルートを推定して返す。"""
+        pos = anchor_file.rfind("/src/")
+        if pos < 0:
+            return ""
+        return anchor_file[: pos + 4]
+
+    @classmethod
+    def load_profile_with_includes(
+        cls,
+        profile_rel_path: str,
+        *,
+        anchor_file: str = "",
+    ) -> dict[str, Any]:
+        """`profile.json` + include 断片を読み込み、1つの dict に統合する。"""
+        profile_path = Path(profile_rel_path)
+        if not profile_path.exists() and anchor_file != "":
+            src_root = cls._resolve_src_root(anchor_file)
+            if src_root != "":
+                rel = profile_rel_path
+                if rel.startswith("src/"):
+                    rel = rel[4:]
+                profile_path = Path(src_root) / rel
+        meta = cls._load_json_dict(profile_path)
+        if len(meta) == 0:
+            return {}
+
+        profile_root = profile_path.parent
+        out: dict[str, Any] = {}
+        includes_obj = meta.get("include")
+        includes: list[str] = []
+        if isinstance(includes_obj, list):
+            for item in includes_obj:
+                if isinstance(item, str) and item != "":
+                    includes.append(item)
+
+        i = 0
+        while i < len(includes):
+            rel = includes[i]
+            piece = cls._load_json_dict(profile_root / rel)
+            for key, val in piece.items():
+                out[key] = val
+            i += 1
+
+        for key, val in meta.items():
+            if key != "include":
+                out[key] = val
+        return out
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """文ノード出力フック。派生クラス側で実装する。"""

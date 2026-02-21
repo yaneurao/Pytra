@@ -37,12 +37,14 @@
 1. [x] 方針固定: `py2rs.py` は「CLI + 入出力 + 依存解決」の薄いオーケストレータに限定する。
    - [x] Rust 固有の式/文変換ロジックは `src/hooks/rs/emitter/rs_emitter.py` へ分離する。
    - [x] `src/common/` と `src/rs_module/` には依存しない。
-2. [ ] `CodeEmitter` の責務拡張を先に実施する（py2rs実装より先）。
-   - [ ] `py2cpp.py` と `py2rs.py` で共通化できる EAST ユーティリティ（型変換補助・import束縛・文/式ディスパッチ補助）を `src/pytra/compiler/east_parts/code_emitter.py` へ移す。
+2. [x] `CodeEmitter` の責務拡張を先に実施する（py2rs実装より先）。
+   - [x] `py2cpp.py` と `py2rs.py` で共通化できる EAST ユーティリティ（型変換補助・import束縛・文/式ディスパッチ補助）を `src/pytra/compiler/east_parts/code_emitter.py` へ移す。
      - [x] import 束縛ローダ `load_import_bindings_from_meta()` を `CodeEmitter` へ移管。
      - [x] tuple 要素取得（`elements`/`elts` 差分吸収）を `CodeEmitter.tuple_elements()` へ移管。
      - [x] `BoolOp` 共通描画 `render_boolop_common()` を `CodeEmitter` へ移管し、`py2rs/py2js/py2cs` で利用する。
      - [x] `Compare` 連鎖共通描画 `render_compare_chain_common()` を `CodeEmitter` へ移管し、`py2rs/py2js/py2cs` で利用する。
+     - [x] profile 読み込み（`profile.json` + include 統合）を `CodeEmitter.load_profile_with_includes()` へ移管し、`py2cpp/py2rs/py2js/py2cs` で利用する。
+     - [x] 文字列リテラル共通エスケープを `CodeEmitter.quote_string_literal()` へ移管し、`py2cpp/py2rs/py2js/py2cs` で利用する。
    - [x] 「共通化候補一覧」を作り、`py2cpp.py` から段階的に移管する（`docs-jp/code-emitter-dispatch-plan.md` 参照）。
 3. [x] Rust 固有処理の分離（最小雛形）
    - [x] `src/hooks/rs/` に Rust 用 hooks を追加。
@@ -80,7 +82,11 @@
    - [x] `src/common/` 依存を撤去する。
    - [x] C# 固有処理を hook/profile へ分離する（`src/hooks/cs/`, `src/profiles/cs/` 追加）。
    - [x] `test/unit/test_py2cs_smoke.py` / `tools/check_py2cs_transpile.py` を追加して回帰確認を自動化する。
-3. [ ] `py2go.py` / `py2java.py` を EAST ベースへ移行する。
+3. [x] `py2go.py` / `py2java.py` を EAST ベースへ移行する。
+   - [x] `src/common/go_java_native_transpiler.py` 依存を撤去し、EAST 入力（`.py/.json`）を受ける薄い CLI へ移行。
+   - [x] `hooks/go` / `hooks/java` に EAST ベースの preview エミッタを追加。
+   - [x] `test/unit/test_py2go_smoke.py` / `test/unit/test_py2java_smoke.py` を追加。
+   - [x] `tools/check_py2go_transpile.py` / `tools/check_py2java_transpile.py` を追加して一括回帰を自動化。
 4. [ ] `py2ts.py` / `py2swift.py` / `py2kotlin.py` を EAST ベースへ移行する。
 5. [ ] 言語横断の回帰テストを追加する。
    - [ ] 「EAST入力が同一なら、未対応時のエラー分類も各言語で同様」を確認するテストを追加する。

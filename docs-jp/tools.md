@@ -25,6 +25,10 @@
   - 目的: `test/fixtures/` と `sample/py` を `py2js.py` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2cs_transpile.py`
   - 目的: `test/fixtures/` と `sample/py` を `py2cs.py` で一括変換し、失敗ケースを検出する。
+- `tools/check_py2go_transpile.py`
+  - 目的: `test/fixtures/` と `sample/py` を `py2go.py` で一括変換し、失敗ケースを検出する。
+- `tools/check_py2java_transpile.py`
+  - 目的: `test/fixtures/` と `sample/py` を `py2java.py` で一括変換し、失敗ケースを検出する。
 - `tools/check_yanesdk_py2cpp_smoke.py`
   - 目的: Yanesdk canonical 対象（`library 1本 + game 7本`）が `py2cpp.py` を通るか確認する。
 - `tools/verify_sample_outputs.py`

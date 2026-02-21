@@ -570,21 +570,14 @@ def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, 
 
 def load_cpp_profile() -> dict[str, Any]:
     """C++ 用 LanguageProfile を読み込む（失敗時は最小既定）。"""
-    out: dict[str, Any] = {}
-    out["syntax"] = {}
-    p = Path("src/profiles/cpp/runtime_calls.json")
-    if not p.exists():
-        return out
-    raw_obj: Any = {}
-    try:
-        txt = p.read_text(encoding="utf-8")
-        raw_obj = json.loads(txt)
-    except Exception:
-        return out
-    raw = raw_obj if isinstance(raw_obj, dict) else {}
-    runtime_calls_obj = raw.get("runtime_calls")
-    if isinstance(runtime_calls_obj, dict):
-        out["runtime_calls"] = runtime_calls_obj
+    out = CodeEmitter.load_profile_with_includes(
+        "src/profiles/cpp/profile.json",
+        anchor_file=__file__,
+    )
+    if not isinstance(out, dict):
+        out = {}
+    if "syntax" not in out or not isinstance(out.get("syntax"), dict):
+        out["syntax"] = {}
     return out
 
 
@@ -690,26 +683,7 @@ AUG_BIN: dict[str, str] = load_cpp_aug_bin()
 
 def cpp_string_lit(s: str) -> str:
     """Python 文字列を C++ 文字列リテラルへエスケープ変換する。"""
-    out: str = '"'
-    i = 0
-    n = len(s)
-    while i < n:
-        ch = s[i : i + 1]
-        if ch == "\\":
-            out += "\\\\"
-        elif ch == '"':
-            out += '\\"'
-        elif ch == "\n":
-            out += "\\n"
-        elif ch == "\r":
-            out += "\\r"
-        elif ch == "\t":
-            out += "\\t"
-        else:
-            out += ch
-        i += 1
-    out += '"'
-    return out
+    return CodeEmitter.quote_string_literal(s)
 
 
 def cpp_char_lit(ch: str) -> str:

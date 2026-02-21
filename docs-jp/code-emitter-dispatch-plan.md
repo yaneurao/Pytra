@@ -46,3 +46,5 @@
 
 - `CodeEmitter.render_boolop_common()` を追加し、`py2rs` / `py2js` / `py2cs` の `BoolOp` 生成を共通化した。
 - `CodeEmitter.render_compare_chain_common()` を追加し、`py2rs` / `py2js` / `py2cs` の `Compare` 連鎖生成を共通化した。
+- `CodeEmitter.load_profile_with_includes()` を追加し、`py2cpp` / `py2rs` / `py2js` / `py2cs` の profile 読み込み重複を削減した。
+- `CodeEmitter.quote_string_literal()` を追加し、`py2cpp` / `py2rs` / `py2js` / `py2cs` の文字列リテラル生成を共通化した。
