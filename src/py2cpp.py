@@ -37,15 +37,23 @@ def _replace_first(text: str, old: str, replacement: str) -> str:
     return text[:pos] + replacement + text[pos + len(old) :]
 
 
-def _sort_str_list_in_place(items: list[str]) -> None:
-    """selfhost 安定化用: list[str] を昇順ソートする（依存最小の挿入ソート）。"""
-    for i in range(1, len(items)):
-        key = items[i]
+def _sort_str_list_in_place(items: list[str]) -> list[str]:
+    """selfhost 安定化用: list[str] の昇順ソート済みコピーを返す。"""
+    out: list[str] = []
+    i = 0
+    while i < len(items):
+        out.append(items[i])
+        i += 1
+    i = 1
+    while i < len(out):
+        key = out[i]
         j = i - 1
-        while j >= 0 and items[j] > key:
-            items[j + 1] = items[j]
+        while j >= 0 and out[j] > key:
+            out[j + 1] = out[j]
             j -= 1
-        items[j + 1] = key
+        out[j + 1] = key
+        i += 1
+    return out
 
 
 def _mkdirs_for_cli(path_txt: str) -> None:
@@ -152,11 +160,7 @@ def _parse_user_error(err_text: str) -> dict[str, Any]:
     text = err_text
     tag = "__PYTRA_USER_ERROR__|"
     if not text.startswith(tag):
-        out0: dict[str, Any] = {}
-        out0["category"] = ""
-        out0["summary"] = ""
-        out0["details"] = []
-        return out0
+        return {"category": "", "summary": "", "details": []}
     lines: list[str] = []
     cur = ""
     for ch in text:
@@ -179,11 +183,7 @@ def _parse_user_error(err_text: str) -> dict[str, Any]:
             cur += ch
     parts.append(cur)
     if len(parts) != 3:
-        out1: dict[str, Any] = {}
-        out1["category"] = ""
-        out1["summary"] = ""
-        out1["details"] = []
-        return out1
+        return {"category": "", "summary": "", "details": []}
     category = parts[1]
     summary = parts[2]
     details: list[str] = []
@@ -192,11 +192,7 @@ def _parse_user_error(err_text: str) -> dict[str, Any]:
             continue
         if line != "":
             details.append(line)
-    out: dict[str, Any] = {}
-    out["category"] = category
-    out["summary"] = summary
-    out["details"] = details
-    return out
+    return {"category": category, "summary": summary, "details": details}
 
 
 def _dict_any_get(src: dict[str, Any], key: str) -> Any:
@@ -246,13 +242,16 @@ def _split_ws_tokens(text: str) -> list[str]:
 def _first_import_detail_line(source_text: str, kind: str) -> str:
     """import エラー表示向けに、入力コードから該当 import 行を抜き出す。"""
     lines = source_text.splitlines()
-    for raw in lines:
-        line = raw
+    i = 0
+    while i < len(lines):
+        raw = lines[i]
+        line = raw if isinstance(raw, str) else ""
         hash_pos = line.find("#")
         if hash_pos >= 0:
             line = line[:hash_pos]
         line = line.strip()
         if line == "":
+            i += 1
             continue
         if kind == "wildcard":
             if line.startswith("from ") and " import " in line and line.endswith("*"):
@@ -264,6 +263,7 @@ def _first_import_detail_line(source_text: str, kind: str) -> str:
                 parts = _split_ws_tokens(line)
                 if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import":
                     return "from " + parts[1] + " import " + parts[3]
+        i += 1
     if kind == "wildcard":
         return "from ... import *"
     return "from .module import symbol"
@@ -493,16 +493,23 @@ def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, 
     fn_names_obj = sigs.keys()
     fn_names: list[str] = []
     if isinstance(fn_names_obj, list):
-        for name_obj in fn_names_obj:
+        i = 0
+        while i < len(fn_names_obj):
+            name_obj = fn_names_obj[i]
             if isinstance(name_obj, str):
                 fn_names.append(name_obj)
-    for fn_name_obj in fn_names:
+            i += 1
+    i = 0
+    while i < len(fn_names):
+        fn_name_obj = fn_names[i]
         sig_obj = sigs.get(fn_name_obj)
         if not isinstance(sig_obj, dict):
+            i += 1
             continue
         arg_types_obj = sig_obj.get("arg_types")
         if isinstance(arg_types_obj, list):
             out[fn_name_obj] = arg_types_obj
+        i += 1
     return out
 
 
@@ -886,7 +893,7 @@ class CppEmitter(CodeEmitter):
                                 seen.add(sym_inc)
                                 includes.append(sym_inc)
                 i += 1
-            _sort_str_list_in_place(includes)
+            includes = _sort_str_list_in_place(includes)
             return includes
         for stmt in body:
             kind = self._node_kind_from_dict(stmt)
@@ -922,7 +929,7 @@ class CppEmitter(CodeEmitter):
                         if sym_inc != "" and sym_inc not in seen:
                             seen.add(sym_inc)
                             includes.append(sym_inc)
-        _sort_str_list_in_place(includes)
+        includes = _sort_str_list_in_place(includes)
         return includes
 
     def _seed_import_maps_from_meta(self) -> None:
@@ -3259,7 +3266,7 @@ class CppEmitter(CodeEmitter):
                 and k not in seen_instance_fields
             ):
                 remaining_instance_keys.append(k)
-        _sort_str_list_in_place(remaining_instance_keys)
+        remaining_instance_keys = _sort_str_list_in_place(remaining_instance_keys)
         for fname in remaining_instance_keys:
             fty_fallback = self.current_class_fields.get(fname, "")
             if isinstance(fty_fallback, str):
@@ -3278,7 +3285,7 @@ class CppEmitter(CodeEmitter):
         for fname, _ in static_field_types.items():
             if fname not in static_emit_names:
                 extra_static_names.append(fname)
-        _sort_str_list_in_place(extra_static_names)
+        extra_static_names = _sort_str_list_in_place(extra_static_names)
         for fname in extra_static_names:
             static_emit_names.append(fname)
         for fname in static_emit_names:
@@ -4217,16 +4224,16 @@ class CppEmitter(CodeEmitter):
                     kw[kw_name] = kw_val
                     kw_values.append(kw_val)
                     kw_nodes.append(kw_val_node)
-        out: dict[str, Any] = {}
-        out["fn"] = fn_obj
-        out["fn_name"] = fn_name
-        out["arg_nodes"] = arg_nodes
-        out["args"] = args
-        out["kw"] = kw
-        out["kw_values"] = kw_values
-        out["kw_nodes"] = kw_nodes
-        out["first_arg"] = first_arg
-        return out
+        return {
+            "fn": fn_obj,
+            "fn_name": fn_name,
+            "arg_nodes": arg_nodes,
+            "args": args,
+            "kw": kw,
+            "kw_values": kw_values,
+            "kw_nodes": kw_nodes,
+            "first_arg": first_arg,
+        }
 
     def _render_ifexp_expr(self, expr: dict[str, Any]) -> str:
         """IfExp（三項演算）を式へ変換する。
@@ -5745,12 +5752,15 @@ def _header_guard_from_path(path: str) -> str:
         src = src[len(prefix2) :]
     src = "PYTRA_" + src.upper()
     out_chars: list[str] = []
-    for ch in src:
+    i = 0
+    while i < len(src):
+        ch = src[i : i + 1]
         ok = ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9"))
         if ok:
             out_chars.append(ch)
         else:
             out_chars.append("_")
+        i += 1
     out = "".join(out_chars)
     while out.startswith("_"):
         out = out[1:]
@@ -6533,26 +6543,16 @@ def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> 
 
 def _resolve_module_name_for_graph(raw_name: str, root_dir: Path) -> dict[str, Any]:
     """import graph 用のモジュール解決（順序依存を避ける前段 helper）。"""
-    out: dict[str, Any] = {}
-    out["status"] = "missing"
-    out["module_id"] = raw_name
-    out["path"] = ""
     if raw_name.startswith("."):
-        out["status"] = "relative"
-        return out
+        return {"status": "relative", "module_id": raw_name, "path": ""}
     if _is_pytra_module_name(raw_name):
-        out["status"] = "pytra"
-        return out
+        return {"status": "pytra", "module_id": raw_name, "path": ""}
     dep_file = _resolve_user_module_path_for_graph(raw_name, root_dir)
     if str(dep_file) != "":
-        out["status"] = "user"
-        out["path"] = str(dep_file)
-        out["module_id"] = raw_name
-        return out
+        return {"status": "user", "module_id": raw_name, "path": str(dep_file)}
     if _is_known_non_user_import(raw_name):
-        out["status"] = "known"
-        return out
-    return out
+        return {"status": "known", "module_id": raw_name, "path": ""}
+    return {"status": "missing", "module_id": raw_name, "path": ""}
 
 
 def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
@@ -6682,7 +6682,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     while i < len(visited_order):
         visited_keys.append(visited_order[i])
         i += 1
-    _sort_str_list_in_place(visited_keys)
+    visited_keys = _sort_str_list_in_place(visited_keys)
     for key in visited_keys:
         if key in key_to_path:
             user_module_files.append(str(key_to_path[key]))
@@ -7211,7 +7211,7 @@ def _write_multi_file_cpp(
     for mod_key, _mod_east in module_east_map.items():
         if isinstance(mod_key, str):
             files.append(mod_key)
-    _sort_str_list_in_place(files)
+    files = _sort_str_list_in_place(files)
     module_ns_map: dict[str, str] = {}
     module_label_map: dict[str, str] = {}
     module_name_by_key: dict[str, str] = {}
