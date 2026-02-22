@@ -1206,6 +1206,32 @@ if __name__ == "__main__":
                 if leaked_png.exists():
                     leaked_png.unlink()
 
+    def _transpile_and_syntax_check_fixture(self, stem: str) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = find_fixture_case(stem)
+            out_cpp = work / f"{stem}.cpp"
+            print(f"  [fixture:{stem}] transpile", flush=True)
+            transpile(src_py, out_cpp)
+            print(f"  [fixture:{stem}] syntax-check", flush=True)
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-O2",
+                    "-I",
+                    "src",
+                    "-I",
+                    "src/runtime/cpp",
+                    "-fsyntax-only",
+                    str(out_cpp),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label=f"syntax-check fixture {stem}",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
     def test_cli_reports_user_syntax_error_category(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             bad_py = Path(tmpdir) / "bad.py"
@@ -1698,6 +1724,9 @@ if __name__ == "__main__":
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
+
+    def test_microgpt_compat_min_syntax_check(self) -> None:
+        self._transpile_and_syntax_check_fixture("microgpt_compat_min")
 
     def test_emit_guard_rejects_object_receiver_call(self) -> None:
         east = {
