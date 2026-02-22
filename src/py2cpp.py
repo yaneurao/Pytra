@@ -624,24 +624,21 @@ AUG_BIN: dict[str, str] = load_cpp_aug_bin()
 
 def cpp_string_lit(s: str) -> str:
     """Python 文字列を C++ 文字列リテラルへエスケープ変換する。"""
-    out = ""
-    i = 0
-    while i < len(s):
-        ch = s[i : i + 1]
+    out_chars: list[str] = []
+    for ch in s:
         if ch == "\\":
-            out += "\\\\"
+            out_chars.append("\\\\")
         elif ch == "\"":
-            out += "\\\""
+            out_chars.append("\\\"")
         elif ch == "\n":
-            out += "\\n"
+            out_chars.append("\\n")
         elif ch == "\r":
-            out += "\\r"
+            out_chars.append("\\r")
         elif ch == "\t":
-            out += "\\t"
+            out_chars.append("\\t")
         else:
-            out += ch
-        i += 1
-    return "\"" + out + "\""
+            out_chars.append(ch)
+    return "\"" + "".join(out_chars) + "\""
 
 
 def cpp_char_lit(ch: str) -> str:
@@ -5616,9 +5613,7 @@ def _split_type_args(text: str) -> list[str]:
     out: list[str] = []
     cur = ""
     depth = 0
-    i = 0
-    while i < len(text):
-        ch = text[i : i + 1]
+    for ch in text:
         if ch == "[":
             depth += 1
             cur += ch
@@ -5633,7 +5628,6 @@ def _split_type_args(text: str) -> list[str]:
             cur = ""
         else:
             cur += ch
-        i += 1
     tail: str = cur.strip()
     if tail != "":
         out.append(tail)
@@ -5645,9 +5639,7 @@ def _split_top_level_union(text: str) -> list[str]:
     out: list[str] = []
     cur = ""
     depth = 0
-    i = 0
-    while i < len(text):
-        ch = text[i : i + 1]
+    for ch in text:
         if ch == "[":
             depth += 1
             cur += ch
@@ -5662,7 +5654,6 @@ def _split_top_level_union(text: str) -> list[str]:
             cur = ""
         else:
             cur += ch
-        i += 1
     tail = cur.strip()
     if tail != "":
         out.append(tail)
