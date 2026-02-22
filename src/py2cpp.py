@@ -6125,18 +6125,12 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                         ent = names_obj[j]
                         if isinstance(ent, dict):
                             ent_dict: dict[str, Any] = ent
-                            mod_name_obj: object = ent_dict.get("name")
-                            mod_name = ""
-                            if isinstance(mod_name_obj, str):
-                                mod_name = mod_name_obj
+                            mod_name = _dict_any_get_str(ent_dict, "name")
                             if mod_name != "" and mod_name not in module_seen:
                                 module_seen.add(mod_name)
                                 modules.append(mod_name)
             elif kind == "ImportFrom":
-                mod_obj: object = stmt_dict.get("module")
-                mod_name = ""
-                if isinstance(mod_obj, str):
-                    mod_name = mod_obj
+                mod_name = _dict_any_get_str(stmt_dict, "module")
                 if mod_name != "" and mod_name not in module_seen:
                     module_seen.add(mod_name)
                     modules.append(mod_name)
@@ -6146,14 +6140,8 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                         ent = names_obj[j]
                         if isinstance(ent, dict):
                             ent_dict = ent
-                            sym_obj: object = ent_dict.get("name")
-                            alias_obj: object = ent_dict.get("asname")
-                            sym_name = ""
-                            if isinstance(sym_obj, str):
-                                sym_name = sym_obj
-                            alias = ""
-                            if isinstance(alias_obj, str):
-                                alias = alias_obj
+                            sym_name = _dict_any_get_str(ent_dict, "name")
+                            alias = _dict_any_get_str(ent_dict, "asname")
                             if sym_name != "":
                                 label = mod_name + "." + sym_name
                                 if alias != "":
