@@ -5,7 +5,7 @@
 # User Specification (Pytra)
 
 This document summarizes usage and input constraints for Pytra.
-This file is the normative specification; executable command workflows are maintained in [Usage Guide](how-to-use.md).
+This file is the normative specification; executable command workflows are maintained in [Usage Guide](../how-to-use.md).
 
 ## 1. Purpose
 
@@ -42,7 +42,7 @@ Pytra is a set of transpilers that converts type-annotated Python code into the 
 - For C++, comment-based passthrough is available.
   - Place `# Pytra::cpp ...` / `# Pytra::pass ...` immediately before a statement to inject that line directly into generated C++.
   - For multi-line blocks, use `# Pytra::cpp begin` ... `# Pytra::cpp end` (or `pass`).
-  - See `docs/spec-east.md` for details.
+  - See [EAST Specification](./spec-east.md) for details.
 
 ## 3. Test Case Policy
 
@@ -113,7 +113,7 @@ python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
 
 ## 7. Related Documents
 
-- How to use: `docs/how-to-use.md`
-- py2cpp feature support matrix (with test evidence): `docs/language/cpp/spec-support.md`
-- Sample code: `docs/sample-code.md`
-- Detailed implementation status: `docs/pytra-readme.md`
+- How to use: [Usage Guide](../how-to-use.md)
+- py2cpp feature support matrix (with test evidence): [C++ Support Matrix](../language/cpp/spec-support.md)
+- Sample code: [Sample Code](./spec-sample-code.md)
+- Detailed implementation status: [Pytra WIP Plan](../plans/pytra-wip.md)

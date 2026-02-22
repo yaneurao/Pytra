@@ -319,7 +319,7 @@ Constraints:
   - runtime-call mappings
   - syntax templates
 - Cases hard to express in JSON are handled by `hooks`.
-- Canonical detailed schema is `docs/spec-language-profile.md`.
+- Canonical detailed schema is `docs/spec/spec-language-profile.md`.
 
 ## 7. Common Implementation Rules
 

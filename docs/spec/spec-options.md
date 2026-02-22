@@ -148,16 +148,16 @@ Enabled in `py2cpp.py`:
 
 ## 6. Notes
 
-- Must stay consistent with existing specification (`docs/spec-dev.md`), so update both simultaneously when introducing options.
+- Must stay consistent with existing specification (`docs/spec/spec-dev.md`), so update both simultaneously when introducing options.
 - For potentially breaking items (`int-width`, `str-index-mode`), provide at least one-release migration period before changing defaults.
 
 ### 6.1 Specification Consistency Check Procedure
 
 When adding/changing options, update all of the following at the same time:
 
-1. `docs/spec-options.md` (option definitions, defaults, presets)
-2. `docs/spec-dev.md` (implementation specification and CLI reflection)
-3. `docs/spec-east.md` (responsibility boundary between EAST side and generator side)
+1. `docs/spec/spec-options.md` (option definitions, defaults, presets)
+2. `docs/spec/spec-dev.md` (implementation specification and CLI reflection)
+3. `docs/spec/spec-east.md` (responsibility boundary between EAST side and generator side)
 4. `docs/how-to-use.md` (usage examples)
 
 After updates, verify:

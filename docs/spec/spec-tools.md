@@ -52,6 +52,6 @@ Its goals are:
 
 ## 4. Update Rules
 
-- When adding a new script under `tools/`, update this `docs/spec-tools.md` at the same time.
+- When adding a new script under `tools/`, update this `docs/spec/spec-tools.md` at the same time.
 - For each script, explicitly state in one line what automation purpose it serves.
 - If there are breaking changes (argument changes, deprecations, consolidation), synchronize related command examples in `docs/how-to-use.md`.

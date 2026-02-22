@@ -4,7 +4,7 @@
 
 # Import Specification
 
-Read `docs/spec-runtime.md` first.
+Read `docs/spec/spec-runtime.md` first.
 
 This document defines how syntax like the following is converted in `py2cpp.py`.
 
@@ -44,7 +44,7 @@ Should namespace-like prefixes be attached to symbol names?
 
 ## Addendum: Concerns
 
-- In current spec (`docs/spec-dev.md`), `from module import *` is unsupported. This should be explicitly fixed as either a target to implement first or continue as `input_invalid`.
+- In current spec (`docs/spec/spec-dev.md`), `from module import *` is unsupported. This should be explicitly fixed as either a target to implement first or continue as `input_invalid`.
 - `#include` alone cannot enforce C++ visibility restrictions, so `from X import Y` constraints must be guaranteed by transpiler name resolution.
 - The allowed symbol kinds for `from X import Y` (function/class/constant/variable), and whether `X.Y` access is allowed/forbidden, need explicit specification.
 - Priority on collisions between import names and local names (local/arg/import alias/builtin) must be fixed to avoid per-language behavior drift.
@@ -209,7 +209,7 @@ QualifiedSymbolRef
   - collision detection results (success/failure)
 - Test criterion should be identity of resolution results, not syntax-level similarity.
 
-## Addendum: Concrete Per-language Implementation Policy (Aligned with `readme.md` / `docs/pytra-readme.md`)
+## Addendum: Concrete Per-language Implementation Policy (Aligned with `readme.md` / `docs/plans/pytra-wip.md`)
 
 Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swift / Kotlin`.
 

@@ -29,9 +29,9 @@ This document defines operation rules that Codex follows while working.
 ## 3. Documentation Sync Rules
 
 - On spec changes, feature additions, or procedure changes, update `README.md` as needed.
-- Check consistency of documents linked from `README.md` (`docs/how-to-use.md`, `docs/sample-code.md`, `docs/spec.md`, `docs/pytra-readme.md`, `docs/spec-philosophy.md`) and their canonical Japanese sources (`docs-jp/how-to-use.md`, `docs-jp/spec/spec-sample-code.md`, `docs-jp/spec/index.md`, `docs-jp/plans/pytra-wip.md`, `docs-jp/spec/spec-philosophy.md`), and update them together when needed.
+- Check consistency of documents linked from `README.md` (`docs/how-to-use.md`, `docs/spec/spec-sample-code.md`, `docs/spec/index.md`, `docs/plans/pytra-wip.md`, `docs/spec/spec-philosophy.md`) and their canonical Japanese sources (`docs-jp/how-to-use.md`, `docs-jp/spec/spec-sample-code.md`, `docs-jp/spec/index.md`, `docs-jp/plans/pytra-wip.md`, `docs-jp/spec/spec-philosophy.md`), and update them together when needed.
 - Include "no implementation-doc mismatch left" in change completion criteria.
-- If scripts in `tools/` are added/removed/renamed, update `docs/spec-tools.md` and `docs-jp/spec/spec-tools.md` at the same time.
+- If scripts in `tools/` are added/removed/renamed, update `docs/spec/spec-tools.md` and `docs-jp/spec/spec-tools.md` at the same time.
 - Terminology rule: when referring to type annotations, always write "type annotation" (not just "annotation").
 - Writing rule: when describing features or folder structures, always state the purpose (what they are for).
 - Writing rule: write not only "where to place" but also "why place there," to prevent responsibility mixing between `std` and `tra`.

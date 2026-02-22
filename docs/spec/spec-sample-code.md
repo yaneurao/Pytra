@@ -10,16 +10,16 @@
 
 ## 2. Directory Structure
 
-- [sample/py](../sample/py): Source Python samples (currently `01` to `16`)
-- [sample/cpp](../sample/cpp): C++ transpilation outputs
-- [sample/cs](../sample/cs): C# transpilation outputs
-- [sample/rs](../sample/rs): Rust transpilation outputs
-- [sample/js](../sample/js): JavaScript transpilation outputs
-- [sample/ts](../sample/ts): TypeScript transpilation outputs
-- [sample/go](../sample/go): Go transpilation outputs
-- [sample/java](../sample/java): Java transpilation outputs
-- [sample/swift](../sample/swift): Swift transpilation outputs
-- [sample/kotlin](../sample/kotlin): Kotlin transpilation outputs
+- [sample/py](../../sample/py): Source Python samples (currently `01` to `16`)
+- [sample/cpp](../../sample/cpp): C++ transpilation outputs
+- [sample/cs](../../sample/cs): C# transpilation outputs
+- [sample/rs](../../sample/rs): Rust transpilation outputs
+- [sample/js](../../sample/js): JavaScript transpilation outputs
+- [sample/ts](../../sample/ts): TypeScript transpilation outputs
+- [sample/go](../../sample/go): Go transpilation outputs
+- [sample/java](../../sample/java): Java transpilation outputs
+- [sample/swift](../../sample/swift): Swift transpilation outputs
+- [sample/kotlin](../../sample/kotlin): Kotlin transpilation outputs
 - `sample/obj`: Build artifacts for each language (not tracked by Git)
 - `sample/out`: Runtime output images (PNG/GIF, not tracked by Git)
 
@@ -51,8 +51,8 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 `test/` and `sample/` have different roles: `test/` is for small feature checks, `sample/` is for practical, heavier-load cases.
 
-- [test/fixtures](../test/fixtures): Source test code for transpilation
-- [test/unit](../test/unit): Unit tests
+- [test/fixtures](../../test/fixtures): Source test code for transpilation
+- [test/unit](../../test/unit): Unit tests
 - `test/transpile/`: Working directory for transpilation artifacts (not tracked by Git)
   - Not viewable on GitHub. Generate locally by running transpilation when needed.
 

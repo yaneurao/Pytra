@@ -5,7 +5,7 @@
 # Usage Guide
 
 This document is an execution runbook for actually running Pytra.  
-For normative input constraints and usage rules, see [User Specification](spec-user.md).
+For normative input constraints and usage rules, see [User Specification](./spec/spec-user.md).
 
 ## Command Prerequisites by OS
 
@@ -31,10 +31,10 @@ For Windows, rewrite commands as follows.
   - Modules under `src/pytra/` (`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`)
   - User-authored `.py` modules
 - User module import is valid by specification, but multi-file dependency resolution is still being implemented in phases.
-- See [Module Index](pylib-modules.md) for supported modules and APIs.
-- See [Option Specification](spec-options.md) for option policy and candidates.
-- See [Tools Guide](spec-tools.md) for helper script purposes.
-- For normative constraint definitions, see [User Specification](spec-user.md).
+- See [Module Index](./spec/spec-pylib-modules.md) for supported modules and APIs.
+- See [Option Specification](./spec/spec-options.md) for option policy and candidates.
+- See [Tools Guide](./spec/spec-tools.md) for helper script purposes.
+- For normative constraint definitions, see [User Specification](./spec/spec-user.md).
 
 ## Transpiler Usage
 
