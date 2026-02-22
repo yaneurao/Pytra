@@ -118,7 +118,7 @@ py2cpp / py2rs 共通化候補:
 ### `src/py2cpp.py`
 
 1. [ ] [ID: P3-PY-01] `while i < len(xs)` + 手動インデックス更新を `for x in xs` / `for i, x in enumerate(xs)` へ戻す。
-2. [ ] [ID: P3-PY-02] `text[0:1] == "x"` のような1文字比較を、selfhost 要件を満たす範囲で `text.startswith("x")` へ戻す。
+2. [x] [ID: P3-PY-02] `text[0:1] == "x"` のような1文字比較を、selfhost 要件を満たす範囲で `text.startswith("x")` へ戻す。
 3. [ ] [ID: P3-PY-03] 空 dict/list 初期化後の逐次代入（`out = {}; out["k"] = v`）を、型崩れしない箇所から辞書リテラルへ戻す。
 4. [ ] [ID: P3-PY-04] 三項演算子を回避している箇所（`if ...: a=x else: a=y`）を、selfhost 側対応後に式形式へ戻す。
 5. [ ] [ID: P3-PY-05] import 解析の一時変数展開（`obj = ...; s = any_to_str(obj)`）を、型安全が確保できる箇所から簡潔化する。
@@ -126,9 +126,11 @@ py2cpp / py2rs 共通化候補:
 進捗メモ:
 - `P3-PY-01` の一部として `src/py2cpp.py::_sanitize_module_label` の手動インデックス `while` を `for ch in s` へ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-PY-01` の継続として `src/py2cpp.py::_path_parent_text`（区切り探索）と `_make_user_error`（details 結合）の `while` ループを `for` ベースへ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
+- `P3-PY-01` の継続として `src/py2cpp.py::_module_tail_to_cpp_header_path`、`_parse_user_error`、`_header_guard_from_path` の手動インデックス走査を `for` ベースへ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-PY-02` の一部として `src/py2cpp.py` の `_render_set_literal_repr` で `[:1]` / `[-1:]` 比較を `startswith` / `endswith` へ戻し、同等挙動を維持した。
 - `P3-PY-02` の継続として `src/py2cpp.py::_emit_target_unpack` の `list[` / `set[` / `tuple[` / `dict[` 判定をスライス比較から `startswith` / `endswith` へ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-PY-02` 周辺の整理として `src/py2cpp.py` のクラス名推定2箇所（`_cpp_type_text`, `_header_cpp_type_from_east`）で `leaf[:1]` 判定を空文字チェック + `leaf[0]` 参照へ統一し、可読性を維持したままスライス依存を削減した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
+- `src/py2cpp.py` で `[:1]` / `[-1:]` / `[0:1]` などの1文字スライス比較パターンが検出ゼロになったため、`P3-PY-02` を完了扱いに更新した。
 
 ### `src/pytra/compiler/east_parts/code_emitter.py`
 
