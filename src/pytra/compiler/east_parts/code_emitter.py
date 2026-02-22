@@ -563,7 +563,7 @@ class CodeEmitter:
                 if not isinstance(raw, bool) and not isinstance(raw, int) and not isinstance(raw, float):
                     if not isinstance(raw, dict) and not isinstance(raw, list) and not isinstance(raw, set):
                         raw_txt = str(raw)
-                        if raw_txt not in {"", "None", "{}", "[]"}:
+                        if not self._is_empty_dynamic_text(raw_txt):
                             name = raw_txt
         if name == "":
             name = default_name
@@ -656,12 +656,10 @@ class CodeEmitter:
                 raw = self.any_to_str(expr_d.get("repr"))
                 if raw != "":
                     qpos = -1
-                    i = 0
-                    while i < len(raw):
-                        if raw[i] in {'"', "'"}:
+                    for i, ch in enumerate(raw):
+                        if ch in {'"', "'"}:
                             qpos = i
                             break
-                        i += 1
                     if qpos >= 0:
                         return f"{bytes_lit_fn_name}({raw[qpos:]})"
                 return f"{bytes_ctor_name}({self.quote_string_literal(v_txt)})"
@@ -1380,7 +1378,7 @@ class CodeEmitter:
         if isinstance(raw, dict) or isinstance(raw, list) or isinstance(raw, set):
             return ""
         text = str(raw)
-        if text in {"", "None", "{}", "[]"}:
+        if self._is_empty_dynamic_text(text):
             return ""
         return text
 

@@ -135,8 +135,8 @@ py2cpp / py2rs 共通化候補:
 
 ### `src/pytra/compiler/east_parts/code_emitter.py`
 
-1. [ ] [ID: P3-CE-01] `split_*` / `normalize_type_name` 周辺の index ループを段階的に `for` ベースへ戻す。
-2. [ ] [ID: P3-CE-02] `any_*` 系ヘルパで重複する `None`/空文字判定を共通小関数へ集約する。
+1. [x] [ID: P3-CE-01] `split_*` / `normalize_type_name` 周辺の index ループを段階的に `for` ベースへ戻す。
+2. [x] [ID: P3-CE-02] `any_*` 系ヘルパで重複する `None`/空文字判定を共通小関数へ集約する。
 3. [x] [ID: P3-CE-03] `_emit_trivia_items` の directive 処理分岐を小関数に分割する。
 4. [x] [ID: P3-CE-04] `hook_on_*` 系で同型の呼び出しパターンを汎用ヘルパ化し、重複を減らす。
 
@@ -148,6 +148,8 @@ py2cpp / py2rs 共通化候補:
 - `P3-CE-04` の一部として `src/pytra/compiler/east_parts/code_emitter.py` に `_lookup_hook` を追加し、`hook_on_emit_stmt` / `hook_on_emit_stmt_kind` / `hook_on_render_expr_kind` / `hook_on_render_expr_leaf` の hook 取得ロジック重複を削減した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-CE-04` の継続として `hook_on_stmt_omit_braces` / `hook_on_for_range_mode` / `hook_on_render_call` も `_lookup_hook` 経由へ統一した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `src/pytra/compiler/east_parts/code_emitter.py` で `hook_on_*` の `if \"on_*\" in self.hooks` パターンが検出ゼロになったため、`P3-CE-04` を完了扱いに更新した。`P3-CE-03` も `_emit_trivia_items` の directive 分岐分割が完了したため完了扱いに更新した。
+- `P3-CE-02` の継続として `render_name_ref` / `attr_name` に残っていた空値判定を `_is_empty_dynamic_text` へ統一し、`code_emitter.py` 内の `{\"\", \"None\", \"{}\", \"[]\"}` 直接判定を helper 定義箇所のみに集約したため、`P3-CE-02` を完了扱いに更新した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
+- `P3-CE-01` の継続として `render_constant_common`（bytes repr 引用符探索）の index `while` を `for enumerate` へ置換し、`code_emitter.py` から index 走査の `while i/j/k < len(...)` パターンが検出ゼロになったため、`P3-CE-01` を完了扱いに更新した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 
 ### 作業ルール
 
