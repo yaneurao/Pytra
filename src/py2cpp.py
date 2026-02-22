@@ -6919,16 +6919,18 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
             for local_name_any, _module_id_obj in legacy_mods.items():
                 if not isinstance(local_name_any, str):
                     continue
-                module_id = _dict_any_get_str(legacy_mods, local_name_any)
-                _set_import_module_binding(import_modules, local_name_any, module_id)
+                _set_import_module_binding(import_modules, local_name_any, _dict_any_get_str(legacy_mods, local_name_any))
             legacy_syms = _dict_any_get_dict(meta, "import_symbols")
             for local_name_any, _sym_obj in legacy_syms.items():
                 if not isinstance(local_name_any, str):
                     continue
                 sym = _dict_any_get_dict(legacy_syms, local_name_any)
-                module_id = _dict_any_get_str(sym, "module")
-                symbol = _dict_any_get_str(sym, "name")
-                _set_import_symbol_binding(import_symbols, local_name_any, module_id, symbol)
+                _set_import_symbol_binding(
+                    import_symbols,
+                    local_name_any,
+                    _dict_any_get_str(sym, "module"),
+                    _dict_any_get_str(sym, "name"),
+                )
         out[mod_path] = {
             "functions": funcs,
             "classes": classes,
