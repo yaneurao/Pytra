@@ -1740,6 +1740,36 @@ def main() -> None:
             cpp = transpile_to_cpp(east)
         self.assertIn("py_range(0, 3, 1)", cpp)
 
+    def test_lambda_default_arg_emits_cpp_default(self) -> None:
+        src = """matrix = lambda nout, nin, std=0.08: nout + nin * std
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "lambda_default.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("float64 std = 0.08", cpp)
+
+    def test_zip_tuple_unpack_does_not_force_object_receiver(self) -> None:
+        src = """class Value:
+    def __init__(self, children=(), local_grads=()):
+        self.grad = 0
+        self._children = children
+        self._local_grads = local_grads
+
+    def backward(self) -> None:
+        for child, local_grad in zip(self._children, self._local_grads):
+            child.grad += local_grad
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "zip_unpack.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("for (auto __it", cpp)
+        self.assertIn("::std::get<0>(__it", cpp)
+        self.assertNotIn("object receiver method call", cpp)
+
     def test_microgpt_compat_min_syntax_check(self) -> None:
         self._transpile_and_syntax_check_fixture("microgpt_compat_min")
 
