@@ -1951,12 +1951,11 @@ class CppEmitter(CodeEmitter):
             if self.is_declared(name):
                 continue
             decl_t = self._merge_decl_types_for_branch_join(body_types[name], else_types[name])
-            if decl_t == "":
-                decl_t = "object"
+            decl_t = decl_t if decl_t != "" else "object"
             cpp_t = self._cpp_type_text(decl_t)
-            if cpp_t in {"", "auto"}:
-                decl_t = "object"
-                cpp_t = "object"
+            fallback_to_object = cpp_t in {"", "auto"}
+            decl_t = "object" if fallback_to_object else decl_t
+            cpp_t = "object" if fallback_to_object else cpp_t
             self.emit(f"{cpp_t} {name};")
             self.declare_in_current_scope(name)
             self.declared_var_types[name] = decl_t
@@ -2036,10 +2035,8 @@ class CppEmitter(CodeEmitter):
         if val_is_dict:
             rendered_val = self.render_expr(stmt.get("value"))
         ann_t_str = self.any_dict_get_str(stmt, "annotation", "")
-        if ann_t_str == "":
-            ann_t_str = decl_hint
-        if ann_t_str == "" and ann_text_fallback not in {"", "{}", "None"}:
-            ann_t_str = ann_text_fallback
+        ann_fallback = ann_text_fallback if ann_text_fallback not in {"", "{}", "None"} else ""
+        ann_t_str = ann_t_str if ann_t_str != "" else (decl_hint if decl_hint != "" else ann_fallback)
         if rendered_val != "" and ann_t_str != "":
             rendered_val = self._rewrite_nullopt_default_for_typed_target(rendered_val, ann_t_str)
         if ann_t_str in {"byte", "uint8"} and val_is_dict:
@@ -5349,8 +5346,7 @@ class CppEmitter(CodeEmitter):
                 stop = self.render_expr(rg.get("stop"))
                 step = self.render_expr(rg.get("step"))
                 mode = self.any_to_str(rg.get("range_mode"))
-                if mode == "":
-                    mode = "dynamic"
+                mode = mode if mode != "" else "dynamic"
                 cond = (
                     f"({tgt} < {stop})"
                     if mode == "ascending"
