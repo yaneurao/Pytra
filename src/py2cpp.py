@@ -6292,8 +6292,7 @@ def _module_name_from_path_for_graph(root: Path, module_path: Path) -> str:
 
 def _module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:
     """import graph 用の EAST module_id 抽出。"""
-    meta_obj = east_doc.get("meta")
-    meta = meta_obj if isinstance(meta_obj, dict) else {}
+    meta = _dict_any_get_dict(east_doc, "meta")
     module_id = _dict_any_get_str(meta, "module_id")
     if module_id != "":
         return module_id
@@ -6742,8 +6741,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     name_txt = _dict_any_get_str(tgt_obj, "id")
                     if name_txt != "" and name_txt not in variables:
                         variables.append(name_txt)
-        meta_obj: object = east.get("meta")
-        meta: dict[str, Any] = meta_obj if isinstance(meta_obj, dict) else {}
+        meta = _dict_any_get_dict(east, "meta")
         import_bindings = _meta_import_bindings(east)
         qualified_symbol_refs = _meta_qualified_symbol_refs(east)
         import_modules: dict[str, str] = {}
@@ -6877,8 +6875,7 @@ def _module_name_from_path(root: Path, module_path: Path) -> str:
 
 def _module_id_from_east(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:
     """EAST `meta.module_id` を優先し、無い場合はパス由来名へフォールバックする。"""
-    meta_obj = east_doc.get("meta")
-    meta = meta_obj if isinstance(meta_obj, dict) else {}
+    meta = _dict_any_get_dict(east_doc, "meta")
     module_id = _dict_any_get_str(meta, "module_id")
     if module_id != "":
         return module_id
