@@ -44,6 +44,8 @@
   - 主要オプション: `--verify-cpp-on-diff`（C++ 生成差分が出たケースだけ `verify_sample_outputs.py` で compile/run 検証）
 - `tools/run_regen_on_version_bump.py`
   - 目的: `transpiler_versions.json` の minor 以上の更新を検出したときだけ `regenerate_samples.py` を起動し、影響言語のみ再生成する。
+- `tools/sync_todo_history_translation.py`
+  - 目的: `docs-jp/todo-history` を正本として `docs/todo-history` の日付ファイル雛形と index を同期し、`--check` で同期漏れを検出する。
 - `tools/verify_sample_outputs.py`
   - 目的: `sample/py` の Python 実行結果と C++ 実行結果（stdout/画像）を比較する。
   - 主要オプション: `--samples`, `--compile-flags`, `--ignore-stdout`
