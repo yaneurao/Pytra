@@ -40,6 +40,7 @@
 - `pytra.std.typing`（`typing` 代替）
   - 型エイリアス: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
   - 関数: `TypeVar(name)`
+  - 現状: `TypeVar(name)` は最小 shim（`name` をそのまま返す）であり、template 型パラメータ機能は提供しません。
 - `pytra.std.os`（`os` 代替・最小実装）
   - 変数: `path`
   - `path` の主なメンバー: `join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`
