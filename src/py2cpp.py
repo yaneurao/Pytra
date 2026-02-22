@@ -6793,27 +6793,20 @@ def _format_graph_list_section(out: str, label: str, items: list[Any]) -> str:
 
 def _format_import_graph_report(analysis: dict[str, Any]) -> str:
     """依存解析結果を `--dump-deps` 向けテキストへ整形する。"""
-    edges_obj = analysis.get("edges")
-    edges: list[str] = edges_obj if isinstance(edges_obj, list) else []
+    edges = _dict_any_get_str_list(analysis, "edges")
     out = "graph:\n"
     if len(edges) == 0:
         out += "  (none)\n"
     else:
-        for i in range(len(edges)):
-            item = edges[i]
-            if isinstance(item, str):
-                out += "  - " + item + "\n"
-    cycles_obj = analysis.get("cycles")
-    cycles: list[Any] = cycles_obj if isinstance(cycles_obj, list) else []
+        for item in edges:
+            out += "  - " + item + "\n"
+    cycles = _dict_any_get_str_list(analysis, "cycles")
     out = _format_graph_list_section(out, "cycles", cycles)
-    missing_obj = analysis.get("missing_modules")
-    missing: list[Any] = missing_obj if isinstance(missing_obj, list) else []
+    missing = _dict_any_get_str_list(analysis, "missing_modules")
     out = _format_graph_list_section(out, "missing", missing)
-    relative_obj = analysis.get("relative_imports")
-    relative: list[Any] = relative_obj if isinstance(relative_obj, list) else []
+    relative = _dict_any_get_str_list(analysis, "relative_imports")
     out = _format_graph_list_section(out, "relative", relative)
-    reserved_obj = analysis.get("reserved_conflicts")
-    reserved: list[Any] = reserved_obj if isinstance(reserved_obj, list) else []
+    reserved = _dict_any_get_str_list(analysis, "reserved_conflicts")
     out = _format_graph_list_section(out, "reserved", reserved)
     return out
 
@@ -6821,48 +6814,34 @@ def _format_import_graph_report(analysis: dict[str, Any]) -> str:
 def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     """依存解析の重大問題を `input_invalid` として報告する。"""
     details: list[str] = []
-    reserved_obj = analysis.get("reserved_conflicts")
-    reserved = reserved_obj if isinstance(reserved_obj, list) else []
-    for i in range(len(reserved)):
-        v = reserved[i]
-        if isinstance(v, str) and v != "":
+    for v in _dict_any_get_str_list(analysis, "reserved_conflicts"):
+        if v != "":
             details.append(f"kind=reserved_conflict file={v} import=pytra")
 
-    relative_obj = analysis.get("relative_imports")
-    relative = relative_obj if isinstance(relative_obj, list) else []
-    for i in range(len(relative)):
-        v = relative[i]
-        if isinstance(v, str) and v != "":
-            v_txt = str(v)
-            file_part = v_txt
-            mod_part = v_txt
-            sep = ": "
-            if sep in v_txt:
-                pos = v_txt.find(sep)
-                file_part = v_txt[:pos]
-                mod_part = v_txt[pos + len(sep) :]
-            details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
+    for v_txt in _dict_any_get_str_list(analysis, "relative_imports"):
+        if v_txt == "":
+            continue
+        file_part = v_txt
+        mod_part = v_txt
+        left, right, found = _split_infix_once(v_txt, ": ")
+        if found:
+            file_part = left
+            mod_part = right
+        details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
 
-    missing_obj = analysis.get("missing_modules")
-    missing = missing_obj if isinstance(missing_obj, list) else []
-    for i in range(len(missing)):
-        v = missing[i]
-        if isinstance(v, str) and v != "":
-            v_txt = str(v)
-            file_part = v_txt
-            mod_part = v_txt
-            sep = ": "
-            if sep in v_txt:
-                pos = v_txt.find(sep)
-                file_part = v_txt[:pos]
-                mod_part = v_txt[pos + len(sep) :]
-            details.append(f"kind=missing_module file={file_part} import={mod_part}")
+    for v_txt in _dict_any_get_str_list(analysis, "missing_modules"):
+        if v_txt == "":
+            continue
+        file_part = v_txt
+        mod_part = v_txt
+        left, right, found = _split_infix_once(v_txt, ": ")
+        if found:
+            file_part = left
+            mod_part = right
+        details.append(f"kind=missing_module file={file_part} import={mod_part}")
 
-    cycles_obj = analysis.get("cycles")
-    cycles = cycles_obj if isinstance(cycles_obj, list) else []
-    for i in range(len(cycles)):
-        v = cycles[i]
-        if isinstance(v, str) and v != "":
+    for v in _dict_any_get_str_list(analysis, "cycles"):
+        if v != "":
             details.append(f"kind=import_cycle file=(graph) import={v}")
     if len(details) > 0:
         raise _make_user_error(
