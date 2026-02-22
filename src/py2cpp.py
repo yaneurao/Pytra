@@ -2859,8 +2859,7 @@ class CppEmitter(CodeEmitter):
             else:
                 cur += ch
         parts.append(cur.strip())
-        for j in range(len(parts)):
-            nm = parts[j]
+        for nm in parts:
             if nm != "":
                 ok = True
                 for k in range(len(nm)):
