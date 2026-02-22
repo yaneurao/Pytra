@@ -363,12 +363,11 @@ class CodeEmitter:
         arg_nodes: list[Any],
     ) -> str:
         """`on_render_module_method` フック。既定では何もしない。"""
-        if "on_render_module_method" in self.hooks:
-            fn = self.hooks["on_render_module_method"]
-            if fn is not None:
-                v = fn(self, module_name, attr, rendered_args, rendered_kwargs, arg_nodes)
-                if isinstance(v, str):
-                    return v
+        fn = self._lookup_hook("on_render_module_method")
+        if fn is not None:
+            v = fn(self, module_name, attr, rendered_args, rendered_kwargs, arg_nodes)
+            if isinstance(v, str):
+                return v
         return ""
 
     def hook_on_render_object_method(
@@ -379,12 +378,11 @@ class CodeEmitter:
         rendered_args: list[str],
     ) -> str:
         """`on_render_object_method` フック。既定では何もしない。"""
-        if "on_render_object_method" in self.hooks:
-            fn = self.hooks["on_render_object_method"]
-            if fn is not None:
-                v = fn(self, owner_type, owner_expr, attr, rendered_args)
-                if isinstance(v, str):
-                    return v
+        fn = self._lookup_hook("on_render_object_method")
+        if fn is not None:
+            v = fn(self, owner_type, owner_expr, attr, rendered_args)
+            if isinstance(v, str):
+                return v
         return ""
 
     def hook_on_render_class_method(
@@ -397,12 +395,11 @@ class CodeEmitter:
         arg_nodes: list[Any],
     ) -> str:
         """`on_render_class_method` フック。既定では何もしない。"""
-        if "on_render_class_method" in self.hooks:
-            fn = self.hooks["on_render_class_method"]
-            if fn is not None:
-                v = fn(self, owner_type, attr, func_node, rendered_args, rendered_kwargs, arg_nodes)
-                if isinstance(v, str):
-                    return v
+        fn = self._lookup_hook("on_render_class_method")
+        if fn is not None:
+            v = fn(self, owner_type, attr, func_node, rendered_args, rendered_kwargs, arg_nodes)
+            if isinstance(v, str):
+                return v
         return ""
 
     def hook_on_render_binop(
@@ -412,12 +409,11 @@ class CodeEmitter:
         right: str,
     ) -> str:
         """`on_render_binop` フック。既定では何もしない。"""
-        if "on_render_binop" in self.hooks:
-            fn = self.hooks["on_render_binop"]
-            if fn is not None:
-                v = fn(self, binop_node, left, right)
-                if isinstance(v, str):
-                    return v
+        fn = self._lookup_hook("on_render_binop")
+        if fn is not None:
+            v = fn(self, binop_node, left, right)
+            if isinstance(v, str):
+                return v
         return ""
 
     def hook_on_render_expr_kind(
@@ -451,12 +447,11 @@ class CodeEmitter:
         expr_node: dict[str, Any],
     ) -> str:
         """複雑式（JoinedStr/Lambda/Comp 系）用フック。既定では何もしない。"""
-        if "on_render_expr_complex" in self.hooks:
-            fn = self.hooks["on_render_expr_complex"]
-            if fn is not None:
-                v = fn(self, expr_node)
-                if isinstance(v, str):
-                    return v
+        fn = self._lookup_hook("on_render_expr_complex")
+        if fn is not None:
+            v = fn(self, expr_node)
+            if isinstance(v, str):
+                return v
         return ""
 
     def syntax_text(self, key: str, default_value: str) -> str:
