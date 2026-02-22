@@ -139,6 +139,9 @@ py2cpp / py2rs 共通化候補:
 3. [ ] [ID: P3-CE-03] `_emit_trivia_items` の directive 処理分岐を小関数に分割する。
 4. [ ] [ID: P3-CE-04] `hook_on_*` 系で同型の呼び出しパターンを汎用ヘルパ化し、重複を減らす。
 
+進捗メモ:
+- `P3-CE-01` の一部として `src/pytra/compiler/east_parts/code_emitter.py` の `escape_string_for_literal`、`render_compare_chain_common`、`load_import_bindings_from_meta` を `for` ベースへ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
+
 ### 作業ルール
 
 1. [ ] [ID: P3-RULE-01] 1パッチで戻す範囲は 1〜3 関数に保つ。

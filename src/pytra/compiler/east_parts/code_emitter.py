@@ -97,24 +97,21 @@ class CodeEmitter:
     @staticmethod
     def escape_string_for_literal(text: str) -> str:
         """C 系言語向けの最小文字列エスケープを返す。"""
-        out = ""
-        i = 0
-        while i < len(text):
-            ch = text[i : i + 1]
+        out_parts: list[str] = []
+        for ch in text:
             if ch == "\\":
-                out += "\\\\"
+                out_parts.append("\\\\")
             elif ch == "\"":
-                out += "\\\""
+                out_parts.append("\\\"")
             elif ch == "\n":
-                out += "\\n"
+                out_parts.append("\\n")
             elif ch == "\r":
-                out += "\\r"
+                out_parts.append("\\r")
             elif ch == "\t":
-                out += "\\t"
+                out_parts.append("\\t")
             else:
-                out += ch
-            i += 1
-        return out
+                out_parts.append(ch)
+        return "".join(out_parts)
 
     @staticmethod
     def quote_string_literal(text: str, quote: str = "\"") -> str:
@@ -1066,8 +1063,10 @@ class CodeEmitter:
             return empty_literal
         terms: list[str] = []
         cur_left = left_expr
-        i = 0
-        while i < len(ops) and i < len(comparators):
+        pair_count = len(ops)
+        if len(comparators) < pair_count:
+            pair_count = len(comparators)
+        for i in range(pair_count):
             op = ops[i]
             right = self.render_expr(comparators[i])
             term: str = ""
@@ -1081,7 +1080,6 @@ class CodeEmitter:
                 op_txt = cmp_map.get(op, "==")
                 terms.append("(" + cur_left + " " + op_txt + " " + right + ")")
             cur_left = right
-            i += 1
         if len(terms) == 1:
             return terms[0]
         return "(" + " && ".join(terms) + ")"
@@ -1318,9 +1316,7 @@ class CodeEmitter:
         self.import_modules = {}
         self.import_symbols = {}
         binds = self.any_to_dict_list(meta.get("import_bindings"))
-        i = 0
-        while i < len(binds):
-            ent = binds[i]
+        for ent in binds:
             binding_kind = self.any_to_str(ent.get("binding_kind"))
             local_name = self.any_to_str(ent.get("local_name"))
             module_id = self.any_to_str(ent.get("module_id"))
@@ -1334,7 +1330,6 @@ class CodeEmitter:
                     sym["module"] = module_id
                     sym["name"] = export_name
                     self.import_symbols[local_name] = sym
-            i += 1
 
     def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
         """from-import で束縛された識別子を返す（無ければ空 dict）。"""
