@@ -139,23 +139,20 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     if j <= i:
         raise RuntimeError("failed to find _call_hook1 marker after _call_hook in merged selfhost source")
     block = text[i:j]
-    targets = [
-        "            return fn(self)\n",
-        "            return fn(self, arg0)\n",
-        "            return fn(self, arg0, arg1)\n",
-        "            return fn(self, arg0, arg1, arg2)\n",
-        "            return fn(self, arg0, arg1, arg2, arg3)\n",
-        "            return fn(self, arg0, arg1, arg2, arg3, arg4)\n",
-        "            return fn(self, arg0, arg1, arg2, arg3, arg4, arg5)\n",
-    ]
-    missing: list[str] = []
-    for target in targets:
-        if target in block:
-            block = block.replace(target, "            return None\n", 1)
-        else:
-            missing.append(target.strip())
-    if len(missing) > 0:
-        raise RuntimeError("failed to neutralize _call_hook dynamic calls: " + ", ".join(missing))
+    lines = block.splitlines(keepends=True)
+    out_lines: list[str] = []
+    replaced = 0
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("return fn(") and stripped.endswith(")"):
+            indent = line[: len(line) - len(line.lstrip())]
+            out_lines.append(indent + "return None\n")
+            replaced += 1
+            continue
+        out_lines.append(line)
+    if replaced != 7:
+        raise RuntimeError("failed to neutralize _call_hook dynamic calls: replaced=" + str(replaced))
+    block = "".join(out_lines)
     return text[:i] + block + text[j:]
 
 
