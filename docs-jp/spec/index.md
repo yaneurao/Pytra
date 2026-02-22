@@ -13,7 +13,7 @@
 - GC 仕様: [GC 仕様](./spec-gc.md)
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
 - 言語別仕様: [言語別仕様](../language/index.md)
-- Codex 向け運用仕様: [Codex 向け運用仕様](../spec-codex.md)
+- Codex 向け運用仕様: [Codex 向け運用仕様](./spec-codex.md)
 - `pylib` モジュール一覧: [pylib モジュール一覧](./spec-pylib-modules.md)
 - 開発思想: [開発思想](./spec-philosophy.md)
 
@@ -32,13 +32,13 @@
 - 言語ごとの機能対応状況を確認したい場合:
   - [言語別仕様](../language/index.md)
 - Codex の作業ルール・TODO 運用・コミット運用を確認したい場合:
-  - [Codex 向け運用仕様](../spec-codex.md)
+  - [Codex 向け運用仕様](./spec-codex.md)
 - 設計思想・EAST 中心設計の背景を確認したい場合:
   - [開発思想](./spec-philosophy.md)
 
 ## Codex 起動時の確認先
 
-- Codex は起動時に `docs-jp/spec/index.md` を入口として読み、続けて [Codex 向け運用仕様](../spec-codex.md) と [TODO](../todo.md) を確認します。
+- Codex は起動時に `docs-jp/spec/index.md` を入口として読み、続けて [Codex 向け運用仕様](./spec-codex.md) と [TODO](../todo.md) を確認します。
 
 ## Any の現行方針
 
