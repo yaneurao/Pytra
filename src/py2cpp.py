@@ -1236,8 +1236,7 @@ class CppEmitter(CodeEmitter):
                             arg_order = self.any_dict_get_list(s, "arg_order")
                             ordered: list[str] = []
                             ordered_names: list[str] = []
-                            for ai in range(len(arg_order)):
-                                raw_n = arg_order[ai]
+                            for raw_n in arg_order:
                                 if isinstance(raw_n, str):
                                     n = str(raw_n)
                                     if n != "self":
