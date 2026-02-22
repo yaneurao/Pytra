@@ -32,3 +32,5 @@
 
 決定ログ:
 - 2026-02-22: 初版作成（todo から文脈分離）。
+- 2026-02-22: `build_selfhost` は通るが、`check_selfhost_cpp_diff --mode allow-not-implemented` は `mismatches=3`（`if_else.py`, `01_mandelbrot.py`, `04_monte_carlo_pi.py`）を再確認。`verify_selfhost_end_to_end --skip-build` では `04_monte_carlo_pi.py` の checksum 不一致のみ失敗。
+- 2026-02-22: 差分調査で、`selfhost/py2cpp.out` 生成結果は `if` / `for` のネスト本文が欠落する一方、`PYTHONPATH=src python3 selfhost/py2cpp.py` では本文が維持されることを確認。原因は selfhost binary 側 parser/runtime 経路（`core.cpp` 系）を優先調査対象とする。

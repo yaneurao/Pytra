@@ -56,10 +56,10 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - `str(Path)`（文字列化）
   - 実装位置:
     - C++: `src/runtime/cpp/pytra/std/pathlib.h/.cpp`
-    - Rust: `src/rs_module/py_runtime.rs`（`PyPath`）
-    - C#: `src/cs_module/pathlib.cs`（`py_path`）
-    - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`
-    - Go/Java: `src/go_module/py_runtime.go`, `src/java_module/PyRuntime.java`
+    - Rust: `src/rs_module/py_runtime.rs`（`PyPath`、`src/runtime/rs/pytra/` へ移行予定）
+    - C#: `src/cs_module/pathlib.cs`（`py_path`、`src/runtime/cs/pytra/` へ移行予定）
+    - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`（`src/runtime/{js,ts}/pytra/` へ移行予定）
+    - Go/Java: `src/go_module/py_runtime.go`, `src/java_module/PyRuntime.java`（`src/runtime/{go,java}/pytra/` へ移行予定）
     - Swift/Kotlin: preview emitter（最小エントリ + 中間コードコメント形式）
   - 差分:
     - Python `pathlib` の完全互換ではなく、Pytra の最小共通 API に限定しています。
@@ -80,10 +80,8 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
   - `pytra.utils.assertions`
     - `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - ターゲット言語ごとのランタイム:
-  - `src/runtime/cpp`, `src/cs_module`, `src/rs_module`
-  - `src/js_module`, `src/ts_module`
-  - `src/go_module`, `src/java_module`
-  - `src/swift_module`, `src/kotlin_module`
+  - 正本: `src/runtime/<lang>/pytra/`（最終配置先）
+  - 旧配置（移行中）: `src/cs_module`, `src/rs_module`, `src/js_module`, `src/ts_module`, `src/go_module`, `src/java_module`, `src/swift_module`, `src/kotlin_module`
 
 ## 作業中
 

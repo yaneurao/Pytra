@@ -85,9 +85,7 @@ py2cpp / py2rs 共通化候補:
 1. [ ] [ID: P1-RUNTIME-01] Rust ランタイムを `src/rs_module/` から `src/runtime/rs/pytra/` へ段階移行し、`src/runtime/cpp/pytra/` と同等の責務分割（`built_in/`, `std/`, `utils/`, `compiler/`）に揃える。
 2. [ ] [ID: P1-RUNTIME-02] `py2rs.py` / Rust hooks のランタイム解決パスを `src/runtime/rs/pytra/` 基準へ更新する。
 3. [ ] [ID: P1-RUNTIME-03] `src/rs_module/` の既存参照を洗い出し、互換レイヤを経由して最終的に廃止する。
-4. [ ] [ID: P1-RUNTIME-04] Rust 以外（C#, JS, TypeScript, Go, Java, Kotlin, Swift）でも、`src/*_module/` 依存のランタイム資産を `src/runtime/<lang>/pytra/` 配下へ寄せる移行計画を作成する。
 5. [ ] [ID: P1-RUNTIME-05] 各言語トランスパイラ（`py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）と hooks のランタイム解決パスを `src/runtime/<lang>/pytra/` 基準へ統一する。
-6. [ ] [ID: P1-RUNTIME-06] 移行完了後に `src/*_module/` 直下へ新規ランタイムを追加しない運用ルールを明文化し、既存資産は段階的に撤去する。
 
 ## P1: 多言語出力品質（`sample/cpp` 水準）
 

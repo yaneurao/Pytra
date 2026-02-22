@@ -14,7 +14,8 @@
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
   - `profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
-  - `runtime/cpp/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: 各ターゲット言語向けランタイム補助
+  - `runtime/`: 各ターゲット言語のランタイム配置先（正本、`src/runtime/<lang>/pytra/`）
+  - `*_module/`: 旧ランタイム配置（互換レイヤ、段階撤去対象）
   - `pytra/`: Python 側の共通ライブラリ（正式）
 - `test/`: `py`（入力）と各ターゲット言語の変換結果
 - `sample/`: 実用サンプル入力と各言語変換結果
@@ -318,7 +319,7 @@
 
 - `src/py2rs.py` は CLI + 入出力の薄いオーケストレータに限定する。
 - Rust 固有の出力処理は `src/hooks/rs/emitter/rs_emitter.py`（`RustEmitter`）へ分離する。
-- `src/py2rs.py` は `src/common/` / `src/rs_module/` に依存しない。
+- `src/py2rs.py` は `src/common/` / `src/rs_module/` に依存しない（最終的に `src/runtime/rs/pytra/` 基準へ統一）。
 - 言語固有差分は `src/profiles/rs/` と `src/hooks/rs/` に分離する。
 - 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
 - 現時点の到達点は「変換成功（transpile success）を優先」であり、Rust コンパイル互換・出力品質は段階的に改善する。
@@ -361,6 +362,7 @@
 
 - `src/common/` には言語非依存で再利用される処理のみを配置します。
 - 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/common/` に置きません。
+- ランタイム実体は `src/runtime/<lang>/pytra/` に配置し、`src/*_module/` 直下へ新規実体を追加しません。
 - `py2cpp.py` と `py2rs.py` で共通化できる処理は、各エミッタへ直接足さずに `CodeEmitter` 側へ先に寄せます。
 - 言語固有分岐は `hooks` / `profiles` 側へ分離し、`py2*.py` は薄いオーケストレータを維持します。
 - CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/pytra/compiler/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。

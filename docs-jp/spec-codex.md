@@ -49,11 +49,12 @@
 ## 5. 実装・配置ルール
 
 - `src/common/` には言語非依存コードのみ配置します。
-- 言語固有コードは各 `py2*.py` または各 `*_module/` に配置します。
+- 言語固有コードは各 `py2*.py`、`src/hooks/<lang>/`、`src/profiles/<lang>/`、`src/runtime/<lang>/pytra/` に配置します。
 - `src/` 直下にはトランスパイラ本体（`py2*.py`）以外を置きません。
 - `CodeEmitter` など全言語で共有可能な基底ロジックは `src/common/` 側へ寄せ、`py2cpp.py` には C++ 固有ロジックのみを残します。
 - 今後の多言語展開を見据え、`py2cpp.py` の肥大化を避けるため、共通化可能な処理は段階的に `src/common/` へ移管します。
-- 生成コードの補助関数は各ターゲット言語ランタイム（`src/*_module/`）へ集約し、生成コードに重複埋め込みしません。
+- 生成コードの補助関数は各ターゲット言語ランタイム（`src/runtime/<lang>/pytra/`）へ集約し、生成コードに重複埋め込みしません。
+- `src/*_module/` は互換レイヤ扱いとし、新規 runtime 実体ファイルを追加しません（段階撤去対象）。
 - `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` は `src/pytra/utils/*.py` からの生成物として扱い、手編集しません（`py2cpp.py` 実行時に自動更新される）。
 - `json` に限らず、Python 標準ライブラリ相当機能を `runtime/cpp` 側へ追加実装してはいけません。
 - Python 標準ライブラリ相当機能の正本は常に `src/pytra/std/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
