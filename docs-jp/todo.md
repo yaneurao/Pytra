@@ -126,6 +126,14 @@ py2cpp / py2rs 共通化候補:
 - `P2-MGPT-03`: `test/fixtures/microgpt/microgpt_compat_min.py`（型注釈付き最小 microgpt 相当ケース）を追加し、`test/unit/test_py2cpp_features.py` に `test_microgpt_compat_min_syntax_check` を追加。`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_microgpt_compat_min_syntax_check` で transpile -> `g++ -fsyntax-only` の導線が通ることを確認。
 - `P2-MGPT-04`: `work/tmp/microgpt-20260222-lite.py` を self_hosted parser 制約に合わせて `microgpt-lite`（dataset -> vocab -> training -> sampling）構成へ再整理し、`random.choices` / `random.gauss` / `random.shuffle` を維持したまま `python3 src/py2cpp.py work/tmp/microgpt-20260222-lite.py -o work/out/microgpt-20260222.cpp` と `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only work/out/microgpt-20260222.cpp` の通過を確認。
 
+## P3: microgpt 原本保全（低優先）
+
+文脈: `docs-jp/plans/p3-microgpt-source-preservation.md`（`TG-P3-MICROGPT-SOURCE-PRESERVATION`）
+
+1. [ ] [ID: P3-MSP-01] `materials/inbox/exec-extracted.log` で抽出した原本改変項目（型注釈追加、内包/zip 展開、I/O 置換、アルゴリズム簡略化）を、parser/emitter/runtime の責務へ再分類する。
+2. [ ] [ID: P3-MSP-02] `materials/microgpt/microgpt-20260222.py` を無改変で `py2cpp` に入力したときの失敗要因を再現・列挙し、改変で迂回していた箇所を実装タスクへ置き換える。
+3. [ ] [ID: P3-MSP-03] `work/tmp/microgpt-20260222-lite.py` 依存を縮退し、原本 `materials/microgpt/microgpt-20260222.py` で transpile -> `g++ -fsyntax-only` が通る回帰導線を整備する。
+
 ## P3: Pythonic 記法戻し（低優先）
 
 文脈: `docs-jp/plans/p3-pythonic-restoration.md`（`TG-P3-PYTHONIC`）
