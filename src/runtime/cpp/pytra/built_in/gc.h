@@ -8,6 +8,8 @@
 #include <atomic>
 #include <cassert>
 #include <cstdint>
+#include <optional>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -41,6 +43,33 @@ public:
      * 参照型メンバーを持つ派生クラスは、この関数で decref を実行します。
      */
     virtual void rc_release_refs();
+
+    /**
+     * @brief truthiness 判定フック。
+     *
+     * 既定値は Python object と同様に truthy（true）とする。
+     */
+    virtual bool py_truthy() const {
+        return true;
+    }
+
+    /**
+     * @brief `len(...)` 相当の長さ問い合わせフック。
+     *
+     * 長さを持たない型は `std::nullopt` を返す。
+     */
+    virtual ::std::optional<::std::int64_t> py_try_len() const {
+        return ::std::nullopt;
+    }
+
+    /**
+     * @brief 文字列表現フック。
+     *
+     * 既定値は汎用 object 表現を返す。
+     */
+    virtual ::std::string py_str() const {
+        return "<object>";
+    }
 
 private:
     friend void incref(PyObj* obj) noexcept;

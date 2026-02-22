@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-02-22
+最終更新: 2026-02-23
 
 ## 文脈運用ルール
 
@@ -19,10 +19,15 @@
 
 文脈: `docs-jp/plans/p0-boxing-boundary-unification.md`（`TG-P0-BOXING`）
 
-1. [ ] [ID: P0-BOX-01] `docs-jp/spec/spec-boxing.md` を正本として、C++ runtime（`gc.h`, `py_runtime.h`）に `py_truthy` / `py_try_len` / `obj_to_rc(_or_raise)` / 厳格変換 API（`*_or_raise`）を段階導入する。
+1. [x] [ID: P0-BOX-01] `docs-jp/spec/spec-boxing.md` を正本として、C++ runtime（`gc.h`, `py_runtime.h`）に `py_truthy` / `py_try_len` / `obj_to_rc(_or_raise)` / 厳格変換 API（`*_or_raise`）を段階導入する。
 2. [ ] [ID: P0-BOX-02] `py2cpp.py` の `Any/object` 境界生成を `obj_to_rc_or_raise` 中心へ移行し、`py_obj_cast<T>(...)->...` の直接生成経路を縮退する。
 3. [ ] [ID: P0-BOX-03] JS/TS runtime では minify 耐性確保のため `type_id` dispatch を強制し、名前文字列依存 dispatch（`constructor.name` 等）を禁止する。
 4. [ ] [ID: P0-BOX-04] runtime unit / py2cpp feature / クロスターゲット検証を整備し、暗黙 `0` / `false` / `None` フォールバック経路の新規混入を防ぐ。
+
+進捗メモ:
+- `P0-BOX-01`: `gc.h` に `PyObj` の hook（`py_truthy` / `py_try_len` / `py_str`）を追加し、`py_runtime.h` で組み込み object（int/float/bool/str/list/dict）へ override 実装した。`obj_to_rc` / `obj_to_rc_or_raise`、`obj_to_int64_or_raise` / `obj_to_float64_or_raise` / `obj_to_str_or_raise` も導入した。
+- `P0-BOX-02`: `src/py2cpp.py` の class field attribute fallback（`Any/unknown receiver`）で `py_obj_cast<T>(...)->...` 直生成を `obj_to_rc_or_raise<T>(..., "<Class>.<field>")->...` へ切替した（経路全体の移行は継続）。
+- `P0-BOX-04`: runtime 回帰として `test/unit/test_cpp_runtime_boxing.py` を追加し、`obj_to_rc(_or_raise)` / `*_or_raise` / `py_truthy` / `py_try_len` 経路を C++ 実行で検証した。コード生成回帰として `test/unit/test_py2cpp_codegen_issues.py::test_unknown_receiver_field_access_uses_obj_to_rc_or_raise` を追加した。
 
 ## P0: Selfhost 安定化
 

@@ -154,42 +154,118 @@ class PyIntObj : public PyObj {
 public:
     explicit PyIntObj(int64 v) : value(v) {}
     int64 value;
+
+    bool py_truthy() const override {
+        return value != 0;
+    }
+
+    ::std::string py_str() const override {
+        return ::std::to_string(value);
+    }
 };
 
 class PyFloatObj : public PyObj {
 public:
     explicit PyFloatObj(float64 v) : value(v) {}
     float64 value;
+
+    bool py_truthy() const override {
+        return value != 0.0;
+    }
+
+    ::std::string py_str() const override {
+        return ::std::to_string(value);
+    }
 };
 
 class PyBoolObj : public PyObj {
 public:
     explicit PyBoolObj(bool v) : value(v) {}
     bool value;
+
+    bool py_truthy() const override {
+        return value;
+    }
+
+    ::std::string py_str() const override {
+        return value ? "True" : "False";
+    }
 };
 
 class PyStrObj : public PyObj {
 public:
     explicit PyStrObj(str v) : value(::std::move(v)) {}
     str value;
+
+    bool py_truthy() const override {
+        return !value.empty();
+    }
+
+    ::std::optional<int64> py_try_len() const override {
+        return static_cast<int64>(value.size());
+    }
+
+    ::std::string py_str() const override {
+        return value.std();
+    }
 };
 
 class PyListObj : public PyObj {
 public:
     explicit PyListObj(list<object> v) : value(::std::move(v)) {}
     list<object> value;
+
+    bool py_truthy() const override {
+        return !value.empty();
+    }
+
+    ::std::optional<int64> py_try_len() const override {
+        return static_cast<int64>(value.size());
+    }
+
+    ::std::string py_str() const override {
+        return "<list>";
+    }
 };
 
 class PyDictObj : public PyObj {
 public:
     explicit PyDictObj(dict<str, object> v) : value(::std::move(v)) {}
     dict<str, object> value;
+
+    bool py_truthy() const override {
+        return !value.empty();
+    }
+
+    ::std::optional<int64> py_try_len() const override {
+        return static_cast<int64>(value.size());
+    }
+
+    ::std::string py_str() const override {
+        return "<dict>";
+    }
 };
 
 template <class T>
 static inline T* py_obj_cast(const object& obj) {
     if (!obj) return nullptr;
     return dynamic_cast<T*>(obj.get());
+}
+
+template <class T>
+static inline rc<T> obj_to_rc(const object& v) {
+    static_assert(::std::is_base_of_v<PyObj, T>, "obj_to_rc<T>: T must derive from PyObj");
+    if (!v) return rc<T>();
+    if (auto* p = dynamic_cast<T*>(v.get())) return rc<T>(p);
+    return rc<T>();
+}
+
+template <class T>
+static inline rc<T> obj_to_rc_or_raise(const object& v, const char* ctx = "obj_to_rc_or_raise") {
+    rc<T> out = obj_to_rc<T>(v);
+    if (out) return out;
+    const char* label = ctx != nullptr ? ctx : "obj_to_rc_or_raise";
+    throw ::std::runtime_error(::std::string(label) + ": type mismatch");
 }
 
 template <class T, class... Args>
@@ -296,56 +372,108 @@ static inline object make_object(const T& v) {
 }
 
 // Python object -> C++ 値の基本変換。
-static inline int64 obj_to_int64(const object& v) {
-    if (!v) return 0;
-    if (const auto* p = py_obj_cast<PyIntObj>(v)) return p->value;
-    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return p->value ? 1 : 0;
-    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return static_cast<int64>(p->value);
+static inline bool obj_try_to_int64(const object& v, int64& out) {
+    if (!v) return false;
+    if (const auto* p = py_obj_cast<PyIntObj>(v)) {
+        out = p->value;
+        return true;
+    }
+    if (const auto* p = py_obj_cast<PyBoolObj>(v)) {
+        out = p->value ? 1 : 0;
+        return true;
+    }
+    if (const auto* p = py_obj_cast<PyFloatObj>(v)) {
+        out = static_cast<int64>(p->value);
+        return true;
+    }
     if (const auto* p = py_obj_cast<PyStrObj>(v)) {
         try {
-            return static_cast<int64>(::std::stoll(p->value));
+            const ::std::string txt = p->value.std();
+            ::std::size_t idx = 0;
+            const int64 parsed = static_cast<int64>(::std::stoll(txt, &idx));
+            if (idx == txt.size()) {
+                out = parsed;
+                return true;
+            }
         } catch (...) {
-            return 0;
+            return false;
         }
     }
+    return false;
+}
+
+static inline bool obj_try_to_float64(const object& v, float64& out) {
+    if (!v) return false;
+    if (const auto* p = py_obj_cast<PyFloatObj>(v)) {
+        out = p->value;
+        return true;
+    }
+    if (const auto* p = py_obj_cast<PyIntObj>(v)) {
+        out = static_cast<float64>(p->value);
+        return true;
+    }
+    if (const auto* p = py_obj_cast<PyBoolObj>(v)) {
+        out = p->value ? 1.0 : 0.0;
+        return true;
+    }
+    if (const auto* p = py_obj_cast<PyStrObj>(v)) {
+        try {
+            const ::std::string txt = p->value.std();
+            ::std::size_t idx = 0;
+            const float64 parsed = ::std::stod(txt, &idx);
+            if (idx == txt.size()) {
+                out = parsed;
+                return true;
+            }
+        } catch (...) {
+            return false;
+        }
+    }
+    return false;
+}
+
+static inline int64 obj_to_int64(const object& v) {
+    int64 out = 0;
+    if (obj_try_to_int64(v, out)) return out;
     return 0;
 }
 
 static inline float64 obj_to_float64(const object& v) {
-    if (!v) return 0.0;
-    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return p->value;
-    if (const auto* p = py_obj_cast<PyIntObj>(v)) return static_cast<float64>(p->value);
-    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return p->value ? 1.0 : 0.0;
-    if (const auto* p = py_obj_cast<PyStrObj>(v)) {
-        try {
-            return ::std::stod(p->value);
-        } catch (...) {
-            return 0.0;
-        }
-    }
+    float64 out = 0.0;
+    if (obj_try_to_float64(v, out)) return out;
     return 0.0;
+}
+
+static inline int64 obj_to_int64_or_raise(const object& v, const char* ctx = "obj_to_int64_or_raise") {
+    int64 out = 0;
+    if (obj_try_to_int64(v, out)) return out;
+    const char* label = ctx != nullptr ? ctx : "obj_to_int64_or_raise";
+    throw ::std::runtime_error(::std::string(label) + ": cannot convert object to int64");
+}
+
+static inline float64 obj_to_float64_or_raise(const object& v, const char* ctx = "obj_to_float64_or_raise") {
+    float64 out = 0.0;
+    if (obj_try_to_float64(v, out)) return out;
+    const char* label = ctx != nullptr ? ctx : "obj_to_float64_or_raise";
+    throw ::std::runtime_error(::std::string(label) + ": cannot convert object to float64");
 }
 
 static inline bool obj_to_bool(const object& v) {
     if (!v) return false;
-    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return p->value;
-    if (const auto* p = py_obj_cast<PyIntObj>(v)) return p->value != 0;
-    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return p->value != 0.0;
-    if (const auto* p = py_obj_cast<PyStrObj>(v)) return !p->value.empty();
-    if (const auto* p = py_obj_cast<PyListObj>(v)) return !p->value.empty();
-    if (const auto* p = py_obj_cast<PyDictObj>(v)) return !p->value.empty();
-    return true;
+    return v->py_truthy();
 }
 
 static inline str obj_to_str(const object& v) {
     if (!v) return "None";
-    if (const auto* p = py_obj_cast<PyStrObj>(v)) return p->value;
-    if (const auto* p = py_obj_cast<PyIntObj>(v)) return ::std::to_string(p->value);
-    if (const auto* p = py_obj_cast<PyFloatObj>(v)) return ::std::to_string(p->value);
-    if (const auto* p = py_obj_cast<PyBoolObj>(v)) return p->value ? "True" : "False";
-    if (const auto* p = py_obj_cast<PyListObj>(v)) return "<list>";
-    if (const auto* p = py_obj_cast<PyDictObj>(v)) return "<dict>";
-    return "<object>";
+    return str(v->py_str());
+}
+
+static inline str obj_to_str_or_raise(const object& v, const char* ctx = "obj_to_str_or_raise") {
+    if (!v) {
+        const char* label = ctx != nullptr ? ctx : "obj_to_str_or_raise";
+        throw ::std::runtime_error(::std::string(label) + ": cannot convert null object to str");
+    }
+    return obj_to_str(v);
 }
 
 static inline const dict<str, object>* obj_to_dict_ptr(const object& v) {
@@ -365,9 +493,8 @@ static inline dict<str, object> obj_to_dict(const object& v) {
 
 static inline int64 py_len(const object& v) {
     if (!v) return 0;
-    if (const auto* p = py_obj_cast<PyStrObj>(v)) return static_cast<int64>(p->value.size());
-    if (const auto* d = obj_to_dict_ptr(v)) return static_cast<int64>(d->size());
-    if (const auto* lst = obj_to_list_ptr(v)) return static_cast<int64>(lst->size());
+    const auto len = v->py_try_len();
+    if (len.has_value()) return *len;
     return 0;
 }
 

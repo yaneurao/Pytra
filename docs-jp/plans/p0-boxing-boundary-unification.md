@@ -37,3 +37,4 @@ ID: `TG-P0-BOXING`
 ## 決定ログ
 
 - 2026-02-22: `spec-boxing` の実装を TODO 最優先へ昇格。`P0-BOX-01`〜`P0-BOX-04` を追加。
+- 2026-02-23: `P0-BOX-01` の初期導入を実施。`gc.h` に `PyObj` hook（`py_truthy` / `py_try_len` / `py_str`）を追加し、`py_runtime.h` に `obj_to_rc(_or_raise)` と `obj_to_*_or_raise` を追加。`py2cpp.py` は class field の Any/unknown receiver fallback を `obj_to_rc_or_raise` 経路へ切替開始（`P0-BOX-02` 継続）。

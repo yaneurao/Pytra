@@ -5094,7 +5094,8 @@ class CppEmitter(CodeEmitter):
             and attr in self.current_class_fields
             and (bt in {"", "unknown"} or self.is_any_like_type(bt))
         ):
-            return f"py_obj_cast<{self.current_class_name}>({base})->{attr}"
+            ctx = f"{self.current_class_name}.{attr}"
+            return f"obj_to_rc_or_raise<{self.current_class_name}>({base}, \"{ctx}\")->{attr}"
         if bt in self.ref_classes:
             return f"{base}->{attr}"
         return f"{base}.{attr}"
