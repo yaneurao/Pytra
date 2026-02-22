@@ -6409,15 +6409,13 @@ def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> 
         if cand_named != "":
             candidates.append((cand_named, 2))
         candidates.append((cand_flat, 1))
-        i = 0
-        while i < len(candidates):
+        for i in range(len(candidates)):
             path_txt, rank = candidates[i]
             if Path(path_txt).exists():
                 if rank > best_rank or (rank == best_rank and distance < best_distance):
                     best_path = path_txt
                     best_rank = rank
                     best_distance = distance
-            i += 1
         parent_dir = _path_parent_text(Path(cur_dir))
         if parent_dir == cur_dir:
             break
@@ -6489,8 +6487,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             graph_keys.append(cur_key)
         cur_disp = key_to_disp[cur_key]
         search_root = Path(_path_parent_text(cur_path))
-        i = 0
-        while i < len(mods):
+        for i in range(len(mods)):
             mod = mods[i]
             resolved = _resolve_module_name_for_graph(mod, search_root)
             status = _dict_any_get_str(resolved, "status")
@@ -6504,12 +6501,10 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 if rel_item not in relative_seen:
                     relative_seen.add(rel_item)
                     relative_imports.append(rel_item)
-                i += 1
                 continue
             dep_disp = mod
             if status == "user":
                 if str(dep_file) == "":
-                    i += 1
                     continue
                 dep_key = _path_key_for_graph(dep_file)
                 dep_disp = _rel_disp_for_graph(root, dep_file)
@@ -6537,7 +6532,6 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             if edge not in edge_seen:
                 edge_seen.add(edge)
                 edges.append(edge)
-            i += 1
 
     cycles: list[str] = []
     cycle_seen: set[str] = set()
