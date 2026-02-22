@@ -6115,9 +6115,7 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
     meta: dict[str, Any] = meta_obj if isinstance(meta_obj, dict) else {}
     binds_obj = meta.get("import_bindings")
     binds: list[Any] = binds_obj if isinstance(binds_obj, list) else []
-    i = 0
-    while i < len(binds):
-        item_obj = binds[i]
+    for item_obj in binds:
         item = item_obj if isinstance(item_obj, dict) else {}
         if len(item) > 0:
             module_id_obj: object = item.get("module_id")
@@ -6145,7 +6143,6 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
                         "binding_kind": binding_kind,
                     }
                 )
-        i += 1
     return out
 
 
@@ -6156,9 +6153,7 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
     meta: dict[str, Any] = meta_obj if isinstance(meta_obj, dict) else {}
     refs_obj = meta.get("qualified_symbol_refs")
     refs: list[Any] = refs_obj if isinstance(refs_obj, list) else []
-    i = 0
-    while i < len(refs):
-        item_obj = refs[i]
+    for item_obj in refs:
         item = item_obj if isinstance(item_obj, dict) else {}
         if len(item) > 0:
             module_id_obj: object = item.get("module_id")
@@ -6181,7 +6176,6 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
                         "local_name": local_name,
                     }
                 )
-        i += 1
     return out
 
 
@@ -6922,9 +6916,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         funcs: list[str] = []
         classes: list[str] = []
         variables: list[str] = []
-        i = 0
-        while i < len(body):
-            st = body[i]
+        for st in body:
             kind = _dict_any_kind(st)
             if kind == "FunctionDef":
                 name_txt = _dict_any_get_str(st, "name")
@@ -6943,22 +6935,18 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     tgt_obj = st.get("target")
                     if isinstance(tgt_obj, dict):
                         targets = [tgt_obj]
-                j = 0
-                while j < len(targets):
-                    tgt_obj = targets[j]
+                for tgt_obj in targets:
                     if isinstance(tgt_obj, dict):
                         if _dict_any_kind(tgt_obj) == "Name":
                             name_txt = _dict_any_get_str(tgt_obj, "id")
                             if name_txt != "" and name_txt not in variables:
                                 variables.append(name_txt)
-                    j += 1
             elif kind == "AnnAssign":
                 tgt_obj = st.get("target")
                 if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
                     name_txt = _dict_any_get_str(tgt_obj, "id")
                     if name_txt != "" and name_txt not in variables:
                         variables.append(name_txt)
-            i += 1
         meta_obj: object = east.get("meta")
         meta: dict[str, Any] = meta_obj if isinstance(meta_obj, dict) else {}
         import_bindings = _meta_import_bindings(east)
@@ -6966,9 +6954,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         import_modules: dict[str, str] = {}
         import_symbols: dict[str, dict[str, str]] = {}
         if len(import_bindings) > 0:
-            i = 0
-            while i < len(import_bindings):
-                ent = import_bindings[i]
+            for ent in import_bindings:
                 module_id = ent["module_id"]
                 export_name = ent["export_name"]
                 local_name = ent["local_name"]
@@ -6977,16 +6963,12 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     import_modules[local_name] = module_id
                 elif binding_kind == "symbol" and export_name != "" and len(qualified_symbol_refs) == 0:
                     import_symbols[local_name] = {"module": module_id, "name": export_name}
-                i += 1
             if len(qualified_symbol_refs) > 0:
-                j = 0
-                while j < len(qualified_symbol_refs):
-                    ref = qualified_symbol_refs[j]
+                for ref in qualified_symbol_refs:
                     module_id = ref["module_id"]
                     symbol = ref["symbol"]
                     local_name = ref["local_name"]
                     import_symbols[local_name] = {"module": module_id, "name": symbol}
-                    j += 1
         else:
             import_modules_obj: object = meta.get("import_modules")
             import_symbols_obj: object = meta.get("import_symbols")
