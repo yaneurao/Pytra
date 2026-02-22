@@ -10,24 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS_JP = ROOT / "docs-jp"
 
 ALLOWED_EXACT: set[str] = {
-    "spec-gc.md",
     "how-to-use.md",
     "philosophy.md",
     "pylib-modules.md",
     "pytra-readme.md",
     "sample-code.md",
     "spec-codex.md",
-    "spec-dev.md",
-    "spec-east.md",
-    "spec-import.md",
-    "spec-language-profile.md",
-    "spec-options.md",
-    "spec-questions.md",
-    "spec-runtime.md",
-    "spec-user.md",
-    "spec.md",
+    "spec/index.md",
     "todo.md",
-    "spec-tools.md",
     "todo-history/index.md",
 }
 

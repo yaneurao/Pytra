@@ -1,6 +1,6 @@
 # Specification Entry Point
 
-<a href="../docs-jp/spec.md">
+<a href="../docs-jp/spec/index.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -35,7 +35,7 @@
 
 ## What Codex Checks At Startup
 
-- At startup, Codex reads `docs-jp/spec.md` as the canonical entry point, then checks [Codex Operation Specification](./spec-codex.md) and [TODO](../docs-jp/todo.md).
+- At startup, Codex reads `docs-jp/spec/index.md` as the canonical entry point, then checks [Codex Operation Specification](./spec-codex.md) and [TODO](../docs-jp/todo.md).
 
 ## Current `Any` Policy
 
