@@ -7064,14 +7064,9 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                 if isinstance(name_obj, str) and name_obj != "":
                     fields_obj: object = st.get("field_types")
                     fields = fields_obj if isinstance(fields_obj, dict) else {}
-                    cls_ent: dict[str, Any] = {}
-                    cls_ent["field_types"] = fields
-                    cls_schema[name_obj] = cls_ent
+                    cls_schema[name_obj] = {"field_types": fields}
             i += 1
-        mod_ent: dict[str, Any] = {}
-        mod_ent["functions"] = fn_schema
-        mod_ent["classes"] = cls_schema
-        out[mod_path] = mod_ent
+        out[mod_path] = {"functions": fn_schema, "classes": cls_schema}
     return out
 
 
