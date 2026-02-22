@@ -227,6 +227,14 @@ def _dict_any_get_str_list(src: dict[str, Any], key: str) -> list[str]:
     return out
 
 
+def _dict_any_get_list(src: dict[str, Any], key: str) -> list[Any]:
+    """`dict[str, Any]` から list 値を安全に取得する。"""
+    value = _dict_any_get(src, key)
+    if isinstance(value, list):
+        return value
+    return []
+
+
 def _split_ws_tokens(text: str) -> list[str]:
     """空白区切りトークンへ分解する（連続空白は 1 区切り扱い）。"""
     tokens: list[str] = []
@@ -594,10 +602,8 @@ def load_cpp_module_attr_call_map(profile: dict[str, Any] = {}) -> dict[str, dic
     out: dict[str, dict[str, str]] = {}
     if not isinstance(profile, dict):
         return out
-    runtime_calls_obj = profile.get("runtime_calls")
-    runtime_calls = runtime_calls_obj if isinstance(runtime_calls_obj, dict) else {}
-    module_attr_obj = runtime_calls.get("module_attr_call")
-    module_attr = module_attr_obj if isinstance(module_attr_obj, dict) else {}
+    runtime_calls = _dict_any_get_dict(profile, "runtime_calls")
+    module_attr = _dict_any_get_dict(runtime_calls, "module_attr_call")
     for module_name, ent_obj in module_attr.items():
         if not isinstance(module_name, str):
             continue
@@ -6331,9 +6337,7 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
     """EAST `meta.import_bindings` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
     meta = _dict_any_get_dict(east_module, "meta")
-    binds_obj = meta.get("import_bindings")
-    binds: list[Any] = binds_obj if isinstance(binds_obj, list) else []
-    for item_obj in binds:
+    for item_obj in _dict_any_get_list(meta, "import_bindings"):
         item = item_obj if isinstance(item_obj, dict) else {}
         if len(item) > 0:
             module_id = _dict_any_get_str(item, "module_id")
@@ -6356,9 +6360,7 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
     """EAST `meta.qualified_symbol_refs` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
     meta = _dict_any_get_dict(east_module, "meta")
-    refs_obj = meta.get("qualified_symbol_refs")
-    refs: list[Any] = refs_obj if isinstance(refs_obj, list) else []
-    for item_obj in refs:
+    for item_obj in _dict_any_get_list(meta, "qualified_symbol_refs"):
         item = item_obj if isinstance(item_obj, dict) else {}
         if len(item) > 0:
             module_id = _dict_any_get_str(item, "module_id")
