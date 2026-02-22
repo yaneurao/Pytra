@@ -57,8 +57,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertNotIn("pass", post_call_hook1)
 
         post_call_hook = _slice_block(patched, "    def _call_hook(", "\n    def _call_hook1(")
-        self.assertIn("pass", post_call_hook)
         self.assertIn("return None", post_call_hook)
+        self.assertNotIn("pass", post_call_hook)
 
         hook_emit_stmt_block = _slice_block(patched, "    def hook_on_emit_stmt(", "\n    def hook_on_emit_stmt_kind(")
         self.assertIn("v = self._call_hook1(", hook_emit_stmt_block)

@@ -141,7 +141,6 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
         "        arg5: Any = None,\n"
         "        argc: int = 0,\n"
         "    ) -> Any:\n"
-        "        pass\n"
         "        return None\n"
     )
     return text[:i] + stub + text[j + 1 :]
