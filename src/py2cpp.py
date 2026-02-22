@@ -6528,8 +6528,7 @@ def _module_name_from_path_for_graph(root: Path, module_path: Path) -> str:
         rel = rel[: -9]
     if not in_root:
         stem = module_path.stem
-        if stem == "__init__":
-            stem = module_path.parent.name
+        stem = module_path.parent.name if stem == "__init__" else stem
         rel = stem
     return rel
 
@@ -6538,9 +6537,7 @@ def _module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict
     """import graph 用の EAST module_id 抽出。"""
     meta = _dict_any_get_dict(east_doc, "meta")
     module_id = _dict_any_get_str(meta, "module_id")
-    if module_id != "":
-        return module_id
-    return _module_name_from_path_for_graph(root, module_path)
+    return module_id if module_id != "" else _module_name_from_path_for_graph(root, module_path)
 
 
 def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> Path:
@@ -7035,8 +7032,7 @@ def _module_name_from_path(root: Path, module_path: Path) -> str:
     # フォールバック時は `pkg/module.py -> module` を返して破綻を避ける。
     if not in_root:
         stem = module_path.stem
-        if stem == "__init__":
-            stem = module_path.parent.name
+        stem = module_path.parent.name if stem == "__init__" else stem
         rel = stem
     return rel
 
