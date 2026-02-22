@@ -6539,9 +6539,7 @@ def _graph_cycle_dfs(
     nxts: list[str] = []
     if key in graph_adj:
         nxts = graph_adj[key]
-    i = 0
-    while i < len(nxts):
-        nxt = nxts[i]
+    for nxt in nxts:
         c = color.get(nxt, 0)
         if c == 0:
             _graph_cycle_dfs(nxt, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
@@ -6562,7 +6560,6 @@ def _graph_cycle_dfs(
                 if cycle_txt not in cycle_seen:
                     cycle_seen.add(cycle_txt)
                     cycles.append(cycle_txt)
-        i += 1
     stack.pop()
     color[key] = 2
 

@@ -29,6 +29,7 @@
 
 決定ログ:
 - 2026-02-22: 初版作成。
+- 2026-02-23: `P3-PY-01` の継続として `src/py2cpp.py::_graph_cycle_dfs` の外側 `nxts` 走査を `while i < len(nxts)` から `for nxt in nxts` へ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）と `python3 tools/check_transpiler_version_gate.py`（`cpp 0.54.0 -> 0.55.0`）は通過。`python3 tools/build_selfhost.py` は既知の selfhost parser 制約（`unsupported import clause: _modules: dict[str`）で失敗し、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` は `selfhost/py2cpp.out` 不在のため未実施。
 - 2026-02-22: `P3-PY-02` の小パッチとして `src/py2cpp.py::_render_set_literal_repr` の `[:1]` / `[-1:]` 判定を `startswith` / `endswith` へ戻した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - 2026-02-22: `P3-PY-02` の継続として `src/py2cpp.py::_emit_target_unpack` の型文字列判定（`list[` / `set[` / `tuple[` / `dict[`）をスライス比較から `startswith` / `endswith` に統一した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - 2026-02-22: `P3-PY-01` の小パッチとして `src/py2cpp.py::_sanitize_module_label` の手動インデックス `while` ループを `for ch in s` へ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
