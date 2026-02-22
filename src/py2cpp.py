@@ -1971,9 +1971,8 @@ class CppEmitter(CodeEmitter):
             cond_txt = cond_fix
         if cond_txt == "":
             test_node = self.any_to_dict_or_empty(stmt.get("test"))
-            cond_txt = self.any_dict_get_str(test_node, "repr", "")
-            if cond_txt == "":
-                cond_txt = "false"
+            cond_repr = self.any_dict_get_str(test_node, "repr", "")
+            cond_txt = cond_repr if cond_repr != "" else "false"
         self._predeclare_if_join_names(body_stmts, else_stmts)
         omit_braces = self.hook_on_stmt_omit_braces("If", stmt, False)
         if omit_braces and len(body_stmts) == 1 and len(else_stmts) <= 1:
@@ -2001,9 +2000,8 @@ class CppEmitter(CodeEmitter):
             cond_txt = cond_fix
         if cond_txt == "":
             test_node = self.any_to_dict_or_empty(stmt.get("test"))
-            cond_txt = self.any_dict_get_str(test_node, "repr", "")
-            if cond_txt == "":
-                cond_txt = "false"
+            cond_repr = self.any_dict_get_str(test_node, "repr", "")
+            cond_txt = cond_repr if cond_repr != "" else "false"
         self.emit_scoped_block(
             self.syntax_line("while_open", "while ({cond}) {", {"cond": cond_txt}),
             self._dict_stmt_list(stmt.get("body")),
@@ -6892,8 +6890,7 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
         east = load_east(p, parser_backend)
         meta = _dict_any_get_dict(east, "meta")
         module_id = _dict_any_get_str(module_id_map, str(p))
-        if module_id == "":
-            module_id = _module_name_from_path_for_graph(root_dir, p)
+        module_id = module_id if module_id != "" else _module_name_from_path_for_graph(root_dir, p)
         if module_id != "":
             module_id_any: Any = module_id
             meta["module_id"] = module_id_any
