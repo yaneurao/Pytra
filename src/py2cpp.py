@@ -1675,10 +1675,8 @@ class CppEmitter(CodeEmitter):
     def _collect_mutated_params(self, body_stmts: list[dict[str, Any]], arg_names: list[str]) -> set[str]:
         """関数本体から `mutable` 扱いすべき引数名を推定する。"""
         params: set[str] = set()
-        i = 0
-        while i < len(arg_names):
-            params.add(arg_names[i])
-            i += 1
+        for arg_name in arg_names:
+            params.add(arg_name)
         out: set[str] = set()
         for st in body_stmts:
             self._collect_mutated_params_from_stmt(st, params, out)
@@ -1693,11 +1691,9 @@ class CppEmitter(CodeEmitter):
             return True
         if self._contains_text(t, "|"):
             parts = self.split_union(t)
-            i = 0
-            while i < len(parts):
-                if parts[i] == "None":
+            for part in parts:
+                if part == "None":
                     return True
-                i += 1
         return False
 
     def _none_default_expr_for_type(self, east_t: str) -> str:
