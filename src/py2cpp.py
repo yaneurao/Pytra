@@ -7347,13 +7347,15 @@ def _write_multi_file_cpp(
             cpp_txt = _inject_after_includes_block(cpp_txt, _join_str_list("\n", fwd_lines))
         _write_text_file(cpp_path, cpp_txt)
 
-        mod_ent: dict[str, Any] = {}
-        mod_ent["module"] = mod_key
-        mod_ent["label"] = label
-        mod_ent["header"] = str(hdr_path)
-        mod_ent["source"] = str(cpp_path)
-        mod_ent["is_entry"] = is_entry
-        manifest_modules.append(mod_ent)
+        manifest_modules.append(
+            {
+                "module": mod_key,
+                "label": label,
+                "header": str(hdr_path),
+                "source": str(cpp_path),
+                "is_entry": is_entry,
+            }
+        )
         i += 1
 
     manifest["modules"] = manifest_modules
