@@ -306,6 +306,11 @@ def _name_target_id(target: dict[str, Any]) -> str:
     return _dict_any_get_str(target, "id")
 
 
+def _stmt_target_name(stmt: dict[str, Any]) -> str:
+    """文ノードの `target` フィールドから Name 識別子を取得する。"""
+    return _name_target_id(_dict_any_get_dict(stmt, "target"))
+
+
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 """
@@ -6121,14 +6126,12 @@ def build_cpp_header_from_east(
                 sep = ", "
                 fn_lines.append(ret_cpp + " " + name + "(" + sep.join(parts) + ");")
         elif kind in {"Assign", "AnnAssign"}:
-            tgt = _dict_any_get_dict(st, "target")
-            if _dict_any_get_str(tgt, "kind") != "Name":
-                continue
-            name = _dict_any_get_str(tgt, "id")
+            name = _stmt_target_name(st)
             if name == "":
                 continue
             decl_t = _dict_any_get_str(st, "decl_type")
             if decl_t == "" or decl_t == "unknown":
+                tgt = _dict_any_get_dict(st, "target")
                 decl_t = _dict_any_get_str(tgt, "resolved_type")
             if decl_t == "" or decl_t == "unknown":
                 continue
@@ -6781,8 +6784,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                     if name_txt != "":
                         exports.add(name_txt)
             elif kind == "AnnAssign":
-                tgt_obj = _dict_any_get_dict(st, "target")
-                name_txt = _name_target_id(tgt_obj)
+                name_txt = _stmt_target_name(st)
                 if name_txt != "":
                     exports.add(name_txt)
         out[mod_name] = exports
@@ -6866,8 +6868,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     if name_txt != "" and name_txt not in variables:
                         variables.append(name_txt)
             elif kind == "AnnAssign":
-                tgt_obj = _dict_any_get_dict(st, "target")
-                name_txt = _name_target_id(tgt_obj)
+                name_txt = _stmt_target_name(st)
                 if name_txt != "" and name_txt not in variables:
                     variables.append(name_txt)
         meta = _dict_any_get_dict(east, "meta")
