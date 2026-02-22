@@ -21,6 +21,32 @@
 
 1. [ ] profile で表現しづらいケースだけを hooks へ移し、`py2cpp.py` 側の条件分岐を残さない状態にする。
 
+## P1: CodeEmitter 共通ディスパッチ再設計
+
+1. [ ] `render_expr` の kind ごとに hook ポイントを追加する。
+2. [ ] `emit_stmt` も kind ごとの hook ポイントへ分解する。
+3. [ ] `CppEmitter` を hook 優先 + fallback の二段構成に統一する。
+4. [ ] `tools/check_selfhost_cpp_diff.py` で差分ゼロを維持しながら fallback を縮退する。
+5. [ ] fallback が十分に減った段階で、共通ディスパッチを `CodeEmitter` 本体へ戻す。
+
+### 受け入れ基準
+
+1. [ ] Python 実行パス: `hooks` 有効時に既存ケースのコード生成結果が不変。
+2. [ ] selfhost 実行パス: `mismatches=0` を維持。
+3. [ ] `py2cpp.py` の `render_expr` / `emit_stmt` 本体分岐が段階的に短くなる。
+
+### py2cpp / py2rs 共通化候補
+
+1. [ ] 優先 A: `If` / `While` / `ForRange` / `For` の文スケルトン生成（開閉ブロック + scope push/pop）を `CodeEmitter` へ移す。
+2. [ ] 優先 A: `Assign` / `AnnAssign` / `AugAssign` の「宣言判定 + 代入先レンダ」共通骨格を `CodeEmitter` へ移す。
+3. [ ] 優先 A: `Compare` / `BoolOp` / `IfExp` の式組み立てを `CodeEmitter` へ移す。
+4. [ ] 優先 A: import 束縛テーブル読み込み（`meta.import_bindings` 反映）を `CodeEmitter` へ移す。
+5. [ ] 優先 B: 型名正規化 + 言語型への最終写像（`normalize_type_name` 後段）を共通化する。
+6. [ ] 優先 B: `Call` 前処理（`_prepare_call_parts` 結果の共通利用）を共通化する。
+7. [ ] 優先 B: `Tuple` 代入の一時変数 lower を共通化する。
+8. [ ] 優先 C: 言語別ランタイム関数へのルーティング（profile + hooks）を共通化する。
+9. [ ] 優先 C: 文字列/配列の細かい最適化（演算子簡約・括弧削減）を共通化する。
+
 ## P1: py2cpp 縮退（行数削減）
 
 1. [ ] `src/py2cpp.py` に残る未移行ロジックを `CodeEmitter` へ段階移管し、行数を縮退する。
