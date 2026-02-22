@@ -122,181 +122,70 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
 
 
 def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
-    """CodeEmitter の hook 呼び出しを selfhost 用に no-op 化する。"""
-    out = text
-
-    def repl(start_marker: str, end_marker: str, stub: str) -> None:
-        nonlocal out
-        i = out.find(start_marker)
-        j = out.find(end_marker)
-        if i >= 0 and j > i:
-            out = out[:i] + stub + out[j + 1 :]
-
-    repl(
-        "    def hook_on_emit_stmt(",
-        "\n    def hook_on_emit_stmt_kind(",
-        (
-            "    def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:\n"
-            "        pass\n"
-            "        return None\n"
-        ),
+    """CodeEmitter の hook 呼び出しヘルパを selfhost 用に no-op 化する。"""
+    start_marker = "    def _call_hook("
+    end_marker = "\n    def hook_on_emit_stmt("
+    i = text.find(start_marker)
+    j = text.find(end_marker)
+    if i < 0 or j <= i:
+        return text
+    stub = (
+        "    def _call_hook(\n"
+        "        self,\n"
+        "        name: str,\n"
+        "        arg0: Any = None,\n"
+        "        arg1: Any = None,\n"
+        "        arg2: Any = None,\n"
+        "        arg3: Any = None,\n"
+        "        arg4: Any = None,\n"
+        "        arg5: Any = None,\n"
+        "        argc: int = 0,\n"
+        "    ) -> Any:\n"
+        "        pass\n"
+        "        return None\n"
+        "\n"
+        "    def _call_hook1(self, name: str, arg0: Any) -> Any:\n"
+        "        pass\n"
+        "        return None\n"
+        "\n"
+        "    def _call_hook2(self, name: str, arg0: Any, arg1: Any) -> Any:\n"
+        "        pass\n"
+        "        return None\n"
+        "\n"
+        "    def _call_hook3(self, name: str, arg0: Any, arg1: Any, arg2: Any) -> Any:\n"
+        "        pass\n"
+        "        return None\n"
+        "\n"
+        "    def _call_hook4(self, name: str, arg0: Any, arg1: Any, arg2: Any, arg3: Any) -> Any:\n"
+        "        pass\n"
+        "        return None\n"
+        "\n"
+        "    def _call_hook5(\n"
+        "        self,\n"
+        "        name: str,\n"
+        "        arg0: Any,\n"
+        "        arg1: Any,\n"
+        "        arg2: Any,\n"
+        "        arg3: Any,\n"
+        "        arg4: Any,\n"
+        "    ) -> Any:\n"
+        "        pass\n"
+        "        return None\n"
+        "\n"
+        "    def _call_hook6(\n"
+        "        self,\n"
+        "        name: str,\n"
+        "        arg0: Any,\n"
+        "        arg1: Any,\n"
+        "        arg2: Any,\n"
+        "        arg3: Any,\n"
+        "        arg4: Any,\n"
+        "        arg5: Any,\n"
+        "    ) -> Any:\n"
+        "        pass\n"
+        "        return None\n"
     )
-    repl(
-        "    def hook_on_emit_stmt_kind(",
-        "\n    def hook_on_stmt_omit_braces(",
-        (
-            "    def hook_on_emit_stmt_kind(\n"
-            "        self,\n"
-            "        kind: str,\n"
-            "        stmt: dict[str, Any],\n"
-            "    ) -> bool | None:\n"
-            "        pass\n"
-            "        return None\n"
-        ),
-    )
-    repl(
-        "    def hook_on_stmt_omit_braces(",
-        "\n    def hook_on_for_range_mode(",
-        (
-            "    def hook_on_stmt_omit_braces(\n"
-            "        self,\n"
-            "        kind: str,\n"
-            "        stmt: dict[str, Any],\n"
-            "        default_value: bool,\n"
-            "    ) -> bool:\n"
-            "        pass\n"
-            "        return default_value\n"
-        ),
-    )
-    repl(
-        "    def hook_on_for_range_mode(",
-        "\n    def hook_on_render_call(",
-        (
-            "    def hook_on_for_range_mode(\n"
-            "        self,\n"
-            "        stmt: dict[str, Any],\n"
-            "        default_mode: str,\n"
-            "    ) -> str:\n"
-            "        pass\n"
-            "        return default_mode\n"
-        ),
-    )
-    repl(
-        "    def hook_on_render_call(",
-        "\n    def hook_on_render_module_method(",
-        (
-            "    def hook_on_render_call(\n"
-            "        self,\n"
-            "        call_node: dict[str, Any],\n"
-            "        func_node: dict[str, Any],\n"
-            "        rendered_args: list[str],\n"
-            "        rendered_kwargs: dict[str, str],\n"
-            "    ) -> str:\n"
-            "        pass\n"
-            "        return \"\"\n"
-        ),
-    )
-    repl(
-        "    def hook_on_render_module_method(",
-        "\n    def hook_on_render_object_method(",
-        (
-            "    def hook_on_render_module_method(\n"
-            "        self,\n"
-            "        module_name: str,\n"
-            "        attr: str,\n"
-            "        rendered_args: list[str],\n"
-            "        rendered_kwargs: dict[str, str],\n"
-            "        arg_nodes: list[Any],\n"
-            "    ) -> str:\n"
-            "        pass\n"
-            "        return \"\"\n"
-        ),
-    )
-    repl(
-        "    def hook_on_render_object_method(",
-        "\n    def hook_on_render_class_method(",
-        (
-            "    def hook_on_render_object_method(\n"
-            "        self,\n"
-            "        owner_type: str,\n"
-            "        owner_expr: str,\n"
-            "        attr: str,\n"
-            "        rendered_args: list[str],\n"
-            "    ) -> str:\n"
-            "        pass\n"
-            "        return \"\"\n"
-        ),
-    )
-    repl(
-        "    def hook_on_render_class_method(",
-        "\n    def hook_on_render_binop(",
-        (
-            "    def hook_on_render_class_method(\n"
-            "        self,\n"
-            "        owner_type: str,\n"
-            "        attr: str,\n"
-            "        func_node: dict[str, Any],\n"
-            "        rendered_args: list[str],\n"
-            "        rendered_kwargs: dict[str, str],\n"
-            "        arg_nodes: list[Any],\n"
-            "    ) -> str:\n"
-            "        pass\n"
-            "        return \"\"\n"
-        ),
-    )
-    repl(
-        "    def hook_on_render_binop(",
-        "\n    def hook_on_render_expr_kind(",
-        (
-            "    def hook_on_render_binop(\n"
-            "        self,\n"
-            "        binop_node: dict[str, Any],\n"
-            "        left: str,\n"
-            "        right: str,\n"
-            "    ) -> str:\n"
-            "        pass\n"
-            "        return \"\"\n"
-        ),
-    )
-    repl(
-        "    def hook_on_render_expr_kind(",
-        "\n    def hook_on_render_expr_leaf(",
-        (
-            "    def hook_on_render_expr_kind(\n"
-            "        self,\n"
-            "        kind: str,\n"
-            "        expr_node: dict[str, Any],\n"
-            "    ) -> str:\n"
-            "        pass\n"
-            "        return \"\"\n"
-        ),
-    )
-    repl(
-        "    def hook_on_render_expr_leaf(",
-        "\n    def hook_on_render_expr_complex(",
-        (
-            "    def hook_on_render_expr_leaf(\n"
-            "        self,\n"
-            "        kind: str,\n"
-            "        expr_node: dict[str, Any],\n"
-            "    ) -> str:\n"
-            "        pass\n"
-            "        return \"\"\n"
-        ),
-    )
-    repl(
-        "    def hook_on_render_expr_complex(",
-        "\n    def syntax_text(",
-        (
-            "    def hook_on_render_expr_complex(\n"
-            "        self,\n"
-            "        expr_node: dict[str, Any],\n"
-            "    ) -> str:\n"
-            "        pass\n"
-            "        return \"\"\n"
-        ),
-    )
-    return out
+    return text[:i] + stub + text[j + 1 :]
 
 
 def main() -> int:

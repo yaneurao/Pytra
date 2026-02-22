@@ -291,11 +291,77 @@ class CodeEmitter:
                 return fn
         return None
 
+    def _call_hook(
+        self,
+        name: str,
+        arg0: Any = None,
+        arg1: Any = None,
+        arg2: Any = None,
+        arg3: Any = None,
+        arg4: Any = None,
+        arg5: Any = None,
+        argc: int = 0,
+    ) -> Any:
+        """hook 呼び出しを 1 箇所へ集約する。未定義時は `None`。"""
+        fn = self._lookup_hook(name)
+        if fn is None:
+            return None
+        if argc <= 0:
+            return fn(self)
+        if argc == 1:
+            return fn(self, arg0)
+        if argc == 2:
+            return fn(self, arg0, arg1)
+        if argc == 3:
+            return fn(self, arg0, arg1, arg2)
+        if argc == 4:
+            return fn(self, arg0, arg1, arg2, arg3)
+        if argc == 5:
+            return fn(self, arg0, arg1, arg2, arg3, arg4)
+        if argc == 6:
+            return fn(self, arg0, arg1, arg2, arg3, arg4, arg5)
+        return None
+
+    def _call_hook1(self, name: str, arg0: Any) -> Any:
+        return self._call_hook(name, arg0, None, None, None, None, None, 1)
+
+    def _call_hook2(self, name: str, arg0: Any, arg1: Any) -> Any:
+        return self._call_hook(name, arg0, arg1, None, None, None, None, 2)
+
+    def _call_hook3(self, name: str, arg0: Any, arg1: Any, arg2: Any) -> Any:
+        return self._call_hook(name, arg0, arg1, arg2, None, None, None, 3)
+
+    def _call_hook4(self, name: str, arg0: Any, arg1: Any, arg2: Any, arg3: Any) -> Any:
+        return self._call_hook(name, arg0, arg1, arg2, arg3, None, None, 4)
+
+    def _call_hook5(
+        self,
+        name: str,
+        arg0: Any,
+        arg1: Any,
+        arg2: Any,
+        arg3: Any,
+        arg4: Any,
+    ) -> Any:
+        return self._call_hook(name, arg0, arg1, arg2, arg3, arg4, None, 5)
+
+    def _call_hook6(
+        self,
+        name: str,
+        arg0: Any,
+        arg1: Any,
+        arg2: Any,
+        arg3: Any,
+        arg4: Any,
+        arg5: Any,
+    ) -> Any:
+        return self._call_hook(name, arg0, arg1, arg2, arg3, arg4, arg5, 6)
+
     def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:
         """`on_emit_stmt` フック。既定では何もしない。"""
-        fn = self._lookup_hook("on_emit_stmt")
-        if fn is not None:
-            return fn(self, stmt)
+        v = self._call_hook1("on_emit_stmt", stmt)
+        if isinstance(v, bool):
+            return True if v else False
         return None
 
     def hook_on_emit_stmt_kind(
@@ -304,9 +370,9 @@ class CodeEmitter:
         stmt: dict[str, Any],
     ) -> bool | None:
         """`on_emit_stmt_kind` フック。既定では何もしない。"""
-        fn = self._lookup_hook("on_emit_stmt_kind")
-        if fn is not None:
-            return fn(self, kind, stmt)
+        v = self._call_hook2("on_emit_stmt_kind", kind, stmt)
+        if isinstance(v, bool):
+            return True if v else False
         return None
 
     def hook_on_stmt_omit_braces(
@@ -316,11 +382,9 @@ class CodeEmitter:
         default_value: bool,
     ) -> bool:
         """制御構文の brace 省略可否を hook で上書きする。"""
-        fn = self._lookup_hook("on_stmt_omit_braces")
-        if fn is not None:
-            v = fn(self, kind, stmt, default_value)
-            if isinstance(v, bool):
-                return v
+        v = self._call_hook3("on_stmt_omit_braces", kind, stmt, default_value)
+        if isinstance(v, bool):
+            return v
         return default_value
 
     def hook_on_for_range_mode(
@@ -332,11 +396,9 @@ class CodeEmitter:
         mode = default_mode
         if mode == "":
             mode = "dynamic"
-        fn = self._lookup_hook("on_for_range_mode")
-        if fn is not None:
-            v = fn(self, stmt, mode)
-            if isinstance(v, str) and v != "":
-                return v
+        v = self._call_hook2("on_for_range_mode", stmt, mode)
+        if isinstance(v, str) and v != "":
+            return v
         return mode
 
     def hook_on_render_call(
@@ -347,11 +409,9 @@ class CodeEmitter:
         rendered_kwargs: dict[str, str],
     ) -> str:
         """`on_render_call` フック。既定では何もしない。"""
-        fn = self._lookup_hook("on_render_call")
-        if fn is not None:
-            v = fn(self, call_node, func_node, rendered_args, rendered_kwargs)
-            if isinstance(v, str):
-                return v
+        v = self._call_hook4("on_render_call", call_node, func_node, rendered_args, rendered_kwargs)
+        if isinstance(v, str):
+            return v
         return ""
 
     def hook_on_render_module_method(
@@ -363,11 +423,9 @@ class CodeEmitter:
         arg_nodes: list[Any],
     ) -> str:
         """`on_render_module_method` フック。既定では何もしない。"""
-        fn = self._lookup_hook("on_render_module_method")
-        if fn is not None:
-            v = fn(self, module_name, attr, rendered_args, rendered_kwargs, arg_nodes)
-            if isinstance(v, str):
-                return v
+        v = self._call_hook5("on_render_module_method", module_name, attr, rendered_args, rendered_kwargs, arg_nodes)
+        if isinstance(v, str):
+            return v
         return ""
 
     def hook_on_render_object_method(
@@ -378,11 +436,9 @@ class CodeEmitter:
         rendered_args: list[str],
     ) -> str:
         """`on_render_object_method` フック。既定では何もしない。"""
-        fn = self._lookup_hook("on_render_object_method")
-        if fn is not None:
-            v = fn(self, owner_type, owner_expr, attr, rendered_args)
-            if isinstance(v, str):
-                return v
+        v = self._call_hook4("on_render_object_method", owner_type, owner_expr, attr, rendered_args)
+        if isinstance(v, str):
+            return v
         return ""
 
     def hook_on_render_class_method(
@@ -395,11 +451,9 @@ class CodeEmitter:
         arg_nodes: list[Any],
     ) -> str:
         """`on_render_class_method` フック。既定では何もしない。"""
-        fn = self._lookup_hook("on_render_class_method")
-        if fn is not None:
-            v = fn(self, owner_type, attr, func_node, rendered_args, rendered_kwargs, arg_nodes)
-            if isinstance(v, str):
-                return v
+        v = self._call_hook6("on_render_class_method", owner_type, attr, func_node, rendered_args, rendered_kwargs, arg_nodes)
+        if isinstance(v, str):
+            return v
         return ""
 
     def hook_on_render_binop(
@@ -409,11 +463,9 @@ class CodeEmitter:
         right: str,
     ) -> str:
         """`on_render_binop` フック。既定では何もしない。"""
-        fn = self._lookup_hook("on_render_binop")
-        if fn is not None:
-            v = fn(self, binop_node, left, right)
-            if isinstance(v, str):
-                return v
+        v = self._call_hook3("on_render_binop", binop_node, left, right)
+        if isinstance(v, str):
+            return v
         return ""
 
     def hook_on_render_expr_kind(
@@ -422,11 +474,9 @@ class CodeEmitter:
         expr_node: dict[str, Any],
     ) -> str:
         """`on_render_expr_kind` フック。既定では何もしない。"""
-        fn = self._lookup_hook("on_render_expr_kind")
-        if fn is not None:
-            v = fn(self, kind, expr_node)
-            if isinstance(v, str):
-                return v
+        v = self._call_hook2("on_render_expr_kind", kind, expr_node)
+        if isinstance(v, str):
+            return v
         return ""
 
     def hook_on_render_expr_leaf(
@@ -435,11 +485,9 @@ class CodeEmitter:
         expr_node: dict[str, Any],
     ) -> str:
         """`Name/Constant/Attribute` などの leaf 式向けフック。"""
-        fn = self._lookup_hook("on_render_expr_leaf")
-        if fn is not None:
-            v = fn(self, kind, expr_node)
-            if isinstance(v, str):
-                return v
+        v = self._call_hook2("on_render_expr_leaf", kind, expr_node)
+        if isinstance(v, str):
+            return v
         return ""
 
     def hook_on_render_expr_complex(
@@ -447,11 +495,9 @@ class CodeEmitter:
         expr_node: dict[str, Any],
     ) -> str:
         """複雑式（JoinedStr/Lambda/Comp 系）用フック。既定では何もしない。"""
-        fn = self._lookup_hook("on_render_expr_complex")
-        if fn is not None:
-            v = fn(self, expr_node)
-            if isinstance(v, str):
-                return v
+        v = self._call_hook1("on_render_expr_complex", expr_node)
+        if isinstance(v, str):
+            return v
         return ""
 
     def syntax_text(self, key: str, default_value: str) -> str:
