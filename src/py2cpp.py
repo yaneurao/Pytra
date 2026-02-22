@@ -7204,10 +7204,11 @@ def _write_multi_file_cpp(
 
     type_schema = build_module_type_schema(module_east_map)
 
-    manifest: dict[str, Any] = {}
-    manifest["entry"] = entry_key
-    manifest["include_dir"] = str(include_dir)
-    manifest["src_dir"] = str(src_dir)
+    manifest: dict[str, Any] = {
+        "entry": entry_key,
+        "include_dir": str(include_dir),
+        "src_dir": str(src_dir),
+    }
     manifest_modules: list[dict[str, Any]] = []
 
     i = 0
