@@ -40,19 +40,15 @@ def _replace_first(text: str, old: str, replacement: str) -> str:
 def _sort_str_list_in_place(items: list[str]) -> list[str]:
     """selfhost 安定化用: list[str] の昇順ソート済みコピーを返す。"""
     out: list[str] = []
-    i = 0
-    while i < len(items):
+    for i in range(len(items)):
         out.append(items[i])
-        i += 1
-    i = 1
-    while i < len(out):
+    for i in range(1, len(out)):
         key = out[i]
         j = i - 1
         while j >= 0 and out[j] > key:
             out[j + 1] = out[j]
             j -= 1
         out[j + 1] = key
-        i += 1
     return out
 
 
@@ -5787,15 +5783,13 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
         if len(elems) == 0:
             return "::std::tuple<>{}"
         parts: list[str] = []
-        i = 0
-        while i < len(elems):
+        for i in range(len(elems)):
             e = elems[i]
             if isinstance(e, dict):
                 txt = _header_render_default_expr(e, "Any")
                 if txt == "":
                     return ""
                 parts.append(txt)
-            i += 1
         if len(parts) == 0:
             return ""
         return "::std::make_tuple(" + _join_str_list(", ", parts) + ")"
