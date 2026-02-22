@@ -6024,8 +6024,7 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
         if len(elems) == 0:
             return "::std::tuple<>{}"
         parts: list[str] = []
-        for i in range(len(elems)):
-            e = elems[i]
+        for e in elems:
             txt = _header_render_default_expr(e, "Any")
             if txt == "":
                 return ""
@@ -6054,8 +6053,7 @@ def build_cpp_header_from_east(
     class_names: set[str] = set()
     ref_classes: set[str] = set()
 
-    for j in range(len(body)):
-        st = body[j]
+    for st in body:
         if _dict_any_get_str(st, "kind") == "ClassDef":
             cls_name = _dict_any_get_str(st, "name")
             if cls_name != "":
@@ -6078,8 +6076,7 @@ def build_cpp_header_from_east(
         "float64",
     }
 
-    for i in range(len(body)):
-        st = body[i]
+    for st in body:
         kind = _dict_any_get_str(st, "kind")
         if kind == "ClassDef":
             cls_name = _dict_any_get_str(st, "name")
@@ -6095,8 +6092,7 @@ def build_cpp_header_from_east(
                 arg_types = _dict_any_get_dict(st, "arg_types")
                 arg_order = _dict_any_get_list(st, "arg_order")
                 parts: list[str] = []
-                for j in range(len(arg_order)):
-                    an = arg_order[j]
+                for an in arg_order:
                     if not isinstance(an, str):
                         continue
                     at = _dict_any_get_str(arg_types, an, "Any")
@@ -6180,24 +6176,24 @@ def build_cpp_header_from_east(
     lines.append("#ifndef " + guard)
     lines.append("#define " + guard)
     lines.append("")
-    for k in range(len(includes)):
-        lines.append(includes[k])
+    for include in includes:
+        lines.append(include)
     if len(includes) > 0:
         lines.append("")
     ns = top_namespace.strip()
     if ns != "":
         lines.append("namespace " + ns + " {")
         lines.append("")
-    for k in range(len(class_lines)):
-        lines.append(class_lines[k])
+    for class_line in class_lines:
+        lines.append(class_line)
     if len(class_lines) > 0:
         lines.append("")
-    for k in range(len(var_lines)):
-        lines.append(var_lines[k])
+    for var_line in var_lines:
+        lines.append(var_line)
     if len(var_lines) > 0 and len(fn_lines) > 0:
         lines.append("")
-    for k in range(len(fn_lines)):
-        lines.append(fn_lines[k])
+    for fn_line in fn_lines:
+        lines.append(fn_line)
     if ns != "":
         lines.append("")
         lines.append("}  // namespace " + ns)
