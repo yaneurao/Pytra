@@ -501,6 +501,13 @@ def _sh_parse_def_sig(
                 arg_types["self"] = in_class
                 arg_order.append("self")
                 continue
+            if ":" not in p:
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message=f"self_hosted parser requires type annotation for parameter: {p_txt}",
+                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                    hint="Use `name: Type` style parameters.",
+                )
             parsed_param = _sh_parse_typed_binding(p, allow_dotted_name=False)
             if parsed_param is None:
                 raise _make_east_build_error(
