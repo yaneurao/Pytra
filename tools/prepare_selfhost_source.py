@@ -103,16 +103,6 @@ def _extract_support_blocks() -> str:
     for name in names:
         parts.append(_extract_top_level_block(cli_text, name, "def"))
     parts.append(
-        "def is_help_requested(parsed: dict[str, str], argv: list[str]) -> bool:\n"
-        "    _ = parsed\n"
-        "    i = 0\n"
-        "    while i < len(argv):\n"
-        "        if argv[i] == \"-h\" or argv[i] == \"--help\":\n"
-        "            return True\n"
-        "        i += 1\n"
-        "    return False\n\n"
-    )
-    parts.append(
         "def build_cpp_hooks() -> dict[str, Any]:\n"
         "    pass\n"
         "    out: dict[str, Any] = {}\n"
@@ -129,46 +119,6 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
     prefix = text[:i]
     suffix = text[i:]
     return prefix.rstrip() + "\n\n" + support_blocks + "\n" + base_class_text + "\n" + suffix
-
-
-def _patch_selfhost_exception_paths(text: str) -> str:
-    out = text
-    old2 = (
-        "    if input_txt == \"\":\n"
-        "        print(\n"
-        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]\",\n"
-        "            file=sys.stderr,\n"
-        "        )\n"
-        "        return 1\n"
-    )
-    new2 = (
-        "    if is_help_requested(parsed, argv_list):\n"
-        "        print(\n"
-        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]\",\n"
-        "            file=sys.stderr,\n"
-        "        )\n"
-        "        return 0\n"
-        "    if input_txt == \"\":\n"
-        "        print(\n"
-        "            \"usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]\",\n"
-        "            file=sys.stderr,\n"
-        "        )\n"
-        "        return 1\n"
-    )
-    out = out.replace(old2, new2, 1)
-    old3 = (
-        "        print(\"error: internal error occurred during transpilation.\", file=sys.stderr)\n"
-        "        print(\"[internal_error] this may be a bug; report it with a reproducible case.\", file=sys.stderr)\n"
-        "        return 1\n"
-    )
-    new3 = (
-        "        print(\"error: internal error occurred during transpilation.\", file=sys.stderr)\n"
-        "        print(\"[internal_error] this may be a bug; report it with a reproducible case.\", file=sys.stderr)\n"
-        "        print(str(ex), file=sys.stderr)\n"
-        "        return 1\n"
-    )
-    out = out.replace(old3, new3, 1)
-    return out
 
 
 def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
@@ -358,7 +308,6 @@ def main() -> int:
     py2cpp_text = _remove_import_line(py2cpp_text)
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
     out = _patch_code_emitter_hooks_for_selfhost(out)
-    out = _patch_selfhost_exception_paths(out)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)
     DST_SELFHOST.write_text(out, encoding="utf-8")

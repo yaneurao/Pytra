@@ -25,6 +25,7 @@
 - `dump_codegen_options_text` の selfhost fallback は最小 `"options:\n"` スタブから、詳細行を出力する selfhost-safe 実装へ置換済み。
 - `CodeEmitter.quote_string_literal` / `CodeEmitter.load_profile_with_includes` は本体側 `@staticmethod` 実装へ移行し、`tools/prepare_selfhost_source.py` 側の該当置換経路を削除済み。
 - `tools/prepare_selfhost_source.py` から `dump_codegen_options_text` 置換と `main guard` 置換を削除し、正本実装を selfhost へそのまま展開する経路へ移行済み。
+- `tools/prepare_selfhost_source.py` から `exception/help` 置換（`_patch_selfhost_exception_paths`）と補助関数 `is_help_requested` を削除し、CLI の正本分岐をそのまま selfhost へ展開する経路へ移行済み。
 
 ## P1: CodeEmitter / Hooks 移行
 
