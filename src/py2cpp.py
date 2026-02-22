@@ -99,8 +99,7 @@ def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
     if module_tail == "":
         return False
     root_txt = str(root_dir)
-    if root_txt.endswith("/"):
-        root_txt = root_txt[:-1]
+    root_txt = root_txt[:-1] if root_txt.endswith("/") else root_txt
     rel = module_tail.replace(".", "/")
     mod_py = Path(root_txt + "/" + rel + ".py")
     if mod_py.exists():
@@ -118,9 +117,8 @@ def _module_tail_to_cpp_header_path(module_tail: str) -> str:
     if len(parts) > 0:
         leaf_i = len(parts) - 1
         leaf = parts[leaf_i]
-        if leaf.endswith("_impl"):
-            leaf = leaf[: len(leaf) - 5] + "-impl"
-            parts[leaf_i] = leaf
+        leaf = leaf[: len(leaf) - 5] + "-impl" if leaf.endswith("_impl") else leaf
+        parts[leaf_i] = leaf
     return _join_str_list("/", parts) + ".h"
 
 
@@ -129,22 +127,16 @@ def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     base_txt = "src/runtime/cpp/pytra"
     if module_name_norm.startswith("pytra.std."):
         tail = module_name_norm[10:]
-        if tail == "":
-            return False
-        rel = _module_tail_to_cpp_header_path(tail)
-        return Path(base_txt + "/std/" + rel).exists()
+        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
+        return rel != "" and Path(base_txt + "/std/" + rel).exists()
     if module_name_norm.startswith("pytra.utils."):
         tail = module_name_norm[12:]
-        if tail == "":
-            return False
-        rel = _module_tail_to_cpp_header_path(tail)
-        return Path(base_txt + "/utils/" + rel).exists()
+        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
+        return rel != "" and Path(base_txt + "/utils/" + rel).exists()
     if module_name_norm.startswith("pytra.compiler."):
         tail = module_name_norm[15:]
-        if tail == "":
-            return False
-        rel = _module_tail_to_cpp_header_path(tail)
-        return Path(base_txt + "/compiler/" + rel).exists()
+        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
+        return rel != "" and Path(base_txt + "/compiler/" + rel).exists()
     return False
 
 
@@ -6610,7 +6602,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     if (root / "pytra" / "__init__.py").exists():
         reserved_conflicts.append(str(root / "pytra" / "__init__.py"))
 
-    while len(queue) > 0:
+    while queue:
         cur_path = queue.pop(0)
         cur_key = _path_key_for_graph(cur_path)
         if cur_key in visited:
