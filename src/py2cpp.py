@@ -2632,15 +2632,13 @@ class CppEmitter(CodeEmitter):
             return out
         parts: list[str] = []
         cur = ""
-        i = 0
-        while i < len(repr_txt):
+        for i in range(len(repr_txt)):
             ch = repr_txt[i : i + 1]
             if ch == ",":
                 parts.append(cur.strip())
                 cur = ""
             else:
                 cur += ch
-            i += 1
         parts.append(cur.strip())
         for j in range(len(parts)):
             nm = parts[j]
