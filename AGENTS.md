@@ -6,7 +6,7 @@
 - `docs-jp/` を正（source of truth）とし、`docs/` は翻訳ミラーとして扱う。
 - `docs-jp/` 配下に新規ファイルを作成する場合は、同一ターンでの明示依頼があるときのみ許可する。
 - 未完了タスクは `docs-jp/todo.md` にのみ記載する。
-- 完了済みは `docs-jp/todo-old.md` と `docs-jp/todo-history/YYYYMMDD.md` へ移す。
+- 完了済みは `docs-jp/todo-history/index.md` と `docs-jp/todo-history/YYYYMMDD.md` へ移す。
 
 ## 長期計画メモの置き場
 
@@ -19,7 +19,7 @@
 - `docs-jp/todo.md` の各タスクは、`[ID: ...]` と対応 plan ファイル参照を必須にする。
 - 着手前に対応 plan の `背景` / `非対象` / `受け入れ基準` を確認し、作業開始時に要点を再確認する。
 - 作業中に判断した内容は、対応 plan の `決定ログ` に日付付きで追記する。
-- 完了移管時（`todo-old` / `todo-history`）は、対応 ID と根拠（コミット、確認コマンド）を残す。
+- 完了移管時（`todo-history/index.md` / `todo-history/YYYYMMDD.md`）は、対応 ID と根拠（コミット、確認コマンド）を残す。
 
 ## ガード運用
 

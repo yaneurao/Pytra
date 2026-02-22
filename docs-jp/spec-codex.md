@@ -23,7 +23,7 @@
 ## 2. TODO 実施ルール
 
 - `docs-jp/todo.md` は継続バックログとして扱います。
-- `docs-jp/todo.md` には未完了タスクのみを置き、セクション単位で完了（全項目 `[x]`）した内容は `docs-jp/todo-old.md` へ移管します。
+- `docs-jp/todo.md` には未完了タスクのみを置き、セクション単位で完了（全項目 `[x]`）した内容は `docs-jp/todo-history/index.md`（索引）と `docs-jp/todo-history/YYYYMMDD.md`（本文）へ移管します。
 - 未完了項目は優先度順に順次実施します。
 - タスク完了時はチェック状態を更新します。
 

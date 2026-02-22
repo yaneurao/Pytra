@@ -138,5 +138,5 @@ py2cpp / py2rs 共通化候補:
 ## メモ
 
 - このファイルは未完了タスクのみを保持します。
-- 完了済みタスクは `docs-jp/todo-old.md` へ移動します。
-- `docs-jp/todo-old.md` は索引のみを保持し、履歴本文は `docs-jp/todo-history/YYYYMMDD.md` に日付単位で保存します。
+- 完了済みタスクは `docs-jp/todo-history/index.md` 経由で履歴へ移動します。
+- `docs-jp/todo-history/index.md` は索引のみを保持し、履歴本文は `docs-jp/todo-history/YYYYMMDD.md` に日付単位で保存します。
