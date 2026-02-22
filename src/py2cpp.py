@@ -1533,8 +1533,8 @@ class CppEmitter(CodeEmitter):
         if t in {"auto", "object"}:
             saw_float = False
             saw_int = False
-            for i in range(len(arg_nodes_safe)):
-                at0 = self.get_expr_type(arg_nodes_safe[i])
+            for node in arg_nodes_safe:
+                at0 = self.get_expr_type(node)
                 at = at0 if isinstance(at0, str) else ""
                 if at in {"float32", "float64"}:
                     saw_float = True
@@ -1605,8 +1605,8 @@ class CppEmitter(CodeEmitter):
                     elem_types: list[str] = []
                     if tuple_t != "":
                         elem_types = self.split_generic(tuple_t[6:-1])
-                    for i in range(len(elems)):
-                        ent = self.any_to_dict_or_empty(elems[i])
+                    for i, elem in enumerate(elems):
+                        ent = self.any_to_dict_or_empty(elem)
                         if self._node_kind_from_dict(ent) == "Name":
                             nm = self.any_to_str(ent.get("id"))
                             if nm != "":
@@ -1614,7 +1614,7 @@ class CppEmitter(CodeEmitter):
                                 if i < len(elem_types):
                                     et = self.normalize_type_name(elem_types[i])
                                 if et == "":
-                                    t_ent = self.get_expr_type(elems[i])
+                                    t_ent = self.get_expr_type(elem)
                                     if isinstance(t_ent, str):
                                         et = self.normalize_type_name(t_ent)
                                 out[nm] = et
