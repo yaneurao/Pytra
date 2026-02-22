@@ -131,11 +131,18 @@ py2cpp / py2rs 共通化候補:
 文脈: `docs-jp/plans/p3-microgpt-source-preservation.md`（`TG-P3-MICROGPT-SOURCE-PRESERVATION`）
 
 1. [x] [ID: P3-MSP-01] `materials/inbox/exec-extracted.log` で抽出した原本改変項目（型注釈追加、内包/zip 展開、I/O 置換、アルゴリズム簡略化）を、parser/emitter/runtime の責務へ再分類する。
-2. [ ] [ID: P3-MSP-02] `materials/microgpt/microgpt-20260222.py` を無改変で `py2cpp` に入力したときの失敗要因を再現・列挙し、改変で迂回していた箇所を実装タスクへ置き換える。
+2. [x] [ID: P3-MSP-02] `materials/microgpt/microgpt-20260222.py` を無改変で `py2cpp` に入力したときの失敗要因を再現・列挙し、改変で迂回していた箇所を実装タスクへ置き換える。
 3. [ ] [ID: P3-MSP-03] `work/tmp/microgpt-20260222-lite.py` 依存を縮退し、原本 `materials/microgpt/microgpt-20260222.py` で transpile -> `g++ -fsyntax-only` が通る回帰導線を整備する。
+4. [ ] [ID: P3-MSP-04] parser: 無注釈引数（`def f(x): ...`）と class 内 1 行メソッド定義（`def f(...): return ...`）の受理方針を再検討し、原本改変なしで読める範囲を拡張する。
+5. [ ] [ID: P3-MSP-05] parser: top-level `for` / tuple 同時代入 / 複数 `for` 内包の受理・lower を段階対応し、原本スクリプト構造を維持して EAST 化できるようにする。
+6. [ ] [ID: P3-MSP-06] EAST/emitter: 内包内 `range(...)` の lower 不整合（`unexpected raw range Call in EAST`）を解消する。
+7. [ ] [ID: P3-MSP-07] EAST/emitter: `zip` / 内包経由で `object receiver` エラーへ落ちる型崩れ経路を再現し、型解決を安定化する。
+8. [ ] [ID: P3-MSP-08] runtime/std: `open` 反復、`list.index`、`random.shuffle(list[str])` など原本依存 API の互換差分を整理し、どのレイヤで吸収するかを確定する。
+9. [ ] [ID: P3-MSP-09] 回帰導線: 原本 `materials/microgpt/microgpt-20260222.py` を固定入力として、`py2cpp` 失敗要因の再発を検知する手順またはテストを追加する。
 
 進捗メモ:
 - `P3-MSP-01`: `materials/inbox/exec-extracted.log`（2026-02-23 00:03〜00:13）と `materials/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` の差分を照合し、改変 7 項目を parser / emitter / runtime の責務へ再分類した。入力側改変を再発させないため、各項目を実装側で吸収する方針を `docs-jp/plans/p3-microgpt-source-preservation.md` に明記。
+- `P3-MSP-02`: `python3 src/py2cpp.py materials/microgpt/microgpt-20260222.py -o work/out/msp2-microgpt.cpp` で先頭エラー（無注釈引数）を再現し、`materials/inbox/exec-extracted.log` の追跡と合わせて失敗要因 A〜F（parser 構文、EAST lower、型崩れ、runtime 互換）を列挙。改変で迂回していた論点を `P3-MSP-04`〜`P3-MSP-09` へ分解して TODO 化。
 
 ## P3: Pythonic 記法戻し（低優先）
 

@@ -6,6 +6,12 @@
 - `docs-jp/todo.md` の `ID: P3-MSP-01`
 - `docs-jp/todo.md` の `ID: P3-MSP-02`
 - `docs-jp/todo.md` の `ID: P3-MSP-03`
+- `docs-jp/todo.md` の `ID: P3-MSP-04`
+- `docs-jp/todo.md` の `ID: P3-MSP-05`
+- `docs-jp/todo.md` の `ID: P3-MSP-06`
+- `docs-jp/todo.md` の `ID: P3-MSP-07`
+- `docs-jp/todo.md` の `ID: P3-MSP-08`
+- `docs-jp/todo.md` の `ID: P3-MSP-09`
 
 背景:
 - `materials/inbox/exec-extracted.log`（2026-02-23 00:03〜00:13）には、`py2cpp` 変換を通すために `microgpt-20260222.py` を段階的に書き換えた履歴が残っている。
@@ -44,6 +50,24 @@
    - 本来の責務: parser / emitter / runtime を跨ぐ総合互換性。
    - 吸収方針: 原本 `microgpt` を入力した失敗点を機能別に分解し、各レイヤへ分配して段階解消する。
 
+原本入力での失敗要因（P3-MSP-02）:
+1. 再現コマンド（2026-02-23 実行）
+   - `python3 src/py2cpp.py materials/microgpt/microgpt-20260222.py -o work/out/msp2-microgpt.cpp`
+   - 結果: `unsupported_syntax: self_hosted parser requires type annotation for parameter: data at 33:0`
+2. 失敗要因列挙（再現 + `materials/inbox/exec-extracted.log` 00:03〜00:13 の追跡）
+   - 要因 A: 無注釈引数（`def __init__(self, data, ...)` ほか）
+   - 要因 B: class 内 1 行メソッド定義（`def __pow__(...): return ...` 形式）
+   - 要因 C: top-level `for` / tuple 同時代入 / 複数 `for` 内包など、top-level・式 lower の未対応構文
+   - 要因 D: `range` を含む内包 lower の不整合（`unexpected raw range Call in EAST`）
+   - 要因 E: `zip` / 内包経由での型崩れに起因する `object receiver` エラー
+   - 要因 F: I/O/stdlib 互換不足（`open` 反復、`list.index`、`random.shuffle(list[str])` など）
+
+実装タスクへの置換方針（P3-MSP-02 の成果物）:
+1. 要因 A/B/C は parser（`self_hosted`）拡張タスクへ置換する。
+2. 要因 D/E は EAST lower / emitter の型解決タスクへ置換する。
+3. 要因 F は `pytra.std` / runtime API 互換タスクへ置換する。
+4. 置換先タスク ID: `P3-MSP-04`〜`P3-MSP-09`（`docs-jp/todo.md`）。
+
 目的:
 - 「変換器都合で元ソースを書き換える」運用を禁止し、必要な対応を parser/emitter/runtime 側タスクへ移す。
 - `materials/microgpt/microgpt-20260222.py`（原本）を無改変のまま扱える状態を作る。
@@ -65,3 +89,4 @@
 決定ログ:
 - 2026-02-23: `materials/inbox/exec-extracted.log` と `materials/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` 差分から、原本改変項目を抽出して本コンテキストを作成。
 - 2026-02-23: `P3-MSP-01` を実施。改変 7 項目を parser / emitter / runtime の責務へ再分類し、入力側改変の代わりに実装側で吸収する方針を明文化。
+- 2026-02-23: `P3-MSP-02` を実施。原本入力で先頭エラー（無注釈引数）を再現し、ログ追跡と合わせて失敗要因 A〜F を列挙。回避改変の内容を `P3-MSP-04`〜`P3-MSP-09` の実装タスクへ置換した。
