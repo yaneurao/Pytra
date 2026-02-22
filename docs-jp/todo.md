@@ -124,7 +124,9 @@ py2cpp / py2rs 共通化候補:
 5. [ ] [ID: P3-PY-05] import 解析の一時変数展開（`obj = ...; s = any_to_str(obj)`）を、型安全が確保できる箇所から簡潔化する。
 
 進捗メモ:
+- `P3-PY-01` の一部として `src/py2cpp.py::_sanitize_module_label` の手動インデックス `while` を `for ch in s` へ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-PY-02` の一部として `src/py2cpp.py` の `_render_set_literal_repr` で `[:1]` / `[-1:]` 比較を `startswith` / `endswith` へ戻し、同等挙動を維持した。
+- `P3-PY-02` の継続として `src/py2cpp.py::_emit_target_unpack` の `list[` / `set[` / `tuple[` / `dict[` 判定をスライス比較から `startswith` / `endswith` へ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 
 ### `src/pytra/compiler/east_parts/code_emitter.py`
 

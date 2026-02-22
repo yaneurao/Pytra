@@ -2874,22 +2874,22 @@ class CppEmitter(CodeEmitter):
         if len(iter_node) > 0:
             iter_kind: str = self._node_kind_from_dict(iter_node)
             iter_t: str = self.any_dict_get_str(iter_node, "resolved_type", "")
-            if iter_t[0:5] == "list[" and iter_t[-1:] == "]":
-                inner_txt: str = iter_t[5 : len(iter_t) - 1]
-                if inner_txt[0:6] == "tuple[" and inner_txt[-1:] == "]":
-                    elem_types = self.split_generic(inner_txt[6 : len(inner_txt) - 1])
-            elif iter_t[0:4] == "set[" and iter_t[-1:] == "]":
-                inner_txt: str = iter_t[4 : len(iter_t) - 1]
-                if inner_txt[0:6] == "tuple[" and inner_txt[-1:] == "]":
-                    elem_types = self.split_generic(inner_txt[6 : len(inner_txt) - 1])
+            if iter_t.startswith("list[") and iter_t.endswith("]"):
+                inner_txt: str = iter_t[5:-1]
+                if inner_txt.startswith("tuple[") and inner_txt.endswith("]"):
+                    elem_types = self.split_generic(inner_txt[6:-1])
+            elif iter_t.startswith("set[") and iter_t.endswith("]"):
+                inner_txt = iter_t[4:-1]
+                if inner_txt.startswith("tuple[") and inner_txt.endswith("]"):
+                    elem_types = self.split_generic(inner_txt[6:-1])
             elif iter_kind == "Call":
                 runtime_call: str = self.any_dict_get_str(iter_node, "runtime_call", "")
                 if runtime_call == "dict.items":
                     fn_node = self.any_to_dict_or_empty(iter_node.get("func"))
                     owner_obj = fn_node.get("value")
                     owner_t: str = self.get_expr_type(owner_obj)
-                    if owner_t[0:5] == "dict[" and owner_t[-1:] == "]":
-                        dict_inner_parts: list[str] = self.split_generic(owner_t[5 : len(owner_t) - 1])
+                    if owner_t.startswith("dict[") and owner_t.endswith("]"):
+                        dict_inner_parts: list[str] = self.split_generic(owner_t[5:-1])
                         if len(dict_inner_parts) == 2:
                             elem_types = [self.normalize_type_name(dict_inner_parts[0]), self.normalize_type_name(dict_inner_parts[1])]
         for i, e in enumerate(self.any_dict_get_list(target, "elements")):
@@ -7187,20 +7187,17 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
 
 
 def _sanitize_module_label(s: str) -> str:
-    out = ""
-    i = 0
-    while i < len(s):
-        ch = s[i : i + 1]
+    out_chars: list[str] = []
+    for ch in s:
         ok = ((ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9") or ch == "_")
         if ok:
-            out += ch
+            out_chars.append(ch)
         else:
-            out += "_"
-        i += 1
+            out_chars.append("_")
+    out = "".join(out_chars)
     if out == "":
         out = "module"
-    head = out[0:1]
-    if head >= "0" and head <= "9":
+    if out[0] >= "0" and out[0] <= "9":
         out = "_" + out
     return out
 
