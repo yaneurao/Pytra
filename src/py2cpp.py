@@ -1675,8 +1675,8 @@ class CppEmitter(CodeEmitter):
             return
         if tkind == "Tuple":
             elems = self.any_dict_get_list(tgt, "elements")
-            for i in range(len(elems)):
-                self._mark_mutated_param_from_target(elems[i], params, out)
+            for elem in elems:
+                self._mark_mutated_param_from_target(elem, params, out)
 
     def _collect_mutated_params_from_stmt(self, stmt: dict[str, Any], params: set[str], out: set[str]) -> None:
         """1文から「破壊的に使われる引数名」を再帰的に収集する。"""
@@ -1895,8 +1895,8 @@ class CppEmitter(CodeEmitter):
         if kind == "Tuple":
             elems = self.any_dict_get_list(nd, "elements")
             parts: list[str] = []
-            for i in range(len(elems)):
-                txt = self._render_param_default_expr(elems[i], "Any")
+            for elem in elems:
+                txt = self._render_param_default_expr(elem, "Any")
                 if txt == "":
                     return ""
                 parts.append(txt)
@@ -2253,8 +2253,8 @@ class CppEmitter(CodeEmitter):
             ents = self._dict_stmt_list(stmt.get("names"))
             if len(ents) == 0:
                 raw_names = self.any_to_list(stmt.get("names"))
-                for i in range(len(raw_names)):
-                    ent = self.any_to_dict_or_empty(raw_names[i])
+                for raw_name in raw_names:
+                    ent = self.any_to_dict_or_empty(raw_name)
                     if len(ent) > 0:
                         ents.append(ent)
             for ent in ents:
@@ -2274,8 +2274,8 @@ class CppEmitter(CodeEmitter):
             ents = self._dict_stmt_list(stmt.get("names"))
             if len(ents) == 0:
                 raw_names = self.any_to_list(stmt.get("names"))
-                for i in range(len(raw_names)):
-                    ent = self.any_to_dict_or_empty(raw_names[i])
+                for raw_name in raw_names:
+                    ent = self.any_to_dict_or_empty(raw_name)
                     if len(ent) > 0:
                         ents.append(ent)
             for ent in ents:
