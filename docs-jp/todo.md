@@ -216,6 +216,13 @@ py2cpp / py2rs 共通化候補:
 3. [ ] [ID: P3-RULE-03] 各パッチで `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を実行する。
 4. [ ] [ID: P3-RULE-04] 回帰が出た場合は「可読性改善より selfhost 安定」を優先する。
 
+## P3: spec 草案整理（低優先）
+
+文脈: `docs-jp/plans/p3-spec-drafts.md`（`TG-P3-SPEC-DRAFTS`）
+
+1. [ ] [ID: P3-SD-01] `docs-jp/spec/spec-make.md` の仕様案を実装現状と照合し、採用する項目を既存仕様へ段階移管する。
+2. [ ] [ID: P3-SD-02] `docs-jp/spec/spec-template.md` の仕様案を実装現状と照合し、採用/保留/非採用の区分を明確化する。
+
 ## メモ
 
 - このファイルは未完了タスクのみを保持します。

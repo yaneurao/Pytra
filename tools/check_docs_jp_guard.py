@@ -20,7 +20,7 @@ ALLOWED_REGEX: tuple[re.Pattern[str], ...] = (
     re.compile(r"^todo-history/[0-9]{8}\.md$"),
     re.compile(r"^plans/.+\.md$"),
     re.compile(r"^language/.+\.md$"),
-    re.compile(r"^spec/spec-(codex|dev|east|gc|import|language-profile|options|runtime|tools|user|pylib-modules|sample-code|philosophy)\.md$"),
+    re.compile(r"^spec/spec-(codex|dev|east|gc|import|language-profile|options|runtime|tools|user|pylib-modules|sample-code|philosophy|make|template)\.md$"),
 )
 
 
