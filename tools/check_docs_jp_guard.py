@@ -11,7 +11,6 @@ DOCS_JP = ROOT / "docs-jp"
 
 ALLOWED_EXACT: set[str] = {
     "how-to-use.md",
-    "philosophy.md",
     "spec-codex.md",
     "spec/index.md",
     "todo.md",
@@ -22,7 +21,7 @@ ALLOWED_REGEX: tuple[re.Pattern[str], ...] = (
     re.compile(r"^todo-history/[0-9]{8}\.md$"),
     re.compile(r"^plans/.+\.md$"),
     re.compile(r"^language/.+\.md$"),
-    re.compile(r"^spec/spec-(dev|east|gc|import|language-profile|options|runtime|tools|user|pylib-modules|sample-code)\.md$"),
+    re.compile(r"^spec/spec-(dev|east|gc|import|language-profile|options|runtime|tools|user|pylib-modules|sample-code|philosophy)\.md$"),
 )
 
 

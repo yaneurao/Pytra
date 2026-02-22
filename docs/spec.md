@@ -15,6 +15,7 @@
 - Language-specific specifications: [Language-Specific Specifications](./language/index.md)
 - Codex operation specification: [Codex Operation Specification](./spec-codex.md)
 - `pylib` module index: [pylib Module Index](./pylib-modules.md)
+- Development philosophy: [Development Philosophy](./spec-philosophy.md)
 
 ## How To Read
 
@@ -32,6 +33,8 @@
   - [Language-Specific Specifications](./language/index.md)
 - If you want Codex work rules, TODO operations, and commit operations:
   - [Codex Operation Specification](./spec-codex.md)
+- If you want design rationale and the EAST-centric architecture background:
+  - [Development Philosophy](./spec-philosophy.md)
 
 ## What Codex Checks At Startup
 

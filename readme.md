@@ -520,7 +520,7 @@ The related documents are listed below in the order they are most frequently ref
 - Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](docs/pytra-readme.md)
 - Browse sample list and overview: [Sample Code Guide](docs/sample-code.md)
 - Review specs, constraints, architecture, and operational rules: [Specification Index](docs/spec.md)
-- Motivation and design philosophy: [Development Philosophy](docs/philosophy.md)
+- Motivation and design philosophy: [Development Philosophy](docs/spec-philosophy.md)
 
 ## License
 
