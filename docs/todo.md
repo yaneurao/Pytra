@@ -13,6 +13,7 @@ Last updated: 2026-02-22
 1. [ ] Continue organizing the selfhost-only stub remaining in `tools/prepare_selfhost_source.py`.
    - [x] Replaced `dump_codegen_options_text`'s selfhost fallback from a minimal `"options:\n"` stub to a selfhost-safe implementation that outputs a detailed line.
    - [x] `CodeEmitter.quote_string_literal` / `CodeEmitter.load_profile_with_includes` has been migrated to the main body `@staticmethod` implementation, and the corresponding replacement route on the `tools/prepare_selfhost_source.py` side has been deleted.
+   - [x] Removed `dump_codegen_options_text` and `main guard` replacement passes from `tools/prepare_selfhost_source.py`, and switched to forwarding the source implementation directly into selfhost.
 
 ## P1: CodeEmitter / Hooks Migration
 
