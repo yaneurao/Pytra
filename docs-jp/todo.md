@@ -130,9 +130,12 @@ py2cpp / py2rs 共通化候補:
 
 文脈: `docs-jp/plans/p3-microgpt-source-preservation.md`（`TG-P3-MICROGPT-SOURCE-PRESERVATION`）
 
-1. [ ] [ID: P3-MSP-01] `materials/inbox/exec-extracted.log` で抽出した原本改変項目（型注釈追加、内包/zip 展開、I/O 置換、アルゴリズム簡略化）を、parser/emitter/runtime の責務へ再分類する。
+1. [x] [ID: P3-MSP-01] `materials/inbox/exec-extracted.log` で抽出した原本改変項目（型注釈追加、内包/zip 展開、I/O 置換、アルゴリズム簡略化）を、parser/emitter/runtime の責務へ再分類する。
 2. [ ] [ID: P3-MSP-02] `materials/microgpt/microgpt-20260222.py` を無改変で `py2cpp` に入力したときの失敗要因を再現・列挙し、改変で迂回していた箇所を実装タスクへ置き換える。
 3. [ ] [ID: P3-MSP-03] `work/tmp/microgpt-20260222-lite.py` 依存を縮退し、原本 `materials/microgpt/microgpt-20260222.py` で transpile -> `g++ -fsyntax-only` が通る回帰導線を整備する。
+
+進捗メモ:
+- `P3-MSP-01`: `materials/inbox/exec-extracted.log`（2026-02-23 00:03〜00:13）と `materials/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` の差分を照合し、改変 7 項目を parser / emitter / runtime の責務へ再分類した。入力側改変を再発させないため、各項目を実装側で吸収する方針を `docs-jp/plans/p3-microgpt-source-preservation.md` に明記。
 
 ## P3: Pythonic 記法戻し（低優先）
 

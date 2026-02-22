@@ -21,6 +21,29 @@
 6. `open('input.txt')` / `urllib` / `os.path.exists` の I/O 経路を削除し、固定データへ置換。
 7. `Value` / autograd / GPT ブロックを含む元アルゴリズムを、軽量な `microgpt-lite` へ再構成。
 
+改変項目の責務再分類（P3-MSP-01）:
+1. 型注釈追加で回避した項目
+   - 本来の責務: parser（`self_hosted`）/ EAST の引数型解決。
+   - 吸収方針: 無注釈引数を受理するか（`unknown` 許容 or 推論）を parser 側仕様として明示し、入力側改変を不要にする。
+2. 1 行メソッド定義の複数行展開で回避した項目
+   - 本来の責務: parser の class-body 文法受理。
+   - 吸収方針: `def f(...): return ...` 形式を class 内でも受理し、同等 EAST へ lower する。
+3. トップレベル `for` / 多重代入の関数化・分解で回避した項目
+   - 本来の責務: parser の top-level statement 受理範囲。
+   - 吸収方針: top-level `for` と tuple unpack 代入を段階対応し、既存 Python スクリプト構造をそのまま受理する。
+4. 内包・generator・f-string 書式の手展開で回避した項目
+   - 本来の責務: parser expression lower + emitter の型整合。
+   - 吸収方針: 内包表記内 `range(...)`、`sum(generator)`、f-string format spec の lower を整備する。
+5. `random.choices(range(...), weights=...)` 形の変更で回避した項目
+   - 本来の責務: emitter の call lower + runtime `random` API。
+   - 吸収方針: `range` 反復体をそのまま `choices` に渡せる経路（または language profile での明示変換）を追加する。
+6. I/O 経路（`open` / `urllib` / `os.path.exists`）の削除で回避した項目
+   - 本来の責務: runtime 標準ライブラリ互換 + import 解決。
+   - 吸収方針: `pytra.std` の API 充足と I/O 反復互換を拡張し、データ入力コードを改変せず変換可能にする。
+7. autograd/GPT 全体を lite へ置換した項目
+   - 本来の責務: parser / emitter / runtime を跨ぐ総合互換性。
+   - 吸収方針: 原本 `microgpt` を入力した失敗点を機能別に分解し、各レイヤへ分配して段階解消する。
+
 目的:
 - 「変換器都合で元ソースを書き換える」運用を禁止し、必要な対応を parser/emitter/runtime 側タスクへ移す。
 - `materials/microgpt/microgpt-20260222.py`（原本）を無改変のまま扱える状態を作る。
@@ -41,3 +64,4 @@
 
 決定ログ:
 - 2026-02-23: `materials/inbox/exec-extracted.log` と `materials/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` 差分から、原本改変項目を抽出して本コンテキストを作成。
+- 2026-02-23: `P3-MSP-01` を実施。改変 7 項目を parser / emitter / runtime の責務へ再分類し、入力側改変の代わりに実装側で吸収する方針を明文化。
