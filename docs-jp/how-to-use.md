@@ -5,6 +5,9 @@
 </a>
 
 
+このドキュメントは、Pytra を実際に動かすための実行手順ガイドです。  
+入力制約や仕様定義の正本は [利用仕様](./spec/spec-user.md) を参照してください。
+
 ## 実行コマンドの前提（OS別）
 
 このドキュメントのコマンド例は、基本的に POSIX シェル（bash/zsh）形式で記載しています。  
@@ -28,9 +31,10 @@ Windows では次の読み替えを行ってください。
 - ただし `math` / `random` / `timeit` / `traceback` / `typing` / `enum` など、`pytra.std.*` に対応 shim がある一部モジュールは正規化して扱えます。
 - `import` できるのは `src/pytra/` 配下にあるモジュール（`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`）と、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
-- サポート済みモジュール一覧と API は [モジュール一覧](pylib-modules.md) を参照してください。
+- サポート済みモジュール一覧と API は [モジュール一覧](./spec/spec-pylib-modules.md) を参照してください。
 - 変換オプションの方針と候補は [オプション仕様](spec/spec-options.md) を参照してください。
 - 補助スクリプト（`tools/`）の用途一覧は [ツール一覧](spec/spec-tools.md) を参照してください。
+- 制約の根拠と正規仕様は [利用仕様](./spec/spec-user.md) を参照してください。
 
 
 ## トランスパイラの使い方
