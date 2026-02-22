@@ -2211,6 +2211,21 @@ class CppEmitter(CodeEmitter):
         for stmt in stmts:
             self.emit_stmt(stmt)
 
+    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
+        """selfhost C++ で base 実装へ静的束縛されるのを避ける。"""
+        self.indent += 1
+        self.scope_stack.append(scope_names)
+        for stmt in stmts:
+            self.emit_stmt(stmt)
+        self.scope_stack.pop()
+        self.indent -= 1
+
+    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
+        """selfhost C++ 向けに scoped block も CppEmitter 側で固定する。"""
+        self.emit(open_line)
+        self.emit_scoped_stmt_list(stmts, scope_names)
+        self.emit_block_close()
+
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
         kind = self._node_kind_from_dict(stmt)
         if kind == "Import":
