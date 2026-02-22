@@ -3626,9 +3626,7 @@ class CppEmitter(CodeEmitter):
         """`isinstance(x, T)` の Name 呼び出し分岐を描画する。"""
         if len(args) != 2:
             return None
-        rhs: dict[str, Any] = {}
-        if len(arg_nodes) > 1:
-            rhs = self.any_to_dict_or_empty(arg_nodes[1])
+        rhs: dict[str, Any] = self.any_to_dict_or_empty(arg_nodes[1]) if len(arg_nodes) > 1 else {}
         if self._node_kind_from_dict(rhs) != "Name":
             return "false"
         type_name = self.any_to_str(rhs.get("id"))
