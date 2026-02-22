@@ -2,7 +2,7 @@
   "schema_version": 1,
   "shared": "0.3.0",
   "languages": {
-    "cpp": "0.90.0",
+    "cpp": "0.91.0",
     "rs": "0.1.0",
     "cs": "0.1.0",
     "js": "0.1.0",

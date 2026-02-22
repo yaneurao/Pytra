@@ -868,8 +868,7 @@ class CppEmitter(CodeEmitter):
         seen: set[str] = set()
         bindings: list[dict[str, Any]] = self._dict_stmt_list(meta.get("import_bindings"))
         if len(bindings) > 0:
-            for i in range(len(bindings)):
-                item = bindings[i]
+            for item in bindings:
                 module_id = self.any_to_str(item.get("module_id"))
                 export_name = self.any_to_str(item.get("export_name"))
                 binding_kind = self.any_to_str(item.get("binding_kind"))
