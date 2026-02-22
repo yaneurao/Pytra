@@ -6244,10 +6244,8 @@ def _graph_cycle_dfs(
                 j -= 1
             if j >= 0:
                 nodes: list[str] = []
-                m = j
-                while m < len(stack):
+                for m in range(j, len(stack)):
                     nodes.append(stack[m])
-                    m += 1
                 nodes.append(nxt)
                 disp_nodes: list[str] = []
                 for k in range(len(nodes)):
