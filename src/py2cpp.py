@@ -4190,8 +4190,7 @@ class CppEmitter(CodeEmitter):
             candidates = [t_norm]
         if self.current_class_name is not None and owner_t in {"", "unknown"}:
             candidates.append(self.current_class_name)
-        for i in range(len(candidates)):
-            c = candidates[i]
+        for c in candidates:
             if c in self.class_method_arg_types:
                 mm = self.class_method_arg_types[c]
                 if method in mm:
@@ -4237,8 +4236,7 @@ class CppEmitter(CodeEmitter):
             candidates = [t_norm]
         if self.current_class_name is not None and owner_t in {"", "unknown"}:
             candidates.append(self.current_class_name)
-        for i in range(len(candidates)):
-            c = candidates[i]
+        for c in candidates:
             if c in self.class_method_arg_names:
                 mm = self.class_method_arg_names[c]
                 if method in mm:
