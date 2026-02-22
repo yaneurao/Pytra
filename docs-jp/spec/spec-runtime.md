@@ -295,3 +295,11 @@ float64 sqrt(float64 x) {
     のように宣言/定義へ分離して受ける。
   - `return _m.sqrt(x)` は `pytra::std::math_impl::sqrt(x)` 呼び出しで受ける。
 - 上記マップ先（`pytra::std::<name>_impl::*`）は手書き実装として事前に提供し、生成コードはそれを参照する。
+
+### 12. `Any` / `object` 表現方針（C++）
+
+- `Any` は C++ では `object`（`rc<PyObj>`）として表現する。
+- `None` は `object{}`（null ハンドル）として表現する。
+- boxing/unboxing は `make_object(...)` / `obj_to_*` / `py_to_*` を使用する。
+- EAST 側の注釈正規化（`any` / `object` は `Any` 同義）から C++ 実装へ落とす際の具体化として、この方針を適用する。
+- EAST 側の定義は [EAST仕様（実装準拠）](./spec-east.md) を参照する。

@@ -148,7 +148,8 @@ Function nodes include:
 - `float` normalizes to `float64`.
 - `byte` normalizes to `uint8` (annotation alias for one-char/one-byte use).
 - `float32` / `float64` are preserved.
-- `any` / `object` are treated as equivalent to `Any` (in C++, `object` = `rc<PyObj>`).
+- `any` / `object` are treated as equivalent to `Any`.
+- For concrete C++ runtime representation (`object`, `None`, boxing/unboxing), see the `Any` / `object` representation policy in [Runtime Specification](./spec-runtime.md).
 - `bytes` / `bytearray` normalize to `list[uint8]`.
 - `pathlib.Path` normalizes to `Path`.
 - C++ runtime `str` / `list` / `dict` / `set` / `bytes` / `bytearray` are implemented as wrappers (composition), not STL inheritance.

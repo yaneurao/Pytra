@@ -149,7 +149,8 @@
 - `float` は `float64` に正規化。
 - `byte` は `uint8` に正規化（1文字/1byte用途の注釈エイリアス）。
 - `float32/float64` はそのまま保持。
-- `any` / `object` は `Any` と同義に扱う（C++ 側では `object` = `rc<PyObj>`）。
+- `any` / `object` は `Any` と同義に扱う。
+- C++ ランタイムでの具体表現（`object`, `None`, boxing/unboxing）は [ランタイム仕様](./spec-runtime.md) の `Any` / `object` 表現方針を参照。
 - `bytes` / `bytearray` は `list[uint8]` に正規化。
 - `pathlib.Path` は `Path` に正規化。
 - C++ ランタイムの `str` / `list` / `dict` / `set` / `bytes` / `bytearray` は、STL 継承ではなく wrapper（composition）として実装する。

@@ -23,7 +23,7 @@
   - [User Specification](./spec-user.md)
 - If you want implementation policy, module structure, and transpilation rules:
   - [Implementation Specification](./spec-dev.md)
-- If you want C++ runtime layout and include mapping rules:
+- If you want C++ runtime layout, include mapping rules, and the `Any` mapping policy:
   - [Runtime Specification](./spec-runtime.md)
 - If you want RC-based GC policy:
   - [GC Specification](./spec-gc.md)
@@ -39,9 +39,3 @@
 ## What Codex Checks At Startup
 
 - At startup, Codex reads `docs-jp/spec/index.md` as the canonical entry point, then checks [Codex Operation Specification](./spec-codex.md) and [TODO](../docs-jp/todo.md).
-
-## Current `Any` Policy
-
-- In C++, `Any` is represented as `object` (`rc<PyObj>`).
-- `None` is represented as `object{}` (null handle).
-- For boxing/unboxing, use `make_object(...)` / `obj_to_*` / `py_to_*`.

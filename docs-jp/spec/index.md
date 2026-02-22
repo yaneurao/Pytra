@@ -23,7 +23,7 @@
   - [利用仕様](./spec-user.md)
 - 実装方針・モジュール構成・変換仕様を確認したい場合:
   - [実装仕様](./spec-dev.md)
-- C++ ランタイム配置・include対応規約を確認したい場合:
+- C++ ランタイム配置・include対応規約・`Any` の C++ 表現方針を確認したい場合:
   - [ランタイム仕様](./spec-runtime.md)
 - RC ベースの GC 方針を確認したい場合:
   - [GC 仕様](./spec-gc.md)
@@ -39,9 +39,3 @@
 ## Codex 起動時の確認先
 
 - Codex は起動時に `docs-jp/spec/index.md` を入口として読み、続けて [Codex 向け運用仕様](./spec-codex.md) と [TODO](../todo.md) を確認します。
-
-## Any の現行方針
-
-- `Any` は C++ では `object`（`rc<PyObj>`）として表現します。
-- `None` は `object{}`（null ハンドル）で表現します。
-- boxing/unboxing は `make_object(...)` / `obj_to_*` / `py_to_*` を使用します。

@@ -292,3 +292,11 @@ Each module must satisfy at least:
     - `.cpp`: `float64 pi = py_to_float64(pytra::std::math_impl::pi);`
   - `return _m.sqrt(x)` maps to `pytra::std::math_impl::sqrt(x)`.
 - Provide mapping targets (`pytra::std::<name>_impl::*`) as handwritten implementations in advance; generated code references them.
+
+### 12. `Any` / `object` Representation Policy (C++)
+
+- In C++, `Any` is represented as `object` (`rc<PyObj>`).
+- `None` is represented as `object{}` (null handle).
+- Use `make_object(...)` / `obj_to_*` / `py_to_*` for boxing/unboxing.
+- Apply this policy as the runtime-level concretization of EAST annotation normalization (`any` / `object` equivalent to `Any`).
+- See [EAST Specification (Implementation-Aligned)](./spec-east.md) for the EAST-side definition.
