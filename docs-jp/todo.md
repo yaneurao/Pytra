@@ -137,8 +137,8 @@ py2cpp / py2rs 共通化候補:
 
 1. [ ] [ID: P3-CE-01] `split_*` / `normalize_type_name` 周辺の index ループを段階的に `for` ベースへ戻す。
 2. [ ] [ID: P3-CE-02] `any_*` 系ヘルパで重複する `None`/空文字判定を共通小関数へ集約する。
-3. [ ] [ID: P3-CE-03] `_emit_trivia_items` の directive 処理分岐を小関数に分割する。
-4. [ ] [ID: P3-CE-04] `hook_on_*` 系で同型の呼び出しパターンを汎用ヘルパ化し、重複を減らす。
+3. [x] [ID: P3-CE-03] `_emit_trivia_items` の directive 処理分岐を小関数に分割する。
+4. [x] [ID: P3-CE-04] `hook_on_*` 系で同型の呼び出しパターンを汎用ヘルパ化し、重複を減らす。
 
 進捗メモ:
 - `P3-CE-01` の一部として `src/pytra/compiler/east_parts/code_emitter.py` の `escape_string_for_literal`、`render_compare_chain_common`、`load_import_bindings_from_meta` を `for` ベースへ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
@@ -147,6 +147,7 @@ py2cpp / py2rs 共通化候補:
 - `P3-CE-03` の一部として `src/pytra/compiler/east_parts/code_emitter.py` の `_emit_trivia_items` から directive/blank 処理を `_handle_comment_trivia_directive`、`_emit_passthrough_directive_line`、`_emit_blank_trivia_item` へ分離した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-CE-04` の一部として `src/pytra/compiler/east_parts/code_emitter.py` に `_lookup_hook` を追加し、`hook_on_emit_stmt` / `hook_on_emit_stmt_kind` / `hook_on_render_expr_kind` / `hook_on_render_expr_leaf` の hook 取得ロジック重複を削減した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-CE-04` の継続として `hook_on_stmt_omit_braces` / `hook_on_for_range_mode` / `hook_on_render_call` も `_lookup_hook` 経由へ統一した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
+- `src/pytra/compiler/east_parts/code_emitter.py` で `hook_on_*` の `if \"on_*\" in self.hooks` パターンが検出ゼロになったため、`P3-CE-04` を完了扱いに更新した。`P3-CE-03` も `_emit_trivia_items` の directive 分岐分割が完了したため完了扱いに更新した。
 
 ### 作業ルール
 
