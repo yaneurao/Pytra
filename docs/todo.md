@@ -35,4 +35,4 @@ Last updated: 2026-02-22
 ## Note
 
 - This file only holds unfinished tasks.
-- Completed tasks will be moved to `docs-jp/todo-old.md`.
+- Completed tasks are moved via `docs-jp/todo-history/index.md`.
