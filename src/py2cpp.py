@@ -6289,11 +6289,9 @@ def _graph_cycle_dfs(
                     m += 1
                 nodes.append(nxt)
                 disp_nodes: list[str] = []
-                k = 0
-                while k < len(nodes):
+                for k in range(len(nodes)):
                     dk = nodes[k]
                     disp_nodes.append(key_to_disp.get(dk, dk))
-                    k += 1
                 cycle_txt = _join_str_list(" -> ", disp_nodes)
                 if cycle_txt not in cycle_seen:
                     cycle_seen.add(cycle_txt)
