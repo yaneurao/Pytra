@@ -1,26 +1,154 @@
 // Python 互換ランタイム（TypeScript版）の共通関数群。
 // 将来的な Python -> TypeScript ネイティブ変換コードから利用する。
 
-/** Python 風の文字列表現へ変換する。 */
-export function pyToString(value: unknown): string {
-  if (value === null || value === undefined) {
-    return "None";
+export const PY_TYPE_NONE = 0;
+export const PY_TYPE_BOOL = 1;
+export const PY_TYPE_NUMBER = 2;
+export const PY_TYPE_STRING = 3;
+export const PY_TYPE_ARRAY = 4;
+export const PY_TYPE_MAP = 5;
+export const PY_TYPE_SET = 6;
+export const PY_TYPE_OBJECT = 7;
+
+export const PYTRA_TYPE_ID = Symbol.for("pytra.type_id");
+export const PYTRA_TRUTHY = Symbol.for("pytra.py_truthy");
+export const PYTRA_TRY_LEN = Symbol.for("pytra.py_try_len");
+export const PYTRA_STR = Symbol.for("pytra.py_str");
+
+type PytraTagged = {
+  [PYTRA_TYPE_ID]?: number;
+  [PYTRA_TRUTHY]?: () => unknown;
+  [PYTRA_TRY_LEN]?: () => unknown;
+  [PYTRA_STR]?: () => unknown;
+};
+
+function asTagged(value: unknown): PytraTagged | null {
+  if ((typeof value === "object" || typeof value === "function") && value !== null) {
+    return value as PytraTagged;
   }
-  if (typeof value === "boolean") {
-    return value ? "True" : "False";
+  return null;
+}
+
+/** 値の type_id を返す（minify 耐性のある tag dispatch 用）。 */
+export function pyTypeId(value: unknown): number {
+  if (value === null || value === undefined) return PY_TYPE_NONE;
+  const ty = typeof value;
+  if (ty === "boolean") return PY_TYPE_BOOL;
+  if (ty === "number") return PY_TYPE_NUMBER;
+  if (ty === "string") return PY_TYPE_STRING;
+  if (Array.isArray(value)) return PY_TYPE_ARRAY;
+  if (value instanceof Map) return PY_TYPE_MAP;
+  if (value instanceof Set) return PY_TYPE_SET;
+  const tagged = asTagged(value);
+  if (tagged !== null) {
+    const raw = tagged[PYTRA_TYPE_ID];
+    if (typeof raw === "number" && Number.isInteger(raw)) {
+      return raw;
+    }
   }
-  if (Array.isArray(value)) {
-    return `[${value.map((v) => pyToString(v)).join(", ")}]`;
+  return PY_TYPE_OBJECT;
+}
+
+/** bool 境界の共通 truthy 判定。 */
+export function pyTruthy(value: unknown): boolean {
+  const typeId = pyTypeId(value);
+  switch (typeId) {
+    case PY_TYPE_NONE:
+      return false;
+    case PY_TYPE_BOOL:
+      return value as boolean;
+    case PY_TYPE_NUMBER:
+      return (value as number) !== 0;
+    case PY_TYPE_STRING:
+      return (value as string).length !== 0;
+    case PY_TYPE_ARRAY:
+      return (value as unknown[]).length !== 0;
+    case PY_TYPE_MAP:
+    case PY_TYPE_SET:
+      return (value as Map<unknown, unknown> | Set<unknown>).size !== 0;
+    case PY_TYPE_OBJECT:
+      return true;
+    default:
+      break;
   }
-  if (value instanceof Map) {
-    const entries = Array.from(value.entries()).map(([k, v]) => `${pyToString(k)}: ${pyToString(v)}`);
-    return `{${entries.join(", ")}}`;
+  const tagged = asTagged(value);
+  if (tagged !== null) {
+    const hook = tagged[PYTRA_TRUTHY];
+    if (typeof hook === "function") {
+      return Boolean(hook.call(tagged));
+    }
   }
-  if (value instanceof Set) {
-    const entries = Array.from(value.values()).map((v) => pyToString(v));
-    return `{${entries.join(", ")}}`;
+  return true;
+}
+
+/** len 境界の共通 try helper（未対応は null）。 */
+export function pyTryLen(value: unknown): number | null {
+  const typeId = pyTypeId(value);
+  switch (typeId) {
+    case PY_TYPE_STRING:
+    case PY_TYPE_ARRAY:
+      return (value as string | unknown[]).length;
+    case PY_TYPE_MAP:
+    case PY_TYPE_SET:
+      return (value as Map<unknown, unknown> | Set<unknown>).size;
+    case PY_TYPE_OBJECT:
+      return Object.keys(value as Record<string, unknown>).length;
+    default:
+      break;
+  }
+  const tagged = asTagged(value);
+  if (tagged !== null) {
+    const hook = tagged[PYTRA_TRY_LEN];
+    if (typeof hook === "function") {
+      const out = hook.call(tagged);
+      if (typeof out === "number" && Number.isFinite(out)) {
+        return Math.trunc(out);
+      }
+    }
+  }
+  return null;
+}
+
+/** str 境界の共通 helper。 */
+export function pyStr(value: unknown): string {
+  const typeId = pyTypeId(value);
+  switch (typeId) {
+    case PY_TYPE_NONE:
+      return "None";
+    case PY_TYPE_BOOL:
+      return (value as boolean) ? "True" : "False";
+    case PY_TYPE_NUMBER:
+      return String(value);
+    case PY_TYPE_STRING:
+      return value as string;
+    case PY_TYPE_ARRAY:
+      return `[${(value as unknown[]).map((v) => pyToString(v)).join(", ")}]`;
+    case PY_TYPE_MAP: {
+      const entries = Array.from((value as Map<unknown, unknown>).entries()).map(([k, v]) => `${pyToString(k)}: ${pyToString(v)}`);
+      return `{${entries.join(", ")}}`;
+    }
+    case PY_TYPE_SET: {
+      const entries = Array.from((value as Set<unknown>).values()).map((v) => pyToString(v));
+      return `{${entries.join(", ")}}`;
+    }
+    case PY_TYPE_OBJECT:
+      return String(value);
+    default:
+      break;
+  }
+  const tagged = asTagged(value);
+  if (tagged !== null) {
+    const hook = tagged[PYTRA_STR];
+    if (typeof hook === "function") {
+      return String(hook.call(tagged));
+    }
   }
   return String(value);
+}
+
+/** Python 風の文字列表現へ変換する。 */
+export function pyToString(value: unknown): string {
+  return pyStr(value);
 }
 
 /** Python の print 相当（空白区切りで表示）。 */
@@ -33,37 +161,15 @@ export function pyPrint(...args: unknown[]): void {
 }
 
 /** Python の len 相当。 */
-export function pyLen(value: string | unknown[] | Map<unknown, unknown> | Set<unknown>): number {
-  if (typeof value === "string" || Array.isArray(value)) {
-    return value.length;
-  }
-  if (value instanceof Map || value instanceof Set) {
-    return value.size;
-  }
-  return Object.keys(value as Record<string, unknown>).length;
+export function pyLen(value: unknown): number {
+  const out = pyTryLen(value);
+  if (out !== null) return out;
+  throw new Error("len() unsupported type");
 }
 
 /** Python の bool 相当。 */
 export function pyBool(value: unknown): boolean {
-  if (value === null || value === undefined) {
-    return false;
-  }
-  if (typeof value === "boolean") {
-    return value;
-  }
-  if (typeof value === "number") {
-    return value !== 0;
-  }
-  if (typeof value === "string") {
-    return value.length !== 0;
-  }
-  if (Array.isArray(value)) {
-    return value.length !== 0;
-  }
-  if (value instanceof Map || value instanceof Set) {
-    return value.size !== 0;
-  }
-  return true;
+  return pyTruthy(value);
 }
 
 /** Python の range 相当配列を返す。 */
@@ -102,20 +208,28 @@ export function pyMod(a: number, b: number): number {
 }
 
 /** Python の in 相当。 */
-export function pyIn(item: unknown, container: string | unknown[] | Set<unknown> | Map<unknown, unknown>): boolean {
-  if (typeof container === "string") {
-    return container.includes(String(item));
+export function pyIn(item: unknown, container: unknown): boolean {
+  const typeId = pyTypeId(container);
+  switch (typeId) {
+    case PY_TYPE_STRING:
+      return (container as string).includes(String(item));
+    case PY_TYPE_ARRAY:
+      return (container as unknown[]).includes(item);
+    case PY_TYPE_SET:
+    case PY_TYPE_MAP:
+      return (container as Set<unknown> | Map<unknown, unknown>).has(item);
+    case PY_TYPE_OBJECT:
+      if (typeof container === "object" && container !== null) {
+        return Object.prototype.hasOwnProperty.call(container as object, String(item));
+      }
+      break;
+    default:
+      if (typeof container === "object" && container !== null) {
+        return Object.prototype.hasOwnProperty.call(container as object, String(item));
+      }
+      break;
   }
-  if (Array.isArray(container)) {
-    return container.includes(item);
-  }
-  if (container instanceof Set || container instanceof Map) {
-    return container.has(item);
-  }
-  if (typeof container === "object" && container !== null) {
-    return Object.prototype.hasOwnProperty.call(container as object, String(item));
-  }
-  return false;
+  throw new Error("in operation unsupported type");
 }
 
 /** Python のスライス相当（step なし）。 */

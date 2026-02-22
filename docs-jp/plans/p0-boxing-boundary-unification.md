@@ -39,3 +39,5 @@ ID: `TG-P0-BOXING`
 - 2026-02-22: `spec-boxing` の実装を TODO 最優先へ昇格。`P0-BOX-01`〜`P0-BOX-04` を追加。
 - 2026-02-23: `P0-BOX-01` の初期導入を実施。`gc.h` に `PyObj` hook（`py_truthy` / `py_try_len` / `py_str`）を追加し、`py_runtime.h` に `obj_to_rc(_or_raise)` と `obj_to_*_or_raise` を追加。`py2cpp.py` は class field の Any/unknown receiver fallback を `obj_to_rc_or_raise` 経路へ切替開始（`P0-BOX-02` 継続）。
 - 2026-02-23: `P0-BOX-02` を主要経路で完了。`py2cpp.py` の `Any/object -> ref class` 変換を `AnnAssign` / `Assign` / `Return` / call引数 / `Yield` で `obj_to_rc_or_raise` へ統一し、`test_py2cpp_codegen_issues` に回帰ケース（annassign/return/call_arg）を追加。
+- 2026-02-23: `P0-BOX-03` を完了。JS/TS runtime の `constructor.name` 依存を廃止し、`PYTRA_TYPE_ID` / `PYTRA_TRUTHY` / `PYTRA_TRY_LEN` / `PYTRA_STR` と `pyTypeId` / `pyTruthy` / `pyTryLen` / `pyStr` による `type_id` dispatch へ移行した。
+- 2026-02-23: `P0-BOX-04` を完了。`test/unit/test_js_ts_runtime_dispatch.py` を追加し、JS/TS 側の minify 耐性 dispatch と hook 経路を検証した。既存の C++ runtime boxing / py2cpp codegen / py2js & py2ts smoke と合わせてクロスターゲット回帰を通過確認した。
