@@ -13,19 +13,19 @@ Related TODO:
 - `docs-jp/todo.md` `ID: P2-MGPT-04`
 
 Background:
-- Transpiling `microgpt/microgpt-20260222.py` via `python3 src/py2cpp.py ...` currently stops because the self_hosted parser rejects arguments without type annotations.
+- Transpiling `materials/microgpt/microgpt-20260222.py` via `python3 src/py2cpp.py ...` currently stops because the self_hosted parser rejects arguments without type annotations.
 - With typed minimal probes for `random.choices` / `random.gauss` / `random.shuffle`, generated C++ emits `pytra::std::random::*` calls, but compilation fails because those APIs were missing in `src/runtime/cpp/pytra/std/random.h`.
 - `os.path.exists` has already been confirmed to transpile and pass C++ syntax check under the same conditions.
 
 Validation commands (already executed):
-- `python3 src/py2cpp.py microgpt/microgpt-20260222.py -o out/microgpt-20260222.cpp`
-- `python3 src/py2cpp.py /tmp/pytra_probe_random_choices.py -o out/pytra_probe_random_choices.cpp`
-- `python3 src/py2cpp.py /tmp/pytra_probe_random_gauss.py -o out/pytra_probe_random_gauss.cpp`
-- `python3 src/py2cpp.py /tmp/pytra_probe_random_shuffle.py -o out/pytra_probe_random_shuffle.cpp`
-- `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only out/pytra_probe_random_choices.cpp`
-- `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only out/pytra_probe_random_gauss.cpp`
-- `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only out/pytra_probe_random_shuffle.cpp`
-- `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only out/pytra_probe_os_exists.cpp`
+- `python3 src/py2cpp.py materials/microgpt/microgpt-20260222.py -o work/out/microgpt-20260222.cpp`
+- `python3 src/py2cpp.py /tmp/pytra_probe_random_choices.py -o work/out/pytra_probe_random_choices.cpp`
+- `python3 src/py2cpp.py /tmp/pytra_probe_random_gauss.py -o work/out/pytra_probe_random_gauss.cpp`
+- `python3 src/py2cpp.py /tmp/pytra_probe_random_shuffle.py -o work/out/pytra_probe_random_shuffle.cpp`
+- `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only work/out/pytra_probe_random_choices.cpp`
+- `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only work/out/pytra_probe_random_gauss.cpp`
+- `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only work/out/pytra_probe_random_shuffle.cpp`
+- `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only work/out/pytra_probe_os_exists.cpp`
 
 Objective:
 - Incrementally improve `py2cpp` compatibility for microgpt-like input while explicitly handling gaps against the current specification (type annotations required).
@@ -43,7 +43,7 @@ Acceptance criteria:
 - Operational policy for type-annotation requirements is documented in spec.
 - Minimal C++ syntax checks pass for `random.choices` / `random.gauss` / `random.shuffle`.
 - Causes of failures on microgpt-like cases can be traced reproducibly (fixture or explicit procedure).
-- `microgpt/microgpt-20260222.py` transpiles with `py2cpp.py` and generated C++ compiles with `g++ -std=c++20 -I src -I src/runtime/cpp`.
+- `materials/microgpt/microgpt-20260222.py` transpiles with `py2cpp.py` and generated C++ compiles with `g++ -std=c++20 -I src -I src/runtime/cpp`.
 
 Decision log:
 - 2026-02-22: Initial draft. Added TODO entries for observed gaps in microgpt conversion tests (type annotations, random API).

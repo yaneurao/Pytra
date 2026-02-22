@@ -14,6 +14,9 @@
 - `docs-jp/` を正本（source of truth）とし、`docs/` は翻訳ミラーとして扱う。
 - `docs-jp/` 直下（トップレベル）への新規ファイル追加は原則禁止（同一ターンの明示依頼がある場合のみ許可）。
 - `docs-jp/plans/`、`docs-jp/language/`、`docs-jp/todo-history/`、`docs-jp/spec/` 配下は、運用ルールに沿う範囲で作成可。
+- 作業生成物は `work/` 配下（`work/out/`, `work/selfhost/`, `work/tmp/`, `work/logs/`）を使用し、リポジトリ直下に `out/` / `selfhost/` を増やさない。
+- `materials/` はユーザー資料置き場として扱い、Codex は read-only（明示指示がある場合のみ編集可）。
+- `materials/Yanesdk/` と `materials/microgpt/` はユーザー管理資料として扱う。
 
 ## 参照先
 

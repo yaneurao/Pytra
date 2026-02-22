@@ -7,14 +7,22 @@ __pycache__/
 .DS_Store
 
 /test/transpile/
-/out/
+/work/
 /sample/obj/
 /sample/out/
 
 /test/transpile/java/*.class
 /sample/java/*.class
 
+# legacy output paths (avoid accidental tracking if recreated)
+/out/
 /selfhost/
+
+# user materials (read-only for Codex)
+/materials/Yanesdk/
+/materials/microgpt/
+
+# legacy material paths
 /Yanesdk/
 /microgpt/
 
