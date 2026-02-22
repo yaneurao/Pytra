@@ -10,6 +10,7 @@
 - User specification: [User Specification](./spec-user.md)
 - Implementation specification: [Implementation Specification](./spec-dev.md)
 - Runtime specification: [Runtime Specification](./spec-runtime.md)
+- GC specification: [GC Specification](./spec-gc.md)
 - Language profile specification: [Language Profile Specification](./spec-language-profile.md)
 - Codex operation specification: [Codex Operation Specification](./spec-codex.md)
 - `pylib` module index: [pylib Module Index](./pylib-modules.md)
@@ -22,6 +23,8 @@
   - [Implementation Specification](./spec-dev.md)
 - If you want C++ runtime layout and include mapping rules:
   - [Runtime Specification](./spec-runtime.md)
+- If you want RC-based GC policy:
+  - [GC Specification](./spec-gc.md)
 - If you want `CodeEmitter` JSON profile and hooks specification:
   - [Language Profile Specification](./spec-language-profile.md)
 - If you want Codex work rules, TODO operations, and commit operations:
