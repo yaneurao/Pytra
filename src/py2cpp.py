@@ -6859,13 +6859,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
         mod_name = _module_id_from_east_for_graph(root, mod_path, east)
         if mod_name == "":
             continue
-        body_obj = east.get("body")
-        body: list[dict[str, Any]] = []
-        if isinstance(body_obj, list):
-            for i in range(len(body_obj)):
-                item = body_obj[i]
-                if isinstance(item, dict):
-                    body.append(item)
+        body = _dict_any_get_dict_list(east, "body")
         exports: set[str] = set()
         for i in range(len(body)):
             st = body[i]
@@ -6875,14 +6869,11 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                 if name_txt != "":
                     exports.add(name_txt)
             elif kind == "Assign":
-                targets: list[Any] = []
-                targets_obj = st.get("targets")
-                if isinstance(targets_obj, list):
-                    targets = targets_obj
-                else:
-                    tgt_obj = st.get("target")
-                    if isinstance(tgt_obj, dict):
-                        targets = [tgt_obj]
+                targets = _dict_any_get_list(st, "targets")
+                if len(targets) == 0:
+                    tgt = _dict_any_get_dict(st, "target")
+                    if len(tgt) > 0:
+                        targets = [tgt]
                 for j in range(len(targets)):
                     tgt_obj = targets[j]
                     if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
@@ -6907,30 +6898,22 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
     details: list[str] = []
     for mod_key, east in module_east_map.items():
         file_disp = _rel_disp_for_graph(root, Path(mod_key))
-        body_obj = east.get("body")
-        body: list[dict[str, Any]] = []
-        if isinstance(body_obj, list):
-            for i in range(len(body_obj)):
-                item = body_obj[i]
-                if isinstance(item, dict):
-                    body.append(item)
+        body = _dict_any_get_dict_list(east, "body")
         for i in range(len(body)):
             st = body[i]
             if _dict_any_kind(st) == "ImportFrom":
                 imported_mod = _dict_any_get_str(st, "module")
                 if imported_mod in exports:
-                    names_obj = st.get("names")
-                    names = names_obj if isinstance(names_obj, list) else []
+                    names = _dict_any_get_dict_list(st, "names")
                     for j in range(len(names)):
                         ent = names[j]
-                        if isinstance(ent, dict):
-                            sym = _dict_any_get_str(ent, "name")
-                            if sym == "*":
-                                continue
-                            if sym != "" and sym not in exports[imported_mod]:
-                                details.append(
-                                    f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
-                                )
+                        sym = _dict_any_get_str(ent, "name")
+                        if sym == "*":
+                            continue
+                        if sym != "" and sym not in exports[imported_mod]:
+                            details.append(
+                                f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
+                            )
     if len(details) > 0:
         raise _make_user_error(
             "input_invalid",
@@ -6943,26 +6926,22 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
     """入口 + 依存ユーザーモジュールを個別に EAST 化して返す。"""
     analysis = _analyze_import_graph(entry_path)
     _validate_import_graph_or_raise(analysis)
-    files_obj = analysis.get("user_module_files")
-    files: list[str] = files_obj if isinstance(files_obj, list) else []
-    module_id_map_obj = analysis.get("module_id_map")
-    module_id_map: dict[str, Any] = module_id_map_obj if isinstance(module_id_map_obj, dict) else {}
+    files = _dict_any_get_str_list(analysis, "user_module_files")
+    module_id_map = _dict_any_get_dict(analysis, "module_id_map")
     out: dict[str, dict[str, Any]] = {}
     root_dir = Path(_path_parent_text(entry_path))
-    for i in range(len(files)):
-        f = files[i]
-        if isinstance(f, str):
-            p = Path(f)
-            east = load_east(p, parser_backend)
-            meta = _dict_any_get_dict(east, "meta")
-            module_id = _dict_any_get_str(module_id_map, str(p))
-            if module_id == "":
-                module_id = _module_name_from_path_for_graph(root_dir, p)
-            if module_id != "":
-                module_id_any: Any = module_id
-                meta["module_id"] = module_id_any
-            east["meta"] = meta
-            out[str(p)] = east
+    for f in files:
+        p = Path(f)
+        east = load_east(p, parser_backend)
+        meta = _dict_any_get_dict(east, "meta")
+        module_id = _dict_any_get_str(module_id_map, str(p))
+        if module_id == "":
+            module_id = _module_name_from_path_for_graph(root_dir, p)
+        if module_id != "":
+            module_id_any: Any = module_id
+            meta["module_id"] = module_id_any
+        east["meta"] = meta
+        out[str(p)] = east
     _validate_from_import_symbols_or_raise(out, root=root_dir)
     return out
 
