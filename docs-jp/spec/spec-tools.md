@@ -39,6 +39,10 @@
   - 目的: Yanesdk canonical 対象（`library 1本 + game 7本`）が `py2cpp.py` を通るか確認する。
 - `tools/check_microgpt_original_py2cpp_regression.py`
   - 目的: 原本 `materials/microgpt/microgpt-20260222.py` を固定入力にし、`py2cpp` の失敗ステージ（A〜F）または成功を検査して再発を検知する。
+- `tools/build_multi_cpp.py`
+  - 目的: `py2cpp.py --multi-file` が出力した `manifest.json` を読み、関連 `*.cpp` と runtime をまとめてビルドする。
+- `tools/verify_multi_file_outputs.py`
+  - 目的: `sample/py` の multi-file 出力をビルド・実行し、単一ファイル出力との実行結果一致を確認する。
 - `tools/check_transpiler_version_gate.py`
   - 目的: 変換器関連ファイルが変更されたとき、`src/pytra/compiler/transpiler_versions.json` の対応コンポーネント（`shared` / 言語別）で minor 以上のバージョン更新が行われているかを検証する。
 - `tools/regenerate_samples.py`

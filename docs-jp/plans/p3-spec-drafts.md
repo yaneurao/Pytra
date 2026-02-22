@@ -29,3 +29,19 @@
 
 決定ログ:
 - 2026-02-22: `spec-make.md` / `spec-template.md` を `docs-jp/spec/` へ移動し、低優先 TODO (`P3-SD-01`, `P3-SD-02`) を追加する方針を確定。
+- 2026-02-22: `P3-SD-01` を実施。`spec-make.md` と実装を照合し、採用済み項目（multi-file `manifest.json` 契約、`tools/build_multi_cpp.py` ビルド導線）を `spec-dev` / `spec-tools` へ移管した。`./pytra --build` / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` は未実装として草案側に残す方針を明記。
+
+## P3-SD-01 照合結果（`spec-make.md`）
+
+採用して既存仕様へ移管した節:
+- §7 `manifest.json` 入力仕様
+  - 移管先: `docs-jp/spec/spec-dev.md`（`3.0 複数ファイル出力と manifest/build`）
+- §6 C++ build フロー（実装済み部分のみ）
+  - 移管先: `docs-jp/spec/spec-dev.md`（`tools/build_multi_cpp.py` フロー）
+- build 補助スクリプトの位置づけ
+  - 移管先: `docs-jp/spec/spec-tools.md`（`tools/build_multi_cpp.py`, `tools/verify_multi_file_outputs.py`）
+
+保留（草案維持）とした節:
+- §4〜§5（`./pytra` ランチャー、`src/pytra/cli.py`、`--target cpp --build`）
+- §8〜§10（`tools/gen_makefile_from_manifest.py` 前提の Makefile 生成契約）
+- §11（段階導入のうち未実装フェーズ）

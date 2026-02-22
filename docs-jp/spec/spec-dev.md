@@ -147,6 +147,26 @@
 - PNG 画像の一致判定は、ファイルバイト列の完全一致を基準とします。
 - GIF 画像の一致判定も、ファイルバイト列の完全一致を基準とします。
 
+### 3.0 複数ファイル出力と `manifest.json` / build（実装済み）
+
+- `py2cpp.py` の既定出力モードは `--multi-file` です（明示 `--single-file` 指定で単一 `.cpp` へ切替）。
+- 互換挙動として、出力先が `.cpp` で終わる場合はモード明示なしでも単一ファイル出力を選びます。
+- `--multi-file` 出力では `--output-dir`（未指定時は `out`）配下へ次を生成します。
+  - `include/`（モジュールごとの `*.h`）
+  - `src/`（モジュールごとの `*.cpp`）
+  - `manifest.json`
+- `manifest.json` には少なくとも次のキーを出力します。
+  - `entry`
+  - `include_dir`
+  - `src_dir`
+  - `modules`（要素は `module`, `label`, `header`, `source`, `is_entry`）
+- 複数ファイル出力の C++ ビルドには `tools/build_multi_cpp.py` を使います。
+  - 基本形: `python3 tools/build_multi_cpp.py out/manifest.json -o out/app.out`
+  - オプション: `--std`（既定 `c++20`）、`--opt`（既定 `-O2`）
+  - `manifest.modules` が配列でない、または有効 `source` が空の場合はエラー終了します。
+  - `manifest.include_dir` が未指定の場合は `manifest` 同階層 `include/` を既定として扱います。
+- `docs-jp/spec/spec-make.md` にある `./pytra --build` / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` は、2026-02-22 時点で未実装です。
+
 ### 3.1 import と `runtime/cpp` 対応
 
 `py2cpp.py` は import 文に応じて include を生成します。

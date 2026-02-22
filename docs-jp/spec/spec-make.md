@@ -1,6 +1,11 @@
-# Makefile 生成とワンショット build 仕様（決定）
+# Makefile 生成とワンショット build 仕様（草案）
 
 この文書は、C++ 向けの build 導線を `py2cpp.py` 直呼びではなく `pytra` 共通 CLI へ集約する運用仕様を定義する。
+
+> 2026-02-22 照合メモ:
+> - `src/pytra/cli.py` と `tools/gen_makefile_from_manifest.py` は未実装です。
+> - 実装済みの採用項目（`--multi-file` の `manifest.json` 契約と `tools/build_multi_cpp.py` 導線）は `docs-jp/spec/spec-dev.md` と `docs-jp/spec/spec-tools.md` へ移管済みです。
+> - 本文の残りは将来導入案として扱います。
 
 ## 1. 決定事項
 

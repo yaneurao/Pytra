@@ -254,8 +254,11 @@ py2cpp / py2rs 共通化候補:
 
 文脈: `docs-jp/plans/p3-spec-drafts.md`（`TG-P3-SPEC-DRAFTS`）
 
-1. [ ] [ID: P3-SD-01] `docs-jp/spec/spec-make.md` の仕様案を実装現状と照合し、採用する項目を既存仕様へ段階移管する。
+1. [x] [ID: P3-SD-01] `docs-jp/spec/spec-make.md` の仕様案を実装現状と照合し、採用する項目を既存仕様へ段階移管する。
 2. [ ] [ID: P3-SD-02] `docs-jp/spec/spec-template.md` の仕様案を実装現状と照合し、採用/保留/非採用の区分を明確化する。
+
+進捗メモ:
+- `P3-SD-01`: `spec-make.md` と実装実体（`src/pytra/compiler/transpile_cli.py`, `src/py2cpp.py`, `tools/build_multi_cpp.py`）を照合し、採用済みの multi-file `manifest.json` 契約と build 導線を `docs-jp/spec/spec-dev.md` / `docs-jp/spec/spec-tools.md` へ移管した。未実装の `./pytra --build` / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` は草案維持として `docs-jp/spec/spec-make.md` と `docs-jp/plans/p3-spec-drafts.md` に明記した。
 
 ## メモ
 
