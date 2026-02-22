@@ -4662,9 +4662,8 @@ class CppEmitter(CodeEmitter):
         if p0 <= 0:
             return "", [], False
         depth = 0
-        i = p0
         n = len(t)
-        while i < n:
+        for i in range(p0, n):
             ch = t[i : i + 1]
             if ch == "(":
                 depth += 1
@@ -4674,7 +4673,6 @@ class CppEmitter(CodeEmitter):
                     return "", [], False
                 if depth < 0:
                     return "", [], False
-            i += 1
         if depth != 0:
             return "", [], False
         fn = self._trim_ws(t[:p0])
@@ -4768,12 +4766,10 @@ class CppEmitter(CodeEmitter):
         while i < n:
             if i + m <= n:
                 matched = True
-                j = 0
-                while j < m:
+                for j in range(m):
                     if text[i + j] != old[j]:
                         matched = False
                         break
-                    j += 1
                 if matched:
                     out += new_txt
                     i += m
