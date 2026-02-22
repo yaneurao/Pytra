@@ -6346,22 +6346,20 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
     """EAST `meta.import_bindings` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
     meta = _dict_any_get_dict(east_module, "meta")
-    for item_obj in _dict_any_get_list(meta, "import_bindings"):
-        item = item_obj if isinstance(item_obj, dict) else {}
-        if len(item) > 0:
-            module_id = _dict_any_get_str(item, "module_id")
-            export_name = _dict_any_get_str(item, "export_name")
-            local_name = _dict_any_get_str(item, "local_name")
-            binding_kind = _dict_any_get_str(item, "binding_kind")
-            if module_id != "" and local_name != "" and binding_kind in {"module", "symbol", "wildcard"}:
-                out.append(
-                    {
-                        "module_id": module_id,
-                        "export_name": export_name,
-                        "local_name": local_name,
-                        "binding_kind": binding_kind,
-                    }
-                )
+    for item in _dict_any_get_dict_list(meta, "import_bindings"):
+        module_id = _dict_any_get_str(item, "module_id")
+        export_name = _dict_any_get_str(item, "export_name")
+        local_name = _dict_any_get_str(item, "local_name")
+        binding_kind = _dict_any_get_str(item, "binding_kind")
+        if module_id != "" and local_name != "" and binding_kind in {"module", "symbol", "wildcard"}:
+            out.append(
+                {
+                    "module_id": module_id,
+                    "export_name": export_name,
+                    "local_name": local_name,
+                    "binding_kind": binding_kind,
+                }
+            )
     return out
 
 
@@ -6369,20 +6367,18 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
     """EAST `meta.qualified_symbol_refs` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
     meta = _dict_any_get_dict(east_module, "meta")
-    for item_obj in _dict_any_get_list(meta, "qualified_symbol_refs"):
-        item = item_obj if isinstance(item_obj, dict) else {}
-        if len(item) > 0:
-            module_id = _dict_any_get_str(item, "module_id")
-            symbol = _dict_any_get_str(item, "symbol")
-            local_name = _dict_any_get_str(item, "local_name")
-            if module_id != "" and symbol != "" and local_name != "":
-                out.append(
-                    {
-                        "module_id": module_id,
-                        "symbol": symbol,
-                        "local_name": local_name,
-                    }
-                )
+    for item in _dict_any_get_dict_list(meta, "qualified_symbol_refs"):
+        module_id = _dict_any_get_str(item, "module_id")
+        symbol = _dict_any_get_str(item, "symbol")
+        local_name = _dict_any_get_str(item, "local_name")
+        if module_id != "" and symbol != "" and local_name != "":
+            out.append(
+                {
+                    "module_id": module_id,
+                    "symbol": symbol,
+                    "local_name": local_name,
+                }
+            )
     return out
 
 
