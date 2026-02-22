@@ -6761,8 +6761,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
             continue
         body = _dict_any_get_dict_list(east, "body")
         exports: set[str] = set()
-        for i in range(len(body)):
-            st = body[i]
+        for st in body:
             kind = _dict_any_kind(st)
             if kind == "FunctionDef" or kind == "ClassDef":
                 name_txt = _dict_any_get_str(st, "name")
@@ -6798,14 +6797,12 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
     for mod_key, east in module_east_map.items():
         file_disp = _rel_disp_for_graph(root, Path(mod_key))
         body = _dict_any_get_dict_list(east, "body")
-        for i in range(len(body)):
-            st = body[i]
+        for st in body:
             if _dict_any_kind(st) == "ImportFrom":
                 imported_mod = _dict_any_get_str(st, "module")
                 if imported_mod in exports:
                     names = _dict_any_get_dict_list(st, "names")
-                    for j in range(len(names)):
-                        ent = names[j]
+                    for ent in names:
                         sym = _dict_any_get_str(ent, "name")
                         if sym == "*":
                             continue
