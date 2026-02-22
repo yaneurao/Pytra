@@ -6790,12 +6790,10 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         body_obj: object = east.get("body")
         body: list[dict[str, Any]] = []
         if isinstance(body_obj, list):
-            i = 0
-            while i < len(body_obj):
+            for i in range(len(body_obj)):
                 item = body_obj[i]
                 if isinstance(item, dict):
                     body.append(item)
-                i += 1
         funcs: list[str] = []
         classes: list[str] = []
         variables: list[str] = []
