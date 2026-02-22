@@ -74,20 +74,15 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             "def load_cpp_hooks(",
             "\n\ndef load_cpp_identifier_rules(",
         )
-        self.assertIn("return {}", load_cpp_hooks_block)
+        self.assertIn("hooks = {}", load_cpp_hooks_block)
+        self.assertIn("try:", load_cpp_hooks_block)
+        self.assertIn("if isinstance(hooks, dict):", load_cpp_hooks_block)
         self.assertNotIn("build_cpp_hooks", load_cpp_hooks_block)
 
     def test_load_cpp_hooks_patch_raises_when_markers_missing(self) -> None:
         mod = _load_prepare_module()
-        with self.assertRaisesRegex(RuntimeError, "load_cpp_hooks block"):
+        with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks call"):
             mod._patch_load_cpp_hooks_for_selfhost("def x() -> int:\n    return 1\n")
-
-        broken_order = (
-            "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:\n"
-            "    return {}\n"
-        )
-        with self.assertRaisesRegex(RuntimeError, "load_cpp_identifier_rules marker"):
-            mod._patch_load_cpp_hooks_for_selfhost(broken_order)
 
     def test_hook_patch_only_replaces_call_hook_body(self) -> None:
         mod = _load_prepare_module()

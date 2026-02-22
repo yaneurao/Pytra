@@ -124,20 +124,11 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
 
 
 def _patch_load_cpp_hooks_for_selfhost(text: str) -> str:
-    start_marker = "def load_cpp_hooks("
-    end_marker = "\n\ndef load_cpp_identifier_rules("
-    i = text.find(start_marker)
-    j = text.find(end_marker, i + len(start_marker))
-    if i < 0:
-        raise RuntimeError("failed to find load_cpp_hooks block in merged selfhost source")
-    if j <= i:
-        raise RuntimeError("failed to find load_cpp_identifier_rules marker after load_cpp_hooks in merged selfhost source")
-    stub = (
-        "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:\n"
-        "    _ = profile\n"
-        "    return {}\n"
-    )
-    return text[:i] + stub + text[j:]
+    target = "        hooks = build_cpp_hooks()\n"
+    replacement = "        hooks = {}\n"
+    if target not in text:
+        raise RuntimeError("failed to find build_cpp_hooks call in merged selfhost source")
+    return text.replace(target, replacement, 1)
 
 
 def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
