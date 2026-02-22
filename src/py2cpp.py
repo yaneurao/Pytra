@@ -63,12 +63,9 @@ def _path_parent_text(path_obj: Path) -> str:
     if path_txt == "":
         return "."
     last_sep = -1
-    i = 0
-    while i < len(path_txt):
-        ch = path_txt[i : i + 1]
+    for i, ch in enumerate(path_txt):
         if ch == "/" or ch == "\\":
             last_sep = i
-        i += 1
     if last_sep <= 0:
         return "."
     return path_txt[:last_sep]
@@ -178,10 +175,8 @@ def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
 
 def _make_user_error(category: str, summary: str, details: list[str]) -> Exception:
     payload = "__PYTRA_USER_ERROR__|" + category + "|" + summary
-    i = 0
-    while i < len(details):
-        payload += "\n" + details[i]
-        i += 1
+    for detail in details:
+        payload += "\n" + detail
     return RuntimeError(payload)
 
 
