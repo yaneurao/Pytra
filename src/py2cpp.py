@@ -1077,9 +1077,8 @@ class CppEmitter(CodeEmitter):
         if len(target_types) == 0:
             return args
         out: list[str] = []
-        i = 0
-        while i < len(args):
-            a = args[i]
+        for i, arg in enumerate(args):
+            a = arg
             if i < len(target_types):
                 tt = target_types[i]
                 arg_t = "unknown"
@@ -1093,7 +1092,6 @@ class CppEmitter(CodeEmitter):
                     if not self.is_boxed_object_expr(a):
                         a = f"make_object({a})"
             out.append(a)
-            i += 1
         return out
 
     def _coerce_py_assert_args(
@@ -1104,10 +1102,9 @@ class CppEmitter(CodeEmitter):
     ) -> list[str]:
         """`py_assert_*` 呼び出しで object 引数が必要な位置を boxing する。"""
         out: list[str] = []
-        i = 0
         nodes = arg_nodes
-        while i < len(args):
-            a = args[i]
+        for i, arg in enumerate(args):
+            a = arg
             needs_object = False
             if fn_name == "py_assert_stdout":
                 needs_object = i == 1
@@ -1123,7 +1120,6 @@ class CppEmitter(CodeEmitter):
                 if not self.is_any_like_type(arg_t):
                     a = f"make_object({a})"
             out.append(a)
-            i += 1
         return out
 
     def _lookup_module_attr_runtime_call(self, module_name: str, attr: str) -> str:
