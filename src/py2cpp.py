@@ -6605,8 +6605,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             graph_keys.append(cur_key)
         cur_disp = key_to_disp[cur_key]
         search_root = Path(_path_parent_text(cur_path))
-        for i in range(len(mods)):
-            mod = mods[i]
+        for mod in mods:
             resolved = _resolve_module_name_for_graph(mod, search_root)
             status = _dict_any_get_str(resolved, "status")
             dep_file = Path("")
@@ -6653,17 +6652,16 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     stack: list[str] = []
 
     keys: list[str] = []
-    for i in range(len(graph_keys)):
-        keys.append(graph_keys[i])
-    for i in range(len(keys)):
-        k = keys[i]
+    for key in graph_keys:
+        keys.append(key)
+    for k in keys:
         if color.get(k, 0) == 0:
             _graph_cycle_dfs(k, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
 
     user_module_files: list[str] = []
     visited_keys: list[str] = []
-    for i in range(len(visited_order)):
-        visited_keys.append(visited_order[i])
+    for visited_key in visited_order:
+        visited_keys.append(visited_key)
     visited_keys = _sort_str_list_in_place(visited_keys)
     for key in visited_keys:
         if key in key_to_path:
