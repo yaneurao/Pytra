@@ -2339,7 +2339,10 @@ class CppEmitter(CodeEmitter):
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
             param_txt = ""
             if by_ref and usage == "mutable":
-                param_txt = f"{ct}& {n}"
+                if ct == "object":
+                    param_txt = f"{ct} {n}"
+                else:
+                    param_txt = f"{ct}& {n}"
             elif by_ref:
                 param_txt = f"const {ct}& {n}"
             else:
@@ -3094,7 +3097,10 @@ class CppEmitter(CodeEmitter):
             else:
                 param_txt = ""
                 if by_ref and usage == "mutable":
-                    param_txt = f"{ct}& {n}"
+                    if ct == "object":
+                        param_txt = f"{ct} {n}"
+                    else:
+                        param_txt = f"{ct}& {n}"
                 elif by_ref:
                     param_txt = f"const {ct}& {n}"
                 else:
@@ -3422,6 +3428,24 @@ class CppEmitter(CodeEmitter):
                 right = self.apply_cast(right, to_txt)
         op_name = expr.get("op")
         op_name_str = str(op_name)
+        dunder_by_binop: dict[str, str] = {
+            "Add": "__add__",
+            "Sub": "__sub__",
+            "Mult": "__mul__",
+            "Div": "__truediv__",
+        }
+        dunder_name = dunder_by_binop.get(op_name_str, "")
+        if dunder_name != "":
+            left_t0 = self.get_expr_type(expr.get("left"))
+            left_t = left_t0 if isinstance(left_t0, str) else ""
+            left_t_norm = self.normalize_type_name(left_t)
+            method_sig = self._class_method_sig(left_t, dunder_name)
+            if left_t_norm not in {"", "unknown", "Any", "object"} and len(method_sig) > 0:
+                call_args = self._coerce_args_for_class_method(left_t, dunder_name, [right], [expr.get("right")])
+                owner = f"({left})"
+                if left_t_norm in self.ref_classes and not left.strip().startswith("*"):
+                    return f"{owner}->{dunder_name}({_join_str_list(', ', call_args)})"
+                return f"{owner}.{dunder_name}({_join_str_list(', ', call_args)})"
         left = self._wrap_for_binop_operand(left, left_expr, op_name_str, False)
         right = self._wrap_for_binop_operand(right, right_expr, op_name_str, True)
         hook_binop_raw = self.hook_on_render_binop(expr, left, right)
@@ -4077,10 +4101,15 @@ class CppEmitter(CodeEmitter):
 
     def _coerce_call_arg(self, arg_txt: str, arg_node: Any, target_t: str) -> str:
         """関数シグネチャに合わせて引数を必要最小限キャストする。"""
-        if not self._can_runtime_cast_target(target_t):
-            return arg_txt
         at0 = self.get_expr_type(arg_node)
         at = at0 if isinstance(at0, str) else ""
+        t_norm = self.normalize_type_name(target_t)
+        if self.is_any_like_type(t_norm):
+            if self.is_any_like_type(at) or self.is_boxed_object_expr(arg_txt):
+                return arg_txt
+            return f"make_object({arg_txt})"
+        if not self._can_runtime_cast_target(target_t):
+            return arg_txt
         if not self.is_any_like_type(at):
             return arg_txt
         if target_t in {"float32", "float64"}:
@@ -4143,6 +4172,29 @@ class CppEmitter(CodeEmitter):
                 return mm[method]
         return []
 
+    def _has_class_method(self, owner_t: str, method: str) -> bool:
+        """クラスメソッドが存在するかを返す（0引数メソッド対応）。"""
+        t_norm = self.normalize_type_name(owner_t)
+        candidates: list[str] = []
+        if self._contains_text(t_norm, "|"):
+            candidates = self.split_union(t_norm)
+        elif t_norm != "":
+            candidates = [t_norm]
+        if self.current_class_name is not None and owner_t in {"", "unknown"}:
+            candidates.append(self.current_class_name)
+        for c in candidates:
+            if c in self.class_method_arg_types:
+                mm = self.class_method_arg_types[c]
+                if method in mm:
+                    return True
+        if owner_t in {"", "unknown"} and self.current_class_name is not None:
+            mm2: dict[str, list[str]] = {}
+            if self.current_class_name in self.class_method_arg_types:
+                mm2 = self.class_method_arg_types[self.current_class_name]
+            if method in mm2:
+                return True
+        return False
+
     def _class_method_name_sig(self, owner_t: str, method: str) -> list[str]:
         """クラスメソッドの引数名シグネチャを返す。未知なら空配列。"""
         t_norm = self.normalize_type_name(owner_t)
@@ -4193,7 +4245,14 @@ class CppEmitter(CodeEmitter):
         arg_nodes: list[Any],
     ) -> list[str]:
         """クラスメソッド呼び出しに対して引数型を合わせる。"""
-        sig = self._class_method_sig(owner_t, method)
+        sig_raw = self._class_method_sig(owner_t, method)
+        sig: list[str] = []
+        for t in sig_raw:
+            t_norm = self.normalize_type_name(t)
+            if t_norm in {"", "unknown"}:
+                sig.append("object")
+            else:
+                sig.append(t_norm)
         return self._coerce_args_by_signature(args, arg_nodes, sig)
 
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
@@ -4334,6 +4393,20 @@ class CppEmitter(CodeEmitter):
             elif on == "orelse":
                 orelse = self.apply_cast(orelse, to_t)
         test_expr = self.render_expr(expr.get("test"))
+        test_node = self.any_to_dict_or_empty(expr.get("test"))
+        if self._node_kind_from_dict(test_node) == "Constant" and isinstance(test_node.get("value"), bool):
+            return body if bool(test_node.get("value")) else orelse
+        if self._node_kind_from_dict(test_node) == "Name":
+            ident = self.any_to_str(test_node.get("id"))
+            if ident == "True":
+                return body
+            if ident == "False":
+                return orelse
+        test_txt = test_expr.strip()
+        if test_txt == "true":
+            return body
+        if test_txt == "false":
+            return orelse
         return f"({test_expr} ? {body} : {orelse})"
 
     def _render_operator_family_expr(
@@ -4400,6 +4473,14 @@ class CppEmitter(CodeEmitter):
                         return f"!({found})" if op0 == "In" else found
             return f"!({operand})"
         if op == "USub":
+            operand_t0 = self.get_expr_type(operand_obj)
+            operand_t = operand_t0 if isinstance(operand_t0, str) else ""
+            operand_t_norm = self.normalize_type_name(operand_t)
+            if operand_t_norm not in {"", "unknown", "Any", "object"} and self._has_class_method(operand_t, "__neg__"):
+                owner = f"({operand})"
+                if operand_t_norm in self.ref_classes and not operand.strip().startswith("*"):
+                    return f"{owner}->__neg__()"
+                return f"{owner}.__neg__()"
             return f"-{operand}"
         if op == "UAdd":
             return f"+{operand}"
@@ -4938,6 +5019,12 @@ class CppEmitter(CodeEmitter):
         bt = self.get_expr_type(expr_d.get("value"))
         if bt == "Path" and attr in {"name", "stem", "parent"}:
             return f"{base}.{attr}()"
+        if (
+            self.current_class_name is not None
+            and attr in self.current_class_fields
+            and (bt in {"", "unknown"} or self.is_any_like_type(bt))
+        ):
+            return f"py_obj_cast<{self.current_class_name}>({base})->{attr}"
         if bt in self.ref_classes:
             return f"{base}->{attr}"
         return f"{base}.{attr}"

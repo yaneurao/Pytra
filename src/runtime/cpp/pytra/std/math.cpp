@@ -33,9 +33,17 @@ namespace pytra::std::math {
     float64 exp(float64 x) {
         return py_to_float64(pytra::std::math_impl::exp(x));
     }
+
+    float64 exp(const object& x) {
+        return py_to_float64(pytra::std::math_impl::exp(py_to_float64(x)));
+    }
     
     float64 log(float64 x) {
         return py_to_float64(pytra::std::math_impl::log(x));
+    }
+
+    float64 log(const object& x) {
+        return py_to_float64(pytra::std::math_impl::log(py_to_float64(x)));
     }
     
     float64 log10(float64 x) {

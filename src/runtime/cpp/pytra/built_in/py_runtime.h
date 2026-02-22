@@ -1984,6 +1984,20 @@ static inline str operator+(const char* lhs, const ::std::any& rhs) {
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 operator+(T lhs, const object& rhs) {
+    return static_cast<float64>(lhs) + py_to_float64(rhs);
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 operator+(const object& lhs, T rhs) {
+    return py_to_float64(lhs) + static_cast<float64>(rhs);
+}
+
+static inline float64 operator+(const object& lhs, const object& rhs) {
+    return py_to_float64(lhs) + py_to_float64(rhs);
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline float64 operator+(T lhs, const ::std::any& rhs) {
     return static_cast<float64>(lhs) + py_to_float64(rhs);
 }
@@ -1995,6 +2009,24 @@ static inline float64 operator+(const ::std::any& lhs, T rhs) {
 
 static inline float64 operator+(const ::std::any& lhs, const ::std::any& rhs) {
     return py_to_float64(lhs) + py_to_float64(rhs);
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 operator-(T lhs, const object& rhs) {
+    return static_cast<float64>(lhs) - py_to_float64(rhs);
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 operator-(const object& lhs, T rhs) {
+    return py_to_float64(lhs) - static_cast<float64>(rhs);
+}
+
+static inline float64 operator-(const object& lhs, const object& rhs) {
+    return py_to_float64(lhs) - py_to_float64(rhs);
+}
+
+static inline float64 operator-(const object& v) {
+    return -py_to_float64(v);
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
@@ -2012,6 +2044,20 @@ static inline float64 operator-(const ::std::any& lhs, const ::std::any& rhs) {
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 operator*(T lhs, const object& rhs) {
+    return static_cast<float64>(lhs) * py_to_float64(rhs);
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 operator*(const object& lhs, T rhs) {
+    return py_to_float64(lhs) * static_cast<float64>(rhs);
+}
+
+static inline float64 operator*(const object& lhs, const object& rhs) {
+    return py_to_float64(lhs) * py_to_float64(rhs);
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline float64 operator*(T lhs, const ::std::any& rhs) {
     return static_cast<float64>(lhs) * py_to_float64(rhs);
 }
@@ -2023,6 +2069,20 @@ static inline float64 operator*(const ::std::any& lhs, T rhs) {
 
 static inline float64 operator*(const ::std::any& lhs, const ::std::any& rhs) {
     return py_to_float64(lhs) * py_to_float64(rhs);
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 operator/(T lhs, const object& rhs) {
+    return static_cast<float64>(lhs) / py_to_float64(rhs);
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 operator/(const object& lhs, T rhs) {
+    return py_to_float64(lhs) / static_cast<float64>(rhs);
+}
+
+static inline float64 operator/(const object& lhs, const object& rhs) {
+    return py_to_float64(lhs) / py_to_float64(rhs);
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
