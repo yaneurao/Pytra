@@ -3148,16 +3148,11 @@ class CppEmitter(CodeEmitter):
             if skip_self:
                 pass
             else:
-                param_txt = ""
-                if by_ref and usage == "mutable":
-                    if ct == "object":
-                        param_txt = f"{ct} {n}"
-                    else:
-                        param_txt = f"{ct}& {n}"
-                elif by_ref:
-                    param_txt = f"const {ct}& {n}"
-                else:
-                    param_txt = f"{ct} {n}"
+                param_txt = (
+                    (f"{ct} {n}" if ct == "object" else f"{ct}& {n}")
+                    if by_ref and usage == "mutable"
+                    else (f"const {ct}& {n}" if by_ref else f"{ct} {n}")
+                )
                 if n in arg_defaults:
                     default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
                     if default_txt != "":
@@ -5713,10 +5708,11 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
     msg: str = ""
     try:
         source_text = input_path.read_text(encoding="utf-8")
-        if parser_backend == "self_hosted":
-            east_any = convert_path(input_path, parser_backend)
-        else:
-            east_any = convert_source_to_east_with_backend(source_text, input_txt, parser_backend)
+        east_any = (
+            convert_path(input_path, parser_backend)
+            if parser_backend == "self_hosted"
+            else convert_source_to_east_with_backend(source_text, input_txt, parser_backend)
+        )
     except SyntaxError as ex:
         msg = str(ex)
         raise _make_user_error(
@@ -6168,11 +6164,9 @@ def build_cpp_header_from_east(
                             at = at_obj
                         at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
                         used_types.add(at_cpp)
-                        param_txt = ""
-                        if at_cpp in by_value_types:
-                            param_txt = at_cpp + " " + an
-                        else:
-                            param_txt = "const " + at_cpp + "& " + an
+                        param_txt = (
+                            at_cpp + " " + an if at_cpp in by_value_types else "const " + at_cpp + "& " + an
+                        )
                         # NOTE:
                         # 既定引数は `.cpp` 側の定義にのみ付与する。
                         # ヘッダと定義の二重指定によるコンパイルエラーを避けるため、
