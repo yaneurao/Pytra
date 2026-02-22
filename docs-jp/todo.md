@@ -15,6 +15,12 @@
 - 着手前に文脈ファイルの `背景` / `非対象` / `受け入れ基準` を確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+## P0: Iterable/Iterator 契約反映（最優先）
+
+文脈: `docs-jp/plans/p0-iterable-runtime-protocol.md`（`TG-P0-ITER`）
+
+1. [ ] [ID: P0-ITER-01] `docs-jp/spec/spec-iterable.md` を正本として、`EAST` trait（`iterable_trait` / `iter_mode`）・C++ runtime（`py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range`）・`py2cpp` codegen 分岐（`static_fastpath` / `runtime_protocol`）を段階導入する。
+
 ## P0: Boxing/Unboxing 境界統一（最優先）
 
 文脈: `docs-jp/plans/p0-boxing-boundary-unification.md`（`TG-P0-BOXING`）
