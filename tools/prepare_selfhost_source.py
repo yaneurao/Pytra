@@ -110,6 +110,11 @@ def _extract_support_blocks() -> str:
     parts: list[str] = []
     for name in names:
         parts.append(_extract_top_level_block(cli_text, name, "def"))
+    # selfhost では hooks モジュールを import しないため、最小スタブを同梱する。
+    parts.append(
+        "def build_cpp_hooks() -> dict[str, Any]:\n"
+        "    return {}\n"
+    )
     return "\n".join(parts)
 
 
@@ -121,14 +126,6 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
     prefix = text[:i]
     suffix = text[i:]
     return prefix.rstrip() + "\n\n" + support_blocks + "\n" + base_class_text + "\n" + suffix
-
-
-def _patch_load_cpp_hooks_for_selfhost(text: str) -> str:
-    target = "        hooks = build_cpp_hooks()\n"
-    replacement = "        hooks = {}\n"
-    if target not in text:
-        raise RuntimeError("failed to find build_cpp_hooks call in merged selfhost source")
-    return text.replace(target, replacement, 1)
 
 
 def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
@@ -166,7 +163,6 @@ def main() -> int:
     base_class = _strip_triple_quoted_docstrings(_extract_code_emitter_class(base_text))
     py2cpp_text = _remove_import_line(py2cpp_text)
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
-    out = _patch_load_cpp_hooks_for_selfhost(out)
     out = _patch_code_emitter_hooks_for_selfhost(out)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)

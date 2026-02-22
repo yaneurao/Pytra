@@ -39,6 +39,7 @@
 1. [ ] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を継続する。
 
 進捗メモ:
+- `P0-SH-04` の継続として `tools/prepare_selfhost_source.py` から `_patch_load_cpp_hooks_for_selfhost` を削除し、`_extract_support_blocks` 側で `build_cpp_hooks() -> dict[str, Any]` の最小スタブ（`return {}`）を同梱する方式へ戻した。これにより `load_cpp_hooks(...)` の正本実装を selfhost へそのまま展開できるようになり、置換境界を `CodeEmitter._call_hook` no-op のみに維持できる。`test/unit/test_prepare_selfhost_source.py` を更新してスタブ同梱と merged source 内の `hooks = build_cpp_hooks()` 維持を検証し、`python3 test/unit/test_prepare_selfhost_source.py`（6件成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）、`python3 tools/check_transpiler_version_gate.py`（`[OK] no transpiler-related changes detected`）を確認した。
 - `dump_codegen_options_text` の selfhost fallback は最小 `"options:\n"` スタブから、詳細行を出力する selfhost-safe 実装へ置換済み。
 - `CodeEmitter.quote_string_literal` / `CodeEmitter.load_profile_with_includes` は本体側 `@staticmethod` 実装へ移行し、`tools/prepare_selfhost_source.py` 側の該当置換経路を削除済み。
 - `tools/prepare_selfhost_source.py` から `dump_codegen_options_text` 置換と `main guard` 置換を削除し、正本実装を selfhost へそのまま展開する経路へ移行済み。

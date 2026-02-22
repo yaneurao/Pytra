@@ -55,34 +55,28 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks import"):
             mod._remove_import_line(broken)
 
-    def test_extract_support_blocks_does_not_inline_build_cpp_hooks(self) -> None:
+    def test_extract_support_blocks_includes_build_cpp_hooks_stub(self) -> None:
         mod = _load_prepare_module()
         support_blocks = mod._extract_support_blocks()
-        self.assertNotIn("def build_cpp_hooks(", support_blocks)
+        self.assertIn("def build_cpp_hooks() -> dict[str, Any]:", support_blocks)
+        self.assertIn("return {}", support_blocks)
 
-    def test_load_cpp_hooks_patch_replaces_body(self) -> None:
+    def test_load_cpp_hooks_uses_support_stub_in_merged_source(self) -> None:
         mod = _load_prepare_module()
         py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
         base_text = mod.SRC_BASE.read_text(encoding="utf-8")
         support_blocks = mod._extract_support_blocks()
         base_class = mod._strip_triple_quoted_docstrings(mod._extract_code_emitter_class(base_text))
         merged = mod._insert_code_emitter(mod._remove_import_line(py2cpp_text), base_class, support_blocks)
-        patched = mod._patch_load_cpp_hooks_for_selfhost(merged)
-
         load_cpp_hooks_block = _slice_block(
-            patched,
+            merged,
             "def load_cpp_hooks(",
             "\n\ndef load_cpp_identifier_rules(",
         )
-        self.assertIn("hooks = {}", load_cpp_hooks_block)
+        self.assertIn("hooks = build_cpp_hooks()", load_cpp_hooks_block)
         self.assertIn("try:", load_cpp_hooks_block)
         self.assertIn("if isinstance(hooks, dict):", load_cpp_hooks_block)
-        self.assertNotIn("build_cpp_hooks", load_cpp_hooks_block)
-
-    def test_load_cpp_hooks_patch_raises_when_markers_missing(self) -> None:
-        mod = _load_prepare_module()
-        with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks call"):
-            mod._patch_load_cpp_hooks_for_selfhost("def x() -> int:\n    return 1\n")
+        self.assertIn("def build_cpp_hooks() -> dict[str, Any]:", merged)
 
     def test_hook_patch_only_replaces_call_hook_body(self) -> None:
         mod = _load_prepare_module()
