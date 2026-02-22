@@ -1153,44 +1153,55 @@ if __name__ == "__main__":
         self.assertIn("py_print", runtime_calls)
 
     def _compile_and_run_fixture(self, stem: str) -> str:
+        leaked_png = ROOT / f"{stem}.png"
+        if leaked_png.exists():
+            leaked_png.unlink()
         with tempfile.TemporaryDirectory() as tmpdir:
             work = Path(tmpdir)
             src_py = find_fixture_case(stem)
             out_cpp = work / f"{stem}.cpp"
             out_exe = work / f"{stem}.out"
-            print(f"  [fixture:{stem}] transpile", flush=True)
-            transpile(src_py, out_cpp)
-            print(f"  [fixture:{stem}] compile", flush=True)
-            comp = self._run_subprocess_with_timeout(
-                [
-                    "g++",
-                    "-std=c++20",
-                    "-O2",
-                    "-I",
-                    "src",
-                    "-I",
-                    "src/runtime/cpp",
-                    str(out_cpp),
-                    *CPP_RUNTIME_SRCS,
-                    "-o",
-                    str(out_exe),
-                ],
-                cwd=ROOT,
-                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
-                label=f"compile fixture {stem}",
-            )
-            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
-            # Keep repository root clean even if a fixture writes images with relative paths,
-            # by fixing runtime cwd to a temporary directory.
-            print(f"  [fixture:{stem}] run", flush=True)
-            run = self._run_subprocess_with_timeout(
-                [str(out_exe)],
-                cwd=work,
-                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
-                label=f"run fixture {stem}",
-            )
-            self.assertEqual(run.returncode, 0, msg=run.stderr)
-            return run.stdout.replace("\r\n", "\n")
+            try:
+                print(f"  [fixture:{stem}] transpile", flush=True)
+                transpile(src_py, out_cpp)
+                print(f"  [fixture:{stem}] compile", flush=True)
+                comp = self._run_subprocess_with_timeout(
+                    [
+                        "g++",
+                        "-std=c++20",
+                        "-O2",
+                        "-I",
+                        "src",
+                        "-I",
+                        "src/runtime/cpp",
+                        str(out_cpp),
+                        *CPP_RUNTIME_SRCS,
+                        "-o",
+                        str(out_exe),
+                    ],
+                    cwd=ROOT,
+                    timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                    label=f"compile fixture {stem}",
+                )
+                self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+                # Keep repository root clean even if a fixture writes images with relative paths,
+                # by fixing runtime cwd to a temporary directory.
+                print(f"  [fixture:{stem}] run", flush=True)
+                run = self._run_subprocess_with_timeout(
+                    [str(out_exe)],
+                    cwd=work,
+                    timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                    label=f"run fixture {stem}",
+                )
+                self.assertEqual(run.returncode, 0, msg=run.stderr)
+                self.assertFalse(
+                    leaked_png.exists(),
+                    msg=f"fixture {stem} leaked {leaked_png.name} to repository root",
+                )
+                return run.stdout.replace("\r\n", "\n")
+            finally:
+                if leaked_png.exists():
+                    leaked_png.unlink()
 
     def test_cli_reports_user_syntax_error_category(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
