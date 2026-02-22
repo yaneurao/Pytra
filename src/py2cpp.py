@@ -6163,18 +6163,12 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
                         ent = names_obj[j]
                         if isinstance(ent, dict):
                             ent_dict: dict[str, Any] = ent
-                            name_obj: object = ent_dict.get("name")
-                            name = ""
-                            if isinstance(name_obj, str):
-                                name = name_obj
+                            name = _dict_any_get_str(ent_dict, "name")
                             if name != "" and name not in seen:
                                 seen.add(name)
                                 out.append(name)
             elif kind == "ImportFrom":
-                mod_obj: object = stmt_dict.get("module")
-                mod = ""
-                if isinstance(mod_obj, str):
-                    mod = mod_obj
+                mod = _dict_any_get_str(stmt_dict, "module")
                 if mod != "" and mod not in seen:
                     seen.add(mod)
                     out.append(mod)
@@ -6652,10 +6646,7 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
         for i in range(len(body)):
             st = body[i]
             if _dict_any_kind(st) == "ImportFrom":
-                mod_obj = st.get("module")
-                imported_mod = ""
-                if isinstance(mod_obj, str):
-                    imported_mod = mod_obj
+                imported_mod = _dict_any_get_str(st, "module")
                 if imported_mod in exports:
                     names_obj = st.get("names")
                     names = names_obj if isinstance(names_obj, list) else []
