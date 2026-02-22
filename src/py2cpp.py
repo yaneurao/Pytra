@@ -40,8 +40,8 @@ def _replace_first(text: str, old: str, replacement: str) -> str:
 def _sort_str_list_in_place(items: list[str]) -> list[str]:
     """selfhost 安定化用: list[str] の昇順ソート済みコピーを返す。"""
     out: list[str] = []
-    for i in range(len(items)):
-        out.append(items[i])
+    for item in items:
+        out.append(item)
     for i in range(1, len(out)):
         key = out[i]
         insert_at = i
