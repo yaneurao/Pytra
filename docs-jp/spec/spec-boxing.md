@@ -91,10 +91,25 @@ runtime に次を追加する。
 
 ## 6. Dispatch 方針（多言語）
 
-- C++: `virtual` hook を一次仕様として採用する。`type_id` は最適化用途として併用可。
-- 非 virtual ターゲット（JS/TS 等）: `type_id` 相当の tag dispatch を必須にする。
-- JS/TS は minify 時に `constructor.name` / メソッド名 / クラス名が変化しうるため、名前文字列に依存した dispatch を禁止する。
-- JS/TS では minify の有無に関わらず `type_id` を強制し、`bool/len/str` の境界処理は必ず `type_id` dispatch を経由する。
+`spec-iterable.md` と同一のオプションで dispatch 方式を一括切替する。
+
+- `--object-dispatch-mode {type_id,native}`
+- 既定値: `native`
+
+モード定義:
+
+- `type_id`:
+1. `Any/object` 境界の dispatch を全面的に `type_id` で行う。
+2. Boxing/Unboxing、`bool/len/str`（および iterable を含む境界処理）を同一方式で解決する。
+3. JS/TS でも minify 有無に関わらず `type_id` dispatch を使う。
+- `native`:
+1. `type_id` dispatch を一切使わない。
+2. C++ は `virtual` hook（必要時 `dynamic_cast`）で解決する。
+3. JS/TS は言語ネイティブ機構で解決し、名前文字列依存 dispatch（`constructor.name` など）は禁止する。
+
+禁止事項:
+
+- 一部機能のみ `type_id`、他機能は `native` の混在（hybrid 運用）。
 
 共通要件:
 - `Any/object` 境界の `bool/len/str` はターゲット間で同じ失敗契約を持つ。
@@ -105,7 +120,7 @@ runtime に次を追加する。
 1. Phase 1: runtime に `py_truthy` / `py_try_len` / `obj_to_rc(_or_raise)` / 厳格変換 API を追加。
 2. Phase 2: `py2cpp.py` の `Any/object` 境界生成を新 API に切替。
 3. Phase 3: 既存の `py_obj_cast<T>` 直書き経路を縮退。
-4. Phase 4: 非 C++ ターゲットへ dispatch 契約を展開。
+4. Phase 4: `--object-dispatch-mode` を含む dispatch 契約を全ターゲットへ展開。
 
 ## 8. 受け入れ基準
 
@@ -113,6 +128,7 @@ runtime に次を追加する。
 - 失敗が `0` / `false` / `None` に暗黙吸収される経路が新規生成コードに残らない。
 - `if x:` でユーザー定義 `__bool__` / `__len__`（または対応 hook）が反映される。
 - `len(x)` は未対応型でエラーになり、`0` へ黙って落ちない。
+- `--object-dispatch-mode=type_id` / `native` のどちらでも仕様どおりの境界挙動を維持する。
 - selfhost/transpile 既存導線で致命回帰を起こさない。
 
 ## 9. テスト観点
