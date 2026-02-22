@@ -311,6 +311,22 @@ def _stmt_target_name(stmt: dict[str, Any]) -> str:
     return _name_target_id(_dict_any_get_dict(stmt, "target"))
 
 
+def _stmt_assigned_names(stmt: dict[str, Any]) -> list[str]:
+    """Assign/AnnAssign 文の Name 代入先を抽出する。"""
+    kind = _dict_any_kind(stmt)
+    out: list[str] = []
+    if kind == "Assign":
+        for tgt_obj in _assign_targets(stmt):
+            name_txt = _name_target_id(tgt_obj)
+            if name_txt != "":
+                out.append(name_txt)
+    elif kind == "AnnAssign":
+        name_txt = _stmt_target_name(stmt)
+        if name_txt != "":
+            out.append(name_txt)
+    return out
+
+
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 """
@@ -6778,14 +6794,8 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                 name_txt = _dict_any_get_str(st, "name")
                 if name_txt != "":
                     exports.add(name_txt)
-            elif kind == "Assign":
-                for tgt_obj in _assign_targets(st):
-                    name_txt = _name_target_id(tgt_obj)
-                    if name_txt != "":
-                        exports.add(name_txt)
-            elif kind == "AnnAssign":
-                name_txt = _stmt_target_name(st)
-                if name_txt != "":
+            elif kind == "Assign" or kind == "AnnAssign":
+                for name_txt in _stmt_assigned_names(st):
                     exports.add(name_txt)
         out[mod_name] = exports
     return out
@@ -6862,15 +6872,10 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 name_txt = _dict_any_get_str(st, "name")
                 if name_txt != "":
                     classes.append(name_txt)
-            elif kind == "Assign":
-                for tgt_obj in _assign_targets(st):
-                    name_txt = _name_target_id(tgt_obj)
-                    if name_txt != "" and name_txt not in variables:
+            elif kind == "Assign" or kind == "AnnAssign":
+                for name_txt in _stmt_assigned_names(st):
+                    if name_txt not in variables:
                         variables.append(name_txt)
-            elif kind == "AnnAssign":
-                name_txt = _stmt_target_name(st)
-                if name_txt != "" and name_txt not in variables:
-                    variables.append(name_txt)
         meta = _dict_any_get_dict(east, "meta")
         import_bindings = _meta_import_bindings(east)
         qualified_symbol_refs = _meta_qualified_symbol_refs(east)
