@@ -6112,13 +6112,9 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
     """EAST `meta.import_bindings` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
     meta_obj = east_module.get("meta")
-    meta: dict[str, Any] = {}
-    if isinstance(meta_obj, dict):
-        meta = meta_obj
+    meta: dict[str, Any] = meta_obj if isinstance(meta_obj, dict) else {}
     binds_obj = meta.get("import_bindings")
-    binds: list[Any] = []
-    if isinstance(binds_obj, list):
-        binds = binds_obj
+    binds: list[Any] = binds_obj if isinstance(binds_obj, list) else []
     i = 0
     while i < len(binds):
         item_obj = binds[i]
@@ -6157,13 +6153,9 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
     """EAST `meta.qualified_symbol_refs` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
     meta_obj = east_module.get("meta")
-    meta: dict[str, Any] = {}
-    if isinstance(meta_obj, dict):
-        meta = meta_obj
+    meta: dict[str, Any] = meta_obj if isinstance(meta_obj, dict) else {}
     refs_obj = meta.get("qualified_symbol_refs")
-    refs: list[Any] = []
-    if isinstance(refs_obj, list):
-        refs = refs_obj
+    refs: list[Any] = refs_obj if isinstance(refs_obj, list) else []
     i = 0
     while i < len(refs):
         item_obj = refs[i]
@@ -6968,9 +6960,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                         variables.append(name_txt)
             i += 1
         meta_obj: object = east.get("meta")
-        meta: dict[str, Any] = {}
-        if isinstance(meta_obj, dict):
-            meta = meta_obj
+        meta: dict[str, Any] = meta_obj if isinstance(meta_obj, dict) else {}
         import_bindings = _meta_import_bindings(east)
         qualified_symbol_refs = _meta_qualified_symbol_refs(east)
         import_modules: dict[str, str] = {}
@@ -7000,12 +6990,8 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         else:
             import_modules_obj: object = meta.get("import_modules")
             import_symbols_obj: object = meta.get("import_symbols")
-            import_modules_obj2: dict[str, Any] = {}
-            if isinstance(import_modules_obj, dict):
-                import_modules_obj2 = import_modules_obj
-            import_symbols_obj2: dict[str, Any] = {}
-            if isinstance(import_symbols_obj, dict):
-                import_symbols_obj2 = import_symbols_obj
+            import_modules_obj2: dict[str, Any] = import_modules_obj if isinstance(import_modules_obj, dict) else {}
+            import_symbols_obj2: dict[str, Any] = import_symbols_obj if isinstance(import_symbols_obj, dict) else {}
             import_modules = dict(import_modules_obj2)
             import_symbols = dict(import_symbols_obj2)
         out[mod_path] = {
