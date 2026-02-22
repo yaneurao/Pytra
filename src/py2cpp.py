@@ -39,15 +39,13 @@ def _replace_first(text: str, old: str, replacement: str) -> str:
 
 def _sort_str_list_in_place(items: list[str]) -> None:
     """selfhost 安定化用: list[str] を昇順ソートする（依存最小の挿入ソート）。"""
-    i = 1
-    while i < len(items):
+    for i in range(1, len(items)):
         key = items[i]
         j = i - 1
         while j >= 0 and items[j] > key:
             items[j + 1] = items[j]
             j -= 1
         items[j + 1] = key
-        i += 1
 
 
 def _mkdirs_for_cli(path_txt: str) -> None:
@@ -1298,14 +1296,7 @@ class CppEmitter(CodeEmitter):
             self.indent -= 1
             self.emit(f"}}  // namespace {self.top_namespace}")
             self.emit("")
-        out: str = ""
-        i = 0
-        while i < len(self.lines):
-            if i > 0:
-                out += NEWLINE_CHAR
-            out += self.lines[i]
-            i += 1
-        return out
+        return NEWLINE_CHAR.join(self.lines)
 
     def apply_cast(self, rendered_expr: str, to_type: str) -> str:
         """EAST の cast 指示に従い C++ 側の明示キャストを適用する。"""
@@ -3924,13 +3915,10 @@ class CppEmitter(CodeEmitter):
             a0 = f"static_cast<uint8>(py_to_int64({a0}))"
             return f"{owner_expr}.append({a0})"
         list_owner_t = ""
-        i = 0
-        while i < len(owner_types):
-            t = owner_types[i]
+        for t in owner_types:
             if t.startswith("list[") and t.endswith("]"):
                 list_owner_t = t
                 break
-            i += 1
         if list_owner_t != "":
             inner_t: str = list_owner_t[5:-1].strip()
             if inner_t == "uint8":
