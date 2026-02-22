@@ -944,10 +944,7 @@ class CppEmitter(CodeEmitter):
                     symbol = self.any_to_str(ref_item.get("symbol"))
                     local_name = self.any_to_str(ref_item.get("local_name"))
                     if module_id != "" and symbol != "" and local_name != "":
-                        sym_ent: dict[str, str] = {}
-                        sym_ent["module"] = module_id
-                        sym_ent["name"] = symbol
-                        self.import_symbols[local_name] = sym_ent
+                        self.import_symbols[local_name] = {"module": module_id, "name": symbol}
                         self.import_symbol_modules.add(module_id)
                     r += 1
             i = 0
@@ -963,10 +960,7 @@ class CppEmitter(CodeEmitter):
                 if binding_kind == "module":
                     self.import_modules[local_name] = module_id
                 elif binding_kind == "symbol" and export_name != "" and len(refs) == 0:
-                    sym_ent: dict[str, str] = {}
-                    sym_ent["module"] = module_id
-                    sym_ent["name"] = export_name
-                    self.import_symbols[local_name] = sym_ent
+                    self.import_symbols[local_name] = {"module": module_id, "name": export_name}
                     self.import_symbol_modules.add(module_id)
                 i += 1
             if len(self.import_symbols) == 0:
@@ -978,10 +972,7 @@ class CppEmitter(CodeEmitter):
                     module_id = self.any_to_str(sym.get("module"))
                     symbol_name = self.any_to_str(sym.get("name"))
                     if module_id != "" and symbol_name != "":
-                        sym_ent2: dict[str, str] = {}
-                        sym_ent2["module"] = module_id
-                        sym_ent2["name"] = symbol_name
-                        self.import_symbols[local_name] = sym_ent2
+                        self.import_symbols[local_name] = {"module": module_id, "name": symbol_name}
                         self.import_symbol_modules.add(module_id)
             if len(self.import_modules) == 0:
                 legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
@@ -1001,10 +992,7 @@ class CppEmitter(CodeEmitter):
             module_id = self.any_to_str(sym.get("module"))
             symbol_name = self.any_to_str(sym.get("name"))
             if module_id != "" and symbol_name != "":
-                sym_ent3: dict[str, str] = {}
-                sym_ent3["module"] = module_id
-                sym_ent3["name"] = symbol_name
-                self.import_symbols[local_name] = sym_ent3
+                self.import_symbols[local_name] = {"module": module_id, "name": symbol_name}
                 self.import_symbol_modules.add(module_id)
         legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
         for local_name, module_id_obj in legacy_mods.items():
