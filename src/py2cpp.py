@@ -6794,8 +6794,7 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
     module_id_map: dict[str, Any] = module_id_map_obj if isinstance(module_id_map_obj, dict) else {}
     out: dict[str, dict[str, Any]] = {}
     root_dir = Path(_path_parent_text(entry_path))
-    i = 0
-    while i < len(files):
+    for i in range(len(files)):
         f = files[i]
         if isinstance(f, str):
             p = Path(f)
@@ -6813,7 +6812,6 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
                 meta["module_id"] = module_id_any
             east["meta"] = meta
             out[str(p)] = east
-        i += 1
     _validate_from_import_symbols_or_raise(out, root=root_dir)
     return out
 
@@ -6912,16 +6910,13 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
         body_obj: object = east.get("body")
         body: list[dict[str, Any]] = []
         if isinstance(body_obj, list):
-            i = 0
-            while i < len(body_obj):
+            for i in range(len(body_obj)):
                 item = body_obj[i]
                 if isinstance(item, dict):
                     body.append(item)
-                i += 1
         fn_schema: dict[str, dict[str, Any]] = {}
         cls_schema: dict[str, dict[str, Any]] = {}
-        i = 0
-        while i < len(body):
+        for i in range(len(body)):
             st = body[i]
             kind = _dict_any_kind(st)
             if kind == "FunctionDef":
@@ -6947,7 +6942,6 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                     fields_obj: object = st.get("field_types")
                     fields = fields_obj if isinstance(fields_obj, dict) else {}
                     cls_schema[name_obj] = {"field_types": fields}
-            i += 1
         out[mod_path] = {"functions": fn_schema, "classes": cls_schema}
     return out
 
