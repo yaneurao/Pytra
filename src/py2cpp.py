@@ -44,11 +44,14 @@ def _sort_str_list_in_place(items: list[str]) -> list[str]:
         out.append(items[i])
     for i in range(1, len(out)):
         key = out[i]
-        j = i - 1
-        while j >= 0 and out[j] > key:
-            out[j + 1] = out[j]
-            j -= 1
-        out[j + 1] = key
+        insert_at = i
+        for j in range(i - 1, -1, -1):
+            if out[j] > key:
+                out[j + 1] = out[j]
+                insert_at = j
+            else:
+                break
+        out[insert_at] = key
     return out
 
 
@@ -6540,9 +6543,11 @@ def _graph_cycle_dfs(
         if c == 0:
             _graph_cycle_dfs(nxt, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
         elif c == 1:
-            j = len(stack) - 1
-            while j >= 0 and stack[j] != nxt:
-                j -= 1
+            j = -1
+            for idx in range(len(stack) - 1, -1, -1):
+                if stack[idx] == nxt:
+                    j = idx
+                    break
             if j >= 0:
                 nodes: list[str] = []
                 for m in range(j, len(stack)):
