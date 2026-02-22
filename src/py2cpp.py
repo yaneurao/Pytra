@@ -239,6 +239,14 @@ def _dict_any_get_dict_list(src: dict[str, Any], key: str) -> list[dict[str, Any
     return out
 
 
+def _append_unique_non_empty(items: list[str], seen: set[str], value: str) -> None:
+    """空でない文字列を未登録時のみ追加する。"""
+    if value == "" or value in seen:
+        return
+    seen.add(value)
+    items.append(value)
+
+
 def _split_ws_tokens(text: str) -> list[str]:
     """空白区切りトークンへ分解する（連続空白は 1 区切り扱い）。"""
     tokens: list[str] = []
@@ -6374,30 +6382,22 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
 
     if len(import_bindings) > 0:
         for ent in import_bindings:
-            if ent["module_id"] != "" and ent["module_id"] not in module_seen:
-                module_seen.add(ent["module_id"])
-                modules.append(ent["module_id"])
+            _append_unique_non_empty(modules, module_seen, ent["module_id"])
             if ent["binding_kind"] == "symbol" and ent["export_name"] != "":
                 label = ent["module_id"] + "." + ent["export_name"]
                 if ent["local_name"] != "" and ent["local_name"] != ent["export_name"]:
                     label += " as " + ent["local_name"]
-                if label not in symbol_seen:
-                    symbol_seen.add(label)
-                    symbols.append(label)
+                _append_unique_non_empty(symbols, symbol_seen, label)
     else:
         for stmt_dict in body:
             kind = _dict_any_kind(stmt_dict)
             if kind == "Import":
                 for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
                     mod_name = _dict_any_get_str(ent_dict, "name")
-                    if mod_name != "" and mod_name not in module_seen:
-                        module_seen.add(mod_name)
-                        modules.append(mod_name)
+                    _append_unique_non_empty(modules, module_seen, mod_name)
             elif kind == "ImportFrom":
                 mod_name = _dict_any_get_str(stmt_dict, "module")
-                if mod_name != "" and mod_name not in module_seen:
-                    module_seen.add(mod_name)
-                    modules.append(mod_name)
+                _append_unique_non_empty(modules, module_seen, mod_name)
                 for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
                     sym_name = _dict_any_get_str(ent_dict, "name")
                     alias = _dict_any_get_str(ent_dict, "asname")
@@ -6405,9 +6405,7 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                         label = mod_name + "." + sym_name
                         if alias != "":
                             label += " as " + alias
-                        if label not in symbol_seen:
-                            symbol_seen.add(label)
-                            symbols.append(label)
+                        _append_unique_non_empty(symbols, symbol_seen, label)
 
     out = "modules:\n"
     if len(modules) == 0:
@@ -6433,14 +6431,10 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
         if kind == "Import":
             for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
                 name = _dict_any_get_str(ent_dict, "name")
-                if name != "" and name not in seen:
-                    seen.add(name)
-                    out.append(name)
+                _append_unique_non_empty(out, seen, name)
         elif kind == "ImportFrom":
             mod = _dict_any_get_str(stmt_dict, "module")
-            if mod != "" and mod not in seen:
-                seen.add(mod)
-                out.append(mod)
+            _append_unique_non_empty(out, seen, mod)
     return out
 
 
