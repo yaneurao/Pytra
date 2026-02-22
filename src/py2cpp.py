@@ -2688,11 +2688,7 @@ class CppEmitter(CodeEmitter):
                     elt_dict = self.any_to_dict_or_empty(elt)
                     name = self.any_dict_get_str(elt_dict, "id", "")
                     if not self.is_declared(name):
-                        decl_t_txt = ""
-                        if i < len(tuple_elem_types):
-                            decl_t_txt = tuple_elem_types[i]
-                        else:
-                            decl_t_txt = self.get_expr_type(elt)
+                        decl_t_txt = tuple_elem_types[i] if i < len(tuple_elem_types) else self.get_expr_type(elt)
                         self.declare_in_current_scope(name)
                         self.declared_var_types[name] = decl_t_txt
                         if decl_t_txt in {"", "unknown", "Any", "object"}:
@@ -7555,11 +7551,11 @@ def main(argv: list[str]) -> int:
             analysis = _analyze_import_graph(input_path)
             _validate_import_graph_or_raise(analysis)
             module_east_map_cache = build_module_east_map(input_path, parser_backend)
-        east_module: dict[str, Any]
-        if input_txt.endswith(".py") and input_txt in module_east_map_cache:
-            east_module = module_east_map_cache[input_txt]
-        else:
-            east_module = load_east(input_path, parser_backend)
+        east_module: dict[str, Any] = (
+            module_east_map_cache[input_txt]
+            if input_txt.endswith(".py") and input_txt in module_east_map_cache
+            else load_east(input_path, parser_backend)
+        )
         if dump_deps:
             dep_text = dump_deps_text(east_module)
             if input_txt.endswith(".py"):
@@ -7650,10 +7646,11 @@ def main(argv: list[str]) -> int:
         else:
             module_east_map: dict[str, dict[str, Any]] = {}
             if input_txt.endswith(".py"):
-                if len(module_east_map_cache) > 0:
-                    module_east_map = module_east_map_cache
-                else:
-                    module_east_map = build_module_east_map(input_path, parser_backend)
+                module_east_map = (
+                    module_east_map_cache
+                    if len(module_east_map_cache) > 0
+                    else build_module_east_map(input_path, parser_backend)
+                )
             else:
                 module_east_map[str(input_path)] = east_module
             out_dir = Path(output_dir_txt) if output_dir_txt != "" else Path("out")
