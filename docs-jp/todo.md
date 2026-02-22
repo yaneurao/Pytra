@@ -121,7 +121,7 @@ py2cpp / py2rs 共通化候補:
 4. [x] [ID: P2-MGPT-04] （低優先）`work/tmp/microgpt-20260222-lite.py` を `py2cpp.py` で変換し、生成 C++ のコンパイル（`g++ -std=c++20 -I src -I src/runtime/cpp`）が通る状態にする。
 
 進捗メモ:
-- `P2-MGPT-01`: 方針を「型注釈必須の仕様維持」に確定。`src/pytra/compiler/east_parts/core.py` で無注釈引数（`def f(x): ...`）の拒否を専用メッセージ（`requires type annotation`）で明示し、`test/fixtures/signature/ng_untyped_param.py` + `test/unit/test_self_hosted_signature.py::test_reject_untyped_parameter` を追加。`docs-jp/spec/spec-user.md` に運用方針を明文化した。
+- `P2-MGPT-01`: 当時方針を「型注釈必須の仕様維持」に確定。`src/pytra/compiler/east_parts/core.py` で無注釈引数（`def f(x): ...`）の拒否を専用メッセージ（`requires type annotation`）で明示し、`test/fixtures/signature/ng_untyped_param.py` + `test/unit/test_self_hosted_signature.py::test_reject_untyped_parameter` を追加した（この方針は後続の `P3-MSP-04` で `unknown` 受理へ更新）。
 - `P2-MGPT-02`: `src/pytra/std/random.py` へ `choices/gauss/shuffle` を追加し、`python3 src/py2cpp.py src/pytra/std/random.py --emit-runtime-cpp` で `src/runtime/cpp/pytra/std/random.*` を更新。`test/fixtures/stdlib/random_timeit_traceback_extended.py` と `test/unit/test_py2cpp_features.py` に runtime 検証を追加し、`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_random_timeit_traceback_extended_runtime` で通過を確認。
 - `P2-MGPT-03`: `test/fixtures/microgpt/microgpt_compat_min.py`（型注釈付き最小 microgpt 相当ケース）を追加し、`test/unit/test_py2cpp_features.py` に `test_microgpt_compat_min_syntax_check` を追加。`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_microgpt_compat_min_syntax_check` で transpile -> `g++ -fsyntax-only` の導線が通ることを確認。
 - `P2-MGPT-04`: `work/tmp/microgpt-20260222-lite.py` を self_hosted parser 制約に合わせて `microgpt-lite`（dataset -> vocab -> training -> sampling）構成へ再整理し、`random.choices` / `random.gauss` / `random.shuffle` を維持したまま `python3 src/py2cpp.py work/tmp/microgpt-20260222-lite.py -o work/out/microgpt-20260222.cpp` と `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only work/out/microgpt-20260222.cpp` の通過を確認。
@@ -133,7 +133,7 @@ py2cpp / py2rs 共通化候補:
 1. [x] [ID: P3-MSP-01] `materials/inbox/exec-extracted.log` で抽出した原本改変項目（型注釈追加、内包/zip 展開、I/O 置換、アルゴリズム簡略化）を、parser/emitter/runtime の責務へ再分類する。
 2. [x] [ID: P3-MSP-02] `materials/microgpt/microgpt-20260222.py` を無改変で `py2cpp` に入力したときの失敗要因を再現・列挙し、改変で迂回していた箇所を実装タスクへ置き換える。
 3. [ ] [ID: P3-MSP-03] `work/tmp/microgpt-20260222-lite.py` 依存を縮退し、原本 `materials/microgpt/microgpt-20260222.py` で transpile -> `g++ -fsyntax-only` が通る回帰導線を整備する。
-4. [ ] [ID: P3-MSP-04] parser: 無注釈引数（`def f(x): ...`）と class 内 1 行メソッド定義（`def f(...): return ...`）の受理方針を再検討し、原本改変なしで読める範囲を拡張する。
+4. [x] [ID: P3-MSP-04] parser: 無注釈引数（`def f(x): ...`）と class 内 1 行メソッド定義（`def f(...): return ...`）の受理方針を再検討し、原本改変なしで読める範囲を拡張する。
 5. [ ] [ID: P3-MSP-05] parser: top-level `for` / tuple 同時代入 / 複数 `for` 内包の受理・lower を段階対応し、原本スクリプト構造を維持して EAST 化できるようにする。
 6. [ ] [ID: P3-MSP-06] EAST/emitter: 内包内 `range(...)` の lower 不整合（`unexpected raw range Call in EAST`）を解消する。
 7. [ ] [ID: P3-MSP-07] EAST/emitter: `zip` / 内包経由で `object receiver` エラーへ落ちる型崩れ経路を再現し、型解決を安定化する。
@@ -143,6 +143,7 @@ py2cpp / py2rs 共通化候補:
 進捗メモ:
 - `P3-MSP-01`: `materials/inbox/exec-extracted.log`（2026-02-23 00:03〜00:13）と `materials/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` の差分を照合し、改変 7 項目を parser / emitter / runtime の責務へ再分類した。入力側改変を再発させないため、各項目を実装側で吸収する方針を `docs-jp/plans/p3-microgpt-source-preservation.md` に明記。
 - `P3-MSP-02`: `python3 src/py2cpp.py materials/microgpt/microgpt-20260222.py -o work/out/msp2-microgpt.cpp` で先頭エラー（無注釈引数）を再現し、`materials/inbox/exec-extracted.log` の追跡と合わせて失敗要因 A〜F（parser 構文、EAST lower、型崩れ、runtime 互換）を列挙。改変で迂回していた論点を `P3-MSP-04`〜`P3-MSP-09` へ分解して TODO 化。
+- `P3-MSP-04`: `src/pytra/compiler/east_parts/core.py` で無注釈引数を `unknown` として受理し、`def ...: return ...` 形式の inline 定義を top-level / nested / class method で受理するよう拡張した。`python3 test/unit/test_self_hosted_signature.py`（7件成功）と `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known` を実行し、原本 `microgpt` の失敗ステージが `A`（無注釈引数）から `C`（top-level/lower ギャップ）へ進んだことを確認した。
 - `P3-MSP-08`: `/tmp/msp8_*` の最小再現で `open` 既定 mode 未補完、`PyFile` 反復未対応、`list.index` 未実装、`random.shuffle(list[str])` の `list<int64>` 固定束縛を確認し、吸収レイヤを `docs-jp/plans/p3-microgpt-source-preservation.md` に確定した。`random.choices(range(...))` は `unexpected raw range Call in EAST` を再現し、runtime/std ではなく `P3-MSP-06`（EAST lower）対象と分離した。
 - `P3-MSP-09`: `tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本 `materials/microgpt/microgpt-20260222.py` 固定入力の transpile/syntax-check 結果を `stage=A..F|SUCCESS` で分類する回帰導線を整備した。`python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known` で実行可能。
 

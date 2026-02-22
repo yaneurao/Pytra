@@ -502,12 +502,30 @@ def _sh_parse_def_sig(
                 arg_order.append("self")
                 continue
             if ":" not in p:
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser requires type annotation for parameter: {p_txt}",
-                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                    hint="Use `name: Type` style parameters.",
-                )
+                p_name = p
+                p_default = ""
+                p_assign = _sh_split_top_level_assign(p)
+                if p_assign is not None:
+                    p_name = p_assign[0].strip()
+                    p_default = p_assign[1].strip()
+                if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", p_name):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse parameter name: {p_txt}",
+                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
+                        hint="Use valid identifier for parameter name.",
+                    )
+                if in_class != "" and p_name == "self":
+                    arg_types["self"] = in_class
+                    arg_order.append("self")
+                    if p_default != "":
+                        arg_defaults["self"] = p_default
+                    continue
+                arg_types[p_name] = "unknown"
+                arg_order.append(p_name)
+                if p_default != "":
+                    arg_defaults[p_name] = p_default
+                continue
             parsed_param = _sh_parse_typed_binding(p, allow_dotted_name=False)
             if parsed_param is None:
                 raise _make_east_build_error(
@@ -544,6 +562,24 @@ def _sh_parse_def_sig(
     out_sig["arg_order"] = arg_order
     out_sig["arg_defaults"] = arg_defaults
     return out_sig
+
+
+def _sh_split_def_header_and_inline_stmt(text: str) -> tuple[str, str]:
+    """`def ...:` と同一行本文（`def ...: stmt`）を分割する。"""
+    txt = text.strip()
+    if not txt.startswith("def "):
+        return txt, ""
+    if txt.endswith(":"):
+        return txt, ""
+    split = _sh_split_top_level_colon(txt)
+    if split is None:
+        return txt, ""
+    head, inline_stmt = split
+    head = head.strip()
+    inline_stmt = inline_stmt.strip()
+    if not head.startswith("def ") or inline_stmt == "":
+        return txt, ""
+    return head + ":", inline_stmt
 
 
 def _sh_scan_logical_line_state(
@@ -3539,7 +3575,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             i += 1
             continue
 
-        sig = _sh_parse_def_sig(ln_no, s)
+        sig_line, inline_fn_stmt = _sh_split_def_header_and_inline_stmt(s)
+        sig = _sh_parse_def_sig(ln_no, sig_line)
         if sig is not None:
             fn_name = str(sig["name"])
             fn_ret = str(sig["ret"])
@@ -3547,14 +3584,19 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             arg_order: list[str] = list(sig["arg_order"])
             arg_defaults_raw_obj: Any = sig.get("arg_defaults")
             arg_defaults_raw: dict[str, Any] = arg_defaults_raw_obj if isinstance(arg_defaults_raw_obj, dict) else {}
-            fn_block, j = _sh_collect_indented_block(body_lines, i + 1, indent)
-            if len(fn_block) == 0:
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser requires non-empty nested function body '{fn_name}'",
-                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                    hint="Add nested function statements.",
-                )
+            fn_block: list[tuple[int, str]] = []
+            j = i + 1
+            if inline_fn_stmt != "":
+                fn_block = [(ln_no, " " * (indent + 4) + inline_fn_stmt)]
+            else:
+                fn_block, j = _sh_collect_indented_block(body_lines, i + 1, indent)
+                if len(fn_block) == 0:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser requires non-empty nested function body '{fn_name}'",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Add nested function statements.",
+                    )
             fn_scope_types: dict[str, str] = dict(name_types)
             for arg_name, arg_ty in arg_types.items():
                 fn_scope_types[arg_name] = arg_ty
@@ -4302,12 +4344,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 class_method_return_types[cur_cls_name] = empty_methods
             continue
         if cur_cls is None:
-            sig = _sh_parse_def_sig(ln_no, s)
+            sig_line_scan, _inline_scan = _sh_split_def_header_and_inline_stmt(s)
+            sig = _sh_parse_def_sig(ln_no, sig_line_scan)
             if sig is not None:
                 fn_returns[str(sig["name"])] = str(sig["ret"])
             continue
         cur_cls_name: str = cur_cls
-        sig = _sh_parse_def_sig(ln_no, s, in_class=cur_cls_name)
+        sig_line_scan, _inline_scan = _sh_split_def_header_and_inline_stmt(s)
+        sig = _sh_parse_def_sig(ln_no, sig_line_scan, in_class=cur_cls_name)
         if sig is not None:
             methods: dict[str, str] = class_method_return_types[cur_cls_name]
             methods[str(sig["name"])] = str(sig["ret"])
@@ -4377,7 +4421,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             main_stmts = _sh_parse_stmt_block(block, name_types=main_name_types, scope_label="__main__")
             i = j
             continue
-        sig_line: str = s
+        sig_line_full: str = s
+        sig_line, inline_fn_stmt = _sh_split_def_header_and_inline_stmt(sig_line_full)
         sig_end_line = logical_end
         sig = _sh_parse_def_sig(i, sig_line)
         if sig is not None:
@@ -4389,23 +4434,27 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             arg_defaults_raw: dict[str, Any] = arg_defaults_raw_obj if isinstance(arg_defaults_raw_obj, dict) else {}
             block: list[tuple[int, str]] = []
             j = sig_end_line + 1
-            while j <= len(lines):
-                bl = lines[j - 1]
-                if bl.strip() == "":
+            if inline_fn_stmt != "":
+                block = [(i, "    " + inline_fn_stmt)]
+                j = i + 1
+            else:
+                while j <= len(lines):
+                    bl = lines[j - 1]
+                    if bl.strip() == "":
+                        block.append((j, bl))
+                        j += 1
+                        continue
+                    if not bl.startswith(" "):
+                        break
                     block.append((j, bl))
                     j += 1
-                    continue
-                if not bl.startswith(" "):
-                    break
-                block.append((j, bl))
-                j += 1
-            if len(block) == 0:
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser requires non-empty function body '{fn_name}'",
-                    source_span=_sh_span(i, 0, len(sig_line)),
-                    hint="Add return or assignment statements in function body.",
-                )
+                if len(block) == 0:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser requires non-empty function body '{fn_name}'",
+                        source_span=_sh_span(i, 0, len(sig_line)),
+                        hint="Add return or assignment statements in function body.",
+                    )
             stmts = _sh_parse_stmt_block(block, name_types=dict(arg_types), scope_label=fn_name)
             docstring, stmts = _sh_extract_leading_docstring(stmts)
             yield_types = _sh_collect_yield_value_types(stmts)
@@ -4796,7 +4845,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             )
                             k += 1
                             continue
-                    sig = _sh_parse_def_sig(ln_no, s2, in_class=cls_name)
+                    sig_line, inline_method_stmt = _sh_split_def_header_and_inline_stmt(s2)
+                    sig = _sh_parse_def_sig(ln_no, sig_line, in_class=cls_name)
                     if sig is not None:
                         mname = str(sig["name"])
                         marg_types: dict[str, str] = dict(sig["arg_types"])
@@ -4806,36 +4856,39 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         mret = str(sig["ret"])
                         method_block: list[tuple[int, str]] = []
                         m = k + 1
-                        while m < len(class_block):
-                            n_pair: tuple[int, str] = class_block[m]
-                            n_no: int = int(n_pair[0])
-                            n_txt: str = str(n_pair[1])
-                            if n_txt.strip() == "":
-                                t = m + 1
-                                while t < len(class_block) and class_block[t][1].strip() == "":
-                                    t += 1
-                                if t >= len(class_block):
-                                    break
-                                t_pair: tuple[int, str] = class_block[t]
-                                t_txt: str = str(t_pair[1])
-                                t_indent = len(t_txt) - len(t_txt.lstrip(" "))
-                                if t_indent <= bind:
+                        if inline_method_stmt != "":
+                            method_block = [(ln_no, " " * (bind + 4) + inline_method_stmt)]
+                        else:
+                            while m < len(class_block):
+                                n_pair: tuple[int, str] = class_block[m]
+                                n_no: int = int(n_pair[0])
+                                n_txt: str = str(n_pair[1])
+                                if n_txt.strip() == "":
+                                    t = m + 1
+                                    while t < len(class_block) and class_block[t][1].strip() == "":
+                                        t += 1
+                                    if t >= len(class_block):
+                                        break
+                                    t_pair: tuple[int, str] = class_block[t]
+                                    t_txt: str = str(t_pair[1])
+                                    t_indent = len(t_txt) - len(t_txt.lstrip(" "))
+                                    if t_indent <= bind:
+                                        break
+                                    method_block.append((n_no, n_txt))
+                                    m += 1
+                                    continue
+                                n_indent = len(n_txt) - len(n_txt.lstrip(" "))
+                                if n_indent <= bind:
                                     break
                                 method_block.append((n_no, n_txt))
                                 m += 1
-                                continue
-                            n_indent = len(n_txt) - len(n_txt.lstrip(" "))
-                            if n_indent <= bind:
-                                break
-                            method_block.append((n_no, n_txt))
-                            m += 1
-                        if len(method_block) == 0:
-                            raise _make_east_build_error(
-                                kind="unsupported_syntax",
-                                message=f"self_hosted parser requires non-empty method body '{cls_name}.{mname}'",
-                                source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                                hint="Add method statements.",
-                            )
+                            if len(method_block) == 0:
+                                raise _make_east_build_error(
+                                    kind="unsupported_syntax",
+                                    message=f"self_hosted parser requires non-empty method body '{cls_name}.{mname}'",
+                                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                                    hint="Add method statements.",
+                                )
                         local_types: dict[str, str] = dict(marg_types)
                         field_names: list[str] = list(field_types.keys())
                         for fnm in field_names:

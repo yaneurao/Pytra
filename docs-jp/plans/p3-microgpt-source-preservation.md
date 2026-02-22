@@ -79,6 +79,23 @@
 4. 再発検知運用:
    - ある失敗要因を解消した後は `--expect-stage` を次の期待値（例: `B`, `C`, ..., `success`）へ更新し、以前の要因へ戻った回帰を検知する。
 
+parser 受理拡張（P3-MSP-04）:
+1. 対応内容（2026-02-23）
+   - 関数シグネチャで無注釈引数（`def f(x): ...`）を `unsupported_syntax` で拒否せず、`arg_types[name] = "unknown"` として受理する。
+   - `def ...: return ...` 形式の 1 行定義を分割して、top-level / nested function / class method の各経路で本文付き `FunctionDef` として EAST 化する。
+2. 実装箇所
+   - `src/pytra/compiler/east_parts/core.py`:
+     - `_sh_parse_def_sig`: 無注釈引数の `unknown` 受理を追加。
+     - `_sh_split_def_header_and_inline_stmt`: `def` ヘッダと inline 本文の分割 helper を追加。
+     - `convert_source_to_east_self_hosted` / `_sh_parse_stmt_block_mutable` / class 解析経路: inline 定義を synthetic body へ lower。
+3. 検証
+   - `python3 test/unit/test_self_hosted_signature.py`
+     - `ok_untyped_param.py` と `ok_class_inline_method.py` を追加し、受理拡張の回帰を固定。
+   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+     - `stage=A`（無注釈引数）から `stage=C`（top-level/lower ギャップ）へ前進。
+4. 境界
+   - 本タスクは parser 受理範囲の拡張のみを対象にし、top-level `for` / tuple 同時代入 / 複数 `for` 内包や lower 不整合は `P3-MSP-05` 以降で扱う。
+
 runtime/std 互換差分整理（P3-MSP-08）:
 1. 再現コマンド（2026-02-23 実行）
    - `python3 src/py2cpp.py /tmp/msp8_open_default_fn.py -o /tmp/msp8_open_default_fn.cpp && g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only /tmp/msp8_open_default_fn.cpp`
@@ -125,4 +142,5 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-23: `P3-MSP-01` を実施。改変 7 項目を parser / emitter / runtime の責務へ再分類し、入力側改変の代わりに実装側で吸収する方針を明文化。
 - 2026-02-23: `P3-MSP-02` を実施。原本入力で先頭エラー（無注釈引数）を再現し、ログ追跡と合わせて失敗要因 A〜F を列挙。回避改変の内容を `P3-MSP-04`〜`P3-MSP-09` の実装タスクへ置換した。
 - 2026-02-23: `P3-MSP-09` を実施。`tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本固定入力の transpile/syntax-check を失敗ステージ A〜F で分類して再発検知できる導線を整備した。
+- 2026-02-23: `P3-MSP-04` を実施。無注釈引数を `unknown` 受理へ切り替え、`def ...: stmt` の inline 定義を top-level / nested / class method で受理する parser 拡張を実装。`test_self_hosted_signature.py` の追加ケース通過と、原本 `microgpt` の失敗ステージ `A -> C` 前進を確認した。
 - 2026-02-23: `P3-MSP-08` を実施。`open`/`list.index`/`random.shuffle(list[str])` の最小再現を行い、runtime/std 互換差分の吸収レイヤを確定した。`random.choices(range(...))` は runtime ではなく `P3-MSP-06`（EAST lower）側で扱うと決定した。
