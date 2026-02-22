@@ -7018,9 +7018,9 @@ def _write_multi_file_cpp(
                 dep_modules.add(mod_name_obj)
         for _alias, sym_obj in import_symbols.items():
             sym = sym_obj if isinstance(sym_obj, dict) else {}
-            mod_name_obj = sym.get("module")
-            if isinstance(mod_name_obj, str) and mod_name_obj != "":
-                dep_modules.add(mod_name_obj)
+            mod_name = _dict_any_get_str(sym, "module")
+            if mod_name != "":
+                dep_modules.add(mod_name)
         fwd_lines: list[str] = []
         for mod_name in dep_modules:
             if mod_name not in module_ns_map:
@@ -7047,10 +7047,7 @@ def _write_multi_file_cpp(
                 if not isinstance(fn_name, str) or fn_name == "main":
                     continue
                 sig = sig_obj if isinstance(sig_obj, dict) else {}
-                ret_obj = sig.get("return_type")
-                ret_t = "None"
-                if isinstance(ret_obj, str):
-                    ret_t = ret_obj
+                ret_t = _dict_any_get_str(sig, "return_type", "None")
                 if ret_t == "None":
                     ret_cpp = "void"
                 else:
@@ -7064,10 +7061,7 @@ def _write_multi_file_cpp(
                     an = arg_order[j]
                     if not isinstance(an, str):
                         continue
-                    at_obj = arg_types.get(an)
-                    at = "object"
-                    if isinstance(at_obj, str):
-                        at = at_obj
+                    at = _dict_any_get_str(arg_types, an, "object")
                     at_cpp = type_emitter._cpp_type_text(at)
                     parts.append(at_cpp + " " + an)
                 sep = ", "
