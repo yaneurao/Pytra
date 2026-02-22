@@ -6525,8 +6525,7 @@ def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> 
         if cand_named != "":
             candidates.append((cand_named, 2))
         candidates.append((cand_flat, 1))
-        for i in range(len(candidates)):
-            path_txt, rank = candidates[i]
+        for path_txt, rank in candidates:
             if Path(path_txt).exists():
                 if rank > best_rank or (rank == best_rank and distance < best_distance):
                     best_path = path_txt
@@ -7252,8 +7251,7 @@ def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
         if cand_named != "":
             candidates.append((cand_named, 2))
         candidates.append((cand_flat, 1))
-        for i in range(len(candidates)):
-            path_txt, rank = candidates[i]
+        for path_txt, rank in candidates:
             if Path(path_txt).exists():
                 if rank > best_rank or (rank == best_rank and distance < best_distance):
                     best_path = path_txt
