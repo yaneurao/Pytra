@@ -6719,13 +6719,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 module_id = resolved_mod_id if resolved_mod_id != "" else mod
                 if dep_key not in module_id_map or module_id_map[dep_key] == "":
                     module_id_map[dep_key] = module_id
-                cur_adj: list[str] = []
-                if cur_key in graph_adj:
-                    cur_adj_obj = graph_adj[cur_key]
-                    if isinstance(cur_adj_obj, list):
-                        cur_adj = cur_adj_obj
-                cur_adj.append(dep_key)
-                graph_adj[cur_key] = cur_adj
+                graph_adj[cur_key].append(dep_key)
                 key_to_path[dep_key] = dep_file
                 key_to_disp[dep_key] = dep_disp
                 if dep_key not in queued and dep_key not in visited:
