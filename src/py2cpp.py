@@ -6314,8 +6314,7 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     symbol_seen: set[str] = set()
 
     if len(import_bindings) > 0:
-        for i in range(len(import_bindings)):
-            ent = import_bindings[i]
+        for ent in import_bindings:
             mod_name = ent["module_id"]
             export_name = ent["export_name"]
             local_name = ent["local_name"]
@@ -6359,14 +6358,14 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     if len(modules) == 0:
         out += "  (none)\n"
     else:
-        for i in range(len(modules)):
-            out += "  - " + modules[i] + "\n"
+        for mod_name in modules:
+            out += "  - " + mod_name + "\n"
     out += "symbols:\n"
     if len(symbols) == 0:
         out += "  (none)\n"
     else:
-        for i in range(len(symbols)):
-            out += "  - " + symbols[i] + "\n"
+        for sym_name in symbols:
+            out += "  - " + sym_name + "\n"
     return out
 
 
