@@ -316,12 +316,11 @@ class CodeEmitter:
         default_value: bool,
     ) -> bool:
         """制御構文の brace 省略可否を hook で上書きする。"""
-        if "on_stmt_omit_braces" in self.hooks:
-            fn = self.hooks["on_stmt_omit_braces"]
-            if fn is not None:
-                v = fn(self, kind, stmt, default_value)
-                if isinstance(v, bool):
-                    return v
+        fn = self._lookup_hook("on_stmt_omit_braces")
+        if fn is not None:
+            v = fn(self, kind, stmt, default_value)
+            if isinstance(v, bool):
+                return v
         return default_value
 
     def hook_on_for_range_mode(
@@ -333,12 +332,11 @@ class CodeEmitter:
         mode = default_mode
         if mode == "":
             mode = "dynamic"
-        if "on_for_range_mode" in self.hooks:
-            fn = self.hooks["on_for_range_mode"]
-            if fn is not None:
-                v = fn(self, stmt, mode)
-                if isinstance(v, str) and v != "":
-                    return v
+        fn = self._lookup_hook("on_for_range_mode")
+        if fn is not None:
+            v = fn(self, stmt, mode)
+            if isinstance(v, str) and v != "":
+                return v
         return mode
 
     def hook_on_render_call(
@@ -349,12 +347,11 @@ class CodeEmitter:
         rendered_kwargs: dict[str, str],
     ) -> str:
         """`on_render_call` フック。既定では何もしない。"""
-        if "on_render_call" in self.hooks:
-            fn = self.hooks["on_render_call"]
-            if fn is not None:
-                v = fn(self, call_node, func_node, rendered_args, rendered_kwargs)
-                if isinstance(v, str):
-                    return v
+        fn = self._lookup_hook("on_render_call")
+        if fn is not None:
+            v = fn(self, call_node, func_node, rendered_args, rendered_kwargs)
+            if isinstance(v, str):
+                return v
         return ""
 
     def hook_on_render_module_method(
