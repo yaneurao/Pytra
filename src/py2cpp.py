@@ -529,15 +529,15 @@ def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, 
 def load_cpp_profile() -> dict[str, Any]:
     """C++ 用 LanguageProfile を読み込む（失敗時は最小既定）。"""
     profile_loader = CodeEmitter({}, {}, {})
-    out = profile_loader.load_profile_with_includes(
+    loaded = profile_loader.load_profile_with_includes(
         "src/profiles/cpp/profile.json",
         anchor_file="src/py2cpp.py",
     )
-    if not isinstance(out, dict):
-        out = {}
-    if "syntax" not in out or not isinstance(out.get("syntax"), dict):
-        out["syntax"] = {}
-    return out
+    if not isinstance(loaded, dict):
+        return {"syntax": {}}
+    if "syntax" not in loaded or not isinstance(loaded.get("syntax"), dict):
+        loaded["syntax"] = {}
+    return loaded
 
 
 def load_cpp_bin_ops() -> dict[str, str]:
