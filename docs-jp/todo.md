@@ -146,6 +146,7 @@ py2cpp / py2rs 共通化候補:
 - `P3-CE-02` の一部として `src/pytra/compiler/east_parts/code_emitter.py` に `_is_empty_dynamic_text` を追加し、`any_dict_get_str` / `any_to_str` / `get_expr_type` / `_node_kind_from_dict` の重複した空値判定を共通化した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-CE-03` の一部として `src/pytra/compiler/east_parts/code_emitter.py` の `_emit_trivia_items` から directive/blank 処理を `_handle_comment_trivia_directive`、`_emit_passthrough_directive_line`、`_emit_blank_trivia_item` へ分離した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-CE-04` の一部として `src/pytra/compiler/east_parts/code_emitter.py` に `_lookup_hook` を追加し、`hook_on_emit_stmt` / `hook_on_emit_stmt_kind` / `hook_on_render_expr_kind` / `hook_on_render_expr_leaf` の hook 取得ロジック重複を削減した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
+- `P3-CE-04` の継続として `hook_on_stmt_omit_braces` / `hook_on_for_range_mode` / `hook_on_render_call` も `_lookup_hook` 経由へ統一した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 
 ### 作業ルール
 
