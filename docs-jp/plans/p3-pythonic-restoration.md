@@ -1,0 +1,31 @@
+# TASK GROUP: TG-P3-PYTHONIC
+
+最終更新: 2026-02-22
+
+関連 TODO:
+- `docs-jp/todo.md` の `ID: P3-PY-*`, `P3-CE-*`, `P3-RULE-*`
+
+背景:
+- selfhost 安定化のため平易化した記法が増え、可読性が低下している。
+
+目的:
+- selfhost 安定を維持したまま、段階的に Pythonic 記法へ戻す。
+
+対象:
+- `src/py2cpp.py` のループ/比較/リテラル/式簡潔化
+- `code_emitter.py` の重複判定・分岐整理
+- 小パッチ運用（1〜3関数）
+
+非対象:
+- 大規模一括リファクタ
+
+受け入れ基準:
+- 可読性向上と selfhost 安定を両立
+- 既定の検証コマンドを毎回通す
+
+確認コマンド:
+- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+
+決定ログ:
+- 2026-02-22: 初版作成。
