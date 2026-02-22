@@ -43,7 +43,7 @@ Python から C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin への変�
 
 ## 実行速度の比較
 
-Pythonで書かれた[サンプルコード](docs-jp/sample-code.md)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒）
+Pythonで書かれた[サンプルコード](docs-jp/spec/spec-sample-code.md)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒）
 
 |No.|内容|Python| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
@@ -520,14 +520,14 @@ if __name__ == "__main__":
 利用時によく参照する順で、関連ドキュメントをまとめています。
 
 - まず使い方を確認する: [使い方ガイド](docs-jp/how-to-use.md)
-- 開発補助スクリプト一覧を確認する: [ツール一覧](docs-jp/spec-tools.md)
-- オプション設計（性能/互換性トレードオフ）を確認する: [オプション仕様](docs-jp/spec-options.md)
-- ランタイム配置と include 規約を確認する: [ランタイム仕様](docs-jp/spec-runtime.md)
-- 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](docs-jp/pytra-readme.md)
+- 開発補助スクリプト一覧を確認する: [ツール一覧](docs-jp/spec/spec-tools.md)
+- オプション設計（性能/互換性トレードオフ）を確認する: [オプション仕様](docs-jp/spec/spec-options.md)
+- ランタイム配置と include 規約を確認する: [ランタイム仕様](docs-jp/spec/spec-runtime.md)
+- 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](docs-jp/plans/pytra-wip.md)
 - `py2cpp` の機能対応（テスト根拠）を確認する: [py2cpp サポートマトリクス](docs-jp/language/cpp/spec-support.md)
-- サンプル一覧と概要を確認する: [サンプルコード案内](docs-jp/sample-code.md)
-- 仕様・制約・構成・運用ルールを確認する: [仕様書トップ](docs-jp/spec.md)
-- 開発の動機と設計理念: [開発思想](docs-jp/philosophy.md)
+- サンプル一覧と概要を確認する: [サンプルコード案内](docs-jp/spec/spec-sample-code.md)
+- 仕様・制約・構成・運用ルールを確認する: [仕様書トップ](docs-jp/spec/index.md)
+- 開発の動機と設計理念: [開発思想](docs-jp/spec/spec-philosophy.md)
 
 ## ライセンス
 
