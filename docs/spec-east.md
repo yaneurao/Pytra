@@ -229,18 +229,20 @@ For `.get(...).items()` on `dict[str, Any]`:
 }
 ```
 
-## 9. Argument readonly/mutable Classification
+## 9. Argument Reassignment Classification (`arg_usage`)
 
-`ArgUsageAnalyzer` attaches `arg_usage`.
+`FunctionDef` attaches `arg_usage`.
 
-- `mutable` conditions:
-  - assignment/aug-assignment to argument itself
-  - writes to argument attributes/subscripts
-  - destructive method calls (`append`, `extend`, `pop`, `write_text`, `mkdir`, etc.)
-  - passing argument to non-pure builtins
+- Values are `readonly | reassigned`.
+- `reassigned` when:
+  - argument name is assigned/aug-assigned (`Assign` / `AnnAssign` / `AugAssign`)
+  - argument name appears in `Swap` left/right targets
+  - argument name is a `for` / `for range` loop target
+  - `except ... as name` binds to an argument name
+- Assignments inside nested `FunctionDef` / `ClassDef` are excluded from outer-function classification.
 - all other cases are `readonly`
 
-`borrow_kind` reflects this classification.
+Currently this metadata is used mainly for backend argument `mut` decisions.
 
 ## 10. Supported Statements
 

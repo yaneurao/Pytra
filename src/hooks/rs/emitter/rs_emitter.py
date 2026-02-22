@@ -598,6 +598,7 @@ class RustEmitter(CodeEmitter):
         fn_name = self._safe_name(fn_name_raw)
         arg_order = self.any_to_str_list(fn.get("arg_order"))
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
+        arg_usage = self.any_to_dict_or_empty(fn.get("arg_usage"))
         args_text_list: list[str] = []
         scope_names: set[str] = set()
 
@@ -610,7 +611,10 @@ class RustEmitter(CodeEmitter):
         for arg_name in arg_order:
             safe = self._safe_name(arg_name)
             arg_t = self._rust_type(self.any_to_str(arg_types.get(arg_name)))
-            args_text_list.append(f"{safe}: {arg_t}")
+            usage = self.any_to_str(arg_usage.get(arg_name))
+            is_mut = usage == "reassigned" or usage == "mutable" or usage == "write"
+            prefix = "mut " if is_mut else ""
+            args_text_list.append(f"{prefix}{safe}: {arg_t}")
             scope_names.add(arg_name)
             self.declared_var_types[arg_name] = self.normalize_type_name(self.any_to_str(arg_types.get(arg_name)))
 

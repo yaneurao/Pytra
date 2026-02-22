@@ -227,18 +227,20 @@
 }
 ```
 
-## 9. 引数 readonly/mutable 判定
+## 9. 引数再代入判定（`arg_usage`）
 
-`ArgUsageAnalyzer` により `arg_usage` を付与する。
+`FunctionDef` ごとに `arg_usage` を付与する。
 
-- `mutable` 条件
-- 引数自体への代入/拡張代入
-- 引数属性・添字への書き込み
-- 破壊的メソッド呼び出し（`append`, `extend`, `pop`, `write_text`, `mkdir` など）
-- 純粋組み込み以外への引数渡し
-- それ以外は `readonly`
+- 値は `readonly | reassigned` を使う。
+- `reassigned` 条件:
+  - 引数名への代入/拡張代入（`Assign` / `AnnAssign` / `AugAssign`）
+  - `Swap` の左辺/右辺としての引数名
+  - `for` / `for range` のターゲットとしての引数名
+  - `except ... as name` の `name` が引数名と一致
+- 入れ子 `FunctionDef` / `ClassDef` 内の代入は外側関数の判定対象に含めない。
+- 上記以外は `readonly`。
 
-`borrow_kind` はこの判定を反映する。
+現時点では、この情報は主に backend 側の引数 `mut` 判定に利用する。
 
 ## 10. 対応文
 

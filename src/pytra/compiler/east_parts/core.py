@@ -1301,6 +1301,110 @@ def _sh_collect_yield_value_types(stmts: list[dict[str, Any]]) -> list[str]:
     return out
 
 
+def _sh_collect_store_name_ids(target: Any, out: set[str]) -> None:
+    """代入ターゲットから Name 識別子を再帰収集する。"""
+    if isinstance(target, dict):
+        kind = str(target.get("kind", ""))
+        if kind == "Name":
+            name = target.get("id")
+            if isinstance(name, str) and name != "":
+                out.add(name)
+            return
+        if kind == "Starred":
+            _sh_collect_store_name_ids(target.get("value"), out)
+            return
+        if kind in {"Tuple", "List"}:
+            elems_obj: Any = target.get("elements")
+            elems: list[Any] = elems_obj if isinstance(elems_obj, list) else []
+            for elem in elems:
+                _sh_collect_store_name_ids(elem, out)
+            return
+        return
+    if isinstance(target, list):
+        for item in target:
+            _sh_collect_store_name_ids(item, out)
+
+
+def _sh_collect_reassigned_names(stmts: list[dict[str, Any]]) -> set[str]:
+    """文リストから再代入（再束縛）されたローカル名を収集する。"""
+    out: set[str] = set()
+    for st in stmts:
+        if not isinstance(st, dict):
+            continue
+        kind = str(st.get("kind", ""))
+        if kind in {"FunctionDef", "ClassDef"}:
+            # 入れ子スコープ内の代入は外側関数引数の再代入に含めない。
+            continue
+        if kind in {"Assign", "AnnAssign", "AugAssign"}:
+            _sh_collect_store_name_ids(st.get("target"), out)
+            continue
+        if kind == "Swap":
+            _sh_collect_store_name_ids(st.get("left"), out)
+            _sh_collect_store_name_ids(st.get("right"), out)
+            continue
+        if kind in {"For", "ForRange"}:
+            _sh_collect_store_name_ids(st.get("target"), out)
+            body_obj: Any = st.get("body")
+            body: list[dict[str, Any]] = body_obj if isinstance(body_obj, list) else []
+            out.update(_sh_collect_reassigned_names(body))
+            orelse_obj: Any = st.get("orelse")
+            orelse: list[dict[str, Any]] = orelse_obj if isinstance(orelse_obj, list) else []
+            out.update(_sh_collect_reassigned_names(orelse))
+            continue
+        if kind in {"If", "While"}:
+            body_obj = st.get("body")
+            body = body_obj if isinstance(body_obj, list) else []
+            out.update(_sh_collect_reassigned_names(body))
+            orelse_obj = st.get("orelse")
+            orelse = orelse_obj if isinstance(orelse_obj, list) else []
+            out.update(_sh_collect_reassigned_names(orelse))
+            continue
+        if kind == "Try":
+            body_obj = st.get("body")
+            body = body_obj if isinstance(body_obj, list) else []
+            out.update(_sh_collect_reassigned_names(body))
+            orelse_obj = st.get("orelse")
+            orelse = orelse_obj if isinstance(orelse_obj, list) else []
+            out.update(_sh_collect_reassigned_names(orelse))
+            final_obj = st.get("finalbody")
+            finalbody = final_obj if isinstance(final_obj, list) else []
+            out.update(_sh_collect_reassigned_names(finalbody))
+            handlers_obj: Any = st.get("handlers")
+            handlers: list[dict[str, Any]] = handlers_obj if isinstance(handlers_obj, list) else []
+            for handler in handlers:
+                if not isinstance(handler, dict):
+                    continue
+                h_name = handler.get("name")
+                if isinstance(h_name, str) and h_name != "":
+                    out.add(h_name)
+                h_body_obj: Any = handler.get("body")
+                h_body: list[dict[str, Any]] = h_body_obj if isinstance(h_body_obj, list) else []
+                out.update(_sh_collect_reassigned_names(h_body))
+    return out
+
+
+def _sh_build_arg_usage_map(
+    arg_order: list[str],
+    arg_types: dict[str, str],
+    fn_stmts: list[dict[str, Any]],
+) -> dict[str, str]:
+    """関数本文の代入状況から `arg_usage` を構築する。"""
+    usage: dict[str, str] = {}
+    for arg_name in arg_types.keys():
+        usage[arg_name] = "readonly"
+    for arg_name in arg_order:
+        usage[arg_name] = "readonly"
+
+    reassigned = _sh_collect_reassigned_names(fn_stmts)
+    for arg_name in arg_types.keys():
+        if arg_name in reassigned:
+            usage[arg_name] = "reassigned"
+    for arg_name in arg_order:
+        if arg_name in reassigned:
+            usage[arg_name] = "reassigned"
+    return usage
+
+
 def _sh_make_generator_return_type(declared_ret: str, yield_types: list[str]) -> tuple[str, str]:
     """yield 検出時の関数戻り型（list[...]）と要素型を決定する。"""
     elem = "unknown"
@@ -3457,10 +3561,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 fn_ret_effective, yield_value_type = _sh_make_generator_return_type(fn_ret, yield_types)
             arg_defaults: dict[str, Any] = {}
             arg_index_map: dict[str, int] = {}
-            arg_usage_map: dict[str, str] = {}
             for arg_pos, arg_name in enumerate(arg_order):
                 arg_index_map[arg_name] = int(arg_pos)
-                arg_usage_map[arg_name] = "readonly"
                 if arg_name in arg_defaults_raw:
                     default_obj: Any = arg_defaults_raw[arg_name]
                     default_txt: str = str(default_obj).strip()
@@ -3474,6 +3576,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                             col=default_col,
                             name_types=dict(name_types),
                         )
+            arg_usage_map = _sh_build_arg_usage_map(arg_order, arg_types, fn_stmts)
             callable_parts: list[str] = []
             for arg_name in arg_order:
                 callable_parts.append(arg_types.get(arg_name, "unknown"))
@@ -4308,9 +4411,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             arg_index_map: dict[str, int] = {}
             for arg_pos, arg_name in enumerate(arg_order):
                 arg_index_map[arg_name] = int(arg_pos)
-            arg_usage_map: dict[str, str] = {}
-            for arg_name in arg_types.keys():
-                arg_usage_map[arg_name] = "readonly"
+            arg_usage_map = _sh_build_arg_usage_map(arg_order, arg_types, stmts)
             for arg_name in arg_order:
                 if arg_name in arg_defaults_raw:
                     default_obj: Any = arg_defaults_raw[arg_name]
@@ -4809,9 +4910,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             arg_name = marg_order[arg_pos]
                             arg_index_map[arg_name] = arg_pos
                             arg_pos += 1
-                        arg_usage_map: dict[str, str] = {}
-                        for arg_name in marg_types.keys():
-                            arg_usage_map[arg_name] = "readonly"
+                        arg_usage_map = _sh_build_arg_usage_map(marg_order, marg_types, stmts)
                         if cls_name in class_method_return_types:
                             methods_map = class_method_return_types[cls_name]
                             methods_map[mname] = mret_effective

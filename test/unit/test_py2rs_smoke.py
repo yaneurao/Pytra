@@ -113,6 +113,25 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("py_any_to_i64(&v)", rust)
         self.assertIn("py_any_to_string(&", rust)
 
+    def test_reassigned_args_emit_mut_only_when_needed(self) -> None:
+        src = """
+def f(x: int, y: int) -> int:
+    x = x + 1
+    return x + y
+
+def g(a: int, b: int) -> int:
+    return a + b
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "arg_usage_case.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertIn("fn f(mut x: i64, y: i64) -> i64 {", rust)
+        self.assertIn("fn g(a: i64, b: i64) -> i64 {", rust)
+        self.assertNotIn("fn f(mut x: i64, mut y: i64) -> i64 {", rust)
+
     def test_py2rs_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2rs.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)

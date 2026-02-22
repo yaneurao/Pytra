@@ -351,6 +351,45 @@ def gen() -> int:
         yields = [n for n in _walk(for_ranges[0].get("body", [])) if isinstance(n, dict) and n.get("kind") == "Yield"]
         self.assertEqual(len(yields), 1)
 
+    def test_arg_usage_tracks_reassigned_parameters(self) -> None:
+        src = """
+def f(x: int, y: int, z: int, w: int) -> int:
+    x = x + 1
+    for y in range(2):
+        z += y
+    return x + z + w
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "f"]
+        self.assertEqual(len(funcs), 1)
+        fn = funcs[0]
+        arg_usage = fn.get("arg_usage", {})
+        self.assertEqual(arg_usage.get("x"), "reassigned")
+        self.assertEqual(arg_usage.get("y"), "reassigned")
+        self.assertEqual(arg_usage.get("z"), "reassigned")
+        self.assertEqual(arg_usage.get("w"), "readonly")
+
+    def test_arg_usage_ignores_nested_scope_reassignment(self) -> None:
+        src = """
+def outer(a: int) -> int:
+    def inner(a: int) -> int:
+        a = a + 1
+        return a
+    return inner(a)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        outer_funcs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "outer"]
+        self.assertEqual(len(outer_funcs), 1)
+        outer = outer_funcs[0]
+        outer_usage = outer.get("arg_usage", {})
+        self.assertEqual(outer_usage.get("a"), "readonly")
+
+        inner_funcs = [n for n in _walk(outer.get("body", [])) if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "inner"]
+        self.assertEqual(len(inner_funcs), 1)
+        inner = inner_funcs[0]
+        inner_usage = inner.get("arg_usage", {})
+        self.assertEqual(inner_usage.get("a"), "reassigned")
+
     def test_trailing_semicolon_is_rejected(self) -> None:
         src = """
 def main() -> None:
