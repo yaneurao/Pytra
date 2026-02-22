@@ -44,3 +44,4 @@
 決定ログ:
 - 2026-02-22: 初版作成。`microgpt` 変換試験で判明したギャップ（型注釈、random API）を TODO 化。
 - 2026-02-22: `P2-MGPT-02` を実装。`src/pytra/std/random.py` へ `choices/gauss/shuffle` を追加し、`--emit-runtime-cpp` で `src/runtime/cpp/pytra/std/random.*` を更新。`choices(population, weights)` 呼び出し互換のため C++ runtime 側に2引数 overload（`choices(population, weights, 1)` へ委譲）を追加し、`shuffle` 宣言を実装シグネチャ（`list<int64>&`）に整合させた。
+- 2026-02-22: `P2-MGPT-03` を実装。`test/fixtures/microgpt/microgpt_compat_min.py` を追加し、`test/unit/test_py2cpp_features.py` に transpile -> `g++ -fsyntax-only` 導線（`test_microgpt_compat_min_syntax_check`）を追加した。`microgpt` 本体の未対応要素（型注釈なし引数、`random.choices(range(...), ...)` 経路）とは分離し、型注釈付き最小ケースで回帰検知できる構成を採用。
