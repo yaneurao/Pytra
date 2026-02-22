@@ -6,6 +6,7 @@
 
 
 This document summarizes usage and input constraints for Pytra.
+This file is the normative specification; executable command workflows are maintained in [Usage Guide](how-to-use.md).
 
 ## 1. Purpose
 
@@ -117,4 +118,3 @@ python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
 - py2cpp feature support matrix (with test evidence): `docs/language/cpp/spec-support.md`
 - Sample code: `docs/sample-code.md`
 - Detailed implementation status: `docs/pytra-readme.md`
-

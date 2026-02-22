@@ -5,6 +5,9 @@
 </a>
 
 
+This document is an execution runbook for actually running Pytra.  
+For normative input constraints and usage rules, see [User Specification](spec-user.md).
+
 ## Command Prerequisites by OS
 
 Command examples in this document are written for POSIX shells (`bash` / `zsh`).
@@ -32,6 +35,7 @@ For Windows, rewrite commands as follows.
 - See [Module Index](pylib-modules.md) for supported modules and APIs.
 - See [Option Specification](spec-options.md) for option policy and candidates.
 - See [Tools Guide](spec-tools.md) for helper script purposes.
+- For normative constraint definitions, see [User Specification](spec-user.md).
 
 ## Transpiler Usage
 
