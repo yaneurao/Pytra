@@ -7204,11 +7204,6 @@ def _write_multi_file_cpp(
 
     type_schema = build_module_type_schema(module_east_map)
 
-    manifest: dict[str, Any] = {
-        "entry": entry_key,
-        "include_dir": str(include_dir),
-        "src_dir": str(src_dir),
-    }
     manifest_modules: list[dict[str, Any]] = []
 
     i = 0
@@ -7359,12 +7354,22 @@ def _write_multi_file_cpp(
         )
         i += 1
 
-    manifest["modules"] = manifest_modules
+    manifest_for_dump: dict[str, Any] = {
+        "entry": entry_key,
+        "include_dir": str(include_dir),
+        "src_dir": str(src_dir),
+        "modules": manifest_modules,
+    }
     manifest_path = output_dir / "manifest.json"
-    manifest_obj: Any = manifest
+    manifest_obj: Any = manifest_for_dump
     _write_text_file(manifest_path, json.dumps(manifest_obj, ensure_ascii=False, indent=2))
-    manifest["manifest"] = str(manifest_path)
-    return manifest
+    return {
+        "entry": entry_key,
+        "include_dir": str(include_dir),
+        "src_dir": str(src_dir),
+        "modules": manifest_modules,
+        "manifest": str(manifest_path),
+    }
 
 
 def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
