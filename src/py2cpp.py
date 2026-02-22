@@ -358,9 +358,7 @@ def _split_top_level_csv(text: str) -> list[str]:
     depth_paren = 0
     depth_brack = 0
     depth_brace = 0
-    i = 0
-    while i < len(text):
-        ch = text[i : i + 1]
+    for ch in text:
         if ch == "(":
             depth_paren += 1
             cur += ch
@@ -387,7 +385,6 @@ def _split_top_level_csv(text: str) -> list[str]:
             cur = ""
         else:
             cur += ch
-        i += 1
     tail = cur.strip()
     if tail != "":
         out.append(tail)
@@ -466,10 +463,8 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
             arg_types: list[str] = []
             arg_defaults: list[str] = []
             parts = _split_top_level_csv(params)
-            p = 0
-            while p < len(parts):
-                prm = parts[p].strip()
-                p += 1
+            for part in parts:
+                prm = part.strip()
                 if prm == "" or prm.startswith("*"):
                     continue
                 default_txt = ""
@@ -500,16 +495,10 @@ def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, 
     fn_names_obj = sigs.keys()
     fn_names: list[str] = []
     if isinstance(fn_names_obj, list):
-        j = 0
-        while j < len(fn_names_obj):
-            name_obj = fn_names_obj[j]
+        for name_obj in fn_names_obj:
             if isinstance(name_obj, str):
                 fn_names.append(name_obj)
-            j += 1
-    i = 0
-    while i < len(fn_names):
-        fn_name_obj = fn_names[i]
-        i += 1
+    for fn_name_obj in fn_names:
         sig_obj = sigs.get(fn_name_obj)
         if not isinstance(sig_obj, dict):
             continue
