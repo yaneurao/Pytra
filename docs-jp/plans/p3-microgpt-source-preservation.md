@@ -79,6 +79,29 @@
 4. 再発検知運用:
    - ある失敗要因を解消した後は `--expect-stage` を次の期待値（例: `B`, `C`, ..., `success`）へ更新し、以前の要因へ戻った回帰を検知する。
 
+runtime/std 互換差分整理（P3-MSP-08）:
+1. 再現コマンド（2026-02-23 実行）
+   - `python3 src/py2cpp.py /tmp/msp8_open_default_fn.py -o /tmp/msp8_open_default_fn.cpp && g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only /tmp/msp8_open_default_fn.cpp`
+   - `python3 src/py2cpp.py /tmp/msp8_open_iter_mode_fn.py -o /tmp/msp8_open_iter_mode_fn.cpp && g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only /tmp/msp8_open_iter_mode_fn.cpp`
+   - `python3 src/py2cpp.py /tmp/msp8_list_index_int_fn.py -o /tmp/msp8_list_index_int_fn.cpp && g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only /tmp/msp8_list_index_int_fn.cpp`
+   - `python3 src/py2cpp.py /tmp/msp8_shuffle_str_fn.py -o /tmp/msp8_shuffle_str_fn.cpp && g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only /tmp/msp8_shuffle_str_fn.cpp`
+   - `python3 src/py2cpp.py /tmp/msp8_shuffle_int_fn.py -o /tmp/msp8_shuffle_int_fn.cpp && g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only /tmp/msp8_shuffle_int_fn.cpp`
+2. 差分マトリクス（原本依存 API）
+   | API / 形 | 観測結果 | 吸収レイヤ決定 | 関連 TODO |
+   | --- | --- | --- | --- |
+   | `open("input.txt")` | `open(const str&, const str&)` に 1 引数呼び出しされ `too few arguments` | EAST/builtin lower 側で Python 既定値 `mode="r"` を補完する（必要なら runtime 側に 1 引数 overload 追加） | `P3-MSP-08`, `P3-MSP-03` |
+   | `for line in open("input.txt", "r")` | `PyFile` に `begin/end` がなく range-for 不能 | runtime (`PyFile`) 側に反復 API を追加して吸収する | `P3-MSP-08`, `P3-MSP-03` |
+   | `xs.index(v)` (`xs: list[int/str]`) | `list<T>` に `index` がなくコンパイル失敗 | runtime (`list<T>`) 側に `index` 実装を追加し、必要に応じて lower の method map を補完する | `P3-MSP-08`, `P3-MSP-03` |
+   | `random.shuffle(xs)` (`xs: list[str]`) | `shuffle(list<int64>&)` 固定シグネチャへ束縛され型不一致 | `pytra.std.random` + C++ runtime `std/random` を要素型依存に一般化して吸収する | `P3-MSP-08`, `P3-MSP-03` |
+3. 境界外（runtime/std ではなく別レイヤ）
+   - `random.choices(range(...), weights=..., k=...)` は `unexpected raw range Call in EAST` で失敗し、EAST lower 問題（要因 D）であることを再確認した。runtime 互換タスクからは除外し、`P3-MSP-06` 側で扱う。
+4. 実装根拠（現状コード）
+   - `src/runtime/cpp/pytra/built_in/str.h`: `open(const str& path, const str& mode)` のみ。
+   - `src/runtime/cpp/pytra/built_in/io.h`: `PyFile` は `read/write/close` のみで `begin/end` を未提供。
+   - `src/runtime/cpp/pytra/built_in/list.h`: `append/extend/pop/...` はあるが `index` 未実装。
+   - `src/runtime/cpp/pytra/std/random.h`: `shuffle(list<int64>&)` に固定。
+   - `src/pytra/compiler/east_parts/core.py`: `list_map` に `index` エントリなし。
+
 目的:
 - 「変換器都合で元ソースを書き換える」運用を禁止し、必要な対応を parser/emitter/runtime 側タスクへ移す。
 - `materials/microgpt/microgpt-20260222.py`（原本）を無改変のまま扱える状態を作る。
@@ -102,3 +125,4 @@
 - 2026-02-23: `P3-MSP-01` を実施。改変 7 項目を parser / emitter / runtime の責務へ再分類し、入力側改変の代わりに実装側で吸収する方針を明文化。
 - 2026-02-23: `P3-MSP-02` を実施。原本入力で先頭エラー（無注釈引数）を再現し、ログ追跡と合わせて失敗要因 A〜F を列挙。回避改変の内容を `P3-MSP-04`〜`P3-MSP-09` の実装タスクへ置換した。
 - 2026-02-23: `P3-MSP-09` を実施。`tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本固定入力の transpile/syntax-check を失敗ステージ A〜F で分類して再発検知できる導線を整備した。
+- 2026-02-23: `P3-MSP-08` を実施。`open`/`list.index`/`random.shuffle(list[str])` の最小再現を行い、runtime/std 互換差分の吸収レイヤを確定した。`random.choices(range(...))` は runtime ではなく `P3-MSP-06`（EAST lower）側で扱うと決定した。

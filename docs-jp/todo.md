@@ -137,12 +137,13 @@ py2cpp / py2rs 共通化候補:
 5. [ ] [ID: P3-MSP-05] parser: top-level `for` / tuple 同時代入 / 複数 `for` 内包の受理・lower を段階対応し、原本スクリプト構造を維持して EAST 化できるようにする。
 6. [ ] [ID: P3-MSP-06] EAST/emitter: 内包内 `range(...)` の lower 不整合（`unexpected raw range Call in EAST`）を解消する。
 7. [ ] [ID: P3-MSP-07] EAST/emitter: `zip` / 内包経由で `object receiver` エラーへ落ちる型崩れ経路を再現し、型解決を安定化する。
-8. [ ] [ID: P3-MSP-08] runtime/std: `open` 反復、`list.index`、`random.shuffle(list[str])` など原本依存 API の互換差分を整理し、どのレイヤで吸収するかを確定する。
+8. [x] [ID: P3-MSP-08] runtime/std: `open` 反復、`list.index`、`random.shuffle(list[str])` など原本依存 API の互換差分を整理し、どのレイヤで吸収するかを確定する。
 9. [x] [ID: P3-MSP-09] 回帰導線: 原本 `materials/microgpt/microgpt-20260222.py` を固定入力として、`py2cpp` 失敗要因の再発を検知する手順またはテストを追加する。
 
 進捗メモ:
 - `P3-MSP-01`: `materials/inbox/exec-extracted.log`（2026-02-23 00:03〜00:13）と `materials/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` の差分を照合し、改変 7 項目を parser / emitter / runtime の責務へ再分類した。入力側改変を再発させないため、各項目を実装側で吸収する方針を `docs-jp/plans/p3-microgpt-source-preservation.md` に明記。
 - `P3-MSP-02`: `python3 src/py2cpp.py materials/microgpt/microgpt-20260222.py -o work/out/msp2-microgpt.cpp` で先頭エラー（無注釈引数）を再現し、`materials/inbox/exec-extracted.log` の追跡と合わせて失敗要因 A〜F（parser 構文、EAST lower、型崩れ、runtime 互換）を列挙。改変で迂回していた論点を `P3-MSP-04`〜`P3-MSP-09` へ分解して TODO 化。
+- `P3-MSP-08`: `/tmp/msp8_*` の最小再現で `open` 既定 mode 未補完、`PyFile` 反復未対応、`list.index` 未実装、`random.shuffle(list[str])` の `list<int64>` 固定束縛を確認し、吸収レイヤを `docs-jp/plans/p3-microgpt-source-preservation.md` に確定した。`random.choices(range(...))` は `unexpected raw range Call in EAST` を再現し、runtime/std ではなく `P3-MSP-06`（EAST lower）対象と分離した。
 - `P3-MSP-09`: `tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本 `materials/microgpt/microgpt-20260222.py` 固定入力の transpile/syntax-check 結果を `stage=A..F|SUCCESS` で分類する回帰導線を整備した。`python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known` で実行可能。
 
 ## P3: Pythonic 記法戻し（低優先）
