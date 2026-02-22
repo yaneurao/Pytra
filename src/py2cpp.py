@@ -1453,10 +1453,7 @@ class CppEmitter(CodeEmitter):
         for i in range(len(value_nodes) - 2, -1, -1):
             cond = self.render_cond(value_nodes[i])
             cur = value_texts[i]
-            if op_name == "And":
-                out = f"({cond} ? {out} : {cur})"
-            else:
-                out = f"({cond} ? {cur} : {out})"
+            out = f"({cond} ? {out} : {cur})" if op_name == "And" else f"({cond} ? {cur} : {out})"
         return out
 
     def render_cond(self, expr: Any) -> str:
@@ -2978,20 +2975,16 @@ class CppEmitter(CodeEmitter):
         mode = self.hook_on_for_range_mode(stmt, "dynamic")
         if mode not in {"ascending", "descending", "dynamic"}:
             mode = "dynamic"
-        cond = ""
-        if mode == "ascending":
-            cond = f"{tgt} < {stop}"
-        elif mode == "descending":
-            cond = f"{tgt} > {stop}"
-        else:
-            cond = f"{step} > 0 ? {tgt} < {stop} : {tgt} > {stop}"
-        inc = ""
-        if self._opt_ge(2) and step == "1":
-            inc = f"++{tgt}"
-        elif self._opt_ge(2) and step == "-1":
-            inc = f"--{tgt}"
-        else:
-            inc = f"{tgt} += {step}"
+        cond = (
+            f"{tgt} < {stop}"
+            if mode == "ascending"
+            else (f"{tgt} > {stop}" if mode == "descending" else f"{step} > 0 ? {tgt} < {stop} : {tgt} > {stop}")
+        )
+        inc = (
+            f"++{tgt}"
+            if self._opt_ge(2) and step == "1"
+            else (f"--{tgt}" if self._opt_ge(2) and step == "-1" else f"{tgt} += {step}")
+        )
         hdr: str = self.syntax_line(
             "for_range_open",
             "for ({type} {target} = {start}; {cond}; {inc})",
@@ -5377,13 +5370,15 @@ class CppEmitter(CodeEmitter):
                 mode = self.any_to_str(rg.get("range_mode"))
                 if mode == "":
                     mode = "dynamic"
-                cond = ""
-                if mode == "ascending":
-                    cond = f"({tgt} < {stop})"
-                elif mode == "descending":
-                    cond = f"({tgt} > {stop})"
-                else:
-                    cond = f"(({step}) > 0 ? ({tgt} < {stop}) : ({tgt} > {stop}))"
+                cond = (
+                    f"({tgt} < {stop})"
+                    if mode == "ascending"
+                    else (
+                        f"({tgt} > {stop})"
+                        if mode == "descending"
+                        else f"(({step}) > 0 ? ({tgt} < {stop}) : ({tgt} > {stop}))"
+                    )
+                )
                 lines.append(f"    for (int64 {tgt} = {start}; {cond}; {tgt} += ({step})) {{")
             else:
                 if tuple_unpack:
