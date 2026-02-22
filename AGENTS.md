@@ -1,19 +1,19 @@
-# Agent Collaboration Rules
+# エージェント運用ルール
 
-## docs-jp Policy
+## docs-jp の基本方針
 
-- `docs-jp/` is the source of truth, and `docs/` is only a translation mirror.
-- Do not create new files under `docs-jp/` unless the user explicitly requests it in the same turn.
-- Keep unfinished work only in `docs-jp/todo.md`.
-- Move completed items to `docs-jp/todo-old.md` and `docs-jp/todo-history/YYYYMMDD.md`.
+- `docs-jp/` を正（source of truth）とし、`docs/` は翻訳ミラーとして扱う。
+- `docs-jp/` 配下に新規ファイルを作成する場合は、同一ターンでの明示依頼があるときのみ許可する。
+- 未完了タスクは `docs-jp/todo.md` にのみ記載する。
+- 完了済みは `docs-jp/todo-old.md` と `docs-jp/todo-history/YYYYMMDD.md` へ移す。
 
-## Long-Term Planning Notes
+## 長期計画メモの置き場
 
-- Store long-term plans and design drafts in `plans/`.
-- Do not keep long-term planning notes as standalone files under `docs-jp/`.
-- When a plan item becomes actionable, copy only the unfinished task into `docs-jp/todo.md`.
+- 長期計画・設計ドラフト・調査メモは `docs-jp/plans/` に保存する。
+- `docs-jp/plans/` の内容は日本語で記述する。
+- 実行可能な未完了タスクに落ちた項目だけを `docs-jp/todo.md` に転記する。
 
-## Guardrail
+## ガード運用
 
-- Run `python3 tools/check_docs_jp_guard.py` before committing when touching docs.
-- `tools/check_docs_jp_guard.py` fails if unmanaged files exist under `docs-jp/`.
+- docs を触ったコミット前に `python3 tools/check_docs_jp_guard.py` を実行する。
+- `tools/check_docs_jp_guard.py` は `docs-jp/` 配下の未管理ファイルを検出したら失敗する。
