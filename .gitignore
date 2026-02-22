@@ -19,12 +19,7 @@ __pycache__/
 /selfhost/
 
 # user materials (read-only for Codex)
-/materials/Yanesdk/
-/materials/microgpt/
-
-# legacy material paths
-/Yanesdk/
-/microgpt/
+/materials/
 
 /import_pylib_png.png
 /from_import_symbols.png
