@@ -1780,18 +1780,20 @@ class CppEmitter(CodeEmitter):
 
     def _node_contains_call_name(self, node: Any, fn_name: str) -> bool:
         """ノード配下に `fn_name(...)` 呼び出しが含まれるかを返す。"""
-        if isinstance(node, dict):
-            if self._node_kind_from_dict(node) == "Call":
-                fn = self.any_to_dict_or_empty(node.get("func"))
+        node_dict = self.any_to_dict_or_empty(node)
+        if len(node_dict) > 0:
+            if self._node_kind_from_dict(node_dict) == "Call":
+                fn = self.any_to_dict_or_empty(_dict_any_get(node_dict, "func"))
                 if self._node_kind_from_dict(fn) == "Name":
                     if self.any_dict_get_str(fn, "id", "") == fn_name:
                         return True
-            for v in node.values():
+            for _k, v in node_dict.items():
                 if self._node_contains_call_name(v, fn_name):
                     return True
             return False
-        if isinstance(node, list):
-            for item in node:
+        node_list = self.any_to_list(node)
+        if len(node_list) > 0:
+            for item in node_list:
                 if self._node_contains_call_name(item, fn_name):
                     return True
         return False

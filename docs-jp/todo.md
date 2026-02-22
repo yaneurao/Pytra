@@ -44,6 +44,7 @@
 - `tools/prepare_selfhost_source.py` から `dump_codegen_options_text` 置換と `main guard` 置換を削除し、正本実装を selfhost へそのまま展開する経路へ移行済み。
 - `tools/prepare_selfhost_source.py` から `exception/help` 置換（`_patch_selfhost_exception_paths`）と補助関数 `is_help_requested` を削除し、CLI の正本分岐をそのまま selfhost へ展開する経路へ移行済み。
 - `CodeEmitter` hooks no-op 置換は暫定で維持中（除去すると selfhost C++ で `object` callable 解決エラーが発生してビルド失敗）。
+- `P0-SH-04` の継続として selfhost parser の import 誤検知（`import_modules` を `import` 文として解釈）を `src/pytra/std/re.py` の `^import\\s+(.+)$` 判定厳密化で修正し、`test/unit/test_pylib_re.py` と `test/unit/test_east_core.py::test_identifier_prefixed_with_import_is_not_import_stmt` を追加した。あわせて `src/py2cpp.py::_node_contains_call_name` の `Any` 直接 `node.get(...)` を `dict` 正規化経由へ修正し、`python3 src/py2cpp.py selfhost/py2cpp.py -o /tmp/selfhost_repro.cpp` が通過することを確認した。`python3 tools/build_selfhost.py` は C++ compile 段階で失敗し、先頭ブロッカーは `for (object ... : dict/list[str])` 由来の型不整合（`selfhost/py2cpp.cpp:3354,6074,9413` など）に更新された。
 
 ## P1: CodeEmitter / Hooks 移行
 

@@ -376,7 +376,11 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
     if pattern == r"^import\s+(.+)$":
         if not text.startswith("import"):
             return None
-        rest: str = text[6:].strip()
+        if len(text) <= 6:
+            return None
+        if not _is_space_ch(text[6:7]):
+            return None
+        rest: str = text[7:].strip()
         if rest == "":
             return None
         return Match(text, [rest])

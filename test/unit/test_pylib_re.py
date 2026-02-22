@@ -25,7 +25,10 @@ class PyLibReTest(unittest.TestCase):
         out = py_re.sub(r"\s+", " ", "a   b\tc")
         self.assertEqual(out, "a b c")
 
+    def test_import_regex_requires_whitespace_after_keyword(self) -> None:
+        self.assertIsNotNone(py_re.match(r"^import\s+(.+)$", "import os"))
+        self.assertIsNone(py_re.match(r"^import\s+(.+)$", "import_modules: dict[str, str] = {}"))
+
 
 if __name__ == "__main__":
     unittest.main()
-
