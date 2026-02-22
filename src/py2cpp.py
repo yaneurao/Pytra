@@ -5813,12 +5813,10 @@ def build_cpp_header_from_east(
     body_obj = east_module.get("body")
     body: list[dict[str, Any]] = []
     if isinstance(body_obj, list):
-        i = 0
-        while i < len(body_obj):
+        for i in range(len(body_obj)):
             item = body_obj[i]
             if isinstance(item, dict):
                 body.append(item)
-            i += 1
 
     class_lines: list[str] = []
     fn_lines: list[str] = []
@@ -5828,8 +5826,7 @@ def build_cpp_header_from_east(
     class_names: set[str] = set()
     ref_classes: set[str] = set()
 
-    j = 0
-    while j < len(body):
+    for j in range(len(body)):
         st = body[j]
         if _dict_any_get_str(st, "kind") == "ClassDef":
             cls_name = _dict_any_get_str(st, "name")
@@ -5838,7 +5835,6 @@ def build_cpp_header_from_east(
                 hint = _dict_any_get_str(st, "class_storage_hint", "ref")
                 if hint == "ref":
                     ref_classes.add(cls_name)
-        j += 1
 
     by_value_types = {
         "bool",
@@ -5854,8 +5850,7 @@ def build_cpp_header_from_east(
         "float64",
     }
 
-    i = 0
-    while i < len(body):
+    for i in range(len(body)):
         st = body[i]
         kind = _dict_any_get_str(st, "kind")
         if kind == "ClassDef":
@@ -5876,8 +5871,7 @@ def build_cpp_header_from_east(
                 arg_defaults_obj = st.get("arg_defaults")
                 arg_defaults = arg_defaults_obj if isinstance(arg_defaults_obj, dict) else {}
                 parts: list[str] = []
-                j = 0
-                while j < len(arg_order):
+                for j in range(len(arg_order)):
                     an = arg_order[j]
                     if isinstance(an, str):
                         at_obj = arg_types.get(an)
@@ -5896,29 +5890,24 @@ def build_cpp_header_from_east(
                         # ヘッダと定義の二重指定によるコンパイルエラーを避けるため、
                         # 宣言側では既定値を埋め込まない。
                         parts.append(param_txt)
-                    j += 1
                 sep = ", "
                 fn_lines.append(ret_cpp + " " + name + "(" + sep.join(parts) + ");")
         elif kind in {"Assign", "AnnAssign"}:
             tgt_obj = st.get("target")
             tgt = tgt_obj if isinstance(tgt_obj, dict) else {}
             if _dict_any_get_str(tgt, "kind") != "Name":
-                i += 1
                 continue
             name = _dict_any_get_str(tgt, "id")
             if name == "":
-                i += 1
                 continue
             decl_t = _dict_any_get_str(st, "decl_type")
             if decl_t == "" or decl_t == "unknown":
                 decl_t = _dict_any_get_str(tgt, "resolved_type")
             if decl_t == "" or decl_t == "unknown":
-                i += 1
                 continue
             cpp_t = _header_cpp_type_from_east(decl_t, ref_classes, class_names)
             used_types.add(cpp_t)
             var_lines.append("extern " + cpp_t + " " + name + ";")
-        i += 1
 
     includes: list[str] = []
     has_std_any = False
@@ -5972,32 +5961,24 @@ def build_cpp_header_from_east(
     lines.append("#ifndef " + guard)
     lines.append("#define " + guard)
     lines.append("")
-    k = 0
-    while k < len(includes):
+    for k in range(len(includes)):
         lines.append(includes[k])
-        k += 1
     if len(includes) > 0:
         lines.append("")
     ns = top_namespace.strip()
     if ns != "":
         lines.append("namespace " + ns + " {")
         lines.append("")
-    k = 0
-    while k < len(class_lines):
+    for k in range(len(class_lines)):
         lines.append(class_lines[k])
-        k += 1
     if len(class_lines) > 0:
         lines.append("")
-    k = 0
-    while k < len(var_lines):
+    for k in range(len(var_lines)):
         lines.append(var_lines[k])
-        k += 1
     if len(var_lines) > 0 and len(fn_lines) > 0:
         lines.append("")
-    k = 0
-    while k < len(fn_lines):
+    for k in range(len(fn_lines)):
         lines.append(fn_lines[k])
-        k += 1
     if ns != "":
         lines.append("")
         lines.append("}  // namespace " + ns)
@@ -7277,15 +7258,13 @@ def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
         if cand_named != "":
             candidates.append((cand_named, 2))
         candidates.append((cand_flat, 1))
-        i = 0
-        while i < len(candidates):
+        for i in range(len(candidates)):
             path_txt, rank = candidates[i]
             if Path(path_txt).exists():
                 if rank > best_rank or (rank == best_rank and distance < best_distance):
                     best_path = path_txt
                     best_rank = rank
                     best_distance = distance
-            i += 1
         parent_dir = _path_parent_text(Path(cur_dir))
         if parent_dir == cur_dir:
             break
