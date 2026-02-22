@@ -2184,16 +2184,10 @@ class CppEmitter(CodeEmitter):
                 if mod == "" or name == "":
                     continue
                 if asname != "":
-                    sym_ent: dict[str, str] = {}
-                    sym_ent["module"] = mod
-                    sym_ent["name"] = name
-                    self.import_symbols[asname] = sym_ent
+                    self.import_symbols[asname] = {"module": mod, "name": name}
                     self.import_symbol_modules.add(mod)
                 else:
-                    sym_ent: dict[str, str] = {}
-                    sym_ent["module"] = mod
-                    sym_ent["name"] = name
-                    self.import_symbols[name] = sym_ent
+                    self.import_symbols[name] = {"module": mod, "name": name}
                     self.import_symbol_modules.add(mod)
         return
 
