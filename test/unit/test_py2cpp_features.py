@@ -1725,6 +1725,21 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_random_choices_range_call_lowers_to_py_range(self) -> None:
+        src = """from pytra.std import random
+
+def main() -> None:
+    weights: list[float] = [1.0, 2.0, 3.0]
+    picks: list[int] = random.choices(range(3), weights=weights, k=1)
+    print(picks[0])
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "random_choices_range.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("py_range(0, 3, 1)", cpp)
+
     def test_microgpt_compat_min_syntax_check(self) -> None:
         self._transpile_and_syntax_check_fixture("microgpt_compat_min")
 

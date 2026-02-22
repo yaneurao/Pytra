@@ -126,6 +126,28 @@ parser top-level/内包拡張（P3-MSP-05）:
 4. 境界
    - lambda 引数既定値（`lambda nout, nin, std=0.08: ...`）は未対応のままで、次の parser タスクへ持ち越す。
 
+EAST/emitter `range(...)` lower 整合（P3-MSP-06）:
+1. 対応内容（2026-02-23）
+   - `src/py2cpp.py` に `range(...)` Name-call 専用 lower（`_render_range_name_call`）を追加し、`raw == "range"` で `RuntimeError("unexpected raw range Call in EAST ...")` を投げる経路を廃止した。
+   - 位置引数 `range(stop)`, `range(start, stop)`, `range(start, stop, step)` を `py_range(start, stop, step)` へ正規化。
+   - keyword 形のうち `range(stop=...)`, `range(start=?, stop=?, step=?)`, `range(start, stop=?, step=?)`, `range(start, stop, step=?)` の主要パターンを `py_range(...)` へ lower。
+2. 実装箇所
+   - `src/py2cpp.py`:
+     - `CppEmitter._render_range_name_call` を追加。
+     - `CppEmitter._render_call_name_or_attr` の `raw == "range"` 分岐を例外送出から helper 呼び出しへ切替。
+   - `test/unit/test_py2cpp_features.py`:
+     - `Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range` を追加し、`random.choices(range(3), ...)` で `py_range(0, 3, 1)` が生成されることを固定。
+3. 検証
+   - `python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range`
+   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+     - `stage=C`（`unsupported lambda parameter token: = at 80:30`）を確認し、`stage=D` への後退が消えたことを確認。
+   - `python3 tools/check_py2cpp_transpile.py`
+     - `checked=124 ok=124 fail=0 skipped=6`
+   - `python3 src/py2cpp.py /tmp/msp6_choices_range.py -o /tmp/msp6_choices_range.cpp`
+     - 生成 C++ に `pytra::std::random::choices(py_range(0, 3, 1), ...)` を確認。
+4. 残課題
+   - lambda 既定値（`stage=C`）と `zip`/object receiver（`P3-MSP-07`）は未着手。
+
 runtime/std 互換差分整理（P3-MSP-08）:
 1. 再現コマンド（2026-02-23 実行）
    - `python3 src/py2cpp.py /tmp/msp8_open_default_fn.py -o /tmp/msp8_open_default_fn.cpp && g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only /tmp/msp8_open_default_fn.cpp`
@@ -174,4 +196,5 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-23: `P3-MSP-09` を実施。`tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本固定入力の transpile/syntax-check を失敗ステージ A〜F で分類して再発検知できる導線を整備した。
 - 2026-02-23: `P3-MSP-04` を実施。無注釈引数を `unknown` 受理へ切り替え、`def ...: stmt` の inline 定義を top-level / nested / class method で受理する parser 拡張を実装。`test_self_hosted_signature.py` の追加ケース通過と、原本 `microgpt` の失敗ステージ `A -> C` 前進を確認した。
 - 2026-02-23: `P3-MSP-05` を実施。top-level `if` / `for`、tuple 同時代入、list-comp 複数 `for`、block 内 import を parser で受理するよう拡張。原本 `microgpt` の失敗先頭を `line 15` から `line 80`（lambda 既定値）へ前進させた。
+- 2026-02-23: `P3-MSP-06` を実施。`src/py2cpp.py` で raw `range(...)` Name-call を `py_range(...)` へ lower する経路を追加し、`unexpected raw range Call in EAST` 例外を解消。`random.choices(range(...))` 再現ケースで transpile 通過を確認し、回帰ステージは `C` 維持（`D` 解消）を確認した。
 - 2026-02-23: `P3-MSP-08` を実施。`open`/`list.index`/`random.shuffle(list[str])` の最小再現を行い、runtime/std 互換差分の吸収レイヤを確定した。`random.choices(range(...))` は runtime ではなく `P3-MSP-06`（EAST lower）側で扱うと決定した。

@@ -3627,6 +3627,32 @@ class CppEmitter(CodeEmitter):
             return f"py_all({args[0]})"
         return None
 
+    def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
+        """`range(...)` の Name 呼び出しを `py_range(start, stop, step)` へ lower する。"""
+        if len(kw) == 0:
+            if len(args) == 1:
+                return f"py_range(0, {args[0]}, 1)"
+            if len(args) == 2:
+                return f"py_range({args[0]}, {args[1]}, 1)"
+            if len(args) == 3:
+                return f"py_range({args[0]}, {args[1]}, {args[2]})"
+            return None
+        known_kw = {"start", "stop", "step"}
+        for name in kw:
+            if name not in known_kw:
+                return None
+        if len(args) == 0 and "stop" in kw:
+            start = kw.get("start", "0")
+            stop = kw["stop"]
+            step = kw.get("step", "1")
+            return f"py_range({start}, {stop}, {step})"
+        if len(args) == 1 and "stop" in kw and "start" not in kw:
+            step = kw.get("step", "1")
+            return f"py_range({args[0]}, {kw['stop']}, {step})"
+        if len(args) == 2 and "step" in kw and "start" not in kw and "stop" not in kw:
+            return f"py_range({args[0]}, {args[1]}, {kw['step']})"
+        return None
+
     def _resolve_or_render_imported_symbol_name_call(
         self,
         raw_name: str,
@@ -3734,7 +3760,10 @@ class CppEmitter(CodeEmitter):
                 call_args = self._coerce_py_assert_args(raw, args, arg_nodes)
                 return f"pytra::utils::assertions::{raw}({_join_str_list(', ', call_args)})"
             if raw == "range":
-                raise RuntimeError("unexpected raw range Call in EAST; expected RangeExpr lowering")
+                range_rendered = self._render_range_name_call(args, kw)
+                if range_rendered is not None:
+                    return range_rendered
+                return None
             if isinstance(raw, str) and raw in self.ref_classes:
                 ctor_args = args
                 if len(kw) > 0:
