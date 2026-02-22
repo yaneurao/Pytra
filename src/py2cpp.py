@@ -6905,8 +6905,22 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     local_name = ref["local_name"]
                     import_symbols[local_name] = {"module": module_id, "name": symbol}
         else:
-            import_modules = dict(_dict_any_get_dict(meta, "import_modules"))
-            import_symbols = dict(_dict_any_get_dict(meta, "import_symbols"))
+            legacy_mods = _dict_any_get_dict(meta, "import_modules")
+            for local_name_any, _module_id_obj in legacy_mods.items():
+                if not isinstance(local_name_any, str):
+                    continue
+                module_id = _dict_any_get_str(legacy_mods, local_name_any)
+                if module_id != "":
+                    import_modules[local_name_any] = module_id
+            legacy_syms = _dict_any_get_dict(meta, "import_symbols")
+            for local_name_any, _sym_obj in legacy_syms.items():
+                if not isinstance(local_name_any, str):
+                    continue
+                sym = _dict_any_get_dict(legacy_syms, local_name_any)
+                module_id = _dict_any_get_str(sym, "module")
+                symbol = _dict_any_get_str(sym, "name")
+                if module_id != "" and symbol != "":
+                    import_symbols[local_name_any] = {"module": module_id, "name": symbol}
         out[mod_path] = {
             "functions": funcs,
             "classes": classes,
@@ -7136,10 +7150,15 @@ def _write_multi_file_cpp(
         import_modules = _dict_any_get_dict(meta, "import_modules")
         import_symbols = _dict_any_get_dict(meta, "import_symbols")
         dep_modules: set[str] = set()
-        for _alias, mod_name_obj in import_modules.items():
-            if isinstance(mod_name_obj, str) and mod_name_obj != "":
-                dep_modules.add(mod_name_obj)
+        for alias_any, _module_id_obj in import_modules.items():
+            if not isinstance(alias_any, str):
+                continue
+            mod_name = _dict_any_get_str(import_modules, alias_any)
+            if mod_name != "":
+                dep_modules.add(mod_name)
         for alias_any, _sym_obj in import_symbols.items():
+            if not isinstance(alias_any, str):
+                continue
             sym = _dict_any_get_dict(import_symbols, alias_any)
             mod_name = _dict_any_get_str(sym, "module")
             if mod_name != "":
