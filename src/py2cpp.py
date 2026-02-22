@@ -1576,10 +1576,8 @@ class CppEmitter(CodeEmitter):
             return
         if tkind == "Tuple":
             elems = self.any_dict_get_list(tgt, "elements")
-            i = 0
-            while i < len(elems):
+            for i in range(len(elems)):
                 self._mark_mutated_param_from_target(elems[i], params, out)
-                i += 1
 
     def _collect_mutated_params_from_stmt(self, stmt: dict[str, Any], params: set[str], out: set[str]) -> None:
         """1文から「破壊的に使われる引数名」を再帰的に収集する。"""
@@ -1757,13 +1755,11 @@ class CppEmitter(CodeEmitter):
         if kind == "Tuple":
             elems = self.any_dict_get_list(nd, "elements")
             parts: list[str] = []
-            i = 0
-            while i < len(elems):
+            for i in range(len(elems)):
                 txt = self._render_param_default_expr(elems[i], "Any")
                 if txt == "":
                     return ""
                 parts.append(txt)
-                i += 1
             return "::std::make_tuple(" + _join_str_list(", ", parts) + ")"
         _ = east_target_t
         return ""
