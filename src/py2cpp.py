@@ -6644,17 +6644,14 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     details: list[str] = []
     reserved_obj = analysis.get("reserved_conflicts")
     reserved = reserved_obj if isinstance(reserved_obj, list) else []
-    i = 0
-    while i < len(reserved):
+    for i in range(len(reserved)):
         v = reserved[i]
         if isinstance(v, str) and v != "":
             details.append(f"kind=reserved_conflict file={v} import=pytra")
-        i += 1
 
     relative_obj = analysis.get("relative_imports")
     relative = relative_obj if isinstance(relative_obj, list) else []
-    i = 0
-    while i < len(relative):
+    for i in range(len(relative)):
         v = relative[i]
         if isinstance(v, str) and v != "":
             v_txt = str(v)
@@ -6666,12 +6663,10 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
                 file_part = v_txt[:pos]
                 mod_part = v_txt[pos + len(sep) :]
             details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
-        i += 1
 
     missing_obj = analysis.get("missing_modules")
     missing = missing_obj if isinstance(missing_obj, list) else []
-    i = 0
-    while i < len(missing):
+    for i in range(len(missing)):
         v = missing[i]
         if isinstance(v, str) and v != "":
             v_txt = str(v)
@@ -6683,16 +6678,13 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
                 file_part = v_txt[:pos]
                 mod_part = v_txt[pos + len(sep) :]
             details.append(f"kind=missing_module file={file_part} import={mod_part}")
-        i += 1
 
     cycles_obj = analysis.get("cycles")
     cycles = cycles_obj if isinstance(cycles_obj, list) else []
-    i = 0
-    while i < len(cycles):
+    for i in range(len(cycles)):
         v = cycles[i]
         if isinstance(v, str) and v != "":
             details.append(f"kind=import_cycle file=(graph) import={v}")
-        i += 1
     if len(details) > 0:
         raise _make_user_error(
             "input_invalid",

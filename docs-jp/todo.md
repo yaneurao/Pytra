@@ -124,6 +124,7 @@ py2cpp / py2rs 共通化候補:
 5. [ ] [ID: P3-PY-05] import 解析の一時変数展開（`obj = ...; s = any_to_str(obj)`）を、型安全が確保できる箇所から簡潔化する。
 
 進捗メモ:
+- `P3-PY-01` の継続として `src/py2cpp.py::_validate_import_graph_or_raise` の `reserved` / `relative` / `missing` / `cycles` 走査を index `while` から `for range` へ置換した（index 参照は維持）。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_transpiler_version_gate.py`（`cpp 0.24.0 -> 0.25.0`）を確認した。
 - `P3-PY-01` の一部として `src/py2cpp.py::_sanitize_module_label` の手動インデックス `while` を `for ch in s` へ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-PY-01` の継続として `src/py2cpp.py::_path_parent_text`（区切り探索）と `_make_user_error`（details 結合）の `while` ループを `for` ベースへ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 - `P3-PY-01` の継続として `src/py2cpp.py::_module_tail_to_cpp_header_path`、`_parse_user_error`、`_header_guard_from_path` の手動インデックス走査を `for` ベースへ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
