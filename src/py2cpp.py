@@ -2970,11 +2970,7 @@ class CppEmitter(CodeEmitter):
         tgt = self.render_expr(stmt.get("target"))
         t0 = self.any_to_str(stmt.get("target_type"))
         t1 = self.get_expr_type(stmt.get("target"))
-        tgt_ty_txt = ""
-        if t0 != "":
-            tgt_ty_txt = t0
-        else:
-            tgt_ty_txt = t1
+        tgt_ty_txt = t0 if t0 != "" else t1
         tgt_ty = self._cpp_type_text(tgt_ty_txt)
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
@@ -6502,10 +6498,7 @@ def _rel_disp_for_graph(base: Path, p: Path) -> str:
     """表示用に `base` からの相対パス文字列を返す。"""
     base_txt = str(base)
     p_txt = str(p)
-    if base_txt.endswith("/"):
-        base_prefix = base_txt
-    else:
-        base_prefix = base_txt + "/"
+    base_prefix = base_txt if base_txt.endswith("/") else base_txt + "/"
     if p_txt.startswith(base_prefix):
         return p_txt[len(base_prefix) :]
     if p_txt == base_txt:
@@ -7261,10 +7254,7 @@ def _write_multi_file_cpp(
                 fn_name = fn_name_any
                 sig = _dict_any_get_dict(funcs, fn_name)
                 ret_t = _dict_any_get_str(sig, "return_type", "None")
-                if ret_t == "None":
-                    ret_cpp = "void"
-                else:
-                    ret_cpp = type_emitter._cpp_type_text(ret_t)
+                ret_cpp = "void" if ret_t == "None" else type_emitter._cpp_type_text(ret_t)
                 arg_types = _dict_any_get_dict(sig, "arg_types")
                 arg_order = _dict_any_get_list(sig, "arg_order")
                 parts: list[str] = []
