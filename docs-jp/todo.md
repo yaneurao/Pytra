@@ -143,12 +143,6 @@ py2cpp / py2rs 共通化候補:
 3. [ ] [ID: P3-RULE-03] 各パッチで `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を実行する。
 4. [ ] [ID: P3-RULE-04] 回帰が出た場合は「可読性改善より selfhost 安定」を優先する。
 
-## Docs 翻訳同期
-
-文脈: `docs-jp/plans/docs-translation-sync.md`（`TG-DOCS-SYNC`）
-
-1. [ ] [ID: DOCS-SYNC-01] `docs-jp/todo-history/YYYYMMDD.md` を正として、`docs/todo-history/YYYYMMDD.md` への翻訳同期フローを整備する（今は未実施）。
-
 ## メモ
 
 - このファイルは未完了タスクのみを保持します。

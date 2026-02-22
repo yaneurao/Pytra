@@ -21,6 +21,8 @@ Its goals are:
 - `tools/verify_sample_outputs.py`
   - Purpose: Compare Python and C++ execution results for `sample/py` (`stdout`/images).
   - Main options: `--samples`, `--compile-flags`, `--ignore-stdout`
+- `tools/sync_todo_history_translation.py`
+  - Purpose: Use `docs-jp/todo-history` as source of truth and synchronize `docs/todo-history` date-file stubs and index; detect sync gaps with `--check`.
 - `tools/verify_image_runtime_parity.py`
   - Purpose: Verify parity between Python source-of-truth image runtime (PNG/GIF) and C++ side.
 
