@@ -7233,8 +7233,10 @@ def _write_multi_file_cpp(
         for _alias, mod_name_obj in import_modules.items():
             if isinstance(mod_name_obj, str) and mod_name_obj != "":
                 dep_modules.add(mod_name_obj)
-        for _alias, sym_obj in import_symbols.items():
-            sym = sym_obj if isinstance(sym_obj, dict) else {}
+        for alias_any in import_symbols.keys():
+            if not isinstance(alias_any, str):
+                continue
+            sym = _dict_any_get_dict(import_symbols, alias_any)
             mod_name = _dict_any_get_str(sym, "module")
             if mod_name != "":
                 dep_modules.add(mod_name)
@@ -7258,18 +7260,18 @@ def _write_multi_file_cpp(
             funcs = _dict_any_get_dict(target_schema, "functions")
             # `main` は他モジュールから呼ばれない前提。
             fn_decls: list[str] = []
-            for fn_name, sig_obj in funcs.items():
-                if not isinstance(fn_name, str) or fn_name == "main":
+            for fn_name_any in funcs.keys():
+                if not isinstance(fn_name_any, str) or fn_name_any == "main":
                     continue
-                sig = sig_obj if isinstance(sig_obj, dict) else {}
+                fn_name = fn_name_any
+                sig = _dict_any_get_dict(funcs, fn_name)
                 ret_t = _dict_any_get_str(sig, "return_type", "None")
                 if ret_t == "None":
                     ret_cpp = "void"
                 else:
                     ret_cpp = type_emitter._cpp_type_text(ret_t)
                 arg_types = _dict_any_get_dict(sig, "arg_types")
-                arg_order_obj = sig.get("arg_order")
-                arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
+                arg_order = _dict_any_get_list(sig, "arg_order")
                 parts: list[str] = []
                 for j in range(len(arg_order)):
                     an = arg_order[j]
