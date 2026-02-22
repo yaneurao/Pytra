@@ -1,9 +1,8 @@
-# User Specification (Pytra)
-
-<a href="../docs-jp/spec/spec-user.md">
+<a href="../../docs-jp/spec/spec-user.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# User Specification (Pytra)
 
 This document summarizes usage and input constraints for Pytra.
 This file is the normative specification; executable command workflows are maintained in [Usage Guide](how-to-use.md).

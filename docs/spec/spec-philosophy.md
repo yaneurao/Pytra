@@ -1,9 +1,8 @@
-# Development Philosophy
-
-<a href="../docs-jp/spec/spec-philosophy.md">
+<a href="../../docs-jp/spec/spec-philosophy.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# Development Philosophy
 
 Pytra is a transpiler designed for running one logic base across multiple languages without unnecessary friction.
 

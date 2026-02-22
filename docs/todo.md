@@ -1,10 +1,8 @@
-# TODO (Open)
-
 <a href="../docs-jp/todo.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-
+# TODO (Open)
 
 Last updated: 2026-02-22
 
