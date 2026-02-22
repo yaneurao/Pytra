@@ -332,6 +332,20 @@
 - `browser` / `browser.widgets.dialog` は外部提供ランタイム（ブラウザ環境）として扱い、`py2js` 側では import 本体を生成しない。
 - 変換可否のスモーク確認は `tools/check_py2js_transpile.py` を正本とする。
 
+### 5.4 責務境界（CodeEmitter / EAST parser / compiler共通層）
+
+- `CodeEmitter` の責務:
+  - 入力済み EAST（ノード + `meta`）を受け取り、言語 profile/hooks を適用してコード文字列を生成する。
+  - スコープ管理・式/文の共通 lower・テンプレート展開など、出力生成に閉じた処理のみを持つ。
+  - ファイルシステム走査、import グラフ解析、プロジェクト全体依存解決は持たない。
+- EAST parser（`src/pytra/compiler/east.py`）の責務:
+  - 単一入力（`.py`）を字句解析/構文解析し、単一モジュール EAST を生成する。
+  - `range` などの言語非依存正規化と、単一ファイル内で完結する型/symbol 補助情報の付与に専念する。
+  - 複数モジュール横断の import グラフ解析や module index 構築は持たない。
+- compiler 共通層（`src/pytra/compiler/` 配下で段階抽出）の責務:
+  - FS 依存の import 解決、module EAST map 構築、symbol index / type schema 構築、deps dump を担当する。
+  - 各 `py2*.py` CLI はこの共通層で解析を完了し、その結果を `CodeEmitter` に渡す構成とする。
+
 ## 6. LanguageProfile / CodeEmitter
 
 - `CodeEmitter` は言語非依存の骨組み（ノード走査、スコープ管理、共通補助）を担当します。

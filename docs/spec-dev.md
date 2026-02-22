@@ -297,6 +297,20 @@ Constraints:
   - type-string helpers (`split_generic`, `split_union`, `normalize_type_name`, `is_*_type`)
 - When adding/changing `CodeEmitter` behavior, add/update tests in that file before rolling out changes to downstream emitters.
 
+### 5.2 Responsibility Boundaries (CodeEmitter / EAST parser / shared compiler layer)
+
+- `CodeEmitter` responsibilities:
+  - Receive already-built EAST (`node` + `meta`) and emit target-language code strings via profile/hooks.
+  - Own only codegen-local logic (scope handling, shared statement/expression lowering, syntax template expansion).
+  - Do not own filesystem traversal, import-graph analysis, or project-wide dependency resolution.
+- EAST parser (`src/pytra/compiler/east.py`) responsibilities:
+  - Parse a single input module (`.py`) and produce a single-module EAST.
+  - Handle language-agnostic normalization (for example, `range` lowering) and single-file symbol/type annotations.
+  - Do not own cross-module import graph analysis or module index construction.
+- Shared compiler layer responsibilities (incrementally extracted under `src/pytra/compiler/`):
+  - Own FS-dependent import resolution, module EAST map construction, symbol index / type schema building, and deps dump generation.
+  - Each `py2*.py` CLI should complete project-level analysis in this layer, then pass results into `CodeEmitter`.
+
 ## 6. LanguageProfile / CodeEmitter
 
 - `CodeEmitter` handles language-agnostic skeleton responsibilities (node traversal, scope management, shared helper logic).

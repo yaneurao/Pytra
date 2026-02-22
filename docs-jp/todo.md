@@ -75,8 +75,6 @@ py2cpp / py2rs 共通化候補:
 3. [ ] [ID: P1-COMP-03] module symbol index / type schema 構築（`build_module_symbol_index`, `build_module_type_schema`）を共通 API 化する。
 4. [ ] [ID: P1-COMP-04] deps dump（`dump_deps_text`, `dump_deps_graph_text`）を共通 API 化し、CLI 層は表示/出力だけを担当する構成にする。
 5. [ ] [ID: P1-COMP-05] 共通抽出後、`py2cpp.py` は C++ 固有責務（C++ runtime/header/multi-file 出力）へ限定する。
-6. [ ] [ID: P1-COMP-06] `CodeEmitter` は EAST -> コード生成に専念し、FS 依存の import 解決やプロジェクト全体解析を持たない境界を明文化する。
-7. [ ] [ID: P1-COMP-07] EAST parser は 1 ファイル EAST 化に専念し、依存グラフ解析責務を持たない境界を明文化する。
 8. [ ] [ID: P1-COMP-08] `py2rs.py` を含む他言語 CLI が共通解析 API を段階採用できる移行計画を作成する。
 
 ## P1: 多言語ランタイム配置統一
