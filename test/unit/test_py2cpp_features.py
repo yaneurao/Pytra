@@ -46,11 +46,14 @@ CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/pytra/std/time-impl.cpp",
     "src/runtime/cpp/pytra/std/math.cpp",
     "src/runtime/cpp/pytra/std/math-impl.cpp",
+    "src/runtime/cpp/pytra/std/random.cpp",
     "src/runtime/cpp/pytra/std/dataclasses.cpp",
     "src/runtime/cpp/pytra/std/glob.cpp",
     "src/runtime/cpp/pytra/std/json.cpp",
     "src/runtime/cpp/pytra/std/re.cpp",
     "src/runtime/cpp/pytra/std/sys.cpp",
+    "src/runtime/cpp/pytra/std/timeit.cpp",
+    "src/runtime/cpp/pytra/std/traceback.cpp",
     "src/runtime/cpp/pytra/std/typing.cpp",
     "src/runtime/cpp/pytra/built_in/io.cpp",
     "src/runtime/cpp/pytra/built_in/bytes_util.cpp",
@@ -1686,6 +1689,12 @@ if __name__ == "__main__":
 
     def test_enum_extended_runtime(self) -> None:
         out = self._compile_and_run_fixture("enum_extended")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_random_timeit_traceback_extended_runtime(self) -> None:
+        out = self._compile_and_run_fixture("random_timeit_traceback_extended")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")

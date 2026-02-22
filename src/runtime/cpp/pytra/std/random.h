@@ -8,12 +8,18 @@
 namespace pytra::std::random {
 
 extern list<int64> _state_box;
+extern list<int64> _gauss_has_spare;
+extern list<float64> _gauss_spare;
 extern list<str> __all__;
 
 void seed(int64 value);
 int64 _next_u31();
 float64 random();
 int64 randint(int64 a, int64 b);
+list<int64> choices(const list<int64>& population, const list<float64>& weights);
+list<int64> choices(const list<int64>& population, const list<float64>& weights, int64 k);
+float64 gauss(float64 mu, float64 sigma);
+void shuffle(list<int64>& xs);
 
 }  // namespace pytra::std::random
 
