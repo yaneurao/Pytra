@@ -409,31 +409,31 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
         return empty
     lines: list[str] = text.splitlines()
     sig_map: dict[str, dict[str, list[str]]] = {}
-    i = 0
-    while i < len(lines):
+    skip_until = 0
+    for i in range(len(lines)):
+        if i < skip_until:
+            continue
         line = lines[i]
         stripped = line.strip()
         if (len(line) - len(line.lstrip(" "))) == 0 and stripped.startswith("def "):
             sig_text = stripped
             j = i + 1
-            while (not sig_text.endswith(":")) and j < len(lines):
-                sig_text += " " + lines[j].strip()
-                j += 1
-            i = j - 1
+            for k in range(i + 1, len(lines)):
+                if sig_text.endswith(":"):
+                    break
+                sig_text += " " + lines[k].strip()
+                j = k + 1
+            skip_until = j
             if not sig_text.endswith(":"):
-                i += 1
                 continue
             sig0 = sig_text[:-1].strip()
             if not sig0.startswith("def "):
-                i += 1
                 continue
             p0 = sig0.find("(")
             if p0 < 0:
-                i += 1
                 continue
             name = sig0[4:p0].strip()
             if name == "":
-                i += 1
                 continue
             depth = 0
             p1 = -1
@@ -447,7 +447,6 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
                         p1 = k
                         break
             if p1 < 0:
-                i += 1
                 continue
             params = sig0[p0 + 1 : p1]
             arg_types: list[str] = []
@@ -474,7 +473,6 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
                 "arg_types": arg_types,
                 "arg_defaults": arg_defaults,
             }
-        i += 1
     return sig_map
 
 
