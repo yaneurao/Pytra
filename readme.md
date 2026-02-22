@@ -35,6 +35,11 @@ WARNING: This project is still under active development and may be far from prod
 
 WARNING: Do not expect entire Python applications to be portable as-is. A realistic expectation is: if the core logic you wrote in Python transpiles well, that is a good outcome.
 
+## Latest News
+
+> **2026-02-23 | v0.1.0 Released**  
+> Pytra can now generate more readable C++ code in a style that stays very close to the original Python source.
+
 ## Runtime Performance Comparison
 
 Execution times for [sample programs](docs/sample-code.md) written in Python and their transpiled versions (unit: seconds).
@@ -518,6 +523,7 @@ The related documents are listed below in the order they are most frequently ref
 - Review option design (performance/compatibility trade-offs): [Options Specification](docs/spec-options.md)
 - Review runtime layout and include conventions: [Runtime Specification](docs/spec-runtime.md)
 - Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](docs/pytra-readme.md)
+- Check `py2cpp` feature coverage (with test evidence): [py2cpp Support Matrix](docs/language/cpp/spec-support.md)
 - Browse sample list and overview: [Sample Code Guide](docs/sample-code.md)
 - Review specs, constraints, architecture, and operational rules: [Specification Index](docs/spec.md)
 - Motivation and design philosophy: [Development Philosophy](docs/spec-philosophy.md)
