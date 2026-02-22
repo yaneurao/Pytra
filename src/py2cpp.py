@@ -578,12 +578,10 @@ def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
     try:
         hooks = build_cpp_hooks()
     except Exception:
-        out0: dict[str, Any] = {}
-        return out0
+        return {}
     if isinstance(hooks, dict):
         return hooks
-    out: dict[str, Any] = {}
-    return out
+    return {}
 
 
 def load_cpp_identifier_rules() -> tuple[set[str], str]:
@@ -6669,13 +6667,6 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             _graph_cycle_dfs(k, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
         i += 1
 
-    out: dict[str, Any] = {}
-    out["edges"] = edges
-    out["missing_modules"] = missing_modules
-    out["relative_imports"] = relative_imports
-    out["reserved_conflicts"] = reserved_conflicts
-    out["cycles"] = cycles
-    out["module_id_map"] = module_id_map
     user_module_files: list[str] = []
     visited_keys: list[str] = []
     i = 0
@@ -6686,8 +6677,15 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     for key in visited_keys:
         if key in key_to_path:
             user_module_files.append(str(key_to_path[key]))
-    out["user_module_files"] = user_module_files
-    return out
+    return {
+        "edges": edges,
+        "missing_modules": missing_modules,
+        "relative_imports": relative_imports,
+        "reserved_conflicts": reserved_conflicts,
+        "cycles": cycles,
+        "module_id_map": module_id_map,
+        "user_module_files": user_module_files,
+    }
 
 
 def _format_graph_list_section(out: str, label: str, items: list[Any]) -> str:
@@ -7449,27 +7447,17 @@ def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
 
 def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
     """モジュール名を `user/pytra/known/missing/relative` に分類して解決する。"""
-    out: dict[str, Any] = {}
-    out["status"] = "missing"
-    out["module_id"] = raw_name
-    out["path"] = None
     if raw_name.startswith("."):
-        out["status"] = "relative"
-        return out
+        return {"status": "relative", "module_id": raw_name, "path": None}
     if _is_pytra_module_name(raw_name):
-        out["status"] = "pytra"
-        return out
+        return {"status": "pytra", "module_id": raw_name, "path": None}
     dep_file = _resolve_user_module_path(raw_name, root_dir)
     if str(dep_file) != "":
-        out["status"] = "user"
-        out["path"] = dep_file
         # import 文字列を module_id の正本として扱う（探索パス由来の見かけに引きずられない）。
-        out["module_id"] = raw_name
-        return out
+        return {"status": "user", "module_id": raw_name, "path": dep_file}
     if _is_known_non_user_import(raw_name):
-        out["status"] = "known"
-        return out
-    return out
+        return {"status": "known", "module_id": raw_name, "path": None}
+    return {"status": "missing", "module_id": raw_name, "path": None}
 
 
 def dump_deps_graph_text(entry_path: Path) -> str:
