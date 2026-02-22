@@ -235,6 +235,15 @@ def _dict_any_get_list(src: dict[str, Any], key: str) -> list[Any]:
     return []
 
 
+def _dict_any_get_dict_list(src: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    """`dict[str, Any]` から dict 要素のみの list を取得する。"""
+    out: list[dict[str, Any]] = []
+    for item in _dict_any_get_list(src, key):
+        if isinstance(item, dict):
+            out.append(item)
+    return out
+
+
 def _split_ws_tokens(text: str) -> list[str]:
     """空白区切りトークンへ分解する（連続空白は 1 区切り扱い）。"""
     tokens: list[str] = []
@@ -6380,13 +6389,7 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
     import_bindings = _meta_import_bindings(east_module)
-    body_obj: object = east_module.get("body")
-    body: list[dict[str, Any]] = []
-    if isinstance(body_obj, list):
-        for i in range(len(body_obj)):
-            item = body_obj[i]
-            if isinstance(item, dict):
-                body.append(item)
+    body = _dict_any_get_dict_list(east_module, "body")
 
     modules: list[str] = []
     module_seen: set[str] = set()
@@ -6411,41 +6414,29 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                     symbol_seen.add(label)
                     symbols.append(label)
     else:
-        for i in range(len(body)):
-            stmt = body[i]
-            stmt_dict: dict[str, Any] = stmt
+        for stmt_dict in body:
             kind = _dict_any_kind(stmt_dict)
             if kind == "Import":
-                names_obj: object = stmt_dict.get("names")
-                if isinstance(names_obj, list):
-                    for j in range(len(names_obj)):
-                        ent = names_obj[j]
-                        if isinstance(ent, dict):
-                            ent_dict: dict[str, Any] = ent
-                            mod_name = _dict_any_get_str(ent_dict, "name")
-                            if mod_name != "" and mod_name not in module_seen:
-                                module_seen.add(mod_name)
-                                modules.append(mod_name)
+                for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
+                    mod_name = _dict_any_get_str(ent_dict, "name")
+                    if mod_name != "" and mod_name not in module_seen:
+                        module_seen.add(mod_name)
+                        modules.append(mod_name)
             elif kind == "ImportFrom":
                 mod_name = _dict_any_get_str(stmt_dict, "module")
                 if mod_name != "" and mod_name not in module_seen:
                     module_seen.add(mod_name)
                     modules.append(mod_name)
-                names_obj = stmt_dict.get("names")
-                if isinstance(names_obj, list):
-                    for j in range(len(names_obj)):
-                        ent = names_obj[j]
-                        if isinstance(ent, dict):
-                            ent_dict = ent
-                            sym_name = _dict_any_get_str(ent_dict, "name")
-                            alias = _dict_any_get_str(ent_dict, "asname")
-                            if sym_name != "":
-                                label = mod_name + "." + sym_name
-                                if alias != "":
-                                    label += " as " + alias
-                                if label not in symbol_seen:
-                                    symbol_seen.add(label)
-                                    symbols.append(label)
+                for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
+                    sym_name = _dict_any_get_str(ent_dict, "name")
+                    alias = _dict_any_get_str(ent_dict, "asname")
+                    if sym_name != "":
+                        label = mod_name + "." + sym_name
+                        if alias != "":
+                            label += " as " + alias
+                        if label not in symbol_seen:
+                            symbol_seen.add(label)
+                            symbols.append(label)
 
     out = "modules:\n"
     if len(modules) == 0:
@@ -6466,30 +6457,19 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
     """EAST module から import / from-import のモジュール名を抽出する。"""
     out: list[str] = []
     seen: set[str] = set()
-    body_obj: object = east_module.get("body")
-    if not isinstance(body_obj, list):
-        return out
-    for i in range(len(body_obj)):
-        stmt = body_obj[i]
-        if isinstance(stmt, dict):
-            stmt_dict: dict[str, Any] = stmt
-            kind = _dict_any_kind(stmt_dict)
-            if kind == "Import":
-                names_obj: object = stmt_dict.get("names")
-                if isinstance(names_obj, list):
-                    for j in range(len(names_obj)):
-                        ent = names_obj[j]
-                        if isinstance(ent, dict):
-                            ent_dict: dict[str, Any] = ent
-                            name = _dict_any_get_str(ent_dict, "name")
-                            if name != "" and name not in seen:
-                                seen.add(name)
-                                out.append(name)
-            elif kind == "ImportFrom":
-                mod = _dict_any_get_str(stmt_dict, "module")
-                if mod != "" and mod not in seen:
-                    seen.add(mod)
-                    out.append(mod)
+    for stmt_dict in _dict_any_get_dict_list(east_module, "body"):
+        kind = _dict_any_kind(stmt_dict)
+        if kind == "Import":
+            for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
+                name = _dict_any_get_str(ent_dict, "name")
+                if name != "" and name not in seen:
+                    seen.add(name)
+                    out.append(name)
+        elif kind == "ImportFrom":
+            mod = _dict_any_get_str(stmt_dict, "module")
+            if mod != "" and mod not in seen:
+                seen.add(mod)
+                out.append(mod)
     return out
 
 
