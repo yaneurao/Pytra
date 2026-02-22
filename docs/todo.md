@@ -15,6 +15,7 @@ Last updated: 2026-02-22
    - [x] `CodeEmitter.quote_string_literal` / `CodeEmitter.load_profile_with_includes` has been migrated to the main body `@staticmethod` implementation, and the corresponding replacement route on the `tools/prepare_selfhost_source.py` side has been deleted.
    - [x] Removed `dump_codegen_options_text` and `main guard` replacement passes from `tools/prepare_selfhost_source.py`, and switched to forwarding the source implementation directly into selfhost.
    - [x] Removed the exception/help replacement pass (`_patch_selfhost_exception_paths`) and helper (`is_help_requested`) from `tools/prepare_selfhost_source.py`, and switched to forwarding the source CLI branch as-is into selfhost.
+   - [ ] `CodeEmitter` hook no-op replacement is still required for now (removing it causes selfhost C++ build failures on `object` callable resolution).
 
 ## P1: CodeEmitter / Hooks Migration
 
