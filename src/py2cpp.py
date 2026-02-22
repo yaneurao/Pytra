@@ -6649,9 +6649,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             resolved_mod_id = _dict_any_get_str(resolved, "module_id")
             if status == "relative":
                 rel_item = cur_disp + ": " + mod
-                if rel_item not in relative_seen:
-                    relative_seen.add(rel_item)
-                    relative_imports.append(rel_item)
+                _append_unique_non_empty(relative_imports, relative_seen, rel_item)
                 continue
             dep_disp = mod
             if status == "user":
@@ -6672,13 +6670,9 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                     queue.append(dep_file)
             elif status == "missing":
                 miss = cur_disp + ": " + mod
-                if miss not in missing_seen:
-                    missing_seen.add(miss)
-                    missing_modules.append(miss)
+                _append_unique_non_empty(missing_modules, missing_seen, miss)
             edge = cur_disp + " -> " + dep_disp
-            if edge not in edge_seen:
-                edge_seen.add(edge)
-                edges.append(edge)
+            _append_unique_non_empty(edges, edge_seen, edge)
 
     cycles: list[str] = []
     cycle_seen: set[str] = set()
