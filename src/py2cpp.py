@@ -288,6 +288,17 @@ def _dict_any_kind(src: dict[str, Any]) -> str:
     return _dict_any_get_str(src, "kind")
 
 
+def _assign_targets(stmt: dict[str, Any]) -> list[dict[str, Any]]:
+    """Assign/AnnAssign 互換で代入先 target 群を正規化して返す。"""
+    targets = _dict_any_get_dict_list(stmt, "targets")
+    if len(targets) > 0:
+        return targets
+    tgt = _dict_any_get_dict(stmt, "target")
+    if len(tgt) > 0:
+        return [tgt]
+    return []
+
+
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 """
@@ -6758,12 +6769,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                 if name_txt != "":
                     exports.add(name_txt)
             elif kind == "Assign":
-                targets = _dict_any_get_dict_list(st, "targets")
-                if len(targets) == 0:
-                    tgt = _dict_any_get_dict(st, "target")
-                    if len(tgt) > 0:
-                        targets = [tgt]
-                for tgt_obj in targets:
+                for tgt_obj in _assign_targets(st):
                     if _dict_any_kind(tgt_obj) == "Name":
                         name_txt = _dict_any_get_str(tgt_obj, "id")
                         if name_txt != "":
@@ -6850,12 +6856,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 if name_txt != "":
                     classes.append(name_txt)
             elif kind == "Assign":
-                targets = _dict_any_get_dict_list(st, "targets")
-                if len(targets) == 0:
-                    tgt = _dict_any_get_dict(st, "target")
-                    if len(tgt) > 0:
-                        targets = [tgt]
-                for tgt_obj in targets:
+                for tgt_obj in _assign_targets(st):
                     if _dict_any_kind(tgt_obj) == "Name":
                         name_txt = _dict_any_get_str(tgt_obj, "id")
                         if name_txt != "" and name_txt not in variables:
