@@ -2355,8 +2355,7 @@ class CppEmitter(CodeEmitter):
         arg_type_ordered: list[str] = []
         for n in arg_names:
             t = self.normalize_type_name(self.any_to_str(arg_types.get(n)))
-            if t == "":
-                t = "unknown"
+            t = t if t != "" else "unknown"
             arg_type_ordered.append(t)
         mutated_params = self._collect_mutated_params(body_stmts, arg_names)
         is_recursive_local_fn = self._stmt_list_contains_call_name(body_stmts, emitted_name)
@@ -2369,8 +2368,7 @@ class CppEmitter(CodeEmitter):
             t = self.any_to_str(arg_types.get(n))
             ct = self._cpp_type_text(t)
             usage = self.any_to_str(arg_usage.get(n))
-            if usage == "":
-                usage = "readonly"
+            usage = usage if usage != "" else "readonly"
             if usage != "mutable" and n in mutated_params:
                 usage = "mutable"
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
@@ -2929,13 +2927,9 @@ class CppEmitter(CodeEmitter):
         for i, e in enumerate(self.any_dict_get_list(target, "elements")):
             if isinstance(e, dict) and self._node_kind_from_dict(e) == "Name":
                 nm = self.render_expr(e)
-                decl_t: str = ""
-                if i < len(elem_types):
-                    decl_t = self.normalize_type_name(elem_types[i])
-                if decl_t == "":
-                    decl_t = self.normalize_type_name(self.get_expr_type(e))
-                if decl_t == "":
-                    decl_t = "unknown"
+                elem_decl_t = self.normalize_type_name(elem_types[i]) if i < len(elem_types) else ""
+                decl_t = elem_decl_t if elem_decl_t != "" else self.normalize_type_name(self.get_expr_type(e))
+                decl_t = decl_t if decl_t != "" else "unknown"
                 self.declared_var_types[nm] = decl_t
                 if self.is_any_like_type(decl_t):
                     self.emit(f"auto {nm} = ::std::get<{i}>({src});")
@@ -3121,8 +3115,7 @@ class CppEmitter(CodeEmitter):
             skip_self = in_class and idx == 0 and n == "self"
             ct = self._cpp_type_text(t)
             usage = self.any_to_str(arg_usage.get(n))
-            if usage == "":
-                usage = "readonly"
+            usage = usage if usage != "" else "readonly"
             if usage != "mutable" and n in mutated_params:
                 usage = "mutable"
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
