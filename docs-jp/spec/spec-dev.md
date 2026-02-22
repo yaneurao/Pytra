@@ -1,6 +1,6 @@
 # 実装仕様（Pytra）
 
-<a href="../../docs/spec-dev.md">
+<a href="../../docs/spec/spec-dev.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
