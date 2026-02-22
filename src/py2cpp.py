@@ -2363,12 +2363,9 @@ class CppEmitter(CodeEmitter):
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
             param_txt = ""
             if by_ref and usage == "mutable":
-                if ct == "object":
-                    param_txt = f"{ct} {n}"
-                    fn_sig_params.append(ct)
-                else:
-                    param_txt = f"{ct}& {n}"
-                    fn_sig_params.append(f"{ct}&")
+                use_object_param = ct == "object"
+                param_txt = f"{ct} {n}" if use_object_param else f"{ct}& {n}"
+                fn_sig_params.append(ct if use_object_param else f"{ct}&")
             elif by_ref:
                 param_txt = f"const {ct}& {n}"
                 fn_sig_params.append(f"const {ct}&")
@@ -3031,18 +3028,20 @@ class CppEmitter(CodeEmitter):
                 {"iter_tmp": iter_tmp, "iter": it},
             )
         else:
-            if t_ty == "auto":
-                hdr = self.syntax_line(
+            hdr = (
+                self.syntax_line(
                     "for_each_auto_ref_open",
                     "for (auto& {target} : {iter})",
                     {"target": t, "iter": it},
                 )
-            else:
-                hdr = self.syntax_line(
+                if t_ty == "auto"
+                else self.syntax_line(
                     "for_each_typed_open",
                     "for ({type} {target} : {iter})",
                     {"type": t_ty, "target": t, "iter": it},
                 )
+            )
+            if t_ty != "auto":
                 self.declared_var_types[t] = t0 if t0 != "" else t1
         if omit_braces:
             self.emit(hdr)
@@ -5265,11 +5264,13 @@ class CppEmitter(CodeEmitter):
             elif t in {"auto", "dict<str, str>", "dict<str, object>"}:
                 key_pick = key_t if key_t not in {"", "unknown"} and not key_mixed else "str"
                 val_pick = val_t if val_t not in {"", "unknown"} else (inferred_val if inferred_val != "" else "str")
-                if self.is_any_like_type(val_pick):
-                    t = f"dict<{self._cpp_type_text(key_pick)}, object>"
-                    val_t = "Any"
-                else:
-                    t = f"dict<{self._cpp_type_text(key_pick)}, {self._cpp_type_text(val_pick)}>"
+                val_is_any_like = self.is_any_like_type(val_pick)
+                t = (
+                    f"dict<{self._cpp_type_text(key_pick)}, object>"
+                    if val_is_any_like
+                    else f"dict<{self._cpp_type_text(key_pick)}, {self._cpp_type_text(val_pick)}>"
+                )
+                val_t = "Any" if val_is_any_like else val_t
             items: list[str] = []
             for kv in entries:
                 key_node: Any = kv.get("key")
