@@ -797,6 +797,36 @@ def _sh_split_top_plus(text: str) -> list[str]:
     return out
 
 
+def _sh_find_top_char(text: str, needle: str) -> int:
+    """文字列/括弧深度を考慮してトップレベルの1文字を探す（未検出なら -1）。"""
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    for i, ch in enumerate(text):
+        if in_str is not None:
+            if esc:
+                esc = False
+                continue
+            if ch == "\\":
+                esc = True
+                continue
+            if ch == in_str:
+                in_str = None
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            continue
+        if ch in {"(", "[", "{"}:
+            depth += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            continue
+        if ch == needle and depth == 0:
+            return i
+    return -1
+
+
 def _sh_infer_item_type(node: dict[str, Any]) -> str:
     """dict/list/set/range 由来の反復要素型を簡易推論する。"""
     t = str(node.get("resolved_type", "unknown"))
@@ -1665,28 +1695,57 @@ class _ShExprParser:
         if not (tok["k"] == "NAME" and tok["v"] == "lambda"):
             return self._parse_or()
         lam_tok = self._eat("NAME")
-        arg_names: list[str] = []
+        arg_entries: list[dict[str, Any]] = []
+        seen_default = False
         while self._cur()["k"] != ":":
             if self._cur()["k"] == ",":
                 self._eat(",")
                 continue
             if self._cur()["k"] == "NAME":
-                arg_names.append(str(self._eat("NAME")["v"]))
+                nm = str(self._eat("NAME")["v"])
+                default_expr: dict[str, Any] | None = None
+                if self._cur()["k"] == "=":
+                    self._eat("=")
+                    default_expr = self._parse_ifexp()
+                    seen_default = True
+                elif seen_default:
+                    cur = self._cur()
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="lambda non-default parameter follows default parameter",
+                        source_span=self._node_span(cur["s"], cur["e"]),
+                        hint="Reorder lambda parameters so defaulted ones come last.",
+                    )
+                param_t = "unknown"
+                if isinstance(default_expr, dict):
+                    default_t = str(default_expr.get("resolved_type", "unknown"))
+                    if default_t != "":
+                        param_t = default_t
+                arg_entries.append({"name": nm, "default": default_expr, "resolved_type": param_t})
                 continue
             cur = self._cur()
             raise _make_east_build_error(
                 kind="unsupported_syntax",
                 message=f"unsupported lambda parameter token: {cur['k']}",
                 source_span=self._node_span(cur["s"], cur["e"]),
-                hint="Use `lambda x, y: expr` form without annotations/defaults.",
+                hint="Use `lambda x, y=default: expr` form (annotations are not supported).",
             )
         self._eat(":")
         bak: dict[str, str] = {}
-        for nm in arg_names:
+        for ent in arg_entries:
+            nm = str(ent.get("name", ""))
+            if nm == "":
+                continue
             bak[nm] = self.name_types.get(nm, "")
-            self.name_types[nm] = "unknown"
+            param_t = str(ent.get("resolved_type", "unknown"))
+            if param_t == "":
+                param_t = "unknown"
+            self.name_types[nm] = param_t
         body = self._parse_ifexp()
-        for nm in arg_names:
+        for ent in arg_entries:
+            nm = str(ent.get("name", ""))
+            if nm == "":
+                continue
             old = bak.get(nm, "")
             if old == "":
                 self.name_types.pop(nm, None)
@@ -1696,8 +1755,30 @@ class _ShExprParser:
         e = int(body["source_span"]["end_col"]) - self.col_base
         body_t = str(body.get("resolved_type", "unknown"))
         ret_t = body_t if body_t != "" else "unknown"
-        params = ",".join(["unknown" for _ in arg_names])
+        param_types: list[str] = []
+        for ent in arg_entries:
+            param_t = str(ent.get("resolved_type", "unknown"))
+            if param_t == "":
+                param_t = "unknown"
+            param_types.append(param_t)
+        params = ",".join(param_types)
         callable_t = f"callable[{params}->{ret_t}]"
+        args: list[dict[str, Any]] = []
+        for ent in arg_entries:
+            nm = str(ent.get("name", ""))
+            default_expr = ent.get("default")
+            param_t = str(ent.get("resolved_type", "unknown"))
+            if param_t == "":
+                param_t = "unknown"
+            arg_ent: dict[str, Any] = {
+                "kind": "arg",
+                "arg": nm,
+                "annotation": None,
+                "resolved_type": param_t,
+            }
+            if isinstance(default_expr, dict):
+                arg_ent["default"] = default_expr
+            args.append(arg_ent)
         return {
             "kind": "Lambda",
             "source_span": self._node_span(s, e),
@@ -1705,15 +1786,7 @@ class _ShExprParser:
             "borrow_kind": "value",
             "casts": [],
             "repr": self._src_slice(s, e),
-            "args": [
-                {
-                    "kind": "arg",
-                    "arg": nm,
-                    "annotation": None,
-                    "resolved_type": "unknown",
-                }
-                for nm in arg_names
-            ],
+            "args": args,
             "body": body,
             "return_type": ret_t,
         }
@@ -2149,6 +2222,12 @@ class _ShExprParser:
                         call_ret = "int64"
                     elif fn_name == "range":
                         call_ret = "range"
+                    elif fn_name == "zip":
+                        zip_item_types: list[str] = []
+                        for arg_node in args:
+                            if isinstance(arg_node, dict):
+                                zip_item_types.append(_sh_infer_item_type(arg_node))
+                        call_ret = f"list[tuple[{','.join(zip_item_types)}]]"
                     elif fn_name == "list":
                         call_ret = "list[unknown]"
                     elif fn_name == "set":
@@ -2406,16 +2485,50 @@ class _ShExprParser:
     def _parse_comp_target(self) -> dict[str, Any]:
         """内包表現のターゲット（name / tuple）を解析する。"""
         if self._cur()["k"] == "NAME":
-            nm = self._eat("NAME")
-            t = self.name_types.get(str(nm["v"]), "unknown")
-            return {
+            first = self._eat("NAME")
+            first_name = str(first["v"])
+            first_t = self.name_types.get(first_name, "unknown")
+            first_node = {
                 "kind": "Name",
-                "source_span": self._node_span(nm["s"], nm["e"]),
-                "resolved_type": t,
+                "source_span": self._node_span(first["s"], first["e"]),
+                "resolved_type": first_t,
                 "borrow_kind": "value",
                 "casts": [],
-                "repr": str(nm["v"]),
-                "id": str(nm["v"]),
+                "repr": first_name,
+                "id": first_name,
+            }
+            if self._cur()["k"] != ",":
+                return first_node
+            elems: list[dict[str, Any]] = [first_node]
+            last_e = first["e"]
+            while self._cur()["k"] == ",":
+                self._eat(",")
+                if self._cur()["k"] != "NAME":
+                    break
+                nm_tok = self._eat("NAME")
+                nm = str(nm_tok["v"])
+                t = self.name_types.get(nm, "unknown")
+                elems.append(
+                    {
+                        "kind": "Name",
+                        "source_span": self._node_span(nm_tok["s"], nm_tok["e"]),
+                        "resolved_type": t,
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": nm,
+                        "id": nm,
+                    }
+                )
+                last_e = nm_tok["e"]
+            elem_types = [str(e.get("resolved_type", "unknown")) for e in elems]
+            return {
+                "kind": "Tuple",
+                "source_span": self._node_span(first["s"], last_e),
+                "resolved_type": f"tuple[{','.join(elem_types)}]",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": self._src_slice(first["s"], last_e),
+                "elements": elems,
             }
         if self._cur()["k"] == "(":
             l = self._eat("(")
@@ -2622,18 +2735,43 @@ class _ShExprParser:
                             hint="Close f-string placeholder with `}`.",
                         )
                     inner_expr = body[j + 1 : k].strip()
+                    expr_txt = inner_expr
+                    conv_txt = ""
+                    fmt_txt = ""
+                    conv_pos = _sh_find_top_char(inner_expr, "!")
+                    fmt_pos = _sh_find_top_char(inner_expr, ":")
+                    if conv_pos >= 0 and (fmt_pos < 0 or conv_pos < fmt_pos):
+                        expr_txt = inner_expr[:conv_pos].strip()
+                        conv_tail_end = fmt_pos if fmt_pos >= 0 else len(inner_expr)
+                        conv_txt = inner_expr[conv_pos + 1 : conv_tail_end].strip()
+                        if fmt_pos >= 0:
+                            fmt_txt = inner_expr[fmt_pos + 1 :].strip()
+                    elif fmt_pos >= 0:
+                        expr_txt = inner_expr[:fmt_pos].strip()
+                        fmt_txt = inner_expr[fmt_pos + 1 :].strip()
+                    if expr_txt == "":
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message="empty f-string placeholder expression in self_hosted parser",
+                            source_span=self._node_span(tok["s"], tok["e"]),
+                            hint="Use `{expr}` form inside f-string placeholders.",
+                        )
                     fv: dict[str, Any] = {
                         "kind": "FormattedValue",
                         "value": _sh_parse_expr(
-                            inner_expr,
+                            expr_txt,
                             line_no=self.line_no,
-                            col_base=self.col_base + tok["s"],
+                            col_base=self.col_base + tok["s"] + j + 1,
                             name_types=self.name_types,
                             fn_return_types=self.fn_return_types,
                             class_method_return_types=self.class_method_return_types,
                             class_base=self.class_base,
                         ),
                     }
+                    if conv_txt != "":
+                        fv["conversion"] = conv_txt
+                    if fmt_txt != "":
+                        fv["format_spec"] = fmt_txt
                     values.append(fv)
                     i = k + 1
                 return {
@@ -3146,6 +3284,9 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                     return _sh_parse_expr_lowered(rewritten, ln_no=ln_no, col=col, name_types=dict(name_types))
 
     # Handle concatenation chains that include f-strings before generic parsing.
+    top_comma_parts = _sh_split_top_commas(txt)
+    is_single_top_expr = len(top_comma_parts) == 1
+
     plus_parts = _sh_split_top_plus(txt)
     if len(plus_parts) >= 2 and any(p.startswith("f\"") or p.startswith("f'") for p in plus_parts):
         nodes = [_sh_parse_expr_lowered(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in plus_parts]
@@ -3163,9 +3304,19 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                 "right": rhs,
             }
         return node
+    if len(plus_parts) >= 2 and is_single_top_expr:
+        return _sh_parse_expr(
+            txt,
+            line_no=ln_no,
+            col_base=col,
+            name_types=name_types,
+            fn_return_types=_SH_FN_RETURNS,
+            class_method_return_types=_SH_CLASS_METHOD_RETURNS,
+            class_base=_SH_CLASS_BASE,
+        )
 
     # dict-comp support: {k: v for x in it} / {k: v for a, b in it}
-    if txt.startswith("{") and txt.endswith("}") and ":" in txt:
+    if txt.startswith("{") and txt.endswith("}") and ":" in txt and is_single_top_expr:
         inner = txt[1:-1].strip()
         p_for = _sh_split_top_keyword(inner, "for")
         if p_for > 0:
@@ -3228,7 +3379,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             }
 
     # set-comp support: {x for x in it} / {x for a, b in it if cond}
-    if txt.startswith("{") and txt.endswith("}") and ":" not in txt:
+    if txt.startswith("{") and txt.endswith("}") and ":" not in txt and is_single_top_expr:
         inner = txt[1:-1].strip()
         p_for = _sh_split_top_keyword(inner, "for")
         if p_for > 0:
@@ -3316,7 +3467,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         }
 
     # list-comp support: [expr for target in iter if cond] + chained for-clauses
-    if txt.startswith("[") and txt.endswith("]"):
+    if txt.startswith("[") and txt.endswith("]") and is_single_top_expr:
         inner = txt[1:-1].strip()
         p_for = _sh_split_top_keyword(inner, "for")
         if p_for > 0:
@@ -3560,42 +3711,15 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         }
 
     if len(txt) >= 3 and txt[0] == "f" and txt[1] in {"'", '"'} and txt[-1] == txt[1]:
-        quote = txt[1]
-        inner = txt[2:-1]
-        values: list[dict[str, Any]] = []
-
-        i = 0
-        while i < len(inner):
-            j = inner.find("{", i)
-            if j < 0:
-                _sh_append_fstring_literal(values, inner[i:], _sh_span(ln_no, col, col + len(raw)))
-                break
-            if j + 1 < len(inner) and inner[j + 1] == "{":
-                _sh_append_fstring_literal(values, inner[i : j + 1], _sh_span(ln_no, col, col + len(raw)))
-                i = j + 2
-                continue
-            if j > i:
-                _sh_append_fstring_literal(values, inner[i:j], _sh_span(ln_no, col, col + len(raw)))
-            k = inner.find("}", j + 1)
-            if k < 0:
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message="unterminated f-string placeholder in self_hosted parser",
-                    source_span=_sh_span(ln_no, col, col + len(raw)),
-                    hint="Close f-string placeholder with `}`.",
-                )
-            inner_expr = inner[j + 1 : k].strip()
-            values.append({"kind": "FormattedValue", "value": _sh_parse_expr_lowered(inner_expr, ln_no=ln_no, col=col, name_types=dict(name_types))})
-            i = k + 1
-        return {
-            "kind": "JoinedStr",
-            "source_span": _sh_span(ln_no, col, col + len(raw)),
-            "resolved_type": "str",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": txt,
-            "values": values,
-        }
+        return _sh_parse_expr(
+            txt,
+            line_no=ln_no,
+            col_base=col,
+            name_types=name_types,
+            fn_return_types=_SH_FN_RETURNS,
+            class_method_return_types=_SH_CLASS_METHOD_RETURNS,
+            class_base=_SH_CLASS_BASE,
+        )
 
     tuple_parts = _sh_split_top_commas(txt)
     if len(tuple_parts) >= 2 or (len(tuple_parts) == 1 and txt.endswith(",")):
@@ -3813,8 +3937,14 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     )
             t_ty = "unknown"
             i_ty = str(iter_expr.get("resolved_type", "unknown"))
+            tuple_target_elem_types: list[str] = []
             if i_ty.startswith("list[") and i_ty.endswith("]"):
-                t_ty = i_ty[5:-1]
+                inner_t = i_ty[5:-1].strip()
+                t_ty = inner_t
+                if inner_t.startswith("tuple[") and inner_t.endswith("]"):
+                    tuple_inner = inner_t[6:-1].strip()
+                    if tuple_inner != "":
+                        tuple_target_elem_types = _sh_split_top_commas(tuple_inner)
             elif i_ty.startswith("tuple[") and i_ty.endswith("]"):
                 t_ty = "unknown"
             elif i_ty.startswith("set[") and i_ty.endswith("]"):
@@ -3836,7 +3966,16 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         nm = str(e.get("id", ""))
                         if nm != "":
                             target_names.append(nm)
-            if t_ty != "unknown":
+            if len(tuple_target_elem_types) > 0 and isinstance(target_expr, dict) and target_expr.get("kind") == "Tuple":
+                for idx, nm in enumerate(target_names):
+                    if idx < len(tuple_target_elem_types):
+                        et = tuple_target_elem_types[idx].strip()
+                        if et == "":
+                            et = "unknown"
+                        name_types[nm] = et
+                    else:
+                        name_types[nm] = "unknown"
+            elif t_ty != "unknown":
                 for nm in target_names:
                     name_types[nm] = t_ty
             if (

@@ -190,6 +190,120 @@ class SelfHostedSignatureTest(unittest.TestCase):
         generators = comp_value.get("generators", [])
         self.assertEqual(len(generators), 2)
 
+    def test_accept_lambda_default_parameter(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_lambda_default.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        lam = None
+        for stmt in body:
+            if not isinstance(stmt, dict) or stmt.get("kind") != "Assign":
+                continue
+            value = stmt.get("value")
+            if isinstance(value, dict) and value.get("kind") == "Lambda":
+                lam = value
+                break
+        self.assertIsNotNone(lam)
+        args = lam.get("args", [])
+        self.assertEqual(len(args), 3)
+        third = args[2]
+        self.assertEqual(third.get("arg"), "std")
+        self.assertEqual(third.get("resolved_type"), "float64")
+        default = third.get("default")
+        self.assertTrue(isinstance(default, dict) and default.get("kind") == "Constant")
+
+    def test_accept_generator_tuple_target(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_generator_tuple_target.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        found = False
+
+        def walk(node) -> None:
+            nonlocal found
+            if found:
+                return
+            if isinstance(node, dict):
+                if node.get("kind") == "ListComp" and node.get("lowered_kind") == "GeneratorArg":
+                    gens = node.get("generators", [])
+                    if len(gens) > 0:
+                        target = gens[0].get("target")
+                        if isinstance(target, dict) and target.get("kind") == "Tuple":
+                            found = True
+                            return
+                for value in node.values():
+                    walk(value)
+                return
+            if isinstance(node, list):
+                for item in node:
+                    walk(item)
+
+        walk(east)
+        self.assertTrue(found)
+
+    def test_accept_list_concat_with_comprehension(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_list_concat_comp.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        assign = None
+        for stmt in body:
+            if isinstance(stmt, dict) and stmt.get("kind") == "Assign":
+                target = stmt.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name" and target.get("id") == "tokens":
+                    assign = stmt
+                    break
+        self.assertIsNotNone(assign)
+        value = assign.get("value", {})
+        self.assertIsInstance(value, dict)
+        self.assertEqual(value.get("kind"), "BinOp")
+
+    def test_accept_tuple_of_list_comprehensions(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_tuple_of_list_comp.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        assign = None
+        for stmt in body:
+            if isinstance(stmt, dict) and stmt.get("kind") == "Assign":
+                assign = stmt
+                break
+        self.assertIsNotNone(assign)
+        value = assign.get("value", {})
+        self.assertIsInstance(value, dict)
+        self.assertEqual(value.get("kind"), "Tuple")
+        elems = value.get("elements", [])
+        self.assertEqual(len(elems), 2)
+
+    def test_accept_fstring_format_spec(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_fstring_format_spec.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        fn = None
+        for stmt in body:
+            if isinstance(stmt, dict) and stmt.get("kind") == "FunctionDef" and stmt.get("name") == "fmt":
+                fn = stmt
+                break
+        self.assertIsNotNone(fn)
+        fn_body = fn.get("body", [])
+        ret = fn_body[0] if len(fn_body) > 0 else {}
+        value = ret.get("value", {}) if isinstance(ret, dict) else {}
+        self.assertTrue(isinstance(value, dict) and value.get("kind") == "JoinedStr")
+        values = value.get("values", [])
+        specs = []
+        for item in values:
+            if isinstance(item, dict) and item.get("kind") == "FormattedValue":
+                spec = item.get("format_spec")
+                if isinstance(spec, str):
+                    specs.append(spec)
+        self.assertIn("4d", specs)
+        self.assertIn(".4f", specs)
+
     def test_reject_object_receiver_access(self) -> None:
         rc, payload = self._run_east(SIG_DIR / "ng_object_receiver.py")
         self.assertNotEqual(rc, 0)

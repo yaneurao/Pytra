@@ -2771,8 +2771,8 @@ class CppEmitter(CodeEmitter):
                     decl_t = self.normalize_type_name(elem_types[i])
                 if decl_t == "":
                     decl_t = self.normalize_type_name(self.get_expr_type(e))
-                if decl_t in {"", "unknown"}:
-                    decl_t = "object"
+                if decl_t == "":
+                    decl_t = "unknown"
                 self.declared_var_types[nm] = decl_t
                 if self.is_any_like_type(decl_t):
                     self.emit(f"auto {nm} = ::std::get<{i}>({src});")
@@ -4867,7 +4867,21 @@ class CppEmitter(CodeEmitter):
         for a in self._dict_stmt_list(expr_d.get("args")):
             nm = self.any_to_str(a.get("arg")).strip()
             if nm != "":
-                arg_texts.append(f"auto {nm}")
+                default_node = a.get("default")
+                param_t = "auto"
+                ann_t = self.any_to_str(a.get("resolved_type")).strip()
+                if isinstance(default_node, dict):
+                    default_t = self.get_expr_type(default_node)
+                    if default_t in {"", "unknown"}:
+                        default_t = ann_t
+                    if default_t not in {"", "unknown", "Any", "object"}:
+                        param_t = self._cpp_type_text(default_t)
+                elif ann_t not in {"", "unknown", "Any", "object"}:
+                    param_t = self._cpp_type_text(ann_t)
+                arg_txt = f"{param_t} {nm}"
+                if isinstance(default_node, dict):
+                    arg_txt += f" = {self.render_expr(default_node)}"
+                arg_texts.append(arg_txt)
         body_expr = self.render_expr(expr_d.get("body"))
         return f"[&]({_join_str_list(', ', arg_texts)}) {{ return {body_expr}; }}"
 

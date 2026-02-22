@@ -124,7 +124,7 @@ parser top-level/内包拡張（P3-MSP-05）:
      - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
      - 先頭失敗は `line 15`（top-level `if`）から `line 80`（lambda 既定値）へ前進。
 4. 境界
-   - lambda 引数既定値（`lambda nout, nin, std=0.08: ...`）は未対応のままで、次の parser タスクへ持ち越す。
+   - ここで未対応だった lambda 既定値・generator tuple target・f-string format spec は後続の `P3-MSP-07` で段階対応した。
 
 EAST/emitter `range(...)` lower 整合（P3-MSP-06）:
 1. 対応内容（2026-02-23）
@@ -146,7 +146,44 @@ EAST/emitter `range(...)` lower 整合（P3-MSP-06）:
    - `python3 src/py2cpp.py /tmp/msp6_choices_range.py -o /tmp/msp6_choices_range.cpp`
      - 生成 C++ に `pytra::std::random::choices(py_range(0, 3, 1), ...)` を確認。
 4. 残課題
-   - lambda 既定値（`stage=C`）と `zip`/object receiver（`P3-MSP-07`）は未着手。
+   - `P3-MSP-06` 単体で解決できる範囲（`range(...)` lower 不整合）は完了。残差は parser/型崩れ側（当時 `stage=C`）として `P3-MSP-07` へ引き継いだ。
+
+EAST/emitter `zip` 経由型崩れ安定化（P3-MSP-07）:
+1. 対応内容（2026-02-23）
+   - parser 側:
+     - `lambda` 既定値引数（`lambda x, y=...: expr`）を受理し、arg `default` と推論型を保持。
+     - generator 引数での括弧なし tuple target（`for a, b in ...`）を受理。
+     - `zip(...)` 呼び出しの戻り型を `list[tuple[...]]` として推論。
+     - `for` 文で tuple target へ要素型を個別束縛するよう調整。
+     - `f-string` placeholder の format spec（`{x:4d}`, `{y:.4f}`）を受理。
+     - `list/listcomp` 連結（`[A] + [comp] + [B]`）および tuple + `+` 混在式の誤解析を解消。
+   - emitter 側:
+     - `src/py2cpp.py::_emit_target_unpack` で未知型を `object` へ固定しないよう変更し、`zip` 経由 tuple unpack の過剰 `object receiver` 化を抑止。
+2. 実装箇所
+   - `src/pytra/compiler/east_parts/core.py`:
+     - `_parse_lambda`（default 引数対応）
+     - `_parse_comp_target`（括弧なし tuple target 対応）
+     - `_parse_postfix`（`zip(...)` 戻り型推論）
+     - `_sh_parse_stmt_block_mutable`（`for` tuple target 型束縛）
+     - `_sh_parse_expr_lowered`（`+` と list/tuple/comp 誤判定の整理、f-string 経路整理）
+     - `_sh_find_top_char`（f-string placeholder 分解補助）
+   - `src/py2cpp.py`:
+     - `_emit_target_unpack`（`unknown` を維持）
+3. 検証
+   - `python3 test/unit/test_self_hosted_signature.py`（16件成功）
+     - 追加 fixture:
+       - `ok_lambda_default.py`
+       - `ok_generator_tuple_target.py`
+       - `ok_list_concat_comp.py`
+       - `ok_tuple_of_list_comp.py`
+       - `ok_fstring_format_spec.py`
+   - `python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range Py2CppFeatureTest.test_lambda_default_arg_emits_cpp_default Py2CppFeatureTest.test_zip_tuple_unpack_does_not_force_object_receiver`
+   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+     - `stage=F`（syntax-check 失敗）へ前進し、transpile 段階の `C/E` は解消。
+   - `python3 tools/check_py2cpp_transpile.py`
+     - `checked=129 ok=129 fail=0 skipped=6`
+4. 残課題
+   - 原本 `microgpt` は transpile 済みだが、生成 C++ の top-level 実行文配置など compile 互換差分が残り `stage=F`。`P3-MSP-03` で継続する。
 
 runtime/std 互換差分整理（P3-MSP-08）:
 1. 再現コマンド（2026-02-23 実行）
@@ -197,4 +234,5 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-23: `P3-MSP-04` を実施。無注釈引数を `unknown` 受理へ切り替え、`def ...: stmt` の inline 定義を top-level / nested / class method で受理する parser 拡張を実装。`test_self_hosted_signature.py` の追加ケース通過と、原本 `microgpt` の失敗ステージ `A -> C` 前進を確認した。
 - 2026-02-23: `P3-MSP-05` を実施。top-level `if` / `for`、tuple 同時代入、list-comp 複数 `for`、block 内 import を parser で受理するよう拡張。原本 `microgpt` の失敗先頭を `line 15` から `line 80`（lambda 既定値）へ前進させた。
 - 2026-02-23: `P3-MSP-06` を実施。`src/py2cpp.py` で raw `range(...)` Name-call を `py_range(...)` へ lower する経路を追加し、`unexpected raw range Call in EAST` 例外を解消。`random.choices(range(...))` 再現ケースで transpile 通過を確認し、回帰ステージは `C` 維持（`D` 解消）を確認した。
+- 2026-02-23: `P3-MSP-07` を実施。`zip`/内包/tuple unpack 経路の型崩れを parser+emitter で段階修正し、`object receiver` 起点の transpile 失敗を解消。原本 `microgpt` の回帰ステージを `C/E` から `F`（syntax-check）へ前進させた。
 - 2026-02-23: `P3-MSP-08` を実施。`open`/`list.index`/`random.shuffle(list[str])` の最小再現を行い、runtime/std 互換差分の吸収レイヤを確定した。`random.choices(range(...))` は runtime ではなく `P3-MSP-06`（EAST lower）側で扱うと決定した。
