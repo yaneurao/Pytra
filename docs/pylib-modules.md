@@ -1,6 +1,6 @@
 # `src/pytra/` Module Index
 
-<a href="../docs-jp/pylib-modules.md">
+<a href="../docs-jp/spec/spec-pylib-modules.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -65,4 +65,3 @@ If you call functions/classes not listed here, transpilation-time errors or targ
   - functions: `convert_source_to_east(...)`, `convert_source_to_east_self_hosted(...)`, `convert_source_to_east_with_backend(...)`, `convert_path(...)`, `render_east_human_cpp(...)`, `main()`
 - `pytra.compiler.east_parts.east_io`
   - functions: `extract_module_leading_trivia(source)`, `load_east_from_path(input_path, parser_backend="self_hosted")`
-

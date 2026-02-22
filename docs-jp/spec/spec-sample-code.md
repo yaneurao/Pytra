@@ -1,6 +1,6 @@
 # サンプルコードについて
 
-<a href="../docs/sample-code.md">
+<a href="../../docs/sample-code.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 

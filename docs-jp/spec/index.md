@@ -14,7 +14,7 @@
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
 - 言語別仕様: [言語別仕様](../language/index.md)
 - Codex 向け運用仕様: [Codex 向け運用仕様](../spec-codex.md)
-- `pylib` モジュール一覧: [pylib モジュール一覧](../pylib-modules.md)
+- `pylib` モジュール一覧: [pylib モジュール一覧](./spec-pylib-modules.md)
 
 ## 読み分け方
 

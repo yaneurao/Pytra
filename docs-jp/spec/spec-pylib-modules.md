@@ -1,6 +1,6 @@
 # `src/pytra/` モジュール一覧
 
-<a href="../docs/pylib-modules.md">
+<a href="../../docs/pylib-modules.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
