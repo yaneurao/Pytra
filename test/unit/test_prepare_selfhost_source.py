@@ -94,7 +94,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertNotIn("pass", post_call_hook1)
 
         post_call_hook = _slice_block(patched, "    def _call_hook(", "\n    def _call_hook1(")
-        self.assertIn("return None", post_call_hook)
+        self.assertIn("fn = self._lookup_hook(name)", post_call_hook)
+        self.assertNotIn("return fn(self", post_call_hook)
         self.assertNotIn("pass", post_call_hook)
 
         hook_emit_stmt_block = _slice_block(patched, "    def hook_on_emit_stmt(", "\n    def hook_on_emit_stmt_kind(")
@@ -116,6 +117,19 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(RuntimeError, "_call_hook1 marker"):
             mod._patch_code_emitter_hooks_for_selfhost(broken_order)
+
+        broken_block = (
+            "class CodeEmitter:\n"
+            "    def _call_hook(\n"
+            "        self,\n"
+            "        name: str,\n"
+            "    ) -> Any:\n"
+            "        return None\n"
+            "    def _call_hook1(self, name: str, arg0: Any) -> Any:\n"
+            "        return self._call_hook(name, arg0, None, None, None, None, None, 1)\n"
+        )
+        with self.assertRaisesRegex(RuntimeError, "neutralize _call_hook dynamic calls"):
+            mod._patch_code_emitter_hooks_for_selfhost(broken_block)
 
 
 if __name__ == "__main__":

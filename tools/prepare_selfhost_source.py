@@ -138,21 +138,25 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
         raise RuntimeError("failed to find _call_hook block in merged selfhost source")
     if j <= i:
         raise RuntimeError("failed to find _call_hook1 marker after _call_hook in merged selfhost source")
-    stub = (
-        "    def _call_hook(\n"
-        "        self,\n"
-        "        name: str,\n"
-        "        arg0: Any = None,\n"
-        "        arg1: Any = None,\n"
-        "        arg2: Any = None,\n"
-        "        arg3: Any = None,\n"
-        "        arg4: Any = None,\n"
-        "        arg5: Any = None,\n"
-        "        argc: int = 0,\n"
-        "    ) -> Any:\n"
-        "        return None\n"
-    )
-    return text[:i] + stub + text[j + 1 :]
+    block = text[i:j]
+    targets = [
+        "            return fn(self)\n",
+        "            return fn(self, arg0)\n",
+        "            return fn(self, arg0, arg1)\n",
+        "            return fn(self, arg0, arg1, arg2)\n",
+        "            return fn(self, arg0, arg1, arg2, arg3)\n",
+        "            return fn(self, arg0, arg1, arg2, arg3, arg4)\n",
+        "            return fn(self, arg0, arg1, arg2, arg3, arg4, arg5)\n",
+    ]
+    missing: list[str] = []
+    for target in targets:
+        if target in block:
+            block = block.replace(target, "            return None\n", 1)
+        else:
+            missing.append(target.strip())
+    if len(missing) > 0:
+        raise RuntimeError("failed to neutralize _call_hook dynamic calls: " + ", ".join(missing))
+    return text[:i] + block + text[j:]
 
 
 def main() -> int:
