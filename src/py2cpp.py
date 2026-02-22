@@ -854,8 +854,7 @@ class CppEmitter(CodeEmitter):
         seen: set[str] = set()
         bindings: list[dict[str, Any]] = self._dict_stmt_list(meta.get("import_bindings"))
         if len(bindings) > 0:
-            i = 0
-            while i < len(bindings):
+            for i in range(len(bindings)):
                 item = bindings[i]
                 module_id = self.any_to_str(item.get("module_id"))
                 export_name = self.any_to_str(item.get("export_name"))
@@ -877,7 +876,6 @@ class CppEmitter(CodeEmitter):
                             if sym_inc != "" and sym_inc not in seen:
                                 seen.add(sym_inc)
                                 includes.append(sym_inc)
-                i += 1
             includes = _sort_str_list_in_place(includes)
             return includes
         for stmt in body:
@@ -924,8 +922,7 @@ class CppEmitter(CodeEmitter):
         bindings = self.any_to_dict_list(meta.get("import_bindings"))
         if len(bindings) > 0:
             if len(refs) > 0:
-                r = 0
-                while r < len(refs):
+                for r in range(len(refs)):
                     ref_item = refs[r]
                     module_id = self.any_to_str(ref_item.get("module_id"))
                     symbol = self.any_to_str(ref_item.get("symbol"))
@@ -933,23 +930,19 @@ class CppEmitter(CodeEmitter):
                     if module_id != "" and symbol != "" and local_name != "":
                         self.import_symbols[local_name] = {"module": module_id, "name": symbol}
                         self.import_symbol_modules.add(module_id)
-                    r += 1
-            i = 0
-            while i < len(bindings):
+            for i in range(len(bindings)):
                 item = bindings[i]
                 module_id = self.any_to_str(item.get("module_id"))
                 export_name = self.any_to_str(item.get("export_name"))
                 local_name = self.any_to_str(item.get("local_name"))
                 binding_kind = self.any_to_str(item.get("binding_kind"))
                 if module_id == "" or local_name == "":
-                    i += 1
                     continue
                 if binding_kind == "module":
                     self.import_modules[local_name] = module_id
                 elif binding_kind == "symbol" and export_name != "" and len(refs) == 0:
                     self.import_symbols[local_name] = {"module": module_id, "name": export_name}
                     self.import_symbol_modules.add(module_id)
-                i += 1
             if len(self.import_symbols) == 0:
                 legacy_syms = self.any_to_dict_or_empty(meta.get("import_symbols"))
                 for local_name, sym_obj in legacy_syms.items():
