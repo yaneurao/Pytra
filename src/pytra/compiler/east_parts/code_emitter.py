@@ -289,12 +289,19 @@ class CodeEmitter:
                 "object receiver method call is forbidden by language constraints"
             )
 
+    def _lookup_hook(self, name: str) -> Any | None:
+        """hook 名から call 可能な値を取得する。未定義時は `None`。"""
+        if name in self.hooks:
+            fn = self.hooks[name]
+            if fn is not None:
+                return fn
+        return None
+
     def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> bool | None:
         """`on_emit_stmt` フック。既定では何もしない。"""
-        if "on_emit_stmt" in self.hooks:
-            fn = self.hooks["on_emit_stmt"]
-            if fn is not None:
-                return fn(self, stmt)
+        fn = self._lookup_hook("on_emit_stmt")
+        if fn is not None:
+            return fn(self, stmt)
         return None
 
     def hook_on_emit_stmt_kind(
@@ -303,10 +310,9 @@ class CodeEmitter:
         stmt: dict[str, Any],
     ) -> bool | None:
         """`on_emit_stmt_kind` フック。既定では何もしない。"""
-        if "on_emit_stmt_kind" in self.hooks:
-            fn = self.hooks["on_emit_stmt_kind"]
-            if fn is not None:
-                return fn(self, kind, stmt)
+        fn = self._lookup_hook("on_emit_stmt_kind")
+        if fn is not None:
+            return fn(self, kind, stmt)
         return None
 
     def hook_on_stmt_omit_braces(
@@ -429,12 +435,11 @@ class CodeEmitter:
         expr_node: dict[str, Any],
     ) -> str:
         """`on_render_expr_kind` フック。既定では何もしない。"""
-        if "on_render_expr_kind" in self.hooks:
-            fn = self.hooks["on_render_expr_kind"]
-            if fn is not None:
-                v = fn(self, kind, expr_node)
-                if isinstance(v, str):
-                    return v
+        fn = self._lookup_hook("on_render_expr_kind")
+        if fn is not None:
+            v = fn(self, kind, expr_node)
+            if isinstance(v, str):
+                return v
         return ""
 
     def hook_on_render_expr_leaf(
@@ -443,12 +448,11 @@ class CodeEmitter:
         expr_node: dict[str, Any],
     ) -> str:
         """`Name/Constant/Attribute` などの leaf 式向けフック。"""
-        if "on_render_expr_leaf" in self.hooks:
-            fn = self.hooks["on_render_expr_leaf"]
-            if fn is not None:
-                v = fn(self, kind, expr_node)
-                if isinstance(v, str):
-                    return v
+        fn = self._lookup_hook("on_render_expr_leaf")
+        if fn is not None:
+            v = fn(self, kind, expr_node)
+            if isinstance(v, str):
+                return v
         return ""
 
     def hook_on_render_expr_complex(
