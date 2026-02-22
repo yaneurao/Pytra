@@ -266,7 +266,6 @@ def _first_import_detail_line(source_text: str, kind: str) -> str:
             line = line[:hash_pos]
         line = line.strip()
         if line == "":
-            i += 1
             continue
         if kind == "wildcard":
             if line.startswith("from ") and " import " in line and line.endswith("*"):
@@ -6376,17 +6375,13 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
 
     if len(import_bindings) > 0:
         for ent in import_bindings:
-            mod_name = ent["module_id"]
-            export_name = ent["export_name"]
-            local_name = ent["local_name"]
-            binding_kind = ent["binding_kind"]
-            if mod_name != "" and mod_name not in module_seen:
-                module_seen.add(mod_name)
-                modules.append(mod_name)
-            if binding_kind == "symbol" and export_name != "":
-                label = mod_name + "." + export_name
-                if local_name != "" and local_name != export_name:
-                    label += " as " + local_name
+            if ent["module_id"] != "" and ent["module_id"] not in module_seen:
+                module_seen.add(ent["module_id"])
+                modules.append(ent["module_id"])
+            if ent["binding_kind"] == "symbol" and ent["export_name"] != "":
+                label = ent["module_id"] + "." + ent["export_name"]
+                if ent["local_name"] != "" and ent["local_name"] != ent["export_name"]:
+                    label += " as " + ent["local_name"]
                 if label not in symbol_seen:
                     symbol_seen.add(label)
                     symbols.append(label)
@@ -6913,20 +6908,13 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         import_symbols: dict[str, dict[str, str]] = {}
         if len(import_bindings) > 0:
             for ent in import_bindings:
-                module_id = ent["module_id"]
-                export_name = ent["export_name"]
-                local_name = ent["local_name"]
-                binding_kind = ent["binding_kind"]
-                if binding_kind == "module":
-                    _set_import_module_binding(import_modules, local_name, module_id)
-                elif binding_kind == "symbol" and export_name != "" and len(qualified_symbol_refs) == 0:
-                    _set_import_symbol_binding(import_symbols, local_name, module_id, export_name)
+                if ent["binding_kind"] == "module":
+                    _set_import_module_binding(import_modules, ent["local_name"], ent["module_id"])
+                elif ent["binding_kind"] == "symbol" and ent["export_name"] != "" and len(qualified_symbol_refs) == 0:
+                    _set_import_symbol_binding(import_symbols, ent["local_name"], ent["module_id"], ent["export_name"])
             if len(qualified_symbol_refs) > 0:
                 for ref in qualified_symbol_refs:
-                    module_id = ref["module_id"]
-                    symbol = ref["symbol"]
-                    local_name = ref["local_name"]
-                    _set_import_symbol_binding(import_symbols, local_name, module_id, symbol)
+                    _set_import_symbol_binding(import_symbols, ref["local_name"], ref["module_id"], ref["symbol"])
         else:
             legacy_mods = _dict_any_get_dict(meta, "import_modules")
             for local_name_any, _module_id_obj in legacy_mods.items():
