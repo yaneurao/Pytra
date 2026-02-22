@@ -53,15 +53,23 @@ def _strip_triple_quoted_docstrings(text: str) -> str:
 
 
 def _remove_import_line(text: str) -> str:
-    targets = [
-        "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n",
-        "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n",
-        "from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks\n",
+    targets: list[tuple[str, str]] = [
+        ("from pytra.compiler.east_parts.code_emitter import CodeEmitter\n", "CodeEmitter import"),
+        (
+            "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n",
+            "transpile_cli import",
+        ),
+        ("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks\n", "build_cpp_hooks import"),
     ]
     out = text
-    for target in targets:
+    missing: list[str] = []
+    for target, label in targets:
         if target in out:
             out = out.replace(target, "", 1)
+        else:
+            missing.append(label)
+    if len(missing) > 0:
+        raise RuntimeError("failed to remove required import lines: " + ", ".join(missing))
     return out
 
 

@@ -29,6 +29,32 @@ def _slice_block(text: str, start_marker: str, end_marker: str) -> str:
 
 
 class PrepareSelfhostSourceTest(unittest.TestCase):
+    def test_remove_import_line_removes_required_imports(self) -> None:
+        mod = _load_prepare_module()
+        py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
+        removed = mod._remove_import_line(py2cpp_text)
+        self.assertNotIn(
+            "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n",
+            removed,
+        )
+        self.assertNotIn(
+            "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n",
+            removed,
+        )
+        self.assertNotIn(
+            "from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks\n",
+            removed,
+        )
+
+    def test_remove_import_line_raises_when_required_import_missing(self) -> None:
+        mod = _load_prepare_module()
+        broken = (
+            "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n"
+            "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n"
+        )
+        with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks import"):
+            mod._remove_import_line(broken)
+
     def test_extract_support_blocks_does_not_inline_build_cpp_hooks(self) -> None:
         mod = _load_prepare_module()
         support_blocks = mod._extract_support_blocks()
