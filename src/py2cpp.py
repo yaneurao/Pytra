@@ -6019,22 +6019,10 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
     for item_obj in binds:
         item = item_obj if isinstance(item_obj, dict) else {}
         if len(item) > 0:
-            module_id_obj: object = item.get("module_id")
-            export_name_obj: object = item.get("export_name")
-            local_name_obj: object = item.get("local_name")
-            binding_kind_obj: object = item.get("binding_kind")
-            module_id = ""
-            if isinstance(module_id_obj, str):
-                module_id = module_id_obj
-            export_name = ""
-            if isinstance(export_name_obj, str):
-                export_name = export_name_obj
-            local_name = ""
-            if isinstance(local_name_obj, str):
-                local_name = local_name_obj
-            binding_kind = ""
-            if isinstance(binding_kind_obj, str):
-                binding_kind = binding_kind_obj
+            module_id = _dict_any_get_str(item, "module_id")
+            export_name = _dict_any_get_str(item, "export_name")
+            local_name = _dict_any_get_str(item, "local_name")
+            binding_kind = _dict_any_get_str(item, "binding_kind")
             if module_id != "" and local_name != "" and binding_kind in {"module", "symbol", "wildcard"}:
                 out.append(
                     {
@@ -6057,18 +6045,9 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
     for item_obj in refs:
         item = item_obj if isinstance(item_obj, dict) else {}
         if len(item) > 0:
-            module_id_obj: object = item.get("module_id")
-            symbol_obj: object = item.get("symbol")
-            local_name_obj: object = item.get("local_name")
-            module_id = ""
-            if isinstance(module_id_obj, str):
-                module_id = module_id_obj
-            symbol = ""
-            if isinstance(symbol_obj, str):
-                symbol = symbol_obj
-            local_name = ""
-            if isinstance(local_name_obj, str):
-                local_name = local_name_obj
+            module_id = _dict_any_get_str(item, "module_id")
+            symbol = _dict_any_get_str(item, "symbol")
+            local_name = _dict_any_get_str(item, "local_name")
             if module_id != "" and symbol != "" and local_name != "":
                 out.append(
                     {
