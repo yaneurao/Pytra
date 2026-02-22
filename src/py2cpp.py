@@ -7005,10 +7005,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 if binding_kind == "module":
                     import_modules[local_name] = module_id
                 elif binding_kind == "symbol" and export_name != "" and len(qualified_symbol_refs) == 0:
-                    sym_ent: dict[str, str] = {}
-                    sym_ent["module"] = module_id
-                    sym_ent["name"] = export_name
-                    import_symbols[local_name] = sym_ent
+                    import_symbols[local_name] = {"module": module_id, "name": export_name}
                 i += 1
             if len(qualified_symbol_refs) > 0:
                 j = 0
@@ -7017,10 +7014,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     module_id = ref["module_id"]
                     symbol = ref["symbol"]
                     local_name = ref["local_name"]
-                    sym_ent: dict[str, str] = {}
-                    sym_ent["module"] = module_id
-                    sym_ent["name"] = symbol
-                    import_symbols[local_name] = sym_ent
+                    import_symbols[local_name] = {"module": module_id, "name": symbol}
                     j += 1
         else:
             import_modules_obj: object = meta.get("import_modules")
@@ -7033,14 +7027,14 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 import_symbols_obj2 = import_symbols_obj
             import_modules = dict(import_modules_obj2)
             import_symbols = dict(import_symbols_obj2)
-        mod_ent: dict[str, Any] = {}
-        mod_ent["functions"] = funcs
-        mod_ent["classes"] = classes
-        mod_ent["variables"] = variables
-        mod_ent["import_bindings"] = import_bindings
-        mod_ent["import_modules"] = import_modules
-        mod_ent["import_symbols"] = import_symbols
-        out[mod_path] = mod_ent
+        out[mod_path] = {
+            "functions": funcs,
+            "classes": classes,
+            "variables": variables,
+            "import_bindings": import_bindings,
+            "import_modules": import_modules,
+            "import_symbols": import_symbols,
+        }
     return out
 
 
