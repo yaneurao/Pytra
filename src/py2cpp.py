@@ -6736,6 +6736,14 @@ def _format_import_graph_report(analysis: dict[str, Any]) -> str:
     return out
 
 
+def _split_graph_issue_entry(v_txt: str) -> tuple[str, str]:
+    """`file: module` 形式を `(file, module)` へ分解する。"""
+    left, right, found = _split_infix_once(v_txt, ": ")
+    if found:
+        return left, right
+    return v_txt, v_txt
+
+
 def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     """依存解析の重大問題を `input_invalid` として報告する。"""
     details: list[str] = []
@@ -6746,23 +6754,13 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     for v_txt in _dict_any_get_str_list(analysis, "relative_imports"):
         if v_txt == "":
             continue
-        file_part = v_txt
-        mod_part = v_txt
-        left, right, found = _split_infix_once(v_txt, ": ")
-        if found:
-            file_part = left
-            mod_part = right
+        file_part, mod_part = _split_graph_issue_entry(v_txt)
         details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
 
     for v_txt in _dict_any_get_str_list(analysis, "missing_modules"):
         if v_txt == "":
             continue
-        file_part = v_txt
-        mod_part = v_txt
-        left, right, found = _split_infix_once(v_txt, ": ")
-        if found:
-            file_part = left
-            mod_part = right
+        file_part, mod_part = _split_graph_issue_entry(v_txt)
         details.append(f"kind=missing_module file={file_part} import={mod_part}")
 
     for v in _dict_any_get_str_list(analysis, "cycles"):
