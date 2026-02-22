@@ -6842,15 +6842,14 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                     tgt = _dict_any_get_dict(st, "target")
                     if len(tgt) > 0:
                         targets = [tgt]
-                for j in range(len(targets)):
-                    tgt_obj = targets[j]
-                    if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
+                for tgt_obj in targets:
+                    if _dict_any_kind(tgt_obj) == "Name":
                         name_txt = _dict_any_get_str(tgt_obj, "id")
                         if name_txt != "":
                             exports.add(name_txt)
             elif kind == "AnnAssign":
-                tgt_obj = st.get("target")
-                if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
+                tgt_obj = _dict_any_get_dict(st, "target")
+                if _dict_any_kind(tgt_obj) == "Name":
                     name_txt = _dict_any_get_str(tgt_obj, "id")
                     if name_txt != "":
                         exports.add(name_txt)
@@ -6939,14 +6938,13 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     if len(tgt) > 0:
                         targets = [tgt]
                 for tgt_obj in targets:
-                    if isinstance(tgt_obj, dict):
-                        if _dict_any_kind(tgt_obj) == "Name":
-                            name_txt = _dict_any_get_str(tgt_obj, "id")
-                            if name_txt != "" and name_txt not in variables:
-                                variables.append(name_txt)
+                    if _dict_any_kind(tgt_obj) == "Name":
+                        name_txt = _dict_any_get_str(tgt_obj, "id")
+                        if name_txt != "" and name_txt not in variables:
+                            variables.append(name_txt)
             elif kind == "AnnAssign":
-                tgt_obj = st.get("target")
-                if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
+                tgt_obj = _dict_any_get_dict(st, "target")
+                if _dict_any_kind(tgt_obj) == "Name":
                     name_txt = _dict_any_get_str(tgt_obj, "id")
                     if name_txt != "" and name_txt not in variables:
                         variables.append(name_txt)
