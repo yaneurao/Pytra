@@ -176,6 +176,23 @@ def make_token() -> Token:
         self.assertIn("return *this;", cpp)
         self.assertNotIn("return self;", cpp)
 
+    def test_unknown_receiver_field_access_uses_obj_to_rc_or_raise(self) -> None:
+        src = """class Box:
+    v: int
+    def __init__(self, v: int):
+        self.v = v
+    def read_from_unknown(self, other) -> int:
+        return other.v
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "unknown_receiver_field.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('return obj_to_rc_or_raise<Box>(other, "Box.v")->v;', cpp)
+        self.assertNotIn("return py_obj_cast<Box>(other)->v;", cpp)
+
     def test_nested_def_inside_method_remains_local_lambda(self) -> None:
         src = """class Box:
     def inc(self, x: int) -> int:
