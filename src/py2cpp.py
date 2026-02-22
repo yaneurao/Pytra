@@ -776,9 +776,9 @@ class CppEmitter(CodeEmitter):
         self.rename_prefix: str = "py_"
         self.reserved_words, self.rename_prefix = load_cpp_identifier_rules()
         self.reserved_words.add("main")
-        self.import_modules: dict[str, str] = {}
-        self.import_symbols: dict[str, dict[str, str]] = {}
-        self.import_symbol_modules: set[str] = set()
+        # import 解決テーブルは init_base_state() 側を正とする。
+        # CppEmitter 側で再代入すると selfhost 生成C++で基底メンバと
+        # 派生メンバが分離し、基底 helper から空テーブルを参照しうる。
         self.module_namespace_map = module_namespace_map
         self.function_arg_types: dict[str, list[str]] = {}
         self.function_return_types: dict[str, str] = {}

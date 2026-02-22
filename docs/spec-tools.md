@@ -37,6 +37,8 @@ Its goals are:
 - `tools/check_selfhost_cpp_diff.py`
   - Purpose: Compare generated C++ diffs between Python and selfhost versions.
   - Main options: `--mode allow-not-implemented`, `--show-diff`, `--selfhost-driver`
+- `tools/check_selfhost_direct_compile.py`
+  - Purpose: Batch-transpile direct selfhost `.py` inputs and run `g++ -fsyntax-only` to detect compile regressions quickly.
 - `tools/summarize_selfhost_errors.py`
   - Purpose: Aggregate selfhost build errors by category.
 - `tools/selfhost_error_hotspots.py`

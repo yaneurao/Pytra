@@ -10,9 +10,7 @@ Last updated: 2026-02-22
 
 ## P0: Selfhost Stabilization
 
-1. [ ] selfhost `.py` Complete the gradual recovery of the route.
-2. [ ] Gradually zero out compile errors for selfhost (including immediate redetection steps upon regression).
-3. [ ] Continue organizing the selfhost-only stub remaining in `tools/prepare_selfhost_source.py`.
+1. [ ] Continue organizing the selfhost-only stub remaining in `tools/prepare_selfhost_source.py`.
    - [x] Replaced `dump_codegen_options_text`'s selfhost fallback from a minimal `"options:\n"` stub to a selfhost-safe implementation that outputs a detailed line.
    - [x] `CodeEmitter.quote_string_literal` / `CodeEmitter.load_profile_with_includes` has been migrated to the main body `@staticmethod` implementation, and the corresponding replacement route on the `tools/prepare_selfhost_source.py` side has been deleted.
 

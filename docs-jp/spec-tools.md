@@ -65,6 +65,8 @@
 - `tools/check_selfhost_cpp_diff.py`
   - 目的: Python 版と selfhost 版の生成 C++ 差分を比較する。
   - 主要オプション: `--mode allow-not-implemented`, `--show-diff`, `--selfhost-driver`
+- `tools/check_selfhost_direct_compile.py`
+  - 目的: selfhost の `.py` 直入力経路を `sample/py` で一括変換し、`g++ -fsyntax-only` でコンパイル回帰を即時検出する。
 - `tools/check_selfhost_stage2_cpp_diff.py`
   - 目的: Python 版と 2段自己変換版（`selfhost/py2cpp_stage2.out`）の生成 C++ 差分を比較する。
   - 主要オプション: `--skip-build`, `--mode`, `--show-diff`
