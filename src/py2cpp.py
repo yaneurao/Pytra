@@ -2895,20 +2895,22 @@ class CppEmitter(CodeEmitter):
             self.emit("/* invalid for */")
             return
         if self._node_kind_from_dict(iter_expr) == "RangeExpr":
-            pseudo: dict[str, Any] = {}
-            pseudo["target"] = stmt.get("target")
             t_raw = stmt.get("target_type")
             target_type_txt = "int64"
             if isinstance(t_raw, str) and t_raw != "":
                 target_type_txt = t_raw
-            pseudo["target_type"] = target_type_txt
-            pseudo["start"] = iter_expr.get("start")
-            pseudo["stop"] = iter_expr.get("stop")
-            pseudo["step"] = iter_expr.get("step")
-            pseudo["range_mode"] = self.any_dict_get_str(iter_expr, "range_mode", "dynamic")
-            pseudo["body"] = self.any_dict_get_list(stmt, "body")
-            pseudo["orelse"] = self.any_dict_get_list(stmt, "orelse")
-            self.emit_for_range(pseudo)
+            self.emit_for_range(
+                {
+                    "target": stmt.get("target"),
+                    "target_type": target_type_txt,
+                    "start": iter_expr.get("start"),
+                    "stop": iter_expr.get("stop"),
+                    "step": iter_expr.get("step"),
+                    "range_mode": self.any_dict_get_str(iter_expr, "range_mode", "dynamic"),
+                    "body": self.any_dict_get_list(stmt, "body"),
+                    "orelse": self.any_dict_get_list(stmt, "orelse"),
+                }
+            )
             return
         body_stmts = self._dict_stmt_list(stmt.get("body"))
         omit_braces = self.hook_on_stmt_omit_braces("For", stmt, False)
