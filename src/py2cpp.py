@@ -5663,23 +5663,19 @@ def _header_cpp_type_from_east(
     if len(parts_union) > 1:
         parts = parts_union
         non_none: list[str] = []
-        i = 0
-        while i < len(parts):
-            p = parts[i].strip()
+        for part in parts:
+            p = part.strip()
             if p != "None":
                 non_none.append(p)
-            i += 1
         if len(parts) == 2 and len(non_none) == 1:
             return "::std::optional<" + _header_cpp_type_from_east(non_none[0], ref_classes, class_names) + ">"
         folded: list[str] = []
-        i = 0
-        while i < len(non_none):
-            p = non_none[i]
+        for part in non_none:
+            p = part
             if p == "bytearray":
                 p = "bytes"
             if p not in folded:
                 folded.append(p)
-            i += 1
         if len(folded) == 1:
             only: str = folded[0]
             return _header_cpp_type_from_east(only, ref_classes, class_names)
@@ -5698,10 +5694,8 @@ def _header_cpp_type_from_east(
     if t.startswith("tuple[") and t.endswith("]"):
         inner = _split_type_args(t[6:-1].strip())
         vals: list[str] = []
-        i = 0
-        while i < len(inner):
-            vals.append(_header_cpp_type_from_east(inner[i], ref_classes, class_names))
-            i += 1
+        for part in inner:
+            vals.append(_header_cpp_type_from_east(part, ref_classes, class_names))
         sep = ", "
         return "::std::tuple<" + sep.join(vals) + ">"
     if "." in t:
@@ -6064,18 +6058,7 @@ def _is_runtime_emit_input_path(input_path: Path) -> bool:
 
 def _runtime_output_rel_tail(module_tail: str) -> str:
     """module tail（`std/<name>_impl` など）を runtime/cpp 相対パス tail へ写像する。"""
-    parts: list[str] = []
-    cur = ""
-    i = 0
-    while i < len(module_tail):
-        ch = module_tail[i : i + 1]
-        if ch == "/":
-            parts.append(cur)
-            cur = ""
-        else:
-            cur += ch
-        i += 1
-    parts.append(cur)
+    parts: list[str] = module_tail.split("/")
     if len(parts) > 0:
         leaf = parts[len(parts) - 1]
         if leaf.endswith("_impl"):
