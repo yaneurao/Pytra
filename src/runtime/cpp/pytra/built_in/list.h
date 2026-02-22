@@ -155,6 +155,15 @@ public:
         return out;
     }
 
+    int64 index(const T& value) const {
+        for (::std::size_t i = 0; i < data_.size(); i++) {
+            if (data_[i] == value) {
+                return static_cast<int64>(i);
+            }
+        }
+        throw ::std::out_of_range("list.index(x): x not in list");
+    }
+
 private:
     ::std::vector<T> data_;
 };

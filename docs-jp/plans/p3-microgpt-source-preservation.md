@@ -208,6 +208,21 @@ runtime/std 互換差分整理（P3-MSP-08）:
    - `src/runtime/cpp/pytra/std/random.h`: `shuffle(list<int64>&)` に固定。
    - `src/pytra/compiler/east_parts/core.py`: `list_map` に `index` エントリなし。
 
+`stage=F` compile 互換の前進（P3-MSP-03 継続）:
+1. 対応内容（2026-02-23）
+   - `src/py2cpp.py` の module top-level 出力を「定義文」と「実行文」に分離し、実行文を `static void __pytra_module_init()` へ集約。`main` 冒頭で idempotent に呼び出すよう変更して、namespace 直下へ実行文が漏れる経路を解消した。
+   - runtime 側に `open(path)` 既定 mode overload、`PyFile::begin/end`、`list<T>::index`、`random.shuffle(list<T>&)` を追加し、`P3-MSP-08` で洗い出した API 欠落の実装を開始した。
+   - `src/py2cpp.py::_coerce_param_signature_default` を追加し、`object/Any` 引数既定値へ `make_object(...)` を補完して `std::make_tuple()` を直接 `const object&` へ渡す不整合を解消した。
+   - `src/pytra/compiler/east_parts/core.py` に無注釈関数の戻り値推定（`return <expr>` 収集）を追加し、戻り注釈なし関数の `void` 固定化で発生する compile 不整合を縮退した。
+2. 検証
+   - `python3 test/unit/test_self_hosted_signature.py`（16件成功）
+   - `python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range Py2CppFeatureTest.test_lambda_default_arg_emits_cpp_default Py2CppFeatureTest.test_zip_tuple_unpack_does_not_force_object_receiver`（3件成功）
+   - `python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）
+   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+     - `stage=F` は維持だが、先頭エラーは `std::make_tuple` 既定値不整合から `Value::__add__` 周辺へ前進。
+3. 残課題
+   - `Value` クラス周辺で、`object` 型引数/フィールドと演算子 lower（`__add__`/`__mul__`/`__neg__` など）の整合が不足しており、引き続き `P3-MSP-03` で compile 互換を詰める必要がある。
+
 目的:
 - 「変換器都合で元ソースを書き換える」運用を禁止し、必要な対応を parser/emitter/runtime 側タスクへ移す。
 - `materials/microgpt/microgpt-20260222.py`（原本）を無改変のまま扱える状態を作る。
@@ -236,3 +251,4 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-23: `P3-MSP-06` を実施。`src/py2cpp.py` で raw `range(...)` Name-call を `py_range(...)` へ lower する経路を追加し、`unexpected raw range Call in EAST` 例外を解消。`random.choices(range(...))` 再現ケースで transpile 通過を確認し、回帰ステージは `C` 維持（`D` 解消）を確認した。
 - 2026-02-23: `P3-MSP-07` を実施。`zip`/内包/tuple unpack 経路の型崩れを parser+emitter で段階修正し、`object receiver` 起点の transpile 失敗を解消。原本 `microgpt` の回帰ステージを `C/E` から `F`（syntax-check）へ前進させた。
 - 2026-02-23: `P3-MSP-08` を実施。`open`/`list.index`/`random.shuffle(list[str])` の最小再現を行い、runtime/std 互換差分の吸収レイヤを確定した。`random.choices(range(...))` は runtime ではなく `P3-MSP-06`（EAST lower）側で扱うと決定した。
+- 2026-02-23: `P3-MSP-03` の継続として module init 分離・runtime API 追加・`object` 既定値補完・無注釈関数の戻り値推定を実装し、`stage=F` 先頭エラーを `std::make_tuple` 既定値不整合から `Value::__add__` 周辺へ前進させた。

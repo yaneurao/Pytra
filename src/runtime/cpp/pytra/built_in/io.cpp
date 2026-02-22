@@ -45,7 +45,9 @@ PyFile::PyFile(PyFile&& other) noexcept
     : ofs_(::std::move(other.ofs_)),
       ifs_(::std::move(other.ifs_)),
       readable_(other.readable_),
-      writable_(other.writable_) {}
+      writable_(other.writable_),
+      line_cache_ready_(other.line_cache_ready_),
+      line_cache_(::std::move(other.line_cache_)) {}
 
 PyFile& PyFile::operator=(PyFile&& other) noexcept {
     if (this != &other) {
@@ -53,6 +55,8 @@ PyFile& PyFile::operator=(PyFile&& other) noexcept {
         ifs_ = ::std::move(other.ifs_);
         readable_ = other.readable_;
         writable_ = other.writable_;
+        line_cache_ready_ = other.line_cache_ready_;
+        line_cache_ = ::std::move(other.line_cache_);
     }
     return *this;
 }
@@ -68,6 +72,8 @@ void PyFile::close() {
     if (ofs_.is_open()) {
         ofs_.close();
     }
+    line_cache_ready_ = false;
+    line_cache_.clear();
 }
 
 void PyFile::ensure_open() const {
@@ -101,8 +107,53 @@ void PyFile::ensure_readable() const {
     return ss.str();
 }
 
+PyFile::iterator PyFile::begin() {
+    ensure_readable();
+    if (!line_cache_ready_) {
+        line_cache_.clear();
+        ifs_.clear();
+        ifs_.seekg(0, ::std::ios::beg);
+        ::std::string line;
+        while (::std::getline(ifs_, line)) {
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
+            }
+            line_cache_.push_back(line);
+        }
+        ifs_.clear();
+        ifs_.seekg(0, ::std::ios::beg);
+        line_cache_ready_ = true;
+    }
+    return line_cache_.begin();
+}
+
+PyFile::iterator PyFile::end() {
+    if (!line_cache_ready_) {
+        (void)begin();
+    }
+    return line_cache_.end();
+}
+
+PyFile::const_iterator PyFile::begin() const {
+    if (!line_cache_ready_) {
+        (void)const_cast<PyFile*>(this)->begin();
+    }
+    return line_cache_.cbegin();
+}
+
+PyFile::const_iterator PyFile::end() const {
+    if (!line_cache_ready_) {
+        (void)const_cast<PyFile*>(this)->begin();
+    }
+    return line_cache_.cend();
+}
+
 PyFile open(const ::std::string& path, const ::std::string& mode) {
     return PyFile(path, mode);
+}
+
+PyFile open(const ::std::string& path) {
+    return open(path, "r");
 }
 
 }  // namespace pytra::runtime::cpp::base

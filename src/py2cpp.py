@@ -1129,6 +1129,80 @@ class CppEmitter(CodeEmitter):
             return f"{ns}::{symbol_name}"
         return None
 
+    def _is_module_definition_stmt(self, stmt: dict[str, Any]) -> bool:
+        """トップレベルで namespace 直下に置ける定義文かを返す。"""
+        kind = self._node_kind_from_dict(stmt)
+        return kind in {"ClassDef", "FunctionDef", "Import", "ImportFrom"}
+
+    def _split_module_top_level_stmts(
+        self,
+        body: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """トップレベル文を「定義文」と「実行文」へ分割する。"""
+        defs: list[dict[str, Any]] = []
+        runtime: list[dict[str, Any]] = []
+        for stmt in body:
+            if self._is_module_definition_stmt(stmt):
+                defs.append(stmt)
+            else:
+                runtime.append(stmt)
+        return defs, runtime
+
+    def _infer_module_global_decl_type(self, stmt: dict[str, Any]) -> str:
+        """トップレベル Name 代入を global 宣言する際の型を推定する。"""
+        kind = self._node_kind_from_dict(stmt)
+        if kind == "AnnAssign":
+            ann_t = self.normalize_type_name(self.any_to_str(stmt.get("annotation")))
+            if ann_t not in {"", "unknown"}:
+                return ann_t
+        d0 = self.normalize_type_name(self.any_dict_get_str(stmt, "decl_type", ""))
+        d1 = self.normalize_type_name(self.get_expr_type(stmt.get("target")))
+        d2 = self.normalize_type_name(self.get_expr_type(stmt.get("value")))
+        picked = ""
+        for t in [d0, d1, d2]:
+            if t not in {"", "unknown"}:
+                picked = t
+                break
+        if picked == "":
+            if d2 != "":
+                picked = d2
+            elif d1 != "":
+                picked = d1
+            elif d0 != "":
+                picked = d0
+        if picked == "None":
+            picked = "Any"
+        if picked == "":
+            picked = "object"
+        return picked
+
+    def _collect_module_global_decls(self, runtime_stmts: list[dict[str, Any]]) -> list[tuple[str, str]]:
+        """トップレベル実行文から global 先行宣言すべき Name と型を抽出する。"""
+        out: list[tuple[str, str]] = []
+        seen: set[str] = set()
+        for stmt in runtime_stmts:
+            kind = self._node_kind_from_dict(stmt)
+            if kind not in {"Assign", "AnnAssign"}:
+                continue
+            target_obj: object = stmt.get("target")
+            if not self.is_plain_name_expr(target_obj):
+                continue
+            target = self.any_to_dict_or_empty(target_obj)
+            raw_name = self.any_dict_get_str(target, "id", "")
+            if raw_name == "":
+                continue
+            name = self.rename_if_reserved(raw_name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+            if name in seen:
+                continue
+            ty = self._infer_module_global_decl_type(stmt)
+            cpp_t = self._cpp_type_text(ty)
+            # callable/unknown 由来の auto は先行宣言せず、init 関数内ローカル宣言へ委譲する。
+            if cpp_t == "auto":
+                continue
+            seen.add(name)
+            out.append((name, ty))
+        return out
+
     def transpile(self) -> str:
         """EAST ドキュメント全体を C++ ソース文字列へ変換する。"""
         self._seed_import_maps_from_meta()
@@ -1219,8 +1293,32 @@ class CppEmitter(CodeEmitter):
             self.emit("")
             self.indent += 1
 
-        for stmt in body:
+        module_defs, module_runtime = self._split_module_top_level_stmts(body)
+        module_globals = self._collect_module_global_decls(module_runtime)
+
+        for g_name, g_ty in module_globals:
+            self.emit(f"{self._cpp_type_text(g_ty)} {g_name};")
+            self.declare_in_current_scope(g_name)
+            self.declared_var_types[g_name] = g_ty
+        if len(module_globals) > 0:
+            self.emit("")
+
+        for stmt in module_defs:
             self.emit_stmt(stmt)
+            self.emit("")
+
+        has_module_runtime = len(module_runtime) > 0
+        if has_module_runtime:
+            self.emit("static void __pytra_module_init() {")
+            self.indent += 1
+            self.emit("static bool __initialized = false;")
+            self.emit("if (__initialized) return;")
+            self.emit("__initialized = true;")
+            self.scope_stack.append(set())
+            self.emit_stmt_list(module_runtime)
+            self.scope_stack.pop()
+            self.indent -= 1
+            self.emit("}")
             self.emit("")
 
         if self.emit_main:
@@ -1237,6 +1335,11 @@ class CppEmitter(CodeEmitter):
             self.indent += 1
             self.emit("pytra_configure_from_argv(argc, argv);")
             self.scope_stack.append(set())
+            if has_module_runtime:
+                if self.top_namespace != "":
+                    self.emit(f"{self.top_namespace}::__pytra_module_init();")
+                else:
+                    self.emit("__pytra_module_init();")
             main_guard: list[dict[str, Any]] = []
             raw_main_guard = self.any_dict_get_list(self.doc, "main_guard_body")
             if isinstance(raw_main_guard, list):
@@ -1721,6 +1824,20 @@ class CppEmitter(CodeEmitter):
         if rendered_expr.endswith(tail_b):
             return rendered_expr[: -len(tail_b)] + ", " + typed_default + ")"
         return rendered_expr
+
+    def _coerce_param_signature_default(self, rendered_expr: str, east_target_t: str) -> str:
+        """関数シグネチャ既定値を引数型に合わせて整形する。"""
+        if rendered_expr == "":
+            return rendered_expr
+        t = self.normalize_type_name(east_target_t)
+        out = self._rewrite_nullopt_default_for_typed_target(rendered_expr, t)
+        if not self.is_any_like_type(t):
+            return out
+        if out in {"object{}", "object()"}:
+            return out
+        if self.is_boxed_object_expr(out):
+            return out
+        return f"make_object({out})"
 
     def _render_param_default_expr(self, node: Any, east_target_t: str) -> str:
         """関数引数既定値ノードを C++ 式へ変換する。"""
@@ -2230,6 +2347,7 @@ class CppEmitter(CodeEmitter):
             if n in arg_defaults:
                 default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
                 if default_txt != "":
+                    default_txt = self._coerce_param_signature_default(default_txt, t)
                     param_txt += f" = {default_txt}"
             params.append(param_txt)
             fn_scope.add(n)
@@ -2984,6 +3102,7 @@ class CppEmitter(CodeEmitter):
                 if n in arg_defaults:
                     default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
                     if default_txt != "":
+                        default_txt = self._coerce_param_signature_default(default_txt, t)
                         param_txt += f" = {default_txt}"
                 params.append(param_txt)
                 fn_scope.add(n)

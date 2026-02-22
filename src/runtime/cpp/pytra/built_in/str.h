@@ -364,6 +364,10 @@ static inline pytra::runtime::cpp::base::PyFile open(const str& path, const str&
     return pytra::runtime::cpp::base::open(static_cast<::std::string>(path), static_cast<::std::string>(mode));
 }
 
+static inline pytra::runtime::cpp::base::PyFile open(const str& path) {
+    return pytra::runtime::cpp::base::open(static_cast<::std::string>(path));
+}
+
 namespace std {
 template <>
 struct hash<str> {

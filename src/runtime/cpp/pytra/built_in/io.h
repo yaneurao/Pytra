@@ -5,11 +5,15 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 namespace pytra::runtime::cpp::base {
 
 class PyFile {
 public:
+    using iterator = ::std::vector<::std::string>::iterator;
+    using const_iterator = ::std::vector<::std::string>::const_iterator;
+
     PyFile() = default;
     PyFile(const ::std::string& path, const ::std::string& mode);
     ~PyFile();
@@ -24,6 +28,10 @@ public:
 
     ::std::size_t write(const ::std::string& text);
     ::std::string read();
+    iterator begin();
+    iterator end();
+    const_iterator begin() const;
+    const_iterator end() const;
 
     template <class BytesLike, class = ::std::enable_if_t<!::std::is_convertible_v<BytesLike, ::std::string>>>
     void write(const BytesLike& bytes_like) {
@@ -42,9 +50,12 @@ private:
     ::std::ifstream ifs_;
     bool readable_ = false;
     bool writable_ = false;
+    mutable bool line_cache_ready_ = false;
+    mutable ::std::vector<::std::string> line_cache_;
 };
 
 PyFile open(const ::std::string& path, const ::std::string& mode);
+PyFile open(const ::std::string& path);
 
 }  // namespace pytra::runtime::cpp::base
 

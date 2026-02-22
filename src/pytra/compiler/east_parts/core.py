@@ -1374,6 +1374,79 @@ def _sh_collect_yield_value_types(stmts: list[dict[str, Any]]) -> list[str]:
     return out
 
 
+def _sh_collect_return_value_types(stmts: list[dict[str, Any]]) -> list[str]:
+    """文リストから `return <expr>` の戻り値型を再帰収集する（入れ子関数/クラスは除外）。"""
+    out: list[str] = []
+    for st in stmts:
+        if not isinstance(st, dict):
+            continue
+        kind = str(st.get("kind", ""))
+        if kind == "Return":
+            val = st.get("value")
+            if not isinstance(val, dict):
+                continue
+            t_val_obj: Any = val.get("resolved_type")
+            t_val = str(t_val_obj) if isinstance(t_val_obj, str) else "unknown"
+            out.append(t_val if t_val != "" else "unknown")
+            continue
+        if kind in {"FunctionDef", "ClassDef"}:
+            continue
+        if kind in {"If", "While", "For", "ForRange"}:
+            body_obj: Any = st.get("body")
+            body_list: list[dict[str, Any]] = body_obj if isinstance(body_obj, list) else []
+            out.extend(_sh_collect_return_value_types(body_list))
+            orelse_obj: Any = st.get("orelse")
+            orelse_list: list[dict[str, Any]] = orelse_obj if isinstance(orelse_obj, list) else []
+            out.extend(_sh_collect_return_value_types(orelse_list))
+            continue
+        if kind == "Try":
+            body_obj = st.get("body")
+            body_list = body_obj if isinstance(body_obj, list) else []
+            out.extend(_sh_collect_return_value_types(body_list))
+            orelse_obj = st.get("orelse")
+            orelse_list = orelse_obj if isinstance(orelse_obj, list) else []
+            out.extend(_sh_collect_return_value_types(orelse_list))
+            final_obj = st.get("finalbody")
+            final_list = final_obj if isinstance(final_obj, list) else []
+            out.extend(_sh_collect_return_value_types(final_list))
+            handlers_obj: Any = st.get("handlers")
+            handlers: list[dict[str, Any]] = handlers_obj if isinstance(handlers_obj, list) else []
+            for h in handlers:
+                if not isinstance(h, dict):
+                    continue
+                h_body_obj: Any = h.get("body")
+                h_body: list[dict[str, Any]] = h_body_obj if isinstance(h_body_obj, list) else []
+                out.extend(_sh_collect_return_value_types(h_body))
+    return out
+
+
+def _sh_infer_return_type_for_untyped_def(declared_ret: str, stmts: list[dict[str, Any]]) -> str:
+    """戻り注釈なし（`None`）関数に対し `return <expr>` から戻り型を推定する。"""
+    if declared_ret != "None":
+        return declared_ret
+    ret_types = _sh_collect_return_value_types(stmts)
+    if len(ret_types) == 0:
+        return declared_ret
+    picked = ""
+    for rt in ret_types:
+        t = rt if rt != "" else "unknown"
+        if t == "None":
+            continue
+        if picked == "":
+            picked = t
+            continue
+        if picked == t:
+            continue
+        if picked == "unknown" or t == "unknown":
+            picked = "unknown"
+            continue
+        picked = "Any"
+        break
+    if picked == "":
+        return declared_ret
+    return picked
+
+
 def _sh_collect_store_name_ids(target: Any, out: set[str]) -> None:
     """代入ターゲットから Name 識別子を再帰収集する。"""
     if isinstance(target, dict):
@@ -3806,6 +3879,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 fn_scope_types[arg_name] = arg_ty
             fn_stmts = _sh_parse_stmt_block(fn_block, name_types=fn_scope_types, scope_label=f"{scope_label}.{fn_name}")
             docstring, fn_stmts = _sh_extract_leading_docstring(fn_stmts)
+            fn_ret = _sh_infer_return_type_for_untyped_def(fn_ret, fn_stmts)
             yield_types = _sh_collect_yield_value_types(fn_stmts)
             is_generator = len(yield_types) > 0
             fn_ret_effective = fn_ret
@@ -4795,6 +4869,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     )
             stmts = _sh_parse_stmt_block(block, name_types=dict(arg_types), scope_label=fn_name)
             docstring, stmts = _sh_extract_leading_docstring(stmts)
+            fn_ret = _sh_infer_return_type_for_untyped_def(fn_ret, stmts)
             yield_types = _sh_collect_yield_value_types(stmts)
             is_generator = len(yield_types) > 0
             fn_ret_effective = fn_ret
@@ -5234,6 +5309,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             local_types[fnm] = fty
                         stmts = _sh_parse_stmt_block(method_block, name_types=local_types, scope_label=f"{cls_name}.{mname}")
                         docstring, stmts = _sh_extract_leading_docstring(stmts)
+                        mret = _sh_infer_return_type_for_untyped_def(mret, stmts)
                         yield_types = _sh_collect_yield_value_types(stmts)
                         is_generator = len(yield_types) > 0
                         mret_effective = mret
