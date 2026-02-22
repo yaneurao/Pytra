@@ -35,6 +35,7 @@ ALLOWED_EXACT: set[str] = {
 
 ALLOWED_REGEX: tuple[re.Pattern[str], ...] = (
     re.compile(r"^todo-history/[0-9]{8}\.md$"),
+    re.compile(r"^plans/.+\.md$"),
 )
 
 
@@ -50,7 +51,7 @@ def _is_allowed(rel_path: Path) -> bool:
 
 def main() -> int:
     if not DOCS_JP.exists():
-        print("docs-jp guard: docs-jp/ does not exist.", file=sys.stderr)
+        print("docs-jp guard: docs-jp/ が存在しません。", file=sys.stderr)
         return 1
 
     disallowed: list[str] = []
@@ -62,10 +63,10 @@ def main() -> int:
             disallowed.append(rel.as_posix())
 
     if disallowed:
-        print("docs-jp guard failed: unmanaged files exist under docs-jp/")
+        print("docs-jp guard failed: docs-jp/ 配下に未管理ファイルがあります。")
         for item in disallowed:
             print(f"- docs-jp/{item}")
-        print("If this was intentional, get explicit user approval and update this guard.")
+        print("意図した追加なら、明示依頼を得たうえでこのガードを更新してください。")
         return 1
 
     print("docs-jp guard passed.")
