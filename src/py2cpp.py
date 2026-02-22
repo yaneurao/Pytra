@@ -2333,11 +2333,11 @@ class CppEmitter(CodeEmitter):
                 if name == "":
                     continue
                 if asname != "":
-                    self.import_modules[asname] = name
+                    _set_import_module_binding(self.import_modules, asname, name)
                 else:
                     base = self._last_dotted_name(name)
                     if base != "":
-                        self.import_modules[base] = name
+                        _set_import_module_binding(self.import_modules, base, name)
             return
         if kind == "ImportFrom":
             mod = self.any_to_str(stmt.get("module"))
@@ -2354,11 +2354,13 @@ class CppEmitter(CodeEmitter):
                 if mod == "" or name == "":
                     continue
                 if asname != "":
-                    self.import_symbols[asname] = {"module": mod, "name": name}
-                    self.import_symbol_modules.add(mod)
+                    _set_import_symbol_binding_and_module_set(
+                        self.import_symbols, self.import_symbol_modules, asname, mod, name
+                    )
                 else:
-                    self.import_symbols[name] = {"module": mod, "name": name}
-                    self.import_symbol_modules.add(mod)
+                    _set_import_symbol_binding_and_module_set(
+                        self.import_symbols, self.import_symbol_modules, name, mod, name
+                    )
         return
 
     def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
