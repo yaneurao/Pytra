@@ -115,12 +115,13 @@ py2cpp / py2rs 共通化候補:
 
 文脈: `docs-jp/plans/p2-microgpt-compatibility.md`（`TG-P2-MICROGPT-COMPAT`）
 
-1. [ ] [ID: P2-MGPT-01] self_hosted parser の型注釈必須制約（`name: Type`）について、仕様維持するか、無注釈引数の受理/推論を拡張するかを決め、選択した方針を実装へ反映する。
+1. [x] [ID: P2-MGPT-01] self_hosted parser の型注釈必須制約（`name: Type`）について、仕様維持するか、無注釈引数の受理/推論を拡張するかを決め、選択した方針を実装へ反映する。
 2. [x] [ID: P2-MGPT-02] `pytra.std.random` と `src/runtime/cpp/pytra/std/random.*` に `choices` / `gauss` / `shuffle` を追加し、`py2cpp` 生成コードがコンパイル可能な状態にする。
 3. [x] [ID: P2-MGPT-03] `microgpt` 相当入力（最小再現 fixture でも可）で transpile -> C++ 構文チェックまで回す検証導線を追加する。
 4. [ ] [ID: P2-MGPT-04] （低優先）`microgpt/microgpt-20260222.py` を `py2cpp.py` で変換し、生成 C++ のコンパイル（`g++ -std=c++20 -I src -I src/runtime/cpp`）が通る状態にする。
 
 進捗メモ:
+- `P2-MGPT-01`: 方針を「型注釈必須の仕様維持」に確定。`src/pytra/compiler/east_parts/core.py` で無注釈引数（`def f(x): ...`）の拒否を専用メッセージ（`requires type annotation`）で明示し、`test/fixtures/signature/ng_untyped_param.py` + `test/unit/test_self_hosted_signature.py::test_reject_untyped_parameter` を追加。`docs-jp/spec/spec-user.md` に運用方針を明文化した。
 - `P2-MGPT-02`: `src/pytra/std/random.py` へ `choices/gauss/shuffle` を追加し、`python3 src/py2cpp.py src/pytra/std/random.py --emit-runtime-cpp` で `src/runtime/cpp/pytra/std/random.*` を更新。`test/fixtures/stdlib/random_timeit_traceback_extended.py` と `test/unit/test_py2cpp_features.py` に runtime 検証を追加し、`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_random_timeit_traceback_extended_runtime` で通過を確認。
 - `P2-MGPT-03`: `test/fixtures/microgpt/microgpt_compat_min.py`（型注釈付き最小 microgpt 相当ケース）を追加し、`test/unit/test_py2cpp_features.py` に `test_microgpt_compat_min_syntax_check` を追加。`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_microgpt_compat_min_syntax_check` で transpile -> `g++ -fsyntax-only` の導線が通ることを確認。
 

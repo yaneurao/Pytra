@@ -17,6 +17,7 @@ DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/signature/ng_object_receiver.py",
     "test/fixtures/signature/ng_posonly.py",
     "test/fixtures/signature/ng_varargs.py",
+    "test/fixtures/signature/ng_untyped_param.py",
     "test/fixtures/typing/any_class_alias.py",
 }
 
