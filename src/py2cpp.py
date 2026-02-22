@@ -346,6 +346,20 @@ def _set_import_symbol_binding(
     import_symbols[local_name] = {"module": module_id, "name": symbol}
 
 
+def _set_import_symbol_binding_and_module_set(
+    import_symbols: dict[str, dict[str, str]],
+    import_symbol_modules: set[str],
+    local_name: str,
+    module_id: str,
+    symbol: str,
+) -> None:
+    """import symbol alias 束縛を追加し、参照 module を追跡する。"""
+    if module_id == "" or symbol == "":
+        return
+    import_symbols[local_name] = {"module": module_id, "name": symbol}
+    import_symbol_modules.add(module_id)
+
+
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 """
@@ -998,8 +1012,9 @@ class CppEmitter(CodeEmitter):
                     symbol = self.any_to_str(ref_item.get("symbol"))
                     local_name = self.any_to_str(ref_item.get("local_name"))
                     if module_id != "" and symbol != "" and local_name != "":
-                        self.import_symbols[local_name] = {"module": module_id, "name": symbol}
-                        self.import_symbol_modules.add(module_id)
+                        _set_import_symbol_binding_and_module_set(
+                            self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol
+                        )
             for item in bindings:
                 module_id = self.any_to_str(item.get("module_id"))
                 export_name = self.any_to_str(item.get("export_name"))
@@ -1008,10 +1023,11 @@ class CppEmitter(CodeEmitter):
                 if module_id == "" or local_name == "":
                     continue
                 if binding_kind == "module":
-                    self.import_modules[local_name] = module_id
+                    _set_import_module_binding(self.import_modules, local_name, module_id)
                 elif binding_kind == "symbol" and export_name != "" and len(refs) == 0:
-                    self.import_symbols[local_name] = {"module": module_id, "name": export_name}
-                    self.import_symbol_modules.add(module_id)
+                    _set_import_symbol_binding_and_module_set(
+                        self.import_symbols, self.import_symbol_modules, local_name, module_id, export_name
+                    )
             if len(self.import_symbols) == 0:
                 legacy_syms = self.any_to_dict_or_empty(meta.get("import_symbols"))
                 for local_name, sym_obj in legacy_syms.items():
@@ -1021,16 +1037,16 @@ class CppEmitter(CodeEmitter):
                     module_id = self.any_to_str(sym.get("module"))
                     symbol_name = self.any_to_str(sym.get("name"))
                     if module_id != "" and symbol_name != "":
-                        self.import_symbols[local_name] = {"module": module_id, "name": symbol_name}
-                        self.import_symbol_modules.add(module_id)
+                        _set_import_symbol_binding_and_module_set(
+                            self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol_name
+                        )
             if len(self.import_modules) == 0:
                 legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
                 for local_name, module_id_obj in legacy_mods.items():
                     if not isinstance(local_name, str):
                         continue
                     module_id = self.any_to_str(module_id_obj)
-                    if module_id != "":
-                        self.import_modules[local_name] = module_id
+                    _set_import_module_binding(self.import_modules, local_name, module_id)
             return
         # canonical メタが空の場合は legacy メタへフォールバックする。
         legacy_syms = self.any_to_dict_or_empty(meta.get("import_symbols"))
@@ -1041,15 +1057,15 @@ class CppEmitter(CodeEmitter):
             module_id = self.any_to_str(sym.get("module"))
             symbol_name = self.any_to_str(sym.get("name"))
             if module_id != "" and symbol_name != "":
-                self.import_symbols[local_name] = {"module": module_id, "name": symbol_name}
-                self.import_symbol_modules.add(module_id)
+                _set_import_symbol_binding_and_module_set(
+                    self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol_name
+                )
         legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
         for local_name, module_id_obj in legacy_mods.items():
             if not isinstance(local_name, str):
                 continue
             module_id = self.any_to_str(module_id_obj)
-            if module_id != "":
-                self.import_modules[local_name] = module_id
+            _set_import_module_binding(self.import_modules, local_name, module_id)
         return
 
     def emit_block_comment(self, text: str) -> None:
