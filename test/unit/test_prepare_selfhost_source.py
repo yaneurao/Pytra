@@ -53,6 +53,21 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("if isinstance(v, bool):", hook_emit_stmt_block)
         self.assertNotIn("pass", hook_emit_stmt_block)
 
+    def test_hook_patch_raises_when_markers_missing(self) -> None:
+        mod = _load_prepare_module()
+        with self.assertRaisesRegex(RuntimeError, "_call_hook block"):
+            mod._patch_code_emitter_hooks_for_selfhost("class CodeEmitter:\n    pass\n")
+
+        broken_order = (
+            "class CodeEmitter:\n"
+            "    def _call_hook(self):\n"
+            "        return None\n"
+            "    def hook_on_emit_stmt(self):\n"
+            "        return None\n"
+        )
+        with self.assertRaisesRegex(RuntimeError, "_call_hook1 marker"):
+            mod._patch_code_emitter_hooks_for_selfhost(broken_order)
+
 
 if __name__ == "__main__":
     unittest.main()

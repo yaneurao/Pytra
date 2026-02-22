@@ -127,8 +127,10 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     end_marker = "\n    def _call_hook1("
     i = text.find(start_marker)
     j = text.find(end_marker)
-    if i < 0 or j <= i:
-        return text
+    if i < 0:
+        raise RuntimeError("failed to find _call_hook block in merged selfhost source")
+    if j <= i:
+        raise RuntimeError("failed to find _call_hook1 marker after _call_hook in merged selfhost source")
     stub = (
         "    def _call_hook(\n"
         "        self,\n"
