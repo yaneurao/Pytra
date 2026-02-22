@@ -1763,6 +1763,31 @@ class CppEmitter(CodeEmitter):
             self._collect_mutated_params_from_stmt(st, params, out)
         return out
 
+    def _node_contains_call_name(self, node: Any, fn_name: str) -> bool:
+        """ノード配下に `fn_name(...)` 呼び出しが含まれるかを返す。"""
+        if isinstance(node, dict):
+            if self._node_kind_from_dict(node) == "Call":
+                fn = self.any_to_dict_or_empty(node.get("func"))
+                if self._node_kind_from_dict(fn) == "Name":
+                    if self.any_dict_get_str(fn, "id", "") == fn_name:
+                        return True
+            for v in node.values():
+                if self._node_contains_call_name(v, fn_name):
+                    return True
+            return False
+        if isinstance(node, list):
+            for item in node:
+                if self._node_contains_call_name(item, fn_name):
+                    return True
+        return False
+
+    def _stmt_list_contains_call_name(self, body_stmts: list[dict[str, Any]], fn_name: str) -> bool:
+        """文リストに `fn_name(...)` 呼び出しが含まれるかを返す。"""
+        for st in body_stmts:
+            if self._node_contains_call_name(st, fn_name):
+                return True
+        return False
+
     def _allows_none_default(self, east_t: str) -> bool:
         """型が `None` 既定値（optional）を許容するか判定する。"""
         t = self.normalize_type_name(east_t)
@@ -2326,8 +2351,19 @@ class CppEmitter(CodeEmitter):
         for raw_n in raw_order:
             if isinstance(raw_n, str) and raw_n != "" and raw_n in arg_types:
                 arg_names.append(str(raw_n))
+        arg_type_ordered: list[str] = []
+        for n in arg_names:
+            t = self.normalize_type_name(self.any_to_str(arg_types.get(n)))
+            if t == "":
+                t = "unknown"
+            arg_type_ordered.append(t)
         mutated_params = self._collect_mutated_params(body_stmts, arg_names)
+        is_recursive_local_fn = self._stmt_list_contains_call_name(body_stmts, emitted_name)
+        # ローカル関数呼び出しの coercion に使うため、現在スコープ中は登録を維持する。
+        self.function_arg_types[emitted_name] = arg_type_ordered
+        self.function_return_types[emitted_name] = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
         fn_scope: set[str] = set()
+        fn_sig_params: list[str] = []
         for n in arg_names:
             t = self.any_to_str(arg_types.get(n))
             ct = self._cpp_type_text(t)
@@ -2341,12 +2377,16 @@ class CppEmitter(CodeEmitter):
             if by_ref and usage == "mutable":
                 if ct == "object":
                     param_txt = f"{ct} {n}"
+                    fn_sig_params.append(ct)
                 else:
                     param_txt = f"{ct}& {n}"
+                    fn_sig_params.append(f"{ct}&")
             elif by_ref:
                 param_txt = f"const {ct}& {n}"
+                fn_sig_params.append(f"const {ct}&")
             else:
                 param_txt = f"{ct} {n}"
+                fn_sig_params.append(ct)
             if n in arg_defaults:
                 default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
                 if default_txt != "":
@@ -2355,7 +2395,12 @@ class CppEmitter(CodeEmitter):
             params.append(param_txt)
             fn_scope.add(n)
         params_txt = ", ".join(params)
-        self.emit(f"auto {emitted_name} = [&]({params_txt}) -> {ret} {{")
+        if is_recursive_local_fn:
+            fn_sig = ", ".join(fn_sig_params)
+            self.emit(f"::std::function<{ret}({fn_sig})> {emitted_name};")
+            self.emit(f"{emitted_name} = [&]({params_txt}) -> {ret} {{")
+        else:
+            self.emit(f"auto {emitted_name} = [&]({params_txt}) -> {ret} {{")
         self.indent += 1
         self.scope_stack.append(set(fn_scope))
         prev_ret = self.current_function_return_type
@@ -3433,6 +3478,7 @@ class CppEmitter(CodeEmitter):
             "Sub": "__sub__",
             "Mult": "__mul__",
             "Div": "__truediv__",
+            "Pow": "__pow__",
         }
         dunder_name = dunder_by_binop.get(op_name_str, "")
         if dunder_name != "":
@@ -3466,6 +3512,8 @@ class CppEmitter(CodeEmitter):
             if len(cast_rules) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
                 return f"{left} / {right}"
             return f"py_div({left}, {right})"
+        if op_name == "Pow":
+            return f"::std::pow(py_to_float64({left}), py_to_float64({right}))"
         if op_name == "FloorDiv":
             if self.floor_div_mode == "python":
                 return f"py_floordiv({left}, {right})"
@@ -4035,6 +4083,9 @@ class CppEmitter(CodeEmitter):
             inner_t: str = list_owner_t[5:-1].strip()
             if inner_t == "uint8":
                 a0 = f"static_cast<uint8>(py_to_int64({a0}))"
+            elif self.is_any_like_type(inner_t):
+                if not self.is_boxed_object_expr(a0):
+                    a0 = f"make_object({a0})"
             elif inner_t != "" and not self.is_any_like_type(inner_t):
                 a0 = f"{self._cpp_type_text(inner_t)}({a0})"
             return f"{owner_expr}.append({a0})"
@@ -4105,7 +4156,11 @@ class CppEmitter(CodeEmitter):
         at = at0 if isinstance(at0, str) else ""
         t_norm = self.normalize_type_name(target_t)
         if self.is_any_like_type(t_norm):
-            if self.is_any_like_type(at) or self.is_boxed_object_expr(arg_txt):
+            if self.is_boxed_object_expr(arg_txt):
+                return arg_txt
+            if arg_txt == "*this":
+                return "object(static_cast<PyObj*>(this), true)"
+            if self.is_any_like_type(at):
                 return arg_txt
             return f"make_object({arg_txt})"
         if not self._can_runtime_cast_target(target_t):
@@ -5338,8 +5393,11 @@ class CppEmitter(CodeEmitter):
                 else:
                     lines.append(f"    for (auto {tgt} : {it}) {{")
             ifs = self.any_to_list(g.get("ifs"))
+            list_elt = elt
+            if out_t == "list<object>" and not self.is_boxed_object_expr(list_elt):
+                list_elt = f"make_object({list_elt})"
             if len(ifs) == 0:
-                lines.append(f"        __out.append({elt});")
+                lines.append(f"        __out.append({list_elt});")
             else:
                 cond_parts: list[str] = []
                 for c in ifs:
@@ -5351,7 +5409,7 @@ class CppEmitter(CodeEmitter):
                             c_txt = c_rep
                     cond_parts.append(c_txt if c_txt != "" else "true")
                 cond: str = _join_str_list(" && ", cond_parts)
-                lines.append(f"        if ({cond}) __out.append({elt});")
+                lines.append(f"        if ({cond}) __out.append({list_elt});")
             lines.append("    }")
             lines.append("    return __out;")
             lines.append("}()")
@@ -5394,8 +5452,11 @@ class CppEmitter(CodeEmitter):
             else:
                 lines.append(f"    for (auto {tgt} : {it}) {{")
             ifs = self.any_to_list(g.get("ifs"))
+            set_elt = elt
+            if out_t == "set<object>" and not self.is_boxed_object_expr(set_elt):
+                set_elt = f"make_object({set_elt})"
             if len(ifs) == 0:
-                lines.append(f"        __out.insert({elt});")
+                lines.append(f"        __out.insert({set_elt});")
             else:
                 cond_parts: list[str] = []
                 for c in ifs:
@@ -5407,7 +5468,7 @@ class CppEmitter(CodeEmitter):
                             c_txt = c_rep
                     cond_parts.append(c_txt if c_txt != "" else "true")
                 cond: str = _join_str_list(" && ", cond_parts)
-                lines.append(f"        if ({cond}) __out.insert({elt});")
+                lines.append(f"        if ({cond}) __out.insert({set_elt});")
             lines.append("    }")
             lines.append("    return __out;")
             lines.append("}()")

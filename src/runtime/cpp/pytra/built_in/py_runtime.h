@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <optional>
 #include <regex>
@@ -2136,12 +2137,23 @@ static inline list<object>::const_iterator end(const object& v) {
     return empty.end();
 }
 
+// range-for は ADL で begin/end を解決するため、object 実体型の名前空間にも置く。
+namespace pytra::gc {
+static inline list<object>::const_iterator begin(const RcHandle<PyObj>& v) {
+    return ::begin(::object(v));
+}
+
+static inline list<object>::const_iterator end(const RcHandle<PyObj>& v) {
+    return ::end(::object(v));
+}
+}  // namespace pytra::gc
+
 static inline list<object>::const_iterator begin(const ::std::optional<object>& v) {
     if (!v.has_value()) {
         static const list<object> empty;
         return empty.begin();
     }
-    return begin(*v);
+    return ::begin(*v);
 }
 
 static inline list<object>::const_iterator end(const ::std::optional<object>& v) {
@@ -2149,7 +2161,7 @@ static inline list<object>::const_iterator end(const ::std::optional<object>& v)
         static const list<object> empty;
         return empty.end();
     }
-    return end(*v);
+    return ::end(*v);
 }
 
 // Selfhost-generated C++ can iterate ::std::any values that hold list<::std::any>.
@@ -2406,6 +2418,46 @@ static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::an
     if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_enumerate(*p, start);
     if (const auto* p = ::std::any_cast<str>(&values)) return py_enumerate(*p, start);
     return {};
+}
+
+template <class A, class B>
+static inline list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {
+    list<::std::tuple<A, B>> out;
+    const ::std::size_t n = ::std::min(lhs.size(), rhs.size());
+    out.reserve(n);
+    for (::std::size_t i = 0; i < n; i++) {
+        out.append(::std::make_tuple(lhs[i], rhs[i]));
+    }
+    return out;
+}
+
+static inline list<::std::tuple<object, object>> zip(const object& lhs, const object& rhs) {
+    if (const auto* l = obj_to_list_ptr(lhs)) {
+        if (const auto* r = obj_to_list_ptr(rhs)) {
+            return zip(*l, *r);
+        }
+    }
+    return {};
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline T sum(const list<T>& values) {
+    T acc = static_cast<T>(0);
+    for (const auto& v : values) acc += v;
+    return acc;
+}
+
+static inline object sum(const list<object>& values) {
+    float64 acc = 0.0;
+    for (const auto& v : values) {
+        acc += py_to_float64(v);
+    }
+    return make_object(acc);
+}
+
+static inline object sum(const object& values) {
+    if (const auto* lst = obj_to_list_ptr(values)) return sum(*lst);
+    return make_object(0);
 }
 
 template <class K, class V, class Q>
