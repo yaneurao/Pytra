@@ -6290,10 +6290,7 @@ def _module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict
     """import graph 用の EAST module_id 抽出。"""
     meta_obj = east_doc.get("meta")
     meta = meta_obj if isinstance(meta_obj, dict) else {}
-    module_id_obj = meta.get("module_id")
-    module_id = ""
-    if isinstance(module_id_obj, str):
-        module_id = module_id_obj
+    module_id = _dict_any_get_str(meta, "module_id")
     if module_id != "":
         return module_id
     return _module_name_from_path_for_graph(root, module_path)
@@ -6879,10 +6876,7 @@ def _module_id_from_east(root: Path, module_path: Path, east_doc: dict[str, Any]
     """EAST `meta.module_id` を優先し、無い場合はパス由来名へフォールバックする。"""
     meta_obj = east_doc.get("meta")
     meta = meta_obj if isinstance(meta_obj, dict) else {}
-    module_id_obj = meta.get("module_id")
-    module_id = ""
-    if isinstance(module_id_obj, str):
-        module_id = module_id_obj
+    module_id = _dict_any_get_str(meta, "module_id")
     if module_id != "":
         return module_id
     return _module_name_from_path(root, module_path)
