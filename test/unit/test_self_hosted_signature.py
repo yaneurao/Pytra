@@ -124,6 +124,72 @@ class SelfHostedSignatureTest(unittest.TestCase):
         self.assertGreater(len(method_body), 0)
         self.assertEqual(method_body[0].get("kind"), "Return")
 
+    def test_accept_top_level_if_with_import(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_top_level_if_import.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        if_stmt = None
+        for stmt in body:
+            if isinstance(stmt, dict) and stmt.get("kind") == "If":
+                if_stmt = stmt
+                break
+        self.assertIsNotNone(if_stmt)
+        if_body = if_stmt.get("body", [])
+        self.assertGreater(len(if_body), 0)
+        self.assertTrue(any(isinstance(st, dict) and st.get("kind") == "Import" for st in if_body))
+
+    def test_accept_top_level_for(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_top_level_for.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        self.assertTrue(any(isinstance(stmt, dict) and stmt.get("kind") in {"For", "ForRange"} for stmt in body))
+
+    def test_accept_top_level_tuple_assign(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_top_level_tuple_assign.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        tuple_assign = None
+        for stmt in body:
+            if not isinstance(stmt, dict) or stmt.get("kind") != "Assign":
+                continue
+            target = stmt.get("target")
+            if isinstance(target, dict) and target.get("kind") == "Tuple":
+                tuple_assign = stmt
+                break
+        self.assertIsNotNone(tuple_assign)
+
+    def test_accept_multi_for_list_comprehension(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_multi_for_comp.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        comp_stmt = None
+        for stmt in body:
+            if not isinstance(stmt, dict) or stmt.get("kind") != "AnnAssign":
+                continue
+            target = stmt.get("target")
+            value = stmt.get("value")
+            if (
+                isinstance(target, dict)
+                and target.get("kind") == "Name"
+                and target.get("id") == "flat"
+                and isinstance(value, dict)
+                and value.get("kind") == "ListComp"
+            ):
+                comp_stmt = stmt
+                break
+        self.assertIsNotNone(comp_stmt)
+        comp_value = comp_stmt.get("value", {})
+        generators = comp_value.get("generators", [])
+        self.assertEqual(len(generators), 2)
+
     def test_reject_object_receiver_access(self) -> None:
         rc, payload = self._run_east(SIG_DIR / "ng_object_receiver.py")
         self.assertNotEqual(rc, 0)

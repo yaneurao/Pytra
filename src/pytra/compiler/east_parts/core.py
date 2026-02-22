@@ -3315,105 +3315,192 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             "entries": entries,
         }
 
-    # list-comp support: [expr for target in iter if cond]
+    # list-comp support: [expr for target in iter if cond] + chained for-clauses
     if txt.startswith("[") and txt.endswith("]"):
         inner = txt[1:-1].strip()
         p_for = _sh_split_top_keyword(inner, "for")
         if p_for > 0:
             elt_txt = inner[:p_for].strip()
-            tail = inner[p_for + 3 :].strip()
-            p_in = _sh_split_top_keyword(tail, "in")
-            if p_in <= 0:
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"invalid list comprehension in self_hosted parser: {txt}",
-                    source_span=_sh_span(ln_no, col, col + len(raw)),
-                    hint="Use `[elem for item in iterable]` form.",
-                )
-            tgt_txt = tail[:p_in].strip()
-            iter_and_if_txt = tail[p_in + 2 :].strip()
-            p_if = _sh_split_top_keyword(iter_and_if_txt, "if")
-            if p_if >= 0:
-                iter_txt = iter_and_if_txt[:p_if].strip()
-                if_txt = iter_and_if_txt[p_if + 2 :].strip()
-            else:
-                iter_txt = iter_and_if_txt
-                if_txt = ""
-            target_node = _sh_parse_expr_lowered(tgt_txt, ln_no=ln_no, col=col + txt.find(tgt_txt), name_types=dict(name_types))
-            iter_node = _sh_parse_expr_lowered(iter_txt, ln_no=ln_no, col=col + txt.find(iter_txt), name_types=dict(name_types))
-            if (
-                isinstance(iter_node, dict)
-                and iter_node.get("kind") == "Call"
-                and isinstance(iter_node.get("func"), dict)
-                and iter_node.get("func", {}).get("kind") == "Name"
-                and iter_node.get("func", {}).get("id") == "range"
-            ):
-                rargs = list(iter_node.get("args", []))
-                if len(rargs) == 1:
-                    start_node = {
-                        "kind": "Constant",
-                        "source_span": _sh_span(ln_no, col, col),
-                        "resolved_type": "int64",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": "0",
-                        "value": 0,
-                    }
-                    stop_node = rargs[0]
-                    step_node = {
-                        "kind": "Constant",
-                        "source_span": _sh_span(ln_no, col, col),
-                        "resolved_type": "int64",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": "1",
-                        "value": 1,
-                    }
-                elif len(rargs) == 2:
-                    start_node = rargs[0]
-                    stop_node = rargs[1]
-                    step_node = {
-                        "kind": "Constant",
-                        "source_span": _sh_span(ln_no, col, col),
-                        "resolved_type": "int64",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": "1",
-                        "value": 1,
-                    }
-                else:
-                    start_node = rargs[0]
-                    stop_node = rargs[1]
-                    step_node = rargs[2]
-                step_const_obj: Any = None
-                if isinstance(step_node, dict):
-                    step_const_obj = step_node.get("value")
-                step_const: int | None = None
-                if isinstance(step_const_obj, int):
-                    step_const = int(step_const_obj)
-                mode = "dynamic"
-                if step_const == 1:
-                    mode = "ascending"
-                elif step_const == -1:
-                    mode = "descending"
-                iter_node = {
-                    "kind": "RangeExpr",
-                    "source_span": iter_node.get("source_span"),
-                    "resolved_type": "range",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": iter_node.get("repr", "range(...)"),
-                    "start": start_node,
-                    "stop": stop_node,
-                    "step": step_node,
-                    "range_mode": mode,
-                }
+            rest = inner[p_for + 3 :].strip()
+            generators: list[dict[str, Any]] = []
+            comp_types: dict[str, str] = dict(name_types)
+            while True:
+                p_in = _sh_split_top_keyword(rest, "in")
+                if p_in <= 0:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"invalid list comprehension in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `[elem for item in iterable]` form.",
+                    )
+                tgt_txt = rest[:p_in].strip()
+                iter_and_suffix_txt = rest[p_in + 2 :].strip()
+                if tgt_txt == "" or iter_and_suffix_txt == "":
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"invalid list comprehension in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `[elem for item in iterable]` form.",
+                    )
+                p_next_for = _sh_split_top_keyword(iter_and_suffix_txt, "for")
+                p_next_if = _sh_split_top_keyword(iter_and_suffix_txt, "if")
+                next_pos = -1
+                if p_next_for >= 0 and (p_next_if < 0 or p_next_for < p_next_if):
+                    next_pos = p_next_for
+                elif p_next_if >= 0:
+                    next_pos = p_next_if
+                iter_txt = iter_and_suffix_txt
+                suffix_txt = ""
+                if next_pos >= 0:
+                    iter_txt = iter_and_suffix_txt[:next_pos].strip()
+                    suffix_txt = iter_and_suffix_txt[next_pos:].strip()
+                if iter_txt == "":
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"invalid list comprehension in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `[elem for item in iterable]` form.",
+                    )
 
-            comp_types = _sh_bind_comp_target_types(dict(name_types), target_node, iter_node)
+                target_node = _sh_parse_expr_lowered(
+                    tgt_txt,
+                    ln_no=ln_no,
+                    col=col + txt.find(tgt_txt),
+                    name_types=dict(comp_types),
+                )
+                iter_node = _sh_parse_expr_lowered(
+                    iter_txt,
+                    ln_no=ln_no,
+                    col=col + txt.find(iter_txt),
+                    name_types=dict(comp_types),
+                )
+                if (
+                    isinstance(iter_node, dict)
+                    and iter_node.get("kind") == "Call"
+                    and isinstance(iter_node.get("func"), dict)
+                    and iter_node.get("func", {}).get("kind") == "Name"
+                    and iter_node.get("func", {}).get("id") == "range"
+                ):
+                    rargs = list(iter_node.get("args", []))
+                    if len(rargs) == 1:
+                        start_node = {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, col, col),
+                            "resolved_type": "int64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "0",
+                            "value": 0,
+                        }
+                        stop_node = rargs[0]
+                        step_node = {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, col, col),
+                            "resolved_type": "int64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "1",
+                            "value": 1,
+                        }
+                    elif len(rargs) == 2:
+                        start_node = rargs[0]
+                        stop_node = rargs[1]
+                        step_node = {
+                            "kind": "Constant",
+                            "source_span": _sh_span(ln_no, col, col),
+                            "resolved_type": "int64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "1",
+                            "value": 1,
+                        }
+                    else:
+                        start_node = rargs[0]
+                        stop_node = rargs[1]
+                        step_node = rargs[2]
+                    step_const_obj: Any = None
+                    if isinstance(step_node, dict):
+                        step_const_obj = step_node.get("value")
+                    step_const: int | None = None
+                    if isinstance(step_const_obj, int):
+                        step_const = int(step_const_obj)
+                    mode = "dynamic"
+                    if step_const == 1:
+                        mode = "ascending"
+                    elif step_const == -1:
+                        mode = "descending"
+                    iter_node = {
+                        "kind": "RangeExpr",
+                        "source_span": iter_node.get("source_span"),
+                        "resolved_type": "range",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": iter_node.get("repr", "range(...)"),
+                        "start": start_node,
+                        "stop": stop_node,
+                        "step": step_node,
+                        "range_mode": mode,
+                    }
+
+                comp_types = _sh_bind_comp_target_types(dict(comp_types), target_node, iter_node)
+                if_nodes: list[dict[str, Any]] = []
+                while suffix_txt.startswith("if "):
+                    cond_tail = suffix_txt[3:].strip()
+                    p_cond_for = _sh_split_top_keyword(cond_tail, "for")
+                    p_cond_if = _sh_split_top_keyword(cond_tail, "if")
+                    split_pos = -1
+                    if p_cond_for >= 0 and (p_cond_if < 0 or p_cond_for < p_cond_if):
+                        split_pos = p_cond_for
+                    elif p_cond_if >= 0:
+                        split_pos = p_cond_if
+                    cond_txt = cond_tail
+                    suffix_txt = ""
+                    if split_pos >= 0:
+                        cond_txt = cond_tail[:split_pos].strip()
+                        suffix_txt = cond_tail[split_pos:].strip()
+                    if cond_txt == "":
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"invalid list comprehension condition in self_hosted parser: {txt}",
+                            source_span=_sh_span(ln_no, col, col + len(raw)),
+                            hint="Use `[elem for item in iterable if cond]` form.",
+                        )
+                    if_nodes.append(
+                        _sh_parse_expr_lowered(
+                            cond_txt,
+                            ln_no=ln_no,
+                            col=col + txt.find(cond_txt),
+                            name_types=dict(comp_types),
+                        )
+                    )
+
+                generators.append(
+                    {
+                        "target": target_node,
+                        "iter": iter_node,
+                        "ifs": if_nodes,
+                        "is_async": False,
+                    }
+                )
+                if suffix_txt == "":
+                    break
+                if not suffix_txt.startswith("for "):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"invalid list comprehension in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `[elem for item in iterable for item2 in iterable2]` form.",
+                    )
+                rest = suffix_txt[4:].strip()
+                if rest == "":
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"invalid list comprehension in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Use `[elem for item in iterable for item2 in iterable2]` form.",
+                    )
+
             elt_node = _sh_parse_expr_lowered(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
-            if_nodes: list[dict[str, Any]] = []
-            if if_txt != "":
-                if_nodes.append(_sh_parse_expr_lowered(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
             elem_t = str(elt_node.get("resolved_type", "unknown"))
             return {
                 "kind": "ListComp",
@@ -3423,14 +3510,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                 "casts": [],
                 "repr": txt,
                 "elt": elt_node,
-                "generators": [
-                    {
-                        "target": target_node,
-                        "iter": iter_node,
-                        "ifs": if_nodes,
-                        "is_async": False,
-                    }
-                ],
+                "generators": generators,
             }
 
     # Very simple list-comp support: [x for x in <iter>]
@@ -3851,6 +3931,122 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 }
             )
             i = j
+            continue
+
+        m_import: re.Match | None = re.match(r"^import\s+(.+)$", s, flags=re.S)
+        if m_import is not None:
+            names_txt = re.strip_group(m_import, 1)
+            raw_parts: list[str] = []
+            for p in names_txt.split(","):
+                p2: str = p.strip()
+                if p2 != "":
+                    raw_parts.append(p2)
+            if len(raw_parts) == 0:
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message="import statement has no module names",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Use `import module` or `import module as alias`.",
+                )
+            aliases: list[dict[str, str | None]] = []
+            for part in raw_parts:
+                parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=True)
+                if parsed_alias is None:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"unsupported import clause: {part}",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Use `import module` or `import module as alias` form.",
+                    )
+                mod_name, as_name_txt = parsed_alias
+                alias_item: dict[str, str | None] = {"name": mod_name, "asname": None}
+                if as_name_txt != "":
+                    alias_item["asname"] = as_name_txt
+                aliases.append(alias_item)
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                {
+                    "kind": "Import",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
+                    "names": aliases,
+                },
+            )
+            i += 1
+            continue
+
+        if s.startswith("from "):
+            marker = " import "
+            pos = s.find(marker)
+            if pos >= 0:
+                mod_txt = s[5:pos].strip()
+                if mod_txt.startswith("."):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="relative import is not supported",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Use absolute import form: `from module import name`.",
+                    )
+        m_import_from: re.Match | None = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
+        if m_import_from is not None:
+            mod_name = re.strip_group(m_import_from, 1)
+            names_txt = re.strip_group(m_import_from, 2)
+            if names_txt == "*":
+                pending_blank_count = _sh_push_stmt_with_trivia(
+                    stmts,
+                    pending_leading_trivia,
+                    pending_blank_count,
+                    {
+                        "kind": "ImportFrom",
+                        "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
+                        "module": mod_name,
+                        "names": [{"name": "*", "asname": None}],
+                        "level": 0,
+                    },
+                )
+                i += 1
+                continue
+            raw_parts: list[str] = []
+            for p in names_txt.split(","):
+                p2: str = p.strip()
+                if p2 != "":
+                    raw_parts.append(p2)
+            if len(raw_parts) == 0:
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message="from-import statement has no symbol names",
+                    source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                    hint="Use `from module import name` form.",
+                )
+            aliases: list[dict[str, str | None]] = []
+            for part in raw_parts:
+                parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
+                if parsed_alias is None:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"unsupported from-import clause: {part}",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Use `from module import name` or `... as alias`.",
+                    )
+                sym_name, as_name_txt = parsed_alias
+                alias_item: dict[str, str | None] = {"name": sym_name, "asname": None}
+                if as_name_txt != "":
+                    alias_item["asname"] = as_name_txt
+                aliases.append(alias_item)
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                {
+                    "kind": "ImportFrom",
+                    "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
+                    "module": mod_name,
+                    "names": aliases,
+                    "level": 0,
+                },
+            )
+            i += 1
             continue
 
         if s.startswith("with ") and s.endswith(":"):
@@ -4375,8 +4571,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         line_idx += 1
     top_merged_lines, top_merged_end = _sh_merge_logical_lines(top_lines)
     top_merged_map: dict[int, str] = {}
-    for top_ln_no, top_txt in top_merged_lines:
+    top_merged_index: dict[int, int] = {}
+    for top_idx, top_pair in enumerate(top_merged_lines):
+        top_ln_no, top_txt = top_pair
         top_merged_map[int(top_ln_no)] = str(top_txt)
+        top_merged_index[int(top_ln_no)] = int(top_idx)
     i = 1
     while i <= len(lines):
         ln_obj = top_merged_map.get(i, lines[i - 1])
@@ -5066,6 +5265,83 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = j
             continue
 
+        top_indent = len(ln) - len(ln.lstrip(" "))
+        if s.startswith("if ") and s.endswith(":"):
+            cur_idx_obj = top_merged_index.get(i)
+            if isinstance(cur_idx_obj, int):
+                cur_idx = int(cur_idx_obj)
+                then_block, j_idx = _sh_collect_indented_block(top_merged_lines, cur_idx + 1, top_indent)
+                if len(then_block) == 0:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="if body is missing in 'module'",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Add indented if-body.",
+                    )
+                _else_stmt_list, j_idx = _sh_parse_if_tail(
+                    start_idx=j_idx,
+                    parent_indent=top_indent,
+                    body_lines=top_merged_lines,
+                    name_types={},
+                    scope_label="module",
+                )
+                stmt_chunk = top_merged_lines[cur_idx:j_idx]
+                parsed_items = _sh_parse_stmt_block(stmt_chunk, name_types={}, scope_label="module")
+                if not first_item_attached and len(parsed_items) > 0:
+                    first_item = parsed_items[0]
+                    if isinstance(first_item, dict):
+                        first_item["leading_comments"] = list(leading_file_comments)
+                        first_item["leading_trivia"] = list(leading_file_trivia)
+                        first_item_attached = True
+                for parsed_item in parsed_items:
+                    body_items.append(parsed_item)
+                if j_idx < len(top_merged_lines):
+                    i = int(top_merged_lines[j_idx][0])
+                else:
+                    i = len(lines) + 1
+                continue
+
+        if s.startswith("for "):
+            cur_idx_obj = top_merged_index.get(i)
+            if isinstance(cur_idx_obj, int):
+                cur_idx = int(cur_idx_obj)
+                for_full = s[len("for ") :].strip()
+                inline_for = False
+                if not for_full.endswith(":"):
+                    inline_for = _sh_split_top_level_colon(for_full) is not None
+                j_idx = cur_idx + 1
+                if for_full.endswith(":"):
+                    body_block, j_idx = _sh_collect_indented_block(top_merged_lines, cur_idx + 1, top_indent)
+                    if len(body_block) == 0:
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message="for body is missing in 'module'",
+                            source_span=_sh_span(i, 0, len(ln)),
+                            hint="Add indented for-body.",
+                        )
+                elif not inline_for:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse for statement: {s}",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Use `for target in iterable:` form.",
+                    )
+                stmt_chunk = top_merged_lines[cur_idx:j_idx]
+                parsed_items = _sh_parse_stmt_block(stmt_chunk, name_types={}, scope_label="module")
+                if not first_item_attached and len(parsed_items) > 0:
+                    first_item = parsed_items[0]
+                    if isinstance(first_item, dict):
+                        first_item["leading_comments"] = list(leading_file_comments)
+                        first_item["leading_trivia"] = list(leading_file_trivia)
+                        first_item_attached = True
+                for parsed_item in parsed_items:
+                    body_items.append(parsed_item)
+                if j_idx < len(top_merged_lines):
+                    i = int(top_merged_lines[j_idx][0])
+                else:
+                    i = len(lines) + 1
+                continue
+
         parsed_top_typed = _sh_parse_typed_binding(s, allow_dotted_name=False)
         if parsed_top_typed is not None:
             top_name, top_ann, top_default = parsed_top_typed
@@ -5102,38 +5378,30 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         asg_top = _sh_split_top_level_assign(s)
         if asg_top is not None:
             asg_left, asg_right = asg_top
-            name = asg_left.strip()
-            if not _sh_is_identifier(name):
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser cannot parse top-level statement: {s}",
-                    source_span=_sh_span(i, 0, len(ln)),
-                    hint="Use def/class/top-level typed assignment/main guard.",
-                )
+            target_txt = asg_left.strip()
             expr_txt = asg_right.strip()
             expr_col = ln.find(expr_txt)
             if expr_col < 0:
                 expr_col = 0
+            target_col = ln.find(target_txt)
+            if target_col < 0:
+                target_col = 0
+            target_node = _sh_parse_expr_lowered(target_txt, ln_no=i, col=target_col, name_types={})
             val_node = _sh_parse_expr_lowered(expr_txt, ln_no=i, col=expr_col, name_types={})
             decl_type = str(val_node.get("resolved_type", "unknown"))
+            declare_name = isinstance(target_node, dict) and target_node.get("kind") == "Name"
+            assign_item: dict[str, Any] = {
+                "kind": "Assign",
+                "source_span": _sh_span(i, target_col, len(ln)),
+                "target": target_node,
+                "value": val_node,
+                "declare": declare_name,
+                "decl_type": decl_type if declare_name else None,
+            }
+            if declare_name:
+                assign_item["declare_init"] = True
             body_items.append(
-                {
-                    "kind": "Assign",
-                    "source_span": _sh_span(i, ln.find(name), len(ln)),
-                    "target": {
-                        "kind": "Name",
-                        "source_span": _sh_span(i, ln.find(name), ln.find(name) + len(name)),
-                        "resolved_type": decl_type,
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": name,
-                        "id": name,
-                    },
-                    "value": val_node,
-                    "declare": True,
-                    "declare_init": True,
-                    "decl_type": decl_type,
-                }
+                assign_item
             )
             i = logical_end + 1
             continue

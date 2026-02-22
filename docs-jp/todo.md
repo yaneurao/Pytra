@@ -134,7 +134,7 @@ py2cpp / py2rs 共通化候補:
 2. [x] [ID: P3-MSP-02] `materials/microgpt/microgpt-20260222.py` を無改変で `py2cpp` に入力したときの失敗要因を再現・列挙し、改変で迂回していた箇所を実装タスクへ置き換える。
 3. [ ] [ID: P3-MSP-03] `work/tmp/microgpt-20260222-lite.py` 依存を縮退し、原本 `materials/microgpt/microgpt-20260222.py` で transpile -> `g++ -fsyntax-only` が通る回帰導線を整備する。
 4. [x] [ID: P3-MSP-04] parser: 無注釈引数（`def f(x): ...`）と class 内 1 行メソッド定義（`def f(...): return ...`）の受理方針を再検討し、原本改変なしで読める範囲を拡張する。
-5. [ ] [ID: P3-MSP-05] parser: top-level `for` / tuple 同時代入 / 複数 `for` 内包の受理・lower を段階対応し、原本スクリプト構造を維持して EAST 化できるようにする。
+5. [x] [ID: P3-MSP-05] parser: top-level `for` / tuple 同時代入 / 複数 `for` 内包の受理・lower を段階対応し、原本スクリプト構造を維持して EAST 化できるようにする。
 6. [ ] [ID: P3-MSP-06] EAST/emitter: 内包内 `range(...)` の lower 不整合（`unexpected raw range Call in EAST`）を解消する。
 7. [ ] [ID: P3-MSP-07] EAST/emitter: `zip` / 内包経由で `object receiver` エラーへ落ちる型崩れ経路を再現し、型解決を安定化する。
 8. [x] [ID: P3-MSP-08] runtime/std: `open` 反復、`list.index`、`random.shuffle(list[str])` など原本依存 API の互換差分を整理し、どのレイヤで吸収するかを確定する。
@@ -144,6 +144,7 @@ py2cpp / py2rs 共通化候補:
 - `P3-MSP-01`: `materials/inbox/exec-extracted.log`（2026-02-23 00:03〜00:13）と `materials/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` の差分を照合し、改変 7 項目を parser / emitter / runtime の責務へ再分類した。入力側改変を再発させないため、各項目を実装側で吸収する方針を `docs-jp/plans/p3-microgpt-source-preservation.md` に明記。
 - `P3-MSP-02`: `python3 src/py2cpp.py materials/microgpt/microgpt-20260222.py -o work/out/msp2-microgpt.cpp` で先頭エラー（無注釈引数）を再現し、`materials/inbox/exec-extracted.log` の追跡と合わせて失敗要因 A〜F（parser 構文、EAST lower、型崩れ、runtime 互換）を列挙。改変で迂回していた論点を `P3-MSP-04`〜`P3-MSP-09` へ分解して TODO 化。
 - `P3-MSP-04`: `src/pytra/compiler/east_parts/core.py` で無注釈引数を `unknown` として受理し、`def ...: return ...` 形式の inline 定義を top-level / nested / class method で受理するよう拡張した。`python3 test/unit/test_self_hosted_signature.py`（7件成功）と `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known` を実行し、原本 `microgpt` の失敗ステージが `A`（無注釈引数）から `C`（top-level/lower ギャップ）へ進んだことを確認した。
+- `P3-MSP-05`: `src/pytra/compiler/east_parts/core.py` で top-level `if` / `for` の受理を追加し、block 内 `import` / `from ... import ...`、top-level tuple 同時代入、list comprehension の複数 `for` 句を受理するよう拡張した。`python3 test/unit/test_self_hosted_signature.py`（11件成功）と `/tmp/msp5_*` 最小再現（top-level `if` / `for` / tuple 同時代入 / 複数 `for` 内包）で通過を確認し、`python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known` で失敗先頭が `line 15` から `line 80`（lambda 既定値）へ前進したことを確認した。
 - `P3-MSP-08`: `/tmp/msp8_*` の最小再現で `open` 既定 mode 未補完、`PyFile` 反復未対応、`list.index` 未実装、`random.shuffle(list[str])` の `list<int64>` 固定束縛を確認し、吸収レイヤを `docs-jp/plans/p3-microgpt-source-preservation.md` に確定した。`random.choices(range(...))` は `unexpected raw range Call in EAST` を再現し、runtime/std ではなく `P3-MSP-06`（EAST lower）対象と分離した。
 - `P3-MSP-09`: `tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本 `materials/microgpt/microgpt-20260222.py` 固定入力の transpile/syntax-check 結果を `stage=A..F|SUCCESS` で分類する回帰導線を整備した。`python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known` で実行可能。
 

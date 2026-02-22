@@ -96,6 +96,36 @@ parser 受理拡張（P3-MSP-04）:
 4. 境界
    - 本タスクは parser 受理範囲の拡張のみを対象にし、top-level `for` / tuple 同時代入 / 複数 `for` 内包や lower 不整合は `P3-MSP-05` 以降で扱う。
 
+parser top-level/内包拡張（P3-MSP-05）:
+1. 対応内容（2026-02-23）
+   - top-level `if` / `for` を `convert_source_to_east_self_hosted` で文として受理し、式扱い（`expected token EOF`）へ落ちる経路を解消。
+   - block parser（`_sh_parse_stmt_block_mutable`）に `import` / `from ... import ...` を追加し、`if` ブロック内 import を受理。
+   - top-level 代入左辺の identifier 固定を廃止し、tuple 同時代入ターゲットを受理。
+   - list comprehension の `for` 句を複数連結で解析できるようにし、`[x for a in A for x in a]` 形式を受理。
+2. 実装箇所
+   - `src/pytra/compiler/east_parts/core.py`:
+     - `_sh_parse_stmt_block_mutable`: block 内 `Import` / `ImportFrom` 分岐を追加。
+     - `convert_source_to_east_self_hosted`: top-level `if` / `for` 分岐を追加し、`_sh_parse_stmt_block` へ委譲。
+     - top-level `asg_top` 処理: target を expression として parse する方式へ変更（tuple target 許容）。
+     - `_sh_parse_expr_lowered` list-comp 分岐: chained `for` / `if` 句を順次解析し `generators` 配列へ lower。
+3. 検証
+   - `python3 test/unit/test_self_hosted_signature.py`
+     - 追加 fixture:
+       - `test/fixtures/signature/ok_top_level_if_import.py`
+       - `test/fixtures/signature/ok_top_level_for.py`
+       - `test/fixtures/signature/ok_top_level_tuple_assign.py`
+       - `test/fixtures/signature/ok_multi_for_comp.py`
+   - 最小再現:
+     - `python3 src/py2cpp.py /tmp/msp5_top_if.py -o /tmp/msp5_top_if.cpp`
+     - `python3 src/py2cpp.py /tmp/msp5_top_for.py -o /tmp/msp5_top_for.cpp`
+     - `python3 src/py2cpp.py /tmp/msp5_top_tuple_assign.py -o /tmp/msp5_top_tuple_assign.cpp`
+     - `python3 src/py2cpp.py /tmp/msp5_multi_for_comp.py -o /tmp/msp5_multi_for_comp.cpp`
+   - 回帰導線:
+     - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+     - 先頭失敗は `line 15`（top-level `if`）から `line 80`（lambda 既定値）へ前進。
+4. 境界
+   - lambda 引数既定値（`lambda nout, nin, std=0.08: ...`）は未対応のままで、次の parser タスクへ持ち越す。
+
 runtime/std 互換差分整理（P3-MSP-08）:
 1. 再現コマンド（2026-02-23 実行）
    - `python3 src/py2cpp.py /tmp/msp8_open_default_fn.py -o /tmp/msp8_open_default_fn.cpp && g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only /tmp/msp8_open_default_fn.cpp`
@@ -143,4 +173,5 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-23: `P3-MSP-02` を実施。原本入力で先頭エラー（無注釈引数）を再現し、ログ追跡と合わせて失敗要因 A〜F を列挙。回避改変の内容を `P3-MSP-04`〜`P3-MSP-09` の実装タスクへ置換した。
 - 2026-02-23: `P3-MSP-09` を実施。`tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本固定入力の transpile/syntax-check を失敗ステージ A〜F で分類して再発検知できる導線を整備した。
 - 2026-02-23: `P3-MSP-04` を実施。無注釈引数を `unknown` 受理へ切り替え、`def ...: stmt` の inline 定義を top-level / nested / class method で受理する parser 拡張を実装。`test_self_hosted_signature.py` の追加ケース通過と、原本 `microgpt` の失敗ステージ `A -> C` 前進を確認した。
+- 2026-02-23: `P3-MSP-05` を実施。top-level `if` / `for`、tuple 同時代入、list-comp 複数 `for`、block 内 import を parser で受理するよう拡張。原本 `microgpt` の失敗先頭を `line 15` から `line 80`（lambda 既定値）へ前進させた。
 - 2026-02-23: `P3-MSP-08` を実施。`open`/`list.index`/`random.shuffle(list[str])` の最小再現を行い、runtime/std 互換差分の吸収レイヤを確定した。`random.choices(range(...))` は runtime ではなく `P3-MSP-06`（EAST lower）側で扱うと決定した。
