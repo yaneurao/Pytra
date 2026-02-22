@@ -59,7 +59,7 @@
   - class: `Enum`, `IntEnum`, `IntFlag`
   - 制約: クラス本体のメンバーは `NAME = expr` 形式を使用してください。
 - `pytra.std.random`（`random` 代替・最小実装）
-  - 関数: `seed(value)`, `random()`, `randint(a, b)`
+  - 関数: `seed(value)`, `random()`, `randint(a, b)`, `choices(population, weights, k=1)`, `gauss(mu=0.0, sigma=1.0)`, `shuffle(xs)`
 - `pytra.std.traceback`（`traceback` 代替・最小実装）
   - 関数: `format_exc()`
 
