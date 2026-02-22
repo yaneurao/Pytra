@@ -327,6 +327,25 @@ def _stmt_assigned_names(stmt: dict[str, Any]) -> list[str]:
     return out
 
 
+def _set_import_module_binding(import_modules: dict[str, str], local_name: str, module_id: str) -> None:
+    """import module alias 束縛を追加する。"""
+    if module_id == "":
+        return
+    import_modules[local_name] = module_id
+
+
+def _set_import_symbol_binding(
+    import_symbols: dict[str, dict[str, str]],
+    local_name: str,
+    module_id: str,
+    symbol: str,
+) -> None:
+    """import symbol alias 束縛を追加する。"""
+    if module_id == "" or symbol == "":
+        return
+    import_symbols[local_name] = {"module": module_id, "name": symbol}
+
+
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 """
@@ -6888,23 +6907,22 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 local_name = ent["local_name"]
                 binding_kind = ent["binding_kind"]
                 if binding_kind == "module":
-                    import_modules[local_name] = module_id
+                    _set_import_module_binding(import_modules, local_name, module_id)
                 elif binding_kind == "symbol" and export_name != "" and len(qualified_symbol_refs) == 0:
-                    import_symbols[local_name] = {"module": module_id, "name": export_name}
+                    _set_import_symbol_binding(import_symbols, local_name, module_id, export_name)
             if len(qualified_symbol_refs) > 0:
                 for ref in qualified_symbol_refs:
                     module_id = ref["module_id"]
                     symbol = ref["symbol"]
                     local_name = ref["local_name"]
-                    import_symbols[local_name] = {"module": module_id, "name": symbol}
+                    _set_import_symbol_binding(import_symbols, local_name, module_id, symbol)
         else:
             legacy_mods = _dict_any_get_dict(meta, "import_modules")
             for local_name_any, _module_id_obj in legacy_mods.items():
                 if not isinstance(local_name_any, str):
                     continue
                 module_id = _dict_any_get_str(legacy_mods, local_name_any)
-                if module_id != "":
-                    import_modules[local_name_any] = module_id
+                _set_import_module_binding(import_modules, local_name_any, module_id)
             legacy_syms = _dict_any_get_dict(meta, "import_symbols")
             for local_name_any, _sym_obj in legacy_syms.items():
                 if not isinstance(local_name_any, str):
@@ -6912,8 +6930,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 sym = _dict_any_get_dict(legacy_syms, local_name_any)
                 module_id = _dict_any_get_str(sym, "module")
                 symbol = _dict_any_get_str(sym, "name")
-                if module_id != "" and symbol != "":
-                    import_symbols[local_name_any] = {"module": module_id, "name": symbol}
+                _set_import_symbol_binding(import_symbols, local_name_any, module_id, symbol)
         out[mod_path] = {
             "functions": funcs,
             "classes": classes,
