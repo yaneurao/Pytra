@@ -19,8 +19,8 @@ Its goals are:
 - `tools/check_py2cpp_transpile.py`
   - Purpose: Batch-transpile `test/fixtures/` with `py2cpp.py` and detect failures.
 - `tools/verify_sample_outputs.py`
-  - Purpose: Compare Python and C++ execution results for `sample/py` (`stdout`/images).
-  - Main options: `--samples`, `--compile-flags`, `--ignore-stdout`
+  - Purpose: Compare C++ execution results (`stdout`/artifacts) against the golden baseline in `sample/golden/manifest.json`, so normal verification does not run Python every time.
+  - Main options: `--samples`, `--compile-flags`, `--ignore-stdout`, `--golden-manifest`, `--refresh-golden`, `--refresh-golden-only`
 - `tools/sync_todo_history_translation.py`
   - Purpose: Use `docs-jp/todo-history` as source of truth and synchronize `docs/todo-history` date-file stubs and index; detect sync gaps with `--check`.
 - `tools/verify_image_runtime_parity.py`

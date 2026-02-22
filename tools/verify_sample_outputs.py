@@ -1,27 +1,39 @@
 #!/usr/bin/env python3
+"""Verify `sample/py` outputs against C++ outputs using golden baselines.
+
+Default behavior:
+- Load baseline from `sample/golden/manifest.json`
+- Transpile+compile+run C++ and compare against the baseline
+
+Refresh behavior:
+- `--refresh-golden`: run Python samples and update golden baseline entries
+- `--refresh-golden-only`: update baselines without running C++ verification
+"""
+
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import re
-import shutil
-import struct
 import subprocess
 import tempfile
-import zlib
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 VERBOSE = False
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_GOLDEN_MANIFEST = ROOT / "sample" / "golden" / "manifest.json"
+MANIFEST_SCHEMA_VERSION = 1
 
 
 @dataclass
 class CaseResult:
     stem: str
     ok: bool
-    stdout_ok: bool
-    image_ok: bool
     message: str
 
 
@@ -35,13 +47,24 @@ def vlog(msg: str) -> None:
         print(msg, flush=True)
 
 
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        while True:
+            chunk = f.read(1024 * 1024)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def parse_output_path(stdout_text: str) -> str | None:
     m = re.search(r"^output:\s*(.+)$", stdout_text, flags=re.M)
     return m.group(1).strip() if m else None
 
 
 def normalize_stdout_for_compare(stdout_text: str) -> str:
-    """実行時間など揺らぐ行を除外して比較用に正規化する。"""
+    """Normalize stdout by removing unstable timing lines."""
     out_lines: list[str] = []
     for line in stdout_text.splitlines():
         low = line.strip().lower()
@@ -52,327 +75,121 @@ def normalize_stdout_for_compare(stdout_text: str) -> str:
 
 
 def runtime_cpp_sources() -> list[str]:
-    """runtime/cpp の C++ 実装ファイル一覧を返す（モジュール名の直書き禁止）。"""
+    """Return runtime/cpp implementation sources without hardcoded module names."""
     out: list[str] = []
+    seen: set[str] = set()
     for p in sorted(Path("src/runtime/cpp/pytra/built_in").glob("*.cpp")):
-        out.append(p.as_posix())
+        rel = p.as_posix()
+        if rel in seen:
+            continue
+        seen.add(rel)
+        out.append(rel)
     for p in sorted(Path("src/runtime/cpp/pytra").rglob("*.cpp")):
-        out.append(p.as_posix())
+        rel = p.as_posix()
+        if rel in seen:
+            continue
+        seen.add(rel)
+        out.append(rel)
     return out
 
 
-def png_raw_rgb(path: Path) -> tuple[int, int, bytes]:
-    b = path.read_bytes()
-    if b[:8] != b"\x89PNG\r\n\x1a\n":
-        raise ValueError("not a PNG file")
-    i = 8
-    w = h = bit = ctype = interlace = None
-    idat_parts: list[bytes] = []
-    while i < len(b):
-        ln = struct.unpack(">I", b[i : i + 4])[0]
-        i += 4
-        typ = b[i : i + 4]
-        i += 4
-        dat = b[i : i + ln]
-        i += ln
-        i += 4  # crc
-        if typ == b"IHDR":
-            w, h, bit, ctype, _comp, _flt, interlace = struct.unpack(">IIBBBBB", dat)
-            if bit != 8 or ctype != 2 or interlace != 0:
-                raise ValueError("unsupported PNG format (only 8-bit RGB non-interlaced)")
-        elif typ == b"IDAT":
-            idat_parts.append(dat)
-        elif typ == b"IEND":
-            break
-    if w is None or h is None:
-        raise ValueError("invalid PNG")
-    comp = zlib.decompress(b"".join(idat_parts))
-    stride = w * 3
-    out = bytearray(h * stride)
-    src = 0
-    prev = bytearray(stride)
-
-    def paeth(a: int, b_: int, c: int) -> int:
-        p = a + b_ - c
-        pa = abs(p - a)
-        pb = abs(p - b_)
-        pc = abs(p - c)
-        if pa <= pb and pa <= pc:
-            return a
-        if pb <= pc:
-            return b_
-        return c
-
-    for y in range(h):
-        f = comp[src]
-        src += 1
-        row = bytearray(comp[src : src + stride])
-        src += stride
-        if f == 1:
-            for x in range(stride):
-                row[x] = (row[x] + (row[x - 3] if x >= 3 else 0)) & 0xFF
-        elif f == 2:
-            for x in range(stride):
-                row[x] = (row[x] + prev[x]) & 0xFF
-        elif f == 3:
-            for x in range(stride):
-                left = row[x - 3] if x >= 3 else 0
-                row[x] = (row[x] + ((left + prev[x]) >> 1)) & 0xFF
-        elif f == 4:
-            for x in range(stride):
-                a = row[x - 3] if x >= 3 else 0
-                b_ = prev[x]
-                c = prev[x - 3] if x >= 3 else 0
-                row[x] = (row[x] + paeth(a, b_, c)) & 0xFF
-        elif f != 0:
-            raise ValueError(f"unknown PNG filter: {f}")
-        out[y * stride : (y + 1) * stride] = row
-        prev = row
-    return w, h, bytes(out)
+def _load_manifest(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {"schema_version": MANIFEST_SCHEMA_VERSION, "cases": {}}
+    try:
+        obj = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise RuntimeError(f"failed to parse golden manifest: {path}: {exc}") from exc
+    if not isinstance(obj, dict):
+        raise RuntimeError(f"golden manifest must be a JSON object: {path}")
+    schema = obj.get("schema_version")
+    if schema != MANIFEST_SCHEMA_VERSION:
+        raise RuntimeError(
+            f"unsupported golden manifest schema: {schema} (expected {MANIFEST_SCHEMA_VERSION})"
+        )
+    cases = obj.get("cases")
+    if not isinstance(cases, dict):
+        raise RuntimeError(f"golden manifest 'cases' must be object: {path}")
+    return obj
 
 
-def gif_lzw_decode(min_code_size: int, data: bytes) -> bytes:
-    clear = 1 << min_code_size
-    end = clear + 1
-    next_code = end + 1
-    code_size = min_code_size + 1
-
-    table: dict[int, bytes] = {i: bytes([i]) for i in range(clear)}
-
-    bitbuf = 0
-    bits = 0
-    p = 0
-
-    def read_code() -> int | None:
-        nonlocal bitbuf, bits, p
-        while bits < code_size:
-            if p >= len(data):
-                return None
-            bitbuf |= data[p] << bits
-            bits += 8
-            p += 1
-        c = bitbuf & ((1 << code_size) - 1)
-        bitbuf >>= code_size
-        bits -= code_size
-        return c
-
-    out = bytearray()
-    prev: bytes | None = None
-
-    while True:
-        c = read_code()
-        if c is None:
-            break
-        if c == clear:
-            table = {i: bytes([i]) for i in range(clear)}
-            next_code = end + 1
-            code_size = min_code_size + 1
-            prev = None
-            continue
-        if c == end:
-            break
-        if c in table:
-            entry = table[c]
-        elif c == next_code and prev is not None:
-            entry = prev + prev[:1]
-        else:
-            raise ValueError("broken GIF LZW stream")
-
-        out.extend(entry)
-        if prev is not None:
-            if next_code < 4096:
-                table[next_code] = prev + entry[:1]
-                next_code += 1
-                if next_code == (1 << code_size) and code_size < 12:
-                    code_size += 1
-        prev = entry
-    return bytes(out)
+def _save_manifest(path: Path, manifest: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    txt = json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True)
+    path.write_text(txt + "\n", encoding="utf-8")
 
 
-def gif_frames_index(path: Path) -> list[dict[str, Any]]:
-    b = path.read_bytes()
-    if not (b.startswith(b"GIF87a") or b.startswith(b"GIF89a")):
-        raise ValueError("not a GIF file")
-    i = 6
-    _w, _h, packed, _bg, _aspect = struct.unpack("<HHBBB", b[i : i + 7])
-    i += 7
-    gct_flag = (packed >> 7) & 1
-    gct_size = 2 ** ((packed & 0x07) + 1) if gct_flag else 0
-    if gct_flag:
-        i += 3 * gct_size
-
-    frames: list[dict[str, Any]] = []
-    cur_delay = 0
-
-    while i < len(b):
-        block = b[i]
-        i += 1
-        if block == 0x3B:  # trailer
-            break
-        if block == 0x21:  # extension
-            label = b[i]
-            i += 1
-            if label == 0xF9:  # GCE
-                sz = b[i]
-                i += 1
-                if sz != 4:
-                    raise ValueError("unexpected GCE size")
-                _packed = b[i]
-                delay = struct.unpack("<H", b[i + 1 : i + 3])[0]
-                _tr = b[i + 3]
-                i += 4
-                _term = b[i]
-                i += 1
-                cur_delay = int(delay)
-            else:
-                # generic sub-blocks
-                while True:
-                    sz = b[i]
-                    i += 1
-                    if sz == 0:
-                        break
-                    i += sz
-            continue
-        if block == 0x2C:  # image descriptor
-            left, top, w, h, ipacked = struct.unpack("<HHHHB", b[i : i + 9])
-            i += 9
-            lct_flag = (ipacked >> 7) & 1
-            interlace = (ipacked >> 6) & 1
-            lct_size = 2 ** ((ipacked & 0x07) + 1) if lct_flag else 0
-            if lct_flag:
-                i += 3 * lct_size
-            min_code_size = b[i]
-            i += 1
-            data = bytearray()
-            while True:
-                sz = b[i]
-                i += 1
-                if sz == 0:
-                    break
-                data.extend(b[i : i + sz])
-                i += sz
-            idx = gif_lzw_decode(min_code_size, bytes(data))
-            frames.append(
-                {
-                    "left": int(left),
-                    "top": int(top),
-                    "width": int(w),
-                    "height": int(h),
-                    "interlace": int(interlace),
-                    "delay": int(cur_delay),
-                    "index": idx,
-                }
-            )
-            cur_delay = 0
-            continue
-        raise ValueError(f"unknown GIF block marker: 0x{block:02x}")
-
-    return frames
+def _source_sha256(stem: str) -> str:
+    src = Path("sample/py") / f"{stem}.py"
+    return _sha256_file(src)
 
 
-def gif_frame_blocks(path: Path) -> list[tuple[int, int, int, int, int, int, bytes]]:
-    """Parse GIF image blocks without LZW decode.
+def _collect_python_baseline(stem: str) -> tuple[bool, str, dict[str, Any] | None]:
+    py = Path("sample/py") / f"{stem}.py"
+    if not py.exists():
+        return False, "python source missing", None
 
-    Returns tuples of:
-    (left, top, width, height, delay_cs, lzw_min_code_size, compressed_data)
-    """
-    b = path.read_bytes()
-    if not (b.startswith(b"GIF87a") or b.startswith(b"GIF89a")):
-        raise ValueError("not a GIF file")
-    i = 6
-    _w, _h, packed, _bg, _aspect = struct.unpack("<HHBBB", b[i : i + 7])
-    i += 7
-    gct_flag = (packed >> 7) & 1
-    gct_size = 2 ** ((packed & 0x07) + 1) if gct_flag else 0
-    if gct_flag:
-        i += 3 * gct_size
+    rc, py_stdout = run_cmd(["python3", str(py)], env={**os.environ, "PYTHONPATH": "src"})
+    if rc != 0:
+        return False, "python run failed", None
 
-    out: list[tuple[int, int, int, int, int, int, bytes]] = []
-    cur_delay = 0
-    while i < len(b):
-        block = b[i]
-        i += 1
-        if block == 0x3B:
-            break
-        if block == 0x21:
-            label = b[i]
-            i += 1
-            if label == 0xF9:
-                sz = b[i]
-                i += 1
-                if sz != 4:
-                    raise ValueError("unexpected GCE size")
-                _packed = b[i]
-                delay = struct.unpack("<H", b[i + 1 : i + 3])[0]
-                _tr = b[i + 3]
-                i += 4
-                _term = b[i]
-                i += 1
-                cur_delay = int(delay)
-            else:
-                while True:
-                    sz = b[i]
-                    i += 1
-                    if sz == 0:
-                        break
-                    i += sz
-            continue
-        if block == 0x2C:
-            left, top, w, h, ipacked = struct.unpack("<HHHHB", b[i : i + 9])
-            i += 9
-            lct_flag = (ipacked >> 7) & 1
-            lct_size = 2 ** ((ipacked & 0x07) + 1) if lct_flag else 0
-            if lct_flag:
-                i += 3 * lct_size
-            min_code_size = int(b[i])
-            i += 1
-            data = bytearray()
-            while True:
-                sz = b[i]
-                i += 1
-                if sz == 0:
-                    break
-                data.extend(b[i : i + sz])
-                i += sz
-            out.append((int(left), int(top), int(w), int(h), int(cur_delay), min_code_size, bytes(data)))
-            cur_delay = 0
-            continue
-        raise ValueError(f"unknown GIF block marker: 0x{block:02x}")
-    return out
+    stdout_norm = normalize_stdout_for_compare(py_stdout)
+    out_path_txt = parse_output_path(py_stdout)
+
+    artifact_obj: dict[str, Any] | None = None
+    if out_path_txt is not None:
+        out_path = Path(out_path_txt)
+        if not out_path.exists() or not out_path.is_file():
+            return False, f"python output artifact missing: {out_path_txt}", None
+        artifact_obj = {
+            "suffix": out_path.suffix.lower(),
+            "sha256": _sha256_file(out_path),
+            "size": int(out_path.stat().st_size),
+        }
+
+    baseline = {
+        "source_rel": py.as_posix(),
+        "source_sha256": _source_sha256(stem),
+        "stdout_normalized": stdout_norm,
+        "stdout_sha256": hashlib.sha256(stdout_norm.encode("utf-8")).hexdigest(),
+        "artifact": artifact_obj,
+    }
+    return True, "baseline updated", baseline
 
 
-def compare_images(py_img: Path, cpp_img: Path) -> tuple[bool, str]:
-    ext = py_img.suffix.lower()
-    if ext != cpp_img.suffix.lower():
-        return False, f"suffix mismatch: {py_img.suffix} vs {cpp_img.suffix}"
-    same = py_img.read_bytes() == cpp_img.read_bytes()
-    return (same, "binary equal" if same else "binary differ")
-
-
-def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdout: bool = False) -> CaseResult:
-    import time
+def _verify_cpp_against_baseline(
+    stem: str,
+    *,
+    baseline: dict[str, Any],
+    work: Path,
+    compile_flags: list[str],
+    ignore_stdout: bool,
+) -> CaseResult:
     py = Path("sample/py") / f"{stem}.py"
     cpp = work / f"{stem}.cpp"
     exe = work / f"{stem}.out"
 
-    t0 = time.time()
-    vlog(f"[{stem}] python run start")
-    rc, py_stdout = run_cmd(["python3", str(py)], env={**os.environ, "PYTHONPATH": "src"})
-    vlog(f"[{stem}] python run done ({time.time()-t0:.2f}s)")
-    if rc != 0:
-        return CaseResult(stem, False, False, False, "python run failed")
-    py_out = parse_output_path(py_stdout)
+    baseline_src_sha = str(baseline.get("source_sha256", ""))
+    current_src_sha = _source_sha256(stem)
+    if baseline_src_sha != current_src_sha:
+        return CaseResult(
+            stem,
+            False,
+            "golden is stale for current source (run --refresh-golden)",
+        )
 
     t1 = time.time()
     vlog(f"[{stem}] transpile start")
     rc, transpile_out = run_cmd(["python3", "src/py2cpp.py", str(py), "-o", str(cpp)])
-    vlog(f"[{stem}] transpile done ({time.time()-t1:.2f}s)")
+    vlog(f"[{stem}] transpile done ({time.time() - t1:.2f}s)")
     if rc != 0:
-        return CaseResult(stem, False, False, False, "transpile failed")
+        first = transpile_out.strip().splitlines()
+        msg = first[0] if len(first) > 0 else "transpile failed"
+        return CaseResult(stem, False, f"transpile failed: {msg}")
 
-    t1 = time.time()
+    t2 = time.time()
     vlog(f"[{stem}] cpp compile start")
-    rc, _ = run_cmd(
+    rc, compile_out = run_cmd(
         [
             "g++",
             "-std=c++20",
@@ -387,41 +204,62 @@ def verify_case(stem: str, *, work: Path, compile_flags: list[str], ignore_stdou
             str(exe),
         ]
     )
-    vlog(f"[{stem}] cpp compile done ({time.time()-t1:.2f}s)")
+    vlog(f"[{stem}] cpp compile done ({time.time() - t2:.2f}s)")
     if rc != 0:
-        return CaseResult(stem, False, False, False, "cpp compile failed")
-    t2 = time.time()
+        first = compile_out.strip().splitlines()
+        msg = first[0] if len(first) > 0 else "cpp compile failed"
+        return CaseResult(stem, False, f"cpp compile failed: {msg}")
+
+    t3 = time.time()
     vlog(f"[{stem}] cpp run start")
     rc, cpp_stdout = run_cmd([str(exe)])
-    vlog(f"[{stem}] cpp run done ({time.time()-t2:.2f}s)")
+    vlog(f"[{stem}] cpp run done ({time.time() - t3:.2f}s)")
     if rc != 0:
-        return CaseResult(stem, False, False, False, "cpp run failed")
+        first = cpp_stdout.strip().splitlines()
+        msg = first[0] if len(first) > 0 else "cpp run failed"
+        return CaseResult(stem, False, f"cpp run failed: {msg}")
 
-    cpp_out = parse_output_path(cpp_stdout)
+    # stdout compare
+    if not ignore_stdout:
+        cpp_norm = normalize_stdout_for_compare(cpp_stdout)
+        expected_norm = str(baseline.get("stdout_normalized", ""))
+        if cpp_norm != expected_norm:
+            return CaseResult(stem, False, "stdout mismatch vs golden")
 
-    if ignore_stdout:
-        stdout_ok = True
-    else:
-        stdout_ok = normalize_stdout_for_compare(py_stdout) == normalize_stdout_for_compare(cpp_stdout)
-    image_ok = True
-    msg = "no image output"
-    if py_out is None and cpp_out is None:
-        image_ok = True
-    elif py_out is None or cpp_out is None:
-        image_ok = False
-        msg = "output path presence mismatch"
-    else:
-        t3 = time.time()
-        vlog(f"[{stem}] image compare start")
-        py_img = work / f"{stem}.py{Path(py_out).suffix.lower()}"
-        cpp_img = work / f"{stem}.cpp{Path(cpp_out).suffix.lower()}"
-        shutil.copyfile(py_out, py_img)
-        shutil.copyfile(cpp_out, cpp_img)
-        image_ok, msg = compare_images(py_img, cpp_img)
-        vlog(f"[{stem}] image compare done ({time.time()-t3:.2f}s)")
-    ok = stdout_ok and image_ok
-    detail = [f"stdout={'skip' if ignore_stdout else ('ok' if stdout_ok else 'diff')}", f"image={'ok' if image_ok else 'diff'}", msg]
-    return CaseResult(stem, ok, stdout_ok, image_ok, ", ".join(detail))
+    # artifact compare
+    expected_artifact_obj = baseline.get("artifact")
+    cpp_out_txt = parse_output_path(cpp_stdout)
+
+    if expected_artifact_obj is None:
+        if cpp_out_txt is None:
+            return CaseResult(stem, True, "stdout=ok image=none")
+        return CaseResult(stem, False, "artifact presence mismatch (golden:none, cpp:exists)")
+
+    if not isinstance(expected_artifact_obj, dict):
+        return CaseResult(stem, False, "invalid golden artifact metadata")
+    if cpp_out_txt is None:
+        return CaseResult(stem, False, "artifact presence mismatch (golden:exists, cpp:none)")
+
+    cpp_artifact = Path(cpp_out_txt)
+    if not cpp_artifact.exists() or not cpp_artifact.is_file():
+        return CaseResult(stem, False, f"cpp output artifact missing: {cpp_out_txt}")
+
+    expected_suffix = str(expected_artifact_obj.get("suffix", ""))
+    expected_sha = str(expected_artifact_obj.get("sha256", ""))
+    expected_size = int(expected_artifact_obj.get("size", -1))
+
+    actual_suffix = cpp_artifact.suffix.lower()
+    actual_sha = _sha256_file(cpp_artifact)
+    actual_size = int(cpp_artifact.stat().st_size)
+
+    if expected_suffix != actual_suffix:
+        return CaseResult(stem, False, f"artifact suffix mismatch: {expected_suffix} vs {actual_suffix}")
+    if expected_size != actual_size:
+        return CaseResult(stem, False, f"artifact size mismatch: {expected_size} vs {actual_size}")
+    if expected_sha != actual_sha:
+        return CaseResult(stem, False, "artifact hash mismatch")
+
+    return CaseResult(stem, True, "stdout=ok image=ok")
 
 
 def main() -> int:
@@ -429,8 +267,28 @@ def main() -> int:
     ap.add_argument("--samples", nargs="*", default=None, help="sample stems (e.g. 01_mandelbrot)")
     ap.add_argument("--compile-flags", default="-O2", help="extra g++ compile flags (space-separated)")
     ap.add_argument("--verbose", action="store_true", help="print phase timings")
-    ap.add_argument("--ignore-stdout", action="store_true", help="judge only image parity and ignore stdout differences")
+    ap.add_argument("--ignore-stdout", action="store_true", help="judge only artifact parity and ignore stdout differences")
+    ap.add_argument(
+        "--golden-manifest",
+        default=str(DEFAULT_GOLDEN_MANIFEST),
+        help="golden manifest JSON path",
+    )
+    ap.add_argument(
+        "--refresh-golden",
+        action="store_true",
+        help="run Python samples and refresh golden baseline entries",
+    )
+    ap.add_argument(
+        "--refresh-golden-only",
+        action="store_true",
+        help="with --refresh-golden, refresh baseline only (skip C++ transpile/compile/run)",
+    )
     args = ap.parse_args()
+
+    if args.refresh_golden_only and not args.refresh_golden:
+        print("[ERROR] --refresh-golden-only requires --refresh-golden")
+        return 2
+
     global VERBOSE
     VERBOSE = args.verbose
 
@@ -441,22 +299,68 @@ def main() -> int:
 
     compile_flags = [x for x in args.compile_flags.split(" ") if x]
 
+    manifest_path = Path(args.golden_manifest)
+    try:
+        manifest = _load_manifest(manifest_path)
+    except RuntimeError as exc:
+        print(f"[ERROR] {exc}")
+        return 2
+
+    cases_obj = manifest.get("cases")
+    if not isinstance(cases_obj, dict):
+        print("[ERROR] golden manifest 'cases' must be object")
+        return 2
+
     work = Path(tempfile.mkdtemp(prefix="pytra_verify_sample_"))
     print(f"work={work}")
 
     ok = 0
     ng = 0
+    updated = 0
+
     for stem in stems:
-        r = verify_case(stem, work=work, compile_flags=compile_flags, ignore_stdout=args.ignore_stdout)
-        if r.ok:
+        baseline_obj: dict[str, Any] | None = None
+
+        if args.refresh_golden:
+            good, msg, baseline_new = _collect_python_baseline(stem)
+            if not good or baseline_new is None:
+                ng += 1
+                print(f"NG {stem}: {msg}")
+                continue
+            cases_obj[stem] = baseline_new
+            baseline_obj = baseline_new
+            updated += 1
+            if args.refresh_golden_only:
+                ok += 1
+                print(f"OK {stem}: golden refreshed")
+                continue
+
+        if baseline_obj is None:
+            baseline_raw = cases_obj.get(stem)
+            if not isinstance(baseline_raw, dict):
+                ng += 1
+                print(f"NG {stem}: golden baseline missing (run --refresh-golden)")
+                continue
+            baseline_obj = baseline_raw
+
+        result = _verify_cpp_against_baseline(
+            stem,
+            baseline=baseline_obj,
+            work=work,
+            compile_flags=compile_flags,
+            ignore_stdout=args.ignore_stdout,
+        )
+        if result.ok:
             ok += 1
-            status = "OK"
+            print(f"OK {stem}: {result.message}")
         else:
             ng += 1
-            status = "NG"
-        print(f"{status} {stem}: {r.message}")
+            print(f"NG {stem}: {result.message}")
 
-    print(f"SUMMARY OK={ok} NG={ng}")
+    if args.refresh_golden:
+        _save_manifest(manifest_path, manifest)
+
+    print(f"SUMMARY OK={ok} NG={ng} UPDATED={updated}")
     return 0 if ng == 0 else 1
 
 

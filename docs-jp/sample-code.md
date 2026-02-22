@@ -60,8 +60,9 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 ## 6. 画像一致に関する補足
 
-- 画像サンプルの一致判定は、Python 実行結果と C++ 実行結果の **出力ファイルバイト列完全一致** を基準とします。
-- PNG/GIF を区別せず、バイト列不一致は不一致（要修正）として扱います。
+- `tools/verify_sample_outputs.py` は `sample/golden/manifest.json` を基準に、C++ 実行結果（`stdout` / 生成物）を照合します。
+- 通常実行では Python を毎回実行せず、ゴールデン更新時だけ Python 実行を使います。
+- 生成物は `suffix` / `size` / `sha256` で照合し、実質的にバイト列一致を確認します。
 
 画像一致検証を自動実行する場合:
 
@@ -69,11 +70,17 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 python3 tools/verify_sample_outputs.py --compile-flags="-O2"
 ```
 
-- `stdout` 差分と、画像ファイルのバイト列差分をまとめて確認できます。
-- `sample/12_sort_visualizer` と `sample/16_glass_sculpture_chaos` では、GIF フレームブロック（遅延値 + LZW 圧縮データ）が一致することを確認済みです。
+- `stdout` 差分と、画像ファイル（`sha256` / `size` / `suffix`）差分をまとめて確認できます。
+- ソース更新でゴールデンが古くなっている場合は `run --refresh-golden` を促すエラーになります。
 
 実行時間などの `stdout` 差分を無視して、画像一致のみ確認したい場合:
 
 ```bash
 python3 tools/verify_sample_outputs.py --ignore-stdout --compile-flags="-O2"
+```
+
+ゴールデン基準を更新したい場合（Python 実行で再生成）:
+
+```bash
+python3 tools/verify_sample_outputs.py --refresh-golden --refresh-golden-only
 ```

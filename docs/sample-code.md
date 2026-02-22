@@ -59,8 +59,9 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 ## 6. Notes On Image Matching
 
-- Image sample parity is judged by **exact output-file byte match** between Python and C++ execution outputs.
-- PNG/GIF are treated uniformly; byte mismatch means mismatch (needs fix).
+- `tools/verify_sample_outputs.py` compares C++ execution results (`stdout` / artifacts) against `sample/golden/manifest.json`.
+- In normal runs, Python is not executed every time; Python runs only when refreshing golden baselines.
+- Artifacts are checked by `suffix` / `size` / `sha256`, which effectively enforces byte-level parity.
 
 To run image parity checks automatically:
 
@@ -68,8 +69,8 @@ To run image parity checks automatically:
 python3 tools/verify_sample_outputs.py --compile-flags="-O2"
 ```
 
-- You can inspect both `stdout` diffs and image-file byte diffs together.
-- For `sample/12_sort_visualizer` and `sample/16_glass_sculpture_chaos`, matching GIF frame blocks (delay values + LZW compressed data) has been confirmed.
+- You can inspect both `stdout` diffs and artifact diffs (`sha256` / `size` / `suffix`) together.
+- If the source changed and golden is stale, the command fails and asks you to run `--refresh-golden`.
 
 If you want to ignore `stdout` diffs such as elapsed time and check image parity only:
 
@@ -77,3 +78,8 @@ If you want to ignore `stdout` diffs such as elapsed time and check image parity
 python3 tools/verify_sample_outputs.py --ignore-stdout --compile-flags="-O2"
 ```
 
+To refresh golden baselines by running Python outputs:
+
+```bash
+python3 tools/verify_sample_outputs.py --refresh-golden --refresh-golden-only
+```

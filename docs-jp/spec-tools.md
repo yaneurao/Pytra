@@ -47,8 +47,8 @@
 - `tools/sync_todo_history_translation.py`
   - 目的: `docs-jp/todo-history` を正本として `docs/todo-history` の日付ファイル雛形と index を同期し、`--check` で同期漏れを検出する。
 - `tools/verify_sample_outputs.py`
-  - 目的: `sample/py` の Python 実行結果と C++ 実行結果（stdout/画像）を比較する。
-  - 主要オプション: `--samples`, `--compile-flags`, `--ignore-stdout`
+  - 目的: `sample/golden/manifest.json` のゴールデン基準と C++ 実行結果（stdout/生成物）を比較し、通常検証で Python 実行を省略する。
+  - 主要オプション: `--samples`, `--compile-flags`, `--ignore-stdout`, `--golden-manifest`, `--refresh-golden`, `--refresh-golden-only`
 - `tools/verify_image_runtime_parity.py`
   - 目的: 画像ランタイム（PNG/GIF）の Python 正本と C++ 側の一致を確認する。
 

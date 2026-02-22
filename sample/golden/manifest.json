@@ -1,0 +1,173 @@
+{
+  "cases": {
+    "01_mandelbrot": {
+      "artifact": {
+        "sha256": "e6aca5871534f87f6b5de2cd0483fcf4ccaf7d6236f0690781c1558f8dc71cfc",
+        "size": 5761703,
+        "suffix": ".png"
+      },
+      "source_rel": "sample/py/01_mandelbrot.py",
+      "source_sha256": "d735bb566958265bd37639578a7e71abb1011a740b48090fd1cccc4d805354dd",
+      "stdout_normalized": "output: sample/out/mandelbrot_01.png\nsize: 1600 x 1200\nmax_iter: 1000",
+      "stdout_sha256": "fe4b185076b37209faf67fba8a491839e9e971325186a801b98a9357a6d7e3e2"
+    },
+    "02_raytrace_spheres": {
+      "artifact": {
+        "sha256": "de15cf06fd45a9a95bfa72f8cd0aa128bc4055ff2e39d760aaab5c4fc07a142e",
+        "size": 4321293,
+        "suffix": ".png"
+      },
+      "source_rel": "sample/py/02_raytrace_spheres.py",
+      "source_sha256": "fb7a2a9f2b7fed57ecf329892d03f05f452f8efb2c8794f3f46be9f50116b6a5",
+      "stdout_normalized": "output: sample/out/raytrace_02.png\nsize: 1600 x 900",
+      "stdout_sha256": "ff6a5f5bdcbf1d7bd94ea9838a1f834670dd280e83356dd705a1743d2edc3145"
+    },
+    "03_julia_set": {
+      "artifact": {
+        "sha256": "aac294aaa75ab1f903c3691cd0f63c8bb1ee03940fed89aaf35b574e455276a7",
+        "size": 24887323,
+        "suffix": ".png"
+      },
+      "source_rel": "sample/py/03_julia_set.py",
+      "source_sha256": "b46263b0f2cc64b7a95692b89d0d1211cd1f8114169f989039f19d335d7ff3e4",
+      "stdout_normalized": "output: sample/out/julia_03.png\nsize: 3840 x 2160\nmax_iter: 20000",
+      "stdout_sha256": "5903020424fb14dacdca8481182c1405b66e697e0ed4ea4fd3c43d851cf29b69"
+    },
+    "04_monte_carlo_pi": {
+      "artifact": null,
+      "source_rel": "sample/py/04_monte_carlo_pi.py",
+      "source_sha256": "beb3ca668202849d6e0e1f3d2cda8ccd914cb56e5991558fe2cf930a7e08ee2b",
+      "stdout_normalized": "pixels: 3840000\nchecksum: 45839292",
+      "stdout_sha256": "fb52b8a70e80e77cc774dc4a5b7f78af797681214a2331fba3579d672c30b153"
+    },
+    "05_mandelbrot_zoom": {
+      "artifact": {
+        "sha256": "9dea81189309de3024d381a0bd876946755c79b5f0d3b24ee3f33e8418cf3f68",
+        "size": 8328849,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/05_mandelbrot_zoom.py",
+      "source_sha256": "f06d76be0446ae48b5da52bd46bbce84f8be5ea56ad9efcf070b10ba937f918e",
+      "stdout_normalized": "output: sample/out/05_mandelbrot_zoom.gif\nframes: 48",
+      "stdout_sha256": "a23cd895d4825638bf51d7b10a92986c3e279544b44bcaaaec5f8e1d81a2ed6b"
+    },
+    "06_julia_parameter_sweep": {
+      "artifact": {
+        "sha256": "66356d4a196d5c765769e78f367374d6b0eef2566fc3a16e34112961391873f9",
+        "size": 12492873,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/06_julia_parameter_sweep.py",
+      "source_sha256": "25006d3313cae9d5de595bf44b9322ff43d2495ad822bfe6ddc8850e8164395d",
+      "stdout_normalized": "output: sample/out/06_julia_parameter_sweep.gif\nframes: 72",
+      "stdout_sha256": "dee8b45a3cfc452be4f5f5ecf260eef432fef4a0043190949d0b1229bc70bd1a"
+    },
+    "07_game_of_life_loop": {
+      "artifact": {
+        "sha256": "9993def8d6da1689fc70c143a63bc0e9be90a6b60cabab735204d9f627459771",
+        "size": 118039911,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/07_game_of_life_loop.py",
+      "source_sha256": "9a188079f55c795afa807c1a18b9f3f96e86b24063dea9200a248a61679a206a",
+      "stdout_normalized": "output: sample/out/07_game_of_life_loop.gif\nframes: 210",
+      "stdout_sha256": "32215e86f7a253a0d77105461e26dc20ff277e523cb962825425cd05134543ee"
+    },
+    "08_langtons_ant": {
+      "artifact": {
+        "sha256": "17a691da370f230185d828c094e686ccb4aa3858ebbad550f9b1784554ebab16",
+        "size": 79696801,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/08_langtons_ant.py",
+      "source_sha256": "519b2afad4c14adb701dd2f7cc09ba5c0af5dc9b7370642ec1839cc5245af010",
+      "stdout_normalized": "output: sample/out/08_langtons_ant.gif\nframes: 200",
+      "stdout_sha256": "bb3f8162844ba28bc6543ab527e587dadf21260571676cb6c4a4b586c2fbd5c0"
+    },
+    "09_fire_simulation": {
+      "artifact": {
+        "sha256": "da956d498ef5e2100003441322572b4dca3bf63cf78aadd7772b89141bc386a1",
+        "size": 93742701,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/09_fire_simulation.py",
+      "source_sha256": "0cfcdf8d95d9c272a15f3eb9aac0c82d9cf13c336d9a598d10a455bb34a512f5",
+      "stdout_normalized": "output: sample/out/09_fire_simulation.gif\nframes: 420",
+      "stdout_sha256": "f944a1322ab44739eec663692afb4f070051f117b635f057ec64eba0baaff29c"
+    },
+    "10_plasma_effect": {
+      "artifact": {
+        "sha256": "2ac8a0a7d2ced8d1fd9c34f19d528af61354d09c0efe1543289fc9ae24799752",
+        "size": 37477017,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/10_plasma_effect.py",
+      "source_sha256": "80ed68cfae4fb6f2e387dd574397732044d1f3cc1feb81a416e59d84698ca0a8",
+      "stdout_normalized": "output: sample/out/10_plasma_effect.gif\nframes: 216",
+      "stdout_sha256": "0d70d8e084928381ee7281749b5f58bb65d6b4eebaee3bdf6c201788aee5a50d"
+    },
+    "11_lissajous_particles": {
+      "artifact": {
+        "sha256": "1b0b7eb839a334956d22e47ed44a81d65e54b27490c7a781020f1d774b5da75d",
+        "size": 62461161,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/11_lissajous_particles.py",
+      "source_sha256": "00d50519e965660fe5078201605d8006561c604c78d22f5c4d92cec6335d856b",
+      "stdout_normalized": "output: sample/out/11_lissajous_particles.gif\nframes: 360",
+      "stdout_sha256": "2bdfef1c6cd78b0ff6f9cd4d9aa6e9e0bc436076d61757fdfe33df63270cc1c2"
+    },
+    "12_sort_visualizer": {
+      "artifact": {
+        "sha256": "3e8431a01c09c7d75ea0b64fc0ed2483e612e3aab66d610cd4c293d9e5665153",
+        "size": 122715277,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/12_sort_visualizer.py",
+      "source_sha256": "96d544a67f8689fa9cd5911b89f92f562ee0dc17798ed47c0ce7cf66a1600fc3",
+      "stdout_normalized": "output: sample/out/12_sort_visualizer.gif\nframes: 943",
+      "stdout_sha256": "b59486d9d91cde3c6f819a3ec1091da792da908f7a7ee45beed4692264aad099"
+    },
+    "13_maze_generation_steps": {
+      "artifact": {
+        "sha256": "352b30b89adb52eb41e54e7dd7ffb238d27a3d4c7576639775f6b409d0c35410",
+        "size": 49504080,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/13_maze_generation_steps.py",
+      "source_sha256": "941e0ff0381f3ac92cd063364d5bf4c44945046178727bde5339691112f1309d",
+      "stdout_normalized": "output: sample/out/13_maze_generation_steps.gif\nframes: 147",
+      "stdout_sha256": "7beaee754888d76b2f7001cbe866d351adadc1db7e4dbff2f9f5c9333d95b492"
+    },
+    "14_raymarching_light_cycle": {
+      "artifact": {
+        "sha256": "1b90c59b4d54ef095250b544ef6b16df7449fe48334efc41cc2977f1199ad3d4",
+        "size": 14574885,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/14_raymarching_light_cycle.py",
+      "source_sha256": "340f96e30fe289cd3b49182680b2935684db032f2920f7411c0a1c9a159fe74c",
+      "stdout_normalized": "output: sample/out/14_raymarching_light_cycle.gif\nframes: 84",
+      "stdout_sha256": "cfd143d0aaa58baf5eec8e17864761fe7270eb6187c0c3d4b99574f5b2397a85"
+    },
+    "15_mini_language_interpreter": {
+      "artifact": null,
+      "source_rel": "sample/py/15_mini_language_interpreter.py",
+      "source_sha256": "7ef40df8bcc5aa53bf2d3a3bd73470acd952db6a3d170fdfe824903270e31371",
+      "stdout_normalized": "26\n8\nprinted: 2\ndemo_checksum: 3414\ntoken_count: 1683886\nexpr_count: 1081277\nstmt_count: 121271\nchecksum: 803546542",
+      "stdout_sha256": "0b8ab7e7cf9ac2af7ffaefc0486908b0d35cab9735dc936a296bf29e60b2f32f"
+    },
+    "16_glass_sculpture_chaos": {
+      "artifact": {
+        "sha256": "951023edf5bb3266088a9abd71f594752fa4b6d5eadc59b856029976b5b57779",
+        "size": 12492873,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/16_glass_sculpture_chaos.py",
+      "source_sha256": "6de38b145e163c14919db25cbc18dff7d68d204e23a268606cfd3bd347ae5e33",
+      "stdout_normalized": "output: sample/out/16_glass_sculpture_chaos.gif\nframes: 72",
+      "stdout_sha256": "0df206633ba5fd907422a60aa947680878c78fef73bb1469623e3ad40d2a39d0"
+    }
+  },
+  "schema_version": 1
+}
