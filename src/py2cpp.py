@@ -299,6 +299,13 @@ def _assign_targets(stmt: dict[str, Any]) -> list[dict[str, Any]]:
     return []
 
 
+def _name_target_id(target: dict[str, Any]) -> str:
+    """代入先が Name のとき識別子を返す。"""
+    if _dict_any_kind(target) != "Name":
+        return ""
+    return _dict_any_get_str(target, "id")
+
+
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 """
@@ -6770,16 +6777,14 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                     exports.add(name_txt)
             elif kind == "Assign":
                 for tgt_obj in _assign_targets(st):
-                    if _dict_any_kind(tgt_obj) == "Name":
-                        name_txt = _dict_any_get_str(tgt_obj, "id")
-                        if name_txt != "":
-                            exports.add(name_txt)
-            elif kind == "AnnAssign":
-                tgt_obj = _dict_any_get_dict(st, "target")
-                if _dict_any_kind(tgt_obj) == "Name":
-                    name_txt = _dict_any_get_str(tgt_obj, "id")
+                    name_txt = _name_target_id(tgt_obj)
                     if name_txt != "":
                         exports.add(name_txt)
+            elif kind == "AnnAssign":
+                tgt_obj = _dict_any_get_dict(st, "target")
+                name_txt = _name_target_id(tgt_obj)
+                if name_txt != "":
+                    exports.add(name_txt)
         out[mod_name] = exports
     return out
 
@@ -6857,16 +6862,14 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     classes.append(name_txt)
             elif kind == "Assign":
                 for tgt_obj in _assign_targets(st):
-                    if _dict_any_kind(tgt_obj) == "Name":
-                        name_txt = _dict_any_get_str(tgt_obj, "id")
-                        if name_txt != "" and name_txt not in variables:
-                            variables.append(name_txt)
-            elif kind == "AnnAssign":
-                tgt_obj = _dict_any_get_dict(st, "target")
-                if _dict_any_kind(tgt_obj) == "Name":
-                    name_txt = _dict_any_get_str(tgt_obj, "id")
+                    name_txt = _name_target_id(tgt_obj)
                     if name_txt != "" and name_txt not in variables:
                         variables.append(name_txt)
+            elif kind == "AnnAssign":
+                tgt_obj = _dict_any_get_dict(st, "target")
+                name_txt = _name_target_id(tgt_obj)
+                if name_txt != "" and name_txt not in variables:
+                    variables.append(name_txt)
         meta = _dict_any_get_dict(east, "meta")
         import_bindings = _meta_import_bindings(east)
         qualified_symbol_refs = _meta_qualified_symbol_refs(east)
