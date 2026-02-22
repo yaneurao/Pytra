@@ -26,7 +26,7 @@
 
 進捗メモ:
 - `P0-BOX-01`: `gc.h` に `PyObj` の hook（`py_truthy` / `py_try_len` / `py_str`）を追加し、`py_runtime.h` で組み込み object（int/float/bool/str/list/dict）へ override 実装した。`obj_to_rc` / `obj_to_rc_or_raise`、`obj_to_int64_or_raise` / `obj_to_float64_or_raise` / `obj_to_str_or_raise` も導入した。
-- `P0-BOX-02`: `src/py2cpp.py` の class field attribute fallback（`Any/unknown receiver`）で `py_obj_cast<T>(...)->...` 直生成を `obj_to_rc_or_raise<T>(..., "<Class>.<field>")->...` へ切替した（経路全体の移行は継続）。
+- `P0-BOX-02`: `src/py2cpp.py` の class field attribute fallback（`Any/unknown receiver`）で `py_obj_cast<T>(...)->...` 直生成を `obj_to_rc_or_raise<T>(..., "<Class>.<field>")->...` へ切替した。
 - `P0-BOX-04`: runtime 回帰として `test/unit/test_cpp_runtime_boxing.py` を追加し、`obj_to_rc(_or_raise)` / `*_or_raise` / `py_truthy` / `py_try_len` 経路を C++ 実行で検証した。コード生成回帰として `test/unit/test_py2cpp_codegen_issues.py::test_unknown_receiver_field_access_uses_obj_to_rc_or_raise` を追加した。
 - `P0-BOX-02`: 追加で `Any/object -> ref class` の主要経路（`AnnAssign` / `Assign` / `Return` / call 引数 / `Yield`）を `obj_to_rc_or_raise` 経由へ統一した。`test/unit/test_py2cpp_codegen_issues.py` に `test_any_to_refclass_{annassign,return,call_arg}_uses_obj_to_rc_or_raise` を追加し、`py2cpp.py` 側の `py_obj_cast<...>` 直生成文字列が消滅していることを確認した。
 
