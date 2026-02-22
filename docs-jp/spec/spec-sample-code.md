@@ -1,6 +1,6 @@
 # サンプルコードについて
 
-<a href="../../docs/sample-code.md">
+<a href="../../docs/spec/spec-sample-code.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
@@ -11,16 +11,16 @@
 
 ## 2. ディレクトリ構成
 
-- [sample/py](../sample/py): 変換元 Python サンプル（現在 `01`〜`16`）
-- [sample/cpp](../sample/cpp): C++ 変換結果
-- [sample/cs](../sample/cs): C# 変換結果
-- [sample/rs](../sample/rs): Rust 変換結果
-- [sample/js](../sample/js): JavaScript 変換結果
-- [sample/ts](../sample/ts): TypeScript 変換結果
-- [sample/go](../sample/go): Go 変換結果
-- [sample/java](../sample/java): Java 変換結果
-- [sample/swift](../sample/swift): Swift 変換結果
-- [sample/kotlin](../sample/kotlin): Kotlin 変換結果
+- [sample/py](../../sample/py): 変換元 Python サンプル（現在 `01`〜`16`）
+- [sample/cpp](../../sample/cpp): C++ 変換結果
+- [sample/cs](../../sample/cs): C# 変換結果
+- [sample/rs](../../sample/rs): Rust 変換結果
+- [sample/js](../../sample/js): JavaScript 変換結果
+- [sample/ts](../../sample/ts): TypeScript 変換結果
+- [sample/go](../../sample/go): Go 変換結果
+- [sample/java](../../sample/java): Java 変換結果
+- [sample/swift](../../sample/swift): Swift 変換結果
+- [sample/kotlin](../../sample/kotlin): Kotlin 変換結果
 - `sample/obj`: 各言語のビルド生成物（Git管理外）
 - `sample/out`: 実行時の出力画像（PNG/GIF、Git管理外）
 
@@ -53,8 +53,8 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 `test/` は小規模な機能確認ケース、`sample/` は実用寄り・負荷高めケースという役割分担です。
 
-- [test/fixtures](../test/fixtures): 変換元テストコード
-- [test/unit](../test/unit): ユニットテスト
+- [test/fixtures](../../test/fixtures): 変換元テストコード
+- [test/unit](../../test/unit): ユニットテスト
 - `test/transpile/`: 変換生成物の作業ディレクトリ（Git管理外）
   - GitHub上では閲覧できません。必要な場合はローカルでトランスパイル実行して生成してください。
 

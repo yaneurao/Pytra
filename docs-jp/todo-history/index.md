@@ -1,6 +1,6 @@
 # TODO（履歴）
 
-<a href="../docs/todo-old.md">
+<a href="../../docs/todo-history/index.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 

@@ -1,6 +1,6 @@
 # LanguageProfile 仕様（CodeEmitter）
 
-<a href="../../docs/spec-language-profile.md">
+<a href="../../docs/spec/spec-language-profile.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 

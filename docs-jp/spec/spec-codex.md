@@ -1,6 +1,6 @@
 # Codex 向け運用仕様（Pytra）
 
-<a href="../../docs/spec-codex.md">
+<a href="../../docs/spec/spec-codex.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
