@@ -767,6 +767,11 @@ class CodeEmitter:
             return False
         return key in obj
 
+    @staticmethod
+    def _is_empty_dynamic_text(txt: str) -> bool:
+        """動的値から得た文字列が有効値かどうかを判定する。"""
+        return txt in {"", "None", "{}", "[]"}
+
     def any_dict_get_str(self, obj: dict[str, Any], key: str, default_value: str = "") -> str:
         """dict 風入力から文字列を取得し、失敗時は既定値を返す。"""
         if not isinstance(obj, dict):
@@ -786,7 +791,7 @@ class CodeEmitter:
         if isinstance(v, dict) or isinstance(v, list) or isinstance(v, set):
             return default_value
         s2 = str(v)
-        if s2 == "" or s2 == "None":
+        if self._is_empty_dynamic_text(s2):
             return default_value
         return s2
 
@@ -911,7 +916,7 @@ class CodeEmitter:
         if isinstance(v, dict) or isinstance(v, list) or isinstance(v, set):
             return ""
         txt = str(v)
-        if txt in {"", "None", "{}", "[]"}:
+        if self._is_empty_dynamic_text(txt):
             return ""
         return txt
 
@@ -935,12 +940,12 @@ class CodeEmitter:
                 txt = self.any_to_str(raw)
                 if txt == "":
                     txt = str(raw)
-                if txt not in {"", "None", "{}", "[]"}:
+                if not self._is_empty_dynamic_text(txt):
                     return self.normalize_type_name(txt)
             elif raw is not None and not isinstance(raw, bool) and not isinstance(raw, int) and not isinstance(raw, float):
                 if not isinstance(raw, dict) and not isinstance(raw, list) and not isinstance(raw, set):
                     txt2 = str(raw)
-                    if txt2 not in {"", "None", "{}", "[]"}:
+                    if not self._is_empty_dynamic_text(txt2):
                         return self.normalize_type_name(txt2)
         return ""
 
@@ -961,7 +966,7 @@ class CodeEmitter:
         if isinstance(raw, dict) or isinstance(raw, list) or isinstance(raw, set):
             return ""
         txt = str(raw)
-        if txt in {"", "None", "{}", "[]"}:
+        if self._is_empty_dynamic_text(txt):
             return ""
         return txt
 

@@ -141,6 +141,7 @@ py2cpp / py2rs 共通化候補:
 
 進捗メモ:
 - `P3-CE-01` の一部として `src/pytra/compiler/east_parts/code_emitter.py` の `escape_string_for_literal`、`render_compare_chain_common`、`load_import_bindings_from_meta` を `for` ベースへ置換した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
+- `P3-CE-02` の一部として `src/pytra/compiler/east_parts/code_emitter.py` に `_is_empty_dynamic_text` を追加し、`any_dict_get_str` / `any_to_str` / `get_expr_type` / `_node_kind_from_dict` の重複した空値判定を共通化した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。
 
 ### 作業ルール
 
