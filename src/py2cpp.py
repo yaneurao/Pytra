@@ -6020,8 +6020,7 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
 def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
     """EAST `meta.import_bindings` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
-    meta_obj = east_module.get("meta")
-    meta: dict[str, Any] = meta_obj if isinstance(meta_obj, dict) else {}
+    meta = _dict_any_get_dict(east_module, "meta")
     binds_obj = meta.get("import_bindings")
     binds: list[Any] = binds_obj if isinstance(binds_obj, list) else []
     for item_obj in binds:
@@ -6046,8 +6045,7 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
 def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, str]]:
     """EAST `meta.qualified_symbol_refs` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
-    meta_obj = east_module.get("meta")
-    meta: dict[str, Any] = meta_obj if isinstance(meta_obj, dict) else {}
+    meta = _dict_any_get_dict(east_module, "meta")
     refs_obj = meta.get("qualified_symbol_refs")
     refs: list[Any] = refs_obj if isinstance(refs_obj, list) else []
     for item_obj in refs:
@@ -6686,8 +6684,7 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
         if isinstance(f, str):
             p = Path(f)
             east = load_east(p, parser_backend)
-            meta_obj = east.get("meta")
-            meta = meta_obj if isinstance(meta_obj, dict) else {}
+            meta = _dict_any_get_dict(east, "meta")
             module_id = _dict_any_get_str(module_id_map, str(p))
             if module_id == "":
                 module_id = _module_name_from_path_for_graph(root_dir, p)
