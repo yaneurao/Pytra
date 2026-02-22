@@ -104,9 +104,7 @@ def _extract_support_blocks() -> str:
         parts.append(_extract_top_level_block(cli_text, name, "def"))
     parts.append(
         "def build_cpp_hooks() -> dict[str, Any]:\n"
-        "    pass\n"
-        "    out: dict[str, Any] = {}\n"
-        "    return out\n\n"
+        "    return {}\n\n"
     )
     return "\n".join(parts)
 

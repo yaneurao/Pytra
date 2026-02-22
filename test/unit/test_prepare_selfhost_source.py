@@ -29,6 +29,18 @@ def _slice_block(text: str, start_marker: str, end_marker: str) -> str:
 
 
 class PrepareSelfhostSourceTest(unittest.TestCase):
+    def test_extract_support_blocks_uses_minimal_build_cpp_hooks_stub(self) -> None:
+        mod = _load_prepare_module()
+        support_blocks = mod._extract_support_blocks()
+        build_cpp_hooks_block = _slice_block(
+            support_blocks,
+            "def build_cpp_hooks() -> dict[str, Any]:",
+            "\n\n",
+        )
+        self.assertIn("return {}", build_cpp_hooks_block)
+        self.assertNotIn("out:", build_cpp_hooks_block)
+        self.assertNotIn("pass", build_cpp_hooks_block)
+
     def test_hook_patch_only_replaces_call_hook_body(self) -> None:
         mod = _load_prepare_module()
         py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")

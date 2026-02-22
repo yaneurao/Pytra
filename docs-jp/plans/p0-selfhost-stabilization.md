@@ -1,6 +1,6 @@
 # TASK GROUP: TG-P0-SH
 
-最終更新: 2026-02-22
+最終更新: 2026-02-23
 
 関連 TODO:
 - `docs-jp/todo.md` の `ID: P0-SH-01` 〜 `P0-SH-04`
@@ -48,3 +48,4 @@
 - 2026-02-23: 置換境界をさらに縮小し、`tools/prepare_selfhost_source.py::_patch_code_emitter_hooks_for_selfhost` は `CodeEmitter._call_hook` 本体のみ no-op 置換する構成へ変更。`_call_hook1..6` は正本実装を selfhost 側へ残せるようにした。`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）、`python3 tools/check_transpiler_version_gate.py`（`[OK] no transpiler-related changes detected`）を確認した。
 - 2026-02-23: `tools/prepare_selfhost_source.py` の置換境界回帰を固定するため `test/unit/test_prepare_selfhost_source.py` を追加。変換結果で `_call_hook` のみが no-op 置換され、`_call_hook1..6` と `hook_on_emit_stmt` が正本ロジック（`return self._call_hook(...)` / bool 判定）を維持していることを検証する。`python3 test/unit/test_prepare_selfhost_source.py` の通過を確認した。
 - 2026-02-23: `tools/prepare_selfhost_source.py::_patch_code_emitter_hooks_for_selfhost` の失敗検出を強化。`_call_hook` / `_call_hook1` マーカー未検出時に `RuntimeError` を送出するよう変更し、置換が静かにスキップされる回帰を防止した。`test/unit/test_prepare_selfhost_source.py` に異常系2ケース（ブロック欠落・終端マーカー欠落）を追加し、`python3 test/unit/test_prepare_selfhost_source.py`（2件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
+- 2026-02-23: `tools/prepare_selfhost_source.py::_extract_support_blocks` の `build_cpp_hooks` スタブを最小化し、`pass` と中間変数 `out` を削除して `return {}` のみへ整理した。`test/unit/test_prepare_selfhost_source.py::test_extract_support_blocks_uses_minimal_build_cpp_hooks_stub` を追加し、`python3 test/unit/test_prepare_selfhost_source.py`（3件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
