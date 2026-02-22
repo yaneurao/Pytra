@@ -1180,16 +1180,9 @@ class CppEmitter(CodeEmitter):
                 picked = t
                 break
         if picked == "":
-            if d2 != "":
-                picked = d2
-            elif d1 != "":
-                picked = d1
-            elif d0 != "":
-                picked = d0
-        if picked == "None":
-            picked = "Any"
-        if picked == "":
-            picked = "object"
+            picked = d2 if d2 != "" else (d1 if d1 != "" else d0)
+        picked = "Any" if picked == "None" else picked
+        picked = picked if picked != "" else "object"
         return picked
 
     def _collect_module_global_decls(self, runtime_stmts: list[dict[str, Any]]) -> list[tuple[str, str]]:
@@ -2120,10 +2113,9 @@ class CppEmitter(CodeEmitter):
         if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
             self.declare_in_current_scope(target)
             picked_decl_t = ann_t_str if ann_t_str != "" else decl_hint
-            if picked_decl_t == "":
-                picked_decl_t = val_t
-            if picked_decl_t == "":
-                picked_decl_t = self.get_expr_type(stmt.get("target"))
+            picked_decl_t = (
+                picked_decl_t if picked_decl_t != "" else (val_t if val_t != "" else self.get_expr_type(stmt.get("target")))
+            )
             self.declared_var_types[target] = self.normalize_type_name(picked_decl_t)
         if declare and not already_declared:
             self.emit(f"{t} {target} = {rendered_val};")
@@ -2140,9 +2132,7 @@ class CppEmitter(CodeEmitter):
             decl_t_raw = stmt.get("decl_type")
             decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
             inferred_t = self.get_expr_type(stmt.get("target"))
-            picked_t = decl_t
-            if picked_t == "":
-                picked_t = inferred_t
+            picked_t = decl_t if decl_t != "" else inferred_t
             t = self._cpp_type_text(picked_t)
             self.declare_in_current_scope(target)
             self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
