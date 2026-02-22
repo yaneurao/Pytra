@@ -2680,13 +2680,11 @@ class CppEmitter(CodeEmitter):
                 cur += ch
             i += 1
         parts.append(cur.strip())
-        j = 0
-        while j < len(parts):
+        for j in range(len(parts)):
             nm = parts[j]
             if nm != "":
                 ok = True
-                k = 0
-                while k < len(nm):
+                for k in range(len(nm)):
                     c = nm[k : k + 1]
                     if k == 0:
                         if not (c == "_" or c.isalpha()):
@@ -2696,10 +2694,8 @@ class CppEmitter(CodeEmitter):
                         if not (c == "_" or c.isalnum()):
                             ok = False
                             break
-                    k += 1
                 if ok:
                     out.append(nm)
-            j += 1
         return out
 
     def render_lvalue(self, expr: Any) -> str:
