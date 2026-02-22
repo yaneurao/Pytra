@@ -5500,8 +5500,7 @@ class CppEmitter(CodeEmitter):
             if owner != "" and leaf != "":
                 mod_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(owner))
                 ns = self._module_name_to_cpp_namespace(mod_name)
-                leaf_head = leaf[:1]
-                looks_like_class = leaf_head != "" and (leaf_head >= "A" and leaf_head <= "Z")
+                looks_like_class = leaf != "" and (leaf[0] >= "A" and leaf[0] <= "Z")
                 if ns != "":
                     if looks_like_class:
                         return f"rc<{ns}::{leaf}>"
@@ -5814,8 +5813,7 @@ def _header_cpp_type_from_east(
         ns_t = t.replace(".", "::")
         dot = t.rfind(".")
         leaf = t[dot + 1 :] if dot >= 0 else t
-        head = leaf[:1]
-        if head != "" and (head >= "A" and head <= "Z"):
+        if leaf != "" and (leaf[0] >= "A" and leaf[0] <= "Z"):
             return "rc<" + ns_t + ">"
         return ns_t
     return t
