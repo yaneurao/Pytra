@@ -29,17 +29,39 @@ def _slice_block(text: str, start_marker: str, end_marker: str) -> str:
 
 
 class PrepareSelfhostSourceTest(unittest.TestCase):
-    def test_extract_support_blocks_uses_minimal_build_cpp_hooks_stub(self) -> None:
+    def test_extract_support_blocks_does_not_inline_build_cpp_hooks(self) -> None:
         mod = _load_prepare_module()
         support_blocks = mod._extract_support_blocks()
-        build_cpp_hooks_block = _slice_block(
-            support_blocks,
-            "def build_cpp_hooks() -> dict[str, Any]:",
-            "\n\n",
+        self.assertNotIn("def build_cpp_hooks(", support_blocks)
+
+    def test_load_cpp_hooks_patch_replaces_body(self) -> None:
+        mod = _load_prepare_module()
+        py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
+        base_text = mod.SRC_BASE.read_text(encoding="utf-8")
+        support_blocks = mod._extract_support_blocks()
+        base_class = mod._strip_triple_quoted_docstrings(mod._extract_code_emitter_class(base_text))
+        merged = mod._insert_code_emitter(mod._remove_import_line(py2cpp_text), base_class, support_blocks)
+        patched = mod._patch_load_cpp_hooks_for_selfhost(merged)
+
+        load_cpp_hooks_block = _slice_block(
+            patched,
+            "def load_cpp_hooks(",
+            "\n\ndef load_cpp_identifier_rules(",
         )
-        self.assertIn("return {}", build_cpp_hooks_block)
-        self.assertNotIn("out:", build_cpp_hooks_block)
-        self.assertNotIn("pass", build_cpp_hooks_block)
+        self.assertIn("return {}", load_cpp_hooks_block)
+        self.assertNotIn("build_cpp_hooks", load_cpp_hooks_block)
+
+    def test_load_cpp_hooks_patch_raises_when_markers_missing(self) -> None:
+        mod = _load_prepare_module()
+        with self.assertRaisesRegex(RuntimeError, "load_cpp_hooks block"):
+            mod._patch_load_cpp_hooks_for_selfhost("def x() -> int:\n    return 1\n")
+
+        broken_order = (
+            "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:\n"
+            "    return {}\n"
+        )
+        with self.assertRaisesRegex(RuntimeError, "load_cpp_identifier_rules marker"):
+            mod._patch_load_cpp_hooks_for_selfhost(broken_order)
 
     def test_hook_patch_only_replaces_call_hook_body(self) -> None:
         mod = _load_prepare_module()

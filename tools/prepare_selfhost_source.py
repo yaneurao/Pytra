@@ -102,10 +102,6 @@ def _extract_support_blocks() -> str:
     parts: list[str] = []
     for name in names:
         parts.append(_extract_top_level_block(cli_text, name, "def"))
-    parts.append(
-        "def build_cpp_hooks() -> dict[str, Any]:\n"
-        "    return {}\n\n"
-    )
     return "\n".join(parts)
 
 
@@ -117,6 +113,23 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
     prefix = text[:i]
     suffix = text[i:]
     return prefix.rstrip() + "\n\n" + support_blocks + "\n" + base_class_text + "\n" + suffix
+
+
+def _patch_load_cpp_hooks_for_selfhost(text: str) -> str:
+    start_marker = "def load_cpp_hooks("
+    end_marker = "\n\ndef load_cpp_identifier_rules("
+    i = text.find(start_marker)
+    j = text.find(end_marker, i + len(start_marker))
+    if i < 0:
+        raise RuntimeError("failed to find load_cpp_hooks block in merged selfhost source")
+    if j <= i:
+        raise RuntimeError("failed to find load_cpp_identifier_rules marker after load_cpp_hooks in merged selfhost source")
+    stub = (
+        "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:\n"
+        "    _ = profile\n"
+        "    return {}\n"
+    )
+    return text[:i] + stub + text[j:]
 
 
 def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
@@ -154,6 +167,7 @@ def main() -> int:
     base_class = _strip_triple_quoted_docstrings(_extract_code_emitter_class(base_text))
     py2cpp_text = _remove_import_line(py2cpp_text)
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
+    out = _patch_load_cpp_hooks_for_selfhost(out)
     out = _patch_code_emitter_hooks_for_selfhost(out)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)
