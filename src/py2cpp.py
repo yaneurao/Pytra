@@ -1500,8 +1500,7 @@ class CppEmitter(CodeEmitter):
                     elem_types: list[str] = []
                     if tuple_t != "":
                         elem_types = self.split_generic(tuple_t[6:-1])
-                    i = 0
-                    while i < len(elems):
+                    for i in range(len(elems)):
                         ent = self.any_to_dict_or_empty(elems[i])
                         if self._node_kind_from_dict(ent) == "Name":
                             nm = self.any_to_str(ent.get("id"))
@@ -1514,7 +1513,6 @@ class CppEmitter(CodeEmitter):
                                     if isinstance(t_ent, str):
                                         et = self.normalize_type_name(t_ent)
                                 out[nm] = et
-                        i += 1
             elif kind == "AnnAssign":
                 tgt = self.any_to_dict_or_empty(st.get("target"))
                 if self._node_kind_from_dict(tgt) == "Name":
@@ -2117,12 +2115,10 @@ class CppEmitter(CodeEmitter):
             ents = self._dict_stmt_list(stmt.get("names"))
             if len(ents) == 0:
                 raw_names = self.any_to_list(stmt.get("names"))
-                i = 0
-                while i < len(raw_names):
+                for i in range(len(raw_names)):
                     ent = self.any_to_dict_or_empty(raw_names[i])
                     if len(ent) > 0:
                         ents.append(ent)
-                    i += 1
             for ent in ents:
                 name = self.any_to_str(ent.get("name"))
                 asname = self.any_to_str(ent.get("asname"))
@@ -2140,12 +2136,10 @@ class CppEmitter(CodeEmitter):
             ents = self._dict_stmt_list(stmt.get("names"))
             if len(ents) == 0:
                 raw_names = self.any_to_list(stmt.get("names"))
-                i = 0
-                while i < len(raw_names):
+                for i in range(len(raw_names)):
                     ent = self.any_to_dict_or_empty(raw_names[i])
                     if len(ent) > 0:
                         ents.append(ent)
-                    i += 1
             for ent in ents:
                 name = self.any_to_str(ent.get("name"))
                 asname = self.any_to_str(ent.get("asname"))
@@ -2441,8 +2435,7 @@ class CppEmitter(CodeEmitter):
                         fallback_names = self._fallback_tuple_target_names_from_repr(pseudo_target)
                 if len(fallback_names) > 0:
                     recovered: list[Any] = []
-                    fi = 0
-                    while fi < len(fallback_names):
+                    for fi in range(len(fallback_names)):
                         nm = fallback_names[fi]
                         rec: dict[str, Any] = {
                             "kind": "Name",
@@ -2452,7 +2445,6 @@ class CppEmitter(CodeEmitter):
                         }
                         rec_any: Any = rec
                         recovered.append(rec_any)
-                        fi += 1
                     lhs_elems = recovered
             if self._opt_ge(2) and isinstance(value, dict) and self._node_kind_from_dict(value) == "Tuple":
                 rhs_elems = self.any_dict_get_list(value, "elements")
