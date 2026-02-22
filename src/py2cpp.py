@@ -82,30 +82,10 @@ def _split_infix_once(text: str, sep: str) -> tuple[str, str, bool]:
     """`text` を最初の `sep` で1回だけ分割する。見つからない場合は失敗を返す。"""
     if sep == "":
         return "", "", False
-    n = len(text)
-    m = len(sep)
-    i = 0
-    while i + m <= n:
-        matched = True
-        j = 0
-        while j < m:
-            if text[i + j] != sep[j]:
-                matched = False
-                break
-            j += 1
-        if matched:
-            left = ""
-            k = 0
-            while k < i:
-                left += text[k]
-                k += 1
-            right = ""
-            k = i + m
-            while k < n:
-                right += text[k]
-                k += 1
-            return left, right, True
-        i += 1
+    pos = text.find(sep)
+    if pos >= 0:
+        end = pos + len(sep)
+        return text[:pos], text[end:], True
     return "", "", False
 
 

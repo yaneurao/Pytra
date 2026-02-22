@@ -176,20 +176,14 @@ class CodeEmitter:
         if isinstance(includes_obj, list):
             includes_raw = includes_obj
 
-        j = 0
-        while j < len(includes_raw):
-            item_obj = includes_raw[j]
+        for item_obj in includes_raw:
             if isinstance(item_obj, str) and item_obj != "":
                 includes.append(item_obj)
-            j += 1
 
-        i = 0
-        while i < len(includes):
-            rel = includes[i]
+        for rel in includes:
             piece = CodeEmitter._load_json_dict(profile_root / rel)
             for key, val in piece.items():
                 out[key] = val
-            i += 1
 
         for key, val in meta.items():
             if key != "include":
@@ -1586,43 +1580,56 @@ class CodeEmitter:
         out["text"] = rest
         return out
 
+    def _emit_passthrough_directive_line(self, directive: dict[str, Any]) -> bool:
+        """pass-through directive が line の場合に行を出力する。"""
+        if self.any_dict_get_str(directive, "kind", "") != "line":
+            return False
+        line_txt = self.any_dict_get_str(directive, "text", "")
+        if line_txt != "":
+            self.emit(line_txt)
+        return True
+
+    def _handle_comment_trivia_directive(self, txt: str) -> bool:
+        """コメント trivia の pass-through directive を処理したら True を返す。"""
+        directive = self._parse_passthrough_comment(txt)
+        d_kind = self.any_dict_get_str(directive, "kind", "")
+        if self.passthrough_cpp_block:
+            if d_kind == "end":
+                self.passthrough_cpp_block = False
+                return True
+            if d_kind == "begin":
+                return True
+            if self._emit_passthrough_directive_line(directive):
+                return True
+            self.emit(txt)
+            return True
+        if d_kind == "begin":
+            self.passthrough_cpp_block = True
+            return True
+        if d_kind == "end":
+            return True
+        if self._emit_passthrough_directive_line(directive):
+            return True
+        return False
+
+    def _emit_blank_trivia_item(self, item: dict[str, Any]) -> None:
+        """blank trivia を空行として出力する。"""
+        cnt = self.any_dict_get_int(item, "count", 1)
+        n = cnt if cnt > 0 else 1
+        for _ in range(n):
+            self.emit("")
+
     def _emit_trivia_items(self, trivia: list[dict[str, Any]]) -> None:
         """trivia をコメント/空行/パススルー行として出力する。"""
         for item in trivia:
             k = self.any_dict_get_str(item, "kind", "")
             if k == "comment":
                 txt = self.any_dict_get_str(item, "text", "")
-                directive = self._parse_passthrough_comment(txt)
-                d_kind = self.any_dict_get_str(directive, "kind", "")
-                if self.passthrough_cpp_block:
-                    if d_kind == "end":
-                        self.passthrough_cpp_block = False
-                        continue
-                    if d_kind == "begin":
-                        continue
-                    if d_kind == "line":
-                        line_txt = self.any_dict_get_str(directive, "text", "")
-                        if line_txt != "":
-                            self.emit(line_txt)
-                        continue
-                    self.emit(txt)
-                    continue
-                if d_kind == "begin":
-                    self.passthrough_cpp_block = True
-                    continue
-                if d_kind == "end":
-                    continue
-                if d_kind == "line":
-                    line_txt = self.any_dict_get_str(directive, "text", "")
-                    if line_txt != "":
-                        self.emit(line_txt)
+                if self._handle_comment_trivia_directive(txt):
                     continue
                 self.emit(self.comment_line_prefix() + txt)
             elif k == "blank":
-                cnt = self.any_dict_get_int(item, "count", 1)
-                n = cnt if cnt > 0 else 1
-                for _ in range(n):
-                    self.emit("")
+                self._emit_blank_trivia_item(item)
 
     def _is_negative_const_index(self, node: Any) -> bool:
         """添字ノードが負の定数インデックスかを判定する。"""
