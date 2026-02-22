@@ -753,12 +753,10 @@ class CppEmitter(CodeEmitter):
 
     def is_declared(self, name: str) -> bool:
         """現在の可視スコープで識別子が宣言済みかを返す。"""
-        i = len(self.scope_stack) - 1
-        while i >= 0:
+        for i in range(len(self.scope_stack) - 1, -1, -1):
             scope = self.scope_stack[i]
             if name in scope:
                 return True
-            i -= 1
         return False
 
     def get_expr_type(self, expr: Any) -> str:
@@ -1449,15 +1447,13 @@ class CppEmitter(CodeEmitter):
 
         op_name = self.any_dict_get_str(expr_dict, "op", "")
         out = value_texts[-1]
-        i = len(value_nodes) - 2
-        while i >= 0:
+        for i in range(len(value_nodes) - 2, -1, -1):
             cond = self.render_cond(value_nodes[i])
             cur = value_texts[i]
             if op_name == "And":
                 out = f"({cond} ? {out} : {cur})"
             else:
                 out = f"({cond} ? {cur} : {out})"
-            i -= 1
         return out
 
     def render_cond(self, expr: Any) -> str:
@@ -5300,10 +5296,8 @@ class CppEmitter(CodeEmitter):
                 n = len(keys_raw)
                 if len(vals_raw) < n:
                     n = len(vals_raw)
-                i = 0
-                while i < n:
+                for i in range(n):
                     entries.append({"key": keys_raw[i], "value": vals_raw[i]})
-                    i += 1
             if len(entries) == 0:
                 return f"{t}{{}}"
             # resolved_type が空/不正確な場合は key/value ノードから最低限を再推定する。
