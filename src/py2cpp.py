@@ -4690,64 +4690,57 @@ class CppEmitter(CodeEmitter):
         cur = ""
         n = len(text)
         m = len(sep)
-        i = 0
         depth_paren = 0
         depth_brack = 0
         depth_brace = 0
         quote = ""
-        while i < n:
+        skip_until = 0
+        for i in range(n):
+            if i < skip_until:
+                continue
             ch = text[i : i + 1]
             if quote != "":
                 cur += ch
                 if ch == quote and (i == 0 or text[i - 1 : i] != "\\"):
                     quote = ""
-                i += 1
                 continue
             if ch == "'" or ch == '"':
                 quote = ch
                 cur += ch
-                i += 1
                 continue
             if ch == "(":
                 depth_paren += 1
                 cur += ch
-                i += 1
                 continue
             if ch == ")":
                 if depth_paren > 0:
                     depth_paren -= 1
                 cur += ch
-                i += 1
                 continue
             if ch == "[":
                 depth_brack += 1
                 cur += ch
-                i += 1
                 continue
             if ch == "]":
                 if depth_brack > 0:
                     depth_brack -= 1
                 cur += ch
-                i += 1
                 continue
             if ch == "{":
                 depth_brace += 1
                 cur += ch
-                i += 1
                 continue
             if ch == "}":
                 if depth_brace > 0:
                     depth_brace -= 1
                 cur += ch
-                i += 1
                 continue
             if depth_paren == 0 and depth_brack == 0 and depth_brace == 0 and text[i : i + m] == sep:
                 parts.append(self._trim_ws(cur))
                 cur = ""
-                i += m
+                skip_until = i + m
                 continue
             cur += ch
-            i += 1
         tail = self._trim_ws(cur)
         if tail != "":
             parts.append(tail)
@@ -4762,8 +4755,10 @@ class CppEmitter(CodeEmitter):
         out = ""
         n = len(text)
         m = len(old)
-        i = 0
-        while i < n:
+        skip_until = 0
+        for i in range(n):
+            if i < skip_until:
+                continue
             if i + m <= n:
                 matched = True
                 for j in range(m):
@@ -4772,10 +4767,9 @@ class CppEmitter(CodeEmitter):
                         break
                 if matched:
                     out += new_txt
-                    i += m
+                    skip_until = i + m
                     continue
             out += text[i]
-            i += 1
         return out
 
     def _looks_like_python_expr_text(self, text: str) -> bool:
