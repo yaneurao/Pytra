@@ -142,6 +142,25 @@ if __name__ == "__main__":
         self.assertIn("parents", names)
         self.assertIn("exist_ok", names)
 
+    def test_identifier_prefixed_with_import_is_not_import_stmt(self) -> None:
+        src = """
+def f() -> None:
+    import_modules: dict[str, str] = {}
+    print(import_modules)
+
+if __name__ == "__main__":
+    f()
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "f"]
+        self.assertEqual(len(funcs), 1)
+        body = funcs[0].get("body", [])
+        ann = [n for n in body if isinstance(n, dict) and n.get("kind") == "AnnAssign"]
+        self.assertEqual(len(ann), 1)
+        target = ann[0].get("target")
+        self.assertIsInstance(target, dict)
+        self.assertEqual(target.get("id"), "import_modules")
+
     def test_raw_range_call_is_lowered_out(self) -> None:
         src = """
 def main() -> None:
