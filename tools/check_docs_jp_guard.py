@@ -27,10 +27,10 @@ ALLOWED_EXACT: set[str] = {
     "spec-runtime.md",
     "spec-user.md",
     "spec.md",
-    "todo-old.md",
     "todo.md",
     "todo2.md",
     "tools.md",
+    "todo-history/index.md",
 }
 
 ALLOWED_REGEX: tuple[re.Pattern[str], ...] = (
