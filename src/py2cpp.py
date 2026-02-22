@@ -3046,14 +3046,11 @@ class CppEmitter(CodeEmitter):
         prev_decl_types = self.declared_var_types
         empty_decl_types: dict[str, str] = {}
         self.declared_var_types = empty_decl_types
-        i = 0
-        while i < len(arg_names):
-            an = arg_names[i]
+        for i, an in enumerate(arg_names):
             if not (in_class and i == 0 and an == "self"):
                 at = self.any_to_str(arg_types.get(an))
                 if at != "":
                     self.declared_var_types[an] = self.normalize_type_name(at)
-            i += 1
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
         self.current_function_is_generator = is_generator
         self.current_function_yield_type = yield_value_type if yield_value_type != "" else "Any"
@@ -4065,18 +4062,16 @@ class CppEmitter(CodeEmitter):
     def _merge_args_with_kw_by_name(self, args: list[str], kw: dict[str, str], arg_names: list[str]) -> list[str]:
         """位置引数+キーワード引数を、引数名順に 1 本化する。"""
         out: list[str] = []
-        i = 0
-        while i < len(args):
-            out.append(args[i])
-            i += 1
+        for arg in args:
+            out.append(arg)
         used_kw: set[str] = set()
-        j = len(out)
-        while j < len(arg_names):
-            nm = arg_names[j]
+        positional_count = len(out)
+        for j, nm in enumerate(arg_names):
+            if j < positional_count:
+                continue
             if nm in kw:
                 out.append(kw[nm])
                 used_kw.add(nm)
-            j += 1
         for nm, val in kw.items():
             if nm not in used_kw:
                 out.append(val)
