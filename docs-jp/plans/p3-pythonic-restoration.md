@@ -29,3 +29,4 @@
 
 決定ログ:
 - 2026-02-22: 初版作成。
+- 2026-02-22: `P3-PY-02` の小パッチとして `src/py2cpp.py::_render_set_literal_repr` の `[:1]` / `[-1:]` 判定を `startswith` / `endswith` へ戻した。`python3 tools/check_py2cpp_transpile.py`（`checked=117 ok=117 fail=0 skipped=5`）と `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知維持）を確認。

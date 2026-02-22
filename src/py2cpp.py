@@ -4632,7 +4632,7 @@ class CppEmitter(CodeEmitter):
     def _render_set_literal_repr(self, text: str) -> str:
         """`{\"a\", ...}` 形式の repr を `set<str>{...}` へ変換する。"""
         t = self._trim_ws(text)
-        if len(t) < 2 or t[:1] != "{" or t[-1:] != "}":
+        if len(t) < 2 or not t.startswith("{") or not t.endswith("}"):
             return ""
         inner = self._trim_ws(t[1:-1])
         if inner == "":
@@ -4641,10 +4641,10 @@ class CppEmitter(CodeEmitter):
         out_items: list[str] = []
         for item in items:
             token = self._trim_ws(item)
-            if len(token) >= 2 and token[:1] == '"' and token[-1:] == '"':
+            if len(token) >= 2 and token.startswith('"') and token.endswith('"'):
                 out_items.append(cpp_string_lit(token[1:-1]))
                 continue
-            if len(token) >= 2 and token[:1] == "'" and token[-1:] == "'":
+            if len(token) >= 2 and token.startswith("'") and token.endswith("'"):
                 out_items.append(cpp_string_lit(token[1:-1]))
                 continue
             return ""
