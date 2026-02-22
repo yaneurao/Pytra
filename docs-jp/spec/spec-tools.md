@@ -38,7 +38,7 @@
 - `tools/check_yanesdk_py2cpp_smoke.py`
   - 目的: Yanesdk canonical 対象（`library 1本 + game 7本`）が `py2cpp.py` を通るか確認する。
 - `tools/check_microgpt_original_py2cpp_regression.py`
-  - 目的: 原本 `materials/microgpt/microgpt-20260222.py` を固定入力にし、`py2cpp` の失敗ステージ（A〜F）または成功を検査して再発を検知する。
+  - 目的: 原本 `materials/refs/microgpt/microgpt-20260222.py` を固定入力にし、`py2cpp` の失敗ステージ（A〜F）または成功を検査して再発を検知する。
 - `tools/build_multi_cpp.py`
   - 目的: `py2cpp.py --multi-file` が出力した `manifest.json` を読み、関連 `*.cpp` と runtime をまとめてビルドする。
 - `tools/verify_multi_file_outputs.py`
