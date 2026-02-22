@@ -56,5 +56,5 @@
 
 決定ログ:
 - 2026-02-22: 初版作成。
-- 2026-02-22: `P1-COMP-06` / `P1-COMP-07` として、`docs-jp/spec-dev.md` に `CodeEmitter`・EAST parser・compiler共通層の責務境界を明文化した。
+- 2026-02-22: `P1-COMP-06` / `P1-COMP-07` として、`docs-jp/spec/spec-dev.md` に `CodeEmitter`・EAST parser・compiler共通層の責務境界を明文化した。
 - 2026-02-22: `P1-COMP-08` として、`py2rs.py` を起点に他言語 CLI へ共通解析 API を段階適用する 5 フェーズ移行計画を追加した。

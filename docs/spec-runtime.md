@@ -1,6 +1,6 @@
 # Runtime Specification
 
-<a href="../docs-jp/spec-runtime.md">
+<a href="../docs-jp/spec/spec-runtime.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 

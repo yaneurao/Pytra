@@ -5,7 +5,7 @@
 - 作業開始時に `docs-jp/spec-codex.md` を読み、記載ルールに従う。
 - `docs-jp/` を正（source of truth）とし、`docs/` は翻訳ミラーとして扱う。
 - `docs-jp/` 直下（トップレベル）に新規ファイルを作成することは禁止し、必要時は同一ターンでの明示依頼があるときのみ許可する。
-- 例外として `docs-jp/plans/`、`docs-jp/language/`、`docs-jp/todo-history/` 配下は、既存運用ルールに沿う範囲で Codex が自律的に新規ファイルを作成してよい。
+- 例外として `docs-jp/plans/`、`docs-jp/language/`、`docs-jp/todo-history/`、`docs-jp/spec/` 配下は、既存運用ルールに沿う範囲で Codex が自律的に新規ファイルを作成してよい。
 - 未完了タスクは `docs-jp/todo.md` にのみ記載する。
 - 完了済みは `docs-jp/todo-history/index.md` と `docs-jp/todo-history/YYYYMMDD.md` へ移す。
 - 優先度上書きは `docs-jp/todo2.md` ではなくチャット指示で行う（形式は `docs-jp/plans/instruction-template.md`）。

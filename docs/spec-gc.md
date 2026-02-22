@@ -1,6 +1,6 @@
 # GC Specification
 
-<a href="../docs-jp/spec-gc.md">
+<a href="../docs-jp/spec/spec-gc.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 

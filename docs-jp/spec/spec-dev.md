@@ -1,6 +1,6 @@
 # 実装仕様（Pytra）
 
-<a href="../docs/spec-dev.md">
+<a href="../../docs/spec-dev.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
@@ -104,7 +104,7 @@
 ## 3. C++ 変換仕様（`py2cpp.py`）
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
-- 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は [py2cpp サポートマトリクス](./language/cpp/spec-support.md) を正として管理します。
+- 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は [py2cpp サポートマトリクス](../language/cpp/spec-support.md) を正として管理します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
 - 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/pytra/built_in/py_runtime.h` 側を利用します。
 - `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
@@ -356,7 +356,7 @@
   - runtime call マップ
   - 構文テンプレート
 - JSON だけで表現しにくい例外ケースは `hooks` で処理します。
-- 詳細スキーマは `docs-jp/spec-language-profile.md` を正本とします。
+- 詳細スキーマは `docs-jp/spec/spec-language-profile.md` を正本とします。
 
 ## 7. 実装上の共通ルール
 

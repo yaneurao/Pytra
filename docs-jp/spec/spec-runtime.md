@@ -1,6 +1,6 @@
 # ランタイムの仕様について
 
-<a href="../docs/spec-runtime.md">
+<a href="../../docs/spec-runtime.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 

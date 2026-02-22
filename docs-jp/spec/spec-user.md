@@ -1,6 +1,6 @@
 # 利用仕様（Pytra）
 
-<a href="../docs/spec-user.md">
+<a href="../../docs/spec-user.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
@@ -46,7 +46,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - C++ 向けには、コメントによるパススルーを利用できます。
   - `# Pytra::cpp ...` / `# Pytra::pass ...` を文の直前に置くと、生成 C++ へその行をそのまま挿入します。
   - 複数行は `# Pytra::cpp begin` ... `# Pytra::cpp end`（または `pass`）で指定できます。
-  - 詳細仕様は `docs-jp/spec-east.md` を参照してください。
+  - 詳細仕様は `docs-jp/spec/spec-east.md` を参照してください。
 
 ## 3. テストケース方針
 
@@ -117,7 +117,7 @@ python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
 
 ## 7. 関連ドキュメント
 
-- 使い方: [使い方ガイド](./how-to-use.md)
-- py2cpp 機能対応表（テスト根拠）: [py2cpp サポートマトリクス](./language/cpp/spec-support.md)
-- サンプルコード: [サンプルコード案内](./sample-code.md)
-- 実装状況詳細: [実装状況メモ](./pytra-readme.md)
+- 使い方: [使い方ガイド](../how-to-use.md)
+- py2cpp 機能対応表（テスト根拠）: [py2cpp サポートマトリクス](../language/cpp/spec-support.md)
+- サンプルコード: [サンプルコード案内](../sample-code.md)
+- 実装状況詳細: [実装状況メモ](../pytra-readme.md)

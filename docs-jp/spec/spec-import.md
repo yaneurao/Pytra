@@ -1,11 +1,11 @@
 # importの仕様
 
-<a href="../docs/spec-import.md">
+<a href="../../docs/spec-import.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
 
-まず、docs-jp/spec-runtime.md も読むこと。
+まず、docs-jp/spec/spec-runtime.md も読むこと。
 
 ## Yanesdk 重複配置の扱い（運用ルール）
 

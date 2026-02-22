@@ -1,6 +1,6 @@
 # EAST仕様（実装準拠）
 
-<a href="../docs/spec-east.md">
+<a href="../../docs/spec-east.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
@@ -301,7 +301,7 @@
 
 補足:
 - 各フェーズの進行管理は `docs-jp/todo.md` で行う。
-- 詳細な実装分担（emitter/profile/hooks）は `docs-jp/spec-dev.md` に従う。
+- 詳細な実装分担（emitter/profile/hooks）は `docs-jp/spec/spec-dev.md` に従う。
 
 ## 17. EAST導入の受け入れ基準
 

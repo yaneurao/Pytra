@@ -1,6 +1,6 @@
 # トランスパイルオプション仕様（案）
 
-<a href="../docs/spec-options.md">
+<a href="../../docs/spec-options.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
@@ -150,16 +150,16 @@
 
 ## 6. 補足
 
-- 既存仕様（`docs-jp/spec-dev.md`）との整合が必要なため、導入時は必ず同時更新する。
+- 既存仕様（`docs-jp/spec/spec-dev.md`）との整合が必要なため、導入時は必ず同時更新する。
 - 破壊的変更になり得る項目（`int-width`, `str-index-mode`）は、デフォルト変更前に 1 リリース以上の移行期間を設ける。
 
 ### 6.1 仕様整合チェック手順
 
 オプションを追加・変更したときは、次を同時に更新する。
 
-1. `docs-jp/spec-options.md`（オプション定義・既定値・preset）
-2. `docs-jp/spec-dev.md`（実装仕様と CLI 反映）
-3. `docs-jp/spec-east.md`（EAST 側と生成器側の責務境界）
+1. `docs-jp/spec/spec-options.md`（オプション定義・既定値・preset）
+2. `docs-jp/spec/spec-dev.md`（実装仕様と CLI 反映）
+3. `docs-jp/spec/spec-east.md`（EAST 側と生成器側の責務境界）
 4. `docs-jp/how-to-use.md`（利用例）
 
 更新後は次を確認する。
