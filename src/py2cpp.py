@@ -6572,23 +6572,17 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     stack: list[str] = []
 
     keys: list[str] = []
-    i = 0
-    while i < len(graph_keys):
+    for i in range(len(graph_keys)):
         keys.append(graph_keys[i])
-        i += 1
-    i = 0
-    while i < len(keys):
+    for i in range(len(keys)):
         k = keys[i]
         if color.get(k, 0) == 0:
             _graph_cycle_dfs(k, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
-        i += 1
 
     user_module_files: list[str] = []
     visited_keys: list[str] = []
-    i = 0
-    while i < len(visited_order):
+    for i in range(len(visited_order)):
         visited_keys.append(visited_order[i])
-        i += 1
     visited_keys = _sort_str_list_in_place(visited_keys)
     for key in visited_keys:
         if key in key_to_path:
@@ -6610,13 +6604,11 @@ def _format_graph_list_section(out: str, label: str, items: list[Any]) -> str:
     if len(items) == 0:
         out2 += "  (none)\n"
         return out2
-    j = 0
-    while j < len(items):
+    for j in range(len(items)):
         val = items[j]
         if isinstance(val, str):
             val_txt = str(val)
             out2 += "  - " + val_txt + "\n"
-        j += 1
     return out2
 
 
@@ -6628,12 +6620,10 @@ def _format_import_graph_report(analysis: dict[str, Any]) -> str:
     if len(edges) == 0:
         out += "  (none)\n"
     else:
-        i = 0
-        while i < len(edges):
+        for i in range(len(edges)):
             item = edges[i]
             if isinstance(item, str):
                 out += "  - " + item + "\n"
-            i += 1
     cycles_obj = analysis.get("cycles")
     cycles: list[Any] = cycles_obj if isinstance(cycles_obj, list) else []
     out = _format_graph_list_section(out, "cycles", cycles)
