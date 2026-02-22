@@ -233,16 +233,13 @@ def _split_ws_tokens(text: str) -> list[str]:
     """空白区切りトークンへ分解する（連続空白は 1 区切り扱い）。"""
     tokens: list[str] = []
     cur = ""
-    i = 0
-    while i < len(text):
-        ch = text[i : i + 1]
+    for ch in text:
         if ch == " " or ch == "\t":
             if cur != "":
                 tokens.append(cur)
                 cur = ""
         else:
             cur += ch
-        i += 1
     if cur != "":
         tokens.append(cur)
     return tokens
@@ -251,16 +248,13 @@ def _split_ws_tokens(text: str) -> list[str]:
 def _first_import_detail_line(source_text: str, kind: str) -> str:
     """import エラー表示向けに、入力コードから該当 import 行を抜き出す。"""
     lines = source_text.splitlines()
-    i = 0
-    while i < len(lines):
-        raw = lines[i]
+    for raw in lines:
         line = raw
         hash_pos = line.find("#")
         if hash_pos >= 0:
             line = line[:hash_pos]
         line = line.strip()
         if line == "":
-            i += 1
             continue
         if kind == "wildcard":
             if line.startswith("from ") and " import " in line and line.endswith("*"):
@@ -272,7 +266,6 @@ def _first_import_detail_line(source_text: str, kind: str) -> str:
                 parts = _split_ws_tokens(line)
                 if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import":
                     return "from " + parts[1] + " import " + parts[3]
-        i += 1
     if kind == "wildcard":
         return "from ... import *"
     return "from .module import symbol"
