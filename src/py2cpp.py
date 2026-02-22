@@ -6020,17 +6020,16 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
             return "false"
         return ""
     if kind == "Tuple":
-        elems = _dict_any_get_list(node, "elements")
+        elems = _dict_any_get_dict_list(node, "elements")
         if len(elems) == 0:
             return "::std::tuple<>{}"
         parts: list[str] = []
         for i in range(len(elems)):
             e = elems[i]
-            if isinstance(e, dict):
-                txt = _header_render_default_expr(e, "Any")
-                if txt == "":
-                    return ""
-                parts.append(txt)
+            txt = _header_render_default_expr(e, "Any")
+            if txt == "":
+                return ""
+            parts.append(txt)
         if len(parts) == 0:
             return ""
         return "::std::make_tuple(" + _join_str_list(", ", parts) + ")"
@@ -6098,26 +6097,23 @@ def build_cpp_header_from_east(
                 parts: list[str] = []
                 for j in range(len(arg_order)):
                     an = arg_order[j]
-                    if isinstance(an, str):
-                        at_obj = arg_types.get(an)
-                        at = "Any"
-                        if isinstance(at_obj, str):
-                            at = at_obj
-                        at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
-                        used_types.add(at_cpp)
-                        param_txt = (
-                            at_cpp + " " + an if at_cpp in by_value_types else "const " + at_cpp + "& " + an
-                        )
-                        # NOTE:
-                        # 既定引数は `.cpp` 側の定義にのみ付与する。
-                        # ヘッダと定義の二重指定によるコンパイルエラーを避けるため、
-                        # 宣言側では既定値を埋め込まない。
-                        parts.append(param_txt)
+                    if not isinstance(an, str):
+                        continue
+                    at = _dict_any_get_str(arg_types, an, "Any")
+                    at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
+                    used_types.add(at_cpp)
+                    param_txt = (
+                        at_cpp + " " + an if at_cpp in by_value_types else "const " + at_cpp + "& " + an
+                    )
+                    # NOTE:
+                    # 既定引数は `.cpp` 側の定義にのみ付与する。
+                    # ヘッダと定義の二重指定によるコンパイルエラーを避けるため、
+                    # 宣言側では既定値を埋め込まない。
+                    parts.append(param_txt)
                 sep = ", "
                 fn_lines.append(ret_cpp + " " + name + "(" + sep.join(parts) + ");")
         elif kind in {"Assign", "AnnAssign"}:
-            tgt_obj = st.get("target")
-            tgt = tgt_obj if isinstance(tgt_obj, dict) else {}
+            tgt = _dict_any_get_dict(st, "target")
             if _dict_any_get_str(tgt, "kind") != "Name":
                 continue
             name = _dict_any_get_str(tgt, "id")
