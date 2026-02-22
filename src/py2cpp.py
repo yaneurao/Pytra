@@ -6685,10 +6685,7 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
             east = load_east(p, parser_backend)
             meta_obj = east.get("meta")
             meta = meta_obj if isinstance(meta_obj, dict) else {}
-            module_id_obj = module_id_map.get(str(p))
-            module_id = ""
-            if isinstance(module_id_obj, str):
-                module_id = module_id_obj
+            module_id = _dict_any_get_str(module_id_map, str(p))
             if module_id == "":
                 module_id = _module_name_from_path_for_graph(root_dir, p)
             if module_id != "":
@@ -6800,28 +6797,25 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
             st = body[i]
             kind = _dict_any_kind(st)
             if kind == "FunctionDef":
-                name_obj: object = st.get("name")
-                if isinstance(name_obj, str) and name_obj != "":
+                name_txt = _dict_any_get_str(st, "name")
+                if name_txt != "":
                     arg_types_obj: object = st.get("arg_types")
                     arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
                     arg_order_obj: object = st.get("arg_order")
                     arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
-                    ret_obj: object = st.get("return_type")
-                    ret_type = "None"
-                    if isinstance(ret_obj, str):
-                        ret_type = ret_obj
+                    ret_type = _dict_any_get_str(st, "return_type", "None")
                     fn_ent: dict[str, Any] = {
                         "arg_types": arg_types,
                         "arg_order": arg_order,
                         "return_type": ret_type,
                     }
-                    fn_schema[name_obj] = fn_ent
+                    fn_schema[name_txt] = fn_ent
             elif kind == "ClassDef":
-                name_obj = st.get("name")
-                if isinstance(name_obj, str) and name_obj != "":
+                name_txt = _dict_any_get_str(st, "name")
+                if name_txt != "":
                     fields_obj: object = st.get("field_types")
                     fields = fields_obj if isinstance(fields_obj, dict) else {}
-                    cls_schema[name_obj] = {"field_types": fields}
+                    cls_schema[name_txt] = {"field_types": fields}
         out[mod_path] = {"functions": fn_schema, "classes": cls_schema}
     return out
 
