@@ -6020,8 +6020,7 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
             return "false"
         return ""
     if kind == "Tuple":
-        elems_obj = node.get("elements")
-        elems = elems_obj if isinstance(elems_obj, list) else []
+        elems = _dict_any_get_list(node, "elements")
         if len(elems) == 0:
             return "::std::tuple<>{}"
         parts: list[str] = []
@@ -6046,13 +6045,7 @@ def build_cpp_header_from_east(
     top_namespace: str = "",
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
-    body_obj = east_module.get("body")
-    body: list[dict[str, Any]] = []
-    if isinstance(body_obj, list):
-        for i in range(len(body_obj)):
-            item = body_obj[i]
-            if isinstance(item, dict):
-                body.append(item)
+    body = _dict_any_get_dict_list(east_module, "body")
 
     class_lines: list[str] = []
     fn_lines: list[str] = []
@@ -6100,12 +6093,8 @@ def build_cpp_header_from_east(
                 ret_t = _dict_any_get_str(st, "return_type", "None")
                 ret_cpp = _header_cpp_type_from_east(ret_t, ref_classes, class_names)
                 used_types.add(ret_cpp)
-                arg_types_obj = st.get("arg_types")
-                arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
-                arg_order_obj = st.get("arg_order")
-                arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
-                arg_defaults_obj = st.get("arg_defaults")
-                arg_defaults = arg_defaults_obj if isinstance(arg_defaults_obj, dict) else {}
+                arg_types = _dict_any_get_dict(st, "arg_types")
+                arg_order = _dict_any_get_list(st, "arg_order")
                 parts: list[str] = []
                 for j in range(len(arg_order)):
                     an = arg_order[j]
