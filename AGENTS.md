@@ -2,6 +2,7 @@
 
 ## docs-jp の基本方針
 
+- 作業開始時に `docs-jp/spec-codex.md` を読み、記載ルールに従う。
 - `docs-jp/` を正（source of truth）とし、`docs/` は翻訳ミラーとして扱う。
 - `docs-jp/` 配下に新規ファイルを作成する場合は、同一ターンでの明示依頼があるときのみ許可する。
 - 未完了タスクは `docs-jp/todo.md` にのみ記載する。
