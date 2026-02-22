@@ -10,6 +10,7 @@
     "while_open": "while ({cond}) {",
     "scope_open": "{",
     "scope_exit_open": "auto {guard} = py_make_scope_exit([&]() {",
+    "scope_exit_close": "});",
     "try_open": "try {",
     "catch_open": "catch (const ::std::exception& {name}) {",
     "for_range_open": "for ({type} {target} = {start}; {cond}; {inc})",

@@ -42,6 +42,12 @@ class CodeEmitter:
     opt_level: str
     import_modules: dict[str, str]
     import_symbols: dict[str, dict[str, str]]
+    import_symbol_modules: set[str]
+    current_class_name: str | None
+    current_class_static_fields: set[str]
+    class_base: dict[str, str]
+    class_method_names: dict[str, set[str]]
+    ref_classes: set[str]
 
     def __init__(
         self,
@@ -72,6 +78,13 @@ class CodeEmitter:
         import_symbols: dict[str, dict[str, str]] = {}
         self.import_modules = import_modules
         self.import_symbols = import_symbols
+        self.import_symbol_modules = set()
+        self.current_class_name = None
+        self.current_class_static_fields = set()
+        self.class_base = {}
+        class_method_names: dict[str, set[str]] = {}
+        self.class_method_names = class_method_names
+        self.ref_classes = set()
 
     def _empty_lines(self) -> list[str]:
         """空の `list[str]` を返す。"""
@@ -103,24 +116,26 @@ class CodeEmitter:
             i += 1
         return out
 
-    @classmethod
-    def quote_string_literal(cls, text: str, quote: str = "\"") -> str:
+    @staticmethod
+    def quote_string_literal(text: str, quote: str = "\"") -> str:
         """エスケープ済み文字列を引用符で囲んで返す。"""
         q = quote
         if q == "":
             q = "\""
-        return q + cls.escape_string_for_literal(text) + q
+        return q + CodeEmitter.escape_string_for_literal(text) + q
 
     @staticmethod
     def _load_json_dict(path: Path) -> dict[str, Any]:
         """JSON ファイルを辞書として読み込む。失敗時は空辞書。"""
         if not path.exists():
             return {}
+        raw_obj: object = {}
         try:
             txt = path.read_text(encoding="utf-8")
-            raw = json.loads(txt)
+            raw_obj = json.loads(txt)
         except Exception:
             return {}
+        raw = raw_obj
         if isinstance(raw, dict):
             return raw
         return {}
@@ -128,14 +143,17 @@ class CodeEmitter:
     @staticmethod
     def _resolve_src_root(anchor_file: str) -> str:
         """`.../src/...` パスから `.../src` ルートを推定して返す。"""
+        if anchor_file.startswith("src/"):
+            return "src"
+        if anchor_file.startswith("src\\"):
+            return "src"
         pos = anchor_file.rfind("/src/")
         if pos < 0:
             return ""
         return anchor_file[: pos + 4]
 
-    @classmethod
+    @staticmethod
     def load_profile_with_includes(
-        cls,
         profile_rel_path: str,
         *,
         anchor_file: str = "",
@@ -143,13 +161,13 @@ class CodeEmitter:
         """`profile.json` + include 断片を読み込み、1つの dict に統合する。"""
         profile_path = Path(profile_rel_path)
         if not profile_path.exists() and anchor_file != "":
-            src_root = cls._resolve_src_root(anchor_file)
+            src_root = CodeEmitter._resolve_src_root(anchor_file)
             if src_root != "":
                 rel = profile_rel_path
                 if rel.startswith("src/"):
                     rel = rel[4:]
                 profile_path = Path(src_root) / rel
-        meta = cls._load_json_dict(profile_path)
+        meta = CodeEmitter._load_json_dict(profile_path)
         if len(meta) == 0:
             return {}
 
@@ -157,15 +175,21 @@ class CodeEmitter:
         out: dict[str, Any] = {}
         includes_obj = meta.get("include")
         includes: list[str] = []
+        includes_raw: list[Any] = []
         if isinstance(includes_obj, list):
-            for item in includes_obj:
-                if isinstance(item, str) and item != "":
-                    includes.append(item)
+            includes_raw = includes_obj
+
+        j = 0
+        while j < len(includes_raw):
+            item_obj = includes_raw[j]
+            if isinstance(item_obj, str) and item_obj != "":
+                includes.append(item_obj)
+            j += 1
 
         i = 0
         while i < len(includes):
             rel = includes[i]
-            piece = cls._load_json_dict(profile_root / rel)
+            piece = CodeEmitter._load_json_dict(profile_root / rel)
             for key, val in piece.items():
                 out[key] = val
             i += 1
@@ -287,6 +311,38 @@ class CodeEmitter:
             if fn is not None:
                 return fn(self, kind, stmt)
         return None
+
+    def hook_on_stmt_omit_braces(
+        self,
+        kind: str,
+        stmt: dict[str, Any],
+        default_value: bool,
+    ) -> bool:
+        """制御構文の brace 省略可否を hook で上書きする。"""
+        if "on_stmt_omit_braces" in self.hooks:
+            fn = self.hooks["on_stmt_omit_braces"]
+            if fn is not None:
+                v = fn(self, kind, stmt, default_value)
+                if isinstance(v, bool):
+                    return v
+        return default_value
+
+    def hook_on_for_range_mode(
+        self,
+        stmt: dict[str, Any],
+        default_mode: str,
+    ) -> str:
+        """ForRange の mode（ascending/descending/dynamic）を hook で上書きする。"""
+        mode = default_mode
+        if mode == "":
+            mode = "dynamic"
+        if "on_for_range_mode" in self.hooks:
+            fn = self.hooks["on_for_range_mode"]
+            if fn is not None:
+                v = fn(self, stmt, mode)
+                if isinstance(v, str) and v != "":
+                    return v
+        return mode
 
     def hook_on_render_call(
         self,
@@ -571,6 +627,134 @@ class CodeEmitter:
         if isinstance(v, str):
             return "0", ""
         return "1", str(v)
+
+    def render_constant_expr_common(
+        self,
+        expr: Any,
+        expr_d: dict[str, Any],
+        *,
+        none_non_any_literal: str,
+        none_any_literal: str,
+        bytes_ctor_name: str = "bytes",
+        bytes_lit_fn_name: str = "py_bytes_lit",
+    ) -> str:
+        """Constant ノードの基本描画を共通化する。"""
+        v = expr_d.get("value")
+        common_pair = self.render_constant_non_string_common(
+            expr,
+            expr_d,
+            none_non_any_literal=none_non_any_literal,
+            none_any_literal=none_any_literal,
+        )
+        common_handled = str(common_pair[0]) == "1"
+        common_non_str = str(common_pair[1])
+        if common_handled:
+            return common_non_str
+        if isinstance(v, str):
+            v_txt = str(v)
+            v_ty = self.get_expr_type(expr)
+            if v_ty in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+                try:
+                    int(v_txt)
+                    return v_txt
+                except Exception:
+                    pass
+            if v_ty in {"float32", "float64"}:
+                try:
+                    float(v_txt)
+                    return v_txt
+                except Exception:
+                    pass
+            if v_ty == "bytes":
+                raw = self.any_to_str(expr_d.get("repr"))
+                if raw != "":
+                    qpos = -1
+                    i = 0
+                    while i < len(raw):
+                        if raw[i] in {'"', "'"}:
+                            qpos = i
+                            break
+                        i += 1
+                    if qpos >= 0:
+                        return f"{bytes_lit_fn_name}({raw[qpos:]})"
+                return f"{bytes_ctor_name}({self.quote_string_literal(v_txt)})"
+            return self.quote_string_literal(v_txt)
+        return str(v)
+
+    def _normalize_runtime_module_name(self, module_name: str) -> str:
+        """言語固有の module 名正規化ポイント。既定実装は入力をそのまま返す。"""
+        return module_name
+
+    def _lookup_module_attr_runtime_call(self, module_name: str, attr: str) -> str:
+        """`module.attr` -> runtime_call 解決ポイント。既定実装は未解決。"""
+        _ = module_name
+        _ = attr
+        return ""
+
+    def _module_name_to_cpp_namespace(self, module_name: str) -> str:
+        """module 名 -> C++ namespace 解決ポイント。既定実装は未解決。"""
+        _ = module_name
+        return ""
+
+    def _make_missing_symbol_import_error(self, base_name: str, attr: str) -> Exception:
+        """`from-import` 束縛名の module 参照エラーを生成する。"""
+        return RuntimeError(
+            "Module names are not bound by from-import statements: "
+            + base_name
+            + "."
+            + attr
+        )
+
+    def render_attribute_expr_common(self, expr_d: dict[str, Any]) -> str:
+        """Attribute ノードの基本描画を共通化する。"""
+        owner_t = self.get_expr_type(expr_d.get("value"))
+        if self.is_forbidden_object_receiver_type(owner_t):
+            raise RuntimeError(
+                "object receiver method call / attribute access is forbidden by language constraints"
+            )
+        base_rendered = self.render_expr(expr_d.get("value"))
+        base_ctx = self.resolve_attribute_owner_context(expr_d.get("value"), base_rendered)
+        base = self.any_dict_get_str(base_ctx, "expr", "")
+        base_node = self.any_to_dict_or_empty(base_ctx.get("node"))
+        base_kind = self._node_kind_from_dict(base_node)
+        attr = self.attr_name(expr_d)
+        direct_self_or_class = self.render_attribute_self_or_class_access(
+            base,
+            attr,
+            self.current_class_name,
+            self.current_class_static_fields,
+            self.class_base,
+            self.class_method_names,
+        )
+        if direct_self_or_class != "":
+            return direct_self_or_class
+        base_module_name = self._normalize_runtime_module_name(
+            self.any_dict_get_str(base_ctx, "module", "")
+        )
+        if base_module_name != "":
+            mapped = self._lookup_module_attr_runtime_call(base_module_name, attr)
+            ns = self._module_name_to_cpp_namespace(base_module_name)
+            direct_module = self.render_attribute_module_access(
+                base_module_name,
+                attr,
+                mapped,
+                ns,
+            )
+            if direct_module != "":
+                return direct_module
+        if base_kind == "Name":
+            base_name = self.any_to_str(base_node.get("id"))
+            if (
+                base_name != ""
+                and not self.is_declared(base_name)
+                and base_name not in self.import_modules
+                and base_name in self.import_symbol_modules
+            ):
+                raise self._make_missing_symbol_import_error(base_name, attr)
+        bt = self.get_expr_type(expr_d.get("value"))
+        if bt in self.ref_classes:
+            return f"{base}->{attr}"
+        return f"{base}.{attr}"
 
     def any_dict_get(self, obj: dict[str, Any], key: str, default_value: Any) -> Any:
         """dict 風入力から key を取得し、失敗時は既定値を返す。"""
@@ -886,6 +1070,7 @@ class CodeEmitter:
         while i < len(ops) and i < len(comparators):
             op = ops[i]
             right = self.render_expr(comparators[i])
+            term: str = ""
             if op == "In" and in_pattern != "":
                 term = in_pattern.replace("{left}", cur_left).replace("{right}", right)
                 terms.append("(" + term + ")")

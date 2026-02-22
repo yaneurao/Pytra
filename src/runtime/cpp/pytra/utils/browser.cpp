@@ -34,7 +34,7 @@ namespace pytra::utils::browser {
             return 0;
         }
         list<Touch> touches() {
-            return list<object>{};
+            return list<Touch>{};
         }
         void preventDefault() {
             /* pass */
@@ -88,9 +88,9 @@ namespace pytra::utils::browser {
             _ = h;
         }
         void fillText(const str& text, const object& x, const object& y) {
-            str _ = text;
-            _ = x;
-            _ = y;
+            (void)text;
+            (void)x;
+            (void)y;
         }
         void strokeRect(const object& x, const object& y, const object& w, const object& h) {
             object _ = x;
@@ -99,15 +99,15 @@ namespace pytra::utils::browser {
             _ = h;
         }
         void drawImage(const rc<HtmlImage>& image, const object& sx, const object& sy, const object& sw, const object& sh, const object& px, const object& py, const object& dw, const object& dh) {
-            rc<HtmlImage> _ = image;
-            _ = sx;
-            _ = sy;
-            _ = sw;
-            _ = sh;
-            _ = px;
-            _ = py;
-            _ = dw;
-            _ = dh;
+            (void)image;
+            (void)sx;
+            (void)sy;
+            (void)sw;
+            (void)sh;
+            (void)px;
+            (void)py;
+            (void)dw;
+            (void)dh;
         }
         rc<TextMetrics> measureText(const str& text) {
             str _ = text;
@@ -144,8 +144,8 @@ namespace pytra::utils::browser {
         int64 width;
         
         Element() {
-            this->currentTime = 0;
-            this->volume = 0;
+            this->currentTime = make_object(int64(0));
+            this->volume = make_object(int64(0));
             this->width = 0;
             this->height = 0;
         }

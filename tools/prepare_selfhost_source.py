@@ -131,39 +131,6 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
     return prefix.rstrip() + "\n\n" + support_blocks + "\n" + base_class_text + "\n" + suffix
 
 
-def _replace_dump_options_for_selfhost(text: str) -> str:
-    start_marker = "def dump_codegen_options_text("
-    end_marker = "\ndef empty_parse_dict("
-    i = text.find(start_marker)
-    j = text.find(end_marker)
-    if i < 0 or j < 0 or j <= i:
-        return text
-    stub = (
-        "def dump_codegen_options_text(\n"
-        "    preset: str,\n"
-        "    negative_index_mode: str,\n"
-        "    bounds_check_mode: str,\n"
-        "    floor_div_mode: str,\n"
-        "    mod_mode: str,\n"
-        "    int_width: str,\n"
-        "    str_index_mode: str,\n"
-        "    str_slice_mode: str,\n"
-        "    opt_level: str,\n"
-        ") -> str:\n"
-        "    _ = preset\n"
-        "    _ = negative_index_mode\n"
-        "    _ = bounds_check_mode\n"
-        "    _ = floor_div_mode\n"
-        "    _ = mod_mode\n"
-        "    _ = int_width\n"
-        "    _ = str_index_mode\n"
-        "    _ = str_slice_mode\n"
-        "    _ = opt_level\n"
-        "    return \"options:\\n\"\n\n"
-    )
-    return text[:i] + stub + text[j + 1 :]
-
-
 def _patch_selfhost_exception_paths(text: str) -> str:
     out = text
     old2 = (
@@ -204,25 +171,48 @@ def _patch_selfhost_exception_paths(text: str) -> str:
     return out
 
 
+def _replace_dump_options_for_selfhost(text: str) -> str:
+    start_marker = "def dump_codegen_options_text("
+    end_marker = "\ndef empty_parse_dict("
+    i = text.find(start_marker)
+    j = text.find(end_marker)
+    if i < 0 or j < 0 or j <= i:
+        return text
+    stub = (
+        "def dump_codegen_options_text(\n"
+        "    preset: str,\n"
+        "    negative_index_mode: str,\n"
+        "    bounds_check_mode: str,\n"
+        "    floor_div_mode: str,\n"
+        "    mod_mode: str,\n"
+        "    int_width: str,\n"
+        "    str_index_mode: str,\n"
+        "    str_slice_mode: str,\n"
+        "    opt_level: str,\n"
+        ") -> str:\n"
+        "    p = preset\n"
+        "    if p == \"\":\n"
+        "        p = \"(none)\"\n"
+        "    out = \"options:\\n\"\n"
+        "    out += \"  preset: \" + p + \"\\n\"\n"
+        "    out += \"  negative-index-mode: \" + negative_index_mode + \"\\n\"\n"
+        "    out += \"  bounds-check-mode: \" + bounds_check_mode + \"\\n\"\n"
+        "    out += \"  floor-div-mode: \" + floor_div_mode + \"\\n\"\n"
+        "    out += \"  mod-mode: \" + mod_mode + \"\\n\"\n"
+        "    out += \"  int-width: \" + int_width + \"\\n\"\n"
+        "    out += \"  str-index-mode: \" + str_index_mode + \"\\n\"\n"
+        "    out += \"  str-slice-mode: \" + str_slice_mode + \"\\n\"\n"
+        "    out += \"  opt-level: \" + opt_level + \"\\n\"\n"
+        "    return out\n\n"
+    )
+    return text[:i] + stub + text[j + 1 :]
+
+
 def _patch_main_guard_for_selfhost(text: str) -> str:
     """selfhost 用に末尾 main guard を self-host parser で安定な形へ置換する。"""
     old = 'if __name__ == "__main__":\n    sys.exit(main(list(sys.argv[1:])))\n'
     new = 'if __name__ == "__main__":\n    main(list(sys.argv[1:]))\n'
     return text.replace(old, new)
-
-
-def _replace_misc_heavy_helpers_for_selfhost(text: str) -> str:
-    """selfhost で型崩れしやすい重い補助関数を最小スタブへ置換する。"""
-    out = text
-
-    def repl(start_marker: str, end_marker: str, stub: str) -> None:
-        nonlocal out
-        i = out.find(start_marker)
-        j = out.find(end_marker)
-        if i >= 0 and j > i:
-            out = out[:i] + stub + out[j + 1 :]
-
-    return out
 
 
 def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
@@ -247,7 +237,7 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     )
     repl(
         "    def hook_on_emit_stmt_kind(",
-        "\n    def hook_on_render_call(",
+        "\n    def hook_on_stmt_omit_braces(",
         (
             "    def hook_on_emit_stmt_kind(\n"
             "        self,\n"
@@ -256,6 +246,33 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
             "    ) -> bool | None:\n"
             "        pass\n"
             "        return None\n"
+        ),
+    )
+    repl(
+        "    def hook_on_stmt_omit_braces(",
+        "\n    def hook_on_for_range_mode(",
+        (
+            "    def hook_on_stmt_omit_braces(\n"
+            "        self,\n"
+            "        kind: str,\n"
+            "        stmt: dict[str, Any],\n"
+            "        default_value: bool,\n"
+            "    ) -> bool:\n"
+            "        pass\n"
+            "        return default_value\n"
+        ),
+    )
+    repl(
+        "    def hook_on_for_range_mode(",
+        "\n    def hook_on_render_call(",
+        (
+            "    def hook_on_for_range_mode(\n"
+            "        self,\n"
+            "        stmt: dict[str, Any],\n"
+            "        default_mode: str,\n"
+            "    ) -> str:\n"
+            "        pass\n"
+            "        return default_mode\n"
         ),
     )
     repl(
@@ -386,7 +403,6 @@ def main() -> int:
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
     out = _replace_dump_options_for_selfhost(out)
     out = _patch_code_emitter_hooks_for_selfhost(out)
-    out = _replace_misc_heavy_helpers_for_selfhost(out)
     out = _patch_main_guard_for_selfhost(out)
     out = _patch_selfhost_exception_paths(out)
 

@@ -570,9 +570,10 @@ def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, 
 
 def load_cpp_profile() -> dict[str, Any]:
     """C++ 用 LanguageProfile を読み込む（失敗時は最小既定）。"""
-    out = CodeEmitter.load_profile_with_includes(
+    profile_loader = CodeEmitter({}, {}, {})
+    out = profile_loader.load_profile_with_includes(
         "src/profiles/cpp/profile.json",
-        anchor_file=__file__,
+        anchor_file="src/py2cpp.py",
     )
     if not isinstance(out, dict):
         out = {}
@@ -683,7 +684,24 @@ AUG_BIN: dict[str, str] = load_cpp_aug_bin()
 
 def cpp_string_lit(s: str) -> str:
     """Python 文字列を C++ 文字列リテラルへエスケープ変換する。"""
-    return CodeEmitter.quote_string_literal(s)
+    out = ""
+    i = 0
+    while i < len(s):
+        ch = s[i : i + 1]
+        if ch == "\\":
+            out += "\\\\"
+        elif ch == "\"":
+            out += "\\\""
+        elif ch == "\n":
+            out += "\\n"
+        elif ch == "\r":
+            out += "\\r"
+        elif ch == "\t":
+            out += "\\t"
+        else:
+            out += ch
+        i += 1
+    return "\"" + out + "\""
 
 
 def cpp_char_lit(ch: str) -> str:
@@ -1061,36 +1079,6 @@ class CppEmitter(CodeEmitter):
         """Emit docstring/comment as C-style block comment."""
         self.emit("/* " + text + " */")
 
-    def emit_function_open(self, ret: str, name: str, args: str) -> None:
-        """C++ 関数ヘッダを profile テンプレート経由で出力する。"""
-        self.emit(
-            self.syntax_line(
-                "function_open",
-                "{ret} {name}({args}) {",
-                {"ret": ret, "name": name, "args": args},
-            )
-        )
-
-    def emit_ctor_open(self, name: str, args: str) -> None:
-        """C++ コンストラクタヘッダを profile テンプレート経由で出力する。"""
-        self.emit(self.syntax_line("ctor_open", "{name}({args}) {", {"name": name, "args": args}))
-
-    def emit_dtor_open(self, name: str) -> None:
-        """C++ デストラクタヘッダを profile テンプレート経由で出力する。"""
-        self.emit(self.syntax_line("dtor_open", "~{name}() {", {"name": name}))
-
-    def emit_class_open(self, name: str, base_txt: str) -> None:
-        """C++ クラス（struct）ヘッダを profile テンプレート経由で出力する。"""
-        self.emit(self.syntax_line("class_open", "struct {name}{base_txt} {", {"name": name, "base_txt": base_txt}))
-
-    def emit_class_close(self) -> None:
-        """C++ クラス終端を profile テンプレート経由で出力する。"""
-        self.emit(self.syntax_text("class_close", "};"))
-
-    def emit_block_close(self) -> None:
-        """C++ ブロック終端を profile テンプレート経由で出力する。"""
-        self.emit(self.syntax_text("block_close", "}"))
-
     def _module_source_path_for_name(self, module_name: str) -> Path:
         """`pytra.*` モジュール名から runtime source `.py` パスを返す（未解決時は空 Path）。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
@@ -1418,7 +1406,8 @@ class CppEmitter(CodeEmitter):
 
     def render_expr_as_any(self, expr: Any) -> str:
         """式を `object`（Any 相当）へ昇格する式文字列を返す。"""
-        return f"make_object({self.render_expr(expr)})"
+        rendered = self.render_expr(expr)
+        return self._box_expr_for_any(rendered, expr)
 
     def render_boolop(self, expr: Any, force_value_select: bool = False) -> str:
         """BoolOp を真偽演算または値選択式として出力する。"""
@@ -1820,6 +1809,28 @@ class CppEmitter(CodeEmitter):
             return "::std::nullopt"
         return cpp_t + "{}"
 
+    def _rewrite_nullopt_default_for_typed_target(self, rendered_expr: str, east_target_t: str) -> str:
+        """`dict_get_node/py_dict_get_default(..., nullopt)` を型付き既定値へ置換する。"""
+        if rendered_expr == "":
+            return rendered_expr
+        t = self.normalize_type_name(east_target_t)
+        if t == "" or self.is_any_like_type(t) or self._allows_none_default(t):
+            return rendered_expr
+        typed_default = self._none_default_expr_for_type(t)
+        if typed_default in {"", "::std::nullopt", "std::nullopt"}:
+            return rendered_expr
+        if not (
+            rendered_expr.startswith("dict_get_node(") or rendered_expr.startswith("py_dict_get_default(")
+        ):
+            return rendered_expr
+        tail_a = ", ::std::nullopt)"
+        tail_b = ", std::nullopt)"
+        if rendered_expr.endswith(tail_a):
+            return rendered_expr[: -len(tail_a)] + ", " + typed_default + ")"
+        if rendered_expr.endswith(tail_b):
+            return rendered_expr[: -len(tail_b)] + ", " + typed_default + ")"
+        return rendered_expr
+
     def _render_param_default_expr(self, node: Any, east_target_t: str) -> str:
         """関数引数既定値ノードを C++ 式へ変換する。"""
         nd = self.any_to_dict_or_empty(node)
@@ -1927,7 +1938,8 @@ class CppEmitter(CodeEmitter):
             if cond_txt == "":
                 cond_txt = "false"
         self._predeclare_if_join_names(body_stmts, else_stmts)
-        if self._can_omit_braces_for_single_stmt(body_stmts) and (len(else_stmts) == 0 or self._can_omit_braces_for_single_stmt(else_stmts)):
+        omit_braces = self.hook_on_stmt_omit_braces("If", stmt, False)
+        if omit_braces and len(body_stmts) == 1 and len(else_stmts) <= 1:
             self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": cond_txt}))
             self.emit_scoped_stmt_list([body_stmts[0]], set())
             if len(else_stmts) > 0:
@@ -1993,6 +2005,8 @@ class CppEmitter(CodeEmitter):
             ann_t_str = decl_hint
         if ann_t_str == "" and ann_text_fallback not in {"", "{}", "None"}:
             ann_t_str = ann_text_fallback
+        if rendered_val != "" and ann_t_str != "":
+            rendered_val = self._rewrite_nullopt_default_for_typed_target(rendered_val, ann_t_str)
         if ann_t_str in {"byte", "uint8"} and val_is_dict:
             byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
@@ -2197,20 +2211,6 @@ class CppEmitter(CodeEmitter):
         for stmt in stmts:
             self.emit_stmt(stmt)
 
-    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
-        """スコープ付き文リスト出力（CppEmitter 固有ディスパッチ）。"""
-        self.indent += 1
-        self.scope_stack.append(scope_names)
-        self.emit_stmt_list(stmts)
-        self.scope_stack.pop()
-        self.indent -= 1
-
-    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
-        """ブロック開始行を出力し、スコープ付きで本文を出力して閉じる。"""
-        self.emit(open_line)
-        self.emit_scoped_stmt_list(stmts, scope_names)
-        self.emit_block_close()
-
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
         kind = self._node_kind_from_dict(stmt)
         if kind == "Import":
@@ -2362,6 +2362,11 @@ class CppEmitter(CodeEmitter):
         self.emit("};")
 
     def _emit_function_stmt(self, stmt: dict[str, Any]) -> None:
+        # class body 直下の FunctionDef は class method として扱う。
+        # 関数本体（scope_stack>1）での nested def は local lambda へ落とす。
+        if self.current_class_name is not None and len(self.scope_stack) == 1:
+            self.emit_function(stmt, True)
+            return
         if len(self.scope_stack) > 1:
             self._emit_local_function_stmt(stmt)
             return
@@ -2418,6 +2423,8 @@ class CppEmitter(CodeEmitter):
             return
         rv = self.render_expr(stmt.get("value"))
         ret_t = self.current_function_return_type
+        if ret_t != "":
+            rv = self._rewrite_nullopt_default_for_typed_target(rv, ret_t)
         expr_t0 = self.get_expr_type(stmt.get("value"))
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
         if self.is_any_like_type(ret_t) and (not self.is_any_like_type(expr_t)):
@@ -2482,18 +2489,18 @@ class CppEmitter(CodeEmitter):
             self.indent += 1
             self.emit_stmt_list(finalbody)
             self.indent -= 1
-            self.emit("});")
+            self.emit(self.syntax_text("scope_exit_close", "});"))
         if len(handlers) == 0:
             self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
             if has_effective_finally:
                 self.indent -= 1
-                self.emit("}")
+                self.emit_block_close()
             return
         self.emit(self.syntax_text("try_open", "try {"))
         self.indent += 1
         self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
         self.indent -= 1
-        self.emit("}")
+        self.emit_block_close()
         for h in handlers:
             name_raw = h.get("name")
             name = "ex"
@@ -2509,29 +2516,10 @@ class CppEmitter(CodeEmitter):
             self.indent += 1
             self.emit_stmt_list(self._dict_stmt_list(h.get("body")))
             self.indent -= 1
-            self.emit("}")
+            self.emit_block_close()
         if has_effective_finally:
             self.indent -= 1
-            self.emit("}")
-
-    def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
-        """単文ブロックで波括弧を省略可能か判定する。"""
-        if not self._opt_ge(1):
-            return False
-        filtered: list[dict[str, Any]] = []
-        for s in stmts:
-            if isinstance(s, dict):
-                filtered.append(s)
-        if len(filtered) != 1:
-            return False
-        one = filtered[0]
-        k = self.any_dict_get_str(one, "kind", "")
-        if k == "Assign":
-            tgt = self.any_to_dict_or_empty(one.get("target"))
-            # tuple assign は C++ で複数行へ展開されるため単文扱い不可
-            if self._node_kind_from_dict(tgt) == "Tuple":
-                return False
-        return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
+            self.emit_block_close()
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         """代入文（通常代入/タプル代入）を C++ へ出力する。"""
@@ -2680,6 +2668,7 @@ class CppEmitter(CodeEmitter):
             self.declare_in_current_scope(texpr)
             self.declared_var_types[texpr] = picked
             rval = self.render_expr(stmt.get("value"))
+            rval = self._rewrite_nullopt_default_for_typed_target(rval, picked)
             if dtype.startswith("list<") and self._contains_text(rval, "[&]() -> list<object> {"):
                 rval = rval.replace("[&]() -> list<object> {", f"[&]() -> {dtype} {{")
                 rval = rval.replace("list<object> __out;", f"{dtype} __out;")
@@ -2707,6 +2696,8 @@ class CppEmitter(CodeEmitter):
         if self.is_plain_name_expr(stmt.get("target")) and t_target in {"", "unknown"}:
             if texpr in self.declared_var_types:
                 t_target = self.declared_var_types[texpr]
+        if t_target != "":
+            rval = self._rewrite_nullopt_default_for_typed_target(rval, t_target)
         if t_target == "uint8" and isinstance(value, dict):
             byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
@@ -2921,9 +2912,11 @@ class CppEmitter(CodeEmitter):
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
         body_stmts = self._dict_stmt_list(stmt.get("body"))
-        omit_braces = len(self.any_dict_get_list(stmt, "orelse")) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
-        mode = self.any_to_str(stmt.get("range_mode"))
-        if mode == "":
+        omit_braces = self.hook_on_stmt_omit_braces("ForRange", stmt, False)
+        if len(body_stmts) != 1:
+            omit_braces = False
+        mode = self.hook_on_for_range_mode(stmt, "dynamic")
+        if mode not in {"ascending", "descending", "dynamic"}:
             mode = "dynamic"
         cond = ""
         if mode == "ascending":
@@ -2988,10 +2981,13 @@ class CppEmitter(CodeEmitter):
             pseudo["step"] = iter_expr.get("step")
             pseudo["range_mode"] = self.any_dict_get_str(iter_expr, "range_mode", "dynamic")
             pseudo["body"] = self.any_dict_get_list(stmt, "body")
+            pseudo["orelse"] = self.any_dict_get_list(stmt, "orelse")
             self.emit_for_range(pseudo)
             return
         body_stmts = self._dict_stmt_list(stmt.get("body"))
-        omit_braces = len(self.any_dict_get_list(stmt, "orelse")) == 0 and self._can_omit_braces_for_single_stmt(body_stmts)
+        omit_braces = self.hook_on_stmt_omit_braces("For", stmt, False)
+        if len(body_stmts) != 1:
+            omit_braces = False
         t = self.render_expr(stmt.get("target"))
         it = self.render_expr(stmt.get("iter"))
         t0 = self.any_to_str(stmt.get("target_type"))
@@ -2999,9 +2995,6 @@ class CppEmitter(CodeEmitter):
         t_ty = self._cpp_type_text(t0 if t0 != "" else t1)
         target_names = self._target_bound_names(target)
         unpack_tuple = self._node_kind_from_dict(target) == "Tuple"
-        if unpack_tuple:
-            # tuple unpack emits extra binding lines before the loop body; keep braces for correctness.
-            omit_braces = False
         iter_tmp = ""
         hdr = ""
         if unpack_tuple:
@@ -3378,9 +3371,7 @@ class CppEmitter(CodeEmitter):
             self.emit_block_close()
             self.emit("")
         for s in class_body:
-            if self._node_kind_from_dict(s) == "FunctionDef":
-                self.emit_function(s, True)
-            elif self._node_kind_from_dict(s) == "AnnAssign":
+            if self._node_kind_from_dict(s) == "AnnAssign":
                 t = self.cpp_type(s.get("annotation"))
                 target = self.render_expr(s.get("target"))
                 if self.is_plain_name_expr(s.get("target")) and target in self.current_class_fields:
@@ -4009,18 +4000,11 @@ class CppEmitter(CodeEmitter):
         _ = expr
         owner_obj = fn.get("value")
         owner_rendered = self.render_expr(owner_obj)
-        owner_ctx = self._resolve_attribute_owner_context_local(owner_obj, owner_rendered)
-        owner_expr = self.any_dict_get_str(owner_ctx, "expr", "")
-        owner_mod = self._normalize_runtime_module_name(self.any_dict_get_str(owner_ctx, "module", ""))
-        owner_node = self.any_to_dict_or_empty(owner_ctx.get("node"))
-        owner_t = self.get_expr_type(owner_obj)
-        if self._node_kind_from_dict(owner_node) == "Name":
-            owner_name = self.any_to_str(owner_node.get("id"))
-            if owner_name in self.declared_var_types:
-                declared_owner_t = self.declared_var_types[owner_name]
-                if declared_owner_t not in {"", "unknown"}:
-                    owner_t = declared_owner_t
-        attr = self.attr_name(fn)
+        call_ctx = self.resolve_call_attribute_context(owner_obj, owner_rendered, fn, self.declared_var_types)
+        owner_expr = self.any_dict_get_str(call_ctx, "owner_expr", "")
+        owner_mod = self._normalize_runtime_module_name(self.any_dict_get_str(call_ctx, "owner_mod", ""))
+        owner_t = self.any_dict_get_str(call_ctx, "owner_type", "")
+        attr = self.any_dict_get_str(call_ctx, "attr", "")
         if attr == "":
             return None
         if owner_mod != "":
@@ -4029,50 +4013,17 @@ class CppEmitter(CodeEmitter):
                 return module_rendered_1
         return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, arg_nodes)
 
-    def _resolve_imported_module_name_local(self, name: str) -> str:
-        """import 束縛名からモジュール名を CppEmitter 側の状態で解決する。"""
-        if name in self.import_modules:
-            mod_name = self.import_modules[name]
-            if mod_name != "":
-                return mod_name
-        if name in self.import_symbols:
-            sym = self.import_symbols[name]
-            parent = sym["module"] if "module" in sym else ""
-            child = sym["name"] if "name" in sym else ""
-            if parent != "" and child != "":
-                return parent + "." + child
-        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
-        refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
-        i = 0
-        while i < len(refs):
-            ref = refs[i]
-            local_name = self.any_to_str(ref.get("local_name"))
-            if local_name == name:
-                module_id = self.any_to_str(ref.get("module_id"))
-                symbol = self.any_to_str(ref.get("symbol"))
-                if module_id != "" and symbol != "":
-                    return module_id + "." + symbol
-            i += 1
-        return ""
-
-    def _resolve_attribute_owner_context_local(self, owner_obj: Any, owner_expr: str) -> dict[str, Any]:
-        """Attribute owner の kind/expr/module を CppEmitter 側で解決する。"""
-        owner_node = self.any_to_dict_or_empty(owner_obj)
-        owner_kind = self._node_kind_from_dict(owner_node)
-        wrapped_owner_expr = owner_expr
-        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-            wrapped_owner_expr = f"({owner_expr})"
-        owner_module = ""
-        if owner_kind in {"Name", "Attribute"}:
-            owner_module = self._resolve_imported_module_name_local(owner_expr)
-            if owner_module == "" and owner_expr.startswith("pytra."):
-                owner_module = owner_expr
-        out: dict[str, Any] = {}
-        out["node"] = owner_node
-        out["kind"] = owner_kind
-        out["expr"] = wrapped_owner_expr
-        out["module"] = owner_module
-        return out
+    def _make_missing_symbol_import_error(self, base_name: str, attr: str) -> Exception:
+        """`from-import` 束縛名の module 参照エラーを生成する（C++ 向け）。"""
+        src_obj = self.doc.get("source_path")
+        src = "(input)"
+        if isinstance(src_obj, str) and src_obj != "":
+            src = src_obj
+        return _make_user_error(
+            "input_invalid",
+            "Module names are not bound by from-import statements.",
+            [f"kind=missing_symbol file={src} import={base_name}.{attr}"],
+        )
 
     def _render_call_attribute_non_module(
         self,
@@ -4293,6 +4244,54 @@ class CppEmitter(CodeEmitter):
         merged_args = self._coerce_args_for_known_function(fn_name, merged_args, merged_arg_nodes)
         return self._render_call_fallback(fn_name, merged_args)
 
+    def _prepare_call_parts(
+        self,
+        expr: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Call ノード前処理（selfhost での静的束縛回避用オーバーライド）。
+
+        NOTE:
+        基底 `CodeEmitter._prepare_call_parts` は `render_expr(...)` を呼ぶが、
+        selfhost 生成 C++ では基底メソッド内からの呼び出しが静的束縛される。
+        その結果、基底 `render_expr`（空文字返却）が使われて Call が `()` に崩れる。
+        CppEmitter 側で同処理を持つことで `CppEmitter.render_expr` 経路を維持する。
+        """
+        fn_obj: object = expr.get("func")
+        fn_name = self.render_expr(fn_obj)
+        arg_nodes_obj: object = self.any_dict_get_list(expr, "args")
+        arg_nodes = self.any_to_list(arg_nodes_obj)
+        args: list[str] = []
+        for arg_node in arg_nodes:
+            args.append(self.render_expr(arg_node))
+        keywords_obj: object = self.any_dict_get_list(expr, "keywords")
+        keywords = self.any_to_list(keywords_obj)
+        first_arg: object = expr
+        if len(arg_nodes) > 0:
+            first_arg = arg_nodes[0]
+        kw: dict[str, str] = {}
+        kw_values: list[str] = []
+        kw_nodes: list[Any] = []
+        for k in keywords:
+            kd = self.any_to_dict_or_empty(k)
+            if len(kd) > 0:
+                kw_name = self.any_to_str(kd.get("arg"))
+                if kw_name != "":
+                    kw_val_node: Any = kd.get("value")
+                    kw_val = self.render_expr(kw_val_node)
+                    kw[kw_name] = kw_val
+                    kw_values.append(kw_val)
+                    kw_nodes.append(kw_val_node)
+        out: dict[str, Any] = {}
+        out["fn"] = fn_obj
+        out["fn_name"] = fn_name
+        out["arg_nodes"] = arg_nodes
+        out["args"] = args
+        out["kw"] = kw
+        out["kw_values"] = kw_values
+        out["kw_nodes"] = kw_nodes
+        out["first_arg"] = first_arg
+        return out
+
     def _render_ifexp_expr(self, expr: dict[str, Any]) -> str:
         """IfExp（三項演算）を式へ変換する。
 
@@ -4338,46 +4337,6 @@ class CppEmitter(CodeEmitter):
         if kind == "IfExp":
             return self._render_ifexp_expr(expr_d)
         return ""
-
-    def _prepare_call_parts(
-        self,
-        expr: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Call ノードの前処理（func/args/kw 展開）を共通化する。"""
-        fn_obj: object = expr.get("func")
-        fn = self.any_to_dict_or_empty(fn_obj)
-        fn_name = self.render_expr(fn_obj)
-        arg_nodes_obj: object = self.any_dict_get_list(expr, "args")
-        arg_nodes = self.any_to_list(arg_nodes_obj)
-        args = [self.render_expr(a) for a in arg_nodes]
-        keywords_obj: object = self.any_dict_get_list(expr, "keywords")
-        keywords = self.any_to_list(keywords_obj)
-        first_arg: object = expr
-        if len(arg_nodes) > 0:
-            first_arg = arg_nodes[0]
-        kw: dict[str, str] = {}
-        kw_values: list[str] = []
-        kw_nodes: list[Any] = []
-        for k in keywords:
-            kd = self.any_to_dict_or_empty(k)
-            if len(kd) > 0:
-                kw_name = self.any_to_str(kd.get("arg"))
-                if kw_name != "":
-                    kw_val_node: Any = kd.get("value")
-                    kw_val = self.render_expr(kw_val_node)
-                    kw[kw_name] = kw_val
-                    kw_values.append(kw_val)
-                    kw_nodes.append(kw_val_node)
-        out: dict[str, Any] = {}
-        out["fn"] = fn_obj
-        out["fn_name"] = fn_name
-        out["arg_nodes"] = arg_nodes
-        out["args"] = args
-        out["kw"] = kw
-        out["kw_values"] = kw_values
-        out["kw_nodes"] = kw_nodes
-        out["first_arg"] = first_arg
-        return out
 
     def _render_unary_expr(self, expr: dict[str, Any]) -> str:
         """UnaryOp ノードを C++ 式へ変換する。"""
@@ -4501,6 +4460,9 @@ class CppEmitter(CodeEmitter):
         if self.is_boxed_object_expr(expr_txt):
             return expr_txt
         src_t = self.get_expr_type(source_node)
+        # `source_node` の型が unknown でも、描画済みテキストが既知変数なら
+        # 宣言型ヒントから再判定して過剰 boxing を避ける。
+        src_t = self.infer_rendered_arg_type(expr_txt, src_t, self.declared_var_types)
         if self.is_any_like_type(src_t):
             return expr_txt
         return f"make_object({expr_txt})"
@@ -4891,57 +4853,31 @@ class CppEmitter(CodeEmitter):
 
     def _render_constant_expr(self, expr: Any, expr_d: dict[str, Any]) -> str:
         """Constant ノードを C++ リテラル式へ変換する。"""
-        v = expr_d.get("value")
-        common_pair = self.render_constant_non_string_common(
+        return self.render_constant_expr_common(
             expr,
             expr_d,
             none_non_any_literal="::std::nullopt",
             none_any_literal="object{}",
+            bytes_ctor_name="bytes",
+            bytes_lit_fn_name="py_bytes_lit",
         )
-        common_handled = str(common_pair[0]) == "1"
-        common_non_str = str(common_pair[1])
-        if common_handled:
-            return common_non_str
-        if isinstance(v, str):
-            v_txt: str = str(v)
-            v_ty = self.get_expr_type(expr)
-            if v_ty in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-                try:
-                    int(v_txt)
-                    return v_txt
-                except Exception:
-                    pass
-            if v_ty in {"float32", "float64"}:
-                try:
-                    float(v_txt)
-                    return v_txt
-                except Exception:
-                    pass
-            if self.get_expr_type(expr) == "bytes":
-                raw = self.any_to_str(expr_d.get("repr"))
-                if raw != "":
-                    qpos = -1
-                    i = 0
-                    while i < len(raw):
-                        if raw[i] in {'"', "'"}:
-                            qpos = i
-                            break
-                        i += 1
-                    if qpos >= 0:
-                        return f"py_bytes_lit({raw[qpos:]})"
-                return f"bytes({cpp_string_lit(v_txt)})"
-            return cpp_string_lit(v_txt)
-        return str(v)
 
     def _render_attribute_expr(self, expr_d: dict[str, Any]) -> str:
-        """Attribute ノードを C++ 式へ変換する。"""
+        """Attribute ノードを C++ 式へ変換する。
+
+        NOTE:
+        `CodeEmitter.render_attribute_expr_common` は内部で `render_expr(...)` を呼ぶ。
+        selfhost 生成 C++ では基底メソッド内呼び出しが静的束縛されるため、
+        基底 `render_expr`（空文字）へ落ちて `.<attr>` 化する。
+        CppEmitter 側で実装して `CppEmitter.render_expr` 経路を維持する。
+        """
         owner_t = self.get_expr_type(expr_d.get("value"))
         if self.is_forbidden_object_receiver_type(owner_t):
             raise RuntimeError(
                 "object receiver method call / attribute access is forbidden by language constraints"
             )
         base_rendered = self.render_expr(expr_d.get("value"))
-        base_ctx = self._resolve_attribute_owner_context_local(expr_d.get("value"), base_rendered)
+        base_ctx = self.resolve_attribute_owner_context(expr_d.get("value"), base_rendered)
         base = self.any_dict_get_str(base_ctx, "expr", "")
         base_node = self.any_to_dict_or_empty(base_ctx.get("node"))
         base_kind = self._node_kind_from_dict(base_node)
@@ -4956,12 +4892,18 @@ class CppEmitter(CodeEmitter):
         )
         if direct_self_or_class != "":
             return direct_self_or_class
-        # import モジュールの属性参照は map -> namespace の順で解決する。
-        base_module_name = self._normalize_runtime_module_name(self.any_dict_get_str(base_ctx, "module", ""))
+        base_module_name = self._normalize_runtime_module_name(
+            self.any_dict_get_str(base_ctx, "module", "")
+        )
         if base_module_name != "":
             mapped = self._lookup_module_attr_runtime_call(base_module_name, attr)
             ns = self._module_name_to_cpp_namespace(base_module_name)
-            direct_module = self.render_attribute_module_access(base_module_name, attr, mapped, ns)
+            direct_module = self.render_attribute_module_access(
+                base_module_name,
+                attr,
+                mapped,
+                ns,
+            )
             if direct_module != "":
                 return direct_module
         if base_kind == "Name":
@@ -4972,16 +4914,10 @@ class CppEmitter(CodeEmitter):
                 and base_name not in self.import_modules
                 and base_name in self.import_symbol_modules
             ):
-                src_obj = self.doc.get("source_path")
-                src = "(input)"
-                if isinstance(src_obj, str) and src_obj != "":
-                    src = src_obj
-                raise _make_user_error(
-                    "input_invalid",
-                    "Module names are not bound by from-import statements.",
-                    [f"kind=missing_symbol file={src} import={base_name}.{attr}"],
-                )
+                raise self._make_missing_symbol_import_error(base_name, attr)
         bt = self.get_expr_type(expr_d.get("value"))
+        if bt == "Path" and attr in {"name", "stem", "parent"}:
+            return f"{base}.{attr}()"
         if bt in self.ref_classes:
             return f"{base}->{attr}"
         return f"{base}.{attr}"
@@ -6583,6 +6519,116 @@ def _graph_cycle_dfs(
     color[key] = 2
 
 
+def _module_name_from_path_for_graph(root: Path, module_path: Path) -> str:
+    """import graph 用の module_id フォールバック解決。"""
+    root_txt = str(root)
+    path_txt = str(module_path)
+    in_root = False
+    if root_txt != "" and not root_txt.endswith("/"):
+        root_txt += "/"
+    rel = path_txt
+    if root_txt != "" and path_txt.startswith(root_txt):
+        rel = path_txt[len(root_txt) :]
+        in_root = True
+    if rel.endswith(".py"):
+        rel = rel[:-3]
+    rel = rel.replace("/", ".")
+    if rel.endswith(".__init__"):
+        rel = rel[: -9]
+    if not in_root:
+        stem = module_path.stem
+        if stem == "__init__":
+            stem = module_path.parent.name
+        rel = stem
+    return rel
+
+
+def _module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:
+    """import graph 用の EAST module_id 抽出。"""
+    meta_obj = east_doc.get("meta")
+    meta = meta_obj if isinstance(meta_obj, dict) else {}
+    module_id_obj = meta.get("module_id")
+    module_id = ""
+    if isinstance(module_id_obj, str):
+        module_id = module_id_obj
+    if module_id != "":
+        return module_id
+    return _module_name_from_path_for_graph(root, module_path)
+
+
+def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> Path:
+    """import graph 用のユーザーモジュール解決（未解決は空 Path）。"""
+    if module_name.startswith("pytra.") or module_name == "pytra":
+        return Path("")
+    rel = module_name.replace(".", "/")
+    parts = module_name.split(".")
+    leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
+    cur_dir = str(search_root)
+    if cur_dir == "":
+        cur_dir = "."
+    seen_dirs: set[str] = set()
+    best_path = ""
+    best_rank = -1
+    best_distance = 1000000000
+    distance = 0
+    while cur_dir not in seen_dirs:
+        seen_dirs.add(cur_dir)
+        prefix = cur_dir
+        if prefix != "" and not prefix.endswith("/"):
+            prefix += "/"
+        cand_init = prefix + rel + "/__init__.py"
+        cand_named = ""
+        if leaf != "":
+            cand_named = prefix + rel + "/" + leaf + ".py"
+        cand_flat = prefix + rel + ".py"
+        candidates: list[tuple[str, int]] = []
+        candidates.append((cand_init, 3))
+        if cand_named != "":
+            candidates.append((cand_named, 2))
+        candidates.append((cand_flat, 1))
+        i = 0
+        while i < len(candidates):
+            path_txt, rank = candidates[i]
+            if Path(path_txt).exists():
+                if rank > best_rank or (rank == best_rank and distance < best_distance):
+                    best_path = path_txt
+                    best_rank = rank
+                    best_distance = distance
+            i += 1
+        parent_dir = _path_parent_text(Path(cur_dir))
+        if parent_dir == cur_dir:
+            break
+        cur_dir = parent_dir if parent_dir != "" else "."
+        distance += 1
+    if best_path != "":
+        return Path(best_path)
+    return Path("")
+
+
+def _resolve_module_name_for_graph(raw_name: str, root_dir: Path) -> dict[str, Any]:
+    """import graph 用のモジュール解決（順序依存を避ける前段 helper）。"""
+    out: dict[str, Any] = {}
+    out["status"] = "missing"
+    out["module_id"] = raw_name
+    out["path"] = ""
+    if raw_name.startswith("."):
+        out["status"] = "relative"
+        return out
+    if _is_pytra_module_name(raw_name):
+        out["status"] = "pytra"
+        return out
+    dep_file = _resolve_user_module_path_for_graph(raw_name, root_dir)
+    if str(dep_file) != "":
+        out["status"] = "user"
+        out["path"] = str(dep_file)
+        out["module_id"] = raw_name
+        return out
+    if _is_known_non_user_import(raw_name):
+        out["status"] = "known"
+        return out
+    return out
+
+
 def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
     root = Path(_path_parent_text(entry_path))
@@ -6618,7 +6664,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
         key_to_path[cur_key] = cur_path
         key_to_disp[cur_key] = _rel_disp_for_graph(root, cur_path)
         if cur_key not in module_id_map:
-            module_id_map[cur_key] = _module_name_from_path(root, cur_path)
+            module_id_map[cur_key] = _module_name_from_path_for_graph(root, cur_path)
         east_cur: dict[str, Any] = {}
         try:
             east_cur = load_east(cur_path)
@@ -6633,12 +6679,12 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
         i = 0
         while i < len(mods):
             mod = mods[i]
-            resolved = resolve_module_name(mod, search_root)
+            resolved = _resolve_module_name_for_graph(mod, search_root)
             status = _dict_any_get_str(resolved, "status")
             dep_file = Path("")
             dep_obj = resolved.get("path")
-            if isinstance(dep_obj, Path):
-                dep_file = dep_obj
+            if isinstance(dep_obj, str) and dep_obj != "":
+                dep_file = Path(dep_obj)
             resolved_mod_id = _dict_any_get_str(resolved, "module_id")
             if status == "relative":
                 rel_item = cur_disp + ": " + mod
@@ -6830,7 +6876,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
     out: dict[str, set[str]] = {}
     for mod_key, east in module_east_map.items():
         mod_path = Path(mod_key)
-        mod_name = _module_id_from_east(root, mod_path, east)
+        mod_name = _module_id_from_east_for_graph(root, mod_path, east)
         if mod_name == "":
             continue
         body_obj = east.get("body")
@@ -6948,11 +6994,14 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
             meta_obj = east.get("meta")
             meta = meta_obj if isinstance(meta_obj, dict) else {}
             module_id_obj = module_id_map.get(str(p))
-            module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+            module_id = ""
+            if isinstance(module_id_obj, str):
+                module_id = module_id_obj
             if module_id == "":
-                module_id = _module_name_from_path(root_dir, p)
+                module_id = _module_name_from_path_for_graph(root_dir, p)
             if module_id != "":
-                meta["module_id"] = module_id
+                module_id_any: Any = module_id
+                meta["module_id"] = module_id_any
             east["meta"] = meta
             out[str(p)] = east
         i += 1
@@ -7185,7 +7234,9 @@ def _module_id_from_east(root: Path, module_path: Path, east_doc: dict[str, Any]
     meta_obj = east_doc.get("meta")
     meta = meta_obj if isinstance(meta_obj, dict) else {}
     module_id_obj = meta.get("module_id")
-    module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+    module_id = ""
+    if isinstance(module_id_obj, str):
+        module_id = module_id_obj
     if module_id != "":
         return module_id
     return _module_name_from_path(root, module_path)

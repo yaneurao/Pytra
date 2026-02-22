@@ -136,11 +136,38 @@ def _render_runtime_call_dict_ops(
         owner = emitter.render_expr(owner_node)
         owner_t = emitter.get_expr_type(owner_node)
         owner_value_t = ""
+        owner_optional_object_dict = False
         if owner_t.startswith("dict[") and owner_t.endswith("]"):
             owner_inner = emitter.split_generic(owner_t[5:-1])
             if len(owner_inner) == 2:
                 owner_value_t = emitter.normalize_type_name(owner_inner[1])
-        objectish_owner = emitter.is_any_like_type(owner_t) or emitter.is_any_like_type(owner_value_t)
+        owner_parts: list[str] = []
+        if emitter._contains_text(owner_t, "|"):
+            owner_parts = emitter.split_union(owner_t)
+        else:
+            owner_parts = [owner_t]
+        if len(owner_parts) >= 2:
+            has_none = False
+            has_dict_object_part = False
+            i = 0
+            while i < len(owner_parts):
+                p = emitter.normalize_type_name(owner_parts[i])
+                if p == "None":
+                    has_none = True
+                elif p.startswith("dict[") and p.endswith("]"):
+                    inner = emitter.split_generic(p[5:-1])
+                    if len(inner) == 2 and emitter.is_any_like_type(emitter.normalize_type_name(inner[1])):
+                        has_dict_object_part = True
+                        if owner_value_t == "":
+                            owner_value_t = emitter.normalize_type_name(inner[1])
+                i += 1
+            if has_none and has_dict_object_part:
+                owner_optional_object_dict = True
+        objectish_owner = (
+            emitter.is_any_like_type(owner_t)
+            or emitter.is_any_like_type(owner_value_t)
+            or owner_optional_object_dict
+        )
         key_expr = rendered_args[0] if len(rendered_args) >= 1 else "/* missing */"
         arg_nodes = emitter.any_to_list(call_node.get("args"))
         key_node: Any = None
@@ -168,16 +195,46 @@ def _render_runtime_call_dict_ops(
             if objectish_owner and out_t in float_out_types:
                 cast_t = emitter._cpp_type_text(out_t)
                 return "static_cast<" + cast_t + ">(dict_get_float(" + owner + ", " + key_expr + ", py_to_float64(" + rendered_args[1] + ")))"
+            if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "bool":
+                return "dict_get_bool(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
+            if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "str":
+                return "dict_get_str(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
             if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in int_out_types:
                 return "dict_get_int(" + owner + ", " + key_expr + ", py_to_int64(" + rendered_args[1] + "))"
             if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in float_out_types:
                 return "dict_get_float(" + owner + ", " + key_expr + ", py_to_float64(" + rendered_args[1] + "))"
+            # `resolved_type` が unknown でも list 既定値から型が分かる場合は
+            # `py_dict_get_default(..., make_object(...))` を避ける。
+            if objectish_owner and out_t in {"", "unknown"} and default_t.startswith("list["):
+                return "dict_get_list(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
             if objectish_owner and out_t.startswith("list["):
                 return "dict_get_list(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
             if objectish_owner and (emitter.is_any_like_type(out_t) or out_t == "object"):
+                if owner_optional_object_dict:
+                    return "py_dict_get_default(" + owner + ", " + key_expr + ", make_object(" + rendered_args[1] + "))"
                 return "dict_get_node(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
             if not objectish_owner:
-                return owner + ".get(" + key_expr + ", " + rendered_args[1] + ")"
+                default_expr = rendered_args[1]
+                val_t = emitter.normalize_type_name(owner_value_t)
+                # `dict[K, V].get(key, None)` で V が optional でない場合は、
+                # C++ 既定値を V{} に変換して `::std::nullopt` 混入を防ぐ。
+                if default_expr in {"::std::nullopt", "std::nullopt"} and val_t not in {"", "None"}:
+                    allows_nullopt = False
+                    if val_t.startswith("optional[") and val_t.endswith("]"):
+                        allows_nullopt = True
+                    elif emitter._contains_text(val_t, "|"):
+                        parts = emitter.split_union(val_t)
+                        i = 0
+                        while i < len(parts):
+                            if emitter.normalize_type_name(parts[i]) == "None":
+                                allows_nullopt = True
+                                break
+                            i += 1
+                    if (not allows_nullopt) and (not emitter.is_any_like_type(val_t)):
+                        default_expr = emitter._cpp_type_text(val_t) + "()"
+                return owner + ".get(" + key_expr + ", " + default_expr + ")"
+            if owner_optional_object_dict:
+                return "py_dict_get_default(" + owner + ", " + key_expr + ", make_object(" + rendered_args[1] + "))"
             return "py_dict_get_default(" + owner + ", " + key_expr + ", " + rendered_args[1] + ")"
         if len(rendered_args) == 1:
             return "py_dict_get_maybe(" + owner + ", " + key_expr + ")"
@@ -483,6 +540,68 @@ def on_emit_stmt_kind(
     return None
 
 
+def _can_omit_braces_for_single_stmt(emitter: Any, stmts: list[dict[str, Any]]) -> bool:
+    """単文ブロックで波括弧を省略可能か判定する。"""
+    if not emitter._opt_ge(1):
+        return False
+    if len(stmts) != 1:
+        return False
+    one = stmts[0]
+    k = emitter.any_dict_get_str(one, "kind", "")
+    if k == "Assign":
+        tgt = emitter.any_to_dict_or_empty(one.get("target"))
+        # tuple assign は C++ で複数行へ展開されるため単文扱い不可
+        if emitter._node_kind_from_dict(tgt) == "Tuple":
+            return False
+    return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
+
+
+def on_stmt_omit_braces(
+    emitter: Any,
+    kind: str,
+    stmt: dict[str, Any],
+    default_value: bool,
+) -> bool:
+    """制御構文の brace 省略可否を C++ 方針で決定する。"""
+    if not emitter._opt_ge(1):
+        return False
+    body_stmts = emitter._dict_stmt_list(stmt.get("body"))
+    if kind == "If":
+        else_stmts = emitter._dict_stmt_list(stmt.get("orelse"))
+        if not _can_omit_braces_for_single_stmt(emitter, body_stmts):
+            return False
+        if len(else_stmts) == 0:
+            return True
+        return _can_omit_braces_for_single_stmt(emitter, else_stmts)
+    if kind == "ForRange":
+        if len(emitter.any_dict_get_list(stmt, "orelse")) != 0:
+            return False
+        return _can_omit_braces_for_single_stmt(emitter, body_stmts)
+    if kind == "For":
+        if len(emitter.any_dict_get_list(stmt, "orelse")) != 0:
+            return False
+        target = emitter.any_to_dict_or_empty(stmt.get("target"))
+        if emitter._node_kind_from_dict(target) == "Tuple":
+            # tuple unpack は束縛文を追加出力するため常に block 必須。
+            return False
+        return _can_omit_braces_for_single_stmt(emitter, body_stmts)
+    return default_value
+
+
+def on_for_range_mode(
+    emitter: Any,
+    stmt: dict[str, Any],
+    default_mode: str,
+) -> str:
+    """ForRange の mode を C++ 側で解決する。"""
+    mode = emitter.any_to_str(stmt.get("range_mode"))
+    if mode == "":
+        mode = default_mode
+    if mode in {"ascending", "descending", "dynamic"}:
+        return mode
+    return default_mode
+
+
 def on_render_module_method(
     emitter: Any,
     module_name: str,
@@ -715,6 +834,8 @@ def build_cpp_hooks() -> dict[str, Any]:
     """C++ エミッタへ注入する hooks dict を構築する。"""
     hooks = EmitterHooks()
     hooks.add("on_emit_stmt_kind", on_emit_stmt_kind)
+    hooks.add("on_stmt_omit_braces", on_stmt_omit_braces)
+    hooks.add("on_for_range_mode", on_for_range_mode)
     hooks.add("on_render_call", on_render_call)
     hooks.add("on_render_module_method", on_render_module_method)
     hooks.add("on_render_object_method", on_render_object_method)

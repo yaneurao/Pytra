@@ -42,6 +42,23 @@ class _HookedEmitter(_DummyEmitter):
             return True
         return None
 
+    def hook_on_stmt_omit_braces(
+        self,
+        kind: str,
+        stmt: dict[str, Any],
+        default_value: bool,
+    ) -> bool:
+        _ = stmt
+        _ = default_value
+        if kind == "If":
+            return True
+        return False
+
+    def hook_on_for_range_mode(self, stmt: dict[str, Any], default_mode: str) -> str:
+        _ = stmt
+        _ = default_mode
+        return "ascending"
+
     def hook_on_render_call(
         self,
         call_node: dict[str, Any],
@@ -822,6 +839,9 @@ class CodeEmitterTest(unittest.TestCase):
         kind_handled = em.hook_on_emit_stmt_kind("Return", {"kind": "Return"})
         self.assertTrue(kind_handled)
         self.assertIn("// hooked-kind-return", em.lines)
+        self.assertTrue(em.hook_on_stmt_omit_braces("If", {"kind": "If"}, False))
+        self.assertFalse(em.hook_on_stmt_omit_braces("While", {"kind": "While"}, True))
+        self.assertEqual(em.hook_on_for_range_mode({"kind": "ForRange"}, "dynamic"), "ascending")
         hook_call = em.hook_on_render_call(
             {"kind": "Call"},
             {"kind": "Name", "id": "hooked"},
@@ -859,6 +879,19 @@ class CodeEmitterTest(unittest.TestCase):
         def on_emit_stmt_kind(_em: CodeEmitter, kind: str, _stmt: dict[str, Any]) -> Any:
             calls.append("emit_stmt_kind:" + kind)
             return True
+
+        def on_stmt_omit_braces(
+            _em: CodeEmitter,
+            kind: str,
+            _stmt: dict[str, Any],
+            _default_value: bool,
+        ) -> Any:
+            calls.append("stmt_omit_braces:" + kind)
+            return kind == "If"
+
+        def on_for_range_mode(_em: CodeEmitter, _stmt: dict[str, Any], _default_mode: str) -> Any:
+            calls.append("for_range_mode")
+            return "descending"
 
         def on_render_call(
             _em: CodeEmitter,
@@ -923,6 +956,8 @@ class CodeEmitterTest(unittest.TestCase):
         hooks: dict[str, Any] = {
             "on_emit_stmt": on_emit_stmt,
             "on_emit_stmt_kind": on_emit_stmt_kind,
+            "on_stmt_omit_braces": on_stmt_omit_braces,
+            "on_for_range_mode": on_for_range_mode,
             "on_render_call": on_render_call,
             "on_render_module_method": on_render_module_method,
             "on_render_object_method": on_render_object_method,
@@ -934,6 +969,8 @@ class CodeEmitterTest(unittest.TestCase):
         em = CodeEmitter({}, {}, hooks)
         self.assertTrue(em.hook_on_emit_stmt({"kind": "Pass"}))
         self.assertTrue(em.hook_on_emit_stmt_kind("Return", {"kind": "Return"}))
+        self.assertTrue(em.hook_on_stmt_omit_braces("If", {"kind": "If"}, False))
+        self.assertEqual(em.hook_on_for_range_mode({"kind": "ForRange"}, "dynamic"), "descending")
         self.assertEqual(
             em.hook_on_render_call({"kind": "Call"}, {"kind": "Name"}, [], {}),
             "dict_hook_call()",
@@ -971,6 +1008,8 @@ class CodeEmitterTest(unittest.TestCase):
         )
         self.assertIn("emit_stmt:Pass", calls)
         self.assertIn("emit_stmt_kind:Return", calls)
+        self.assertIn("stmt_omit_braces:If", calls)
+        self.assertIn("for_range_mode", calls)
         self.assertIn("render_call", calls)
         self.assertIn("render_module_method", calls)
         self.assertIn("render_object_method", calls)
