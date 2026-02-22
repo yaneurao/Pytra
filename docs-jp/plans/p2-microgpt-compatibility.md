@@ -6,6 +6,7 @@
 - `docs-jp/todo.md` の `ID: P2-MGPT-01`
 - `docs-jp/todo.md` の `ID: P2-MGPT-02`
 - `docs-jp/todo.md` の `ID: P2-MGPT-03`
+- `docs-jp/todo.md` の `ID: P2-MGPT-04`
 
 背景:
 - `microgpt/microgpt-20260222.py` を `python3 src/py2cpp.py ...` で変換すると、self_hosted parser が型注釈なし引数を受理できず停止する。
@@ -38,6 +39,7 @@
 - 型注釈要件に関する運用方針が仕様として明文化されている。
 - `random.choices` / `random.gauss` / `random.shuffle` を使う最小ケースで C++ 構文チェックが通る。
 - `microgpt` 相当ケースの変換失敗原因を再現可能に追跡できる（fixture か手順）。
+- `microgpt/microgpt-20260222.py` を `py2cpp.py` で変換し、生成 C++ が `g++ -std=c++20 -I src -I src/runtime/cpp` でコンパイル可能である。
 
 決定ログ:
 - 2026-02-22: 初版作成。`microgpt` 変換試験で判明したギャップ（型注釈、random API）を TODO 化。

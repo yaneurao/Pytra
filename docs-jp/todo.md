@@ -118,6 +118,7 @@ py2cpp / py2rs 共通化候補:
 1. [ ] [ID: P2-MGPT-01] self_hosted parser の型注釈必須制約（`name: Type`）について、仕様維持するか、無注釈引数の受理/推論を拡張するかを決め、選択した方針を実装へ反映する。
 2. [ ] [ID: P2-MGPT-02] `pytra.std.random` と `src/runtime/cpp/pytra/std/random.*` に `choices` / `gauss` / `shuffle` を追加し、`py2cpp` 生成コードがコンパイル可能な状態にする。
 3. [ ] [ID: P2-MGPT-03] `microgpt` 相当入力（最小再現 fixture でも可）で transpile -> C++ 構文チェックまで回す検証導線を追加する。
+4. [ ] [ID: P2-MGPT-04] （低優先）`microgpt/microgpt-20260222.py` を `py2cpp.py` で変換し、生成 C++ のコンパイル（`g++ -std=c++20 -I src -I src/runtime/cpp`）が通る状態にする。
 
 ## P3: Pythonic 記法戻し（低優先）
 
