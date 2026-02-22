@@ -6704,15 +6704,12 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
         body_obj = east.get("body")
         body: list[dict[str, Any]] = []
         if isinstance(body_obj, list):
-            i = 0
-            while i < len(body_obj):
+            for i in range(len(body_obj)):
                 item = body_obj[i]
                 if isinstance(item, dict):
                     body.append(item)
-                i += 1
         exports: set[str] = set()
-        i = 0
-        while i < len(body):
+        for i in range(len(body)):
             st = body[i]
             kind = _dict_any_kind(st)
             if kind == "FunctionDef" or kind == "ClassDef":
@@ -6728,21 +6725,18 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                     tgt_obj = st.get("target")
                     if isinstance(tgt_obj, dict):
                         targets = [tgt_obj]
-                j = 0
-                while j < len(targets):
+                for j in range(len(targets)):
                     tgt_obj = targets[j]
                     if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
                         name_txt = _dict_any_get_str(tgt_obj, "id")
                         if name_txt != "":
                             exports.add(name_txt)
-                    j += 1
             elif kind == "AnnAssign":
                 tgt_obj = st.get("target")
                 if isinstance(tgt_obj, dict) and _dict_any_kind(tgt_obj) == "Name":
                     name_txt = _dict_any_get_str(tgt_obj, "id")
                     if name_txt != "":
                         exports.add(name_txt)
-            i += 1
         out[mod_name] = exports
     return out
 
@@ -6758,14 +6752,11 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
         body_obj = east.get("body")
         body: list[dict[str, Any]] = []
         if isinstance(body_obj, list):
-            i = 0
-            while i < len(body_obj):
+            for i in range(len(body_obj)):
                 item = body_obj[i]
                 if isinstance(item, dict):
                     body.append(item)
-                i += 1
-        i = 0
-        while i < len(body):
+        for i in range(len(body)):
             st = body[i]
             if _dict_any_kind(st) == "ImportFrom":
                 mod_obj = st.get("module")
@@ -6775,20 +6766,16 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
                 if imported_mod in exports:
                     names_obj = st.get("names")
                     names = names_obj if isinstance(names_obj, list) else []
-                    j = 0
-                    while j < len(names):
+                    for j in range(len(names)):
                         ent = names[j]
                         if isinstance(ent, dict):
                             sym = _dict_any_get_str(ent, "name")
                             if sym == "*":
-                                j += 1
                                 continue
                             if sym != "" and sym not in exports[imported_mod]:
                                 details.append(
                                     f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
                                 )
-                        j += 1
-            i += 1
     if len(details) > 0:
         raise _make_user_error(
             "input_invalid",
