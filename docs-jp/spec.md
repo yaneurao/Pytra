@@ -12,6 +12,7 @@
 - ランタイム仕様: [ランタイム仕様](./spec-runtime.md)
 - GC 仕様: [GC 仕様](./spec-gc.md)
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
+- 言語別仕様: [言語別仕様](./language/index.md)
 - Codex 向け運用仕様: [Codex 向け運用仕様](./spec-codex.md)
 - `pylib` モジュール一覧: [pylib モジュール一覧](./pylib-modules.md)
 
@@ -27,6 +28,8 @@
   - [GC 仕様](./spec-gc.md)
 - `CodeEmitter` の JSON プロファイルと hooks 仕様を確認したい場合:
   - [言語プロファイル仕様](./spec-language-profile.md)
+- 言語ごとの機能対応状況を確認したい場合:
+  - [言語別仕様](./language/index.md)
 - Codex の作業ルール・TODO 運用・コミット運用を確認したい場合:
   - [Codex 向け運用仕様](./spec-codex.md)
 

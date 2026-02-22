@@ -306,7 +306,7 @@ python3 tools/check_py2js_transpile.py
 
 Pytra は Python のサブセットを対象とします。通常の Python コードとして実行できる入力でも、未対応構文を含む場合は変換時に失敗します。
 
-`py2cpp` の機能サポート状況を細かく確認したい場合は、`docs-jp/spec-py2cpp-support.md` を参照してください（テスト根拠つき）。
+`py2cpp` の機能サポート状況を細かく確認したい場合は、`docs-jp/language/cpp/spec-support.md` を参照してください（テスト根拠つき）。
 
 ### 0. エラーカテゴリ
 

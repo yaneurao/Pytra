@@ -12,6 +12,7 @@
 - Runtime specification: [Runtime Specification](./spec-runtime.md)
 - GC specification: [GC Specification](./spec-gc.md)
 - Language profile specification: [Language Profile Specification](./spec-language-profile.md)
+- Language-specific specifications: [Language-Specific Specifications](./language/index.md)
 - Codex operation specification: [Codex Operation Specification](./spec-codex.md)
 - `pylib` module index: [pylib Module Index](./pylib-modules.md)
 
@@ -27,6 +28,8 @@
   - [GC Specification](./spec-gc.md)
 - If you want `CodeEmitter` JSON profile and hooks specification:
   - [Language Profile Specification](./spec-language-profile.md)
+- If you want per-language support details:
+  - [Language-Specific Specifications](./language/index.md)
 - If you want Codex work rules, TODO operations, and commit operations:
   - [Codex Operation Specification](./spec-codex.md)
 

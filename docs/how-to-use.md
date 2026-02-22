@@ -302,7 +302,7 @@ Notes:
 
 Pytra targets a subset of Python. Even if input runs in CPython, transpilation fails when unsupported syntax is used.
 
-For detailed support granularity in `py2cpp` (`enumerate(start)`, `lambda`, comprehensions, etc.), see `docs/spec-py2cpp-support.md` (with test evidence).
+For detailed support granularity in `py2cpp` (`enumerate(start)`, `lambda`, comprehensions, etc.), see `docs/language/cpp/spec-support.md` (with test evidence).
 
 ### 0. Error Categories
 

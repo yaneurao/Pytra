@@ -22,7 +22,6 @@ ALLOWED_EXACT: set[str] = {
     "spec-import.md",
     "spec-language-profile.md",
     "spec-options.md",
-    "spec-py2cpp-support.md",
     "spec-questions.md",
     "spec-runtime.md",
     "spec-user.md",
@@ -35,6 +34,7 @@ ALLOWED_EXACT: set[str] = {
 ALLOWED_REGEX: tuple[re.Pattern[str], ...] = (
     re.compile(r"^todo-history/[0-9]{8}\.md$"),
     re.compile(r"^plans/.+\.md$"),
+    re.compile(r"^language/.+\.md$"),
 )
 
 

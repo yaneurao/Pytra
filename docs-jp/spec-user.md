@@ -118,6 +118,6 @@ python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
 ## 7. 関連ドキュメント
 
 - 使い方: `docs-jp/how-to-use.md`
-- py2cpp 機能対応表（テスト根拠）: `docs-jp/spec-py2cpp-support.md`
+- py2cpp 機能対応表（テスト根拠）: `docs-jp/language/cpp/spec-support.md`
 - サンプルコード: `docs-jp/sample-code.md`
 - 実装状況詳細: `docs-jp/pytra-readme.md`

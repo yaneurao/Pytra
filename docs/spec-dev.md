@@ -91,7 +91,7 @@ Names starting with `_` are treated as internal. The following are public APIs.
 ## 3. C++ Conversion Spec (`py2cpp.py`)
 
 - Parses Python AST and generates a single `.cpp` (with required includes).
-- Detailed support granularity (`enumerate(start)`, `lambda`, comprehensions, etc.) is managed in `docs/spec-py2cpp-support.md`.
+- Detailed support granularity (`enumerate(start)`, `lambda`, comprehensions, etc.) is managed in `docs/language/cpp/spec-support.md`.
 - Generated code uses runtime helpers under `src/runtime/cpp/`.
 - Helper functions are not inlined into generated `.cpp`; use `runtime/cpp/pytra/built_in/py_runtime.h`.
 - Not only `json`: standard-library-equivalent features use `src/pytra/std/*.py` as source of truth, and should not be reimplemented independently in `runtime/cpp`.

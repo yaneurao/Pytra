@@ -1,6 +1,6 @@
 # py2cpp サポートマトリクス（テスト準拠）
 
-<a href="../docs/spec-py2cpp-support.md">
+<a href="../../../docs/language/cpp/spec-support.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 

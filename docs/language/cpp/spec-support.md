@@ -1,6 +1,6 @@
 # py2cpp Support Matrix (Test-Aligned)
 
-<a href="../docs-jp/spec-py2cpp-support.md">
+<a href="../../../docs-jp/language/cpp/spec-support.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -83,4 +83,3 @@ The following still lack sufficient dedicated regression coverage, so they are t
 
 - When updating this table, always add runtime-test evidence (`test/unit/...`) for each corresponding row.
 - Do not mark anything as `supported` if implementation appears to work but no test evidence exists.
-

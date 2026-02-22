@@ -114,7 +114,7 @@ python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
 ## 7. Related Documents
 
 - How to use: `docs/how-to-use.md`
-- py2cpp feature support matrix (with test evidence): `docs/spec-py2cpp-support.md`
+- py2cpp feature support matrix (with test evidence): `docs/language/cpp/spec-support.md`
 - Sample code: `docs/sample-code.md`
 - Detailed implementation status: `docs/pytra-readme.md`
 
