@@ -103,6 +103,7 @@ py2cpp / py2rs 共通化候補:
 5. [ ] [ID: P1-MQ-05] 非 C++ 各言語で、生成物による再自己変換（多段 selfhost）が成立するかを検証し、失敗要因を分類する。
 6. [ ] [ID: P1-MQ-06] 非 C++ 言語の selfhost / 多段 selfhost 検証を定期実行できるチェック導線（手順またはスクリプト）を整備する。
 7. [ ] [ID: P1-MQ-07] `sample/` 生成物はタイムスタンプ埋め込みなしで管理し、CI で再生成差分ゼロ（常に最新）を必須化する。
+8. [ ] [ID: P1-MQ-08] `sample/py` のゴールデン出力置き場（例: `sample/golden/<stem>/` + `manifest`）を定義し、`verify_sample_outputs.py` は既定でゴールデン比較、`--refresh-golden` 指定時のみ Python 実行で更新する運用へ切り替える。
 
 ## P2: Any/object 境界整理
 

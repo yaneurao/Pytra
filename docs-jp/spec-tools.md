@@ -15,7 +15,7 @@
 ## 1. 日常運用で使うもの
 
 - `tools/run_local_ci.py`
-  - 目的: ローカル最小 CI（transpile 回帰 + unit + selfhost build + diff）を一括実行する。
+  - 目的: ローカル最小 CI（version gate + 条件付き sample 再生成 + transpile 回帰 + unit + selfhost build + diff）を一括実行する。
 - `tools/check_py2cpp_transpile.py`
   - 目的: `test/fixtures/` を `py2cpp.py` で一括変換し、失敗ケースを検出する。
   - 主要オプション: `--check-yanesdk-smoke`（Yanesdk の縮小ケースを同時確認）
@@ -37,6 +37,13 @@
   - 目的: `test/fixtures/` と `sample/py` を `py2kotlin.py` で一括変換し、失敗ケースを検出する。
 - `tools/check_yanesdk_py2cpp_smoke.py`
   - 目的: Yanesdk canonical 対象（`library 1本 + game 7本`）が `py2cpp.py` を通るか確認する。
+- `tools/check_transpiler_version_gate.py`
+  - 目的: 変換器関連ファイルが変更されたとき、`src/pytra/compiler/transpiler_versions.json` の対応コンポーネント（`shared` / 言語別）で minor 以上のバージョン更新が行われているかを検証する。
+- `tools/regenerate_samples.py`
+  - 目的: `sample/py` から各 `sample/<lang>` を再生成し、`src/pytra/compiler/transpiler_versions.json` のバージョン・トークンが変わらない限り再生成を skip する。
+  - 主要オプション: `--verify-cpp-on-diff`（C++ 生成差分が出たケースだけ `verify_sample_outputs.py` で compile/run 検証）
+- `tools/run_regen_on_version_bump.py`
+  - 目的: `transpiler_versions.json` の minor 以上の更新を検出したときだけ `regenerate_samples.py` を起動し、影響言語のみ再生成する。
 - `tools/verify_sample_outputs.py`
   - 目的: `sample/py` の Python 実行結果と C++ 実行結果（stdout/画像）を比較する。
   - 主要オプション: `--samples`, `--compile-flags`, `--ignore-stdout`
@@ -75,3 +82,6 @@
 - `tools/` に新しいスクリプトを追加した場合は、この `docs-jp/spec-tools.md` を同時に更新します。
 - スクリプトの目的は「何を自動化するために存在するか」を 1 行で明記します。
 - 破壊的変更（引数仕様の変更、廃止、統合）がある場合は、`docs-jp/how-to-use.md` の関連コマンド例も同期更新します。
+- sample 再生成は「変換器ソース差分」ではなく `src/pytra/compiler/transpiler_versions.json` の minor 以上の更新をトリガーにします。
+- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/hooks/**`, `src/profiles/**`）を変更したコミットでは、`tools/check_transpiler_version_gate.py` を通過させる必要があります。
+- バージョン更新で sample 再生成したときは、`tools/run_regen_on_version_bump.py --verify-cpp-on-diff` を使い、生成差分が出た C++ ケースを compile/run 検証します。

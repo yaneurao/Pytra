@@ -71,6 +71,8 @@
 - `src/pytra/compiler/east_parts/code_emitter.py` を変更した場合は `test/unit/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
 - `CodeEmitter` / `py2cpp` 系の変更では、最低限 `python3 tools/check_py2cpp_transpile.py` と `python3 tools/build_selfhost.py` の両方を通過させてからコミットします。
 - 上記 2 コマンドのいずれかが失敗した状態でのコミットは禁止します。
+- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/hooks/**`, `src/profiles/**`）を変更する場合は、`src/pytra/compiler/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
+- sample 再生成は `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` を使用し、バージョン更新で差分が出た C++ ケースを compile/run 検証します。
 
 ## 7. selfhost 運用ノウハウ
 
@@ -83,3 +85,11 @@
 - selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pytra/std/` の shim のみを使う（例: `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.typing`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`）。
 - selfhost 向けに確実性を優先する箇所では、`continue` に依存した分岐や `x in {"a", "b"}` のようなリテラル集合 membership を避け、`if/elif` と明示比較（`x == "a" or x == "b"`）を優先する。
 - 日次の最小回帰は `python3 tools/run_local_ci.py` を実行し、`check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff をまとめて通す。
+
+## 8. 対外リリース版バージョン運用
+
+- 対外リリース版の正本はリポジトリ直下 `VERSION` とし、形式は `MAJOR.MINOR.PATCH`（SemVer）を使います。
+- 現在の対外リリース版は `0.0.1` です。
+- `PATCH` の更新は Codex が実施してよいものとします。
+- `MAJOR` / `MINOR` の更新は、ユーザーの明示指示がある場合のみ実施します。
+- `src/pytra/compiler/transpiler_versions.json` は再生成トリガー用の内部バージョンであり、対外リリース版（`VERSION`）とは別管理です。
