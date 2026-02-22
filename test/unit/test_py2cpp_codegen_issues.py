@@ -176,6 +176,23 @@ def make_token() -> Token:
         self.assertIn("return *this;", cpp)
         self.assertNotIn("return self;", cpp)
 
+    def test_nested_def_inside_method_remains_local_lambda(self) -> None:
+        src = """class Box:
+    def inc(self, x: int) -> int:
+        def inner(y: int) -> int:
+            return y + 1
+        return inner(x)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "nested_def_in_method.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("int64 inc(int64 x)", cpp)
+        self.assertIn("auto inner = [&](", cpp)
+        self.assertNotIn("int64 inner(int64 y)", cpp)
+
     def test_unknown_tuple_destructure_uses_auto_not_std_any(self) -> None:
         src = """from pytra.std import os
 
@@ -286,6 +303,125 @@ def f() -> float:
         self.assertIn("dict_get_int(", cpp)
         self.assertNotIn("py_dict_get_default(", cpp)
 
+    def test_dict_get_typed_none_default_uses_value_default(self) -> None:
+        src = """def f(d: dict[str, int]) -> int:
+    return d.get("k", None)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dict_get_typed_none.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('d.get(py_to_string("k"), int64())', cpp)
+        self.assertNotIn('d.get(py_to_string("k"), ::std::nullopt)', cpp)
+
+    def test_dict_get_object_none_default_in_annassign_uses_typed_default(self) -> None:
+        src = """def f(d: dict[str, object]) -> int:
+    x: int = d.get("k", None)
+    return x
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dict_get_object_none_annassign.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('int64 x = dict_get_node(d, "k", 0);', cpp)
+        self.assertNotIn('int64 x = dict_get_node(d, "k", ::std::nullopt);', cpp)
+
+    def test_dict_get_object_none_default_in_return_uses_typed_default(self) -> None:
+        src = """def f(d: dict[str, object]) -> int:
+    return d.get("k", None)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dict_get_object_none_return.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('return dict_get_node(d, "k", 0);', cpp)
+        self.assertNotIn('return dict_get_node(d, "k", ::std::nullopt);', cpp)
+
+    def test_annassign_dict_object_value_is_not_reboxed(self) -> None:
+        src = """def f(x: object) -> dict[str, object]:
+    d: dict[str, object] = {"k": x}
+    return d
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dict_object_annassign_no_rebox.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('dict<str, object> d = dict<str, object>{{"k", x}};', cpp)
+        self.assertNotIn('dict<str, object> d = dict<str, object>{{"k", make_object(x)}};', cpp)
+
+    def test_optional_dict_object_get_int_uses_typed_wrapper(self) -> None:
+        src = """def f(d: dict[str, object] | None) -> int:
+    return d.get("k", 3)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "optional_dict_object_get_int.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('return dict_get_int(d, "k", py_to_int64(3));', cpp)
+        self.assertNotIn('return d.get("k", 3);', cpp)
+
+    def test_optional_dict_object_get_bool_uses_typed_wrapper(self) -> None:
+        src = """def f(d: dict[str, object] | None) -> bool:
+    return d.get("k", True)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "optional_dict_object_get_bool.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('return dict_get_bool(d, "k", true);', cpp)
+        self.assertNotIn('return d.get("k", true);', cpp)
+
+    def test_optional_dict_object_get_str_uses_typed_wrapper(self) -> None:
+        src = """def f(d: dict[str, object] | None) -> str:
+    return d.get("k", "x")
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "optional_dict_object_get_str.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('return dict_get_str(d, "k", "x");', cpp)
+        self.assertNotIn('return py_dict_get_default(d, "k", "x");', cpp)
+
+    def test_optional_dict_object_get_float_uses_typed_wrapper(self) -> None:
+        src = """def f(d: dict[str, object] | None) -> float:
+    return d.get("k", 1.25)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "optional_dict_object_get_float.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('return dict_get_float(d, "k", py_to_float64(1.25));', cpp)
+        self.assertNotIn('return py_dict_get_default(d, "k", 1.25);', cpp)
+
+    def test_optional_dict_object_get_list_uses_list_wrapper(self) -> None:
+        src = """def f(d: dict[str, object] | None) -> list[int]:
+    return d.get("k", [1, 2])
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "optional_dict_object_get_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('return dict_get_list(d, "k", list<int64>{1, 2});', cpp)
+        self.assertNotIn('return py_dict_get_default(d, "k", make_object(list<int64>{1, 2}));', cpp)
+
     def test_none_constant_for_any_like_uses_object_empty(self) -> None:
         src = """def f() -> object:
     x: object = None
@@ -335,6 +471,40 @@ def f(x: object) -> None:
         self.assertEqual(em.infer_rendered_arg_type("x", "unknown", em.declared_var_types), "object")
         self.assertEqual(em.infer_rendered_arg_type("(x)", "", em.declared_var_types), "object")
         self.assertEqual(em.infer_rendered_arg_type("x", "int64", em.declared_var_types), "int64")
+
+    def test_box_expr_for_any_uses_declared_type_hint_for_unknown_source(self) -> None:
+        em = CppEmitter({}, load_cpp_profile(), {})
+        em.declared_var_types["x"] = "object"
+        # source_node が unknown でも、rendered text から object 型を推定できる場合は再 boxing しない。
+        self.assertEqual("x", em._box_expr_for_any("x", {}))
+        self.assertEqual("make_object(y)", em._box_expr_for_any("y", {}))
+
+    def test_control_flow_brace_policy_uses_cpp_hooks(self) -> None:
+        src = """def f(flag: bool, xs: list[tuple[int, int]]) -> int:
+    total: int = 0
+    if flag:
+        total += 1
+    else:
+        total += 2
+    for i in range(0, 3, 1):
+        total += i
+    for a, b in xs:
+        total += a + b
+    return total
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "control_flow_braces.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+        lines = cpp.splitlines()
+        if_lines = [line.strip() for line in lines if line.strip().startswith("if (flag)")]
+        self.assertEqual(if_lines, ["if (flag)"])
+        range_lines = [line.strip() for line in lines if line.strip().startswith("for (int64 i = 0; i < 3; ++i)")]
+        self.assertEqual(range_lines, ["for (int64 i = 0; i < 3; ++i)"])
+        unpack_lines = [line.strip() for line in lines if line.strip().startswith("for (auto __it_")]
+        self.assertEqual(len(unpack_lines), 1)
+        self.assertTrue(unpack_lines[0].endswith("{"))
 
 
 if __name__ == "__main__":
