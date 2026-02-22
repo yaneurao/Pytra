@@ -242,8 +242,7 @@ def _split_ws_tokens(text: str) -> list[str]:
 def _first_import_detail_line(source_text: str, kind: str) -> str:
     """import エラー表示向けに、入力コードから該当 import 行を抜き出す。"""
     lines = source_text.splitlines()
-    i = 0
-    while i < len(lines):
+    for i in range(len(lines)):
         raw = lines[i]
         line = raw if isinstance(raw, str) else ""
         hash_pos = line.find("#")
@@ -263,7 +262,6 @@ def _first_import_detail_line(source_text: str, kind: str) -> str:
                 parts = _split_ws_tokens(line)
                 if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import":
                     return "from " + parts[1] + " import " + parts[3]
-        i += 1
     if kind == "wildcard":
         return "from ... import *"
     return "from .module import symbol"
@@ -443,8 +441,7 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
                 continue
             depth = 0
             p1 = -1
-            k = p0
-            while k < len(sig0):
+            for k in range(p0, len(sig0)):
                 ch = sig0[k : k + 1]
                 if ch == "(":
                     depth += 1
@@ -453,7 +450,6 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
                     if depth == 0:
                         p1 = k
                         break
-                k += 1
             if p1 < 0:
                 i += 1
                 continue
@@ -493,23 +489,18 @@ def _extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, 
     fn_names_obj = sigs.keys()
     fn_names: list[str] = []
     if isinstance(fn_names_obj, list):
-        i = 0
-        while i < len(fn_names_obj):
+        for i in range(len(fn_names_obj)):
             name_obj = fn_names_obj[i]
             if isinstance(name_obj, str):
                 fn_names.append(name_obj)
-            i += 1
-    i = 0
-    while i < len(fn_names):
+    for i in range(len(fn_names)):
         fn_name_obj = fn_names[i]
         sig_obj = sigs.get(fn_name_obj)
         if not isinstance(sig_obj, dict):
-            i += 1
             continue
         arg_types_obj = sig_obj.get("arg_types")
         if isinstance(arg_types_obj, list):
             out[fn_name_obj] = arg_types_obj
-        i += 1
     return out
 
 
