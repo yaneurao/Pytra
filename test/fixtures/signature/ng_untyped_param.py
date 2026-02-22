@@ -1,4 +1,4 @@
-# self_hosted parser signature test: untyped parameter is rejected.
+# legacy signature fixture: untyped parameter sample.
 
 def twice(x) -> int:
     return x * 2

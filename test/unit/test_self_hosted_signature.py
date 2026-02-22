@@ -87,14 +87,42 @@ class SelfHostedSignatureTest(unittest.TestCase):
         err = payload.get("error", {})
         self.assertEqual(err.get("kind"), "unsupported_syntax")
 
-    def test_reject_untyped_parameter(self) -> None:
-        rc, payload = self._run_east(SIG_DIR / "ng_untyped_param.py")
-        self.assertNotEqual(rc, 0)
-        self.assertEqual(payload.get("ok"), False)
-        err = payload.get("error", {})
-        self.assertEqual(err.get("kind"), "unsupported_syntax")
-        self.assertIn("requires type annotation", str(err.get("message", "")))
-        self.assertIn("name: Type", str(err.get("hint", "")))
+    def test_accept_untyped_parameter(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_untyped_param.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        fn = None
+        for stmt in body:
+            if isinstance(stmt, dict) and stmt.get("kind") == "FunctionDef" and stmt.get("name") == "twice":
+                fn = stmt
+                break
+        self.assertIsNotNone(fn)
+        self.assertEqual(fn.get("arg_types", {}).get("x"), "unknown")
+
+    def test_accept_class_inline_method(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_class_inline_method.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        cls = None
+        for stmt in body:
+            if isinstance(stmt, dict) and stmt.get("kind") == "ClassDef" and stmt.get("name") == "Value":
+                cls = stmt
+                break
+        self.assertIsNotNone(cls)
+        cls_body = cls.get("body", [])
+        method = None
+        for item in cls_body:
+            if isinstance(item, dict) and item.get("kind") == "FunctionDef" and item.get("name") == "__pow__":
+                method = item
+                break
+        self.assertIsNotNone(method)
+        method_body = method.get("body", [])
+        self.assertGreater(len(method_body), 0)
+        self.assertEqual(method_body[0].get("kind"), "Return")
 
     def test_reject_object_receiver_access(self) -> None:
         rc, payload = self._run_east(SIG_DIR / "ng_object_receiver.py")
