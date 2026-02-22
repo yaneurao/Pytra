@@ -4802,8 +4802,7 @@ class CppEmitter(CodeEmitter):
         if t.startswith("not "):
             inner = self._trim_ws(t[4:])
             inner_cpp = self._render_repr_expr(inner)
-            if inner_cpp == "":
-                inner_cpp = inner
+            inner_cpp = inner_cpp if inner_cpp != "" else inner
             return f"!({inner_cpp})"
 
         not_in_parts = self._split_top_level_infix_text(t, " not in ")
@@ -4811,11 +4810,9 @@ class CppEmitter(CodeEmitter):
             lhs = not_in_parts[0]
             rhs = not_in_parts[1]
             lhs_cpp = self._render_repr_expr(lhs)
-            if lhs_cpp == "":
-                lhs_cpp = self._trim_ws(lhs)
+            lhs_cpp = lhs_cpp if lhs_cpp != "" else self._trim_ws(lhs)
             rhs_cpp = self._render_repr_expr(rhs)
-            if rhs_cpp == "":
-                rhs_cpp = self._trim_ws(rhs)
+            rhs_cpp = rhs_cpp if rhs_cpp != "" else self._trim_ws(rhs)
             rhs_set = self._render_set_literal_repr(rhs_cpp)
             if rhs_set != "":
                 rhs_cpp = rhs_set
@@ -4826,11 +4823,9 @@ class CppEmitter(CodeEmitter):
             lhs = in_parts[0]
             rhs = in_parts[1]
             lhs_cpp = self._render_repr_expr(lhs)
-            if lhs_cpp == "":
-                lhs_cpp = self._trim_ws(lhs)
+            lhs_cpp = lhs_cpp if lhs_cpp != "" else self._trim_ws(lhs)
             rhs_cpp = self._render_repr_expr(rhs)
-            if rhs_cpp == "":
-                rhs_cpp = self._trim_ws(rhs)
+            rhs_cpp = rhs_cpp if rhs_cpp != "" else self._trim_ws(rhs)
             rhs_set = self._render_set_literal_repr(rhs_cpp)
             if rhs_set != "":
                 rhs_cpp = rhs_set
@@ -4843,8 +4838,7 @@ class CppEmitter(CodeEmitter):
                 cmp_terms: list[str] = []
                 for part in cmp_parts:
                     p_cpp = self._render_repr_expr(part)
-                    if p_cpp == "":
-                        p_cpp = self._trim_ws(part)
+                    p_cpp = p_cpp if p_cpp != "" else self._trim_ws(part)
                     cmp_terms.append(p_cpp)
                 pair_parts: list[str] = []
                 for i in range(len(cmp_terms) - 1):
@@ -4857,13 +4851,11 @@ class CppEmitter(CodeEmitter):
         if call_ok:
             if fn_name == "len" and len(fn_args) == 1:
                 arg0 = self._render_repr_expr(fn_args[0])
-                if arg0 == "":
-                    arg0 = self._trim_ws(fn_args[0])
+                arg0 = arg0 if arg0 != "" else self._trim_ws(fn_args[0])
                 return f"py_len({arg0})"
             if fn_name == "isinstance" and len(fn_args) == 2:
                 arg0 = self._render_repr_expr(fn_args[0])
-                if arg0 == "":
-                    arg0 = self._trim_ws(fn_args[0])
+                arg0 = arg0 if arg0 != "" else self._trim_ws(fn_args[0])
                 ty = self._trim_ws(fn_args[1])
                 fn_map = {
                     "str": "py_is_str",
@@ -4885,18 +4877,13 @@ class CppEmitter(CodeEmitter):
                 lo, hi, has_colon = _split_infix_once(body, ":")
                 if has_colon:
                     base_cpp = self._render_repr_expr(base)
-                    if base_cpp == "":
-                        base_cpp = base
+                    base_cpp = base_cpp if base_cpp != "" else base
                     lo_cpp = self._render_repr_expr(lo)
-                    if lo_cpp == "":
-                        lo_cpp = self._trim_ws(lo)
+                    lo_cpp = lo_cpp if lo_cpp != "" else self._trim_ws(lo)
                     hi_cpp = self._render_repr_expr(hi)
-                    if hi_cpp == "":
-                        hi_cpp = self._trim_ws(hi)
-                    if lo_cpp == "":
-                        lo_cpp = "0"
-                    if hi_cpp == "":
-                        hi_cpp = f"py_len({base_cpp})"
+                    hi_cpp = hi_cpp if hi_cpp != "" else self._trim_ws(hi)
+                    lo_cpp = lo_cpp if lo_cpp != "" else "0"
+                    hi_cpp = hi_cpp if hi_cpp != "" else f"py_len({base_cpp})"
                     return f"py_slice({base_cpp}, {lo_cpp}, {hi_cpp})"
         out = t
         out = self._replace_all_text(out, " is not None", " != ::std::nullopt")
@@ -5188,9 +5175,9 @@ class CppEmitter(CodeEmitter):
                 if brace_pos > 0:
                     cand = rv[:brace_pos].strip()
                     if cand.startswith("dict<") or cand.startswith("list<") or cand.startswith("set<"):
-                        if ctor_elem == "":
-                            ctor_elem = cand
-                        elif ctor_elem != cand:
+                        first_ctor_elem = ctor_elem == ""
+                        ctor_elem = cand if first_ctor_elem else ctor_elem
+                        if not first_ctor_elem and ctor_elem != cand:
                             ctor_mixed = True
                 if self.is_any_like_type(elem_t):
                     rv = self._box_expr_for_any(rv, e)
@@ -5262,16 +5249,16 @@ class CppEmitter(CodeEmitter):
                 kt0 = self.get_expr_type(key_node)
                 kt = kt0 if isinstance(kt0, str) else ""
                 if kt not in {"", "unknown"}:
-                    if inferred_key == "":
-                        inferred_key = kt
-                    elif kt != inferred_key:
+                    first_inferred_key = inferred_key == ""
+                    inferred_key = kt if first_inferred_key else inferred_key
+                    if not first_inferred_key and kt != inferred_key:
                         key_mixed = True
                 vt0 = self.get_expr_type(val_node)
                 vt = vt0 if isinstance(vt0, str) else ""
                 if vt not in {"", "unknown"}:
-                    if inferred_val == "":
-                        inferred_val = vt
-                    elif vt != inferred_val:
+                    first_inferred_val = inferred_val == ""
+                    inferred_val = vt if first_inferred_val else inferred_val
+                    if not first_inferred_val and vt != inferred_val:
                         val_mixed = True
             if key_t in {"", "unknown"} and inferred_key != "" and not key_mixed:
                 key_t = inferred_key
@@ -7534,8 +7521,7 @@ def main(argv: list[str]) -> int:
                 print("skip: impl module is hand-written on C++ side: " + module_tail)
                 return 0
             ns = top_namespace_opt
-            if ns == "":
-                ns = _runtime_namespace_for_tail(module_tail)
+            ns = ns if ns != "" else _runtime_namespace_for_tail(module_tail)
             rel_tail = _runtime_output_rel_tail(module_tail)
             out_root = Path("src/runtime/cpp/pytra")
             cpp_out = out_root / (rel_tail + ".cpp")
