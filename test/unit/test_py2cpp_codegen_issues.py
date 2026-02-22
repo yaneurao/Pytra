@@ -193,6 +193,64 @@ def make_token() -> Token:
         self.assertIn('return obj_to_rc_or_raise<Box>(other, "Box.v")->v;', cpp)
         self.assertNotIn("return py_obj_cast<Box>(other)->v;", cpp)
 
+    def test_any_to_refclass_annassign_uses_obj_to_rc_or_raise(self) -> None:
+        src = """from dataclasses import dataclass
+
+@dataclass
+class Box:
+    v: int
+
+def f(x: object) -> int:
+    y: Box = x
+    return y.v
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "any_to_ref_annassign.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('rc<Box> y = obj_to_rc_or_raise<Box>(x, "annassign:y");', cpp)
+
+    def test_any_to_refclass_return_uses_obj_to_rc_or_raise(self) -> None:
+        src = """from dataclasses import dataclass
+
+@dataclass
+class Box:
+    v: int
+
+def f(x: object) -> Box:
+    return x
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "any_to_ref_return.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('return obj_to_rc_or_raise<Box>(x, "return:Box");', cpp)
+
+    def test_any_to_refclass_call_arg_uses_obj_to_rc_or_raise(self) -> None:
+        src = """from dataclasses import dataclass
+
+@dataclass
+class Box:
+    v: int
+
+def take_box(b: Box) -> int:
+    return b.v
+
+def f(x: object) -> int:
+    return take_box(x)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "any_to_ref_call_arg.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn('return take_box(obj_to_rc_or_raise<Box>(x, "call_arg:Box"));', cpp)
+
     def test_nested_def_inside_method_remains_local_lambda(self) -> None:
         src = """class Box:
     def inc(self, x: int) -> int:

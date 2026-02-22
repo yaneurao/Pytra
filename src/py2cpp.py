@@ -2099,7 +2099,7 @@ class CppEmitter(CodeEmitter):
             if has_none and len(non_none_norm) == 1 and non_none_norm[0] == ann_norm:
                 rendered_val = f"({rendered_val}).value()"
         if self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
-            rendered_val = self.apply_cast(rendered_val, ann_t_str)
+            rendered_val = self._coerce_any_expr_to_target(rendered_val, ann_t_str, f"annassign:{target}")
         if self.is_any_like_type(ann_t_str) and val_is_dict:
             if val_kind == "Constant" and val.get("value") is None:
                 rendered_val = "object{}"
@@ -2505,7 +2505,7 @@ class CppEmitter(CodeEmitter):
         if self.is_any_like_type(ret_t) and (not self.is_any_like_type(expr_t)):
             rv = self.render_expr_as_any(stmt.get("value"))
         if self._can_runtime_cast_target(ret_t) and self.is_any_like_type(expr_t):
-            rv = self.apply_cast(rv, ret_t)
+            rv = self._coerce_any_expr_to_target(rv, ret_t, f"return:{ret_t}")
         self.emit(
             self.syntax_line(
                 "return_value",
@@ -2536,7 +2536,7 @@ class CppEmitter(CodeEmitter):
         yv = self.render_expr(stmt.get("value"))
         yv_t = self.get_expr_type(stmt.get("value"))
         if self.current_function_yield_type not in {"", "unknown", "Any", "object"} and self.is_any_like_type(yv_t):
-            yv = self.apply_cast(yv, self.current_function_yield_type)
+            yv = self._coerce_any_expr_to_target(yv, self.current_function_yield_type, f"yield:{self.current_function_yield_type}")
         self.emit(f"{buf}.append({yv});")
 
     def _emit_assign_stmt(self, stmt: dict[str, Any]) -> None:
@@ -2754,7 +2754,7 @@ class CppEmitter(CodeEmitter):
             rval_t0 = self.get_expr_type(stmt.get("value"))
             rval_t = rval_t0 if isinstance(rval_t0, str) else ""
             if self._can_runtime_cast_target(picked) and self.is_any_like_type(rval_t):
-                rval = self.apply_cast(rval, picked)
+                rval = self._coerce_any_expr_to_target(rval, picked, f"assign:{texpr}")
             if self.is_any_like_type(picked):
                 if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
                     rval = "object{}"
@@ -2780,7 +2780,7 @@ class CppEmitter(CodeEmitter):
         rval_t0 = self.get_expr_type(stmt.get("value"))
         rval_t = rval_t0 if isinstance(rval_t0, str) else ""
         if self._can_runtime_cast_target(t_target) and self.is_any_like_type(rval_t):
-            rval = self.apply_cast(rval, t_target)
+            rval = self._coerce_any_expr_to_target(rval, t_target, f"assign:{texpr}")
         if self.is_any_like_type(t_target):
             if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
                 rval = "object{}"
@@ -4165,6 +4165,28 @@ class CppEmitter(CodeEmitter):
             return class_rendered
         return None
 
+    def _coerce_any_expr_to_target(self, expr_txt: str, target_t: str, ctx: str) -> str:
+        """Any/object 式を target_t へ変換する（失敗契約は fail-fast）。"""
+        t_norm = self.normalize_type_name(target_t)
+        if t_norm in self.ref_classes:
+            cpp_t = self._cpp_type_text(t_norm)
+            ref_inner = t_norm
+            if cpp_t.startswith("rc<") and cpp_t.endswith(">"):
+                ref_inner = cpp_t[3:-1]
+            ctx_safe = ctx.replace("\\", "\\\\").replace('"', '\\"')
+            return f'obj_to_rc_or_raise<{ref_inner}>({expr_txt}, "{ctx_safe}")'
+        if t_norm in {"float32", "float64"}:
+            return f"py_to_float64({expr_txt})"
+        if t_norm in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+            return f"{t_norm}(py_to_int64({expr_txt}))"
+        if t_norm == "bool":
+            return f"py_to_bool({expr_txt})"
+        if t_norm == "str":
+            return f"py_to_string({expr_txt})"
+        if t_norm.startswith("list[") or t_norm.startswith("dict[") or t_norm.startswith("set["):
+            return f"{self._cpp_type_text(t_norm)}({expr_txt})"
+        return expr_txt
+
     def _coerce_call_arg(self, arg_txt: str, arg_node: Any, target_t: str) -> str:
         """関数シグネチャに合わせて引数を必要最小限キャストする。"""
         at0 = self.get_expr_type(arg_node)
@@ -4182,17 +4204,7 @@ class CppEmitter(CodeEmitter):
             return arg_txt
         if not self.is_any_like_type(at):
             return arg_txt
-        if target_t in {"float32", "float64"}:
-            return f"py_to_float64({arg_txt})"
-        if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-            return f"{target_t}(py_to_int64({arg_txt}))"
-        if target_t == "bool":
-            return f"py_to_bool({arg_txt})"
-        if target_t == "str":
-            return f"py_to_string({arg_txt})"
-        if target_t.startswith("list[") or target_t.startswith("dict[") or target_t.startswith("set["):
-            return f"{self._cpp_type_text(target_t)}({arg_txt})"
-        return arg_txt
+        return self._coerce_any_expr_to_target(arg_txt, target_t, f"call_arg:{t_norm}")
 
     def _coerce_args_by_signature(
         self,
