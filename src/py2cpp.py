@@ -5693,15 +5693,13 @@ def _header_guard_from_path(path: str) -> str:
         src = src[len(prefix2) :]
     src = "PYTRA_" + src.upper()
     out_chars: list[str] = []
-    i = 0
-    while i < len(src):
+    for i in range(len(src)):
         ch = src[i : i + 1]
         ok = ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9"))
         if ok:
             out_chars.append(ch)
         else:
             out_chars.append("_")
-        i += 1
     out = "".join(out_chars)
     while out.startswith("_"):
         out = out[1:]
@@ -5717,11 +5715,9 @@ def _header_allows_none_default(east_t: str) -> bool:
         return True
     if "|" in txt:
         parts = txt.split("|")
-        i = 0
-        while i < len(parts):
+        for i in range(len(parts)):
             if parts[i].strip() == "None":
                 return True
-            i += 1
     return txt == "None"
 
 
