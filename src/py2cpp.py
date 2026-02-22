@@ -6551,8 +6551,7 @@ def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> 
     parts = module_name.split(".")
     leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
     cur_dir = str(search_root)
-    if cur_dir == "":
-        cur_dir = "."
+    cur_dir = cur_dir if cur_dir != "" else "."
     seen_dirs: set[str] = set()
     best_path = ""
     best_rank = -1
@@ -6564,9 +6563,7 @@ def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> 
         if prefix != "" and not prefix.endswith("/"):
             prefix += "/"
         cand_init = prefix + rel + "/__init__.py"
-        cand_named = ""
-        if leaf != "":
-            cand_named = prefix + rel + "/" + leaf + ".py"
+        cand_named = prefix + rel + "/" + leaf + ".py" if leaf != "" else ""
         cand_flat = prefix + rel + ".py"
         candidates: list[tuple[str, int]] = []
         candidates.append((cand_init, 3))
@@ -6999,8 +6996,7 @@ def _sanitize_module_label(s: str) -> str:
         else:
             out_chars.append("_")
     out = "".join(out_chars)
-    if out == "":
-        out = "module"
+    out = out if out != "" else "module"
     if out[0] >= "0" and out[0] <= "9":
         out = "_" + out
     return out
@@ -7277,8 +7273,7 @@ def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
     parts = module_name.split(".")
     leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
     cur_dir = str(search_root)
-    if cur_dir == "":
-        cur_dir = "."
+    cur_dir = cur_dir if cur_dir != "" else "."
     seen_dirs: set[str] = set()
     best_path = ""
     best_rank = -1
@@ -7290,9 +7285,7 @@ def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
         if prefix != "" and not prefix.endswith("/"):
             prefix += "/"
         cand_init = prefix + rel + "/__init__.py"
-        cand_named = ""
-        if leaf != "":
-            cand_named = prefix + rel + "/" + leaf + ".py"
+        cand_named = prefix + rel + "/" + leaf + ".py" if leaf != "" else ""
         cand_flat = prefix + rel + ".py"
         candidates: list[tuple[str, int]] = []
         candidates.append((cand_init, 3))
