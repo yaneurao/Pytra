@@ -947,20 +947,14 @@ class CppEmitter(CodeEmitter):
                 if module_id != "":
                     mod_name = self._normalize_runtime_module_name(module_id)
                     inc = self._module_name_to_cpp_include(mod_name)
-                    if inc != "" and inc not in seen:
-                        seen.add(inc)
-                        includes.append(inc)
+                    _append_unique_non_empty(includes, seen, inc)
                     if binding_kind == "symbol" and export_name != "":
                         if mod_name == "pytra.std":
                             sym_inc = self._module_name_to_cpp_include("pytra.std." + export_name)
-                            if sym_inc != "" and sym_inc not in seen:
-                                seen.add(sym_inc)
-                                includes.append(sym_inc)
+                            _append_unique_non_empty(includes, seen, sym_inc)
                         elif mod_name == "pytra.utils":
                             sym_inc = self._module_name_to_cpp_include("pytra.utils." + export_name)
-                            if sym_inc != "" and sym_inc not in seen:
-                                seen.add(sym_inc)
-                                includes.append(sym_inc)
+                            _append_unique_non_empty(includes, seen, sym_inc)
             includes = _sort_str_list_in_place(includes)
             return includes
         for stmt in body:
@@ -969,34 +963,26 @@ class CppEmitter(CodeEmitter):
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     mod_name = self.any_to_str(ent.get("name"))
                     inc = self._module_name_to_cpp_include(mod_name)
-                    if inc != "" and inc not in seen:
-                        seen.add(inc)
-                        includes.append(inc)
+                    _append_unique_non_empty(includes, seen, inc)
             elif kind == "ImportFrom":
                 mod_name = self.any_to_str(stmt.get("module"))
                 mod_name = self._normalize_runtime_module_name(mod_name)
                 inc = self._module_name_to_cpp_include(mod_name)
-                if inc != "" and inc not in seen:
-                    seen.add(inc)
-                    includes.append(inc)
+                _append_unique_non_empty(includes, seen, inc)
                 if mod_name == "pytra.std":
                     for ent in self._dict_stmt_list(stmt.get("names")):
                         sym = self.any_to_str(ent.get("name"))
                         if sym == "":
                             continue
                         sym_inc = self._module_name_to_cpp_include("pytra.std." + sym)
-                        if sym_inc != "" and sym_inc not in seen:
-                            seen.add(sym_inc)
-                            includes.append(sym_inc)
+                        _append_unique_non_empty(includes, seen, sym_inc)
                 if mod_name == "pytra.utils":
                     for ent in self._dict_stmt_list(stmt.get("names")):
                         sym = self.any_to_str(ent.get("name"))
                         if sym == "":
                             continue
                         sym_inc = self._module_name_to_cpp_include("pytra.utils." + sym)
-                        if sym_inc != "" and sym_inc not in seen:
-                            seen.add(sym_inc)
-                            includes.append(sym_inc)
+                        _append_unique_non_empty(includes, seen, sym_inc)
         includes = _sort_str_list_in_place(includes)
         return includes
 
