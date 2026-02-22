@@ -1318,8 +1318,8 @@ class CppEmitter(CodeEmitter):
         if len(module_globals) > 0:
             self.emit("")
 
-        for stmt in module_defs:
-            self.emit_stmt(stmt)
+        for i in range(len(module_defs)):
+            self.emit_stmt(module_defs[i])
             self.emit("")
 
         has_module_runtime = len(module_runtime) > 0
@@ -3846,7 +3846,7 @@ class CppEmitter(CodeEmitter):
                 return f"py_range({args[0]}, {args[1]}, {args[2]})"
             return None
         known_kw = {"start", "stop", "step"}
-        for name in kw:
+        for name, _value in kw.items():
             if name not in known_kw:
                 return None
         if len(args) == 0 and "stop" in kw:
@@ -6731,7 +6731,9 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 module_id = resolved_mod_id if resolved_mod_id != "" else mod
                 if dep_key not in module_id_map or module_id_map[dep_key] == "":
                     module_id_map[dep_key] = module_id
-                graph_adj[cur_key].append(dep_key)
+                cur_adj = graph_adj.get(cur_key, [])
+                cur_adj.append(dep_key)
+                graph_adj[cur_key] = cur_adj
                 key_to_path[dep_key] = dep_file
                 key_to_disp[dep_key] = dep_disp
                 if dep_key not in queued and dep_key not in visited:
@@ -6779,17 +6781,14 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     }
 
 
-def _format_graph_list_section(out: str, label: str, items: list[Any]) -> str:
+def _format_graph_list_section(out: str, label: str, items: list[str]) -> str:
     """依存解析レポートの1セクションを追記して返す。"""
     out2 = out + label + ":\n"
     if len(items) == 0:
         out2 += "  (none)\n"
         return out2
-    for j in range(len(items)):
-        val = items[j]
-        if isinstance(val, str):
-            val_txt = str(val)
-            out2 += "  - " + val_txt + "\n"
+    for val_txt in items:
+        out2 += "  - " + val_txt + "\n"
     return out2
 
 
@@ -6871,7 +6870,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
                 if name_txt != "":
                     exports.add(name_txt)
             elif kind == "Assign":
-                targets = _dict_any_get_list(st, "targets")
+                targets = _dict_any_get_dict_list(st, "targets")
                 if len(targets) == 0:
                     tgt = _dict_any_get_dict(st, "target")
                     if len(tgt) > 0:
@@ -6967,7 +6966,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 if name_txt != "":
                     classes.append(name_txt)
             elif kind == "Assign":
-                targets = _dict_any_get_list(st, "targets")
+                targets = _dict_any_get_dict_list(st, "targets")
                 if len(targets) == 0:
                     tgt = _dict_any_get_dict(st, "target")
                     if len(tgt) > 0:
@@ -7157,7 +7156,7 @@ def _write_multi_file_cpp(
     root = Path(_path_parent_text(entry_path))
     entry_key = str(entry_path)
     files: list[str] = []
-    for mod_key in module_east_map.keys():
+    for mod_key, _east_obj in module_east_map.items():
         files.append(mod_key)
     files = _sort_str_list_in_place(files)
     module_ns_map: dict[str, str] = {}
@@ -7242,9 +7241,7 @@ def _write_multi_file_cpp(
         for _alias, mod_name_obj in import_modules.items():
             if isinstance(mod_name_obj, str) and mod_name_obj != "":
                 dep_modules.add(mod_name_obj)
-        for alias_any in import_symbols.keys():
-            if not isinstance(alias_any, str):
-                continue
+        for alias_any, _sym_obj in import_symbols.items():
             sym = _dict_any_get_dict(import_symbols, alias_any)
             mod_name = _dict_any_get_str(sym, "module")
             if mod_name != "":
@@ -7269,8 +7266,8 @@ def _write_multi_file_cpp(
             funcs = _dict_any_get_dict(target_schema, "functions")
             # `main` は他モジュールから呼ばれない前提。
             fn_decls: list[str] = []
-            for fn_name_any in funcs.keys():
-                if not isinstance(fn_name_any, str) or fn_name_any == "main":
+            for fn_name_any, _fn_sig in funcs.items():
+                if fn_name_any == "main":
                     continue
                 fn_name = fn_name_any
                 sig = _dict_any_get_dict(funcs, fn_name)
