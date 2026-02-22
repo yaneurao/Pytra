@@ -936,16 +936,14 @@ class CppEmitter(CodeEmitter):
         bindings = self.any_to_dict_list(meta.get("import_bindings"))
         if len(bindings) > 0:
             if len(refs) > 0:
-                for r in range(len(refs)):
-                    ref_item = refs[r]
+                for ref_item in refs:
                     module_id = self.any_to_str(ref_item.get("module_id"))
                     symbol = self.any_to_str(ref_item.get("symbol"))
                     local_name = self.any_to_str(ref_item.get("local_name"))
                     if module_id != "" and symbol != "" and local_name != "":
                         self.import_symbols[local_name] = {"module": module_id, "name": symbol}
                         self.import_symbol_modules.add(module_id)
-            for i in range(len(bindings)):
-                item = bindings[i]
+            for item in bindings:
                 module_id = self.any_to_str(item.get("module_id"))
                 export_name = self.any_to_str(item.get("export_name"))
                 local_name = self.any_to_str(item.get("local_name"))
