@@ -255,10 +255,11 @@ py2cpp / py2rs 共通化候補:
 文脈: `docs-jp/plans/p3-spec-drafts.md`（`TG-P3-SPEC-DRAFTS`）
 
 1. [x] [ID: P3-SD-01] `docs-jp/spec/spec-make.md` の仕様案を実装現状と照合し、採用する項目を既存仕様へ段階移管する。
-2. [ ] [ID: P3-SD-02] `docs-jp/spec/spec-template.md` の仕様案を実装現状と照合し、採用/保留/非採用の区分を明確化する。
+2. [x] [ID: P3-SD-02] `docs-jp/spec/spec-template.md` の仕様案を実装現状と照合し、採用/保留/非採用の区分を明確化する。
 
 進捗メモ:
 - `P3-SD-01`: `spec-make.md` と実装実体（`src/pytra/compiler/transpile_cli.py`, `src/py2cpp.py`, `tools/build_multi_cpp.py`）を照合し、採用済みの multi-file `manifest.json` 契約と build 導線を `docs-jp/spec/spec-dev.md` / `docs-jp/spec/spec-tools.md` へ移管した。未実装の `./pytra --build` / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` は草案維持として `docs-jp/spec/spec-make.md` と `docs-jp/plans/p3-spec-drafts.md` に明記した。
+- `P3-SD-02`: `spec-template.md` と実装実体（`src/pytra/std/typing.py`, `src/pytra/compiler/east_parts/core.py`, `src/pytra/compiler/east_parts/code_emitter.py`）を照合し、採用/保留/非採用を区分した。採用項目は `TypeVar` 最小 shim のみとして `docs-jp/spec/spec-pylib-modules.md` へ移管し、`spec-template.md` の「採用」断定表現は「候補」へ修正した。
 
 ## メモ
 
