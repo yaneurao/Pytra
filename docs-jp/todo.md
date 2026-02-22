@@ -111,6 +111,14 @@ py2cpp / py2rs 共通化候補:
 6. [ ] [ID: P2-ANY-06] selfhost 変換で `std::any` を通る経路を記録・列挙し、段階的に除去する。
 7. [ ] [ID: P2-ANY-07] 影響上位3関数単位でパッチを分けて改善し、毎回 `check_py2cpp_transpile.py` を実行する。
 
+## P2: microgpt 変換互換性
+
+文脈: `docs-jp/plans/p2-microgpt-compatibility.md`（`TG-P2-MICROGPT-COMPAT`）
+
+1. [ ] [ID: P2-MGPT-01] self_hosted parser の型注釈必須制約（`name: Type`）について、仕様維持するか、無注釈引数の受理/推論を拡張するかを決め、選択した方針を実装へ反映する。
+2. [ ] [ID: P2-MGPT-02] `pytra.std.random` と `src/runtime/cpp/pytra/std/random.*` に `choices` / `gauss` / `shuffle` を追加し、`py2cpp` 生成コードがコンパイル可能な状態にする。
+3. [ ] [ID: P2-MGPT-03] `microgpt` 相当入力（最小再現 fixture でも可）で transpile -> C++ 構文チェックまで回す検証導線を追加する。
+
 ## P3: Pythonic 記法戻し（低優先）
 
 文脈: `docs-jp/plans/p3-pythonic-restoration.md`（`TG-P3-PYTHONIC`）
