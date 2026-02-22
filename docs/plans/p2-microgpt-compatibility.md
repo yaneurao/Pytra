@@ -13,12 +13,12 @@ Related TODO:
 - `docs-jp/todo.md` `ID: P2-MGPT-04`
 
 Background:
-- Transpiling `materials/microgpt/microgpt-20260222.py` via `python3 src/py2cpp.py ...` currently stops because the self_hosted parser rejects arguments without type annotations.
+- Transpiling `work/tmp/microgpt-20260222-lite.py` via `python3 src/py2cpp.py ...` currently stops because the self_hosted parser rejects arguments without type annotations.
 - With typed minimal probes for `random.choices` / `random.gauss` / `random.shuffle`, generated C++ emits `pytra::std::random::*` calls, but compilation fails because those APIs were missing in `src/runtime/cpp/pytra/std/random.h`.
 - `os.path.exists` has already been confirmed to transpile and pass C++ syntax check under the same conditions.
 
 Validation commands (already executed):
-- `python3 src/py2cpp.py materials/microgpt/microgpt-20260222.py -o work/out/microgpt-20260222.cpp`
+- `python3 src/py2cpp.py work/tmp/microgpt-20260222-lite.py -o work/out/microgpt-20260222.cpp`
 - `python3 src/py2cpp.py /tmp/pytra_probe_random_choices.py -o work/out/pytra_probe_random_choices.cpp`
 - `python3 src/py2cpp.py /tmp/pytra_probe_random_gauss.py -o work/out/pytra_probe_random_gauss.cpp`
 - `python3 src/py2cpp.py /tmp/pytra_probe_random_shuffle.py -o work/out/pytra_probe_random_shuffle.cpp`
@@ -43,7 +43,7 @@ Acceptance criteria:
 - Operational policy for type-annotation requirements is documented in spec.
 - Minimal C++ syntax checks pass for `random.choices` / `random.gauss` / `random.shuffle`.
 - Causes of failures on microgpt-like cases can be traced reproducibly (fixture or explicit procedure).
-- `materials/microgpt/microgpt-20260222.py` transpiles with `py2cpp.py` and generated C++ compiles with `g++ -std=c++20 -I src -I src/runtime/cpp`.
+- `work/tmp/microgpt-20260222-lite.py` transpiles with `py2cpp.py` and generated C++ compiles with `g++ -std=c++20 -I src -I src/runtime/cpp`.
 
 Decision log:
 - 2026-02-22: Initial draft. Added TODO entries for observed gaps in microgpt conversion tests (type annotations, random API).
