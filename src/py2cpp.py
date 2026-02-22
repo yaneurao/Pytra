@@ -4017,14 +4017,12 @@ class CppEmitter(CodeEmitter):
             candidates = [t_norm]
         if self.current_class_name is not None and owner_t in {"", "unknown"}:
             candidates.append(self.current_class_name)
-        i = 0
-        while i < len(candidates):
+        for i in range(len(candidates)):
             c = candidates[i]
             if c in self.class_method_arg_types:
                 mm = self.class_method_arg_types[c]
                 if method in mm:
                     return mm[method]
-            i += 1
         if owner_t in {"", "unknown"} and self.current_class_name is not None:
             mm: dict[str, list[str]] = {}
             if self.current_class_name in self.class_method_arg_types:
@@ -4043,14 +4041,12 @@ class CppEmitter(CodeEmitter):
             candidates = [t_norm]
         if self.current_class_name is not None and owner_t in {"", "unknown"}:
             candidates.append(self.current_class_name)
-        i = 0
-        while i < len(candidates):
+        for i in range(len(candidates)):
             c = candidates[i]
             if c in self.class_method_arg_names:
                 mm = self.class_method_arg_names[c]
                 if method in mm:
                     return mm[method]
-            i += 1
         if owner_t in {"", "unknown"} and self.current_class_name is not None:
             mm2: dict[str, list[str]] = {}
             if self.current_class_name in self.class_method_arg_names:
