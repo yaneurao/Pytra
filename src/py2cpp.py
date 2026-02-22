@@ -6125,12 +6125,10 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     body_obj: object = east_module.get("body")
     body: list[dict[str, Any]] = []
     if isinstance(body_obj, list):
-        i = 0
-        while i < len(body_obj):
+        for i in range(len(body_obj)):
             item = body_obj[i]
             if isinstance(item, dict):
                 body.append(item)
-            i += 1
 
     modules: list[str] = []
     module_seen: set[str] = set()
@@ -6138,8 +6136,7 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     symbol_seen: set[str] = set()
 
     if len(import_bindings) > 0:
-        i = 0
-        while i < len(import_bindings):
+        for i in range(len(import_bindings)):
             ent = import_bindings[i]
             mod_name = ent["module_id"]
             export_name = ent["export_name"]
@@ -6155,18 +6152,15 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                 if label not in symbol_seen:
                     symbol_seen.add(label)
                     symbols.append(label)
-            i += 1
     else:
-        i = 0
-        while i < len(body):
+        for i in range(len(body)):
             stmt = body[i]
             stmt_dict: dict[str, Any] = stmt
             kind = _dict_any_kind(stmt_dict)
             if kind == "Import":
                 names_obj: object = stmt_dict.get("names")
                 if isinstance(names_obj, list):
-                    j = 0
-                    while j < len(names_obj):
+                    for j in range(len(names_obj)):
                         ent = names_obj[j]
                         if isinstance(ent, dict):
                             ent_dict: dict[str, Any] = ent
@@ -6177,7 +6171,6 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                             if mod_name != "" and mod_name not in module_seen:
                                 module_seen.add(mod_name)
                                 modules.append(mod_name)
-                        j += 1
             elif kind == "ImportFrom":
                 mod_obj: object = stmt_dict.get("module")
                 mod_name = ""
@@ -6207,7 +6200,6 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                                 if label not in symbol_seen:
                                     symbol_seen.add(label)
                                     symbols.append(label)
-            i += 1
 
     out = "modules:\n"
     if len(modules) == 0:
