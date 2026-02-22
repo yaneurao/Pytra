@@ -478,10 +478,10 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
                 ann = prm[colon + 1 :]
                 arg_types.append(_normalize_param_annotation(ann))
                 arg_defaults.append(default_txt)
-            sig_ent: dict[str, list[str]] = {}
-            sig_ent["arg_types"] = arg_types
-            sig_ent["arg_defaults"] = arg_defaults
-            sig_map[name] = sig_ent
+            sig_map[name] = {
+                "arg_types": arg_types,
+                "arg_defaults": arg_defaults,
+            }
         i += 1
     return sig_map
 
@@ -6152,12 +6152,14 @@ def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
             if isinstance(binding_kind_obj, str):
                 binding_kind = binding_kind_obj
             if module_id != "" and local_name != "" and binding_kind in {"module", "symbol", "wildcard"}:
-                ent: dict[str, str] = {}
-                ent["module_id"] = module_id
-                ent["export_name"] = export_name
-                ent["local_name"] = local_name
-                ent["binding_kind"] = binding_kind
-                out.append(ent)
+                out.append(
+                    {
+                        "module_id": module_id,
+                        "export_name": export_name,
+                        "local_name": local_name,
+                        "binding_kind": binding_kind,
+                    }
+                )
         i += 1
     return out
 
@@ -6191,11 +6193,13 @@ def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, s
             if isinstance(local_name_obj, str):
                 local_name = local_name_obj
             if module_id != "" and symbol != "" and local_name != "":
-                ent: dict[str, str] = {}
-                ent["module_id"] = module_id
-                ent["symbol"] = symbol
-                ent["local_name"] = local_name
-                out.append(ent)
+                out.append(
+                    {
+                        "module_id": module_id,
+                        "symbol": symbol,
+                        "local_name": local_name,
+                    }
+                )
         i += 1
     return out
 
