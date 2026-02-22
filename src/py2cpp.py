@@ -6939,8 +6939,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
         body = _dict_any_get_dict_list(east, "body")
         fn_schema: dict[str, dict[str, Any]] = {}
         cls_schema: dict[str, dict[str, Any]] = {}
-        for i in range(len(body)):
-            st = body[i]
+        for st in body:
             kind = _dict_any_kind(st)
             if kind == "FunctionDef":
                 name_txt = _dict_any_get_str(st, "name")
@@ -7074,8 +7073,7 @@ def _write_multi_file_cpp(
     module_ns_map: dict[str, str] = {}
     module_label_map: dict[str, str] = {}
     module_name_by_key: dict[str, str] = {}
-    for i in range(len(files)):
-        mod_key = files[i]
+    for mod_key in files:
         mod_path = Path(mod_key)
         east0 = _dict_any_get_dict(module_east_map, mod_key)
         label = _module_rel_label(root, mod_path)
@@ -7089,15 +7087,12 @@ def _write_multi_file_cpp(
 
     manifest_modules: list[dict[str, Any]] = []
 
-    for i in range(len(files)):
-        mod_key = files[i]
+    for mod_key in files:
         east = _dict_any_get_dict(module_east_map, mod_key)
         if len(east) == 0:
             continue
         mod_path = Path(mod_key)
-        label = ""
-        if mod_key in module_label_map:
-            label = module_label_map[mod_key]
+        label = module_label_map[mod_key] if mod_key in module_label_map else ""
         hdr_path = include_dir / (label + ".h")
         cpp_path = src_dir / (label + ".cpp")
         guard = "PYTRA_MULTI_" + _sanitize_module_label(label).upper() + "_H"
@@ -7171,9 +7166,7 @@ def _write_multi_file_cpp(
             target_key = ""
             for k2, p2 in module_east_map.items():
                 _ = p2
-                target_mod_name = ""
-                if k2 in module_name_by_key:
-                    target_mod_name = module_name_by_key[k2]
+                target_mod_name = module_name_by_key[k2] if k2 in module_name_by_key else ""
                 if target_mod_name == mod_name:
                     target_key = k2
                     break
@@ -7193,8 +7186,7 @@ def _write_multi_file_cpp(
                 arg_types = _dict_any_get_dict(sig, "arg_types")
                 arg_order = _dict_any_get_list(sig, "arg_order")
                 parts: list[str] = []
-                for j in range(len(arg_order)):
-                    an = arg_order[j]
+                for an in arg_order:
                     if not isinstance(an, str):
                         continue
                     at = _dict_any_get_str(arg_types, an, "object")
