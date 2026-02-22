@@ -15,6 +15,15 @@
 - 着手前に文脈ファイルの `背景` / `非対象` / `受け入れ基準` を確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+## P0: Boxing/Unboxing 境界統一（最優先）
+
+文脈: `docs-jp/plans/p0-boxing-boundary-unification.md`（`TG-P0-BOXING`）
+
+1. [ ] [ID: P0-BOX-01] `docs-jp/spec/spec-boxing.md` を正本として、C++ runtime（`gc.h`, `py_runtime.h`）に `py_truthy` / `py_try_len` / `obj_to_rc(_or_raise)` / 厳格変換 API（`*_or_raise`）を段階導入する。
+2. [ ] [ID: P0-BOX-02] `py2cpp.py` の `Any/object` 境界生成を `obj_to_rc_or_raise` 中心へ移行し、`py_obj_cast<T>(...)->...` の直接生成経路を縮退する。
+3. [ ] [ID: P0-BOX-03] JS/TS runtime では minify 耐性確保のため `type_id` dispatch を強制し、名前文字列依存 dispatch（`constructor.name` 等）を禁止する。
+4. [ ] [ID: P0-BOX-04] runtime unit / py2cpp feature / クロスターゲット検証を整備し、暗黙 `0` / `false` / `None` フォールバック経路の新規混入を防ぐ。
+
 ## P0: Selfhost 安定化
 
 文脈: `docs-jp/plans/p0-selfhost-stabilization.md`（`TG-P0-SH`）
