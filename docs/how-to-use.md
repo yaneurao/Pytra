@@ -1,9 +1,8 @@
-# Usage Guide
-
 <a href="../docs-jp/how-to-use.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# Usage Guide
 
 This document is an execution runbook for actually running Pytra.  
 For normative input constraints and usage rules, see [User Specification](spec-user.md).

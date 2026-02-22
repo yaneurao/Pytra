@@ -1,9 +1,8 @@
-# Pytra Implementation Status Notes
-
-<a href="../docs-jp/plans/pytra-wip.md">
+<a href="../../docs-jp/plans/pytra-wip.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# Pytra Implementation Status Notes
 
 This page contains implementation-status details separated from `README.md`.
 

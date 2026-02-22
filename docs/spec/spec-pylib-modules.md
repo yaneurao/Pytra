@@ -1,9 +1,8 @@
-# `src/pytra/` Module Index
-
-<a href="../docs-jp/spec/spec-pylib-modules.md">
+<a href="../../docs-jp/spec/spec-pylib-modules.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# `src/pytra/` Module Index
 
 This page lists supported modules and public APIs under `src/pytra/`.  
 Names starting with `_` are treated as internal implementation details and are out of support scope.

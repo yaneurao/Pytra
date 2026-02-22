@@ -1,9 +1,8 @@
-# Runtime Specification
-
-<a href="../docs-jp/spec/spec-runtime.md">
+<a href="../../docs-jp/spec/spec-runtime.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# Runtime Specification
 
 ### 1. Clarify Responsibility Split Between Generated Artifacts and Handwritten Implementations
 

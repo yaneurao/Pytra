@@ -1,9 +1,8 @@
-# py2cpp Support Matrix (Test-Aligned)
-
 <a href="../../../docs-jp/language/cpp/spec-support.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# py2cpp Support Matrix (Test-Aligned)
 
 Last updated: 2026-02-21
 

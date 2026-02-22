@@ -1,9 +1,8 @@
-# Specification Entry Point
-
-<a href="../docs-jp/spec/index.md">
+<a href="../../docs-jp/spec/index.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# Specification Entry Point
 
 `docs/spec.md` is the entry page for the full specification set. Details are split into the following files.
 

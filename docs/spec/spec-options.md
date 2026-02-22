@@ -1,9 +1,8 @@
-# Transpile Option Specification (Draft)
-
-<a href="../docs-jp/spec/spec-options.md">
+<a href="../../docs-jp/spec/spec-options.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# Transpile Option Specification (Draft)
 
 This document is a draft for organizing Pytra option design.  
 Its purpose is to let users explicitly choose trade-offs between "Python compatibility" and "generated-code performance."

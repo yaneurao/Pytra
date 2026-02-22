@@ -1,9 +1,8 @@
-# About Sample Code
-
-<a href="../docs-jp/spec/spec-sample-code.md">
+<a href="../../docs-jp/spec/spec-sample-code.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# About Sample Code
 
 ## 1. Purpose
 

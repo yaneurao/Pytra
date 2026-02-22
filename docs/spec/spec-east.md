@@ -1,9 +1,8 @@
-# EAST Specification (Implementation-Aligned)
-
-<a href="../docs-jp/spec/spec-east.md">
+<a href="../../docs-jp/spec/spec-east.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
+# EAST Specification (Implementation-Aligned)
 
 This document describes the EAST specification aligned with the current implementation in `src/pytra/compiler/east.py`.
 
