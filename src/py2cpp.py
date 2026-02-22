@@ -1155,8 +1155,7 @@ class CppEmitter(CodeEmitter):
                             arg_order = self.any_dict_get_list(s, "arg_order")
                             ordered: list[str] = []
                             ordered_names: list[str] = []
-                            ai = 0
-                            while ai < len(arg_order):
+                            for ai in range(len(arg_order)):
                                 raw_n = arg_order[ai]
                                 if isinstance(raw_n, str):
                                     n = str(raw_n)
@@ -1164,7 +1163,6 @@ class CppEmitter(CodeEmitter):
                                         ordered_names.append(n)
                                         if n in arg_types:
                                             ordered.append(self.any_to_str(arg_types.get(n)))
-                                ai += 1
                             marg[fn_name] = ordered
                             marg_names[fn_name] = ordered_names
                     self.class_method_names[cls_name] = mset
@@ -1430,15 +1428,13 @@ class CppEmitter(CodeEmitter):
         if t in {"auto", "object"}:
             saw_float = False
             saw_int = False
-            i = 0
-            while i < len(arg_nodes_safe):
+            for i in range(len(arg_nodes_safe)):
                 at0 = self.get_expr_type(arg_nodes_safe[i])
                 at = at0 if isinstance(at0, str) else ""
                 if at in {"float32", "float64"}:
                     saw_float = True
                 elif at in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
                     saw_int = True
-                i += 1
             if saw_float:
                 t = "float64"
             elif saw_int:
