@@ -6409,9 +6409,9 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             resolved = _resolve_module_name_for_graph(mod, search_root)
             status = _dict_any_get_str(resolved, "status")
             dep_file = Path("")
-            dep_obj = resolved.get("path")
-            if isinstance(dep_obj, str) and dep_obj != "":
-                dep_file = Path(dep_obj)
+            dep_txt = _dict_any_get_str(resolved, "path")
+            if dep_txt != "":
+                dep_file = Path(dep_txt)
             resolved_mod_id = _dict_any_get_str(resolved, "module_id")
             if status == "relative":
                 rel_item = cur_disp + ": " + mod
