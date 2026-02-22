@@ -7064,8 +7064,7 @@ def _write_multi_file_cpp(
     module_ns_map: dict[str, str] = {}
     module_label_map: dict[str, str] = {}
     module_name_by_key: dict[str, str] = {}
-    i = 0
-    while i < len(files):
+    for i in range(len(files)):
         mod_key = files[i]
         mod_path = Path(mod_key)
         east_obj0 = module_east_map.get(mod_key)
@@ -7076,18 +7075,15 @@ def _write_multi_file_cpp(
         module_name_by_key[mod_key] = mod_name
         if mod_name != "":
             module_ns_map[mod_name] = "pytra_mod_" + label
-        i += 1
 
     type_schema = build_module_type_schema(module_east_map)
 
     manifest_modules: list[dict[str, Any]] = []
 
-    i = 0
-    while i < len(files):
+    for i in range(len(files)):
         mod_key = files[i]
         east_obj = module_east_map.get(mod_key)
         if not isinstance(east_obj, dict):
-            i += 1
             continue
         east = east_obj
         mod_path = Path(mod_key)
@@ -7196,11 +7192,9 @@ def _write_multi_file_cpp(
                 arg_order_obj = sig.get("arg_order")
                 arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
                 parts: list[str] = []
-                j = 0
-                while j < len(arg_order):
+                for j in range(len(arg_order)):
                     an = arg_order[j]
                     if not isinstance(an, str):
-                        j += 1
                         continue
                     at_obj = arg_types.get(an)
                     at = "object"
@@ -7208,7 +7202,6 @@ def _write_multi_file_cpp(
                         at = at_obj
                     at_cpp = type_emitter._cpp_type_text(at)
                     parts.append(at_cpp + " " + an)
-                    j += 1
                 sep = ", "
                 fn_decls.append("    " + ret_cpp + " " + fn_name + "(" + sep.join(parts) + ");")
             if len(fn_decls) > 0:
@@ -7228,7 +7221,6 @@ def _write_multi_file_cpp(
                 "is_entry": is_entry,
             }
         )
-        i += 1
 
     manifest_for_dump: dict[str, Any] = {
         "entry": entry_key,
