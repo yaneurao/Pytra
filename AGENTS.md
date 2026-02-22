@@ -17,6 +17,7 @@
 - 作業生成物は `work/` 配下（`work/out/`, `work/selfhost/`, `work/tmp/`, `work/logs/`）を使用し、リポジトリ直下に `out/` / `selfhost/` を増やさない。
 - `materials/` はユーザー資料置き場として扱い、Codex は read-only（明示指示がある場合のみ編集可）。
 - `materials/Yanesdk/` と `materials/microgpt/` はユーザー管理資料として扱う。
+- 変換互換性テストの原本（例: `materials/microgpt/microgpt-20260222.py`）は改変禁止とし、変換器都合の回避版が必要な場合は `work/tmp/*-lite.py` を別名で作成して分離する。
 
 ## 参照先
 
