@@ -6950,13 +6950,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
     """モジュール単位 EAST から公開シンボルと import alias 情報を抽出する。"""
     out: dict[str, dict[str, Any]] = {}
     for mod_path, east in module_east_map.items():
-        body_obj: object = east.get("body")
-        body: list[dict[str, Any]] = []
-        if isinstance(body_obj, list):
-            for i in range(len(body_obj)):
-                item = body_obj[i]
-                if isinstance(item, dict):
-                    body.append(item)
+        body = _dict_any_get_dict_list(east, "body")
         funcs: list[str] = []
         classes: list[str] = []
         variables: list[str] = []
@@ -6971,14 +6965,11 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 if name_txt != "":
                     classes.append(name_txt)
             elif kind == "Assign":
-                targets: list[Any] = []
-                targets_obj = st.get("targets")
-                if isinstance(targets_obj, list):
-                    targets = targets_obj
-                else:
-                    tgt_obj = st.get("target")
-                    if isinstance(tgt_obj, dict):
-                        targets = [tgt_obj]
+                targets = _dict_any_get_list(st, "targets")
+                if len(targets) == 0:
+                    tgt = _dict_any_get_dict(st, "target")
+                    if len(tgt) > 0:
+                        targets = [tgt]
                 for tgt_obj in targets:
                     if isinstance(tgt_obj, dict):
                         if _dict_any_kind(tgt_obj) == "Name":
@@ -7013,10 +7004,8 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     local_name = ref["local_name"]
                     import_symbols[local_name] = {"module": module_id, "name": symbol}
         else:
-            import_modules_obj: object = meta.get("import_modules")
-            import_symbols_obj: object = meta.get("import_symbols")
-            import_modules = dict(import_modules_obj) if isinstance(import_modules_obj, dict) else {}
-            import_symbols = dict(import_symbols_obj) if isinstance(import_symbols_obj, dict) else {}
+            import_modules = dict(_dict_any_get_dict(meta, "import_modules"))
+            import_symbols = dict(_dict_any_get_dict(meta, "import_symbols"))
         out[mod_path] = {
             "functions": funcs,
             "classes": classes,
@@ -7032,13 +7021,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
     """モジュール間共有用の最小型スキーマ（関数/クラス）を構築する。"""
     out: dict[str, dict[str, Any]] = {}
     for mod_path, east in module_east_map.items():
-        body_obj: object = east.get("body")
-        body: list[dict[str, Any]] = []
-        if isinstance(body_obj, list):
-            for i in range(len(body_obj)):
-                item = body_obj[i]
-                if isinstance(item, dict):
-                    body.append(item)
+        body = _dict_any_get_dict_list(east, "body")
         fn_schema: dict[str, dict[str, Any]] = {}
         cls_schema: dict[str, dict[str, Any]] = {}
         for i in range(len(body)):
@@ -7047,10 +7030,8 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
             if kind == "FunctionDef":
                 name_txt = _dict_any_get_str(st, "name")
                 if name_txt != "":
-                    arg_types_obj: object = st.get("arg_types")
-                    arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
-                    arg_order_obj: object = st.get("arg_order")
-                    arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
+                    arg_types = _dict_any_get_dict(st, "arg_types")
+                    arg_order = _dict_any_get_list(st, "arg_order")
                     ret_type = _dict_any_get_str(st, "return_type", "None")
                     fn_ent: dict[str, Any] = {
                         "arg_types": arg_types,
@@ -7061,8 +7042,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
             elif kind == "ClassDef":
                 name_txt = _dict_any_get_str(st, "name")
                 if name_txt != "":
-                    fields_obj: object = st.get("field_types")
-                    fields = fields_obj if isinstance(fields_obj, dict) else {}
+                    fields = _dict_any_get_dict(st, "field_types")
                     cls_schema[name_txt] = {"field_types": fields}
         out[mod_path] = {"functions": fn_schema, "classes": cls_schema}
     return out
