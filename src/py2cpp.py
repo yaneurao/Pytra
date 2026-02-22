@@ -6207,8 +6207,7 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                     modules.append(mod_name)
                 names_obj = stmt_dict.get("names")
                 if isinstance(names_obj, list):
-                    j = 0
-                    while j < len(names_obj):
+                    for j in range(len(names_obj)):
                         ent = names_obj[j]
                         if isinstance(ent, dict):
                             ent_dict = ent
@@ -6227,25 +6226,20 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                                 if label not in symbol_seen:
                                     symbol_seen.add(label)
                                     symbols.append(label)
-                        j += 1
             i += 1
 
     out = "modules:\n"
     if len(modules) == 0:
         out += "  (none)\n"
     else:
-        i = 0
-        while i < len(modules):
+        for i in range(len(modules)):
             out += "  - " + modules[i] + "\n"
-            i += 1
     out += "symbols:\n"
     if len(symbols) == 0:
         out += "  (none)\n"
     else:
-        i = 0
-        while i < len(symbols):
+        for i in range(len(symbols)):
             out += "  - " + symbols[i] + "\n"
-            i += 1
     return out
 
 
@@ -6256,8 +6250,7 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
     body_obj: object = east_module.get("body")
     if not isinstance(body_obj, list):
         return out
-    i = 0
-    while i < len(body_obj):
+    for i in range(len(body_obj)):
         stmt = body_obj[i]
         if isinstance(stmt, dict):
             stmt_dict: dict[str, Any] = stmt
@@ -6265,8 +6258,7 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
             if kind == "Import":
                 names_obj: object = stmt_dict.get("names")
                 if isinstance(names_obj, list):
-                    j = 0
-                    while j < len(names_obj):
+                    for j in range(len(names_obj)):
                         ent = names_obj[j]
                         if isinstance(ent, dict):
                             ent_dict: dict[str, Any] = ent
@@ -6277,7 +6269,6 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
                             if name != "" and name not in seen:
                                 seen.add(name)
                                 out.append(name)
-                        j += 1
             elif kind == "ImportFrom":
                 mod_obj: object = stmt_dict.get("module")
                 mod = ""
@@ -6286,7 +6277,6 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
                 if mod != "" and mod not in seen:
                     seen.add(mod)
                     out.append(mod)
-        i += 1
     return out
 
 
