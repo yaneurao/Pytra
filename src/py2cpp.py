@@ -7145,9 +7145,8 @@ def _write_multi_file_cpp(
     root = Path(_path_parent_text(entry_path))
     entry_key = str(entry_path)
     files: list[str] = []
-    for mod_key, _mod_east in module_east_map.items():
-        if isinstance(mod_key, str):
-            files.append(mod_key)
+    for mod_key in module_east_map.keys():
+        files.append(mod_key)
     files = _sort_str_list_in_place(files)
     module_ns_map: dict[str, str] = {}
     module_label_map: dict[str, str] = {}
@@ -7155,8 +7154,7 @@ def _write_multi_file_cpp(
     for i in range(len(files)):
         mod_key = files[i]
         mod_path = Path(mod_key)
-        east_obj0 = module_east_map.get(mod_key)
-        east0 = east_obj0 if isinstance(east_obj0, dict) else {}
+        east0 = _dict_any_get_dict(module_east_map, mod_key)
         label = _module_rel_label(root, mod_path)
         module_label_map[mod_key] = label
         mod_name = _module_id_from_east(root, mod_path, east0)
@@ -7170,10 +7168,9 @@ def _write_multi_file_cpp(
 
     for i in range(len(files)):
         mod_key = files[i]
-        east_obj = module_east_map.get(mod_key)
-        if not isinstance(east_obj, dict):
+        east = _dict_any_get_dict(module_east_map, mod_key)
+        if len(east) == 0:
             continue
-        east = east_obj
         mod_path = Path(mod_key)
         label = ""
         if mod_key in module_label_map:
