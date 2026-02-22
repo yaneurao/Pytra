@@ -2469,19 +2469,19 @@ class CppEmitter(CodeEmitter):
                         lhs_txt = stmt_repr
                         if eq_pos >= 0:
                             lhs_txt = stmt_repr[:eq_pos]
-                        pseudo_target: dict[str, Any] = {}
-                        pseudo_target["repr"] = lhs_txt
+                        pseudo_target: dict[str, Any] = {"repr": lhs_txt}
                         fallback_names = self._fallback_tuple_target_names_from_repr(pseudo_target)
                 if len(fallback_names) > 0:
                     recovered: list[Any] = []
                     fi = 0
                     while fi < len(fallback_names):
                         nm = fallback_names[fi]
-                        rec: dict[str, Any] = {}
-                        rec["kind"] = "Name"
-                        rec["id"] = nm
-                        rec["resolved_type"] = "unknown"
-                        rec["repr"] = nm
+                        rec: dict[str, Any] = {
+                            "kind": "Name",
+                            "id": nm,
+                            "resolved_type": "unknown",
+                            "repr": nm,
+                        }
                         rec_any: Any = rec
                         recovered.append(rec_any)
                         fi += 1
@@ -5021,10 +5021,7 @@ class CppEmitter(CodeEmitter):
                     n = len(vals_raw)
                 i = 0
                 while i < n:
-                    ent: dict[str, Any] = {}
-                    ent["key"] = keys_raw[i]
-                    ent["value"] = vals_raw[i]
-                    entries.append(ent)
+                    entries.append({"key": keys_raw[i], "value": vals_raw[i]})
                     i += 1
             if len(entries) == 0:
                 return f"{t}{{}}"
@@ -7056,10 +7053,11 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                     ret_type = "None"
                     if isinstance(ret_obj, str):
                         ret_type = ret_obj
-                    fn_ent: dict[str, Any] = {}
-                    fn_ent["arg_types"] = arg_types
-                    fn_ent["arg_order"] = arg_order
-                    fn_ent["return_type"] = ret_type
+                    fn_ent: dict[str, Any] = {
+                        "arg_types": arg_types,
+                        "arg_order": arg_order,
+                        "return_type": ret_type,
+                    }
                     fn_schema[name_obj] = fn_ent
             elif kind == "ClassDef":
                 name_obj = st.get("name")
