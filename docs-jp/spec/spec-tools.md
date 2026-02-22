@@ -37,6 +37,8 @@
   - 目的: `test/fixtures/` と `sample/py` を `py2kotlin.py` で一括変換し、失敗ケースを検出する。
 - `tools/check_yanesdk_py2cpp_smoke.py`
   - 目的: Yanesdk canonical 対象（`library 1本 + game 7本`）が `py2cpp.py` を通るか確認する。
+- `tools/check_microgpt_original_py2cpp_regression.py`
+  - 目的: 原本 `materials/microgpt/microgpt-20260222.py` を固定入力にし、`py2cpp` の失敗ステージ（A〜F）または成功を検査して再発を検知する。
 - `tools/check_transpiler_version_gate.py`
   - 目的: 変換器関連ファイルが変更されたとき、`src/pytra/compiler/transpiler_versions.json` の対応コンポーネント（`shared` / 言語別）で minor 以上のバージョン更新が行われているかを検証する。
 - `tools/regenerate_samples.py`

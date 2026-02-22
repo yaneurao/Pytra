@@ -68,6 +68,17 @@
 3. 要因 F は `pytra.std` / runtime API 互換タスクへ置換する。
 4. 置換先タスク ID: `P3-MSP-04`〜`P3-MSP-09`（`docs-jp/todo.md`）。
 
+回帰導線（P3-MSP-09）:
+1. 固定入力:
+   - `materials/microgpt/microgpt-20260222.py`（原本）
+2. 検査コマンド:
+   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+3. 期待結果:
+   - `result=fail phase=transpile` か `result=fail phase=syntax-check` の場合は `stage=A..F` のいずれかで分類される。
+   - `result=ok phase=transpile+syntax-check` の場合は `stage=SUCCESS` となる。
+4. 再発検知運用:
+   - ある失敗要因を解消した後は `--expect-stage` を次の期待値（例: `B`, `C`, ..., `success`）へ更新し、以前の要因へ戻った回帰を検知する。
+
 目的:
 - 「変換器都合で元ソースを書き換える」運用を禁止し、必要な対応を parser/emitter/runtime 側タスクへ移す。
 - `materials/microgpt/microgpt-20260222.py`（原本）を無改変のまま扱える状態を作る。
@@ -90,3 +101,4 @@
 - 2026-02-23: `materials/inbox/exec-extracted.log` と `materials/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` 差分から、原本改変項目を抽出して本コンテキストを作成。
 - 2026-02-23: `P3-MSP-01` を実施。改変 7 項目を parser / emitter / runtime の責務へ再分類し、入力側改変の代わりに実装側で吸収する方針を明文化。
 - 2026-02-23: `P3-MSP-02` を実施。原本入力で先頭エラー（無注釈引数）を再現し、ログ追跡と合わせて失敗要因 A〜F を列挙。回避改変の内容を `P3-MSP-04`〜`P3-MSP-09` の実装タスクへ置換した。
+- 2026-02-23: `P3-MSP-09` を実施。`tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本固定入力の transpile/syntax-check を失敗ステージ A〜F で分類して再発検知できる導線を整備した。
