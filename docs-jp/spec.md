@@ -10,6 +10,7 @@
 - 利用仕様: [利用仕様](./spec-user.md)
 - 実装仕様: [実装仕様](./spec-dev.md)
 - ランタイム仕様: [ランタイム仕様](./spec-runtime.md)
+- GC 仕様: [GC 仕様](./spec-gc.md)
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
 - Codex 向け運用仕様: [Codex 向け運用仕様](./spec-codex.md)
 - `pylib` モジュール一覧: [pylib モジュール一覧](./pylib-modules.md)
@@ -22,6 +23,8 @@
   - [実装仕様](./spec-dev.md)
 - C++ ランタイム配置・include対応規約を確認したい場合:
   - [ランタイム仕様](./spec-runtime.md)
+- RC ベースの GC 方針を確認したい場合:
+  - [GC 仕様](./spec-gc.md)
 - `CodeEmitter` の JSON プロファイルと hooks 仕様を確認したい場合:
   - [言語プロファイル仕様](./spec-language-profile.md)
 - Codex の作業ルール・TODO 運用・コミット運用を確認したい場合:

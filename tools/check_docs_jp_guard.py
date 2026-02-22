@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS_JP = ROOT / "docs-jp"
 
 ALLOWED_EXACT: set[str] = {
-    "gc.md",
+    "spec-gc.md",
     "how-to-use.md",
     "philosophy.md",
     "pylib-modules.md",
