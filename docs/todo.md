@@ -5,43 +5,37 @@
 </a>
 
 
-Last updated: 2026-02-21
+
+Last updated: 2026-02-22
 
 ## P0: Selfhost Stabilization
 
-1. [ ] Complete staged recovery of the selfhost `.py` path.
-2. [ ] Stabilize the minimal execution path of `selfhost/py2cpp.out` (ensure input/generation/execution can always be reproduced end-to-end).
-3. [ ] Reduce selfhost compile errors to zero in stages (including immediate re-detection procedures on regression).
-4. [ ] Continue cleanup of selfhost-only stubs in `tools/prepare_selfhost_source.py`.
+1. [ ] selfhost `.py` Complete the gradual recovery of the route.
+2. [ ] Stabilize the minimum execution path of `selfhost/py2cpp.out` (make the end-to-end of input/generation/execution always reproducible).
+3. [ ] Gradually zero out compile errors for selfhost (including immediate redetection steps upon regression).
+4. [ ] Continue organizing the selfhost-only stub remaining in `tools/prepare_selfhost_source.py`.
+   - [x] Replaced `dump_codegen_options_text`'s selfhost fallback from a minimal `"options:\n"` stub to a selfhost-safe implementation that outputs a detailed line.
+   - [x] `CodeEmitter.quote_string_literal` / `CodeEmitter.load_profile_with_includes` has been migrated to the main body `@staticmethod` implementation, and the corresponding replacement route on the `tools/prepare_selfhost_source.py` side has been deleted.
 
 ## P1: CodeEmitter / Hooks Migration
 
-1. [ ] Implement hook injection (`EmitterHooks`).
-2. [ ] Gradually split the large branches in `render_expr(Call/BinOp/Compare)` into hooks + helpers.
-3. [ ] Move only profile-hard-to-express cases to hooks (leave no condition branches in `py2cpp.py`).
+1. [ ] Move only the cases that are difficult to express with profile to hooks, and leave no conditional branch on the `py2cpp.py` side.
 
-## P1: py2cpp Reduction (Line Count Reduction)
+## P1: py2cpp degeneracy (line count reduction)
 
-1. [ ] Move remaining unmigrated logic from `src/py2cpp.py` into `CodeEmitter`, reducing line count in stages.
-2. [ ] Split `render_expr` `Call` branches (builtin/module/method) by feature and migrate to `CodeEmitter` helpers.
-3. [ ] Split arithmetic/comparison/type-conversion branches in `render_expr` into independent functions, switchable via profile/hooks.
-4. [ ] Move base rendering of `Constant(Name/Attribute)` to shared `CodeEmitter`.
-5. [ ] Template control-flow branches in `emit_stmt` and move them to `CodeEmitter.syntax_*`.
-6. [ ] Override only C++-specific differences (brace omission, range-mode, etc.) in hooks.
-7. [ ] Move shared templates for `FunctionDef` / `ClassDef` (`open/body/close`) into `CodeEmitter`.
-8. [ ] Continue cleaning up unused functions (move detailed tasks into higher-priority sections as needed).
+1. [ ] Step by step transfer the unmigrated logic remaining in `src/py2cpp.py` to `CodeEmitter` and reduce the number of lines.
 
-## P2: Any/object Boundary Cleanup
+## P2: Any/object boundary arrangement
 
-1. [ ] Gradually migrate `CodeEmitter` `Any/dict` boundaries to implementations that stay stable under selfhost.
-2. [ ] Minimize fallback to `object` in `cpp_type` and expression rendering.
-3. [ ] Separate routes where `Any -> object` is required from routes where it is not, and reduce excessive `make_object(...)` insertion.
-4. [ ] Clean up places where default arguments for `py_dict_get_default` / `dict_get_node` become `object`-mandatory.
-5. [ ] Identify places in `py2cpp.py` that pass `nullopt` as default values and replace them with type-specific defaults.
-6. [ ] Log and list routes that go through `std::any` (from selfhost conversion), then remove them incrementally.
-7. [ ] Improve in patches grouped per top 3 functions, and run `check_py2cpp_transpile.py` each time.
+1. [ ] Gradually migrate the `Any/dict` boundary of `CodeEmitter` to an implementation that is stable even on selfhost.
+2. [ ] Minimize fallback to `object` with `cpp_type` and expression drawing.
+3. [ ] Separate routes that require `Any -> object` from those that do not, reducing excessive `make_object(...)` insertion.
+4. [ ] Organize the places where the default value of `py_dict_get_default` / `dict_get_node` is required `object`.
+5. [ ] Find out where `nullopt` is passed as the default value for `py2cpp.py` and replace it with the default value for each type.
+6. [ ] Record and enumerate the routes passing through `std::any` with selfhost conversion and remove them step by step.
+7. [ ] Separate patches to improve the top 3 most affected functions, and execute `check_py2cpp_transpile.py` every time.
 
-## Notes
+## Note
 
-- Completed tasks and historical logs have been moved to `docs/todo-old.md`.
-- Going forward, `docs/todo.md` keeps only unfinished tasks.
+- This file only holds unfinished tasks.
+- Completed tasks will be moved to `docs-jp/todo-old.md`.
