@@ -1,6 +1,6 @@
 # Pytra Implementation Status Notes
 
-<a href="../docs-jp/pytra-readme.md">
+<a href="../docs-jp/plans/pytra-wip.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -114,4 +114,3 @@ For Python standard libraries, support is limited not only by module name but by
 - Full byte-for-byte compatibility with all Python syntax
 - Advanced GC compatibility including circular references and weak references
 - Full reproduction of all dynamic execution features (e.g., dynamic import)
-

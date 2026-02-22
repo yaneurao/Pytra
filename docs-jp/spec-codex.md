@@ -33,7 +33,7 @@
 ## 3. ドキュメント同期ルール
 
 - 仕様変更・機能追加・手順変更時は、`README.md` を必要に応じて更新します。
-- `README.md` からリンクされるドキュメント（`docs-jp/how-to-use.md`, `docs-jp/spec/spec-sample-code.md`, `docs-jp/spec/index.md`, `docs-jp/pytra-readme.md`）の整合性を確認し、必要なら同時更新します。
+- `README.md` からリンクされるドキュメント（`docs-jp/how-to-use.md`, `docs-jp/spec/spec-sample-code.md`, `docs-jp/spec/index.md`, `docs-jp/plans/pytra-wip.md`）の整合性を確認し、必要なら同時更新します。
 - 実装とドキュメントの不一致を残さないことを、変更完了条件に含めます。
 - `tools/` にスクリプトを追加・削除・改名した場合は、`docs-jp/spec/spec-tools.md` を同時更新します。
 - 用語ルール: type annotation を指す場合は「注釈」ではなく必ず「型注釈」と記載します。

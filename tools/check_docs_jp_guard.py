@@ -12,7 +12,6 @@ DOCS_JP = ROOT / "docs-jp"
 ALLOWED_EXACT: set[str] = {
     "how-to-use.md",
     "philosophy.md",
-    "pytra-readme.md",
     "spec-codex.md",
     "spec/index.md",
     "todo.md",
