@@ -24,6 +24,7 @@
 
 - `docs-jp/todo.md` は継続バックログとして扱います。
 - `docs-jp/todo.md` には未完了タスクのみを置き、セクション単位で完了（全項目 `[x]`）した内容は `docs-jp/todo-history/index.md`（索引）と `docs-jp/todo-history/YYYYMMDD.md`（本文）へ移管します。
+- 優先度上書きは `docs-jp/todo2.md` ではなく、チャット指示で `対象ID` / `完了条件` / `非対象` を明示して行います（テンプレート: `docs-jp/plans/instruction-template.md`）。
 - 未完了項目は優先度順に順次実施します。
 - タスク完了時はチェック状態を更新します。
 

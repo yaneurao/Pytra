@@ -7,6 +7,7 @@
 - `docs-jp/` 配下に新規ファイルを作成する場合は、同一ターンでの明示依頼があるときのみ許可する。
 - 未完了タスクは `docs-jp/todo.md` にのみ記載する。
 - 完了済みは `docs-jp/todo-history/index.md` と `docs-jp/todo-history/YYYYMMDD.md` へ移す。
+- 優先度上書きは `docs-jp/todo2.md` ではなくチャット指示で行う（形式は `docs-jp/plans/instruction-template.md`）。
 
 ## 長期計画メモの置き場
 

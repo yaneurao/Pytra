@@ -9,6 +9,7 @@
 - 具体的に着手する項目だけを `docs-jp/todo.md` に転記する。
 - 各 plan は `todo` のタスク ID（例: `P1-COMP-01`）と 1 対 1 で紐づける。
 - `todo` 側には、タスク ID と対応 plan ファイルパスを必ず併記する。
+- 優先度上書きの指示形式は `docs-jp/plans/instruction-template.md` を使う。
 
 ## 推奨テンプレート
 

@@ -22,7 +22,8 @@ This document defines operation rules that Codex follows while working.
 ## 2. TODO Execution Rules
 
 - Treat `docs-jp/todo.md` as a continuous backlog.
-- Keep only unfinished tasks in `docs-jp/todo.md`. When a section is fully complete (all items `[x]`), move it to `docs-jp/todo-old.md`.
+- Keep only unfinished tasks in `docs-jp/todo.md`. When a section is fully complete (all items `[x]`), move it to `docs-jp/todo-history/index.md` (index) and `docs-jp/todo-history/YYYYMMDD.md` (body).
+- For priority override, do not use `docs-jp/todo2.md`; provide `target IDs`, `done criteria`, and `out of scope` in chat instruction (template: `docs-jp/plans/instruction-template.md`).
 - Execute unfinished items sequentially in priority order.
 - Update check status when tasks are completed.
 
