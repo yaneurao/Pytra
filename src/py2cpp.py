@@ -6812,10 +6812,8 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         else:
             import_modules_obj: object = meta.get("import_modules")
             import_symbols_obj: object = meta.get("import_symbols")
-            import_modules_obj2: dict[str, Any] = import_modules_obj if isinstance(import_modules_obj, dict) else {}
-            import_symbols_obj2: dict[str, Any] = import_symbols_obj if isinstance(import_symbols_obj, dict) else {}
-            import_modules = dict(import_modules_obj2)
-            import_symbols = dict(import_symbols_obj2)
+            import_modules = dict(import_modules_obj) if isinstance(import_modules_obj, dict) else {}
+            import_symbols = dict(import_symbols_obj) if isinstance(import_symbols_obj, dict) else {}
         out[mod_path] = {
             "functions": funcs,
             "classes": classes,
