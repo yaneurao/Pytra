@@ -20,9 +20,8 @@
 文脈: `docs-jp/plans/p0-selfhost-stabilization.md`（`TG-P0-SH`）
 
 1. [ ] [ID: P0-SH-01] selfhost `.py` 経路の段階回復を完了する。
-2. [ ] [ID: P0-SH-02] `selfhost/py2cpp.out` の最小実行経路を安定化する（入力/生成/実行の end-to-end を常に再現可能にする）。
-3. [ ] [ID: P0-SH-03] selfhost のコンパイルエラーを段階的にゼロ化する（回帰時の即時再検出手順を含む）。
-4. [ ] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を継続する。
+2. [ ] [ID: P0-SH-03] selfhost のコンパイルエラーを段階的にゼロ化する（回帰時の即時再検出手順を含む）。
+3. [ ] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を継続する。
 
 進捗メモ:
 - `dump_codegen_options_text` の selfhost fallback は最小 `"options:\n"` スタブから、詳細行を出力する selfhost-safe 実装へ置換済み。
