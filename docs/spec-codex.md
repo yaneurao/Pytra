@@ -31,7 +31,7 @@ This document defines operation rules that Codex follows while working.
 - On spec changes, feature additions, or procedure changes, update `README.md` as needed.
 - Check consistency of documents linked from `README.md` (`docs/how-to-use.md`, `docs/sample-code.md`, `docs/spec.md`, `docs/pytra-readme.md`) and their canonical Japanese sources (`docs-jp/how-to-use.md`, `docs-jp/sample-code.md`, `docs-jp/spec.md`, `docs-jp/pytra-readme.md`), and update them together when needed.
 - Include "no implementation-doc mismatch left" in change completion criteria.
-- If scripts in `tools/` are added/removed/renamed, update `docs/tools.md` and `docs-jp/tools.md` at the same time.
+- If scripts in `tools/` are added/removed/renamed, update `docs/spec-tools.md` and `docs-jp/spec-tools.md` at the same time.
 - Terminology rule: when referring to type annotations, always write "type annotation" (not just "annotation").
 - Writing rule: when describing features or folder structures, always state the purpose (what they are for).
 - Writing rule: write not only "where to place" but also "why place there," to prevent responsibility mixing between `std` and `tra`.

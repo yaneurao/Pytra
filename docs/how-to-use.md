@@ -31,7 +31,7 @@ For Windows, rewrite commands as follows.
 - User module import is valid by specification, but multi-file dependency resolution is still being implemented in phases.
 - See [Module Index](pylib-modules.md) for supported modules and APIs.
 - See [Option Specification](spec-options.md) for option policy and candidates.
-- See [Tools Guide](tools.md) for helper script purposes.
+- See [Tools Guide](spec-tools.md) for helper script purposes.
 
 ## Transpiler Usage
 

@@ -516,7 +516,7 @@ if __name__ == "__main__":
 利用時によく参照する順で、関連ドキュメントをまとめています。
 
 - まず使い方を確認する: [使い方ガイド](docs-jp/how-to-use.md)
-- 開発補助スクリプト一覧を確認する: [ツール一覧](docs-jp/tools.md)
+- 開発補助スクリプト一覧を確認する: [ツール一覧](docs-jp/spec-tools.md)
 - オプション設計（性能/互換性トレードオフ）を確認する: [オプション仕様](docs-jp/spec-options.md)
 - ランタイム配置と include 規約を確認する: [ランタイム仕様](docs-jp/spec-runtime.md)
 - 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](docs-jp/pytra-readme.md)

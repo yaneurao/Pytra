@@ -1,6 +1,6 @@
 # `tools/` Script Index
 
-<a href="../docs-jp/tools.md">
+<a href="../docs-jp/spec-tools.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -49,7 +49,6 @@ Its goals are:
 
 ## 4. Update Rules
 
-- When adding a new script under `tools/`, update this `docs/tools.md` at the same time.
+- When adding a new script under `tools/`, update this `docs/spec-tools.md` at the same time.
 - For each script, explicitly state in one line what automation purpose it serves.
 - If there are breaking changes (argument changes, deprecations, consolidation), synchronize related command examples in `docs/how-to-use.md`.
-

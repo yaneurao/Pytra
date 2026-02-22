@@ -1,6 +1,6 @@
 # `tools/` スクリプト一覧
 
-<a href="../docs/tools.md">
+<a href="../docs/spec-tools.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
@@ -72,6 +72,6 @@
 
 ## 4. 更新ルール
 
-- `tools/` に新しいスクリプトを追加した場合は、この `docs-jp/tools.md` を同時に更新します。
+- `tools/` に新しいスクリプトを追加した場合は、この `docs-jp/spec-tools.md` を同時に更新します。
 - スクリプトの目的は「何を自動化するために存在するか」を 1 行で明記します。
 - 破壊的変更（引数仕様の変更、廃止、統合）がある場合は、`docs-jp/how-to-use.md` の関連コマンド例も同期更新します。

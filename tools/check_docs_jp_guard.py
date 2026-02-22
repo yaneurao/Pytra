@@ -29,7 +29,7 @@ ALLOWED_EXACT: set[str] = {
     "spec.md",
     "todo.md",
     "todo2.md",
-    "tools.md",
+    "spec-tools.md",
     "todo-history/index.md",
 }
 

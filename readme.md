@@ -514,7 +514,7 @@ if __name__ == "__main__":
 The related documents are listed below in the order they are most frequently referenced during usage.
 
 - Start with usage instructions: [Usage Guide](docs/how-to-use.md)
-- Check the developer utility script list: [Tools](docs/tools.md)
+- Check the developer utility script list: [Tools](docs/spec-tools.md)
 - Review option design (performance/compatibility trade-offs): [Options Specification](docs/spec-options.md)
 - Review runtime layout and include conventions: [Runtime Specification](docs/spec-runtime.md)
 - Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](docs/pytra-readme.md)
