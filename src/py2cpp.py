@@ -206,6 +206,14 @@ def _dict_any_get_str(src: dict[str, Any], key: str, default_value: str = "") ->
     return default_value
 
 
+def _dict_any_get_dict(src: dict[str, Any], key: str) -> dict[str, Any]:
+    """`dict[str, Any]` から辞書値を安全に取得する。"""
+    value = _dict_any_get(src, key)
+    if isinstance(value, dict):
+        return value
+    return {}
+
+
 def _dict_any_get_str_list(src: dict[str, Any], key: str) -> list[str]:
     """`dict[str, Any]` の list 値を `list[str]` として取得する。"""
     out: list[str] = []
@@ -6990,8 +6998,7 @@ def _write_multi_file_cpp(
             '#include "pytra_multi_prelude.h"',
         )
         # ユーザーモジュール import 呼び出しを解決するため、参照先関数の前方宣言を補う。
-        meta_obj = east.get("meta")
-        meta = meta_obj if isinstance(meta_obj, dict) else {}
+        meta = _dict_any_get_dict(east, "meta")
         type_emitter = CppEmitter(
             east,
             {},
@@ -7006,10 +7013,8 @@ def _write_multi_file_cpp(
             "",
             False,
         )
-        import_modules_obj = meta.get("import_modules")
-        import_modules = import_modules_obj if isinstance(import_modules_obj, dict) else {}
-        import_symbols_obj = meta.get("import_symbols")
-        import_symbols = import_symbols_obj if isinstance(import_symbols_obj, dict) else {}
+        import_modules = _dict_any_get_dict(meta, "import_modules")
+        import_symbols = _dict_any_get_dict(meta, "import_symbols")
         dep_modules: set[str] = set()
         for _alias, mod_name_obj in import_modules.items():
             if isinstance(mod_name_obj, str) and mod_name_obj != "":
@@ -7035,10 +7040,8 @@ def _write_multi_file_cpp(
                     break
             if target_key == "":
                 continue
-            target_schema_obj = type_schema.get(target_key)
-            target_schema = target_schema_obj if isinstance(target_schema_obj, dict) else {}
-            funcs_obj = target_schema.get("functions")
-            funcs = funcs_obj if isinstance(funcs_obj, dict) else {}
+            target_schema = _dict_any_get_dict(type_schema, target_key)
+            funcs = _dict_any_get_dict(target_schema, "functions")
             # `main` は他モジュールから呼ばれない前提。
             fn_decls: list[str] = []
             for fn_name, sig_obj in funcs.items():
@@ -7050,8 +7053,7 @@ def _write_multi_file_cpp(
                     ret_cpp = "void"
                 else:
                     ret_cpp = type_emitter._cpp_type_text(ret_t)
-                arg_types_obj = sig.get("arg_types")
-                arg_types = arg_types_obj if isinstance(arg_types_obj, dict) else {}
+                arg_types = _dict_any_get_dict(sig, "arg_types")
                 arg_order_obj = sig.get("arg_order")
                 arg_order = arg_order_obj if isinstance(arg_order_obj, list) else []
                 parts: list[str] = []
