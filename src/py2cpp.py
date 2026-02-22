@@ -129,23 +129,13 @@ def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
 def _module_tail_to_cpp_header_path(module_tail: str) -> str:
     """`a.b.c_impl` を `a/b/c-impl.h` へ変換する。"""
     path_tail = module_tail.replace(".", "/")
-    parts: list[str] = []
-    cur = ""
-    i = 0
-    while i < len(path_tail):
-        ch = path_tail[i : i + 1]
-        if ch == "/":
-            parts.append(cur)
-            cur = ""
-        else:
-            cur += ch
-        i += 1
-    parts.append(cur)
+    parts: list[str] = path_tail.split("/")
     if len(parts) > 0:
-        leaf = parts[len(parts) - 1]
+        leaf_i = len(parts) - 1
+        leaf = parts[leaf_i]
         if leaf.endswith("_impl"):
             leaf = leaf[: len(leaf) - 5] + "-impl"
-            parts[len(parts) - 1] = leaf
+            parts[leaf_i] = leaf
     return _join_str_list("/", parts) + ".h"
 
 
@@ -191,30 +181,24 @@ def _parse_user_error(err_text: str) -> dict[str, Any]:
         return out0
     lines: list[str] = []
     cur = ""
-    i = 0
-    while i < len(text):
-        ch = text[i : i + 1]
+    for ch in text:
         if ch == "\n":
             lines.append(cur)
             cur = ""
         else:
             cur += ch
-        i += 1
     lines.append(cur)
     head = lines[0] if len(lines) > 0 else ""
     parts: list[str] = []
     cur = ""
     split_count = 0
-    i = 0
-    while i < len(head):
-        ch = head[i : i + 1]
+    for ch in head:
         if ch == "|" and split_count < 2:
             parts.append(cur)
             cur = ""
             split_count += 1
         else:
             cur += ch
-        i += 1
     parts.append(cur)
     if len(parts) != 3:
         out1: dict[str, Any] = {}
@@ -225,12 +209,11 @@ def _parse_user_error(err_text: str) -> dict[str, Any]:
     category = parts[1]
     summary = parts[2]
     details: list[str] = []
-    i = 1
-    while i < len(lines):
-        line = lines[i]
+    for i, line in enumerate(lines):
+        if i == 0:
+            continue
         if line != "":
             details.append(line)
-        i += 1
     out: dict[str, Any] = {}
     out["category"] = category
     out["summary"] = summary
@@ -5824,16 +5807,14 @@ def _header_guard_from_path(path: str) -> str:
     elif src.startswith(prefix2):
         src = src[len(prefix2) :]
     src = "PYTRA_" + src.upper()
-    out = ""
-    i = 0
-    while i < len(src):
-        ch: str = src[i : i + 1]
+    out_chars: list[str] = []
+    for ch in src:
         ok = ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9"))
         if ok:
-            out += ch
+            out_chars.append(ch)
         else:
-            out += "_"
-        i += 1
+            out_chars.append("_")
+    out = "".join(out_chars)
     while out.startswith("_"):
         out = out[1:]
     if not out.endswith("_H"):
