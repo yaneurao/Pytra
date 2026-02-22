@@ -51,6 +51,17 @@
 
 1. [ ] `src/py2cpp.py` に残る未移行ロジックを `CodeEmitter` へ段階移管し、行数を縮退する。
 
+## P1: 多言語ランタイム配置統一
+
+目的: ランタイム配置を言語間で統一し、責務混在と重複実装を防ぐ。
+
+1. [ ] Rust ランタイムを `src/rs_module/` から `src/runtime/rs/pytra/` へ段階移行し、`src/runtime/cpp/pytra/` と同等の責務分割（`built_in/`, `std/`, `utils/`, `compiler/`）に揃える。
+2. [ ] `py2rs.py` / Rust hooks のランタイム解決パスを `src/runtime/rs/pytra/` 基準へ更新する。
+3. [ ] `src/rs_module/` の既存参照を洗い出し、互換レイヤを経由して最終的に廃止する。
+4. [ ] Rust 以外（C#, JS, TypeScript, Go, Java, Kotlin, Swift）でも、`src/*_module/` 依存のランタイム資産を `src/runtime/<lang>/pytra/` 配下へ寄せる移行計画を作成する。
+5. [ ] 各言語トランスパイラ（`py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）と hooks のランタイム解決パスを `src/runtime/<lang>/pytra/` 基準へ統一する。
+6. [ ] 移行完了後に `src/*_module/` 直下へ新規ランタイムを追加しない運用ルールを明文化し、既存資産は段階的に撤去する。
+
 ## P2: Any/object 境界整理
 
 1. [ ] `CodeEmitter` の `Any/dict` 境界を selfhost でも安定する実装へ段階移行する。
