@@ -3765,6 +3765,18 @@ class CppEmitter(CodeEmitter):
                 inner = self.split_generic(owner_t2[5:-1])
                 if len(inner) == 2 and inner[1] != "":
                     val_t = self.normalize_type_name(inner[1])
+            if len(arg_nodes) >= 2:
+                pop_default_node = {
+                    "kind": "DictPopDefault",
+                    "owner": owner_node,
+                    "key": arg_nodes[0],
+                    "default": arg_nodes[1],
+                    "value_type": val_t,
+                    "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(pop_default_node)
             default_expr = args[1]
             if default_expr in {"::std::nullopt", "std::nullopt"} and not self.is_any_like_type(val_t) and val_t != "None":
                 default_expr = self._cpp_type_text(val_t) + "()"
@@ -6058,6 +6070,18 @@ class CppEmitter(CodeEmitter):
             key_expr = self.render_expr(key_node)
             key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
             return f"py_dict_get_maybe({owner_expr}, {key_expr})"
+        if kind == "DictPopDefault":
+            owner_node = expr_d.get("owner")
+            key_node = expr_d.get("key")
+            default_node = expr_d.get("default")
+            owner_expr = self.render_expr(owner_node)
+            key_expr = self.render_expr(key_node)
+            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
+            default_expr = self.render_expr(default_node)
+            val_t = self.normalize_type_name(self.any_dict_get_str(expr_d, "value_type", "Any"))
+            if default_expr in {"::std::nullopt", "std::nullopt"} and not self.is_any_like_type(val_t) and val_t != "None":
+                default_expr = self._cpp_type_text(val_t) + "()"
+            return f"({owner_expr}.contains({key_expr}) ? {owner_expr}.pop({key_expr}) : {default_expr})"
         if kind == "DictGetDefault":
             owner_node = expr_d.get("owner")
             key_node = expr_d.get("key")
