@@ -5805,11 +5805,10 @@ def _is_runtime_emit_input_path(input_path: Path) -> bool:
 def _runtime_output_rel_tail(module_tail: str) -> str:
     """module tail（`std/<name>_impl` など）を runtime/cpp 相対パス tail へ写像する。"""
     parts: list[str] = module_tail.split("/")
-    if len(parts) > 0:
-        leaf = parts[len(parts) - 1]
+    if parts:
+        leaf = parts[-1]
         if leaf.endswith("_impl"):
-            leaf = leaf[: len(leaf) - 5] + "-impl"
-            parts[len(parts) - 1] = leaf
+            parts[-1] = leaf[: len(leaf) - 5] + "-impl"
     rel = join_str_list("/", parts)
     if rel == "std" or rel.startswith("std/"):
         return rel
