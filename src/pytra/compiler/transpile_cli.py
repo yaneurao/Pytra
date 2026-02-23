@@ -265,6 +265,11 @@ def looks_like_runtime_function_name(name: str) -> bool:
     return False
 
 
+def is_pytra_module_name(module_name: str) -> bool:
+    """`pytra` 配下モジュール名かを判定する。"""
+    return module_name == "pytra" or module_name.startswith("pytra.")
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,

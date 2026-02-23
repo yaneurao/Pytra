@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6740,10 +6740,6 @@ def _is_known_non_user_import(module_name: str) -> bool:
     return False
 
 
-def _is_pytra_module_name(module_name: str) -> bool:
-    return module_name == "pytra" or module_name.startswith("pytra.")
-
-
 def _path_key_for_graph(p: Path) -> str:
     """依存グラフ内部で使うパス文字列キーを返す。"""
     return str(p)
@@ -6880,7 +6876,7 @@ def _resolve_module_name_for_graph(raw_name: str, root_dir: Path) -> dict[str, A
     """import graph 用のモジュール解決（順序依存を避ける前段 helper）。"""
     if raw_name.startswith("."):
         return {"status": "relative", "module_id": raw_name, "path": ""}
-    if _is_pytra_module_name(raw_name):
+    if is_pytra_module_name(raw_name):
         return {"status": "pytra", "module_id": raw_name, "path": ""}
     dep_file = _resolve_user_module_path_for_graph(raw_name, root_dir)
     if str(dep_file) != "":
@@ -7590,7 +7586,7 @@ def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
     """モジュール名を `user/pytra/known/missing/relative` に分類して解決する。"""
     if raw_name.startswith("."):
         return {"status": "relative", "module_id": raw_name, "path": None}
-    if _is_pytra_module_name(raw_name):
+    if is_pytra_module_name(raw_name):
         return {"status": "pytra", "module_id": raw_name, "path": None}
     dep_file = _resolve_user_module_path(raw_name, root_dir)
     if str(dep_file) != "":
