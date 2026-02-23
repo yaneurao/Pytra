@@ -3850,10 +3850,6 @@ class CppEmitter(CodeEmitter):
             else:
                 charclass_node["value"] = fn.get("value")
             return self.render_expr(charclass_node)
-            if len(args) == 0:
-                return owner + ".isdigit()"
-            if len(args) == 1:
-                return args[0] + ".isdigit()"
         if runtime_call == "py_isalpha":
             charclass_node = {
                 "kind": "StrCharClassOp",
@@ -3867,10 +3863,6 @@ class CppEmitter(CodeEmitter):
             else:
                 charclass_node["value"] = fn.get("value")
             return self.render_expr(charclass_node)
-            if len(args) == 0:
-                return owner + ".isalpha()"
-            if len(args) == 1:
-                return args[0] + ".isalpha()"
         if runtime_call == "py_strip":
             strip_node = {
                 "kind": "StrStripOp",
@@ -3883,10 +3875,6 @@ class CppEmitter(CodeEmitter):
             if len(arg_nodes) >= 1:
                 strip_node["chars"] = arg_nodes[0]
             return self.render_expr(strip_node)
-            if len(args) == 0:
-                return f"py_strip({owner})"
-            if len(args) == 1:
-                return f"{owner}.strip({args[0]})"
         if runtime_call == "py_rstrip":
             rstrip_node = {
                 "kind": "StrStripOp",
@@ -3899,10 +3887,6 @@ class CppEmitter(CodeEmitter):
             if len(arg_nodes) >= 1:
                 rstrip_node["chars"] = arg_nodes[0]
             return self.render_expr(rstrip_node)
-            if len(args) == 0:
-                return f"py_rstrip({owner})"
-            if len(args) == 1:
-                return f"{owner}.rstrip({args[0]})"
         if runtime_call == "py_lstrip":
             lstrip_node = {
                 "kind": "StrStripOp",
@@ -3915,10 +3899,6 @@ class CppEmitter(CodeEmitter):
             if len(arg_nodes) >= 1:
                 lstrip_node["chars"] = arg_nodes[0]
             return self.render_expr(lstrip_node)
-            if len(args) == 0:
-                return f"py_lstrip({owner})"
-            if len(args) == 1:
-                return f"{owner}.lstrip({args[0]})"
         if runtime_call == "py_startswith":
             if len(arg_nodes) >= 1:
                 starts_node = {
