@@ -47,7 +47,7 @@
 
 文脈: `docs-jp/plans/p0-typeid-isinstance-dispatch.md`（`TG-P0-TYPEID-ISINSTANCE`）
 
-1. [ ] [ID: P0-TID-01] `type_id` ベースの共通判定 API（`py_isinstance` / `py_is_subtype`）を C++/JS/TS runtime と各 emitter lower に統一導入する（`P0-TID-01-S1` から `P0-TID-01-S4` 完了でクローズ）。
+1. [x] [ID: P0-TID-01] `type_id` ベースの共通判定 API（`py_isinstance` / `py_is_subtype`）を C++/JS/TS runtime と各 emitter lower に統一導入する（`P0-TID-01-S1` から `P0-TID-01-S4` 完了でクローズ）。
 2. [x] [ID: P0-TID-01-S1] `docs-jp/spec/spec-type_id.md` / `docs-jp/spec/spec-boxing.md` / `docs-jp/spec/spec-iterable.md` の整合を取り、`isinstance` 判定の共通 API 契約を確定する。
 3. [x] [ID: P0-TID-01-S2] C++ runtime に `py_isinstance` / `py_is_subtype` を実装し、既存 call site を段階的に置換する。
 4. [x] [ID: P0-TID-01-S3] JS/TS runtime に同等 API を実装し、`type_id` dispatch のオン/オフ方針（オプション切替）と整合させる。
