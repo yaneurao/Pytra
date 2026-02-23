@@ -110,11 +110,6 @@ def _extract_support_blocks() -> str:
     parts: list[str] = []
     for name in names:
         parts.append(_extract_top_level_block(cli_text, name, "def"))
-    # selfhost では hooks モジュールを import しないため、最小スタブを同梱する。
-    parts.append(
-        "def build_cpp_hooks() -> dict[str, Any]:\n"
-        "    return {}\n"
-    )
     return "\n".join(parts)
 
 
@@ -156,6 +151,25 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     return text[:i] + block + text[j:]
 
 
+def _patch_load_cpp_hooks_for_selfhost(text: str) -> str:
+    """`load_cpp_hooks` 内の hooks 取得を selfhost 用に空 dict へ固定化する。"""
+    start_marker = "def load_cpp_hooks("
+    end_marker = "\n\ndef load_cpp_identifier_rules("
+    i = text.find(start_marker)
+    if i < 0:
+        raise RuntimeError("failed to find load_cpp_hooks block in merged selfhost source")
+    j = text.find(end_marker, i + len(start_marker))
+    if j <= i:
+        raise RuntimeError("failed to find load_cpp_identifier_rules marker after load_cpp_hooks in merged selfhost source")
+    block = text[i:j]
+    target = "        hooks = build_cpp_hooks()\n"
+    replacement = "        hooks = {}\n"
+    if target not in block:
+        raise RuntimeError("failed to patch load_cpp_hooks call: hooks = build_cpp_hooks()")
+    block = block.replace(target, replacement, 1)
+    return text[:i] + block + text[j:]
+
+
 def main() -> int:
     py2cpp_text = SRC_PY2CPP.read_text(encoding="utf-8")
     base_text = SRC_BASE.read_text(encoding="utf-8")
@@ -164,6 +178,7 @@ def main() -> int:
     base_class = _strip_triple_quoted_docstrings(_extract_code_emitter_class(base_text))
     py2cpp_text = _remove_import_line(py2cpp_text)
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
+    out = _patch_load_cpp_hooks_for_selfhost(out)
     out = _patch_code_emitter_hooks_for_selfhost(out)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)
