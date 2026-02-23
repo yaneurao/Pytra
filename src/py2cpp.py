@@ -2165,8 +2165,7 @@ class CppEmitter(CodeEmitter):
                         fallback_names = self._fallback_tuple_target_names_from_repr(pseudo_target)
                 if len(fallback_names) > 0:
                     recovered: list[Any] = []
-                    for fi in range(len(fallback_names)):
-                        nm = fallback_names[fi]
+                    for nm in fallback_names:
                         rec: dict[str, Any] = {
                             "kind": "Name",
                             "id": nm,
@@ -2370,8 +2369,7 @@ class CppEmitter(CodeEmitter):
         for nm in parts:
             if nm != "":
                 ok = True
-                for k in range(len(nm)):
-                    c = nm[k : k + 1]
+                for k, c in enumerate(nm):
                     if k == 0:
                         if not (c == "_" or c.isalpha()):
                             ok = False
