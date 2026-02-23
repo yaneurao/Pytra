@@ -359,6 +359,11 @@ def dict_any_get_str(src: dict[str, object], key: str, default_value: str = "") 
     return default_value
 
 
+def dict_any_kind(src: dict[str, object]) -> str:
+    """EAST 風ノード辞書の `kind` を返す（未定義時は空文字）。"""
+    return dict_any_get_str(src, "kind")
+
+
 def dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str:
     """`dict[str, str]` から値を取得する（未定義時は既定値）。"""
     if key in src:

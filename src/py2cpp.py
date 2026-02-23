@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_any_get_str, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_any_get_str, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -240,11 +240,6 @@ def _dict_any_get_dict_list(src: dict[str, Any], key: str) -> list[dict[str, Any
     return out
 
 
-def _dict_any_kind(src: dict[str, Any]) -> str:
-    """`dict` の `kind` を文字列として安全に取得する。"""
-    return dict_any_get_str(src, "kind")
-
-
 def _assign_targets(stmt: dict[str, Any]) -> list[dict[str, Any]]:
     """Assign/AnnAssign 互換で代入先 target 群を正規化して返す。"""
     targets = _dict_any_get_dict_list(stmt, "targets")
@@ -258,7 +253,7 @@ def _assign_targets(stmt: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _name_target_id(target: dict[str, Any]) -> str:
     """代入先が Name のとき識別子を返す。"""
-    if _dict_any_kind(target) != "Name":
+    if dict_any_kind(target) != "Name":
         return ""
     return dict_any_get_str(target, "id")
 
@@ -270,7 +265,7 @@ def _stmt_target_name(stmt: dict[str, Any]) -> str:
 
 def _stmt_assigned_names(stmt: dict[str, Any]) -> list[str]:
     """Assign/AnnAssign 文の Name 代入先を抽出する。"""
-    kind = _dict_any_kind(stmt)
+    kind = dict_any_kind(stmt)
     out: list[str] = []
     if kind == "Assign":
         for tgt_obj in _assign_targets(stmt):
@@ -286,7 +281,7 @@ def _stmt_assigned_names(stmt: dict[str, Any]) -> list[str]:
 
 def _collect_store_names_from_target(target: dict[str, Any], out: set[str]) -> None:
     """代入先 target から束縛名を抽出する。"""
-    kind = _dict_any_kind(target)
+    kind = dict_any_kind(target)
     if kind == "Name":
         ident = dict_any_get_str(target, "id")
         if ident != "":
@@ -352,7 +347,7 @@ def _module_parse_metrics(east_module: dict[str, Any]) -> dict[str, int]:
 def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
     """statement ノードの束縛名を抽出して返す。"""
     symbols: set[str] = set()
-    kind = _dict_any_kind(stmt)
+    kind = dict_any_kind(stmt)
     if kind == "FunctionDef" or kind == "AsyncFunctionDef":
         fn_name = dict_any_get_str(stmt, "name")
         if fn_name != "":
@@ -416,7 +411,7 @@ def _stmt_list_scope_depth(body: list[dict[str, Any]], depth: int) -> int:
     """statement list の最大 scope 深さを返す。"""
     max_depth = depth
     for st in body:
-        kind = _dict_any_kind(st)
+        kind = dict_any_kind(st)
         child_depth = depth + 1 if kind in SCOPE_NESTING_KINDS else depth
         if child_depth > max_depth:
             max_depth = child_depth
@@ -5956,7 +5951,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
             east_obj = _dict_any_get(payload, "east")
             if isinstance(ok_obj, bool) and ok_obj and isinstance(east_obj, dict):
                 return east_obj
-            if _dict_any_kind(payload) == "Module":
+            if dict_any_kind(payload) == "Module":
                 return payload
         raise make_user_error(
             "input_invalid",
@@ -6537,7 +6532,7 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                 append_unique_non_empty(symbols, symbol_seen, label)
     else:
         for stmt_dict in body:
-            kind = _dict_any_kind(stmt_dict)
+            kind = dict_any_kind(stmt_dict)
             if kind == "Import":
                 for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
                     mod_name = dict_any_get_str(ent_dict, "name")
@@ -6748,7 +6743,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
         body = _dict_any_get_dict_list(east, "body")
         exports: set[str] = set()
         for st in body:
-            kind = _dict_any_kind(st)
+            kind = dict_any_kind(st)
             if kind == "FunctionDef" or kind == "ClassDef":
                 name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
@@ -6770,7 +6765,7 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
         file_disp = rel_disp_for_graph(root, Path(mod_key))
         body = _dict_any_get_dict_list(east, "body")
         for st in body:
-            if _dict_any_kind(st) == "ImportFrom":
+            if dict_any_kind(st) == "ImportFrom":
                 imported_mod = dict_any_get_str(st, "module")
                 if imported_mod in exports:
                     names = _dict_any_get_dict_list(st, "names")
@@ -6822,7 +6817,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         classes: list[str] = []
         variables: list[str] = []
         for st in body:
-            kind = _dict_any_kind(st)
+            kind = dict_any_kind(st)
             if kind == "FunctionDef":
                 name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
@@ -6885,7 +6880,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
         fn_schema: dict[str, dict[str, Any]] = {}
         cls_schema: dict[str, dict[str, Any]] = {}
         for st in body:
-            kind = _dict_any_kind(st)
+            kind = dict_any_kind(st)
             if kind == "FunctionDef":
                 name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
