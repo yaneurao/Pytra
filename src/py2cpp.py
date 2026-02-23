@@ -6077,8 +6077,7 @@ def _write_multi_file_cpp(
             if isinstance(module_id_obj, str) and module_id_obj:
                 dep_modules.add(module_id_obj)
         for sym_obj in import_symbols.values():
-            sym = self.any_to_dict_or_empty(sym_obj)
-            module_id = dict_any_get_str(sym, "module")
+            module_id = dict_any_get_str(sym_obj if isinstance(sym_obj, dict) else {}, "module")
             if module_id:
                 dep_modules.add(module_id)
         fwd_lines: list[str] = []

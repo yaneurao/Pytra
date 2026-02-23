@@ -2408,6 +2408,36 @@ def main() -> None:
             self.assertIn('#include "pytra_multi_prelude.h"', src_txt)
             self.assertNotIn('#include "runtime/cpp/py_runtime.h"', src_txt)
 
+    def test_cli_multi_file_from_import_generates_out_include_src(self) -> None:
+        src_main = """from helper import f
+
+def main() -> None:
+    print(f())
+"""
+        src_helper = """def f() -> int:
+    return 7
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            out_dir = root / "out"
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+            self.assertTrue((out_dir / "include").exists())
+            self.assertTrue((out_dir / "src").exists())
+            self.assertTrue((out_dir / "manifest.json").exists())
+            manifest_txt = (out_dir / "manifest.json").read_text(encoding="utf-8")
+            self.assertIn("main.py", manifest_txt)
+            self.assertIn("helper.py", manifest_txt)
+
     def test_cli_default_mode_is_multi_file(self) -> None:
         src_main = """def main() -> None:
     print(1)
