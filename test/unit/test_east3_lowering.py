@@ -123,6 +123,75 @@ class East3LoweringTest(unittest.TestCase):
         for plan in plans:
             self.assertEqual(plan.get("dispatch_mode"), root_mode)
 
+    def test_lower_for_contract_coerces_iter_mode_to_runtime_protocol(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {"kind": "Name", "id": "x"},
+                    "target_type": "int64",
+                    "iter_mode": "static_fastpath",
+                    "iter": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("kind"), "ForCore")
+        self.assertEqual(body[0].get("iter_mode"), "runtime_protocol")
+        self.assertEqual(body[0].get("iter_plan", {}).get("kind"), "RuntimeIterForPlan")
+
+    def test_lower_call_contract_keeps_non_any_builtin_call_unchanged(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "int64",
+                        "func": {"kind": "Name", "id": "len"},
+                        "args": [{"kind": "Name", "id": "xs", "resolved_type": "list[int64]"}],
+                        "keywords": [],
+                        "lowered_kind": "BuiltinCall",
+                        "builtin_name": "len",
+                        "runtime_call": "py_len",
+                    },
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        value = body[0].get("value", {})
+        self.assertEqual(value.get("kind"), "Call")
+        self.assertEqual(value.get("runtime_call"), "py_len")
+
+    def test_lower_assign_contract_keeps_same_side_non_any_assignment(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "AnnAssign",
+                    "target": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                    "annotation": "int64",
+                    "decl_type": "int64",
+                    "value": {"kind": "Name", "id": "j", "resolved_type": "int64"},
+                    "declare": True,
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        value = body[0].get("value", {})
+        self.assertEqual(value.get("kind"), "Name")
+        self.assertEqual(value.get("id"), "j")
+
     def test_lower_for_and_forrange_to_forcore(self) -> None:
         east2 = {
             "kind": "Module",
