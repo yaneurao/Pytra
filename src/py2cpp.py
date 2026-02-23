@@ -3479,6 +3479,16 @@ class CppEmitter(CodeEmitter):
         if self._contains_text(owner_t, "|"):
             owner_types = self.split_union(owner_t)
         if runtime_call == "list.append":
+            if len(arg_nodes) >= 1:
+                append_node = {
+                    "kind": "ListAppend",
+                    "owner": owner_node,
+                    "value": arg_nodes[0],
+                    "resolved_type": "None",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(append_node)
             append_rendered = self._render_append_call_object_method(owner_types, owner, args, arg_nodes)
             if append_rendered is not None:
                 return append_rendered
@@ -5770,6 +5780,20 @@ class CppEmitter(CodeEmitter):
         if kind == "ObjTypeId":
             value_expr = self.render_expr(expr_d.get("value"))
             return f"py_runtime_type_id({value_expr})"
+        if kind == "ListAppend":
+            owner_node = expr_d.get("owner")
+            value_node = expr_d.get("value")
+            owner_expr = self.render_expr(owner_node)
+            value_expr = self.render_expr(value_node)
+            owner_t0 = self.get_expr_type(owner_node)
+            owner_t = owner_t0 if isinstance(owner_t0, str) else ""
+            owner_types: list[str] = [owner_t]
+            if self._contains_text(owner_t, "|"):
+                owner_types = self.split_union(owner_t)
+            append_rendered = self._render_append_call_object_method(owner_types, owner_expr, [value_expr], [value_node])
+            if append_rendered is not None:
+                return append_rendered
+            return f"{owner_expr}.append({value_expr})"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))
