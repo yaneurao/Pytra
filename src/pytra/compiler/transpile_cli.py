@@ -1441,6 +1441,30 @@ def resolve_module_name_for_graph(
     return {"status": "missing", "module_id": raw_name, "path": ""}
 
 
+def resolve_module_name(
+    raw_name: str,
+    root_dir: Path,
+) -> dict[str, object]:
+    """モジュール名を `user/pytra/known/missing/relative` に分類して解決する。"""
+    resolved = resolve_module_name_for_graph(
+        raw_name,
+        root_dir,
+        Path("src/pytra/std"),
+        Path("src/pytra/utils"),
+    )
+    status = dict_any_get_str(resolved, "status")
+    module_id = dict_any_get_str(resolved, "module_id", raw_name)
+    path_txt = dict_any_get_str(resolved, "path")
+    path_obj: Path | None = None
+    if path_txt != "":
+        path_obj = Path(path_txt)
+    return {
+        "status": status,
+        "module_id": module_id,
+        "path": path_obj,
+    }
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
