@@ -4764,7 +4764,7 @@ class CppEmitter(CodeEmitter):
             if direct_module != "":
                 return direct_module
         if base_kind == "Name":
-            base_name = self.any_to_str(base_node.get("id"))
+            base_name = dict_any_get_str(base_node, "id")
             if (
                 base_name != ""
                 and not self.is_declared(base_name)
