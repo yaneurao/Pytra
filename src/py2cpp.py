@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6915,35 +6915,6 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
     return out
 
 
-def _sanitize_module_label(s: str) -> str:
-    out_chars: list[str] = []
-    for ch in s:
-        ok = ((ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9") or ch == "_")
-        if ok:
-            out_chars.append(ch)
-        else:
-            out_chars.append("_")
-    out = "".join(out_chars)
-    out = out if out != "" else "module"
-    if out[0] >= "0" and out[0] <= "9":
-        out = "_" + out
-    return out
-
-
-def _module_rel_label(root: Path, module_path: Path) -> str:
-    root_txt = str(root)
-    path_txt = str(module_path)
-    if root_txt != "" and not root_txt.endswith("/"):
-        root_txt += "/"
-    rel = path_txt
-    if root_txt != "" and path_txt.startswith(root_txt):
-        rel = path_txt[len(root_txt) :]
-    if rel.endswith(".py"):
-        rel = rel[:-3]
-    rel = rel.replace("/", "__")
-    return _sanitize_module_label(rel)
-
-
 def _inject_after_includes_block(cpp_text: str, block: str) -> str:
     """先頭 include 群の直後に block を差し込む。"""
     if block == "":
@@ -7001,7 +6972,7 @@ def _write_multi_file_cpp(
     for mod_key in files:
         mod_path = Path(mod_key)
         east0 = _dict_any_get_dict(module_east_map, mod_key)
-        label = _module_rel_label(root, mod_path)
+        label = module_rel_label(root, mod_path)
         module_label_map[mod_key] = label
         mod_name = module_id_from_east_for_graph(root, mod_path, east0)
         module_name_by_key[mod_key] = mod_name
@@ -7020,7 +6991,7 @@ def _write_multi_file_cpp(
         label = module_label_map[mod_key] if mod_key in module_label_map else ""
         hdr_path = include_dir / (label + ".h")
         cpp_path = src_dir / (label + ".cpp")
-        guard = "PYTRA_MULTI_" + _sanitize_module_label(label).upper() + "_H"
+        guard = "PYTRA_MULTI_" + sanitize_module_label(label).upper() + "_H"
         hdr_text = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
         hdr_text += "#ifndef " + guard + "\n"
         hdr_text += "#define " + guard + "\n\n"

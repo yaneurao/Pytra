@@ -378,6 +378,37 @@ def rel_disp_for_graph(base: Path, p: Path) -> str:
     return p_txt
 
 
+def sanitize_module_label(text: str) -> str:
+    """モジュール識別子向けに英数字/`_` のみ残す。"""
+    out_chars: list[str] = []
+    for ch in text:
+        ok = ((ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9") or ch == "_")
+        if ok:
+            out_chars.append(ch)
+        else:
+            out_chars.append("_")
+    out = "".join(out_chars)
+    out = out if out != "" else "module"
+    if out[0] >= "0" and out[0] <= "9":
+        out = "_" + out
+    return out
+
+
+def module_rel_label(root: Path, module_path: Path) -> str:
+    """`root` からの相対パスを multi-file 用モジュールラベルへ変換する。"""
+    root_txt = str(root)
+    path_txt = str(module_path)
+    if root_txt != "" and not root_txt.endswith("/"):
+        root_txt += "/"
+    rel = path_txt
+    if root_txt != "" and path_txt.startswith(root_txt):
+        rel = path_txt[len(root_txt) :]
+    if rel.endswith(".py"):
+        rel = rel[:-3]
+    rel = rel.replace("/", "__")
+    return sanitize_module_label(rel)
+
+
 def module_name_from_path_for_graph(root: Path, module_path: Path) -> str:
     """import graph 用の module_id フォールバック解決。"""
     root_txt = str(root)
