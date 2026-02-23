@@ -22,130 +22,12 @@
 - `docs-jp/todo.md` / `docs-jp/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
-## P0: Runtime 起源分離（最優先）
-
-文脈: `docs-jp/plans/p1-runtime-layout-unification.md`（`TG-P1-RUNTIME-LAYOUT`）
-
-1. [x] [ID: P0-RUNTIME-SEP-01] C++ runtime を「生成物」と「手書き」で上位フォルダ分離する（`P0-RUNTIME-SEP-01-S1` から `P0-RUNTIME-SEP-01-S5` 完了でクローズ）。
-2. [x] [ID: P0-RUNTIME-SEP-01-S1] `src/runtime/cpp/pytra/` 配下の現状を棚卸しし、`std/`・`built_in/`・`utils/`・`compiler/` の各ファイルを「生成物 / 手書き / 入口フォワーダー」に分類する。
-3. [x] [ID: P0-RUNTIME-SEP-01-S2] `src/runtime/cpp/pytra-gen/`（自動生成専用）と `src/runtime/cpp/pytra-core/`（手書き専用）を新設し、ビルド/インクルード解決を破壊しない最小構成を作る。
-4. [x] [ID: P0-RUNTIME-SEP-01-S3] 自動生成ファイルを `pytra-gen` へ段階移動し、`AUTO-GENERATED` ヘッダ付与を統一する。
-5. [x] [ID: P0-RUNTIME-SEP-01-S4] 手書きファイル（`-impl` 含む）を `pytra-core` へ段階移動し、`src/runtime/cpp/pytra/` を公開 include 入口（薄いフォワーダー）へ縮退する。
-6. [x] [ID: P0-RUNTIME-SEP-01-S5] CI ガードを追加し、`pytra-gen` は `AUTO-GENERATED` 必須、`pytra-core` は `AUTO-GENERATED` 禁止を強制する。
-
-方針メモ:
-- ターゲット言語の増加を前提に、runtime は「自動生成層を厚く・手書き層を薄く」を基本方針とする。意味論は可能な限り `src/pytra/` 側の正本から生成し、手書きは GC/ABI など低レベル最小層へ限定する。
-
-進捗メモ:
-- `P0-RUNTIME-SEP-01-S1`: `docs-jp/plans/p1-runtime-layout-unification-inventory.md` に `src/runtime/cpp/pytra/` 全57ファイルの分類台帳（`generated=38`, `handwritten=19`, `entry_forwarder=0`）を追加した。
-- `P0-RUNTIME-SEP-01-S2`: `src/runtime/cpp/pytra-gen/` と `src/runtime/cpp/pytra-core/` を新設し、各ディレクトリに責務境界と禁止事項（生成物必須/禁止）を明記した。
-- `P0-RUNTIME-SEP-01-S3`: 生成物38ファイル（`std/*`, `utils/*`, `compiler/east_parts/core.*`）を `src/runtime/cpp/pytra-gen/` へ移動し、旧 `src/runtime/cpp/pytra/` には互換フォワーダー（`.h/.cpp`）を配置した。`src/py2cpp.py --emit-runtime-cpp` の出力先も `pytra-gen` へ変更した。
-- `P0-RUNTIME-SEP-01-S4`: 手書き19ファイル（`built_in/*`, `std/*-impl.*`）を `src/runtime/cpp/pytra-core/` へ移動し、`src/runtime/cpp/pytra/` の全57ファイルをフォワーダー化した（公開入口として維持）。
-- `P0-RUNTIME-SEP-01-S5`: `tools/check_runtime_cpp_layout.py` を追加し、`tools/run_local_ci.py` へ組み込んで `pytra-gen` の `AUTO-GENERATED` 必須と `pytra-core` の同マーカー禁止を CI で強制した。
-
-## P0: type_id 継承判定・isinstance 統一（最優先）
-
-文脈: `docs-jp/plans/p0-typeid-isinstance-dispatch.md`（`TG-P0-TYPEID-ISINSTANCE`）
-
-1. [x] [ID: P0-TID-01] `type_id` ベースの共通判定 API（`py_isinstance` / `py_is_subtype`）を C++/JS/TS runtime と各 emitter lower に統一導入する（`P0-TID-01-S1` から `P0-TID-01-S4` 完了でクローズ）。
-2. [x] [ID: P0-TID-01-S1] `docs-jp/spec/spec-type_id.md` / `docs-jp/spec/spec-boxing.md` / `docs-jp/spec/spec-iterable.md` の整合を取り、`isinstance` 判定の共通 API 契約を確定する。
-3. [x] [ID: P0-TID-01-S2] C++ runtime に `py_isinstance` / `py_is_subtype` を実装し、既存 call site を段階的に置換する。
-4. [x] [ID: P0-TID-01-S3] JS/TS runtime に同等 API を実装し、`type_id` dispatch のオン/オフ方針（オプション切替）と整合させる。
-5. [x] [ID: P0-TID-01-S4] `py2cpp` を含む各 emitter の `isinstance` lower を runtime API 経由へ統一し、target 固有 built-in 直書き分岐を縮退する。
-6. [x] [ID: P0-TID-02] `src/pytra/built_in/`（pure Python）を runtime 意味論の正本として新設し、target 非依存 built-in 処理を段階移管する（`P0-TID-02-S1` から `P0-TID-02-S4` 完了でクローズ）。
-7. [x] [ID: P0-TID-02-S1] `src/pytra/built_in/` の配置・命名・生成対象ルールを定義し、最小スケルトンを作成する。
-8. [x] [ID: P0-TID-02-S2] `isinstance` / `issubclass` / `type_id` の pure Python 実装を `src/pytra/built_in/` へ移管する。
-9. [x] [ID: P0-TID-02-S3] `py2cpp.py --emit-runtime-cpp` を拡張し、`src/pytra/built_in/*.py` から `src/runtime/cpp/pytra/built_in/*.{h,cpp}` を生成できるようにする。
-10. [x] [ID: P0-TID-02-S4] C++ 側の手書き built-in 実装を最小ブート層（GC/ABI 等）へ限定し、移管済み処理の重複実装を解消する（`P0-TID-02-S4-S1` から `P0-TID-02-S4-S3` 完了でクローズ）。
-11. [x] [ID: P0-TID-02-S4-S1] `py_runtime.h`（手書き）と `pytra-gen/built_in/type_id.*`（生成）における `type_id` 系シンボル重複を棚卸しし、削減方針を確定する。
-12. [x] [ID: P0-TID-02-S4-S2] `py_runtime.h` に残す最小ブート層（GC/ABI/`PyObj` 基盤）と、生成層へ移す `type_id` 判定ロジックの責務境界を確定し、移行パッチを作成する。
-13. [x] [ID: P0-TID-02-S4-S3] ビルド参照を生成層優先へ切り替え、重複シンボルを削除したうえで C++ 回帰テストを通す。
-
-進捗メモ:
-- `P0-TID-01-S1`: `spec-type_id` / `spec-boxing` / `spec-iterable` の3文書で、`--object-dispatch-mode` の一括切替範囲と `py_is_subtype` / `py_isinstance` / `py_issubclass` 契約を揃えて明文化した。
-- `P0-TID-01-S2`: C++ runtime（`py_runtime.h`）に `py_is_subtype` / `py_issubclass` / `py_isinstance` を実装し、`py2cpp` の `isinstance` lower が `py_isinstance(..., <type_id>)` を生成する回帰を `test/unit/test_py2cpp_codegen_issues.py` で確認した。
-- `P0-TID-01-S3`: JS/TS runtime に `pyIsSubtype` / `pyIsInstance` と `pyRegisterClassType` ベースの型ID運用を実装し、`test/unit/test_js_ts_runtime_dispatch.py` / `test/unit/test_py2js_smoke.py` / `test/unit/test_py2ts_smoke.py` で回帰を確認した。
-- `P0-TID-01-S4`: emitter 側の `isinstance` lower を runtime API 経由へ統一し、C++/JS/TS/C#/Rust の回帰を `test/unit/test_py2cs_smoke.py` / `test/unit/test_py2rs_smoke.py` と `tools/check_py2{cpp,js,ts,cs,rs}_transpile.py` で確認した。
-- `P0-TID-02-S1`: `src/pytra/built_in/` を新設し、`__init__.py` と `README.md` で配置・命名・生成対象ルール（正本層/生成先/低レベル層境界）を確定した。
-- `P0-TID-02-S2`: `src/pytra/built_in/type_id.py` に `py_tid_register_class_type` / `py_tid_is_subtype` / `py_tid_issubclass` / `py_tid_runtime_type_id` / `py_tid_isinstance` の pure Python 実装を移管し、`test/unit/test_pytra_built_in_type_id.py`（4件成功）で回帰を確認した。
-- `P0-TID-02-S3`: `py2cpp.py --emit-runtime-cpp` の入力許可に `src/pytra/built_in/` を追加し、`src/pytra/built_in/type_id.py` から `src/runtime/cpp/pytra-gen/built_in/type_id.{h,cpp}` と `src/runtime/cpp/pytra/built_in/type_id.{h,cpp}`（互換フォワーダー）を生成できることを確認した。
-- `P0-TID-02-S4-S1`: `py_runtime.h` と生成 `built_in/type_id.*` の重複シンボル（`PYTRA_TID_*`, `py_register_class_type`, `py_is_subtype`, `py_issubclass`, `py_runtime_type_id`, `py_isinstance`）を棚卸しし、S4 を `S4-S1`〜`S4-S3` へ分割した。
-- `P0-TID-02-S4-S2`: 生成側 `type_id.py` を `PYB_TID_*` / `py_tid_*` 命名へ再設計し、`src/runtime/cpp/pytra-gen/built_in/type_id.cpp` が `g++ -std=c++17 -I src -I src/runtime/cpp -fsyntax-only` を通る移行パッチを適用した（手書き側 API は温存し、S4-S3で切替予定）。
-- 詳細ログは `docs-jp/plans/p0-typeid-isinstance-dispatch.md` の `決定ログ` を参照。
-
-## P0: Iterable/Iterator 契約反映（最優先）
-
-文脈: `docs-jp/plans/p0-iterable-runtime-protocol.md`（`TG-P0-ITER`）
-
-1. [x] [ID: P0-ITER-01] `docs-jp/spec/spec-iterable.md` を正本として iterable/iterator 契約を実装全体へ反映する（`P0-ITER-01-S1` から `P0-ITER-01-S4` 完了でクローズ）。
-2. [x] [ID: P0-ITER-01-S1] `EAST` trait（`iterable_trait` / `iter_mode`）の必要情報と既存ノード影響を整理し、導入手順を確定する。
-3. [x] [ID: P0-ITER-01-S2] `EAST` trait を導入し、parser/lower から必要メタデータを供給できる状態にする。
-4. [x] [ID: P0-ITER-01-S3] C++ runtime（`py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range`）を実装し、`spec-iterable` の契約を満たす。
-5. [x] [ID: P0-ITER-01-S4] `py2cpp` codegen の `static_fastpath` / `runtime_protocol` 分岐を実装し、回帰テストを追加する。
-
-進捗メモ:
-- `P0-ITER-01-S1`: `docs-jp/plans/p0-iterable-runtime-protocol.md` に `For` / `ForRange` 影響範囲、trait 必須項目、`core.py`（producer）と `py2cpp.py`（consumer）の責務境界を棚卸しした。
-- `P0-ITER-01-S2`: `test/unit/test_py2cpp_codegen_issues.py` に `iter_mode` 欠落時の互換フォールバック回帰（`test_for_without_iter_mode_keeps_legacy_static_fastpath`）を追加し、parser/lower 供給済み trait と旧 EAST 互換の双方を固定した。
-- `P0-ITER-01-S3`: C++ runtime の `py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range` 実装を `test/unit/test_cpp_runtime_iterable.py`（compile+run）で再検証し、non-iterable fail-fast を含む契約維持を確認した。
-- `P0-ITER-01-S4`: `py2cpp` の `emit_for_each` が `iter_mode` 分岐（`static_fastpath` / `runtime_protocol`）を使うことを既存回帰＋`tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で再確認した。
-- 詳細ログは `docs-jp/plans/p0-iterable-runtime-protocol.md` の `決定ログ` を参照。
-
-## P0: Selfhost 安定化
-
-文脈: `docs-jp/plans/p0-selfhost-stabilization.md`（`TG-P0-SH`）
-
-1. [x] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を完了する（`P0-SH-04-S1` から `P0-SH-04-S3` 完了でクローズ）。
-2. [x] [ID: P0-SH-04-S1] 残存スタブを棚卸しし、「恒久機能化すべきもの」と「削除すべきもの」を分類する。
-3. [x] [ID: P0-SH-04-S2] 恒久機能化対象を compiler/runtime 側へ移し、prepare 側分岐を段階削減する（`P0-SH-04-S2-S1` から `P0-SH-04-S2-S3` 完了でクローズ）。
-4. [x] [ID: P0-SH-04-S2-S1] `CodeEmitter` 本体へ dynamic hooks の有効/無効フラグを追加し、prepare 側 no-op パッチを本体機能へ移す土台を作る。
-5. [x] [ID: P0-SH-04-S2-S2] `tools/prepare_selfhost_source.py` の `_patch_code_emitter_hooks_for_selfhost` を、文字列置換から「フラグ設定のみ」へ縮退する。
-6. [x] [ID: P0-SH-04-S2-S3] `load_cpp_hooks` 経路の selfhost fallback を compiler 側へ移し、`_patch_load_cpp_hooks_for_selfhost` を撤去する。
-7. [x] [ID: P0-SH-04-S3] selfhost 回帰（通常 + guard profile）を再計測し、prepare スクリプト依存の再流入を防ぐ。
-8. [x] [ID: P0-SH-05] selfhost 暴走対策として fail-fast ガードを導入し、`--guard-profile {off,default,strict}` と個別上限（`--max-ast-depth`, `--max-parse-nodes`, `--max-symbols-per-module`, `--max-scope-depth`, `--max-import-graph-nodes`, `--max-import-graph-edges`, `--max-generated-lines`）を CLI から指定可能にする。制限超過時は `input_invalid(kind=limit_exceeded, stage=...)` で早期停止する。
-
-進捗メモ:
-- `P0-SH-04-S1`: `docs-jp/plans/p0-selfhost-stabilization.md` に `prepare_selfhost_source.py` の残存パッチを棚卸しし、恒久機能化対象（`_patch_code_emitter_hooks_for_selfhost`, `_patch_load_cpp_hooks_for_selfhost`）と削除対象（`build_cpp_hooks` import 除去分岐）を分類した。
-- `P0-SH-04-S2-S1`: `CodeEmitter` に `dynamic_hooks_enabled` フラグと `set_dynamic_hooks_enabled()` を追加し、dynamic hook 呼び出しを本体機能で無効化できる土台を導入した（`test/unit/test_code_emitter.py` と `test/unit/test_prepare_selfhost_source.py` 回帰通過）。
-- `P0-SH-04-S2-S2`: `prepare_selfhost_source.py` の hook パッチを `_call_hook` 本体の `return fn(...)` 置換から、`CppEmitter.__init__` への `self.set_dynamic_hooks_enabled(False)` 挿入へ変更した（`test/unit/test_prepare_selfhost_source.py` 回帰通過）。
-- `P0-SH-04-S2-S3`: `src/py2cpp.py` の `load_cpp_hooks` を `_build_cpp_hooks_impl`（既定 `return {}` / 通常時 import で上書き）経由へ変更し、`tools/prepare_selfhost_source.py` から `_patch_load_cpp_hooks_for_selfhost` を削除した。`python3 tools/prepare_selfhost_source.py && python3 src/py2cpp.py selfhost/py2cpp.py -o /tmp/selfhost_check.cpp`、`python3 test/unit/test_prepare_selfhost_source.py`、`python3 tools/check_py2cpp_transpile.py` で回帰を確認した。
-- `P0-SH-04-S3`: `selfhost/py2cpp.py` の通常/guard（`default`/`strict`）変換を再計測し、出力 hash 一致を確認した（`/tmp/selfhost_{normal,guard_default,guard_strict}.cpp`）。`check_selfhost_cpp_diff --mode allow-not-implemented` は既知 `mismatches=3`、`verify_selfhost_end_to_end --skip-build` は `sample/py/01_mandelbrot.py` のみ失敗、`check_selfhost_direct_compile` は 3ケース `failures=0`。加えて `test_prepare_selfhost_source.py` に `_patch_load_cpp_hooks_for_selfhost` 非存在テストを追加し、prepare 依存の再流入を検知可能にした。
-- 詳細ログは `docs-jp/plans/p0-selfhost-stabilization.md` の `決定ログ` を参照。
-
-## P1: CodeEmitter / Hooks 移行
-
-文脈: `docs-jp/plans/p1-codeemitter-hooks-migration.md`（`TG-P1-CEH`）
-
-1. [x] [ID: P1-CEH-01] profile で表現しづらいケースだけを hooks へ移し、`py2cpp.py` 側条件分岐を残さない状態にする（`P1-CEH-01-S1` から `P1-CEH-01-S4` 完了でクローズ）。
-2. [x] [ID: P1-CEH-01-S1] `py2cpp.py` 側の profile/hook 境界違反ケースを棚卸しし、移行優先順位を決める。
-3. [x] [ID: P1-CEH-01-S2] hook 化しやすいケースから `CodeEmitter` hooks へ移行し、`py2cpp.py` 条件分岐を削減する。
-4. [x] [ID: P1-CEH-01-S3] hook 化が難しいケースは profile 側表現力拡張で吸収し、target 固有分岐の再追加を防ぐ。
-5. [x] [ID: P1-CEH-01-S4] selfhost/fixture 回帰で生成差分を確認し、残る `py2cpp.py` 分岐を除去する。
-
-進捗メモ:
-- `P1-CEH-01-S1`: `docs-jp/plans/p1-codeemitter-hooks-migration.md` に `emit_stmt`/`emit_for_*`、Builtin runtime fallback、`_render_call_fallback`、`_render_binop_expr` などの境界違反ケースを `高/中/低` 優先で棚卸しし、`S2` 着手順を確定した。
-- `P1-CEH-01-S2`: `CppEmitter.hook_on_emit_stmt_kind` を override して「dynamic hook優先 + C++既定フォールバック」を導入し、`emit_stmt` の kind 分岐を `hook_on_emit_stmt_kind` 側へ移した。selfhost（dynamic hooks無効）でも `Pass`/`Import` などが処理されることを `test_py2cpp_features.py::test_emit_stmt_fallback_works_when_dynamic_hooks_disabled` で固定した。
-- `P1-CEH-01-S3`: `load_cpp_type_map` と `load_cpp_identifier_rules` を profile 読み取り対応に拡張し、`CppEmitter.__init__` から `self.profile` を渡して target 固有ハードコード依存を縮小した。`test_py2cpp_features.py` に profile overlay/override 回帰を追加し、`tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）を確認した。
-- [ID: P1-CEH-01-S4] `_emit_stmt_kind_fallback` の残存 if 連鎖をディスパッチテーブルへ置換し、`test_py2cpp_features.py`（4件）, `test_cpp_hooks.py`, `check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）, `check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知）, `verify_selfhost_end_to_end.py --skip-build --cases sample/py/01_mandelbrot.py sample/py/17_monte_carlo_pi.py test/fixtures/control/if_else.py`（`failures=1` 既知: `01_mandelbrot`）, `check_selfhost_direct_compile.py --cases sample/py/01_mandelbrot.py sample/py/17_monte_carlo_pi.py test/fixtures/control/if_else.py`（`failures=0`）で回帰基線を確認した。
-
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
 文脈: `docs-jp/plans/p1-codeemitter-dispatch-redesign.md`（`TG-P1-CED`）
 
-1. [x] [ID: P1-CED-01] `render_expr` の kind ごとに hook ポイントを追加する（`P1-CED-01-S1` から `P1-CED-01-S3` 完了でクローズ）。
-2. [x] [ID: P1-CED-01-S1] `CodeEmitter` に kind 専用 hook 名（`on_render_expr_<kind>`）解決 API を追加し、`py2cpp` `render_expr` から呼び出す。
-3. [x] [ID: P1-CED-01-S2] 非 C++ emitter（`rs/cs/js/ts`）の `render_expr` へ kind 専用 hook 呼び出しを揃えて適用する。
-4. [x] [ID: P1-CED-01-S3] kind 専用 hook の登録規約を hooks/profile ドキュメントへ反映し、selfhost 回帰で挙動固定する。
-5. [x] [ID: P1-CED-02] `emit_stmt` も kind ごとの hook ポイントへ分解する。
-6. [x] [ID: P1-CED-03] `CppEmitter` を hook 優先 + fallback の二段構成に統一する。
-7. [ ] [ID: P1-CED-04] `tools/check_selfhost_cpp_diff.py` で差分ゼロを維持しながら fallback を縮退する。
-8. [ ] [ID: P1-CED-05] fallback が十分に減った段階で、共通ディスパッチを `CodeEmitter` 本体へ戻す。
-
-進捗メモ:
-- `P1-CED-01-S1`: `CodeEmitter` に `hook_on_render_expr_kind_specific()` と kind 正規化（`Name` -> `on_render_expr_name`, `IfExp` -> `on_render_expr_if_exp`）を追加し、`py2cpp` `render_expr` で「kind専用hook -> 既存kind hook」の優先順を導入した。`test_code_emitter.py` / `test_py2cpp_features.py` に回帰を追加して固定した。
-- `P1-CED-01-S2`: `js/cs/rs` emitter の `render_expr` 先頭で `hook_on_render_expr_kind_specific()` を呼び出すよう統一し、`ts` は `transpile_to_js()` 経由で同一経路を利用することを `test_py2ts_smoke.py` で固定した。`test_py2{js,cs,rs,ts}_smoke.py` と `check_py2{js,cs,rs,ts}_transpile.py` を通過した。
-- [ID: P1-CED-01-S3] `spec-language-profile.md` / `spec-dev.md` に kind 専用 hook（`on_render_expr_<kind>`）の命名規約と優先順位（kind専用 -> kind汎用 -> leaf/complex -> 既定実装）を明文化し、`check_selfhost_cpp_diff.py --mode allow-not-implemented` の既知基線（`mismatches=3`）を再確認した。
-- [ID: P1-CED-02] `CodeEmitter.hook_on_emit_stmt_kind` を「kind専用 (`on_emit_stmt_<kind>`) -> 汎用 (`on_emit_stmt_kind`)」順へ変更し、`test_code_emitter.py` / `test_py2cpp_features.py` で優先順位を固定した。`check_py2{cpp,js,cs,rs,ts}_transpile.py` と `check_selfhost_cpp_diff.py --mode allow-not-implemented`（既知 `mismatches=3`）で回帰基線を確認した。
-- [ID: P1-CED-03] `CppEmitter.hook_on_render_expr_kind` を override し、`kind専用 -> kind汎用 -> leaf/complex` を一箇所に集約したうえで `render_expr` を fallback 分岐専任へ縮退した。`test_py2cpp_features.py` に leaf/complex 経路回帰を追加し、`check_py2{cpp,js,cs,rs,ts}_transpile.py` と `check_selfhost_cpp_diff.py --mode allow-not-implemented`（既知 `mismatches=3`）で基線維持を確認した。
+1. [ ] [ID: P1-CED-04] `tools/check_selfhost_cpp_diff.py` で差分ゼロを維持しながら fallback を縮退する。
+2. [ ] [ID: P1-CED-05] fallback が十分に減った段階で、共通ディスパッチを `CodeEmitter` 本体へ戻す。
 
 受け入れ基準:
 1. [ ] [ID: P1-CED-AC-01] Python 実行パス: `hooks` 有効時に既存ケースのコード生成結果が不変。
@@ -241,15 +123,7 @@ py2cpp / py2rs 共通化候補:
 
 文脈: `docs-jp/plans/p3-microgpt-source-preservation.md`（`TG-P3-MICROGPT-SOURCE-PRESERVATION`）
 
-1. [x] [ID: P3-MSP-01] `archive/exec-extracted-20260222.log` で抽出した原本改変項目（型注釈追加、内包/zip 展開、I/O 置換、アルゴリズム簡略化）を、parser/emitter/runtime の責務へ再分類する。
-2. [x] [ID: P3-MSP-02] `materials/refs/microgpt/microgpt-20260222.py` を無改変で `py2cpp` に入力したときの失敗要因を再現・列挙し、改変で迂回していた箇所を実装タスクへ置き換える。
-3. [ ] [ID: P3-MSP-03] `work/tmp/microgpt-20260222-lite.py` 依存を縮退し、原本 `materials/refs/microgpt/microgpt-20260222.py` で transpile -> `g++ -fsyntax-only` が通る回帰導線を整備する。
-4. [x] [ID: P3-MSP-04] parser: 無注釈引数（`def f(x): ...`）と class 内 1 行メソッド定義（`def f(...): return ...`）の受理方針を再検討し、原本改変なしで読める範囲を拡張する。
-5. [x] [ID: P3-MSP-05] parser: top-level `for` / tuple 同時代入 / 複数 `for` 内包の受理・lower を段階対応し、原本スクリプト構造を維持して EAST 化できるようにする。
-6. [x] [ID: P3-MSP-06] EAST/emitter: 内包内 `range(...)` の lower 不整合（`unexpected raw range Call in EAST`）を解消する。
-7. [x] [ID: P3-MSP-07] EAST/emitter: `zip` / 内包経由で `object receiver` エラーへ落ちる型崩れ経路を再現し、型解決を安定化する。
-8. [x] [ID: P3-MSP-08] runtime/std: `open` 反復、`list.index`、`random.shuffle(list[str])` など原本依存 API の互換差分を整理し、どのレイヤで吸収するかを確定する。
-9. [x] [ID: P3-MSP-09] 回帰導線: 原本 `materials/refs/microgpt/microgpt-20260222.py` を固定入力として、`py2cpp` 失敗要因の再発を検知する手順またはテストを追加する。
+1. [ ] [ID: P3-MSP-03] `work/tmp/microgpt-20260222-lite.py` 依存を縮退し、原本 `materials/refs/microgpt/microgpt-20260222.py` で transpile -> `g++ -fsyntax-only` が通る回帰導線を整備する。
 
 進捗メモ:
 - 詳細ログは `docs-jp/plans/p3-microgpt-source-preservation.md` の `決定ログ` を参照。
@@ -261,20 +135,9 @@ py2cpp / py2rs 共通化候補:
 ### `src/py2cpp.py`
 
 1. [ ] [ID: P3-PY-01] `while i < len(xs)` + 手動インデックス更新を `for x in xs` / `for i, x in enumerate(xs)` へ戻す。
-2. [x] [ID: P3-PY-02] `text[0:1] == "x"` のような1文字比較を、selfhost 要件を満たす範囲で `text.startswith("x")` へ戻す。
-3. [ ] [ID: P3-PY-03] 空 dict/list 初期化後の逐次代入（`out = {}; out["k"] = v`）を、型崩れしない箇所から辞書リテラルへ戻す。
-4. [ ] [ID: P3-PY-04] 三項演算子を回避している箇所（`if ...: a=x else: a=y`）を、selfhost 側対応後に式形式へ戻す。
-5. [ ] [ID: P3-PY-05] import 解析の一時変数展開（`obj = ...; s = any_to_str(obj)`）を、型安全が確保できる箇所から簡潔化する。
-
-進捗メモ:
-- 詳細ログは `docs-jp/plans/p3-pythonic-restoration.md` の `決定ログ` を参照。
-
-### `src/pytra/compiler/east_parts/code_emitter.py`
-
-1. [x] [ID: P3-CE-01] `split_*` / `normalize_type_name` 周辺の index ループを段階的に `for` ベースへ戻す。
-2. [x] [ID: P3-CE-02] `any_*` 系ヘルパで重複する `None`/空文字判定を共通小関数へ集約する。
-3. [x] [ID: P3-CE-03] `_emit_trivia_items` の directive 処理分岐を小関数に分割する。
-4. [x] [ID: P3-CE-04] `hook_on_*` 系で同型の呼び出しパターンを汎用ヘルパ化し、重複を減らす。
+2. [ ] [ID: P3-PY-03] 空 dict/list 初期化後の逐次代入（`out = {}; out["k"] = v`）を、型崩れしない箇所から辞書リテラルへ戻す。
+3. [ ] [ID: P3-PY-04] 三項演算子を回避している箇所（`if ...: a=x else: a=y`）を、selfhost 側対応後に式形式へ戻す。
+4. [ ] [ID: P3-PY-05] import 解析の一時変数展開（`obj = ...; s = any_to_str(obj)`）を、型安全が確保できる箇所から簡潔化する。
 
 進捗メモ:
 - 詳細ログは `docs-jp/plans/p3-pythonic-restoration.md` の `決定ログ` を参照。
