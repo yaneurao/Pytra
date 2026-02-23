@@ -64,6 +64,14 @@ def split_infix_once(text: str, sep: str) -> tuple[str, str, bool]:
     return "", "", False
 
 
+def replace_first(text: str, old: str, replacement: str) -> str:
+    """`text` 内の最初の `old` だけを `replacement` に置換する。"""
+    pos = text.find(old)
+    if pos < 0:
+        return text
+    return text[:pos] + replacement + text[pos + len(old) :]
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,

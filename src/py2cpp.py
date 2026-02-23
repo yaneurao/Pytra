@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options
+from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -22,14 +22,6 @@ from pytra.std import sys
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT = Path("src/pytra/compiler")
-
-
-def _replace_first(text: str, old: str, replacement: str) -> str:
-    """`text` 内の最初の `old` だけを `replacement` に置換する。"""
-    pos = text.find(old)
-    if pos < 0:
-        return text
-    return text[:pos] + replacement + text[pos + len(old) :]
 
 
 def _mkdirs_for_cli(path_txt: str) -> None:
@@ -7599,7 +7591,7 @@ def _write_multi_file_cpp(
             emit_main if is_entry else False,
         )
         # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。
-        cpp_txt = _replace_first(
+        cpp_txt = replace_first(
             cpp_txt,
             '#include "runtime/cpp/pytra/built_in/py_runtime.h"',
             '#include "pytra_multi_prelude.h"',
@@ -8058,7 +8050,7 @@ def main(argv: list[str]) -> int:
                 new_runtime_include = (
                     '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
                 )
-                cpp_txt_runtime = _replace_first(
+                cpp_txt_runtime = replace_first(
                     cpp_txt_runtime,
                     old_runtime_include,
                     new_runtime_include,
