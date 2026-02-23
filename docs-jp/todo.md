@@ -77,7 +77,7 @@
 
 文脈: `docs-jp/plans/p0-iterable-runtime-protocol.md`（`TG-P0-ITER`）
 
-1. [ ] [ID: P0-ITER-01] `docs-jp/spec/spec-iterable.md` を正本として iterable/iterator 契約を実装全体へ反映する（`P0-ITER-01-S1` から `P0-ITER-01-S4` 完了でクローズ）。
+1. [x] [ID: P0-ITER-01] `docs-jp/spec/spec-iterable.md` を正本として iterable/iterator 契約を実装全体へ反映する（`P0-ITER-01-S1` から `P0-ITER-01-S4` 完了でクローズ）。
 2. [x] [ID: P0-ITER-01-S1] `EAST` trait（`iterable_trait` / `iter_mode`）の必要情報と既存ノード影響を整理し、導入手順を確定する。
 3. [x] [ID: P0-ITER-01-S2] `EAST` trait を導入し、parser/lower から必要メタデータを供給できる状態にする。
 4. [x] [ID: P0-ITER-01-S3] C++ runtime（`py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range`）を実装し、`spec-iterable` の契約を満たす。
