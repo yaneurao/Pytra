@@ -47,7 +47,7 @@
 `P0-SH-04-S1` 棚卸し結果（`tools/prepare_selfhost_source.py`）:
 
 - 恒久機能化対象（S2 で compiler/runtime 側へ移す）:
-  - `_patch_code_emitter_hooks_for_selfhost`: `CodeEmitter._call_hook` の dynamic callable を selfhost だけ `return None` 化しており、現状の最大スタブ。selfhost 用パッチではなく `CodeEmitter` 本体の「hooks 無効モード」へ昇格させる。
+  - `_patch_code_emitter_hooks_for_selfhost`: 既存は `CodeEmitter._call_hook` の dynamic callable を selfhost 用に置換していた。S2 で `CodeEmitter` 本体の「hooks 無効モード」へ昇格させ、prepare 側はフラグ設定だけへ縮退する。
   - `_patch_load_cpp_hooks_for_selfhost`: `load_cpp_hooks` 内の `hooks = build_cpp_hooks()` を `hooks = {}` へ差し替えている。`load_cpp_hooks` 側で「フックなし初期化」を正規機能として持たせ、差し替え依存を除去する。
 - 削除対象（S2 完了後に prepare から外す）:
   - `_remove_import_line` の `build_cpp_hooks` import 除去分岐: 上記恒久機能化により selfhost 側で import 抜き差しする必要がなくなるため削除。
@@ -85,3 +85,4 @@
 - 2026-02-23: docs-jp/todo.md の P0-SH-04 を -S1 〜 -S3 に分割したため、本 plan の関連 TODO と実行順を同粒度に同期した。
 - 2026-02-23: `P0-SH-04-S1` を完了。`tools/prepare_selfhost_source.py` の残存 selfhost 専用パッチを棚卸しし、`_patch_code_emitter_hooks_for_selfhost` / `_patch_load_cpp_hooks_for_selfhost` を恒久機能化対象、`build_cpp_hooks` import 除去分岐を削除対象、`_extract_support_blocks` 系を維持対象に分類した。
 - 2026-02-23: `P0-SH-04-S2` を `S2-S1` 〜 `S2-S3` に分割した。先行して `S2-S1` を完了し、`src/pytra/compiler/east_parts/code_emitter.py` に `dynamic_hooks_enabled` と `set_dynamic_hooks_enabled()` を追加して、dynamic hooks 無効化を prepare 固有置換ではなく本体機能として表現できる土台を導入した。`python3 test/unit/test_code_emitter.py`（34件成功）、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。
+- 2026-02-23: `P0-SH-04-S2-S2` を完了。`tools/prepare_selfhost_source.py::_patch_code_emitter_hooks_for_selfhost` を `_call_hook` 本体の `return fn(...)` 置換方式から、`CppEmitter.__init__` へ `self.set_dynamic_hooks_enabled(False)` を注入する方式へ変更した。これにより hook 無効化の責務を `CodeEmitter` 本体へ寄せ、prepare 側のパッチ境界を 1 箇所へ縮小した。`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）と `python3 test/unit/test_code_emitter.py`（34件成功）で回帰なしを確認した。

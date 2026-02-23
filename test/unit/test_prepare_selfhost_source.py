@@ -163,7 +163,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("if isinstance(hooks, dict):", load_cpp_hooks_block)
         self.assertNotIn("def build_cpp_hooks() -> dict[str, Any]:", merged)
 
-    def test_hook_patch_only_replaces_call_hook_body(self) -> None:
+    def test_hook_patch_only_injects_dynamic_hook_disable_in_cpp_emitter(self) -> None:
         mod = _load_prepare_module()
         py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
         base_text = mod.SRC_BASE.read_text(encoding="utf-8")
@@ -178,10 +178,19 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("return self._call_hook(", post_call_hook1)
         self.assertNotIn("pass", post_call_hook1)
 
+        pre_call_hook = _slice_block(merged, "    def _call_hook(", "\n    def _call_hook1(")
         post_call_hook = _slice_block(patched, "    def _call_hook(", "\n    def _call_hook1(")
+        self.assertEqual(post_call_hook, pre_call_hook)
         self.assertIn("fn = self._lookup_hook(name)", post_call_hook)
-        self.assertNotIn("return fn(self", post_call_hook)
         self.assertNotIn("pass", post_call_hook)
+
+        cpp_init_block = _slice_block(
+            patched,
+            "    def __init__(\n",
+            "\n    def current_scope_names(",
+        )
+        self.assertIn("self.init_base_state(east_doc, profile, hooks)", cpp_init_block)
+        self.assertIn("self.set_dynamic_hooks_enabled(False)", cpp_init_block)
 
         hook_emit_stmt_block = _slice_block(patched, "    def hook_on_emit_stmt(", "\n    def hook_on_emit_stmt_kind(")
         self.assertIn("v = self._call_hook1(", hook_emit_stmt_block)
@@ -190,31 +199,19 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
 
     def test_hook_patch_raises_when_markers_missing(self) -> None:
         mod = _load_prepare_module()
-        with self.assertRaisesRegex(RuntimeError, "_call_hook block"):
+        with self.assertRaisesRegex(RuntimeError, "CppEmitter block"):
             mod._patch_code_emitter_hooks_for_selfhost("class CodeEmitter:\n    pass\n")
 
         broken_order = (
             "class CodeEmitter:\n"
-            "    def _call_hook(self):\n"
+            "    def __init__(self):\n"
             "        return None\n"
-            "    def hook_on_emit_stmt(self):\n"
-            "        return None\n"
+            "class CppEmitter(CodeEmitter):\n"
+            "    def __init__(self):\n"
+            "        pass\n"
         )
-        with self.assertRaisesRegex(RuntimeError, "_call_hook1 marker"):
+        with self.assertRaisesRegex(RuntimeError, "init_base_state call"):
             mod._patch_code_emitter_hooks_for_selfhost(broken_order)
-
-        broken_block = (
-            "class CodeEmitter:\n"
-            "    def _call_hook(\n"
-            "        self,\n"
-            "        name: str,\n"
-            "    ) -> Any:\n"
-            "        return None\n"
-            "    def _call_hook1(self, name: str, arg0: Any) -> Any:\n"
-            "        return self._call_hook(name, arg0, None, None, None, None, None, 1)\n"
-        )
-        with self.assertRaisesRegex(RuntimeError, "neutralize _call_hook dynamic calls"):
-            mod._patch_code_emitter_hooks_for_selfhost(broken_block)
 
     def test_load_cpp_hooks_patch_raises_when_markers_missing(self) -> None:
         mod = _load_prepare_module()
