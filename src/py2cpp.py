@@ -562,13 +562,14 @@ class CppEmitter(CodeEmitter):
                     dict_str_get(ref_item, "symbol", ""),
                 )
             for item in bindings:
-                if dict_str_get(item, "binding_kind", "") == "module":
+                binding_kind = dict_str_get(item, "binding_kind", "")
+                if binding_kind == "module":
                     set_import_module_binding(
                         self.import_modules,
                         dict_str_get(item, "local_name", ""),
                         dict_str_get(item, "module_id", ""),
                     )
-                elif dict_str_get(item, "binding_kind", "") == "symbol" and not refs:
+                elif binding_kind == "symbol" and not refs:
                     set_import_symbol_binding_and_module_set(
                         self.import_symbols,
                         self.import_symbol_modules,
