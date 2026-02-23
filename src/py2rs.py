@@ -8,9 +8,7 @@ from pytra.std.typing import Any
 from hooks.rs.emitter.rs_emitter import load_rs_profile, transpile_to_rust
 from pytra.compiler.transpile_cli import (
     add_common_transpile_args,
-    dict_any_get_str,
-    load_east_document,
-    parse_user_error,
+    load_east_document_compat,
 )
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -19,22 +17,8 @@ from pytra.std import sys
 
 def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """`.py` / `.json` を EAST ドキュメントへ読み込む。"""
-    suffix = input_path.suffix.lower()
-    if suffix != ".json" and suffix != ".py":
-        raise RuntimeError("input must be .py or .json")
-    try:
-        doc = load_east_document(input_path, parser_backend=parser_backend)
-    except RuntimeError as ex:
-        if suffix == ".json":
-            parsed = parse_user_error(str(ex))
-            if dict_any_get_str(parsed, "category") == "input_invalid":
-                raise RuntimeError("EAST json root must be object") from ex
-        raise
-    if isinstance(doc, dict):
-        return doc
-    if suffix == ".json":
-        raise RuntimeError("EAST json root must be object")
-    raise RuntimeError("EAST root must be dict")
+    doc = load_east_document_compat(input_path, parser_backend=parser_backend)
+    return doc
 
 
 def _default_output_path(input_path: Path) -> Path:
