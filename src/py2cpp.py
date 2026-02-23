@@ -28,11 +28,10 @@ def _module_tail_to_cpp_header_path(module_tail: str) -> str:
     """`a.b.c_impl` を `a/b/c-impl.h` へ変換する。"""
     path_tail = module_tail.replace(".", "/")
     parts: list[str] = path_tail.split("/")
-    if len(parts) > 0:
-        leaf_i = len(parts) - 1
-        leaf = parts[leaf_i]
+    if parts:
+        leaf = parts[-1]
         leaf = leaf[: len(leaf) - 5] + "-impl" if leaf.endswith("_impl") else leaf
-        parts[leaf_i] = leaf
+        parts[-1] = leaf
     return join_str_list("/", parts) + ".h"
 
 
@@ -351,7 +350,7 @@ class CppEmitter(CodeEmitter):
         """現在スコープの識別子集合を返す（selfhost では CppEmitter 側を正とする）。"""
         if len(self.scope_stack) == 0:
             self.scope_stack.append(set())
-        return self.scope_stack[len(self.scope_stack) - 1]
+        return self.scope_stack[-1]
 
     def declare_in_current_scope(self, name: str) -> None:
         """現在スコープへ識別子を追加する。"""
@@ -359,7 +358,7 @@ class CppEmitter(CodeEmitter):
             return
         scope = self.current_scope_names()
         scope.add(name)
-        self.scope_stack[len(self.scope_stack) - 1] = scope
+        self.scope_stack[-1] = scope
 
     def is_declared(self, name: str) -> bool:
         """現在の可視スコープで識別子が宣言済みかを返す。"""
