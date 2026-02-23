@@ -3658,7 +3658,7 @@ class CppEmitter(CodeEmitter):
         """Call の Name/Attribute 分岐を処理する。"""
         fn_kind = self._node_kind_from_dict(fn)
         if fn_kind == "Name":
-            raw = self.any_to_str(fn.get("id"))
+            raw = dict_any_get_str(fn, "id")
             imported_rendered, raw = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes)
             if imported_rendered is not None:
                 return imported_rendered
