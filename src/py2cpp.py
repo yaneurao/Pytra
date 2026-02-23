@@ -2356,8 +2356,7 @@ class CppEmitter(CodeEmitter):
             return out
         parts: list[str] = []
         cur = ""
-        for i in range(len(repr_txt)):
-            ch = repr_txt[i : i + 1]
+        for ch in repr_txt:
             if ch == ",":
                 parts.append(cur.strip())
                 cur = ""
