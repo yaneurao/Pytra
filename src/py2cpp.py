@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6525,49 +6525,9 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
     return "pytra::utils::" + module_tail.replace("/", "::")
 
 
-def _meta_import_bindings(east_module: dict[str, Any]) -> list[dict[str, str]]:
-    """EAST `meta.import_bindings` を正規化して返す（無い場合は空）。"""
-    out: list[dict[str, str]] = []
-    meta = _dict_any_get_dict(east_module, "meta")
-    for item in _dict_any_get_dict_list(meta, "import_bindings"):
-        module_id = _dict_any_get_str(item, "module_id")
-        export_name = _dict_any_get_str(item, "export_name")
-        local_name = _dict_any_get_str(item, "local_name")
-        binding_kind = _dict_any_get_str(item, "binding_kind")
-        if module_id != "" and local_name != "" and binding_kind in {"module", "symbol", "wildcard"}:
-            out.append(
-                {
-                    "module_id": module_id,
-                    "export_name": export_name,
-                    "local_name": local_name,
-                    "binding_kind": binding_kind,
-                }
-            )
-    return out
-
-
-def _meta_qualified_symbol_refs(east_module: dict[str, Any]) -> list[dict[str, str]]:
-    """EAST `meta.qualified_symbol_refs` を正規化して返す（無い場合は空）。"""
-    out: list[dict[str, str]] = []
-    meta = _dict_any_get_dict(east_module, "meta")
-    for item in _dict_any_get_dict_list(meta, "qualified_symbol_refs"):
-        module_id = _dict_any_get_str(item, "module_id")
-        symbol = _dict_any_get_str(item, "symbol")
-        local_name = _dict_any_get_str(item, "local_name")
-        if module_id != "" and symbol != "" and local_name != "":
-            out.append(
-                {
-                    "module_id": module_id,
-                    "symbol": symbol,
-                    "local_name": local_name,
-                }
-            )
-    return out
-
-
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
-    import_bindings = _meta_import_bindings(east_module)
+    import_bindings = meta_import_bindings(east_module)
     body = _dict_any_get_dict_list(east_module, "body")
 
     modules: list[str] = []
@@ -6884,8 +6844,8 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                     if name_txt not in variables:
                         variables.append(name_txt)
         meta = _dict_any_get_dict(east, "meta")
-        import_bindings = _meta_import_bindings(east)
-        qualified_symbol_refs = _meta_qualified_symbol_refs(east)
+        import_bindings = meta_import_bindings(east)
+        qualified_symbol_refs = meta_qualified_symbol_refs(east)
         import_modules: dict[str, str] = {}
         import_symbols: dict[str, dict[str, str]] = {}
         if len(import_bindings) > 0:

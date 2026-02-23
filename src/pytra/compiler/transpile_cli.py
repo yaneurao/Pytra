@@ -412,6 +412,77 @@ def module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[
     return module_id if module_id != "" else module_name_from_path_for_graph(root, module_path)
 
 
+def meta_import_bindings(east_module: dict[str, object]) -> list[dict[str, str]]:
+    """EAST `meta.import_bindings` を正規化して返す（無い場合は空）。"""
+    out: list[dict[str, str]] = []
+    meta_any = east_module.get("meta")
+    if not isinstance(meta_any, dict):
+        return out
+    items_any = meta_any.get("import_bindings")
+    if not isinstance(items_any, list):
+        return out
+    for item_any in items_any:
+        if not isinstance(item_any, dict):
+            continue
+        module_id = ""
+        module_id_any = item_any.get("module_id")
+        if isinstance(module_id_any, str):
+            module_id = module_id_any
+        export_name = ""
+        export_name_any = item_any.get("export_name")
+        if isinstance(export_name_any, str):
+            export_name = export_name_any
+        local_name = ""
+        local_name_any = item_any.get("local_name")
+        if isinstance(local_name_any, str):
+            local_name = local_name_any
+        binding_kind = ""
+        binding_kind_any = item_any.get("binding_kind")
+        if isinstance(binding_kind_any, str):
+            binding_kind = binding_kind_any
+        if module_id != "" and local_name != "" and binding_kind in {"module", "symbol", "wildcard"}:
+            entry: dict[str, str] = {}
+            entry["module_id"] = module_id
+            entry["export_name"] = export_name
+            entry["local_name"] = local_name
+            entry["binding_kind"] = binding_kind
+            out.append(entry)
+    return out
+
+
+def meta_qualified_symbol_refs(east_module: dict[str, object]) -> list[dict[str, str]]:
+    """EAST `meta.qualified_symbol_refs` を正規化して返す（無い場合は空）。"""
+    out: list[dict[str, str]] = []
+    meta_any = east_module.get("meta")
+    if not isinstance(meta_any, dict):
+        return out
+    items_any = meta_any.get("qualified_symbol_refs")
+    if not isinstance(items_any, list):
+        return out
+    for item_any in items_any:
+        if not isinstance(item_any, dict):
+            continue
+        module_id = ""
+        module_id_any = item_any.get("module_id")
+        if isinstance(module_id_any, str):
+            module_id = module_id_any
+        symbol = ""
+        symbol_any = item_any.get("symbol")
+        if isinstance(symbol_any, str):
+            symbol = symbol_any
+        local_name = ""
+        local_name_any = item_any.get("local_name")
+        if isinstance(local_name_any, str):
+            local_name = local_name_any
+        if module_id != "" and symbol != "" and local_name != "":
+            entry: dict[str, str] = {}
+            entry["module_id"] = module_id
+            entry["symbol"] = symbol
+            entry["local_name"] = local_name
+            out.append(entry)
+    return out
+
+
 def graph_cycle_dfs(
     key: str,
     graph_adj: dict[str, list[str]],
