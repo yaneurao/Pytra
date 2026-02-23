@@ -40,16 +40,16 @@ def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     base_txt = "src/runtime/cpp/pytra"
     if module_name_norm.startswith("pytra.std."):
         tail = module_name_norm[10:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and Path(base_txt + "/std/" + rel).exists()
+        rel = _module_tail_to_cpp_header_path(tail) if tail else ""
+        return bool(rel) and Path(base_txt + "/std/" + rel).exists()
     if module_name_norm.startswith("pytra.utils."):
         tail = module_name_norm[12:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and Path(base_txt + "/utils/" + rel).exists()
+        rel = _module_tail_to_cpp_header_path(tail) if tail else ""
+        return bool(rel) and Path(base_txt + "/utils/" + rel).exists()
     if module_name_norm.startswith("pytra.compiler."):
         tail = module_name_norm[15:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and Path(base_txt + "/compiler/" + rel).exists()
+        rel = _module_tail_to_cpp_header_path(tail) if tail else ""
+        return bool(rel) and Path(base_txt + "/compiler/" + rel).exists()
     return False
 
 
