@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, parse_guard_limit_or_raise, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -112,18 +112,6 @@ def _guard_profile_base_limits(profile: str) -> dict[str, int]:
     raise ValueError("invalid --guard-profile: " + profile)
 
 
-def _parse_guard_limit_or_raise(raw: str, option_name: str) -> int:
-    """個別 `--max-*` 値を正整数へ変換する。"""
-    if raw == "":
-        return -1
-    if not raw.isdigit():
-        raise ValueError("invalid value for --" + option_name + ": " + raw)
-    value = int(raw)
-    if value <= 0:
-        raise ValueError("invalid value for --" + option_name + ": must be > 0")
-    return value
-
-
 def _resolve_guard_limits(
     guard_profile: str,
     max_ast_depth_raw: str,
@@ -139,25 +127,25 @@ def _resolve_guard_limits(
     if profile not in GUARD_PROFILES:
         raise ValueError("invalid --guard-profile: " + profile)
     out = _guard_profile_base_limits(profile)
-    max_ast_depth = _parse_guard_limit_or_raise(max_ast_depth_raw, "max-ast-depth")
+    max_ast_depth = parse_guard_limit_or_raise(max_ast_depth_raw, "max-ast-depth")
     if max_ast_depth > 0:
         out["max_ast_depth"] = max_ast_depth
-    max_parse_nodes = _parse_guard_limit_or_raise(max_parse_nodes_raw, "max-parse-nodes")
+    max_parse_nodes = parse_guard_limit_or_raise(max_parse_nodes_raw, "max-parse-nodes")
     if max_parse_nodes > 0:
         out["max_parse_nodes"] = max_parse_nodes
-    max_symbols_per_module = _parse_guard_limit_or_raise(max_symbols_per_module_raw, "max-symbols-per-module")
+    max_symbols_per_module = parse_guard_limit_or_raise(max_symbols_per_module_raw, "max-symbols-per-module")
     if max_symbols_per_module > 0:
         out["max_symbols_per_module"] = max_symbols_per_module
-    max_scope_depth = _parse_guard_limit_or_raise(max_scope_depth_raw, "max-scope-depth")
+    max_scope_depth = parse_guard_limit_or_raise(max_scope_depth_raw, "max-scope-depth")
     if max_scope_depth > 0:
         out["max_scope_depth"] = max_scope_depth
-    max_import_graph_nodes = _parse_guard_limit_or_raise(max_import_graph_nodes_raw, "max-import-graph-nodes")
+    max_import_graph_nodes = parse_guard_limit_or_raise(max_import_graph_nodes_raw, "max-import-graph-nodes")
     if max_import_graph_nodes > 0:
         out["max_import_graph_nodes"] = max_import_graph_nodes
-    max_import_graph_edges = _parse_guard_limit_or_raise(max_import_graph_edges_raw, "max-import-graph-edges")
+    max_import_graph_edges = parse_guard_limit_or_raise(max_import_graph_edges_raw, "max-import-graph-edges")
     if max_import_graph_edges > 0:
         out["max_import_graph_edges"] = max_import_graph_edges
-    max_generated_lines = _parse_guard_limit_or_raise(max_generated_lines_raw, "max-generated-lines")
+    max_generated_lines = parse_guard_limit_or_raise(max_generated_lines_raw, "max-generated-lines")
     if max_generated_lines > 0:
         out["max_generated_lines"] = max_generated_lines
     return out

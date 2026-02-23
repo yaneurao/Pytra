@@ -1267,6 +1267,18 @@ def sort_str_list_copy(items: list[str]) -> list[str]:
     return out
 
 
+def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:
+    """個別 `--max-*` 値を正整数へ変換する。"""
+    if raw == "":
+        return -1
+    if not raw.isdigit():
+        raise ValueError("invalid value for --" + option_name + ": " + raw)
+    value = int(raw)
+    if value <= 0:
+        raise ValueError("invalid value for --" + option_name + ": must be > 0")
+    return value
+
+
 def empty_parse_dict() -> dict[str, str]:
     out: dict[str, str] = {}
     out["__error"] = ""
