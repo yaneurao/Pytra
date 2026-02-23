@@ -552,8 +552,7 @@ class CppEmitter(CodeEmitter):
         for local_name, module_id_any in legacy_mods.items():
             if not isinstance(local_name, str):
                 continue
-            module_id = self.any_to_str(module_id_any)
-            set_import_module_binding(self.import_modules, local_name, module_id)
+            set_import_module_binding(self.import_modules, local_name, self.any_to_str(module_id_any))
 
     def _seed_import_maps_from_meta(self) -> None:
         """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
