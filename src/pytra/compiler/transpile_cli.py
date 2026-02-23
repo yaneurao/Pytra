@@ -310,6 +310,47 @@ def module_name_from_path_for_graph(root: Path, module_path: Path) -> str:
     return rel
 
 
+def graph_cycle_dfs(
+    key: str,
+    graph_adj: dict[str, list[str]],
+    key_to_disp: dict[str, str],
+    color: dict[str, int],
+    stack: list[str],
+    cycles: list[str],
+    cycle_seen: set[str],
+) -> None:
+    """import graph DFS で循環参照を収集する。"""
+    color[key] = 1
+    stack.append(key)
+    nxts: list[str] = []
+    if key in graph_adj:
+        nxts = graph_adj[key]
+    for nxt in nxts:
+        c = color.get(nxt, 0)
+        if c == 0:
+            graph_cycle_dfs(nxt, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
+        elif c == 1:
+            j = -1
+            for idx in range(len(stack) - 1, -1, -1):
+                if stack[idx] == nxt:
+                    j = idx
+                    break
+            if j >= 0:
+                nodes: list[str] = []
+                for m in range(j, len(stack)):
+                    nodes.append(stack[m])
+                nodes.append(nxt)
+                disp_nodes: list[str] = []
+                for dk in nodes:
+                    disp_nodes.append(key_to_disp.get(dk, dk))
+                cycle_txt = join_str_list(" -> ", disp_nodes)
+                if cycle_txt not in cycle_seen:
+                    cycle_seen.add(cycle_txt)
+                    cycles.append(cycle_txt)
+    stack.pop()
+    color[key] = 2
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
