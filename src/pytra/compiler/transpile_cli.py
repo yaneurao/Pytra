@@ -1122,6 +1122,18 @@ def resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> P
     return Path("")
 
 
+def collect_reserved_import_conflicts(root: Path) -> list[str]:
+    """予約名 `pytra` と衝突するユーザーファイルを収集する。"""
+    out: list[str] = []
+    pytra_file = root / "pytra.py"
+    pytra_pkg_init = root / "pytra" / "__init__.py"
+    if pytra_file.exists():
+        out.append(str(pytra_file))
+    if pytra_pkg_init.exists():
+        out.append(str(pytra_pkg_init))
+    return out
+
+
 def format_graph_list_section(out: str, label: str, items: list[str]) -> str:
     """依存解析レポートの1セクションを追記して返す。"""
     out2 = out + label + ":\n"
