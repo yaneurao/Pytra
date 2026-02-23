@@ -557,8 +557,8 @@ class CppEmitter(CodeEmitter):
     def _seed_import_maps_from_meta(self) -> None:
         """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
         meta = self.any_to_dict_or_empty(self.doc.get("meta"))
-        refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
-        bindings = self.any_to_dict_list(meta.get("import_bindings"))
+        refs = dict_any_get_dict_list(meta, "qualified_symbol_refs")
+        bindings = dict_any_get_dict_list(meta, "import_bindings")
         if len(bindings) > 0:
             if len(refs) > 0:
                 for ref_item in refs:
