@@ -229,9 +229,9 @@ def load_cpp_module_attr_call_map(profile: dict[str, Any] = {}) -> dict[str, dic
         mapped: dict[str, str] = {}
         for attr_name, runtime_name in ent.items():
             if isinstance(attr_name, str) and isinstance(runtime_name, str):
-                if runtime_name != "":
+                if runtime_name:
                     mapped[attr_name] = runtime_name
-        if len(mapped) > 0:
+        if mapped:
             out[module_name] = mapped
     return out
 
