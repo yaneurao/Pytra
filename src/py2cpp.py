@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options
+from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -58,17 +58,6 @@ def _write_text_file(path_obj: Path, text: str) -> None:
     f = open(str(path_obj), "w", encoding="utf-8")
     f.write(text)
     f.close()
-
-
-def _split_infix_once(text: str, sep: str) -> tuple[str, str, bool]:
-    """`text` を最初の `sep` で1回だけ分割する。見つからない場合は失敗を返す。"""
-    if sep == "":
-        return "", "", False
-    pos = text.find(sep)
-    if pos >= 0:
-        end = pos + len(sep)
-        return text[:pos], text[end:], True
-    return "", "", False
 
 
 def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
@@ -480,7 +469,7 @@ def _local_binding_name(name: str, asname: str) -> str:
     """import 句のローカル束縛名を返す。"""
     if asname != "":
         return asname
-    head, _tail, found = _split_infix_once(name, ".")
+    head, _tail, found = split_infix_once(name, ".")
     if found and head != "":
         return head
     return name
@@ -5083,13 +5072,13 @@ class CppEmitter(CodeEmitter):
         ops = self.any_to_str_list(expr.get("ops"))
         if len(ops) == 0:
             rep = self.any_dict_get_str(expr, "repr", "")
-            lhs, rhs, ok = _split_infix_once(rep, " not in ")
+            lhs, rhs, ok = split_infix_once(rep, " not in ")
             if ok:
                 lhs = self._trim_ws(lhs)
                 rhs = self._trim_ws(rhs)
                 if lhs != "" and rhs != "":
                     return f"!py_contains({rhs}, {lhs})"
-            lhs, rhs, ok = _split_infix_once(rep, " in ")
+            lhs, rhs, ok = split_infix_once(rep, " in ")
             if ok:
                 lhs = self._trim_ws(lhs)
                 rhs = self._trim_ws(rhs)
@@ -5413,7 +5402,7 @@ class CppEmitter(CodeEmitter):
             if p > 0:
                 base = self._trim_ws(t[:p])
                 body = self._trim_ws(t[p + 1 : -1])
-                lo, hi, has_colon = _split_infix_once(body, ":")
+                lo, hi, has_colon = split_infix_once(body, ":")
                 if has_colon:
                     base_cpp = self._render_repr_expr(base)
                     base_cpp = base_cpp if base_cpp != "" else base
@@ -7231,7 +7220,7 @@ def _format_import_graph_report(analysis: dict[str, Any]) -> str:
 
 def _split_graph_issue_entry(v_txt: str) -> tuple[str, str]:
     """`file: module` 形式を `(file, module)` へ分解する。"""
-    left, right, found = _split_infix_once(v_txt, ": ")
+    left, right, found = split_infix_once(v_txt, ": ")
     if found:
         return left, right
     return v_txt, v_txt

@@ -53,6 +53,17 @@ def join_str_list(sep: str, items: list[str]) -> str:
     return sep.join(items)
 
 
+def split_infix_once(text: str, sep: str) -> tuple[str, str, bool]:
+    """`text` を最初の `sep` で1回だけ分割する。見つからない場合は失敗を返す。"""
+    if sep == "":
+        return "", "", False
+    pos = text.find(sep)
+    if pos >= 0:
+        end = pos + len(sep)
+        return text[:pos], text[end:], True
+    return "", "", False
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
