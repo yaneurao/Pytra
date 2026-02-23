@@ -3384,6 +3384,13 @@ class CppEmitter(CodeEmitter):
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
         owner_expr = self._render_builtin_call_owner_expr(expr, fn)
+        any_boundary_expr = self._build_any_boundary_expr_from_builtin_call(
+            builtin_name,
+            runtime_call,
+            arg_nodes,
+        )
+        if any_boundary_expr is not None:
+            return self.render_expr(any_boundary_expr)
         if runtime_call == "static_cast":
             static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, args, first_arg)
             if static_cast_rendered is not None:
@@ -4174,6 +4181,60 @@ class CppEmitter(CodeEmitter):
                 "casts": [],
             }
         if raw_name == "next":
+            return {
+                "kind": "ObjIterNext",
+                "iter": arg0,
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        return None
+
+    def _build_any_boundary_expr_from_builtin_call(
+        self,
+        builtin_name: str,
+        runtime_call: str,
+        arg_nodes: list[Any],
+    ) -> dict[str, Any] | None:
+        if len(arg_nodes) != 1:
+            return None
+        arg0 = arg_nodes[0]
+        arg0_t = self.get_expr_type(arg0)
+        if not self.is_any_like_type(arg0_t):
+            return None
+        if builtin_name == "bool" or runtime_call == "py_to_bool":
+            return {
+                "kind": "ObjBool",
+                "value": arg0,
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if builtin_name == "len" or runtime_call == "py_len":
+            return {
+                "kind": "ObjLen",
+                "value": arg0,
+                "resolved_type": "int64",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if builtin_name == "str" or runtime_call == "py_to_string":
+            return {
+                "kind": "ObjStr",
+                "value": arg0,
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if builtin_name == "iter" or runtime_call == "py_iter_or_raise":
+            return {
+                "kind": "ObjIterInit",
+                "value": arg0,
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if builtin_name == "next" or runtime_call == "py_next_or_stop":
             return {
                 "kind": "ObjIterNext",
                 "iter": arg0,

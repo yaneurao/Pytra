@@ -146,6 +146,26 @@ class East3CppBridgeTest(unittest.TestCase):
         symbols = collect_symbols_from_stmt(stmt)
         self.assertEqual(symbols, {"a", "b"})
 
+    def test_builtin_any_boundary_helper_builds_obj_nodes(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        any_arg = {"kind": "Name", "id": "x", "resolved_type": "object"}
+
+        out_bool = emitter._build_any_boundary_expr_from_builtin_call("bool", "static_cast", [any_arg])
+        out_len = emitter._build_any_boundary_expr_from_builtin_call("len", "py_len", [any_arg])
+        out_str = emitter._build_any_boundary_expr_from_builtin_call("str", "py_to_string", [any_arg])
+        out_iter = emitter._build_any_boundary_expr_from_builtin_call("iter", "", [any_arg])
+        out_next = emitter._build_any_boundary_expr_from_builtin_call("next", "", [any_arg])
+
+        self.assertEqual(out_bool.get("kind"), "ObjBool")
+        self.assertEqual(out_len.get("kind"), "ObjLen")
+        self.assertEqual(out_str.get("kind"), "ObjStr")
+        self.assertEqual(out_iter.get("kind"), "ObjIterInit")
+        self.assertEqual(out_next.get("kind"), "ObjIterNext")
+
+        concrete_arg = {"kind": "Name", "id": "n", "resolved_type": "int64"}
+        out_none = emitter._build_any_boundary_expr_from_builtin_call("bool", "static_cast", [concrete_arg])
+        self.assertIsNone(out_none)
+
     def test_parse_py2cpp_argv_accepts_east_stage_and_object_dispatch_mode(self) -> None:
         parsed = parse_py2cpp_argv(
             [
