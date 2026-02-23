@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -22,22 +22,6 @@ from pytra.std import sys
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT = Path("src/pytra/compiler")
-
-
-def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
-    """`root_dir` 配下に `module_tail` 相当の `.py` / package があるかを返す。"""
-    if module_tail == "":
-        return False
-    root_txt = str(root_dir)
-    root_txt = root_txt[:-1] if root_txt.endswith("/") else root_txt
-    rel = module_tail.replace(".", "/")
-    mod_py = Path(root_txt + "/" + rel + ".py")
-    if mod_py.exists():
-        return True
-    pkg_init = Path(root_txt + "/" + rel + "/__init__.py")
-    if pkg_init.exists():
-        return True
-    return False
 
 
 def _module_tail_to_cpp_header_path(module_tail: str) -> str:
@@ -1063,11 +1047,11 @@ class CppEmitter(CodeEmitter):
             return "pytra.utils." + module_name[10:]
         if module_name == "pylib.tra":
             return "pytra.utils"
-        if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, module_name):
+        if python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, module_name):
             return "pytra.std." + module_name
-        if _python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, module_name):
+        if python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, module_name):
             return "pytra.utils." + module_name
-        if _python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, module_name):
+        if python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, module_name):
             return "pytra.compiler." + module_name
         return module_name
 
@@ -1076,15 +1060,15 @@ class CppEmitter(CodeEmitter):
         module_name_norm = self._normalize_runtime_module_name(module_name)
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
-            if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
+            if python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
                 return "pytra/std/" + _module_tail_to_cpp_header_path(tail)
         if module_name_norm.startswith("pytra.utils."):
             tail = module_name_norm[12:]
-            if _python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
+            if python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
                 return "pytra/utils/" + _module_tail_to_cpp_header_path(tail)
         if module_name_norm.startswith("pytra.compiler."):
             tail = module_name_norm[15:]
-            if _python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
+            if python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
                 return "pytra/compiler/" + _module_tail_to_cpp_header_path(tail)
         return ""
 

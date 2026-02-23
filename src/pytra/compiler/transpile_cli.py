@@ -222,6 +222,22 @@ def path_parent_text(path_obj: Path) -> str:
     return path_txt[:last_sep]
 
 
+def python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
+    """`root_dir` 配下に `module_tail` 相当の `.py` / package があるかを返す。"""
+    if module_tail == "":
+        return False
+    root_txt = str(root_dir)
+    root_txt = root_txt[:-1] if root_txt.endswith("/") else root_txt
+    rel = module_tail.replace(".", "/")
+    mod_py = Path(root_txt + "/" + rel + ".py")
+    if mod_py.exists():
+        return True
+    pkg_init = Path(root_txt + "/" + rel + "/__init__.py")
+    if pkg_init.exists():
+        return True
+    return False
+
+
 def mkdirs_for_cli(path_txt: str) -> None:
     """CLI 出力向けに親ディレクトリを作成する。"""
     if path_txt == "":
