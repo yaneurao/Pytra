@@ -347,6 +347,55 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(expr), "xs.clear()")
 
+    def test_render_expr_supports_set_erase_and_clear_ir_nodes(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        erase_node = {
+            "kind": "SetErase",
+            "owner": {"kind": "Name", "id": "s", "resolved_type": "set[int64]"},
+            "value": {"kind": "Name", "id": "v", "resolved_type": "int64"},
+            "resolved_type": "None",
+        }
+        clear_node = {
+            "kind": "SetClear",
+            "owner": {"kind": "Name", "id": "s", "resolved_type": "set[int64]"},
+            "resolved_type": "None",
+        }
+        self.assertEqual(emitter.render_expr(erase_node), "s.erase(v)")
+        self.assertEqual(emitter.render_expr(clear_node), "s.clear()")
+
+    def test_builtin_runtime_set_erase_and_clear_use_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        erase_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "set.remove",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "set[int64]"},
+                "attr": "remove",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Name", "id": "v", "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        clear_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "set.clear",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "set[int64]"},
+                "attr": "clear",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(erase_expr), "s.erase(v)")
+        self.assertEqual(emitter.render_expr(clear_expr), "s.clear()")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",

@@ -3562,12 +3562,29 @@ class CppEmitter(CodeEmitter):
             a0 = args[0] if len(args) >= 1 else "/* missing */"
             return f"{owner}.insert({a0})"
         if runtime_call in {"set.discard", "set.remove"}:
+            owner_node = fn.get("value")
+            if len(arg_nodes) >= 1:
+                set_erase_node = {
+                    "kind": "SetErase",
+                    "owner": owner_node,
+                    "value": arg_nodes[0],
+                    "resolved_type": "None",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(set_erase_node)
             owner = self.render_expr(fn.get("value"))
             a0 = args[0] if len(args) >= 1 else "/* missing */"
             return f"{owner}.erase({a0})"
         if runtime_call == "set.clear":
-            owner = self.render_expr(fn.get("value"))
-            return f"{owner}.clear()"
+            clear_node = {
+                "kind": "SetClear",
+                "owner": fn.get("value"),
+                "resolved_type": "None",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(clear_node)
         return None
 
     def _render_builtin_runtime_dict_ops(
@@ -5858,6 +5875,16 @@ class CppEmitter(CodeEmitter):
                 return f"{owner_expr}.pop()"
             return f"{owner_expr}.pop({index_expr})"
         if kind == "ListClear":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            return f"{owner_expr}.clear()"
+        if kind == "SetErase":
+            owner_node = expr_d.get("owner")
+            value_node = expr_d.get("value")
+            owner_expr = self.render_expr(owner_node)
+            value_expr = self.render_expr(value_node)
+            return f"{owner_expr}.erase({value_expr})"
+        if kind == "SetClear":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             return f"{owner_expr}.clear()"
