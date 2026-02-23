@@ -38,6 +38,9 @@
 
 1. `P0-SH-04-S1`: `tools/prepare_selfhost_source.py` の残存スタブを棚卸しし、恒久機能化対象と削除対象に分類する。
 2. `P0-SH-04-S2`: 恒久化対象を compiler/runtime 側へ移し、prepare スクリプト固有分岐を段階削減する。
+   - `P0-SH-04-S2-S1`: `CodeEmitter` 本体へ dynamic hooks の有効/無効フラグを追加する。
+   - `P0-SH-04-S2-S2`: `_patch_code_emitter_hooks_for_selfhost` をフラグ設定方式へ縮退する。
+   - `P0-SH-04-S2-S3`: `load_cpp_hooks` fallback を compiler 側へ移し、`_patch_load_cpp_hooks_for_selfhost` を撤去する。
 3. `P0-SH-04-S3`: 通常 selfhost と guard profile 付き selfhost の回帰を再計測し、prepare 依存の再流入を防ぐ。
 4. `P0-SH-05`: fail-fast ガード（`--guard-profile` / `--max-*`）の導入済み状態を維持し、回帰時は同導線で再検証する。
 
@@ -81,3 +84,4 @@
 - 2026-02-23: `_patch_load_cpp_hooks_for_selfhost` の置換境界を縮小し、`load_cpp_hooks(...)` 関数ブロック全体の差し替えを廃止して `hooks = build_cpp_hooks()` の1行だけを `hooks = {}` へ置換する方式へ変更した。`test/unit/test_prepare_selfhost_source.py` の `load_cpp_hooks` 置換テストを更新し、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
 - 2026-02-23: docs-jp/todo.md の P0-SH-04 を -S1 〜 -S3 に分割したため、本 plan の関連 TODO と実行順を同粒度に同期した。
 - 2026-02-23: `P0-SH-04-S1` を完了。`tools/prepare_selfhost_source.py` の残存 selfhost 専用パッチを棚卸しし、`_patch_code_emitter_hooks_for_selfhost` / `_patch_load_cpp_hooks_for_selfhost` を恒久機能化対象、`build_cpp_hooks` import 除去分岐を削除対象、`_extract_support_blocks` 系を維持対象に分類した。
+- 2026-02-23: `P0-SH-04-S2` を `S2-S1` 〜 `S2-S3` に分割した。先行して `S2-S1` を完了し、`src/pytra/compiler/east_parts/code_emitter.py` に `dynamic_hooks_enabled` と `set_dynamic_hooks_enabled()` を追加して、dynamic hooks 無効化を prepare 固有置換ではなく本体機能として表現できる土台を導入した。`python3 test/unit/test_code_emitter.py`（34件成功）、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。

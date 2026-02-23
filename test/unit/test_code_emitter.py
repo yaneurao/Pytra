@@ -1018,6 +1018,26 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertIn("render_expr_kind:MagicExpr", calls)
         self.assertIn("render_expr_complex", calls)
 
+    def test_dynamic_hook_disable_switch(self) -> None:
+        calls: list[str] = []
+
+        def on_emit_stmt(_em: CodeEmitter, stmt: dict[str, Any]) -> Any:
+            calls.append("emit_stmt:" + str(stmt.get("kind")))
+            return True
+
+        hooks: dict[str, Any] = {"on_emit_stmt": on_emit_stmt}
+        em = CodeEmitter({}, {}, hooks)
+        self.assertTrue(em.hook_on_emit_stmt({"kind": "Pass"}))
+        self.assertEqual(calls, ["emit_stmt:Pass"])
+
+        em.set_dynamic_hooks_enabled(False)
+        self.assertIsNone(em.hook_on_emit_stmt({"kind": "Pass"}))
+        self.assertEqual(calls, ["emit_stmt:Pass"])
+
+        em.set_dynamic_hooks_enabled(True)
+        self.assertTrue(em.hook_on_emit_stmt({"kind": "Pass"}))
+        self.assertEqual(calls, ["emit_stmt:Pass", "emit_stmt:Pass"])
+
     def test_emitter_hooks_container(self) -> None:
         hooks = EmitterHooks()
         hooks.add("", None)

@@ -48,6 +48,7 @@ class CodeEmitter:
     class_base: dict[str, str]
     class_method_names: dict[str, set[str]]
     ref_classes: set[str]
+    dynamic_hooks_enabled: bool
 
     def __init__(
         self,
@@ -85,6 +86,7 @@ class CodeEmitter:
         class_method_names: dict[str, set[str]] = {}
         self.class_method_names = class_method_names
         self.ref_classes = set()
+        self.dynamic_hooks_enabled = True
 
     def _empty_lines(self) -> list[str]:
         """空の `list[str]` を返す。"""
@@ -291,6 +293,10 @@ class CodeEmitter:
                 return fn
         return None
 
+    def set_dynamic_hooks_enabled(self, enabled: bool) -> None:
+        """dynamic hook 呼び出しを有効/無効に切り替える。"""
+        self.dynamic_hooks_enabled = True if enabled else False
+
     def _call_hook(
         self,
         name: str,
@@ -303,6 +309,8 @@ class CodeEmitter:
         argc: int = 0,
     ) -> Any:
         """hook 呼び出しを 1 箇所へ集約する。未定義時は `None`。"""
+        if not self.dynamic_hooks_enabled:
+            return None
         fn = self._lookup_hook(name)
         if fn is None:
             return None

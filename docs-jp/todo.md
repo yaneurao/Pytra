@@ -96,12 +96,16 @@
 
 1. [ ] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を完了する（`P0-SH-04-S1` から `P0-SH-04-S3` 完了でクローズ）。
 2. [x] [ID: P0-SH-04-S1] 残存スタブを棚卸しし、「恒久機能化すべきもの」と「削除すべきもの」を分類する。
-3. [ ] [ID: P0-SH-04-S2] 恒久機能化対象を compiler/runtime 側へ移し、prepare 側分岐を段階削減する。
-4. [ ] [ID: P0-SH-04-S3] selfhost 回帰（通常 + guard profile）を再計測し、prepare スクリプト依存の再流入を防ぐ。
-5. [x] [ID: P0-SH-05] selfhost 暴走対策として fail-fast ガードを導入し、`--guard-profile {off,default,strict}` と個別上限（`--max-ast-depth`, `--max-parse-nodes`, `--max-symbols-per-module`, `--max-scope-depth`, `--max-import-graph-nodes`, `--max-import-graph-edges`, `--max-generated-lines`）を CLI から指定可能にする。制限超過時は `input_invalid(kind=limit_exceeded, stage=...)` で早期停止する。
+3. [ ] [ID: P0-SH-04-S2] 恒久機能化対象を compiler/runtime 側へ移し、prepare 側分岐を段階削減する（`P0-SH-04-S2-S1` から `P0-SH-04-S2-S3` 完了でクローズ）。
+4. [x] [ID: P0-SH-04-S2-S1] `CodeEmitter` 本体へ dynamic hooks の有効/無効フラグを追加し、prepare 側 no-op パッチを本体機能へ移す土台を作る。
+5. [ ] [ID: P0-SH-04-S2-S2] `tools/prepare_selfhost_source.py` の `_patch_code_emitter_hooks_for_selfhost` を、文字列置換から「フラグ設定のみ」へ縮退する。
+6. [ ] [ID: P0-SH-04-S2-S3] `load_cpp_hooks` 経路の selfhost fallback を compiler 側へ移し、`_patch_load_cpp_hooks_for_selfhost` を撤去する。
+7. [ ] [ID: P0-SH-04-S3] selfhost 回帰（通常 + guard profile）を再計測し、prepare スクリプト依存の再流入を防ぐ。
+8. [x] [ID: P0-SH-05] selfhost 暴走対策として fail-fast ガードを導入し、`--guard-profile {off,default,strict}` と個別上限（`--max-ast-depth`, `--max-parse-nodes`, `--max-symbols-per-module`, `--max-scope-depth`, `--max-import-graph-nodes`, `--max-import-graph-edges`, `--max-generated-lines`）を CLI から指定可能にする。制限超過時は `input_invalid(kind=limit_exceeded, stage=...)` で早期停止する。
 
 進捗メモ:
 - `P0-SH-04-S1`: `docs-jp/plans/p0-selfhost-stabilization.md` に `prepare_selfhost_source.py` の残存パッチを棚卸しし、恒久機能化対象（`_patch_code_emitter_hooks_for_selfhost`, `_patch_load_cpp_hooks_for_selfhost`）と削除対象（`build_cpp_hooks` import 除去分岐）を分類した。
+- `P0-SH-04-S2-S1`: `CodeEmitter` に `dynamic_hooks_enabled` フラグと `set_dynamic_hooks_enabled()` を追加し、dynamic hook 呼び出しを本体機能で無効化できる土台を導入した（`test/unit/test_code_emitter.py` と `test/unit/test_prepare_selfhost_source.py` 回帰通過）。
 - 詳細ログは `docs-jp/plans/p0-selfhost-stabilization.md` の `決定ログ` を参照。
 
 ## P1: CodeEmitter / Hooks 移行
