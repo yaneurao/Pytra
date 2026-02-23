@@ -531,7 +531,7 @@ class CppEmitter(CodeEmitter):
 
     def _seed_legacy_import_symbols_from_meta(self, meta: dict[str, Any]) -> None:
         """legacy `meta.import_symbols` を `self.import_symbols` へ反映する。"""
-        legacy_syms = self.any_to_dict_or_empty(meta.get("import_symbols"))
+        legacy_syms = dict_any_get_dict(meta, "import_symbols")
         for local_name, sym_obj in legacy_syms.items():
             if not isinstance(local_name, str):
                 continue
@@ -548,7 +548,7 @@ class CppEmitter(CodeEmitter):
 
     def _seed_legacy_import_modules_from_meta(self, meta: dict[str, Any]) -> None:
         """legacy `meta.import_modules` を `self.import_modules` へ反映する。"""
-        legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
+        legacy_mods = dict_any_get_dict(meta, "import_modules")
         for local_name, module_id_any in legacy_mods.items():
             if not isinstance(local_name, str):
                 continue
