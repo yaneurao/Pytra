@@ -38,7 +38,7 @@
 サブタスク実行順（todo 同期）:
 
 1. `P0-RUNTIME-SEP-01`（C++ runtime 起源分離）
-   - `P0-RUNTIME-SEP-01-S1`: `src/runtime/cpp/pytra/` の全ファイルを「生成物 / 手書き / 入口」に分類する。
+   - `P0-RUNTIME-SEP-01-S1`: `src/runtime/cpp/pytra/` の全ファイルを「生成物 / 手書き / 入口」に分類する（結果: `docs-jp/plans/p1-runtime-layout-unification-inventory.md`）。
    - `P0-RUNTIME-SEP-01-S2`: `src/runtime/cpp/pytra-gen/` と `src/runtime/cpp/pytra-core/` の最小構成を作る。
    - `P0-RUNTIME-SEP-01-S3`: 自動生成ファイルを `pytra-gen` へ段階移動する。
    - `P0-RUNTIME-SEP-01-S4`: 手書きファイル（`-impl` 含む）を `pytra-core` へ段階移動する。
@@ -70,3 +70,4 @@
 - 2026-02-22: Rust 以外（C#/JS/TS/Go/Java/Swift/Kotlin）の `src/*_module/` -> `src/runtime/<lang>/pytra/` 移行計画（資産マップ + 段階手順）を追加。
 - 2026-02-22: `src/*_module/` 直下に新規 runtime 実体を追加しない運用ルールを明文化。
 - 2026-02-23: docs-jp/todo.md の親子 ID 分割（-S*）へ同期し、P0-RUNTIME-SEP-01 を含む実行順を明示した。
+- 2026-02-23: `P0-RUNTIME-SEP-01-S1` を実施し、`src/runtime/cpp/pytra/` 全57ファイルの分類台帳を `docs-jp/plans/p1-runtime-layout-unification-inventory.md` として追加した（`generated=38`, `handwritten=19`, `entry_forwarder=0`）。
