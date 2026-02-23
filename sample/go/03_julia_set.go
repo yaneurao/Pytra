@@ -785,7 +785,7 @@ func run_julia() any {
     _ = height
     var max_iter int = 20000
     _ = max_iter
-    var out_path string = "sample/out/julia_03.png"
+    var out_path string = "sample/out/03_julia_set.png"
     _ = out_path
     var start float64 = pyToFloat(pyPerfCounter())
     _ = start

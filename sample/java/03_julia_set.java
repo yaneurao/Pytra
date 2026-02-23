@@ -804,7 +804,7 @@ class pytra_03_julia_set {
         Object width = 3840;
         Object height = 2160;
         Object max_iter = 20000;
-        Object out_path = "sample/out/julia_03.png";
+        Object out_path = "sample/out/03_julia_set.png";
         Object start = PyRuntime.pyPerfCounter();
         Object pixels = render_julia(width, height, max_iter, PyRuntime.pyNeg(0.8), 0.156);
         PyRuntime.pyWriteRGBPNG(out_path, width, height, pixels);

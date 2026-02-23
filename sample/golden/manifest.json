@@ -7,9 +7,9 @@
         "suffix": ".png"
       },
       "source_rel": "sample/py/01_mandelbrot.py",
-      "source_sha256": "d735bb566958265bd37639578a7e71abb1011a740b48090fd1cccc4d805354dd",
-      "stdout_normalized": "output: sample/out/mandelbrot_01.png\nsize: 1600 x 1200\nmax_iter: 1000",
-      "stdout_sha256": "fe4b185076b37209faf67fba8a491839e9e971325186a801b98a9357a6d7e3e2"
+      "source_sha256": "003bf850800f0f402709ef1714c4e12493ff6326ab5ba9730f7105baa571e58f",
+      "stdout_normalized": "output: sample/out/01_mandelbrot.png\nsize: 1600 x 1200\nmax_iter: 1000",
+      "stdout_sha256": "35ec027708a19af3163d61cd7e241587b2c6b39277ab7410f8e5123bbe495c8b"
     },
     "02_raytrace_spheres": {
       "artifact": {
@@ -18,9 +18,9 @@
         "suffix": ".png"
       },
       "source_rel": "sample/py/02_raytrace_spheres.py",
-      "source_sha256": "fb7a2a9f2b7fed57ecf329892d03f05f452f8efb2c8794f3f46be9f50116b6a5",
-      "stdout_normalized": "output: sample/out/raytrace_02.png\nsize: 1600 x 900",
-      "stdout_sha256": "ff6a5f5bdcbf1d7bd94ea9838a1f834670dd280e83356dd705a1743d2edc3145"
+      "source_sha256": "2be67e45cc058e68095a304519b6445d26f4ff271f0500f5d97b8c806ec77099",
+      "stdout_normalized": "output: sample/out/02_raytrace_spheres.png\nsize: 1600 x 900",
+      "stdout_sha256": "f4661ff823d9afb80264a5e0cf402934615b7ab0b1222721ae986265c6b6e7f9"
     },
     "03_julia_set": {
       "artifact": {
@@ -29,9 +29,9 @@
         "suffix": ".png"
       },
       "source_rel": "sample/py/03_julia_set.py",
-      "source_sha256": "b46263b0f2cc64b7a95692b89d0d1211cd1f8114169f989039f19d335d7ff3e4",
-      "stdout_normalized": "output: sample/out/julia_03.png\nsize: 3840 x 2160\nmax_iter: 20000",
-      "stdout_sha256": "5903020424fb14dacdca8481182c1405b66e697e0ed4ea4fd3c43d851cf29b69"
+      "source_sha256": "ac95c4d684b79bed0e01c1f09e0949f45f140ef2d1347c478c5b294c669f556d",
+      "stdout_normalized": "output: sample/out/03_julia_set.png\nsize: 3840 x 2160\nmax_iter: 20000",
+      "stdout_sha256": "c7bce3a8153feefba05aa926a887c40860678abd8a8ace6db1fbe465e09c81ae"
     },
     "04_monte_carlo_pi": {
       "artifact": null,

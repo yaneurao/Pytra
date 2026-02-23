@@ -210,7 +210,7 @@ public static class Program
         long width = 1600L;
         long height = 900L;
         long aa = 2L;
-        string out_path = "sample/out/raytrace_02.png";
+        string out_path = "sample/out/02_raytrace_spheres.png";
         double start = Pytra.CsModule.time.perf_counter();
         List<byte> pixels = render(width, height, aa);
         Pytra.CsModule.png_helper.write_rgb_png(out_path, width, height, pixels);

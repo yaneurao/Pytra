@@ -831,7 +831,7 @@ class pytra_01_mandelbrot {
         Object width = 1600;
         Object height = 1200;
         Object max_iter = 1000;
-        Object out_path = "sample/out/mandelbrot_01.png";
+        Object out_path = "sample/out/01_mandelbrot.png";
         Object start = PyRuntime.pyPerfCounter();
         Object pixels = render_mandelbrot(width, height, max_iter, PyRuntime.pyNeg(2.2), 1.0, PyRuntime.pyNeg(1.2), 1.2);
         PyRuntime.pyWriteRGBPNG(out_path, width, height, pixels);

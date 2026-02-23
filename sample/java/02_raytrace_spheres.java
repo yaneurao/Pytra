@@ -919,7 +919,7 @@ class pytra_02_raytrace_spheres {
         Object width = 1600;
         Object height = 900;
         Object aa = 2;
-        Object out_path = "sample/out/raytrace_02.png";
+        Object out_path = "sample/out/02_raytrace_spheres.png";
         Object start = PyRuntime.pyPerfCounter();
         Object pixels = render(width, height, aa);
         PyRuntime.pyWriteRGBPNG(out_path, width, height, pixels);

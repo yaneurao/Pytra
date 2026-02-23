@@ -70,7 +70,7 @@ function run_mandelbrot() {
     let width = 1600;
     let height = 1200;
     let max_iter = 1000;
-    let out_path = 'sample/out/mandelbrot_01.png';
+    let out_path = 'sample/out/01_mandelbrot.png';
     let start = perf_counter();
     let pixels = render_mandelbrot(width, height, max_iter, (-(2.2)), 1.0, (-(1.2)), 1.2);
     png_helper.write_rgb_png(out_path, width, height, pixels);

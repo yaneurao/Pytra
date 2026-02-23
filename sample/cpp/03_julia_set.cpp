@@ -52,7 +52,7 @@ void run_julia() {
     int64 width = 3840;
     int64 height = 2160;
     int64 max_iter = 20000;
-    str out_path = "sample/out/julia_03.png";
+    str out_path = "sample/out/03_julia_set.png";
     
     float64 start = perf_counter();
     bytearray pixels = render_julia(width, height, max_iter, -0.8, 0.156);

@@ -169,7 +169,7 @@ def run_raytrace() -> None:
     width: int = 1600
     height: int = 900
     aa: int = 2
-    out_path: str = "sample/out/raytrace_02.png"
+    out_path: str = "sample/out/02_raytrace_spheres.png"
 
     start: float = perf_counter()
     pixels: bytearray = render(width, height, aa)

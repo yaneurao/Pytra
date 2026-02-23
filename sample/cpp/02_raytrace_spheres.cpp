@@ -182,7 +182,7 @@ void run_raytrace() {
     int64 width = 1600;
     int64 height = 900;
     int64 aa = 2;
-    str out_path = "sample/out/raytrace_02.png";
+    str out_path = "sample/out/02_raytrace_spheres.png";
     
     float64 start = perf_counter();
     bytearray pixels = render(width, height, aa);

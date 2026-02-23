@@ -812,7 +812,7 @@ func run_mandelbrot() any {
     _ = height
     var max_iter int = 1000
     _ = max_iter
-    var out_path string = "sample/out/mandelbrot_01.png"
+    var out_path string = "sample/out/01_mandelbrot.png"
     _ = out_path
     var start float64 = pyToFloat(pyPerfCounter())
     _ = start

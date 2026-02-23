@@ -68,7 +68,7 @@ void run_mandelbrot() {
     int64 width = 1600;
     int64 height = 1200;
     int64 max_iter = 1000;
-    str out_path = "sample/out/mandelbrot_01.png";
+    str out_path = "sample/out/01_mandelbrot.png";
     
     float64 start = perf_counter();
     

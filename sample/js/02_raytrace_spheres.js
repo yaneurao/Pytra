@@ -171,7 +171,7 @@ function run_raytrace() {
     let width = 1600;
     let height = 900;
     let aa = 2;
-    let out_path = 'sample/out/raytrace_02.png';
+    let out_path = 'sample/out/02_raytrace_spheres.png';
     let start = perf_counter();
     let pixels = render(width, height, aa);
     png_helper.write_rgb_png(out_path, width, height, pixels);

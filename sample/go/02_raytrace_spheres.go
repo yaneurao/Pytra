@@ -949,7 +949,7 @@ func run_raytrace() any {
     _ = height
     var aa int = 2
     _ = aa
-    var out_path string = "sample/out/raytrace_02.png"
+    var out_path string = "sample/out/02_raytrace_spheres.png"
     _ = out_path
     var start float64 = pyToFloat(pyPerfCounter())
     _ = start

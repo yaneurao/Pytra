@@ -86,7 +86,7 @@ public static class Program
         long width = 1600L;
         long height = 1200L;
         long max_iter = 1000L;
-        string out_path = "sample/out/mandelbrot_01.png";
+        string out_path = "sample/out/01_mandelbrot.png";
         double start = Pytra.CsModule.time.perf_counter();
         List<byte> pixels = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);
         Pytra.CsModule.png_helper.write_rgb_png(out_path, width, height, pixels);

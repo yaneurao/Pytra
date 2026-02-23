@@ -49,7 +49,7 @@ def run_julia() -> None:
     width: int = 3840
     height: int = 2160
     max_iter: int = 20000
-    out_path: str = "sample/out/julia_03.png"
+    out_path: str = "sample/out/03_julia_set.png"
 
     start: float = perf_counter()
     pixels: bytearray = render_julia(width, height, max_iter, -0.8, 0.156)

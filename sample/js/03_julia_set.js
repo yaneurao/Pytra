@@ -55,7 +55,7 @@ function run_julia() {
     let width = 3840;
     let height = 2160;
     let max_iter = 20000;
-    let out_path = 'sample/out/julia_03.png';
+    let out_path = 'sample/out/03_julia_set.png';
     let start = perf_counter();
     let pixels = render_julia(width, height, max_iter, (-(0.8)), 0.156);
     png_helper.write_rgb_png(out_path, width, height, pixels);

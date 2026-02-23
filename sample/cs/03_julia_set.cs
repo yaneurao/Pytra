@@ -64,7 +64,7 @@ public static class Program
         long width = 3840L;
         long height = 2160L;
         long max_iter = 20000L;
-        string out_path = "sample/out/julia_03.png";
+        string out_path = "sample/out/03_julia_set.png";
         double start = Pytra.CsModule.time.perf_counter();
         List<byte> pixels = render_julia(width, height, max_iter, (-0.8), 0.156);
         Pytra.CsModule.png_helper.write_rgb_png(out_path, width, height, pixels);

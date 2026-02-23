@@ -47,7 +47,7 @@ fn run_julia() -> () {
     let mut width: i64 = 3840;
     let mut height: i64 = 2160;
     let mut max_iter: i64 = 20000;
-    let mut out_path: String = "sample/out/julia_03.png".to_string();
+    let mut out_path: String = "sample/out/03_julia_set.png".to_string();
     let mut start: f64 = perf_counter();
     let mut pixels: Vec<u8> = render_julia(width, height, max_iter, (-0.8), 0.156);
     py_write_rgb_png(&(out_path), width, height, &(pixels));

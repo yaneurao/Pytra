@@ -62,7 +62,7 @@ fn run_mandelbrot() -> () {
     let mut width: i64 = 1600;
     let mut height: i64 = 1200;
     let mut max_iter: i64 = 1000;
-    let mut out_path: String = "sample/out/mandelbrot_01.png".to_string();
+    let mut out_path: String = "sample/out/01_mandelbrot.png".to_string();
     let mut start: f64 = perf_counter();
     let mut pixels: Vec<u8> = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);
     py_write_rgb_png(&(out_path), width, height, &(pixels));

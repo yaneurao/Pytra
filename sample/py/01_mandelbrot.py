@@ -73,7 +73,7 @@ def run_mandelbrot() -> None:
     width: int = 1600
     height: int = 1200
     max_iter: int = 1000
-    out_path: str = "sample/out/mandelbrot_01.png"
+    out_path: str = "sample/out/01_mandelbrot.png"
 
     start: float = perf_counter()
 

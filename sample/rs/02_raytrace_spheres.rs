@@ -160,7 +160,7 @@ fn run_raytrace() -> () {
     let mut width: i64 = 1600;
     let mut height: i64 = 900;
     let mut aa: i64 = 2;
-    let mut out_path: String = "sample/out/raytrace_02.png".to_string();
+    let mut out_path: String = "sample/out/02_raytrace_spheres.png".to_string();
     let mut start: f64 = perf_counter();
     let mut pixels: Vec<u8> = render(width, height, aa);
     py_write_rgb_png(&(out_path), width, height, &(pixels));
