@@ -5902,7 +5902,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 dep_file = Path(dep_txt)
                 dep_key = path_key_for_graph(dep_file)
                 dep_disp = rel_disp_for_graph(root, dep_file)
-                module_id = resolved_mod_id if resolved_mod_id != "" else mod
+                module_id = resolved_mod_id or mod
                 if dep_key not in module_id_map or module_id_map[dep_key] == "":
                     module_id_map[dep_key] = module_id
                 graph_adj[cur_key].append(dep_key)
@@ -6073,11 +6073,11 @@ def _write_multi_file_cpp(
         import_symbols = dict_any_get_dict(meta, "import_symbols")
         dep_modules: set[str] = set()
         for module_id_obj in import_modules.values():
-            if isinstance(module_id_obj, str) and module_id_obj != "":
+            if isinstance(module_id_obj, str) and module_id_obj:
                 dep_modules.add(module_id_obj)
         for sym_obj in import_symbols.values():
             module_id = dict_any_get_str(self.any_to_dict_or_empty(sym_obj), "module")
-            if module_id != "":
+            if module_id:
                 dep_modules.add(module_id)
         fwd_lines: list[str] = []
         for mod_name in dep_modules:
