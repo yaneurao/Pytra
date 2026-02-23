@@ -442,36 +442,36 @@ class CppEmitter(CodeEmitter):
         module_name_norm = self._normalize_runtime_module_name(module_name)
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
-            if tail != "":
+            if tail:
                 return "pytra::std::" + tail.replace(".", "::")
             return ""
         if module_name_norm.startswith("pytra.utils."):
             tail = module_name_norm[12:]
-            if tail != "":
+            if tail:
                 return "pytra::utils::" + tail.replace(".", "::")
             return ""
         if module_name_norm.startswith("pytra.compiler."):
             tail = module_name_norm[15:]
-            if tail != "":
+            if tail:
                 return "pytra::compiler::" + tail.replace(".", "::")
             return ""
         if module_name_norm.startswith("pytra."):
             tail = module_name_norm[6:]
-            if tail != "":
+            if tail:
                 return "pytra::" + tail.replace(".", "::")
             return "pytra"
         inc = self._module_name_to_cpp_include(module_name_norm)
         if inc.startswith("pytra/std/") and inc.endswith(".h"):
             tail: str = inc[10 : len(inc) - 2].replace("/", "::")
-            if tail != "":
+            if tail:
                 return "pytra::" + tail
         if inc.startswith("pytra/utils/") and inc.endswith(".h"):
             tail: str = inc[12 : len(inc) - 2].replace("/", "::")
-            if tail != "":
+            if tail:
                 return "pytra::utils::" + tail
         if inc.startswith("pytra/compiler/") and inc.endswith(".h"):
             tail = inc[15 : len(inc) - 2].replace("/", "::")
-            if tail != "":
+            if tail:
                 return "pytra::compiler::" + tail
         return ""
 
@@ -492,7 +492,7 @@ class CppEmitter(CodeEmitter):
     ) -> None:
         """`pytra.std/utils` の symbol include を必要時のみ追加する。"""
         runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
-        if runtime_prefix == "" or symbol == "":
+        if not runtime_prefix or not symbol:
             return
         sym_inc = self._module_name_to_cpp_include(runtime_prefix + symbol)
         append_unique_non_empty(includes, seen, sym_inc)
