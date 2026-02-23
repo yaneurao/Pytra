@@ -492,11 +492,13 @@ class CppEmitter(CodeEmitter):
                     inc = self._module_name_to_cpp_include(mod_name)
                     append_unique_non_empty(includes, seen, inc)
                     if binding_kind == "symbol" and export_name != "":
+                        runtime_prefix = ""
                         if mod_name == "pytra.std":
-                            sym_inc = self._module_name_to_cpp_include("pytra.std." + export_name)
-                            append_unique_non_empty(includes, seen, sym_inc)
+                            runtime_prefix = "pytra.std."
                         elif mod_name == "pytra.utils":
-                            sym_inc = self._module_name_to_cpp_include("pytra.utils." + export_name)
+                            runtime_prefix = "pytra.utils."
+                        if runtime_prefix != "":
+                            sym_inc = self._module_name_to_cpp_include(runtime_prefix + export_name)
                             append_unique_non_empty(includes, seen, sym_inc)
             includes = sort_str_list_copy(includes)
             return includes
