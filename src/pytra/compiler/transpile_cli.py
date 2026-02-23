@@ -263,6 +263,20 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
     )
 
 
+def load_east1_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
+    """入力ファイル（.py/.json）を読み取り `EAST1` ルートとして返す。
+
+    NOTE:
+    現段階では parser 直後の出力 API として段階識別（`east_stage=1`）を付与し、
+    既存 `load_east_document` との互換（schema/meta 補完・エラー分類）を維持する。
+    `EAST1 -> EAST2` 正規化 pass の分離は `P0-EAST123-06-S2` で行う。
+    """
+    east1 = load_east_document(input_path, parser_backend=parser_backend)
+    if isinstance(east1, dict) and dict_any_kind(east1) == "Module":
+        east1["east_stage"] = 1
+    return east1
+
+
 def load_east_document_compat(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
     """非 C++ CLI 互換の `load_east` 振る舞いで EAST を読み込む。"""
     suffix = input_path.suffix.lower()

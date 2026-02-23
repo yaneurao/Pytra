@@ -2121,6 +2121,28 @@ def f() -> int:
         self.assertEqual(dict_any_get_str(wrapped_meta, "dispatch_mode"), "native")
         self.assertEqual(dict_any_get_str(module_meta, "dispatch_mode"), "native")
 
+    def test_load_east1_document_sets_stage1_while_keeping_root_contract(self) -> None:
+        from src.pytra.compiler.transpile_cli import load_east1_document
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            wrapped = root / "wrapped.json"
+            module_json = root / "module.json"
+            wrapped.write_text('{"ok": true, "east": {"kind": "Module", "body": []}}', encoding="utf-8")
+            module_json.write_text('{"kind": "Module", "body": []}', encoding="utf-8")
+            wrapped_east = load_east1_document(wrapped)
+            module_east = load_east1_document(module_json)
+        self.assertEqual(dict_any_get_str(wrapped_east, "kind"), "Module")
+        self.assertEqual(dict_any_get_str(module_east, "kind"), "Module")
+        self.assertEqual(dict_any_get(wrapped_east, "east_stage"), 1)
+        self.assertEqual(dict_any_get(module_east, "east_stage"), 1)
+        self.assertEqual(dict_any_get(wrapped_east, "schema_version"), 1)
+        self.assertEqual(dict_any_get(module_east, "schema_version"), 1)
+        wrapped_meta = dict_any_get_dict(wrapped_east, "meta")
+        module_meta = dict_any_get_dict(module_east, "meta")
+        self.assertEqual(dict_any_get_str(wrapped_meta, "dispatch_mode"), "native")
+        self.assertEqual(dict_any_get_str(module_meta, "dispatch_mode"), "native")
+
     def test_resolve_module_name_classifies_user_pytra_and_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

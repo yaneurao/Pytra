@@ -162,3 +162,4 @@
 - 2026-02-23: [ID: P0-EAST123-04-S3] `check_selfhost_cpp_diff.py` / `check_py2js_transpile.py` / `check_py2ts_transpile.py` に EAST3 契約テストの preflight（`test_east3_lowering.py`, `test_east3_cpp_bridge.py`）を組み込み、`run_local_ci.py` に JS/TS クロスターゲットチェックを追加した。
 - 2026-02-23: [ID: P0-EAST123-05-S1] `tools/check_cpp_hooks_semantic_budget.py` を追加し、C++ hooks の semantic/syntax/no-op 分類と基線メトリクス（`total=11`, `semantic=4`, `syntax=6`, `noop=1`, `unknown=0`）を記録した。
 - 2026-02-23: [ID: P0-EAST123-05-S2] `run_local_ci.py` に `tools/check_cpp_hooks_semantic_budget.py --max-semantic 4` を追加し、semantic hook の新規流入を失敗扱いにするチェック導線を常時実行化した。
+- 2026-02-23: [ID: P0-EAST123-06-S1] `load_east1_document(...)` を `transpile_cli` に追加し、既存のエラー分類/ルート契約を維持したまま `east_stage=1` を返す parser 直後 API を導入した。`test_py2cpp_features.py` に helper 契約テストを追加し、`prepare_selfhost_source` の import 行除去を prefix 判定へ更新して回帰を解消した。
