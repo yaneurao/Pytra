@@ -39,7 +39,7 @@
 11. [x] [ID: P0-EAST123-03-S1] C++ hooks / `py2cpp.py` の意味論実装経路（dispatch/boxing/iterable/built-in）を棚卸しする。
 12. [ ] [ID: P0-EAST123-03-S2] 棚卸し結果に基づいて意味論経路を EAST3 命令写像へ置換し、重複ロジックを撤去する（`P0-EAST123-03-S2-S1` から `P0-EAST123-03-S2-S3` 完了でクローズ）。
 13. [x] [ID: P0-EAST123-03-S2-S1] CppEmitter 側で EAST3 命令ノード（`ForCore`, `Box/Unbox`, `ObjBool/ObjLen/ObjStr/ObjIter*`）を受理し、既存 C++ runtime API へ写像する。
-14. [ ] [ID: P0-EAST123-03-S2-S2] `For` / `iter_mode` / Any 境界の backend 再判断を段階的に EAST3 命令入力へ置換し、再判断箇所を縮退する。
+14. [x] [ID: P0-EAST123-03-S2-S2] `For` / `iter_mode` / Any 境界の backend 再判断を段階的に EAST3 命令入力へ置換し、再判断箇所を縮退する。
 15. [ ] [ID: P0-EAST123-03-S2-S3] `py2cpp.py` と `hooks/cpp` の `runtime_call` / built-in 分岐重複を撤去し、EAST3 命令写像 + 構文差分 hook のみに収束させる。
 13. [ ] [ID: P0-EAST123-04] `EAST3` 契約（schema/例外/回帰）をテストで固定する（`P0-EAST123-04-S1` から `P0-EAST123-04-S3` 完了でクローズ）。
 14. [ ] [ID: P0-EAST123-04-S1] schema テスト（必須フィールド、`iter_plan` 形状、`dispatch_mode` 一貫性）を追加する。

@@ -140,3 +140,4 @@
 - 2026-02-23: [ID: P0-EAST123-02-S3] `lower_east2_to_east3(..., object_dispatch_mode=...)` と `load_east3_document(..., object_dispatch_mode=...)` を追加し、dispatch mode を `EAST2 -> EAST3` エントリで一度だけ確定して `EAST3.meta.dispatch_mode` と `RuntimeIterForPlan.dispatch_mode` へ反映するテストを追加した。
 - 2026-02-23: [ID: P0-EAST123-03-S1] `py2cpp.py` と `hooks/cpp` の意味論実装経路（dispatch/boxing/iterable/built-in）を棚卸しし、`P0-EAST123-03-S2` の置換対象として固定した。
 - 2026-02-23: [ID: P0-EAST123-03-S2-S1] `py2cpp.py` に `ForCore` / `Box` / `Unbox` / `Obj*` 受理を追加し、`test/unit/test_east3_cpp_bridge.py` で C++ 写像と `ForCore` のシンボル収集（`transpile_cli` 側）を固定した。
+- 2026-02-23: [ID: P0-EAST123-03-S2-S2] `py2cpp` に `--east-stage {2,3}` / `--object-dispatch-mode` を追加し、`load_east(..., east_stage=\"3\")` で `EAST2 -> EAST3` を通す経路を導入して `ForCore` / Any 境界を backend 再判断なしで受理できるようにした。

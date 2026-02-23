@@ -2040,6 +2040,7 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
         "output_dir": "",
         "top_namespace_opt": "",
         "negative_index_mode_opt": "",
+        "object_dispatch_mode_opt": "",
         "bounds_check_mode_opt": "",
         "floor_div_mode_opt": "",
         "mod_mode_opt": "",
@@ -2049,6 +2050,7 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
         "opt_level_opt": "",
         "preset": "",
         "parser_backend": "self_hosted",
+        "east_stage": "2",
         "guard_profile": "default",
         "max_ast_depth": "",
         "max_parse_nodes": "",
@@ -2082,6 +2084,16 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
             if i >= len(argv):
                 return _parse_error_dict("missing value for --negative-index-mode")
             out["negative_index_mode_opt"] = argv[i]
+        elif a == "--object-dispatch-mode":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --object-dispatch-mode")
+            out["object_dispatch_mode_opt"] = argv[i]
+        elif a == "--east-stage":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --east-stage")
+            out["east_stage"] = argv[i]
         elif a == "--output-dir":
             i += 1
             if i >= len(argv):

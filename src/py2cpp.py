@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, print_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document, load_east3_document, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, print_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from pytra.std import json
 from pytra.std import os
@@ -5541,9 +5541,24 @@ class CppEmitter(CodeEmitter):
         return east_type
 
 
-def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
+def load_east(
+    input_path: Path,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "2",
+    object_dispatch_mode: str = "",
+) -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
-    east_doc = load_east_document(input_path, parser_backend)
+    east_doc: dict[str, Any]
+    if east_stage == "3":
+        east3_doc = load_east3_document(
+            input_path,
+            parser_backend=parser_backend,
+            object_dispatch_mode=object_dispatch_mode,
+        )
+        east_doc = east3_doc if isinstance(east3_doc, dict) else {}
+    else:
+        east2_doc = load_east_document(input_path, parser_backend)
+        east_doc = east2_doc if isinstance(east2_doc, dict) else {}
     return east_doc if isinstance(east_doc, dict) else {}
 
 
@@ -6137,14 +6152,24 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     )
 
 
-def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted") -> dict[str, dict[str, Any]]:
+def build_module_east_map(
+    entry_path: Path,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "2",
+    object_dispatch_mode: str = "",
+) -> dict[str, dict[str, Any]]:
     """入口 + 依存ユーザーモジュールを個別に EAST 化して返す。"""
     analysis = _analyze_import_graph(entry_path)
     files = dict_any_get_str_list(analysis, "user_module_files")
     module_east_raw: dict[str, dict[str, Any]] = {}
     for f in files:
         p = Path(f)
-        module_east_raw[str(p)] = load_east(p, parser_backend)
+        module_east_raw[str(p)] = load_east(
+            p,
+            parser_backend,
+            east_stage=east_stage,
+            object_dispatch_mode=object_dispatch_mode,
+        )
     return build_module_east_map_from_analysis(
         entry_path,
         analysis,
@@ -6407,6 +6432,7 @@ def main(argv: list[str]) -> int:
     output_dir_txt = dict_str_get(parsed, "output_dir", "")
     top_namespace_opt = dict_str_get(parsed, "top_namespace_opt", "")
     negative_index_mode_opt = dict_str_get(parsed, "negative_index_mode_opt", "")
+    object_dispatch_mode_opt = dict_str_get(parsed, "object_dispatch_mode_opt", "")
     bounds_check_mode_opt = dict_str_get(parsed, "bounds_check_mode_opt", "")
     floor_div_mode_opt = dict_str_get(parsed, "floor_div_mode_opt", "")
     mod_mode_opt = dict_str_get(parsed, "mod_mode_opt", "")
@@ -6416,6 +6442,7 @@ def main(argv: list[str]) -> int:
     opt_level_opt = dict_str_get(parsed, "opt_level_opt", "")
     preset = dict_str_get(parsed, "preset", "")
     parser_backend = dict_str_get(parsed, "parser_backend", "self_hosted")
+    east_stage = dict_str_get(parsed, "east_stage", "2")
     guard_profile = dict_str_get(parsed, "guard_profile", "default")
     max_ast_depth_raw = dict_str_get(parsed, "max_ast_depth", "")
     max_parse_nodes_raw = dict_str_get(parsed, "max_parse_nodes", "")
@@ -6432,6 +6459,7 @@ def main(argv: list[str]) -> int:
     emit_runtime_cpp = dict_str_get(parsed, "emit_runtime_cpp", "0") == "1"
     show_help = dict_str_get(parsed, "help", "0") == "1"
     negative_index_mode = ""
+    object_dispatch_mode = ""
     bounds_check_mode = ""
     floor_div_mode = ""
     mod_mode = ""
@@ -6439,7 +6467,7 @@ def main(argv: list[str]) -> int:
     str_index_mode = ""
     str_slice_mode = ""
     opt_level = ""
-    usage_text = "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--guard-profile {off,default,strict}] [--max-ast-depth N] [--max-parse-nodes N] [--max-symbols-per-module N] [--max-scope-depth N] [--max-import-graph-nodes N] [--max-import-graph-edges N] [--max-generated-lines N] [--no-main] [--dump-deps] [--dump-options]"
+    usage_text = "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--object-dispatch-mode {native,type_id}] [--east-stage {2,3}] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--guard-profile {off,default,strict}] [--max-ast-depth N] [--max-parse-nodes N] [--max-symbols-per-module N] [--max-scope-depth N] [--max-import-graph-nodes N] [--max-import-graph-edges N] [--max-generated-lines N] [--no-main] [--dump-deps] [--dump-options]"
     guard_limits: dict[str, int] = {}
 
     if show_help:
@@ -6448,6 +6476,13 @@ def main(argv: list[str]) -> int:
     if input_txt == "":
         print(usage_text, file=sys.stderr)
         return 1
+    if east_stage != "2" and east_stage != "3":
+        print(f"error: invalid --east-stage: {east_stage}", file=sys.stderr)
+        return 1
+    if object_dispatch_mode_opt not in {"", "native", "type_id"}:
+        print(f"error: invalid --object-dispatch-mode: {object_dispatch_mode_opt}", file=sys.stderr)
+        return 1
+    object_dispatch_mode = object_dispatch_mode_opt if object_dispatch_mode_opt != "" else "native"
     if not _is_valid_cpp_namespace_name(top_namespace_opt):
         print(f"error: invalid --top-namespace: {top_namespace_opt}", file=sys.stderr)
         return 1
@@ -6539,11 +6574,21 @@ def main(argv: list[str]) -> int:
             analysis = _analyze_import_graph(input_path)
             validate_import_graph_or_raise(analysis)
             import_graph_analysis = analysis
-            module_east_map_cache = build_module_east_map(input_path, parser_backend)
+            module_east_map_cache = build_module_east_map(
+                input_path,
+                parser_backend,
+                east_stage=east_stage,
+                object_dispatch_mode=object_dispatch_mode,
+            )
         east_module: dict[str, Any] = (
             module_east_map_cache[input_txt]
             if input_txt.endswith(".py") and input_txt in module_east_map_cache
-            else load_east(input_path, parser_backend)
+            else load_east(
+                input_path,
+                parser_backend,
+                east_stage=east_stage,
+                object_dispatch_mode=object_dispatch_mode,
+            )
         )
         guard_module_map = select_guard_module_map(input_txt, east_module, module_east_map_cache)
         check_parse_stage_guards(guard_module_map, guard_limits)
@@ -6668,7 +6713,12 @@ def main(argv: list[str]) -> int:
                 module_east_map = (
                     module_east_map_cache
                     if len(module_east_map_cache) > 0
-                    else build_module_east_map(input_path, parser_backend)
+                    else build_module_east_map(
+                        input_path,
+                        parser_backend,
+                        east_stage=east_stage,
+                        object_dispatch_mode=object_dispatch_mode,
+                    )
                 )
             else:
                 module_east_map[str(input_path)] = east_module

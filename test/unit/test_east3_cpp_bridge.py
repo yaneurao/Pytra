@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -10,8 +12,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2cpp import CppEmitter
-from src.pytra.compiler.transpile_cli import collect_symbols_from_stmt
+from src.py2cpp import CppEmitter, load_east
+from src.pytra.compiler.transpile_cli import collect_symbols_from_stmt, parse_py2cpp_argv
 
 
 def _const_i(v: int) -> dict[str, object]:
@@ -100,6 +102,46 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         symbols = collect_symbols_from_stmt(stmt)
         self.assertEqual(symbols, {"a", "b"})
+
+    def test_parse_py2cpp_argv_accepts_east_stage_and_object_dispatch_mode(self) -> None:
+        parsed = parse_py2cpp_argv(
+            [
+                "input.py",
+                "--east-stage",
+                "3",
+                "--object-dispatch-mode",
+                "type_id",
+            ]
+        )
+        self.assertEqual(parsed.get("__error"), "")
+        self.assertEqual(parsed.get("east_stage"), "3")
+        self.assertEqual(parsed.get("object_dispatch_mode_opt"), "type_id")
+
+    def test_load_east_stage3_applies_dispatch_mode_override(self) -> None:
+        payload = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {"kind": "Name", "id": "x", "resolved_type": "object"},
+                    "target_type": "object",
+                    "iter_mode": "runtime_protocol",
+                    "iter": {"kind": "Name", "id": "xs", "resolved_type": "object"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "in.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            out = load_east(p, east_stage="3", object_dispatch_mode="type_id")
+        self.assertEqual(out.get("east_stage"), 3)
+        self.assertEqual(out.get("meta", {}).get("dispatch_mode"), "type_id")
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("kind"), "ForCore")
+        self.assertEqual(body[0].get("iter_plan", {}).get("dispatch_mode"), "type_id")
 
 
 if __name__ == "__main__":
