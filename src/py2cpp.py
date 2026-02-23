@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -246,33 +246,6 @@ def _dict_any_get_dict_list(src: dict[str, Any], key: str) -> list[dict[str, Any
         if isinstance(item, dict):
             out.append(item)
     return out
-
-
-def _first_import_detail_line(source_text: str, kind: str) -> str:
-    """import エラー表示向けに、入力コードから該当 import 行を抜き出す。"""
-    lines = source_text.splitlines()
-    for i in range(len(lines)):
-        raw = lines[i]
-        line = raw if isinstance(raw, str) else ""
-        hash_pos = line.find("#")
-        if hash_pos >= 0:
-            line = line[:hash_pos]
-        line = line.strip()
-        if line == "":
-            continue
-        if kind == "wildcard":
-            if line.startswith("from ") and " import " in line and line.endswith("*"):
-                parts = split_ws_tokens(line)
-                if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import" and parts[3] == "*":
-                    return "from " + parts[1] + " import *"
-        if kind == "relative":
-            if line.startswith("from .") and " import " in line:
-                parts = split_ws_tokens(line)
-                if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import":
-                    return "from " + parts[1] + " import " + parts[3]
-    if kind == "wildcard":
-        return "from ... import *"
-    return "from .module import symbol"
 
 
 def _dict_any_kind(src: dict[str, Any]) -> str:
@@ -6033,14 +6006,14 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
             raise ex
         msg = str(ex)
         if "from-import wildcard is not supported" in msg:
-            label = _first_import_detail_line(source_text, "wildcard")
+            label = first_import_detail_line(source_text, "wildcard")
             raise make_user_error(
                 "input_invalid",
                 "Unsupported import syntax.",
                 [f"kind=unsupported_import_form file={input_path} import={label}"],
             ) from ex
         if "relative import is not supported" in msg:
-            label = _first_import_detail_line(source_text, "relative")
+            label = first_import_detail_line(source_text, "relative")
             raise make_user_error(
                 "input_invalid",
                 "Unsupported import syntax.",
