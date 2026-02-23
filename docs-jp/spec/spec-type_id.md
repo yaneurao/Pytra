@@ -147,6 +147,8 @@
 - 変換器の `isinstance` lower は runtime API 呼び出しへ統一する。
 - built-in 特例分岐は段階的に縮退する。
 - target 固有最適化を入れても、観測可能な判定結果は API 契約に一致させる。
+- `type_id` 判定 lower は原則 `EAST3` で命令化し、backend はその命令を runtime API へ写像するだけにする。
+- backend（例: C++ emitter）で `type_id` 判定ロジックを直接文字列生成する経路は、移行期間の互換層を除き禁止する。
 
 ## 12. テスト観点
 
