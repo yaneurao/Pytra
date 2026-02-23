@@ -16,6 +16,7 @@ def add_common_transpile_args(
     parser: argparse.ArgumentParser,
     *,
     enable_negative_index_mode: bool = False,
+    enable_object_dispatch_mode: bool = False,
     parser_backends: Iterable[str] | None = None,
 ) -> None:
     """各トランスパイラで共通利用する CLI 引数を追加する。"""
@@ -26,6 +27,12 @@ def add_common_transpile_args(
             "--negative-index-mode",
             choices=["always", "const_only", "off"],
             help="Policy for Python-style negative indexing on list/str subscripts",
+        )
+    if enable_object_dispatch_mode:
+        parser.add_argument(
+            "--object-dispatch-mode",
+            choices=["native", "type_id"],
+            help="Object boundary dispatch mode used by EAST2->EAST3 lowering",
         )
     if parser_backends is not None:
         choices = list(parser_backends)
@@ -40,6 +47,7 @@ def normalize_common_transpile_args(
     args: argparse.Namespace,
     *,
     default_negative_index_mode: str | None = None,
+    default_object_dispatch_mode: str | None = None,
     default_parser_backend: str | None = None,
 ) -> argparse.Namespace:
     """共通引数の既定値を埋める。"""
@@ -47,6 +55,10 @@ def normalize_common_transpile_args(
         cur = getattr(args, "negative_index_mode", None)
         if not cur:
             setattr(args, "negative_index_mode", default_negative_index_mode)
+    if default_object_dispatch_mode is not None:
+        cur = getattr(args, "object_dispatch_mode", None)
+        if not cur:
+            setattr(args, "object_dispatch_mode", default_object_dispatch_mode)
     if default_parser_backend is not None:
         cur = getattr(args, "parser_backend", None)
         if not cur:
@@ -271,11 +283,15 @@ def load_east_document_compat(input_path: Path, parser_backend: str = "self_host
     raise RuntimeError("EAST root must be dict")
 
 
-def load_east3_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
+def load_east3_document(
+    input_path: Path,
+    parser_backend: str = "self_hosted",
+    object_dispatch_mode: str = "",
+) -> dict[str, object]:
     """入力ファイルを読み込み、最小 `EAST2 -> EAST3` lower を適用して返す。"""
     east2 = load_east_document(input_path, parser_backend=parser_backend)
     if isinstance(east2, dict):
-        east3 = lower_east2_to_east3(east2)
+        east3 = lower_east2_to_east3(east2, object_dispatch_mode=object_dispatch_mode)
         if isinstance(east3, dict):
             return east3
     raise make_user_error(

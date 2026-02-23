@@ -80,3 +80,5 @@
 - 2026-02-23: [ID: P0-EAST123-01-S4] `spec-east123` と `spec-linker` に仕様優先順位（`east123` 上位 / `linker` 下位）を明記した。
 - 2026-02-23: `P0-EAST123-01-S1` / `P0-EAST123-01-S2` / `P0-EAST123-01-S3` として、`spec-east123` のルート契約（`east_stage`/`schema_version`/`meta.dispatch_mode`）、dispatch mode 単一点適用（`EAST2 -> EAST3`）、および `spec-east`/`spec-dev`/`spec-type_id`/`spec-boxing`/`spec-iterable` の参照整合を同期した。
 - 2026-02-23: [ID: P0-EAST123-02-S1] `src/pytra/compiler/east_parts/east3_lowering.py` に最小 `EAST2 -> EAST3` pass を追加し、`For` / `ForRange` を `ForCore + iter_plan`（`RuntimeIterForPlan` / `StaticRangeForPlan`）へ lower する契約を `test/unit/test_east3_lowering.py` で固定した。
+- 2026-02-23: [ID: P0-EAST123-02-S2] `east3_lowering` で `Any/object` 境界命令 lower（`Box`/`Unbox`/`ObjBool`/`ObjLen`/`ObjStr`/`ObjIterInit`/`ObjIterNext`）を追加し、`test/unit/test_east3_lowering.py` に境界命令化テストを拡張した。
+- 2026-02-23: [ID: P0-EAST123-02-S3] `lower_east2_to_east3(..., object_dispatch_mode=...)` と `load_east3_document(..., object_dispatch_mode=...)` を追加し、dispatch mode を `EAST2 -> EAST3` エントリで一度だけ確定して `EAST3.meta.dispatch_mode` と `RuntimeIterForPlan.dispatch_mode` へ反映するテストを追加した。
