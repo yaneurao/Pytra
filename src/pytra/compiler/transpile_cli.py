@@ -1470,6 +1470,19 @@ def sort_str_list_copy(items: list[str]) -> list[str]:
     return out
 
 
+def collect_user_module_files_for_graph(visited_order: list[str], key_to_path: dict[str, Path]) -> list[str]:
+    """import graph 解析済みキー列と path map からソート済みファイル一覧を返す。"""
+    out: list[str] = []
+    visited_keys: list[str] = []
+    for visited_key in visited_order:
+        visited_keys.append(visited_key)
+    visited_keys = sort_str_list_copy(visited_keys)
+    for key in visited_keys:
+        if key in key_to_path:
+            out.append(str(key_to_path[key]))
+    return out
+
+
 def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:
     """個別 `--max-*` 値を正整数へ変換する。"""
     if raw == "":
