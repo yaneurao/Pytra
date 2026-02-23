@@ -560,6 +560,7 @@ class CppEmitter(CodeEmitter):
         meta = dict_any_get_dict(self.doc, "meta")
         refs = meta_qualified_symbol_refs(self.doc)
         bindings = meta_import_bindings(self.doc)
+        has_refs = bool(refs)
         if bindings:
             for ref_item in refs:
                 set_import_symbol_binding_and_module_set(
@@ -577,7 +578,7 @@ class CppEmitter(CodeEmitter):
                         dict_str_get(item, "local_name", ""),
                         dict_str_get(item, "module_id", ""),
                     )
-                elif binding_kind == "symbol" and not refs:
+                elif binding_kind == "symbol" and not has_refs:
                     set_import_symbol_binding_and_module_set(
                         self.import_symbols,
                         self.import_symbol_modules,
@@ -1849,21 +1850,20 @@ class CppEmitter(CodeEmitter):
 
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
         kind = self._node_kind_from_dict(stmt)
+        ents = self._dict_stmt_list(stmt.get("names"))
         if kind == "Import":
-            ents = self._dict_stmt_list(stmt.get("names"))
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
-                local_name = asname if asname != "" else self._last_dotted_name(name)
+                local_name = asname if asname else self._last_dotted_name(name)
                 set_import_module_binding(self.import_modules, local_name, name)
             return
         if kind == "ImportFrom":
             mod = dict_any_get_str(stmt, "module")
-            ents = self._dict_stmt_list(stmt.get("names"))
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
-                local_name = asname if asname != "" else name
+                local_name = asname if asname else name
                 set_import_symbol_binding_and_module_set(
                     self.import_symbols, self.import_symbol_modules, local_name, mod, name
                 )
