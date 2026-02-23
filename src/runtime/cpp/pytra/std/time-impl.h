@@ -1,11 +1,4 @@
-#ifndef PYTRA_STD_TIME_IMPL_H
-#define PYTRA_STD_TIME_IMPL_H
+// FORWARDER: handwritten runtime header moved to pytra-core.
+#pragma once
 
-namespace pytra::std::time_impl {
-
-double perf_counter();
-
-}  // namespace pytra::std::time_impl
-
-#endif  // PYTRA_STD_TIME_IMPL_H
-
+#include "runtime/cpp/pytra-core/std/time-impl.h"

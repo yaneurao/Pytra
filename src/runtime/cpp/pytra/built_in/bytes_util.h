@@ -1,14 +1,4 @@
-#ifndef PYTRA_BUILT_IN_BYTES_UTIL_H
-#define PYTRA_BUILT_IN_BYTES_UTIL_H
+// FORWARDER: handwritten runtime header moved to pytra-core.
+#pragma once
 
-#include <cstdint>
-#include <string>
-#include <vector>
-
-namespace pytra::runtime::cpp::base {
-
-::std::vector<::std::uint8_t> int_to_bytes(::std::int64_t value, ::std::int64_t length, const ::std::string& byteorder);
-
-}  // namespace pytra::runtime::cpp::base
-
-#endif  // PYTRA_BUILT_IN_BYTES_UTIL_H
+#include "runtime/cpp/pytra-core/built_in/bytes_util.h"
