@@ -21,6 +21,108 @@ def _const_i(v: int) -> dict[str, object]:
 
 
 class East3LoweringTest(unittest.TestCase):
+    def _collect_runtime_iter_plans(self, node: object) -> list[dict[str, object]]:
+        plans: list[dict[str, object]] = []
+        if not isinstance(node, dict):
+            return plans
+        if node.get("kind") == "ForCore":
+            iter_plan = node.get("iter_plan")
+            if isinstance(iter_plan, dict) and iter_plan.get("kind") == "RuntimeIterForPlan":
+                plans.append(iter_plan)
+        for key in ("body", "orelse"):
+            val = node.get(key)
+            if isinstance(val, list):
+                for child in val:
+                    plans.extend(self._collect_runtime_iter_plans(child))
+        return plans
+
+    def test_schema_root_fields_are_present_after_lowering(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "body": [],
+        }
+        out = lower_east2_to_east3(east2)
+        self.assertEqual(out.get("kind"), "Module")
+        self.assertEqual(out.get("east_stage"), 3)
+        self.assertEqual(out.get("schema_version"), 1)
+        self.assertIn(out.get("meta", {}).get("dispatch_mode"), {"native", "type_id"})
+        self.assertIsInstance(out.get("body"), list)
+
+    def test_schema_forcore_iter_plan_shape_static_and_runtime(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {"kind": "Name", "id": "x"},
+                    "target_type": "unknown",
+                    "iter_mode": "runtime_protocol",
+                    "iter": {"kind": "Name", "id": "items"},
+                    "body": [],
+                    "orelse": [],
+                },
+                {
+                    "kind": "ForRange",
+                    "target": {"kind": "Name", "id": "i"},
+                    "target_type": "int64",
+                    "start": _const_i(0),
+                    "stop": _const_i(4),
+                    "step": _const_i(1),
+                    "body": [],
+                    "orelse": [],
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        self.assertIsInstance(body, list)
+        runtime_for = body[0]
+        runtime_plan = runtime_for.get("iter_plan", {})
+        self.assertEqual(runtime_for.get("kind"), "ForCore")
+        self.assertEqual(runtime_plan.get("kind"), "RuntimeIterForPlan")
+        self.assertIsInstance(runtime_plan.get("iter_expr"), dict)
+        self.assertEqual(runtime_plan.get("init_op"), "ObjIterInit")
+        self.assertEqual(runtime_plan.get("next_op"), "ObjIterNext")
+        self.assertIn(runtime_plan.get("dispatch_mode"), {"native", "type_id"})
+        static_for = body[1]
+        static_plan = static_for.get("iter_plan", {})
+        self.assertEqual(static_for.get("kind"), "ForCore")
+        self.assertEqual(static_plan.get("kind"), "StaticRangeForPlan")
+        self.assertIsInstance(static_plan.get("start"), dict)
+        self.assertIsInstance(static_plan.get("stop"), dict)
+        self.assertIsInstance(static_plan.get("step"), dict)
+
+    def test_schema_dispatch_mode_is_consistent_between_root_and_runtime_iter_plan(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "body": [
+                        {
+                            "kind": "For",
+                            "target": {"kind": "Name", "id": "x"},
+                            "target_type": "unknown",
+                            "iter_mode": "runtime_protocol",
+                            "iter": {"kind": "Name", "id": "obj"},
+                            "body": [],
+                            "orelse": [],
+                        }
+                    ],
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2, object_dispatch_mode="type_id")
+        root_mode = out.get("meta", {}).get("dispatch_mode")
+        self.assertEqual(root_mode, "type_id")
+        plans = self._collect_runtime_iter_plans(out)
+        self.assertGreaterEqual(len(plans), 1)
+        for plan in plans:
+            self.assertEqual(plan.get("dispatch_mode"), root_mode)
+
     def test_lower_for_and_forrange_to_forcore(self) -> None:
         east2 = {
             "kind": "Module",

@@ -141,3 +141,4 @@
 - 2026-02-23: [ID: P0-EAST123-03-S2-S1] `py2cpp.py` に `ForCore` / `Box` / `Unbox` / `Obj*` 受理を追加し、`test/unit/test_east3_cpp_bridge.py` で C++ 写像と `ForCore` のシンボル収集（`transpile_cli` 側）を固定した。
 - 2026-02-23: [ID: P0-EAST123-03-S2-S2] `py2cpp` に `--east-stage {2,3}` / `--object-dispatch-mode` を追加し、`load_east(..., east_stage=\"3\")` で `EAST2 -> EAST3` を通す経路を導入して `ForCore` / Any 境界を backend 再判断なしで受理できるようにした。
 - 2026-02-23: [ID: P0-EAST123-03-S2-S3] `runtime_call` / built-in の list/set/dict/str/special 分岐を `py2cpp.py` へ移管し、`hooks/cpp` の `on_render_call` は no-op 化した。`test_cpp_hooks.py` / `test_py2cpp_codegen_issues.py` / `test_east3_cpp_bridge.py` で回帰確認済み。
+- 2026-02-23: [ID: P0-EAST123-04-S1] `test/unit/test_east3_lowering.py` に schema 契約テストを追加し、`EAST3` ルート必須項目、`ForCore.iter_plan` 形状（`RuntimeIterForPlan` / `StaticRangeForPlan`）、および `meta.dispatch_mode` と runtime plan の一貫性を固定した。

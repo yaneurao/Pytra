@@ -42,7 +42,7 @@
 14. [x] [ID: P0-EAST123-03-S2-S2] `For` / `iter_mode` / Any 境界の backend 再判断を段階的に EAST3 命令入力へ置換し、再判断箇所を縮退する。
 15. [x] [ID: P0-EAST123-03-S2-S3] `py2cpp.py` と `hooks/cpp` の `runtime_call` / built-in 分岐重複を撤去し、EAST3 命令写像 + 構文差分 hook のみに収束させる。
 16. [ ] [ID: P0-EAST123-04] `EAST3` 契約（schema/例外/回帰）をテストで固定する（`P0-EAST123-04-S1` から `P0-EAST123-04-S3` 完了でクローズ）。
-17. [ ] [ID: P0-EAST123-04-S1] schema テスト（必須フィールド、`iter_plan` 形状、`dispatch_mode` 一貫性）を追加する。
+17. [x] [ID: P0-EAST123-04-S1] schema テスト（必須フィールド、`iter_plan` 形状、`dispatch_mode` 一貫性）を追加する。
 18. [ ] [ID: P0-EAST123-04-S2] lowering 契約テスト（`EAST2 -> EAST3`）を追加する。
 19. [ ] [ID: P0-EAST123-04-S3] selfhost + クロスターゲット回帰導線へ組み込む。
 20. [ ] [ID: P0-EAST123-05] hooks 縮退を定量管理する（`P0-EAST123-05-S1` から `P0-EAST123-05-S2` 完了でクローズ）。
