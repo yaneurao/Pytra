@@ -95,12 +95,13 @@
 文脈: `docs-jp/plans/p0-selfhost-stabilization.md`（`TG-P0-SH`）
 
 1. [ ] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を完了する（`P0-SH-04-S1` から `P0-SH-04-S3` 完了でクローズ）。
-2. [ ] [ID: P0-SH-04-S1] 残存スタブを棚卸しし、「恒久機能化すべきもの」と「削除すべきもの」を分類する。
+2. [x] [ID: P0-SH-04-S1] 残存スタブを棚卸しし、「恒久機能化すべきもの」と「削除すべきもの」を分類する。
 3. [ ] [ID: P0-SH-04-S2] 恒久機能化対象を compiler/runtime 側へ移し、prepare 側分岐を段階削減する。
 4. [ ] [ID: P0-SH-04-S3] selfhost 回帰（通常 + guard profile）を再計測し、prepare スクリプト依存の再流入を防ぐ。
 5. [x] [ID: P0-SH-05] selfhost 暴走対策として fail-fast ガードを導入し、`--guard-profile {off,default,strict}` と個別上限（`--max-ast-depth`, `--max-parse-nodes`, `--max-symbols-per-module`, `--max-scope-depth`, `--max-import-graph-nodes`, `--max-import-graph-edges`, `--max-generated-lines`）を CLI から指定可能にする。制限超過時は `input_invalid(kind=limit_exceeded, stage=...)` で早期停止する。
 
 進捗メモ:
+- `P0-SH-04-S1`: `docs-jp/plans/p0-selfhost-stabilization.md` に `prepare_selfhost_source.py` の残存パッチを棚卸しし、恒久機能化対象（`_patch_code_emitter_hooks_for_selfhost`, `_patch_load_cpp_hooks_for_selfhost`）と削除対象（`build_cpp_hooks` import 除去分岐）を分類した。
 - 詳細ログは `docs-jp/plans/p0-selfhost-stabilization.md` の `決定ログ` を参照。
 
 ## P1: CodeEmitter / Hooks 移行

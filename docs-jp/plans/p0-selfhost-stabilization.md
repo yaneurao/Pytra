@@ -41,6 +41,17 @@
 3. `P0-SH-04-S3`: 通常 selfhost と guard profile 付き selfhost の回帰を再計測し、prepare 依存の再流入を防ぐ。
 4. `P0-SH-05`: fail-fast ガード（`--guard-profile` / `--max-*`）の導入済み状態を維持し、回帰時は同導線で再検証する。
 
+`P0-SH-04-S1` 棚卸し結果（`tools/prepare_selfhost_source.py`）:
+
+- 恒久機能化対象（S2 で compiler/runtime 側へ移す）:
+  - `_patch_code_emitter_hooks_for_selfhost`: `CodeEmitter._call_hook` の dynamic callable を selfhost だけ `return None` 化しており、現状の最大スタブ。selfhost 用パッチではなく `CodeEmitter` 本体の「hooks 無効モード」へ昇格させる。
+  - `_patch_load_cpp_hooks_for_selfhost`: `load_cpp_hooks` 内の `hooks = build_cpp_hooks()` を `hooks = {}` へ差し替えている。`load_cpp_hooks` 側で「フックなし初期化」を正規機能として持たせ、差し替え依存を除去する。
+- 削除対象（S2 完了後に prepare から外す）:
+  - `_remove_import_line` の `build_cpp_hooks` import 除去分岐: 上記恒久機能化により selfhost 側で import 抜き差しする必要がなくなるため削除。
+  - `_patch_load_cpp_hooks_for_selfhost`: `load_cpp_hooks` 正規化後は置換関数自体を削除。
+- 維持対象（スタブではなく selfhost 生成基盤）:
+  - `_extract_support_blocks` / `_insert_code_emitter`: selfhost 単一ソース化の基盤であり、S1 時点では削除対象にしない。
+
 決定ログ:
 - 2026-02-22: 初版作成（todo から文脈分離）。
 - 2026-02-23: selfhost 実行の暴走対策として、構文木深さ/ノード数/スコープ深さ/シンボル数/import graph 規模/生成量の上限を CLI オプションで指定できるガード設計を `P0-SH-05` として追加。`guard_profile`（`off/default/strict`）と個別上限（`--max-ast-depth` など）を段階導入対象にした。
@@ -69,3 +80,4 @@
 - 2026-02-23: `tools/prepare_selfhost_source.py::_remove_import_line` を fail-fast 化し、`CodeEmitter`/`transpile_cli`/`build_cpp_hooks` の import 行が見つからない場合に `RuntimeError` を送出するよう変更した。`test/unit/test_prepare_selfhost_source.py` に import 除去の正常系/異常系テストを追加し、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
 - 2026-02-23: `_patch_load_cpp_hooks_for_selfhost` の置換境界を縮小し、`load_cpp_hooks(...)` 関数ブロック全体の差し替えを廃止して `hooks = build_cpp_hooks()` の1行だけを `hooks = {}` へ置換する方式へ変更した。`test/unit/test_prepare_selfhost_source.py` の `load_cpp_hooks` 置換テストを更新し、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
 - 2026-02-23: docs-jp/todo.md の P0-SH-04 を -S1 〜 -S3 に分割したため、本 plan の関連 TODO と実行順を同粒度に同期した。
+- 2026-02-23: `P0-SH-04-S1` を完了。`tools/prepare_selfhost_source.py` の残存 selfhost 専用パッチを棚卸しし、`_patch_code_emitter_hooks_for_selfhost` / `_patch_load_cpp_hooks_for_selfhost` を恒久機能化対象、`build_cpp_hooks` import 除去分岐を削除対象、`_extract_support_blocks` 系を維持対象に分類した。
