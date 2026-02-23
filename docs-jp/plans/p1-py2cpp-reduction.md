@@ -4,6 +4,8 @@
 
 関連 TODO:
 - `docs-jp/todo.md` の `ID: P1-CPP-REDUCE-01` 〜 `P1-CPP-REDUCE-02`
+- `docs-jp/todo.md` の `ID: P1-CPP-REDUCE-01-S1` 〜 `P1-CPP-REDUCE-01-S3`
+- `docs-jp/todo.md` の `ID: P1-CPP-REDUCE-02-S1` 〜 `P1-CPP-REDUCE-02-S3`
 
 背景:
 - `py2cpp.py` の肥大化により、変更影響範囲が広くレビュー・回帰確認コストが高い。
@@ -29,6 +31,16 @@
 - `python3 tools/check_py2cpp_transpile.py`
 - `python3 tools/build_selfhost.py`
 
+サブタスク実行順（todo 同期）:
+
+1. `P1-CPP-REDUCE-01-S1`: `py2cpp.py` 内ロジックを「言語非依存」と「C++ 固有」へ分類し、移管順を確定する。
+2. `P1-CPP-REDUCE-01-S2`: 言語非依存ロジックを `CodeEmitter` / `src/pytra/compiler/` へ段階移管する。
+3. `P1-CPP-REDUCE-01-S3`: selfhost 差分ゼロを維持したまま `py2cpp.py` の重複分岐を削減する。
+4. `P1-CPP-REDUCE-02-S1`: 「汎用 helper 禁止 / 共通層先行抽出」の運用ルールを文書化する。
+5. `P1-CPP-REDUCE-02-S2`: helper 追加の回帰を検出する lint/CI チェックを追加する。
+6. `P1-CPP-REDUCE-02-S3`: 緊急 hotfix 時の例外運用と後追い抽出期限を定義する。
+
 決定ログ:
 - 2026-02-22: 初版作成。
 - 2026-02-23: 全言語 selfhost の長期目標に合わせ、`py2cpp.py` への汎用 helper 追加を抑制して共通層先行抽出へ寄せる方針（`P1-CPP-REDUCE-02`）を追加した。
+- 2026-02-23: docs-jp/todo.md の P1-CPP-REDUCE-01/02 を -S* 子タスクへ分割したため、本 plan に同粒度の実行順を追記した。

@@ -2,6 +2,10 @@
 
 ID: `TG-P0-ITER`
 
+## 関連 TODO
+
+- `docs-jp/todo.md` の `ID: P0-ITER-01`（`P0-ITER-01-S1` 〜 `P0-ITER-01-S4`）
+
 ## 背景
 
 - `materials/refs/spec-iterable.md` に、`for ... in ...` の動作を Python の `iter/next` 契約へ寄せる改良案を整理した。
@@ -20,13 +24,12 @@ ID: `TG-P0-ITER`
 - 例外メッセージ文言の CPython 完全一致。
 - 性能最適化のみを目的とした先行変更。
 
-## 実施項目
+## サブタスク実行順（todo 同期）
 
-1. `docs-jp/spec/spec-iterable.md` を正本として固定し、仕様と TODO を同期する。
-2. `EAST` に iterable trait と `For.iter_mode` を導入し、codegen 分岐を明示化する。
-3. C++ runtime に `py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range` を導入する。
-4. `py2cpp` で `static_fastpath` と `runtime_protocol` を明示分岐する。
-5. `--object-dispatch-mode {type_id,native}` の iterable 境界要件を cross-target で固定する。
+1. `P0-ITER-01-S1`: `EAST` trait（`iterable_trait` / `iter_mode`）で必要なメタデータを確定し、影響ノードを整理する。
+2. `P0-ITER-01-S2`: parser/lower から `EAST` trait を供給できるようにし、既存 `For` への互換移行を固定する。
+3. `P0-ITER-01-S3`: C++ runtime に `py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range` を実装し、non-iterable fail-fast 契約を固定する。
+4. `P0-ITER-01-S4`: `py2cpp` の `static_fastpath` / `runtime_protocol` 分岐と回帰テストを整備する。
 
 ## 受け入れ基準
 
@@ -42,3 +45,4 @@ ID: `TG-P0-ITER`
 - 2026-02-23: `py2cpp` の `For` 生成は `iter_mode`（`static_fastpath` / `runtime_protocol`）で分岐する。`runtime_protocol` は `for (object ... : py_dyn_range(iterable))` を生成し、tuple unpack は `py_at(...)` で展開する。
 - 2026-02-23: selfhost 安定性のため、`iter_mode` 未付与の既存 EAST は `unknown` を既定 `static_fastpath` として扱う（互換優先）。`object/Any` は parser 側で明示 `runtime_protocol` を付与して切り替える。
 - 2026-02-23: C++ runtime の object iterable 経路で `set` を扱えるようにした。`PySetObj`（`PYTRA_TID_SET`）と `make_object(const set<T>&)` を追加し、`py_dyn_range(make_object(set<...>))` が反復可能であること、`py_isinstance(make_object(set<...>), PYTRA_TID_SET)` が成立することを `test/unit/test_cpp_runtime_iterable.py` / `test/unit/test_cpp_runtime_type_id.py` で固定した。
+- 2026-02-23: docs-jp/todo.md の P0-ITER-01 を -S1 〜 -S4 へ分割したため、本 plan 側にも同粒度の実行順を追記した。

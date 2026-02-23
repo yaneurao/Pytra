@@ -3,7 +3,8 @@
 最終更新: 2026-02-23
 
 関連 TODO:
-- `docs-jp/todo.md` の `ID: P0-SH-01` 〜 `P0-SH-05`
+- `docs-jp/todo.md` の `ID: P0-SH-04`（`P0-SH-04-S1` 〜 `P0-SH-04-S3`）
+- `docs-jp/todo.md` の `ID: P0-SH-05`
 
 背景:
 - selfhost の変換・ビルド・実行が不安定だと、回帰検出と改善サイクル全体が止まる。
@@ -33,6 +34,13 @@
 - `python3 tools/verify_selfhost_end_to_end.py --skip-build --cases sample/py/01_mandelbrot.py sample/py/17_monte_carlo_pi.py test/fixtures/control/if_else.py`
 - `python3 tools/check_selfhost_direct_compile.py --cases sample/py/*.py`
 
+サブタスク実行順（todo 同期）:
+
+1. `P0-SH-04-S1`: `tools/prepare_selfhost_source.py` の残存スタブを棚卸しし、恒久機能化対象と削除対象に分類する。
+2. `P0-SH-04-S2`: 恒久化対象を compiler/runtime 側へ移し、prepare スクリプト固有分岐を段階削減する。
+3. `P0-SH-04-S3`: 通常 selfhost と guard profile 付き selfhost の回帰を再計測し、prepare 依存の再流入を防ぐ。
+4. `P0-SH-05`: fail-fast ガード（`--guard-profile` / `--max-*`）の導入済み状態を維持し、回帰時は同導線で再検証する。
+
 決定ログ:
 - 2026-02-22: 初版作成（todo から文脈分離）。
 - 2026-02-23: selfhost 実行の暴走対策として、構文木深さ/ノード数/スコープ深さ/シンボル数/import graph 規模/生成量の上限を CLI オプションで指定できるガード設計を `P0-SH-05` として追加。`guard_profile`（`off/default/strict`）と個別上限（`--max-ast-depth` など）を段階導入対象にした。
@@ -60,3 +68,4 @@
 - 2026-02-23: `build_cpp_hooks` の selfhost 専用スタブ関数を削除し、`_patch_load_cpp_hooks_for_selfhost` を追加して `load_cpp_hooks(...)` 本体を selfhost 生成時だけ `return {}` へ置換する方式に変更した。`test/unit/test_prepare_selfhost_source.py` に `load_cpp_hooks` 置換の正常系/異常系テストを追加し、`python3 test/unit/test_prepare_selfhost_source.py`（5件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
 - 2026-02-23: `tools/prepare_selfhost_source.py::_remove_import_line` を fail-fast 化し、`CodeEmitter`/`transpile_cli`/`build_cpp_hooks` の import 行が見つからない場合に `RuntimeError` を送出するよう変更した。`test/unit/test_prepare_selfhost_source.py` に import 除去の正常系/異常系テストを追加し、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
 - 2026-02-23: `_patch_load_cpp_hooks_for_selfhost` の置換境界を縮小し、`load_cpp_hooks(...)` 関数ブロック全体の差し替えを廃止して `hooks = build_cpp_hooks()` の1行だけを `hooks = {}` へ置換する方式へ変更した。`test/unit/test_prepare_selfhost_source.py` の `load_cpp_hooks` 置換テストを更新し、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
+- 2026-02-23: docs-jp/todo.md の P0-SH-04 を -S1 〜 -S3 に分割したため、本 plan の関連 TODO と実行順を同粒度に同期した。

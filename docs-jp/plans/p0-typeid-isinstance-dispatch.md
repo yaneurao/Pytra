@@ -2,6 +2,11 @@
 
 ID: `TG-P0-TYPEID-ISINSTANCE`
 
+## 関連 TODO
+
+- `docs-jp/todo.md` の `ID: P0-TID-01`（`P0-TID-01-S1` 〜 `P0-TID-01-S4`）
+- `docs-jp/todo.md` の `ID: P0-TID-02`（`P0-TID-02-S1` 〜 `P0-TID-02-S4`）
+
 ## 背景
 
 - 現状の `isinstance` は target ごとに部分実装で、C++ は built-in 判定の組み合わせ、JS/TS は `pyTypeId` があっても継承判定 API が不足している。
@@ -19,13 +24,18 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
 - Python 完全互換（`abc` や metaclass を含む全型システム）を一度に達成すること。
 - 既存全 runtime API の一括刷新。
 
-## 実施項目
+## サブタスク実行順（todo 同期）
 
-1. 共通判定 API を定義する（例: `py_isinstance(obj, type_id)` / `py_is_subtype(actual, expected)`）。
-2. C++ runtime で `type_id` と派生関係テーブル（または同等機構）を実装する。
-3. JS/TS runtime で `type_id` モード時の同等 API を実装し、継承判定を可能にする。
-4. `py2cpp`（必要に応じて他言語 emitter）で `isinstance` lower を新 API 経由へ切り替える。
-5. built-in 直書き分岐を段階縮退し、回帰テストで固定する。
+1. `P0-TID-01`（type_id 判定 API 統一）
+   - `P0-TID-01-S1`: `spec-type_id` / `spec-boxing` / `spec-iterable` 間で `isinstance` 契約を整合させる。
+   - `P0-TID-01-S2`: C++ runtime に `py_isinstance` / `py_is_subtype` を実装し、既存 call site を置換する。
+   - `P0-TID-01-S3`: JS/TS runtime に同等 API を実装し、dispatch オプション方針と整合させる。
+   - `P0-TID-01-S4`: 各 emitter の `isinstance` lower を runtime API 経由へ統一し、直書き分岐を縮退する。
+2. `P0-TID-02`（pure Python built_in 正本化）
+   - `P0-TID-02-S1`: `src/pytra/built_in/` の配置・命名・生成対象ルールを確定する。
+   - `P0-TID-02-S2`: `isinstance` / `issubclass` / `type_id` を pure Python 実装へ移管する。
+   - `P0-TID-02-S3`: `py2cpp.py --emit-runtime-cpp` で `src/pytra/built_in/*.py` から C++ runtime built_in 生成を可能にする。
+   - `P0-TID-02-S4`: C++ 手書き built_in 実装を最小ブート層（GC/ABI 等）へ縮退する。
 
 ## 受け入れ基準
 
@@ -48,3 +58,4 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
 - 2026-02-23: `hooks/cs` / `hooks/rs` の `isinstance(..., object)` を追加実装した。C# は `(x is object)`、Rust は `true` へ lower し、target 間で `object` 判定の意味を揃えた。`test/unit/test_py2cs_smoke.py` / `test/unit/test_py2rs_smoke.py` に回帰を追加し、`python3 tools/check_py2cs_transpile.py` / `python3 tools/check_py2rs_transpile.py`（ともに `checked=129 ok=129 fail=0 skipped=6`）で回帰なしを確認した。
 - 2026-02-23: `hooks/cs` / `hooks/rs` の tuple 指定 `isinstance(x, (T1, T2, ...))` lower を回帰テストで固定した。C# は OR 連結された `is` 判定（`int/Base/dict/object`）を、Rust は `Any` に対する `matches!` OR 連結（`Int`/`Dict`）を検証するテストを追加し、`python3 test/unit/test_py2cs_smoke.py`（9件成功）、`python3 test/unit/test_py2rs_smoke.py`（16件成功）、`python3 tools/check_py2cs_transpile.py` / `python3 tools/check_py2rs_transpile.py`（ともに `checked=129 ok=129 fail=0 skipped=6`）で回帰なしを確認した。
 - 2026-02-23: `hooks/cs` / `hooks/rs` の `isinstance(x, set)` lower を追加した。C# は `System.Collections.ISet` への `is` 判定へ、Rust は `Any` 経路で `matches!(x, PyAny::Set(_))` へ lower する。Rust `PyAny` には `Set(Vec<PyAny>)` variant と helper（truthy/string）分岐を追加し、`test/unit/test_py2cs_smoke.py` / `test/unit/test_py2rs_smoke.py` の set 回帰、`python3 tools/check_py2cs_transpile.py` / `python3 tools/check_py2rs_transpile.py`（ともに `checked=129 ok=129 fail=0 skipped=6`）で回帰なしを確認した。
+- 2026-02-23: docs-jp/todo.md の P0-TID-01 / P0-TID-02 を -S* 子タスクへ分割したため、本 plan に同一粒度の実行順を追記した。
