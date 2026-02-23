@@ -3734,11 +3734,32 @@ class CppEmitter(CodeEmitter):
                 default_expr = self._cpp_type_text(val_t) + "()"
             return f"({owner}.contains({key_expr}) ? {owner}.pop({key_expr}) : {default_expr})"
         if runtime_call == "dict.items":
-            return self.render_expr(fn.get("value"))
+            items_node = {
+                "kind": "DictItems",
+                "owner": owner_node,
+                "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(items_node)
         if runtime_call == "dict.keys":
-            return f"py_dict_keys({owner})"
+            keys_node = {
+                "kind": "DictKeys",
+                "owner": owner_node,
+                "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(keys_node)
         if runtime_call == "dict.values":
-            return f"py_dict_values({owner})"
+            values_node = {
+                "kind": "DictValues",
+                "owner": owner_node,
+                "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(values_node)
         return None
 
     def _render_builtin_runtime_str_ops(
@@ -5906,6 +5927,18 @@ class CppEmitter(CodeEmitter):
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             return f"{owner_expr}.clear()"
+        if kind == "DictItems":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            return owner_expr
+        if kind == "DictKeys":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            return f"py_dict_keys({owner_expr})"
+        if kind == "DictValues":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            return f"py_dict_values({owner_expr})"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))

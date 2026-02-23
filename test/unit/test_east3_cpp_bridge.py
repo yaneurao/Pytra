@@ -444,6 +444,64 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(erase_expr), "s.erase(v)")
         self.assertEqual(emitter.render_expr(clear_expr), "s.clear()")
 
+    def test_render_expr_supports_dict_view_ir_nodes(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        owner = {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"}
+        items_node = {"kind": "DictItems", "owner": owner, "resolved_type": "dict_items[str, int64]"}
+        keys_node = {"kind": "DictKeys", "owner": owner, "resolved_type": "list[str]"}
+        values_node = {"kind": "DictValues", "owner": owner, "resolved_type": "list[int64]"}
+        self.assertEqual(emitter.render_expr(items_node), "d")
+        self.assertEqual(emitter.render_expr(keys_node), "py_dict_keys(d)")
+        self.assertEqual(emitter.render_expr(values_node), "py_dict_values(d)")
+
+    def test_builtin_runtime_dict_views_use_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        items_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "dict.items",
+            "resolved_type": "dict_items[str, int64]",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"},
+                "attr": "items",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        keys_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "dict.keys",
+            "resolved_type": "list[str]",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"},
+                "attr": "keys",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        values_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "dict.values",
+            "resolved_type": "list[int64]",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"},
+                "attr": "values",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(items_expr), "d")
+        self.assertEqual(emitter.render_expr(keys_expr), "py_dict_keys(d)")
+        self.assertEqual(emitter.render_expr(values_expr), "py_dict_values(d)")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
