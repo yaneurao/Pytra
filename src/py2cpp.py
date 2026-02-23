@@ -3415,7 +3415,6 @@ class CppEmitter(CodeEmitter):
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
-        owner_expr = self._render_builtin_call_owner_expr(expr, fn)
         any_boundary_expr = self._build_any_boundary_expr_from_builtin_call(
             builtin_name,
             runtime_call,
@@ -3442,13 +3441,6 @@ class CppEmitter(CodeEmitter):
         special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, expr, fn, args, kw, arg_nodes)
         if special_runtime_rendered is not None:
             return str(special_runtime_rendered)
-        runtime_fallback = self._render_builtin_runtime_fallback(
-            runtime_call,
-            args,
-            owner_expr,
-        )
-        if runtime_fallback is not None:
-            return str(runtime_fallback)
         if builtin_name == "bytes":
             return f"bytes({join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
         if builtin_name == "bytearray":
@@ -4187,46 +4179,6 @@ class CppEmitter(CodeEmitter):
             elif len(args) >= 2:
                 int_to_bytes_node["byteorder_expr"] = args[1]
             return self.render_expr(int_to_bytes_node)
-        return None
-
-    def _render_builtin_runtime_fallback(
-        self,
-        runtime_call: str,
-        args: list[str],
-        owner_expr: str,
-    ) -> str | None:
-        """hooks 無効時に BuiltinCall の runtime 分岐を描画する。"""
-        owner_runtime_rendered = self._render_builtin_call_owner_runtime(runtime_call, owner_expr, args)
-        if owner_runtime_rendered is not None:
-            return str(owner_runtime_rendered)
-        return None
-
-    def _render_builtin_call_owner_expr(self, expr: dict[str, Any], fn: dict[str, Any]) -> str:
-        """BuiltinCall の owner 式（`obj.method` 側）を解決する。"""
-        if self._node_kind_from_dict(fn) != "Attribute":
-            return ""
-        runtime_owner_obj = expr.get("runtime_owner")
-        runtime_owner_node = self.any_to_dict_or_empty(runtime_owner_obj)
-        if len(runtime_owner_node) > 0:
-            return self.render_expr(runtime_owner_obj)
-        return self.render_expr(fn.get("value"))
-
-    def _render_builtin_call_owner_runtime(
-        self,
-        runtime_call: str,
-        owner_expr: str,
-        args: list[str],
-    ) -> str | None:
-        """BuiltinCall の owner 付き runtime_call 分岐を描画する。"""
-        if runtime_call in {"std::filesystem::exists", "::std::filesystem::exists"} and owner_expr != "" and len(args) == 0:
-            return f"{runtime_call}({owner_expr})"
-        if runtime_call != "" and runtime_call.startswith("py_"):
-            py_args = list(args)
-            if owner_expr != "":
-                py_args = [owner_expr] + py_args
-            return f"{runtime_call}({join_str_list(', ', py_args)})"
-        if runtime_call != "" and self._is_std_runtime_call(runtime_call):
-            return f"{runtime_call}({join_str_list(', ', args)})"
         return None
 
     def _render_dict_get_default_expr(
