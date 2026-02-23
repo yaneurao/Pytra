@@ -3417,7 +3417,7 @@ class CppEmitter(CodeEmitter):
             static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, args, first_arg)
             if static_cast_rendered is not None:
                 return str(static_cast_rendered)
-        list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, expr, fn, args)
+        list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, expr, fn, args, arg_nodes)
         if list_ops_rendered is not None:
             return str(list_ops_rendered)
         set_ops_rendered = self._render_builtin_runtime_set_ops(runtime_call, fn, args)
@@ -3455,6 +3455,7 @@ class CppEmitter(CodeEmitter):
         expr: dict[str, Any],
         fn: dict[str, Any],
         args: list[str],
+        arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の list 系 runtime_call を処理する。"""
         _ = expr
@@ -3468,7 +3469,7 @@ class CppEmitter(CodeEmitter):
         if self._contains_text(owner_t, "|"):
             owner_types = self.split_union(owner_t)
         if runtime_call == "list.append":
-            append_rendered = self._render_append_call_object_method(owner_types, owner, args)
+            append_rendered = self._render_append_call_object_method(owner_types, owner, args, arg_nodes)
             if append_rendered is not None:
                 return append_rendered
             if len(args) >= 1:
@@ -4586,9 +4587,13 @@ class CppEmitter(CodeEmitter):
         owner_types: list[str],
         owner_expr: str,
         args: list[str],
+        arg_nodes: list[Any] | None = None,
     ) -> str | None:
         """`obj.append(...)` の型依存特殊処理を描画する。"""
         a0 = args[0] if len(args) >= 1 else "/* missing */"
+        arg0_node: Any = {}
+        if isinstance(arg_nodes, list) and len(arg_nodes) >= 1:
+            arg0_node = arg_nodes[0]
         if "bytearray" in owner_types:
             a0 = f"static_cast<uint8>(py_to_int64({a0}))"
             return f"{owner_expr}.append({a0})"
@@ -4603,7 +4608,11 @@ class CppEmitter(CodeEmitter):
                 a0 = f"static_cast<uint8>(py_to_int64({a0}))"
             elif self.is_any_like_type(inner_t):
                 if not self.is_boxed_object_expr(a0):
-                    a0 = f"make_object({a0})"
+                    arg0_node_d = self.any_to_dict_or_empty(arg0_node)
+                    if len(arg0_node_d) > 0:
+                        a0 = self.render_expr(self._build_box_expr_node(arg0_node))
+                    else:
+                        a0 = f"make_object({a0})"
             elif inner_t != "" and not self.is_any_like_type(inner_t):
                 a0 = f"{self._cpp_type_text(inner_t)}({a0})"
             return f"{owner_expr}.append({a0})"
@@ -4870,7 +4879,7 @@ class CppEmitter(CodeEmitter):
         owner_types: list[str] = [owner_t]
         if self._contains_text(owner_t, "|"):
             owner_types = self.split_union(owner_t)
-        rendered = self._render_append_call_object_method(owner_types, owner_expr, args)
+        rendered = self._render_append_call_object_method(owner_types, owner_expr, args, [])
         if rendered is not None:
             return rendered
         return f"{owner_expr}.append({args[0]})"
@@ -5973,7 +5982,7 @@ class CppEmitter(CodeEmitter):
             ifs = self.any_to_list(g.get("ifs"))
             list_elt = elt
             if out_t == "list<object>" and not self.is_boxed_object_expr(list_elt):
-                list_elt = f"make_object({list_elt})"
+                list_elt = self._box_any_target_value(list_elt, expr_d.get("elt"))
             if len(ifs) == 0:
                 lines.append(f"        __out.append({list_elt});")
             else:
@@ -6032,7 +6041,7 @@ class CppEmitter(CodeEmitter):
             ifs = self.any_to_list(g.get("ifs"))
             set_elt = elt
             if out_t == "set<object>" and not self.is_boxed_object_expr(set_elt):
-                set_elt = f"make_object({set_elt})"
+                set_elt = self._box_any_target_value(set_elt, expr_d.get("elt"))
             if len(ifs) == 0:
                 lines.append(f"        __out.insert({set_elt});")
             else:

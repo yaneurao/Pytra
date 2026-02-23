@@ -190,6 +190,13 @@ class East3CppBridgeTest(unittest.TestCase):
         out = emitter._coerce_dict_key_expr(owner, "7", key_node)
         self.assertEqual(out, "make_object(7)")
 
+    def test_render_append_call_object_method_boxes_list_any_arg(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        owner_types = ["list[Any]"]
+        arg_node = {"kind": "Name", "id": "n", "resolved_type": "int64"}
+        out = emitter._render_append_call_object_method(owner_types, "xs", ["n"], [arg_node])
+        self.assertEqual(out, "xs.append(make_object(n))")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
