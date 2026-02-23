@@ -538,6 +538,18 @@ def module_analyze_metrics(
     return {"symbols": len(symbols), "scope_depth": scope_depth}
 
 
+def select_guard_module_map(
+    input_txt: str,
+    east_module: dict[str, object],
+    module_east_map_cache: dict[str, dict[str, object]],
+) -> dict[str, dict[str, object]]:
+    """ガード計測対象の module map を返す。"""
+    if len(module_east_map_cache) > 0:
+        return module_east_map_cache
+    key = input_txt if input_txt != "" else "<input>"
+    return {key: east_module}
+
+
 def stmt_list_scope_depth(
     body: list[dict[str, object]],
     depth: int,
