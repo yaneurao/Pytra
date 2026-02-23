@@ -7,19 +7,49 @@
 
 #include "pytra/std/typing.h"
 
-int64 PYB_TID_NONE;
-int64 PYB_TID_BOOL;
-int64 PYB_TID_INT;
-int64 PYB_TID_FLOAT;
-int64 PYB_TID_STR;
-int64 PYB_TID_LIST;
-int64 PYB_TID_DICT;
-int64 PYB_TID_SET;
-int64 PYB_TID_OBJECT;
-int64 PYB_TID_USER_BASE;
 dict<int64, list<int64>> _TYPE_BASES;
 dict<str, int64> _TYPE_STATE;
 
+
+int64 _tid_none() {
+    return 0;
+}
+
+int64 _tid_bool() {
+    return 1;
+}
+
+int64 _tid_int() {
+    return 2;
+}
+
+int64 _tid_float() {
+    return 3;
+}
+
+int64 _tid_str() {
+    return 4;
+}
+
+int64 _tid_list() {
+    return 5;
+}
+
+int64 _tid_dict() {
+    return 6;
+}
+
+int64 _tid_set() {
+    return 7;
+}
+
+int64 _tid_object() {
+    return 8;
+}
+
+int64 _tid_user_base() {
+    return 1000;
+}
 
 list<int64> _make_int_list_0() {
     list<int64> out = list<int64>{};
@@ -50,17 +80,19 @@ bool _contains_int(const list<int64>& items, int64 value) {
 }
 
 void _ensure_builtins() {
+    if (!py_contains(_TYPE_STATE, "next_user_type_id"))
+        _TYPE_STATE["next_user_type_id"] = _tid_user_base();
     if (py_len(_TYPE_BASES) > 0)
         return;
-    _TYPE_BASES[PYB_TID_NONE] = _make_int_list_0();
-    _TYPE_BASES[PYB_TID_OBJECT] = _make_int_list_0();
-    _TYPE_BASES[PYB_TID_BOOL] = _make_int_list_2(PYB_TID_INT, PYB_TID_OBJECT);
-    _TYPE_BASES[PYB_TID_INT] = _make_int_list_1(PYB_TID_OBJECT);
-    _TYPE_BASES[PYB_TID_FLOAT] = _make_int_list_1(PYB_TID_OBJECT);
-    _TYPE_BASES[PYB_TID_STR] = _make_int_list_1(PYB_TID_OBJECT);
-    _TYPE_BASES[PYB_TID_LIST] = _make_int_list_1(PYB_TID_OBJECT);
-    _TYPE_BASES[PYB_TID_DICT] = _make_int_list_1(PYB_TID_OBJECT);
-    _TYPE_BASES[PYB_TID_SET] = _make_int_list_1(PYB_TID_OBJECT);
+    _TYPE_BASES[_tid_none()] = _make_int_list_0();
+    _TYPE_BASES[_tid_object()] = _make_int_list_0();
+    _TYPE_BASES[_tid_bool()] = _make_int_list_2(_tid_int(), _tid_object());
+    _TYPE_BASES[_tid_int()] = _make_int_list_1(_tid_object());
+    _TYPE_BASES[_tid_float()] = _make_int_list_1(_tid_object());
+    _TYPE_BASES[_tid_str()] = _make_int_list_1(_tid_object());
+    _TYPE_BASES[_tid_list()] = _make_int_list_1(_tid_object());
+    _TYPE_BASES[_tid_dict()] = _make_int_list_1(_tid_object());
+    _TYPE_BASES[_tid_set()] = _make_int_list_1(_tid_object());
 }
 
 list<int64> _normalize_base_type_ids(const list<int64>& base_type_ids) {
@@ -76,7 +108,7 @@ list<int64> _normalize_base_type_ids(const list<int64>& base_type_ids) {
         i++;
     }
     if (py_len(out) == 0)
-        out.append(int64(PYB_TID_OBJECT));
+        out.append(int64(_tid_object()));
     return out;
 }
 
@@ -93,22 +125,22 @@ int64 py_tid_runtime_type_id(const object& value) {
     /* Resolve runtime type_id for a Python value. */
     _ensure_builtins();
     if (py_is_none(value))
-        return PYB_TID_NONE;
+        return _tid_none();
     if (py_isinstance(value, PYTRA_TID_BOOL))
-        return PYB_TID_BOOL;
+        return _tid_bool();
     if (py_isinstance(value, PYTRA_TID_INT))
-        return PYB_TID_INT;
+        return _tid_int();
     if (py_isinstance(value, PYTRA_TID_FLOAT))
-        return PYB_TID_FLOAT;
+        return _tid_float();
     if (py_isinstance(value, PYTRA_TID_STR))
-        return PYB_TID_STR;
+        return _tid_str();
     if (py_isinstance(value, PYTRA_TID_LIST))
-        return PYB_TID_LIST;
+        return _tid_list();
     if (py_isinstance(value, PYTRA_TID_DICT))
-        return PYB_TID_DICT;
+        return _tid_dict();
     if (py_isinstance(value, PYTRA_TID_SET))
-        return PYB_TID_SET;
-    return PYB_TID_OBJECT;
+        return _tid_set();
+    return _tid_object();
 }
 
 bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id) {
@@ -116,7 +148,7 @@ bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id) {
     _ensure_builtins();
     if (actual_type_id == expected_type_id)
         return true;
-    if ((expected_type_id == PYB_TID_OBJECT) && (actual_type_id != PYB_TID_NONE))
+    if ((expected_type_id == _tid_object()) && (actual_type_id != _tid_none()))
         return true;
     list<int64> stack = _make_int_list_1(actual_type_id);
     list<int64> visited = _make_int_list_0();
@@ -152,7 +184,7 @@ bool py_tid_isinstance(const object& value, int64 expected_type_id) {
 void _py_reset_type_registry_for_test() {
     /* Reset mutable registry state for deterministic unit tests. */
     _TYPE_BASES.clear();
-    _TYPE_STATE["next_user_type_id"] = PYB_TID_USER_BASE;
+    _TYPE_STATE["next_user_type_id"] = _tid_user_base();
     _ensure_builtins();
 }
 
@@ -161,16 +193,6 @@ static void __pytra_module_init() {
     if (__initialized) return;
     __initialized = true;
     /* Pure-Python source-of-truth for type_id based subtype/isinstance semantics. */
-    PYB_TID_NONE = 0;
-    PYB_TID_BOOL = 1;
-    PYB_TID_INT = 2;
-    PYB_TID_FLOAT = 3;
-    PYB_TID_STR = 4;
-    PYB_TID_LIST = 5;
-    PYB_TID_DICT = 6;
-    PYB_TID_SET = 7;
-    PYB_TID_OBJECT = 8;
-    PYB_TID_USER_BASE = 1000;
     _TYPE_BASES = dict<int64, list<int64>>{};
-    _TYPE_STATE = dict<str, int64>{{"next_user_type_id", PYB_TID_USER_BASE}};
+    _TYPE_STATE = dict<str, int64>{};
 }

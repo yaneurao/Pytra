@@ -52,14 +52,14 @@
 3. [x] [ID: P0-TID-01-S2] C++ runtime に `py_isinstance` / `py_is_subtype` を実装し、既存 call site を段階的に置換する。
 4. [x] [ID: P0-TID-01-S3] JS/TS runtime に同等 API を実装し、`type_id` dispatch のオン/オフ方針（オプション切替）と整合させる。
 5. [x] [ID: P0-TID-01-S4] `py2cpp` を含む各 emitter の `isinstance` lower を runtime API 経由へ統一し、target 固有 built-in 直書き分岐を縮退する。
-6. [ ] [ID: P0-TID-02] `src/pytra/built_in/`（pure Python）を runtime 意味論の正本として新設し、target 非依存 built-in 処理を段階移管する（`P0-TID-02-S1` から `P0-TID-02-S4` 完了でクローズ）。
+6. [x] [ID: P0-TID-02] `src/pytra/built_in/`（pure Python）を runtime 意味論の正本として新設し、target 非依存 built-in 処理を段階移管する（`P0-TID-02-S1` から `P0-TID-02-S4` 完了でクローズ）。
 7. [x] [ID: P0-TID-02-S1] `src/pytra/built_in/` の配置・命名・生成対象ルールを定義し、最小スケルトンを作成する。
 8. [x] [ID: P0-TID-02-S2] `isinstance` / `issubclass` / `type_id` の pure Python 実装を `src/pytra/built_in/` へ移管する。
 9. [x] [ID: P0-TID-02-S3] `py2cpp.py --emit-runtime-cpp` を拡張し、`src/pytra/built_in/*.py` から `src/runtime/cpp/pytra/built_in/*.{h,cpp}` を生成できるようにする。
-10. [ ] [ID: P0-TID-02-S4] C++ 側の手書き built-in 実装を最小ブート層（GC/ABI 等）へ限定し、移管済み処理の重複実装を解消する（`P0-TID-02-S4-S1` から `P0-TID-02-S4-S3` 完了でクローズ）。
+10. [x] [ID: P0-TID-02-S4] C++ 側の手書き built-in 実装を最小ブート層（GC/ABI 等）へ限定し、移管済み処理の重複実装を解消する（`P0-TID-02-S4-S1` から `P0-TID-02-S4-S3` 完了でクローズ）。
 11. [x] [ID: P0-TID-02-S4-S1] `py_runtime.h`（手書き）と `pytra-gen/built_in/type_id.*`（生成）における `type_id` 系シンボル重複を棚卸しし、削減方針を確定する。
 12. [x] [ID: P0-TID-02-S4-S2] `py_runtime.h` に残す最小ブート層（GC/ABI/`PyObj` 基盤）と、生成層へ移す `type_id` 判定ロジックの責務境界を確定し、移行パッチを作成する。
-13. [ ] [ID: P0-TID-02-S4-S3] ビルド参照を生成層優先へ切り替え、重複シンボルを削除したうえで C++ 回帰テストを通す。
+13. [x] [ID: P0-TID-02-S4-S3] ビルド参照を生成層優先へ切り替え、重複シンボルを削除したうえで C++ 回帰テストを通す。
 
 進捗メモ:
 - `P0-TID-01-S1`: `spec-type_id` / `spec-boxing` / `spec-iterable` の3文書で、`--object-dispatch-mode` の一括切替範囲と `py_is_subtype` / `py_isinstance` / `py_issubclass` 契約を揃えて明文化した。
