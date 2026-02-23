@@ -258,6 +258,34 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(expr), "xs.insert(xs.end(), ys.begin(), ys.end())")
 
+    def test_render_expr_supports_set_add_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        node = {
+            "kind": "SetAdd",
+            "owner": {"kind": "Name", "id": "s", "resolved_type": "set[int64]"},
+            "value": {"kind": "Name", "id": "v", "resolved_type": "int64"},
+            "resolved_type": "None",
+        }
+        self.assertEqual(emitter.render_expr(node), "s.insert(v)")
+
+    def test_builtin_runtime_set_add_uses_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "set.add",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "set[int64]"},
+                "attr": "add",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Name", "id": "v", "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(expr), "s.insert(v)")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",

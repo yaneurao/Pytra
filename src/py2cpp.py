@@ -3430,7 +3430,7 @@ class CppEmitter(CodeEmitter):
         list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, expr, fn, args, arg_nodes)
         if list_ops_rendered is not None:
             return str(list_ops_rendered)
-        set_ops_rendered = self._render_builtin_runtime_set_ops(runtime_call, fn, args)
+        set_ops_rendered = self._render_builtin_runtime_set_ops(runtime_call, fn, args, arg_nodes)
         if set_ops_rendered is not None:
             return str(set_ops_rendered)
         dict_ops_rendered = self._render_builtin_runtime_dict_ops(runtime_call, expr, fn, args)
@@ -3525,9 +3525,21 @@ class CppEmitter(CodeEmitter):
         runtime_call: str,
         fn: dict[str, Any],
         args: list[str],
+        arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の set 系 runtime_call を処理する。"""
         if runtime_call == "set.add":
+            owner_node = fn.get("value")
+            if len(arg_nodes) >= 1:
+                set_add_node = {
+                    "kind": "SetAdd",
+                    "owner": owner_node,
+                    "value": arg_nodes[0],
+                    "resolved_type": "None",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(set_add_node)
             owner = self.render_expr(fn.get("value"))
             a0 = args[0] if len(args) >= 1 else "/* missing */"
             return f"{owner}.insert({a0})"
@@ -5810,6 +5822,12 @@ class CppEmitter(CodeEmitter):
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
             return f"{owner_expr}.insert({owner_expr}.end(), {value_expr}.begin(), {value_expr}.end())"
+        if kind == "SetAdd":
+            owner_node = expr_d.get("owner")
+            value_node = expr_d.get("value")
+            owner_expr = self.render_expr(owner_node)
+            value_expr = self.render_expr(value_node)
+            return f"{owner_expr}.insert({value_expr})"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))
