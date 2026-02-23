@@ -481,7 +481,7 @@ class CppEmitter(CodeEmitter):
         """EAST body から必要な C++ include を収集する。"""
         includes: list[str] = []
         seen: set[str] = set()
-        bindings: list[dict[str, Any]] = self._dict_stmt_list(meta.get("import_bindings"))
+        bindings = dict_any_get_dict_list(meta, "import_bindings")
         if len(bindings) > 0:
             for item in bindings:
                 module_id = dict_any_get_str(item, "module_id")
@@ -536,14 +536,12 @@ class CppEmitter(CodeEmitter):
             if not isinstance(local_name, str):
                 continue
             sym = self.any_to_dict_or_empty(sym_obj)
-            module_id = dict_any_get_str(sym, "module")
-            symbol = dict_any_get_str(sym, "name")
             set_import_symbol_binding_and_module_set(
                 self.import_symbols,
                 self.import_symbol_modules,
                 local_name,
-                module_id,
-                symbol,
+                dict_any_get_str(sym, "module"),
+                dict_any_get_str(sym, "name"),
             )
 
     def _seed_legacy_import_modules_from_meta(self, meta: dict[str, Any]) -> None:
