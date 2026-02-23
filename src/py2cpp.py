@@ -363,8 +363,7 @@ class CppEmitter(CodeEmitter):
 
     def is_declared(self, name: str) -> bool:
         """現在の可視スコープで識別子が宣言済みかを返す。"""
-        for i in range(len(self.scope_stack) - 1, -1, -1):
-            scope = self.scope_stack[i]
+        for scope in reversed(self.scope_stack):
             if name in scope:
                 return True
         return False
