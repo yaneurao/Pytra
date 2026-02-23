@@ -716,7 +716,12 @@ class CppEmitter(CodeEmitter):
                 arg_is_unknown = arg_t == "" or arg_t == "unknown"
                 if self.is_any_like_type(tt) and (arg_is_unknown or not self.is_any_like_type(arg_t)):
                     if not self.is_boxed_object_expr(a):
-                        a = f"make_object({a})"
+                        arg_node = arg_nodes[i] if i < len(arg_nodes) else {}
+                        arg_node_d = self.any_to_dict_or_empty(arg_node)
+                        if len(arg_node_d) > 0:
+                            a = self.render_expr(self._build_box_expr_node(arg_node))
+                        else:
+                            a = f"make_object({a})"
             out.append(a)
         return out
 
@@ -744,7 +749,12 @@ class CppEmitter(CodeEmitter):
                         arg_t = at
                 arg_t = self.infer_rendered_arg_type(a, arg_t, self.declared_var_types)
                 if not self.is_any_like_type(arg_t):
-                    a = f"make_object({a})"
+                    arg_node = nodes[i] if i < len(nodes) else {}
+                    arg_node_d = self.any_to_dict_or_empty(arg_node)
+                    if len(arg_node_d) > 0:
+                        a = self.render_expr(self._build_box_expr_node(arg_node))
+                    else:
+                        a = f"make_object({a})"
             out.append(a)
         return out
 
@@ -2480,6 +2490,9 @@ class CppEmitter(CodeEmitter):
         if self.is_any_like_type(key_t):
             if self.is_boxed_object_expr(key_expr):
                 return key_expr
+            key_node_d = self.any_to_dict_or_empty(key_node)
+            if len(key_node_d) > 0:
+                return self.render_expr(self._build_box_expr_node(key_node))
             return f"make_object({key_expr})"
         return self.apply_cast(key_expr, key_t)
 
@@ -3584,7 +3597,8 @@ class CppEmitter(CodeEmitter):
                     return f"dict_get_list({owner}, {key_expr}, {args[1]})"
                 if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
                     if owner_optional_object_dict:
-                        return f"py_dict_get_default({owner}, {key_expr}, make_object({args[1]}))"
+                        boxed_default = self._box_any_target_value(args[1], default_node)
+                        return f"py_dict_get_default({owner}, {key_expr}, {boxed_default})"
                     return f"dict_get_node({owner}, {key_expr}, {args[1]})"
                 if not objectish_owner:
                     default_expr = args[1]
@@ -3605,7 +3619,8 @@ class CppEmitter(CodeEmitter):
                             default_expr = self._cpp_type_text(val_t) + "()"
                     return f"{owner}.get({key_expr}, {default_expr})"
                 if owner_optional_object_dict:
-                    return f"py_dict_get_default({owner}, {key_expr}, make_object({args[1]}))"
+                    boxed_default = self._box_any_target_value(args[1], default_node)
+                    return f"py_dict_get_default({owner}, {key_expr}, {boxed_default})"
                 return f"py_dict_get_default({owner}, {key_expr}, {args[1]})"
             if len(args) == 1:
                 return f"py_dict_get_maybe({owner}, {key_expr})"

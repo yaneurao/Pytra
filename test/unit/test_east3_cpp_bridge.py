@@ -176,6 +176,20 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(boxed_any, "make_object(v)")
         self.assertEqual(boxed_none, "object{}")
 
+    def test_coerce_args_for_module_function_boxes_any_target_param(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter._module_fn_arg_type_cache["pkg.mod"] = {"f": ["Any"]}
+        arg_node = {"kind": "Name", "id": "n", "resolved_type": "int64"}
+        out = emitter._coerce_args_for_module_function("pkg.mod", "f", ["n"], [arg_node])
+        self.assertEqual(out, ["make_object(n)"])
+
+    def test_coerce_dict_key_expr_boxes_any_key_type(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        owner = {"kind": "Name", "id": "d", "resolved_type": "dict[Any, int64]"}
+        key_node = _const_i(7)
+        out = emitter._coerce_dict_key_expr(owner, "7", key_node)
+        self.assertEqual(out, "make_object(7)")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
