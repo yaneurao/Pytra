@@ -3547,10 +3547,10 @@ class CppEmitter(CodeEmitter):
             resolved_name = dict_str_get(resolved, "name", "")
             if resolved_name != "":
                 raw = resolved_name
-        if raw == "" or imported_module == "":
+        if not raw or not imported_module:
             return None, raw
         mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
-        mapped_runtime_txt = str(mapped_runtime) if mapped_runtime is not None else ""
+        mapped_runtime_txt = mapped_runtime or ""
         if (
             mapped_runtime_txt != ""
             and mapped_runtime_txt not in {"perf_counter", "Path"}
