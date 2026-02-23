@@ -103,6 +103,7 @@ py2cpp / py2rs 共通化候補:
 文脈: `docs-jp/plans/p1-py2cpp-reduction.md`（`TG-P1-CPP-REDUCE`）
 
 1. [ ] [ID: P1-CPP-REDUCE-01] `src/py2cpp.py` に残る未移行ロジックを `CodeEmitter` へ段階移管し、行数を縮退する。
+2. [ ] [ID: P1-CPP-REDUCE-02] 全言語 selfhost を前提に、`py2cpp.py` への汎用 helper 新規追加を原則禁止し、必要な共通処理は `src/pytra/compiler/` へ先行抽出してから利用する運用へ移行する。
 
 ## P1: コンパイラ共通層への抽出（py2cpp 偏在解消）
 
@@ -113,6 +114,8 @@ py2cpp / py2rs 共通化候補:
 3. [ ] [ID: P1-COMP-03] module symbol index / type schema 構築（`build_module_symbol_index`, `build_module_type_schema`）を共通 API 化する。
 4. [ ] [ID: P1-COMP-04] deps dump（`dump_deps_text`, `dump_deps_graph_text`）を共通 API 化し、CLI 層は表示/出力だけを担当する構成にする。
 5. [ ] [ID: P1-COMP-05] 共通抽出後、`py2cpp.py` は C++ 固有責務（C++ runtime/header/multi-file 出力）へ限定する。
+6. [ ] [ID: P1-COMP-09] `py2cpp.py` に残る汎用 helper（例: 文字列リスト整列、module 解析補助）を `src/pytra/compiler/` へ移管し、非 C++ 各 `py2*` から同一実装を再利用できる状態にする。
+7. [ ] [ID: P1-COMP-10] 「全言語 selfhost を阻害しない共通層優先」の運用ルールを整備し、`py2cpp.py` へ汎用処理が再流入しない回帰チェック（lint/静的検査または CI ルール）を追加する。
 
 ## P1: 多言語ランタイム配置統一
 
