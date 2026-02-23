@@ -6019,7 +6019,7 @@ def _write_multi_file_cpp(
     root = Path(path_parent_text(entry_path))
     entry_key = str(entry_path)
     files: list[str] = []
-    for mod_key, _east_obj in module_east_map.items():
+    for mod_key in module_east_map:
         files.append(mod_key)
     files = sort_str_list_copy(files)
     module_ns_map: dict[str, str] = {}
@@ -6118,9 +6118,9 @@ def _write_multi_file_cpp(
                 dep_modules.add(module_id_obj)
         fwd_lines: list[str] = []
         for mod_name in dep_modules:
-            if mod_name not in module_ns_map:
+            target_ns = module_ns_map.get(mod_name, "")
+            if target_ns == "":
                 continue
-            target_ns = module_ns_map[mod_name]
             target_key = module_key_by_name.get(mod_name, "")
             if target_key == "":
                 continue
