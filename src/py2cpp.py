@@ -3211,6 +3211,14 @@ class CppEmitter(CodeEmitter):
         self.current_function_is_generator = is_generator
         self.current_function_yield_type = yield_value_type if yield_value_type != "" else "Any"
         self.current_function_yield_buffer = self.next_tmp("__yield_values") if is_generator else ""
+        is_gc_ctor = (
+            in_class
+            and name == "__init__"
+            and self.current_class_name is not None
+            and self.current_class_name in self.ref_classes
+        )
+        if is_gc_ctor:
+            self.emit("this->set_type_id(PYTRA_TYPE_ID);")
         if docstring != "":
             self.emit_block_comment(docstring)
         if is_generator:
@@ -3429,9 +3437,15 @@ class CppEmitter(CodeEmitter):
                 self.emit(f"inline static {self._cpp_type_text(fty)} {fname};")
         for fname, fty in instance_fields_ordered:
             self.emit(f"{self._cpp_type_text(fty)} {fname};")
-        if len(static_emit_names) > 0 or len(instance_fields_ordered) > 0:
+        if gc_managed:
+            base_type_id_expr = f"{base}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
+            self.emit(
+                "inline static uint32 PYTRA_TYPE_ID = "
+                f"py_register_class_type(list<uint32>{{{base_type_id_expr}}});"
+            )
+        if len(static_emit_names) > 0 or len(instance_fields_ordered) > 0 or gc_managed:
             self.emit("")
-        if len(instance_fields_ordered) > 0 and not has_init:
+        if (len(instance_fields_ordered) > 0 or gc_managed) and not has_init:
             params: list[str] = []
             for fname, fty in instance_fields_ordered:
                 p = f"{self._cpp_type_text(fty)} {fname}"
@@ -3441,6 +3455,8 @@ class CppEmitter(CodeEmitter):
             self.emit(f"{name}({_join_str_list(', ', params)}) {{")
             self.indent += 1
             self.scope_stack.append(set())
+            if gc_managed:
+                self.emit("this->set_type_id(PYTRA_TYPE_ID);")
             for fname, _ in instance_fields_ordered:
                 self.emit(f"this->{fname} = {fname};")
             self.scope_stack.pop()
@@ -3809,17 +3825,19 @@ class CppEmitter(CodeEmitter):
 
     def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
         """`isinstance(x, T)` の `T` に対応する runtime 判定式を返す。"""
-        fn_map = {
-            "str": "py_is_str",
-            "list": "py_is_list",
-            "dict": "py_is_dict",
-            "set": "py_is_set",
-            "int": "py_is_int",
-            "float": "py_is_float",
-            "bool": "py_is_bool",
+        type_id_map = {
+            "str": "PYTRA_TID_STR",
+            "list": "PYTRA_TID_LIST",
+            "dict": "PYTRA_TID_DICT",
+            "set": "PYTRA_TID_SET",
+            "int": "PYTRA_TID_INT",
+            "float": "PYTRA_TID_FLOAT",
+            "bool": "PYTRA_TID_BOOL",
         }
-        if type_name in fn_map:
-            return f"{fn_map[type_name]}({value_expr})"
+        if type_name in type_id_map:
+            return f"py_isinstance({value_expr}, {type_id_map[type_name]})"
+        if type_name in self.ref_classes:
+            return f"py_isinstance({value_expr}, {type_name}::PYTRA_TYPE_ID)"
         return "false"
 
     def _render_simple_name_builtin_call(self, raw: str, args: list[str]) -> str | None:

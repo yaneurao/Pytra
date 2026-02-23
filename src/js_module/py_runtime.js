@@ -15,6 +15,78 @@ const PYTRA_TRUTHY = Symbol.for("pytra.py_truthy");
 const PYTRA_TRY_LEN = Symbol.for("pytra.py_try_len");
 const PYTRA_STR = Symbol.for("pytra.py_str");
 
+const PYTRA_USER_TYPE_ID_BASE = 1000;
+let _pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
+const _pyTypeBases = new Map();
+
+function _initBuiltinTypeBases() {
+  if (_pyTypeBases.size > 0) {
+    return;
+  }
+  _pyTypeBases.set(PY_TYPE_NONE, []);
+  _pyTypeBases.set(PY_TYPE_BOOL, [PY_TYPE_NUMBER, PY_TYPE_OBJECT]);
+  _pyTypeBases.set(PY_TYPE_NUMBER, [PY_TYPE_OBJECT]);
+  _pyTypeBases.set(PY_TYPE_STRING, [PY_TYPE_OBJECT]);
+  _pyTypeBases.set(PY_TYPE_ARRAY, [PY_TYPE_OBJECT]);
+  _pyTypeBases.set(PY_TYPE_MAP, [PY_TYPE_OBJECT]);
+  _pyTypeBases.set(PY_TYPE_SET, [PY_TYPE_OBJECT]);
+  _pyTypeBases.set(PY_TYPE_OBJECT, []);
+}
+
+function pyRegisterType(typeId, bases = []) {
+  _initBuiltinTypeBases();
+  const normalized = Array.isArray(bases) ? bases.slice() : [];
+  _pyTypeBases.set(typeId, normalized);
+  return typeId;
+}
+
+function pyRegisterClassType(bases = [PY_TYPE_OBJECT]) {
+  _initBuiltinTypeBases();
+  while (_pyTypeBases.has(_pyNextTypeId)) {
+    _pyNextTypeId += 1;
+  }
+  const out = _pyNextTypeId;
+  _pyNextTypeId += 1;
+  return pyRegisterType(out, bases);
+}
+
+function pyIsSubtype(actualTypeId, expectedTypeId) {
+  _initBuiltinTypeBases();
+  if (actualTypeId === expectedTypeId) {
+    return true;
+  }
+  if (!_pyTypeBases.has(expectedTypeId)) {
+    return false;
+  }
+  const visited = new Set();
+  const stack = [actualTypeId];
+  while (stack.length > 0) {
+    const cur = stack.pop();
+    if (cur === expectedTypeId) {
+      return true;
+    }
+    if (visited.has(cur)) {
+      continue;
+    }
+    visited.add(cur);
+    const bases = _pyTypeBases.get(cur);
+    if (!Array.isArray(bases)) {
+      continue;
+    }
+    for (const b of bases) {
+      if (b === expectedTypeId) {
+        return true;
+      }
+      stack.push(b);
+    }
+  }
+  return false;
+}
+
+function pyIsInstance(value, expectedTypeId) {
+  return pyIsSubtype(pyTypeId(value), expectedTypeId);
+}
+
 /** 値の type_id を返す（minify 耐性のある tag dispatch 用）。 */
 function pyTypeId(value) {
   if (value === null || value === undefined) {
@@ -283,6 +355,10 @@ module.exports = {
   PYTRA_TRUTHY,
   PYTRA_TRY_LEN,
   PYTRA_STR,
+  pyRegisterType,
+  pyRegisterClassType,
+  pyIsSubtype,
+  pyIsInstance,
   pyTypeId,
   pyTruthy,
   pyTryLen,

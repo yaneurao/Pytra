@@ -54,6 +54,14 @@ assert.equal(rt.pyBool([]), false);
 assert.equal(rt.pyLen({ a: 1, b: 2 }), 2);
 assert.equal(rt.pyTypeId("x"), rt.PY_TYPE_STRING);
 assert.equal(rt.pyTypeId(1), rt.PY_TYPE_NUMBER);
+assert.equal(rt.pyIsInstance(1, rt.PY_TYPE_NUMBER), true);
+assert.equal(rt.pyIsSubtype(rt.PY_TYPE_BOOL, rt.PY_TYPE_NUMBER), true);
+
+const baseType = rt.pyRegisterClassType([rt.PY_TYPE_OBJECT]);
+const childType = rt.pyRegisterClassType([baseType]);
+const taggedChild = { [rt.PYTRA_TYPE_ID]: childType };
+assert.equal(rt.pyIsSubtype(childType, baseType), true);
+assert.equal(rt.pyIsInstance(taggedChild, baseType), true);
 
 let threw = false;
 try {
@@ -75,6 +83,10 @@ console.log("ok");
         self.assertIn("export const PYTRA_TRY_LEN", src)
         self.assertIn("export const PYTRA_STR", src)
         self.assertIn("export function pyTypeId", src)
+        self.assertIn("export function pyRegisterType", src)
+        self.assertIn("export function pyRegisterClassType", src)
+        self.assertIn("export function pyIsSubtype", src)
+        self.assertIn("export function pyIsInstance", src)
         self.assertIn("export function pyTruthy", src)
         self.assertIn("export function pyTryLen", src)
         self.assertIn("export function pyStr", src)

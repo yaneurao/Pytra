@@ -21,6 +21,9 @@
 
 1. [ ] [ID: P0-TID-01] `type_id` ベースの共通判定 API（`py_isinstance` / `py_is_subtype`）を C++/JS/TS runtime に導入し、`py2cpp` を含む各 emitter の `isinstance` lower を runtime API 経由へ統一する。target 固有の built-in 直書き分岐は段階的に縮退する。
 
+進捗メモ:
+- C++ runtime に `PYTRA_TID_*`、`py_register_class_type`、`py_is_subtype`、`py_isinstance`、`py_issubclass` を追加し、`py2cpp` の `isinstance` 生成を `py_isinstance(..., <type_id>)` 経由へ切替した。GC 管理クラスには `PYTRA_TYPE_ID` 付与と constructor での `set_type_id(...)` を導入した。JS/TS runtime には `pyRegisterType` / `pyRegisterClassType` / `pyIsSubtype` / `pyIsInstance` を追加し、`test_cpp_runtime_type_id.py` / `test_js_ts_runtime_dispatch.py` / `test_py2cpp_codegen_issues.py` で回帰固定した。
+
 ## P0: Iterable/Iterator 契約反映（最優先）
 
 文脈: `docs-jp/plans/p0-iterable-runtime-protocol.md`（`TG-P0-ITER`）

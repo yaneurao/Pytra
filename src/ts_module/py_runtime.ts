@@ -15,6 +15,80 @@ export const PYTRA_TRUTHY = Symbol.for("pytra.py_truthy");
 export const PYTRA_TRY_LEN = Symbol.for("pytra.py_try_len");
 export const PYTRA_STR = Symbol.for("pytra.py_str");
 
+const PYTRA_USER_TYPE_ID_BASE = 1000;
+let pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
+const pyTypeBases = new Map<number, number[]>();
+
+function initBuiltinTypeBases(): void {
+  if (pyTypeBases.size > 0) {
+    return;
+  }
+  pyTypeBases.set(PY_TYPE_NONE, []);
+  pyTypeBases.set(PY_TYPE_BOOL, [PY_TYPE_NUMBER, PY_TYPE_OBJECT]);
+  pyTypeBases.set(PY_TYPE_NUMBER, [PY_TYPE_OBJECT]);
+  pyTypeBases.set(PY_TYPE_STRING, [PY_TYPE_OBJECT]);
+  pyTypeBases.set(PY_TYPE_ARRAY, [PY_TYPE_OBJECT]);
+  pyTypeBases.set(PY_TYPE_MAP, [PY_TYPE_OBJECT]);
+  pyTypeBases.set(PY_TYPE_SET, [PY_TYPE_OBJECT]);
+  pyTypeBases.set(PY_TYPE_OBJECT, []);
+}
+
+export function pyRegisterType(typeId: number, bases: number[] = []): number {
+  initBuiltinTypeBases();
+  pyTypeBases.set(typeId, bases.slice());
+  return typeId;
+}
+
+export function pyRegisterClassType(bases: number[] = [PY_TYPE_OBJECT]): number {
+  initBuiltinTypeBases();
+  while (pyTypeBases.has(pyNextTypeId)) {
+    pyNextTypeId += 1;
+  }
+  const out = pyNextTypeId;
+  pyNextTypeId += 1;
+  return pyRegisterType(out, bases);
+}
+
+export function pyIsSubtype(actualTypeId: number, expectedTypeId: number): boolean {
+  initBuiltinTypeBases();
+  if (actualTypeId === expectedTypeId) {
+    return true;
+  }
+  if (!pyTypeBases.has(expectedTypeId)) {
+    return false;
+  }
+  const visited = new Set<number>();
+  const stack: number[] = [actualTypeId];
+  while (stack.length > 0) {
+    const cur = stack.pop();
+    if (cur === undefined) {
+      continue;
+    }
+    if (cur === expectedTypeId) {
+      return true;
+    }
+    if (visited.has(cur)) {
+      continue;
+    }
+    visited.add(cur);
+    const bases = pyTypeBases.get(cur);
+    if (!Array.isArray(bases)) {
+      continue;
+    }
+    for (const b of bases) {
+      if (b === expectedTypeId) {
+        return true;
+      }
+      stack.push(b);
+    }
+  }
+  return false;
+}
+
+export function pyIsInstance(value: unknown, expectedTypeId: number): boolean {
+  return pyIsSubtype(pyTypeId(value), expectedTypeId);
+}
+
 type PytraTagged = {
   [PYTRA_TYPE_ID]?: number;
   [PYTRA_TRUTHY]?: () => unknown;

@@ -66,6 +66,19 @@ static inline const list<object>* obj_to_list_ptr(const object& v);
 #include "dict.h"
 #include "set.h"
 
+// type_id は target 非依存で stable な型判定キーとして扱う。
+// 予約領域（0-999）は runtime 組み込み型に割り当てる。
+static constexpr uint32 PYTRA_TID_NONE = 0;
+static constexpr uint32 PYTRA_TID_BOOL = 1;
+static constexpr uint32 PYTRA_TID_INT = 2;
+static constexpr uint32 PYTRA_TID_FLOAT = 3;
+static constexpr uint32 PYTRA_TID_STR = 4;
+static constexpr uint32 PYTRA_TID_LIST = 5;
+static constexpr uint32 PYTRA_TID_DICT = 6;
+static constexpr uint32 PYTRA_TID_SET = 7;
+static constexpr uint32 PYTRA_TID_OBJECT = 8;
+static constexpr uint32 PYTRA_TID_USER_BASE = 1000;
+
 inline list<str> str::split(const str& sep, int64 maxsplit) const {
     list<str> out = list<str>{};
     const ::std::string& s = data_;
@@ -152,7 +165,7 @@ inline str str::join(const list<str>& parts) const {
 // 各 Py*Obj は値を保持するだけで、振る舞いは下のヘルパ関数側で提供する。
 class PyIntObj : public PyObj {
 public:
-    explicit PyIntObj(int64 v) : value(v) {}
+    explicit PyIntObj(int64 v) : PyObj(PYTRA_TID_INT), value(v) {}
     int64 value;
 
     bool py_truthy() const override {
@@ -166,7 +179,7 @@ public:
 
 class PyFloatObj : public PyObj {
 public:
-    explicit PyFloatObj(float64 v) : value(v) {}
+    explicit PyFloatObj(float64 v) : PyObj(PYTRA_TID_FLOAT), value(v) {}
     float64 value;
 
     bool py_truthy() const override {
@@ -180,7 +193,7 @@ public:
 
 class PyBoolObj : public PyObj {
 public:
-    explicit PyBoolObj(bool v) : value(v) {}
+    explicit PyBoolObj(bool v) : PyObj(PYTRA_TID_BOOL), value(v) {}
     bool value;
 
     bool py_truthy() const override {
@@ -194,7 +207,7 @@ public:
 
 class PyStrObj : public PyObj {
 public:
-    explicit PyStrObj(str v) : value(::std::move(v)) {}
+    explicit PyStrObj(str v) : PyObj(PYTRA_TID_STR), value(::std::move(v)) {}
     str value;
 
     bool py_truthy() const override {
@@ -212,7 +225,7 @@ public:
 
 class PyListObj : public PyObj {
 public:
-    explicit PyListObj(list<object> v) : value(::std::move(v)) {}
+    explicit PyListObj(list<object> v) : PyObj(PYTRA_TID_LIST), value(::std::move(v)) {}
     list<object> value;
 
     bool py_truthy() const override {
@@ -230,7 +243,7 @@ public:
 
 class PyDictObj : public PyObj {
 public:
-    explicit PyDictObj(dict<str, object> v) : value(::std::move(v)) {}
+    explicit PyDictObj(dict<str, object> v) : PyObj(PYTRA_TID_DICT), value(::std::move(v)) {}
     dict<str, object> value;
 
     bool py_truthy() const override {
@@ -1995,6 +2008,124 @@ static inline bool py_is_int(const ::std::any& v) {
 }
 static inline bool py_is_float(const ::std::any& v) { return v.type() == typeid(float32) || v.type() == typeid(float64); }
 static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(bool); }
+
+static inline ::std::unordered_map<uint32, ::std::vector<uint32>>& py_type_base_registry() {
+    static ::std::unordered_map<uint32, ::std::vector<uint32>> registry;
+    return registry;
+}
+
+static inline void py_register_builtin_type_hierarchy_once() {
+    static bool initialized = false;
+    if (initialized) {
+        return;
+    }
+    initialized = true;
+    auto& reg = py_type_base_registry();
+    reg[PYTRA_TID_NONE] = {};
+    reg[PYTRA_TID_OBJECT] = {};
+    reg[PYTRA_TID_BOOL] = {PYTRA_TID_INT, PYTRA_TID_OBJECT};
+    reg[PYTRA_TID_INT] = {PYTRA_TID_OBJECT};
+    reg[PYTRA_TID_FLOAT] = {PYTRA_TID_OBJECT};
+    reg[PYTRA_TID_STR] = {PYTRA_TID_OBJECT};
+    reg[PYTRA_TID_LIST] = {PYTRA_TID_OBJECT};
+    reg[PYTRA_TID_DICT] = {PYTRA_TID_OBJECT};
+    reg[PYTRA_TID_SET] = {PYTRA_TID_OBJECT};
+}
+
+static inline uint32 py_register_type(uint32 type_id, const list<uint32>& bases) {
+    py_register_builtin_type_hierarchy_once();
+    auto& reg = py_type_base_registry();
+    ::std::vector<uint32> base_ids;
+    base_ids.reserve(bases.size());
+    for (uint32 b : bases) {
+        base_ids.push_back(b);
+    }
+    reg[type_id] = ::std::move(base_ids);
+    return type_id;
+}
+
+static inline uint32 py_register_class_type(const list<uint32>& bases) {
+    py_register_builtin_type_hierarchy_once();
+    static uint32 next_type_id = PYTRA_TID_USER_BASE;
+    auto& reg = py_type_base_registry();
+    while (reg.find(next_type_id) != reg.end()) {
+        next_type_id += 1;
+    }
+    uint32 type_id = next_type_id;
+    next_type_id += 1;
+    return py_register_type(type_id, bases);
+}
+
+static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
+    py_register_builtin_type_hierarchy_once();
+    if (actual_type_id == expected_type_id) {
+        return true;
+    }
+    auto& reg = py_type_base_registry();
+    if (reg.find(expected_type_id) == reg.end()) {
+        return false;
+    }
+    ::std::vector<uint32> stack;
+    stack.push_back(actual_type_id);
+    ::std::unordered_set<uint32> visited;
+    while (!stack.empty()) {
+        uint32 cur = stack.back();
+        stack.pop_back();
+        if (cur == expected_type_id) {
+            return true;
+        }
+        if (!visited.insert(cur).second) {
+            continue;
+        }
+        auto it = reg.find(cur);
+        if (it == reg.end()) {
+            continue;
+        }
+        for (uint32 base_id : it->second) {
+            if (base_id == expected_type_id) {
+                return true;
+            }
+            stack.push_back(base_id);
+        }
+    }
+    return false;
+}
+
+static inline bool py_issubclass(uint32 actual_type_id, uint32 expected_type_id) {
+    return py_is_subtype(actual_type_id, expected_type_id);
+}
+
+static inline uint32 py_runtime_type_id(const object& v) {
+    if (!v) {
+        return PYTRA_TID_NONE;
+    }
+    uint32 out = v->type_id();
+    if (out == 0) {
+        return PYTRA_TID_OBJECT;
+    }
+    return out;
+}
+
+template <class T>
+static inline uint32 py_runtime_type_id(const T& v) {
+    if (py_is_none(v)) return PYTRA_TID_NONE;
+    if (py_is_bool(v)) return PYTRA_TID_BOOL;
+    if (py_is_int(v)) return PYTRA_TID_INT;
+    if (py_is_float(v)) return PYTRA_TID_FLOAT;
+    if (py_is_str(v)) return PYTRA_TID_STR;
+    if (py_is_list(v)) return PYTRA_TID_LIST;
+    if (py_is_dict(v)) return PYTRA_TID_DICT;
+    if (py_is_set(v)) return PYTRA_TID_SET;
+    if constexpr (::std::is_same_v<T, object>) {
+        return py_runtime_type_id(static_cast<const object&>(v));
+    }
+    return PYTRA_TID_OBJECT;
+}
+
+template <class T>
+static inline bool py_isinstance(const T& value, uint32 expected_type_id) {
+    return py_is_subtype(py_runtime_type_id(value), expected_type_id);
+}
 
 // selfhost 由来の `obj == std::nullopt` 比較（None 判定）互換。
 static inline bool operator==(const object& lhs, const ::std::nullopt_t&) { return !lhs; }

@@ -71,6 +71,11 @@ public:
         return "<object>";
     }
 
+protected:
+    void set_type_id(uint32_t type_id) noexcept {
+        type_id_ = type_id;
+    }
+
 private:
     friend void incref(PyObj* obj) noexcept;
     friend void decref(PyObj* obj) noexcept;

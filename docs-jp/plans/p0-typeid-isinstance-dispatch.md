@@ -37,3 +37,4 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
 ## 決定ログ
 
 - 2026-02-23: 「場当たり分岐を増やさないため、`type_id` 派生判定を最優先で進める」方針を確定し、`P0-TID-01` を追加。
+- 2026-02-23: Phase 1 として C++/JS/TS runtime に共通 API（`py_is_subtype` / `py_isinstance` 系）を導入し、`py2cpp` の `isinstance` lower は built-in 判定関数直呼びから `py_isinstance(..., <type_id>)` へ移行する。C++ の GC 管理クラスには `PYTRA_TYPE_ID` と constructor 内 `set_type_id(...)` を付与する。

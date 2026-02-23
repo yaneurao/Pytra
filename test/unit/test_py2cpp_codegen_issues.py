@@ -581,6 +581,41 @@ def f(x: object) -> None:
         self.assertEqual(len(unpack_lines), 1)
         self.assertTrue(unpack_lines[0].endswith("{"))
 
+    def test_isinstance_builtin_lowers_to_type_id_runtime_api(self) -> None:
+        src = """def f(x: object) -> bool:
+    return isinstance(x, int)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "isinstance_builtin.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return py_isinstance(x, PYTRA_TID_INT);", cpp)
+        self.assertNotIn("return py_is_int(x);", cpp)
+
+    def test_gc_class_emits_type_id_and_isinstance_uses_runtime_api(self) -> None:
+        src = """class Base:
+    def __init__(self):
+        pass
+
+class Child(Base):
+    def __init__(self):
+        super().__init__()
+
+def f(x: object) -> bool:
+    return isinstance(x, Child)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "isinstance_class.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type", cpp)
+        self.assertIn("this->set_type_id(PYTRA_TYPE_ID);", cpp)
+        self.assertIn("return py_isinstance(x, Child::PYTRA_TYPE_ID);", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()
