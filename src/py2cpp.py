@@ -553,23 +553,23 @@ class CppEmitter(CodeEmitter):
     def _seed_import_maps_from_meta(self) -> None:
         """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
         meta = dict_any_get_dict(self.doc, "meta")
-        refs = dict_any_get_dict_list(meta, "qualified_symbol_refs")
-        bindings = dict_any_get_dict_list(meta, "import_bindings")
+        refs = meta_qualified_symbol_refs(self.doc)
+        bindings = meta_import_bindings(self.doc)
         if len(bindings) > 0:
             if len(refs) > 0:
                 for ref_item in refs:
-                    module_id = dict_any_get_str(ref_item, "module_id")
-                    symbol = dict_any_get_str(ref_item, "symbol")
-                    local_name = dict_any_get_str(ref_item, "local_name")
+                    module_id = dict_str_get(ref_item, "module_id", "")
+                    symbol = dict_str_get(ref_item, "symbol", "")
+                    local_name = dict_str_get(ref_item, "local_name", "")
                     if module_id != "" and symbol != "" and local_name != "":
                         set_import_symbol_binding_and_module_set(
                             self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol
                         )
             for item in bindings:
-                module_id = dict_any_get_str(item, "module_id")
-                export_name = dict_any_get_str(item, "export_name")
-                local_name = dict_any_get_str(item, "local_name")
-                binding_kind = dict_any_get_str(item, "binding_kind")
+                module_id = dict_str_get(item, "module_id", "")
+                export_name = dict_str_get(item, "export_name", "")
+                local_name = dict_str_get(item, "local_name", "")
+                binding_kind = dict_str_get(item, "binding_kind", "")
                 if module_id == "" or local_name == "":
                     continue
                 if binding_kind == "module":
