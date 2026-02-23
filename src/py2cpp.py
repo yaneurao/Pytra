@@ -354,7 +354,7 @@ class CppEmitter(CodeEmitter):
 
     def declare_in_current_scope(self, name: str) -> None:
         """現在スコープへ識別子を追加する。"""
-        if name == "":
+        if not name:
             return
         scope = self.current_scope_names()
         scope.add(name)
@@ -371,7 +371,7 @@ class CppEmitter(CodeEmitter):
         """EAST 型に加えて現在スコープの推論型テーブルも参照する。"""
         node_for_base = self.any_to_dict_or_empty(expr)
         t = self.any_dict_get_str(node_for_base, "resolved_type", "")
-        if t != "":
+        if t:
             t = self.normalize_type_name(t)
         if t not in {"", "unknown"}:
             return t
@@ -760,10 +760,10 @@ class CppEmitter(CodeEmitter):
             if t not in {"", "unknown"}:
                 picked = t
                 break
-        if picked == "":
-            picked = d2 if d2 != "" else (d1 if d1 != "" else d0)
+        if not picked:
+            picked = d2 or d1 or d0
         picked = "Any" if picked == "None" else picked
-        picked = picked if picked != "" else "object"
+        picked = picked or "object"
         return picked
 
     def _collect_module_global_decls(self, runtime_stmts: list[dict[str, Any]]) -> list[tuple[str, str]]:
@@ -779,7 +779,7 @@ class CppEmitter(CodeEmitter):
                 continue
             target = self.any_to_dict_or_empty(target_obj)
             raw_name = self.any_dict_get_str(target, "id", "")
-            if raw_name == "":
+            if not raw_name:
                 continue
             name = self.rename_if_reserved(raw_name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             if name in seen:
