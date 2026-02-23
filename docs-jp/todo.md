@@ -115,16 +115,17 @@
 
 文脈: `docs-jp/plans/p1-codeemitter-hooks-migration.md`（`TG-P1-CEH`）
 
-1. [ ] [ID: P1-CEH-01] profile で表現しづらいケースだけを hooks へ移し、`py2cpp.py` 側条件分岐を残さない状態にする（`P1-CEH-01-S1` から `P1-CEH-01-S4` 完了でクローズ）。
+1. [x] [ID: P1-CEH-01] profile で表現しづらいケースだけを hooks へ移し、`py2cpp.py` 側条件分岐を残さない状態にする（`P1-CEH-01-S1` から `P1-CEH-01-S4` 完了でクローズ）。
 2. [x] [ID: P1-CEH-01-S1] `py2cpp.py` 側の profile/hook 境界違反ケースを棚卸しし、移行優先順位を決める。
 3. [x] [ID: P1-CEH-01-S2] hook 化しやすいケースから `CodeEmitter` hooks へ移行し、`py2cpp.py` 条件分岐を削減する。
 4. [x] [ID: P1-CEH-01-S3] hook 化が難しいケースは profile 側表現力拡張で吸収し、target 固有分岐の再追加を防ぐ。
-5. [ ] [ID: P1-CEH-01-S4] selfhost/fixture 回帰で生成差分を確認し、残る `py2cpp.py` 分岐を除去する。
+5. [x] [ID: P1-CEH-01-S4] selfhost/fixture 回帰で生成差分を確認し、残る `py2cpp.py` 分岐を除去する。
 
 進捗メモ:
 - `P1-CEH-01-S1`: `docs-jp/plans/p1-codeemitter-hooks-migration.md` に `emit_stmt`/`emit_for_*`、Builtin runtime fallback、`_render_call_fallback`、`_render_binop_expr` などの境界違反ケースを `高/中/低` 優先で棚卸しし、`S2` 着手順を確定した。
 - `P1-CEH-01-S2`: `CppEmitter.hook_on_emit_stmt_kind` を override して「dynamic hook優先 + C++既定フォールバック」を導入し、`emit_stmt` の kind 分岐を `hook_on_emit_stmt_kind` 側へ移した。selfhost（dynamic hooks無効）でも `Pass`/`Import` などが処理されることを `test_py2cpp_features.py::test_emit_stmt_fallback_works_when_dynamic_hooks_disabled` で固定した。
 - `P1-CEH-01-S3`: `load_cpp_type_map` と `load_cpp_identifier_rules` を profile 読み取り対応に拡張し、`CppEmitter.__init__` から `self.profile` を渡して target 固有ハードコード依存を縮小した。`test_py2cpp_features.py` に profile overlay/override 回帰を追加し、`tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）を確認した。
+- [ID: P1-CEH-01-S4] `_emit_stmt_kind_fallback` の残存 if 連鎖をディスパッチテーブルへ置換し、`test_py2cpp_features.py`（4件）, `test_cpp_hooks.py`, `check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）, `check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 既知）, `verify_selfhost_end_to_end.py --skip-build --cases sample/py/01_mandelbrot.py sample/py/17_monte_carlo_pi.py test/fixtures/control/if_else.py`（`failures=1` 既知: `01_mandelbrot`）, `check_selfhost_direct_compile.py --cases sample/py/01_mandelbrot.py sample/py/17_monte_carlo_pi.py test/fixtures/control/if_else.py`（`failures=0`）で回帰基線を確認した。
 
 ## P1: CodeEmitter 共通ディスパッチ再設計
 

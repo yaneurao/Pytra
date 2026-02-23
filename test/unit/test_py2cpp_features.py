@@ -166,6 +166,17 @@ class Py2CppFeatureTest(unittest.TestCase):
         emitter.emit_stmt({"kind": "Import", "names": [{"name": "math", "asname": ""}]})
         self.assertEqual(emitter.import_modules.get("math"), "math")
 
+    def test_emit_stmt_dispatch_table_handles_continue_and_unknown(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.set_dynamic_hooks_enabled(False)
+        emitter.emit_stmt({"kind": "Continue"})
+        self.assertTrue(len(emitter.lines) >= 1)
+        self.assertEqual(emitter.lines[-1].strip(), "continue;")
+
+        emitter.emit_stmt({"kind": "UnknownKind"})
+        self.assertTrue(len(emitter.lines) >= 1)
+        self.assertIn("unsupported stmt kind: UnknownKind", emitter.lines[-1])
+
     def test_load_cpp_type_map_allows_profile_overlay(self) -> None:
         profile = {
             "types": {

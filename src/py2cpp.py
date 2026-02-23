@@ -1802,65 +1802,34 @@ class CppEmitter(CodeEmitter):
 
     def _emit_stmt_kind_fallback(self, kind: str, stmt: dict[str, Any]) -> bool:
         """`on_emit_stmt_kind` 未処理時の C++ 既定ディスパッチ。"""
+        handlers: dict[str, Any] = {
+            "Expr": self._emit_expr_stmt,
+            "Return": self._emit_return_stmt,
+            "Assign": self._emit_assign_stmt,
+            "Swap": self._emit_swap_stmt,
+            "AnnAssign": self._emit_annassign_stmt,
+            "AugAssign": self._emit_augassign_stmt,
+            "If": self._emit_if_stmt,
+            "While": self._emit_while_stmt,
+            "ForRange": self.emit_for_range,
+            "For": self.emit_for_each,
+            "Raise": self._emit_raise_stmt,
+            "Try": self._emit_try_stmt,
+            "FunctionDef": self._emit_function_stmt,
+            "ClassDef": self._emit_class_stmt,
+            "Pass": self._emit_pass_stmt,
+            "Break": self._emit_break_stmt,
+            "Continue": self._emit_continue_stmt,
+            "Yield": self._emit_yield_stmt,
+            "Import": self._emit_noop_stmt,
+            "ImportFrom": self._emit_noop_stmt,
+        }
+        handler = handlers.get(kind)
+        if handler is None:
+            return False
         self.emit_leading_comments(stmt)
-        if kind == "Expr":
-            self._emit_expr_stmt(stmt)
-            return True
-        if kind == "Return":
-            self._emit_return_stmt(stmt)
-            return True
-        if kind == "Assign":
-            self._emit_assign_stmt(stmt)
-            return True
-        if kind == "Swap":
-            self._emit_swap_stmt(stmt)
-            return True
-        if kind == "AnnAssign":
-            self._emit_annassign_stmt(stmt)
-            return True
-        if kind == "AugAssign":
-            self._emit_augassign_stmt(stmt)
-            return True
-        if kind == "If":
-            self._emit_if_stmt(stmt)
-            return True
-        if kind == "While":
-            self._emit_while_stmt(stmt)
-            return True
-        if kind == "ForRange":
-            self.emit_for_range(stmt)
-            return True
-        if kind == "For":
-            self.emit_for_each(stmt)
-            return True
-        if kind == "Raise":
-            self._emit_raise_stmt(stmt)
-            return True
-        if kind == "Try":
-            self._emit_try_stmt(stmt)
-            return True
-        if kind == "FunctionDef":
-            self._emit_function_stmt(stmt)
-            return True
-        if kind == "ClassDef":
-            self._emit_class_stmt(stmt)
-            return True
-        if kind == "Pass":
-            self._emit_pass_stmt(stmt)
-            return True
-        if kind == "Break":
-            self._emit_break_stmt(stmt)
-            return True
-        if kind == "Continue":
-            self._emit_continue_stmt(stmt)
-            return True
-        if kind == "Yield":
-            self._emit_yield_stmt(stmt)
-            return True
-        if kind == "Import" or kind == "ImportFrom":
-            self._emit_noop_stmt(stmt)
-            return True
-        return False
+        handler(stmt)
+        return True
 
     def hook_on_emit_stmt_kind(
         self,
