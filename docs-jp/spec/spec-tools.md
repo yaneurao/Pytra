@@ -83,6 +83,26 @@
 - `tools/selfhost_error_report.py`
   - 目的: selfhost エラー解析結果のレポートを整形出力する。
 
+### 2.1 selfhost 暴走ガード（導入方針）
+
+selfhost の調査時に、深い再帰・巨大構文木・シンボル爆発で実行が長時間化するケースを早期停止できるよう、以下のガードを `py2cpp.py` / 共通 CLI へ段階導入する。
+
+- `--guard-profile {off,default,strict}`
+  - 既定は `default`。`off` は制限無効、`strict` は調査向けに低い上限を適用する。
+- 個別上限オプション（`guard_profile` より優先）
+  - `--max-ast-depth`
+  - `--max-parse-nodes`
+  - `--max-symbols-per-module`
+  - `--max-scope-depth`
+  - `--max-import-graph-nodes`
+  - `--max-import-graph-edges`
+  - `--max-generated-lines`
+
+失敗契約:
+
+- いずれかの上限超過時は、`input_invalid(kind=limit_exceeded, stage=<parse|analyze|emit>, limit=<name>, value=<n>)` 形式で fail-fast する。
+- `tools/build_selfhost.py` など selfhost 実行系ツールは、必要に応じて `--timeout-sec` 併用でプロセス時間上限を設定できるようにする。
+
 ## 3. 言語間確認
 - `tools/runtime_parity_check.py`
   - 目的: 複数ターゲット言語でのランタイム平準化チェックを実行する。

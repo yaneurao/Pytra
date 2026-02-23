@@ -43,6 +43,7 @@
 文脈: `docs-jp/plans/p0-selfhost-stabilization.md`（`TG-P0-SH`）
 
 1. [ ] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を継続する。
+2. [ ] [ID: P0-SH-05] selfhost 暴走対策として fail-fast ガードを導入し、`--guard-profile {off,default,strict}` と個別上限（`--max-ast-depth`, `--max-parse-nodes`, `--max-symbols-per-module`, `--max-scope-depth`, `--max-import-graph-nodes`, `--max-import-graph-edges`, `--max-generated-lines`）を CLI から指定可能にする。制限超過時は `input_invalid(kind=limit_exceeded, stage=...)` で早期停止する。
 
 進捗メモ:
 - `P0-SH-04` の継続として `tools/prepare_selfhost_source.py::_patch_code_emitter_hooks_for_selfhost` の dynamic call 無効化を、固定7文字列置換から `_call_hook` ブロック内の `return fn(...)` 行検出ベースへ変更した。これにより `_call_hook` 内の軽微な改行/空白変更に耐性を持たせつつ、無効化対象が 7 行からずれた場合は `replaced=<count>` で fail-fast する。`python3 test/unit/test_prepare_selfhost_source.py`（6件成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）、`python3 tools/check_transpiler_version_gate.py`（`[OK] no transpiler-related changes detected`）を確認した。

@@ -170,6 +170,10 @@ template 関連の失敗は次を使用する。
 
 最低限、次を通過すること。
 
+- fixture 配置方針（実装着手時）:
+  - `test/fixtures/template/` を新設し、template 関連 fixture を集約する。
+  - 正常系は `ok_*`、異常系は `ng_*` の命名規約で管理する。
+  - 最低限 `ok`（関数/クラスの実体化成功）と `ng`（`missing_instantiation` / `duplicate_instantiation` / `unsupported_type_argument`）を追加する。
 - 正常系:
   - `.py` の `@instantiate(...)` で指定した型だけが生成される。
   - 生成コードが compile/run 可能である。
