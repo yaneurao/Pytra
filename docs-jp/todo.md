@@ -136,7 +136,7 @@
 3. [x] [ID: P1-CED-01-S2] 非 C++ emitter（`rs/cs/js/ts`）の `render_expr` へ kind 専用 hook 呼び出しを揃えて適用する。
 4. [x] [ID: P1-CED-01-S3] kind 専用 hook の登録規約を hooks/profile ドキュメントへ反映し、selfhost 回帰で挙動固定する。
 5. [x] [ID: P1-CED-02] `emit_stmt` も kind ごとの hook ポイントへ分解する。
-6. [ ] [ID: P1-CED-03] `CppEmitter` を hook 優先 + fallback の二段構成に統一する。
+6. [x] [ID: P1-CED-03] `CppEmitter` を hook 優先 + fallback の二段構成に統一する。
 7. [ ] [ID: P1-CED-04] `tools/check_selfhost_cpp_diff.py` で差分ゼロを維持しながら fallback を縮退する。
 8. [ ] [ID: P1-CED-05] fallback が十分に減った段階で、共通ディスパッチを `CodeEmitter` 本体へ戻す。
 
@@ -145,6 +145,7 @@
 - `P1-CED-01-S2`: `js/cs/rs` emitter の `render_expr` 先頭で `hook_on_render_expr_kind_specific()` を呼び出すよう統一し、`ts` は `transpile_to_js()` 経由で同一経路を利用することを `test_py2ts_smoke.py` で固定した。`test_py2{js,cs,rs,ts}_smoke.py` と `check_py2{js,cs,rs,ts}_transpile.py` を通過した。
 - [ID: P1-CED-01-S3] `spec-language-profile.md` / `spec-dev.md` に kind 専用 hook（`on_render_expr_<kind>`）の命名規約と優先順位（kind専用 -> kind汎用 -> leaf/complex -> 既定実装）を明文化し、`check_selfhost_cpp_diff.py --mode allow-not-implemented` の既知基線（`mismatches=3`）を再確認した。
 - [ID: P1-CED-02] `CodeEmitter.hook_on_emit_stmt_kind` を「kind専用 (`on_emit_stmt_<kind>`) -> 汎用 (`on_emit_stmt_kind`)」順へ変更し、`test_code_emitter.py` / `test_py2cpp_features.py` で優先順位を固定した。`check_py2{cpp,js,cs,rs,ts}_transpile.py` と `check_selfhost_cpp_diff.py --mode allow-not-implemented`（既知 `mismatches=3`）で回帰基線を確認した。
+- [ID: P1-CED-03] `CppEmitter.hook_on_render_expr_kind` を override し、`kind専用 -> kind汎用 -> leaf/complex` を一箇所に集約したうえで `render_expr` を fallback 分岐専任へ縮退した。`test_py2cpp_features.py` に leaf/complex 経路回帰を追加し、`check_py2{cpp,js,cs,rs,ts}_transpile.py` と `check_selfhost_cpp_diff.py --mode allow-not-implemented`（既知 `mismatches=3`）で基線維持を確認した。
 
 受け入れ基準:
 1. [ ] [ID: P1-CED-AC-01] Python 実行パス: `hooks` 有効時に既存ケースのコード生成結果が不変。

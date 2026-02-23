@@ -188,6 +188,22 @@ class Py2CppFeatureTest(unittest.TestCase):
         rendered = emitter.render_expr({"kind": "Name", "id": "alpha"})
         self.assertEqual(rendered, "specific_name_hook()")
 
+    def test_render_expr_leaf_hook_applies_via_hook_on_render_expr_kind(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.hooks["on_render_expr_leaf"] = (
+            lambda _em, _kind, _expr_node: "leaf_hook()"
+        )
+        rendered = emitter.render_expr({"kind": "Name", "id": "alpha"})
+        self.assertEqual(rendered, "leaf_hook()")
+
+    def test_render_expr_complex_hook_applies_via_hook_on_render_expr_kind(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.hooks["on_render_expr_complex"] = (
+            lambda _em, _expr_node: "complex_hook()"
+        )
+        rendered = emitter.render_expr({"kind": "JoinedStr", "values": []})
+        self.assertEqual(rendered, "complex_hook()")
+
     def test_emit_stmt_kind_specific_hook_precedes_generic_and_fallback(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
 

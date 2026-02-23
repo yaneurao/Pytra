@@ -1844,6 +1844,28 @@ class CppEmitter(CodeEmitter):
             return True
         return handled_by_hook
 
+    def hook_on_render_expr_kind(
+        self,
+        kind: str,
+        expr_node: dict[str, Any],
+    ) -> str:
+        """dynamic hook 優先で式 kind 処理を解決し、未処理は fallback へ渡す。"""
+        rendered_specific = self.hook_on_render_expr_kind_specific(kind, expr_node)
+        if rendered_specific != "":
+            return rendered_specific
+        rendered_kind = super().hook_on_render_expr_kind(kind, expr_node)
+        if rendered_kind != "":
+            return rendered_kind
+        if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
+            rendered_complex = self.hook_on_render_expr_complex(expr_node)
+            if rendered_complex != "":
+                return rendered_complex
+        if kind in {"Name", "Constant", "Attribute"}:
+            rendered_leaf = self.hook_on_render_expr_leaf(kind, expr_node)
+            if rendered_leaf != "":
+                return rendered_leaf
+        return ""
+
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
         hook_stmt = self.hook_on_emit_stmt(stmt)
@@ -4857,20 +4879,9 @@ class CppEmitter(CodeEmitter):
         if len(expr_d) == 0:
             return "/* none */"
         kind = self._node_kind_from_dict(expr_d)
-        hook_specific = self.hook_on_render_expr_kind_specific(kind, expr_d)
-        if hook_specific != "":
-            return hook_specific
         hook_kind = self.hook_on_render_expr_kind(kind, expr_d)
         if hook_kind != "":
             return hook_kind
-        if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
-            hook_complex = self.hook_on_render_expr_complex(expr_d)
-            if hook_complex != "":
-                return hook_complex
-        if kind in {"Name", "Constant", "Attribute"}:
-            hook_leaf = self.hook_on_render_expr_leaf(kind, expr_d)
-            if hook_leaf != "":
-                return hook_leaf
 
         if kind == "Name":
             return self._render_name_expr(expr_d)
