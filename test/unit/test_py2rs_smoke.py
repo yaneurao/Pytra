@@ -137,6 +137,74 @@ def g(a: int, b: int) -> int:
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
+    def test_isinstance_lowering_for_any_uses_pyany_matches(self) -> None:
+        src = """
+from pytra.std.typing import Any
+
+def is_int(x: Any) -> bool:
+    return isinstance(x, int)
+
+def is_dict(x: Any) -> bool:
+    return isinstance(x, dict)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "isinstance_any.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertNotIn("isinstance(", rust)
+        self.assertIn("matches!(x, PyAny::Int(_))", rust)
+        self.assertIn("matches!(x, PyAny::Dict(_))", rust)
+
+    def test_isinstance_lowering_for_static_builtin_type(self) -> None:
+        src = """
+def is_int(x: int) -> bool:
+    return isinstance(x, int)
+
+def is_float(x: int) -> bool:
+    return isinstance(x, float)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "isinstance_builtin.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertNotIn("isinstance(", rust)
+        int_fn = rust[rust.index("fn is_int(") : rust.index("fn is_float(")]
+        float_fn = rust[rust.index("fn is_float(") :]
+        self.assertIn("return true;", int_fn)
+        self.assertIn("return false;", float_fn)
+
+    def test_isinstance_lowering_for_class_inheritance(self) -> None:
+        src = """
+class A:
+    def __init__(self) -> None:
+        pass
+
+class B(A):
+    def __init__(self) -> None:
+        pass
+
+def is_base(x: B) -> bool:
+    return isinstance(x, A)
+
+def is_child(x: A) -> bool:
+    return isinstance(x, B)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "isinstance_class.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertNotIn("isinstance(", rust)
+        base_fn = rust[rust.index("fn is_base(") : rust.index("fn is_child(")]
+        child_fn = rust[rust.index("fn is_child(") :]
+        self.assertIn("return true;", base_fn)
+        self.assertIn("return false;", child_fn)
+
 
 if __name__ == "__main__":
     unittest.main()

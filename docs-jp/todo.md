@@ -26,6 +26,7 @@
 - `py2cpp` の ref class 伝播を継承両方向に補強し、`ref` 子クラスを持つ親クラスも `ref` 化して `PYTRA_TYPE_ID` を付与するようにした。これにより `isinstance(x, Base)` と `isinstance(x, Child)` の双方が `py_isinstance(..., <Class>::PYTRA_TYPE_ID)` へ lower される。
 - `hooks/js` emitter でも `isinstance` を `pyIsInstance(..., <type_id>)` へ lower するようにし、class 定義へ `PYTRA_TYPE_ID`（`pyRegisterClassType`）と constructor での `this[PYTRA_TYPE_ID]` 付与を追加した。dict リテラルには `[PYTRA_TYPE_ID]: PY_TYPE_MAP` を埋め込み、`py2ts`（JS preview 出力）も同一経路で `type_id` lower を共有する。
 - `hooks/cs` emitter でも `isinstance(x, T)` を C# `is` 演算子へ lower する経路を追加した。builtin（`int/float/bool/str/list/dict`）と user class の判定を `isinstance(...)` 直呼びから縮退し、`test/unit/test_py2cs_smoke.py` に回帰テスト（builtin/class）を追加した。
+- `hooks/rs` emitter でも `isinstance(x, T)` を生呼びせず lower する経路を追加した。`Any/object` は `PyAny` への `matches!`（`Int/Float/Bool/Str/List/Dict`）で判定し、静的型（builtin/class）は `get_expr_type` と class 継承表（`ClassDef.base`）で `true/false` へ縮退する。`test/unit/test_py2rs_smoke.py` に `isinstance` 回帰（Any/builtin/class 継承）を追加し、`python3 test/unit/test_py2rs_smoke.py` と `python3 tools/check_py2rs_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）を確認した。
 
 ## P0: Iterable/Iterator 契約反映（最優先）
 

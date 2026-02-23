@@ -50,6 +50,7 @@ class RustEmitter(CodeEmitter):
             self.rename_prefix = "py_"
         self.function_return_types: dict[str, str] = {}
         self.class_names: set[str] = set()
+        self.class_base_map: dict[str, str] = {}
         self.class_field_types: dict[str, dict[str, str]] = {}
         self.declared_var_types: dict[str, str] = {}
         self.uses_pyany: bool = False
@@ -446,6 +447,7 @@ class RustEmitter(CodeEmitter):
             self.emit("")
 
         self.class_names = set()
+        self.class_base_map = self._collect_class_base_map(body)
         self.function_return_types = {}
         for stmt in body:
             kind = self.any_dict_get_str(stmt, "kind", "")
@@ -990,6 +992,120 @@ class RustEmitter(CodeEmitter):
                 value = "py_any_to_string(&" + value + ")"
         self.emit(self.syntax_line("augassign_apply", "{target} {op} {value};", {"target": target, "op": mapped, "value": value}))
 
+    def _collect_class_base_map(self, body: list[dict[str, Any]]) -> dict[str, str]:
+        """ClassDef から `child -> base` の継承表を抽出する。"""
+        out: dict[str, str] = {}
+        for stmt in body:
+            if self.any_dict_get_str(stmt, "kind", "") != "ClassDef":
+                continue
+            child = self.any_to_str(stmt.get("name"))
+            if child == "":
+                continue
+            base = self.any_to_str(stmt.get("base"))
+            if base != "":
+                out[child] = self.normalize_type_name(base)
+        return out
+
+    def _is_class_subtype(self, actual: str, expected: str) -> bool:
+        """`actual` が `expected` の派生型かを継承表で判定する。"""
+        cur = self.normalize_type_name(actual)
+        want = self.normalize_type_name(expected)
+        if cur == "" or want == "":
+            return False
+        if cur == want:
+            return True
+        visited: set[str] = set()
+        while cur != "" and cur not in visited:
+            visited.add(cur)
+            if cur == want:
+                return True
+            if cur not in self.class_base_map:
+                break
+            cur = self.normalize_type_name(self.class_base_map[cur])
+        return False
+
+    def _render_isinstance_type_check(self, value_expr: str, value_node: Any, type_name: str) -> str:
+        """`isinstance(x, T)` の `T` を Rust 式へ lower する。"""
+        expected = self.normalize_type_name(type_name)
+        actual = self.normalize_type_name(self.get_expr_type(value_node))
+        if actual == "":
+            return "false"
+
+        expected_is_bool = expected == "bool"
+        expected_is_int = self._is_int_type(expected)
+        expected_is_float = self._is_float_type(expected)
+        expected_is_str = expected == "str"
+        expected_is_list = expected.startswith("list[") or expected == "list"
+        expected_is_dict = expected.startswith("dict[") or expected == "dict"
+        expected_is_set = expected.startswith("set[") or expected == "set"
+
+        if self._is_any_type(actual):
+            self.uses_pyany = True
+            if expected_is_bool:
+                return "matches!(" + value_expr + ", PyAny::Bool(_))"
+            if expected_is_int:
+                return "matches!(" + value_expr + ", PyAny::Int(_))"
+            if expected_is_float:
+                return "matches!(" + value_expr + ", PyAny::Float(_))"
+            if expected_is_str:
+                return "matches!(" + value_expr + ", PyAny::Str(_))"
+            if expected_is_list:
+                return "matches!(" + value_expr + ", PyAny::List(_))"
+            if expected_is_dict:
+                return "matches!(" + value_expr + ", PyAny::Dict(_))"
+            return "false"
+
+        actual_parts = self.split_union(actual)
+        if len(actual_parts) == 0:
+            actual_parts = [actual]
+        for part_raw in actual_parts:
+            part = self.normalize_type_name(part_raw)
+            if part == "" or part == "None":
+                continue
+            if expected_is_bool and part == "bool":
+                return "true"
+            if expected_is_int and self._is_int_type(part):
+                return "true"
+            if expected_is_float and self._is_float_type(part):
+                return "true"
+            if expected_is_str and part == "str":
+                return "true"
+            if expected_is_list and (part.startswith("list[") or part == "bytes" or part == "bytearray"):
+                return "true"
+            if expected_is_dict and part.startswith("dict["):
+                return "true"
+            if expected_is_set and part.startswith("set["):
+                return "true"
+            if expected in self.class_names and part in self.class_names and self._is_class_subtype(part, expected):
+                return "true"
+        return "false"
+
+    def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
+        """`isinstance(...)` 呼び出しを Rust へ lower する。"""
+        if len(rendered_args) != 2:
+            return "false"
+        rhs_node = self.any_to_dict_or_empty(arg_nodes[1] if len(arg_nodes) > 1 else None)
+        rhs_kind = self.any_dict_get_str(rhs_node, "kind", "")
+        if rhs_kind == "Name":
+            rhs_name = self.any_dict_get_str(rhs_node, "id", "")
+            lowered = self._render_isinstance_type_check(rendered_args[0], arg_nodes[0] if len(arg_nodes) > 0 else None, rhs_name)
+            if lowered != "":
+                return lowered
+            return "false"
+        if rhs_kind == "Tuple":
+            checks: list[str] = []
+            for elt in self.tuple_elements(rhs_node):
+                e_node = self.any_to_dict_or_empty(elt)
+                if self.any_dict_get_str(e_node, "kind", "") != "Name":
+                    continue
+                e_name = self.any_dict_get_str(e_node, "id", "")
+                lowered = self._render_isinstance_type_check(rendered_args[0], arg_nodes[0] if len(arg_nodes) > 0 else None, e_name)
+                if lowered != "":
+                    checks.append(lowered)
+            if len(checks) > 0:
+                return "(" + " || ".join(checks) + ")"
+        return "false"
+
     def _render_compare(self, expr: dict[str, Any]) -> str:
         left = self.render_expr(expr.get("left"))
         ops = self.any_to_str_list(expr.get("ops"))
@@ -1014,6 +1130,8 @@ class RustEmitter(CodeEmitter):
             fn_name = self._safe_name(fn_name_raw)
             if fn_name_raw in self.class_names:
                 return f"{fn_name_raw}::new(" + ", ".join(rendered_args) + ")"
+            if fn_name_raw == "isinstance":
+                return self._render_isinstance_call(rendered_args, arg_nodes)
             if fn_name_raw == "print":
                 if len(rendered_args) == 0:
                     return "println!(\"\")"
