@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6740,23 +6740,6 @@ def _is_known_non_user_import(module_name: str) -> bool:
     return False
 
 
-def _path_key_for_graph(p: Path) -> str:
-    """依存グラフ内部で使うパス文字列キーを返す。"""
-    return str(p)
-
-
-def _rel_disp_for_graph(base: Path, p: Path) -> str:
-    """表示用に `base` からの相対パス文字列を返す。"""
-    base_txt = str(base)
-    p_txt = str(p)
-    base_prefix = base_txt if base_txt.endswith("/") else base_txt + "/"
-    if p_txt.startswith(base_prefix):
-        return p_txt[len(base_prefix) :]
-    if p_txt == base_txt:
-        return "."
-    return p_txt
-
-
 def _graph_cycle_dfs(
     key: str,
     graph_adj: dict[str, list[str]],
@@ -6890,7 +6873,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
     root = Path(path_parent_text(entry_path))
     queue: list[Path] = [entry_path]
-    queued: set[str] = {_path_key_for_graph(entry_path)}
+    queued: set[str] = {path_key_for_graph(entry_path)}
     visited: set[str] = set()
     visited_order: list[str] = []
     edges: list[str] = []
@@ -6913,13 +6896,13 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
 
     while queue:
         cur_path = queue.pop(0)
-        cur_key = _path_key_for_graph(cur_path)
+        cur_key = path_key_for_graph(cur_path)
         if cur_key in visited:
             continue
         visited.add(cur_key)
         visited_order.append(cur_key)
         key_to_path[cur_key] = cur_path
-        key_to_disp[cur_key] = _rel_disp_for_graph(root, cur_path)
+        key_to_disp[cur_key] = rel_disp_for_graph(root, cur_path)
         if cur_key not in module_id_map:
             module_id_map[cur_key] = _module_name_from_path_for_graph(root, cur_path)
         east_cur: dict[str, Any] = {}
@@ -6949,8 +6932,8 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             if status == "user":
                 if str(dep_file) == "":
                     continue
-                dep_key = _path_key_for_graph(dep_file)
-                dep_disp = _rel_disp_for_graph(root, dep_file)
+                dep_key = path_key_for_graph(dep_file)
+                dep_disp = rel_disp_for_graph(root, dep_file)
                 module_id = resolved_mod_id if resolved_mod_id != "" else mod
                 if dep_key not in module_id_map or module_id_map[dep_key] == "":
                     module_id_map[dep_key] = module_id
@@ -7090,7 +7073,7 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
         return
     details: list[str] = []
     for mod_key, east in module_east_map.items():
-        file_disp = _rel_disp_for_graph(root, Path(mod_key))
+        file_disp = rel_disp_for_graph(root, Path(mod_key))
         body = _dict_any_get_dict_list(east, "body")
         for st in body:
             if _dict_any_kind(st) == "ImportFrom":

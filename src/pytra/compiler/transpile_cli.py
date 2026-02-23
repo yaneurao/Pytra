@@ -270,6 +270,23 @@ def is_pytra_module_name(module_name: str) -> bool:
     return module_name == "pytra" or module_name.startswith("pytra.")
 
 
+def path_key_for_graph(p: Path) -> str:
+    """依存グラフ内部で使うパス文字列キーを返す。"""
+    return str(p)
+
+
+def rel_disp_for_graph(base: Path, p: Path) -> str:
+    """表示用に `base` からの相対パス文字列を返す。"""
+    base_txt = str(base)
+    p_txt = str(p)
+    base_prefix = base_txt if base_txt.endswith("/") else base_txt + "/"
+    if p_txt.startswith(base_prefix):
+        return p_txt[len(base_prefix) :]
+    if p_txt == base_txt:
+        return "."
+    return p_txt
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
