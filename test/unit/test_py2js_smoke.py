@@ -85,7 +85,47 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
+    def test_isinstance_lowers_to_type_id_runtime_api(self) -> None:
+        src = """class Base:
+    def __init__(self):
+        pass
+
+class Child(Base):
+    def __init__(self):
+        super().__init__()
+
+def f(x: object) -> bool:
+    return isinstance(x, int) or isinstance(x, Base) or isinstance(x, Child)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "isinstance_type_id.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            js = transpile_to_js(east)
+
+        self.assertIn("const py_runtime = require(__pytra_root + '/src/js_module/py_runtime.js');", js)
+        self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);", js)
+        self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([Base.PYTRA_TYPE_ID]);", js)
+        self.assertIn("this[PYTRA_TYPE_ID] = Base.PYTRA_TYPE_ID;", js)
+        self.assertIn("this[PYTRA_TYPE_ID] = Child.PYTRA_TYPE_ID;", js)
+        self.assertIn("pyIsInstance(x, PY_TYPE_NUMBER)", js)
+        self.assertIn("pyIsInstance(x, Base.PYTRA_TYPE_ID)", js)
+        self.assertIn("pyIsInstance(x, Child.PYTRA_TYPE_ID)", js)
+
+    def test_dict_literal_has_type_id_tag_for_isinstance(self) -> None:
+        src = """def f() -> bool:
+    x: dict[str, int] = {"k": 1}
+    return isinstance(x, dict)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "dict_type_id.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            js = transpile_to_js(east)
+
+        self.assertIn("[PYTRA_TYPE_ID]: PY_TYPE_MAP", js)
+        self.assertIn("pyIsInstance(x, PY_TYPE_MAP)", js)
+
 
 if __name__ == "__main__":
     unittest.main()
-

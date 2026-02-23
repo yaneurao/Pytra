@@ -39,3 +39,4 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
 - 2026-02-23: 「場当たり分岐を増やさないため、`type_id` 派生判定を最優先で進める」方針を確定し、`P0-TID-01` を追加。
 - 2026-02-23: Phase 1 として C++/JS/TS runtime に共通 API（`py_is_subtype` / `py_isinstance` 系）を導入し、`py2cpp` の `isinstance` lower は built-in 判定関数直呼びから `py_isinstance(..., <type_id>)` へ移行する。C++ の GC 管理クラスには `PYTRA_TYPE_ID` と constructor 内 `set_type_id(...)` を付与する。
 - 2026-02-23: `py2cpp` の class storage hint 伝播は「base->child」だけでなく「ref child->base」も含める。これにより `ref` 子クラスを持つ親クラスでも `PYTRA_TYPE_ID` が定義され、`isinstance(x, Base)` の lower を `py_isinstance(x, Base::PYTRA_TYPE_ID)` で統一できる。
+- 2026-02-23: `hooks/js` emitter（`py2js` / `py2ts` preview 共通）でも `isinstance` を `pyIsInstance(..., <type_id>)` へ移行し、class へ `PYTRA_TYPE_ID`（`pyRegisterClassType`）と constructor 内 `this[PYTRA_TYPE_ID]` を導入する。dict literal は `PY_TYPE_MAP` tag を付け、`isinstance(x, dict)` 判定を type_id 経路へ寄せる。

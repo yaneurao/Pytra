@@ -24,6 +24,7 @@
 進捗メモ:
 - C++ runtime に `PYTRA_TID_*`、`py_register_class_type`、`py_is_subtype`、`py_isinstance`、`py_issubclass` を追加し、`py2cpp` の `isinstance` 生成を `py_isinstance(..., <type_id>)` 経由へ切替した。GC 管理クラスには `PYTRA_TYPE_ID` 付与と constructor での `set_type_id(...)` を導入した。JS/TS runtime には `pyRegisterType` / `pyRegisterClassType` / `pyIsSubtype` / `pyIsInstance` を追加し、`test_cpp_runtime_type_id.py` / `test_js_ts_runtime_dispatch.py` / `test_py2cpp_codegen_issues.py` で回帰固定した。
 - `py2cpp` の ref class 伝播を継承両方向に補強し、`ref` 子クラスを持つ親クラスも `ref` 化して `PYTRA_TYPE_ID` を付与するようにした。これにより `isinstance(x, Base)` と `isinstance(x, Child)` の双方が `py_isinstance(..., <Class>::PYTRA_TYPE_ID)` へ lower される。
+- `hooks/js` emitter でも `isinstance` を `pyIsInstance(..., <type_id>)` へ lower するようにし、class 定義へ `PYTRA_TYPE_ID`（`pyRegisterClassType`）と constructor での `this[PYTRA_TYPE_ID]` 付与を追加した。dict リテラルには `[PYTRA_TYPE_ID]: PY_TYPE_MAP` を埋め込み、`py2ts`（JS preview 出力）も同一経路で `type_id` lower を共有する。
 
 ## P0: Iterable/Iterator 契約反映（最優先）
 

@@ -177,6 +177,14 @@ class JsEmitter(CodeEmitter):
         meta = self.any_to_dict_or_empty(module.get("meta"))
         self.load_import_bindings_from_meta(meta)
         self.emit_module_leading_trivia()
+        self.emit("const __pytra_root = process.cwd();")
+        self.emit("const py_runtime = require(__pytra_root + '/src/js_module/py_runtime.js');")
+        self.emit(
+            "const { PYTRA_TYPE_ID, PY_TYPE_BOOL, PY_TYPE_NUMBER, PY_TYPE_STRING, "
+            + "PY_TYPE_ARRAY, PY_TYPE_MAP, PY_TYPE_SET, PY_TYPE_OBJECT, "
+            + "pyRegisterClassType, pyIsInstance } = py_runtime;"
+        )
+        self.emit("")
         import_lines = self._collect_import_statements(body, meta)
         for line in import_lines:
             self.emit(line)
@@ -217,11 +225,18 @@ class JsEmitter(CodeEmitter):
 
     def _emit_class(self, stmt: dict[str, Any]) -> None:
         """ClassDef を JavaScript class として出力する。"""
-        class_name = self._safe_name(self.any_to_str(stmt.get("name")))
+        class_name_raw = self.any_to_str(stmt.get("name"))
+        class_name = self._safe_name(class_name_raw)
+        base_raw = self.any_to_str(stmt.get("base"))
         self.current_class_name = class_name
         self.emit("class " + class_name + " {")
         self.indent += 1
         members = self._dict_stmt_list(stmt.get("body"))
+        base_type_id = "PY_TYPE_OBJECT"
+        if base_raw != "" and base_raw in self.class_names:
+            base_type_id = self._safe_name(base_raw) + ".PYTRA_TYPE_ID"
+        self.emit("static PYTRA_TYPE_ID = pyRegisterClassType([" + base_type_id + "]);")
+        self.emit("")
 
         emitted_ctor = False
         for member in members:
@@ -231,6 +246,7 @@ class JsEmitter(CodeEmitter):
                 break
         if not emitted_ctor:
             self.emit("constructor() {")
+            self.emit("this[PYTRA_TYPE_ID] = " + class_name + ".PYTRA_TYPE_ID;")
             self.emit("}")
 
         for member in members:
@@ -262,6 +278,8 @@ class JsEmitter(CodeEmitter):
                 args.append(self._safe_name(arg_name))
                 scope_names.add(arg_name)
             self.emit(method_name + "(" + ", ".join(args) + ") {")
+            if fn_name_raw == "__init__":
+                self.emit("this[PYTRA_TYPE_ID] = " + in_class + ".PYTRA_TYPE_ID;")
         else:
             fn_name = self._safe_name(fn_name_raw)
             for arg_name in arg_order:
@@ -501,6 +519,25 @@ class JsEmitter(CodeEmitter):
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """組み込み関数呼び出しを JavaScript 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
+        if fn_name_raw == "isinstance" and len(rendered_args) == 2:
+            rhs = self.any_to_dict_or_empty(arg_nodes[1]) if len(arg_nodes) > 1 else {}
+            if self.any_dict_get_str(rhs, "kind", "") != "Name":
+                return "false"
+            rhs_name = self.any_dict_get_str(rhs, "id", "")
+            type_id_map = {
+                "str": "PY_TYPE_STRING",
+                "list": "PY_TYPE_ARRAY",
+                "dict": "PY_TYPE_MAP",
+                "set": "PY_TYPE_SET",
+                "int": "PY_TYPE_NUMBER",
+                "float": "PY_TYPE_NUMBER",
+                "bool": "PY_TYPE_BOOL",
+            }
+            if rhs_name in type_id_map:
+                return "pyIsInstance(" + rendered_args[0] + ", " + type_id_map[rhs_name] + ")"
+            if rhs_name in self.class_names:
+                return "pyIsInstance(" + rendered_args[0] + ", " + self._safe_name(rhs_name) + ".PYTRA_TYPE_ID)"
+            return "false"
         if fn_name_raw == "print":
             return "console.log(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "len" and len(rendered_args) == 1:
@@ -671,6 +708,7 @@ class JsEmitter(CodeEmitter):
         if kind == "Dict":
             entries = self.any_to_list(expr_d.get("entries"))
             parts: list[str] = []
+            parts.append("[PYTRA_TYPE_ID]: PY_TYPE_MAP")
             i = 0
             while i < len(entries):
                 ent = self.any_to_dict_or_empty(entries[i])

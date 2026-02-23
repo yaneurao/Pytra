@@ -77,7 +77,24 @@ class Py2TsSmokeTest(unittest.TestCase):
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
+    def test_ts_preview_keeps_isinstance_type_id_lowering(self) -> None:
+        src = """class Base:
+    def __init__(self):
+        pass
+
+def f(x: object) -> bool:
+    return isinstance(x, int) or isinstance(x, Base)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "ts_isinstance_type_id.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            ts = transpile_to_typescript(east)
+
+        self.assertIn("pyIsInstance(x, PY_TYPE_NUMBER)", ts)
+        self.assertIn("pyIsInstance(x, Base.PYTRA_TYPE_ID)", ts)
+        self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);", ts)
+
 
 if __name__ == "__main__":
     unittest.main()
-
