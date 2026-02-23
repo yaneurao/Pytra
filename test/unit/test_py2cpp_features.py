@@ -229,6 +229,114 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(err, "")
         self.assertEqual(parsed.get("emit_runtime_cpp"), "1")
 
+    def test_parse_py2cpp_argv_guard_options(self) -> None:
+        parsed = parse_py2cpp_argv(
+            [
+                "input.py",
+                "--guard-profile",
+                "strict",
+                "--max-ast-depth",
+                "10",
+                "--max-parse-nodes",
+                "20",
+                "--max-symbols-per-module",
+                "30",
+                "--max-scope-depth",
+                "40",
+                "--max-import-graph-nodes",
+                "50",
+                "--max-import-graph-edges",
+                "60",
+                "--max-generated-lines",
+                "70",
+            ]
+        )
+        err = str(parsed.get("__error", ""))
+        self.assertEqual(err, "")
+        self.assertEqual(parsed.get("guard_profile"), "strict")
+        self.assertEqual(parsed.get("max_ast_depth"), "10")
+        self.assertEqual(parsed.get("max_parse_nodes"), "20")
+        self.assertEqual(parsed.get("max_symbols_per_module"), "30")
+        self.assertEqual(parsed.get("max_scope_depth"), "40")
+        self.assertEqual(parsed.get("max_import_graph_nodes"), "50")
+        self.assertEqual(parsed.get("max_import_graph_edges"), "60")
+        self.assertEqual(parsed.get("max_generated_lines"), "70")
+
+    def test_guard_limit_exceeded_in_parse_stage(self) -> None:
+        src = "x: int = 1\n"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "guard_parse.py"
+            out_cpp = Path(tmpdir) / "guard_parse.cpp"
+            src_py.write_text(src, encoding="utf-8")
+            cp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "src/py2cpp.py",
+                    str(src_py),
+                    "-o",
+                    str(out_cpp),
+                    "--max-parse-nodes",
+                    "1",
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="py2cpp parse guard",
+            )
+        self.assertNotEqual(cp.returncode, 0)
+        self.assertIn("[input_invalid]", cp.stderr)
+        self.assertIn("kind=limit_exceeded stage=parse limit=max-parse-nodes", cp.stderr)
+
+    def test_guard_limit_exceeded_in_analyze_stage(self) -> None:
+        main_src = "import dep\nx: int = dep.value\n"
+        dep_src = "value: int = 1\n"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "main.py"
+            dep_py = Path(tmpdir) / "dep.py"
+            out_cpp = Path(tmpdir) / "guard_analyze.cpp"
+            src_py.write_text(main_src, encoding="utf-8")
+            dep_py.write_text(dep_src, encoding="utf-8")
+            cp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "src/py2cpp.py",
+                    str(src_py),
+                    "-o",
+                    str(out_cpp),
+                    "--max-import-graph-nodes",
+                    "1",
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="py2cpp analyze guard",
+            )
+        self.assertNotEqual(cp.returncode, 0)
+        self.assertIn("[input_invalid]", cp.stderr)
+        self.assertIn("kind=limit_exceeded stage=analyze limit=max-import-graph-nodes", cp.stderr)
+
+    def test_guard_limit_exceeded_in_emit_stage(self) -> None:
+        src = "x: int = 1\n"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "guard_emit.py"
+            out_cpp = Path(tmpdir) / "guard_emit.cpp"
+            src_py.write_text(src, encoding="utf-8")
+            cp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "src/py2cpp.py",
+                    str(src_py),
+                    "-o",
+                    str(out_cpp),
+                    "--max-generated-lines",
+                    "1",
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="py2cpp emit guard",
+            )
+        self.assertNotEqual(cp.returncode, 0)
+        self.assertIn("[input_invalid]", cp.stderr)
+        self.assertIn("kind=limit_exceeded stage=emit limit=max-generated-lines", cp.stderr)
+
     def test_list_pop_emits_method_call(self) -> None:
         src = """def pop_last() -> int:
     xs: list[int] = [1, 2, 3]

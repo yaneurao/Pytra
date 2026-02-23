@@ -83,12 +83,28 @@
 - `tools/selfhost_error_report.py`
   - 目的: selfhost エラー解析結果のレポートを整形出力する。
 
-### 2.1 selfhost 暴走ガード（導入方針）
+### 2.1 selfhost 暴走ガード（実装済み）
 
 selfhost の調査時に、深い再帰・巨大構文木・シンボル爆発で実行が長時間化するケースを早期停止できるよう、以下のガードを `py2cpp.py` / 共通 CLI へ段階導入する。
 
 - `--guard-profile {off,default,strict}`
   - 既定は `default`。`off` は制限無効、`strict` は調査向けに低い上限を適用する。
+  - `default` の既定値:
+    - `max-ast-depth=800`
+    - `max-parse-nodes=2000000`
+    - `max-symbols-per-module=200000`
+    - `max-scope-depth=400`
+    - `max-import-graph-nodes=5000`
+    - `max-import-graph-edges=20000`
+    - `max-generated-lines=2000000`
+  - `strict` の既定値:
+    - `max-ast-depth=200`
+    - `max-parse-nodes=200000`
+    - `max-symbols-per-module=20000`
+    - `max-scope-depth=120`
+    - `max-import-graph-nodes=1000`
+    - `max-import-graph-edges=4000`
+    - `max-generated-lines=300000`
 - 個別上限オプション（`guard_profile` より優先）
   - `--max-ast-depth`
   - `--max-parse-nodes`

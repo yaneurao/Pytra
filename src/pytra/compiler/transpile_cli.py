@@ -210,6 +210,14 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
         "opt_level_opt": "",
         "preset": "",
         "parser_backend": "self_hosted",
+        "guard_profile": "default",
+        "max_ast_depth": "",
+        "max_parse_nodes": "",
+        "max_symbols_per_module": "",
+        "max_scope_depth": "",
+        "max_import_graph_nodes": "",
+        "max_import_graph_edges": "",
+        "max_generated_lines": "",
         "no_main": "0",
         "single_file": "0",
         "output_mode_explicit": "0",
@@ -303,6 +311,46 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
             if i >= len(argv):
                 return _parse_error_dict("missing value for --parser-backend")
             out["parser_backend"] = argv[i]
+        elif a == "--guard-profile":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --guard-profile")
+            out["guard_profile"] = argv[i]
+        elif a == "--max-ast-depth":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --max-ast-depth")
+            out["max_ast_depth"] = argv[i]
+        elif a == "--max-parse-nodes":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --max-parse-nodes")
+            out["max_parse_nodes"] = argv[i]
+        elif a == "--max-symbols-per-module":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --max-symbols-per-module")
+            out["max_symbols_per_module"] = argv[i]
+        elif a == "--max-scope-depth":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --max-scope-depth")
+            out["max_scope_depth"] = argv[i]
+        elif a == "--max-import-graph-nodes":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --max-import-graph-nodes")
+            out["max_import_graph_nodes"] = argv[i]
+        elif a == "--max-import-graph-edges":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --max-import-graph-edges")
+            out["max_import_graph_edges"] = argv[i]
+        elif a == "--max-generated-lines":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --max-generated-lines")
+            out["max_generated_lines"] = argv[i]
         elif a == "--no-main":
             out["no_main"] = "1"
         elif a == "--dump-deps":

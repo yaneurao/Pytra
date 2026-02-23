@@ -186,6 +186,158 @@ def _parse_user_error(err_text: str) -> dict[str, Any]:
     return {"category": category, "summary": summary, "details": details}
 
 
+GUARD_PROFILES: set[str] = {"off", "default", "strict"}
+GUARD_LIMIT_LABELS: dict[str, str] = {
+    "max_ast_depth": "max-ast-depth",
+    "max_parse_nodes": "max-parse-nodes",
+    "max_symbols_per_module": "max-symbols-per-module",
+    "max_scope_depth": "max-scope-depth",
+    "max_import_graph_nodes": "max-import-graph-nodes",
+    "max_import_graph_edges": "max-import-graph-edges",
+    "max_generated_lines": "max-generated-lines",
+}
+SCOPE_NESTING_KINDS: set[str] = {
+    "FunctionDef",
+    "AsyncFunctionDef",
+    "ClassDef",
+    "If",
+    "For",
+    "While",
+    "With",
+    "Try",
+    "ExceptHandler",
+    "Match",
+    "MatchCase",
+}
+
+
+def _guard_profile_base_limits(profile: str) -> dict[str, int]:
+    """`off/default/strict` からガード上限初期値を解決する。"""
+    out: dict[str, int] = {}
+    if profile == "off":
+        out["max_ast_depth"] = 0
+        out["max_parse_nodes"] = 0
+        out["max_symbols_per_module"] = 0
+        out["max_scope_depth"] = 0
+        out["max_import_graph_nodes"] = 0
+        out["max_import_graph_edges"] = 0
+        out["max_generated_lines"] = 0
+        return out
+    if profile == "default":
+        out["max_ast_depth"] = 800
+        out["max_parse_nodes"] = 2000000
+        out["max_symbols_per_module"] = 200000
+        out["max_scope_depth"] = 400
+        out["max_import_graph_nodes"] = 5000
+        out["max_import_graph_edges"] = 20000
+        out["max_generated_lines"] = 2000000
+        return out
+    if profile == "strict":
+        out["max_ast_depth"] = 200
+        out["max_parse_nodes"] = 200000
+        out["max_symbols_per_module"] = 20000
+        out["max_scope_depth"] = 120
+        out["max_import_graph_nodes"] = 1000
+        out["max_import_graph_edges"] = 4000
+        out["max_generated_lines"] = 300000
+        return out
+    raise ValueError("invalid --guard-profile: " + profile)
+
+
+def _parse_guard_limit_or_raise(raw: str, option_name: str) -> int:
+    """個別 `--max-*` 値を正整数へ変換する。"""
+    if raw == "":
+        return -1
+    if not raw.isdigit():
+        raise ValueError("invalid value for --" + option_name + ": " + raw)
+    value = int(raw)
+    if value <= 0:
+        raise ValueError("invalid value for --" + option_name + ": must be > 0")
+    return value
+
+
+def _resolve_guard_limits(
+    guard_profile: str,
+    max_ast_depth_raw: str,
+    max_parse_nodes_raw: str,
+    max_symbols_per_module_raw: str,
+    max_scope_depth_raw: str,
+    max_import_graph_nodes_raw: str,
+    max_import_graph_edges_raw: str,
+    max_generated_lines_raw: str,
+) -> dict[str, int]:
+    """profile + 個別指定からガード上限を解決する。"""
+    profile = guard_profile if guard_profile != "" else "default"
+    if profile not in GUARD_PROFILES:
+        raise ValueError("invalid --guard-profile: " + profile)
+    out = _guard_profile_base_limits(profile)
+    max_ast_depth = _parse_guard_limit_or_raise(max_ast_depth_raw, "max-ast-depth")
+    if max_ast_depth > 0:
+        out["max_ast_depth"] = max_ast_depth
+    max_parse_nodes = _parse_guard_limit_or_raise(max_parse_nodes_raw, "max-parse-nodes")
+    if max_parse_nodes > 0:
+        out["max_parse_nodes"] = max_parse_nodes
+    max_symbols_per_module = _parse_guard_limit_or_raise(max_symbols_per_module_raw, "max-symbols-per-module")
+    if max_symbols_per_module > 0:
+        out["max_symbols_per_module"] = max_symbols_per_module
+    max_scope_depth = _parse_guard_limit_or_raise(max_scope_depth_raw, "max-scope-depth")
+    if max_scope_depth > 0:
+        out["max_scope_depth"] = max_scope_depth
+    max_import_graph_nodes = _parse_guard_limit_or_raise(max_import_graph_nodes_raw, "max-import-graph-nodes")
+    if max_import_graph_nodes > 0:
+        out["max_import_graph_nodes"] = max_import_graph_nodes
+    max_import_graph_edges = _parse_guard_limit_or_raise(max_import_graph_edges_raw, "max-import-graph-edges")
+    if max_import_graph_edges > 0:
+        out["max_import_graph_edges"] = max_import_graph_edges
+    max_generated_lines = _parse_guard_limit_or_raise(max_generated_lines_raw, "max-generated-lines")
+    if max_generated_lines > 0:
+        out["max_generated_lines"] = max_generated_lines
+    return out
+
+
+def _raise_guard_limit_exceeded(
+    stage: str,
+    limit_key: str,
+    value: int,
+    max_value: int,
+    detail_subject: str = "",
+) -> None:
+    """ガード上限超過を `input_invalid(kind=limit_exceeded, ...)` で報告する。"""
+    limit_label = GUARD_LIMIT_LABELS[limit_key] if limit_key in GUARD_LIMIT_LABELS else limit_key
+    detail = f"kind=limit_exceeded stage={stage} limit={limit_label} value={value} max={max_value}"
+    if detail_subject != "":
+        detail += " file=" + detail_subject
+    raise _make_user_error(
+        "input_invalid",
+        "Input exceeds configured guard limits.",
+        [detail],
+    )
+
+
+def _check_guard_limit(
+    stage: str,
+    limit_key: str,
+    value: int,
+    limits: dict[str, int],
+    detail_subject: str = "",
+) -> None:
+    """`limits` に設定された上限を超えた場合に例外を送出する。"""
+    max_value = limits[limit_key] if limit_key in limits else 0
+    if max_value > 0 and value > max_value:
+        _raise_guard_limit_exceeded(stage, limit_key, value, max_value, detail_subject)
+
+
+def _count_text_lines(text: str) -> int:
+    """テキスト行数（空文字は0行）を返す。"""
+    if text == "":
+        return 0
+    line_count = 1
+    for ch in text:
+        if ch == "\n":
+            line_count += 1
+    return line_count
+
+
 def _dict_any_get(src: dict[str, Any], key: str) -> Any:
     """`dict[str, Any]` から値を安全に取得する（未定義時は `None`）。"""
     if key in src:
@@ -332,6 +484,212 @@ def _stmt_assigned_names(stmt: dict[str, Any]) -> list[str]:
         if name_txt != "":
             out.append(name_txt)
     return out
+
+
+def _collect_store_names_from_target(target: dict[str, Any], out: set[str]) -> None:
+    """代入先 target から束縛名を抽出する。"""
+    kind = _dict_any_kind(target)
+    if kind == "Name":
+        ident = _dict_any_get_str(target, "id")
+        if ident != "":
+            out.add(ident)
+        return
+    if kind == "Tuple" or kind == "List":
+        for ent in _dict_any_get_dict_list(target, "elements"):
+            _collect_store_names_from_target(ent, out)
+
+
+def _local_binding_name(name: str, asname: str) -> str:
+    """import 句のローカル束縛名を返す。"""
+    if asname != "":
+        return asname
+    head, _tail, found = _split_infix_once(name, ".")
+    if found and head != "":
+        return head
+    return name
+
+
+def _stmt_child_stmt_lists(stmt: dict[str, Any]) -> list[list[dict[str, Any]]]:
+    """文ノードが持つ子 statement list 群を抽出する。"""
+    out: list[list[dict[str, Any]]] = []
+    body = _dict_any_get_dict_list(stmt, "body")
+    if len(body) > 0:
+        out.append(body)
+    orelse = _dict_any_get_dict_list(stmt, "orelse")
+    if len(orelse) > 0:
+        out.append(orelse)
+    finalbody = _dict_any_get_dict_list(stmt, "finalbody")
+    if len(finalbody) > 0:
+        out.append(finalbody)
+    handlers = _dict_any_get_dict_list(stmt, "handlers")
+    for handler in handlers:
+        h_body = _dict_any_get_dict_list(handler, "body")
+        if len(h_body) > 0:
+            out.append(h_body)
+    cases = _dict_any_get_dict_list(stmt, "cases")
+    for case in cases:
+        c_body = _dict_any_get_dict_list(case, "body")
+        if len(c_body) > 0:
+            out.append(c_body)
+    return out
+
+
+def _stmt_list_parse_metrics(body: list[dict[str, Any]], depth: int) -> tuple[int, int]:
+    """statement list から `parse_nodes` と `max_depth` を計測する。"""
+    node_count = 0
+    max_depth = 0
+    if len(body) > 0:
+        max_depth = depth
+    for st in body:
+        node_count += 1
+        if depth > max_depth:
+            max_depth = depth
+        for child in _stmt_child_stmt_lists(st):
+            child_nodes, child_depth = _stmt_list_parse_metrics(child, depth + 1)
+            node_count += child_nodes
+            if child_depth > max_depth:
+                max_depth = child_depth
+    return node_count, max_depth
+
+
+def _module_parse_metrics(east_module: dict[str, Any]) -> dict[str, int]:
+    """EAST module 単位の parse 指標（深さ・ノード数）を返す。"""
+    body = _dict_any_get_dict_list(east_module, "body")
+    node_count, max_depth = _stmt_list_parse_metrics(body, 1)
+    module_nodes = node_count + 1  # Module root
+    module_depth = max_depth if max_depth > 0 else 1
+    return {"max_ast_depth": module_depth, "parse_nodes": module_nodes}
+
+
+def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
+    """statement ノードの束縛名を抽出して返す。"""
+    symbols: set[str] = set()
+    kind = _dict_any_kind(stmt)
+    if kind == "FunctionDef" or kind == "AsyncFunctionDef":
+        fn_name = _dict_any_get_str(stmt, "name")
+        if fn_name != "":
+            symbols.add(fn_name)
+        for arg_any in _dict_any_get_list(stmt, "arg_order"):
+            if isinstance(arg_any, str) and arg_any != "":
+                symbols.add(arg_any)
+    elif kind == "ClassDef":
+        cls_name = _dict_any_get_str(stmt, "name")
+        if cls_name != "":
+            symbols.add(cls_name)
+    elif kind == "Assign" or kind == "AnnAssign":
+        for name_txt in _stmt_assigned_names(stmt):
+            if name_txt != "":
+                symbols.add(name_txt)
+    elif kind == "For":
+        target = _dict_any_get_dict(stmt, "target")
+        if len(target) > 0:
+            _collect_store_names_from_target(target, symbols)
+    elif kind == "With":
+        for item in _dict_any_get_dict_list(stmt, "items"):
+            opt_vars = _dict_any_get_dict(item, "optional_vars")
+            if len(opt_vars) > 0:
+                _collect_store_names_from_target(opt_vars, symbols)
+    elif kind == "ExceptHandler":
+        name_txt = _dict_any_get_str(stmt, "name")
+        if name_txt != "":
+            symbols.add(name_txt)
+    elif kind == "Import":
+        for ent in _dict_any_get_dict_list(stmt, "names"):
+            name_txt = _dict_any_get_str(ent, "name")
+            asname_txt = _dict_any_get_str(ent, "asname")
+            local_name = _local_binding_name(name_txt, asname_txt)
+            if local_name != "":
+                symbols.add(local_name)
+    elif kind == "ImportFrom":
+        for ent in _dict_any_get_dict_list(stmt, "names"):
+            sym_name = _dict_any_get_str(ent, "name")
+            if sym_name == "*":
+                continue
+            asname_txt = _dict_any_get_str(ent, "asname")
+            local_name = _local_binding_name(sym_name, asname_txt)
+            if local_name != "":
+                symbols.add(local_name)
+    return symbols
+
+
+def _collect_symbols_from_stmt_list(body: list[dict[str, Any]]) -> set[str]:
+    """statement list から束縛名を再帰収集する。"""
+    symbols: set[str] = set()
+    for st in body:
+        for name_txt in _collect_symbols_from_stmt(st):
+            symbols.add(name_txt)
+        for child in _stmt_child_stmt_lists(st):
+            for name_txt in _collect_symbols_from_stmt_list(child):
+                symbols.add(name_txt)
+    return symbols
+
+
+def _stmt_list_scope_depth(body: list[dict[str, Any]], depth: int) -> int:
+    """statement list の最大 scope 深さを返す。"""
+    max_depth = depth
+    for st in body:
+        kind = _dict_any_kind(st)
+        child_depth = depth + 1 if kind in SCOPE_NESTING_KINDS else depth
+        if child_depth > max_depth:
+            max_depth = child_depth
+        for child in _stmt_child_stmt_lists(st):
+            d = _stmt_list_scope_depth(child, child_depth)
+            if d > max_depth:
+                max_depth = d
+    return max_depth
+
+
+def _module_analyze_metrics(east_module: dict[str, Any]) -> dict[str, int]:
+    """EAST module 単位の analyze 指標（symbol 数・scope 深さ）を返す。"""
+    body = _dict_any_get_dict_list(east_module, "body")
+    symbols = _collect_symbols_from_stmt_list(body)
+    scope_depth = _stmt_list_scope_depth(body, 0)
+    return {"symbols": len(symbols), "scope_depth": scope_depth}
+
+
+def _select_guard_module_map(
+    input_txt: str,
+    east_module: dict[str, Any],
+    module_east_map_cache: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """ガード計測対象の module map を返す。"""
+    if len(module_east_map_cache) > 0:
+        return module_east_map_cache
+    key = input_txt if input_txt != "" else "<input>"
+    return {key: east_module}
+
+
+def _check_parse_stage_guards(
+    module_map: dict[str, dict[str, Any]],
+    guard_limits: dict[str, int],
+) -> None:
+    """parse ステージの AST 深さ / ノード数ガードを検証する。"""
+    parse_nodes_total = 0
+    for mod_key, east in module_map.items():
+        metrics = _module_parse_metrics(east)
+        module_depth = metrics["max_ast_depth"] if "max_ast_depth" in metrics else 0
+        module_nodes = metrics["parse_nodes"] if "parse_nodes" in metrics else 0
+        _check_guard_limit("parse", "max_ast_depth", module_depth, guard_limits, mod_key)
+        parse_nodes_total += module_nodes
+    _check_guard_limit("parse", "max_parse_nodes", parse_nodes_total, guard_limits)
+
+
+def _check_analyze_stage_guards(
+    module_map: dict[str, dict[str, Any]],
+    import_graph_analysis: dict[str, Any],
+    guard_limits: dict[str, int],
+) -> None:
+    """analyze ステージの symbol/scope/import graph ガードを検証する。"""
+    for mod_key, east in module_map.items():
+        metrics = _module_analyze_metrics(east)
+        symbol_count = metrics["symbols"] if "symbols" in metrics else 0
+        scope_depth = metrics["scope_depth"] if "scope_depth" in metrics else 0
+        _check_guard_limit("analyze", "max_symbols_per_module", symbol_count, guard_limits, mod_key)
+        _check_guard_limit("analyze", "max_scope_depth", scope_depth, guard_limits, mod_key)
+    graph_nodes = len(_dict_any_get_str_list(import_graph_analysis, "user_module_files"))
+    graph_edges = len(_dict_any_get_str_list(import_graph_analysis, "edges"))
+    _check_guard_limit("analyze", "max_import_graph_nodes", graph_nodes, guard_limits)
+    _check_guard_limit("analyze", "max_import_graph_edges", graph_edges, guard_limits)
 
 
 def _set_import_module_binding(import_modules: dict[str, str], local_name: str, module_id: str) -> None:
@@ -7176,6 +7534,7 @@ def _write_multi_file_cpp(
     opt_level: str,
     top_namespace: str,
     emit_main: bool,
+    max_generated_lines: int = 0,
 ) -> dict[str, Any]:
     """モジュールごとに `.h/.cpp` を `out/include`, `out/src` へ出力する。"""
     include_dir = output_dir / "include"
@@ -7188,6 +7547,10 @@ def _write_multi_file_cpp(
     prelude_txt += "#define PYTRA_MULTI_PRELUDE_H\n\n"
     prelude_txt += "#include \"runtime/cpp/pytra/built_in/py_runtime.h\"\n\n"
     prelude_txt += "#endif  // PYTRA_MULTI_PRELUDE_H\n"
+    generated_lines_total = 0
+    generated_lines_total += _count_text_lines(prelude_txt)
+    if max_generated_lines > 0:
+        _check_guard_limit("emit", "max_generated_lines", generated_lines_total, {"max_generated_lines": max_generated_lines})
     _write_text_file(prelude_hdr, prelude_txt)
 
     root = Path(_path_parent_text(entry_path))
@@ -7229,6 +7592,15 @@ def _write_multi_file_cpp(
         hdr_text += "void module_" + label + "();\n"
         hdr_text += "}  // namespace pytra_multi\n\n"
         hdr_text += "#endif  // " + guard + "\n"
+        generated_lines_total += _count_text_lines(hdr_text)
+        if max_generated_lines > 0:
+            _check_guard_limit(
+                "emit",
+                "max_generated_lines",
+                generated_lines_total,
+                {"max_generated_lines": max_generated_lines},
+                str(mod_path),
+            )
         _write_text_file(hdr_path, hdr_text)
 
         is_entry = mod_key == entry_key
@@ -7326,6 +7698,15 @@ def _write_multi_file_cpp(
                 fwd_lines.append("}  // namespace " + target_ns)
         if len(fwd_lines) > 0:
             cpp_txt = _inject_after_includes_block(cpp_txt, _join_str_list("\n", fwd_lines))
+        generated_lines_total += _count_text_lines(cpp_txt)
+        if max_generated_lines > 0:
+            _check_guard_limit(
+                "emit",
+                "max_generated_lines",
+                generated_lines_total,
+                {"max_generated_lines": max_generated_lines},
+                str(mod_path),
+            )
         _write_text_file(cpp_path, cpp_txt)
 
         manifest_modules.append(
@@ -7346,13 +7727,24 @@ def _write_multi_file_cpp(
     }
     manifest_path = output_dir / "manifest.json"
     manifest_obj: Any = manifest_for_dump
-    _write_text_file(manifest_path, json.dumps(manifest_obj, ensure_ascii=False, indent=2))
+    manifest_txt = json.dumps(manifest_obj, ensure_ascii=False, indent=2)
+    generated_lines_total += _count_text_lines(manifest_txt)
+    if max_generated_lines > 0:
+        _check_guard_limit(
+            "emit",
+            "max_generated_lines",
+            generated_lines_total,
+            {"max_generated_lines": max_generated_lines},
+            str(entry_path),
+        )
+    _write_text_file(manifest_path, manifest_txt)
     return {
         "entry": entry_key,
         "include_dir": str(include_dir),
         "src_dir": str(src_dir),
         "modules": manifest_modules,
         "manifest": str(manifest_path),
+        "generated_lines_total": generated_lines_total,
     }
 
 
@@ -7500,6 +7892,14 @@ def main(argv: list[str]) -> int:
     opt_level_opt = _dict_str_get(parsed, "opt_level_opt", "")
     preset = _dict_str_get(parsed, "preset", "")
     parser_backend = _dict_str_get(parsed, "parser_backend", "self_hosted")
+    guard_profile = _dict_str_get(parsed, "guard_profile", "default")
+    max_ast_depth_raw = _dict_str_get(parsed, "max_ast_depth", "")
+    max_parse_nodes_raw = _dict_str_get(parsed, "max_parse_nodes", "")
+    max_symbols_per_module_raw = _dict_str_get(parsed, "max_symbols_per_module", "")
+    max_scope_depth_raw = _dict_str_get(parsed, "max_scope_depth", "")
+    max_import_graph_nodes_raw = _dict_str_get(parsed, "max_import_graph_nodes", "")
+    max_import_graph_edges_raw = _dict_str_get(parsed, "max_import_graph_edges", "")
+    max_generated_lines_raw = _dict_str_get(parsed, "max_generated_lines", "")
     no_main = _dict_str_get(parsed, "no_main", "0") == "1"
     single_file = _dict_str_get(parsed, "single_file", "1") == "1"
     output_mode_explicit = _dict_str_get(parsed, "output_mode_explicit", "0") == "1"
@@ -7515,18 +7915,14 @@ def main(argv: list[str]) -> int:
     str_index_mode = ""
     str_slice_mode = ""
     opt_level = ""
+    usage_text = "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--guard-profile {off,default,strict}] [--max-ast-depth N] [--max-parse-nodes N] [--max-symbols-per-module N] [--max-scope-depth N] [--max-import-graph-nodes N] [--max-import-graph-edges N] [--max-generated-lines N] [--no-main] [--dump-deps] [--dump-options]"
+    guard_limits: dict[str, int] = {}
 
     if show_help:
-        print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
-            file=sys.stderr,
-        )
+        print(usage_text, file=sys.stderr)
         return 0
     if input_txt == "":
-        print(
-            "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--no-main] [--dump-deps] [--dump-options]",
-            file=sys.stderr,
-        )
+        print(usage_text, file=sys.stderr)
         return 1
     if not _is_valid_cpp_namespace_name(top_namespace_opt):
         print(f"error: invalid --top-namespace: {top_namespace_opt}", file=sys.stderr)
@@ -7569,6 +7965,20 @@ def main(argv: list[str]) -> int:
     if opt_err != "" and not allow_planned:
         print(f"error: {opt_err}", file=sys.stderr)
         return 1
+    try:
+        guard_limits = _resolve_guard_limits(
+            guard_profile,
+            max_ast_depth_raw,
+            max_parse_nodes_raw,
+            max_symbols_per_module_raw,
+            max_scope_depth_raw,
+            max_import_graph_nodes_raw,
+            max_import_graph_edges_raw,
+            max_generated_lines_raw,
+        )
+    except ValueError as ex:
+        print("error: " + str(ex), file=sys.stderr)
+        return 1
 
     input_path = Path(input_txt)
     if not input_path.exists():
@@ -7600,15 +8010,20 @@ def main(argv: list[str]) -> int:
     cpp = ""
     try:
         module_east_map_cache: dict[str, dict[str, Any]] = {}
+        import_graph_analysis: dict[str, Any] = {"user_module_files": [], "edges": []}
         if input_txt.endswith(".py") and not (emit_runtime_cpp and _is_runtime_emit_input_path(input_path)):
             analysis = _analyze_import_graph(input_path)
             _validate_import_graph_or_raise(analysis)
+            import_graph_analysis = analysis
             module_east_map_cache = build_module_east_map(input_path, parser_backend)
         east_module: dict[str, Any] = (
             module_east_map_cache[input_txt]
             if input_txt.endswith(".py") and input_txt in module_east_map_cache
             else load_east(input_path, parser_backend)
         )
+        guard_module_map = _select_guard_module_map(input_txt, east_module, module_east_map_cache)
+        _check_parse_stage_guards(guard_module_map, guard_limits)
+        _check_analyze_stage_guards(guard_module_map, import_graph_analysis, guard_limits)
         if dump_deps:
             dep_text = dump_deps_text(east_module)
             if input_txt.endswith(".py"):
@@ -7669,6 +8084,8 @@ def main(argv: list[str]) -> int:
                     new_runtime_include,
                 )
             hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
+            generated_lines_runtime = _count_text_lines(cpp_txt_runtime) + _count_text_lines(hdr_txt_runtime)
+            _check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
             _write_text_file(cpp_out, cpp_txt_runtime)
             _write_text_file(hdr_out, hdr_txt_runtime)
             print("generated: " + str(hdr_out))
@@ -7690,10 +8107,13 @@ def main(argv: list[str]) -> int:
                 top_namespace_opt,
                 not no_main,
             )
+            _check_guard_limit("emit", "max_generated_lines", _count_text_lines(cpp), guard_limits, str(input_path))
             if header_output_txt != "":
                 hdr_path = Path(header_output_txt)
                 _mkdirs_for_cli(_path_parent_text(hdr_path))
                 hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt)
+                generated_lines_single = _count_text_lines(cpp) + _count_text_lines(hdr_txt)
+                _check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
                 _write_text_file(hdr_path, hdr_txt)
         else:
             module_east_map: dict[str, dict[str, Any]] = {}
@@ -7722,6 +8142,7 @@ def main(argv: list[str]) -> int:
                 opt_level,
                 top_namespace_opt,
                 not no_main,
+                guard_limits["max_generated_lines"] if "max_generated_lines" in guard_limits else 0,
             )
             msg = "multi-file output generated at: " + str(out_dir)
             manifest_obj: Any = mf.get("manifest")
