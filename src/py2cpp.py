@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6747,56 +6747,13 @@ def _module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict
     return module_id if module_id != "" else module_name_from_path_for_graph(root, module_path)
 
 
-def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> Path:
-    """import graph 用のユーザーモジュール解決（未解決は空 Path）。"""
-    if module_name.startswith("pytra.") or module_name == "pytra":
-        return Path("")
-    rel = module_name.replace(".", "/")
-    parts = module_name.split(".")
-    leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
-    cur_dir = str(search_root)
-    cur_dir = cur_dir if cur_dir != "" else "."
-    seen_dirs: set[str] = set()
-    best_path = ""
-    best_rank = -1
-    best_distance = 1000000000
-    distance = 0
-    while cur_dir not in seen_dirs:
-        seen_dirs.add(cur_dir)
-        prefix = cur_dir
-        if prefix != "" and not prefix.endswith("/"):
-            prefix += "/"
-        cand_init = prefix + rel + "/__init__.py"
-        cand_named = prefix + rel + "/" + leaf + ".py" if leaf != "" else ""
-        cand_flat = prefix + rel + ".py"
-        candidates: list[tuple[str, int]] = []
-        candidates.append((cand_init, 3))
-        if cand_named != "":
-            candidates.append((cand_named, 2))
-        candidates.append((cand_flat, 1))
-        for path_txt, rank in candidates:
-            if Path(path_txt).exists():
-                if rank > best_rank or (rank == best_rank and distance < best_distance):
-                    best_path = path_txt
-                    best_rank = rank
-                    best_distance = distance
-        parent_dir = path_parent_text(Path(cur_dir))
-        if parent_dir == cur_dir:
-            break
-        cur_dir = parent_dir if parent_dir != "" else "."
-        distance += 1
-    if best_path != "":
-        return Path(best_path)
-    return Path("")
-
-
 def _resolve_module_name_for_graph(raw_name: str, root_dir: Path) -> dict[str, Any]:
     """import graph 用のモジュール解決（順序依存を避ける前段 helper）。"""
     if raw_name.startswith("."):
         return {"status": "relative", "module_id": raw_name, "path": ""}
     if is_pytra_module_name(raw_name):
         return {"status": "pytra", "module_id": raw_name, "path": ""}
-    dep_file = _resolve_user_module_path_for_graph(raw_name, root_dir)
+    dep_file = resolve_user_module_path_for_graph(raw_name, root_dir)
     if str(dep_file) != "":
         return {"status": "user", "module_id": raw_name, "path": str(dep_file)}
     if _is_known_non_user_import(raw_name):
