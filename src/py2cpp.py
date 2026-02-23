@@ -6099,10 +6099,10 @@ def _write_multi_file_cpp(
         import_modules = dict_any_get_dict(meta, "import_modules")
         import_symbols = dict_any_get_dict(meta, "import_symbols")
         dep_modules: set[str] = set()
-        for _alias_any, module_id_obj in import_modules.items():
+        for module_id_obj in import_modules.values():
             if isinstance(module_id_obj, str) and module_id_obj != "":
                 dep_modules.add(module_id_obj)
-        for _alias_any, sym_obj in import_symbols.items():
+        for sym_obj in import_symbols.values():
             module_id = dict_any_get_str(self.any_to_dict_or_empty(sym_obj), "module")
             if module_id != "":
                 dep_modules.add(module_id)
