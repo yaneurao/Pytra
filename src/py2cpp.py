@@ -477,6 +477,14 @@ class CppEmitter(CodeEmitter):
                 return "pytra::compiler::" + tail
         return ""
 
+    def _runtime_symbol_module_prefix(self, mod_name: str) -> str:
+        """runtime symbol include 解決で使う module prefix（`pytra.std.` 等）を返す。"""
+        if mod_name == "pytra.std":
+            return "pytra.std."
+        if mod_name == "pytra.utils":
+            return "pytra.utils."
+        return ""
+
     def _collect_import_cpp_includes(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
         """EAST body から必要な C++ include を収集する。"""
         includes: list[str] = []
@@ -492,11 +500,7 @@ class CppEmitter(CodeEmitter):
                     inc = self._module_name_to_cpp_include(mod_name)
                     append_unique_non_empty(includes, seen, inc)
                     if binding_kind == "symbol" and export_name != "":
-                        runtime_prefix = ""
-                        if mod_name == "pytra.std":
-                            runtime_prefix = "pytra.std."
-                        elif mod_name == "pytra.utils":
-                            runtime_prefix = "pytra.utils."
+                        runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
                         if runtime_prefix != "":
                             sym_inc = self._module_name_to_cpp_include(runtime_prefix + export_name)
                             append_unique_non_empty(includes, seen, sym_inc)
@@ -514,11 +518,7 @@ class CppEmitter(CodeEmitter):
                 mod_name = self._normalize_runtime_module_name(mod_name)
                 inc = self._module_name_to_cpp_include(mod_name)
                 append_unique_non_empty(includes, seen, inc)
-                runtime_prefix = ""
-                if mod_name == "pytra.std":
-                    runtime_prefix = "pytra.std."
-                elif mod_name == "pytra.utils":
-                    runtime_prefix = "pytra.utils."
+                runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
                 if runtime_prefix != "":
                     for ent in self._dict_stmt_list(stmt.get("names")):
                         sym = dict_any_get_str(ent, "name")
