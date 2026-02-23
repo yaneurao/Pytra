@@ -2112,6 +2112,14 @@ def f() -> int:
             module_east = load_east_document_helper(module_json)
         self.assertEqual(dict_any_get_str(wrapped_east, "kind"), "Module")
         self.assertEqual(dict_any_get_str(module_east, "kind"), "Module")
+        self.assertEqual(dict_any_get(wrapped_east, "east_stage"), 2)
+        self.assertEqual(dict_any_get(module_east, "east_stage"), 2)
+        self.assertEqual(dict_any_get(wrapped_east, "schema_version"), 1)
+        self.assertEqual(dict_any_get(module_east, "schema_version"), 1)
+        wrapped_meta = dict_any_get_dict(wrapped_east, "meta")
+        module_meta = dict_any_get_dict(module_east, "meta")
+        self.assertEqual(dict_any_get_str(wrapped_meta, "dispatch_mode"), "native")
+        self.assertEqual(dict_any_get_str(module_meta, "dispatch_mode"), "native")
 
     def test_resolve_module_name_classifies_user_pytra_and_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
