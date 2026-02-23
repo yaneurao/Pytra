@@ -6,6 +6,8 @@
 位置づけ:
 - 現行実装準拠の仕様は [spec-east.md](./spec-east.md)。
 - 本書は次期構成（段階移行前提）の仕様であり、`EAST2 -> EAST3` 導入時の正本とする。
+- 連結段の詳細（`type_id` 確定、manifest、中間ファイル再開）は [spec-linker.md](./spec-linker.md) に分離する。
+- 仕様優先順位は `spec-east123`（上位） -> `spec-linker`（下位）とする。
 - 元案は `materials/refs/spec-east123.md`。
 
 ## 1. 背景
