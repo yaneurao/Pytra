@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6874,17 +6874,6 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     }
 
 
-def _format_graph_list_section(out: str, label: str, items: list[str]) -> str:
-    """依存解析レポートの1セクションを追記して返す。"""
-    out2 = out + label + ":\n"
-    if len(items) == 0:
-        out2 += "  (none)\n"
-        return out2
-    for val_txt in items:
-        out2 += "  - " + val_txt + "\n"
-    return out2
-
-
 def _format_import_graph_report(analysis: dict[str, Any]) -> str:
     """依存解析結果を `--dump-deps` 向けテキストへ整形する。"""
     edges = _dict_any_get_str_list(analysis, "edges")
@@ -6895,13 +6884,13 @@ def _format_import_graph_report(analysis: dict[str, Any]) -> str:
         for item in edges:
             out += "  - " + item + "\n"
     cycles = _dict_any_get_str_list(analysis, "cycles")
-    out = _format_graph_list_section(out, "cycles", cycles)
+    out = format_graph_list_section(out, "cycles", cycles)
     missing = _dict_any_get_str_list(analysis, "missing_modules")
-    out = _format_graph_list_section(out, "missing", missing)
+    out = format_graph_list_section(out, "missing", missing)
     relative = _dict_any_get_str_list(analysis, "relative_imports")
-    out = _format_graph_list_section(out, "relative", relative)
+    out = format_graph_list_section(out, "relative", relative)
     reserved = _dict_any_get_str_list(analysis, "reserved_conflicts")
-    out = _format_graph_list_section(out, "reserved", reserved)
+    out = format_graph_list_section(out, "reserved", reserved)
     return out
 
 

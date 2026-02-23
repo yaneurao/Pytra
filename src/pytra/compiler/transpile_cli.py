@@ -394,6 +394,17 @@ def resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> P
     return Path("")
 
 
+def format_graph_list_section(out: str, label: str, items: list[str]) -> str:
+    """依存解析レポートの1セクションを追記して返す。"""
+    out2 = out + label + ":\n"
+    if len(items) == 0:
+        out2 += "  (none)\n"
+        return out2
+    for val_txt in items:
+        out2 += "  - " + val_txt + "\n"
+    return out2
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
