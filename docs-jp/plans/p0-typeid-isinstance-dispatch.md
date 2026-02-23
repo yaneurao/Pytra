@@ -37,6 +37,13 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
    - `P0-TID-02-S3`: `py2cpp.py --emit-runtime-cpp` で `src/pytra/built_in/*.py` から C++ runtime built_in 生成を可能にする。
    - `P0-TID-02-S4`: C++ 手書き built_in 実装を最小ブート層（GC/ABI 等）へ縮退する。
 
+## `P0-TID-02-S1` で確定したルール
+
+- 正本配置: target 非依存 built-in 意味論は `src/pytra/built_in/*.py` に置く。
+- 命名: `snake_case.py` を基本とし、`_impl` 接尾辞は target 側手書き層専用として予約する。
+- 生成対象: `src/pytra/built_in/<name>.py` は将来 `src/runtime/<lang>/pytra/built_in/<name>.*` へ生成する。
+- 境界: GC/ABI など低レベル処理だけを `src/runtime/<lang>/pytra-core/built_in/` に残し、意味論は正本層へ寄せる。
+
 ## 受け入れ基準
 
 - `isinstance(x, T)` が `type_id` ベースでユーザー定義型/派生型まで判定できる。
@@ -63,3 +70,4 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
 - 2026-02-23: `P0-TID-01-S2` を完了。C++ runtime（`src/runtime/cpp/pytra-core/built_in/py_runtime.h`）の `py_is_subtype` / `py_issubclass` / `py_isinstance` 実装と `py2cpp` lower 経路の統一を確認し、`python3 test/unit/test_py2cpp_codegen_issues.py`（41件成功）で回帰なしを確認した。
 - 2026-02-23: `P0-TID-01-S3` を完了。JS/TS runtime の `pyIsSubtype` / `pyIsInstance` と class `type_id` 登録（`pyRegisterClassType`）運用を確認し、`python3 test/unit/test_js_ts_runtime_dispatch.py`（3件成功）、`python3 test/unit/test_py2js_smoke.py`（10件成功）、`python3 test/unit/test_py2ts_smoke.py`（8件成功）で回帰なしを確認した。
 - 2026-02-23: `P0-TID-01-S4` を完了。emitter 側 `isinstance` lower の runtime API 経由統一（C++/JS/TS/C#/Rust）を確認し、`python3 test/unit/test_py2cs_smoke.py`（10件成功）、`python3 test/unit/test_py2rs_smoke.py`（18件成功）、`python3 tools/check_py2cpp_transpile.py` / `python3 tools/check_py2js_transpile.py` / `python3 tools/check_py2ts_transpile.py` / `python3 tools/check_py2cs_transpile.py` / `python3 tools/check_py2rs_transpile.py`（いずれも `checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。
+- 2026-02-23: `P0-TID-02-S1` を完了。`src/pytra/built_in/` を新設し、`__init__.py` と `README.md` で配置・命名・生成対象ルール（正本層 / 生成先 / 低レベル層境界）を確定した。
