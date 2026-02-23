@@ -550,6 +550,39 @@ def select_guard_module_map(
     return {key: east_module}
 
 
+def set_import_module_binding(import_modules: dict[str, str], local_name: str, module_id: str) -> None:
+    """import module alias 束縛を追加する。"""
+    if module_id == "":
+        return
+    import_modules[local_name] = module_id
+
+
+def set_import_symbol_binding(
+    import_symbols: dict[str, dict[str, str]],
+    local_name: str,
+    module_id: str,
+    symbol: str,
+) -> None:
+    """import symbol alias 束縛を追加する。"""
+    if module_id == "" or symbol == "":
+        return
+    import_symbols[local_name] = {"module": module_id, "name": symbol}
+
+
+def set_import_symbol_binding_and_module_set(
+    import_symbols: dict[str, dict[str, str]],
+    import_symbol_modules: set[str],
+    local_name: str,
+    module_id: str,
+    symbol: str,
+) -> None:
+    """import symbol alias 束縛を追加し、参照 module を追跡する。"""
+    if module_id == "" or symbol == "":
+        return
+    import_symbols[local_name] = {"module": module_id, "name": symbol}
+    import_symbol_modules.add(module_id)
+
+
 def stmt_list_scope_depth(
     body: list[dict[str, object]],
     depth: int,
