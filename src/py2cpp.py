@@ -546,6 +546,11 @@ class CppEmitter(CodeEmitter):
                 continue
             set_import_module_binding(self.import_modules, local_name, self.any_to_str(module_id_any))
 
+    def _seed_legacy_import_maps_from_meta(self, meta: dict[str, Any]) -> None:
+        """legacy import メタを symbols/modules の両方へ反映する。"""
+        self._seed_legacy_import_symbols_from_meta(meta)
+        self._seed_legacy_import_modules_from_meta(meta)
+
     def _seed_import_maps_from_meta(self) -> None:
         """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
         meta = dict_any_get_dict(self.doc, "meta")
@@ -582,8 +587,7 @@ class CppEmitter(CodeEmitter):
                 self._seed_legacy_import_modules_from_meta(meta)
             return
         # canonical メタが空の場合は legacy メタへフォールバックする。
-        self._seed_legacy_import_symbols_from_meta(meta)
-        self._seed_legacy_import_modules_from_meta(meta)
+        self._seed_legacy_import_maps_from_meta(meta)
         return
 
     def emit_block_comment(self, text: str) -> None:
