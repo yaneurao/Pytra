@@ -28,6 +28,38 @@ def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
 
 
+def _run_east3_contract_tests() -> tuple[bool, str]:
+    checks = [
+        [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "test/unit",
+            "-p",
+            "test_east3_lowering.py",
+        ],
+        [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "test/unit",
+            "-p",
+            "test_east3_cpp_bridge.py",
+        ],
+    ]
+    for cmd in checks:
+        cp = _run(cmd)
+        if cp.returncode != 0:
+            msg = cp.stderr.strip() or cp.stdout.strip()
+            first = msg.splitlines()[0] if msg else "unknown error"
+            return False, first
+    return True, ""
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="compare py2cpp outputs: python vs selfhost")
     ap.add_argument("--selfhost-bin", default="selfhost/py2cpp.out")
@@ -45,7 +77,18 @@ def main() -> int:
         default="allow-not-implemented",
         help="strict: any selfhost failure is mismatch, allow-not-implemented: [not_implemented] is skipped",
     )
+    ap.add_argument(
+        "--skip-east3-contract-tests",
+        action="store_true",
+        help="skip EAST3 schema/lowering preflight tests",
+    )
     args = ap.parse_args()
+
+    if not args.skip_east3_contract_tests:
+        ok_contract, msg_contract = _run_east3_contract_tests()
+        if not ok_contract:
+            print(f"[FAIL east3-contract] {msg_contract}")
+            return 1
 
     selfhost_bin = ROOT / args.selfhost_bin
     if not selfhost_bin.exists():

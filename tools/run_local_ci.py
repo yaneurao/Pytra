@@ -24,6 +24,8 @@ def main() -> int:
         ["python3", "tools/check_runtime_cpp_layout.py"],
         ["python3", "tools/run_regen_on_version_bump.py", "--verify-cpp-on-diff"],
         ["python3", "tools/check_py2cpp_transpile.py"],
+        ["python3", "tools/check_py2js_transpile.py"],
+        ["python3", "tools/check_py2ts_transpile.py"],
         ["python3", "test/unit/test_code_emitter.py"],
         ["python3", "test/unit/test_py2cpp_features.py"],
         ["python3", "tools/build_selfhost.py"],

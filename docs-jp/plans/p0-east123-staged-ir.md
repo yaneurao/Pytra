@@ -124,6 +124,22 @@
 `P0-EAST123-03-S2` での置換方針（本棚卸しからの確定）:
 - 上記カテゴリを `EAST3` 命令写像へ段階移行し、hooks は構文差分専任へ縮退する。
 
+## P0-EAST123-05-S1 hooks 分類・基線（2026-02-23）
+
+実行コマンド:
+- `python3 tools/check_cpp_hooks_semantic_budget.py`
+
+計測結果:
+- `total=11`
+- `semantic=4`（`on_for_range_mode`, `on_render_binop`, `on_render_expr_kind`, `on_render_object_method`）
+- `syntax=6`（`on_emit_stmt_kind`, `on_render_class_method`, `on_render_expr_complex`, `on_render_expr_leaf`, `on_render_module_method`, `on_stmt_omit_braces`）
+- `noop=1`（`on_render_call`）
+- `unknown=0`
+
+記録方針:
+- `tools/check_cpp_hooks_semantic_budget.py` を基線計測コマンドとして扱う。
+- 次段 (`P0-EAST123-05-S2`) でこの基線を上限とする流入防止チェックを追加する。
+
 決定ログ:
 - 2026-02-23: 初版作成。`docs-jp/spec/spec-east123.md` を最優先事項として `todo` の `P0` へ昇格し、実装導入の作業枠を定義した。
 - 2026-02-23: `EAST3` 導入効果を明示するため、`ID: P0-EAST123-05`（hooks 縮退の定量管理）を TODO/plan に追加した。
@@ -143,3 +159,5 @@
 - 2026-02-23: [ID: P0-EAST123-03-S2-S3] `runtime_call` / built-in の list/set/dict/str/special 分岐を `py2cpp.py` へ移管し、`hooks/cpp` の `on_render_call` は no-op 化した。`test_cpp_hooks.py` / `test_py2cpp_codegen_issues.py` / `test_east3_cpp_bridge.py` で回帰確認済み。
 - 2026-02-23: [ID: P0-EAST123-04-S1] `test/unit/test_east3_lowering.py` に schema 契約テストを追加し、`EAST3` ルート必須項目、`ForCore.iter_plan` 形状（`RuntimeIterForPlan` / `StaticRangeForPlan`）、および `meta.dispatch_mode` と runtime plan の一貫性を固定した。
 - 2026-02-23: [ID: P0-EAST123-04-S2] `test/unit/test_east3_lowering.py` に lowering 契約テストを追加し、`For -> ForCore` の `iter_mode` 正規化、non-Any builtin call 非変換、同型代入での Box/Unbox 非挿入を固定した。
+- 2026-02-23: [ID: P0-EAST123-04-S3] `check_selfhost_cpp_diff.py` / `check_py2js_transpile.py` / `check_py2ts_transpile.py` に EAST3 契約テストの preflight（`test_east3_lowering.py`, `test_east3_cpp_bridge.py`）を組み込み、`run_local_ci.py` に JS/TS クロスターゲットチェックを追加した。
+- 2026-02-23: [ID: P0-EAST123-05-S1] `tools/check_cpp_hooks_semantic_budget.py` を追加し、C++ hooks の semantic/syntax/no-op 分類と基線メトリクス（`total=11`, `semantic=4`, `syntax=6`, `noop=1`, `unknown=0`）を記録した。
