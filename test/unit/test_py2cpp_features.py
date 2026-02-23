@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -263,6 +263,23 @@ class Py2CppFeatureTest(unittest.TestCase):
             ]
         }
         self.assertEqual(collect_import_modules(east_module), ["os", "pkg.mod"])
+
+    def test_is_known_non_user_import(self) -> None:
+        self.assertTrue(
+            is_known_non_user_import("__future__", Path("/tmp/missing_std"), Path("/tmp/missing_utils"))
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            std_root = root / "std"
+            utils_root = root / "utils"
+            std_root.mkdir(parents=True)
+            utils_root.mkdir(parents=True)
+            (std_root / "pkg").mkdir(parents=True)
+            (std_root / "pkg" / "__init__.py").write_text("", encoding="utf-8")
+            (utils_root / "mod.py").write_text("", encoding="utf-8")
+            self.assertTrue(is_known_non_user_import("pkg", std_root, utils_root))
+            self.assertTrue(is_known_non_user_import("mod", std_root, utils_root))
+            self.assertFalse(is_known_non_user_import("missing_mod", std_root, utils_root))
 
     def test_graph_cycle_dfs_collects_cycle(self) -> None:
         graph_adj = {"a": ["b"], "b": ["a"]}

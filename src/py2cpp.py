@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6706,24 +6706,6 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     return out
 
 
-NON_FILE_STANDARD_IMPORTS: set[str] = {
-    "__future__",
-    "os",
-    "glob",
-}
-
-
-def _is_known_non_user_import(module_name: str) -> bool:
-    """依存グラフで「ユーザーファイル解決不要」とみなす import か判定する。"""
-    if module_name in NON_FILE_STANDARD_IMPORTS:
-        return True
-    if _python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, module_name):
-        return True
-    if _python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, module_name):
-        return True
-    return False
-
-
 def _resolve_module_name_for_graph(raw_name: str, root_dir: Path) -> dict[str, Any]:
     """import graph 用のモジュール解決（順序依存を避ける前段 helper）。"""
     if raw_name.startswith("."):
@@ -6733,7 +6715,7 @@ def _resolve_module_name_for_graph(raw_name: str, root_dir: Path) -> dict[str, A
     dep_file = resolve_user_module_path_for_graph(raw_name, root_dir)
     if str(dep_file) != "":
         return {"status": "user", "module_id": raw_name, "path": str(dep_file)}
-    if _is_known_non_user_import(raw_name):
+    if is_known_non_user_import(raw_name, RUNTIME_STD_SOURCE_ROOT, RUNTIME_UTILS_SOURCE_ROOT):
         return {"status": "known", "module_id": raw_name, "path": ""}
     return {"status": "missing", "module_id": raw_name, "path": ""}
 
@@ -7433,7 +7415,7 @@ def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
     if str(dep_file) != "":
         # import 文字列を module_id の正本として扱う（探索パス由来の見かけに引きずられない）。
         return {"status": "user", "module_id": raw_name, "path": dep_file}
-    if _is_known_non_user_import(raw_name):
+    if is_known_non_user_import(raw_name, RUNTIME_STD_SOURCE_ROOT, RUNTIME_UTILS_SOURCE_ROOT):
         return {"status": "known", "module_id": raw_name, "path": None}
     return {"status": "missing", "module_id": raw_name, "path": None}
 

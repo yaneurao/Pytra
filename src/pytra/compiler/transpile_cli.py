@@ -447,6 +447,32 @@ def collect_import_modules(east_module: dict[str, object]) -> list[str]:
     return out
 
 
+def is_known_non_user_import(
+    module_name: str,
+    runtime_std_source_root: Path,
+    runtime_utils_source_root: Path,
+) -> bool:
+    """import graph でユーザーファイル解決不要とみなす import か判定する。"""
+    if module_name == "__future__" or module_name == "os" or module_name == "glob":
+        return True
+    rel = module_name.replace(".", "/")
+    std_root_txt = str(runtime_std_source_root)
+    if std_root_txt != "" and not std_root_txt.endswith("/"):
+        std_root_txt += "/"
+    utils_root_txt = str(runtime_utils_source_root)
+    if utils_root_txt != "" and not utils_root_txt.endswith("/"):
+        utils_root_txt += "/"
+    if Path(std_root_txt + rel + ".py").exists():
+        return True
+    if Path(std_root_txt + rel + "/__init__.py").exists():
+        return True
+    if Path(utils_root_txt + rel + ".py").exists():
+        return True
+    if Path(utils_root_txt + rel + "/__init__.py").exists():
+        return True
+    return False
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
