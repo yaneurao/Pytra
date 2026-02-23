@@ -782,6 +782,34 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
     return out
 
 
+def build_module_east_map_from_analysis(
+    entry_path: Path,
+    analysis: dict[str, object],
+    module_east_raw: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """依存解析結果を使って module EAST map を構築する。"""
+    validate_import_graph_or_raise(analysis)
+    files = dict_any_get_str_list(analysis, "user_module_files")
+    module_id_map = dict_any_get_dict(analysis, "module_id_map")
+    out: dict[str, dict[str, Any]] = {}
+    root_dir = Path(path_parent_text(entry_path))
+    for f in files:
+        p = Path(f)
+        east = dict_any_get_dict(module_east_raw, str(p))
+        if len(east) == 0:
+            continue
+        meta = dict_any_get_dict(east, "meta")
+        module_id = dict_any_get_str(module_id_map, str(p))
+        module_id = module_id if module_id != "" else module_name_from_path_for_graph(root_dir, p)
+        if module_id != "":
+            module_id_any: Any = module_id
+            meta["module_id"] = module_id_any
+        east["meta"] = meta
+        out[str(p)] = east
+    validate_from_import_symbols_or_raise(out, root=root_dir)
+    return out
+
+
 def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """モジュール間共有用の最小型スキーマ（関数/クラス）を構築する。"""
     out: dict[str, dict[str, Any]] = {}
