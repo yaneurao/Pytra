@@ -712,7 +712,7 @@ class CppEmitter(CodeEmitter):
                 owner_map = self.module_attr_call_map[owner_key]
                 if attr in owner_map:
                     mapped = owner_map[attr]
-                    if mapped != "":
+                    if mapped:
                         return mapped
         return ""
 
@@ -720,10 +720,10 @@ class CppEmitter(CodeEmitter):
         """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
         mapped = self._lookup_module_attr_runtime_call(module_name_norm, symbol_name)
-        if mapped != "":
+        if mapped:
             return mapped
         ns = self._module_name_to_cpp_namespace(module_name_norm)
-        if ns != "":
+        if ns:
             return f"{ns}::{symbol_name}"
         return None
 
