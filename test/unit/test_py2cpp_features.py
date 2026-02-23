@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -235,6 +235,19 @@ class Py2CppFeatureTest(unittest.TestCase):
             module_name_from_path_for_graph(Path("pkg"), Path("/tmp/other.py")),
             "other",
         )
+
+    def test_graph_cycle_dfs_collects_cycle(self) -> None:
+        graph_adj = {"a": ["b"], "b": ["a"]}
+        key_to_disp = {"a": "a.py", "b": "b.py"}
+        color: dict[str, int] = {}
+        stack: list[str] = []
+        cycles: list[str] = []
+        cycle_seen: set[str] = set()
+        graph_cycle_dfs("a", graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
+        self.assertEqual(cycles, ["a.py -> b.py -> a.py"])
+        self.assertEqual(color.get("a"), 2)
+        self.assertEqual(color.get("b"), 2)
+        self.assertEqual(stack, [])
 
     def test_append_unique_non_empty_appends_once(self) -> None:
         items = ["a"]

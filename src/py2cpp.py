@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6740,48 +6740,6 @@ def _is_known_non_user_import(module_name: str) -> bool:
     return False
 
 
-def _graph_cycle_dfs(
-    key: str,
-    graph_adj: dict[str, list[str]],
-    key_to_disp: dict[str, str],
-    color: dict[str, int],
-    stack: list[str],
-    cycles: list[str],
-    cycle_seen: set[str],
-) -> None:
-    """import graph DFS で循環参照を収集する。"""
-    color[key] = 1
-    stack.append(key)
-    nxts: list[str] = []
-    if key in graph_adj:
-        nxts = graph_adj[key]
-    for nxt in nxts:
-        c = color.get(nxt, 0)
-        if c == 0:
-            _graph_cycle_dfs(nxt, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
-        elif c == 1:
-            j = -1
-            for idx in range(len(stack) - 1, -1, -1):
-                if stack[idx] == nxt:
-                    j = idx
-                    break
-            if j >= 0:
-                nodes: list[str] = []
-                for m in range(j, len(stack)):
-                    nodes.append(stack[m])
-                nodes.append(nxt)
-                disp_nodes: list[str] = []
-                for k in range(len(nodes)):
-                    dk = nodes[k]
-                    disp_nodes.append(key_to_disp.get(dk, dk))
-                cycle_txt = join_str_list(" -> ", disp_nodes)
-                if cycle_txt not in cycle_seen:
-                    cycle_seen.add(cycle_txt)
-                    cycles.append(cycle_txt)
-    stack.pop()
-    color[key] = 2
-
-
 def _module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:
     """import graph 用の EAST module_id 抽出。"""
     meta = _dict_any_get_dict(east_doc, "meta")
@@ -6938,7 +6896,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
         keys.append(key)
     for k in keys:
         if color.get(k, 0) == 0:
-            _graph_cycle_dfs(k, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
+            graph_cycle_dfs(k, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
 
     user_module_files: list[str] = []
     visited_keys: list[str] = []
