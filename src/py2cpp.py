@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -52,52 +52,6 @@ def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
         rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
         return rel != "" and Path(base_txt + "/compiler/" + rel).exists()
     return False
-
-
-def _make_user_error(category: str, summary: str, details: list[str]) -> Exception:
-    payload = "__PYTRA_USER_ERROR__|" + category + "|" + summary
-    for detail in details:
-        payload += "\n" + detail
-    return RuntimeError(payload)
-
-
-def _parse_user_error(err_text: str) -> dict[str, Any]:
-    text = err_text
-    tag = "__PYTRA_USER_ERROR__|"
-    if not text.startswith(tag):
-        return {"category": "", "summary": "", "details": []}
-    lines: list[str] = []
-    cur = ""
-    for ch in text:
-        if ch == "\n":
-            lines.append(cur)
-            cur = ""
-        else:
-            cur += ch
-    lines.append(cur)
-    head = lines[0] if len(lines) > 0 else ""
-    parts: list[str] = []
-    cur = ""
-    split_count = 0
-    for ch in head:
-        if ch == "|" and split_count < 2:
-            parts.append(cur)
-            cur = ""
-            split_count += 1
-        else:
-            cur += ch
-    parts.append(cur)
-    if len(parts) != 3:
-        return {"category": "", "summary": "", "details": []}
-    category = parts[1]
-    summary = parts[2]
-    details: list[str] = []
-    for i, line in enumerate(lines):
-        if i == 0:
-            continue
-        if line != "":
-            details.append(line)
-    return {"category": category, "summary": summary, "details": details}
 
 
 GUARD_PROFILES: set[str] = {"off", "default", "strict"}
@@ -221,7 +175,7 @@ def _raise_guard_limit_exceeded(
     detail = f"kind=limit_exceeded stage={stage} limit={limit_label} value={value} max={max_value}"
     if detail_subject != "":
         detail += " file=" + detail_subject
-    raise _make_user_error(
+    raise make_user_error(
         "input_invalid",
         "Input exceeds configured guard limits.",
         [detail],
@@ -4478,7 +4432,7 @@ class CppEmitter(CodeEmitter):
         src = "(input)"
         if isinstance(src_obj, str) and src_obj != "":
             src = src_obj
-        return _make_user_error(
+        return make_user_error(
             "input_invalid",
             "Module names are not bound by from-import statements.",
             [f"kind=missing_symbol file={src} import={base_name}.{attr}"],
@@ -6039,7 +5993,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
                 return east_obj
             if _dict_any_kind(payload) == "Module":
                 return payload
-        raise _make_user_error(
+        raise make_user_error(
             "input_invalid",
             "Invalid EAST JSON format.",
             ["expected: {'ok': true, 'east': {...}} or {'kind': 'Module', ...}"],
@@ -6056,13 +6010,13 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
         )
     except SyntaxError as ex:
         msg = str(ex)
-        raise _make_user_error(
+        raise make_user_error(
             "user_syntax_error",
             "Python syntax error.",
             [msg],
         ) from ex
     except Exception as ex:
-        parsed_err = _parse_user_error(str(ex))
+        parsed_err = parse_user_error(str(ex))
         ex_cat = _dict_any_get_str(parsed_err, "category")
         ex_details = _dict_any_get_str_list(parsed_err, "details")
         if ex_cat != "":
@@ -6071,7 +6025,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
                 if len(ex_details) > 0 and isinstance(ex_details[0], str):
                     first = ex_details[0]
                 if first == "":
-                    raise _make_user_error(
+                    raise make_user_error(
                         "user_syntax_error",
                         "Python syntax error.",
                         [],
@@ -6080,20 +6034,20 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
         msg = str(ex)
         if "from-import wildcard is not supported" in msg:
             label = _first_import_detail_line(source_text, "wildcard")
-            raise _make_user_error(
+            raise make_user_error(
                 "input_invalid",
                 "Unsupported import syntax.",
                 [f"kind=unsupported_import_form file={input_path} import={label}"],
             ) from ex
         if "relative import is not supported" in msg:
             label = _first_import_detail_line(source_text, "relative")
-            raise _make_user_error(
+            raise make_user_error(
                 "input_invalid",
                 "Unsupported import syntax.",
                 [f"kind=unsupported_import_form file={input_path} import={label}"],
             ) from ex
         if "duplicate import binding:" in msg:
-            raise _make_user_error(
+            raise make_user_error(
                 "input_invalid",
                 "Duplicate import binding.",
                 [f"kind=duplicate_binding file={input_path} import={msg}"],
@@ -6109,10 +6063,10 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
         if "forbidden by language constraints" in msg:
             category = "unsupported_by_design"
             summary = "This syntax is unsupported by language design."
-        raise _make_user_error(category, summary, [msg]) from ex
+        raise make_user_error(category, summary, [msg]) from ex
     if isinstance(east_any, dict):
         return east_any
-    raise _make_user_error(
+    raise make_user_error(
         "input_invalid",
         "Failed to build EAST.",
         ["EAST root must be a dict."],
@@ -6851,7 +6805,7 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
         if v != "":
             details.append(f"kind=import_cycle file=(graph) import={v}")
     if len(details) > 0:
-        raise _make_user_error(
+        raise make_user_error(
             "input_invalid",
             "Failed to resolve imports (missing/conflict/cycle).",
             details,
@@ -6904,7 +6858,7 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
                                 f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
                             )
     if len(details) > 0:
-        raise _make_user_error(
+        raise make_user_error(
             "input_invalid",
             "Failed to resolve imports (missing symbols).",
             details,
@@ -7359,7 +7313,7 @@ def dump_deps_graph_text(entry_path: Path) -> str:
 
 def print_user_error(err_text: str) -> None:
     """分類済みユーザーエラーをカテゴリ別に表示する。"""
-    parsed_err = _parse_user_error(err_text)
+    parsed_err = parse_user_error(err_text)
     cat = _dict_any_get_str(parsed_err, "category")
     details = _dict_any_get_str_list(parsed_err, "details")
     if cat == "":
@@ -7687,7 +7641,7 @@ def main(argv: list[str]) -> int:
             print(msg, end="")
             return 0
     except Exception as ex:
-        parsed_err = _parse_user_error(str(ex))
+        parsed_err = parse_user_error(str(ex))
         cat = _dict_any_get_str(parsed_err, "category")
         if cat != "":
             print_user_error(str(ex))

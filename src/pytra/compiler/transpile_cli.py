@@ -50,6 +50,54 @@ def normalize_common_transpile_args(
     return args
 
 
+def make_user_error(category: str, summary: str, details: list[str]) -> Exception:
+    """共通フォーマットの user error 例外を生成する。"""
+    payload = "__PYTRA_USER_ERROR__|" + category + "|" + summary
+    for detail in details:
+        payload += "\n" + detail
+    return RuntimeError(payload)
+
+
+def parse_user_error(err_text: str) -> dict[str, object]:
+    """共通フォーマットの user error 文字列を解析する。"""
+    text = err_text
+    tag = "__PYTRA_USER_ERROR__|"
+    if not text.startswith(tag):
+        return {"category": "", "summary": "", "details": []}
+    lines: list[str] = []
+    cur = ""
+    for ch in text:
+        if ch == "\n":
+            lines.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    lines.append(cur)
+    head = lines[0] if len(lines) > 0 else ""
+    parts: list[str] = []
+    cur = ""
+    split_count = 0
+    for ch in head:
+        if ch == "|" and split_count < 2:
+            parts.append(cur)
+            cur = ""
+            split_count += 1
+        else:
+            cur += ch
+    parts.append(cur)
+    if len(parts) != 3:
+        return {"category": "", "summary": "", "details": []}
+    category = parts[1]
+    summary = parts[2]
+    details: list[str] = []
+    for i, line in enumerate(lines):
+        if i == 0:
+            continue
+        if line != "":
+            details.append(line)
+    return {"category": category, "summary": summary, "details": details}
+
+
 def join_str_list(sep: str, items: list[str]) -> str:
     """区切り文字で `list[str]` を結合する selfhost-safe helper。"""
     return sep.join(items)
