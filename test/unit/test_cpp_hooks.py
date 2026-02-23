@@ -192,7 +192,7 @@ class _DummyEmitter:
 
 
 class CppHooksTest(unittest.TestCase):
-    def test_on_render_call_static_cast_single_arg(self) -> None:
+    def test_on_render_call_is_noop_after_runtime_migration(self) -> None:
         em = _DummyEmitter()
         call_node = {
             "kind": "Call",
@@ -202,20 +202,7 @@ class CppHooksTest(unittest.TestCase):
         }
         func_node = {"kind": "Name", "id": "int"}
         rendered = on_render_call(em, call_node, func_node, ["x"], {})
-        self.assertEqual(rendered, "py_to_int64(x)")
-
-    def test_on_render_call_static_cast_int_base(self) -> None:
-        em = _DummyEmitter()
-        call_node = {
-            "kind": "Call",
-            "runtime_call": "static_cast",
-            "builtin_name": "int",
-            "resolved_type": "int64",
-            "args": [{"kind": "Name", "id": "s", "resolved_type": "str"}, {"kind": "Constant", "value": 16}],
-        }
-        func_node = {"kind": "Name", "id": "int"}
-        rendered = on_render_call(em, call_node, func_node, ["s", "16"], {})
-        self.assertEqual(rendered, "py_to_int64_base(s, py_to_int64(16))")
+        self.assertIsNone(rendered)
 
     def test_range_expr_render(self) -> None:
         em = _DummyEmitter()

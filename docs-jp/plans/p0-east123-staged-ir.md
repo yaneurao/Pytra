@@ -109,18 +109,17 @@
 
 ### built-in lower（runtime_call 分岐）
 
-- `src/py2cpp.py:3280` `_render_builtin_call_with_runtime`
-- `src/py2cpp.py:3315` `_render_builtin_runtime_fallback`
-- `src/py2cpp.py:3459` `_render_scalar_cast_builtin_call`
-- `src/hooks/cpp/hooks/cpp_hooks.py:60` `_render_runtime_call_list_ops`
-- `src/hooks/cpp/hooks/cpp_hooks.py:105` `_render_runtime_call_set_ops`
-- `src/hooks/cpp/hooks/cpp_hooks.py:126` `_render_runtime_call_dict_ops`
-- `src/hooks/cpp/hooks/cpp_hooks.py:275` `_render_runtime_call_str_ops`
-- `src/hooks/cpp/hooks/cpp_hooks.py:354` `_render_runtime_call_direct_builtin`
-- `src/hooks/cpp/hooks/cpp_hooks.py:454` `on_render_call`
+- `src/py2cpp.py` `_render_builtin_call`
+- `src/py2cpp.py` `_render_builtin_runtime_list_ops`
+- `src/py2cpp.py` `_render_builtin_runtime_set_ops`
+- `src/py2cpp.py` `_render_builtin_runtime_dict_ops`
+- `src/py2cpp.py` `_render_builtin_runtime_str_ops`
+- `src/py2cpp.py` `_render_builtin_runtime_special_ops`
+- `src/py2cpp.py` `_render_builtin_runtime_fallback`
+- `src/hooks/cpp/hooks/cpp_hooks.py` `on_render_call`（no-op）
 
 現状:
-- `runtime_call` ベース分岐が `py2cpp.py` と hooks に重複している。
+- `runtime_call` / built-in 分岐は `py2cpp.py` 側へ集約し、`hooks/cpp` の `on_render_call` は構文差分専任の no-op へ縮退した。
 
 `P0-EAST123-03-S2` での置換方針（本棚卸しからの確定）:
 - 上記カテゴリを `EAST3` 命令写像へ段階移行し、hooks は構文差分専任へ縮退する。
@@ -141,3 +140,4 @@
 - 2026-02-23: [ID: P0-EAST123-03-S1] `py2cpp.py` と `hooks/cpp` の意味論実装経路（dispatch/boxing/iterable/built-in）を棚卸しし、`P0-EAST123-03-S2` の置換対象として固定した。
 - 2026-02-23: [ID: P0-EAST123-03-S2-S1] `py2cpp.py` に `ForCore` / `Box` / `Unbox` / `Obj*` 受理を追加し、`test/unit/test_east3_cpp_bridge.py` で C++ 写像と `ForCore` のシンボル収集（`transpile_cli` 側）を固定した。
 - 2026-02-23: [ID: P0-EAST123-03-S2-S2] `py2cpp` に `--east-stage {2,3}` / `--object-dispatch-mode` を追加し、`load_east(..., east_stage=\"3\")` で `EAST2 -> EAST3` を通す経路を導入して `ForCore` / Any 境界を backend 再判断なしで受理できるようにした。
+- 2026-02-23: [ID: P0-EAST123-03-S2-S3] `runtime_call` / built-in の list/set/dict/str/special 分岐を `py2cpp.py` へ移管し、`hooks/cpp` の `on_render_call` は no-op 化した。`test_cpp_hooks.py` / `test_py2cpp_codegen_issues.py` / `test_east3_cpp_bridge.py` で回帰確認済み。
