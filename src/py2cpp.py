@@ -3894,6 +3894,21 @@ class CppEmitter(CodeEmitter):
             if len(args) == 1:
                 return f"{owner}.lstrip({args[0]})"
         if runtime_call == "py_startswith":
+            if len(arg_nodes) >= 1:
+                starts_node = {
+                    "kind": "StrStartsEndsWith",
+                    "mode": "startswith",
+                    "owner": fn.get("value"),
+                    "needle": arg_nodes[0],
+                    "resolved_type": "bool",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                if len(arg_nodes) >= 2:
+                    starts_node["start"] = arg_nodes[1]
+                if len(arg_nodes) >= 3:
+                    starts_node["end"] = arg_nodes[2]
+                return self.render_expr(starts_node)
             if len(args) == 1:
                 return f"py_startswith({owner}, {args[0]})"
             if len(args) == 2:
@@ -3904,6 +3919,21 @@ class CppEmitter(CodeEmitter):
                 end = f"py_to_int64({args[2]})"
                 return f"py_startswith(py_slice({owner}, {start}, {end}), {args[0]})"
         if runtime_call == "py_endswith":
+            if len(arg_nodes) >= 1:
+                ends_node = {
+                    "kind": "StrStartsEndsWith",
+                    "mode": "endswith",
+                    "owner": fn.get("value"),
+                    "needle": arg_nodes[0],
+                    "resolved_type": "bool",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                if len(arg_nodes) >= 2:
+                    ends_node["start"] = arg_nodes[1]
+                if len(arg_nodes) >= 3:
+                    ends_node["end"] = arg_nodes[2]
+                return self.render_expr(ends_node)
             if len(args) == 1:
                 return f"py_endswith({owner}, {args[0]})"
             if len(args) == 2:
@@ -6152,6 +6182,24 @@ class CppEmitter(CodeEmitter):
             if mode == "lstrip":
                 return f"py_lstrip({owner_expr})"
             return f"py_strip({owner_expr})"
+        if kind == "StrStartsEndsWith":
+            owner_node = expr_d.get("owner")
+            needle_node = expr_d.get("needle")
+            owner_expr = self.render_expr(owner_node)
+            needle_expr = self.render_expr(needle_node)
+            mode = self.any_dict_get_str(expr_d, "mode", "startswith")
+            has_start = self.any_dict_has(expr_d, "start")
+            fn_name = "py_startswith" if mode != "endswith" else "py_endswith"
+            if not has_start:
+                return f"{fn_name}({owner_expr}, {needle_expr})"
+            start_expr = self.render_expr(expr_d.get("start"))
+            start_cast = f"py_to_int64({start_expr})"
+            end_expr = f"py_len({owner_expr})"
+            if self.any_dict_has(expr_d, "end"):
+                end_raw = self.render_expr(expr_d.get("end"))
+                end_expr = f"py_to_int64({end_raw})"
+            sliced = f"py_slice({owner_expr}, {start_cast}, {end_expr})"
+            return f"{fn_name}({sliced}, {needle_expr})"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))

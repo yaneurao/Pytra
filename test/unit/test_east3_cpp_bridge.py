@@ -685,6 +685,72 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(strip_expr), "py_strip(s)")
         self.assertEqual(emitter.render_expr(strip_chars_expr), 's.strip("x")')
 
+    def test_render_expr_supports_str_starts_ends_with_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        owner = {"kind": "Name", "id": "s", "resolved_type": "str"}
+        needle = {"kind": "Constant", "value": "x", "resolved_type": "str"}
+        starts_node = {
+            "kind": "StrStartsEndsWith",
+            "mode": "startswith",
+            "owner": owner,
+            "needle": needle,
+            "resolved_type": "bool",
+        }
+        ends_slice_node = {
+            "kind": "StrStartsEndsWith",
+            "mode": "endswith",
+            "owner": owner,
+            "needle": needle,
+            "start": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+            "end": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+            "resolved_type": "bool",
+        }
+        self.assertEqual(emitter.render_expr(starts_node), 'py_startswith(s, "x")')
+        self.assertEqual(
+            emitter.render_expr(ends_slice_node),
+            'py_endswith(py_slice(s, py_to_int64(1), py_to_int64(3)), "x")',
+        )
+
+    def test_builtin_runtime_py_startswith_endswith_use_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        starts_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_startswith",
+            "resolved_type": "bool",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "startswith",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Constant", "value": "x", "resolved_type": "str"}],
+            "keywords": [],
+        }
+        ends_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_endswith",
+            "resolved_type": "bool",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "endswith",
+                "resolved_type": "unknown",
+            },
+            "args": [
+                {"kind": "Constant", "value": "x", "resolved_type": "str"},
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+            ],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(starts_expr), 'py_startswith(s, "x")')
+        self.assertEqual(
+            emitter.render_expr(ends_expr),
+            'py_endswith(py_slice(s, py_to_int64(1), py_to_int64(3)), "x")',
+        )
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
