@@ -1855,8 +1855,7 @@ class CppEmitter(CodeEmitter):
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
                 local_name = asname if asname != "" else self._last_dotted_name(name)
-                if local_name != "":
-                    set_import_module_binding(self.import_modules, local_name, name)
+                set_import_module_binding(self.import_modules, local_name, name)
             return
         if kind == "ImportFrom":
             mod = dict_any_get_str(stmt, "module")
