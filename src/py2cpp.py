@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options
+from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -22,13 +22,6 @@ from pytra.std import sys
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT = Path("src/pytra/compiler")
-
-
-def _write_text_file(path_obj: Path, text: str) -> None:
-    """CLI 出力向けにテキストを書き出す。"""
-    f = open(str(path_obj), "w", encoding="utf-8")
-    f.write(text)
-    f.close()
 
 
 def _python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
@@ -7502,7 +7495,7 @@ def _write_multi_file_cpp(
     generated_lines_total += _count_text_lines(prelude_txt)
     if max_generated_lines > 0:
         _check_guard_limit("emit", "max_generated_lines", generated_lines_total, {"max_generated_lines": max_generated_lines})
-    _write_text_file(prelude_hdr, prelude_txt)
+    write_text_file(prelude_hdr, prelude_txt)
 
     root = Path(path_parent_text(entry_path))
     entry_key = str(entry_path)
@@ -7552,7 +7545,7 @@ def _write_multi_file_cpp(
                 {"max_generated_lines": max_generated_lines},
                 str(mod_path),
             )
-        _write_text_file(hdr_path, hdr_text)
+        write_text_file(hdr_path, hdr_text)
 
         is_entry = mod_key == entry_key
         cpp_txt = _transpile_to_cpp_with_map(
@@ -7658,7 +7651,7 @@ def _write_multi_file_cpp(
                 {"max_generated_lines": max_generated_lines},
                 str(mod_path),
             )
-        _write_text_file(cpp_path, cpp_txt)
+        write_text_file(cpp_path, cpp_txt)
 
         manifest_modules.append(
             {
@@ -7688,7 +7681,7 @@ def _write_multi_file_cpp(
             {"max_generated_lines": max_generated_lines},
             str(entry_path),
         )
-    _write_text_file(manifest_path, manifest_txt)
+    write_text_file(manifest_path, manifest_txt)
     return {
         "entry": entry_key,
         "include_dir": str(include_dir),
@@ -7953,7 +7946,7 @@ def main(argv: list[str]) -> int:
             if output_txt != "":
                 out_path = Path(output_txt)
                 mkdirs_for_cli(path_parent_text(out_path))
-                _write_text_file(out_path, options_text)
+                write_text_file(out_path, options_text)
             else:
                 print(options_text, end="")
             return 0
@@ -7982,7 +7975,7 @@ def main(argv: list[str]) -> int:
             if output_txt != "":
                 out_path = Path(output_txt)
                 mkdirs_for_cli(path_parent_text(out_path))
-                _write_text_file(out_path, dep_text)
+                write_text_file(out_path, dep_text)
             else:
                 print(dep_text, end="")
             return 0
@@ -8037,8 +8030,8 @@ def main(argv: list[str]) -> int:
             hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
             generated_lines_runtime = _count_text_lines(cpp_txt_runtime) + _count_text_lines(hdr_txt_runtime)
             _check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
-            _write_text_file(cpp_out, cpp_txt_runtime)
-            _write_text_file(hdr_out, hdr_txt_runtime)
+            write_text_file(cpp_out, cpp_txt_runtime)
+            write_text_file(hdr_out, hdr_txt_runtime)
             print("generated: " + str(hdr_out))
             print("generated: " + str(cpp_out))
             return 0
@@ -8065,7 +8058,7 @@ def main(argv: list[str]) -> int:
                 hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt)
                 generated_lines_single = _count_text_lines(cpp) + _count_text_lines(hdr_txt)
                 _check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
-                _write_text_file(hdr_path, hdr_txt)
+                write_text_file(hdr_path, hdr_txt)
         else:
             module_east_map: dict[str, dict[str, Any]] = {}
             if input_txt.endswith(".py"):
@@ -8119,7 +8112,7 @@ def main(argv: list[str]) -> int:
     if output_txt != "":
         out_path = Path(output_txt)
         mkdirs_for_cli(path_parent_text(out_path))
-        _write_text_file(out_path, cpp)
+        write_text_file(out_path, cpp)
     else:
         print(cpp)
     return 0

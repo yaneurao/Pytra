@@ -95,6 +95,13 @@ def mkdirs_for_cli(path_txt: str) -> None:
     os.makedirs(path_txt, exist_ok=True)
 
 
+def write_text_file(path_obj: Path, text: str) -> None:
+    """CLI 出力向けにテキストを書き出す。"""
+    f = open(str(path_obj), "w", encoding="utf-8")
+    f.write(text)
+    f.close()
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
