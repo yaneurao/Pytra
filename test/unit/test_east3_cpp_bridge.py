@@ -115,19 +115,19 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(unbox_expr), "int64(py_to_int64(v))")
         self.assertEqual(
             emitter.render_expr(is_instance),
-            "py_isinstance(v, static_cast<uint32>(PYTRA_TID_INT))",
+            "py_isinstance(v, PYTRA_TID_INT)",
         )
         self.assertEqual(
             emitter.render_expr(is_instance_class),
-            "py_isinstance(v, static_cast<uint32>(Base::PYTRA_TYPE_ID))",
+            "py_isinstance(v, Base::PYTRA_TYPE_ID)",
         )
         self.assertEqual(
             emitter.render_expr(is_subclass),
-            "py_issubclass(static_cast<uint32>(1001), static_cast<uint32>(1000))",
+            "py_issubclass(1001, 1000)",
         )
         self.assertEqual(
             emitter.render_expr(is_subtype),
-            "py_is_subtype(static_cast<uint32>(1001), static_cast<uint32>(1000))",
+            "py_is_subtype(1001, 1000)",
         )
 
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:

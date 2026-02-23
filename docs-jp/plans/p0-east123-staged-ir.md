@@ -71,6 +71,29 @@
 22. `P0-EAST123-04-S2`: lowering 契約テスト（`EAST2 -> EAST3`）整備。
 23. `P0-EAST123-04-S3`: selfhost + クロスターゲット回帰導線へ統合。
 
+## P0-EAST123-08-S1 IR-first 移行順（確定）
+
+目的:
+- `type_id` 以外の言語非依存意味論を、backend/hook 実装から `EAST3` 命令へ順次移す実行順を固定する。
+
+移行優先度（高 -> 低）:
+1. `truthy/len/str`（`ObjBool` / `ObjLen` / `ObjStr`）
+   - 理由: 分岐条件・ループ条件・標準ライブラリでの使用頻度が高く、誤差分が全体挙動へ波及しやすい。
+   - 完了条件: backend 側の bool/len/str 判定分岐が `EAST3` 命令写像のみに収束する。
+2. `iterable`（`ObjIterInit` / `ObjIterNext` + `ForCore.iter_plan`）
+   - 理由: `for` 系の再判断が backend 側へ残りやすく、hooks 肥大化の主因になっている。
+   - 完了条件: `iter_mode`/`iter_plan` の意味論再判断を backend/hook で行わない。
+3. `boxing/unboxing`（`Box` / `Unbox` / `CastOrRaise`）
+   - 理由: 代入・引数・戻り値の境界処理が広範囲に分散しており、段階導入の影響面が大きい。
+   - 完了条件: Any 境界の注入/解除ロジックが `EAST3` 命令入力へ統一される。
+4. 主要 built-in lower（list/set/dict/str/special）
+   - 理由: API 数が多く差分面積が大きいため、前段の境界命令が安定してから移行する。
+   - 完了条件: `runtime_call` 直分岐の新規追加を停止し、既存分岐を EAST3 命令写像へ段階置換する。
+
+分割実行規約:
+- `P0-EAST123-08-S2`: 上記 1〜3（truthy/len/str + iterable + boxing/unboxing）を第1陣として実装する。
+- `P0-EAST123-08-S3`: 上記 4（主要 built-in lower）を第2陣として実装する。
+
 ## P0-EAST123-03-S1 棚卸し（C++ hooks / py2cpp）
 
 目的:
@@ -165,3 +188,5 @@
 - 2026-02-23: [ID: P0-EAST123-06-S1] `load_east1_document(...)` を `transpile_cli` に追加し、既存のエラー分類/ルート契約を維持したまま `east_stage=1` を返す parser 直後 API を導入した。`test_py2cpp_features.py` に helper 契約テストを追加し、`prepare_selfhost_source` の import 行除去を prefix 判定へ更新して回帰を解消した。
 - 2026-02-23: [ID: P0-EAST123-06-S2] `normalize_east1_to_east2_document(...)` を `transpile_cli` に追加し、`load_east_document(...)` で `EAST1 -> EAST2` 正規化（stage `1 -> 2`）を通す構成へ分離した。`load_east_document` の既存呼び出し互換を維持するため、stage1 JSON 入力の正規化を `test_py2cpp_features.py` で固定した。
 - 2026-02-24: [ID: P0-EAST123-07-S1] `EAST2 -> EAST3` lowering に `ObjTypeId` / `IsInstance` / `IsSubclass` / `IsSubtype` を追加し、`isinstance` / `issubclass` / `py_*subtype` 系 call を EAST3 命令へ正規化した。`py2cpp` で新命令を runtime API（`py_runtime_type_id`, `py_isinstance`, `py_issubclass`, `py_is_subtype`）へ写像し、`test_east3_lowering.py` / `test_east3_cpp_bridge.py` / `test_py2cpp_codegen_issues.py` で回帰確認した。
+- 2026-02-24: [ID: P0-EAST123-07-S2] `Call(Name=...)` の `isinstance`/`issubclass`/`py_*type_id` 分岐で EAST3 型判定ノード（`IsInstance`/`IsSubclass`/`IsSubtype`/`ObjTypeId`）を構築して `render_expr` 経由へ統一し、backend の直接判定文字列組み立て経路を縮退した。`_render_repr_expr` の `isinstance` も `py_isinstance + type_id` 経路へ更新し、`test_py2cpp_codegen_issues.py` / `test_east3_cpp_bridge.py` / `test_east3_lowering.py` / `tools/check_py2cpp_transpile.py` で回帰確認した。
+- 2026-02-24: [ID: P0-EAST123-08-S1] `type_id` 以外の IR-first 移行順を確定し、優先度を `truthy/len/str -> iterable -> boxing/unboxing -> 主要 built-in` と定義した。実装段は `P0-EAST123-08-S2`（第1陣: 1〜3）/`P0-EAST123-08-S3`（第2陣: 4）に固定した。

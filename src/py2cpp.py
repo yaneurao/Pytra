@@ -3930,34 +3930,6 @@ class CppEmitter(CodeEmitter):
             return f"py_to_int64({args[0]})"
         return f"static_cast<{target}>({args[0]})"
 
-    def _render_isinstance_name_call(
-        self,
-        args: list[str],
-        arg_nodes: list[Any],
-    ) -> str | None:
-        """`isinstance(x, T)` の Name 呼び出し分岐を描画する。"""
-        if len(args) != 2:
-            return None
-        rhs: dict[str, Any] = self.any_to_dict_or_empty(arg_nodes[1]) if len(arg_nodes) > 1 else {}
-        a0 = args[0]
-        rhs_kind = self._node_kind_from_dict(rhs)
-        if rhs_kind == "Name":
-            type_name = self.any_to_str(rhs.get("id"))
-            return self._render_isinstance_type_check(a0, type_name)
-        if rhs_kind == "Tuple":
-            checks: list[str] = []
-            for elt in self.tuple_elements(rhs):
-                e_node = self.any_to_dict_or_empty(elt)
-                if self._node_kind_from_dict(e_node) != "Name":
-                    continue
-                e_name = self.any_to_str(e_node.get("id"))
-                lowered = self._render_isinstance_type_check(a0, e_name)
-                if lowered != "false":
-                    checks.append(lowered)
-            if len(checks) > 0:
-                return "(" + " || ".join(checks) + ")"
-        return "false"
-
     def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
         """`isinstance(x, T)` の `T` に対応する runtime 判定式を返す。"""
         type_id_expr = self._render_type_id_operand_expr({"kind": "Name", "id": type_name})
@@ -4027,6 +3999,136 @@ class CppEmitter(CodeEmitter):
         if rendered == "/* none */":
             return ""
         return rendered
+
+    def _const_false_expr_node(self) -> dict[str, Any]:
+        return {
+            "kind": "Constant",
+            "resolved_type": "bool",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "False",
+            "value": False,
+        }
+
+    def _boolop_or_expr_node(self, values: list[dict[str, Any]]) -> dict[str, Any]:
+        return {
+            "kind": "BoolOp",
+            "op": "Or",
+            "values": values,
+            "resolved_type": "bool",
+            "borrow_kind": "value",
+            "casts": [],
+        }
+
+    def _collect_type_ref_nodes_for_isinstance(self, type_node: Any) -> list[dict[str, Any]]:
+        node = self.any_to_dict_or_empty(type_node)
+        if len(node) == 0:
+            return []
+        kind = self._node_kind_from_dict(node)
+        if kind == "Name":
+            return [node]
+        if kind == "Tuple":
+            out: list[dict[str, Any]] = []
+            for elt in self.tuple_elements(node):
+                ent = self.any_to_dict_or_empty(elt)
+                if self._node_kind_from_dict(ent) == "Name":
+                    out.append(ent)
+            return out
+        return []
+
+    def _build_type_id_expr_from_call_name(
+        self,
+        raw_name: str,
+        arg_nodes: list[Any],
+    ) -> dict[str, Any] | None:
+        if raw_name == "isinstance":
+            if len(arg_nodes) != 2:
+                return self._const_false_expr_node()
+            value_node = arg_nodes[0]
+            type_nodes = self._collect_type_ref_nodes_for_isinstance(arg_nodes[1])
+            if len(type_nodes) == 0:
+                return self._const_false_expr_node()
+            checks: list[dict[str, Any]] = []
+            for type_node in type_nodes:
+                checks.append(
+                    {
+                        "kind": "IsInstance",
+                        "value": value_node,
+                        "expected_type_id": type_node,
+                        "resolved_type": "bool",
+                        "borrow_kind": "value",
+                        "casts": [],
+                    }
+                )
+            if len(checks) == 1:
+                return checks[0]
+            return self._boolop_or_expr_node(checks)
+        if raw_name == "issubclass":
+            if len(arg_nodes) != 2:
+                return self._const_false_expr_node()
+            actual_type_node = arg_nodes[0]
+            expected_nodes = self._collect_type_ref_nodes_for_isinstance(arg_nodes[1])
+            if len(expected_nodes) == 0:
+                return self._const_false_expr_node()
+            checks = []
+            for expected_node in expected_nodes:
+                checks.append(
+                    {
+                        "kind": "IsSubclass",
+                        "actual_type_id": actual_type_node,
+                        "expected_type_id": expected_node,
+                        "resolved_type": "bool",
+                        "borrow_kind": "value",
+                        "casts": [],
+                    }
+                )
+            if len(checks) == 1:
+                return checks[0]
+            return self._boolop_or_expr_node(checks)
+        if raw_name == "py_isinstance" or raw_name == "py_tid_isinstance":
+            if len(arg_nodes) != 2:
+                return self._const_false_expr_node()
+            return {
+                "kind": "IsInstance",
+                "value": arg_nodes[0],
+                "expected_type_id": arg_nodes[1],
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if raw_name == "py_issubclass" or raw_name == "py_tid_issubclass":
+            if len(arg_nodes) != 2:
+                return self._const_false_expr_node()
+            return {
+                "kind": "IsSubclass",
+                "actual_type_id": arg_nodes[0],
+                "expected_type_id": arg_nodes[1],
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if raw_name == "py_is_subtype" or raw_name == "py_tid_is_subtype":
+            if len(arg_nodes) != 2:
+                return self._const_false_expr_node()
+            return {
+                "kind": "IsSubtype",
+                "actual_type_id": arg_nodes[0],
+                "expected_type_id": arg_nodes[1],
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if raw_name == "py_runtime_type_id" or raw_name == "py_tid_runtime_type_id":
+            if len(arg_nodes) != 1:
+                return None
+            return {
+                "kind": "ObjTypeId",
+                "value": arg_nodes[0],
+                "resolved_type": "int64",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        return None
 
     def _render_simple_name_builtin_call(self, raw: str, args: list[str]) -> str | None:
         """Name 呼び出しの単純ビルトイン分岐を描画する。"""
@@ -4184,10 +4286,9 @@ class CppEmitter(CodeEmitter):
             simple_builtin_rendered = self._render_simple_name_builtin_call(raw, args)
             if simple_builtin_rendered is not None:
                 return simple_builtin_rendered
-            if raw == "isinstance":
-                isinstance_rendered = self._render_isinstance_name_call(args, arg_nodes)
-                if isinstance_rendered is not None:
-                    return isinstance_rendered
+            type_id_expr = self._build_type_id_expr_from_call_name(raw, arg_nodes)
+            if type_id_expr is not None:
+                return self.render_expr(type_id_expr)
             collection_ctor_rendered = self._render_collection_constructor_call(raw, expr, args, first_arg)
             if collection_ctor_rendered is not None:
                 return collection_ctor_rendered
@@ -5105,17 +5206,9 @@ class CppEmitter(CodeEmitter):
                 arg0 = self._render_repr_expr(fn_args[0])
                 arg0 = arg0 if arg0 != "" else self._trim_ws(fn_args[0])
                 ty = self._trim_ws(fn_args[1])
-                fn_map = {
-                    "str": "py_is_str",
-                    "list": "py_is_list",
-                    "dict": "py_is_dict",
-                    "set": "py_is_set",
-                    "int": "py_is_int",
-                    "float": "py_is_float",
-                    "bool": "py_is_bool",
-                }
-                if ty in fn_map:
-                    return f"{fn_map[ty]}({arg0})"
+                type_id_expr = self._render_type_id_operand_expr({"kind": "Name", "id": ty})
+                if type_id_expr != "":
+                    return f"py_isinstance({arg0}, {type_id_expr})"
 
         if t.endswith("]"):
             p: int64 = t.find("[")
@@ -5441,19 +5534,19 @@ class CppEmitter(CodeEmitter):
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))
             if actual_type_id_expr == "" or expected_type_id_expr == "":
                 return "false"
-            return f"py_is_subtype(static_cast<uint32>({actual_type_id_expr}), static_cast<uint32>({expected_type_id_expr}))"
+            return f"py_is_subtype({actual_type_id_expr}, {expected_type_id_expr})"
         if kind == "IsSubclass":
             actual_type_id_expr = self._render_type_id_operand_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self._render_type_id_operand_expr(expr_d.get("expected_type_id"))
             if actual_type_id_expr == "" or expected_type_id_expr == "":
                 return "false"
-            return f"py_issubclass(static_cast<uint32>({actual_type_id_expr}), static_cast<uint32>({expected_type_id_expr}))"
+            return f"py_issubclass({actual_type_id_expr}, {expected_type_id_expr})"
         if kind == "IsInstance":
             value_expr = self.render_expr(expr_d.get("value"))
             expected_type_id_expr = self._render_type_id_operand_expr(expr_d.get("expected_type_id"))
             if expected_type_id_expr == "":
                 return "false"
-            return f"py_isinstance({value_expr}, static_cast<uint32>({expected_type_id_expr}))"
+            return f"py_isinstance({value_expr}, {expected_type_id_expr})"
         op_rendered = self._render_operator_family_expr(kind, expr, expr_d)
         if op_rendered != "":
             return op_rendered
