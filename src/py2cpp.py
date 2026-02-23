@@ -3436,7 +3436,7 @@ class CppEmitter(CodeEmitter):
         dict_ops_rendered = self._render_builtin_runtime_dict_ops(runtime_call, expr, fn, args)
         if dict_ops_rendered is not None:
             return str(dict_ops_rendered)
-        str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, fn, args)
+        str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, fn, args, arg_nodes)
         if str_ops_rendered is not None:
             return str(str_ops_rendered)
         special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, fn, args, kw)
@@ -3815,6 +3815,7 @@ class CppEmitter(CodeEmitter):
         runtime_call: str,
         fn: dict[str, Any],
         args: list[str],
+        arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の文字列系 runtime_call を処理する。"""
         if runtime_call not in {
@@ -3845,16 +3846,49 @@ class CppEmitter(CodeEmitter):
             if len(args) == 1:
                 return args[0] + ".isalpha()"
         if runtime_call == "py_strip":
+            strip_node = {
+                "kind": "StrStripOp",
+                "mode": "strip",
+                "owner": fn.get("value"),
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                strip_node["chars"] = arg_nodes[0]
+            return self.render_expr(strip_node)
             if len(args) == 0:
                 return f"py_strip({owner})"
             if len(args) == 1:
                 return f"{owner}.strip({args[0]})"
         if runtime_call == "py_rstrip":
+            rstrip_node = {
+                "kind": "StrStripOp",
+                "mode": "rstrip",
+                "owner": fn.get("value"),
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                rstrip_node["chars"] = arg_nodes[0]
+            return self.render_expr(rstrip_node)
             if len(args) == 0:
                 return f"py_rstrip({owner})"
             if len(args) == 1:
                 return f"{owner}.rstrip({args[0]})"
         if runtime_call == "py_lstrip":
+            lstrip_node = {
+                "kind": "StrStripOp",
+                "mode": "lstrip",
+                "owner": fn.get("value"),
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                lstrip_node["chars"] = arg_nodes[0]
+            return self.render_expr(lstrip_node)
             if len(args) == 0:
                 return f"py_lstrip({owner})"
             if len(args) == 1:
@@ -6101,6 +6135,23 @@ class CppEmitter(CodeEmitter):
                 objectish_owner,
                 owner_optional_object_dict,
             )
+        if kind == "StrStripOp":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            mode = self.any_dict_get_str(expr_d, "mode", "strip")
+            has_chars = self.any_dict_has(expr_d, "chars")
+            if has_chars:
+                chars_expr = self.render_expr(expr_d.get("chars"))
+                if mode == "rstrip":
+                    return f"{owner_expr}.rstrip({chars_expr})"
+                if mode == "lstrip":
+                    return f"{owner_expr}.lstrip({chars_expr})"
+                return f"{owner_expr}.strip({chars_expr})"
+            if mode == "rstrip":
+                return f"py_rstrip({owner_expr})"
+            if mode == "lstrip":
+                return f"py_lstrip({owner_expr})"
+            return f"py_strip({owner_expr})"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))

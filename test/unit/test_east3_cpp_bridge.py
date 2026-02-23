@@ -634,6 +634,57 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(get_expr), "d.get(py_to_string(k), 7)")
 
+    def test_render_expr_supports_str_strip_op_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        owner = {"kind": "Name", "id": "s", "resolved_type": "str"}
+        strip_node = {"kind": "StrStripOp", "mode": "strip", "owner": owner, "resolved_type": "str"}
+        strip_chars_node = {
+            "kind": "StrStripOp",
+            "mode": "strip",
+            "owner": owner,
+            "chars": {"kind": "Constant", "value": "x", "resolved_type": "str"},
+            "resolved_type": "str",
+        }
+        lstrip_node = {"kind": "StrStripOp", "mode": "lstrip", "owner": owner, "resolved_type": "str"}
+        rstrip_node = {"kind": "StrStripOp", "mode": "rstrip", "owner": owner, "resolved_type": "str"}
+        self.assertEqual(emitter.render_expr(strip_node), "py_strip(s)")
+        self.assertEqual(emitter.render_expr(strip_chars_node), 's.strip("x")')
+        self.assertEqual(emitter.render_expr(lstrip_node), "py_lstrip(s)")
+        self.assertEqual(emitter.render_expr(rstrip_node), "py_rstrip(s)")
+
+    def test_builtin_runtime_py_strip_uses_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        strip_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_strip",
+            "resolved_type": "str",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "strip",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        strip_chars_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_strip",
+            "resolved_type": "str",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "strip",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Constant", "value": "x", "resolved_type": "str"}],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(strip_expr), "py_strip(s)")
+        self.assertEqual(emitter.render_expr(strip_chars_expr), 's.strip("x")')
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
