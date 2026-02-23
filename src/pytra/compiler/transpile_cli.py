@@ -351,6 +351,49 @@ def graph_cycle_dfs(
     color[key] = 2
 
 
+def resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> Path:
+    """import graph 用のユーザーモジュール解決（未解決は空 Path）。"""
+    if module_name.startswith("pytra.") or module_name == "pytra":
+        return Path("")
+    rel = module_name.replace(".", "/")
+    parts = module_name.split(".")
+    leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
+    cur_dir = str(search_root)
+    cur_dir = cur_dir if cur_dir != "" else "."
+    seen_dirs: set[str] = set()
+    best_path = ""
+    best_rank = -1
+    best_distance = 1000000000
+    distance = 0
+    while cur_dir not in seen_dirs:
+        seen_dirs.add(cur_dir)
+        prefix = cur_dir
+        if prefix != "" and not prefix.endswith("/"):
+            prefix += "/"
+        cand_init = prefix + rel + "/__init__.py"
+        cand_named = prefix + rel + "/" + leaf + ".py" if leaf != "" else ""
+        cand_flat = prefix + rel + ".py"
+        candidates: list[tuple[str, int]] = []
+        candidates.append((cand_init, 3))
+        if cand_named != "":
+            candidates.append((cand_named, 2))
+        candidates.append((cand_flat, 1))
+        for path_txt, rank in candidates:
+            if Path(path_txt).exists():
+                if rank > best_rank or (rank == best_rank and distance < best_distance):
+                    best_path = path_txt
+                    best_rank = rank
+                    best_distance = distance
+        parent_dir = path_parent_text(Path(cur_dir))
+        if parent_dir == cur_dir:
+            break
+        cur_dir = parent_dir if parent_dir != "" else "."
+        distance += 1
+    if best_path != "":
+        return Path(best_path)
+    return Path("")
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
