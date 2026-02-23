@@ -485,6 +485,20 @@ class CppEmitter(CodeEmitter):
             return "pytra.utils."
         return ""
 
+    def _append_runtime_symbol_include(
+        self,
+        includes: list[str],
+        seen: set[str],
+        mod_name: str,
+        symbol: str,
+    ) -> None:
+        """`pytra.std/utils` の symbol include を必要時のみ追加する。"""
+        runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
+        if runtime_prefix == "" or symbol == "":
+            return
+        sym_inc = self._module_name_to_cpp_include(runtime_prefix + symbol)
+        append_unique_non_empty(includes, seen, sym_inc)
+
     def _collect_import_cpp_includes(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
         """EAST body から必要な C++ include を収集する。"""
         includes: list[str] = []
@@ -499,10 +513,7 @@ class CppEmitter(CodeEmitter):
                 inc = self._module_name_to_cpp_include(mod_name)
                 append_unique_non_empty(includes, seen, inc)
                 if binding_kind == "symbol" and export_name != "":
-                    runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
-                    if runtime_prefix != "":
-                        sym_inc = self._module_name_to_cpp_include(runtime_prefix + export_name)
-                        append_unique_non_empty(includes, seen, sym_inc)
+                    self._append_runtime_symbol_include(includes, seen, mod_name, export_name)
             includes = sort_str_list_copy(includes)
             return includes
         for stmt in body:
@@ -517,14 +528,9 @@ class CppEmitter(CodeEmitter):
                 mod_name = self._normalize_runtime_module_name(mod_name)
                 inc = self._module_name_to_cpp_include(mod_name)
                 append_unique_non_empty(includes, seen, inc)
-                runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
-                if runtime_prefix != "":
-                    for ent in self._dict_stmt_list(stmt.get("names")):
-                        sym = dict_any_get_str(ent, "name")
-                        if sym == "":
-                            continue
-                        sym_inc = self._module_name_to_cpp_include(runtime_prefix + sym)
-                        append_unique_non_empty(includes, seen, sym_inc)
+                for ent in self._dict_stmt_list(stmt.get("names")):
+                    sym = dict_any_get_str(ent, "name")
+                    self._append_runtime_symbol_include(includes, seen, mod_name, sym)
         includes = sort_str_list_copy(includes)
         return includes
 
