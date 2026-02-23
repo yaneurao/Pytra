@@ -47,14 +47,26 @@
 - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
 
 サブタスク実行順（todo 同期）:
-1. `P0-EAST123-01`: `spec-east123` の契約を実装仕様（`spec-dev` / `spec-east`）へ確定反映する。
-2. `P0-EAST123-02`: `EAST2 -> EAST3` 最小 lowering（`ForCore`, `RuntimeIterForPlan`, `Any/object` 境界命令）を導入する。
-3. `P0-EAST123-03`: backend/hook 側の意味論再解釈経路を撤去し、構文差分専任に縮退する。
-4. `P0-EAST123-04`: schema/例外契約/回帰導線を固定し、CI レベルの再発防止へ接続する。
-5. `P0-EAST123-05`: hooks 実装を定量的に縮退し、意味論 hook を撤去して構文差分 hook のみへ収束させる。
-6. `P0-EAST123-06`: 現行 `EAST2` を `EAST1`/`EAST2` に段階分離し、parser と normalize の責務境界を固定する。
-7. `P0-EAST123-07`: `type_id` lower を EAST3 命令化へ統一し、backend は命令写像専任にする。
-8. `P0-EAST123-08`: `type_id` 以外の言語非依存意味論も IR-first（EAST3 命令化 -> backend 写像）へ移行し、C++ hooks の意味論実装を縮退する。
+1. `P0-EAST123-01-S1`: ルートスキーマ（`east_stage`, `schema_version`, `meta.dispatch_mode`）の仕様統一。
+2. `P0-EAST123-01-S2`: `dispatch mode` 適用点と後段再判断禁止の仕様固定。
+3. `P0-EAST123-01-S3`: `spec-east` / `spec-type_id` / `spec-boxing` / `spec-iterable` / `spec-dev` の整合調整。
+4. `P0-EAST123-02-S1`: `For` / `ForRange` の `ForCore + iter_plan` lower 実装。
+5. `P0-EAST123-02-S2`: `Any/object` 境界命令の EAST3 lower 実装。
+6. `P0-EAST123-02-S3`: `--object-dispatch-mode` の単一点適用実装。
+7. `P0-EAST123-06-S1`: parser 直後 `EAST1` 出力 API 追加。
+8. `P0-EAST123-06-S2`: `EAST1 -> EAST2` normalize pass 分離 + `load_east(...)` 互換維持。
+9. `P0-EAST123-07-S1`: `type_id` 判定（`isinstance` / `issubclass` / subtype）の EAST3 命令化。
+10. `P0-EAST123-07-S2`: backend 側 `type_id` 直書き判定生成の撤去（runtime API 写像へ統一）。
+11. `P0-EAST123-08-S1`: IR-first 移行対象（boxing/unboxing, iterable, truthy/len/str, built-in lower）の優先度確定。
+12. `P0-EAST123-08-S2`: 第1陣（boxing/unboxing, iterable, truthy/len/str）の EAST3 移行。
+13. `P0-EAST123-08-S3`: 第2陣（主要 built-in lower）の EAST3 移行。
+14. `P0-EAST123-03-S1`: C++ hooks / `py2cpp.py` の意味論実装経路棚卸し。
+15. `P0-EAST123-03-S2`: EAST3 命令写像へ置換し、重複ロジックを撤去。
+16. `P0-EAST123-05-S1`: hooks 分類と縮退メトリクス基線を確定。
+17. `P0-EAST123-05-S2`: 意味論 hook 新規流入を防ぐ CI ルール追加。
+18. `P0-EAST123-04-S1`: schema テスト整備（必須項目、`iter_plan` 形状、`dispatch_mode`）。
+19. `P0-EAST123-04-S2`: lowering 契約テスト（`EAST2 -> EAST3`）整備。
+20. `P0-EAST123-04-S3`: selfhost + クロスターゲット回帰導線へ統合。
 
 決定ログ:
 - 2026-02-23: 初版作成。`docs-jp/spec/spec-east123.md` を最優先事項として `todo` の `P0` へ昇格し、実装導入の作業枠を定義した。
@@ -62,3 +74,4 @@
 - 2026-02-23: 現行 `EAST2` が `EAST1 + EAST2` 相当である課題を反映し、`ID: P0-EAST123-06`（EAST1/EAST2 分離）を TODO/plan に追加した。
 - 2026-02-23: `type_id` 関連 lower を backend 直書きではなく EAST3 命令化へ統一する方針を反映し、`ID: P0-EAST123-07` を TODO/plan に追加した。
 - 2026-02-23: `type_id` に限らず IR-first を徹底するため、`ID: P0-EAST123-08`（言語非依存意味論の EAST3 命令化と C++ hooks 縮退）を TODO/plan に追加した。
+- 2026-02-23: 実行単位を小さく保つため、`P0-EAST123-01-S1` を起点に `-S1/-S2/...` 形式で約20サブタスクへ再分割した。

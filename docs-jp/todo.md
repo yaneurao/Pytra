@@ -26,14 +26,34 @@
 
 文脈: `docs-jp/plans/p0-east123-staged-ir.md`（`TG-P0-EAST123`）
 
-1. [ ] [ID: P0-EAST123-01] `docs-jp/spec/spec-east123.md` を正本として、EAST1/EAST2/EAST3 の責務・ルートスキーマ・dispatch 固定点を実装仕様へ確定する。
-2. [ ] [ID: P0-EAST123-02] `EAST2 -> EAST3` core lowering の最小実装（`ForCore` / `RuntimeIterForPlan` / `Any/object` 境界命令）を導入し、`--object-dispatch-mode` の適用点を一箇所に固定する。
-3. [ ] [ID: P0-EAST123-03] backend 側の意味論再解釈を禁止し、hooks を構文差分専任へ縮退する（`dispatch mode` 再判断・boxing/iterable 再実装の撤去）。
-4. [ ] [ID: P0-EAST123-04] `EAST3` 契約（schema/例外/回帰）をテストで固定し、selfhost とクロスターゲットの回帰導線へ組み込む。
-5. [ ] [ID: P0-EAST123-05] `EAST3` 導入後に hooks 実装を定量的に縮退する（意味論 hook を撤去し、構文差分 hook のみに限定する）。
-6. [ ] [ID: P0-EAST123-06] 現行 `EAST2`（`EAST1 + EAST2` 相当）を段階分離し、`EAST1` は parser 直後の loss-minimal IR、`EAST2` は normalize 専任 IR として責務境界を固定する。
-7. [ ] [ID: P0-EAST123-07] `type_id` 関連 lower（`isinstance`/`issubclass`/subtype 判定）を「EAST3 命令化 -> backend 写像」へ統一し、C++ 文字列の直接生成経路を原則禁止する。
-8. [ ] [ID: P0-EAST123-08] `type_id` に限らず、可能な限り言語非依存意味論（boxing/unboxing, iterable, truthy/len/str, 主要 built-in lower）を「EAST3 命令化 -> backend 写像」へ統一し、C++ hooks の意味論実装を段階撤去する。
+1. [ ] [ID: P0-EAST123-01] `spec-east123` の仕様契約を実装仕様へ確定する（`P0-EAST123-01-S1` から `P0-EAST123-01-S3` 完了でクローズ）。
+2. [ ] [ID: P0-EAST123-01-S1] `EAST1/EAST2/EAST3` のルートスキーマ（`east_stage`, `schema_version`, `meta.dispatch_mode`）を仕様間で統一する。
+3. [ ] [ID: P0-EAST123-01-S2] `dispatch mode` の適用点と後段再判断禁止を仕様へ明文化する。
+4. [ ] [ID: P0-EAST123-01-S3] `spec-east` / `spec-type_id` / `spec-boxing` / `spec-iterable` / `spec-dev` の相互参照と責務境界を揃える。
+5. [ ] [ID: P0-EAST123-02] `EAST2 -> EAST3` core lowering の実装土台を導入する（`P0-EAST123-02-S1` から `P0-EAST123-02-S3` 完了でクローズ）。
+6. [ ] [ID: P0-EAST123-02-S1] `For` / `ForRange` を `ForCore` + `iter_plan` へ lower する最小経路を実装する。
+7. [ ] [ID: P0-EAST123-02-S2] `Any/object` 境界命令（`Box`/`Unbox`/`ObjBool`/`ObjLen`/`ObjStr`/`ObjIter*`）の EAST3 lower を実装する。
+8. [ ] [ID: P0-EAST123-02-S3] `--object-dispatch-mode` を `EAST2 -> EAST3` の単一地点で反映する。
+9. [ ] [ID: P0-EAST123-03] backend 側の意味論再解釈を禁止し、hooks を構文差分専任へ縮退する（`P0-EAST123-03-S1` から `P0-EAST123-03-S2` 完了でクローズ）。
+10. [ ] [ID: P0-EAST123-03-S1] C++ hooks / `py2cpp.py` の意味論実装経路（dispatch/boxing/iterable/built-in）を棚卸しする。
+11. [ ] [ID: P0-EAST123-03-S2] 棚卸し結果に基づいて意味論経路を EAST3 命令写像へ置換し、重複ロジックを撤去する。
+12. [ ] [ID: P0-EAST123-04] `EAST3` 契約（schema/例外/回帰）をテストで固定する（`P0-EAST123-04-S1` から `P0-EAST123-04-S3` 完了でクローズ）。
+13. [ ] [ID: P0-EAST123-04-S1] schema テスト（必須フィールド、`iter_plan` 形状、`dispatch_mode` 一貫性）を追加する。
+14. [ ] [ID: P0-EAST123-04-S2] lowering 契約テスト（`EAST2 -> EAST3`）を追加する。
+15. [ ] [ID: P0-EAST123-04-S3] selfhost + クロスターゲット回帰導線へ組み込む。
+16. [ ] [ID: P0-EAST123-05] hooks 縮退を定量管理する（`P0-EAST123-05-S1` から `P0-EAST123-05-S2` 完了でクローズ）。
+17. [ ] [ID: P0-EAST123-05-S1] C++ hooks の意味論/構文差分を分類し、基線メトリクスを記録する。
+18. [ ] [ID: P0-EAST123-05-S2] 意味論 hook の新規流入を防ぐ CI ルール（lint/チェック）を追加する。
+19. [ ] [ID: P0-EAST123-06] 現行 `EAST2`（`EAST1 + EAST2` 相当）を段階分離する（`P0-EAST123-06-S1` から `P0-EAST123-06-S2` 完了でクローズ）。
+20. [ ] [ID: P0-EAST123-06-S1] parser 直後の `EAST1` 出力 API（normalize なし）を追加する。
+21. [ ] [ID: P0-EAST123-06-S2] `EAST1 -> EAST2` normalize pass を分離し、既存 `load_east(...)` 互換を維持する。
+22. [ ] [ID: P0-EAST123-07] `type_id` lower を「EAST3 命令化 -> backend 写像」へ統一する（`P0-EAST123-07-S1` から `P0-EAST123-07-S2` 完了でクローズ）。
+23. [ ] [ID: P0-EAST123-07-S1] `isinstance` / `issubclass` / subtype 判定を EAST3 命令へ lower する。
+24. [ ] [ID: P0-EAST123-07-S2] backend 側の `type_id` 直書き判定生成を撤去し、runtime API 写像へ統一する。
+25. [ ] [ID: P0-EAST123-08] 言語非依存意味論を IR-first（EAST3 命令化 -> backend 写像）へ拡張する（`P0-EAST123-08-S1` から `P0-EAST123-08-S3` 完了でクローズ）。
+26. [ ] [ID: P0-EAST123-08-S1] `type_id` 以外で IR 化優先対象（boxing/unboxing, iterable, truthy/len/str, built-in lower）の移行順を確定する。
+27. [ ] [ID: P0-EAST123-08-S2] 第1陣（boxing/unboxing, iterable, truthy/len/str）を EAST3 命令へ移行する。
+28. [ ] [ID: P0-EAST123-08-S3] 第2陣（主要 built-in lower）を EAST3 命令へ移行し、C++ hooks を構文差分専任へ縮退する。
 
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
