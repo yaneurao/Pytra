@@ -69,6 +69,7 @@ class East3CppBridgeTest(unittest.TestCase):
 
     def test_render_expr_supports_east3_obj_boundary_nodes(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.ref_classes = {"Base"}
         any_name = {"kind": "Name", "id": "v", "resolved_type": "Any"}
 
         obj_len = {"kind": "ObjLen", "value": any_name, "resolved_type": "int64"}
@@ -76,16 +77,58 @@ class East3CppBridgeTest(unittest.TestCase):
         obj_str = {"kind": "ObjStr", "value": any_name, "resolved_type": "str"}
         obj_iter = {"kind": "ObjIterInit", "value": any_name, "resolved_type": "object"}
         obj_next = {"kind": "ObjIterNext", "iter": any_name, "resolved_type": "object"}
+        obj_type_id = {"kind": "ObjTypeId", "value": any_name, "resolved_type": "int64"}
         box_expr = {"kind": "Box", "value": _const_i(1), "resolved_type": "object"}
         unbox_expr = {"kind": "Unbox", "value": any_name, "target": "int64", "resolved_type": "int64"}
+        is_instance = {
+            "kind": "IsInstance",
+            "value": any_name,
+            "expected_type_id": {"kind": "Name", "id": "PYTRA_TID_INT", "resolved_type": "int64"},
+            "resolved_type": "bool",
+        }
+        is_instance_class = {
+            "kind": "IsInstance",
+            "value": any_name,
+            "expected_type_id": {"kind": "Name", "id": "Base", "resolved_type": "unknown"},
+            "resolved_type": "bool",
+        }
+        is_subclass = {
+            "kind": "IsSubclass",
+            "actual_type_id": _const_i(1001),
+            "expected_type_id": _const_i(1000),
+            "resolved_type": "bool",
+        }
+        is_subtype = {
+            "kind": "IsSubtype",
+            "actual_type_id": _const_i(1001),
+            "expected_type_id": _const_i(1000),
+            "resolved_type": "bool",
+        }
 
         self.assertEqual(emitter.render_expr(obj_len), "py_len(v)")
         self.assertEqual(emitter.render_expr(obj_bool), "py_to_bool(v)")
         self.assertEqual(emitter.render_expr(obj_str), "py_to_string(v)")
         self.assertEqual(emitter.render_expr(obj_iter), "py_iter_or_raise(v)")
         self.assertEqual(emitter.render_expr(obj_next), "py_next_or_stop(v)")
+        self.assertEqual(emitter.render_expr(obj_type_id), "py_runtime_type_id(v)")
         self.assertEqual(emitter.render_expr(box_expr), "make_object(1)")
         self.assertEqual(emitter.render_expr(unbox_expr), "int64(py_to_int64(v))")
+        self.assertEqual(
+            emitter.render_expr(is_instance),
+            "py_isinstance(v, static_cast<uint32>(PYTRA_TID_INT))",
+        )
+        self.assertEqual(
+            emitter.render_expr(is_instance_class),
+            "py_isinstance(v, static_cast<uint32>(Base::PYTRA_TYPE_ID))",
+        )
+        self.assertEqual(
+            emitter.render_expr(is_subclass),
+            "py_issubclass(static_cast<uint32>(1001), static_cast<uint32>(1000))",
+        )
+        self.assertEqual(
+            emitter.render_expr(is_subtype),
+            "py_is_subtype(static_cast<uint32>(1001), static_cast<uint32>(1000))",
+        )
 
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {

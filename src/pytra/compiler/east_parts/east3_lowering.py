@@ -80,6 +80,258 @@ def _const_int_node(value: int) -> dict[str, Any]:
     }
 
 
+def _const_bool_node(value: bool) -> dict[str, Any]:
+    return {
+        "kind": "Constant",
+        "resolved_type": "bool",
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": "True" if value else "False",
+        "value": value,
+    }
+
+
+def _make_name_node(name: str, resolved_type: str = "unknown") -> dict[str, Any]:
+    return {
+        "kind": "Name",
+        "id": name,
+        "resolved_type": resolved_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": name,
+    }
+
+
+def _builtin_type_id_symbol(type_name: str) -> str:
+    table = {
+        "None": "PYTRA_TID_NONE",
+        "bool": "PYTRA_TID_BOOL",
+        "int": "PYTRA_TID_INT",
+        "float": "PYTRA_TID_FLOAT",
+        "str": "PYTRA_TID_STR",
+        "list": "PYTRA_TID_LIST",
+        "dict": "PYTRA_TID_DICT",
+        "set": "PYTRA_TID_SET",
+        "object": "PYTRA_TID_OBJECT",
+    }
+    return table.get(type_name, "")
+
+
+def _copy_source_span_and_repr(source_expr: Any, out: dict[str, Any]) -> None:
+    span = _node_source_span(source_expr)
+    if isinstance(span, dict):
+        out["source_span"] = span
+    repr_txt = _node_repr(source_expr)
+    if repr_txt != "":
+        out["repr"] = repr_txt
+
+
+def _make_type_predicate_expr(
+    *,
+    kind: str,
+    left_key: str,
+    left_expr: Any,
+    expected_type_id_expr: Any,
+    source_expr: Any,
+) -> dict[str, Any]:
+    out: dict[str, Any] = {
+        "kind": kind,
+        "resolved_type": "bool",
+        "borrow_kind": "value",
+        "casts": [],
+        left_key: left_expr,
+        "expected_type_id": expected_type_id_expr,
+    }
+    _copy_source_span_and_repr(source_expr, out)
+    return out
+
+
+def _build_or_of_checks(checks: list[dict[str, Any]], source_expr: Any) -> dict[str, Any]:
+    if len(checks) == 1:
+        return checks[0]
+    out: dict[str, Any] = {
+        "kind": "BoolOp",
+        "op": "Or",
+        "values": checks,
+        "resolved_type": "bool",
+        "borrow_kind": "value",
+        "casts": [],
+    }
+    _copy_source_span_and_repr(source_expr, out)
+    return out
+
+
+def _type_ref_expr_to_type_id_expr(type_ref_expr: Any, *, dispatch_mode: str) -> Any:
+    node = _lower_node(type_ref_expr, dispatch_mode=dispatch_mode)
+    if not isinstance(node, dict):
+        return None
+    if node.get("kind") != "Name":
+        return None
+    type_name_obj = node.get("id")
+    if not isinstance(type_name_obj, str):
+        return None
+    type_name = type_name_obj.strip()
+    if type_name == "":
+        return None
+    builtin_symbol = _builtin_type_id_symbol(type_name)
+    if builtin_symbol != "":
+        out = _make_name_node(builtin_symbol, "int64")
+        span = _node_source_span(type_ref_expr)
+        if isinstance(span, dict):
+            out["source_span"] = span
+        return out
+    return node
+
+
+def _collect_expected_type_id_exprs(type_spec_expr: Any, *, dispatch_mode: str) -> list[Any]:
+    spec_node = _lower_node(type_spec_expr, dispatch_mode=dispatch_mode)
+    if isinstance(spec_node, dict) and spec_node.get("kind") == "Tuple":
+        out: list[Any] = []
+        elems_obj = spec_node.get("elements")
+        elems: list[Any] = elems_obj if isinstance(elems_obj, list) else []
+        for elem in elems:
+            lowered = _type_ref_expr_to_type_id_expr(elem, dispatch_mode=dispatch_mode)
+            if lowered is not None:
+                out.append(lowered)
+        return out
+    lowered_one = _type_ref_expr_to_type_id_expr(spec_node, dispatch_mode=dispatch_mode)
+    if lowered_one is None:
+        return []
+    return [lowered_one]
+
+
+def _lower_isinstance_call_expr(out_call: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
+    args_obj = out_call.get("args")
+    args: list[Any] = args_obj if isinstance(args_obj, list) else []
+    if len(args) != 2:
+        return out_call
+    value_expr = args[0]
+    expected = _collect_expected_type_id_exprs(args[1], dispatch_mode=dispatch_mode)
+    if len(expected) == 0:
+        false_out = _const_bool_node(False)
+        _copy_source_span_and_repr(out_call, false_out)
+        return false_out
+    checks: list[dict[str, Any]] = []
+    for expected_type_id_expr in expected:
+        checks.append(
+            _make_type_predicate_expr(
+                kind="IsInstance",
+                left_key="value",
+                left_expr=value_expr,
+                expected_type_id_expr=expected_type_id_expr,
+                source_expr=out_call,
+            )
+        )
+    return _build_or_of_checks(checks, out_call)
+
+
+def _lower_issubclass_call_expr(out_call: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
+    args_obj = out_call.get("args")
+    args: list[Any] = args_obj if isinstance(args_obj, list) else []
+    if len(args) != 2:
+        return out_call
+    actual_type_id_expr = _type_ref_expr_to_type_id_expr(args[0], dispatch_mode=dispatch_mode)
+    if actual_type_id_expr is None:
+        false_out = _const_bool_node(False)
+        _copy_source_span_and_repr(out_call, false_out)
+        return false_out
+    expected = _collect_expected_type_id_exprs(args[1], dispatch_mode=dispatch_mode)
+    if len(expected) == 0:
+        false_out = _const_bool_node(False)
+        _copy_source_span_and_repr(out_call, false_out)
+        return false_out
+    checks: list[dict[str, Any]] = []
+    for expected_type_id_expr in expected:
+        checks.append(
+            _make_type_predicate_expr(
+                kind="IsSubclass",
+                left_key="actual_type_id",
+                left_expr=actual_type_id_expr,
+                expected_type_id_expr=expected_type_id_expr,
+                source_expr=out_call,
+            )
+        )
+    return _build_or_of_checks(checks, out_call)
+
+
+def _lower_py_isinstance_call_expr(out_call: dict[str, Any]) -> dict[str, Any]:
+    args_obj = out_call.get("args")
+    args: list[Any] = args_obj if isinstance(args_obj, list) else []
+    if len(args) != 2:
+        return out_call
+    return _make_type_predicate_expr(
+        kind="IsInstance",
+        left_key="value",
+        left_expr=args[0],
+        expected_type_id_expr=args[1],
+        source_expr=out_call,
+    )
+
+
+def _lower_py_issubclass_call_expr(out_call: dict[str, Any]) -> dict[str, Any]:
+    args_obj = out_call.get("args")
+    args: list[Any] = args_obj if isinstance(args_obj, list) else []
+    if len(args) != 2:
+        return out_call
+    return _make_type_predicate_expr(
+        kind="IsSubclass",
+        left_key="actual_type_id",
+        left_expr=args[0],
+        expected_type_id_expr=args[1],
+        source_expr=out_call,
+    )
+
+
+def _lower_py_issubtype_call_expr(out_call: dict[str, Any]) -> dict[str, Any]:
+    args_obj = out_call.get("args")
+    args: list[Any] = args_obj if isinstance(args_obj, list) else []
+    if len(args) != 2:
+        return out_call
+    return _make_type_predicate_expr(
+        kind="IsSubtype",
+        left_key="actual_type_id",
+        left_expr=args[0],
+        expected_type_id_expr=args[1],
+        source_expr=out_call,
+    )
+
+
+def _lower_py_runtime_type_id_call_expr(out_call: dict[str, Any]) -> dict[str, Any]:
+    args_obj = out_call.get("args")
+    args: list[Any] = args_obj if isinstance(args_obj, list) else []
+    if len(args) != 1:
+        return out_call
+    out = _make_boundary_expr(
+        kind="ObjTypeId",
+        value_key="value",
+        value_node=args[0],
+        resolved_type="int64",
+        source_expr=out_call,
+    )
+    return out
+
+
+def _lower_type_id_call_expr(out_call: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
+    func_obj = out_call.get("func")
+    if not isinstance(func_obj, dict) or func_obj.get("kind") != "Name":
+        return out_call
+    fn_name_obj = func_obj.get("id")
+    fn_name = fn_name_obj if isinstance(fn_name_obj, str) else ""
+    if fn_name == "isinstance":
+        return _lower_isinstance_call_expr(out_call, dispatch_mode=dispatch_mode)
+    if fn_name == "issubclass":
+        return _lower_issubclass_call_expr(out_call, dispatch_mode=dispatch_mode)
+    if fn_name == "py_isinstance" or fn_name == "py_tid_isinstance":
+        return _lower_py_isinstance_call_expr(out_call)
+    if fn_name == "py_issubclass" or fn_name == "py_tid_issubclass":
+        return _lower_py_issubclass_call_expr(out_call)
+    if fn_name == "py_is_subtype" or fn_name == "py_tid_is_subtype":
+        return _lower_py_issubtype_call_expr(out_call)
+    if fn_name == "py_runtime_type_id" or fn_name == "py_tid_runtime_type_id":
+        return _lower_py_runtime_type_id_call_expr(out_call)
+    return out_call
+
+
 def _copy_extra_fields(
     source: dict[str, Any],
     out: dict[str, Any],
@@ -301,6 +553,12 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
     out: dict[str, Any] = {}
     for key in call:
         out[key] = _lower_node(call[key], dispatch_mode=dispatch_mode)
+
+    out = _lower_type_id_call_expr(out, dispatch_mode=dispatch_mode)
+    if not isinstance(out, dict):
+        return out
+    if out.get("kind") != "Call":
+        return out
 
     args_obj = out.get("args")
     args: list[Any] = args_obj if isinstance(args_obj, list) else []

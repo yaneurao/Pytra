@@ -425,6 +425,131 @@ class East3LoweringTest(unittest.TestCase):
         self.assertEqual(body[3].get("value", {}).get("kind"), "ObjIterInit")
         self.assertEqual(body[4].get("value", {}).get("kind"), "ObjIterNext")
 
+    def test_lower_isinstance_and_issubclass_to_type_id_core_nodes(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "type_id"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "isinstance"},
+                        "args": [
+                            {"kind": "Name", "id": "x", "resolved_type": "object"},
+                            {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+                        ],
+                        "keywords": [],
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "isinstance"},
+                        "args": [
+                            {"kind": "Name", "id": "x", "resolved_type": "object"},
+                            {
+                                "kind": "Tuple",
+                                "resolved_type": "tuple[unknown,unknown,unknown]",
+                                "elements": [
+                                    {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+                                    {"kind": "Name", "id": "Base", "resolved_type": "unknown"},
+                                    {"kind": "Name", "id": "dict", "resolved_type": "unknown"},
+                                ],
+                            },
+                        ],
+                        "keywords": [],
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "issubclass"},
+                        "args": [
+                            {"kind": "Name", "id": "Child", "resolved_type": "unknown"},
+                            {"kind": "Name", "id": "Base", "resolved_type": "unknown"},
+                        ],
+                        "keywords": [],
+                    },
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        first = body[0].get("value", {})
+        self.assertEqual(first.get("kind"), "IsInstance")
+        self.assertEqual(first.get("expected_type_id", {}).get("kind"), "Name")
+        self.assertEqual(first.get("expected_type_id", {}).get("id"), "PYTRA_TID_INT")
+        second = body[1].get("value", {})
+        self.assertEqual(second.get("kind"), "BoolOp")
+        self.assertEqual(second.get("op"), "Or")
+        second_values = second.get("values", [])
+        self.assertEqual(second_values[0].get("kind"), "IsInstance")
+        self.assertEqual(second_values[0].get("expected_type_id", {}).get("id"), "PYTRA_TID_INT")
+        self.assertEqual(second_values[1].get("expected_type_id", {}).get("kind"), "Name")
+        self.assertEqual(second_values[1].get("expected_type_id", {}).get("id"), "Base")
+        self.assertEqual(second_values[2].get("expected_type_id", {}).get("id"), "PYTRA_TID_DICT")
+        third = body[2].get("value", {})
+        self.assertEqual(third.get("kind"), "IsSubclass")
+        self.assertEqual(third.get("actual_type_id", {}).get("kind"), "Name")
+        self.assertEqual(third.get("actual_type_id", {}).get("id"), "Child")
+        self.assertEqual(third.get("expected_type_id", {}).get("kind"), "Name")
+        self.assertEqual(third.get("expected_type_id", {}).get("id"), "Base")
+
+    def test_lower_runtime_type_id_and_subtype_calls_to_core_nodes(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "type_id"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "int64",
+                        "func": {"kind": "Name", "id": "py_runtime_type_id"},
+                        "args": [{"kind": "Name", "id": "x", "resolved_type": "object"}],
+                        "keywords": [],
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "py_is_subtype"},
+                        "args": [
+                            {"kind": "Name", "id": "a_tid", "resolved_type": "int64"},
+                            {"kind": "Name", "id": "e_tid", "resolved_type": "int64"},
+                        ],
+                        "keywords": [],
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "py_issubclass"},
+                        "args": [
+                            {"kind": "Name", "id": "a_tid", "resolved_type": "int64"},
+                            {"kind": "Name", "id": "e_tid", "resolved_type": "int64"},
+                        ],
+                        "keywords": [],
+                    },
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("value", {}).get("kind"), "ObjTypeId")
+        self.assertEqual(body[1].get("value", {}).get("kind"), "IsSubtype")
+        self.assertEqual(body[2].get("value", {}).get("kind"), "IsSubclass")
+
     def test_lower_assign_inserts_box_and_unbox_for_any_boundary(self) -> None:
         east2 = {
             "kind": "Module",

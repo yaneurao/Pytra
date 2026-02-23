@@ -3960,21 +3960,73 @@ class CppEmitter(CodeEmitter):
 
     def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
         """`isinstance(x, T)` の `T` に対応する runtime 判定式を返す。"""
-        type_id_map = {
-            "str": "PYTRA_TID_STR",
-            "list": "PYTRA_TID_LIST",
-            "dict": "PYTRA_TID_DICT",
-            "set": "PYTRA_TID_SET",
-            "int": "PYTRA_TID_INT",
-            "float": "PYTRA_TID_FLOAT",
-            "bool": "PYTRA_TID_BOOL",
-            "object": "PYTRA_TID_OBJECT",
-        }
-        if type_name in type_id_map:
-            return f"py_isinstance({value_expr}, {type_id_map[type_name]})"
-        if type_name in self.ref_classes:
-            return f"py_isinstance({value_expr}, {type_name}::PYTRA_TYPE_ID)"
+        type_id_expr = self._render_type_id_operand_expr({"kind": "Name", "id": type_name})
+        if type_id_expr != "":
+            return f"py_isinstance({value_expr}, {type_id_expr})"
         return "false"
+
+    def _render_type_id_operand_expr(self, type_id_node: Any) -> str:
+        """type_id 式ノードを C++ の type_id 式へ写像する。"""
+        node = self.any_to_dict_or_empty(type_id_node)
+        if len(node) == 0:
+            return ""
+        kind = self._node_kind_from_dict(node)
+        if kind == "Name":
+            type_name = self.any_to_str(node.get("id")).strip()
+            if type_name == "":
+                return ""
+            if type_name == "PYTRA_TID_NONE":
+                return "PYTRA_TID_NONE"
+            if type_name == "PYTRA_TID_BOOL":
+                return "PYTRA_TID_BOOL"
+            if type_name == "PYTRA_TID_INT":
+                return "PYTRA_TID_INT"
+            if type_name == "PYTRA_TID_FLOAT":
+                return "PYTRA_TID_FLOAT"
+            if type_name == "PYTRA_TID_STR":
+                return "PYTRA_TID_STR"
+            if type_name == "PYTRA_TID_LIST":
+                return "PYTRA_TID_LIST"
+            if type_name == "PYTRA_TID_DICT":
+                return "PYTRA_TID_DICT"
+            if type_name == "PYTRA_TID_SET":
+                return "PYTRA_TID_SET"
+            if type_name == "PYTRA_TID_OBJECT":
+                return "PYTRA_TID_OBJECT"
+            if type_name == "None":
+                return "PYTRA_TID_NONE"
+            if type_name == "bool":
+                return "PYTRA_TID_BOOL"
+            if type_name == "int":
+                return "PYTRA_TID_INT"
+            if type_name == "float":
+                return "PYTRA_TID_FLOAT"
+            if type_name == "str":
+                return "PYTRA_TID_STR"
+            if type_name == "list":
+                return "PYTRA_TID_LIST"
+            if type_name == "dict":
+                return "PYTRA_TID_DICT"
+            if type_name == "set":
+                return "PYTRA_TID_SET"
+            if type_name == "object":
+                return "PYTRA_TID_OBJECT"
+            if type_name in self.ref_classes:
+                return f"{type_name}::PYTRA_TYPE_ID"
+            if self.is_declared(type_name):
+                return type_name
+            return ""
+        if kind == "Attribute":
+            owner_node = self.any_to_dict_or_empty(node.get("value"))
+            owner_kind = self._node_kind_from_dict(owner_node)
+            owner_name = self.any_to_str(owner_node.get("id")).strip()
+            attr_name = self.any_to_str(node.get("attr")).strip()
+            if owner_kind == "Name" and attr_name == "PYTRA_TYPE_ID" and owner_name in self.ref_classes:
+                return f"{owner_name}::PYTRA_TYPE_ID"
+        rendered = self.render_expr(type_id_node)
+        if rendered == "/* none */":
+            return ""
+        return rendered
 
     def _render_simple_name_builtin_call(self, raw: str, args: list[str]) -> str | None:
         """Name 呼び出しの単純ビルトイン分岐を描画する。"""
@@ -5381,6 +5433,27 @@ class CppEmitter(CodeEmitter):
         if kind == "ObjIterNext":
             iter_expr = self.render_expr(expr_d.get("iter"))
             return f"py_next_or_stop({iter_expr})"
+        if kind == "ObjTypeId":
+            value_expr = self.render_expr(expr_d.get("value"))
+            return f"py_runtime_type_id({value_expr})"
+        if kind == "IsSubtype":
+            actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
+            expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))
+            if actual_type_id_expr == "" or expected_type_id_expr == "":
+                return "false"
+            return f"py_is_subtype(static_cast<uint32>({actual_type_id_expr}), static_cast<uint32>({expected_type_id_expr}))"
+        if kind == "IsSubclass":
+            actual_type_id_expr = self._render_type_id_operand_expr(expr_d.get("actual_type_id"))
+            expected_type_id_expr = self._render_type_id_operand_expr(expr_d.get("expected_type_id"))
+            if actual_type_id_expr == "" or expected_type_id_expr == "":
+                return "false"
+            return f"py_issubclass(static_cast<uint32>({actual_type_id_expr}), static_cast<uint32>({expected_type_id_expr}))"
+        if kind == "IsInstance":
+            value_expr = self.render_expr(expr_d.get("value"))
+            expected_type_id_expr = self._render_type_id_operand_expr(expr_d.get("expected_type_id"))
+            if expected_type_id_expr == "":
+                return "false"
+            return f"py_isinstance({value_expr}, static_cast<uint32>({expected_type_id_expr}))"
         op_rendered = self._render_operator_family_expr(kind, expr, expr_d)
         if op_rendered != "":
             return op_rendered
