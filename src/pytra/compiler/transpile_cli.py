@@ -74,6 +74,22 @@ def replace_first(text: str, old: str, replacement: str) -> str:
     return text[:pos] + replacement + text[pos + len(old) :]
 
 
+def split_ws_tokens(text: str) -> list[str]:
+    """空白区切りトークンへ分解する（連続空白は 1 区切り扱い）。"""
+    tokens: list[str] = []
+    cur = ""
+    for ch in text:
+        if ch == " " or ch == "\t":
+            if cur != "":
+                tokens.append(cur)
+                cur = ""
+        else:
+            cur += ch
+    if cur != "":
+        tokens.append(cur)
+    return tokens
+
+
 def path_parent_text(path_obj: Path) -> str:
     """Path から親ディレクトリ文字列を取得する。"""
     path_txt: str = str(path_obj)

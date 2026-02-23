@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, write_text_file
+from src.pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_ws_tokens, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -192,6 +192,11 @@ class Py2CppFeatureTest(unittest.TestCase):
     def test_replace_first_replaces_single_match(self) -> None:
         self.assertEqual(replace_first("aaab", "a", "x"), "xaab")
         self.assertEqual(replace_first("hello", "z", "x"), "hello")
+
+    def test_split_ws_tokens_splits_ascii_whitespace(self) -> None:
+        self.assertEqual(split_ws_tokens("a b\tc"), ["a", "b", "c"])
+        self.assertEqual(split_ws_tokens("  a   b  "), ["a", "b"])
+        self.assertEqual(split_ws_tokens(""), [])
 
     def test_path_parent_text_returns_parent_dir(self) -> None:
         self.assertEqual(path_parent_text(Path("a/b/c.txt")), "a/b")

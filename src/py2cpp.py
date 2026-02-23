@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -318,22 +318,6 @@ def _append_unique_non_empty(items: list[str], seen: set[str], value: str) -> No
     items.append(value)
 
 
-def _split_ws_tokens(text: str) -> list[str]:
-    """空白区切りトークンへ分解する（連続空白は 1 区切り扱い）。"""
-    tokens: list[str] = []
-    cur = ""
-    for ch in text:
-        if ch == " " or ch == "\t":
-            if cur != "":
-                tokens.append(cur)
-                cur = ""
-        else:
-            cur += ch
-    if cur != "":
-        tokens.append(cur)
-    return tokens
-
-
 def _first_import_detail_line(source_text: str, kind: str) -> str:
     """import エラー表示向けに、入力コードから該当 import 行を抜き出す。"""
     lines = source_text.splitlines()
@@ -348,12 +332,12 @@ def _first_import_detail_line(source_text: str, kind: str) -> str:
             continue
         if kind == "wildcard":
             if line.startswith("from ") and " import " in line and line.endswith("*"):
-                parts = _split_ws_tokens(line)
+                parts = split_ws_tokens(line)
                 if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import" and parts[3] == "*":
                     return "from " + parts[1] + " import *"
         if kind == "relative":
             if line.startswith("from .") and " import " in line:
-                parts = _split_ws_tokens(line)
+                parts = split_ws_tokens(line)
                 if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import":
                     return "from " + parts[1] + " import " + parts[3]
     if kind == "wildcard":

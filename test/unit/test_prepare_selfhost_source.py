@@ -38,7 +38,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             removed,
         )
         self.assertNotIn(
-            "from pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options, write_text_file\n",
+            "from pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_ws_tokens, validate_codegen_options, write_text_file\n",
             removed,
         )
         self.assertNotIn(
@@ -50,7 +50,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         mod = _load_prepare_module()
         broken = (
             "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n"
-            "from pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options, write_text_file\n"
+            "from pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_ws_tokens, validate_codegen_options, write_text_file\n"
         )
         with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks import"):
             mod._remove_import_line(broken)
@@ -63,6 +63,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def path_parent_text(path_obj: Path) -> str:", support_blocks)
         self.assertIn("def replace_first(text: str, old: str, replacement: str) -> str:", support_blocks)
         self.assertIn("def split_infix_once(text: str, sep: str) -> tuple[str, str, bool]:", support_blocks)
+        self.assertIn("def split_ws_tokens(text: str) -> list[str]:", support_blocks)
         self.assertIn("def sort_str_list_copy(items: list[str]) -> list[str]:", support_blocks)
         self.assertIn("def count_text_lines(text: str) -> int:", support_blocks)
         self.assertIn("def write_text_file(path_obj: Path, text: str) -> None:", support_blocks)
