@@ -117,12 +117,13 @@
 
 1. [ ] [ID: P1-CEH-01] profile で表現しづらいケースだけを hooks へ移し、`py2cpp.py` 側条件分岐を残さない状態にする（`P1-CEH-01-S1` から `P1-CEH-01-S4` 完了でクローズ）。
 2. [x] [ID: P1-CEH-01-S1] `py2cpp.py` 側の profile/hook 境界違反ケースを棚卸しし、移行優先順位を決める。
-3. [ ] [ID: P1-CEH-01-S2] hook 化しやすいケースから `CodeEmitter` hooks へ移行し、`py2cpp.py` 条件分岐を削減する。
+3. [x] [ID: P1-CEH-01-S2] hook 化しやすいケースから `CodeEmitter` hooks へ移行し、`py2cpp.py` 条件分岐を削減する。
 4. [ ] [ID: P1-CEH-01-S3] hook 化が難しいケースは profile 側表現力拡張で吸収し、target 固有分岐の再追加を防ぐ。
 5. [ ] [ID: P1-CEH-01-S4] selfhost/fixture 回帰で生成差分を確認し、残る `py2cpp.py` 分岐を除去する。
 
 進捗メモ:
 - `P1-CEH-01-S1`: `docs-jp/plans/p1-codeemitter-hooks-migration.md` に `emit_stmt`/`emit_for_*`、Builtin runtime fallback、`_render_call_fallback`、`_render_binop_expr` などの境界違反ケースを `高/中/低` 優先で棚卸しし、`S2` 着手順を確定した。
+- `P1-CEH-01-S2`: `CppEmitter.hook_on_emit_stmt_kind` を override して「dynamic hook優先 + C++既定フォールバック」を導入し、`emit_stmt` の kind 分岐を `hook_on_emit_stmt_kind` 側へ移した。selfhost（dynamic hooks無効）でも `Pass`/`Import` などが処理されることを `test_py2cpp_features.py::test_emit_stmt_fallback_works_when_dynamic_hooks_disabled` で固定した。
 
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
