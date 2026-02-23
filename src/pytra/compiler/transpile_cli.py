@@ -383,6 +383,22 @@ def stmt_target_name(stmt: dict[str, object]) -> str:
     return name_target_id(dict_any_get_dict(stmt, "target"))
 
 
+def stmt_assigned_names(stmt: dict[str, object]) -> list[str]:
+    """Assign/AnnAssign 文の Name 代入先を抽出する。"""
+    kind = dict_any_kind(stmt)
+    out: list[str] = []
+    if kind == "Assign":
+        for tgt_obj in assign_targets(stmt):
+            name_txt = name_target_id(tgt_obj)
+            if name_txt != "":
+                out.append(name_txt)
+    elif kind == "AnnAssign":
+        name_txt = stmt_target_name(stmt)
+        if name_txt != "":
+            out.append(name_txt)
+    return out
+
+
 def dict_any_get_str_list(src: dict[str, object], key: str) -> list[str]:
     """`dict[str, object]` の list 値から `str` 要素だけを抽出する。"""
     out: list[str] = []
