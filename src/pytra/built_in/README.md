@@ -24,3 +24,7 @@
 ## テスト運用
 
 - 仕様追加時は unit test か fixture を同時追加し、既存 runtime との観測結果差分を検証する。
+
+## 現在の実装
+
+- `type_id.py`: `py_register_class_type` / `py_is_subtype` / `py_issubclass` / `py_runtime_type_id` / `py_isinstance` の pure Python 実装。
