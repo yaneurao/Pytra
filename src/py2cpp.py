@@ -507,13 +507,12 @@ class CppEmitter(CodeEmitter):
         if bindings:
             for item in bindings:
                 module_id = dict_any_get_str(item, "module_id")
-                export_name = dict_any_get_str(item, "export_name")
                 binding_kind = dict_any_get_str(item, "binding_kind")
                 mod_name = self._normalize_runtime_module_name(module_id)
                 inc = self._module_name_to_cpp_include(mod_name)
                 append_unique_non_empty(includes, seen, inc)
-                if binding_kind == "symbol" and export_name != "":
-                    self._append_runtime_symbol_include(includes, seen, mod_name, export_name)
+                if binding_kind == "symbol":
+                    self._append_runtime_symbol_include(includes, seen, mod_name, dict_any_get_str(item, "export_name"))
             includes = sort_str_list_copy(includes)
             return includes
         for stmt in body:
@@ -529,8 +528,7 @@ class CppEmitter(CodeEmitter):
                 inc = self._module_name_to_cpp_include(mod_name)
                 append_unique_non_empty(includes, seen, inc)
                 for ent in self._dict_stmt_list(stmt.get("names")):
-                    sym = dict_any_get_str(ent, "name")
-                    self._append_runtime_symbol_include(includes, seen, mod_name, sym)
+                    self._append_runtime_symbol_include(includes, seen, mod_name, dict_any_get_str(ent, "name"))
         includes = sort_str_list_copy(includes)
         return includes
 
@@ -563,15 +561,14 @@ class CppEmitter(CodeEmitter):
         refs = meta_qualified_symbol_refs(self.doc)
         bindings = meta_import_bindings(self.doc)
         if bindings:
-            if refs:
-                for ref_item in refs:
-                    set_import_symbol_binding_and_module_set(
-                        self.import_symbols,
-                        self.import_symbol_modules,
-                        dict_str_get(ref_item, "local_name", ""),
-                        dict_str_get(ref_item, "module_id", ""),
-                        dict_str_get(ref_item, "symbol", ""),
-                    )
+            for ref_item in refs:
+                set_import_symbol_binding_and_module_set(
+                    self.import_symbols,
+                    self.import_symbol_modules,
+                    dict_str_get(ref_item, "local_name", ""),
+                    dict_str_get(ref_item, "module_id", ""),
+                    dict_str_get(ref_item, "symbol", ""),
+                )
             for item in bindings:
                 binding_kind = dict_str_get(item, "binding_kind", "")
                 if binding_kind == "module":
