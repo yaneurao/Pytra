@@ -455,6 +455,25 @@ def stmt_list_parse_metrics(body: list[dict[str, object]], depth: int) -> tuple[
     return node_count, max_depth
 
 
+def stmt_list_scope_depth(
+    body: list[dict[str, object]],
+    depth: int,
+    scope_nesting_kinds: set[str],
+) -> int:
+    """statement list の最大 scope 深さを返す。"""
+    max_depth = depth
+    for st in body:
+        kind = dict_any_kind(st)
+        child_depth = depth + 1 if kind in scope_nesting_kinds else depth
+        if child_depth > max_depth:
+            max_depth = child_depth
+        for child in stmt_child_stmt_lists(st):
+            d = stmt_list_scope_depth(child, child_depth, scope_nesting_kinds)
+            if d > max_depth:
+                max_depth = d
+    return max_depth
+
+
 def dict_any_get_str_list(src: dict[str, object], key: str) -> list[str]:
     """`dict[str, object]` の list 値から `str` 要素だけを抽出する。"""
     out: list[str] = []
