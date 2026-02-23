@@ -4130,6 +4130,59 @@ class CppEmitter(CodeEmitter):
             }
         return None
 
+    def _build_any_boundary_expr_from_call_name(
+        self,
+        raw_name: str,
+        arg_nodes: list[Any],
+    ) -> dict[str, Any] | None:
+        if len(arg_nodes) != 1:
+            return None
+        arg0 = arg_nodes[0]
+        arg0_t = self.get_expr_type(arg0)
+        if not self.is_any_like_type(arg0_t):
+            return None
+        if raw_name == "bool":
+            return {
+                "kind": "ObjBool",
+                "value": arg0,
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if raw_name == "len":
+            return {
+                "kind": "ObjLen",
+                "value": arg0,
+                "resolved_type": "int64",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if raw_name == "str":
+            return {
+                "kind": "ObjStr",
+                "value": arg0,
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if raw_name == "iter":
+            return {
+                "kind": "ObjIterInit",
+                "value": arg0,
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        if raw_name == "next":
+            return {
+                "kind": "ObjIterNext",
+                "iter": arg0,
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+        return None
+
     def _render_simple_name_builtin_call(self, raw: str, args: list[str]) -> str | None:
         """Name 呼び出しの単純ビルトイン分岐を描画する。"""
         if raw == "print":
@@ -4283,6 +4336,9 @@ class CppEmitter(CodeEmitter):
                     ctor_arg_names = self._class_method_name_sig(raw, "__init__")
                     ctor_args = self._merge_args_with_kw_by_name(args, kw, ctor_arg_names)
                 return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
+            any_boundary_expr = self._build_any_boundary_expr_from_call_name(raw, arg_nodes)
+            if any_boundary_expr is not None:
+                return self.render_expr(any_boundary_expr)
             simple_builtin_rendered = self._render_simple_name_builtin_call(raw, args)
             if simple_builtin_rendered is not None:
                 return simple_builtin_rendered

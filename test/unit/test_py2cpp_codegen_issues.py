@@ -666,6 +666,35 @@ def f(x: object) -> None:
         self.assertIn("return py_isinstance(x, PYTRA_TID_INT);", cpp)
         self.assertNotIn("return py_is_int(x);", cpp)
 
+    def test_any_boundary_builtin_names_route_to_obj_core_runtime_api(self) -> None:
+        src = """def f_bool(x: object) -> bool:
+    return bool(x)
+
+def f_len(x: object) -> int:
+    return len(x)
+
+def f_str(x: object) -> str:
+    return str(x)
+
+def f_iter(x: object) -> object:
+    return iter(x)
+
+def f_next(it: object) -> object:
+    return next(it)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "any_boundary_builtin_names.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return py_to_bool(x);", cpp)
+        self.assertIn("return py_len(x);", cpp)
+        self.assertIn("return py_to_string(x);", cpp)
+        self.assertIn("return make_object(py_iter_or_raise(x));", cpp)
+        self.assertIn("return make_object(py_next_or_stop(it));", cpp)
+        self.assertNotIn("return bool(x);", cpp)
+
     def test_isinstance_set_lowers_to_set_type_id_runtime_api(self) -> None:
         src = """def f(x: object) -> bool:
     return isinstance(x, set)
