@@ -1133,6 +1133,57 @@ def format_graph_list_section(out: str, label: str, items: list[str]) -> str:
     return out2
 
 
+def dump_deps_text(east_module: dict[str, object]) -> str:
+    """EAST の import メタデータを人間向けテキストへ整形する。"""
+    import_bindings = meta_import_bindings(east_module)
+    body = dict_any_get_dict_list(east_module, "body")
+    modules: list[str] = []
+    module_seen: set[str] = set()
+    symbols: list[str] = []
+    symbol_seen: set[str] = set()
+
+    if len(import_bindings) > 0:
+        for ent in import_bindings:
+            append_unique_non_empty(modules, module_seen, ent["module_id"])
+            if ent["binding_kind"] == "symbol" and ent["export_name"] != "":
+                label = ent["module_id"] + "." + ent["export_name"]
+                if ent["local_name"] != "" and ent["local_name"] != ent["export_name"]:
+                    label += " as " + ent["local_name"]
+                append_unique_non_empty(symbols, symbol_seen, label)
+    else:
+        for stmt_dict in body:
+            kind = dict_any_kind(stmt_dict)
+            if kind == "Import":
+                for ent_dict in dict_any_get_dict_list(stmt_dict, "names"):
+                    mod_name = dict_any_get_str(ent_dict, "name")
+                    append_unique_non_empty(modules, module_seen, mod_name)
+            elif kind == "ImportFrom":
+                mod_name = dict_any_get_str(stmt_dict, "module")
+                append_unique_non_empty(modules, module_seen, mod_name)
+                for ent_dict in dict_any_get_dict_list(stmt_dict, "names"):
+                    sym_name = dict_any_get_str(ent_dict, "name")
+                    alias = dict_any_get_str(ent_dict, "asname")
+                    if sym_name != "":
+                        label = mod_name + "." + sym_name
+                        if alias != "":
+                            label += " as " + alias
+                        append_unique_non_empty(symbols, symbol_seen, label)
+
+    out = "modules:\n"
+    if len(modules) == 0:
+        out += "  (none)\n"
+    else:
+        for mod_name in modules:
+            out += "  - " + mod_name + "\n"
+    out += "symbols:\n"
+    if len(symbols) == 0:
+        out += "  (none)\n"
+    else:
+        for sym_name in symbols:
+            out += "  - " + sym_name + "\n"
+    return out
+
+
 def format_import_graph_report(analysis: dict[str, object]) -> str:
     """依存解析結果を `--dump-deps` 向けテキストへ整形する。"""
     edges = dict_any_get_str_list(analysis, "edges")

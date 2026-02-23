@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -5963,58 +5963,6 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
     if module_tail == "compiler":
         return "pytra::compiler"
     return "pytra::utils::" + module_tail.replace("/", "::")
-
-
-def dump_deps_text(east_module: dict[str, Any]) -> str:
-    """EAST の import メタデータを人間向けテキストへ整形する。"""
-    import_bindings = meta_import_bindings(east_module)
-    body = dict_any_get_dict_list(east_module, "body")
-
-    modules: list[str] = []
-    module_seen: set[str] = set()
-    symbols: list[str] = []
-    symbol_seen: set[str] = set()
-
-    if len(import_bindings) > 0:
-        for ent in import_bindings:
-            append_unique_non_empty(modules, module_seen, ent["module_id"])
-            if ent["binding_kind"] == "symbol" and ent["export_name"] != "":
-                label = ent["module_id"] + "." + ent["export_name"]
-                if ent["local_name"] != "" and ent["local_name"] != ent["export_name"]:
-                    label += " as " + ent["local_name"]
-                append_unique_non_empty(symbols, symbol_seen, label)
-    else:
-        for stmt_dict in body:
-            kind = dict_any_kind(stmt_dict)
-            if kind == "Import":
-                for ent_dict in dict_any_get_dict_list(stmt_dict, "names"):
-                    mod_name = dict_any_get_str(ent_dict, "name")
-                    append_unique_non_empty(modules, module_seen, mod_name)
-            elif kind == "ImportFrom":
-                mod_name = dict_any_get_str(stmt_dict, "module")
-                append_unique_non_empty(modules, module_seen, mod_name)
-                for ent_dict in dict_any_get_dict_list(stmt_dict, "names"):
-                    sym_name = dict_any_get_str(ent_dict, "name")
-                    alias = dict_any_get_str(ent_dict, "asname")
-                    if sym_name != "":
-                        label = mod_name + "." + sym_name
-                        if alias != "":
-                            label += " as " + alias
-                        append_unique_non_empty(symbols, symbol_seen, label)
-
-    out = "modules:\n"
-    if len(modules) == 0:
-        out += "  (none)\n"
-    else:
-        for mod_name in modules:
-            out += "  - " + mod_name + "\n"
-    out += "symbols:\n"
-    if len(symbols) == 0:
-        out += "  (none)\n"
-    else:
-        for sym_name in symbols:
-            out += "  - " + sym_name + "\n"
-    return out
 
 
 def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
