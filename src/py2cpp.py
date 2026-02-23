@@ -7346,63 +7346,13 @@ def _write_multi_file_cpp(
     }
 
 
-def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
-    """ユーザーモジュール名を `search_root` 基準で `.py` パスへ解決する（未解決は空 Path）。
-
-    解決時は `search_root` から親ディレクトリへ遡りながら候補を探索し、
-    候補が複数ある場合は次の優先順位で選ぶ。
-    1) `<mod>/__init__.py`
-    2) `<mod>/<leaf>.py`（例: `yanesdk/yanesdk.py`）
-    3) `<mod>.py`
-    """
-    if module_name.startswith("pytra.") or module_name == "pytra":
-        return Path("")
-    rel = module_name.replace(".", "/")
-    parts = module_name.split(".")
-    leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
-    cur_dir = str(search_root)
-    cur_dir = cur_dir if cur_dir != "" else "."
-    seen_dirs: set[str] = set()
-    best_path = ""
-    best_rank = -1
-    best_distance = 1000000000
-    distance = 0
-    while cur_dir not in seen_dirs:
-        seen_dirs.add(cur_dir)
-        prefix = cur_dir
-        if prefix != "" and not prefix.endswith("/"):
-            prefix += "/"
-        cand_init = prefix + rel + "/__init__.py"
-        cand_named = prefix + rel + "/" + leaf + ".py" if leaf != "" else ""
-        cand_flat = prefix + rel + ".py"
-        candidates: list[tuple[str, int]] = []
-        candidates.append((cand_init, 3))
-        if cand_named != "":
-            candidates.append((cand_named, 2))
-        candidates.append((cand_flat, 1))
-        for path_txt, rank in candidates:
-            if Path(path_txt).exists():
-                if rank > best_rank or (rank == best_rank and distance < best_distance):
-                    best_path = path_txt
-                    best_rank = rank
-                    best_distance = distance
-        parent_dir = path_parent_text(Path(cur_dir))
-        if parent_dir == cur_dir:
-            break
-        cur_dir = parent_dir if parent_dir != "" else "."
-        distance += 1
-    if best_path != "":
-        return Path(best_path)
-    return Path("")
-
-
 def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
     """モジュール名を `user/pytra/known/missing/relative` に分類して解決する。"""
     if raw_name.startswith("."):
         return {"status": "relative", "module_id": raw_name, "path": None}
     if is_pytra_module_name(raw_name):
         return {"status": "pytra", "module_id": raw_name, "path": None}
-    dep_file = _resolve_user_module_path(raw_name, root_dir)
+    dep_file = resolve_user_module_path_for_graph(raw_name, root_dir)
     if str(dep_file) != "":
         # import 文字列を module_id の正本として扱う（探索パス由来の見かけに引きずられない）。
         return {"status": "user", "module_id": raw_name, "path": dep_file}
