@@ -2362,17 +2362,17 @@ class CppEmitter(CodeEmitter):
             return False
         kind = self._node_kind_from_dict(value)
         if kind == "Name":
-            name = self.any_to_str(value.get("id"))
+            name = dict_any_get_str(value, "id")
             if name in self.import_modules:
                 return True
             if name in self.import_symbols:
                 return True
             return False
         if kind == "Attribute":
-            owner = self.any_to_dict_or_empty(value.get("value"))
+            owner = dict_any_get_dict(value, "value")
             if self._node_kind_from_dict(owner) != "Name":
                 return False
-            owner_name = self.any_to_str(owner.get("id"))
+            owner_name = dict_any_get_str(owner, "id")
             if owner_name in self.import_modules:
                 return True
             if owner_name in self.import_symbols:
