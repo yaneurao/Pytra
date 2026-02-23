@@ -1,11 +1,4 @@
-#ifndef PYTRA_BUILT_IN_EXCEPTIONS_H
-#define PYTRA_BUILT_IN_EXCEPTIONS_H
+// FORWARDER: handwritten runtime header moved to pytra-core.
+#pragma once
 
-#include <stdexcept>
-
-using ValueError = ::std::runtime_error;
-using RuntimeError = ::std::runtime_error;
-using TypeError = ::std::runtime_error;
-using IndexError = ::std::runtime_error;
-
-#endif  // PYTRA_BUILT_IN_EXCEPTIONS_H
+#include "runtime/cpp/pytra-core/built_in/exceptions.h"
