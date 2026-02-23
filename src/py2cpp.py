@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -695,46 +695,6 @@ def _looks_like_runtime_function_name(name: str) -> bool:
     return False
 
 
-def _split_top_level_csv(text: str) -> list[str]:
-    """括弧ネストを考慮してカンマ区切りを分割する。"""
-    out: list[str] = []
-    cur = ""
-    depth_paren = 0
-    depth_brack = 0
-    depth_brace = 0
-    for ch in text:
-        if ch == "(":
-            depth_paren += 1
-            cur += ch
-        elif ch == ")":
-            if depth_paren > 0:
-                depth_paren -= 1
-            cur += ch
-        elif ch == "[":
-            depth_brack += 1
-            cur += ch
-        elif ch == "]":
-            if depth_brack > 0:
-                depth_brack -= 1
-            cur += ch
-        elif ch == "{":
-            depth_brace += 1
-            cur += ch
-        elif ch == "}":
-            if depth_brace > 0:
-                depth_brace -= 1
-            cur += ch
-        elif ch == "," and depth_paren == 0 and depth_brack == 0 and depth_brace == 0:
-            out.append(cur.strip())
-            cur = ""
-        else:
-            cur += ch
-    tail = cur.strip()
-    if tail != "":
-        out.append(tail)
-    return out
-
-
 def _normalize_param_annotation(ann: str) -> str:
     """関数引数注釈文字列を EAST 互換の粗い型名へ正規化する。"""
     t = ann.strip()
@@ -803,7 +763,7 @@ def _extract_function_signatures_from_python_source(src_path: Path) -> dict[str,
             params = sig0[p0 + 1 : p1]
             arg_types: list[str] = []
             arg_defaults: list[str] = []
-            parts = _split_top_level_csv(params)
+            parts = split_top_level_csv(params)
             for part in parts:
                 prm = part.strip()
                 if prm == "" or prm.startswith("*"):
@@ -5094,7 +5054,7 @@ class CppEmitter(CodeEmitter):
         inner = self._trim_ws(t[p0 + 1 : n - 1])
         args: list[str] = []
         if inner != "":
-            args = _split_top_level_csv(inner)
+            args = split_top_level_csv(inner)
         return fn, args, True
 
     def _split_top_level_infix_text(self, text: str, sep: str) -> list[str]:
@@ -5213,7 +5173,7 @@ class CppEmitter(CodeEmitter):
         inner = self._trim_ws(t[1:-1])
         if inner == "":
             return "set<str>{}"
-        items = _split_top_level_csv(inner)
+        items = split_top_level_csv(inner)
         out_items: list[str] = []
         for item in items:
             token = self._trim_ws(item)
