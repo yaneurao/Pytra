@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from pytra.std import argparse
+from pytra.std import json
 from pytra.std import os
 from pytra.std.pathlib import Path
 from pytra.std.typing import Iterable
@@ -96,6 +98,99 @@ def parse_user_error(err_text: str) -> dict[str, object]:
         if line != "":
             details.append(line)
     return {"category": category, "summary": summary, "details": details}
+
+
+def load_east_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
+    """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
+    input_txt = str(input_path)
+    if input_txt.endswith(".json"):
+        payload_any = json.loads(input_path.read_text(encoding="utf-8"))
+        if isinstance(payload_any, dict):
+            payload = payload_any
+            ok_obj = dict_any_get(payload, "ok")
+            east_obj = dict_any_get(payload, "east")
+            if isinstance(ok_obj, bool) and ok_obj and isinstance(east_obj, dict):
+                return east_obj
+            if dict_any_kind(payload) == "Module":
+                return payload
+        raise make_user_error(
+            "input_invalid",
+            "Invalid EAST JSON format.",
+            ["expected: {'ok': true, 'east': {...}} or {'kind': 'Module', ...}"],
+        )
+    source_text = ""
+    east_any: object = None
+    msg = ""
+    try:
+        source_text = input_path.read_text(encoding="utf-8")
+        east_any = (
+            convert_path(input_path, parser_backend)
+            if parser_backend == "self_hosted"
+            else convert_source_to_east_with_backend(source_text, input_txt, parser_backend)
+        )
+    except SyntaxError as ex:
+        msg = str(ex)
+        raise make_user_error(
+            "user_syntax_error",
+            "Python syntax error.",
+            [msg],
+        ) from ex
+    except Exception as ex:
+        parsed_err = parse_user_error(str(ex))
+        ex_cat = dict_any_get_str(parsed_err, "category")
+        ex_details = dict_any_get_str_list(parsed_err, "details")
+        if ex_cat != "":
+            if ex_cat == "not_implemented":
+                first = ""
+                if len(ex_details) > 0 and isinstance(ex_details[0], str):
+                    first = ex_details[0]
+                if first == "":
+                    raise make_user_error(
+                        "user_syntax_error",
+                        "Python syntax error.",
+                        [],
+                    ) from ex
+            raise ex
+        msg = str(ex)
+        if "from-import wildcard is not supported" in msg:
+            label = first_import_detail_line(source_text, "wildcard")
+            raise make_user_error(
+                "input_invalid",
+                "Unsupported import syntax.",
+                [f"kind=unsupported_import_form file={input_path} import={label}"],
+            ) from ex
+        if "relative import is not supported" in msg:
+            label = first_import_detail_line(source_text, "relative")
+            raise make_user_error(
+                "input_invalid",
+                "Unsupported import syntax.",
+                [f"kind=unsupported_import_form file={input_path} import={label}"],
+            ) from ex
+        if "duplicate import binding:" in msg:
+            raise make_user_error(
+                "input_invalid",
+                "Duplicate import binding.",
+                [f"kind=duplicate_binding file={input_path} import={msg}"],
+            ) from ex
+        category = "not_implemented"
+        summary = "This syntax is not implemented yet."
+        if msg == "":
+            category = "user_syntax_error"
+            summary = "Python syntax error."
+        if ("cannot parse" in msg) or ("unexpected token" in msg) or ("invalid syntax" in msg):
+            category = "user_syntax_error"
+            summary = "Python syntax error."
+        if "forbidden by language constraints" in msg:
+            category = "unsupported_by_design"
+            summary = "This syntax is unsupported by language design."
+        raise make_user_error(category, summary, [msg]) from ex
+    if isinstance(east_any, dict):
+        return east_any
+    raise make_user_error(
+        "input_invalid",
+        "Failed to build EAST.",
+        ["EAST root must be a dict."],
+    )
 
 
 def join_str_list(sep: str, items: list[str]) -> str:

@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -5395,95 +5395,8 @@ class CppEmitter(CodeEmitter):
 
 def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
-    input_txt = str(input_path)
-    if input_txt.endswith(".json"):
-        payload_any = json.loads(input_path.read_text(encoding="utf-8"))
-        if isinstance(payload_any, dict):
-            payload = payload_any
-            ok_obj = dict_any_get(payload, "ok")
-            east_obj = dict_any_get(payload, "east")
-            if isinstance(ok_obj, bool) and ok_obj and isinstance(east_obj, dict):
-                return east_obj
-            if dict_any_kind(payload) == "Module":
-                return payload
-        raise make_user_error(
-            "input_invalid",
-            "Invalid EAST JSON format.",
-            ["expected: {'ok': true, 'east': {...}} or {'kind': 'Module', ...}"],
-        )
-    source_text: str = ""
-    east_any: Any = None
-    msg: str = ""
-    try:
-        source_text = input_path.read_text(encoding="utf-8")
-        east_any = (
-            convert_path(input_path, parser_backend)
-            if parser_backend == "self_hosted"
-            else convert_source_to_east_with_backend(source_text, input_txt, parser_backend)
-        )
-    except SyntaxError as ex:
-        msg = str(ex)
-        raise make_user_error(
-            "user_syntax_error",
-            "Python syntax error.",
-            [msg],
-        ) from ex
-    except Exception as ex:
-        parsed_err = parse_user_error(str(ex))
-        ex_cat = dict_any_get_str(parsed_err, "category")
-        ex_details = dict_any_get_str_list(parsed_err, "details")
-        if ex_cat != "":
-            if ex_cat == "not_implemented":
-                first = ""
-                if len(ex_details) > 0 and isinstance(ex_details[0], str):
-                    first = ex_details[0]
-                if first == "":
-                    raise make_user_error(
-                        "user_syntax_error",
-                        "Python syntax error.",
-                        [],
-                    ) from ex
-            raise ex
-        msg = str(ex)
-        if "from-import wildcard is not supported" in msg:
-            label = first_import_detail_line(source_text, "wildcard")
-            raise make_user_error(
-                "input_invalid",
-                "Unsupported import syntax.",
-                [f"kind=unsupported_import_form file={input_path} import={label}"],
-            ) from ex
-        if "relative import is not supported" in msg:
-            label = first_import_detail_line(source_text, "relative")
-            raise make_user_error(
-                "input_invalid",
-                "Unsupported import syntax.",
-                [f"kind=unsupported_import_form file={input_path} import={label}"],
-            ) from ex
-        if "duplicate import binding:" in msg:
-            raise make_user_error(
-                "input_invalid",
-                "Duplicate import binding.",
-                [f"kind=duplicate_binding file={input_path} import={msg}"],
-            ) from ex
-        category = "not_implemented"
-        summary = "This syntax is not implemented yet."
-        if msg == "":
-            category = "user_syntax_error"
-            summary = "Python syntax error."
-        if ("cannot parse" in msg) or ("unexpected token" in msg) or ("invalid syntax" in msg):
-            category = "user_syntax_error"
-            summary = "Python syntax error."
-        if "forbidden by language constraints" in msg:
-            category = "unsupported_by_design"
-            summary = "This syntax is unsupported by language design."
-        raise make_user_error(category, summary, [msg]) from ex
-    if isinstance(east_any, dict):
-        return east_any
-    raise make_user_error(
-        "input_invalid",
-        "Failed to build EAST.",
-        ["EAST root must be a dict."],
-    )
+    east_doc = load_east_document(input_path, parser_backend)
+    return east_doc if isinstance(east_doc, dict) else {}
 
 
 def _transpile_to_cpp_with_map(
