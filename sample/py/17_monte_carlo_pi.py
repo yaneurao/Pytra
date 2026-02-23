@@ -1,4 +1,4 @@
-# 04: Sample that scans a large grid using integer arithmetic only and computes a checksum.
+# 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
 # It avoids floating-point error effects, making cross-language comparisons easier.
 
 from time import perf_counter

@@ -33,14 +33,14 @@ Acceptance criteria:
 Validation commands:
 - `python3 tools/build_selfhost.py`
 - `python3 tools/check_selfhost_cpp_diff.py`
-- `python3 tools/verify_selfhost_end_to_end.py --skip-build --cases sample/py/01_mandelbrot.py sample/py/04_monte_carlo_pi.py test/fixtures/control/if_else.py`
+- `python3 tools/verify_selfhost_end_to_end.py --skip-build --cases sample/py/01_mandelbrot.py sample/py/17_monte_carlo_pi.py test/fixtures/control/if_else.py`
 - `python3 tools/check_selfhost_direct_compile.py --cases sample/py/*.py`
 
 Decision log:
 - 2026-02-22: Initial draft (split context out of TODO).
-- 2026-02-22: Reconfirmed that `build_selfhost` passes, while `check_selfhost_cpp_diff --mode allow-not-implemented` reports `mismatches=3` (`if_else.py`, `01_mandelbrot.py`, `04_monte_carlo_pi.py`). Under `verify_selfhost_end_to_end --skip-build`, only `04_monte_carlo_pi.py` fails by checksum mismatch.
+- 2026-02-22: Reconfirmed that `build_selfhost` passes, while `check_selfhost_cpp_diff --mode allow-not-implemented` reports `mismatches=3` (`if_else.py`, `01_mandelbrot.py`, `17_monte_carlo_pi.py`). Under `verify_selfhost_end_to_end --skip-build`, only `17_monte_carlo_pi.py` fails by checksum mismatch.
 - 2026-02-22: Root-cause investigation showed `selfhost/py2cpp.out` output dropped nested bodies in `if`/`for`, while `PYTHONPATH=src python3 selfhost/py2cpp.py` preserved them. Priority moved to parser/runtime path in the selfhost binary (`core.cpp` lineage).
-- 2026-02-22: Corrected root cause to static binding of default `CodeEmitter` `emit_scoped_stmt_list` / `emit_scoped_block` calls in selfhost C++. Added same-name overrides in `src/py2cpp.py` `CppEmitter`, fixing nested-body omission. Verified `failures=0` via `verify_selfhost_end_to_end --skip-build --cases sample/py/01_mandelbrot.py sample/py/04_monte_carlo_pi.py test/fixtures/control/if_else.py`.
+- 2026-02-22: Corrected root cause to static binding of default `CodeEmitter` `emit_scoped_stmt_list` / `emit_scoped_block` calls in selfhost C++. Added same-name overrides in `src/py2cpp.py` `CppEmitter`, fixing nested-body omission. Verified `failures=0` via `verify_selfhost_end_to_end --skip-build --cases sample/py/01_mandelbrot.py sample/py/17_monte_carlo_pi.py test/fixtures/control/if_else.py`.
 - 2026-02-22: Removed import-resolution table reinitialization from `CppEmitter.__init__`, fixing the route where selfhost C++ failed to resolve `math.*` due to base/derived member separation. Verified `failures=0` on multiple cases and `python3 tools/check_selfhost_direct_compile.py --cases sample/py/*.py`.
 - 2026-02-22: Removed `dump_codegen_options_text` replacement and `main guard` replacement paths from `tools/prepare_selfhost_source.py`, forwarding canonical `transpile_cli.py` / `py2cpp.py` as-is into selfhost. Confirmed no regressions with `tools/build_selfhost.py`, `./selfhost/py2cpp.out -h`, `--dump-options`, and `verify_selfhost_end_to_end --skip-build`.
 - 2026-02-22: Removed exception/help replacement (`_patch_selfhost_exception_paths`) and helper `is_help_requested` from `tools/prepare_selfhost_source.py`, forwarding canonical CLI branches as-is into selfhost. Confirmed no regressions, with `mismatches=3` unchanged in allow-not-implemented mode.

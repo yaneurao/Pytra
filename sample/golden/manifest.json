@@ -33,12 +33,16 @@
       "stdout_normalized": "output: sample/out/03_julia_set.png\nsize: 3840 x 2160\nmax_iter: 20000",
       "stdout_sha256": "c7bce3a8153feefba05aa926a887c40860678abd8a8ace6db1fbe465e09c81ae"
     },
-    "04_monte_carlo_pi": {
-      "artifact": null,
-      "source_rel": "sample/py/04_monte_carlo_pi.py",
-      "source_sha256": "beb3ca668202849d6e0e1f3d2cda8ccd914cb56e5991558fe2cf930a7e08ee2b",
-      "stdout_normalized": "pixels: 3840000\nchecksum: 45839292",
-      "stdout_sha256": "fb52b8a70e80e77cc774dc4a5b7f78af797681214a2331fba3579d672c30b153"
+    "04_orbit_trap_julia": {
+      "artifact": {
+        "sha256": "0bb7170acdff27edfee99cffece7efe5fea078817c4aa71e5fd773c387870f94",
+        "size": 6222418,
+        "suffix": ".png"
+      },
+      "source_rel": "sample/py/04_orbit_trap_julia.py",
+      "source_sha256": "eab127e268d2cf513011f6882b73b594333e70bbb82153af6d2c5f084f8d1d07",
+      "stdout_normalized": "output: sample/out/04_orbit_trap_julia.png\nsize: 1920 x 1080\nmax_iter: 1400",
+      "stdout_sha256": "fc0b3ca03843a678b733b6a7b3ba037236fd2b6743285679130e683f6c91b83e"
     },
     "05_mandelbrot_zoom": {
       "artifact": {
@@ -150,12 +154,16 @@
       "stdout_normalized": "output: sample/out/14_raymarching_light_cycle.gif\nframes: 84",
       "stdout_sha256": "cfd143d0aaa58baf5eec8e17864761fe7270eb6187c0c3d4b99574f5b2397a85"
     },
-    "15_mini_language_interpreter": {
-      "artifact": null,
-      "source_rel": "sample/py/15_mini_language_interpreter.py",
-      "source_sha256": "7ef40df8bcc5aa53bf2d3a3bd73470acd952db6a3d170fdfe824903270e31371",
-      "stdout_normalized": "26\n8\nprinted: 2\ndemo_checksum: 3414\ntoken_count: 1683886\nexpr_count: 1081277\nstmt_count: 121271\nchecksum: 803546542",
-      "stdout_sha256": "0b8ab7e7cf9ac2af7ffaefc0486908b0d35cab9735dc936a296bf29e60b2f32f"
+    "15_wave_interference_loop": {
+      "artifact": {
+        "sha256": "5aaab0fe93e2b8acc9d2a4e217b89c5991936b77eeaacd827bd929d7b162f7e9",
+        "size": 16656897,
+        "suffix": ".gif"
+      },
+      "source_rel": "sample/py/15_wave_interference_loop.py",
+      "source_sha256": "39317d799850347560158f98765aa9ee33a247fec7551bdcdb782537148a9b87",
+      "stdout_normalized": "output: sample/out/15_wave_interference_loop.gif\nframes: 96",
+      "stdout_sha256": "01045c38850edfbc06def84c709c9abff46c7f6da1610039aa40c533128f13c0"
     },
     "16_glass_sculpture_chaos": {
       "artifact": {
@@ -167,6 +175,20 @@
       "source_sha256": "6de38b145e163c14919db25cbc18dff7d68d204e23a268606cfd3bd347ae5e33",
       "stdout_normalized": "output: sample/out/16_glass_sculpture_chaos.gif\nframes: 72",
       "stdout_sha256": "0df206633ba5fd907422a60aa947680878c78fef73bb1469623e3ad40d2a39d0"
+    },
+    "17_monte_carlo_pi": {
+      "artifact": null,
+      "source_rel": "sample/py/17_monte_carlo_pi.py",
+      "source_sha256": "b855c1d8ebea1fcb4d6cbd6df53a4e4408ed354a0d213ab6605b6cecf6c6a154",
+      "stdout_normalized": "pixels: 3840000\nchecksum: 45839292",
+      "stdout_sha256": "fb52b8a70e80e77cc774dc4a5b7f78af797681214a2331fba3579d672c30b153"
+    },
+    "18_mini_language_interpreter": {
+      "artifact": null,
+      "source_rel": "sample/py/18_mini_language_interpreter.py",
+      "source_sha256": "7ef40df8bcc5aa53bf2d3a3bd73470acd952db6a3d170fdfe824903270e31371",
+      "stdout_normalized": "26\n8\nprinted: 2\ndemo_checksum: 3414\ntoken_count: 1683886\nexpr_count: 1081277\nstmt_count: 121271\nchecksum: 803546542",
+      "stdout_sha256": "0b8ab7e7cf9ac2af7ffaefc0486908b0d35cab9735dc936a296bf29e60b2f32f"
     }
   },
   "schema_version": 1
