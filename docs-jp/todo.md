@@ -30,6 +30,7 @@
 2. [ ] [ID: P0-EAST123-02] `EAST2 -> EAST3` core lowering の最小実装（`ForCore` / `RuntimeIterForPlan` / `Any/object` 境界命令）を導入し、`--object-dispatch-mode` の適用点を一箇所に固定する。
 3. [ ] [ID: P0-EAST123-03] backend 側の意味論再解釈を禁止し、hooks を構文差分専任へ縮退する（`dispatch mode` 再判断・boxing/iterable 再実装の撤去）。
 4. [ ] [ID: P0-EAST123-04] `EAST3` 契約（schema/例外/回帰）をテストで固定し、selfhost とクロスターゲットの回帰導線へ組み込む。
+5. [ ] [ID: P0-EAST123-05] `EAST3` 導入後に hooks 実装を定量的に縮退する（意味論 hook を撤去し、構文差分 hook のみに限定する）。
 
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
