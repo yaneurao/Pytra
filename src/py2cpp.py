@@ -6025,6 +6025,7 @@ def _write_multi_file_cpp(
     module_ns_map: dict[str, str] = {}
     module_label_map: dict[str, str] = {}
     module_name_by_key: dict[str, str] = {}
+    module_key_by_name: dict[str, str] = {}
     for mod_key in files:
         mod_path = Path(mod_key)
         east0 = dict_any_get_dict(module_east_map, mod_key)
@@ -6034,6 +6035,8 @@ def _write_multi_file_cpp(
         module_name_by_key[mod_key] = mod_name
         if mod_name != "":
             module_ns_map[mod_name] = "pytra_mod_" + label
+            if mod_name not in module_key_by_name:
+                module_key_by_name[mod_name] = mod_key
 
     type_schema = build_module_type_schema(module_east_map)
 
@@ -6118,11 +6121,7 @@ def _write_multi_file_cpp(
             if mod_name not in module_ns_map:
                 continue
             target_ns = module_ns_map[mod_name]
-            target_key = ""
-            for k2, target_mod_name in module_name_by_key.items():
-                if target_mod_name == mod_name:
-                    target_key = k2
-                    break
+            target_key = module_key_by_name.get(mod_name, "")
             if target_key == "":
                 continue
             target_schema = dict_any_get_dict(type_schema, target_key)
