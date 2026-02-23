@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_any_get_str, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_any_get_str, dict_any_get_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -210,18 +210,10 @@ def _dict_any_get_dict(src: dict[str, Any], key: str) -> dict[str, Any]:
     return {}
 
 
-def _dict_any_get_list(src: dict[str, Any], key: str) -> list[Any]:
-    """`dict[str, Any]` から list 値を安全に取得する。"""
-    value = _dict_any_get(src, key)
-    if isinstance(value, list):
-        return value
-    return []
-
-
 def _dict_any_get_dict_list(src: dict[str, Any], key: str) -> list[dict[str, Any]]:
     """`dict[str, Any]` から dict 要素のみの list を取得する。"""
     out: list[dict[str, Any]] = []
-    for item in _dict_any_get_list(src, key):
+    for item in dict_any_get_list(src, key):
         if isinstance(item, dict):
             out.append(item)
     return out
@@ -339,7 +331,7 @@ def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
         fn_name = dict_any_get_str(stmt, "name")
         if fn_name != "":
             symbols.add(fn_name)
-        for arg_any in _dict_any_get_list(stmt, "arg_order"):
+        for arg_any in dict_any_get_list(stmt, "arg_order"):
             if isinstance(arg_any, str) and arg_any != "":
                 symbols.add(arg_any)
     elif kind == "ClassDef":
@@ -6328,7 +6320,7 @@ def build_cpp_header_from_east(
                 ret_cpp = _header_cpp_type_from_east(ret_t, ref_classes, class_names)
                 used_types.add(ret_cpp)
                 arg_types = _dict_any_get_dict(st, "arg_types")
-                arg_order = _dict_any_get_list(st, "arg_order")
+                arg_order = dict_any_get_list(st, "arg_order")
                 parts: list[str] = []
                 for an in arg_order:
                     if not isinstance(an, str):
@@ -6872,7 +6864,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                 name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
                     arg_types = _dict_any_get_dict(st, "arg_types")
-                    arg_order = _dict_any_get_list(st, "arg_order")
+                    arg_order = dict_any_get_list(st, "arg_order")
                     ret_type = dict_any_get_str(st, "return_type", "None")
                     fn_ent: dict[str, Any] = {
                         "arg_types": arg_types,
@@ -7051,7 +7043,7 @@ def _write_multi_file_cpp(
                 ret_t = dict_any_get_str(sig, "return_type", "None")
                 ret_cpp = "void" if ret_t == "None" else type_emitter._cpp_type_text(ret_t)
                 arg_types = _dict_any_get_dict(sig, "arg_types")
-                arg_order = _dict_any_get_list(sig, "arg_order")
+                arg_order = dict_any_get_list(sig, "arg_order")
                 parts: list[str] = []
                 for an in arg_order:
                     if not isinstance(an, str):
