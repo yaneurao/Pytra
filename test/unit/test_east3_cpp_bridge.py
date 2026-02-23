@@ -286,6 +286,67 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(expr), "s.insert(v)")
 
+    def test_render_expr_supports_list_pop_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        node_no_index = {
+            "kind": "ListPop",
+            "owner": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "resolved_type": "int64",
+        }
+        node_with_index = {
+            "kind": "ListPop",
+            "owner": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "index": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+            "resolved_type": "int64",
+        }
+        self.assertEqual(emitter.render_expr(node_no_index), "xs.pop()")
+        self.assertEqual(emitter.render_expr(node_with_index), "xs.pop(i)")
+
+    def test_builtin_runtime_list_pop_uses_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.pop",
+            "resolved_type": "int64",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                "attr": "pop",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(expr), "xs.pop()")
+
+    def test_render_expr_supports_list_clear_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        node = {
+            "kind": "ListClear",
+            "owner": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "resolved_type": "None",
+        }
+        self.assertEqual(emitter.render_expr(node), "xs.clear()")
+
+    def test_builtin_runtime_list_clear_uses_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.clear",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                "attr": "clear",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(expr), "xs.clear()")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",

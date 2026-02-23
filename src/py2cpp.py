@@ -3509,10 +3509,28 @@ class CppEmitter(CodeEmitter):
             a0 = args[0] if len(args) >= 1 else "{}"
             return f"{owner}.insert({owner}.end(), {a0}.begin(), {a0}.end())"
         if runtime_call == "list.pop":
+            pop_node = {
+                "kind": "ListPop",
+                "owner": owner_node,
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                pop_node["index"] = arg_nodes[0]
+            return self.render_expr(pop_node)
             if len(args) == 0:
                 return f"{owner}.pop()"
             return f"{owner}.pop({args[0]})"
         if runtime_call == "list.clear":
+            clear_node = {
+                "kind": "ListClear",
+                "owner": owner_node,
+                "resolved_type": "None",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(clear_node)
             return f"{owner}.clear()"
         if runtime_call == "list.reverse":
             return f"::std::reverse({owner}.begin(), {owner}.end())"
@@ -5828,6 +5846,21 @@ class CppEmitter(CodeEmitter):
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
             return f"{owner_expr}.insert({value_expr})"
+        if kind == "ListPop":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            has_index = self.any_dict_has(expr_d, "index")
+            if not has_index:
+                return f"{owner_expr}.pop()"
+            index_node = expr_d.get("index")
+            index_expr = self.render_expr(index_node)
+            if index_expr in {"", "/* none */"}:
+                return f"{owner_expr}.pop()"
+            return f"{owner_expr}.pop({index_expr})"
+        if kind == "ListClear":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            return f"{owner_expr}.clear()"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))
