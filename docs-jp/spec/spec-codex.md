@@ -29,7 +29,9 @@
 - 優先度上書きは `docs-jp/todo2.md` ではなく、チャット指示で `対象ID` / `完了条件` / `非対象` を明示して行います（テンプレート: `docs-jp/plans/instruction-template.md`）。
 - 未完了項目は優先度順に順次実施します（最小 `P<number>` を最優先、同一優先度は上から先頭）。
 - `P0` が 1 件でも未完了なら、明示上書き指示なしで `P1` 以下へ着手してはいけません。
-- `docs-jp/todo.md` の進捗メモを追加したターンでは、`python3 tools/check_todo_priority.py` を通過させます。
+- `docs-jp/todo.md` の進捗メモは 1 行要約に留め、詳細な判断・検証ログは文脈ファイル（`docs-jp/plans/*.md`）の `決定ログ` へ追記します。
+- 大きいタスクは文脈ファイルで `-S1` / `-S2` 形式の子タスクへ分割してよく、`tools/check_todo_priority.py` は最上位未完了 `ID` とその子 `ID` を許可します。
+- `docs-jp/todo.md` または `docs-jp/plans/*.md` に進捗ログを追加したターンでは、`python3 tools/check_todo_priority.py` を通過させます。
 - 割り込み等で未コミット差分が残る場合は、同一 `ID` を完了させるか差分を戻してから別 `ID` へ移ります。
 - タスク完了時はチェック状態を更新します。
 

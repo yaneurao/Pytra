@@ -17,7 +17,7 @@
 - `tools/run_local_ci.py`
   - 目的: ローカル最小 CI（version gate + todo 優先度ガード + 条件付き sample 再生成 + transpile 回帰 + unit + selfhost build + diff）を一括実行する。
 - `tools/check_todo_priority.py`
-  - 目的: `docs-jp/todo.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID` と一致するかを検証し、優先度逸脱を防止する。
+  - 目的: `docs-jp/todo.md` / `docs-jp/plans/*.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID`（またはその子 `ID`）と一致するかを検証し、優先度逸脱を防止する。
 - `tools/check_py2cpp_transpile.py`
   - 目的: `test/fixtures/` を `py2cpp.py` で一括変換し、失敗ケースを検出する。
   - 主要オプション: `--check-yanesdk-smoke`（Yanesdk の縮小ケースを同時確認）
