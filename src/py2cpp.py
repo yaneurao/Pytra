@@ -1112,6 +1112,16 @@ class CppEmitter(CodeEmitter):
             return "false"
         if t == "bool":
             return body
+        if self.is_any_like_type(t):
+            return self.render_expr(
+                {
+                    "kind": "ObjBool",
+                    "value": expr_node,
+                    "resolved_type": "bool",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+            )
         if t == "str" or t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
             return self.truthy_len_expr(body)
         return body

@@ -146,6 +146,11 @@ class East3CppBridgeTest(unittest.TestCase):
             "py_is_subtype(1001, 1000)",
         )
 
+    def test_render_cond_for_any_routes_to_objbool(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        any_name = {"kind": "Name", "id": "v", "resolved_type": "Any"}
+        self.assertEqual(emitter.render_cond(any_name), "py_to_bool(v)")
+
     def test_render_unbox_honors_ctx_for_refclass_cast(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.ref_classes = {"Box"}
