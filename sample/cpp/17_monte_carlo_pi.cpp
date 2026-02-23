@@ -1,8 +1,10 @@
-#include "cpp_module/py_runtime.h"
+#include "runtime/cpp/pytra/built_in/py_runtime.h"
+
+#include "pytra/std/time.h"
 
 
-// 04: 整数演算のみで大きなグリッドを走査し、チェックサムを計算するサンプルです。
-// 浮動小数点誤差の影響を避け、言語間で比較しやすいベンチマークにします。
+// 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
+// It avoids floating-point error effects, making cross-language comparisons easier.
 
 int64 run_integer_grid_checksum(int64 width, int64 height, int64 seed) {
     int64 mod_main = 2147483647;
@@ -18,7 +20,6 @@ int64 run_integer_grid_checksum(int64 width, int64 height, int64 seed) {
         }
         acc = (acc + row_sum * (y + 1)) % mod_out;
     }
-    
     return acc;
 }
 
@@ -26,9 +27,9 @@ void run_integer_benchmark() {
     int64 width = 2400;
     int64 height = 1600;
     
-    float64 start = perf_counter();
+    float64 start = pytra::std::time::perf_counter();
     int64 checksum = run_integer_grid_checksum(width, height, 123456789);
-    float64 elapsed = perf_counter() - start;
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     
     py_print("pixels:", width * height);
     py_print("checksum:", checksum);

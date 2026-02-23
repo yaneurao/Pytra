@@ -27,7 +27,7 @@ DEFAULT_CASES = [
     "test/fixtures/core/str_join_method.py",
     "test/fixtures/control/if_else.py",
     "test/fixtures/control/ifexp_ternary_regression.py",
-    "sample/py/04_monte_carlo_pi.py",
+    "sample/py/17_monte_carlo_pi.py",
 ]
 
 
