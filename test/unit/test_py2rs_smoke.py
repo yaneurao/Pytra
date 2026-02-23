@@ -227,6 +227,24 @@ def from_any(x: Any) -> bool:
         self.assertIn("return true;", static_fn)
         self.assertIn("return true;", any_fn)
 
+    def test_isinstance_tuple_lowering_for_any_uses_or_of_matches(self) -> None:
+        src = """
+from pytra.std.typing import Any
+
+def f(x: Any) -> bool:
+    return isinstance(x, (int, dict))
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "isinstance_tuple_any.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertNotIn("isinstance(", rust)
+        self.assertIn("matches!(x, PyAny::Int(_))", rust)
+        self.assertIn("matches!(x, PyAny::Dict(_))", rust)
+        self.assertIn("||", rust)
+
 
 if __name__ == "__main__":
     unittest.main()
