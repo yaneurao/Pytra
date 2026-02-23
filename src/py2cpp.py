@@ -1026,9 +1026,10 @@ class CppEmitter(CodeEmitter):
 
         op_name = self.any_dict_get_str(expr_dict, "op", "")
         out = value_texts[-1]
-        for i in range(len(value_nodes) - 2, -1, -1):
-            cond = self.render_cond(value_nodes[i])
-            cur = value_texts[i]
+        prev_nodes = value_nodes[:-1]
+        prev_texts = value_texts[:-1]
+        for value_node, cur in zip(reversed(prev_nodes), reversed(prev_texts)):
+            cond = self.render_cond(value_node)
             out = f"({cond} ? {out} : {cur})" if op_name == "And" else f"({cond} ? {cur} : {out})"
         return out
 
