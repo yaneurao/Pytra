@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -394,16 +394,6 @@ def _collect_store_names_from_target(target: dict[str, Any], out: set[str]) -> N
             _collect_store_names_from_target(ent, out)
 
 
-def _local_binding_name(name: str, asname: str) -> str:
-    """import 句のローカル束縛名を返す。"""
-    if asname != "":
-        return asname
-    head, _tail, found = split_infix_once(name, ".")
-    if found and head != "":
-        return head
-    return name
-
-
 def _stmt_child_stmt_lists(stmt: dict[str, Any]) -> list[list[dict[str, Any]]]:
     """文ノードが持つ子 statement list 群を抽出する。"""
     out: list[list[dict[str, Any]]] = []
@@ -492,7 +482,7 @@ def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
         for ent in _dict_any_get_dict_list(stmt, "names"):
             name_txt = _dict_any_get_str(ent, "name")
             asname_txt = _dict_any_get_str(ent, "asname")
-            local_name = _local_binding_name(name_txt, asname_txt)
+            local_name = local_binding_name(name_txt, asname_txt)
             if local_name != "":
                 symbols.add(local_name)
     elif kind == "ImportFrom":
@@ -501,7 +491,7 @@ def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
             if sym_name == "*":
                 continue
             asname_txt = _dict_any_get_str(ent, "asname")
-            local_name = _local_binding_name(sym_name, asname_txt)
+            local_name = local_binding_name(sym_name, asname_txt)
             if local_name != "":
                 symbols.add(local_name)
     return symbols

@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -247,6 +247,11 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertTrue(looks_like_runtime_function_name("pytra::std::math::exp"))
         self.assertFalse(looks_like_runtime_function_name(""))
         self.assertFalse(looks_like_runtime_function_name("user_func"))
+
+    def test_local_binding_name_prefers_alias(self) -> None:
+        self.assertEqual(local_binding_name("a.b", "x"), "x")
+        self.assertEqual(local_binding_name("a.b", ""), "a")
+        self.assertEqual(local_binding_name("mod", ""), "mod")
 
     def test_parse_py2cpp_argv(self) -> None:
         parsed = parse_py2cpp_argv(
