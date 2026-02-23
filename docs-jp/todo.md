@@ -26,7 +26,12 @@
 
 文脈: `docs-jp/plans/p1-runtime-layout-unification.md`（`TG-P1-RUNTIME-LAYOUT`）
 
-1. [ ] [ID: P0-RUNTIME-SEP-01] C++ runtime を「生成物」と「手書き」で上位フォルダ分離する。`src/runtime/cpp/pytra-gen/`（自動生成専用）と `src/runtime/cpp/pytra-core/`（手書き専用）を新設し、`src/runtime/cpp/pytra/` は公開 include 入口（薄いフォワーダー）に限定する。`std/`・`built_in/` の混在（`-impl` 含む）を段階解消し、CI で `pytra-gen` は `AUTO-GENERATED` 必須、`pytra-core` は禁止を強制する。
+1. [ ] [ID: P0-RUNTIME-SEP-01] C++ runtime を「生成物」と「手書き」で上位フォルダ分離する（`P0-RUNTIME-SEP-01-S1` から `P0-RUNTIME-SEP-01-S5` 完了でクローズ）。
+2. [ ] [ID: P0-RUNTIME-SEP-01-S1] `src/runtime/cpp/pytra/` 配下の現状を棚卸しし、`std/`・`built_in/`・`utils/`・`compiler/` の各ファイルを「生成物 / 手書き / 入口フォワーダー」に分類する。
+3. [ ] [ID: P0-RUNTIME-SEP-01-S2] `src/runtime/cpp/pytra-gen/`（自動生成専用）と `src/runtime/cpp/pytra-core/`（手書き専用）を新設し、ビルド/インクルード解決を破壊しない最小構成を作る。
+4. [ ] [ID: P0-RUNTIME-SEP-01-S3] 自動生成ファイルを `pytra-gen` へ段階移動し、`AUTO-GENERATED` ヘッダ付与を統一する。
+5. [ ] [ID: P0-RUNTIME-SEP-01-S4] 手書きファイル（`-impl` 含む）を `pytra-core` へ段階移動し、`src/runtime/cpp/pytra/` を公開 include 入口（薄いフォワーダー）へ縮退する。
+6. [ ] [ID: P0-RUNTIME-SEP-01-S5] CI ガードを追加し、`pytra-gen` は `AUTO-GENERATED` 必須、`pytra-core` は `AUTO-GENERATED` 禁止を強制する。
 
 方針メモ:
 - ターゲット言語の増加を前提に、runtime は「自動生成層を厚く・手書き層を薄く」を基本方針とする。意味論は可能な限り `src/pytra/` 側の正本から生成し、手書きは GC/ABI など低レベル最小層へ限定する。
@@ -35,8 +40,16 @@
 
 文脈: `docs-jp/plans/p0-typeid-isinstance-dispatch.md`（`TG-P0-TYPEID-ISINSTANCE`）
 
-1. [ ] [ID: P0-TID-01] `type_id` ベースの共通判定 API（`py_isinstance` / `py_is_subtype`）を C++/JS/TS runtime に導入し、`py2cpp` を含む各 emitter の `isinstance` lower を runtime API 経由へ統一する。target 固有の built-in 直書き分岐は段階的に縮退する。
-2. [ ] [ID: P0-TID-02] `src/pytra/built_in/`（pure Python）を runtime 意味論の正本として新設し、`isinstance` / `issubclass` / `type_id` を含む target 非依存 built-in 処理をここへ段階移管する。`py2cpp.py --emit-runtime-cpp` は `src/pytra/built_in/*.py` を `src/runtime/cpp/pytra/built_in/*.{h,cpp}` へ生成できるよう拡張し、C++ 側手書き実装を最小ブート層（GC/ABI 等）へ限定する。
+1. [ ] [ID: P0-TID-01] `type_id` ベースの共通判定 API（`py_isinstance` / `py_is_subtype`）を C++/JS/TS runtime と各 emitter lower に統一導入する（`P0-TID-01-S1` から `P0-TID-01-S4` 完了でクローズ）。
+2. [ ] [ID: P0-TID-01-S1] `docs-jp/spec/spec-type_id.md` / `docs-jp/spec/spec-boxing.md` / `docs-jp/spec/spec-iterable.md` の整合を取り、`isinstance` 判定の共通 API 契約を確定する。
+3. [ ] [ID: P0-TID-01-S2] C++ runtime に `py_isinstance` / `py_is_subtype` を実装し、既存 call site を段階的に置換する。
+4. [ ] [ID: P0-TID-01-S3] JS/TS runtime に同等 API を実装し、`type_id` dispatch のオン/オフ方針（オプション切替）と整合させる。
+5. [ ] [ID: P0-TID-01-S4] `py2cpp` を含む各 emitter の `isinstance` lower を runtime API 経由へ統一し、target 固有 built-in 直書き分岐を縮退する。
+6. [ ] [ID: P0-TID-02] `src/pytra/built_in/`（pure Python）を runtime 意味論の正本として新設し、target 非依存 built-in 処理を段階移管する（`P0-TID-02-S1` から `P0-TID-02-S4` 完了でクローズ）。
+7. [ ] [ID: P0-TID-02-S1] `src/pytra/built_in/` の配置・命名・生成対象ルールを定義し、最小スケルトンを作成する。
+8. [ ] [ID: P0-TID-02-S2] `isinstance` / `issubclass` / `type_id` の pure Python 実装を `src/pytra/built_in/` へ移管する。
+9. [ ] [ID: P0-TID-02-S3] `py2cpp.py --emit-runtime-cpp` を拡張し、`src/pytra/built_in/*.py` から `src/runtime/cpp/pytra/built_in/*.{h,cpp}` を生成できるようにする。
+10. [ ] [ID: P0-TID-02-S4] C++ 側の手書き built-in 実装を最小ブート層（GC/ABI 等）へ限定し、移管済み処理の重複実装を解消する。
 
 進捗メモ:
 - 詳細ログは `docs-jp/plans/p0-typeid-isinstance-dispatch.md` の `決定ログ` を参照。
@@ -45,7 +58,11 @@
 
 文脈: `docs-jp/plans/p0-iterable-runtime-protocol.md`（`TG-P0-ITER`）
 
-1. [ ] [ID: P0-ITER-01] `docs-jp/spec/spec-iterable.md` を正本として、`EAST` trait（`iterable_trait` / `iter_mode`）・C++ runtime（`py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range`）・`py2cpp` codegen 分岐（`static_fastpath` / `runtime_protocol`）を段階導入する。
+1. [ ] [ID: P0-ITER-01] `docs-jp/spec/spec-iterable.md` を正本として iterable/iterator 契約を実装全体へ反映する（`P0-ITER-01-S1` から `P0-ITER-01-S4` 完了でクローズ）。
+2. [ ] [ID: P0-ITER-01-S1] `EAST` trait（`iterable_trait` / `iter_mode`）の必要情報と既存ノード影響を整理し、導入手順を確定する。
+3. [ ] [ID: P0-ITER-01-S2] `EAST` trait を導入し、parser/lower から必要メタデータを供給できる状態にする。
+4. [ ] [ID: P0-ITER-01-S3] C++ runtime（`py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range`）を実装し、`spec-iterable` の契約を満たす。
+5. [ ] [ID: P0-ITER-01-S4] `py2cpp` codegen の `static_fastpath` / `runtime_protocol` 分岐を実装し、回帰テストを追加する。
 
 進捗メモ:
 - 詳細ログは `docs-jp/plans/p0-iterable-runtime-protocol.md` の `決定ログ` を参照。
@@ -54,8 +71,11 @@
 
 文脈: `docs-jp/plans/p0-selfhost-stabilization.md`（`TG-P0-SH`）
 
-1. [ ] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を継続する。
-2. [x] [ID: P0-SH-05] selfhost 暴走対策として fail-fast ガードを導入し、`--guard-profile {off,default,strict}` と個別上限（`--max-ast-depth`, `--max-parse-nodes`, `--max-symbols-per-module`, `--max-scope-depth`, `--max-import-graph-nodes`, `--max-import-graph-edges`, `--max-generated-lines`）を CLI から指定可能にする。制限超過時は `input_invalid(kind=limit_exceeded, stage=...)` で早期停止する。
+1. [ ] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を完了する（`P0-SH-04-S1` から `P0-SH-04-S3` 完了でクローズ）。
+2. [ ] [ID: P0-SH-04-S1] 残存スタブを棚卸しし、「恒久機能化すべきもの」と「削除すべきもの」を分類する。
+3. [ ] [ID: P0-SH-04-S2] 恒久機能化対象を compiler/runtime 側へ移し、prepare 側分岐を段階削減する。
+4. [ ] [ID: P0-SH-04-S3] selfhost 回帰（通常 + guard profile）を再計測し、prepare スクリプト依存の再流入を防ぐ。
+5. [x] [ID: P0-SH-05] selfhost 暴走対策として fail-fast ガードを導入し、`--guard-profile {off,default,strict}` と個別上限（`--max-ast-depth`, `--max-parse-nodes`, `--max-symbols-per-module`, `--max-scope-depth`, `--max-import-graph-nodes`, `--max-import-graph-edges`, `--max-generated-lines`）を CLI から指定可能にする。制限超過時は `input_invalid(kind=limit_exceeded, stage=...)` で早期停止する。
 
 進捗メモ:
 - 詳細ログは `docs-jp/plans/p0-selfhost-stabilization.md` の `決定ログ` を参照。
@@ -64,7 +84,11 @@
 
 文脈: `docs-jp/plans/p1-codeemitter-hooks-migration.md`（`TG-P1-CEH`）
 
-1. [ ] [ID: P1-CEH-01] profile で表現しづらいケースだけを hooks へ移し、`py2cpp.py` 側の条件分岐を残さない状態にする。
+1. [ ] [ID: P1-CEH-01] profile で表現しづらいケースだけを hooks へ移し、`py2cpp.py` 側条件分岐を残さない状態にする（`P1-CEH-01-S1` から `P1-CEH-01-S4` 完了でクローズ）。
+2. [ ] [ID: P1-CEH-01-S1] `py2cpp.py` 側の profile/hook 境界違反ケースを棚卸しし、移行優先順位を決める。
+3. [ ] [ID: P1-CEH-01-S2] hook 化しやすいケースから `CodeEmitter` hooks へ移行し、`py2cpp.py` 条件分岐を削減する。
+4. [ ] [ID: P1-CEH-01-S3] hook 化が難しいケースは profile 側表現力拡張で吸収し、target 固有分岐の再追加を防ぐ。
+5. [ ] [ID: P1-CEH-01-S4] selfhost/fixture 回帰で生成差分を確認し、残る `py2cpp.py` 分岐を除去する。
 
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
@@ -96,8 +120,14 @@ py2cpp / py2rs 共通化候補:
 
 文脈: `docs-jp/plans/p1-py2cpp-reduction.md`（`TG-P1-CPP-REDUCE`）
 
-1. [ ] [ID: P1-CPP-REDUCE-01] `src/py2cpp.py` に残る未移行ロジックを `CodeEmitter` へ段階移管し、行数を縮退する。
-2. [ ] [ID: P1-CPP-REDUCE-02] 全言語 selfhost を前提に、`py2cpp.py` への汎用 helper 新規追加を原則禁止し、必要な共通処理は `src/pytra/compiler/` へ先行抽出してから利用する運用へ移行する。
+1. [ ] [ID: P1-CPP-REDUCE-01] `src/py2cpp.py` に残る未移行ロジックを `CodeEmitter` へ段階移管し、行数を縮退する（`P1-CPP-REDUCE-01-S1` から `P1-CPP-REDUCE-01-S3` 完了でクローズ）。
+2. [ ] [ID: P1-CPP-REDUCE-01-S1] `py2cpp.py` 内ロジックを「言語非依存」「C++固有」に分類し、移管順を確定する。
+3. [ ] [ID: P1-CPP-REDUCE-01-S2] 言語非依存ロジックを `CodeEmitter` / `src/pytra/compiler/` へ段階移管する。
+4. [ ] [ID: P1-CPP-REDUCE-01-S3] selfhost 差分ゼロを維持したまま `py2cpp.py` の重複分岐を削減する。
+5. [ ] [ID: P1-CPP-REDUCE-02] 全言語 selfhost 前提で `py2cpp.py` への汎用 helper 新規追加を原則禁止する運用へ移行する（`P1-CPP-REDUCE-02-S1` から `P1-CPP-REDUCE-02-S3` 完了でクローズ）。
+6. [ ] [ID: P1-CPP-REDUCE-02-S1] 「汎用 helper 禁止 / 共通層先行抽出」の運用ルールを文書化する。
+7. [ ] [ID: P1-CPP-REDUCE-02-S2] 既存 helper 追加箇所を検出する lint/CI チェックを追加する。
+8. [ ] [ID: P1-CPP-REDUCE-02-S3] 例外（緊急 hotfix）時の暫定運用と後追い抽出期限を定義する。
 
 ## P1: コンパイラ共通層への抽出（py2cpp 偏在解消）
 
@@ -122,9 +152,19 @@ py2cpp / py2rs 共通化候補:
 目的: ランタイム配置を言語間で統一し、責務混在と重複実装を防ぐ。
 
 1. [ ] [ID: P1-RUNTIME-01] Rust ランタイムを `src/rs_module/` から `src/runtime/rs/pytra/` へ段階移行し、`src/runtime/cpp/pytra/` と同等の責務分割（`built_in/`, `std/`, `utils/`, `compiler/`）に揃える。
-2. [ ] [ID: P1-RUNTIME-02] `py2rs.py` / Rust hooks のランタイム解決パスを `src/runtime/rs/pytra/` 基準へ更新する。
-3. [ ] [ID: P1-RUNTIME-03] `src/rs_module/` の既存参照を洗い出し、互換レイヤを経由して最終的に廃止する。
-5. [ ] [ID: P1-RUNTIME-05] 各言語トランスパイラ（`py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）と hooks のランタイム解決パスを `src/runtime/<lang>/pytra/` 基準へ統一する。
+2. [ ] [ID: P1-RUNTIME-01-S1] `src/rs_module/` の機能を責務別に棚卸しし、`src/runtime/rs/pytra/{built_in,std,utils,compiler}` への対応表を作る。
+3. [ ] [ID: P1-RUNTIME-01-S2] Rust runtime ファイルを新配置へ段階移動し、互換 include/import レイヤを暫定維持する。
+4. [ ] [ID: P1-RUNTIME-01-S3] selfhost/transpile 回帰を通したうえで `src/rs_module/` 依存を縮退する。
+5. [ ] [ID: P1-RUNTIME-02] `py2rs.py` / Rust hooks のランタイム解決パスを `src/runtime/rs/pytra/` 基準へ更新する（`P1-RUNTIME-02-S1` から `P1-RUNTIME-02-S2` 完了でクローズ）。
+6. [ ] [ID: P1-RUNTIME-02-S1] Rust emitter/hooks の path 解決箇所を特定し、新旧パス併用期間の互換仕様を定義する。
+7. [ ] [ID: P1-RUNTIME-02-S2] 参照先を新パスへ切り替え、旧パス fallback を段階撤去する。
+8. [ ] [ID: P1-RUNTIME-03] `src/rs_module/` の既存参照を洗い出し、互換レイヤを経由して最終的に廃止する（`P1-RUNTIME-03-S1` から `P1-RUNTIME-03-S2` 完了でクローズ）。
+9. [ ] [ID: P1-RUNTIME-03-S1] `src/rs_module/` 参照元を全件列挙し、廃止可否を判定する。
+10. [ ] [ID: P1-RUNTIME-03-S2] 参照を `src/runtime/rs/pytra/` 側へ置換し、`src/rs_module/` を削除する。
+11. [ ] [ID: P1-RUNTIME-05] 各言語トランスパイラ（`py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）と hooks のランタイム解決パスを `src/runtime/<lang>/pytra/` 基準へ統一する（`P1-RUNTIME-05-S1` から `P1-RUNTIME-05-S3` 完了でクローズ）。
+12. [ ] [ID: P1-RUNTIME-05-S1] 言語ごとの現行 runtime 解決パスを棚卸しし、差分一覧を作成する。
+13. [ ] [ID: P1-RUNTIME-05-S2] 各 `py2<lang>.py` / hooks の参照先を `src/runtime/<lang>/pytra/` 基準へ順次更新する。
+14. [ ] [ID: P1-RUNTIME-05-S3] 多言語 smoke で回帰確認し、旧パス互換レイヤを段階撤去する。
 
 ## P1: 多言語出力品質（`sample/cpp` 水準）
 
