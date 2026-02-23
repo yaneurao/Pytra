@@ -692,6 +692,65 @@ def check_analyze_stage_guards(
     check_guard_limit("analyze", "max_import_graph_edges", graph_edges, guard_limits)
 
 
+def module_export_table(
+    module_east_map: dict[str, dict[str, object]],
+    root: Path,
+) -> dict[str, set[str]]:
+    """ユーザーモジュールの公開シンボル表（関数/クラス/代入名）を構築する。"""
+    out: dict[str, set[str]] = {}
+    for mod_key, east in module_east_map.items():
+        mod_path = Path(mod_key)
+        mod_name = module_id_from_east_for_graph(root, mod_path, east)
+        if mod_name == "":
+            continue
+        body = dict_any_get_dict_list(east, "body")
+        exports: set[str] = set()
+        for st in body:
+            kind = dict_any_kind(st)
+            if kind == "FunctionDef" or kind == "ClassDef":
+                name_txt = dict_any_get_str(st, "name")
+                if name_txt != "":
+                    exports.add(name_txt)
+            elif kind == "Assign" or kind == "AnnAssign":
+                for name_txt in stmt_assigned_names(st):
+                    exports.add(name_txt)
+        out[mod_name] = exports
+    return out
+
+
+def validate_from_import_symbols_or_raise(
+    module_east_map: dict[str, dict[str, object]],
+    root: Path,
+) -> None:
+    """`from M import S` の `S` が `M` の公開シンボルに存在するか検証する。"""
+    exports = module_export_table(module_east_map, root)
+    if len(exports) == 0:
+        return
+    details: list[str] = []
+    for mod_key, east in module_east_map.items():
+        file_disp = rel_disp_for_graph(root, Path(mod_key))
+        body = dict_any_get_dict_list(east, "body")
+        for st in body:
+            if dict_any_kind(st) == "ImportFrom":
+                imported_mod = dict_any_get_str(st, "module")
+                if imported_mod in exports:
+                    names = dict_any_get_dict_list(st, "names")
+                    for ent in names:
+                        sym = dict_any_get_str(ent, "name")
+                        if sym == "*":
+                            continue
+                        if sym != "" and sym not in exports[imported_mod]:
+                            details.append(
+                                f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
+                            )
+    if len(details) > 0:
+        raise make_user_error(
+            "input_invalid",
+            "Failed to resolve imports (missing symbols).",
+            details,
+        )
+
+
 def set_import_module_binding(import_modules: dict[str, str], local_name: str, module_id: str) -> None:
     """import module alias 束縛を追加する。"""
     if module_id == "":

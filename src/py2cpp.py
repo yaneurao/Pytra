@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6185,59 +6185,6 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
         )
 
 
-def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path) -> dict[str, set[str]]:
-    """ユーザーモジュールの公開シンボル表（関数/クラス/代入名）を構築する。"""
-    out: dict[str, set[str]] = {}
-    for mod_key, east in module_east_map.items():
-        mod_path = Path(mod_key)
-        mod_name = module_id_from_east_for_graph(root, mod_path, east)
-        if mod_name == "":
-            continue
-        body = dict_any_get_dict_list(east, "body")
-        exports: set[str] = set()
-        for st in body:
-            kind = dict_any_kind(st)
-            if kind == "FunctionDef" or kind == "ClassDef":
-                name_txt = dict_any_get_str(st, "name")
-                if name_txt != "":
-                    exports.add(name_txt)
-            elif kind == "Assign" or kind == "AnnAssign":
-                for name_txt in stmt_assigned_names(st):
-                    exports.add(name_txt)
-        out[mod_name] = exports
-    return out
-
-
-def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, Any]], root: Path) -> None:
-    """`from M import S` の `S` が `M` の公開シンボルに存在するか検証する。"""
-    exports = _module_export_table(module_east_map, root)
-    if len(exports) == 0:
-        return
-    details: list[str] = []
-    for mod_key, east in module_east_map.items():
-        file_disp = rel_disp_for_graph(root, Path(mod_key))
-        body = dict_any_get_dict_list(east, "body")
-        for st in body:
-            if dict_any_kind(st) == "ImportFrom":
-                imported_mod = dict_any_get_str(st, "module")
-                if imported_mod in exports:
-                    names = dict_any_get_dict_list(st, "names")
-                    for ent in names:
-                        sym = dict_any_get_str(ent, "name")
-                        if sym == "*":
-                            continue
-                        if sym != "" and sym not in exports[imported_mod]:
-                            details.append(
-                                f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
-                            )
-    if len(details) > 0:
-        raise make_user_error(
-            "input_invalid",
-            "Failed to resolve imports (missing symbols).",
-            details,
-        )
-
-
 def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted") -> dict[str, dict[str, Any]]:
     """入口 + 依存ユーザーモジュールを個別に EAST 化して返す。"""
     analysis = _analyze_import_graph(entry_path)
@@ -6257,7 +6204,7 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
             meta["module_id"] = module_id_any
         east["meta"] = meta
         out[str(p)] = east
-    _validate_from_import_symbols_or_raise(out, root=root_dir)
+    validate_from_import_symbols_or_raise(out, root=root_dir)
     return out
 
 
