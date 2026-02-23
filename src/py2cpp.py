@@ -896,8 +896,8 @@ class CppEmitter(CodeEmitter):
         if len(module_globals) > 0:
             self.emit("")
 
-        for i in range(len(module_defs)):
-            self.emit_stmt(module_defs[i])
+        for stmt in module_defs:
+            self.emit_stmt(stmt)
             self.emit("")
 
         has_module_runtime = len(module_runtime) > 0
