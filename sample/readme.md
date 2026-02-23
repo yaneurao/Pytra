@@ -2,8 +2,11 @@
 
 This directory contains reference Python samples and transpiled outputs for each target language.
 
+<a href="readme-ja.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/sample-日本語-2563EB?style=flat-square">
+</a>
+
 - Golden manifest: [`golden/manifest.json`](golden/manifest.json)
-- Japanese version: [`readme-ja.md`](readme-ja.md)
 
 | No | Sample | Output | Py | C++ | Rust | C# | JS | TS | Go | Java | Kotlin | Swift |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

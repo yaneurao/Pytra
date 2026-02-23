@@ -2,8 +2,11 @@
 
 このディレクトリには、Python の元サンプルと各ターゲット言語への変換結果を配置しています。
 
+<a href="readme.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/sample-English-2563EB?style=flat-square">
+</a>
+
 - ゴールデンマニフェスト: [`golden/manifest.json`](golden/manifest.json)
-- English: [`readme.md`](readme.md)
 
 | No | サンプル | 実行結果 | Py | C++ | Rust | C# | JS | TS | Go | Java | Kotlin | Swift |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
