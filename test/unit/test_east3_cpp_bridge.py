@@ -1109,6 +1109,16 @@ class East3CppBridgeTest(unittest.TestCase):
             "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
             "resolved_type": "str",
         }
+        minmax_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "minmax",
+            "mode": "max",
+            "args": [
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                {"kind": "Constant", "value": 2, "resolved_type": "int64"},
+            ],
+            "resolved_type": "int64",
+        }
         perf_node = {"kind": "RuntimeSpecialOp", "op": "perf_counter", "resolved_type": "float64"}
         open_node = {
             "kind": "RuntimeSpecialOp",
@@ -1143,6 +1153,10 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_node), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_node), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
+        self.assertEqual(
+            emitter.render_expr(minmax_node),
+            "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",
+        )
         self.assertEqual(emitter.render_expr(perf_node), "pytra::std::time::perf_counter()")
         self.assertEqual(emitter.render_expr(open_node), 'open("a.txt", "rb")')
         self.assertEqual(emitter.render_expr(path_ctor_node), 'Path("a.txt")')
@@ -1179,6 +1193,30 @@ class East3CppBridgeTest(unittest.TestCase):
             "resolved_type": "str",
             "func": {"kind": "Name", "id": "str", "resolved_type": "unknown"},
             "args": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        max_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_max",
+            "resolved_type": "int64",
+            "func": {"kind": "Name", "id": "max", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                {"kind": "Constant", "value": 2, "resolved_type": "int64"},
+            ],
+            "keywords": [],
+        }
+        min_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_min",
+            "resolved_type": "int64",
+            "func": {"kind": "Name", "id": "min", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                {"kind": "Constant", "value": 2, "resolved_type": "int64"},
+            ],
             "keywords": [],
         }
         perf_expr = {
@@ -1241,6 +1279,14 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_expr), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_expr), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_expr), "::std::to_string(1)")
+        self.assertEqual(
+            emitter.render_expr(max_expr),
+            "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",
+        )
+        self.assertEqual(
+            emitter.render_expr(min_expr),
+            "::std::min<int64>(static_cast<int64>(1), static_cast<int64>(2))",
+        )
         self.assertEqual(emitter.render_expr(perf_expr), "pytra::std::time::perf_counter()")
         self.assertEqual(emitter.render_expr(open_expr), 'open("a.txt", "rb")')
         self.assertEqual(emitter.render_expr(path_ctor_expr), 'Path("a.txt")')

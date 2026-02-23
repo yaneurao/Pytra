@@ -3439,7 +3439,7 @@ class CppEmitter(CodeEmitter):
         str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, fn, args, arg_nodes)
         if str_ops_rendered is not None:
             return str(str_ops_rendered)
-        special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, fn, args, kw, arg_nodes)
+        special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, expr, fn, args, kw, arg_nodes)
         if special_runtime_rendered is not None:
             return str(special_runtime_rendered)
         runtime_fallback = self._render_builtin_runtime_fallback(
@@ -4019,6 +4019,7 @@ class CppEmitter(CodeEmitter):
     def _render_builtin_runtime_special_ops(
         self,
         runtime_call: str,
+        expr: dict[str, Any],
         fn: dict[str, Any],
         args: list[str],
         kw: dict[str, str],
@@ -4162,6 +4163,20 @@ class CppEmitter(CodeEmitter):
             else:
                 to_string_node["value_expr"] = args[0]
             return self.render_expr(to_string_node)
+        if runtime_call in {"py_min", "py_max"} and (len(arg_nodes) >= 1 or len(args) >= 1):
+            minmax_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "minmax",
+                "mode": "min" if runtime_call == "py_min" else "max",
+                "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) > 0:
+                minmax_node["args"] = arg_nodes
+            elif len(args) > 0:
+                minmax_node["arg_exprs"] = args
+            return self.render_expr(minmax_node)
         if runtime_call == "perf_counter":
             perf_node = {
                 "kind": "RuntimeSpecialOp",
@@ -4241,9 +4256,6 @@ class CppEmitter(CodeEmitter):
         owner_expr: str,
     ) -> str | None:
         """hooks 無効時に BuiltinCall の runtime 分岐を描画する。"""
-        if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
-            fn_name = "min" if runtime_call == "py_min" else "max"
-            return self.render_minmax(fn_name, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
         if runtime_call == "py_join":
             join_rendered = self._render_builtin_join_call(owner_expr, args)
             if join_rendered is not None:
@@ -6510,6 +6522,21 @@ class CppEmitter(CodeEmitter):
                     return self.render_to_string(expr_d.get("value"))
                 value_expr_txt = self.any_dict_get_str(expr_d, "value_expr", "")
                 return f"py_to_string({value_expr_txt})"
+            if op == "minmax":
+                mode = self.any_dict_get_str(expr_d, "mode", "min")
+                fn_name = "max" if mode == "max" else "min"
+                rendered_args: list[str] = []
+                arg_nodes_for_minmax: list[Any] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes_for_minmax = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes_for_minmax:
+                        rendered_args.append(self.render_expr(arg_node))
+                elif self.any_dict_has(expr_d, "arg_exprs"):
+                    raw_args = self.any_to_list(expr_d.get("arg_exprs"))
+                    for raw_arg in raw_args:
+                        rendered_args.append(self.any_to_str(raw_arg))
+                out_t = self.any_dict_get_str(expr_d, "resolved_type", "")
+                return self.render_minmax(fn_name, rendered_args, out_t, arg_nodes_for_minmax)
             if op == "perf_counter":
                 return "pytra::std::time::perf_counter()"
             if op == "open":
