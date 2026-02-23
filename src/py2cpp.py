@@ -3826,6 +3826,8 @@ class CppEmitter(CodeEmitter):
             "py_lstrip",
             "py_startswith",
             "py_endswith",
+            "py_find",
+            "py_rfind",
             "py_replace",
             "py_join",
         }:
@@ -3967,6 +3969,26 @@ class CppEmitter(CodeEmitter):
                 start = f"py_to_int64({args[1]})"
                 end = f"py_to_int64({args[2]})"
                 return f"py_endswith(py_slice({owner}, {start}, {end}), {args[0]})"
+        if runtime_call in {"py_find", "py_rfind"}:
+            if len(arg_nodes) >= 1:
+                find_node = {
+                    "kind": "StrFindOp",
+                    "mode": "rfind" if runtime_call == "py_rfind" else "find",
+                    "owner": fn.get("value"),
+                    "needle": arg_nodes[0],
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                if len(arg_nodes) >= 2:
+                    find_node["start"] = arg_nodes[1]
+                if len(arg_nodes) >= 3:
+                    find_node["end"] = arg_nodes[2]
+                return self.render_expr(find_node)
+            if len(args) >= 1:
+                merged_args = [owner]
+                merged_args.extend(args)
+                return f"{runtime_call}({join_str_list(', ', merged_args)})"
         if runtime_call == "py_replace" and len(args) == 2:
             if len(arg_nodes) >= 2:
                 replace_node = {
@@ -6367,6 +6389,17 @@ class CppEmitter(CodeEmitter):
                 end_expr = f"py_to_int64({end_raw})"
             sliced = f"py_slice({owner_expr}, {start_cast}, {end_expr})"
             return f"{fn_name}({sliced}, {needle_expr})"
+        if kind == "StrFindOp":
+            owner_expr = self.render_expr(expr_d.get("owner"))
+            needle_expr = self.render_expr(expr_d.get("needle"))
+            mode = self.any_dict_get_str(expr_d, "mode", "find")
+            fn_name = "py_rfind" if mode == "rfind" else "py_find"
+            args: list[str] = [owner_expr, needle_expr]
+            if self.any_dict_has(expr_d, "start"):
+                args.append(self.render_expr(expr_d.get("start")))
+            if self.any_dict_has(expr_d, "end"):
+                args.append(self.render_expr(expr_d.get("end")))
+            return f"{fn_name}({join_str_list(', ', args)})"
         if kind == "StrCharClassOp":
             value_node = expr_d.get("value")
             value_expr = self.render_expr(value_node)

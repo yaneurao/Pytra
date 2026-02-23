@@ -751,6 +751,66 @@ class East3CppBridgeTest(unittest.TestCase):
             'py_endswith(py_slice(s, py_to_int64(1), py_to_int64(3)), "x")',
         )
 
+    def test_render_expr_supports_str_find_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        owner = {"kind": "Name", "id": "s", "resolved_type": "str"}
+        needle = {"kind": "Constant", "value": "x", "resolved_type": "str"}
+        find_node = {
+            "kind": "StrFindOp",
+            "mode": "find",
+            "owner": owner,
+            "needle": needle,
+            "resolved_type": "int64",
+        }
+        rfind_node = {
+            "kind": "StrFindOp",
+            "mode": "rfind",
+            "owner": owner,
+            "needle": needle,
+            "start": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+            "end": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+            "resolved_type": "int64",
+        }
+        self.assertEqual(emitter.render_expr(find_node), 'py_find(s, "x")')
+        self.assertEqual(emitter.render_expr(rfind_node), 'py_rfind(s, "x", 1, 3)')
+
+    def test_builtin_runtime_py_find_rfind_use_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        find_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_find",
+            "resolved_type": "int64",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "find",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Constant", "value": "x", "resolved_type": "str"}],
+            "keywords": [],
+        }
+        rfind_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_rfind",
+            "resolved_type": "int64",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "rfind",
+                "resolved_type": "unknown",
+            },
+            "args": [
+                {"kind": "Constant", "value": "x", "resolved_type": "str"},
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+            ],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(find_expr), 'py_find(s, "x")')
+        self.assertEqual(emitter.render_expr(rfind_expr), 'py_rfind(s, "x", 1, 3)')
+
     def test_render_expr_supports_str_char_class_ir_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         isdigit_node = {
