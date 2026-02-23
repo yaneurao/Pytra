@@ -1312,6 +1312,45 @@ def guard_profile_base_limits(profile: str) -> dict[str, int]:
     raise ValueError("invalid --guard-profile: " + profile)
 
 
+def resolve_guard_limits(
+    guard_profile: str,
+    max_ast_depth_raw: str,
+    max_parse_nodes_raw: str,
+    max_symbols_per_module_raw: str,
+    max_scope_depth_raw: str,
+    max_import_graph_nodes_raw: str,
+    max_import_graph_edges_raw: str,
+    max_generated_lines_raw: str,
+) -> dict[str, int]:
+    """profile + 個別指定からガード上限を解決する。"""
+    profile = guard_profile if guard_profile != "" else "default"
+    if profile not in {"off", "default", "strict"}:
+        raise ValueError("invalid --guard-profile: " + profile)
+    out = guard_profile_base_limits(profile)
+    max_ast_depth = parse_guard_limit_or_raise(max_ast_depth_raw, "max-ast-depth")
+    if max_ast_depth > 0:
+        out["max_ast_depth"] = max_ast_depth
+    max_parse_nodes = parse_guard_limit_or_raise(max_parse_nodes_raw, "max-parse-nodes")
+    if max_parse_nodes > 0:
+        out["max_parse_nodes"] = max_parse_nodes
+    max_symbols_per_module = parse_guard_limit_or_raise(max_symbols_per_module_raw, "max-symbols-per-module")
+    if max_symbols_per_module > 0:
+        out["max_symbols_per_module"] = max_symbols_per_module
+    max_scope_depth = parse_guard_limit_or_raise(max_scope_depth_raw, "max-scope-depth")
+    if max_scope_depth > 0:
+        out["max_scope_depth"] = max_scope_depth
+    max_import_graph_nodes = parse_guard_limit_or_raise(max_import_graph_nodes_raw, "max-import-graph-nodes")
+    if max_import_graph_nodes > 0:
+        out["max_import_graph_nodes"] = max_import_graph_nodes
+    max_import_graph_edges = parse_guard_limit_or_raise(max_import_graph_edges_raw, "max-import-graph-edges")
+    if max_import_graph_edges > 0:
+        out["max_import_graph_edges"] = max_import_graph_edges
+    max_generated_lines = parse_guard_limit_or_raise(max_generated_lines_raw, "max-generated-lines")
+    if max_generated_lines > 0:
+        out["max_generated_lines"] = max_generated_lines
+    return out
+
+
 def empty_parse_dict() -> dict[str, str]:
     out: dict[str, str] = {}
     out["__error"] = ""

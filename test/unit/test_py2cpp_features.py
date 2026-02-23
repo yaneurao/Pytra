@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, parse_guard_limit_or_raise, guard_profile_base_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, resolve_guard_limits, parse_guard_limit_or_raise, guard_profile_base_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -767,6 +767,32 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(guard_profile_base_limits("strict")["max_generated_lines"], 300000)
         with self.assertRaisesRegex(ValueError, "invalid --guard-profile: bad"):
             guard_profile_base_limits("bad")
+
+    def test_resolve_guard_limits(self) -> None:
+        defaults = resolve_guard_limits("default", "", "", "", "", "", "", "")
+        self.assertEqual(defaults["max_ast_depth"], 800)
+        self.assertEqual(defaults["max_generated_lines"], 2000000)
+
+        off = resolve_guard_limits("off", "", "", "", "", "", "", "")
+        self.assertEqual(off["max_parse_nodes"], 0)
+        self.assertEqual(off["max_scope_depth"], 0)
+
+        overrides = resolve_guard_limits("strict", "10", "20", "30", "40", "50", "60", "70")
+        self.assertEqual(
+            overrides,
+            {
+                "max_ast_depth": 10,
+                "max_parse_nodes": 20,
+                "max_symbols_per_module": 30,
+                "max_scope_depth": 40,
+                "max_import_graph_nodes": 50,
+                "max_import_graph_edges": 60,
+                "max_generated_lines": 70,
+            },
+        )
+
+        with self.assertRaisesRegex(ValueError, "invalid --guard-profile: bad"):
+            resolve_guard_limits("bad", "", "", "", "", "", "", "")
 
     def test_parse_guard_limit_or_raise(self) -> None:
         self.assertEqual(parse_guard_limit_or_raise("", "max-ast-depth"), -1)
