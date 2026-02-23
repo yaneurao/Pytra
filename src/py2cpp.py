@@ -3661,6 +3661,22 @@ class CppEmitter(CodeEmitter):
                     default_node = arg_nodes[1]
                 if default_node is not None:
                     default_t = self.normalize_type_name(self.get_expr_type(default_node))
+                if len(arg_nodes) >= 2:
+                    get_default_node = {
+                        "kind": "DictGetDefault",
+                        "owner": owner_node,
+                        "key": arg_nodes[0],
+                        "default": default_node,
+                        "out_type": out_t,
+                        "default_type": default_t,
+                        "owner_value_type": owner_value_t,
+                        "objectish_owner": objectish_owner,
+                        "owner_optional_object_dict": owner_optional_object_dict,
+                        "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                        "borrow_kind": "value",
+                        "casts": [],
+                    }
+                    return self.render_expr(get_default_node)
                 if objectish_owner and out_t == "bool":
                     return f"dict_get_bool({owner}, {key_expr}, {args[1]})"
                 if objectish_owner and out_t == "str":
@@ -3968,6 +3984,75 @@ class CppEmitter(CodeEmitter):
                 return f"{runtime_call}({owner_expr})"
             return f"{runtime_call}({join_str_list(', ', args)})"
         return None
+
+    def _render_dict_get_default_expr(
+        self,
+        owner_node: Any,
+        key_node: Any,
+        default_node: Any,
+        out_t: str,
+        default_t: str,
+        owner_value_t: str,
+        objectish_owner: bool,
+        owner_optional_object_dict: bool,
+    ) -> str:
+        """`dict.get(key, default)` の既定値あり経路を描画する。"""
+        owner_expr = self.render_expr(owner_node)
+        key_expr = self.render_expr(key_node)
+        default_expr = self.render_expr(default_node)
+        if not objectish_owner:
+            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
+        int_out_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        float_out_types = {"float32", "float64"}
+        if objectish_owner and out_t == "bool":
+            return f"dict_get_bool({owner_expr}, {key_expr}, {default_expr})"
+        if objectish_owner and out_t == "str":
+            return f"dict_get_str({owner_expr}, {key_expr}, {default_expr})"
+        if objectish_owner and out_t in int_out_types:
+            cast_t = self._cpp_type_text(out_t)
+            return f"static_cast<{cast_t}>(dict_get_int({owner_expr}, {key_expr}, py_to_int64({default_expr})))"
+        if objectish_owner and out_t in float_out_types:
+            cast_t = self._cpp_type_text(out_t)
+            return f"static_cast<{cast_t}>(dict_get_float({owner_expr}, {key_expr}, py_to_float64({default_expr})))"
+        if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "bool":
+            return f"dict_get_bool({owner_expr}, {key_expr}, {default_expr})"
+        if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "str":
+            return f"dict_get_str({owner_expr}, {key_expr}, {default_expr})"
+        if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in int_out_types:
+            return f"dict_get_int({owner_expr}, {key_expr}, py_to_int64({default_expr}))"
+        if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in float_out_types:
+            return f"dict_get_float({owner_expr}, {key_expr}, py_to_float64({default_expr}))"
+        if objectish_owner and out_t in {"", "unknown"} and default_t.startswith("list["):
+            return f"dict_get_list({owner_expr}, {key_expr}, {default_expr})"
+        if objectish_owner and out_t.startswith("list["):
+            return f"dict_get_list({owner_expr}, {key_expr}, {default_expr})"
+        if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
+            if owner_optional_object_dict:
+                boxed_default = self._box_any_target_value(default_expr, default_node)
+                return f"py_dict_get_default({owner_expr}, {key_expr}, {boxed_default})"
+            return f"dict_get_node({owner_expr}, {key_expr}, {default_expr})"
+        if not objectish_owner:
+            if default_expr in {"::std::nullopt", "std::nullopt"}:
+                val_t = self.normalize_type_name(owner_value_t)
+                if val_t not in {"", "None"}:
+                    allows_nullopt = False
+                    if val_t.startswith("optional[") and val_t.endswith("]"):
+                        allows_nullopt = True
+                    elif self._contains_text(val_t, "|"):
+                        parts = self.split_union(val_t)
+                        i = 0
+                        while i < len(parts):
+                            if self.normalize_type_name(parts[i]) == "None":
+                                allows_nullopt = True
+                                break
+                            i += 1
+                    if (not allows_nullopt) and (not self.is_any_like_type(val_t)):
+                        default_expr = self._cpp_type_text(val_t) + "()"
+            return f"{owner_expr}.get({key_expr}, {default_expr})"
+        if owner_optional_object_dict:
+            boxed_default = self._box_any_target_value(default_expr, default_node)
+            return f"py_dict_get_default({owner_expr}, {key_expr}, {boxed_default})"
+        return f"py_dict_get_default({owner_expr}, {key_expr}, {default_expr})"
 
     def _render_builtin_static_cast_call(
         self,
@@ -5973,6 +6058,25 @@ class CppEmitter(CodeEmitter):
             key_expr = self.render_expr(key_node)
             key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
             return f"py_dict_get_maybe({owner_expr}, {key_expr})"
+        if kind == "DictGetDefault":
+            owner_node = expr_d.get("owner")
+            key_node = expr_d.get("key")
+            default_node = expr_d.get("default")
+            out_t = self.normalize_type_name(self.any_dict_get_str(expr_d, "out_type", ""))
+            default_t = self.normalize_type_name(self.any_dict_get_str(expr_d, "default_type", ""))
+            owner_value_t = self.normalize_type_name(self.any_dict_get_str(expr_d, "owner_value_type", ""))
+            objectish_owner = self.any_to_bool(expr_d.get("objectish_owner"))
+            owner_optional_object_dict = self.any_to_bool(expr_d.get("owner_optional_object_dict"))
+            return self._render_dict_get_default_expr(
+                owner_node,
+                key_node,
+                default_node,
+                out_t,
+                default_t,
+                owner_value_t,
+                objectish_owner,
+                owner_optional_object_dict,
+            )
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))

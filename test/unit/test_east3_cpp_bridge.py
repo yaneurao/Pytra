@@ -558,6 +558,43 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(get_expr), "py_dict_get_maybe(d, py_to_string(k))")
 
+    def test_render_expr_supports_dict_get_default_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        node = {
+            "kind": "DictGetDefault",
+            "owner": {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"},
+            "key": {"kind": "Name", "id": "k", "resolved_type": "str"},
+            "default": {"kind": "Constant", "value": 7, "resolved_type": "int64"},
+            "out_type": "int64",
+            "default_type": "int64",
+            "owner_value_type": "int64",
+            "objectish_owner": False,
+            "owner_optional_object_dict": False,
+            "resolved_type": "int64",
+        }
+        self.assertEqual(emitter.render_expr(node), "d.get(py_to_string(k), 7)")
+
+    def test_builtin_runtime_dict_get_with_default_uses_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        get_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "dict.get",
+            "resolved_type": "int64",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"},
+                "attr": "get",
+                "resolved_type": "unknown",
+            },
+            "args": [
+                {"kind": "Name", "id": "k", "resolved_type": "str"},
+                {"kind": "Constant", "value": 7, "resolved_type": "int64"},
+            ],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(get_expr), "d.get(py_to_string(k), 7)")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
