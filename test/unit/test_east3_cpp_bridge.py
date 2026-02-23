@@ -347,6 +347,54 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(expr), "xs.clear()")
 
+    def test_render_expr_supports_list_reverse_and_sort_ir_nodes(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        reverse_node = {
+            "kind": "ListReverse",
+            "owner": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "resolved_type": "None",
+        }
+        sort_node = {
+            "kind": "ListSort",
+            "owner": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "resolved_type": "None",
+        }
+        self.assertEqual(emitter.render_expr(reverse_node), "::std::reverse(xs.begin(), xs.end())")
+        self.assertEqual(emitter.render_expr(sort_node), "::std::sort(xs.begin(), xs.end())")
+
+    def test_builtin_runtime_list_reverse_and_sort_use_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        reverse_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.reverse",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                "attr": "reverse",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        sort_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.sort",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                "attr": "sort",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(reverse_expr), "::std::reverse(xs.begin(), xs.end())")
+        self.assertEqual(emitter.render_expr(sort_expr), "::std::sort(xs.begin(), xs.end())")
+
     def test_render_expr_supports_set_erase_and_clear_ir_nodes(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         erase_node = {

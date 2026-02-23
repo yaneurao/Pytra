@@ -3519,9 +3519,6 @@ class CppEmitter(CodeEmitter):
             if len(arg_nodes) >= 1:
                 pop_node["index"] = arg_nodes[0]
             return self.render_expr(pop_node)
-            if len(args) == 0:
-                return f"{owner}.pop()"
-            return f"{owner}.pop({args[0]})"
         if runtime_call == "list.clear":
             clear_node = {
                 "kind": "ListClear",
@@ -3531,11 +3528,24 @@ class CppEmitter(CodeEmitter):
                 "casts": [],
             }
             return self.render_expr(clear_node)
-            return f"{owner}.clear()"
         if runtime_call == "list.reverse":
-            return f"::std::reverse({owner}.begin(), {owner}.end())"
+            reverse_node = {
+                "kind": "ListReverse",
+                "owner": owner_node,
+                "resolved_type": "None",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(reverse_node)
         if runtime_call == "list.sort":
-            return f"::std::sort({owner}.begin(), {owner}.end())"
+            sort_node = {
+                "kind": "ListSort",
+                "owner": owner_node,
+                "resolved_type": "None",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(sort_node)
         return None
 
     def _render_builtin_runtime_set_ops(
@@ -5878,6 +5888,14 @@ class CppEmitter(CodeEmitter):
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             return f"{owner_expr}.clear()"
+        if kind == "ListReverse":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            return f"::std::reverse({owner_expr}.begin(), {owner_expr}.end())"
+        if kind == "ListSort":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            return f"::std::sort({owner_expr}.begin(), {owner_expr}.end())"
         if kind == "SetErase":
             owner_node = expr_d.get("owner")
             value_node = expr_d.get("value")
