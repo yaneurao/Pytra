@@ -751,6 +751,56 @@ class East3CppBridgeTest(unittest.TestCase):
             'py_endswith(py_slice(s, py_to_int64(1), py_to_int64(3)), "x")',
         )
 
+    def test_render_expr_supports_str_char_class_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        isdigit_node = {
+            "kind": "StrCharClassOp",
+            "mode": "isdigit",
+            "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+            "resolved_type": "bool",
+        }
+        isalpha_node = {
+            "kind": "StrCharClassOp",
+            "mode": "isalpha",
+            "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+            "resolved_type": "bool",
+        }
+        self.assertEqual(emitter.render_expr(isdigit_node), "s.isdigit()")
+        self.assertEqual(emitter.render_expr(isalpha_node), "s.isalpha()")
+
+    def test_builtin_runtime_py_isdigit_isalpha_use_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        isdigit_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_isdigit",
+            "resolved_type": "bool",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "isdigit",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        isalpha_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_isalpha",
+            "resolved_type": "bool",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "isalpha",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(isdigit_expr), "s.isdigit()")
+        self.assertEqual(emitter.render_expr(isalpha_expr), "s.isalpha()")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
