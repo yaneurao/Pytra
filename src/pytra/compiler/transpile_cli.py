@@ -364,6 +364,20 @@ def dict_any_kind(src: dict[str, object]) -> str:
     return dict_any_get_str(src, "kind")
 
 
+def dict_any_get_str_list(src: dict[str, object], key: str) -> list[str]:
+    """`dict[str, object]` の list 値から `str` 要素だけを抽出する。"""
+    out: list[str] = []
+    if key not in src:
+        return out
+    value = src[key]
+    if not isinstance(value, list):
+        return out
+    for item in value:
+        if isinstance(item, str):
+            out.append(item)
+    return out
+
+
 def dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str:
     """`dict[str, str]` から値を取得する（未定義時は既定値）。"""
     if key in src:
