@@ -455,6 +455,15 @@ def stmt_list_parse_metrics(body: list[dict[str, object]], depth: int) -> tuple[
     return node_count, max_depth
 
 
+def module_parse_metrics(east_module: dict[str, object]) -> dict[str, int]:
+    """EAST module 単位の parse 指標（深さ・ノード数）を返す。"""
+    body = dict_any_get_dict_list(east_module, "body")
+    node_count, max_depth = stmt_list_parse_metrics(body, 1)
+    module_nodes = node_count + 1  # Module root
+    module_depth = max_depth if max_depth > 0 else 1
+    return {"max_ast_depth": module_depth, "parse_nodes": module_nodes}
+
+
 def stmt_list_scope_depth(
     body: list[dict[str, object]],
     depth: int,
