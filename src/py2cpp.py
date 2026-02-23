@@ -3836,11 +3836,35 @@ class CppEmitter(CodeEmitter):
         if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
             owner = "(" + owner + ")"
         if runtime_call == "py_isdigit":
+            charclass_node = {
+                "kind": "StrCharClassOp",
+                "mode": "isdigit",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                charclass_node["value"] = arg_nodes[0]
+            else:
+                charclass_node["value"] = fn.get("value")
+            return self.render_expr(charclass_node)
             if len(args) == 0:
                 return owner + ".isdigit()"
             if len(args) == 1:
                 return args[0] + ".isdigit()"
         if runtime_call == "py_isalpha":
+            charclass_node = {
+                "kind": "StrCharClassOp",
+                "mode": "isalpha",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                charclass_node["value"] = arg_nodes[0]
+            else:
+                charclass_node["value"] = fn.get("value")
+            return self.render_expr(charclass_node)
             if len(args) == 0:
                 return owner + ".isalpha()"
             if len(args) == 1:
@@ -6200,6 +6224,13 @@ class CppEmitter(CodeEmitter):
                 end_expr = f"py_to_int64({end_raw})"
             sliced = f"py_slice({owner_expr}, {start_cast}, {end_expr})"
             return f"{fn_name}({sliced}, {needle_expr})"
+        if kind == "StrCharClassOp":
+            value_node = expr_d.get("value")
+            value_expr = self.render_expr(value_node)
+            mode = self.any_dict_get_str(expr_d, "mode", "isdigit")
+            if mode == "isalpha":
+                return f"{value_expr}.isalpha()"
+            return f"{value_expr}.isdigit()"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))
