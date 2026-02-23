@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
+from pytra.compiler.east_parts.east3_lowering import lower_east2_to_east3
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std import os
@@ -268,6 +269,20 @@ def load_east_document_compat(input_path: Path, parser_backend: str = "self_host
     if suffix == ".json":
         raise RuntimeError("EAST json root must be object")
     raise RuntimeError("EAST root must be dict")
+
+
+def load_east3_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
+    """入力ファイルを読み込み、最小 `EAST2 -> EAST3` lower を適用して返す。"""
+    east2 = load_east_document(input_path, parser_backend=parser_backend)
+    if isinstance(east2, dict):
+        east3 = lower_east2_to_east3(east2)
+        if isinstance(east3, dict):
+            return east3
+    raise make_user_error(
+        "input_invalid",
+        "Failed to build EAST3.",
+        ["EAST3 root must be a dict."],
+    )
 
 
 def join_str_list(sep: str, items: list[str]) -> str:

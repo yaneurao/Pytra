@@ -32,7 +32,7 @@
 4. [x] [ID: P0-EAST123-01-S3] `spec-east` / `spec-type_id` / `spec-boxing` / `spec-iterable` / `spec-dev` の相互参照と責務境界を揃える。
 5. [x] [ID: P0-EAST123-01-S4] `spec-east123` を上位仕様、`spec-linker` を下位仕様として確定し、仕様参照順（`east123` -> `linker`）を index/plan へ明記する。
 6. [ ] [ID: P0-EAST123-02] `EAST2 -> EAST3` core lowering の実装土台を導入する（`P0-EAST123-02-S1` から `P0-EAST123-02-S3` 完了でクローズ）。
-7. [ ] [ID: P0-EAST123-02-S1] `For` / `ForRange` を `ForCore` + `iter_plan` へ lower する最小経路を実装する。
+7. [x] [ID: P0-EAST123-02-S1] `For` / `ForRange` を `ForCore` + `iter_plan` へ lower する最小経路を実装する。
 8. [ ] [ID: P0-EAST123-02-S2] `Any/object` 境界命令（`Box`/`Unbox`/`ObjBool`/`ObjLen`/`ObjStr`/`ObjIter*`）の EAST3 lower を実装する。
 9. [ ] [ID: P0-EAST123-02-S3] `--object-dispatch-mode` を `EAST2 -> EAST3` の単一地点で反映する。
 10. [ ] [ID: P0-EAST123-03] backend 側の意味論再解釈を禁止し、hooks を構文差分専任へ縮退する（`P0-EAST123-03-S1` から `P0-EAST123-03-S2` 完了でクローズ）。
