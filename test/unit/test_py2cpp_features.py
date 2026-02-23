@@ -188,6 +188,23 @@ class Py2CppFeatureTest(unittest.TestCase):
         rendered = emitter.render_expr({"kind": "Name", "id": "alpha"})
         self.assertEqual(rendered, "specific_name_hook()")
 
+    def test_emit_stmt_kind_specific_hook_precedes_generic_and_fallback(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+
+        def on_emit_stmt_continue(_em: CppEmitter, _kind: str, _stmt: dict[str, object]) -> bool:
+            _em.emit("/* specific-continue */")
+            return True
+
+        def on_emit_stmt_kind(_em: CppEmitter, _kind: str, _stmt: dict[str, object]) -> bool:
+            _em.emit("/* generic-kind */")
+            return True
+
+        emitter.hooks["on_emit_stmt_continue"] = on_emit_stmt_continue
+        emitter.hooks["on_emit_stmt_kind"] = on_emit_stmt_kind
+        emitter.emit_stmt({"kind": "Continue"})
+        self.assertTrue(len(emitter.lines) >= 1)
+        self.assertEqual(emitter.lines[-1].strip(), "/* specific-continue */")
+
     def test_load_cpp_type_map_allows_profile_overlay(self) -> None:
         profile = {
             "types": {

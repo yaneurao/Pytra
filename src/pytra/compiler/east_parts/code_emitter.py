@@ -378,6 +378,9 @@ class CodeEmitter:
         stmt: dict[str, Any],
     ) -> bool | None:
         """`on_emit_stmt_kind` フック。既定では何もしない。"""
+        handled_specific = self.hook_on_emit_stmt_kind_specific(kind, stmt)
+        if isinstance(handled_specific, bool):
+            return handled_specific
         v = self._call_hook2("on_emit_stmt_kind", kind, stmt)
         if isinstance(v, bool):
             return True if v else False
@@ -476,8 +479,8 @@ class CodeEmitter:
             return v
         return ""
 
-    def _render_expr_kind_hook_suffix(self, kind: str) -> str:
-        """`Name` / `IfExp` などを hook 名用の snake_case へ正規化する。"""
+    def _kind_hook_suffix(self, kind: str) -> str:
+        """`Name` / `IfExp` などを hook 名 suffix 用 snake_case へ正規化する。"""
         text = kind.strip()
         if text == "":
             return ""
@@ -518,8 +521,32 @@ class CodeEmitter:
                 continue
             out_chars.append(ch)
             i += 1
-        out = "".join(out_chars)
-        return out
+        return "".join(out_chars)
+
+    def _stmt_kind_hook_name(self, kind: str) -> str:
+        """文 kind 専用 hook 名（`on_emit_stmt_<kind>`）を返す。"""
+        suffix = self._kind_hook_suffix(kind)
+        if suffix == "":
+            return ""
+        return "on_emit_stmt_" + suffix
+
+    def hook_on_emit_stmt_kind_specific(
+        self,
+        kind: str,
+        stmt: dict[str, Any],
+    ) -> bool | None:
+        """kind 別文フック（`on_emit_stmt_<kind>`）を呼び出す。"""
+        hook_name = self._stmt_kind_hook_name(kind)
+        if hook_name == "":
+            return None
+        v = self._call_hook2(hook_name, kind, stmt)
+        if isinstance(v, bool):
+            return True if v else False
+        return None
+
+    def _render_expr_kind_hook_suffix(self, kind: str) -> str:
+        """`Name` / `IfExp` などを式 hook 名用 snake_case へ正規化する。"""
+        return self._kind_hook_suffix(kind)
 
     def _render_expr_kind_hook_name(self, kind: str) -> str:
         """式 kind 専用 hook 名（`on_render_expr_<kind>`）を返す。"""
