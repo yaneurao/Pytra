@@ -62,23 +62,6 @@
 - 回帰固定として `test/unit/test_east_core.py`（`iter_mode`/trait 付与）、`test/unit/test_py2cpp_codegen_issues.py`（`py_dyn_range` と static fastpath）、`test/unit/test_cpp_runtime_iterable.py`（runtime iterable API）を追加し、`check_py2cpp_transpile` と `build_selfhost` の通過を確認した。
 - C++ runtime の object iterable 経路に `set` を追加した。`PySetObj`（`PYTRA_TID_SET`）と `make_object(const set<T>&)` を導入し、`py_dyn_range(make_object(set<...>))` と `py_isinstance(make_object(set<...>), PYTRA_TID_SET)` が通るようにした。`test/unit/test_cpp_runtime_iterable.py`（set 反復の合計検証）と `test/unit/test_cpp_runtime_type_id.py`（set object の type_id 判定）で回帰を固定した。
 
-## P0: Boxing/Unboxing 境界統一（最優先）
-
-文脈: `docs-jp/plans/p0-boxing-boundary-unification.md`（`TG-P0-BOXING`）
-
-1. [x] [ID: P0-BOX-01] `docs-jp/spec/spec-boxing.md` を正本として、C++ runtime（`gc.h`, `py_runtime.h`）に `py_truthy` / `py_try_len` / `obj_to_rc(_or_raise)` / 厳格変換 API（`*_or_raise`）を段階導入する。
-2. [x] [ID: P0-BOX-02] `py2cpp.py` の `Any/object` 境界生成を `obj_to_rc_or_raise` 中心へ移行し、`py_obj_cast<T>(...)->...` の直接生成経路を縮退する。
-3. [x] [ID: P0-BOX-03] JS/TS runtime では minify 耐性確保のため `type_id` dispatch を強制し、名前文字列依存 dispatch（`constructor.name` 等）を禁止する。
-4. [x] [ID: P0-BOX-04] runtime unit / py2cpp feature / クロスターゲット検証を整備し、暗黙 `0` / `false` / `None` フォールバック経路の新規混入を防ぐ。
-
-進捗メモ:
-- `P0-BOX-01`: `gc.h` に `PyObj` の hook（`py_truthy` / `py_try_len` / `py_str`）を追加し、`py_runtime.h` で組み込み object（int/float/bool/str/list/dict）へ override 実装した。`obj_to_rc` / `obj_to_rc_or_raise`、`obj_to_int64_or_raise` / `obj_to_float64_or_raise` / `obj_to_str_or_raise` も導入した。
-- `P0-BOX-02`: `src/py2cpp.py` の class field attribute fallback（`Any/unknown receiver`）で `py_obj_cast<T>(...)->...` 直生成を `obj_to_rc_or_raise<T>(..., "<Class>.<field>")->...` へ切替した。
-- `P0-BOX-04`: runtime 回帰として `test/unit/test_cpp_runtime_boxing.py` を追加し、`obj_to_rc(_or_raise)` / `*_or_raise` / `py_truthy` / `py_try_len` 経路を C++ 実行で検証した。コード生成回帰として `test/unit/test_py2cpp_codegen_issues.py::test_unknown_receiver_field_access_uses_obj_to_rc_or_raise` を追加した。
-- `P0-BOX-02`: 追加で `Any/object -> ref class` の主要経路（`AnnAssign` / `Assign` / `Return` / call 引数 / `Yield`）を `obj_to_rc_or_raise` 経由へ統一した。`test/unit/test_py2cpp_codegen_issues.py` に `test_any_to_refclass_{annassign,return,call_arg}_uses_obj_to_rc_or_raise` を追加し、`py2cpp.py` 側の `py_obj_cast<...>` 直生成文字列が消滅していることを確認した。
-- `P0-BOX-03`: `src/js_module/py_runtime.js` と `src/ts_module/py_runtime.ts` に `PYTRA_TYPE_ID` / `PYTRA_TRUTHY` / `PYTRA_TRY_LEN` / `PYTRA_STR` を導入し、`pyTypeId` / `pyTruthy` / `pyTryLen` / `pyStr` の `type_id` dispatch を実装。`pyToString` / `pyLen` / `pyBool` / `pyIn` を当該経路へ統一した。
-- `P0-BOX-04`: `test/unit/test_js_ts_runtime_dispatch.py` を追加し、`constructor.name` 非依存の静的検査と JS runtime 実行での hook dispatch（`type_id` / truthy / len / str）を検証した。合わせて `test/unit/test_cpp_runtime_boxing.py`、`test/unit/test_py2cpp_codegen_issues.py`、`test/unit/test_py2js_smoke.py`、`test/unit/test_py2ts_smoke.py` を通してクロスターゲット回帰を確認した。
-
 ## P0: Selfhost 安定化
 
 文脈: `docs-jp/plans/p0-selfhost-stabilization.md`（`TG-P0-SH`）
@@ -276,21 +259,6 @@ py2cpp / py2rs 共通化候補:
 5. [ ] [ID: P2-ANY-05] `py2cpp.py` で既定値に `nullopt` を渡している箇所を洗い出し、型別既定値へ置換する。
 6. [ ] [ID: P2-ANY-06] selfhost 変換で `std::any` を通る経路を記録・列挙し、段階的に除去する。
 7. [ ] [ID: P2-ANY-07] 影響上位3関数単位でパッチを分けて改善し、毎回 `check_py2cpp_transpile.py` を実行する。
-
-## P2: microgpt 変換互換性
-
-文脈: `docs-jp/plans/p2-microgpt-compatibility.md`（`TG-P2-MICROGPT-COMPAT`）
-
-1. [x] [ID: P2-MGPT-01] self_hosted parser の型注釈必須制約（`name: Type`）について、仕様維持するか、無注釈引数の受理/推論を拡張するかを決め、選択した方針を実装へ反映する。
-2. [x] [ID: P2-MGPT-02] `pytra.std.random` と `src/runtime/cpp/pytra/std/random.*` に `choices` / `gauss` / `shuffle` を追加し、`py2cpp` 生成コードがコンパイル可能な状態にする。
-3. [x] [ID: P2-MGPT-03] `microgpt` 相当入力（最小再現 fixture でも可）で transpile -> C++ 構文チェックまで回す検証導線を追加する。
-4. [x] [ID: P2-MGPT-04] （低優先）`work/tmp/microgpt-20260222-lite.py` を `py2cpp.py` で変換し、生成 C++ のコンパイル（`g++ -std=c++20 -I src -I src/runtime/cpp`）が通る状態にする。
-
-進捗メモ:
-- `P2-MGPT-01`: 当時方針を「型注釈必須の仕様維持」に確定。`src/pytra/compiler/east_parts/core.py` で無注釈引数（`def f(x): ...`）の拒否を専用メッセージ（`requires type annotation`）で明示し、`test/fixtures/signature/ng_untyped_param.py` + `test/unit/test_self_hosted_signature.py::test_reject_untyped_parameter` を追加した（この方針は後続の `P3-MSP-04` で `unknown` 受理へ更新）。
-- `P2-MGPT-02`: `src/pytra/std/random.py` へ `choices/gauss/shuffle` を追加し、`python3 src/py2cpp.py src/pytra/std/random.py --emit-runtime-cpp` で `src/runtime/cpp/pytra/std/random.*` を更新。`test/fixtures/stdlib/random_timeit_traceback_extended.py` と `test/unit/test_py2cpp_features.py` に runtime 検証を追加し、`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_random_timeit_traceback_extended_runtime` で通過を確認。
-- `P2-MGPT-03`: `test/fixtures/microgpt/microgpt_compat_min.py`（型注釈付き最小 microgpt 相当ケース）を追加し、`test/unit/test_py2cpp_features.py` に `test_microgpt_compat_min_syntax_check` を追加。`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_microgpt_compat_min_syntax_check` で transpile -> `g++ -fsyntax-only` の導線が通ることを確認。
-- `P2-MGPT-04`: `work/tmp/microgpt-20260222-lite.py` を self_hosted parser 制約に合わせて `microgpt-lite`（dataset -> vocab -> training -> sampling）構成へ再整理し、`random.choices` / `random.gauss` / `random.shuffle` を維持したまま `python3 src/py2cpp.py work/tmp/microgpt-20260222-lite.py -o work/out/microgpt-20260222.cpp` と `g++ -std=c++20 -I src -I src/runtime/cpp -fsyntax-only work/out/microgpt-20260222.cpp` の通過を確認。
 
 ## P3: microgpt 原本保全（低優先）
 
@@ -564,17 +532,6 @@ py2cpp / py2rs 共通化候補:
 2. [ ] [ID: P3-RULE-02] 各パッチで `python3 tools/check_py2cpp_transpile.py` を実行する。
 3. [ ] [ID: P3-RULE-03] 各パッチで `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を実行する。
 4. [ ] [ID: P3-RULE-04] 回帰が出た場合は「可読性改善より selfhost 安定」を優先する。
-
-## P3: spec 草案整理（低優先）
-
-文脈: `docs-jp/plans/p3-spec-drafts.md`（`TG-P3-SPEC-DRAFTS`）
-
-1. [x] [ID: P3-SD-01] `docs-jp/spec/spec-make.md` の仕様案を実装現状と照合し、採用する項目を既存仕様へ段階移管する。
-2. [x] [ID: P3-SD-02] `docs-jp/spec/spec-template.md` の仕様案を実装現状と照合し、採用/保留/非採用の区分を明確化する。
-
-進捗メモ:
-- `P3-SD-01`: `spec-make.md` と実装実体（`src/pytra/compiler/transpile_cli.py`, `src/py2cpp.py`, `tools/build_multi_cpp.py`）を照合し、採用済みの multi-file `manifest.json` 契約と build 導線を `docs-jp/spec/spec-dev.md` / `docs-jp/spec/spec-tools.md` へ移管した。未実装の `./pytra --build` / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` は草案維持として `docs-jp/spec/spec-make.md` と `docs-jp/plans/p3-spec-drafts.md` に明記した。
-- `P3-SD-02`: `spec-template.md` と実装実体（`src/pytra/std/typing.py`, `src/pytra/compiler/east_parts/core.py`, `src/pytra/compiler/east_parts/code_emitter.py`）を照合し、採用/保留/非採用を区分した。採用項目は `TypeVar` 最小 shim のみとして `docs-jp/spec/spec-pylib-modules.md` へ移管し、`spec-template.md` の「採用」断定表現は「候補」へ修正した。
 
 ## P3: サンプル実行時間の再計測とREADME更新（低優先）
 
