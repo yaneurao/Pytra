@@ -484,9 +484,9 @@ class CppEmitter(CodeEmitter):
         bindings: list[dict[str, Any]] = self._dict_stmt_list(meta.get("import_bindings"))
         if len(bindings) > 0:
             for item in bindings:
-                module_id = self.any_to_str(item.get("module_id"))
-                export_name = self.any_to_str(item.get("export_name"))
-                binding_kind = self.any_to_str(item.get("binding_kind"))
+                module_id = dict_any_get_str(item, "module_id")
+                export_name = dict_any_get_str(item, "export_name")
+                binding_kind = dict_any_get_str(item, "binding_kind")
                 if module_id != "":
                     mod_name = self._normalize_runtime_module_name(module_id)
                     inc = self._module_name_to_cpp_include(mod_name)
@@ -504,24 +504,24 @@ class CppEmitter(CodeEmitter):
             kind = self._node_kind_from_dict(stmt)
             if kind == "Import":
                 for ent in self._dict_stmt_list(stmt.get("names")):
-                    mod_name = self.any_to_str(ent.get("name"))
+                    mod_name = dict_any_get_str(ent, "name")
                     inc = self._module_name_to_cpp_include(mod_name)
                     append_unique_non_empty(includes, seen, inc)
             elif kind == "ImportFrom":
-                mod_name = self.any_to_str(stmt.get("module"))
+                mod_name = dict_any_get_str(stmt, "module")
                 mod_name = self._normalize_runtime_module_name(mod_name)
                 inc = self._module_name_to_cpp_include(mod_name)
                 append_unique_non_empty(includes, seen, inc)
                 if mod_name == "pytra.std":
                     for ent in self._dict_stmt_list(stmt.get("names")):
-                        sym = self.any_to_str(ent.get("name"))
+                        sym = dict_any_get_str(ent, "name")
                         if sym == "":
                             continue
                         sym_inc = self._module_name_to_cpp_include("pytra.std." + sym)
                         append_unique_non_empty(includes, seen, sym_inc)
                 if mod_name == "pytra.utils":
                     for ent in self._dict_stmt_list(stmt.get("names")):
-                        sym = self.any_to_str(ent.get("name"))
+                        sym = dict_any_get_str(ent, "name")
                         if sym == "":
                             continue
                         sym_inc = self._module_name_to_cpp_include("pytra.utils." + sym)
