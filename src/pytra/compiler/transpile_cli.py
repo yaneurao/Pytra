@@ -527,6 +527,17 @@ def collect_symbols_from_stmt_list(body: list[dict[str, object]]) -> set[str]:
     return symbols
 
 
+def module_analyze_metrics(
+    east_module: dict[str, object],
+    scope_nesting_kinds: set[str],
+) -> dict[str, int]:
+    """EAST module 単位の analyze 指標（symbol 数・scope 深さ）を返す。"""
+    body = dict_any_get_dict_list(east_module, "body")
+    symbols = collect_symbols_from_stmt_list(body)
+    scope_depth = stmt_list_scope_depth(body, 0, scope_nesting_kinds)
+    return {"symbols": len(symbols), "scope_depth": scope_depth}
+
+
 def stmt_list_scope_depth(
     body: list[dict[str, object]],
     depth: int,
