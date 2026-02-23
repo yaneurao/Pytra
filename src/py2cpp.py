@@ -563,18 +563,18 @@ class CppEmitter(CodeEmitter):
         if len(bindings) > 0:
             if len(refs) > 0:
                 for ref_item in refs:
-                    module_id = self.any_to_str(ref_item.get("module_id"))
-                    symbol = self.any_to_str(ref_item.get("symbol"))
-                    local_name = self.any_to_str(ref_item.get("local_name"))
+                    module_id = dict_any_get_str(ref_item, "module_id")
+                    symbol = dict_any_get_str(ref_item, "symbol")
+                    local_name = dict_any_get_str(ref_item, "local_name")
                     if module_id != "" and symbol != "" and local_name != "":
                         set_import_symbol_binding_and_module_set(
                             self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol
                         )
             for item in bindings:
-                module_id = self.any_to_str(item.get("module_id"))
-                export_name = self.any_to_str(item.get("export_name"))
-                local_name = self.any_to_str(item.get("local_name"))
-                binding_kind = self.any_to_str(item.get("binding_kind"))
+                module_id = dict_any_get_str(item, "module_id")
+                export_name = dict_any_get_str(item, "export_name")
+                local_name = dict_any_get_str(item, "local_name")
+                binding_kind = dict_any_get_str(item, "binding_kind")
                 if module_id == "" or local_name == "":
                     continue
                 if binding_kind == "module":
