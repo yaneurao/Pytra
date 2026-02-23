@@ -3,20 +3,48 @@
 from pytra.std.typing import Any
 
 
-PYB_TID_NONE = 0
-PYB_TID_BOOL = 1
-PYB_TID_INT = 2
-PYB_TID_FLOAT = 3
-PYB_TID_STR = 4
-PYB_TID_LIST = 5
-PYB_TID_DICT = 6
-PYB_TID_SET = 7
-PYB_TID_OBJECT = 8
-PYB_TID_USER_BASE = 1000
-
-
 _TYPE_BASES: dict[int, list[int]] = {}
-_TYPE_STATE: dict[str, int] = {"next_user_type_id": PYB_TID_USER_BASE}
+_TYPE_STATE: dict[str, int] = {}
+
+
+def _tid_none() -> int:
+    return 0
+
+
+def _tid_bool() -> int:
+    return 1
+
+
+def _tid_int() -> int:
+    return 2
+
+
+def _tid_float() -> int:
+    return 3
+
+
+def _tid_str() -> int:
+    return 4
+
+
+def _tid_list() -> int:
+    return 5
+
+
+def _tid_dict() -> int:
+    return 6
+
+
+def _tid_set() -> int:
+    return 7
+
+
+def _tid_object() -> int:
+    return 8
+
+
+def _tid_user_base() -> int:
+    return 1000
 
 
 def _make_int_list_0() -> list[int]:
@@ -47,17 +75,19 @@ def _contains_int(items: list[int], value: int) -> bool:
 
 
 def _ensure_builtins() -> None:
+    if "next_user_type_id" not in _TYPE_STATE:
+        _TYPE_STATE["next_user_type_id"] = _tid_user_base()
     if len(_TYPE_BASES) > 0:
         return
-    _TYPE_BASES[PYB_TID_NONE] = _make_int_list_0()
-    _TYPE_BASES[PYB_TID_OBJECT] = _make_int_list_0()
-    _TYPE_BASES[PYB_TID_BOOL] = _make_int_list_2(PYB_TID_INT, PYB_TID_OBJECT)
-    _TYPE_BASES[PYB_TID_INT] = _make_int_list_1(PYB_TID_OBJECT)
-    _TYPE_BASES[PYB_TID_FLOAT] = _make_int_list_1(PYB_TID_OBJECT)
-    _TYPE_BASES[PYB_TID_STR] = _make_int_list_1(PYB_TID_OBJECT)
-    _TYPE_BASES[PYB_TID_LIST] = _make_int_list_1(PYB_TID_OBJECT)
-    _TYPE_BASES[PYB_TID_DICT] = _make_int_list_1(PYB_TID_OBJECT)
-    _TYPE_BASES[PYB_TID_SET] = _make_int_list_1(PYB_TID_OBJECT)
+    _TYPE_BASES[_tid_none()] = _make_int_list_0()
+    _TYPE_BASES[_tid_object()] = _make_int_list_0()
+    _TYPE_BASES[_tid_bool()] = _make_int_list_2(_tid_int(), _tid_object())
+    _TYPE_BASES[_tid_int()] = _make_int_list_1(_tid_object())
+    _TYPE_BASES[_tid_float()] = _make_int_list_1(_tid_object())
+    _TYPE_BASES[_tid_str()] = _make_int_list_1(_tid_object())
+    _TYPE_BASES[_tid_list()] = _make_int_list_1(_tid_object())
+    _TYPE_BASES[_tid_dict()] = _make_int_list_1(_tid_object())
+    _TYPE_BASES[_tid_set()] = _make_int_list_1(_tid_object())
 
 
 def _normalize_base_type_ids(base_type_ids: list[int]) -> list[int]:
@@ -71,7 +101,7 @@ def _normalize_base_type_ids(base_type_ids: list[int]) -> list[int]:
                 out.append(tid)
         i += 1
     if len(out) == 0:
-        out.append(PYB_TID_OBJECT)
+        out.append(_tid_object())
     return out
 
 
@@ -88,22 +118,22 @@ def py_tid_runtime_type_id(value: Any) -> int:
     """Resolve runtime type_id for a Python value."""
     _ensure_builtins()
     if value is None:
-        return PYB_TID_NONE
+        return _tid_none()
     if isinstance(value, bool):
-        return PYB_TID_BOOL
+        return _tid_bool()
     if isinstance(value, int):
-        return PYB_TID_INT
+        return _tid_int()
     if isinstance(value, float):
-        return PYB_TID_FLOAT
+        return _tid_float()
     if isinstance(value, str):
-        return PYB_TID_STR
+        return _tid_str()
     if isinstance(value, list):
-        return PYB_TID_LIST
+        return _tid_list()
     if isinstance(value, dict):
-        return PYB_TID_DICT
+        return _tid_dict()
     if isinstance(value, set):
-        return PYB_TID_SET
-    return PYB_TID_OBJECT
+        return _tid_set()
+    return _tid_object()
 
 
 def py_tid_is_subtype(actual_type_id: int, expected_type_id: int) -> bool:
@@ -111,7 +141,7 @@ def py_tid_is_subtype(actual_type_id: int, expected_type_id: int) -> bool:
     _ensure_builtins()
     if actual_type_id == expected_type_id:
         return True
-    if expected_type_id == PYB_TID_OBJECT and actual_type_id != PYB_TID_NONE:
+    if expected_type_id == _tid_object() and actual_type_id != _tid_none():
         return True
 
     stack: list[int] = _make_int_list_1(actual_type_id)
@@ -146,5 +176,5 @@ def py_tid_isinstance(value: Any, expected_type_id: int) -> bool:
 def _py_reset_type_registry_for_test() -> None:
     """Reset mutable registry state for deterministic unit tests."""
     _TYPE_BASES.clear()
-    _TYPE_STATE["next_user_type_id"] = PYB_TID_USER_BASE
+    _TYPE_STATE["next_user_type_id"] = _tid_user_base()
     _ensure_builtins()

@@ -2142,90 +2142,23 @@ static inline bool py_is_int(const ::std::any& v) {
 static inline bool py_is_float(const ::std::any& v) { return v.type() == typeid(float32) || v.type() == typeid(float64); }
 static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(bool); }
 
-static inline ::std::unordered_map<uint32, ::std::vector<uint32>>& py_type_base_registry() {
-    static ::std::unordered_map<uint32, ::std::vector<uint32>> registry;
-    return registry;
-}
-
-static inline void py_register_builtin_type_hierarchy_once() {
-    static bool initialized = false;
-    if (initialized) {
-        return;
-    }
-    initialized = true;
-    auto& reg = py_type_base_registry();
-    reg[PYTRA_TID_NONE] = {};
-    reg[PYTRA_TID_OBJECT] = {};
-    reg[PYTRA_TID_BOOL] = {PYTRA_TID_INT, PYTRA_TID_OBJECT};
-    reg[PYTRA_TID_INT] = {PYTRA_TID_OBJECT};
-    reg[PYTRA_TID_FLOAT] = {PYTRA_TID_OBJECT};
-    reg[PYTRA_TID_STR] = {PYTRA_TID_OBJECT};
-    reg[PYTRA_TID_LIST] = {PYTRA_TID_OBJECT};
-    reg[PYTRA_TID_DICT] = {PYTRA_TID_OBJECT};
-    reg[PYTRA_TID_SET] = {PYTRA_TID_OBJECT};
-}
-
-static inline uint32 py_register_type(uint32 type_id, const list<uint32>& bases) {
-    py_register_builtin_type_hierarchy_once();
-    auto& reg = py_type_base_registry();
-    ::std::vector<uint32> base_ids;
-    base_ids.reserve(bases.size());
-    for (uint32 b : bases) {
-        base_ids.push_back(b);
-    }
-    reg[type_id] = ::std::move(base_ids);
-    return type_id;
-}
+// type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
+#include "runtime/cpp/pytra/built_in/type_id.h"
 
 static inline uint32 py_register_class_type(const list<uint32>& bases) {
-    py_register_builtin_type_hierarchy_once();
-    static uint32 next_type_id = PYTRA_TID_USER_BASE;
-    auto& reg = py_type_base_registry();
-    while (reg.find(next_type_id) != reg.end()) {
-        next_type_id += 1;
+    list<int64> bases_i64 = list<int64>{};
+    for (uint32 b : bases) {
+        bases_i64.append(static_cast<int64>(b));
     }
-    uint32 type_id = next_type_id;
-    next_type_id += 1;
-    return py_register_type(type_id, bases);
+    return static_cast<uint32>(py_tid_register_class_type(bases_i64));
 }
 
 static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
-    py_register_builtin_type_hierarchy_once();
-    if (actual_type_id == expected_type_id) {
-        return true;
-    }
-    auto& reg = py_type_base_registry();
-    if (reg.find(expected_type_id) == reg.end()) {
-        return false;
-    }
-    ::std::vector<uint32> stack;
-    stack.push_back(actual_type_id);
-    ::std::unordered_set<uint32> visited;
-    while (!stack.empty()) {
-        uint32 cur = stack.back();
-        stack.pop_back();
-        if (cur == expected_type_id) {
-            return true;
-        }
-        if (!visited.insert(cur).second) {
-            continue;
-        }
-        auto it = reg.find(cur);
-        if (it == reg.end()) {
-            continue;
-        }
-        for (uint32 base_id : it->second) {
-            if (base_id == expected_type_id) {
-                return true;
-            }
-            stack.push_back(base_id);
-        }
-    }
-    return false;
+    return py_tid_is_subtype(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
 }
 
 static inline bool py_issubclass(uint32 actual_type_id, uint32 expected_type_id) {
-    return py_is_subtype(actual_type_id, expected_type_id);
+    return py_tid_issubclass(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
 }
 
 static inline uint32 py_runtime_type_id(const object& v) {

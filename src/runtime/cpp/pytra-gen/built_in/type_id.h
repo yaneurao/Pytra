@@ -5,19 +5,19 @@
 #ifndef PYTRA_SRC_RUNTIME_CPP_PYTRA_GEN_BUILT_IN_TYPE_ID_H
 #define PYTRA_SRC_RUNTIME_CPP_PYTRA_GEN_BUILT_IN_TYPE_ID_H
 
-extern int64 PYB_TID_NONE;
-extern int64 PYB_TID_BOOL;
-extern int64 PYB_TID_INT;
-extern int64 PYB_TID_FLOAT;
-extern int64 PYB_TID_STR;
-extern int64 PYB_TID_LIST;
-extern int64 PYB_TID_DICT;
-extern int64 PYB_TID_SET;
-extern int64 PYB_TID_OBJECT;
-extern int64 PYB_TID_USER_BASE;
 extern dict<int64, list<int64>> _TYPE_BASES;
 extern dict<str, int64> _TYPE_STATE;
 
+int64 _tid_none();
+int64 _tid_bool();
+int64 _tid_int();
+int64 _tid_float();
+int64 _tid_str();
+int64 _tid_list();
+int64 _tid_dict();
+int64 _tid_set();
+int64 _tid_object();
+int64 _tid_user_base();
 list<int64> _make_int_list_0();
 list<int64> _make_int_list_1(int64 a0);
 list<int64> _make_int_list_2(int64 a0, int64 a1);
