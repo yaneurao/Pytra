@@ -377,6 +377,9 @@
   - 構文テンプレート
 - JSON だけで表現しにくい例外ケースは `hooks` で処理します。
 - 詳細スキーマは `docs-jp/spec/spec-language-profile.md` を正本とします。
+- `render_expr` の hook 優先順位は「`on_render_expr_<kind>` -> `on_render_expr_kind` -> `on_render_expr_leaf/complex` -> emitter 既定実装」を共通規約とします。
+- kind 専用 hook 名は EAST kind の snake_case 変換で決めます（例: `IfExp -> on_render_expr_if_exp`）。
+- `py2ts.py` は現状 JavaScript emitter 経由のプレビュー実装のため、TypeScript でも同じ `render_expr` hook 順序・命名規約を適用します。
 
 ## 7. 実装上の共通ルール
 

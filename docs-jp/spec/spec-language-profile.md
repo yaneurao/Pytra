@@ -174,12 +174,28 @@ selfhost 制約:
   - `True` を返すと既定の文出力をスキップ
 - `on_render_call(emitter, call_node, func_node, rendered_args, rendered_kwargs)`
 - `on_render_binop(emitter, binop_node, left, right)`
+- `on_render_expr_<kind>(emitter, kind, expr_node)`:
+  - `render_expr` の kind 単位フック。`<kind>` は EAST kind を snake_case 化した名前を使う。
+  - 例: `Name -> on_render_expr_name`, `IfExp -> on_render_expr_if_exp`, `ListComp -> on_render_expr_list_comp`
 
 戻り値:
 - `None`: 既定ロジック継続
 - `str`: その文字列を採用
 
-### 5.1 実装位置（C++）
+### 5.1 `render_expr` hook 優先順位
+
+`render_expr` は次の順でフックを評価します。
+
+1. kind 専用 hook: `on_render_expr_<kind>`
+2. 汎用 kind hook: `on_render_expr_kind`
+3. leaf hook: `on_render_expr_leaf`（`Name` / `Constant` / `Attribute`）
+4. complex hook: `on_render_expr_complex`（`JoinedStr` / `Lambda` / `*Comp`）
+5. 各言語 emitter の既定実装
+
+この順序は C++ / Rust / C# / JavaScript で共通です。
+TypeScript プレビューは `transpile_to_js()` 経由で JavaScript emitter を利用するため、同じ hook 順序を継承します。
+
+### 5.2 実装位置（C++）
 
 ```text
 src/hooks/cpp/hooks/cpp_hooks.py
