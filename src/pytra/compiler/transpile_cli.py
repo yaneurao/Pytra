@@ -76,6 +76,14 @@ def local_binding_name(name: str, asname: str) -> str:
     return name
 
 
+def split_graph_issue_entry(v_txt: str) -> tuple[str, str]:
+    """`file: module` 形式を `(file, module)` へ分解する。"""
+    left, right, found = split_infix_once(v_txt, ": ")
+    if found:
+        return left, right
+    return v_txt, v_txt
+
+
 def replace_first(text: str, old: str, replacement: str) -> str:
     """`text` 内の最初の `old` だけを `replacement` に置換する。"""
     pos = text.find(old)

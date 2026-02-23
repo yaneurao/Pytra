@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -7086,14 +7086,6 @@ def _format_import_graph_report(analysis: dict[str, Any]) -> str:
     return out
 
 
-def _split_graph_issue_entry(v_txt: str) -> tuple[str, str]:
-    """`file: module` 形式を `(file, module)` へ分解する。"""
-    left, right, found = split_infix_once(v_txt, ": ")
-    if found:
-        return left, right
-    return v_txt, v_txt
-
-
 def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     """依存解析の重大問題を `input_invalid` として報告する。"""
     details: list[str] = []
@@ -7104,13 +7096,13 @@ def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
     for v_txt in _dict_any_get_str_list(analysis, "relative_imports"):
         if v_txt == "":
             continue
-        file_part, mod_part = _split_graph_issue_entry(v_txt)
+        file_part, mod_part = split_graph_issue_entry(v_txt)
         details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
 
     for v_txt in _dict_any_get_str_list(analysis, "missing_modules"):
         if v_txt == "":
             continue
-        file_part, mod_part = _split_graph_issue_entry(v_txt)
+        file_part, mod_part = split_graph_issue_entry(v_txt)
         details.append(f"kind=missing_module file={file_part} import={mod_part}")
 
     for v in _dict_any_get_str_list(analysis, "cycles"):
