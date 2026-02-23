@@ -3582,9 +3582,7 @@ class CppEmitter(CodeEmitter):
         if raw == "" or imported_module == "":
             return None, raw
         mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
-        mapped_runtime_txt = ""
-        if mapped_runtime is not None:
-            mapped_runtime_txt = str(mapped_runtime)
+        mapped_runtime_txt = str(mapped_runtime) if mapped_runtime is not None else ""
         if (
             mapped_runtime_txt != ""
             and mapped_runtime_txt not in {"perf_counter", "Path"}
@@ -3661,9 +3659,7 @@ class CppEmitter(CodeEmitter):
         fn_kind = self._node_kind_from_dict(fn)
         if fn_kind == "Name":
             raw = self.any_to_str(fn.get("id"))
-            resolved = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes)
-            imported_rendered = resolved[0]
-            raw = resolved[1]
+            imported_rendered, raw = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes)
             if imported_rendered is not None:
                 return imported_rendered
             if raw.startswith("py_assert_"):
