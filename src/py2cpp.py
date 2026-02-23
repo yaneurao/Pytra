@@ -5799,6 +5799,20 @@ def _runtime_module_tail_from_source_path(input_path: Path) -> str:
     return rel
 
 
+def _prepend_generated_cpp_banner(cpp_text: str, source_path: Path) -> str:
+    """生成 C++ ソースへ AUTO-GENERATED バナーを先頭付与する。"""
+    marker = "// AUTO-GENERATED FILE. DO NOT EDIT."
+    if cpp_text.startswith(marker):
+        return cpp_text
+    lines = [
+        marker,
+        "// source: " + str(source_path),
+        "// generated-by: src/py2cpp.py",
+        "",
+    ]
+    return join_str_list("\n", lines) + cpp_text
+
+
 def _is_runtime_emit_input_path(input_path: Path) -> bool:
     """`--emit-runtime-cpp` 対象パスか（`src/pytra/std|utils|compiler` 配下）を返す。"""
     return _runtime_module_tail_from_source_path(input_path) != ""
@@ -6403,6 +6417,7 @@ def main(argv: list[str]) -> int:
                     old_runtime_include,
                     new_runtime_include,
                 )
+            cpp_txt_runtime = _prepend_generated_cpp_banner(cpp_txt_runtime, input_path)
             hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
             generated_lines_runtime = count_text_lines(cpp_txt_runtime) + count_text_lines(hdr_txt_runtime)
             check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))

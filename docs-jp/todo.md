@@ -31,7 +31,7 @@
 3. [x] [ID: P0-RUNTIME-SEP-01-S2] `src/runtime/cpp/pytra-gen/`（自動生成専用）と `src/runtime/cpp/pytra-core/`（手書き専用）を新設し、ビルド/インクルード解決を破壊しない最小構成を作る。
 4. [x] [ID: P0-RUNTIME-SEP-01-S3] 自動生成ファイルを `pytra-gen` へ段階移動し、`AUTO-GENERATED` ヘッダ付与を統一する。
 5. [x] [ID: P0-RUNTIME-SEP-01-S4] 手書きファイル（`-impl` 含む）を `pytra-core` へ段階移動し、`src/runtime/cpp/pytra/` を公開 include 入口（薄いフォワーダー）へ縮退する。
-6. [ ] [ID: P0-RUNTIME-SEP-01-S5] CI ガードを追加し、`pytra-gen` は `AUTO-GENERATED` 必須、`pytra-core` は `AUTO-GENERATED` 禁止を強制する。
+6. [x] [ID: P0-RUNTIME-SEP-01-S5] CI ガードを追加し、`pytra-gen` は `AUTO-GENERATED` 必須、`pytra-core` は `AUTO-GENERATED` 禁止を強制する。
 
 方針メモ:
 - ターゲット言語の増加を前提に、runtime は「自動生成層を厚く・手書き層を薄く」を基本方針とする。意味論は可能な限り `src/pytra/` 側の正本から生成し、手書きは GC/ABI など低レベル最小層へ限定する。
@@ -41,6 +41,7 @@
 - `P0-RUNTIME-SEP-01-S2`: `src/runtime/cpp/pytra-gen/` と `src/runtime/cpp/pytra-core/` を新設し、各ディレクトリに責務境界と禁止事項（生成物必須/禁止）を明記した。
 - `P0-RUNTIME-SEP-01-S3`: 生成物38ファイル（`std/*`, `utils/*`, `compiler/east_parts/core.*`）を `src/runtime/cpp/pytra-gen/` へ移動し、旧 `src/runtime/cpp/pytra/` には互換フォワーダー（`.h/.cpp`）を配置した。`src/py2cpp.py --emit-runtime-cpp` の出力先も `pytra-gen` へ変更した。
 - `P0-RUNTIME-SEP-01-S4`: 手書き19ファイル（`built_in/*`, `std/*-impl.*`）を `src/runtime/cpp/pytra-core/` へ移動し、`src/runtime/cpp/pytra/` の全57ファイルをフォワーダー化した（公開入口として維持）。
+- `P0-RUNTIME-SEP-01-S5`: `tools/check_runtime_cpp_layout.py` を追加し、`tools/run_local_ci.py` へ組み込んで `pytra-gen` の `AUTO-GENERATED` 必須と `pytra-core` の同マーカー禁止を CI で強制した。
 
 ## P0: type_id 継承判定・isinstance 統一（最優先）
 
