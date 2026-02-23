@@ -26,11 +26,11 @@
 
 文脈: `docs-jp/plans/p0-east123-staged-ir.md`（`TG-P0-EAST123`）
 
-1. [ ] [ID: P0-EAST123-01] `spec-east123` の仕様契約を実装仕様へ確定する（`P0-EAST123-01-S1` から `P0-EAST123-01-S4` 完了でクローズ）。
-2. [ ] [ID: P0-EAST123-01-S1] `EAST1/EAST2/EAST3` のルートスキーマ（`east_stage`, `schema_version`, `meta.dispatch_mode`）を仕様間で統一する。
-3. [ ] [ID: P0-EAST123-01-S2] `dispatch mode` の適用点と後段再判断禁止を仕様へ明文化する。
-4. [ ] [ID: P0-EAST123-01-S3] `spec-east` / `spec-type_id` / `spec-boxing` / `spec-iterable` / `spec-dev` の相互参照と責務境界を揃える。
-5. [ ] [ID: P0-EAST123-01-S4] `spec-east123` を上位仕様、`spec-linker` を下位仕様として確定し、仕様参照順（`east123` -> `linker`）を index/plan へ明記する。
+1. [x] [ID: P0-EAST123-01] `spec-east123` の仕様契約を実装仕様へ確定する（`P0-EAST123-01-S1` から `P0-EAST123-01-S4` 完了でクローズ）。
+2. [x] [ID: P0-EAST123-01-S1] `EAST1/EAST2/EAST3` のルートスキーマ（`east_stage`, `schema_version`, `meta.dispatch_mode`）を仕様間で統一する。
+3. [x] [ID: P0-EAST123-01-S2] `dispatch mode` の適用点と後段再判断禁止を仕様へ明文化する。
+4. [x] [ID: P0-EAST123-01-S3] `spec-east` / `spec-type_id` / `spec-boxing` / `spec-iterable` / `spec-dev` の相互参照と責務境界を揃える。
+5. [x] [ID: P0-EAST123-01-S4] `spec-east123` を上位仕様、`spec-linker` を下位仕様として確定し、仕様参照順（`east123` -> `linker`）を index/plan へ明記する。
 6. [ ] [ID: P0-EAST123-02] `EAST2 -> EAST3` core lowering の実装土台を導入する（`P0-EAST123-02-S1` から `P0-EAST123-02-S3` 完了でクローズ）。
 7. [ ] [ID: P0-EAST123-02-S1] `For` / `ForRange` を `ForCore` + `iter_plan` へ lower する最小経路を実装する。
 8. [ ] [ID: P0-EAST123-02-S2] `Any/object` 境界命令（`Box`/`Unbox`/`ObjBool`/`ObjLen`/`ObjStr`/`ObjIter*`）の EAST3 lower を実装する。
