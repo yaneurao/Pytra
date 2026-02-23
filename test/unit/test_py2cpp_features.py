@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, write_text_file
+from src.pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -211,6 +211,12 @@ class Py2CppFeatureTest(unittest.TestCase):
             out = Path(td) / "out.txt"
             write_text_file(out, "abc")
             self.assertEqual(out.read_text(encoding="utf-8"), "abc")
+
+    def test_count_text_lines_counts_newlines(self) -> None:
+        self.assertEqual(count_text_lines(""), 0)
+        self.assertEqual(count_text_lines("a"), 1)
+        self.assertEqual(count_text_lines("a\nb"), 2)
+        self.assertEqual(count_text_lines("a\n"), 2)
 
     def test_parse_py2cpp_argv(self) -> None:
         parsed = parse_py2cpp_argv(

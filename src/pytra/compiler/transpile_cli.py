@@ -102,6 +102,17 @@ def write_text_file(path_obj: Path, text: str) -> None:
     f.close()
 
 
+def count_text_lines(text: str) -> int:
+    """テキストの行数を返す。空文字列は 0 行。"""
+    if text == "":
+        return 0
+    count = 1
+    for ch in text:
+        if ch == "\n":
+            count += 1
+    return count
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,

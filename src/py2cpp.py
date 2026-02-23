@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -255,17 +255,6 @@ def _check_guard_limit(
     max_value = limits[limit_key] if limit_key in limits else 0
     if max_value > 0 and value > max_value:
         _raise_guard_limit_exceeded(stage, limit_key, value, max_value, detail_subject)
-
-
-def _count_text_lines(text: str) -> int:
-    """テキスト行数（空文字は0行）を返す。"""
-    if text == "":
-        return 0
-    line_count = 1
-    for ch in text:
-        if ch == "\n":
-            line_count += 1
-    return line_count
 
 
 def _dict_any_get(src: dict[str, Any], key: str) -> Any:
@@ -7492,7 +7481,7 @@ def _write_multi_file_cpp(
     prelude_txt += "#include \"runtime/cpp/pytra/built_in/py_runtime.h\"\n\n"
     prelude_txt += "#endif  // PYTRA_MULTI_PRELUDE_H\n"
     generated_lines_total = 0
-    generated_lines_total += _count_text_lines(prelude_txt)
+    generated_lines_total += count_text_lines(prelude_txt)
     if max_generated_lines > 0:
         _check_guard_limit("emit", "max_generated_lines", generated_lines_total, {"max_generated_lines": max_generated_lines})
     write_text_file(prelude_hdr, prelude_txt)
@@ -7536,7 +7525,7 @@ def _write_multi_file_cpp(
         hdr_text += "void module_" + label + "();\n"
         hdr_text += "}  // namespace pytra_multi\n\n"
         hdr_text += "#endif  // " + guard + "\n"
-        generated_lines_total += _count_text_lines(hdr_text)
+        generated_lines_total += count_text_lines(hdr_text)
         if max_generated_lines > 0:
             _check_guard_limit(
                 "emit",
@@ -7642,7 +7631,7 @@ def _write_multi_file_cpp(
                 fwd_lines.append("}  // namespace " + target_ns)
         if len(fwd_lines) > 0:
             cpp_txt = _inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))
-        generated_lines_total += _count_text_lines(cpp_txt)
+        generated_lines_total += count_text_lines(cpp_txt)
         if max_generated_lines > 0:
             _check_guard_limit(
                 "emit",
@@ -7672,7 +7661,7 @@ def _write_multi_file_cpp(
     manifest_path = output_dir / "manifest.json"
     manifest_obj: Any = manifest_for_dump
     manifest_txt = json.dumps(manifest_obj, ensure_ascii=False, indent=2)
-    generated_lines_total += _count_text_lines(manifest_txt)
+    generated_lines_total += count_text_lines(manifest_txt)
     if max_generated_lines > 0:
         _check_guard_limit(
             "emit",
@@ -8028,7 +8017,7 @@ def main(argv: list[str]) -> int:
                     new_runtime_include,
                 )
             hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
-            generated_lines_runtime = _count_text_lines(cpp_txt_runtime) + _count_text_lines(hdr_txt_runtime)
+            generated_lines_runtime = count_text_lines(cpp_txt_runtime) + count_text_lines(hdr_txt_runtime)
             _check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
             write_text_file(cpp_out, cpp_txt_runtime)
             write_text_file(hdr_out, hdr_txt_runtime)
@@ -8051,12 +8040,12 @@ def main(argv: list[str]) -> int:
                 top_namespace_opt,
                 not no_main,
             )
-            _check_guard_limit("emit", "max_generated_lines", _count_text_lines(cpp), guard_limits, str(input_path))
+            _check_guard_limit("emit", "max_generated_lines", count_text_lines(cpp), guard_limits, str(input_path))
             if header_output_txt != "":
                 hdr_path = Path(header_output_txt)
                 mkdirs_for_cli(path_parent_text(hdr_path))
                 hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt)
-                generated_lines_single = _count_text_lines(cpp) + _count_text_lines(hdr_txt)
+                generated_lines_single = count_text_lines(cpp) + count_text_lines(hdr_txt)
                 _check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
                 write_text_file(hdr_path, hdr_txt)
         else:
