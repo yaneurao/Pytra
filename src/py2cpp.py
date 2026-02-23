@@ -525,8 +525,7 @@ class CppEmitter(CodeEmitter):
 
     def _seed_legacy_import_symbols_from_meta(self, meta: dict[str, Any]) -> None:
         """legacy `meta.import_symbols` を `self.import_symbols` へ反映する。"""
-        legacy_syms = dict_any_get_dict(meta, "import_symbols")
-        for local_name, sym_obj in legacy_syms.items():
+        for local_name, sym_obj in dict_any_get_dict(meta, "import_symbols").items():
             if not isinstance(local_name, str):
                 continue
             set_import_symbol_binding_and_module_set(
