@@ -1721,10 +1721,7 @@ class CppEmitter(CodeEmitter):
         if self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
             rendered_val = self._coerce_any_expr_to_target(rendered_val, ann_t_str, f"annassign:{target}")
         if self.is_any_like_type(ann_t_str) and val_is_dict:
-            if val_kind == "Constant" and val.get("value") is None:
-                rendered_val = "object{}"
-            elif not self.is_boxed_object_expr(rendered_val):
-                rendered_val = f"make_object({rendered_val})"
+            rendered_val = self._box_any_target_value(rendered_val, stmt.get("value"))
         declare = self.any_dict_get_int(stmt, "declare", 1) != 0
         already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
         if target.startswith("this->"):
@@ -2350,10 +2347,7 @@ class CppEmitter(CodeEmitter):
             if self._can_runtime_cast_target(picked) and self.is_any_like_type(rval_t):
                 rval = self._coerce_any_expr_to_target(rval, picked, f"assign:{texpr}")
             if self.is_any_like_type(picked):
-                if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
-                    rval = "object{}"
-                elif not self.is_boxed_object_expr(rval):
-                    rval = f"make_object({rval})"
+                rval = self._box_any_target_value(rval, stmt.get("value"))
             self.emit(f"{dtype} {texpr} = {rval};")
             return
         rval = self.render_expr(stmt.get("value"))
@@ -2376,10 +2370,7 @@ class CppEmitter(CodeEmitter):
         if self._can_runtime_cast_target(t_target) and self.is_any_like_type(rval_t):
             rval = self._coerce_any_expr_to_target(rval, t_target, f"assign:{texpr}")
         if self.is_any_like_type(t_target):
-            if isinstance(value, dict) and self._node_kind_from_dict(value) == "Constant" and value.get("value") is None:
-                rval = "object{}"
-            elif not self.is_boxed_object_expr(rval):
-                rval = f"make_object({rval})"
+            rval = self._box_any_target_value(rval, stmt.get("value"))
         self.emit(f"{texpr} = {rval};")
 
     def _is_reexport_assign(self, target: dict[str, Any], value: dict[str, Any]) -> bool:
@@ -5149,6 +5140,25 @@ class CppEmitter(CodeEmitter):
         src_t = self.infer_rendered_arg_type(expr_txt, src_t, self.declared_var_types)
         if self.is_any_like_type(src_t):
             return expr_txt
+        return f"make_object({expr_txt})"
+
+    def _box_any_target_value(self, expr_txt: str, source_node: Any) -> str:
+        """Any/object ターゲット代入用に値を boxing する（None は object{}）。"""
+        if expr_txt == "":
+            return expr_txt
+        if expr_txt in {"object{}", "object()"}:
+            return expr_txt
+        source_d = self.any_to_dict_or_empty(source_node)
+        if self._node_kind_from_dict(source_d) == "Constant" and source_d.get("value") is None:
+            return "object{}"
+        if self.is_boxed_object_expr(expr_txt):
+            return expr_txt
+        if len(source_d) > 0:
+            boxed_expr = self.render_expr(self._build_box_expr_node(source_node))
+            # 既存挙動互換: source が Any/object の場合も代入先 Any では明示 boxing を維持する。
+            if boxed_expr == expr_txt and not self.is_boxed_object_expr(expr_txt):
+                return f"make_object({expr_txt})"
+            return boxed_expr
         return f"make_object({expr_txt})"
 
     def _split_call_repr(self, text: str) -> tuple[str, list[str], bool]:

@@ -162,6 +162,20 @@ class East3CppBridgeTest(unittest.TestCase):
             'obj_to_rc_or_raise<Box>(arg, "call_arg:Box")',
         )
 
+    def test_box_any_target_value_handles_none_and_plain_values(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        int_name = {"kind": "Name", "id": "n", "resolved_type": "int64"}
+        any_name = {"kind": "Name", "id": "v", "resolved_type": "Any"}
+        none_node = {"kind": "Constant", "value": None, "resolved_type": "None"}
+
+        boxed_int = emitter._box_any_target_value("n", int_name)
+        boxed_any = emitter._box_any_target_value("v", any_name)
+        boxed_none = emitter._box_any_target_value("std::nullopt", none_node)
+
+        self.assertEqual(boxed_int, "make_object(n)")
+        self.assertEqual(boxed_any, "make_object(v)")
+        self.assertEqual(boxed_none, "object{}")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
