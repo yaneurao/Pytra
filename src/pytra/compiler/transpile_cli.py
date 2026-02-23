@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytra.std import argparse
+from pytra.std.pathlib import Path
 from pytra.std.typing import Iterable
 
 
@@ -70,6 +71,20 @@ def replace_first(text: str, old: str, replacement: str) -> str:
     if pos < 0:
         return text
     return text[:pos] + replacement + text[pos + len(old) :]
+
+
+def path_parent_text(path_obj: Path) -> str:
+    """Path から親ディレクトリ文字列を取得する。"""
+    path_txt: str = str(path_obj)
+    if path_txt == "":
+        return "."
+    last_sep = -1
+    for i, ch in enumerate(path_txt):
+        if ch == "/" or ch == "\\":
+            last_sep = i
+    if last_sep <= 0:
+        return "."
+    return path_txt[:last_sep]
 
 
 def resolve_codegen_options(

@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options
+from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -29,20 +29,6 @@ def _mkdirs_for_cli(path_txt: str) -> None:
     if path_txt == "":
         return
     os.makedirs(path_txt, exist_ok=True)
-
-
-def _path_parent_text(path_obj: Path) -> str:
-    """Path から親ディレクトリ文字列を取得する。"""
-    path_txt: str = str(path_obj)
-    if path_txt == "":
-        return "."
-    last_sep = -1
-    for i, ch in enumerate(path_txt):
-        if ch == "/" or ch == "\\":
-            last_sep = i
-    if last_sep <= 0:
-        return "."
-    return path_txt[:last_sep]
 
 
 def _write_text_file(path_obj: Path, text: str) -> None:
@@ -7042,7 +7028,7 @@ def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> 
                     best_path = path_txt
                     best_rank = rank
                     best_distance = distance
-        parent_dir = _path_parent_text(Path(cur_dir))
+        parent_dir = path_parent_text(Path(cur_dir))
         if parent_dir == cur_dir:
             break
         cur_dir = parent_dir if parent_dir != "" else "."
@@ -7068,7 +7054,7 @@ def _resolve_module_name_for_graph(raw_name: str, root_dir: Path) -> dict[str, A
 
 def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
-    root = Path(_path_parent_text(entry_path))
+    root = Path(path_parent_text(entry_path))
     queue: list[Path] = [entry_path]
     queued: set[str] = {_path_key_for_graph(entry_path)}
     visited: set[str] = set()
@@ -7112,7 +7098,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             graph_adj[cur_key] = []
             graph_keys.append(cur_key)
         cur_disp = key_to_disp[cur_key]
-        search_root = Path(_path_parent_text(cur_path))
+        search_root = Path(path_parent_text(cur_path))
         for mod in mods:
             resolved = _resolve_module_name_for_graph(mod, search_root)
             status = _dict_any_get_str(resolved, "status")
@@ -7308,7 +7294,7 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
     files = _dict_any_get_str_list(analysis, "user_module_files")
     module_id_map = _dict_any_get_dict(analysis, "module_id_map")
     out: dict[str, dict[str, Any]] = {}
-    root_dir = Path(_path_parent_text(entry_path))
+    root_dir = Path(path_parent_text(entry_path))
     for f in files:
         p = Path(f)
         east = load_east(p, parser_backend)
@@ -7525,7 +7511,7 @@ def _write_multi_file_cpp(
         _check_guard_limit("emit", "max_generated_lines", generated_lines_total, {"max_generated_lines": max_generated_lines})
     _write_text_file(prelude_hdr, prelude_txt)
 
-    root = Path(_path_parent_text(entry_path))
+    root = Path(path_parent_text(entry_path))
     entry_key = str(entry_path)
     files: list[str] = []
     for mod_key, _east_obj in module_east_map.items():
@@ -7760,7 +7746,7 @@ def _resolve_user_module_path(module_name: str, search_root: Path) -> Path:
                     best_path = path_txt
                     best_rank = rank
                     best_distance = distance
-        parent_dir = _path_parent_text(Path(cur_dir))
+        parent_dir = path_parent_text(Path(cur_dir))
         if parent_dir == cur_dir:
             break
         cur_dir = parent_dir if parent_dir != "" else "."
@@ -7973,7 +7959,7 @@ def main(argv: list[str]) -> int:
         )
             if output_txt != "":
                 out_path = Path(output_txt)
-                _mkdirs_for_cli(_path_parent_text(out_path))
+                _mkdirs_for_cli(path_parent_text(out_path))
                 _write_text_file(out_path, options_text)
             else:
                 print(options_text, end="")
@@ -8002,7 +7988,7 @@ def main(argv: list[str]) -> int:
                 dep_text += dump_deps_graph_text(input_path)
             if output_txt != "":
                 out_path = Path(output_txt)
-                _mkdirs_for_cli(_path_parent_text(out_path))
+                _mkdirs_for_cli(path_parent_text(out_path))
                 _write_text_file(out_path, dep_text)
             else:
                 print(dep_text, end="")
@@ -8027,8 +8013,8 @@ def main(argv: list[str]) -> int:
             out_root = Path("src/runtime/cpp/pytra")
             cpp_out = out_root / (rel_tail + ".cpp")
             hdr_out = out_root / (rel_tail + ".h")
-            _mkdirs_for_cli(_path_parent_text(cpp_out))
-            _mkdirs_for_cli(_path_parent_text(hdr_out))
+            _mkdirs_for_cli(path_parent_text(cpp_out))
+            _mkdirs_for_cli(path_parent_text(hdr_out))
             runtime_ns_map: dict[str, str] = {}
             cpp_txt_runtime: str = _transpile_to_cpp_with_map(
                 east_module,
@@ -8082,7 +8068,7 @@ def main(argv: list[str]) -> int:
             _check_guard_limit("emit", "max_generated_lines", _count_text_lines(cpp), guard_limits, str(input_path))
             if header_output_txt != "":
                 hdr_path = Path(header_output_txt)
-                _mkdirs_for_cli(_path_parent_text(hdr_path))
+                _mkdirs_for_cli(path_parent_text(hdr_path))
                 hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt)
                 generated_lines_single = _count_text_lines(cpp) + _count_text_lines(hdr_txt)
                 _check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
@@ -8139,7 +8125,7 @@ def main(argv: list[str]) -> int:
 
     if output_txt != "":
         out_path = Path(output_txt)
-        _mkdirs_for_cli(_path_parent_text(out_path))
+        _mkdirs_for_cli(path_parent_text(out_path))
         _write_text_file(out_path, cpp)
     else:
         print(cpp)
