@@ -556,7 +556,7 @@ class CppEmitter(CodeEmitter):
 
     def _seed_import_maps_from_meta(self) -> None:
         """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
-        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        meta = dict_any_get_dict(self.doc, "meta")
         refs = dict_any_get_dict_list(meta, "qualified_symbol_refs")
         bindings = dict_any_get_dict_list(meta, "import_bindings")
         if len(bindings) > 0:
@@ -802,7 +802,7 @@ class CppEmitter(CodeEmitter):
     def transpile(self) -> str:
         """EAST ドキュメント全体を C++ ソース文字列へ変換する。"""
         self._seed_import_maps_from_meta()
-        meta: dict[str, Any] = self.any_to_dict_or_empty(self.doc.get("meta"))
+        meta: dict[str, Any] = dict_any_get_dict(self.doc, "meta")
         body: list[dict[str, Any]] = []
         raw_body = self.any_dict_get_list(self.doc, "body")
         if isinstance(raw_body, list):
