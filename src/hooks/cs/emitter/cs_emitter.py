@@ -774,11 +774,55 @@ class CSharpEmitter(CodeEmitter):
             return "(" + arg_expr + ").Count"
         return "(" + arg_expr + ").Count()"
 
+    def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
+        """`isinstance(x, T)` の `T` を C# 型判定式へ変換する。"""
+        builtin_map = {
+            "bool": "bool",
+            "int": "long",
+            "float": "double",
+            "str": "string",
+            "list": "System.Collections.IList",
+            "dict": "System.Collections.IDictionary",
+        }
+        if type_name in builtin_map:
+            return "(" + value_expr + " is " + builtin_map[type_name] + ")"
+        if type_name in self.class_names:
+            return "(" + value_expr + " is " + self._safe_name(type_name) + ")"
+        return ""
+
+    def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
+        """`isinstance(...)` 呼び出しを C# へ lower する。"""
+        if len(rendered_args) != 2:
+            return "false"
+        rhs_node = self.any_to_dict_or_empty(arg_nodes[1] if len(arg_nodes) > 1 else None)
+        rhs_kind = self.any_dict_get_str(rhs_node, "kind", "")
+        if rhs_kind == "Name":
+            rhs_name = self.any_dict_get_str(rhs_node, "id", "")
+            lowered = self._render_isinstance_type_check(rendered_args[0], rhs_name)
+            if lowered != "":
+                return lowered
+            return "false"
+        if rhs_kind == "Tuple":
+            checks: list[str] = []
+            for elt in self.tuple_elements(rhs_node):
+                e_node = self.any_to_dict_or_empty(elt)
+                if self.any_dict_get_str(e_node, "kind", "") != "Name":
+                    continue
+                e_name = self.any_dict_get_str(e_node, "id", "")
+                lowered = self._render_isinstance_type_check(rendered_args[0], e_name)
+                if lowered != "":
+                    checks.append(lowered)
+            if len(checks) > 0:
+                return "(" + " || ".join(checks) + ")"
+        return "false"
+
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """組み込み関数呼び出しを C# 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
         if fn_name_raw in self.class_names:
             return "new " + fn_name_raw + "(" + ", ".join(rendered_args) + ")"
+        if fn_name_raw == "isinstance":
+            return self._render_isinstance_call(rendered_args, arg_nodes)
         if fn_name_raw == "print":
             if len(rendered_args) == 0:
                 return "Console.WriteLine()"
