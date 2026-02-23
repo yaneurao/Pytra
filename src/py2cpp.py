@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -683,17 +683,6 @@ DEFAULT_AUG_BIN = {
     "LShift": "<<",
     "RShift": ">>",
 }
-
-def _looks_like_runtime_function_name(name: str) -> bool:
-    """ランタイム関数名（`py_*` か `ns::func`）らしい文字列か判定する。"""
-    if name == "":
-        return False
-    if name.find("::") != -1:
-        return True
-    if name.startswith("py_"):
-        return True
-    return False
-
 
 def _normalize_param_annotation(ann: str) -> str:
     """関数引数注釈文字列を EAST 互換の粗い型名へ正規化する。"""
@@ -4262,7 +4251,7 @@ class CppEmitter(CodeEmitter):
         if (
             mapped_runtime_txt != ""
             and mapped_runtime_txt not in {"perf_counter", "Path"}
-            and _looks_like_runtime_function_name(mapped_runtime_txt)
+            and looks_like_runtime_function_name(mapped_runtime_txt)
         ):
             merged_args = self.merge_call_args(args, kw)
             call_args: list[str] = merged_args

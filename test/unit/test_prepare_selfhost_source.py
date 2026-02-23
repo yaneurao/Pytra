@@ -38,7 +38,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             removed,
         )
         self.assertNotIn(
-            "from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file\n",
+            "from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file\n",
             removed,
         )
         self.assertNotIn(
@@ -50,7 +50,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         mod = _load_prepare_module()
         broken = (
             "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n"
-            "from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file\n"
+            "from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file\n"
         )
         with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks import"):
             mod._remove_import_line(broken)
@@ -69,6 +69,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def sort_str_list_copy(items: list[str]) -> list[str]:", support_blocks)
         self.assertIn("def count_text_lines(text: str) -> int:", support_blocks)
         self.assertIn("def dict_str_get(src: dict[str, str], key: str, default_value: str = \"\") -> str:", support_blocks)
+        self.assertIn("def looks_like_runtime_function_name(name: str) -> bool:", support_blocks)
         self.assertIn("def write_text_file(path_obj: Path, text: str) -> None:", support_blocks)
         self.assertNotIn("def build_cpp_hooks() -> dict[str, Any]:", support_blocks)
 

@@ -184,6 +184,17 @@ def dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str:
     return default_value
 
 
+def looks_like_runtime_function_name(name: str) -> bool:
+    """ランタイム関数名（`py_*` か `ns::func`）らしい文字列か判定する。"""
+    if name == "":
+        return False
+    if name.find("::") != -1:
+        return True
+    if name.startswith("py_"):
+        return True
+    return False
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
