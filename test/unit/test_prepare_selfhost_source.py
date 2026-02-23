@@ -38,7 +38,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             removed,
         )
         self.assertNotIn(
-            "from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file\n",
+            "from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file\n",
             removed,
         )
         self.assertNotIn(
@@ -50,7 +50,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         mod = _load_prepare_module()
         broken = (
             "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n"
-            "from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file\n"
+            "from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file\n"
         )
         with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks import"):
             mod._remove_import_line(broken)
@@ -74,6 +74,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def count_text_lines(text: str) -> int:", support_blocks)
         self.assertIn("def dict_str_get(src: dict[str, str], key: str, default_value: str = \"\") -> str:", support_blocks)
         self.assertIn("def looks_like_runtime_function_name(name: str) -> bool:", support_blocks)
+        self.assertIn("def make_user_error(category: str, summary: str, details: list[str]) -> Exception:", support_blocks)
+        self.assertIn("def parse_user_error(err_text: str) -> dict[str, object]:", support_blocks)
         self.assertIn("def is_pytra_module_name(module_name: str) -> bool:", support_blocks)
         self.assertIn("def module_name_from_path_for_graph(root: Path, module_path: Path) -> str:", support_blocks)
         self.assertIn("def module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:", support_blocks)
