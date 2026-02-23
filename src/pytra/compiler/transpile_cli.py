@@ -378,6 +378,11 @@ def name_target_id(target: dict[str, object]) -> str:
     return dict_any_get_str(target, "id")
 
 
+def stmt_target_name(stmt: dict[str, object]) -> str:
+    """文ノードの `target` から Name 識別子を取得する。"""
+    return name_target_id(dict_any_get_dict(stmt, "target"))
+
+
 def dict_any_get_str_list(src: dict[str, object], key: str) -> list[str]:
     """`dict[str, object]` の list 値から `str` 要素だけを抽出する。"""
     out: list[str] = []
