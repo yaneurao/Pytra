@@ -69,6 +69,60 @@
 20. `P0-EAST123-04-S2`: lowering 契約テスト（`EAST2 -> EAST3`）整備。
 21. `P0-EAST123-04-S3`: selfhost + クロスターゲット回帰導線へ統合。
 
+## P0-EAST123-03-S1 棚卸し（C++ hooks / py2cpp）
+
+目的:
+- `dispatch/boxing/iterable/built-in` の意味論実装がどこに残っているかを列挙し、`P0-EAST123-03-S2` の撤去対象を固定する。
+
+### dispatch（type_id / isinstance）
+
+- `src/py2cpp.py:3500` `_render_isinstance_name_call`
+- `src/py2cpp.py:3528` `_render_isinstance_type_check`
+- `src/py2cpp.py:3702` `Call(Name="isinstance")` の直接分岐
+- `src/py2cpp.py:4061` `render_call_expr` 系の `isinstance` 補助分岐
+
+現状:
+- `type_id` 判定式生成が `py2cpp.py` に直書きされている（`PYTRA_TID_*`, `Class::PYTRA_TYPE_ID`）。
+
+### boxing / unboxing（Any 境界）
+
+- `src/py2cpp.py:722` `_coerce_py_assert_args`（`make_object(...)` 注入）
+- `src/py2cpp.py:1504` `_box_expr_if_needed`
+- `src/py2cpp.py:1726`, `src/py2cpp.py:2354`, `src/py2cpp.py:2380` 代入系での `make_object(...)`
+- `src/py2cpp.py:3823`, `src/py2cpp.py:3921`, `src/py2cpp.py:4370` 呼び出し/式評価時の boxing
+- `src/hooks/cpp/hooks/cpp_hooks.py:207`, `src/hooks/cpp/hooks/cpp_hooks.py:214`, `src/hooks/cpp/hooks/cpp_hooks.py:237` dict 系 default での `make_object(...)`
+
+現状:
+- Any 境界の boxing 判断が emitter/hooks の両方に分散している。
+
+### iterable（for / runtime protocol）
+
+- `src/py2cpp.py:2700` `_resolve_for_iter_mode`（`static_fastpath/runtime_protocol` 決定）
+- `src/py2cpp.py:2742` `_emit_for_each_runtime`（`py_dyn_range(...)`）
+- `src/py2cpp.py:2723` `_emit_target_unpack_runtime`（`py_at(...)`）
+- `src/py2cpp.py:2611` `_emit_for_each`（通常 for / range 系）
+
+現状:
+- iterable 意味論（mode 決定、runtime 反復、unpack）が backend 側で決定・実装されている。
+
+### built-in lower（runtime_call 分岐）
+
+- `src/py2cpp.py:3280` `_render_builtin_call_with_runtime`
+- `src/py2cpp.py:3315` `_render_builtin_runtime_fallback`
+- `src/py2cpp.py:3459` `_render_scalar_cast_builtin_call`
+- `src/hooks/cpp/hooks/cpp_hooks.py:60` `_render_runtime_call_list_ops`
+- `src/hooks/cpp/hooks/cpp_hooks.py:105` `_render_runtime_call_set_ops`
+- `src/hooks/cpp/hooks/cpp_hooks.py:126` `_render_runtime_call_dict_ops`
+- `src/hooks/cpp/hooks/cpp_hooks.py:275` `_render_runtime_call_str_ops`
+- `src/hooks/cpp/hooks/cpp_hooks.py:354` `_render_runtime_call_direct_builtin`
+- `src/hooks/cpp/hooks/cpp_hooks.py:454` `on_render_call`
+
+現状:
+- `runtime_call` ベース分岐が `py2cpp.py` と hooks に重複している。
+
+`P0-EAST123-03-S2` での置換方針（本棚卸しからの確定）:
+- 上記カテゴリを `EAST3` 命令写像へ段階移行し、hooks は構文差分専任へ縮退する。
+
 決定ログ:
 - 2026-02-23: 初版作成。`docs-jp/spec/spec-east123.md` を最優先事項として `todo` の `P0` へ昇格し、実装導入の作業枠を定義した。
 - 2026-02-23: `EAST3` 導入効果を明示するため、`ID: P0-EAST123-05`（hooks 縮退の定量管理）を TODO/plan に追加した。
@@ -82,3 +136,4 @@
 - 2026-02-23: [ID: P0-EAST123-02-S1] `src/pytra/compiler/east_parts/east3_lowering.py` に最小 `EAST2 -> EAST3` pass を追加し、`For` / `ForRange` を `ForCore + iter_plan`（`RuntimeIterForPlan` / `StaticRangeForPlan`）へ lower する契約を `test/unit/test_east3_lowering.py` で固定した。
 - 2026-02-23: [ID: P0-EAST123-02-S2] `east3_lowering` で `Any/object` 境界命令 lower（`Box`/`Unbox`/`ObjBool`/`ObjLen`/`ObjStr`/`ObjIterInit`/`ObjIterNext`）を追加し、`test/unit/test_east3_lowering.py` に境界命令化テストを拡張した。
 - 2026-02-23: [ID: P0-EAST123-02-S3] `lower_east2_to_east3(..., object_dispatch_mode=...)` と `load_east3_document(..., object_dispatch_mode=...)` を追加し、dispatch mode を `EAST2 -> EAST3` エントリで一度だけ確定して `EAST3.meta.dispatch_mode` と `RuntimeIterForPlan.dispatch_mode` へ反映するテストを追加した。
+- 2026-02-23: [ID: P0-EAST123-03-S1] `py2cpp.py` と `hooks/cpp` の意味論実装経路（dispatch/boxing/iterable/built-in）を棚卸しし、`P0-EAST123-03-S2` の置換対象として固定した。

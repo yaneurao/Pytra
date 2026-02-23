@@ -36,7 +36,7 @@
 8. [x] [ID: P0-EAST123-02-S2] `Any/object` 境界命令（`Box`/`Unbox`/`ObjBool`/`ObjLen`/`ObjStr`/`ObjIter*`）の EAST3 lower を実装する。
 9. [x] [ID: P0-EAST123-02-S3] `--object-dispatch-mode` を `EAST2 -> EAST3` の単一地点で反映する。
 10. [ ] [ID: P0-EAST123-03] backend 側の意味論再解釈を禁止し、hooks を構文差分専任へ縮退する（`P0-EAST123-03-S1` から `P0-EAST123-03-S2` 完了でクローズ）。
-11. [ ] [ID: P0-EAST123-03-S1] C++ hooks / `py2cpp.py` の意味論実装経路（dispatch/boxing/iterable/built-in）を棚卸しする。
+11. [x] [ID: P0-EAST123-03-S1] C++ hooks / `py2cpp.py` の意味論実装経路（dispatch/boxing/iterable/built-in）を棚卸しする。
 12. [ ] [ID: P0-EAST123-03-S2] 棚卸し結果に基づいて意味論経路を EAST3 命令写像へ置換し、重複ロジックを撤去する。
 13. [ ] [ID: P0-EAST123-04] `EAST3` 契約（schema/例外/回帰）をテストで固定する（`P0-EAST123-04-S1` から `P0-EAST123-04-S3` 完了でクローズ）。
 14. [ ] [ID: P0-EAST123-04-S1] schema テスト（必須フィールド、`iter_plan` 形状、`dispatch_mode` 一貫性）を追加する。
