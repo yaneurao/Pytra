@@ -563,17 +563,14 @@ class CppEmitter(CodeEmitter):
                     module_id = dict_str_get(ref_item, "module_id", "")
                     symbol = dict_str_get(ref_item, "symbol", "")
                     local_name = dict_str_get(ref_item, "local_name", "")
-                    if module_id != "" and symbol != "" and local_name != "":
-                        set_import_symbol_binding_and_module_set(
-                            self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol
-                        )
+                    set_import_symbol_binding_and_module_set(
+                        self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol
+                    )
             for item in bindings:
                 module_id = dict_str_get(item, "module_id", "")
                 export_name = dict_str_get(item, "export_name", "")
                 local_name = dict_str_get(item, "local_name", "")
                 binding_kind = dict_str_get(item, "binding_kind", "")
-                if module_id == "" or local_name == "":
-                    continue
                 if binding_kind == "module":
                     set_import_module_binding(self.import_modules, local_name, module_id)
                 elif binding_kind == "symbol" and export_name != "" and len(refs) == 0:
