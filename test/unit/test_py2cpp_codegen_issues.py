@@ -626,6 +626,31 @@ def f(x: object) -> None:
         self.assertIn("return py_isinstance(x, PYTRA_TID_INT);", cpp)
         self.assertNotIn("return py_is_int(x);", cpp)
 
+    def test_isinstance_tuple_lowers_to_or_of_type_id_checks(self) -> None:
+        src = """class Base:
+    def __init__(self):
+        pass
+
+class Child(Base):
+    def __init__(self):
+        super().__init__()
+
+def f(x: object) -> bool:
+    return isinstance(x, (int, Base, Child, dict, object))
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "isinstance_tuple.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("py_isinstance(x, PYTRA_TID_INT)", cpp)
+        self.assertIn("py_isinstance(x, Base::PYTRA_TYPE_ID)", cpp)
+        self.assertIn("py_isinstance(x, Child::PYTRA_TYPE_ID)", cpp)
+        self.assertIn("py_isinstance(x, PYTRA_TID_DICT)", cpp)
+        self.assertIn("py_isinstance(x, PYTRA_TID_OBJECT)", cpp)
+        self.assertNotIn("return isinstance(", cpp)
+
     def test_gc_class_emits_type_id_and_isinstance_uses_runtime_api(self) -> None:
         src = """class Base:
     def __init__(self):

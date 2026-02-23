@@ -4301,11 +4301,24 @@ class CppEmitter(CodeEmitter):
         if len(args) != 2:
             return None
         rhs: dict[str, Any] = self.any_to_dict_or_empty(arg_nodes[1]) if len(arg_nodes) > 1 else {}
-        if self._node_kind_from_dict(rhs) != "Name":
-            return "false"
-        type_name = self.any_to_str(rhs.get("id"))
         a0 = args[0]
-        return self._render_isinstance_type_check(a0, type_name)
+        rhs_kind = self._node_kind_from_dict(rhs)
+        if rhs_kind == "Name":
+            type_name = self.any_to_str(rhs.get("id"))
+            return self._render_isinstance_type_check(a0, type_name)
+        if rhs_kind == "Tuple":
+            checks: list[str] = []
+            for elt in self.tuple_elements(rhs):
+                e_node = self.any_to_dict_or_empty(elt)
+                if self._node_kind_from_dict(e_node) != "Name":
+                    continue
+                e_name = self.any_to_str(e_node.get("id"))
+                lowered = self._render_isinstance_type_check(a0, e_name)
+                if lowered != "false":
+                    checks.append(lowered)
+            if len(checks) > 0:
+                return "(" + " || ".join(checks) + ")"
+        return "false"
 
     def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
         """`isinstance(x, T)` の `T` に対応する runtime 判定式を返す。"""
@@ -4317,6 +4330,7 @@ class CppEmitter(CodeEmitter):
             "int": "PYTRA_TID_INT",
             "float": "PYTRA_TID_FLOAT",
             "bool": "PYTRA_TID_BOOL",
+            "object": "PYTRA_TID_OBJECT",
         }
         if type_name in type_id_map:
             return f"py_isinstance({value_expr}, {type_id_map[type_name]})"
