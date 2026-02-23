@@ -95,6 +95,26 @@ def f(x: object) -> bool:
         self.assertIn("pyIsInstance(x, Base.PYTRA_TYPE_ID)", ts)
         self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);", ts)
 
+    def test_ts_preview_lowers_isinstance_tuple_to_or_checks(self) -> None:
+        src = """class Base:
+    def __init__(self):
+        pass
+
+def f(x: object) -> bool:
+    return isinstance(x, (int, Base, dict, object))
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "ts_isinstance_tuple_type_id.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            ts = transpile_to_typescript(east)
+
+        self.assertIn("pyIsInstance(x, PY_TYPE_NUMBER)", ts)
+        self.assertIn("pyIsInstance(x, Base.PYTRA_TYPE_ID)", ts)
+        self.assertIn("pyIsInstance(x, PY_TYPE_MAP)", ts)
+        self.assertIn("pyIsInstance(x, PY_TYPE_OBJECT)", ts)
+        self.assertNotIn("isinstance(", ts)
+
 
 if __name__ == "__main__":
     unittest.main()

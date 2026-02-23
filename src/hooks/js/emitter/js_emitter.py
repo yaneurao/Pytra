@@ -516,28 +516,55 @@ class JsEmitter(CodeEmitter):
         comps = self.any_to_list(expr.get("comparators"))
         return self.render_compare_chain_common(left, ops, comps, self.cmp_ops, empty_literal="false")
 
+    def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
+        """`isinstance(x, T)` の `T` を JS runtime API 判定式へ変換する。"""
+        type_id_map = {
+            "str": "PY_TYPE_STRING",
+            "list": "PY_TYPE_ARRAY",
+            "dict": "PY_TYPE_MAP",
+            "set": "PY_TYPE_SET",
+            "int": "PY_TYPE_NUMBER",
+            "float": "PY_TYPE_NUMBER",
+            "bool": "PY_TYPE_BOOL",
+            "object": "PY_TYPE_OBJECT",
+        }
+        if type_name in type_id_map:
+            return "pyIsInstance(" + value_expr + ", " + type_id_map[type_name] + ")"
+        if type_name in self.class_names:
+            return "pyIsInstance(" + value_expr + ", " + self._safe_name(type_name) + ".PYTRA_TYPE_ID)"
+        return ""
+
+    def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
+        """`isinstance(...)` 呼び出しを JS runtime API へ lower する。"""
+        if len(rendered_args) != 2:
+            return "false"
+        rhs_node = self.any_to_dict_or_empty(arg_nodes[1] if len(arg_nodes) > 1 else None)
+        rhs_kind = self.any_dict_get_str(rhs_node, "kind", "")
+        if rhs_kind == "Name":
+            rhs_name = self.any_dict_get_str(rhs_node, "id", "")
+            lowered = self._render_isinstance_type_check(rendered_args[0], rhs_name)
+            if lowered != "":
+                return lowered
+            return "false"
+        if rhs_kind == "Tuple":
+            checks: list[str] = []
+            for elt in self.tuple_elements(rhs_node):
+                e_node = self.any_to_dict_or_empty(elt)
+                if self.any_dict_get_str(e_node, "kind", "") != "Name":
+                    continue
+                e_name = self.any_dict_get_str(e_node, "id", "")
+                lowered = self._render_isinstance_type_check(rendered_args[0], e_name)
+                if lowered != "":
+                    checks.append(lowered)
+            if len(checks) > 0:
+                return "(" + " || ".join(checks) + ")"
+        return "false"
+
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """組み込み関数呼び出しを JavaScript 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
-        if fn_name_raw == "isinstance" and len(rendered_args) == 2:
-            rhs = self.any_to_dict_or_empty(arg_nodes[1]) if len(arg_nodes) > 1 else {}
-            if self.any_dict_get_str(rhs, "kind", "") != "Name":
-                return "false"
-            rhs_name = self.any_dict_get_str(rhs, "id", "")
-            type_id_map = {
-                "str": "PY_TYPE_STRING",
-                "list": "PY_TYPE_ARRAY",
-                "dict": "PY_TYPE_MAP",
-                "set": "PY_TYPE_SET",
-                "int": "PY_TYPE_NUMBER",
-                "float": "PY_TYPE_NUMBER",
-                "bool": "PY_TYPE_BOOL",
-            }
-            if rhs_name in type_id_map:
-                return "pyIsInstance(" + rendered_args[0] + ", " + type_id_map[rhs_name] + ")"
-            if rhs_name in self.class_names:
-                return "pyIsInstance(" + rendered_args[0] + ", " + self._safe_name(rhs_name) + ".PYTRA_TYPE_ID)"
-            return "false"
+        if fn_name_raw == "isinstance":
+            return self._render_isinstance_call(rendered_args, arg_nodes)
         if fn_name_raw == "print":
             return "console.log(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "len" and len(rendered_args) == 1:

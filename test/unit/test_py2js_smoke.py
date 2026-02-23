@@ -126,6 +126,26 @@ def f(x: object) -> bool:
         self.assertIn("[PYTRA_TYPE_ID]: PY_TYPE_MAP", js)
         self.assertIn("pyIsInstance(x, PY_TYPE_MAP)", js)
 
+    def test_isinstance_tuple_lowers_to_or_of_type_id_checks(self) -> None:
+        src = """class Base:
+    def __init__(self):
+        pass
+
+def f(x: object) -> bool:
+    return isinstance(x, (int, Base, dict, object))
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "isinstance_tuple_type_id.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            js = transpile_to_js(east)
+
+        self.assertIn("pyIsInstance(x, PY_TYPE_NUMBER)", js)
+        self.assertIn("pyIsInstance(x, Base.PYTRA_TYPE_ID)", js)
+        self.assertIn("pyIsInstance(x, PY_TYPE_MAP)", js)
+        self.assertIn("pyIsInstance(x, PY_TYPE_OBJECT)", js)
+        self.assertNotIn("isinstance(", js)
+
 
 if __name__ == "__main__":
     unittest.main()
