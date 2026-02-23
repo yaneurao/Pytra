@@ -424,6 +424,19 @@ def stmt_child_stmt_lists(stmt: dict[str, object]) -> list[list[dict[str, object
     return out
 
 
+def collect_store_names_from_target(target: dict[str, object], out: set[str]) -> None:
+    """代入先 target から束縛名を抽出する。"""
+    kind = dict_any_kind(target)
+    if kind == "Name":
+        ident = dict_any_get_str(target, "id")
+        if ident != "":
+            out.add(ident)
+        return
+    if kind == "Tuple" or kind == "List":
+        for ent in dict_any_get_dict_list(target, "elements"):
+            collect_store_names_from_target(ent, out)
+
+
 def dict_any_get_str_list(src: dict[str, object], key: str) -> list[str]:
     """`dict[str, object]` の list 値から `str` 要素だけを抽出する。"""
     out: list[str] = []

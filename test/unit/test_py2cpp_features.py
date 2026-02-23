@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, name_target_id, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_target_name, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, name_target_id, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_target_name, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -496,6 +496,28 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(out[3], [{"kind": "ExceptHandler"}])
         self.assertEqual(out[4], [{"kind": "MatchCase"}])
         self.assertEqual(stmt_child_stmt_lists({}), [])
+
+    def test_collect_store_names_from_target_extracts_nested_names(self) -> None:
+        out: set[str] = set()
+        collect_store_names_from_target({"kind": "Name", "id": "x"}, out)
+        self.assertEqual(out, {"x"})
+
+        out2: set[str] = set()
+        collect_store_names_from_target(
+            {
+                "kind": "Tuple",
+                "elements": [
+                    {"kind": "Name", "id": "a"},
+                    {"kind": "List", "elements": [{"kind": "Name", "id": "b"}, {"kind": "Attribute", "id": "c"}]},
+                ],
+            },
+            out2,
+        )
+        self.assertEqual(out2, {"a", "b"})
+
+        out3: set[str] = set()
+        collect_store_names_from_target({"kind": "Name", "id": 1}, out3)
+        self.assertEqual(out3, set())
 
     def test_dict_any_get_str_list_filters_non_str(self) -> None:
         data: dict[str, object] = {"xs": ["a", 1, "b"], "ys": "abc"}
