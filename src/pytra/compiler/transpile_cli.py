@@ -1351,6 +1351,47 @@ def resolve_guard_limits(
     return out
 
 
+def raise_guard_limit_exceeded(
+    stage: str,
+    limit_key: str,
+    value: int,
+    max_value: int,
+    detail_subject: str = "",
+) -> None:
+    """ガード上限超過を `input_invalid(kind=limit_exceeded, ...)` で報告する。"""
+    limit_labels: dict[str, str] = {
+        "max_ast_depth": "max-ast-depth",
+        "max_parse_nodes": "max-parse-nodes",
+        "max_symbols_per_module": "max-symbols-per-module",
+        "max_scope_depth": "max-scope-depth",
+        "max_import_graph_nodes": "max-import-graph-nodes",
+        "max_import_graph_edges": "max-import-graph-edges",
+        "max_generated_lines": "max-generated-lines",
+    }
+    limit_label = limit_labels[limit_key] if limit_key in limit_labels else limit_key
+    detail = f"kind=limit_exceeded stage={stage} limit={limit_label} value={value} max={max_value}"
+    if detail_subject != "":
+        detail += " file=" + detail_subject
+    raise make_user_error(
+        "input_invalid",
+        "Input exceeds configured guard limits.",
+        [detail],
+    )
+
+
+def check_guard_limit(
+    stage: str,
+    limit_key: str,
+    value: int,
+    limits: dict[str, int],
+    detail_subject: str = "",
+) -> None:
+    """`limits` に設定された上限を超えた場合に例外を送出する。"""
+    max_value = limits[limit_key] if limit_key in limits else 0
+    if max_value > 0 and value > max_value:
+        raise_guard_limit_exceeded(stage, limit_key, value, max_value, detail_subject)
+
+
 def empty_parse_dict() -> dict[str, str]:
     out: dict[str, str] = {}
     out["__error"] = ""

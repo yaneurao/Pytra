@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_guard_limit, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -54,15 +54,6 @@ def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     return False
 
 
-GUARD_LIMIT_LABELS: dict[str, str] = {
-    "max_ast_depth": "max-ast-depth",
-    "max_parse_nodes": "max-parse-nodes",
-    "max_symbols_per_module": "max-symbols-per-module",
-    "max_scope_depth": "max-scope-depth",
-    "max_import_graph_nodes": "max-import-graph-nodes",
-    "max_import_graph_edges": "max-import-graph-edges",
-    "max_generated_lines": "max-generated-lines",
-}
 SCOPE_NESTING_KINDS: set[str] = {
     "FunctionDef",
     "AsyncFunctionDef",
@@ -78,38 +69,6 @@ SCOPE_NESTING_KINDS: set[str] = {
 }
 
 
-def _raise_guard_limit_exceeded(
-    stage: str,
-    limit_key: str,
-    value: int,
-    max_value: int,
-    detail_subject: str = "",
-) -> None:
-    """ガード上限超過を `input_invalid(kind=limit_exceeded, ...)` で報告する。"""
-    limit_label = GUARD_LIMIT_LABELS[limit_key] if limit_key in GUARD_LIMIT_LABELS else limit_key
-    detail = f"kind=limit_exceeded stage={stage} limit={limit_label} value={value} max={max_value}"
-    if detail_subject != "":
-        detail += " file=" + detail_subject
-    raise make_user_error(
-        "input_invalid",
-        "Input exceeds configured guard limits.",
-        [detail],
-    )
-
-
-def _check_guard_limit(
-    stage: str,
-    limit_key: str,
-    value: int,
-    limits: dict[str, int],
-    detail_subject: str = "",
-) -> None:
-    """`limits` に設定された上限を超えた場合に例外を送出する。"""
-    max_value = limits[limit_key] if limit_key in limits else 0
-    if max_value > 0 and value > max_value:
-        _raise_guard_limit_exceeded(stage, limit_key, value, max_value, detail_subject)
-
-
 def _check_parse_stage_guards(
     module_map: dict[str, dict[str, Any]],
     guard_limits: dict[str, int],
@@ -120,9 +79,9 @@ def _check_parse_stage_guards(
         metrics = module_parse_metrics(east)
         module_depth = metrics["max_ast_depth"] if "max_ast_depth" in metrics else 0
         module_nodes = metrics["parse_nodes"] if "parse_nodes" in metrics else 0
-        _check_guard_limit("parse", "max_ast_depth", module_depth, guard_limits, mod_key)
+        check_guard_limit("parse", "max_ast_depth", module_depth, guard_limits, mod_key)
         parse_nodes_total += module_nodes
-    _check_guard_limit("parse", "max_parse_nodes", parse_nodes_total, guard_limits)
+    check_guard_limit("parse", "max_parse_nodes", parse_nodes_total, guard_limits)
 
 
 def _check_analyze_stage_guards(
@@ -135,12 +94,12 @@ def _check_analyze_stage_guards(
         metrics = module_analyze_metrics(east, SCOPE_NESTING_KINDS)
         symbol_count = metrics["symbols"] if "symbols" in metrics else 0
         scope_depth = metrics["scope_depth"] if "scope_depth" in metrics else 0
-        _check_guard_limit("analyze", "max_symbols_per_module", symbol_count, guard_limits, mod_key)
-        _check_guard_limit("analyze", "max_scope_depth", scope_depth, guard_limits, mod_key)
+        check_guard_limit("analyze", "max_symbols_per_module", symbol_count, guard_limits, mod_key)
+        check_guard_limit("analyze", "max_scope_depth", scope_depth, guard_limits, mod_key)
     graph_nodes = len(dict_any_get_str_list(import_graph_analysis, "user_module_files"))
     graph_edges = len(dict_any_get_str_list(import_graph_analysis, "edges"))
-    _check_guard_limit("analyze", "max_import_graph_nodes", graph_nodes, guard_limits)
-    _check_guard_limit("analyze", "max_import_graph_edges", graph_edges, guard_limits)
+    check_guard_limit("analyze", "max_import_graph_nodes", graph_nodes, guard_limits)
+    check_guard_limit("analyze", "max_import_graph_edges", graph_edges, guard_limits)
 
 
 CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
@@ -6459,7 +6418,7 @@ def _write_multi_file_cpp(
     generated_lines_total = 0
     generated_lines_total += count_text_lines(prelude_txt)
     if max_generated_lines > 0:
-        _check_guard_limit("emit", "max_generated_lines", generated_lines_total, {"max_generated_lines": max_generated_lines})
+        check_guard_limit("emit", "max_generated_lines", generated_lines_total, {"max_generated_lines": max_generated_lines})
     write_text_file(prelude_hdr, prelude_txt)
 
     root = Path(path_parent_text(entry_path))
@@ -6503,7 +6462,7 @@ def _write_multi_file_cpp(
         hdr_text += "#endif  // " + guard + "\n"
         generated_lines_total += count_text_lines(hdr_text)
         if max_generated_lines > 0:
-            _check_guard_limit(
+            check_guard_limit(
                 "emit",
                 "max_generated_lines",
                 generated_lines_total,
@@ -6609,7 +6568,7 @@ def _write_multi_file_cpp(
             cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))
         generated_lines_total += count_text_lines(cpp_txt)
         if max_generated_lines > 0:
-            _check_guard_limit(
+            check_guard_limit(
                 "emit",
                 "max_generated_lines",
                 generated_lines_total,
@@ -6639,7 +6598,7 @@ def _write_multi_file_cpp(
     manifest_txt = json.dumps(manifest_obj, ensure_ascii=False, indent=2)
     generated_lines_total += count_text_lines(manifest_txt)
     if max_generated_lines > 0:
-        _check_guard_limit(
+        check_guard_limit(
             "emit",
             "max_generated_lines",
             generated_lines_total,
@@ -6943,7 +6902,7 @@ def main(argv: list[str]) -> int:
                 )
             hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
             generated_lines_runtime = count_text_lines(cpp_txt_runtime) + count_text_lines(hdr_txt_runtime)
-            _check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
+            check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
             write_text_file(cpp_out, cpp_txt_runtime)
             write_text_file(hdr_out, hdr_txt_runtime)
             print("generated: " + str(hdr_out))
@@ -6965,13 +6924,13 @@ def main(argv: list[str]) -> int:
                 top_namespace_opt,
                 not no_main,
             )
-            _check_guard_limit("emit", "max_generated_lines", count_text_lines(cpp), guard_limits, str(input_path))
+            check_guard_limit("emit", "max_generated_lines", count_text_lines(cpp), guard_limits, str(input_path))
             if header_output_txt != "":
                 hdr_path = Path(header_output_txt)
                 mkdirs_for_cli(path_parent_text(hdr_path))
                 hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt)
                 generated_lines_single = count_text_lines(cpp) + count_text_lines(hdr_txt)
-                _check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
+                check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
                 write_text_file(hdr_path, hdr_txt)
         else:
             module_east_map: dict[str, dict[str, Any]] = {}
