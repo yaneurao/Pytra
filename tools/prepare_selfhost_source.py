@@ -56,7 +56,7 @@ def _remove_import_line(text: str) -> str:
     targets: list[tuple[str, str]] = [
         ("from pytra.compiler.east_parts.code_emitter import CodeEmitter\n", "CodeEmitter import"),
         (
-            "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options\n",
+            "from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options\n",
             "transpile_cli import",
         ),
         ("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks\n", "build_cpp_hooks import"),
@@ -100,6 +100,7 @@ def _extract_top_level_block(text: str, name: str, kind: str) -> str:
 def _extract_support_blocks() -> str:
     cli_text = SRC_TRANSPILE_CLI.read_text(encoding="utf-8")
     names = [
+        "join_str_list",
         "resolve_codegen_options",
         "validate_codegen_options",
         "dump_codegen_options_text",
@@ -115,13 +116,21 @@ def _extract_support_blocks() -> str:
 
 
 def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -> str:
-    marker = "CPP_HEADER = "
-    i = text.find(marker)
+    support_marker = "RUNTIME_STD_SOURCE_ROOT = "
+    i = text.find(support_marker)
     if i < 0:
-        raise RuntimeError("CPP_HEADER marker not found in py2cpp.py")
+        raise RuntimeError("RUNTIME_STD_SOURCE_ROOT marker not found in py2cpp.py")
     prefix = text[:i]
     suffix = text[i:]
-    return prefix.rstrip() + "\n\n" + support_blocks + "\n" + base_class_text + "\n" + suffix
+    out = prefix.rstrip() + "\n\n" + support_blocks + "\n" + suffix
+
+    marker = "CPP_HEADER = "
+    j = out.find(marker)
+    if j < 0:
+        raise RuntimeError("CPP_HEADER marker not found in py2cpp.py")
+    prefix2 = out[:j]
+    suffix2 = out[j:]
+    return prefix2.rstrip() + "\n\n" + base_class_text + "\n" + suffix2
 
 
 def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:

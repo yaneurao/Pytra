@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy
+from src.pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -174,6 +174,10 @@ class Py2CppFeatureTest(unittest.TestCase):
         sorted_items = sort_str_list_copy(items)
         self.assertEqual(sorted_items, ["a", "b", "b", "z"])
         self.assertEqual(items, ["z", "b", "a", "b"])
+
+    def test_join_str_list_joins_items(self) -> None:
+        self.assertEqual(join_str_list(" / ", ["a", "b", "c"]), "a / b / c")
+        self.assertEqual(join_str_list("", []), "")
 
     def test_parse_py2cpp_argv(self) -> None:
         parsed = parse_py2cpp_argv(

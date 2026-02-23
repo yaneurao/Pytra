@@ -64,3 +64,4 @@
 - 2026-02-22: `P1-COMP-08` として、`py2rs.py` を起点に他言語 CLI へ共通解析 API を段階適用する 5 フェーズ移行計画を追加した。
 - 2026-02-23: 全言語 selfhost を長期目標として再確認し、`py2cpp.py` への汎用 helper 集積を抑制する方針を `P1-COMP-09` / `P1-COMP-10` として追加した。
 - 2026-02-23: `P1-COMP-09` の小パッチとして、`src/py2cpp.py` の文字列リスト整列 helper を `src/pytra/compiler/transpile_cli.py::sort_str_list_copy` へ移管した。selfhost 展開で同 helper が欠落しないよう `tools/prepare_selfhost_source.py` の `transpile_cli` import 除去対象と support block 抽出名リストを更新し、`test/unit/test_prepare_selfhost_source.py` / `test/unit/test_py2cpp_features.py` で回帰を固定した。
+- 2026-02-23: `P1-COMP-09` の継続として、`src/py2cpp.py` の区切り結合 helper `_join_str_list` も `src/pytra/compiler/transpile_cli.py::join_str_list` へ移管した。`py2cpp` 内の呼び出しを共通 helper へ統一し、selfhost 用 `tools/prepare_selfhost_source.py` の `transpile_cli` import 除去ターゲットと support block 抽出対象へ `join_str_list` を追加した。`test/unit/test_prepare_selfhost_source.py` と `test/unit/test_py2cpp_features.py` の回帰を更新して固定した。

@@ -48,6 +48,11 @@ def normalize_common_transpile_args(
     return args
 
 
+def join_str_list(sep: str, items: list[str]) -> str:
+    """区切り文字で `list[str]` を結合する selfhost-safe helper。"""
+    return sep.join(items)
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,

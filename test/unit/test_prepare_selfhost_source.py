@@ -38,7 +38,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             removed,
         )
         self.assertNotIn(
-            "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options\n",
+            "from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options\n",
             removed,
         )
         self.assertNotIn(
@@ -50,7 +50,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         mod = _load_prepare_module()
         broken = (
             "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n"
-            "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options\n"
+            "from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options\n"
         )
         with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks import"):
             mod._remove_import_line(broken)
@@ -58,6 +58,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
     def test_extract_support_blocks_does_not_inline_build_cpp_hooks_stub(self) -> None:
         mod = _load_prepare_module()
         support_blocks = mod._extract_support_blocks()
+        self.assertIn("def join_str_list(sep: str, items: list[str]) -> str:", support_blocks)
         self.assertIn("def sort_str_list_copy(items: list[str]) -> list[str]:", support_blocks)
         self.assertNotIn("def build_cpp_hooks() -> dict[str, Any]:", support_blocks)
 

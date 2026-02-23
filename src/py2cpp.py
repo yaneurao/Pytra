@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options
+from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -22,11 +22,6 @@ from pytra.std import sys
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT = Path("src/pytra/compiler")
-
-
-def _join_str_list(sep: str, items: list[str]) -> str:
-    """selfhost 安定化用: 区切り文字列による結合を明示関数化する。"""
-    return sep.join(items)
 
 
 def _replace_first(text: str, old: str, replacement: str) -> str:
@@ -101,7 +96,7 @@ def _module_tail_to_cpp_header_path(module_tail: str) -> str:
         leaf = parts[leaf_i]
         leaf = leaf[: len(leaf) - 5] + "-impl" if leaf.endswith("_impl") else leaf
         parts[leaf_i] = leaf
-    return _join_str_list("/", parts) + ".h"
+    return join_str_list("/", parts) + ".h"
 
 
 def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
@@ -2299,7 +2294,7 @@ class CppEmitter(CodeEmitter):
                 if txt == "":
                     return ""
                 parts.append(txt)
-            return "::std::make_tuple(" + _join_str_list(", ", parts) + ")"
+            return "::std::make_tuple(" + join_str_list(", ", parts) + ")"
         _ = east_target_t
         return ""
 
@@ -2443,7 +2438,7 @@ class CppEmitter(CodeEmitter):
                     k = self.render_expr(kv.get("key"))
                     v = self.render_expr_as_any(kv.get("value"))
                     items.append(f"{{{k}, {v}}}")
-                rendered_val = f"{t}{{{_join_str_list(', ', items)}}}"
+                rendered_val = f"{t}{{{join_str_list(', ', items)}}}"
         if val_is_dict and t != "auto":
             vkind = val_kind
             if vkind == "BoolOp":
@@ -3918,7 +3913,7 @@ class CppEmitter(CodeEmitter):
                 if fname in instance_field_defaults and instance_field_defaults[fname] != "":
                     p += f" = {instance_field_defaults[fname]}"
                 params.append(p)
-            self.emit(f"{name}({_join_str_list(', ', params)}) {{")
+            self.emit(f"{name}({join_str_list(', ', params)}) {{")
             self.indent += 1
             self.scope_stack.append(set())
             if gc_managed:
@@ -3994,8 +3989,8 @@ class CppEmitter(CodeEmitter):
                 call_args = self._coerce_args_for_class_method(left_t, dunder_name, [right], [expr.get("right")])
                 owner = f"({left})"
                 if left_t_norm in self.ref_classes and not left.strip().startswith("*"):
-                    return f"{owner}->{dunder_name}({_join_str_list(', ', call_args)})"
-                return f"{owner}.{dunder_name}({_join_str_list(', ', call_args)})"
+                    return f"{owner}->{dunder_name}({join_str_list(', ', call_args)})"
+                return f"{owner}.{dunder_name}({join_str_list(', ', call_args)})"
         left = self._wrap_for_binop_operand(left, left_expr, op_name_str, False)
         right = self._wrap_for_binop_operand(right, right_expr, op_name_str, True)
         hook_binop_raw = self.hook_on_render_binop(expr, left, right)
@@ -4074,9 +4069,9 @@ class CppEmitter(CodeEmitter):
         if runtime_fallback is not None:
             return str(runtime_fallback)
         if builtin_name == "bytes":
-            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
+            return f"bytes({join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
         if builtin_name == "bytearray":
-            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
+            return f"bytearray({join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
         return ""
 
     def _render_builtin_runtime_fallback(
@@ -4091,7 +4086,7 @@ class CppEmitter(CodeEmitter):
     ) -> str | None:
         """hooks 無効時に BuiltinCall の runtime 分岐を描画する。"""
         if runtime_call == "py_print":
-            return f"py_print({_join_str_list(', ', args)})"
+            return f"py_print({join_str_list(', ', args)})"
         if runtime_call == "py_len" and len(args) == 1:
             return f"py_len({args[0]})"
         if runtime_call == "py_to_string" and len(args) == 1:
@@ -4103,7 +4098,7 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "perf_counter":
             return "pytra::std::time::perf_counter()"
         if runtime_call == "open":
-            return f"open({_join_str_list(', ', args)})"
+            return f"open({join_str_list(', ', args)})"
         if runtime_call == "py_int_to_bytes":
             owner = self.render_expr(fn.get("value"))
             length = args[0] if len(args) >= 1 else "0"
@@ -4118,7 +4113,7 @@ class CppEmitter(CodeEmitter):
                 return '::std::runtime_error("error")'
             return f"::std::runtime_error({args[0]})"
         if runtime_call == "Path":
-            return f"Path({_join_str_list(', ', args)})"
+            return f"Path({join_str_list(', ', args)})"
         owner_runtime_rendered = self._render_builtin_call_owner_runtime(runtime_call, owner_expr, args)
         if owner_runtime_rendered is not None:
             return str(owner_runtime_rendered)
@@ -4146,11 +4141,11 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "py_replace" and owner_expr != "" and len(args) >= 2:
             return f"py_replace({owner_expr}, {args[0]}, {args[1]})"
         if runtime_call in {"py_startswith", "py_endswith", "py_find", "py_rfind"} and owner_expr != "" and len(args) >= 1:
-            return f"{runtime_call}({owner_expr}, {_join_str_list(', ', args)})"
+            return f"{runtime_call}({owner_expr}, {join_str_list(', ', args)})"
         if runtime_call != "" and (self._is_std_runtime_call(runtime_call) or runtime_call.startswith("py_")):
             if owner_expr != "" and runtime_call.startswith("py_") and len(args) == 0:
                 return f"{runtime_call}({owner_expr})"
-            return f"{runtime_call}({_join_str_list(', ', args)})"
+            return f"{runtime_call}({join_str_list(', ', args)})"
         return None
 
     def _render_builtin_static_cast_call(
@@ -4323,7 +4318,7 @@ class CppEmitter(CodeEmitter):
     def _render_simple_name_builtin_call(self, raw: str, args: list[str]) -> str | None:
         """Name 呼び出しの単純ビルトイン分岐を描画する。"""
         if raw == "print":
-            return f"py_print({_join_str_list(', ', args)})"
+            return f"py_print({join_str_list(', ', args)})"
         if raw == "len" and len(args) == 1:
             return f"py_len({args[0]})"
         if raw == "reversed" and len(args) == 1:
@@ -4397,7 +4392,7 @@ class CppEmitter(CodeEmitter):
                 call_args = self._coerce_args_for_module_function(imported_module, raw, merged_args, arg_nodes)
             if raw.startswith("py_assert_"):
                 call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
-            return f"{mapped_runtime_txt}({_join_str_list(', ', call_args)})", raw
+            return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
         imported_module_norm = self._normalize_runtime_module_name(imported_module)
         if imported_module_norm in self.module_namespace_map:
             namespaced = self._render_namespaced_module_call(
@@ -4421,9 +4416,9 @@ class CppEmitter(CodeEmitter):
     ) -> str | None:
         """`Call(Name)` の残りビルトイン分岐を処理する。"""
         if raw == "bytes":
-            return f"bytes({_join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
+            return f"bytes({join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
         if raw == "bytearray":
-            return f"bytearray({_join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
+            return f"bytearray({join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
         if raw == "str" and len(args) == 1:
             src_expr = first_arg
             return self.render_to_string(src_expr)
@@ -4445,7 +4440,7 @@ class CppEmitter(CodeEmitter):
                 return '::std::runtime_error("error")'
             return f"::std::runtime_error({args[0]})"
         if raw == "Path":
-            return f"Path({_join_str_list(', ', args)})"
+            return f"Path({join_str_list(', ', args)})"
         return None
 
     def _render_call_name_or_attr(
@@ -4469,7 +4464,7 @@ class CppEmitter(CodeEmitter):
                 return imported_rendered
             if raw.startswith("py_assert_"):
                 call_args = self._coerce_py_assert_args(raw, args, arg_nodes)
-                return f"pytra::utils::assertions::{raw}({_join_str_list(', ', call_args)})"
+                return f"pytra::utils::assertions::{raw}({join_str_list(', ', call_args)})"
             if raw == "range":
                 range_rendered = self._render_range_name_call(args, kw)
                 if range_rendered is not None:
@@ -4480,7 +4475,7 @@ class CppEmitter(CodeEmitter):
                 if len(kw) > 0:
                     ctor_arg_names = self._class_method_name_sig(raw, "__init__")
                     ctor_args = self._merge_args_with_kw_by_name(args, kw, ctor_arg_names)
-                return f"::rc_new<{raw}>({_join_str_list(', ', ctor_args)})"
+                return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
             simple_builtin_rendered = self._render_simple_name_builtin_call(raw, args)
             if simple_builtin_rendered is not None:
                 return simple_builtin_rendered
@@ -4563,7 +4558,7 @@ class CppEmitter(CodeEmitter):
         call_args = self._coerce_args_for_module_function(module_name, func_name, rendered_args, arg_nodes)
         if func_name.startswith("py_assert_"):
             call_args = self._coerce_py_assert_args(func_name, call_args, arg_nodes)
-        return f"{namespace_name}::{func_name}({_join_str_list(', ', call_args)})"
+        return f"{namespace_name}::{func_name}({join_str_list(', ', call_args)})"
 
     def _render_call_class_method(
         self,
@@ -4581,7 +4576,7 @@ class CppEmitter(CodeEmitter):
         call_args = self.merge_call_args(args, kw)
         call_args = self._coerce_args_for_class_method(owner_t, attr, call_args, arg_nodes)
         fn_expr = self._render_attribute_expr(fn)
-        return f"{fn_expr}({_join_str_list(', ', call_args)})"
+        return f"{fn_expr}({join_str_list(', ', call_args)})"
 
     def _render_append_call_object_method(
         self,
@@ -4849,13 +4844,13 @@ class CppEmitter(CodeEmitter):
             return self._render_isinstance_type_check(args[0], ty)
         if fn_name.startswith("py_assert_"):
             call_args = self._coerce_py_assert_args(fn_name, args, [])
-            return f"pytra::utils::assertions::{fn_name}({_join_str_list(', ', call_args)})"
+            return f"pytra::utils::assertions::{fn_name}({join_str_list(', ', call_args)})"
         append_fallback_rendered = self._render_append_fallback_call(fn_name, args)
         if append_fallback_rendered is not None and append_fallback_rendered != "":
             return str(append_fallback_rendered)
         if fn_name == "print":
-            return f"py_print({_join_str_list(', ', args)})"
-        return f"{fn_name}({_join_str_list(', ', args)})"
+            return f"py_print({join_str_list(', ', args)})"
+        return f"{fn_name}({join_str_list(', ', args)})"
 
     def _render_append_fallback_call(self, fn_name: str, args: list[str]) -> str | None:
         """`obj.append(...)` の fallback 文字列呼び出しを型付き helper 経由で処理する。"""
@@ -5141,7 +5136,7 @@ class CppEmitter(CodeEmitter):
                     parts.append(f"{cur} {cop} {rhs}")
             cur = rhs
             cur_node = rhs_node
-        return _join_str_list(" && ", parts) if len(parts) > 0 else "true"
+        return join_str_list(" && ", parts) if len(parts) > 0 else "true"
 
     def _box_expr_for_any(self, expr_txt: str, source_node: Any) -> str:
         """Any/object 向けの boxing を必要時のみ適用する。"""
@@ -5311,7 +5306,7 @@ class CppEmitter(CodeEmitter):
                 out_items.append(cpp_string_lit(token[1:-1]))
                 continue
             return ""
-        return f"set<str>{{{_join_str_list(', ', out_items)}}}"
+        return f"set<str>{{{join_str_list(', ', out_items)}}}"
 
     def _render_repr_expr(self, rep: str) -> str:
         """repr 生文字列を最小限 C++ 式へ補正する。"""
@@ -5329,7 +5324,7 @@ class CppEmitter(CodeEmitter):
                 else:
                     rendered.append(self._trim_ws(p))
             wrapped = [f"({c})" for c in rendered]
-            return _join_str_list(" || ", wrapped)
+            return join_str_list(" || ", wrapped)
 
         and_parts = self._split_top_level_infix_text(t, " and ")
         if len(and_parts) >= 2:
@@ -5341,7 +5336,7 @@ class CppEmitter(CodeEmitter):
                 else:
                     rendered.append(self._trim_ws(p))
             wrapped = [f"({c})" for c in rendered]
-            return _join_str_list(" && ", wrapped)
+            return join_str_list(" && ", wrapped)
 
         if t.startswith("not "):
             inner = self._trim_ws(t[4:])
@@ -5389,7 +5384,7 @@ class CppEmitter(CodeEmitter):
                     pair_parts.append(f"{cmp_terms[i]} {op} {cmp_terms[i + 1]}")
                 if len(pair_parts) > 0:
                     wrapped = [f"({x})" for x in pair_parts]
-                    return _join_str_list(" && ", wrapped)
+                    return join_str_list(" && ", wrapped)
 
         fn_name, fn_args, call_ok = self._split_call_repr(t)
         if call_ok:
@@ -5612,7 +5607,7 @@ class CppEmitter(CodeEmitter):
                             parts.append(self.render_to_string(val))
             if len(parts) == 0:
                 return '""'
-            return _join_str_list(" + ", parts)
+            return join_str_list(" + ", parts)
         parts: list[str] = []
         for p in self._dict_stmt_list(expr_d.get("values")):
             pk = self._node_kind_from_dict(p)
@@ -5628,7 +5623,7 @@ class CppEmitter(CodeEmitter):
                     parts.append(self.render_to_string(v))
         if len(parts) == 0:
             return '""'
-        return _join_str_list(" + ", parts)
+        return join_str_list(" + ", parts)
 
     def _render_lambda_expr(self, expr_d: dict[str, Any]) -> str:
         """Lambda ノードを C++ のラムダ式へ変換する。"""
@@ -5652,7 +5647,7 @@ class CppEmitter(CodeEmitter):
                     arg_txt += f" = {self.render_expr(default_node)}"
                 arg_texts.append(arg_txt)
         body_expr = self.render_expr(expr_d.get("body"))
-        return f"[&]({_join_str_list(', ', arg_texts)}) {{ return {body_expr}; }}"
+        return f"[&]({join_str_list(', ', arg_texts)}) {{ return {body_expr}; }}"
 
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
@@ -5835,7 +5830,7 @@ class CppEmitter(CodeEmitter):
                 if self.is_any_like_type(val_t):
                     v = self._box_expr_for_any(v, val_node)
                 items.append(f"{{{k}, {v}}}")
-            return f"{t}{{{_join_str_list(', ', items)}}}"
+            return f"{t}{{{join_str_list(', ', items)}}}"
         if kind == "Subscript":
             return self._render_subscript_expr(expr)
         if kind == "JoinedStr":
@@ -5917,7 +5912,7 @@ class CppEmitter(CodeEmitter):
                         if c_rep != "":
                             c_txt = c_rep
                     cond_parts.append(c_txt if c_txt != "" else "true")
-                cond: str = _join_str_list(" && ", cond_parts)
+                cond: str = join_str_list(" && ", cond_parts)
                 lines.append(f"        if ({cond}) __out.append({list_elt});")
             lines.append("    }")
             lines.append("    return __out;")
@@ -5976,7 +5971,7 @@ class CppEmitter(CodeEmitter):
                         if c_rep != "":
                             c_txt = c_rep
                     cond_parts.append(c_txt if c_txt != "" else "true")
-                cond: str = _join_str_list(" && ", cond_parts)
+                cond: str = join_str_list(" && ", cond_parts)
                 lines.append(f"        if ({cond}) __out.insert({set_elt});")
             lines.append("    }")
             lines.append("    return __out;")
@@ -6035,7 +6030,7 @@ class CppEmitter(CodeEmitter):
                         if c_rep != "":
                             c_txt = c_rep
                     cond_parts.append(c_txt if c_txt != "" else "true")
-                cond: str = _join_str_list(" && ", cond_parts)
+                cond: str = join_str_list(" && ", cond_parts)
                 lines.append(f"        if ({cond}) __out[{key}] = {val};")
             lines.append("    }")
             lines.append("    return __out;")
@@ -6584,7 +6579,7 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
             parts.append(txt)
         if len(parts) == 0:
             return ""
-        return "::std::make_tuple(" + _join_str_list(", ", parts) + ")"
+        return "::std::make_tuple(" + join_str_list(", ", parts) + ")"
     _ = east_target_t
     return ""
 
@@ -6751,7 +6746,7 @@ def build_cpp_header_from_east(
     lines.append("")
     lines.append("#endif  // " + guard)
     lines.append("")
-    return _join_str_list("\n", lines)
+    return join_str_list("\n", lines)
 
 
 def _runtime_module_tail_from_source_path(input_path: Path) -> str:
@@ -6789,7 +6784,7 @@ def _runtime_output_rel_tail(module_tail: str) -> str:
         if leaf.endswith("_impl"):
             leaf = leaf[: len(leaf) - 5] + "-impl"
             parts[len(parts) - 1] = leaf
-    rel = _join_str_list("/", parts)
+    rel = join_str_list("/", parts)
     if rel == "std" or rel.startswith("std/"):
         return rel
     if rel == "compiler" or rel.startswith("compiler/"):
@@ -6995,7 +6990,7 @@ def _graph_cycle_dfs(
                 for k in range(len(nodes)):
                     dk = nodes[k]
                     disp_nodes.append(key_to_disp.get(dk, dk))
-                cycle_txt = _join_str_list(" -> ", disp_nodes)
+                cycle_txt = join_str_list(" -> ", disp_nodes)
                 if cycle_txt not in cycle_seen:
                     cycle_seen.add(cycle_txt)
                     cycles.append(cycle_txt)
@@ -7693,7 +7688,7 @@ def _write_multi_file_cpp(
                 fwd_lines.extend(fn_decls)
                 fwd_lines.append("}  // namespace " + target_ns)
         if len(fwd_lines) > 0:
-            cpp_txt = _inject_after_includes_block(cpp_txt, _join_str_list("\n", fwd_lines))
+            cpp_txt = _inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))
         generated_lines_total += _count_text_lines(cpp_txt)
         if max_generated_lines > 0:
             _check_guard_limit(
