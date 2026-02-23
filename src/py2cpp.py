@@ -5903,7 +5903,6 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
         key_to_disp[cur_key] = rel_disp_for_graph(root, cur_path)
         if cur_key not in module_id_map:
             module_id_map[cur_key] = module_name_from_path_for_graph(root, cur_path)
-        east_cur: dict[str, Any] = {}
         try:
             east_cur = load_east(cur_path)
         except Exception:
@@ -5922,10 +5921,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 RUNTIME_UTILS_SOURCE_ROOT,
             )
             status = dict_any_get_str(resolved, "status")
-            dep_file = Path("")
             dep_txt = dict_any_get_str(resolved, "path")
-            if dep_txt != "":
-                dep_file = Path(dep_txt)
             resolved_mod_id = dict_any_get_str(resolved, "module_id")
             if status == "relative":
                 rel_item = cur_disp + ": " + mod
@@ -5933,16 +5929,15 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 continue
             dep_disp = mod
             if status == "user":
-                if str(dep_file) == "":
+                if dep_txt == "":
                     continue
+                dep_file = Path(dep_txt)
                 dep_key = path_key_for_graph(dep_file)
                 dep_disp = rel_disp_for_graph(root, dep_file)
                 module_id = resolved_mod_id if resolved_mod_id != "" else mod
                 if dep_key not in module_id_map or module_id_map[dep_key] == "":
                     module_id_map[dep_key] = module_id
-                cur_adj = graph_adj.get(cur_key, [])
-                cur_adj.append(dep_key)
-                graph_adj[cur_key] = cur_adj
+                graph_adj[cur_key].append(dep_key)
                 key_to_path[dep_key] = dep_file
                 key_to_disp[dep_key] = dep_disp
                 if dep_key not in queued and dep_key not in visited:
