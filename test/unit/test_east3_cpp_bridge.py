@@ -1026,6 +1026,110 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(stem_expr), "p.stem()")
         self.assertEqual(emitter.render_expr(identity_expr), "p")
 
+    def test_render_expr_supports_runtime_special_op_ir_nodes(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        perf_node = {"kind": "RuntimeSpecialOp", "op": "perf_counter", "resolved_type": "float64"}
+        open_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "open",
+            "args": [
+                {"kind": "Constant", "value": "a.txt", "resolved_type": "str"},
+                {"kind": "Constant", "value": "rb", "resolved_type": "str"},
+            ],
+            "resolved_type": "unknown",
+        }
+        path_ctor_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "path_ctor",
+            "args": [{"kind": "Constant", "value": "a.txt", "resolved_type": "str"}],
+            "resolved_type": "Path",
+        }
+        runtime_error_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "runtime_error",
+            "message": {"kind": "Constant", "value": "boom", "resolved_type": "str"},
+            "resolved_type": "::std::runtime_error",
+        }
+        int_to_bytes_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "int_to_bytes",
+            "owner": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+            "length": {"kind": "Constant", "value": 4, "resolved_type": "int64"},
+            "byteorder": {"kind": "Constant", "value": "little", "resolved_type": "str"},
+            "resolved_type": "bytes",
+        }
+
+        self.assertEqual(emitter.render_expr(perf_node), "pytra::std::time::perf_counter()")
+        self.assertEqual(emitter.render_expr(open_node), 'open("a.txt", "rb")')
+        self.assertEqual(emitter.render_expr(path_ctor_node), 'Path("a.txt")')
+        self.assertEqual(emitter.render_expr(runtime_error_node), '::std::runtime_error("boom")')
+        self.assertEqual(emitter.render_expr(int_to_bytes_node), 'py_int_to_bytes(n, 4, "little")')
+
+    def test_builtin_runtime_misc_special_ops_use_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        perf_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "perf_counter",
+            "resolved_type": "float64",
+            "func": {"kind": "Name", "id": "perf_counter", "resolved_type": "unknown"},
+            "args": [],
+            "keywords": [],
+        }
+        open_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "open",
+            "resolved_type": "unknown",
+            "func": {"kind": "Name", "id": "open", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Constant", "value": "a.txt", "resolved_type": "str"},
+                {"kind": "Constant", "value": "rb", "resolved_type": "str"},
+            ],
+            "keywords": [],
+        }
+        path_ctor_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "Path",
+            "resolved_type": "Path",
+            "func": {"kind": "Name", "id": "Path", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": "a.txt", "resolved_type": "str"}],
+            "keywords": [],
+        }
+        runtime_error_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "std::runtime_error",
+            "resolved_type": "::std::runtime_error",
+            "func": {"kind": "Name", "id": "RuntimeError", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": "boom", "resolved_type": "str"}],
+            "keywords": [],
+        }
+        int_to_bytes_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_int_to_bytes",
+            "resolved_type": "bytes",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                "attr": "to_bytes",
+                "resolved_type": "unknown",
+            },
+            "args": [
+                {"kind": "Constant", "value": 4, "resolved_type": "int64"},
+                {"kind": "Constant", "value": "little", "resolved_type": "str"},
+            ],
+            "keywords": [],
+        }
+
+        self.assertEqual(emitter.render_expr(perf_expr), "pytra::std::time::perf_counter()")
+        self.assertEqual(emitter.render_expr(open_expr), 'open("a.txt", "rb")')
+        self.assertEqual(emitter.render_expr(path_ctor_expr), 'Path("a.txt")')
+        self.assertEqual(emitter.render_expr(runtime_error_expr), '::std::runtime_error("boom")')
+        self.assertEqual(emitter.render_expr(int_to_bytes_expr), 'py_int_to_bytes(n, 4, "little")')
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",

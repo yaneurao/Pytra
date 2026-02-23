@@ -4101,6 +4101,72 @@ class CppEmitter(CodeEmitter):
                 "casts": [],
             }
             return self.render_expr(identity_node)
+        if runtime_call == "perf_counter":
+            perf_node = {
+                "kind": "RuntimeSpecialOp",
+                "op": "perf_counter",
+                "resolved_type": "float64",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(perf_node)
+        if runtime_call == "open":
+            open_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "open",
+                "resolved_type": "unknown",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) > 0:
+                open_node["args"] = arg_nodes
+            elif len(args) > 0:
+                open_node["arg_exprs"] = args
+            return self.render_expr(open_node)
+        if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
+            runtime_error_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "runtime_error",
+                "resolved_type": "::std::runtime_error",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                runtime_error_node["message"] = arg_nodes[0]
+            elif len(args) >= 1:
+                runtime_error_node["message_expr"] = args[0]
+            return self.render_expr(runtime_error_node)
+        if runtime_call == "Path":
+            path_ctor_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "path_ctor",
+                "resolved_type": "Path",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) > 0:
+                path_ctor_node["args"] = arg_nodes
+            elif len(args) > 0:
+                path_ctor_node["arg_exprs"] = args
+            return self.render_expr(path_ctor_node)
+        if runtime_call == "py_int_to_bytes":
+            int_to_bytes_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "int_to_bytes",
+                "owner": fn.get("value"),
+                "resolved_type": "bytes",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                int_to_bytes_node["length"] = arg_nodes[0]
+            elif len(args) >= 1:
+                int_to_bytes_node["length_expr"] = args[0]
+            if len(arg_nodes) >= 2:
+                int_to_bytes_node["byteorder"] = arg_nodes[1]
+            elif len(args) >= 2:
+                int_to_bytes_node["byteorder_expr"] = args[1]
+            return self.render_expr(int_to_bytes_node)
         return None
 
     def _render_builtin_runtime_fallback(
@@ -4124,25 +4190,10 @@ class CppEmitter(CodeEmitter):
         if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
             fn_name = "min" if runtime_call == "py_min" else "max"
             return self.render_minmax(fn_name, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
-        if runtime_call == "perf_counter":
-            return "pytra::std::time::perf_counter()"
-        if runtime_call == "open":
-            return f"open({join_str_list(', ', args)})"
-        if runtime_call == "py_int_to_bytes":
-            owner = self.render_expr(fn.get("value"))
-            length = args[0] if len(args) >= 1 else "0"
-            byteorder = args[1] if len(args) >= 2 else '"little"'
-            return f"py_int_to_bytes({owner}, {length}, {byteorder})"
         if runtime_call == "py_join":
             join_rendered = self._render_builtin_join_call(owner_expr, args)
             if join_rendered is not None:
                 return str(join_rendered)
-        if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
-            if len(args) == 0:
-                return '::std::runtime_error("error")'
-            return f"::std::runtime_error({args[0]})"
-        if runtime_call == "Path":
-            return f"Path({join_str_list(', ', args)})"
         owner_runtime_rendered = self._render_builtin_call_owner_runtime(runtime_call, owner_expr, args)
         if owner_runtime_rendered is not None:
             return str(owner_runtime_rendered)
@@ -6370,6 +6421,54 @@ class CppEmitter(CodeEmitter):
                 return f"{owner_expr}.stem()"
             if op == "identity":
                 return owner_expr
+            return ""
+        if kind == "RuntimeSpecialOp":
+            op = self.any_dict_get_str(expr_d, "op", "")
+            if op == "perf_counter":
+                return "pytra::std::time::perf_counter()"
+            if op == "open":
+                open_args: list[str] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes:
+                        open_args.append(self.render_expr(arg_node))
+                elif self.any_dict_has(expr_d, "arg_exprs"):
+                    raw_args = self.any_to_list(expr_d.get("arg_exprs"))
+                    for raw_arg in raw_args:
+                        open_args.append(self.any_to_str(raw_arg))
+                return f"open({join_str_list(', ', open_args)})"
+            if op == "path_ctor":
+                path_args: list[str] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes:
+                        path_args.append(self.render_expr(arg_node))
+                elif self.any_dict_has(expr_d, "arg_exprs"):
+                    raw_args = self.any_to_list(expr_d.get("arg_exprs"))
+                    for raw_arg in raw_args:
+                        path_args.append(self.any_to_str(raw_arg))
+                return f"Path({join_str_list(', ', path_args)})"
+            if op == "runtime_error":
+                if self.any_dict_has(expr_d, "message"):
+                    message_expr = self.render_expr(expr_d.get("message"))
+                    return f"::std::runtime_error({message_expr})"
+                if self.any_dict_has(expr_d, "message_expr"):
+                    message_expr = self.any_dict_get_str(expr_d, "message_expr", '"error"')
+                    return f"::std::runtime_error({message_expr})"
+                return '::std::runtime_error("error")'
+            if op == "int_to_bytes":
+                owner_expr = self.render_expr(expr_d.get("owner"))
+                length_expr = "0"
+                if self.any_dict_has(expr_d, "length"):
+                    length_expr = self.render_expr(expr_d.get("length"))
+                elif self.any_dict_has(expr_d, "length_expr"):
+                    length_expr = self.any_dict_get_str(expr_d, "length_expr", "0")
+                byteorder_expr = '"little"'
+                if self.any_dict_has(expr_d, "byteorder"):
+                    byteorder_expr = self.render_expr(expr_d.get("byteorder"))
+                elif self.any_dict_has(expr_d, "byteorder_expr"):
+                    byteorder_expr = self.any_dict_get_str(expr_d, "byteorder_expr", '"little"')
+                return f"py_int_to_bytes({owner_expr}, {length_expr}, {byteorder_expr})"
             return ""
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
