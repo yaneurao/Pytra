@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options
+from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -35,24 +35,6 @@ def _replace_first(text: str, old: str, replacement: str) -> str:
     if pos < 0:
         return text
     return text[:pos] + replacement + text[pos + len(old) :]
-
-
-def _sort_str_list_in_place(items: list[str]) -> list[str]:
-    """selfhost 安定化用: list[str] の昇順ソート済みコピーを返す。"""
-    out: list[str] = []
-    for item in items:
-        out.append(item)
-    for i in range(1, len(out)):
-        key = out[i]
-        insert_at = i
-        for j in range(i - 1, -1, -1):
-            if out[j] > key:
-                out[j + 1] = out[j]
-                insert_at = j
-            else:
-                break
-        out[insert_at] = key
-    return out
 
 
 def _mkdirs_for_cli(path_txt: str) -> None:
@@ -1313,7 +1295,7 @@ class CppEmitter(CodeEmitter):
                         elif mod_name == "pytra.utils":
                             sym_inc = self._module_name_to_cpp_include("pytra.utils." + export_name)
                             _append_unique_non_empty(includes, seen, sym_inc)
-            includes = _sort_str_list_in_place(includes)
+            includes = sort_str_list_copy(includes)
             return includes
         for stmt in body:
             kind = self._node_kind_from_dict(stmt)
@@ -1341,7 +1323,7 @@ class CppEmitter(CodeEmitter):
                             continue
                         sym_inc = self._module_name_to_cpp_include("pytra.utils." + sym)
                         _append_unique_non_empty(includes, seen, sym_inc)
-        includes = _sort_str_list_in_place(includes)
+        includes = sort_str_list_copy(includes)
         return includes
 
     def _seed_import_maps_from_meta(self) -> None:
@@ -3892,7 +3874,7 @@ class CppEmitter(CodeEmitter):
                 and k not in seen_instance_fields
             ):
                 remaining_instance_keys.append(k)
-        remaining_instance_keys = _sort_str_list_in_place(remaining_instance_keys)
+        remaining_instance_keys = sort_str_list_copy(remaining_instance_keys)
         for fname in remaining_instance_keys:
             fty_fallback = self.current_class_fields.get(fname, "")
             if isinstance(fty_fallback, str):
@@ -3911,7 +3893,7 @@ class CppEmitter(CodeEmitter):
         for fname, _ in static_field_types.items():
             if fname not in static_emit_names:
                 extra_static_names.append(fname)
-        extra_static_names = _sort_str_list_in_place(extra_static_names)
+        extra_static_names = sort_str_list_copy(extra_static_names)
         for fname in extra_static_names:
             static_emit_names.append(fname)
         for fname in static_emit_names:
@@ -7206,7 +7188,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     visited_keys: list[str] = []
     for visited_key in visited_order:
         visited_keys.append(visited_key)
-    visited_keys = _sort_str_list_in_place(visited_keys)
+    visited_keys = sort_str_list_copy(visited_keys)
     for key in visited_keys:
         if key in key_to_path:
             user_module_files.append(str(key_to_path[key]))
@@ -7572,7 +7554,7 @@ def _write_multi_file_cpp(
     files: list[str] = []
     for mod_key, _east_obj in module_east_map.items():
         files.append(mod_key)
-    files = _sort_str_list_in_place(files)
+    files = sort_str_list_copy(files)
     module_ns_map: dict[str, str] = {}
     module_label_map: dict[str, str] = {}
     module_name_by_key: dict[str, str] = {}

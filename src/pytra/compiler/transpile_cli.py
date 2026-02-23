@@ -181,6 +181,24 @@ def dump_codegen_options_text(
     return out
 
 
+def sort_str_list_copy(items: list[str]) -> list[str]:
+    """`list[str]` を昇順へ整列したコピーを返す（selfhost-safe 実装）。"""
+    out: list[str] = []
+    for item in items:
+        out.append(item)
+    for i in range(1, len(out)):
+        key = out[i]
+        insert_at = i
+        for j in range(i - 1, -1, -1):
+            if out[j] > key:
+                out[j + 1] = out[j]
+                insert_at = j
+            else:
+                break
+        out[insert_at] = key
+    return out
+
+
 def empty_parse_dict() -> dict[str, str]:
     out: dict[str, str] = {}
     out["__error"] = ""
