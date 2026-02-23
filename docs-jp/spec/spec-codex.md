@@ -20,7 +20,7 @@
 - `docs/`（英語版）は必要に応じて後追い翻訳で更新してよく、同期が一時的に遅れることを許容します。
 - 日本語版と英語版で記述差分がある場合は、`docs-jp/` の内容を正として判断します。
 - `docs-jp/` 直下（トップレベル）への新規ファイル追加は原則禁止とし、必要時は同一ターンでの明示指示を必須とします。
-- 例外として、`docs-jp/plans/`、`docs-jp/language/`、`docs-jp/todo-history/`、`docs-jp/spec/` 配下は、運用ルールに沿う範囲で Codex が自律的に新規ファイルを作成してよいものとします。
+- 例外として、`docs-jp/plans/`、`docs-jp/language/`、`docs-jp/todo-history/`、`docs-jp/spec/`、`docs-jp/news/` 配下は、運用ルールに沿う範囲で Codex が自律的に新規ファイルを作成してよいものとします。
 
 ## 2. TODO 実施ルール
 
@@ -36,6 +36,7 @@
 - `README.md` からリンクされるドキュメント（`docs-jp/how-to-use.md`, `sample/readme-ja.md`, `docs-jp/spec/index.md`, `docs-jp/plans/pytra-wip.md`, `docs-jp/spec/spec-philosophy.md`）の整合性を確認し、必要なら同時更新します。
 - 実装とドキュメントの不一致を残さないことを、変更完了条件に含めます。
 - `tools/` にスクリプトを追加・削除・改名した場合は、`docs-jp/spec/spec-tools.md` を同時更新します。
+- `readme-jp.md` の「最新ニュース」は最新 3 件までを保持し、古くなったニュースは `docs-jp/news/YYYYMMDD-<slug>.md` へ移動して `docs-jp/news/index.md` に追記します。
 - 用語ルール: type annotation を指す場合は「注釈」ではなく必ず「型注釈」と記載します。
 - 記述ルール: 機能やフォルダ構成を説明するときは、何をするためのものか（目的性）を必ず明記します。
 - 記述ルール: 「どこに置くか」だけでなく「なぜそこに置くか」を併記し、`std` と `tra` の責務混在を防ぎます。

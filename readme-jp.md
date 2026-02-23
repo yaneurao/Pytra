@@ -40,6 +40,7 @@ Python から C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin への変�
 > **2026-02-23 | v0.1.0 リリース**  
 > Pythonの元ソースコードに極めて近いスタイルで、より読みやすい C++ コードを生成できるようになりました。  
 
+- 過去ニュース: [docs-jp/news/index.md](docs-jp/news/index.md)
 
 ## 実行速度の比較
 
