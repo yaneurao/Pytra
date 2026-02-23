@@ -100,7 +100,7 @@
 4. [x] [ID: P0-SH-04-S2-S1] `CodeEmitter` 本体へ dynamic hooks の有効/無効フラグを追加し、prepare 側 no-op パッチを本体機能へ移す土台を作る。
 5. [x] [ID: P0-SH-04-S2-S2] `tools/prepare_selfhost_source.py` の `_patch_code_emitter_hooks_for_selfhost` を、文字列置換から「フラグ設定のみ」へ縮退する。
 6. [x] [ID: P0-SH-04-S2-S3] `load_cpp_hooks` 経路の selfhost fallback を compiler 側へ移し、`_patch_load_cpp_hooks_for_selfhost` を撤去する。
-7. [ ] [ID: P0-SH-04-S3] selfhost 回帰（通常 + guard profile）を再計測し、prepare スクリプト依存の再流入を防ぐ。
+7. [x] [ID: P0-SH-04-S3] selfhost 回帰（通常 + guard profile）を再計測し、prepare スクリプト依存の再流入を防ぐ。
 8. [x] [ID: P0-SH-05] selfhost 暴走対策として fail-fast ガードを導入し、`--guard-profile {off,default,strict}` と個別上限（`--max-ast-depth`, `--max-parse-nodes`, `--max-symbols-per-module`, `--max-scope-depth`, `--max-import-graph-nodes`, `--max-import-graph-edges`, `--max-generated-lines`）を CLI から指定可能にする。制限超過時は `input_invalid(kind=limit_exceeded, stage=...)` で早期停止する。
 
 進捗メモ:
@@ -108,6 +108,7 @@
 - `P0-SH-04-S2-S1`: `CodeEmitter` に `dynamic_hooks_enabled` フラグと `set_dynamic_hooks_enabled()` を追加し、dynamic hook 呼び出しを本体機能で無効化できる土台を導入した（`test/unit/test_code_emitter.py` と `test/unit/test_prepare_selfhost_source.py` 回帰通過）。
 - `P0-SH-04-S2-S2`: `prepare_selfhost_source.py` の hook パッチを `_call_hook` 本体の `return fn(...)` 置換から、`CppEmitter.__init__` への `self.set_dynamic_hooks_enabled(False)` 挿入へ変更した（`test/unit/test_prepare_selfhost_source.py` 回帰通過）。
 - `P0-SH-04-S2-S3`: `src/py2cpp.py` の `load_cpp_hooks` を `_build_cpp_hooks_impl`（既定 `return {}` / 通常時 import で上書き）経由へ変更し、`tools/prepare_selfhost_source.py` から `_patch_load_cpp_hooks_for_selfhost` を削除した。`python3 tools/prepare_selfhost_source.py && python3 src/py2cpp.py selfhost/py2cpp.py -o /tmp/selfhost_check.cpp`、`python3 test/unit/test_prepare_selfhost_source.py`、`python3 tools/check_py2cpp_transpile.py` で回帰を確認した。
+- `P0-SH-04-S3`: `selfhost/py2cpp.py` の通常/guard（`default`/`strict`）変換を再計測し、出力 hash 一致を確認した（`/tmp/selfhost_{normal,guard_default,guard_strict}.cpp`）。`check_selfhost_cpp_diff --mode allow-not-implemented` は既知 `mismatches=3`、`verify_selfhost_end_to_end --skip-build` は `sample/py/01_mandelbrot.py` のみ失敗、`check_selfhost_direct_compile` は 3ケース `failures=0`。加えて `test_prepare_selfhost_source.py` に `_patch_load_cpp_hooks_for_selfhost` 非存在テストを追加し、prepare 依存の再流入を検知可能にした。
 - 詳細ログは `docs-jp/plans/p0-selfhost-stabilization.md` の `決定ログ` を参照。
 
 ## P1: CodeEmitter / Hooks 移行

@@ -29,6 +29,10 @@ def _slice_block(text: str, start_marker: str, end_marker: str) -> str:
 
 
 class PrepareSelfhostSourceTest(unittest.TestCase):
+    def test_load_cpp_hooks_patch_function_is_absent(self) -> None:
+        mod = _load_prepare_module()
+        self.assertFalse(hasattr(mod, "_patch_load_cpp_hooks_for_selfhost"))
+
     def test_remove_import_line_removes_required_imports(self) -> None:
         mod = _load_prepare_module()
         py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
