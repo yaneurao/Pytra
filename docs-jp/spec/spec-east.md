@@ -7,6 +7,8 @@
 
 この文書は `src/pytra/compiler/east.py` の現実装に合わせた EAST 仕様である。
 
+次期の三段構成（`EAST1` / `EAST2` / `EAST3`）設計は [spec-east123.md](./spec-east123.md) を参照。
+
 ## 1. 目的
 
 - EAST(Extended AST) は Python AST から、言語非依存の意味注釈付き JSON を生成する中間表現である。
