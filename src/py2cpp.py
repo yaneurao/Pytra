@@ -536,21 +536,24 @@ class CppEmitter(CodeEmitter):
             if not isinstance(local_name, str):
                 continue
             sym = self.any_to_dict_or_empty(sym_obj)
+            module_id = dict_any_get_str(sym, "module")
+            symbol = dict_any_get_str(sym, "name")
             set_import_symbol_binding_and_module_set(
                 self.import_symbols,
                 self.import_symbol_modules,
                 local_name,
-                self.any_to_str(sym.get("module")),
-                self.any_to_str(sym.get("name")),
+                module_id,
+                symbol,
             )
 
     def _seed_legacy_import_modules_from_meta(self, meta: dict[str, Any]) -> None:
         """legacy `meta.import_modules` を `self.import_modules` へ反映する。"""
         legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
-        for local_name, module_id_obj in legacy_mods.items():
+        for local_name, module_id_any in legacy_mods.items():
             if not isinstance(local_name, str):
                 continue
-            set_import_module_binding(self.import_modules, local_name, self.any_to_str(module_id_obj))
+            module_id = self.any_to_str(module_id_any)
+            set_import_module_binding(self.import_modules, local_name, module_id)
 
     def _seed_import_maps_from_meta(self) -> None:
         """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
