@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once
+from src.pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -196,6 +196,15 @@ class Py2CppFeatureTest(unittest.TestCase):
     def test_path_parent_text_returns_parent_dir(self) -> None:
         self.assertEqual(path_parent_text(Path("a/b/c.txt")), "a/b")
         self.assertEqual(path_parent_text(Path("file.txt")), ".")
+
+    def test_mkdirs_for_cli_creates_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            target = Path(td) / "nested" / "dir"
+            self.assertFalse(target.exists())
+            mkdirs_for_cli(str(target))
+            self.assertTrue(target.exists())
+            self.assertTrue(target.is_dir())
+            mkdirs_for_cli("")
 
     def test_parse_py2cpp_argv(self) -> None:
         parsed = parse_py2cpp_argv(

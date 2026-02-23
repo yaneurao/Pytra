@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options
+from pytra.compiler.transpile_cli import dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, validate_codegen_options
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -22,13 +22,6 @@ from pytra.std import sys
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT = Path("src/pytra/compiler")
-
-
-def _mkdirs_for_cli(path_txt: str) -> None:
-    """CLI 出力向けに親ディレクトリを作成する。"""
-    if path_txt == "":
-        return
-    os.makedirs(path_txt, exist_ok=True)
 
 
 def _write_text_file(path_obj: Path, text: str) -> None:
@@ -7497,8 +7490,8 @@ def _write_multi_file_cpp(
     """モジュールごとに `.h/.cpp` を `out/include`, `out/src` へ出力する。"""
     include_dir = output_dir / "include"
     src_dir = output_dir / "src"
-    _mkdirs_for_cli(str(include_dir))
-    _mkdirs_for_cli(str(src_dir))
+    mkdirs_for_cli(str(include_dir))
+    mkdirs_for_cli(str(src_dir))
     prelude_hdr = include_dir / "pytra_multi_prelude.h"
     prelude_txt = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
     prelude_txt += "#ifndef PYTRA_MULTI_PRELUDE_H\n"
@@ -7959,7 +7952,7 @@ def main(argv: list[str]) -> int:
         )
             if output_txt != "":
                 out_path = Path(output_txt)
-                _mkdirs_for_cli(path_parent_text(out_path))
+                mkdirs_for_cli(path_parent_text(out_path))
                 _write_text_file(out_path, options_text)
             else:
                 print(options_text, end="")
@@ -7988,7 +7981,7 @@ def main(argv: list[str]) -> int:
                 dep_text += dump_deps_graph_text(input_path)
             if output_txt != "":
                 out_path = Path(output_txt)
-                _mkdirs_for_cli(path_parent_text(out_path))
+                mkdirs_for_cli(path_parent_text(out_path))
                 _write_text_file(out_path, dep_text)
             else:
                 print(dep_text, end="")
@@ -8013,8 +8006,8 @@ def main(argv: list[str]) -> int:
             out_root = Path("src/runtime/cpp/pytra")
             cpp_out = out_root / (rel_tail + ".cpp")
             hdr_out = out_root / (rel_tail + ".h")
-            _mkdirs_for_cli(path_parent_text(cpp_out))
-            _mkdirs_for_cli(path_parent_text(hdr_out))
+            mkdirs_for_cli(path_parent_text(cpp_out))
+            mkdirs_for_cli(path_parent_text(hdr_out))
             runtime_ns_map: dict[str, str] = {}
             cpp_txt_runtime: str = _transpile_to_cpp_with_map(
                 east_module,
@@ -8068,7 +8061,7 @@ def main(argv: list[str]) -> int:
             _check_guard_limit("emit", "max_generated_lines", _count_text_lines(cpp), guard_limits, str(input_path))
             if header_output_txt != "":
                 hdr_path = Path(header_output_txt)
-                _mkdirs_for_cli(path_parent_text(hdr_path))
+                mkdirs_for_cli(path_parent_text(hdr_path))
                 hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt)
                 generated_lines_single = _count_text_lines(cpp) + _count_text_lines(hdr_txt)
                 _check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
@@ -8125,7 +8118,7 @@ def main(argv: list[str]) -> int:
 
     if output_txt != "":
         out_path = Path(output_txt)
-        _mkdirs_for_cli(path_parent_text(out_path))
+        mkdirs_for_cli(path_parent_text(out_path))
         _write_text_file(out_path, cpp)
     else:
         print(cpp)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytra.std import argparse
+from pytra.std import os
 from pytra.std.pathlib import Path
 from pytra.std.typing import Iterable
 
@@ -85,6 +86,13 @@ def path_parent_text(path_obj: Path) -> str:
     if last_sep <= 0:
         return "."
     return path_txt[:last_sep]
+
+
+def mkdirs_for_cli(path_txt: str) -> None:
+    """CLI 出力向けに親ディレクトリを作成する。"""
+    if path_txt == "":
+        return
+    os.makedirs(path_txt, exist_ok=True)
 
 
 def resolve_codegen_options(
