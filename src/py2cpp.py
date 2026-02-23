@@ -6107,14 +6107,12 @@ def _write_multi_file_cpp(
         import_symbols = dict_any_get_dict(meta, "import_symbols")
         dep_modules: set[str] = set()
         for _alias_any, module_id_obj in import_modules.items():
-            mod_name = module_id_obj if isinstance(module_id_obj, str) else ""
-            if mod_name != "":
-                dep_modules.add(mod_name)
+            if isinstance(module_id_obj, str) and module_id_obj != "":
+                dep_modules.add(module_id_obj)
         for _alias_any, sym_obj in import_symbols.items():
-            sym = sym_obj if isinstance(sym_obj, dict) else {}
-            mod_name = dict_any_get_str(sym, "module")
-            if mod_name != "":
-                dep_modules.add(mod_name)
+            module_id_obj = sym_obj.get("module") if isinstance(sym_obj, dict) else ""
+            if isinstance(module_id_obj, str) and module_id_obj != "":
+                dep_modules.add(module_id_obj)
         fwd_lines: list[str] = []
         for mod_name in dep_modules:
             if mod_name not in module_ns_map:
