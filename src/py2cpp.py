@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6782,34 +6782,11 @@ def _graph_cycle_dfs(
     color[key] = 2
 
 
-def _module_name_from_path_for_graph(root: Path, module_path: Path) -> str:
-    """import graph 用の module_id フォールバック解決。"""
-    root_txt = str(root)
-    path_txt = str(module_path)
-    in_root = False
-    if root_txt != "" and not root_txt.endswith("/"):
-        root_txt += "/"
-    rel = path_txt
-    if root_txt != "" and path_txt.startswith(root_txt):
-        rel = path_txt[len(root_txt) :]
-        in_root = True
-    if rel.endswith(".py"):
-        rel = rel[:-3]
-    rel = rel.replace("/", ".")
-    if rel.endswith(".__init__"):
-        rel = rel[: -9]
-    if not in_root:
-        stem = module_path.stem
-        stem = module_path.parent.name if stem == "__init__" else stem
-        rel = stem
-    return rel
-
-
 def _module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:
     """import graph 用の EAST module_id 抽出。"""
     meta = _dict_any_get_dict(east_doc, "meta")
     module_id = _dict_any_get_str(meta, "module_id")
-    return module_id if module_id != "" else _module_name_from_path_for_graph(root, module_path)
+    return module_id if module_id != "" else module_name_from_path_for_graph(root, module_path)
 
 
 def _resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> Path:
@@ -6904,7 +6881,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
         key_to_path[cur_key] = cur_path
         key_to_disp[cur_key] = rel_disp_for_graph(root, cur_path)
         if cur_key not in module_id_map:
-            module_id_map[cur_key] = _module_name_from_path_for_graph(root, cur_path)
+            module_id_map[cur_key] = module_name_from_path_for_graph(root, cur_path)
         east_cur: dict[str, Any] = {}
         try:
             east_cur = load_east(cur_path)
@@ -7109,7 +7086,7 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
         east = load_east(p, parser_backend)
         meta = _dict_any_get_dict(east, "meta")
         module_id = _dict_any_get_str(module_id_map, str(p))
-        module_id = module_id if module_id != "" else _module_name_from_path_for_graph(root_dir, p)
+        module_id = module_id if module_id != "" else module_name_from_path_for_graph(root_dir, p)
         if module_id != "":
             module_id_any: Any = module_id
             meta["module_id"] = module_id_any
