@@ -101,11 +101,13 @@ runtime に次を追加する。
 - `type_id`:
 1. `Any/object` 境界の dispatch を全面的に `type_id` で行う。
 2. Boxing/Unboxing、`bool/len/str`（および iterable を含む境界処理）を同一方式で解決する。
-3. JS/TS でも minify 有無に関わらず `type_id` dispatch を使う。
+3. 名目的型判定は `spec-type_id` で定義した `py_is_subtype` / `py_isinstance` / `py_issubclass` 契約に従う。
+4. JS/TS でも minify 有無に関わらず `type_id` dispatch を使う。
 - `native`:
 1. `type_id` dispatch を一切使わない。
 2. C++ は `virtual` hook（必要時 `dynamic_cast`）で解決する。
-3. JS/TS は言語ネイティブ機構で解決し、名前文字列依存 dispatch（`constructor.name` など）は禁止する。
+3. `isinstance` / `issubclass` は target 固有機構で解決するが、`spec-type_id` と同じ観測結果を満たす。
+4. JS/TS は言語ネイティブ機構で解決し、名前文字列依存 dispatch（`constructor.name` など）は禁止する。
 
 禁止事項:
 

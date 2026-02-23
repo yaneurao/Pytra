@@ -126,9 +126,11 @@
   - `Any/object` 境界の dispatch を全面的に `type_id` で行う。
   - iterable では `py_iter_or_raise` / `py_next_or_stop` を `type_id` dispatch で解決する。
   - Boxing/Unboxing、`bool/len/str`、`iter/next` のすべてで同一方式を使う。
+  - 名目的型判定（`isinstance` / `issubclass`）は `spec-type_id` の `py_is_subtype` / `py_isinstance` / `py_issubclass` 契約に従う。
 - `native`:
   - `type_id` dispatch を一切使わない。
   - C++ は virtual/hook（必要時 dynamic cast）、JS/TS は `Symbol.iterator` / `next` などネイティブ機構で解決する。
+  - `isinstance` / `issubclass` は target 固有機構で解決するが、`spec-type_id` と同じ観測結果を満たす。
   - `constructor.name` 依存 dispatch は禁止する。
 
 禁止事項:

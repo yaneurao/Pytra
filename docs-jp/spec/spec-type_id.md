@@ -90,6 +90,10 @@
 - `py_isinstance(obj: object, expected_type_id: int) -> bool`
 - `py_issubclass(actual_type_id: int, expected_type_id: int) -> bool`
 
+適用範囲:
+- `--object-dispatch-mode=type_id` では上記 3 API を判定の正規経路として必須化する。
+- `--object-dispatch-mode=native` では target 固有機構で同じ観測結果を満たす（必要なら互換 API 層を提供してよい）。
+
 規約:
 - `py_isinstance` は `obj.type_id` を取得し `py_is_subtype` を呼ぶだけにする。
 - 判定失敗は `false` を返し、例外は投げない。
@@ -109,12 +113,15 @@
 
 ## 9. ディスパッチモードとの関係
 
+- 共通 CLI: `--object-dispatch-mode {type_id,native}`（既定: `native`）。
+- 切替対象は `isinstance` / `issubclass` に加えて、boxing・iterable・`bool/len/str` を含む `Any/object` 境界全体とする。
 - `--object-dispatch-mode=type_id`:
   - `Any/object` 境界の `isinstance` / `issubclass` を `type_id` API で判定する。
   - boxing / iterable / truthy などの object 境界処理も同一モードで解決する（個別混在禁止）。
 - `--object-dispatch-mode=native`:
   - ターゲット固有のネイティブ機構で解決してよい。
   - ただし名前文字列依存 dispatch は禁止。
+- 禁止事項: 一部機能だけ `type_id`、他を `native` にする hybrid 運用。
 
 ## 10. ターゲット別要求
 

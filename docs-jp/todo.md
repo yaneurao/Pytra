@@ -48,7 +48,7 @@
 文脈: `docs-jp/plans/p0-typeid-isinstance-dispatch.md`（`TG-P0-TYPEID-ISINSTANCE`）
 
 1. [ ] [ID: P0-TID-01] `type_id` ベースの共通判定 API（`py_isinstance` / `py_is_subtype`）を C++/JS/TS runtime と各 emitter lower に統一導入する（`P0-TID-01-S1` から `P0-TID-01-S4` 完了でクローズ）。
-2. [ ] [ID: P0-TID-01-S1] `docs-jp/spec/spec-type_id.md` / `docs-jp/spec/spec-boxing.md` / `docs-jp/spec/spec-iterable.md` の整合を取り、`isinstance` 判定の共通 API 契約を確定する。
+2. [x] [ID: P0-TID-01-S1] `docs-jp/spec/spec-type_id.md` / `docs-jp/spec/spec-boxing.md` / `docs-jp/spec/spec-iterable.md` の整合を取り、`isinstance` 判定の共通 API 契約を確定する。
 3. [ ] [ID: P0-TID-01-S2] C++ runtime に `py_isinstance` / `py_is_subtype` を実装し、既存 call site を段階的に置換する。
 4. [ ] [ID: P0-TID-01-S3] JS/TS runtime に同等 API を実装し、`type_id` dispatch のオン/オフ方針（オプション切替）と整合させる。
 5. [ ] [ID: P0-TID-01-S4] `py2cpp` を含む各 emitter の `isinstance` lower を runtime API 経由へ統一し、target 固有 built-in 直書き分岐を縮退する。
@@ -59,6 +59,7 @@
 10. [ ] [ID: P0-TID-02-S4] C++ 側の手書き built-in 実装を最小ブート層（GC/ABI 等）へ限定し、移管済み処理の重複実装を解消する。
 
 進捗メモ:
+- `P0-TID-01-S1`: `spec-type_id` / `spec-boxing` / `spec-iterable` の3文書で、`--object-dispatch-mode` の一括切替範囲と `py_is_subtype` / `py_isinstance` / `py_issubclass` 契約を揃えて明文化した。
 - 詳細ログは `docs-jp/plans/p0-typeid-isinstance-dispatch.md` の `決定ログ` を参照。
 
 ## P0: Iterable/Iterator 契約反映（最優先）
