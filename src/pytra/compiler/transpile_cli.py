@@ -223,6 +223,26 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
     )
 
 
+def load_east_document_compat(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
+    """非 C++ CLI 互換の `load_east` 振る舞いで EAST を読み込む。"""
+    suffix = input_path.suffix.lower()
+    if suffix != ".json" and suffix != ".py":
+        raise RuntimeError("input must be .py or .json")
+    try:
+        doc = load_east_document(input_path, parser_backend=parser_backend)
+    except RuntimeError as ex:
+        if suffix == ".json":
+            parsed = parse_user_error(str(ex))
+            if dict_any_get_str(parsed, "category") == "input_invalid":
+                raise RuntimeError("EAST json root must be object") from ex
+        raise
+    if isinstance(doc, dict):
+        return doc
+    if suffix == ".json":
+        raise RuntimeError("EAST json root must be object")
+    raise RuntimeError("EAST root must be dict")
+
+
 def join_str_list(sep: str, items: list[str]) -> str:
     """区切り文字で `list[str]` を結合する selfhost-safe helper。"""
     return sep.join(items)

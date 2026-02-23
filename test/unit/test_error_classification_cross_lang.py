@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
@@ -34,6 +35,12 @@ MODULES = [
     py2kotlin,
 ]
 
+PHASE2_MODULES = [
+    py2cs,
+    py2js,
+    py2ts,
+]
+
 
 class ErrorClassificationCrossLanguageTest(unittest.TestCase):
     def test_invalid_json_root_is_classified_consistently(self) -> None:
@@ -55,6 +62,17 @@ class ErrorClassificationCrossLanguageTest(unittest.TestCase):
                     with self.assertRaises(RuntimeError) as cm:
                         mod.load_east(bad)
                     self.assertIn("input must be .py or .json", str(cm.exception))
+
+    def test_phase2_modules_accept_wrapped_east_json(self) -> None:
+        payload = {"ok": True, "east": {"kind": "Module", "body": []}}
+        with tempfile.TemporaryDirectory() as td:
+            wrapped = Path(td) / "wrapped.east.json"
+            wrapped.write_text(json.dumps(payload), encoding="utf-8")
+            for mod in PHASE2_MODULES:
+                with self.subTest(module=mod.__name__):
+                    doc = mod.load_east(wrapped)
+                    self.assertIsInstance(doc, dict)
+                    self.assertEqual(doc.get("kind"), "Module")
 
 
 if __name__ == "__main__":
