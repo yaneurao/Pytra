@@ -144,6 +144,7 @@ py2cpp / py2rs 共通化候補:
 5. [ ] [ID: P1-COMP-05] 共通抽出後、`py2cpp.py` は C++ 固有責務（C++ runtime/header/multi-file 出力）へ限定する。
 6. [ ] [ID: P1-COMP-09] `py2cpp.py` に残る汎用 helper（例: 文字列リスト整列、module 解析補助）を `src/pytra/compiler/` へ移管し、非 C++ 各 `py2*` から同一実装を再利用できる状態にする。
 7. [ ] [ID: P1-COMP-10] 「全言語 selfhost を阻害しない共通層優先」の運用ルールを整備し、`py2cpp.py` へ汎用処理が再流入しない回帰チェック（lint/静的検査または CI ルール）を追加する。
+8. [ ] [ID: P1-COMP-11] `src/pytra/compiler/transpile_cli.py` の汎用 helper 群を機能グループごとに `class + @staticmethod` へ整理し、`py2cpp.py` 側 import を class 単位へ縮退する。移行時はトップレベル互換ラッパーを暫定維持し、`tools/prepare_selfhost_source.py` / `test/unit/test_prepare_selfhost_source.py` の抽出ロジックも同時更新して selfhost 回帰を防ぐ。
 
 進捗メモ:
 - `P1-COMP-09` の一部として、`src/py2cpp.py` に残っていた汎用 helper `_sort_str_list_in_place` を `src/pytra/compiler/transpile_cli.py::sort_str_list_copy` へ移管し、`py2cpp` 側は共通 helper 呼び出しへ置換した。selfhost 展開を壊さないよう `tools/prepare_selfhost_source.py` の `transpile_cli` import 除去ターゲットと support block 抽出対象へ同 helper を追加し、`test/unit/test_py2cpp_features.py` と `test/unit/test_prepare_selfhost_source.py` へ回帰を追加した。`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_sort_str_list_copy_returns_sorted_copy`、`python3 test/unit/test_prepare_selfhost_source.py`、`python3 tools/check_py2cpp_transpile.py`、`python3 tools/build_selfhost.py`、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`、`python3 tools/check_transpiler_version_gate.py` を通過させた。

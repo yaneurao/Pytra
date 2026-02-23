@@ -3,7 +3,7 @@
 最終更新: 2026-02-23
 
 関連 TODO:
-- `docs-jp/todo.md` の `ID: P1-COMP-01` 〜 `P1-COMP-10`
+- `docs-jp/todo.md` の `ID: P1-COMP-01` 〜 `P1-COMP-11`
 
 背景:
 - import グラフ解析や module index 構築など全言語共通処理が `py2cpp.py` に偏在している。
@@ -52,6 +52,21 @@
 5. Phase 4（旧経路の縮退）
    - `py2cpp.py` を含む各 CLI から重複した project 解析コードを削除する。
    - 共通 API 層に回帰テストを追加し、CLI 層は配線テスト中心へ移行する。
+
+`P1-COMP-11` 移行計画（`transpile_cli` helper の `class + @staticmethod` 化）:
+
+1. Phase A（互換レイヤ導入）
+   - `src/pytra/compiler/transpile_cli.py` に機能グループ単位の utility class を追加し、現行トップレベル関数は互換ラッパーとして維持する。
+   - 既存 CLI / test を壊さないことを優先し、公開関数名・戻り値スキーマは不変とする。
+2. Phase B（呼び出し側縮退）
+   - `py2cpp.py` を起点に `from ... import <many helpers>` を class import ベースへ段階移行する。
+   - 置換は機械変換で行い、差分は構文/参照名の変更に限定する。
+3. Phase C（selfhost 同期）
+   - `tools/prepare_selfhost_source.py` の support block 抽出を class 構造対応へ更新する。
+   - `test/unit/test_prepare_selfhost_source.py` の import 除去・抽出期待値を更新し、selfhost 経路で回帰を固定する。
+4. Phase D（旧経路撤去）
+   - すべての呼び出しが class 側へ移行した段階でトップレベル互換ラッパーを撤去する。
+   - `check_py2cpp_transpile` / `build_selfhost` / `check_selfhost_cpp_diff` を完走させ、回帰なしを完了条件とする。
 
 完了条件:
 - 非 C++ の各 CLI が、project 解析を `src/pytra/compiler/` 共通 API 経由で実行する。
