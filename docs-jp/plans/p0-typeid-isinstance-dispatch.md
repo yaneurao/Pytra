@@ -50,6 +50,11 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
 - `P0-TID-02-S4-S2`: 手書き層に残す最小ブート責務（GC/ABI/`PyObj` 基盤）と生成層へ移す `type_id` 判定責務を確定し、移行パッチを作成する。
 - `P0-TID-02-S4-S3`: 参照先を生成層優先へ切り替え、重複シンボルを削除したうえで C++ 回帰を通す。
 
+`S4-S2` の責務境界（確定）:
+- `py_runtime.h`（手書き）: GC/ABI、`PyObj` ベース、`make_object` 系と既存公開 API 入口（互換維持）。
+- `pytra-gen/built_in/type_id.*`（生成）: `type_id` の registry/subtype 意味論（`py_tid_*`）正本。
+- `S4-S3` で `py_runtime.h` 公開 API (`py_is_subtype` など) から `py_tid_*` へ段階委譲し、重複実装を削除する。
+
 ## 受け入れ基準
 
 - `isinstance(x, T)` が `type_id` ベースでユーザー定義型/派生型まで判定できる。
@@ -77,6 +82,7 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
 - 2026-02-23: `P0-TID-01-S3` を完了。JS/TS runtime の `pyIsSubtype` / `pyIsInstance` と class `type_id` 登録（`pyRegisterClassType`）運用を確認し、`python3 test/unit/test_js_ts_runtime_dispatch.py`（3件成功）、`python3 test/unit/test_py2js_smoke.py`（10件成功）、`python3 test/unit/test_py2ts_smoke.py`（8件成功）で回帰なしを確認した。
 - 2026-02-23: `P0-TID-01-S4` を完了。emitter 側 `isinstance` lower の runtime API 経由統一（C++/JS/TS/C#/Rust）を確認し、`python3 test/unit/test_py2cs_smoke.py`（10件成功）、`python3 test/unit/test_py2rs_smoke.py`（18件成功）、`python3 tools/check_py2cpp_transpile.py` / `python3 tools/check_py2js_transpile.py` / `python3 tools/check_py2ts_transpile.py` / `python3 tools/check_py2cs_transpile.py` / `python3 tools/check_py2rs_transpile.py`（いずれも `checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。
 - 2026-02-23: `P0-TID-02-S1` を完了。`src/pytra/built_in/` を新設し、`__init__.py` と `README.md` で配置・命名・生成対象ルール（正本層 / 生成先 / 低レベル層境界）を確定した。
-- 2026-02-23: `P0-TID-02-S2` を完了。`src/pytra/built_in/type_id.py` へ `py_register_class_type` / `py_is_subtype` / `py_issubclass` / `py_runtime_type_id` / `py_isinstance` の pure Python 実装を移管し、`python3 test/unit/test_pytra_built_in_type_id.py`（4件成功）で回帰なしを確認した。
+- 2026-02-23: `P0-TID-02-S2` を完了。`src/pytra/built_in/type_id.py` へ `py_tid_register_class_type` / `py_tid_is_subtype` / `py_tid_issubclass` / `py_tid_runtime_type_id` / `py_tid_isinstance` の pure Python 実装を移管し、`python3 test/unit/test_pytra_built_in_type_id.py`（4件成功）で回帰なしを確認した。
 - 2026-02-23: `P0-TID-02-S3` を完了。`py2cpp.py --emit-runtime-cpp` の対象に `src/pytra/built_in/` を追加し、`python3 src/py2cpp.py src/pytra/built_in/type_id.py --emit-runtime-cpp` で `src/runtime/cpp/pytra-gen/built_in/type_id.{h,cpp}` と互換フォワーダー `src/runtime/cpp/pytra/built_in/type_id.{h,cpp}` が生成されることを確認した。回帰として `python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_runtime_module_tail_and_namespace_support_compiler_tree`、`python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）を実行した。
 - 2026-02-23: `P0-TID-02-S4-S1` を完了。`src/runtime/cpp/pytra-core/built_in/py_runtime.h` と `src/runtime/cpp/pytra-gen/built_in/type_id.*` を棚卸しし、重複対象を `PYTRA_TID_*`、`py_register_class_type`、`py_is_subtype`、`py_issubclass`、`py_runtime_type_id`、`py_isinstance` と確定した。移行作業を `S4-S1`〜`S4-S3` へ分割した。
+- 2026-02-23: `P0-TID-02-S4-S2` を完了。`src/pytra/built_in/type_id.py` を `PYB_TID_*` / `py_tid_*` 命名へ再設計して手書き API と衝突しない生成形へ移行し、`python3 src/py2cpp.py src/pytra/built_in/type_id.py --emit-runtime-cpp` 後の `src/runtime/cpp/pytra-gen/built_in/type_id.cpp` が `g++ -std=c++17 -I src -I src/runtime/cpp -fsyntax-only` を通ることを確認した。
