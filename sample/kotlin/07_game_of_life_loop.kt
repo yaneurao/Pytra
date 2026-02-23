@@ -1,75 +1,146 @@
-// このファイルは自動生成です（Python -> Kotlin node-backed mode）。
-
-// Kotlin 実行向け Node.js ランタイム補助。
-
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.Base64
-import java.util.UUID
-
-/**
- * Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
- */
-object PyRuntime {
-    /**
-     * @param sourceBase64 JavaScript ソースコードの Base64 文字列。
-     * @param args JavaScript 側へ渡す引数配列。
-     * @return node プロセスの終了コード。失敗時は 1 を返す。
-     */
-    @JvmStatic
-    fun runEmbeddedNode(sourceBase64: String, args: Array<String>): Int {
-        val sourceBytes: ByteArray = try {
-            Base64.getDecoder().decode(sourceBase64)
-        } catch (ex: IllegalArgumentException) {
-            System.err.println("error: failed to decode embedded JavaScript source")
-            return 1
-        }
-
-        val tempFile: Path = try {
-            val name = "pytra_embedded_${UUID.randomUUID()}.js"
-            val p = File(System.getProperty("java.io.tmpdir"), name).toPath()
-            Files.write(p, sourceBytes)
-            p
-        } catch (ex: Exception) {
-            System.err.println("error: failed to write temporary JavaScript file: ${ex.message}")
-            return 1
-        }
-
-        val command = mutableListOf("node", tempFile.toString())
-        command.addAll(args)
-        val process: Process = try {
-            ProcessBuilder(command)
-                .inheritIO()
-                .start()
-        } catch (ex: Exception) {
-            System.err.println("error: failed to launch node: ${ex.message}")
-            try {
-                Files.deleteIfExists(tempFile)
-            } catch (_: Exception) {
+// このファイルは EAST ベース Kotlin プレビュー出力です。
+// TODO: 専用 KotlinEmitter 実装へ段階移行する。
+fun main() {
+    /*
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    
+    public static class Program
+    {
+        // 07: Sample that outputs Game of Life evolution as a GIF.
+        
+        public static List<List<long>> next_state(List<List<long>> grid, long w, long h)
+        {
+            List<List<long>> nxt = new List<unknown>();
+            for (long y = 0; y < h; y += 1) {
+                List<long> row = new List<unknown>();
+                for (long x = 0; x < w; x += 1) {
+                    long cnt = 0;
+                    for (long dy = (-1); dy < 2; dy += 1) {
+                        for (long dx = (-1); dx < 2; dx += 1) {
+                            if ((dx != 0) || (dy != 0)) {
+                                long nx = ((((x + dx) + w)) % w);
+                                long ny = ((((y + dy) + h)) % h);
+                                cnt += grid[(int)(ny)][(int)(nx)];
+                            }
+                        }
+                    }
+                    long alive = grid[(int)(y)][(int)(x)];
+                    if ((alive == 1) && ((cnt == 2) || (cnt == 3))) {
+                        row.Add(1);
+                    } else {
+                        if ((alive == 0) && (cnt == 3)) {
+                            row.Add(1);
+                        } else {
+                            row.Add(0);
+                        }
+                    }
+                }
+                nxt.Add(row);
             }
-            return 1
+            return nxt;
         }
-
-        val code = process.waitFor()
-        try {
-            Files.deleteIfExists(tempFile)
-        } catch (_: Exception) {
+        
+        public static List<byte> render(List<List<long>> grid, long w, long h, long cell)
+        {
+            long width = (w * cell);
+            long height = (h * cell);
+            List<byte> frame = bytearray((width * height));
+            for (long y = 0; y < h; y += 1) {
+                for (long x = 0; x < w; x += 1) {
+                    long v = (grid[(int)(y)][(int)(x)] ? 255 : 0);
+                    for (long yy = 0; yy < cell; yy += 1) {
+                        long py_base = (((((y * cell) + yy)) * width) + (x * cell));
+                        for (long xx = 0; xx < cell; xx += 1) {
+                            frame[(int)((py_base + xx))] = v;
+                        }
+                    }
+                }
+            }
+            return bytes(frame);
         }
-        return code
+        
+        public static void run_07_game_of_life_loop()
+        {
+            long w = 144;
+            long h = 108;
+            long cell = 4;
+            long steps = 105;
+            string out_path = "sample/out/07_game_of_life_loop.gif";
+            
+            unknown start = perf_counter();
+            List<List<long>> grid = [[0] * w for _ in range(h)];
+            
+            // Lay down sparse noise so the whole field is less likely to stabilize too early.
+            // Avoid large integer literals so all transpilers handle the expression consistently.
+            for (long y = 0; y < h; y += 1) {
+                for (long x = 0; x < w; x += 1) {
+                    long noise = ((((((x * 37) + (y * 73)) + ((x * y) % 19)) + (((x + y)) % 11))) % 97);
+                    if (noise < 3) {
+                        grid[(int)(y)][(int)(x)] = 1;
+                    }
+                }
+            }
+            // Place multiple well-known long-lived patterns.
+            List<List<long>> glider = new List<List<long>>();
+            List<List<long>> r_pentomino = new List<List<long>>();
+            List<List<long>> lwss = new List<List<long>>();
+            
+            for (long gy = 8; gy < (h - 8); gy += 18) {
+                for (long gx = 8; gx < (w - 8); gx += 22) {
+                    long kind = ((((gx * 7) + (gy * 11))) % 3);
+                    if (kind == 0) {
+                        long ph = (glider).Count;
+                        for (long py = 0; py < ph; py += 1) {
+                            long pw = (glider[(int)(py)]).Count;
+                            for (long px = 0; px < pw; px += 1) {
+                                if (glider[(int)(py)][(int)(px)] == 1) {
+                                    grid[(int)((((gy + py)) % h))][(int)((((gx + px)) % w))] = 1;
+                                }
+                            }
+                        }
+                    } else {
+                        if (kind == 1) {
+                            long ph = (r_pentomino).Count;
+                            for (long py = 0; py < ph; py += 1) {
+                                long pw = (r_pentomino[(int)(py)]).Count;
+                                for (long px = 0; px < pw; px += 1) {
+                                    if (r_pentomino[(int)(py)][(int)(px)] == 1) {
+                                        grid[(int)((((gy + py)) % h))][(int)((((gx + px)) % w))] = 1;
+                                    }
+                                }
+                            }
+                        } else {
+                            long ph = (lwss).Count;
+                            for (long py = 0; py < ph; py += 1) {
+                                long pw = (lwss[(int)(py)]).Count;
+                                for (long px = 0; px < pw; px += 1) {
+                                    if (lwss[(int)(py)][(int)(px)] == 1) {
+                                        grid[(int)((((gy + py)) % h))][(int)((((gx + px)) % w))] = 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            List<List<byte>> frames = new List<unknown>();
+            for (long _ = 0; _ < steps; _ += 1) {
+                frames.Add(render(grid, w, h, cell));
+                grid = next_state(grid, w, h);
+            }
+            save_gif(out_path, (w * cell), (h * cell), frames, grayscale_palette());
+            unknown elapsed = (perf_counter() - start);
+            Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
+            Console.WriteLine(string.Join(" ", new object[] { "frames:", steps }));
+            Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+        }
+        
+        public static void Main(string[] args)
+        {
+                run_07_game_of_life_loop();
+        }
     }
-}
-
-class pytra_07_game_of_life_loop {
-    companion object {
-        // 埋め込み JavaScript ソース（Base64）。
-        private const val PYTRA_EMBEDDED_JS_BASE64: String = "Ly8gZ2VuZXJhdGVkIGludGVybmFsIEphdmFTY3JpcHQKCmNvbnN0IF9fcHl0cmFfcm9vdCA9IHByb2Nlc3MuY3dkKCk7CmNvbnN0IHB5X3J1bnRpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9weV9ydW50aW1lLmpzJyk7CmNvbnN0IHB5X21hdGggPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9tYXRoLmpzJyk7CmNvbnN0IHB5X3RpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS90aW1lLmpzJyk7CmNvbnN0IHsgcHlQcmludCwgcHlMZW4sIHB5Qm9vbCwgcHlSYW5nZSwgcHlGbG9vckRpdiwgcHlNb2QsIHB5SW4sIHB5U2xpY2UsIHB5T3JkLCBweUNociwgcHlCeXRlYXJyYXksIHB5Qnl0ZXMsIHB5SXNEaWdpdCwgcHlJc0FscGhhIH0gPSBweV9ydW50aW1lOwpjb25zdCB7IHBlcmZDb3VudGVyIH0gPSBweV90aW1lOwpjb25zdCBwZXJmX2NvdW50ZXIgPSBwZXJmQ291bnRlcjsKY29uc3QgeyBncmF5c2NhbGVfcGFsZXR0ZSwgc2F2ZV9naWYgfSA9IHJlcXVpcmUoX19weXRyYV9yb290ICsgJy9zcmMvanNfbW9kdWxlL2dpZl9oZWxwZXIuanMnKTsKCmZ1bmN0aW9uIG5leHRfc3RhdGUoZ3JpZCwgdywgaCkgewogICAgbGV0IG54dCA9IFtdOwogICAgbGV0IHk7CiAgICBmb3IgKGxldCBfX3B5dHJhX2lfMSA9IDA7IF9fcHl0cmFfaV8xIDwgaDsgX19weXRyYV9pXzEgKz0gMSkgewogICAgICAgIHkgPSBfX3B5dHJhX2lfMTsKICAgICAgICBsZXQgcm93ID0gW107CiAgICAgICAgbGV0IHg7CiAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzIgPSAwOyBfX3B5dHJhX2lfMiA8IHc7IF9fcHl0cmFfaV8yICs9IDEpIHsKICAgICAgICAgICAgeCA9IF9fcHl0cmFfaV8yOwogICAgICAgICAgICBsZXQgY250ID0gMDsKICAgICAgICAgICAgbGV0IGR5OwogICAgICAgICAgICBmb3IgKGxldCBfX3B5dHJhX2lfMyA9ICgtKDEpKTsgX19weXRyYV9pXzMgPCAyOyBfX3B5dHJhX2lfMyArPSAxKSB7CiAgICAgICAgICAgICAgICBkeSA9IF9fcHl0cmFfaV8zOwogICAgICAgICAgICAgICAgbGV0IGR4OwogICAgICAgICAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzQgPSAoLSgxKSk7IF9fcHl0cmFfaV80IDwgMjsgX19weXRyYV9pXzQgKz0gMSkgewogICAgICAgICAgICAgICAgICAgIGR4ID0gX19weXRyYV9pXzQ7CiAgICAgICAgICAgICAgICAgICAgaWYgKHB5Qm9vbCgoKChkeCkgIT09ICgwKSkgfHwgKChkeSkgIT09ICgwKSkpKSkgewogICAgICAgICAgICAgICAgICAgICAgICBsZXQgbnggPSBweU1vZCgoKCgoeCkgKyAoZHgpKSkgKyAodykpLCB3KTsKICAgICAgICAgICAgICAgICAgICAgICAgbGV0IG55ID0gcHlNb2QoKCgoKHkpICsgKGR5KSkpICsgKGgpKSwgaCk7CiAgICAgICAgICAgICAgICAgICAgICAgIGNudCA9IGNudCArIGdyaWRbbnldW254XTsKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KICAgICAgICAgICAgbGV0IGFsaXZlID0gZ3JpZFt5XVt4XTsKICAgICAgICAgICAgaWYgKHB5Qm9vbCgoKChhbGl2ZSkgPT09ICgxKSkgJiYgKCgoY250KSA9PT0gKDIpKSB8fCAoKGNudCkgPT09ICgzKSkpKSkpIHsKICAgICAgICAgICAgICAgIHJvdy5wdXNoKDEpOwogICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgaWYgKHB5Qm9vbCgoKChhbGl2ZSkgPT09ICgwKSkgJiYgKChjbnQpID09PSAoMykpKSkpIHsKICAgICAgICAgICAgICAgICAgICByb3cucHVzaCgxKTsKICAgICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAgICAgcm93LnB1c2goMCk7CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICAgICAgbnh0LnB1c2gocm93KTsKICAgIH0KICAgIHJldHVybiBueHQ7Cn0KZnVuY3Rpb24gcmVuZGVyKGdyaWQsIHcsIGgsIGNlbGwpIHsKICAgIGxldCB3aWR0aCA9ICgodykgKiAoY2VsbCkpOwogICAgbGV0IGhlaWdodCA9ICgoaCkgKiAoY2VsbCkpOwogICAgbGV0IGZyYW1lID0gcHlCeXRlYXJyYXkoKCh3aWR0aCkgKiAoaGVpZ2h0KSkpOwogICAgbGV0IHk7CiAgICBmb3IgKGxldCBfX3B5dHJhX2lfNSA9IDA7IF9fcHl0cmFfaV81IDwgaDsgX19weXRyYV9pXzUgKz0gMSkgewogICAgICAgIHkgPSBfX3B5dHJhX2lfNTsKICAgICAgICBsZXQgeDsKICAgICAgICBmb3IgKGxldCBfX3B5dHJhX2lfNiA9IDA7IF9fcHl0cmFfaV82IDwgdzsgX19weXRyYV9pXzYgKz0gMSkgewogICAgICAgICAgICB4ID0gX19weXRyYV9pXzY7CiAgICAgICAgICAgIGxldCB2ID0gKHB5Qm9vbChncmlkW3ldW3hdKSA/IDI1NSA6IDApOwogICAgICAgICAgICBsZXQgeXk7CiAgICAgICAgICAgIGZvciAobGV0IF9fcHl0cmFfaV83ID0gMDsgX19weXRyYV9pXzcgPCBjZWxsOyBfX3B5dHJhX2lfNyArPSAxKSB7CiAgICAgICAgICAgICAgICB5eSA9IF9fcHl0cmFfaV83OwogICAgICAgICAgICAgICAgbGV0IGJhc2UgPSAoKCgoKCgoKHkpICogKGNlbGwpKSkgKyAoeXkpKSkgKiAod2lkdGgpKSkgKyAoKCh4KSAqIChjZWxsKSkpKTsKICAgICAgICAgICAgICAgIGxldCB4eDsKICAgICAgICAgICAgICAgIGZvciAobGV0IF9fcHl0cmFfaV84ID0gMDsgX19weXRyYV9pXzggPCBjZWxsOyBfX3B5dHJhX2lfOCArPSAxKSB7CiAgICAgICAgICAgICAgICAgICAgeHggPSBfX3B5dHJhX2lfODsKICAgICAgICAgICAgICAgICAgICBmcmFtZVsoKGJhc2UpICsgKHh4KSldID0gdjsKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KICAgIHJldHVybiBweUJ5dGVzKGZyYW1lKTsKfQpmdW5jdGlvbiBydW5fMDdfZ2FtZV9vZl9saWZlX2xvb3AoKSB7CiAgICBsZXQgdyA9IDE0NDsKICAgIGxldCBoID0gMTA4OwogICAgbGV0IGNlbGwgPSA0OwogICAgbGV0IHN0ZXBzID0gMjEwOwogICAgbGV0IG91dF9wYXRoID0gJ3NhbXBsZS9vdXQvMDdfZ2FtZV9vZl9saWZlX2xvb3AuZ2lmJzsKICAgIGxldCBzdGFydCA9IHBlcmZfY291bnRlcigpOwogICAgbGV0IGdyaWQgPSBbXTsKICAgIGxldCBfOwogICAgZm9yIChsZXQgX19weXRyYV9pXzkgPSAwOyBfX3B5dHJhX2lfOSA8IGg7IF9fcHl0cmFfaV85ICs9IDEpIHsKICAgICAgICBfID0gX19weXRyYV9pXzk7CiAgICAgICAgbGV0IHJvdyA9IFtdOwogICAgICAgIGZvciAobGV0IF9fcHl0cmFfaV8xMCA9IDA7IF9fcHl0cmFfaV8xMCA8IHc7IF9fcHl0cmFfaV8xMCArPSAxKSB7CiAgICAgICAgICAgIF8gPSBfX3B5dHJhX2lfMTA7CiAgICAgICAgICAgIHJvdy5wdXNoKDApOwogICAgICAgIH0KICAgICAgICBncmlkLnB1c2gocm93KTsKICAgIH0KICAgIGxldCB5OwogICAgZm9yIChsZXQgX19weXRyYV9pXzExID0gMDsgX19weXRyYV9pXzExIDwgaDsgX19weXRyYV9pXzExICs9IDEpIHsKICAgICAgICB5ID0gX19weXRyYV9pXzExOwogICAgICAgIGxldCB4OwogICAgICAgIGZvciAobGV0IF9fcHl0cmFfaV8xMiA9IDA7IF9fcHl0cmFfaV8xMiA8IHc7IF9fcHl0cmFfaV8xMiArPSAxKSB7CiAgICAgICAgICAgIHggPSBfX3B5dHJhX2lfMTI7CiAgICAgICAgICAgIGxldCBub2lzZSA9IHB5TW9kKCgoKCgoKCgoeCkgKiAoMzcpKSkgKyAoKCh5KSAqICg3MykpKSkpICsgKHB5TW9kKCgoeCkgKiAoeSkpLCAxOSkpKSkgKyAocHlNb2QoKCh4KSArICh5KSksIDExKSkpLCA5Nyk7CiAgICAgICAgICAgIGlmIChweUJvb2woKChub2lzZSkgPCAoMykpKSkgewogICAgICAgICAgICAgICAgZ3JpZFt5XVt4XSA9IDE7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9CiAgICBsZXQgZ2xpZGVyID0gW1swLCAxLCAwXSwgWzAsIDAsIDFdLCBbMSwgMSwgMV1dOwogICAgbGV0IHJfcGVudG9taW5vID0gW1swLCAxLCAxXSwgWzEsIDEsIDBdLCBbMCwgMSwgMF1dOwogICAgbGV0IGx3c3MgPSBbWzAsIDEsIDEsIDEsIDFdLCBbMSwgMCwgMCwgMCwgMV0sIFswLCAwLCAwLCAwLCAxXSwgWzEsIDAsIDAsIDEsIDBdXTsKICAgIGxldCBneTsKICAgIGZvciAobGV0IF9fcHl0cmFfaV8xMyA9IDg7ICgxOCA+IDAgPyBfX3B5dHJhX2lfMTMgPCAoKGgpIC0gKDgpKSA6IF9fcHl0cmFfaV8xMyA+ICgoaCkgLSAoOCkpKTsgX19weXRyYV9pXzEzICs9IDE4KSB7CiAgICAgICAgZ3kgPSBfX3B5dHJhX2lfMTM7CiAgICAgICAgbGV0IGd4OwogICAgICAgIGZvciAobGV0IF9fcHl0cmFfaV8xNCA9IDg7ICgyMiA+IDAgPyBfX3B5dHJhX2lfMTQgPCAoKHcpIC0gKDgpKSA6IF9fcHl0cmFfaV8xNCA+ICgodykgLSAoOCkpKTsgX19weXRyYV9pXzE0ICs9IDIyKSB7CiAgICAgICAgICAgIGd4ID0gX19weXRyYV9pXzE0OwogICAgICAgICAgICBsZXQga2luZCA9IHB5TW9kKCgoKChneCkgKiAoNykpKSArICgoKGd5KSAqICgxMSkpKSksIDMpOwogICAgICAgICAgICBpZiAocHlCb29sKCgoa2luZCkgPT09ICgwKSkpKSB7CiAgICAgICAgICAgICAgICBsZXQgcGggPSBweUxlbihnbGlkZXIpOwogICAgICAgICAgICAgICAgbGV0IHB5OwogICAgICAgICAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzE1ID0gMDsgX19weXRyYV9pXzE1IDwgcGg7IF9fcHl0cmFfaV8xNSArPSAxKSB7CiAgICAgICAgICAgICAgICAgICAgcHkgPSBfX3B5dHJhX2lfMTU7CiAgICAgICAgICAgICAgICAgICAgbGV0IHB3ID0gcHlMZW4oZ2xpZGVyW3B5XSk7CiAgICAgICAgICAgICAgICAgICAgbGV0IHB4OwogICAgICAgICAgICAgICAgICAgIGZvciAobGV0IF9fcHl0cmFfaV8xNiA9IDA7IF9fcHl0cmFfaV8xNiA8IHB3OyBfX3B5dHJhX2lfMTYgKz0gMSkgewogICAgICAgICAgICAgICAgICAgICAgICBweCA9IF9fcHl0cmFfaV8xNjsKICAgICAgICAgICAgICAgICAgICAgICAgaWYgKHB5Qm9vbCgoKGdsaWRlcltweV1bcHhdKSA9PT0gKDEpKSkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGdyaWRbcHlNb2QoKChneSkgKyAocHkpKSwgaCldW3B5TW9kKCgoZ3gpICsgKHB4KSksIHcpXSA9IDE7CiAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICBpZiAocHlCb29sKCgoa2luZCkgPT09ICgxKSkpKSB7CiAgICAgICAgICAgICAgICAgICAgbGV0IHBoID0gcHlMZW4ocl9wZW50b21pbm8pOwogICAgICAgICAgICAgICAgICAgIGxldCBweTsKICAgICAgICAgICAgICAgICAgICBmb3IgKGxldCBfX3B5dHJhX2lfMTcgPSAwOyBfX3B5dHJhX2lfMTcgPCBwaDsgX19weXRyYV9pXzE3ICs9IDEpIHsKICAgICAgICAgICAgICAgICAgICAgICAgcHkgPSBfX3B5dHJhX2lfMTc7CiAgICAgICAgICAgICAgICAgICAgICAgIGxldCBwdyA9IHB5TGVuKHJfcGVudG9taW5vW3B5XSk7CiAgICAgICAgICAgICAgICAgICAgICAgIGxldCBweDsKICAgICAgICAgICAgICAgICAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzE4ID0gMDsgX19weXRyYV9pXzE4IDwgcHc7IF9fcHl0cmFfaV8xOCArPSAxKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBweCA9IF9fcHl0cmFfaV8xODsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChweUJvb2woKChyX3BlbnRvbWlub1tweV1bcHhdKSA9PT0gKDEpKSkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBncmlkW3B5TW9kKCgoZ3kpICsgKHB5KSksIGgpXVtweU1vZCgoKGd4KSArIChweCkpLCB3KV0gPSAxOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgICAgICAgICBsZXQgcGggPSBweUxlbihsd3NzKTsKICAgICAgICAgICAgICAgICAgICBsZXQgcHk7CiAgICAgICAgICAgICAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzE5ID0gMDsgX19weXRyYV9pXzE5IDwgcGg7IF9fcHl0cmFfaV8xOSArPSAxKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIHB5ID0gX19weXRyYV9pXzE5OwogICAgICAgICAgICAgICAgICAgICAgICBsZXQgcHcgPSBweUxlbihsd3NzW3B5XSk7CiAgICAgICAgICAgICAgICAgICAgICAgIGxldCBweDsKICAgICAgICAgICAgICAgICAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzIwID0gMDsgX19weXRyYV9pXzIwIDwgcHc7IF9fcHl0cmFfaV8yMCArPSAxKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBweCA9IF9fcHl0cmFfaV8yMDsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChweUJvb2woKChsd3NzW3B5XVtweF0pID09PSAoMSkpKSkgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGdyaWRbcHlNb2QoKChneSkgKyAocHkpKSwgaCldW3B5TW9kKCgoZ3gpICsgKHB4KSksIHcpXSA9IDE7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9CiAgICBsZXQgZnJhbWVzID0gW107CiAgICBmb3IgKGxldCBfX3B5dHJhX2lfMjEgPSAwOyBfX3B5dHJhX2lfMjEgPCBzdGVwczsgX19weXRyYV9pXzIxICs9IDEpIHsKICAgICAgICBfID0gX19weXRyYV9pXzIxOwogICAgICAgIGZyYW1lcy5wdXNoKHJlbmRlcihncmlkLCB3LCBoLCBjZWxsKSk7CiAgICAgICAgZ3JpZCA9IG5leHRfc3RhdGUoZ3JpZCwgdywgaCk7CiAgICB9CiAgICBzYXZlX2dpZihvdXRfcGF0aCwgKCh3KSAqIChjZWxsKSksICgoaCkgKiAoY2VsbCkpLCBmcmFtZXMsIGdyYXlzY2FsZV9wYWxldHRlKCksIDQsIDApOwogICAgbGV0IGVsYXBzZWQgPSAoKHBlcmZfY291bnRlcigpKSAtIChzdGFydCkpOwogICAgcHlQcmludCgnb3V0cHV0OicsIG91dF9wYXRoKTsKICAgIHB5UHJpbnQoJ2ZyYW1lczonLCBzdGVwcyk7CiAgICBweVByaW50KCdlbGFwc2VkX3NlYzonLCBlbGFwc2VkKTsKfQpydW5fMDdfZ2FtZV9vZl9saWZlX2xvb3AoKTsK"
-
-        // エントリポイント。
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val code = PyRuntime.runEmbeddedNode(PYTRA_EMBEDDED_JS_BASE64, args)
-            kotlin.system.exitProcess(code)
-        }
-    }
+    */
 }

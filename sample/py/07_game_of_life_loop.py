@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from pytra.runtime.gif import grayscale_palette, save_gif
+from pytra.utils.gif import grayscale_palette, save_gif
 
 
 def next_state(grid: list[list[int]], w: int, h: int) -> list[list[int]]:
@@ -48,7 +48,7 @@ def run_07_game_of_life_loop() -> None:
     w = 144
     h = 108
     cell = 4
-    steps = 210
+    steps = 105
     out_path = "sample/out/07_game_of_life_loop.gif"
 
     start = perf_counter()

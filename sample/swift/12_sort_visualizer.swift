@@ -1,55 +1,86 @@
-// このファイルは自動生成です（Python -> Swift node-backed mode）。
-
-// Swift 実行向け Node.js ランタイム補助。
-
+// このファイルは EAST ベース Swift プレビュー出力です。
+// TODO: 専用 SwiftEmitter 実装へ段階移行する。
 import Foundation
 
-/// Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
-/// - Parameters:
-///   - sourceBase64: JavaScript ソースコードの Base64 文字列。
-///   - args: JavaScript 側へ渡す引数配列。
-/// - Returns:
-///   node プロセスの終了コード。失敗時は 1 を返す。
-func pytraRunEmbeddedNode(_ sourceBase64: String, _ args: [String]) -> Int32 {
-    guard let sourceData = Data(base64Encoded: sourceBase64) else {
-        fputs("error: failed to decode embedded JavaScript source\n", stderr)
-        return 1
+func main() {
+    /*
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    
+    public static class Program
+    {
+        // 12: Sample that outputs intermediate states of bubble sort as a GIF.
+        
+        public static List<byte> render(List<long> values, long w, long h)
+        {
+            List<byte> frame = bytearray((w * h));
+            long n = (values).Count;
+            double bar_w = (w / n);
+            for (long i = 0; i < n; i += 1) {
+                long x0 = Convert.ToInt64((i * bar_w));
+                long x1 = Convert.ToInt64((((i + 1)) * bar_w));
+                if (x1 <= x0) {
+                    x1 = (x0 + 1);
+                }
+                long bh = Convert.ToInt64((((values[(int)(i)] / n)) * h));
+                long y = (h - bh);
+                for (long y = y; y < h; y += 1) {
+                    for (long x = x0; x < x1; x += 1) {
+                        frame[(int)(((y * w) + x))] = 255;
+                    }
+                }
+            }
+            return bytes(frame);
+        }
+        
+        public static void run_12_sort_visualizer()
+        {
+            long w = 320;
+            long h = 180;
+            long n = 124;
+            string out_path = "sample/out/12_sort_visualizer.gif";
+            
+            unknown start = perf_counter();
+            List<long> values = new List<unknown>();
+            for (long i = 0; i < n; i += 1) {
+                values.Add(((((i * 37) + 19)) % n));
+            }
+            List<List<byte>> frames = new List<List<byte>>();
+            long frame_stride = 16;
+            
+            long op = 0;
+            for (long i = 0; i < n; i += 1) {
+                bool swapped = false;
+                for (long j = 0; j < ((n - i) - 1); j += 1) {
+                    if (values[(int)(j)] > values[(int)((j + 1))]) {
+                        var __tmp_1 = (values[(int)((j + 1))], values[(int)(j)]);
+                        values[(int)(j)] = __tmp_1.Item1;
+                        values[(int)((j + 1))] = __tmp_1.Item2;
+                        swapped = true;
+                    }
+                    if ((op % frame_stride) == 0) {
+                        frames.Add(render(values, w, h));
+                    }
+                    op += 1;
+                }
+                if (!swapped) {
+                    py_break;
+                }
+            }
+            save_gif(out_path, w, h, frames, grayscale_palette());
+            unknown elapsed = (perf_counter() - start);
+            Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
+            Console.WriteLine(string.Join(" ", new object[] { "frames:", (frames).Count }));
+            Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+        }
+        
+        public static void Main(string[] args)
+        {
+                run_12_sort_visualizer();
+        }
     }
-
-    let tmpDir = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-    let fileName = "pytra_embedded_\(UUID().uuidString).js"
-    let scriptURL = tmpDir.appendingPathComponent(fileName)
-
-    do {
-        try sourceData.write(to: scriptURL)
-    } catch {
-        fputs("error: failed to write temporary JavaScript file: \(error)\n", stderr)
-        return 1
-    }
-
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    process.arguments = ["node", scriptURL.path] + args
-    process.environment = ProcessInfo.processInfo.environment
-    process.standardInput = FileHandle.standardInput
-    process.standardOutput = FileHandle.standardOutput
-    process.standardError = FileHandle.standardError
-
-    do {
-        try process.run()
-        process.waitUntilExit()
-    } catch {
-        fputs("error: failed to launch node: \(error)\n", stderr)
-        try? FileManager.default.removeItem(at: scriptURL)
-        return 1
-    }
-
-    try? FileManager.default.removeItem(at: scriptURL)
-    return process.terminationStatus
+    */
 }
 
-// 埋め込み JavaScript ソース（Base64）。
-let pytraEmbeddedJsBase64 = "Ly8gZ2VuZXJhdGVkIGludGVybmFsIEphdmFTY3JpcHQKCmNvbnN0IF9fcHl0cmFfcm9vdCA9IHByb2Nlc3MuY3dkKCk7CmNvbnN0IHB5X3J1bnRpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9weV9ydW50aW1lLmpzJyk7CmNvbnN0IHB5X21hdGggPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS9tYXRoLmpzJyk7CmNvbnN0IHB5X3RpbWUgPSByZXF1aXJlKF9fcHl0cmFfcm9vdCArICcvc3JjL2pzX21vZHVsZS90aW1lLmpzJyk7CmNvbnN0IHsgcHlQcmludCwgcHlMZW4sIHB5Qm9vbCwgcHlSYW5nZSwgcHlGbG9vckRpdiwgcHlNb2QsIHB5SW4sIHB5U2xpY2UsIHB5T3JkLCBweUNociwgcHlCeXRlYXJyYXksIHB5Qnl0ZXMsIHB5SXNEaWdpdCwgcHlJc0FscGhhIH0gPSBweV9ydW50aW1lOwpjb25zdCB7IHBlcmZDb3VudGVyIH0gPSBweV90aW1lOwpjb25zdCBwZXJmX2NvdW50ZXIgPSBwZXJmQ291bnRlcjsKY29uc3QgeyBncmF5c2NhbGVfcGFsZXR0ZSwgc2F2ZV9naWYgfSA9IHJlcXVpcmUoX19weXRyYV9yb290ICsgJy9zcmMvanNfbW9kdWxlL2dpZl9oZWxwZXIuanMnKTsKCmZ1bmN0aW9uIHJlbmRlcih2YWx1ZXMsIHcsIGgpIHsKICAgIGxldCBmcmFtZSA9IHB5Qnl0ZWFycmF5KCgodykgKiAoaCkpKTsKICAgIGxldCBuID0gcHlMZW4odmFsdWVzKTsKICAgIGxldCBiYXJfdyA9ICgodykgLyAobikpOwogICAgbGV0IGk7CiAgICBmb3IgKGxldCBfX3B5dHJhX2lfMSA9IDA7IF9fcHl0cmFfaV8xIDwgbjsgX19weXRyYV9pXzEgKz0gMSkgewogICAgICAgIGkgPSBfX3B5dHJhX2lfMTsKICAgICAgICBsZXQgeDAgPSBNYXRoLnRydW5jKE51bWJlcigoKGkpICogKGJhcl93KSkpKTsKICAgICAgICBsZXQgeDEgPSBNYXRoLnRydW5jKE51bWJlcigoKCgoaSkgKyAoMSkpKSAqIChiYXJfdykpKSk7CiAgICAgICAgaWYgKHB5Qm9vbCgoKHgxKSA8PSAoeDApKSkpIHsKICAgICAgICAgICAgeDEgPSAoKHgwKSArICgxKSk7CiAgICAgICAgfQogICAgICAgIGxldCBiaCA9IE1hdGgudHJ1bmMoTnVtYmVyKCgoKCh2YWx1ZXNbaV0pIC8gKG4pKSkgKiAoaCkpKSk7CiAgICAgICAgbGV0IHkgPSAoKGgpIC0gKGJoKSk7CiAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzIgPSB5OyBfX3B5dHJhX2lfMiA8IGg7IF9fcHl0cmFfaV8yICs9IDEpIHsKICAgICAgICAgICAgeSA9IF9fcHl0cmFfaV8yOwogICAgICAgICAgICBsZXQgeDsKICAgICAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzMgPSB4MDsgX19weXRyYV9pXzMgPCB4MTsgX19weXRyYV9pXzMgKz0gMSkgewogICAgICAgICAgICAgICAgeCA9IF9fcHl0cmFfaV8zOwogICAgICAgICAgICAgICAgZnJhbWVbKCgoKHkpICogKHcpKSkgKyAoeCkpXSA9IDI1NTsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KICAgIHJldHVybiBweUJ5dGVzKGZyYW1lKTsKfQpmdW5jdGlvbiBydW5fMTJfc29ydF92aXN1YWxpemVyKCkgewogICAgbGV0IHcgPSAzMjA7CiAgICBsZXQgaCA9IDE4MDsKICAgIGxldCBuID0gMTI0OwogICAgbGV0IG91dF9wYXRoID0gJ3NhbXBsZS9vdXQvMTJfc29ydF92aXN1YWxpemVyLmdpZic7CiAgICBsZXQgc3RhcnQgPSBwZXJmX2NvdW50ZXIoKTsKICAgIGxldCB2YWx1ZXMgPSBbXTsKICAgIGxldCBpOwogICAgZm9yIChsZXQgX19weXRyYV9pXzQgPSAwOyBfX3B5dHJhX2lfNCA8IG47IF9fcHl0cmFfaV80ICs9IDEpIHsKICAgICAgICBpID0gX19weXRyYV9pXzQ7CiAgICAgICAgdmFsdWVzLnB1c2gocHlNb2QoKCgoKGkpICogKDM3KSkpICsgKDE5KSksIG4pKTsKICAgIH0KICAgIGxldCBmcmFtZXMgPSBbcmVuZGVyKHZhbHVlcywgdywgaCldOwogICAgbGV0IG9wID0gMDsKICAgIGZvciAobGV0IF9fcHl0cmFfaV81ID0gMDsgX19weXRyYV9pXzUgPCBuOyBfX3B5dHJhX2lfNSArPSAxKSB7CiAgICAgICAgaSA9IF9fcHl0cmFfaV81OwogICAgICAgIGxldCBzd2FwcGVkID0gZmFsc2U7CiAgICAgICAgbGV0IGo7CiAgICAgICAgZm9yIChsZXQgX19weXRyYV9pXzYgPSAwOyBfX3B5dHJhX2lfNiA8ICgoKChuKSAtIChpKSkpIC0gKDEpKTsgX19weXRyYV9pXzYgKz0gMSkgewogICAgICAgICAgICBqID0gX19weXRyYV9pXzY7CiAgICAgICAgICAgIGlmIChweUJvb2woKCh2YWx1ZXNbal0pID4gKHZhbHVlc1soKGopICsgKDEpKV0pKSkpIHsKICAgICAgICAgICAgICAgIGxldCB0bXAgPSB2YWx1ZXNbal07CiAgICAgICAgICAgICAgICB2YWx1ZXNbal0gPSB2YWx1ZXNbKChqKSArICgxKSldOwogICAgICAgICAgICAgICAgdmFsdWVzWygoaikgKyAoMSkpXSA9IHRtcDsKICAgICAgICAgICAgICAgIHN3YXBwZWQgPSB0cnVlOwogICAgICAgICAgICB9CiAgICAgICAgICAgIGlmIChweUJvb2woKChweU1vZChvcCwgOCkpID09PSAoMCkpKSkgewogICAgICAgICAgICAgICAgZnJhbWVzLnB1c2gocmVuZGVyKHZhbHVlcywgdywgaCkpOwogICAgICAgICAgICB9CiAgICAgICAgICAgIG9wID0gb3AgKyAxOwogICAgICAgIH0KICAgICAgICBpZiAocHlCb29sKCghcHlCb29sKHN3YXBwZWQpKSkpIHsKICAgICAgICAgICAgYnJlYWs7CiAgICAgICAgfQogICAgfQogICAgc2F2ZV9naWYob3V0X3BhdGgsIHcsIGgsIGZyYW1lcywgZ3JheXNjYWxlX3BhbGV0dGUoKSwgMywgMCk7CiAgICBsZXQgZWxhcHNlZCA9ICgocGVyZl9jb3VudGVyKCkpIC0gKHN0YXJ0KSk7CiAgICBweVByaW50KCdvdXRwdXQ6Jywgb3V0X3BhdGgpOwogICAgcHlQcmludCgnZnJhbWVzOicsIHB5TGVuKGZyYW1lcykpOwogICAgcHlQcmludCgnZWxhcHNlZF9zZWM6JywgZWxhcHNlZCk7Cn0KcnVuXzEyX3NvcnRfdmlzdWFsaXplcigpOwo="
-let pytraArgs = Array(CommandLine.arguments.dropFirst())
-let pytraCode = pytraRunEmbeddedNode(pytraEmbeddedJsBase64, pytraArgs)
-Foundation.exit(pytraCode)
+main()

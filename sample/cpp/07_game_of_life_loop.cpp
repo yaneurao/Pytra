@@ -1,7 +1,12 @@
-#include "cpp_module/py_runtime.h"
+#include "runtime/cpp/pytra/built_in/py_runtime.h"
+
+#include "pytra/std/time.h"
+#include "pytra/utils/gif.h"
 
 
-// 07: Game of Life の進化をGIF出力するサンプル。
+
+
+// 07: Sample that outputs Game of Life evolution as a GIF.
 
 list<list<int64>> next_state(const list<list<int64>>& grid, int64 w, int64 h) {
     list<list<int64>> nxt = list<list<int64>>{};
@@ -20,15 +25,15 @@ list<list<int64>> next_state(const list<list<int64>>& grid, int64 w, int64 h) {
             }
             int64 alive = grid[y][x];
             if ((alive == 1) && ((cnt == 2) || (cnt == 3))) {
-                row.append(1);
+                row.append(int64(1));
             } else {
                 if ((alive == 0) && (cnt == 3))
-                    row.append(1);
+                    row.append(int64(1));
                 else
-                    row.append(0);
+                    row.append(int64(0));
             }
         }
-        nxt.append(row);
+        nxt.append(list<int64>(row));
     }
     return nxt;
 }
@@ -54,20 +59,14 @@ void run_07_game_of_life_loop() {
     int64 w = 144;
     int64 h = 108;
     int64 cell = 4;
-    int64 steps = 210;
+    int64 steps = 105;
     str out_path = "sample/out/07_game_of_life_loop.gif";
     
-    std::any start = make_object(perf_counter());
-    list<list<int64>> grid = list<list<int64>>{};
-    for (int64 _ = 0; _ < h; ++_) {
-        list<int64> row = list<int64>{};
-        for (int64 _ = 0; _ < w; ++_)
-            row.append(0);
-        grid.append(row);
-    }
+    auto start = pytra::std::time::perf_counter();
+    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>{0}, w)));     }     return __out; }();
     
-    // 疎なノイズを敷いて、全体が早期に固定化しにくい土台を作る。
-    // 大きな整数リテラルを使わない式にして、各トランスパイラで同一に扱えるようにする。
+    // Lay down sparse noise so the whole field is less likely to stabilize too early.
+    // Avoid large integer literals so all transpilers handle the expression consistently.
     for (int64 y = 0; y < h; ++y) {
         for (int64 x = 0; x < w; ++x) {
             int64 noise = (x * 37 + y * 73 + x * y % 19 + (x + y) % 11) % 97;
@@ -75,8 +74,7 @@ void run_07_game_of_life_loop() {
                 grid[y][x] = 1;
         }
     }
-    
-    // 代表的な長寿命パターンを複数配置する。
+    // Place multiple well-known long-lived patterns.
     list<list<int64>> glider = list<list<int64>>{list<int64>{0, 1, 0}, list<int64>{0, 0, 1}, list<int64>{1, 1, 1}};
     list<list<int64>> r_pentomino = list<list<int64>>{list<int64>{0, 1, 1}, list<int64>{1, 1, 0}, list<int64>{0, 1, 0}};
     list<list<int64>> lwss = list<list<int64>>{list<int64>{0, 1, 1, 1, 1}, list<int64>{1, 0, 0, 0, 1}, list<int64>{0, 0, 0, 0, 1}, list<int64>{1, 0, 0, 1, 0}};
@@ -84,8 +82,9 @@ void run_07_game_of_life_loop() {
     for (int64 gy = 8; 18 > 0 ? gy < h - 8 : gy > h - 8; gy += 18) {
         for (int64 gx = 8; 22 > 0 ? gx < w - 8 : gx > w - 8; gx += 22) {
             int64 kind = (gx * 7 + gy * 11) % 3;
+            int64 ph;
             if (kind == 0) {
-                int64 ph = py_len(glider);
+                ph = py_len(glider);
                 for (int64 py = 0; py < ph; ++py) {
                     int64 pw = py_len(glider[py]);
                     for (int64 px = 0; px < pw; ++px) {
@@ -95,7 +94,7 @@ void run_07_game_of_life_loop() {
                 }
             } else {
                 if (kind == 1) {
-                    int64 ph = py_len(r_pentomino);
+                    ph = py_len(r_pentomino);
                     for (int64 py = 0; py < ph; ++py) {
                         int64 pw = py_len(r_pentomino[py]);
                         for (int64 px = 0; px < pw; ++px) {
@@ -104,7 +103,7 @@ void run_07_game_of_life_loop() {
                         }
                     }
                 } else {
-                    int64 ph = py_len(lwss);
+                    ph = py_len(lwss);
                     for (int64 py = 0; py < ph; ++py) {
                         int64 pw = py_len(lwss[py]);
                         for (int64 px = 0; px < pw; ++px) {
@@ -116,16 +115,13 @@ void run_07_game_of_life_loop() {
             }
         }
     }
-    
     list<bytes> frames = list<bytes>{};
     for (int64 _ = 0; _ < steps; ++_) {
-        frames.append(render(grid, w, h, cell));
+        frames.append(bytes(render(grid, w, h, cell)));
         grid = next_state(grid, w, h);
     }
-    
-    // bridge: Python gif.save_gif -> C++ runtime save_gif
-    save_gif(out_path, w * cell, h * cell, frames, grayscale_palette(), 4, 0);
-    std::any elapsed = make_object(perf_counter() - start);
+    pytra::utils::gif::save_gif(out_path, w * cell, h * cell, frames, pytra::utils::gif::grayscale_palette(), 4, 0);
+    auto elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", steps);
     py_print("elapsed_sec:", elapsed);

@@ -1,78 +1,75 @@
-// このファイルは自動生成です（Python -> TypeScript native mode）。
-
+// このファイルは EAST ベース TypeScript プレビュー出力です。
+// TODO: 専用 TSEmitter 実装へ段階移行する。
 const __pytra_root = process.cwd();
-const py_runtime = require(__pytra_root + '/src/ts_module/py_runtime.ts');
-const py_math = require(__pytra_root + '/src/ts_module/math.ts');
-const py_time = require(__pytra_root + '/src/ts_module/time.ts');
-const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
-const { perfCounter } = py_time;
-const perf_counter = perfCounter;
-const { grayscale_palette, save_gif } = require(__pytra_root + '/src/ts_module/gif_helper.ts');
+const py_runtime = require(__pytra_root + '/src/js_module/py_runtime.js');
+const { PYTRA_TYPE_ID, PY_TYPE_BOOL, PY_TYPE_NUMBER, PY_TYPE_STRING, PY_TYPE_ARRAY, PY_TYPE_MAP, PY_TYPE_SET, PY_TYPE_OBJECT, pyRegisterClassType, pyIsInstance } = py_runtime;
+
+import { perf_counter } from "./time.js";
+import { grayscale_palette } from "./pytra/utils/gif.js";
+import { save_gif } from "./pytra/utils/gif.js";
+
+// 12: Sample that outputs intermediate states of bubble sort as a GIF.
 
 function render(values, w, h) {
-    let frame = pyBytearray(((w) * (h)));
-    let n = pyLen(values);
-    let bar_w = ((w) / (n));
-    let i;
-    for (let __pytra_i_1 = 0; __pytra_i_1 < n; __pytra_i_1 += 1) {
-        i = __pytra_i_1;
-        let x0 = Math.trunc(Number(((i) * (bar_w))));
-        let x1 = Math.trunc(Number(((((i) + (1))) * (bar_w))));
-        if (pyBool(((x1) <= (x0)))) {
-            x1 = ((x0) + (1));
+    let frame = bytearray((w * h));
+    let n = (values).length;
+    let bar_w = (w / n);
+    for (let i = 0; i < n; i += 1) {
+        let x0 = Math.trunc(Number((i * bar_w)));
+        let x1 = Math.trunc(Number((((i + 1)) * bar_w)));
+        if (x1 <= x0) {
+            x1 = (x0 + 1);
         }
-        let bh = Math.trunc(Number(((((values[i]) / (n))) * (h))));
-        let y = ((h) - (bh));
-        for (let __pytra_i_2 = y; __pytra_i_2 < h; __pytra_i_2 += 1) {
-            y = __pytra_i_2;
-            let x;
-            for (let __pytra_i_3 = x0; __pytra_i_3 < x1; __pytra_i_3 += 1) {
-                x = __pytra_i_3;
-                frame[((((y) * (w))) + (x))] = 255;
+        let bh = Math.trunc(Number((((values[i] / n)) * h)));
+        let y = (h - bh);
+        for (let y = y; y < h; y += 1) {
+            for (let x = x0; x < x1; x += 1) {
+                frame[((y * w) + x)] = 255;
             }
         }
     }
-    return pyBytes(frame);
+    return bytes(frame);
 }
+
 function run_12_sort_visualizer() {
     let w = 320;
     let h = 180;
     let n = 124;
-    let out_path = 'sample/out/12_sort_visualizer.gif';
+    let out_path = "sample/out/12_sort_visualizer.gif";
+    
     let start = perf_counter();
     let values = [];
-    let i;
-    for (let __pytra_i_4 = 0; __pytra_i_4 < n; __pytra_i_4 += 1) {
-        i = __pytra_i_4;
-        values.push(pyMod(((((i) * (37))) + (19)), n));
+    for (let i = 0; i < n; i += 1) {
+        values.push(((((i * 37) + 19)) % n));
     }
-    let frames = [render(values, w, h)];
+    let frames = [];
+    let frame_stride = 16;
+    
     let op = 0;
-    for (let __pytra_i_5 = 0; __pytra_i_5 < n; __pytra_i_5 += 1) {
-        i = __pytra_i_5;
+    for (let i = 0; i < n; i += 1) {
         let swapped = false;
-        let j;
-        for (let __pytra_i_6 = 0; __pytra_i_6 < ((((n) - (i))) - (1)); __pytra_i_6 += 1) {
-            j = __pytra_i_6;
-            if (pyBool(((values[j]) > (values[((j) + (1))])))) {
-                let tmp = values[j];
-                values[j] = values[((j) + (1))];
-                values[((j) + (1))] = tmp;
+        for (let j = 0; j < ((n - i) - 1); j += 1) {
+            if (values[j] > values[(j + 1)]) {
+                const __tmp_1 = [values[(j + 1)], values[j]];
+                values[j] = __tmp_1[0];
+                values[(j + 1)] = __tmp_1[1];
                 swapped = true;
             }
-            if (pyBool(((pyMod(op, 8)) === (0)))) {
+            if ((op % frame_stride) === 0) {
                 frames.push(render(values, w, h));
             }
-            op = op + 1;
+            op += 1;
         }
-        if (pyBool((!pyBool(swapped)))) {
-            break;
+        if (!swapped) {
+            py_break;
         }
     }
-    save_gif(out_path, w, h, frames, grayscale_palette(), 3, 0);
-    let elapsed = ((perf_counter()) - (start));
-    pyPrint('output:', out_path);
-    pyPrint('frames:', pyLen(frames));
-    pyPrint('elapsed_sec:', elapsed);
+    save_gif(out_path, w, h, frames, grayscale_palette());
+    let elapsed = (perf_counter() - start);
+    console.log("output:", out_path);
+    console.log("frames:", (frames).length);
+    console.log("elapsed_sec:", elapsed);
 }
+
+// __main__ guard
 run_12_sort_visualizer();

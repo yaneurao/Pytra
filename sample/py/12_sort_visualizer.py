@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from pytra.runtime.gif import grayscale_palette, save_gif
+from pytra.utils.gif import grayscale_palette, save_gif
 
 
 def render(values: list[int], w: int, h: int) -> bytes:
@@ -36,6 +36,7 @@ def run_12_sort_visualizer() -> None:
         values.append((i * 37 + 19) % n)
 
     frames: list[bytes] = [render(values, w, h)]
+    frame_stride = 16
 
     op = 0
     for i in range(n):
@@ -44,7 +45,7 @@ def run_12_sort_visualizer() -> None:
             if values[j] > values[j + 1]:
                 values[j], values[j + 1] = values[j + 1], values[j]
                 swapped = True
-            if op % 8 == 0:
+            if op % frame_stride == 0:
                 frames.append(render(values, w, h))
             op += 1
         if not swapped:

@@ -68,14 +68,14 @@
     },
     "07_game_of_life_loop": {
       "artifact": {
-        "sha256": "9993def8d6da1689fc70c143a63bc0e9be90a6b60cabab735204d9f627459771",
-        "size": 118039911,
+        "sha256": "8f297dda2b259111269b28f9b3b835e676f919c88c570f724018ea128e288260",
+        "size": 59020356,
         "suffix": ".gif"
       },
       "source_rel": "sample/py/07_game_of_life_loop.py",
-      "source_sha256": "9a188079f55c795afa807c1a18b9f3f96e86b24063dea9200a248a61679a206a",
-      "stdout_normalized": "output: sample/out/07_game_of_life_loop.gif\nframes: 210",
-      "stdout_sha256": "32215e86f7a253a0d77105461e26dc20ff277e523cb962825425cd05134543ee"
+      "source_sha256": "895c3043be051cfcdb5d449fbb458c6042be9e994a09c1b24bfdcc8486512f35",
+      "stdout_normalized": "output: sample/out/07_game_of_life_loop.gif\nframes: 105",
+      "stdout_sha256": "6f9e253f437d9c14d4a661a188915bb22deab1cb1ab2be5c14fb8e8ba0aa6a76"
     },
     "08_langtons_ant": {
       "artifact": {
@@ -123,14 +123,14 @@
     },
     "12_sort_visualizer": {
       "artifact": {
-        "sha256": "3e8431a01c09c7d75ea0b64fc0ed2483e612e3aab66d610cd4c293d9e5665153",
-        "size": 122715277,
+        "sha256": "95318268be580fd858b2b8ebee1996c0a686b2b8322a9cca9e4856719b1c61fb",
+        "size": 61423105,
         "suffix": ".gif"
       },
       "source_rel": "sample/py/12_sort_visualizer.py",
-      "source_sha256": "96d544a67f8689fa9cd5911b89f92f562ee0dc17798ed47c0ce7cf66a1600fc3",
-      "stdout_normalized": "output: sample/out/12_sort_visualizer.gif\nframes: 943",
-      "stdout_sha256": "b59486d9d91cde3c6f819a3ec1091da792da908f7a7ee45beed4692264aad099"
+      "source_sha256": "b1fd98890c99282225bba79f33b06ac108421c2a43cdc0d02630d8952ceaa67a",
+      "stdout_normalized": "output: sample/out/12_sort_visualizer.gif\nframes: 472",
+      "stdout_sha256": "0a50f903f68d92447b3f8fa57fe8e9399e57b299a4b73aac29cc6a98a8800894"
     },
     "13_maze_generation_steps": {
       "artifact": {
