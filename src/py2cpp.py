@@ -4240,13 +4240,12 @@ class CppEmitter(CodeEmitter):
         """BuiltinCall の owner 付き runtime_call 分岐を描画する。"""
         if runtime_call in {"std::filesystem::exists", "::std::filesystem::exists"} and owner_expr != "" and len(args) == 0:
             return f"{runtime_call}({owner_expr})"
-        if runtime_call == "py_replace" and owner_expr != "" and len(args) >= 2:
-            return f"py_replace({owner_expr}, {args[0]}, {args[1]})"
-        if runtime_call in {"py_startswith", "py_endswith", "py_find", "py_rfind"} and owner_expr != "" and len(args) >= 1:
-            return f"{runtime_call}({owner_expr}, {join_str_list(', ', args)})"
-        if runtime_call != "" and (self._is_std_runtime_call(runtime_call) or runtime_call.startswith("py_")):
-            if owner_expr != "" and runtime_call.startswith("py_") and len(args) == 0:
-                return f"{runtime_call}({owner_expr})"
+        if runtime_call != "" and runtime_call.startswith("py_"):
+            py_args = list(args)
+            if owner_expr != "":
+                py_args = [owner_expr] + py_args
+            return f"{runtime_call}({join_str_list(', ', py_args)})"
+        if runtime_call != "" and self._is_std_runtime_call(runtime_call):
             return f"{runtime_call}({join_str_list(', ', args)})"
         return None
 

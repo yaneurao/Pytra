@@ -1226,6 +1226,18 @@ class East3CppBridgeTest(unittest.TestCase):
         out_none = emitter._build_any_boundary_expr_from_builtin_call("bool", "static_cast", [concrete_arg])
         self.assertIsNone(out_none)
 
+    def test_builtin_call_owner_runtime_py_calls_use_owner_first_arg(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        replace_call = emitter._render_builtin_call_owner_runtime("py_replace", "s", ['"a"', '"b"'])
+        starts_call = emitter._render_builtin_call_owner_runtime("py_startswith", "s", ['"x"'])
+        strip_call = emitter._render_builtin_call_owner_runtime("py_strip", "s", [])
+        ownerless_print = emitter._render_builtin_call_owner_runtime("py_print", "", ["v"])
+
+        self.assertEqual(replace_call, 'py_replace(s, "a", "b")')
+        self.assertEqual(starts_call, 'py_startswith(s, "x")')
+        self.assertEqual(strip_call, "py_strip(s)")
+        self.assertEqual(ownerless_print, "py_print(v)")
+
     def test_parse_py2cpp_argv_accepts_east_stage_and_object_dispatch_mode(self) -> None:
         parsed = parse_py2cpp_argv(
             [
