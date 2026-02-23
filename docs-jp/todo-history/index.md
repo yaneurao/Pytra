@@ -10,7 +10,12 @@
 
 - `docs-jp/todo-history/index.md` は索引のみを保持します。
 - 完了履歴の本文は `docs-jp/todo-history/YYYYMMDD.md` に日付単位で保存します。
+- 完了した plan は `docs-jp/plans/archive/` へ移動し、この索引からリンクします。
 - `docs/` 側は `docs-jp/` を正として翻訳を同期します。
+
+## 完了 plan アーカイブ
+
+- （未登録）完了時に `docs-jp/plans/archive/YYYYMMDD-<task-group>.md` を追加して追記する。
 
 ## 日付別リンク
 
