@@ -419,6 +419,17 @@ def dict_any_get_dict_list(src: dict[str, object], key: str) -> list[dict[str, o
     return out
 
 
+def assign_targets(stmt: dict[str, object]) -> list[dict[str, object]]:
+    """Assign/AnnAssign 互換で代入先 target 群を正規化して返す。"""
+    targets = dict_any_get_dict_list(stmt, "targets")
+    if len(targets) > 0:
+        return targets
+    tgt = dict_any_get_dict(stmt, "target")
+    if len(tgt) > 0:
+        return [tgt]
+    return []
+
+
 def dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str:
     """`dict[str, str]` から値を取得する（未定義時は既定値）。"""
     if key in src:
