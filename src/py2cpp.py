@@ -3564,10 +3564,11 @@ class CppEmitter(CodeEmitter):
                 call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
             return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
         imported_module_norm = self._normalize_runtime_module_name(imported_module)
-        if imported_module_norm in self.module_namespace_map:
+        target_ns = self.module_namespace_map.get(imported_module_norm, "")
+        if target_ns != "":
             namespaced = self._render_namespaced_module_call(
                 imported_module,
-                self.module_namespace_map[imported_module_norm],
+                target_ns,
                 raw,
                 args,
                 arg_nodes,
