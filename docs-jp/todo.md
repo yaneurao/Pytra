@@ -131,11 +131,17 @@
 
 文脈: `docs-jp/plans/p1-codeemitter-dispatch-redesign.md`（`TG-P1-CED`）
 
-1. [ ] [ID: P1-CED-01] `render_expr` の kind ごとに hook ポイントを追加する。
-2. [ ] [ID: P1-CED-02] `emit_stmt` も kind ごとの hook ポイントへ分解する。
-3. [ ] [ID: P1-CED-03] `CppEmitter` を hook 優先 + fallback の二段構成に統一する。
-4. [ ] [ID: P1-CED-04] `tools/check_selfhost_cpp_diff.py` で差分ゼロを維持しながら fallback を縮退する。
-5. [ ] [ID: P1-CED-05] fallback が十分に減った段階で、共通ディスパッチを `CodeEmitter` 本体へ戻す。
+1. [ ] [ID: P1-CED-01] `render_expr` の kind ごとに hook ポイントを追加する（`P1-CED-01-S1` から `P1-CED-01-S3` 完了でクローズ）。
+2. [x] [ID: P1-CED-01-S1] `CodeEmitter` に kind 専用 hook 名（`on_render_expr_<kind>`）解決 API を追加し、`py2cpp` `render_expr` から呼び出す。
+3. [ ] [ID: P1-CED-01-S2] 非 C++ emitter（`rs/cs/js/ts`）の `render_expr` へ kind 専用 hook 呼び出しを揃えて適用する。
+4. [ ] [ID: P1-CED-01-S3] kind 専用 hook の登録規約を hooks/profile ドキュメントへ反映し、selfhost 回帰で挙動固定する。
+5. [ ] [ID: P1-CED-02] `emit_stmt` も kind ごとの hook ポイントへ分解する。
+6. [ ] [ID: P1-CED-03] `CppEmitter` を hook 優先 + fallback の二段構成に統一する。
+7. [ ] [ID: P1-CED-04] `tools/check_selfhost_cpp_diff.py` で差分ゼロを維持しながら fallback を縮退する。
+8. [ ] [ID: P1-CED-05] fallback が十分に減った段階で、共通ディスパッチを `CodeEmitter` 本体へ戻す。
+
+進捗メモ:
+- `P1-CED-01-S1`: `CodeEmitter` に `hook_on_render_expr_kind_specific()` と kind 正規化（`Name` -> `on_render_expr_name`, `IfExp` -> `on_render_expr_if_exp`）を追加し、`py2cpp` `render_expr` で「kind専用hook -> 既存kind hook」の優先順を導入した。`test_code_emitter.py` / `test_py2cpp_features.py` に回帰を追加して固定した。
 
 受け入れ基準:
 1. [ ] [ID: P1-CED-AC-01] Python 実行パス: `hooks` 有効時に既存ケースのコード生成結果が不変。
