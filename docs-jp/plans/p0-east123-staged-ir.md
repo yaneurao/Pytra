@@ -62,12 +62,14 @@
 13. `P0-EAST123-08-S2`: 第1陣（boxing/unboxing, iterable, truthy/len/str）の EAST3 移行。
 14. `P0-EAST123-08-S3`: 第2陣（主要 built-in lower）の EAST3 移行。
 15. `P0-EAST123-03-S1`: C++ hooks / `py2cpp.py` の意味論実装経路棚卸し。
-16. `P0-EAST123-03-S2`: EAST3 命令写像へ置換し、重複ロジックを撤去。
-17. `P0-EAST123-05-S1`: hooks 分類と縮退メトリクス基線を確定。
-18. `P0-EAST123-05-S2`: 意味論 hook 新規流入を防ぐ CI ルール追加。
-19. `P0-EAST123-04-S1`: schema テスト整備（必須項目、`iter_plan` 形状、`dispatch_mode`）。
-20. `P0-EAST123-04-S2`: lowering 契約テスト（`EAST2 -> EAST3`）整備。
-21. `P0-EAST123-04-S3`: selfhost + クロスターゲット回帰導線へ統合。
+16. `P0-EAST123-03-S2-S1`: CppEmitter 側で EAST3 命令ノード受理（`ForCore`, `Box/Unbox`, `Obj*`）を追加。
+17. `P0-EAST123-03-S2-S2`: `For` / `iter_mode` / Any 境界の backend 再判断を EAST3 命令入力へ置換。
+18. `P0-EAST123-03-S2-S3`: `py2cpp.py` と `hooks/cpp` の `runtime_call` / built-in 分岐重複を撤去。
+19. `P0-EAST123-05-S1`: hooks 分類と縮退メトリクス基線を確定。
+20. `P0-EAST123-05-S2`: 意味論 hook 新規流入を防ぐ CI ルール追加。
+21. `P0-EAST123-04-S1`: schema テスト整備（必須項目、`iter_plan` 形状、`dispatch_mode`）。
+22. `P0-EAST123-04-S2`: lowering 契約テスト（`EAST2 -> EAST3`）整備。
+23. `P0-EAST123-04-S3`: selfhost + クロスターゲット回帰導線へ統合。
 
 ## P0-EAST123-03-S1 棚卸し（C++ hooks / py2cpp）
 
@@ -137,3 +139,4 @@
 - 2026-02-23: [ID: P0-EAST123-02-S2] `east3_lowering` で `Any/object` 境界命令 lower（`Box`/`Unbox`/`ObjBool`/`ObjLen`/`ObjStr`/`ObjIterInit`/`ObjIterNext`）を追加し、`test/unit/test_east3_lowering.py` に境界命令化テストを拡張した。
 - 2026-02-23: [ID: P0-EAST123-02-S3] `lower_east2_to_east3(..., object_dispatch_mode=...)` と `load_east3_document(..., object_dispatch_mode=...)` を追加し、dispatch mode を `EAST2 -> EAST3` エントリで一度だけ確定して `EAST3.meta.dispatch_mode` と `RuntimeIterForPlan.dispatch_mode` へ反映するテストを追加した。
 - 2026-02-23: [ID: P0-EAST123-03-S1] `py2cpp.py` と `hooks/cpp` の意味論実装経路（dispatch/boxing/iterable/built-in）を棚卸しし、`P0-EAST123-03-S2` の置換対象として固定した。
+- 2026-02-23: [ID: P0-EAST123-03-S2-S1] `py2cpp.py` に `ForCore` / `Box` / `Unbox` / `Obj*` 受理を追加し、`test/unit/test_east3_cpp_bridge.py` で C++ 写像と `ForCore` のシンボル収集（`transpile_cli` 側）を固定した。

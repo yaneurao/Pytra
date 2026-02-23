@@ -748,6 +748,24 @@ def collect_store_names_from_target(target: dict[str, object], out: set[str]) ->
             collect_store_names_from_target(ent, out)
 
 
+def collect_store_names_from_target_plan(target_plan: dict[str, object], out: set[str]) -> None:
+    """EAST3 `target_plan` から束縛名を抽出する。"""
+    kind = dict_any_kind(target_plan)
+    if kind == "NameTarget":
+        ident = dict_any_get_str(target_plan, "id")
+        if ident != "":
+            out.add(ident)
+        return
+    if kind == "TupleTarget":
+        for ent in dict_any_get_dict_list(target_plan, "elements"):
+            collect_store_names_from_target_plan(ent, out)
+        return
+    if kind == "ExprTarget":
+        target = dict_any_get_dict(target_plan, "target")
+        if len(target) > 0:
+            collect_store_names_from_target(target, out)
+
+
 def stmt_list_parse_metrics(body: list[dict[str, object]], depth: int) -> tuple[int, int]:
     """statement list から `parse_nodes` と `max_depth` を計測する。"""
     node_count = 0
@@ -798,6 +816,14 @@ def collect_symbols_from_stmt(stmt: dict[str, object]) -> set[str]:
         target = dict_any_get_dict(stmt, "target")
         if len(target) > 0:
             collect_store_names_from_target(target, symbols)
+    elif kind == "ForCore":
+        target_plan = dict_any_get_dict(stmt, "target_plan")
+        if len(target_plan) > 0:
+            collect_store_names_from_target_plan(target_plan, symbols)
+        else:
+            target = dict_any_get_dict(stmt, "target")
+            if len(target) > 0:
+                collect_store_names_from_target(target, symbols)
     elif kind == "With":
         for item in dict_any_get_dict_list(stmt, "items"):
             opt_vars = dict_any_get_dict(item, "optional_vars")
