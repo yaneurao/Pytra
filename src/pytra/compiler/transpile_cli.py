@@ -437,6 +437,24 @@ def collect_store_names_from_target(target: dict[str, object], out: set[str]) ->
             collect_store_names_from_target(ent, out)
 
 
+def stmt_list_parse_metrics(body: list[dict[str, object]], depth: int) -> tuple[int, int]:
+    """statement list から `parse_nodes` と `max_depth` を計測する。"""
+    node_count = 0
+    max_depth = 0
+    if len(body) > 0:
+        max_depth = depth
+    for st in body:
+        node_count += 1
+        if depth > max_depth:
+            max_depth = depth
+        for child in stmt_child_stmt_lists(st):
+            child_nodes, child_depth = stmt_list_parse_metrics(child, depth + 1)
+            node_count += child_nodes
+            if child_depth > max_depth:
+                max_depth = child_depth
+    return node_count, max_depth
+
+
 def dict_any_get_str_list(src: dict[str, object], key: str) -> list[str]:
     """`dict[str, object]` の list 値から `str` 要素だけを抽出する。"""
     out: list[str] = []

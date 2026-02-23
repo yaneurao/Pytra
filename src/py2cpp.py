@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, name_target_id, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_target_name, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, name_target_id, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_target_name, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -195,28 +195,10 @@ def _check_guard_limit(
         _raise_guard_limit_exceeded(stage, limit_key, value, max_value, detail_subject)
 
 
-def _stmt_list_parse_metrics(body: list[dict[str, Any]], depth: int) -> tuple[int, int]:
-    """statement list から `parse_nodes` と `max_depth` を計測する。"""
-    node_count = 0
-    max_depth = 0
-    if len(body) > 0:
-        max_depth = depth
-    for st in body:
-        node_count += 1
-        if depth > max_depth:
-            max_depth = depth
-        for child in stmt_child_stmt_lists(st):
-            child_nodes, child_depth = _stmt_list_parse_metrics(child, depth + 1)
-            node_count += child_nodes
-            if child_depth > max_depth:
-                max_depth = child_depth
-    return node_count, max_depth
-
-
 def _module_parse_metrics(east_module: dict[str, Any]) -> dict[str, int]:
     """EAST module 単位の parse 指標（深さ・ノード数）を返す。"""
     body = dict_any_get_dict_list(east_module, "body")
-    node_count, max_depth = _stmt_list_parse_metrics(body, 1)
+    node_count, max_depth = stmt_list_parse_metrics(body, 1)
     module_nodes = node_count + 1  # Module root
     module_depth = max_depth if max_depth > 0 else 1
     return {"max_ast_depth": module_depth, "parse_nodes": module_nodes}
