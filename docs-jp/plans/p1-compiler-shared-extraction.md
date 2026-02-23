@@ -1,15 +1,17 @@
 # TASK GROUP: TG-P1-COMP-SHARED
 
-最終更新: 2026-02-22
+最終更新: 2026-02-23
 
 関連 TODO:
-- `docs-jp/todo.md` の `ID: P1-COMP-01` 〜 `P1-COMP-08`
+- `docs-jp/todo.md` の `ID: P1-COMP-01` 〜 `P1-COMP-10`
 
 背景:
 - import グラフ解析や module index 構築など全言語共通処理が `py2cpp.py` に偏在している。
+- 将来的な目標は「全言語で selfhost 可能な変換能力」であり、特定言語実装（`py2cpp.py`）への汎用処理偏在は拡張時のボトルネックになる。
 
 目的:
 - 共通解析を `src/pytra/compiler/` の API へ抽出し、各 `py2*` CLI で再利用可能にする。
+- `py2cpp.py` は C++ 固有責務へ限定し、他言語 selfhost 導線でも再利用できる共通実装を優先する。
 
 対象:
 - import グラフ解析
@@ -25,6 +27,8 @@
 - 共通解析 API が `py2cpp` 以外から利用可能
 - `py2cpp.py` は C++ 固有責務中心に縮退
 - 境界定義（CodeEmitter / parser / compiler共通層）が文書化される
+- `py2cpp.py` 由来の汎用 helper が `src/pytra/compiler/` へ移管され、少なくとも 1 つ以上の非 C++ `py2*` で再利用される
+- 新規の汎用処理は `py2cpp.py` ではなく共通層へ追加する運用ルールが定義され、回帰チェックで担保される
 
 確認コマンド:
 - `python3 tools/check_py2cpp_transpile.py`
@@ -58,3 +62,4 @@
 - 2026-02-22: 初版作成。
 - 2026-02-22: `P1-COMP-06` / `P1-COMP-07` として、`docs-jp/spec/spec-dev.md` に `CodeEmitter`・EAST parser・compiler共通層の責務境界を明文化した。
 - 2026-02-22: `P1-COMP-08` として、`py2rs.py` を起点に他言語 CLI へ共通解析 API を段階適用する 5 フェーズ移行計画を追加した。
+- 2026-02-23: 全言語 selfhost を長期目標として再確認し、`py2cpp.py` への汎用 helper 集積を抑制する方針を `P1-COMP-09` / `P1-COMP-10` として追加した。
