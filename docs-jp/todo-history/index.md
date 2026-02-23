@@ -15,7 +15,10 @@
 
 ## 完了 plan アーカイブ
 
-- （未登録）完了時に `docs-jp/plans/archive/YYYYMMDD-<task-group>.md` を追加して追記する。
+- [2026-02-23 / TG-DOCS-SYNC](../plans/archive/20260223-tg-docs-sync.md)
+- [2026-02-23 / TG-P0-BOXING](../plans/archive/20260223-tg-p0-boxing.md)
+- [2026-02-23 / TG-P2-MICROGPT-COMPAT](../plans/archive/20260223-tg-p2-microgpt-compat.md)
+- [2026-02-23 / TG-P3-SPEC-DRAFTS](../plans/archive/20260223-tg-p3-spec-drafts.md)
 
 ## 日付別リンク
 
