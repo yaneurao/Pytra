@@ -4857,6 +4857,9 @@ class CppEmitter(CodeEmitter):
         if len(expr_d) == 0:
             return "/* none */"
         kind = self._node_kind_from_dict(expr_d)
+        hook_specific = self.hook_on_render_expr_kind_specific(kind, expr_d)
+        if hook_specific != "":
+            return hook_specific
         hook_kind = self.hook_on_render_expr_kind(kind, expr_d)
         if hook_kind != "":
             return hook_kind

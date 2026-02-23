@@ -476,6 +476,72 @@ class CodeEmitter:
             return v
         return ""
 
+    def _render_expr_kind_hook_suffix(self, kind: str) -> str:
+        """`Name` / `IfExp` などを hook 名用の snake_case へ正規化する。"""
+        text = kind.strip()
+        if text == "":
+            return ""
+        raw: list[str] = []
+        n = len(text)
+        i = 0
+        while i < n:
+            ch = text[i]
+            if "A" <= ch <= "Z":
+                prev_ch = text[i - 1] if i > 0 else ""
+                next_ch = text[i + 1] if i + 1 < n else ""
+                prev_is_lower_or_digit = ("a" <= prev_ch <= "z") or ("0" <= prev_ch <= "9")
+                next_is_lower = "a" <= next_ch <= "z"
+                if len(raw) > 0 and raw[-1] != "_" and (prev_is_lower_or_digit or next_is_lower):
+                    raw.append("_")
+                raw.append(chr(ord(ch) + 32))
+                i += 1
+                continue
+            is_lower = "a" <= ch <= "z"
+            is_digit = "0" <= ch <= "9"
+            if is_lower or is_digit:
+                raw.append(ch)
+            elif len(raw) > 0 and raw[-1] != "_":
+                raw.append("_")
+            i += 1
+        start = 0
+        end = len(raw)
+        while start < end and raw[start] == "_":
+            start += 1
+        while end > start and raw[end - 1] == "_":
+            end -= 1
+        out_chars: list[str] = []
+        i = start
+        while i < end:
+            ch = raw[i]
+            if ch == "_" and len(out_chars) > 0 and out_chars[-1] == "_":
+                i += 1
+                continue
+            out_chars.append(ch)
+            i += 1
+        out = "".join(out_chars)
+        return out
+
+    def _render_expr_kind_hook_name(self, kind: str) -> str:
+        """式 kind 専用 hook 名（`on_render_expr_<kind>`）を返す。"""
+        suffix = self._render_expr_kind_hook_suffix(kind)
+        if suffix == "":
+            return ""
+        return "on_render_expr_" + suffix
+
+    def hook_on_render_expr_kind_specific(
+        self,
+        kind: str,
+        expr_node: dict[str, Any],
+    ) -> str:
+        """kind 別 hook（`on_render_expr_<kind>`）を呼び出す。"""
+        hook_name = self._render_expr_kind_hook_name(kind)
+        if hook_name == "":
+            return ""
+        v = self._call_hook2(hook_name, kind, expr_node)
+        if isinstance(v, str):
+            return v
+        return ""
+
     def hook_on_render_expr_kind(
         self,
         kind: str,

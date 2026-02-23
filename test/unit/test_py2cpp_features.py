@@ -177,6 +177,17 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertTrue(len(emitter.lines) >= 1)
         self.assertIn("unsupported stmt kind: UnknownKind", emitter.lines[-1])
 
+    def test_render_expr_kind_specific_hook_precedes_generic_kind_hook(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.hooks["on_render_expr_name"] = (
+            lambda _em, _kind, _expr_node: "specific_name_hook()"
+        )
+        emitter.hooks["on_render_expr_kind"] = (
+            lambda _em, _kind, _expr_node: "generic_kind_hook()"
+        )
+        rendered = emitter.render_expr({"kind": "Name", "id": "alpha"})
+        self.assertEqual(rendered, "specific_name_hook()")
+
     def test_load_cpp_type_map_allows_profile_overlay(self) -> None:
         profile = {
             "types": {

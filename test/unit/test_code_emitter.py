@@ -940,6 +940,10 @@ class CodeEmitterTest(unittest.TestCase):
             calls.append("render_expr_kind:" + kind)
             return "dict_hook_expr()"
 
+        def on_render_expr_name(_em: CodeEmitter, kind: str, _expr_node: dict[str, Any]) -> Any:
+            calls.append("render_expr_name:" + kind)
+            return "dict_hook_expr_name()"
+
         def on_render_expr_complex(_em: CodeEmitter, _expr_node: dict[str, Any]) -> Any:
             calls.append("render_expr_complex")
             return "dict_hook_complex()"
@@ -964,6 +968,7 @@ class CodeEmitterTest(unittest.TestCase):
             "on_render_class_method": on_render_class_method,
             "on_render_binop": on_render_binop,
             "on_render_expr_kind": on_render_expr_kind,
+            "on_render_expr_name": on_render_expr_name,
             "on_render_expr_complex": on_render_expr_complex,
         }
         em = CodeEmitter({}, {}, hooks)
@@ -1003,6 +1008,10 @@ class CodeEmitterTest(unittest.TestCase):
             "dict_hook_expr()",
         )
         self.assertEqual(
+            em.hook_on_render_expr_kind_specific("Name", {"kind": "Name", "id": "x"}),
+            "dict_hook_expr_name()",
+        )
+        self.assertEqual(
             em.hook_on_render_expr_complex({"kind": "JoinedStr"}),
             "dict_hook_complex()",
         )
@@ -1016,7 +1025,15 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertIn("render_class_method", calls)
         self.assertIn("render_binop", calls)
         self.assertIn("render_expr_kind:MagicExpr", calls)
+        self.assertIn("render_expr_name:Name", calls)
         self.assertIn("render_expr_complex", calls)
+
+    def test_render_expr_kind_hook_name_normalization(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em._render_expr_kind_hook_name("Name"), "on_render_expr_name")
+        self.assertEqual(em._render_expr_kind_hook_name("IfExp"), "on_render_expr_if_exp")
+        self.assertEqual(em._render_expr_kind_hook_name("ListComp"), "on_render_expr_list_comp")
+        self.assertEqual(em._render_expr_kind_hook_name(""), "")
 
     def test_dynamic_hook_disable_switch(self) -> None:
         calls: list[str] = []
