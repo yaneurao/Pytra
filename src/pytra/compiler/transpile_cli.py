@@ -1133,6 +1133,53 @@ def format_graph_list_section(out: str, label: str, items: list[str]) -> str:
     return out2
 
 
+def format_import_graph_report(analysis: dict[str, object]) -> str:
+    """依存解析結果を `--dump-deps` 向けテキストへ整形する。"""
+    edges = dict_any_get_str_list(analysis, "edges")
+    out = "graph:\n"
+    if len(edges) == 0:
+        out += "  (none)\n"
+    else:
+        for item in edges:
+            out += "  - " + item + "\n"
+    cycles = dict_any_get_str_list(analysis, "cycles")
+    out = format_graph_list_section(out, "cycles", cycles)
+    missing = dict_any_get_str_list(analysis, "missing_modules")
+    out = format_graph_list_section(out, "missing", missing)
+    relative = dict_any_get_str_list(analysis, "relative_imports")
+    out = format_graph_list_section(out, "relative", relative)
+    reserved = dict_any_get_str_list(analysis, "reserved_conflicts")
+    out = format_graph_list_section(out, "reserved", reserved)
+    return out
+
+
+def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:
+    """依存解析の重大問題を `input_invalid` として報告する。"""
+    details: list[str] = []
+    for v in dict_any_get_str_list(analysis, "reserved_conflicts"):
+        if v != "":
+            details.append(f"kind=reserved_conflict file={v} import=pytra")
+    for v_txt in dict_any_get_str_list(analysis, "relative_imports"):
+        if v_txt == "":
+            continue
+        file_part, mod_part = split_graph_issue_entry(v_txt)
+        details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
+    for v_txt in dict_any_get_str_list(analysis, "missing_modules"):
+        if v_txt == "":
+            continue
+        file_part, mod_part = split_graph_issue_entry(v_txt)
+        details.append(f"kind=missing_module file={file_part} import={mod_part}")
+    for v in dict_any_get_str_list(analysis, "cycles"):
+        if v != "":
+            details.append(f"kind=import_cycle file=(graph) import={v}")
+    if len(details) > 0:
+        raise make_user_error(
+            "input_invalid",
+            "Failed to resolve imports (missing/conflict/cycle).",
+            details,
+        )
+
+
 def collect_import_modules(east_module: dict[str, object]) -> list[str]:
     """EAST module から import / from-import のモジュール名を抽出する。"""
     out: list[str] = []

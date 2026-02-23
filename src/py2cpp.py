@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6135,60 +6135,10 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
     }
 
 
-def _format_import_graph_report(analysis: dict[str, Any]) -> str:
-    """依存解析結果を `--dump-deps` 向けテキストへ整形する。"""
-    edges = dict_any_get_str_list(analysis, "edges")
-    out = "graph:\n"
-    if len(edges) == 0:
-        out += "  (none)\n"
-    else:
-        for item in edges:
-            out += "  - " + item + "\n"
-    cycles = dict_any_get_str_list(analysis, "cycles")
-    out = format_graph_list_section(out, "cycles", cycles)
-    missing = dict_any_get_str_list(analysis, "missing_modules")
-    out = format_graph_list_section(out, "missing", missing)
-    relative = dict_any_get_str_list(analysis, "relative_imports")
-    out = format_graph_list_section(out, "relative", relative)
-    reserved = dict_any_get_str_list(analysis, "reserved_conflicts")
-    out = format_graph_list_section(out, "reserved", reserved)
-    return out
-
-
-def _validate_import_graph_or_raise(analysis: dict[str, Any]) -> None:
-    """依存解析の重大問題を `input_invalid` として報告する。"""
-    details: list[str] = []
-    for v in dict_any_get_str_list(analysis, "reserved_conflicts"):
-        if v != "":
-            details.append(f"kind=reserved_conflict file={v} import=pytra")
-
-    for v_txt in dict_any_get_str_list(analysis, "relative_imports"):
-        if v_txt == "":
-            continue
-        file_part, mod_part = split_graph_issue_entry(v_txt)
-        details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
-
-    for v_txt in dict_any_get_str_list(analysis, "missing_modules"):
-        if v_txt == "":
-            continue
-        file_part, mod_part = split_graph_issue_entry(v_txt)
-        details.append(f"kind=missing_module file={file_part} import={mod_part}")
-
-    for v in dict_any_get_str_list(analysis, "cycles"):
-        if v != "":
-            details.append(f"kind=import_cycle file=(graph) import={v}")
-    if len(details) > 0:
-        raise make_user_error(
-            "input_invalid",
-            "Failed to resolve imports (missing/conflict/cycle).",
-            details,
-        )
-
-
 def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted") -> dict[str, dict[str, Any]]:
     """入口 + 依存ユーザーモジュールを個別に EAST 化して返す。"""
     analysis = _analyze_import_graph(entry_path)
-    _validate_import_graph_or_raise(analysis)
+    validate_import_graph_or_raise(analysis)
     files = dict_any_get_str_list(analysis, "user_module_files")
     module_id_map = dict_any_get_dict(analysis, "module_id_map")
     out: dict[str, dict[str, Any]] = {}
@@ -6554,7 +6504,7 @@ def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
 def dump_deps_graph_text(entry_path: Path) -> str:
     """入力 `.py` から辿れるユーザーモジュール依存グラフを整形して返す。"""
     analysis = _analyze_import_graph(entry_path)
-    return _format_import_graph_report(analysis)
+    return format_import_graph_report(analysis)
 
 
 def print_user_error(err_text: str) -> None:
@@ -6744,7 +6694,7 @@ def main(argv: list[str]) -> int:
         import_graph_analysis: dict[str, Any] = {"user_module_files": [], "edges": []}
         if input_txt.endswith(".py") and not (emit_runtime_cpp and _is_runtime_emit_input_path(input_path)):
             analysis = _analyze_import_graph(input_path)
-            _validate_import_graph_or_raise(analysis)
+            validate_import_graph_or_raise(analysis)
             import_graph_analysis = analysis
             module_east_map_cache = build_module_east_map(input_path, parser_backend)
         east_module: dict[str, Any] = (
