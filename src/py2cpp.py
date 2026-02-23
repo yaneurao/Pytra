@@ -565,22 +565,28 @@ class CppEmitter(CodeEmitter):
         if bindings:
             if refs:
                 for ref_item in refs:
-                    module_id = dict_str_get(ref_item, "module_id", "")
-                    symbol = dict_str_get(ref_item, "symbol", "")
-                    local_name = dict_str_get(ref_item, "local_name", "")
                     set_import_symbol_binding_and_module_set(
-                        self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol
+                        self.import_symbols,
+                        self.import_symbol_modules,
+                        dict_str_get(ref_item, "local_name", ""),
+                        dict_str_get(ref_item, "module_id", ""),
+                        dict_str_get(ref_item, "symbol", ""),
                     )
             for item in bindings:
-                module_id = dict_str_get(item, "module_id", "")
-                export_name = dict_str_get(item, "export_name", "")
-                local_name = dict_str_get(item, "local_name", "")
                 binding_kind = dict_str_get(item, "binding_kind", "")
                 if binding_kind == "module":
-                    set_import_module_binding(self.import_modules, local_name, module_id)
+                    set_import_module_binding(
+                        self.import_modules,
+                        dict_str_get(item, "local_name", ""),
+                        dict_str_get(item, "module_id", ""),
+                    )
                 elif binding_kind == "symbol" and not refs:
                     set_import_symbol_binding_and_module_set(
-                        self.import_symbols, self.import_symbol_modules, local_name, module_id, export_name
+                        self.import_symbols,
+                        self.import_symbol_modules,
+                        dict_str_get(item, "local_name", ""),
+                        dict_str_get(item, "module_id", ""),
+                        dict_str_get(item, "export_name", ""),
                     )
             if not self.import_symbols:
                 self._seed_legacy_import_symbols_from_meta(meta)
