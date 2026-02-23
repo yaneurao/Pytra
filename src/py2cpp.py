@@ -3439,7 +3439,7 @@ class CppEmitter(CodeEmitter):
         str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, fn, args, arg_nodes)
         if str_ops_rendered is not None:
             return str(str_ops_rendered)
-        special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, fn, args, kw)
+        special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, fn, args, kw, arg_nodes)
         if special_runtime_rendered is not None:
             return str(special_runtime_rendered)
         runtime_fallback = self._render_builtin_runtime_fallback(
@@ -4000,13 +4000,9 @@ class CppEmitter(CodeEmitter):
         fn: dict[str, Any],
         args: list[str],
         kw: dict[str, str],
+        arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の Path/utility 系 runtime_call を処理する。"""
-        owner_node = self.any_to_dict_or_empty(fn.get("value"))
-        owner = self.render_expr(fn.get("value"))
-        owner_kind = self._node_kind_from_dict(owner_node)
-        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-            owner = "(" + owner + ")"
         if runtime_call == "std::filesystem::create_directories":
             parents = kw.get("parents", "false")
             exist_ok = kw.get("exist_ok", "false")
@@ -4014,22 +4010,97 @@ class CppEmitter(CodeEmitter):
                 parents = args[0]
             if len(args) >= 2:
                 exist_ok = args[1]
-            return f"{owner}.mkdir({parents}, {exist_ok})"
+            mkdir_node: dict[str, Any] = {
+                "kind": "PathRuntimeOp",
+                "op": "mkdir",
+                "owner": fn.get("value"),
+                "resolved_type": "None",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                mkdir_node["parents"] = arg_nodes[0]
+            else:
+                mkdir_node["parents_expr"] = parents
+            if len(arg_nodes) >= 2:
+                mkdir_node["exist_ok"] = arg_nodes[1]
+            else:
+                mkdir_node["exist_ok_expr"] = exist_ok
+            return self.render_expr(mkdir_node)
         if runtime_call == "std::filesystem::exists":
-            return f"{owner}.exists()"
+            exists_node = {
+                "kind": "PathRuntimeOp",
+                "op": "exists",
+                "owner": fn.get("value"),
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(exists_node)
         if runtime_call == "py_write_text":
-            write_arg = args[0] if len(args) >= 1 else '""'
-            return f"{owner}.write_text({write_arg})"
+            write_node: dict[str, Any] = {
+                "kind": "PathRuntimeOp",
+                "op": "write_text",
+                "owner": fn.get("value"),
+                "resolved_type": "None",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                write_node["value"] = arg_nodes[0]
+            else:
+                write_node["value_expr"] = args[0] if len(args) >= 1 else '""'
+            return self.render_expr(write_node)
         if runtime_call == "py_read_text":
-            return f"{owner}.read_text()"
+            read_node = {
+                "kind": "PathRuntimeOp",
+                "op": "read_text",
+                "owner": fn.get("value"),
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(read_node)
         if runtime_call == "path_parent":
-            return f"{owner}.parent()"
+            parent_node = {
+                "kind": "PathRuntimeOp",
+                "op": "parent",
+                "owner": fn.get("value"),
+                "resolved_type": "Path",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(parent_node)
         if runtime_call == "path_name":
-            return f"{owner}.name()"
+            name_node = {
+                "kind": "PathRuntimeOp",
+                "op": "name",
+                "owner": fn.get("value"),
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(name_node)
         if runtime_call == "path_stem":
-            return f"{owner}.stem()"
+            stem_node = {
+                "kind": "PathRuntimeOp",
+                "op": "stem",
+                "owner": fn.get("value"),
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(stem_node)
         if runtime_call == "identity":
-            return owner
+            identity_node = {
+                "kind": "PathRuntimeOp",
+                "op": "identity",
+                "owner": fn.get("value"),
+                "resolved_type": self.get_expr_type(fn.get("value")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(identity_node)
         return None
 
     def _render_builtin_runtime_fallback(
@@ -6261,6 +6332,45 @@ class CppEmitter(CodeEmitter):
             owner_expr = self.render_expr(expr_d.get("owner"))
             items_expr = self.render_expr(expr_d.get("items"))
             return f"str({owner_expr}).join({items_expr})"
+        if kind == "PathRuntimeOp":
+            owner_expr = self.render_expr(expr_d.get("owner"))
+            owner_node = self.any_to_dict_or_empty(expr_d.get("owner"))
+            owner_kind = self._node_kind_from_dict(owner_node)
+            if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                owner_expr = "(" + owner_expr + ")"
+            op = self.any_dict_get_str(expr_d, "op", "")
+            if op == "mkdir":
+                parents_expr = "false"
+                if self.any_dict_has(expr_d, "parents"):
+                    parents_expr = self.render_expr(expr_d.get("parents"))
+                elif self.any_dict_has(expr_d, "parents_expr"):
+                    parents_expr = self.any_dict_get_str(expr_d, "parents_expr", "false")
+                exist_ok_expr = "false"
+                if self.any_dict_has(expr_d, "exist_ok"):
+                    exist_ok_expr = self.render_expr(expr_d.get("exist_ok"))
+                elif self.any_dict_has(expr_d, "exist_ok_expr"):
+                    exist_ok_expr = self.any_dict_get_str(expr_d, "exist_ok_expr", "false")
+                return f"{owner_expr}.mkdir({parents_expr}, {exist_ok_expr})"
+            if op == "exists":
+                return f"{owner_expr}.exists()"
+            if op == "write_text":
+                value_expr = '""'
+                if self.any_dict_has(expr_d, "value"):
+                    value_expr = self.render_expr(expr_d.get("value"))
+                elif self.any_dict_has(expr_d, "value_expr"):
+                    value_expr = self.any_dict_get_str(expr_d, "value_expr", '""')
+                return f"{owner_expr}.write_text({value_expr})"
+            if op == "read_text":
+                return f"{owner_expr}.read_text()"
+            if op == "parent":
+                return f"{owner_expr}.parent()"
+            if op == "name":
+                return f"{owner_expr}.name()"
+            if op == "stem":
+                return f"{owner_expr}.stem()"
+            if op == "identity":
+                return owner_expr
+            return ""
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))

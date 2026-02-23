@@ -856,6 +856,176 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(replace_expr), 'py_replace(s, "a", "b")')
         self.assertEqual(emitter.render_expr(join_expr), "str(s).join(xs)")
 
+    def test_render_expr_supports_path_runtime_op_ir_nodes(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        owner = {"kind": "Name", "id": "p", "resolved_type": "Path"}
+        mkdir_node = {
+            "kind": "PathRuntimeOp",
+            "op": "mkdir",
+            "owner": owner,
+            "parents": {"kind": "Constant", "value": True, "resolved_type": "bool"},
+            "exist_ok": {"kind": "Constant", "value": False, "resolved_type": "bool"},
+            "resolved_type": "None",
+        }
+        mkdir_kw_only_node = {
+            "kind": "PathRuntimeOp",
+            "op": "mkdir",
+            "owner": owner,
+            "parents_expr": "parents_flag",
+            "exist_ok_expr": "exist_ok_flag",
+            "resolved_type": "None",
+        }
+        exists_node = {"kind": "PathRuntimeOp", "op": "exists", "owner": owner, "resolved_type": "bool"}
+        write_node = {
+            "kind": "PathRuntimeOp",
+            "op": "write_text",
+            "owner": owner,
+            "value": {"kind": "Constant", "value": "42", "resolved_type": "str"},
+            "resolved_type": "None",
+        }
+        read_node = {"kind": "PathRuntimeOp", "op": "read_text", "owner": owner, "resolved_type": "str"}
+        parent_node = {"kind": "PathRuntimeOp", "op": "parent", "owner": owner, "resolved_type": "Path"}
+        name_node = {"kind": "PathRuntimeOp", "op": "name", "owner": owner, "resolved_type": "str"}
+        stem_node = {"kind": "PathRuntimeOp", "op": "stem", "owner": owner, "resolved_type": "str"}
+        identity_node = {"kind": "PathRuntimeOp", "op": "identity", "owner": owner, "resolved_type": "Path"}
+
+        self.assertEqual(emitter.render_expr(mkdir_node), "p.mkdir(true, false)")
+        self.assertEqual(emitter.render_expr(mkdir_kw_only_node), "p.mkdir(parents_flag, exist_ok_flag)")
+        self.assertEqual(emitter.render_expr(exists_node), "p.exists()")
+        self.assertEqual(emitter.render_expr(write_node), 'p.write_text("42")')
+        self.assertEqual(emitter.render_expr(read_node), "p.read_text()")
+        self.assertEqual(emitter.render_expr(parent_node), "p.parent()")
+        self.assertEqual(emitter.render_expr(name_node), "p.name()")
+        self.assertEqual(emitter.render_expr(stem_node), "p.stem()")
+        self.assertEqual(emitter.render_expr(identity_node), "p")
+
+    def test_builtin_runtime_path_special_ops_use_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        mkdir_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "std::filesystem::create_directories",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "mkdir",
+                "resolved_type": "unknown",
+            },
+            "args": [
+                {"kind": "Constant", "value": True, "resolved_type": "bool"},
+                {"kind": "Constant", "value": False, "resolved_type": "bool"},
+            ],
+            "keywords": [],
+        }
+        exists_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "std::filesystem::exists",
+            "resolved_type": "bool",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "exists",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        write_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_write_text",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "write_text",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Constant", "value": "42", "resolved_type": "str"}],
+            "keywords": [],
+        }
+        read_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_read_text",
+            "resolved_type": "str",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "read_text",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        parent_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "path_parent",
+            "resolved_type": "Path",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "parent",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        name_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "path_name",
+            "resolved_type": "str",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "name",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        stem_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "path_stem",
+            "resolved_type": "str",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "stem",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        identity_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "identity",
+            "resolved_type": "Path",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "identity",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+
+        self.assertEqual(emitter.render_expr(mkdir_expr), "p.mkdir(true, false)")
+        self.assertEqual(emitter.render_expr(exists_expr), "p.exists()")
+        self.assertEqual(emitter.render_expr(write_expr), 'p.write_text("42")')
+        self.assertEqual(emitter.render_expr(read_expr), "p.read_text()")
+        self.assertEqual(emitter.render_expr(parent_expr), "p.parent()")
+        self.assertEqual(emitter.render_expr(name_expr), "p.name()")
+        self.assertEqual(emitter.render_expr(stem_expr), "p.stem()")
+        self.assertEqual(emitter.render_expr(identity_expr), "p")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
