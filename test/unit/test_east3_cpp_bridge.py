@@ -230,6 +230,34 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(expr), "xs.append(make_object(n))")
 
+    def test_render_expr_supports_list_extend_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        node = {
+            "kind": "ListExtend",
+            "owner": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "value": {"kind": "Name", "id": "ys", "resolved_type": "list[int64]"},
+            "resolved_type": "None",
+        }
+        self.assertEqual(emitter.render_expr(node), "xs.insert(xs.end(), ys.begin(), ys.end())")
+
+    def test_builtin_runtime_list_extend_uses_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.extend",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                "attr": "extend",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Name", "id": "ys", "resolved_type": "list[int64]"}],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(expr), "xs.insert(xs.end(), ys.begin(), ys.end())")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",

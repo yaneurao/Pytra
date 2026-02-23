@@ -3496,6 +3496,16 @@ class CppEmitter(CodeEmitter):
                 return f"{owner}.append({args[0]})"
             return f"{owner}.append(/* missing */)"
         if runtime_call == "list.extend":
+            if len(arg_nodes) >= 1:
+                extend_node = {
+                    "kind": "ListExtend",
+                    "owner": owner_node,
+                    "value": arg_nodes[0],
+                    "resolved_type": "None",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(extend_node)
             a0 = args[0] if len(args) >= 1 else "{}"
             return f"{owner}.insert({owner}.end(), {a0}.begin(), {a0}.end())"
         if runtime_call == "list.pop":
@@ -5794,6 +5804,12 @@ class CppEmitter(CodeEmitter):
             if append_rendered is not None:
                 return append_rendered
             return f"{owner_expr}.append({value_expr})"
+        if kind == "ListExtend":
+            owner_node = expr_d.get("owner")
+            value_node = expr_d.get("value")
+            owner_expr = self.render_expr(owner_node)
+            value_expr = self.render_expr(value_node)
+            return f"{owner_expr}.insert({owner_expr}.end(), {value_expr}.begin(), {value_expr}.end())"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))
