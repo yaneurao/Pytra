@@ -2835,7 +2835,13 @@ class CppEmitter(CodeEmitter):
             rhs = f"py_at({src_obj}, {i})"
             decl_t = self.normalize_type_name(self.get_expr_type(e))
             if self._can_runtime_cast_target(decl_t) and not self.is_any_like_type(decl_t):
-                rhs = self._coerce_any_expr_to_target(rhs, decl_t, f"for_unpack:{nm}")
+                rhs = self.render_expr(
+                    self._build_unbox_expr_node(
+                        self._build_py_at_expr_node(src_obj, i),
+                        decl_t,
+                        f"for_unpack:{nm}",
+                    )
+                )
                 self.emit(f"{self._cpp_type_text(decl_t)} {nm} = {rhs};")
                 self.declared_var_types[nm] = decl_t
             else:
@@ -2886,7 +2892,13 @@ class CppEmitter(CodeEmitter):
             elif iter_tmp != "" and self._node_kind_from_dict(target) == "Name":
                 rhs = iter_tmp
                 if self._can_runtime_cast_target(t_decl):
-                    rhs = self._coerce_any_expr_to_target(rhs, t_decl, f"for_target:{t}")
+                    rhs = self.render_expr(
+                        self._build_unbox_expr_node(
+                            self._build_name_expr_node(iter_tmp, "object"),
+                            t_decl,
+                            f"for_target:{t}",
+                        )
+                    )
                     self.emit(f"{self._cpp_type_text(t_decl)} {t} = {rhs};")
                     self.declared_var_types[t] = t_decl
                 else:
@@ -2911,7 +2923,13 @@ class CppEmitter(CodeEmitter):
         elif iter_tmp != "" and self._node_kind_from_dict(target) == "Name":
             rhs = iter_tmp
             if self._can_runtime_cast_target(t_decl):
-                rhs = self._coerce_any_expr_to_target(rhs, t_decl, f"for_target:{t}")
+                rhs = self.render_expr(
+                    self._build_unbox_expr_node(
+                        self._build_name_expr_node(iter_tmp, "object"),
+                        t_decl,
+                        f"for_target:{t}",
+                    )
+                )
                 self.emit(f"{self._cpp_type_text(t_decl)} {t} = {rhs};")
                 self.declared_var_types[t] = t_decl
             else:
@@ -3963,6 +3981,41 @@ class CppEmitter(CodeEmitter):
             "resolved_type": t_norm,
             "borrow_kind": "value",
             "casts": [],
+        }
+
+    def _build_name_expr_node(self, name: str, resolved_type: str = "unknown") -> dict[str, Any]:
+        return {
+            "kind": "Name",
+            "id": name,
+            "resolved_type": resolved_type,
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": name,
+        }
+
+    def _build_constant_int_expr_node(self, value: int) -> dict[str, Any]:
+        return {
+            "kind": "Constant",
+            "resolved_type": "int64",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": str(value),
+            "value": value,
+        }
+
+    def _build_py_at_expr_node(self, container_name: str, index: int) -> dict[str, Any]:
+        return {
+            "kind": "Call",
+            "func": self._build_name_expr_node("py_at"),
+            "args": [
+                self._build_name_expr_node(container_name, "object"),
+                self._build_constant_int_expr_node(index),
+            ],
+            "keywords": [],
+            "resolved_type": "object",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": f"py_at({container_name}, {index})",
         }
 
     def _render_type_id_operand_expr(self, type_id_node: Any) -> str:
