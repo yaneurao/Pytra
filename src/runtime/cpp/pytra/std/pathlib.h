@@ -1,15 +1,4 @@
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/pathlib.py
-// generated-by: src/py2cpp.py
+// FORWARDER: generated runtime header moved to pytra-gen.
+#pragma once
 
-#ifndef PYTRA_STD_PATHLIB_H
-#define PYTRA_STD_PATHLIB_H
-
-namespace pytra::std::pathlib {
-
-struct Path;
-
-
-}  // namespace pytra::std::pathlib
-
-#endif  // PYTRA_STD_PATHLIB_H
+#include "runtime/cpp/pytra-gen/std/pathlib.h"

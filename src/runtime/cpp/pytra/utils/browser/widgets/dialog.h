@@ -1,17 +1,4 @@
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/utils/browser/widgets/dialog.py
-// generated-by: src/py2cpp.py
+// FORWARDER: generated runtime header moved to pytra-gen.
+#pragma once
 
-#ifndef PYTRA_UTILS_BROWSER_WIDGETS_DIALOG_H
-#define PYTRA_UTILS_BROWSER_WIDGETS_DIALOG_H
-
-namespace pytra::utils::browser::widgets::dialog {
-
-struct Dialog;
-struct EntryDialog;
-struct InfoDialog;
-
-
-}  // namespace pytra::utils::browser::widgets::dialog
-
-#endif  // PYTRA_UTILS_BROWSER_WIDGETS_DIALOG_H
+#include "runtime/cpp/pytra-gen/utils/browser/widgets/dialog.h"

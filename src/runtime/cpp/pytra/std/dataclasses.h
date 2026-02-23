@@ -1,14 +1,4 @@
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/dataclasses.py
-// generated-by: src/py2cpp.py
+// FORWARDER: generated runtime header moved to pytra-gen.
+#pragma once
 
-#ifndef PYTRA_STD_DATACLASSES_H
-#define PYTRA_STD_DATACLASSES_H
-
-namespace pytra::std::dataclasses {
-
-object dataclass(const object& _cls, bool init = true, bool repr = true, bool eq = true);
-
-}  // namespace pytra::std::dataclasses
-
-#endif  // PYTRA_STD_DATACLASSES_H
+#include "runtime/cpp/pytra-gen/std/dataclasses.h"
