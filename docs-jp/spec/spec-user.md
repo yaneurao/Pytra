@@ -123,5 +123,5 @@ python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
 
 - 使い方: [使い方ガイド](../how-to-use.md)
 - py2cpp 機能対応表（テスト根拠）: [py2cpp サポートマトリクス](../language/cpp/spec-support.md)
-- サンプルコード: [サンプルコード案内](./spec-sample-code.md)
+- サンプルコード: [サンプルコード案内](../../sample/readme-ja.md)
 - 実装状況詳細: [実装状況メモ（WIP）](../plans/pytra-wip.md)
