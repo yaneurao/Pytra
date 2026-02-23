@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, path_key_for_graph, path_parent_text, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6706,22 +6706,6 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
     return out
 
 
-def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
-    """EAST module から import / from-import のモジュール名を抽出する。"""
-    out: list[str] = []
-    seen: set[str] = set()
-    for stmt_dict in _dict_any_get_dict_list(east_module, "body"):
-        kind = _dict_any_kind(stmt_dict)
-        if kind == "Import":
-            for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
-                name = _dict_any_get_str(ent_dict, "name")
-                append_unique_non_empty(out, seen, name)
-        elif kind == "ImportFrom":
-            mod = _dict_any_get_str(stmt_dict, "module")
-            append_unique_non_empty(out, seen, mod)
-    return out
-
-
 NON_FILE_STANDARD_IMPORTS: set[str] = {
     "__future__",
     "os",
@@ -6795,7 +6779,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             east_cur = load_east(cur_path)
         except Exception:
             continue
-        mods = _collect_import_modules(east_cur)
+        mods = collect_import_modules(east_cur)
         if cur_key not in graph_adj:
             graph_adj[cur_key] = []
             graph_keys.append(cur_key)
