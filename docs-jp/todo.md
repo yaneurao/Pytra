@@ -94,7 +94,7 @@
 
 文脈: `docs-jp/plans/p0-selfhost-stabilization.md`（`TG-P0-SH`）
 
-1. [ ] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を完了する（`P0-SH-04-S1` から `P0-SH-04-S3` 完了でクローズ）。
+1. [x] [ID: P0-SH-04] `tools/prepare_selfhost_source.py` に残る selfhost 専用スタブ整理を完了する（`P0-SH-04-S1` から `P0-SH-04-S3` 完了でクローズ）。
 2. [x] [ID: P0-SH-04-S1] 残存スタブを棚卸しし、「恒久機能化すべきもの」と「削除すべきもの」を分類する。
 3. [x] [ID: P0-SH-04-S2] 恒久機能化対象を compiler/runtime 側へ移し、prepare 側分岐を段階削減する（`P0-SH-04-S2-S1` から `P0-SH-04-S2-S3` 完了でクローズ）。
 4. [x] [ID: P0-SH-04-S2-S1] `CodeEmitter` 本体へ dynamic hooks の有効/無効フラグを追加し、prepare 側 no-op パッチを本体機能へ移す土台を作る。
