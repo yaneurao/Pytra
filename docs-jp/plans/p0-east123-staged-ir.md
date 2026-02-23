@@ -93,6 +93,10 @@
 分割実行規約:
 - `P0-EAST123-08-S2`: 上記 1〜3（truthy/len/str + iterable + boxing/unboxing）を第1陣として実装する。
 - `P0-EAST123-08-S3`: 上記 4（主要 built-in lower）を第2陣として実装する。
+- `P0-EAST123-08-S3-S1`: `list/set` 系 built-in lower を IR-first へ移行する。
+- `P0-EAST123-08-S3-S2`: `dict` 系 built-in lower を IR-first へ移行する。
+- `P0-EAST123-08-S3-S3`: `str/special` 系 built-in lower を IR-first へ移行する。
+- `P0-EAST123-08-S3-S4`: backend 直分岐を整理し、EAST3 命令写像 + 構文差分 hook のみに収束させる。
 
 ## P0-EAST123-03-S1 棚卸し（C++ hooks / py2cpp）
 
@@ -198,3 +202,5 @@
 - 2026-02-24: [ID: P0-EAST123-08-S2] 第1陣の6パッチ目として、`_coerce_args_for_module_function` / `_coerce_py_assert_args` / `_coerce_dict_key_expr` / `dict.get(default)` の Any 境界 boxing を `Box` ノード経由へ寄せた。`test_east3_cpp_bridge.py` に module 引数・dict[Any,*] key の回帰を追加し、`test_py2cpp_codegen_issues.py` / `test_east3_lowering.py` / `tools/check_py2cpp_transpile.py` / `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で確認した（selfhost 差分は既知3件維持）。
 - 2026-02-24: [ID: P0-EAST123-08-S2] 第1陣の7パッチ目として、`list.append`（`list[Any]`）と `list/set comprehension` の Any boxing を `Box` ノード経由（`_render_append_call_object_method`, `_box_any_target_value`）へ寄せた。`test_east3_cpp_bridge.py` に `list[Any].append` 回帰を追加し、`test_py2cpp_codegen_issues.py` / `test_east3_lowering.py` / `tools/check_py2cpp_transpile.py` / `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で確認した（selfhost 差分は既知3件維持）。
 - 2026-02-24: [ID: P0-EAST123-08-S2] 第1陣の8パッチ目として、`render_cond` の Any/object 条件判定を `ObjBool` 命令経路へ統一し、`if/while` の truthy 評価を backend 直書きから IR-first 写像へ寄せた。`test_east3_cpp_bridge.py` に `render_cond(Any)` 回帰を追加し、`test_py2cpp_codegen_issues.py` / `test_east3_lowering.py` / `tools/check_py2cpp_transpile.py` / `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で確認した（selfhost 差分は既知3件維持）。
+- 2026-02-24: [ID: P0-EAST123-08-S2] 第1陣（boxing/unboxing, iterable, truthy/len/str）の移行が完了したため、`docs-jp/todo.md` 側で `P0-EAST123-08-S2` を完了済みに更新した。
+- 2026-02-24: [ID: P0-EAST123-08-S3] 第2陣（主要 built-in lower）の着手単位を `S3-S1..S3-S4` へ分割し、`list/set -> dict -> str/special -> backend分岐整理` の順で実装する方針を固定した。
