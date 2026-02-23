@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6197,32 +6197,6 @@ def transpile_to_cpp(
     )
 
 
-def _split_type_args(text: str) -> list[str]:
-    """`A[B,C[D]]` の `B,C[D]` をトップレベルで分割する。"""
-    out: list[str] = []
-    cur = ""
-    depth = 0
-    for ch in text:
-        if ch == "[":
-            depth += 1
-            cur += ch
-        elif ch == "]":
-            if depth > 0:
-                depth -= 1
-            cur += ch
-        elif ch == "," and depth == 0:
-            part: str = cur.strip()
-            if part != "":
-                out.append(part)
-            cur = ""
-        else:
-            cur += ch
-    tail: str = cur.strip()
-    if tail != "":
-        out.append(tail)
-    return out
-
-
 def _split_top_level_union(text: str) -> list[str]:
     """`A|B[list[C|D]]` をトップレベルの `|` で分割する。"""
     out: list[str] = []
@@ -6312,12 +6286,12 @@ def _header_cpp_type_from_east(
         inner = t[4:-1].strip()
         return "set<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
     if t.startswith("dict[") and t.endswith("]"):
-        inner = _split_type_args(t[5:-1].strip())
+        inner = split_type_args(t[5:-1].strip())
         if len(inner) == 2:
             return "dict<" + _header_cpp_type_from_east(inner[0], ref_classes, class_names) + ", " + _header_cpp_type_from_east(inner[1], ref_classes, class_names) + ">"
         return "dict<str, object>"
     if t.startswith("tuple[") and t.endswith("]"):
-        inner = _split_type_args(t[6:-1].strip())
+        inner = split_type_args(t[6:-1].strip())
         vals: list[str] = []
         for part in inner:
             vals.append(_header_cpp_type_from_east(part, ref_classes, class_names))

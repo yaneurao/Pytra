@@ -156,6 +156,32 @@ def split_top_level_csv(text: str) -> list[str]:
     return out
 
 
+def split_type_args(text: str) -> list[str]:
+    """`A[B,C[D]]` の `B,C[D]` をトップレベルで分割する。"""
+    out: list[str] = []
+    cur = ""
+    depth = 0
+    for ch in text:
+        if ch == "[":
+            depth += 1
+            cur += ch
+        elif ch == "]":
+            if depth > 0:
+                depth -= 1
+            cur += ch
+        elif ch == "," and depth == 0:
+            part: str = cur.strip()
+            if part != "":
+                out.append(part)
+            cur = ""
+        else:
+            cur += ch
+    tail: str = cur.strip()
+    if tail != "":
+        out.append(tail)
+    return out
+
+
 def path_parent_text(path_obj: Path) -> str:
     """Path から親ディレクトリ文字列を取得する。"""
     path_txt: str = str(path_obj)
