@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_any_get_str, dict_any_get_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -202,14 +202,6 @@ def _dict_any_get(src: dict[str, Any], key: str) -> Any:
     return None
 
 
-def _dict_any_get_dict(src: dict[str, Any], key: str) -> dict[str, Any]:
-    """`dict[str, Any]` から辞書値を安全に取得する。"""
-    value = _dict_any_get(src, key)
-    if isinstance(value, dict):
-        return value
-    return {}
-
-
 def _dict_any_get_dict_list(src: dict[str, Any], key: str) -> list[dict[str, Any]]:
     """`dict[str, Any]` から dict 要素のみの list を取得する。"""
     out: list[dict[str, Any]] = []
@@ -224,7 +216,7 @@ def _assign_targets(stmt: dict[str, Any]) -> list[dict[str, Any]]:
     targets = _dict_any_get_dict_list(stmt, "targets")
     if len(targets) > 0:
         return targets
-    tgt = _dict_any_get_dict(stmt, "target")
+    tgt = dict_any_get_dict(stmt, "target")
     if len(tgt) > 0:
         return [tgt]
     return []
@@ -239,7 +231,7 @@ def _name_target_id(target: dict[str, Any]) -> str:
 
 def _stmt_target_name(stmt: dict[str, Any]) -> str:
     """文ノードの `target` フィールドから Name 識別子を取得する。"""
-    return _name_target_id(_dict_any_get_dict(stmt, "target"))
+    return _name_target_id(dict_any_get_dict(stmt, "target"))
 
 
 def _stmt_assigned_names(stmt: dict[str, Any]) -> list[str]:
@@ -343,12 +335,12 @@ def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
             if name_txt != "":
                 symbols.add(name_txt)
     elif kind == "For":
-        target = _dict_any_get_dict(stmt, "target")
+        target = dict_any_get_dict(stmt, "target")
         if len(target) > 0:
             _collect_store_names_from_target(target, symbols)
     elif kind == "With":
         for item in _dict_any_get_dict_list(stmt, "items"):
-            opt_vars = _dict_any_get_dict(item, "optional_vars")
+            opt_vars = dict_any_get_dict(item, "optional_vars")
             if len(opt_vars) > 0:
                 _collect_store_names_from_target(opt_vars, symbols)
     elif kind == "ExceptHandler":
@@ -747,8 +739,8 @@ def load_cpp_module_attr_call_map(profile: dict[str, Any] = {}) -> dict[str, dic
     out: dict[str, dict[str, str]] = {}
     if not isinstance(profile, dict):
         return out
-    runtime_calls = _dict_any_get_dict(profile, "runtime_calls")
-    module_attr = _dict_any_get_dict(runtime_calls, "module_attr_call")
+    runtime_calls = dict_any_get_dict(profile, "runtime_calls")
+    module_attr = dict_any_get_dict(runtime_calls, "module_attr_call")
     for module_name, ent_obj in module_attr.items():
         if not isinstance(module_name, str):
             continue
@@ -6319,7 +6311,7 @@ def build_cpp_header_from_east(
                 ret_t = dict_any_get_str(st, "return_type", "None")
                 ret_cpp = _header_cpp_type_from_east(ret_t, ref_classes, class_names)
                 used_types.add(ret_cpp)
-                arg_types = _dict_any_get_dict(st, "arg_types")
+                arg_types = dict_any_get_dict(st, "arg_types")
                 arg_order = dict_any_get_list(st, "arg_order")
                 parts: list[str] = []
                 for an in arg_order:
@@ -6344,7 +6336,7 @@ def build_cpp_header_from_east(
                 continue
             decl_t = dict_any_get_str(st, "decl_type")
             if decl_t == "" or decl_t == "unknown":
-                tgt = _dict_any_get_dict(st, "target")
+                tgt = dict_any_get_dict(st, "target")
                 decl_t = dict_any_get_str(tgt, "resolved_type")
             if decl_t == "" or decl_t == "unknown":
                 continue
@@ -6769,13 +6761,13 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
     analysis = _analyze_import_graph(entry_path)
     _validate_import_graph_or_raise(analysis)
     files = dict_any_get_str_list(analysis, "user_module_files")
-    module_id_map = _dict_any_get_dict(analysis, "module_id_map")
+    module_id_map = dict_any_get_dict(analysis, "module_id_map")
     out: dict[str, dict[str, Any]] = {}
     root_dir = Path(path_parent_text(entry_path))
     for f in files:
         p = Path(f)
         east = load_east(p, parser_backend)
-        meta = _dict_any_get_dict(east, "meta")
+        meta = dict_any_get_dict(east, "meta")
         module_id = dict_any_get_str(module_id_map, str(p))
         module_id = module_id if module_id != "" else module_name_from_path_for_graph(root_dir, p)
         if module_id != "":
@@ -6809,7 +6801,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 for name_txt in _stmt_assigned_names(st):
                     if name_txt not in variables:
                         variables.append(name_txt)
-        meta = _dict_any_get_dict(east, "meta")
+        meta = dict_any_get_dict(east, "meta")
         import_bindings = meta_import_bindings(east)
         qualified_symbol_refs = meta_qualified_symbol_refs(east)
         import_modules: dict[str, str] = {}
@@ -6824,16 +6816,16 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 for ref in qualified_symbol_refs:
                     _set_import_symbol_binding(import_symbols, ref["local_name"], ref["module_id"], ref["symbol"])
         else:
-            legacy_mods = _dict_any_get_dict(meta, "import_modules")
+            legacy_mods = dict_any_get_dict(meta, "import_modules")
             for local_name_any, _module_id_obj in legacy_mods.items():
                 if not isinstance(local_name_any, str):
                     continue
                 _set_import_module_binding(import_modules, local_name_any, dict_any_get_str(legacy_mods, local_name_any))
-            legacy_syms = _dict_any_get_dict(meta, "import_symbols")
+            legacy_syms = dict_any_get_dict(meta, "import_symbols")
             for local_name_any, _sym_obj in legacy_syms.items():
                 if not isinstance(local_name_any, str):
                     continue
-                sym = _dict_any_get_dict(legacy_syms, local_name_any)
+                sym = dict_any_get_dict(legacy_syms, local_name_any)
                 _set_import_symbol_binding(
                     import_symbols,
                     local_name_any,
@@ -6863,7 +6855,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
             if kind == "FunctionDef":
                 name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
-                    arg_types = _dict_any_get_dict(st, "arg_types")
+                    arg_types = dict_any_get_dict(st, "arg_types")
                     arg_order = dict_any_get_list(st, "arg_order")
                     ret_type = dict_any_get_str(st, "return_type", "None")
                     fn_ent: dict[str, Any] = {
@@ -6875,7 +6867,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
             elif kind == "ClassDef":
                 name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
-                    fields = _dict_any_get_dict(st, "field_types")
+                    fields = dict_any_get_dict(st, "field_types")
                     cls_schema[name_txt] = {"field_types": fields}
         out[mod_path] = {"functions": fn_schema, "classes": cls_schema}
     return out
@@ -6925,7 +6917,7 @@ def _write_multi_file_cpp(
     module_name_by_key: dict[str, str] = {}
     for mod_key in files:
         mod_path = Path(mod_key)
-        east0 = _dict_any_get_dict(module_east_map, mod_key)
+        east0 = dict_any_get_dict(module_east_map, mod_key)
         label = module_rel_label(root, mod_path)
         module_label_map[mod_key] = label
         mod_name = module_id_from_east_for_graph(root, mod_path, east0)
@@ -6938,7 +6930,7 @@ def _write_multi_file_cpp(
     manifest_modules: list[dict[str, Any]] = []
 
     for mod_key in files:
-        east = _dict_any_get_dict(module_east_map, mod_key)
+        east = dict_any_get_dict(module_east_map, mod_key)
         if len(east) == 0:
             continue
         mod_path = Path(mod_key)
@@ -6986,7 +6978,7 @@ def _write_multi_file_cpp(
             '#include "pytra_multi_prelude.h"',
         )
         # ユーザーモジュール import 呼び出しを解決するため、参照先関数の前方宣言を補う。
-        meta = _dict_any_get_dict(east, "meta")
+        meta = dict_any_get_dict(east, "meta")
         type_emitter = CppEmitter(
             east,
             {},
@@ -7001,8 +6993,8 @@ def _write_multi_file_cpp(
             "",
             False,
         )
-        import_modules = _dict_any_get_dict(meta, "import_modules")
-        import_symbols = _dict_any_get_dict(meta, "import_symbols")
+        import_modules = dict_any_get_dict(meta, "import_modules")
+        import_symbols = dict_any_get_dict(meta, "import_symbols")
         dep_modules: set[str] = set()
         for alias_any, _module_id_obj in import_modules.items():
             if not isinstance(alias_any, str):
@@ -7013,7 +7005,7 @@ def _write_multi_file_cpp(
         for alias_any, _sym_obj in import_symbols.items():
             if not isinstance(alias_any, str):
                 continue
-            sym = _dict_any_get_dict(import_symbols, alias_any)
+            sym = dict_any_get_dict(import_symbols, alias_any)
             mod_name = dict_any_get_str(sym, "module")
             if mod_name != "":
                 dep_modules.add(mod_name)
@@ -7031,18 +7023,18 @@ def _write_multi_file_cpp(
                     break
             if target_key == "":
                 continue
-            target_schema = _dict_any_get_dict(type_schema, target_key)
-            funcs = _dict_any_get_dict(target_schema, "functions")
+            target_schema = dict_any_get_dict(type_schema, target_key)
+            funcs = dict_any_get_dict(target_schema, "functions")
             # `main` は他モジュールから呼ばれない前提。
             fn_decls: list[str] = []
             for fn_name_any, _fn_sig in funcs.items():
                 if fn_name_any == "main":
                     continue
                 fn_name = fn_name_any
-                sig = _dict_any_get_dict(funcs, fn_name)
+                sig = dict_any_get_dict(funcs, fn_name)
                 ret_t = dict_any_get_str(sig, "return_type", "None")
                 ret_cpp = "void" if ret_t == "None" else type_emitter._cpp_type_text(ret_t)
-                arg_types = _dict_any_get_dict(sig, "arg_types")
+                arg_types = dict_any_get_dict(sig, "arg_types")
                 arg_order = dict_any_get_list(sig, "arg_order")
                 parts: list[str] = []
                 for an in arg_order:
