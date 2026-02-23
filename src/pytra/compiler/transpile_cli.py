@@ -371,6 +371,13 @@ def dict_any_kind(src: dict[str, object]) -> str:
     return dict_any_get_str(src, "kind")
 
 
+def name_target_id(target: dict[str, object]) -> str:
+    """代入先が Name ノードのとき識別子を返す。"""
+    if dict_any_kind(target) != "Name":
+        return ""
+    return dict_any_get_str(target, "id")
+
+
 def dict_any_get_str_list(src: dict[str, object], key: str) -> list[str]:
     """`dict[str, object]` の list 値から `str` 要素だけを抽出する。"""
     out: list[str] = []
