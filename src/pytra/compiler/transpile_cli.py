@@ -350,6 +350,13 @@ def count_text_lines(text: str) -> int:
     return count
 
 
+def dict_any_get(src: dict[str, object], key: str) -> object | None:
+    """`dict[str, object]` から値を取得する（未定義時は `None`）。"""
+    if key in src:
+        return src[key]
+    return None
+
+
 def dict_any_get_str(src: dict[str, object], key: str, default_value: str = "") -> str:
     """`dict[str, object]` から `str` 値を取得する（未定義/非文字列は既定値）。"""
     if key in src:
