@@ -473,6 +473,25 @@ def is_known_non_user_import(
     return False
 
 
+def resolve_module_name_for_graph(
+    raw_name: str,
+    root_dir: Path,
+    runtime_std_source_root: Path,
+    runtime_utils_source_root: Path,
+) -> dict[str, str]:
+    """import graph 用のモジュール解決（順序依存を避ける前段 helper）。"""
+    if raw_name.startswith("."):
+        return {"status": "relative", "module_id": raw_name, "path": ""}
+    if is_pytra_module_name(raw_name):
+        return {"status": "pytra", "module_id": raw_name, "path": ""}
+    dep_file = resolve_user_module_path_for_graph(raw_name, root_dir)
+    if str(dep_file) != "":
+        return {"status": "user", "module_id": raw_name, "path": str(dep_file)}
+    if is_known_non_user_import(raw_name, runtime_std_source_root, runtime_utils_source_root):
+        return {"status": "known", "module_id": raw_name, "path": ""}
+    return {"status": "missing", "module_id": raw_name, "path": ""}
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
