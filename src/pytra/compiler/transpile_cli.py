@@ -156,6 +156,33 @@ def split_ws_tokens(text: str) -> list[str]:
     return tokens
 
 
+def first_import_detail_line(source_text: str, kind: str) -> str:
+    """import エラー表示向けに、入力コードから該当 import 行を抜き出す。"""
+    lines = source_text.splitlines()
+    for i in range(len(lines)):
+        raw = lines[i]
+        line = raw if isinstance(raw, str) else ""
+        hash_pos = line.find("#")
+        if hash_pos >= 0:
+            line = line[:hash_pos]
+        line = line.strip()
+        if line == "":
+            continue
+        if kind == "wildcard":
+            if line.startswith("from ") and " import " in line and line.endswith("*"):
+                parts = split_ws_tokens(line)
+                if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import" and parts[3] == "*":
+                    return "from " + parts[1] + " import *"
+        if kind == "relative":
+            if line.startswith("from .") and " import " in line:
+                parts = split_ws_tokens(line)
+                if len(parts) >= 4 and parts[0] == "from" and parts[2] == "import":
+                    return "from " + parts[1] + " import " + parts[3]
+    if kind == "wildcard":
+        return "from ... import *"
+    return "from .module import symbol"
+
+
 def append_unique_non_empty(items: list[str], seen: set[str], value: str) -> None:
     """空でない文字列を未登録時のみ追加する。"""
     if value == "" or value in seen:

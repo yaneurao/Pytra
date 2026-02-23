@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -205,6 +205,20 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed["category"], "")
         self.assertEqual(parsed["summary"], "")
         self.assertEqual(parsed["details"], [])
+
+    def test_first_import_detail_line_extracts_wildcard_and_relative(self) -> None:
+        src = (
+            "# comment\n"
+            "from pkg.mod import *\n"
+            "from .local import name\n"
+        )
+        self.assertEqual(first_import_detail_line(src, "wildcard"), "from pkg.mod import *")
+        self.assertEqual(first_import_detail_line(src, "relative"), "from .local import name")
+
+    def test_first_import_detail_line_fallback(self) -> None:
+        src = "print('x')\n"
+        self.assertEqual(first_import_detail_line(src, "wildcard"), "from ... import *")
+        self.assertEqual(first_import_detail_line(src, "relative"), "from .module import symbol")
 
     def test_split_ws_tokens_splits_ascii_whitespace(self) -> None:
         self.assertEqual(split_ws_tokens("a b\tc"), ["a", "b", "c"])
