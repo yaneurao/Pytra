@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -7717,13 +7717,6 @@ def print_user_error(err_text: str) -> None:
             print(line, file=sys.stderr)
 
 
-def _dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str:
-    """`dict[str, str]` から文字列値を安全に取得する。"""
-    if key in src:
-        return src[key]
-    return default_value
-
-
 def _is_valid_cpp_namespace_name(ns: str) -> bool:
     """selfhost 安定性優先の簡易チェック。"""
     return True
@@ -7742,40 +7735,40 @@ def main(argv: list[str]) -> int:
         if is_exec_name and not head.startswith("-"):
             parse_argv = list(argv_list[1:])
     parsed = parse_py2cpp_argv(parse_argv)
-    parse_err = _dict_str_get(parsed, "__error", "")
+    parse_err = dict_str_get(parsed, "__error", "")
     if parse_err != "":
         print(f"error: {parse_err}", file=sys.stderr)
         return 1
-    input_txt = _dict_str_get(parsed, "input", "")
-    output_txt = _dict_str_get(parsed, "output", "")
-    header_output_txt = _dict_str_get(parsed, "header_output", "")
-    output_dir_txt = _dict_str_get(parsed, "output_dir", "")
-    top_namespace_opt = _dict_str_get(parsed, "top_namespace_opt", "")
-    negative_index_mode_opt = _dict_str_get(parsed, "negative_index_mode_opt", "")
-    bounds_check_mode_opt = _dict_str_get(parsed, "bounds_check_mode_opt", "")
-    floor_div_mode_opt = _dict_str_get(parsed, "floor_div_mode_opt", "")
-    mod_mode_opt = _dict_str_get(parsed, "mod_mode_opt", "")
-    int_width_opt = _dict_str_get(parsed, "int_width_opt", "")
-    str_index_mode_opt = _dict_str_get(parsed, "str_index_mode_opt", "")
-    str_slice_mode_opt = _dict_str_get(parsed, "str_slice_mode_opt", "")
-    opt_level_opt = _dict_str_get(parsed, "opt_level_opt", "")
-    preset = _dict_str_get(parsed, "preset", "")
-    parser_backend = _dict_str_get(parsed, "parser_backend", "self_hosted")
-    guard_profile = _dict_str_get(parsed, "guard_profile", "default")
-    max_ast_depth_raw = _dict_str_get(parsed, "max_ast_depth", "")
-    max_parse_nodes_raw = _dict_str_get(parsed, "max_parse_nodes", "")
-    max_symbols_per_module_raw = _dict_str_get(parsed, "max_symbols_per_module", "")
-    max_scope_depth_raw = _dict_str_get(parsed, "max_scope_depth", "")
-    max_import_graph_nodes_raw = _dict_str_get(parsed, "max_import_graph_nodes", "")
-    max_import_graph_edges_raw = _dict_str_get(parsed, "max_import_graph_edges", "")
-    max_generated_lines_raw = _dict_str_get(parsed, "max_generated_lines", "")
-    no_main = _dict_str_get(parsed, "no_main", "0") == "1"
-    single_file = _dict_str_get(parsed, "single_file", "1") == "1"
-    output_mode_explicit = _dict_str_get(parsed, "output_mode_explicit", "0") == "1"
-    dump_deps = _dict_str_get(parsed, "dump_deps", "0") == "1"
-    dump_options = _dict_str_get(parsed, "dump_options", "0") == "1"
-    emit_runtime_cpp = _dict_str_get(parsed, "emit_runtime_cpp", "0") == "1"
-    show_help = _dict_str_get(parsed, "help", "0") == "1"
+    input_txt = dict_str_get(parsed, "input", "")
+    output_txt = dict_str_get(parsed, "output", "")
+    header_output_txt = dict_str_get(parsed, "header_output", "")
+    output_dir_txt = dict_str_get(parsed, "output_dir", "")
+    top_namespace_opt = dict_str_get(parsed, "top_namespace_opt", "")
+    negative_index_mode_opt = dict_str_get(parsed, "negative_index_mode_opt", "")
+    bounds_check_mode_opt = dict_str_get(parsed, "bounds_check_mode_opt", "")
+    floor_div_mode_opt = dict_str_get(parsed, "floor_div_mode_opt", "")
+    mod_mode_opt = dict_str_get(parsed, "mod_mode_opt", "")
+    int_width_opt = dict_str_get(parsed, "int_width_opt", "")
+    str_index_mode_opt = dict_str_get(parsed, "str_index_mode_opt", "")
+    str_slice_mode_opt = dict_str_get(parsed, "str_slice_mode_opt", "")
+    opt_level_opt = dict_str_get(parsed, "opt_level_opt", "")
+    preset = dict_str_get(parsed, "preset", "")
+    parser_backend = dict_str_get(parsed, "parser_backend", "self_hosted")
+    guard_profile = dict_str_get(parsed, "guard_profile", "default")
+    max_ast_depth_raw = dict_str_get(parsed, "max_ast_depth", "")
+    max_parse_nodes_raw = dict_str_get(parsed, "max_parse_nodes", "")
+    max_symbols_per_module_raw = dict_str_get(parsed, "max_symbols_per_module", "")
+    max_scope_depth_raw = dict_str_get(parsed, "max_scope_depth", "")
+    max_import_graph_nodes_raw = dict_str_get(parsed, "max_import_graph_nodes", "")
+    max_import_graph_edges_raw = dict_str_get(parsed, "max_import_graph_edges", "")
+    max_generated_lines_raw = dict_str_get(parsed, "max_generated_lines", "")
+    no_main = dict_str_get(parsed, "no_main", "0") == "1"
+    single_file = dict_str_get(parsed, "single_file", "1") == "1"
+    output_mode_explicit = dict_str_get(parsed, "output_mode_explicit", "0") == "1"
+    dump_deps = dict_str_get(parsed, "dump_deps", "0") == "1"
+    dump_options = dict_str_get(parsed, "dump_options", "0") == "1"
+    emit_runtime_cpp = dict_str_get(parsed, "emit_runtime_cpp", "0") == "1"
+    show_help = dict_str_get(parsed, "help", "0") == "1"
     negative_index_mode = ""
     bounds_check_mode = ""
     floor_div_mode = ""
