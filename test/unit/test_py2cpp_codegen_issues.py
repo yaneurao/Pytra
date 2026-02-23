@@ -604,7 +604,7 @@ class Child(Base):
         super().__init__()
 
 def f(x: object) -> bool:
-    return isinstance(x, Child)
+    return isinstance(x, Base) or isinstance(x, Child)
 """
         with tempfile.TemporaryDirectory() as tmpdir:
             src_py = Path(tmpdir) / "isinstance_class.py"
@@ -614,7 +614,9 @@ def f(x: object) -> bool:
 
         self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type", cpp)
         self.assertIn("this->set_type_id(PYTRA_TYPE_ID);", cpp)
-        self.assertIn("return py_isinstance(x, Child::PYTRA_TYPE_ID);", cpp)
+        self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{PYTRA_TID_OBJECT});", cpp)
+        self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{Base::PYTRA_TYPE_ID});", cpp)
+        self.assertIn("return (py_isinstance(x, Base::PYTRA_TYPE_ID)) || (py_isinstance(x, Child::PYTRA_TYPE_ID));", cpp)
 
 
 if __name__ == "__main__":

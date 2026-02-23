@@ -1333,6 +1333,9 @@ class CppEmitter(CodeEmitter):
                 if base != "" and base in self.ref_classes and name not in self.ref_classes:
                     self.ref_classes.add(name)
                     changed = True
+                if base != "" and name in self.ref_classes and base in self.class_names and base not in self.ref_classes:
+                    self.ref_classes.add(base)
+                    changed = True
         self.value_classes = {name for name in self.class_names if name not in self.ref_classes}
 
         self.emit_module_leading_trivia()
