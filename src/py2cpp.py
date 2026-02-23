@@ -6131,11 +6131,13 @@ def _write_multi_file_cpp(
             funcs = dict_any_get_dict(target_schema, "functions")
             # `main` は他モジュールから呼ばれない前提。
             fn_decls: list[str] = []
-            for fn_name_any, _fn_sig in funcs.items():
+            for fn_name_any, fn_sig_obj in funcs.items():
+                if not isinstance(fn_name_any, str):
+                    continue
                 if fn_name_any == "main":
                     continue
                 fn_name = fn_name_any
-                sig = dict_any_get_dict(funcs, fn_name)
+                sig = fn_sig_obj if isinstance(fn_sig_obj, dict) else {}
                 ret_t = dict_any_get_str(sig, "return_type", "None")
                 ret_cpp = "void" if ret_t == "None" else type_emitter._cpp_type_text(ret_t)
                 arg_types = dict_any_get_dict(sig, "arg_types")
