@@ -31,6 +31,29 @@ ID: `TG-P0-ITER`
 3. `P0-ITER-01-S3`: C++ runtime に `py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range` を実装し、non-iterable fail-fast 契約を固定する。
 4. `P0-ITER-01-S4`: `py2cpp` の `static_fastpath` / `runtime_protocol` 分岐と回帰テストを整備する。
 
+## `P0-ITER-01-S1` 棚卸し結果
+
+- 必須メタデータ（`For` ノード）:
+  - `iter_mode`: `static_fastpath | runtime_protocol`
+  - `iter_source_type`: 反復元の解決型（空なら `unknown`）
+  - `iter_element_type`: 反復要素型（空なら `unknown`）
+- 必須メタデータ（`For.iter` 式ノード）:
+  - `iterable_trait`: `yes | no | unknown`
+  - `iter_protocol`: `static_range | runtime_protocol`
+  - `iter_element_type`: `For.iter_element_type` と同じ規約で保持
+- 生成側（producer）:
+  - `src/pytra/compiler/east_parts/core.py` の `for` 解析で `iter_mode` / `iter_source_type` / `iter_element_type` を `For` に付与し、`iterable_trait` / `iter_protocol` を `iter` 式へ注入する。
+- 消費側（consumer）:
+  - `src/py2cpp.py` の `emit_for_each` が `_resolve_for_iter_mode` で `iter_mode` を解決し、`_emit_for_each_runtime` で `py_dyn_range(...)` 経路を生成する。
+  - `iter_mode` が欠落した旧 EAST は `_resolve_for_iter_mode` で `static_fastpath` へフォールバックし互換維持する。
+- 影響ノード:
+  - 直接影響: `For`（新規メタデータ利用）
+  - 隣接影響: `ForRange`（`for range(...)` lower の分岐点だが `iter_mode` 非依存）
+- 既存回帰テスト:
+  - `test/unit/test_east_core.py::test_for_iter_mode_and_iterable_traits_are_annotated`
+  - `test/unit/test_py2cpp_codegen_issues.py::test_for_object_uses_runtime_protocol_py_dyn_range`
+  - `test/unit/test_py2cpp_codegen_issues.py::test_for_list_keeps_static_fastpath`
+
 ## 受け入れ基準
 
 - `object/Any` の `for` が `__iter__` / `__next__` を経由して動作する。
@@ -46,3 +69,4 @@ ID: `TG-P0-ITER`
 - 2026-02-23: selfhost 安定性のため、`iter_mode` 未付与の既存 EAST は `unknown` を既定 `static_fastpath` として扱う（互換優先）。`object/Any` は parser 側で明示 `runtime_protocol` を付与して切り替える。
 - 2026-02-23: C++ runtime の object iterable 経路で `set` を扱えるようにした。`PySetObj`（`PYTRA_TID_SET`）と `make_object(const set<T>&)` を追加し、`py_dyn_range(make_object(set<...>))` が反復可能であること、`py_isinstance(make_object(set<...>), PYTRA_TID_SET)` が成立することを `test/unit/test_cpp_runtime_iterable.py` / `test/unit/test_cpp_runtime_type_id.py` で固定した。
 - 2026-02-23: docs-jp/todo.md の P0-ITER-01 を -S1 〜 -S4 へ分割したため、本 plan 側にも同粒度の実行順を追記した。
+- 2026-02-23: `P0-ITER-01-S1` を完了。`EAST` の必須 trait（`iter_mode` / `iter_source_type` / `iter_element_type` / `iterable_trait` / `iter_protocol`）と影響ノード（`For` / `ForRange`）を棚卸しし、producer（`core.py`）と consumer（`py2cpp.py`）の責務境界を固定した。回帰として `python3 test/unit/test_east_core.py`、`python3 test/unit/test_py2cpp_codegen_issues.py` を実行して既存契約が維持されることを確認した。
