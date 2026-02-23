@@ -503,7 +503,7 @@ class CppEmitter(CodeEmitter):
         for stmt in body:
             kind = self._node_kind_from_dict(stmt)
             if kind == "Import":
-                for ent in self._import_entries_for_stmt(stmt):
+                for ent in self._dict_stmt_list(stmt.get("names")):
                     mod_name = dict_any_get_str(ent, "name")
                     inc = self._module_name_to_cpp_include(mod_name)
                     append_unique_non_empty(includes, seen, inc)
@@ -518,7 +518,7 @@ class CppEmitter(CodeEmitter):
                 elif mod_name == "pytra.utils":
                     runtime_prefix = "pytra.utils."
                 if runtime_prefix != "":
-                    for ent in self._import_entries_for_stmt(stmt):
+                    for ent in self._dict_stmt_list(stmt.get("names")):
                         sym = dict_any_get_str(ent, "name")
                         if sym == "":
                             continue
@@ -587,18 +587,6 @@ class CppEmitter(CodeEmitter):
         self._seed_legacy_import_symbols_from_meta(meta)
         self._seed_legacy_import_modules_from_meta(meta)
         return
-
-    def _import_entries_for_stmt(self, stmt: dict[str, Any]) -> list[dict[str, Any]]:
-        """Import/ImportFrom の `names` を dict list へ正規化する。"""
-        entries = self._dict_stmt_list(stmt.get("names"))
-        if len(entries) > 0:
-            return entries
-        out: list[dict[str, Any]] = []
-        for raw_name in self.any_to_list(stmt.get("names")):
-            ent = self.any_to_dict_or_empty(raw_name)
-            if len(ent) > 0:
-                out.append(ent)
-        return out
 
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
@@ -1855,7 +1843,7 @@ class CppEmitter(CodeEmitter):
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
         kind = self._node_kind_from_dict(stmt)
         if kind == "Import":
-            ents = self._import_entries_for_stmt(stmt)
+            ents = self._dict_stmt_list(stmt.get("names"))
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
@@ -1870,7 +1858,7 @@ class CppEmitter(CodeEmitter):
             return
         if kind == "ImportFrom":
             mod = dict_any_get_str(stmt, "module")
-            ents = self._import_entries_for_stmt(stmt)
+            ents = self._dict_stmt_list(stmt.get("names"))
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
