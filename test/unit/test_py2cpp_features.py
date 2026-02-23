@@ -136,15 +136,21 @@ class Py2CppFeatureTest(unittest.TestCase):
             _runtime_module_tail_from_source_path(Path("src/pytra/compiler/east_parts/core.py")),
             "compiler/east_parts/core",
         )
+        self.assertEqual(
+            _runtime_module_tail_from_source_path(Path("src/pytra/built_in/type_id.py")),
+            "built_in/type_id",
+        )
         self.assertEqual(_runtime_module_tail_from_source_path(Path("sample/py/01_mandelbrot.py")), "")
 
         self.assertEqual(_runtime_output_rel_tail("std/math_impl"), "std/math-impl")
         self.assertEqual(_runtime_output_rel_tail("json"), "utils/json")
         self.assertEqual(_runtime_output_rel_tail("compiler/east_parts/core_impl"), "compiler/east_parts/core-impl")
+        self.assertEqual(_runtime_output_rel_tail("built_in/type_id"), "built_in/type_id")
 
         self.assertEqual(_runtime_namespace_for_tail("std/math"), "pytra::std::math")
         self.assertEqual(_runtime_namespace_for_tail("json"), "pytra::utils::json")
         self.assertEqual(_runtime_namespace_for_tail("compiler/east_parts/core"), "pytra::compiler::east_parts::core")
+        self.assertEqual(_runtime_namespace_for_tail("built_in/type_id"), "")
 
     def test_preset_resolution_and_override(self) -> None:
         neg, bnd, fdiv, mod, iw, sidx, ssli, opt = resolve_codegen_options("native", "", "", "", "", "", "", "", "")

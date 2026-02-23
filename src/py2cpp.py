@@ -22,6 +22,7 @@ from pytra.std import sys
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT = Path("src/pytra/compiler")
+RUNTIME_BUILT_IN_SOURCE_ROOT = Path("src/pytra/built_in")
 RUNTIME_CPP_COMPAT_ROOT = Path("src/runtime/cpp/pytra")
 RUNTIME_CPP_GEN_ROOT = Path("src/runtime/cpp/pytra-gen")
 
@@ -54,6 +55,10 @@ def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
         tail = module_name_norm[15:]
         rel = _module_tail_to_cpp_header_path(tail) if tail else ""
         return bool(rel) and _exists_under_runtime_roots("compiler/" + rel)
+    if module_name_norm.startswith("pytra.built_in."):
+        tail = module_name_norm[15:]
+        rel = _module_tail_to_cpp_header_path(tail) if tail else ""
+        return bool(rel) and _exists_under_runtime_roots("built_in/" + rel)
     return False
 
 
@@ -407,6 +412,10 @@ class CppEmitter(CodeEmitter):
             return module_name
         if module_name == "pytra.compiler":
             return "pytra.compiler"
+        if module_name.startswith("pytra.built_in."):
+            return module_name
+        if module_name == "pytra.built_in":
+            return "pytra.built_in"
         if module_name.startswith("pytra.runtime."):
             # 旧互換: runtime 名は utils 名へ正規化する。
             return "pytra.utils." + module_name[14:]
@@ -422,6 +431,8 @@ class CppEmitter(CodeEmitter):
             return "pytra.utils." + module_name
         if python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, module_name):
             return "pytra.compiler." + module_name
+        if python_module_exists_under(RUNTIME_BUILT_IN_SOURCE_ROOT, module_name):
+            return "pytra.built_in." + module_name
         return module_name
 
     def _module_name_to_cpp_include(self, module_name: str) -> str:
@@ -439,6 +450,10 @@ class CppEmitter(CodeEmitter):
             tail = module_name_norm[15:]
             if python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
                 return "pytra/compiler/" + _module_tail_to_cpp_header_path(tail)
+        if module_name_norm.startswith("pytra.built_in."):
+            tail = module_name_norm[15:]
+            if python_module_exists_under(RUNTIME_BUILT_IN_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
+                return "pytra/built_in/" + _module_tail_to_cpp_header_path(tail)
         return ""
 
     def _module_name_to_cpp_namespace(self, module_name: str) -> str:
@@ -458,6 +473,8 @@ class CppEmitter(CodeEmitter):
             tail = module_name_norm[15:]
             if tail:
                 return "pytra::compiler::" + tail.replace(".", "::")
+            return ""
+        if module_name_norm.startswith("pytra.built_in."):
             return ""
         if module_name_norm.startswith("pytra."):
             tail = module_name_norm[6:]
@@ -485,6 +502,8 @@ class CppEmitter(CodeEmitter):
             return "pytra.std."
         if mod_name == "pytra.utils":
             return "pytra.utils."
+        if mod_name == "pytra.built_in":
+            return "pytra.built_in."
         return ""
 
     def _append_runtime_symbol_include(
@@ -5784,12 +5803,15 @@ def _runtime_module_tail_from_source_path(input_path: Path) -> str:
     std_prefix = "src/pytra/std/"
     utils_prefix = "src/pytra/utils/"
     compiler_prefix = "src/pytra/compiler/"
+    built_in_prefix = "src/pytra/built_in/"
     if src.startswith(std_prefix):
         rel = "std/" + src[len(std_prefix) :]
     elif src.startswith(utils_prefix):
         rel = src[len(utils_prefix) :]
     elif src.startswith(compiler_prefix):
         rel = "compiler/" + src[len(compiler_prefix) :]
+    elif src.startswith(built_in_prefix):
+        rel = "built_in/" + src[len(built_in_prefix) :]
     else:
         return ""
     if rel.endswith(".py"):
@@ -5814,7 +5836,7 @@ def _prepend_generated_cpp_banner(cpp_text: str, source_path: Path) -> str:
 
 
 def _is_runtime_emit_input_path(input_path: Path) -> bool:
-    """`--emit-runtime-cpp` 対象パスか（`src/pytra/std|utils|compiler` 配下）を返す。"""
+    """`--emit-runtime-cpp` 対象パスか（`src/pytra/std|utils|compiler|built_in` 配下）を返す。"""
     return _runtime_module_tail_from_source_path(input_path) != ""
 
 
@@ -5829,6 +5851,8 @@ def _runtime_output_rel_tail(module_tail: str) -> str:
     if rel == "std" or rel.startswith("std/"):
         return rel
     if rel == "compiler" or rel.startswith("compiler/"):
+        return rel
+    if rel == "built_in" or rel.startswith("built_in/"):
         return rel
     return "utils/" + rel
 
@@ -5847,6 +5871,10 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
         return "pytra::compiler::" + rest
     if module_tail == "compiler":
         return "pytra::compiler"
+    if module_tail.startswith("built_in/"):
+        return ""
+    if module_tail == "built_in":
+        return ""
     return "pytra::utils::" + module_tail.replace("/", "::")
 
 
@@ -6371,7 +6399,7 @@ def main(argv: list[str]) -> int:
             module_tail = _runtime_module_tail_from_source_path(input_path)
             if module_tail == "":
                 print(
-                    "error: --emit-runtime-cpp input must be under src/pytra/std/, src/pytra/utils/, or src/pytra/compiler/",
+                    "error: --emit-runtime-cpp input must be under src/pytra/std/, src/pytra/utils/, src/pytra/compiler/, or src/pytra/built_in/",
                     file=sys.stderr,
                 )
                 return 1

@@ -16,7 +16,7 @@ PYTRA_TID_USER_BASE = 1000
 
 
 _TYPE_BASES: dict[int, list[int]] = {}
-_NEXT_USER_TYPE_ID = PYTRA_TID_USER_BASE
+_TYPE_STATE: dict[str, int] = {"next_user_type_id": PYTRA_TID_USER_BASE}
 
 
 def _contains_int(items: list[int], value: int) -> bool:
@@ -26,11 +26,6 @@ def _contains_int(items: list[int], value: int) -> bool:
             return True
         i += 1
     return False
-
-
-def _append_unique(items: list[int], value: int) -> None:
-    if not _contains_int(items, value):
-        items.append(value)
 
 
 def _ensure_builtins() -> None:
@@ -54,7 +49,8 @@ def _normalize_base_type_ids(base_type_ids: list[int]) -> list[int]:
     while i < len(base_type_ids):
         tid = base_type_ids[i]
         if isinstance(tid, int):
-            _append_unique(out, tid)
+            if not _contains_int(out, tid):
+                out.append(tid)
         i += 1
     if len(out) == 0:
         out.append(PYTRA_TID_OBJECT)
@@ -63,10 +59,9 @@ def _normalize_base_type_ids(base_type_ids: list[int]) -> list[int]:
 
 def py_register_class_type(base_type_ids: list[int]) -> int:
     """Allocate and register a new user class type_id."""
-    global _NEXT_USER_TYPE_ID
     _ensure_builtins()
-    tid = _NEXT_USER_TYPE_ID
-    _NEXT_USER_TYPE_ID += 1
+    tid = _TYPE_STATE["next_user_type_id"]
+    _TYPE_STATE["next_user_type_id"] = tid + 1
     _TYPE_BASES[tid] = _normalize_base_type_ids(base_type_ids)
     return tid
 
@@ -139,7 +134,6 @@ def py_isinstance(value: Any, expected_type_id: int) -> bool:
 
 def _py_reset_type_registry_for_test() -> None:
     """Reset mutable registry state for deterministic unit tests."""
-    global _NEXT_USER_TYPE_ID
     _TYPE_BASES.clear()
-    _NEXT_USER_TYPE_ID = PYTRA_TID_USER_BASE
+    _TYPE_STATE["next_user_type_id"] = PYTRA_TID_USER_BASE
     _ensure_builtins()
