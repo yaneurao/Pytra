@@ -399,6 +399,31 @@ def stmt_assigned_names(stmt: dict[str, object]) -> list[str]:
     return out
 
 
+def stmt_child_stmt_lists(stmt: dict[str, object]) -> list[list[dict[str, object]]]:
+    """文ノードが持つ子 statement list 群を抽出する。"""
+    out: list[list[dict[str, object]]] = []
+    body = dict_any_get_dict_list(stmt, "body")
+    if len(body) > 0:
+        out.append(body)
+    orelse = dict_any_get_dict_list(stmt, "orelse")
+    if len(orelse) > 0:
+        out.append(orelse)
+    finalbody = dict_any_get_dict_list(stmt, "finalbody")
+    if len(finalbody) > 0:
+        out.append(finalbody)
+    handlers = dict_any_get_dict_list(stmt, "handlers")
+    for handler in handlers:
+        h_body = dict_any_get_dict_list(handler, "body")
+        if len(h_body) > 0:
+            out.append(h_body)
+    cases = dict_any_get_dict_list(stmt, "cases")
+    for case in cases:
+        c_body = dict_any_get_dict_list(case, "body")
+        if len(c_body) > 0:
+            out.append(c_body)
+    return out
+
+
 def dict_any_get_str_list(src: dict[str, object], key: str) -> list[str]:
     """`dict[str, object]` の list 値から `str` 要素だけを抽出する。"""
     out: list[str] = []
