@@ -2395,9 +2395,12 @@ class _ShExprParser:
                     if owner_t == "str":
                         str_map = {
                             "strip": "py_strip",
+                            "lstrip": "py_lstrip",
                             "rstrip": "py_rstrip",
                             "startswith": "py_startswith",
                             "endswith": "py_endswith",
+                            "find": "py_find",
+                            "rfind": "py_rfind",
                             "replace": "py_replace",
                             "join": "py_join",
                             "isdigit": "py_isdigit",

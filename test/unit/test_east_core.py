@@ -95,13 +95,16 @@ from pathlib import Path
 def main() -> None:
     s: str = "  abc  "
     t: str = s.strip()
+    u: str = s.lstrip()
+    p0: int = s.find("a")
+    p1: int = s.rfind("a")
     xs: list[int] = []
     xs.append(1)
     d: dict[str, int] = {"a": 1}
     v: int = d.get("a", 0)
     p: Path = Path("tmp")
     ok: bool = p.exists()
-    print(len(xs), t, v, ok)
+    print(len(xs), t, u, p0, p1, v, ok)
 
 if __name__ == "__main__":
     main()
@@ -110,6 +113,9 @@ if __name__ == "__main__":
         calls = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Call"]
         runtime_calls = {str(n.get("runtime_call")) for n in calls if n.get("lowered_kind") == "BuiltinCall"}
         self.assertIn("py_strip", runtime_calls)
+        self.assertIn("py_lstrip", runtime_calls)
+        self.assertIn("py_find", runtime_calls)
+        self.assertIn("py_rfind", runtime_calls)
         self.assertIn("list.append", runtime_calls)
         self.assertIn("dict.get", runtime_calls)
         self.assertIn("std::filesystem::exists", runtime_calls)
