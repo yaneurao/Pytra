@@ -625,14 +625,13 @@ class CppEmitter(CodeEmitter):
         module_name_norm = self._normalize_runtime_module_name(module_name)
         cached = self._module_fn_arg_type_cache.get(module_name_norm)
         if isinstance(cached, dict):
-            fn_map = cached
-            sig = fn_map.get(fn_name)
+            sig = cached.get(fn_name)
             if isinstance(sig, list):
                 return sig
             return []
         fn_map: dict[str, list[str]] = {}
         src_path: Path = self._module_source_path_for_name(module_name_norm)
-        if str(src_path) == "":
+        if not str(src_path):
             self._module_fn_arg_type_cache[module_name_norm] = fn_map
             return []
         fn_map = extract_function_arg_types_from_python_source(src_path)
