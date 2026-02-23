@@ -59,7 +59,7 @@ def _remove_import_line(text: str) -> str:
             "from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, print_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file\n",
             "transpile_cli import",
         ),
-        ("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks\n", "build_cpp_hooks import"),
+        ("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl\n", "build_cpp_hooks import"),
     ]
     out = text
     missing: list[str] = []
@@ -236,25 +236,6 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     return text[: j + len(target)] + inserted + text[j + len(target) :]
 
 
-def _patch_load_cpp_hooks_for_selfhost(text: str) -> str:
-    """`load_cpp_hooks` 内の hooks 取得を selfhost 用に空 dict へ固定化する。"""
-    start_marker = "def load_cpp_hooks("
-    end_marker = "\n\ndef load_cpp_identifier_rules("
-    i = text.find(start_marker)
-    if i < 0:
-        raise RuntimeError("failed to find load_cpp_hooks block in merged selfhost source")
-    j = text.find(end_marker, i + len(start_marker))
-    if j <= i:
-        raise RuntimeError("failed to find load_cpp_identifier_rules marker after load_cpp_hooks in merged selfhost source")
-    block = text[i:j]
-    target = "        hooks = build_cpp_hooks()\n"
-    replacement = "        hooks = {}\n"
-    if target not in block:
-        raise RuntimeError("failed to patch load_cpp_hooks call: hooks = build_cpp_hooks()")
-    block = block.replace(target, replacement, 1)
-    return text[:i] + block + text[j:]
-
-
 def main() -> int:
     py2cpp_text = SRC_PY2CPP.read_text(encoding="utf-8")
     base_text = SRC_BASE.read_text(encoding="utf-8")
@@ -263,7 +244,6 @@ def main() -> int:
     base_class = _strip_triple_quoted_docstrings(_extract_code_emitter_class(base_text))
     py2cpp_text = _remove_import_line(py2cpp_text)
     out = _insert_code_emitter(py2cpp_text, base_class, support_blocks)
-    out = _patch_load_cpp_hooks_for_selfhost(out)
     out = _patch_code_emitter_hooks_for_selfhost(out)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)

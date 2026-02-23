@@ -42,7 +42,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             removed,
         )
         self.assertNotIn(
-            "from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks\n",
+            "from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl\n",
             removed,
         )
 
@@ -144,24 +144,23 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def check_guard_limit(", support_blocks)
         self.assertNotIn("def build_cpp_hooks() -> dict[str, Any]:", support_blocks)
 
-    def test_load_cpp_hooks_is_patched_to_empty_dict_in_merged_source(self) -> None:
+    def test_load_cpp_hooks_uses_factory_fallback_in_merged_source(self) -> None:
         mod = _load_prepare_module()
         py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
         base_text = mod.SRC_BASE.read_text(encoding="utf-8")
         support_blocks = mod._extract_support_blocks()
         base_class = mod._strip_triple_quoted_docstrings(mod._extract_code_emitter_class(base_text))
         merged = mod._insert_code_emitter(mod._remove_import_line(py2cpp_text), base_class, support_blocks)
-        merged = mod._patch_load_cpp_hooks_for_selfhost(merged)
         load_cpp_hooks_block = _slice_block(
             merged,
             "def load_cpp_hooks(",
             "\n\ndef load_cpp_identifier_rules(",
         )
-        self.assertIn("hooks = {}", load_cpp_hooks_block)
-        self.assertNotIn("hooks = build_cpp_hooks()", load_cpp_hooks_block)
+        self.assertIn("hooks = _build_cpp_hooks_impl()", load_cpp_hooks_block)
         self.assertIn("try:", load_cpp_hooks_block)
         self.assertIn("if isinstance(hooks, dict):", load_cpp_hooks_block)
-        self.assertNotIn("def build_cpp_hooks() -> dict[str, Any]:", merged)
+        self.assertNotIn("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl", merged)
+        self.assertIn("def _build_cpp_hooks_impl() -> dict[str, Any]:", merged)
 
     def test_hook_patch_only_injects_dynamic_hook_disable_in_cpp_emitter(self) -> None:
         mod = _load_prepare_module()
@@ -212,32 +211,6 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(RuntimeError, "init_base_state call"):
             mod._patch_code_emitter_hooks_for_selfhost(broken_order)
-
-    def test_load_cpp_hooks_patch_raises_when_markers_missing(self) -> None:
-        mod = _load_prepare_module()
-        with self.assertRaisesRegex(RuntimeError, "load_cpp_hooks block"):
-            mod._patch_load_cpp_hooks_for_selfhost("def x():\n    pass\n")
-
-        broken_order = (
-            "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:\n"
-            "    return {}\n"
-        )
-        with self.assertRaisesRegex(RuntimeError, "load_cpp_identifier_rules marker"):
-            mod._patch_load_cpp_hooks_for_selfhost(broken_order)
-
-        broken_call = (
-            "def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:\n"
-            "    hooks: Any = {}\n"
-            "    try:\n"
-            "        hooks = {}\n"
-            "    except Exception:\n"
-            "        return {}\n"
-            "\n"
-            "def load_cpp_identifier_rules() -> tuple[set[str], str]:\n"
-            "    return set(), \"\"\n"
-        )
-        with self.assertRaisesRegex(RuntimeError, "hooks = build_cpp_hooks"):
-            mod._patch_load_cpp_hooks_for_selfhost(broken_call)
 
 
 if __name__ == "__main__":
