@@ -59,6 +59,8 @@ static inline str obj_to_str(const object& v);
 static inline dict<str, object> obj_to_dict(const object& v);
 static inline const dict<str, object>* obj_to_dict_ptr(const object& v);
 static inline const list<object>* obj_to_list_ptr(const object& v);
+template <class T> static inline object make_object(const T& v);
+template <class T, class... Args> static inline object object_new(Args&&... args);
 
 #include "str.h"
 #include "path.h"
@@ -221,6 +223,8 @@ public:
     ::std::string py_str() const override {
         return value.std();
     }
+
+    object py_iter_or_raise() const override;
 };
 
 class PyListObj : public PyObj {
@@ -239,6 +243,8 @@ public:
     ::std::string py_str() const override {
         return "<list>";
     }
+
+    object py_iter_or_raise() const override;
 };
 
 class PyDictObj : public PyObj {
@@ -257,7 +263,89 @@ public:
     ::std::string py_str() const override {
         return "<dict>";
     }
+
+    object py_iter_or_raise() const override;
 };
+
+class PyListIterObj : public PyObj {
+public:
+    explicit PyListIterObj(list<object> values)
+        : PyObj(PYTRA_TID_OBJECT), values_(::std::move(values)), index_(0) {}
+
+    object py_iter_or_raise() const override {
+        return object(static_cast<PyObj*>(const_cast<PyListIterObj*>(this)));
+    }
+
+    ::std::optional<object> py_next_or_stop() override {
+        if (index_ >= static_cast<int64>(values_.size())) return ::std::nullopt;
+        object out = values_[static_cast<::std::size_t>(index_)];
+        index_ += 1;
+        return out;
+    }
+
+private:
+    list<object> values_;
+    int64 index_;
+};
+
+class PyDictKeyIterObj : public PyObj {
+public:
+    explicit PyDictKeyIterObj(list<object> keys)
+        : PyObj(PYTRA_TID_OBJECT), keys_(::std::move(keys)), index_(0) {}
+
+    object py_iter_or_raise() const override {
+        return object(static_cast<PyObj*>(const_cast<PyDictKeyIterObj*>(this)));
+    }
+
+    ::std::optional<object> py_next_or_stop() override {
+        if (index_ >= static_cast<int64>(keys_.size())) return ::std::nullopt;
+        object out = keys_[static_cast<::std::size_t>(index_)];
+        index_ += 1;
+        return out;
+    }
+
+private:
+    list<object> keys_;
+    int64 index_;
+};
+
+class PyStrIterObj : public PyObj {
+public:
+    explicit PyStrIterObj(str value)
+        : PyObj(PYTRA_TID_OBJECT), value_(::std::move(value)), index_(0) {}
+
+    object py_iter_or_raise() const override {
+        return object(static_cast<PyObj*>(const_cast<PyStrIterObj*>(this)));
+    }
+
+    ::std::optional<object> py_next_or_stop() override {
+        if (index_ >= static_cast<int64>(value_.size())) return ::std::nullopt;
+        str ch = value_[index_];
+        index_ += 1;
+        return make_object(ch);
+    }
+
+private:
+    str value_;
+    int64 index_;
+};
+
+inline object PyStrObj::py_iter_or_raise() const {
+    return object_new<PyStrIterObj>(value);
+}
+
+inline object PyListObj::py_iter_or_raise() const {
+    return object_new<PyListIterObj>(value);
+}
+
+inline object PyDictObj::py_iter_or_raise() const {
+    list<object> keys{};
+    keys.reserve(value.size());
+    for (const auto& kv : value) {
+        keys.append(make_object(kv.first));
+    }
+    return object_new<PyDictKeyIterObj>(::std::move(keys));
+}
 
 template <class T>
 static inline T* py_obj_cast(const object& obj) {
@@ -2125,6 +2213,93 @@ static inline uint32 py_runtime_type_id(const T& v) {
 template <class T>
 static inline bool py_isinstance(const T& value, uint32 expected_type_id) {
     return py_is_subtype(py_runtime_type_id(value), expected_type_id);
+}
+
+static inline object py_iter_or_raise(const object& value) {
+    if (!value) {
+        throw TypeError("NoneType is not iterable");
+    }
+    return value->py_iter_or_raise();
+}
+
+template <class T>
+static inline object py_iter_or_raise(const T& value) {
+    return py_iter_or_raise(make_object(value));
+}
+
+static inline ::std::optional<object> py_next_or_stop(const object& iter_obj) {
+    if (!iter_obj) {
+        throw TypeError("NoneType is not an iterator");
+    }
+    return iter_obj->py_next_or_stop();
+}
+
+class py_dyn_range_iter {
+public:
+    py_dyn_range_iter() : is_end_(true) {}
+    explicit py_dyn_range_iter(object iter_obj, bool is_end = false)
+        : iter_obj_(::std::move(iter_obj)), is_end_(is_end) {
+        if (!is_end_) {
+            pull_next();
+        }
+    }
+
+    const object& operator*() const {
+        return current_;
+    }
+
+    py_dyn_range_iter& operator++() {
+        pull_next();
+        return *this;
+    }
+
+    bool operator!=(const py_dyn_range_iter& other) const {
+        return is_end_ != other.is_end_;
+    }
+
+private:
+    void pull_next() {
+        if (is_end_) {
+            return;
+        }
+        ::std::optional<object> nxt = py_next_or_stop(iter_obj_);
+        if (!nxt.has_value()) {
+            is_end_ = true;
+            current_ = object();
+            return;
+        }
+        current_ = *nxt;
+    }
+
+    object iter_obj_;
+    object current_;
+    bool is_end_ = true;
+};
+
+class py_dyn_range_view {
+public:
+    explicit py_dyn_range_view(object iterable)
+        : iter_obj_(py_iter_or_raise(iterable)) {}
+
+    py_dyn_range_iter begin() const {
+        return py_dyn_range_iter(iter_obj_, false);
+    }
+
+    py_dyn_range_iter end() const {
+        return py_dyn_range_iter(iter_obj_, true);
+    }
+
+private:
+    object iter_obj_;
+};
+
+static inline py_dyn_range_view py_dyn_range(const object& iterable) {
+    return py_dyn_range_view(iterable);
+}
+
+template <class T>
+static inline py_dyn_range_view py_dyn_range(const T& iterable) {
+    return py_dyn_range(make_object(iterable));
 }
 
 // selfhost 由来の `obj == std::nullopt` 比較（None 判定）互換。

@@ -9,11 +9,17 @@
 #include <cassert>
 #include <cstdint>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
 
 namespace pytra::gc {
+
+template <class T>
+class RcHandle;
+class PyObj;
+using object = RcHandle<PyObj>;
 
 /**
  * @brief RC（参照カウント）管理対象の基底クラスです。
@@ -61,6 +67,21 @@ public:
     virtual ::std::optional<::std::int64_t> py_try_len() const {
         return ::std::nullopt;
     }
+
+    /**
+     * @brief `iter(obj)` 相当のフック。
+     *
+     * 既定実装は non-iterable として `std::runtime_error` を送出する。
+     */
+    virtual object py_iter_or_raise() const;
+
+    /**
+     * @brief `next(it)` 相当のフック。
+     *
+     * 次要素がある場合は `object`、終端時は `std::nullopt` を返す。
+     * 既定実装は non-iterator として `std::runtime_error` を送出する。
+     */
+    virtual ::std::optional<object> py_next_or_stop();
 
     /**
      * @brief 文字列表現フック。
@@ -192,6 +213,14 @@ public:
 private:
     T* ptr_ = nullptr;
 };
+
+inline object PyObj::py_iter_or_raise() const {
+    throw ::std::runtime_error("object is not iterable");
+}
+
+inline ::std::optional<object> PyObj::py_next_or_stop() {
+    throw ::std::runtime_error("object is not an iterator");
+}
 
 }  // namespace pytra::gc
 

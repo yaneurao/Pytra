@@ -4011,22 +4011,70 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     )
             t_ty = "unknown"
             i_ty = str(iter_expr.get("resolved_type", "unknown"))
+            i_ty_norm = i_ty.strip()
+            iter_mode = "static_fastpath"
+            iterable_trait = "unknown"
+            iter_protocol = "static_range"
             tuple_target_elem_types: list[str] = []
             if i_ty.startswith("list[") and i_ty.endswith("]"):
                 inner_t = i_ty[5:-1].strip()
                 t_ty = inner_t
+                iter_mode = "static_fastpath"
+                iterable_trait = "yes"
+                iter_protocol = "static_range"
                 if inner_t.startswith("tuple[") and inner_t.endswith("]"):
                     tuple_inner = inner_t[6:-1].strip()
                     if tuple_inner != "":
                         tuple_target_elem_types = _sh_split_top_commas(tuple_inner)
+            elif i_ty.startswith("dict[") and i_ty.endswith("]"):
+                dict_inner = i_ty[5:-1].strip()
+                dict_parts = _sh_split_top_commas(dict_inner)
+                if len(dict_parts) >= 1:
+                    key_t = dict_parts[0].strip()
+                    t_ty = key_t if key_t != "" else "unknown"
+                iter_mode = "static_fastpath"
+                iterable_trait = "yes"
+                iter_protocol = "static_range"
             elif i_ty.startswith("tuple[") and i_ty.endswith("]"):
                 t_ty = "unknown"
+                iter_mode = "static_fastpath"
+                iterable_trait = "yes"
+                iter_protocol = "static_range"
             elif i_ty.startswith("set[") and i_ty.endswith("]"):
                 t_ty = i_ty[4:-1]
+                iter_mode = "static_fastpath"
+                iterable_trait = "yes"
+                iter_protocol = "static_range"
             elif i_ty == "str":
                 t_ty = "str"
+                iter_mode = "static_fastpath"
+                iterable_trait = "yes"
+                iter_protocol = "static_range"
             elif i_ty in {"bytes", "bytearray"}:
                 t_ty = "uint8"
+                iter_mode = "static_fastpath"
+                iterable_trait = "yes"
+                iter_protocol = "static_range"
+            elif i_ty_norm == "Any" or i_ty_norm == "object":
+                iter_mode = "runtime_protocol"
+                iterable_trait = "unknown"
+                iter_protocol = "runtime_protocol"
+            elif i_ty_norm in {"int", "int64", "float", "float64", "bool"}:
+                iterable_trait = "no"
+                iter_mode = "runtime_protocol"
+                iter_protocol = "runtime_protocol"
+            elif "|" in i_ty_norm:
+                union_parts = _sh_split_top_commas(i_ty_norm.replace("|", ","))
+                for up in union_parts:
+                    u = up.strip()
+                    if u == "Any" or u == "object":
+                        iter_mode = "runtime_protocol"
+                        iter_protocol = "runtime_protocol"
+                        break
+            if isinstance(iter_expr, dict):
+                iter_expr["iterable_trait"] = iterable_trait
+                iter_expr["iter_protocol"] = iter_protocol
+                iter_expr["iter_element_type"] = t_ty
             target_names: list[str] = []
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                 nm = str(target_expr.get("id", ""))
@@ -4138,6 +4186,9 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
                     "target": target_expr,
                     "target_type": t_ty,
+                    "iter_mode": iter_mode,
+                    "iter_source_type": i_ty_norm if i_ty_norm != "" else "unknown",
+                    "iter_element_type": t_ty,
                     "iter": iter_expr,
                     "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
                     "orelse": [],

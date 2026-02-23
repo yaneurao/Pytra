@@ -187,6 +187,41 @@ if __name__ == "__main__":
         )
         self.assertTrue(has_for_range)
 
+    def test_for_iter_mode_and_iterable_traits_are_annotated(self) -> None:
+        src = """
+def f(xs: list[int], d: dict[str, int], x: object) -> None:
+    for a in xs:
+        pass
+    for k in d:
+        pass
+    for v in x:
+        pass
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "f"]
+        self.assertEqual(len(funcs), 1)
+        body = funcs[0].get("body", [])
+        for_nodes = [n for n in body if isinstance(n, dict) and n.get("kind") == "For"]
+        self.assertEqual(len(for_nodes), 3)
+
+        list_for = for_nodes[0]
+        self.assertEqual(list_for.get("iter_mode"), "static_fastpath")
+        self.assertEqual(list_for.get("iter_element_type"), "int64")
+        self.assertEqual(list_for.get("iter", {}).get("iterable_trait"), "yes")
+        self.assertEqual(list_for.get("iter", {}).get("iter_protocol"), "static_range")
+
+        dict_for = for_nodes[1]
+        self.assertEqual(dict_for.get("iter_mode"), "static_fastpath")
+        self.assertEqual(dict_for.get("iter_element_type"), "str")
+        self.assertEqual(dict_for.get("iter", {}).get("iterable_trait"), "yes")
+        self.assertEqual(dict_for.get("iter", {}).get("iter_protocol"), "static_range")
+
+        obj_for = for_nodes[2]
+        self.assertEqual(obj_for.get("iter_mode"), "runtime_protocol")
+        self.assertEqual(obj_for.get("iter_source_type"), "object")
+        self.assertEqual(obj_for.get("iter", {}).get("iterable_trait"), "unknown")
+        self.assertEqual(obj_for.get("iter", {}).get("iter_protocol"), "runtime_protocol")
+
     def test_super_call_is_parsed(self) -> None:
         src = """
 class Base:

@@ -38,3 +38,6 @@ ID: `TG-P0-ITER`
 ## 決定ログ
 
 - 2026-02-23: `materials/refs/spec-iterable.md` を `docs-jp/spec/spec-iterable.md` へコピーし、`P0-ITER-01` を TODO 最優先に追加。
+- 2026-02-23: Phase 1 として C++ runtime に `PyObj::py_iter_or_raise` / `PyObj::py_next_or_stop` と `py_iter_or_raise(...)` / `py_next_or_stop(...)` / `py_dyn_range(...)` を導入し、`PyListObj` / `PyDictObj` / `PyStrObj` は iterator object を返す実装へ更新した。non-iterable は `TypeError` 相当（`runtime_error`）で fail-fast とする。
+- 2026-02-23: `py2cpp` の `For` 生成は `iter_mode`（`static_fastpath` / `runtime_protocol`）で分岐する。`runtime_protocol` は `for (object ... : py_dyn_range(iterable))` を生成し、tuple unpack は `py_at(...)` で展開する。
+- 2026-02-23: selfhost 安定性のため、`iter_mode` 未付与の既存 EAST は `unknown` を既定 `static_fastpath` として扱う（互換優先）。`object/Any` は parser 側で明示 `runtime_protocol` を付与して切り替える。

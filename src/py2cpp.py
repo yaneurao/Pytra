@@ -3071,6 +3071,10 @@ class CppEmitter(CodeEmitter):
         omit_braces = self.hook_on_stmt_omit_braces("For", stmt, False)
         if len(body_stmts) != 1:
             omit_braces = False
+        iter_mode = self._resolve_for_iter_mode(stmt, iter_expr)
+        if iter_mode == "runtime_protocol":
+            self._emit_for_each_runtime(stmt, target, iter_expr, body_stmts, omit_braces)
+            return
         t = self.render_expr(stmt.get("target"))
         it = self.render_expr(stmt.get("iter"))
         t0 = self.any_to_str(stmt.get("target_type"))
@@ -3125,6 +3129,128 @@ class CppEmitter(CodeEmitter):
         self.scope_stack.append(set(target_names))
         if unpack_tuple:
             self._emit_target_unpack(target, iter_tmp, iter_expr)
+        self.emit_stmt_list(body_stmts)
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit_block_close()
+
+    def _resolve_for_iter_mode(self, stmt: dict[str, Any], iter_expr: dict[str, Any]) -> str:
+        """`For` の反復モード（static/runtime）を決定する。"""
+        mode_txt = self.any_to_str(stmt.get("iter_mode"))
+        if mode_txt == "static_fastpath" or mode_txt == "runtime_protocol":
+            return mode_txt
+        iter_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+        if iter_t == "":
+            iter_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+        if iter_t == "Any" or iter_t == "object":
+            return "runtime_protocol"
+        # 明示 `iter_mode` が無い既存 EAST では selfhost 互換を優先し、unknown は static 側に倒す。
+        if iter_t == "" or iter_t == "unknown":
+            return "static_fastpath"
+        if self._contains_text(iter_t, "|"):
+            parts = self.split_union(iter_t)
+            for p in parts:
+                p_norm = self.normalize_type_name(p)
+                if p_norm == "Any" or p_norm == "object":
+                    return "runtime_protocol"
+            return "static_fastpath"
+        return "static_fastpath"
+
+    def _emit_target_unpack_runtime(self, target: dict[str, Any], src_obj: str) -> None:
+        """runtime iterable プロトコル用のタプル unpack（`py_at` ベース）。"""
+        if self._node_kind_from_dict(target) != "Tuple":
+            return
+        elems = self.any_to_list(target.get("elements"))
+        for i, e in enumerate(elems):
+            e_node = self.any_to_dict_or_empty(e)
+            if self._node_kind_from_dict(e_node) != "Name":
+                continue
+            nm = self.render_expr(e)
+            rhs = f"py_at({src_obj}, {i})"
+            decl_t = self.normalize_type_name(self.get_expr_type(e))
+            if self._can_runtime_cast_target(decl_t) and not self.is_any_like_type(decl_t):
+                rhs = self._coerce_any_expr_to_target(rhs, decl_t, f"for_unpack:{nm}")
+                self.emit(f"{self._cpp_type_text(decl_t)} {nm} = {rhs};")
+                self.declared_var_types[nm] = decl_t
+            else:
+                self.emit(f"auto {nm} = {rhs};")
+                self.declared_var_types[nm] = "object"
+
+    def _emit_for_each_runtime(
+        self,
+        stmt: dict[str, Any],
+        target: dict[str, Any],
+        iter_expr: dict[str, Any],
+        body_stmts: list[dict[str, Any]],
+        omit_braces: bool,
+    ) -> None:
+        """`For` を runtime iterable プロトコル（`py_dyn_range`）で出力する。"""
+        t = self.render_expr(stmt.get("target"))
+        it = self.render_expr(stmt.get("iter"))
+        t0 = self.any_to_str(stmt.get("target_type"))
+        t1 = self.get_expr_type(stmt.get("target"))
+        t_decl = self.normalize_type_name(t0 if t0 != "" else t1)
+        unpack_tuple = self._node_kind_from_dict(target) == "Tuple"
+        target_names = self._target_bound_names(target)
+        iter_tmp = ""
+        hdr = ""
+        needs_tmp = unpack_tuple or self._node_kind_from_dict(target) != "Name" or not self.is_any_like_type(t_decl)
+        if needs_tmp:
+            iter_tmp = self.next_tmp("__itobj")
+            hdr = self.syntax_line(
+                "for_each_runtime_open",
+                "for (object {iter_tmp} : py_dyn_range({iter}))",
+                {"iter_tmp": iter_tmp, "iter": it},
+            )
+        else:
+            hdr = self.syntax_line(
+                "for_each_runtime_target_open",
+                "for (object {target} : py_dyn_range({iter}))",
+                {"target": t, "iter": it},
+            )
+            if t != "":
+                self.declared_var_types[t] = "object"
+
+        if omit_braces:
+            self.emit(hdr)
+            self.indent += 1
+            self.scope_stack.append(set(target_names))
+            if unpack_tuple:
+                self._emit_target_unpack_runtime(target, iter_tmp)
+            elif iter_tmp != "" and self._node_kind_from_dict(target) == "Name":
+                rhs = iter_tmp
+                if self._can_runtime_cast_target(t_decl):
+                    rhs = self._coerce_any_expr_to_target(rhs, t_decl, f"for_target:{t}")
+                    self.emit(f"{self._cpp_type_text(t_decl)} {t} = {rhs};")
+                    self.declared_var_types[t] = t_decl
+                else:
+                    self.emit(f"auto {t} = {rhs};")
+                    self.declared_var_types[t] = "object"
+            self.emit_stmt(body_stmts[0])
+            self.scope_stack.pop()
+            self.indent -= 1
+            return
+
+        self.emit(
+            self.syntax_line(
+                "for_open_block",
+                "{header} {",
+                {"header": hdr},
+            )
+        )
+        self.indent += 1
+        self.scope_stack.append(set(target_names))
+        if unpack_tuple:
+            self._emit_target_unpack_runtime(target, iter_tmp)
+        elif iter_tmp != "" and self._node_kind_from_dict(target) == "Name":
+            rhs = iter_tmp
+            if self._can_runtime_cast_target(t_decl):
+                rhs = self._coerce_any_expr_to_target(rhs, t_decl, f"for_target:{t}")
+                self.emit(f"{self._cpp_type_text(t_decl)} {t} = {rhs};")
+                self.declared_var_types[t] = t_decl
+            else:
+                self.emit(f"auto {t} = {rhs};")
+                self.declared_var_types[t] = "object"
         self.emit_stmt_list(body_stmts)
         self.scope_stack.pop()
         self.indent -= 1
@@ -3442,10 +3568,7 @@ class CppEmitter(CodeEmitter):
             self.emit(f"{self._cpp_type_text(fty)} {fname};")
         if gc_managed:
             base_type_id_expr = f"{base}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
-            self.emit(
-                "inline static uint32 PYTRA_TYPE_ID = "
-                f"py_register_class_type(list<uint32>{{{base_type_id_expr}}});"
-            )
+            self.emit(f"inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{{{base_type_id_expr}}});")
         if len(static_emit_names) > 0 or len(instance_fields_ordered) > 0 or gc_managed:
             self.emit("")
         if (len(instance_fields_ordered) > 0 or gc_managed) and not has_init:

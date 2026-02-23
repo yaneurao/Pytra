@@ -581,6 +581,38 @@ def f(x: object) -> None:
         self.assertEqual(len(unpack_lines), 1)
         self.assertTrue(unpack_lines[0].endswith("{"))
 
+    def test_for_object_uses_runtime_protocol_py_dyn_range(self) -> None:
+        src = """def f(x: object) -> int:
+    s: int = 0
+    for v in x:
+        s += int(v)
+    return s
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "for_object_runtime_protocol.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("for (object v : py_dyn_range(x))", cpp)
+        self.assertNotIn("for (auto& v : x)", cpp)
+
+    def test_for_list_keeps_static_fastpath(self) -> None:
+        src = """def f(xs: list[int]) -> int:
+    s: int = 0
+    for v in xs:
+        s += v
+    return s
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "for_list_static_fastpath.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("for (int64 v : xs)", cpp)
+        self.assertNotIn("py_dyn_range(xs)", cpp)
+
     def test_isinstance_builtin_lowers_to_type_id_runtime_api(self) -> None:
         src = """def f(x: object) -> bool:
     return isinstance(x, int)

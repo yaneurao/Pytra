@@ -32,6 +32,12 @@
 
 1. [ ] [ID: P0-ITER-01] `docs-jp/spec/spec-iterable.md` を正本として、`EAST` trait（`iterable_trait` / `iter_mode`）・C++ runtime（`py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range`）・`py2cpp` codegen 分岐（`static_fastpath` / `runtime_protocol`）を段階導入する。
 
+進捗メモ:
+- `EAST`（`src/pytra/compiler/east_parts/core.py`）で `For` ノードに `iter_mode` / `iter_source_type` / `iter_element_type` を付与し、`iter` 式にも `iterable_trait` / `iter_protocol` / `iter_element_type` を埋め込む初期実装を追加した。`list` / `dict` / `set` / `str` / `bytes` は `static_fastpath`、`object/Any` と明確な非 iterable（`int/float/bool`）は `runtime_protocol` を選ぶ。
+- C++ runtime（`gc.h`, `py_runtime.h`）に `PyObj::py_iter_or_raise` / `PyObj::py_next_or_stop` hook、`py_iter_or_raise(...)` / `py_next_or_stop(...)` / `py_dyn_range(...)` API、`PyListObj` / `PyDictObj` / `PyStrObj` 向け iterator 実装（`PyListIterObj` / `PyDictKeyIterObj` / `PyStrIterObj`）を追加した。non-iterable は `TypeError` 相当（`runtime_error`）で fail-fast する。
+- `py2cpp` の `emit_for_each` を `iter_mode` 分岐化し、`runtime_protocol` では `for (object ... : py_dyn_range(iterable))` を生成するようにした。tuple unpack は runtime 経路で `py_at(...)` ベースへ分岐する。
+- 回帰固定として `test/unit/test_east_core.py`（`iter_mode`/trait 付与）、`test/unit/test_py2cpp_codegen_issues.py`（`py_dyn_range` と static fastpath）、`test/unit/test_cpp_runtime_iterable.py`（runtime iterable API）を追加し、`check_py2cpp_transpile` と `build_selfhost` の通過を確認した。
+
 ## P0: Boxing/Unboxing 境界統一（最優先）
 
 文脈: `docs-jp/plans/p0-boxing-boundary-unification.md`（`TG-P0-BOXING`）
