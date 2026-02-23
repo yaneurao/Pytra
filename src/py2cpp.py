@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_any_get_str, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -202,14 +202,6 @@ def _dict_any_get(src: dict[str, Any], key: str) -> Any:
     return None
 
 
-def _dict_any_get_str(src: dict[str, Any], key: str, default_value: str = "") -> str:
-    """`dict[str, Any]` から文字列値を安全に取得する。"""
-    value = _dict_any_get(src, key)
-    if isinstance(value, str):
-        return value
-    return default_value
-
-
 def _dict_any_get_dict(src: dict[str, Any], key: str) -> dict[str, Any]:
     """`dict[str, Any]` から辞書値を安全に取得する。"""
     value = _dict_any_get(src, key)
@@ -250,7 +242,7 @@ def _dict_any_get_dict_list(src: dict[str, Any], key: str) -> list[dict[str, Any
 
 def _dict_any_kind(src: dict[str, Any]) -> str:
     """`dict` の `kind` を文字列として安全に取得する。"""
-    return _dict_any_get_str(src, "kind")
+    return dict_any_get_str(src, "kind")
 
 
 def _assign_targets(stmt: dict[str, Any]) -> list[dict[str, Any]]:
@@ -268,7 +260,7 @@ def _name_target_id(target: dict[str, Any]) -> str:
     """代入先が Name のとき識別子を返す。"""
     if _dict_any_kind(target) != "Name":
         return ""
-    return _dict_any_get_str(target, "id")
+    return dict_any_get_str(target, "id")
 
 
 def _stmt_target_name(stmt: dict[str, Any]) -> str:
@@ -296,7 +288,7 @@ def _collect_store_names_from_target(target: dict[str, Any], out: set[str]) -> N
     """代入先 target から束縛名を抽出する。"""
     kind = _dict_any_kind(target)
     if kind == "Name":
-        ident = _dict_any_get_str(target, "id")
+        ident = dict_any_get_str(target, "id")
         if ident != "":
             out.add(ident)
         return
@@ -362,14 +354,14 @@ def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
     symbols: set[str] = set()
     kind = _dict_any_kind(stmt)
     if kind == "FunctionDef" or kind == "AsyncFunctionDef":
-        fn_name = _dict_any_get_str(stmt, "name")
+        fn_name = dict_any_get_str(stmt, "name")
         if fn_name != "":
             symbols.add(fn_name)
         for arg_any in _dict_any_get_list(stmt, "arg_order"):
             if isinstance(arg_any, str) and arg_any != "":
                 symbols.add(arg_any)
     elif kind == "ClassDef":
-        cls_name = _dict_any_get_str(stmt, "name")
+        cls_name = dict_any_get_str(stmt, "name")
         if cls_name != "":
             symbols.add(cls_name)
     elif kind == "Assign" or kind == "AnnAssign":
@@ -386,22 +378,22 @@ def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
             if len(opt_vars) > 0:
                 _collect_store_names_from_target(opt_vars, symbols)
     elif kind == "ExceptHandler":
-        name_txt = _dict_any_get_str(stmt, "name")
+        name_txt = dict_any_get_str(stmt, "name")
         if name_txt != "":
             symbols.add(name_txt)
     elif kind == "Import":
         for ent in _dict_any_get_dict_list(stmt, "names"):
-            name_txt = _dict_any_get_str(ent, "name")
-            asname_txt = _dict_any_get_str(ent, "asname")
+            name_txt = dict_any_get_str(ent, "name")
+            asname_txt = dict_any_get_str(ent, "asname")
             local_name = local_binding_name(name_txt, asname_txt)
             if local_name != "":
                 symbols.add(local_name)
     elif kind == "ImportFrom":
         for ent in _dict_any_get_dict_list(stmt, "names"):
-            sym_name = _dict_any_get_str(ent, "name")
+            sym_name = dict_any_get_str(ent, "name")
             if sym_name == "*":
                 continue
-            asname_txt = _dict_any_get_str(ent, "asname")
+            asname_txt = dict_any_get_str(ent, "asname")
             local_name = local_binding_name(sym_name, asname_txt)
             if local_name != "":
                 symbols.add(local_name)
@@ -5990,7 +5982,7 @@ def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str
         ) from ex
     except Exception as ex:
         parsed_err = parse_user_error(str(ex))
-        ex_cat = _dict_any_get_str(parsed_err, "category")
+        ex_cat = dict_any_get_str(parsed_err, "category")
         ex_details = _dict_any_get_str_list(parsed_err, "details")
         if ex_cat != "":
             if ex_cat == "not_implemented":
@@ -6260,7 +6252,7 @@ def _header_none_default_expr_for_type(east_t: str) -> str:
 
 def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str:
     """EAST の既定値ノードを C++ ヘッダ宣言用の式文字列へ変換する。"""
-    kind = _dict_any_get_str(node, "kind")
+    kind = dict_any_get_str(node, "kind")
     if kind == "Constant":
         val = node.get("value")
         if val is None:
@@ -6275,7 +6267,7 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
             return cpp_string_lit(val)
         return ""
     if kind == "Name":
-        ident = _dict_any_get_str(node, "id")
+        ident = dict_any_get_str(node, "id")
         if ident == "None":
             return _header_none_default_expr_for_type(east_target_t)
         if ident == "True":
@@ -6318,11 +6310,11 @@ def build_cpp_header_from_east(
     ref_classes: set[str] = set()
 
     for st in body:
-        if _dict_any_get_str(st, "kind") == "ClassDef":
-            cls_name = _dict_any_get_str(st, "name")
+        if dict_any_get_str(st, "kind") == "ClassDef":
+            cls_name = dict_any_get_str(st, "name")
             if cls_name != "":
                 class_names.add(cls_name)
-                hint = _dict_any_get_str(st, "class_storage_hint", "ref")
+                hint = dict_any_get_str(st, "class_storage_hint", "ref")
                 if hint == "ref":
                     ref_classes.add(cls_name)
 
@@ -6341,16 +6333,16 @@ def build_cpp_header_from_east(
     }
 
     for st in body:
-        kind = _dict_any_get_str(st, "kind")
+        kind = dict_any_get_str(st, "kind")
         if kind == "ClassDef":
-            cls_name = _dict_any_get_str(st, "name")
+            cls_name = dict_any_get_str(st, "name")
             if cls_name != "" and cls_name not in seen_classes:
                 class_lines.append("struct " + cls_name + ";")
                 seen_classes.add(cls_name)
         elif kind == "FunctionDef":
-            name = _dict_any_get_str(st, "name")
+            name = dict_any_get_str(st, "name")
             if name != "":
-                ret_t = _dict_any_get_str(st, "return_type", "None")
+                ret_t = dict_any_get_str(st, "return_type", "None")
                 ret_cpp = _header_cpp_type_from_east(ret_t, ref_classes, class_names)
                 used_types.add(ret_cpp)
                 arg_types = _dict_any_get_dict(st, "arg_types")
@@ -6359,7 +6351,7 @@ def build_cpp_header_from_east(
                 for an in arg_order:
                     if not isinstance(an, str):
                         continue
-                    at = _dict_any_get_str(arg_types, an, "Any")
+                    at = dict_any_get_str(arg_types, an, "Any")
                     at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
                     used_types.add(at_cpp)
                     param_txt = (
@@ -6376,10 +6368,10 @@ def build_cpp_header_from_east(
             name = _stmt_target_name(st)
             if name == "":
                 continue
-            decl_t = _dict_any_get_str(st, "decl_type")
+            decl_t = dict_any_get_str(st, "decl_type")
             if decl_t == "" or decl_t == "unknown":
                 tgt = _dict_any_get_dict(st, "target")
-                decl_t = _dict_any_get_str(tgt, "resolved_type")
+                decl_t = dict_any_get_str(tgt, "resolved_type")
             if decl_t == "" or decl_t == "unknown":
                 continue
             cpp_t = _header_cpp_type_from_east(decl_t, ref_classes, class_names)
@@ -6548,14 +6540,14 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
             kind = _dict_any_kind(stmt_dict)
             if kind == "Import":
                 for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
-                    mod_name = _dict_any_get_str(ent_dict, "name")
+                    mod_name = dict_any_get_str(ent_dict, "name")
                     append_unique_non_empty(modules, module_seen, mod_name)
             elif kind == "ImportFrom":
-                mod_name = _dict_any_get_str(stmt_dict, "module")
+                mod_name = dict_any_get_str(stmt_dict, "module")
                 append_unique_non_empty(modules, module_seen, mod_name)
                 for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
-                    sym_name = _dict_any_get_str(ent_dict, "name")
-                    alias = _dict_any_get_str(ent_dict, "asname")
+                    sym_name = dict_any_get_str(ent_dict, "name")
+                    alias = dict_any_get_str(ent_dict, "asname")
                     if sym_name != "":
                         label = mod_name + "." + sym_name
                         if alias != "":
@@ -6631,12 +6623,12 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 RUNTIME_STD_SOURCE_ROOT,
                 RUNTIME_UTILS_SOURCE_ROOT,
             )
-            status = _dict_any_get_str(resolved, "status")
+            status = dict_any_get_str(resolved, "status")
             dep_file = Path("")
-            dep_txt = _dict_any_get_str(resolved, "path")
+            dep_txt = dict_any_get_str(resolved, "path")
             if dep_txt != "":
                 dep_file = Path(dep_txt)
-            resolved_mod_id = _dict_any_get_str(resolved, "module_id")
+            resolved_mod_id = dict_any_get_str(resolved, "module_id")
             if status == "relative":
                 rel_item = cur_disp + ": " + mod
                 append_unique_non_empty(relative_imports, relative_seen, rel_item)
@@ -6758,7 +6750,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
         for st in body:
             kind = _dict_any_kind(st)
             if kind == "FunctionDef" or kind == "ClassDef":
-                name_txt = _dict_any_get_str(st, "name")
+                name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
                     exports.add(name_txt)
             elif kind == "Assign" or kind == "AnnAssign":
@@ -6779,11 +6771,11 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
         body = _dict_any_get_dict_list(east, "body")
         for st in body:
             if _dict_any_kind(st) == "ImportFrom":
-                imported_mod = _dict_any_get_str(st, "module")
+                imported_mod = dict_any_get_str(st, "module")
                 if imported_mod in exports:
                     names = _dict_any_get_dict_list(st, "names")
                     for ent in names:
-                        sym = _dict_any_get_str(ent, "name")
+                        sym = dict_any_get_str(ent, "name")
                         if sym == "*":
                             continue
                         if sym != "" and sym not in exports[imported_mod]:
@@ -6810,7 +6802,7 @@ def build_module_east_map(entry_path: Path, parser_backend: str = "self_hosted")
         p = Path(f)
         east = load_east(p, parser_backend)
         meta = _dict_any_get_dict(east, "meta")
-        module_id = _dict_any_get_str(module_id_map, str(p))
+        module_id = dict_any_get_str(module_id_map, str(p))
         module_id = module_id if module_id != "" else module_name_from_path_for_graph(root_dir, p)
         if module_id != "":
             module_id_any: Any = module_id
@@ -6832,11 +6824,11 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
         for st in body:
             kind = _dict_any_kind(st)
             if kind == "FunctionDef":
-                name_txt = _dict_any_get_str(st, "name")
+                name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
                     funcs.append(name_txt)
             elif kind == "ClassDef":
-                name_txt = _dict_any_get_str(st, "name")
+                name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
                     classes.append(name_txt)
             elif kind == "Assign" or kind == "AnnAssign":
@@ -6862,7 +6854,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
             for local_name_any, _module_id_obj in legacy_mods.items():
                 if not isinstance(local_name_any, str):
                     continue
-                _set_import_module_binding(import_modules, local_name_any, _dict_any_get_str(legacy_mods, local_name_any))
+                _set_import_module_binding(import_modules, local_name_any, dict_any_get_str(legacy_mods, local_name_any))
             legacy_syms = _dict_any_get_dict(meta, "import_symbols")
             for local_name_any, _sym_obj in legacy_syms.items():
                 if not isinstance(local_name_any, str):
@@ -6871,8 +6863,8 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
                 _set_import_symbol_binding(
                     import_symbols,
                     local_name_any,
-                    _dict_any_get_str(sym, "module"),
-                    _dict_any_get_str(sym, "name"),
+                    dict_any_get_str(sym, "module"),
+                    dict_any_get_str(sym, "name"),
                 )
         out[mod_path] = {
             "functions": funcs,
@@ -6895,11 +6887,11 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
         for st in body:
             kind = _dict_any_kind(st)
             if kind == "FunctionDef":
-                name_txt = _dict_any_get_str(st, "name")
+                name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
                     arg_types = _dict_any_get_dict(st, "arg_types")
                     arg_order = _dict_any_get_list(st, "arg_order")
-                    ret_type = _dict_any_get_str(st, "return_type", "None")
+                    ret_type = dict_any_get_str(st, "return_type", "None")
                     fn_ent: dict[str, Any] = {
                         "arg_types": arg_types,
                         "arg_order": arg_order,
@@ -6907,7 +6899,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                     }
                     fn_schema[name_txt] = fn_ent
             elif kind == "ClassDef":
-                name_txt = _dict_any_get_str(st, "name")
+                name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
                     fields = _dict_any_get_dict(st, "field_types")
                     cls_schema[name_txt] = {"field_types": fields}
@@ -7041,14 +7033,14 @@ def _write_multi_file_cpp(
         for alias_any, _module_id_obj in import_modules.items():
             if not isinstance(alias_any, str):
                 continue
-            mod_name = _dict_any_get_str(import_modules, alias_any)
+            mod_name = dict_any_get_str(import_modules, alias_any)
             if mod_name != "":
                 dep_modules.add(mod_name)
         for alias_any, _sym_obj in import_symbols.items():
             if not isinstance(alias_any, str):
                 continue
             sym = _dict_any_get_dict(import_symbols, alias_any)
-            mod_name = _dict_any_get_str(sym, "module")
+            mod_name = dict_any_get_str(sym, "module")
             if mod_name != "":
                 dep_modules.add(mod_name)
         fwd_lines: list[str] = []
@@ -7074,7 +7066,7 @@ def _write_multi_file_cpp(
                     continue
                 fn_name = fn_name_any
                 sig = _dict_any_get_dict(funcs, fn_name)
-                ret_t = _dict_any_get_str(sig, "return_type", "None")
+                ret_t = dict_any_get_str(sig, "return_type", "None")
                 ret_cpp = "void" if ret_t == "None" else type_emitter._cpp_type_text(ret_t)
                 arg_types = _dict_any_get_dict(sig, "arg_types")
                 arg_order = _dict_any_get_list(sig, "arg_order")
@@ -7082,7 +7074,7 @@ def _write_multi_file_cpp(
                 for an in arg_order:
                     if not isinstance(an, str):
                         continue
-                    at = _dict_any_get_str(arg_types, an, "object")
+                    at = dict_any_get_str(arg_types, an, "object")
                     at_cpp = type_emitter._cpp_type_text(at)
                     parts.append(at_cpp + " " + an)
                 sep = ", "
@@ -7151,9 +7143,9 @@ def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
         RUNTIME_STD_SOURCE_ROOT,
         RUNTIME_UTILS_SOURCE_ROOT,
     )
-    status = _dict_any_get_str(resolved, "status")
-    module_id = _dict_any_get_str(resolved, "module_id", raw_name)
-    path_txt = _dict_any_get_str(resolved, "path")
+    status = dict_any_get_str(resolved, "status")
+    module_id = dict_any_get_str(resolved, "module_id", raw_name)
+    path_txt = dict_any_get_str(resolved, "path")
     path_obj: Path | None = None
     if path_txt != "":
         path_obj = Path(path_txt)
@@ -7173,7 +7165,7 @@ def dump_deps_graph_text(entry_path: Path) -> str:
 def print_user_error(err_text: str) -> None:
     """分類済みユーザーエラーをカテゴリ別に表示する。"""
     parsed_err = parse_user_error(err_text)
-    cat = _dict_any_get_str(parsed_err, "category")
+    cat = dict_any_get_str(parsed_err, "category")
     details = _dict_any_get_str_list(parsed_err, "details")
     if cat == "":
         print("error: transpilation failed.", file=sys.stderr)
@@ -7501,7 +7493,7 @@ def main(argv: list[str]) -> int:
             return 0
     except Exception as ex:
         parsed_err = parse_user_error(str(ex))
-        cat = _dict_any_get_str(parsed_err, "category")
+        cat = dict_any_get_str(parsed_err, "category")
         if cat != "":
             print_user_error(str(ex))
             return 1
