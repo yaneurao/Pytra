@@ -221,31 +221,19 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
 
 
 def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
-    """CodeEmitter の hook 呼び出しヘルパを selfhost 用に no-op 化する。"""
-    start_marker = "    def _call_hook("
-    end_marker = "\n    def _call_hook1("
-    i = text.find(start_marker)
-    j = text.find(end_marker)
+    """CppEmitter 初期化時に dynamic hooks を無効化する。"""
+    class_marker = "class CppEmitter(CodeEmitter):"
+    i = text.find(class_marker)
     if i < 0:
-        raise RuntimeError("failed to find _call_hook block in merged selfhost source")
-    if j <= i:
-        raise RuntimeError("failed to find _call_hook1 marker after _call_hook in merged selfhost source")
-    block = text[i:j]
-    lines = block.splitlines(keepends=True)
-    out_lines: list[str] = []
-    replaced = 0
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("return fn(") and stripped.endswith(")"):
-            indent = line[: len(line) - len(line.lstrip())]
-            out_lines.append(indent + "return None\n")
-            replaced += 1
-            continue
-        out_lines.append(line)
-    if replaced != 7:
-        raise RuntimeError("failed to neutralize _call_hook dynamic calls: replaced=" + str(replaced))
-    block = "".join(out_lines)
-    return text[:i] + block + text[j:]
+        raise RuntimeError("failed to find CppEmitter block in merged selfhost source")
+    target = "        self.init_base_state(east_doc, profile, hooks)\n"
+    j = text.find(target, i + len(class_marker))
+    if j < 0:
+        raise RuntimeError("failed to find init_base_state call in CppEmitter.__init__")
+    inserted = "        self.set_dynamic_hooks_enabled(False)\n"
+    if text.startswith(inserted, j + len(target)):
+        return text
+    return text[: j + len(target)] + inserted + text[j + len(target) :]
 
 
 def _patch_load_cpp_hooks_for_selfhost(text: str) -> str:
