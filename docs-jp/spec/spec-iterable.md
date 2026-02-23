@@ -141,6 +141,8 @@
 
 - C++ と同じ失敗契約（non-iterable は `TypeError` 相当）。
 - 同一モードでは決定的挙動を維持する。
+- `meta.dispatch_mode` はルートスキーマ入力をそのまま使い、backend/hook で再決定しない。
+- dispatch mode の意味論適用点は `EAST2 -> EAST3` の lowering 1 回に限定する。
 
 ## 8. 変換器（py2cpp）規則
 
@@ -338,3 +340,11 @@ class JsTsIterableDispatchTest(unittest.TestCase):
 - C++ では begin/end ブリッジを採用しても、意味論の正本は `iter/next` とする。  
 - これにより、Python と非 C++ ターゲットに同じ仕様を展開しやすくなる。  
 - 既存 `spec-boxing.md` の fail-fast 方針（暗黙空反復禁止）と整合する。
+
+## 13. 関連
+
+- `docs-jp/spec/spec-east123.md`
+- `docs-jp/spec/spec-linker.md`
+- `docs-jp/spec/spec-type_id.md`
+- `docs-jp/spec/spec-boxing.md`
+- `docs-jp/spec/spec-dev.md`

@@ -8,6 +8,7 @@
 この文書は `src/pytra/compiler/east.py` の現実装に合わせた EAST 仕様である。
 
 次期の三段構成（`EAST1` / `EAST2` / `EAST3`）設計は [spec-east123.md](./spec-east123.md) を参照。
+この文書は実装準拠の `EAST2` 相当仕様として扱う。
 
 ## 1. 目的
 
@@ -64,6 +65,8 @@
 `east` オブジェクトは以下を持つ。
 
 - `kind`: 常に `Module`
+- `east_stage`: 常に `2`（`EAST2`）
+- `schema_version`: 整数（現行 `1`）
 - `source_path`: 入力パス
 - `source_span`: モジュール span
 - `body`: 通常のトップレベル文
@@ -73,6 +76,11 @@
 - `meta.qualified_symbol_refs`: `from-import` の解決済み参照（`QualifiedSymbolRef[]`）
 - `meta.import_modules`: `import module [as alias]` の束縛情報（`alias -> module`）
 - `meta.import_symbols`: `from module import symbol [as alias]` の束縛情報（`alias -> {module,name}`）
+- `meta.dispatch_mode`: `native | type_id`（コンパイル開始時に確定し、`EAST2 -> EAST3` で意味適用する）
+
+注:
+- `meta.dispatch_mode` の意味論適用点は `EAST2 -> EAST3` の 1 回のみで、backend/hook で再判断しない。
+- 詳細契約は `docs-jp/spec/spec-east123.md` と `docs-jp/spec/spec-linker.md` を正本とする。
 
 `ImportBinding` は次を持つ。
 

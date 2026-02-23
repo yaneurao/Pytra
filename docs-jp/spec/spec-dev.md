@@ -359,13 +359,17 @@
   - 入力済み EAST（ノード + `meta`）を受け取り、言語 profile/hooks を適用してコード文字列を生成する。
   - スコープ管理・式/文の共通 lower・テンプレート展開など、出力生成に閉じた処理のみを持つ。
   - ファイルシステム走査、import グラフ解析、プロジェクト全体依存解決は持たない。
+  - `meta.dispatch_mode` は入力値を読むだけにし、mode 再決定や意味論差し替えを行わない。
 - EAST parser（`src/pytra/compiler/east.py`）の責務:
   - 単一入力（`.py`）を字句解析/構文解析し、単一モジュール EAST を生成する。
   - `range` などの言語非依存正規化と、単一ファイル内で完結する型/symbol 補助情報の付与に専念する。
   - 複数モジュール横断の import グラフ解析や module index 構築は持たない。
+  - ルート契約（`east_stage`, `schema_version`, `meta.dispatch_mode`）を満たす EAST 文書を生成/保持する。
 - compiler 共通層（`src/pytra/compiler/` 配下で段階抽出）の責務:
   - FS 依存の import 解決、module EAST map 構築、symbol index / type schema 構築、deps dump を担当する。
   - 各 `py2*.py` CLI はこの共通層で解析を完了し、その結果を `CodeEmitter` に渡す構成とする。
+  - `--object-dispatch-mode` はコンパイル開始時に 1 回だけ確定し、段間で `meta.dispatch_mode` として保持する。
+  - dispatch mode の意味論適用は `EAST2 -> EAST3` lowering のみで実施し、backend/hook では再判断しない。
 
 ## 6. LanguageProfile / CodeEmitter
 

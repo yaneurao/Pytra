@@ -150,6 +150,11 @@
 - `type_id` 判定 lower は原則 `EAST3` で命令化し、backend はその命令を runtime API へ写像するだけにする。
 - backend（例: C++ emitter）で `type_id` 判定ロジックを直接文字列生成する経路は、移行期間の互換層を除き禁止する。
 
+EAST3 連携規約:
+- `meta.dispatch_mode`（`native | type_id`）はルートスキーマから受け取り、backend/hook で再決定しない。
+- dispatch mode の意味論適用点は `EAST2 -> EAST3` の lowering 1 回のみとする。
+- `type_id` 判定命令の連結・ID 確定は `spec-linker` の契約に従う。
+
 ## 12. テスト観点
 
 1. 単一継承: `A <- B <- C` で `isinstance(C(), A)` が真。
@@ -169,6 +174,9 @@
 
 ## 14. 関連
 
+- `docs-jp/spec/spec-east123.md`
+- `docs-jp/spec/spec-linker.md`
+- `docs-jp/spec/spec-dev.md`
 - `docs-jp/spec/spec-boxing.md`
 - `docs-jp/spec/spec-iterable.md`
 - `docs-jp/plans/p0-typeid-isinstance-dispatch.md`

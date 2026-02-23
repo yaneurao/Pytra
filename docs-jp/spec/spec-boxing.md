@@ -116,6 +116,8 @@ runtime に次を追加する。
 共通要件:
 - `Any/object` 境界の `bool/len/str` はターゲット間で同じ失敗契約を持つ。
 - 同一入力で決定的な dispatch（再現可能な挙動）を維持する。
+- `meta.dispatch_mode` はルートスキーマ入力をそのまま使い、backend/hook で再決定しない。
+- dispatch mode の意味論適用点は `EAST2 -> EAST3` の lowering 1 回に限定する。
 
 ## 7. 段階導入
 
@@ -148,6 +150,11 @@ runtime に次を追加する。
 
 ## 10. 関連
 
+- `docs-jp/spec/spec-east123.md`
+- `docs-jp/spec/spec-linker.md`
+- `docs-jp/spec/spec-type_id.md`
+- `docs-jp/spec/spec-iterable.md`
+- `docs-jp/spec/spec-dev.md`
 - `docs-jp/spec/spec-runtime.md`
 - `docs-jp/plans/p2-any-object-boundary.md`
 - `docs-jp/plans/p3-microgpt-source-preservation.md`

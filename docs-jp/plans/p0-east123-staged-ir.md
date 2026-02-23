@@ -78,3 +78,4 @@
 - 2026-02-23: 実行単位を小さく保つため、`P0-EAST123-01-S1` を起点に `-S1/-S2/...` 形式で約20サブタスクへ再分割した。
 - 2026-02-23: `spec-east123` を上位仕様、`spec-linker` を下位仕様として扱う順序を `P0-EAST123-01-S4` として TODO/plan へ追加した。
 - 2026-02-23: [ID: P0-EAST123-01-S4] `spec-east123` と `spec-linker` に仕様優先順位（`east123` 上位 / `linker` 下位）を明記した。
+- 2026-02-23: `P0-EAST123-01-S1` / `P0-EAST123-01-S2` / `P0-EAST123-01-S3` として、`spec-east123` のルート契約（`east_stage`/`schema_version`/`meta.dispatch_mode`）、dispatch mode 単一点適用（`EAST2 -> EAST3`）、および `spec-east`/`spec-dev`/`spec-type_id`/`spec-boxing`/`spec-iterable` の参照整合を同期した。

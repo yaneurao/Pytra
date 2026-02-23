@@ -48,16 +48,14 @@
 - `source_path`: 入力パス
 - `body`: 文配列
 - `meta`: 追加メタ
-
-`EAST3` では `meta.dispatch_mode` を必須とする。
-
 - `meta.dispatch_mode`: `native | type_id`
 
 不変条件:
 
 1. `east_stage` とノード形状が一致する。  
-2. `EAST3` 以降で dispatch mode の再決定を行わない。  
-3. backend は `EAST3` の意味論を変更しない。
+2. `meta.dispatch_mode` は全段で保持し、値は段間で不変とする。  
+3. dispatch mode の意味適用は `EAST2 -> EAST3` の 1 回だけで行う。  
+4. backend は `EAST3` の意味論を変更しない。
 
 ## 6. 三段階の責務
 
@@ -135,7 +133,8 @@
 
 ## 8. dispatch mode の適用点
 
-`--object-dispatch-mode` は `EAST2 -> EAST3` で 1 回だけ適用し、`EAST3.meta.dispatch_mode` と `RuntimeIterForPlan.dispatch_mode` へ埋め込む。  
+`--object-dispatch-mode` はコンパイル開始時に確定し、`EAST1`/`EAST2`/`EAST3` の `meta.dispatch_mode` へ同値を保持する。  
+意味論としての適用は `EAST2 -> EAST3` で 1 回だけ行い、`RuntimeIterForPlan.dispatch_mode` へ埋め込む。  
 この段階より後では、モード切替の意味論判断を行わない。
 
 ### 8.1 `type_id` モード
