@@ -511,8 +511,7 @@ class CppEmitter(CodeEmitter):
                 append_unique_non_empty(includes, seen, inc)
                 if dict_any_get_str(item, "binding_kind") == "symbol":
                     self._append_runtime_symbol_include(includes, seen, mod_name, dict_any_get_str(item, "export_name"))
-            includes = sort_str_list_copy(includes)
-            return includes
+            return sort_str_list_copy(includes)
         for stmt in body:
             kind = self._node_kind_from_dict(stmt)
             if kind == "Import":
@@ -521,14 +520,12 @@ class CppEmitter(CodeEmitter):
                     inc = self._module_name_to_cpp_include(mod_name)
                     append_unique_non_empty(includes, seen, inc)
             elif kind == "ImportFrom":
-                mod_name = dict_any_get_str(stmt, "module")
-                mod_name = self._normalize_runtime_module_name(mod_name)
+                mod_name = self._normalize_runtime_module_name(dict_any_get_str(stmt, "module"))
                 inc = self._module_name_to_cpp_include(mod_name)
                 append_unique_non_empty(includes, seen, inc)
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     self._append_runtime_symbol_include(includes, seen, mod_name, dict_any_get_str(ent, "name"))
-        includes = sort_str_list_copy(includes)
-        return includes
+        return sort_str_list_copy(includes)
 
     def _seed_legacy_import_symbols_from_meta(self, meta: dict[str, Any]) -> None:
         """legacy `meta.import_symbols` を `self.import_symbols` へ反映する。"""
