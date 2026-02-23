@@ -515,6 +515,18 @@ def collect_symbols_from_stmt(stmt: dict[str, object]) -> set[str]:
     return symbols
 
 
+def collect_symbols_from_stmt_list(body: list[dict[str, object]]) -> set[str]:
+    """statement list から束縛名を再帰収集する。"""
+    symbols: set[str] = set()
+    for st in body:
+        for name_txt in collect_symbols_from_stmt(st):
+            symbols.add(name_txt)
+        for child in stmt_child_stmt_lists(st):
+            for name_txt in collect_symbols_from_stmt_list(child):
+                symbols.add(name_txt)
+    return symbols
+
+
 def stmt_list_scope_depth(
     body: list[dict[str, object]],
     depth: int,
