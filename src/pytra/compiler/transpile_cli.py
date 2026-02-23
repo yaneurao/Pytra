@@ -1279,6 +1279,39 @@ def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:
     return value
 
 
+def guard_profile_base_limits(profile: str) -> dict[str, int]:
+    """`off/default/strict` からガード上限初期値を解決する。"""
+    out: dict[str, int] = {}
+    if profile == "off":
+        out["max_ast_depth"] = 0
+        out["max_parse_nodes"] = 0
+        out["max_symbols_per_module"] = 0
+        out["max_scope_depth"] = 0
+        out["max_import_graph_nodes"] = 0
+        out["max_import_graph_edges"] = 0
+        out["max_generated_lines"] = 0
+        return out
+    if profile == "default":
+        out["max_ast_depth"] = 800
+        out["max_parse_nodes"] = 2000000
+        out["max_symbols_per_module"] = 200000
+        out["max_scope_depth"] = 400
+        out["max_import_graph_nodes"] = 5000
+        out["max_import_graph_edges"] = 20000
+        out["max_generated_lines"] = 2000000
+        return out
+    if profile == "strict":
+        out["max_ast_depth"] = 200
+        out["max_parse_nodes"] = 200000
+        out["max_symbols_per_module"] = 20000
+        out["max_scope_depth"] = 120
+        out["max_import_graph_nodes"] = 1000
+        out["max_import_graph_edges"] = 4000
+        out["max_generated_lines"] = 300000
+        return out
+    raise ValueError("invalid --guard-profile: " + profile)
+
+
 def empty_parse_dict() -> dict[str, str]:
     out: dict[str, str] = {}
     out["__error"] = ""
