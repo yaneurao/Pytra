@@ -4547,8 +4547,13 @@ class CppEmitter(CodeEmitter):
                     p_cpp = p_cpp if p_cpp != "" else self._trim_ws(part)
                     cmp_terms.append(p_cpp)
                 pair_parts: list[str] = []
-                for i in range(len(cmp_terms) - 1):
-                    pair_parts.append(f"{cmp_terms[i]} {op} {cmp_terms[i + 1]}")
+                prev_term = ""
+                has_prev = False
+                for term in cmp_terms:
+                    if has_prev:
+                        pair_parts.append(f"{prev_term} {op} {term}")
+                    prev_term = term
+                    has_prev = True
                 if len(pair_parts) > 0:
                     wrapped = [f"({x})" for x in pair_parts]
                     return join_str_list(" && ", wrapped)
