@@ -613,6 +613,46 @@ def f(x: object) -> None:
         self.assertIn("for (int64 v : xs)", cpp)
         self.assertNotIn("py_dyn_range(xs)", cpp)
 
+    def test_for_without_iter_mode_keeps_legacy_static_fastpath(self) -> None:
+        src = """def f(xs):
+    s = 0
+    for v in xs:
+        s = s + v
+    return s
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "for_legacy_without_iter_mode.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            for_node: dict[str, object] | None = None
+            mod_body = east.get("body", [])
+            if isinstance(mod_body, list):
+                for top in mod_body:
+                    if not isinstance(top, dict) or top.get("kind") != "FunctionDef":
+                        continue
+                    fn_body = top.get("body", [])
+                    if not isinstance(fn_body, list):
+                        continue
+                    for stmt in fn_body:
+                        if isinstance(stmt, dict) and stmt.get("kind") == "For":
+                            for_node = stmt
+                            break
+                    if for_node is not None:
+                        break
+            self.assertIsNotNone(for_node)
+            if for_node is None:
+                return
+            for_node.pop("iter_mode", None)
+            iter_expr = for_node.get("iter")
+            if isinstance(iter_expr, dict):
+                iter_expr.pop("iterable_trait", None)
+                iter_expr.pop("iter_protocol", None)
+                iter_expr.pop("iter_element_type", None)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("for (object v : xs)", cpp)
+        self.assertNotIn("py_dyn_range(xs)", cpp)
+
     def test_isinstance_builtin_lowers_to_type_id_runtime_api(self) -> None:
         src = """def f(x: object) -> bool:
     return isinstance(x, int)

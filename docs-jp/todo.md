@@ -79,12 +79,13 @@
 
 1. [ ] [ID: P0-ITER-01] `docs-jp/spec/spec-iterable.md` を正本として iterable/iterator 契約を実装全体へ反映する（`P0-ITER-01-S1` から `P0-ITER-01-S4` 完了でクローズ）。
 2. [x] [ID: P0-ITER-01-S1] `EAST` trait（`iterable_trait` / `iter_mode`）の必要情報と既存ノード影響を整理し、導入手順を確定する。
-3. [ ] [ID: P0-ITER-01-S2] `EAST` trait を導入し、parser/lower から必要メタデータを供給できる状態にする。
+3. [x] [ID: P0-ITER-01-S2] `EAST` trait を導入し、parser/lower から必要メタデータを供給できる状態にする。
 4. [ ] [ID: P0-ITER-01-S3] C++ runtime（`py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range`）を実装し、`spec-iterable` の契約を満たす。
 5. [ ] [ID: P0-ITER-01-S4] `py2cpp` codegen の `static_fastpath` / `runtime_protocol` 分岐を実装し、回帰テストを追加する。
 
 進捗メモ:
 - `P0-ITER-01-S1`: `docs-jp/plans/p0-iterable-runtime-protocol.md` に `For` / `ForRange` 影響範囲、trait 必須項目、`core.py`（producer）と `py2cpp.py`（consumer）の責務境界を棚卸しした。
+- `P0-ITER-01-S2`: `test/unit/test_py2cpp_codegen_issues.py` に `iter_mode` 欠落時の互換フォールバック回帰（`test_for_without_iter_mode_keeps_legacy_static_fastpath`）を追加し、parser/lower 供給済み trait と旧 EAST 互換の双方を固定した。
 - 詳細ログは `docs-jp/plans/p0-iterable-runtime-protocol.md` の `決定ログ` を参照。
 
 ## P0: Selfhost 安定化
