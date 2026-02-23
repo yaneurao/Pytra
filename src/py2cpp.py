@@ -3721,6 +3721,16 @@ class CppEmitter(CodeEmitter):
                 key_node = arg_nodes[0]
             key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
             if len(args) <= 1:
+                if len(arg_nodes) >= 1:
+                    pop_node = {
+                        "kind": "DictPop",
+                        "owner": owner_node,
+                        "key": arg_nodes[0],
+                        "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                        "borrow_kind": "value",
+                        "casts": [],
+                    }
+                    return self.render_expr(pop_node)
                 return f"{owner}.pop({key_expr})"
             owner_t0 = self.get_expr_type(owner_node)
             owner_t2 = owner_t0 if isinstance(owner_t0, str) else ""
@@ -5939,6 +5949,13 @@ class CppEmitter(CodeEmitter):
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             return f"py_dict_values({owner_expr})"
+        if kind == "DictPop":
+            owner_node = expr_d.get("owner")
+            key_node = expr_d.get("key")
+            owner_expr = self.render_expr(owner_node)
+            key_expr = self.render_expr(key_node)
+            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
+            return f"{owner_expr}.pop({key_expr})"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))

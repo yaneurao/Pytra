@@ -502,6 +502,34 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(keys_expr), "py_dict_keys(d)")
         self.assertEqual(emitter.render_expr(values_expr), "py_dict_values(d)")
 
+    def test_render_expr_supports_dict_pop_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        node = {
+            "kind": "DictPop",
+            "owner": {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"},
+            "key": {"kind": "Name", "id": "k", "resolved_type": "str"},
+            "resolved_type": "int64",
+        }
+        self.assertEqual(emitter.render_expr(node), "d.pop(py_to_string(k))")
+
+    def test_builtin_runtime_dict_pop_without_default_uses_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        pop_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "dict.pop",
+            "resolved_type": "int64",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"},
+                "attr": "pop",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Name", "id": "k", "resolved_type": "str"}],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(pop_expr), "d.pop(py_to_string(k))")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
