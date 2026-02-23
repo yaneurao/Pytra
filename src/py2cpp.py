@@ -5535,8 +5535,8 @@ def _header_allows_none_default(east_t: str) -> bool:
         return True
     if "|" in txt:
         parts = txt.split("|")
-        for i in range(len(parts)):
-            if parts[i].strip() == "None":
+        for part in parts:
+            if part.strip() == "None":
                 return True
     return txt == "None"
 
