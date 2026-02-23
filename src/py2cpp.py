@@ -1843,15 +1843,20 @@ class CppEmitter(CodeEmitter):
         self.emit_block_close()
 
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
+        def _import_entries_for_stmt(s: dict[str, Any]) -> list[dict[str, Any]]:
+            entries = self._dict_stmt_list(s.get("names"))
+            if len(entries) > 0:
+                return entries
+            out: list[dict[str, Any]] = []
+            for raw_name in self.any_to_list(s.get("names")):
+                ent = self.any_to_dict_or_empty(raw_name)
+                if len(ent) > 0:
+                    out.append(ent)
+            return out
+
         kind = self._node_kind_from_dict(stmt)
         if kind == "Import":
-            ents = self._dict_stmt_list(stmt.get("names"))
-            if len(ents) == 0:
-                raw_names = self.any_to_list(stmt.get("names"))
-                for raw_name in raw_names:
-                    ent = self.any_to_dict_or_empty(raw_name)
-                    if len(ent) > 0:
-                        ents.append(ent)
+            ents = _import_entries_for_stmt(stmt)
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
@@ -1866,13 +1871,7 @@ class CppEmitter(CodeEmitter):
             return
         if kind == "ImportFrom":
             mod = dict_any_get_str(stmt, "module")
-            ents = self._dict_stmt_list(stmt.get("names"))
-            if len(ents) == 0:
-                raw_names = self.any_to_list(stmt.get("names"))
-                for raw_name in raw_names:
-                    ent = self.any_to_dict_or_empty(raw_name)
-                    if len(ent) > 0:
-                        ents.append(ent)
+            ents = _import_entries_for_stmt(stmt)
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
