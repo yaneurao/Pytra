@@ -3575,8 +3575,8 @@ class CppEmitter(CodeEmitter):
         imported_module = ""
         if raw != "" and not self.is_declared(raw):
             resolved = self._resolve_imported_symbol(raw)
-            imported_module = resolved["module"] if "module" in resolved else ""
-            resolved_name = resolved["name"] if "name" in resolved else ""
+            imported_module = dict_str_get(resolved, "module", "")
+            resolved_name = dict_str_get(resolved, "name", "")
             if resolved_name != "":
                 raw = resolved_name
         if raw == "" or imported_module == "":
