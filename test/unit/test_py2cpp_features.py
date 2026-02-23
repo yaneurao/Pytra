@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, check_guard_limit, collect_import_modules, collect_reserved_import_conflicts, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_parse_stage_guards, resolve_guard_limits, parse_guard_limit_or_raise, guard_profile_base_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, raise_guard_limit_exceeded, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, check_guard_limit, collect_import_modules, collect_reserved_import_conflicts, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_type_schema as build_module_type_schema_helper, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_parse_stage_guards, resolve_guard_limits, parse_guard_limit_or_raise, guard_profile_base_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, raise_guard_limit_exceeded, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -2011,6 +2011,22 @@ def f(a: int, b: int) -> int:
         self.assertEqual(schema[str(main_py)]["functions"]["run"]["return_type"], "int64")
         self.assertEqual(schema[str(helper_py)]["functions"]["f"]["arg_types"]["a"], "int64")
         self.assertEqual(schema[str(helper_py)]["classes"]["C"]["field_types"]["x"], "int64")
+
+    def test_build_module_type_schema_helper_contains_function_and_class_types(self) -> None:
+        src = """class C:
+    x: int = 1
+
+def f(a: int, b: int) -> int:
+    return a + b
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            mod_py = root / "mod.py"
+            mod_py.write_text(src, encoding="utf-8")
+            mp = {str(mod_py): load_east(mod_py)}
+            schema = build_module_type_schema_helper(mp)
+        self.assertEqual(schema[str(mod_py)]["functions"]["f"]["arg_types"]["a"], "int64")
+        self.assertEqual(schema[str(mod_py)]["classes"]["C"]["field_types"]["x"], "int64")
 
     def test_floor_div_mode_native_and_python(self) -> None:
         src = """def main() -> None:

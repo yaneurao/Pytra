@@ -718,6 +718,36 @@ def module_export_table(
     return out
 
 
+def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """モジュール間共有用の最小型スキーマ（関数/クラス）を構築する。"""
+    out: dict[str, dict[str, Any]] = {}
+    for mod_path, east in module_east_map.items():
+        body = dict_any_get_dict_list(east, "body")
+        fn_schema: dict[str, dict[str, Any]] = {}
+        cls_schema: dict[str, dict[str, Any]] = {}
+        for st in body:
+            kind = dict_any_kind(st)
+            if kind == "FunctionDef":
+                name_txt = dict_any_get_str(st, "name")
+                if name_txt != "":
+                    arg_types = dict_any_get_dict(st, "arg_types")
+                    arg_order = dict_any_get_list(st, "arg_order")
+                    ret_type = dict_any_get_str(st, "return_type", "None")
+                    fn_ent: dict[str, Any] = {
+                        "arg_types": arg_types,
+                        "arg_order": arg_order,
+                        "return_type": ret_type,
+                    }
+                    fn_schema[name_txt] = fn_ent
+            elif kind == "ClassDef":
+                name_txt = dict_any_get_str(st, "name")
+                if name_txt != "":
+                    fields = dict_any_get_dict(st, "field_types")
+                    cls_schema[name_txt] = {"field_types": fields}
+        out[mod_path] = {"functions": fn_schema, "classes": cls_schema}
+    return out
+
+
 def validate_from_import_symbols_or_raise(
     module_east_map: dict[str, dict[str, object]],
     root: Path,
