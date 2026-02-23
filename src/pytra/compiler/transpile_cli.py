@@ -1605,6 +1605,43 @@ def collect_user_module_files_for_graph(visited_order: list[str], key_to_path: d
     return out
 
 
+def finalize_import_graph_analysis(
+    graph_adj: dict[str, list[str]],
+    graph_keys: list[str],
+    key_to_disp: dict[str, str],
+    visited_order: list[str],
+    key_to_path: dict[str, Path],
+    edges: list[str],
+    missing_modules: list[str],
+    relative_imports: list[str],
+    reserved_conflicts: list[str],
+    module_id_map: dict[str, str],
+) -> dict[str, object]:
+    """import graph の最終整形（循環検出・ファイル一覧・戻り値整形）を行う。"""
+    cycles: list[str] = []
+    cycle_seen: set[str] = set()
+    color: dict[str, int] = {}
+    stack: list[str] = []
+
+    keys: list[str] = []
+    for key in graph_keys:
+        keys.append(key)
+    for k in keys:
+        if color.get(k, 0) == 0:
+            graph_cycle_dfs(k, graph_adj, key_to_disp, color, stack, cycles, cycle_seen)
+
+    user_module_files = collect_user_module_files_for_graph(visited_order, key_to_path)
+    return {
+        "edges": edges,
+        "missing_modules": missing_modules,
+        "relative_imports": relative_imports,
+        "reserved_conflicts": reserved_conflicts,
+        "cycles": cycles,
+        "module_id_map": module_id_map,
+        "user_module_files": user_module_files,
+    }
+
+
 def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:
     """個別 `--max-*` 値を正整数へ変換する。"""
     if raw == "":
