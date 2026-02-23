@@ -507,8 +507,7 @@ class CppEmitter(CodeEmitter):
         if bindings:
             for item in bindings:
                 mod_name = self._normalize_runtime_module_name(dict_any_get_str(item, "module_id"))
-                inc = self._module_name_to_cpp_include(mod_name)
-                append_unique_non_empty(includes, seen, inc)
+                append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(mod_name))
                 if dict_any_get_str(item, "binding_kind") == "symbol":
                     self._append_runtime_symbol_include(includes, seen, mod_name, dict_any_get_str(item, "export_name"))
             return sort_str_list_copy(includes)
@@ -516,13 +515,12 @@ class CppEmitter(CodeEmitter):
             kind = self._node_kind_from_dict(stmt)
             if kind == "Import":
                 for ent in self._dict_stmt_list(stmt.get("names")):
-                    mod_name = dict_any_get_str(ent, "name")
-                    inc = self._module_name_to_cpp_include(mod_name)
-                    append_unique_non_empty(includes, seen, inc)
+                    append_unique_non_empty(
+                        includes, seen, self._module_name_to_cpp_include(dict_any_get_str(ent, "name"))
+                    )
             elif kind == "ImportFrom":
                 mod_name = self._normalize_runtime_module_name(dict_any_get_str(stmt, "module"))
-                inc = self._module_name_to_cpp_include(mod_name)
-                append_unique_non_empty(includes, seen, inc)
+                append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(mod_name))
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     self._append_runtime_symbol_include(includes, seen, mod_name, dict_any_get_str(ent, "name"))
         return sort_str_list_copy(includes)
