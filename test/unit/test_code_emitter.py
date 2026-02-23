@@ -880,6 +880,10 @@ class CodeEmitterTest(unittest.TestCase):
             calls.append("emit_stmt_kind:" + kind)
             return True
 
+        def on_emit_stmt_return(_em: CodeEmitter, kind: str, _stmt: dict[str, Any]) -> Any:
+            calls.append("emit_stmt_return:" + kind)
+            return True
+
         def on_stmt_omit_braces(
             _em: CodeEmitter,
             kind: str,
@@ -960,6 +964,7 @@ class CodeEmitterTest(unittest.TestCase):
         hooks: dict[str, Any] = {
             "on_emit_stmt": on_emit_stmt,
             "on_emit_stmt_kind": on_emit_stmt_kind,
+            "on_emit_stmt_return": on_emit_stmt_return,
             "on_stmt_omit_braces": on_stmt_omit_braces,
             "on_for_range_mode": on_for_range_mode,
             "on_render_call": on_render_call,
@@ -974,6 +979,7 @@ class CodeEmitterTest(unittest.TestCase):
         em = CodeEmitter({}, {}, hooks)
         self.assertTrue(em.hook_on_emit_stmt({"kind": "Pass"}))
         self.assertTrue(em.hook_on_emit_stmt_kind("Return", {"kind": "Return"}))
+        self.assertTrue(em.hook_on_emit_stmt_kind("Break", {"kind": "Break"}))
         self.assertTrue(em.hook_on_stmt_omit_braces("If", {"kind": "If"}, False))
         self.assertEqual(em.hook_on_for_range_mode({"kind": "ForRange"}, "dynamic"), "descending")
         self.assertEqual(
@@ -1016,7 +1022,8 @@ class CodeEmitterTest(unittest.TestCase):
             "dict_hook_complex()",
         )
         self.assertIn("emit_stmt:Pass", calls)
-        self.assertIn("emit_stmt_kind:Return", calls)
+        self.assertIn("emit_stmt_return:Return", calls)
+        self.assertIn("emit_stmt_kind:Break", calls)
         self.assertIn("stmt_omit_braces:If", calls)
         self.assertIn("for_range_mode", calls)
         self.assertIn("render_call", calls)
@@ -1034,6 +1041,12 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em._render_expr_kind_hook_name("IfExp"), "on_render_expr_if_exp")
         self.assertEqual(em._render_expr_kind_hook_name("ListComp"), "on_render_expr_list_comp")
         self.assertEqual(em._render_expr_kind_hook_name(""), "")
+
+    def test_stmt_kind_hook_name_normalization(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em._stmt_kind_hook_name("Assign"), "on_emit_stmt_assign")
+        self.assertEqual(em._stmt_kind_hook_name("IfExp"), "on_emit_stmt_if_exp")
+        self.assertEqual(em._stmt_kind_hook_name(""), "")
 
     def test_dynamic_hook_disable_switch(self) -> None:
         calls: list[str] = []
