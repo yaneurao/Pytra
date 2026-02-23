@@ -529,6 +529,29 @@ class CppEmitter(CodeEmitter):
         includes = sort_str_list_copy(includes)
         return includes
 
+    def _seed_legacy_import_symbols_from_meta(self, meta: dict[str, Any]) -> None:
+        """legacy `meta.import_symbols` を `self.import_symbols` へ反映する。"""
+        legacy_syms = self.any_to_dict_or_empty(meta.get("import_symbols"))
+        for local_name, sym_obj in legacy_syms.items():
+            if not isinstance(local_name, str):
+                continue
+            sym = self.any_to_dict_or_empty(sym_obj)
+            set_import_symbol_binding_and_module_set(
+                self.import_symbols,
+                self.import_symbol_modules,
+                local_name,
+                self.any_to_str(sym.get("module")),
+                self.any_to_str(sym.get("name")),
+            )
+
+    def _seed_legacy_import_modules_from_meta(self, meta: dict[str, Any]) -> None:
+        """legacy `meta.import_modules` を `self.import_modules` へ反映する。"""
+        legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
+        for local_name, module_id_obj in legacy_mods.items():
+            if not isinstance(local_name, str):
+                continue
+            set_import_module_binding(self.import_modules, local_name, self.any_to_str(module_id_obj))
+
     def _seed_import_maps_from_meta(self) -> None:
         """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
         meta = self.any_to_dict_or_empty(self.doc.get("meta"))
@@ -558,43 +581,13 @@ class CppEmitter(CodeEmitter):
                         self.import_symbols, self.import_symbol_modules, local_name, module_id, export_name
                     )
             if len(self.import_symbols) == 0:
-                legacy_syms = self.any_to_dict_or_empty(meta.get("import_symbols"))
-                for local_name, sym_obj in legacy_syms.items():
-                    if not isinstance(local_name, str):
-                        continue
-                    sym = self.any_to_dict_or_empty(sym_obj)
-                    module_id = self.any_to_str(sym.get("module"))
-                    symbol_name = self.any_to_str(sym.get("name"))
-                    if module_id != "" and symbol_name != "":
-                        set_import_symbol_binding_and_module_set(
-                            self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol_name
-                        )
+                self._seed_legacy_import_symbols_from_meta(meta)
             if len(self.import_modules) == 0:
-                legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
-                for local_name, module_id_obj in legacy_mods.items():
-                    if not isinstance(local_name, str):
-                        continue
-                    module_id = self.any_to_str(module_id_obj)
-                    set_import_module_binding(self.import_modules, local_name, module_id)
+                self._seed_legacy_import_modules_from_meta(meta)
             return
         # canonical メタが空の場合は legacy メタへフォールバックする。
-        legacy_syms = self.any_to_dict_or_empty(meta.get("import_symbols"))
-        for local_name, sym_obj in legacy_syms.items():
-            if not isinstance(local_name, str):
-                continue
-            sym = self.any_to_dict_or_empty(sym_obj)
-            module_id = self.any_to_str(sym.get("module"))
-            symbol_name = self.any_to_str(sym.get("name"))
-            if module_id != "" and symbol_name != "":
-                set_import_symbol_binding_and_module_set(
-                    self.import_symbols, self.import_symbol_modules, local_name, module_id, symbol_name
-                )
-        legacy_mods = self.any_to_dict_or_empty(meta.get("import_modules"))
-        for local_name, module_id_obj in legacy_mods.items():
-            if not isinstance(local_name, str):
-                continue
-            module_id = self.any_to_str(module_id_obj)
-            set_import_module_binding(self.import_modules, local_name, module_id)
+        self._seed_legacy_import_symbols_from_meta(meta)
+        self._seed_legacy_import_modules_from_meta(meta)
         return
 
     def emit_block_comment(self, text: str) -> None:
