@@ -464,6 +464,57 @@ def module_parse_metrics(east_module: dict[str, object]) -> dict[str, int]:
     return {"max_ast_depth": module_depth, "parse_nodes": module_nodes}
 
 
+def collect_symbols_from_stmt(stmt: dict[str, object]) -> set[str]:
+    """statement ノードの束縛名を抽出して返す。"""
+    symbols: set[str] = set()
+    kind = dict_any_kind(stmt)
+    if kind == "FunctionDef" or kind == "AsyncFunctionDef":
+        fn_name = dict_any_get_str(stmt, "name")
+        if fn_name != "":
+            symbols.add(fn_name)
+        for arg_any in dict_any_get_list(stmt, "arg_order"):
+            if isinstance(arg_any, str) and arg_any != "":
+                symbols.add(arg_any)
+    elif kind == "ClassDef":
+        cls_name = dict_any_get_str(stmt, "name")
+        if cls_name != "":
+            symbols.add(cls_name)
+    elif kind == "Assign" or kind == "AnnAssign":
+        for name_txt in stmt_assigned_names(stmt):
+            if name_txt != "":
+                symbols.add(name_txt)
+    elif kind == "For":
+        target = dict_any_get_dict(stmt, "target")
+        if len(target) > 0:
+            collect_store_names_from_target(target, symbols)
+    elif kind == "With":
+        for item in dict_any_get_dict_list(stmt, "items"):
+            opt_vars = dict_any_get_dict(item, "optional_vars")
+            if len(opt_vars) > 0:
+                collect_store_names_from_target(opt_vars, symbols)
+    elif kind == "ExceptHandler":
+        name_txt = dict_any_get_str(stmt, "name")
+        if name_txt != "":
+            symbols.add(name_txt)
+    elif kind == "Import":
+        for ent in dict_any_get_dict_list(stmt, "names"):
+            name_txt = dict_any_get_str(ent, "name")
+            asname_txt = dict_any_get_str(ent, "asname")
+            local_name = local_binding_name(name_txt, asname_txt)
+            if local_name != "":
+                symbols.add(local_name)
+    elif kind == "ImportFrom":
+        for ent in dict_any_get_dict_list(stmt, "names"):
+            sym_name = dict_any_get_str(ent, "name")
+            if sym_name == "*":
+                continue
+            asname_txt = dict_any_get_str(ent, "asname")
+            local_name = local_binding_name(sym_name, asname_txt)
+            if local_name != "":
+                symbols.add(local_name)
+    return symbols
+
+
 def stmt_list_scope_depth(
     body: list[dict[str, object]],
     depth: int,
