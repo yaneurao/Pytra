@@ -37,6 +37,8 @@ from src.py2cpp import (
     dump_deps_text,
     dump_deps_graph_text,
     load_cpp_module_attr_call_map,
+    load_cpp_identifier_rules,
+    load_cpp_type_map,
     load_east,
     resolve_module_name,
     transpile_to_cpp,
@@ -163,6 +165,33 @@ class Py2CppFeatureTest(unittest.TestCase):
 
         emitter.emit_stmt({"kind": "Import", "names": [{"name": "math", "asname": ""}]})
         self.assertEqual(emitter.import_modules.get("math"), "math")
+
+    def test_load_cpp_type_map_allows_profile_overlay(self) -> None:
+        profile = {
+            "types": {
+                "Path": "MyPath",
+                "Custom": "CustomCpp",
+            }
+        }
+        loaded = load_cpp_type_map(profile)
+        self.assertEqual(loaded["Path"], "MyPath")
+        self.assertEqual(loaded["Custom"], "CustomCpp")
+        self.assertEqual(loaded["Any"], "object")
+
+    def test_load_cpp_identifier_rules_allows_profile_override(self) -> None:
+        profile = {
+            "syntax": {
+                "identifiers": {
+                    "reserved_words": ["foo", "bar"],
+                    "rename_prefix": "zz_",
+                }
+            }
+        }
+        reserved, prefix = load_cpp_identifier_rules(profile)
+        self.assertEqual(prefix, "zz_")
+        self.assertIn("foo", reserved)
+        self.assertIn("bar", reserved)
+        self.assertNotIn("while", reserved)
 
     def test_preset_resolution_and_override(self) -> None:
         neg, bnd, fdiv, mod, iw, sidx, ssli, opt = resolve_codegen_options("native", "", "", "", "", "", "", "", "")

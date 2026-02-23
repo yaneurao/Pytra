@@ -182,9 +182,9 @@ def load_cpp_aug_bin() -> dict[str, str]:
     return dict(DEFAULT_AUG_BIN)
 
 
-def load_cpp_type_map() -> dict[str, str]:
-    """EAST 型 -> C++ 型の基本マップを profile から取得する。"""
-    return {
+def load_cpp_type_map(profile: dict[str, Any] | None = None) -> dict[str, str]:
+    """EAST 型 -> C++ 型の基本マップを返す（profile の `types` で上書き可能）。"""
+    out: dict[str, str] = {
         "int8": "int8",
         "uint8": "uint8",
         "int16": "int16",
@@ -204,6 +204,12 @@ def load_cpp_type_map() -> dict[str, str]:
         "Any": "object",
         "object": "object",
     }
+    if isinstance(profile, dict):
+        type_map = dict_any_get_dict(profile, "types")
+        for name, mapped in type_map.items():
+            if isinstance(name, str) and isinstance(mapped, str) and name != "" and mapped != "":
+                out[name] = mapped
+    return out
 
 
 def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -219,8 +225,8 @@ def load_cpp_hooks(profile: dict[str, Any] | None = None) -> dict[str, Any]:
     return {}
 
 
-def load_cpp_identifier_rules() -> tuple[set[str], str]:
-    """識別子リネーム規則を profile から取得する。"""
+def load_cpp_identifier_rules(profile: dict[str, Any] | None = None) -> tuple[set[str], str]:
+    """識別子リネーム規則を返す（profile.syntax.identifiers で上書き可能）。"""
     reserved: set[str] = {
         "alignas", "alignof", "asm", "auto", "break", "case", "catch", "char", "class", "const", "constexpr",
         "continue", "default", "delete", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if",
@@ -228,7 +234,20 @@ def load_cpp_identifier_rules() -> tuple[set[str], str]:
         "return", "short", "signed", "sizeof", "static", "struct", "switch", "template", "this", "throw", "try",
         "typedef", "typename", "union", "unsigned", "virtual", "void", "volatile", "while",
     }
-    return reserved, "py_"
+    rename_prefix = "py_"
+    if isinstance(profile, dict):
+        syntax_map = dict_any_get_dict(profile, "syntax")
+        identifiers = dict_any_get_dict(syntax_map, "identifiers")
+        configured = dict_any_get_list(identifiers, "reserved_words")
+        if len(configured) > 0:
+            reserved = set()
+            for item in configured:
+                if isinstance(item, str) and item != "":
+                    reserved.add(item)
+        configured_prefix = dict_any_get_str(identifiers, "rename_prefix", "")
+        if configured_prefix != "":
+            rename_prefix = configured_prefix
+    return reserved, rename_prefix
 
 
 def load_cpp_module_attr_call_map(profile: dict[str, Any] = {}) -> dict[str, dict[str, str]]:
@@ -340,14 +359,14 @@ class CppEmitter(CodeEmitter):
         self.class_storage_hints: dict[str, str] = {}
         self.ref_classes: set[str] = set()
         self.value_classes: set[str] = set()
-        self.type_map: dict[str, str] = load_cpp_type_map()
+        self.type_map: dict[str, str] = load_cpp_type_map(self.profile)
         if self.int_width == "32":
             self.type_map["int64"] = "int32"
             self.type_map["uint64"] = "uint32"
         self.module_attr_call_map: dict[str, dict[str, str]] = load_cpp_module_attr_call_map(self.profile)
         self.reserved_words: set[str] = set()
         self.rename_prefix: str = "py_"
-        self.reserved_words, self.rename_prefix = load_cpp_identifier_rules()
+        self.reserved_words, self.rename_prefix = load_cpp_identifier_rules(self.profile)
         self.reserved_words.add("main")
         # import 解決テーブルは init_base_state() 側を正とする。
         # CppEmitter 側で再代入すると selfhost 生成C++で基底メンバと
