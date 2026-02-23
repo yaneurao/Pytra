@@ -63,7 +63,7 @@ Execution times for [sample programs](docs/spec/spec-sample-code.md) written in 
 |15 |Mini-language interpreter|2.415|0.254|0.789|1.035|0.509|0.465|3.261|1.984|0.524|0.512|
 |16 |Chaos rotation of glass sculpture (GIF)|7.352|0.258|0.231|1.289|0.940|1.105|3.014|4.025|0.977|0.991|
 
-![06_julia_parameter_sweep](images/06_julia_parameter_sweep.gif)
+![06_julia_parameter_sweep](sample/out/06_julia_parameter_sweep.gif)
 
 <details>
 <summary>Sample code: 06_julia_parameter_sweep.py</summary>
@@ -178,7 +178,7 @@ if __name__ == "__main__":
 
 <br/>
 
-![16_glass_sculpture_chaos](images/16_glass_sculpture_chaos.gif)
+![16_glass_sculpture_chaos](sample/out/16_glass_sculpture_chaos.gif)
 
 <details>
 <summary>Sample code: 16_glass_sculpture_chaos.py</summary>
