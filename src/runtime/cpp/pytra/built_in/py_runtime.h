@@ -59,6 +59,7 @@ static inline str obj_to_str(const object& v);
 static inline dict<str, object> obj_to_dict(const object& v);
 static inline const dict<str, object>* obj_to_dict_ptr(const object& v);
 static inline const list<object>* obj_to_list_ptr(const object& v);
+static inline const list<object>* obj_to_set_ptr(const object& v);
 template <class T> static inline object make_object(const T& v);
 template <class T, class... Args> static inline object object_new(Args&&... args);
 
@@ -267,6 +268,26 @@ public:
     object py_iter_or_raise() const override;
 };
 
+class PySetObj : public PyObj {
+public:
+    explicit PySetObj(list<object> v) : PyObj(PYTRA_TID_SET), value(::std::move(v)) {}
+    list<object> value;
+
+    bool py_truthy() const override {
+        return !value.empty();
+    }
+
+    ::std::optional<int64> py_try_len() const override {
+        return static_cast<int64>(value.size());
+    }
+
+    ::std::string py_str() const override {
+        return "<set>";
+    }
+
+    object py_iter_or_raise() const override;
+};
+
 class PyListIterObj : public PyObj {
 public:
     explicit PyListIterObj(list<object> values)
@@ -345,6 +366,10 @@ inline object PyDictObj::py_iter_or_raise() const {
         keys.append(make_object(kv.first));
     }
     return object_new<PyDictKeyIterObj>(::std::move(keys));
+}
+
+inline object PySetObj::py_iter_or_raise() const {
+    return object_new<PyListIterObj>(value);
 }
 
 template <class T>
@@ -426,6 +451,12 @@ static inline object make_object(const ::std::any& v) {
         for (const auto& kv : *p) out[kv.first] = make_object(kv.second);
         return object_new<PyDictObj>(out);
     }
+    if (const auto* p = ::std::any_cast<set<str>>(&v)) {
+        list<object> out{};
+        out.reserve(p->size());
+        for (const auto& e : *p) out.append(make_object(e));
+        return object_new<PySetObj>(out);
+    }
     return object();
 }
 
@@ -442,6 +473,14 @@ static inline object make_object(const dict<str, V>& values) {
     dict<str, object> out;
     for (const auto& kv : values) out[kv.first] = make_object(kv.second);
     return object_new<PyDictObj>(::std::move(out));
+}
+
+template <class T>
+static inline object make_object(const set<T>& values) {
+    list<object> out;
+    out.reserve(values.size());
+    for (const auto& v : values) out.append(make_object(v));
+    return object_new<PySetObj>(::std::move(out));
 }
 
 template <class T>
@@ -587,6 +626,11 @@ static inline const list<object>* obj_to_list_ptr(const object& v) {
     return nullptr;
 }
 
+static inline const list<object>* obj_to_set_ptr(const object& v) {
+    if (const auto* p = py_obj_cast<PySetObj>(v)) return &(p->value);
+    return nullptr;
+}
+
 static inline dict<str, object> obj_to_dict(const object& v) {
     if (const auto* p = obj_to_dict_ptr(v)) return *p;
     return {};
@@ -626,6 +670,7 @@ static inline int64 py_len(const ::std::any& v) {
     if (const auto* p = ::std::any_cast<object>(&v)) {
         if (const auto* d = obj_to_dict_ptr(*p)) return static_cast<int64>(d->size());
         if (const auto* lst = obj_to_list_ptr(*p)) return static_cast<int64>(lst->size());
+        if (const auto* st = obj_to_set_ptr(*p)) return static_cast<int64>(st->size());
         return 0;
     }
     return 0;

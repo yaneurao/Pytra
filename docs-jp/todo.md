@@ -43,6 +43,7 @@
 - C++ runtime（`gc.h`, `py_runtime.h`）に `PyObj::py_iter_or_raise` / `PyObj::py_next_or_stop` hook、`py_iter_or_raise(...)` / `py_next_or_stop(...)` / `py_dyn_range(...)` API、`PyListObj` / `PyDictObj` / `PyStrObj` 向け iterator 実装（`PyListIterObj` / `PyDictKeyIterObj` / `PyStrIterObj`）を追加した。non-iterable は `TypeError` 相当（`runtime_error`）で fail-fast する。
 - `py2cpp` の `emit_for_each` を `iter_mode` 分岐化し、`runtime_protocol` では `for (object ... : py_dyn_range(iterable))` を生成するようにした。tuple unpack は runtime 経路で `py_at(...)` ベースへ分岐する。
 - 回帰固定として `test/unit/test_east_core.py`（`iter_mode`/trait 付与）、`test/unit/test_py2cpp_codegen_issues.py`（`py_dyn_range` と static fastpath）、`test/unit/test_cpp_runtime_iterable.py`（runtime iterable API）を追加し、`check_py2cpp_transpile` と `build_selfhost` の通過を確認した。
+- C++ runtime の object iterable 経路に `set` を追加した。`PySetObj`（`PYTRA_TID_SET`）と `make_object(const set<T>&)` を導入し、`py_dyn_range(make_object(set<...>))` と `py_isinstance(make_object(set<...>), PYTRA_TID_SET)` が通るようにした。`test/unit/test_cpp_runtime_iterable.py`（set 反復の合計検証）と `test/unit/test_cpp_runtime_type_id.py`（set object の type_id 判定）で回帰を固定した。
 
 ## P0: Boxing/Unboxing 境界統一（最優先）
 

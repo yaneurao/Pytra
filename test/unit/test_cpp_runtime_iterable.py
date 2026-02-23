@@ -95,6 +95,13 @@ int main() {
     }
     assert(joined == "ab");
 
+    object set_obj = make_object(set<int64>{1, 2, 3});
+    int64 set_sum = 0;
+    for (object v : py_dyn_range(set_obj)) {
+        set_sum += obj_to_int64(v);
+    }
+    assert(set_sum == 6);
+
     bool thrown = false;
     try {
         for (object _ : py_dyn_range(make_object(int64(9)))) {

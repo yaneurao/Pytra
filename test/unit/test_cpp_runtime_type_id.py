@@ -93,6 +93,8 @@ int main() {
 
     set<str> names = set<str>{"a", "b"};
     assert(py_isinstance(names, PYTRA_TID_SET));
+    object names_obj = make_object(names);
+    assert(py_isinstance(names_obj, PYTRA_TID_SET));
 
     std::cout << "runtime type_id ok" << std::endl;
     return 0;
@@ -136,4 +138,3 @@ int main() {
 
 if __name__ == "__main__":
     unittest.main()
-
