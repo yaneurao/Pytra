@@ -6106,16 +6106,12 @@ def _write_multi_file_cpp(
         import_modules = dict_any_get_dict(meta, "import_modules")
         import_symbols = dict_any_get_dict(meta, "import_symbols")
         dep_modules: set[str] = set()
-        for alias_any, _module_id_obj in import_modules.items():
-            if not isinstance(alias_any, str):
-                continue
-            mod_name = dict_any_get_str(import_modules, alias_any)
+        for _alias_any, module_id_obj in import_modules.items():
+            mod_name = module_id_obj if isinstance(module_id_obj, str) else ""
             if mod_name != "":
                 dep_modules.add(mod_name)
-        for alias_any, _sym_obj in import_symbols.items():
-            if not isinstance(alias_any, str):
-                continue
-            sym = dict_any_get_dict(import_symbols, alias_any)
+        for _alias_any, sym_obj in import_symbols.items():
+            sym = sym_obj if isinstance(sym_obj, dict) else {}
             mod_name = dict_any_get_str(sym, "module")
             if mod_name != "":
                 dep_modules.add(mod_name)
