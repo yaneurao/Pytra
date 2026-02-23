@@ -3550,7 +3550,7 @@ class CppEmitter(CodeEmitter):
         mapped_runtime = self._resolve_runtime_call_for_imported_symbol(imported_module, raw)
         mapped_runtime_txt = mapped_runtime or ""
         if (
-            mapped_runtime_txt != ""
+            mapped_runtime_txt
             and mapped_runtime_txt not in {"perf_counter", "Path"}
             and looks_like_runtime_function_name(mapped_runtime_txt)
         ):
@@ -3563,7 +3563,7 @@ class CppEmitter(CodeEmitter):
             return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
         imported_module_norm = self._normalize_runtime_module_name(imported_module)
         target_ns = self.module_namespace_map.get(imported_module_norm, "")
-        if target_ns != "":
+        if target_ns:
             namespaced = self._render_namespaced_module_call(
                 imported_module,
                 target_ns,
