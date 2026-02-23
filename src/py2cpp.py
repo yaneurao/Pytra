@@ -530,13 +530,12 @@ class CppEmitter(CodeEmitter):
         for local_name, sym_obj in legacy_syms.items():
             if not isinstance(local_name, str):
                 continue
-            sym = self.any_to_dict_or_empty(sym_obj)
             set_import_symbol_binding_and_module_set(
                 self.import_symbols,
                 self.import_symbol_modules,
                 local_name,
-                dict_any_get_str(sym, "module"),
-                dict_any_get_str(sym, "name"),
+                dict_any_get_str(sym_obj if isinstance(sym_obj, dict) else {}, "module"),
+                dict_any_get_str(sym_obj if isinstance(sym_obj, dict) else {}, "name"),
             )
 
     def _seed_legacy_import_modules_from_meta(self, meta: dict[str, Any]) -> None:
