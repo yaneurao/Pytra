@@ -15,6 +15,12 @@
 - 着手前に文脈ファイルの `背景` / `非対象` / `受け入れ基準` を確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+## P0: type_id 継承判定・isinstance 統一（最優先）
+
+文脈: `docs-jp/plans/p0-typeid-isinstance-dispatch.md`（`TG-P0-TYPEID-ISINSTANCE`）
+
+1. [ ] [ID: P0-TID-01] `type_id` ベースの共通判定 API（`py_isinstance` / `py_is_subtype`）を C++/JS/TS runtime に導入し、`py2cpp` を含む各 emitter の `isinstance` lower を runtime API 経由へ統一する。target 固有の built-in 直書き分岐は段階的に縮退する。
+
 ## P0: Iterable/Iterator 契約反映（最優先）
 
 文脈: `docs-jp/plans/p0-iterable-runtime-protocol.md`（`TG-P0-ITER`）
