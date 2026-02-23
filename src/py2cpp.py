@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -202,18 +202,9 @@ def _dict_any_get(src: dict[str, Any], key: str) -> Any:
     return None
 
 
-def _dict_any_get_dict_list(src: dict[str, Any], key: str) -> list[dict[str, Any]]:
-    """`dict[str, Any]` から dict 要素のみの list を取得する。"""
-    out: list[dict[str, Any]] = []
-    for item in dict_any_get_list(src, key):
-        if isinstance(item, dict):
-            out.append(item)
-    return out
-
-
 def _assign_targets(stmt: dict[str, Any]) -> list[dict[str, Any]]:
     """Assign/AnnAssign 互換で代入先 target 群を正規化して返す。"""
-    targets = _dict_any_get_dict_list(stmt, "targets")
+    targets = dict_any_get_dict_list(stmt, "targets")
     if len(targets) > 0:
         return targets
     tgt = dict_any_get_dict(stmt, "target")
@@ -259,30 +250,30 @@ def _collect_store_names_from_target(target: dict[str, Any], out: set[str]) -> N
             out.add(ident)
         return
     if kind == "Tuple" or kind == "List":
-        for ent in _dict_any_get_dict_list(target, "elements"):
+        for ent in dict_any_get_dict_list(target, "elements"):
             _collect_store_names_from_target(ent, out)
 
 
 def _stmt_child_stmt_lists(stmt: dict[str, Any]) -> list[list[dict[str, Any]]]:
     """文ノードが持つ子 statement list 群を抽出する。"""
     out: list[list[dict[str, Any]]] = []
-    body = _dict_any_get_dict_list(stmt, "body")
+    body = dict_any_get_dict_list(stmt, "body")
     if len(body) > 0:
         out.append(body)
-    orelse = _dict_any_get_dict_list(stmt, "orelse")
+    orelse = dict_any_get_dict_list(stmt, "orelse")
     if len(orelse) > 0:
         out.append(orelse)
-    finalbody = _dict_any_get_dict_list(stmt, "finalbody")
+    finalbody = dict_any_get_dict_list(stmt, "finalbody")
     if len(finalbody) > 0:
         out.append(finalbody)
-    handlers = _dict_any_get_dict_list(stmt, "handlers")
+    handlers = dict_any_get_dict_list(stmt, "handlers")
     for handler in handlers:
-        h_body = _dict_any_get_dict_list(handler, "body")
+        h_body = dict_any_get_dict_list(handler, "body")
         if len(h_body) > 0:
             out.append(h_body)
-    cases = _dict_any_get_dict_list(stmt, "cases")
+    cases = dict_any_get_dict_list(stmt, "cases")
     for case in cases:
-        c_body = _dict_any_get_dict_list(case, "body")
+        c_body = dict_any_get_dict_list(case, "body")
         if len(c_body) > 0:
             out.append(c_body)
     return out
@@ -308,7 +299,7 @@ def _stmt_list_parse_metrics(body: list[dict[str, Any]], depth: int) -> tuple[in
 
 def _module_parse_metrics(east_module: dict[str, Any]) -> dict[str, int]:
     """EAST module 単位の parse 指標（深さ・ノード数）を返す。"""
-    body = _dict_any_get_dict_list(east_module, "body")
+    body = dict_any_get_dict_list(east_module, "body")
     node_count, max_depth = _stmt_list_parse_metrics(body, 1)
     module_nodes = node_count + 1  # Module root
     module_depth = max_depth if max_depth > 0 else 1
@@ -339,7 +330,7 @@ def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
         if len(target) > 0:
             _collect_store_names_from_target(target, symbols)
     elif kind == "With":
-        for item in _dict_any_get_dict_list(stmt, "items"):
+        for item in dict_any_get_dict_list(stmt, "items"):
             opt_vars = dict_any_get_dict(item, "optional_vars")
             if len(opt_vars) > 0:
                 _collect_store_names_from_target(opt_vars, symbols)
@@ -348,14 +339,14 @@ def _collect_symbols_from_stmt(stmt: dict[str, Any]) -> set[str]:
         if name_txt != "":
             symbols.add(name_txt)
     elif kind == "Import":
-        for ent in _dict_any_get_dict_list(stmt, "names"):
+        for ent in dict_any_get_dict_list(stmt, "names"):
             name_txt = dict_any_get_str(ent, "name")
             asname_txt = dict_any_get_str(ent, "asname")
             local_name = local_binding_name(name_txt, asname_txt)
             if local_name != "":
                 symbols.add(local_name)
     elif kind == "ImportFrom":
-        for ent in _dict_any_get_dict_list(stmt, "names"):
+        for ent in dict_any_get_dict_list(stmt, "names"):
             sym_name = dict_any_get_str(ent, "name")
             if sym_name == "*":
                 continue
@@ -395,7 +386,7 @@ def _stmt_list_scope_depth(body: list[dict[str, Any]], depth: int) -> int:
 
 def _module_analyze_metrics(east_module: dict[str, Any]) -> dict[str, int]:
     """EAST module 単位の analyze 指標（symbol 数・scope 深さ）を返す。"""
-    body = _dict_any_get_dict_list(east_module, "body")
+    body = dict_any_get_dict_list(east_module, "body")
     symbols = _collect_symbols_from_stmt_list(body)
     scope_depth = _stmt_list_scope_depth(body, 0)
     return {"symbols": len(symbols), "scope_depth": scope_depth}
@@ -6242,7 +6233,7 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
             return "false"
         return ""
     if kind == "Tuple":
-        elems = _dict_any_get_dict_list(node, "elements")
+        elems = dict_any_get_dict_list(node, "elements")
         if len(elems) == 0:
             return "::std::tuple<>{}"
         parts: list[str] = []
@@ -6265,7 +6256,7 @@ def build_cpp_header_from_east(
     top_namespace: str = "",
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
-    body = _dict_any_get_dict_list(east_module, "body")
+    body = dict_any_get_dict_list(east_module, "body")
 
     class_lines: list[str] = []
     fn_lines: list[str] = []
@@ -6486,7 +6477,7 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
 def dump_deps_text(east_module: dict[str, Any]) -> str:
     """EAST の import メタデータを人間向けテキストへ整形する。"""
     import_bindings = meta_import_bindings(east_module)
-    body = _dict_any_get_dict_list(east_module, "body")
+    body = dict_any_get_dict_list(east_module, "body")
 
     modules: list[str] = []
     module_seen: set[str] = set()
@@ -6505,13 +6496,13 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
         for stmt_dict in body:
             kind = dict_any_kind(stmt_dict)
             if kind == "Import":
-                for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
+                for ent_dict in dict_any_get_dict_list(stmt_dict, "names"):
                     mod_name = dict_any_get_str(ent_dict, "name")
                     append_unique_non_empty(modules, module_seen, mod_name)
             elif kind == "ImportFrom":
                 mod_name = dict_any_get_str(stmt_dict, "module")
                 append_unique_non_empty(modules, module_seen, mod_name)
-                for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
+                for ent_dict in dict_any_get_dict_list(stmt_dict, "names"):
                     sym_name = dict_any_get_str(ent_dict, "name")
                     alias = dict_any_get_str(ent_dict, "asname")
                     if sym_name != "":
@@ -6711,7 +6702,7 @@ def _module_export_table(module_east_map: dict[str, dict[str, Any]], root: Path)
         mod_name = module_id_from_east_for_graph(root, mod_path, east)
         if mod_name == "":
             continue
-        body = _dict_any_get_dict_list(east, "body")
+        body = dict_any_get_dict_list(east, "body")
         exports: set[str] = set()
         for st in body:
             kind = dict_any_kind(st)
@@ -6734,12 +6725,12 @@ def _validate_from_import_symbols_or_raise(module_east_map: dict[str, dict[str, 
     details: list[str] = []
     for mod_key, east in module_east_map.items():
         file_disp = rel_disp_for_graph(root, Path(mod_key))
-        body = _dict_any_get_dict_list(east, "body")
+        body = dict_any_get_dict_list(east, "body")
         for st in body:
             if dict_any_kind(st) == "ImportFrom":
                 imported_mod = dict_any_get_str(st, "module")
                 if imported_mod in exports:
-                    names = _dict_any_get_dict_list(st, "names")
+                    names = dict_any_get_dict_list(st, "names")
                     for ent in names:
                         sym = dict_any_get_str(ent, "name")
                         if sym == "*":
@@ -6783,7 +6774,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
     """モジュール単位 EAST から公開シンボルと import alias 情報を抽出する。"""
     out: dict[str, dict[str, Any]] = {}
     for mod_path, east in module_east_map.items():
-        body = _dict_any_get_dict_list(east, "body")
+        body = dict_any_get_dict_list(east, "body")
         funcs: list[str] = []
         classes: list[str] = []
         variables: list[str] = []
@@ -6847,7 +6838,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
     """モジュール間共有用の最小型スキーマ（関数/クラス）を構築する。"""
     out: dict[str, dict[str, Any]] = {}
     for mod_path, east in module_east_map.items():
-        body = _dict_any_get_dict_list(east, "body")
+        body = dict_any_get_dict_list(east, "body")
         fn_schema: dict[str, dict[str, Any]] = {}
         cls_schema: dict[str, dict[str, Any]] = {}
         for st in body:

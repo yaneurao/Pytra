@@ -398,6 +398,20 @@ def dict_any_get_dict(src: dict[str, object], key: str) -> dict[str, object]:
     return {}
 
 
+def dict_any_get_dict_list(src: dict[str, object], key: str) -> list[dict[str, object]]:
+    """`dict[str, object]` の list 値から dict 要素だけを抽出する。"""
+    out: list[dict[str, object]] = []
+    if key not in src:
+        return out
+    value = src[key]
+    if not isinstance(value, list):
+        return out
+    for item in value:
+        if isinstance(item, dict):
+            out.append(item)
+    return out
+
+
 def dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str:
     """`dict[str, str]` から値を取得する（未定義時は既定値）。"""
     if key in src:
