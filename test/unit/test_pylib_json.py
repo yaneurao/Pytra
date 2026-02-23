@@ -105,6 +105,55 @@ class PyLibJsonTest(unittest.TestCase):
             out = load_east_from_path(p)
             self.assertEqual(out.get("kind"), "Module")
 
+    def test_east_io_normalizes_root_schema_defaults(self) -> None:
+        payload = {"kind": "Module", "body": []}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "mod.east.json"
+            p.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            out = load_east_from_path(p)
+            self.assertEqual(out.get("east_stage"), 2)
+            self.assertEqual(out.get("schema_version"), 1)
+            meta = out.get("meta")
+            self.assertIsInstance(meta, dict)
+            assert isinstance(meta, dict)
+            self.assertEqual(meta.get("dispatch_mode"), "native")
+
+    def test_east_io_keeps_valid_root_schema_values(self) -> None:
+        payload = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 7,
+            "meta": {"dispatch_mode": "type_id"},
+            "body": [],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "mod.east.json"
+            p.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            out = load_east_from_path(p)
+            self.assertEqual(out.get("east_stage"), 3)
+            self.assertEqual(out.get("schema_version"), 7)
+            meta = out.get("meta")
+            self.assertIsInstance(meta, dict)
+            assert isinstance(meta, dict)
+            self.assertEqual(meta.get("dispatch_mode"), "type_id")
+
+    def test_east_io_normalizes_invalid_dispatch_mode(self) -> None:
+        payload = {
+            "kind": "Module",
+            "east_stage": 2,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "unknown_mode"},
+            "body": [],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "mod.east.json"
+            p.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            out = load_east_from_path(p)
+            meta = out.get("meta")
+            self.assertIsInstance(meta, dict)
+            assert isinstance(meta, dict)
+            self.assertEqual(meta.get("dispatch_mode"), "native")
+
 
 if __name__ == "__main__":
     unittest.main()
