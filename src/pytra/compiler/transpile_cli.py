@@ -177,6 +177,13 @@ def count_text_lines(text: str) -> int:
     return count
 
 
+def dict_str_get(src: dict[str, str], key: str, default_value: str = "") -> str:
+    """`dict[str, str]` から値を取得する（未定義時は既定値）。"""
+    if key in src:
+        return src[key]
+    return default_value
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
