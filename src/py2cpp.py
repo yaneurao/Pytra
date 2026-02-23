@@ -5516,8 +5516,7 @@ def _header_guard_from_path(path: str) -> str:
         src = src[len(prefix2) :]
     src = "PYTRA_" + src.upper()
     out_chars: list[str] = []
-    for i in range(len(src)):
-        ch = src[i : i + 1]
+    for ch in src:
         ok = ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9"))
         if ok:
             out_chars.append(ch)
