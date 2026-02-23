@@ -26,7 +26,7 @@
 
 文脈: `docs-jp/plans/p1-runtime-layout-unification.md`（`TG-P1-RUNTIME-LAYOUT`）
 
-1. [ ] [ID: P0-RUNTIME-SEP-01] C++ runtime を「生成物」と「手書き」で上位フォルダ分離する（`P0-RUNTIME-SEP-01-S1` から `P0-RUNTIME-SEP-01-S5` 完了でクローズ）。
+1. [x] [ID: P0-RUNTIME-SEP-01] C++ runtime を「生成物」と「手書き」で上位フォルダ分離する（`P0-RUNTIME-SEP-01-S1` から `P0-RUNTIME-SEP-01-S5` 完了でクローズ）。
 2. [x] [ID: P0-RUNTIME-SEP-01-S1] `src/runtime/cpp/pytra/` 配下の現状を棚卸しし、`std/`・`built_in/`・`utils/`・`compiler/` の各ファイルを「生成物 / 手書き / 入口フォワーダー」に分類する。
 3. [x] [ID: P0-RUNTIME-SEP-01-S2] `src/runtime/cpp/pytra-gen/`（自動生成専用）と `src/runtime/cpp/pytra-core/`（手書き専用）を新設し、ビルド/インクルード解決を破壊しない最小構成を作る。
 4. [x] [ID: P0-RUNTIME-SEP-01-S3] 自動生成ファイルを `pytra-gen` へ段階移動し、`AUTO-GENERATED` ヘッダ付与を統一する。
