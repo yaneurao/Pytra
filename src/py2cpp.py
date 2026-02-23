@@ -3541,7 +3541,7 @@ class CppEmitter(CodeEmitter):
         """`Call(Name)` で import 済みシンボルを解決し、必要なら直接呼び出しへ変換する。"""
         raw = raw_name
         imported_module = ""
-        if raw != "" and not self.is_declared(raw):
+        if raw and not self.is_declared(raw):
             resolved = self._resolve_imported_symbol(raw)
             imported_module = dict_str_get(resolved, "module", "")
             raw = dict_str_get(resolved, "name", "") or raw
