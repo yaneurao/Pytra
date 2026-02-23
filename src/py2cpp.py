@@ -5523,9 +5523,7 @@ def _header_guard_from_path(path: str) -> str:
             out_chars.append(ch)
         else:
             out_chars.append("_")
-    out = "".join(out_chars)
-    while out.startswith("_"):
-        out = out[1:]
+    out = "".join(out_chars).lstrip("_")
     if not out.endswith("_H"):
         out += "_H"
     return out
