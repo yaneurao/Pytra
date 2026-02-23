@@ -718,6 +718,70 @@ def module_export_table(
     return out
 
 
+def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """モジュール単位 EAST から公開シンボルと import alias 情報を抽出する。"""
+    out: dict[str, dict[str, Any]] = {}
+    for mod_path, east in module_east_map.items():
+        body = dict_any_get_dict_list(east, "body")
+        funcs: list[str] = []
+        classes: list[str] = []
+        variables: list[str] = []
+        for st in body:
+            kind = dict_any_kind(st)
+            if kind == "FunctionDef":
+                name_txt = dict_any_get_str(st, "name")
+                if name_txt != "":
+                    funcs.append(name_txt)
+            elif kind == "ClassDef":
+                name_txt = dict_any_get_str(st, "name")
+                if name_txt != "":
+                    classes.append(name_txt)
+            elif kind == "Assign" or kind == "AnnAssign":
+                for name_txt in stmt_assigned_names(st):
+                    if name_txt not in variables:
+                        variables.append(name_txt)
+        meta = dict_any_get_dict(east, "meta")
+        import_bindings = meta_import_bindings(east)
+        qualified_symbol_refs = meta_qualified_symbol_refs(east)
+        import_modules: dict[str, str] = {}
+        import_symbols: dict[str, dict[str, str]] = {}
+        if len(import_bindings) > 0:
+            for ent in import_bindings:
+                if ent["binding_kind"] == "module":
+                    set_import_module_binding(import_modules, ent["local_name"], ent["module_id"])
+                elif ent["binding_kind"] == "symbol" and ent["export_name"] != "" and len(qualified_symbol_refs) == 0:
+                    set_import_symbol_binding(import_symbols, ent["local_name"], ent["module_id"], ent["export_name"])
+            if len(qualified_symbol_refs) > 0:
+                for ref in qualified_symbol_refs:
+                    set_import_symbol_binding(import_symbols, ref["local_name"], ref["module_id"], ref["symbol"])
+        else:
+            legacy_mods = dict_any_get_dict(meta, "import_modules")
+            for local_name_any, _module_id_obj in legacy_mods.items():
+                if not isinstance(local_name_any, str):
+                    continue
+                set_import_module_binding(import_modules, local_name_any, dict_any_get_str(legacy_mods, local_name_any))
+            legacy_syms = dict_any_get_dict(meta, "import_symbols")
+            for local_name_any, _sym_obj in legacy_syms.items():
+                if not isinstance(local_name_any, str):
+                    continue
+                sym = dict_any_get_dict(legacy_syms, local_name_any)
+                set_import_symbol_binding(
+                    import_symbols,
+                    local_name_any,
+                    dict_any_get_str(sym, "module"),
+                    dict_any_get_str(sym, "name"),
+                )
+        out[mod_path] = {
+            "functions": funcs,
+            "classes": classes,
+            "variables": variables,
+            "import_bindings": import_bindings,
+            "import_modules": import_modules,
+            "import_symbols": import_symbols,
+        }
+    return out
+
+
 def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """モジュール間共有用の最小型スキーマ（関数/クラス）を構築する。"""
     out: dict[str, dict[str, Any]] = {}
