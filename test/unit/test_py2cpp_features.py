@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_type_args, split_ws_tokens, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -206,6 +206,11 @@ class Py2CppFeatureTest(unittest.TestCase):
     def test_split_type_args_splits_bracket_nested_commas(self) -> None:
         self.assertEqual(split_type_args("A,B[C,D],E"), ["A", "B[C,D]", "E"])
         self.assertEqual(split_type_args(""), [])
+
+    def test_split_top_level_union_splits_only_top_level_pipe(self) -> None:
+        self.assertEqual(split_top_level_union("A|B[list[C|D]]"), ["A", "B[list[C|D]]"])
+        self.assertEqual(split_top_level_union("A|B|C"), ["A", "B", "C"])
+        self.assertEqual(split_top_level_union(""), [])
 
     def test_path_parent_text_returns_parent_dir(self) -> None:
         self.assertEqual(path_parent_text(Path("a/b/c.txt")), "a/b")

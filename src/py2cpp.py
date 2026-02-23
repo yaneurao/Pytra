@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dict_str_get, dump_codegen_options_text, join_str_list, local_binding_name, looks_like_runtime_function_name, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6197,32 +6197,6 @@ def transpile_to_cpp(
     )
 
 
-def _split_top_level_union(text: str) -> list[str]:
-    """`A|B[list[C|D]]` をトップレベルの `|` で分割する。"""
-    out: list[str] = []
-    cur = ""
-    depth = 0
-    for ch in text:
-        if ch == "[":
-            depth += 1
-            cur += ch
-        elif ch == "]":
-            if depth > 0:
-                depth -= 1
-            cur += ch
-        elif ch == "|" and depth == 0:
-            part = cur.strip()
-            if part != "":
-                out.append(part)
-            cur = ""
-        else:
-            cur += ch
-    tail = cur.strip()
-    if tail != "":
-        out.append(tail)
-    return out
-
-
 def _header_cpp_type_from_east(
     east_t: str,
     ref_classes: set[str],
@@ -6258,7 +6232,7 @@ def _header_cpp_type_from_east(
     }
     if t in prim:
         return prim[t]
-    parts_union = _split_top_level_union(t)
+    parts_union = split_top_level_union(t)
     if len(parts_union) > 1:
         parts = parts_union
         non_none: list[str] = []
