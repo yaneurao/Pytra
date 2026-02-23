@@ -66,6 +66,16 @@ def split_infix_once(text: str, sep: str) -> tuple[str, str, bool]:
     return "", "", False
 
 
+def local_binding_name(name: str, asname: str) -> str:
+    """import 句のローカル束縛名を返す。"""
+    if asname != "":
+        return asname
+    head, _tail, found = split_infix_once(name, ".")
+    if found and head != "":
+        return head
+    return name
+
+
 def replace_first(text: str, old: str, replacement: str) -> str:
     """`text` 内の最初の `old` だけを `replacement` に置換する。"""
     pos = text.find(old)
