@@ -3554,10 +3554,9 @@ class CppEmitter(CodeEmitter):
             and mapped_runtime_txt not in {"perf_counter", "Path"}
             and looks_like_runtime_function_name(mapped_runtime_txt)
         ):
-            merged_args = self.merge_call_args(args, kw)
-            call_args: list[str] = merged_args
+            call_args = self.merge_call_args(args, kw)
             if self._contains_text(mapped_runtime_txt, "::"):
-                call_args = self._coerce_args_for_module_function(imported_module, raw, merged_args, arg_nodes)
+                call_args = self._coerce_args_for_module_function(imported_module, raw, call_args, arg_nodes)
             if raw.startswith("py_assert_"):
                 call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
             return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
