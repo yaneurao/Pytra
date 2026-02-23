@@ -22,6 +22,15 @@
 - `docs-jp/todo.md` / `docs-jp/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+## P0: EAST1/EAST2/EAST3 三段構成導入（最優先）
+
+文脈: `docs-jp/plans/p0-east123-staged-ir.md`（`TG-P0-EAST123`）
+
+1. [ ] [ID: P0-EAST123-01] `docs-jp/spec/spec-east123.md` を正本として、EAST1/EAST2/EAST3 の責務・ルートスキーマ・dispatch 固定点を実装仕様へ確定する。
+2. [ ] [ID: P0-EAST123-02] `EAST2 -> EAST3` core lowering の最小実装（`ForCore` / `RuntimeIterForPlan` / `Any/object` 境界命令）を導入し、`--object-dispatch-mode` の適用点を一箇所に固定する。
+3. [ ] [ID: P0-EAST123-03] backend 側の意味論再解釈を禁止し、hooks を構文差分専任へ縮退する（`dispatch mode` 再判断・boxing/iterable 再実装の撤去）。
+4. [ ] [ID: P0-EAST123-04] `EAST3` 契約（schema/例外/回帰）をテストで固定し、selfhost とクロスターゲットの回帰導線へ組み込む。
+
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
 文脈: `docs-jp/plans/p1-codeemitter-dispatch-redesign.md`（`TG-P1-CED`）
