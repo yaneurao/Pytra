@@ -4123,6 +4123,45 @@ class CppEmitter(CodeEmitter):
                 "casts": [],
             }
             return self.render_expr(identity_node)
+        if runtime_call == "py_print":
+            print_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "print",
+                "resolved_type": "None",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) > 0:
+                print_node["args"] = arg_nodes
+            elif len(args) > 0:
+                print_node["arg_exprs"] = args
+            return self.render_expr(print_node)
+        if runtime_call == "py_len" and (len(arg_nodes) >= 1 or len(args) >= 1):
+            len_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "len",
+                "resolved_type": "int64",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                len_node["value"] = arg_nodes[0]
+            else:
+                len_node["value_expr"] = args[0]
+            return self.render_expr(len_node)
+        if runtime_call == "py_to_string" and (len(arg_nodes) >= 1 or len(args) >= 1):
+            to_string_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "to_string",
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) >= 1:
+                to_string_node["value"] = arg_nodes[0]
+            else:
+                to_string_node["value_expr"] = args[0]
+            return self.render_expr(to_string_node)
         if runtime_call == "perf_counter":
             perf_node = {
                 "kind": "RuntimeSpecialOp",
@@ -4202,13 +4241,6 @@ class CppEmitter(CodeEmitter):
         owner_expr: str,
     ) -> str | None:
         """hooks 無効時に BuiltinCall の runtime 分岐を描画する。"""
-        if runtime_call == "py_print":
-            return f"py_print({join_str_list(', ', args)})"
-        if runtime_call == "py_len" and len(args) == 1:
-            return f"py_len({args[0]})"
-        if runtime_call == "py_to_string" and len(args) == 1:
-            src_expr = first_arg
-            return self.render_to_string(src_expr)
         if runtime_call in {"py_min", "py_max"} and len(args) >= 1:
             fn_name = "min" if runtime_call == "py_min" else "max"
             return self.render_minmax(fn_name, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
@@ -6456,6 +6488,28 @@ class CppEmitter(CodeEmitter):
             return ""
         if kind == "RuntimeSpecialOp":
             op = self.any_dict_get_str(expr_d, "op", "")
+            if op == "print":
+                print_args: list[str] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes:
+                        print_args.append(self.render_expr(arg_node))
+                elif self.any_dict_has(expr_d, "arg_exprs"):
+                    raw_args = self.any_to_list(expr_d.get("arg_exprs"))
+                    for raw_arg in raw_args:
+                        print_args.append(self.any_to_str(raw_arg))
+                return f"py_print({join_str_list(', ', print_args)})"
+            if op == "len":
+                if self.any_dict_has(expr_d, "value"):
+                    value_expr = self.render_expr(expr_d.get("value"))
+                    return f"py_len({value_expr})"
+                value_expr_txt = self.any_dict_get_str(expr_d, "value_expr", "")
+                return f"py_len({value_expr_txt})"
+            if op == "to_string":
+                if self.any_dict_has(expr_d, "value"):
+                    return self.render_to_string(expr_d.get("value"))
+                value_expr_txt = self.any_dict_get_str(expr_d, "value_expr", "")
+                return f"py_to_string({value_expr_txt})"
             if op == "perf_counter":
                 return "pytra::std::time::perf_counter()"
             if op == "open":

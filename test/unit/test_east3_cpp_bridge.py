@@ -1088,6 +1088,27 @@ class East3CppBridgeTest(unittest.TestCase):
 
     def test_render_expr_supports_runtime_special_op_ir_nodes(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        print_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "print",
+            "args": [
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                {"kind": "Constant", "value": "x", "resolved_type": "str"},
+            ],
+            "resolved_type": "None",
+        }
+        len_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "len",
+            "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "resolved_type": "int64",
+        }
+        to_string_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "to_string",
+            "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+            "resolved_type": "str",
+        }
         perf_node = {"kind": "RuntimeSpecialOp", "op": "perf_counter", "resolved_type": "float64"}
         open_node = {
             "kind": "RuntimeSpecialOp",
@@ -1119,6 +1140,9 @@ class East3CppBridgeTest(unittest.TestCase):
             "resolved_type": "bytes",
         }
 
+        self.assertEqual(emitter.render_expr(print_node), 'py_print(1, "x")')
+        self.assertEqual(emitter.render_expr(len_node), "py_len(xs)")
+        self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
         self.assertEqual(emitter.render_expr(perf_node), "pytra::std::time::perf_counter()")
         self.assertEqual(emitter.render_expr(open_node), 'open("a.txt", "rb")')
         self.assertEqual(emitter.render_expr(path_ctor_node), 'Path("a.txt")')
@@ -1127,6 +1151,36 @@ class East3CppBridgeTest(unittest.TestCase):
 
     def test_builtin_runtime_misc_special_ops_use_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        print_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_print",
+            "resolved_type": "None",
+            "func": {"kind": "Name", "id": "print", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                {"kind": "Constant", "value": "x", "resolved_type": "str"},
+            ],
+            "keywords": [],
+        }
+        len_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_len",
+            "resolved_type": "int64",
+            "func": {"kind": "Name", "id": "len", "resolved_type": "unknown"},
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "list[int64]"}],
+            "keywords": [],
+        }
+        to_string_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_to_string",
+            "resolved_type": "str",
+            "func": {"kind": "Name", "id": "str", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
+            "keywords": [],
+        }
         perf_expr = {
             "kind": "Call",
             "lowered_kind": "BuiltinCall",
@@ -1184,6 +1238,9 @@ class East3CppBridgeTest(unittest.TestCase):
             "keywords": [],
         }
 
+        self.assertEqual(emitter.render_expr(print_expr), 'py_print(1, "x")')
+        self.assertEqual(emitter.render_expr(len_expr), "py_len(xs)")
+        self.assertEqual(emitter.render_expr(to_string_expr), "::std::to_string(1)")
         self.assertEqual(emitter.render_expr(perf_expr), "pytra::std::time::perf_counter()")
         self.assertEqual(emitter.render_expr(open_expr), 'open("a.txt", "rb")')
         self.assertEqual(emitter.render_expr(path_ctor_expr), 'Path("a.txt")')
