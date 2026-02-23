@@ -32,3 +32,86 @@ This directory contains reference Python samples and transpiled outputs for each
 Notes:
 - `-` in `Output` means the sample does not currently publish an image/GIF artifact in `sample/out/`.
 - This index is path-based and intended for GitHub folder browsing.
+
+## Sample Operation Guide
+
+### Purpose
+
+`sample/` is the directory for transpiling practical Python samples into each target language and comparing execution results and runtime.
+
+### Directory Structure
+
+- [`py/`](py): Source Python samples (currently `01` to `18`)
+- [`cpp/`](cpp): C++ transpilation outputs
+- [`cs/`](cs): C# transpilation outputs
+- [`rs/`](rs): Rust transpilation outputs
+- [`js/`](js): JavaScript transpilation outputs
+- [`ts/`](ts): TypeScript transpilation outputs
+- [`go/`](go): Go transpilation outputs
+- [`java/`](java): Java transpilation outputs
+- [`swift/`](swift): Swift transpilation outputs
+- [`kotlin/`](kotlin): Kotlin transpilation outputs
+- [`images/`](images): Static images for README rendering (tracked by Git)
+- `obj/`: Build artifacts for each language (not tracked by Git)
+- `out/`: Runtime output images (PNG/GIF, not tracked by Git)
+
+### Measurement Conditions (README Table Baseline)
+
+- Python: `PYTHONPATH=src python3 sample/py/<file>.py`
+- C++: `g++ -std=c++20 -O3 -ffast-math -flto -I src ...`
+- C#: `mcs ...` + `mono ...`
+- Rust: `rustc -O ...`
+- JavaScript: `node sample/js/<file>.js`
+- TypeScript: Compile with `tsc ...`, then run with `node ...`
+- Go: `go run` or execute after `go build`
+- Java: `javac` + `java`
+- Swift: Executable built with `swiftc`
+- Kotlin: `jar` built with `kotlinc -include-runtime`
+
+Note:
+- `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` are currently in preview emitter status.
+- For these four languages, outputs are minimal entry files with intermediate-code comments, so they are excluded from runtime comparison.
+
+### Runtime Notes
+
+- When running `sample/py/` as Python directly, add `PYTHONPATH=src` for `pylib` resolution.
+
+```bash
+PYTHONPATH=src python3 sample/py/01_mandelbrot.py
+```
+
+### Relation To Test Code
+
+`test/` and `sample/` have different roles: `test/` is for small feature checks, `sample/` is for practical, heavier-load cases.
+
+- [`../test/fixtures`](../test/fixtures): Source test code for transpilation
+- [`../test/unit`](../test/unit): Unit tests
+- `../test/transpile/`: Working directory for transpilation artifacts (not tracked by Git)
+  - Not viewable on GitHub. Generate locally by running transpilation when needed.
+
+### Notes On Image Matching
+
+- `tools/verify_sample_outputs.py` compares C++ execution results (`stdout` / artifacts) against `sample/golden/manifest.json`.
+- In normal runs, Python is not executed every time; Python runs only when refreshing golden baselines.
+- Artifacts are checked by `suffix` / `size` / `sha256`, which effectively enforces byte-level parity.
+
+To run image parity checks automatically:
+
+```bash
+python3 tools/verify_sample_outputs.py --compile-flags="-O2"
+```
+
+- You can inspect both `stdout` diffs and artifact diffs (`sha256` / `size` / `suffix`) together.
+- If the source changed and golden is stale, the command fails and asks you to run `--refresh-golden`.
+
+If you want to ignore `stdout` diffs such as elapsed time and check image parity only:
+
+```bash
+python3 tools/verify_sample_outputs.py --ignore-stdout --compile-flags="-O2"
+```
+
+To refresh golden baselines by running Python outputs:
+
+```bash
+python3 tools/verify_sample_outputs.py --refresh-golden --refresh-golden-only
+```

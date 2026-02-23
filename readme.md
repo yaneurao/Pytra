@@ -42,7 +42,7 @@ WARNING: Do not expect entire Python applications to be portable as-is. A realis
 
 ## Runtime Performance Comparison
 
-Execution times for [sample programs](docs/spec/spec-sample-code.md) written in Python and their transpiled versions (unit: seconds).
+Execution times for [sample programs](sample/readme.md) written in Python and their transpiled versions (unit: seconds).
 
 |No.|Workload|Python| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
@@ -524,7 +524,7 @@ The related documents are listed below in the order they are most frequently ref
 - Review runtime layout and include conventions: [Runtime Specification](docs/spec/spec-runtime.md)
 - Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](docs/plans/pytra-wip.md)
 - Check `py2cpp` feature coverage (with test evidence): [py2cpp Support Matrix](docs/language/cpp/spec-support.md)
-- Browse sample list and overview: [Sample Code Guide](docs/spec/spec-sample-code.md)
+- Browse sample list and overview: [Sample Code Guide](sample/readme.md)
 - Review specs, constraints, architecture, and operational rules: [Specification Index](docs/spec/index.md)
 - Motivation and design philosophy: [Development Philosophy](docs/spec/spec-philosophy.md)
 
