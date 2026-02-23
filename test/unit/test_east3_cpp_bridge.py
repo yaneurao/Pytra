@@ -202,6 +202,34 @@ class East3CppBridgeTest(unittest.TestCase):
         out = emitter._render_append_call_object_method(owner_types, "xs", ["n"], [arg_node])
         self.assertEqual(out, "xs.append(make_object(n))")
 
+    def test_render_expr_supports_list_append_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        node = {
+            "kind": "ListAppend",
+            "owner": {"kind": "Name", "id": "xs", "resolved_type": "list[Any]"},
+            "value": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+            "resolved_type": "None",
+        }
+        self.assertEqual(emitter.render_expr(node), "xs.append(make_object(n))")
+
+    def test_builtin_runtime_list_append_uses_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.append",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[Any]"},
+                "attr": "append",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Name", "id": "n", "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(expr), "xs.append(make_object(n))")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
