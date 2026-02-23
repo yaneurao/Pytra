@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, check_guard_limit, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, resolve_guard_limits, parse_guard_limit_or_raise, guard_profile_base_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, raise_guard_limit_exceeded, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, check_guard_limit, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_parse_stage_guards, resolve_guard_limits, parse_guard_limit_or_raise, guard_profile_base_limits, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, raise_guard_limit_exceeded, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -823,6 +823,101 @@ class Py2CppFeatureTest(unittest.TestCase):
         detail0 = str(details[0]) if isinstance(details, list) and len(details) > 0 else ""
         self.assertIn("kind=limit_exceeded", detail0)
         self.assertIn("limit=max-parse-nodes", detail0)
+
+    def test_check_parse_stage_guards_validates_depth_and_total_nodes(self) -> None:
+        module_map: dict[str, dict[str, object]] = {
+            "a.py": {"body": [{"kind": "If", "body": [{"kind": "Expr"}], "orelse": []}]},
+            "b.py": {"body": [{"kind": "Expr"}]},
+        }
+        check_parse_stage_guards(
+            module_map,
+            {
+                "max_ast_depth": 2,
+                "max_parse_nodes": 5,
+            },
+        )
+        with self.assertRaises(RuntimeError) as cm_depth:
+            check_parse_stage_guards(module_map, {"max_ast_depth": 1, "max_parse_nodes": 0})
+        parsed_depth = parse_user_error(str(cm_depth.exception))
+        details_depth = parsed_depth.get("details")
+        self.assertTrue(isinstance(details_depth, list))
+        detail_depth = str(details_depth[0]) if isinstance(details_depth, list) and len(details_depth) > 0 else ""
+        self.assertIn("stage=parse", detail_depth)
+        self.assertIn("limit=max-ast-depth", detail_depth)
+        self.assertIn("file=a.py", detail_depth)
+
+        with self.assertRaises(RuntimeError) as cm_nodes:
+            check_parse_stage_guards(module_map, {"max_ast_depth": 0, "max_parse_nodes": 4})
+        parsed_nodes = parse_user_error(str(cm_nodes.exception))
+        details_nodes = parsed_nodes.get("details")
+        self.assertTrue(isinstance(details_nodes, list))
+        detail_nodes = str(details_nodes[0]) if isinstance(details_nodes, list) and len(details_nodes) > 0 else ""
+        self.assertIn("stage=parse", detail_nodes)
+        self.assertIn("limit=max-parse-nodes", detail_nodes)
+
+    def test_check_analyze_stage_guards_validates_module_and_graph_limits(self) -> None:
+        module_map: dict[str, dict[str, object]] = {
+            "main.py": {
+                "body": [
+                    {"kind": "FunctionDef", "name": "f", "arg_order": ["x"], "body": [{"kind": "Expr"}]},
+                ],
+            },
+        }
+        import_graph_analysis: dict[str, object] = {
+            "user_module_files": ["main.py", "dep.py"],
+            "edges": ["main.py -> dep.py"],
+        }
+        scope_kinds = {"FunctionDef", "If", "For"}
+        check_analyze_stage_guards(
+            module_map,
+            import_graph_analysis,
+            {
+                "max_symbols_per_module": 4,
+                "max_scope_depth": 2,
+                "max_import_graph_nodes": 2,
+                "max_import_graph_edges": 1,
+            },
+            scope_kinds,
+        )
+
+        with self.assertRaises(RuntimeError) as cm_symbol:
+            check_analyze_stage_guards(
+                module_map,
+                import_graph_analysis,
+                {
+                    "max_symbols_per_module": 1,
+                    "max_scope_depth": 0,
+                    "max_import_graph_nodes": 0,
+                    "max_import_graph_edges": 0,
+                },
+                scope_kinds,
+            )
+        parsed_symbol = parse_user_error(str(cm_symbol.exception))
+        details_symbol = parsed_symbol.get("details")
+        self.assertTrue(isinstance(details_symbol, list))
+        detail_symbol = str(details_symbol[0]) if isinstance(details_symbol, list) and len(details_symbol) > 0 else ""
+        self.assertIn("stage=analyze", detail_symbol)
+        self.assertIn("limit=max-symbols-per-module", detail_symbol)
+        self.assertIn("file=main.py", detail_symbol)
+
+        with self.assertRaises(RuntimeError) as cm_graph:
+            check_analyze_stage_guards(
+                module_map,
+                import_graph_analysis,
+                {
+                    "max_symbols_per_module": 0,
+                    "max_scope_depth": 0,
+                    "max_import_graph_nodes": 1,
+                    "max_import_graph_edges": 0,
+                },
+                scope_kinds,
+            )
+        parsed_graph = parse_user_error(str(cm_graph.exception))
+        details_graph = parsed_graph.get("details")
+        self.assertTrue(isinstance(details_graph, list))
+        detail_graph = str(details_graph[0]) if isinstance(details_graph, list) and len(details_graph) > 0 else ""
+        self.assertIn("stage=analyze", detail_graph)
+        self.assertIn("limit=max-import-graph-nodes", detail_graph)
 
     def test_parse_guard_limit_or_raise(self) -> None:
         self.assertEqual(parse_guard_limit_or_raise("", "max-ast-depth"), -1)

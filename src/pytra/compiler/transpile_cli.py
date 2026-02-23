@@ -658,6 +658,40 @@ def select_guard_module_map(
     return {key: east_module}
 
 
+def check_parse_stage_guards(
+    module_map: dict[str, dict[str, object]],
+    guard_limits: dict[str, int],
+) -> None:
+    """parse ステージの AST 深さ / ノード数ガードを検証する。"""
+    parse_nodes_total = 0
+    for mod_key, east in module_map.items():
+        metrics = module_parse_metrics(east)
+        module_depth = metrics["max_ast_depth"] if "max_ast_depth" in metrics else 0
+        module_nodes = metrics["parse_nodes"] if "parse_nodes" in metrics else 0
+        check_guard_limit("parse", "max_ast_depth", module_depth, guard_limits, mod_key)
+        parse_nodes_total += module_nodes
+    check_guard_limit("parse", "max_parse_nodes", parse_nodes_total, guard_limits)
+
+
+def check_analyze_stage_guards(
+    module_map: dict[str, dict[str, object]],
+    import_graph_analysis: dict[str, object],
+    guard_limits: dict[str, int],
+    scope_nesting_kinds: set[str],
+) -> None:
+    """analyze ステージの symbol/scope/import graph ガードを検証する。"""
+    for mod_key, east in module_map.items():
+        metrics = module_analyze_metrics(east, scope_nesting_kinds)
+        symbol_count = metrics["symbols"] if "symbols" in metrics else 0
+        scope_depth = metrics["scope_depth"] if "scope_depth" in metrics else 0
+        check_guard_limit("analyze", "max_symbols_per_module", symbol_count, guard_limits, mod_key)
+        check_guard_limit("analyze", "max_scope_depth", scope_depth, guard_limits, mod_key)
+    graph_nodes = len(dict_any_get_str_list(import_graph_analysis, "user_module_files"))
+    graph_edges = len(dict_any_get_str_list(import_graph_analysis, "edges"))
+    check_guard_limit("analyze", "max_import_graph_nodes", graph_nodes, guard_limits)
+    check_guard_limit("analyze", "max_import_graph_edges", graph_edges, guard_limits)
+
+
 def set_import_module_binding(import_modules: dict[str, str], local_name: str, module_id: str) -> None:
     """import module alias 束縛を追加する。"""
     if module_id == "":
