@@ -1845,12 +1845,9 @@ class CppEmitter(CodeEmitter):
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
-                if asname != "":
-                    set_import_module_binding(self.import_modules, asname, name)
-                else:
-                    base = self._last_dotted_name(name)
-                    if base != "":
-                        set_import_module_binding(self.import_modules, base, name)
+                local_name = asname if asname != "" else self._last_dotted_name(name)
+                if local_name != "":
+                    set_import_module_binding(self.import_modules, local_name, name)
             return
         if kind == "ImportFrom":
             mod = dict_any_get_str(stmt, "module")
@@ -1858,14 +1855,10 @@ class CppEmitter(CodeEmitter):
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
-                if asname != "":
-                    set_import_symbol_binding_and_module_set(
-                        self.import_symbols, self.import_symbol_modules, asname, mod, name
-                    )
-                else:
-                    set_import_symbol_binding_and_module_set(
-                        self.import_symbols, self.import_symbol_modules, name, mod, name
-                    )
+                local_name = asname if asname != "" else name
+                set_import_symbol_binding_and_module_set(
+                    self.import_symbols, self.import_symbol_modules, local_name, mod, name
+                )
         return
 
     def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
