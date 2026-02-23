@@ -416,6 +416,37 @@ def format_graph_list_section(out: str, label: str, items: list[str]) -> str:
     return out2
 
 
+def collect_import_modules(east_module: dict[str, object]) -> list[str]:
+    """EAST module から import / from-import のモジュール名を抽出する。"""
+    out: list[str] = []
+    seen: set[str] = set()
+    body_any = east_module.get("body")
+    if not isinstance(body_any, list):
+        return out
+    for stmt_any in body_any:
+        if not isinstance(stmt_any, dict):
+            continue
+        kind = ""
+        kind_any = stmt_any.get("kind")
+        if isinstance(kind_any, str):
+            kind = kind_any
+        if kind == "Import":
+            names_any = stmt_any.get("names")
+            if not isinstance(names_any, list):
+                continue
+            for ent_any in names_any:
+                if not isinstance(ent_any, dict):
+                    continue
+                name_any = ent_any.get("name")
+                if isinstance(name_any, str):
+                    append_unique_non_empty(out, seen, name_any)
+        elif kind == "ImportFrom":
+            module_any = stmt_any.get("module")
+            if isinstance(module_any, str):
+                append_unique_non_empty(out, seen, module_any)
+    return out
+
+
 def resolve_codegen_options(
     preset: str,
     negative_index_mode_opt: str,
