@@ -3436,7 +3436,7 @@ class CppEmitter(CodeEmitter):
         dict_ops_rendered = self._render_builtin_runtime_dict_ops(runtime_call, expr, fn, args)
         if dict_ops_rendered is not None:
             return str(dict_ops_rendered)
-        str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, fn, args, arg_nodes)
+        str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, fn, arg_nodes)
         if str_ops_rendered is not None:
             return str(str_ops_rendered)
         special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, expr, fn, args, kw, arg_nodes)
@@ -3810,7 +3810,6 @@ class CppEmitter(CodeEmitter):
         self,
         runtime_call: str,
         fn: dict[str, Any],
-        args: list[str],
         arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の文字列系 runtime_call を処理する。"""
@@ -3828,11 +3827,6 @@ class CppEmitter(CodeEmitter):
             "py_join",
         }:
             return None
-        owner_node = self.any_to_dict_or_empty(fn.get("value"))
-        owner = self.render_expr(fn.get("value"))
-        owner_kind = self._node_kind_from_dict(owner_node)
-        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-            owner = "(" + owner + ")"
         if runtime_call == "py_isdigit":
             charclass_node = {
                 "kind": "StrCharClassOp",
@@ -3911,15 +3905,6 @@ class CppEmitter(CodeEmitter):
                 if len(arg_nodes) >= 3:
                     starts_node["end"] = arg_nodes[2]
                 return self.render_expr(starts_node)
-            if len(args) == 1:
-                return f"py_startswith({owner}, {args[0]})"
-            if len(args) == 2:
-                start = f"py_to_int64({args[1]})"
-                return f"py_startswith(py_slice({owner}, {start}, py_len({owner})), {args[0]})"
-            if len(args) >= 3:
-                start = f"py_to_int64({args[1]})"
-                end = f"py_to_int64({args[2]})"
-                return f"py_startswith(py_slice({owner}, {start}, {end}), {args[0]})"
         if runtime_call == "py_endswith":
             if len(arg_nodes) >= 1:
                 ends_node = {
@@ -3936,15 +3921,6 @@ class CppEmitter(CodeEmitter):
                 if len(arg_nodes) >= 3:
                     ends_node["end"] = arg_nodes[2]
                 return self.render_expr(ends_node)
-            if len(args) == 1:
-                return f"py_endswith({owner}, {args[0]})"
-            if len(args) == 2:
-                start = f"py_to_int64({args[1]})"
-                return f"py_endswith(py_slice({owner}, {start}, py_len({owner})), {args[0]})"
-            if len(args) >= 3:
-                start = f"py_to_int64({args[1]})"
-                end = f"py_to_int64({args[2]})"
-                return f"py_endswith(py_slice({owner}, {start}, {end}), {args[0]})"
         if runtime_call in {"py_find", "py_rfind"}:
             if len(arg_nodes) >= 1:
                 find_node = {
@@ -3961,35 +3937,27 @@ class CppEmitter(CodeEmitter):
                 if len(arg_nodes) >= 3:
                     find_node["end"] = arg_nodes[2]
                 return self.render_expr(find_node)
-            if len(args) >= 1:
-                merged_args = [owner]
-                merged_args.extend(args)
-                return f"{runtime_call}({join_str_list(', ', merged_args)})"
-        if runtime_call == "py_replace" and len(args) == 2:
-            if len(arg_nodes) >= 2:
-                replace_node = {
-                    "kind": "StrReplace",
-                    "owner": fn.get("value"),
-                    "old": arg_nodes[0],
-                    "new": arg_nodes[1],
-                    "resolved_type": "str",
-                    "borrow_kind": "value",
-                    "casts": [],
-                }
-                return self.render_expr(replace_node)
-            return f"py_replace({owner}, {args[0]}, {args[1]})"
-        if runtime_call == "py_join" and len(args) == 1:
-            if len(arg_nodes) >= 1:
-                join_node = {
-                    "kind": "StrJoin",
-                    "owner": fn.get("value"),
-                    "items": arg_nodes[0],
-                    "resolved_type": "str",
-                    "borrow_kind": "value",
-                    "casts": [],
-                }
-                return self.render_expr(join_node)
-            return f"str({owner}).join({args[0]})"
+        if runtime_call == "py_replace" and len(arg_nodes) >= 2:
+            replace_node = {
+                "kind": "StrReplace",
+                "owner": fn.get("value"),
+                "old": arg_nodes[0],
+                "new": arg_nodes[1],
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(replace_node)
+        if runtime_call == "py_join" and len(arg_nodes) >= 1:
+            join_node = {
+                "kind": "StrJoin",
+                "owner": fn.get("value"),
+                "items": arg_nodes[0],
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(join_node)
         return None
 
     def _render_builtin_runtime_special_ops(
