@@ -541,8 +541,7 @@ class CppEmitter(CodeEmitter):
 
     def _seed_legacy_import_modules_from_meta(self, meta: dict[str, Any]) -> None:
         """legacy `meta.import_modules` を `self.import_modules` へ反映する。"""
-        legacy_mods = dict_any_get_dict(meta, "import_modules")
-        for local_name, module_id_any in legacy_mods.items():
+        for local_name, module_id_any in dict_any_get_dict(meta, "import_modules").items():
             if not isinstance(local_name, str):
                 continue
             set_import_module_binding(self.import_modules, local_name, self.any_to_str(module_id_any))
