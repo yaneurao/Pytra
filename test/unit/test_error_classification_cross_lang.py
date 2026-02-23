@@ -41,6 +41,13 @@ PHASE2_MODULES = [
     py2ts,
 ]
 
+PHASE3_MODULES = [
+    py2go,
+    py2java,
+    py2swift,
+    py2kotlin,
+]
+
 
 class ErrorClassificationCrossLanguageTest(unittest.TestCase):
     def test_invalid_json_root_is_classified_consistently(self) -> None:
@@ -69,6 +76,17 @@ class ErrorClassificationCrossLanguageTest(unittest.TestCase):
             wrapped = Path(td) / "wrapped.east.json"
             wrapped.write_text(json.dumps(payload), encoding="utf-8")
             for mod in PHASE2_MODULES:
+                with self.subTest(module=mod.__name__):
+                    doc = mod.load_east(wrapped)
+                    self.assertIsInstance(doc, dict)
+                    self.assertEqual(doc.get("kind"), "Module")
+
+    def test_phase3_modules_accept_wrapped_east_json(self) -> None:
+        payload = {"ok": True, "east": {"kind": "Module", "body": []}}
+        with tempfile.TemporaryDirectory() as td:
+            wrapped = Path(td) / "wrapped.east.json"
+            wrapped.write_text(json.dumps(payload), encoding="utf-8")
+            for mod in PHASE3_MODULES:
                 with self.subTest(module=mod.__name__):
                     doc = mod.load_east(wrapped)
                     self.assertIsInstance(doc, dict)

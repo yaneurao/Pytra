@@ -6,26 +6,16 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from hooks.swift.emitter.swift_emitter import load_swift_profile, transpile_to_swift
-from pytra.compiler.east_parts.core import convert_path
-from pytra.compiler.transpile_cli import add_common_transpile_args
+from pytra.compiler.transpile_cli import add_common_transpile_args, load_east_document_compat
 from pytra.std import argparse
-from pytra.std import json
 from pytra.std.pathlib import Path
 from pytra.std import sys
 
 
 def load_east(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """`.py` / `.json` を EAST ドキュメントへ読み込む。"""
-    suffix = input_path.suffix.lower()
-    if suffix == ".json":
-        txt = input_path.read_text(encoding="utf-8")
-        doc = json.loads(txt)
-        if isinstance(doc, dict):
-            return doc
-        raise RuntimeError("EAST json root must be object")
-    if suffix == ".py":
-        return convert_path(input_path, parser_backend=parser_backend)
-    raise RuntimeError("input must be .py or .json")
+    doc = load_east_document_compat(input_path, parser_backend=parser_backend)
+    return doc
 
 
 def _default_output_path(input_path: Path) -> Path:
@@ -75,4 +65,3 @@ def main() -> int:
 if __name__ == "__main__":
     _ = load_swift_profile
     sys.exit(main())
-
