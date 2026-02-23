@@ -3388,6 +3388,21 @@ class CppEmitter(CodeEmitter):
             static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, args, first_arg)
             if static_cast_rendered is not None:
                 return str(static_cast_rendered)
+        list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, expr, fn, args)
+        if list_ops_rendered is not None:
+            return str(list_ops_rendered)
+        set_ops_rendered = self._render_builtin_runtime_set_ops(runtime_call, fn, args)
+        if set_ops_rendered is not None:
+            return str(set_ops_rendered)
+        dict_ops_rendered = self._render_builtin_runtime_dict_ops(runtime_call, expr, fn, args)
+        if dict_ops_rendered is not None:
+            return str(dict_ops_rendered)
+        str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, fn, args)
+        if str_ops_rendered is not None:
+            return str(str_ops_rendered)
+        special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, fn, args, kw)
+        if special_runtime_rendered is not None:
+            return str(special_runtime_rendered)
         runtime_fallback = self._render_builtin_runtime_fallback(
             runtime_call,
             expr,
@@ -3404,6 +3419,321 @@ class CppEmitter(CodeEmitter):
         if builtin_name == "bytearray":
             return f"bytearray({join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
         return ""
+
+    def _render_builtin_runtime_list_ops(
+        self,
+        runtime_call: str,
+        expr: dict[str, Any],
+        fn: dict[str, Any],
+        args: list[str],
+    ) -> str | None:
+        """BuiltinCall の list 系 runtime_call を処理する。"""
+        _ = expr
+        if runtime_call not in {"list.append", "list.extend", "list.pop", "list.clear", "list.reverse", "list.sort"}:
+            return None
+        owner_node: Any = fn.get("value")
+        owner = self.render_expr(owner_node)
+        owner_t0 = self.get_expr_type(owner_node)
+        owner_t = owner_t0 if isinstance(owner_t0, str) else ""
+        owner_types: list[str] = [owner_t]
+        if self._contains_text(owner_t, "|"):
+            owner_types = self.split_union(owner_t)
+        if runtime_call == "list.append":
+            append_rendered = self._render_append_call_object_method(owner_types, owner, args)
+            if append_rendered is not None:
+                return append_rendered
+            if len(args) >= 1:
+                return f"{owner}.append({args[0]})"
+            return f"{owner}.append(/* missing */)"
+        if runtime_call == "list.extend":
+            a0 = args[0] if len(args) >= 1 else "{}"
+            return f"{owner}.insert({owner}.end(), {a0}.begin(), {a0}.end())"
+        if runtime_call == "list.pop":
+            if len(args) == 0:
+                return f"{owner}.pop()"
+            return f"{owner}.pop({args[0]})"
+        if runtime_call == "list.clear":
+            return f"{owner}.clear()"
+        if runtime_call == "list.reverse":
+            return f"::std::reverse({owner}.begin(), {owner}.end())"
+        if runtime_call == "list.sort":
+            return f"::std::sort({owner}.begin(), {owner}.end())"
+        return None
+
+    def _render_builtin_runtime_set_ops(
+        self,
+        runtime_call: str,
+        fn: dict[str, Any],
+        args: list[str],
+    ) -> str | None:
+        """BuiltinCall の set 系 runtime_call を処理する。"""
+        if runtime_call == "set.add":
+            owner = self.render_expr(fn.get("value"))
+            a0 = args[0] if len(args) >= 1 else "/* missing */"
+            return f"{owner}.insert({a0})"
+        if runtime_call in {"set.discard", "set.remove"}:
+            owner = self.render_expr(fn.get("value"))
+            a0 = args[0] if len(args) >= 1 else "/* missing */"
+            return f"{owner}.erase({a0})"
+        if runtime_call == "set.clear":
+            owner = self.render_expr(fn.get("value"))
+            return f"{owner}.clear()"
+        return None
+
+    def _render_builtin_runtime_dict_ops(
+        self,
+        runtime_call: str,
+        expr: dict[str, Any],
+        fn: dict[str, Any],
+        args: list[str],
+    ) -> str | None:
+        """BuiltinCall の dict 系 runtime_call を処理する。"""
+        if runtime_call not in {"dict.get", "dict.pop", "dict.items", "dict.keys", "dict.values"}:
+            return None
+        owner_node: Any = fn.get("value")
+        owner = self.render_expr(owner_node)
+        owner_t = self.get_expr_type(owner_node)
+        if runtime_call == "dict.get":
+            owner_value_t = ""
+            owner_optional_object_dict = False
+            if owner_t.startswith("dict[") and owner_t.endswith("]"):
+                owner_inner = self.split_generic(owner_t[5:-1])
+                if len(owner_inner) == 2:
+                    owner_value_t = self.normalize_type_name(owner_inner[1])
+            owner_parts: list[str] = []
+            if self._contains_text(owner_t, "|"):
+                owner_parts = self.split_union(owner_t)
+            else:
+                owner_parts = [owner_t]
+            if len(owner_parts) >= 2:
+                has_none = False
+                has_dict_object_part = False
+                i = 0
+                while i < len(owner_parts):
+                    p = self.normalize_type_name(owner_parts[i])
+                    if p == "None":
+                        has_none = True
+                    elif p.startswith("dict[") and p.endswith("]"):
+                        inner = self.split_generic(p[5:-1])
+                        if len(inner) == 2 and self.is_any_like_type(self.normalize_type_name(inner[1])):
+                            has_dict_object_part = True
+                            if owner_value_t == "":
+                                owner_value_t = self.normalize_type_name(inner[1])
+                    i += 1
+                if has_none and has_dict_object_part:
+                    owner_optional_object_dict = True
+            objectish_owner = (
+                self.is_any_like_type(owner_t)
+                or self.is_any_like_type(owner_value_t)
+                or owner_optional_object_dict
+            )
+            key_expr = args[0] if len(args) >= 1 else "/* missing */"
+            arg_nodes = self.any_to_list(expr.get("args"))
+            key_node: Any = None
+            if len(arg_nodes) >= 1:
+                key_node = arg_nodes[0]
+            if not objectish_owner:
+                key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
+            if len(args) >= 2:
+                out_t = self.normalize_type_name(self.any_to_str(expr.get("resolved_type")))
+                int_out_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+                float_out_types = {"float32", "float64"}
+                default_t = ""
+                default_node: Any = None
+                if len(arg_nodes) >= 2:
+                    default_node = arg_nodes[1]
+                if default_node is not None:
+                    default_t = self.normalize_type_name(self.get_expr_type(default_node))
+                if objectish_owner and out_t == "bool":
+                    return f"dict_get_bool({owner}, {key_expr}, {args[1]})"
+                if objectish_owner and out_t == "str":
+                    return f"dict_get_str({owner}, {key_expr}, {args[1]})"
+                if objectish_owner and out_t in int_out_types:
+                    cast_t = self._cpp_type_text(out_t)
+                    return f"static_cast<{cast_t}>(dict_get_int({owner}, {key_expr}, py_to_int64({args[1]})))"
+                if objectish_owner and out_t in float_out_types:
+                    cast_t = self._cpp_type_text(out_t)
+                    return f"static_cast<{cast_t}>(dict_get_float({owner}, {key_expr}, py_to_float64({args[1]})))"
+                if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "bool":
+                    return f"dict_get_bool({owner}, {key_expr}, {args[1]})"
+                if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "str":
+                    return f"dict_get_str({owner}, {key_expr}, {args[1]})"
+                if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in int_out_types:
+                    return f"dict_get_int({owner}, {key_expr}, py_to_int64({args[1]}))"
+                if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in float_out_types:
+                    return f"dict_get_float({owner}, {key_expr}, py_to_float64({args[1]}))"
+                if objectish_owner and out_t in {"", "unknown"} and default_t.startswith("list["):
+                    return f"dict_get_list({owner}, {key_expr}, {args[1]})"
+                if objectish_owner and out_t.startswith("list["):
+                    return f"dict_get_list({owner}, {key_expr}, {args[1]})"
+                if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
+                    if owner_optional_object_dict:
+                        return f"py_dict_get_default({owner}, {key_expr}, make_object({args[1]}))"
+                    return f"dict_get_node({owner}, {key_expr}, {args[1]})"
+                if not objectish_owner:
+                    default_expr = args[1]
+                    val_t = self.normalize_type_name(owner_value_t)
+                    if default_expr in {"::std::nullopt", "std::nullopt"} and val_t not in {"", "None"}:
+                        allows_nullopt = False
+                        if val_t.startswith("optional[") and val_t.endswith("]"):
+                            allows_nullopt = True
+                        elif self._contains_text(val_t, "|"):
+                            parts = self.split_union(val_t)
+                            i = 0
+                            while i < len(parts):
+                                if self.normalize_type_name(parts[i]) == "None":
+                                    allows_nullopt = True
+                                    break
+                                i += 1
+                        if (not allows_nullopt) and (not self.is_any_like_type(val_t)):
+                            default_expr = self._cpp_type_text(val_t) + "()"
+                    return f"{owner}.get({key_expr}, {default_expr})"
+                if owner_optional_object_dict:
+                    return f"py_dict_get_default({owner}, {key_expr}, make_object({args[1]}))"
+                return f"py_dict_get_default({owner}, {key_expr}, {args[1]})"
+            if len(args) == 1:
+                return f"py_dict_get_maybe({owner}, {key_expr})"
+            return ""
+        if runtime_call == "dict.pop":
+            key_expr = args[0] if len(args) >= 1 else "/* missing */"
+            arg_nodes = self.any_to_list(expr.get("args"))
+            key_node: Any = None
+            if len(arg_nodes) >= 1:
+                key_node = arg_nodes[0]
+            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
+            if len(args) <= 1:
+                return f"{owner}.pop({key_expr})"
+            owner_t0 = self.get_expr_type(owner_node)
+            owner_t2 = owner_t0 if isinstance(owner_t0, str) else ""
+            val_t = "Any"
+            if owner_t2.startswith("dict[") and owner_t2.endswith("]"):
+                inner = self.split_generic(owner_t2[5:-1])
+                if len(inner) == 2 and inner[1] != "":
+                    val_t = self.normalize_type_name(inner[1])
+            default_expr = args[1]
+            if default_expr in {"::std::nullopt", "std::nullopt"} and not self.is_any_like_type(val_t) and val_t != "None":
+                default_expr = self._cpp_type_text(val_t) + "()"
+            return f"({owner}.contains({key_expr}) ? {owner}.pop({key_expr}) : {default_expr})"
+        if runtime_call == "dict.items":
+            return self.render_expr(fn.get("value"))
+        if runtime_call == "dict.keys":
+            return f"py_dict_keys({owner})"
+        if runtime_call == "dict.values":
+            return f"py_dict_values({owner})"
+        return None
+
+    def _render_builtin_runtime_str_ops(
+        self,
+        runtime_call: str,
+        fn: dict[str, Any],
+        args: list[str],
+    ) -> str | None:
+        """BuiltinCall の文字列系 runtime_call を処理する。"""
+        if runtime_call not in {
+            "py_isdigit",
+            "py_isalpha",
+            "py_strip",
+            "py_rstrip",
+            "py_lstrip",
+            "py_startswith",
+            "py_endswith",
+            "py_replace",
+            "py_join",
+        }:
+            return None
+        owner_node = self.any_to_dict_or_empty(fn.get("value"))
+        owner = self.render_expr(fn.get("value"))
+        owner_kind = self._node_kind_from_dict(owner_node)
+        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            owner = "(" + owner + ")"
+        if runtime_call == "py_isdigit":
+            if len(args) == 0:
+                return owner + ".isdigit()"
+            if len(args) == 1:
+                return args[0] + ".isdigit()"
+        if runtime_call == "py_isalpha":
+            if len(args) == 0:
+                return owner + ".isalpha()"
+            if len(args) == 1:
+                return args[0] + ".isalpha()"
+        if runtime_call == "py_strip":
+            if len(args) == 0:
+                return f"py_strip({owner})"
+            if len(args) == 1:
+                return f"{owner}.strip({args[0]})"
+        if runtime_call == "py_rstrip":
+            if len(args) == 0:
+                return f"py_rstrip({owner})"
+            if len(args) == 1:
+                return f"{owner}.rstrip({args[0]})"
+        if runtime_call == "py_lstrip":
+            if len(args) == 0:
+                return f"py_lstrip({owner})"
+            if len(args) == 1:
+                return f"{owner}.lstrip({args[0]})"
+        if runtime_call == "py_startswith":
+            if len(args) == 1:
+                return f"py_startswith({owner}, {args[0]})"
+            if len(args) == 2:
+                start = f"py_to_int64({args[1]})"
+                return f"py_startswith(py_slice({owner}, {start}, py_len({owner})), {args[0]})"
+            if len(args) >= 3:
+                start = f"py_to_int64({args[1]})"
+                end = f"py_to_int64({args[2]})"
+                return f"py_startswith(py_slice({owner}, {start}, {end}), {args[0]})"
+        if runtime_call == "py_endswith":
+            if len(args) == 1:
+                return f"py_endswith({owner}, {args[0]})"
+            if len(args) == 2:
+                start = f"py_to_int64({args[1]})"
+                return f"py_endswith(py_slice({owner}, {start}, py_len({owner})), {args[0]})"
+            if len(args) >= 3:
+                start = f"py_to_int64({args[1]})"
+                end = f"py_to_int64({args[2]})"
+                return f"py_endswith(py_slice({owner}, {start}, {end}), {args[0]})"
+        if runtime_call == "py_replace" and len(args) == 2:
+            return f"py_replace({owner}, {args[0]}, {args[1]})"
+        if runtime_call == "py_join" and len(args) == 1:
+            return f"str({owner}).join({args[0]})"
+        return None
+
+    def _render_builtin_runtime_special_ops(
+        self,
+        runtime_call: str,
+        fn: dict[str, Any],
+        args: list[str],
+        kw: dict[str, str],
+    ) -> str | None:
+        """BuiltinCall の Path/utility 系 runtime_call を処理する。"""
+        owner_node = self.any_to_dict_or_empty(fn.get("value"))
+        owner = self.render_expr(fn.get("value"))
+        owner_kind = self._node_kind_from_dict(owner_node)
+        if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+            owner = "(" + owner + ")"
+        if runtime_call == "std::filesystem::create_directories":
+            parents = kw.get("parents", "false")
+            exist_ok = kw.get("exist_ok", "false")
+            if len(args) >= 1:
+                parents = args[0]
+            if len(args) >= 2:
+                exist_ok = args[1]
+            return f"{owner}.mkdir({parents}, {exist_ok})"
+        if runtime_call == "std::filesystem::exists":
+            return f"{owner}.exists()"
+        if runtime_call == "py_write_text":
+            write_arg = args[0] if len(args) >= 1 else '""'
+            return f"{owner}.write_text({write_arg})"
+        if runtime_call == "py_read_text":
+            return f"{owner}.read_text()"
+        if runtime_call == "path_parent":
+            return f"{owner}.parent()"
+        if runtime_call == "path_name":
+            return f"{owner}.name()"
+        if runtime_call == "path_stem":
+            return f"{owner}.stem()"
+        if runtime_call == "identity":
+            return owner
+        return None
 
     def _render_builtin_runtime_fallback(
         self,
