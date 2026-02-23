@@ -1856,8 +1856,8 @@ class CppEmitter(CodeEmitter):
                     if len(ent) > 0:
                         ents.append(ent)
             for ent in ents:
-                name = self.any_to_str(ent.get("name"))
-                asname = self.any_to_str(ent.get("asname"))
+                name = dict_any_get_str(ent, "name")
+                asname = dict_any_get_str(ent, "asname")
                 if name == "":
                     continue
                 if asname != "":
@@ -1868,7 +1868,7 @@ class CppEmitter(CodeEmitter):
                         set_import_module_binding(self.import_modules, base, name)
             return
         if kind == "ImportFrom":
-            mod = self.any_to_str(stmt.get("module"))
+            mod = dict_any_get_str(stmt, "module")
             ents = self._dict_stmt_list(stmt.get("names"))
             if len(ents) == 0:
                 raw_names = self.any_to_list(stmt.get("names"))
@@ -1877,8 +1877,8 @@ class CppEmitter(CodeEmitter):
                     if len(ent) > 0:
                         ents.append(ent)
             for ent in ents:
-                name = self.any_to_str(ent.get("name"))
-                asname = self.any_to_str(ent.get("asname"))
+                name = dict_any_get_str(ent, "name")
+                asname = dict_any_get_str(ent, "asname")
                 if mod == "" or name == "":
                     continue
                 if asname != "":
