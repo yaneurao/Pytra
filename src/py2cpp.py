@@ -3444,11 +3444,7 @@ class CppEmitter(CodeEmitter):
             return str(special_runtime_rendered)
         runtime_fallback = self._render_builtin_runtime_fallback(
             runtime_call,
-            expr,
-            fn,
             args,
-            arg_nodes,
-            first_arg,
             owner_expr,
         )
         if runtime_fallback is not None:
@@ -4228,11 +4224,7 @@ class CppEmitter(CodeEmitter):
     def _render_builtin_runtime_fallback(
         self,
         runtime_call: str,
-        expr: dict[str, Any],
-        fn: dict[str, Any],
         args: list[str],
-        arg_nodes: list[Any],
-        first_arg: Any,
         owner_expr: str,
     ) -> str | None:
         """hooks 無効時に BuiltinCall の runtime 分岐を描画する。"""
