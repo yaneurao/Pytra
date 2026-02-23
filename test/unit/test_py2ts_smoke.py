@@ -115,6 +115,19 @@ def f(x: object) -> bool:
         self.assertIn("pyIsInstance(x, PY_TYPE_OBJECT)", ts)
         self.assertNotIn("isinstance(", ts)
 
+    def test_ts_preview_lowers_isinstance_set_to_type_id_check(self) -> None:
+        src = """def f(x: object) -> bool:
+    return isinstance(x, set)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "ts_isinstance_set_type_id.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            ts = transpile_to_typescript(east)
+
+        self.assertIn("pyIsInstance(x, PY_TYPE_SET)", ts)
+        self.assertNotIn("isinstance(", ts)
+
 
 if __name__ == "__main__":
     unittest.main()

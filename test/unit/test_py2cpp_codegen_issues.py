@@ -626,6 +626,19 @@ def f(x: object) -> None:
         self.assertIn("return py_isinstance(x, PYTRA_TID_INT);", cpp)
         self.assertNotIn("return py_is_int(x);", cpp)
 
+    def test_isinstance_set_lowers_to_set_type_id_runtime_api(self) -> None:
+        src = """def f(x: object) -> bool:
+    return isinstance(x, set)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "isinstance_set.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return py_isinstance(x, PYTRA_TID_SET);", cpp)
+        self.assertNotIn("return isinstance(", cpp)
+
     def test_isinstance_tuple_lowers_to_or_of_type_id_checks(self) -> None:
         src = """class Base:
     def __init__(self):
