@@ -6,6 +6,8 @@ Rule:
   priority bucket (smallest P<number>).
 - Read newly added progress IDs from git diff of docs-jp/todo.md and
   docs-jp/plans/*.md.
+- For plans, only decision-log style lines ("- YYYY-MM-DD: ...") are treated
+  as progress entries; structural ID references are ignored.
 - Every newly added progress ID must match that target ID, or be a child ID
   that starts with "<target>-".
 """
@@ -25,6 +27,7 @@ PLANS_DIR = ROOT / "docs-jp" / "plans"
 TASK_RE = re.compile(r"^\s*\d+\.\s+\[( |x)\]\s+\[ID:\s*([A-Za-z0-9-]+)\]")
 TODO_PROGRESS_RE = re.compile(r"^\s*-\s*`(P[0-9]+-[A-Za-z0-9-]+)`")
 PLAN_ID_TOKEN_RE = re.compile(r"`(P[0-9]+-[A-Za-z0-9-]+)`")
+PLAN_PROGRESS_LINE_RE = re.compile(r"^\s*-\s*\d{4}-\d{2}-\d{2}:")
 PRIO_RE = re.compile(r"^P([0-9]+)-")
 
 
@@ -78,6 +81,8 @@ def _added_progress_ids_from_diff() -> list[str]:
                 out_ids.append(m.group(1))
             continue
         if current_path.startswith(rel_plans + "/"):
+            if PLAN_PROGRESS_LINE_RE.match(line) is None:
+                continue
             for m in PLAN_ID_TOKEN_RE.finditer(line):
                 out_ids.append(m.group(1))
     return out_ids
