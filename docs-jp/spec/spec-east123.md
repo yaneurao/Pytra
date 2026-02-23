@@ -109,6 +109,7 @@
 - boxing/unboxing を明示命令化（例: `Box`, `Unbox`, `CastOrRaise`）。
 - bool/len/str の動的経路を明示命令化（例: `ObjBool`, `ObjLen`, `ObjStr`）。
 - iterable を明示命令化（例: `ObjIterInit`, `ObjIterNext`）。
+- `type_id` 判定（`isinstance` / `issubclass` / subtype）を明示命令化し、backend は命令写像のみを行う。
 - `ForCore` は `iter_mode` を必ず保持（`static_fastpath` or `runtime_protocol`）。
 - `runtime_protocol` の場合、`iter_plan.dispatch_mode` を必須化する。
 
@@ -180,6 +181,20 @@
 - `ObjStr(value)`
 - `ObjIterInit(value)`
 - `ObjIterNext(iter)`
+
+### 9.3 type_id 判定（Core 命令）
+
+`EAST3` では `type_id` 判定も命令ノードとして扱う。
+
+- `ObjTypeId(value)`
+- `IsSubtype(actual_type_id, expected_type_id)`
+- `IsInstance(value, expected_type_id)`
+- `IsSubclass(actual_type_id, expected_type_id)`
+
+規約:
+- `type_id` 判定は `EAST3` で確定し、backend 側で意味論再判断しない。
+- C++ など backend は runtime API への写像のみを担当する。
+- backend による判定ロジックの直接実装（文字列比較や個別分岐の再実装）は禁止する。
 
 ### 9.3 例外契約
 
@@ -308,4 +323,3 @@ EAST3（概略）:
 - `python3 tools/check_py2js_transpile.py`
 - `python3 tools/check_py2ts_transpile.py`
 - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
-
