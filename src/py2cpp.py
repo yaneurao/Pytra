@@ -495,15 +495,14 @@ class CppEmitter(CodeEmitter):
                 module_id = dict_any_get_str(item, "module_id")
                 export_name = dict_any_get_str(item, "export_name")
                 binding_kind = dict_any_get_str(item, "binding_kind")
-                if module_id != "":
-                    mod_name = self._normalize_runtime_module_name(module_id)
-                    inc = self._module_name_to_cpp_include(mod_name)
-                    append_unique_non_empty(includes, seen, inc)
-                    if binding_kind == "symbol" and export_name != "":
-                        runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
-                        if runtime_prefix != "":
-                            sym_inc = self._module_name_to_cpp_include(runtime_prefix + export_name)
-                            append_unique_non_empty(includes, seen, sym_inc)
+                mod_name = self._normalize_runtime_module_name(module_id)
+                inc = self._module_name_to_cpp_include(mod_name)
+                append_unique_non_empty(includes, seen, inc)
+                if binding_kind == "symbol" and export_name != "":
+                    runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
+                    if runtime_prefix != "":
+                        sym_inc = self._module_name_to_cpp_include(runtime_prefix + export_name)
+                        append_unique_non_empty(includes, seen, sym_inc)
             includes = sort_str_list_copy(includes)
             return includes
         for stmt in body:
@@ -573,7 +572,7 @@ class CppEmitter(CodeEmitter):
                 binding_kind = dict_str_get(item, "binding_kind", "")
                 if binding_kind == "module":
                     set_import_module_binding(self.import_modules, local_name, module_id)
-                elif binding_kind == "symbol" and export_name != "" and not refs:
+                elif binding_kind == "symbol" and not refs:
                     set_import_symbol_binding_and_module_set(
                         self.import_symbols, self.import_symbol_modules, local_name, module_id, export_name
                     )
@@ -1846,8 +1845,6 @@ class CppEmitter(CodeEmitter):
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
-                if name == "":
-                    continue
                 if asname != "":
                     set_import_module_binding(self.import_modules, asname, name)
                 else:
@@ -1861,8 +1858,6 @@ class CppEmitter(CodeEmitter):
             for ent in ents:
                 name = dict_any_get_str(ent, "name")
                 asname = dict_any_get_str(ent, "asname")
-                if mod == "" or name == "":
-                    continue
                 if asname != "":
                     set_import_symbol_binding_and_module_set(
                         self.import_symbols, self.import_symbol_modules, asname, mod, name
