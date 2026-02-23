@@ -18,6 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2ts import load_east, load_ts_profile, transpile_to_typescript
 from src.pytra.compiler.east_parts.core import convert_path
+from hooks.ts.emitter import ts_emitter as ts_emitter_mod
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -76,6 +77,19 @@ class Py2TsSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "py2ts.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
+
+    def test_ts_preview_uses_js_transpile_pipeline(self) -> None:
+        original = ts_emitter_mod.transpile_to_js
+        try:
+            ts_emitter_mod.transpile_to_js = (
+                lambda _east_doc: "const __ts_js_pipeline_marker = 1;\n"
+            )
+            ts = ts_emitter_mod.transpile_to_typescript(
+                {"kind": "Module", "body": [], "meta": {}}
+            )
+        finally:
+            ts_emitter_mod.transpile_to_js = original
+        self.assertIn("const __ts_js_pipeline_marker = 1;", ts)
 
     def test_ts_preview_keeps_isinstance_type_id_lowering(self) -> None:
         src = """class Base:

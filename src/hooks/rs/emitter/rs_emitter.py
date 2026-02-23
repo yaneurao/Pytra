@@ -1237,6 +1237,9 @@ class RustEmitter(CodeEmitter):
             return "()"
         kind = self.any_dict_get_str(expr_d, "kind", "")
 
+        hook_specific = self.hook_on_render_expr_kind_specific(kind, expr_d)
+        if hook_specific != "":
+            return hook_specific
         hook_leaf = self.hook_on_render_expr_leaf(kind, expr_d)
         if hook_leaf != "":
             return hook_leaf

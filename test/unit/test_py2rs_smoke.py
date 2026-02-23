@@ -18,6 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2rs import load_east, load_rs_profile, transpile_to_rust
 from src.pytra.compiler.east_parts.core import convert_path
+from hooks.rs.emitter.rs_emitter import RustEmitter
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -147,6 +148,17 @@ def g(a: int, b: int) -> int:
         src = (ROOT / "src" / "py2rs.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
+
+    def test_render_expr_kind_specific_hook_precedes_leaf_hook(self) -> None:
+        emitter = RustEmitter({"kind": "Module", "body": [], "meta": {}})
+        emitter.hooks["on_render_expr_name"] = (
+            lambda _em, _kind, _expr_node: "specific_name_hook()"
+        )
+        emitter.hooks["on_render_expr_leaf"] = (
+            lambda _em, _kind, _expr_node: "leaf_hook()"
+        )
+        rendered = emitter.render_expr({"kind": "Name", "id": "x"})
+        self.assertEqual(rendered, "specific_name_hook()")
 
     def test_isinstance_lowering_for_any_uses_pyany_matches(self) -> None:
         src = """

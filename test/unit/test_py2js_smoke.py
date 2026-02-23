@@ -18,6 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2js import load_east, load_js_profile, transpile_to_js
 from src.pytra.compiler.east_parts.core import convert_path
+from hooks.js.emitter.js_emitter import JsEmitter
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -84,6 +85,17 @@ class Py2JsSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "py2js.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
+
+    def test_render_expr_kind_specific_hook_precedes_leaf_hook(self) -> None:
+        emitter = JsEmitter({"kind": "Module", "body": [], "meta": {}})
+        emitter.hooks["on_render_expr_name"] = (
+            lambda _em, _kind, _expr_node: "specific_name_hook()"
+        )
+        emitter.hooks["on_render_expr_leaf"] = (
+            lambda _em, _kind, _expr_node: "leaf_hook()"
+        )
+        rendered = emitter.render_expr({"kind": "Name", "id": "x"})
+        self.assertEqual(rendered, "specific_name_hook()")
 
     def test_isinstance_lowers_to_type_id_runtime_api(self) -> None:
         src = """class Base:
