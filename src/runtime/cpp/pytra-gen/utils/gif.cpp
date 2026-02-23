@@ -1,3 +1,7 @@
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/utils/gif.py
+// generated-by: src/py2cpp.py
+
 #include "runtime/cpp/pytra/built_in/py_runtime.h"
 
 

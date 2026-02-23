@@ -15,9 +15,11 @@
 ## 1. 日常運用で使うもの
 
 - `tools/run_local_ci.py`
-  - 目的: ローカル最小 CI（version gate + todo 優先度ガード + 条件付き sample 再生成 + transpile 回帰 + unit + selfhost build + diff）を一括実行する。
+  - 目的: ローカル最小 CI（version gate + todo 優先度ガード + runtime 層分離ガード + 条件付き sample 再生成 + transpile 回帰 + unit + selfhost build + diff）を一括実行する。
 - `tools/check_todo_priority.py`
   - 目的: `docs-jp/todo.md` / `docs-jp/plans/*.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID`（またはその子 `ID`）と一致するかを検証し、優先度逸脱を防止する。`plans` 側は `決定ログ`（`- YYYY-MM-DD: ...`）行のみを進捗判定対象にし、構造整理の ID 列挙は対象外とする。
+- `tools/check_runtime_cpp_layout.py`
+  - 目的: `src/runtime/cpp/pytra-gen/` は `AUTO-GENERATED` マーカー必須、`src/runtime/cpp/pytra-core/` は同マーカー禁止という責務分離ルールを検証する。
 - `tools/check_py2cpp_transpile.py`
   - 目的: `test/fixtures/` を `py2cpp.py` で一括変換し、失敗ケースを検出する。
   - 主要オプション: `--check-yanesdk-smoke`（Yanesdk の縮小ケースを同時確認）
