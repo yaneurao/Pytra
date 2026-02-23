@@ -60,6 +60,17 @@ class Py2RsSmokeTest(unittest.TestCase):
             rust = transpile_to_rust(loaded)
         self.assertIn("fn add(a: i64, b: i64)", rust)
 
+    def test_load_east_from_json_wrapper_payload(self) -> None:
+        fixture = find_fixture_case("add")
+        east = convert_path(fixture)
+        with tempfile.TemporaryDirectory() as td:
+            east_json = Path(td) / "case.wrapped.east.json"
+            wrapped = {"ok": True, "east": east}
+            east_json.write_text(json.dumps(wrapped), encoding="utf-8")
+            loaded = load_east(east_json)
+            rust = transpile_to_rust(loaded)
+        self.assertIn("fn add(a: i64, b: i64)", rust)
+
     def test_cli_smoke_generates_rs_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
