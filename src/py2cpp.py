@@ -22,6 +22,8 @@ from pytra.std import sys
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT = Path("src/pytra/compiler")
+RUNTIME_CPP_COMPAT_ROOT = Path("src/runtime/cpp/pytra")
+RUNTIME_CPP_GEN_ROOT = Path("src/runtime/cpp/pytra-gen")
 
 
 def _module_tail_to_cpp_header_path(module_tail: str) -> str:
@@ -37,19 +39,21 @@ def _module_tail_to_cpp_header_path(module_tail: str) -> str:
 
 def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     """`pytra.*` モジュールの runtime C++ ヘッダ実在有無を返す。"""
-    base_txt = "src/runtime/cpp/pytra"
+    def _exists_under_runtime_roots(rel_hdr: str) -> bool:
+        return (RUNTIME_CPP_COMPAT_ROOT / rel_hdr).exists() or (RUNTIME_CPP_GEN_ROOT / rel_hdr).exists()
+
     if module_name_norm.startswith("pytra.std."):
         tail = module_name_norm[10:]
         rel = _module_tail_to_cpp_header_path(tail) if tail else ""
-        return bool(rel) and Path(base_txt + "/std/" + rel).exists()
+        return bool(rel) and _exists_under_runtime_roots("std/" + rel)
     if module_name_norm.startswith("pytra.utils."):
         tail = module_name_norm[12:]
         rel = _module_tail_to_cpp_header_path(tail) if tail else ""
-        return bool(rel) and Path(base_txt + "/utils/" + rel).exists()
+        return bool(rel) and _exists_under_runtime_roots("utils/" + rel)
     if module_name_norm.startswith("pytra.compiler."):
         tail = module_name_norm[15:]
         rel = _module_tail_to_cpp_header_path(tail) if tail else ""
-        return bool(rel) and Path(base_txt + "/compiler/" + rel).exists()
+        return bool(rel) and _exists_under_runtime_roots("compiler/" + rel)
     return False
 
 
@@ -6363,11 +6367,16 @@ def main(argv: list[str]) -> int:
             ns = top_namespace_opt
             ns = ns if ns != "" else _runtime_namespace_for_tail(module_tail)
             rel_tail = _runtime_output_rel_tail(module_tail)
-            out_root = Path("src/runtime/cpp/pytra")
+            out_root = RUNTIME_CPP_GEN_ROOT
+            compat_root = RUNTIME_CPP_COMPAT_ROOT
             cpp_out = out_root / (rel_tail + ".cpp")
             hdr_out = out_root / (rel_tail + ".h")
+            compat_cpp_out = compat_root / (rel_tail + ".cpp")
+            compat_hdr_out = compat_root / (rel_tail + ".h")
             mkdirs_for_cli(path_parent_text(cpp_out))
             mkdirs_for_cli(path_parent_text(hdr_out))
+            mkdirs_for_cli(path_parent_text(compat_cpp_out))
+            mkdirs_for_cli(path_parent_text(compat_hdr_out))
             runtime_ns_map: dict[str, str] = {}
             cpp_txt_runtime: str = _transpile_to_cpp_with_map(
                 east_module,
@@ -6399,8 +6408,25 @@ def main(argv: list[str]) -> int:
             check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
             write_text_file(cpp_out, cpp_txt_runtime)
             write_text_file(hdr_out, hdr_txt_runtime)
+            compat_hdr_txt = (
+                "// FORWARDER: generated runtime header moved to pytra-gen.\n"
+                + "#pragma once\n\n"
+                + '#include "runtime/cpp/pytra-gen/'
+                + rel_tail
+                + '.h"\n'
+            )
+            compat_cpp_txt = (
+                "// FORWARDER TU: generated runtime source moved to pytra-gen.\n"
+                + '#include "runtime/cpp/pytra-gen/'
+                + rel_tail
+                + '.cpp"\n'
+            )
+            write_text_file(compat_hdr_out, compat_hdr_txt)
+            write_text_file(compat_cpp_out, compat_cpp_txt)
             print("generated: " + str(hdr_out))
             print("generated: " + str(cpp_out))
+            print("updated: " + str(compat_hdr_out))
+            print("updated: " + str(compat_cpp_out))
             return 0
         if single_file:
             empty_ns: dict[str, str] = {}

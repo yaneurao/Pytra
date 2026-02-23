@@ -1,14 +1,4 @@
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/glob.py
-// generated-by: src/py2cpp.py
+// FORWARDER: generated runtime header moved to pytra-gen.
+#pragma once
 
-#ifndef PYTRA_STD_GLOB_H
-#define PYTRA_STD_GLOB_H
-
-namespace pytra::std::glob {
-
-list<str> glob(const str& pattern);
-
-}  // namespace pytra::std::glob
-
-#endif  // PYTRA_STD_GLOB_H
+#include "runtime/cpp/pytra-gen/std/glob.h"

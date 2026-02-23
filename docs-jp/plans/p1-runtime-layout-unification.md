@@ -72,3 +72,4 @@
 - 2026-02-23: docs-jp/todo.md の親子 ID 分割（-S*）へ同期し、P0-RUNTIME-SEP-01 を含む実行順を明示した。
 - 2026-02-23: `P0-RUNTIME-SEP-01-S1` を実施し、`src/runtime/cpp/pytra/` 全57ファイルの分類台帳を `docs-jp/plans/p1-runtime-layout-unification-inventory.md` として追加した（`generated=38`, `handwritten=19`, `entry_forwarder=0`）。
 - 2026-02-23: `P0-RUNTIME-SEP-01-S2` を実施し、`src/runtime/cpp/pytra-gen/` と `src/runtime/cpp/pytra-core/` を新設した。両ディレクトリに `README.md` を配置し、責務境界（生成専用/手書き専用）と禁止事項を固定した。
+- 2026-02-23: `P0-RUNTIME-SEP-01-S3` を実施し、生成物38ファイルを `src/runtime/cpp/pytra-gen/` へ移動した。`src/runtime/cpp/pytra/` 側には同名フォワーダー（`.h/.cpp`）を配置して既存ビルド参照を互換維持した。合わせて `src/py2cpp.py --emit-runtime-cpp` は `pytra-gen` へ出力し、`pytra/` 側フォワーダーを自動更新するよう変更した。
