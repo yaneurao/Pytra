@@ -56,7 +56,7 @@ def _remove_import_line(text: str) -> str:
     targets: list[tuple[str, str]] = [
         ("from pytra.compiler.east_parts.code_emitter import CodeEmitter\n", "CodeEmitter import"),
         (
-            "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, validate_codegen_options\n",
+            "from pytra.compiler.transpile_cli import dump_codegen_options_text, parse_py2cpp_argv, resolve_codegen_options, sort_str_list_copy, validate_codegen_options\n",
             "transpile_cli import",
         ),
         ("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks\n", "build_cpp_hooks import"),
@@ -103,6 +103,7 @@ def _extract_support_blocks() -> str:
         "resolve_codegen_options",
         "validate_codegen_options",
         "dump_codegen_options_text",
+        "sort_str_list_copy",
         "empty_parse_dict",
         "_parse_error_dict",
         "parse_py2cpp_argv",
