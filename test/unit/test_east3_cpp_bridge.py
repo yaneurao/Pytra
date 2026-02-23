@@ -130,6 +130,22 @@ class East3CppBridgeTest(unittest.TestCase):
             "py_is_subtype(1001, 1000)",
         )
 
+    def test_render_unbox_honors_ctx_for_refclass_cast(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.ref_classes = {"Box"}
+        any_name = {"kind": "Name", "id": "arg", "resolved_type": "Any"}
+        unbox_ref = {
+            "kind": "Unbox",
+            "value": any_name,
+            "target": "Box",
+            "ctx": "call_arg:Box",
+            "resolved_type": "Box",
+        }
+        self.assertEqual(
+            emitter.render_expr(unbox_ref),
+            'obj_to_rc_or_raise<Box>(arg, "call_arg:Box")',
+        )
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",

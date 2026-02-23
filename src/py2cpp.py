@@ -3944,6 +3944,27 @@ class CppEmitter(CodeEmitter):
             return f"py_isinstance({value_expr}, {type_id_expr})"
         return "false"
 
+    def _build_box_expr_node(self, value_node: Any) -> dict[str, Any]:
+        return {
+            "kind": "Box",
+            "value": value_node,
+            "resolved_type": "object",
+            "borrow_kind": "value",
+            "casts": [],
+        }
+
+    def _build_unbox_expr_node(self, value_node: Any, target_t: str, ctx: str) -> dict[str, Any]:
+        t_norm = self.normalize_type_name(target_t)
+        return {
+            "kind": "Unbox",
+            "value": value_node,
+            "target": t_norm,
+            "ctx": ctx,
+            "resolved_type": t_norm,
+            "borrow_kind": "value",
+            "casts": [],
+        }
+
     def _render_type_id_operand_expr(self, type_id_node: Any) -> str:
         """type_id 式ノードを C++ の type_id 式へ写像する。"""
         node = self.any_to_dict_or_empty(type_id_node)
@@ -4614,6 +4635,7 @@ class CppEmitter(CodeEmitter):
         at0 = self.get_expr_type(arg_node)
         at = at0 if isinstance(at0, str) else ""
         t_norm = self.normalize_type_name(target_t)
+        arg_node_dict = self.any_to_dict_or_empty(arg_node)
         if self.is_any_like_type(t_norm):
             if self.is_boxed_object_expr(arg_txt):
                 return arg_txt
@@ -4621,11 +4643,15 @@ class CppEmitter(CodeEmitter):
                 return "object(static_cast<PyObj*>(this), true)"
             if self.is_any_like_type(at):
                 return arg_txt
+            if len(arg_node_dict) > 0:
+                return self.render_expr(self._build_box_expr_node(arg_node))
             return f"make_object({arg_txt})"
         if not self._can_runtime_cast_target(target_t):
             return arg_txt
         if not self.is_any_like_type(at):
             return arg_txt
+        if len(arg_node_dict) > 0:
+            return self.render_expr(self._build_unbox_expr_node(arg_node, t_norm, f"call_arg:{t_norm}"))
         return self._coerce_any_expr_to_target(arg_txt, target_t, f"call_arg:{t_norm}")
 
     def _coerce_args_by_signature(
@@ -5617,7 +5643,8 @@ class CppEmitter(CodeEmitter):
                 target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
             if target_t == "" or target_t == "unknown" or self.is_any_like_type(target_t):
                 return value_expr
-            return self._coerce_any_expr_to_target(value_expr, target_t, "east3_unbox")
+            ctx = self.any_dict_get_str(expr_d, "ctx", "east3_unbox")
+            return self._coerce_any_expr_to_target(value_expr, target_t, ctx)
         if kind == "CastOrRaise":
             value_expr = self.render_expr(expr_d.get("value"))
             target_t = self.normalize_type_name(self.any_to_str(expr_d.get("target")))
