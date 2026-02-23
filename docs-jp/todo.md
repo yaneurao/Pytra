@@ -45,9 +45,9 @@
 17. [x] [ID: P0-EAST123-04-S1] schema テスト（必須フィールド、`iter_plan` 形状、`dispatch_mode` 一貫性）を追加する。
 18. [x] [ID: P0-EAST123-04-S2] lowering 契約テスト（`EAST2 -> EAST3`）を追加する。
 19. [x] [ID: P0-EAST123-04-S3] selfhost + クロスターゲット回帰導線へ組み込む。
-20. [ ] [ID: P0-EAST123-05] hooks 縮退を定量管理する（`P0-EAST123-05-S1` から `P0-EAST123-05-S2` 完了でクローズ）。
+20. [x] [ID: P0-EAST123-05] hooks 縮退を定量管理する（`P0-EAST123-05-S1` から `P0-EAST123-05-S2` 完了でクローズ）。
 21. [x] [ID: P0-EAST123-05-S1] C++ hooks の意味論/構文差分を分類し、基線メトリクスを記録する。
-22. [ ] [ID: P0-EAST123-05-S2] 意味論 hook の新規流入を防ぐ CI ルール（lint/チェック）を追加する。
+22. [x] [ID: P0-EAST123-05-S2] 意味論 hook の新規流入を防ぐ CI ルール（lint/チェック）を追加する。
 23. [ ] [ID: P0-EAST123-06] 現行 `EAST2`（`EAST1 + EAST2` 相当）を段階分離する（`P0-EAST123-06-S1` から `P0-EAST123-06-S2` 完了でクローズ）。
 24. [ ] [ID: P0-EAST123-06-S1] parser 直後の `EAST1` 出力 API（normalize なし）を追加する。
 25. [ ] [ID: P0-EAST123-06-S2] `EAST1 -> EAST2` normalize pass を分離し、既存 `load_east(...)` 互換を維持する。

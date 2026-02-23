@@ -161,3 +161,4 @@
 - 2026-02-23: [ID: P0-EAST123-04-S2] `test/unit/test_east3_lowering.py` に lowering 契約テストを追加し、`For -> ForCore` の `iter_mode` 正規化、non-Any builtin call 非変換、同型代入での Box/Unbox 非挿入を固定した。
 - 2026-02-23: [ID: P0-EAST123-04-S3] `check_selfhost_cpp_diff.py` / `check_py2js_transpile.py` / `check_py2ts_transpile.py` に EAST3 契約テストの preflight（`test_east3_lowering.py`, `test_east3_cpp_bridge.py`）を組み込み、`run_local_ci.py` に JS/TS クロスターゲットチェックを追加した。
 - 2026-02-23: [ID: P0-EAST123-05-S1] `tools/check_cpp_hooks_semantic_budget.py` を追加し、C++ hooks の semantic/syntax/no-op 分類と基線メトリクス（`total=11`, `semantic=4`, `syntax=6`, `noop=1`, `unknown=0`）を記録した。
+- 2026-02-23: [ID: P0-EAST123-05-S2] `run_local_ci.py` に `tools/check_cpp_hooks_semantic_budget.py --max-semantic 4` を追加し、semantic hook の新規流入を失敗扱いにするチェック導線を常時実行化した。
