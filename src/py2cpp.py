@@ -482,7 +482,7 @@ class CppEmitter(CodeEmitter):
         includes: list[str] = []
         seen: set[str] = set()
         bindings = dict_any_get_dict_list(meta, "import_bindings")
-        if len(bindings) > 0:
+        if bindings:
             for item in bindings:
                 module_id = dict_any_get_str(item, "module_id")
                 export_name = dict_any_get_str(item, "export_name")
@@ -580,9 +580,9 @@ class CppEmitter(CodeEmitter):
                     set_import_symbol_binding_and_module_set(
                         self.import_symbols, self.import_symbol_modules, local_name, module_id, export_name
                     )
-            if len(self.import_symbols) == 0:
+            if not self.import_symbols:
                 self._seed_legacy_import_symbols_from_meta(meta)
-            if len(self.import_modules) == 0:
+            if not self.import_modules:
                 self._seed_legacy_import_modules_from_meta(meta)
             return
         # canonical メタが空の場合は legacy メタへフォールバックする。
