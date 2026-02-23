@@ -205,6 +205,28 @@ def is_child(x: A) -> bool:
         self.assertIn("return true;", base_fn)
         self.assertIn("return false;", child_fn)
 
+    def test_isinstance_lowering_for_object_type(self) -> None:
+        src = """
+from pytra.std.typing import Any
+
+def from_static(x: int) -> bool:
+    return isinstance(x, object)
+
+def from_any(x: Any) -> bool:
+    return isinstance(x, object)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "isinstance_object.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertNotIn("isinstance(", rust)
+        static_fn = rust[rust.index("fn from_static(") : rust.index("fn from_any(")]
+        any_fn = rust[rust.index("fn from_any(") :]
+        self.assertIn("return true;", static_fn)
+        self.assertIn("return true;", any_fn)
+
 
 if __name__ == "__main__":
     unittest.main()

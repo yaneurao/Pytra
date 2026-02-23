@@ -1027,6 +1027,8 @@ class RustEmitter(CodeEmitter):
     def _render_isinstance_type_check(self, value_expr: str, value_node: Any, type_name: str) -> str:
         """`isinstance(x, T)` の `T` を Rust 式へ lower する。"""
         expected = self.normalize_type_name(type_name)
+        if expected == "object":
+            return "true"
         actual = self.normalize_type_name(self.get_expr_type(value_node))
         if actual == "":
             return "false"

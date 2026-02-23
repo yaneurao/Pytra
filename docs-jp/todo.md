@@ -29,6 +29,7 @@
 - `hooks/js` emitter の `isinstance` lower を拡張し、`isinstance(x, (T1, T2, ...))` を `pyIsInstance(..., type_id)` の OR 合成へ統一した。`object` も `PY_TYPE_OBJECT` 判定へ寄せ、`test/unit/test_py2js_smoke.py` と `test/unit/test_py2ts_smoke.py` に tuple 回帰を追加して `python3 tools/check_py2js_transpile.py` / `python3 tools/check_py2ts_transpile.py`（ともに `checked=129 ok=129 fail=0 skipped=6`）を確認した。
 - `hooks/cs` emitter でも `isinstance(x, T)` を C# `is` 演算子へ lower する経路を追加した。builtin（`int/float/bool/str/list/dict`）と user class の判定を `isinstance(...)` 直呼びから縮退し、`test/unit/test_py2cs_smoke.py` に回帰テスト（builtin/class）を追加した。
 - `hooks/rs` emitter でも `isinstance(x, T)` を生呼びせず lower する経路を追加した。`Any/object` は `PyAny` への `matches!`（`Int/Float/Bool/Str/List/Dict`）で判定し、静的型（builtin/class）は `get_expr_type` と class 継承表（`ClassDef.base`）で `true/false` へ縮退する。`test/unit/test_py2rs_smoke.py` に `isinstance` 回帰（Any/builtin/class 継承）を追加し、`python3 test/unit/test_py2rs_smoke.py` と `python3 tools/check_py2rs_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）を確認した。
+- `hooks/cs` / `hooks/rs` の `isinstance(..., object)` を統一し、C# は `(x is object)`、Rust は `true` へ lower するようにした（Python 互換で `object` は全値を受理）。`test/unit/test_py2cs_smoke.py` と `test/unit/test_py2rs_smoke.py` に回帰を追加し、`python3 tools/check_py2cs_transpile.py` / `python3 tools/check_py2rs_transpile.py`（ともに `checked=129 ok=129 fail=0 skipped=6`）を確認した。
 
 ## P0: Iterable/Iterator 契約反映（最優先）
 
