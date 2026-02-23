@@ -783,6 +783,7 @@ class CSharpEmitter(CodeEmitter):
             "str": "string",
             "list": "System.Collections.IList",
             "dict": "System.Collections.IDictionary",
+            "object": "object",
         }
         if type_name in builtin_map:
             return "(" + value_expr + " is " + builtin_map[type_name] + ")"

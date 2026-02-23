@@ -106,6 +106,19 @@ def f(x: object) -> bool:
         self.assertIn("(x is Base)", cs)
         self.assertNotIn("isinstance(", cs)
 
+    def test_isinstance_object_lowers_to_object_is_check(self) -> None:
+        src = """def f(x: int) -> bool:
+    return isinstance(x, object)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "isinstance_object.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("(x is object)", cs)
+        self.assertNotIn("isinstance(", cs)
+
     def test_py2cs_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2cs.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
