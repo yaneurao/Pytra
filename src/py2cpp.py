@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -308,14 +308,6 @@ def _dict_any_get_dict_list(src: dict[str, Any], key: str) -> list[dict[str, Any
         if isinstance(item, dict):
             out.append(item)
     return out
-
-
-def _append_unique_non_empty(items: list[str], seen: set[str], value: str) -> None:
-    """空でない文字列を未登録時のみ追加する。"""
-    if value == "" or value in seen:
-        return
-    seen.add(value)
-    items.append(value)
 
 
 def _first_import_detail_line(source_text: str, kind: str) -> str:
@@ -1208,14 +1200,14 @@ class CppEmitter(CodeEmitter):
                 if module_id != "":
                     mod_name = self._normalize_runtime_module_name(module_id)
                     inc = self._module_name_to_cpp_include(mod_name)
-                    _append_unique_non_empty(includes, seen, inc)
+                    append_unique_non_empty(includes, seen, inc)
                     if binding_kind == "symbol" and export_name != "":
                         if mod_name == "pytra.std":
                             sym_inc = self._module_name_to_cpp_include("pytra.std." + export_name)
-                            _append_unique_non_empty(includes, seen, sym_inc)
+                            append_unique_non_empty(includes, seen, sym_inc)
                         elif mod_name == "pytra.utils":
                             sym_inc = self._module_name_to_cpp_include("pytra.utils." + export_name)
-                            _append_unique_non_empty(includes, seen, sym_inc)
+                            append_unique_non_empty(includes, seen, sym_inc)
             includes = sort_str_list_copy(includes)
             return includes
         for stmt in body:
@@ -1224,26 +1216,26 @@ class CppEmitter(CodeEmitter):
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     mod_name = self.any_to_str(ent.get("name"))
                     inc = self._module_name_to_cpp_include(mod_name)
-                    _append_unique_non_empty(includes, seen, inc)
+                    append_unique_non_empty(includes, seen, inc)
             elif kind == "ImportFrom":
                 mod_name = self.any_to_str(stmt.get("module"))
                 mod_name = self._normalize_runtime_module_name(mod_name)
                 inc = self._module_name_to_cpp_include(mod_name)
-                _append_unique_non_empty(includes, seen, inc)
+                append_unique_non_empty(includes, seen, inc)
                 if mod_name == "pytra.std":
                     for ent in self._dict_stmt_list(stmt.get("names")):
                         sym = self.any_to_str(ent.get("name"))
                         if sym == "":
                             continue
                         sym_inc = self._module_name_to_cpp_include("pytra.std." + sym)
-                        _append_unique_non_empty(includes, seen, sym_inc)
+                        append_unique_non_empty(includes, seen, sym_inc)
                 if mod_name == "pytra.utils":
                     for ent in self._dict_stmt_list(stmt.get("names")):
                         sym = self.any_to_str(ent.get("name"))
                         if sym == "":
                             continue
                         sym_inc = self._module_name_to_cpp_include("pytra.utils." + sym)
-                        _append_unique_non_empty(includes, seen, sym_inc)
+                        append_unique_non_empty(includes, seen, sym_inc)
         includes = sort_str_list_copy(includes)
         return includes
 
@@ -6787,22 +6779,22 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
 
     if len(import_bindings) > 0:
         for ent in import_bindings:
-            _append_unique_non_empty(modules, module_seen, ent["module_id"])
+            append_unique_non_empty(modules, module_seen, ent["module_id"])
             if ent["binding_kind"] == "symbol" and ent["export_name"] != "":
                 label = ent["module_id"] + "." + ent["export_name"]
                 if ent["local_name"] != "" and ent["local_name"] != ent["export_name"]:
                     label += " as " + ent["local_name"]
-                _append_unique_non_empty(symbols, symbol_seen, label)
+                append_unique_non_empty(symbols, symbol_seen, label)
     else:
         for stmt_dict in body:
             kind = _dict_any_kind(stmt_dict)
             if kind == "Import":
                 for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
                     mod_name = _dict_any_get_str(ent_dict, "name")
-                    _append_unique_non_empty(modules, module_seen, mod_name)
+                    append_unique_non_empty(modules, module_seen, mod_name)
             elif kind == "ImportFrom":
                 mod_name = _dict_any_get_str(stmt_dict, "module")
-                _append_unique_non_empty(modules, module_seen, mod_name)
+                append_unique_non_empty(modules, module_seen, mod_name)
                 for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
                     sym_name = _dict_any_get_str(ent_dict, "name")
                     alias = _dict_any_get_str(ent_dict, "asname")
@@ -6810,7 +6802,7 @@ def dump_deps_text(east_module: dict[str, Any]) -> str:
                         label = mod_name + "." + sym_name
                         if alias != "":
                             label += " as " + alias
-                        _append_unique_non_empty(symbols, symbol_seen, label)
+                        append_unique_non_empty(symbols, symbol_seen, label)
 
     out = "modules:\n"
     if len(modules) == 0:
@@ -6836,10 +6828,10 @@ def _collect_import_modules(east_module: dict[str, Any]) -> list[str]:
         if kind == "Import":
             for ent_dict in _dict_any_get_dict_list(stmt_dict, "names"):
                 name = _dict_any_get_str(ent_dict, "name")
-                _append_unique_non_empty(out, seen, name)
+                append_unique_non_empty(out, seen, name)
         elif kind == "ImportFrom":
             mod = _dict_any_get_str(stmt_dict, "module")
-            _append_unique_non_empty(out, seen, mod)
+            append_unique_non_empty(out, seen, mod)
     return out
 
 
@@ -7068,7 +7060,7 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
             resolved_mod_id = _dict_any_get_str(resolved, "module_id")
             if status == "relative":
                 rel_item = cur_disp + ": " + mod
-                _append_unique_non_empty(relative_imports, relative_seen, rel_item)
+                append_unique_non_empty(relative_imports, relative_seen, rel_item)
                 continue
             dep_disp = mod
             if status == "user":
@@ -7089,9 +7081,9 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                     queue.append(dep_file)
             elif status == "missing":
                 miss = cur_disp + ": " + mod
-                _append_unique_non_empty(missing_modules, missing_seen, miss)
+                append_unique_non_empty(missing_modules, missing_seen, miss)
             edge = cur_disp + " -> " + dep_disp
-            _append_unique_non_empty(edges, edge_seen, edge)
+            append_unique_non_empty(edges, edge_seen, edge)
 
     cycles: list[str] = []
     cycle_seen: set[str] = set()

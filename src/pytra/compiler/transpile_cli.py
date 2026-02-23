@@ -90,6 +90,14 @@ def split_ws_tokens(text: str) -> list[str]:
     return tokens
 
 
+def append_unique_non_empty(items: list[str], seen: set[str], value: str) -> None:
+    """空でない文字列を未登録時のみ追加する。"""
+    if value == "" or value in seen:
+        return
+    seen.add(value)
+    items.append(value)
+
+
 def path_parent_text(path_obj: Path) -> str:
     """Path から親ディレクトリ文字列を取得する。"""
     path_txt: str = str(path_obj)
