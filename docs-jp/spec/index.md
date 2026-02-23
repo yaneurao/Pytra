@@ -11,6 +11,7 @@
 - 実装仕様: [実装仕様](./spec-dev.md)
 - ランタイム仕様: [ランタイム仕様](./spec-runtime.md)
 - Boxing/Unboxing 仕様: [Boxing/Unboxing 仕様](./spec-boxing.md)
+- type_id 仕様: [type_id 仕様](./spec-type_id.md)
 - GC 仕様: [GC 仕様](./spec-gc.md)
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
 - 言語別仕様: [言語別仕様](../language/index.md)
@@ -28,6 +29,8 @@
   - [ランタイム仕様](./spec-runtime.md)
 - `Any/object` 境界の Boxing/Unboxing 契約を確認したい場合:
   - [Boxing/Unboxing 仕様](./spec-boxing.md)
+- 多重継承を含む `type_id` 判定契約（`isinstance`/`issubclass`）を確認したい場合:
+  - [type_id 仕様](./spec-type_id.md)
 - RC ベースの GC 方針を確認したい場合:
   - [GC 仕様](./spec-gc.md)
 - `CodeEmitter` の JSON プロファイルと hooks 仕様を確認したい場合:
