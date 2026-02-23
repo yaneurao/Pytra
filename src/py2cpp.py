@@ -512,19 +512,17 @@ class CppEmitter(CodeEmitter):
                 mod_name = self._normalize_runtime_module_name(mod_name)
                 inc = self._module_name_to_cpp_include(mod_name)
                 append_unique_non_empty(includes, seen, inc)
+                runtime_prefix = ""
                 if mod_name == "pytra.std":
+                    runtime_prefix = "pytra.std."
+                elif mod_name == "pytra.utils":
+                    runtime_prefix = "pytra.utils."
+                if runtime_prefix != "":
                     for ent in self._import_entries_for_stmt(stmt):
                         sym = dict_any_get_str(ent, "name")
                         if sym == "":
                             continue
-                        sym_inc = self._module_name_to_cpp_include("pytra.std." + sym)
-                        append_unique_non_empty(includes, seen, sym_inc)
-                if mod_name == "pytra.utils":
-                    for ent in self._import_entries_for_stmt(stmt):
-                        sym = dict_any_get_str(ent, "name")
-                        if sym == "":
-                            continue
-                        sym_inc = self._module_name_to_cpp_include("pytra.utils." + sym)
+                        sym_inc = self._module_name_to_cpp_include(runtime_prefix + sym)
                         append_unique_non_empty(includes, seen, sym_inc)
         includes = sort_str_list_copy(includes)
         return includes
