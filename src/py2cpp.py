@@ -3833,10 +3833,9 @@ class CppEmitter(CodeEmitter):
 
     def _make_missing_symbol_import_error(self, base_name: str, attr: str) -> Exception:
         """`from-import` 束縛名の module 参照エラーを生成する（C++ 向け）。"""
-        src_obj = self.doc.get("source_path")
-        src = "(input)"
-        if isinstance(src_obj, str) and src_obj != "":
-            src = src_obj
+        src = dict_any_get_str(self.doc, "source_path", "(input)")
+        if src == "":
+            src = "(input)"
         return make_user_error(
             "input_invalid",
             "Module names are not bound by from-import statements.",
