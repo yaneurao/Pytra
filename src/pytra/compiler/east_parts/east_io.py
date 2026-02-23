@@ -10,6 +10,41 @@ from pytra.std import json
 from pytra.std.pathlib import Path
 
 
+def _normalize_dispatch_mode(value: Any) -> str:
+    if isinstance(value, str):
+        mode = value.strip()
+        if mode == "native" or mode == "type_id":
+            return mode
+    return "native"
+
+
+def _normalize_east_root(east: dict[str, Any]) -> dict[str, Any]:
+    """EAST ルート契約（stage/schema/meta.dispatch_mode）を補完する。"""
+    if east.get("kind") != "Module":
+        return east
+
+    stage_value = east.get("east_stage")
+    stage = 2
+    if isinstance(stage_value, int):
+        if stage_value == 1 or stage_value == 2 or stage_value == 3:
+            stage = stage_value
+    east["east_stage"] = stage
+
+    schema_value = east.get("schema_version")
+    schema_version = 1
+    if isinstance(schema_value, int) and schema_value > 0:
+        schema_version = schema_value
+    east["schema_version"] = schema_version
+
+    meta_value = east.get("meta")
+    meta: dict[str, Any] = {}
+    if isinstance(meta_value, dict):
+        meta = meta_value
+    east["meta"] = meta
+    meta["dispatch_mode"] = _normalize_dispatch_mode(meta.get("dispatch_mode"))
+    return east
+
+
 @dataclass
 class UserFacingError(Exception):
     """ユーザーにそのまま提示するための分類済み例外。"""
@@ -76,9 +111,9 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
                 details=[f"error: {payload.get('error')}"],
             )
         if payload.get("ok") is True and isinstance(payload.get("east"), dict):
-            return payload["east"]
+            return _normalize_east_root(payload["east"])
         if payload.get("kind") == "Module":
-            return payload
+            return _normalize_east_root(payload)
         raise UserFacingError(
             category="input_invalid",
             summary="Invalid EAST JSON structure.",
@@ -145,6 +180,7 @@ def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted"
             ) from exc
 
     if isinstance(east, dict):
+        east = _normalize_east_root(east)
         has_stmt_leading_trivia = False
         body = east.get("body")
         if isinstance(body, list) and len(body) > 0 and isinstance(body[0], dict):
