@@ -6984,39 +6984,6 @@ def _module_rel_label(root: Path, module_path: Path) -> str:
     return _sanitize_module_label(rel)
 
 
-def _module_name_from_path(root: Path, module_path: Path) -> str:
-    root_txt = str(root)
-    path_txt = str(module_path)
-    in_root = False
-    if root_txt != "" and not root_txt.endswith("/"):
-        root_txt += "/"
-    rel = path_txt
-    if root_txt != "" and path_txt.startswith(root_txt):
-        rel = path_txt[len(root_txt) :]
-        in_root = True
-    if rel.endswith(".py"):
-        rel = rel[:-3]
-    rel = rel.replace("/", ".")
-    if rel.endswith(".__init__"):
-        rel = rel[: -9]
-    # root 配下外のファイルは import 文字列側で module_id を持つ想定だが、
-    # フォールバック時は `pkg/module.py -> module` を返して破綻を避ける。
-    if not in_root:
-        stem = module_path.stem
-        stem = module_path.parent.name if stem == "__init__" else stem
-        rel = stem
-    return rel
-
-
-def _module_id_from_east(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:
-    """EAST `meta.module_id` を優先し、無い場合はパス由来名へフォールバックする。"""
-    meta = _dict_any_get_dict(east_doc, "meta")
-    module_id = _dict_any_get_str(meta, "module_id")
-    if module_id != "":
-        return module_id
-    return _module_name_from_path(root, module_path)
-
-
 def _inject_after_includes_block(cpp_text: str, block: str) -> str:
     """先頭 include 群の直後に block を差し込む。"""
     if block == "":
@@ -7076,7 +7043,7 @@ def _write_multi_file_cpp(
         east0 = _dict_any_get_dict(module_east_map, mod_key)
         label = _module_rel_label(root, mod_path)
         module_label_map[mod_key] = label
-        mod_name = _module_id_from_east(root, mod_path, east0)
+        mod_name = module_id_from_east_for_graph(root, mod_path, east0)
         module_name_by_key[mod_key] = mod_name
         if mod_name != "":
             module_ns_map[mod_name] = "pytra_mod_" + label
