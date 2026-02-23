@@ -243,6 +243,114 @@ def split_top_level_csv(text: str) -> list[str]:
     return out
 
 
+def normalize_param_annotation(ann: str) -> str:
+    """関数引数注釈文字列を EAST 互換の粗い型名へ正規化する。"""
+    t = ann.strip()
+    if t == "":
+        return "unknown"
+    if "Any" in t:
+        return "Any"
+    if "object" in t:
+        return "object"
+    if t in {"int", "float", "str", "bool", "bytes", "bytearray"}:
+        return t
+    if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+        return t
+    return t
+
+
+def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, dict[str, list[str]]]:
+    """`def` シグネチャから引数型とデフォルト値（テキスト）を抽出する。"""
+    text = ""
+    try:
+        text = src_path.read_text(encoding="utf-8")
+    except Exception:
+        empty: dict[str, dict[str, list[str]]] = {}
+        return empty
+    lines: list[str] = text.splitlines()
+    sig_map: dict[str, dict[str, list[str]]] = {}
+    skip_until = 0
+    for i in range(len(lines)):
+        if i < skip_until:
+            continue
+        line = lines[i]
+        stripped = line.strip()
+        if (len(line) - len(line.lstrip(" "))) == 0 and stripped.startswith("def "):
+            sig_text = stripped
+            j = i + 1
+            for k in range(i + 1, len(lines)):
+                if sig_text.endswith(":"):
+                    break
+                sig_text += " " + lines[k].strip()
+                j = k + 1
+            skip_until = j
+            if not sig_text.endswith(":"):
+                continue
+            sig0 = sig_text[:-1].strip()
+            if not sig0.startswith("def "):
+                continue
+            p0 = sig0.find("(")
+            if p0 < 0:
+                continue
+            name = sig0[4:p0].strip()
+            if name == "":
+                continue
+            depth = 0
+            p1 = -1
+            for k in range(p0, len(sig0)):
+                ch = sig0[k : k + 1]
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                    if depth == 0:
+                        p1 = k
+                        break
+            if p1 < 0:
+                continue
+            params = sig0[p0 + 1 : p1]
+            arg_types: list[str] = []
+            arg_defaults: list[str] = []
+            parts = split_top_level_csv(params)
+            for part in parts:
+                prm = part.strip()
+                if prm == "" or prm.startswith("*"):
+                    continue
+                default_txt = ""
+                eq_top = prm.find("=")
+                if eq_top >= 0:
+                    default_txt = prm[eq_top + 1 :].strip()
+                    prm = prm[:eq_top].strip()
+                colon = prm.find(":")
+                if colon < 0:
+                    arg_types.append("unknown")
+                    arg_defaults.append(default_txt)
+                    continue
+                ann = prm[colon + 1 :]
+                arg_types.append(normalize_param_annotation(ann))
+                arg_defaults.append(default_txt)
+            sig_map[name] = {
+                "arg_types": arg_types,
+                "arg_defaults": arg_defaults,
+            }
+    return sig_map
+
+
+def extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, list[str]]:
+    """EAST 化に失敗するモジュール用の関数シグネチャ簡易抽出。"""
+    sigs = extract_function_signatures_from_python_source(src_path)
+    out: dict[str, list[str]] = {}
+    for fn_name_obj, sig_obj in sigs.items():
+        if not isinstance(fn_name_obj, str):
+            continue
+        if not isinstance(sig_obj, dict):
+            continue
+        arg_types_obj = sig_obj.get("arg_types")
+        if isinstance(arg_types_obj, list):
+            out[fn_name_obj] = arg_types_obj
+    return out
+
+
 def split_type_args(text: str) -> list[str]:
     """`A[B,C[D]]` の `B,C[D]` をトップレベルで分割する。"""
     out: list[str] = []
