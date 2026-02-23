@@ -3711,6 +3711,16 @@ class CppEmitter(CodeEmitter):
                     return f"py_dict_get_default({owner}, {key_expr}, {boxed_default})"
                 return f"py_dict_get_default({owner}, {key_expr}, {args[1]})"
             if len(args) == 1:
+                if len(arg_nodes) >= 1:
+                    maybe_node = {
+                        "kind": "DictGetMaybe",
+                        "owner": owner_node,
+                        "key": arg_nodes[0],
+                        "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                        "borrow_kind": "value",
+                        "casts": [],
+                    }
+                    return self.render_expr(maybe_node)
                 return f"py_dict_get_maybe({owner}, {key_expr})"
             return ""
         if runtime_call == "dict.pop":
@@ -5956,6 +5966,13 @@ class CppEmitter(CodeEmitter):
             key_expr = self.render_expr(key_node)
             key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
             return f"{owner_expr}.pop({key_expr})"
+        if kind == "DictGetMaybe":
+            owner_node = expr_d.get("owner")
+            key_node = expr_d.get("key")
+            owner_expr = self.render_expr(owner_node)
+            key_expr = self.render_expr(key_node)
+            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
+            return f"py_dict_get_maybe({owner_expr}, {key_expr})"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))
