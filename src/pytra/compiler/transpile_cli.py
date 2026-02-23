@@ -310,6 +310,17 @@ def module_name_from_path_for_graph(root: Path, module_path: Path) -> str:
     return rel
 
 
+def module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:
+    """import graph 用の EAST module_id 抽出。"""
+    module_id = ""
+    meta_any = east_doc.get("meta")
+    if isinstance(meta_any, dict):
+        module_id_any = meta_any.get("module_id")
+        if isinstance(module_id_any, str):
+            module_id = module_id_any
+    return module_id if module_id != "" else module_name_from_path_for_graph(root, module_path)
+
+
 def graph_cycle_dfs(
     key: str,
     graph_adj: dict[str, list[str]],
