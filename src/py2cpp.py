@@ -557,8 +557,8 @@ class CppEmitter(CodeEmitter):
         meta = dict_any_get_dict(self.doc, "meta")
         refs = meta_qualified_symbol_refs(self.doc)
         bindings = meta_import_bindings(self.doc)
-        if len(bindings) > 0:
-            if len(refs) > 0:
+        if bindings:
+            if refs:
                 for ref_item in refs:
                     module_id = dict_str_get(ref_item, "module_id", "")
                     symbol = dict_str_get(ref_item, "symbol", "")
@@ -573,7 +573,7 @@ class CppEmitter(CodeEmitter):
                 binding_kind = dict_str_get(item, "binding_kind", "")
                 if binding_kind == "module":
                     set_import_module_binding(self.import_modules, local_name, module_id)
-                elif binding_kind == "symbol" and export_name != "" and len(refs) == 0:
+                elif binding_kind == "symbol" and export_name != "" and not refs:
                     set_import_symbol_binding_and_module_set(
                         self.import_symbols, self.import_symbol_modules, local_name, module_id, export_name
                     )
