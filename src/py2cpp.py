@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, name_target_id, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -195,16 +195,9 @@ def _check_guard_limit(
         _raise_guard_limit_exceeded(stage, limit_key, value, max_value, detail_subject)
 
 
-def _name_target_id(target: dict[str, Any]) -> str:
-    """代入先が Name のとき識別子を返す。"""
-    if dict_any_kind(target) != "Name":
-        return ""
-    return dict_any_get_str(target, "id")
-
-
 def _stmt_target_name(stmt: dict[str, Any]) -> str:
     """文ノードの `target` フィールドから Name 識別子を取得する。"""
-    return _name_target_id(dict_any_get_dict(stmt, "target"))
+    return name_target_id(dict_any_get_dict(stmt, "target"))
 
 
 def _stmt_assigned_names(stmt: dict[str, Any]) -> list[str]:
@@ -213,7 +206,7 @@ def _stmt_assigned_names(stmt: dict[str, Any]) -> list[str]:
     out: list[str] = []
     if kind == "Assign":
         for tgt_obj in assign_targets(stmt):
-            name_txt = _name_target_id(tgt_obj)
+            name_txt = name_target_id(tgt_obj)
             if name_txt != "":
                 out.append(name_txt)
     elif kind == "AnnAssign":
