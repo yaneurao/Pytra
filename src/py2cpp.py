@@ -506,12 +506,10 @@ class CppEmitter(CodeEmitter):
         bindings = dict_any_get_dict_list(meta, "import_bindings")
         if bindings:
             for item in bindings:
-                module_id = dict_any_get_str(item, "module_id")
-                binding_kind = dict_any_get_str(item, "binding_kind")
-                mod_name = self._normalize_runtime_module_name(module_id)
+                mod_name = self._normalize_runtime_module_name(dict_any_get_str(item, "module_id"))
                 inc = self._module_name_to_cpp_include(mod_name)
                 append_unique_non_empty(includes, seen, inc)
-                if binding_kind == "symbol":
+                if dict_any_get_str(item, "binding_kind") == "symbol":
                     self._append_runtime_symbol_include(includes, seen, mod_name, dict_any_get_str(item, "export_name"))
             includes = sort_str_list_copy(includes)
             return includes
@@ -571,14 +569,13 @@ class CppEmitter(CodeEmitter):
                     dict_str_get(ref_item, "symbol", ""),
                 )
             for item in bindings:
-                binding_kind = dict_str_get(item, "binding_kind", "")
-                if binding_kind == "module":
+                if dict_str_get(item, "binding_kind", "") == "module":
                     set_import_module_binding(
                         self.import_modules,
                         dict_str_get(item, "local_name", ""),
                         dict_str_get(item, "module_id", ""),
                     )
-                elif binding_kind == "symbol" and not has_refs:
+                elif dict_str_get(item, "binding_kind", "") == "symbol" and not has_refs:
                     set_import_symbol_binding_and_module_set(
                         self.import_symbols,
                         self.import_symbol_modules,
