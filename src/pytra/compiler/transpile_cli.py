@@ -140,6 +140,18 @@ def replace_first(text: str, old: str, replacement: str) -> str:
     return text[:pos] + replacement + text[pos + len(old) :]
 
 
+def inject_after_includes_block(cpp_text: str, block: str) -> str:
+    """先頭 include 群の直後に block を差し込む。"""
+    if block == "":
+        return cpp_text
+    pos = cpp_text.find("\n\n")
+    if pos < 0:
+        return cpp_text + "\n" + block + "\n"
+    head = cpp_text[: pos + 2]
+    tail = cpp_text[pos + 2 :]
+    return head + block + "\n" + tail
+
+
 def split_ws_tokens(text: str) -> list[str]:
     """空白区切りトークンへ分解する（連続空白は 1 区切り扱い）。"""
     tokens: list[str] = []

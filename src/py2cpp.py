@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, collect_import_modules, count_text_lines, dict_str_get, dump_codegen_options_text, first_import_detail_line, format_graph_list_section, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_id_from_east_for_graph, module_name_from_path_for_graph, module_rel_label, parse_py2cpp_argv, parse_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, sort_str_list_copy, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, validate_codegen_options, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks
 from pytra.std import json
@@ -6915,18 +6915,6 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
     return out
 
 
-def _inject_after_includes_block(cpp_text: str, block: str) -> str:
-    """先頭 include 群の直後に block を差し込む。"""
-    if block == "":
-        return cpp_text
-    pos = cpp_text.find("\n\n")
-    if pos < 0:
-        return cpp_text + "\n" + block + "\n"
-    head = cpp_text[: pos + 2]
-    tail = cpp_text[pos + 2 :]
-    return head + block + "\n" + tail
-
-
 def _write_multi_file_cpp(
     entry_path: Path,
     module_east_map: dict[str, dict[str, Any]],
@@ -7104,7 +7092,7 @@ def _write_multi_file_cpp(
                 fwd_lines.extend(fn_decls)
                 fwd_lines.append("}  // namespace " + target_ns)
         if len(fwd_lines) > 0:
-            cpp_txt = _inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))
+            cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))
         generated_lines_total += count_text_lines(cpp_txt)
         if max_generated_lines > 0:
             _check_guard_limit(
