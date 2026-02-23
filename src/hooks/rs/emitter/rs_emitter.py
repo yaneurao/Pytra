@@ -160,6 +160,7 @@ class RustEmitter(CodeEmitter):
         self.emit("Str(String),")
         self.emit("Dict(::std::collections::BTreeMap<String, PyAny>),")
         self.emit("List(Vec<PyAny>),")
+        self.emit("Set(Vec<PyAny>),")
         self.emit("#[default]")
         self.emit("None,")
         self.indent -= 1
@@ -214,6 +215,7 @@ class RustEmitter(CodeEmitter):
         self.emit("PyAny::Str(s) => !s.is_empty(),")
         self.emit("PyAny::Dict(d) => !d.is_empty(),")
         self.emit("PyAny::List(xs) => !xs.is_empty(),")
+        self.emit("PyAny::Set(xs) => !xs.is_empty(),")
         self.emit("PyAny::None => false,")
         self.indent -= 1
         self.emit("}")
@@ -230,6 +232,7 @@ class RustEmitter(CodeEmitter):
         self.emit("PyAny::Str(s) => s.clone(),")
         self.emit("PyAny::Dict(d) => format!(\"{:?}\", d),")
         self.emit("PyAny::List(xs) => format!(\"{:?}\", xs),")
+        self.emit("PyAny::Set(xs) => format!(\"{:?}\", xs),")
         self.emit("PyAny::None => String::new(),")
         self.indent -= 1
         self.emit("}")
@@ -808,11 +811,10 @@ class RustEmitter(CodeEmitter):
         """式を `PyAny` へ昇格する。"""
         expr_d = self.any_to_dict_or_empty(expr)
         kind = self.any_dict_get_str(expr_d, "kind", "")
-        rendered = self.render_expr(expr)
         src_t = self.normalize_type_name(self.get_expr_type(expr))
         self.uses_pyany = True
         if src_t == "PyAny" or self._is_any_type(src_t):
-            return rendered
+            return self.render_expr(expr)
         if kind == "Dict":
             return "PyAny::Dict(" + self._render_dict_expr(expr_d, force_any_values=True) + ")"
         if kind == "List":
@@ -821,6 +823,15 @@ class RustEmitter(CodeEmitter):
             for item in items:
                 vals.append(self._render_as_pyany(item))
             return "PyAny::List(vec![" + ", ".join(vals) + "])"
+        if kind == "Set":
+            items = self.any_to_list(expr_d.get("elements"))
+            if len(items) == 0:
+                items = self.any_to_list(expr_d.get("elts"))
+            vals: list[str] = []
+            for item in items:
+                vals.append(self._render_as_pyany(item))
+            return "PyAny::Set(vec![" + ", ".join(vals) + "])"
+        rendered = self.render_expr(expr)
         if self._is_int_type(src_t):
             return "PyAny::Int((" + rendered + ") as i64)"
         if self._is_float_type(src_t):
@@ -1055,6 +1066,8 @@ class RustEmitter(CodeEmitter):
                 return "matches!(" + value_expr + ", PyAny::List(_))"
             if expected_is_dict:
                 return "matches!(" + value_expr + ", PyAny::Dict(_))"
+            if expected_is_set:
+                return "matches!(" + value_expr + ", PyAny::Set(_))"
             return "false"
 
         actual_parts = self.split_union(actual)

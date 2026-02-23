@@ -783,6 +783,7 @@ class CSharpEmitter(CodeEmitter):
             "str": "string",
             "list": "System.Collections.IList",
             "dict": "System.Collections.IDictionary",
+            "set": "System.Collections.ISet",
             "object": "object",
         }
         if type_name in builtin_map:

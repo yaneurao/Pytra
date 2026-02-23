@@ -245,6 +245,22 @@ def f(x: Any) -> bool:
         self.assertIn("matches!(x, PyAny::Dict(_))", rust)
         self.assertIn("||", rust)
 
+    def test_isinstance_set_lowering_for_any_uses_pyany_set_match(self) -> None:
+        src = """
+from pytra.std.typing import Any
+
+def f(x: Any) -> bool:
+    return isinstance(x, set)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "isinstance_set_any.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertNotIn("isinstance(", rust)
+        self.assertIn("matches!(x, PyAny::Set(_))", rust)
+
 
 if __name__ == "__main__":
     unittest.main()
