@@ -3968,8 +3968,29 @@ class CppEmitter(CodeEmitter):
                 end = f"py_to_int64({args[2]})"
                 return f"py_endswith(py_slice({owner}, {start}, {end}), {args[0]})"
         if runtime_call == "py_replace" and len(args) == 2:
+            if len(arg_nodes) >= 2:
+                replace_node = {
+                    "kind": "StrReplace",
+                    "owner": fn.get("value"),
+                    "old": arg_nodes[0],
+                    "new": arg_nodes[1],
+                    "resolved_type": "str",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(replace_node)
             return f"py_replace({owner}, {args[0]}, {args[1]})"
         if runtime_call == "py_join" and len(args) == 1:
+            if len(arg_nodes) >= 1:
+                join_node = {
+                    "kind": "StrJoin",
+                    "owner": fn.get("value"),
+                    "items": arg_nodes[0],
+                    "resolved_type": "str",
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(join_node)
             return f"str({owner}).join({args[0]})"
         return None
 
@@ -6231,6 +6252,15 @@ class CppEmitter(CodeEmitter):
             if mode == "isalpha":
                 return f"{value_expr}.isalpha()"
             return f"{value_expr}.isdigit()"
+        if kind == "StrReplace":
+            owner_expr = self.render_expr(expr_d.get("owner"))
+            old_expr = self.render_expr(expr_d.get("old"))
+            new_expr = self.render_expr(expr_d.get("new"))
+            return f"py_replace({owner_expr}, {old_expr}, {new_expr})"
+        if kind == "StrJoin":
+            owner_expr = self.render_expr(expr_d.get("owner"))
+            items_expr = self.render_expr(expr_d.get("items"))
+            return f"str({owner_expr}).join({items_expr})"
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
             expected_type_id_expr = self.render_expr(expr_d.get("expected_type_id"))

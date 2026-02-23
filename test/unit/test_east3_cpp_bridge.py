@@ -801,6 +801,61 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(isdigit_expr), "s.isdigit()")
         self.assertEqual(emitter.render_expr(isalpha_expr), "s.isalpha()")
 
+    def test_render_expr_supports_str_replace_and_join_ir_nodes(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        owner = {"kind": "Name", "id": "s", "resolved_type": "str"}
+        replace_node = {
+            "kind": "StrReplace",
+            "owner": owner,
+            "old": {"kind": "Constant", "value": "a", "resolved_type": "str"},
+            "new": {"kind": "Constant", "value": "b", "resolved_type": "str"},
+            "resolved_type": "str",
+        }
+        join_node = {
+            "kind": "StrJoin",
+            "owner": owner,
+            "items": {"kind": "Name", "id": "xs", "resolved_type": "list[str]"},
+            "resolved_type": "str",
+        }
+        self.assertEqual(emitter.render_expr(replace_node), 'py_replace(s, "a", "b")')
+        self.assertEqual(emitter.render_expr(join_node), "str(s).join(xs)")
+
+    def test_builtin_runtime_py_replace_py_join_use_ir_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        replace_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_replace",
+            "resolved_type": "str",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "replace",
+                "resolved_type": "unknown",
+            },
+            "args": [
+                {"kind": "Constant", "value": "a", "resolved_type": "str"},
+                {"kind": "Constant", "value": "b", "resolved_type": "str"},
+            ],
+            "keywords": [],
+        }
+        join_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_join",
+            "resolved_type": "str",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "join",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "list[str]"}],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(replace_expr), 'py_replace(s, "a", "b")')
+        self.assertEqual(emitter.render_expr(join_expr), "str(s).join(xs)")
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
