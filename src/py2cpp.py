@@ -7348,17 +7348,23 @@ def _write_multi_file_cpp(
 
 def resolve_module_name(raw_name: str, root_dir: Path) -> dict[str, Any]:
     """モジュール名を `user/pytra/known/missing/relative` に分類して解決する。"""
-    if raw_name.startswith("."):
-        return {"status": "relative", "module_id": raw_name, "path": None}
-    if is_pytra_module_name(raw_name):
-        return {"status": "pytra", "module_id": raw_name, "path": None}
-    dep_file = resolve_user_module_path_for_graph(raw_name, root_dir)
-    if str(dep_file) != "":
-        # import 文字列を module_id の正本として扱う（探索パス由来の見かけに引きずられない）。
-        return {"status": "user", "module_id": raw_name, "path": dep_file}
-    if is_known_non_user_import(raw_name, RUNTIME_STD_SOURCE_ROOT, RUNTIME_UTILS_SOURCE_ROOT):
-        return {"status": "known", "module_id": raw_name, "path": None}
-    return {"status": "missing", "module_id": raw_name, "path": None}
+    resolved = resolve_module_name_for_graph(
+        raw_name,
+        root_dir,
+        RUNTIME_STD_SOURCE_ROOT,
+        RUNTIME_UTILS_SOURCE_ROOT,
+    )
+    status = _dict_any_get_str(resolved, "status")
+    module_id = _dict_any_get_str(resolved, "module_id", raw_name)
+    path_txt = _dict_any_get_str(resolved, "path")
+    path_obj: Path | None = None
+    if path_txt != "":
+        path_obj = Path(path_txt)
+    return {
+        "status": status,
+        "module_id": module_id,
+        "path": path_obj,
+    }
 
 
 def dump_deps_graph_text(entry_path: Path) -> str:
