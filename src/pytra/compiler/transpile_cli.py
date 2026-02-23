@@ -6,6 +6,7 @@ from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std import os
+from pytra.std import sys
 from pytra.std.pathlib import Path
 from pytra.std.typing import Iterable
 
@@ -98,6 +99,35 @@ def parse_user_error(err_text: str) -> dict[str, object]:
         if line != "":
             details.append(line)
     return {"category": category, "summary": summary, "details": details}
+
+
+def print_user_error(err_text: str) -> None:
+    """分類済みユーザーエラーをカテゴリ別に標準エラーへ表示する。"""
+    parsed_err = parse_user_error(err_text)
+    cat = dict_any_get_str(parsed_err, "category")
+    details = dict_any_get_str_list(parsed_err, "details")
+    if cat == "":
+        print("error: transpilation failed.", file=sys.stderr)
+        print("[transpile_error] check your input code and support status.", file=sys.stderr)
+        return
+    if cat == "user_syntax_error":
+        print("error: input Python has a syntax error.", file=sys.stderr)
+        print("[user_syntax_error] fix the syntax.", file=sys.stderr)
+    elif cat == "unsupported_by_design":
+        print("error: this syntax is unsupported by language design.", file=sys.stderr)
+        print("[unsupported_by_design] rewrite it using a supported form.", file=sys.stderr)
+    elif cat == "not_implemented":
+        print("error: this syntax is not implemented yet.", file=sys.stderr)
+        print("[not_implemented] check TODO implementation status.", file=sys.stderr)
+    elif cat == "input_invalid":
+        print("error: invalid input file format.", file=sys.stderr)
+        print("[input_invalid] provide .py or valid EAST JSON.", file=sys.stderr)
+    else:
+        print("error: transpilation failed.", file=sys.stderr)
+        print(f"[{cat}] check your input code and support status.", file=sys.stderr)
+    for line in details:
+        if line != "":
+            print(line, file=sys.stderr)
 
 
 def load_east_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
