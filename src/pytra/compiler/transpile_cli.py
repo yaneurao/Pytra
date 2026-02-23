@@ -98,6 +98,46 @@ def append_unique_non_empty(items: list[str], seen: set[str], value: str) -> Non
     items.append(value)
 
 
+def split_top_level_csv(text: str) -> list[str]:
+    """括弧ネストを考慮してカンマ区切りを分割する。"""
+    out: list[str] = []
+    cur = ""
+    depth_paren = 0
+    depth_brack = 0
+    depth_brace = 0
+    for ch in text:
+        if ch == "(":
+            depth_paren += 1
+            cur += ch
+        elif ch == ")":
+            if depth_paren > 0:
+                depth_paren -= 1
+            cur += ch
+        elif ch == "[":
+            depth_brack += 1
+            cur += ch
+        elif ch == "]":
+            if depth_brack > 0:
+                depth_brack -= 1
+            cur += ch
+        elif ch == "{":
+            depth_brace += 1
+            cur += ch
+        elif ch == "}":
+            if depth_brace > 0:
+                depth_brace -= 1
+            cur += ch
+        elif ch == "," and depth_paren == 0 and depth_brack == 0 and depth_brace == 0:
+            out.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+    tail = cur.strip()
+    if tail != "":
+        out.append(tail)
+    return out
+
+
 def path_parent_text(path_obj: Path) -> str:
     """Path から親ディレクトリ文字列を取得する。"""
     path_txt: str = str(path_obj)

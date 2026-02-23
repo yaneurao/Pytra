@@ -21,7 +21,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_ws_tokens, write_text_file
+from src.pytra.compiler.transpile_cli import append_unique_non_empty, count_text_lines, dump_codegen_options_text, join_str_list, mkdirs_for_cli, parse_py2cpp_argv, path_parent_text, replace_first, resolve_codegen_options, sort_str_list_copy, split_infix_once, split_top_level_csv, split_ws_tokens, write_text_file
 from src.py2cpp import (
     _analyze_import_graph,
     _runtime_module_tail_from_source_path,
@@ -197,6 +197,11 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(split_ws_tokens("a b\tc"), ["a", "b", "c"])
         self.assertEqual(split_ws_tokens("  a   b  "), ["a", "b"])
         self.assertEqual(split_ws_tokens(""), [])
+
+    def test_split_top_level_csv_splits_only_top_level_commas(self) -> None:
+        self.assertEqual(split_top_level_csv("a,b,(c,d),e"), ["a", "b", "(c,d)", "e"])
+        self.assertEqual(split_top_level_csv("list[int], dict[str, int]"), ["list[int]", "dict[str, int]"])
+        self.assertEqual(split_top_level_csv(""), [])
 
     def test_path_parent_text_returns_parent_dir(self) -> None:
         self.assertEqual(path_parent_text(Path("a/b/c.txt")), "a/b")
