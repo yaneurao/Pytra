@@ -180,9 +180,9 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             ok_obj = dict_any_get(payload, "ok")
             east_obj = dict_any_get(payload, "east")
             if isinstance(ok_obj, bool) and ok_obj and isinstance(east_obj, dict):
-                return _normalize_east_root(east_obj)
+                return normalize_east1_to_east2_document(_normalize_east_root(east_obj))
             if dict_any_kind(payload) == "Module":
-                return _normalize_east_root(payload)
+                return normalize_east1_to_east2_document(_normalize_east_root(payload))
         raise make_user_error(
             "input_invalid",
             "Invalid EAST JSON format.",
@@ -255,12 +255,21 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             summary = "This syntax is unsupported by language design."
         raise make_user_error(category, summary, [msg]) from ex
     if isinstance(east_any, dict):
-        return _normalize_east_root(east_any)
+        return normalize_east1_to_east2_document(_normalize_east_root(east_any))
     raise make_user_error(
         "input_invalid",
         "Failed to build EAST.",
         ["EAST root must be a dict."],
     )
+
+
+def normalize_east1_to_east2_document(east_doc: dict[str, object]) -> dict[str, object]:
+    """`EAST1` ルートを `EAST2` 契約（stage=2）へ正規化する。"""
+    if isinstance(east_doc, dict) and dict_any_kind(east_doc) == "Module":
+        stage_obj = dict_any_get(east_doc, "east_stage")
+        if isinstance(stage_obj, int) and stage_obj == 1:
+            east_doc["east_stage"] = 2
+    return east_doc
 
 
 def load_east1_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:

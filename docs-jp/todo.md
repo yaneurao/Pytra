@@ -48,9 +48,9 @@
 20. [x] [ID: P0-EAST123-05] hooks 縮退を定量管理する（`P0-EAST123-05-S1` から `P0-EAST123-05-S2` 完了でクローズ）。
 21. [x] [ID: P0-EAST123-05-S1] C++ hooks の意味論/構文差分を分類し、基線メトリクスを記録する。
 22. [x] [ID: P0-EAST123-05-S2] 意味論 hook の新規流入を防ぐ CI ルール（lint/チェック）を追加する。
-23. [ ] [ID: P0-EAST123-06] 現行 `EAST2`（`EAST1 + EAST2` 相当）を段階分離する（`P0-EAST123-06-S1` から `P0-EAST123-06-S2` 完了でクローズ）。
+23. [x] [ID: P0-EAST123-06] 現行 `EAST2`（`EAST1 + EAST2` 相当）を段階分離する（`P0-EAST123-06-S1` から `P0-EAST123-06-S2` 完了でクローズ）。
 24. [x] [ID: P0-EAST123-06-S1] parser 直後の `EAST1` 出力 API（normalize なし）を追加する。
-25. [ ] [ID: P0-EAST123-06-S2] `EAST1 -> EAST2` normalize pass を分離し、既存 `load_east(...)` 互換を維持する。
+25. [x] [ID: P0-EAST123-06-S2] `EAST1 -> EAST2` normalize pass を分離し、既存 `load_east(...)` 互換を維持する。
 26. [ ] [ID: P0-EAST123-07] `type_id` lower を「EAST3 命令化 -> backend 写像」へ統一する（`P0-EAST123-07-S1` から `P0-EAST123-07-S2` 完了でクローズ）。
 27. [ ] [ID: P0-EAST123-07-S1] `isinstance` / `issubclass` / subtype 判定を EAST3 命令へ lower する。
 28. [ ] [ID: P0-EAST123-07-S2] backend 側の `type_id` 直書き判定生成を撤去し、runtime API 写像へ統一する。

@@ -163,3 +163,4 @@
 - 2026-02-23: [ID: P0-EAST123-05-S1] `tools/check_cpp_hooks_semantic_budget.py` を追加し、C++ hooks の semantic/syntax/no-op 分類と基線メトリクス（`total=11`, `semantic=4`, `syntax=6`, `noop=1`, `unknown=0`）を記録した。
 - 2026-02-23: [ID: P0-EAST123-05-S2] `run_local_ci.py` に `tools/check_cpp_hooks_semantic_budget.py --max-semantic 4` を追加し、semantic hook の新規流入を失敗扱いにするチェック導線を常時実行化した。
 - 2026-02-23: [ID: P0-EAST123-06-S1] `load_east1_document(...)` を `transpile_cli` に追加し、既存のエラー分類/ルート契約を維持したまま `east_stage=1` を返す parser 直後 API を導入した。`test_py2cpp_features.py` に helper 契約テストを追加し、`prepare_selfhost_source` の import 行除去を prefix 判定へ更新して回帰を解消した。
+- 2026-02-23: [ID: P0-EAST123-06-S2] `normalize_east1_to_east2_document(...)` を `transpile_cli` に追加し、`load_east_document(...)` で `EAST1 -> EAST2` 正規化（stage `1 -> 2`）を通す構成へ分離した。`load_east_document` の既存呼び出し互換を維持するため、stage1 JSON 入力の正規化を `test_py2cpp_features.py` で固定した。

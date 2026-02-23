@@ -2143,6 +2143,15 @@ def f() -> int:
         self.assertEqual(dict_any_get_str(wrapped_meta, "dispatch_mode"), "native")
         self.assertEqual(dict_any_get_str(module_meta, "dispatch_mode"), "native")
 
+    def test_load_east_document_helper_normalizes_stage1_to_stage2(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            stage1_json = root / "stage1.json"
+            stage1_json.write_text('{"kind":"Module","east_stage":1,"schema_version":1,"meta":{"dispatch_mode":"native"},"body":[]}', encoding="utf-8")
+            out = load_east_document_helper(stage1_json)
+        self.assertEqual(dict_any_get_str(out, "kind"), "Module")
+        self.assertEqual(dict_any_get(out, "east_stage"), 2)
+
     def test_resolve_module_name_classifies_user_pytra_and_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
