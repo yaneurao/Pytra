@@ -420,7 +420,7 @@ class CodeEmitterTest(unittest.TestCase):
             {
                 "meta": {
                     "qualified_symbol_refs": [
-                        {"module_id": "pytra.runtime", "symbol": "png", "local_name": "png"},
+                        {"module_id": "pytra.utils", "symbol": "png", "local_name": "png"},
                     ],
                     "import_bindings": [
                         {
@@ -434,19 +434,19 @@ class CodeEmitterTest(unittest.TestCase):
             }
         )
         self.assertEqual(em.import_symbols, {})
-        self.assertEqual(em._resolve_imported_module_name("png"), "pytra.runtime.png")
+        self.assertEqual(em._resolve_imported_module_name("png"), "pytra.utils.png")
         self.assertEqual(em._resolve_imported_module_name("m"), "pytra.std.math")
 
     def test_attribute_owner_context_and_type_helpers(self) -> None:
         em = _DummyEmitter({})
-        em.import_modules = {"png": "pytra.runtime.png"}
+        em.import_modules = {"png": "pytra.utils.png"}
         owner_ctx = em.resolve_attribute_owner_context(
             {"kind": "Name", "id": "png", "repr": "png"},
             "png",
         )
         self.assertEqual(owner_ctx.get("kind"), "Name")
         self.assertEqual(owner_ctx.get("expr"), "png")
-        self.assertEqual(owner_ctx.get("module"), "pytra.runtime.png")
+        self.assertEqual(owner_ctx.get("module"), "pytra.utils.png")
         self.assertEqual(em.attr_name({"kind": "Attribute", "attr": "write_rgb_png"}), "write_rgb_png")
         self.assertEqual(em.attr_name({"kind": "Attribute", "attr": None}), "")
         declared = {"items": "list[int64]"}
