@@ -110,6 +110,7 @@
 - bool/len/str の動的経路を明示命令化（例: `ObjBool`, `ObjLen`, `ObjStr`）。
 - iterable を明示命令化（例: `ObjIterInit`, `ObjIterNext`）。
 - `type_id` 判定（`isinstance` / `issubclass` / subtype）を明示命令化し、backend は命令写像のみを行う。
+- 可能な限り言語非依存意味論（主要 built-in lower 含む）を EAST3 命令へ寄せ、backend/hook に意味論実装を残さない。
 - `ForCore` は `iter_mode` を必ず保持（`static_fastpath` or `runtime_protocol`）。
 - `runtime_protocol` の場合、`iter_plan.dispatch_mode` を必須化する。
 
@@ -196,7 +197,7 @@
 - C++ など backend は runtime API への写像のみを担当する。
 - backend による判定ロジックの直接実装（文字列比較や個別分岐の再実装）は禁止する。
 
-### 9.3 例外契約
+### 9.4 例外契約
 
 - non-iterable の `for` は `TypeError` 相当。
 - `len` 未対応は `TypeError` 相当。
@@ -217,6 +218,7 @@
 - dispatch mode の再判断。
 - boxing/unboxing の意味論変更。
 - iterable 判定ロジックの再実装。
+- 言語非依存意味論を backend/hook 側へ新規実装すること（IR-first 原則に反する追加）。
 
 ## 11. 具体例
 

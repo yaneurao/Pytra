@@ -33,6 +33,7 @@
 5. [ ] [ID: P0-EAST123-05] `EAST3` 導入後に hooks 実装を定量的に縮退する（意味論 hook を撤去し、構文差分 hook のみに限定する）。
 6. [ ] [ID: P0-EAST123-06] 現行 `EAST2`（`EAST1 + EAST2` 相当）を段階分離し、`EAST1` は parser 直後の loss-minimal IR、`EAST2` は normalize 専任 IR として責務境界を固定する。
 7. [ ] [ID: P0-EAST123-07] `type_id` 関連 lower（`isinstance`/`issubclass`/subtype 判定）を「EAST3 命令化 -> backend 写像」へ統一し、C++ 文字列の直接生成経路を原則禁止する。
+8. [ ] [ID: P0-EAST123-08] `type_id` に限らず、可能な限り言語非依存意味論（boxing/unboxing, iterable, truthy/len/str, 主要 built-in lower）を「EAST3 命令化 -> backend 写像」へ統一し、C++ hooks の意味論実装を段階撤去する。
 
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
