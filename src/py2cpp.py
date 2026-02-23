@@ -4196,10 +4196,6 @@ class CppEmitter(CodeEmitter):
         owner_expr: str,
     ) -> str | None:
         """hooks 無効時に BuiltinCall の runtime 分岐を描画する。"""
-        if runtime_call == "py_join":
-            join_rendered = self._render_builtin_join_call(owner_expr, args)
-            if join_rendered is not None:
-                return str(join_rendered)
         owner_runtime_rendered = self._render_builtin_call_owner_runtime(runtime_call, owner_expr, args)
         if owner_runtime_rendered is not None:
             return str(owner_runtime_rendered)
@@ -4332,16 +4328,6 @@ class CppEmitter(CodeEmitter):
         if len(args) == 2 and builtin_name == "int":
             return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
         return None
-
-    def _render_builtin_join_call(
-        self,
-        owner_expr: str,
-        args: list[str],
-    ) -> str | None:
-        """BuiltinCall の `runtime_call=py_join` 分岐を描画する。"""
-        if len(args) != 1 or owner_expr == "":
-            return None
-        return f"str({owner_expr}).join({args[0]})"
 
     def _render_collection_constructor_call(
         self,
