@@ -15,11 +15,21 @@
 - 着手前に文脈ファイルの `背景` / `非対象` / `受け入れ基準` を確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+## P0: Runtime 起源分離（最優先）
+
+文脈: `docs-jp/plans/p1-runtime-layout-unification.md`（`TG-P1-RUNTIME-LAYOUT`）
+
+1. [ ] [ID: P0-RUNTIME-SEP-01] C++ runtime を「生成物」と「手書き」で上位フォルダ分離する。`src/runtime/cpp/pytra-gen/`（自動生成専用）と `src/runtime/cpp/pytra-core/`（手書き専用）を新設し、`src/runtime/cpp/pytra/` は公開 include 入口（薄いフォワーダー）に限定する。`std/`・`built_in/` の混在（`-impl` 含む）を段階解消し、CI で `pytra-gen` は `AUTO-GENERATED` 必須、`pytra-core` は禁止を強制する。
+
+方針メモ:
+- ターゲット言語の増加を前提に、runtime は「自動生成層を厚く・手書き層を薄く」を基本方針とする。意味論は可能な限り `src/pytra/` 側の正本から生成し、手書きは GC/ABI など低レベル最小層へ限定する。
+
 ## P0: type_id 継承判定・isinstance 統一（最優先）
 
 文脈: `docs-jp/plans/p0-typeid-isinstance-dispatch.md`（`TG-P0-TYPEID-ISINSTANCE`）
 
 1. [ ] [ID: P0-TID-01] `type_id` ベースの共通判定 API（`py_isinstance` / `py_is_subtype`）を C++/JS/TS runtime に導入し、`py2cpp` を含む各 emitter の `isinstance` lower を runtime API 経由へ統一する。target 固有の built-in 直書き分岐は段階的に縮退する。
+2. [ ] [ID: P0-TID-02] `src/pytra/built_in/`（pure Python）を runtime 意味論の正本として新設し、`isinstance` / `issubclass` / `type_id` を含む target 非依存 built-in 処理をここへ段階移管する。`py2cpp.py --emit-runtime-cpp` は `src/pytra/built_in/*.py` を `src/runtime/cpp/pytra/built_in/*.{h,cpp}` へ生成できるよう拡張し、C++ 側手書き実装を最小ブート層（GC/ABI 等）へ限定する。
 
 進捗メモ:
 - C++ runtime に `PYTRA_TID_*`、`py_register_class_type`、`py_is_subtype`、`py_isinstance`、`py_issubclass` を追加し、`py2cpp` の `isinstance` 生成を `py_isinstance(..., <type_id>)` 経由へ切替した。GC 管理クラスには `PYTRA_TYPE_ID` 付与と constructor での `set_type_id(...)` を導入した。JS/TS runtime には `pyRegisterType` / `pyRegisterClassType` / `pyIsSubtype` / `pyIsInstance` を追加し、`test_cpp_runtime_type_id.py` / `test_js_ts_runtime_dispatch.py` / `test_py2cpp_codegen_issues.py` で回帰固定した。
