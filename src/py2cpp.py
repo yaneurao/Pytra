@@ -6121,9 +6121,7 @@ def _write_multi_file_cpp(
                 continue
             target_ns = module_ns_map[mod_name]
             target_key = ""
-            for k2, p2 in module_east_map.items():
-                _ = p2
-                target_mod_name = module_name_by_key[k2] if k2 in module_name_by_key else ""
+            for k2, target_mod_name in module_name_by_key.items():
                 if target_mod_name == mod_name:
                     target_key = k2
                     break
