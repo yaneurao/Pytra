@@ -64,7 +64,7 @@
 |---|---|---|---|
 | Rust import/use 変換 | `src/hooks/rs/emitter/rs_emitter.py::_module_id_to_rust_use_path` と `_collect_use_lines` | EAST `module_id` を Rust `use crate::...` パスへ機械変換 | 変換規則は維持しつつ、ランタイム実体は `src/runtime/rs/pytra/` 側を正本として扱う |
 | CLI 側 runtime パス解決 | `src/py2rs.py` | `.py/.json -> EAST -> Rust` 変換のみ。`src/rs_module` 直接参照なし | `py2rs.py` には新旧パス fallback を持たせず、互換は runtime 側 shim で吸収する |
-| 既存生成物の legacy 参照 | `sample/rs/*.rs`（`#[path = "../../src/rs_module/py_runtime.rs"]`） | 旧パス参照が残る | `src/rs_module/py_runtime.rs` shim で新正本へ委譲し、`P1-RUNTIME-02-S2` で生成側の参照先を段階切替する |
+| 既存生成物の path 参照 | `sample/rs/*.rs`（`#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]`） | 新パス参照へ切替済み | 過去生成物が旧参照でも `src/rs_module/py_runtime.rs` shim で互換維持する |
 
 `P1-RUNTIME-01-S1` 棚卸し結果（`src/rs_module/` -> `src/runtime/rs/pytra/` 対応表）:
 
@@ -103,3 +103,5 @@
 - 2026-02-24: ID: P1-RUNTIME-01-S3 として `src/rs_module` 依存縮退の固定化を実施した。`tools/check_rs_runtime_layout.py` を追加し、`src/rs_module/` 直下は互換 shim (`py_runtime.rs`) のみ許可、実体は `src/runtime/rs/pytra/built_in/py_runtime.rs` 必須とするガードを導入した。`tools/run_local_ci.py` に同チェックを組み込み、`python3 tools/check_py2rs_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。
 - 2026-02-24: ID: P1-RUNTIME-01（親タスク）を完了として履歴へ移管した。残作業は `P1-RUNTIME-02` 以降（参照パス切替と `src/rs_module` 最終撤去）へ移行する。
 - 2026-02-24: ID: P1-RUNTIME-02-S1 として Rust path 解決箇所を棚卸しした。`py2rs.py` は runtime パス非依存、`rs_emitter.py` は `module_id -> use crate::...` の変換責務、既存生成物の旧 `src/rs_module` 参照は shim で吸収する互換方針を確定した。
+- 2026-02-24: ID: P1-RUNTIME-02-S2 として生成物参照先を新パスへ切替した。`sample/rs/*.rs` の `#[path = "../../src/rs_module/py_runtime.rs"]` を `#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]` へ一括更新し、コード側の旧パス依存を撤去した。旧参照 fallback は `src/rs_module/py_runtime.rs` shim のみ維持する。
+- 2026-02-24: ID: P1-RUNTIME-02（親タスク）を完了として履歴へ移管した。次段は `P1-RUNTIME-03`（`src/rs_module` 廃止）へ進む。
