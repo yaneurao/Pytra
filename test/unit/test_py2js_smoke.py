@@ -53,6 +53,13 @@ class Py2JsSmokeTest(unittest.TestCase):
             js = transpile_to_js(loaded)
         self.assertIn("function add(a, b)", js)
 
+    def test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape(self) -> None:
+        fixture = find_fixture_case("for_range")
+        loaded = load_east(fixture, parser_backend="self_hosted")
+        self.assertIsInstance(loaded, dict)
+        self.assertEqual(loaded.get("kind"), "Module")
+        self.assertEqual(loaded.get("east_stage"), 2)
+
     def test_browser_import_symbols_are_treated_as_external(self) -> None:
         fixture = find_fixture_case("browser_external_symbols")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -80,6 +87,24 @@ class Py2JsSmokeTest(unittest.TestCase):
             self.assertTrue(out_js.exists())
             txt = out_js.read_text(encoding="utf-8")
             self.assertIn("function abs_like", txt)
+
+    def test_cli_warns_when_stage2_compat_mode_is_selected(self) -> None:
+        fixture = find_fixture_case("if_else")
+        with tempfile.TemporaryDirectory() as td:
+            out_js = Path(td) / "if_else.js"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2js.py", str(fixture), "-o", str(out_js), "--east-stage", "2"],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertIn("warning: --east-stage 2 is compatibility mode; default is 3.", proc.stderr)
 
     def test_py2js_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2js.py").read_text(encoding="utf-8")

@@ -215,6 +215,21 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
   - `test/unit/test_py2cs_smoke.py` が `Ran 13 tests ... OK` で通過。
   - `tools/check_py2cs_transpile.py` が `checked=131 ok=131 fail=0 skipped=6` で通過。
 
+## `py2js` 既定 `EAST3` 主経路導入（`P0-EASTMIG-06-S3-S3`）
+
+`py2js.py` を `EAST3` 既定へ切替え、`EAST2` は明示互換モードへ縮退する。
+
+- CLI 更新:
+  - `--east-stage {2,3}`（既定 `3`）と `--object-dispatch-mode {native,type_id}` を追加。
+  - `--east-stage 2` 指定時は `warning: --east-stage 2 is compatibility mode; default is 3.` を標準エラーへ出力。
+- 読み込み経路:
+  - `east_stage=3` は `load_east3_document(...)` を使用。
+  - JS emitter の現行契約へ合わせるため、`EAST3` ノードは `pytra.compiler.east_parts.east3_legacy_compat` で legacy 形状へ互換変換して受け渡す。
+  - `east_stage=2` は `load_east_document_compat` を明示互換モードとして維持。
+- 回帰確認:
+  - `test/unit/test_py2js_smoke.py` が `Ran 13 tests ... OK` で通過。
+  - `tools/check_py2js_transpile.py` が `checked=131 ok=131 fail=0 skipped=6` で通過。
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -238,6 +253,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06-S3-S3`] `py2js.py` に `--east-stage` / `--object-dispatch-mode` を追加し、既定を `EAST3` に切替えた。`stage=2` は警告付き互換モードへ縮退。`EAST3` ノード互換は `east3_legacy_compat` を利用し、`test_py2js_smoke` と `check_py2js_transpile` を通過させた。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S2`] `py2cs.py` に `--east-stage` / `--object-dispatch-mode` を追加し、既定を `EAST3` に切替えた。`stage=2` は警告付き互換モードへ縮退。`EAST3` ノード互換は `east3_legacy_compat` を共通利用し、`test_py2cs_smoke` と `check_py2cs_transpile` を通過させた。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S1`] `py2rs.py` に `--east-stage` / `--object-dispatch-mode` を追加し、既定を `EAST3` に切替えた。`stage=2` は警告付き互換モードへ縮退。`EAST3` ノード互換は `east3_legacy_compat` を利用し、`test_py2rs_smoke` と `check_py2rs_transpile` を通過させた。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0`] `S0-S1` から `S0-S5` 完了により、`EAST1/EAST2/EAST3` 境界固定ゲートをクローズした。以後の `P0-EASTMIG-06` は `S3` 以降（非 C++ 変換器主経路化）を最上位未完了として進める。
