@@ -1443,8 +1443,21 @@ class CodeEmitter:
         """Name 代入時に新規宣言が必要かを共通判定する。"""
         if name_raw == "":
             return False
-        declare = self.any_dict_get_bool(stmt, "declare", default_declare)
+        declare = self.stmt_declare_flag(stmt, default_declare)
         return declare and not self.is_declared(name_raw)
+
+    def stmt_declare_flag(self, stmt: dict[str, Any], default_declare: bool) -> bool:
+        """`stmt.declare` を bool/int 互換で解釈し、宣言フラグを返す。"""
+        if not isinstance(stmt, dict):
+            return default_declare
+        if "declare" not in stmt:
+            return default_declare
+        raw = stmt.get("declare")
+        if isinstance(raw, bool):
+            return bool(raw)
+        if isinstance(raw, int):
+            return raw != 0
+        return default_declare
 
     def render_augassign_basic(
         self,

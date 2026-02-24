@@ -1765,6 +1765,7 @@ class CppEmitter(CodeEmitter):
             t = self.cpp_type(stmt.get("decl_type"))
             if t == "auto" and ann_text_fallback not in {"", "{}", "None"}:
                 t = self._cpp_type_text(self.normalize_type_name(ann_text_fallback))
+        target_node = self.any_to_dict_or_empty(stmt.get("target"))
         target = self.render_expr(stmt.get("target"))
         val = self.any_to_dict_or_empty(stmt.get("value"))
         val_is_dict: bool = len(val) > 0
@@ -1825,8 +1826,10 @@ class CppEmitter(CodeEmitter):
             rendered_val = self._coerce_any_expr_to_target(rendered_val, ann_t_str, f"annassign:{target}")
         if self.is_any_like_type(ann_t_str) and val_is_dict:
             rendered_val = self._box_any_target_value(rendered_val, stmt.get("value"))
-        declare = self.any_dict_get_int(stmt, "declare", 1) != 0
-        already_declared = self.is_declared(target) if self.is_plain_name_expr(stmt.get("target")) else False
+        is_plain_name_target = self._node_kind_from_dict(target_node) == "Name"
+        declare_stmt = self.stmt_declare_flag(stmt, True)
+        declare_name_binding = is_plain_name_target and self.should_declare_name_binding(stmt, target, True)
+        already_declared = is_plain_name_target and self.is_declared(target)
         if target.startswith("this->"):
             if not val_is_dict:
                 self.emit(f"{target};")
@@ -1834,19 +1837,19 @@ class CppEmitter(CodeEmitter):
                 self.emit(f"{target} = {rendered_val};")
             return
         if not val_is_dict:
-            if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
+            if declare_name_binding:
                 self.declare_in_current_scope(target)
-            if declare and not already_declared:
+            if declare_stmt and not already_declared:
                 self.emit(f"{t} {target};")
             return
-        if declare and self.is_plain_name_expr(stmt.get("target")) and not already_declared:
+        if declare_name_binding:
             self.declare_in_current_scope(target)
             picked_decl_t = ann_t_str if ann_t_str != "" else decl_hint
             picked_decl_t = (
-                picked_decl_t if picked_decl_t != "" else (val_t if val_t != "" else self.get_expr_type(stmt.get("target")))
+                picked_decl_t if picked_decl_t != "" else (val_t if val_t != "" else self.get_expr_type(target_node))
             )
             self.declared_var_types[target] = self.normalize_type_name(picked_decl_t)
-        if declare and not already_declared:
+        if declare_stmt and not already_declared:
             self.emit(f"{t} {target} = {rendered_val};")
         else:
             self.emit(f"{target} = {rendered_val};")
@@ -1856,8 +1859,12 @@ class CppEmitter(CodeEmitter):
         op = "+="
         target_expr_node = self.any_to_dict_or_empty(stmt.get("target"))
         target = self._render_lvalue_for_augassign(stmt.get("target"))
-        declare = self.any_dict_get_int(stmt, "declare", 0) != 0
-        if declare and self._node_kind_from_dict(target_expr_node) == "Name" and target not in self.current_scope():
+        declare_name_binding = self._node_kind_from_dict(target_expr_node) == "Name" and self.should_declare_name_binding(
+            stmt,
+            target,
+            False,
+        )
+        if declare_name_binding:
             decl_t_raw = stmt.get("decl_type")
             decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
             inferred_t = self.get_expr_type(stmt.get("target"))
@@ -2277,7 +2284,7 @@ class CppEmitter(CodeEmitter):
 
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         """代入文（通常代入/タプル代入）を C++ へ出力する。"""
-        target = self.any_to_dict_or_empty(stmt.get("target"))
+        target = self.primary_assign_target(stmt)
         value = self.any_to_dict_or_empty(stmt.get("value"))
         if len(target) == 0 or len(value) == 0:
             self.emit("/* invalid assign */")
@@ -2376,10 +2383,11 @@ class CppEmitter(CodeEmitter):
                         continue
                 self.emit(f"{lhs} = {rhs_item};")
             return
-        texpr = self.render_lvalue(stmt.get("target"))
-        if self.is_plain_name_expr(stmt.get("target")) and not self.is_declared(texpr):
+        target_obj: Any = target
+        texpr = self.render_lvalue(target_obj)
+        if self.is_plain_name_expr(target_obj) and not self.is_declared(texpr):
             d0 = self.normalize_type_name(self.any_dict_get_str(stmt, "decl_type", ""))
-            d1 = self.normalize_type_name(self.get_expr_type(stmt.get("target")))
+            d1 = self.normalize_type_name(self.get_expr_type(target_obj))
             d2 = self.normalize_type_name(self.get_expr_type(stmt.get("value")))
             if d0 == "unknown":
                 d0 = ""
@@ -2434,10 +2442,10 @@ class CppEmitter(CodeEmitter):
             self.emit(f"{dtype} {texpr} = {rval};")
             return
         rval = self.render_expr(stmt.get("value"))
-        t_target = self.get_expr_type(stmt.get("target"))
+        t_target = self.get_expr_type(target_obj)
         if t_target == "None":
             t_target = "Any"
-        if self.is_plain_name_expr(stmt.get("target")) and t_target in {"", "unknown"}:
+        if self.is_plain_name_expr(target_obj) and t_target in {"", "unknown"}:
             if texpr in self.declared_var_types:
                 t_target = self.declared_var_types[texpr]
         if t_target != "":

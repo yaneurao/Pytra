@@ -890,10 +890,15 @@ class CodeEmitterTest(unittest.TestCase):
         target3 = em.primary_assign_target({})
         self.assertEqual(target3, {})
 
+        self.assertTrue(em.stmt_declare_flag({"declare": 1}, False))
+        self.assertFalse(em.stmt_declare_flag({"declare": 0}, True))
+        self.assertTrue(em.stmt_declare_flag({}, True))
         self.assertTrue(em.should_declare_name_binding({"declare": True}, "x", False))
         em.declare_in_current_scope("x")
         self.assertFalse(em.should_declare_name_binding({"declare": True}, "x", False))
         self.assertFalse(em.should_declare_name_binding({"declare": False}, "y", True))
+        self.assertTrue(em.should_declare_name_binding({"declare": 1}, "z", False))
+        self.assertFalse(em.should_declare_name_binding({"declare": 0}, "w", True))
 
         dummy = _DummyEmitter({})
         target_txt, value_txt, op_txt = dummy.render_augassign_basic(
