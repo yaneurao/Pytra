@@ -343,7 +343,7 @@ class JsTsIterableDispatchTest(unittest.TestCase):
 
 ## 13. 関連
 
-- `docs-ja/spec/spec-east123.md`
+- `docs-ja/spec/spec-east.md`
 - `docs-ja/spec/spec-linker.md`
 - `docs-ja/spec/spec-type_id.md`
 - `docs-ja/spec/spec-boxing.md`

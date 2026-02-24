@@ -174,7 +174,7 @@ EAST3 連携規約:
 
 ## 14. 関連
 
-- `docs-ja/spec/spec-east123.md`
+- `docs-ja/spec/spec-east.md`
 - `docs-ja/spec/spec-linker.md`
 - `docs-ja/spec/spec-dev.md`
 - `docs-ja/spec/spec-boxing.md`

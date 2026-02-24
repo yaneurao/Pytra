@@ -1,3 +1,12 @@
+# アーカイブ: spec-east123-migration.md
+
+- 元ファイル: docs-ja/spec/spec-east123-migration.md
+- 退役日: 2026-02-24
+- 退役理由: EAST移行計画を spec-east.md へ統合したため。
+- 現行の参照先: docs-ja/spec/spec-east.md
+
+---
+
 # EAST1/EAST2/EAST3 移行計画（実装順）
 
 この文書は、`EAST1 -> EAST2 -> EAST3` 構成へ安全に移行するための実装計画を定義する。  

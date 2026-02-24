@@ -1,3 +1,12 @@
+# アーカイブ: spec-east1-build.md
+
+- 元ファイル: docs-ja/spec/spec-east1-build.md
+- 退役日: 2026-02-24
+- 退役理由: EAST1 build責務境界を spec-east.md へ統合したため。
+- 現行の参照先: docs-ja/spec/spec-east.md
+
+---
+
 # EAST1 Build 分離仕様（`east1_build.py`）
 
 最終更新: 2026-02-24

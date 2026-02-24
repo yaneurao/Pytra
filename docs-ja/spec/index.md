@@ -15,10 +15,11 @@
 - GC 仕様: [GC 仕様](./spec-gc.md)
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
 - フォルダ責務マップ仕様: [フォルダ責務マップ仕様](./spec-folder.md)
-- EAST 三段構成仕様（設計ドラフト）: [EAST1/EAST2/EAST3 三段構成仕様](./spec-east123.md)
-- EAST 三段構成移行仕様（実装導線）: [EAST1/EAST2/EAST3 移行計画](./spec-east123-migration.md)
-- EAST1 build 分離仕様: [EAST1 Build 分離仕様](./spec-east1-build.md)
-- EAST 三段構成の現行/移行後ファイル責務対応表: [spec-east123-migration 3.1](./spec-east123-migration.md#31-現行移行後の責務対応表2026-02-24)
+- EAST 統合仕様（現行正本）: [EAST仕様（統合）](./spec-east.md)
+- EAST 三段構成の責務: [EAST 段階構成](./spec-east.md#east-stages)
+- EAST 三段構成の現行/移行後ファイル責務対応表: [責務対応表](./spec-east.md#east-file-mapping)
+- EAST1 build 責務境界: [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
+- EAST 移行フェーズ: [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
 - Linker 仕様（EAST 連結）: [Linker 仕様](./spec-linker.md)
 - 言語別仕様: [言語別仕様](../language/index.md)
 - Codex 向け運用仕様: [Codex 向け運用仕様](./spec-codex.md)
@@ -44,14 +45,14 @@
   - [言語プロファイル仕様](./spec-language-profile.md)
 - どのフォルダに何を置くべきか（責務境界）を確認したい場合:
   - [フォルダ責務マップ仕様](./spec-folder.md)
-- EAST を三段（EAST1/EAST2/EAST3）へ分離する次期設計を確認したい場合:
-  - [EAST1/EAST2/EAST3 三段構成仕様](./spec-east123.md)
-- EAST1/EAST2/EAST3 の「どのファイルがどの責務を持つか」と移行順を確認したい場合:
-  - [EAST1/EAST2/EAST3 移行計画](./spec-east123-migration.md)
+- EAST を三段（EAST1/EAST2/EAST3）でどう運用するかを確認したい場合:
+  - [EAST 段階構成](./spec-east.md#east-stages)
+- EAST1/EAST2/EAST3 の現行/移行後ファイル責務対応表を確認したい場合:
+  - [責務対応表](./spec-east.md#east-file-mapping)
 - `EAST1` build 入口（`east1_build.py`）の責務境界を確認したい場合:
-  - [EAST1 Build 分離仕様](./spec-east1-build.md)
-- EAST1/EAST2/EAST3 の現行/移行後ファイル対応表だけを先に確認したい場合:
-  - [spec-east123-migration 3.1](./spec-east123-migration.md#31-現行移行後の責務対応表2026-02-24)
+  - [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
+- EAST3 主経路化までの移行順を確認したい場合:
+  - [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
 - `EAST3` の連結段（`type_id` 決定、manifest、中間ファイル再開）を確認したい場合:
   - [Linker 仕様](./spec-linker.md)
 - 言語ごとの機能対応状況を確認したい場合:

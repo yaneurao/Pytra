@@ -14,4 +14,7 @@
 
 ## アーカイブ一覧
 
-- （現在なし）
+- 2026-02-24:
+  - [20260224-spec-east123.md](./20260224-spec-east123.md)
+  - [20260224-spec-east123-migration.md](./20260224-spec-east123-migration.md)
+  - [20260224-spec-east1-build.md](./20260224-spec-east1-build.md)

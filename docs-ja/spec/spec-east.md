@@ -5,10 +5,12 @@
 </a>
 
 
-この文書は `src/pytra/compiler/east.py` の現実装に合わせた EAST 仕様である。
+この文書は `src/pytra/compiler/east.py` / `src/pytra/compiler/east_parts/` の現実装に合わせた EAST 仕様の統合正本である。
 
-次期の三段構成（`EAST1` / `EAST2` / `EAST3`）設計は [spec-east123.md](./spec-east123.md) を参照。
-この文書は実装準拠の `EAST2` 相当仕様として扱う。
+統合方針:
+- 現行実装準拠の EAST2 仕様と、EAST1/EAST2/EAST3 三段構成の責務仕様をこの文書へ統合する。
+- 旧ドキュメント（`spec-east123.md`, `spec-east123-migration.md`, `spec-east1-build.md`）は `docs-ja/spec/archive/` に退役移管する。
+- 連結段（`type_id` 決定、manifest、中間ファイル再開）の詳細は [spec-linker.md](./spec-linker.md) を参照する。
 
 ## 1. 目的
 
@@ -80,7 +82,7 @@
 
 注:
 - `meta.dispatch_mode` の意味論適用点は `EAST2 -> EAST3` の 1 回のみで、backend/hook で再判断しない。
-- 詳細契約は `docs-ja/spec/spec-east123.md` と `docs-ja/spec/spec-linker.md` を正本とする。
+- 詳細契約は本書と `docs-ja/spec/spec-linker.md` を正本とする。
 
 `ImportBinding` は次を持つ。
 
@@ -304,24 +306,102 @@
 - `sample/py` 16/16 を `src/pytra/compiler/east.py` で変換可能（`ok: true`）
 - `sample/py` 16/16 を `src/py2cpp.py` で「変換→コンパイル→実行」可能（`ok`）
 
-## 16. 段階導入計画（EAST移行）
+<a id="east-stages"></a>
+## 16. 現行の段階構成（2026-02-24）
 
-- Phase 1: EAST 生成器を先行実装し、型解決・rename・cast 明示を EAST 側へ集約する。
-- Phase 2: 各バックエンドは AST 直読み依存を減らし、EAST 入力前提へ段階移行する。
-- Phase 3: AST 直読み経路を廃止し、EAST を唯一の中間表現として運用する。
+- EAST は `EAST1 -> EAST2 -> EAST3` の三段で扱う。
+- 現行実装では `EAST2` が実装準拠の主入力で、`EAST3` 主経路化を進行中である。
+- `meta.dispatch_mode` は全段で保持し、意味論適用は `EAST2 -> EAST3` の 1 回のみとする。
+
+### 16.1 段階ごとの責務
+
+- `EAST1`（Parsed）:
+  - parser 直後 IR。
+  - source span / trivia を保持し、backend 固有ノードは混入させない。
+- `EAST2`（Normalized）:
+  - 構文正規化 IR。
+  - `ForRange` / `RangeExpr`、import 正規化、型解決結果を安定化する。
+- `EAST3`（Core）:
+  - backend 非依存の意味論確定 IR。
+  - boxing/unboxing、`Obj*` 命令、`type_id` 判定、反復計画を明示命令化する。
+
+### 16.2 不変条件
+
+1. `east_stage` とノード形状を一致させる。  
+2. `dispatch_mode` の意味適用は `EAST2 -> EAST3` の 1 回だけで行う。  
+3. backend / hook は `EAST3` の意味論を再判断しない。  
+
+<a id="east-pipeline"></a>
+## 17. パイプライン仕様（統合）
+
+1. `Source -> EAST1`  
+2. `EAST1 -> EAST2`（Normalize pass）  
+3. `EAST2 -> EAST3`（Core Lowering pass）  
+4. `EAST3 -> TargetEmitter`（言語写像）  
 
 補足:
-- 各フェーズの進行管理は `docs-ja/todo/index.md` で行う。
-- 詳細な実装分担（emitter/profile/hooks）は `docs-ja/spec/spec-dev.md` に従う。
+- `--object-dispatch-mode {type_id,native}` はコンパイル開始時に確定し、`EAST2 -> EAST3` で `iter_plan` / `Obj*` 系命令へ反映する。
+- backend/hook 側でモード再判定して命令を差し替えてはならない。
 
-## 17. EAST導入の受け入れ基準
+<a id="east-file-mapping"></a>
+## 18. 現行/移行後の責務対応表（2026-02-24）
+
+| 段 | 責務 | 現行実装（着手時点） | 移行後の正本 |
+| --- | --- | --- | --- |
+| EAST1 | parser 直後 IR 生成 | `src/pytra/compiler/east_parts/core.py` | `src/pytra/compiler/east_parts/core.py` |
+| EAST1 | EAST1 入口 API | `src/pytra/compiler/east_parts/east1.py`（互換ラッパ経由） | `src/pytra/compiler/east_parts/east1.py` |
+| EAST2 | EAST1 -> EAST2 正規化 API | `src/pytra/compiler/east_parts/east2.py`（互換ラッパ + selfhost fallback） | `src/pytra/compiler/east_parts/east2.py` |
+| EAST3 | EAST2 -> EAST3 lower 本体 | `src/pytra/compiler/east_parts/east3_lowering.py` | `src/pytra/compiler/east_parts/east3_lowering.py` |
+| EAST3 | EAST3 入口 API | `src/pytra/compiler/east_parts/east3.py`（互換ラッパ経由） | `src/pytra/compiler/east_parts/east3.py` |
+| Bridge | backend 入口（C++） | `src/py2cpp.py`（`--east-stage {2,3}` 二重運用） | `src/py2cpp.py`（`EAST3` 主経路 + `EAST2` 互換） |
+| CLI 互換 | 旧 API 公開 | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/transpile_cli.py`（互換ラッパ専任） |
+
+<a id="east1-build-boundary"></a>
+## 19. `EAST1` build 入口の責務境界
+
+目的:
+- `.py/.json -> EAST1` build の入口責務を分離し、`transpile_cli.py` の責務を縮退する。
+
+構成:
+- `core.py`: self-hosted parser 実装（低レイヤ）
+- `east1_build.py`: build 入口（追加対象）
+- `east1.py`: stage 契約 helper（薄い API）
+
+受け入れ条件:
+1. `EAST1` build は `east_stage=1` 付与までに限定し、`EAST1 -> EAST2` を行わない。  
+2. `load_east_document_compat` のエラー契約（`input_invalid` 系）を維持する。  
+3. `transpile_cli.py` は build 本体ロジックを持たず、委譲中心とする。  
+
+<a id="east-migration-phases"></a>
+## 20. 移行フェーズ（EAST3 主経路化）
+
+1. Phase 0: 契約テスト固定（`EAST3` ルート必須項目、`ForCore`/`iter_plan` 必須性、dispatch 反映点）
+2. Phase 1: API 分離（`east1.py` / `east2.py` / `east3.py` へ責務移管）
+3. Phase 2: `EAST3` 主経路化（`py2cpp.py` の再判断ロジック棚卸し）
+4. Phase 3: hook 分離（移行期間限定で stage 混在を解消）
+5. Phase 4: `EAST2` 経路縮退（互換モード化 -> 段階撤去）
+
+補足:
+- 各フェーズの進行管理は `docs-ja/todo/index.md` と `docs-ja/plans/plan-east123-migration.md` で行う。
+
+## 21. EAST導入の受け入れ基準
 
 - 既存 `test/fixtures` が EAST 経由で変換可能であること。
 - 推論失敗時に、`kind` / `source_span` / `hint` を含むエラーを返すこと。
-- 仕様差分は文書化され、後段エミッタで暗黙救済しないこと（例: `range` の生 Call を残さない）。
-- 共通ランタイムケース（`math`, `pathlib` など）で、言語間の意味一致を維持できること。
+- 仕様差分は文書化し、後段エミッタで暗黙救済しないこと。
+- `--object-dispatch-mode` が `EAST2 -> EAST3` のみで適用されること。
+- hooks に言語非依存意味論を新規実装しないこと。
 
-## 18. 将来拡張（方針）
+## 22. 最低確認コマンド
+
+```bash
+python3 tools/check_py2cpp_transpile.py
+python3 tools/check_py2js_transpile.py
+python3 tools/check_py2ts_transpile.py
+python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
+```
+
+## 23. 将来拡張（方針）
 
 - `borrow_kind` は現状 `value | readonly_ref | mutable_ref` を使用し、`move` は未使用。
 - 将来的には Rust 向けの参照注釈（`&` / `&mut` 相当）へ接続可能な表現を維持する。
