@@ -4794,6 +4794,64 @@ class CppEmitter(CodeEmitter):
             "dict",
         }
 
+    def _requires_builtin_method_call_lowering(self, owner_t: str, attr: str) -> bool:
+        """parser 側で BuiltinCall へ lower 済みであるべき method 呼び出しか判定する。"""
+        method = self.any_to_str(attr)
+        if method == "":
+            return False
+        int_like_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        owner_norm = self.normalize_type_name(owner_t)
+        owner_parts: list[str] = [owner_norm]
+        if self._contains_text(owner_norm, "|"):
+            owner_parts = self.split_union(owner_norm)
+        for part in owner_parts:
+            t = self.normalize_type_name(part)
+            if t == "str" and method in {
+                "strip",
+                "lstrip",
+                "rstrip",
+                "startswith",
+                "endswith",
+                "find",
+                "rfind",
+                "replace",
+                "join",
+                "isdigit",
+                "isalpha",
+            }:
+                return True
+            if t == "Path" and method in {
+                "mkdir",
+                "exists",
+                "write_text",
+                "read_text",
+                "parent",
+                "name",
+                "stem",
+            }:
+                return True
+            if (t in int_like_types or t == "int") and method == "to_bytes":
+                return True
+            if t.startswith("list[") and method in {"append", "extend", "pop", "clear", "reverse", "sort"}:
+                return True
+            if t.startswith("set[") and method in {"add", "discard", "remove", "clear"}:
+                return True
+            if t.startswith("dict[") and method in {"get", "pop", "items", "keys", "values"}:
+                return True
+            if t == "unknown" and method in {
+                "append",
+                "extend",
+                "pop",
+                "get",
+                "items",
+                "keys",
+                "values",
+                "isdigit",
+                "isalpha",
+            }:
+                return True
+        return False
+
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
         """`range(...)` 引数を `py_range(start, stop, step)` 形式へ正規化する。"""
         if len(kw) == 0:
@@ -5040,6 +5098,11 @@ class CppEmitter(CodeEmitter):
             module_rendered_1 = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes)
             if module_rendered_1 is not None and module_rendered_1 != "":
                 return module_rendered_1
+        if self._requires_builtin_method_call_lowering(owner_t, attr):
+            owner_label = self.normalize_type_name(owner_t)
+            if owner_label == "":
+                owner_label = "unknown"
+            raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + attr)
         return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, arg_nodes)
 
     def _make_missing_symbol_import_error(self, base_name: str, attr: str) -> Exception:
@@ -5254,29 +5317,22 @@ class CppEmitter(CodeEmitter):
         """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
         if self._requires_builtin_call_lowering(fn_name):
             raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + fn_name)
+        dot_pos = fn_name.rfind(".")
+        if dot_pos > 0:
+            owner_expr = fn_name[:dot_pos]
+            method = fn_name[dot_pos + 1 :]
+            owner_t = "unknown"
+            if owner_expr in self.declared_var_types:
+                owner_t = self.declared_var_types[owner_expr]
+            if self._requires_builtin_method_call_lowering(owner_t, method):
+                owner_label = self.normalize_type_name(owner_t)
+                if owner_label == "":
+                    owner_label = "unknown"
+                raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + method)
         if fn_name.startswith("py_assert_"):
             call_args = self._coerce_py_assert_args(fn_name, args, [])
             return f"pytra::utils::assertions::{fn_name}({join_str_list(', ', call_args)})"
-        append_fallback_rendered = self._render_append_fallback_call(fn_name, args)
-        if append_fallback_rendered is not None and append_fallback_rendered != "":
-            return str(append_fallback_rendered)
         return f"{fn_name}({join_str_list(', ', args)})"
-
-    def _render_append_fallback_call(self, fn_name: str, args: list[str]) -> str | None:
-        """`obj.append(...)` の fallback 文字列呼び出しを型付き helper 経由で処理する。"""
-        if not fn_name.endswith(".append") or len(args) != 1:
-            return None
-        owner_expr = fn_name[: len(fn_name) - 7]
-        owner_t = ""
-        if owner_expr in self.declared_var_types:
-            owner_t = self.declared_var_types[owner_expr]
-        owner_types: list[str] = [owner_t]
-        if self._contains_text(owner_t, "|"):
-            owner_types = self.split_union(owner_t)
-        rendered = self._render_append_call_object_method(owner_types, owner_expr, args, [])
-        if rendered is not None:
-            return rendered
-        return f"{owner_expr}.append({args[0]})"
 
     def _render_call_expr_from_context(
         self,

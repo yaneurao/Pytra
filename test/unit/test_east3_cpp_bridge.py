@@ -1772,6 +1772,43 @@ class East3CppBridgeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: zip"):
             emitter.render_expr(plain_zip)
 
+    def test_plain_builtin_method_call_requires_builtin_lowering(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        plain_append = {
+            "kind": "Call",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                "attr": "append",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        plain_path_exists = {
+            "kind": "Call",
+            "resolved_type": "bool",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "exists",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        with self.assertRaisesRegex(
+            ValueError,
+            "builtin method call must be lowered_kind=BuiltinCall: list\\[int64\\].append",
+        ):
+            emitter.render_expr(plain_append)
+        with self.assertRaisesRegex(
+            ValueError,
+            "builtin method call must be lowered_kind=BuiltinCall: Path.exists",
+        ):
+            emitter.render_expr(plain_path_exists)
+
     def test_plain_isinstance_call_uses_type_id_core_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         plain_isinstance = {
@@ -1790,6 +1827,15 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: print"):
             emitter._render_call_fallback("print", ["1"])
+
+    def test_call_fallback_rejects_parser_lowered_builtin_methods(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.declared_var_types["xs"] = "list[int64]"
+        with self.assertRaisesRegex(
+            ValueError,
+            "builtin method call must be lowered_kind=BuiltinCall: list\\[int64\\].append",
+        ):
+            emitter._render_call_fallback("xs.append", ["1"])
 
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
