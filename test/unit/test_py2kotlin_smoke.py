@@ -103,6 +103,12 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
+    def test_kotlin_runtime_source_path_is_migrated(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "kotlin" / "pytra" / "py_runtime.kt"
+        legacy_path = ROOT / "src" / "kotlin_module" / "py_runtime.kt"
+        self.assertTrue(runtime_path.exists())
+        self.assertFalse(legacy_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
