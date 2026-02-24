@@ -251,3 +251,4 @@
 - 2026-02-24: ID: P1-MQ-07 として `check_sample_regen_clean.py` を追加し、`run_local_ci.py` で再生成後の sample 差分ゼロを検証する運用を固定した。
 - 2026-02-24: `sample/go`, `sample/kotlin`, `sample/swift` が preview 要約出力のままであることを確認。`P1-MQ-02-S3-S2/S3` の完了条件が不足していたため、`P1-MQ-10`（preview 脱却）を再オープンした。
 - 2026-02-25: ID: P1-MQ-10-S1 として `src/hooks/go/emitter/go_emitter.py` を C# 本文委譲モードへ変更し、`sample/go` の要約コメント専用出力を廃止。`python3 tools/regenerate_samples.py --langs go --force --clear-cache --verify-cpp-on-diff` で `sample/go/*.go` を再生成。
+- 2026-02-25: ID: P1-MQ-10-S2 として `src/hooks/kotlin/emitter/kotlin_emitter.py` を preview 除去の暫定 C# 本文委譲へ変更し、`sample/kotlin` を `python3 tools/regenerate_samples.py --langs kotlin --force --clear-cache --verify-cpp-on-diff` で再生成。`TODO: 専用 KotlinEmitter 実装へ段階移行する。` を除去。
