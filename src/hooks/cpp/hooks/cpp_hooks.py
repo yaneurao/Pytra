@@ -20,35 +20,6 @@ def _looks_like_runtime_symbol(name: str) -> bool:
     return False
 
 
-def on_emit_stmt_kind(
-    emitter: Any,
-    kind: str,
-    stmt: dict[str, Any],
-) -> bool | None:
-    """stmt kind 単位の出力フック。terminal 文の処理を先行させる。"""
-    if kind in {"Expr", "Return", "Pass", "Break", "Continue", "Import", "ImportFrom"}:
-        emitter.emit_leading_comments(stmt)
-    if kind == "Expr":
-        emitter._emit_expr_stmt(stmt)
-        return True
-    if kind == "Return":
-        emitter._emit_return_stmt(stmt)
-        return True
-    if kind == "Pass":
-        emitter._emit_pass_stmt(stmt)
-        return True
-    if kind == "Break":
-        emitter._emit_break_stmt(stmt)
-        return True
-    if kind == "Continue":
-        emitter._emit_continue_stmt(stmt)
-        return True
-    if kind == "Import" or kind == "ImportFrom":
-        emitter._emit_noop_stmt(stmt)
-        return True
-    return None
-
-
 def on_stmt_omit_braces(
     emitter: Any,
     kind: str,
