@@ -22,6 +22,12 @@
 - `docs-ja/todo/index.md` / `docs-ja/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+## P1: 多言語出力品質（高優先）
+
+文脈: `docs-ja/plans/p1-multilang-output-quality.md`（`TG-P1-MULTILANG-QUALITY`）
+
+1. [ ] [ID: P1-MQ-09] Rust emitter の `BinOp` で発生している過剰括弧（例: `y = (((2.0 * x) * y) + cy);`）を最小化し、`sample/rs` を再生成して可読性を `sample/cpp` 水準へ戻す。実施後は `tools/measure_multilang_quality.py` の `rs paren` 指標を再計測し、`tools/check_multilang_quality_regression.py` の基線を更新して再発を防止する。
+
 ## P3: Pythonic 記法戻し（低優先）
 
 文脈: `docs-ja/plans/p3-pythonic-restoration.md`（`TG-P3-PYTHONIC`）
