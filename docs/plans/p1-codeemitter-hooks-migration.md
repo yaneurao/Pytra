@@ -1,4 +1,4 @@
-<a href="../../docs-jp/plans/p1-codeemitter-hooks-migration.md">
+<a href="../../docs-ja/plans/p1-codeemitter-hooks-migration.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-jp/todo.md` `ID: P1-CEH-01`
+- `docs-ja/todo.md` `ID: P1-CEH-01`
 
 Background:
 - If conditional logic remains in `py2cpp.py`, extensibility via profile/hook and cross-language consistency degrades.

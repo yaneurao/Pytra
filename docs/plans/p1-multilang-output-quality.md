@@ -1,4 +1,4 @@
-<a href="../../docs-jp/plans/p1-multilang-output-quality.md">
+<a href="../../docs-ja/plans/p1-multilang-output-quality.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-jp/todo.md` `ID: P1-MQ-01` to `P1-MQ-08`
+- `docs-ja/todo.md` `ID: P1-MQ-01` to `P1-MQ-08`
 
 Background:
 - Compared with `sample/cpp/`, generated code in `sample/rs` and other languages (`cs/js/ts/go/java/swift/kotlin`) shows notable readability regressions.

@@ -1,4 +1,4 @@
-<a href="../../docs-jp/plans/instruction-template.md">
+<a href="../../docs-ja/plans/instruction-template.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -6,7 +6,7 @@
 
 Last updated: 2026-02-22
 
-Use this template when you need to override priorities for the current work while keeping `docs-jp/todo.md` as the source of truth.
+Use this template when you need to override priorities for the current work while keeping `docs-ja/todo.md` as the source of truth.
 Do not use `todo2.md`.
 
 ## Template
@@ -18,7 +18,7 @@ Target IDs for this turn:
 
 Completion conditions:
 - Unit tests pass
-- Update related descriptions in docs-jp
+- Update related descriptions in docs-ja
 
 Out of scope:
 - Translation updates under docs/
@@ -32,4 +32,4 @@ Priority:
 
 - Override priority through chat instructions (do not use `todo2.md`).
 - Instructions must include at least: `target IDs`, `completion conditions`, and `out of scope`.
-- Without explicit override instructions, follow the default priority order in `docs-jp/todo.md`.
+- Without explicit override instructions, follow the default priority order in `docs-ja/todo.md`.

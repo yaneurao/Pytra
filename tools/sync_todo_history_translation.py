@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize docs/todo-history translation scaffolding from docs-jp/todo-history."""
+"""Synchronize docs/todo-history translation scaffolding from docs-ja/todo-history."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-JP_DIR = ROOT / "docs-jp" / "todo-history"
+JP_DIR = ROOT / "docs-ja" / "todo-history"
 EN_DIR = ROOT / "docs" / "todo-history"
 DATE_FILE_RE = re.compile(r"^[0-9]{8}\.md$")
 STATUS_PENDING = "pending"
@@ -71,13 +71,13 @@ def _write_stub(name: str, *, dry_run: bool, overwrite: bool) -> bool:
     date_txt = _date_label(name[:-3])
     body = (
         f"# TODO History ({date_txt})\n\n"
-        f"<a href=\"../../docs-jp/todo-history/{name}\">\n"
+        f"<a href=\"../../docs-ja/todo-history/{name}\">\n"
         "  <img alt=\"Read in Japanese\" src=\"https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square\">\n"
         "</a>\n\n"
         "<!-- translation-status: pending -->\n"
         f"<!-- source-sha256: {src_hash} -->\n\n"
         "This file is an English translation mirror of the Japanese source.\n\n"
-        f"- Source of truth: `docs-jp/todo-history/{name}`\n"
+        f"- Source of truth: `docs-ja/todo-history/{name}`\n"
         "- Status: pending translation\n"
         "- Workflow: translate this file, then update `translation-status` to `done`.\n"
     )
@@ -90,7 +90,7 @@ def _render_index(date_files: list[str], status_map: dict[str, str]) -> str:
     lines: list[str] = []
     lines.append("# TODO History (Index)")
     lines.append("")
-    lines.append("<a href=\"../../docs-jp/todo-history/index.md\">")
+    lines.append("<a href=\"../../docs-ja/todo-history/index.md\">")
     lines.append("  <img alt=\"Read in Japanese\" src=\"https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square\">")
     lines.append("</a>")
     lines.append("")
@@ -98,7 +98,7 @@ def _render_index(date_files: list[str], status_map: dict[str, str]) -> str:
     lines.append("")
     lines.append("## Policy")
     lines.append("")
-    lines.append("- `docs-jp/todo-history/` is the source of truth.")
+    lines.append("- `docs-ja/todo-history/` is the source of truth.")
     lines.append("- Keep one file per date (`YYYYMMDD.md`).")
     lines.append("- Use `python3 tools/sync_todo_history_translation.py` to create missing mirror files and refresh this index.")
     lines.append("")
@@ -169,7 +169,7 @@ def check_only() -> int:
         for name in missing:
             print(f"  - {name}")
     if extra:
-        print("[FAIL] extra docs/todo-history files not present in docs-jp:")
+        print("[FAIL] extra docs/todo-history files not present in docs-ja:")
         for name in extra:
             print(f"  - {name}")
     if not index_exists:
@@ -178,12 +178,12 @@ def check_only() -> int:
     if missing or extra or not index_exists:
         return 1
 
-    print("[OK] docs/todo-history file set is synchronized with docs-jp/todo-history")
+    print("[OK] docs/todo-history file set is synchronized with docs-ja/todo-history")
     return 0
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="sync docs/todo-history from docs-jp/todo-history")
+    ap = argparse.ArgumentParser(description="sync docs/todo-history from docs-ja/todo-history")
     ap.add_argument("--check", action="store_true", help="check only (no write)")
     ap.add_argument("--dry-run", action="store_true", help="show action without writing")
     ap.add_argument(

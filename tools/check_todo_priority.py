@@ -2,10 +2,10 @@
 """Enforce TODO execution order by checking newly added progress IDs.
 
 Rule:
-- Read docs-jp/todo.md and find the first unfinished task ID in the highest
+- Read docs-ja/todo.md and find the first unfinished task ID in the highest
   priority bucket (smallest P<number>).
-- Read newly added progress IDs from git diff of docs-jp/todo.md and
-  docs-jp/plans/*.md.
+- Read newly added progress IDs from git diff of docs-ja/todo.md and
+  docs-ja/plans/*.md.
 - For plans, only decision-log style lines ("- YYYY-MM-DD: ...") are treated
   as progress entries; structural ID references are ignored.
 - Every newly added progress ID must match that target ID, or be a child ID
@@ -21,8 +21,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TODO_PATH = ROOT / "docs-jp" / "todo.md"
-PLANS_DIR = ROOT / "docs-jp" / "plans"
+TODO_PATH = ROOT / "docs-ja" / "todo.md"
+PLANS_DIR = ROOT / "docs-ja" / "plans"
 
 TASK_RE = re.compile(r"^\s*\d+\.\s+\[( |x)\]\s+\[ID:\s*([A-Za-z0-9-]+)\]")
 TODO_PROGRESS_RE = re.compile(r"^\s*-\s*`(P[0-9]+-[A-Za-z0-9-]+)`")
@@ -105,7 +105,7 @@ def main() -> int:
 
     added_ids = _added_progress_ids_from_diff()
     if not added_ids:
-        print("[OK] no new progress entry in docs-jp/todo.md diff (skip)")
+        print("[OK] no new progress entry in docs-ja/todo.md diff (skip)")
         return 0
 
     mismatched: list[str] = []

@@ -1,4 +1,4 @@
-<a href="../../docs-jp/plans/p1-py2cpp-reduction.md">
+<a href="../../docs-ja/plans/p1-py2cpp-reduction.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-jp/todo.md` `ID: P1-CPP-REDUCE-01`
+- `docs-ja/todo.md` `ID: P1-CPP-REDUCE-01`
 
 Background:
 - As `py2cpp.py` grows larger, change impact broadens and review/regression validation cost increases.

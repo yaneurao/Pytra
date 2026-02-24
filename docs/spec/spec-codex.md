@@ -1,4 +1,4 @@
-<a href="../../docs-jp/spec/spec-codex.md">
+<a href="../../docs-ja/spec/spec-codex.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -8,30 +8,30 @@ This document defines operation rules that Codex follows while working.
 
 ## 1. Startup Checks
 
-- At Codex startup, first check `docs-jp/spec/index.md` and `docs-jp/todo.md`.
-- From unfinished (`[ ]`) items in `docs-jp/todo.md`, include tasks aligned with the current request as work targets.
+- At Codex startup, first check `docs-ja/spec/index.md` and `docs-ja/todo.md`.
+- From unfinished (`[ ]`) items in `docs-ja/todo.md`, include tasks aligned with the current request as work targets.
 
 ## 1.1 Documentation Language Policy
 
-- Treat `docs-jp/` as the source of truth and update Japanese docs first.
+- Treat `docs-ja/` as the source of truth and update Japanese docs first.
 - Assume user instructions are primarily in Japanese and operate with Japanese instructions as the default workflow.
 - `docs/` (English docs) may be updated later as delayed translation when needed.
-- If Japanese and English documentation diverge, prioritize `docs-jp/` as canonical.
+- If Japanese and English documentation diverge, prioritize `docs-ja/` as canonical.
 
 ## 2. TODO Execution Rules
 
-- Treat `docs-jp/todo.md` as a continuous backlog.
-- Keep only unfinished tasks in `docs-jp/todo.md`. When a section is fully complete (all items `[x]`), move it to `docs-jp/todo-history/index.md` (index) and `docs-jp/todo-history/YYYYMMDD.md` (body).
-- For priority override, do not use `docs-jp/todo2.md`; provide `target IDs`, `done criteria`, and `out of scope` in chat instruction (template: `docs-jp/plans/instruction-template.md`).
+- Treat `docs-ja/todo.md` as a continuous backlog.
+- Keep only unfinished tasks in `docs-ja/todo.md`. When a section is fully complete (all items `[x]`), move it to `docs-ja/todo-history/index.md` (index) and `docs-ja/todo-history/YYYYMMDD.md` (body).
+- For priority override, do not use `docs-ja/todo2.md`; provide `target IDs`, `done criteria`, and `out of scope` in chat instruction (template: `docs-ja/plans/instruction-template.md`).
 - Execute unfinished items sequentially in priority order.
 - Update check status when tasks are completed.
 
 ## 3. Documentation Sync Rules
 
 - On spec changes, feature additions, or procedure changes, update `README.md` as needed.
-- Check consistency of documents linked from `README.md` (`docs/how-to-use.md`, `sample/readme.md`, `docs/spec/index.md`, `docs/plans/pytra-wip.md`, `docs/spec/spec-philosophy.md`) and their canonical Japanese sources (`docs-jp/how-to-use.md`, `sample/readme-ja.md`, `docs-jp/spec/index.md`, `docs-jp/plans/pytra-wip.md`, `docs-jp/spec/spec-philosophy.md`), and update them together when needed.
+- Check consistency of documents linked from `README.md` (`docs/how-to-use.md`, `sample/readme.md`, `docs/spec/index.md`, `docs/plans/pytra-wip.md`, `docs/spec/spec-philosophy.md`) and their canonical Japanese sources (`docs-ja/how-to-use.md`, `sample/readme-ja.md`, `docs-ja/spec/index.md`, `docs-ja/plans/pytra-wip.md`, `docs-ja/spec/spec-philosophy.md`), and update them together when needed.
 - Include "no implementation-doc mismatch left" in change completion criteria.
-- If scripts in `tools/` are added/removed/renamed, update `docs/spec/spec-tools.md` and `docs-jp/spec/spec-tools.md` at the same time.
+- If scripts in `tools/` are added/removed/renamed, update `docs/spec/spec-tools.md` and `docs-ja/spec/spec-tools.md` at the same time.
 - Terminology rule: when referring to type annotations, always write "type annotation" (not just "annotation").
 - Writing rule: when describing features or folder structures, always state the purpose (what they are for).
 - Writing rule: write not only "where to place" but also "why place there," to prevent responsibility mixing between `std` and `tra`.

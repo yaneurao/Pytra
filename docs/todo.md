@@ -1,4 +1,4 @@
-<a href="../docs-jp/todo.md">
+<a href="../docs-ja/todo.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -36,4 +36,4 @@ Last updated: 2026-02-22
 ## Note
 
 - This file only holds unfinished tasks.
-- Completed tasks are moved via `docs-jp/todo-history/index.md`.
+- Completed tasks are moved via `docs-ja/todo-history/index.md`.

@@ -1,4 +1,4 @@
-<a href="../../docs-jp/spec/index.md">
+<a href="../../docs-ja/spec/index.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -37,4 +37,4 @@
 
 ## What Codex Checks At Startup
 
-- At startup, Codex reads `docs-jp/spec/index.md` as the canonical entry point, then checks [Codex Operation Specification](./spec-codex.md) and [TODO](../todo.md).
+- At startup, Codex reads `docs-ja/spec/index.md` as the canonical entry point, then checks [Codex Operation Specification](./spec-codex.md) and [TODO](../todo.md).

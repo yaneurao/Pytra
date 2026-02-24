@@ -1,4 +1,4 @@
-<a href="../../docs-jp/plans/p3-pythonic-restoration.md">
+<a href="../../docs-ja/plans/p3-pythonic-restoration.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-jp/todo.md` `ID: P3-PY-*`, `P3-CE-*`, `P3-RULE-*`
+- `docs-ja/todo.md` `ID: P3-PY-*`, `P3-CE-*`, `P3-RULE-*`
 
 Background:
 - Readability dropped because many simplified patterns were introduced to stabilize selfhost.

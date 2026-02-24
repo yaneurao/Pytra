@@ -1,4 +1,4 @@
-<a href="../../docs-jp/plans/p1-codeemitter-dispatch-redesign.md">
+<a href="../../docs-ja/plans/p1-codeemitter-dispatch-redesign.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-jp/todo.md` `ID: P1-CED-*`
+- `docs-ja/todo.md` `ID: P1-CED-*`
 
 Background:
 - Selfhost strongly depends on static-binding assumptions, and commonization can create paths that fail to reach derived implementations.

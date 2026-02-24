@@ -1,6 +1,6 @@
 # What is Pytra?
 
-<a href="readme-jp.md">
+<a href="readme-ja.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/README-日本語-2563EB?style=flat-square">
 </a>
 

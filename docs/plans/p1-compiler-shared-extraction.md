@@ -1,4 +1,4 @@
-<a href="../../docs-jp/plans/p1-compiler-shared-extraction.md">
+<a href="../../docs-ja/plans/p1-compiler-shared-extraction.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-jp/todo.md` `ID: P1-COMP-01` to `P1-COMP-08`
+- `docs-ja/todo.md` `ID: P1-COMP-01` to `P1-COMP-08`
 
 Background:
 - Cross-language logic such as import-graph analysis and module-index construction is concentrated in `py2cpp.py`.
@@ -60,5 +60,5 @@ Completion conditions:
 
 Decision log:
 - 2026-02-22: Initial draft.
-- 2026-02-22: For `P1-COMP-06` / `P1-COMP-07`, documented boundaries for `CodeEmitter`, EAST parser, and compiler shared layer in `docs-jp/spec/spec-dev.md`.
+- 2026-02-22: For `P1-COMP-06` / `P1-COMP-07`, documented boundaries for `CodeEmitter`, EAST parser, and compiler shared layer in `docs-ja/spec/spec-dev.md`.
 - 2026-02-22: For `P1-COMP-08`, added a 5-phase migration plan starting from `py2rs.py` and rolling shared analysis APIs into other language CLIs.

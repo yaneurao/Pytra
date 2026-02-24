@@ -1,4 +1,4 @@
-<a href="../../docs-jp/plans/p2-microgpt-compatibility.md">
+<a href="../../docs-ja/plans/p2-microgpt-compatibility.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -7,10 +7,10 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-jp/todo.md` `ID: P2-MGPT-01`
-- `docs-jp/todo.md` `ID: P2-MGPT-02`
-- `docs-jp/todo.md` `ID: P2-MGPT-03`
-- `docs-jp/todo.md` `ID: P2-MGPT-04`
+- `docs-ja/todo.md` `ID: P2-MGPT-01`
+- `docs-ja/todo.md` `ID: P2-MGPT-02`
+- `docs-ja/todo.md` `ID: P2-MGPT-03`
+- `docs-ja/todo.md` `ID: P2-MGPT-04`
 
 Background:
 - Transpiling `work/tmp/microgpt-20260222-lite.py` via `python3 src/py2cpp.py ...` currently stops because the self_hosted parser rejects arguments without type annotations.

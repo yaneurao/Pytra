@@ -1,4 +1,4 @@
-<a href="../../docs-jp/spec/spec-pylib-modules.md">
+<a href="../../docs-ja/spec/spec-pylib-modules.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 

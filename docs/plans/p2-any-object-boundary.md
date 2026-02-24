@@ -1,4 +1,4 @@
-<a href="../../docs-jp/plans/p2-any-object-boundary.md">
+<a href="../../docs-ja/plans/p2-any-object-boundary.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-jp/todo.md` `ID: P2-ANY-01` to `P2-ANY-07`
+- `docs-ja/todo.md` `ID: P2-ANY-01` to `P2-ANY-07`
 
 Background:
 - Ambiguous `Any/object` boundaries reduce quality in both selfhost and generated code through excessive boxing and type collapse.

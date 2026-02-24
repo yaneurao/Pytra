@@ -1,4 +1,4 @@
-<a href="../../docs-jp/spec/spec-tools.md">
+<a href="../../docs-ja/spec/spec-tools.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -21,7 +21,7 @@ Its goals are:
   - Purpose: Compare C++ execution results (`stdout`/artifacts) against the golden baseline in `sample/golden/manifest.json`, so normal verification does not run Python every time.
   - Main options: `--samples`, `--compile-flags`, `--ignore-stdout`, `--golden-manifest`, `--refresh-golden`, `--refresh-golden-only`
 - `tools/sync_todo_history_translation.py`
-  - Purpose: Use `docs-jp/todo-history` as source of truth and synchronize `docs/todo-history` date-file stubs and index; detect sync gaps with `--check`.
+  - Purpose: Use `docs-ja/todo-history` as source of truth and synchronize `docs/todo-history` date-file stubs and index; detect sync gaps with `--check`.
 - `tools/verify_image_runtime_parity.py`
   - Purpose: Verify parity between Python source-of-truth image runtime (PNG/GIF) and C++ side.
 
