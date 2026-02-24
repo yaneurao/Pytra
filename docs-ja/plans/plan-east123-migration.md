@@ -339,6 +339,18 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
   - `python3 tools/check_py2cpp_transpile.py` -> `checked=131 ok=131 fail=0 skipped=6`
   - `python3 tools/check_noncpp_east3_contract.py` -> `8/8` 言語 pass
 
+## 仕様同期（`P0-EASTMIG-06-S5`）
+
+`docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` を実装実態へ同期し、`EAST2` を移行互換モードとして明文化する。
+
+- `spec-east` 更新:
+  - `16. 現行の段階構成` で「`py2*.py` 既定は `EAST3`、`EAST2` は `--east-stage 2` 明示時の互換モード」を明記。
+  - `20. 移行フェーズ` に現行運用（`stage2` 警告文言）を追記。
+  - `22. 最低確認コマンド` を `check_noncpp_east3_contract.py` ベースへ更新。
+- `spec-dev` 更新:
+  - Rust/JS 経路に `--east-stage` 既定 `3` + `stage2` 互換モード（警告付き）を追記。
+  - `8.1 --east-stage 運用` を追加し、C++ + 非 C++ 8変換器の運用統一と回帰導線（`check_py2cpp_transpile` / `check_noncpp_east3_contract`）を明文化。
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -362,6 +374,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06-S5`] `spec-east` / `spec-dev` を更新し、`EAST3` 既定・`EAST2` 互換モード（`--east-stage 2` 警告付き）の現行運用と回帰導線を仕様へ同期した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S4`] `test_east3_lowering` に non-cpp 契約ガード実行テストを追加し、`tools/check_py2*_transpile.py` で既定実行時の stage2 互換警告を失敗扱いに統一した。`check_py2cpp_transpile` と `check_noncpp_east3_contract`、`test_east3_*` の回帰が通過。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S9`] `tools/check_noncpp_east3_contract.py` と `test_noncpp_east3_contract_guard.py` を追加し、非 C++ 8変換器の `--east-stage` 既定値・警告文言・回帰導線を統一した。`run_local_ci` の非 C++ 導線は同スクリプトへ統合。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S8`] `py2swift.py` に `--east-stage` / `--object-dispatch-mode` を追加し、既定を `EAST3` に切替えた。`stage=2` は警告付き互換モードへ縮退。`EAST3` ノード互換は `east3_legacy_compat` を利用し、`test_py2swift_smoke` と `check_py2swift_transpile` を通過させた。
