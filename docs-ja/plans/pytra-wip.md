@@ -61,7 +61,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`（`src/runtime/{js,ts}/pytra/` へ移行予定）
     - Go: `src/runtime/go/pytra/py_runtime.go`（移行済み）
     - Java: `src/runtime/java/pytra/built_in/PyRuntime.java`（移行済み）
-    - Swift/Kotlin: preview emitter（最小エントリ + 中間コードコメント形式）
+    - Kotlin: preview emitter（最小エントリ + 中間コードコメント形式）
   - 差分:
     - Python `pathlib` の完全互換ではなく、Pytra の最小共通 API に限定しています。
     - `read_text` / `write_text` の encoding 指定は UTF-8 固定です（引数は互換目的で受理するが無視される実装を含む）。
@@ -82,7 +82,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - ターゲット言語ごとのランタイム:
   - 正本: `src/runtime/<lang>/pytra/`（最終配置先）
-  - 旧配置（移行中）: `src/js_module`, `src/ts_module`, `src/swift_module`
+  - 旧配置（移行中）: `src/js_module`, `src/ts_module`
 
 ## 作業中
 

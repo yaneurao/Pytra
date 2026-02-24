@@ -106,9 +106,9 @@
 `P1-RUNTIME-05-S1` 棚卸し結果（Rust 以外 runtime 解決パス差分）:
 
 - 前提確認:
-- `src/runtime/{js,ts,swift}/pytra/` は未作成（全言語 `missing`）。
+- `src/runtime/{js,ts}/pytra/` は未作成（全言語 `missing`）。
   - `src/runtime/cs/pytra/` はこの課題（`P1-RUNTIME-06-S1`）として完了済み。
-  - 既存 runtime 実体は `src/{cs,js,ts,go,java,kotlin,swift}_module/` 配下に存在。
+  - 既存 runtime 実体は `src/{js,ts}_module/` 配下に残存（legacy shim/移行対象）。
 - 集計対象:
   - `src/py2{cs,js,ts,go,java,kotlin,swift}.py`
   - `src/hooks/{cs,js,ts,go,java,kotlin,swift}/`
@@ -123,7 +123,7 @@
 | Go | `src/go_module/py_runtime.go` | `py2go.py` / `go_emitter.py` は preview 出力で runtime パス解決なし | `src/runtime/go/pytra/py_runtime.go` へ移行済み（`src/go_module` は削除対象） | 将来 native emitter 切替時の基準基盤として `src/runtime/go/pytra/` を採用 |
 | Java | `src/java_module/PyRuntime.java` | `py2java.py` / `java_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体は `src/runtime/java/pytra/built_in/PyRuntime.java` へ移行済み（`src/java_module` は削除対象） | 将来 native emitter 切替時の基準基盤として `src/runtime/java/pytra/` を採用 |
 | Kotlin | `src/kotlin_module/py_runtime.kt` | `py2kotlin.py` / `kotlin_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体は `src/runtime/kotlin/pytra/py_runtime.kt` へ移行済み（`src/kotlin_module` は削除対象） | `src/runtime/kotlin/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
-| Swift | `src/swift_module/py_runtime.swift` | `py2swift.py` / `swift_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体配置のみ旧規約 | `src/runtime/swift/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
+| Swift | `src/swift_module/py_runtime.swift` | `py2swift.py` / `swift_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体は `src/runtime/swift/pytra/py_runtime.swift` へ移行済み（`src/swift_module` は削除対象） | `src/runtime/swift/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
 
 `P1-RUNTIME-05-S1` の差分サマリ:
 
@@ -179,3 +179,4 @@
 - 2026-02-24: ID: P1-RUNTIME-05-S3 として多言語 smoke（`check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin}_transpile.py`）を実施し、全ターゲット回帰なしを確認した。`src/{js,ts}_module` は legacy shim へ縮退し、`sample/{js,ts}` 生成物の旧 `src/*_module` 参照を `src/runtime/{js,ts}/pytra` へ置換、さらに `tools/check_runtime_legacy_shims.py` を追加して旧パス再流入防止を CI へ組み込んだ。
 - 2026-02-24: 旧タスクの完了判定が「参照パス統一」止まりで、`src/{cs,go,java,kotlin,swift}_module/` の runtime 実体移行完了条件を満たしていないことを確認。残作業を `P1-RUNTIME-06`（再オープン）として `todo` へ復帰した。
 - 2026-02-25: ID: `P1-RUNTIME-06-S4` を実施し、`src/kotlin_module/py_runtime.kt` を `src/runtime/kotlin/pytra/py_runtime.kt` へ移行した。`test/unit/test_py2kotlin_smoke.py` に移行検証を追加し、`src/kotlin_module` の実体ファイルを削除対象扱いにした。
+- 2026-02-25: ID: `P1-RUNTIME-06-S5` を実施し、`src/swift_module/py_runtime.swift` を `src/runtime/swift/pytra/py_runtime.swift` へ移行した。`test/unit/test_py2swift_smoke.py` に移行検証を追加し、`src/swift_module` の実体ファイルを削除対象扱いにした。
