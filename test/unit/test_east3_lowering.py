@@ -456,6 +456,7 @@ class East3LoweringTest(unittest.TestCase):
                         "func": {"kind": "Name", "id": "iter"},
                         "args": [any_name],
                         "keywords": [],
+                        "lowered_kind": "BuiltinCall",
                     },
                 },
             ],
@@ -464,6 +465,28 @@ class East3LoweringTest(unittest.TestCase):
         body = out.get("body", [])
         self.assertEqual(body[0].get("value", {}).get("kind"), "ObjBool")
         self.assertEqual(body[1].get("value", {}).get("kind"), "ObjIterInit")
+
+    def test_lower_any_boundary_does_not_reinterpret_plain_call_by_name(self) -> None:
+        any_name = {"kind": "Name", "id": "x", "resolved_type": "Any"}
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "object",
+                        "func": {"kind": "Name", "id": "iter"},
+                        "args": [any_name],
+                        "keywords": [],
+                    },
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("value", {}).get("kind"), "Call")
 
     def test_lower_isinstance_and_issubclass_to_type_id_core_nodes(self) -> None:
         east2 = {

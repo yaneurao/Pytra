@@ -611,6 +611,9 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
             source_expr=out,
         )
 
+    if out.get("lowered_kind") != "BuiltinCall":
+        return out
+
     # Legacy fallback for stage2 payloads that still encode builtin identity.
     builtin_name = out.get("builtin_name")
     if builtin_name == "bool":
