@@ -663,6 +663,16 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
     return out
 
 
+def _lower_forcore_stmt(stmt: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for key in stmt:
+        out[key] = _lower_node(stmt[key], dispatch_mode=dispatch_mode)
+    iter_plan_obj = out.get("iter_plan")
+    if isinstance(iter_plan_obj, dict) and iter_plan_obj.get("kind") == "RuntimeIterForPlan":
+        iter_plan_obj["dispatch_mode"] = dispatch_mode
+    return out
+
+
 def _lower_node(node: Any, *, dispatch_mode: str) -> Any:
     if isinstance(node, list):
         out_list: list[Any] = []
@@ -679,6 +689,8 @@ def _lower_node(node: Any, *, dispatch_mode: str) -> Any:
             return _lower_assignment_like_stmt(node, dispatch_mode=dispatch_mode)
         if kind == "Call":
             return _lower_call_expr(node, dispatch_mode=dispatch_mode)
+        if kind == "ForCore":
+            return _lower_forcore_stmt(node, dispatch_mode=dispatch_mode)
         out_dict: dict[str, Any] = {}
         for key in node:
             out_dict[key] = _lower_node(node[key], dispatch_mode=dispatch_mode)

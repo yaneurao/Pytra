@@ -2061,6 +2061,39 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(body[0].get("kind"), "ForCore")
         self.assertEqual(body[0].get("iter_plan", {}).get("dispatch_mode"), "type_id")
 
+    def test_load_east_stage3_normalizes_prelowered_forcore_dispatch_mode(self) -> None:
+        payload = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "iter_mode": "runtime_protocol",
+                    "iter_plan": {
+                        "kind": "RuntimeIterForPlan",
+                        "iter_expr": {"kind": "Name", "id": "xs", "resolved_type": "object"},
+                        "dispatch_mode": "native",
+                        "init_op": "ObjIterInit",
+                        "next_op": "ObjIterNext",
+                    },
+                    "target_plan": {"kind": "NameTarget", "id": "x", "target_type": "object"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "in-stage3.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            out = load_east(p, east_stage="3", object_dispatch_mode="type_id")
+        self.assertEqual(out.get("east_stage"), 3)
+        self.assertEqual(out.get("meta", {}).get("dispatch_mode"), "type_id")
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("kind"), "ForCore")
+        self.assertEqual(body[0].get("iter_plan", {}).get("dispatch_mode"), "type_id")
+
 
 if __name__ == "__main__":
     unittest.main()
