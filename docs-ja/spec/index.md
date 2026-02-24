@@ -14,6 +14,7 @@
 - type_id 仕様: [type_id 仕様](./spec-type_id.md)
 - GC 仕様: [GC 仕様](./spec-gc.md)
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
+- フォルダ責務マップ仕様: [フォルダ責務マップ仕様](./spec-folder.md)
 - EAST 三段構成仕様（設計ドラフト）: [EAST1/EAST2/EAST3 三段構成仕様](./spec-east123.md)
 - EAST 三段構成移行仕様（実装導線）: [EAST1/EAST2/EAST3 移行計画](./spec-east123-migration.md)
 - EAST 三段構成の現行/移行後ファイル責務対応表: [spec-east123-migration 3.1](./spec-east123-migration.md#31-現行移行後の責務対応表2026-02-24)
@@ -39,6 +40,8 @@
   - [GC 仕様](./spec-gc.md)
 - `CodeEmitter` の JSON プロファイルと hooks 仕様を確認したい場合:
   - [言語プロファイル仕様](./spec-language-profile.md)
+- どのフォルダに何を置くべきか（責務境界）を確認したい場合:
+  - [フォルダ責務マップ仕様](./spec-folder.md)
 - EAST を三段（EAST1/EAST2/EAST3）へ分離する次期設計を確認したい場合:
   - [EAST1/EAST2/EAST3 三段構成仕様](./spec-east123.md)
 - EAST1/EAST2/EAST3 の「どのファイルがどの責務を持つか」と移行順を確認したい場合:
@@ -56,4 +59,4 @@
 
 ## Codex 起動時の確認先
 
-- Codex は起動時に `docs-ja/spec/index.md` を入口として読み、続けて [Codex 向け運用仕様](./spec-codex.md) と [TODO](../todo.md) を確認します。
+- Codex は起動時に `docs-ja/spec/index.md` を入口として読み、続けて [Codex 向け運用仕様](./spec-codex.md) と [TODO](../todo/index.md) を確認します。

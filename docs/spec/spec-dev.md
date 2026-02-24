@@ -6,6 +6,8 @@
 
 This document summarizes transpiler implementation policy, structure, and conversion rules.
 
+- The source of truth for folder boundaries is [`docs/spec/spec-folder.md`](./spec-folder.md); this document focuses on implementation behavior.
+
 ## 1. Repository Layout
 
 - `src/`
