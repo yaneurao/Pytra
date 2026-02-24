@@ -8,8 +8,13 @@ Pytra is a collection of transpilers that convert programs written in a subset o
 
 ## Latest News
 
+> **2026-02-25 | v0.2.0 Released**  
+> Version 0.2.0 improves generated code accuracy so that outputs for all supported languages stay closer to the original source code.
+
 > **2026-02-23 | v0.1.0 Released**  
 > Pytra can now generate more readable C++ code in a style that stays very close to the original Python source.
+
+- Past News: [docs/news/index.md](docs/news/index.md)
 
 ## Features
 
