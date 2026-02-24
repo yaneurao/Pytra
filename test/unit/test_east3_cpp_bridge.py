@@ -1271,6 +1271,45 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Name", "id": "it", "resolved_type": "object"}],
             "keywords": [],
         }
+        reversed_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_reversed",
+            "resolved_type": "object",
+            "func": {"kind": "Name", "id": "reversed", "resolved_type": "unknown"},
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "list[int64]"}],
+            "keywords": [],
+        }
+        enumerate_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_enumerate",
+            "resolved_type": "object",
+            "func": {"kind": "Name", "id": "enumerate", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+            ],
+            "keywords": [],
+        }
+        any_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_any",
+            "resolved_type": "bool",
+            "func": {"kind": "Name", "id": "any", "resolved_type": "unknown"},
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "list[int64]"}],
+            "keywords": [],
+        }
+        all_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_all",
+            "resolved_type": "bool",
+            "func": {"kind": "Name", "id": "all", "resolved_type": "unknown"},
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "list[int64]"}],
+            "keywords": [],
+        }
         max_expr = {
             "kind": "Call",
             "lowered_kind": "BuiltinCall",
@@ -1378,6 +1417,10 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", py_to_int64(16))')
         self.assertEqual(emitter.render_expr(iter_expr), "py_iter_or_raise(xs)")
         self.assertEqual(emitter.render_expr(next_expr), "py_next_or_stop(it)")
+        self.assertEqual(emitter.render_expr(reversed_expr), "py_reversed(xs)")
+        self.assertEqual(emitter.render_expr(enumerate_expr), "py_enumerate(xs, py_to_int64(1))")
+        self.assertEqual(emitter.render_expr(any_expr), "py_any(xs)")
+        self.assertEqual(emitter.render_expr(all_expr), "py_all(xs)")
         self.assertEqual(
             emitter.render_expr(max_expr),
             "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",
@@ -1410,10 +1453,19 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Name", "id": "xs", "resolved_type": "object"}],
             "keywords": [],
         }
+        plain_any = {
+            "kind": "Call",
+            "resolved_type": "bool",
+            "func": {"kind": "Name", "id": "any", "resolved_type": "unknown"},
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "object"}],
+            "keywords": [],
+        }
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: print"):
             emitter.render_expr(plain_print)
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: len"):
             emitter.render_expr(plain_len)
+        with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: any"):
+            emitter.render_expr(plain_any)
 
     def test_plain_isinstance_call_uses_type_id_core_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

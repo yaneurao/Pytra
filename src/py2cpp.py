@@ -4072,6 +4072,17 @@ class CppEmitter(CodeEmitter):
             }
             next_node["value"] = arg_nodes[0]
             return self.render_expr(next_node)
+        if runtime_call == "py_reversed" and len(arg_nodes) >= 1:
+            return f"py_reversed({self.render_expr(arg_nodes[0])})"
+        if runtime_call == "py_enumerate" and len(arg_nodes) >= 1:
+            if len(arg_nodes) >= 2:
+                start_expr = self.render_expr(arg_nodes[1])
+                return f"py_enumerate({self.render_expr(arg_nodes[0])}, py_to_int64({start_expr}))"
+            return f"py_enumerate({self.render_expr(arg_nodes[0])})"
+        if runtime_call == "py_any" and len(arg_nodes) >= 1:
+            return f"py_any({self.render_expr(arg_nodes[0])})"
+        if runtime_call == "py_all" and len(arg_nodes) >= 1:
+            return f"py_all({self.render_expr(arg_nodes[0])})"
         if runtime_call in {"py_min", "py_max"} and len(arg_nodes) >= 1:
             minmax_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
@@ -4605,20 +4616,6 @@ class CppEmitter(CodeEmitter):
             }
         return None
 
-    def _render_simple_name_builtin_call(self, raw: str, args: list[str]) -> str | None:
-        """Name 呼び出しの単純ビルトイン分岐を描画する。"""
-        if raw == "reversed" and len(args) == 1:
-            return f"py_reversed({args[0]})"
-        if raw == "enumerate" and len(args) == 1:
-            return f"py_enumerate({args[0]})"
-        if raw == "enumerate" and len(args) >= 2:
-            return f"py_enumerate({args[0]}, py_to_int64({args[1]}))"
-        if raw == "any" and len(args) == 1:
-            return f"py_any({args[0]})"
-        if raw == "all" and len(args) == 1:
-            return f"py_all({args[0]})"
-        return None
-
     def _requires_builtin_call_lowering(self, raw: str) -> bool:
         """parser 側で BuiltinCall へ lower 済みであるべき Name を返す。"""
         return raw in {
@@ -4639,6 +4636,10 @@ class CppEmitter(CodeEmitter):
             "next",
             "bytes",
             "bytearray",
+            "reversed",
+            "enumerate",
+            "any",
+            "all",
         }
 
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
@@ -4753,9 +4754,6 @@ class CppEmitter(CodeEmitter):
                 return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
             if self._requires_builtin_call_lowering(raw):
                 raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + raw)
-            simple_builtin_rendered = self._render_simple_name_builtin_call(raw, args)
-            if simple_builtin_rendered is not None:
-                return simple_builtin_rendered
             type_id_expr = self._build_type_id_expr_from_call_name(raw, arg_nodes)
             if type_id_expr is not None:
                 return self.render_expr(type_id_expr)

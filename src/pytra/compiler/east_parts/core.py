@@ -2402,6 +2402,22 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "next"
                     payload["runtime_call"] = "py_next_or_stop"
+                elif fn_name == "reversed":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "reversed"
+                    payload["runtime_call"] = "py_reversed"
+                elif fn_name == "enumerate":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "enumerate"
+                    payload["runtime_call"] = "py_enumerate"
+                elif fn_name == "any":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "any"
+                    payload["runtime_call"] = "py_any"
+                elif fn_name == "all":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "all"
+                    payload["runtime_call"] = "py_all"
                 elif fn_name in {"bytes", "bytearray"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
