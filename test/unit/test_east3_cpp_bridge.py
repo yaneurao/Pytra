@@ -1158,6 +1158,17 @@ class East3CppBridgeTest(unittest.TestCase):
             "byteorder": {"kind": "Constant", "value": "little", "resolved_type": "str"},
             "resolved_type": "bytes",
         }
+        bytes_ctor_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "bytes_ctor",
+            "resolved_type": "bytes",
+        }
+        bytearray_ctor_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "bytearray_ctor",
+            "args": [{"kind": "Constant", "value": b"\x01\x02", "resolved_type": "bytes"}],
+            "resolved_type": "bytearray",
+        }
 
         self.assertEqual(emitter.render_expr(print_node), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_node), "py_len(xs)")
@@ -1171,6 +1182,8 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(path_ctor_node), 'Path("a.txt")')
         self.assertEqual(emitter.render_expr(runtime_error_node), '::std::runtime_error("boom")')
         self.assertEqual(emitter.render_expr(int_to_bytes_node), 'py_int_to_bytes(n, 4, "little")')
+        self.assertEqual(emitter.render_expr(bytes_ctor_node), "bytes{}")
+        self.assertEqual(emitter.render_expr(bytearray_ctor_node), "bytearray(b'\\x01\\x02')")
 
     def test_builtin_runtime_misc_special_ops_use_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1284,6 +1297,24 @@ class East3CppBridgeTest(unittest.TestCase):
             ],
             "keywords": [],
         }
+        bytes_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "bytes",
+            "resolved_type": "bytes",
+            "func": {"kind": "Name", "id": "bytes", "resolved_type": "unknown"},
+            "args": [],
+            "keywords": [],
+        }
+        bytearray_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "bytearray",
+            "resolved_type": "bytearray",
+            "func": {"kind": "Name", "id": "bytearray", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": b"\x01\x02", "resolved_type": "bytes"}],
+            "keywords": [],
+        }
 
         self.assertEqual(emitter.render_expr(print_expr), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_expr), "py_len(xs)")
@@ -1301,6 +1332,8 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(path_ctor_expr), 'Path("a.txt")')
         self.assertEqual(emitter.render_expr(runtime_error_expr), '::std::runtime_error("boom")')
         self.assertEqual(emitter.render_expr(int_to_bytes_expr), 'py_int_to_bytes(n, 4, "little")')
+        self.assertEqual(emitter.render_expr(bytes_expr), "bytes{}")
+        self.assertEqual(emitter.render_expr(bytearray_expr), "bytearray(b'\\x01\\x02')")
 
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {

@@ -3440,19 +3440,27 @@ class CppEmitter(CodeEmitter):
         if special_runtime_rendered is not None:
             return str(special_runtime_rendered)
         if builtin_name == "bytes":
-            if len(arg_nodes) == 0:
-                return "bytes{}"
-            rendered_args: list[str] = []
-            for arg_node in arg_nodes:
-                rendered_args.append(self.render_expr(arg_node))
-            return f"bytes({join_str_list(', ', rendered_args)})"
+            bytes_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "bytes_ctor",
+                "resolved_type": "bytes",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) > 0:
+                bytes_node["args"] = arg_nodes
+            return self.render_expr(bytes_node)
         if builtin_name == "bytearray":
-            if len(arg_nodes) == 0:
-                return "bytearray{}"
-            rendered_args = []
-            for arg_node in arg_nodes:
-                rendered_args.append(self.render_expr(arg_node))
-            return f"bytearray({join_str_list(', ', rendered_args)})"
+            bytearray_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "bytearray_ctor",
+                "resolved_type": "bytearray",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) > 0:
+                bytearray_node["args"] = arg_nodes
+            return self.render_expr(bytearray_node)
         return ""
 
     def _render_builtin_runtime_list_ops(
@@ -6335,6 +6343,24 @@ class CppEmitter(CodeEmitter):
                 if self.any_dict_has(expr_d, "byteorder"):
                     byteorder_expr = self.render_expr(expr_d.get("byteorder"))
                 return f"py_int_to_bytes({owner_expr}, {length_expr}, {byteorder_expr})"
+            if op == "bytes_ctor":
+                bytes_args: list[str] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes:
+                        bytes_args.append(self.render_expr(arg_node))
+                if len(bytes_args) == 0:
+                    return "bytes{}"
+                return f"bytes({join_str_list(', ', bytes_args)})"
+            if op == "bytearray_ctor":
+                bytearray_args: list[str] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes:
+                        bytearray_args.append(self.render_expr(arg_node))
+                if len(bytearray_args) == 0:
+                    return "bytearray{}"
+                return f"bytearray({join_str_list(', ', bytearray_args)})"
             return ""
         if kind == "IsSubtype":
             actual_type_id_expr = self.render_expr(expr_d.get("actual_type_id"))
