@@ -119,6 +119,14 @@
 3. `Go/Java/Kotlin/Swift` は preview backend のため path 解決処理が未実装で、先に runtime 配置規約の正本化が必要。
 4. 既存テスト/ドキュメントは `src/js_module` と `src/*_module` 前提のものがあり、S2/S3 で同時更新対象になる。
 
+`P1-RUNTIME-05-S2` 実装結果（`py2<lang>.py` / hooks 参照更新）:
+
+1. `src/hooks/js/emitter/js_emitter.py` の `py_runtime` require を `src/runtime/js/pytra/py_runtime.js` へ更新した。
+2. `src/common2/js_ts_native_transpiler.py` の runtime require 先を `src/runtime/js/pytra/*` / `src/runtime/ts/pytra/*` へ統一した。
+3. `src/runtime/js/pytra/` と `src/runtime/ts/pytra/` を新設し、既存 `src/js_module/*.js` / `src/ts_module/*.ts` と同名 runtime を複製配置して新参照先を有効化した。
+4. 回帰テストを新パスへ合わせて更新した（`test/unit/test_py2js_smoke.py`, `test/unit/test_js_ts_runtime_dispatch.py`）。
+5. `Go/Java/Kotlin/Swift` は preview backend で runtime path 直書きが存在しないため、S2 では参照更新対象なしとした（S3 で旧配置縮退を扱う）。
+
 運用ルール:
 
 1. 新規 runtime 実装（`py_runtime.*`, `pathlib.*`, `png/gif helper` など）は `src/runtime/<lang>/pytra/` 配下にのみ追加する。
@@ -147,3 +155,4 @@
 - 2026-02-24: ID: P1-RUNTIME-03-S2 として `src/rs_module/py_runtime.rs` を削除し、`tools/check_rs_runtime_layout.py` を「`src/rs_module` ソース禁止」ルールへ更新した。`docs-ja/how-to-use.md`、`docs-ja/spec/spec-dev.md`、`docs-ja/plans/pytra-wip.md` の旧参照を `src/runtime/rs/pytra/` 基準へ置換した。
 - 2026-02-24: ID: P1-RUNTIME-03（親タスク）を完了として履歴へ移管した。Rust runtime の旧配置依存は解消し、残タスクは `P1-RUNTIME-05`（他言語統一）へ移行する。
 - 2026-02-24: ID: `P1-RUNTIME-05-S1` として Rust 以外（`cs/js/ts/go/java/kotlin/swift`）の runtime 解決パスを棚卸しした。`py2<lang>.py` 本体は path 非依存、直書き参照は `src/hooks/js/emitter/js_emitter.py` と `src/common2/js_ts_native_transpiler.py` に集中すること、`Go/Java/Kotlin/Swift` は preview backend のため path 解決実装未着手であることを確定した。
+- 2026-02-24: ID: `P1-RUNTIME-05-S2` として `JS/TS` runtime 参照を `src/runtime/{js,ts}/pytra/` へ切替した。`js_emitter.py` と `js_ts_native_transpiler.py` の require 先更新、`src/runtime/js/pytra` と `src/runtime/ts/pytra` の runtime 複製配置、関連テスト更新（`test_py2js_smoke.py`, `test_js_ts_runtime_dispatch.py`）を実施し、`python3 tools/check_py2js_transpile.py` / `python3 tools/check_py2ts_transpile.py` / ユニットテストで回帰なしを確認した。

@@ -173,7 +173,7 @@ class JsEmitter(CodeEmitter):
         self.load_import_bindings_from_meta(meta)
         self.emit_module_leading_trivia()
         self.emit("const __pytra_root = process.cwd();")
-        self.emit("const py_runtime = require(__pytra_root + '/src/js_module/py_runtime.js');")
+        self.emit("const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');")
         self.emit(
             "const { PYTRA_TYPE_ID, PY_TYPE_BOOL, PY_TYPE_NUMBER, PY_TYPE_STRING, "
             + "PY_TYPE_ARRAY, PY_TYPE_MAP, PY_TYPE_SET, PY_TYPE_OBJECT, "

@@ -24,8 +24,8 @@ class JsTsRuntimeDispatchTest(unittest.TestCase):
             )
 
     def test_runtime_sources_do_not_use_name_dispatch(self) -> None:
-        js_src = (ROOT / "src" / "js_module" / "py_runtime.js").read_text(encoding="utf-8")
-        ts_src = (ROOT / "src" / "ts_module" / "py_runtime.ts").read_text(encoding="utf-8")
+        js_src = (ROOT / "src" / "runtime" / "js" / "pytra" / "py_runtime.js").read_text(encoding="utf-8")
+        ts_src = (ROOT / "src" / "runtime" / "ts" / "pytra" / "py_runtime.ts").read_text(encoding="utf-8")
         self.assertNotIn("constructor.name", js_src)
         self.assertNotIn("constructor.name", ts_src)
         self.assertIn("function pyTypeId", js_src)
@@ -36,7 +36,7 @@ class JsTsRuntimeDispatchTest(unittest.TestCase):
     def test_js_runtime_type_id_dispatch_and_hooks(self) -> None:
         script = r"""
 const assert = require("assert");
-const rt = require(process.cwd() + "/src/js_module/py_runtime.js");
+const rt = require(process.cwd() + "/src/runtime/js/pytra/py_runtime.js");
 
 const custom = {
   [rt.PYTRA_TYPE_ID]: 7001,
@@ -77,7 +77,7 @@ console.log("ok");
         self.assertIn("ok", proc.stdout)
 
     def test_ts_runtime_exports_type_id_dispatch_apis(self) -> None:
-        src = (ROOT / "src" / "ts_module" / "py_runtime.ts").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "runtime" / "ts" / "pytra" / "py_runtime.ts").read_text(encoding="utf-8")
         self.assertIn("export const PYTRA_TYPE_ID", src)
         self.assertIn("export const PYTRA_TRUTHY", src)
         self.assertIn("export const PYTRA_TRY_LEN", src)
