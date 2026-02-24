@@ -64,6 +64,8 @@
 ### 文脈
 - `docs-ja/plans/p3-test-misc-transpile.md`
 
+- 運用制約: `test/misc` 側の改変はしない。変換器/共通基盤の改善で対応し、難所は超低優先で後ろへ回す。
+
 ### タスク（S001〜S100）
 
 1. [ ] [ID: P3-MISC-01-S001] `test/misc/01_prime_reporter.py` を `py2cpp.py` で C++ 変換可能にする。
