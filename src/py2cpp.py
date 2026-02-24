@@ -2600,28 +2600,11 @@ class CppEmitter(CodeEmitter):
             {"type": tgt_ty, "target": tgt, "start": start, "cond": cond, "inc": inc},
         )
         self.declared_var_types[tgt] = tgt_ty_txt
-        if omit_braces:
-            self.emit(hdr)
-            self.indent += 1
-            scope_names: set[str] = set()
-            scope_names.add(tgt)
-            self.scope_stack.append(scope_names)
-            self.emit_stmt(body_stmts[0])
-            self.scope_stack.pop()
-            self.indent -= 1
-            return
-
         scope_names: set[str] = set()
         scope_names.add(tgt)
-        self.emit_scoped_block(
-            self.syntax_line(
-                "for_open_block",
-                "{header} {",
-                {"header": hdr},
-            ),
-            body_stmts,
-            scope_names,
-        )
+        self._emit_for_body_open(hdr, scope_names, omit_braces)
+        self._emit_for_body_stmts(body_stmts, omit_braces)
+        self._emit_for_body_close(omit_braces)
 
     def _emit_for_body_open(self, header: str, scope_names: set[str], omit_braces: bool) -> None:
         """for 系文のヘッダ出力 + scope 開始を共通化する。"""
