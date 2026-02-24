@@ -112,6 +112,20 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - backend hooks は移行期間中に分離してもよいが、最終形は `EAST3` 向け最小 hook 集合に収束させる。
 - `P0-EASTMIG-06-S0` が完了するまでは、CodeEmitter の新規意味論実装（段階境界を曖昧にする変更）へ着手しない。
 
+## 段階横断残存一覧（`P0-EASTMIG-06-S0-S3`）
+
+`src/pytra/compiler/east_parts/` と `src/pytra/compiler/transpile_cli.py` の責務境界を棚卸しし、段階横断が残る箇所を固定する。
+
+| 箇所 | 現状（段階横断の内容） | リスク | 後続での解消先 |
+| --- | --- | --- | --- |
+| `src/pytra/compiler/transpile_cli.py::load_east_document` | `.py/.json` 入力から `normalize_east1_to_east2_document` を即時適用し、`EAST1` build と `EAST2` 正規化が同一関数で混在。 | `EAST1` 専用入口の責務が不明瞭化。 | `P0-EASTMIG-06-S0-S5` で委譲境界を固定。 |
+| `src/pytra/compiler/transpile_cli.py::normalize_east_root_document` | `east_stage` 未指定時に `2` を補完し、stage 契約補完と段階変換前提が同居。 | 旧入力で `EAST2` 既定が温存される。 | `P0-EASTMIG-06-S1` / `S2` で既定経路見直し。 |
+| `src/pytra/compiler/transpile_cli.py::normalize_east1_to_east2_document` | stage module 委譲と selfhost 互換 fallback（`stage==1 -> 2` 書換え）が同居。 | `EAST2` 互換処理の残存箇所が見えづらい。 | `P0-EASTMIG-06-S5` で互換モード文言を同期。 |
+| `src/pytra/compiler/transpile_cli.py::load_east_document_compat` | 非 C++ CLI 互換 API が `load_east_document` へ依存し、段階境界より互換挙動を優先。 | 非 C++ 変換器で `EAST2` 既定が継続。 | `P0-EASTMIG-06-S3-*` で各変換器を `EAST3` 主経路化。 |
+| `src/pytra/compiler/transpile_cli.py::_parse_cli_args_dict` | `east_stage` の既定値が `"2"`。 | CLI 既定が `EAST2` 固定となり移行が遅延。 | `P0-EASTMIG-06-S2`（cpp）と `S3-*`（非 cpp）で切替。 |
+| `src/pytra/compiler/east_parts/east_io.py::_normalize_east_root` | ルート補完で `east_stage` 未指定時に `2` を補完。 | stage 既定が util 層で固定化される。 | `P0-EASTMIG-06-S5` で契約文書と実装を同期。 |
+| `src/pytra/compiler/east_parts/render_human_east2_cpp.py` | human renderer が `EAST2` 専用実装のみ。 | `EAST3` 可視化が不足し段階差分が追跡しにくい。 | `P0-EASTMIG-06-S7` で `render_human_east3_cpp.py` を追加。 |
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -135,6 +149,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06-S0-S3`] `transpile_cli.py` / `east_parts` の段階横断残存を棚卸しし、`load_east_document` の `EAST1->EAST2` 即時正規化、`east_stage=2` 既定補完、`load_east_document_compat` 依存、`render_human_east2_cpp` 専用実装などを一覧化して後続タスクへの受け渡しを固定した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S2`] `docs-ja/spec/spec-dev.md` の責務境界へ「CodeEmitter は EAST3 以降の構文写像専任」「意味論 lower 禁止」「backend/hook 側の再解釈禁止」を明記した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S1`] `docs-ja/spec/spec-east.md` の `16.1.1` に段階境界表（入力/出力/禁止事項/担当ファイル）を追加し、`EAST1/EAST2/EAST3` の責務固定を仕様として明文化した。
 - 2026-02-24: 本計画を `materials/refs/` に `plans` 形式で追加。
