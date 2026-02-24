@@ -31,7 +31,7 @@
 
 進捗メモ:
 - [ID: P0-CPP-EMITTER-01-S1] `CppEmitter` 本体を `src/hooks/cpp/emitter/cpp_emitter.py` に移し、`py2cpp.py` 側では `install_py2cpp_runtime_symbols(globals())` で実行時依存を注入する形へ変更。
-3. [ ] [ID: P0-CPP-EMITTER-01-S2] `src/hooks/cpp/emitter/__init__.py`（新規）で `load_cpp_profile` / `transpile_to_cpp` など C++ backend API を公開し、`py2cpp.py` から再利用する。
+3. [x] [ID: P0-CPP-EMITTER-01-S2] `src/hooks/cpp/emitter/__init__.py`（新規）で `load_cpp_profile` / `transpile_to_cpp` など C++ backend API を公開し、`py2cpp.py` から再利用する。
 4. [ ] [ID: P0-CPP-EMITTER-01-S3] `src/py2cpp.py` を CLI・引数処理・I/O・高位オーケストレーションのみに縮退し、emitter 本体実装を保持しない状態にする。
 5. [ ] [ID: P0-CPP-EMITTER-01-S4] `check_py2cpp_transpile` / smoke / docs（`spec-dev`）を更新し、分離後の構成を回帰ガード込みで固定する。
 
