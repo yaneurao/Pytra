@@ -14,6 +14,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.hooks.cpp.hooks.cpp_hooks import (
+    build_cpp_hooks,
     on_emit_stmt_kind,
     on_for_range_mode,
     on_render_call,
@@ -194,6 +195,12 @@ class _DummyEmitter:
 
 
 class CppHooksTest(unittest.TestCase):
+    def test_build_cpp_hooks_does_not_register_object_method_hook(self) -> None:
+        hooks = build_cpp_hooks()
+        self.assertNotIn("on_render_object_method", hooks)
+        self.assertIn("on_render_module_method", hooks)
+        self.assertIn("on_render_class_method", hooks)
+
     def test_on_render_call_is_noop_after_runtime_migration(self) -> None:
         em = _DummyEmitter()
         call_node = {
