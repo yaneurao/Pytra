@@ -185,7 +185,7 @@ impl Parser {
     
     fn add_expr(&self, node: ExprNode) -> i64 {
         py_self.expr_nodes.push(node);
-        return (py_self.expr_nodes.len() as i64 - 1);
+        return py_self.expr_nodes.len() as i64 - 1;
     }
     
     fn parse_program(&self) -> Vec<StmtNode> {
@@ -266,11 +266,11 @@ impl Parser {
     
     fn parse_primary(&self) -> i64 {
         if py_self.py_match("NUMBER") {
-            let token_num: Token = py_self.tokens[(py_self.pos - 1) as usize];
+            let token_num: Token = py_self.tokens[py_self.pos - 1 as usize];
             return py_self.add_expr(ExprNode::new("lit", token_num.text as i64, "", "", (-1), (-1)));
         }
         if py_self.py_match("IDENT") {
-            let token_ident: Token = py_self.tokens[(py_self.pos - 1) as usize];
+            let token_ident: Token = py_self.tokens[py_self.pos - 1 as usize];
             return py_self.add_expr(ExprNode::new("var", 0, token_ident.text, "", (-1), (-1)));
         }
         if py_self.py_match("LPAREN") {
@@ -302,19 +302,19 @@ fn eval_expr(expr_index: i64, expr_nodes: Vec<ExprNode>, env: ::std::collections
         let lhs: i64 = eval_expr(node.left, expr_nodes, env);
         let rhs: i64 = eval_expr(node.right, expr_nodes, env);
         if node.op == "+" {
-            return (lhs + rhs);
+            return lhs + rhs;
         }
         if node.op == "-" {
-            return (lhs - rhs);
+            return lhs - rhs;
         }
         if node.op == "*" {
-            return (lhs * rhs);
+            return lhs * rhs;
         }
         if node.op == "/" {
             if rhs == 0 {
                 // unsupported stmt: Raise
             }
-            return (lhs / rhs);
+            return lhs / rhs;
         }
         // unsupported stmt: Raise
     }
@@ -325,7 +325,6 @@ fn execute(stmts: Vec<StmtNode>, expr_nodes: Vec<ExprNode>, trace: bool) -> i64 
     let mut env: ::std::collections::BTreeMap<String, i64> = ::std::collections::BTreeMap::from([]);
     let mut checksum: i64 = 0;
     let mut printed: i64 = 0;
-    
     for stmt in (stmts).clone() {
         if stmt.kind == "let" {
             env[stmt.name as usize] = eval_expr(stmt.expr_index, expr_nodes, env);
@@ -342,11 +341,11 @@ fn execute(stmts: Vec<StmtNode>, expr_nodes: Vec<ExprNode>, trace: bool) -> i64 
         if trace {
             println!("{}", value);
         }
-        let mut norm: i64 = (value % 1000000007);
+        let mut norm: i64 = value % 1000000007;
         if norm < 0 {
             norm += 1000000007;
         }
-        checksum = ((((checksum * 131) + norm)) % 1000000007);
+        checksum = (checksum * 131 + norm) % 1000000007;
         printed += 1;
     }
     if trace {
@@ -357,23 +356,20 @@ fn execute(stmts: Vec<StmtNode>, expr_nodes: Vec<ExprNode>, trace: bool) -> i64 
 
 fn build_benchmark_source(var_count: i64, loops: i64) -> Vec<String> {
     let mut lines: Vec<String> = vec![];
-    
-    // Declare initial variables.
     let mut i: i64 = 0;
     while i < var_count {
-        lines.push(((("let v" + i.to_string()) + " = ") + (i + 1).to_string()));
+        lines.push("let v" + i.to_string() + " = " + i + 1.to_string());
         i += 1;
     }
-    // Force evaluation of many arithmetic expressions.
     let mut i: i64 = 0;
     while i < loops {
-        let x: i64 = (i % var_count);
-        let y: i64 = (((i + 3)) % var_count);
-        let c1: i64 = ((i % 7) + 1);
-        let c2: i64 = ((i % 11) + 2);
-        lines.push(((((((((("v" + x.to_string()) + " = (v") + x.to_string()) + " * ") + c1.to_string()) + " + v") + y.to_string()) + " + 10000) / ") + c2.to_string()));
-        if (i % 97) == 0 {
-            lines.push(("print v" + x.to_string()));
+        let x: i64 = i % var_count;
+        let y: i64 = (i + 3) % var_count;
+        let c1: i64 = i % 7 + 1;
+        let c2: i64 = i % 11 + 2;
+        lines.push("v" + x.to_string() + " = (v" + x.to_string() + " * " + c1.to_string() + " + v" + y.to_string() + " + 10000) / " + c2.to_string());
+        if i % 97 == 0 {
+            lines.push("print v" + x.to_string());
         }
         i += 1;
     }
@@ -404,7 +400,7 @@ fn run_benchmark() {
     let parser: Parser = Parser::new(tokens);
     let stmts: Vec<StmtNode> = parser.parse_program();
     let checksum: i64 = execute(stmts, parser.expr_nodes, false);
-    let elapsed: f64 = (perf_counter() - start);
+    let elapsed: f64 = perf_counter() - start;
     
     println!("{:?}", ("token_count:", tokens.len() as i64));
     println!("{:?}", ("expr_count:", parser.expr_nodes.len() as i64));
