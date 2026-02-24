@@ -779,8 +779,7 @@ def main(argv: list[str]) -> int:
             else:
                 module_east_map: dict[str, dict[str, Any]] = {str(input_path): east_module}
             out_dir = Path(output_dir_txt) if output_dir_txt != "" else Path("out")
-            if output_txt != "":
-                out_dir = Path(output_txt)
+            out_dir = Path(output_txt) if output_txt != "" else out_dir
             mf = _write_multi_file_cpp(
                 input_path,
                 module_east_map,
@@ -799,13 +798,8 @@ def main(argv: list[str]) -> int:
             )
             msg = "multi-file output generated at: " + str(out_dir)
             manifest_obj: Any = mf.get("manifest")
-            manifest_txt = ""
-            if isinstance(manifest_obj, str):
-                manifest_txt = manifest_obj
-            if manifest_txt != "":
-                msg += "\nmanifest: " + manifest_txt + "\n"
-            else:
-                msg += "\n"
+            manifest_txt = manifest_obj if isinstance(manifest_obj, str) else ""
+            msg += "\nmanifest: " + manifest_txt + "\n" if manifest_txt != "" else "\n"
             print(msg, end="")
             return 0
     except Exception as ex:
