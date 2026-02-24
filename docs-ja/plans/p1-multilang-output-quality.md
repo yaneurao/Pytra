@@ -189,6 +189,19 @@
   - `js`: stage1 pass / stage2 fail（`hooks/js/emitter/js_emitter.py` の自己変換で `object receiver attribute/method access is forbidden`）。
   - `ts/go/java/swift/kotlin`: stage1 pass だが preview 出力のため stage2 blocked（従来どおり）。
 
+`P1-MQ-05` 実装結果（多段 selfhost 可否と失敗要因分類）:
+
+- 対象: `tools/check_multilang_selfhost_multistage.py`, `docs-ja/plans/p1-multilang-selfhost-multistage-status.md`
+- 変更点:
+  1. 非 C++ 各言語で `stage1 -> stage2(self->self) -> stage3(sample)` を同一手順で試行する多段 selfhost チェックを追加した。
+  2. 失敗要因を `stage1_transpile_fail` / `toolchain_missing` / `compile_fail` / `self_retranspile_fail` / `stage2_compile_fail` / `sample_transpile_fail` / `preview_only` に分類し、レポートへ固定した。
+  3. `js` は `P1-MQ-04-S2` の依存展開経路を再利用し、`py2js.py` の自己再変換（stage2）可否まで判定するようにした。
+- 固定結果サマリ:
+  - `rs`: `stage1_transpile_fail`（self-hosted parser が `from ... import (...)` を未対応）。
+  - `cs`: `toolchain_missing`（`mcs/mono` 不在）。
+  - `js`: `stage1_dependency_transpile_fail`（`hooks/js/emitter/js_emitter.py` 自己変換で object receiver 制約に抵触）。
+  - `ts/go/java/swift/kotlin`: `preview_only`（stage2/stage3 blocked）。
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
@@ -203,3 +216,4 @@
 - 2026-02-24: ID: P1-MQ-04-S1 として stage1 selfhost 棚卸しスクリプト（`tools/check_multilang_selfhost_stage1.py`）を追加し、言語別ステータスを `docs-ja/plans/p1-multilang-selfhost-status.md` に固定した。
 - 2026-02-24: ID: P1-MQ-04-S2 の事前調査として JS emitter に `Slice` 出力（`out[:-3]` -> `.slice(...)`）を追加して stage2 の `SyntaxError` は解消したが、次段で `src/hooks/js/emitter/js_emitter.js` 不在（Python hooks 依存）により実行が継続失敗することを確認した。
 - 2026-02-24: ID: P1-MQ-04-S2 として non-preview 言語（`rs/cs/js`）の stage2 runner を自動化し、`docs-ja/plans/p1-multilang-selfhost-status.md` に `blocked/fail` 理由を固定した。
+- 2026-02-24: ID: P1-MQ-05 として多段 selfhost チェック（`tools/check_multilang_selfhost_multistage.py`）を追加し、`docs-ja/plans/p1-multilang-selfhost-multistage-status.md` に失敗カテゴリを固定した。
