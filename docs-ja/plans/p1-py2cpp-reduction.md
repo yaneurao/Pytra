@@ -40,7 +40,32 @@
 5. `P1-CPP-REDUCE-02-S2`: helper 追加の回帰を検出する lint/CI チェックを追加する。
 6. `P1-CPP-REDUCE-02-S3`: 緊急 hotfix 時の例外運用と後追い抽出期限を定義する。
 
+分類インベントリ（`P1-CPP-REDUCE-01-S1`）:
+
+| 区分 | 主なロジック（`src/py2cpp.py`） | 判定 | 移管先/方針 | 優先度 |
+| --- | --- | --- | --- | --- |
+| A1 | `render_boolop` / `render_cond` / `render_ifexp_common` 系の式組み立て | 言語非依存 | `CodeEmitter` 共通 helper へ継続移管 | 高 |
+| A2 | `Call` 前処理（`_prepare_call_parts` 周辺） | 言語非依存 | `CodeEmitter` へ集約済み。残差分を継続縮退 | 高 |
+| A3 | `Assign`/`AnnAssign`/`AugAssign` の宣言判定・tuple lower 骨格 | 言語非依存 | `CodeEmitter` 共通 helper へ継続移管 | 高 |
+| A4 | `For`/`ForRange`/`ForCore` のブロック骨格・scope push/pop | 言語非依存 | `CodeEmitter` / `east_parts` 側へ継続移管 | 高 |
+| A5 | import/meta 束縛表の初期化と参照（`meta.import_bindings`） | 言語非依存 | `CodeEmitter` API を正本として維持（実施済み） | 中 |
+| A6 | `EAST1/2/3` 変換前後で共有可能な lowering 前処理 | 言語非依存 | `src/pytra/compiler/east_parts/` へ段階移管 | 中 |
+| A7 | 解析/CLI 補助（module 解析・deps dump 等） | 言語非依存 | `src/pytra/compiler/` 共通層へ抽出（`P1-COMP-*`） | 高 |
+| C1 | `_cpp_type_text` / `cpp_type`（`rc<>`, `::std::optional`, `dict<...>` など） | C++固有 | `py2cpp.py` 残置（共通化しない） | 固定 |
+| C2 | C++ runtime 呼び出し名解決（`py_*`, `pytra::...`） | C++固有 | `py2cpp.py` + `hooks/cpp` 残置 | 固定 |
+| C3 | include/header/namespace/main 生成 | C++固有 | `py2cpp.py` 残置 | 固定 |
+| C4 | C++ 演算子/キャスト最適化（`static_cast`, `::std::get`, `cpp_char_lit`） | C++固有 | `py2cpp.py` 残置 | 固定 |
+| C5 | selfhost C++ 経路の互換分岐（静的束縛回避等） | C++固有 | 互換維持しつつ段階縮退 | 中 |
+
+移管順確定（`P1-CPP-REDUCE-01-S1`）:
+
+1. `A1/A3`（式・代入骨格）を `CodeEmitter` 優先で吸収する。
+2. `A4/A6`（制御構文・EAST 前後処理）を `east_parts` 側へ寄せる。
+3. `A7`（解析/CLI 補助）を `src/pytra/compiler/` 共通 API として切り出す。
+4. `C1-C5` は C++ 専任面として維持し、共通層から逆流しない境界を固定する。
+
 決定ログ:
 - 2026-02-22: 初版作成。
 - 2026-02-23: 全言語 selfhost の長期目標に合わせ、`py2cpp.py` への汎用 helper 追加を抑制して共通層先行抽出へ寄せる方針（`P1-CPP-REDUCE-02`）を追加した。
 - 2026-02-23: docs-ja/todo.md の P1-CPP-REDUCE-01/02 を -S* 子タスクへ分割したため、本 plan に同粒度の実行順を追記した。
+- 2026-02-24: [ID: P1-CPP-REDUCE-01-S1] `py2cpp.py` を「言語非依存（A群）」と「C++固有（C群）」へ分類し、移管順（A1/A3 -> A4/A6 -> A7 -> C群固定）を確定した。以後 `P1-CPP-REDUCE-01-S2` は A群のみを対象に進め、C群は境界維持を前提とする。
