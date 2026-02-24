@@ -4708,10 +4708,6 @@ class CppEmitter(CodeEmitter):
 
     def _render_simple_name_builtin_call(self, raw: str, args: list[str]) -> str | None:
         """Name 呼び出しの単純ビルトイン分岐を描画する。"""
-        if raw == "print":
-            return f"py_print({join_str_list(', ', args)})"
-        if raw == "len" and len(args) == 1:
-            return f"py_len({args[0]})"
         if raw == "reversed" and len(args) == 1:
             return f"py_reversed({args[0]})"
         if raw == "enumerate" and len(args) == 1:
@@ -5258,8 +5254,6 @@ class CppEmitter(CodeEmitter):
 
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
         """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
-        if fn_name == "len" and len(args) == 1:
-            return f"py_len({args[0]})"
         if fn_name == "isinstance" and len(args) == 2:
             ty = args[1].strip()
             return self._render_isinstance_type_check(args[0], ty)
@@ -5269,8 +5263,6 @@ class CppEmitter(CodeEmitter):
         append_fallback_rendered = self._render_append_fallback_call(fn_name, args)
         if append_fallback_rendered is not None and append_fallback_rendered != "":
             return str(append_fallback_rendered)
-        if fn_name == "print":
-            return f"py_print({join_str_list(', ', args)})"
         return f"{fn_name}({join_str_list(', ', args)})"
 
     def _render_append_fallback_call(self, fn_name: str, args: list[str]) -> str | None:
