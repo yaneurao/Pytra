@@ -4843,9 +4843,6 @@ class CppEmitter(CodeEmitter):
             type_id_expr = self._build_type_id_expr_from_call_name(raw, arg_nodes)
             if type_id_expr is not None:
                 return self.render_expr(type_id_expr)
-            collection_ctor_rendered = self._render_collection_constructor_call(raw, expr, args, first_arg)
-            if collection_ctor_rendered is not None:
-                return collection_ctor_rendered
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw, arg_nodes)
