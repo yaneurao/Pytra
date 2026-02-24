@@ -831,6 +831,38 @@ class CodeEmitterTest(unittest.TestCase):
             ],
         )
 
+    def test_emit_if_stmt_skeleton_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit_if_stmt_skeleton(
+            "cond",
+            ["a"],
+            ["b"],
+            if_open_default="if ({cond}) {",
+            else_open_default="} else {",
+        )
+        self.assertEqual(
+            em.lines,
+            [
+                "if (cond) {",
+                "    stmt:a",
+                "} else {",
+                "    stmt:b",
+                "}",
+            ],
+        )
+
+    def test_emit_while_stmt_skeleton_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit_while_stmt_skeleton("cond", ["a"], while_open_default="while ({cond}) {")
+        self.assertEqual(
+            em.lines,
+            [
+                "while (cond) {",
+                "    stmt:a",
+                "}",
+            ],
+        )
+
     def test_hook_invocation_helpers(self) -> None:
         em = _HookedEmitter({})
         stmt_handled = em.hook_on_emit_stmt({"kind": "Pass"})

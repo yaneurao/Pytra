@@ -578,23 +578,21 @@ class CSharpEmitter(CodeEmitter):
 
     def _emit_if(self, stmt: dict[str, Any]) -> None:
         cond = self.render_cond(stmt.get("test"))
-        self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": cond}))
-        body = self._dict_stmt_list(stmt.get("body"))
-        self.emit_scoped_stmt_list(body, set())
-        orelse = self._dict_stmt_list(stmt.get("orelse"))
-        if len(orelse) == 0:
-            self.emit(self.syntax_text("block_close", "}"))
-            return
-        self.emit(self.syntax_text("else_open", "} else {"))
-        self.emit_scoped_stmt_list(orelse, set())
-        self.emit(self.syntax_text("block_close", "}"))
+        self.emit_if_stmt_skeleton(
+            cond,
+            self._dict_stmt_list(stmt.get("body")),
+            self._dict_stmt_list(stmt.get("orelse")),
+            if_open_default="if ({cond}) {",
+            else_open_default="} else {",
+        )
 
     def _emit_while(self, stmt: dict[str, Any]) -> None:
         cond = self.render_cond(stmt.get("test"))
-        self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": cond}))
-        body = self._dict_stmt_list(stmt.get("body"))
-        self.emit_scoped_stmt_list(body, set())
-        self.emit(self.syntax_text("block_close", "}"))
+        self.emit_while_stmt_skeleton(
+            cond,
+            self._dict_stmt_list(stmt.get("body")),
+            while_open_default="while ({cond}) {",
+        )
 
     def _emit_for_range(self, stmt: dict[str, Any]) -> None:
         target_node = self.any_to_dict_or_empty(stmt.get("target"))

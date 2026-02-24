@@ -1739,10 +1739,10 @@ class CppEmitter(CodeEmitter):
             test_node = self.any_to_dict_or_empty(stmt.get("test"))
             cond_repr = self.any_dict_get_str(test_node, "repr", "")
             cond_txt = cond_repr if cond_repr != "" else "false"
-        self.emit_scoped_block(
-            self.syntax_line("while_open", "while ({cond}) {", {"cond": cond_txt}),
+        self.emit_while_stmt_skeleton(
+            cond_txt,
             self._dict_stmt_list(stmt.get("body")),
-            set(),
+            while_open_default="while ({cond}) {",
         )
 
     def _render_lvalue_for_augassign(self, target_expr: Any) -> str:

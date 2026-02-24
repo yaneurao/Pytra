@@ -702,6 +702,43 @@ class CodeEmitter:
         self.emit_scoped_stmt_list(stmts, scope_names)
         self.emit_block_close()
 
+    def emit_if_stmt_skeleton(
+        self,
+        cond_expr: str,
+        body_stmts: list[dict[str, Any]],
+        else_stmts: list[dict[str, Any]],
+        *,
+        if_open_default: str = "if ({cond}) {",
+        else_open_default: str = "} else {",
+        body_scope: set[str] | None = None,
+        else_scope: set[str] | None = None,
+    ) -> None:
+        """`if/else` の開閉ブロックとスコープ処理を共通出力する。"""
+        b_scope = body_scope if body_scope is not None else set()
+        e_scope = else_scope if else_scope is not None else set()
+        self.emit(self.syntax_line("if_open", if_open_default, {"cond": cond_expr}))
+        self.emit_scoped_stmt_list(body_stmts, b_scope)
+        if len(else_stmts) == 0:
+            self.emit(self.syntax_text("block_close", "}"))
+            return
+        self.emit(self.syntax_text("else_open", else_open_default))
+        self.emit_scoped_stmt_list(else_stmts, e_scope)
+        self.emit(self.syntax_text("block_close", "}"))
+
+    def emit_while_stmt_skeleton(
+        self,
+        cond_expr: str,
+        body_stmts: list[dict[str, Any]],
+        *,
+        while_open_default: str = "while ({cond}) {",
+        body_scope: set[str] | None = None,
+    ) -> None:
+        """`while` の開閉ブロックとスコープ処理を共通出力する。"""
+        b_scope = body_scope if body_scope is not None else set()
+        self.emit(self.syntax_line("while_open", while_open_default, {"cond": cond_expr}))
+        self.emit_scoped_stmt_list(body_stmts, b_scope)
+        self.emit(self.syntax_text("block_close", "}"))
+
     def next_tmp(self, prefix: str = "__tmp") -> str:
         """衝突しない一時変数名を生成する。"""
         self.tmp_id += 1
