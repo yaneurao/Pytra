@@ -22,6 +22,31 @@
 - `docs-ja/todo/index.md` / `docs-ja/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+
+
+## P1: C++ Emitter Reduction
+
+### 文脈
+- `docs-ja/plans/p1-cpp-emitter-reduce.md`
+
+### タスク（S1〜S8, 小粒度）
+
+1. [ ] [ID: P1-CPP-EMIT-01] `CppEmitter` の責務分類を確定し、`expression/render/statement/runtime_call/cast/control_flow/misc` の移管対象を固定する。
+2. [ ] [ID: P1-CPP-EMIT-01-S1] `CppEmitter` の expression rendering のヘルパ群を `src/hooks/cpp/emitter/expr.py` 相当へ移譲し、呼び出し元を最小差分で切り替える。
+3. [ ] [ID: P1-CPP-EMIT-01-S2] statement rendering のうち `For`/`While`/`If`/`Try` 系を `src/hooks/cpp/emitter/stmt.py` 側に移譲する。
+4. [ ] [ID: P1-CPP-EMIT-01-S3] cast / runtime-call / import の分岐を専用ヘルパへ整理し、重複分岐を削減する。
+5. [ ] [ID: P1-CPP-EMIT-01-S4] `temp` 名生成（`__tmp`）と一時変数生存域管理を 1 モジュールへ集約し、同名ロジックの重複を除去する。
+6. [ ] [ID: P1-CPP-EMIT-01-S5] `fallback_tuple_target_names_from_repr` 系の変換ロジックを共通処理に集約し、`code_emitter` 側互換を壊さずに移管する。
+7. [ ] [ID: P1-CPP-EMIT-01-S6] `cast`/`object receiver` 周辺の分岐を 1 ハンドラに寄せ、`emit_binary_op` 系の条件分岐重複を 1/3 以下に抑える。
+8. [ ] [ID: P1-CPP-EMIT-01-S7] `render_trivia` とコメント/ディレクティブ処理を切り出し、`docs-ja/plans/p1-codeemitter-dispatch-redesign.md` との責務整合を確認する。
+9. [ ] [ID: P1-CPP-EMIT-01-S8] `py2cpp.py` から CppEmitter 本体ロジック参照をなくし、CLI/配線だけに絞る。
+10. [ ] [ID: P1-CPP-EMIT-01-S9] 上位 API 互換を保ったまま `check_py2cpp_transpile` / `test_py2cpp_smoke` を回して回帰検証を固定する。
+
+### 対応方針
+- 1 つの `S*` は原則 1〜3 関数単位で着手し、1 タスクあたり 1 コミット以内で完了可能な粒度にする。
+- 各 `S*` の終端で `git diff` を確認し、受け入れ基準を `docs-ja/plans/p1-cpp-emitter-reduce.md` の決定ログに追記する。
+
+
 ## メモ
 
 - このファイルは未完了タスクのみを保持します。
