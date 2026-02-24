@@ -310,7 +310,7 @@
 ## 16. 現行の段階構成（2026-02-24）
 
 - EAST は `EAST1 -> EAST2 -> EAST3` の三段で扱う。
-- 現行実装では `EAST2` が実装準拠の主入力で、`EAST3` 主経路化を進行中である。
+- 現行実装では `py2*.py` の既定経路を `EAST3` とし、`EAST2` は `--east-stage 2` 明示時のみの移行互換モードとして扱う。
 - `meta.dispatch_mode` は全段で保持し、意味論適用は `EAST2 -> EAST3` の 1 回のみとする。
 
 ### 16.1 段階ごとの責務
@@ -391,6 +391,7 @@
 
 補足:
 - 各フェーズの進行管理は `docs-ja/todo/index.md` と `docs-ja/plans/plan-east123-migration.md` で行う。
+- `Phase 4` の現行運用: 全 `py2*.py` の既定は `--east-stage 3`、`--east-stage 2` は `warning: --east-stage 2 is compatibility mode; default is 3.` を伴う互換経路。
 
 ## 21. EAST導入の受け入れ基準
 
@@ -404,8 +405,7 @@
 
 ```bash
 python3 tools/check_py2cpp_transpile.py
-python3 tools/check_py2js_transpile.py
-python3 tools/check_py2ts_transpile.py
+python3 tools/check_noncpp_east3_contract.py
 python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
 ```
 

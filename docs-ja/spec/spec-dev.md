@@ -357,6 +357,7 @@
 - `src/py2rs.py` は `src/common/` / `src/rs_module/` に依存しない（`src/runtime/rs/pytra/` 基準で統一済み）。
 - 言語固有差分は `src/profiles/rs/` と `src/hooks/rs/` に分離する。
 - 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
+- `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。
 - 現時点の到達点は「変換成功（transpile success）を優先」であり、Rust コンパイル互換・出力品質は段階的に改善する。
 
 ### 5.3 EASTベース JavaScript 経路（段階移行）
@@ -367,6 +368,7 @@
 - 言語固有差分は `src/profiles/js/` と `src/hooks/js/` に分離する。
 - `browser` / `browser.widgets.dialog` は外部提供ランタイム（ブラウザ環境）として扱い、`py2js` 側では import 本体を生成しない。
 - 変換可否のスモーク確認は `tools/check_py2js_transpile.py` を正本とする。
+- `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。
 
 ### 5.4 責務境界（CodeEmitter / EAST parser / compiler共通層）
 
@@ -422,3 +424,9 @@
 - `py2ts.py`: EAST ベースプレビューモード（JS 互換出力）
 - `py2go.py` / `py2java.py`: EAST ベースプレビューモード（専用 Emitter へ段階移行中）
 - `py2swift.py` / `py2kotlin.py`: EAST ベースプレビューモード（専用 Emitter へ段階移行中）
+
+### 8.1 `--east-stage` 運用（実装同期）
+
+- `py2cpp.py` と非 C++ 8変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）は、既定を `--east-stage 3` に統一する。
+- `--east-stage 2` は移行互換モードであり、`warning: --east-stage 2 is compatibility mode; default is 3.` を出力する。
+- 回帰導線は `tools/check_py2cpp_transpile.py` と `tools/check_noncpp_east3_contract.py` を正本とする。
