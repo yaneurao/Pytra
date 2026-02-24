@@ -72,6 +72,13 @@ class Py2RsSmokeTest(unittest.TestCase):
             rust = transpile_to_rust(loaded)
         self.assertIn("fn add(a: i64, b: i64)", rust)
 
+    def test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape(self) -> None:
+        fixture = find_fixture_case("for_range")
+        loaded = load_east(fixture, parser_backend="self_hosted")
+        self.assertIsInstance(loaded, dict)
+        self.assertEqual(loaded.get("kind"), "Module")
+        self.assertEqual(loaded.get("east_stage"), 2)
+
     def test_cli_smoke_generates_rs_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
@@ -91,6 +98,24 @@ class Py2RsSmokeTest(unittest.TestCase):
             self.assertTrue(out_rs.exists())
             txt = out_rs.read_text(encoding="utf-8")
             self.assertIn("fn abs_like", txt)
+
+    def test_cli_warns_when_stage2_compat_mode_is_selected(self) -> None:
+        fixture = find_fixture_case("if_else")
+        with tempfile.TemporaryDirectory() as td:
+            out_rs = Path(td) / "if_else.rs"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2rs.py", str(fixture), "-o", str(out_rs), "--east-stage", "2"],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertIn("warning: --east-stage 2 is compatibility mode; default is 3.", proc.stderr)
 
     def test_imports_emit_use_lines(self) -> None:
         fixture = find_fixture_case("from_pytra_std_import_math")
