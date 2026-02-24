@@ -200,6 +200,7 @@ class CppHooksTest(unittest.TestCase):
         self.assertNotIn("on_render_object_method", hooks)
         self.assertNotIn("on_render_expr_kind", hooks)
         self.assertNotIn("on_render_binop", hooks)
+        self.assertNotIn("on_for_range_mode", hooks)
         self.assertIn("on_render_module_method", hooks)
         self.assertIn("on_render_class_method", hooks)
 

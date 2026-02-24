@@ -341,7 +341,6 @@ def build_cpp_hooks() -> dict[str, Any]:
     hooks = EmitterHooks()
     hooks.add("on_emit_stmt_kind", on_emit_stmt_kind)
     hooks.add("on_stmt_omit_braces", on_stmt_omit_braces)
-    hooks.add("on_for_range_mode", on_for_range_mode)
     hooks.add("on_render_call", on_render_call)
     hooks.add("on_render_module_method", on_render_module_method)
     hooks.add("on_render_class_method", on_render_class_method)
