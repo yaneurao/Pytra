@@ -66,13 +66,14 @@
 1. [ ] [ID: P1-MQ-10] `sample/go`, `sample/kotlin`, `sample/swift` の preview 要約出力（「C# ベース中間出力のシグネチャ要約」）を廃止し、通常のコード生成へ移行する（`P1-MQ-10-S1` から `P1-MQ-10-S4` 完了でクローズ）。
 2. [x] [ID: P1-MQ-10-S1] GoEmitter の CodeEmitter ベース実装を拡張し、`sample/go` が要約コメントではなく AST 本文を出力するようにする。
 3. [x] [ID: P1-MQ-10-S2] KotlinEmitter の CodeEmitter ベース実装を拡張し、`sample/kotlin` が要約コメントではなく AST 本文を出力するようにする。
-4. [ ] [ID: P1-MQ-10-S3] SwiftEmitter の CodeEmitter ベース実装を拡張し、`sample/swift` が要約コメントではなく AST 本文を出力するようにする。
+4. [x] [ID: P1-MQ-10-S3] SwiftEmitter の CodeEmitter ベース実装を拡張し、`sample/swift` が要約コメントではなく AST 本文を出力するようにする。
 5. [ ] [ID: P1-MQ-10-S4] `tools/check_py2{go,kotlin,swift}_transpile.py` と `tools/check_multilang_quality_regression.py` に「preview 要約出力禁止」検査を追加し、`sample/go`, `sample/kotlin`, `sample/swift` の先頭 `TODO: 専用 *Emitter 実装へ段階移行` 文言が再流入しないようにする。
 
 進捗メモ:
 - [ID: P1-MQ-10-S1] `src/hooks/go/emitter/go_emitter.py` を C# 本文ベースの暫定実装へ変更し、`sample/go` の要約コメント専用出力を廃止した。
 - [ID: P1-MQ-10-S1] `python3 tools/regenerate_samples.py --langs go --force --clear-cache --verify-cpp-on-diff` 実行で `sample/go/*.go` を再生成し、`TODO: 専用 GoEmitter 実装へ段階移行する。` を削除。
 - [ID: P1-MQ-10-S2] `src/hooks/kotlin/emitter/kotlin_emitter.py` を C# 本文委譲へ暫定変更し、`sample/kotlin/*.kt` を `python3 tools/regenerate_samples.py --langs kotlin --force --clear-cache --verify-cpp-on-diff` で再生成。`TODO: 専用 KotlinEmitter 実装へ段階移行する。` を削除。
+- [ID: P1-MQ-10-S3] `src/hooks/swift/emitter/swift_emitter.py` を C# 本文委譲へ暫定変更し、`sample/swift/*.swift` を `python3 tools/regenerate_samples.py --langs swift --force --clear-cache --verify-cpp-on-diff` で再生成。`TODO: 専用 SwiftEmitter 実装へ段階移行する。` を削除。
 
 ## P1: 多言語ランタイム配置統一（再オープン）
 
