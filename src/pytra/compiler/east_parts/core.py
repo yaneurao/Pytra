@@ -281,9 +281,7 @@ def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
     depth = 0
     in_str: str | None = None
     esc = False
-    i = 0
-    while i < len(raw):
-        ch = raw[i]
+    for i, ch in enumerate(raw):
         if in_str is not None:
             if esc:
                 esc = False
@@ -291,19 +289,15 @@ def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
                 esc = True
             elif ch == in_str:
                 in_str = None
-            i += 1
             continue
         if ch in {"'", '"'}:
             in_str = ch
-            i += 1
             continue
         if ch in {"(", "[", "{"}:
             depth += 1
-            i += 1
             continue
         if ch in {")", "]", "}"}:
             depth -= 1
-            i += 1
             continue
         if depth == 0:
             for op in ops:
@@ -315,7 +309,6 @@ def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
                     if not _sh_is_dotted_identifier(left):
                         return None
                     return left, op, right
-        i += 1
     return None
 
 
@@ -721,40 +714,31 @@ def _sh_split_top_keyword(text: str, kw: str) -> int:
     depth = 0
     in_str: str | None = None
     esc = False
-    i = 0
-    while i < len(text):
-        ch = text[i]
+    for i, ch in enumerate(text):
         if in_str is not None:
             if esc:
                 esc = False
-                i += 1
                 continue
             if ch == "\\":
                 esc = True
-                i += 1
                 continue
             if ch == in_str:
                 in_str = None
-            i += 1
             continue
         if ch in {"'", '"'}:
             in_str = ch
-            i += 1
             continue
         if ch in {"(", "[", "{"}:
             depth += 1
-            i += 1
             continue
         if ch in {")", "]", "}"}:
             depth -= 1
-            i += 1
             continue
         if depth == 0 and text[i:].startswith(kw):
             prev_ok = i == 0 or text[i - 1].isspace()
             next_ok = (i + len(kw) >= len(text)) or text[i + len(kw)].isspace()
             if prev_ok and next_ok:
                 return i
-        i += 1
     return -1
 
 
@@ -1057,9 +1041,7 @@ def _sh_split_top_level_from(text: str) -> tuple[str, str] | None:
     depth = 0
     in_str: str | None = None
     esc = False
-    i = 0
-    while i < len(text):
-        ch = text[i]
+    for i, ch in enumerate(text):
         if in_str is not None:
             if esc:
                 esc = False
@@ -1067,19 +1049,15 @@ def _sh_split_top_level_from(text: str) -> tuple[str, str] | None:
                 esc = True
             elif ch == in_str:
                 in_str = None
-            i += 1
             continue
         if ch in {"'", '"'}:
             in_str = ch
-            i += 1
             continue
         if ch in {"(", "[", "{"}:
             depth += 1
-            i += 1
             continue
         if ch in {")", "]", "}"}:
             depth -= 1
-            i += 1
             continue
         if depth == 0 and text[i:].startswith(" from "):
             lhs = text[:i].strip()
@@ -1087,7 +1065,6 @@ def _sh_split_top_level_from(text: str) -> tuple[str, str] | None:
             if lhs != "" and rhs != "":
                 return lhs, rhs
             return None
-        i += 1
     return None
 
 
@@ -1096,9 +1073,7 @@ def _sh_split_top_level_in(text: str) -> tuple[str, str] | None:
     depth = 0
     in_str: str | None = None
     esc = False
-    i = 0
-    while i < len(text):
-        ch = text[i]
+    for i, ch in enumerate(text):
         if in_str is not None:
             if esc:
                 esc = False
@@ -1106,19 +1081,15 @@ def _sh_split_top_level_in(text: str) -> tuple[str, str] | None:
                 esc = True
             elif ch == in_str:
                 in_str = None
-            i += 1
             continue
         if ch in {"'", '"'}:
             in_str = ch
-            i += 1
             continue
         if ch in {"(", "[", "{"}:
             depth += 1
-            i += 1
             continue
         if ch in {")", "]", "}"}:
             depth -= 1
-            i += 1
             continue
         if depth == 0 and text[i:].startswith(" in "):
             lhs = text[:i].strip()
@@ -1126,7 +1097,6 @@ def _sh_split_top_level_in(text: str) -> tuple[str, str] | None:
             if lhs != "" and rhs != "":
                 return lhs, rhs
             return None
-        i += 1
     return None
 
 
