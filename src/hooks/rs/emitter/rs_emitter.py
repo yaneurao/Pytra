@@ -1108,7 +1108,7 @@ class RustEmitter(CodeEmitter):
         return self.render_compare_chain_common(left, ops, comps, self.cmp_ops, empty_literal="false")
 
     def _render_call(self, expr: dict[str, Any]) -> str:
-        parts = self.unpack_prepared_call_parts(self._prepare_call_parts(expr))
+        parts = self.prepare_call_context(expr)
         fn_node = self.any_to_dict_or_empty(parts.get("fn"))
         fn_kind = self.any_dict_get_str(fn_node, "kind", "")
         args = self.any_to_list(parts.get("args"))
