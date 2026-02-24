@@ -533,4 +533,4 @@ if __name__ == "__main__":
 
 ## ライセンス
 
-MIT License
+Apache License 2.0

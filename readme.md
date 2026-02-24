@@ -530,4 +530,4 @@ The related documents are listed below in the order they are most frequently ref
 
 ## License
 
-MIT License
+Apache License 2.0
