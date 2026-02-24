@@ -38,34 +38,44 @@ def _module_tail_to_cpp_header_path(module_tail: str) -> str:
     """`a.b.c_impl` を `a/b/c-impl.h` へ変換する。"""
     path_tail = module_tail.replace(".", "/")
     parts: list[str] = path_tail.split("/")
-    if parts:
+    if len(parts) > 0:
         leaf = parts[-1]
         leaf = leaf[: len(leaf) - 5] + "-impl" if leaf.endswith("_impl") else leaf
         parts[-1] = leaf
     return join_str_list("/", parts) + ".h"
 
 
+def _join_runtime_path(base_dir: Path, rel_path: str) -> Path:
+    """selfhost-safe な Path 連結（`/` 演算子依存を避ける）。"""
+    base_txt = str(base_dir)
+    if base_txt.endswith("/"):
+        return Path(base_txt + rel_path)
+    return Path(base_txt + "/" + rel_path)
+
+
 def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     """`pytra.*` モジュールの runtime C++ ヘッダ実在有無を返す。"""
     def _exists_under_runtime_roots(rel_hdr: str) -> bool:
-        return (RUNTIME_CPP_COMPAT_ROOT / rel_hdr).exists() or (RUNTIME_CPP_GEN_ROOT / rel_hdr).exists()
+        compat_hdr = _join_runtime_path(RUNTIME_CPP_COMPAT_ROOT, rel_hdr)
+        gen_hdr = _join_runtime_path(RUNTIME_CPP_GEN_ROOT, rel_hdr)
+        return compat_hdr.exists() or gen_hdr.exists()
 
     if module_name_norm.startswith("pytra.std."):
         tail = module_name_norm[10:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail else ""
-        return bool(rel) and _exists_under_runtime_roots("std/" + rel)
+        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
+        return rel != "" and _exists_under_runtime_roots("std/" + rel)
     if module_name_norm.startswith("pytra.utils."):
         tail = module_name_norm[12:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail else ""
-        return bool(rel) and _exists_under_runtime_roots("utils/" + rel)
+        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
+        return rel != "" and _exists_under_runtime_roots("utils/" + rel)
     if module_name_norm.startswith("pytra.compiler."):
         tail = module_name_norm[15:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail else ""
-        return bool(rel) and _exists_under_runtime_roots("compiler/" + rel)
+        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
+        return rel != "" and _exists_under_runtime_roots("compiler/" + rel)
     if module_name_norm.startswith("pytra.built_in."):
         tail = module_name_norm[15:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail else ""
-        return bool(rel) and _exists_under_runtime_roots("built_in/" + rel)
+        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
+        return rel != "" and _exists_under_runtime_roots("built_in/" + rel)
     return False
 
 
@@ -265,9 +275,9 @@ def load_cpp_module_attr_call_map(profile: dict[str, Any] = {}) -> dict[str, dic
         mapped: dict[str, str] = {}
         for attr_name, runtime_name in ent.items():
             if isinstance(attr_name, str) and isinstance(runtime_name, str):
-                if runtime_name:
+                if runtime_name != "":
                     mapped[attr_name] = runtime_name
-        if mapped:
+        if len(mapped) > 0:
             out[module_name] = mapped
     return out
 
@@ -390,7 +400,7 @@ class CppEmitter(CodeEmitter):
 
     def declare_in_current_scope(self, name: str) -> None:
         """現在スコープへ識別子を追加する。"""
-        if not name:
+        if name == "":
             return
         scope = self.current_scope_names()
         scope.add(name)
@@ -407,7 +417,7 @@ class CppEmitter(CodeEmitter):
         """EAST 型に加えて現在スコープの推論型テーブルも参照する。"""
         node_for_base = self.any_to_dict_or_empty(expr)
         t = self.any_dict_get_str(node_for_base, "resolved_type", "")
-        if t:
+        if t != "":
             t = self.normalize_type_name(t)
         if t not in {"", "unknown"}:
             return t
@@ -488,38 +498,38 @@ class CppEmitter(CodeEmitter):
         module_name_norm = self._normalize_runtime_module_name(module_name)
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
-            if tail:
+            if tail != "":
                 return "pytra::std::" + tail.replace(".", "::")
             return ""
         if module_name_norm.startswith("pytra.utils."):
             tail = module_name_norm[12:]
-            if tail:
+            if tail != "":
                 return "pytra::utils::" + tail.replace(".", "::")
             return ""
         if module_name_norm.startswith("pytra.compiler."):
             tail = module_name_norm[15:]
-            if tail:
+            if tail != "":
                 return "pytra::compiler::" + tail.replace(".", "::")
             return ""
         if module_name_norm.startswith("pytra.built_in."):
             return ""
         if module_name_norm.startswith("pytra."):
             tail = module_name_norm[6:]
-            if tail:
+            if tail != "":
                 return "pytra::" + tail.replace(".", "::")
             return "pytra"
         inc = self._module_name_to_cpp_include(module_name_norm)
         if inc.startswith("pytra/std/") and inc.endswith(".h"):
             tail: str = inc[10 : len(inc) - 2].replace("/", "::")
-            if tail:
+            if tail != "":
                 return "pytra::" + tail
         if inc.startswith("pytra/utils/") and inc.endswith(".h"):
             tail: str = inc[12 : len(inc) - 2].replace("/", "::")
-            if tail:
+            if tail != "":
                 return "pytra::utils::" + tail
         if inc.startswith("pytra/compiler/") and inc.endswith(".h"):
             tail = inc[15 : len(inc) - 2].replace("/", "::")
-            if tail:
+            if tail != "":
                 return "pytra::compiler::" + tail
         return ""
 
@@ -542,7 +552,7 @@ class CppEmitter(CodeEmitter):
     ) -> None:
         """`pytra.std/utils` の symbol include を必要時のみ追加する。"""
         runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
-        if not runtime_prefix or not symbol:
+        if runtime_prefix == "" or symbol == "":
             return
         sym_inc = self._module_name_to_cpp_include(runtime_prefix + symbol)
         append_unique_non_empty(includes, seen, sym_inc)
@@ -552,7 +562,7 @@ class CppEmitter(CodeEmitter):
         includes: list[str] = []
         seen: set[str] = set()
         bindings = dict_any_get_dict_list(meta, "import_bindings")
-        if bindings:
+        if len(bindings) > 0:
             for item in bindings:
                 mod_name = self._normalize_runtime_module_name(dict_any_get_str(item, "module_id"))
                 append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(mod_name))
@@ -603,7 +613,7 @@ class CppEmitter(CodeEmitter):
         meta = dict_any_get_dict(self.doc, "meta")
         refs = meta_qualified_symbol_refs(self.doc)
         bindings = meta_import_bindings(self.doc)
-        if bindings:
+        if len(bindings) > 0:
             for ref_item in refs:
                 set_import_symbol_binding_and_module_set(
                     self.import_symbols,
@@ -620,7 +630,7 @@ class CppEmitter(CodeEmitter):
                         dict_str_get(item, "local_name", ""),
                         dict_str_get(item, "module_id", ""),
                     )
-                elif binding_kind == "symbol" and not refs:
+                elif binding_kind == "symbol" and len(refs) == 0:
                     set_import_symbol_binding_and_module_set(
                         self.import_symbols,
                         self.import_symbol_modules,
@@ -628,9 +638,9 @@ class CppEmitter(CodeEmitter):
                         dict_str_get(item, "module_id", ""),
                         dict_str_get(item, "export_name", ""),
                     )
-            if not self.import_symbols:
+            if len(self.import_symbols) == 0:
                 self._seed_legacy_import_symbols_from_meta(meta)
-            if not self.import_modules:
+            if len(self.import_modules) == 0:
                 self._seed_legacy_import_modules_from_meta(meta)
             return
         # canonical メタが空の場合は legacy メタへフォールバックする。
@@ -681,7 +691,7 @@ class CppEmitter(CodeEmitter):
             return []
         fn_map: dict[str, list[str]] = {}
         src_path: Path = self._module_source_path_for_name(module_name_norm)
-        if not str(src_path):
+        if str(src_path) == "":
             self._module_fn_arg_type_cache[module_name_norm] = fn_map
             return []
         fn_map = extract_function_arg_types_from_python_source(src_path)
@@ -4931,11 +4941,11 @@ class CppEmitter(CodeEmitter):
         """`Call(Name)` で import 済みシンボルを解決し、必要なら直接呼び出しへ変換する。"""
         raw = raw_name
         imported_module = ""
-        if raw and not self.is_declared(raw):
+        if raw != "" and not self.is_declared(raw):
             resolved = self._resolve_imported_symbol(raw)
             imported_module = dict_str_get(resolved, "module", "")
             raw = dict_str_get(resolved, "name", "") or raw
-        if not raw or not imported_module:
+        if raw == "" or imported_module == "":
             return None, raw
         mapped_runtime_txt = self._resolve_runtime_call_for_imported_symbol(imported_module, raw) or ""
         if (
@@ -4950,7 +4960,7 @@ class CppEmitter(CodeEmitter):
                 call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
             return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
         target_ns = self.module_namespace_map.get(self._normalize_runtime_module_name(imported_module), "")
-        if target_ns:
+        if target_ns != "":
             namespaced = self._render_namespaced_module_call(
                 imported_module,
                 target_ns,
@@ -8238,10 +8248,10 @@ def main(argv: list[str]) -> int:
             rel_tail = _runtime_output_rel_tail(module_tail)
             out_root = RUNTIME_CPP_GEN_ROOT
             compat_root = RUNTIME_CPP_COMPAT_ROOT
-            cpp_out = out_root / (rel_tail + ".cpp")
-            hdr_out = out_root / (rel_tail + ".h")
-            compat_cpp_out = compat_root / (rel_tail + ".cpp")
-            compat_hdr_out = compat_root / (rel_tail + ".h")
+            cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
+            hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
+            compat_cpp_out = _join_runtime_path(compat_root, rel_tail + ".cpp")
+            compat_hdr_out = _join_runtime_path(compat_root, rel_tail + ".h")
             mkdirs_for_cli(path_parent_text(cpp_out))
             mkdirs_for_cli(path_parent_text(hdr_out))
             mkdirs_for_cli(path_parent_text(compat_cpp_out))
@@ -8281,15 +8291,11 @@ def main(argv: list[str]) -> int:
             compat_hdr_txt = (
                 "// FORWARDER: generated runtime header moved to pytra-gen.\n"
                 + "#pragma once\n\n"
-                + '#include "runtime/cpp/pytra-gen/'
-                + rel_tail
-                + '.h"\n'
+                + f'#include "runtime/cpp/pytra-gen/{rel_tail}.h"\n'
             )
             compat_cpp_txt = (
                 "// FORWARDER TU: generated runtime source moved to pytra-gen.\n"
-                + '#include "runtime/cpp/pytra-gen/'
-                + rel_tail
-                + '.cpp"\n'
+                + f'#include "runtime/cpp/pytra-gen/{rel_tail}.cpp"\n'
             )
             write_text_file(compat_hdr_out, compat_hdr_txt)
             write_text_file(compat_cpp_out, compat_cpp_txt)
