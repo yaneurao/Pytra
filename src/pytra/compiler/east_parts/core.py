@@ -953,9 +953,11 @@ def _sh_split_top_level_assign(text: str) -> tuple[str, str] | None:
     depth = 0
     in_str: str | None = None
     esc = False
-    i = 0
-    while i < len(text):
-        ch = text[i]
+    skip = 0
+    for i, ch in enumerate(text):
+        if skip > 0:
+            skip -= 1
+            continue
         if in_str is not None:
             if esc:
                 esc = False
@@ -963,41 +965,35 @@ def _sh_split_top_level_assign(text: str) -> tuple[str, str] | None:
                 esc = True
             elif ch == in_str:
                 if i + 2 < len(text) and text[i : i + 3] == in_str * 3:
-                    i += 2
+                    skip = 2
                 else:
                     in_str = None
-            i += 1
             continue
         if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
             in_str = text[i]
-            i += 3
+            skip = 2
             continue
         if ch in {"'", '"'}:
             in_str = ch
-            i += 1
             continue
         if ch == "#":
             break
         if ch in {"(", "[", "{"}:
             depth += 1
-            i += 1
             continue
         if ch in {")", "]", "}"}:
             depth -= 1
-            i += 1
             continue
         if ch == "=" and depth == 0:
             prev = text[i - 1] if i - 1 >= 0 else ""
             nxt = text[i + 1] if i + 1 < len(text) else ""
             if prev in {"!", "<", ">", "="} or nxt == "=":
-                i += 1
                 continue
             lhs = text[:i].strip()
             rhs = text[i + 1 :].strip()
             if lhs != "" and rhs != "":
                 return lhs, rhs
             return None
-        i += 1
     return None
 
 
