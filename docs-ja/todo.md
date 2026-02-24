@@ -37,8 +37,7 @@ py2cpp / py2rs 共通化候補:
 文脈: `docs-ja/plans/p1-py2cpp-reduction.md`（`TG-P1-CPP-REDUCE`）
 
 1. [ ] [ID: P1-CPP-REDUCE-01] `src/py2cpp.py` に残る未移行ロジックを `CodeEmitter` へ段階移管し、行数を縮退する（`P1-CPP-REDUCE-01-S1` から `P1-CPP-REDUCE-01-S3` 完了でクローズ）。
-2. [ ] [ID: P1-CPP-REDUCE-01-S2] 言語非依存ロジックを `CodeEmitter` / `src/pytra/compiler/` へ段階移管する。
-3. [ ] [ID: P1-CPP-REDUCE-01-S3] selfhost 差分ゼロを維持したまま `py2cpp.py` の重複分岐を削減する。
+2. [ ] [ID: P1-CPP-REDUCE-01-S3] selfhost 差分ゼロを維持したまま `py2cpp.py` の重複分岐を削減する。
 5. [ ] [ID: P1-CPP-REDUCE-02] 全言語 selfhost 前提で `py2cpp.py` への汎用 helper 新規追加を原則禁止する運用へ移行する（`P1-CPP-REDUCE-02-S1` から `P1-CPP-REDUCE-02-S3` 完了でクローズ）。
 6. [ ] [ID: P1-CPP-REDUCE-02-S1] 「汎用 helper 禁止 / 共通層先行抽出」の運用ルールを文書化する。
 7. [ ] [ID: P1-CPP-REDUCE-02-S2] 既存 helper 追加箇所を検出する lint/CI チェックを追加する。

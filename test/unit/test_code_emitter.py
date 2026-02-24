@@ -1036,6 +1036,23 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(target_txt, "lhs")
         self.assertEqual(value_txt, "rhs")
         self.assertEqual(op_txt, "+=")
+        self.assertEqual(
+            em.fallback_tuple_target_names_from_repr({"kind": "Tuple", "repr": "a, _b2, 3x"}),
+            ["a", "_b2"],
+        )
+        self.assertEqual(
+            em.target_bound_names(
+                {
+                    "kind": "Tuple",
+                    "elements": [
+                        {"kind": "Name", "id": "a"},
+                        {"kind": "Name", "id": "b"},
+                        {"kind": "Constant", "value": 1},
+                    ],
+                }
+            ),
+            {"a", "b"},
+        )
 
     def test_hook_invocation_helpers(self) -> None:
         em = _HookedEmitter({})

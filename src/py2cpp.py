@@ -2260,7 +2260,7 @@ class CppEmitter(CodeEmitter):
         if self._node_kind_from_dict(target) == "Tuple":
             lhs_elems = self.any_dict_get_list(target, "elements")
             if len(lhs_elems) == 0:
-                fallback_names = self._fallback_tuple_target_names_from_repr(target)
+                fallback_names = self.fallback_tuple_target_names_from_repr(target)
                 if len(fallback_names) == 0:
                     stmt_repr = self.any_dict_get_str(stmt, "repr", "")
                     if stmt_repr != "":
@@ -2269,7 +2269,7 @@ class CppEmitter(CodeEmitter):
                         if eq_pos >= 0:
                             lhs_txt = stmt_repr[:eq_pos]
                         pseudo_target: dict[str, Any] = {"repr": lhs_txt}
-                        fallback_names = self._fallback_tuple_target_names_from_repr(pseudo_target)
+                        fallback_names = self.fallback_tuple_target_names_from_repr(pseudo_target)
                 if len(fallback_names) > 0:
                     recovered: list[Any] = []
                     for nm in fallback_names:
@@ -2463,37 +2463,6 @@ class CppEmitter(CodeEmitter):
                 return True
         return False
 
-    def _fallback_tuple_target_names_from_repr(self, target: dict[str, Any]) -> list[str]:
-        """selfhost で tuple target 要素が欠落したとき、repr から簡易復元する。"""
-        out: list[str] = []
-        repr_txt = self.any_dict_get_str(target, "repr", "")
-        if repr_txt == "" or "," not in repr_txt:
-            return out
-        parts: list[str] = []
-        cur = ""
-        for ch in repr_txt:
-            if ch == ",":
-                parts.append(cur.strip())
-                cur = ""
-            else:
-                cur += ch
-        parts.append(cur.strip())
-        for nm in parts:
-            if nm != "":
-                ok = True
-                for k, c in enumerate(nm):
-                    if k == 0:
-                        if not (c == "_" or c.isalpha()):
-                            ok = False
-                            break
-                    else:
-                        if not (c == "_" or c.isalnum()):
-                            ok = False
-                            break
-                if ok:
-                    out.append(nm)
-        return out
-
     def render_lvalue(self, expr: Any) -> str:
         """左辺値文脈の式（添字代入含む）を C++ 文字列へ変換する。"""
         node = self.any_to_dict_or_empty(expr)
@@ -2550,20 +2519,6 @@ class CppEmitter(CodeEmitter):
                 return self.render_expr(self._build_box_expr_node(key_node))
             return f"make_object({key_expr})"
         return self.apply_cast(key_expr, key_t)
-
-    def _target_bound_names(self, target: dict[str, Any]) -> set[str]:
-        """for ターゲットが束縛する識別子名を収集する。"""
-        names: set[str] = set()
-        if not isinstance(target, dict) or len(target) == 0:
-            return names
-        if self._node_kind_from_dict(target) == "Name":
-            names.add(self.any_dict_get_str(target, "id", "_"))
-            return names
-        if self._node_kind_from_dict(target) == "Tuple":
-            for e_dict in self._dict_stmt_list(target.get("elements")):
-                if self._node_kind_from_dict(e_dict) == "Name":
-                    names.add(self.any_dict_get_str(e_dict, "id", "_"))
-        return names
 
     def _emit_target_unpack(self, target: dict[str, Any], src: str, iter_expr: dict[str, Any]) -> None:
         """タプルターゲットへのアンパック代入を出力する。"""
@@ -2707,7 +2662,7 @@ class CppEmitter(CodeEmitter):
         t0 = self.any_to_str(stmt.get("target_type"))
         t1 = self.get_expr_type(stmt.get("target"))
         t_ty = self._cpp_type_text(t0 if t0 != "" else t1)
-        target_names = self._target_bound_names(target)
+        target_names = self.target_bound_names(target)
         unpack_tuple = self._node_kind_from_dict(target) == "Tuple"
         iter_tmp = ""
         hdr = ""
@@ -3063,7 +3018,7 @@ class CppEmitter(CodeEmitter):
         t1 = self.get_expr_type(stmt.get("target"))
         t_decl = self.normalize_type_name(t0 if t0 != "" else t1)
         unpack_tuple = self._node_kind_from_dict(target) == "Tuple"
-        target_names = self._target_bound_names(target)
+        target_names = self.target_bound_names(target)
         iter_tmp = ""
         hdr = ""
         needs_tmp = unpack_tuple or self._node_kind_from_dict(target) != "Name" or not self.is_any_like_type(t_decl)

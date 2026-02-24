@@ -1126,6 +1126,65 @@ class CodeEmitter:
             return out
         return self.any_to_list(tuple_node.get("elts"))
 
+    def fallback_tuple_target_names_from_repr(self, target: dict[str, Any]) -> list[str]:
+        """tuple target 要素が欠落したとき、`repr` から識別子候補を復元する。"""
+        out: list[str] = []
+        repr_txt = self.any_dict_get_str(target, "repr", "")
+        if repr_txt == "" or "," not in repr_txt:
+            return out
+        parts: list[str] = []
+        cur = ""
+        for ch in repr_txt:
+            if ch == ",":
+                parts.append(cur.strip())
+                cur = ""
+            else:
+                cur += ch
+        parts.append(cur.strip())
+        for nm in parts:
+            if nm == "":
+                continue
+            ok = True
+            i = 0
+            while i < len(nm):
+                ch = nm[i]
+                if i == 0:
+                    is_head_ok = ch == "_" or (("a" <= ch) and (ch <= "z")) or (("A" <= ch) and (ch <= "Z"))
+                    if not is_head_ok:
+                        ok = False
+                        break
+                else:
+                    is_body_ok = (
+                        ch == "_"
+                        or (("a" <= ch) and (ch <= "z"))
+                        or (("A" <= ch) and (ch <= "Z"))
+                        or (("0" <= ch) and (ch <= "9"))
+                    )
+                    if not is_body_ok:
+                        ok = False
+                        break
+                i += 1
+            if ok:
+                out.append(nm)
+        return out
+
+    def target_bound_names(self, target: dict[str, Any]) -> set[str]:
+        """for ターゲットが束縛する識別子名を収集する。"""
+        names: set[str] = set()
+        if not isinstance(target, dict) or len(target) == 0:
+            return names
+        kind = self._node_kind_from_dict(target)
+        if kind == "Name":
+            names.add(self.any_dict_get_str(target, "id", "_"))
+            return names
+        if kind == "Tuple":
+            elems = self.tuple_elements(target)
+            for elem in elems:
+                e_dict = self.any_to_dict_or_empty(elem)
+                if self._node_kind_from_dict(e_dict) == "Name":
+                    names.add(self.any_dict_get_str(e_dict, "id", "_"))
+        return names
+
     def any_to_str(self, v: Any) -> str:
         """動的値を str に安全に変換する。変換不能なら空文字。"""
         if isinstance(v, str):
