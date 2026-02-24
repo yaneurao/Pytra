@@ -310,7 +310,9 @@
 ## 16. 現行の段階構成（2026-02-24）
 
 - EAST は `EAST1 -> EAST2 -> EAST3` の三段で扱う。
-- 現行実装では `py2*.py` の既定経路を `EAST3` とし、`EAST2` は `--east-stage 2` 明示時のみの移行互換モードとして扱う。
+- 現行実装では `py2*.py` の既定経路を `EAST3` とする。
+- `py2cpp.py` は `--east-stage 3` のみ受理し、`--east-stage 2` はエラーで停止する。
+- 非 C++ 8変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）は `--east-stage 2` を移行互換モード（警告付き）として維持する。
 - `meta.dispatch_mode` は全段で保持し、意味論適用は `EAST2 -> EAST3` の 1 回のみとする。
 
 ### 16.1 段階ごとの責務
@@ -361,7 +363,7 @@
 | EAST2 | EAST1 -> EAST2 正規化 API | `src/pytra/compiler/east_parts/east2.py`（互換ラッパ + selfhost fallback） | `src/pytra/compiler/east_parts/east2.py` |
 | EAST3 | EAST2 -> EAST3 lower 本体 | `src/pytra/compiler/east_parts/east3_lowering.py` | `src/pytra/compiler/east_parts/east3_lowering.py` |
 | EAST3 | EAST3 入口 API | `src/pytra/compiler/east_parts/east3.py`（互換ラッパ経由） | `src/pytra/compiler/east_parts/east3.py` |
-| Bridge | backend 入口（C++） | `src/py2cpp.py`（`--east-stage {2,3}` 二重運用） | `src/py2cpp.py`（`EAST3` 主経路 + `EAST2` 互換） |
+| Bridge | backend 入口（C++） | `src/py2cpp.py`（`--east-stage 3` 専用） | `src/py2cpp.py`（`EAST3` 専用） |
 | CLI 互換 | 旧 API 公開 | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/transpile_cli.py`（互換ラッパ専任） |
 
 <a id="east1-build-boundary"></a>
@@ -392,7 +394,7 @@
 
 補足:
 - 各フェーズの進行管理は `docs-ja/todo/index.md` と `docs-ja/plans/plan-east123-migration.md` で行う。
-- `Phase 4` の現行運用: 全 `py2*.py` の既定は `--east-stage 3`、`--east-stage 2` は `warning: --east-stage 2 is compatibility mode; default is 3.` を伴う互換経路。
+- `Phase 4` の現行運用: 全 `py2*.py` の既定は `--east-stage 3`。`py2cpp.py` は `--east-stage 2` を受理せずエラー停止、非 C++ 8変換器は `warning: --east-stage 2 is compatibility mode; default is 3.` を伴う互換経路を維持する。
 
 ## 21. EAST導入の受け入れ基準
 

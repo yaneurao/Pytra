@@ -428,5 +428,6 @@
 ### 8.1 `--east-stage` 運用（実装同期）
 
 - `py2cpp.py` と非 C++ 8変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）は、既定を `--east-stage 3` に統一する。
-- `--east-stage 2` は移行互換モードであり、`warning: --east-stage 2 is compatibility mode; default is 3.` を出力する。
+- `py2cpp.py` は `--east-stage 3` のみ受理し、`--east-stage 2` 指定時はエラー停止する。
+- 非 C++ 8変換器のみ、`--east-stage 2` を移行互換モードとして受理し、`warning: --east-stage 2 is compatibility mode; default is 3.` を出力する。
 - 回帰導線は `tools/check_py2cpp_transpile.py` と `tools/check_noncpp_east3_contract.py` を正本とする。

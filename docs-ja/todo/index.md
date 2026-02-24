@@ -30,9 +30,10 @@
 2. [x] [ID: P0-CPP-EAST2-01-S1] `src/py2cpp.py` から `--east-stage 2` 受理経路を除去し、`EAST2` 指定時は明示エラーで停止する。
 3. [ ] [ID: P0-CPP-EAST2-01-S2] `src/py2cpp.py` 内の `EAST2 -> C++` 互換専用分岐（legacy fallback/互換ノード写像）を段階的に削除し、EAST3 前提の実装へ整理する。
 4. [x] [ID: P0-CPP-EAST2-01-S3] `tools/check_py2cpp_transpile.py` と `test/unit/test_py2cpp_smoke.py` を更新し、`EAST2` 経路が復活しない回帰ガードを追加する。
-5. [ ] [ID: P0-CPP-EAST2-01-S4] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` を更新し、C++ 経路が EAST3 専用であることを明記する。
+5. [x] [ID: P0-CPP-EAST2-01-S4] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` を更新し、C++ 経路が EAST3 専用であることを明記する。
 進捗メモ: [ID: P0-CPP-EAST2-01-S2] `BuiltinCall.runtime_call` 未設定時 fallback と self-hosted parser 向け未lower method fallback を削除し、`type_id` Name-call も lower 必須化。`check_py2cpp_transpile` は再度 `ok=131 fail=0` を確認。
 進捗メモ: [ID: P0-CPP-EAST2-01-S3] `check_py2cpp_transpile.py` に `--east-stage 2` 失敗必須チェックを追加し、`test/unit/test_py2cpp_smoke.py` を新設。`check_py2cpp_transpile` は `checked=132 ok=132 fail=0`。
+進捗メモ: [ID: P0-CPP-EAST2-01-S4] `spec-east` / `spec-dev` を更新し、`py2cpp.py` は `--east-stage 3` 専用・非 C++ 8変換器のみ `--east-stage 2` 互換維持と明記。
 
 ## P0: `EAST1 build` 互換運用廃止（2番目優先）
 
