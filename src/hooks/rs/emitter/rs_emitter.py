@@ -1324,6 +1324,18 @@ class RustEmitter(CodeEmitter):
         comps = self.any_to_list(expr.get("comparators"))
         return self.render_compare_chain_common(left, ops, comps, self.cmp_ops, empty_literal="false")
 
+    def _render_binop(self, expr: dict[str, Any]) -> str:
+        left_node = self.any_to_dict_or_empty(expr.get("left"))
+        right_node = self.any_to_dict_or_empty(expr.get("right"))
+        left = self._wrap_for_binop_operand(self.render_expr(left_node), left_node, self.any_dict_get_str(expr, "op", ""), is_right=False)
+        right = self._wrap_for_binop_operand(self.render_expr(right_node), right_node, self.any_dict_get_str(expr, "op", ""), is_right=True)
+        custom = self.hook_on_render_binop(expr, left, right)
+        if custom != "":
+            return custom
+        op = self.any_to_str(expr.get("op"))
+        mapped = self.bin_ops.get(op, "+")
+        return left + " " + mapped + " " + right
+
     def _render_call(self, expr: dict[str, Any]) -> str:
         parts = self.prepare_call_context(expr)
         fn_node = self.any_to_dict_or_empty(parts.get("fn"))
@@ -1463,16 +1475,7 @@ class RustEmitter(CodeEmitter):
                 return "(!" + right + ")"
             return right
         if kind == "BinOp":
-            left_node = self.any_to_dict_or_empty(expr_d.get("left"))
-            right_node = self.any_to_dict_or_empty(expr_d.get("right"))
-            left = self._wrap_for_binop_operand(self.render_expr(left_node), left_node, self.any_dict_get_str(expr_d, "op", ""), is_right=False)
-            right = self._wrap_for_binop_operand(self.render_expr(right_node), right_node, self.any_dict_get_str(expr_d, "op", ""), is_right=True)
-            custom = self.hook_on_render_binop(expr_d, left, right)
-            if custom != "":
-                return custom
-            op = self.any_to_str(expr_d.get("op"))
-            mapped = self.bin_ops.get(op, "+")
-            return "(" + left + " " + mapped + " " + right + ")"
+            return self._render_binop(expr_d)
         if kind == "Compare":
             return self._render_compare(expr_d)
         if kind == "BoolOp":

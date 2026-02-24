@@ -5,9 +5,9 @@ use crate::pytra::runtime::gif::save_gif;
 // 13: Sample that outputs DFS maze-generation progress as a GIF.
 
 fn capture(grid: Vec<Vec<i64>>, w: i64, h: i64, scale: i64) -> Vec<u8> {
-    let width = (w * scale);
-    let height = (h * scale);
-    let mut frame = bytearray((width * height));
+    let width = w * scale;
+    let height = h * scale;
+    let mut frame = bytearray(width * height);
     let mut y: i64 = 0;
     while y < h {
         let mut x: i64 = 0;
@@ -15,10 +15,10 @@ fn capture(grid: Vec<Vec<i64>>, w: i64, h: i64, scale: i64) -> Vec<u8> {
             let v = ((grid[y as usize][x as usize] == 0) ? 255 : 40);
             let mut yy: i64 = 0;
             while yy < scale {
-                let base = (((((y * scale) + yy)) * width) + (x * scale));
+                let base = (y * scale + yy) * width + x * scale;
                 let mut xx: i64 = 0;
                 while xx < scale {
-                    frame[(base + xx) as usize] = v;
+                    frame[base + xx as usize] = v;
                     xx += 1;
                 }
                 yy += 1;
@@ -57,19 +57,19 @@ fn run_13_maze_generation_steps() {
             let __tmp_2 = dirs[k as usize];
             dx = __tmp_2.0;
             dy = __tmp_2.1;
-            let mut nx = (x + dx);
-            let mut ny = (y + dy);
-            if (nx >= 1) && (nx < (cell_w - 1)) && (ny >= 1) && (ny < (cell_h - 1)) && (grid[ny as usize][nx as usize] == 1) {
+            let mut nx = x + dx;
+            let mut ny = y + dy;
+            if (nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (grid[ny as usize][nx as usize] == 1) {
                 if dx == 2 {
-                    candidates.push((nx, ny, (x + 1), y));
+                    candidates.push((nx, ny, x + 1, y));
                 } else {
                     if dx == (-2) {
-                        candidates.push((nx, ny, (x - 1), y));
+                        candidates.push((nx, ny, x - 1, y));
                     } else {
                         if dy == 2 {
-                            candidates.push((nx, ny, x, (y + 1)));
+                            candidates.push((nx, ny, x, y + 1));
                         } else {
-                            candidates.push((nx, ny, x, (y - 1)));
+                            candidates.push((nx, ny, x, y - 1));
                         }
                     }
                 }
@@ -79,20 +79,20 @@ fn run_13_maze_generation_steps() {
         if candidates.len() as i64 == 0 {
             stack.pop().unwrap_or_default();
         } else {
-            let sel = candidates[(((((x * 17) + (y * 29)) + (stack.len() as i64 * 13))) % candidates.len() as i64) as usize];
+            let sel = candidates[(x * 17 + y * 29 + stack.len() as i64 * 13) % candidates.len() as i64 as usize];
             (nx, ny, wx, wy) = sel;
             grid[wy as usize][wx as usize] = 0;
             grid[ny as usize][nx as usize] = 0;
             stack.push((nx, ny));
         }
-        if (step % capture_every) == 0 {
+        if step % capture_every == 0 {
             frames.push(capture(grid, cell_w, cell_h, scale));
         }
         step += 1;
     }
     frames.push(capture(grid, cell_w, cell_h, scale));
-    save_gif(out_path, (cell_w * scale), (cell_h * scale), frames, grayscale_palette());
-    let elapsed = (perf_counter() - start);
+    save_gif(out_path, cell_w * scale, cell_h * scale, frames, grayscale_palette());
+    let elapsed = perf_counter() - start;
     println!("{:?}", ("output:", out_path));
     println!("{:?}", ("frames:", frames.len() as i64));
     println!("{:?}", ("elapsed_sec:", elapsed));

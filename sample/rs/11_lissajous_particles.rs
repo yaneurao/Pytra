@@ -9,8 +9,8 @@ fn color_palette() -> Vec<u8> {
     let mut i: i64 = 0;
     while i < 256 {
         let r = i;
-        let g = ((i * 3) % 256);
-        let b = (255 - i);
+        let g = i * 3 % 256;
+        let b = 255 - i;
         p.push(r);
         p.push(g);
         p.push(b);
@@ -28,29 +28,26 @@ fn run_11_lissajous_particles() {
     
     let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
-    
     let mut t: i64 = 0;
     while t < frames_n {
-        let mut frame = bytearray((w * h));
-        
+        let mut frame = bytearray(w * h);
         let mut p: i64 = 0;
         while p < particles {
-            let phase = (p * 0.261799);
-            let x = ((w * 0.5) + ((w * 0.38) * math.sin(((0.11 * t) + (phase * 2.0))))) as i64;
-            let y = ((h * 0.5) + ((h * 0.38) * math.sin(((0.17 * t) + (phase * 3.0))))) as i64;
-            let color = (30 + ((p * 9) % 220));
-            
+            let phase = p * 0.261799;
+            let x = w * 0.5 + w * 0.38 * math.sin(0.11 * t + phase * 2.0) as i64;
+            let y = h * 0.5 + h * 0.38 * math.sin(0.17 * t + phase * 3.0) as i64;
+            let color = 30 + p * 9 % 220;
             let mut dy: i64 = (-2);
             while dy < 3 {
                 let mut dx: i64 = (-2);
                 while dx < 3 {
-                    let xx = (x + dx);
-                    let yy = (y + dy);
+                    let xx = x + dx;
+                    let yy = y + dy;
                     if (xx >= 0) && (xx < w) && (yy >= 0) && (yy < h) {
-                        let d2 = ((dx * dx) + (dy * dy));
+                        let d2 = dx * dx + dy * dy;
                         if d2 <= 4 {
-                            let idx = ((yy * w) + xx);
-                            let mut v = (color - (d2 * 20));
+                            let idx = yy * w + xx;
+                            let mut v = color - d2 * 20;
                             v = max(0, v);
                             if v > frame[idx as usize] {
                                 frame[idx as usize] = v;
@@ -67,7 +64,7 @@ fn run_11_lissajous_particles() {
         t += 1;
     }
     save_gif(out_path, w, h, frames, color_palette());
-    let elapsed = (perf_counter() - start);
+    let elapsed = perf_counter() - start;
     println!("{:?}", ("output:", out_path));
     println!("{:?}", ("frames:", frames_n));
     println!("{:?}", ("elapsed_sec:", elapsed));
