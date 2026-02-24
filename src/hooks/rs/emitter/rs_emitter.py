@@ -728,17 +728,15 @@ class RustEmitter(CodeEmitter):
         cond = f"{target} < {stop}"
         if range_mode == "descending":
             cond = f"{target} > {stop}"
-        self.emit(self.syntax_line("for_range_open", "while {cond} {", {"cond": cond}))
         body_scope: set[str] = set()
         body_scope.add(self.any_dict_get_str(target_node, "id", target))
         body = self._dict_stmt_list(stmt.get("body"))
-        self.indent += 1
-        self.scope_stack.append(body_scope)
-        self.emit_stmt_list(body)
-        self.emit(f"{target} += {step};")
-        self.scope_stack.pop()
-        self.indent -= 1
-        self.emit(self.syntax_text("block_close", "}"))
+        self.emit_scoped_block_with_tail_lines(
+            self.syntax_line("for_range_open", "while {cond} {", {"cond": cond}),
+            body,
+            body_scope,
+            [f"{target} += {step};"],
+        )
 
     def _emit_for(self, stmt: dict[str, Any]) -> None:
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
@@ -800,10 +798,12 @@ class RustEmitter(CodeEmitter):
                 if self.any_dict_get_str(v_node, "kind", "") == "Name":
                     self.declared_var_types[self.any_dict_get_str(v_node, "id", "")] = iter_val_t
 
-        self.emit(self.syntax_line("for_open", "for {target} in {iter} {", {"target": target, "iter": iter_expr}))
         body = self._dict_stmt_list(stmt.get("body"))
-        self.emit_scoped_stmt_list(body, body_scope)
-        self.emit(self.syntax_text("block_close", "}"))
+        self.emit_scoped_block(
+            self.syntax_line("for_open", "for {target} in {iter} {", {"target": target, "iter": iter_expr}),
+            body,
+            body_scope,
+        )
 
     def _render_as_pyany(self, expr: Any) -> str:
         """式を `PyAny` へ昇格する。"""

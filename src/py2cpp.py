@@ -1720,14 +1720,13 @@ class CppEmitter(CodeEmitter):
                 self.emit_scoped_stmt_list([else_stmts[0]], set())
             return
 
-        self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": cond_txt}))
-        self.emit_scoped_stmt_list(body_stmts, set())
-        if len(else_stmts) > 0:
-            self.emit(self.syntax_text("else_open", "} else {"))
-            self.emit_scoped_stmt_list(else_stmts, set())
-            self.emit_block_close()
-        else:
-            self.emit_block_close()
+        self.emit_if_stmt_skeleton(
+            cond_txt,
+            body_stmts,
+            else_stmts,
+            if_open_default="if ({cond}) {",
+            else_open_default="} else {",
+        )
 
     def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
         """While ノードを出力する。"""
@@ -2675,17 +2674,17 @@ class CppEmitter(CodeEmitter):
             self.indent -= 1
             return
 
-        self.emit(
+        scope_names: set[str] = set()
+        scope_names.add(tgt)
+        self.emit_scoped_block(
             self.syntax_line(
                 "for_open_block",
                 "{header} {",
                 {"header": hdr},
-            )
+            ),
+            body_stmts,
+            scope_names,
         )
-        scope_names: set[str] = set()
-        scope_names.add(tgt)
-        self.emit_scoped_stmt_list(body_stmts, scope_names)
-        self.emit_block_close()
 
     def emit_for_each(self, stmt: dict[str, Any]) -> None:
         """For ノード（反復）を C++ range-for として出力する。"""
@@ -2764,21 +2763,23 @@ class CppEmitter(CodeEmitter):
             self.indent -= 1
             return
 
-        self.emit(
-            self.syntax_line(
-                "for_open_block",
-                "{header} {",
-                {"header": hdr},
-            )
+        open_line = self.syntax_line(
+            "for_open_block",
+            "{header} {",
+            {"header": hdr},
         )
-        self.indent += 1
-        self.scope_stack.append(set(target_names))
+        target_scope = set(target_names)
         if unpack_tuple:
+            self.emit(open_line)
+            self.indent += 1
+            self.scope_stack.append(target_scope)
             self._emit_target_unpack(target, iter_tmp, iter_expr)
-        self.emit_stmt_list(body_stmts)
-        self.scope_stack.pop()
-        self.indent -= 1
-        self.emit_block_close()
+            self.emit_stmt_list(body_stmts)
+            self.scope_stack.pop()
+            self.indent -= 1
+            self.emit_block_close()
+            return
+        self.emit_scoped_block(open_line, body_stmts, target_scope)
 
     def _target_expr_from_target_plan(self, target_plan: dict[str, Any]) -> dict[str, Any]:
         """EAST3 `target_plan` を既存 For/ForRange 互換の target ノードへ変換する。"""

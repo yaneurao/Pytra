@@ -702,6 +702,24 @@ class CodeEmitter:
         self.emit_scoped_stmt_list(stmts, scope_names)
         self.emit_block_close()
 
+    def emit_scoped_block_with_tail_lines(
+        self,
+        open_line: str,
+        stmts: list[dict[str, Any]],
+        scope_names: set[str],
+        tail_lines: list[str],
+    ) -> None:
+        """スコープ付き block の末尾へ生テキスト行を挿入して閉じる。"""
+        self.emit(open_line)
+        self.indent += 1
+        self.scope_stack.append(scope_names)
+        self.emit_stmt_list(stmts)
+        for line in tail_lines:
+            self.emit(line)
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit_block_close()
+
     def emit_if_stmt_skeleton(
         self,
         cond_expr: str,

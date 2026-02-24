@@ -606,10 +606,12 @@ class CSharpEmitter(CodeEmitter):
         cond = target + " < " + stop
         if range_mode == "descending":
             cond = target + " > " + stop
-        self.emit("for (" + target_type + " " + target + " = " + start + "; " + cond + "; " + target + " += " + step + ") {")
         body = self._dict_stmt_list(stmt.get("body"))
-        self.emit_scoped_stmt_list(body, {target_name})
-        self.emit("}")
+        self.emit_scoped_block(
+            "for (" + target_type + " " + target + " = " + start + "; " + cond + "; " + target + " += " + step + ") {",
+            body,
+            {target_name},
+        )
 
     def _iter_is_dict_items(self, iter_node: Any) -> bool:
         """反復対象が `dict.items()` か判定する。"""
@@ -656,9 +658,11 @@ class CSharpEmitter(CodeEmitter):
 
         target_raw = self.any_dict_get_str(target_node, "id", "_it")
         target = self._safe_name(target_raw)
-        self.emit(self.syntax_line("for_open", "foreach (var {target} in {iter}) {", {"target": target, "iter": iter_expr}))
-        self.emit_scoped_stmt_list(body, {target_raw})
-        self.emit("}")
+        self.emit_scoped_block(
+            self.syntax_line("for_open", "foreach (var {target} in {iter}) {", {"target": target, "iter": iter_expr}),
+            body,
+            {target_raw},
+        )
 
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))

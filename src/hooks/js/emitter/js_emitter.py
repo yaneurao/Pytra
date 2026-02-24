@@ -411,12 +411,10 @@ class JsEmitter(CodeEmitter):
         inc = target + " += " + step
         if range_mode == "descending":
             cond = target + " > " + stop
-        self.emit("for (let " + target + " = " + start + "; " + cond + "; " + inc + ") {")
         body = self._dict_stmt_list(stmt.get("body"))
         scope = set()
         scope.add(target_name)
-        self.emit_scoped_stmt_list(body, scope)
-        self.emit("}")
+        self.emit_scoped_block("for (let " + target + " = " + start + "; " + cond + "; " + inc + ") {", body, scope)
 
     def _emit_for(self, stmt: dict[str, Any]) -> None:
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
@@ -445,10 +443,12 @@ class JsEmitter(CodeEmitter):
         iter_type = self.get_expr_type(iter_node)
         if iter_type.startswith("dict[") and target_kind != "Tuple":
             iter_expr = "Object.keys(" + iter_expr + ")"
-        self.emit(self.syntax_line("for_open", "for (const {target} of {iter}) {", {"target": target_text, "iter": iter_expr}))
         body = self._dict_stmt_list(stmt.get("body"))
-        self.emit_scoped_stmt_list(body, scope)
-        self.emit("}")
+        self.emit_scoped_block(
+            self.syntax_line("for_open", "for (const {target} of {iter}) {", {"target": target_text, "iter": iter_expr}),
+            body,
+            scope,
+        )
 
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))

@@ -851,6 +851,24 @@ class CodeEmitterTest(unittest.TestCase):
             ],
         )
 
+    def test_emit_scoped_block_with_tail_lines_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit_scoped_block_with_tail_lines(
+            "while (cond) {",
+            ["a"],
+            {"i"},
+            ["i += 1;"],
+        )
+        self.assertEqual(
+            em.lines,
+            [
+                "while (cond) {",
+                "    stmt:a",
+                "    i += 1;",
+                "}",
+            ],
+        )
+
     def test_emit_while_stmt_skeleton_helper(self) -> None:
         em = _DummyEmitter({})
         em.emit_while_stmt_skeleton("cond", ["a"], while_open_default="while ({cond}) {")
