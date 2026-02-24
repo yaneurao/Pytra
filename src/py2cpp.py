@@ -3412,9 +3412,7 @@ class CppEmitter(CodeEmitter):
     ) -> str:
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
-        builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
         any_boundary_expr = self._build_any_boundary_expr_from_builtin_call(
-            builtin_name,
             runtime_call,
             arg_nodes,
         )
@@ -4615,7 +4613,6 @@ class CppEmitter(CodeEmitter):
 
     def _build_any_boundary_expr_from_builtin_call(
         self,
-        builtin_name: str,
         runtime_call: str,
         arg_nodes: list[Any],
     ) -> dict[str, Any] | None:
@@ -4633,7 +4630,7 @@ class CppEmitter(CodeEmitter):
                 "borrow_kind": "value",
                 "casts": [],
             }
-        if builtin_name == "len" or runtime_call == "py_len":
+        if runtime_call == "py_len":
             return {
                 "kind": "ObjLen",
                 "value": arg0,
@@ -4641,7 +4638,7 @@ class CppEmitter(CodeEmitter):
                 "borrow_kind": "value",
                 "casts": [],
             }
-        if builtin_name == "str" or runtime_call == "py_to_string":
+        if runtime_call == "py_to_string":
             return {
                 "kind": "ObjStr",
                 "value": arg0,

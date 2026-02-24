@@ -1414,11 +1414,11 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         any_arg = {"kind": "Name", "id": "x", "resolved_type": "object"}
 
-        out_bool = emitter._build_any_boundary_expr_from_builtin_call("bool", "py_to_bool", [any_arg])
-        out_len = emitter._build_any_boundary_expr_from_builtin_call("len", "py_len", [any_arg])
-        out_str = emitter._build_any_boundary_expr_from_builtin_call("str", "py_to_string", [any_arg])
-        out_iter = emitter._build_any_boundary_expr_from_builtin_call("iter", "py_iter_or_raise", [any_arg])
-        out_next = emitter._build_any_boundary_expr_from_builtin_call("next", "py_next_or_stop", [any_arg])
+        out_bool = emitter._build_any_boundary_expr_from_builtin_call("py_to_bool", [any_arg])
+        out_len = emitter._build_any_boundary_expr_from_builtin_call("py_len", [any_arg])
+        out_str = emitter._build_any_boundary_expr_from_builtin_call("py_to_string", [any_arg])
+        out_iter = emitter._build_any_boundary_expr_from_builtin_call("py_iter_or_raise", [any_arg])
+        out_next = emitter._build_any_boundary_expr_from_builtin_call("py_next_or_stop", [any_arg])
 
         self.assertEqual(out_bool.get("kind"), "ObjBool")
         self.assertEqual(out_len.get("kind"), "ObjLen")
@@ -1427,7 +1427,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertIsNone(out_next)
 
         concrete_arg = {"kind": "Name", "id": "n", "resolved_type": "int64"}
-        out_none = emitter._build_any_boundary_expr_from_builtin_call("bool", "py_to_bool", [concrete_arg])
+        out_none = emitter._build_any_boundary_expr_from_builtin_call("py_to_bool", [concrete_arg])
         self.assertIsNone(out_none)
 
     def test_parse_py2cpp_argv_accepts_east_stage_and_object_dispatch_mode(self) -> None:
