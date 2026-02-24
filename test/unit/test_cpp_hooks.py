@@ -15,7 +15,6 @@ if str(ROOT / "src") not in sys.path:
 
 from src.hooks.cpp.hooks.cpp_hooks import (
     build_cpp_hooks,
-    on_emit_stmt_kind,
     on_render_expr_complex,
     on_render_class_method,
     on_render_module_method,
@@ -154,33 +153,6 @@ class _DummyEmitter:
             return value
         return {}
 
-    def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
-        _ = stmt
-        self.emitted.append("pass")
-
-    def _emit_break_stmt(self, stmt: dict[str, Any]) -> None:
-        _ = stmt
-        self.emitted.append("break")
-
-    def _emit_continue_stmt(self, stmt: dict[str, Any]) -> None:
-        _ = stmt
-        self.emitted.append("continue")
-
-    def _emit_expr_stmt(self, stmt: dict[str, Any]) -> None:
-        _ = stmt
-        self.emitted.append("expr")
-
-    def _emit_return_stmt(self, stmt: dict[str, Any]) -> None:
-        _ = stmt
-        self.emitted.append("return")
-
-    def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
-        _ = stmt
-        self.emitted.append("noop")
-
-    def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
-        _ = stmt
-
     def _render_joinedstr_expr(self, expr_d: dict[str, Any]) -> str:
         _ = expr_d
         return "joined-rendered"
@@ -250,20 +222,6 @@ class CppHooksTest(unittest.TestCase):
         }
         rendered = on_render_class_method(em, "MathUtil", "twice", func, ["x"], {}, [])
         self.assertEqual(rendered, "MathUtil::twice(x)")
-
-    def test_on_emit_stmt_kind_terminal(self) -> None:
-        em = _DummyEmitter()
-        done = on_emit_stmt_kind(em, "Pass", {"kind": "Pass"})
-        self.assertEqual(done, True)
-        self.assertEqual(em.emitted, ["pass"])
-
-    def test_on_emit_stmt_kind_expr_return_import(self) -> None:
-        em = _DummyEmitter()
-        self.assertEqual(on_emit_stmt_kind(em, "Expr", {"kind": "Expr"}), True)
-        self.assertEqual(on_emit_stmt_kind(em, "Return", {"kind": "Return"}), True)
-        self.assertEqual(on_emit_stmt_kind(em, "Import", {"kind": "Import"}), True)
-        self.assertEqual(on_emit_stmt_kind(em, "ImportFrom", {"kind": "ImportFrom"}), True)
-        self.assertEqual(em.emitted, ["expr", "return", "noop", "noop"])
 
     def test_on_render_expr_complex(self) -> None:
         em = _DummyEmitter()
