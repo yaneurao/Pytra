@@ -1,64 +1,76 @@
-#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]
-mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use crate::math;
+use crate::time::perf_counter;
+use crate::pytra::runtime::gif::save_gif;
 
-// このファイルは自動生成です（native Rust mode）。
+// 11: Sample that outputs Lissajous-motion particles as a GIF.
 
 fn color_palette() -> Vec<u8> {
-    let mut p = Vec::<u8>::new();
-    for i in (0)..(256) {
-        let mut r = i;
-        let mut g = ((((i) * (3))) % (256));
-        let mut b = ((255) - (i));
-        p.push((r) as u8);
-        p.push((g) as u8);
-        p.push((b) as u8);
+    let mut p = bytearray();
+    let mut i: i64 = 0;
+    while i < 256 {
+        let r = i;
+        let g = ((i * 3) % 256);
+        let b = (255 - i);
+        p.push(r);
+        p.push(g);
+        p.push(b);
+        i += 1;
     }
-    return (p).clone();
+    return bytes(p);
 }
 
-fn run_11_lissajous_particles() -> () {
-    let mut w = 320;
-    let mut h = 240;
-    let mut frames_n = 360;
-    let mut particles = 48;
-    let mut out_path = "sample/out/11_lissajous_particles.gif".to_string();
-    let mut start = perf_counter();
+fn run_11_lissajous_particles() {
+    let w = 320;
+    let h = 240;
+    let frames_n = 360;
+    let particles = 48;
+    let out_path = "sample/out/11_lissajous_particles.gif";
+    
+    let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
-    for t in (0)..(frames_n) {
-        let mut frame = vec![0u8; (((w) * (h))) as usize];
-        for p in (0)..(particles) {
-            let mut phase = (((( p ) as f64) * (( 0.261799 ) as f64)));
-            let mut x = (((((((( w ) as f64) * (( 0.5 ) as f64)))) + ((((((( w ) as f64) * (( 0.38 ) as f64)))) * (math_sin((((((((( 0.11 ) as f64) * (( t ) as f64)))) + (((phase) * (2.0))))) as f64))))))) as i64);
-            let mut y = (((((((( h ) as f64) * (( 0.5 ) as f64)))) + ((((((( h ) as f64) * (( 0.38 ) as f64)))) * (math_sin((((((((( 0.17 ) as f64) * (( t ) as f64)))) + (((phase) * (3.0))))) as f64))))))) as i64);
-            let mut color = ((30) + (((((p) * (9))) % (220))));
-            for dy in ((-2))..(3) {
-                for dx in ((-2))..(3) {
-                    let mut xx = ((x) + (dx));
-                    let mut yy = ((y) + (dy));
-                    if py_bool(&((((xx) >= (0)) && ((xx) < (w)) && ((yy) >= (0)) && ((yy) < (h))))) {
-                        let mut d2 = ((((dx) * (dx))) + (((dy) * (dy))));
-                        if py_bool(&(((d2) <= (4)))) {
-                            let mut idx = ((((yy) * (w))) + (xx));
-                            let mut v = ((color) - (((d2) * (20))));
-                            if py_bool(&(((v) < (0)))) {
-                                v = 0;
-                            }
-                            if py_bool(&((((( v ) as f64) > (( (frame)[idx as usize] ) as f64))))) {
-                                (frame)[idx as usize] = (v) as u8;
+    
+    let mut t: i64 = 0;
+    while t < frames_n {
+        let mut frame = bytearray((w * h));
+        
+        let mut p: i64 = 0;
+        while p < particles {
+            let phase = (p * 0.261799);
+            let x = ((w * 0.5) + ((w * 0.38) * math.sin(((0.11 * t) + (phase * 2.0))))) as i64;
+            let y = ((h * 0.5) + ((h * 0.38) * math.sin(((0.17 * t) + (phase * 3.0))))) as i64;
+            let color = (30 + ((p * 9) % 220));
+            
+            let mut dy: i64 = (-2);
+            while dy < 3 {
+                let mut dx: i64 = (-2);
+                while dx < 3 {
+                    let xx = (x + dx);
+                    let yy = (y + dy);
+                    if (xx >= 0) && (xx < w) && (yy >= 0) && (yy < h) {
+                        let d2 = ((dx * dx) + (dy * dy));
+                        if d2 <= 4 {
+                            let idx = ((yy * w) + xx);
+                            let mut v = (color - (d2 * 20));
+                            v = max(0, v);
+                            if v > frame[idx as usize] {
+                                frame[idx as usize] = v;
                             }
                         }
                     }
+                    dx += 1;
                 }
+                dy += 1;
             }
+            p += 1;
         }
-        frames.push((frame).clone());
+        frames.push(bytes(frame));
+        t += 1;
     }
-    py_save_gif(&(out_path), w, h, &(frames), &(color_palette()), 3, 0);
-    let mut elapsed = ((perf_counter()) - (start));
-    println!("{} {}", "output:".to_string(), out_path);
-    println!("{} {}", "frames:".to_string(), frames_n);
-    println!("{} {}", "elapsed_sec:".to_string(), elapsed);
+    save_gif(out_path, w, h, frames, color_palette());
+    let elapsed = (perf_counter() - start);
+    println!("{:?}", ("output:", out_path));
+    println!("{:?}", ("frames:", frames_n));
+    println!("{:?}", ("elapsed_sec:", elapsed));
 }
 
 fn main() {

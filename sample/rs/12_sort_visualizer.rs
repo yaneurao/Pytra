@@ -6,16 +6,16 @@ use crate::pytra::utils::gif::save_gif;
 
 fn render(values: Vec<i64>, w: i64, h: i64) -> Vec<u8> {
     let mut frame = bytearray((w * h));
-    let mut n = values.len() as i64;
-    let mut bar_w = (w / n);
+    let n = values.len() as i64;
+    let bar_w = (w / n);
     let mut i: i64 = 0;
     while i < n {
-        let mut x0 = (i * bar_w) as i64;
+        let x0 = (i * bar_w) as i64;
         let mut x1 = (((i + 1)) * bar_w) as i64;
         if x1 <= x0 {
             x1 = (x0 + 1);
         }
-        let mut bh = (((values[i as usize] / n)) * h) as i64;
+        let bh = (((values[i as usize] / n)) * h) as i64;
         let mut y = (h - bh);
         let mut y: i64 = y;
         while y < h {
@@ -32,12 +32,12 @@ fn render(values: Vec<i64>, w: i64, h: i64) -> Vec<u8> {
 }
 
 fn run_12_sort_visualizer() {
-    let mut w = 320;
-    let mut h = 180;
-    let mut n = 124;
-    let mut out_path = "sample/out/12_sort_visualizer.gif";
+    let w = 320;
+    let h = 180;
+    let n = 124;
+    let out_path = "sample/out/12_sort_visualizer.gif";
     
-    let mut start = perf_counter();
+    let start = perf_counter();
     let mut values: Vec<i64> = vec![];
     let mut i: i64 = 0;
     while i < n {
@@ -45,7 +45,7 @@ fn run_12_sort_visualizer() {
         i += 1;
     }
     let mut frames: Vec<Vec<u8>> = vec![];
-    let mut frame_stride = 16;
+    let frame_stride = 16;
     
     let mut op = 0;
     let mut i: i64 = 0;
@@ -71,7 +71,7 @@ fn run_12_sort_visualizer() {
         i += 1;
     }
     save_gif(out_path, w, h, frames, grayscale_palette());
-    let mut elapsed = (perf_counter() - start);
+    let elapsed = (perf_counter() - start);
     println!("{:?}", ("output:", out_path));
     println!("{:?}", ("frames:", frames.len() as i64));
     println!("{:?}", ("elapsed_sec:", elapsed));

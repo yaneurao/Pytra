@@ -59,9 +59,9 @@ fn tokenize(lines: Vec<String>) -> Vec<Token> {
     let mut tokens: Vec<Token> = vec![];
     for (line_index, source) in enumerate(lines) {
         let mut i: i64 = 0;
-        let mut n: i64 = source.len() as i64;
+        let n: i64 = source.len() as i64;
         while i < n {
-            let mut ch: String = source[i as usize];
+            let ch: String = source[i as usize];
             
             if ch == " " {
                 i += 1;
@@ -169,10 +169,10 @@ impl Parser {
     
     fn expect(&self, kind: String) -> Token {
         if py_self.peek_kind() != kind {
-            let mut t: Token = py_self.tokens[py_self.pos as usize];
+            let t: Token = py_self.tokens[py_self.pos as usize];
             // unsupported stmt: Raise
         }
-        let mut token: Token = py_self.tokens[py_self.pos as usize];
+        let token: Token = py_self.tokens[py_self.pos as usize];
         py_self.pos += 1;
         return token;
     }
@@ -192,7 +192,7 @@ impl Parser {
         let mut stmts: Vec<StmtNode> = vec![];
         py_self.skip_newlines();
         while py_self.peek_kind() != "EOF" {
-            let mut stmt: StmtNode = py_self.parse_stmt();
+            let stmt: StmtNode = py_self.parse_stmt();
             stmts.push(stmt);
             py_self.skip_newlines();
         }
@@ -201,18 +201,18 @@ impl Parser {
     
     fn parse_stmt(&self) -> StmtNode {
         if py_self.py_match("LET") {
-            let mut let_name: String = py_self.expect("IDENT").text;
+            let let_name: String = py_self.expect("IDENT").text;
             py_self.expect("EQUAL");
-            let mut let_expr_index: i64 = py_self.parse_expr();
+            let let_expr_index: i64 = py_self.parse_expr();
             return StmtNode::new("let", let_name, let_expr_index);
         }
         if py_self.py_match("PRINT") {
-            let mut print_expr_index: i64 = py_self.parse_expr();
+            let print_expr_index: i64 = py_self.parse_expr();
             return StmtNode::new("print", "", print_expr_index);
         }
-        let mut assign_name: String = py_self.expect("IDENT").text;
+        let assign_name: String = py_self.expect("IDENT").text;
         py_self.expect("EQUAL");
-        let mut assign_expr_index: i64 = py_self.parse_expr();
+        let assign_expr_index: i64 = py_self.parse_expr();
         return StmtNode::new("assign", assign_name, assign_expr_index);
     }
     
@@ -258,7 +258,7 @@ impl Parser {
     
     fn parse_unary(&self) -> i64 {
         if py_self.py_match("MINUS") {
-            let mut child: i64 = py_self.parse_unary();
+            let child: i64 = py_self.parse_unary();
             return py_self.add_expr(ExprNode::new("neg", 0, "", "", child, (-1)));
         }
         return py_self.parse_primary();
@@ -266,25 +266,25 @@ impl Parser {
     
     fn parse_primary(&self) -> i64 {
         if py_self.py_match("NUMBER") {
-            let mut token_num: Token = py_self.tokens[(py_self.pos - 1) as usize];
+            let token_num: Token = py_self.tokens[(py_self.pos - 1) as usize];
             return py_self.add_expr(ExprNode::new("lit", token_num.text as i64, "", "", (-1), (-1)));
         }
         if py_self.py_match("IDENT") {
-            let mut token_ident: Token = py_self.tokens[(py_self.pos - 1) as usize];
+            let token_ident: Token = py_self.tokens[(py_self.pos - 1) as usize];
             return py_self.add_expr(ExprNode::new("var", 0, token_ident.text, "", (-1), (-1)));
         }
         if py_self.py_match("LPAREN") {
-            let mut expr_index: i64 = py_self.parse_expr();
+            let expr_index: i64 = py_self.parse_expr();
             py_self.expect("RPAREN");
             return expr_index;
         }
-        let mut t = py_self.tokens[py_self.pos as usize];
+        let t = py_self.tokens[py_self.pos as usize];
         // unsupported stmt: Raise
     }
 }
 
 fn eval_expr(expr_index: i64, expr_nodes: Vec<ExprNode>, env: ::std::collections::BTreeMap<String, i64>) -> i64 {
-    let mut node: ExprNode = expr_nodes[expr_index as usize];
+    let node: ExprNode = expr_nodes[expr_index as usize];
     
     if node.kind == "lit" {
         return node.value;
@@ -299,8 +299,8 @@ fn eval_expr(expr_index: i64, expr_nodes: Vec<ExprNode>, env: ::std::collections
         return (-eval_expr(node.left, expr_nodes, env));
     }
     if node.kind == "bin" {
-        let mut lhs: i64 = eval_expr(node.left, expr_nodes, env);
-        let mut rhs: i64 = eval_expr(node.right, expr_nodes, env);
+        let lhs: i64 = eval_expr(node.left, expr_nodes, env);
+        let rhs: i64 = eval_expr(node.right, expr_nodes, env);
         if node.op == "+" {
             return (lhs + rhs);
         }
@@ -338,7 +338,7 @@ fn execute(stmts: Vec<StmtNode>, expr_nodes: Vec<ExprNode>, trace: bool) -> i64 
             env[stmt.name as usize] = eval_expr(stmt.expr_index, expr_nodes, env);
             py_continue;
         }
-        let mut value: i64 = eval_expr(stmt.expr_index, expr_nodes, env);
+        let value: i64 = eval_expr(stmt.expr_index, expr_nodes, env);
         if trace {
             println!("{}", value);
         }
@@ -367,10 +367,10 @@ fn build_benchmark_source(var_count: i64, loops: i64) -> Vec<String> {
     // Force evaluation of many arithmetic expressions.
     let mut i: i64 = 0;
     while i < loops {
-        let mut x: i64 = (i % var_count);
-        let mut y: i64 = (((i + 3)) % var_count);
-        let mut c1: i64 = ((i % 7) + 1);
-        let mut c2: i64 = ((i % 11) + 2);
+        let x: i64 = (i % var_count);
+        let y: i64 = (((i + 3)) % var_count);
+        let c1: i64 = ((i % 7) + 1);
+        let c2: i64 = ((i % 11) + 2);
         lines.push(((((((((("v" + x.to_string()) + " = (v") + x.to_string()) + " * ") + c1.to_string()) + " + v") + y.to_string()) + " + 10000) / ") + c2.to_string()));
         if (i % 97) == 0 {
             lines.push(("print v" + x.to_string()));
@@ -390,21 +390,21 @@ fn run_demo() {
     demo_lines.push("print a");
     demo_lines.push("print a / b");
     
-    let mut tokens: Vec<Token> = tokenize(demo_lines);
-    let mut parser: Parser = Parser::new(tokens);
-    let mut stmts: Vec<StmtNode> = parser.parse_program();
-    let mut checksum: i64 = execute(stmts, parser.expr_nodes, true);
+    let tokens: Vec<Token> = tokenize(demo_lines);
+    let parser: Parser = Parser::new(tokens);
+    let stmts: Vec<StmtNode> = parser.parse_program();
+    let checksum: i64 = execute(stmts, parser.expr_nodes, true);
     println!("{:?}", ("demo_checksum:", checksum));
 }
 
 fn run_benchmark() {
-    let mut source_lines: Vec<String> = build_benchmark_source(32, 120000);
-    let mut start: f64 = perf_counter();
-    let mut tokens: Vec<Token> = tokenize(source_lines);
-    let mut parser: Parser = Parser::new(tokens);
-    let mut stmts: Vec<StmtNode> = parser.parse_program();
-    let mut checksum: i64 = execute(stmts, parser.expr_nodes, false);
-    let mut elapsed: f64 = (perf_counter() - start);
+    let source_lines: Vec<String> = build_benchmark_source(32, 120000);
+    let start: f64 = perf_counter();
+    let tokens: Vec<Token> = tokenize(source_lines);
+    let parser: Parser = Parser::new(tokens);
+    let stmts: Vec<StmtNode> = parser.parse_program();
+    let checksum: i64 = execute(stmts, parser.expr_nodes, false);
+    let elapsed: f64 = (perf_counter() - start);
     
     println!("{:?}", ("token_count:", tokens.len() as i64));
     println!("{:?}", ("expr_count:", parser.expr_nodes.len() as i64));

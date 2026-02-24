@@ -1,70 +1,72 @@
-#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]
-mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use crate::time::perf_counter;
+use crate::pytra::runtime::gif::grayscale_palette;
+use crate::pytra::runtime::gif::save_gif;
 
-// このファイルは自動生成です（native Rust mode）。
+// 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
-fn capture(grid: &Vec<Vec<i64>>, mut w: i64, mut h: i64) -> Vec<u8> {
-    let mut frame = vec![0u8; (((w) * (h))) as usize];
-    let mut i = 0;
-    for y in (0)..(h) {
-        for x in (0)..(w) {
-            (frame)[i as usize] = ((if py_bool(&(((grid)[y as usize])[x as usize])) { 255 } else { 0 })) as u8;
-            i = i + 1;
+fn capture(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<u8> {
+    let mut frame = bytearray((w * h));
+    let mut y: i64 = 0;
+    while y < h {
+        let row_base = (y * w);
+        let mut x: i64 = 0;
+        while x < w {
+            frame[(row_base + x) as usize] = (grid[y as usize][x as usize] ? 255 : 0);
+            x += 1;
         }
+        y += 1;
     }
-    return (frame).clone();
+    return bytes(frame);
 }
 
-fn run_08_langtons_ant() -> () {
-    let mut w = 420;
-    let mut h = 420;
-    let mut out_path = "sample/out/08_langtons_ant.gif".to_string();
-    let mut start = perf_counter();
-    let mut grid: Vec<Vec<i64>> = vec![];
-    for gy in (0)..(h) {
-        let mut row: Vec<i64> = vec![];
-        for gx in (0)..(w) {
-            row.push(0);
-        }
-        grid.push(row);
-    }
-    let mut x = ((w) / (2));
-    let mut y = ((h) / (2));
+fn run_08_langtons_ant() {
+    let w = 420;
+    let h = 420;
+    let out_path = "sample/out/08_langtons_ant.gif";
+    
+    let start = perf_counter();
+    
+    let mut grid: Vec<Vec<i64>> = [[0] * w for _ in range(h)];
+    let mut x = (w / 2);
+    let mut y = (h / 2);
     let mut d = 0;
-    let mut steps_total = 600000;
-    let mut capture_every = 3000;
+    
+    let steps_total = 600000;
+    let capture_every = 3000;
     let mut frames: Vec<Vec<u8>> = vec![];
-    for i in (0)..(steps_total) {
-        if py_bool(&(((((grid)[y as usize])[x as usize]) == (0)))) {
-            d = ((((d) + (1))) % (4));
-            ((grid)[y as usize])[x as usize] = 1;
+    
+    let mut i: i64 = 0;
+    while i < steps_total {
+        if grid[y as usize][x as usize] == 0 {
+            d = (((d + 1)) % 4);
+            grid[y as usize][x as usize] = 1;
         } else {
-            d = ((((d) + (3))) % (4));
-            ((grid)[y as usize])[x as usize] = 0;
+            d = (((d + 3)) % 4);
+            grid[y as usize][x as usize] = 0;
         }
-        if py_bool(&(((d) == (0)))) {
-            y = ((((((y) - (1))) + (h))) % (h));
+        if d == 0 {
+            y = ((((y - 1) + h)) % h);
         } else {
-            if py_bool(&(((d) == (1)))) {
-                x = ((((x) + (1))) % (w));
+            if d == 1 {
+                x = (((x + 1)) % w);
             } else {
-                if py_bool(&(((d) == (2)))) {
-                    y = ((((y) + (1))) % (h));
+                if d == 2 {
+                    y = (((y + 1)) % h);
                 } else {
-                    x = ((((((x) - (1))) + (w))) % (w));
+                    x = ((((x - 1) + w)) % w);
                 }
             }
         }
-        if py_bool(&(((((i) % (capture_every))) == (0)))) {
-            frames.push(capture(&(grid), w, h));
+        if (i % capture_every) == 0 {
+            frames.push(capture(grid, w, h));
         }
+        i += 1;
     }
-    py_save_gif(&(out_path), w, h, &(frames), &(py_grayscale_palette()), 5, 0);
-    let mut elapsed = ((perf_counter()) - (start));
-    println!("{} {}", "output:".to_string(), out_path);
-    println!("{} {}", "frames:".to_string(), (py_len(&(frames)) as i64));
-    println!("{} {}", "elapsed_sec:".to_string(), elapsed);
+    save_gif(out_path, w, h, frames, grayscale_palette());
+    let elapsed = (perf_counter() - start);
+    println!("{:?}", ("output:", out_path));
+    println!("{:?}", ("frames:", frames.len() as i64));
+    println!("{:?}", ("elapsed_sec:", elapsed));
 }
 
 fn main() {

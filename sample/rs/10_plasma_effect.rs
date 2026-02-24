@@ -1,42 +1,50 @@
-#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]
-mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use crate::math;
+use crate::time::perf_counter;
+use crate::pytra::runtime::gif::grayscale_palette;
+use crate::pytra::runtime::gif::save_gif;
 
-// このファイルは自動生成です（native Rust mode）。
+// 10: Sample that outputs a plasma effect as a GIF.
 
-fn run_10_plasma_effect() -> () {
-    let mut w = 320;
-    let mut h = 240;
-    let mut frames_n = 216;
-    let mut out_path = "sample/out/10_plasma_effect.gif".to_string();
-    let mut start = perf_counter();
+fn run_10_plasma_effect() {
+    let w = 320;
+    let h = 240;
+    let frames_n = 216;
+    let out_path = "sample/out/10_plasma_effect.gif";
+    
+    let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
-    for t in (0)..(frames_n) {
-        let mut frame = vec![0u8; (((w) * (h))) as usize];
-        let mut i = 0;
-        for y in (0)..(h) {
-            for x in (0)..(w) {
-                let mut dx = ((x) - (160));
-                let mut dy = ((y) - (120));
-                let mut v = ((((((math_sin((((((((( x ) as f64) + (( (((( t ) as f64) * (( 2.0 ) as f64))) ) as f64)))) * (0.045))) as f64))) + (math_sin((((((((( y ) as f64) - (( (((( t ) as f64) * (( 1.2 ) as f64))) ) as f64)))) * (0.05))) as f64))))) + (math_sin((((((((( ((x) + (y)) ) as f64) + (( (((( t ) as f64) * (( 1.7 ) as f64))) ) as f64)))) * (0.03))) as f64))))) + (math_sin(((((((math_sqrt(((((((dx) * (dx))) + (((dy) * (dy))))) as f64))) * (0.07))) - ((((( t ) as f64) * (( 0.18 ) as f64)))))) as f64))));
-                let mut c = ((((((v) + (4.0))) * (((( 255.0 ) as f64) / (( 8.0 ) as f64))))) as i64);
-                if py_bool(&(((c) < (0)))) {
+    
+    let mut t: i64 = 0;
+    while t < frames_n {
+        let mut frame = bytearray((w * h));
+        let mut y: i64 = 0;
+        while y < h {
+            let row_base = (y * w);
+            let mut x: i64 = 0;
+            while x < w {
+                let dx = (x - 160);
+                let dy = (y - 120);
+                let v = (((math.sin((((x + (t * 2.0))) * 0.045)) + math.sin((((y - (t * 1.2))) * 0.05))) + math.sin(((((x + y) + (t * 1.7))) * 0.03))) + math.sin(((math.sqrt(((dx * dx) + (dy * dy))) * 0.07) - (t * 0.18))));
+                let mut c = (((v + 4.0)) * ((255.0 / 8.0))) as i64;
+                if c < 0 {
                     c = 0;
                 }
-                if py_bool(&(((c) > (255)))) {
+                if c > 255 {
                     c = 255;
                 }
-                (frame)[i as usize] = (c) as u8;
-                i = i + 1;
+                frame[(row_base + x) as usize] = c;
+                x += 1;
             }
+            y += 1;
         }
-        frames.push((frame).clone());
+        frames.push(bytes(frame));
+        t += 1;
     }
-    py_save_gif(&(out_path), w, h, &(frames), &(py_grayscale_palette()), 3, 0);
-    let mut elapsed = ((perf_counter()) - (start));
-    println!("{} {}", "output:".to_string(), out_path);
-    println!("{} {}", "frames:".to_string(), frames_n);
-    println!("{} {}", "elapsed_sec:".to_string(), elapsed);
+    save_gif(out_path, w, h, frames, grayscale_palette());
+    let elapsed = (perf_counter() - start);
+    println!("{:?}", ("output:", out_path));
+    println!("{:?}", ("frames:", frames_n));
+    println!("{:?}", ("elapsed_sec:", elapsed));
 }
 
 fn main() {

@@ -1,58 +1,64 @@
-#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]
-mod py_runtime;
-use py_runtime::{math_cos, math_exp, math_floor, math_sin, math_sqrt, perf_counter, py_bool, py_grayscale_palette, py_in, py_isalpha, py_isdigit, py_len, py_print, py_save_gif, py_slice, py_write_rgb_png};
+use crate::time::perf_counter;
+use crate::pytra::runtime::gif::grayscale_palette;
+use crate::pytra::runtime::gif::save_gif;
 
-// このファイルは自動生成です（native Rust mode）。
+// 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 
-fn render_frame(mut width: i64, mut height: i64, mut center_x: f64, mut center_y: f64, mut scale: f64, mut max_iter: i64) -> Vec<u8> {
-    let mut frame = vec![0u8; (((width) * (height))) as usize];
-    let mut idx = 0;
-    for y in (0)..(height) {
-        let mut cy = ((center_y) + ((((((( y ) as f64) - (( (((( height ) as f64) * (( 0.5 ) as f64))) ) as f64)))) * (scale))));
-        for x in (0)..(width) {
-            let mut cx = ((center_x) + ((((((( x ) as f64) - (( (((( width ) as f64) * (( 0.5 ) as f64))) ) as f64)))) * (scale))));
+fn render_frame(width: i64, height: i64, center_x: f64, center_y: f64, scale: f64, max_iter: i64) -> Vec<u8> {
+    let mut frame = bytearray((width * height));
+    let mut y: i64 = 0;
+    while y < height {
+        let row_base = (y * width);
+        let cy = (center_y + (((y - (height * 0.5))) * scale));
+        let mut x: i64 = 0;
+        while x < width {
+            let cx = (center_x + (((x - (width * 0.5))) * scale));
             let mut zx = 0.0;
             let mut zy = 0.0;
             let mut i = 0;
-            while py_bool(&(((i) < (max_iter)))) {
-                let mut zx2 = ((zx) * (zx));
-                let mut zy2 = ((zy) * (zy));
-                if py_bool(&(((((zx2) + (zy2))) > (4.0)))) {
-                    break;
+            while i < max_iter {
+                let zx2 = (zx * zx);
+                let zy2 = (zy * zy);
+                if (zx2 + zy2) > 4.0 {
+                    py_break;
                 }
-                zy = ((((((2.0) * (zx))) * (zy))) + (cy));
-                zx = ((((zx2) - (zy2))) + (cx));
-                i = i + 1;
+                zy = (((2.0 * zx) * zy) + cy);
+                zx = ((zx2 - zy2) + cx);
+                i += 1;
             }
-            (frame)[idx as usize] = (((((( (((( 255.0 ) as f64) * (( i ) as f64))) ) as f64) / (( max_iter ) as f64))) as i64)) as u8;
-            idx = idx + 1;
+            frame[(row_base + x) as usize] = ((255.0 * i) / max_iter) as i64;
+            x += 1;
         }
+        y += 1;
     }
-    return (frame).clone();
+    return bytes(frame);
 }
 
-fn run_05_mandelbrot_zoom() -> () {
-    let mut width = 320;
-    let mut height = 240;
-    let mut frame_count = 48;
-    let mut max_iter = 110;
-    let mut center_x = (-0.743643887037151);
-    let mut center_y = 0.13182590420533;
-    let mut base_scale = ((( 3.2 ) as f64) / (( width ) as f64));
-    let mut zoom_per_frame = 0.93;
-    let mut out_path = "sample/out/05_mandelbrot_zoom.gif".to_string();
-    let mut start = perf_counter();
+fn run_05_mandelbrot_zoom() {
+    let width = 320;
+    let height = 240;
+    let frame_count = 48;
+    let max_iter = 110;
+    let center_x = (-0.743643887037151);
+    let center_y = 0.13182590420533;
+    let base_scale = (3.2 / width);
+    let zoom_per_frame = 0.93;
+    let out_path = "sample/out/05_mandelbrot_zoom.gif";
+    
+    let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
     let mut scale = base_scale;
-    for _ in (0)..(frame_count) {
+    let mut _: i64 = 0;
+    while _ < frame_count {
         frames.push(render_frame(width, height, center_x, center_y, scale, max_iter));
-        scale = scale * zoom_per_frame;
+        scale *= zoom_per_frame;
+        _ += 1;
     }
-    py_save_gif(&(out_path), width, height, &(frames), &(py_grayscale_palette()), 5, 0);
-    let mut elapsed = ((perf_counter()) - (start));
-    println!("{} {}", "output:".to_string(), out_path);
-    println!("{} {}", "frames:".to_string(), frame_count);
-    println!("{} {}", "elapsed_sec:".to_string(), elapsed);
+    save_gif(out_path, width, height, frames, grayscale_palette());
+    let elapsed = (perf_counter() - start);
+    println!("{:?}", ("output:", out_path));
+    println!("{:?}", ("frames:", frame_count));
+    println!("{:?}", ("elapsed_sec:", elapsed));
 }
 
 fn main() {

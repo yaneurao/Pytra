@@ -4,8 +4,8 @@ use crate::time::perf_counter;
 // It avoids floating-point error effects, making cross-language comparisons easier.
 
 fn run_integer_grid_checksum(width: i64, height: i64, seed: i64) -> i64 {
-    let mut mod_main: i64 = 2147483647;
-    let mut mod_out: i64 = 1000000007;
+    let mod_main: i64 = 2147483647;
+    let mod_out: i64 = 1000000007;
     let mut acc: i64 = (seed % mod_out);
     
     let mut y: i64 = 0;
@@ -25,12 +25,12 @@ fn run_integer_grid_checksum(width: i64, height: i64, seed: i64) -> i64 {
 }
 
 fn run_integer_benchmark() {
-    let mut width: i64 = 2400;
-    let mut height: i64 = 1600;
+    let width: i64 = 2400;
+    let height: i64 = 1600;
     
-    let mut start: f64 = perf_counter();
-    let mut checksum: i64 = run_integer_grid_checksum(width, height, 123456789);
-    let mut elapsed: f64 = (perf_counter() - start);
+    let start: f64 = perf_counter();
+    let checksum: i64 = run_integer_grid_checksum(width, height, 123456789);
+    let elapsed: f64 = (perf_counter() - start);
     
     println!("{:?}", ("pixels:", (width * height)));
     println!("{:?}", ("checksum:", checksum));

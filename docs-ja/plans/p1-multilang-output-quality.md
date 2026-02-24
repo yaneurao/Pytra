@@ -57,7 +57,25 @@
   - `unused_import_est`: `cs +21.14`, `js +6.06`, `ts +6.03`
 - 上記は簡易ヒューリスティック計測であり、`unused_import_est` と `cast` は厳密構文解析ではない。
 
+`P1-MQ-02-S1` 実装結果（Rust `mut` 縮退）:
+
+- 対象: `src/hooks/rs/emitter/rs_emitter.py`, `src/profiles/rs/syntax.json`
+- 変更点:
+  1. 関数本文を事前走査し、束縛名ごとの書き込み回数と破壊的メソッド呼び出し receiver を収集する。
+  2. 引数 `mut` は `arg_usage` に加えて、上記の実書き込み/破壊的呼び出しがある場合のみ付与する。
+  3. `let mut` 宣言は一律付与をやめ、`write_count` と mutating call 情報に基づいて `let` / `let mut` を切り替える。
+  4. `rs` profile の宣言テンプレート（`annassign_decl_*`, `assign_decl_init`）を `{mut_kw}` 対応に変更し、可変性を emitter 側で制御する。
+- 生成物反映:
+  - `python3 tools/regenerate_samples.py --langs rs --force` で `sample/rs` を再生成。
+  - `sample/rs/01_mandelbrot.rs` では `x2/y2/t/r/g/b/width/height/max_iter/...` の不要 `mut` が除去されることを確認。
+- 指標変化（`sample/cpp` 比較の生カウント）:
+  - `rs mut`: `711 -> 609`
+  - `rs paren`: `2347 -> 821`
+  - `rs cast`: `421 -> 180`
+  - `rs clone`: `18 -> 1`
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
 - 2026-02-24: ID: P1-MQ-01 として `tools/measure_multilang_quality.py` を追加し、`docs-ja/plans/p1-multilang-output-quality-baseline.md` に `sample/cpp` 比の品質差分（`mut`/`paren`/`cast`/`clone`/`unused_import_est`）を定量化した。
+- 2026-02-24: ID: P1-MQ-02-S1 として Rust emitter の `mut` 付与を事前解析ベースへ切り替え、`sample/rs` 再生成と品質再計測で `mut`/`paren`/`cast`/`clone` の減少を確認した。

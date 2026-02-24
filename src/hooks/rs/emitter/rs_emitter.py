@@ -49,6 +49,8 @@ class RustEmitter(CodeEmitter):
         self.class_field_types: dict[str, dict[str, str]] = {}
         self.declared_var_types: dict[str, str] = {}
         self.uses_pyany: bool = False
+        self.current_fn_write_counts: dict[str, int] = {}
+        self.current_fn_mutating_call_counts: dict[str, int] = {}
 
     def get_expr_type(self, expr: Any) -> str:
         """解決済み型 + ローカル宣言テーブルで式型を返す。"""
@@ -64,6 +66,210 @@ class RustEmitter(CodeEmitter):
 
     def _safe_name(self, name: str) -> str:
         return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
+
+    def _increment_name_count(self, counts: dict[str, int], name: str) -> None:
+        """識別子カウントを 1 増やす。"""
+        if name == "":
+            return
+        if name in counts:
+            counts[name] += 1
+            return
+        counts[name] = 1
+
+    def _collect_store_name_counts_from_target(self, target: Any, counts: dict[str, int]) -> None:
+        """代入 target から束縛名書き込み回数を収集する。"""
+        if isinstance(target, dict):
+            kind = self.any_dict_get_str(target, "kind", "")
+            if kind == "Name":
+                self._increment_name_count(counts, self.any_dict_get_str(target, "id", ""))
+                return
+            if kind == "Attribute" or kind == "Subscript":
+                self._collect_store_name_counts_from_target(target.get("value"), counts)
+                return
+            if kind == "Tuple" or kind == "List":
+                elems_obj: Any = target.get("elements")
+                elems: list[Any] = elems_obj if isinstance(elems_obj, list) else []
+                for elem in elems:
+                    self._collect_store_name_counts_from_target(elem, counts)
+                return
+            return
+        if isinstance(target, list):
+            for item in target:
+                self._collect_store_name_counts_from_target(item, counts)
+
+    def _collect_name_write_counts(self, stmts: list[dict[str, Any]]) -> dict[str, int]:
+        """関数本文の書き込み回数（束縛名単位）を収集する。"""
+        out: dict[str, int] = {}
+        for st in stmts:
+            if not isinstance(st, dict):
+                continue
+            kind = self.any_dict_get_str(st, "kind", "")
+            if kind == "FunctionDef" or kind == "ClassDef":
+                continue
+            if kind == "Assign" or kind == "AnnAssign" or kind == "AugAssign":
+                self._collect_store_name_counts_from_target(st.get("target"), out)
+                continue
+            if kind == "Swap":
+                self._collect_store_name_counts_from_target(st.get("left"), out)
+                self._collect_store_name_counts_from_target(st.get("right"), out)
+                continue
+            if kind == "For" or kind == "ForRange":
+                self._collect_store_name_counts_from_target(st.get("target"), out)
+                body_obj: Any = st.get("body")
+                body: list[dict[str, Any]] = body_obj if isinstance(body_obj, list) else []
+                body_counts = self._collect_name_write_counts(body)
+                for name, cnt in body_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                orelse_obj: Any = st.get("orelse")
+                orelse: list[dict[str, Any]] = orelse_obj if isinstance(orelse_obj, list) else []
+                orelse_counts = self._collect_name_write_counts(orelse)
+                for name, cnt in orelse_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                continue
+            if kind == "If" or kind == "While":
+                body_obj = st.get("body")
+                body = body_obj if isinstance(body_obj, list) else []
+                body_counts = self._collect_name_write_counts(body)
+                for name, cnt in body_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                orelse_obj = st.get("orelse")
+                orelse = orelse_obj if isinstance(orelse_obj, list) else []
+                orelse_counts = self._collect_name_write_counts(orelse)
+                for name, cnt in orelse_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                continue
+            if kind == "Try":
+                body_obj = st.get("body")
+                body = body_obj if isinstance(body_obj, list) else []
+                body_counts = self._collect_name_write_counts(body)
+                for name, cnt in body_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                orelse_obj = st.get("orelse")
+                orelse = orelse_obj if isinstance(orelse_obj, list) else []
+                orelse_counts = self._collect_name_write_counts(orelse)
+                for name, cnt in orelse_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                final_obj = st.get("finalbody")
+                finalbody = final_obj if isinstance(final_obj, list) else []
+                final_counts = self._collect_name_write_counts(finalbody)
+                for name, cnt in final_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                handlers_obj: Any = st.get("handlers")
+                handlers: list[dict[str, Any]] = handlers_obj if isinstance(handlers_obj, list) else []
+                for handler in handlers:
+                    if not isinstance(handler, dict):
+                        continue
+                    h_name = handler.get("name")
+                    if isinstance(h_name, str) and h_name != "":
+                        self._increment_name_count(out, h_name)
+                    h_body_obj: Any = handler.get("body")
+                    h_body: list[dict[str, Any]] = h_body_obj if isinstance(h_body_obj, list) else []
+                    h_counts = self._collect_name_write_counts(h_body)
+                    for name, cnt in h_counts.items():
+                        out[name] = out.get(name, 0) + cnt
+        return out
+
+    def _mutating_method_names(self) -> set[str]:
+        return {
+            "append",
+            "pop",
+            "clear",
+            "insert",
+            "remove",
+            "sort",
+            "reverse",
+            "extend",
+            "update",
+            "setdefault",
+            "add",
+            "discard",
+        }
+
+    def _collect_mutating_call_counts_from_expr(self, node: Any, out: dict[str, int]) -> None:
+        """破壊的メソッド呼び出し receiver 名の出現回数を収集する。"""
+        if isinstance(node, dict):
+            kind = self.any_dict_get_str(node, "kind", "")
+            if kind == "Call":
+                fn = self.any_to_dict_or_empty(node.get("func"))
+                if self.any_dict_get_str(fn, "kind", "") == "Attribute":
+                    attr = self.any_dict_get_str(fn, "attr", "")
+                    if attr in self._mutating_method_names():
+                        owner = self.any_to_dict_or_empty(fn.get("value"))
+                        if self.any_dict_get_str(owner, "kind", "") == "Name":
+                            self._increment_name_count(out, self.any_dict_get_str(owner, "id", ""))
+            for _k, v in node.items():
+                self._collect_mutating_call_counts_from_expr(v, out)
+            return
+        if isinstance(node, list):
+            for item in node:
+                self._collect_mutating_call_counts_from_expr(item, out)
+
+    def _collect_mutating_receiver_name_counts(self, stmts: list[dict[str, Any]]) -> dict[str, int]:
+        """関数本文から破壊的メソッド呼び出し receiver 名を収集する。"""
+        out: dict[str, int] = {}
+        for st in stmts:
+            if not isinstance(st, dict):
+                continue
+            kind = self.any_dict_get_str(st, "kind", "")
+            if kind == "FunctionDef" or kind == "ClassDef":
+                continue
+            if kind == "If" or kind == "While" or kind == "For" or kind == "ForRange":
+                self._collect_mutating_call_counts_from_expr(st.get("test"), out)
+                self._collect_mutating_call_counts_from_expr(st.get("iter"), out)
+                self._collect_mutating_call_counts_from_expr(st.get("start"), out)
+                self._collect_mutating_call_counts_from_expr(st.get("stop"), out)
+                self._collect_mutating_call_counts_from_expr(st.get("step"), out)
+                body_obj: Any = st.get("body")
+                body: list[dict[str, Any]] = body_obj if isinstance(body_obj, list) else []
+                body_counts = self._collect_mutating_receiver_name_counts(body)
+                for name, cnt in body_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                orelse_obj: Any = st.get("orelse")
+                orelse: list[dict[str, Any]] = orelse_obj if isinstance(orelse_obj, list) else []
+                orelse_counts = self._collect_mutating_receiver_name_counts(orelse)
+                for name, cnt in orelse_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                continue
+            if kind == "Try":
+                body_obj = st.get("body")
+                body = body_obj if isinstance(body_obj, list) else []
+                body_counts = self._collect_mutating_receiver_name_counts(body)
+                for name, cnt in body_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                orelse_obj = st.get("orelse")
+                orelse = orelse_obj if isinstance(orelse_obj, list) else []
+                orelse_counts = self._collect_mutating_receiver_name_counts(orelse)
+                for name, cnt in orelse_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                final_obj = st.get("finalbody")
+                finalbody = final_obj if isinstance(final_obj, list) else []
+                final_counts = self._collect_mutating_receiver_name_counts(finalbody)
+                for name, cnt in final_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                handlers_obj: Any = st.get("handlers")
+                handlers: list[dict[str, Any]] = handlers_obj if isinstance(handlers_obj, list) else []
+                for handler in handlers:
+                    if not isinstance(handler, dict):
+                        continue
+                    h_body_obj: Any = handler.get("body")
+                    h_body: list[dict[str, Any]] = h_body_obj if isinstance(h_body_obj, list) else []
+                    h_counts = self._collect_mutating_receiver_name_counts(h_body)
+                    for name, cnt in h_counts.items():
+                        out[name] = out.get(name, 0) + cnt
+                continue
+            self._collect_mutating_call_counts_from_expr(st, out)
+        return out
+
+    def _should_declare_mut(self, name_raw: str, has_init_write: bool) -> bool:
+        """現在関数内の書き込み情報から `let mut` 必要性を判定する。"""
+        write_count = self.current_fn_write_counts.get(name_raw, 0)
+        mut_call_count = self.current_fn_mutating_call_counts.get(name_raw, 0)
+        threshold = 1 if has_init_write else 0
+        if write_count > threshold:
+            return True
+        if mut_call_count > 0:
+            return True
+        return False
 
     def _doc_mentions_any(self, node: Any) -> bool:
         """EAST 全体に `Any/object` 型が含まれるかを粗く判定する。"""
@@ -596,6 +802,11 @@ class RustEmitter(CodeEmitter):
         arg_order = self.any_to_str_list(fn.get("arg_order"))
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
         arg_usage = self.any_to_dict_or_empty(fn.get("arg_usage"))
+        body = self._dict_stmt_list(fn.get("body"))
+        prev_write_counts = self.current_fn_write_counts
+        prev_mut_call_counts = self.current_fn_mutating_call_counts
+        self.current_fn_write_counts = self._collect_name_write_counts(body)
+        self.current_fn_mutating_call_counts = self._collect_mutating_receiver_name_counts(body)
         args_text_list: list[str] = []
         scope_names: set[str] = set()
 
@@ -609,7 +820,9 @@ class RustEmitter(CodeEmitter):
             safe = self._safe_name(arg_name)
             arg_t = self._rust_type(self.any_to_str(arg_types.get(arg_name)))
             usage = self.any_to_str(arg_usage.get(arg_name))
-            is_mut = usage == "reassigned" or usage == "mutable" or usage == "write"
+            write_count = self.current_fn_write_counts.get(arg_name, 0)
+            mut_call_count = self.current_fn_mutating_call_counts.get(arg_name, 0)
+            is_mut = usage == "reassigned" or usage == "mutable" or usage == "write" or write_count > 0 or mut_call_count > 0
             prefix = "mut " if is_mut else ""
             args_text_list.append(f"{prefix}{safe}: {arg_t}")
             scope_names.add(arg_name)
@@ -627,9 +840,10 @@ class RustEmitter(CodeEmitter):
         )
         self.emit(line)
 
-        body = self._dict_stmt_list(fn.get("body"))
         self.emit_scoped_stmt_list(body, scope_names)
         self.emit("}")
+        self.current_fn_write_counts = prev_write_counts
+        self.current_fn_mutating_call_counts = prev_mut_call_counts
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """文ノードを Rust へ出力する。"""
@@ -924,14 +1138,16 @@ class RustEmitter(CodeEmitter):
 
         value_obj = stmt.get("value")
         if value_obj is None:
-            self.emit(self.syntax_line("annassign_decl_noinit", "let mut {target}: {type};", {"target": name, "type": t}))
+            mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=False) else ""
+            self.emit(self.syntax_line("annassign_decl_noinit", "let {mut_kw}{target}: {type};", {"mut_kw": mut_kw, "target": name, "type": t}))
             return
         value = self._render_value_for_decl_type(value_obj, t_east)
+        mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=True) else ""
         self.emit(
             self.syntax_line(
                 "annassign_decl_init",
-                "let mut {target}: {type} = {value};",
-                {"target": name, "type": t, "value": value},
+                "let {mut_kw}{target}: {type} = {value};",
+                {"mut_kw": mut_kw, "target": name, "type": t, "value": value},
             )
         )
 
@@ -946,7 +1162,8 @@ class RustEmitter(CodeEmitter):
                 t = self.get_expr_type(stmt.get("value"))
                 if t != "":
                     self.declared_var_types[name_raw] = t
-                self.emit(self.syntax_line("assign_decl_init", "let mut {target} = {value};", {"target": name, "value": value}))
+                mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=True) else ""
+                self.emit(self.syntax_line("assign_decl_init", "let {mut_kw}{target} = {value};", {"mut_kw": mut_kw, "target": name, "value": value}))
                 return
             self.emit(self.syntax_line("assign_set", "{target} = {value};", {"target": name, "value": value}))
             return

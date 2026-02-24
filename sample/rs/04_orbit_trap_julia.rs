@@ -8,7 +8,7 @@ fn render_orbit_trap_julia(width: i64, height: i64, max_iter: i64, cx: f64, cy: 
     
     let mut y: i64 = 0;
     while y < height {
-        let mut zy0: f64 = ((-1.3) + (2.6 * ((y / ((height - 1))))));
+        let zy0: f64 = ((-1.3) + (2.6 * ((y / ((height - 1))))));
         let mut x: i64 = 0;
         while x < width {
             let mut zx: f64 = ((-1.9) + (3.8 * ((x / ((width - 1))))));
@@ -38,8 +38,8 @@ fn render_orbit_trap_julia(width: i64, height: i64, max_iter: i64, cx: f64, cy: 
                 if dxy < trap {
                     trap = dxy;
                 }
-                let mut zx2: f64 = (zx * zx);
-                let mut zy2: f64 = (zy * zy);
+                let zx2: f64 = (zx * zx);
+                let zy2: f64 = (zy * zy);
                 if (zx2 + zy2) > 4.0 {
                     py_break;
                 }
@@ -62,8 +62,8 @@ fn render_orbit_trap_julia(width: i64, height: i64, max_iter: i64, cx: f64, cy: 
                 if trap_scaled < 0.0 {
                     trap_scaled = 0.0;
                 }
-                let mut t: f64 = (i / max_iter);
-                let mut tone: i64 = (255.0 * ((1.0 - trap_scaled))) as i64;
+                let t: f64 = (i / max_iter);
+                let tone: i64 = (255.0 * ((1.0 - trap_scaled))) as i64;
                 r = (tone * ((0.35 + (0.65 * t)))) as i64;
                 g = (tone * ((0.15 + (0.85 * ((1.0 - t)))))) as i64;
                 b = (255.0 * ((0.25 + (0.75 * t)))) as i64;
@@ -88,15 +88,15 @@ fn render_orbit_trap_julia(width: i64, height: i64, max_iter: i64, cx: f64, cy: 
 }
 
 fn run_04_orbit_trap_julia() {
-    let mut width: i64 = 1920;
-    let mut height: i64 = 1080;
-    let mut max_iter: i64 = 1400;
-    let mut out_path: String = "sample/out/04_orbit_trap_julia.png";
+    let width: i64 = 1920;
+    let height: i64 = 1080;
+    let max_iter: i64 = 1400;
+    let out_path: String = "sample/out/04_orbit_trap_julia.png";
     
-    let mut start: f64 = perf_counter();
-    let mut pixels: Vec<u8> = render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889);
+    let start: f64 = perf_counter();
+    let pixels: Vec<u8> = render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889);
     png.write_rgb_png(out_path, width, height, pixels);
-    let mut elapsed: f64 = (perf_counter() - start);
+    let elapsed: f64 = (perf_counter() - start);
     
     println!("{:?}", ("output:", out_path));
     println!("{:?}", ("size:", width, "x", height));

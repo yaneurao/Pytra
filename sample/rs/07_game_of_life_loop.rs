@@ -17,15 +17,15 @@ fn next_state(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
                 let mut dx: i64 = (-1);
                 while dx < 2 {
                     if (dx != 0) || (dy != 0) {
-                        let mut nx = ((((x + dx) + w)) % w);
-                        let mut ny = ((((y + dy) + h)) % h);
+                        let nx = ((((x + dx) + w)) % w);
+                        let ny = ((((y + dy) + h)) % h);
                         cnt += grid[ny as usize][nx as usize];
                     }
                     dx += 1;
                 }
                 dy += 1;
             }
-            let mut alive = grid[y as usize][x as usize];
+            let alive = grid[y as usize][x as usize];
             if (alive == 1) && ((cnt == 2) || (cnt == 3)) {
                 row.push(1);
             } else {
@@ -44,17 +44,17 @@ fn next_state(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
 }
 
 fn render(grid: Vec<Vec<i64>>, w: i64, h: i64, cell: i64) -> Vec<u8> {
-    let mut width = (w * cell);
-    let mut height = (h * cell);
+    let width = (w * cell);
+    let height = (h * cell);
     let mut frame = bytearray((width * height));
     let mut y: i64 = 0;
     while y < h {
         let mut x: i64 = 0;
         while x < w {
-            let mut v = (grid[y as usize][x as usize] ? 255 : 0);
+            let v = (grid[y as usize][x as usize] ? 255 : 0);
             let mut yy: i64 = 0;
             while yy < cell {
-                let mut base = (((((y * cell) + yy)) * width) + (x * cell));
+                let base = (((((y * cell) + yy)) * width) + (x * cell));
                 let mut xx: i64 = 0;
                 while xx < cell {
                     frame[(base + xx) as usize] = v;
@@ -70,13 +70,13 @@ fn render(grid: Vec<Vec<i64>>, w: i64, h: i64, cell: i64) -> Vec<u8> {
 }
 
 fn run_07_game_of_life_loop() {
-    let mut w = 144;
-    let mut h = 108;
-    let mut cell = 4;
-    let mut steps = 105;
-    let mut out_path = "sample/out/07_game_of_life_loop.gif";
+    let w = 144;
+    let h = 108;
+    let cell = 4;
+    let steps = 105;
+    let out_path = "sample/out/07_game_of_life_loop.gif";
     
-    let mut start = perf_counter();
+    let start = perf_counter();
     let mut grid: Vec<Vec<i64>> = [[0] * w for _ in range(h)];
     
     // Lay down sparse noise so the whole field is less likely to stabilize too early.
@@ -85,7 +85,7 @@ fn run_07_game_of_life_loop() {
     while y < h {
         let mut x: i64 = 0;
         while x < w {
-            let mut noise = ((((((x * 37) + (y * 73)) + ((x * y) % 19)) + (((x + y)) % 11))) % 97);
+            let noise = ((((((x * 37) + (y * 73)) + ((x * y) % 19)) + (((x + y)) % 11))) % 97);
             if noise < 3 {
                 grid[y as usize][x as usize] = 1;
             }
@@ -94,15 +94,15 @@ fn run_07_game_of_life_loop() {
         y += 1;
     }
     // Place multiple well-known long-lived patterns.
-    let mut glider = vec![];
-    let mut r_pentomino = vec![];
-    let mut lwss = vec![];
+    let glider = vec![];
+    let r_pentomino = vec![];
+    let lwss = vec![];
     
     let mut gy: i64 = 8;
     while gy < (h - 8) {
         let mut gx: i64 = 8;
         while gx < (w - 8) {
-            let mut kind = ((((gx * 7) + (gy * 11))) % 3);
+            let kind = ((((gx * 7) + (gy * 11))) % 3);
             if kind == 0 {
                 let mut ph = glider.len() as i64;
                 let mut py: i64 = 0;
@@ -160,7 +160,7 @@ fn run_07_game_of_life_loop() {
         _ += 1;
     }
     save_gif(out_path, (w * cell), (h * cell), frames, grayscale_palette());
-    let mut elapsed = (perf_counter() - start);
+    let elapsed = (perf_counter() - start);
     println!("{:?}", ("output:", out_path));
     println!("{:?}", ("frames:", steps));
     println!("{:?}", ("elapsed_sec:", elapsed));
