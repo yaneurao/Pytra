@@ -4620,7 +4620,7 @@ class CppEmitter(CodeEmitter):
         arg0_t = self.get_expr_type(arg0)
         if not self.is_any_like_type(arg0_t):
             return None
-        if builtin_name == "bool" or runtime_call == "py_to_bool":
+        if runtime_call == "py_to_bool":
             return {
                 "kind": "ObjBool",
                 "value": arg0,

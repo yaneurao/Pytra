@@ -2364,7 +2364,14 @@ class _ShExprParser:
                 elif fn_name in {"int", "float", "bool"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
-                    payload["runtime_call"] = "static_cast"
+                    runtime_call = "static_cast"
+                    if fn_name == "bool" and len(args) == 1:
+                        arg0 = args[0]
+                        if isinstance(arg0, dict):
+                            arg0_t = str(arg0.get("resolved_type", "unknown"))
+                            if self._is_forbidden_object_receiver_type(arg0_t):
+                                runtime_call = "py_to_bool"
+                    payload["runtime_call"] = runtime_call
                 elif fn_name in {"min", "max"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
