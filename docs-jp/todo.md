@@ -54,7 +54,7 @@
 26. [x] [ID: P0-EAST123-07] `type_id` lower を「EAST3 命令化 -> backend 写像」へ統一する（`P0-EAST123-07-S1` から `P0-EAST123-07-S2` 完了でクローズ）。
 27. [x] [ID: P0-EAST123-07-S1] `isinstance` / `issubclass` / subtype 判定を EAST3 命令へ lower する。
 28. [x] [ID: P0-EAST123-07-S2] backend 側の `type_id` 直書き判定生成を撤去し、runtime API 写像へ統一する。
-29. [ ] [ID: P0-EAST123-08] 言語非依存意味論を IR-first（EAST3 命令化 -> backend 写像）へ拡張する（`P0-EAST123-08-S1` から `P0-EAST123-08-S3` 完了でクローズ）。
+29. [x] [ID: P0-EAST123-08] 言語非依存意味論を IR-first（EAST3 命令化 -> backend 写像）へ拡張する（`P0-EAST123-08-S1` から `P0-EAST123-08-S3` 完了でクローズ）。
 30. [x] [ID: P0-EAST123-08-S1] `type_id` 以外で IR 化優先対象（boxing/unboxing, iterable, truthy/len/str, built-in lower）の移行順を確定する。
 31. [x] [ID: P0-EAST123-08-S2] 第1陣（boxing/unboxing, iterable, truthy/len/str）を EAST3 命令へ移行する。
 32. [x] [ID: P0-EAST123-08-S3] 第2陣（主要 built-in lower）を EAST3 命令へ移行し、C++ hooks を構文差分専任へ縮退する。
