@@ -65,6 +65,18 @@
 - `EAST1 -> EAST2` は parser 出力正規化層であり、意味論確定は行わない。
 - backend hooks は移行期間中に分離してもよいが、最終形は `EAST3` 向け最小 hook 集合に収束させる。
 
+## C++ hooks 棚卸し（P0-EASTMIG-04-S1）
+
+`src/hooks/cpp/hooks/cpp_hooks.py` の現行 hook を「意味論」「構文差分」に分類する。
+
+| hook | 分類 | 根拠 | `P0-EASTMIG-04-S2` 方針 |
+| --- | --- | --- | --- |
+| `on_stmt_omit_braces` | 構文差分 | brace の有無のみ制御し、意味論を変更しない。 | 維持（構文差分専任）。 |
+| `on_render_expr_complex` | 構文差分 | `JoinedStr`/`Lambda` の描画経路選択のみ。 | 維持（構文差分専任）。 |
+| `on_render_module_method` | 意味論 | `runtime_call` 解決と module 関数ディスパッチを実施。 | `EAST3` 命令写像または共通層へ移管候補。 |
+| `on_render_class_method` | 意味論 | クラスメソッドのシグネチャ解決と引数 coercion を実施。 | `EAST3` 命令写像または共通層へ移管候補。 |
+| `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
+
 決定ログ:
 - 2026-02-24: 本計画を `materials/refs/` に `plans` 形式で追加。
 - 2026-02-24: dispatch 方針は単一オプション `--object-dispatch-mode`（既定 `native`）を維持。
@@ -77,3 +89,4 @@
 - 2026-02-24: `P0-EASTMIG-03-S2` として Any/object 境界の型付き変換（AnnAssign/Assign/Return/Yield）を `Unbox` 命令写像優先へ切り替え、`_coerce_any_expr_to_target_via_unbox` を追加した。source node が存在する経路では legacy 文字列キャスト再判断を通らず、`EAST3` ノード経由で backend 生成する。
 - 2026-02-24: `P0-EASTMIG-03-S3` として `type_id` / built-in lower の未 lower fallback を `EAST3` 主経路で fail-fast 化した。`east_stage=3` では `isinstance`/`issubclass` Name-call と `runtime_call` 未設定 BuiltinCall を拒否し、`east_stage=2` + selfhost 互換のみ legacy fallback を残す。
 - 2026-02-24: P0-EASTMIG-03-S4 として回帰基線を固定した。`python3 test/unit/test_east3_cpp_bridge.py`（71件）/ `python3 tools/check_py2cpp_transpile.py`（checked=131, fail=0）/ `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（mismatches=0）/ `python3 tools/check_todo_priority.py` を通過し、P0-EASTMIG-03 をクローズ。
+- 2026-02-24: `P0-EASTMIG-04-S1` として `src/hooks/cpp/hooks/cpp_hooks.py` の hook 5件を分類し、意味論 3件（`on_render_module_method`, `on_render_class_method`, `on_render_expr_leaf`）と構文差分 2件（`on_stmt_omit_braces`, `on_render_expr_complex`）の棚卸し表を本計画へ記録した。
