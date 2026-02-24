@@ -3602,12 +3602,17 @@ class CppEmitter(CodeEmitter):
     ) -> str:
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
-        if runtime_call == "" and self._is_self_hosted_parser_doc():
+        if runtime_call == "":
             legacy_builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
-            if legacy_builtin_name == "bytearray":
-                runtime_call = "bytearray_ctor"
-            elif legacy_builtin_name == "bytes":
-                runtime_call = "bytes_ctor"
+            if self._doc_east_stage() == "3":
+                raise ValueError(
+                    "builtin call must define runtime_call in EAST3: " + legacy_builtin_name
+                )
+            if self._is_self_hosted_parser_doc():
+                if legacy_builtin_name == "bytearray":
+                    runtime_call = "bytearray_ctor"
+                elif legacy_builtin_name == "bytes":
+                    runtime_call = "bytes_ctor"
         any_boundary_expr = self._build_any_boundary_expr_from_builtin_call(
             runtime_call,
             arg_nodes,
@@ -4996,6 +5001,22 @@ class CppEmitter(CodeEmitter):
         meta = self.any_to_dict_or_empty(self.doc.get("meta"))
         return self.any_dict_get_str(meta, "parser_backend", "") == "self_hosted"
 
+    def _doc_east_stage(self) -> str:
+        """入力 EAST の段階（`2`/`3`）を返す。未知値は `2` 扱い。"""
+        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        stage = self.any_dict_get_str(meta, "east_stage", "2")
+        if stage not in {"2", "3"}:
+            return "2"
+        return stage
+
+    def _allows_legacy_type_id_name_call(self, raw_name: str) -> bool:
+        """未 lower の type_id Name-call を許容するか判定する。"""
+        if raw_name not in {"isinstance", "issubclass"}:
+            return True
+        if self._is_self_hosted_parser_doc():
+            return True
+        return self._doc_east_stage() != "3"
+
     def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
         """self_hosted parser 由来の trivia は directive のみ反映する。"""
         if "leading_trivia" not in stmt:
@@ -5145,6 +5166,8 @@ class CppEmitter(CodeEmitter):
                 return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
             if self._requires_builtin_call_lowering(raw):
                 raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + raw)
+            if not self._allows_legacy_type_id_name_call(raw):
+                raise ValueError("type_id call must be lowered to EAST3 node: " + raw)
             type_id_expr = self._build_type_id_expr_from_call_name(raw, arg_nodes)
             if type_id_expr is not None:
                 return self.render_expr(type_id_expr)
@@ -6127,6 +6150,8 @@ class CppEmitter(CodeEmitter):
                 arg0 = arg0 if arg0 != "" else self._trim_ws(fn_args[0])
                 return f"py_len({arg0})"
             if fn_name == "isinstance" and len(fn_args) == 2:
+                if not self._allows_legacy_type_id_name_call("isinstance"):
+                    raise ValueError("type_id call must be lowered to EAST3 node: isinstance")
                 arg0 = self._render_repr_expr(fn_args[0])
                 arg0 = arg0 if arg0 != "" else self._trim_ws(fn_args[0])
                 ty = self._trim_ws(fn_args[1])

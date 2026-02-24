@@ -65,6 +65,9 @@
 - Any/object 境界（型付き代入/return/yield）:
   - `P0-EASTMIG-03-S2` で `AnnAssign` / `Assign` / `Return` / `Yield` の Any -> 型付き変換を `Unbox` 命令写像優先に置換。
   - source node が存在する経路は `_coerce_any_expr_to_target_via_unbox` で `Unbox` ノード経由に統一し、backend 側の文字列キャスト再判断を縮退。
+- type_id / built-in lower:
+  - `P0-EASTMIG-03-S3` で `east_stage=3` 時の未 lower fallback を fail-fast 化し、`type_id` Name-call（`isinstance` / `issubclass`）と `runtime_call` 未設定 BuiltinCall を拒否。
+  - `east_stage=2` + selfhost 互換モードでは既存 fallback を維持し、移行期間の後方互換を確保。
 
 ## 4. 移行方針
 

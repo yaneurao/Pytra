@@ -198,6 +198,64 @@ class East3CppBridgeTest(unittest.TestCase):
             "py_is_subtype(1001, 1000)",
         )
 
+    def test_legacy_type_id_name_call_rejected_in_east3(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"east_stage": "3"}}, {})
+        call_expr = {
+            "kind": "Call",
+            "func": {"kind": "Name", "id": "isinstance", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Name", "id": "v", "resolved_type": "Any"},
+                {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+            ],
+            "keywords": [],
+            "resolved_type": "bool",
+        }
+        with self.assertRaisesRegex(ValueError, "type_id call must be lowered to EAST3 node: isinstance"):
+            emitter.render_expr(call_expr)
+
+    def test_legacy_type_id_name_call_allowed_in_east2_compat(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"east_stage": "2"}}, {})
+        call_expr = {
+            "kind": "Call",
+            "func": {"kind": "Name", "id": "isinstance", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Name", "id": "v", "resolved_type": "Any"},
+                {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+            ],
+            "keywords": [],
+            "resolved_type": "bool",
+        }
+        self.assertEqual(emitter.render_expr(call_expr), "py_isinstance(v, PYTRA_TID_INT)")
+
+    def test_builtin_call_without_runtime_call_rejected_in_east3(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"east_stage": "3"}}, {})
+        call_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "bytes",
+            "runtime_call": "",
+            "func": {"kind": "Name", "id": "bytes", "resolved_type": "unknown"},
+            "args": [],
+            "keywords": [],
+            "resolved_type": "bytes",
+        }
+        with self.assertRaisesRegex(ValueError, "builtin call must define runtime_call in EAST3: bytes"):
+            emitter.render_expr(call_expr)
+
+    def test_builtin_call_without_runtime_call_allowed_for_stage2_selfhost_compat(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"east_stage": "2", "parser_backend": "self_hosted"}}, {})
+        call_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "bytes",
+            "runtime_call": "",
+            "func": {"kind": "Name", "id": "bytes", "resolved_type": "unknown"},
+            "args": [],
+            "keywords": [],
+            "resolved_type": "bytes",
+        }
+        self.assertEqual(emitter.render_expr(call_expr), "bytes{}")
+
     def test_render_cond_for_any_routes_to_objbool(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         any_name = {"kind": "Name", "id": "v", "resolved_type": "Any"}
