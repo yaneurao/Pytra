@@ -31,7 +31,7 @@ def _check_forbidden_refs(errors: list[str]) -> None:
     forbidden = ("/src/js_module/", "/src/ts_module/")
     targets = [
         ROOT / "src" / "hooks",
-        ROOT / "src" / "common2",
+        ROOT / "src" / "pytra",
         ROOT / "test" / "unit",
         ROOT / "sample" / "js",
         ROOT / "sample" / "ts",

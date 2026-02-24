@@ -2,6 +2,10 @@
 
 最終更新: 2026-02-24
 
+注記:
+- `src/common2/` は 2026-02-24 に削除済みです。
+- 本文中の `src/common2/...` は過去フェーズの履歴参照です。
+
 関連 TODO:
 - `docs-ja/todo/index.md` の `ID: P0-RUNTIME-SEP-01`（`P0-RUNTIME-SEP-01-S1` 〜 `P0-RUNTIME-SEP-01-S5`）
 - `docs-ja/todo/index.md` の `ID: P1-RUNTIME-01`（`P1-RUNTIME-01-S1` 〜 `P1-RUNTIME-01-S3`）

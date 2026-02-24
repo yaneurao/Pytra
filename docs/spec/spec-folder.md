@@ -102,13 +102,6 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 - Not allowed: new runtime implementations.
 - Note: phased removal target; new implementations go to `src/runtime/<lang>/pytra/`.
 
-### 3.6 `src/common2/` (temporary)
-
-- Purpose: current shared-layer location during naming/layout transition.
-- Allowed: language-agnostic utilities.
-- Not allowed: language-specific logic.
-- Note: if renamed/finalized, update this spec and related specs in the same change.
-
 ## 4. Documentation Operation Boundaries
 
 ### 4.1 `docs-ja/todo/index.md`
