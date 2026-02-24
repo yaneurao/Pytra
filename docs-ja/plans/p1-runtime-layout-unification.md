@@ -66,6 +66,16 @@
 | CLI 側 runtime パス解決 | `src/py2rs.py` | `.py/.json -> EAST -> Rust` 変換のみ。`src/rs_module` 直接参照なし | `py2rs.py` には新旧パス fallback を持たせず、互換は runtime 側 shim で吸収する |
 | 既存生成物の path 参照 | `sample/rs/*.rs`（`#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]`） | 新パス参照へ切替済み | 過去生成物が旧参照でも `src/rs_module/py_runtime.rs` shim で互換維持する |
 
+`P1-RUNTIME-03-S1` 棚卸し結果（`src/rs_module/` 参照元と廃止可否）:
+
+| 参照元 | 参照内容 | 廃止可否判定 | 条件/備考 |
+|---|---|---|---|
+| `src/rs_module/py_runtime.rs` | 互換 shim 本体 | `P1-RUNTIME-03-S2` で廃止対象 | 旧参照 fallback を終了すると同時に削除 |
+| `tools/check_rs_runtime_layout.py` | `src/rs_module` shim 前提のレイアウト検証 | `P1-RUNTIME-03-S2` で更新対象 | shim 廃止後は `src/runtime/rs/pytra/` 直検証へ置換 |
+| `docs-ja/how-to-use.md` / `docs/how-to-use.md` | `src/rs_module` を runtime 配置として案内 | `P1-RUNTIME-03-S2` で更新対象 | 新配置 `src/runtime/rs/pytra/` へ文言置換 |
+| `docs-ja/plans/pytra-wip.md` / `docs/plans/pytra-wip.md` | 旧配置参照の移行注記 | `P1-RUNTIME-03-S2` で更新対象 | 旧配置記述を互換終了済みへ変更 |
+| `docs-ja/spec/spec-dev.md` | `src/rs_module` を移行中として言及 | `P1-RUNTIME-03-S2` で更新対象 | 「非依存」の最終状態へ更新 |
+
 `P1-RUNTIME-01-S1` 棚卸し結果（`src/rs_module/` -> `src/runtime/rs/pytra/` 対応表）:
 
 - 現状 `src/rs_module/` は `py_runtime.rs` 1ファイルのみ（`find src/rs_module -type f` で確認）。
@@ -105,3 +115,4 @@
 - 2026-02-24: ID: P1-RUNTIME-02-S1 として Rust path 解決箇所を棚卸しした。`py2rs.py` は runtime パス非依存、`rs_emitter.py` は `module_id -> use crate::...` の変換責務、既存生成物の旧 `src/rs_module` 参照は shim で吸収する互換方針を確定した。
 - 2026-02-24: ID: P1-RUNTIME-02-S2 として生成物参照先を新パスへ切替した。`sample/rs/*.rs` の `#[path = "../../src/rs_module/py_runtime.rs"]` を `#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]` へ一括更新し、コード側の旧パス依存を撤去した。旧参照 fallback は `src/rs_module/py_runtime.rs` shim のみ維持する。
 - 2026-02-24: ID: P1-RUNTIME-02（親タスク）を完了として履歴へ移管した。次段は `P1-RUNTIME-03`（`src/rs_module` 廃止）へ進む。
+- 2026-02-24: ID: P1-RUNTIME-03-S1 として `src/rs_module` 参照元を全件棚卸しし、コード側は `src/rs_module/py_runtime.rs` shim と `tools/check_rs_runtime_layout.py` のみが直接依存、残りは docs 記述であることを確認した。`P1-RUNTIME-03-S2` では shim 削除 + ガード更新 + docs 置換を同時実施する方針を確定した。
