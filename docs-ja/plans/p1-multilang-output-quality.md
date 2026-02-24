@@ -124,6 +124,23 @@
   - `java cast`: `413 -> 0`
   - `java imports`: `132 -> 0`
 
+`P1-MQ-02-S3-S3` 実装結果（Swift/Kotlin preview 冗長縮退）:
+
+- 対象: `src/hooks/swift/emitter/swift_emitter.py`, `src/hooks/kotlin/emitter/kotlin_emitter.py`
+- 変更点:
+  1. Swift/Kotlin preview で C# 全文埋め込みをやめ、シグネチャ要約コメントへ切り替えた。
+  2. Swift 既定 `import Foundation` を撤去し、未使用 import を解消した。
+  3. Swift/Kotlin transpiler minor version を `0.3.0` へ更新した（`transpiler_versions.json`）。
+- 生成物反映:
+  - `python3 tools/regenerate_samples.py --langs swift,kotlin --force` で `sample/swift` / `sample/kotlin` を再生成。
+- 指標変化（`sample/cpp` 比較の生カウント）:
+  - `swift paren`: `296 -> 0`
+  - `swift imports`: `18 -> 0`
+  - `swift unused_import_est`: `6 -> 0`
+  - `kotlin paren`: `296 -> 0`
+  - `kotlin cast`: `12 -> 0`
+  - `kotlin imports`: `60 -> 0`
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
@@ -132,3 +149,4 @@
 - 2026-02-24: ID: P1-MQ-02-S2 として JS emitter の括弧最小化・import/runtime symbol 縮退を実装し、`sample/js` / `sample/ts` の `paren` と `unused_import_est` の大幅減少を確認した。
 - 2026-02-24: ID: P1-MQ-02-S3-S1 として C# emitter の cast/import/括弧縮退を実施し、`sample/cs` の `paren`/`cast`/`imports`/`unused_import_est` を大幅削減した。
 - 2026-02-24: ID: P1-MQ-02-S3-S2 として Go/Java preview 出力をシグネチャ要約へ縮退し、`sample/go` / `sample/java` の `paren`/`cast`/`imports` を削減した。
+- 2026-02-24: ID: P1-MQ-02-S3-S3 として Swift/Kotlin preview 出力をシグネチャ要約へ縮退し、`sample/swift` / `sample/kotlin` の `paren`/`cast`/`imports`/`unused_import_est` を削減した。
