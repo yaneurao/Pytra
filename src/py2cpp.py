@@ -4104,6 +4104,8 @@ class CppEmitter(CodeEmitter):
             if range_rendered is not None:
                 return range_rendered
             return None
+        if runtime_call == "zip" and len(arg_nodes) >= 2:
+            return f"zip({self.render_expr(arg_nodes[0])}, {self.render_expr(arg_nodes[1])})"
         if runtime_call in {"list_ctor", "set_ctor", "dict_ctor"}:
             ctor_name = runtime_call[:-5]
             ctor_args: list[str] = []
@@ -4656,6 +4658,7 @@ class CppEmitter(CodeEmitter):
             "float",
             "bool",
             "range",
+            "zip",
             "min",
             "max",
             "perf_counter",

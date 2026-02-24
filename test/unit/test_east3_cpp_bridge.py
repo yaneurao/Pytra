@@ -1292,6 +1292,18 @@ class East3CppBridgeTest(unittest.TestCase):
             ],
             "keywords": [],
         }
+        zip_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "zip",
+            "resolved_type": "list[tuple[int64,int64]]",
+            "func": {"kind": "Name", "id": "zip", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                {"kind": "Name", "id": "ys", "resolved_type": "list[int64]"},
+            ],
+            "keywords": [],
+        }
         any_expr = {
             "kind": "Call",
             "lowered_kind": "BuiltinCall",
@@ -1486,6 +1498,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(next_expr), "py_next_or_stop(it)")
         self.assertEqual(emitter.render_expr(reversed_expr), "py_reversed(xs)")
         self.assertEqual(emitter.render_expr(enumerate_expr), "py_enumerate(xs, py_to_int64(1))")
+        self.assertEqual(emitter.render_expr(zip_expr), "zip(xs, ys)")
         self.assertEqual(emitter.render_expr(any_expr), "py_any(xs)")
         self.assertEqual(emitter.render_expr(all_expr), "py_all(xs)")
         self.assertEqual(emitter.render_expr(ord_expr), 'py_ord("A")')
@@ -1555,6 +1568,16 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Constant", "value": 3, "resolved_type": "int64"}],
             "keywords": [],
         }
+        plain_zip = {
+            "kind": "Call",
+            "resolved_type": "list[tuple[int64,int64]]",
+            "func": {"kind": "Name", "id": "zip", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                {"kind": "Name", "id": "ys", "resolved_type": "list[int64]"},
+            ],
+            "keywords": [],
+        }
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: print"):
             emitter.render_expr(plain_print)
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: len"):
@@ -1567,6 +1590,8 @@ class East3CppBridgeTest(unittest.TestCase):
             emitter.render_expr(plain_list)
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: range"):
             emitter.render_expr(plain_range)
+        with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: zip"):
+            emitter.render_expr(plain_zip)
 
     def test_plain_isinstance_call_uses_type_id_core_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

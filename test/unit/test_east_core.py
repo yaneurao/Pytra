@@ -102,6 +102,7 @@ def main() -> None:
     ba: bytearray = bytearray(blob)
     xs: list[int] = []
     xs.append(1)
+    zp = zip(xs, xs)
     n: int = int("10", 16)
     o: object = xs
     b: bool = bool(o)
@@ -121,7 +122,7 @@ def main() -> None:
     v: int = d.get("a", 0)
     p: Path = Path("tmp")
     ok: bool = p.exists()
-    print(len(xs), t, u, p0, p1, len(ba), n, b, first, ri, en, has_any, has_all, ch, ocode, len(ys), len(zs), len(d2), v, ok)
+    print(len(xs), t, u, p0, p1, len(ba), n, b, first, ri, en, zp, has_any, has_all, ch, ocode, len(ys), len(zs), len(d2), v, ok)
 
 if __name__ == "__main__":
     main()
@@ -139,6 +140,7 @@ if __name__ == "__main__":
         self.assertIn("py_next_or_stop", runtime_calls)
         self.assertIn("py_reversed", runtime_calls)
         self.assertIn("py_enumerate", runtime_calls)
+        self.assertIn("zip", runtime_calls)
         self.assertIn("py_any", runtime_calls)
         self.assertIn("py_all", runtime_calls)
         self.assertIn("py_ord", runtime_calls)
