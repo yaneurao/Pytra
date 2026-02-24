@@ -2232,7 +2232,7 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
         "opt_level_opt": "",
         "preset": "",
         "parser_backend": "self_hosted",
-        "east_stage": "2",
+        "east_stage": "3",
         "guard_profile": "default",
         "max_ast_depth": "",
         "max_parse_nodes": "",

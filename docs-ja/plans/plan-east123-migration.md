@@ -172,6 +172,19 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - `normalize_east1_to_east2_document` が `east_stage==1` を `2` へ変換。
 - `load_east_document_compat` が `load_east_document` を呼び出すため、非 C++ 変換器は既定で `EAST2` 経路へ入る。
 
+## `py2cpp` 既定 `EAST3` 切替（`P0-EASTMIG-06-S2`）
+
+`py2cpp.py` の既定 stage を `3` に切替え、`stage=2` は互換モードとして警告付き運用へ縮退する。
+
+- 既定値更新:
+  - `parse_py2cpp_argv` の `east_stage` 初期値を `"3"` へ更新。
+  - `py2cpp.py::load_east` / `build_module_east_map` / `main` の `east_stage` 既定を `"3"` へ更新。
+- 互換モード警告:
+  - `main` で `east_stage=="2"` のとき、`warning: --east-stage 2 is compatibility mode; default is 3.` を標準エラーへ出力。
+- 回帰確認:
+  - `tools/check_py2cpp_boundary.py` が通過。
+  - `tools/check_py2cpp_transpile.py` が `checked=131 ok=131 fail=0 skipped=6` で通過。
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -195,6 +208,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06-S2`] `py2cpp` の既定 `east_stage` を `3` へ切替え、`stage=2` は互換警告付き運用へ縮退した。`parse_py2cpp_argv` 初期値・`load_east`/`build_module_east_map`/`main` 既定を更新し、`check_py2cpp_transpile`（131件）と境界ガード通過を確認した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S1`] 全 `py2*.py`（`py2cpp` + 非 C++ 8変換器）の EAST 読み込み経路を棚卸しし、`load_east_document_compat` 依存と `east_stage="2"` 既定値の残存箇所を表形式で固定した。後続は `S2`（cpp 既定切替）と `S3-*`（非 cpp 主経路化）へ受け渡す。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S5`] `S0-S1` から `S0-S4` の成果物を本計画へ集約し、`P0-EASTMIG-06-S0` を `P0` 先行ゲートとして確定した。以降の `S1` 以降は境界契約を破壊しないことを受け入れ条件とする。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S4`] `tools/check_east_stage_boundary.py` と `test/unit/test_east_stage_boundary_guard.py` を追加し、`east2.py` での `EAST3` lower 流入と `code_emitter.py` での stage 再解釈 API 流入を静的検査で拒否するガードを導入した。`tools/run_local_ci.py` に同ガードを組み込んだ。

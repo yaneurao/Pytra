@@ -1223,6 +1223,7 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed.get("preset"), "balanced")
         self.assertEqual(parsed.get("mod_mode_opt"), "native")
         self.assertEqual(parsed.get("dump_options"), "1")
+        self.assertEqual(parsed.get("east_stage"), "3")
 
     def test_parse_py2cpp_argv_accepts_positional_output(self) -> None:
         parsed = parse_py2cpp_argv(["input.py", "out.cpp", "-O2"])
@@ -1249,6 +1250,7 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(err3, "")
         self.assertEqual(parsed3.get("single_file"), "0")
         self.assertEqual(parsed3.get("output_mode_explicit"), "0")
+        self.assertEqual(parsed3.get("east_stage"), "3")
 
     def test_parse_py2cpp_argv_header_output(self) -> None:
         parsed = parse_py2cpp_argv(["input.py", "--header-output", "out.h", "-o", "out.cpp"])
