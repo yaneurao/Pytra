@@ -4319,47 +4319,6 @@ class CppEmitter(CodeEmitter):
             return f"{t}({args[0]})"
         return f"{ctor_name}({args[0]})"
 
-    def _render_scalar_cast_builtin_call(
-        self,
-        raw: str,
-        expr: dict[str, Any],
-        args: list[str],
-        first_arg: Any,
-    ) -> str | None:
-        """`int/float/bool` の1引数キャスト呼び出しを共通化する。"""
-        if raw not in {"int", "float", "bool"}:
-            return None
-        if len(args) != 1:
-            return None
-        target = self.cpp_type(expr.get("resolved_type"))
-        arg_t = self.get_expr_type(first_arg)
-        numeric_t = {
-            "int8",
-            "uint8",
-            "int16",
-            "uint16",
-            "int32",
-            "uint32",
-            "int64",
-            "uint64",
-            "float32",
-            "float64",
-            "bool",
-        }
-        if raw == "bool" and self.is_any_like_type(arg_t):
-            return f"py_to_bool({args[0]})"
-        if raw == "float" and self.is_any_like_type(arg_t):
-            return f"py_to_float64({args[0]})"
-        if raw == "float" and arg_t == "str":
-            return f"py_to_float64({args[0]})"
-        if raw == "int" and target == "int64" and arg_t == "str":
-            return f"py_to_int64({args[0]})"
-        if raw == "int" and target == "int64" and arg_t in numeric_t:
-            return f"int64({args[0]})"
-        if raw == "int" and target == "int64":
-            return f"py_to_int64({args[0]})"
-        return f"static_cast<{target}>({args[0]})"
-
     def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
         """`isinstance(x, T)` の `T` に対応する runtime 判定式を返す。"""
         type_id_expr = self._render_type_id_operand_expr({"kind": "Name", "id": type_name})
@@ -4812,38 +4771,13 @@ class CppEmitter(CodeEmitter):
     def _render_misc_name_builtin_call(
         self,
         raw: str,
-        expr: dict[str, Any],
         args: list[str],
-        arg_nodes: list[Any],
-        first_arg: Any,
     ) -> str | None:
         """`Call(Name)` の残りビルトイン分岐を処理する。"""
-        if raw == "bytes":
-            return f"bytes({join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
-        if raw == "bytearray":
-            return f"bytearray({join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
-        if raw == "str" and len(args) == 1:
-            src_expr = first_arg
-            return self.render_to_string(src_expr)
-        scalar_cast_rendered = self._render_scalar_cast_builtin_call(raw, expr, args, first_arg)
-        if scalar_cast_rendered is not None:
-            return scalar_cast_rendered
-        if raw == "int" and len(args) == 2:
-            return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
         if raw == "ord" and len(args) == 1:
             return f"py_ord({args[0]})"
         if raw == "chr" and len(args) == 1:
             return f"py_chr({args[0]})"
-        if raw in {"min", "max"} and len(args) >= 1:
-            return self.render_minmax(raw, args, self.any_to_str(expr.get("resolved_type")), arg_nodes)
-        if raw == "perf_counter":
-            return "pytra::std::time::perf_counter()"
-        if raw in {"Exception", "RuntimeError"}:
-            if len(args) == 0:
-                return '::std::runtime_error("error")'
-            return f"::std::runtime_error({args[0]})"
-        if raw == "Path":
-            return f"Path({join_str_list(', ', args)})"
         return None
 
     def _render_call_name_or_attr(
@@ -4891,7 +4825,7 @@ class CppEmitter(CodeEmitter):
             collection_ctor_rendered = self._render_collection_constructor_call(raw, expr, args, first_arg)
             if collection_ctor_rendered is not None:
                 return collection_ctor_rendered
-            misc_builtin_rendered = self._render_misc_name_builtin_call(raw, expr, args, arg_nodes, first_arg)
+            misc_builtin_rendered = self._render_misc_name_builtin_call(raw, args)
             if misc_builtin_rendered is not None:
                 return misc_builtin_rendered
         if fn_kind == "Attribute":
