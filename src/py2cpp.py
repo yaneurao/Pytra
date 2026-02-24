@@ -1614,6 +1614,60 @@ class CppEmitter(CodeEmitter):
             self.declare_in_current_scope(name)
             self.declared_var_types[name] = decl_t
 
+    def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
+        """単文ブロックで波括弧を省略可能か判定する。"""
+        if not self._opt_ge(1):
+            return False
+        if len(stmts) != 1:
+            return False
+        one = stmts[0]
+        kind = self.any_dict_get_str(one, "kind", "")
+        if kind == "Assign":
+            target = self.any_to_dict_or_empty(one.get("target"))
+            if self._node_kind_from_dict(target) == "Tuple":
+                return False
+        return kind in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
+
+    def _default_stmt_omit_braces(self, kind: str, stmt: dict[str, Any], default_value: bool = False) -> bool:
+        """hooks 無効時にも C++ 既定方針で brace 省略を決める。"""
+        if not self._opt_ge(1):
+            return False
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        if kind == "If":
+            else_stmts = self._dict_stmt_list(stmt.get("orelse"))
+            if not self._can_omit_braces_for_single_stmt(body_stmts):
+                return False
+            if len(else_stmts) == 0:
+                return True
+            return self._can_omit_braces_for_single_stmt(else_stmts)
+        if kind == "ForRange":
+            if len(self.any_dict_get_list(stmt, "orelse")) != 0:
+                return False
+            return self._can_omit_braces_for_single_stmt(body_stmts)
+        if kind == "For":
+            if len(self.any_dict_get_list(stmt, "orelse")) != 0:
+                return False
+            target = self.any_to_dict_or_empty(stmt.get("target"))
+            if self._node_kind_from_dict(target) == "Tuple":
+                return False
+            return self._can_omit_braces_for_single_stmt(body_stmts)
+        return default_value
+
+    def _default_for_range_mode(self, stmt: dict[str, Any], default_mode: str, step_expr: str) -> str:
+        """hooks 無効時の ForRange mode を C++ 既定方針で解決する。"""
+        mode = self.any_to_str(stmt.get("range_mode"))
+        if mode == "":
+            mode = default_mode
+        if mode not in {"ascending", "descending", "dynamic"}:
+            mode = default_mode if default_mode in {"ascending", "descending", "dynamic"} else "dynamic"
+        if mode == "dynamic":
+            step_txt = step_expr.strip()
+            if step_txt in {"1", "+1"}:
+                return "ascending"
+            if step_txt == "-1":
+                return "descending"
+        return mode
+
     def _emit_if_stmt(self, stmt: dict[str, Any]) -> None:
         """If ノードを出力する。"""
         body_stmts = self._dict_stmt_list(stmt.get("body"))
@@ -1627,7 +1681,8 @@ class CppEmitter(CodeEmitter):
             cond_repr = self.any_dict_get_str(test_node, "repr", "")
             cond_txt = cond_repr if cond_repr != "" else "false"
         self._predeclare_if_join_names(body_stmts, else_stmts)
-        omit_braces = self.hook_on_stmt_omit_braces("If", stmt, False)
+        omit_default = self._default_stmt_omit_braces("If", stmt, False)
+        omit_braces = self.hook_on_stmt_omit_braces("If", stmt, omit_default)
         if omit_braces and len(body_stmts) == 1 and len(else_stmts) <= 1:
             self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": cond_txt}))
             self.emit_scoped_stmt_list([body_stmts[0]], set())
@@ -2576,12 +2631,14 @@ class CppEmitter(CodeEmitter):
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
         body_stmts = self._dict_stmt_list(stmt.get("body"))
-        omit_braces = self.hook_on_stmt_omit_braces("ForRange", stmt, False)
+        omit_default = self._default_stmt_omit_braces("ForRange", stmt, False)
+        omit_braces = self.hook_on_stmt_omit_braces("ForRange", stmt, omit_default)
         if len(body_stmts) != 1:
             omit_braces = False
-        mode = self.hook_on_for_range_mode(stmt, "dynamic")
+        mode_default = self._default_for_range_mode(stmt, "dynamic", step)
+        mode = self.hook_on_for_range_mode(stmt, mode_default)
         if mode not in {"ascending", "descending", "dynamic"}:
-            mode = "dynamic"
+            mode = mode_default
         cond = (
             f"{tgt} < {stop}"
             if mode == "ascending"
@@ -2647,7 +2704,8 @@ class CppEmitter(CodeEmitter):
             )
             return
         body_stmts = self._dict_stmt_list(stmt.get("body"))
-        omit_braces = self.hook_on_stmt_omit_braces("For", stmt, False)
+        omit_default = self._default_stmt_omit_braces("For", stmt, False)
+        omit_braces = self.hook_on_stmt_omit_braces("For", stmt, omit_default)
         if len(body_stmts) != 1:
             omit_braces = False
         iter_mode = self._resolve_for_iter_mode(stmt, iter_expr)
