@@ -98,11 +98,6 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
    - `P0-EASTMIG-06-S5`: `spec-east` / `spec-dev` の記述を同期する。
    - `P0-EASTMIG-06-S6`: `EAST1` build 責務境界を `docs-ja/spec/spec-east.md#east1-build-boundary` へ正式化する。
    - `P0-EASTMIG-06-S7`: （低優先）`render_human_east3_cpp.py` を追加し、`EAST3` 命令ノードの人間可読レンダラを整備する。
-   - `P0-EASTMIG-06-S8`: （最下位優先）非 C++ 各言語の selfhost / 多段 selfhost を成立状態へ収束する。
-     - `P0-EASTMIG-06-S8-S1`: 現在の `stage1/stage2/stage3` 状態と pass 条件を受け入れ基準付きで再固定。
-     - `P0-EASTMIG-06-S8-S2`: `rs/cs/js` の stage2/stage3 失敗要因を解消し pass へ収束。
-     - `P0-EASTMIG-06-S8-S3`: `ts/go/java/swift/kotlin` の preview 脱却と stage2/stage3 実行経路を整備。
-     - `P0-EASTMIG-06-S8-S4`: selfhost suite 全言語 pass を固定し、status 文書を同期。
 
 ## P0-EASTMIG-06 再オープン理由
 
@@ -116,6 +111,16 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - `EAST1 -> EAST2` は parser 出力正規化層であり、意味論確定は行わない。
 - backend hooks は移行期間中に分離してもよいが、最終形は `EAST3` 向け最小 hook 集合に収束させる。
 - `P0-EASTMIG-06-S0` が完了するまでは、CodeEmitter の新規意味論実装（段階境界を曖昧にする変更）へ着手しない。
+
+## 保留バックログ（低優先）
+
+次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
+
+- `P0-EASTMIG-06-S8`: 非 C++ 各言語の selfhost / 多段 selfhost を成立状態へ収束する。
+  - `P0-EASTMIG-06-S8-S1`: 現在の `stage1/stage2/stage3` 状態と pass 条件を受け入れ基準付きで再固定。
+  - `P0-EASTMIG-06-S8-S2`: `rs/cs/js` の stage2/stage3 失敗要因を解消し pass へ収束。
+  - `P0-EASTMIG-06-S8-S3`: `ts/go/java/swift/kotlin` の preview 脱却と stage2/stage3 実行経路を整備。
+  - `P0-EASTMIG-06-S8-S4`: selfhost suite 全言語 pass を固定し、status 文書を同期。
 
 ## C++ hooks 棚卸し（P0-EASTMIG-04-S1）
 
@@ -150,6 +155,6 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - 2026-02-24: `P0-EASTMIG-06` を再オープンした。`py2cpp.py` の既定 stage と非 C++ 変換器の `EAST2` 既定経路が残存しており、全変換器での `EAST3` 主経路統一が未完了のため。
 - 2026-02-24: EAST責務境界を先に固定しないと CodeEmitter 作業が肥大化するリスクを反映し、`P0-EASTMIG-06-S0`（境界固定ゲート）を最優先サブタスクとして追加した。
 - 2026-02-24: `P0-EASTMIG-06-S3` の粒度が大きいため、非 C++ 8変換器を `P0-EASTMIG-06-S3-S1` から `P0-EASTMIG-06-S3-S8` へ分割し、最後に `S3-S9` で既定値/警告文言/回帰導線の統一を固定する構成へ更新した。
-- 2026-02-24: 「各言語 `py2<lang>.py` の selfhost / 多段 selfhost 成立」を未完了課題として `P0-EASTMIG-06-S8` 系へ再登録し、`P0` セクション内の最下位優先タスクとして位置づけた。
+- 2026-02-24: 「各言語 `py2<lang>.py` の selfhost / 多段 selfhost 成立」は `P0-EASTMIG-06-S8` 系として保持しつつ、全体低優先の保留バックログへ退避した（`P0` 本線完了後に `todo` 再投入）。
 - 2026-02-24: `P0-EASTMIG-06-S6` として `docs-ja/spec/spec-east.md#east1-build-boundary` を追加し、`east1_build.py` 分離仕様（`load_east_document_compat` エラー契約互換、selfhost diff 実行、`EAST1` build での `EAST2` 非変換）を受け入れ基準へ固定した。
 - 2026-02-24: `east_parts/human.py` を `render_human_east2_cpp.py` へ改名し、`P0-EASTMIG-06-S7`（低優先）として `render_human_east3_cpp.py` 追加タスクを `todo`/plan に登録した。

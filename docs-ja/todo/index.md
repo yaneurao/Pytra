@@ -49,11 +49,6 @@
 21. [ ] [ID: P0-EASTMIG-06-S5] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` の記述を実装実態へ同期し、`EAST2` を「移行互換モード」として明文化する。
 22. [ ] [ID: P0-EASTMIG-06-S6] `EAST1` build 責務境界を `docs-ja/spec/spec-east.md#east1-build-boundary` で正式化し、`load_east_document_compat` エラー契約互換・selfhost diff 実行・`EAST1` build での `EAST2` 非変換を受け入れ基準として固定する。
 23. [ ] [ID: P0-EASTMIG-06-S7] （低優先）`east_parts/render_human_east2_cpp.py` と並行して `east_parts/render_human_east3_cpp.py` を追加し、`EAST3` 命令ノード（`ForCore`, `Box/Unbox`, `Obj*`, `type_id` 系）を人間可読ビューへ描画する経路を整備する。
-24. [ ] [ID: P0-EASTMIG-06-S8] （最下位優先）非 C++ 各言語（`rs/cs/js/ts/go/java/swift/kotlin`）で `py2<lang>.py` の selfhost と多段 selfhost を成立状態へ収束させる（`P0-EASTMIG-06-S8-S1` から `P0-EASTMIG-06-S8-S4` 完了でクローズ）。
-25. [ ] [ID: P0-EASTMIG-06-S8-S1] 現在の selfhost 状態（`stage1/stage2/stage3`、`preview_only/toolchain_missing` など）を受け入れ基準付きマトリクスに再整理し、pass 条件を言語ごとに固定する。
-26. [ ] [ID: P0-EASTMIG-06-S8-S2] 非 preview 言語（`rs/cs/js`）の stage2/stage3 失敗要因を解消し、`check_multilang_selfhost_stage1.py` と `check_multilang_selfhost_multistage.py` で `pass` へ収束させる。
-27. [ ] [ID: P0-EASTMIG-06-S8-S3] preview 言語（`ts/go/java/swift/kotlin`）の preview 脱却と stage2/stage3 実行経路を整備し、自己再変換可能な生成器へ移行する。
-28. [ ] [ID: P0-EASTMIG-06-S8-S4] `tools/check_multilang_selfhost_suite.py` を最終基準として全言語 pass を固定し、`docs-ja/plans/p1-multilang-selfhost-status.md` / `docs-ja/plans/p1-multilang-selfhost-multistage-status.md` を最新状態へ同期する。
 
 ## P1: 多言語出力品質（preview 脱却の再オープン）
 
