@@ -460,8 +460,7 @@ class JsEmitter(CodeEmitter):
         name_raw = self.any_dict_get_str(target, "id", "_")
         name = self._safe_name(name_raw)
         value_obj = stmt.get("value")
-        declare = self.any_dict_get_bool(stmt, "declare", True)
-        if declare and not self.is_declared(name_raw):
+        if self.should_declare_name_binding(stmt, name_raw, True):
             self.declare_in_current_scope(name_raw)
             if value_obj is None:
                 self.emit("let " + name + ";")
@@ -472,18 +471,13 @@ class JsEmitter(CodeEmitter):
             self.emit(name + " = " + self.render_expr(value_obj) + ";")
 
     def _emit_assign(self, stmt: dict[str, Any]) -> None:
-        target = self.any_to_dict_or_empty(stmt.get("target"))
-        if len(target) == 0:
-            targets = self._dict_stmt_list(stmt.get("targets"))
-            if len(targets) > 0:
-                target = targets[0]
+        target = self.primary_assign_target(stmt)
         value = self.render_expr(stmt.get("value"))
         target_kind = self.any_dict_get_str(target, "kind", "")
         if target_kind == "Name":
             name_raw = self.any_dict_get_str(target, "id", "_")
             name = self._safe_name(name_raw)
-            declare = self.any_dict_get_bool(stmt, "declare", False)
-            if declare and not self.is_declared(name_raw):
+            if self.should_declare_name_binding(stmt, name_raw, False):
                 self.declare_in_current_scope(name_raw)
                 self.emit("let " + name + " = " + value + ";")
             else:
@@ -502,10 +496,7 @@ class JsEmitter(CodeEmitter):
         self.emit(self.render_expr(target) + " = " + value + ";")
 
     def _emit_augassign(self, stmt: dict[str, Any]) -> None:
-        target = self.render_expr(stmt.get("target"))
-        value = self.render_expr(stmt.get("value"))
-        op = self.any_to_str(stmt.get("op"))
-        mapped = self.aug_ops.get(op, "+=")
+        target, value, mapped = self.render_augassign_basic(stmt, self.aug_ops, "+=")
         self.emit(self.syntax_line("augassign_apply", "{target} {op} {value};", {"target": target, "op": mapped, "value": value}))
 
     def _render_compare(self, expr: dict[str, Any]) -> str:

@@ -944,17 +944,12 @@ class RustEmitter(CodeEmitter):
         )
 
     def _emit_assign(self, stmt: dict[str, Any]) -> None:
-        target = self.any_to_dict_or_empty(stmt.get("target"))
-        if len(target) == 0:
-            targets = self._dict_stmt_list(stmt.get("targets"))
-            if len(targets) > 0:
-                target = targets[0]
+        target = self.primary_assign_target(stmt)
         value = self.render_expr(stmt.get("value"))
         if self.any_dict_get_str(target, "kind", "") == "Name":
             name_raw = self.any_dict_get_str(target, "id", "_")
             name = self._safe_name(name_raw)
-            declare = self.any_dict_get_bool(stmt, "declare", False)
-            if declare and not self.is_declared(name_raw):
+            if self.should_declare_name_binding(stmt, name_raw, False):
                 self.declare_in_current_scope(name_raw)
                 t = self.get_expr_type(stmt.get("value"))
                 if t != "":
@@ -981,12 +976,7 @@ class RustEmitter(CodeEmitter):
     def _emit_augassign(self, stmt: dict[str, Any]) -> None:
         target_obj = stmt.get("target")
         value_obj = stmt.get("value")
-        target = self.render_expr(target_obj)
-        value = self.render_expr(value_obj)
-        op = self.any_to_str(stmt.get("op"))
-        mapped = self.aug_ops.get(op, "")
-        if mapped == "":
-            mapped = "+="
+        target, value, mapped = self.render_augassign_basic(stmt, self.aug_ops, "+=")
         target_t = self.normalize_type_name(self.get_expr_type(target_obj))
         value_t = self.normalize_type_name(self.get_expr_type(value_obj))
         if self._is_any_type(value_t):

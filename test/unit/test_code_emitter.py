@@ -881,6 +881,30 @@ class CodeEmitterTest(unittest.TestCase):
             ],
         )
 
+    def test_assignment_helper_primitives(self) -> None:
+        em = CodeEmitter({})
+        target = em.primary_assign_target({"target": {"kind": "Name", "id": "x"}})
+        self.assertEqual(target, {"kind": "Name", "id": "x"})
+        target2 = em.primary_assign_target({"targets": [{"kind": "Name", "id": "y"}]})
+        self.assertEqual(target2, {"kind": "Name", "id": "y"})
+        target3 = em.primary_assign_target({})
+        self.assertEqual(target3, {})
+
+        self.assertTrue(em.should_declare_name_binding({"declare": True}, "x", False))
+        em.declare_in_current_scope("x")
+        self.assertFalse(em.should_declare_name_binding({"declare": True}, "x", False))
+        self.assertFalse(em.should_declare_name_binding({"declare": False}, "y", True))
+
+        dummy = _DummyEmitter({})
+        target_txt, value_txt, op_txt = dummy.render_augassign_basic(
+            {"target": {"repr": "lhs"}, "value": {"repr": "rhs"}, "op": "Add"},
+            {"Add": "+="},
+            "+=",
+        )
+        self.assertEqual(target_txt, "lhs")
+        self.assertEqual(value_txt, "rhs")
+        self.assertEqual(op_txt, "+=")
+
     def test_hook_invocation_helpers(self) -> None:
         em = _HookedEmitter({})
         stmt_handled = em.hook_on_emit_stmt({"kind": "Pass"})

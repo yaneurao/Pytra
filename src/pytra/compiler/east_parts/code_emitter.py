@@ -1424,6 +1424,43 @@ class CodeEmitter:
                 return True
         return False
 
+    def primary_assign_target(self, stmt: dict[str, Any]) -> dict[str, Any]:
+        """`Assign` から主対象ノード（`target` / 先頭 `targets`）を返す。"""
+        target = self.any_to_dict_or_empty(stmt.get("target"))
+        if len(target) > 0:
+            return target
+        targets = self._dict_stmt_list(stmt.get("targets"))
+        if len(targets) > 0:
+            return targets[0]
+        return {}
+
+    def should_declare_name_binding(
+        self,
+        stmt: dict[str, Any],
+        name_raw: str,
+        default_declare: bool,
+    ) -> bool:
+        """Name 代入時に新規宣言が必要かを共通判定する。"""
+        if name_raw == "":
+            return False
+        declare = self.any_dict_get_bool(stmt, "declare", default_declare)
+        return declare and not self.is_declared(name_raw)
+
+    def render_augassign_basic(
+        self,
+        stmt: dict[str, Any],
+        aug_ops: dict[str, str],
+        default_op: str = "+=",
+    ) -> tuple[str, str, str]:
+        """`AugAssign` の target/value/op を共通取得する。"""
+        target = self.render_expr(stmt.get("target"))
+        value = self.render_expr(stmt.get("value"))
+        op = self.any_to_str(stmt.get("op"))
+        mapped = aug_ops.get(op, default_op)
+        if mapped == "":
+            mapped = default_op
+        return target, value, mapped
+
     def _is_identifier_expr(self, text: str) -> bool:
         """式文字列が単純な識別子のみかを判定する。"""
         if len(text) == 0:
