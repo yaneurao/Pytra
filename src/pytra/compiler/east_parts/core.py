@@ -346,19 +346,19 @@ def _sh_decode_py_string_body(text: str, raw_mode: bool) -> str:
     if raw_mode:
         return text
     out = ""
-    i = 0
-    while i < len(text):
-        ch = text[i : i + 1]
+    skip = 0
+    for i, ch in enumerate(text):
+        if skip > 0:
+            skip -= 1
+            continue
         if ch != "\\":
             out += ch
-            i += 1
             continue
-        i += 1
-        if i >= len(text):
+        if i + 1 >= len(text):
             out += "\\"
             break
-        esc = text[i : i + 1]
-        i += 1
+        esc = text[i + 1 : i + 2]
+        skip = 1
         if esc == "n":
             out += "\n"
         elif esc == "r":
@@ -375,18 +375,18 @@ def _sh_decode_py_string_body(text: str, raw_mode: bool) -> str:
             out += "\a"
         elif esc in {'"', "'", "\\"}:
             out += esc
-        elif esc == "x" and i + 1 < len(text):
-            hex2 = text[i : i + 2]
+        elif esc == "x" and i + 2 < len(text):
+            hex2 = text[i + 1 : i + 3]
             try:
                 out += chr(int(hex2, 16))
-                i += 2
+                skip = 3
             except ValueError:
                 out += "x"
-        elif esc == "u" and i + 3 < len(text):
-            hex4 = text[i : i + 4]
+        elif esc == "u" and i + 4 < len(text):
+            hex4 = text[i + 1 : i + 5]
             try:
                 out += chr(int(hex4, 16))
-                i += 4
+                skip = 4
             except ValueError:
                 out += "u"
         else:
@@ -575,33 +575,32 @@ def _sh_scan_logical_line_state(
     mode: str,
 ) -> tuple[int, str]:
     """論理行マージ用に括弧深度と文字列モードを更新する。"""
-    i = 0
     mode_cur = mode
-    while i < len(txt):
+    skip = 0
+    for i, ch in enumerate(txt):
+        if skip > 0:
+            skip -= 1
+            continue
         if mode_cur in {"'''", '"""'}:
             close = txt.find(mode_cur, i)
             if close < 0:
-                i = len(txt)
-                continue
-            i = close + 3
+                break
+            skip = close + 3 - i - 1
             mode_cur = ""
             continue
-        ch = txt[i]
         if mode_cur in {"'", '"'}:
             if ch == "\\":
-                i += 2
+                skip = 1
                 continue
             if ch == mode_cur:
                 mode_cur = ""
-            i += 1
             continue
         if i + 2 < len(txt) and txt[i : i + 3] in {"'''", '"""'}:
             mode_cur = txt[i : i + 3]
-            i += 3
+            skip = 2
             continue
         if ch in {"'", '"'}:
             mode_cur = ch
-            i += 1
             continue
         if ch == "#":
             break
@@ -609,7 +608,6 @@ def _sh_scan_logical_line_state(
             depth += 1
         elif ch in {")", "]", "}"}:
             depth -= 1
-        i += 1
     return depth, mode_cur
 
 

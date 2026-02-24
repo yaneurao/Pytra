@@ -114,6 +114,7 @@
     - [x] [ID: P3-EAST-PY-03-S2] `_sh_parse_augassign`, `_sh_split_top_keyword`, `_sh_split_top_level_from`, `_sh_split_top_level_in` を `for` / `enumerate` へ戻し、`while i < len(...)` を除去する。
     - [x] [ID: P3-EAST-PY-03-S3] `_sh_split_args_with_offsets`, `_sh_split_top_level_colon`, `_sh_has_explicit_line_continuation` を `for` / `enumerate` または `for-range` へ戻して、`while` ベースのインデックス走査を除去する。
    - [x] [ID: P3-EAST-PY-03-S4] `_sh_split_top_level_assign` を `while i < len(...)` から `for`/`enumerate` + `skip` 制御へ置換し、文字列終端/エスケープ分岐を維持する。
+    - [x] [ID: P3-EAST-PY-03-S5] `_sh_decode_py_string_body`, `_sh_scan_logical_line_state` を `for` / `enumerate` + `skip` 制御へ置換し、`while i < len(...)` を除去する。
 4. [x] [ID: P3-EAST-PY-03-S1] `_sh_is_identifier` と `_sh_bind_comp_target_types` を `for` / `enumerate` へ戻し、`while i < len(...)` を除去する。
 5. [ ] [ID: P3-EAST-PY-04] `P3-EAST-PY-02` と `P3-EAST-PY-03` の結果を `docs-ja/plans/p3-pythonic-restoration.md` に反映し、残る非 Pythonic 記法の維持理由（selfhost 制約）を明文化する。
 
