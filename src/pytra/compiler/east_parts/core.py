@@ -1582,92 +1582,92 @@ class _ShExprParser:
     def _tokenize(self, text: str) -> list[dict[str, Any]]:
         """式テキストを self-hosted 用トークン列へ変換する。"""
         out: list[dict[str, Any]] = []
-        i = 0
-        while i < len(text):
-            ch = text[i]
+        skip = 0
+        text_len = len(text)
+        for i, ch in enumerate(text):
+            if skip > 0:
+                skip -= 1
+                continue
             if ch.isspace():
-                i += 1
                 continue
             # string literal prefixes: r"...", f"...", b"...", u"...", rf"...", fr"...", ...
             pref_len = 0
-            if i + 1 < len(text):
+            if i + 1 < text_len:
                 p1 = text[i]
                 if p1 in _SH_STR_PREFIX_CHARS and text[i + 1] in {"'", '"'}:
                     pref_len = 1
-                elif i + 2 < len(text):
+                elif i + 2 < text_len:
                     p2 = text[i : i + 2]
                     if all(c in _SH_STR_PREFIX_CHARS for c in p2) and text[i + 2] in {"'", '"'}:
                         pref_len = 2
             if pref_len > 0:
                 end = _sh_scan_string_token(text, i, i + pref_len, self.line_no, self.col_base)
                 out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
-                i = end
+                skip = end - i - 1
                 continue
             if ch.isdigit():
-                if ch == "0" and i + 2 < len(text) and text[i + 1] in {"x", "X"}:
+                if ch == "0" and i + 2 < text_len and text[i + 1] in {"x", "X"}:
                     j = i + 2
-                    while j < len(text) and (text[j].isdigit() or text[j].lower() in {"a", "b", "c", "d", "e", "f"}):
+                    while j < text_len and (text[j].isdigit() or text[j].lower() in {"a", "b", "c", "d", "e", "f"}):
                         j += 1
                     if j > i + 2:
                         out.append({"k": "INT", "v": text[i:j], "s": i, "e": j})
-                        i = j
+                        skip = j - i - 1
                         continue
                 j = i + 1
-                while j < len(text) and text[j].isdigit():
+                while j < text_len and text[j].isdigit():
                     j += 1
                 has_float = False
-                if j < len(text) and text[j] == ".":
+                if j < text_len and text[j] == ".":
                     k = j + 1
-                    while k < len(text) and text[k].isdigit():
+                    while k < text_len and text[k].isdigit():
                         k += 1
                     if k > j + 1:
                         j = k
                         has_float = True
-                if j < len(text) and text[j] in {"e", "E"}:
+                if j < text_len and text[j] in {"e", "E"}:
                     k = j + 1
-                    if k < len(text) and text[k] in {"+", "-"}:
+                    if k < text_len and text[k] in {"+", "-"}:
                         k += 1
                     d0 = k
-                    while k < len(text) and text[k].isdigit():
+                    while k < text_len and text[k].isdigit():
                         k += 1
                     if k > d0:
                         j = k
                         has_float = True
                 if has_float:
                     out.append({"k": "FLOAT", "v": text[i:j], "s": i, "e": j})
-                    i = j
+                    skip = j - i - 1
                     continue
                 out.append({"k": "INT", "v": text[i:j], "s": i, "e": j})
-                i = j
+                skip = j - i - 1
                 continue
             if ch.isalpha() or ch == "_":
                 j = i + 1
-                while j < len(text) and (text[j].isalnum() or text[j] == "_"):
+                while j < text_len and (text[j].isalnum() or text[j] == "_"):
                     j += 1
                 out.append({"k": "NAME", "v": text[i:j], "s": i, "e": j})
-                i = j
+                skip = j - i - 1
                 continue
-            if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
+            if i + 2 < text_len and text[i : i + 3] in {"'''", '"""'}:
                 end = _sh_scan_string_token(text, i, i, self.line_no, self.col_base)
                 out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
-                i = end
+                skip = end - i - 1
                 continue
             if ch in {"'", '"'}:
                 end = _sh_scan_string_token(text, i, i, self.line_no, self.col_base)
                 out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
-                i = end
+                skip = end - i - 1
                 continue
-            if i + 1 < len(text) and text[i : i + 2] in {"<=", ">=", "==", "!=", "//", "<<", ">>", "**"}:
+            if i + 1 < text_len and text[i : i + 2] in {"<=", ">=", "==", "!=", "//", "<<", ">>", "**"}:
                 out.append({"k": text[i : i + 2], "v": text[i : i + 2], "s": i, "e": i + 2})
-                i += 2
+                skip = 1
                 continue
             if ch in {"<", ">"}:
                 out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
-                i += 1
                 continue
             if ch in {"+", "-", "*", "/", "%", "&", "|", "^", "(", ")", ",", ".", "[", "]", ":", "=", "{", "}"}:
                 out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
-                i += 1
                 continue
             raise _make_east_build_error(
                 kind="unsupported_syntax",
