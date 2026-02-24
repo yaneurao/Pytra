@@ -151,6 +151,7 @@ def _extract_support_blocks() -> str:
         "stmt_assigned_names",
         "stmt_child_stmt_lists",
         "collect_store_names_from_target",
+        "collect_store_names_from_target_plan",
         "collect_symbols_from_stmt",
         "collect_symbols_from_stmt_list",
         "stmt_list_parse_metrics",
@@ -161,6 +162,8 @@ def _extract_support_blocks() -> str:
         "make_user_error",
         "parse_user_error",
         "print_user_error",
+        "normalize_east_root_document",
+        "normalize_east1_to_east2_document",
         "load_east_document",
         "is_pytra_module_name",
         "module_name_from_path_for_graph",
@@ -208,6 +211,21 @@ def _extract_support_blocks() -> str:
     parts: list[str] = []
     for name in names:
         parts.append(_extract_top_level_block(cli_text, name, "def"))
+    parts.append(
+        "\n".join(
+            [
+                "def load_east3_document(",
+                "    input_path: Path,",
+                "    parser_backend: str = \"self_hosted\",",
+                "    object_dispatch_mode: str = \"\",",
+                ") -> dict[str, object]:",
+                "    \"\"\"selfhost 互換: EAST3 入力は EAST2 読み込みへフォールバックする。\"\"\"",
+                "    _ = object_dispatch_mode",
+                "    return load_east_document(input_path, parser_backend=parser_backend)",
+                "",
+            ]
+        )
+    )
     return "\n".join(parts)
 
 

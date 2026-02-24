@@ -94,6 +94,10 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def stmt_assigned_names(stmt: dict[str, object]) -> list[str]:", support_blocks)
         self.assertIn("def stmt_child_stmt_lists(stmt: dict[str, object]) -> list[list[dict[str, object]]]:", support_blocks)
         self.assertIn("def collect_store_names_from_target(target: dict[str, object], out: set[str]) -> None:", support_blocks)
+        self.assertIn(
+            "def collect_store_names_from_target_plan(target_plan: dict[str, object], out: set[str]) -> None:",
+            support_blocks,
+        )
         self.assertIn("def collect_symbols_from_stmt(stmt: dict[str, object]) -> set[str]:", support_blocks)
         self.assertIn("def collect_symbols_from_stmt_list(body: list[dict[str, object]]) -> set[str]:", support_blocks)
         self.assertIn("def stmt_list_parse_metrics(body: list[dict[str, object]], depth: int) -> tuple[int, int]:", support_blocks)
@@ -105,7 +109,13 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def make_user_error(category: str, summary: str, details: list[str]) -> Exception:", support_blocks)
         self.assertIn("def parse_user_error(err_text: str) -> dict[str, object]:", support_blocks)
         self.assertIn("def print_user_error(err_text: str) -> None:", support_blocks)
+        self.assertIn("def normalize_east_root_document(doc: dict[str, object]) -> dict[str, object]:", support_blocks)
+        self.assertIn("def normalize_east1_to_east2_document(east_doc: dict[str, object]) -> dict[str, object]:", support_blocks)
         self.assertIn("def load_east_document(input_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, object]:", support_blocks)
+        self.assertIn(
+            "def load_east3_document(",
+            support_blocks,
+        )
         self.assertIn("def is_pytra_module_name(module_name: str) -> bool:", support_blocks)
         self.assertIn("def module_name_from_path_for_graph(root: Path, module_path: Path) -> str:", support_blocks)
         self.assertIn("def module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:", support_blocks)

@@ -143,35 +143,37 @@ def print_user_error(err_text: str) -> None:
             print(line, file=sys.stderr)
 
 
+def normalize_east_root_document(doc: dict[str, object]) -> dict[str, object]:
+    """EAST ルート dict に stage/schema/meta の既定値を補完する。"""
+    if dict_any_kind(doc) != "Module":
+        return doc
+    stage_obj = dict_any_get(doc, "east_stage")
+    stage = 2
+    if isinstance(stage_obj, int) and (stage_obj == 1 or stage_obj == 2 or stage_obj == 3):
+        stage = stage_obj
+    doc["east_stage"] = stage
+
+    schema_obj = dict_any_get(doc, "schema_version")
+    schema_version = 1
+    if isinstance(schema_obj, int) and schema_obj > 0:
+        schema_version = schema_obj
+    doc["schema_version"] = schema_version
+
+    meta_obj = dict_any_get(doc, "meta")
+    meta: dict[str, object] = {}
+    if isinstance(meta_obj, dict):
+        meta = meta_obj
+    doc["meta"] = meta
+
+    mode = dict_any_get_str(meta, "dispatch_mode")
+    if mode != "native" and mode != "type_id":
+        mode = "native"
+    meta["dispatch_mode"] = mode
+    return doc
+
+
 def load_east_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
-    def _normalize_east_root(doc: dict[str, object]) -> dict[str, object]:
-        if dict_any_kind(doc) != "Module":
-            return doc
-        stage_obj = dict_any_get(doc, "east_stage")
-        stage = 2
-        if isinstance(stage_obj, int) and (stage_obj == 1 or stage_obj == 2 or stage_obj == 3):
-            stage = stage_obj
-        doc["east_stage"] = stage
-
-        schema_obj = dict_any_get(doc, "schema_version")
-        schema_version = 1
-        if isinstance(schema_obj, int) and schema_obj > 0:
-            schema_version = schema_obj
-        doc["schema_version"] = schema_version
-
-        meta_obj = dict_any_get(doc, "meta")
-        meta: dict[str, object] = {}
-        if isinstance(meta_obj, dict):
-            meta = meta_obj
-        doc["meta"] = meta
-
-        mode = dict_any_get_str(meta, "dispatch_mode")
-        if mode != "native" and mode != "type_id":
-            mode = "native"
-        meta["dispatch_mode"] = mode
-        return doc
-
     input_txt = str(input_path)
     if input_txt.endswith(".json"):
         payload_any = json.loads(input_path.read_text(encoding="utf-8"))
@@ -180,9 +182,11 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             ok_obj = dict_any_get(payload, "ok")
             east_obj = dict_any_get(payload, "east")
             if isinstance(ok_obj, bool) and ok_obj and isinstance(east_obj, dict):
-                return normalize_east1_to_east2_document(_normalize_east_root(east_obj))
+                east_doc = normalize_east_root_document(east_obj)
+                return normalize_east1_to_east2_document(east_doc)
             if dict_any_kind(payload) == "Module":
-                return normalize_east1_to_east2_document(_normalize_east_root(payload))
+                payload_doc = normalize_east_root_document(payload)
+                return normalize_east1_to_east2_document(payload_doc)
         raise make_user_error(
             "input_invalid",
             "Invalid EAST JSON format.",
@@ -255,7 +259,8 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             summary = "This syntax is unsupported by language design."
         raise make_user_error(category, summary, [msg]) from ex
     if isinstance(east_any, dict):
-        return normalize_east1_to_east2_document(_normalize_east_root(east_any))
+        east_doc = normalize_east_root_document(east_any)
+        return normalize_east1_to_east2_document(east_doc)
     raise make_user_error(
         "input_invalid",
         "Failed to build EAST.",
