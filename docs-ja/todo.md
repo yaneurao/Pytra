@@ -37,19 +37,18 @@
 目的: ランタイム配置を言語間で統一し、責務混在と重複実装を防ぐ。
 
 1. [ ] [ID: P1-RUNTIME-01] Rust ランタイムを `src/rs_module/` から `src/runtime/rs/pytra/` へ段階移行し、`src/runtime/cpp/pytra/` と同等の責務分割（`built_in/`, `std/`, `utils/`, `compiler/`）に揃える。
-2. [ ] [ID: P1-RUNTIME-01-S1] `src/rs_module/` の機能を責務別に棚卸しし、`src/runtime/rs/pytra/{built_in,std,utils,compiler}` への対応表を作る。
-3. [ ] [ID: P1-RUNTIME-01-S2] Rust runtime ファイルを新配置へ段階移動し、互換 include/import レイヤを暫定維持する。
-4. [ ] [ID: P1-RUNTIME-01-S3] selfhost/transpile 回帰を通したうえで `src/rs_module/` 依存を縮退する。
-5. [ ] [ID: P1-RUNTIME-02] `py2rs.py` / Rust hooks のランタイム解決パスを `src/runtime/rs/pytra/` 基準へ更新する（`P1-RUNTIME-02-S1` から `P1-RUNTIME-02-S2` 完了でクローズ）。
-6. [ ] [ID: P1-RUNTIME-02-S1] Rust emitter/hooks の path 解決箇所を特定し、新旧パス併用期間の互換仕様を定義する。
-7. [ ] [ID: P1-RUNTIME-02-S2] 参照先を新パスへ切り替え、旧パス fallback を段階撤去する。
-8. [ ] [ID: P1-RUNTIME-03] `src/rs_module/` の既存参照を洗い出し、互換レイヤを経由して最終的に廃止する（`P1-RUNTIME-03-S1` から `P1-RUNTIME-03-S2` 完了でクローズ）。
-9. [ ] [ID: P1-RUNTIME-03-S1] `src/rs_module/` 参照元を全件列挙し、廃止可否を判定する。
-10. [ ] [ID: P1-RUNTIME-03-S2] 参照を `src/runtime/rs/pytra/` 側へ置換し、`src/rs_module/` を削除する。
-11. [ ] [ID: P1-RUNTIME-05] 各言語トランスパイラ（`py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）と hooks のランタイム解決パスを `src/runtime/<lang>/pytra/` 基準へ統一する（`P1-RUNTIME-05-S1` から `P1-RUNTIME-05-S3` 完了でクローズ）。
-12. [ ] [ID: P1-RUNTIME-05-S1] 言語ごとの現行 runtime 解決パスを棚卸しし、差分一覧を作成する。
-13. [ ] [ID: P1-RUNTIME-05-S2] 各 `py2<lang>.py` / hooks の参照先を `src/runtime/<lang>/pytra/` 基準へ順次更新する。
-14. [ ] [ID: P1-RUNTIME-05-S3] 多言語 smoke で回帰確認し、旧パス互換レイヤを段階撤去する。
+2. [ ] [ID: P1-RUNTIME-01-S2] Rust runtime ファイルを新配置へ段階移動し、互換 include/import レイヤを暫定維持する。
+3. [ ] [ID: P1-RUNTIME-01-S3] selfhost/transpile 回帰を通したうえで `src/rs_module/` 依存を縮退する。
+4. [ ] [ID: P1-RUNTIME-02] `py2rs.py` / Rust hooks のランタイム解決パスを `src/runtime/rs/pytra/` 基準へ更新する（`P1-RUNTIME-02-S1` から `P1-RUNTIME-02-S2` 完了でクローズ）。
+5. [ ] [ID: P1-RUNTIME-02-S1] Rust emitter/hooks の path 解決箇所を特定し、新旧パス併用期間の互換仕様を定義する。
+6. [ ] [ID: P1-RUNTIME-02-S2] 参照先を新パスへ切り替え、旧パス fallback を段階撤去する。
+7. [ ] [ID: P1-RUNTIME-03] `src/rs_module/` の既存参照を洗い出し、互換レイヤを経由して最終的に廃止する（`P1-RUNTIME-03-S1` から `P1-RUNTIME-03-S2` 完了でクローズ）。
+8. [ ] [ID: P1-RUNTIME-03-S1] `src/rs_module/` 参照元を全件列挙し、廃止可否を判定する。
+9. [ ] [ID: P1-RUNTIME-03-S2] 参照を `src/runtime/rs/pytra/` 側へ置換し、`src/rs_module/` を削除する。
+10. [ ] [ID: P1-RUNTIME-05] 各言語トランスパイラ（`py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）と hooks のランタイム解決パスを `src/runtime/<lang>/pytra/` 基準へ統一する（`P1-RUNTIME-05-S1` から `P1-RUNTIME-05-S3` 完了でクローズ）。
+11. [ ] [ID: P1-RUNTIME-05-S1] 言語ごとの現行 runtime 解決パスを棚卸しし、差分一覧を作成する。
+12. [ ] [ID: P1-RUNTIME-05-S2] 各 `py2<lang>.py` / hooks の参照先を `src/runtime/<lang>/pytra/` 基準へ順次更新する。
+13. [ ] [ID: P1-RUNTIME-05-S3] 多言語 smoke で回帰確認し、旧パス互換レイヤを段階撤去する。
 
 ## P1: 多言語出力品質（`sample/cpp` 水準）
 

@@ -58,6 +58,21 @@
    - `P1-RUNTIME-05-S2`: 各 `py2<lang>.py` / hooks の参照を新基準へ順次更新する。
    - `P1-RUNTIME-05-S3`: 多言語 smoke 実行後に旧パス互換レイヤを段階撤去する。
 
+`P1-RUNTIME-01-S1` 棚卸し結果（`src/rs_module/` -> `src/runtime/rs/pytra/` 対応表）:
+
+- 現状 `src/rs_module/` は `py_runtime.rs` 1ファイルのみ（`find src/rs_module -type f` で確認）。
+- `py_runtime.rs` は built-in / std / utils の責務が単一ファイルに混在しているため、`P1-RUNTIME-01-S2` で下記分割を行う。
+
+| 現在 (`src/rs_module/py_runtime.rs`) の責務 | 代表シンボル | 移行先（予定） |
+|---|---|---|
+| Python組み込み互換（truthy/len/slice/in/print/文字判定） | `PyBool`, `PyLen`, `PySlice`, `py_bool`, `py_len`, `py_slice`, `py_in`, `py_print`, `py_isdigit`, `py_isalpha` | `src/runtime/rs/pytra/built_in/py_runtime.rs` |
+| std.math 互換 | `math_sin`, `math_cos`, `math_tan`, `math_sqrt`, `math_exp`, `math_log`, `math_log10`, `math_fabs`, `math_floor`, `math_ceil`, `math_pow` | `src/runtime/rs/pytra/std/math.rs` |
+| std.pathlib 互換 | `PyPath` と関連 impl | `src/runtime/rs/pytra/std/pathlib.rs` |
+| std.time 互換 | `perf_counter` | `src/runtime/rs/pytra/std/time.rs` |
+| utils.gif 互換 | `py_grayscale_palette`, `py_save_gif`, `gif_lzw_encode` | `src/runtime/rs/pytra/utils/gif.rs` |
+| utils.png 互換 | `py_write_rgb_png`, `png_crc32`, `png_adler32`, `png_chunk` | `src/runtime/rs/pytra/utils/png.rs` |
+| compiler 向け共通レイヤ | なし（今回棚卸し時点で `py_runtime.rs` 内に compiler 専用APIなし） | `src/runtime/rs/pytra/compiler/README.md`（空ディレクトリ維持） |
+
 運用ルール:
 
 1. 新規 runtime 実装（`py_runtime.*`, `pathlib.*`, `png/gif helper` など）は `src/runtime/<lang>/pytra/` 配下にのみ追加する。
@@ -75,3 +90,4 @@
 - 2026-02-23: `P0-RUNTIME-SEP-01-S3` を実施し、生成物38ファイルを `src/runtime/cpp/pytra-gen/` へ移動した。`src/runtime/cpp/pytra/` 側には同名フォワーダー（`.h/.cpp`）を配置して既存ビルド参照を互換維持した。合わせて `src/py2cpp.py --emit-runtime-cpp` は `pytra-gen` へ出力し、`pytra/` 側フォワーダーを自動更新するよう変更した。
 - 2026-02-23: `P0-RUNTIME-SEP-01-S4` を実施し、手書き19ファイル（`built_in/*`, `std/*-impl.*`）を `src/runtime/cpp/pytra-core/` へ移動した。これにより `src/runtime/cpp/pytra/` は全57ファイルが公開フォワーダー層となり、実体は `pytra-gen`（生成）と `pytra-core`（手書き）へ分離された。
 - 2026-02-23: `P0-RUNTIME-SEP-01-S5` を実施し、`tools/check_runtime_cpp_layout.py` を追加した。`pytra-gen` は `AUTO-GENERATED FILE. DO NOT EDIT.` 必須、`pytra-core` は同マーカー禁止を検証し、`tools/run_local_ci.py` に組み込んで常時ガード化した。
+- 2026-02-24: `P1-RUNTIME-01-S1` として `src/rs_module/` の棚卸しを実施し、`py_runtime.rs` に混在している責務を `src/runtime/rs/pytra/{built_in,std,utils,compiler}` へ分割する対応表を本ファイルへ追加した。
