@@ -569,6 +569,49 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
     if not _is_any_like_type(arg0_type):
         return out
 
+    runtime_call = out.get("runtime_call")
+    if runtime_call == "py_to_bool":
+        return _make_boundary_expr(
+            kind="ObjBool",
+            value_key="value",
+            value_node=arg0,
+            resolved_type="bool",
+            source_expr=out,
+        )
+    if runtime_call == "py_len":
+        return _make_boundary_expr(
+            kind="ObjLen",
+            value_key="value",
+            value_node=arg0,
+            resolved_type="int64",
+            source_expr=out,
+        )
+    if runtime_call == "py_to_string":
+        return _make_boundary_expr(
+            kind="ObjStr",
+            value_key="value",
+            value_node=arg0,
+            resolved_type="str",
+            source_expr=out,
+        )
+    if runtime_call == "py_iter_or_raise":
+        return _make_boundary_expr(
+            kind="ObjIterInit",
+            value_key="value",
+            value_node=arg0,
+            resolved_type="object",
+            source_expr=out,
+        )
+    if runtime_call == "py_next_or_stop":
+        return _make_boundary_expr(
+            kind="ObjIterNext",
+            value_key="iter",
+            value_node=arg0,
+            resolved_type="object",
+            source_expr=out,
+        )
+
+    # Legacy fallback for stage2 payloads that still encode builtin identity.
     builtin_name = out.get("builtin_name")
     if builtin_name == "bool":
         return _make_boundary_expr(
