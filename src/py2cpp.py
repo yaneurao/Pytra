@@ -3439,28 +3439,6 @@ class CppEmitter(CodeEmitter):
         special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, expr, fn, arg_nodes, kw_nodes)
         if special_runtime_rendered is not None:
             return str(special_runtime_rendered)
-        if builtin_name == "bytes":
-            bytes_node: dict[str, Any] = {
-                "kind": "RuntimeSpecialOp",
-                "op": "bytes_ctor",
-                "resolved_type": "bytes",
-                "borrow_kind": "value",
-                "casts": [],
-            }
-            if len(arg_nodes) > 0:
-                bytes_node["args"] = arg_nodes
-            return self.render_expr(bytes_node)
-        if builtin_name == "bytearray":
-            bytearray_node: dict[str, Any] = {
-                "kind": "RuntimeSpecialOp",
-                "op": "bytearray_ctor",
-                "resolved_type": "bytearray",
-                "borrow_kind": "value",
-                "casts": [],
-            }
-            if len(arg_nodes) > 0:
-                bytearray_node["args"] = arg_nodes
-            return self.render_expr(bytearray_node)
         return ""
 
     def _render_builtin_runtime_list_ops(
@@ -4076,6 +4054,28 @@ class CppEmitter(CodeEmitter):
             if len(arg_nodes) >= 2:
                 int_to_bytes_node["byteorder"] = arg_nodes[1]
             return self.render_expr(int_to_bytes_node)
+        if runtime_call == "bytes_ctor":
+            bytes_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "bytes_ctor",
+                "resolved_type": "bytes",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) > 0:
+                bytes_node["args"] = arg_nodes
+            return self.render_expr(bytes_node)
+        if runtime_call == "bytearray_ctor":
+            bytearray_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "bytearray_ctor",
+                "resolved_type": "bytearray",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) > 0:
+                bytearray_node["args"] = arg_nodes
+            return self.render_expr(bytearray_node)
         return None
 
     def _keyword_names_from_builtin_call(self, expr: dict[str, Any]) -> list[str]:

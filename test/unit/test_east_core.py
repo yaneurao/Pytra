@@ -98,13 +98,15 @@ def main() -> None:
     u: str = s.lstrip()
     p0: int = s.find("a")
     p1: int = s.rfind("a")
+    blob: bytes = bytes()
+    ba: bytearray = bytearray(blob)
     xs: list[int] = []
     xs.append(1)
     d: dict[str, int] = {"a": 1}
     v: int = d.get("a", 0)
     p: Path = Path("tmp")
     ok: bool = p.exists()
-    print(len(xs), t, u, p0, p1, v, ok)
+    print(len(xs), t, u, p0, p1, len(ba), v, ok)
 
 if __name__ == "__main__":
     main()
@@ -116,6 +118,8 @@ if __name__ == "__main__":
         self.assertIn("py_lstrip", runtime_calls)
         self.assertIn("py_find", runtime_calls)
         self.assertIn("py_rfind", runtime_calls)
+        self.assertIn("bytes_ctor", runtime_calls)
+        self.assertIn("bytearray_ctor", runtime_calls)
         self.assertIn("list.append", runtime_calls)
         self.assertIn("dict.get", runtime_calls)
         self.assertIn("std::filesystem::exists", runtime_calls)
