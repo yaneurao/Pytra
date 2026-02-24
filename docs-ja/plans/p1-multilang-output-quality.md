@@ -48,6 +48,7 @@
 - `python3 tools/check_multilang_selfhost_stage1.py`
 - `python3 tools/check_multilang_selfhost_multistage.py`
 - `python3 tools/check_multilang_selfhost_suite.py`
+- `python3 tools/check_sample_regen_clean.py`
 
 `P1-MQ-01` 計測結果:
 
@@ -215,6 +216,16 @@
 - 確認:
   - `python3 tools/check_multilang_selfhost_suite.py` が成功し、既知失敗カテゴリ（`stage1_transpile_fail` / `toolchain_missing` / `preview_only` など）を要約表示することを確認。
 
+`P1-MQ-07` 実装結果（sample 再生成差分ゼロ運用）:
+
+- 対象: `tools/check_sample_regen_clean.py`, `tools/run_local_ci.py`
+- 変更点:
+  1. `sample/{cpp,rs,cs,js,ts,go,java,swift,kotlin}` を対象に、未コミット差分が残っていないかを検査する `check_sample_regen_clean.py` を追加した。
+  2. `run_local_ci.py` で `run_regen_on_version_bump.py` 実行直後に `check_sample_regen_clean.py` を走らせ、再生成差分ゼロを CI 導線で強制するようにした。
+  3. 既存の `check_transpiler_version_gate.py` + `run_regen_on_version_bump.py` と組み合わせ、transpiler 変更時に version bump -> 再生成 -> 差分ゼロ検証までを一連化した。
+- 確認:
+  - `python3 tools/check_sample_regen_clean.py` が `sample outputs are clean` を返すことを確認。
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
@@ -231,3 +242,4 @@
 - 2026-02-24: ID: P1-MQ-04-S2 として non-preview 言語（`rs/cs/js`）の stage2 runner を自動化し、`docs-ja/plans/p1-multilang-selfhost-status.md` に `blocked/fail` 理由を固定した。
 - 2026-02-24: ID: P1-MQ-05 として多段 selfhost チェック（`tools/check_multilang_selfhost_multistage.py`）を追加し、`docs-ja/plans/p1-multilang-selfhost-multistage-status.md` に失敗カテゴリを固定した。
 - 2026-02-24: ID: P1-MQ-06 として統合 selfhost スイート（`tools/check_multilang_selfhost_suite.py`）を追加し、`tools/run_local_ci.py` へ組み込んだ。
+- 2026-02-24: ID: P1-MQ-07 として `check_sample_regen_clean.py` を追加し、`run_local_ci.py` で再生成後の sample 差分ゼロを検証する運用を固定した。
