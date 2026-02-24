@@ -1328,6 +1328,15 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Constant", "value": 65, "resolved_type": "int64"}],
             "keywords": [],
         }
+        range_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_range",
+            "resolved_type": "range",
+            "func": {"kind": "Name", "id": "range", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": 3, "resolved_type": "int64"}],
+            "keywords": [],
+        }
         list_ctor_expr = {
             "kind": "Call",
             "lowered_kind": "BuiltinCall",
@@ -1468,6 +1477,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(all_expr), "py_all(xs)")
         self.assertEqual(emitter.render_expr(ord_expr), 'py_ord("A")')
         self.assertEqual(emitter.render_expr(chr_expr), "py_chr(65)")
+        self.assertEqual(emitter.render_expr(range_expr), "py_range(0, 3, 1)")
         self.assertEqual(emitter.render_expr(list_ctor_expr), "xs")
         self.assertEqual(emitter.render_expr(set_ctor_expr), "set<int64>(xs)")
         self.assertEqual(emitter.render_expr(dict_ctor_expr), "d")
@@ -1524,6 +1534,13 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [],
             "keywords": [],
         }
+        plain_range = {
+            "kind": "Call",
+            "resolved_type": "range",
+            "func": {"kind": "Name", "id": "range", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": 3, "resolved_type": "int64"}],
+            "keywords": [],
+        }
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: print"):
             emitter.render_expr(plain_print)
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: len"):
@@ -1534,6 +1551,8 @@ class East3CppBridgeTest(unittest.TestCase):
             emitter.render_expr(plain_ord)
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: list"):
             emitter.render_expr(plain_list)
+        with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: range"):
+            emitter.render_expr(plain_range)
 
     def test_plain_isinstance_call_uses_type_id_core_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

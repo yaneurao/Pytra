@@ -4087,6 +4087,23 @@ class CppEmitter(CodeEmitter):
             return f"py_ord({self.render_expr(arg_nodes[0])})"
         if runtime_call == "py_chr" and len(arg_nodes) >= 1:
             return f"py_chr({self.render_expr(arg_nodes[0])})"
+        if runtime_call == "py_range":
+            range_args: list[str] = []
+            for arg_node in arg_nodes:
+                range_args.append(self.render_expr(arg_node))
+            kw_names = self._keyword_names_from_builtin_call(expr)
+            range_kw: dict[str, str] = {}
+            i = 0
+            while i < len(kw_nodes):
+                if i < len(kw_names):
+                    kw_name = kw_names[i]
+                    if kw_name != "":
+                        range_kw[kw_name] = self.render_expr(kw_nodes[i])
+                i += 1
+            range_rendered = self._render_range_name_call(range_args, range_kw)
+            if range_rendered is not None:
+                return range_rendered
+            return None
         if runtime_call in {"list_ctor", "set_ctor", "dict_ctor"}:
             ctor_name = runtime_call[:-5]
             ctor_args: list[str] = []
@@ -4638,6 +4655,7 @@ class CppEmitter(CodeEmitter):
             "int",
             "float",
             "bool",
+            "range",
             "min",
             "max",
             "perf_counter",
@@ -4661,7 +4679,7 @@ class CppEmitter(CodeEmitter):
         }
 
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
-        """`range(...)` の Name 呼び出しを `py_range(start, stop, step)` へ lower する。"""
+        """`range(...)` 引数を `py_range(start, stop, step)` 形式へ正規化する。"""
         if len(kw) == 0:
             if len(args) == 1:
                 return f"py_range(0, {args[0]}, 1)"
@@ -4747,11 +4765,6 @@ class CppEmitter(CodeEmitter):
             if raw.startswith("py_assert_"):
                 call_args = self._coerce_py_assert_args(raw, args, arg_nodes)
                 return f"pytra::utils::assertions::{raw}({join_str_list(', ', call_args)})"
-            if raw == "range":
-                range_rendered = self._render_range_name_call(args, kw)
-                if range_rendered is not None:
-                    return range_rendered
-                return None
             if isinstance(raw, str) and raw in self.ref_classes:
                 ctor_args = args
                 if len(kw) > 0:

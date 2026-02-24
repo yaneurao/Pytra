@@ -2357,6 +2357,10 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "len"
                     payload["runtime_call"] = "py_len"
+                elif fn_name == "range":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "range"
+                    payload["runtime_call"] = "py_range"
                 elif fn_name == "str":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "str"

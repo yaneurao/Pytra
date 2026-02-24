@@ -113,6 +113,7 @@ def main() -> None:
     has_all: bool = all(xs)
     ch: str = chr(65)
     ocode: int = ord("A")
+    r = range(3)
     ys: list[int] = list(xs)
     zs: set[int] = set(xs)
     d: dict[str, int] = {"a": 1}
@@ -142,6 +143,7 @@ if __name__ == "__main__":
         self.assertIn("py_all", runtime_calls)
         self.assertIn("py_ord", runtime_calls)
         self.assertIn("py_chr", runtime_calls)
+        self.assertIn("py_range", runtime_calls)
         self.assertIn("list_ctor", runtime_calls)
         self.assertIn("set_ctor", runtime_calls)
         self.assertIn("dict_ctor", runtime_calls)
