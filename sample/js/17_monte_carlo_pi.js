@@ -1,5 +1,5 @@
 const __pytra_root = process.cwd();
-const py_runtime = require(__pytra_root + '/src/js_module/py_runtime.js');
+const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');
 const { PYTRA_TYPE_ID, PY_TYPE_BOOL, PY_TYPE_NUMBER, PY_TYPE_STRING, PY_TYPE_ARRAY, PY_TYPE_MAP, PY_TYPE_SET, PY_TYPE_OBJECT, pyRegisterClassType, pyIsInstance } = py_runtime;
 
 import { perf_counter } from "./time.js";

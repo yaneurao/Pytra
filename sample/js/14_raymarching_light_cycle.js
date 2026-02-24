@@ -1,14 +1,14 @@
 // このファイルは自動生成です（Python -> JavaScript native mode）。
 
 const __pytra_root = process.cwd();
-const py_runtime = require(__pytra_root + '/src/js_module/py_runtime.js');
-const py_math = require(__pytra_root + '/src/js_module/math.js');
-const py_time = require(__pytra_root + '/src/js_module/time.js');
+const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');
+const py_math = require(__pytra_root + '/src/runtime/js/pytra/math.js');
+const py_time = require(__pytra_root + '/src/runtime/js/pytra/time.js');
 const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
 const { perfCounter } = py_time;
-const math = require(__pytra_root + '/src/js_module/math.js');
+const math = require(__pytra_root + '/src/runtime/js/pytra/math.js');
 const perf_counter = perfCounter;
-const { save_gif } = require(__pytra_root + '/src/js_module/gif_helper.js');
+const { save_gif } = require(__pytra_root + '/src/runtime/js/pytra/gif_helper.js');
 
 function palette() {
     let p = pyBytearray();

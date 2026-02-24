@@ -1,13 +1,13 @@
 // このファイルは自動生成です（Python -> TypeScript native mode）。
 
 const __pytra_root = process.cwd();
-const py_runtime = require(__pytra_root + '/src/ts_module/py_runtime.ts');
-const py_math = require(__pytra_root + '/src/ts_module/math.ts');
-const py_time = require(__pytra_root + '/src/ts_module/time.ts');
+const py_runtime = require(__pytra_root + '/src/runtime/ts/pytra/py_runtime.ts');
+const py_math = require(__pytra_root + '/src/runtime/ts/pytra/math.ts');
+const py_time = require(__pytra_root + '/src/runtime/ts/pytra/time.ts');
 const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
 const { perfCounter } = py_time;
 const perf_counter = perfCounter;
-const png_helper = require(__pytra_root + '/src/ts_module/png_helper.ts');
+const png_helper = require(__pytra_root + '/src/runtime/ts/pytra/png_helper.ts');
 
 function render_julia(width, height, max_iter, cx, cy) {
     let pixels = pyBytearray();

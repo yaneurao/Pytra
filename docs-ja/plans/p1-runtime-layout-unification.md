@@ -105,8 +105,8 @@
 | 言語 | runtime 実体（現行） | path 解決の実装箇所（現行） | 現行状態 | S2 の更新方針 |
 |---|---|---|---|---|
 | C# | `src/cs_module/{py_runtime.cs,pathlib.cs,png_helper.cs,gif_helper.cs,time.cs}` | `py2cs.py` は path 非依存。`cs_emitter.py` は import `module_id` を namespace 化し、生成コードは `Pytra.CsModule.*` を参照 | `src/runtime/cs/pytra/` 未整備 | runtime 実体を `src/runtime/cs/pytra/` へ移動し、namespace/参照名を新配置へ合わせる |
-| JS | `src/js_module/{py_runtime.js,pathlib.js,png_helper.js,gif_helper.js,math.js,time.js}` | `src/hooks/js/emitter/js_emitter.py` が `require(__pytra_root + '/src/js_module/py_runtime.js')` を直書き | 旧パス固定参照が残存 | `js_emitter.py` の runtime require 基準を `src/runtime/js/pytra/` へ切替 |
-| TS | `src/ts_module/{py_runtime.ts,pathlib.ts,png_helper.ts,gif_helper.ts,math.ts,time.ts}` | `py2ts.py` は `ts_emitter.py` 経由、`ts_emitter.py` は `js_emitter.py` を再利用（JS 側直書きに追従）。加えて `src/common2/js_ts_native_transpiler.py` が `src/ts_module/*.ts` を直書き | `js_module` と `ts_module` 参照が混在 | `ts_emitter` 経路と `common2` 経路の両方を `src/runtime/ts/pytra/` 基準へ統一 |
+| JS | `src/js_module/{py_runtime.js,pathlib.js,png_helper.js,gif_helper.js,math.js,time.js}` | `src/hooks/js/emitter/js_emitter.py`（S2 で新パスへ切替済み） | 新参照は `src/runtime/js/pytra/` 基準、旧 `src/js_module` は shim のみ | S3 で旧パス直参照を生成物/テストから撤去し、shim 運用へ縮退 |
+| TS | `src/ts_module/{py_runtime.ts,pathlib.ts,png_helper.ts,gif_helper.ts,math.ts,time.ts}` | `py2ts.py` は `ts_emitter.py` 経由、`src/common2/js_ts_native_transpiler.py`（S2 で新パスへ切替済み） | 新参照は `src/runtime/ts/pytra/` 基準、旧 `src/ts_module` は shim のみ | S3 で旧パス直参照を生成物/テストから撤去し、shim 運用へ縮退 |
 | Go | `src/go_module/py_runtime.go` | `py2go.py` / `go_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体配置のみ旧規約 | `src/runtime/go/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
 | Java | `src/java_module/PyRuntime.java` | `py2java.py` / `java_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体配置のみ旧規約 | `src/runtime/java/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
 | Kotlin | `src/kotlin_module/py_runtime.kt` | `py2kotlin.py` / `kotlin_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体配置のみ旧規約 | `src/runtime/kotlin/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
@@ -126,6 +126,13 @@
 3. `src/runtime/js/pytra/` と `src/runtime/ts/pytra/` を新設し、既存 `src/js_module/*.js` / `src/ts_module/*.ts` と同名 runtime を複製配置して新参照先を有効化した。
 4. 回帰テストを新パスへ合わせて更新した（`test/unit/test_py2js_smoke.py`, `test/unit/test_js_ts_runtime_dispatch.py`）。
 5. `Go/Java/Kotlin/Swift` は preview backend で runtime path 直書きが存在しないため、S2 では参照更新対象なしとした（S3 で旧配置縮退を扱う）。
+
+`P1-RUNTIME-05-S3` 実装結果（多言語 smoke + 旧パス互換レイヤ段階撤去）:
+
+1. 多言語 smoke として `tools/check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin}_transpile.py` を実行し、全ターゲットで `checked=131 ok=131 fail=0 skipped=6` を確認した。
+2. `src/js_module/*.js` と `src/ts_module/*.ts` を「新配置参照のみ」の legacy shim に縮退し、実体ロジックの重複管理を解消した。
+3. `sample/js/*.js` と `sample/ts/*.ts` の runtime require を `src/runtime/{js,ts}/pytra/` 基準へ置換し、生成物側の旧パス依存を撤去した。
+4. `tools/check_runtime_legacy_shims.py` を追加し、`src/{js,ts}_module` が shim であること、および `src/hooks` / `src/common2` / `test/unit` / `sample/{js,ts}` に旧パス文字列が残っていないことを CI で検証可能にした（`tools/run_local_ci.py` に組み込み）。
 
 運用ルール:
 
@@ -156,3 +163,4 @@
 - 2026-02-24: ID: P1-RUNTIME-03（親タスク）を完了として履歴へ移管した。Rust runtime の旧配置依存は解消し、残タスクは `P1-RUNTIME-05`（他言語統一）へ移行する。
 - 2026-02-24: ID: `P1-RUNTIME-05-S1` として Rust 以外（`cs/js/ts/go/java/kotlin/swift`）の runtime 解決パスを棚卸しした。`py2<lang>.py` 本体は path 非依存、直書き参照は `src/hooks/js/emitter/js_emitter.py` と `src/common2/js_ts_native_transpiler.py` に集中すること、`Go/Java/Kotlin/Swift` は preview backend のため path 解決実装未着手であることを確定した。
 - 2026-02-24: ID: `P1-RUNTIME-05-S2` として `JS/TS` runtime 参照を `src/runtime/{js,ts}/pytra/` へ切替した。`js_emitter.py` と `js_ts_native_transpiler.py` の require 先更新、`src/runtime/js/pytra` と `src/runtime/ts/pytra` の runtime 複製配置、関連テスト更新（`test_py2js_smoke.py`, `test_js_ts_runtime_dispatch.py`）を実施し、`python3 tools/check_py2js_transpile.py` / `python3 tools/check_py2ts_transpile.py` / ユニットテストで回帰なしを確認した。
+- 2026-02-24: ID: P1-RUNTIME-05-S3 として多言語 smoke（`check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin}_transpile.py`）を実施し、全ターゲット回帰なしを確認した。`src/{js,ts}_module` は legacy shim へ縮退し、`sample/{js,ts}` 生成物の旧 `src/*_module` 参照を `src/runtime/{js,ts}/pytra` へ置換、さらに `tools/check_runtime_legacy_shims.py` を追加して旧パス再流入防止を CI へ組み込んだ。

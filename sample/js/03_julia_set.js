@@ -1,13 +1,13 @@
 // このファイルは自動生成です（Python -> JavaScript native mode）。
 
 const __pytra_root = process.cwd();
-const py_runtime = require(__pytra_root + '/src/js_module/py_runtime.js');
-const py_math = require(__pytra_root + '/src/js_module/math.js');
-const py_time = require(__pytra_root + '/src/js_module/time.js');
+const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');
+const py_math = require(__pytra_root + '/src/runtime/js/pytra/math.js');
+const py_time = require(__pytra_root + '/src/runtime/js/pytra/time.js');
 const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
 const { perfCounter } = py_time;
 const perf_counter = perfCounter;
-const png_helper = require(__pytra_root + '/src/js_module/png_helper.js');
+const png_helper = require(__pytra_root + '/src/runtime/js/pytra/png_helper.js');
 
 function render_julia(width, height, max_iter, cx, cy) {
     let pixels = pyBytearray();

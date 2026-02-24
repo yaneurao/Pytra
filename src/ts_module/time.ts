@@ -1,6 +1,3 @@
-// Python の time モジュール互換（最小実装）。
-
-/** Python の perf_counter 相当。 */
-export function perfCounter(): number {
-  return Number(process.hrtime.bigint()) / 1_000_000_000;
-}
+// Legacy compatibility shim for runtime layout migration.
+// Source of truth: src/runtime/ts/pytra/time.ts
+export * from "../runtime/ts/pytra/time";
