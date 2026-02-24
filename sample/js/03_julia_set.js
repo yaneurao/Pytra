@@ -19,7 +19,7 @@ function render_julia(width, height, max_iter, cx, cy) {
                 let zx2 = zx * zx;
                 let zy2 = zy * zy;
                 if (zx2 + zy2 > 4.0) {
-                    py_break;
+                    break;
                 }
                 zy = 2.0 * zx * zy + cy;
                 zx = zx2 - zy2 + cx;

@@ -46,22 +46,28 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 
 |No.|Workload|Python| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
-|01 |Mandelbrot set (PNG)|16.338|0.748|0.719|2.549|1.519|1.489|0.829|9.224|1.481|1.489|
-|02 |Simple sphere ray tracer (PNG)|5.300|0.176|0.155|0.865|0.436|0.460|0.413|6.554|0.441|0.439|
-|03 |Julia set (PNG)|13.320|0.808|0.675|3.395|1.816|1.834|1.118|3.983|1.731|1.782|
-|04 |Pi approximation by Monte Carlo|0.327|0.007|0.197|0.601|2.118|2.153|0.360|3.145|2.153|2.154|
-|05 |Mandelbrot zoom (GIF)|14.615|0.533|0.539|2.694|1.193|1.243|0.623|3.016|1.256|1.229|
-|06 |Julia parameter sweep (GIF)|9.706|0.377|0.387|1.929|0.981|0.997|0.503|3.708|1.002|0.996|
-|07 |Game of Life (GIF)|13.576|0.793|0.722|3.272|2.750|2.949|1.682|4.727|2.808|2.853|
-|08 |Langton's Ant (GIF)|7.469|0.498|0.453|2.233|1.946|2.145|0.967|2.004|2.205|2.049|
-|09 |Flame simulation (GIF)|13.829|0.670|0.607|6.488|2.480|2.525|2.692|3.483|2.546|2.534|
-|10 |Plasma effect (GIF)|7.431|0.679|0.529|2.356|1.539|2.156|0.887|2.636|1.519|1.512|
-|11 |Lissajous particles (GIF)|5.214|0.374|0.343|0.754|1.535|1.598|0.439|0.759|1.576|1.594|
-|12 |Sorting visualization (GIF)|11.402|0.742|0.684|1.852|3.098|3.249|1.186|2.537|3.248|3.136|
-|13 |Maze generation steps (GIF)|4.879|0.298|0.274|0.946|1.069|1.162|0.505|0.859|1.091|1.086|
-|14 |Simple ray marching (GIF)|3.103|0.161|0.149|0.467|0.505|0.761|0.288|0.798|0.533|0.520|
-|15 |Mini-language interpreter|2.415|0.254|0.789|1.035|0.509|0.465|3.261|1.984|0.524|0.512|
-|16 |Chaos rotation of glass sculpture (GIF)|7.352|0.258|0.231|1.289|0.940|1.105|3.014|4.025|0.977|0.991|
+|01 |Mandelbrot set (PNG)|20.793| - | - | - |0.817|0.876| - | - | - | - |
+|02 |Simple sphere ray tracer (PNG)|7.607| - | - | - |0.293|0.291| - | - | - | - |
+|03 |Julia set (PNG)|24.485| - | - | - |1.270|1.319| - | - | - | - |
+|04 |Orbit-trap Julia set (PNG)|13.682| - | - | - |0.548|0.517| - | - | - | - |
+|05 |Mandelbrot zoom (GIF)|15.491| - | - | - |0.765|0.737| - | - | - | - |
+|06 |Julia parameter sweep (GIF)|10.340| - | - | - |0.658|0.625| - | - | - | - |
+|07 |Game of Life (GIF)|5.547| - | - | - |1.232|1.343| - | - | - | - |
+|08 |Langton's Ant (GIF)|5.745| - | - | - |2.141|2.094| - | - | - | - |
+|09 |Flame simulation (GIF)|12.693| - | - | - |2.472|2.274| - | - | - | - |
+|10 |Plasma effect (GIF)|7.067| - | - | - |1.381|2.565| - | - | - | - |
+|11 |Lissajous particles (GIF)|3.837| - | - | - |1.592|1.453| - | - | - | - |
+|12 |Sorting visualization (GIF)|4.303| - | - | - |1.540|1.533| - | - | - | - |
+|13 |Maze generation steps (GIF)|3.830| - | - | - |0.024|0.015| - | - | - | - |
+|14 |Simple ray marching (GIF)|3.050| - | - | - |0.530|0.834| - | - | - | - |
+|15 |Wave interference loop (GIF)|2.953| - | - | - |0.677|1.119| - | - | - | - |
+|16 |Chaos rotation of glass sculpture (GIF)|7.869| - | - | - |0.793|1.153| - | - | - | - |
+|17 |Monte Carlo Pi approximation|0.325| - | - | - |0.049|0.049| - | - | - | - |
+|18 |Mini-language interpreter|2.550| - | - | - |0.372|0.412| - | - | - | - |
+
+Notes:
+- C++ could not be measured due current generation/build regression in converted code (`src/runtime/cpp/pytra-gen/compiler/east_parts/core.cpp` and generated `18_mini_language_interpreter.cpp` default-arg placeholders).
+- Rust/C#/Go/Java/Swift/Kotlin were not measured because compiler/runtime toolchains are not installed in this environment.
 
 ![06_julia_parameter_sweep](sample/images/06_julia_parameter_sweep.gif)
 

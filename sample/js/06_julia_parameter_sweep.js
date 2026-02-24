@@ -35,7 +35,7 @@ function render_frame(width, height, cr, ci, max_iter, phase) {
                 let zx2 = zx * zx;
                 let zy2 = zy * zy;
                 if (zx2 + zy2 > 4.0) {
-                    py_break;
+                    break;
                 }
                 zy = 2.0 * zx * zy + ci;
                 zx = zx2 - zy2 + cr;

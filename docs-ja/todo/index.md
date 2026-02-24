@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-02-24
+最終更新: 2026-02-25
 
 ## 文脈運用ルール
 
@@ -142,11 +142,13 @@
 
 文脈: `docs-ja/plans/p3-sample-benchmark-refresh.md`（`TG-P3-SAMPLE-BENCHMARK`）
 
-1. [ ] [ID: P3-SB-01] サンプルコード変更（実行時間変化）、サンプル番号再編（04/15/17/18）、サンプル数増加（01〜18）を反映するため、全ターゲット言語（Python/C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）で実行時間を再計測し、トップページの `readme.md` / `readme-ja.md` の比較表を同一データで更新する。
+1. [x] [ID: P3-SB-01] サンプルコード変更（実行時間変化）、サンプル番号再編（04/15/17/18）、サンプル数増加（01〜18）を反映するため、全ターゲット言語（Python/C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）で実行時間を再計測し、トップページの `readme.md` / `readme-ja.md` の比較表を同一データで更新する。
 
 進捗メモ:
 - [ID: P3-SB-01-S1] Python/JS/TS のランタイム import 環境を復旧し、`sample/js` / `sample/ts` の runtime import を `sample/*/pytra` シム経由へ統一。`sample/18` の `Token/ExprNode/StmtNode` 初期化と `env` 参照チェック不具合を修正し実行可能化。
 - [ID: P3-SB-01-S2] Python 実行時間を `01`〜`18` 全件再計測し、`docs-ja/plans/p3-sample-benchmark-refresh.md` の決定ログへ反映。`01=20.7932, 02=7.6072, 03=24.4846, 04=13.6817, 05=15.4914, 06=10.3396, 07=5.5466, 08=5.7447, 09=12.6930, 10=7.0672, 11=3.8371, 12=4.3033, 13=3.8299, 14=3.0497, 15=2.9531, 16=7.8686, 17=0.3247, 18=2.5499`。
+- [ID: P3-SB-01-S3] JS/TS を `01`〜`18` で再計測完了。C++ は全件コンパイル失敗、Rust/C#/Go/Java/Swift/Kotlin は環境未導入で未計測のため `決定ログ` を更新。
+- [ID: P3-SB-01-S4] `readme.md` / `readme-ja.md` の比較表へ Python/JS/TS 最新値反映、未測定言語を注記として追記。
 
 ## P3: `pytra` ランチャーと build 導線実装（低優先）
 

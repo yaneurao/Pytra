@@ -22,7 +22,10 @@ function run_08_langtons_ant() {
     
     let start = perf_counter();
     
-    let grid = [[0] * w for _ in range(h)];
+    let grid = [];
+    for (let _y = 0; _y < h; _y += 1) {
+        grid.push(Array(w).fill(0));
+    }
     let x = Math.floor(w / 2);
     let y = Math.floor(h / 2);
     let d = 0;

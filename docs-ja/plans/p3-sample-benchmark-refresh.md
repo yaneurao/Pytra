@@ -35,10 +35,13 @@
 - 2026-02-25: `P3-SB-01-S2` 実施。`PYTHONPATH=src python3 sample/py/<file>.py` で `01`〜`18` を再計測。測定値（秒）:
   - 01: 20.7932, 02: 7.6072, 03: 24.4846, 04: 13.6817, 05: 15.4914, 06: 10.3396, 07: 5.5466, 08: 5.7447, 09: 12.6930, 10: 7.0672, 11: 3.8371, 12: 4.3033, 13: 3.8299, 14: 3.0497, 15: 2.9531, 16: 7.8686, 17: 0.3247, 18: 2.5499.
 - 2026-02-25: 各実行の stdout を `sample/obj/<no>_py.txt` に保存して再現証跡を保持（`sample/obj` は Git 管理外）。
+- 2026-02-25: `P3-SB-01-S3` 実施。`sample/obj/*_js_bench.txt` / `sample/obj/*_ts_bench.txt` を再計測し、`01`〜`18` の JS/TS を収集。C++ は全件でビルド失敗（`src/runtime/cpp/pytra-gen/compiler/east_parts/core.cpp` の `str` 比較/`float64` 曖昧参照および `18_mini_language_interpreter.cpp` の既定引数呼び出しエラー）。Rust/C#/Go/Java/Swift/Kotlin はツールチェイン未導入のため未実施。
+- 2026-02-25: `P3-SB-01-S4` 実施方針を確定。JS/TS と Python の最新値を `readme.md` / `readme-ja.md` の比較表に反映し、未測定言語を注記として記録する。
 
 ### 分解
 
 - [x] [ID: P3-SB-01-S1] Python/JS/TS のランタイム import 環境を復旧し、`sample/*` の実行時 import 解決を再現可能にする。
 - [x] [ID: P3-SB-01-S2] Python 実行を再計測し、`sample/py` 全件の実行時間を収集する。
-- [ ] [ID: P3-SB-01-S3] C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin を順次再計測し、環境欠如・既知コンパイル障害を明示記録する。
-- [ ] [ID: P3-SB-01-S4] 計測データを `readme.md` / `readme-ja.md` の比較表に反映し、未計測言語の注記を追加する。
+- [x] [ID: P3-SB-01-S3] C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin を順次再計測し、環境欠如・既知コンパイル障害を明示記録する。
+  - 01〜18 の JS/TS は再計測完了。C++ は全件でビルド失敗（`core.cpp` の文字列比較と `18_mini_language_interpreter` の既定引数不整合）。Rust/C#/Go/Java/Swift/Kotlin はツールチェイン未導入で未実施。
+- [x] [ID: P3-SB-01-S4] 計測データを `readme.md` / `readme-ja.md` の比較表に反映し、未計測言語の注記を追加する。

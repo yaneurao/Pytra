@@ -8,17 +8,13 @@
 
 
 
-// 15: Sample that renders wave interference animation and writes a GIF.
-
 void run_15_wave_interference_loop() {
     int64 w = 320;
     int64 h = 240;
     int64 frames_n = 96;
     str out_path = "sample/out/15_wave_interference_loop.gif";
-    
     auto start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
-    
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
         float64 phase = py_to_float64(t) * 0.12;
@@ -27,7 +23,7 @@ void run_15_wave_interference_loop() {
             for (int64 x = 0; x < w; ++x) {
                 int64 dx = x - 160;
                 int64 dy = y - 120;
-                auto v = pytra::std::math::sin((py_to_float64(x) + py_to_float64(t) * 1.5) * 0.045) + pytra::std::math::sin((py_to_float64(y) - py_to_float64(t) * 1.2) * 0.04) + pytra::std::math::sin((py_to_float64(x + y)) * 0.02 + phase) + pytra::std::math::sin(pytra::std::math::sqrt(dx * dx + dy * dy) * 0.08 - phase * 1.3);
+                auto v = pytra::std::math::sin((py_to_float64(x) + py_to_float64(t) * 1.5) * 0.045) + pytra::std::math::sin((py_to_float64(y) - py_to_float64(t) * 1.2) * 0.04) + pytra::std::math::sin((py_to_float64(x + y)) * 0.02 + phase) + pytra::std::math::sin(py_to_float64(pytra::std::math::sqrt(dx * dx + dy * dy) * 0.08 - phase * 1.3));
                 int64 c = py_to_int64((v + 4.0) * (255.0 / 8.0));
                 if (c < 0)
                     c = 0;
@@ -38,7 +34,7 @@ void run_15_wave_interference_loop() {
         }
         frames.append(bytes(bytes(frame)));
     }
-    pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), 4, 0);
+    pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), int64(py_to_int64(4)), int64(py_to_int64(0)));
     auto elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);

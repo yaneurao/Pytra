@@ -38,7 +38,10 @@ function run_09_fire_simulation() {
     let out_path = "sample/out/09_fire_simulation.gif";
     
     let start = perf_counter();
-    let heat = [[0] * w for _ in range(h)];
+    let heat = [];
+    for (let _y = 0; _y < h; _y += 1) {
+        heat.push(Array(w).fill(0));
+    }
     let frames = [];
     
     for (let t = 0; t < steps; t += 1) {

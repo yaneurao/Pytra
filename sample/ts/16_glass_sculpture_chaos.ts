@@ -122,6 +122,15 @@ function render_frame(width, height, frame_id, frames_n) {
     let look_x = 0.0;
     let look_y = 0.35;
     let look_z = 0.0;
+    let fwd_x = 0.0;
+    let fwd_y = 0.0;
+    let fwd_z = 0.0;
+    let right_x = 0.0;
+    let right_y = 0.0;
+    let right_z = 0.0;
+    let up_x = 0.0;
+    let up_y = 0.0;
+    let up_z = 0.0;
     
     [fwd_x, fwd_y, fwd_z] = normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z);
     [right_x, right_y, right_z] = normalize(fwd_z, 0.0, -fwd_x);
@@ -145,6 +154,30 @@ function render_frame(width, height, frame_id, frames_n) {
     let frame = bytearray(width * height);
     let aspect = width / height;
     let fov = 1.25;
+    let dx = 0.0;
+    let dy = 0.0;
+    let dz = 0.0;
+    let ldx = 0.0;
+    let ldy = 0.0;
+    let ldz = 0.0;
+    let nx = 0.0;
+    let ny = 0.0;
+    let nz = 0.0;
+    let rdx = 0.0;
+    let rdy = 0.0;
+    let rdz = 0.0;
+    let tdx = 0.0;
+    let tdy = 0.0;
+    let tdz = 0.0;
+    let sr = 0.0;
+    let sg = 0.0;
+    let sb = 0.0;
+    let tr = 0.0;
+    let tg = 0.0;
+    let tb = 0.0;
+    let hvx = 0.0;
+    let hvy = 0.0;
+    let hvz = 0.0;
     
     for (let py = 0; py < height; py += 1) {
         let row_base = py * width;

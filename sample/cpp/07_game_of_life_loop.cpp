@@ -6,8 +6,6 @@
 
 
 
-// 07: Sample that outputs Game of Life evolution as a GIF.
-
 list<list<int64>> next_state(const list<list<int64>>& grid, int64 w, int64 h) {
     list<list<int64>> nxt = list<list<int64>>{};
     for (int64 y = 0; y < h; ++y) {
@@ -61,12 +59,8 @@ void run_07_game_of_life_loop() {
     int64 cell = 4;
     int64 steps = 105;
     str out_path = "sample/out/07_game_of_life_loop.gif";
-    
     auto start = pytra::std::time::perf_counter();
     list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>{0}, w)));     }     return __out; }();
-    
-    // Lay down sparse noise so the whole field is less likely to stabilize too early.
-    // Avoid large integer literals so all transpilers handle the expression consistently.
     for (int64 y = 0; y < h; ++y) {
         for (int64 x = 0; x < w; ++x) {
             int64 noise = (x * 37 + y * 73 + x * y % 19 + (x + y) % 11) % 97;
@@ -74,11 +68,9 @@ void run_07_game_of_life_loop() {
                 grid[y][x] = 1;
         }
     }
-    // Place multiple well-known long-lived patterns.
     list<list<int64>> glider = list<list<int64>>{list<int64>{0, 1, 0}, list<int64>{0, 0, 1}, list<int64>{1, 1, 1}};
     list<list<int64>> r_pentomino = list<list<int64>>{list<int64>{0, 1, 1}, list<int64>{1, 1, 0}, list<int64>{0, 1, 0}};
     list<list<int64>> lwss = list<list<int64>>{list<int64>{0, 1, 1, 1, 1}, list<int64>{1, 0, 0, 0, 1}, list<int64>{0, 0, 0, 0, 1}, list<int64>{1, 0, 0, 1, 0}};
-    
     for (int64 gy = 8; 18 > 0 ? gy < h - 8 : gy > h - 8; gy += 18) {
         for (int64 gx = 8; 22 > 0 ? gx < w - 8 : gx > w - 8; gx += 22) {
             int64 kind = (gx * 7 + gy * 11) % 3;
@@ -120,7 +112,7 @@ void run_07_game_of_life_loop() {
         frames.append(bytes(render(grid, w, h, cell)));
         grid = next_state(grid, w, h);
     }
-    pytra::utils::gif::save_gif(out_path, w * cell, h * cell, frames, pytra::utils::gif::grayscale_palette(), 4, 0);
+    pytra::utils::gif::save_gif(out_path, w * cell, h * cell, frames, pytra::utils::gif::grayscale_palette(), int64(py_to_int64(4)), int64(py_to_int64(0)));
     auto elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", steps);

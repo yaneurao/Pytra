@@ -63,7 +63,10 @@ function run_07_game_of_life_loop() {
     let out_path = "sample/out/07_game_of_life_loop.gif";
     
     let start = perf_counter();
-    let grid = [[0] * w for _ in range(h)];
+    let grid = [];
+    for (let _y = 0; _y < h; _y += 1) {
+        grid.push(Array(w).fill(0));
+    }
     
     // Lay down sparse noise so the whole field is less likely to stabilize too early.
     // Avoid large integer literals so all transpilers handle the expression consistently.

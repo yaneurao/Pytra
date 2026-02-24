@@ -1,7 +1,12 @@
-#include "cpp_module/py_runtime.h"
+#include "runtime/cpp/pytra/built_in/py_runtime.h"
+
+#include "pytra/std/math.h"
+#include "pytra/std/time.h"
+#include "pytra/utils/gif.h"
 
 
-// 11: リサージュ運動する粒子をGIF出力するサンプル。
+
+
 
 bytes color_palette() {
     bytearray p = bytearray{};
@@ -22,19 +27,15 @@ void run_11_lissajous_particles() {
     int64 frames_n = 360;
     int64 particles = 48;
     str out_path = "sample/out/11_lissajous_particles.gif";
-    
-    std::any start = make_object(perf_counter());
+    auto start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
-    
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
-        
         for (int64 p = 0; p < particles; ++p) {
-            float64 phase = static_cast<float64>(p) * 0.261799;
-            int64 x = py_to_int64(static_cast<float64>(w) * 0.5 + static_cast<float64>(w) * 0.38 * py_math::sin(0.11 * static_cast<float64>(t) + phase * 2.0));
-            int64 y = py_to_int64(static_cast<float64>(h) * 0.5 + static_cast<float64>(h) * 0.38 * py_math::sin(0.17 * static_cast<float64>(t) + phase * 3.0));
+            float64 phase = py_to_float64(p) * 0.261799;
+            int64 x = py_to_int64(py_to_float64(w) * 0.5 + py_to_float64(w) * 0.38 * pytra::std::math::sin(0.11 * py_to_float64(t) + phase * 2.0));
+            int64 y = py_to_int64(py_to_float64(h) * 0.5 + py_to_float64(h) * 0.38 * pytra::std::math::sin(0.17 * py_to_float64(t) + phase * 3.0));
             int64 color = 30 + p * 9 % 220;
-            
             for (int64 dy = -2; dy < 3; ++dy) {
                 for (int64 dx = -2; dx < 3; ++dx) {
                     int64 xx = x + dx;
@@ -44,21 +45,18 @@ void run_11_lissajous_particles() {
                         if (d2 <= 4) {
                             int64 idx = yy * w + xx;
                             int64 v = color - d2 * 20;
-                            v = std::max<std::any>(static_cast<std::any>(0), static_cast<std::any>(v));
+                            v = int64(py_to_int64(::std::max<int64>(static_cast<int64>(0), static_cast<int64>(v))));
                             if (v > frame[idx])
-                                frame[idx] = v;
+                                frame[idx] = uint8(py_to_int64(v));
                         }
                     }
                 }
             }
         }
-        
-        frames.append(bytes(frame));
+        frames.append(bytes(bytes(frame)));
     }
-    
-    // bridge: Python gif.save_gif -> C++ runtime save_gif
-    save_gif(out_path, w, h, frames, color_palette(), 3, 0);
-    std::any elapsed = make_object(perf_counter() - start);
+    pytra::utils::gif::save_gif(out_path, w, h, frames, color_palette(), int64(py_to_int64(3)), int64(py_to_int64(0)));
+    auto elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

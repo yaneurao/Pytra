@@ -33,7 +33,10 @@ function run_13_maze_generation_steps() {
     let out_path = "sample/out/13_maze_generation_steps.gif";
     
     let start = perf_counter();
-    let grid = [[1] * cell_w for _ in range(cell_h)];
+    let grid = [];
+    for (let _y = 0; _y < cell_h; _y += 1) {
+        grid.push(Array(cell_w).fill(1));
+    }
     let stack = [];
     grid[1][1] = 0;
     

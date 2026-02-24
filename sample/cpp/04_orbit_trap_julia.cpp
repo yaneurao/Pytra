@@ -6,17 +6,13 @@
 
 
 
-// 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
-
 bytearray render_orbit_trap_julia(int64 width, int64 height, int64 max_iter, float64 cx, float64 cy) {
     bytearray pixels = bytearray{};
-    
     for (int64 y = 0; y < height; ++y) {
         float64 zy0 = -1.3 + 2.6 * (py_to_float64(y) / (py_to_float64(height - 1)));
         for (int64 x = 0; x < width; ++x) {
             float64 zx = -1.9 + 3.8 * (py_to_float64(x) / (py_to_float64(width - 1)));
             float64 zy = zy0;
-            
             float64 trap = 1.0e9;
             int64 i = 0;
             while (i < max_iter) {
@@ -68,9 +64,9 @@ bytearray render_orbit_trap_julia(int64 width, int64 height, int64 max_iter, flo
                 if (b > 255)
                     b = 255;
             }
-            pixels.append(static_cast<uint8>(py_to_int64(r)));
-            pixels.append(static_cast<uint8>(py_to_int64(g)));
-            pixels.append(static_cast<uint8>(py_to_int64(b)));
+            pixels.append(r);
+            pixels.append(g);
+            pixels.append(b);
         }
     }
     return pixels;
@@ -81,12 +77,10 @@ void run_04_orbit_trap_julia() {
     int64 height = 1080;
     int64 max_iter = 1400;
     str out_path = "sample/out/04_orbit_trap_julia.png";
-    
-    float64 start = pytra::std::time::perf_counter();
+    float64 start = py_to_float64(pytra::std::time::perf_counter());
     bytearray pixels = render_orbit_trap_julia(width, height, max_iter, -0.7269, 0.1889);
     pytra::utils::png::write_rgb_png(out_path, width, height, pixels);
-    float64 elapsed = pytra::std::time::perf_counter() - start;
-    
+    float64 elapsed = py_to_float64(pytra::std::time::perf_counter() - start);
     py_print("output:", out_path);
     py_print("size:", width, "x", height);
     py_print("max_iter:", max_iter);

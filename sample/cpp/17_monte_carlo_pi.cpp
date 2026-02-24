@@ -3,14 +3,10 @@
 #include "pytra/std/time.h"
 
 
-// 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
-// It avoids floating-point error effects, making cross-language comparisons easier.
-
 int64 run_integer_grid_checksum(int64 width, int64 height, int64 seed) {
     int64 mod_main = 2147483647;
     int64 mod_out = 1000000007;
     int64 acc = seed % mod_out;
-    
     for (int64 y = 0; y < height; ++y) {
         int64 row_sum = 0;
         for (int64 x = 0; x < width; ++x) {
@@ -26,11 +22,9 @@ int64 run_integer_grid_checksum(int64 width, int64 height, int64 seed) {
 void run_integer_benchmark() {
     int64 width = 2400;
     int64 height = 1600;
-    
-    float64 start = pytra::std::time::perf_counter();
+    float64 start = py_to_float64(pytra::std::time::perf_counter());
     int64 checksum = run_integer_grid_checksum(width, height, 123456789);
-    float64 elapsed = pytra::std::time::perf_counter() - start;
-    
+    float64 elapsed = py_to_float64(pytra::std::time::perf_counter() - start);
     py_print("pixels:", width * height);
     py_print("checksum:", checksum);
     py_print("elapsed_sec:", elapsed);

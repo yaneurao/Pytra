@@ -6,8 +6,6 @@
 
 
 
-// 12: Sample that outputs intermediate states of bubble sort as a GIF.
-
 bytes render(const list<int64>& values, int64 w, int64 h) {
     bytearray frame = bytearray(w * h);
     int64 n = py_len(values);
@@ -32,14 +30,12 @@ void run_12_sort_visualizer() {
     int64 h = 180;
     int64 n = 124;
     str out_path = "sample/out/12_sort_visualizer.gif";
-    
     auto start = pytra::std::time::perf_counter();
     list<int64> values = list<int64>{};
     for (int64 i = 0; i < n; ++i)
         values.append(int64((i * 37 + 19) % n));
     list<bytes> frames = list<bytes>{render(values, w, h)};
     int64 frame_stride = 16;
-    
     int64 op = 0;
     for (int64 i = 0; i < n; ++i) {
         bool swapped = false;
@@ -55,7 +51,7 @@ void run_12_sort_visualizer() {
         if (!(swapped))
             break;
     }
-    pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), 3, 0);
+    pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), int64(py_to_int64(3)), int64(py_to_int64(0)));
     auto elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));

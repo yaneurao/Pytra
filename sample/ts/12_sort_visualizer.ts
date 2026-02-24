@@ -17,8 +17,8 @@ function render(values, w, h) {
             x1 = x0 + 1;
         }
         let bh = Math.trunc(Number((values[i] / n) * h));
-        let y = h - bh;
-        for (let y = y; y < h; y += 1) {
+        let y0 = h - bh;
+        for (let y = y0; y < h; y += 1) {
             for (let x = x0; x < x1; x += 1) {
                 frame[y * w + x] = 255;
             }
@@ -57,7 +57,7 @@ function run_12_sort_visualizer() {
             op += 1;
         }
         if (!swapped) {
-            py_break;
+            break;
         }
     }
     save_gif(out_path, w, h, frames, grayscale_palette());
