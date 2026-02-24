@@ -18,7 +18,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "src" / "py2cpp.py"
+CPP_EMITTER_TARGET = ROOT / "src" / "hooks" / "cpp" / "emitter" / "cpp_emitter.py"
+CPP_EMITTER_CLASS_NAME = "CppEmitter"
 ALLOWLIST = ROOT / "tools" / "py2cpp_cpp_helper_allowlist.txt"
+
+
+def _collect_toplevel_classes(source_path: Path) -> set[str]:
+    tree = ast.parse(source_path.read_text(encoding="utf-8"))
+    return {
+        node.name
+        for node in tree.body
+        if isinstance(node, ast.ClassDef)
+    }
+
+
+def _has_class(source_path: Path, class_name: str) -> bool:
+    return class_name in _collect_toplevel_classes(source_path)
 
 
 def _collect_cpp_private_helpers(source_path: Path) -> list[str]:
@@ -26,7 +41,7 @@ def _collect_cpp_private_helpers(source_path: Path) -> list[str]:
     for node in tree.body:
         if not isinstance(node, ast.ClassDef):
             continue
-        if node.name != "CppEmitter":
+        if node.name != CPP_EMITTER_CLASS_NAME:
             continue
         names: list[str] = []
         for item in node.body:
@@ -36,7 +51,7 @@ def _collect_cpp_private_helpers(source_path: Path) -> list[str]:
                     names.append(name)
         names.sort()
         return names
-    raise RuntimeError("class CppEmitter not found in src/py2cpp.py")
+    raise RuntimeError(f"class {CPP_EMITTER_CLASS_NAME} not found in {source_path}")
 
 
 def _read_allowlist(path: Path) -> list[str]:
@@ -71,7 +86,12 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    current = _collect_cpp_private_helpers(TARGET)
+    if _has_class(TARGET, CPP_EMITTER_CLASS_NAME):
+        print("[FAIL] CppEmitter must not be implemented in src/py2cpp.py")
+        print("Move implementation to src/hooks/cpp/emitter/cpp_emitter.py")
+        return 1
+
+    current = _collect_cpp_private_helpers(CPP_EMITTER_TARGET)
 
     if args.write_allowlist:
         _write_allowlist(ALLOWLIST, current)

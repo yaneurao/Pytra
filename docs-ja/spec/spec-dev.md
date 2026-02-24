@@ -106,6 +106,7 @@
 ## 3. C++ 変換仕様（`py2cpp.py`）
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
+- `CppEmitter` 実装は `src/hooks/cpp/emitter/cpp_emitter.py` へ分離され、`py2cpp.py` は CLI / オーケストレーション層として扱います。
 - 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は [py2cpp サポートマトリクス](../language/cpp/spec-support.md) を正として管理します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
 - 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/pytra/built_in/py_runtime.h` 側を利用します。

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import subprocess
 import tempfile
 import unittest
@@ -15,6 +16,28 @@ STAGE2_COMPAT_WARNING = "warning: --east-stage 2 is compatibility mode; default 
 
 
 class Py2CppSmokeTest(unittest.TestCase):
+    def test_cpp_emitter_not_implemented_in_py2cpp(self) -> None:
+        text = PY2CPP.read_text(encoding="utf-8")
+        ast_root = ast.parse(text)
+
+        top_level_classes = {
+            node.name
+            for node in ast_root.body
+            if isinstance(node, ast.ClassDef)
+        }
+        self.assertNotIn("CppEmitter", top_level_classes)
+
+        has_emitter_import = False
+        for node in ast_root.body:
+            if not isinstance(node, ast.ImportFrom):
+                continue
+            if node.module != "hooks.cpp.emitter":
+                continue
+            has_emitter_import = any(alias.name == "CppEmitter" for alias in node.names)
+            if has_emitter_import:
+                break
+        self.assertTrue(has_emitter_import)
+
     def test_default_run_has_no_stage2_compat_warning(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             src_py = Path(tmpdir) / "ok.py"

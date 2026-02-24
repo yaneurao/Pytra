@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import subprocess
 import tempfile
 from pathlib import Path
@@ -73,6 +74,28 @@ def _run_one_stage2_must_fail(src: Path, out: Path) -> tuple[bool, str]:
     return False, f"unexpected stage2 error message: {first}"
 
 
+def _assert_cpp_emitter_separation() -> tuple[bool, str]:
+    py2cpp_text = PY2CPP.read_text(encoding="utf-8")
+    py2cpp_ast = ast.parse(py2cpp_text)
+
+    has_cpp_emitter_class = False
+    has_cpp_emitter_import = False
+    for node in py2cpp_ast.body:
+        if isinstance(node, ast.ClassDef) and node.name == "CppEmitter":
+            has_cpp_emitter_class = True
+        if not isinstance(node, ast.ImportFrom):
+            continue
+        if node.module == "hooks.cpp.emitter":
+            if any(alias.name == "CppEmitter" for alias in node.names):
+                has_cpp_emitter_import = True
+
+    if has_cpp_emitter_class:
+        return False, "class CppEmitter must be removed from src/py2cpp.py"
+    if not has_cpp_emitter_import:
+        return False, "missing import from hooks.cpp.emitter import CppEmitter"
+    return True, ""
+
+
 def _has_import_statement(src: Path) -> bool:
     text = src.read_text(encoding="utf-8")
     for line in text.splitlines():
@@ -115,6 +138,10 @@ def main() -> int:
         if len(docs_games) > 0:
             yanesdk_files.append(docs_games[0])
     expected_fails = set() if args.include_expected_failures else DEFAULT_EXPECTED_FAILS
+    ok, msg = _assert_cpp_emitter_separation()
+    if not ok:
+        print(f"FAIL structure: {msg}")
+        return 1
 
     fails: list[tuple[str, str]] = []
     skipped = 0

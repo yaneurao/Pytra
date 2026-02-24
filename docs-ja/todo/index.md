@@ -29,11 +29,14 @@
 1. [ ] [ID: P0-CPP-EMITTER-01] `src/py2cpp.py` に同居している `CppEmitter` 本体を `src/hooks/cpp/emitter` へ移し、`py2cpp.py` を薄い CLI/配線層へ縮退する（`P0-CPP-EMITTER-01-S1` から `P0-CPP-EMITTER-01-S4` 完了でクローズ）。
 2. [x] [ID: P0-CPP-EMITTER-01-S1] `src/hooks/cpp/emitter/cpp_emitter.py`（新規）へ `class CppEmitter` と直接依存する補助ロジックを移管する。
 
+3. [x] [ID: P0-CPP-EMITTER-01-S2] `src/hooks/cpp/emitter/__init__.py`（新規）で `load_cpp_profile` / `transpile_to_cpp` など C++ backend API を公開し、`py2cpp.py` から再利用する。
+4. [x] [ID: P0-CPP-EMITTER-01-S3] `src/py2cpp.py` を CLI・引数処理・I/O・高位オーケストレーションのみに縮退し、emitter 本体実装を保持しない状態にする。
+5. [x] [ID: P0-CPP-EMITTER-01-S4] `check_py2cpp_transpile` / smoke / docs（`spec-dev`）を更新し、分離後の構成を回帰ガード込みで固定する。
+
 進捗メモ:
 - [ID: P0-CPP-EMITTER-01-S1] `CppEmitter` 本体を `src/hooks/cpp/emitter/cpp_emitter.py` に移し、`py2cpp.py` 側では `install_py2cpp_runtime_symbols(globals())` で実行時依存を注入する形へ変更。
-3. [x] [ID: P0-CPP-EMITTER-01-S2] `src/hooks/cpp/emitter/__init__.py`（新規）で `load_cpp_profile` / `transpile_to_cpp` など C++ backend API を公開し、`py2cpp.py` から再利用する。
-4. [ ] [ID: P0-CPP-EMITTER-01-S3] `src/py2cpp.py` を CLI・引数処理・I/O・高位オーケストレーションのみに縮退し、emitter 本体実装を保持しない状態にする。
-5. [ ] [ID: P0-CPP-EMITTER-01-S4] `check_py2cpp_transpile` / smoke / docs（`spec-dev`）を更新し、分離後の構成を回帰ガード込みで固定する。
+- [ID: P0-CPP-EMITTER-01-S3] `src/py2cpp.py` から `CppEmitter` クラス定義を除外し、オーケストレーション向けに薄い構成へ固定した。
+- [ID: P0-CPP-EMITTER-01-S4] `test/unit/test_py2cpp_smoke.py` で emitter 分離を検証し、`tools/check_py2cpp_helper_guard.py` で対象監視を `src/hooks/cpp/emitter/cpp_emitter.py` に固定した。
 
 ## P0: `py2cpp.py` 残責務の段階分離（5番目優先）
 
