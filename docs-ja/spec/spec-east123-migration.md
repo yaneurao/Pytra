@@ -48,6 +48,21 @@
 現状は stage 境界 API が `transpile_cli.py` に集中して見通しが悪い。  
 本移行では、段階責務を `east_parts/east1.py`, `east_parts/east2.py`, `east_parts/east3.py` へ分離し、`transpile_cli.py` を互換ラッパ中心へ縮退する。
 
+## 3.2 `py2cpp.py` の `--east-stage` 分岐棚卸し（P0-EASTMIG-03-S1）
+
+`P0-EASTMIG-03-S1` で、loop 系の `EAST2` 依存を次のように整理した。
+
+- 入口分岐（`load_east(..., east_stage=...)`）:
+  - `east_stage=3`: `load_east3_document` を使用（従来どおり）。
+  - `east_stage=2`: 互換入力を許容しつつ、backend 側で `ForRange` / runtime `For` を `ForCore` bridge へ寄せる。
+- backend 既定ディスパッチ（`CppEmitter._emit_stmt_kind_fallback`）:
+  - `ForRange`: `emit_for_range` 直呼びを縮退し、`_forrange_stmt_to_forcore` -> `emit_for_core` へ置換。
+  - `For`: runtime `For` と `RangeExpr` `For` を `_for_stmt_to_forcore` -> `emit_for_core` へ置換。
+  - `For` static-fastpath（既存 C++ range-for）は互換維持のため当面残す。
+- `iter_plan`:
+  - `StaticRangeForPlan` は `range_mode` を明示保持（bridge 時に補完）。
+  - `RuntimeIterForPlan` は `dispatch_mode` を `meta.dispatch_mode` から補完。
+
 ## 4. 移行方針
 
 1. まず「無挙動変更」で責務分離する。  

@@ -1874,9 +1874,17 @@ class CppEmitter(CodeEmitter):
         elif kind == "While":
             self._emit_while_stmt(stmt)
         elif kind == "ForRange":
-            self.emit_for_range(stmt)
+            forcore_stmt = self._forrange_stmt_to_forcore(stmt)
+            if len(forcore_stmt) > 0:
+                self.emit_for_core(forcore_stmt)
+            else:
+                self.emit_for_range(stmt)
         elif kind == "For":
-            self.emit_for_each(stmt)
+            forcore_stmt = self._for_stmt_to_forcore(stmt)
+            if len(forcore_stmt) > 0:
+                self.emit_for_core(forcore_stmt)
+            else:
+                self.emit_for_each(stmt)
         elif kind == "ForCore":
             self.emit_for_core(stmt)
         elif kind == "Raise":
@@ -2735,6 +2743,139 @@ class CppEmitter(CodeEmitter):
             return
         self.emit_scoped_block(open_line, body_stmts, target_scope)
 
+    def _dispatch_mode_for_forcore_bridge(self) -> str:
+        """ForCore bridge で使用する dispatch mode を返す。"""
+        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        mode = self.any_dict_get_str(meta, "dispatch_mode", "native")
+        if mode != "native" and mode != "type_id":
+            return "native"
+        return mode
+
+    def _target_plan_from_target_expr(self, target_expr: dict[str, Any], target_type_hint: str = "") -> dict[str, Any]:
+        """既存 For/ForRange の target ノードを EAST3 `target_plan` へ変換する。"""
+        kind = self._node_kind_from_dict(target_expr)
+        target_type = self.normalize_type_name(target_type_hint)
+        if target_type == "":
+            target_type = self.normalize_type_name(self.get_expr_type(target_expr))
+        if target_type == "":
+            target_type = "unknown"
+
+        if kind == "Name":
+            target_id = self.any_dict_get_str(target_expr, "id", "")
+            if target_id == "":
+                return {}
+            return {
+                "kind": "NameTarget",
+                "id": target_id,
+                "target_type": target_type,
+            }
+        if kind == "Tuple":
+            elems = self.any_to_list(target_expr.get("elements"))
+            elem_plans: list[dict[str, Any]] = []
+            for elem_obj in elems:
+                elem_expr = self.any_to_dict_or_empty(elem_obj)
+                if len(elem_expr) == 0:
+                    continue
+                elem_hint = self.normalize_type_name(self.get_expr_type(elem_expr))
+                elem_plan = self._target_plan_from_target_expr(elem_expr, elem_hint)
+                if len(elem_plan) > 0:
+                    elem_plans.append(elem_plan)
+            return {
+                "kind": "TupleTarget",
+                "target_type": target_type,
+                "elements": elem_plans,
+            }
+        return {
+            "kind": "ExprTarget",
+            "target_type": target_type,
+            "target": target_expr,
+        }
+
+    def _forrange_stmt_to_forcore(self, stmt: dict[str, Any]) -> dict[str, Any]:
+        """既存 `ForRange` ノードを EAST3 `ForCore` へ変換する。"""
+        target_expr = self.any_to_dict_or_empty(stmt.get("target"))
+        if len(target_expr) == 0:
+            return {}
+        target_type_hint = self.any_dict_get_str(stmt, "target_type", "")
+        target_plan = self._target_plan_from_target_expr(target_expr, target_type_hint)
+        if len(target_plan) == 0:
+            return {}
+
+        step_expr = self.any_to_dict_or_empty(stmt.get("step"))
+        if len(step_expr) == 0:
+            step_expr = {"kind": "Constant", "resolved_type": "int64", "value": 1, "repr": "1"}
+        range_mode = self.any_dict_get_str(stmt, "range_mode", "")
+        if range_mode == "":
+            range_mode = self._range_mode_from_step_expr(step_expr)
+
+        iter_plan: dict[str, Any] = {
+            "kind": "StaticRangeForPlan",
+            "start": stmt.get("start"),
+            "stop": stmt.get("stop"),
+            "step": step_expr,
+            "range_mode": range_mode,
+        }
+        return {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": iter_plan,
+            "target_plan": target_plan,
+            "body": self.any_dict_get_list(stmt, "body"),
+            "orelse": self.any_dict_get_list(stmt, "orelse"),
+        }
+
+    def _for_stmt_to_forcore(self, stmt: dict[str, Any]) -> dict[str, Any]:
+        """既存 `For` ノードのうち EAST3 へ安全移行可能な経路を `ForCore` へ変換する。"""
+        target_expr = self.any_to_dict_or_empty(stmt.get("target"))
+        iter_expr = self.any_to_dict_or_empty(stmt.get("iter"))
+        if len(target_expr) == 0 or len(iter_expr) == 0:
+            return {}
+
+        target_type_hint = self.any_dict_get_str(stmt, "target_type", "")
+        target_plan = self._target_plan_from_target_expr(target_expr, target_type_hint)
+        if len(target_plan) == 0:
+            return {}
+
+        iter_kind = self._node_kind_from_dict(iter_expr)
+        if iter_kind == "RangeExpr":
+            step_expr = self.any_to_dict_or_empty(iter_expr.get("step"))
+            if len(step_expr) == 0:
+                step_expr = {"kind": "Constant", "resolved_type": "int64", "value": 1, "repr": "1"}
+            iter_plan: dict[str, Any] = {
+                "kind": "StaticRangeForPlan",
+                "start": iter_expr.get("start"),
+                "stop": iter_expr.get("stop"),
+                "step": step_expr,
+                "range_mode": self.any_dict_get_str(iter_expr, "range_mode", self._range_mode_from_step_expr(step_expr)),
+            }
+            return {
+                "kind": "ForCore",
+                "iter_mode": "static_fastpath",
+                "iter_plan": iter_plan,
+                "target_plan": target_plan,
+                "body": self.any_dict_get_list(stmt, "body"),
+                "orelse": self.any_dict_get_list(stmt, "orelse"),
+            }
+
+        iter_mode = self._resolve_for_iter_mode(stmt, iter_expr)
+        if iter_mode != "runtime_protocol":
+            return {}
+        iter_plan = {
+            "kind": "RuntimeIterForPlan",
+            "iter_expr": iter_expr,
+            "dispatch_mode": self._dispatch_mode_for_forcore_bridge(),
+            "init_op": "ObjIterInit",
+            "next_op": "ObjIterNext",
+        }
+        return {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": iter_plan,
+            "target_plan": target_plan,
+            "body": self.any_dict_get_list(stmt, "body"),
+            "orelse": self.any_dict_get_list(stmt, "orelse"),
+        }
+
     def _target_expr_from_target_plan(self, target_plan: dict[str, Any]) -> dict[str, Any]:
         """EAST3 `target_plan` を既存 For/ForRange 互換の target ノードへ変換する。"""
         plan_kind = self.any_dict_get_str(target_plan, "kind", "")
@@ -2803,6 +2944,9 @@ class CppEmitter(CodeEmitter):
             step_expr = self.any_to_dict_or_empty(step_obj)
             if len(step_expr) == 0:
                 step_expr = {"kind": "Constant", "resolved_type": "int64", "value": 1, "repr": "1"}
+            range_mode_txt = self.any_dict_get_str(iter_plan, "range_mode", "")
+            if range_mode_txt == "":
+                range_mode_txt = self._range_mode_from_step_expr(step_expr)
             self.emit_for_range(
                 {
                     "target": target_expr,
@@ -2810,7 +2954,7 @@ class CppEmitter(CodeEmitter):
                     "start": start_expr,
                     "stop": stop_expr,
                     "step": step_expr,
-                    "range_mode": self._range_mode_from_step_expr(step_expr),
+                    "range_mode": range_mode_txt,
                     "body": body_stmts,
                     "orelse": orelse_stmts,
                 }

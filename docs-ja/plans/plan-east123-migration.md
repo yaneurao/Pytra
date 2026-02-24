@@ -73,3 +73,4 @@
 - 2026-02-24: `P0-EASTMIG-02-S2` として `src/pytra/compiler/east_parts/east2.py` を追加し、`normalize_east1_to_east2_document` を段階モジュールへ移設した（`transpile_cli.py` 側は selfhost 互換 fallback を維持）。
 - 2026-02-24: `P0-EASTMIG-02-S3` として `src/pytra/compiler/east_parts/east3.py` を追加し、`load_east3_document` と `lower_east2_to_east3` 公開委譲を段階モジュールへ集約した。
 - 2026-02-24: P0-EASTMIG-02-S4 として、`transpile_cli.py` の段階 API を stage module 委譲ラッパへ整理し、互換テスト（wrapper 委譲 + selfhost 抽出）を追加した。
+- 2026-02-24: `P0-EASTMIG-03-S1` として `py2cpp.py` の loop 分岐を棚卸しし、`ForRange` と runtime `For` を `ForCore` bridge（`_forrange_stmt_to_forcore`, `_for_stmt_to_forcore`）経由へ置換した。`For` static-fastpath は既存 C++ range-for を維持し、次段 (`P0-EASTMIG-03-S2/S3`) で縮退を継続する。
