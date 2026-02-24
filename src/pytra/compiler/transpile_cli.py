@@ -1597,6 +1597,22 @@ def format_import_graph_report(analysis: dict[str, object]) -> str:
     return out
 
 
+def dump_deps_graph_text(
+    entry_path: Path,
+    runtime_std_source_root: Path = Path("src/pytra/std"),
+    runtime_utils_source_root: Path = Path("src/pytra/utils"),
+    load_east_fn: object = load_east_document,
+) -> str:
+    """入力 `.py` から辿れるユーザーモジュール依存グラフを整形して返す。"""
+    analysis = analyze_import_graph(
+        entry_path,
+        runtime_std_source_root,
+        runtime_utils_source_root,
+        load_east_fn,
+    )
+    return format_import_graph_report(analysis)
+
+
 def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:
     """依存解析の重大問題を `input_invalid` として報告する。"""
     details: list[str] = []
