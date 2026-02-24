@@ -3510,6 +3510,12 @@ class CppEmitter(CodeEmitter):
     ) -> str:
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
+        if runtime_call == "" and self._is_self_hosted_parser_doc():
+            legacy_builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
+            if legacy_builtin_name == "bytearray":
+                runtime_call = "bytearray_ctor"
+            elif legacy_builtin_name == "bytes":
+                runtime_call = "bytes_ctor"
         any_boundary_expr = self._build_any_boundary_expr_from_builtin_call(
             runtime_call,
             arg_nodes,
@@ -3607,7 +3613,7 @@ class CppEmitter(CodeEmitter):
         owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
         if runtime_call == "list.append":
             if len(arg_nodes) >= 1:
-                append_node = {
+                append_node: dict[str, Any] = {
                     "kind": "ListAppend",
                     "owner": owner_node,
                     "value": arg_nodes[0],
@@ -3619,7 +3625,7 @@ class CppEmitter(CodeEmitter):
             return None
         if runtime_call == "list.extend":
             if len(arg_nodes) >= 1:
-                extend_node = {
+                extend_node: dict[str, Any] = {
                     "kind": "ListExtend",
                     "owner": owner_node,
                     "value": arg_nodes[0],
@@ -3630,7 +3636,7 @@ class CppEmitter(CodeEmitter):
                 return self.render_expr(extend_node)
             return None
         if runtime_call == "list.pop":
-            pop_node = {
+            pop_node: dict[str, Any] = {
                 "kind": "ListPop",
                 "owner": owner_node,
                 "resolved_type": "object",
@@ -3641,7 +3647,7 @@ class CppEmitter(CodeEmitter):
                 pop_node["index"] = arg_nodes[0]
             return self.render_expr(pop_node)
         if runtime_call == "list.clear":
-            clear_node = {
+            clear_node: dict[str, Any] = {
                 "kind": "ListClear",
                 "owner": owner_node,
                 "resolved_type": "None",
@@ -3650,7 +3656,7 @@ class CppEmitter(CodeEmitter):
             }
             return self.render_expr(clear_node)
         if runtime_call == "list.reverse":
-            reverse_node = {
+            reverse_node: dict[str, Any] = {
                 "kind": "ListReverse",
                 "owner": owner_node,
                 "resolved_type": "None",
@@ -3659,7 +3665,7 @@ class CppEmitter(CodeEmitter):
             }
             return self.render_expr(reverse_node)
         if runtime_call == "list.sort":
-            sort_node = {
+            sort_node: dict[str, Any] = {
                 "kind": "ListSort",
                 "owner": owner_node,
                 "resolved_type": "None",
@@ -3679,7 +3685,7 @@ class CppEmitter(CodeEmitter):
         owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
         if runtime_call == "set.add":
             if len(arg_nodes) >= 1:
-                set_add_node = {
+                set_add_node: dict[str, Any] = {
                     "kind": "SetAdd",
                     "owner": owner_node,
                     "value": arg_nodes[0],
@@ -3691,7 +3697,7 @@ class CppEmitter(CodeEmitter):
             return None
         if runtime_call in {"set.discard", "set.remove"}:
             if len(arg_nodes) >= 1:
-                set_erase_node = {
+                set_erase_node: dict[str, Any] = {
                     "kind": "SetErase",
                     "owner": owner_node,
                     "value": arg_nodes[0],
@@ -3702,7 +3708,7 @@ class CppEmitter(CodeEmitter):
                 return self.render_expr(set_erase_node)
             return None
         if runtime_call == "set.clear":
-            clear_node = {
+            clear_node: dict[str, Any] = {
                 "kind": "SetClear",
                 "owner": owner_node,
                 "resolved_type": "None",
@@ -3760,7 +3766,7 @@ class CppEmitter(CodeEmitter):
             if len(arg_nodes) >= 2:
                 default_node: Any = arg_nodes[1]
                 default_t = self.normalize_type_name(self.get_expr_type(default_node))
-                get_default_node = {
+                get_default_node: dict[str, Any] = {
                     "kind": "DictGetDefault",
                     "owner": owner_node,
                     "key": arg_nodes[0],
@@ -3776,7 +3782,7 @@ class CppEmitter(CodeEmitter):
                 }
                 return self.render_expr(get_default_node)
             if len(arg_nodes) == 1:
-                maybe_node = {
+                maybe_node: dict[str, Any] = {
                     "kind": "DictGetMaybe",
                     "owner": owner_node,
                     "key": arg_nodes[0],
@@ -3788,7 +3794,7 @@ class CppEmitter(CodeEmitter):
             return None
         if runtime_call == "dict.pop":
             if len(arg_nodes) == 1:
-                pop_node = {
+                pop_node: dict[str, Any] = {
                     "kind": "DictPop",
                     "owner": owner_node,
                     "key": arg_nodes[0],
@@ -3806,7 +3812,7 @@ class CppEmitter(CodeEmitter):
                 inner = self.split_generic(owner_t2[5:-1])
                 if len(inner) == 2 and inner[1] != "":
                     val_t = self.normalize_type_name(inner[1])
-            pop_default_node = {
+            pop_default_node: dict[str, Any] = {
                 "kind": "DictPopDefault",
                 "owner": owner_node,
                 "key": arg_nodes[0],
@@ -3818,7 +3824,7 @@ class CppEmitter(CodeEmitter):
             }
             return self.render_expr(pop_default_node)
         if runtime_call == "dict.items":
-            items_node = {
+            items_node: dict[str, Any] = {
                 "kind": "DictItems",
                 "owner": owner_node,
                 "resolved_type": self.any_to_str(expr.get("resolved_type")),
@@ -3827,7 +3833,7 @@ class CppEmitter(CodeEmitter):
             }
             return self.render_expr(items_node)
         if runtime_call == "dict.keys":
-            keys_node = {
+            keys_node: dict[str, Any] = {
                 "kind": "DictKeys",
                 "owner": owner_node,
                 "resolved_type": self.any_to_str(expr.get("resolved_type")),
@@ -3836,7 +3842,7 @@ class CppEmitter(CodeEmitter):
             }
             return self.render_expr(keys_node)
         if runtime_call == "dict.values":
-            values_node = {
+            values_node: dict[str, Any] = {
                 "kind": "DictValues",
                 "owner": owner_node,
                 "resolved_type": self.any_to_str(expr.get("resolved_type")),
@@ -3869,7 +3875,7 @@ class CppEmitter(CodeEmitter):
             return None
         owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
         if runtime_call == "py_isdigit":
-            charclass_node = {
+            charclass_node: dict[str, Any] = {
                 "kind": "StrCharClassOp",
                 "mode": "isdigit",
                 "resolved_type": "bool",
@@ -3882,7 +3888,7 @@ class CppEmitter(CodeEmitter):
                 charclass_node["value"] = owner_node
             return self.render_expr(charclass_node)
         if runtime_call == "py_isalpha":
-            charclass_node = {
+            charclass_node: dict[str, Any] = {
                 "kind": "StrCharClassOp",
                 "mode": "isalpha",
                 "resolved_type": "bool",
@@ -3895,7 +3901,7 @@ class CppEmitter(CodeEmitter):
                 charclass_node["value"] = owner_node
             return self.render_expr(charclass_node)
         if runtime_call == "py_strip":
-            strip_node = {
+            strip_node: dict[str, Any] = {
                 "kind": "StrStripOp",
                 "mode": "strip",
                 "owner": owner_node,
@@ -3907,7 +3913,7 @@ class CppEmitter(CodeEmitter):
                 strip_node["chars"] = arg_nodes[0]
             return self.render_expr(strip_node)
         if runtime_call == "py_rstrip":
-            rstrip_node = {
+            rstrip_node: dict[str, Any] = {
                 "kind": "StrStripOp",
                 "mode": "rstrip",
                 "owner": owner_node,
@@ -3919,7 +3925,7 @@ class CppEmitter(CodeEmitter):
                 rstrip_node["chars"] = arg_nodes[0]
             return self.render_expr(rstrip_node)
         if runtime_call == "py_lstrip":
-            lstrip_node = {
+            lstrip_node: dict[str, Any] = {
                 "kind": "StrStripOp",
                 "mode": "lstrip",
                 "owner": owner_node,
@@ -3932,7 +3938,7 @@ class CppEmitter(CodeEmitter):
             return self.render_expr(lstrip_node)
         if runtime_call == "py_startswith":
             if len(arg_nodes) >= 1:
-                starts_node = {
+                starts_node: dict[str, Any] = {
                     "kind": "StrStartsEndsWith",
                     "mode": "startswith",
                     "owner": owner_node,
@@ -3948,7 +3954,7 @@ class CppEmitter(CodeEmitter):
                 return self.render_expr(starts_node)
         if runtime_call == "py_endswith":
             if len(arg_nodes) >= 1:
-                ends_node = {
+                ends_node: dict[str, Any] = {
                     "kind": "StrStartsEndsWith",
                     "mode": "endswith",
                     "owner": owner_node,
@@ -3964,7 +3970,7 @@ class CppEmitter(CodeEmitter):
                 return self.render_expr(ends_node)
         if runtime_call in {"py_find", "py_rfind"}:
             if len(arg_nodes) >= 1:
-                find_node = {
+                find_node: dict[str, Any] = {
                     "kind": "StrFindOp",
                     "mode": "rfind" if runtime_call == "py_rfind" else "find",
                     "owner": owner_node,
@@ -3979,7 +3985,7 @@ class CppEmitter(CodeEmitter):
                     find_node["end"] = arg_nodes[2]
                 return self.render_expr(find_node)
         if runtime_call == "py_replace" and len(arg_nodes) >= 2:
-            replace_node = {
+            replace_node: dict[str, Any] = {
                 "kind": "StrReplace",
                 "owner": owner_node,
                 "old": arg_nodes[0],
@@ -3990,7 +3996,7 @@ class CppEmitter(CodeEmitter):
             }
             return self.render_expr(replace_node)
         if runtime_call == "py_join" and len(arg_nodes) >= 1:
-            join_node = {
+            join_node: dict[str, Any] = {
                 "kind": "StrJoin",
                 "owner": owner_node,
                 "items": arg_nodes[0],
@@ -4897,6 +4903,22 @@ class CppEmitter(CodeEmitter):
         """入力 EAST が self_hosted parser 由来かを返す。"""
         meta = self.any_to_dict_or_empty(self.doc.get("meta"))
         return self.any_dict_get_str(meta, "parser_backend", "") == "self_hosted"
+
+    def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
+        """self_hosted parser 由来の trivia は directive のみ反映する。"""
+        if "leading_trivia" not in stmt:
+            return
+        trivia = self.any_to_dict_list(stmt.get("leading_trivia"))
+        if len(trivia) == 0:
+            return
+        if not self._is_self_hosted_parser_doc():
+            self._emit_trivia_items(trivia)
+            return
+        for item in trivia:
+            if self.any_dict_get_str(item, "kind", "") != "comment":
+                continue
+            txt = self.any_dict_get_str(item, "text", "")
+            self._handle_comment_trivia_directive(txt)
 
     def _render_legacy_builtin_method_call(
         self,
@@ -8435,8 +8457,11 @@ def main(argv: list[str]) -> int:
         if cat != "":
             print_user_error(str(ex))
             return 1
+        detail = str(ex)
         print("error: internal error occurred during transpilation.", file=sys.stderr)
         print("[internal_error] this may be a bug; report it with a reproducible case.", file=sys.stderr)
+        if detail != "":
+            print("detail: " + detail, file=sys.stderr)
         return 1
 
     if output_txt != "":

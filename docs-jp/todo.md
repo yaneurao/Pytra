@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-02-23
+最終更新: 2026-02-24
 
 ## 文脈運用ルール
 
@@ -57,11 +57,11 @@
 29. [ ] [ID: P0-EAST123-08] 言語非依存意味論を IR-first（EAST3 命令化 -> backend 写像）へ拡張する（`P0-EAST123-08-S1` から `P0-EAST123-08-S3` 完了でクローズ）。
 30. [x] [ID: P0-EAST123-08-S1] `type_id` 以外で IR 化優先対象（boxing/unboxing, iterable, truthy/len/str, built-in lower）の移行順を確定する。
 31. [x] [ID: P0-EAST123-08-S2] 第1陣（boxing/unboxing, iterable, truthy/len/str）を EAST3 命令へ移行する。
-32. [ ] [ID: P0-EAST123-08-S3] 第2陣（主要 built-in lower）を EAST3 命令へ移行し、C++ hooks を構文差分専任へ縮退する。
+32. [x] [ID: P0-EAST123-08-S3] 第2陣（主要 built-in lower）を EAST3 命令へ移行し、C++ hooks を構文差分専任へ縮退する。
 33. [x] [ID: P0-EAST123-08-S3-S1] `list/set` 系 built-in lower（append/extend/pop/insert/remove/contains/comprehension 補助）を IR-first（EAST3 命令 or IR ノード）へ段階移行する。
 34. [x] [ID: P0-EAST123-08-S3-S2] `dict` 系 built-in lower（現行 runtime_call 対象: get/pop/items/keys/values）を IR-first へ移行し、Any/default 境界を backend 直書き分岐から撤去する。
 35. [x] [ID: P0-EAST123-08-S3-S3] `str` / special built-in lower（replace/find/split/join/format/open/path/time など）を IR-first へ移行し、runtime_call 直分岐を縮退する。
-36. [ ] [ID: P0-EAST123-08-S3-S4] `py2cpp.py` built-in 分岐の backend 再判断を整理し、EAST3 命令写像 + 構文差分 hook のみへ収束させる（selfhost 差分ゼロ目標）。
+36. [x] [ID: P0-EAST123-08-S3-S4] `py2cpp.py` built-in 分岐の backend 再判断を整理し、EAST3 命令写像 + 構文差分 hook のみへ収束させる（selfhost 差分ゼロ目標）。
 
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
