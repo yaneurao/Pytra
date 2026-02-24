@@ -68,6 +68,8 @@
 - type_id / built-in lower:
   - `P0-EASTMIG-03-S3` で `east_stage=3` 時の未 lower fallback を fail-fast 化し、`type_id` Name-call（`isinstance` / `issubclass`）と `runtime_call` 未設定 BuiltinCall を拒否。
   - `east_stage=2` + selfhost 互換モードでは既存 fallback を維持し、移行期間の後方互換を確保。
+- 回帰基線:
+  - `P0-EASTMIG-03-S4` で `check_py2cpp_transpile`（131件）と `check_selfhost_cpp_diff --mode allow-not-implemented`（mismatches=0）を基線として固定。
 
 ## 4. 移行方針
 
