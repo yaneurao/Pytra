@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std import argparse
 
 from .core import EastBuildError, convert_path
-from .human import _dump_json, render_east_human_cpp
+from .render_human_east2_cpp import _dump_json, render_east_human_cpp
 from pytra.std.pathlib import Path
 from pytra.std import sys
 

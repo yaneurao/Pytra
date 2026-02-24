@@ -82,6 +82,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
    - `P0-EASTMIG-06-S4`: `EAST3` 主経路を回帰導線の既定へ固定する。
    - `P0-EASTMIG-06-S5`: `spec-east123*` / `spec-dev` の記述を同期する。
    - `P0-EASTMIG-06-S6`: `EAST1` build 責務境界を `docs-ja/spec/spec-east1-build.md` へ正式化する。
+   - `P0-EASTMIG-06-S7`: （低優先）`render_human_east3_cpp.py` を追加し、`EAST3` 命令ノードの人間可読レンダラを整備する。
 
 ## P0-EASTMIG-06 再オープン理由
 
@@ -126,3 +127,4 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - 2026-02-24: P0-EASTMIG-05-S3 として `--east-stage 2` を移行互換モードに位置づける縮退手順（互換維持 -> 警告 -> 撤去判定）を plan/spec に固定し、P0-EASTMIG-05 をクローズ。
 - 2026-02-24: `P0-EASTMIG-06` を再オープンした。`py2cpp.py` の既定 stage と非 C++ 変換器の `EAST2` 既定経路が残存しており、全変換器での `EAST3` 主経路統一が未完了のため。
 - 2026-02-24: `P0-EASTMIG-06-S6` として `docs-ja/spec/spec-east1-build.md` を追加し、`east1_build.py` 分離仕様（`load_east_document_compat` エラー契約互換、selfhost diff 実行、`EAST1` build での `EAST2` 非変換）を受け入れ基準へ固定した。
+- 2026-02-24: `east_parts/human.py` を `render_human_east2_cpp.py` へ改名し、`P0-EASTMIG-06-S7`（低優先）として `render_human_east3_cpp.py` 追加タスクを `todo`/plan に登録した。
