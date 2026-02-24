@@ -30,26 +30,6 @@ def _looks_like_runtime_symbol(name: str) -> bool:
     return False
 
 
-def on_render_call(
-    emitter: Any,
-    call_node: dict[str, Any],
-    func_node: dict[str, Any],
-    rendered_args: list[str],
-    rendered_kwargs: dict[str, str],
-) -> str | None:
-    """Call 式出力フック。
-
-    runtime_call / built-in の意味論は `CppEmitter._render_builtin_call` 側へ統一したため、
-    C++ hook はここでは介入しない（構文差分専任）。
-    """
-    _ = emitter
-    _ = call_node
-    _ = func_node
-    _ = rendered_args
-    _ = rendered_kwargs
-    return None
-
-
 def on_emit_stmt_kind(
     emitter: Any,
     kind: str,
@@ -341,7 +321,6 @@ def build_cpp_hooks() -> dict[str, Any]:
     hooks = EmitterHooks()
     hooks.add("on_emit_stmt_kind", on_emit_stmt_kind)
     hooks.add("on_stmt_omit_braces", on_stmt_omit_braces)
-    hooks.add("on_render_call", on_render_call)
     hooks.add("on_render_module_method", on_render_module_method)
     hooks.add("on_render_class_method", on_render_class_method)
     hooks.add("on_render_expr_leaf", on_render_expr_leaf)

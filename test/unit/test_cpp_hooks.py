@@ -17,7 +17,6 @@ from src.hooks.cpp.hooks.cpp_hooks import (
     build_cpp_hooks,
     on_emit_stmt_kind,
     on_for_range_mode,
-    on_render_call,
     on_render_expr_complex,
     on_render_class_method,
     on_render_expr_kind,
@@ -203,18 +202,6 @@ class CppHooksTest(unittest.TestCase):
         self.assertNotIn("on_for_range_mode", hooks)
         self.assertIn("on_render_module_method", hooks)
         self.assertIn("on_render_class_method", hooks)
-
-    def test_on_render_call_is_noop_after_runtime_migration(self) -> None:
-        em = _DummyEmitter()
-        call_node = {
-            "kind": "Call",
-            "runtime_call": "static_cast",
-            "resolved_type": "int64",
-            "args": [{"kind": "Name", "id": "x", "resolved_type": "str"}],
-        }
-        func_node = {"kind": "Name", "id": "int"}
-        rendered = on_render_call(em, call_node, func_node, ["x"], {})
-        self.assertIsNone(rendered)
 
     def test_on_stmt_omit_braces_prefers_emitter_default_impl(self) -> None:
         class _DefaultingEmitter:
