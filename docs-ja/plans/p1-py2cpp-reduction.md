@@ -5,6 +5,7 @@
 関連 TODO:
 - `docs-ja/todo.md` の `ID: P1-CPP-REDUCE-01` 〜 `P1-CPP-REDUCE-02`
 - `docs-ja/todo.md` の `ID: P1-CPP-REDUCE-01-S1` 〜 `P1-CPP-REDUCE-01-S3`
+- `docs-ja/todo.md` の `ID: P1-CPP-REDUCE-01-S3-S1` 〜 `P1-CPP-REDUCE-01-S3-S3`
 - `docs-ja/todo.md` の `ID: P1-CPP-REDUCE-02-S1` 〜 `P1-CPP-REDUCE-02-S3`
 
 背景:
@@ -36,9 +37,12 @@
 1. `P1-CPP-REDUCE-01-S1`: `py2cpp.py` 内ロジックを「言語非依存」と「C++ 固有」へ分類し、移管順を確定する。
 2. `P1-CPP-REDUCE-01-S2`: 言語非依存ロジックを `CodeEmitter` / `src/pytra/compiler/` へ段階移管する。
 3. `P1-CPP-REDUCE-01-S3`: selfhost 差分ゼロを維持したまま `py2cpp.py` の重複分岐を削減する。
-4. `P1-CPP-REDUCE-02-S1`: 「汎用 helper 禁止 / 共通層先行抽出」の運用ルールを文書化する。
-5. `P1-CPP-REDUCE-02-S2`: helper 追加の回帰を検出する lint/CI チェックを追加する。
-6. `P1-CPP-REDUCE-02-S3`: 緊急 hotfix 時の例外運用と後追い抽出期限を定義する。
+4. `P1-CPP-REDUCE-01-S3-S1`: `_emit_for_each_runtime` の Name ターゲット束縛重複を helper 化して削減する。
+5. `P1-CPP-REDUCE-01-S3-S2`: `emit_for_each` / `_emit_for_each_runtime` の `omit_braces` + scope 処理骨格を共通化する。
+6. `P1-CPP-REDUCE-01-S3-S3`: `emit_for_range` / `emit_for_each` のヘッダ生成・target scope 分岐を整理する。
+7. `P1-CPP-REDUCE-02-S1`: 「汎用 helper 禁止 / 共通層先行抽出」の運用ルールを文書化する。
+8. `P1-CPP-REDUCE-02-S2`: helper 追加の回帰を検出する lint/CI チェックを追加する。
+9. `P1-CPP-REDUCE-02-S3`: 緊急 hotfix 時の例外運用と後追い抽出期限を定義する。
 
 分類インベントリ（`P1-CPP-REDUCE-01-S1`）:
 
@@ -70,3 +74,4 @@
 - 2026-02-23: docs-ja/todo.md の P1-CPP-REDUCE-01/02 を -S* 子タスクへ分割したため、本 plan に同粒度の実行順を追記した。
 - 2026-02-24: [ID: P1-CPP-REDUCE-01-S1] `py2cpp.py` を「言語非依存（A群）」と「C++固有（C群）」へ分類し、移管順（A1/A3 -> A4/A6 -> A7 -> C群固定）を確定した。以後 `P1-CPP-REDUCE-01-S2` は A群のみを対象に進め、C群は境界維持を前提とする。
 - 2026-02-24: [ID: P1-CPP-REDUCE-01-S2] `fallback_tuple_target_names_from_repr` / `target_bound_names` を `CodeEmitter` へ移管し、`py2cpp.py` 側の同名 helper を削除した。`test/unit/test_code_emitter.py` に回帰テストを追加し、`check_py2cpp_transpile` / `check_selfhost_cpp_diff --mode allow-not-implemented` で差分ゼロを確認。
+- 2026-02-24: [ID: P1-CPP-REDUCE-01-S3-S1] `_emit_for_each_runtime` 内の Name ターゲット束縛分岐（`omit_braces` 有無で重複）を `_emit_for_each_runtime_target_bind` へ抽出し、重複分岐を削減した。`check_py2cpp_transpile` / `check_selfhost_cpp_diff --mode allow-not-implemented` で回帰なしを確認した。

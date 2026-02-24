@@ -3003,6 +3003,31 @@ class CppEmitter(CodeEmitter):
                 self.emit(f"auto {nm} = {rhs};")
                 self.declared_var_types[nm] = "object"
 
+    def _emit_for_each_runtime_target_bind(
+        self,
+        target: dict[str, Any],
+        target_name: str,
+        target_decl_type: str,
+        iter_tmp: str,
+    ) -> None:
+        """runtime for-each で一時 object をターゲットへ束縛する。"""
+        if iter_tmp == "" or self._node_kind_from_dict(target) != "Name":
+            return
+        rhs = iter_tmp
+        if self._can_runtime_cast_target(target_decl_type):
+            rhs = self.render_expr(
+                self._build_unbox_expr_node(
+                    self._build_name_expr_node(iter_tmp, "object"),
+                    target_decl_type,
+                    f"for_target:{target_name}",
+                )
+            )
+            self.emit(f"{self._cpp_type_text(target_decl_type)} {target_name} = {rhs};")
+            self.declared_var_types[target_name] = target_decl_type
+            return
+        self.emit(f"auto {target_name} = {rhs};")
+        self.declared_var_types[target_name] = "object"
+
     def _emit_for_each_runtime(
         self,
         stmt: dict[str, Any],
@@ -3044,21 +3069,8 @@ class CppEmitter(CodeEmitter):
             self.scope_stack.append(set(target_names))
             if unpack_tuple:
                 self._emit_target_unpack_runtime(target, iter_tmp)
-            elif iter_tmp != "" and self._node_kind_from_dict(target) == "Name":
-                rhs = iter_tmp
-                if self._can_runtime_cast_target(t_decl):
-                    rhs = self.render_expr(
-                        self._build_unbox_expr_node(
-                            self._build_name_expr_node(iter_tmp, "object"),
-                            t_decl,
-                            f"for_target:{t}",
-                        )
-                    )
-                    self.emit(f"{self._cpp_type_text(t_decl)} {t} = {rhs};")
-                    self.declared_var_types[t] = t_decl
-                else:
-                    self.emit(f"auto {t} = {rhs};")
-                    self.declared_var_types[t] = "object"
+            else:
+                self._emit_for_each_runtime_target_bind(target, t, t_decl, iter_tmp)
             self.emit_stmt(body_stmts[0])
             self.scope_stack.pop()
             self.indent -= 1
@@ -3075,21 +3087,8 @@ class CppEmitter(CodeEmitter):
         self.scope_stack.append(set(target_names))
         if unpack_tuple:
             self._emit_target_unpack_runtime(target, iter_tmp)
-        elif iter_tmp != "" and self._node_kind_from_dict(target) == "Name":
-            rhs = iter_tmp
-            if self._can_runtime_cast_target(t_decl):
-                rhs = self.render_expr(
-                    self._build_unbox_expr_node(
-                        self._build_name_expr_node(iter_tmp, "object"),
-                        t_decl,
-                        f"for_target:{t}",
-                    )
-                )
-                self.emit(f"{self._cpp_type_text(t_decl)} {t} = {rhs};")
-                self.declared_var_types[t] = t_decl
-            else:
-                self.emit(f"auto {t} = {rhs};")
-                self.declared_var_types[t] = "object"
+        else:
+            self._emit_for_each_runtime_target_bind(target, t, t_decl, iter_tmp)
         self.emit_stmt_list(body_stmts)
         self.scope_stack.pop()
         self.indent -= 1
