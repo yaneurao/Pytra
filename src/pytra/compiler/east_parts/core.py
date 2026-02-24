@@ -949,30 +949,34 @@ def _sh_collect_indented_block(
 def _sh_split_top_level_assign(text: str) -> tuple[str, str] | None:
     """トップレベルの `=` を 1 つだけ持つ代入式を分割する。"""
     depth = 0
-    in_str: str | None = None
+    in_str = ""
+    in_str_len = 0
     esc = False
     skip = 0
     for i, ch in enumerate(text):
         if skip > 0:
             skip -= 1
             continue
-        if in_str is not None:
+        if in_str != "":
             if esc:
                 esc = False
             elif ch == "\\":
                 esc = True
             elif ch == in_str:
-                if i + 2 < len(text) and text[i : i + 3] == in_str * 3:
+                if in_str_len == 3 and i + 2 < len(text) and text[i : i + 3] == (in_str + in_str + in_str):
                     skip = 2
                 else:
-                    in_str = None
+                    in_str = ""
+                    in_str_len = 0
             continue
         if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
             in_str = text[i]
+            in_str_len = 3
             skip = 2
             continue
         if ch in {"'", '"'}:
             in_str = ch
+            in_str_len = 1
             continue
         if ch == "#":
             break

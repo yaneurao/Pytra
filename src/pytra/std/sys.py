@@ -64,11 +64,17 @@ def set_path(values: Any) -> None:
 
 
 def write_stderr_impl(text: str) -> None:
-    py_runtime_write_stderr(text)
+    try:
+        py_runtime_write_stderr(text)
+    except NameError:
+        _host_sys.stderr.write(text)
 
 
 def write_stdout_impl(text: str) -> None:
-    py_runtime_write_stdout(text)
+    try:
+        py_runtime_write_stdout(text)
+    except NameError:
+        _host_sys.stdout.write(text)
 
 
 def write_stderr(text: str) -> None:

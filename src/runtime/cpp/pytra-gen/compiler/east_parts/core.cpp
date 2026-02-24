@@ -921,12 +921,13 @@ namespace pytra::compiler::east_parts::core {
     ::std::optional<::std::tuple<str, str>> _sh_split_top_level_assign(const str& text) {
         /* トップレベルの `=` を 1 つだけ持つ代入式を分割する。 */
         int64 depth = 0;
-        ::std::optional<str> in_str = ::std::nullopt;
+        str in_str = "";
+        int64 in_str_len = 0;
         bool esc = false;
         int64 i = 0;
         while (i < py_len(text)) {
             str ch = text[i];
-            if (!py_is_none(in_str)) {
+            if (in_str != "") {
                 if (esc) {
                     esc = false;
                 } else {
@@ -934,10 +935,12 @@ namespace pytra::compiler::east_parts::core {
                         esc = true;
                     } else {
                         if (ch == in_str) {
-                            if ((i + 2 < py_len(text)) && (py_slice(text, i, i + 3) == in_str * 3))
+                            if ((in_str_len == 3) && (i + 2 < py_len(text)) && (py_slice(text, i, i + 3) == (in_str + in_str + in_str)))
                                 i += 2;
-                            else
-                                in_str = ::std::nullopt;
+                            else {
+                                in_str = "";
+                                in_str_len = 0;
+                            }
                         }
                     }
                 }
@@ -946,11 +949,13 @@ namespace pytra::compiler::east_parts::core {
             }
             if ((i + 2 < py_len(text)) && (py_contains(set<str>{"'''", "\"\"\""}, py_slice(text, i, i + 3)))) {
                 in_str = text[i];
+                in_str_len = 3;
                 i += 3;
                 continue;
             }
             if (py_contains(set<str>{"'", "\""}, ch)) {
                 in_str = ch;
+                in_str_len = 1;
                 i++;
                 continue;
             }
