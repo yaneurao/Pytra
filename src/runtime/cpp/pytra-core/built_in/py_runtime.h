@@ -1353,6 +1353,24 @@ static inline object py_at(const object& v, int64 idx) {
     throw ::std::runtime_error("index access on non-indexable object");
 }
 
+static inline object py_slice(const object& v, int64 lo, int64 up) {
+    if (const auto* lst = obj_to_list_ptr(v)) {
+        return make_object(py_slice(*lst, lo, up));
+    }
+    if (const auto* s = py_obj_cast<PyStrObj>(v)) {
+        return make_object(py_slice(s->value, lo, up));
+    }
+    throw ::std::runtime_error("slice access on non-sliceable object");
+}
+
+static inline object py_slice(const object& v, int64 lo, const object& up) {
+    return py_slice(v, lo, py_to_int64(up));
+}
+
+static inline object py_slice(const object& v, int64 lo, const ::std::any& up) {
+    return py_slice(v, lo, py_to_int64(up));
+}
+
 template <::std::size_t I = 0, class... Ts>
 static inline object _py_tuple_at_impl(const ::std::tuple<Ts...>& tup, int64 idx) {
     constexpr int64 N = static_cast<int64>(sizeof...(Ts));

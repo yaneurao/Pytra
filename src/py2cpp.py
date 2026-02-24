@@ -506,6 +506,7 @@ class CppEmitter(CodeEmitter):
         self.ref_classes: set[str] = set()
         self.value_classes: set[str] = set()
         self.class_field_owner_unique: dict[str, str] = {}
+        self.class_method_owner_unique: dict[str, str] = {}
         self.type_map: dict[str, str] = load_cpp_type_map(self.profile)
         if self.int_width == "32":
             self.type_map["int64"] = "int32"
@@ -1059,6 +1060,26 @@ class CppEmitter(CodeEmitter):
             if len(owners) == 1:
                 for owner in owners:
                     self.class_field_owner_unique[attr] = owner
+        method_owner_candidates: dict[str, set[str]] = {}
+        for cls_name, method_names in self.class_method_names.items():
+            if cls_name not in self.ref_classes:
+                continue
+            for raw_method in method_names:
+                if not isinstance(raw_method, str):
+                    continue
+                method = raw_method
+                if method == "":
+                    continue
+                cur = method_owner_candidates.get(method)
+                if not isinstance(cur, set):
+                    cur = set()
+                    method_owner_candidates[method] = cur
+                cur.add(cls_name)
+        self.class_method_owner_unique = {}
+        for method, owners in method_owner_candidates.items():
+            if len(owners) == 1:
+                for owner in owners:
+                    self.class_method_owner_unique[method] = owner
 
         self.emit_module_leading_trivia()
         header_text: str = CPP_HEADER
@@ -6361,9 +6382,9 @@ class CppEmitter(CodeEmitter):
         if val_ty.startswith("dict["):
             idx = self._coerce_dict_key_expr(expr.get("value"), idx, sl)
             return f"py_dict_get({val}, {idx})"
-        if (val_ty in {"", "unknown"} or self.is_any_like_type(val_ty)) and idx_is_str_key:
-            return f"py_dict_get({val}, {idx})"
-        if (val_ty in {"", "unknown"} or self.is_any_like_type(val_ty)) and idx_is_int:
+        if val_ty in {"", "unknown"} or self.is_any_like_type(val_ty):
+            if idx_is_str_key:
+                return f"py_dict_get({val}, {idx})"
             return f"py_at({val}, py_to_int64({idx}))"
         if val_ty.startswith("tuple[") and val_ty.endswith("]"):
             parts = self.split_generic(val_ty[6:-1])
@@ -6481,6 +6502,13 @@ class CppEmitter(CodeEmitter):
             if owner_cls != "" and owner_cls in self.ref_classes:
                 ctx = f"{owner_cls}.{attr}"
                 return f"obj_to_rc_or_raise<{owner_cls}>({base}, \"{ctx}\")->{attr}"
+            owner_m_cls = self.class_method_owner_unique.get(attr, "")
+            if owner_m_cls != "" and owner_m_cls in self.ref_classes:
+                ctx = f"{owner_m_cls}.{attr}"
+                base_obj = base
+                if not self.is_boxed_object_expr(base_obj):
+                    base_obj = f"make_object({base_obj})"
+                return f"obj_to_rc_or_raise<{owner_m_cls}>({base_obj}, \"{ctx}\")->{attr}"
         if bt in self.ref_classes:
             return f"{base}->{attr}"
         return f"{base}.{attr}"
