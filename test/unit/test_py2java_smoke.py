@@ -53,6 +53,13 @@ class Py2JavaSmokeTest(unittest.TestCase):
             java = transpile_to_java(loaded)
         self.assertIn("public final class Main", java)
 
+    def test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape(self) -> None:
+        fixture = find_fixture_case("for_range")
+        loaded = load_east(fixture, parser_backend="self_hosted")
+        self.assertIsInstance(loaded, dict)
+        self.assertEqual(loaded.get("kind"), "Module")
+        self.assertEqual(loaded.get("east_stage"), 2)
+
     def test_cli_smoke_generates_java_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
@@ -73,6 +80,24 @@ class Py2JavaSmokeTest(unittest.TestCase):
             txt = out_java.read_text(encoding="utf-8")
             self.assertIn("public final class Main", txt)
 
+    def test_cli_warns_when_stage2_compat_mode_is_selected(self) -> None:
+        fixture = find_fixture_case("if_else")
+        with tempfile.TemporaryDirectory() as td:
+            out_java = Path(td) / "if_else.java"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2java.py", str(fixture), "-o", str(out_java), "--east-stage", "2"],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertIn("warning: --east-stage 2 is compatibility mode; default is 3.", proc.stderr)
+
     def test_py2java_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2java.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
@@ -81,4 +106,3 @@ class Py2JavaSmokeTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
