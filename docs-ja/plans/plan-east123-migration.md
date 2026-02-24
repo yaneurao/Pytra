@@ -8,6 +8,7 @@
 - `docs-ja/todo/index.md` の `ID: P0-EASTMIG-03`
 - `docs-ja/todo/index.md` の `ID: P0-EASTMIG-04`
 - `docs-ja/todo/index.md` の `ID: P0-EASTMIG-05`
+- `docs-ja/todo/index.md` の `ID: P0-EASTMIG-06`
 
 背景:
 - 現状は `EAST1/EAST2/EAST3` の責務がファイル上で見えにくく、`transpile_cli.py` に集約されている。
@@ -74,6 +75,13 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 3. `P0-EASTMIG-03`: `py2cpp.py` を `EAST3` 主経路化し、`EAST2` 再判断ロジックを段階縮退する。
 4. `P0-EASTMIG-04`: hooks を `EAST3` 前提で棚卸しし、意味論 hook の流入を禁止する。
 5. `P0-EASTMIG-05`: `--east-stage 3` 主経路の回帰導線を標準化し、`EAST2` 互換を移行モードへ格下げする。
+6. `P0-EASTMIG-06`: 全変換器で `EAST3` を主経路へ統一し、`EAST2` 既定経路を撤去する。
+
+## P0-EASTMIG-06 再オープン理由
+
+- `P0-EASTMIG-05` で方針（`EAST3` 主経路化）を確定したが、実装は部分的に `EAST2` 既定が残っている。
+- 具体的には、`py2cpp.py` の既定 `--east-stage` はまだ `2`、非 C++ 変換器は `load_east_document_compat`（EAST2 互換）経路が主流である。
+- そのため、未完了分を `P0-EASTMIG-06` として再オープンし、「全変換器で EAST3 を既定主経路化」までを完了条件に置く。
 
 実行メモ:
 - `EAST3 lower` は `EAST2 -> EAST3` 変換のことを指す。
@@ -110,3 +118,4 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - 2026-02-24: `P0-EASTMIG-05-S1` として `test/unit/test_east3_lowering.py` / `test/unit/test_east3_cpp_bridge.py` を拡充し、既存 `ForCore` 入力に対しても `RuntimeIterForPlan.dispatch_mode` を `object_dispatch_mode` へ正規化する契約を追加した（lowering 19件 / bridge 72件とも通過）。
 - 2026-02-24: `P0-EASTMIG-05-S2` として `check_py2{cpp,js,ts}_transpile` + `check_selfhost_cpp_diff --mode allow-not-implemented` を `EAST3` 主経路の標準回帰導線として固定し、実測結果（各 `checked=131 fail=0`、`mismatches=0`）を確認した。
 - 2026-02-24: P0-EASTMIG-05-S3 として `--east-stage 2` を移行互換モードに位置づける縮退手順（互換維持 -> 警告 -> 撤去判定）を plan/spec に固定し、P0-EASTMIG-05 をクローズ。
+- 2026-02-24: `P0-EASTMIG-06` を再オープンした。`py2cpp.py` の既定 stage と非 C++ 変換器の `EAST2` 既定経路が残存しており、全変換器での `EAST3` 主経路統一が未完了のため。
