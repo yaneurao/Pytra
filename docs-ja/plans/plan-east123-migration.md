@@ -79,6 +79,15 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
    - `P0-EASTMIG-06-S1`: 全 `py2*.py` の `EAST2` 既定経路を棚卸しする。
    - `P0-EASTMIG-06-S2`: `py2cpp.py` の既定 `--east-stage` を `3` へ切替える。
    - `P0-EASTMIG-06-S3`: 非 C++ 変換器へ `EAST3` 主経路を導入する。
+     - `P0-EASTMIG-06-S3-S1`: `py2rs.py` の既定経路を `EAST3` 主経路へ切替。
+     - `P0-EASTMIG-06-S3-S2`: `py2cs.py` の既定経路を `EAST3` 主経路へ切替。
+     - `P0-EASTMIG-06-S3-S3`: `py2js.py` の既定経路を `EAST3` 主経路へ切替。
+     - `P0-EASTMIG-06-S3-S4`: `py2ts.py` の既定経路を `EAST3` 主経路へ切替。
+     - `P0-EASTMIG-06-S3-S5`: `py2go.py` の既定経路を `EAST3` 主経路へ切替。
+     - `P0-EASTMIG-06-S3-S6`: `py2java.py` の既定経路を `EAST3` 主経路へ切替。
+     - `P0-EASTMIG-06-S3-S7`: `py2kotlin.py` の既定経路を `EAST3` 主経路へ切替。
+     - `P0-EASTMIG-06-S3-S8`: `py2swift.py` の既定経路を `EAST3` 主経路へ切替。
+     - `P0-EASTMIG-06-S3-S9`: 非 C++ 8変換器の既定値・警告文言・回帰導線を統一。
    - `P0-EASTMIG-06-S4`: `EAST3` 主経路を回帰導線の既定へ固定する。
    - `P0-EASTMIG-06-S5`: `spec-east` / `spec-dev` の記述を同期する。
    - `P0-EASTMIG-06-S6`: `EAST1` build 責務境界を `docs-ja/spec/spec-east.md#east1-build-boundary` へ正式化する。
@@ -126,5 +135,6 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - 2026-02-24: `P0-EASTMIG-05-S2` として `check_py2{cpp,js,ts}_transpile` + `check_selfhost_cpp_diff --mode allow-not-implemented` を `EAST3` 主経路の標準回帰導線として固定し、実測結果（各 `checked=131 fail=0`、`mismatches=0`）を確認した。
 - 2026-02-24: P0-EASTMIG-05-S3 として `--east-stage 2` を移行互換モードに位置づける縮退手順（互換維持 -> 警告 -> 撤去判定）を plan/spec に固定し、P0-EASTMIG-05 をクローズ。
 - 2026-02-24: `P0-EASTMIG-06` を再オープンした。`py2cpp.py` の既定 stage と非 C++ 変換器の `EAST2` 既定経路が残存しており、全変換器での `EAST3` 主経路統一が未完了のため。
+- 2026-02-24: `P0-EASTMIG-06-S3` の粒度が大きいため、非 C++ 8変換器を `P0-EASTMIG-06-S3-S1` から `P0-EASTMIG-06-S3-S8` へ分割し、最後に `S3-S9` で既定値/警告文言/回帰導線の統一を固定する構成へ更新した。
 - 2026-02-24: `P0-EASTMIG-06-S6` として `docs-ja/spec/spec-east.md#east1-build-boundary` を追加し、`east1_build.py` 分離仕様（`load_east_document_compat` エラー契約互換、selfhost diff 実行、`EAST1` build での `EAST2` 非変換）を受け入れ基準へ固定した。
 - 2026-02-24: `east_parts/human.py` を `render_human_east2_cpp.py` へ改名し、`P0-EASTMIG-06-S7`（低優先）として `render_human_east3_cpp.py` 追加タスクを `todo`/plan に登録した。
