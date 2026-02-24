@@ -3,8 +3,8 @@
 最終更新: 2026-02-23
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P0-SH-04`（`P0-SH-04-S1` 〜 `P0-SH-04-S3`）
-- `docs-ja/todo.md` の `ID: P0-SH-05`
+- `docs-ja/todo/index.md` の `ID: P0-SH-04`（`P0-SH-04-S1` 〜 `P0-SH-04-S3`）
+- `docs-ja/todo/index.md` の `ID: P0-SH-05`
 
 背景:
 - selfhost の変換・ビルド・実行が不安定だと、回帰検出と改善サイクル全体が止まる。
@@ -82,7 +82,7 @@
 - 2026-02-23: `build_cpp_hooks` の selfhost 専用スタブ関数を削除し、`_patch_load_cpp_hooks_for_selfhost` を追加して `load_cpp_hooks(...)` 本体を selfhost 生成時だけ `return {}` へ置換する方式に変更した。`test/unit/test_prepare_selfhost_source.py` に `load_cpp_hooks` 置換の正常系/異常系テストを追加し、`python3 test/unit/test_prepare_selfhost_source.py`（5件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
 - 2026-02-23: `tools/prepare_selfhost_source.py::_remove_import_line` を fail-fast 化し、`CodeEmitter`/`transpile_cli`/`build_cpp_hooks` の import 行が見つからない場合に `RuntimeError` を送出するよう変更した。`test/unit/test_prepare_selfhost_source.py` に import 除去の正常系/異常系テストを追加し、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
 - 2026-02-23: `_patch_load_cpp_hooks_for_selfhost` の置換境界を縮小し、`load_cpp_hooks(...)` 関数ブロック全体の差し替えを廃止して `hooks = build_cpp_hooks()` の1行だけを `hooks = {}` へ置換する方式へ変更した。`test/unit/test_prepare_selfhost_source.py` の `load_cpp_hooks` 置換テストを更新し、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/build_selfhost.py`（成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（`mismatches=3` 維持）を確認した。
-- 2026-02-23: docs-ja/todo.md の P0-SH-04 を -S1 〜 -S3 に分割したため、本 plan の関連 TODO と実行順を同粒度に同期した。
+- 2026-02-23: docs-ja/todo/index.md の P0-SH-04 を -S1 〜 -S3 に分割したため、本 plan の関連 TODO と実行順を同粒度に同期した。
 - 2026-02-23: `P0-SH-04-S1` を完了。`tools/prepare_selfhost_source.py` の残存 selfhost 専用パッチを棚卸しし、`_patch_code_emitter_hooks_for_selfhost` / `_patch_load_cpp_hooks_for_selfhost` を恒久機能化対象、`build_cpp_hooks` import 除去分岐を削除対象、`_extract_support_blocks` 系を維持対象に分類した。
 - 2026-02-23: `P0-SH-04-S2` を `S2-S1` 〜 `S2-S3` に分割した。先行して `S2-S1` を完了し、`src/pytra/compiler/east_parts/code_emitter.py` に `dynamic_hooks_enabled` と `set_dynamic_hooks_enabled()` を追加して、dynamic hooks 無効化を prepare 固有置換ではなく本体機能として表現できる土台を導入した。`python3 test/unit/test_code_emitter.py`（34件成功）、`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）、`python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。
 - 2026-02-23: `P0-SH-04-S2-S2` を完了。`tools/prepare_selfhost_source.py::_patch_code_emitter_hooks_for_selfhost` を `_call_hook` 本体の `return fn(...)` 置換方式から、`CppEmitter.__init__` へ `self.set_dynamic_hooks_enabled(False)` を注入する方式へ変更した。これにより hook 無効化の責務を `CodeEmitter` 本体へ寄せ、prepare 側のパッチ境界を 1 箇所へ縮小した。`python3 test/unit/test_prepare_selfhost_source.py`（7件成功）と `python3 test/unit/test_code_emitter.py`（34件成功）で回帰なしを確認した。

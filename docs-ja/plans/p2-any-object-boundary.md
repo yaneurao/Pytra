@@ -3,7 +3,7 @@
 最終更新: 2026-02-22
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P2-ANY-01` 〜 `P2-ANY-07`
+- `docs-ja/todo/index.md` の `ID: P2-ANY-01` 〜 `P2-ANY-07`
 
 背景:
 - `Any/object` 境界が曖昧だと、過剰 boxing や型崩れで selfhost・生成コード双方の品質が落ちる。

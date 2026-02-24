@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P1-MQ-01` to `P1-MQ-08`
+- `docs-ja/todo/index.md` `ID: P1-MQ-01` to `P1-MQ-08`
 
 Background:
 - Compared with `sample/cpp/`, generated code in `sample/rs` and other languages (`cs/js/ts/go/java/swift/kotlin`) shows notable readability regressions.

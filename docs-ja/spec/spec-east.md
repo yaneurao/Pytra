@@ -311,7 +311,7 @@
 - Phase 3: AST 直読み経路を廃止し、EAST を唯一の中間表現として運用する。
 
 補足:
-- 各フェーズの進行管理は `docs-ja/todo.md` で行う。
+- 各フェーズの進行管理は `docs-ja/todo/index.md` で行う。
 - 詳細な実装分担（emitter/profile/hooks）は `docs-ja/spec/spec-dev.md` に従う。
 
 ## 17. EAST導入の受け入れ基準

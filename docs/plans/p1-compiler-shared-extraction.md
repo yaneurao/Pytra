@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P1-COMP-01` to `P1-COMP-08`
+- `docs-ja/todo/index.md` `ID: P1-COMP-01` to `P1-COMP-08`
 
 Background:
 - Cross-language logic such as import-graph analysis and module-index construction is concentrated in `py2cpp.py`.

@@ -13,12 +13,12 @@ ALLOWED_EXACT: set[str] = {
     "how-to-use.md",
     "news/index.md",
     "spec/index.md",
-    "todo.md",
-    "todo-history/index.md",
+    "todo/index.md",
+    "todo/archive/index.md",
 }
 
 ALLOWED_REGEX: tuple[re.Pattern[str], ...] = (
-    re.compile(r"^todo-history/[0-9]{8}\.md$"),
+    re.compile(r"^todo/archive/[0-9]{8}\.md$"),
     re.compile(r"^plans/.+\.md$"),
     re.compile(r"^language/.+\.md$"),
     re.compile(r"^spec/spec-(boxing|codex|dev|east|east123|east123-migration|gc|import|iterable|language-profile|linker|options|runtime|tools|type_id|user|pylib-modules|sample-code|philosophy|make|template)\.md$"),

@@ -3,10 +3,10 @@
 最終更新: 2026-02-24
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P1-CPP-REDUCE-01` 〜 `P1-CPP-REDUCE-02`
-- `docs-ja/todo.md` の `ID: P1-CPP-REDUCE-01-S1` 〜 `P1-CPP-REDUCE-01-S3`
-- `docs-ja/todo.md` の `ID: P1-CPP-REDUCE-01-S3-S1` 〜 `P1-CPP-REDUCE-01-S3-S3`
-- `docs-ja/todo.md` の `ID: P1-CPP-REDUCE-02-S1` 〜 `P1-CPP-REDUCE-02-S3`
+- `docs-ja/todo/index.md` の `ID: P1-CPP-REDUCE-01` 〜 `P1-CPP-REDUCE-02`
+- `docs-ja/todo/index.md` の `ID: P1-CPP-REDUCE-01-S1` 〜 `P1-CPP-REDUCE-01-S3`
+- `docs-ja/todo/index.md` の `ID: P1-CPP-REDUCE-01-S3-S1` 〜 `P1-CPP-REDUCE-01-S3-S3`
+- `docs-ja/todo/index.md` の `ID: P1-CPP-REDUCE-02-S1` 〜 `P1-CPP-REDUCE-02-S3`
 
 背景:
 - `py2cpp.py` の肥大化により、変更影響範囲が広くレビュー・回帰確認コストが高い。
@@ -71,7 +71,7 @@
 決定ログ:
 - 2026-02-22: 初版作成。
 - 2026-02-23: 全言語 selfhost の長期目標に合わせ、`py2cpp.py` への汎用 helper 追加を抑制して共通層先行抽出へ寄せる方針（`P1-CPP-REDUCE-02`）を追加した。
-- 2026-02-23: docs-ja/todo.md の P1-CPP-REDUCE-01/02 を -S* 子タスクへ分割したため、本 plan に同粒度の実行順を追記した。
+- 2026-02-23: docs-ja/todo/index.md の P1-CPP-REDUCE-01/02 を -S* 子タスクへ分割したため、本 plan に同粒度の実行順を追記した。
 - 2026-02-24: [ID: P1-CPP-REDUCE-01-S1] `py2cpp.py` を「言語非依存（A群）」と「C++固有（C群）」へ分類し、移管順（A1/A3 -> A4/A6 -> A7 -> C群固定）を確定した。以後 `P1-CPP-REDUCE-01-S2` は A群のみを対象に進め、C群は境界維持を前提とする。
 - 2026-02-24: [ID: P1-CPP-REDUCE-01-S2] `fallback_tuple_target_names_from_repr` / `target_bound_names` を `CodeEmitter` へ移管し、`py2cpp.py` 側の同名 helper を削除した。`test/unit/test_code_emitter.py` に回帰テストを追加し、`check_py2cpp_transpile` / `check_selfhost_cpp_diff --mode allow-not-implemented` で差分ゼロを確認。
 - 2026-02-24: [ID: P1-CPP-REDUCE-01-S3-S1] `_emit_for_each_runtime` 内の Name ターゲット束縛分岐（`omit_braces` 有無で重複）を `_emit_for_each_runtime_target_bind` へ抽出し、重複分岐を削減した。`check_py2cpp_transpile` / `check_selfhost_cpp_diff --mode allow-not-implemented` で回帰なしを確認した。

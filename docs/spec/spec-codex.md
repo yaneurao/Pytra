@@ -8,8 +8,8 @@ This document defines operation rules that Codex follows while working.
 
 ## 1. Startup Checks
 
-- At Codex startup, first check `docs-ja/spec/index.md` and `docs-ja/todo.md`.
-- From unfinished (`[ ]`) items in `docs-ja/todo.md`, include tasks aligned with the current request as work targets.
+- At Codex startup, first check `docs-ja/spec/index.md` and `docs-ja/todo/index.md`.
+- From unfinished (`[ ]`) items in `docs-ja/todo/index.md`, include tasks aligned with the current request as work targets.
 
 ## 1.1 Documentation Language Policy
 
@@ -20,8 +20,8 @@ This document defines operation rules that Codex follows while working.
 
 ## 2. TODO Execution Rules
 
-- Treat `docs-ja/todo.md` as a continuous backlog.
-- Keep only unfinished tasks in `docs-ja/todo.md`. When a section is fully complete (all items `[x]`), move it to `docs-ja/todo-history/index.md` (index) and `docs-ja/todo-history/YYYYMMDD.md` (body).
+- Treat `docs-ja/todo/index.md` as a continuous backlog.
+- Keep only unfinished tasks in `docs-ja/todo/index.md`. When a section is fully complete (all items `[x]`), move it to `docs-ja/todo/archive/index.md` (index) and `docs-ja/todo/archive/YYYYMMDD.md` (body).
 - For priority override, do not use `docs-ja/todo2.md`; provide `target IDs`, `done criteria`, and `out of scope` in chat instruction (template: `docs-ja/plans/instruction-template.md`).
 - Execute unfinished items sequentially in priority order.
 - Update check status when tasks are completed.

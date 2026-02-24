@@ -17,7 +17,7 @@
 - `tools/run_local_ci.py`
   - 目的: ローカル最小 CI（version gate + todo 優先度ガード + runtime 層分離ガード + 条件付き sample 再生成 + transpile 回帰 + unit + selfhost build + diff）を一括実行する。
 - `tools/check_todo_priority.py`
-  - 目的: `docs-ja/todo.md` / `docs-ja/plans/*.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID`（またはその子 `ID`）と一致するかを検証し、優先度逸脱を防止する。`plans` 側は `決定ログ`（`- YYYY-MM-DD: ...`）行のみを進捗判定対象にし、構造整理の ID 列挙は対象外とする。
+  - 目的: `docs-ja/todo/index.md` / `docs-ja/plans/*.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID`（またはその子 `ID`）と一致するかを検証し、優先度逸脱を防止する。`plans` 側は `決定ログ`（`- YYYY-MM-DD: ...`）行のみを進捗判定対象にし、構造整理の ID 列挙は対象外とする。
 - `tools/check_runtime_cpp_layout.py`
   - 目的: `src/runtime/cpp/pytra-gen/` は `AUTO-GENERATED` マーカー必須、`src/runtime/cpp/pytra-core/` は同マーカー禁止という責務分離ルールを検証する。
 - `tools/check_py2cpp_transpile.py`
@@ -55,7 +55,7 @@
 - `tools/run_regen_on_version_bump.py`
   - 目的: `transpiler_versions.json` の minor 以上の更新を検出したときだけ `regenerate_samples.py` を起動し、影響言語のみ再生成する。
 - `tools/sync_todo_history_translation.py`
-  - 目的: `docs-ja/todo-history` を正本として `docs/todo-history` の日付ファイル雛形と index を同期し、`--check` で同期漏れを検出する。
+  - 目的: `docs-ja/todo/archive` を正本として `docs/todo/archive` の日付ファイル雛形と index を同期し、`--check` で同期漏れを検出する。
 - `tools/verify_sample_outputs.py`
   - 目的: `sample/golden/manifest.json` のゴールデン基準と C++ 実行結果（stdout/生成物）を比較し、通常検証で Python 実行を省略する。
   - 主要オプション: `--samples`, `--compile-flags`, `--ignore-stdout`, `--golden-manifest`, `--refresh-golden`, `--refresh-golden-only`

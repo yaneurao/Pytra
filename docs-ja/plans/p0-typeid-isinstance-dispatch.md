@@ -4,8 +4,8 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
 
 ## 関連 TODO
 
-- `docs-ja/todo.md` の `ID: P0-TID-01`（`P0-TID-01-S1` 〜 `P0-TID-01-S4`）
-- `docs-ja/todo.md` の `ID: P0-TID-02`（`P0-TID-02-S1` 〜 `P0-TID-02-S4`）
+- `docs-ja/todo/index.md` の `ID: P0-TID-01`（`P0-TID-01-S1` 〜 `P0-TID-01-S4`）
+- `docs-ja/todo/index.md` の `ID: P0-TID-02`（`P0-TID-02-S1` 〜 `P0-TID-02-S4`）
 
 ## 背景
 
@@ -76,7 +76,7 @@ ID: `TG-P0-TYPEID-ISINSTANCE`
 - 2026-02-23: `hooks/cs` / `hooks/rs` の `isinstance(..., object)` を追加実装した。C# は `(x is object)`、Rust は `true` へ lower し、target 間で `object` 判定の意味を揃えた。`test/unit/test_py2cs_smoke.py` / `test/unit/test_py2rs_smoke.py` に回帰を追加し、`python3 tools/check_py2cs_transpile.py` / `python3 tools/check_py2rs_transpile.py`（ともに `checked=129 ok=129 fail=0 skipped=6`）で回帰なしを確認した。
 - 2026-02-23: `hooks/cs` / `hooks/rs` の tuple 指定 `isinstance(x, (T1, T2, ...))` lower を回帰テストで固定した。C# は OR 連結された `is` 判定（`int/Base/dict/object`）を、Rust は `Any` に対する `matches!` OR 連結（`Int`/`Dict`）を検証するテストを追加し、`python3 test/unit/test_py2cs_smoke.py`（9件成功）、`python3 test/unit/test_py2rs_smoke.py`（16件成功）、`python3 tools/check_py2cs_transpile.py` / `python3 tools/check_py2rs_transpile.py`（ともに `checked=129 ok=129 fail=0 skipped=6`）で回帰なしを確認した。
 - 2026-02-23: `hooks/cs` / `hooks/rs` の `isinstance(x, set)` lower を追加した。C# は `System.Collections.ISet` への `is` 判定へ、Rust は `Any` 経路で `matches!(x, PyAny::Set(_))` へ lower する。Rust `PyAny` には `Set(Vec<PyAny>)` variant と helper（truthy/string）分岐を追加し、`test/unit/test_py2cs_smoke.py` / `test/unit/test_py2rs_smoke.py` の set 回帰、`python3 tools/check_py2cs_transpile.py` / `python3 tools/check_py2rs_transpile.py`（ともに `checked=129 ok=129 fail=0 skipped=6`）で回帰なしを確認した。
-- 2026-02-23: docs-ja/todo.md の P0-TID-01 / P0-TID-02 を -S* 子タスクへ分割したため、本 plan に同一粒度の実行順を追記した。
+- 2026-02-23: docs-ja/todo/index.md の P0-TID-01 / P0-TID-02 を -S* 子タスクへ分割したため、本 plan に同一粒度の実行順を追記した。
 - 2026-02-23: `P0-TID-01-S1` として `docs-ja/spec/spec-type_id.md` / `docs-ja/spec/spec-boxing.md` / `docs-ja/spec/spec-iterable.md` を整合し、`--object-dispatch-mode` の一括切替対象（`isinstance`・boxing・iterable・`bool/len/str`）と `py_is_subtype` / `py_isinstance` / `py_issubclass` 契約を統一明文化した。
 - 2026-02-23: `P0-TID-01-S2` を完了。C++ runtime（`src/runtime/cpp/pytra-core/built_in/py_runtime.h`）の `py_is_subtype` / `py_issubclass` / `py_isinstance` 実装と `py2cpp` lower 経路の統一を確認し、`python3 test/unit/test_py2cpp_codegen_issues.py`（41件成功）で回帰なしを確認した。
 - 2026-02-23: `P0-TID-01-S3` を完了。JS/TS runtime の `pyIsSubtype` / `pyIsInstance` と class `type_id` 登録（`pyRegisterClassType`）運用を確認し、`python3 test/unit/test_js_ts_runtime_dispatch.py`（3件成功）、`python3 test/unit/test_py2js_smoke.py`（10件成功）、`python3 test/unit/test_py2ts_smoke.py`（8件成功）で回帰なしを確認した。

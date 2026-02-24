@@ -3,11 +3,11 @@
 最終更新: 2026-02-24
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P0-RUNTIME-SEP-01`（`P0-RUNTIME-SEP-01-S1` 〜 `P0-RUNTIME-SEP-01-S5`）
-- `docs-ja/todo.md` の `ID: P1-RUNTIME-01`（`P1-RUNTIME-01-S1` 〜 `P1-RUNTIME-01-S3`）
-- `docs-ja/todo.md` の `ID: P1-RUNTIME-02`（`P1-RUNTIME-02-S1` 〜 `P1-RUNTIME-02-S2`）
-- `docs-ja/todo.md` の `ID: P1-RUNTIME-03`（`P1-RUNTIME-03-S1` 〜 `P1-RUNTIME-03-S2`）
-- `docs-ja/todo.md` の `ID: P1-RUNTIME-05`（`P1-RUNTIME-05-S1` 〜 `P1-RUNTIME-05-S3`）
+- `docs-ja/todo/index.md` の `ID: P0-RUNTIME-SEP-01`（`P0-RUNTIME-SEP-01-S1` 〜 `P0-RUNTIME-SEP-01-S5`）
+- `docs-ja/todo/index.md` の `ID: P1-RUNTIME-01`（`P1-RUNTIME-01-S1` 〜 `P1-RUNTIME-01-S3`）
+- `docs-ja/todo/index.md` の `ID: P1-RUNTIME-02`（`P1-RUNTIME-02-S1` 〜 `P1-RUNTIME-02-S2`）
+- `docs-ja/todo/index.md` の `ID: P1-RUNTIME-03`（`P1-RUNTIME-03-S1` 〜 `P1-RUNTIME-03-S2`）
+- `docs-ja/todo/index.md` の `ID: P1-RUNTIME-05`（`P1-RUNTIME-05-S1` 〜 `P1-RUNTIME-05-S3`）
 
 背景:
 - 言語ごとに runtime 配置規約が分断され、保守責務と探索規則が揺れている。
@@ -139,13 +139,13 @@
 1. 新規 runtime 実装（`py_runtime.*`, `pathlib.*`, `png/gif helper` など）は `src/runtime/<lang>/pytra/` 配下にのみ追加する。
 2. `src/*_module/` 直下は互換レイヤ専用とし、新規実体ファイルは追加しない。
 3. 互換レイヤは「移行完了後に削除する前提」の暫定資産として扱い、`todo` に撤去タスクを必ず紐付ける。
-4. 例外追加が必要な場合は、同一ターンで `docs-ja/todo.md` に理由と撤去期限を記録する。
+4. 例外追加が必要な場合は、同一ターンで `docs-ja/todo/index.md` に理由と撤去期限を記録する。
 
 決定ログ:
 - 2026-02-22: 初版作成。
 - 2026-02-22: Rust 以外（C#/JS/TS/Go/Java/Swift/Kotlin）の `src/*_module/` -> `src/runtime/<lang>/pytra/` 移行計画（資産マップ + 段階手順）を追加。
 - 2026-02-22: `src/*_module/` 直下に新規 runtime 実体を追加しない運用ルールを明文化。
-- 2026-02-23: docs-ja/todo.md の親子 ID 分割（-S*）へ同期し、P0-RUNTIME-SEP-01 を含む実行順を明示した。
+- 2026-02-23: docs-ja/todo/index.md の親子 ID 分割（-S*）へ同期し、P0-RUNTIME-SEP-01 を含む実行順を明示した。
 - 2026-02-23: `P0-RUNTIME-SEP-01-S1` を実施し、`src/runtime/cpp/pytra/` 全57ファイルの分類台帳を `docs-ja/plans/p1-runtime-layout-unification-inventory.md` として追加した（`generated=38`, `handwritten=19`, `entry_forwarder=0`）。
 - 2026-02-23: `P0-RUNTIME-SEP-01-S2` を実施し、`src/runtime/cpp/pytra-gen/` と `src/runtime/cpp/pytra-core/` を新設した。両ディレクトリに `README.md` を配置し、責務境界（生成専用/手書き専用）と禁止事項を固定した。
 - 2026-02-23: `P0-RUNTIME-SEP-01-S3` を実施し、生成物38ファイルを `src/runtime/cpp/pytra-gen/` へ移動した。`src/runtime/cpp/pytra/` 側には同名フォワーダー（`.h/.cpp`）を配置して既存ビルド参照を互換維持した。合わせて `src/py2cpp.py --emit-runtime-cpp` は `pytra-gen` へ出力し、`pytra/` 側フォワーダーを自動更新するよう変更した。

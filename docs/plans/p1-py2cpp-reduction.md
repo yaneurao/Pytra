@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P1-CPP-REDUCE-01`
+- `docs-ja/todo/index.md` `ID: P1-CPP-REDUCE-01`
 
 Background:
 - As `py2cpp.py` grows larger, change impact broadens and review/regression validation cost increases.

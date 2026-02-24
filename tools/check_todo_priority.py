@@ -2,13 +2,13 @@
 """Enforce TODO execution order by checking newly added progress IDs.
 
 Rule:
-- Read docs-ja/todo.md and find the first unfinished task ID in the highest
+- Read docs-ja/todo/index.md and find the first unfinished task ID in the highest
   priority bucket (smallest P<number>).
-- Read newly added progress IDs from git diff of docs-ja/todo.md and
+- Read net-new progress IDs from git diff of docs-ja/todo/index.md and
   docs-ja/plans/*.md.
 - For plans, only decision-log style lines ("- YYYY-MM-DD: ...") are treated
   as progress entries; structural ID references are ignored.
-- Every newly added progress ID must match that target ID, or be a child ID
+- Every net-new progress ID must match that target ID, or be a child ID
   that starts with "<target>-".
 """
 
@@ -21,7 +21,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TODO_PATH = ROOT / "docs-ja" / "todo.md"
+TODO_PATH = ROOT / "docs-ja" / "todo" / "index.md"
 PLANS_DIR = ROOT / "docs-ja" / "plans"
 
 TASK_RE = re.compile(r"^\s*\d+\.\s+\[( |x)\]\s+\[ID:\s*([A-Za-z0-9-]+)\]")
@@ -58,6 +58,18 @@ def _highest_unfinished_id(lines: list[str]) -> str | None:
     return best_id
 
 
+def _extract_progress_ids_from_line(*, line: str, is_todo_file: bool) -> list[str]:
+    if is_todo_file:
+        m = TODO_PROGRESS_RE.match(line)
+        if m is None:
+            return []
+        return [m.group(1)]
+
+    if PLAN_PROGRESS_LINE_RE.match(line) is None:
+        return []
+    return [m.group(1) for m in PLAN_ID_TOKEN_RE.finditer(line)]
+
+
 def _added_progress_ids_from_diff() -> list[str]:
     rel_todo = TODO_PATH.relative_to(ROOT).as_posix()
     rel_plans = PLANS_DIR.relative_to(ROOT).as_posix()
@@ -66,26 +78,39 @@ def _added_progress_ids_from_diff() -> list[str]:
     if p.returncode != 0:
         return []
 
-    out_ids: list[str] = []
+    added_seq: list[str] = []
+    removed_counts: dict[str, int] = {}
     current_path = ""
     for raw in p.stdout.splitlines():
-        if raw.startswith("+++ b/"):
+        if raw.startswith("+++ b/") or raw.startswith("--- a/"):
             current_path = raw[6:]
             continue
-        if not raw.startswith("+") or raw.startswith("+++"):
+        is_added = raw.startswith("+") and not raw.startswith("+++")
+        is_removed = raw.startswith("-") and not raw.startswith("---")
+        if not is_added and not is_removed:
+            continue
+        is_todo_file = current_path == rel_todo
+        is_plan_file = current_path.startswith(rel_plans + "/")
+        if not is_todo_file and not is_plan_file:
             continue
         line = raw[1:]
-        if current_path == rel_todo:
-            m = TODO_PROGRESS_RE.match(line)
-            if m is not None:
-                out_ids.append(m.group(1))
+        ids = _extract_progress_ids_from_line(line=line, is_todo_file=is_todo_file)
+        if not ids:
             continue
-        if current_path.startswith(rel_plans + "/"):
-            if PLAN_PROGRESS_LINE_RE.match(line) is None:
-                continue
-            for m in PLAN_ID_TOKEN_RE.finditer(line):
-                out_ids.append(m.group(1))
-    return out_ids
+        if is_added:
+            added_seq.extend(ids)
+            continue
+        for pid in ids:
+            removed_counts[pid] = removed_counts.get(pid, 0) + 1
+
+    net_new: list[str] = []
+    for pid in added_seq:
+        remain = removed_counts.get(pid, 0)
+        if remain > 0:
+            removed_counts[pid] = remain - 1
+            continue
+        net_new.append(pid)
+    return net_new
 
 
 def _is_allowed_progress_id(target_id: str, progress_id: str) -> bool:
@@ -105,7 +130,7 @@ def main() -> int:
 
     added_ids = _added_progress_ids_from_diff()
     if not added_ids:
-        print("[OK] no new progress entry in docs-ja/todo.md diff (skip)")
+        print("[OK] no new progress entry in docs-ja/todo/index.md diff (skip)")
         return 0
 
     mismatched: list[str] = []

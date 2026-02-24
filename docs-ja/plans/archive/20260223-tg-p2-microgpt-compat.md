@@ -3,10 +3,10 @@
 最終更新: 2026-02-22
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P2-MGPT-01`
-- `docs-ja/todo.md` の `ID: P2-MGPT-02`
-- `docs-ja/todo.md` の `ID: P2-MGPT-03`
-- `docs-ja/todo.md` の `ID: P2-MGPT-04`
+- `docs-ja/todo/index.md` の `ID: P2-MGPT-01`
+- `docs-ja/todo/index.md` の `ID: P2-MGPT-02`
+- `docs-ja/todo/index.md` の `ID: P2-MGPT-03`
+- `docs-ja/todo/index.md` の `ID: P2-MGPT-04`
 
 背景:
 - `work/tmp/microgpt-20260222-lite.py` を `python3 src/py2cpp.py ...` で変換すると、self_hosted parser が型注釈なし引数を受理できず停止する。

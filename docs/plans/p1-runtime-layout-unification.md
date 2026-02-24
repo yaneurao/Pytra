@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P1-RUNTIME-01` to `P1-RUNTIME-06`
+- `docs-ja/todo/index.md` `ID: P1-RUNTIME-01` to `P1-RUNTIME-06`
 
 Background:
 - Runtime placement conventions are fragmented by language, blurring maintenance responsibilities and lookup rules.
@@ -55,7 +55,7 @@ Validation commands:
 1. Add new runtime implementations (`py_runtime.*`, `pathlib.*`, `png/gif helper`, etc.) only under `src/runtime/<lang>/pytra/`.
 2. Treat `src/*_module/` as compatibility layers only; do not add new runtime body files there.
 3. Treat compatibility layers as temporary assets intended for removal after migration, and always link them to removal tasks in TODO.
-4. If exceptions are required, record reason and planned removal deadline in `docs-ja/todo.md` within the same turn.
+4. If exceptions are required, record reason and planned removal deadline in `docs-ja/todo/index.md` within the same turn.
 
 Decision log:
 - 2026-02-22: Initial draft.

@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P0-SH-01` to `P0-SH-04`
+- `docs-ja/todo/index.md` `ID: P0-SH-01` to `P0-SH-04`
 
 Background:
 - If selfhost transpile/build/run is unstable, the full regression-detection and improvement loop stalls.

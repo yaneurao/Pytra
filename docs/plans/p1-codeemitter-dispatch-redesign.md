@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P1-CED-*`
+- `docs-ja/todo/index.md` `ID: P1-CED-*`
 
 Background:
 - Selfhost strongly depends on static-binding assumptions, and commonization can create paths that fail to reach derived implementations.

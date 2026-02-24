@@ -179,7 +179,7 @@ go run test/transpile/go/iterable.go
 ```
 
 Notes:
-- Some `pylib` APIs used by `sample/py` require Go-side runtime extensions (see latest status in `docs/todo.md`).
+- Some `pylib` APIs used by `sample/py` require Go-side runtime extensions (see latest status in `docs/todo/index.md`).
 
 </details>
 
@@ -193,7 +193,7 @@ java -cp test/transpile/java iterable
 ```
 
 Notes:
-- Some `pylib` APIs used by `sample/py` require Java-side runtime extensions (see latest status in `docs/todo.md`).
+- Some `pylib` APIs used by `sample/py` require Java-side runtime extensions (see latest status in `docs/todo/index.md`).
 
 </details>
 
@@ -395,7 +395,7 @@ Expand only the language section you need.
 
 - Current implementation partly uses `any`, but numeric operations still infer `int` / `float64` / `bool` / `string`.
 - `bytes` / `bytearray` are handled as `[]byte` in runtime.
-- Improving Go annotation reflection to reduce `any` fallback remains an unfinished task in `docs/todo.md`.
+- Improving Go annotation reflection to reduce `any` fallback remains an unfinished task in `docs/todo/index.md`.
 
 </details>
 
@@ -404,7 +404,7 @@ Expand only the language section you need.
 
 - Current implementation partly uses `Object`.
 - `bytes` / `bytearray` are handled as `byte[]` in runtime.
-- Improving Java annotation reflection to reduce `Object` fallback remains an unfinished task in `docs/todo.md`.
+- Improving Java annotation reflection to reduce `Object` fallback remains an unfinished task in `docs/todo/index.md`.
 
 </details>
 
