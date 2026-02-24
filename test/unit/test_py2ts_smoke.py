@@ -53,6 +53,13 @@ class Py2TsSmokeTest(unittest.TestCase):
             ts = transpile_to_typescript(loaded)
         self.assertIn("function add(a, b)", ts)
 
+    def test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape(self) -> None:
+        fixture = find_fixture_case("for_range")
+        loaded = load_east(fixture, parser_backend="self_hosted")
+        self.assertIsInstance(loaded, dict)
+        self.assertEqual(loaded.get("kind"), "Module")
+        self.assertEqual(loaded.get("east_stage"), 2)
+
     def test_cli_smoke_generates_ts_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
@@ -72,6 +79,24 @@ class Py2TsSmokeTest(unittest.TestCase):
             self.assertTrue(out_ts.exists())
             txt = out_ts.read_text(encoding="utf-8")
             self.assertIn("function abs_like", txt)
+
+    def test_cli_warns_when_stage2_compat_mode_is_selected(self) -> None:
+        fixture = find_fixture_case("if_else")
+        with tempfile.TemporaryDirectory() as td:
+            out_ts = Path(td) / "if_else.ts"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2ts.py", str(fixture), "-o", str(out_ts), "--east-stage", "2"],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertIn("warning: --east-stage 2 is compatibility mode; default is 3.", proc.stderr)
 
     def test_py2ts_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2ts.py").read_text(encoding="utf-8")
