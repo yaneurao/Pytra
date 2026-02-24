@@ -79,58 +79,17 @@ def on_emit_stmt_kind(
     return None
 
 
-def _can_omit_braces_for_single_stmt(emitter: Any, stmts: list[dict[str, Any]]) -> bool:
-    """単文ブロックで波括弧を省略可能か判定する。"""
-    impl = getattr(emitter, "_can_omit_braces_for_single_stmt", None)
-    if callable(impl):
-        return bool(impl(stmts))
-    if not emitter._opt_ge(1):
-        return False
-    if len(stmts) != 1:
-        return False
-    one = stmts[0]
-    k = emitter.any_dict_get_str(one, "kind", "")
-    if k == "Assign":
-        tgt = emitter.any_to_dict_or_empty(one.get("target"))
-        # tuple assign は C++ で複数行へ展開されるため単文扱い不可
-        if emitter._node_kind_from_dict(tgt) == "Tuple":
-            return False
-    return k in {"Return", "Expr", "Assign", "AnnAssign", "AugAssign", "Swap", "Raise", "Break", "Continue"}
-
-
 def on_stmt_omit_braces(
     emitter: Any,
     kind: str,
     stmt: dict[str, Any],
     default_value: bool,
 ) -> bool:
-    """制御構文の brace 省略可否を C++ 方針で決定する。"""
+    """制御構文の brace 省略可否を core 既定方針へ委譲する。"""
     default_impl = getattr(emitter, "_default_stmt_omit_braces", None)
     if callable(default_impl):
         return bool(default_impl(kind, stmt, default_value))
-    if not emitter._opt_ge(1):
-        return False
-    body_stmts = emitter._dict_stmt_list(stmt.get("body"))
-    if kind == "If":
-        else_stmts = emitter._dict_stmt_list(stmt.get("orelse"))
-        if not _can_omit_braces_for_single_stmt(emitter, body_stmts):
-            return False
-        if len(else_stmts) == 0:
-            return True
-        return _can_omit_braces_for_single_stmt(emitter, else_stmts)
-    if kind == "ForRange":
-        if len(emitter.any_dict_get_list(stmt, "orelse")) != 0:
-            return False
-        return _can_omit_braces_for_single_stmt(emitter, body_stmts)
-    if kind == "For":
-        if len(emitter.any_dict_get_list(stmt, "orelse")) != 0:
-            return False
-        target = emitter.any_to_dict_or_empty(stmt.get("target"))
-        if emitter._node_kind_from_dict(target) == "Tuple":
-            # tuple unpack は束縛文を追加出力するため常に block 必須。
-            return False
-        return _can_omit_braces_for_single_stmt(emitter, body_stmts)
-    return default_value
+    return bool(default_value)
 
 
 def on_for_range_mode(
@@ -138,7 +97,7 @@ def on_for_range_mode(
     stmt: dict[str, Any],
     default_mode: str,
 ) -> str:
-    """ForRange の mode を C++ 側で解決する。"""
+    """ForRange の mode を core 既定方針へ委譲する。"""
     default_impl = getattr(emitter, "_default_for_range_mode", None)
     if callable(default_impl):
         step_expr = emitter.render_expr(stmt.get("step"))
@@ -146,11 +105,6 @@ def on_for_range_mode(
         if isinstance(resolved, str) and resolved in {"ascending", "descending", "dynamic"}:
             return resolved
         return default_mode
-    mode = emitter.any_to_str(stmt.get("range_mode"))
-    if mode == "":
-        mode = default_mode
-    if mode in {"ascending", "descending", "dynamic"}:
-        return mode
     return default_mode
 
 
