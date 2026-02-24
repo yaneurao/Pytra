@@ -144,9 +144,7 @@ def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
     in_str: str | None = None
     esc = False
     start = 0
-    i = 0
-    while i < len(arg_text):
-        ch = arg_text[i]
+    for i, ch in enumerate(arg_text):
         if in_str is not None:
             if esc:
                 esc = False
@@ -154,21 +152,20 @@ def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
                 esc = True
             elif ch == in_str:
                 in_str = None
-            i += 1
             continue
         if ch in {"'", '"'}:
             in_str = ch
-            i += 1
             continue
         if ch in {"(", "[", "{"}:
             depth += 1
-        elif ch in {")", "]", "}"}:
+            continue
+        if ch in {")", "]", "}"}:
             depth -= 1
-        elif ch == "," and depth == 0:
+            continue
+        if ch == "," and depth == 0:
             part = arg_text[start:i]
             out.append((part.strip(), start + (len(part) - len(part.lstrip()))))
             start = i + 1
-        i += 1
     tail = arg_text[start:]
     if tail.strip() != "":
         out.append((tail.strip(), start + (len(tail) - len(tail.lstrip()))))
@@ -622,10 +619,11 @@ def _sh_has_explicit_line_continuation(txt: str) -> bool:
     if body == "":
         return False
     backslashes = 0
-    i = len(body) - 1
-    while i >= 0 and body[i] == "\\":
-        backslashes += 1
-        i -= 1
+    for i in range(len(body) - 1, -1, -1):
+        if body[i] == "\\":
+            backslashes += 1
+        else:
+            break
     return (backslashes % 2) == 1
 
 
@@ -1105,33 +1103,25 @@ def _sh_split_top_level_colon(text: str) -> tuple[str, str] | None:
     depth = 0
     in_str: str | None = None
     esc = False
-    i = 0
-    while i < len(text):
-        ch = text[i]
+    for i, ch in enumerate(text):
         if in_str is not None:
             if esc:
                 esc = False
-                i += 1
                 continue
             if ch == "\\":
                 esc = True
-                i += 1
                 continue
             if ch == in_str:
                 in_str = None
-            i += 1
             continue
         if ch in {"'", '"'}:
             in_str = ch
-            i += 1
             continue
         if ch in {"(", "[", "{"}:
             depth += 1
-            i += 1
             continue
         if ch in {")", "]", "}"}:
             depth -= 1
-            i += 1
             continue
         if ch == ":" and depth == 0:
             lhs = text[:i].strip()
@@ -1139,7 +1129,6 @@ def _sh_split_top_level_colon(text: str) -> tuple[str, str] | None:
             if lhs != "" and rhs != "":
                 return lhs, rhs
             return None
-        i += 1
     return None
 
 
