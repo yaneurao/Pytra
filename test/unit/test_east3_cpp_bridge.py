@@ -1139,6 +1139,54 @@ class East3CppBridgeTest(unittest.TestCase):
             "value": {"kind": "Name", "id": "it", "resolved_type": "object"},
             "resolved_type": "object",
         }
+        reversed_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "reversed",
+            "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "resolved_type": "object",
+        }
+        enumerate_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "enumerate",
+            "args": [
+                {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+            ],
+            "resolved_type": "object",
+        }
+        any_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "any",
+            "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "resolved_type": "bool",
+        }
+        all_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "all",
+            "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "resolved_type": "bool",
+        }
+        ord_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "ord",
+            "value": {"kind": "Constant", "value": "A", "resolved_type": "str"},
+            "resolved_type": "int64",
+        }
+        chr_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "chr",
+            "value": {"kind": "Constant", "value": 65, "resolved_type": "int64"},
+            "resolved_type": "str",
+        }
+        zip_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "zip",
+            "args": [
+                {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                {"kind": "Name", "id": "ys", "resolved_type": "list[int64]"},
+            ],
+            "resolved_type": "list[tuple[int64,int64]]",
+        }
         minmax_node = {
             "kind": "RuntimeSpecialOp",
             "op": "minmax",
@@ -1197,6 +1245,13 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", py_to_int64(16))')
         self.assertEqual(emitter.render_expr(iter_node), "py_iter_or_raise(xs)")
         self.assertEqual(emitter.render_expr(next_node), "py_next_or_stop(it)")
+        self.assertEqual(emitter.render_expr(reversed_node), "py_reversed(xs)")
+        self.assertEqual(emitter.render_expr(enumerate_node), "py_enumerate(xs, py_to_int64(1))")
+        self.assertEqual(emitter.render_expr(any_node), "py_any(xs)")
+        self.assertEqual(emitter.render_expr(all_node), "py_all(xs)")
+        self.assertEqual(emitter.render_expr(ord_node), 'py_ord("A")')
+        self.assertEqual(emitter.render_expr(chr_node), "py_chr(65)")
+        self.assertEqual(emitter.render_expr(zip_node), "zip(xs, ys)")
         self.assertEqual(
             emitter.render_expr(minmax_node),
             "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",

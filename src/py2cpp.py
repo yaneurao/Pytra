@@ -4073,20 +4073,68 @@ class CppEmitter(CodeEmitter):
             next_node["value"] = arg_nodes[0]
             return self.render_expr(next_node)
         if runtime_call == "py_reversed" and len(arg_nodes) >= 1:
-            return f"py_reversed({self.render_expr(arg_nodes[0])})"
+            reversed_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "reversed",
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            reversed_node["value"] = arg_nodes[0]
+            return self.render_expr(reversed_node)
         if runtime_call == "py_enumerate" and len(arg_nodes) >= 1:
+            enumerate_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "enumerate",
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            enumerate_args: list[Any] = [arg_nodes[0]]
             if len(arg_nodes) >= 2:
-                start_expr = self.render_expr(arg_nodes[1])
-                return f"py_enumerate({self.render_expr(arg_nodes[0])}, py_to_int64({start_expr}))"
-            return f"py_enumerate({self.render_expr(arg_nodes[0])})"
+                enumerate_args.append(arg_nodes[1])
+            enumerate_node["args"] = enumerate_args
+            return self.render_expr(enumerate_node)
         if runtime_call == "py_any" and len(arg_nodes) >= 1:
-            return f"py_any({self.render_expr(arg_nodes[0])})"
+            any_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "any",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            any_node["value"] = arg_nodes[0]
+            return self.render_expr(any_node)
         if runtime_call == "py_all" and len(arg_nodes) >= 1:
-            return f"py_all({self.render_expr(arg_nodes[0])})"
+            all_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "all",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            all_node["value"] = arg_nodes[0]
+            return self.render_expr(all_node)
         if runtime_call == "py_ord" and len(arg_nodes) >= 1:
-            return f"py_ord({self.render_expr(arg_nodes[0])})"
+            ord_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "ord",
+                "resolved_type": "int64",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            ord_node["value"] = arg_nodes[0]
+            return self.render_expr(ord_node)
         if runtime_call == "py_chr" and len(arg_nodes) >= 1:
-            return f"py_chr({self.render_expr(arg_nodes[0])})"
+            chr_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "chr",
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            chr_node["value"] = arg_nodes[0]
+            return self.render_expr(chr_node)
         if runtime_call == "py_range":
             range_args: list[str] = []
             for arg_node in arg_nodes:
@@ -4105,7 +4153,15 @@ class CppEmitter(CodeEmitter):
                 return range_rendered
             return None
         if runtime_call == "zip" and len(arg_nodes) >= 2:
-            return f"zip({self.render_expr(arg_nodes[0])}, {self.render_expr(arg_nodes[1])})"
+            zip_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "zip",
+                "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            zip_node["args"] = [arg_nodes[0], arg_nodes[1]]
+            return self.render_expr(zip_node)
         if runtime_call in {"list_ctor", "set_ctor", "dict_ctor"}:
             ctor_name = runtime_call[:-5]
             ctor_args: list[str] = []
@@ -6291,6 +6347,41 @@ class CppEmitter(CodeEmitter):
             if op == "next_or_stop":
                 value_expr = self.render_expr(expr_d.get("value"))
                 return f"py_next_or_stop({value_expr})"
+            if op == "reversed":
+                value_expr = self.render_expr(expr_d.get("value"))
+                return f"py_reversed({value_expr})"
+            if op == "enumerate":
+                enumerate_args: list[str] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes:
+                        enumerate_args.append(self.render_expr(arg_node))
+                if len(enumerate_args) >= 2:
+                    return f"py_enumerate({enumerate_args[0]}, py_to_int64({enumerate_args[1]}))"
+                if len(enumerate_args) == 1:
+                    return f"py_enumerate({enumerate_args[0]})"
+                return ""
+            if op == "any":
+                value_expr = self.render_expr(expr_d.get("value"))
+                return f"py_any({value_expr})"
+            if op == "all":
+                value_expr = self.render_expr(expr_d.get("value"))
+                return f"py_all({value_expr})"
+            if op == "ord":
+                value_expr = self.render_expr(expr_d.get("value"))
+                return f"py_ord({value_expr})"
+            if op == "chr":
+                value_expr = self.render_expr(expr_d.get("value"))
+                return f"py_chr({value_expr})"
+            if op == "zip":
+                zip_args: list[str] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes:
+                        zip_args.append(self.render_expr(arg_node))
+                if len(zip_args) >= 2:
+                    return f"zip({zip_args[0]}, {zip_args[1]})"
+                return ""
             if op == "minmax":
                 mode = self.any_dict_get_str(expr_d, "mode", "min")
                 fn_name = "max" if mode == "max" else "min"
