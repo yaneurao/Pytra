@@ -1310,6 +1310,24 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Name", "id": "xs", "resolved_type": "list[int64]"}],
             "keywords": [],
         }
+        ord_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_ord",
+            "resolved_type": "int64",
+            "func": {"kind": "Name", "id": "ord", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": "A", "resolved_type": "str"}],
+            "keywords": [],
+        }
+        chr_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_chr",
+            "resolved_type": "str",
+            "func": {"kind": "Name", "id": "chr", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": 65, "resolved_type": "int64"}],
+            "keywords": [],
+        }
         max_expr = {
             "kind": "Call",
             "lowered_kind": "BuiltinCall",
@@ -1421,6 +1439,8 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(enumerate_expr), "py_enumerate(xs, py_to_int64(1))")
         self.assertEqual(emitter.render_expr(any_expr), "py_any(xs)")
         self.assertEqual(emitter.render_expr(all_expr), "py_all(xs)")
+        self.assertEqual(emitter.render_expr(ord_expr), 'py_ord("A")')
+        self.assertEqual(emitter.render_expr(chr_expr), "py_chr(65)")
         self.assertEqual(
             emitter.render_expr(max_expr),
             "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",
@@ -1460,12 +1480,21 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Name", "id": "xs", "resolved_type": "object"}],
             "keywords": [],
         }
+        plain_ord = {
+            "kind": "Call",
+            "resolved_type": "int64",
+            "func": {"kind": "Name", "id": "ord", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": "A", "resolved_type": "str"}],
+            "keywords": [],
+        }
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: print"):
             emitter.render_expr(plain_print)
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: len"):
             emitter.render_expr(plain_len)
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: any"):
             emitter.render_expr(plain_any)
+        with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: ord"):
+            emitter.render_expr(plain_ord)
 
     def test_plain_isinstance_call_uses_type_id_core_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

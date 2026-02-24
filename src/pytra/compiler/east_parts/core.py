@@ -2418,6 +2418,14 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "all"
                     payload["runtime_call"] = "py_all"
+                elif fn_name == "ord":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "ord"
+                    payload["runtime_call"] = "py_ord"
+                elif fn_name == "chr":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "chr"
+                    payload["runtime_call"] = "py_chr"
                 elif fn_name in {"bytes", "bytearray"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name

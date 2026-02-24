@@ -111,11 +111,13 @@ def main() -> None:
     en = enumerate(xs, 1)
     has_any: bool = any(xs)
     has_all: bool = all(xs)
+    ch: str = chr(65)
+    ocode: int = ord("A")
     d: dict[str, int] = {"a": 1}
     v: int = d.get("a", 0)
     p: Path = Path("tmp")
     ok: bool = p.exists()
-    print(len(xs), t, u, p0, p1, len(ba), n, b, first, ri, en, has_any, has_all, v, ok)
+    print(len(xs), t, u, p0, p1, len(ba), n, b, first, ri, en, has_any, has_all, ch, ocode, v, ok)
 
 if __name__ == "__main__":
     main()
@@ -135,6 +137,8 @@ if __name__ == "__main__":
         self.assertIn("py_enumerate", runtime_calls)
         self.assertIn("py_any", runtime_calls)
         self.assertIn("py_all", runtime_calls)
+        self.assertIn("py_ord", runtime_calls)
+        self.assertIn("py_chr", runtime_calls)
         self.assertIn("py_to_bool", runtime_calls)
         self.assertIn("py_to_int64_base", runtime_calls)
         self.assertIn("list.append", runtime_calls)

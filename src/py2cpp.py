@@ -4083,6 +4083,10 @@ class CppEmitter(CodeEmitter):
             return f"py_any({self.render_expr(arg_nodes[0])})"
         if runtime_call == "py_all" and len(arg_nodes) >= 1:
             return f"py_all({self.render_expr(arg_nodes[0])})"
+        if runtime_call == "py_ord" and len(arg_nodes) >= 1:
+            return f"py_ord({self.render_expr(arg_nodes[0])})"
+        if runtime_call == "py_chr" and len(arg_nodes) >= 1:
+            return f"py_chr({self.render_expr(arg_nodes[0])})"
         if runtime_call in {"py_min", "py_max"} and len(arg_nodes) >= 1:
             minmax_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
@@ -4640,6 +4644,8 @@ class CppEmitter(CodeEmitter):
             "enumerate",
             "any",
             "all",
+            "ord",
+            "chr",
         }
 
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
@@ -4709,18 +4715,6 @@ class CppEmitter(CodeEmitter):
                 return namespaced, raw
         return None, raw
 
-    def _render_misc_name_builtin_call(
-        self,
-        raw: str,
-        args: list[str],
-    ) -> str | None:
-        """`Call(Name)` の残りビルトイン分岐を処理する。"""
-        if raw == "ord" and len(args) == 1:
-            return f"py_ord({args[0]})"
-        if raw == "chr" and len(args) == 1:
-            return f"py_chr({args[0]})"
-        return None
-
     def _render_call_name_or_attr(
         self,
         expr: dict[str, Any],
@@ -4760,9 +4754,6 @@ class CppEmitter(CodeEmitter):
             collection_ctor_rendered = self._render_collection_constructor_call(raw, expr, args, first_arg)
             if collection_ctor_rendered is not None:
                 return collection_ctor_rendered
-            misc_builtin_rendered = self._render_misc_name_builtin_call(raw, args)
-            if misc_builtin_rendered is not None:
-                return misc_builtin_rendered
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw, arg_nodes)
