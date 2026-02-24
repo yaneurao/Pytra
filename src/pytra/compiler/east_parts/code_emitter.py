@@ -504,9 +504,7 @@ class CodeEmitter:
             return ""
         raw: list[str] = []
         n = len(text)
-        i = 0
-        while i < n:
-            ch = text[i]
+        for i, ch in enumerate(text):
             if ("A" <= ch) and (ch <= "Z"):
                 prev_ch = text[i - 1] if i > 0 else ""
                 next_ch = text[i + 1] if i + 1 < n else ""
@@ -517,7 +515,6 @@ class CodeEmitter:
                 if len(raw) > 0 and raw[-1] != "_" and (prev_is_lower_or_digit or next_is_lower):
                     raw.append("_")
                 raw.append(chr(ord(ch) + 32))
-                i += 1
                 continue
             is_lower = ("a" <= ch) and (ch <= "z")
             is_digit = ("0" <= ch) and (ch <= "9")
@@ -525,22 +522,12 @@ class CodeEmitter:
                 raw.append(ch)
             elif len(raw) > 0 and raw[-1] != "_":
                 raw.append("_")
-            i += 1
-        start = 0
-        end = len(raw)
-        while start < end and raw[start] == "_":
-            start += 1
-        while end > start and raw[end - 1] == "_":
-            end -= 1
+        joined = "".join(raw).strip("_")
         out_chars: list[str] = []
-        i = start
-        while i < end:
-            ch = raw[i]
+        for ch in joined:
             if ch == "_" and len(out_chars) > 0 and out_chars[-1] == "_":
-                i += 1
-                continue
+                continue  # 連続したアンダースコアを除去
             out_chars.append(ch)
-            i += 1
         return "".join(out_chars)
 
     def _stmt_kind_hook_name(self, kind: str) -> str:
@@ -1145,9 +1132,7 @@ class CodeEmitter:
             if nm == "":
                 continue
             ok = True
-            i = 0
-            while i < len(nm):
-                ch = nm[i]
+            for i, ch in enumerate(nm):
                 if i == 0:
                     is_head_ok = ch == "_" or (("a" <= ch) and (ch <= "z")) or (("A" <= ch) and (ch <= "Z"))
                     if not is_head_ok:
@@ -1163,7 +1148,6 @@ class CodeEmitter:
                     if not is_body_ok:
                         ok = False
                         break
-                i += 1
             if ok:
                 out.append(nm)
         return out
@@ -1666,15 +1650,13 @@ class CodeEmitter:
         self.emit(
             tmp_decl_template.replace("{tmp}", tmp_name).replace("{value}", value_expr)
         )
-        i = 0
-        while i < len(rendered_targets):
+        for i, target_txt in enumerate(rendered_targets):
             idx_txt = str(i + index_offset)
             item_expr = item_expr_template.replace("{tmp}", tmp_name).replace("{index}", idx_txt)
             line = (
-                assign_template.replace("{target}", rendered_targets[i]).replace("{item}", item_expr)
+                assign_template.replace("{target}", target_txt).replace("{item}", item_expr)
             )
             self.emit(line)
-            i += 1
         return True
 
     def should_declare_name_binding(

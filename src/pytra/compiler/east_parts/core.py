@@ -220,13 +220,10 @@ def _sh_is_identifier(text: str) -> bool:
     is_head = ("A" <= c0 <= "Z") or ("a" <= c0 <= "z") or c0 == "_"
     if not is_head:
         return False
-    i = 1
-    while i < len(text):
-        ch = text[i : i + 1]
+    for ch in text[1:]:
         is_body = ("A" <= ch <= "Z") or ("a" <= ch <= "z") or ("0" <= ch <= "9") or ch == "_"
         if not is_body:
             return False
-        i += 1
     return True
 
 
@@ -870,20 +867,17 @@ def _sh_bind_comp_target_types(
         inner = item_t[6:-1].strip()
         if inner != "":
             elem_types = _sh_split_top_commas(inner)
-    i = 0
-    while i < len(elem_nodes):
-        e = elem_nodes[i]
+    for idx, e in enumerate(elem_nodes):
         if isinstance(e, dict) and e.get("kind") == "Name":
             nm = str(e.get("id", ""))
             if nm != "":
-                if i < len(elem_types):
-                    et = elem_types[i].strip()
+                if idx < len(elem_types):
+                    et = elem_types[idx].strip()
                     if et == "":
                         et = "unknown"
                     out[nm] = et
                 else:
                     out[nm] = "unknown"
-        i += 1
     return out
 
 

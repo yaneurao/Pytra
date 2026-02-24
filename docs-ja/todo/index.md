@@ -108,10 +108,11 @@
 
 ### `src/pytra/compiler/east_parts/`（先行）
 
-1. [ ] [ID: P3-EAST-PY-01] `src/pytra/compiler/east_parts/{code_emitter.py,core.py}` で selfhost 安定化のために残した非 Pythonic 記法（`while i < len(...)`、手動 index 走査、冗長な空判定）を棚卸しし、`Pythonic へ戻せる/戻せない` の判定表を作る。
-2. [ ] [ID: P3-EAST-PY-02] `P3-EAST-PY-01` で「戻せる」と判定した `code_emitter.py` の非 Pythonic 記法を、1パッチ 1〜3 関数の粒度で `for` / `enumerate` / 直接反復へ戻す。
+1. [x] [ID: P3-EAST-PY-01] `src/pytra/compiler/east_parts/{code_emitter.py,core.py}` で selfhost 安定化のために残した非 Pythonic 記法（`while i < len(...)`、手動 index 走査、冗長な空判定）を棚卸しし、`Pythonic へ戻せる/戻せない` の判定表を作成し、戻せる候補を先に着手した。
+2. [x] [ID: P3-EAST-PY-02] `P3-EAST-PY-01` で「戻せる」と判定した `code_emitter.py` の非 Pythonic 記法を、1パッチ 1〜3 関数の粒度で `for` / `enumerate` / 直接反復へ戻した。
 3. [ ] [ID: P3-EAST-PY-03] `P3-EAST-PY-01` で「戻せる」と判定した `core.py` の非 Pythonic 記法を、selfhost 回帰が出ない範囲で段階的に戻す。
-4. [ ] [ID: P3-EAST-PY-04] `P3-EAST-PY-02` と `P3-EAST-PY-03` の結果を `docs-ja/plans/p3-pythonic-restoration.md` に反映し、残る非 Pythonic 記法の維持理由（selfhost 制約）を明文化する。
+4. [ ] [ID: P3-EAST-PY-03-S1] `_sh_is_identifier` と `_sh_bind_comp_target_types` を `for` / `enumerate` へ戻し、`while i < len(...)` を除去する。
+5. [ ] [ID: P3-EAST-PY-04] `P3-EAST-PY-02` と `P3-EAST-PY-03` の結果を `docs-ja/plans/p3-pythonic-restoration.md` に反映し、残る非 Pythonic 記法の維持理由（selfhost 制約）を明文化する。
 
 ### `src/py2cpp.py`
 
@@ -125,6 +126,7 @@
 進捗メモ:
 - 詳細ログは `docs-ja/plans/p3-pythonic-restoration.md` の `決定ログ` を参照。
 - 作業ルールは `docs-ja/plans/p3-pythonic-restoration.md` の「作業ルール」を参照。
+- [ID: P3-EAST-PY-03-S1] `core.py` の `_sh_is_identifier` と `_sh_bind_comp_target_types` を `for` / `enumerate` 化し、`code_emitter.py` の `while i < len(...)` を 3 件（`_kind_hook_suffix`, `fallback_tuple_target_names_from_repr`, `emit_tuple_assign_with_tmp`）に限定して簡潔化。
 
 ## P3: サンプル実行時間の再計測とREADME更新（低優先）
 
