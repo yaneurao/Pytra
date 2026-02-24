@@ -178,11 +178,12 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
     if input_txt.endswith(".json"):
         payload_any = json.loads(input_path.read_text(encoding="utf-8"))
         if isinstance(payload_any, dict):
-            payload = payload_any
+            payload: dict[str, object] = payload_any
             ok_obj = dict_any_get(payload, "ok")
             east_obj = dict_any_get(payload, "east")
             if isinstance(ok_obj, bool) and ok_obj and isinstance(east_obj, dict):
-                east_doc = normalize_east_root_document(east_obj)
+                east_obj_dict: dict[str, object] = east_obj
+                east_doc = normalize_east_root_document(east_obj_dict)
                 return normalize_east1_to_east2_document(east_doc)
             if dict_any_kind(payload) == "Module":
                 payload_doc = normalize_east_root_document(payload)
@@ -259,7 +260,8 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             summary = "This syntax is unsupported by language design."
         raise make_user_error(category, summary, [msg]) from ex
     if isinstance(east_any, dict):
-        east_doc = normalize_east_root_document(east_any)
+        east_any_dict: dict[str, object] = east_any
+        east_doc = normalize_east_root_document(east_any_dict)
         return normalize_east1_to_east2_document(east_doc)
     raise make_user_error(
         "input_invalid",
