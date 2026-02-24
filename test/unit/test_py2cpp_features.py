@@ -2229,6 +2229,86 @@ def f() -> int:
         self.assertEqual(dict_any_get_str(out, "kind"), "Module")
         self.assertEqual(dict_any_get(out, "east_stage"), 2)
 
+    def test_transpile_cli_normalize_stage_wrapper_uses_stage_module_alias(self) -> None:
+        from src.pytra.compiler import transpile_cli as cli
+
+        calls: list[str] = []
+
+        def _fake_stage_fn(east_doc: dict[str, object]) -> dict[str, object]:
+            calls.append("called")
+            out = dict(east_doc)
+            out["east_stage"] = 2
+            return out
+
+        old = cli.normalize_east1_to_east2_document_stage
+        try:
+            cli.normalize_east1_to_east2_document_stage = _fake_stage_fn
+            out = cli.normalize_east1_to_east2_document({"kind": "Module", "east_stage": 1, "body": []})
+        finally:
+            cli.normalize_east1_to_east2_document_stage = old
+        self.assertEqual(calls, ["called"])
+        self.assertEqual(dict_any_get(out, "east_stage"), 2)
+
+    def test_transpile_cli_load_east1_wrapper_delegates_to_stage_module(self) -> None:
+        from src.pytra.compiler import transpile_cli as cli
+
+        calls: list[str] = []
+
+        def _fake_stage_fn(
+            _path: Path,
+            parser_backend: str = "self_hosted",
+            load_east_document_fn: object = None,
+        ) -> dict[str, object]:
+            _ = parser_backend
+            _ = load_east_document_fn
+            calls.append("called")
+            return {"kind": "Module", "east_stage": 1, "schema_version": 1, "meta": {"dispatch_mode": "native"}, "body": []}
+
+        old = cli.load_east1_document_stage
+        try:
+            cli.load_east1_document_stage = _fake_stage_fn
+            with tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                p = root / "dummy.py"
+                p.write_text("x = 1\n", encoding="utf-8")
+                out = cli.load_east1_document(p)
+        finally:
+            cli.load_east1_document_stage = old
+        self.assertEqual(calls, ["called"])
+        self.assertEqual(dict_any_get(out, "east_stage"), 1)
+
+    def test_transpile_cli_load_east3_wrapper_delegates_to_stage_module(self) -> None:
+        from src.pytra.compiler import transpile_cli as cli
+
+        calls: list[str] = []
+
+        def _fake_stage_fn(
+            _path: Path,
+            parser_backend: str = "self_hosted",
+            object_dispatch_mode: str = "",
+            load_east_document_fn: object = None,
+            make_user_error_fn: object = None,
+        ) -> dict[str, object]:
+            _ = parser_backend
+            _ = object_dispatch_mode
+            _ = load_east_document_fn
+            _ = make_user_error_fn
+            calls.append("called")
+            return {"kind": "Module", "east_stage": 3, "schema_version": 1, "meta": {"dispatch_mode": "native"}, "body": []}
+
+        old = cli.load_east3_document_stage
+        try:
+            cli.load_east3_document_stage = _fake_stage_fn
+            with tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                p = root / "dummy.py"
+                p.write_text("x = 1\n", encoding="utf-8")
+                out = cli.load_east3_document(p)
+        finally:
+            cli.load_east3_document_stage = old
+        self.assertEqual(calls, ["called"])
+        self.assertEqual(dict_any_get(out, "east_stage"), 3)
+
     def test_resolve_module_name_classifies_user_pytra_and_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
