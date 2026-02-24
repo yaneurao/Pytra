@@ -167,7 +167,7 @@ npx tsx test/transpile/ts/iterable.ts
 ```
 
 Notes:
-- If input uses `import`, corresponding runtime implementations under `src/ts_module/` are required.
+- If input uses `import`, corresponding runtime implementations under `src/runtime/ts/pytra/` are required.
 
 </details>
 
