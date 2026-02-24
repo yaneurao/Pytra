@@ -48,7 +48,7 @@
 現状は stage 境界 API が `transpile_cli.py` に集中して見通しが悪い。  
 本移行では、段階責務を `east_parts/east1.py`, `east_parts/east2.py`, `east_parts/east3.py` へ分離し、`transpile_cli.py` を互換ラッパ中心へ縮退する。
 
-## 3.2 `py2cpp.py` の `--east-stage` 分岐棚卸し（P0-EASTMIG-03-S1）
+## 3.2 `py2cpp.py` の `--east-stage` 分岐棚卸し（P0-EASTMIG-03-S1 / P0-EASTMIG-03-S2）
 
 `P0-EASTMIG-03-S1` で、loop 系の `EAST2` 依存を次のように整理した。
 
@@ -62,6 +62,9 @@
 - `iter_plan`:
   - `StaticRangeForPlan` は `range_mode` を明示保持（bridge 時に補完）。
   - `RuntimeIterForPlan` は `dispatch_mode` を `meta.dispatch_mode` から補完。
+- Any/object 境界（型付き代入/return/yield）:
+  - `P0-EASTMIG-03-S2` で `AnnAssign` / `Assign` / `Return` / `Yield` の Any -> 型付き変換を `Unbox` 命令写像優先に置換。
+  - source node が存在する経路は `_coerce_any_expr_to_target_via_unbox` で `Unbox` ノード経由に統一し、backend 側の文字列キャスト再判断を縮退。
 
 ## 4. 移行方針
 

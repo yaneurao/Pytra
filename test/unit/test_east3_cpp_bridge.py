@@ -219,6 +219,28 @@ class East3CppBridgeTest(unittest.TestCase):
             'obj_to_rc_or_raise<Box>(arg, "call_arg:Box")',
         )
 
+    def test_coerce_any_expr_to_target_via_unbox_prefers_ir_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        any_name = {"kind": "Name", "id": "v", "resolved_type": "Any"}
+        emitter._coerce_any_expr_to_target = lambda *_args, **_kwargs: "LEGACY_PATH_USED"  # type: ignore[method-assign]
+        self.assertEqual(
+            emitter._coerce_any_expr_to_target_via_unbox("v", any_name, "int64", "assign:x"),
+            "int64(py_to_int64(v))",
+        )
+
+    def test_emit_return_stmt_prefers_unbox_ir_over_legacy_coerce(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.current_function_return_type = "int64"
+        emitter._coerce_any_expr_to_target = lambda *_args, **_kwargs: "LEGACY_PATH_USED"  # type: ignore[method-assign]
+        stmt = {
+            "kind": "Return",
+            "value": {"kind": "Name", "id": "v", "resolved_type": "Any"},
+        }
+        emitter._emit_return_stmt(stmt)
+        text = "\n".join(emitter.lines)
+        self.assertIn("return int64(py_to_int64(v));", text)
+        self.assertNotIn("LEGACY_PATH_USED", text)
+
     def test_box_any_target_value_handles_none_and_plain_values(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         int_name = {"kind": "Name", "id": "n", "resolved_type": "int64"}

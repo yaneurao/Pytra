@@ -1769,7 +1769,12 @@ class CppEmitter(CodeEmitter):
             if has_none and len(non_none_norm) == 1 and non_none_norm[0] == ann_norm:
                 rendered_val = f"({rendered_val}).value()"
         if self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
-            rendered_val = self._coerce_any_expr_to_target(rendered_val, ann_t_str, f"annassign:{target}")
+            rendered_val = self._coerce_any_expr_to_target_via_unbox(
+                rendered_val,
+                stmt.get("value"),
+                ann_t_str,
+                f"annassign:{target}",
+            )
         if self.is_any_like_type(ann_t_str) and val_is_dict:
             rendered_val = self._box_any_target_value(rendered_val, stmt.get("value"))
         is_plain_name_target = self._node_kind_from_dict(target_node) == "Name"
@@ -2145,7 +2150,12 @@ class CppEmitter(CodeEmitter):
         if self.is_any_like_type(ret_t) and (not self.is_any_like_type(expr_t)):
             rv = self.render_expr_as_any(stmt.get("value"))
         if self._can_runtime_cast_target(ret_t) and self.is_any_like_type(expr_t):
-            rv = self._coerce_any_expr_to_target(rv, ret_t, f"return:{ret_t}")
+            rv = self._coerce_any_expr_to_target_via_unbox(
+                rv,
+                stmt.get("value"),
+                ret_t,
+                f"return:{ret_t}",
+            )
         self.emit(
             self.syntax_line(
                 "return_value",
@@ -2176,7 +2186,12 @@ class CppEmitter(CodeEmitter):
         yv = self.render_expr(stmt.get("value"))
         yv_t = self.get_expr_type(stmt.get("value"))
         if self.current_function_yield_type not in {"", "unknown", "Any", "object"} and self.is_any_like_type(yv_t):
-            yv = self._coerce_any_expr_to_target(yv, self.current_function_yield_type, f"yield:{self.current_function_yield_type}")
+            yv = self._coerce_any_expr_to_target_via_unbox(
+                yv,
+                stmt.get("value"),
+                self.current_function_yield_type,
+                f"yield:{self.current_function_yield_type}",
+            )
         self.emit(f"{buf}.append({yv});")
 
     def _emit_assign_stmt(self, stmt: dict[str, Any]) -> None:
@@ -2390,7 +2405,12 @@ class CppEmitter(CodeEmitter):
             rval_t0 = self.get_expr_type(stmt.get("value"))
             rval_t = rval_t0 if isinstance(rval_t0, str) else ""
             if self._can_runtime_cast_target(picked) and self.is_any_like_type(rval_t):
-                rval = self._coerce_any_expr_to_target(rval, picked, f"assign:{texpr}")
+                rval = self._coerce_any_expr_to_target_via_unbox(
+                    rval,
+                    stmt.get("value"),
+                    picked,
+                    f"assign:{texpr}",
+                )
             if self.is_any_like_type(picked):
                 rval = self._box_any_target_value(rval, stmt.get("value"))
             self.emit(f"{dtype} {texpr} = {rval};")
@@ -2413,7 +2433,12 @@ class CppEmitter(CodeEmitter):
         rval_t0 = self.get_expr_type(stmt.get("value"))
         rval_t = rval_t0 if isinstance(rval_t0, str) else ""
         if self._can_runtime_cast_target(t_target) and self.is_any_like_type(rval_t):
-            rval = self._coerce_any_expr_to_target(rval, t_target, f"assign:{texpr}")
+            rval = self._coerce_any_expr_to_target_via_unbox(
+                rval,
+                stmt.get("value"),
+                t_target,
+                f"assign:{texpr}",
+            )
         if self.is_any_like_type(t_target):
             rval = self._box_any_target_value(rval, stmt.get("value"))
         self.emit(f"{texpr} = {rval};")
@@ -5317,8 +5342,8 @@ class CppEmitter(CodeEmitter):
             return class_rendered
         return None
 
-    def _coerce_any_expr_to_target(self, expr_txt: str, target_t: str, ctx: str) -> str:
-        """Any/object 式を target_t へ変換する（失敗契約は fail-fast）。"""
+    def _render_unbox_target_cast(self, expr_txt: str, target_t: str, ctx: str) -> str:
+        """`Unbox` / `CastOrRaise` の最終 C++ 変換を行う。"""
         t_norm = self.normalize_type_name(target_t)
         if t_norm in self.ref_classes:
             cpp_t = self._cpp_type_text(t_norm)
@@ -5338,6 +5363,22 @@ class CppEmitter(CodeEmitter):
         if t_norm.startswith("list[") or t_norm.startswith("dict[") or t_norm.startswith("set["):
             return f"{self._cpp_type_text(t_norm)}({expr_txt})"
         return expr_txt
+
+    def _coerce_any_expr_to_target(self, expr_txt: str, target_t: str, ctx: str) -> str:
+        """Any/object 式を target_t へ変換する（legacy 互換 wrapper）。"""
+        return self._render_unbox_target_cast(expr_txt, target_t, ctx)
+
+    def _coerce_any_expr_to_target_via_unbox(self, expr_txt: str, source_node: Any, target_t: str, ctx: str) -> str:
+        """Any/object から型付き値への変換を EAST3 `Unbox` 命令写像へ寄せる。"""
+        if expr_txt == "":
+            return expr_txt
+        t_norm = self.normalize_type_name(target_t)
+        if t_norm in {"", "unknown"} or self.is_any_like_type(t_norm):
+            return expr_txt
+        source_d = self.any_to_dict_or_empty(source_node)
+        if len(source_d) > 0:
+            return self.render_expr(self._build_unbox_expr_node(source_node, t_norm, ctx))
+        return self._coerce_any_expr_to_target(expr_txt, t_norm, ctx)
 
     def _coerce_call_arg(self, arg_txt: str, arg_node: Any, target_t: str) -> str:
         """関数シグネチャに合わせて引数を必要最小限キャストする。"""
@@ -6384,7 +6425,7 @@ class CppEmitter(CodeEmitter):
             if target_t == "" or target_t == "unknown" or self.is_any_like_type(target_t):
                 return value_expr
             ctx = self.any_dict_get_str(expr_d, "ctx", "east3_unbox")
-            return self._coerce_any_expr_to_target(value_expr, target_t, ctx)
+            return self._render_unbox_target_cast(value_expr, target_t, ctx)
         if kind == "CastOrRaise":
             value_expr = self.render_expr(expr_d.get("value"))
             target_t = self.normalize_type_name(self.any_to_str(expr_d.get("target")))
@@ -6394,7 +6435,7 @@ class CppEmitter(CodeEmitter):
                 return value_expr
             if self.is_any_like_type(target_t):
                 return self._box_expr_for_any(value_expr, expr_d.get("value"))
-            return self._coerce_any_expr_to_target(value_expr, target_t, "east3_cast_or_raise")
+            return self._render_unbox_target_cast(value_expr, target_t, "east3_cast_or_raise")
         if kind == "ObjBool":
             value_expr = self.render_expr(expr_d.get("value"))
             return f"py_to_bool({value_expr})"

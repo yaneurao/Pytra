@@ -27,7 +27,6 @@
 文脈: `docs-ja/plans/plan-east123-migration.md`（`TG-P0-EAST123-MIGRATION`）
 
 1. [ ] [ID: P0-EASTMIG-03] `py2cpp.py` の標準経路を `EAST3` 前提へ寄せ、`EAST2` 再判断ロジック（For/Any/object/type_id/builtin）を段階縮退する。
-2. [ ] [ID: P0-EASTMIG-03-S2] `Any/object` 境界（Box/Unbox/Obj*）で backend 再判断している経路を `EAST3` 命令写像へ統一する。
 3. [ ] [ID: P0-EASTMIG-03-S3] `type_id` / built-in lower の `EAST2` 依存分岐を削減し、`EAST3` 前提経路を主経路化する。
 4. [ ] [ID: P0-EASTMIG-03-S4] `tools/check_py2cpp_transpile.py` と `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で主経路化後の回帰基線を固定する。
 5. [ ] [ID: P0-EASTMIG-04] C++ hooks の意味論実装を棚卸しし、`EAST3` 前提の構文差分専任へ縮退する（意味論 hook の新規追加を禁止）。
