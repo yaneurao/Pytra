@@ -163,6 +163,18 @@
 - 確認:
   - `python3 tools/check_multilang_quality_regression.py` が `48 comparisons` で通過することを確認。
 
+`P1-MQ-04-S1` 実装結果（stage1 selfhost 棚卸し）:
+
+- 対象: `tools/check_multilang_selfhost_stage1.py`, `docs-ja/plans/p1-multilang-selfhost-status.md`
+- 変更点:
+  1. 非 C++ 各言語の `py2<lang>.py` 自己変換（stage1）を一括実行し、生成物モード（native/preview）と stage2 実行可否を収集するスクリプトを追加した。
+  2. 初回ステータスを `docs-ja/plans/p1-multilang-selfhost-status.md` に固定した。
+- 初回結果サマリ:
+  - `rs`: stage1 fail（self-hosted parser が `from ... import (... )` 構文を拒否）
+  - `js`: stage1 pass / stage2 fail（生成 `py2js.js` 実行時 `SyntaxError: Unexpected token ']'`）
+  - `cs`: stage1 pass（stage2 runner 未自動化）
+  - `ts/go/java/swift/kotlin`: stage1 pass だが preview 出力のため stage2 blocked
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
@@ -174,3 +186,4 @@
 - 2026-02-24: ID: P1-MQ-02-S3-S3 として Swift/Kotlin preview 出力をシグネチャ要約へ縮退し、`sample/swift` / `sample/kotlin` の `paren`/`cast`/`imports`/`unused_import_est` を削減した。
 - 2026-02-24: ID: P1-MQ-02-S4 として多言語サンプル再生成と再計測を完了し、`docs-ja/plans/p1-multilang-output-quality-baseline.md` に改善結果を固定した。
 - 2026-02-24: ID: P1-MQ-03 として品質回帰チェック（`tools/check_multilang_quality_regression.py`）を追加し、`tools/run_local_ci.py` に組み込んだ。
+- 2026-02-24: ID: P1-MQ-04-S1 として stage1 selfhost 棚卸しスクリプト（`tools/check_multilang_selfhost_stage1.py`）を追加し、言語別ステータスを `docs-ja/plans/p1-multilang-selfhost-status.md` に固定した。
