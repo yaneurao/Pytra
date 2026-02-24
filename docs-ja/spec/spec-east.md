@@ -325,6 +325,14 @@
   - backend 非依存の意味論確定 IR。
   - boxing/unboxing、`Obj*` 命令、`type_id` 判定、反復計画を明示命令化する。
 
+### 16.1.1 段階境界表（入力/出力/禁止事項/担当ファイル）
+
+| 段 | 入力 | 出力 | 禁止事項 | 担当ファイル |
+| --- | --- | --- | --- | --- |
+| `EAST1` | `Source`（`.py` / parser backend 指定） | `east_stage=1` の `Module` 文書 | `EAST2/EAST3` 変換、dispatch 意味適用、target 依存ノード生成 | `src/pytra/compiler/east_parts/core.py`, `src/pytra/compiler/east_parts/east1.py` |
+| `EAST2` | `EAST1` 文書 | `east_stage=2` の正規化 `Module` 文書 | dispatch 意味適用、boxing/type_id 命令化、backend 構文判断 | `src/pytra/compiler/east_parts/east2.py` |
+| `EAST3` | `EAST2` 文書 + `meta.dispatch_mode` | `east_stage=3` の core 命令化 `Module` 文書 | target 言語構文への写像、hook による意味論再判断 | `src/pytra/compiler/east_parts/east3_lowering.py`, `src/pytra/compiler/east_parts/east3.py` |
+
 ### 16.2 不変条件
 
 1. `east_stage` とノード形状を一致させる。  
