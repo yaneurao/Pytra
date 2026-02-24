@@ -74,8 +74,26 @@
   - `rs cast`: `421 -> 180`
   - `rs clone`: `18 -> 1`
 
+`P1-MQ-02-S2` 実装結果（JS/TS 括弧・import 縮退）:
+
+- 対象: `src/hooks/js/emitter/js_emitter.py`
+- 変更点:
+  1. `BinOp` / `BoolOp` / `Compare` / `UnaryOp` の式描画で、意味保持に必要な最小限の括弧のみを残すようにした。
+  2. `import_bindings` と AST 走査結果から未使用識別子を除外し、`import` 文の過剰出力を削減した。
+  3. `py_runtime` の展開シンボルを「実際に必要な型ID関連シンボルのみ」へ縮退し、不要な destructuring を削減した。
+- 生成物反映:
+  - `python3 tools/regenerate_samples.py --langs js,ts --force` で `sample/js` / `sample/ts` を再生成。
+- 指標変化（`sample/cpp` 比較の生カウント）:
+  - `js paren`: `2029 -> 923`
+  - `ts paren`: `2029 -> 923`
+  - `js imports`: `75 -> 67`
+  - `ts imports`: `75 -> 67`
+  - `js unused_import_est`: `13 -> 1`
+  - `ts unused_import_est`: `13 -> 1`
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
 - 2026-02-24: ID: P1-MQ-01 として `tools/measure_multilang_quality.py` を追加し、`docs-ja/plans/p1-multilang-output-quality-baseline.md` に `sample/cpp` 比の品質差分（`mut`/`paren`/`cast`/`clone`/`unused_import_est`）を定量化した。
 - 2026-02-24: ID: P1-MQ-02-S1 として Rust emitter の `mut` 付与を事前解析ベースへ切り替え、`sample/rs` 再生成と品質再計測で `mut`/`paren`/`cast`/`clone` の減少を確認した。
+- 2026-02-24: ID: P1-MQ-02-S2 として JS emitter の括弧最小化・import/runtime symbol 縮退を実装し、`sample/js` / `sample/ts` の `paren` と `unused_import_est` の大幅減少を確認した。

@@ -1,7 +1,3 @@
-const __pytra_root = process.cwd();
-const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');
-const { PYTRA_TYPE_ID, PY_TYPE_BOOL, PY_TYPE_NUMBER, PY_TYPE_STRING, PY_TYPE_ARRAY, PY_TYPE_MAP, PY_TYPE_SET, PY_TYPE_OBJECT, pyRegisterClassType, pyIsInstance } = py_runtime;
-
 import { perf_counter } from "./time.js";
 import { png } from "./pytra/utils.js";
 
@@ -11,9 +7,9 @@ function render_orbit_trap_julia(width, height, max_iter, cx, cy) {
     let pixels = bytearray();
     
     for (let y = 0; y < height; y += 1) {
-        let zy0 = ((-1.3) + (2.6 * ((y / ((height - 1))))));
+        let zy0 = -1.3 + 2.6 * (y / (height - 1));
         for (let x = 0; x < width; x += 1) {
-            let zx = ((-1.9) + (3.8 * ((x / ((width - 1))))));
+            let zx = -1.9 + 3.8 * (x / (width - 1));
             let zy = zy0;
             
             let trap = 1.0e9;
@@ -21,15 +17,15 @@ function render_orbit_trap_julia(width, height, max_iter, cx, cy) {
             while (i < max_iter) {
                 let ax = zx;
                 if (ax < 0.0) {
-                    ax = (-ax);
+                    ax = -ax;
                 }
                 let ay = zy;
                 if (ay < 0.0) {
-                    ay = (-ay);
+                    ay = -ay;
                 }
-                let dxy = (zx - zy);
+                let dxy = zx - zy;
                 if (dxy < 0.0) {
-                    dxy = (-dxy);
+                    dxy = -dxy;
                 }
                 if (ax < trap) {
                     trap = ax;
@@ -40,13 +36,13 @@ function render_orbit_trap_julia(width, height, max_iter, cx, cy) {
                 if (dxy < trap) {
                     trap = dxy;
                 }
-                let zx2 = (zx * zx);
-                let zy2 = (zy * zy);
-                if ((zx2 + zy2) > 4.0) {
+                let zx2 = zx * zx;
+                let zy2 = zy * zy;
+                if (zx2 + zy2 > 4.0) {
                     py_break;
                 }
-                zy = (((2.0 * zx) * zy) + cy);
-                zx = ((zx2 - zy2) + cx);
+                zy = 2.0 * zx * zy + cy;
+                zx = zx2 - zy2 + cx;
                 i += 1;
             }
             let r = 0;
@@ -57,18 +53,18 @@ function render_orbit_trap_julia(width, height, max_iter, cx, cy) {
                 g = 0;
                 b = 0;
             } else {
-                let trap_scaled = (trap * 3.2);
+                let trap_scaled = trap * 3.2;
                 if (trap_scaled > 1.0) {
                     trap_scaled = 1.0;
                 }
                 if (trap_scaled < 0.0) {
                     trap_scaled = 0.0;
                 }
-                let t = (i / max_iter);
-                let tone = Math.trunc(Number((255.0 * ((1.0 - trap_scaled)))));
-                r = Math.trunc(Number((tone * ((0.35 + (0.65 * t))))));
-                g = Math.trunc(Number((tone * ((0.15 + (0.85 * ((1.0 - t))))))));
-                b = Math.trunc(Number((255.0 * ((0.25 + (0.75 * t))))));
+                let t = i / max_iter;
+                let tone = Math.trunc(Number(255.0 * (1.0 - trap_scaled)));
+                r = Math.trunc(Number(tone * (0.35 + 0.65 * t)));
+                g = Math.trunc(Number(tone * (0.15 + 0.85 * (1.0 - t))));
+                b = Math.trunc(Number(255.0 * (0.25 + 0.75 * t)));
                 if (r > 255) {
                     r = 255;
                 }
@@ -94,9 +90,9 @@ function run_04_orbit_trap_julia() {
     let out_path = "sample/out/04_orbit_trap_julia.png";
     
     let start = perf_counter();
-    let pixels = render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889);
+    let pixels = render_orbit_trap_julia(width, height, max_iter, -0.7269, 0.1889);
     png.write_rgb_png(out_path, width, height, pixels);
-    let elapsed = (perf_counter() - start);
+    let elapsed = perf_counter() - start;
     
     console.log("output:", out_path);
     console.log("size:", width, "x", height);

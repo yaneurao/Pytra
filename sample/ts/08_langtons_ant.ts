@@ -1,83 +1,69 @@
-// このファイルは自動生成です（Python -> TypeScript native mode）。
+// このファイルは EAST ベース TypeScript プレビュー出力です。
+// TODO: 専用 TSEmitter 実装へ段階移行する。
+import { perf_counter } from "./time.js";
+import { grayscale_palette } from "./pytra/runtime/gif.js";
+import { save_gif } from "./pytra/runtime/gif.js";
 
-const __pytra_root = process.cwd();
-const py_runtime = require(__pytra_root + '/src/runtime/ts/pytra/py_runtime.ts');
-const py_math = require(__pytra_root + '/src/runtime/ts/pytra/math.ts');
-const py_time = require(__pytra_root + '/src/runtime/ts/pytra/time.ts');
-const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
-const { perfCounter } = py_time;
-const perf_counter = perfCounter;
-const { grayscale_palette, save_gif } = require(__pytra_root + '/src/runtime/ts/pytra/gif_helper.ts');
+// 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
 function capture(grid, w, h) {
-    let frame = pyBytearray(((w) * (h)));
-    let i = 0;
-    let y;
-    for (let __pytra_i_1 = 0; __pytra_i_1 < h; __pytra_i_1 += 1) {
-        y = __pytra_i_1;
-        let x;
-        for (let __pytra_i_2 = 0; __pytra_i_2 < w; __pytra_i_2 += 1) {
-            x = __pytra_i_2;
-            frame[i] = (pyBool(grid[y][x]) ? 255 : 0);
-            i = i + 1;
+    let frame = bytearray(w * h);
+    for (let y = 0; y < h; y += 1) {
+        let row_base = y * w;
+        for (let x = 0; x < w; x += 1) {
+            frame[row_base + x] = (grid[y][x] ? 255 : 0);
         }
     }
-    return pyBytes(frame);
+    return bytes(frame);
 }
+
 function run_08_langtons_ant() {
     let w = 420;
     let h = 420;
-    let out_path = 'sample/out/08_langtons_ant.gif';
+    let out_path = "sample/out/08_langtons_ant.gif";
+    
     let start = perf_counter();
-    let grid = [];
-    let gy;
-    for (let __pytra_i_3 = 0; __pytra_i_3 < h; __pytra_i_3 += 1) {
-        gy = __pytra_i_3;
-        let row = [];
-        let gx;
-        for (let __pytra_i_4 = 0; __pytra_i_4 < w; __pytra_i_4 += 1) {
-            gx = __pytra_i_4;
-            row.push(0);
-        }
-        grid.push(row);
-    }
-    let x = pyFloorDiv(w, 2);
-    let y = pyFloorDiv(h, 2);
+    
+    let grid = [[0] * w for _ in range(h)];
+    let x = Math.floor(w / 2);
+    let y = Math.floor(h / 2);
     let d = 0;
+    
     let steps_total = 600000;
     let capture_every = 3000;
     let frames = [];
-    let i;
-    for (let __pytra_i_5 = 0; __pytra_i_5 < steps_total; __pytra_i_5 += 1) {
-        i = __pytra_i_5;
-        if (pyBool(((grid[y][x]) === (0)))) {
-            d = pyMod(((d) + (1)), 4);
+    
+    for (let i = 0; i < steps_total; i += 1) {
+        if (grid[y][x] === 0) {
+            d = (d + 1) % 4;
             grid[y][x] = 1;
         } else {
-            d = pyMod(((d) + (3)), 4);
+            d = (d + 3) % 4;
             grid[y][x] = 0;
         }
-        if (pyBool(((d) === (0)))) {
-            y = pyMod(((((y) - (1))) + (h)), h);
+        if (d === 0) {
+            y = (y - 1 + h) % h;
         } else {
-            if (pyBool(((d) === (1)))) {
-                x = pyMod(((x) + (1)), w);
+            if (d === 1) {
+                x = (x + 1) % w;
             } else {
-                if (pyBool(((d) === (2)))) {
-                    y = pyMod(((y) + (1)), h);
+                if (d === 2) {
+                    y = (y + 1) % h;
                 } else {
-                    x = pyMod(((((x) - (1))) + (w)), w);
+                    x = (x - 1 + w) % w;
                 }
             }
         }
-        if (pyBool(((pyMod(i, capture_every)) === (0)))) {
+        if (i % capture_every === 0) {
             frames.push(capture(grid, w, h));
         }
     }
-    save_gif(out_path, w, h, frames, grayscale_palette(), 5, 0);
-    let elapsed = ((perf_counter()) - (start));
-    pyPrint('output:', out_path);
-    pyPrint('frames:', pyLen(frames));
-    pyPrint('elapsed_sec:', elapsed);
+    save_gif(out_path, w, h, frames, grayscale_palette());
+    let elapsed = perf_counter() - start;
+    console.log("output:", out_path);
+    console.log("frames:", (frames).length);
+    console.log("elapsed_sec:", elapsed);
 }
+
+// __main__ guard
 run_08_langtons_ant();

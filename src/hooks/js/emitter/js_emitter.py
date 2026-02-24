@@ -63,7 +63,120 @@ class JsEmitter(CodeEmitter):
             return ""
         return "./" + module_id.replace(".", "/") + ".js"
 
-    def _collect_import_statements(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
+    def _walk_node_names(self, node: Any, out: set[str]) -> None:
+        """ノード配下の Name.id を収集する（Import/ImportFrom 自身は除外）。"""
+        if isinstance(node, dict):
+            kind = self.any_dict_get_str(node, "kind", "")
+            if kind == "Import" or kind == "ImportFrom":
+                return
+            if kind == "Name":
+                name = self.any_to_str(node.get("id"))
+                if name != "":
+                    out.add(name)
+                return
+            for key, value in node.items():
+                if key == "comments":
+                    continue
+                self._walk_node_names(value, out)
+            return
+        if isinstance(node, list):
+            for item in node:
+                self._walk_node_names(item, out)
+
+    def _collect_used_names(self, body: list[dict[str, Any]], main_guard_body: list[dict[str, Any]]) -> set[str]:
+        """モジュール全体で実際に参照される識別子名を収集する。"""
+        used: set[str] = set()
+        for stmt in body:
+            self._walk_node_names(stmt, used)
+        for stmt in main_guard_body:
+            self._walk_node_names(stmt, used)
+        return used
+
+    def _collect_isinstance_type_symbols(self, rhs_node: dict[str, Any], required: set[str]) -> None:
+        """isinstance の第2引数から必要な runtime type 定数を抽出する。"""
+        kind = self.any_dict_get_str(rhs_node, "kind", "")
+        if kind == "Name":
+            rhs_name = self.any_dict_get_str(rhs_node, "id", "")
+            type_id_map = {
+                "str": "PY_TYPE_STRING",
+                "list": "PY_TYPE_ARRAY",
+                "dict": "PY_TYPE_MAP",
+                "set": "PY_TYPE_SET",
+                "int": "PY_TYPE_NUMBER",
+                "float": "PY_TYPE_NUMBER",
+                "bool": "PY_TYPE_BOOL",
+                "object": "PY_TYPE_OBJECT",
+            }
+            symbol = type_id_map.get(rhs_name, "")
+            if symbol != "":
+                required.add(symbol)
+            return
+        if kind == "Tuple":
+            for elt in self.tuple_elements(rhs_node):
+                self._collect_isinstance_type_symbols(self.any_to_dict_or_empty(elt), required)
+
+    def _walk_runtime_requirements(self, node: Any, required: set[str]) -> None:
+        """ノード配下から py_runtime シンボル依存を収集する。"""
+        if isinstance(node, dict):
+            kind = self.any_dict_get_str(node, "kind", "")
+            if kind == "ClassDef":
+                required.add("PYTRA_TYPE_ID")
+                required.add("PY_TYPE_OBJECT")
+                required.add("pyRegisterClassType")
+            elif kind == "Dict":
+                required.add("PYTRA_TYPE_ID")
+                required.add("PY_TYPE_MAP")
+            elif kind == "Call":
+                fn = self.any_to_dict_or_empty(node.get("func"))
+                if self.any_dict_get_str(fn, "kind", "") == "Name" and self.any_dict_get_str(fn, "id", "") == "isinstance":
+                    required.add("pyIsInstance")
+                    args = self.any_to_list(node.get("args"))
+                    if len(args) >= 2:
+                        self._collect_isinstance_type_symbols(self.any_to_dict_or_empty(args[1]), required)
+            for key, value in node.items():
+                if key == "comments":
+                    continue
+                self._walk_runtime_requirements(value, required)
+            return
+        if isinstance(node, list):
+            for item in node:
+                self._walk_runtime_requirements(item, required)
+
+    def _collect_runtime_symbols(
+        self,
+        body: list[dict[str, Any]],
+        main_guard_body: list[dict[str, Any]],
+    ) -> list[str]:
+        """モジュールで必要な py_runtime シンボルを順序付きで返す。"""
+        required: set[str] = set()
+        for stmt in body:
+            self._walk_runtime_requirements(stmt, required)
+        for stmt in main_guard_body:
+            self._walk_runtime_requirements(stmt, required)
+        ordered = [
+            "PYTRA_TYPE_ID",
+            "PY_TYPE_BOOL",
+            "PY_TYPE_NUMBER",
+            "PY_TYPE_STRING",
+            "PY_TYPE_ARRAY",
+            "PY_TYPE_MAP",
+            "PY_TYPE_SET",
+            "PY_TYPE_OBJECT",
+            "pyRegisterClassType",
+            "pyIsInstance",
+        ]
+        out: list[str] = []
+        for name in ordered:
+            if name in required:
+                out.append(name)
+        return out
+
+    def _collect_import_statements(
+        self,
+        body: list[dict[str, Any]],
+        meta: dict[str, Any],
+        used_names: set[str],
+    ) -> list[str]:
         """import 情報を JavaScript import 文へ変換する。"""
         out: list[str] = []
         seen: set[str] = set()
@@ -100,10 +213,16 @@ class JsEmitter(CodeEmitter):
                     i += 1
                     continue
                 if binding_kind == "module" and local_name != "":
+                    if local_name not in used_names:
+                        i += 1
+                        continue
                     leaf = self._last_dotted_name(module_id)
                     alias = local_name if local_name != leaf else leaf
                     _add("import * as " + self._safe_name(alias) + " from " + self.quote_string_literal(module_path) + ";")
                 elif binding_kind == "symbol" and export_name != "":
+                    if local_name == "" or local_name not in used_names:
+                        i += 1
+                        continue
                     if local_name != "" and local_name != export_name:
                         _add(
                             "import { "
@@ -137,6 +256,8 @@ class JsEmitter(CodeEmitter):
                     asname = self.any_to_str(ent.get("asname"))
                     leaf = self._last_dotted_name(module_id)
                     alias = asname if asname != "" else leaf
+                    if alias not in used_names:
+                        continue
                     _add("import * as " + self._safe_name(alias) + " from " + self.quote_string_literal(module_path) + ";")
             elif kind == "ImportFrom":
                 module_id = self.any_to_str(stmt.get("module"))
@@ -154,6 +275,9 @@ class JsEmitter(CodeEmitter):
                     module_path = self._module_id_to_js_path(module_id)
                     if module_path == "":
                         continue
+                    alias_name = asname if asname != "" else name
+                    if alias_name not in used_names:
+                        continue
                     if asname != "" and asname != name:
                         _add("import { " + name + " as " + self._safe_name(asname) + " } from " + self.quote_string_literal(module_path) + ";")
                     else:
@@ -169,18 +293,18 @@ class JsEmitter(CodeEmitter):
 
         module = self.doc
         body = self._dict_stmt_list(module.get("body"))
+        main_guard_body = self._dict_stmt_list(module.get("main_guard_body"))
         meta = self.any_to_dict_or_empty(module.get("meta"))
         self.load_import_bindings_from_meta(meta)
         self.emit_module_leading_trivia()
-        self.emit("const __pytra_root = process.cwd();")
-        self.emit("const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');")
-        self.emit(
-            "const { PYTRA_TYPE_ID, PY_TYPE_BOOL, PY_TYPE_NUMBER, PY_TYPE_STRING, "
-            + "PY_TYPE_ARRAY, PY_TYPE_MAP, PY_TYPE_SET, PY_TYPE_OBJECT, "
-            + "pyRegisterClassType, pyIsInstance } = py_runtime;"
-        )
-        self.emit("")
-        import_lines = self._collect_import_statements(body, meta)
+        used_names = self._collect_used_names(body, main_guard_body)
+        runtime_symbols = self._collect_runtime_symbols(body, main_guard_body)
+        if len(runtime_symbols) > 0:
+            self.emit("const __pytra_root = process.cwd();")
+            self.emit("const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');")
+            self.emit("const { " + ", ".join(runtime_symbols) + " } = py_runtime;")
+            self.emit("")
+        import_lines = self._collect_import_statements(body, meta, used_names)
         for line in import_lines:
             self.emit(line)
         if len(import_lines) > 0:
@@ -210,7 +334,6 @@ class JsEmitter(CodeEmitter):
                 continue
             top_level_stmts.append(stmt)
 
-        main_guard_body = self._dict_stmt_list(module.get("main_guard_body"))
         if len(main_guard_body) > 0:
             self.emit("// __main__ guard")
             self.emit_stmt_list(main_guard_body)
@@ -498,7 +621,23 @@ class JsEmitter(CodeEmitter):
         left = self.render_expr(expr.get("left"))
         ops = self.any_to_str_list(expr.get("ops"))
         comps = self.any_to_list(expr.get("comparators"))
-        return self.render_compare_chain_common(left, ops, comps, self.cmp_ops, empty_literal="false")
+        right_exprs: list[str] = []
+        pair_count = len(ops)
+        if len(comps) < pair_count:
+            pair_count = len(comps)
+        i = 0
+        while i < pair_count:
+            right_exprs.append(self.render_expr(comps[i]))
+            i += 1
+        return self.render_compare_chain_from_rendered(
+            left,
+            ops,
+            right_exprs,
+            self.cmp_ops,
+            empty_literal="false",
+            wrap_terms=False,
+            wrap_whole=False,
+        )
 
     def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
         """`isinstance(x, T)` の `T` を JS runtime API 判定式へ変換する。"""
@@ -541,7 +680,7 @@ class JsEmitter(CodeEmitter):
                 if lowered != "":
                     checks.append(lowered)
             if len(checks) > 0:
-                return "(" + " || ".join(checks) + ")"
+                return " || ".join(checks)
         return "false"
 
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
@@ -675,11 +814,18 @@ class JsEmitter(CodeEmitter):
             return owner_expr + "." + attr
         if kind == "UnaryOp":
             op = self.any_dict_get_str(expr_d, "op", "")
-            operand = self.render_expr(expr_d.get("operand"))
+            operand_node = self.any_to_dict_or_empty(expr_d.get("operand"))
+            operand = self.render_expr(operand_node)
+            operand_kind = self.any_dict_get_str(operand_node, "kind", "")
+            simple_operand = operand_kind in {"Name", "Constant", "Call", "Attribute", "Subscript"}
             if op == "USub":
-                return "(-" + operand + ")"
+                if simple_operand:
+                    return "-" + operand
+                return "-(" + operand + ")"
             if op == "Not":
-                return "(!" + operand + ")"
+                if simple_operand:
+                    return "!" + operand
+                return "!(" + operand + ")"
             return operand
         if kind == "BinOp":
             op = self.any_to_str(expr_d.get("op"))
@@ -691,15 +837,23 @@ class JsEmitter(CodeEmitter):
             if custom != "":
                 return custom
             if op == "FloorDiv":
-                return "Math.floor((" + left + ") / (" + right + "))"
+                return "Math.floor(" + left + " / " + right + ")"
             mapped = self.bin_ops.get(op, "+")
-            return "(" + left + " " + mapped + " " + right + ")"
+            return left + " " + mapped + " " + right
         if kind == "Compare":
             return self._render_compare(expr_d)
         if kind == "BoolOp":
             vals = self.any_to_list(expr_d.get("values"))
             op = self.any_to_str(expr_d.get("op"))
-            return self.render_boolop_common(vals, op, and_token="&&", or_token="||", empty_literal="false")
+            return self.render_boolop_chain_common(
+                vals,
+                op,
+                and_token="&&",
+                or_token="||",
+                empty_literal="false",
+                wrap_each=False,
+                wrap_whole=False,
+            )
         if kind == "Call":
             hook = self.hook_on_render_call(expr_d, self.any_to_dict_or_empty(expr_d.get("func")), [], {})
             if hook != "":

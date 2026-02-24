@@ -1,115 +1,94 @@
-// このファイルは自動生成です（Python -> TypeScript native mode）。
+// このファイルは EAST ベース TypeScript プレビュー出力です。
+// TODO: 専用 TSEmitter 実装へ段階移行する。
+import { perf_counter } from "./time.js";
+import { grayscale_palette } from "./pytra/runtime/gif.js";
+import { save_gif } from "./pytra/runtime/gif.js";
 
-const __pytra_root = process.cwd();
-const py_runtime = require(__pytra_root + '/src/runtime/ts/pytra/py_runtime.ts');
-const py_math = require(__pytra_root + '/src/runtime/ts/pytra/math.ts');
-const py_time = require(__pytra_root + '/src/runtime/ts/pytra/time.ts');
-const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;
-const { perfCounter } = py_time;
-const perf_counter = perfCounter;
-const { grayscale_palette, save_gif } = require(__pytra_root + '/src/runtime/ts/pytra/gif_helper.ts');
+// 13: Sample that outputs DFS maze-generation progress as a GIF.
 
 function capture(grid, w, h, scale) {
-    let width = ((w) * (scale));
-    let height = ((h) * (scale));
-    let frame = pyBytearray(((width) * (height)));
-    let y;
-    for (let __pytra_i_1 = 0; __pytra_i_1 < h; __pytra_i_1 += 1) {
-        y = __pytra_i_1;
-        let x;
-        for (let __pytra_i_2 = 0; __pytra_i_2 < w; __pytra_i_2 += 1) {
-            x = __pytra_i_2;
-            let v = (pyBool(((grid[y][x]) === (0))) ? 255 : 40);
-            let yy;
-            for (let __pytra_i_3 = 0; __pytra_i_3 < scale; __pytra_i_3 += 1) {
-                yy = __pytra_i_3;
-                let base = ((((((((y) * (scale))) + (yy))) * (width))) + (((x) * (scale))));
-                let xx;
-                for (let __pytra_i_4 = 0; __pytra_i_4 < scale; __pytra_i_4 += 1) {
-                    xx = __pytra_i_4;
-                    frame[((base) + (xx))] = v;
+    let width = w * scale;
+    let height = h * scale;
+    let frame = bytearray(width * height);
+    for (let y = 0; y < h; y += 1) {
+        for (let x = 0; x < w; x += 1) {
+            let v = (grid[y][x] === 0 ? 255 : 40);
+            for (let yy = 0; yy < scale; yy += 1) {
+                let base = (y * scale + yy) * width + x * scale;
+                for (let xx = 0; xx < scale; xx += 1) {
+                    frame[base + xx] = v;
                 }
             }
         }
     }
-    return pyBytes(frame);
+    return bytes(frame);
 }
+
 function run_13_maze_generation_steps() {
+    // Increase maze size and render resolution to ensure sufficient runtime.
     let cell_w = 89;
     let cell_h = 67;
     let scale = 5;
     let capture_every = 20;
-    let out_path = 'sample/out/13_maze_generation_steps.gif';
+    let out_path = "sample/out/13_maze_generation_steps.gif";
+    
     let start = perf_counter();
-    let grid = [];
-    let _;
-    for (let __pytra_i_5 = 0; __pytra_i_5 < cell_h; __pytra_i_5 += 1) {
-        _ = __pytra_i_5;
-        let row = [];
-        for (let __pytra_i_6 = 0; __pytra_i_6 < cell_w; __pytra_i_6 += 1) {
-            _ = __pytra_i_6;
-            row.push(1);
-        }
-        grid.push(row);
-    }
-    let stack = [[1, 1]];
+    let grid = [[1] * cell_w for _ in range(cell_h)];
+    let stack = [];
     grid[1][1] = 0;
-    let dirs = [[2, 0], [(-(2)), 0], [0, 2], [0, (-(2))]];
+    
+    let dirs = [];
     let frames = [];
     let step = 0;
-    while (pyBool(((pyLen(stack)) > (0)))) {
-        let last_index = ((pyLen(stack)) - (1));
-        const __pytra_tuple_7 = stack[last_index];
-        let x = __pytra_tuple_7[0];
-        let y = __pytra_tuple_7[1];
+    
+    while ((stack).length !== 0) {
+        const __tmp_1 = stack[-1];
+        x = __tmp_1[0];
+        y = __tmp_1[1];
         let candidates = [];
-        let k;
-        for (let __pytra_i_8 = 0; __pytra_i_8 < 4; __pytra_i_8 += 1) {
-            k = __pytra_i_8;
-            const __pytra_tuple_9 = dirs[k];
-            let dx = __pytra_tuple_9[0];
-            let dy = __pytra_tuple_9[1];
-            let nx = ((x) + (dx));
-            let ny = ((y) + (dy));
-            if (pyBool((((nx) >= (1)) && ((nx) < (((cell_w) - (1)))) && ((ny) >= (1)) && ((ny) < (((cell_h) - (1)))) && ((grid[ny][nx]) === (1))))) {
-                if (pyBool(((dx) === (2)))) {
-                    candidates.push([nx, ny, ((x) + (1)), y]);
+        for (let k = 0; k < 4; k += 1) {
+            const __tmp_2 = dirs[k];
+            dx = __tmp_2[0];
+            dy = __tmp_2[1];
+            let nx = x + dx;
+            let ny = y + dy;
+            if (nx >= 1 && nx < cell_w - 1 && ny >= 1 && ny < cell_h - 1 && grid[ny][nx] === 1) {
+                if (dx === 2) {
+                    candidates.push([nx, ny, x + 1, y]);
                 } else {
-                    if (pyBool(((dx) === ((-(2)))))) {
-                        candidates.push([nx, ny, ((x) - (1)), y]);
+                    if (dx === -2) {
+                        candidates.push([nx, ny, x - 1, y]);
                     } else {
-                        if (pyBool(((dy) === (2)))) {
-                            candidates.push([nx, ny, x, ((y) + (1))]);
+                        if (dy === 2) {
+                            candidates.push([nx, ny, x, y + 1]);
                         } else {
-                            candidates.push([nx, ny, x, ((y) - (1))]);
+                            candidates.push([nx, ny, x, y - 1]);
                         }
                     }
                 }
             }
         }
-        if (pyBool(((pyLen(candidates)) === (0)))) {
+        if ((candidates).length === 0) {
             stack.pop();
         } else {
-            let sel = candidates[pyMod(((((((x) * (17))) + (((y) * (29))))) + (((pyLen(stack)) * (13)))), pyLen(candidates))];
-            const __pytra_tuple_10 = sel;
-            let nx = __pytra_tuple_10[0];
-            let ny = __pytra_tuple_10[1];
-            let wx = __pytra_tuple_10[2];
-            let wy = __pytra_tuple_10[3];
+            let sel = candidates[(x * 17 + y * 29 + (stack).length * 13) % (candidates).length];
+            [nx, ny, wx, wy] = sel;
             grid[wy][wx] = 0;
             grid[ny][nx] = 0;
             stack.push([nx, ny]);
         }
-        if (pyBool(((pyMod(step, capture_every)) === (0)))) {
+        if (step % capture_every === 0) {
             frames.push(capture(grid, cell_w, cell_h, scale));
         }
-        step = step + 1;
+        step += 1;
     }
     frames.push(capture(grid, cell_w, cell_h, scale));
-    save_gif(out_path, ((cell_w) * (scale)), ((cell_h) * (scale)), frames, grayscale_palette(), 4, 0);
-    let elapsed = ((perf_counter()) - (start));
-    pyPrint('output:', out_path);
-    pyPrint('frames:', pyLen(frames));
-    pyPrint('elapsed_sec:', elapsed);
+    save_gif(out_path, cell_w * scale, cell_h * scale, frames, grayscale_palette());
+    let elapsed = perf_counter() - start;
+    console.log("output:", out_path);
+    console.log("frames:", (frames).length);
+    console.log("elapsed_sec:", elapsed);
 }
+
+// __main__ guard
 run_13_maze_generation_steps();
