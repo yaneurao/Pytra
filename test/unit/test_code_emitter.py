@@ -690,6 +690,11 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(parts.get("args"), ["a"])
         self.assertEqual(parts.get("kw_values"), ["b"])
         self.assertEqual(parts.get("kw"), {"k": "b"})
+        call_ctx = em.prepare_call_context(call_node)
+        self.assertEqual(call_ctx.get("fn_name"), "fn")
+        self.assertEqual(call_ctx.get("args"), ["a"])
+        self.assertEqual(call_ctx.get("kw_values"), ["b"])
+        self.assertEqual(call_ctx.get("kw"), {"k": "b"})
 
         ifexp = {
             "kind": "IfExp",

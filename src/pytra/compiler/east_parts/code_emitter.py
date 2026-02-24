@@ -274,6 +274,10 @@ class CodeEmitter:
         out["first_arg"] = first_arg
         return out
 
+    def prepare_call_context(self, expr: dict[str, Any]) -> dict[str, Any]:
+        """Call ノードの前処理結果を unpack 済み文脈として返す。"""
+        return self.unpack_prepared_call_parts(self._prepare_call_parts(expr))
+
     def validate_call_receiver_or_raise(self, fn_node: dict[str, Any]) -> None:
         """`obj.method(...)` の object レシーバ禁止ルールを検証する。"""
         if self._node_kind_from_dict(fn_node) != "Attribute":

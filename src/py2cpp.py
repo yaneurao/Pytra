@@ -6412,8 +6412,7 @@ class CppEmitter(CodeEmitter):
         if kind == "Attribute":
             return self._render_attribute_expr(expr_d)
         if kind == "Call":
-            call_parts: dict[str, Any] = self._prepare_call_parts(expr_d)
-            call_ctx = self.unpack_prepared_call_parts(call_parts)
+            call_ctx = self.prepare_call_context(expr_d)
             fn = self.any_to_dict_or_empty(call_ctx.get("fn"))
             fn_name = self.any_to_str(call_ctx.get("fn_name"))
             arg_nodes = self.any_to_list(call_ctx.get("arg_nodes"))
