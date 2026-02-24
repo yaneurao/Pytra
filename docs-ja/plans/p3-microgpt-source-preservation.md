@@ -259,3 +259,4 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-24: `materials/` 再編後の導線ずれを解消するため、`tools/check_microgpt_original_py2cpp_regression.py` の既定入力を `materials/refs/microgpt/microgpt-20260222.py` へ更新し、`--source` 省略で `stage=F` を再現できる状態に復旧した。
 - 2026-02-24: `P3-MSP-03` の継続として `x if isinstance(x, T) else T(x)` 形の `IfExp` で `else` 側を `make_object(...)` へ統一する lower を追加し、`stage=F` 先頭エラーを `Value::__add__` から `Value::log()` 周辺へ前進させた（`check_microgpt_original_py2cpp_regression.py --expect-stage any-known`）。
 - 2026-02-24: `P3-MSP-03` の継続として module 関数引数 coercion に「数値シグネチャ + Any/unknown 引数の unbox」を追加し、`pytra::std::math::log/exp` へ `object` が流れる経路を縮退。`stage=F` 先頭エラーを `Value::log()` から lambda 内部（`val.data` / `(val - max_val).exp()`）へ前進させた。
+- 2026-02-24: `P3-MSP-03` の継続として、モジュール内で属性名が一意な ref-class フィールドを `unknown/object` 受信でも `obj_to_rc_or_raise<Cls>(...)->field` に降ろす経路を追加。`max(val.data for val in logits)` 側の崩れを解消し、`stage=F` 先頭エラーを `(val - max_val).exp()` 側へ前進させた。
