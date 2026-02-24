@@ -29,6 +29,7 @@ def main() -> int:
         ["python3", "tools/check_runtime_legacy_shims.py"],
         ["python3", "tools/run_regen_on_version_bump.py", "--verify-cpp-on-diff"],
         ["python3", "tools/check_multilang_quality_regression.py"],
+        ["python3", "tools/check_multilang_selfhost_suite.py"],
         ["python3", "tools/check_py2cpp_transpile.py"],
         ["python3", "tools/check_py2js_transpile.py"],
         ["python3", "tools/check_py2ts_transpile.py"],

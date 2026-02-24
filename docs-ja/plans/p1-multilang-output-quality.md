@@ -45,6 +45,9 @@
 - `python3 tools/check_py2java_transpile.py`
 - `python3 tools/check_py2swift_transpile.py`
 - `python3 tools/check_py2kotlin_transpile.py`
+- `python3 tools/check_multilang_selfhost_stage1.py`
+- `python3 tools/check_multilang_selfhost_multistage.py`
+- `python3 tools/check_multilang_selfhost_suite.py`
 
 `P1-MQ-01` 計測結果:
 
@@ -202,6 +205,16 @@
   - `js`: `stage1_dependency_transpile_fail`（`hooks/js/emitter/js_emitter.py` 自己変換で object receiver 制約に抵触）。
   - `ts/go/java/swift/kotlin`: `preview_only`（stage2/stage3 blocked）。
 
+`P1-MQ-06` 実装結果（定期実行導線整備）:
+
+- 対象: `tools/check_multilang_selfhost_suite.py`, `tools/run_local_ci.py`
+- 変更点:
+  1. `check_multilang_selfhost_stage1.py` と `check_multilang_selfhost_multistage.py` をまとめて実行する統合スイート（`check_multilang_selfhost_suite.py`）を追加した。
+  2. 統合スイートは実行後に `docs-ja/plans/*status.md` を再生成し、stage1/multistage の失敗要因サマリを標準出力へ出す。
+  3. `tools/run_local_ci.py` に統合スイートを追加し、通常 CI 相当導線から定期実行できるようにした。
+- 確認:
+  - `python3 tools/check_multilang_selfhost_suite.py` が成功し、既知失敗カテゴリ（`stage1_transpile_fail` / `toolchain_missing` / `preview_only` など）を要約表示することを確認。
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
@@ -217,3 +230,4 @@
 - 2026-02-24: ID: P1-MQ-04-S2 の事前調査として JS emitter に `Slice` 出力（`out[:-3]` -> `.slice(...)`）を追加して stage2 の `SyntaxError` は解消したが、次段で `src/hooks/js/emitter/js_emitter.js` 不在（Python hooks 依存）により実行が継続失敗することを確認した。
 - 2026-02-24: ID: P1-MQ-04-S2 として non-preview 言語（`rs/cs/js`）の stage2 runner を自動化し、`docs-ja/plans/p1-multilang-selfhost-status.md` に `blocked/fail` 理由を固定した。
 - 2026-02-24: ID: P1-MQ-05 として多段 selfhost チェック（`tools/check_multilang_selfhost_multistage.py`）を追加し、`docs-ja/plans/p1-multilang-selfhost-multistage-status.md` に失敗カテゴリを固定した。
+- 2026-02-24: ID: P1-MQ-06 として統合 selfhost スイート（`tools/check_multilang_selfhost_suite.py`）を追加し、`tools/run_local_ci.py` へ組み込んだ。
