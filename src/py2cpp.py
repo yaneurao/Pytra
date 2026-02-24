@@ -5222,8 +5222,7 @@ class CppEmitter(CodeEmitter):
         if hook_call_txt != "":
             return hook_call_txt
         lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
-        has_runtime_call = self.any_dict_has(expr_d, "runtime_call")
-        if lowered_kind == "BuiltinCall" or has_runtime_call:
+        if lowered_kind == "BuiltinCall":
             builtin_rendered: str = self._render_builtin_call(expr_d, fn, arg_nodes, kw_nodes)
             if builtin_rendered != "":
                 return builtin_rendered
