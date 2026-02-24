@@ -39,7 +39,6 @@ _cpp_type_text
 _default_for_range_mode
 _default_stmt_omit_braces
 _dispatch_mode_for_forcore_bridge
-_doc_east_stage
 _emit_annassign_stmt
 _emit_assign_stmt
 _emit_augassign_stmt
@@ -71,6 +70,7 @@ _forrange_stmt_to_forcore
 _has_class_method
 _infer_module_global_decl_type
 _infer_name_assign_type
+_is_isinstance_ctor_ifexp_pattern
 _is_module_definition_stmt
 _is_reexport_assign
 _is_self_hosted_parser_doc
@@ -117,7 +117,6 @@ _render_dict_get_default_expr
 _render_ifexp_expr
 _render_joinedstr_expr
 _render_lambda_expr
-_render_legacy_builtin_method_call
 _render_lvalue_for_augassign
 _render_name_expr
 _render_namespaced_module_call

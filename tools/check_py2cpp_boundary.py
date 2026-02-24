@@ -63,7 +63,7 @@ COMPAT_WRAPPER_TOPLEVEL: set[str] = {
 
 # ラッパごとの最低限の委譲シグネチャ検査（source substring）。
 WRAPPER_DELEGATION_MARKERS: dict[str, str] = {
-    "load_east": "load_east_document(",
+    "load_east": "load_east3_document(",
     "_analyze_import_graph": "analyze_import_graph(",
     "build_module_east_map": "build_module_east_map_common(",
     "dump_deps_graph_text": "dump_deps_graph_text_common(",
