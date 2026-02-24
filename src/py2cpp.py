@@ -7790,7 +7790,9 @@ def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
                 module_id = resolved_mod_id if resolved_mod_id != "" else mod
                 if dep_key not in module_id_map or module_id_map[dep_key] == "":
                     module_id_map[dep_key] = module_id
-                deps = dict_any_get_list(graph_adj, cur_key)
+                deps: list[str] = []
+                if cur_key in graph_adj:
+                    deps = graph_adj[cur_key]
                 deps.append(dep_key)
                 graph_adj[cur_key] = deps
                 key_to_path[dep_key] = dep_file
