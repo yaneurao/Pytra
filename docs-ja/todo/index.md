@@ -27,10 +27,9 @@
 文脈: `docs-ja/plans/plan-east123-migration.md`（`TG-P0-EAST123-MIGRATION`）
 
 1. [ ] [ID: P0-EASTMIG-06] `EAST3` を全変換器の標準主経路として確定し、`EAST2` は明示互換モードに限定する（`P0-EASTMIG-06-S0` から `P0-EASTMIG-06-S7` 完了でクローズ）。
-2. [ ] [ID: P0-EASTMIG-06-S4] `test/unit/test_east3_*` と `tools/check_py2*_transpile.py` を更新し、`EAST3` 主経路が回帰導線の既定になるよう固定する。
-3. [ ] [ID: P0-EASTMIG-06-S5] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` の記述を実装実態へ同期し、`EAST2` を「移行互換モード」として明文化する。
-4. [ ] [ID: P0-EASTMIG-06-S6] `EAST1` build 責務境界を `docs-ja/spec/spec-east.md#east1-build-boundary` で正式化し、`load_east_document_compat` エラー契約互換・selfhost diff 実行・`EAST1` build での `EAST2` 非変換を受け入れ基準として固定する。
-5. [ ] [ID: P0-EASTMIG-06-S7] （低優先）`east_parts/render_human_east2_cpp.py` と並行して `east_parts/render_human_east3_cpp.py` を追加し、`EAST3` 命令ノード（`ForCore`, `Box/Unbox`, `Obj*`, `type_id` 系）を人間可読ビューへ描画する経路を整備する。
+2. [ ] [ID: P0-EASTMIG-06-S5] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` の記述を実装実態へ同期し、`EAST2` を「移行互換モード」として明文化する。
+3. [ ] [ID: P0-EASTMIG-06-S6] `EAST1` build 責務境界を `docs-ja/spec/spec-east.md#east1-build-boundary` で正式化し、`load_east_document_compat` エラー契約互換・selfhost diff 実行・`EAST1` build での `EAST2` 非変換を受け入れ基準として固定する。
+4. [ ] [ID: P0-EASTMIG-06-S7] （低優先）`east_parts/render_human_east2_cpp.py` と並行して `east_parts/render_human_east3_cpp.py` を追加し、`EAST3` 命令ノード（`ForCore`, `Box/Unbox`, `Obj*`, `type_id` 系）を人間可読ビューへ描画する経路を整備する。
 
 ## P1: 多言語出力品質（preview 脱却の再オープン）
 

@@ -324,6 +324,21 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
   - `python3 test/unit/test_noncpp_east3_contract_guard.py` が `Ran 1 test ... OK` で通過。
   - `python3 tools/check_noncpp_east3_contract.py` が `8/8` 言語で通過。
 
+## `EAST3` 主経路の回帰導線固定（`P0-EASTMIG-06-S4`）
+
+`test/unit/test_east3_*` と `tools/check_py2*_transpile.py` の両面で「既定は `EAST3`」契約を固定する。
+
+- `test/unit/test_east3_*` 更新:
+  - `test/unit/test_east3_lowering.py` に `test_noncpp_east3_contract_script_passes_static_mode` を追加し、`tools/check_noncpp_east3_contract.py --skip-transpile` が通過することを `east3` 回帰セット内で保証。
+- `tools/check_py2*_transpile.py` 更新:
+  - `check_py2cpp_transpile.py` と非 C++ 8変換器の `check_py2*_transpile.py`（`rs/cs/js/ts/go/java/kotlin/swift`）で、既定実行時に `warning: --east-stage 2 is compatibility mode; default is 3.` が出た場合を失敗扱いに変更。
+  - これにより、既定経路が `EAST2` 互換モードへ後退した際に transpile チェックで即検出できるようにした。
+- 回帰確認:
+  - `python3 test/unit/test_east3_lowering.py` -> `Ran 20 tests ... OK`
+  - `python3 test/unit/test_east3_cpp_bridge.py` -> `Ran 72 tests ... OK`
+  - `python3 tools/check_py2cpp_transpile.py` -> `checked=131 ok=131 fail=0 skipped=6`
+  - `python3 tools/check_noncpp_east3_contract.py` -> `8/8` 言語 pass
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -347,6 +362,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06-S4`] `test_east3_lowering` に non-cpp 契約ガード実行テストを追加し、`tools/check_py2*_transpile.py` で既定実行時の stage2 互換警告を失敗扱いに統一した。`check_py2cpp_transpile` と `check_noncpp_east3_contract`、`test_east3_*` の回帰が通過。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S9`] `tools/check_noncpp_east3_contract.py` と `test_noncpp_east3_contract_guard.py` を追加し、非 C++ 8変換器の `--east-stage` 既定値・警告文言・回帰導線を統一した。`run_local_ci` の非 C++ 導線は同スクリプトへ統合。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S8`] `py2swift.py` に `--east-stage` / `--object-dispatch-mode` を追加し、既定を `EAST3` に切替えた。`stage=2` は警告付き互換モードへ縮退。`EAST3` ノード互換は `east3_legacy_compat` を利用し、`test_py2swift_smoke` と `check_py2swift_transpile` を通過させた。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S7`] `py2kotlin.py` に `--east-stage` / `--object-dispatch-mode` を追加し、既定を `EAST3` に切替えた。`stage=2` は警告付き互換モードへ縮退。`EAST3` ノード互換は `east3_legacy_compat` を利用し、`test_py2kotlin_smoke` と `check_py2kotlin_transpile` を通過させた。

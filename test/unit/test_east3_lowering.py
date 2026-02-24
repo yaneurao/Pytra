@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -726,6 +727,16 @@ class East3LoweringTest(unittest.TestCase):
         body = out.get("body", [])
         iter_plan = body[0].get("iter_plan", {})
         self.assertEqual(iter_plan.get("dispatch_mode"), "type_id")
+
+    def test_noncpp_east3_contract_script_passes_static_mode(self) -> None:
+        cp = subprocess.run(
+            ["python3", "tools/check_noncpp_east3_contract.py", "--skip-transpile"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(cp.returncode, 0, msg=f"{cp.stdout}\n{cp.stderr}")
+        self.assertIn("static contract checks passed", cp.stdout)
 
 
 if __name__ == "__main__":

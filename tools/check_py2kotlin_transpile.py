@@ -29,6 +29,9 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
         capture_output=True,
         text=True,
     )
+    compat_warning = "warning: --east-stage 2 is compatibility mode; default is 3."
+    if cp.returncode == 0 and compat_warning in cp.stderr:
+        return False, "unexpected stage2 compatibility warning in default run"
     if cp.returncode == 0:
         return True, ""
     msg = cp.stderr.strip() or cp.stdout.strip()
@@ -76,4 +79,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
