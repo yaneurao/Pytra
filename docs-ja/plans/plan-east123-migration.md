@@ -151,6 +151,27 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - `P0-EASTMIG-06-S1` 以降の実装では、上記 4 成果物を「破壊しない」ことを受け入れ条件に含める。
 - 境界契約の変更が必要な場合は、先に `docs-ja/spec/spec-east.md` / `docs-ja/spec/spec-dev.md` と本計画を更新してから実装変更を行う。
 
+## 全 `py2*.py` 読み込み経路棚卸し（`P0-EASTMIG-06-S1`）
+
+`EAST2` 既定経路の残存箇所を、変換器ごとに固定する。
+
+| 変換器 | 読み込み入口 | `EAST2` 既定化ポイント | 備考 |
+| --- | --- | --- | --- |
+| `src/py2cpp.py` | `load_east(..., east_stage="2")` | `parse_py2cpp_argv` の既定 `east_stage="2"` / `main()` 側 `dict_str_get(..., "east_stage", "2")`。`east_stage != "3"` 分岐で `load_east_document` を通る。 | `--east-stage {2,3}` を公開済み。`S2` で既定 `3` へ切替対象。 |
+| `src/py2rs.py` | `load_east_document_compat` | `--east-stage` 引数なし。`load_east_document_compat -> load_east_document` の既定経路へ固定。 | `S3-S1` で `EAST3` 主経路化対象。 |
+| `src/py2cs.py` | `load_east_document_compat` | 同上。 | `S3-S2` 対象。 |
+| `src/py2js.py` | `load_east_document_compat` | 同上。 | `S3-S3` 対象。 |
+| `src/py2ts.py` | `load_east_document_compat` | 同上。 | `S3-S4` 対象。 |
+| `src/py2go.py` | `load_east_document_compat` | 同上。 | `S3-S5` 対象。 |
+| `src/py2java.py` | `load_east_document_compat` | 同上。 | `S3-S6` 対象。 |
+| `src/py2kotlin.py` | `load_east_document_compat` | 同上。 | `S3-S7` 対象。 |
+| `src/py2swift.py` | `load_east_document_compat` | 同上。 | `S3-S8` 対象。 |
+
+共通の `EAST2` 既定化源（`transpile_cli.py`）:
+- `normalize_east_root_document` が `east_stage` 未指定時に `2` を補完。
+- `normalize_east1_to_east2_document` が `east_stage==1` を `2` へ変換。
+- `load_east_document_compat` が `load_east_document` を呼び出すため、非 C++ 変換器は既定で `EAST2` 経路へ入る。
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -174,6 +195,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06-S1`] 全 `py2*.py`（`py2cpp` + 非 C++ 8変換器）の EAST 読み込み経路を棚卸しし、`load_east_document_compat` 依存と `east_stage="2"` 既定値の残存箇所を表形式で固定した。後続は `S2`（cpp 既定切替）と `S3-*`（非 cpp 主経路化）へ受け渡す。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S5`] `S0-S1` から `S0-S4` の成果物を本計画へ集約し、`P0-EASTMIG-06-S0` を `P0` 先行ゲートとして確定した。以降の `S1` 以降は境界契約を破壊しないことを受け入れ条件とする。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S4`] `tools/check_east_stage_boundary.py` と `test/unit/test_east_stage_boundary_guard.py` を追加し、`east2.py` での `EAST3` lower 流入と `code_emitter.py` での stage 再解釈 API 流入を静的検査で拒否するガードを導入した。`tools/run_local_ci.py` に同ガードを組み込んだ。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S3`] `transpile_cli.py` / `east_parts` の段階横断残存を棚卸しし、`load_east_document` の `EAST1->EAST2` 即時正規化、`east_stage=2` 既定補完、`load_east_document_compat` 依存、`render_human_east2_cpp` 専用実装などを一覧化して後続タスクへの受け渡しを固定した。
