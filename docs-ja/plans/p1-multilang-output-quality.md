@@ -1,9 +1,9 @@
 # TASK GROUP: TG-P1-MULTILANG-QUALITY
 
-最終更新: 2026-02-22
+最終更新: 2026-02-24
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P1-MQ-01` 〜 `P1-MQ-08`
+- `docs-ja/todo.md` の `ID: P1-MQ-01` 〜 `P1-MQ-07`
 
 背景:
 - `sample/cpp/` と比べて、`sample/rs` および他言語（`cs/js/ts/go/java/swift/kotlin`）の生成コードは可読性の劣化が目立つ。
@@ -36,6 +36,7 @@
 - `sample/py` のゴールデン出力置き場と更新手順（通常比較 / 明示更新）を文書化し、通常検証時に毎回 Python 実行しなくてよい状態にする。
 
 確認コマンド:
+- `python3 tools/measure_multilang_quality.py`
 - `python3 tools/check_py2rs_transpile.py`
 - `python3 tools/check_py2cs_transpile.py`
 - `python3 tools/check_py2js_transpile.py`
@@ -45,6 +46,18 @@
 - `python3 tools/check_py2swift_transpile.py`
 - `python3 tools/check_py2kotlin_transpile.py`
 
+`P1-MQ-01` 計測結果:
+
+- ベースラインレポート: `docs-ja/plans/p1-multilang-output-quality-baseline.md`
+- 計測対象: `sample/{cpp,rs,cs,js,ts,go,java,swift,kotlin}`
+- 主要観測値（`sample/cpp` 比 / kLoC）:
+  - `mut`: `rs +334.59`
+  - `paren`: `rs +982.59`, `js +824.04`, `ts +818.78`, `cs +309.99`
+  - `cast`: `rs +198.12`, `cs +79.87`, `go +73.43`, `java +36.45`
+  - `unused_import_est`: `cs +21.14`, `js +6.06`, `ts +6.03`
+- 上記は簡易ヒューリスティック計測であり、`unused_import_est` と `cast` は厳密構文解析ではない。
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
+- 2026-02-24: ID: P1-MQ-01 として `tools/measure_multilang_quality.py` を追加し、`docs-ja/plans/p1-multilang-output-quality-baseline.md` に `sample/cpp` 比の品質差分（`mut`/`paren`/`cast`/`clone`/`unused_import_est`）を定量化した。
