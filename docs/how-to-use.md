@@ -154,7 +154,7 @@ node test/transpile/js/iterable.js
 ```
 
 Notes:
-- If input uses `import`, corresponding runtime implementations under `src/js_module/` are required.
+- If input uses `import`, corresponding runtime implementations under `src/runtime/js/pytra/` are required.
 
 </details>
 
