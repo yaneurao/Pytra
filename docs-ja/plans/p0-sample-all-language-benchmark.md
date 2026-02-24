@@ -29,3 +29,5 @@
 - 2026-02-25: Java ターゲットは `public class Main` のファイル名制約により、`runtime_parity_check` で出力先を固定 `Main.java` 化して実行に到達。現状は `Main.main` が TODO スタブ生成のままで出力なしのため検証不合格（実装側 emitter 仕上げが必要）。
 - 2026-02-25: `runtime_parity_check --targets cpp,rs,cs,js,ts,go,java,swift,kotlin` を再実行。`math_extended` / `pathlib_extended` は `cpp` のみPASS、`rs` は `crate::pytra` / `crate::math` / `crate::pathlib` の未解決、`cs` は型未解決と `System.IO` 等 import 不足、`js/ts` は `pytra/utils/assertions` import path 404、`go` は `using` 由来の構文誤出力、`java` は出力ミスマッチ（空文字）、`swift` は C#/Kotlin 風 `using` / `public static` を含む未対応言語混入、`kotlin` も同様の構文混入で失敗。
 - 2026-02-25: P0-SAMPLE-BENCH-01-S1 完了。`runtime_parity_check` が対象言語全部で skip なく到達することを再確認（`rustc/mcs/mono/go/java/javac/kotlin/node/node` 実行環境 + `swiftc`）。以降は言語別失敗の構文/import 根本不整合に注力。
+- 2026-02-25: `tools/verify_sample_outputs.py --refresh-golden --refresh-golden-only` を再実行し、`sample/golden/manifest.json` を 18 件すべて更新（Python実行時基準 + ゴールデンアーティファクト hash/サイズ含む）。
+- 2026-02-25: `tools/verify_sample_outputs.py --refresh-golden` 実行時、`OK: 13` `NG: 5` (`06`,`12`,`14`,`16` の artifact hash mismatch、`18` の C++ compile fail)。この時点でベースライン再更新は完了、NG 5件は後続タスクで分解対応が必要。

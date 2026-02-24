@@ -463,6 +463,8 @@ def _lower_assignment_like_stmt(stmt: dict[str, Any], *, dispatch_mode: str) -> 
         out[key] = _lower_node(stmt[key], dispatch_mode=dispatch_mode)
     if "value" not in stmt:
         return out
+    if stmt.get("value") is None:
+        return out
     value_lowered = _lower_node(stmt.get("value"), dispatch_mode=dispatch_mode)
     target_type = _resolve_assign_target_type(stmt)
     out["value"] = _wrap_value_for_target_type(value_lowered, target_type)
