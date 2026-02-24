@@ -1394,6 +1394,18 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(bytes_expr), "bytes{}")
         self.assertEqual(emitter.render_expr(bytearray_expr), "bytearray(b'\\x01\\x02')")
 
+    def test_plain_builtin_call_requires_builtin_lowering(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        plain_print = {
+            "kind": "Call",
+            "resolved_type": "None",
+            "func": {"kind": "Name", "id": "print", "resolved_type": "unknown"},
+            "args": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: print"):
+            emitter.render_expr(plain_print)
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",

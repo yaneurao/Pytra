@@ -4724,6 +4724,28 @@ class CppEmitter(CodeEmitter):
             return f"py_all({args[0]})"
         return None
 
+    def _requires_builtin_call_lowering(self, raw: str) -> bool:
+        """parser 側で BuiltinCall へ lower 済みであるべき Name を返す。"""
+        return raw in {
+            "print",
+            "len",
+            "str",
+            "int",
+            "float",
+            "bool",
+            "min",
+            "max",
+            "perf_counter",
+            "Exception",
+            "RuntimeError",
+            "Path",
+            "open",
+            "iter",
+            "next",
+            "bytes",
+            "bytearray",
+        }
+
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
         """`range(...)` の Name 呼び出しを `py_range(start, stop, step)` へ lower する。"""
         if len(kw) == 0:
@@ -4859,6 +4881,8 @@ class CppEmitter(CodeEmitter):
                     ctor_arg_names = self._class_method_name_sig(raw, "__init__")
                     ctor_args = self._merge_args_with_kw_by_name(args, kw, ctor_arg_names)
                 return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
+            if self._requires_builtin_call_lowering(raw):
+                raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + raw)
             any_boundary_expr = self._build_any_boundary_expr_from_call_name(raw, arg_nodes)
             if any_boundary_expr is not None:
                 return self.render_expr(any_boundary_expr)
