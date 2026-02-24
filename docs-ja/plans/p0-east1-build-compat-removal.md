@@ -35,3 +35,4 @@
 
 決定ログ:
 - 2026-02-24: ユーザー指示により、`py2cpp` 起点の `EAST1 build/import graph` 互換運用を廃止し、最優先群の2番目として着手する方針を確定。
+- 2026-02-24: [ID: `P0-EAST1-BUILD-01-S1`] `src/pytra/compiler/east_parts/east1_build.py` を追加し、`.py/.json -> EAST1` build（`build_east1_document`）と import graph 入口（`analyze_import_graph` / `build_module_east_map`）API を定義。`test/unit/test_east1_build.py` を新設して stage=1 契約を固定した。

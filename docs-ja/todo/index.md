@@ -27,10 +27,11 @@
 文脈: `docs-ja/plans/p0-east1-build-compat-removal.md`（`TG-P0-EAST1-BUILD-COMPAT-REMOVAL`）
 
 1. [ ] [ID: P0-EAST1-BUILD-01] `py2cpp` 起点の `EAST1 build/import graph` 互換運用を廃止し、`east_parts` 側の正規責務へ移管する（`P0-EAST1-BUILD-01-S1` から `P0-EAST1-BUILD-01-S4` 完了でクローズ）。
-2. [ ] [ID: P0-EAST1-BUILD-01-S1] `src/pytra/compiler/east_parts/east1_build.py`（新規）へ `.py/.json -> EAST1` build と import graph 解析入口 API を定義する。
+2. [x] [ID: P0-EAST1-BUILD-01-S1] `src/pytra/compiler/east_parts/east1_build.py`（新規）へ `.py/.json -> EAST1` build と import graph 解析入口 API を定義する。
 3. [ ] [ID: P0-EAST1-BUILD-01-S2] `src/py2cpp.py` の import graph/build 呼び出しを `east1_build` API へ置換し、`transpile_cli` 互換 helper 依存を削減する。
 4. [ ] [ID: P0-EAST1-BUILD-01-S3] `src/pytra/compiler/transpile_cli.py` の `py2cpp` 互換専用 helper（import graph/build 導線）を撤去または薄い委譲へ縮退する。
 5. [ ] [ID: P0-EAST1-BUILD-01-S4] `spec-east` / `spec-dev` と `py2cpp` 関連テストを同期し、責務境界と回帰ガードを固定する。
+進捗メモ: [ID: P0-EAST1-BUILD-01-S1] `east_parts/east1_build.py` を新設し、`build_east1_document`・`analyze_import_graph`・`build_module_east_map` の入口 API と unit test（`test_east1_build.py`）を追加。
 
 ## P0: 依存解析の `EAST1 build` 責務化（3番目優先）
 
