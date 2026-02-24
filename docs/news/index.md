@@ -1,13 +1,13 @@
-# 過去ニュース
+# Past News
 
-このディレクトリは、`readme-ja.md` の「最新ニュース」から移動した過去ニュースの保管場所です。
+This directory stores past news items that were moved from the “Latest News” section of `readme.md`.
 
-## 運用ルール
+## Maintenance Rules
 
-- `readme-ja.md` には最新 3 件までを掲載します。
-- 4 件目以降の古いニュースは `docs-ja/news/YYYYMMDD-<slug>.md` へ移動します。
-- 移動時はこの `index.md` に逆時系列でリンクを追記します。
+- `readme.md` keeps only the latest three news items.
+- Older news items from the fourth onward are moved to `docs/news/YYYYMMDD-<slug>.md`.
+- When moving an item, add a reverse-chronological link in this `index.md`.
 
-## 一覧（新しい順）
+## List (newest first)
 
-- 現在、移動済みニュースはありません。
+- No moved news items are currently archived.
