@@ -13,7 +13,7 @@ python3 tools/measure_multilang_quality.py
 | lang | files | lines | mut | paren | cast | clone | imports | unused_import_est |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | cpp | 18 | 2125 | 0 | 259 | 0 | 0 | 30 | 0 |
-| rs | 18 | 2210 | 245 | 821 | 180 | 1 | 49 | 1 |
+| rs | 18 | 2184 | 245 | 164 | 180 | 1 | 49 | 1 |
 | cs | 18 | 2129 | 0 | 215 | 0 | 0 | 7 | 0 |
 | js | 18 | 1998 | 0 | 148 | 0 | 0 | 49 | 0 |
 | ts | 18 | 2034 | 0 | 148 | 18 | 0 | 49 | 0 |
@@ -26,7 +26,7 @@ python3 tools/measure_multilang_quality.py
 
 | lang | mutΔ/kLoC | parenΔ/kLoC | castΔ/kLoC | cloneΔ/kLoC | unused_importΔ/kLoC |
 |---|---:|---:|---:|---:|---:|
-| rs | 110.86 | 249.61 | 81.45 | 0.45 | 0.45 |
+| rs | 112.18 | -46.79 | 82.42 | 0.46 | 0.46 |
 | cs | 0.00 | -20.90 | 0.00 | 0.00 | 0.00 |
 | js | 0.00 | -47.81 | 0.00 | 0.00 | 0.00 |
 | ts | 0.00 | -49.12 | 8.85 | 0.00 | 0.00 |
