@@ -1,9 +1,9 @@
 # TASK GROUP: TG-P3-PYTHONIC
 
-最終更新: 2026-02-23
+最終更新: 2026-02-24
 
 関連 TODO:
-- `docs-ja/todo/index.md` の `ID: P3-PY-*`, `P3-CE-*`
+- `docs-ja/todo/index.md` の `ID: P3-EAST-PY-*`, `P3-PY-*`, `P3-CE-*`
 
 背景:
 - selfhost 安定化のため平易化した記法が増え、可読性が低下している。
@@ -12,6 +12,7 @@
 - selfhost 安定を維持したまま、段階的に Pythonic 記法へ戻す。
 
 対象:
+- `src/pytra/compiler/east_parts/{code_emitter.py,core.py}` の非 Pythonic 記法戻し（先行）
 - `src/py2cpp.py` のループ/比較/リテラル/式簡潔化
 - `code_emitter.py` の重複判定・分岐整理
 - 小パッチ運用（1〜3関数）
@@ -22,6 +23,7 @@
 受け入れ基準:
 - 可読性向上と selfhost 安定を両立
 - 既定の検証コマンドを毎回通す
+- `P3-EAST-PY-*` 完了までは `P3-PY-*` の新規着手を開始しない（`east_parts` を先行する）
 
 確認コマンド:
 - `python3 tools/check_py2cpp_transpile.py`
@@ -34,6 +36,7 @@
 - 回帰が出た場合は「可読性改善より selfhost 安定」を優先する。
 
 決定ログ:
+- 2026-02-24: `P3-EAST-PY-*` を追加し、Pythonic 記法戻しの着手順を `east_parts`（`code_emitter.py` / `core.py`）先行へ変更した。`py2cpp.py` 側は `P3-EAST-PY-*` 完了後に着手する。
 - 2026-02-22: 初版作成。
 - 2026-02-23: `P3-PY-05` の継続として空文字判定とフォールバック式を簡潔化し、`src/py2cpp.py::CppEmitter.declare_in_current_scope` の `if name == ""` を `if not name` へ、`src/py2cpp.py::CppEmitter.get_expr_type` の `if t != ""` を `if t` へ、`src/py2cpp.py::CppEmitter._infer_module_global_decl_type` の `d2/d1/d0` フォールバックを `d2 or d1 or d0` に統一し `picked = picked if picked != "" else "object"` を `picked = picked or "object"` へ簡潔化した。あわせて `src/py2cpp.py::CppEmitter._collect_module_global_decls` の `if raw_name == ""` を `if not raw_name` へ統一した。`python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）を確認し、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` は `mismatches=3 skipped=0`（既知維持）だった。`src/pytra/compiler/transpiler_versions.json` の `cpp` を `0.268.0 -> 0.269.0` へ更新した。
 - 2026-02-23: `P3-PY-05` の継続として import モジュール関数シグネチャ読取を簡潔化し、`src/py2cpp.py::CppEmitter._module_function_arg_types` の cache 参照で `fn_map = cached` 一時変数を削除して `sig = cached.get(fn_name)` へ統一した。あわせて空パス判定 `if str(src_path) == ""` を `if not str(src_path)` へ統一した。`python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）を確認し、`python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` は `mismatches=3 skipped=0`（既知維持）だった。`src/pytra/compiler/transpiler_versions.json` の `cpp` を `0.267.0 -> 0.268.0` へ更新した。

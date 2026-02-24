@@ -82,7 +82,16 @@
 
 文脈: `docs-ja/plans/p3-pythonic-restoration.md`（`TG-P3-PYTHONIC`）
 
+### `src/pytra/compiler/east_parts/`（先行）
+
+1. [ ] [ID: P3-EAST-PY-01] `src/pytra/compiler/east_parts/{code_emitter.py,core.py}` で selfhost 安定化のために残した非 Pythonic 記法（`while i < len(...)`、手動 index 走査、冗長な空判定）を棚卸しし、`Pythonic へ戻せる/戻せない` の判定表を作る。
+2. [ ] [ID: P3-EAST-PY-02] `P3-EAST-PY-01` で「戻せる」と判定した `code_emitter.py` の非 Pythonic 記法を、1パッチ 1〜3 関数の粒度で `for` / `enumerate` / 直接反復へ戻す。
+3. [ ] [ID: P3-EAST-PY-03] `P3-EAST-PY-01` で「戻せる」と判定した `core.py` の非 Pythonic 記法を、selfhost 回帰が出ない範囲で段階的に戻す。
+4. [ ] [ID: P3-EAST-PY-04] `P3-EAST-PY-02` と `P3-EAST-PY-03` の結果を `docs-ja/plans/p3-pythonic-restoration.md` に反映し、残る非 Pythonic 記法の維持理由（selfhost 制約）を明文化する。
+
 ### `src/py2cpp.py`
+
+`P3-EAST-PY-*` を先行し、`east_parts` 側の整理完了後に着手する。
 
 1. [ ] [ID: P3-PY-01] `while i < len(xs)` + 手動インデックス更新を `for x in xs` / `for i, x in enumerate(xs)` へ戻す。
 2. [ ] [ID: P3-PY-03] 空 dict/list 初期化後の逐次代入（`out = {}; out["k"] = v`）を、型崩れしない箇所から辞書リテラルへ戻す。
