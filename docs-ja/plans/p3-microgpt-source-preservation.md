@@ -1,6 +1,6 @@
 # TASK GROUP: TG-P3-MICROGPT-SOURCE-PRESERVATION
 
-最終更新: 2026-02-23
+最終更新: 2026-02-24
 
 関連 TODO:
 - `docs-ja/todo.md` の `ID: P3-MSP-01`
@@ -256,3 +256,4 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-23: `P3-MSP-08` を実施。`open`/`list.index`/`random.shuffle(list[str])` の最小再現を行い、runtime/std 互換差分の吸収レイヤを確定した。`random.choices(range(...))` は runtime ではなく `P3-MSP-06`（EAST lower）側で扱うと決定した。
 - 2026-02-23: `P3-MSP-03` の継続として module init 分離・runtime API 追加・`object` 既定値補完・無注釈関数の戻り値推定を実装し、`stage=F` 先頭エラーを `std::make_tuple` 既定値不整合から `Value::__add__` 周辺へ前進させた。
 - 2026-02-23: `P3-MSP-03` の継続として `IfExp` 定数畳み込み、class/object 境界の dunder lower・boxing 強化、runtime `object` 四則演算と `math.log/exp(object)` overload を追加し、`stage=F` 先頭エラーを `Value::__add__` から `Value::__rtruediv__` 周辺へ前進させた。
+- 2026-02-24: `materials/` 再編後の導線ずれを解消するため、`tools/check_microgpt_original_py2cpp_regression.py` の既定入力を `materials/refs/microgpt/microgpt-20260222.py` へ更新し、`--source` 省略で `stage=F` を再現できる状態に復旧した。

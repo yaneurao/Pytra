@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PY2CPP = ROOT / "src" / "py2cpp.py"
-DEFAULT_SOURCE = ROOT / "materials" / "microgpt" / "microgpt-20260222.py"
+DEFAULT_SOURCE = ROOT / "materials" / "refs" / "microgpt" / "microgpt-20260222.py"
 
 KNOWN_STAGES = ("A", "B", "C", "D", "E", "F")
 
@@ -103,12 +103,12 @@ def _matches_expectation(expect: str, stage: str) -> bool:
 
 def _build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
-        description="check regression stage for original materials/microgpt/microgpt-20260222.py"
+        description="check regression stage for original materials/refs/microgpt/microgpt-20260222.py"
     )
     ap.add_argument(
         "--source",
         default=str(DEFAULT_SOURCE),
-        help="python source to transpile (default: materials/microgpt/microgpt-20260222.py)",
+        help="python source to transpile (default: materials/refs/microgpt/microgpt-20260222.py)",
     )
     ap.add_argument(
         "--expect-stage",
