@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from pytra.compiler.east_parts.east1 import normalize_east1_root_document
-from pytra.compiler.transpile_cli import EastDocumentHelpers, ImportGraphHelpers
+from pytra.compiler.transpile_cli import analyze_import_graph as analyze_import_graph_core
+from pytra.compiler.transpile_cli import build_module_east_map_from_analysis as build_module_east_map_from_analysis_core
+from pytra.compiler.transpile_cli import build_module_symbol_index as build_module_symbol_index_core
+from pytra.compiler.transpile_cli import build_module_type_schema as build_module_type_schema_core
+from pytra.compiler.transpile_cli import load_east_document as load_east_document_core
 from pytra.std.pathlib import Path
 from pytra.std.typing import Any
 
@@ -16,7 +20,7 @@ def build_east1_document(
     """入力（`.py/.json`）を `EAST1` ルートへ変換して返す。"""
     load_fn = load_east_document_fn
     if load_fn is None:
-        load_fn = EastDocumentHelpers.load_east_document
+        load_fn = load_east_document_core
     east_any = load_fn(input_path, parser_backend=parser_backend)
     if isinstance(east_any, dict):
         east_doc: dict[str, object] = east_any
@@ -39,7 +43,7 @@ def analyze_import_graph(
             return build_east1_document(path, parser_backend=parser_backend)
 
         load_fn = _load_default
-    out_any = ImportGraphHelpers.analyze_import_graph(
+    out_any = analyze_import_graph_core(
         entry_path,
         runtime_std_source_root,
         runtime_utils_source_root,
@@ -103,7 +107,7 @@ def build_module_east_map(
             east_one: dict[str, object] = east_any
             module_east_raw[str(p)] = east_one
 
-    module_map_any = ImportGraphHelpers.build_module_east_map_from_analysis(
+    module_map_any = build_module_east_map_from_analysis_core(
         entry_path,
         analysis,
         module_east_raw,
@@ -116,7 +120,7 @@ def build_module_east_map(
 
 def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """module EAST map からシンボル索引を構築する。"""
-    out_any = ImportGraphHelpers.build_module_symbol_index(module_east_map)
+    out_any = build_module_symbol_index_core(module_east_map)
     if isinstance(out_any, dict):
         out: dict[str, dict[str, Any]] = out_any
         return out
@@ -125,7 +129,7 @@ def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dic
 
 def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """module EAST map から type schema を構築する。"""
-    out_any = ImportGraphHelpers.build_module_type_schema(module_east_map)
+    out_any = build_module_type_schema_core(module_east_map)
     if isinstance(out_any, dict):
         out: dict[str, dict[str, Any]] = out_any
         return out

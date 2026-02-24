@@ -37,3 +37,4 @@
 - 2026-02-24: ユーザー指示により、`py2cpp` 起点の `EAST1 build/import graph` 互換運用を廃止し、最優先群の2番目として着手する方針を確定。
 - 2026-02-24: [ID: `P0-EAST1-BUILD-01-S1`] `src/pytra/compiler/east_parts/east1_build.py` を追加し、`.py/.json -> EAST1` build（`build_east1_document`）と import graph 入口（`analyze_import_graph` / `build_module_east_map`）API を定義。`test/unit/test_east1_build.py` を新設して stage=1 契約を固定した。
 - 2026-02-24: [ID: `P0-EAST1-BUILD-01-S2`] `src/py2cpp.py` の import graph/build 呼び出しを `East1BuildHelpers` 委譲へ置換。`_analyze_import_graph` は `east1_build.analyze_import_graph` を利用し、`build_module_east_map` は import graph 解析を `east1_build` に寄せつつ、モジュール実体は `load_east(..., stage=3)` で構築する経路へ整理した。
+- 2026-02-24: [ID: `P0-EAST1-BUILD-01-S3`] `transpile_cli.ImportGraphHelpers` の `analyze_import_graph` / `build_module_east_map` を `east1_build` への thin wrapper（lazy import）へ置換し、`py2cpp` 互換 helper 側の責務を「委譲のみ」へ縮退した。

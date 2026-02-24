@@ -2077,6 +2077,59 @@ def build_module_east_map(
     return build_module_east_map_from_analysis(entry_path, analysis, module_east_raw)
 
 
+def analyze_import_graph_via_east1_build(
+    entry_path: Path,
+    runtime_std_source_root: Path,
+    runtime_utils_source_root: Path,
+    load_east_fn: object,
+) -> dict[str, object]:
+    """`east1_build` 入口へ委譲する import graph helper。"""
+    from pytra.compiler.east_parts.east1_build import East1BuildHelpers
+
+    def _load_east1(path_obj: Path) -> dict[str, object]:
+        if callable(load_east_fn):
+            loaded = load_east_fn(path_obj)
+            if isinstance(loaded, dict):
+                return loaded
+        return {}
+
+    return East1BuildHelpers.analyze_import_graph(
+        entry_path,
+        runtime_std_source_root=runtime_std_source_root,
+        runtime_utils_source_root=runtime_utils_source_root,
+        load_east1_document_fn=_load_east1,
+    )
+
+
+def build_module_east_map_via_east1_build(
+    entry_path: Path,
+    load_east_fn: object,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "2",
+    object_dispatch_mode: str = "",
+    runtime_std_source_root: Path = Path("src/pytra/std"),
+    runtime_utils_source_root: Path = Path("src/pytra/utils"),
+) -> dict[str, dict[str, object]]:
+    """`east1_build` 入口へ委譲する module EAST map helper。"""
+    from pytra.compiler.east_parts.east1_build import East1BuildHelpers
+
+    def _build_doc(path_obj: Path, parser_backend: str = "self_hosted", object_dispatch_mode: str = "") -> dict[str, object]:
+        if callable(load_east_fn):
+            loaded = load_east_fn(path_obj, parser_backend, east_stage, object_dispatch_mode)
+            if isinstance(loaded, dict):
+                return loaded
+        return {}
+
+    return East1BuildHelpers.build_module_east_map(
+        entry_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        runtime_std_source_root=runtime_std_source_root,
+        runtime_utils_source_root=runtime_utils_source_root,
+        build_module_document_fn=_build_doc,
+    )
+
+
 def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:
     """個別 `--max-*` 値を正整数へ変換する。"""
     if raw == "":
@@ -2513,8 +2566,8 @@ class ImportGraphHelpers:
     is_pytra_module_name = staticmethod(is_pytra_module_name)
     collect_user_module_files_for_graph = staticmethod(collect_user_module_files_for_graph)
     finalize_import_graph_analysis = staticmethod(finalize_import_graph_analysis)
-    analyze_import_graph = staticmethod(analyze_import_graph)
-    build_module_east_map = staticmethod(build_module_east_map)
+    analyze_import_graph = staticmethod(analyze_import_graph_via_east1_build)
+    build_module_east_map = staticmethod(build_module_east_map_via_east1_build)
 
 
 class CodegenOptionHelpers:
