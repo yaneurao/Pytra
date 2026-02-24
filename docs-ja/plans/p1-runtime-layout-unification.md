@@ -70,8 +70,8 @@
 
 | 参照元 | 参照内容 | 廃止可否判定 | 条件/備考 |
 |---|---|---|---|
-| `src/rs_module/py_runtime.rs` | 互換 shim 本体 | `P1-RUNTIME-03-S2` で廃止対象 | 旧参照 fallback を終了すると同時に削除 |
-| `tools/check_rs_runtime_layout.py` | `src/rs_module` shim 前提のレイアウト検証 | `P1-RUNTIME-03-S2` で更新対象 | shim 廃止後は `src/runtime/rs/pytra/` 直検証へ置換 |
+| `src/rs_module/py_runtime.rs` | 互換 shim 本体 | 削除済み（`P1-RUNTIME-03-S2`） | 旧参照 fallback を終了し削除 |
+| `tools/check_rs_runtime_layout.py` | Rust runtime レイアウト検証 | 更新済み（`P1-RUNTIME-03-S2`） | `src/rs_module` ソース禁止 + `src/runtime/rs/pytra/` 必須を検証 |
 | `docs-ja/how-to-use.md` / `docs/how-to-use.md` | `src/rs_module` を runtime 配置として案内 | `P1-RUNTIME-03-S2` で更新対象 | 新配置 `src/runtime/rs/pytra/` へ文言置換 |
 | `docs-ja/plans/pytra-wip.md` / `docs/plans/pytra-wip.md` | 旧配置参照の移行注記 | `P1-RUNTIME-03-S2` で更新対象 | 旧配置記述を互換終了済みへ変更 |
 | `docs-ja/spec/spec-dev.md` | `src/rs_module` を移行中として言及 | `P1-RUNTIME-03-S2` で更新対象 | 「非依存」の最終状態へ更新 |
@@ -116,3 +116,5 @@
 - 2026-02-24: ID: P1-RUNTIME-02-S2 として生成物参照先を新パスへ切替した。`sample/rs/*.rs` の `#[path = "../../src/rs_module/py_runtime.rs"]` を `#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]` へ一括更新し、コード側の旧パス依存を撤去した。旧参照 fallback は `src/rs_module/py_runtime.rs` shim のみ維持する。
 - 2026-02-24: ID: P1-RUNTIME-02（親タスク）を完了として履歴へ移管した。次段は `P1-RUNTIME-03`（`src/rs_module` 廃止）へ進む。
 - 2026-02-24: ID: P1-RUNTIME-03-S1 として `src/rs_module` 参照元を全件棚卸しし、コード側は `src/rs_module/py_runtime.rs` shim と `tools/check_rs_runtime_layout.py` のみが直接依存、残りは docs 記述であることを確認した。`P1-RUNTIME-03-S2` では shim 削除 + ガード更新 + docs 置換を同時実施する方針を確定した。
+- 2026-02-24: ID: P1-RUNTIME-03-S2 として `src/rs_module/py_runtime.rs` を削除し、`tools/check_rs_runtime_layout.py` を「`src/rs_module` ソース禁止」ルールへ更新した。`docs-ja/how-to-use.md`、`docs-ja/spec/spec-dev.md`、`docs-ja/plans/pytra-wip.md` の旧参照を `src/runtime/rs/pytra/` 基準へ置換した。
+- 2026-02-24: ID: P1-RUNTIME-03（親タスク）を完了として履歴へ移管した。Rust runtime の旧配置依存は解消し、残タスクは `P1-RUNTIME-05`（他言語統一）へ移行する。

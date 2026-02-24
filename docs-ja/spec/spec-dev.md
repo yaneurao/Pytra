@@ -352,7 +352,7 @@
 
 - `src/py2rs.py` は CLI + 入出力の薄いオーケストレータに限定する。
 - Rust 固有の出力処理は `src/hooks/rs/emitter/rs_emitter.py`（`RustEmitter`）へ分離する。
-- `src/py2rs.py` は `src/common/` / `src/rs_module/` に依存しない（最終的に `src/runtime/rs/pytra/` 基準へ統一）。
+- `src/py2rs.py` は `src/common/` / `src/rs_module/` に依存しない（`src/runtime/rs/pytra/` 基準で統一済み）。
 - 言語固有差分は `src/profiles/rs/` と `src/hooks/rs/` に分離する。
 - 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
 - 現時点の到達点は「変換成功（transpile success）を優先」であり、Rust コンパイル互換・出力品質は段階的に改善する。
