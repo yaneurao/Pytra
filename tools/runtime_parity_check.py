@@ -14,6 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "test" / "fixtures"
+SWIFTC = ROOT / ".chain" / "swift" / "usr" / "bin" / "swiftc"
 
 
 @dataclass
@@ -37,6 +38,10 @@ def run_shell(cmd: str, cwd: Path) -> subprocess.CompletedProcess[str]:
 
 def can_run(target: Target) -> bool:
     for tool in target.needs:
+        if tool.startswith("/"):
+            if Path(tool).is_file():
+                continue
+            return False
         if shutil.which(tool) is None:
             return False
     return True
@@ -120,9 +125,12 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
         ),
         Target(
             name="swift",
-            transpile_cmd=f"python src/py2swift.py {shlex.quote(case_src)} test/transpile/swift/{case_stem}.swift",
-            run_cmd=f"swiftc test/transpile/swift/{case_stem}.swift -o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out",
-            needs=("python", "swiftc", "node"),
+            transpile_cmd=(
+                f"python src/py2swift.py {shlex.quote(case_src)} --output "
+                f"test/transpile/swift/{case_stem}.swift"
+            ),
+            run_cmd=f"{SWIFTC.as_posix()} test/transpile/swift/{case_stem}.swift -o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out",
+            needs=("python", SWIFTC.as_posix()),
         ),
         Target(
             name="kotlin",

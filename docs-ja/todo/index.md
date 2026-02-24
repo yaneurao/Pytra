@@ -28,7 +28,7 @@
 
 ### 文脈
 - `docs-ja/plans/p0-sample-all-language-benchmark.md`
-- 進捗: [ID: P0-SAMPLE-BENCH-01] `runtime_parity_check` で `cpp` はPASS、他言語は現時点のemit/runtine不整合（`rs/cs/js/ts/go/java/kotlin`）または`swiftc`未導入で対応保留。
+- 進捗: [ID: P0-SAMPLE-BENCH-01] `runtime_parity_check` を全言語対象で再実行し、`cpp` はPASS。`rs/cs/js/ts/go/java/swift/kotlin` は `import`/型/構文の根本混入により失敗、`swiftc` は導入済み。
 
 ### タスク（S1〜S3）
 
