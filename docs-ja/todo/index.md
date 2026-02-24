@@ -135,6 +135,7 @@
 - [ID: P3-EAST-PY-03-S1] `core.py` の `_sh_is_identifier` と `_sh_bind_comp_target_types` を `for` / `enumerate` 化し、`code_emitter.py` の `while i < len(...)` を 3 件（`_kind_hook_suffix`, `fallback_tuple_target_names_from_repr`, `emit_tuple_assign_with_tmp`）に限定して簡潔化。
 - [ID: P3-EAST-PY-04] `core.py` の `_sh_parse_stmt_block_mutable` を `for ... enumerate` + `skip` 制御へ移行し、`while i < len(...)` 由来のインデックス更新を排除。
 - [ID: P3-PY-01] `src/py2cpp.py` から `while i < len(...)` や同等の手動インデックス更新パターンを除去済みとして `P3-PY-01` を完了扱い。
+- `build_module_east_map` の辞書フィルタ構築を辞書内包表記へ変更し、`main` の分岐での `module_east_map: {} -> {...}` へ移行して逐次代入を削減。
 
 ## P3: サンプル実行時間の再計測とREADME更新（低優先）
 

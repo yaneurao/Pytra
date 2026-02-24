@@ -431,11 +431,7 @@ def build_module_east_map(
         runtime_utils_source_root=RUNTIME_UTILS_SOURCE_ROOT,
         build_module_document_fn=_build_module_doc,
     )
-    out: dict[str, dict[str, Any]] = {}
-    for key, value in mp.items():
-        if isinstance(value, dict):
-            out[key] = value
-    return out
+    return {key: value for key, value in mp.items() if isinstance(value, dict)}
 
 
 def _write_multi_file_cpp(*args: Any, **kwargs: Any) -> dict[str, Any]:
@@ -769,9 +765,8 @@ def main(argv: list[str]) -> int:
                 check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
                 write_text_file(hdr_path, hdr_txt)
         else:
-            module_east_map: dict[str, dict[str, Any]] = {}
             if input_txt.endswith(".py"):
-                module_east_map = (
+                module_east_map: dict[str, dict[str, Any]] = (
                     module_east_map_cache
                     if len(module_east_map_cache) > 0
                     else build_module_east_map(
@@ -782,7 +777,7 @@ def main(argv: list[str]) -> int:
                     )
                 )
             else:
-                module_east_map[str(input_path)] = east_module
+                module_east_map: dict[str, dict[str, Any]] = {str(input_path): east_module}
             out_dir = Path(output_dir_txt) if output_dir_txt != "" else Path("out")
             if output_txt != "":
                 out_dir = Path(output_txt)
