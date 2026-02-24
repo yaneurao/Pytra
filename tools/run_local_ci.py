@@ -22,6 +22,7 @@ def main() -> int:
         ["python3", "tools/check_transpiler_version_gate.py"],
         ["python3", "tools/check_todo_priority.py"],
         ["python3", "tools/check_py2cpp_boundary.py"],
+        ["python3", "tools/check_east_stage_boundary.py"],
         ["python3", "tools/check_py2cpp_helper_guard.py"],
         ["python3", "tools/check_cpp_hooks_semantic_budget.py", "--max-semantic", "0"],
         ["python3", "tools/check_runtime_cpp_layout.py"],

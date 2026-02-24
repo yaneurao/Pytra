@@ -126,6 +126,18 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `src/pytra/compiler/east_parts/east_io.py::_normalize_east_root` | ルート補完で `east_stage` 未指定時に `2` を補完。 | stage 既定が util 層で固定化される。 | `P0-EASTMIG-06-S5` で契約文書と実装を同期。 |
 | `src/pytra/compiler/east_parts/render_human_east2_cpp.py` | human renderer が `EAST2` 専用実装のみ。 | `EAST3` 可視化が不足し段階差分が追跡しにくい。 | `P0-EASTMIG-06-S7` で `render_human_east3_cpp.py` を追加。 |
 
+## 段階境界ガード（`P0-EASTMIG-06-S0-S4`）
+
+`stage` 境界違反の再流入を防ぐため、静的ガード + unit 実行ガードを追加する。
+
+- `tools/check_east_stage_boundary.py`
+  - `src/pytra/compiler/east_parts/east2.py` で `EAST3` lower API（`lower_east2_to_east3*`, `load_east3_document`）の import/call を禁止。
+  - `src/pytra/compiler/east_parts/code_emitter.py` で stage load/lower API（`load_east_document*`, `normalize_east1_to_east2_document`, `lower_east2_to_east3*`, `convert_*`）の import/call を禁止。
+- `test/unit/test_east_stage_boundary_guard.py`
+  - 上記ガードを subprocess 実行し、CI で return code を固定する。
+- `tools/run_local_ci.py`
+  - `tools/check_east_stage_boundary.py` を標準チェック列へ追加する。
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -149,6 +161,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06-S0-S4`] `tools/check_east_stage_boundary.py` と `test/unit/test_east_stage_boundary_guard.py` を追加し、`east2.py` での `EAST3` lower 流入と `code_emitter.py` での stage 再解釈 API 流入を静的検査で拒否するガードを導入した。`tools/run_local_ci.py` に同ガードを組み込んだ。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S3`] `transpile_cli.py` / `east_parts` の段階横断残存を棚卸しし、`load_east_document` の `EAST1->EAST2` 即時正規化、`east_stage=2` 既定補完、`load_east_document_compat` 依存、`render_human_east2_cpp` 専用実装などを一覧化して後続タスクへの受け渡しを固定した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S2`] `docs-ja/spec/spec-dev.md` の責務境界へ「CodeEmitter は EAST3 以降の構文写像専任」「意味論 lower 禁止」「backend/hook 側の再解釈禁止」を明記した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S1`] `docs-ja/spec/spec-east.md` の `16.1.1` に段階境界表（入力/出力/禁止事項/担当ファイル）を追加し、`EAST1/EAST2/EAST3` の責務固定を仕様として明文化した。
