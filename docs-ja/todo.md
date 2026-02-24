@@ -37,8 +37,7 @@ py2cpp / py2rs 共通化候補:
 文脈: `docs-ja/plans/p1-py2cpp-reduction.md`（`TG-P1-CPP-REDUCE`）
 
 1. [ ] [ID: P1-CPP-REDUCE-02] 全言語 selfhost 前提で `py2cpp.py` への汎用 helper 新規追加を原則禁止する運用へ移行する（`P1-CPP-REDUCE-02-S1` から `P1-CPP-REDUCE-02-S3` 完了でクローズ）。
-2. [ ] [ID: P1-CPP-REDUCE-02-S2] 既存 helper 追加箇所を検出する lint/CI チェックを追加する。
-3. [ ] [ID: P1-CPP-REDUCE-02-S3] 例外（緊急 hotfix）時の暫定運用と後追い抽出期限を定義する。
+2. [ ] [ID: P1-CPP-REDUCE-02-S3] 例外（緊急 hotfix）時の暫定運用と後追い抽出期限を定義する。
 
 ## P1: コンパイラ共通層への抽出（py2cpp 偏在解消）
 

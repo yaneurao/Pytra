@@ -77,3 +77,4 @@
 - 2026-02-24: [ID: P1-CPP-REDUCE-01-S3-S1] `_emit_for_each_runtime` 内の Name ターゲット束縛分岐（`omit_braces` 有無で重複）を `_emit_for_each_runtime_target_bind` へ抽出し、重複分岐を削減した。`check_py2cpp_transpile` / `check_selfhost_cpp_diff --mode allow-not-implemented` で回帰なしを確認した。
 - 2026-02-24: [ID: P1-CPP-REDUCE-01-S3-S2] `emit_for_each` / `_emit_for_each_runtime` に重複していた for 本文スコープ制御（`omit_braces` の有無で二重実装）を `_emit_for_body_open` / `_emit_for_body_stmts` / `_emit_for_body_close` へ共通化した。`check_py2cpp_transpile` / `check_selfhost_cpp_diff --mode allow-not-implemented` で回帰なしを確認した。
 - 2026-02-24: [ID: P1-CPP-REDUCE-02-S1] 「汎用 helper 禁止 / 共通層先行抽出」ルールを `docs-ja/spec/spec-dev.md` に追記し、`py2cpp.py` へ言語非依存ロジックを直接追加しない運用基準を文書化した。
+- 2026-02-24: [ID: P1-CPP-REDUCE-02-S2] `tools/check_py2cpp_helper_guard.py` と allowlist（`tools/py2cpp_cpp_helper_allowlist.txt`）を追加し、`CppEmitter` private helper の増加を検出する CI ガードを導入した。`tools/run_local_ci.py` に同チェックを組み込み、ローカル CI 経路で常時検査できる状態にした。
