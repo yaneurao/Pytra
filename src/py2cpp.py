@@ -1108,10 +1108,15 @@ class CppEmitter(CodeEmitter):
             return "false"
         value_texts = [self.render_expr(v) for v in value_nodes]
         if not force_value_select and self.get_expr_type(expr) == "bool":
-            op = "&&" if self.any_dict_get_str(expr_dict, "op", "") == "And" else "||"
-            wrapped_values = [f"({txt})" for txt in value_texts]
-            sep = f" {op} "
-            return sep.join(wrapped_values)
+            return self.render_boolop_chain_common(
+                value_nodes,
+                self.any_dict_get_str(expr_dict, "op", ""),
+                and_token="&&",
+                or_token="||",
+                empty_literal="false",
+                wrap_each=True,
+                wrap_whole=False,
+            )
 
         op_name = self.any_dict_get_str(expr_dict, "op", "")
         out = value_texts[-1]
@@ -5654,16 +5659,40 @@ class CppEmitter(CodeEmitter):
                 return rep
             return "true"
         cmps = self._dict_stmt_list(expr.get("comparators"))
-        parts: list[str] = []
-        cur = left
-        cur_node: object = expr.get("left")
-        for i, op in enumerate(ops):
-            rhs_node: object = cmps[i] if i < len(cmps) else {}
+        rhs_nodes: list[Any] = []
+        rhs_texts: list[str] = []
+        has_special_case = False
+        cur_probe_node: object = expr.get("left")
+        for i, op_name in enumerate(ops):
+            rhs_node = cmps[i] if i < len(cmps) else {}
             rhs = self.render_expr(rhs_node)
             if self._looks_like_python_expr_text(rhs):
                 rhs_cpp = self._render_repr_expr(rhs)
                 if rhs_cpp != "":
                     rhs = rhs_cpp
+            rhs_nodes.append(rhs_node)
+            rhs_texts.append(rhs)
+            if op_name in {"In", "NotIn", "Is", "IsNot"}:
+                has_special_case = True
+            elif self._try_optimize_char_compare(cur_probe_node, op_name, rhs_node) != "":
+                has_special_case = True
+            cur_probe_node = rhs_node
+        if not has_special_case:
+            return self.render_compare_chain_from_rendered(
+                left,
+                ops,
+                rhs_texts,
+                CMP_OPS,
+                empty_literal="true",
+                wrap_terms=False,
+                wrap_whole=False,
+            )
+        parts: list[str] = []
+        cur = left
+        cur_node: object = expr.get("left")
+        for i, op in enumerate(ops):
+            rhs_node: object = rhs_nodes[i] if i < len(rhs_nodes) else {}
+            rhs = rhs_texts[i] if i < len(rhs_texts) else ""
             op_name: str = op
             cop = "=="
             cop_txt = str(CMP_OPS.get(op_name, ""))
