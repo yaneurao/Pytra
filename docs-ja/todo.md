@@ -27,7 +27,6 @@
 文脈: `docs-ja/plans/plan-east123-migration.md`（`TG-P0-EAST123-MIGRATION`）
 
 5. [ ] [ID: P0-EASTMIG-04] C++ hooks の意味論実装を棚卸しし、`EAST3` 前提の構文差分専任へ縮退する（意味論 hook の新規追加を禁止）。
-7. [ ] [ID: P0-EASTMIG-04-S2] 意味論 hook を `EAST3` 命令写像または共通層へ移し、C++ hooks 側から撤去する。
 8. [ ] [ID: P0-EASTMIG-04-S3] 意味論 hook の新規流入を防ぐチェック（lint またはテスト）を追加する。
 9. [ ] [ID: P0-EASTMIG-05] `--east-stage 3` 主経路の回帰導線（unit/transpile/selfhost）を標準化し、`EAST2` 入力を移行互換モードとして段階的に格下げする。
 10. [ ] [ID: P0-EASTMIG-05-S1] `test/unit/test_east3_lowering.py` / `test/unit/test_east3_cpp_bridge.py` を `EAST3` 主経路前提で拡充する。
