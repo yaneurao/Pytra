@@ -181,6 +181,26 @@ if __name__ == "__main__":
         self.assertIn("parents", names)
         self.assertIn("exist_ok", names)
 
+    def test_range_keywords_are_kept_for_builtin_call(self) -> None:
+        src = """
+def main() -> None:
+    r = range(start=1, stop=5, step=2)
+    print(r)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        range_calls = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict)
+            and n.get("kind") == "Call"
+            and n.get("lowered_kind") == "BuiltinCall"
+            and n.get("runtime_call") == "py_range"
+        ]
+        self.assertEqual(len(range_calls), 1)
+        kws = range_calls[0].get("keywords", [])
+        names = [k.get("arg") for k in kws if isinstance(k, dict)]
+        self.assertEqual(names, ["start", "stop", "step"])
+
     def test_identifier_prefixed_with_import_is_not_import_stmt(self) -> None:
         src = """
 def f() -> None:

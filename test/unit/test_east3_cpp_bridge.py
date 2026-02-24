@@ -1337,6 +1337,19 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Constant", "value": 3, "resolved_type": "int64"}],
             "keywords": [],
         }
+        range_kw_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_range",
+            "resolved_type": "range",
+            "func": {"kind": "Name", "id": "range", "resolved_type": "unknown"},
+            "args": [],
+            "keywords": [
+                {"arg": "start", "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"}},
+                {"arg": "stop", "value": {"kind": "Constant", "value": 5, "resolved_type": "int64"}},
+                {"arg": "step", "value": {"kind": "Constant", "value": 2, "resolved_type": "int64"}},
+            ],
+        }
         list_ctor_expr = {
             "kind": "Call",
             "lowered_kind": "BuiltinCall",
@@ -1478,6 +1491,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(ord_expr), 'py_ord("A")')
         self.assertEqual(emitter.render_expr(chr_expr), "py_chr(65)")
         self.assertEqual(emitter.render_expr(range_expr), "py_range(0, 3, 1)")
+        self.assertEqual(emitter.render_expr(range_kw_expr), "py_range(1, 5, 2)")
         self.assertEqual(emitter.render_expr(list_ctor_expr), "xs")
         self.assertEqual(emitter.render_expr(set_ctor_expr), "set<int64>(xs)")
         self.assertEqual(emitter.render_expr(dict_ctor_expr), "d")
