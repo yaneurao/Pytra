@@ -505,6 +505,7 @@ class CppEmitter(CodeEmitter):
         self.class_storage_hints: dict[str, str] = {}
         self.ref_classes: set[str] = set()
         self.value_classes: set[str] = set()
+        self.class_field_owner_unique: dict[str, str] = {}
         self.type_map: dict[str, str] = load_cpp_type_map(self.profile)
         if self.int_width == "32":
             self.type_map["int64"] = "int32"
@@ -1034,6 +1035,30 @@ class CppEmitter(CodeEmitter):
                     self.ref_classes.add(base)
                     changed = True
         self.value_classes = {name for name in self.class_names if name not in self.ref_classes}
+        field_owner_candidates: dict[str, set[str]] = {}
+        for stmt in body:
+            if self._node_kind_from_dict(stmt) != "ClassDef":
+                continue
+            cls_name = self.any_dict_get_str(stmt, "name", "")
+            if cls_name == "" or cls_name not in self.ref_classes:
+                continue
+            field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
+            for raw_attr in field_types.keys():
+                if not isinstance(raw_attr, str):
+                    continue
+                attr = raw_attr
+                if attr == "":
+                    continue
+                cur = field_owner_candidates.get(attr)
+                if not isinstance(cur, set):
+                    cur = set()
+                    field_owner_candidates[attr] = cur
+                cur.add(cls_name)
+        self.class_field_owner_unique = {}
+        for attr, owners in field_owner_candidates.items():
+            if len(owners) == 1:
+                for owner in owners:
+                    self.class_field_owner_unique[attr] = owner
 
         self.emit_module_leading_trivia()
         header_text: str = CPP_HEADER
@@ -6451,6 +6476,11 @@ class CppEmitter(CodeEmitter):
         ):
             ctx = f"{self.current_class_name}.{attr}"
             return f"obj_to_rc_or_raise<{self.current_class_name}>({base}, \"{ctx}\")->{attr}"
+        if bt in {"", "unknown"} or self.is_any_like_type(bt):
+            owner_cls = self.class_field_owner_unique.get(attr, "")
+            if owner_cls != "" and owner_cls in self.ref_classes:
+                ctx = f"{owner_cls}.{attr}"
+                return f"obj_to_rc_or_raise<{owner_cls}>({base}, \"{ctx}\")->{attr}"
         if bt in self.ref_classes:
             return f"{base}->{attr}"
         return f"{base}.{attr}"
