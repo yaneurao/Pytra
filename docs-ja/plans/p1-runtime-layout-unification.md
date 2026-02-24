@@ -12,6 +12,7 @@
 - `docs-ja/todo/index.md` の `ID: P1-RUNTIME-02`（`P1-RUNTIME-02-S1` 〜 `P1-RUNTIME-02-S2`）
 - `docs-ja/todo/index.md` の `ID: P1-RUNTIME-03`（`P1-RUNTIME-03-S1` 〜 `P1-RUNTIME-03-S2`）
 - `docs-ja/todo/index.md` の `ID: P1-RUNTIME-05`（`P1-RUNTIME-05-S1` 〜 `P1-RUNTIME-05-S3`）
+- `docs-ja/todo/index.md` の `ID: P1-RUNTIME-06`（`P1-RUNTIME-06-S1` 〜 `P1-RUNTIME-06-S6`）
 
 背景:
 - 言語ごとに runtime 配置規約が分断され、保守責務と探索規則が揺れている。
@@ -61,6 +62,13 @@
    - `P1-RUNTIME-05-S1`: 言語ごとの現行 runtime 解決パス差分を棚卸しする。
    - `P1-RUNTIME-05-S2`: 各 `py2<lang>.py` / hooks の参照を新基準へ順次更新する。
    - `P1-RUNTIME-05-S3`: 多言語 smoke 実行後に旧パス互換レイヤを段階撤去する。
+6. `P1-RUNTIME-06`（Rust 以外 runtime 実体移行の完了）
+   - `P1-RUNTIME-06-S1`: C# runtime 実体を `src/runtime/cs/pytra/` へ移行する。
+   - `P1-RUNTIME-06-S2`: Go runtime 実体を `src/runtime/go/pytra/` へ移行する。
+   - `P1-RUNTIME-06-S3`: Java runtime 実体を `src/runtime/java/pytra/` へ移行する。
+   - `P1-RUNTIME-06-S4`: Kotlin runtime 実体を `src/runtime/kotlin/pytra/` へ移行する。
+   - `P1-RUNTIME-06-S5`: Swift runtime 実体を `src/runtime/swift/pytra/` へ移行する。
+   - `P1-RUNTIME-06-S6`: `src/{cs,go,java,kotlin,swift}_module/` の再流入を防ぐ CI ガードを追加する。
 
 `P1-RUNTIME-02-S1` 棚卸し結果（Rust emitter/hooks の path 解決箇所と互換仕様）:
 
@@ -168,3 +176,4 @@
 - 2026-02-24: ID: `P1-RUNTIME-05-S1` として Rust 以外（`cs/js/ts/go/java/kotlin/swift`）の runtime 解決パスを棚卸しした。`py2<lang>.py` 本体は path 非依存、直書き参照は `src/hooks/js/emitter/js_emitter.py` と `src/common2/js_ts_native_transpiler.py` に集中すること、`Go/Java/Kotlin/Swift` は preview backend のため path 解決実装未着手であることを確定した。
 - 2026-02-24: ID: `P1-RUNTIME-05-S2` として `JS/TS` runtime 参照を `src/runtime/{js,ts}/pytra/` へ切替した。`js_emitter.py` と `js_ts_native_transpiler.py` の require 先更新、`src/runtime/js/pytra` と `src/runtime/ts/pytra` の runtime 複製配置、関連テスト更新（`test_py2js_smoke.py`, `test_js_ts_runtime_dispatch.py`）を実施し、`python3 tools/check_py2js_transpile.py` / `python3 tools/check_py2ts_transpile.py` / ユニットテストで回帰なしを確認した。
 - 2026-02-24: ID: P1-RUNTIME-05-S3 として多言語 smoke（`check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin}_transpile.py`）を実施し、全ターゲット回帰なしを確認した。`src/{js,ts}_module` は legacy shim へ縮退し、`sample/{js,ts}` 生成物の旧 `src/*_module` 参照を `src/runtime/{js,ts}/pytra` へ置換、さらに `tools/check_runtime_legacy_shims.py` を追加して旧パス再流入防止を CI へ組み込んだ。
+- 2026-02-24: 旧タスクの完了判定が「参照パス統一」止まりで、`src/{cs,go,java,kotlin,swift}_module/` の runtime 実体移行完了条件を満たしていないことを確認。残作業を `P1-RUNTIME-06`（再オープン）として `todo` へ復帰した。
