@@ -37,9 +37,8 @@
 目的: ランタイム配置を言語間で統一し、責務混在と重複実装を防ぐ。
 
 1. [ ] [ID: P1-RUNTIME-05] 各言語トランスパイラ（`py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）と hooks のランタイム解決パスを `src/runtime/<lang>/pytra/` 基準へ統一する（`P1-RUNTIME-05-S1` から `P1-RUNTIME-05-S3` 完了でクローズ）。
-2. [ ] [ID: P1-RUNTIME-05-S1] 言語ごとの現行 runtime 解決パスを棚卸しし、差分一覧を作成する。
-3. [ ] [ID: P1-RUNTIME-05-S2] 各 `py2<lang>.py` / hooks の参照先を `src/runtime/<lang>/pytra/` 基準へ順次更新する。
-4. [ ] [ID: P1-RUNTIME-05-S3] 多言語 smoke で回帰確認し、旧パス互換レイヤを段階撤去する。
+2. [ ] [ID: P1-RUNTIME-05-S2] 各 `py2<lang>.py` / hooks の参照先を `src/runtime/<lang>/pytra/` 基準へ順次更新する。
+3. [ ] [ID: P1-RUNTIME-05-S3] 多言語 smoke で回帰確認し、旧パス互換レイヤを段階撤去する。
 
 ## P1: 多言語出力品質（`sample/cpp` 水準）
 

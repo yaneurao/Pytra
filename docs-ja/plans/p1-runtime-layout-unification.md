@@ -1,6 +1,6 @@
 # TASK GROUP: TG-P1-RUNTIME-LAYOUT
 
-最終更新: 2026-02-23
+最終更新: 2026-02-24
 
 関連 TODO:
 - `docs-ja/todo.md` の `ID: P0-RUNTIME-SEP-01`（`P0-RUNTIME-SEP-01-S1` 〜 `P0-RUNTIME-SEP-01-S5`）
@@ -91,6 +91,34 @@
 | utils.png 互換 | `py_write_rgb_png`, `png_crc32`, `png_adler32`, `png_chunk` | `src/runtime/rs/pytra/utils/png.rs` |
 | compiler 向け共通レイヤ | なし（今回棚卸し時点で `py_runtime.rs` 内に compiler 専用APIなし） | `src/runtime/rs/pytra/compiler/README.md`（空ディレクトリ維持） |
 
+`P1-RUNTIME-05-S1` 棚卸し結果（Rust 以外 runtime 解決パス差分）:
+
+- 前提確認:
+  - `src/runtime/{cs,js,ts,go,java,kotlin,swift}/pytra/` は未作成（全言語 `missing`）。
+  - 既存 runtime 実体は `src/{cs,js,ts,go,java,kotlin,swift}_module/` 配下に存在。
+- 集計対象:
+  - `src/py2{cs,js,ts,go,java,kotlin,swift}.py`
+  - `src/hooks/{cs,js,ts,go,java,kotlin,swift}/`
+  - 生成確認用: `sample/{cs,js,ts,go,java,kotlin,swift}/`
+  - 連動箇所（S2 で同時更新が必要）: `src/common2/js_ts_native_transpiler.py`, `test/unit/test_py2js_smoke.py`, `test/unit/test_js_ts_runtime_dispatch.py`, `docs-ja/how-to-use.md`
+
+| 言語 | runtime 実体（現行） | path 解決の実装箇所（現行） | 現行状態 | S2 の更新方針 |
+|---|---|---|---|---|
+| C# | `src/cs_module/{py_runtime.cs,pathlib.cs,png_helper.cs,gif_helper.cs,time.cs}` | `py2cs.py` は path 非依存。`cs_emitter.py` は import `module_id` を namespace 化し、生成コードは `Pytra.CsModule.*` を参照 | `src/runtime/cs/pytra/` 未整備 | runtime 実体を `src/runtime/cs/pytra/` へ移動し、namespace/参照名を新配置へ合わせる |
+| JS | `src/js_module/{py_runtime.js,pathlib.js,png_helper.js,gif_helper.js,math.js,time.js}` | `src/hooks/js/emitter/js_emitter.py` が `require(__pytra_root + '/src/js_module/py_runtime.js')` を直書き | 旧パス固定参照が残存 | `js_emitter.py` の runtime require 基準を `src/runtime/js/pytra/` へ切替 |
+| TS | `src/ts_module/{py_runtime.ts,pathlib.ts,png_helper.ts,gif_helper.ts,math.ts,time.ts}` | `py2ts.py` は `ts_emitter.py` 経由、`ts_emitter.py` は `js_emitter.py` を再利用（JS 側直書きに追従）。加えて `src/common2/js_ts_native_transpiler.py` が `src/ts_module/*.ts` を直書き | `js_module` と `ts_module` 参照が混在 | `ts_emitter` 経路と `common2` 経路の両方を `src/runtime/ts/pytra/` 基準へ統一 |
+| Go | `src/go_module/py_runtime.go` | `py2go.py` / `go_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体配置のみ旧規約 | `src/runtime/go/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
+| Java | `src/java_module/PyRuntime.java` | `py2java.py` / `java_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体配置のみ旧規約 | `src/runtime/java/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
+| Kotlin | `src/kotlin_module/py_runtime.kt` | `py2kotlin.py` / `kotlin_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体配置のみ旧規約 | `src/runtime/kotlin/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
+| Swift | `src/swift_module/py_runtime.swift` | `py2swift.py` / `swift_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体配置のみ旧規約 | `src/runtime/swift/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |
+
+`P1-RUNTIME-05-S1` の差分サマリ:
+
+1. `py2<lang>.py` 本体に runtime path 直書きはない（CLI 層は path 非依存）。
+2. 実コードで path 直書きがあるのは `JS/TS` 系（`js_emitter.py` と `common2/js_ts_native_transpiler.py`）。
+3. `Go/Java/Kotlin/Swift` は preview backend のため path 解決処理が未実装で、先に runtime 配置規約の正本化が必要。
+4. 既存テスト/ドキュメントは `src/js_module` と `src/*_module` 前提のものがあり、S2/S3 で同時更新対象になる。
+
 運用ルール:
 
 1. 新規 runtime 実装（`py_runtime.*`, `pathlib.*`, `png/gif helper` など）は `src/runtime/<lang>/pytra/` 配下にのみ追加する。
@@ -118,3 +146,4 @@
 - 2026-02-24: ID: P1-RUNTIME-03-S1 として `src/rs_module` 参照元を全件棚卸しし、コード側は `src/rs_module/py_runtime.rs` shim と `tools/check_rs_runtime_layout.py` のみが直接依存、残りは docs 記述であることを確認した。`P1-RUNTIME-03-S2` では shim 削除 + ガード更新 + docs 置換を同時実施する方針を確定した。
 - 2026-02-24: ID: P1-RUNTIME-03-S2 として `src/rs_module/py_runtime.rs` を削除し、`tools/check_rs_runtime_layout.py` を「`src/rs_module` ソース禁止」ルールへ更新した。`docs-ja/how-to-use.md`、`docs-ja/spec/spec-dev.md`、`docs-ja/plans/pytra-wip.md` の旧参照を `src/runtime/rs/pytra/` 基準へ置換した。
 - 2026-02-24: ID: P1-RUNTIME-03（親タスク）を完了として履歴へ移管した。Rust runtime の旧配置依存は解消し、残タスクは `P1-RUNTIME-05`（他言語統一）へ移行する。
+- 2026-02-24: ID: `P1-RUNTIME-05-S1` として Rust 以外（`cs/js/ts/go/java/kotlin/swift`）の runtime 解決パスを棚卸しした。`py2<lang>.py` 本体は path 非依存、直書き参照は `src/hooks/js/emitter/js_emitter.py` と `src/common2/js_ts_native_transpiler.py` に集中すること、`Go/Java/Kotlin/Swift` は preview backend のため path 解決実装未着手であることを確定した。
