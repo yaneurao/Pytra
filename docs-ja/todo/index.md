@@ -43,13 +43,16 @@
 文脈: `docs-ja/plans/p0-py2cpp-responsibility-split.md`（`TG-P0-PY2CPP-SPLIT`）
 
 1. [ ] [ID: P0-PY2CPP-SPLIT-01] `py2cpp.py` に残る非CLI責務を backend モジュールへ段階移管し、最終的に CLI/配線専用へ縮退する（`P0-PY2CPP-SPLIT-01-S1` から `P0-PY2CPP-SPLIT-01-S7` 完了でクローズ）。
-2. [ ] [ID: P0-PY2CPP-SPLIT-01-S1] 着手前提を固定する（`P0-CPP-EAST2-01` / `P0-EAST1-BUILD-01` / `P0-DEP-EAST1-01` / `P0-CPP-EMITTER-01` の完了後に着手）。
-3. [ ] [ID: P0-PY2CPP-SPLIT-01-S2] `load_cpp_profile` / type-map / hooks / identifier ルール等の C++ profile 解決責務を `src/hooks/cpp/profile/` へ分離する。
+2. [x] [ID: P0-PY2CPP-SPLIT-01-S1] 着手前提を固定する（`P0-CPP-EAST2-01` / `P0-EAST1-BUILD-01` / `P0-DEP-EAST1-01` / `P0-CPP-EMITTER-01` の完了後に着手）。
+3. [x] [ID: P0-PY2CPP-SPLIT-01-S2] `load_cpp_profile` / type-map / hooks / identifier ルール等の C++ profile 解決責務を `src/hooks/cpp/profile/` へ分離する。
 4. [ ] [ID: P0-PY2CPP-SPLIT-01-S3] `build_cpp_header_from_east` と関連補助関数（header type/default/include guard）を `src/hooks/cpp/header/` へ分離する。
 5. [ ] [ID: P0-PY2CPP-SPLIT-01-S4] `_write_multi_file_cpp` と manifest 生成責務を `src/hooks/cpp/multifile/` へ分離する。
 6. [ ] [ID: P0-PY2CPP-SPLIT-01-S5] runtime emit 用補助（`_runtime_*` 群）を `src/hooks/cpp/runtime_emit/` へ分離し、`py2cpp.py` 側は呼び出しのみへ縮退する。
 7. [ ] [ID: P0-PY2CPP-SPLIT-01-S6] `py2cpp.py` 冒頭の `_HELPER_GROUPS` による helper 再エクスポート依存を段階的に除去し、必要 API を明示 import へ置換する。
 8. [ ] [ID: P0-PY2CPP-SPLIT-01-S7] 分離後の構成を `spec-dev` とテスト（`check_py2cpp_transpile` / smoke / unit）へ同期し、責務回帰ガードを固定する。
+
+進捗メモ:
+- [ID: P0-PY2CPP-SPLIT-01-S2] `src/hooks/cpp/profile/cpp_profile.py` を追加し、`load_cpp_profile` 系（profile/type-map/hooks/identifier）を新規モジュールに移譲。`py2cpp.py` と `src/hooks/cpp/emitter/cpp_emitter.py` は既存 API を薄い委譲で保持して縮退。
 
 ## P1: 多言語出力品質（preview 脱却の再オープン）
 

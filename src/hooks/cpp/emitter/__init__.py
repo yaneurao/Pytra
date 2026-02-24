@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
-
 from hooks.cpp.emitter.cpp_emitter import CppEmitter, install_py2cpp_runtime_symbols
+from hooks.cpp.profile import load_cpp_profile
+from pytra.std.typing import Any
 
 __all__ = [
     "CppEmitter",
@@ -12,13 +12,6 @@ __all__ = [
     "load_cpp_profile",
     "transpile_to_cpp",
 ]
-
-
-def load_cpp_profile() -> dict[str, Any]:
-    """Load C++ language profile via `py2cpp` entrypoint."""
-    import py2cpp
-
-    return py2cpp.load_cpp_profile()
 
 
 def transpile_to_cpp(*args: Any, **kwargs: Any) -> str:

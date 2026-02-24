@@ -20,7 +20,6 @@ TARGET = ROOT / "src" / "py2cpp.py"
 
 # C++ 固有責務として py2cpp.py に残すトップレベル関数。
 CPP_SPECIFIC_TOPLEVEL: set[str] = {
-    "_build_cpp_hooks_impl",
     "_module_tail_to_cpp_header_path",
     "_join_runtime_path",
     "_runtime_cpp_header_exists_for_module",
@@ -65,7 +64,7 @@ COMPAT_WRAPPER_TOPLEVEL: set[str] = {
 WRAPPER_DELEGATION_MARKERS: dict[str, str] = {
     "load_east": "load_east3_document(",
     "_analyze_import_graph": "analyze_import_graph(",
-    "build_module_east_map": "build_module_east_map_common(",
+    "build_module_east_map": "East1BuildHelpers.build_module_east_map(",
     "dump_deps_graph_text": "dump_deps_graph_text_common(",
 }
 

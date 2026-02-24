@@ -3,6 +3,17 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from hooks.cpp.profile import (
+    AUG_BIN,
+    AUG_OPS,
+    BIN_OPS,
+    CMP_OPS,
+    load_cpp_hooks,
+    load_cpp_identifier_rules,
+    load_cpp_module_attr_call_map,
+    load_cpp_profile,
+    load_cpp_type_map,
+)
 
 
 def install_py2cpp_runtime_symbols(globals_snapshot: dict[str, Any]) -> None:
@@ -7139,5 +7150,4 @@ class CppEmitter(CodeEmitter):
                     return f"rc<{owner_ns}::{leaf}>"
                 return owner_ns + "::" + leaf
         return east_type
-
 

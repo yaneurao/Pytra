@@ -35,3 +35,4 @@
 
 決定ログ:
 - 2026-02-24: ユーザー指示により、`py2cpp.py` の残責務を段階分離する `P0` タスク群を追加。
+- 2026-02-24: `src/hooks/cpp/profile/cpp_profile.py` を追加し、`load_cpp_profile` 系（profile/ルール/type-map/hooks）を移譲。`py2cpp.py` と `cpp_emitter.py` には後方互換の委譲 API を残し、責務を `profile` モジュールへ集中。
