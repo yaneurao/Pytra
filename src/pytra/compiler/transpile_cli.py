@@ -2032,6 +2032,35 @@ def analyze_import_graph(
     )
 
 
+def build_module_east_map(
+    entry_path: Path,
+    load_east_fn: object,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "2",
+    object_dispatch_mode: str = "",
+    runtime_std_source_root: Path = Path("src/pytra/std"),
+    runtime_utils_source_root: Path = Path("src/pytra/utils"),
+) -> dict[str, dict[str, object]]:
+    """入口 + 依存ユーザーモジュールを個別に EAST 化して返す。"""
+    analysis = analyze_import_graph(
+        entry_path,
+        runtime_std_source_root,
+        runtime_utils_source_root,
+        load_east_fn,
+    )
+    files = dict_any_get_str_list(analysis, "user_module_files")
+    module_east_raw: dict[str, dict[str, object]] = {}
+    for f in files:
+        p = Path(f)
+        east_one: dict[str, object] = {}
+        if callable(load_east_fn):
+            loaded = load_east_fn(p, parser_backend, east_stage, object_dispatch_mode)
+            if isinstance(loaded, dict):
+                east_one = loaded
+        module_east_raw[str(p)] = east_one
+    return build_module_east_map_from_analysis(entry_path, analysis, module_east_raw)
+
+
 def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:
     """個別 `--max-*` 値を正整数へ変換する。"""
     if raw == "":
