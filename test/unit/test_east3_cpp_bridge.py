@@ -1127,6 +1127,13 @@ class East3CppBridgeTest(unittest.TestCase):
             ],
             "resolved_type": "int64",
         }
+        static_cast_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "static_cast",
+            "target": "int64",
+            "value": {"kind": "Constant", "value": "10", "resolved_type": "str"},
+            "resolved_type": "int64",
+        }
         iter_node = {
             "kind": "RuntimeSpecialOp",
             "op": "iter_or_raise",
@@ -1282,6 +1289,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(len_node), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
         self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", py_to_int64(16))')
+        self.assertEqual(emitter.render_expr(static_cast_node), 'py_to_int64("10")')
         self.assertEqual(emitter.render_expr(iter_node), "py_iter_or_raise(xs)")
         self.assertEqual(emitter.render_expr(next_node), "py_next_or_stop(it)")
         self.assertEqual(emitter.render_expr(reversed_node), "py_reversed(xs)")

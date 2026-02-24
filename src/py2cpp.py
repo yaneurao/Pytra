@@ -3476,10 +3476,17 @@ class CppEmitter(CodeEmitter):
         )
         if any_boundary_expr is not None:
             return self.render_expr(any_boundary_expr)
-        if runtime_call == "static_cast":
-            static_cast_rendered = self._render_builtin_static_cast_call(expr, arg_nodes)
-            if static_cast_rendered is not None:
-                return str(static_cast_rendered)
+        if runtime_call == "static_cast" and len(arg_nodes) == 1:
+            static_cast_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "static_cast",
+                "target": self.any_to_str(expr.get("resolved_type")),
+                "value": arg_nodes[0],
+                "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(static_cast_node)
         list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, fn, arg_nodes)
         if list_ops_rendered is not None:
             return str(list_ops_rendered)
@@ -6341,6 +6348,17 @@ class CppEmitter(CodeEmitter):
                         int_base_args.append(self.render_expr(arg_node))
                 if len(int_base_args) >= 2:
                     return f"py_to_int64_base({int_base_args[0]}, py_to_int64({int_base_args[1]}))"
+                return ""
+            if op == "static_cast":
+                if not self.any_dict_has(expr_d, "value"):
+                    return ""
+                target = self.any_dict_get_str(expr_d, "target", "")
+                if target == "":
+                    target = self.any_dict_get_str(expr_d, "resolved_type", "")
+                static_cast_expr = {"resolved_type": target}
+                static_cast_rendered = self._render_builtin_static_cast_call(static_cast_expr, [expr_d.get("value")])
+                if static_cast_rendered is not None:
+                    return static_cast_rendered
                 return ""
             if op == "iter_or_raise":
                 value_expr = self.render_expr(expr_d.get("value"))
