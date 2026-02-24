@@ -4136,22 +4136,20 @@ class CppEmitter(CodeEmitter):
             chr_node["value"] = arg_nodes[0]
             return self.render_expr(chr_node)
         if runtime_call == "py_range":
-            range_args: list[str] = []
-            for arg_node in arg_nodes:
-                range_args.append(self.render_expr(arg_node))
+            range_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "range",
+                "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            if len(arg_nodes) > 0:
+                range_node["args"] = arg_nodes
             kw_names = self._keyword_names_from_builtin_call(expr)
-            range_kw: dict[str, str] = {}
-            i = 0
-            while i < len(kw_nodes):
-                if i < len(kw_names):
-                    kw_name = kw_names[i]
-                    if kw_name != "":
-                        range_kw[kw_name] = self.render_expr(kw_nodes[i])
-                i += 1
-            range_rendered = self._render_range_name_call(range_args, range_kw)
-            if range_rendered is not None:
-                return range_rendered
-            return None
+            if len(kw_names) > 0:
+                range_node["kw_names"] = kw_names
+                range_node["kw_values"] = kw_nodes
+            return self.render_expr(range_node)
         if runtime_call == "zip" and len(arg_nodes) >= 2:
             zip_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
@@ -6373,6 +6371,30 @@ class CppEmitter(CodeEmitter):
             if op == "chr":
                 value_expr = self.render_expr(expr_d.get("value"))
                 return f"py_chr({value_expr})"
+            if op == "range":
+                range_args: list[str] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes:
+                        range_args.append(self.render_expr(arg_node))
+                range_kw: dict[str, str] = {}
+                kw_names: list[str] = []
+                if self.any_dict_has(expr_d, "kw_names"):
+                    kw_names = self.any_to_str_list(expr_d.get("kw_names"))
+                kw_values: list[Any] = []
+                if self.any_dict_has(expr_d, "kw_values"):
+                    kw_values = self.any_to_list(expr_d.get("kw_values"))
+                i = 0
+                while i < len(kw_values):
+                    if i < len(kw_names):
+                        kw_name = kw_names[i]
+                        if kw_name != "":
+                            range_kw[kw_name] = self.render_expr(kw_values[i])
+                    i += 1
+                range_rendered = self._render_range_name_call(range_args, range_kw)
+                if range_rendered is not None:
+                    return range_rendered
+                return ""
             if op == "zip":
                 zip_args: list[str] = []
                 if self.any_dict_has(expr_d, "args"):

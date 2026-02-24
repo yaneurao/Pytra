@@ -1178,6 +1178,24 @@ class East3CppBridgeTest(unittest.TestCase):
             "value": {"kind": "Constant", "value": 65, "resolved_type": "int64"},
             "resolved_type": "str",
         }
+        range_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "range",
+            "args": [{"kind": "Constant", "value": 3, "resolved_type": "int64"}],
+            "resolved_type": "range",
+        }
+        range_kw_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "range",
+            "args": [],
+            "kw_names": ["start", "stop", "step"],
+            "kw_values": [
+                {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                {"kind": "Constant", "value": 5, "resolved_type": "int64"},
+                {"kind": "Constant", "value": 2, "resolved_type": "int64"},
+            ],
+            "resolved_type": "range",
+        }
         zip_node = {
             "kind": "RuntimeSpecialOp",
             "op": "zip",
@@ -1251,6 +1269,8 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(all_node), "py_all(xs)")
         self.assertEqual(emitter.render_expr(ord_node), 'py_ord("A")')
         self.assertEqual(emitter.render_expr(chr_node), "py_chr(65)")
+        self.assertEqual(emitter.render_expr(range_node), "py_range(0, 3, 1)")
+        self.assertEqual(emitter.render_expr(range_kw_node), "py_range(1, 5, 2)")
         self.assertEqual(emitter.render_expr(zip_node), "zip(xs, ys)")
         self.assertEqual(
             emitter.render_expr(minmax_node),
