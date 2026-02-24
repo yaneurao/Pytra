@@ -141,6 +141,19 @@
   - `kotlin cast`: `12 -> 0`
   - `kotlin imports`: `60 -> 0`
 
+`P1-MQ-02-S4` 実装結果（多言語再生成・再計測固定）:
+
+- 実施内容:
+  1. `sample/{rs,cs,js,ts,go,java,swift,kotlin}` を段階的に再生成し、各言語の改善を生成物へ反映した。
+  2. `python3 tools/measure_multilang_quality.py` を再実行し、`docs-ja/plans/p1-multilang-output-quality-baseline.md` を最新指標で更新した。
+  3. `P1-MQ-02-S1` から `P1-MQ-02-S4` の結果を本ドキュメントへ集約し、比較指標を固定した。
+- 固定後ハイライト（生カウント）:
+  - `rs`: `mut=245`, `paren=821`, `cast=180`
+  - `cs`: `paren=215`, `cast=0`, `imports=7`, `unused_import_est=0`
+  - `js`: `paren=148`, `imports=49`, `unused_import_est=0`
+  - `ts`: `paren=148`, `cast=18`, `imports=49`, `unused_import_est=0`
+  - `go/java/swift/kotlin`: `paren=0`, `cast=0`, `imports=0`（preview 縮退後）
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
@@ -150,3 +163,4 @@
 - 2026-02-24: ID: P1-MQ-02-S3-S1 として C# emitter の cast/import/括弧縮退を実施し、`sample/cs` の `paren`/`cast`/`imports`/`unused_import_est` を大幅削減した。
 - 2026-02-24: ID: P1-MQ-02-S3-S2 として Go/Java preview 出力をシグネチャ要約へ縮退し、`sample/go` / `sample/java` の `paren`/`cast`/`imports` を削減した。
 - 2026-02-24: ID: P1-MQ-02-S3-S3 として Swift/Kotlin preview 出力をシグネチャ要約へ縮退し、`sample/swift` / `sample/kotlin` の `paren`/`cast`/`imports`/`unused_import_est` を削減した。
+- 2026-02-24: ID: P1-MQ-02-S4 として多言語サンプル再生成と再計測を完了し、`docs-ja/plans/p1-multilang-output-quality-baseline.md` に改善結果を固定した。
