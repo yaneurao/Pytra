@@ -5333,6 +5333,9 @@ class CppEmitter(CodeEmitter):
                 if len(kw) > 0:
                     ctor_arg_names = self._class_method_name_sig(raw, "__init__")
                     ctor_args = self._merge_args_with_kw_by_name(args, kw, ctor_arg_names)
+                else:
+                    # class ctor でも __init__ シグネチャに合わせて boxing/unboxing を適用する。
+                    ctor_args = self._coerce_args_for_class_method(raw, "__init__", ctor_args, arg_nodes)
                 return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
             if self._requires_builtin_call_lowering(raw):
                 raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + raw)
@@ -5601,6 +5604,20 @@ class CppEmitter(CodeEmitter):
             if self.is_any_like_type(at):
                 return arg_txt
             if len(arg_node_dict) > 0:
+                if self._node_kind_from_dict(arg_node_dict) == "Tuple":
+                    items: list[str] = []
+                    for elem in self.any_to_list(arg_node_dict.get("elements")):
+                        elem_d = self.any_to_dict_or_empty(elem)
+                        if (
+                            self._node_kind_from_dict(elem_d) == "Name"
+                            and dict_any_get_str(elem_d, "id", "") == "self"
+                            and self.current_class_name is not None
+                            and self.current_class_name in self.ref_classes
+                        ):
+                            items.append("object(static_cast<PyObj*>(this), true)")
+                        else:
+                            items.append(self.render_expr(elem))
+                    return f"make_object(::std::make_tuple({join_str_list(', ', items)}))"
                 return self.render_expr(self._build_box_expr_node(arg_node))
             return f"make_object({arg_txt})"
         if not self._can_runtime_cast_target(target_t):
@@ -6570,12 +6587,18 @@ class CppEmitter(CodeEmitter):
             and (bt in {"", "unknown"} or self.is_any_like_type(bt))
         ):
             ctx = f"{self.current_class_name}.{attr}"
-            return f"obj_to_rc_or_raise<{self.current_class_name}>({base}, \"{ctx}\")->{attr}"
+            base_obj = base
+            if not self.is_boxed_object_expr(base_obj):
+                base_obj = f"make_object({base_obj})"
+            return f"obj_to_rc_or_raise<{self.current_class_name}>({base_obj}, \"{ctx}\")->{attr}"
         if bt in {"", "unknown"} or self.is_any_like_type(bt):
             owner_cls = self.class_field_owner_unique.get(attr, "")
             if owner_cls != "" and owner_cls in self.ref_classes:
                 ctx = f"{owner_cls}.{attr}"
-                return f"obj_to_rc_or_raise<{owner_cls}>({base}, \"{ctx}\")->{attr}"
+                base_obj = base
+                if not self.is_boxed_object_expr(base_obj):
+                    base_obj = f"make_object({base_obj})"
+                return f"obj_to_rc_or_raise<{owner_cls}>({base_obj}, \"{ctx}\")->{attr}"
             owner_m_cls = self.class_method_owner_unique.get(attr, "")
             if owner_m_cls != "" and owner_m_cls in self.ref_classes:
                 ctx = f"{owner_m_cls}.{attr}"

@@ -966,6 +966,11 @@ static inline float64 py_to_float64(const object& v) {
     return obj_to_float64(v);
 }
 
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 py_to_float64(T v) {
+    return static_cast<float64>(v);
+}
+
 static inline bool py_to_bool(const object& v) {
     return obj_to_bool(v);
 }
@@ -2516,6 +2521,11 @@ static inline float64 operator-(const object& lhs, const object& rhs) {
     return py_to_float64(lhs) - py_to_float64(rhs);
 }
 
+template <class T>
+static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
+    return v->__neg__();
+}
+
 static inline float64 operator-(const object& v) {
     return -py_to_float64(v);
 }
@@ -2588,6 +2598,30 @@ static inline float64 operator/(const ::std::any& lhs, T rhs) {
 
 static inline float64 operator/(const ::std::any& lhs, const ::std::any& rhs) {
     return py_to_float64(lhs) / py_to_float64(rhs);
+}
+
+template <class T>
+static inline object& operator+=(object& lhs, const T& rhs) {
+    lhs = make_object(py_to_float64(lhs) + py_to_float64(rhs));
+    return lhs;
+}
+
+template <class T>
+static inline object& operator-=(object& lhs, const T& rhs) {
+    lhs = make_object(py_to_float64(lhs) - py_to_float64(rhs));
+    return lhs;
+}
+
+template <class T>
+static inline object& operator*=(object& lhs, const T& rhs) {
+    lhs = make_object(py_to_float64(lhs) * py_to_float64(rhs));
+    return lhs;
+}
+
+template <class T>
+static inline object& operator/=(object& lhs, const T& rhs) {
+    lhs = make_object(py_to_float64(lhs) / py_to_float64(rhs));
+    return lhs;
 }
 
 // `for x in any_value` を成立させるための begin/end ブリッジ。
@@ -3114,7 +3148,7 @@ static inline bool py_contains(const object& values, const Q& key) {
 // `/` / `//` / `%` の Python 互換セマンティクス（とくに負数時の扱い）を提供する。
 template <class A, class B>
 static inline float64 py_div(A lhs, B rhs) {
-    return static_cast<float64>(lhs) / static_cast<float64>(rhs);
+    return py_to_float64(lhs) / py_to_float64(rhs);
 }
 
 template <class A, class B>

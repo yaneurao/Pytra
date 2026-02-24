@@ -222,9 +222,12 @@ runtime/std 互換差分整理（P3-MSP-08）:
    - `python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）
    - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
      - `stage=F` は維持だが、先頭エラーは `std::make_tuple` 既定値不整合から `Value::__add__`、さらに `Value::__rtruediv__` 周辺へ前進。
-3. 残課題
-   - `Value` クラス周辺で、`__rtruediv__` を含む逆演算 lower と class/object 混在演算の整合が不足している。
-   - `backward` 内ラムダ再帰 (`build_topo`) と `zip`/`sum`/range-for など builtin lower の未解決 compile gap が残っており、引き続き `P3-MSP-03` で compile 互換を詰める必要がある。
+3. 完了状態（2026-02-24）
+   - `src/pytra/compiler/east_parts/core.py` の `/` 型推論を「数値同士のみ `float64`、それ以外は `unknown`」へ修正し、`softmax` 由来の `Value -> float64` 崩れを抑止した。
+   - `src/py2cpp.py` で class ctor 引数のシグネチャ coercion（`__init__`）を有効化し、`object` 引数への boxing を徹底した。
+   - `src/py2cpp.py` の `Attribute` lower（`obj_to_rc_or_raise`) で unknown owner を常に boxing するよう修正し、`loss.data` 経路の compile 崩れを解消した。
+   - `src/runtime/cpp/pytra-core/built_in/py_runtime.h` で `py_div` の object 対応、`object` 複合代入、`rc<T>` の unary minus（`__neg__`）を追加し、`Value` 演算経路の compile 互換を確立した。
+   - 検証: `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known` が `result=ok phase=transpile+syntax-check, stage=SUCCESS` で通過した。
 
 目的:
 - 「変換器都合で元ソースを書き換える」運用を禁止し、必要な対応を parser/emitter/runtime 側タスクへ移す。
@@ -258,6 +261,7 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-23: `P3-MSP-03` の継続として `IfExp` 定数畳み込み、class/object 境界の dunder lower・boxing 強化、runtime `object` 四則演算と `math.log/exp(object)` overload を追加し、`stage=F` 先頭エラーを `Value::__add__` から `Value::__rtruediv__` 周辺へ前進させた。
 - 2026-02-24: `materials/` 再編後の導線ずれを解消するため、`tools/check_microgpt_original_py2cpp_regression.py` の既定入力を `materials/refs/microgpt/microgpt-20260222.py` へ更新し、`--source` 省略で `stage=F` を再現できる状態に復旧した。
 - 2026-02-24: `P3-MSP-03` の継続として `x if isinstance(x, T) else T(x)` 形の `IfExp` で `else` 側を `make_object(...)` へ統一する lower を追加し、`stage=F` 先頭エラーを `Value::__add__` から `Value::log()` 周辺へ前進させた（`check_microgpt_original_py2cpp_regression.py --expect-stage any-known`）。
+- 2026-02-24: P3-MSP-03 を完了。`core.py` の `/` 型推論、`py2cpp.py` の class ctor / 属性 access boxing、runtime `py_div` / `object` 複合代入 / `rc<T>` unary minus を段階適用し、`materials/refs/microgpt/microgpt-20260222.py` を入力した `transpile -> g++ -fsyntax-only` が `stage=SUCCESS` で通過した。
 - 2026-02-24: `P3-MSP-03` の継続として module 関数引数 coercion に「数値シグネチャ + Any/unknown 引数の unbox」を追加し、`pytra::std::math::log/exp` へ `object` が流れる経路を縮退。`stage=F` 先頭エラーを `Value::log()` から lambda 内部（`val.data` / `(val - max_val).exp()`）へ前進させた。
 - 2026-02-24: `P3-MSP-03` の継続として、モジュール内で属性名が一意な ref-class フィールドを `unknown/object` 受信でも `obj_to_rc_or_raise<Cls>(...)->field` に降ろす経路を追加。`max(val.data for val in logits)` 側の崩れを解消し、`stage=F` 先頭エラーを `(val - max_val).exp()` 側へ前進させた。
 - 2026-02-24: `P3-MSP-03` の継続として、(1) モジュール内で属性名が一意な ref-class メソッドも `unknown/object` 受信時に `obj_to_rc_or_raise<Cls>(...)->method(...)` へ寄せる経路を追加、(2) `Subscript` の any-like 受信を `py_at(..., py_to_int64(...))` に統一、(3) runtime に `py_slice(object, int64, object/any)` overload を追加した。`check_py2cpp_transpile.py`（`checked=131 fail=0`）と `check_microgpt_original_py2cpp_regression.py`（`stage=F` 維持）を確認した。

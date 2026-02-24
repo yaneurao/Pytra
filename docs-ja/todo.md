@@ -34,15 +34,6 @@
 
 文脈: `docs-ja/plans/p1-multilang-output-quality.md`（`TG-P1-MULTILANG-QUALITY`）
 
-## P3: microgpt 原本保全（低優先）
-
-文脈: `docs-ja/plans/p3-microgpt-source-preservation.md`（`TG-P3-MICROGPT-SOURCE-PRESERVATION`）
-
-1. [ ] [ID: P3-MSP-03] `work/tmp/microgpt-20260222-lite.py` 依存を縮退し、原本 `materials/refs/microgpt/microgpt-20260222.py` で transpile -> `g++ -fsyntax-only` が通る回帰導線を整備する。
-
-進捗メモ:
-- 詳細ログは `docs-ja/plans/p3-microgpt-source-preservation.md` の `決定ログ` を参照。
-
 ## P3: Pythonic 記法戻し（低優先）
 
 文脈: `docs-ja/plans/p3-pythonic-restoration.md`（`TG-P3-PYTHONIC`）
