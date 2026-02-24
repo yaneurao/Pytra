@@ -90,6 +90,16 @@
 
 1. [ ] [ID: P3-SB-01] サンプルコード変更（実行時間変化）、サンプル番号再編（04/15/17/18）、サンプル数増加（01〜18）を反映するため、全ターゲット言語（Python/C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）で実行時間を再計測し、トップページの `readme.md` / `readme-ja.md` の比較表を同一データで更新する。
 
+## P3: `pytra` ランチャーと build 導線実装（低優先）
+
+文脈: `docs-ja/plans/p3-pytra-launcher-build.md`（`TG-P3-LAUNCHER-BUILD`）
+
+1. [ ] [ID: P3-LB-01] `spec-make` の未実装項目（`./pytra` ランチャー / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` / `--target cpp --build`）を実装し、C++ の「変換 -> Makefile 生成 -> build」導線を 1 コマンドで実行できるようにする（`P3-LB-01-S1` から `P3-LB-01-S4` 完了でクローズ）。
+2. [ ] [ID: P3-LB-01-S1] `tools/gen_makefile_from_manifest.py` を追加し、`manifest.json` から `Makefile`（`all/run/clean`）を生成できるようにする。
+3. [ ] [ID: P3-LB-01-S2] `src/pytra/cli.py` を追加し、`./pytra INPUT.py --target cpp --build` で `py2cpp --multi-file` -> Makefile 生成 -> `make` 実行までを連結できるようにする。
+4. [ ] [ID: P3-LB-01-S3] リポジトリ直下に `./pytra` ランチャーを追加し、`PYTHONPATH=src` の手動設定なしで `python3 -m pytra.cli` を起動できるようにする。
+5. [ ] [ID: P3-LB-01-S4] `tools` / CLI の unit test とドキュメント（`spec-make.md` / `spec-dev.md` / `spec-tools.md`）を同期し、未実装表記を解消する。
+
 ## メモ
 
 - このファイルは未完了タスクのみを保持します。
