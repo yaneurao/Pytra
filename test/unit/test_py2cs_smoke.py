@@ -54,6 +54,13 @@ class Py2CsSmokeTest(unittest.TestCase):
             cs = transpile_to_csharp(loaded)
         self.assertIn("public static long add(long a, long b)", cs)
 
+    def test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape(self) -> None:
+        fixture = find_fixture_case("for_range")
+        loaded = load_east(fixture, parser_backend="self_hosted")
+        self.assertIsInstance(loaded, dict)
+        self.assertEqual(loaded.get("kind"), "Module")
+        self.assertEqual(loaded.get("east_stage"), 2)
+
     def test_cli_smoke_generates_cs_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
@@ -73,6 +80,24 @@ class Py2CsSmokeTest(unittest.TestCase):
             self.assertTrue(out_cs.exists())
             txt = out_cs.read_text(encoding="utf-8")
             self.assertIn("public static long abs_like", txt)
+
+    def test_cli_warns_when_stage2_compat_mode_is_selected(self) -> None:
+        fixture = find_fixture_case("if_else")
+        with tempfile.TemporaryDirectory() as td:
+            out_cs = Path(td) / "if_else.cs"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2cs.py", str(fixture), "-o", str(out_cs), "--east-stage", "2"],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertIn("warning: --east-stage 2 is compatibility mode; default is 3.", proc.stderr)
 
     def test_isinstance_builtin_lowers_to_csharp_is_checks(self) -> None:
         src = """def f(x: object) -> bool:
