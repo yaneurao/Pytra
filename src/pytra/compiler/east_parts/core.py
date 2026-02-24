@@ -2750,12 +2750,15 @@ class _ShExprParser:
         if op_sym == "/":
             if lt == "Path" and rt in {"str", "Path"}:
                 out_t = "Path"
-            else:
+            elif (lt in INT_TYPES or lt in FLOAT_TYPES) and (rt in INT_TYPES or rt in FLOAT_TYPES):
                 out_t = "float64"
-                if lt == "int64":
+                if lt in INT_TYPES:
                     casts.append({"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
-                if rt == "int64":
+                if rt in INT_TYPES:
                     casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+            else:
+                # object/unknown を数値に固定化しない。
+                out_t = "unknown"
         elif op_sym == "//":
             out_t = "int64" if lt in {"int64", "unknown"} and rt in {"int64", "unknown"} else "float64"
         elif op_sym == "+" and (

@@ -7,6 +7,7 @@ template <class T>
 class list;
 template <class T>
 ::std::string py_to_string(const T& v);
+static inline ::std::string py_to_string(const object& v);
 
 class str {
 public:
