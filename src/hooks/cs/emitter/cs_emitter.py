@@ -721,16 +721,16 @@ class CSharpEmitter(CodeEmitter):
             self.emit(name + " = " + value + ";")
             return
 
-        if target_kind == "Tuple":
-            names = self.tuple_elements(target)
-            if len(names) == 2:
-                a = self.render_expr(names[0])
-                b = self.render_expr(names[1])
-                tmp = self.next_tmp("__tmp")
-                self.emit("var " + tmp + " = " + value + ";")
-                self.emit(a + " = " + tmp + ".Item1;")
-                self.emit(b + " = " + tmp + ".Item2;")
-                return
+        if self.emit_tuple_assign_with_tmp(
+            target,
+            value,
+            tmp_prefix="__tmp",
+            tmp_decl_template="var {tmp} = {value};",
+            item_expr_template="{tmp}.Item{index}",
+            assign_template="{target} = {item};",
+            index_offset=1,
+        ):
+            return
 
         self.emit(self.render_expr(target) + " = " + value + ";")
 

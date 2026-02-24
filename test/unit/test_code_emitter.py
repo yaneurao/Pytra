@@ -890,6 +890,35 @@ class CodeEmitterTest(unittest.TestCase):
             ],
         )
 
+    def test_emit_tuple_assign_with_tmp_helper(self) -> None:
+        em = _DummyEmitter({})
+        target = {
+            "kind": "Tuple",
+            "elements": [
+                {"kind": "Name", "repr": "a"},
+                {"kind": "Name", "repr": "b"},
+            ],
+        }
+        handled = em.emit_tuple_assign_with_tmp(
+            target,
+            "rhs",
+            tmp_prefix="__tmp",
+            tmp_decl_template="const {tmp} = {value};",
+            item_expr_template="{tmp}[{index}]",
+            assign_template="{target} = {item};",
+            index_offset=0,
+        )
+        self.assertTrue(handled)
+        self.assertEqual(
+            em.lines,
+            [
+                "const __tmp_1 = rhs;",
+                "a = __tmp_1[0];",
+                "b = __tmp_1[1];",
+            ],
+        )
+        self.assertFalse(em.emit_tuple_assign_with_tmp({"kind": "Name", "repr": "x"}, "rhs"))
+
     def test_emit_if_stmt_skeleton_helper(self) -> None:
         em = _DummyEmitter({})
         em.emit_if_stmt_skeleton(

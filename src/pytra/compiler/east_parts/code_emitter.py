@@ -1583,6 +1583,41 @@ class CodeEmitter:
             return targets[0]
         return {}
 
+    def emit_tuple_assign_with_tmp(
+        self,
+        target_node: dict[str, Any],
+        value_expr: str,
+        *,
+        tmp_prefix: str = "__tmp",
+        tmp_decl_template: str = "auto {tmp} = {value};",
+        item_expr_template: str = "{tmp}[{index}]",
+        assign_template: str = "{target} = {item};",
+        index_offset: int = 0,
+    ) -> bool:
+        """2要素 tuple 代入の `tmp` lower を共通出力する。"""
+        if self.any_dict_get_str(target_node, "kind", "") != "Tuple":
+            return False
+        names = self.tuple_elements(target_node)
+        if len(names) != 2:
+            return False
+        rendered_targets: list[str] = []
+        for node in names:
+            rendered_targets.append(self.render_expr(node))
+        tmp_name = self.next_tmp(tmp_prefix)
+        self.emit(
+            tmp_decl_template.replace("{tmp}", tmp_name).replace("{value}", value_expr)
+        )
+        i = 0
+        while i < len(rendered_targets):
+            idx_txt = str(i + index_offset)
+            item_expr = item_expr_template.replace("{tmp}", tmp_name).replace("{index}", idx_txt)
+            line = (
+                assign_template.replace("{target}", rendered_targets[i]).replace("{item}", item_expr)
+            )
+            self.emit(line)
+            i += 1
+        return True
+
     def should_declare_name_binding(
         self,
         stmt: dict[str, Any],

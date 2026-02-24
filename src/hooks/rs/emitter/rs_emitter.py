@@ -951,16 +951,16 @@ class RustEmitter(CodeEmitter):
             self.emit(self.syntax_line("assign_set", "{target} = {value};", {"target": name, "value": value}))
             return
 
-        if self.any_dict_get_str(target, "kind", "") == "Tuple":
-            names: list[Any] = self.tuple_elements(target)
-            if len(names) == 2:
-                a = self.render_expr(names[0])
-                b = self.render_expr(names[1])
-                tmp = self.next_tmp("__tmp")
-                self.emit(f"let {tmp} = {value};")
-                self.emit(f"{a} = {tmp}.0;")
-                self.emit(f"{b} = {tmp}.1;")
-                return
+        if self.emit_tuple_assign_with_tmp(
+            target,
+            value,
+            tmp_prefix="__tmp",
+            tmp_decl_template="let {tmp} = {value};",
+            item_expr_template="{tmp}.{index}",
+            assign_template="{target} = {item};",
+            index_offset=0,
+        ):
+            return
 
         rendered_target = self.render_expr(target)
         self.emit(self.syntax_line("assign_set", "{target} = {value};", {"target": rendered_target, "value": value}))
