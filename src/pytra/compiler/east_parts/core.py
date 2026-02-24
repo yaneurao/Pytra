@@ -2481,6 +2481,7 @@ class _ShExprParser:
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
+                            payload["runtime_owner"] = owner
                     elif owner_t in INT_TYPES or owner_t == "int":
                         int_map = {
                             "to_bytes": "py_int_to_bytes",
@@ -2490,6 +2491,7 @@ class _ShExprParser:
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
+                            payload["runtime_owner"] = owner
                     elif owner_t.startswith("list["):
                         list_map = {
                             "append": "list.append",
@@ -2504,6 +2506,7 @@ class _ShExprParser:
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
+                            payload["runtime_owner"] = owner
                     elif owner_t.startswith("set["):
                         set_map = {
                             "add": "set.add",
@@ -2516,6 +2519,7 @@ class _ShExprParser:
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
+                            payload["runtime_owner"] = owner
                     elif owner_t.startswith("dict["):
                         dict_map = {
                             "get": "dict.get",
@@ -2529,6 +2533,7 @@ class _ShExprParser:
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
+                            payload["runtime_owner"] = owner
                     elif owner_t == "unknown":
                         unknown_map = {
                             "append": "list.append",
@@ -2546,6 +2551,7 @@ class _ShExprParser:
                             payload["lowered_kind"] = "BuiltinCall"
                             payload["builtin_name"] = attr
                             payload["runtime_call"] = rc
+                            payload["runtime_owner"] = owner
                 node = payload
                 continue
             if tok["k"] == "[":

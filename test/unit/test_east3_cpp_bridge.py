@@ -230,6 +230,24 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(expr), "xs.append(make_object(n))")
 
+    def test_builtin_runtime_list_append_uses_runtime_owner_when_func_value_missing(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.append",
+            "runtime_owner": {"kind": "Name", "id": "xs", "resolved_type": "list[Any]"},
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "attr": "append",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Name", "id": "n", "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(expr), "xs.append(make_object(n))")
+
     def test_render_expr_supports_list_extend_ir_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         node = {
@@ -1094,6 +1112,24 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(name_expr), "p.name()")
         self.assertEqual(emitter.render_expr(stem_expr), "p.stem()")
         self.assertEqual(emitter.render_expr(identity_expr), "p")
+
+    def test_builtin_runtime_path_exists_uses_runtime_owner_when_func_value_missing(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "std::filesystem::exists",
+            "runtime_owner": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+            "resolved_type": "bool",
+            "func": {
+                "kind": "Attribute",
+                "attr": "exists",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(expr), "p.exists()")
 
     def test_render_expr_supports_runtime_special_op_ir_nodes(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

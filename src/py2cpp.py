@@ -3487,16 +3487,16 @@ class CppEmitter(CodeEmitter):
                 "casts": [],
             }
             return self.render_expr(static_cast_node)
-        list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, fn, arg_nodes)
+        list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, expr, fn, arg_nodes)
         if list_ops_rendered is not None:
             return str(list_ops_rendered)
-        set_ops_rendered = self._render_builtin_runtime_set_ops(runtime_call, fn, arg_nodes)
+        set_ops_rendered = self._render_builtin_runtime_set_ops(runtime_call, expr, fn, arg_nodes)
         if set_ops_rendered is not None:
             return str(set_ops_rendered)
         dict_ops_rendered = self._render_builtin_runtime_dict_ops(runtime_call, expr, fn)
         if dict_ops_rendered is not None:
             return str(dict_ops_rendered)
-        str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, fn, arg_nodes)
+        str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, expr, fn, arg_nodes)
         if str_ops_rendered is not None:
             return str(str_ops_rendered)
         special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, expr, fn, arg_nodes, kw_nodes)
@@ -3504,16 +3504,24 @@ class CppEmitter(CodeEmitter):
             return str(special_runtime_rendered)
         return ""
 
+    def _builtin_runtime_owner_node(self, expr: dict[str, Any], fn: dict[str, Any]) -> Any:
+        """BuiltinCall の receiver ノードを `runtime_owner` 優先で返す。"""
+        runtime_owner = expr.get("runtime_owner")
+        if len(self.any_to_dict_or_empty(runtime_owner)) > 0:
+            return runtime_owner
+        return fn.get("value")
+
     def _render_builtin_runtime_list_ops(
         self,
         runtime_call: str,
+        expr: dict[str, Any],
         fn: dict[str, Any],
         arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の list 系 runtime_call を処理する。"""
         if runtime_call not in {"list.append", "list.extend", "list.pop", "list.clear", "list.reverse", "list.sort"}:
             return None
-        owner_node: Any = fn.get("value")
+        owner_node = self._builtin_runtime_owner_node(expr, fn)
         if runtime_call == "list.append":
             if len(arg_nodes) >= 1:
                 append_node = {
@@ -3581,12 +3589,13 @@ class CppEmitter(CodeEmitter):
     def _render_builtin_runtime_set_ops(
         self,
         runtime_call: str,
+        expr: dict[str, Any],
         fn: dict[str, Any],
         arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の set 系 runtime_call を処理する。"""
+        owner_node = self._builtin_runtime_owner_node(expr, fn)
         if runtime_call == "set.add":
-            owner_node = fn.get("value")
             if len(arg_nodes) >= 1:
                 set_add_node = {
                     "kind": "SetAdd",
@@ -3599,7 +3608,6 @@ class CppEmitter(CodeEmitter):
                 return self.render_expr(set_add_node)
             return None
         if runtime_call in {"set.discard", "set.remove"}:
-            owner_node = fn.get("value")
             if len(arg_nodes) >= 1:
                 set_erase_node = {
                     "kind": "SetErase",
@@ -3614,7 +3622,7 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "set.clear":
             clear_node = {
                 "kind": "SetClear",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "None",
                 "borrow_kind": "value",
                 "casts": [],
@@ -3631,7 +3639,7 @@ class CppEmitter(CodeEmitter):
         """BuiltinCall の dict 系 runtime_call を処理する。"""
         if runtime_call not in {"dict.get", "dict.pop", "dict.items", "dict.keys", "dict.values"}:
             return None
-        owner_node: Any = fn.get("value")
+        owner_node = self._builtin_runtime_owner_node(expr, fn)
         owner_t = self.get_expr_type(owner_node)
         arg_nodes = self.any_to_list(expr.get("args"))
         if runtime_call == "dict.get":
@@ -3760,6 +3768,7 @@ class CppEmitter(CodeEmitter):
     def _render_builtin_runtime_str_ops(
         self,
         runtime_call: str,
+        expr: dict[str, Any],
         fn: dict[str, Any],
         arg_nodes: list[Any],
     ) -> str | None:
@@ -3778,6 +3787,7 @@ class CppEmitter(CodeEmitter):
             "py_join",
         }:
             return None
+        owner_node = self._builtin_runtime_owner_node(expr, fn)
         if runtime_call == "py_isdigit":
             charclass_node = {
                 "kind": "StrCharClassOp",
@@ -3789,7 +3799,7 @@ class CppEmitter(CodeEmitter):
             if len(arg_nodes) >= 1:
                 charclass_node["value"] = arg_nodes[0]
             else:
-                charclass_node["value"] = fn.get("value")
+                charclass_node["value"] = owner_node
             return self.render_expr(charclass_node)
         if runtime_call == "py_isalpha":
             charclass_node = {
@@ -3802,13 +3812,13 @@ class CppEmitter(CodeEmitter):
             if len(arg_nodes) >= 1:
                 charclass_node["value"] = arg_nodes[0]
             else:
-                charclass_node["value"] = fn.get("value")
+                charclass_node["value"] = owner_node
             return self.render_expr(charclass_node)
         if runtime_call == "py_strip":
             strip_node = {
                 "kind": "StrStripOp",
                 "mode": "strip",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "str",
                 "borrow_kind": "value",
                 "casts": [],
@@ -3820,7 +3830,7 @@ class CppEmitter(CodeEmitter):
             rstrip_node = {
                 "kind": "StrStripOp",
                 "mode": "rstrip",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "str",
                 "borrow_kind": "value",
                 "casts": [],
@@ -3832,7 +3842,7 @@ class CppEmitter(CodeEmitter):
             lstrip_node = {
                 "kind": "StrStripOp",
                 "mode": "lstrip",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "str",
                 "borrow_kind": "value",
                 "casts": [],
@@ -3845,7 +3855,7 @@ class CppEmitter(CodeEmitter):
                 starts_node = {
                     "kind": "StrStartsEndsWith",
                     "mode": "startswith",
-                    "owner": fn.get("value"),
+                    "owner": owner_node,
                     "needle": arg_nodes[0],
                     "resolved_type": "bool",
                     "borrow_kind": "value",
@@ -3861,7 +3871,7 @@ class CppEmitter(CodeEmitter):
                 ends_node = {
                     "kind": "StrStartsEndsWith",
                     "mode": "endswith",
-                    "owner": fn.get("value"),
+                    "owner": owner_node,
                     "needle": arg_nodes[0],
                     "resolved_type": "bool",
                     "borrow_kind": "value",
@@ -3877,7 +3887,7 @@ class CppEmitter(CodeEmitter):
                 find_node = {
                     "kind": "StrFindOp",
                     "mode": "rfind" if runtime_call == "py_rfind" else "find",
-                    "owner": fn.get("value"),
+                    "owner": owner_node,
                     "needle": arg_nodes[0],
                     "resolved_type": "int64",
                     "borrow_kind": "value",
@@ -3891,7 +3901,7 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "py_replace" and len(arg_nodes) >= 2:
             replace_node = {
                 "kind": "StrReplace",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "old": arg_nodes[0],
                 "new": arg_nodes[1],
                 "resolved_type": "str",
@@ -3902,7 +3912,7 @@ class CppEmitter(CodeEmitter):
         if runtime_call == "py_join" and len(arg_nodes) >= 1:
             join_node = {
                 "kind": "StrJoin",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "items": arg_nodes[0],
                 "resolved_type": "str",
                 "borrow_kind": "value",
@@ -3920,6 +3930,7 @@ class CppEmitter(CodeEmitter):
         kw_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の Path/utility 系 runtime_call を処理する。"""
+        owner_node = self._builtin_runtime_owner_node(expr, fn)
         if runtime_call == "std::filesystem::create_directories":
             parents_node: Any = None
             exist_ok_node: Any = None
@@ -3936,7 +3947,7 @@ class CppEmitter(CodeEmitter):
             mkdir_node: dict[str, Any] = {
                 "kind": "PathRuntimeOp",
                 "op": "mkdir",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "None",
                 "borrow_kind": "value",
                 "casts": [],
@@ -3950,7 +3961,7 @@ class CppEmitter(CodeEmitter):
             exists_node = {
                 "kind": "PathRuntimeOp",
                 "op": "exists",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "bool",
                 "borrow_kind": "value",
                 "casts": [],
@@ -3960,7 +3971,7 @@ class CppEmitter(CodeEmitter):
             write_node: dict[str, Any] = {
                 "kind": "PathRuntimeOp",
                 "op": "write_text",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "None",
                 "borrow_kind": "value",
                 "casts": [],
@@ -3972,7 +3983,7 @@ class CppEmitter(CodeEmitter):
             read_node = {
                 "kind": "PathRuntimeOp",
                 "op": "read_text",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "str",
                 "borrow_kind": "value",
                 "casts": [],
@@ -3982,7 +3993,7 @@ class CppEmitter(CodeEmitter):
             parent_node = {
                 "kind": "PathRuntimeOp",
                 "op": "parent",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "Path",
                 "borrow_kind": "value",
                 "casts": [],
@@ -3992,7 +4003,7 @@ class CppEmitter(CodeEmitter):
             name_node = {
                 "kind": "PathRuntimeOp",
                 "op": "name",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "str",
                 "borrow_kind": "value",
                 "casts": [],
@@ -4002,7 +4013,7 @@ class CppEmitter(CodeEmitter):
             stem_node = {
                 "kind": "PathRuntimeOp",
                 "op": "stem",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "str",
                 "borrow_kind": "value",
                 "casts": [],
@@ -4012,8 +4023,8 @@ class CppEmitter(CodeEmitter):
             identity_node = {
                 "kind": "PathRuntimeOp",
                 "op": "identity",
-                "owner": fn.get("value"),
-                "resolved_type": self.get_expr_type(fn.get("value")),
+                "owner": owner_node,
+                "resolved_type": self.get_expr_type(owner_node),
                 "borrow_kind": "value",
                 "casts": [],
             }
@@ -4237,7 +4248,7 @@ class CppEmitter(CodeEmitter):
             int_to_bytes_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
                 "op": "int_to_bytes",
-                "owner": fn.get("value"),
+                "owner": owner_node,
                 "resolved_type": "bytes",
                 "borrow_kind": "value",
                 "casts": [],

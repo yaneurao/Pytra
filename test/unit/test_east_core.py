@@ -248,6 +248,33 @@ def main(xs: list[int], s: str, p: Path) -> None:
         ]
         self.assertEqual(missing_runtime, [])
 
+    def test_builtin_method_calls_keep_runtime_owner(self) -> None:
+        src = """
+from pathlib import Path
+
+def main(xs: list[int], d: dict[str, int], s: str, n: int, p: Path) -> None:
+    xs.append(1)
+    _ = d.get("a", 0)
+    _ = s.strip()
+    _ = n.to_bytes(2, "little")
+    _ = p.exists()
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        calls = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict)
+            and n.get("kind") == "Call"
+            and n.get("lowered_kind") == "BuiltinCall"
+        ]
+        target_runtime_calls = {"list.append", "dict.get", "py_strip", "py_int_to_bytes", "std::filesystem::exists"}
+        targets = [c for c in calls if str(c.get("runtime_call")) in target_runtime_calls]
+        self.assertEqual(len(targets), 5)
+        for c in targets:
+            owner = c.get("runtime_owner")
+            self.assertIsInstance(owner, dict)
+            self.assertNotEqual(owner.get("kind"), "")
+
     def test_raw_range_call_is_lowered_out(self) -> None:
         src = """
 def main() -> None:
