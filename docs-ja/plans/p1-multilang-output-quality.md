@@ -171,7 +171,7 @@
   2. 初回ステータスを `docs-ja/plans/p1-multilang-selfhost-status.md` に固定した。
 - 初回結果サマリ:
   - `rs`: stage1 fail（self-hosted parser が `from ... import (... )` 構文を拒否）
-  - `js`: stage1 pass / stage2 fail（生成 `py2js.js` 実行時 `SyntaxError: Unexpected token ']'`）
+  - `js`: stage1 pass / stage2 fail（生成 `py2js.js` 実行時に `src/hooks/js/emitter/js_emitter.js` が解決できない）
   - `cs`: stage1 pass（stage2 runner 未自動化）
   - `ts/go/java/swift/kotlin`: stage1 pass だが preview 出力のため stage2 blocked
 
@@ -187,3 +187,4 @@
 - 2026-02-24: ID: P1-MQ-02-S4 として多言語サンプル再生成と再計測を完了し、`docs-ja/plans/p1-multilang-output-quality-baseline.md` に改善結果を固定した。
 - 2026-02-24: ID: P1-MQ-03 として品質回帰チェック（`tools/check_multilang_quality_regression.py`）を追加し、`tools/run_local_ci.py` に組み込んだ。
 - 2026-02-24: ID: P1-MQ-04-S1 として stage1 selfhost 棚卸しスクリプト（`tools/check_multilang_selfhost_stage1.py`）を追加し、言語別ステータスを `docs-ja/plans/p1-multilang-selfhost-status.md` に固定した。
+- 2026-02-24: ID: P1-MQ-04-S2 の事前調査として JS emitter に `Slice` 出力（`out[:-3]` -> `.slice(...)`）を追加して stage2 の `SyntaxError` は解消したが、次段で `src/hooks/js/emitter/js_emitter.js` 不在（Python hooks 依存）により実行が継続失敗することを確認した。

@@ -155,7 +155,19 @@ def main() -> int:
                     rows.append(StatusRow(spec.lang, "pass", mode, "skip", "node not found"))
                     continue
                 out2 = tmp / "js_stage2_out.js"
-                ok2, msg2 = _run(["node", str(out1), str(sample_py), "-o", str(out2)])
+                js_driver = ROOT / "src" / "__pytra_tmp_py2js_selfhost.js"
+                ok_tmp, msg_tmp = _run(["python3", str(cli), str(src), "-o", str(js_driver)])
+                if not ok_tmp:
+                    rows.append(StatusRow(spec.lang, "pass", mode, "fail", "js stage2 driver emit failed: " + msg_tmp))
+                    continue
+                try:
+                    ok2, msg2 = _run(["node", str(js_driver), str(sample_py), "-o", str(out2)])
+                finally:
+                    try:
+                        if js_driver.exists():
+                            js_driver.unlink()
+                    except Exception:
+                        pass
                 if ok2 and out2.exists():
                     rows.append(StatusRow(spec.lang, "pass", mode, "pass", "sample/py/01 transpile ok"))
                 else:

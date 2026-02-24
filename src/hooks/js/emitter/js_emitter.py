@@ -893,7 +893,32 @@ class JsEmitter(CodeEmitter):
             return "({" + ", ".join(parts) + "})"
         if kind == "Subscript":
             owner = self.render_expr(expr_d.get("value"))
-            idx = self.render_expr(expr_d.get("slice"))
+            idx_node = self.any_to_dict_or_empty(expr_d.get("slice"))
+            idx_kind = self.any_dict_get_str(idx_node, "kind", "")
+            if idx_kind == "Slice":
+                lower_node = idx_node.get("lower")
+                upper_node = idx_node.get("upper")
+                step_node = idx_node.get("step")
+                has_lower = lower_node is not None and len(self.any_to_dict_or_empty(lower_node)) > 0
+                has_upper = upper_node is not None and len(self.any_to_dict_or_empty(upper_node)) > 0
+                has_step = step_node is not None and len(self.any_to_dict_or_empty(step_node)) > 0
+                if has_step:
+                    step_expr = self.render_expr(step_node)
+                    if has_lower and has_upper:
+                        return owner + ".slice(" + self.render_expr(lower_node) + ", " + self.render_expr(upper_node) + ").filter((_, i) => i % (" + step_expr + ") === 0)"
+                    if has_lower:
+                        return owner + ".slice(" + self.render_expr(lower_node) + ").filter((_, i) => i % (" + step_expr + ") === 0)"
+                    if has_upper:
+                        return owner + ".slice(0, " + self.render_expr(upper_node) + ").filter((_, i) => i % (" + step_expr + ") === 0)"
+                    return owner + ".filter((_, i) => i % (" + step_expr + ") === 0)"
+                if has_lower and has_upper:
+                    return owner + ".slice(" + self.render_expr(lower_node) + ", " + self.render_expr(upper_node) + ")"
+                if has_lower:
+                    return owner + ".slice(" + self.render_expr(lower_node) + ")"
+                if has_upper:
+                    return owner + ".slice(0, " + self.render_expr(upper_node) + ")"
+                return owner + ".slice()"
+            idx = self.render_expr(idx_node)
             return owner + "[" + idx + "]"
         if kind == "Lambda":
             args_obj = self.any_to_dict_or_empty(expr_d.get("args"))
