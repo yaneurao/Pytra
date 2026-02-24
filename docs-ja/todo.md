@@ -22,6 +22,16 @@
 - `docs-ja/todo.md` / `docs-ja/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+## P0: EAST123 責務境界の可視化移行（最優先）
+
+文脈: `docs-ja/plans/plan-east123-migration.md`（`TG-P0-EAST123-MIGRATION`）
+
+1. [ ] [ID: P0-EASTMIG-01] `EAST1/EAST2/EAST3` の責務境界とファイル対応表（どの実装がどの段を担うか）を `docs-ja/spec/spec-east123-migration.md` と `docs-ja/plans/plan-east123-migration.md` で同期固定する。
+2. [ ] [ID: P0-EASTMIG-02] `transpile_cli.py` に集中している段階 API（`load_east1_document`, `normalize_east1_to_east2_document`, `load_east3_document`）を `src/pytra/compiler/east_parts/east1.py` / `east2.py` / `east3.py` へ分離し、`transpile_cli.py` は互換ラッパ責務へ縮退する。
+3. [ ] [ID: P0-EASTMIG-03] `py2cpp.py` の標準経路を `EAST3` 前提へ寄せ、`EAST2` 再判断ロジック（For/Any/object/type_id/builtin）を段階縮退する。
+4. [ ] [ID: P0-EASTMIG-04] C++ hooks の意味論実装を棚卸しし、`EAST3` 前提の構文差分専任へ縮退する（意味論 hook の新規追加を禁止）。
+5. [ ] [ID: P0-EASTMIG-05] `--east-stage 3` 主経路の回帰導線（unit/transpile/selfhost）を標準化し、`EAST2` 入力を移行互換モードとして段階的に格下げする。
+
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
 文脈: `docs-ja/plans/p1-codeemitter-dispatch-redesign.md`（`TG-P1-CED`）

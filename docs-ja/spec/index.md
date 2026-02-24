@@ -15,6 +15,7 @@
 - GC 仕様: [GC 仕様](./spec-gc.md)
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
 - EAST 三段構成仕様（設計ドラフト）: [EAST1/EAST2/EAST3 三段構成仕様](./spec-east123.md)
+- EAST 三段構成移行仕様（実装導線）: [EAST1/EAST2/EAST3 移行計画](./spec-east123-migration.md)
 - Linker 仕様（EAST 連結）: [Linker 仕様](./spec-linker.md)
 - 言語別仕様: [言語別仕様](../language/index.md)
 - Codex 向け運用仕様: [Codex 向け運用仕様](./spec-codex.md)
@@ -39,6 +40,8 @@
   - [言語プロファイル仕様](./spec-language-profile.md)
 - EAST を三段（EAST1/EAST2/EAST3）へ分離する次期設計を確認したい場合:
   - [EAST1/EAST2/EAST3 三段構成仕様](./spec-east123.md)
+- EAST1/EAST2/EAST3 の「どのファイルがどの責務を持つか」と移行順を確認したい場合:
+  - [EAST1/EAST2/EAST3 移行計画](./spec-east123-migration.md)
 - `EAST3` の連結段（`type_id` 決定、manifest、中間ファイル再開）を確認したい場合:
   - [Linker 仕様](./spec-linker.md)
 - 言語ごとの機能対応状況を確認したい場合:
