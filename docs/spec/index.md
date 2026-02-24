@@ -11,6 +11,7 @@
 - Runtime specification: [Runtime Specification](./spec-runtime.md)
 - GC specification: [GC Specification](./spec-gc.md)
 - Language profile specification: [Language Profile Specification](./spec-language-profile.md)
+- Folder responsibility map specification: [Folder Responsibility Map Specification](./spec-folder.md)
 - Language-specific specifications: [Language-Specific Specifications](../language/index.md)
 - Codex operation specification: [Codex Operation Specification](./spec-codex.md)
 - `pylib` module index: [pylib Module Index](./spec-pylib-modules.md)
@@ -28,6 +29,8 @@
   - [GC Specification](./spec-gc.md)
 - If you want `CodeEmitter` JSON profile and hooks specification:
   - [Language Profile Specification](./spec-language-profile.md)
+- If you want folder responsibility boundaries (where to place what):
+  - [Folder Responsibility Map Specification](./spec-folder.md)
 - If you want per-language support details:
   - [Language-Specific Specifications](../language/index.md)
 - If you want Codex work rules, TODO operations, and commit operations:
@@ -37,4 +40,4 @@
 
 ## What Codex Checks At Startup
 
-- At startup, Codex reads `docs-ja/spec/index.md` as the canonical entry point, then checks [Codex Operation Specification](./spec-codex.md) and [TODO](../todo.md).
+- At startup, Codex reads `docs-ja/spec/index.md` as the canonical entry point, then checks [Codex Operation Specification](./spec-codex.md) and [TODO](../todo/index.md).
