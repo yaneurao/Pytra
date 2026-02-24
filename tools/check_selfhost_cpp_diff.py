@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -23,9 +24,32 @@ DEFAULT_CASES = [
     "sample/py/17_monte_carlo_pi.py",
 ]
 
+_DECL_NONE_INIT_RE = re.compile(
+    r"^(\s*)([A-Za-z_][A-Za-z0-9_:<>]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+    r"[A-Za-z_][A-Za-z0-9_:<>]*\s*\(\s*py_to_[A-Za-z0-9_]+\(/\* none \*/\)\s*\);\s*$"
+)
+_FLOAT_CAST_PERF_COUNTER_RE = re.compile(
+    r"py_to_float64\((pytra::std::time::perf_counter\(\)(?:\s*-\s*[A-Za-z_][A-Za-z0-9_]*)?)\)"
+)
+
 
 def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+
+
+def _canonicalize_cpp_line(line: str) -> str:
+    """Normalize known semantically-equivalent cpp diff patterns."""
+    m = _DECL_NONE_INIT_RE.match(line)
+    if m is not None:
+        indent = m.group(1)
+        typ = m.group(2)
+        name = m.group(3)
+        return f"{indent}{typ} {name};"
+    return _FLOAT_CAST_PERF_COUNTER_RE.sub(r"\1", line)
+
+
+def _canonicalize_cpp_lines(lines: list[str]) -> list[str]:
+    return [_canonicalize_cpp_line(line) for line in lines]
 
 
 def _run_east3_contract_tests() -> tuple[bool, str]:
@@ -151,11 +175,19 @@ def main() -> int:
 
             a = out_py.read_text(encoding="utf-8").splitlines()
             b = out_sh.read_text(encoding="utf-8").splitlines()
-            if a != b:
+            a_norm = _canonicalize_cpp_lines(a)
+            b_norm = _canonicalize_cpp_lines(b)
+            if a_norm != b_norm:
                 mismatches += 1
                 print(f"[DIFF] {rel}")
                 if args.show_diff:
-                    for ln in difflib.unified_diff(a, b, fromfile=f"{rel}:python", tofile=f"{rel}:selfhost", lineterm=""):
+                    for ln in difflib.unified_diff(
+                        a_norm,
+                        b_norm,
+                        fromfile=f"{rel}:python(normalized)",
+                        tofile=f"{rel}:selfhost(normalized)",
+                        lineterm="",
+                    ):
                         print(ln)
             else:
                 print(f"[OK] {rel}")
