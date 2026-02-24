@@ -1,30 +1,51 @@
-const __pytra_root = process.cwd();
-const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');
-const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType } = py_runtime;
+import {
+  PYTRA_TYPE_ID,
+  PY_TYPE_MAP,
+  PY_TYPE_OBJECT,
+  pyRegisterClassType,
+} from "./pytra/runtime.js";
+
+function RuntimeError(message) {
+    const err = new Error(message);
+    err.name = "RuntimeError";
+    return err;
+}
 
 import { perf_counter } from "./time.js";
 
 class Token {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
-    constructor() {
-    this[PYTRA_TYPE_ID] = Token.PYTRA_TYPE_ID;
+    constructor(kind, text, pos) {
+        this[PYTRA_TYPE_ID] = Token.PYTRA_TYPE_ID;
+        this.kind = kind;
+        this.text = text;
+        this.pos = pos;
     }
 }
 
 class ExprNode {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
-    constructor() {
-    this[PYTRA_TYPE_ID] = ExprNode.PYTRA_TYPE_ID;
+    constructor(kind, value, name, op, left, right) {
+        this[PYTRA_TYPE_ID] = ExprNode.PYTRA_TYPE_ID;
+        this.kind = kind;
+        this.value = value;
+        this.name = name;
+        this.op = op;
+        this.left = left;
+        this.right = right;
     }
 }
 
 class StmtNode {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
-    constructor() {
-    this[PYTRA_TYPE_ID] = StmtNode.PYTRA_TYPE_ID;
+    constructor(kind, name, expr_index) {
+        this[PYTRA_TYPE_ID] = StmtNode.PYTRA_TYPE_ID;
+        this.kind = kind;
+        this.name = name;
+        this.expr_index = expr_index;
     }
 }
 
@@ -38,58 +59,58 @@ function tokenize(lines) {
             
             if (ch === " ") {
                 i += 1;
-                py_continue;
+                continue;
             }
             if (ch === "+") {
                 tokens.push(new Token("PLUS", ch, i));
                 i += 1;
-                py_continue;
+                continue;
             }
             if (ch === "-") {
                 tokens.push(new Token("MINUS", ch, i));
                 i += 1;
-                py_continue;
+                continue;
             }
             if (ch === "*") {
                 tokens.push(new Token("STAR", ch, i));
                 i += 1;
-                py_continue;
+                continue;
             }
             if (ch === "/") {
                 tokens.push(new Token("SLASH", ch, i));
                 i += 1;
-                py_continue;
+                continue;
             }
             if (ch === "(") {
                 tokens.push(new Token("LPAREN", ch, i));
                 i += 1;
-                py_continue;
+                continue;
             }
             if (ch === ")") {
                 tokens.push(new Token("RPAREN", ch, i));
                 i += 1;
-                py_continue;
+                continue;
             }
             if (ch === "=") {
                 tokens.push(new Token("EQUAL", ch, i));
                 i += 1;
-                py_continue;
+                continue;
             }
-            if (ch.isdigit()) {
+            if ("0" <= ch && ch <= "9") {
                 let start = i;
-                while (i < n && source[i].isdigit()) {
+                while (i < n && source[i] >= "0" && source[i] <= "9") {
                     i += 1;
                 }
-                let text = source[];
+                let text = source.slice(start, i);
                 tokens.push(new Token("NUMBER", text, start));
-                py_continue;
+                continue;
             }
-            if (ch.isalpha() || ch === "_") {
+            if (/^[A-Za-z_]$/.test(ch)) {
                 let start = i;
-                while (i < n && source[i].isalpha() || source[i] === "_" || source[i].isdigit()) {
+                while ((i < n && /^[A-Za-z_]$/.test(source[i])) || ("0" <= source[i] && source[i] <= "9")) {
                     i += 1;
                 }
-                let text = source[];
+                let text = source.slice(start, i);
                 if (text === "let") {
                     tokens.push(new Token("LET", text, start));
                 } else {
@@ -99,7 +120,7 @@ function tokenize(lines) {
                         tokens.push(new Token("IDENT", text, start));
                     }
                 }
-                py_continue;
+                continue;
             }
             throw RuntimeError("tokenize error at line=" + String(line_index) + " pos=" + String(i) + " ch=" + ch);
         }
@@ -194,14 +215,14 @@ class Parser {
             if (this.match("PLUS")) {
                 let right = this.parse_mul();
                 left = this.add_expr(new ExprNode("bin", 0, "", "+", left, right));
-                py_continue;
+                continue;
             }
             if (this.match("MINUS")) {
                 let right = this.parse_mul();
                 left = this.add_expr(new ExprNode("bin", 0, "", "-", left, right));
-                py_continue;
+                continue;
             }
-            py_break;
+            break;
         }
         return left;
     }
@@ -212,14 +233,14 @@ class Parser {
             if (this.match("STAR")) {
                 let right = this.parse_unary();
                 left = this.add_expr(new ExprNode("bin", 0, "", "*", left, right));
-                py_continue;
+                continue;
             }
             if (this.match("SLASH")) {
                 let right = this.parse_unary();
                 left = this.add_expr(new ExprNode("bin", 0, "", "/", left, right));
-                py_continue;
+                continue;
             }
-            py_break;
+            break;
         }
         return left;
     }
@@ -258,7 +279,7 @@ function eval_expr(expr_index, expr_nodes, env) {
         return node.value;
     }
     if (node.kind === "var") {
-        if (!(node.name == env)) {
+        if (!(node.name in env)) {
             throw RuntimeError("undefined variable: " + node.name);
         }
         return env[node.name];
@@ -297,14 +318,14 @@ function execute(stmts, expr_nodes, trace) {
     for (const stmt of stmts) {
         if (stmt.kind === "let") {
             env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env);
-            py_continue;
+            continue;
         }
         if (stmt.kind === "assign") {
-            if (!(stmt.name == env)) {
+            if (!(stmt.name in env)) {
                 throw RuntimeError("assign to undefined variable: " + stmt.name);
             }
             env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env);
-            py_continue;
+            continue;
         }
         let value = eval_expr(stmt.expr_index, expr_nodes, env);
         if (trace) {
@@ -382,5 +403,14 @@ function __pytra_main() {
     run_benchmark();
 }
 
+if (typeof globalThis !== "undefined") {
+  globalThis.__pytra_debug_tokenize = tokenize;
+  globalThis.__pytra_debug_Parser = Parser;
+  globalThis.__pytra_debug_run_demo = run_demo;
+  globalThis.__pytra_debug_run_benchmark = run_benchmark;
+}
+
 // __main__ guard
-main();
+if (globalThis.__pytra_skip_main !== true) {
+  __pytra_main();
+}
