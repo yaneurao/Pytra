@@ -1652,24 +1652,81 @@ class CodeEmitter:
         return ""
 
     def load_import_bindings_from_meta(self, meta: dict[str, Any]) -> None:
-        """`meta.import_bindings` から import 解決テーブルを初期化する。"""
+        """`meta.import_bindings`（+ legacy メタ）から import 解決テーブルを初期化する。"""
         self.import_modules = {}
         self.import_symbols = {}
+        self.import_symbol_modules = set()
+
+        def _add_symbol_binding(local_name: str, module_id: str, export_name: str) -> None:
+            if local_name == "" or module_id == "" or export_name == "":
+                return
+            sym: dict[str, str] = {}
+            sym["module"] = module_id
+            sym["name"] = export_name
+            self.import_symbols[local_name] = sym
+            self.import_symbol_modules.add(module_id)
+
         binds = self.any_to_dict_list(meta.get("import_bindings"))
-        for ent in binds:
-            binding_kind = self.any_to_str(ent.get("binding_kind"))
-            local_name = self.any_to_str(ent.get("local_name"))
-            module_id = self.any_to_str(ent.get("module_id"))
-            if binding_kind == "module":
-                if local_name != "" and module_id != "":
-                    self.import_modules[local_name] = module_id
-            elif binding_kind == "symbol":
-                export_name = self.any_to_str(ent.get("export_name"))
-                if local_name != "" and module_id != "" and export_name != "":
-                    sym: dict[str, str] = {}
-                    sym["module"] = module_id
-                    sym["name"] = export_name
-                    self.import_symbols[local_name] = sym
+        refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
+
+        if len(binds) > 0:
+            for ref in refs:
+                _add_symbol_binding(
+                    self.any_to_str(ref.get("local_name")),
+                    self.any_to_str(ref.get("module_id")),
+                    self.any_to_str(ref.get("symbol")),
+                )
+
+            for ent in binds:
+                binding_kind = self.any_to_str(ent.get("binding_kind"))
+                local_name = self.any_to_str(ent.get("local_name"))
+                module_id = self.any_to_str(ent.get("module_id"))
+                if binding_kind == "module":
+                    if local_name != "" and module_id != "":
+                        self.import_modules[local_name] = module_id
+                elif binding_kind == "symbol" and len(refs) == 0:
+                    _add_symbol_binding(local_name, module_id, self.any_to_str(ent.get("export_name")))
+
+            if len(self.import_symbols) == 0:
+                legacy_symbols = self.any_to_dict_or_empty(meta.get("import_symbols"))
+                for local_name_obj, sym_obj in legacy_symbols.items():
+                    if not isinstance(local_name_obj, str):
+                        continue
+                    local_name = local_name_obj
+                    sym = sym_obj if isinstance(sym_obj, dict) else {}
+                    _add_symbol_binding(
+                        local_name,
+                        self.any_dict_get_str(sym, "module", ""),
+                        self.any_dict_get_str(sym, "name", ""),
+                    )
+            if len(self.import_modules) == 0:
+                legacy_modules = self.any_to_dict_or_empty(meta.get("import_modules"))
+                for local_name_obj, module_id_obj in legacy_modules.items():
+                    if not isinstance(local_name_obj, str):
+                        continue
+                    module_id = self.any_to_str(module_id_obj)
+                    if module_id != "":
+                        self.import_modules[local_name_obj] = module_id
+            return
+
+        legacy_symbols = self.any_to_dict_or_empty(meta.get("import_symbols"))
+        for local_name_obj, sym_obj in legacy_symbols.items():
+            if not isinstance(local_name_obj, str):
+                continue
+            local_name = local_name_obj
+            sym = sym_obj if isinstance(sym_obj, dict) else {}
+            _add_symbol_binding(
+                local_name,
+                self.any_dict_get_str(sym, "module", ""),
+                self.any_dict_get_str(sym, "name", ""),
+            )
+        legacy_modules = self.any_to_dict_or_empty(meta.get("import_modules"))
+        for local_name_obj, module_id_obj in legacy_modules.items():
+            if not isinstance(local_name_obj, str):
+                continue
+            module_id = self.any_to_str(module_id_obj)
+            if module_id != "":
+                self.import_modules[local_name_obj] = module_id
 
     def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
         """from-import で束縛された識別子を返す（無ければ空 dict）。"""

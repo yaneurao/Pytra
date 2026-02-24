@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document, load_east3_document, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, print_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
+from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document, load_east3_document, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, print_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from pytra.std import json
 from pytra.std import os
@@ -591,69 +591,10 @@ class CppEmitter(CodeEmitter):
                     )
         return sort_str_list_copy(includes)
 
-    def _seed_legacy_import_symbols_from_meta(self, meta: dict[str, Any]) -> None:
-        """legacy `meta.import_symbols` を `self.import_symbols` へ反映する。"""
-        for local_name, sym_obj in dict_any_get_dict(meta, "import_symbols").items():
-            if not isinstance(local_name, str):
-                continue
-            set_import_symbol_binding_and_module_set(
-                self.import_symbols,
-                self.import_symbol_modules,
-                local_name,
-                dict_any_get_str(sym_obj if isinstance(sym_obj, dict) else {}, "module"),
-                dict_any_get_str(sym_obj if isinstance(sym_obj, dict) else {}, "name"),
-            )
-
-    def _seed_legacy_import_modules_from_meta(self, meta: dict[str, Any]) -> None:
-        """legacy `meta.import_modules` を `self.import_modules` へ反映する。"""
-        for local_name, module_id_any in dict_any_get_dict(meta, "import_modules").items():
-            if not isinstance(local_name, str):
-                continue
-            set_import_module_binding(self.import_modules, local_name, self.any_to_str(module_id_any))
-
-    def _seed_legacy_import_maps_from_meta(self, meta: dict[str, Any]) -> None:
-        """legacy import メタを symbols/modules の両方へ反映する。"""
-        self._seed_legacy_import_symbols_from_meta(meta)
-        self._seed_legacy_import_modules_from_meta(meta)
-
     def _seed_import_maps_from_meta(self) -> None:
         """`meta.import_bindings`（または互換メタ）から import 束縛マップを初期化する。"""
         meta = dict_any_get_dict(self.doc, "meta")
-        refs = meta_qualified_symbol_refs(self.doc)
-        bindings = meta_import_bindings(self.doc)
-        if len(bindings) > 0:
-            for ref_item in refs:
-                set_import_symbol_binding_and_module_set(
-                    self.import_symbols,
-                    self.import_symbol_modules,
-                    dict_str_get(ref_item, "local_name", ""),
-                    dict_str_get(ref_item, "module_id", ""),
-                    dict_str_get(ref_item, "symbol", ""),
-                )
-            for item in bindings:
-                binding_kind = dict_str_get(item, "binding_kind", "")
-                if binding_kind == "module":
-                    set_import_module_binding(
-                        self.import_modules,
-                        dict_str_get(item, "local_name", ""),
-                        dict_str_get(item, "module_id", ""),
-                    )
-                elif binding_kind == "symbol" and len(refs) == 0:
-                    set_import_symbol_binding_and_module_set(
-                        self.import_symbols,
-                        self.import_symbol_modules,
-                        dict_str_get(item, "local_name", ""),
-                        dict_str_get(item, "module_id", ""),
-                        dict_str_get(item, "export_name", ""),
-                    )
-            if len(self.import_symbols) == 0:
-                self._seed_legacy_import_symbols_from_meta(meta)
-            if len(self.import_modules) == 0:
-                self._seed_legacy_import_modules_from_meta(meta)
-            return
-        # canonical メタが空の場合は legacy メタへフォールバックする。
-        self._seed_legacy_import_maps_from_meta(meta)
-        return
+        self.load_import_bindings_from_meta(meta)
 
     def emit_block_comment(self, text: str) -> None:
         """Emit docstring/comment as C-style block comment."""
