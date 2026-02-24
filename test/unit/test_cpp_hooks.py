@@ -16,12 +16,9 @@ if str(ROOT / "src") not in sys.path:
 from src.hooks.cpp.hooks.cpp_hooks import (
     build_cpp_hooks,
     on_emit_stmt_kind,
-    on_for_range_mode,
     on_render_expr_complex,
     on_render_class_method,
-    on_render_expr_kind,
     on_render_module_method,
-    on_render_object_method,
     on_stmt_omit_braces,
 )
 
@@ -214,25 +211,6 @@ class CppHooksTest(unittest.TestCase):
         self.assertTrue(on_stmt_omit_braces(em, "If", {"body": []}, False))
         self.assertFalse(on_stmt_omit_braces(em, "For", {"body": []}, False))
 
-    def test_on_for_range_mode_prefers_emitter_default_impl(self) -> None:
-        class _RangeModeEmitter:
-            def render_expr(self, expr: Any) -> str:
-                if isinstance(expr, dict):
-                    rep = expr.get("repr")
-                    if isinstance(rep, str):
-                        return rep
-                return ""
-
-            def _default_for_range_mode(self, stmt: dict[str, Any], default_mode: str, step_expr: str) -> str:
-                _ = stmt
-                if step_expr == "1":
-                    return "ascending"
-                return default_mode
-
-        em = _RangeModeEmitter()
-        stmt = {"range_mode": "dynamic", "step": {"repr": "1"}}
-        self.assertEqual(on_for_range_mode(em, stmt, "dynamic"), "ascending")
-
     def test_on_stmt_omit_braces_falls_back_without_core_default(self) -> None:
         class _FallbackEmitter:
             pass
@@ -252,64 +230,6 @@ class CppHooksTest(unittest.TestCase):
 
         em = _EmitterWithDefault()
         self.assertTrue(on_stmt_omit_braces(em, "If", {"body": []}, False))
-
-    def test_on_for_range_mode_falls_back_without_core_default(self) -> None:
-        class _FallbackEmitter:
-            pass
-
-        em = _FallbackEmitter()
-        self.assertEqual(on_for_range_mode(em, {"range_mode": "ascending"}, "dynamic"), "dynamic")
-        self.assertEqual(on_for_range_mode(em, {"range_mode": "invalid"}, "dynamic"), "dynamic")
-
-    def test_range_expr_render(self) -> None:
-        em = _DummyEmitter()
-        node = {
-            "kind": "RangeExpr",
-            "start": {"repr": "0"},
-            "stop": {"repr": "n"},
-            "step": {"repr": "1"},
-        }
-        rendered = on_render_expr_kind(em, "RangeExpr", node)
-        self.assertEqual(rendered, "py_range(0, n, 1)")
-
-    def test_compare_contains_render(self) -> None:
-        em = _DummyEmitter()
-        node = {
-            "kind": "Compare",
-            "lowered_kind": "Contains",
-            "container": {"repr": "xs"},
-            "key": {"repr": "x"},
-            "negated": False,
-        }
-        rendered = on_render_expr_kind(em, "Compare", node)
-        self.assertEqual(rendered, "py_contains(xs, x)")
-
-    def test_compare_not_contains_render(self) -> None:
-        em = _DummyEmitter()
-        node = {
-            "kind": "Compare",
-            "lowered_kind": "Contains",
-            "container": {"repr": "xs"},
-            "key": {"repr": "x"},
-            "negated": True,
-        }
-        rendered = on_render_expr_kind(em, "Compare", node)
-        self.assertEqual(rendered, "!(py_contains(xs, x))")
-
-    def test_object_method_str_strip_render(self) -> None:
-        em = _DummyEmitter()
-        rendered = on_render_object_method(em, "str", "s", "strip", [])
-        self.assertEqual(rendered, "py_strip(s)")
-
-    def test_object_method_unknown_clear_render(self) -> None:
-        em = _DummyEmitter()
-        rendered = on_render_object_method(em, "unknown", "xs", "clear", [])
-        self.assertEqual(rendered, "xs.clear()")
-
-    def test_object_method_append_render(self) -> None:
-        em = _DummyEmitter()
-        rendered = on_render_object_method(em, "list[int64]", "xs", "append", ["x"])
-        self.assertEqual(rendered, "xs.append(x)")
 
     def test_module_method_prefers_namespace_map(self) -> None:
         em = _DummyEmitter()

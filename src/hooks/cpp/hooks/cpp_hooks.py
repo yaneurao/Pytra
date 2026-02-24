@@ -6,16 +6,6 @@ from pytra.std.typing import Any
 from pytra.compiler.east_parts.code_emitter import EmitterHooks
 
 
-def _render_owner_expr(emitter: Any, func_node: dict[str, Any]) -> str:
-    """Attribute call の owner 式を C++ 向けに整形する。"""
-    owner_node = emitter.any_to_dict_or_empty(func_node.get("value"))
-    owner_expr = emitter.render_expr(func_node.get("value"))
-    owner_kind = emitter.any_dict_get_str(owner_node, "kind", "")
-    if owner_kind in {"BinOp", "BoolOp", "Compare", "IfExp"}:
-        owner_expr = "(" + owner_expr + ")"
-    return owner_expr
-
-
 def _looks_like_runtime_symbol(name: str) -> bool:
     """ランタイム関数シンボルとして直接出力できる文字列か判定する。"""
     if name == "":
@@ -72,22 +62,6 @@ def on_stmt_omit_braces(
     return bool(default_value)
 
 
-def on_for_range_mode(
-    emitter: Any,
-    stmt: dict[str, Any],
-    default_mode: str,
-) -> str:
-    """ForRange の mode を core 既定方針へ委譲する。"""
-    default_impl = getattr(emitter, "_default_for_range_mode", None)
-    if callable(default_impl):
-        step_expr = emitter.render_expr(stmt.get("step"))
-        resolved = default_impl(stmt, default_mode, step_expr)
-        if isinstance(resolved, str) and resolved in {"ascending", "descending", "dynamic"}:
-            return resolved
-        return default_mode
-    return default_mode
-
-
 def on_render_module_method(
     emitter: Any,
     module_name: str,
@@ -127,40 +101,6 @@ def on_render_module_method(
     return None
 
 
-def on_render_object_method(
-    emitter: Any,
-    owner_type: str,
-    owner_expr: str,
-    attr: str,
-    rendered_args: list[str],
-) -> str | None:
-    """obj.method(...) の C++ 固有分岐を処理する。"""
-    owner_types: list[str] = [owner_type]
-    if emitter._contains_text(owner_type, "|"):
-        owner_types = emitter.split_union(owner_type)
-    if owner_type == "unknown" and attr == "clear":
-        return owner_expr + ".clear()"
-    if attr == "append":
-        append_rendered = emitter._render_append_call_object_method(owner_types, owner_expr, rendered_args)
-        if isinstance(append_rendered, str) and append_rendered != "":
-            return append_rendered
-    if attr in {"strip", "lstrip", "rstrip"}:
-        if len(rendered_args) == 0:
-            return "py_" + attr + "(" + owner_expr + ")"
-        if len(rendered_args) == 1:
-            return "py_" + attr + "(" + owner_expr + ", " + rendered_args[0] + ")"
-    if attr in {"startswith", "endswith"} and len(rendered_args) >= 1:
-        return "py_" + attr + "(" + owner_expr + ", " + rendered_args[0] + ")"
-    if attr == "replace" and len(rendered_args) >= 2:
-        return "py_replace(" + owner_expr + ", " + rendered_args[0] + ", " + rendered_args[1] + ")"
-    if "str" in owner_types:
-        if attr in {"isdigit", "isalpha", "isalnum", "isspace", "lower", "upper"} and len(rendered_args) == 0:
-            return owner_expr + "." + attr + "()"
-        if attr in {"find", "rfind"}:
-            return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
-    return None
-
-
 def on_render_class_method(
     emitter: Any,
     owner_type: str,
@@ -178,78 +118,6 @@ def on_render_class_method(
     call_args = emitter._coerce_args_for_class_method(owner_type, attr, call_args, arg_nodes)
     fn_expr = emitter._render_attribute_expr(func_node)
     return fn_expr + "(" + ", ".join(call_args) + ")"
-
-
-def on_render_binop(
-    emitter: Any,
-    binop_node: dict[str, Any],
-    left: str,
-    right: str,
-) -> str | None:
-    """BinOp の C++ 固有分岐を処理する。"""
-    op_name = emitter.any_to_str(binop_node.get("op"))
-    casts = emitter.any_to_list(binop_node.get("casts"))
-
-    if op_name == "Div":
-        lt0 = emitter.get_expr_type(binop_node.get("left"))
-        rt0 = emitter.get_expr_type(binop_node.get("right"))
-        lt = lt0 if isinstance(lt0, str) else ""
-        rt = rt0 if isinstance(rt0, str) else ""
-        if lt == "Path" and rt in {"str", "Path"}:
-            return left + " / " + right
-        if len(casts) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
-            return left + " / " + right
-        return "py_div(" + left + ", " + right + ")"
-
-    if op_name == "FloorDiv":
-        if emitter.floor_div_mode == "python":
-            return "py_floordiv(" + left + ", " + right + ")"
-        return left + " / " + right
-
-    if op_name == "Mod":
-        if emitter.mod_mode == "python":
-            return "py_mod(" + left + ", " + right + ")"
-        return left + " % " + right
-
-    if op_name == "Mult":
-        lt0 = emitter.get_expr_type(binop_node.get("left"))
-        rt0 = emitter.get_expr_type(binop_node.get("right"))
-        lt = lt0 if isinstance(lt0, str) else ""
-        rt = rt0 if isinstance(rt0, str) else ""
-        int_types = {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}
-        if lt.startswith("list[") and rt in int_types:
-            return "py_repeat(" + left + ", " + right + ")"
-        if rt.startswith("list[") and lt in int_types:
-            return "py_repeat(" + right + ", " + left + ")"
-        if lt == "str" and rt in int_types:
-            return "py_repeat(" + left + ", " + right + ")"
-        if rt == "str" and lt in int_types:
-            return "py_repeat(" + right + ", " + left + ")"
-
-    return None
-
-
-def on_render_expr_kind(
-    emitter: Any,
-    kind: str,
-    expr_node: dict[str, Any],
-) -> str | None:
-    """式 kind 単位の出力フック。"""
-    if kind == "RangeExpr":
-        start = emitter.render_expr(expr_node.get("start"))
-        stop = emitter.render_expr(expr_node.get("stop"))
-        step = emitter.render_expr(expr_node.get("step"))
-        return "py_range(" + start + ", " + stop + ", " + step + ")"
-    if kind == "Compare":
-        if emitter.any_dict_get_str(expr_node, "lowered_kind", "") == "Contains":
-            container = emitter.render_expr(expr_node.get("container"))
-            key = emitter.render_expr(expr_node.get("key"))
-            base = "py_contains(" + container + ", " + key + ")"
-            if emitter.any_to_bool(expr_node.get("negated")):
-                return "!(" + base + ")"
-            return base
-        return None
-    return None
 
 
 def on_render_expr_leaf(
