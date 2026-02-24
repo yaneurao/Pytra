@@ -927,14 +927,6 @@ class East3CppBridgeTest(unittest.TestCase):
             "exist_ok": {"kind": "Constant", "value": False, "resolved_type": "bool"},
             "resolved_type": "None",
         }
-        mkdir_kw_only_node = {
-            "kind": "PathRuntimeOp",
-            "op": "mkdir",
-            "owner": owner,
-            "parents_expr": "parents_flag",
-            "exist_ok_expr": "exist_ok_flag",
-            "resolved_type": "None",
-        }
         exists_node = {"kind": "PathRuntimeOp", "op": "exists", "owner": owner, "resolved_type": "bool"}
         write_node = {
             "kind": "PathRuntimeOp",
@@ -950,7 +942,6 @@ class East3CppBridgeTest(unittest.TestCase):
         identity_node = {"kind": "PathRuntimeOp", "op": "identity", "owner": owner, "resolved_type": "Path"}
 
         self.assertEqual(emitter.render_expr(mkdir_node), "p.mkdir(true, false)")
-        self.assertEqual(emitter.render_expr(mkdir_kw_only_node), "p.mkdir(parents_flag, exist_ok_flag)")
         self.assertEqual(emitter.render_expr(exists_node), "p.exists()")
         self.assertEqual(emitter.render_expr(write_node), 'p.write_text("42")')
         self.assertEqual(emitter.render_expr(read_node), "p.read_text()")

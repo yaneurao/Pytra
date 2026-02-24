@@ -6258,13 +6258,9 @@ class CppEmitter(CodeEmitter):
                 parents_expr = "false"
                 if self.any_dict_has(expr_d, "parents"):
                     parents_expr = self.render_expr(expr_d.get("parents"))
-                elif self.any_dict_has(expr_d, "parents_expr"):
-                    parents_expr = self.any_dict_get_str(expr_d, "parents_expr", "false")
                 exist_ok_expr = "false"
                 if self.any_dict_has(expr_d, "exist_ok"):
                     exist_ok_expr = self.render_expr(expr_d.get("exist_ok"))
-                elif self.any_dict_has(expr_d, "exist_ok_expr"):
-                    exist_ok_expr = self.any_dict_get_str(expr_d, "exist_ok_expr", "false")
                 return f"{owner_expr}.mkdir({parents_expr}, {exist_ok_expr})"
             if op == "exists":
                 return f"{owner_expr}.exists()"
@@ -6272,8 +6268,6 @@ class CppEmitter(CodeEmitter):
                 value_expr = '""'
                 if self.any_dict_has(expr_d, "value"):
                     value_expr = self.render_expr(expr_d.get("value"))
-                elif self.any_dict_has(expr_d, "value_expr"):
-                    value_expr = self.any_dict_get_str(expr_d, "value_expr", '""')
                 return f"{owner_expr}.write_text({value_expr})"
             if op == "read_text":
                 return f"{owner_expr}.read_text()"
@@ -6294,22 +6288,12 @@ class CppEmitter(CodeEmitter):
                     arg_nodes = self.any_to_list(expr_d.get("args"))
                     for arg_node in arg_nodes:
                         print_args.append(self.render_expr(arg_node))
-                elif self.any_dict_has(expr_d, "arg_exprs"):
-                    raw_args = self.any_to_list(expr_d.get("arg_exprs"))
-                    for raw_arg in raw_args:
-                        print_args.append(self.any_to_str(raw_arg))
                 return f"py_print({join_str_list(', ', print_args)})"
             if op == "len":
-                if self.any_dict_has(expr_d, "value"):
-                    value_expr = self.render_expr(expr_d.get("value"))
-                    return f"py_len({value_expr})"
-                value_expr_txt = self.any_dict_get_str(expr_d, "value_expr", "")
-                return f"py_len({value_expr_txt})"
+                value_expr = self.render_expr(expr_d.get("value"))
+                return f"py_len({value_expr})"
             if op == "to_string":
-                if self.any_dict_has(expr_d, "value"):
-                    return self.render_to_string(expr_d.get("value"))
-                value_expr_txt = self.any_dict_get_str(expr_d, "value_expr", "")
-                return f"py_to_string({value_expr_txt})"
+                return self.render_to_string(expr_d.get("value"))
             if op == "minmax":
                 mode = self.any_dict_get_str(expr_d, "mode", "min")
                 fn_name = "max" if mode == "max" else "min"
@@ -6319,10 +6303,6 @@ class CppEmitter(CodeEmitter):
                     arg_nodes_for_minmax = self.any_to_list(expr_d.get("args"))
                     for arg_node in arg_nodes_for_minmax:
                         rendered_args.append(self.render_expr(arg_node))
-                elif self.any_dict_has(expr_d, "arg_exprs"):
-                    raw_args = self.any_to_list(expr_d.get("arg_exprs"))
-                    for raw_arg in raw_args:
-                        rendered_args.append(self.any_to_str(raw_arg))
                 out_t = self.any_dict_get_str(expr_d, "resolved_type", "")
                 return self.render_minmax(fn_name, rendered_args, out_t, arg_nodes_for_minmax)
             if op == "perf_counter":
@@ -6333,10 +6313,6 @@ class CppEmitter(CodeEmitter):
                     arg_nodes = self.any_to_list(expr_d.get("args"))
                     for arg_node in arg_nodes:
                         open_args.append(self.render_expr(arg_node))
-                elif self.any_dict_has(expr_d, "arg_exprs"):
-                    raw_args = self.any_to_list(expr_d.get("arg_exprs"))
-                    for raw_arg in raw_args:
-                        open_args.append(self.any_to_str(raw_arg))
                 return f"open({join_str_list(', ', open_args)})"
             if op == "path_ctor":
                 path_args: list[str] = []
@@ -6344,17 +6320,10 @@ class CppEmitter(CodeEmitter):
                     arg_nodes = self.any_to_list(expr_d.get("args"))
                     for arg_node in arg_nodes:
                         path_args.append(self.render_expr(arg_node))
-                elif self.any_dict_has(expr_d, "arg_exprs"):
-                    raw_args = self.any_to_list(expr_d.get("arg_exprs"))
-                    for raw_arg in raw_args:
-                        path_args.append(self.any_to_str(raw_arg))
                 return f"Path({join_str_list(', ', path_args)})"
             if op == "runtime_error":
                 if self.any_dict_has(expr_d, "message"):
                     message_expr = self.render_expr(expr_d.get("message"))
-                    return f"::std::runtime_error({message_expr})"
-                if self.any_dict_has(expr_d, "message_expr"):
-                    message_expr = self.any_dict_get_str(expr_d, "message_expr", '"error"')
                     return f"::std::runtime_error({message_expr})"
                 return '::std::runtime_error("error")'
             if op == "int_to_bytes":
@@ -6362,13 +6331,9 @@ class CppEmitter(CodeEmitter):
                 length_expr = "0"
                 if self.any_dict_has(expr_d, "length"):
                     length_expr = self.render_expr(expr_d.get("length"))
-                elif self.any_dict_has(expr_d, "length_expr"):
-                    length_expr = self.any_dict_get_str(expr_d, "length_expr", "0")
                 byteorder_expr = '"little"'
                 if self.any_dict_has(expr_d, "byteorder"):
                     byteorder_expr = self.render_expr(expr_d.get("byteorder"))
-                elif self.any_dict_has(expr_d, "byteorder_expr"):
-                    byteorder_expr = self.any_dict_get_str(expr_d, "byteorder_expr", '"little"')
                 return f"py_int_to_bytes({owner_expr}, {length_expr}, {byteorder_expr})"
             return ""
         if kind == "IsSubtype":
