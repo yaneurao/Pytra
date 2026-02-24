@@ -16,142 +16,16 @@ if str(ROOT / "src") not in sys.path:
 from src.hooks.cpp.hooks.cpp_hooks import (
     build_cpp_hooks,
     on_render_expr_complex,
-    on_render_class_method,
-    on_render_module_method,
     on_stmt_omit_braces,
 )
 
 
 class _DummyEmitter:
-    module_namespace_map: dict[str, str]
-    emitted: list[str]
-
-    def __init__(self) -> None:
-        self.module_namespace_map = {"pytra.std.math": "pytra::std::math"}
-        self.emitted = []
-
     def any_dict_get_str(self, obj: dict[str, Any], key: str, default_value: str = "") -> str:
         if not isinstance(obj, dict):
             return default_value
         v = obj.get(key, default_value)
         return v if isinstance(v, str) else default_value
-
-    def render_expr(self, expr: Any) -> str:
-        if isinstance(expr, dict):
-            rep = expr.get("repr")
-            if isinstance(rep, str):
-                return rep
-        return "<?>"
-
-    def any_to_bool(self, obj: Any) -> bool:
-        return bool(obj)
-
-    def any_to_list(self, value: Any) -> list[Any]:
-        if isinstance(value, list):
-            return value
-        return []
-
-    def cpp_type(self, type_node: Any) -> str:
-        if isinstance(type_node, str):
-            if type_node == "int64":
-                return "int64"
-            if type_node == "float64":
-                return "float64"
-            if type_node == "bool":
-                return "bool"
-        return "auto"
-
-    def get_expr_type(self, expr: Any) -> str:
-        if isinstance(expr, dict):
-            t = expr.get("resolved_type")
-            if isinstance(t, str):
-                return t
-        return ""
-
-    def is_any_like_type(self, t: str) -> bool:
-        return t in {"Any", "object", "unknown"}
-
-    def _contains_text(self, text: str, needle: str) -> bool:
-        return needle in text
-
-    def split_union(self, text: str) -> list[str]:
-        parts = text.split("|")
-        out: list[str] = []
-        i = 0
-        while i < len(parts):
-            p = parts[i].strip()
-            if p != "":
-                out.append(p)
-            i += 1
-        return out
-
-    def merge_call_args(self, args: list[str], kw: dict[str, str]) -> list[str]:
-        out: list[str] = []
-        i = 0
-        while i < len(args):
-            out.append(args[i])
-            i += 1
-        for _, v in kw.items():
-            out.append(v)
-        return out
-
-    def _normalize_runtime_module_name(self, module_name: str) -> str:
-        return module_name
-
-    def _coerce_args_for_module_function(
-        self, module_name: str, fn_name: str, args: list[str], arg_nodes: list[Any]
-    ) -> list[str]:
-        _ = module_name
-        _ = fn_name
-        _ = arg_nodes
-        return args
-
-    def _lookup_module_attr_runtime_call(self, owner_mod: str, attr: str) -> str:
-        if owner_mod == "pytra.std.math" and attr == "pow":
-            return "pytra::std::math::pow"
-        return ""
-
-    def _module_name_to_cpp_namespace(self, module_name: str) -> str:
-        if module_name == "my.mod":
-            return "my::mod"
-        return ""
-
-    def _render_append_call_object_method(
-        self, owner_types: list[str], owner_expr: str, rendered_args: list[str]
-    ) -> str | None:
-        _ = owner_types
-        if len(rendered_args) == 1:
-            return owner_expr + ".append(" + rendered_args[0] + ")"
-        return None
-
-    def _class_method_sig(self, owner_t: str, method: str) -> list[str]:
-        if owner_t == "MathUtil" and method == "twice":
-            return ["int64"]
-        return []
-
-    def _coerce_args_for_class_method(
-        self,
-        owner_t: str,
-        method: str,
-        args: list[str],
-        arg_nodes: list[Any],
-    ) -> list[str]:
-        _ = owner_t
-        _ = method
-        _ = arg_nodes
-        return args
-
-    def _render_attribute_expr(self, expr_d: dict[str, Any]) -> str:
-        owner = self.any_dict_get_str(self.any_to_dict_or_empty(expr_d.get("value")), "id", "")
-        attr = self.any_dict_get_str(expr_d, "attr", "")
-        if owner != "" and attr != "":
-            return owner + "::" + attr
-        return "<?>::<?>"
-
-    def any_to_dict_or_empty(self, value: Any) -> dict[str, Any]:
-        if isinstance(value, dict):
-            return value
-        return {}
 
     def _render_joinedstr_expr(self, expr_d: dict[str, Any]) -> str:
         _ = expr_d
@@ -163,14 +37,12 @@ class _DummyEmitter:
 
 
 class CppHooksTest(unittest.TestCase):
-    def test_build_cpp_hooks_does_not_register_object_method_hook(self) -> None:
+    def test_build_cpp_hooks_registers_only_syntax_hooks(self) -> None:
         hooks = build_cpp_hooks()
-        self.assertNotIn("on_render_object_method", hooks)
-        self.assertNotIn("on_render_expr_kind", hooks)
-        self.assertNotIn("on_render_binop", hooks)
-        self.assertNotIn("on_for_range_mode", hooks)
-        self.assertIn("on_render_module_method", hooks)
-        self.assertIn("on_render_class_method", hooks)
+        self.assertEqual(set(hooks.keys()), {"on_stmt_omit_braces", "on_render_expr_complex"})
+        self.assertNotIn("on_render_module_method", hooks)
+        self.assertNotIn("on_render_class_method", hooks)
+        self.assertNotIn("on_render_expr_leaf", hooks)
 
     def test_on_stmt_omit_braces_prefers_emitter_default_impl(self) -> None:
         class _DefaultingEmitter:
@@ -202,26 +74,6 @@ class CppHooksTest(unittest.TestCase):
 
         em = _EmitterWithDefault()
         self.assertTrue(on_stmt_omit_braces(em, "If", {"body": []}, False))
-
-    def test_module_method_prefers_namespace_map(self) -> None:
-        em = _DummyEmitter()
-        rendered = on_render_module_method(em, "pytra.std.math", "sqrt", ["x"], {}, [])
-        self.assertEqual(rendered, "pytra::std::math::sqrt(x)")
-
-    def test_module_method_runtime_mapping(self) -> None:
-        em = _DummyEmitter()
-        rendered = on_render_module_method(em, "pytra.std.math", "pow", ["x", "y"], {}, [])
-        self.assertEqual(rendered, "pytra::std::math::pow(x, y)")
-
-    def test_class_method_render(self) -> None:
-        em = _DummyEmitter()
-        func = {
-            "kind": "Attribute",
-            "value": {"kind": "Name", "id": "MathUtil"},
-            "attr": "twice",
-        }
-        rendered = on_render_class_method(em, "MathUtil", "twice", func, ["x"], {}, [])
-        self.assertEqual(rendered, "MathUtil::twice(x)")
 
     def test_on_render_expr_complex(self) -> None:
         em = _DummyEmitter()
