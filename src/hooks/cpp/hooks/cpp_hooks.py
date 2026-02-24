@@ -344,7 +344,6 @@ def build_cpp_hooks() -> dict[str, Any]:
     hooks.add("on_for_range_mode", on_for_range_mode)
     hooks.add("on_render_call", on_render_call)
     hooks.add("on_render_module_method", on_render_module_method)
-    hooks.add("on_render_object_method", on_render_object_method)
     hooks.add("on_render_class_method", on_render_class_method)
     hooks.add("on_render_binop", on_render_binop)
     hooks.add("on_render_expr_kind", on_render_expr_kind)
