@@ -185,6 +185,7 @@
 - `ImportGraphHelpers` のうち `analyze_import_graph` / `build_module_east_map` は、実装本体を `src/pytra/compiler/east_parts/east1_build.py` へ委譲する thin wrapper として運用します（互換公開 API のみ保持）。
 - `py2cpp.py` の import graph/build 入口（`_analyze_import_graph`, `build_module_east_map`）は `East1BuildHelpers` への委譲に限定し、`transpile_cli` へ実装詳細を持ち込みません。
 - 回帰は `test/unit/test_east1_build.py`・`test/unit/test_py2cpp_east1_build_bridge.py`・`tools/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
+- `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py'` を併用し、`py2cpp.py` の責務境界（`tools/check_py2cpp_boundary.py`）が維持されていることを確認します。
 
 ### 3.1 import と `runtime/cpp` 対応
 

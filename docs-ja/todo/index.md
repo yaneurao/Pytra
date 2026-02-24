@@ -26,7 +26,7 @@
 
 文脈: `docs-ja/plans/p0-cpp-emitter-extraction.md`（`TG-P0-CPP-EMITTER-EXTRACTION`）
 
-1. [ ] [ID: P0-CPP-EMITTER-01] `src/py2cpp.py` に同居している `CppEmitter` 本体を `src/hooks/cpp/emitter` へ移し、`py2cpp.py` を薄い CLI/配線層へ縮退する（`P0-CPP-EMITTER-01-S1` から `P0-CPP-EMITTER-01-S4` 完了でクローズ）。
+1. [x] [ID: P0-CPP-EMITTER-01] `src/py2cpp.py` に同居している `CppEmitter` 本体を `src/hooks/cpp/emitter` へ移し、`py2cpp.py` を薄い CLI/配線層へ縮退する（`P0-CPP-EMITTER-01-S1` から `P0-CPP-EMITTER-01-S4` 完了でクローズ）。
 2. [x] [ID: P0-CPP-EMITTER-01-S1] `src/hooks/cpp/emitter/cpp_emitter.py`（新規）へ `class CppEmitter` と直接依存する補助ロジックを移管する。
 
 3. [x] [ID: P0-CPP-EMITTER-01-S2] `src/hooks/cpp/emitter/__init__.py`（新規）で `load_cpp_profile` / `transpile_to_cpp` など C++ backend API を公開し、`py2cpp.py` から再利用する。
@@ -42,27 +42,36 @@
 
 文脈: `docs-ja/plans/p0-py2cpp-responsibility-split.md`（`TG-P0-PY2CPP-SPLIT`）
 
-1. [ ] [ID: P0-PY2CPP-SPLIT-01] `py2cpp.py` に残る非CLI責務を backend モジュールへ段階移管し、最終的に CLI/配線専用へ縮退する（`P0-PY2CPP-SPLIT-01-S1` から `P0-PY2CPP-SPLIT-01-S7` 完了でクローズ）。
+1. [x] [ID: P0-PY2CPP-SPLIT-01] `py2cpp.py` に残る非CLI責務を backend モジュールへ段階移管し、最終的に CLI/配線専用へ縮退する（`P0-PY2CPP-SPLIT-01-S1` から `P0-PY2CPP-SPLIT-01-S7` 完了でクローズ）。
 2. [x] [ID: P0-PY2CPP-SPLIT-01-S1] 着手前提を固定する（`P0-CPP-EAST2-01` / `P0-EAST1-BUILD-01` / `P0-DEP-EAST1-01` / `P0-CPP-EMITTER-01` の完了後に着手）。
 3. [x] [ID: P0-PY2CPP-SPLIT-01-S2] `load_cpp_profile` / type-map / hooks / identifier ルール等の C++ profile 解決責務を `src/hooks/cpp/profile/` へ分離する。
-4. [ ] [ID: P0-PY2CPP-SPLIT-01-S3] `build_cpp_header_from_east` と関連補助関数（header type/default/include guard）を `src/hooks/cpp/header/` へ分離する。
-5. [ ] [ID: P0-PY2CPP-SPLIT-01-S4] `_write_multi_file_cpp` と manifest 生成責務を `src/hooks/cpp/multifile/` へ分離する。
-6. [ ] [ID: P0-PY2CPP-SPLIT-01-S5] runtime emit 用補助（`_runtime_*` 群）を `src/hooks/cpp/runtime_emit/` へ分離し、`py2cpp.py` 側は呼び出しのみへ縮退する。
-7. [ ] [ID: P0-PY2CPP-SPLIT-01-S6] `py2cpp.py` 冒頭の `_HELPER_GROUPS` による helper 再エクスポート依存を段階的に除去し、必要 API を明示 import へ置換する。
-8. [ ] [ID: P0-PY2CPP-SPLIT-01-S7] 分離後の構成を `spec-dev` とテスト（`check_py2cpp_transpile` / smoke / unit）へ同期し、責務回帰ガードを固定する。
+4. [x] [ID: P0-PY2CPP-SPLIT-01-S3] `build_cpp_header_from_east` と関連補助関数（header type/default/include guard）を `src/hooks/cpp/header/` へ分離する。
+5. [x] [ID: P0-PY2CPP-SPLIT-01-S4] `_write_multi_file_cpp` と manifest 生成責務を `src/hooks/cpp/multifile/` へ分離する。
+6. [x] [ID: P0-PY2CPP-SPLIT-01-S5] runtime emit 用補助（`_runtime_*` 群）を `src/hooks/cpp/runtime_emit/` へ分離し、`py2cpp.py` 側は呼び出しのみへ縮退する。
+7. [x] [ID: P0-PY2CPP-SPLIT-01-S6] `py2cpp.py` 冒頭の `_HELPER_GROUPS` による helper 再エクスポート依存を段階的に除去し、必要 API を明示 import へ置換する。
+8. [x] [ID: P0-PY2CPP-SPLIT-01-S7] 分離後の構成を `spec-dev` とテスト（`check_py2cpp_transpile` / smoke / unit）へ同期し、責務回帰ガードを固定する。
 
 進捗メモ:
 - [ID: P0-PY2CPP-SPLIT-01-S2] `src/hooks/cpp/profile/cpp_profile.py` を追加し、`load_cpp_profile` 系（profile/type-map/hooks/identifier）を新規モジュールに移譲。`py2cpp.py` と `src/hooks/cpp/emitter/cpp_emitter.py` は既存 API を薄い委譲で保持して縮退。
+- [ID: P0-PY2CPP-SPLIT-01-S3] `build_cpp_header_from_east` を `src/hooks/cpp/header/cpp_header.py` へ分離し、`src/py2cpp.py` には委譲ラッパを残す形へ変更。
+- [ID: P0-PY2CPP-SPLIT-01-S4] `src/hooks/cpp/multifile/write_multi_file_cpp` を新設し、`_write_multi_file_cpp` は delegation wrapper のみ保持する形へ移行。
+- [ID: P0-PY2CPP-SPLIT-01-S5] runtime emit 補助群（runtime module tail/path/namespace/bannner判定）を `src/hooks/cpp/runtime_emit/` に集約し、py2cpp は delegate 仕様へ切替。
+- [ID: P0-PY2CPP-SPLIT-01-S6] `py2cpp.py` の `_HELPER_GROUPS` を削除し、`pytra.compiler.transpile_cli` の helper 群を明示 import へ統合。`tools/check_py2cpp_boundary.py` / `python -m py_compile src/py2cpp.py` を通過。
+- [ID: P0-PY2CPP-SPLIT-01-S7] `src/hooks/cpp/runtime_emit/__init__.py` に `_join_runtime_path` など旧実装向け alias を追加し、`src/py2cpp.py` の既存 import 経路を崩さず責務移譲を維持。`python3 tools/check_py2cpp_boundary.py` / `python3 tools/check_py2cpp_transpile.py` / `python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py'` を実行し、`test/unit/test_py2cpp_smoke.py` の既存チェックを維持。
 
 ## P1: 多言語出力品質（preview 脱却の再オープン）
 
 文脈: `docs-ja/plans/p1-multilang-output-quality.md`（`TG-P1-MULTILANG-QUALITY`）
 
 1. [ ] [ID: P1-MQ-10] `sample/go`, `sample/kotlin`, `sample/swift` の preview 要約出力（「C# ベース中間出力のシグネチャ要約」）を廃止し、通常のコード生成へ移行する（`P1-MQ-10-S1` から `P1-MQ-10-S4` 完了でクローズ）。
-2. [ ] [ID: P1-MQ-10-S1] GoEmitter の CodeEmitter ベース実装を拡張し、`sample/go` が要約コメントではなく AST 本文を出力するようにする。
+2. [x] [ID: P1-MQ-10-S1] GoEmitter の CodeEmitter ベース実装を拡張し、`sample/go` が要約コメントではなく AST 本文を出力するようにする。
 3. [ ] [ID: P1-MQ-10-S2] KotlinEmitter の CodeEmitter ベース実装を拡張し、`sample/kotlin` が要約コメントではなく AST 本文を出力するようにする。
 4. [ ] [ID: P1-MQ-10-S3] SwiftEmitter の CodeEmitter ベース実装を拡張し、`sample/swift` が要約コメントではなく AST 本文を出力するようにする。
 5. [ ] [ID: P1-MQ-10-S4] `tools/check_py2{go,kotlin,swift}_transpile.py` と `tools/check_multilang_quality_regression.py` に「preview 要約出力禁止」検査を追加し、`sample/go`, `sample/kotlin`, `sample/swift` の先頭 `TODO: 専用 *Emitter 実装へ段階移行` 文言が再流入しないようにする。
+
+進捗メモ:
+- [ID: P1-MQ-10-S1] `src/hooks/go/emitter/go_emitter.py` を C# 本文ベースの暫定実装へ変更し、`sample/go` の要約コメント専用出力を廃止した。
+- [ID: P1-MQ-10-S1] `python3 tools/regenerate_samples.py --langs go --force --clear-cache --verify-cpp-on-diff` 実行で `sample/go/*.go` を再生成し、`TODO: 専用 GoEmitter 実装へ段階移行する。` を削除。
 
 ## P1: 多言語ランタイム配置統一（再オープン）
 

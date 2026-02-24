@@ -8,10 +8,93 @@ It can also accept a Python source file and internally run src/pytra/compiler/ea
 from __future__ import annotations
 
 from pytra.std.typing import Any
-
 from pytra.compiler.east_parts.east1_build import East1BuildHelpers
-from pytra.compiler.transpile_cli import CodegenOptionHelpers, EastAnalysisHelpers, EastDocumentHelpers, ErrorHelpers, GuardHelpers, ImportGraphHelpers, Py2CppArgvHelpers, TextPathHelpers
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
+from pytra.compiler.transpile_cli import (
+    add_common_transpile_args,
+    append_unique_non_empty,
+    assign_targets,
+    check_analyze_stage_guards,
+    check_guard_limit,
+    check_parse_stage_guards,
+    collect_import_modules,
+    collect_reserved_import_conflicts,
+    collect_store_names_from_target,
+    collect_symbols_from_stmt,
+    collect_symbols_from_stmt_list,
+    collect_user_module_files_for_graph,
+    count_text_lines,
+    dict_any_get,
+    dict_any_get_dict,
+    dict_any_get_dict_list,
+    dict_any_get_list,
+    dict_any_get_str,
+    dict_any_get_str_list,
+    dict_any_kind,
+    dict_str_get,
+    dump_deps_graph_text as dump_deps_graph_text_common,
+    dump_deps_text,
+    extract_function_arg_types_from_python_source,
+    extract_function_signatures_from_python_source,
+    finalize_import_graph_analysis,
+    format_graph_list_section,
+    format_import_graph_report,
+    first_import_detail_line,
+    graph_cycle_dfs,
+    inject_after_includes_block,
+    is_known_non_user_import,
+    is_pytra_module_name,
+    join_str_list,
+    looks_like_runtime_function_name,
+    load_east3_document,
+    load_east_document,
+    local_binding_name,
+    make_user_error,
+    module_analyze_metrics,
+    module_export_table,
+    module_id_from_east_for_graph,
+    module_name_from_path_for_graph,
+    module_parse_metrics,
+    module_rel_label,
+    mkdirs_for_cli,
+    name_target_id,
+    normalize_common_transpile_args,
+    normalize_param_annotation,
+    parse_py2cpp_argv,
+    parse_user_error,
+    path_key_for_graph,
+    path_parent_text,
+    print_user_error,
+    python_module_exists_under,
+    rel_disp_for_graph,
+    replace_first,
+    resolve_codegen_options,
+    resolve_guard_limits,
+    resolve_module_name,
+    resolve_module_name_for_graph,
+    resolve_user_module_path_for_graph,
+    sanitize_module_label,
+    select_guard_module_map,
+    set_import_module_binding,
+    set_import_symbol_binding_and_module_set,
+    sort_str_list_copy,
+    split_graph_issue_entry,
+    split_infix_once,
+    split_top_level_csv,
+    split_top_level_union,
+    split_type_args,
+    split_ws_tokens,
+    stmt_assigned_names,
+    stmt_child_stmt_lists,
+    stmt_list_parse_metrics,
+    stmt_list_scope_depth,
+    stmt_target_name,
+    validate_codegen_options,
+    validate_from_import_symbols_or_raise,
+    validate_import_graph_or_raise,
+    write_text_file,
+    dump_codegen_options_text,
+)
 from pytra.std import json
 from pytra.std import os
 from pytra.std.pathlib import Path
@@ -28,199 +111,73 @@ from hooks.cpp.profile import load_cpp_bin_ops as _load_cpp_bin_ops
 from hooks.cpp.profile import load_cpp_cmp_ops as _load_cpp_cmp_ops
 from hooks.cpp.profile import load_cpp_aug_ops as _load_cpp_aug_ops
 from hooks.cpp.profile import load_cpp_aug_bin as _load_cpp_aug_bin
+from hooks.cpp.header import build_cpp_header_from_east as _build_cpp_header_from_east
+from hooks.cpp.multifile import write_multi_file_cpp as _write_multi_file_cpp_impl
 
-
-_HELPER_GROUPS: list[tuple[object | None, list[str]]] = [
-    (
-        globals().get("ErrorHelpers"),
-        [
-            "make_user_error",
-            "parse_user_error",
-            "print_user_error",
-        ],
-    ),
-    (
-        globals().get("EastDocumentHelpers"),
-        [
-            "load_east_document",
-            "load_east3_document",
-        ],
-    ),
-    (
-        globals().get("TextPathHelpers"),
-        [
-            "join_str_list",
-            "split_infix_once",
-            "local_binding_name",
-            "split_graph_issue_entry",
-            "replace_first",
-            "inject_after_includes_block",
-            "split_ws_tokens",
-            "first_import_detail_line",
-            "append_unique_non_empty",
-            "split_top_level_csv",
-            "normalize_param_annotation",
-            "extract_function_signatures_from_python_source",
-            "extract_function_arg_types_from_python_source",
-            "split_type_args",
-            "split_top_level_union",
-            "path_parent_text",
-            "python_module_exists_under",
-            "mkdirs_for_cli",
-            "write_text_file",
-            "count_text_lines",
-            "sort_str_list_copy",
-        ],
-    ),
-    (
-        globals().get("EastAnalysisHelpers"),
-        [
-            "dict_any_get",
-            "dict_any_get_str",
-            "dict_any_get_list",
-            "dict_any_get_dict",
-            "dict_any_get_dict_list",
-            "dict_any_get_str_list",
-            "dict_any_kind",
-            "dict_str_get",
-            "name_target_id",
-            "stmt_target_name",
-            "assign_targets",
-            "stmt_assigned_names",
-            "stmt_child_stmt_lists",
-            "collect_store_names_from_target",
-            "collect_symbols_from_stmt",
-            "collect_symbols_from_stmt_list",
-            "stmt_list_parse_metrics",
-            "stmt_list_scope_depth",
-            "looks_like_runtime_function_name",
-            "module_parse_metrics",
-            "module_analyze_metrics",
-            "select_guard_module_map",
-        ],
-    ),
-    (
-        globals().get("ImportGraphHelpers"),
-        [
-            "collect_import_modules",
-            "module_id_from_east_for_graph",
-            "module_name_from_path_for_graph",
-            "module_export_table",
-            "module_rel_label",
-            "path_key_for_graph",
-            "collect_reserved_import_conflicts",
-            "rel_disp_for_graph",
-            "format_graph_list_section",
-            "format_import_graph_report",
-            "graph_cycle_dfs",
-            "is_known_non_user_import",
-            "is_pytra_module_name",
-            "resolve_module_name",
-            "resolve_module_name_for_graph",
-            "resolve_user_module_path_for_graph",
-            "sanitize_module_label",
-            "set_import_module_binding",
-            "set_import_symbol_binding_and_module_set",
-            "validate_from_import_symbols_or_raise",
-            "validate_import_graph_or_raise",
-            "collect_user_module_files_for_graph",
-            "finalize_import_graph_analysis",
-            "dump_deps_text",
-        ],
-    ),
-    (
-        globals().get("CodegenOptionHelpers"),
-        [
-            "resolve_codegen_options",
-            "validate_codegen_options",
-            "dump_codegen_options_text",
-        ],
-    ),
-    (
-        globals().get("GuardHelpers"),
-        [
-            "check_analyze_stage_guards",
-            "check_guard_limit",
-            "check_parse_stage_guards",
-            "resolve_guard_limits",
-        ],
-    ),
-    (
-        globals().get("Py2CppArgvHelpers"),
-        [
-            "parse_py2cpp_argv",
-        ],
-    ),
-]
-for _helper_class, _helper_names in _HELPER_GROUPS:
-    if _helper_class is None:
-        continue
-    for _helper_name in _helper_names:
-        globals()[_helper_name] = getattr(_helper_class, _helper_name)
-if "ImportGraphHelpers" in globals():
-    dump_deps_graph_text_common = ImportGraphHelpers.dump_deps_graph_text
 build_module_symbol_index = East1BuildHelpers.build_module_symbol_index
 build_module_type_schema = East1BuildHelpers.build_module_type_schema
-del _helper_class
-del _helper_name
-del _helper_names
-del _HELPER_GROUPS
-
-
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl
+
+
+from hooks.cpp.runtime_emit import (
+    RUNTIME_CPP_COMPAT_ROOT,
+    RUNTIME_CPP_GEN_ROOT,
+    _join_runtime_path as _join_runtime_path_impl,
+    _module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl,
+    _runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl,
+    _runtime_module_tail_from_source_path as _runtime_module_tail_from_source_path_impl,
+    _prepend_generated_cpp_banner as _prepend_generated_cpp_banner_impl,
+    _is_runtime_emit_input_path as _is_runtime_emit_input_path_impl,
+    _runtime_output_rel_tail as _runtime_output_rel_tail_impl,
+    _runtime_namespace_for_tail as _runtime_namespace_for_tail_impl,
+)
 
 
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT = Path("src/pytra/compiler")
 RUNTIME_BUILT_IN_SOURCE_ROOT = Path("src/pytra/built_in")
-RUNTIME_CPP_COMPAT_ROOT = Path("src/runtime/cpp/pytra")
-RUNTIME_CPP_GEN_ROOT = Path("src/runtime/cpp/pytra-gen")
 
 
 def _module_tail_to_cpp_header_path(module_tail: str) -> str:
-    """`a.b.c_impl` を `a/b/c-impl.h` へ変換する。"""
-    path_tail = module_tail.replace(".", "/")
-    parts: list[str] = path_tail.split("/")
-    if len(parts) > 0:
-        leaf = parts[-1]
-        leaf = leaf[: len(leaf) - 5] + "-impl" if leaf.endswith("_impl") else leaf
-        parts[-1] = leaf
-    return join_str_list("/", parts) + ".h"
+    """Delegate to runtime emit module."""
+    return _module_tail_to_cpp_header_path_impl(module_tail)
 
 
 def _join_runtime_path(base_dir: Path, rel_path: str) -> Path:
-    """selfhost-safe な Path 連結（`/` 演算子依存を避ける）。"""
-    base_txt = str(base_dir)
-    if base_txt.endswith("/"):
-        return Path(base_txt + rel_path)
-    return Path(base_txt + "/" + rel_path)
+    """Delegate to runtime emit module."""
+    return _join_runtime_path_impl(base_dir, rel_path)
 
 
 def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
-    """`pytra.*` モジュールの runtime C++ ヘッダ実在有無を返す。"""
-    def _exists_under_runtime_roots(rel_hdr: str) -> bool:
-        compat_hdr = _join_runtime_path(RUNTIME_CPP_COMPAT_ROOT, rel_hdr)
-        gen_hdr = _join_runtime_path(RUNTIME_CPP_GEN_ROOT, rel_hdr)
-        return compat_hdr.exists() or gen_hdr.exists()
+    """Delegate to runtime emit module."""
+    return _runtime_cpp_header_exists_for_module_impl(module_name_norm)
 
-    if module_name_norm.startswith("pytra.std."):
-        tail = module_name_norm[10:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and _exists_under_runtime_roots("std/" + rel)
-    if module_name_norm.startswith("pytra.utils."):
-        tail = module_name_norm[12:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and _exists_under_runtime_roots("utils/" + rel)
-    if module_name_norm.startswith("pytra.compiler."):
-        tail = module_name_norm[15:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and _exists_under_runtime_roots("compiler/" + rel)
-    if module_name_norm.startswith("pytra.built_in."):
-        tail = module_name_norm[15:]
-        rel = _module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and _exists_under_runtime_roots("built_in/" + rel)
-    return False
+
+def _runtime_module_tail_from_source_path(input_path: Path) -> str:
+    """Delegate to runtime emit module."""
+    return _runtime_module_tail_from_source_path_impl(input_path)
+
+
+def _prepend_generated_cpp_banner(cpp_text: str, source_path: Path) -> str:
+    """Delegate to runtime emit module."""
+    return _prepend_generated_cpp_banner_impl(cpp_text, source_path)
+
+
+def _is_runtime_emit_input_path(input_path: Path) -> bool:
+    """Delegate to runtime emit module."""
+    return _is_runtime_emit_input_path_impl(input_path)
+
+
+def _runtime_output_rel_tail(module_tail: str) -> str:
+    """Delegate to runtime emit module."""
+    return _runtime_output_rel_tail_impl(module_tail)
+
+
+def _runtime_namespace_for_tail(module_tail: str) -> str:
+    """Delegate to runtime emit module."""
+    return _runtime_namespace_for_tail_impl(module_tail)
+
 
 
 SCOPE_NESTING_KINDS: set[str] = {
@@ -427,201 +384,6 @@ def transpile_to_cpp(
     )
 
 
-def _header_cpp_type_from_east(
-    east_t: str,
-    ref_classes: set[str],
-    class_names: set[str],
-) -> str:
-    """EAST 型名を runtime header 向け C++ 型名へ変換する。"""
-    t: str = east_t.strip()
-    if t == "":
-        return "object"
-    if t in ref_classes:
-        return "rc<" + t + ">"
-    if t in class_names:
-        return t
-    prim: dict[str, str] = {
-        "int8": "int8",
-        "uint8": "uint8",
-        "int16": "int16",
-        "uint16": "uint16",
-        "int32": "int32",
-        "uint32": "uint32",
-        "int64": "int64",
-        "uint64": "uint64",
-        "float32": "float32",
-        "float64": "float64",
-        "bool": "bool",
-        "str": "str",
-        "bytes": "bytes",
-        "bytearray": "bytearray",
-        "None": "void",
-        "Any": "object",
-        "object": "object",
-        "unknown": "object",
-    }
-    if t in prim:
-        return prim[t]
-    parts_union = split_top_level_union(t)
-    if len(parts_union) > 1:
-        parts = parts_union
-        non_none: list[str] = []
-        for part in parts:
-            p = part.strip()
-            if p != "None":
-                non_none.append(p)
-        if len(parts) == 2 and len(non_none) == 1:
-            return "::std::optional<" + _header_cpp_type_from_east(non_none[0], ref_classes, class_names) + ">"
-        folded: list[str] = []
-        for part in non_none:
-            p = part
-            if p == "bytearray":
-                p = "bytes"
-            if p not in folded:
-                folded.append(p)
-        if len(folded) == 1:
-            only: str = folded[0]
-            return _header_cpp_type_from_east(only, ref_classes, class_names)
-        return "object"
-    if t.startswith("list[") and t.endswith("]"):
-        inner = t[5:-1].strip()
-        return "list<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
-    if t.startswith("set[") and t.endswith("]"):
-        inner = t[4:-1].strip()
-        return "set<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
-    if t.startswith("dict[") and t.endswith("]"):
-        inner = split_type_args(t[5:-1].strip())
-        if len(inner) == 2:
-            return "dict<" + _header_cpp_type_from_east(inner[0], ref_classes, class_names) + ", " + _header_cpp_type_from_east(inner[1], ref_classes, class_names) + ">"
-        return "dict<str, object>"
-    if t.startswith("tuple[") and t.endswith("]"):
-        inner = split_type_args(t[6:-1].strip())
-        vals: list[str] = []
-        for part in inner:
-            vals.append(_header_cpp_type_from_east(part, ref_classes, class_names))
-        sep = ", "
-        return "::std::tuple<" + sep.join(vals) + ">"
-    if "." in t:
-        ns_t = t.replace(".", "::")
-        dot = t.rfind(".")
-        leaf = t[dot + 1 :] if dot >= 0 else t
-        if leaf != "" and (leaf[0] >= "A" and leaf[0] <= "Z"):
-            return "rc<" + ns_t + ">"
-        return ns_t
-    return t
-
-
-def _header_guard_from_path(path: str) -> str:
-    """ヘッダパスから include guard を生成する。"""
-    src = path.replace("\\", "/")
-    prefix1 = "src/runtime/cpp/pytra/"
-    prefix2 = "runtime/cpp/pytra/"
-    if src.startswith(prefix1):
-        src = src[len(prefix1) :]
-    elif src.startswith(prefix2):
-        src = src[len(prefix2) :]
-    src = "PYTRA_" + src.upper()
-    out_chars: list[str] = []
-    i = 0
-    while i < len(src):
-        ch = src[i]
-        ok = ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9"))
-        if ok:
-            out_chars.append(ch)
-        else:
-            out_chars.append("_")
-        i += 1
-    out = "".join(out_chars).lstrip("_")
-    if not out.endswith("_H"):
-        out += "_H"
-    return out
-
-
-def _header_allows_none_default(east_t: str) -> bool:
-    """ヘッダ既定値で `None`（optional）を許容する型か判定する。"""
-    txt = east_t.strip()
-    if txt.startswith("optional[") and txt.endswith("]"):
-        return True
-    if "|" in txt:
-        parts = txt.split("|")
-        i = 0
-        while i < len(parts):
-            part = str(parts[i])
-            if part.strip() == "None":
-                return True
-            i += 1
-    return txt == "None"
-
-
-def _header_none_default_expr_for_type(east_t: str) -> str:
-    """ヘッダ既定値で `None` を型別既定値へ変換する。"""
-    txt = east_t.strip()
-    if txt in {"", "unknown", "Any", "object"}:
-        return "object{}"
-    if _header_allows_none_default(txt):
-        return "::std::nullopt"
-    if txt in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-        return "0"
-    if txt in {"float32", "float64"}:
-        return "0.0"
-    if txt == "bool":
-        return "false"
-    if txt == "str":
-        return "str()"
-    if txt == "bytes":
-        return "bytes()"
-    if txt == "bytearray":
-        return "bytearray()"
-    if txt == "Path":
-        return "Path()"
-    cpp_t = _header_cpp_type_from_east(txt, set(), set())
-    if cpp_t.startswith("::std::optional<"):
-        return "::std::nullopt"
-    return cpp_t + "{}"
-
-
-def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str:
-    """EAST の既定値ノードを C++ ヘッダ宣言用の式文字列へ変換する。"""
-    kind = dict_any_get_str(node, "kind")
-    if kind == "Constant":
-        val = node.get("value")
-        if val is None:
-            return _header_none_default_expr_for_type(east_target_t)
-        if isinstance(val, bool):
-            return "true" if val else "false"
-        if isinstance(val, int):
-            return str(val)
-        if isinstance(val, float):
-            return str(val)
-        if isinstance(val, str):
-            return cpp_string_lit(val)
-        return ""
-    if kind == "Name":
-        ident = dict_any_get_str(node, "id")
-        if ident == "None":
-            return _header_none_default_expr_for_type(east_target_t)
-        if ident == "True":
-            return "true"
-        if ident == "False":
-            return "false"
-        return ""
-    if kind == "Tuple":
-        elems = dict_any_get_dict_list(node, "elements")
-        if len(elems) == 0:
-            return "::std::tuple<>{}"
-        parts: list[str] = []
-        for e in elems:
-            txt = _header_render_default_expr(e, "Any")
-            if txt == "":
-                return ""
-            parts.append(txt)
-        if len(parts) == 0:
-            return ""
-        return "::std::make_tuple(" + join_str_list(", ", parts) + ")"
-    _ = east_target_t
-    return ""
-
-
 def build_cpp_header_from_east(
     east_module: dict[str, Any],
     source_path: Path,
@@ -629,244 +391,9 @@ def build_cpp_header_from_east(
     top_namespace: str = "",
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
-    body = dict_any_get_dict_list(east_module, "body")
-
-    class_lines: list[str] = []
-    fn_lines: list[str] = []
-    var_lines: list[str] = []
-    used_types: set[str] = set()
-    seen_classes: set[str] = set()
-    class_names: set[str] = set()
-    ref_classes: set[str] = set()
-
-    for st in body:
-        if dict_any_get_str(st, "kind") == "ClassDef":
-            cls_name = dict_any_get_str(st, "name")
-            if cls_name != "":
-                class_names.add(cls_name)
-                hint = dict_any_get_str(st, "class_storage_hint", "ref")
-                if hint == "ref":
-                    ref_classes.add(cls_name)
-
-    by_value_types = {
-        "bool",
-        "int8",
-        "uint8",
-        "int16",
-        "uint16",
-        "int32",
-        "uint32",
-        "int64",
-        "uint64",
-        "float32",
-        "float64",
-    }
-
-    for st in body:
-        kind = dict_any_get_str(st, "kind")
-        if kind == "ClassDef":
-            cls_name = dict_any_get_str(st, "name")
-            if cls_name != "" and cls_name not in seen_classes:
-                class_lines.append("struct " + cls_name + ";")
-                seen_classes.add(cls_name)
-        elif kind == "FunctionDef":
-            name = dict_any_get_str(st, "name")
-            if name != "":
-                ret_t = dict_any_get_str(st, "return_type", "None")
-                ret_cpp = _header_cpp_type_from_east(ret_t, ref_classes, class_names)
-                used_types.add(ret_cpp)
-                arg_types = dict_any_get_dict(st, "arg_types")
-                arg_order = dict_any_get_list(st, "arg_order")
-                parts: list[str] = []
-                for an in arg_order:
-                    if not isinstance(an, str):
-                        continue
-                    at = dict_any_get_str(arg_types, an, "Any")
-                    at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
-                    used_types.add(at_cpp)
-                    param_txt = (
-                        at_cpp + " " + an if at_cpp in by_value_types else "const " + at_cpp + "& " + an
-                    )
-                    # NOTE:
-                    # 既定引数は `.cpp` 側の定義にのみ付与する。
-                    # ヘッダと定義の二重指定によるコンパイルエラーを避けるため、
-                    # 宣言側では既定値を埋め込まない。
-                    parts.append(param_txt)
-                sep = ", "
-                fn_lines.append(ret_cpp + " " + name + "(" + sep.join(parts) + ");")
-        elif kind in {"Assign", "AnnAssign"}:
-            name = stmt_target_name(st)
-            if name == "":
-                continue
-            decl_t = dict_any_get_str(st, "decl_type")
-            if decl_t == "" or decl_t == "unknown":
-                tgt = dict_any_get_dict(st, "target")
-                decl_t = dict_any_get_str(tgt, "resolved_type")
-            if decl_t == "" or decl_t == "unknown":
-                continue
-            cpp_t = _header_cpp_type_from_east(decl_t, ref_classes, class_names)
-            used_types.add(cpp_t)
-            var_lines.append("extern " + cpp_t + " " + name + ";")
-
-    includes: list[str] = []
-    has_std_any = False
-    has_std_int = False
-    has_std_string = False
-    has_std_vector = False
-    has_std_tuple = False
-    has_std_optional = False
-    has_std_umap = False
-    has_std_uset = False
-    for t in used_types:
-        if "::std::any" in t:
-            has_std_any = True
-        if "::std::int" in t or "::std::uint" in t:
-            has_std_int = True
-        if "::std::string" in t:
-            has_std_string = True
-        if "::std::vector" in t:
-            has_std_vector = True
-        if "::std::tuple" in t:
-            has_std_tuple = True
-        if "::std::optional" in t:
-            has_std_optional = True
-        if "::std::unordered_map" in t:
-            has_std_umap = True
-        if "::std::unordered_set" in t:
-            has_std_uset = True
-    if has_std_any:
-        includes.append("#include <any>")
-    if has_std_int:
-        includes.append("#include <cstdint>")
-    if has_std_string:
-        includes.append("#include <string>")
-    if has_std_vector:
-        includes.append("#include <vector>")
-    if has_std_tuple:
-        includes.append("#include <tuple>")
-    if has_std_optional:
-        includes.append("#include <optional>")
-    if has_std_umap:
-        includes.append("#include <unordered_map>")
-    if has_std_uset:
-        includes.append("#include <unordered_set>")
-
-    guard = _header_guard_from_path(str(output_path))
-    lines: list[str] = []
-    lines.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
-    lines.append("// source: " + str(source_path))
-    lines.append("// generated-by: src/py2cpp.py")
-    lines.append("")
-    lines.append("#ifndef " + guard)
-    lines.append("#define " + guard)
-    lines.append("")
-    for include in includes:
-        lines.append(include)
-    if len(includes) > 0:
-        lines.append("")
-    ns = top_namespace.strip()
-    if ns != "":
-        lines.append("namespace " + ns + " {")
-        lines.append("")
-    for class_line in class_lines:
-        lines.append(class_line)
-    if len(class_lines) > 0:
-        lines.append("")
-    for var_line in var_lines:
-        lines.append(var_line)
-    if len(var_lines) > 0 and len(fn_lines) > 0:
-        lines.append("")
-    for fn_line in fn_lines:
-        lines.append(fn_line)
-    if ns != "":
-        lines.append("")
-        lines.append("}  // namespace " + ns)
-    lines.append("")
-    lines.append("#endif  // " + guard)
-    lines.append("")
-    return join_str_list("\n", lines)
+    return _build_cpp_header_from_east(east_module, source_path, output_path, top_namespace)
 
 
-def _runtime_module_tail_from_source_path(input_path: Path) -> str:
-    """`src/pytra/std|utils|compiler` から runtime tail を返す。"""
-    src = str(input_path)
-    rel = ""
-    std_prefix = "src/pytra/std/"
-    utils_prefix = "src/pytra/utils/"
-    compiler_prefix = "src/pytra/compiler/"
-    built_in_prefix = "src/pytra/built_in/"
-    if src.startswith(std_prefix):
-        rel = "std/" + src[len(std_prefix) :]
-    elif src.startswith(utils_prefix):
-        rel = src[len(utils_prefix) :]
-    elif src.startswith(compiler_prefix):
-        rel = "compiler/" + src[len(compiler_prefix) :]
-    elif src.startswith(built_in_prefix):
-        rel = "built_in/" + src[len(built_in_prefix) :]
-    else:
-        return ""
-    if rel.endswith(".py"):
-        rel = rel[: len(rel) - 3]
-    if rel.endswith("/__init__"):
-        rel = rel[: len(rel) - 9]
-    return rel
-
-
-def _prepend_generated_cpp_banner(cpp_text: str, source_path: Path) -> str:
-    """生成 C++ ソースへ AUTO-GENERATED バナーを先頭付与する。"""
-    marker = "// AUTO-GENERATED FILE. DO NOT EDIT."
-    if cpp_text.startswith(marker):
-        return cpp_text
-    lines = [
-        marker,
-        "// source: " + str(source_path),
-        "// generated-by: src/py2cpp.py",
-        "",
-    ]
-    return join_str_list("\n", lines) + cpp_text
-
-
-def _is_runtime_emit_input_path(input_path: Path) -> bool:
-    """`--emit-runtime-cpp` 対象パスか（`src/pytra/std|utils|compiler|built_in` 配下）を返す。"""
-    return _runtime_module_tail_from_source_path(input_path) != ""
-
-
-def _runtime_output_rel_tail(module_tail: str) -> str:
-    """module tail（`std/<name>_impl` など）を runtime/cpp 相対パス tail へ写像する。"""
-    parts: list[str] = module_tail.split("/")
-    if parts:
-        leaf = parts[-1]
-        if leaf.endswith("_impl"):
-            parts[-1] = leaf[: len(leaf) - 5] + "-impl"
-    rel = join_str_list("/", parts)
-    if rel == "std" or rel.startswith("std/"):
-        return rel
-    if rel == "compiler" or rel.startswith("compiler/"):
-        return rel
-    if rel == "built_in" or rel.startswith("built_in/"):
-        return rel
-    return "utils/" + rel
-
-
-def _runtime_namespace_for_tail(module_tail: str) -> str:
-    """runtime source tail から C++ namespace を導出する。"""
-    if module_tail == "":
-        return ""
-    if module_tail.startswith("std/"):
-        rest: str = module_tail[4:].replace("/", "::")
-        return "pytra::std::" + rest
-    if module_tail == "std":
-        return "pytra::std"
-    if module_tail.startswith("compiler/"):
-        rest = module_tail[9:].replace("/", "::")
-        return "pytra::compiler::" + rest
-    if module_tail == "compiler":
-        return "pytra::compiler"
-    if module_tail.startswith("built_in/"):
-        return ""
-    if module_tail == "built_in":
-        return ""
-    return "pytra::utils::" + module_tail.replace("/", "::")
 
 
 def _analyze_import_graph(entry_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
@@ -911,225 +438,9 @@ def build_module_east_map(
     return out
 
 
-def _write_multi_file_cpp(
-    entry_path: Path,
-    module_east_map: dict[str, dict[str, Any]],
-    output_dir: Path,
-    negative_index_mode: str,
-    bounds_check_mode: str,
-    floor_div_mode: str,
-    mod_mode: str,
-    int_width: str,
-    str_index_mode: str,
-    str_slice_mode: str,
-    opt_level: str,
-    top_namespace: str,
-    emit_main: bool,
-    max_generated_lines: int = 0,
-) -> dict[str, Any]:
-    """モジュールごとに `.h/.cpp` を `out/include`, `out/src` へ出力する。"""
-    include_dir = output_dir / "include"
-    src_dir = output_dir / "src"
-    mkdirs_for_cli(str(include_dir))
-    mkdirs_for_cli(str(src_dir))
-    prelude_hdr = include_dir / "pytra_multi_prelude.h"
-    prelude_txt = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
-    prelude_txt += "#ifndef PYTRA_MULTI_PRELUDE_H\n"
-    prelude_txt += "#define PYTRA_MULTI_PRELUDE_H\n\n"
-    prelude_txt += "#include \"runtime/cpp/pytra/built_in/py_runtime.h\"\n\n"
-    prelude_txt += "#endif  // PYTRA_MULTI_PRELUDE_H\n"
-    generated_lines_total = 0
-    generated_lines_total += count_text_lines(prelude_txt)
-    if max_generated_lines > 0:
-        check_guard_limit("emit", "max_generated_lines", generated_lines_total, {"max_generated_lines": max_generated_lines})
-    write_text_file(prelude_hdr, prelude_txt)
-
-    root = Path(path_parent_text(entry_path))
-    entry_key = str(entry_path)
-    files: list[str] = []
-    for mod_key, _mod_doc in module_east_map.items():
-        files.append(mod_key)
-    files = sort_str_list_copy(files)
-    module_ns_map: dict[str, str] = {}
-    module_label_map: dict[str, str] = {}
-    module_name_by_key: dict[str, str] = {}
-    module_key_by_name: dict[str, str] = {}
-    for mod_key in files:
-        mod_path = Path(mod_key)
-        east0 = dict_any_get_dict(module_east_map, mod_key)
-        label = module_rel_label(root, mod_path)
-        module_label_map[mod_key] = label
-        mod_name = module_id_from_east_for_graph(root, mod_path, east0)
-        module_name_by_key[mod_key] = mod_name
-        if mod_name != "":
-            module_ns_map[mod_name] = "pytra_mod_" + label
-            if mod_name not in module_key_by_name:
-                module_key_by_name[mod_name] = mod_key
-
-    type_schema = East1BuildHelpers.build_module_type_schema(module_east_map)
-
-    manifest_modules: list[dict[str, Any]] = []
-
-    for mod_key in files:
-        east = dict_any_get_dict(module_east_map, mod_key)
-        if len(east) == 0:
-            continue
-        mod_path = Path(mod_key)
-        label = module_label_map[mod_key] if mod_key in module_label_map else ""
-        hdr_path = include_dir / (label + ".h")
-        cpp_path = src_dir / (label + ".cpp")
-        guard = "PYTRA_MULTI_" + sanitize_module_label(label).upper() + "_H"
-        hdr_text = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
-        hdr_text += "#ifndef " + guard + "\n"
-        hdr_text += "#define " + guard + "\n\n"
-        hdr_text += "namespace pytra_multi {\n"
-        hdr_text += "void module_" + label + "();\n"
-        hdr_text += "}  // namespace pytra_multi\n\n"
-        hdr_text += "#endif  // " + guard + "\n"
-        generated_lines_total += count_text_lines(hdr_text)
-        if max_generated_lines > 0:
-            check_guard_limit(
-                "emit",
-                "max_generated_lines",
-                generated_lines_total,
-                {"max_generated_lines": max_generated_lines},
-                str(mod_path),
-            )
-        write_text_file(hdr_path, hdr_text)
-
-        is_entry = mod_key == entry_key
-        cpp_txt = _transpile_to_cpp_with_map(
-            east,
-            module_ns_map,
-            negative_index_mode,
-            bounds_check_mode,
-            floor_div_mode,
-            mod_mode,
-            int_width,
-            str_index_mode,
-            str_slice_mode,
-            opt_level,
-            "pytra_mod_" + label,
-            emit_main if is_entry else False,
-        )
-        # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。
-        cpp_txt = replace_first(
-            cpp_txt,
-            '#include "runtime/cpp/pytra/built_in/py_runtime.h"',
-            '#include "pytra_multi_prelude.h"',
-        )
-        # ユーザーモジュール import 呼び出しを解決するため、参照先関数の前方宣言を補う。
-        meta = dict_any_get_dict(east, "meta")
-        type_emitter = CppEmitter(
-            east,
-            {},
-            negative_index_mode,
-            bounds_check_mode,
-            floor_div_mode,
-            mod_mode,
-            int_width,
-            str_index_mode,
-            str_slice_mode,
-            opt_level,
-            "",
-            False,
-        )
-        import_modules = dict_any_get_dict(meta, "import_modules")
-        import_symbols = dict_any_get_dict(meta, "import_symbols")
-        dep_modules: set[str] = set()
-        for module_id_obj in import_modules.values():
-            if isinstance(module_id_obj, str) and module_id_obj:
-                dep_modules.add(module_id_obj)
-        for sym_obj in import_symbols.values():
-            module_id = dict_any_get_str(sym_obj if isinstance(sym_obj, dict) else {}, "module")
-            if module_id:
-                dep_modules.add(module_id)
-        fwd_lines: list[str] = []
-        for mod_name in dep_modules:
-            target_ns = module_ns_map.get(mod_name, "")
-            if target_ns == "":
-                continue
-            target_key = module_key_by_name.get(mod_name, "")
-            if target_key == "":
-                continue
-            target_schema = dict_any_get_dict(type_schema, target_key)
-            funcs = dict_any_get_dict(target_schema, "functions")
-            # `main` は他モジュールから呼ばれない前提。
-            fn_decls: list[str] = []
-            for fn_name_any, fn_sig_obj in funcs.items():
-                if not isinstance(fn_name_any, str):
-                    continue
-                if fn_name_any == "main":
-                    continue
-                fn_name = fn_name_any
-                sig = fn_sig_obj if isinstance(fn_sig_obj, dict) else {}
-                ret_t = dict_any_get_str(sig, "return_type", "None")
-                ret_cpp = "void" if ret_t == "None" else type_emitter._cpp_type_text(ret_t)
-                arg_types = dict_any_get_dict(sig, "arg_types")
-                arg_order = dict_any_get_list(sig, "arg_order")
-                parts: list[str] = []
-                for an in arg_order:
-                    if not isinstance(an, str):
-                        continue
-                    at = dict_any_get_str(arg_types, an, "object")
-                    at_cpp = type_emitter._cpp_type_text(at)
-                    parts.append(at_cpp + " " + an)
-                sep = ", "
-                fn_decls.append("    " + ret_cpp + " " + fn_name + "(" + sep.join(parts) + ");")
-            if len(fn_decls) > 0:
-                fwd_lines.append("namespace " + target_ns + " {")
-                fwd_lines.extend(fn_decls)
-                fwd_lines.append("}  // namespace " + target_ns)
-        if len(fwd_lines) > 0:
-            cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))
-        generated_lines_total += count_text_lines(cpp_txt)
-        if max_generated_lines > 0:
-            check_guard_limit(
-                "emit",
-                "max_generated_lines",
-                generated_lines_total,
-                {"max_generated_lines": max_generated_lines},
-                str(mod_path),
-            )
-        write_text_file(cpp_path, cpp_txt)
-
-        manifest_modules.append(
-            {
-                "module": mod_key,
-                "label": label,
-                "header": str(hdr_path),
-                "source": str(cpp_path),
-                "is_entry": is_entry,
-            }
-        )
-
-    manifest_for_dump: dict[str, Any] = {
-        "entry": entry_key,
-        "include_dir": str(include_dir),
-        "src_dir": str(src_dir),
-        "modules": manifest_modules,
-    }
-    manifest_path = output_dir / "manifest.json"
-    manifest_obj: Any = manifest_for_dump
-    manifest_txt = json.dumps(manifest_obj, ensure_ascii=False, indent=2)
-    generated_lines_total += count_text_lines(manifest_txt)
-    if max_generated_lines > 0:
-        check_guard_limit(
-            "emit",
-            "max_generated_lines",
-            generated_lines_total,
-            {"max_generated_lines": max_generated_lines},
-            str(entry_path),
-        )
-    write_text_file(manifest_path, manifest_txt)
-    return {
-        "entry": entry_key,
-        "include_dir": str(include_dir),
-        "src_dir": str(src_dir),
-        "modules": manifest_modules,
-        "manifest": str(manifest_path),
-        "generated_lines_total": generated_lines_total,
-    }
+def _write_multi_file_cpp(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Delegate multi-file output generation to hooks.cpp.multifile."""
+    return _write_multi_file_cpp_impl(*args, **kwargs)  # type: ignore[no-any-return]
 
 
 def dump_deps_graph_text(entry_path: Path) -> str:

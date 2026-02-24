@@ -30,9 +30,13 @@
 
 確認コマンド:
 - `python3 tools/check_py2cpp_transpile.py`
-- `python3 -m unittest test.unit.test_py2cpp_smoke`
+- `python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py'`
 - `python3 tools/check_todo_priority.py`
 
 決定ログ:
 - 2026-02-24: ユーザー指示により、`py2cpp.py` の残責務を段階分離する `P0` タスク群を追加。
 - 2026-02-24: `src/hooks/cpp/profile/cpp_profile.py` を追加し、`load_cpp_profile` 系（profile/ルール/type-map/hooks）を移譲。`py2cpp.py` と `cpp_emitter.py` には後方互換の委譲 API を残し、責務を `profile` モジュールへ集中。
+- 2026-02-24: `src/hooks/cpp/header/cpp_header.py` を追加し、`build_cpp_header_from_east` と header 型変換・既定値・include guard 生成ロジックを分離。`py2cpp.py` では `build_cpp_header_from_east` を `_build_cpp_header_from_east` 経由の wrapper として維持。
+- 2026-02-25: `src/hooks/cpp/multifile/cpp_multifile.py` を追加し、`_write_multi_file_cpp` と manifest 生成責務を移譲。`py2cpp.py` 側は wrapper のみ残す構成へ変更。
+- 2026-02-26: `src/py2cpp.py` の `_HELPER_GROUPS` を削除し、`pytra.compiler.transpile_cli` の helper 群を明示 import へ移行。`py2cpp.py` は `dump_deps_graph_text_common` を含む互換 wrapper を維持し、境界チェックを継続する構成へ変更。
+- 2026-02-27: `P0-PY2CPP-SPLIT-01-S7` 完了。`src/hooks/cpp/runtime_emit/__init__.py` で `_join_runtime_path` 等の互換エイリアスを追加し、`src/py2cpp.py` import 断絶を解消。`python3 tools/check_py2cpp_boundary.py` / `python3 tools/check_py2cpp_transpile.py` / `python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py'` を実行し、責務回帰ガードを固定。
