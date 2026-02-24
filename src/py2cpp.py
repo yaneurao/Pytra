@@ -5745,14 +5745,67 @@ class CppEmitter(CodeEmitter):
                 body = self.apply_cast(body, to_t)
             elif on == "orelse":
                 orelse = self.apply_cast(orelse, to_t)
-        test_expr = self.render_expr(expr.get("test"))
+        test_node = self.any_to_dict_or_empty(expr.get("test"))
+        body_node = self.any_to_dict_or_empty(expr.get("body"))
+        orelse_node = self.any_to_dict_or_empty(expr.get("orelse"))
+        if self._is_isinstance_ctor_ifexp_pattern(test_node, body_node, orelse_node):
+            if not self.is_boxed_object_expr(orelse):
+                orelse = f"make_object({orelse})"
+        test_expr = self.render_expr(test_node)
         return self.render_ifexp_common(
             test_expr,
             body,
             orelse,
-            test_node=self.any_to_dict_or_empty(expr.get("test")),
+            test_node=test_node,
             fold_bool_literal=True,
         )
+
+    def _is_isinstance_ctor_ifexp_pattern(
+        self,
+        test_node: dict[str, Any],
+        body_node: dict[str, Any],
+        orelse_node: dict[str, Any],
+    ) -> bool:
+        """`x if isinstance(x, T) else T(x)` 形を検出する。"""
+        if self.any_dict_get_str(test_node, "kind", "") != "Call":
+            return False
+        fn_node = self.any_to_dict_or_empty(test_node.get("func"))
+        if self.any_dict_get_str(fn_node, "kind", "") != "Name":
+            return False
+        if self.any_dict_get_str(fn_node, "id", "") != "isinstance":
+            return False
+        test_args = self.any_to_list(test_node.get("args"))
+        if len(test_args) < 2:
+            return False
+        lhs = self.any_to_dict_or_empty(test_args[0])
+        if self.any_dict_get_str(lhs, "kind", "") != "Name":
+            return False
+        lhs_name = self.any_dict_get_str(lhs, "id", "")
+        if lhs_name == "":
+            return False
+
+        if self.any_dict_get_str(body_node, "kind", "") != "Name":
+            return False
+        if self.any_dict_get_str(body_node, "id", "") != lhs_name:
+            return False
+
+        if self.any_dict_get_str(orelse_node, "kind", "") != "Call":
+            return False
+        ctor_node = self.any_to_dict_or_empty(orelse_node.get("func"))
+        if self.any_dict_get_str(ctor_node, "kind", "") != "Name":
+            return False
+        ctor_name = self.any_dict_get_str(ctor_node, "id", "")
+        if ctor_name == "":
+            return False
+        orelse_args = self.any_to_list(orelse_node.get("args"))
+        if len(orelse_args) < 1:
+            return False
+        first_arg = self.any_to_dict_or_empty(orelse_args[0])
+        if self.any_dict_get_str(first_arg, "kind", "") != "Name":
+            return False
+        if self.any_dict_get_str(first_arg, "id", "") != lhs_name:
+            return False
+        return True
 
     def _render_operator_family_expr(
         self,
