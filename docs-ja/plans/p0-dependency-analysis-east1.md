@@ -41,3 +41,4 @@
 - 2026-02-24: ユーザー指示により、依存解析の責務を `EAST1 build` へ明示移管するタスクを `P0` 優先で追加。
 - 2026-02-24: [ID: `P0-DEP-EAST1-01-S1`] P0-EAST1-BUILD-01 完了（archive 移管済み）を着手前提に固定し、`P0-DEP-EAST1-01` はこの前提を満たした状態で `S2` 以降を進める方針を確定。
 - 2026-02-24: [ID: `P0-DEP-EAST1-01-S2`] import graph 解析本体を `east1_build` 側（`_analyze_import_graph_impl`）へ移し、`transpile_cli` の `analyze_import_graph` / `build_module_east_map` 公開名は `east1_build` thin wrapper へ固定した。
+- 2026-02-24: [ID: `P0-DEP-EAST1-01-S3`] `py2cpp.py` の依存解析導線（`_analyze_import_graph`, `build_module_east_map`）が `East1BuildHelpers` 公開 API 呼び出しに収束していることを確認し、`transpile_cli` 実装詳細への直接参照を撤去済みと判断した。
