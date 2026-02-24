@@ -27,23 +27,22 @@
 文脈: `docs-ja/plans/plan-east123-migration.md`（`TG-P0-EAST123-MIGRATION`）
 
 1. [ ] [ID: P0-EASTMIG-02] `transpile_cli.py` に集中している段階 API（`load_east1_document`, `normalize_east1_to_east2_document`, `load_east3_document`）を `src/pytra/compiler/east_parts/east1.py` / `east2.py` / `east3.py` へ分離し、`transpile_cli.py` は互換ラッパ責務へ縮退する。
-2. [ ] [ID: P0-EASTMIG-02-S1] `src/pytra/compiler/east_parts/east1.py` を追加し、`load_east1_document` と EAST1 ルート正規化 helper を移設する。
-3. [ ] [ID: P0-EASTMIG-02-S2] `src/pytra/compiler/east_parts/east2.py` を追加し、`normalize_east1_to_east2_document` と EAST2 契約 helper を移設する。
-4. [ ] [ID: P0-EASTMIG-02-S3] `src/pytra/compiler/east_parts/east3.py` を追加し、`load_east3_document` と `lower_east2_to_east3` 公開委譲を集約する。
-5. [ ] [ID: P0-EASTMIG-02-S4] `src/pytra/compiler/transpile_cli.py` を互換ラッパ中心へ縮退し、既存呼び出し互換をテストで固定する。
-6. [ ] [ID: P0-EASTMIG-03] `py2cpp.py` の標準経路を `EAST3` 前提へ寄せ、`EAST2` 再判断ロジック（For/Any/object/type_id/builtin）を段階縮退する。
-7. [ ] [ID: P0-EASTMIG-03-S1] `py2cpp.py` の `--east-stage` 分岐を棚卸しし、`EAST2` 依存箇所（For/ForRange/iter_plan）を `EAST3` 命令入力へ置換する。
-8. [ ] [ID: P0-EASTMIG-03-S2] `Any/object` 境界（Box/Unbox/Obj*）で backend 再判断している経路を `EAST3` 命令写像へ統一する。
-9. [ ] [ID: P0-EASTMIG-03-S3] `type_id` / built-in lower の `EAST2` 依存分岐を削減し、`EAST3` 前提経路を主経路化する。
-10. [ ] [ID: P0-EASTMIG-03-S4] `tools/check_py2cpp_transpile.py` と `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で主経路化後の回帰基線を固定する。
-11. [ ] [ID: P0-EASTMIG-04] C++ hooks の意味論実装を棚卸しし、`EAST3` 前提の構文差分専任へ縮退する（意味論 hook の新規追加を禁止）。
-12. [ ] [ID: P0-EASTMIG-04-S1] `src/hooks/cpp/` の hook を「意味論」「構文差分」に分類し、一覧を `docs-ja/plans/plan-east123-migration.md` に記録する。
-13. [ ] [ID: P0-EASTMIG-04-S2] 意味論 hook を `EAST3` 命令写像または共通層へ移し、C++ hooks 側から撤去する。
-14. [ ] [ID: P0-EASTMIG-04-S3] 意味論 hook の新規流入を防ぐチェック（lint またはテスト）を追加する。
-15. [ ] [ID: P0-EASTMIG-05] `--east-stage 3` 主経路の回帰導線（unit/transpile/selfhost）を標準化し、`EAST2` 入力を移行互換モードとして段階的に格下げする。
-16. [ ] [ID: P0-EASTMIG-05-S1] `test/unit/test_east3_lowering.py` / `test/unit/test_east3_cpp_bridge.py` を `EAST3` 主経路前提で拡充する。
-17. [ ] [ID: P0-EASTMIG-05-S2] `tools/check_py2{cpp,js,ts}_transpile.py` と selfhost 差分検証を `EAST3` 主経路の標準導線として文書化する。
-18. [ ] [ID: P0-EASTMIG-05-S3] `--east-stage 2` を移行互換モードとして位置づけ、縮退手順（警告/段階撤去）を `docs-ja/spec/spec-east123-migration.md` と `docs-ja/plans/plan-east123-migration.md` に明記する。
+2. [ ] [ID: P0-EASTMIG-02-S2] `src/pytra/compiler/east_parts/east2.py` を追加し、`normalize_east1_to_east2_document` と EAST2 契約 helper を移設する。
+3. [ ] [ID: P0-EASTMIG-02-S3] `src/pytra/compiler/east_parts/east3.py` を追加し、`load_east3_document` と `lower_east2_to_east3` 公開委譲を集約する。
+4. [ ] [ID: P0-EASTMIG-02-S4] `src/pytra/compiler/transpile_cli.py` を互換ラッパ中心へ縮退し、既存呼び出し互換をテストで固定する。
+5. [ ] [ID: P0-EASTMIG-03] `py2cpp.py` の標準経路を `EAST3` 前提へ寄せ、`EAST2` 再判断ロジック（For/Any/object/type_id/builtin）を段階縮退する。
+6. [ ] [ID: P0-EASTMIG-03-S1] `py2cpp.py` の `--east-stage` 分岐を棚卸しし、`EAST2` 依存箇所（For/ForRange/iter_plan）を `EAST3` 命令入力へ置換する。
+7. [ ] [ID: P0-EASTMIG-03-S2] `Any/object` 境界（Box/Unbox/Obj*）で backend 再判断している経路を `EAST3` 命令写像へ統一する。
+8. [ ] [ID: P0-EASTMIG-03-S3] `type_id` / built-in lower の `EAST2` 依存分岐を削減し、`EAST3` 前提経路を主経路化する。
+9. [ ] [ID: P0-EASTMIG-03-S4] `tools/check_py2cpp_transpile.py` と `tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` で主経路化後の回帰基線を固定する。
+10. [ ] [ID: P0-EASTMIG-04] C++ hooks の意味論実装を棚卸しし、`EAST3` 前提の構文差分専任へ縮退する（意味論 hook の新規追加を禁止）。
+11. [ ] [ID: P0-EASTMIG-04-S1] `src/hooks/cpp/` の hook を「意味論」「構文差分」に分類し、一覧を `docs-ja/plans/plan-east123-migration.md` に記録する。
+12. [ ] [ID: P0-EASTMIG-04-S2] 意味論 hook を `EAST3` 命令写像または共通層へ移し、C++ hooks 側から撤去する。
+13. [ ] [ID: P0-EASTMIG-04-S3] 意味論 hook の新規流入を防ぐチェック（lint またはテスト）を追加する。
+14. [ ] [ID: P0-EASTMIG-05] `--east-stage 3` 主経路の回帰導線（unit/transpile/selfhost）を標準化し、`EAST2` 入力を移行互換モードとして段階的に格下げする。
+15. [ ] [ID: P0-EASTMIG-05-S1] `test/unit/test_east3_lowering.py` / `test/unit/test_east3_cpp_bridge.py` を `EAST3` 主経路前提で拡充する。
+16. [ ] [ID: P0-EASTMIG-05-S2] `tools/check_py2{cpp,js,ts}_transpile.py` と selfhost 差分検証を `EAST3` 主経路の標準導線として文書化する。
+17. [ ] [ID: P0-EASTMIG-05-S3] `--east-stage 2` を移行互換モードとして位置づけ、縮退手順（警告/段階撤去）を `docs-ja/spec/spec-east123-migration.md` と `docs-ja/plans/plan-east123-migration.md` に明記する。
 
 ## P1: CodeEmitter 共通ディスパッチ再設計
 

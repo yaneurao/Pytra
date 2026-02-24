@@ -69,3 +69,4 @@
 - 2026-02-24: 本計画を `materials/refs/` に `plans` 形式で追加。
 - 2026-02-24: dispatch 方針は単一オプション `--object-dispatch-mode`（既定 `native`）を維持。
 - 2026-02-24: `docs-ja/plans/plan-east123-migration.md` として採用し、`docs-ja/todo.md` へ `P0-EASTMIG-*` タスク群を登録する。
+- 2026-02-24: `P0-EASTMIG-02-S1` として `src/pytra/compiler/east_parts/east1.py` を追加し、`load_east1_document` の実処理を `transpile_cli.py` 互換ラッパから分離した。
