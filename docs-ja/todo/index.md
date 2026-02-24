@@ -32,7 +32,7 @@
 
 ### タスク（S1〜S3）
 
-1. [ ] [ID: P0-SAMPLE-BENCH-01] 必要ツールチェイン（Rust/C#/Go/Java/Swift/Kotlin 等）を環境に導入し、`runtime_parity_check --targets cpp,rs,cs,js,ts,go,java,swift,kotlin` が skip せずに実行される状態にする（Swift は `swiftc` 実行可を必須化）。
+1. [x] [ID: P0-SAMPLE-BENCH-01] 必要ツールチェイン（Rust/C#/Go/Java/Swift/Kotlin 等）を環境に導入し、`runtime_parity_check --targets cpp,rs,cs,js,ts,go,java,swift,kotlin` が skip せずに実行される状態にする（Swift は `swiftc` 実行可を必須化）。
 2. [ ] [ID: P0-SAMPLE-BENCH-02] `sample/py` 全件（01〜18）を全言語ターゲットで実行し、全言語サンプル実行を優先して通す（差分がある場合は言語別で対処）。
 3. [ ] [ID: P0-SAMPLE-BENCH-03] `python3 tools/verify_sample_outputs.py --refresh-golden` を実行し、全言語計測結果を再取得して `readme-ja.md`（必要に応じて `readme.md`）を更新する。
 

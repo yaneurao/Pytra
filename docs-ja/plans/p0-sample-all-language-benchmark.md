@@ -28,3 +28,4 @@
 - 2026-02-25: `swiftc` をインストールして実行経路を確立（`tools/runtime_parity_check.py` を `--output` 指定対応＋絶対パス指定 `SWIFTC` 化）。`rust/cs/js/ts/go/java/swift/kotlin` が未修正仕様または生成コード品質の未整合で失敗継続。
 - 2026-02-25: Java ターゲットは `public class Main` のファイル名制約により、`runtime_parity_check` で出力先を固定 `Main.java` 化して実行に到達。現状は `Main.main` が TODO スタブ生成のままで出力なしのため検証不合格（実装側 emitter 仕上げが必要）。
 - 2026-02-25: `runtime_parity_check --targets cpp,rs,cs,js,ts,go,java,swift,kotlin` を再実行。`math_extended` / `pathlib_extended` は `cpp` のみPASS、`rs` は `crate::pytra` / `crate::math` / `crate::pathlib` の未解決、`cs` は型未解決と `System.IO` 等 import 不足、`js/ts` は `pytra/utils/assertions` import path 404、`go` は `using` 由来の構文誤出力、`java` は出力ミスマッチ（空文字）、`swift` は C#/Kotlin 風 `using` / `public static` を含む未対応言語混入、`kotlin` も同様の構文混入で失敗。
+- 2026-02-25: P0-SAMPLE-BENCH-01-S1 完了。`runtime_parity_check` が対象言語全部で skip なく到達することを再確認（`rustc/mcs/mono/go/java/javac/kotlin/node/node` 実行環境 + `swiftc`）。以降は言語別失敗の構文/import 根本不整合に注力。
