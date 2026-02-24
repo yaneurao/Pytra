@@ -816,6 +816,14 @@ class CppEmitter(CodeEmitter):
                             a = self.render_expr(self._build_box_expr_node(arg_node))
                         else:
                             a = f"make_object({a})"
+                elif self._can_runtime_cast_target(tt) and (arg_is_unknown or self.is_any_like_type(arg_t)):
+                    arg_node = arg_nodes[i] if i < len(arg_nodes) else {}
+                    arg_node_d = arg_node if isinstance(arg_node, dict) else {}
+                    t_norm = self.normalize_type_name(tt)
+                    if len(arg_node_d) > 0:
+                        a = self.render_expr(self._build_unbox_expr_node(arg_node, t_norm, f"module_arg:{t_norm}"))
+                    else:
+                        a = self._coerce_any_expr_to_target(a, tt, f"module_arg:{t_norm}")
             out.append(a)
         return out
 
