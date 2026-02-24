@@ -581,6 +581,48 @@ def f(x: object) -> None:
         self.assertEqual(len(unpack_lines), 1)
         self.assertTrue(unpack_lines[0].endswith("{"))
 
+    def test_control_flow_defaults_keep_hook_parity_when_dynamic_hooks_disabled(self) -> None:
+        src = """def f(flag: bool) -> int:
+    total: int = 0
+    if flag:
+        total += 1
+    else:
+        total += 2
+    for i in range(0, 3, 1):
+        total += i
+    return total
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "control_flow_defaults.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+
+        def _walk(node: object) -> list[dict[str, object]]:
+            out: list[dict[str, object]] = []
+            if isinstance(node, dict):
+                out.append(node)
+                for value in node.values():
+                    out.extend(_walk(value))
+                return out
+            if isinstance(node, list):
+                for item in node:
+                    out.extend(_walk(item))
+            return out
+
+        for node in _walk(east):
+            if node.get("kind") == "ForRange":
+                node["range_mode"] = "dynamic"
+
+        emitter = CppEmitter(east, {}, emit_main=False)
+        emitter.set_dynamic_hooks_enabled(False)
+        cpp = emitter.transpile()
+        lines = cpp.splitlines()
+        if_lines = [line.strip() for line in lines if line.strip().startswith("if (flag)")]
+        self.assertEqual(if_lines, ["if (flag)"])
+        range_lines = [line.strip() for line in lines if line.strip().startswith("for (int64 i = 0; i < 3; ++i)")]
+        self.assertEqual(range_lines, ["for (int64 i = 0; i < 3; ++i)"])
+        self.assertNotIn("? i < 3 : i > 3", cpp)
+
     def test_for_object_uses_runtime_protocol_py_dyn_range(self) -> None:
         src = """def f(x: object) -> int:
     s: int = 0
