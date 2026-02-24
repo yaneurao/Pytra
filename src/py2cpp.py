@@ -3421,7 +3421,7 @@ class CppEmitter(CodeEmitter):
         if any_boundary_expr is not None:
             return self.render_expr(any_boundary_expr)
         if runtime_call == "static_cast":
-            static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, arg_nodes)
+            static_cast_rendered = self._render_builtin_static_cast_call(expr, arg_nodes)
             if static_cast_rendered is not None:
                 return str(static_cast_rendered)
         list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, fn, arg_nodes)
@@ -4199,7 +4199,6 @@ class CppEmitter(CodeEmitter):
     def _render_builtin_static_cast_call(
         self,
         expr: dict[str, Any],
-        builtin_name: str,
         arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の `runtime_call=static_cast` 分岐を描画する。"""
