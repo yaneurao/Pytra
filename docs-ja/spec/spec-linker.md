@@ -13,8 +13,8 @@
 2. `type_id` など「全モジュールを見ないと確定できない情報」を 1 箇所で確定する。
 
 位置づけ:
-- 上位仕様は [spec-east123.md](./spec-east123.md) とし、本書はその連結段詳細を定義する下位仕様とする。
-- 仕様衝突時は `spec-east123` を優先し、本書はそれに従って更新する。
+- 上位仕様は [spec-east.md](./spec-east.md) とし、本書はその連結段詳細を定義する下位仕様とする。
+- 仕様衝突時は `spec-east` を優先し、本書はそれに従って更新する。
 
 ## 1. 背景
 
@@ -169,7 +169,7 @@ linker 失敗は `input_invalid(kind=..., stage=link, ...)` で統一する。
 
 ## 12. 関連
 
-- `docs-ja/spec/spec-east123.md`
+- `docs-ja/spec/spec-east.md`
 - `docs-ja/spec/spec-type_id.md`
 - `docs-ja/spec/spec-boxing.md`
 - `docs-ja/spec/spec-iterable.md`

@@ -8,10 +8,10 @@
 背景:
 - 単一 EAST + backend hooks 運用では、意味論 lowering が backend 側へ漏れやすく、hooks が肥大化する。
 - `Any/object` 境界、`dispatch mode`、iterable 契約の責務境界を backend 非依存で固定する必要がある。
-- `docs-ja/spec/spec-east123.md` に三段構成（EAST1/EAST2/EAST3）の設計ドラフトを追加済みであり、これを実装計画へ落とし込む段階に入った。
+- `docs-ja/spec/spec-east.md` に三段構成（EAST1/EAST2/EAST3）の統合仕様を反映済みであり、これを実装計画へ落とし込む段階に入った。
 
 目的:
-- `spec-east123` を最優先仕様として実装へ接続し、EAST3 を意味論の単一正本にする。
+- `spec-east` を最優先仕様として実装へ接続し、EAST3 を意味論の単一正本にする。
 - `EAST2 -> EAST3` で `--object-dispatch-mode` を一括適用し、後段再判断を禁止する。
 - hooks を「構文差分の最終調整」に限定し、意味論実装を core lowering 側へ回収する。
 
@@ -31,7 +31,7 @@
 - 既存 backend の全面 rewrite
 
 受け入れ基準:
-1. `docs-ja/spec/spec-east123.md` の契約（stage/scheme/dispatch 固定点）と実装仕様の差分が解消されている。
+1. `docs-ja/spec/spec-east.md` の契約（stage/scheme/dispatch 固定点）と実装仕様の差分が解消されている。
 2. `EAST3.meta.dispatch_mode` と `RuntimeIterForPlan.dispatch_mode` が導入され、後段で mode 再判定しない。
 3. hooks での意味論変更（dispatch 再判断、boxing/iterable 再実装）が段階的に撤去される。
 4. `EAST3` 契約を unit/codegen/selfhost 回帰で検証できる。
@@ -50,7 +50,7 @@
 1. `P0-EAST123-01-S1`: ルートスキーマ（`east_stage`, `schema_version`, `meta.dispatch_mode`）の仕様統一。
 2. `P0-EAST123-01-S2`: `dispatch mode` 適用点と後段再判断禁止の仕様固定。
 3. `P0-EAST123-01-S3`: `spec-east` / `spec-type_id` / `spec-boxing` / `spec-iterable` / `spec-dev` の整合調整。
-4. `P0-EAST123-01-S4`: `spec-east123` を上位仕様、`spec-linker` を下位仕様として確定し、参照順を明文化。
+4. `P0-EAST123-01-S4`: `spec-east` を上位仕様、`spec-linker` を下位仕様として確定し、参照順を明文化。
 5. `P0-EAST123-02-S1`: `For` / `ForRange` の `ForCore + iter_plan` lower 実装。
 6. `P0-EAST123-02-S2`: `Any/object` 境界命令の EAST3 lower 実装。
 7. `P0-EAST123-02-S3`: `--object-dispatch-mode` の単一点適用実装。
@@ -168,7 +168,7 @@
 - 次段 (`P0-EAST123-05-S2`) でこの基線を上限とする流入防止チェックを追加する。
 
 決定ログ:
-- 2026-02-23: 初版作成。`docs-ja/spec/spec-east123.md` を最優先事項として `todo` の `P0` へ昇格し、実装導入の作業枠を定義した。
+- 2026-02-23: 初版作成。`docs-ja/spec/spec-east.md` を最優先事項として `todo` の `P0` へ昇格し、実装導入の作業枠を定義した。
 - 2026-02-23: `EAST3` 導入効果を明示するため、`ID: P0-EAST123-05`（hooks 縮退の定量管理）を TODO/plan に追加した。
 - 2026-02-23: 現行 `EAST2` が `EAST1 + EAST2` 相当である課題を反映し、`ID: P0-EAST123-06`（EAST1/EAST2 分離）を TODO/plan に追加した。
 - 2026-02-23: `type_id` 関連 lower を backend 直書きではなく EAST3 命令化へ統一する方針を反映し、`ID: P0-EAST123-07` を TODO/plan に追加した。

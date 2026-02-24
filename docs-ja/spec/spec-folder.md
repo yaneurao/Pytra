@@ -6,7 +6,7 @@
 
 
 このドキュメントは「どのフォルダに何を置くか」を決める責務境界の正本です。  
-アルゴリズム詳細は他仕様（`spec-dev.md`, `spec-east123.md`, `spec-runtime.md` など）を参照し、本書は配置判断に限定します。
+アルゴリズム詳細は他仕様（`spec-dev.md`, `spec-east.md`, `spec-runtime.md` など）を参照し、本書は配置判断に限定します。
 
 ## 1. 適用範囲
 
@@ -145,7 +145,7 @@
 ## 6. 関連仕様
 
 - 実装仕様: `docs-ja/spec/spec-dev.md`
-- EAST三段構成: `docs-ja/spec/spec-east123.md`
-- EAST移行責務対応: `docs-ja/spec/spec-east123-migration.md`
+- EAST三段構成: `docs-ja/spec/spec-east.md#east-stages`
+- EAST移行責務対応: `docs-ja/spec/spec-east.md#east-file-mapping`
 - ランタイム仕様: `docs-ja/spec/spec-runtime.md`
 - Codex運用: `docs-ja/spec/spec-codex.md`

@@ -31,8 +31,8 @@
 3. [ ] [ID: P0-EASTMIG-06-S2] `py2cpp.py` の既定を `--east-stage 3` に切替え、`--east-stage 2` は互換モードとして警告付き運用に縮退する。
 4. [ ] [ID: P0-EASTMIG-06-S3] 非 C++ 変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）で `EAST3` 主経路を導入し、`EAST2` 直依存を段階撤去する。
 5. [ ] [ID: P0-EASTMIG-06-S4] `test/unit/test_east3_*` と `tools/check_py2*_transpile.py` を更新し、`EAST3` 主経路が回帰導線の既定になるよう固定する。
-6. [ ] [ID: P0-EASTMIG-06-S5] `docs-ja/spec/spec-east123*.md` と `docs-ja/spec/spec-dev.md` の記述を実装実態へ同期し、`EAST2` を「移行互換モード」として明文化する。
-7. [ ] [ID: P0-EASTMIG-06-S6] `EAST1` build 責務境界を `docs-ja/spec/spec-east1-build.md` で正式化し、`load_east_document_compat` エラー契約互換・selfhost diff 実行・`EAST1` build での `EAST2` 非変換を受け入れ基準として固定する。
+6. [ ] [ID: P0-EASTMIG-06-S5] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` の記述を実装実態へ同期し、`EAST2` を「移行互換モード」として明文化する。
+7. [ ] [ID: P0-EASTMIG-06-S6] `EAST1` build 責務境界を `docs-ja/spec/spec-east.md#east1-build-boundary` で正式化し、`load_east_document_compat` エラー契約互換・selfhost diff 実行・`EAST1` build での `EAST2` 非変換を受け入れ基準として固定する。
 8. [ ] [ID: P0-EASTMIG-06-S7] （低優先）`east_parts/render_human_east2_cpp.py` と並行して `east_parts/render_human_east3_cpp.py` を追加し、`EAST3` 命令ノード（`ForCore`, `Box/Unbox`, `Obj*`, `type_id` 系）を人間可読ビューへ描画する経路を整備する。
 
 ## P1: 多言語出力品質（preview 脱却の再オープン）
