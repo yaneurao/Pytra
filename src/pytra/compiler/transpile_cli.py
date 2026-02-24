@@ -2130,6 +2130,11 @@ def build_module_east_map_via_east1_build(
     )
 
 
+# 互換公開名は `east1_build` 入口への薄い委譲に固定する。
+analyze_import_graph = analyze_import_graph_via_east1_build
+build_module_east_map = build_module_east_map_via_east1_build
+
+
 def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:
     """個別 `--max-*` 値を正整数へ変換する。"""
     if raw == "":
