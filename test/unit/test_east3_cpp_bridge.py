@@ -1205,6 +1205,27 @@ class East3CppBridgeTest(unittest.TestCase):
             ],
             "resolved_type": "list[tuple[int64,int64]]",
         }
+        list_ctor_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "collection_ctor",
+            "ctor_name": "list",
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "list[int64]"}],
+            "resolved_type": "list[int64]",
+        }
+        set_ctor_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "collection_ctor",
+            "ctor_name": "set",
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "list[int64]"}],
+            "resolved_type": "set[int64]",
+        }
+        dict_ctor_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "collection_ctor",
+            "ctor_name": "dict",
+            "args": [{"kind": "Name", "id": "d", "resolved_type": "dict[str,int64]"}],
+            "resolved_type": "dict[str,int64]",
+        }
         minmax_node = {
             "kind": "RuntimeSpecialOp",
             "op": "minmax",
@@ -1272,6 +1293,9 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(range_node), "py_range(0, 3, 1)")
         self.assertEqual(emitter.render_expr(range_kw_node), "py_range(1, 5, 2)")
         self.assertEqual(emitter.render_expr(zip_node), "zip(xs, ys)")
+        self.assertEqual(emitter.render_expr(list_ctor_node), "xs")
+        self.assertEqual(emitter.render_expr(set_ctor_node), "set<int64>(xs)")
+        self.assertEqual(emitter.render_expr(dict_ctor_node), "d")
         self.assertEqual(
             emitter.render_expr(minmax_node),
             "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",

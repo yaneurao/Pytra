@@ -4161,14 +4161,17 @@ class CppEmitter(CodeEmitter):
             zip_node["args"] = [arg_nodes[0], arg_nodes[1]]
             return self.render_expr(zip_node)
         if runtime_call in {"list_ctor", "set_ctor", "dict_ctor"}:
-            ctor_name = runtime_call[:-5]
-            ctor_args: list[str] = []
-            for arg_node in arg_nodes:
-                ctor_args.append(self.render_expr(arg_node))
-            first_arg: Any = expr
+            collection_ctor_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "collection_ctor",
+                "ctor_name": runtime_call[:-5],
+                "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
             if len(arg_nodes) > 0:
-                first_arg = arg_nodes[0]
-            return self._render_collection_constructor_call(ctor_name, expr, ctor_args, first_arg)
+                collection_ctor_node["args"] = arg_nodes
+            return self.render_expr(collection_ctor_node)
         if runtime_call in {"py_min", "py_max"} and len(arg_nodes) >= 1:
             minmax_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
@@ -6404,6 +6407,18 @@ class CppEmitter(CodeEmitter):
                 if len(zip_args) >= 2:
                     return f"zip({zip_args[0]}, {zip_args[1]})"
                 return ""
+            if op == "collection_ctor":
+                ctor_name = self.any_dict_get_str(expr_d, "ctor_name", "")
+                ctor_args: list[str] = []
+                arg_nodes_raw: list[Any] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes_raw = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes_raw:
+                        ctor_args.append(self.render_expr(arg_node))
+                first_arg: Any = expr_d
+                if len(arg_nodes_raw) > 0:
+                    first_arg = arg_nodes_raw[0]
+                return self._render_collection_constructor_call(ctor_name, expr_d, ctor_args, first_arg) or ""
             if op == "minmax":
                 mode = self.any_dict_get_str(expr_d, "mode", "min")
                 fn_name = "max" if mode == "max" else "min"
