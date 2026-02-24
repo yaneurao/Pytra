@@ -4087,6 +4087,15 @@ class CppEmitter(CodeEmitter):
             return f"py_ord({self.render_expr(arg_nodes[0])})"
         if runtime_call == "py_chr" and len(arg_nodes) >= 1:
             return f"py_chr({self.render_expr(arg_nodes[0])})"
+        if runtime_call in {"list_ctor", "set_ctor", "dict_ctor"}:
+            ctor_name = runtime_call[:-5]
+            ctor_args: list[str] = []
+            for arg_node in arg_nodes:
+                ctor_args.append(self.render_expr(arg_node))
+            first_arg: Any = expr
+            if len(arg_nodes) > 0:
+                first_arg = arg_nodes[0]
+            return self._render_collection_constructor_call(ctor_name, expr, ctor_args, first_arg)
         if runtime_call in {"py_min", "py_max"} and len(arg_nodes) >= 1:
             minmax_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
@@ -4646,6 +4655,9 @@ class CppEmitter(CodeEmitter):
             "all",
             "ord",
             "chr",
+            "list",
+            "set",
+            "dict",
         }
 
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:

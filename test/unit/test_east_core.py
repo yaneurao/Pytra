@@ -113,11 +113,14 @@ def main() -> None:
     has_all: bool = all(xs)
     ch: str = chr(65)
     ocode: int = ord("A")
+    ys: list[int] = list(xs)
+    zs: set[int] = set(xs)
     d: dict[str, int] = {"a": 1}
+    d2: dict[str, int] = dict(d)
     v: int = d.get("a", 0)
     p: Path = Path("tmp")
     ok: bool = p.exists()
-    print(len(xs), t, u, p0, p1, len(ba), n, b, first, ri, en, has_any, has_all, ch, ocode, v, ok)
+    print(len(xs), t, u, p0, p1, len(ba), n, b, first, ri, en, has_any, has_all, ch, ocode, len(ys), len(zs), len(d2), v, ok)
 
 if __name__ == "__main__":
     main()
@@ -139,6 +142,9 @@ if __name__ == "__main__":
         self.assertIn("py_all", runtime_calls)
         self.assertIn("py_ord", runtime_calls)
         self.assertIn("py_chr", runtime_calls)
+        self.assertIn("list_ctor", runtime_calls)
+        self.assertIn("set_ctor", runtime_calls)
+        self.assertIn("dict_ctor", runtime_calls)
         self.assertIn("py_to_bool", runtime_calls)
         self.assertIn("py_to_int64_base", runtime_calls)
         self.assertIn("list.append", runtime_calls)

@@ -2430,6 +2430,10 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     payload["runtime_call"] = "bytes_ctor" if fn_name == "bytes" else "bytearray_ctor"
+                elif fn_name in {"list", "set", "dict"}:
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = fn_name
+                    payload["runtime_call"] = fn_name + "_ctor"
                 elif isinstance(node, dict) and node.get("kind") == "Attribute":
                     attr = str(node.get("attr", ""))
                     owner = node.get("value")
