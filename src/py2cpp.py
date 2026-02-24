@@ -4319,13 +4319,6 @@ class CppEmitter(CodeEmitter):
             return f"{t}({args[0]})"
         return f"{ctor_name}({args[0]})"
 
-    def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
-        """`isinstance(x, T)` の `T` に対応する runtime 判定式を返す。"""
-        type_id_expr = self._render_type_id_operand_expr({"kind": "Name", "id": type_name})
-        if type_id_expr != "":
-            return f"py_isinstance({value_expr}, {type_id_expr})"
-        return "false"
-
     def _build_box_expr_node(self, value_node: Any) -> dict[str, Any]:
         return {
             "kind": "Box",
@@ -4575,59 +4568,6 @@ class CppEmitter(CodeEmitter):
             }
         return None
 
-    def _build_any_boundary_expr_from_call_name(
-        self,
-        raw_name: str,
-        arg_nodes: list[Any],
-    ) -> dict[str, Any] | None:
-        if len(arg_nodes) != 1:
-            return None
-        arg0 = arg_nodes[0]
-        arg0_t = self.get_expr_type(arg0)
-        if not self.is_any_like_type(arg0_t):
-            return None
-        if raw_name == "bool":
-            return {
-                "kind": "ObjBool",
-                "value": arg0,
-                "resolved_type": "bool",
-                "borrow_kind": "value",
-                "casts": [],
-            }
-        if raw_name == "len":
-            return {
-                "kind": "ObjLen",
-                "value": arg0,
-                "resolved_type": "int64",
-                "borrow_kind": "value",
-                "casts": [],
-            }
-        if raw_name == "str":
-            return {
-                "kind": "ObjStr",
-                "value": arg0,
-                "resolved_type": "str",
-                "borrow_kind": "value",
-                "casts": [],
-            }
-        if raw_name == "iter":
-            return {
-                "kind": "ObjIterInit",
-                "value": arg0,
-                "resolved_type": "object",
-                "borrow_kind": "value",
-                "casts": [],
-            }
-        if raw_name == "next":
-            return {
-                "kind": "ObjIterNext",
-                "iter": arg0,
-                "resolved_type": "object",
-                "borrow_kind": "value",
-                "casts": [],
-            }
-        return None
-
     def _build_any_boundary_expr_from_builtin_call(
         self,
         runtime_call: str,
@@ -4813,9 +4753,6 @@ class CppEmitter(CodeEmitter):
                 return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
             if self._requires_builtin_call_lowering(raw):
                 raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + raw)
-            any_boundary_expr = self._build_any_boundary_expr_from_call_name(raw, arg_nodes)
-            if any_boundary_expr is not None:
-                return self.render_expr(any_boundary_expr)
             simple_builtin_rendered = self._render_simple_name_builtin_call(raw, args)
             if simple_builtin_rendered is not None:
                 return simple_builtin_rendered
@@ -5188,9 +5125,6 @@ class CppEmitter(CodeEmitter):
 
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
         """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
-        if fn_name == "isinstance" and len(args) == 2:
-            ty = args[1].strip()
-            return self._render_isinstance_type_check(args[0], ty)
         if fn_name.startswith("py_assert_"):
             call_args = self._coerce_py_assert_args(fn_name, args, [])
             return f"pytra::utils::assertions::{fn_name}({join_str_list(', ', call_args)})"

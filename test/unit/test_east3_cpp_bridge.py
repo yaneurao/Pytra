@@ -1403,8 +1403,31 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
             "keywords": [],
         }
+        plain_len = {
+            "kind": "Call",
+            "resolved_type": "int64",
+            "func": {"kind": "Name", "id": "len", "resolved_type": "unknown"},
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "object"}],
+            "keywords": [],
+        }
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: print"):
             emitter.render_expr(plain_print)
+        with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: len"):
+            emitter.render_expr(plain_len)
+
+    def test_plain_isinstance_call_uses_type_id_core_node_path(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        plain_isinstance = {
+            "kind": "Call",
+            "resolved_type": "bool",
+            "func": {"kind": "Name", "id": "isinstance", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Name", "id": "x", "resolved_type": "object"},
+                {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+            ],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(plain_isinstance), "py_isinstance(x, PYTRA_TID_INT)")
 
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
