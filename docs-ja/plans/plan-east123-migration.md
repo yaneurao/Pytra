@@ -46,6 +46,16 @@
 - `python3 tools/check_py2ts_transpile.py`
 - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
 
+標準回帰導線（`P0-EASTMIG-05-S2`）:
+1. `python3 tools/check_py2cpp_transpile.py`
+2. `python3 tools/check_py2js_transpile.py`
+3. `python3 tools/check_py2ts_transpile.py`
+4. `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+
+判定基準:
+- `check_py2*` 系は `fail=0`。
+- selfhost 差分検証は `mismatches=0`。
+
 サブタスク実行順（todo 同期）:
 1. `P0-EASTMIG-01`: stage 名と責務境界（`EAST1/2/3`）を `spec` と `plan` で同期する。
    - `P0-EASTMIG-01-S1`: `spec-east123-migration` に責務対応表を固定する。
@@ -93,3 +103,4 @@
 - 2026-02-24: `P0-EASTMIG-04-S2` として `src/hooks/cpp/hooks/cpp_hooks.py` から意味論 hook（`on_render_module_method`, `on_render_class_method`, `on_render_expr_leaf`）を撤去し、hooks を構文差分（`on_stmt_omit_braces`, `on_render_expr_complex`）専任へ縮退した。
 - 2026-02-24: P0-EASTMIG-04-S3 として hooks 回帰ガードを `test/unit/test_cpp_hooks.py` へ追加し、`build_cpp_hooks()` が構文差分 hook のみ（`on_stmt_omit_braces`, `on_render_expr_complex`）を登録することを固定した。P0-EASTMIG-04 をクローズ。
 - 2026-02-24: `P0-EASTMIG-05-S1` として `test/unit/test_east3_lowering.py` / `test/unit/test_east3_cpp_bridge.py` を拡充し、既存 `ForCore` 入力に対しても `RuntimeIterForPlan.dispatch_mode` を `object_dispatch_mode` へ正規化する契約を追加した（lowering 19件 / bridge 72件とも通過）。
+- 2026-02-24: `P0-EASTMIG-05-S2` として `check_py2{cpp,js,ts}_transpile` + `check_selfhost_cpp_diff --mode allow-not-implemented` を `EAST3` 主経路の標準回帰導線として固定し、実測結果（各 `checked=131 fail=0`、`mismatches=0`）を確認した。

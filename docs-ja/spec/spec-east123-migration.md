@@ -190,6 +190,14 @@ python3 tools/check_py2ts_transpile.py
 python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
 ```
 
+### 9.1 EAST3 主経路の標準回帰導線（P0-EASTMIG-05-S2）
+
+- 実行順は `check_py2cpp_transpile` -> `check_py2js_transpile` -> `check_py2ts_transpile` -> `check_selfhost_cpp_diff` とする。
+- 受け入れ判定は次を満たすこと:
+  - `check_py2*` 系: `fail=0`。
+  - `check_selfhost_cpp_diff --mode allow-not-implemented`: `mismatches=0`。
+- `EAST3` 主経路変更時は上記 4 コマンドを同一コミット前に実行し、結果を `docs-ja/plans/plan-east123-migration.md` の `決定ログ` へ記録する。
+
 ## 10. リスクと回避
 
 1. リスク: `EAST1/EAST2` 分離で既存CLI互換が崩れる。  
