@@ -29,23 +29,23 @@
 - `py2cpp.py` は `--east-stage {2,3}` の二重運用。
 - hooks は補助レイヤだが、意味論ロジック残存リスクがある。
 
-## 3.1 現行ファイル責務対応（2026-02-24）
+## 3.1 現行/移行後の責務対応表（2026-02-24）
 
-現時点では、`EAST1/EAST2/EAST3` の責務は次の実装へ対応している。
+`EAST1/EAST2/EAST3` の責務境界を、現行実装と移行後配置で 1:1 に対応付ける。
 
-- `EAST1`（parse 直後）:
-  - 実体 parser: `src/pytra/compiler/east_parts/core.py`
-  - 入口 API: `load_east1_document(...)`（`src/pytra/compiler/transpile_cli.py`）
-- `EAST2`（normalize）:
-  - 入口 API: `normalize_east1_to_east2_document(...)`（`src/pytra/compiler/transpile_cli.py`）
-  - 補助 normalize: `src/pytra/compiler/east_parts/east_io.py`
-- `EAST3`（core lowering）:
-  - lower 実体: `src/pytra/compiler/east_parts/east3_lowering.py`
-  - 入口 API: `load_east3_document(...)`（`src/pytra/compiler/transpile_cli.py`）
-- backend bridge（C++）:
-  - `src/py2cpp.py`（`--east-stage {2,3}` 二重運用）
+| 段 | 責務 | 現行実装（着手時点） | 移行後の正本 |
+| --- | --- | --- | --- |
+| EAST1 | parser 直後 IR 生成 | `src/pytra/compiler/east_parts/core.py` | `src/pytra/compiler/east_parts/core.py`（維持） |
+| EAST1 | EAST1 入口 API（`load_east1_document`） | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/east_parts/east1.py` |
+| EAST1 | EAST1 ルート正規化（`east_stage=1` 固定） | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/east_parts/east1.py` |
+| EAST2 | EAST1 -> EAST2 正規化 API（`normalize_east1_to_east2_document`） | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/east_parts/east2.py` |
+| EAST2 | ルート契約補助（meta/dispatch 正規化） | `src/pytra/compiler/east_parts/east_io.py` | `src/pytra/compiler/east_parts/east2.py` + `east_io.py` |
+| EAST3 | EAST2 -> EAST3 lower 本体 | `src/pytra/compiler/east_parts/east3_lowering.py` | `src/pytra/compiler/east_parts/east3_lowering.py`（維持） |
+| EAST3 | EAST3 入口 API（`load_east3_document`） | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/east_parts/east3.py` |
+| Bridge | backend 入口（C++） | `src/py2cpp.py`（`--east-stage {2,3}` 二重運用） | `src/py2cpp.py`（`EAST3` 主経路 + `EAST2` 互換） |
+| CLI 互換 | 旧 API 互換公開 | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/transpile_cli.py`（互換ラッパ専任） |
 
-この状態では stage 境界 API が `transpile_cli.py` に集中して見通しが悪い。  
+現状は stage 境界 API が `transpile_cli.py` に集中して見通しが悪い。  
 本移行では、段階責務を `east_parts/east1.py`, `east_parts/east2.py`, `east_parts/east3.py` へ分離し、`transpile_cli.py` を互換ラッパ中心へ縮退する。
 
 ## 4. 移行方針
