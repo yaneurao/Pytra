@@ -91,13 +91,7 @@
 
 進捗メモ:
 - 詳細ログは `docs-ja/plans/p3-pythonic-restoration.md` の `決定ログ` を参照。
-
-### 作業ルール
-
-1. [ ] [ID: P3-RULE-01] 1パッチで戻す範囲は 1〜3 関数に保つ。
-2. [ ] [ID: P3-RULE-02] 各パッチで `python3 tools/check_py2cpp_transpile.py` を実行する。
-3. [ ] [ID: P3-RULE-03] 各パッチで `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を実行する。
-4. [ ] [ID: P3-RULE-04] 回帰が出た場合は「可読性改善より selfhost 安定」を優先する。
+- 作業ルールは `docs-ja/plans/p3-pythonic-restoration.md` の「作業ルール」を参照。
 
 ## P3: サンプル実行時間の再計測とREADME更新（低優先）
 

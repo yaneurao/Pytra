@@ -3,7 +3,7 @@
 最終更新: 2026-02-23
 
 関連 TODO:
-- `docs-ja/todo/index.md` の `ID: P3-PY-*`, `P3-CE-*`, `P3-RULE-*`
+- `docs-ja/todo/index.md` の `ID: P3-PY-*`, `P3-CE-*`
 
 背景:
 - selfhost 安定化のため平易化した記法が増え、可読性が低下している。
@@ -26,6 +26,12 @@
 確認コマンド:
 - `python3 tools/check_py2cpp_transpile.py`
 - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+
+作業ルール:
+- 1パッチで戻す範囲は 1〜3 関数に保つ。
+- 各パッチで `python3 tools/check_py2cpp_transpile.py` を実行する。
+- 各パッチで `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を実行する。
+- 回帰が出た場合は「可読性改善より selfhost 安定」を優先する。
 
 決定ログ:
 - 2026-02-22: 初版作成。
