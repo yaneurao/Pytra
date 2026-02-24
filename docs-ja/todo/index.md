@@ -127,7 +127,7 @@
 1. [x] [ID: P3-PY-01] `while i < len(xs)` + 手動インデックス更新を `for x in xs` / `for i, x in enumerate(xs)` へ戻す。
 2. [x] [ID: P3-PY-03] 空 dict/list 初期化後の逐次代入（`out = {}; out["k"] = v`）を、型崩れしない箇所から辞書リテラルへ戻す。
 3. [x] [ID: P3-PY-04] 三項演算子を回避している箇所（`if ...: a=x else: a=y`）を、selfhost 側対応後に式形式へ戻す。
-4. [ ] [ID: P3-PY-05] import 解析の一時変数展開（`obj = ...; s = any_to_str(obj)`）を、型安全が確保できる箇所から簡潔化する。
+4. [x] [ID: P3-PY-05] import 解析の一時変数展開（`obj = ...; s = any_to_str(obj)`）を、型安全が確保できる箇所から簡潔化する。
 
 進捗メモ:
 - 詳細ログは `docs-ja/plans/p3-pythonic-restoration.md` の `決定ログ` を参照。
@@ -143,6 +143,9 @@
 文脈: `docs-ja/plans/p3-sample-benchmark-refresh.md`（`TG-P3-SAMPLE-BENCHMARK`）
 
 1. [ ] [ID: P3-SB-01] サンプルコード変更（実行時間変化）、サンプル番号再編（04/15/17/18）、サンプル数増加（01〜18）を反映するため、全ターゲット言語（Python/C++/Rust/C#/JS/TS/Go/Java/Swift/Kotlin）で実行時間を再計測し、トップページの `readme.md` / `readme-ja.md` の比較表を同一データで更新する。
+
+進捗メモ:
+- [ID: P3-SB-01-S1] Python/JS/TS のランタイム import 環境を復旧し、`sample/js` / `sample/ts` の runtime import を `sample/*/pytra` シム経由へ統一。`sample/18` の `Token/ExprNode/StmtNode` 初期化と `env` 参照チェック不具合を修正し実行可能化。
 
 ## P3: `pytra` ランチャーと build 導線実装（低優先）
 
