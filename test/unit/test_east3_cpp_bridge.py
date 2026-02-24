@@ -1481,6 +1481,11 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(plain_isinstance), "py_isinstance(x, PYTRA_TID_INT)")
 
+    def test_call_fallback_rejects_parser_lowered_builtins(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: print"):
+            emitter._render_call_fallback("print", ["1"])
+
     def test_collect_symbols_from_stmt_supports_forcore_target_plan(self) -> None:
         stmt = {
             "kind": "ForCore",
