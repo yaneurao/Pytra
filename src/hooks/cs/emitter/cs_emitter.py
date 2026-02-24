@@ -70,13 +70,43 @@ class CSharpEmitter(CodeEmitter):
             return ""
         return module_id
 
-    def _collect_using_lines(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
+    def _walk_node_names(self, node: Any, out: set[str]) -> None:
+        """ノード配下の Name.id を収集する（Import/ImportFrom 自身は除外）。"""
+        if isinstance(node, dict):
+            kind = self.any_dict_get_str(node, "kind", "")
+            if kind == "Import" or kind == "ImportFrom":
+                return
+            if kind == "Name":
+                name = self.any_to_str(node.get("id"))
+                if name != "":
+                    out.add(name)
+                return
+            for key, value in node.items():
+                if key == "comments":
+                    continue
+                self._walk_node_names(value, out)
+            return
+        if isinstance(node, list):
+            for item in node:
+                self._walk_node_names(item, out)
+
+    def _collect_used_names(self, body: list[dict[str, Any]], main_guard_body: list[dict[str, Any]]) -> set[str]:
+        """モジュール全体で実際に参照される識別子名を収集する。"""
+        used: set[str] = set()
+        for stmt in body:
+            self._walk_node_names(stmt, used)
+        for stmt in main_guard_body:
+            self._walk_node_names(stmt, used)
+        return used
+
+    def _collect_using_lines(
+        self,
+        body: list[dict[str, Any]],
+        meta: dict[str, Any],
+        used_names: set[str],
+    ) -> list[str]:
         """import 情報を C# using 行へ変換する。"""
-        out: list[str] = [
-            "using System;",
-            "using System.Collections.Generic;",
-            "using System.Linq;",
-        ]
+        out: list[str] = []
         seen: set[str] = set(out)
 
         def _add(line: str) -> None:
@@ -106,6 +136,9 @@ class CSharpEmitter(CodeEmitter):
                     continue
                 if binding_kind == "module":
                     if local_name != "":
+                        if local_name not in used_names:
+                            i += 1
+                            continue
                         leaf = self._last_dotted_name(module_id)
                         if local_name != leaf:
                             _add("using " + self._safe_name(local_name) + " = " + ns + ";")
@@ -114,7 +147,7 @@ class CSharpEmitter(CodeEmitter):
                     else:
                         _add("using " + ns + ";")
                 elif binding_kind == "symbol" and export_name != "":
-                    if local_name != "" and local_name != export_name:
+                    if local_name != "" and local_name != export_name and local_name in used_names:
                         _add("using " + self._safe_name(local_name) + " = " + ns + "." + export_name + ";")
                 i += 1
             return out
@@ -133,8 +166,13 @@ class CSharpEmitter(CodeEmitter):
                         continue
                     asname = self.any_to_str(ent.get("asname"))
                     if asname != "":
+                        if asname not in used_names:
+                            continue
                         _add("using " + self._safe_name(asname) + " = " + ns + ";")
                     else:
+                        leaf = self._last_dotted_name(module_id)
+                        if leaf not in used_names:
+                            continue
                         _add("using " + ns + ";")
             elif kind == "ImportFrom":
                 module_id = self.any_to_str(stmt.get("module"))
@@ -145,14 +183,17 @@ class CSharpEmitter(CodeEmitter):
                 ns = self._module_id_to_cs_namespace(module_id)
                 if ns == "":
                     continue
-                _add("using " + ns + ";")
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     sym = self.any_to_str(ent.get("name"))
                     asname = self.any_to_str(ent.get("asname"))
                     if sym == "" or sym == "*":
                         continue
                     if asname != "" and asname != sym:
+                        if asname not in used_names:
+                            continue
                         _add("using " + self._safe_name(asname) + " = " + ns + "." + sym + ";")
+                    elif sym in used_names:
+                        _add("using " + ns + ";")
         return out
 
     def _cs_type(self, east_type: str) -> str:
@@ -166,14 +207,14 @@ class CSharpEmitter(CodeEmitter):
                 return mapped
         if t.startswith("list[") and t.endswith("]"):
             inner = t[5:-1].strip()
-            return "List<" + self._cs_type(inner) + ">"
+            return "System.Collections.Generic.List<" + self._cs_type(inner) + ">"
         if t.startswith("set[") and t.endswith("]"):
             inner = t[4:-1].strip()
-            return "HashSet<" + self._cs_type(inner) + ">"
+            return "System.Collections.Generic.HashSet<" + self._cs_type(inner) + ">"
         if t.startswith("dict[") and t.endswith("]"):
             parts = self.split_generic(t[5:-1].strip())
             if len(parts) == 2:
-                return "Dictionary<" + self._cs_type(parts[0]) + ", " + self._cs_type(parts[1]) + ">"
+                return "System.Collections.Generic.Dictionary<" + self._cs_type(parts[0]) + ", " + self._cs_type(parts[1]) + ">"
         if t.startswith("tuple[") and t.endswith("]"):
             parts = self.split_generic(t[6:-1].strip())
             rendered: list[str] = []
@@ -207,11 +248,11 @@ class CSharpEmitter(CodeEmitter):
             elem_t = self._cs_type(list_t[5:-1].strip())
         elts = self.any_to_list(expr_d.get("elts"))
         if len(elts) == 0:
-            return "new List<" + elem_t + ">()"
+            return "new System.Collections.Generic.List<" + elem_t + ">()"
         rendered: list[str] = []
         for elt in elts:
             rendered.append(self.render_expr(elt))
-        return "new List<" + elem_t + "> { " + ", ".join(rendered) + " }"
+        return "new System.Collections.Generic.List<" + elem_t + "> { " + ", ".join(rendered) + " }"
 
     def _typed_dict_literal(self, expr_d: dict[str, Any]) -> str:
         """Dict リテラルを C# 式へ描画する。"""
@@ -243,8 +284,8 @@ class CSharpEmitter(CodeEmitter):
                 i += 1
 
         if len(pairs) == 0:
-            return "new Dictionary<" + key_t + ", " + val_t + ">()"
-        return "new Dictionary<" + key_t + ", " + val_t + "> { " + ", ".join(pairs) + " }"
+            return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">()"
+        return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + "> { " + ", ".join(pairs) + " }"
 
     def transpile(self) -> str:
         """モジュール全体を C# ソースへ変換する。"""
@@ -256,14 +297,17 @@ class CSharpEmitter(CodeEmitter):
 
         module = self.doc
         body = self._dict_stmt_list(module.get("body"))
+        main_guard_body = self._dict_stmt_list(module.get("main_guard_body"))
         meta = self.any_to_dict_or_empty(module.get("meta"))
         self.load_import_bindings_from_meta(meta)
         self.emit_module_leading_trivia()
 
-        using_lines = self._collect_using_lines(body, meta)
+        used_names = self._collect_used_names(body, main_guard_body)
+        using_lines = self._collect_using_lines(body, meta, used_names)
         for line in using_lines:
             self.emit(line)
-        self.emit("")
+        if len(using_lines) > 0:
+            self.emit("")
 
         self.class_names = set()
         for stmt in body:
@@ -306,7 +350,7 @@ class CSharpEmitter(CodeEmitter):
             self._emit_enumerate_helper()
             self.emit("")
 
-        main_body = list(top_level_stmts) + self._dict_stmt_list(module.get("main_guard_body"))
+        main_body = list(top_level_stmts) + main_guard_body
         self.emit("public static void Main(string[] args)")
         self.emit("{")
         self.indent += 1
@@ -321,7 +365,10 @@ class CSharpEmitter(CodeEmitter):
 
     def _emit_enumerate_helper(self) -> None:
         """enumerate() 用の最小 helper を出力する。"""
-        self.emit("private static IEnumerable<(long, T)> PytraEnumerate<T>(IEnumerable<T> source, long start = 0)")
+        self.emit(
+            "private static System.Collections.Generic.IEnumerable<(long, T)> "
+            + "PytraEnumerate<T>(System.Collections.Generic.IEnumerable<T> source, long start = 0)"
+        )
         self.emit("{")
         self.indent += 1
         self.emit("long i = start;")
@@ -517,7 +564,7 @@ class CSharpEmitter(CodeEmitter):
         if kind == "Raise":
             exc = stmt.get("exc")
             if exc is None:
-                self.emit("throw new Exception(\"raise\");")
+                self.emit("throw new System.Exception(\"raise\");")
             else:
                 self.emit("throw " + self.render_expr(exc) + ";")
             return
@@ -562,7 +609,7 @@ class CSharpEmitter(CodeEmitter):
             ex_name = self.any_to_str(first.get("name"))
             if ex_name == "":
                 ex_name = "ex"
-            self.emit("} catch (Exception " + self._safe_name(ex_name) + ") {")
+            self.emit("} catch (System.Exception " + self._safe_name(ex_name) + ") {")
             self.emit_scoped_stmt_list(self._dict_stmt_list(first.get("body")), {ex_name})
             if len(handlers) > 1:
                 self.emit("    // unsupported: additional except handlers are ignored")
@@ -742,14 +789,24 @@ class CSharpEmitter(CodeEmitter):
         left = self.render_expr(expr.get("left"))
         ops = self.any_to_str_list(expr.get("ops"))
         comps = self.any_to_list(expr.get("comparators"))
-        return self.render_compare_chain_common(
+        right_exprs: list[str] = []
+        pair_count = len(ops)
+        if len(comps) < pair_count:
+            pair_count = len(comps)
+        i = 0
+        while i < pair_count:
+            right_exprs.append(self.render_expr(comps[i]))
+            i += 1
+        return self.render_compare_chain_from_rendered(
             left,
             ops,
-            comps,
+            right_exprs,
             self.cmp_ops,
             empty_literal="false",
             in_pattern="{right}.Contains({left})",
             not_in_pattern="!{right}.Contains({left})",
+            wrap_terms=False,
+            wrap_whole=False,
         )
 
     def _render_len_call(self, arg_expr: str, arg_node: Any) -> str:
@@ -802,7 +859,7 @@ class CSharpEmitter(CodeEmitter):
                 if lowered != "":
                     checks.append(lowered)
             if len(checks) > 0:
-                return "(" + " || ".join(checks) + ")"
+                return " || ".join(checks)
         return "false"
 
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
@@ -814,24 +871,24 @@ class CSharpEmitter(CodeEmitter):
             return self._render_isinstance_call(rendered_args, arg_nodes)
         if fn_name_raw == "print":
             if len(rendered_args) == 0:
-                return "Console.WriteLine()"
+                return "System.Console.WriteLine()"
             if len(rendered_args) == 1:
-                return "Console.WriteLine(" + rendered_args[0] + ")"
-            return "Console.WriteLine(string.Join(\" \", new object[] { " + ", ".join(rendered_args) + " }))"
+                return "System.Console.WriteLine(" + rendered_args[0] + ")"
+            return "System.Console.WriteLine(string.Join(\" \", new object[] { " + ", ".join(rendered_args) + " }))"
         if fn_name_raw == "len" and len(rendered_args) == 1:
             return self._render_len_call(rendered_args[0], arg_nodes[0] if len(arg_nodes) > 0 else None)
         if fn_name_raw == "str" and len(rendered_args) == 1:
-            return "Convert.ToString(" + rendered_args[0] + ")"
+            return "System.Convert.ToString(" + rendered_args[0] + ")"
         if fn_name_raw == "int" and len(rendered_args) == 1:
-            return "Convert.ToInt64(" + rendered_args[0] + ")"
+            return "System.Convert.ToInt64(" + rendered_args[0] + ")"
         if fn_name_raw == "float" and len(rendered_args) == 1:
-            return "Convert.ToDouble(" + rendered_args[0] + ")"
+            return "System.Convert.ToDouble(" + rendered_args[0] + ")"
         if fn_name_raw == "bool" and len(rendered_args) == 1:
-            return "Convert.ToBoolean(" + rendered_args[0] + ")"
+            return "System.Convert.ToBoolean(" + rendered_args[0] + ")"
         if fn_name_raw == "Exception":
             if len(rendered_args) >= 1:
-                return "new Exception(" + rendered_args[0] + ")"
-            return "new Exception(\"Exception\")"
+                return "new System.Exception(" + rendered_args[0] + ")"
+            return "new System.Exception(\"Exception\")"
         if fn_name_raw == "enumerate":
             self.needs_enumerate_helper = True
             if len(rendered_args) == 1:
@@ -936,11 +993,18 @@ class CSharpEmitter(CodeEmitter):
 
         if kind == "UnaryOp":
             op = self.any_dict_get_str(expr_d, "op", "")
-            operand = self.render_expr(expr_d.get("operand"))
+            operand_node = self.any_to_dict_or_empty(expr_d.get("operand"))
+            operand = self.render_expr(operand_node)
+            operand_kind = self.any_dict_get_str(operand_node, "kind", "")
+            simple_operand = operand_kind in {"Name", "Constant", "Call", "Attribute", "Subscript"}
             if op == "USub":
-                return "(-" + operand + ")"
+                if simple_operand:
+                    return "-" + operand
+                return "-(" + operand + ")"
             if op == "Not":
-                return "(!" + operand + ")"
+                if simple_operand:
+                    return "!" + operand
+                return "!(" + operand + ")"
             return operand
 
         if kind == "BinOp":
@@ -953,9 +1017,9 @@ class CSharpEmitter(CodeEmitter):
             if custom != "":
                 return custom
             if op == "FloorDiv":
-                return "((long)Math.Floor((double)(" + left + ") / (double)(" + right + ")))"
+                return "System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(" + left + ") / System.Convert.ToDouble(" + right + ")))"
             mapped = self.bin_ops.get(op, "+")
-            return "(" + left + " " + mapped + " " + right + ")"
+            return left + " " + mapped + " " + right
 
         if kind == "Compare":
             return self._render_compare(expr_d)
@@ -963,7 +1027,15 @@ class CSharpEmitter(CodeEmitter):
         if kind == "BoolOp":
             vals = self.any_to_list(expr_d.get("values"))
             op = self.any_to_str(expr_d.get("op"))
-            return self.render_boolop_common(vals, op, and_token="&&", or_token="||", empty_literal="false")
+            return self.render_boolop_chain_common(
+                vals,
+                op,
+                and_token="&&",
+                or_token="||",
+                empty_literal="false",
+                wrap_each=False,
+                wrap_whole=False,
+            )
 
         if kind == "Call":
             hook = self.hook_on_render_call(expr_d, self.any_to_dict_or_empty(expr_d.get("func")), [], {})
@@ -992,7 +1064,7 @@ class CSharpEmitter(CodeEmitter):
         if kind == "Subscript":
             owner = self.render_expr(expr_d.get("value"))
             idx = self.render_expr(expr_d.get("slice"))
-            return owner + "[(int)(" + idx + ")]"
+            return owner + "[System.Convert.ToInt32(" + idx + ")]"
 
         if kind == "Lambda":
             args = self.any_to_list(self.any_to_dict_or_empty(expr_d.get("args")).get("args"))

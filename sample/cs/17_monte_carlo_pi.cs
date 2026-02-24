@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 public static class Program
 {
     // 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
@@ -11,16 +7,16 @@ public static class Program
     {
         long mod_main = 2147483647;
         long mod_out = 1000000007;
-        long acc = (seed % mod_out);
+        long acc = seed % mod_out;
         
         for (long y = 0; y < height; y += 1) {
             long row_sum = 0;
             for (long x = 0; x < width; x += 1) {
-                long v = (((((x * 37) + (y * 73)) + seed)) % mod_main);
-                v = ((((v * 48271) + 1)) % mod_main);
-                row_sum += (v % 256);
+                long v = (x * 37 + y * 73 + seed) % mod_main;
+                v = (v * 48271 + 1) % mod_main;
+                row_sum += v % 256;
             }
-            acc = (((acc + (row_sum * ((y + 1))))) % mod_out);
+            acc = (acc + row_sum * (y + 1)) % mod_out;
         }
         return acc;
     }
@@ -32,11 +28,11 @@ public static class Program
         
         double start = perf_counter();
         long checksum = run_integer_grid_checksum(width, height, 123456789);
-        double elapsed = (perf_counter() - start);
+        double elapsed = perf_counter() - start;
         
-        Console.WriteLine(string.Join(" ", new object[] { "pixels:", (width * height) }));
-        Console.WriteLine(string.Join(" ", new object[] { "checksum:", checksum }));
-        Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "pixels:", width * height }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "checksum:", checksum }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
     }
     
     public static void Main(string[] args)

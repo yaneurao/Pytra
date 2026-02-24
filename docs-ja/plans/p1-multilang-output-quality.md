@@ -84,12 +84,28 @@
 - 生成物反映:
   - `python3 tools/regenerate_samples.py --langs js,ts --force` で `sample/js` / `sample/ts` を再生成。
 - 指標変化（`sample/cpp` 比較の生カウント）:
-  - `js paren`: `2029 -> 923`
-  - `ts paren`: `2029 -> 923`
-  - `js imports`: `75 -> 67`
-  - `ts imports`: `75 -> 67`
-  - `js unused_import_est`: `13 -> 1`
-  - `ts unused_import_est`: `13 -> 1`
+  - `js paren`: `2029 -> 148`
+  - `ts paren`: `2029 -> 148`
+  - `js imports`: `75 -> 49`
+  - `ts imports`: `75 -> 49`
+  - `js unused_import_est`: `13 -> 0`
+  - `ts unused_import_est`: `13 -> 0`
+
+`P1-MQ-02-S3-S1` 実装結果（C# cast/import/paren 縮退）:
+
+- 対象: `src/hooks/cs/emitter/cs_emitter.py`
+- 変更点:
+  1. `import_bindings` と AST 走査結果から未使用識別子を除外し、`using` の過剰出力を抑制した。
+  2. `List` / `Dictionary` / `HashSet` / `IEnumerable` などを完全修飾名へ寄せ、既定 `using` 依存を削減した。
+  3. `BinOp` / `BoolOp` / `Compare` / `UnaryOp` の式描画で最小括弧化を行い、`((`/`))` を削減した。
+  4. `FloorDiv` と `Subscript` の `(long|double|int)` 直キャストを `System.Convert` 経由へ置換した。
+- 生成物反映:
+  - `python3 tools/regenerate_samples.py --langs cs --force` で `sample/cs` を再生成。
+- 指標変化（`sample/cpp` 比較の生カウント）:
+  - `cs paren`: `1103 -> 215`
+  - `cs cast`: `204 -> 0`
+  - `cs imports`: `55 -> 7`
+  - `cs unused_import_est`: `54 -> 0`
 
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
@@ -97,3 +113,4 @@
 - 2026-02-24: ID: P1-MQ-01 として `tools/measure_multilang_quality.py` を追加し、`docs-ja/plans/p1-multilang-output-quality-baseline.md` に `sample/cpp` 比の品質差分（`mut`/`paren`/`cast`/`clone`/`unused_import_est`）を定量化した。
 - 2026-02-24: ID: P1-MQ-02-S1 として Rust emitter の `mut` 付与を事前解析ベースへ切り替え、`sample/rs` 再生成と品質再計測で `mut`/`paren`/`cast`/`clone` の減少を確認した。
 - 2026-02-24: ID: P1-MQ-02-S2 として JS emitter の括弧最小化・import/runtime symbol 縮退を実装し、`sample/js` / `sample/ts` の `paren` と `unused_import_est` の大幅減少を確認した。
+- 2026-02-24: ID: P1-MQ-02-S3-S1 として C# emitter の cast/import/括弧縮退を実施し、`sample/cs` の `paren`/`cast`/`imports`/`unused_import_est` を大幅削減した。

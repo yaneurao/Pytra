@@ -1,99 +1,72 @@
-using System.Collections.Generic;
-using System.IO;
-using System;
+using math;
 
 public static class Program
 {
+    // 11: Sample that outputs Lissajous-motion particles as a GIF.
+    
     public static List<byte> color_palette()
     {
-        var p = new List<byte>();
-        var __pytra_range_start_1 = 0;
-        var __pytra_range_stop_2 = 256L;
-        var __pytra_range_step_3 = 1;
-        if (__pytra_range_step_3 == 0) throw new Exception("range() arg 3 must not be zero");
-        for (var i = __pytra_range_start_1; (__pytra_range_step_3 > 0) ? (i < __pytra_range_stop_2) : (i > __pytra_range_stop_2); i += __pytra_range_step_3)
-        {
-            var r = i;
-            var g = ((i * 3L) % 256L);
-            var b = (255L - i);
-            Pytra.CsModule.py_runtime.py_append(p, r);
-            Pytra.CsModule.py_runtime.py_append(p, g);
-            Pytra.CsModule.py_runtime.py_append(p, b);
+        List<byte> p = bytearray();
+        for (long i = 0; i < 256; i += 1) {
+            long r = i;
+            long g = i * 3 % 256;
+            long b = 255 - i;
+            p.Add(r);
+            p.Add(g);
+            p.Add(b);
         }
-        return Pytra.CsModule.py_runtime.py_bytes(p);
+        return bytes(p);
     }
-
+    
     public static void run_11_lissajous_particles()
     {
-        long w = 320L;
-        long h = 240L;
-        long frames_n = 360L;
-        long particles = 48L;
+        long w = 320;
+        long h = 240;
+        long frames_n = 360;
+        long particles = 48;
         string out_path = "sample/out/11_lissajous_particles.gif";
-        var start = Pytra.CsModule.time.perf_counter();
-        List<List<byte>> frames = new List<List<byte>> {  };
-        var __pytra_range_start_4 = 0;
-        var __pytra_range_stop_5 = frames_n;
-        var __pytra_range_step_6 = 1;
-        if (__pytra_range_step_6 == 0) throw new Exception("range() arg 3 must not be zero");
-        for (var t = __pytra_range_start_4; (__pytra_range_step_6 > 0) ? (t < __pytra_range_stop_5) : (t > __pytra_range_stop_5); t += __pytra_range_step_6)
-        {
-            var frame = Pytra.CsModule.py_runtime.py_bytearray((w * h));
-            var __pytra_range_start_7 = 0;
-            var __pytra_range_stop_8 = particles;
-            var __pytra_range_step_9 = 1;
-            if (__pytra_range_step_9 == 0) throw new Exception("range() arg 3 must not be zero");
-            for (var p = __pytra_range_start_7; (__pytra_range_step_9 > 0) ? (p < __pytra_range_stop_8) : (p > __pytra_range_stop_8); p += __pytra_range_step_9)
-            {
-                var phase = (p * 0.261799);
-                var x = (long)(((w * 0.5) + ((w * 0.38) * Math.Sin(((0.11 * t) + (phase * 2.0))))));
-                var y = (long)(((h * 0.5) + ((h * 0.38) * Math.Sin(((0.17 * t) + (phase * 3.0))))));
-                var color = (30L + ((p * 9L) % 220L));
-                var __pytra_range_start_10 = (-2L);
-                var __pytra_range_stop_11 = 3L;
-                var __pytra_range_step_12 = 1;
-                if (__pytra_range_step_12 == 0) throw new Exception("range() arg 3 must not be zero");
-                for (var dy = __pytra_range_start_10; (__pytra_range_step_12 > 0) ? (dy < __pytra_range_stop_11) : (dy > __pytra_range_stop_11); dy += __pytra_range_step_12)
-                {
-                    var __pytra_range_start_13 = (-2L);
-                    var __pytra_range_stop_14 = 3L;
-                    var __pytra_range_step_15 = 1;
-                    if (__pytra_range_step_15 == 0) throw new Exception("range() arg 3 must not be zero");
-                    for (var dx = __pytra_range_start_13; (__pytra_range_step_15 > 0) ? (dx < __pytra_range_stop_14) : (dx > __pytra_range_stop_14); dx += __pytra_range_step_15)
-                    {
-                        var xx = (x + dx);
-                        var yy = (y + dy);
-                        if (Pytra.CsModule.py_runtime.py_bool(((xx >= 0L) && (xx < w) && (yy >= 0L) && (yy < h))))
-                        {
-                            var d2 = ((dx * dx) + (dy * dy));
-                            if (Pytra.CsModule.py_runtime.py_bool((d2 <= 4L)))
-                            {
-                                var idx = ((yy * w) + xx);
-                                var v = (color - (d2 * 20L));
-                                if (Pytra.CsModule.py_runtime.py_bool((v < 0L)))
-                                {
-                                    v = 0L;
-                                }
-                                if (Pytra.CsModule.py_runtime.py_bool((v > Pytra.CsModule.py_runtime.py_get(frame, idx))))
-                                {
-                                    Pytra.CsModule.py_runtime.py_set(frame, idx, v);
+        
+        unknown start = perf_counter();
+        System.Collections.Generic.List<List<byte>> frames = new System.Collections.Generic.List<unknown>();
+        
+        for (long t = 0; t < frames_n; t += 1) {
+            List<byte> frame = bytearray(w * h);
+            
+            for (long p = 0; p < particles; p += 1) {
+                double phase = p * 0.261799;
+                long x = System.Convert.ToInt64(w * 0.5 + w * 0.38 * math.sin(0.11 * t + phase * 2.0));
+                long y = System.Convert.ToInt64(h * 0.5 + h * 0.38 * math.sin(0.17 * t + phase * 3.0));
+                long color = 30 + p * 9 % 220;
+                
+                for (long dy = -2; dy < 3; dy += 1) {
+                    for (long dx = -2; dx < 3; dx += 1) {
+                        long xx = x + dx;
+                        long yy = y + dy;
+                        if (xx >= 0 && xx < w && yy >= 0 && yy < h) {
+                            long d2 = dx * dx + dy * dy;
+                            if (d2 <= 4) {
+                                long idx = yy * w + xx;
+                                long v = color - d2 * 20;
+                                v = max(0, v);
+                                if (v > frame[System.Convert.ToInt32(idx)]) {
+                                    frame[System.Convert.ToInt32(idx)] = v;
                                 }
                             }
                         }
                     }
                 }
             }
-            Pytra.CsModule.py_runtime.py_append(frames, Pytra.CsModule.py_runtime.py_bytes(frame));
+            frames.Add(bytes(frame));
         }
-        Pytra.CsModule.gif_helper.save_gif(out_path, w, h, frames, color_palette(), delay_cs: 3L, loop: 0L);
-        var elapsed = (Pytra.CsModule.time.perf_counter() - start);
-        Pytra.CsModule.py_runtime.print("output:", out_path);
-        Pytra.CsModule.py_runtime.print("frames:", frames_n);
-        Pytra.CsModule.py_runtime.print("elapsed_sec:", elapsed);
+        save_gif(out_path, w, h, frames, color_palette());
+        unknown elapsed = perf_counter() - start;
+        System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "frames:", frames_n }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
     }
-
+    
     public static void Main(string[] args)
     {
-        run_11_lissajous_particles();
+            run_11_lissajous_particles();
     }
 }

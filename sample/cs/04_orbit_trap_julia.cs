@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 public static class Program
 {
     // 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
@@ -11,9 +7,9 @@ public static class Program
         List<byte> pixels = bytearray();
         
         for (long y = 0; y < height; y += 1) {
-            double zy0 = ((-1.3) + (2.6 * ((y / ((height - 1))))));
+            double zy0 = -1.3 + 2.6 * (y / (height - 1));
             for (long x = 0; x < width; x += 1) {
-                double zx = ((-1.9) + (3.8 * ((x / ((width - 1))))));
+                double zx = -1.9 + 3.8 * (x / (width - 1));
                 double zy = zy0;
                 
                 double trap = 1.0e9;
@@ -21,15 +17,15 @@ public static class Program
                 while (i < max_iter) {
                     double ax = zx;
                     if (ax < 0.0) {
-                        ax = (-ax);
+                        ax = -ax;
                     }
                     double ay = zy;
                     if (ay < 0.0) {
-                        ay = (-ay);
+                        ay = -ay;
                     }
-                    double dxy = (zx - zy);
+                    double dxy = zx - zy;
                     if (dxy < 0.0) {
-                        dxy = (-dxy);
+                        dxy = -dxy;
                     }
                     if (ax < trap) {
                         trap = ax;
@@ -40,13 +36,13 @@ public static class Program
                     if (dxy < trap) {
                         trap = dxy;
                     }
-                    double zx2 = (zx * zx);
-                    double zy2 = (zy * zy);
-                    if ((zx2 + zy2) > 4.0) {
+                    double zx2 = zx * zx;
+                    double zy2 = zy * zy;
+                    if (zx2 + zy2 > 4.0) {
                         py_break;
                     }
-                    zy = (((2.0 * zx) * zy) + cy);
-                    zx = ((zx2 - zy2) + cx);
+                    zy = 2.0 * zx * zy + cy;
+                    zx = zx2 - zy2 + cx;
                     i += 1;
                 }
                 long r = 0;
@@ -57,18 +53,18 @@ public static class Program
                     g = 0;
                     b = 0;
                 } else {
-                    double trap_scaled = (trap * 3.2);
+                    double trap_scaled = trap * 3.2;
                     if (trap_scaled > 1.0) {
                         trap_scaled = 1.0;
                     }
                     if (trap_scaled < 0.0) {
                         trap_scaled = 0.0;
                     }
-                    double t = (i / max_iter);
-                    long tone = Convert.ToInt64((255.0 * ((1.0 - trap_scaled))));
-                    r = Convert.ToInt64((tone * ((0.35 + (0.65 * t)))));
-                    g = Convert.ToInt64((tone * ((0.15 + (0.85 * ((1.0 - t)))))));
-                    b = Convert.ToInt64((255.0 * ((0.25 + (0.75 * t)))));
+                    double t = i / max_iter;
+                    long tone = System.Convert.ToInt64(255.0 * (1.0 - trap_scaled));
+                    r = System.Convert.ToInt64(tone * (0.35 + 0.65 * t));
+                    g = System.Convert.ToInt64(tone * (0.15 + 0.85 * (1.0 - t)));
+                    b = System.Convert.ToInt64(255.0 * (0.25 + 0.75 * t));
                     if (r > 255) {
                         r = 255;
                     }
@@ -95,14 +91,14 @@ public static class Program
         string out_path = "sample/out/04_orbit_trap_julia.png";
         
         double start = perf_counter();
-        List<byte> pixels = render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889);
+        List<byte> pixels = render_orbit_trap_julia(width, height, max_iter, -0.7269, 0.1889);
         png.write_rgb_png(out_path, width, height, pixels);
-        double elapsed = (perf_counter() - start);
+        double elapsed = perf_counter() - start;
         
-        Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
-        Console.WriteLine(string.Join(" ", new object[] { "size:", width, "x", height }));
-        Console.WriteLine(string.Join(" ", new object[] { "max_iter:", max_iter }));
-        Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "size:", width, "x", height }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "max_iter:", max_iter }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
     }
     
     public static void Main(string[] args)

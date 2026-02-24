@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 public class Token
 {
     public string kind;
@@ -40,25 +36,25 @@ public class StmtNode
 
 public class Parser
 {
-    public List<Token> tokens;
+    public System.Collections.Generic.List<Token> tokens;
     public long pos;
-    public List<ExprNode> expr_nodes;
+    public System.Collections.Generic.List<ExprNode> expr_nodes;
     
-    public Parser(List<Token> tokens)
+    public Parser(System.Collections.Generic.List<Token> tokens)
     {
         this.tokens = tokens;
         this.pos = 0;
         this.expr_nodes = this.new_expr_nodes();
     }
     
-    public List<ExprNode> new_expr_nodes()
+    public System.Collections.Generic.List<ExprNode> new_expr_nodes()
     {
-        return new List<unknown>();
+        return new System.Collections.Generic.List<unknown>();
     }
     
     public string peek_kind()
     {
-        return this.tokens[(int)(this.pos)].kind;
+        return this.tokens[System.Convert.ToInt32(this.pos)].kind;
     }
     
     public bool match(string kind)
@@ -73,10 +69,10 @@ public class Parser
     public Token expect(string kind)
     {
         if (this.peek_kind() != kind) {
-            Token t = this.tokens[(int)(this.pos)];
-            throw RuntimeError(((((("parse error at pos=" + Convert.ToString(t.pos)) + ", expected=") + kind) + ", got=") + t.kind));
+            Token t = this.tokens[System.Convert.ToInt32(this.pos)];
+            throw RuntimeError("parse error at pos=" + System.Convert.ToString(t.pos) + ", expected=" + kind + ", got=" + t.kind);
         }
-        Token token = this.tokens[(int)(this.pos)];
+        Token token = this.tokens[System.Convert.ToInt32(this.pos)];
         this.pos += 1;
         return token;
     }
@@ -91,12 +87,12 @@ public class Parser
     public long add_expr(ExprNode node)
     {
         this.expr_nodes.Add(node);
-        return ((this.expr_nodes).Count - 1);
+        return (this.expr_nodes).Count - 1;
     }
     
-    public List<StmtNode> parse_program()
+    public System.Collections.Generic.List<StmtNode> parse_program()
     {
-        List<StmtNode> stmts = new List<unknown>();
+        System.Collections.Generic.List<StmtNode> stmts = new System.Collections.Generic.List<unknown>();
         this.skip_newlines();
         while (this.peek_kind() != "EOF") {
             StmtNode stmt = this.parse_stmt();
@@ -171,7 +167,7 @@ public class Parser
     {
         if (this.match("MINUS")) {
             long child = this.parse_unary();
-            return this.add_expr(new ExprNode("neg", 0, "", "", child, (-1)));
+            return this.add_expr(new ExprNode("neg", 0, "", "", child, -1));
         }
         return this.parse_primary();
     }
@@ -179,35 +175,35 @@ public class Parser
     public long parse_primary()
     {
         if (this.match("NUMBER")) {
-            Token token_num = this.tokens[(int)((this.pos - 1))];
-            return this.add_expr(new ExprNode("lit", Convert.ToInt64(token_num.text), "", "", (-1), (-1)));
+            Token token_num = this.tokens[System.Convert.ToInt32(this.pos - 1)];
+            return this.add_expr(new ExprNode("lit", System.Convert.ToInt64(token_num.text), "", "", -1, -1));
         }
         if (this.match("IDENT")) {
-            Token token_ident = this.tokens[(int)((this.pos - 1))];
-            return this.add_expr(new ExprNode("var", 0, token_ident.text, "", (-1), (-1)));
+            Token token_ident = this.tokens[System.Convert.ToInt32(this.pos - 1)];
+            return this.add_expr(new ExprNode("var", 0, token_ident.text, "", -1, -1));
         }
         if (this.match("LPAREN")) {
             long expr_index = this.parse_expr();
             this.expect("RPAREN");
             return expr_index;
         }
-        Token t = this.tokens[(int)(this.pos)];
-        throw RuntimeError(((("primary parse error at pos=" + Convert.ToString(t.pos)) + " got=") + t.kind));
+        Token t = this.tokens[System.Convert.ToInt32(this.pos)];
+        throw RuntimeError("primary parse error at pos=" + System.Convert.ToString(t.pos) + " got=" + t.kind);
     }
 }
 
 public static class Program
 {
-    public static List<Token> tokenize(List<string> lines)
+    public static System.Collections.Generic.List<Token> tokenize(System.Collections.Generic.List<string> lines)
     {
-        List<Token> tokens = new List<unknown>();
+        System.Collections.Generic.List<Token> tokens = new System.Collections.Generic.List<unknown>();
         foreach (var __it_1 in Program.PytraEnumerate(lines)) {
         var line_index = __it_1.Item1;
         var source = __it_1.Item2;
             long i = 0;
             long n = (source).Count();
             while (i < n) {
-                string ch = source[(int)(i)];
+                string ch = source[System.Convert.ToInt32(i)];
                 
                 if (ch == " ") {
                     i += 1;
@@ -250,19 +246,19 @@ public static class Program
                 }
                 if (ch.isdigit()) {
                     long start = i;
-                    while ((i < n) && source[(int)(i)].isdigit()) {
+                    while (i < n && source[System.Convert.ToInt32(i)].isdigit()) {
                         i += 1;
                     }
-                    string text = source[(int)(null)];
+                    string text = source[System.Convert.ToInt32(null)];
                     tokens.Add(new Token("NUMBER", text, start));
                     py_continue;
                 }
-                if (ch.isalpha() || (ch == "_")) {
+                if (ch.isalpha() || ch == "_") {
                     long start = i;
-                    while ((i < n) && ((source[(int)(i)].isalpha() || (source[(int)(i)] == "_")) || source[(int)(i)].isdigit())) {
+                    while (i < n && source[System.Convert.ToInt32(i)].isalpha() || source[System.Convert.ToInt32(i)] == "_" || source[System.Convert.ToInt32(i)].isdigit()) {
                         i += 1;
                     }
-                    unknown text = source[(int)(null)];
+                    unknown text = source[System.Convert.ToInt32(null)];
                     if (text == "let") {
                         tokens.Add(new Token("LET", text, start));
                     } else {
@@ -274,7 +270,7 @@ public static class Program
                     }
                     py_continue;
                 }
-                throw RuntimeError(((((("tokenize error at line=" + Convert.ToString(line_index)) + " pos=") + Convert.ToString(i)) + " ch=") + ch));
+                throw RuntimeError("tokenize error at line=" + System.Convert.ToString(line_index) + " pos=" + System.Convert.ToString(i) + " ch=" + ch);
             }
             tokens.Add(new Token("NEWLINE", "", n));
         }
@@ -282,97 +278,97 @@ public static class Program
         return tokens;
     }
     
-    public static long eval_expr(long expr_index, List<ExprNode> expr_nodes, Dictionary<string, long> env)
+    public static long eval_expr(long expr_index, System.Collections.Generic.List<ExprNode> expr_nodes, System.Collections.Generic.Dictionary<string, long> env)
     {
-        ExprNode node = expr_nodes[(int)(expr_index)];
+        ExprNode node = expr_nodes[System.Convert.ToInt32(expr_index)];
         
         if (node.kind == "lit") {
             return node.value;
         }
         if (node.kind == "var") {
             if (!(env.Contains(node.name))) {
-                throw RuntimeError(("undefined variable: " + node.name));
+                throw RuntimeError("undefined variable: " + node.name);
             }
-            return env[(int)(node.name)];
+            return env[System.Convert.ToInt32(node.name)];
         }
         if (node.kind == "neg") {
-            return (-eval_expr(node.left, expr_nodes, env));
+            return -eval_expr(node.left, expr_nodes, env);
         }
         if (node.kind == "bin") {
             long lhs = eval_expr(node.left, expr_nodes, env);
             long rhs = eval_expr(node.right, expr_nodes, env);
             if (node.op == "+") {
-                return (lhs + rhs);
+                return lhs + rhs;
             }
             if (node.op == "-") {
-                return (lhs - rhs);
+                return lhs - rhs;
             }
             if (node.op == "*") {
-                return (lhs * rhs);
+                return lhs * rhs;
             }
             if (node.op == "/") {
                 if (rhs == 0) {
                     throw RuntimeError("division by zero");
                 }
-                return ((long)Math.Floor((double)(lhs) / (double)(rhs)));
+                return System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(lhs) / System.Convert.ToDouble(rhs)));
             }
-            throw RuntimeError(("unknown operator: " + node.op));
+            throw RuntimeError("unknown operator: " + node.op);
         }
-        throw RuntimeError(("unknown node kind: " + node.kind));
+        throw RuntimeError("unknown node kind: " + node.kind);
     }
     
-    public static long execute(List<StmtNode> stmts, List<ExprNode> expr_nodes, bool trace)
+    public static long execute(System.Collections.Generic.List<StmtNode> stmts, System.Collections.Generic.List<ExprNode> expr_nodes, bool trace)
     {
-        Dictionary<string, long> env = new Dictionary<unknown, unknown>();
+        System.Collections.Generic.Dictionary<string, long> env = new System.Collections.Generic.Dictionary<unknown, unknown>();
         long checksum = 0;
         long printed = 0;
         
         foreach (var stmt in stmts) {
             if (stmt.kind == "let") {
-                env[(int)(stmt.name)] = eval_expr(stmt.expr_index, expr_nodes, env);
+                env[System.Convert.ToInt32(stmt.name)] = eval_expr(stmt.expr_index, expr_nodes, env);
                 py_continue;
             }
             if (stmt.kind == "assign") {
                 if (!(env.Contains(stmt.name))) {
-                    throw RuntimeError(("assign to undefined variable: " + stmt.name));
+                    throw RuntimeError("assign to undefined variable: " + stmt.name);
                 }
-                env[(int)(stmt.name)] = eval_expr(stmt.expr_index, expr_nodes, env);
+                env[System.Convert.ToInt32(stmt.name)] = eval_expr(stmt.expr_index, expr_nodes, env);
                 py_continue;
             }
             long value = eval_expr(stmt.expr_index, expr_nodes, env);
             if (trace) {
-                Console.WriteLine(value);
+                System.Console.WriteLine(value);
             }
-            long norm = (value % 1000000007);
+            long norm = value % 1000000007;
             if (norm < 0) {
                 norm += 1000000007;
             }
-            checksum = ((((checksum * 131) + norm)) % 1000000007);
+            checksum = (checksum * 131 + norm) % 1000000007;
             printed += 1;
         }
         if (trace) {
-            Console.WriteLine(string.Join(" ", new object[] { "printed:", printed }));
+            System.Console.WriteLine(string.Join(" ", new object[] { "printed:", printed }));
         }
         return checksum;
     }
     
-    public static List<string> build_benchmark_source(long var_count, long loops)
+    public static System.Collections.Generic.List<string> build_benchmark_source(long var_count, long loops)
     {
-        List<string> lines = new List<unknown>();
+        System.Collections.Generic.List<string> lines = new System.Collections.Generic.List<unknown>();
         
         // Declare initial variables.
         for (long i = 0; i < var_count; i += 1) {
-            lines.Add(((("let v" + Convert.ToString(i)) + " = ") + Convert.ToString((i + 1))));
+            lines.Add("let v" + System.Convert.ToString(i) + " = " + System.Convert.ToString(i + 1));
         }
         // Force evaluation of many arithmetic expressions.
         for (long i = 0; i < loops; i += 1) {
-            long x = (i % var_count);
-            long y = (((i + 3)) % var_count);
-            long c1 = ((i % 7) + 1);
-            long c2 = ((i % 11) + 2);
-            lines.Add(((((((((("v" + Convert.ToString(x)) + " = (v") + Convert.ToString(x)) + " * ") + Convert.ToString(c1)) + " + v") + Convert.ToString(y)) + " + 10000) / ") + Convert.ToString(c2)));
-            if ((i % 97) == 0) {
-                lines.Add(("print v" + Convert.ToString(x)));
+            long x = i % var_count;
+            long y = (i + 3) % var_count;
+            long c1 = i % 7 + 1;
+            long c2 = i % 11 + 2;
+            lines.Add("v" + System.Convert.ToString(x) + " = (v" + System.Convert.ToString(x) + " * " + System.Convert.ToString(c1) + " + v" + System.Convert.ToString(y) + " + 10000) / " + System.Convert.ToString(c2));
+            if (i % 97 == 0) {
+                lines.Add("print v" + System.Convert.ToString(x));
             }
         }
         // Print final values together.
@@ -382,35 +378,35 @@ public static class Program
     
     public static void run_demo()
     {
-        List<string> demo_lines = new List<unknown>();
+        System.Collections.Generic.List<string> demo_lines = new System.Collections.Generic.List<unknown>();
         demo_lines.Add("let a = 10");
         demo_lines.Add("let b = 3");
         demo_lines.Add("a = (a + b) * 2");
         demo_lines.Add("print a");
         demo_lines.Add("print a / b");
         
-        List<Token> tokens = tokenize(demo_lines);
+        System.Collections.Generic.List<Token> tokens = tokenize(demo_lines);
         Parser parser = new Parser(tokens);
-        List<StmtNode> stmts = parser.parse_program();
+        System.Collections.Generic.List<StmtNode> stmts = parser.parse_program();
         long checksum = execute(stmts, parser.expr_nodes, true);
-        Console.WriteLine(string.Join(" ", new object[] { "demo_checksum:", checksum }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "demo_checksum:", checksum }));
     }
     
     public static void run_benchmark()
     {
-        List<string> source_lines = build_benchmark_source(32, 120000);
+        System.Collections.Generic.List<string> source_lines = build_benchmark_source(32, 120000);
         double start = perf_counter();
-        List<Token> tokens = tokenize(source_lines);
+        System.Collections.Generic.List<Token> tokens = tokenize(source_lines);
         Parser parser = new Parser(tokens);
-        List<StmtNode> stmts = parser.parse_program();
+        System.Collections.Generic.List<StmtNode> stmts = parser.parse_program();
         long checksum = execute(stmts, parser.expr_nodes, false);
-        double elapsed = (perf_counter() - start);
+        double elapsed = perf_counter() - start;
         
-        Console.WriteLine(string.Join(" ", new object[] { "token_count:", (tokens).Count }));
-        Console.WriteLine(string.Join(" ", new object[] { "expr_count:", (parser.expr_nodes).Count() }));
-        Console.WriteLine(string.Join(" ", new object[] { "stmt_count:", (stmts).Count }));
-        Console.WriteLine(string.Join(" ", new object[] { "checksum:", checksum }));
-        Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "token_count:", (tokens).Count }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "expr_count:", (parser.expr_nodes).Count() }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "stmt_count:", (stmts).Count }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "checksum:", checksum }));
+        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
     }
     
     public static void __pytra_main()
@@ -419,7 +415,7 @@ public static class Program
         run_benchmark();
     }
     
-    private static IEnumerable<(long, T)> PytraEnumerate<T>(IEnumerable<T> source, long start = 0)
+    private static System.Collections.Generic.IEnumerable<(long, T)> PytraEnumerate<T>(System.Collections.Generic.IEnumerable<T> source, long start = 0)
     {
         long i = start;
         foreach (T item in source)
