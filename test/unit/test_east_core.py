@@ -102,11 +102,13 @@ def main() -> None:
     ba: bytearray = bytearray(blob)
     xs: list[int] = []
     xs.append(1)
+    it = iter(xs)
+    first = next(it)
     d: dict[str, int] = {"a": 1}
     v: int = d.get("a", 0)
     p: Path = Path("tmp")
     ok: bool = p.exists()
-    print(len(xs), t, u, p0, p1, len(ba), v, ok)
+    print(len(xs), t, u, p0, p1, len(ba), first, v, ok)
 
 if __name__ == "__main__":
     main()
@@ -120,6 +122,8 @@ if __name__ == "__main__":
         self.assertIn("py_rfind", runtime_calls)
         self.assertIn("bytes_ctor", runtime_calls)
         self.assertIn("bytearray_ctor", runtime_calls)
+        self.assertIn("py_iter_or_raise", runtime_calls)
+        self.assertIn("py_next_or_stop", runtime_calls)
         self.assertIn("list.append", runtime_calls)
         self.assertIn("dict.get", runtime_calls)
         self.assertIn("std::filesystem::exists", runtime_calls)

@@ -2385,6 +2385,14 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "open"
                     payload["runtime_call"] = "open"
+                elif fn_name == "iter":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "iter"
+                    payload["runtime_call"] = "py_iter_or_raise"
+                elif fn_name == "next":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = "next"
+                    payload["runtime_call"] = "py_next_or_stop"
                 elif fn_name in {"bytes", "bytearray"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
