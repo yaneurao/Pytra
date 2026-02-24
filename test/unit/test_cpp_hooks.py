@@ -273,6 +273,25 @@ class CppHooksTest(unittest.TestCase):
         stmt = {"body": [{"kind": "Return"}], "orelse": []}
         self.assertTrue(on_stmt_omit_braces(em, "If", stmt, False))
 
+    def test_on_stmt_omit_braces_uses_emitter_can_omit_impl_when_available(self) -> None:
+        class _EmitterWithCanOmit:
+            def _opt_ge(self, level: int) -> bool:
+                _ = level
+                return True
+
+            def _can_omit_braces_for_single_stmt(self, stmts: list[dict[str, Any]]) -> bool:
+                _ = stmts
+                return True
+
+            def _dict_stmt_list(self, value: Any) -> list[dict[str, Any]]:
+                if isinstance(value, list):
+                    return [v for v in value if isinstance(v, dict)]
+                return []
+
+        em = _EmitterWithCanOmit()
+        stmt = {"body": [{"kind": "Return"}], "orelse": []}
+        self.assertTrue(on_stmt_omit_braces(em, "If", stmt, False))
+
     def test_on_for_range_mode_falls_back_without_core_default(self) -> None:
         class _FallbackEmitter:
             def any_to_str(self, value: Any) -> str:

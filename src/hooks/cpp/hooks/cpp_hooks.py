@@ -81,6 +81,9 @@ def on_emit_stmt_kind(
 
 def _can_omit_braces_for_single_stmt(emitter: Any, stmts: list[dict[str, Any]]) -> bool:
     """単文ブロックで波括弧を省略可能か判定する。"""
+    impl = getattr(emitter, "_can_omit_braces_for_single_stmt", None)
+    if callable(impl):
+        return bool(impl(stmts))
     if not emitter._opt_ge(1):
         return False
     if len(stmts) != 1:
