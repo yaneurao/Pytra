@@ -2,6 +2,7 @@
 
 この文書は、`EAST1 -> EAST2 -> EAST3` 構成へ安全に移行するための実装計画を定義する。  
 前提仕様は `docs-ja/spec/spec-east123.md` とする。
+`EAST1` build 入口の責務境界は `docs-ja/spec/spec-east1-build.md` を参照する。
 
 ## 1. 目的
 

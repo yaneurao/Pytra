@@ -76,6 +76,12 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 4. `P0-EASTMIG-04`: hooks を `EAST3` 前提で棚卸しし、意味論 hook の流入を禁止する。
 5. `P0-EASTMIG-05`: `--east-stage 3` 主経路の回帰導線を標準化し、`EAST2` 互換を移行モードへ格下げする。
 6. `P0-EASTMIG-06`: 全変換器で `EAST3` を主経路へ統一し、`EAST2` 既定経路を撤去する。
+   - `P0-EASTMIG-06-S1`: 全 `py2*.py` の `EAST2` 既定経路を棚卸しする。
+   - `P0-EASTMIG-06-S2`: `py2cpp.py` の既定 `--east-stage` を `3` へ切替える。
+   - `P0-EASTMIG-06-S3`: 非 C++ 変換器へ `EAST3` 主経路を導入する。
+   - `P0-EASTMIG-06-S4`: `EAST3` 主経路を回帰導線の既定へ固定する。
+   - `P0-EASTMIG-06-S5`: `spec-east123*` / `spec-dev` の記述を同期する。
+   - `P0-EASTMIG-06-S6`: `EAST1` build 責務境界を `docs-ja/spec/spec-east1-build.md` へ正式化する。
 
 ## P0-EASTMIG-06 再オープン理由
 
@@ -119,3 +125,4 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - 2026-02-24: `P0-EASTMIG-05-S2` として `check_py2{cpp,js,ts}_transpile` + `check_selfhost_cpp_diff --mode allow-not-implemented` を `EAST3` 主経路の標準回帰導線として固定し、実測結果（各 `checked=131 fail=0`、`mismatches=0`）を確認した。
 - 2026-02-24: P0-EASTMIG-05-S3 として `--east-stage 2` を移行互換モードに位置づける縮退手順（互換維持 -> 警告 -> 撤去判定）を plan/spec に固定し、P0-EASTMIG-05 をクローズ。
 - 2026-02-24: `P0-EASTMIG-06` を再オープンした。`py2cpp.py` の既定 stage と非 C++ 変換器の `EAST2` 既定経路が残存しており、全変換器での `EAST3` 主経路統一が未完了のため。
+- 2026-02-24: `P0-EASTMIG-06-S6` として `docs-ja/spec/spec-east1-build.md` を追加し、`east1_build.py` 分離仕様（`load_east_document_compat` エラー契約互換、selfhost diff 実行、`EAST1` build での `EAST2` 非変換）を受け入れ基準へ固定した。
