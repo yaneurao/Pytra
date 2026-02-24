@@ -248,19 +248,53 @@ def _insert_code_emitter(text: str, base_class_text: str, support_blocks: str) -
 
 
 def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
-    """CppEmitter 初期化時に dynamic hooks を無効化する。"""
+    """selfhost 向けに dynamic hooks 依存コードを安全化する。"""
+    call_hook_marker = "    def _call_hook(\n"
+    call_hook_start = text.find(call_hook_marker)
+    if call_hook_start < 0:
+        raise RuntimeError("failed to find _call_hook in merged selfhost source")
+    call_hook_end_marker = "\n    def _call_hook1("
+    call_hook_end = text.find(call_hook_end_marker, call_hook_start + len(call_hook_marker))
+    if call_hook_end < 0:
+        raise RuntimeError("failed to find _call_hook1 marker in merged selfhost source")
+    call_hook_stub = (
+        "    def _call_hook(\n"
+        "        self,\n"
+        "        name: str,\n"
+        "        arg0: Any = None,\n"
+        "        arg1: Any = None,\n"
+        "        arg2: Any = None,\n"
+        "        arg3: Any = None,\n"
+        "        arg4: Any = None,\n"
+        "        arg5: Any = None,\n"
+        "        argc: int = 0,\n"
+        "    ) -> Any:\n"
+        "        \"\"\"selfhost 互換: dynamic hooks は無効化済みなので常に未処理を返す。\"\"\"\n"
+        "        _ = name\n"
+        "        _ = arg0\n"
+        "        _ = arg1\n"
+        "        _ = arg2\n"
+        "        _ = arg3\n"
+        "        _ = arg4\n"
+        "        _ = arg5\n"
+        "        _ = argc\n"
+        "        return None\n"
+        "\n"
+    )
+    out = text[:call_hook_start] + call_hook_stub + text[call_hook_end:]
+
     class_marker = "class CppEmitter(CodeEmitter):"
-    i = text.find(class_marker)
+    i = out.find(class_marker)
     if i < 0:
         raise RuntimeError("failed to find CppEmitter block in merged selfhost source")
     target = "        self.init_base_state(east_doc, profile, hooks)\n"
-    j = text.find(target, i + len(class_marker))
+    j = out.find(target, i + len(class_marker))
     if j < 0:
         raise RuntimeError("failed to find init_base_state call in CppEmitter.__init__")
     inserted = "        self.set_dynamic_hooks_enabled(False)\n"
-    if text.startswith(inserted, j + len(target)):
-        return text
-    return text[: j + len(target)] + inserted + text[j + len(target) :]
+    if out.startswith(inserted, j + len(target)):
+        return out
+    return out[: j + len(target)] + inserted + out[j + len(target) :]
 
 
 def main() -> int:
