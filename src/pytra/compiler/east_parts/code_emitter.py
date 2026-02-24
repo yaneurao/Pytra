@@ -2084,7 +2084,34 @@ class CodeEmitter:
             elif on == "orelse":
                 orelse = self.apply_cast(orelse, to_t)
         test_expr = self.render_expr(expr.get("test"))
-        return f"({test_expr} ? {body} : {orelse})"
+        return self.render_ifexp_common(test_expr, body, orelse)
+
+    def render_ifexp_common(
+        self,
+        test_expr: str,
+        body_expr: str,
+        orelse_expr: str,
+        *,
+        test_node: dict[str, Any] | None = None,
+        fold_bool_literal: bool = False,
+    ) -> str:
+        """IfExp の式組み立てを共通化する。"""
+        if fold_bool_literal:
+            node = test_node if isinstance(test_node, dict) else {}
+            if self._node_kind_from_dict(node) == "Constant" and isinstance(node.get("value"), bool):
+                return body_expr if bool(node.get("value")) else orelse_expr
+            if self._node_kind_from_dict(node) == "Name":
+                ident = self.any_to_str(node.get("id"))
+                if ident == "True":
+                    return body_expr
+                if ident == "False":
+                    return orelse_expr
+            t = test_expr.strip()
+            if t == "true":
+                return body_expr
+            if t == "false":
+                return orelse_expr
+        return f"({test_expr} ? {body_expr} : {orelse_expr})"
 
     def _binop_precedence(self, op_name: str) -> int:
         """二項演算子の優先順位を返す。"""

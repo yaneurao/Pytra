@@ -689,6 +689,24 @@ class CodeEmitterTest(unittest.TestCase):
             em._render_ifexp_expr(ifexp),
             "(cond ? cast<int64>(x) : cast<str>(y))",
         )
+        self.assertEqual(
+            em.render_ifexp_common("true", "a", "b", fold_bool_literal=True),
+            "a",
+        )
+        self.assertEqual(
+            em.render_ifexp_common("false", "a", "b", fold_bool_literal=True),
+            "b",
+        )
+        self.assertEqual(
+            em.render_ifexp_common(
+                "cond",
+                "a",
+                "b",
+                test_node={"kind": "Constant", "value": True},
+                fold_bool_literal=True,
+            ),
+            "a",
+        )
 
     def test_split_helpers(self) -> None:
         em = CodeEmitter({})

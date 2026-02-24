@@ -5536,21 +5536,13 @@ class CppEmitter(CodeEmitter):
             elif on == "orelse":
                 orelse = self.apply_cast(orelse, to_t)
         test_expr = self.render_expr(expr.get("test"))
-        test_node = self.any_to_dict_or_empty(expr.get("test"))
-        if self._node_kind_from_dict(test_node) == "Constant" and isinstance(test_node.get("value"), bool):
-            return body if bool(test_node.get("value")) else orelse
-        if self._node_kind_from_dict(test_node) == "Name":
-            ident = self.any_to_str(test_node.get("id"))
-            if ident == "True":
-                return body
-            if ident == "False":
-                return orelse
-        test_txt = test_expr.strip()
-        if test_txt == "true":
-            return body
-        if test_txt == "false":
-            return orelse
-        return f"({test_expr} ? {body} : {orelse})"
+        return self.render_ifexp_common(
+            test_expr,
+            body,
+            orelse,
+            test_node=self.any_to_dict_or_empty(expr.get("test")),
+            fold_bool_literal=True,
+        )
 
     def _render_operator_family_expr(
         self,
