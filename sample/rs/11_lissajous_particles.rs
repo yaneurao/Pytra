@@ -37,9 +37,9 @@ fn run_11_lissajous_particles() {
             let x = w * 0.5 + w * 0.38 * math.sin(0.11 * t + phase * 2.0) as i64;
             let y = h * 0.5 + h * 0.38 * math.sin(0.17 * t + phase * 3.0) as i64;
             let color = 30 + p * 9 % 220;
-            let mut dy: i64 = (-2);
+            let mut dy: i64 = -2;
             while dy < 3 {
-                let mut dx: i64 = (-2);
+                let mut dx: i64 = -2;
                 while dx < 3 {
                     let xx = x + dx;
                     let yy = y + dy;

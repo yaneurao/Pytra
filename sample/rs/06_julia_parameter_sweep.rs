@@ -29,10 +29,10 @@ fn render_frame(width: i64, height: i64, cr: f64, ci: f64, max_iter: i64, phase:
     let mut y: i64 = 0;
     while y < height {
         let row_base = y * width;
-        let zy0 = (-1.2) + 2.4 * (y / (height - 1));
+        let zy0 = -1.2 + 2.4 * (y / (height - 1));
         let mut x: i64 = 0;
         while x < width {
-            let mut zx = (-1.8) + 3.6 * (x / (width - 1));
+            let mut zx = -1.8 + 3.6 * (x / (width - 1));
             let mut zy = zy0;
             let mut i = 0;
             while i < max_iter {
@@ -69,7 +69,7 @@ fn run_06_julia_parameter_sweep() {
     let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
     // Orbit an ellipse around a known visually good region to reduce flat blown highlights.
-    let center_cr = (-0.745);
+    let center_cr = -0.745;
     let center_ci = 0.186;
     let radius_cr = 0.12;
     let radius_ci = 0.10;

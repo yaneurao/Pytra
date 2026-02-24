@@ -26,7 +26,7 @@ fn scene(x: f64, y: f64, light_x: f64, light_y: f64) -> i64 {
     let y2 = y - 0.15;
     let r1 = math.sqrt(x1 * x1 + y1 * y1);
     let r2 = math.sqrt(x2 * x2 + y2 * y2);
-    let blob = math.exp((-7.0) * r1 * r1) + math.exp((-8.0) * r2 * r2);
+    let blob = math.exp(-7.0 * r1 * r1) + math.exp(-8.0 * r2 * r2);
     
     let lx = x - light_x;
     let ly = y - light_y;

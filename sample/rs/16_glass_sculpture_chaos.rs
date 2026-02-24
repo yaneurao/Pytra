@@ -37,7 +37,7 @@ fn reflect(ix: f64, iy: f64, iz: f64, nx: f64, ny: f64, nz: f64) -> (f64, f64, f
 
 fn refract(ix: f64, iy: f64, iz: f64, nx: f64, ny: f64, nz: f64, eta: f64) -> (f64, f64, f64) {
     // Simple IOR-based refraction. Return reflection direction on total internal reflection.
-    let cosi = (-dot(ix, iy, iz, nx, ny, nz));
+    let cosi = -dot(ix, iy, iz, nx, ny, nz);
     let sint2 = eta * eta * (1.0 - cosi * cosi);
     if sint2 > 1.0 {
         return reflect(ix, iy, iz, nx, ny, nz);
@@ -73,18 +73,18 @@ fn sphere_intersect(ox: f64, oy: f64, oz: f64, dx: f64, dy: f64, dz: f64, cx: f6
     let c = lx * lx + ly * ly + lz * lz - radius * radius;
     let h = b * b - c;
     if h < 0.0 {
-        return (-1.0);
+        return -1.0;
     }
     let s = math.sqrt(h);
-    let t0 = (-b) - s;
+    let t0 = -b - s;
     if t0 > 1e-4 {
         return t0;
     }
-    let t1 = (-b) + s;
+    let t1 = -b + s;
     if t1 > 1e-4 {
         return t1;
     }
-    return (-1.0);
+    return -1.0;
 }
 
 fn palette_332() -> Vec<u8> {
@@ -124,7 +124,7 @@ fn render_frame(width: i64, height: i64, frame_id: i64, frames_n: i64) -> Vec<u8
     let look_z = 0.0;
     
     (fwd_x, fwd_y, fwd_z) = normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z);
-    (right_x, right_y, right_z) = normalize(fwd_z, 0.0, (-fwd_x));
+    (right_x, right_y, right_z) = normalize(fwd_z, 0.0, -fwd_x);
     (up_x, up_y, up_z) = normalize(right_y * fwd_z - right_z * fwd_y, right_z * fwd_x - right_x * fwd_z, right_x * fwd_y - right_y * fwd_x);
     
     // Moving glass sculpture (3 spheres) and an emissive sphere.
@@ -165,8 +165,8 @@ fn render_frame(width: i64, height: i64, frame_id: i64, frames_n: i64) -> Vec<u8
             let mut b = 0.0;
             
             // Floor plane y=-1.2
-            if dy < (-1e-6) {
-                let tf = ((-1.2) - cam_y) / dy;
+            if dy < -1e-6 {
+                let tf = (-1.2 - cam_y) / dy;
                 if (tf > 1e-4) && (tf < best_t) {
                     best_t = tf;
                     hit_kind = 1;
@@ -201,7 +201,7 @@ fn render_frame(width: i64, height: i64, frame_id: i64, frames_n: i64) -> Vec<u8
                     let base_b = ((checker == 0) ? 0.13 : 0.08);
                     // Emissive sphere contribution.
                     let mut lxv = lx - hx;
-                    let mut lyv = ly - (-1.2);
+                    let mut lyv = ly - -1.2;
                     let mut lzv = lz - hz;
                     (ldx, ldy, ldz) = normalize(lxv, lyv, lzv);
                     let mut ndotl = max(ldy, 0.0);
@@ -243,7 +243,7 @@ fn render_frame(width: i64, height: i64, frame_id: i64, frames_n: i64) -> Vec<u8
                     (tdx, tdy, tdz) = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
                     (sr, sg, sb) = sky_color(rdx, rdy, rdz, tphase);
                     (tr, tg, tb) = sky_color(tdx, tdy, tdz, tphase + 0.8);
-                    let cosi = max((-dx * nx + dy * ny + dz * nz), 0.0);
+                    let cosi = max(-(dx * nx + dy * ny + dz * nz), 0.0);
                     let fr = schlick(cosi, 0.04);
                     r = tr * (1.0 - fr) + sr * fr;
                     g = tg * (1.0 - fr) + sg * fr;

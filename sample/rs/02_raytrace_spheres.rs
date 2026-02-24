@@ -26,11 +26,11 @@ fn hit_sphere(ox: f64, oy: f64, oz: f64, dx: f64, dy: f64, dz: f64, cx: f64, cy:
     
     let d: f64 = b * b - 4.0 * a * c;
     if d < 0.0 {
-        return (-1.0);
+        return -1.0;
     }
     let sd: f64 = math.sqrt(d);
-    let t0: f64 = ((-b) - sd) / (2.0 * a);
-    let t1: f64 = ((-b) + sd) / (2.0 * a);
+    let t0: f64 = (-b - sd) / (2.0 * a);
+    let t1: f64 = (-b + sd) / (2.0 * a);
     
     if t0 > 0.001 {
         return t0;
@@ -38,7 +38,7 @@ fn hit_sphere(ox: f64, oy: f64, oz: f64, dx: f64, dy: f64, dz: f64, cx: f64, cy:
     if t1 > 0.001 {
         return t1;
     }
-    return (-1.0);
+    return -1.0;
 }
 
 fn render(width: i64, height: i64, aa: i64) -> Vec<u8> {
@@ -47,12 +47,12 @@ fn render(width: i64, height: i64, aa: i64) -> Vec<u8> {
     // Camera origin
     let ox: f64 = 0.0;
     let oy: f64 = 0.0;
-    let oz: f64 = (-3.0);
+    let oz: f64 = -3.0;
     
     // Light direction (normalized)
-    let lx: f64 = (-0.4);
+    let lx: f64 = -0.4;
     let ly: f64 = 0.8;
-    let lz: f64 = (-0.45);
+    let lz: f64 = -0.45;
     let mut y: i64 = 0;
     while y < height {
         let mut x: i64 = 0;
@@ -78,9 +78,9 @@ fn render(width: i64, height: i64, aa: i64) -> Vec<u8> {
                     dz *= inv_len;
                     
                     let mut t_min: f64 = 1.0e30;
-                    let mut hit_id: i64 = (-1);
+                    let mut hit_id: i64 = -1;
                     
-                    let mut t: f64 = hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8);
+                    let mut t: f64 = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
                     if (t > 0.0) && (t < t_min) {
                         t_min = t;
                         hit_id = 0;
@@ -90,7 +90,7 @@ fn render(width: i64, height: i64, aa: i64) -> Vec<u8> {
                         t_min = t;
                         hit_id = 1;
                     }
-                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, (-1001.0), 3.0, 1000.0);
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, -1001.0, 3.0, 1000.0);
                     if (t > 0.0) && (t < t_min) {
                         t_min = t;
                         hit_id = 2;
@@ -123,7 +123,7 @@ fn render(width: i64, height: i64, aa: i64) -> Vec<u8> {
                                 nz = 0.0;
                             }
                         }
-                        let mut diff: f64 = nx * (-lx) + ny * (-ly) + nz * (-lz);
+                        let mut diff: f64 = nx * -lx + ny * -ly + nz * -lz;
                         diff = clamp01(diff);
                         
                         let mut base_r: f64 = 0.0;

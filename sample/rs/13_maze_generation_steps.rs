@@ -48,7 +48,7 @@ fn run_13_maze_generation_steps() {
     let mut step = 0;
     
     while stack.len() != 0 {
-        let __tmp_1 = stack[(-1) as usize];
+        let __tmp_1 = stack[-1 as usize];
         x = __tmp_1.0;
         y = __tmp_1.1;
         let mut candidates: Vec<(i64, i64, i64, i64)> = vec![];
@@ -63,7 +63,7 @@ fn run_13_maze_generation_steps() {
                 if dx == 2 {
                     candidates.push((nx, ny, x + 1, y));
                 } else {
-                    if dx == (-2) {
+                    if dx == -2 {
                         candidates.push((nx, ny, x - 1, y));
                     } else {
                         if dy == 2 {

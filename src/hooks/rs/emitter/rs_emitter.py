@@ -1468,11 +1468,14 @@ class RustEmitter(CodeEmitter):
             return owner + "." + attr
         if kind == "UnaryOp":
             op = self.any_dict_get_str(expr_d, "op", "")
-            right = self.render_expr(expr_d.get("operand"))
+            right_node = self.any_to_dict_or_empty(expr_d.get("operand"))
+            right = self.render_expr(right_node)
+            right_kind = self.any_dict_get_str(right_node, "kind", "")
+            simple_right = right_kind in {"Name", "Constant", "Call", "Attribute", "Subscript"}
             if op == "USub":
-                return "(-" + right + ")"
+                return "-" + right if simple_right else "-(" + right + ")"
             if op == "Not":
-                return "(!" + right + ")"
+                return "!" + right if simple_right else "!(" + right + ")"
             return right
         if kind == "BinOp":
             return self._render_binop(expr_d)

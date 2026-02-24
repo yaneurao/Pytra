@@ -39,7 +39,7 @@ fn run_05_mandelbrot_zoom() {
     let height = 240;
     let frame_count = 48;
     let max_iter = 110;
-    let center_x = (-0.743643887037151);
+    let center_x = -0.743643887037151;
     let center_y = 0.13182590420533;
     let base_scale = 3.2 / width;
     let zoom_per_frame = 0.93;

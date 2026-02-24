@@ -72,7 +72,7 @@ fn run_mandelbrot() {
     
     let start: f64 = perf_counter();
     
-    let pixels: Vec<u8> = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2);
+    let pixels: Vec<u8> = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
     png.write_rgb_png(out_path, width, height, pixels);
     
     let elapsed: f64 = perf_counter() - start;

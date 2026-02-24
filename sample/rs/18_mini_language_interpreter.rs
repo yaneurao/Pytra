@@ -259,7 +259,7 @@ impl Parser {
     fn parse_unary(&self) -> i64 {
         if py_self.py_match("MINUS") {
             let child: i64 = py_self.parse_unary();
-            return py_self.add_expr(ExprNode::new("neg", 0, "", "", child, (-1)));
+            return py_self.add_expr(ExprNode::new("neg", 0, "", "", child, -1));
         }
         return py_self.parse_primary();
     }
@@ -267,11 +267,11 @@ impl Parser {
     fn parse_primary(&self) -> i64 {
         if py_self.py_match("NUMBER") {
             let token_num: Token = py_self.tokens[py_self.pos - 1 as usize];
-            return py_self.add_expr(ExprNode::new("lit", token_num.text as i64, "", "", (-1), (-1)));
+            return py_self.add_expr(ExprNode::new("lit", token_num.text as i64, "", "", -1, -1));
         }
         if py_self.py_match("IDENT") {
             let token_ident: Token = py_self.tokens[py_self.pos - 1 as usize];
-            return py_self.add_expr(ExprNode::new("var", 0, token_ident.text, "", (-1), (-1)));
+            return py_self.add_expr(ExprNode::new("var", 0, token_ident.text, "", -1, -1));
         }
         if py_self.py_match("LPAREN") {
             let expr_index: i64 = py_self.parse_expr();
@@ -290,13 +290,13 @@ fn eval_expr(expr_index: i64, expr_nodes: Vec<ExprNode>, env: ::std::collections
         return node.value;
     }
     if node.kind == "var" {
-        if !(node.name == env) {
+        if !((node.name == env)) {
             // unsupported stmt: Raise
         }
         return env[node.name as usize];
     }
     if node.kind == "neg" {
-        return (-eval_expr(node.left, expr_nodes, env));
+        return -eval_expr(node.left, expr_nodes, env);
     }
     if node.kind == "bin" {
         let lhs: i64 = eval_expr(node.left, expr_nodes, env);
@@ -331,7 +331,7 @@ fn execute(stmts: Vec<StmtNode>, expr_nodes: Vec<ExprNode>, trace: bool) -> i64 
             py_continue;
         }
         if stmt.kind == "assign" {
-            if !(stmt.name == env) {
+            if !((stmt.name == env)) {
                 // unsupported stmt: Raise
             }
             env[stmt.name as usize] = eval_expr(stmt.expr_index, expr_nodes, env);

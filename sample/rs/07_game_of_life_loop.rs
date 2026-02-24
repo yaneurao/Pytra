@@ -12,9 +12,9 @@ fn next_state(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
         let mut x: i64 = 0;
         while x < w {
             let mut cnt = 0;
-            let mut dy: i64 = (-1);
+            let mut dy: i64 = -1;
             while dy < 2 {
-                let mut dx: i64 = (-1);
+                let mut dx: i64 = -1;
                 while dx < 2 {
                     if (dx != 0) || (dy != 0) {
                         let nx = (x + dx + w) % w;

@@ -8,10 +8,10 @@ fn render_julia(width: i64, height: i64, max_iter: i64, cx: f64, cy: f64) -> Vec
     let mut pixels: Vec<u8> = bytearray();
     let mut y: i64 = 0;
     while y < height {
-        let zy0: f64 = (-1.2) + 2.4 * (y / (height - 1));
+        let zy0: f64 = -1.2 + 2.4 * (y / (height - 1));
         let mut x: i64 = 0;
         while x < width {
-            let mut zx: f64 = (-1.8) + 3.6 * (x / (width - 1));
+            let mut zx: f64 = -1.8 + 3.6 * (x / (width - 1));
             let mut zy: f64 = zy0;
             
             let mut i: i64 = 0;
@@ -55,7 +55,7 @@ fn run_julia() {
     let out_path: String = "sample/out/03_julia_set.png";
     
     let start: f64 = perf_counter();
-    let pixels: Vec<u8> = render_julia(width, height, max_iter, (-0.8), 0.156);
+    let pixels: Vec<u8> = render_julia(width, height, max_iter, -0.8, 0.156);
     png.write_rgb_png(out_path, width, height, pixels);
     let elapsed: f64 = perf_counter() - start;
     
