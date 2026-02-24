@@ -3986,6 +3986,26 @@ class CppEmitter(CodeEmitter):
             }
             to_string_node["value"] = arg_nodes[0]
             return self.render_expr(to_string_node)
+        if runtime_call == "py_iter_or_raise" and len(arg_nodes) >= 1:
+            iter_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "iter_or_raise",
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            iter_node["value"] = arg_nodes[0]
+            return self.render_expr(iter_node)
+        if runtime_call == "py_next_or_stop" and len(arg_nodes) >= 1:
+            next_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "next_or_stop",
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            next_node["value"] = arg_nodes[0]
+            return self.render_expr(next_node)
         if runtime_call in {"py_min", "py_max"} and len(arg_nodes) >= 1:
             minmax_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
@@ -4621,22 +4641,6 @@ class CppEmitter(CodeEmitter):
                 "kind": "ObjStr",
                 "value": arg0,
                 "resolved_type": "str",
-                "borrow_kind": "value",
-                "casts": [],
-            }
-        if builtin_name == "iter" or runtime_call == "py_iter_or_raise":
-            return {
-                "kind": "ObjIterInit",
-                "value": arg0,
-                "resolved_type": "object",
-                "borrow_kind": "value",
-                "casts": [],
-            }
-        if builtin_name == "next" or runtime_call == "py_next_or_stop":
-            return {
-                "kind": "ObjIterNext",
-                "iter": arg0,
-                "resolved_type": "object",
                 "borrow_kind": "value",
                 "casts": [],
             }
@@ -6309,6 +6313,12 @@ class CppEmitter(CodeEmitter):
                 return f"py_len({value_expr})"
             if op == "to_string":
                 return self.render_to_string(expr_d.get("value"))
+            if op == "iter_or_raise":
+                value_expr = self.render_expr(expr_d.get("value"))
+                return f"py_iter_or_raise({value_expr})"
+            if op == "next_or_stop":
+                value_expr = self.render_expr(expr_d.get("value"))
+                return f"py_next_or_stop({value_expr})"
             if op == "minmax":
                 mode = self.any_dict_get_str(expr_d, "mode", "min")
                 fn_name = "max" if mode == "max" else "min"

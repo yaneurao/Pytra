@@ -1118,6 +1118,18 @@ class East3CppBridgeTest(unittest.TestCase):
             "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
             "resolved_type": "str",
         }
+        iter_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "iter_or_raise",
+            "value": {"kind": "Name", "id": "xs", "resolved_type": "object"},
+            "resolved_type": "object",
+        }
+        next_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "next_or_stop",
+            "value": {"kind": "Name", "id": "it", "resolved_type": "object"},
+            "resolved_type": "object",
+        }
         minmax_node = {
             "kind": "RuntimeSpecialOp",
             "op": "minmax",
@@ -1173,6 +1185,8 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_node), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_node), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
+        self.assertEqual(emitter.render_expr(iter_node), "py_iter_or_raise(xs)")
+        self.assertEqual(emitter.render_expr(next_node), "py_next_or_stop(it)")
         self.assertEqual(
             emitter.render_expr(minmax_node),
             "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",
@@ -1215,6 +1229,24 @@ class East3CppBridgeTest(unittest.TestCase):
             "resolved_type": "str",
             "func": {"kind": "Name", "id": "str", "resolved_type": "unknown"},
             "args": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        iter_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_iter_or_raise",
+            "resolved_type": "object",
+            "func": {"kind": "Name", "id": "iter", "resolved_type": "unknown"},
+            "args": [{"kind": "Name", "id": "xs", "resolved_type": "object"}],
+            "keywords": [],
+        }
+        next_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_next_or_stop",
+            "resolved_type": "object",
+            "func": {"kind": "Name", "id": "next", "resolved_type": "unknown"},
+            "args": [{"kind": "Name", "id": "it", "resolved_type": "object"}],
             "keywords": [],
         }
         max_expr = {
@@ -1321,6 +1353,8 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_expr), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_expr), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_expr), "::std::to_string(1)")
+        self.assertEqual(emitter.render_expr(iter_expr), "py_iter_or_raise(xs)")
+        self.assertEqual(emitter.render_expr(next_expr), "py_next_or_stop(it)")
         self.assertEqual(
             emitter.render_expr(max_expr),
             "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",
@@ -1360,14 +1394,14 @@ class East3CppBridgeTest(unittest.TestCase):
         out_bool = emitter._build_any_boundary_expr_from_builtin_call("bool", "static_cast", [any_arg])
         out_len = emitter._build_any_boundary_expr_from_builtin_call("len", "py_len", [any_arg])
         out_str = emitter._build_any_boundary_expr_from_builtin_call("str", "py_to_string", [any_arg])
-        out_iter = emitter._build_any_boundary_expr_from_builtin_call("iter", "", [any_arg])
-        out_next = emitter._build_any_boundary_expr_from_builtin_call("next", "", [any_arg])
+        out_iter = emitter._build_any_boundary_expr_from_builtin_call("iter", "py_iter_or_raise", [any_arg])
+        out_next = emitter._build_any_boundary_expr_from_builtin_call("next", "py_next_or_stop", [any_arg])
 
         self.assertEqual(out_bool.get("kind"), "ObjBool")
         self.assertEqual(out_len.get("kind"), "ObjLen")
         self.assertEqual(out_str.get("kind"), "ObjStr")
-        self.assertEqual(out_iter.get("kind"), "ObjIterInit")
-        self.assertEqual(out_next.get("kind"), "ObjIterNext")
+        self.assertIsNone(out_iter)
+        self.assertIsNone(out_next)
 
         concrete_arg = {"kind": "Name", "id": "n", "resolved_type": "int64"}
         out_none = emitter._build_any_boundary_expr_from_builtin_call("bool", "static_cast", [concrete_arg])
