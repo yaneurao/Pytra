@@ -248,6 +248,24 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(expr), "xs.append(make_object(n))")
 
+    def test_builtin_runtime_list_append_requires_owner(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.append",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "attr": "append",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Name", "id": "n", "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        with self.assertRaisesRegex(ValueError, "builtin runtime owner is required: list.append"):
+            emitter.render_expr(expr)
+
     def test_render_expr_supports_list_extend_ir_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         node = {
@@ -1130,6 +1148,24 @@ class East3CppBridgeTest(unittest.TestCase):
             "keywords": [],
         }
         self.assertEqual(emitter.render_expr(expr), "p.exists()")
+
+    def test_builtin_runtime_path_exists_requires_owner(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "std::filesystem::exists",
+            "resolved_type": "bool",
+            "func": {
+                "kind": "Attribute",
+                "attr": "exists",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [],
+        }
+        with self.assertRaisesRegex(ValueError, "builtin runtime owner is required: std::filesystem::exists"):
+            emitter.render_expr(expr)
 
     def test_render_expr_supports_runtime_special_op_ir_nodes(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

@@ -3464,7 +3464,6 @@ class CppEmitter(CodeEmitter):
     def _render_builtin_call(
         self,
         expr: dict[str, Any],
-        fn: dict[str, Any],
         arg_nodes: list[Any],
         kw_nodes: list[Any],
     ) -> str:
@@ -3487,14 +3486,13 @@ class CppEmitter(CodeEmitter):
                 "casts": [],
             }
             return self.render_expr(static_cast_node)
-        _ = fn
         list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, expr, arg_nodes)
         if list_ops_rendered is not None:
             return str(list_ops_rendered)
         set_ops_rendered = self._render_builtin_runtime_set_ops(runtime_call, expr, arg_nodes)
         if set_ops_rendered is not None:
             return str(set_ops_rendered)
-        dict_ops_rendered = self._render_builtin_runtime_dict_ops(runtime_call, expr)
+        dict_ops_rendered = self._render_builtin_runtime_dict_ops(runtime_call, expr, arg_nodes)
         if dict_ops_rendered is not None:
             return str(dict_ops_rendered)
         str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, expr, arg_nodes)
@@ -3505,14 +3503,55 @@ class CppEmitter(CodeEmitter):
             return str(special_runtime_rendered)
         return ""
 
-    def _builtin_runtime_owner_node(self, expr: dict[str, Any]) -> Any:
+    def _builtin_runtime_owner_node(self, expr: dict[str, Any], runtime_call: str = "") -> Any:
         """BuiltinCall の receiver ノードを `runtime_owner` 優先で返す。"""
+        owner_required_runtime_calls = {
+            "list.append",
+            "list.extend",
+            "list.pop",
+            "list.clear",
+            "list.reverse",
+            "list.sort",
+            "set.add",
+            "set.discard",
+            "set.remove",
+            "set.clear",
+            "dict.get",
+            "dict.pop",
+            "dict.items",
+            "dict.keys",
+            "dict.values",
+            "py_isdigit",
+            "py_isalpha",
+            "py_strip",
+            "py_rstrip",
+            "py_lstrip",
+            "py_startswith",
+            "py_endswith",
+            "py_find",
+            "py_rfind",
+            "py_replace",
+            "py_join",
+            "std::filesystem::create_directories",
+            "std::filesystem::exists",
+            "py_write_text",
+            "py_read_text",
+            "path_parent",
+            "path_name",
+            "path_stem",
+            "identity",
+            "py_int_to_bytes",
+        }
         runtime_owner = expr.get("runtime_owner")
         if len(self.any_to_dict_or_empty(runtime_owner)) > 0:
             return runtime_owner
         func_node = self.any_to_dict_or_empty(expr.get("func"))
         if len(func_node) > 0:
-            return func_node.get("value")
+            func_value = func_node.get("value")
+            if len(self.any_to_dict_or_empty(func_value)) > 0:
+                return func_value
+        if runtime_call in owner_required_runtime_calls:
+            raise ValueError("builtin runtime owner is required: " + runtime_call)
         return None
 
     def _render_builtin_runtime_list_ops(
@@ -3524,7 +3563,7 @@ class CppEmitter(CodeEmitter):
         """BuiltinCall の list 系 runtime_call を処理する。"""
         if runtime_call not in {"list.append", "list.extend", "list.pop", "list.clear", "list.reverse", "list.sort"}:
             return None
-        owner_node = self._builtin_runtime_owner_node(expr)
+        owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
         if runtime_call == "list.append":
             if len(arg_nodes) >= 1:
                 append_node = {
@@ -3596,7 +3635,7 @@ class CppEmitter(CodeEmitter):
         arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の set 系 runtime_call を処理する。"""
-        owner_node = self._builtin_runtime_owner_node(expr)
+        owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
         if runtime_call == "set.add":
             if len(arg_nodes) >= 1:
                 set_add_node = {
@@ -3636,13 +3675,13 @@ class CppEmitter(CodeEmitter):
         self,
         runtime_call: str,
         expr: dict[str, Any],
+        arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の dict 系 runtime_call を処理する。"""
         if runtime_call not in {"dict.get", "dict.pop", "dict.items", "dict.keys", "dict.values"}:
             return None
-        owner_node = self._builtin_runtime_owner_node(expr)
+        owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
         owner_t = self.get_expr_type(owner_node)
-        arg_nodes = self.any_to_list(expr.get("args"))
         if runtime_call == "dict.get":
             owner_value_t = ""
             owner_optional_object_dict = False
@@ -3787,7 +3826,7 @@ class CppEmitter(CodeEmitter):
             "py_join",
         }:
             return None
-        owner_node = self._builtin_runtime_owner_node(expr)
+        owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
         if runtime_call == "py_isdigit":
             charclass_node = {
                 "kind": "StrCharClassOp",
@@ -3929,7 +3968,7 @@ class CppEmitter(CodeEmitter):
         kw_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の Path/utility 系 runtime_call を処理する。"""
-        owner_node = self._builtin_runtime_owner_node(expr)
+        owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
         if runtime_call == "std::filesystem::create_directories":
             parents_node: Any = None
             exist_ok_node: Any = None
@@ -5261,7 +5300,7 @@ class CppEmitter(CodeEmitter):
             return hook_call_txt
         lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
         if lowered_kind == "BuiltinCall":
-            builtin_rendered: str = self._render_builtin_call(expr_d, fn, arg_nodes, kw_nodes)
+            builtin_rendered: str = self._render_builtin_call(expr_d, arg_nodes, kw_nodes)
             if builtin_rendered != "":
                 return builtin_rendered
             runtime_call_txt = self.any_dict_get_str(expr_d, "runtime_call", "")
