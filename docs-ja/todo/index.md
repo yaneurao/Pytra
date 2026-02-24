@@ -22,6 +22,16 @@
 - `docs-ja/todo/index.md` / `docs-ja/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+## P1: 多言語出力品質（preview 脱却の再オープン）
+
+文脈: `docs-ja/plans/p1-multilang-output-quality.md`（`TG-P1-MULTILANG-QUALITY`）
+
+1. [ ] [ID: P1-MQ-10] `sample/go`, `sample/kotlin`, `sample/swift` の preview 要約出力（「C# ベース中間出力のシグネチャ要約」）を廃止し、通常のコード生成へ移行する（`P1-MQ-10-S1` から `P1-MQ-10-S4` 完了でクローズ）。
+2. [ ] [ID: P1-MQ-10-S1] GoEmitter の CodeEmitter ベース実装を拡張し、`sample/go` が要約コメントではなく AST 本文を出力するようにする。
+3. [ ] [ID: P1-MQ-10-S2] KotlinEmitter の CodeEmitter ベース実装を拡張し、`sample/kotlin` が要約コメントではなく AST 本文を出力するようにする。
+4. [ ] [ID: P1-MQ-10-S3] SwiftEmitter の CodeEmitter ベース実装を拡張し、`sample/swift` が要約コメントではなく AST 本文を出力するようにする。
+5. [ ] [ID: P1-MQ-10-S4] `tools/check_py2{go,kotlin,swift}_transpile.py` と `tools/check_multilang_quality_regression.py` に「preview 要約出力禁止」検査を追加し、`sample/go`, `sample/kotlin`, `sample/swift` の先頭 `TODO: 専用 *Emitter 実装へ段階移行` 文言が再流入しないようにする。
+
 ## P1: 多言語ランタイム配置統一（再オープン）
 
 文脈: `docs-ja/plans/p1-runtime-layout-unification.md`（`TG-P1-RUNTIME-LAYOUT`）

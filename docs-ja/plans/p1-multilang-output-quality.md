@@ -3,7 +3,7 @@
 最終更新: 2026-02-24
 
 関連 TODO:
-- `docs-ja/todo/index.md` の `ID: P1-MQ-01` 〜 `P1-MQ-09`（`P1-MQ-01` 〜 `P1-MQ-08` は履歴へ移管済み）
+- `docs-ja/todo/index.md` の `ID: P1-MQ-01` 〜 `P1-MQ-10`（`P1-MQ-01` 〜 `P1-MQ-08` は履歴へ移管済み）
 
 背景:
 - `sample/cpp/` と比べて、`sample/rs` および他言語（`cs/js/ts/go/java/swift/kotlin`）の生成コードは可読性の劣化が目立つ。
@@ -226,6 +226,12 @@
 - 確認:
   - `python3 tools/check_sample_regen_clean.py` が `sample outputs are clean` を返すことを確認。
 
+`P1-MQ-10` 再オープン理由（preview 脱却）:
+
+- `P1-MQ-02-S3-S2` / `P1-MQ-02-S3-S3` は「括弧/cast/import 指標削減」を完了条件にした結果、Go/Kotlin/Swift で preview 要約出力（C# シグネチャコメント）を許容したままクローズされていた。
+- `sample/go`, `sample/kotlin`, `sample/swift` の先頭に `TODO: 専用 *Emitter 実装へ段階移行` が残っており、「正常変換（通常コード生成）」の完了条件を満たしていない。
+- `P1-MQ-10` では受け入れ基準を「preview 要約出力を禁止し、AST 本文を生成する」に修正する。
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
@@ -243,3 +249,4 @@
 - 2026-02-24: ID: P1-MQ-05 として多段 selfhost チェック（`tools/check_multilang_selfhost_multistage.py`）を追加し、`docs-ja/plans/p1-multilang-selfhost-multistage-status.md` に失敗カテゴリを固定した。
 - 2026-02-24: ID: P1-MQ-06 として統合 selfhost スイート（`tools/check_multilang_selfhost_suite.py`）を追加し、`tools/run_local_ci.py` へ組み込んだ。
 - 2026-02-24: ID: P1-MQ-07 として `check_sample_regen_clean.py` を追加し、`run_local_ci.py` で再生成後の sample 差分ゼロを検証する運用を固定した。
+- 2026-02-24: `sample/go`, `sample/kotlin`, `sample/swift` が preview 要約出力のままであることを確認。`P1-MQ-02-S3-S2/S3` の完了条件が不足していたため、`P1-MQ-10`（preview 脱却）を再オープンした。
