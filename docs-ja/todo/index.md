@@ -22,6 +22,59 @@
 - `docs-ja/todo/index.md` / `docs-ja/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
+## P0: `py2cpp` の `EAST2 -> C++` 互換経路廃止（最優先）
+
+文脈: `docs-ja/plans/p0-cpp-east2-removal.md`（`TG-P0-CPP-EAST2-REMOVAL`）
+
+1. [ ] [ID: P0-CPP-EAST2-01] `py2cpp` の C++ 生成で `EAST2 -> C++` 互換経路を完全廃止し、EAST3 専用経路へ一本化する（`P0-CPP-EAST2-01-S1` から `P0-CPP-EAST2-01-S4` 完了でクローズ）。
+2. [ ] [ID: P0-CPP-EAST2-01-S1] `src/py2cpp.py` から `--east-stage 2` 受理経路を除去し、`EAST2` 指定時は明示エラーで停止する。
+3. [ ] [ID: P0-CPP-EAST2-01-S2] `src/py2cpp.py` 内の `EAST2 -> C++` 互換専用分岐（legacy fallback/互換ノード写像）を段階的に削除し、EAST3 前提の実装へ整理する。
+4. [ ] [ID: P0-CPP-EAST2-01-S3] `tools/check_py2cpp_transpile.py` と `test/unit/test_py2cpp_smoke.py` を更新し、`EAST2` 経路が復活しない回帰ガードを追加する。
+5. [ ] [ID: P0-CPP-EAST2-01-S4] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` を更新し、C++ 経路が EAST3 専用であることを明記する。
+
+## P0: `EAST1 build` 互換運用廃止（2番目優先）
+
+文脈: `docs-ja/plans/p0-east1-build-compat-removal.md`（`TG-P0-EAST1-BUILD-COMPAT-REMOVAL`）
+
+1. [ ] [ID: P0-EAST1-BUILD-01] `py2cpp` 起点の `EAST1 build/import graph` 互換運用を廃止し、`east_parts` 側の正規責務へ移管する（`P0-EAST1-BUILD-01-S1` から `P0-EAST1-BUILD-01-S4` 完了でクローズ）。
+2. [ ] [ID: P0-EAST1-BUILD-01-S1] `src/pytra/compiler/east_parts/east1_build.py`（新規）へ `.py/.json -> EAST1` build と import graph 解析入口 API を定義する。
+3. [ ] [ID: P0-EAST1-BUILD-01-S2] `src/py2cpp.py` の import graph/build 呼び出しを `east1_build` API へ置換し、`transpile_cli` 互換 helper 依存を削減する。
+4. [ ] [ID: P0-EAST1-BUILD-01-S3] `src/pytra/compiler/transpile_cli.py` の `py2cpp` 互換専用 helper（import graph/build 導線）を撤去または薄い委譲へ縮退する。
+5. [ ] [ID: P0-EAST1-BUILD-01-S4] `spec-east` / `spec-dev` と `py2cpp` 関連テストを同期し、責務境界と回帰ガードを固定する。
+
+## P0: 依存解析の `EAST1 build` 責務化（3番目優先）
+
+文脈: `docs-ja/plans/p0-dependency-analysis-east1.md`（`TG-P0-DEP-ANALYSIS-EAST1`）
+
+1. [ ] [ID: P0-DEP-EAST1-01] 依存解析（import graph）の実装責務を `EAST1 build` 層へ集約し、`py2cpp.py` / `transpile_cli.py` から分離する（`P0-DEP-EAST1-01-S1` から `P0-DEP-EAST1-01-S4` 完了でクローズ）。
+2. [ ] [ID: P0-DEP-EAST1-01-S1] `P0-EAST1-BUILD-01` 完了を前提条件として明記し、依存解析タスクの着手条件を固定する。
+3. [ ] [ID: P0-DEP-EAST1-01-S2] import graph helper 本体を `src/pytra/compiler/east_parts/east1_build.py` へ移し、`transpile_cli.py` 側を薄い互換委譲へ縮退する。
+4. [ ] [ID: P0-DEP-EAST1-01-S3] `src/py2cpp.py` から依存解析の実装詳細参照を除去し、`east1_build` 公開 API のみを利用する。
+5. [ ] [ID: P0-DEP-EAST1-01-S4] 依存解析責務境界を `spec-east` / `spec-dev` に明記し、`check_py2cpp_transpile` / smoke で回帰ガードを固定する。
+
+## P0: `CppEmitter` 本体の `py2cpp.py` からの抽出（4番目優先）
+
+文脈: `docs-ja/plans/p0-cpp-emitter-extraction.md`（`TG-P0-CPP-EMITTER-EXTRACTION`）
+
+1. [ ] [ID: P0-CPP-EMITTER-01] `src/py2cpp.py` に同居している `CppEmitter` 本体を `src/hooks/cpp/emitter` へ移し、`py2cpp.py` を薄い CLI/配線層へ縮退する（`P0-CPP-EMITTER-01-S1` から `P0-CPP-EMITTER-01-S4` 完了でクローズ）。
+2. [ ] [ID: P0-CPP-EMITTER-01-S1] `src/hooks/cpp/emitter/cpp_emitter.py`（新規）へ `class CppEmitter` と直接依存する補助ロジックを移管する。
+3. [ ] [ID: P0-CPP-EMITTER-01-S2] `src/hooks/cpp/emitter/__init__.py`（新規）で `load_cpp_profile` / `transpile_to_cpp` など C++ backend API を公開し、`py2cpp.py` から再利用する。
+4. [ ] [ID: P0-CPP-EMITTER-01-S3] `src/py2cpp.py` を CLI・引数処理・I/O・高位オーケストレーションのみに縮退し、emitter 本体実装を保持しない状態にする。
+5. [ ] [ID: P0-CPP-EMITTER-01-S4] `check_py2cpp_transpile` / smoke / docs（`spec-dev`）を更新し、分離後の構成を回帰ガード込みで固定する。
+
+## P0: `py2cpp.py` 残責務の段階分離（5番目優先）
+
+文脈: `docs-ja/plans/p0-py2cpp-responsibility-split.md`（`TG-P0-PY2CPP-SPLIT`）
+
+1. [ ] [ID: P0-PY2CPP-SPLIT-01] `py2cpp.py` に残る非CLI責務を backend モジュールへ段階移管し、最終的に CLI/配線専用へ縮退する（`P0-PY2CPP-SPLIT-01-S1` から `P0-PY2CPP-SPLIT-01-S7` 完了でクローズ）。
+2. [ ] [ID: P0-PY2CPP-SPLIT-01-S1] 着手前提を固定する（`P0-CPP-EAST2-01` / `P0-EAST1-BUILD-01` / `P0-DEP-EAST1-01` / `P0-CPP-EMITTER-01` の完了後に着手）。
+3. [ ] [ID: P0-PY2CPP-SPLIT-01-S2] `load_cpp_profile` / type-map / hooks / identifier ルール等の C++ profile 解決責務を `src/hooks/cpp/profile/` へ分離する。
+4. [ ] [ID: P0-PY2CPP-SPLIT-01-S3] `build_cpp_header_from_east` と関連補助関数（header type/default/include guard）を `src/hooks/cpp/header/` へ分離する。
+5. [ ] [ID: P0-PY2CPP-SPLIT-01-S4] `_write_multi_file_cpp` と manifest 生成責務を `src/hooks/cpp/multifile/` へ分離する。
+6. [ ] [ID: P0-PY2CPP-SPLIT-01-S5] runtime emit 用補助（`_runtime_*` 群）を `src/hooks/cpp/runtime_emit/` へ分離し、`py2cpp.py` 側は呼び出しのみへ縮退する。
+7. [ ] [ID: P0-PY2CPP-SPLIT-01-S6] `py2cpp.py` 冒頭の `_HELPER_GROUPS` による helper 再エクスポート依存を段階的に除去し、必要 API を明示 import へ置換する。
+8. [ ] [ID: P0-PY2CPP-SPLIT-01-S7] 分離後の構成を `spec-dev` とテスト（`check_py2cpp_transpile` / smoke / unit）へ同期し、責務回帰ガードを固定する。
+
 ## P1: 多言語出力品質（preview 脱却の再オープン）
 
 文脈: `docs-ja/plans/p1-multilang-output-quality.md`（`TG-P1-MULTILANG-QUALITY`）
