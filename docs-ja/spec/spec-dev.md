@@ -167,6 +167,13 @@
   - `manifest.include_dir` が未指定の場合は `manifest` 同階層 `include/` を既定として扱います。
 - `docs-ja/spec/spec-make.md` にある `./pytra --build` / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` は、2026-02-22 時点で未実装です。
 
+### py2cpp 共通化ガードルール
+
+- `src/py2cpp.py` へ新規ロジックを追加する場合は、先に「C++ 固有」か「言語非依存」かを分類します。
+- 言語非依存と判定した処理は `src/pytra/compiler/`（`east_parts/` や `CodeEmitter` 含む）へ実装し、`py2cpp.py` へは直接追加しません。
+- `py2cpp.py` に残す処理は C++ 固有責務（型写像、runtime 名解決、header/include 生成、C++ 構文最適化）に限定します。
+- 既存の `py2cpp.py` 汎用 helper を修正する場合も、同時に共通層移管可否を検討し、`docs-ja/plans/p1-py2cpp-reduction.md` の決定ログへ記録します。
+
 ### 3.1 import と `runtime/cpp` 対応
 
 `py2cpp.py` は import 文に応じて include を生成します。
