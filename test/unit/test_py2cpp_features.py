@@ -2163,6 +2163,31 @@ def f() -> int:
         self.assertEqual(dict_any_get_str(wrapped_meta, "dispatch_mode"), "native")
         self.assertEqual(dict_any_get_str(module_meta, "dispatch_mode"), "native")
 
+    def test_east1_stage_loader_helper_requires_loader_callback(self) -> None:
+        from src.pytra.compiler.east_parts.east1 import load_east1_document as load_east1_stage
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            p = root / "dummy.py"
+            p.write_text("x = 1\n", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "load_east_document_fn is required"):
+                load_east1_stage(p)
+
+    def test_east1_stage_loader_helper_marks_module_stage1(self) -> None:
+        from src.pytra.compiler.east_parts.east1 import load_east1_document as load_east1_stage
+
+        def _fake_loader(_p: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
+            _ = parser_backend
+            return {"kind": "Module", "east_stage": 2, "schema_version": 1, "meta": {"dispatch_mode": "native"}, "body": []}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            p = root / "dummy.py"
+            p.write_text("x = 1\n", encoding="utf-8")
+            out = load_east1_stage(p, load_east_document_fn=_fake_loader)
+        self.assertEqual(dict_any_get_str(out, "kind"), "Module")
+        self.assertEqual(dict_any_get(out, "east_stage"), 1)
+
     def test_load_east_document_helper_normalizes_stage1_to_stage2(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -36,8 +36,8 @@
 | 段 | 責務 | 現行実装（着手時点） | 移行後の正本 |
 | --- | --- | --- | --- |
 | EAST1 | parser 直後 IR 生成 | `src/pytra/compiler/east_parts/core.py` | `src/pytra/compiler/east_parts/core.py`（維持） |
-| EAST1 | EAST1 入口 API（`load_east1_document`） | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/east_parts/east1.py` |
-| EAST1 | EAST1 ルート正規化（`east_stage=1` 固定） | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/east_parts/east1.py` |
+| EAST1 | EAST1 入口 API（`load_east1_document`） | `src/pytra/compiler/east_parts/east1.py`（`transpile_cli.py` 互換ラッパ経由） | `src/pytra/compiler/east_parts/east1.py` |
+| EAST1 | EAST1 ルート正規化（`east_stage=1` 固定） | `src/pytra/compiler/east_parts/east1.py` | `src/pytra/compiler/east_parts/east1.py` |
 | EAST2 | EAST1 -> EAST2 正規化 API（`normalize_east1_to_east2_document`） | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/east_parts/east2.py` |
 | EAST2 | ルート契約補助（meta/dispatch 正規化） | `src/pytra/compiler/east_parts/east_io.py` | `src/pytra/compiler/east_parts/east2.py` + `east_io.py` |
 | EAST3 | EAST2 -> EAST3 lower 本体 | `src/pytra/compiler/east_parts/east3_lowering.py` | `src/pytra/compiler/east_parts/east3_lowering.py`（維持） |

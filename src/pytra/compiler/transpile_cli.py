@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
+from pytra.compiler.east_parts.east1 import load_east1_document as load_east1_document_stage
 from pytra.compiler.east_parts.east3_lowering import lower_east2_to_east3
 from pytra.std import argparse
 from pytra.std import json
@@ -280,17 +281,12 @@ def normalize_east1_to_east2_document(east_doc: dict[str, object]) -> dict[str, 
 
 
 def load_east1_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
-    """入力ファイル（.py/.json）を読み取り `EAST1` ルートとして返す。
-
-    NOTE:
-    現段階では parser 直後の出力 API として段階識別（`east_stage=1`）を付与し、
-    既存 `load_east_document` との互換（schema/meta 補完・エラー分類）を維持する。
-    `EAST1 -> EAST2` 正規化 pass の分離は `P0-EAST123-06-S2` で行う。
-    """
-    east1 = load_east_document(input_path, parser_backend=parser_backend)
-    if isinstance(east1, dict) and dict_any_kind(east1) == "Module":
-        east1["east_stage"] = 1
-    return east1
+    """入力ファイル（.py/.json）を読み取り `EAST1` ルートとして返す。"""
+    return load_east1_document_stage(
+        input_path,
+        parser_backend=parser_backend,
+        load_east_document_fn=load_east_document,
+    )
 
 
 def load_east_document_compat(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
