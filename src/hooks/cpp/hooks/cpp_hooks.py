@@ -187,7 +187,6 @@ def on_render_expr_complex(
 def build_cpp_hooks() -> dict[str, Any]:
     """C++ エミッタへ注入する hooks dict を構築する。"""
     hooks = EmitterHooks()
-    hooks.add("on_emit_stmt_kind", on_emit_stmt_kind)
     hooks.add("on_stmt_omit_braces", on_stmt_omit_braces)
     hooks.add("on_render_module_method", on_render_module_method)
     hooks.add("on_render_class_method", on_render_class_method)
