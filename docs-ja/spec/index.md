@@ -22,6 +22,7 @@
 - Linker 仕様（EAST 連結）: [Linker 仕様](./spec-linker.md)
 - 言語別仕様: [言語別仕様](../language/index.md)
 - Codex 向け運用仕様: [Codex 向け運用仕様](./spec-codex.md)
+- 旧仕様アーカイブ: [仕様アーカイブ](./archive/index.md)
 - `pylib` モジュール一覧: [pylib モジュール一覧](./spec-pylib-modules.md)
 - 開発思想: [開発思想](./spec-philosophy.md)
 
@@ -57,6 +58,8 @@
   - [言語別仕様](../language/index.md)
 - Codex の作業ルール・TODO 運用・コミット運用を確認したい場合:
   - [Codex 向け運用仕様](./spec-codex.md)
+- 旧仕様（現行ではない文書）を確認したい場合:
+  - [仕様アーカイブ](./archive/index.md)
 - 設計思想・EAST 中心設計の背景を確認したい場合:
   - [開発思想](./spec-philosophy.md)
 

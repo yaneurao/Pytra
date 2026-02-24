@@ -46,7 +46,7 @@
 ### 2.4 `docs-ja/`
 
 - 目的: 仕様・運用・履歴の正本（source of truth）を保持する。
-- 置くもの: `spec/`, `plans/`, `todo/`, `language/`, `news/`
+- 置くもの: `spec/`, `spec/archive/`, `plans/`, `todo/`, `language/`, `news/`
 - 置かないもの: 実装コード
 
 ### 2.5 `docs/`
@@ -126,6 +126,12 @@
 - 目的: 完了履歴を日付単位で保持する。
 - 置くもの: `YYYYMMDD.md`, `index.md`
 - 置かないもの: 未完了タスク
+
+### 4.3 `docs-ja/spec/archive/`
+
+- 目的: 退役した旧仕様を日付付きで保管する。
+- 置くもの: `YYYYMMDD-<slug>.md`, `index.md`
+- 置かないもの: 現行仕様（現行仕様は `docs-ja/spec/` 直下）
 
 ## 5. 追加時チェックリスト
 
