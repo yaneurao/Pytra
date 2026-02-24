@@ -6,6 +6,11 @@
 
 Pytra is a collection of transpilers that convert programs written in a subset of Python into multiple target languages.
 
+## Latest News
+
+> **2026-02-23 | v0.1.0 Released**  
+> Pytra can now generate more readable C++ code in a style that stays very close to the original Python source.
+
 ## Features
 
 It supports transpilation from Python to C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin.
@@ -34,11 +39,6 @@ The following points are also considered practical advantages:
 WARNING: This project is still under active development and may be far from production-ready. Review sample code first and use at your own risk.
 
 WARNING: Do not expect entire Python applications to be portable as-is. A realistic expectation is: if the core logic you wrote in Python transpiles well, that is a good outcome.
-
-## Latest News
-
-> **2026-02-23 | v0.1.0 Released**  
-> Pytra can now generate more readable C++ code in a style that stays very close to the original Python source.
 
 ## Runtime Performance Comparison
 
