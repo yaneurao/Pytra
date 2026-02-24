@@ -150,6 +150,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def resolve_module_name(", support_blocks)
         self.assertIn("def validate_from_import_symbols_or_raise(", support_blocks)
         self.assertIn("def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:", support_blocks)
+        self.assertIn("build_module_east_map_common = build_module_east_map", support_blocks)
+        self.assertIn("dump_deps_graph_text_common = dump_deps_graph_text", support_blocks)
         self.assertIn("def graph_cycle_dfs(", support_blocks)
         self.assertIn("def write_text_file(path_obj: Path, text: str) -> None:", support_blocks)
         self.assertIn("def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:", support_blocks)

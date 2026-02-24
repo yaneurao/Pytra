@@ -30,17 +30,6 @@
 
 文脈: `docs-ja/plans/p1-codeemitter-dispatch-redesign.md`（`TG-P1-CED`）
 
-## P1: コンパイラ共通層への抽出（py2cpp 偏在解消）
-
-文脈: `docs-ja/plans/p1-compiler-shared-extraction.md`（`TG-P1-COMP-SHARED`）
-
-1. [ ] [ID: P1-COMP-09] `py2cpp.py` に残る汎用 helper（例: 文字列リスト整列、module 解析補助）を `src/pytra/compiler/` へ移管し、非 C++ 各 `py2*` から同一実装を再利用できる状態にする。
-2. [ ] [ID: P1-COMP-10] 「全言語 selfhost を阻害しない共通層優先」の運用ルールを整備し、`py2cpp.py` へ汎用処理が再流入しない回帰チェック（lint/静的検査または CI ルール）を追加する。
-3. [ ] [ID: P1-COMP-11] `src/pytra/compiler/transpile_cli.py` の汎用 helper 群を機能グループごとに `class + @staticmethod` へ整理し、`py2cpp.py` 側 import を class 単位へ縮退する。移行時はトップレベル互換ラッパーを暫定維持し、`tools/prepare_selfhost_source.py` / `test/unit/test_prepare_selfhost_source.py` の抽出ロジックも同時更新して selfhost 回帰を防ぐ。
-
-進捗メモ:
-- 詳細ログは `docs-ja/plans/p1-compiler-shared-extraction.md` の `決定ログ` を参照。
-
 ## P1: 多言語ランタイム配置統一
 
 文脈: `docs-ja/plans/p1-runtime-layout-unification.md`（`TG-P1-RUNTIME-LAYOUT`）

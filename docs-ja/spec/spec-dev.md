@@ -178,6 +178,7 @@
 - 暫定追加した helper は「追加日から 7 日以内」または「次回 PATCH リリースまで」の早い方で、`src/pytra/compiler/` 側へ後追い抽出します。
 - 後追い抽出完了まで、`docs-ja/todo.md` に抽出タスクを未完了で保持し、`tools/check_py2cpp_helper_guard.py` の allowlist 更新理由を `docs-ja/plans/p1-py2cpp-reduction.md` に記録します。
 - 上記の責務境界は `tools/check_py2cpp_boundary.py` で検証し、`tools/run_local_ci.py` で常時実行します。
+- `src/pytra/compiler/transpile_cli.py` の汎用 helper は機能グループごとの `class + @staticmethod`（`*Helpers`）を正本とし、`py2cpp.py` 側は class 単位 import + 起動時束縛で参照します。トップレベル関数は当面、既存 CLI / selfhost 互換のために併存させます。
 
 ### 3.1 import と `runtime/cpp` 対応
 

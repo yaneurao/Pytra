@@ -229,6 +229,8 @@ def _extract_support_blocks() -> str:
             ]
         )
     )
+    parts.append("build_module_east_map_common = build_module_east_map\n")
+    parts.append("dump_deps_graph_text_common = dump_deps_graph_text\n")
     return "\n".join(parts)
 
 

@@ -10,12 +10,152 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import analyze_import_graph, append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, dump_deps_graph_text as dump_deps_graph_text_common, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document, load_east3_document, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map as build_module_east_map_common, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, print_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
+from pytra.compiler.transpile_cli import CodegenOptionHelpers, EastAnalysisHelpers, EastDocumentHelpers, ErrorHelpers, GuardHelpers, ImportGraphHelpers, Py2CppArgvHelpers, TextPathHelpers
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from pytra.std import json
 from pytra.std import os
 from pytra.std.pathlib import Path
 from pytra.std import sys
+
+
+_HELPER_GROUPS: list[tuple[object | None, list[str]]] = [
+    (
+        globals().get("ErrorHelpers"),
+        [
+            "make_user_error",
+            "parse_user_error",
+            "print_user_error",
+        ],
+    ),
+    (
+        globals().get("EastDocumentHelpers"),
+        [
+            "load_east_document",
+            "load_east3_document",
+        ],
+    ),
+    (
+        globals().get("TextPathHelpers"),
+        [
+            "join_str_list",
+            "split_infix_once",
+            "local_binding_name",
+            "split_graph_issue_entry",
+            "replace_first",
+            "inject_after_includes_block",
+            "split_ws_tokens",
+            "first_import_detail_line",
+            "append_unique_non_empty",
+            "split_top_level_csv",
+            "normalize_param_annotation",
+            "extract_function_signatures_from_python_source",
+            "extract_function_arg_types_from_python_source",
+            "split_type_args",
+            "split_top_level_union",
+            "path_parent_text",
+            "python_module_exists_under",
+            "mkdirs_for_cli",
+            "write_text_file",
+            "count_text_lines",
+            "sort_str_list_copy",
+        ],
+    ),
+    (
+        globals().get("EastAnalysisHelpers"),
+        [
+            "dict_any_get",
+            "dict_any_get_str",
+            "dict_any_get_list",
+            "dict_any_get_dict",
+            "dict_any_get_dict_list",
+            "dict_any_get_str_list",
+            "dict_any_kind",
+            "dict_str_get",
+            "name_target_id",
+            "stmt_target_name",
+            "assign_targets",
+            "stmt_assigned_names",
+            "stmt_child_stmt_lists",
+            "collect_store_names_from_target",
+            "collect_symbols_from_stmt",
+            "collect_symbols_from_stmt_list",
+            "stmt_list_parse_metrics",
+            "stmt_list_scope_depth",
+            "looks_like_runtime_function_name",
+            "module_parse_metrics",
+            "module_analyze_metrics",
+            "select_guard_module_map",
+        ],
+    ),
+    (
+        globals().get("ImportGraphHelpers"),
+        [
+            "analyze_import_graph",
+            "collect_import_modules",
+            "module_id_from_east_for_graph",
+            "module_name_from_path_for_graph",
+            "module_export_table",
+            "build_module_symbol_index",
+            "build_module_east_map_from_analysis",
+            "build_module_type_schema",
+            "module_rel_label",
+            "path_key_for_graph",
+            "collect_reserved_import_conflicts",
+            "rel_disp_for_graph",
+            "format_graph_list_section",
+            "format_import_graph_report",
+            "graph_cycle_dfs",
+            "is_known_non_user_import",
+            "is_pytra_module_name",
+            "resolve_module_name",
+            "resolve_module_name_for_graph",
+            "resolve_user_module_path_for_graph",
+            "sanitize_module_label",
+            "set_import_module_binding",
+            "set_import_symbol_binding_and_module_set",
+            "validate_from_import_symbols_or_raise",
+            "validate_import_graph_or_raise",
+            "collect_user_module_files_for_graph",
+            "finalize_import_graph_analysis",
+            "dump_deps_text",
+        ],
+    ),
+    (
+        globals().get("CodegenOptionHelpers"),
+        [
+            "resolve_codegen_options",
+            "validate_codegen_options",
+            "dump_codegen_options_text",
+        ],
+    ),
+    (
+        globals().get("GuardHelpers"),
+        [
+            "check_analyze_stage_guards",
+            "check_guard_limit",
+            "check_parse_stage_guards",
+            "resolve_guard_limits",
+        ],
+    ),
+    (
+        globals().get("Py2CppArgvHelpers"),
+        [
+            "parse_py2cpp_argv",
+        ],
+    ),
+]
+for _helper_class, _helper_names in _HELPER_GROUPS:
+    if _helper_class is None:
+        continue
+    for _helper_name in _helper_names:
+        globals()[_helper_name] = getattr(_helper_class, _helper_name)
+if "ImportGraphHelpers" in globals():
+    build_module_east_map_common = ImportGraphHelpers.build_module_east_map
+    dump_deps_graph_text_common = ImportGraphHelpers.dump_deps_graph_text
+del _helper_class
+del _helper_name
+del _helper_names
+del _HELPER_GROUPS
 
 
 def _build_cpp_hooks_impl() -> dict[str, Any]:

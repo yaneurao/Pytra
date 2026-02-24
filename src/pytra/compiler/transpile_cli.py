@@ -2409,3 +2409,130 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
                 return _parse_error_dict(f"unexpected extra argument: {a}")
         i += 1
     return out
+
+
+class CommonTranspileArgHelpers:
+    add_common_transpile_args = staticmethod(add_common_transpile_args)
+    normalize_common_transpile_args = staticmethod(normalize_common_transpile_args)
+
+
+class ErrorHelpers:
+    make_user_error = staticmethod(make_user_error)
+    parse_user_error = staticmethod(parse_user_error)
+    print_user_error = staticmethod(print_user_error)
+
+
+class EastDocumentHelpers:
+    normalize_east_root_document = staticmethod(normalize_east_root_document)
+    load_east_document = staticmethod(load_east_document)
+    normalize_east1_to_east2_document = staticmethod(normalize_east1_to_east2_document)
+    load_east1_document = staticmethod(load_east1_document)
+    load_east_document_compat = staticmethod(load_east_document_compat)
+    load_east3_document = staticmethod(load_east3_document)
+
+
+class TextPathHelpers:
+    join_str_list = staticmethod(join_str_list)
+    split_infix_once = staticmethod(split_infix_once)
+    local_binding_name = staticmethod(local_binding_name)
+    split_graph_issue_entry = staticmethod(split_graph_issue_entry)
+    replace_first = staticmethod(replace_first)
+    inject_after_includes_block = staticmethod(inject_after_includes_block)
+    split_ws_tokens = staticmethod(split_ws_tokens)
+    first_import_detail_line = staticmethod(first_import_detail_line)
+    append_unique_non_empty = staticmethod(append_unique_non_empty)
+    split_top_level_csv = staticmethod(split_top_level_csv)
+    normalize_param_annotation = staticmethod(normalize_param_annotation)
+    extract_function_signatures_from_python_source = staticmethod(extract_function_signatures_from_python_source)
+    extract_function_arg_types_from_python_source = staticmethod(extract_function_arg_types_from_python_source)
+    split_type_args = staticmethod(split_type_args)
+    split_top_level_union = staticmethod(split_top_level_union)
+    path_parent_text = staticmethod(path_parent_text)
+    python_module_exists_under = staticmethod(python_module_exists_under)
+    mkdirs_for_cli = staticmethod(mkdirs_for_cli)
+    write_text_file = staticmethod(write_text_file)
+    count_text_lines = staticmethod(count_text_lines)
+    sort_str_list_copy = staticmethod(sort_str_list_copy)
+
+
+class EastAnalysisHelpers:
+    dict_any_get = staticmethod(dict_any_get)
+    dict_any_get_str = staticmethod(dict_any_get_str)
+    dict_any_kind = staticmethod(dict_any_kind)
+    name_target_id = staticmethod(name_target_id)
+    stmt_target_name = staticmethod(stmt_target_name)
+    stmt_assigned_names = staticmethod(stmt_assigned_names)
+    stmt_child_stmt_lists = staticmethod(stmt_child_stmt_lists)
+    collect_store_names_from_target = staticmethod(collect_store_names_from_target)
+    collect_store_names_from_target_plan = staticmethod(collect_store_names_from_target_plan)
+    stmt_list_parse_metrics = staticmethod(stmt_list_parse_metrics)
+    module_parse_metrics = staticmethod(module_parse_metrics)
+    collect_symbols_from_stmt = staticmethod(collect_symbols_from_stmt)
+    collect_symbols_from_stmt_list = staticmethod(collect_symbols_from_stmt_list)
+    module_analyze_metrics = staticmethod(module_analyze_metrics)
+    select_guard_module_map = staticmethod(select_guard_module_map)
+    stmt_list_scope_depth = staticmethod(stmt_list_scope_depth)
+    dict_any_get_str_list = staticmethod(dict_any_get_str_list)
+    dict_any_get_list = staticmethod(dict_any_get_list)
+    dict_any_get_dict = staticmethod(dict_any_get_dict)
+    dict_any_get_dict_list = staticmethod(dict_any_get_dict_list)
+    assign_targets = staticmethod(assign_targets)
+    dict_str_get = staticmethod(dict_str_get)
+    looks_like_runtime_function_name = staticmethod(looks_like_runtime_function_name)
+
+
+class ImportGraphHelpers:
+    module_export_table = staticmethod(module_export_table)
+    build_module_symbol_index = staticmethod(build_module_symbol_index)
+    build_module_east_map_from_analysis = staticmethod(build_module_east_map_from_analysis)
+    build_module_type_schema = staticmethod(build_module_type_schema)
+    validate_from_import_symbols_or_raise = staticmethod(validate_from_import_symbols_or_raise)
+    set_import_module_binding = staticmethod(set_import_module_binding)
+    set_import_symbol_binding = staticmethod(set_import_symbol_binding)
+    set_import_symbol_binding_and_module_set = staticmethod(set_import_symbol_binding_and_module_set)
+    path_key_for_graph = staticmethod(path_key_for_graph)
+    rel_disp_for_graph = staticmethod(rel_disp_for_graph)
+    sanitize_module_label = staticmethod(sanitize_module_label)
+    module_rel_label = staticmethod(module_rel_label)
+    module_name_from_path_for_graph = staticmethod(module_name_from_path_for_graph)
+    module_id_from_east_for_graph = staticmethod(module_id_from_east_for_graph)
+    meta_import_bindings = staticmethod(meta_import_bindings)
+    meta_qualified_symbol_refs = staticmethod(meta_qualified_symbol_refs)
+    graph_cycle_dfs = staticmethod(graph_cycle_dfs)
+    resolve_user_module_path_for_graph = staticmethod(resolve_user_module_path_for_graph)
+    collect_reserved_import_conflicts = staticmethod(collect_reserved_import_conflicts)
+    format_graph_list_section = staticmethod(format_graph_list_section)
+    dump_deps_text = staticmethod(dump_deps_text)
+    format_import_graph_report = staticmethod(format_import_graph_report)
+    dump_deps_graph_text = staticmethod(dump_deps_graph_text)
+    validate_import_graph_or_raise = staticmethod(validate_import_graph_or_raise)
+    collect_import_modules = staticmethod(collect_import_modules)
+    is_known_non_user_import = staticmethod(is_known_non_user_import)
+    resolve_module_name_for_graph = staticmethod(resolve_module_name_for_graph)
+    resolve_module_name = staticmethod(resolve_module_name)
+    is_pytra_module_name = staticmethod(is_pytra_module_name)
+    collect_user_module_files_for_graph = staticmethod(collect_user_module_files_for_graph)
+    finalize_import_graph_analysis = staticmethod(finalize_import_graph_analysis)
+    analyze_import_graph = staticmethod(analyze_import_graph)
+    build_module_east_map = staticmethod(build_module_east_map)
+
+
+class CodegenOptionHelpers:
+    resolve_codegen_options = staticmethod(resolve_codegen_options)
+    validate_codegen_options = staticmethod(validate_codegen_options)
+    dump_codegen_options_text = staticmethod(dump_codegen_options_text)
+
+
+class GuardHelpers:
+    parse_guard_limit_or_raise = staticmethod(parse_guard_limit_or_raise)
+    guard_profile_base_limits = staticmethod(guard_profile_base_limits)
+    resolve_guard_limits = staticmethod(resolve_guard_limits)
+    raise_guard_limit_exceeded = staticmethod(raise_guard_limit_exceeded)
+    check_guard_limit = staticmethod(check_guard_limit)
+    check_parse_stage_guards = staticmethod(check_parse_stage_guards)
+    check_analyze_stage_guards = staticmethod(check_analyze_stage_guards)
+
+
+class Py2CppArgvHelpers:
+    empty_parse_dict = staticmethod(empty_parse_dict)
+    parse_py2cpp_argv = staticmethod(parse_py2cpp_argv)
