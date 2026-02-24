@@ -59,7 +59,8 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - Rust: `src/runtime/rs/pytra/built_in/py_runtime.rs`（`PyPath`）
     - C#: `src/runtime/cs/pytra/std/pathlib.cs`（`py_path`）
     - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`（`src/runtime/{js,ts}/pytra/` へ移行予定）
-    - Go/Java: `src/go_module/py_runtime.go`, `src/java_module/PyRuntime.java`（`src/runtime/{go,java}/pytra/` へ移行予定）
+    - Go: `src/runtime/go/pytra/py_runtime.go`（移行済み）
+    - Java: `src/java_module/PyRuntime.java`（`src/runtime/java/pytra/` へ移行予定）
     - Swift/Kotlin: preview emitter（最小エントリ + 中間コードコメント形式）
   - 差分:
     - Python `pathlib` の完全互換ではなく、Pytra の最小共通 API に限定しています。
@@ -81,7 +82,7 @@ Python標準ライブラリは「モジュール名だけ」でなく、対応�
     - `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - ターゲット言語ごとのランタイム:
   - 正本: `src/runtime/<lang>/pytra/`（最終配置先）
-  - 旧配置（移行中）: `src/js_module`, `src/ts_module`, `src/go_module`, `src/java_module`, `src/swift_module`, `src/kotlin_module`
+  - 旧配置（移行中）: `src/js_module`, `src/ts_module`, `src/java_module`, `src/swift_module`, `src/kotlin_module`
 
 ## 作業中
 

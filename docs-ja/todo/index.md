@@ -63,7 +63,7 @@
 
 文脈: `docs-ja/plans/p1-multilang-output-quality.md`（`TG-P1-MULTILANG-QUALITY`）
 
-1. [ ] [ID: P1-MQ-10] `sample/go`, `sample/kotlin`, `sample/swift` の preview 要約出力（「C# ベース中間出力のシグネチャ要約」）を廃止し、通常のコード生成へ移行する（`P1-MQ-10-S1` から `P1-MQ-10-S4` 完了でクローズ）。
+1. [x] [ID: P1-MQ-10] `sample/go`, `sample/kotlin`, `sample/swift` の preview 要約出力（「C# ベース中間出力のシグネチャ要約」）を廃止し、通常のコード生成へ移行する（`P1-MQ-10-S1` から `P1-MQ-10-S4` 完了でクローズ）。
 2. [x] [ID: P1-MQ-10-S1] GoEmitter の CodeEmitter ベース実装を拡張し、`sample/go` が要約コメントではなく AST 本文を出力するようにする。
 3. [x] [ID: P1-MQ-10-S2] KotlinEmitter の CodeEmitter ベース実装を拡張し、`sample/kotlin` が要約コメントではなく AST 本文を出力するようにする。
 4. [x] [ID: P1-MQ-10-S3] SwiftEmitter の CodeEmitter ベース実装を拡張し、`sample/swift` が要約コメントではなく AST 本文を出力するようにする。
@@ -82,7 +82,7 @@
 
 1. [ ] [ID: P1-RUNTIME-06] `src/{cs,go,java,kotlin,swift}_module/` の runtime 実体を `src/runtime/<lang>/pytra/` へ移行し、`src/*_module/` を shim-only または削除状態へ収束させる（`P1-RUNTIME-06-S1` から `P1-RUNTIME-06-S6` 完了でクローズ）。
 2. [x] [ID: P1-RUNTIME-06-S1] C# runtime 実体（`src/cs_module/*`）を `src/runtime/cs/pytra/` へ移し、参照/namespace/テストを新配置へ合わせる。
-3. [ ] [ID: P1-RUNTIME-06-S2] Go runtime 実体（`src/go_module/py_runtime.go`）を `src/runtime/go/pytra/` へ移し、参照と smoke 検証を新配置へ合わせる。
+3. [x] [ID: P1-RUNTIME-06-S2] Go runtime 実体（`src/go_module/py_runtime.go`）を `src/runtime/go/pytra/` へ移し、参照と smoke 検証を新配置へ合わせる。
 4. [ ] [ID: P1-RUNTIME-06-S3] Java runtime 実体（`src/java_module/PyRuntime.java`）を `src/runtime/java/pytra/` へ移し、参照と smoke 検証を新配置へ合わせる。
 5. [ ] [ID: P1-RUNTIME-06-S4] Kotlin runtime 実体（`src/kotlin_module/py_runtime.kt`）を `src/runtime/kotlin/pytra/` へ移し、参照と smoke 検証を新配置へ合わせる。
 6. [ ] [ID: P1-RUNTIME-06-S5] Swift runtime 実体（`src/swift_module/py_runtime.swift`）を `src/runtime/swift/pytra/` へ移し、参照と smoke 検証を新配置へ合わせる。

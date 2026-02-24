@@ -103,6 +103,12 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
+    def test_go_runtime_source_path_is_migrated(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "go" / "pytra" / "py_runtime.go"
+        legacy_path = ROOT / "src" / "go_module" / "py_runtime.go"
+        self.assertTrue(runtime_path.exists())
+        self.assertFalse(legacy_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
