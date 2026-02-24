@@ -26,9 +26,6 @@
 
 文脈: `docs-ja/plans/plan-east123-migration.md`（`TG-P0-EAST123-MIGRATION`）
 
-9. [ ] [ID: P0-EASTMIG-05] `--east-stage 3` 主経路の回帰導線（unit/transpile/selfhost）を標準化し、`EAST2` 入力を移行互換モードとして段階的に格下げする。
-12. [ ] [ID: P0-EASTMIG-05-S3] `--east-stage 2` を移行互換モードとして位置づけ、縮退手順（警告/段階撤去）を `docs-ja/spec/spec-east123-migration.md` と `docs-ja/plans/plan-east123-migration.md` に明記する。
-
 ## P1: CodeEmitter 共通ディスパッチ再設計
 
 文脈: `docs-ja/plans/p1-codeemitter-dispatch-redesign.md`（`TG-P1-CED`）

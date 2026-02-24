@@ -198,6 +198,15 @@ python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
   - `check_selfhost_cpp_diff --mode allow-not-implemented`: `mismatches=0`。
 - `EAST3` 主経路変更時は上記 4 コマンドを同一コミット前に実行し、結果を `docs-ja/plans/plan-east123-migration.md` の `決定ログ` へ記録する。
 
+### 9.2 `--east-stage 2` 移行互換モード（P0-EASTMIG-05-S3）
+
+- `--east-stage 3` を標準経路とし、`--east-stage 2` は移行互換モードとして扱う。
+- 移行互換モードの縮退手順:
+  1. 互換維持フェーズ: `EAST2` 入力を許容しつつ、backend 側で `EAST3` 命令写像へ寄せる。
+  2. 警告フェーズ: `--east-stage 2` 実行時に非推奨警告を出し、`--east-stage 3` への移行を促す。
+  3. 撤去判定フェーズ: CI/日次運用の `EAST3` 単独成立を継続確認し、`EAST2` 互換を段階的に削除する。
+- 新規機能追加時は `EAST3` 経路を必須とし、`EAST2` 側へ同等実装を追加しない。
+
 ## 10. リスクと回避
 
 1. リスク: `EAST1/EAST2` 分離で既存CLI互換が崩れる。  

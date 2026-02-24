@@ -56,6 +56,11 @@
 - `check_py2*` 系は `fail=0`。
 - selfhost 差分検証は `mismatches=0`。
 
+EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
+1. 既定運用は `--east-stage 3` とし、`--east-stage 2` は移行互換モードとする。
+2. 互換モードは既存入力の受け皿に限定し、新規意味論を追加しない。
+3. 警告フェーズを経て、`EAST3` 単独運用が安定した段階で `EAST2` 互換を段階撤去する。
+
 サブタスク実行順（todo 同期）:
 1. `P0-EASTMIG-01`: stage 名と責務境界（`EAST1/2/3`）を `spec` と `plan` で同期する。
    - `P0-EASTMIG-01-S1`: `spec-east123-migration` に責務対応表を固定する。
@@ -104,3 +109,4 @@
 - 2026-02-24: P0-EASTMIG-04-S3 として hooks 回帰ガードを `test/unit/test_cpp_hooks.py` へ追加し、`build_cpp_hooks()` が構文差分 hook のみ（`on_stmt_omit_braces`, `on_render_expr_complex`）を登録することを固定した。P0-EASTMIG-04 をクローズ。
 - 2026-02-24: `P0-EASTMIG-05-S1` として `test/unit/test_east3_lowering.py` / `test/unit/test_east3_cpp_bridge.py` を拡充し、既存 `ForCore` 入力に対しても `RuntimeIterForPlan.dispatch_mode` を `object_dispatch_mode` へ正規化する契約を追加した（lowering 19件 / bridge 72件とも通過）。
 - 2026-02-24: `P0-EASTMIG-05-S2` として `check_py2{cpp,js,ts}_transpile` + `check_selfhost_cpp_diff --mode allow-not-implemented` を `EAST3` 主経路の標準回帰導線として固定し、実測結果（各 `checked=131 fail=0`、`mismatches=0`）を確認した。
+- 2026-02-24: P0-EASTMIG-05-S3 として `--east-stage 2` を移行互換モードに位置づける縮退手順（互換維持 -> 警告 -> 撤去判定）を plan/spec に固定し、P0-EASTMIG-05 をクローズ。
