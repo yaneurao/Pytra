@@ -5123,6 +5123,8 @@ class CppEmitter(CodeEmitter):
 
     def _render_call_fallback(self, fn_name: str, args: list[str]) -> str:
         """Call の最終フォールバック（通常の関数呼び出し）を返す。"""
+        if self._requires_builtin_call_lowering(fn_name):
+            raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + fn_name)
         if fn_name.startswith("py_assert_"):
             call_args = self._coerce_py_assert_args(fn_name, args, [])
             return f"pytra::utils::assertions::{fn_name}({join_str_list(', ', call_args)})"
