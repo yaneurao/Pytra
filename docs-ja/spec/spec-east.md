@@ -376,12 +376,15 @@
 - `core.py`: self-hosted parser 実装（低レイヤ）
 - `east1_build.py`: build 入口（追加対象）
 - `east1.py`: stage 契約 helper（薄い API）
+- `py2cpp.py`: `_analyze_import_graph` / `build_module_east_map` は `East1BuildHelpers` への委譲のみを担当
+- `transpile_cli.py`: `ImportGraphHelpers.analyze_import_graph` / `build_module_east_map` は `east1_build` への thin wrapper（互換公開のみ）
 
 受け入れ条件:
 1. `EAST1` build は `east_stage=1` 付与までに限定し、`EAST1 -> EAST2` を行わない。  
 2. `load_east_document_compat` のエラー契約（`input_invalid` 系）を維持する。  
 3. `transpile_cli.py` は build 本体ロジックを持たず、委譲中心とする。  
 4. `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を回帰導線に含め、差分発生時は `todo` へ切り出して追跡する。  
+5. `test/unit/test_east1_build.py` と `test/unit/test_py2cpp_east1_build_bridge.py` で、`EAST1` 入口契約と `py2cpp` 委譲経路を固定する。  
 
 <a id="east-migration-phases"></a>
 ## 20. 移行フェーズ（EAST3 主経路化）

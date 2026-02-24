@@ -22,19 +22,6 @@
 - `docs-ja/todo/index.md` / `docs-ja/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
-## P0: `EAST1 build` 互換運用廃止（2番目優先）
-
-文脈: `docs-ja/plans/p0-east1-build-compat-removal.md`（`TG-P0-EAST1-BUILD-COMPAT-REMOVAL`）
-
-1. [ ] [ID: P0-EAST1-BUILD-01] `py2cpp` 起点の `EAST1 build/import graph` 互換運用を廃止し、`east_parts` 側の正規責務へ移管する（`P0-EAST1-BUILD-01-S1` から `P0-EAST1-BUILD-01-S4` 完了でクローズ）。
-2. [x] [ID: P0-EAST1-BUILD-01-S1] `src/pytra/compiler/east_parts/east1_build.py`（新規）へ `.py/.json -> EAST1` build と import graph 解析入口 API を定義する。
-3. [x] [ID: P0-EAST1-BUILD-01-S2] `src/py2cpp.py` の import graph/build 呼び出しを `east1_build` API へ置換し、`transpile_cli` 互換 helper 依存を削減する。
-4. [x] [ID: P0-EAST1-BUILD-01-S3] `src/pytra/compiler/transpile_cli.py` の `py2cpp` 互換専用 helper（import graph/build 導線）を撤去または薄い委譲へ縮退する。
-5. [ ] [ID: P0-EAST1-BUILD-01-S4] `spec-east` / `spec-dev` と `py2cpp` 関連テストを同期し、責務境界と回帰ガードを固定する。
-進捗メモ: [ID: P0-EAST1-BUILD-01-S1] `east_parts/east1_build.py` を新設し、`build_east1_document`・`analyze_import_graph`・`build_module_east_map` の入口 API と unit test（`test_east1_build.py`）を追加。
-進捗メモ: [ID: P0-EAST1-BUILD-01-S2] `py2cpp.py` の `_analyze_import_graph` / `build_module_east_map` を `East1BuildHelpers` 委譲へ置換し、`build_module_symbol_index` / `build_module_type_schema` も `east1_build` 起点へ寄せた。
-進捗メモ: [ID: P0-EAST1-BUILD-01-S3] `transpile_cli.ImportGraphHelpers` の `analyze_import_graph` / `build_module_east_map` を `east1_build` への薄い委譲 wrapper（lazy import）へ置換し、互換 helper の責務を縮退した。
-
 ## P0: 依存解析の `EAST1 build` 責務化（3番目優先）
 
 文脈: `docs-ja/plans/p0-dependency-analysis-east1.md`（`TG-P0-DEP-ANALYSIS-EAST1`）
