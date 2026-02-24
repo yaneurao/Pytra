@@ -176,7 +176,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertNotIn("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl", merged)
         self.assertIn("def _build_cpp_hooks_impl() -> dict[str, Any]:", merged)
 
-    def test_hook_patch_only_injects_dynamic_hook_disable_in_cpp_emitter(self) -> None:
+    def test_hook_patch_injects_dynamic_hook_disable_and_call_hook_stub(self) -> None:
         mod = _load_prepare_module()
         py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
         base_text = mod.SRC_BASE.read_text(encoding="utf-8")
@@ -193,8 +193,10 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
 
         pre_call_hook = _slice_block(merged, "    def _call_hook(", "\n    def _call_hook1(")
         post_call_hook = _slice_block(patched, "    def _call_hook(", "\n    def _call_hook1(")
-        self.assertEqual(post_call_hook, pre_call_hook)
-        self.assertIn("fn = self._lookup_hook(name)", post_call_hook)
+        self.assertNotEqual(post_call_hook, pre_call_hook)
+        self.assertIn("selfhost 互換: dynamic hooks は無効化済みなので常に未処理を返す。", post_call_hook)
+        self.assertIn("return None", post_call_hook)
+        self.assertNotIn("fn = self._lookup_hook(name)", post_call_hook)
         self.assertNotIn("pass", post_call_hook)
 
         cpp_init_block = _slice_block(
@@ -212,12 +214,17 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
 
     def test_hook_patch_raises_when_markers_missing(self) -> None:
         mod = _load_prepare_module()
-        with self.assertRaisesRegex(RuntimeError, "CppEmitter block"):
+        with self.assertRaisesRegex(RuntimeError, "_call_hook"):
             mod._patch_code_emitter_hooks_for_selfhost("class CodeEmitter:\n    pass\n")
 
         broken_order = (
             "class CodeEmitter:\n"
-            "    def __init__(self):\n"
+            "    def _call_hook(\n"
+            "        self,\n"
+            "        name: str,\n"
+            "    ) -> object:\n"
+            "        return None\n"
+            "    def _call_hook1(self, name: str, arg0: object) -> object:\n"
             "        return None\n"
             "class CppEmitter(CodeEmitter):\n"
             "    def __init__(self):\n"

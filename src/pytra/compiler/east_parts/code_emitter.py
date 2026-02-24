@@ -489,18 +489,20 @@ class CodeEmitter:
         i = 0
         while i < n:
             ch = text[i]
-            if "A" <= ch <= "Z":
+            if ("A" <= ch) and (ch <= "Z"):
                 prev_ch = text[i - 1] if i > 0 else ""
                 next_ch = text[i + 1] if i + 1 < n else ""
-                prev_is_lower_or_digit = ("a" <= prev_ch <= "z") or ("0" <= prev_ch <= "9")
-                next_is_lower = "a" <= next_ch <= "z"
+                prev_is_lower_or_digit = (("a" <= prev_ch) and (prev_ch <= "z")) or (
+                    ("0" <= prev_ch) and (prev_ch <= "9")
+                )
+                next_is_lower = ("a" <= next_ch) and (next_ch <= "z")
                 if len(raw) > 0 and raw[-1] != "_" and (prev_is_lower_or_digit or next_is_lower):
                     raw.append("_")
                 raw.append(chr(ord(ch) + 32))
                 i += 1
                 continue
-            is_lower = "a" <= ch <= "z"
-            is_digit = "0" <= ch <= "9"
+            is_lower = ("a" <= ch) and (ch <= "z")
+            is_digit = ("0" <= ch) and (ch <= "9")
             if is_lower or is_digit:
                 raw.append(ch)
             elif len(raw) > 0 and raw[-1] != "_":
