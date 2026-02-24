@@ -350,6 +350,40 @@ class East3LoweringTest(unittest.TestCase):
         self.assertEqual(body[0].get("kind"), "ForCore")
         self.assertEqual(body[0].get("iter_plan", {}).get("kind"), "StaticRangeForPlan")
 
+    def test_load_east3_document_normalizes_existing_forcore_runtime_dispatch_mode(self) -> None:
+        payload = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "iter_mode": "runtime_protocol",
+                    "iter_plan": {
+                        "kind": "RuntimeIterForPlan",
+                        "iter_expr": {"kind": "Name", "id": "xs", "resolved_type": "object"},
+                        "dispatch_mode": "native",
+                        "init_op": "ObjIterInit",
+                        "next_op": "ObjIterNext",
+                    },
+                    "target_plan": {"kind": "NameTarget", "id": "x", "target_type": "object"},
+                    "body": [{"kind": "Pass"}],
+                    "orelse": [],
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "east3.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            out = load_east3_document(p, object_dispatch_mode="type_id")
+        self.assertEqual(out.get("east_stage"), 3)
+        self.assertEqual(out.get("meta", {}).get("dispatch_mode"), "type_id")
+        body = out.get("body", [])
+        runtime_plan = body[0].get("iter_plan", {})
+        self.assertEqual(runtime_plan.get("kind"), "RuntimeIterForPlan")
+        self.assertEqual(runtime_plan.get("dispatch_mode"), "type_id")
+
     def test_lower_any_boundary_builtin_calls_to_obj_ops(self) -> None:
         any_name = {"kind": "Name", "id": "x", "resolved_type": "Any"}
         east2 = {
