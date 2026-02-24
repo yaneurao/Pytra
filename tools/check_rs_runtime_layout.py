@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Guard Rust runtime layout migration state.
+"""Guard Rust runtime layout state.
 
 Policy:
 - Runtime implementation must live under `src/runtime/rs/pytra/`.
-- `src/rs_module/py_runtime.rs` is allowed only as a compatibility shim.
-- `src/rs_module/` must not grow additional runtime source files.
+- `src/rs_module/` is deprecated and must not contain source files.
 """
 
 from __future__ import annotations
@@ -14,9 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY_DIR = ROOT / "src" / "rs_module"
-LEGACY_SHIM = LEGACY_DIR / "py_runtime.rs"
 NEW_RUNTIME = ROOT / "src" / "runtime" / "rs" / "pytra" / "built_in" / "py_runtime.rs"
-SHIM_INCLUDE_LINE = 'include!("../runtime/rs/pytra/built_in/py_runtime.rs");'
 
 
 def _collect_files(base: Path) -> list[Path]:
@@ -36,30 +33,16 @@ def main() -> int:
         print(f"  - {NEW_RUNTIME.relative_to(ROOT)}")
         return 1
 
-    if not LEGACY_SHIM.exists():
-        print("[FAIL] missing legacy compatibility shim")
-        print(f"  - {LEGACY_SHIM.relative_to(ROOT)}")
-        return 1
-
     legacy_files = _collect_files(LEGACY_DIR)
-    expected = [LEGACY_SHIM]
-    if legacy_files != expected:
-        print("[FAIL] unexpected files under src/rs_module")
-        print("  expected only:")
-        print(f"    - {LEGACY_SHIM.relative_to(ROOT)}")
+    if len(legacy_files) > 0:
+        print("[FAIL] deprecated src/rs_module still contains files")
         print("  actual:")
         for path in legacy_files:
             print(f"    - {path.relative_to(ROOT)}")
         return 1
 
-    shim_text = LEGACY_SHIM.read_text(encoding="utf-8")
-    if SHIM_INCLUDE_LINE not in shim_text:
-        print("[FAIL] legacy shim does not include new runtime path")
-        print(f"  expected line: {SHIM_INCLUDE_LINE}")
-        return 1
-
     print("[OK] rs runtime layout guard passed")
-    print(f"  shim: {LEGACY_SHIM.relative_to(ROOT)}")
+    print("  legacy: src/rs_module has no source files")
     print(f"  runtime: {NEW_RUNTIME.relative_to(ROOT)}")
     return 0
 

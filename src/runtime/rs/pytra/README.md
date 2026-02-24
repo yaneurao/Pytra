@@ -6,5 +6,3 @@
 - `std/`: `pytra.std.*` 相当
 - `utils/`: `pytra.utils.*` 相当
 - `compiler/`: compiler 補助（必要時）
-
-`src/rs_module/` は移行期間の互換レイヤです。
