@@ -222,6 +222,32 @@ if __name__ == "__main__":
         self.assertIsInstance(target, dict)
         self.assertEqual(target.get("id"), "import_modules")
 
+    def test_builtin_call_nodes_always_have_runtime_call(self) -> None:
+        src = """
+from pathlib import Path
+
+def main(xs: list[int], s: str, p: Path) -> None:
+    _ = print(len(xs), str(1), int("10", 16), bool(xs), range(3), zip(xs, xs))
+    _ = s.strip()
+    _ = s.find("x")
+    _ = p.exists()
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        builtin_calls = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict)
+            and n.get("kind") == "Call"
+            and n.get("lowered_kind") == "BuiltinCall"
+        ]
+        self.assertGreater(len(builtin_calls), 0)
+        missing_runtime = [
+            n
+            for n in builtin_calls
+            if not isinstance(n.get("runtime_call"), str) or str(n.get("runtime_call")) == ""
+        ]
+        self.assertEqual(missing_runtime, [])
+
     def test_raw_range_call_is_lowered_out(self) -> None:
         src = """
 def main() -> None:
