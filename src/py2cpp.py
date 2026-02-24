@@ -402,9 +402,9 @@ class CppEmitter(CodeEmitter):
         """現在スコープへ識別子を追加する。"""
         if name == "":
             return
-        scope = self.current_scope_names()
-        scope.add(name)
-        self.scope_stack[-1] = scope
+        if len(self.scope_stack) == 0:
+            self.scope_stack.append(set())
+        self.scope_stack[-1].add(name)
 
     def is_declared(self, name: str) -> bool:
         """現在の可視スコープで識別子が宣言済みかを返す。"""

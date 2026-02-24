@@ -1331,10 +1331,10 @@ class CodeEmitter:
         return self.scope_stack[-1]
 
     def declare_in_current_scope(self, name: str) -> None:
-        """現在スコープへ宣言済み名を追加する（selfhost互換で再代入する）。"""
-        scope = self.current_scope()
-        scope.add(name)
-        self.scope_stack[-1] = scope
+        """現在スコープへ宣言済み名を追加する。"""
+        if len(self.scope_stack) == 0:
+            self.scope_stack.append(set())
+        self.scope_stack[-1].add(name)
 
     def is_declared(self, name: str) -> bool:
         """指定名がどこかの有効スコープで宣言済みか判定する。"""
