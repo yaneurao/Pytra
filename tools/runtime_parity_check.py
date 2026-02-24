@@ -4,16 +4,17 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shlex
 import shutil
 import subprocess
-import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "test" / "fixtures"
+SAMPLE_ROOT = ROOT / "sample" / "py"
 SWIFTC = ROOT / ".chain" / "swift" / "usr" / "bin" / "swiftc"
 
 
@@ -32,8 +33,24 @@ def normalize(text: str) -> str:
     return "\n".join(lines)
 
 
-def run_shell(cmd: str, cwd: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, cwd=cwd, shell=True, capture_output=True, text=True)
+def run_shell(
+    cmd: str,
+    cwd: Path,
+    *,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    proc_env = os.environ.copy()
+    if env is not None:
+        proc_env.update(env)
+    return subprocess.run(
+        cmd,
+        cwd=cwd,
+        shell=True,
+        check=False,
+        capture_output=True,
+        text=True,
+        env=proc_env,
+    )
 
 
 def can_run(target: Target) -> bool:
@@ -47,8 +64,19 @@ def can_run(target: Target) -> bool:
     return True
 
 
-def find_case_path(case_stem: str) -> Path | None:
-    matches = sorted(FIXTURE_ROOT.rglob(f"{case_stem}.py"))
+def _normalize_output_for_compare(stdout_text: str) -> str:
+    lines: list[str] = []
+    for line in stdout_text.splitlines():
+        low = line.strip().lower()
+        if low.startswith("elapsed_sec:") or low.startswith("elapsed:") or low.startswith("time_sec:"):
+            continue
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def find_case_path(case_stem: str, case_root: str) -> Path | None:
+    root = SAMPLE_ROOT if case_root == "sample" else FIXTURE_ROOT
+    matches = sorted(root.rglob(f"{case_stem}.py"))
     if not matches:
         return None
     return matches[0]
@@ -144,8 +172,14 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
     ]
 
 
-def check_case(case_stem: str, enabled_targets: set[str]) -> int:
-    case_path = find_case_path(case_stem)
+def check_case(
+    case_stem: str,
+    enabled_targets: set[str],
+    *,
+    case_root: str,
+    ignore_stdout: bool,
+) -> int:
+    case_path = find_case_path(case_stem, case_root)
     if case_path is None:
         print(f"[ERROR] missing case: {case_stem}")
         return 1
@@ -153,13 +187,18 @@ def check_case(case_stem: str, enabled_targets: set[str]) -> int:
         work = Path(tmpdir)
         (work / "src").symlink_to(ROOT / "src", target_is_directory=True)
         (work / "test").symlink_to(ROOT / "test", target_is_directory=True)
+        if case_root == "sample":
+            (work / "sample").symlink_to(ROOT / "sample", target_is_directory=True)
 
-        py = run_shell(f"PYTHONPATH=src python {shlex.quote(case_path.as_posix())}", cwd=work)
+        run_expr = f"python {shlex.quote(case_path.as_posix())}"
+        run_env = {"PYTHONPATH": "src"}
+        py = run_shell(run_expr, cwd=work, env=run_env)
+
         if py.returncode != 0:
             print(f"[ERROR] python:{case_stem} failed")
             print(py.stderr.strip())
             return 1
-        expected = normalize(py.stdout)
+        expected = _normalize_output_for_compare(py.stdout) if ignore_stdout else py.stdout
 
         mismatches: list[str] = []
         for target in build_targets(case_stem, case_path):
@@ -179,7 +218,7 @@ def check_case(case_stem: str, enabled_targets: set[str]) -> int:
                 mismatches.append(f"{case_stem}:{target.name}: run failed: {rr.stderr.strip()}")
                 continue
 
-            actual = normalize(rr.stdout)
+            actual = _normalize_output_for_compare(rr.stdout) if ignore_stdout else rr.stdout
             if actual != expected:
                 mismatches.append(
                     f"{case_stem}:{target.name}: output mismatch\n"
@@ -205,7 +244,18 @@ def main() -> int:
         "cases",
         nargs="*",
         default=["math_extended", "pathlib_extended"],
-        help="case stems under test/fixtures/** (without .py)",
+        help="case stems (case names without .py).",
+    )
+    parser.add_argument(
+        "--case-root",
+        default="fixture",
+        choices=("fixture", "sample"),
+        help="source root to read cases from (fixture: test/fixtures, sample: sample/py)",
+    )
+    parser.add_argument(
+        "--ignore-unstable-stdout",
+        action="store_true",
+        help="ignore timing lines for output compare (elapsed_sec/time_sec)",
     )
     parser.add_argument(
         "--targets",
@@ -225,7 +275,12 @@ def main() -> int:
 
     exit_code = 0
     for stem in args.cases:
-        code = check_case(stem, enabled_targets)
+        code = check_case(
+            stem,
+            enabled_targets,
+            case_root=args.case_root,
+            ignore_stdout=args.ignore_unstable_stdout,
+        )
         if code != 0:
             exit_code = code
     return exit_code
