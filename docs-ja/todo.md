@@ -31,7 +31,6 @@
 文脈: `docs-ja/plans/p1-codeemitter-dispatch-redesign.md`（`TG-P1-CED`）
 
 py2cpp / py2rs 共通化候補:
-2. [ ] [ID: P1-CED-C-02] 優先 C: 文字列/配列の細かい最適化（演算子簡約・括弧削減）を共通化する。
 
 ## P1: py2cpp 縮退（行数削減）
 

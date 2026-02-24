@@ -1304,22 +1304,12 @@ class RustEmitter(CodeEmitter):
 
     def render_cond(self, expr: Any) -> str:
         """条件式向け描画（数値等を bool 条件へ寄せる）。"""
-        node = self.any_to_dict_or_empty(expr)
-        if len(node) == 0:
-            return "false"
-        t = self.get_expr_type(expr)
-        rendered = self._strip_outer_parens(self.render_expr(expr))
-        if rendered == "":
-            return "false"
-        if t == "bool":
-            return rendered
-        if t == "str":
-            return "!" + rendered + ".is_empty()"
-        if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
-            return rendered + ".len() != 0"
-        if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}:
-            return rendered + " != 0"
-        return rendered
+        return self.render_truthy_cond_common(
+            expr,
+            str_non_empty_pattern="!{expr}.is_empty()",
+            collection_non_empty_pattern="{expr}.len() != 0",
+            number_non_zero_pattern="{expr} != 0",
+        )
 def transpile_to_rust(east_doc: dict[str, Any]) -> str:
     """EAST ドキュメントを Rust コードへ変換する。"""
     emitter = RustEmitter(east_doc)

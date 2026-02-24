@@ -1732,6 +1732,32 @@ class CodeEmitter:
             return True
         return text.find(needle) >= 0
 
+    def render_truthy_cond_common(
+        self,
+        expr: Any,
+        *,
+        str_non_empty_pattern: str,
+        collection_non_empty_pattern: str,
+        number_non_zero_pattern: str = "{expr} != 0",
+    ) -> str:
+        """条件式向けの truthy 判定（str/collection/number）を共通描画する。"""
+        node = self.any_to_dict_or_empty(expr)
+        if len(node) == 0:
+            return "false"
+        t = self.get_expr_type(expr)
+        rendered = self._strip_outer_parens(self.render_expr(expr))
+        if rendered == "":
+            return "false"
+        if t == "bool":
+            return rendered
+        if t == "str":
+            return str_non_empty_pattern.replace("{expr}", rendered)
+        if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+            return collection_non_empty_pattern.replace("{expr}", rendered)
+        if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}:
+            return number_non_zero_pattern.replace("{expr}", rendered)
+        return rendered
+
     def _last_dotted_name(self, name: str) -> str:
         """`a.b.c` の末尾要素 `c` を返す。"""
         last = name

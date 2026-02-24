@@ -758,20 +758,13 @@ class JsEmitter(CodeEmitter):
 
     def render_cond(self, expr: Any) -> str:
         """条件式向け描画（シーケンスを真偽値へ寄せる）。"""
-        node = self.any_to_dict_or_empty(expr)
-        if len(node) == 0:
-            return "false"
-        t = self.get_expr_type(expr)
-        rendered = self._strip_outer_parens(self.render_expr(expr))
-        if rendered == "":
-            return "false"
-        if t == "bool":
-            return rendered
-        if t == "str":
-            return "(" + rendered + ").length !== 0"
-        if t.startswith("list[") or t.startswith("tuple[") or t.startswith("dict[") or t.startswith("set["):
-            return "(" + rendered + ").length !== 0"
-        return rendered
+        return self.render_truthy_cond_common(
+            expr,
+            str_non_empty_pattern="({expr}).length !== 0",
+            collection_non_empty_pattern="({expr}).length !== 0",
+            # JS backend は数値条件をそのまま使う既存挙動を維持する。
+            number_non_zero_pattern="{expr}",
+        )
 
 
 def transpile_to_js(east_doc: dict[str, Any]) -> str:

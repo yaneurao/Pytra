@@ -806,6 +806,45 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.type_generic_args("dict[str, int]", "dict"), ["str", "int64"])
         self.assertEqual(em.type_generic_args("tuple[int, str]", "tuple"), ["int64", "str"])
 
+    def test_render_truthy_cond_common(self) -> None:
+        em = _DummyEmitter({})
+        self.assertEqual(
+            em.render_truthy_cond_common(
+                {"kind": "Name", "repr": "(s)", "resolved_type": "str"},
+                str_non_empty_pattern="{expr}.Length != 0",
+                collection_non_empty_pattern="{expr}.Count != 0",
+                number_non_zero_pattern="{expr} != 0",
+            ),
+            "s.Length != 0",
+        )
+        self.assertEqual(
+            em.render_truthy_cond_common(
+                {"kind": "Name", "repr": "(xs)", "resolved_type": "list[int]"},
+                str_non_empty_pattern="{expr}.Length != 0",
+                collection_non_empty_pattern="{expr}.Count != 0",
+                number_non_zero_pattern="{expr} != 0",
+            ),
+            "xs.Count != 0",
+        )
+        self.assertEqual(
+            em.render_truthy_cond_common(
+                {"kind": "Name", "repr": "(n)", "resolved_type": "int"},
+                str_non_empty_pattern="{expr}.Length != 0",
+                collection_non_empty_pattern="{expr}.Count != 0",
+                number_non_zero_pattern="{expr} != 0",
+            ),
+            "n != 0",
+        )
+        self.assertEqual(
+            em.render_truthy_cond_common(
+                {"kind": "Name", "repr": "(flag)", "resolved_type": "bool"},
+                str_non_empty_pattern="{expr}.Length != 0",
+                collection_non_empty_pattern="{expr}.Count != 0",
+                number_non_zero_pattern="{expr} != 0",
+            ),
+            "flag",
+        )
+
     def test_forbidden_object_receiver_rule(self) -> None:
         em = CodeEmitter({})
         self.assertTrue(em.is_forbidden_object_receiver_type("Any"))
