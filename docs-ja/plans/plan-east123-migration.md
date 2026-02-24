@@ -76,6 +76,12 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 4. `P0-EASTMIG-04`: hooks を `EAST3` 前提で棚卸しし、意味論 hook の流入を禁止する。
 5. `P0-EASTMIG-05`: `--east-stage 3` 主経路の回帰導線を標準化し、`EAST2` 互換を移行モードへ格下げする。
 6. `P0-EASTMIG-06`: 全変換器で `EAST3` を主経路へ統一し、`EAST2` 既定経路を撤去する。
+   - `P0-EASTMIG-06-S0`: 境界固定を先行ゲートとして実施する（CodeEmitter 肥大化防止）。
+     - `P0-EASTMIG-06-S0-S1`: `spec-east` に stage の入力/出力/禁止事項/担当ファイル表を追加。
+     - `P0-EASTMIG-06-S0-S2`: `spec-dev` に CodeEmitter/hook の責務境界（意味論 lower 禁止）を明記。
+     - `P0-EASTMIG-06-S0-S3`: `east_parts` と `transpile_cli` の段階横断残存箇所を棚卸し。
+     - `P0-EASTMIG-06-S0-S4`: stage 境界違反を検出する unit/tools ガードを追加。
+     - `P0-EASTMIG-06-S0-S5`: `todo`/`plan` へ反映し、境界固定を P0 の先行ゲートとして確定。
    - `P0-EASTMIG-06-S1`: 全 `py2*.py` の `EAST2` 既定経路を棚卸しする。
    - `P0-EASTMIG-06-S2`: `py2cpp.py` の既定 `--east-stage` を `3` へ切替える。
    - `P0-EASTMIG-06-S3`: 非 C++ 変換器へ `EAST3` 主経路を導入する。
@@ -97,12 +103,14 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 
 - `P0-EASTMIG-05` で方針（`EAST3` 主経路化）を確定したが、実装は部分的に `EAST2` 既定が残っている。
 - 具体的には、`py2cpp.py` の既定 `--east-stage` はまだ `2`、非 C++ 変換器は `load_east_document_compat`（EAST2 互換）経路が主流である。
-- そのため、未完了分を `P0-EASTMIG-06` として再オープンし、「全変換器で EAST3 を既定主経路化」までを完了条件に置く。
+- この状態で各言語 CodeEmitter を先に拡張すると、責務境界が曖昧なまま backend に意味論実装が再流入し、修正範囲が肥大化する。
+- そのため、未完了分を `P0-EASTMIG-06` として再オープンし、「境界固定（S0） -> 全変換器で EAST3 既定主経路化」の順を完了条件に置く。
 
 実行メモ:
 - `EAST3 lower` は `EAST2 -> EAST3` 変換のことを指す。
 - `EAST1 -> EAST2` は parser 出力正規化層であり、意味論確定は行わない。
 - backend hooks は移行期間中に分離してもよいが、最終形は `EAST3` 向け最小 hook 集合に収束させる。
+- `P0-EASTMIG-06-S0` が完了するまでは、CodeEmitter の新規意味論実装（段階境界を曖昧にする変更）へ着手しない。
 
 ## C++ hooks 棚卸し（P0-EASTMIG-04-S1）
 
@@ -135,6 +143,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - 2026-02-24: `P0-EASTMIG-05-S2` として `check_py2{cpp,js,ts}_transpile` + `check_selfhost_cpp_diff --mode allow-not-implemented` を `EAST3` 主経路の標準回帰導線として固定し、実測結果（各 `checked=131 fail=0`、`mismatches=0`）を確認した。
 - 2026-02-24: P0-EASTMIG-05-S3 として `--east-stage 2` を移行互換モードに位置づける縮退手順（互換維持 -> 警告 -> 撤去判定）を plan/spec に固定し、P0-EASTMIG-05 をクローズ。
 - 2026-02-24: `P0-EASTMIG-06` を再オープンした。`py2cpp.py` の既定 stage と非 C++ 変換器の `EAST2` 既定経路が残存しており、全変換器での `EAST3` 主経路統一が未完了のため。
+- 2026-02-24: EAST責務境界を先に固定しないと CodeEmitter 作業が肥大化するリスクを反映し、`P0-EASTMIG-06-S0`（境界固定ゲート）を最優先サブタスクとして追加した。
 - 2026-02-24: `P0-EASTMIG-06-S3` の粒度が大きいため、非 C++ 8変換器を `P0-EASTMIG-06-S3-S1` から `P0-EASTMIG-06-S3-S8` へ分割し、最後に `S3-S9` で既定値/警告文言/回帰導線の統一を固定する構成へ更新した。
 - 2026-02-24: `P0-EASTMIG-06-S6` として `docs-ja/spec/spec-east.md#east1-build-boundary` を追加し、`east1_build.py` 分離仕様（`load_east_document_compat` エラー契約互換、selfhost diff 実行、`EAST1` build での `EAST2` 非変換）を受け入れ基準へ固定した。
 - 2026-02-24: `east_parts/human.py` を `render_human_east2_cpp.py` へ改名し、`P0-EASTMIG-06-S7`（低優先）として `render_human_east3_cpp.py` 追加タスクを `todo`/plan に登録した。
