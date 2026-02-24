@@ -2674,6 +2674,20 @@ if __name__ == "__main__":
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("[user_syntax_error]", proc.stderr)
 
+    def test_cli_rejects_east_stage_2(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "ok.py"
+            src_py.write_text("print(1)\n", encoding="utf-8")
+            out_cpp = Path(tmpdir) / "ok.cpp"
+            proc = subprocess.run(
+                ["python3", "src/py2cpp.py", str(src_py), "--east-stage", "2", "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("--east-stage 2 is removed", proc.stderr)
+
     def test_cli_multi_file_generates_out_include_src(self) -> None:
         src_main = """import helper
 

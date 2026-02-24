@@ -27,7 +27,7 @@
 文脈: `docs-ja/plans/p0-cpp-east2-removal.md`（`TG-P0-CPP-EAST2-REMOVAL`）
 
 1. [ ] [ID: P0-CPP-EAST2-01] `py2cpp` の C++ 生成で `EAST2 -> C++` 互換経路を完全廃止し、EAST3 専用経路へ一本化する（`P0-CPP-EAST2-01-S1` から `P0-CPP-EAST2-01-S4` 完了でクローズ）。
-2. [ ] [ID: P0-CPP-EAST2-01-S1] `src/py2cpp.py` から `--east-stage 2` 受理経路を除去し、`EAST2` 指定時は明示エラーで停止する。
+2. [x] [ID: P0-CPP-EAST2-01-S1] `src/py2cpp.py` から `--east-stage 2` 受理経路を除去し、`EAST2` 指定時は明示エラーで停止する。
 3. [ ] [ID: P0-CPP-EAST2-01-S2] `src/py2cpp.py` 内の `EAST2 -> C++` 互換専用分岐（legacy fallback/互換ノード写像）を段階的に削除し、EAST3 前提の実装へ整理する。
 4. [ ] [ID: P0-CPP-EAST2-01-S3] `tools/check_py2cpp_transpile.py` と `test/unit/test_py2cpp_smoke.py` を更新し、`EAST2` 経路が復活しない回帰ガードを追加する。
 5. [ ] [ID: P0-CPP-EAST2-01-S4] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` を更新し、C++ 経路が EAST3 専用であることを明記する。

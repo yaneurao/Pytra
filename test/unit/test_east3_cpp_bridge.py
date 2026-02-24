@@ -2061,6 +2061,14 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(body[0].get("kind"), "ForCore")
         self.assertEqual(body[0].get("iter_plan", {}).get("dispatch_mode"), "type_id")
 
+    def test_load_east_rejects_stage2_for_py2cpp(self) -> None:
+        payload = {"kind": "Module", "meta": {}, "body": []}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "in.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "supports only --east-stage 3"):
+                load_east(p, east_stage="2")
+
     def test_load_east_stage3_normalizes_prelowered_forcore_dispatch_mode(self) -> None:
         payload = {
             "kind": "Module",

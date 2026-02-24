@@ -7681,17 +7681,14 @@ def load_east(
     object_dispatch_mode: str = "",
 ) -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
-    east_doc: dict[str, Any]
-    if east_stage == "3":
-        east3_doc = load_east3_document(
-            input_path,
-            parser_backend=parser_backend,
-            object_dispatch_mode=object_dispatch_mode,
-        )
-        east_doc = east3_doc if isinstance(east3_doc, dict) else {}
-    else:
-        east2_doc = load_east_document(input_path, parser_backend)
-        east_doc = east2_doc if isinstance(east2_doc, dict) else {}
+    if east_stage != "3":
+        raise RuntimeError("py2cpp supports only --east-stage 3: " + east_stage)
+    east3_doc = load_east3_document(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+    )
+    east_doc: dict[str, Any] = east3_doc if isinstance(east3_doc, dict) else {}
     return east_doc if isinstance(east_doc, dict) else {}
 
 
@@ -8527,7 +8524,7 @@ def main(argv: list[str]) -> int:
     str_index_mode = ""
     str_slice_mode = ""
     opt_level = ""
-    usage_text = "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--object-dispatch-mode {native,type_id}] [--east-stage {2,3} (default:3)] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--guard-profile {off,default,strict}] [--max-ast-depth N] [--max-parse-nodes N] [--max-symbols-per-module N] [--max-scope-depth N] [--max-import-graph-nodes N] [--max-import-graph-edges N] [--max-generated-lines N] [--no-main] [--dump-deps] [--dump-options]"
+    usage_text = "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--object-dispatch-mode {native,type_id}] [--east-stage {3} (default:3)] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--guard-profile {off,default,strict}] [--max-ast-depth N] [--max-parse-nodes N] [--max-symbols-per-module N] [--max-scope-depth N] [--max-import-graph-nodes N] [--max-import-graph-edges N] [--max-generated-lines N] [--no-main] [--dump-deps] [--dump-options]"
     guard_limits: dict[str, int] = {}
 
     if show_help:
@@ -8536,11 +8533,12 @@ def main(argv: list[str]) -> int:
     if input_txt == "":
         print(usage_text, file=sys.stderr)
         return 1
-    if east_stage != "2" and east_stage != "3":
-        print(f"error: invalid --east-stage: {east_stage}", file=sys.stderr)
+    if east_stage != "3":
+        if east_stage == "2":
+            print("error: --east-stage 2 is removed; py2cpp supports only --east-stage 3.", file=sys.stderr)
+        else:
+            print(f"error: invalid --east-stage: {east_stage} (py2cpp supports only 3)", file=sys.stderr)
         return 1
-    if east_stage == "2":
-        print("warning: --east-stage 2 is compatibility mode; default is 3.", file=sys.stderr)
     if object_dispatch_mode_opt not in {"", "native", "type_id"}:
         print(f"error: invalid --object-dispatch-mode: {object_dispatch_mode_opt}", file=sys.stderr)
         return 1

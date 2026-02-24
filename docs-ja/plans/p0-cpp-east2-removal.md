@@ -36,3 +36,4 @@
 
 決定ログ:
 - 2026-02-24: ユーザー指示により、`EAST2 -> C++` の互換経路を「最優先で完全廃止」する方針を確定。
+- 2026-02-24: [ID: `P0-CPP-EAST2-01-S1`] `src/py2cpp.py` の `--east-stage 2` 受理を廃止し、`EAST2` 指定時はエラー停止へ変更。`load_east()` も `EAST3` 以外を拒否する契約に更新し、`test_py2cpp_features` / `test_east3_cpp_bridge` に拒否テストを追加した。
