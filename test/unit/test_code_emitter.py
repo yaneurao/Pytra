@@ -869,6 +869,16 @@ class CodeEmitterTest(unittest.TestCase):
         hook_complex = em.hook_on_render_expr_complex({"kind": "JoinedStr"})
         self.assertEqual(hook_complex, "complex_expr()")
 
+    def test_emit_stmt_kind_fallback_path_in_base(self) -> None:
+        class _FallbackEmitter(CodeEmitter):
+            def _emit_stmt_kind_fallback(self, kind: str, stmt: dict[str, Any]) -> bool:
+                _ = stmt
+                return kind == "Continue"
+
+        em = _FallbackEmitter({})
+        self.assertTrue(em.hook_on_emit_stmt_kind("Continue", {"kind": "Continue"}))
+        self.assertIsNone(em.hook_on_emit_stmt_kind("UnknownKind", {"kind": "UnknownKind"}))
+
     def test_hook_invocation_helpers_with_dict_hooks(self) -> None:
         calls: list[str] = []
 

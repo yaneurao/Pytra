@@ -377,14 +377,28 @@ class CodeEmitter:
         kind: str,
         stmt: dict[str, Any],
     ) -> bool | None:
-        """`on_emit_stmt_kind` フック。既定では何もしない。"""
+        """`on_emit_stmt_kind` を解決し、未処理時は fallback へ委譲する。"""
         handled_specific = self.hook_on_emit_stmt_kind_specific(kind, stmt)
-        if isinstance(handled_specific, bool):
-            return handled_specific
+        if isinstance(handled_specific, bool) and handled_specific:
+            return True
         v = self._call_hook2("on_emit_stmt_kind", kind, stmt)
+        if isinstance(v, bool) and v:
+            return True
+        if self._emit_stmt_kind_fallback(kind, stmt):
+            return True
         if isinstance(v, bool):
-            return True if v else False
-        return None
+            return False
+        return handled_specific
+
+    def _emit_stmt_kind_fallback(
+        self,
+        kind: str,
+        stmt: dict[str, Any],
+    ) -> bool:
+        """文 kind の既定 fallback。基底では未処理。"""
+        _ = kind
+        _ = stmt
+        return False
 
     def hook_on_stmt_omit_braces(
         self,
@@ -576,10 +590,21 @@ class CodeEmitter:
         kind: str,
         expr_node: dict[str, Any],
     ) -> str:
-        """`on_render_expr_kind` フック。既定では何もしない。"""
+        """式 kind hook を `specific -> generic -> complex/leaf` 順で解決する。"""
+        rendered_specific = self.hook_on_render_expr_kind_specific(kind, expr_node)
+        if rendered_specific != "":
+            return rendered_specific
         v = self._call_hook2("on_render_expr_kind", kind, expr_node)
-        if isinstance(v, str):
+        if isinstance(v, str) and v != "":
             return v
+        if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
+            rendered_complex = self.hook_on_render_expr_complex(expr_node)
+            if rendered_complex != "":
+                return rendered_complex
+        if kind in {"Name", "Constant", "Attribute"}:
+            rendered_leaf = self.hook_on_render_expr_leaf(kind, expr_node)
+            if rendered_leaf != "":
+                return rendered_leaf
         return ""
 
     def hook_on_render_expr_leaf(

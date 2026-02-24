@@ -188,6 +188,14 @@ class Py2CppFeatureTest(unittest.TestCase):
         rendered = emitter.render_expr({"kind": "Name", "id": "alpha"})
         self.assertEqual(rendered, "specific_name_hook()")
 
+    def test_render_expr_generic_kind_hook_applies_when_specific_missing(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.hooks["on_render_expr_kind"] = (
+            lambda _em, _kind, _expr_node: "generic_kind_hook()"
+        )
+        rendered = emitter.render_expr({"kind": "Name", "id": "alpha"})
+        self.assertEqual(rendered, "generic_kind_hook()")
+
     def test_render_expr_leaf_hook_applies_via_hook_on_render_expr_kind(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.hooks["on_render_expr_leaf"] = (
@@ -220,6 +228,18 @@ class Py2CppFeatureTest(unittest.TestCase):
         emitter.emit_stmt({"kind": "Continue"})
         self.assertTrue(len(emitter.lines) >= 1)
         self.assertEqual(emitter.lines[-1].strip(), "/* specific-continue */")
+
+    def test_emit_stmt_generic_kind_hook_applies_before_cpp_fallback(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+
+        def on_emit_stmt_kind(_em: CppEmitter, _kind: str, _stmt: dict[str, object]) -> bool:
+            _em.emit("/* generic-kind */")
+            return True
+
+        emitter.hooks["on_emit_stmt_kind"] = on_emit_stmt_kind
+        emitter.emit_stmt({"kind": "Continue"})
+        self.assertTrue(len(emitter.lines) >= 1)
+        self.assertEqual(emitter.lines[-1].strip(), "/* generic-kind */")
 
     def test_load_cpp_type_map_allows_profile_overlay(self) -> None:
         profile = {

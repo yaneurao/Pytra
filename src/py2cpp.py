@@ -1949,38 +1949,6 @@ class CppEmitter(CodeEmitter):
             return False
         return True
 
-    def hook_on_emit_stmt_kind(
-        self,
-        kind: str,
-        stmt: dict[str, Any],
-    ) -> bool | None:
-        """dynamic hook 優先 + C++ 既定フォールバックで kind 処理を解決する。"""
-        handled_by_hook = self.hook_on_emit_stmt_kind_specific(kind, stmt)
-        if isinstance(handled_by_hook, bool) and handled_by_hook:
-            return True
-        if self._emit_stmt_kind_fallback(kind, stmt):
-            return True
-        return handled_by_hook
-
-    def hook_on_render_expr_kind(
-        self,
-        kind: str,
-        expr_node: dict[str, Any],
-    ) -> str:
-        """dynamic hook 優先で式 kind 処理を解決し、未処理は fallback へ渡す。"""
-        rendered_specific = self.hook_on_render_expr_kind_specific(kind, expr_node)
-        if rendered_specific != "":
-            return rendered_specific
-        if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
-            rendered_complex = self.hook_on_render_expr_complex(expr_node)
-            if rendered_complex != "":
-                return rendered_complex
-        if kind in {"Name", "Constant", "Attribute"}:
-            rendered_leaf = self.hook_on_render_expr_leaf(kind, expr_node)
-            if rendered_leaf != "":
-                return rendered_leaf
-        return ""
-
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
         hook_stmt = self.hook_on_emit_stmt(stmt)
