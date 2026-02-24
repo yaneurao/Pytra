@@ -307,4 +307,9 @@ def render_east2_human_cpp(out_doc: dict[str, Any]) -> str:
 # Backward compatibility alias.
 def render_east_human_cpp(out_doc: dict[str, Any]) -> str:
     """Compatibility wrapper for the old renderer symbol name."""
+    east = out_doc.get("east")
+    if out_doc.get("ok", False) and isinstance(east, dict) and east.get("east_stage") == 3:
+        from .render_human_east3_cpp import render_east3_human_cpp
+
+        return render_east3_human_cpp(out_doc)
     return render_east2_human_cpp(out_doc)

@@ -22,12 +22,12 @@
 - `docs-ja/todo/index.md` / `docs-ja/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
-## P0: EAST123 最終移行（最優先・再オープン）
+## P0: EAST123 最終移行（最優先・継続）
 
 文脈: `docs-ja/plans/plan-east123-migration.md`（`TG-P0-EAST123-MIGRATION`）
 
-1. [ ] [ID: P0-EASTMIG-06] `EAST3` を全変換器の標準主経路として確定し、`EAST2` は明示互換モードに限定する（`P0-EASTMIG-06-S0` から `P0-EASTMIG-06-S7` 完了でクローズ）。
-2. [ ] [ID: P0-EASTMIG-06-S7] （低優先）`east_parts/render_human_east2_cpp.py` と並行して `east_parts/render_human_east3_cpp.py` を追加し、`EAST3` 命令ノード（`ForCore`, `Box/Unbox`, `Obj*`, `type_id` 系）を人間可読ビューへ描画する経路を整備する。
+1. [ ] [ID: P0-EASTMIG-06] `EAST3` を全変換器の標準主経路として確定し、`EAST2` は明示互換モードに限定する（`P0-EASTMIG-06-S10` 完了でクローズ）。
+2. [ ] [ID: P0-EASTMIG-06-S10] `check_selfhost_cpp_diff.py --mode allow-not-implemented` で検出された `sample/py/01_mandelbrot.py` と `sample/py/17_monte_carlo_pi.py` の差分原因を切り分け、`P0-EASTMIG-06` の最終クローズ条件を確定する。
 
 ## P1: 多言語出力品質（preview 脱却の再オープン）
 

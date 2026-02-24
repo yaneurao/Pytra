@@ -98,6 +98,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
    - `P0-EASTMIG-06-S5`: `spec-east` / `spec-dev` の記述を同期する。
    - `P0-EASTMIG-06-S6`: `EAST1` build 責務境界を `docs-ja/spec/spec-east.md#east1-build-boundary` へ正式化する。
    - `P0-EASTMIG-06-S7`: （低優先）`render_human_east3_cpp.py` を追加し、`EAST3` 命令ノードの人間可読レンダラを整備する。
+   - `P0-EASTMIG-06-S10`: selfhost 差分（`sample/py/01_mandelbrot.py`, `sample/py/17_monte_carlo_pi.py`）を切り分け、`P0-EASTMIG-06` の最終クローズ可否を確定する。
 
 ## P0-EASTMIG-06 再オープン理由
 
@@ -364,6 +365,29 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
   - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` 実行済み。
   - 実行結果: `mismatches=2`（`sample/py/01_mandelbrot.py`, `sample/py/17_monte_carlo_pi.py`）。
 
+## `EAST3` 人間可読 renderer 整備（`P0-EASTMIG-06-S7`）
+
+`EAST3` 命令ノード（`ForCore`, `Box/Unbox`, `Obj*`, `type_id` 系）を C++ 風擬似コードで可視化する経路を整備する。
+
+- 追加:
+  - `src/pytra/compiler/east_parts/render_human_east3_cpp.py` を追加。
+  - `ForCore`（`StaticRangeForPlan` / `RuntimeIterForPlan`）と `Box`, `Unbox`, `Obj*`, `Is*` 系式ノードを EAST3 専用表記で描画。
+  - `render_human_east2_cpp.py::render_east_human_cpp` は `east_stage=3` 入力時に `render_east3_human_cpp` へ自動委譲。
+  - `src/pytra/compiler/east_parts/__init__.py` に `render_east3_human_cpp` を公開。
+- テスト:
+  - `test/unit/test_render_human_east3_cpp.py` を追加し、EAST3 専用 renderer と互換 wrapper の dispatch を固定。
+  - `test/unit/test_east3_lowering.py` も併せて実行し、既存 `EAST3` 契約との整合を確認。
+
+## selfhost 差分切り分け（`P0-EASTMIG-06-S10`）
+
+`P0-EASTMIG-06` の最終クローズ判定に向け、`check_selfhost_cpp_diff` で残っている差分を切り分ける。
+
+- 対象:
+  - `sample/py/01_mandelbrot.py`
+  - `sample/py/17_monte_carlo_pi.py`
+- 目的:
+  - 差分の原因を `EAST3` 主経路化由来か既存差分かで分類し、`P0-EASTMIG-06` のクローズ可否を確定する。
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -387,6 +411,8 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06`] `S0` から `S7` の実装は完了したが、`check_selfhost_cpp_diff --mode allow-not-implemented` の差分（2件）を `S10` で切り分けるまでクローズ保留とした。
+- 2026-02-24: [ID: `P0-EASTMIG-06-S7`] `render_human_east3_cpp.py` を追加し、`render_east_human_cpp` 互換 wrapper から `east_stage=3` で自動委譲する経路を導入。`test_render_human_east3_cpp` を追加して ForCore/Obj*/type_id ノードの可視化を固定した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S6`] `spec-east#east1-build-boundary` の受け入れ基準へ selfhost diff 実行を明記した。現時点の実行結果は `mismatches=2`（`sample/py/01_mandelbrot.py`, `sample/py/17_monte_carlo_pi.py`）で、差分は継続追跡対象とする。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S5`] `spec-east` / `spec-dev` を更新し、`EAST3` 既定・`EAST2` 互換モード（`--east-stage 2` 警告付き）の現行運用と回帰導線を仕様へ同期した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S4`] `test_east3_lowering` に non-cpp 契約ガード実行テストを追加し、`tools/check_py2*_transpile.py` で既定実行時の stage2 互換警告を失敗扱いに統一した。`check_py2cpp_transpile` と `check_noncpp_east3_contract`、`test_east3_*` の回帰が通過。
