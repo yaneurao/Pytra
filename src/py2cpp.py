@@ -195,7 +195,7 @@ def load_cpp_aug_bin() -> dict[str, str]:
 
 def load_cpp_type_map(profile: dict[str, Any] = {}) -> dict[str, str]:
     """EAST 型 -> C++ 型の基本マップを返す（profile の `types` で上書き可能）。"""
-    out: dict[str, str] = {
+    defaults: dict[str, str] = {
         "int8": "int8",
         "uint8": "uint8",
         "int16": "int16",
@@ -215,12 +215,7 @@ def load_cpp_type_map(profile: dict[str, Any] = {}) -> dict[str, str]:
         "Any": "object",
         "object": "object",
     }
-    if isinstance(profile, dict):
-        type_map = dict_any_get_dict(profile, "types")
-        for name, mapped in type_map.items():
-            if isinstance(name, str) and isinstance(mapped, str) and name != "" and mapped != "":
-                out[name] = mapped
-    return out
+    return CodeEmitter.load_type_map(profile, defaults)
 
 
 def load_cpp_hooks(profile: dict[str, Any] = {}) -> dict[str, Any]:
@@ -7247,30 +7242,22 @@ class CppEmitter(CodeEmitter):
 
     def _cpp_type_text(self, east_type: str) -> str:
         """正規化済み型名（str）を C++ 型名へマッピングする。"""
+        t_norm, mapped = self.normalize_type_and_lookup_map(east_type, self.type_map)
+        east_type = t_norm
         if east_type == "":
             return "auto"
         if east_type in self.ref_classes:
             return f"rc<{east_type}>"
         if east_type in self.class_names:
             return east_type
-        mapped = ""
-        if east_type in self.type_map:
-            mapped = self.type_map[east_type]
         if mapped != "":
             return mapped
         if east_type in {"Any", "object"}:
             return "object"
         if east_type.find("|") != -1:
-            parts = self.split_union(east_type)
-            if len(parts) >= 2:
-                non_none: list[str] = []
-                has_none = False
-                for p in parts:
-                    if p == "None":
-                        has_none = True
-                        continue
-                    if p not in non_none:
-                        non_none.append(p)
+            union_parts = self.split_union(east_type)
+            if len(union_parts) >= 2:
+                non_none, has_none = self.split_union_non_none(east_type)
                 if len(non_none) >= 1:
                     only_bytes = True
                     for p in non_none:
@@ -7279,61 +7266,62 @@ class CppEmitter(CodeEmitter):
                             break
                     if only_bytes:
                         return "bytes"
-                has_any_like = False
-                for p in non_none:
-                    if self.is_any_like_type(p):
-                        has_any_like = True
-                        break
-                if has_any_like:
+                    has_any_like = False
+                    for p in non_none:
+                        if self.is_any_like_type(p):
+                            has_any_like = True
+                            break
+                    if has_any_like:
+                        return "object"
+                    if has_none and len(non_none) == 1:
+                        return f"::std::optional<{self._cpp_type_text(non_none[0])}>"
+                    if (not has_none) and len(non_none) == 1:
+                        return self._cpp_type_text(non_none[0])
                     return "object"
-                if has_none and len(non_none) == 1:
-                    return f"::std::optional<{self._cpp_type_text(non_none[0])}>"
-                if (not has_none) and len(non_none) == 1:
-                    return self._cpp_type_text(non_none[0])
-                return "object"
         if east_type == "None":
             return "void"
         if east_type == "PyFile":
             return "pytra::runtime::cpp::base::PyFile"
-        if east_type.startswith("list[") and east_type.endswith("]"):
-            inner = self.split_generic(east_type[5:-1])
-            if len(inner) == 1:
-                if inner[0] == "None":
-                    return "list<object>"
-                if inner[0] == "uint8":
-                    return "bytearray"
-                if self.is_any_like_type(inner[0]):
-                    return "list<object>"
-                if inner[0] == "unknown":
-                    return "list<object>"
-                return f"list<{self._cpp_type_text(inner[0])}>"
-        if east_type.startswith("set[") and east_type.endswith("]"):
-            inner = self.split_generic(east_type[4:-1])
-            if len(inner) == 1:
-                if inner[0] == "None":
-                    return "set<object>"
-                if inner[0] == "unknown":
-                    return "set<str>"
-                return f"set<{self._cpp_type_text(inner[0])}>"
-        if east_type.startswith("dict[") and east_type.endswith("]"):
-            inner = self.split_generic(east_type[5:-1])
-            if len(inner) == 2:
-                if inner[1] == "None":
-                    key_t = inner[0] if inner[0] not in {"", "unknown"} else "str"
-                    return f"dict<{self._cpp_type_text(key_t)}, object>"
-                if self.is_any_like_type(inner[1]):
-                    return f"dict<{self._cpp_type_text(inner[0] if inner[0] != 'unknown' else 'str')}, object>"
-                if inner[0] == "unknown" and inner[1] == "unknown":
-                    return "dict<str, object>"
-                if inner[0] == "unknown":
-                    return f"dict<str, {self._cpp_type_text(inner[1])}>"
-                if inner[1] == "unknown":
-                    return f"dict<{self._cpp_type_text(inner[0])}, object>"
-                return f"dict<{self._cpp_type_text(inner[0])}, {self._cpp_type_text(inner[1])}>"
-        if east_type.startswith("tuple[") and east_type.endswith("]"):
-            inner = self.split_generic(east_type[6:-1])
+        list_inner = self.type_generic_args(east_type, "list")
+        if len(list_inner) == 1:
+            list_elem = list_inner[0]
+            if list_elem == "None":
+                return "list<object>"
+            if list_elem == "uint8":
+                return "bytearray"
+            if self.is_any_like_type(list_elem):
+                return "list<object>"
+            if list_elem == "unknown":
+                return "list<object>"
+            return f"list<{self._cpp_type_text(list_elem)}>"
+        set_inner = self.type_generic_args(east_type, "set")
+        if len(set_inner) == 1:
+            set_elem = set_inner[0]
+            if set_elem == "None":
+                return "set<object>"
+            if set_elem == "unknown":
+                return "set<str>"
+            return f"set<{self._cpp_type_text(set_elem)}>"
+        dict_inner = self.type_generic_args(east_type, "dict")
+        if len(dict_inner) == 2:
+            dict_key = dict_inner[0]
+            dict_val = dict_inner[1]
+            if dict_val == "None":
+                key_t = dict_key if dict_key not in {"", "unknown"} else "str"
+                return f"dict<{self._cpp_type_text(key_t)}, object>"
+            if self.is_any_like_type(dict_val):
+                return f"dict<{self._cpp_type_text(dict_key if dict_key != 'unknown' else 'str')}, object>"
+            if dict_key == "unknown" and dict_val == "unknown":
+                return "dict<str, object>"
+            if dict_key == "unknown":
+                return f"dict<str, {self._cpp_type_text(dict_val)}>"
+            if dict_val == "unknown":
+                return f"dict<{self._cpp_type_text(dict_key)}, object>"
+            return f"dict<{self._cpp_type_text(dict_key)}, {self._cpp_type_text(dict_val)}>"
+        tuple_inner = self.type_generic_args(east_type, "tuple")
+        if len(tuple_inner) > 0:
             inner_cpp: list[str] = []
-            for x in inner:
+            for x in tuple_inner:
                 inner_cpp.append(self._cpp_type_text(x))
             sep = ", "
             return "::std::tuple<" + sep.join(inner_cpp) + ">"

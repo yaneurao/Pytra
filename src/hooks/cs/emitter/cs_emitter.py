@@ -32,12 +32,7 @@ class CSharpEmitter(CodeEmitter):
         profile = load_cs_profile()
         hooks = load_cs_hooks(profile)
         self.init_base_state(east_doc, profile, hooks)
-        raw_types = self.any_to_dict_or_empty(profile.get("types"))
-        nested_types = self.any_to_dict_or_empty(raw_types.get("types"))
-        if len(nested_types) > 0:
-            self.type_map = self.any_to_str_dict_or_empty(nested_types)
-        else:
-            self.type_map = self.any_to_str_dict_or_empty(raw_types)
+        self.type_map = self.load_type_map(profile)
         operators = self.any_to_dict_or_empty(profile.get("operators"))
         self.bin_ops = self.any_to_str_dict_or_empty(operators.get("binop"))
         self.cmp_ops = self.any_to_str_dict_or_empty(operators.get("cmp"))

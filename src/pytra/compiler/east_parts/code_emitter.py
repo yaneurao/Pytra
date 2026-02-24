@@ -1249,6 +1249,83 @@ class CodeEmitter:
             out.append(tail)
         return out
 
+    @staticmethod
+    def load_type_map(
+        profile: dict[str, Any],
+        defaults: dict[str, str] | None = None,
+    ) -> dict[str, str]:
+        """profile `types`（`types.types` 互換）を型マップとして読み込む。"""
+        out: dict[str, str] = {}
+        if isinstance(defaults, dict):
+            for key, val in defaults.items():
+                if isinstance(key, str) and isinstance(val, str) and key != "" and val != "":
+                    out[key] = val
+        if not isinstance(profile, dict):
+            return out
+        raw_types = profile.get("types")
+        type_section = raw_types if isinstance(raw_types, dict) else {}
+        nested_types = type_section.get("types")
+        source = nested_types if isinstance(nested_types, dict) and len(nested_types) > 0 else type_section
+        for key, val in source.items():
+            if isinstance(key, str) and isinstance(val, str) and key != "" and val != "":
+                out[key] = val
+        return out
+
+    def normalize_type_and_lookup_map(
+        self,
+        east_type: str,
+        type_map: dict[str, str],
+    ) -> tuple[str, str]:
+        """型名を正規化し、`type_map` の直接マッピング結果を返す。"""
+        norm = self.normalize_type_name(east_type)
+        if norm == "":
+            return "", ""
+        mapped = ""
+        if norm in type_map:
+            mapped = self.any_to_str(type_map.get(norm))
+        if mapped == "":
+            return norm, ""
+        return norm, mapped
+
+    def split_union_non_none(self, union_type: str) -> tuple[list[str], bool]:
+        """Union 型を `None` とそれ以外（重複除去）へ分解する。"""
+        t = self.normalize_type_name(union_type)
+        if t == "":
+            return [], False
+        if t.find("|") < 0:
+            if t == "None":
+                return [], True
+            return [t], False
+        parts = self.split_union(t)
+        non_none: list[str] = []
+        seen: set[str] = set()
+        has_none = False
+        for part in parts:
+            p = self.normalize_type_name(part)
+            if p == "":
+                continue
+            if p == "None":
+                has_none = True
+                continue
+            if p in seen:
+                continue
+            seen.add(p)
+            non_none.append(p)
+        return non_none, has_none
+
+    def type_generic_args(self, east_type: str, base_name: str) -> list[str]:
+        """`list[T]` などの generic 型引数を `base_name` 指定で返す。"""
+        t = self.normalize_type_name(east_type)
+        if t == "":
+            return []
+        prefix = base_name + "["
+        if not t.startswith(prefix) or not t.endswith("]"):
+            return []
+        inner = t[len(prefix):-1].strip()
+        if inner == "":
+            return []
+        return self.split_generic(inner)
+
     def render_boolop_common(
         self,
         values: list[Any],

@@ -32,12 +32,7 @@ class RustEmitter(CodeEmitter):
         profile = load_rs_profile()
         hooks = load_rs_hooks(profile)
         self.init_base_state(east_doc, profile, hooks)
-        raw_types = self.any_to_dict_or_empty(profile.get("types"))
-        nested_types = self.any_to_dict_or_empty(raw_types.get("types"))
-        if len(nested_types) > 0:
-            self.type_map = self.any_to_str_dict_or_empty(nested_types)
-        else:
-            self.type_map = self.any_to_str_dict_or_empty(raw_types)
+        self.type_map = self.load_type_map(profile)
         operators = self.any_to_dict_or_empty(profile.get("operators"))
         self.bin_ops = self.any_to_str_dict_or_empty(operators.get("binop"))
         self.cmp_ops = self.any_to_str_dict_or_empty(operators.get("cmp"))
@@ -372,58 +367,55 @@ class RustEmitter(CodeEmitter):
 
     def _rust_type(self, east_type: str) -> str:
         """EAST 型名を Rust 型名へ変換する。"""
-        t = self.normalize_type_name(east_type)
+        t, mapped = self.normalize_type_and_lookup_map(east_type, self.type_map)
         if t == "":
             return "i64"
         if self._is_any_type(t):
             self.uses_pyany = True
             return "PyAny"
-        if t in self.type_map:
-            mapped = self.type_map[t]
-            if mapped != "":
-                return mapped
-        if t.startswith("list[") and t.endswith("]"):
-            inner = t[5:-1].strip()
-            return f"Vec<{self._rust_type(inner)}>"
-        if t.startswith("set[") and t.endswith("]"):
-            inner = t[4:-1].strip()
-            return f"::std::collections::BTreeSet<{self._rust_type(inner)}>"
-        if t.startswith("dict[") and t.endswith("]"):
-            parts = self.split_generic(t[5:-1].strip())
-            if len(parts) == 2:
-                return (
-                    "::std::collections::BTreeMap<"
-                    + self._rust_type(parts[0])
-                    + ", "
-                    + self._rust_type(parts[1])
-                    + ">"
-                )
-        if t.startswith("tuple[") and t.endswith("]"):
-            parts = self.split_generic(t[6:-1].strip())
+        if mapped != "":
+            return mapped
+        list_inner = self.type_generic_args(t, "list")
+        if len(list_inner) == 1:
+            return f"Vec<{self._rust_type(list_inner[0])}>"
+        set_inner = self.type_generic_args(t, "set")
+        if len(set_inner) == 1:
+            return f"::std::collections::BTreeSet<{self._rust_type(set_inner[0])}>"
+        dict_inner = self.type_generic_args(t, "dict")
+        if len(dict_inner) == 2:
+            parts = dict_inner
+            return (
+                "::std::collections::BTreeMap<"
+                + self._rust_type(parts[0])
+                + ", "
+                + self._rust_type(parts[1])
+                + ">"
+            )
+        tuple_inner = self.type_generic_args(t, "tuple")
+        if len(tuple_inner) > 0:
             rendered: list[str] = []
-            for part in parts:
+            for part in tuple_inner:
                 rendered.append(self._rust_type(part))
             if len(rendered) == 1:
                 return f"({rendered[0]},)"
             return "(" + ", ".join(rendered) + ")"
         if t.find("|") >= 0:
-            parts = self.split_union(t)
-            any_like = False
-            non_none: list[str] = []
-            has_none = False
-            for part in parts:
-                if part == "None":
-                    has_none = True
-                elif self._is_any_type(part):
-                    any_like = True
-                else:
-                    non_none.append(part)
-            if any_like:
-                self.uses_pyany = True
-                return "PyAny"
-            if has_none and len(non_none) == 1:
-                return f"Option<{self._rust_type(non_none[0])}>"
-            return "String"
+            union_parts = self.split_union(t)
+            if len(union_parts) >= 2:
+                non_none, has_none = self.split_union_non_none(t)
+                any_like = False
+                for part in non_none:
+                    if self._is_any_type(part):
+                        any_like = True
+                        break
+                if any_like:
+                    self.uses_pyany = True
+                    return "PyAny"
+                if has_none and len(non_none) == 1:
+                    return f"Option<{self._rust_type(non_none[0])}>"
+                if (not has_none) and len(non_none) == 1:
+                    return self._rust_type(non_none[0])
+                return "String"
         if t == "None":
             return "()"
         return t

@@ -781,6 +781,26 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertTrue(em.is_indexable_sequence_type("bytearray"))
         self.assertFalse(em.is_indexable_sequence_type("dict[str, int64]"))
 
+        loaded = CodeEmitter.load_type_map(
+            {"types": {"types": {"str": "String"}, "int64": "long"}},
+            {"int64": "i64", "bool": "bool"},
+        )
+        self.assertEqual(loaded["str"], "String")
+        self.assertEqual(loaded["int64"], "i64")
+        self.assertEqual(loaded["bool"], "bool")
+
+        norm_t, mapped = em.normalize_type_and_lookup_map("int", {"int64": "i64"})
+        self.assertEqual(norm_t, "int64")
+        self.assertEqual(mapped, "i64")
+
+        union_non_none, union_has_none = em.split_union_non_none("str|None|str|unknown")
+        self.assertEqual(union_non_none, ["str", "unknown"])
+        self.assertTrue(union_has_none)
+
+        self.assertEqual(em.type_generic_args("list[int|None]", "list"), ["int64|None"])
+        self.assertEqual(em.type_generic_args("dict[str, int]", "dict"), ["str", "int64"])
+        self.assertEqual(em.type_generic_args("tuple[int, str]", "tuple"), ["int64", "str"])
+
     def test_forbidden_object_receiver_rule(self) -> None:
         em = CodeEmitter({})
         self.assertTrue(em.is_forbidden_object_receiver_type("Any"))
