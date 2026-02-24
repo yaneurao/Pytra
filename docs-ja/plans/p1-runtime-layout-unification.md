@@ -106,7 +106,8 @@
 `P1-RUNTIME-05-S1` 棚卸し結果（Rust 以外 runtime 解決パス差分）:
 
 - 前提確認:
-  - `src/runtime/{cs,js,ts,go,java,kotlin,swift}/pytra/` は未作成（全言語 `missing`）。
+  - `src/runtime/{js,ts,go,java,kotlin,swift}/pytra/` は未作成（全言語 `missing`）。
+  - `src/runtime/cs/pytra/` はこの課題（`P1-RUNTIME-06-S1`）として完了済み。
   - 既存 runtime 実体は `src/{cs,js,ts,go,java,kotlin,swift}_module/` 配下に存在。
 - 集計対象:
   - `src/py2{cs,js,ts,go,java,kotlin,swift}.py`
@@ -116,7 +117,7 @@
 
 | 言語 | runtime 実体（現行） | path 解決の実装箇所（現行） | 現行状態 | S2 の更新方針 |
 |---|---|---|---|---|
-| C# | `src/cs_module/{py_runtime.cs,pathlib.cs,png_helper.cs,gif_helper.cs,time.cs}` | `py2cs.py` は path 非依存。`cs_emitter.py` は import `module_id` を namespace 化し、生成コードは `Pytra.CsModule.*` を参照 | `src/runtime/cs/pytra/` 未整備 | runtime 実体を `src/runtime/cs/pytra/` へ移動し、namespace/参照名を新配置へ合わせる |
+| C# | `src/cs_module/{py_runtime.cs,pathlib.cs,png_helper.cs,gif_helper.cs,time.cs}` | `py2cs.py` は path 非依存。`cs_emitter.py` は import `module_id` を namespace 化し、生成コードは `Pytra.CsModule.*` を参照 | `src/runtime/cs/pytra/` 完了（`P1-RUNTIME-06-S1`） | runtime 実体を `src/runtime/cs/pytra/` へ移動済み。 |
 | JS | `src/js_module/{py_runtime.js,pathlib.js,png_helper.js,gif_helper.js,math.js,time.js}` | `src/hooks/js/emitter/js_emitter.py`（S2 で新パスへ切替済み） | 新参照は `src/runtime/js/pytra/` 基準、旧 `src/js_module` は shim のみ | S3 で旧パス直参照を生成物/テストから撤去し、shim 運用へ縮退 |
 | TS | `src/ts_module/{py_runtime.ts,pathlib.ts,png_helper.ts,gif_helper.ts,math.ts,time.ts}` | `py2ts.py` は `ts_emitter.py` 経由、`src/common2/js_ts_native_transpiler.py`（S2 で新パスへ切替済み） | 新参照は `src/runtime/ts/pytra/` 基準、旧 `src/ts_module` は shim のみ | S3 で旧パス直参照を生成物/テストから撤去し、shim 運用へ縮退 |
 | Go | `src/go_module/py_runtime.go` | `py2go.py` / `go_emitter.py` は preview 出力で runtime パス解決なし | runtime 実体配置のみ旧規約 | `src/runtime/go/pytra/` 新設 + 将来 native emitter 切替時に同基準を使用 |

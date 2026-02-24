@@ -135,12 +135,13 @@ Notes:
 python src/py2cs.py test/fixtures/collections/iterable.py test/transpile/cs/iterable.cs
 mcs -out:test/transpile/obj/iterable.exe \
   test/transpile/cs/iterable.cs \
-  src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs src/cs_module/pathlib.cs
+  src/runtime/cs/pytra/built_in/py_runtime.cs src/runtime/cs/pytra/built_in/time.cs \
+  src/runtime/cs/pytra/utils/png_helper.cs src/runtime/cs/pytra/utils/gif_helper.cs src/runtime/cs/pytra/std/pathlib.cs
 mono test/transpile/obj/iterable.exe
 ```
 
 Notes:
-- Compile runtime implementation files (`src/cs_module/*.cs`) together with generated code.
+- Compile C# runtime implementation files from `src/runtime/cs/pytra` together with generated code.
 
 </details>
 

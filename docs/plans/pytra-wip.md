@@ -56,7 +56,7 @@ For Python standard libraries, support is limited not only by module name but by
   - Implementation locations:
     - C++: `src/runtime/cpp/pytra/std/pathlib.h/.cpp`
     - Rust: `src/rs_module/py_runtime.rs` (`PyPath`)
-    - C#: `src/cs_module/pathlib.cs` (`py_path`)
+    - C#: `src/runtime/cs/pytra/std/pathlib.cs` (`py_path`)
     - JS/TS: `src/js_module/pathlib.js`, `src/ts_module/pathlib.ts`
     - Go/Java: `src/go_module/py_runtime.go`, `src/java_module/PyRuntime.java`
     - Swift/Kotlin: because they use the Node backend approach, implementation depends on JS runtime (`src/js_module/pathlib.js`)
@@ -79,7 +79,7 @@ For Python standard libraries, support is limited not only by module name but by
   - `pytra.utils.assertions`
     - `py_assert_true`, `py_assert_eq`, `py_assert_all`, `py_assert_stdout`
 - Per-target runtime locations:
-  - `src/runtime/cpp`, `src/cs_module`, `src/rs_module`
+  - `src/runtime/cpp`, `src/runtime/cs/pytra`, `src/rs_module`
   - `src/js_module`, `src/ts_module`
   - `src/go_module`, `src/java_module`
   - `src/swift_module`, `src/kotlin_module`

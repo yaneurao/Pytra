@@ -85,7 +85,11 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
             transpile_cmd=f"python src/py2cs.py {shlex.quote(case_src)} test/transpile/cs/{case_stem}.cs",
             run_cmd=(
                 f"mcs -out:test/transpile/obj/{case_stem}_cs.exe test/transpile/cs/{case_stem}.cs "
-                "src/cs_module/py_runtime.cs src/cs_module/time.cs src/cs_module/png_helper.cs src/cs_module/pathlib.cs "
+                "src/runtime/cs/pytra/built_in/py_runtime.cs "
+                "src/runtime/cs/pytra/built_in/time.cs "
+                "src/runtime/cs/pytra/utils/png_helper.cs "
+                "src/runtime/cs/pytra/utils/gif_helper.cs "
+                "src/runtime/cs/pytra/std/pathlib.cs "
                 f"&& mono test/transpile/obj/{case_stem}_cs.exe"
             ),
             needs=("python", "mcs", "mono"),

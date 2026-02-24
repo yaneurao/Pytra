@@ -15,7 +15,8 @@ This document summarizes transpiler implementation policy, structure, and conver
   - Place only transpiler entry scripts (`py2*.py`) directly under `src/`.
   - `common/`: shared base implementations and utilities used across multiple languages
   - `profiles/`: language-difference JSON for `CodeEmitter` (types/operators/runtime-call/syntax)
-  - `runtime/cpp/`, `cs_module/`, `rs_module/`, `js_module/`, `ts_module/`, `go_module/`, `java_module/`, `swift_module/`, `kotlin_module/`: runtime helpers for each target language
+  - `runtime/cpp/`, `runtime/<lang>/pytra/`: canonical runtime helpers for each target language
+  - `*_module/`: legacy compatibility folders for non-native migrations
   - `pytra/`: canonical Python-side shared library
 - `test/`: `py` inputs and converted outputs for each target language
 - `sample/`: practical sample inputs and converted outputs for each language
