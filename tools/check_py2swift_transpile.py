@@ -21,6 +21,10 @@ DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/typing/any_class_alias.py",
 }
 
+FORBIDDEN_PREVIEW_MARKERS = [
+    "TODO: 専用 SwiftEmitter 実装へ段階移行する。",
+]
+
 
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
@@ -33,6 +37,10 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     if cp.returncode == 0 and compat_warning in cp.stderr:
         return False, "unexpected stage2 compatibility warning in default run"
     if cp.returncode == 0:
+        output = out.read_text(encoding="utf-8")
+        for marker in FORBIDDEN_PREVIEW_MARKERS:
+            if marker in output:
+                return False, f"preview marker still present: {marker}"
         return True, ""
     msg = cp.stderr.strip() or cp.stdout.strip()
     first = msg.splitlines()[0] if msg else "unknown error"

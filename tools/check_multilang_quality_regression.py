@@ -30,6 +30,13 @@ class Row:
     unused_import_est: int
 
 
+PREVIEW_MARKERS = {
+    "go": "TODO: 専用 GoEmitter 実装へ段階移行する。",
+    "kotlin": "TODO: 専用 KotlinEmitter 実装へ段階移行する。",
+    "swift": "TODO: 専用 SwiftEmitter 実装へ段階移行する。",
+}
+
+
 def _parse_int_cell(text: str) -> int:
     t = text.strip()
     if not re.fullmatch(r"-?\d+", t):
@@ -97,6 +104,23 @@ def _measure_current() -> dict[str, Row]:
     return out
 
 
+def _check_preview_markers() -> list[str]:
+    failures: list[str] = []
+    sample_dir = ROOT / "sample"
+    for lang, marker in PREVIEW_MARKERS.items():
+        ext = {
+            "go": ".go",
+            "kotlin": ".kt",
+            "swift": ".swift",
+        }[lang]
+        for path in sorted((sample_dir / lang).glob(f"*{ext}")):
+            text = path.read_text(encoding="utf-8")
+            if marker in text:
+                rel = str(path.relative_to(ROOT))
+                failures.append(f"{lang}: {rel} still contains preview marker")
+    return failures
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="check multilang quality regression against baseline")
     ap.add_argument(
@@ -111,6 +135,13 @@ def main() -> int:
         help="allow this many count increase per metric",
     )
     args = ap.parse_args()
+
+    marker_failures = _check_preview_markers()
+    if marker_failures:
+        print("[FAIL] preview marker check")
+        for line in marker_failures:
+            print("  - " + line)
+        return 1
 
     baseline_path = ROOT / args.baseline
     try:
