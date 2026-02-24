@@ -10,7 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
-from pytra.compiler.transpile_cli import append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document, load_east3_document, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, print_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
+from pytra.compiler.transpile_cli import analyze_import_graph, append_unique_non_empty, assign_targets, collect_import_modules, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document, load_east3_document, looks_like_runtime_function_name, make_user_error, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index, build_module_east_map_from_analysis, build_module_type_schema, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_guard_limit, check_parse_stage_guards, resolve_guard_limits, parse_user_error, print_user_error, path_key_for_graph, path_parent_text, python_module_exists_under, collect_reserved_import_conflicts, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_codegen_options, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from pytra.std import json
 from pytra.std import os
@@ -7803,100 +7803,14 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
 
 
 def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
-    """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
-    root = Path(path_parent_text(entry_path))
-    queue: list[Path] = [entry_path]
-    queued: set[str] = {path_key_for_graph(entry_path)}
-    visited: set[str] = set()
-    visited_order: list[str] = []
-    edges: list[str] = []
-    edge_seen: set[str] = set()
-    missing_modules: list[str] = []
-    missing_seen: set[str] = set()
-    relative_imports: list[str] = []
-    relative_seen: set[str] = set()
-    graph_adj: dict[str, list[str]] = {}
-    graph_keys: list[str] = []
-    key_to_disp: dict[str, str] = {}
-    key_to_path: dict[str, Path] = {}
-    module_id_map: dict[str, str] = {}
-
-    reserved_conflicts = collect_reserved_import_conflicts(root)
-
-    while queue:
-        cur_path = queue.pop(0)
-        cur_key = path_key_for_graph(cur_path)
-        if cur_key in visited:
-            continue
-        visited.add(cur_key)
-        visited_order.append(cur_key)
-        key_to_path[cur_key] = cur_path
-        key_to_disp[cur_key] = rel_disp_for_graph(root, cur_path)
-        if cur_key not in module_id_map:
-            module_id_map[cur_key] = module_name_from_path_for_graph(root, cur_path)
-        east_cur: dict[str, Any] = {}
-        try:
-            east_cur = load_east(cur_path)
-        except Exception:
-            continue
-        mods = collect_import_modules(east_cur)
-        if cur_key not in graph_adj:
-            graph_adj[cur_key] = []
-            graph_keys.append(cur_key)
-        cur_disp = key_to_disp[cur_key]
-        search_root = Path(path_parent_text(cur_path))
-        for mod in mods:
-            resolved = resolve_module_name_for_graph(
-                mod,
-                search_root,
-                RUNTIME_STD_SOURCE_ROOT,
-                RUNTIME_UTILS_SOURCE_ROOT,
-            )
-            status = dict_any_get_str(resolved, "status")
-            dep_txt = dict_any_get_str(resolved, "path")
-            resolved_mod_id = dict_any_get_str(resolved, "module_id")
-            if status == "relative":
-                rel_item = cur_disp + ": " + mod
-                append_unique_non_empty(relative_imports, relative_seen, rel_item)
-                continue
-            dep_disp = mod
-            if status == "user":
-                if dep_txt == "":
-                    continue
-                dep_file = Path(dep_txt)
-                dep_key = path_key_for_graph(dep_file)
-                dep_disp = rel_disp_for_graph(root, dep_file)
-                module_id = resolved_mod_id if resolved_mod_id != "" else mod
-                if dep_key not in module_id_map or module_id_map[dep_key] == "":
-                    module_id_map[dep_key] = module_id
-                deps: list[str] = []
-                if cur_key in graph_adj:
-                    deps = graph_adj[cur_key]
-                deps.append(dep_key)
-                graph_adj[cur_key] = deps
-                key_to_path[dep_key] = dep_file
-                key_to_disp[dep_key] = dep_disp
-                if dep_key not in queued and dep_key not in visited:
-                    queued.add(dep_key)
-                    queue.append(dep_file)
-            elif status == "missing":
-                miss = cur_disp + ": " + mod
-                append_unique_non_empty(missing_modules, missing_seen, miss)
-            edge = cur_disp + " -> " + dep_disp
-            append_unique_non_empty(edges, edge_seen, edge)
-
-    return finalize_import_graph_analysis(
-        graph_adj,
-        graph_keys,
-        key_to_disp,
-        visited_order,
-        key_to_path,
-        edges,
-        missing_modules,
-        relative_imports,
-        reserved_conflicts,
-        module_id_map,
+    """ユーザーモジュール依存解析（共通層 `analyze_import_graph` への委譲）。"""
+    analysis = analyze_import_graph(
+        entry_path,
+        RUNTIME_STD_SOURCE_ROOT,
+        RUNTIME_UTILS_SOURCE_ROOT,
+        load_east,
     )
+    return analysis if isinstance(analysis, dict) else {}
 
 
 def build_module_east_map(
