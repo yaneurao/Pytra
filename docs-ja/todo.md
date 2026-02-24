@@ -34,12 +34,11 @@
 
 文脈: `docs-ja/plans/p1-compiler-shared-extraction.md`（`TG-P1-COMP-SHARED`）
 
-1. [ ] [ID: P1-COMP-03] module symbol index / type schema 構築（`build_module_symbol_index`, `build_module_type_schema`）を共通 API 化する。
-2. [ ] [ID: P1-COMP-04] deps dump（`dump_deps_text`, `dump_deps_graph_text`）を共通 API 化し、CLI 層は表示/出力だけを担当する構成にする。
-3. [ ] [ID: P1-COMP-05] 共通抽出後、`py2cpp.py` は C++ 固有責務（C++ runtime/header/multi-file 出力）へ限定する。
-4. [ ] [ID: P1-COMP-09] `py2cpp.py` に残る汎用 helper（例: 文字列リスト整列、module 解析補助）を `src/pytra/compiler/` へ移管し、非 C++ 各 `py2*` から同一実装を再利用できる状態にする。
-5. [ ] [ID: P1-COMP-10] 「全言語 selfhost を阻害しない共通層優先」の運用ルールを整備し、`py2cpp.py` へ汎用処理が再流入しない回帰チェック（lint/静的検査または CI ルール）を追加する。
-6. [ ] [ID: P1-COMP-11] `src/pytra/compiler/transpile_cli.py` の汎用 helper 群を機能グループごとに `class + @staticmethod` へ整理し、`py2cpp.py` 側 import を class 単位へ縮退する。移行時はトップレベル互換ラッパーを暫定維持し、`tools/prepare_selfhost_source.py` / `test/unit/test_prepare_selfhost_source.py` の抽出ロジックも同時更新して selfhost 回帰を防ぐ。
+1. [ ] [ID: P1-COMP-04] deps dump（`dump_deps_text`, `dump_deps_graph_text`）を共通 API 化し、CLI 層は表示/出力だけを担当する構成にする。
+2. [ ] [ID: P1-COMP-05] 共通抽出後、`py2cpp.py` は C++ 固有責務（C++ runtime/header/multi-file 出力）へ限定する。
+3. [ ] [ID: P1-COMP-09] `py2cpp.py` に残る汎用 helper（例: 文字列リスト整列、module 解析補助）を `src/pytra/compiler/` へ移管し、非 C++ 各 `py2*` から同一実装を再利用できる状態にする。
+4. [ ] [ID: P1-COMP-10] 「全言語 selfhost を阻害しない共通層優先」の運用ルールを整備し、`py2cpp.py` へ汎用処理が再流入しない回帰チェック（lint/静的検査または CI ルール）を追加する。
+5. [ ] [ID: P1-COMP-11] `src/pytra/compiler/transpile_cli.py` の汎用 helper 群を機能グループごとに `class + @staticmethod` へ整理し、`py2cpp.py` 側 import を class 単位へ縮退する。移行時はトップレベル互換ラッパーを暫定維持し、`tools/prepare_selfhost_source.py` / `test/unit/test_prepare_selfhost_source.py` の抽出ロジックも同時更新して selfhost 回帰を防ぐ。
 
 進捗メモ:
 - 詳細ログは `docs-ja/plans/p1-compiler-shared-extraction.md` の `決定ログ` を参照。
