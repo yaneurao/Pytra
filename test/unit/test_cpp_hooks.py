@@ -236,6 +236,52 @@ class CppHooksTest(unittest.TestCase):
         stmt = {"range_mode": "dynamic", "step": {"repr": "1"}}
         self.assertEqual(on_for_range_mode(em, stmt, "dynamic"), "ascending")
 
+    def test_on_stmt_omit_braces_falls_back_without_core_default(self) -> None:
+        class _FallbackEmitter:
+            def _opt_ge(self, level: int) -> bool:
+                _ = level
+                return True
+
+            def _dict_stmt_list(self, value: Any) -> list[dict[str, Any]]:
+                if isinstance(value, list):
+                    return [v for v in value if isinstance(v, dict)]
+                return []
+
+            def any_dict_get_list(self, obj: dict[str, Any], key: str) -> list[Any]:
+                if not isinstance(obj, dict):
+                    return []
+                value = obj.get(key)
+                if isinstance(value, list):
+                    return value
+                return []
+
+            def any_dict_get_str(self, obj: dict[str, Any], key: str, default_value: str = "") -> str:
+                if not isinstance(obj, dict):
+                    return default_value
+                value = obj.get(key, default_value)
+                return value if isinstance(value, str) else default_value
+
+            def any_to_dict_or_empty(self, value: Any) -> dict[str, Any]:
+                if isinstance(value, dict):
+                    return value
+                return {}
+
+            def _node_kind_from_dict(self, value: dict[str, Any]) -> str:
+                return self.any_dict_get_str(value, "kind", "")
+
+        em = _FallbackEmitter()
+        stmt = {"body": [{"kind": "Return"}], "orelse": []}
+        self.assertTrue(on_stmt_omit_braces(em, "If", stmt, False))
+
+    def test_on_for_range_mode_falls_back_without_core_default(self) -> None:
+        class _FallbackEmitter:
+            def any_to_str(self, value: Any) -> str:
+                return value if isinstance(value, str) else ""
+
+        em = _FallbackEmitter()
+        self.assertEqual(on_for_range_mode(em, {"range_mode": "ascending"}, "dynamic"), "ascending")
+        self.assertEqual(on_for_range_mode(em, {"range_mode": "invalid"}, "dynamic"), "dynamic")
+
     def test_range_expr_render(self) -> None:
         em = _DummyEmitter()
         node = {
