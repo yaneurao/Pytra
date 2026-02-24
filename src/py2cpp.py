@@ -3407,10 +3407,8 @@ class CppEmitter(CodeEmitter):
         self,
         expr: dict[str, Any],
         fn: dict[str, Any],
-        args: list[str],
-        kw: dict[str, str],
         arg_nodes: list[Any],
-        first_arg: Any,
+        kw_nodes: list[Any],
     ) -> str:
         """lowered_kind=BuiltinCall の呼び出しを処理する。"""
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
@@ -3423,49 +3421,50 @@ class CppEmitter(CodeEmitter):
         if any_boundary_expr is not None:
             return self.render_expr(any_boundary_expr)
         if runtime_call == "static_cast":
-            static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, args, first_arg)
+            static_cast_rendered = self._render_builtin_static_cast_call(expr, builtin_name, arg_nodes)
             if static_cast_rendered is not None:
                 return str(static_cast_rendered)
-        list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, expr, fn, args, arg_nodes)
+        list_ops_rendered = self._render_builtin_runtime_list_ops(runtime_call, fn, arg_nodes)
         if list_ops_rendered is not None:
             return str(list_ops_rendered)
-        set_ops_rendered = self._render_builtin_runtime_set_ops(runtime_call, fn, args, arg_nodes)
+        set_ops_rendered = self._render_builtin_runtime_set_ops(runtime_call, fn, arg_nodes)
         if set_ops_rendered is not None:
             return str(set_ops_rendered)
-        dict_ops_rendered = self._render_builtin_runtime_dict_ops(runtime_call, expr, fn, args)
+        dict_ops_rendered = self._render_builtin_runtime_dict_ops(runtime_call, expr, fn)
         if dict_ops_rendered is not None:
             return str(dict_ops_rendered)
         str_ops_rendered = self._render_builtin_runtime_str_ops(runtime_call, fn, arg_nodes)
         if str_ops_rendered is not None:
             return str(str_ops_rendered)
-        special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, expr, fn, args, kw, arg_nodes)
+        special_runtime_rendered = self._render_builtin_runtime_special_ops(runtime_call, expr, fn, arg_nodes, kw_nodes)
         if special_runtime_rendered is not None:
             return str(special_runtime_rendered)
         if builtin_name == "bytes":
-            return f"bytes({join_str_list(', ', args)})" if len(args) >= 1 else "bytes{}"
+            if len(arg_nodes) == 0:
+                return "bytes{}"
+            rendered_args: list[str] = []
+            for arg_node in arg_nodes:
+                rendered_args.append(self.render_expr(arg_node))
+            return f"bytes({join_str_list(', ', rendered_args)})"
         if builtin_name == "bytearray":
-            return f"bytearray({join_str_list(', ', args)})" if len(args) >= 1 else "bytearray{}"
+            if len(arg_nodes) == 0:
+                return "bytearray{}"
+            rendered_args = []
+            for arg_node in arg_nodes:
+                rendered_args.append(self.render_expr(arg_node))
+            return f"bytearray({join_str_list(', ', rendered_args)})"
         return ""
 
     def _render_builtin_runtime_list_ops(
         self,
         runtime_call: str,
-        expr: dict[str, Any],
         fn: dict[str, Any],
-        args: list[str],
         arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の list 系 runtime_call を処理する。"""
-        _ = expr
         if runtime_call not in {"list.append", "list.extend", "list.pop", "list.clear", "list.reverse", "list.sort"}:
             return None
         owner_node: Any = fn.get("value")
-        owner = self.render_expr(owner_node)
-        owner_t0 = self.get_expr_type(owner_node)
-        owner_t = owner_t0 if isinstance(owner_t0, str) else ""
-        owner_types: list[str] = [owner_t]
-        if self._contains_text(owner_t, "|"):
-            owner_types = self.split_union(owner_t)
         if runtime_call == "list.append":
             if len(arg_nodes) >= 1:
                 append_node = {
@@ -3477,12 +3476,7 @@ class CppEmitter(CodeEmitter):
                     "casts": [],
                 }
                 return self.render_expr(append_node)
-            append_rendered = self._render_append_call_object_method(owner_types, owner, args, arg_nodes)
-            if append_rendered is not None:
-                return append_rendered
-            if len(args) >= 1:
-                return f"{owner}.append({args[0]})"
-            return f"{owner}.append(/* missing */)"
+            return None
         if runtime_call == "list.extend":
             if len(arg_nodes) >= 1:
                 extend_node = {
@@ -3494,8 +3488,7 @@ class CppEmitter(CodeEmitter):
                     "casts": [],
                 }
                 return self.render_expr(extend_node)
-            a0 = args[0] if len(args) >= 1 else "{}"
-            return f"{owner}.insert({owner}.end(), {a0}.begin(), {a0}.end())"
+            return None
         if runtime_call == "list.pop":
             pop_node = {
                 "kind": "ListPop",
@@ -3540,7 +3533,6 @@ class CppEmitter(CodeEmitter):
         self,
         runtime_call: str,
         fn: dict[str, Any],
-        args: list[str],
         arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の set 系 runtime_call を処理する。"""
@@ -3556,9 +3548,7 @@ class CppEmitter(CodeEmitter):
                     "casts": [],
                 }
                 return self.render_expr(set_add_node)
-            owner = self.render_expr(fn.get("value"))
-            a0 = args[0] if len(args) >= 1 else "/* missing */"
-            return f"{owner}.insert({a0})"
+            return None
         if runtime_call in {"set.discard", "set.remove"}:
             owner_node = fn.get("value")
             if len(arg_nodes) >= 1:
@@ -3571,9 +3561,7 @@ class CppEmitter(CodeEmitter):
                     "casts": [],
                 }
                 return self.render_expr(set_erase_node)
-            owner = self.render_expr(fn.get("value"))
-            a0 = args[0] if len(args) >= 1 else "/* missing */"
-            return f"{owner}.erase({a0})"
+            return None
         if runtime_call == "set.clear":
             clear_node = {
                 "kind": "SetClear",
@@ -3590,14 +3578,13 @@ class CppEmitter(CodeEmitter):
         runtime_call: str,
         expr: dict[str, Any],
         fn: dict[str, Any],
-        args: list[str],
     ) -> str | None:
         """BuiltinCall の dict 系 runtime_call を処理する。"""
         if runtime_call not in {"dict.get", "dict.pop", "dict.items", "dict.keys", "dict.values"}:
             return None
         owner_node: Any = fn.get("value")
-        owner = self.render_expr(owner_node)
         owner_t = self.get_expr_type(owner_node)
+        arg_nodes = self.any_to_list(expr.get("args"))
         if runtime_call == "dict.get":
             owner_value_t = ""
             owner_optional_object_dict = False
@@ -3632,120 +3619,48 @@ class CppEmitter(CodeEmitter):
                 or self.is_any_like_type(owner_value_t)
                 or owner_optional_object_dict
             )
-            key_expr = args[0] if len(args) >= 1 else "/* missing */"
-            arg_nodes = self.any_to_list(expr.get("args"))
-            key_node: Any = None
-            if len(arg_nodes) >= 1:
-                key_node = arg_nodes[0]
-            if not objectish_owner:
-                key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
-            if len(args) >= 2:
-                out_t = self.normalize_type_name(self.any_to_str(expr.get("resolved_type")))
-                int_out_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
-                float_out_types = {"float32", "float64"}
-                default_t = ""
-                default_node: Any = None
-                if len(arg_nodes) >= 2:
-                    default_node = arg_nodes[1]
-                if default_node is not None:
-                    default_t = self.normalize_type_name(self.get_expr_type(default_node))
-                if len(arg_nodes) >= 2:
-                    get_default_node = {
-                        "kind": "DictGetDefault",
-                        "owner": owner_node,
-                        "key": arg_nodes[0],
-                        "default": default_node,
-                        "out_type": out_t,
-                        "default_type": default_t,
-                        "owner_value_type": owner_value_t,
-                        "objectish_owner": objectish_owner,
-                        "owner_optional_object_dict": owner_optional_object_dict,
-                        "resolved_type": self.any_to_str(expr.get("resolved_type")),
-                        "borrow_kind": "value",
-                        "casts": [],
-                    }
-                    return self.render_expr(get_default_node)
-                if objectish_owner and out_t == "bool":
-                    return f"dict_get_bool({owner}, {key_expr}, {args[1]})"
-                if objectish_owner and out_t == "str":
-                    return f"dict_get_str({owner}, {key_expr}, {args[1]})"
-                if objectish_owner and out_t in int_out_types:
-                    cast_t = self._cpp_type_text(out_t)
-                    return f"static_cast<{cast_t}>(dict_get_int({owner}, {key_expr}, py_to_int64({args[1]})))"
-                if objectish_owner and out_t in float_out_types:
-                    cast_t = self._cpp_type_text(out_t)
-                    return f"static_cast<{cast_t}>(dict_get_float({owner}, {key_expr}, py_to_float64({args[1]})))"
-                if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "bool":
-                    return f"dict_get_bool({owner}, {key_expr}, {args[1]})"
-                if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "str":
-                    return f"dict_get_str({owner}, {key_expr}, {args[1]})"
-                if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in int_out_types:
-                    return f"dict_get_int({owner}, {key_expr}, py_to_int64({args[1]}))"
-                if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in float_out_types:
-                    return f"dict_get_float({owner}, {key_expr}, py_to_float64({args[1]}))"
-                if objectish_owner and out_t in {"", "unknown"} and default_t.startswith("list["):
-                    return f"dict_get_list({owner}, {key_expr}, {args[1]})"
-                if objectish_owner and out_t.startswith("list["):
-                    return f"dict_get_list({owner}, {key_expr}, {args[1]})"
-                if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
-                    if owner_optional_object_dict:
-                        boxed_default = self._box_any_target_value(args[1], default_node)
-                        return f"py_dict_get_default({owner}, {key_expr}, {boxed_default})"
-                    return f"dict_get_node({owner}, {key_expr}, {args[1]})"
-                if not objectish_owner:
-                    default_expr = args[1]
-                    val_t = self.normalize_type_name(owner_value_t)
-                    if default_expr in {"::std::nullopt", "std::nullopt"} and val_t not in {"", "None"}:
-                        allows_nullopt = False
-                        if val_t.startswith("optional[") and val_t.endswith("]"):
-                            allows_nullopt = True
-                        elif self._contains_text(val_t, "|"):
-                            parts = self.split_union(val_t)
-                            i = 0
-                            while i < len(parts):
-                                if self.normalize_type_name(parts[i]) == "None":
-                                    allows_nullopt = True
-                                    break
-                                i += 1
-                        if (not allows_nullopt) and (not self.is_any_like_type(val_t)):
-                            default_expr = self._cpp_type_text(val_t) + "()"
-                    return f"{owner}.get({key_expr}, {default_expr})"
-                if owner_optional_object_dict:
-                    boxed_default = self._box_any_target_value(args[1], default_node)
-                    return f"py_dict_get_default({owner}, {key_expr}, {boxed_default})"
-                return f"py_dict_get_default({owner}, {key_expr}, {args[1]})"
-            if len(args) == 1:
-                if len(arg_nodes) >= 1:
-                    maybe_node = {
-                        "kind": "DictGetMaybe",
-                        "owner": owner_node,
-                        "key": arg_nodes[0],
-                        "resolved_type": self.any_to_str(expr.get("resolved_type")),
-                        "borrow_kind": "value",
-                        "casts": [],
-                    }
-                    return self.render_expr(maybe_node)
-                return f"py_dict_get_maybe({owner}, {key_expr})"
-            return ""
+            if len(arg_nodes) >= 2:
+                default_node: Any = arg_nodes[1]
+                default_t = self.normalize_type_name(self.get_expr_type(default_node))
+                get_default_node = {
+                    "kind": "DictGetDefault",
+                    "owner": owner_node,
+                    "key": arg_nodes[0],
+                    "default": default_node,
+                    "out_type": self.normalize_type_name(self.any_to_str(expr.get("resolved_type"))),
+                    "default_type": default_t,
+                    "owner_value_type": owner_value_t,
+                    "objectish_owner": objectish_owner,
+                    "owner_optional_object_dict": owner_optional_object_dict,
+                    "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(get_default_node)
+            if len(arg_nodes) == 1:
+                maybe_node = {
+                    "kind": "DictGetMaybe",
+                    "owner": owner_node,
+                    "key": arg_nodes[0],
+                    "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(maybe_node)
+            return None
         if runtime_call == "dict.pop":
-            key_expr = args[0] if len(args) >= 1 else "/* missing */"
-            arg_nodes = self.any_to_list(expr.get("args"))
-            key_node: Any = None
-            if len(arg_nodes) >= 1:
-                key_node = arg_nodes[0]
-            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
-            if len(args) <= 1:
-                if len(arg_nodes) >= 1:
-                    pop_node = {
-                        "kind": "DictPop",
-                        "owner": owner_node,
-                        "key": arg_nodes[0],
-                        "resolved_type": self.any_to_str(expr.get("resolved_type")),
-                        "borrow_kind": "value",
-                        "casts": [],
-                    }
-                    return self.render_expr(pop_node)
-                return f"{owner}.pop({key_expr})"
+            if len(arg_nodes) == 1:
+                pop_node = {
+                    "kind": "DictPop",
+                    "owner": owner_node,
+                    "key": arg_nodes[0],
+                    "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                    "borrow_kind": "value",
+                    "casts": [],
+                }
+                return self.render_expr(pop_node)
+            if len(arg_nodes) < 2:
+                return None
             owner_t0 = self.get_expr_type(owner_node)
             owner_t2 = owner_t0 if isinstance(owner_t0, str) else ""
             val_t = "Any"
@@ -3753,22 +3668,17 @@ class CppEmitter(CodeEmitter):
                 inner = self.split_generic(owner_t2[5:-1])
                 if len(inner) == 2 and inner[1] != "":
                     val_t = self.normalize_type_name(inner[1])
-            if len(arg_nodes) >= 2:
-                pop_default_node = {
-                    "kind": "DictPopDefault",
-                    "owner": owner_node,
-                    "key": arg_nodes[0],
-                    "default": arg_nodes[1],
-                    "value_type": val_t,
-                    "resolved_type": self.any_to_str(expr.get("resolved_type")),
-                    "borrow_kind": "value",
-                    "casts": [],
-                }
-                return self.render_expr(pop_default_node)
-            default_expr = args[1]
-            if default_expr in {"::std::nullopt", "std::nullopt"} and not self.is_any_like_type(val_t) and val_t != "None":
-                default_expr = self._cpp_type_text(val_t) + "()"
-            return f"({owner}.contains({key_expr}) ? {owner}.pop({key_expr}) : {default_expr})"
+            pop_default_node = {
+                "kind": "DictPopDefault",
+                "owner": owner_node,
+                "key": arg_nodes[0],
+                "default": arg_nodes[1],
+                "value_type": val_t,
+                "resolved_type": self.any_to_str(expr.get("resolved_type")),
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(pop_default_node)
         if runtime_call == "dict.items":
             items_node = {
                 "kind": "DictItems",
@@ -3957,18 +3867,23 @@ class CppEmitter(CodeEmitter):
         runtime_call: str,
         expr: dict[str, Any],
         fn: dict[str, Any],
-        args: list[str],
-        kw: dict[str, str],
         arg_nodes: list[Any],
+        kw_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の Path/utility 系 runtime_call を処理する。"""
         if runtime_call == "std::filesystem::create_directories":
-            parents = kw.get("parents", "false")
-            exist_ok = kw.get("exist_ok", "false")
-            if len(args) >= 1:
-                parents = args[0]
-            if len(args) >= 2:
-                exist_ok = args[1]
+            parents_node: Any = None
+            exist_ok_node: Any = None
+            if len(arg_nodes) >= 1:
+                parents_node = arg_nodes[0]
+            if len(arg_nodes) >= 2:
+                exist_ok_node = arg_nodes[1]
+            if parents_node is None:
+                kw_names = self._keyword_names_from_builtin_call(expr)
+                parents_node = self._keyword_node_by_name(kw_nodes, kw_names, "parents")
+            if exist_ok_node is None:
+                kw_names = self._keyword_names_from_builtin_call(expr)
+                exist_ok_node = self._keyword_node_by_name(kw_nodes, kw_names, "exist_ok")
             mkdir_node: dict[str, Any] = {
                 "kind": "PathRuntimeOp",
                 "op": "mkdir",
@@ -3977,14 +3892,10 @@ class CppEmitter(CodeEmitter):
                 "borrow_kind": "value",
                 "casts": [],
             }
-            if len(arg_nodes) >= 1:
-                mkdir_node["parents"] = arg_nodes[0]
-            else:
-                mkdir_node["parents_expr"] = parents
-            if len(arg_nodes) >= 2:
-                mkdir_node["exist_ok"] = arg_nodes[1]
-            else:
-                mkdir_node["exist_ok_expr"] = exist_ok
+            if parents_node is not None:
+                mkdir_node["parents"] = parents_node
+            if exist_ok_node is not None:
+                mkdir_node["exist_ok"] = exist_ok_node
             return self.render_expr(mkdir_node)
         if runtime_call == "std::filesystem::exists":
             exists_node = {
@@ -4007,8 +3918,6 @@ class CppEmitter(CodeEmitter):
             }
             if len(arg_nodes) >= 1:
                 write_node["value"] = arg_nodes[0]
-            else:
-                write_node["value_expr"] = args[0] if len(args) >= 1 else '""'
             return self.render_expr(write_node)
         if runtime_call == "py_read_text":
             read_node = {
@@ -4070,10 +3979,8 @@ class CppEmitter(CodeEmitter):
             }
             if len(arg_nodes) > 0:
                 print_node["args"] = arg_nodes
-            elif len(args) > 0:
-                print_node["arg_exprs"] = args
             return self.render_expr(print_node)
-        if runtime_call == "py_len" and (len(arg_nodes) >= 1 or len(args) >= 1):
+        if runtime_call == "py_len" and len(arg_nodes) >= 1:
             len_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
                 "op": "len",
@@ -4081,12 +3988,9 @@ class CppEmitter(CodeEmitter):
                 "borrow_kind": "value",
                 "casts": [],
             }
-            if len(arg_nodes) >= 1:
-                len_node["value"] = arg_nodes[0]
-            else:
-                len_node["value_expr"] = args[0]
+            len_node["value"] = arg_nodes[0]
             return self.render_expr(len_node)
-        if runtime_call == "py_to_string" and (len(arg_nodes) >= 1 or len(args) >= 1):
+        if runtime_call == "py_to_string" and len(arg_nodes) >= 1:
             to_string_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
                 "op": "to_string",
@@ -4094,12 +3998,9 @@ class CppEmitter(CodeEmitter):
                 "borrow_kind": "value",
                 "casts": [],
             }
-            if len(arg_nodes) >= 1:
-                to_string_node["value"] = arg_nodes[0]
-            else:
-                to_string_node["value_expr"] = args[0]
+            to_string_node["value"] = arg_nodes[0]
             return self.render_expr(to_string_node)
-        if runtime_call in {"py_min", "py_max"} and (len(arg_nodes) >= 1 or len(args) >= 1):
+        if runtime_call in {"py_min", "py_max"} and len(arg_nodes) >= 1:
             minmax_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
                 "op": "minmax",
@@ -4110,8 +4011,6 @@ class CppEmitter(CodeEmitter):
             }
             if len(arg_nodes) > 0:
                 minmax_node["args"] = arg_nodes
-            elif len(args) > 0:
-                minmax_node["arg_exprs"] = args
             return self.render_expr(minmax_node)
         if runtime_call == "perf_counter":
             perf_node = {
@@ -4132,8 +4031,6 @@ class CppEmitter(CodeEmitter):
             }
             if len(arg_nodes) > 0:
                 open_node["args"] = arg_nodes
-            elif len(args) > 0:
-                open_node["arg_exprs"] = args
             return self.render_expr(open_node)
         if runtime_call in {"std::runtime_error", "::std::runtime_error"}:
             runtime_error_node: dict[str, Any] = {
@@ -4145,8 +4042,6 @@ class CppEmitter(CodeEmitter):
             }
             if len(arg_nodes) >= 1:
                 runtime_error_node["message"] = arg_nodes[0]
-            elif len(args) >= 1:
-                runtime_error_node["message_expr"] = args[0]
             return self.render_expr(runtime_error_node)
         if runtime_call == "Path":
             path_ctor_node: dict[str, Any] = {
@@ -4158,8 +4053,6 @@ class CppEmitter(CodeEmitter):
             }
             if len(arg_nodes) > 0:
                 path_ctor_node["args"] = arg_nodes
-            elif len(args) > 0:
-                path_ctor_node["arg_exprs"] = args
             return self.render_expr(path_ctor_node)
         if runtime_call == "py_int_to_bytes":
             int_to_bytes_node: dict[str, Any] = {
@@ -4172,13 +4065,28 @@ class CppEmitter(CodeEmitter):
             }
             if len(arg_nodes) >= 1:
                 int_to_bytes_node["length"] = arg_nodes[0]
-            elif len(args) >= 1:
-                int_to_bytes_node["length_expr"] = args[0]
             if len(arg_nodes) >= 2:
                 int_to_bytes_node["byteorder"] = arg_nodes[1]
-            elif len(args) >= 2:
-                int_to_bytes_node["byteorder_expr"] = args[1]
             return self.render_expr(int_to_bytes_node)
+        return None
+
+    def _keyword_names_from_builtin_call(self, expr: dict[str, Any]) -> list[str]:
+        """BuiltinCall の keyword 名を呼び出し順で返す。"""
+        names: list[str] = []
+        for kw_obj in self.any_to_list(expr.get("keywords")):
+            kw_dict = self.any_to_dict_or_empty(kw_obj)
+            if len(kw_dict) == 0:
+                continue
+            names.append(self.any_dict_get_str(kw_dict, "arg", ""))
+        return names
+
+    def _keyword_node_by_name(self, kw_nodes: list[Any], kw_names: list[str], name: str) -> Any | None:
+        """keyword ノード列から指定名の value ノードを取得する。"""
+        i = 0
+        while i < len(kw_nodes):
+            if i < len(kw_names) and kw_names[i] == name:
+                return kw_nodes[i]
+            i += 1
         return None
 
     def _render_dict_get_default_expr(
@@ -4254,31 +4162,33 @@ class CppEmitter(CodeEmitter):
         self,
         expr: dict[str, Any],
         builtin_name: str,
-        args: list[str],
-        first_arg: Any,
+        arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の `runtime_call=static_cast` 分岐を描画する。"""
-        if len(args) == 1:
+        if len(arg_nodes) == 1:
+            arg_expr = self.render_expr(arg_nodes[0])
             target = self.cpp_type(expr.get("resolved_type"))
-            arg_t = self.get_expr_type(first_arg)
+            arg_t = self.get_expr_type(arg_nodes[0])
             numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
             if target == "int64" and arg_t == "str":
-                return f"py_to_int64({args[0]})"
+                return f"py_to_int64({arg_expr})"
             if target in {"float64", "float32"} and arg_t == "str":
-                return f"py_to_float64({args[0]})"
+                return f"py_to_float64({arg_expr})"
             if target == "int64" and arg_t in numeric_t:
-                return f"int64({args[0]})"
+                return f"int64({arg_expr})"
             if target == "int64" and self.is_any_like_type(arg_t):
-                return f"py_to_int64({args[0]})"
+                return f"py_to_int64({arg_expr})"
             if target in {"float64", "float32"} and self.is_any_like_type(arg_t):
-                return f"py_to_float64({args[0]})"
+                return f"py_to_float64({arg_expr})"
             if target == "bool" and self.is_any_like_type(arg_t):
-                return f"py_to_bool({args[0]})"
+                return f"py_to_bool({arg_expr})"
             if target == "int64":
-                return f"py_to_int64({args[0]})"
-            return f"static_cast<{target}>({args[0]})"
-        if len(args) == 2 and builtin_name == "int":
-            return f"py_to_int64_base({args[0]}, py_to_int64({args[1]}))"
+                return f"py_to_int64({arg_expr})"
+            return f"static_cast<{target}>({arg_expr})"
+        if len(arg_nodes) == 2 and builtin_name == "int":
+            arg0_expr = self.render_expr(arg_nodes[0])
+            arg1_expr = self.render_expr(arg_nodes[1])
+            return f"py_to_int64_base({arg0_expr}, py_to_int64({arg1_expr}))"
         return None
 
     def _render_collection_constructor_call(
@@ -5306,7 +5216,7 @@ class CppEmitter(CodeEmitter):
         lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
         has_runtime_call = self.any_dict_has(expr_d, "runtime_call")
         if lowered_kind == "BuiltinCall" or has_runtime_call:
-            builtin_rendered: str = self._render_builtin_call(expr_d, fn, args, kw, arg_nodes, first_arg)
+            builtin_rendered: str = self._render_builtin_call(expr_d, fn, arg_nodes, kw_nodes)
             if builtin_rendered != "":
                 return builtin_rendered
         name_or_attr = self._render_call_name_or_attr(expr_d, fn, fn_name, args, kw, arg_nodes, first_arg)

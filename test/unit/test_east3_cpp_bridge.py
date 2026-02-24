@@ -978,6 +978,23 @@ class East3CppBridgeTest(unittest.TestCase):
             ],
             "keywords": [],
         }
+        mkdir_kw_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "std::filesystem::create_directories",
+            "resolved_type": "None",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                "attr": "mkdir",
+                "resolved_type": "unknown",
+            },
+            "args": [],
+            "keywords": [
+                {"arg": "parents", "value": {"kind": "Constant", "value": True, "resolved_type": "bool"}},
+                {"arg": "exist_ok", "value": {"kind": "Constant", "value": True, "resolved_type": "bool"}},
+            ],
+        }
         exists_expr = {
             "kind": "Call",
             "lowered_kind": "BuiltinCall",
@@ -1078,6 +1095,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
 
         self.assertEqual(emitter.render_expr(mkdir_expr), "p.mkdir(true, false)")
+        self.assertEqual(emitter.render_expr(mkdir_kw_expr), "p.mkdir(true, true)")
         self.assertEqual(emitter.render_expr(exists_expr), "p.exists()")
         self.assertEqual(emitter.render_expr(write_expr), 'p.write_text("42")')
         self.assertEqual(emitter.render_expr(read_expr), "p.read_text()")
