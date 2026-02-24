@@ -88,7 +88,12 @@ public:
     ::std::size_t count(const K& key) const { return data_.count(key); }
     bool contains(const K& key) const { return data_.find(key) != data_.end(); }
 
-    V& operator[](const K& key) { return data_[key]; }
+    V& operator[](const K& key) {
+        if (data_.bucket_count() == 0) {
+            data_.rehash(1);
+        }
+        return data_[key];
+    }
     V& at(const K& key) { return data_.at(key); }
     const V& at(const K& key) const { return data_.at(key); }
 

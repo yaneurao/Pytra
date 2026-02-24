@@ -34,8 +34,9 @@ def runtime_cpp_sources() -> list[str]:
     out: list[str] = []
     for p in files_all:
         rel = p.relative_to(SELFHOST_RUNTIME).as_posix()
-        # 互換レイヤ（std/pylib）は新実体（pytra/*）と二重定義になるため除外する。
-        if rel.startswith("cpp/std/") or rel.startswith("cpp/pylib/"):
+        # 互換レイヤ（std/pylib/pytra forwarder TU）は実体（pytra-core/pytra-gen）と
+        # 二重定義になるため除外する。
+        if rel.startswith("cpp/std/") or rel.startswith("cpp/pylib/") or rel.startswith("cpp/pytra/"):
             continue
         out.append(str(p))
     return out
