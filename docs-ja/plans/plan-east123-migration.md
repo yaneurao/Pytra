@@ -351,6 +351,19 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
   - Rust/JS 経路に `--east-stage` 既定 `3` + `stage2` 互換モード（警告付き）を追記。
   - `8.1 --east-stage 運用` を追加し、C++ + 非 C++ 8変換器の運用統一と回帰導線（`check_py2cpp_transpile` / `check_noncpp_east3_contract`）を明文化。
 
+## `EAST1` build 責務境界の正式化（`P0-EASTMIG-06-S6`）
+
+`docs-ja/spec/spec-east.md#east1-build-boundary` の受け入れ基準を現行運用に合わせて固定する。
+
+- 反映内容:
+  - `EAST1` build で `EAST1 -> EAST2` を行わない境界を維持。
+  - `load_east_document_compat` のエラー契約互換を維持。
+  - `transpile_cli.py` は build 実体を持たず委譲中心とする。
+  - `check_selfhost_cpp_diff --mode allow-not-implemented` を受け入れ基準に含め、差分発生時は todo 追跡する運用へ明記。
+- 実行確認:
+  - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` 実行済み。
+  - 実行結果: `mismatches=2`（`sample/py/01_mandelbrot.py`, `sample/py/17_monte_carlo_pi.py`）。
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -374,6 +387,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06-S6`] `spec-east#east1-build-boundary` の受け入れ基準へ selfhost diff 実行を明記した。現時点の実行結果は `mismatches=2`（`sample/py/01_mandelbrot.py`, `sample/py/17_monte_carlo_pi.py`）で、差分は継続追跡対象とする。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S5`] `spec-east` / `spec-dev` を更新し、`EAST3` 既定・`EAST2` 互換モード（`--east-stage 2` 警告付き）の現行運用と回帰導線を仕様へ同期した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S4`] `test_east3_lowering` に non-cpp 契約ガード実行テストを追加し、`tools/check_py2*_transpile.py` で既定実行時の stage2 互換警告を失敗扱いに統一した。`check_py2cpp_transpile` と `check_noncpp_east3_contract`、`test_east3_*` の回帰が通過。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S9`] `tools/check_noncpp_east3_contract.py` と `test_noncpp_east3_contract_guard.py` を追加し、非 C++ 8変換器の `--east-stage` 既定値・警告文言・回帰導線を統一した。`run_local_ci` の非 C++ 導線は同スクリプトへ統合。
