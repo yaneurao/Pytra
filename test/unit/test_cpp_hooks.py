@@ -198,6 +198,7 @@ class CppHooksTest(unittest.TestCase):
     def test_build_cpp_hooks_does_not_register_object_method_hook(self) -> None:
         hooks = build_cpp_hooks()
         self.assertNotIn("on_render_object_method", hooks)
+        self.assertNotIn("on_render_expr_kind", hooks)
         self.assertIn("on_render_module_method", hooks)
         self.assertIn("on_render_class_method", hooks)
 
