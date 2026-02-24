@@ -8,6 +8,7 @@
 - 本書は次期構成（段階移行前提）の仕様であり、`EAST2 -> EAST3` 導入時の正本とする。
 - 連結段の詳細（`type_id` 確定、manifest、中間ファイル再開）は [spec-linker.md](./spec-linker.md) に分離する。
 - 実装順とファイル責務対応は [spec-east123-migration.md](./spec-east123-migration.md) を参照する。
+- 現行/移行後のファイル責務対応表は [spec-east123-migration.md の 3.1 節](./spec-east123-migration.md#31-現行移行後の責務対応表2026-02-24) を参照する。
 - 仕様優先順位は `spec-east123`（上位） -> `spec-linker`（下位）とする。
 - 元案は `materials/refs/spec-east123.md`。
 

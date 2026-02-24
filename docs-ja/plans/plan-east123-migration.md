@@ -48,7 +48,14 @@
 
 サブタスク実行順（todo 同期）:
 1. `P0-EASTMIG-01`: stage 名と責務境界（`EAST1/2/3`）を `spec` と `plan` で同期する。
+   - `P0-EASTMIG-01-S1`: `spec-east123-migration` に責務対応表を固定する。
+   - `P0-EASTMIG-01-S2`: 本計画の実行順と `todo` 実行順を同期する。
+   - `P0-EASTMIG-01-S3`: `spec-east123` / `spec/index` から移行仕様への導線を固定する。
 2. `P0-EASTMIG-02`: `transpile_cli.py` に集中している段階 API を `east_parts/east1.py`, `east_parts/east2.py`, `east_parts/east3.py` へ分離する。
+   - `P0-EASTMIG-02-S1`: `east1.py` へ `load_east1_document` と EAST1 正規化 helper を移す。
+   - `P0-EASTMIG-02-S2`: `east2.py` へ `normalize_east1_to_east2_document` と EAST2 helper を移す。
+   - `P0-EASTMIG-02-S3`: `east3.py` へ `load_east3_document` と公開委譲を集約する。
+   - `P0-EASTMIG-02-S4`: `transpile_cli.py` を互換ラッパ中心へ縮退する。
 3. `P0-EASTMIG-03`: `py2cpp.py` を `EAST3` 主経路化し、`EAST2` 再判断ロジックを段階縮退する。
 4. `P0-EASTMIG-04`: hooks を `EAST3` 前提で棚卸しし、意味論 hook の流入を禁止する。
 5. `P0-EASTMIG-05`: `--east-stage 3` 主経路の回帰導線を標準化し、`EAST2` 互換を移行モードへ格下げする。
