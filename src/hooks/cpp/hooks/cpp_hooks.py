@@ -345,7 +345,6 @@ def build_cpp_hooks() -> dict[str, Any]:
     hooks.add("on_render_call", on_render_call)
     hooks.add("on_render_module_method", on_render_module_method)
     hooks.add("on_render_class_method", on_render_class_method)
-    hooks.add("on_render_binop", on_render_binop)
     hooks.add("on_render_expr_leaf", on_render_expr_leaf)
     hooks.add("on_render_expr_complex", on_render_expr_complex)
     return hooks.to_dict()
