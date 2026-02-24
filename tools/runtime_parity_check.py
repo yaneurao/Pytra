@@ -76,13 +76,13 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
         ),
         Target(
             name="rs",
-            transpile_cmd=f"python src/py2rs.py {shlex.quote(case_src)} test/transpile/rs/{case_stem}.rs",
+            transpile_cmd=f"python src/py2rs.py {shlex.quote(case_src)} -o test/transpile/rs/{case_stem}.rs",
             run_cmd=f"rustc -O test/transpile/rs/{case_stem}.rs -o test/transpile/obj/{case_stem}_rs.out && test/transpile/obj/{case_stem}_rs.out",
             needs=("python", "rustc"),
         ),
         Target(
             name="cs",
-            transpile_cmd=f"python src/py2cs.py {shlex.quote(case_src)} test/transpile/cs/{case_stem}.cs",
+            transpile_cmd=f"python src/py2cs.py {shlex.quote(case_src)} -o test/transpile/cs/{case_stem}.cs",
             run_cmd=(
                 f"mcs -out:test/transpile/obj/{case_stem}_cs.exe test/transpile/cs/{case_stem}.cs "
                 "src/runtime/cs/pytra/built_in/py_runtime.cs "
@@ -96,25 +96,25 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
         ),
         Target(
             name="js",
-            transpile_cmd=f"python src/py2js.py {shlex.quote(case_src)} test/transpile/js/{case_stem}.js",
+            transpile_cmd=f"python src/py2js.py {shlex.quote(case_src)} -o test/transpile/js/{case_stem}.js",
             run_cmd=f"node test/transpile/js/{case_stem}.js",
             needs=("python", "node"),
         ),
         Target(
             name="ts",
-            transpile_cmd=f"python src/py2ts.py {shlex.quote(case_src)} test/transpile/ts/{case_stem}.ts",
+            transpile_cmd=f"python src/py2ts.py {shlex.quote(case_src)} -o test/transpile/ts/{case_stem}.ts",
             run_cmd=f"npx -y tsx test/transpile/ts/{case_stem}.ts",
             needs=("python", "node", "npx"),
         ),
         Target(
             name="go",
-            transpile_cmd=f"python src/py2go.py {shlex.quote(case_src)} test/transpile/go/{case_stem}.go",
+            transpile_cmd=f"python src/py2go.py {shlex.quote(case_src)} -o test/transpile/go/{case_stem}.go",
             run_cmd=f"go run test/transpile/go/{case_stem}.go",
             needs=("python", "go"),
         ),
         Target(
             name="java",
-            transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} test/transpile/java/{case_stem}.java",
+            transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} -o test/transpile/java/{case_stem}.java",
             run_cmd=f"javac test/transpile/java/{case_stem}.java && java -cp test/transpile/java {case_stem}",
             needs=("python", "javac", "java"),
         ),
@@ -126,7 +126,7 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
         ),
         Target(
             name="kotlin",
-            transpile_cmd=f"python src/py2kotlin.py {shlex.quote(case_src)} test/transpile/kotlin/{case_stem}.kt",
+            transpile_cmd=f"python src/py2kotlin.py {shlex.quote(case_src)} -o test/transpile/kotlin/{case_stem}.kt",
             run_cmd=(
                 f"kotlinc test/transpile/kotlin/{case_stem}.kt -include-runtime -d test/transpile/obj/{case_stem}_kotlin.jar "
                 f"&& java -jar test/transpile/obj/{case_stem}_kotlin.jar"

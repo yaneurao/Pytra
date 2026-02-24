@@ -23,5 +23,7 @@
 - 本タスク完了時に `docs-ja/todo/index.md` の進捗を 1 行更新。
 
 ## 決定ログ
-- 2026-02-25: Swift toolchain を `swiftc` 実行可能環境として導入し、`/workspace/Pytra/.chain/swift/bin` から `swiftc/swift` を参照可能化（現時点は `runtime_parity_check` 実行時に PATH へ追加して使用）。
+- 2026-02-25: `runtime_parity_check` の基盤修正（`core.cpp`/`east_parts/core.py` の比較式分解の堅牢化、`tools/runtime_parity_check.py` の非C++向け `-o` 出力パス合わせ）を反映し、`math_extended` / `pathlib_extended` の `cpp` がPASSを確認。
+- 2026-02-25: `src/pytra/std/sys.py` の標準入出力フォールバックを追加し、移植済みランタイムが未定義実装を要求した場合のCI/実行時クラッシュを抑制。
+- 2026-02-25: 現時点で `swiftc` は未導入のため、`runtime_parity_check` では `swift` ターゲットがskip。`rs`/`cs`/`js`/`ts`/`go`/`java`/`kotlin` は出力生成とランタイム/インポート仕様の未整合により不一致・実行失敗。
 - 追記用。
