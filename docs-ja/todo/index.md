@@ -80,23 +80,27 @@
 
 文脈: `docs-ja/plans/p1-runtime-layout-unification.md`（`TG-P1-RUNTIME-LAYOUT`）
 
-1. [ ] [ID: P1-RUNTIME-06] `src/{cs,go,java,kotlin,swift}_module/` の runtime 実体を `src/runtime/<lang>/pytra/` へ移行し、`src/*_module/` を shim-only または削除状態へ収束させる（`P1-RUNTIME-06-S1` から `P1-RUNTIME-06-S6` 完了でクローズ）。
+1. [x] [ID: P1-RUNTIME-06] `src/{cs,go,java,kotlin,swift}_module/` の runtime 実体を `src/runtime/<lang>/pytra/` へ移行し、`src/*_module/` を shim-only または削除状態へ収束させる（`P1-RUNTIME-06-S1` から `P1-RUNTIME-06-S6` 完了でクローズ）。
 2. [x] [ID: P1-RUNTIME-06-S1] C# runtime 実体（`src/cs_module/*`）を `src/runtime/cs/pytra/` へ移し、参照/namespace/テストを新配置へ合わせる。
 3. [x] [ID: P1-RUNTIME-06-S2] Go runtime 実体（`src/go_module/py_runtime.go`）を `src/runtime/go/pytra/` へ移し、参照と smoke 検証を新配置へ合わせる。
 4. [x] [ID: P1-RUNTIME-06-S3] Java runtime 実体（`src/java_module/PyRuntime.java`）を `src/runtime/java/pytra/` へ移し、参照と smoke 検証を新配置へ合わせる。
 5. [x] [ID: P1-RUNTIME-06-S4] Kotlin runtime 実体（`src/kotlin_module/py_runtime.kt`）を `src/runtime/kotlin/pytra/` へ移し、参照と smoke 検証を新配置へ合わせる。
 6. [x] [ID: P1-RUNTIME-06-S5] Swift runtime 実体（`src/swift_module/py_runtime.swift`）を `src/runtime/swift/pytra/` へ移し、参照と smoke 検証を新配置へ合わせる。
-7. [ ] [ID: P1-RUNTIME-06-S6] `tools/check_runtime_legacy_shims.py` と関連 docs を更新し、`src/{cs,go,java,kotlin,swift}_module/` に実体ファイルが再流入しない CI ガードを追加する。
+7. [x] [ID: P1-RUNTIME-06-S6] `tools/check_runtime_legacy_shims.py` と関連 docs を更新し、`src/{cs,go,java,kotlin,swift}_module/` に実体ファイルが再流入しない CI ガードを追加する。
 
 進捗メモ:
 - [ID: P1-RUNTIME-06-S4] `src/kotlin_module/py_runtime.kt` を `src/runtime/kotlin/pytra/py_runtime.kt` へ移動し、`test/unit/test_py2kotlin_smoke.py` に移行検証を追加した。
 - [ID: P1-RUNTIME-06-S5] `src/swift_module/py_runtime.swift` を `src/runtime/swift/pytra/py_runtime.swift` へ移動し、`test/unit/test_py2swift_smoke.py` に移行検証を追加した。
+- P1-RUNTIME-06-S6 を完了し、runtime 参照/配置統一タスク一式を確定。`tools/check_runtime_legacy_shims.py` を更新して legacy 流入を防止するガードを導入済み。
 
 ## P1: 多言語出力品質（高優先）
 
 文脈: `docs-ja/plans/p1-multilang-output-quality.md`（`TG-P1-MULTILANG-QUALITY`）
 
-1. [ ] [ID: P1-MQ-09] Rust emitter の `BinOp` で発生している過剰括弧（例: `y = (((2.0 * x) * y) + cy);`）を最小化し、`sample/rs` を再生成して可読性を `sample/cpp` 水準へ戻す。実施後は `tools/measure_multilang_quality.py` の `rs paren` 指標を再計測し、`tools/check_multilang_quality_regression.py` の基線を更新して再発を防止する。
+1. [x] [ID: P1-MQ-09] Rust emitter の `BinOp` で発生している過剰括弧（例: `y = (((2.0 * x) * y) + cy);`）を最小化し、`sample/rs` を再生成して可読性を `sample/cpp` 水準へ戻す。実施後は `tools/measure_multilang_quality.py` の `rs paren` 指標を再計測し、`tools/check_multilang_quality_regression.py` の基線を更新して再発を防止する。
+
+進捗メモ:
+- [ID: P1-MQ-09] `src/hooks/rs/emitter/rs_emitter.py` の `BinOp` 出力を固定括弧形式から最小括弧へ変更し、`sample/rs` を再生成。`tools/measure_multilang_quality.py` で `rs paren=164` を確認し、`tools/check_multilang_quality_regression.py` で回帰チェックを通過。
 
 ## P3: Pythonic 記法戻し（低優先）
 

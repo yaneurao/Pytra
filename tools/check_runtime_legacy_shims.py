@@ -7,6 +7,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+FORBIDDEN_LEGACY_MODULE_DIRS = [
+    "cs_module",
+    "go_module",
+    "java_module",
+    "kotlin_module",
+    "swift_module",
+]
 
 
 def _check_js_shims(errors: list[str]) -> None:
@@ -29,6 +36,8 @@ def _check_ts_shims(errors: list[str]) -> None:
 
 def _check_forbidden_refs(errors: list[str]) -> None:
     forbidden = ("/src/js_module/", "/src/ts_module/")
+    for legacy in FORBIDDEN_LEGACY_MODULE_DIRS:
+        forbidden += (f"/src/{legacy}/",)
     targets = [
         ROOT / "src" / "hooks",
         ROOT / "src" / "pytra",
@@ -46,14 +55,26 @@ def _check_forbidden_refs(errors: list[str]) -> None:
                 text = path.read_text(encoding="utf-8")
             except UnicodeDecodeError:
                 continue
-            if forbidden[0] in text or forbidden[1] in text:
-                errors.append(f"forbidden legacy path ref: {path.relative_to(ROOT)}")
+            for marker in forbidden:
+                if marker in text:
+                    errors.append(f"forbidden legacy path ref: {path.relative_to(ROOT)}")
+                    break
+
+
+def _check_legacy_runtime_modules_removed(errors: list[str]) -> None:
+    for name in FORBIDDEN_LEGACY_MODULE_DIRS:
+        module_dir = ROOT / "src" / name
+        if module_dir.exists():
+            entries = sorted(module_dir.rglob("*"))
+            if entries:
+                errors.append(f"legacy runtime module directory should not contain files: {module_dir.relative_to(ROOT)}")
 
 
 def main() -> int:
     errors: list[str] = []
     _check_js_shims(errors)
     _check_ts_shims(errors)
+    _check_legacy_runtime_modules_removed(errors)
     _check_forbidden_refs(errors)
     if errors:
         for e in errors:

@@ -180,3 +180,4 @@
 - 2026-02-24: 旧タスクの完了判定が「参照パス統一」止まりで、`src/{cs,go,java,kotlin,swift}_module/` の runtime 実体移行完了条件を満たしていないことを確認。残作業を `P1-RUNTIME-06`（再オープン）として `todo` へ復帰した。
 - 2026-02-25: ID: `P1-RUNTIME-06-S4` を実施し、`src/kotlin_module/py_runtime.kt` を `src/runtime/kotlin/pytra/py_runtime.kt` へ移行した。`test/unit/test_py2kotlin_smoke.py` に移行検証を追加し、`src/kotlin_module` の実体ファイルを削除対象扱いにした。
 - 2026-02-25: ID: `P1-RUNTIME-06-S5` を実施し、`src/swift_module/py_runtime.swift` を `src/runtime/swift/pytra/py_runtime.swift` へ移行した。`test/unit/test_py2swift_smoke.py` に移行検証を追加し、`src/swift_module` の実体ファイルを削除対象扱いにした。
+- 2026-02-25: legacy runtime guard を実施し、`tools/check_runtime_legacy_shims.py` を更新して `cs/go/java/kotlin/swift` legacy module の再流入（存在・参照）を検知するガードを追加した。

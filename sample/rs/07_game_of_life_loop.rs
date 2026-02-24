@@ -17,8 +17,8 @@ fn next_state(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
                 let mut dx: i64 = (-1);
                 while dx < 2 {
                     if (dx != 0) || (dy != 0) {
-                        let nx = ((((x + dx) + w)) % w);
-                        let ny = ((((y + dy) + h)) % h);
+                        let nx = (x + dx + w) % w;
+                        let ny = (y + dy + h) % h;
                         cnt += grid[ny as usize][nx as usize];
                     }
                     dx += 1;
@@ -44,9 +44,9 @@ fn next_state(grid: Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
 }
 
 fn render(grid: Vec<Vec<i64>>, w: i64, h: i64, cell: i64) -> Vec<u8> {
-    let width = (w * cell);
-    let height = (h * cell);
-    let mut frame = bytearray((width * height));
+    let width = w * cell;
+    let height = h * cell;
+    let mut frame = bytearray(width * height);
     let mut y: i64 = 0;
     while y < h {
         let mut x: i64 = 0;
@@ -54,10 +54,10 @@ fn render(grid: Vec<Vec<i64>>, w: i64, h: i64, cell: i64) -> Vec<u8> {
             let v = (grid[y as usize][x as usize] ? 255 : 0);
             let mut yy: i64 = 0;
             while yy < cell {
-                let base = (((((y * cell) + yy)) * width) + (x * cell));
+                let base = (y * cell + yy) * width + x * cell;
                 let mut xx: i64 = 0;
                 while xx < cell {
-                    frame[(base + xx) as usize] = v;
+                    frame[base + xx as usize] = v;
                     xx += 1;
                 }
                 yy += 1;
@@ -78,14 +78,11 @@ fn run_07_game_of_life_loop() {
     
     let start = perf_counter();
     let mut grid: Vec<Vec<i64>> = [[0] * w for _ in range(h)];
-    
-    // Lay down sparse noise so the whole field is less likely to stabilize too early.
-    // Avoid large integer literals so all transpilers handle the expression consistently.
     let mut y: i64 = 0;
     while y < h {
         let mut x: i64 = 0;
         while x < w {
-            let noise = ((((((x * 37) + (y * 73)) + ((x * y) % 19)) + (((x + y)) % 11))) % 97);
+            let noise = (x * 37 + y * 73 + x * y % 19 + (x + y) % 11) % 97;
             if noise < 3 {
                 grid[y as usize][x as usize] = 1;
             }
@@ -97,12 +94,11 @@ fn run_07_game_of_life_loop() {
     let glider = vec![];
     let r_pentomino = vec![];
     let lwss = vec![];
-    
     let mut gy: i64 = 8;
-    while gy < (h - 8) {
+    while gy < h - 8 {
         let mut gx: i64 = 8;
-        while gx < (w - 8) {
-            let kind = ((((gx * 7) + (gy * 11))) % 3);
+        while gx < w - 8 {
+            let kind = (gx * 7 + gy * 11) % 3;
             if kind == 0 {
                 let mut ph = glider.len() as i64;
                 let mut py: i64 = 0;
@@ -111,7 +107,7 @@ fn run_07_game_of_life_loop() {
                     let mut px: i64 = 0;
                     while px < pw {
                         if glider[py as usize][px as usize] == 1 {
-                            grid[(((gy + py)) % h) as usize][(((gx + px)) % w) as usize] = 1;
+                            grid[(gy + py) % h as usize][(gx + px) % w as usize] = 1;
                         }
                         px += 1;
                     }
@@ -126,7 +122,7 @@ fn run_07_game_of_life_loop() {
                         let mut px: i64 = 0;
                         while px < pw {
                             if r_pentomino[py as usize][px as usize] == 1 {
-                                grid[(((gy + py)) % h) as usize][(((gx + px)) % w) as usize] = 1;
+                                grid[(gy + py) % h as usize][(gx + px) % w as usize] = 1;
                             }
                             px += 1;
                         }
@@ -140,7 +136,7 @@ fn run_07_game_of_life_loop() {
                         let mut px: i64 = 0;
                         while px < pw {
                             if lwss[py as usize][px as usize] == 1 {
-                                grid[(((gy + py)) % h) as usize][(((gx + px)) % w) as usize] = 1;
+                                grid[(gy + py) % h as usize][(gx + px) % w as usize] = 1;
                             }
                             px += 1;
                         }
@@ -159,8 +155,8 @@ fn run_07_game_of_life_loop() {
         grid = next_state(grid, w, h);
         _ += 1;
     }
-    save_gif(out_path, (w * cell), (h * cell), frames, grayscale_palette());
-    let elapsed = (perf_counter() - start);
+    save_gif(out_path, w * cell, h * cell, frames, grayscale_palette());
+    let elapsed = perf_counter() - start;
     println!("{:?}", ("output:", out_path));
     println!("{:?}", ("frames:", steps));
     println!("{:?}", ("elapsed_sec:", elapsed));
