@@ -457,8 +457,9 @@ def cpp_char_lit(ch: str) -> str:
     return "'" + str(ch) + "'"
 
 
-from hooks.cpp.emitter.cpp_emitter import CppEmitter, install_py2cpp_runtime_symbols
+from hooks.cpp.emitter import CppEmitter, install_py2cpp_runtime_symbols
 install_py2cpp_runtime_symbols(globals())
+
 
 def load_east(
     input_path: Path,

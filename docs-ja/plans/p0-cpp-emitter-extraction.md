@@ -36,3 +36,4 @@
 決定ログ:
 - 2026-02-24: ユーザー指示により、`py2cpp.py` から `CppEmitter` 本体を抽出する `P0` タスクを追加。
 - 2026-02-24: [ID: P0-CPP-EMITTER-01-S1] `src/hooks/cpp/emitter/cpp_emitter.py` へ `CppEmitter` クラスを移設し、`py2cpp.py` 側は import + `install_py2cpp_runtime_symbols(globals())` を経由する構成へ変更。
+- 2026-02-24: [ID: P0-CPP-EMITTER-01-S2] `src/hooks/cpp/emitter/__init__.py` を API 入口として整備し、`py2cpp.py` 側を `hooks.cpp.emitter` 経由で参照可能にした。
