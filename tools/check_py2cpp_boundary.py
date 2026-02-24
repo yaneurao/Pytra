@@ -20,9 +20,6 @@ TARGET = ROOT / "src" / "py2cpp.py"
 
 # C++ 固有責務として py2cpp.py に残すトップレベル関数。
 CPP_SPECIFIC_TOPLEVEL: set[str] = {
-    "_module_tail_to_cpp_header_path",
-    "_join_runtime_path",
-    "_runtime_cpp_header_exists_for_module",
     "load_cpp_profile",
     "load_cpp_bin_ops",
     "load_cpp_cmp_ops",
@@ -36,18 +33,7 @@ CPP_SPECIFIC_TOPLEVEL: set[str] = {
     "cpp_char_lit",
     "_transpile_to_cpp_with_map",
     "transpile_to_cpp",
-    "_header_cpp_type_from_east",
-    "_header_guard_from_path",
-    "_header_allows_none_default",
-    "_header_none_default_expr_for_type",
-    "_header_render_default_expr",
     "build_cpp_header_from_east",
-    "_runtime_module_tail_from_source_path",
-    "_prepend_generated_cpp_banner",
-    "_is_runtime_emit_input_path",
-    "_runtime_output_rel_tail",
-    "_runtime_namespace_for_tail",
-    "_write_multi_file_cpp",
     "_is_valid_cpp_namespace_name",
     "main",
 }
@@ -58,14 +44,34 @@ COMPAT_WRAPPER_TOPLEVEL: set[str] = {
     "_analyze_import_graph",
     "build_module_east_map",
     "dump_deps_graph_text",
+    "build_cpp_header_from_east",
+    "_write_multi_file_cpp",
+    "_module_tail_to_cpp_header_path",
+    "_join_runtime_path",
+    "_runtime_cpp_header_exists_for_module",
+    "_runtime_module_tail_from_source_path",
+    "_prepend_generated_cpp_banner",
+    "_is_runtime_emit_input_path",
+    "_runtime_output_rel_tail",
+    "_runtime_namespace_for_tail",
 }
 
 # ラッパごとの最低限の委譲シグネチャ検査（source substring）。
 WRAPPER_DELEGATION_MARKERS: dict[str, str] = {
     "load_east": "load_east3_document(",
-    "_analyze_import_graph": "analyze_import_graph(",
+    "_analyze_import_graph": "East1BuildHelpers.analyze_import_graph(",
     "build_module_east_map": "East1BuildHelpers.build_module_east_map(",
     "dump_deps_graph_text": "dump_deps_graph_text_common(",
+    "build_cpp_header_from_east": "_build_cpp_header_from_east(",
+    "_write_multi_file_cpp": "_write_multi_file_cpp_impl(",
+    "_module_tail_to_cpp_header_path": "_module_tail_to_cpp_header_path_impl(",
+    "_join_runtime_path": "_join_runtime_path_impl(",
+    "_runtime_cpp_header_exists_for_module": "_runtime_cpp_header_exists_for_module_impl(",
+    "_runtime_module_tail_from_source_path": "_runtime_module_tail_from_source_path_impl(",
+    "_prepend_generated_cpp_banner": "_prepend_generated_cpp_banner_impl(",
+    "_is_runtime_emit_input_path": "_is_runtime_emit_input_path_impl(",
+    "_runtime_output_rel_tail": "_runtime_output_rel_tail_impl(",
+    "_runtime_namespace_for_tail": "_runtime_namespace_for_tail_impl(",
 }
 
 
