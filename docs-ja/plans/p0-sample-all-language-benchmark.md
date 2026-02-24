@@ -25,5 +25,6 @@
 ## 決定ログ
 - 2026-02-25: `runtime_parity_check` の基盤修正（`core.cpp`/`east_parts/core.py` の比較式分解の堅牢化、`tools/runtime_parity_check.py` の非C++向け `-o` 出力パス合わせ）を反映し、`math_extended` / `pathlib_extended` の `cpp` がPASSを確認。
 - 2026-02-25: `src/pytra/std/sys.py` の標準入出力フォールバックを追加し、移植済みランタイムが未定義実装を要求した場合のCI/実行時クラッシュを抑制。
-- 2026-02-25: 現時点で `swiftc` は未導入のため、`runtime_parity_check` では `swift` ターゲットがskip。`rs`/`cs`/`js`/`ts`/`go`/`java`/`kotlin` は出力生成とランタイム/インポート仕様の未整合により不一致・実行失敗。
+- 2026-02-25: 現時点で `swiftc` は未導入のため、`runtime_parity_check` では `swift` ターゲットがskip。`rs`/`cs`/`js`/`ts`/`go`/`kotlin` は出力生成とランタイム/インポート仕様の未整合により不一致・実行失敗。
+- 2026-02-25: Java ターゲットは `public class Main` のファイル名制約により、`runtime_parity_check` で出力先を固定 `Main.java` 化して実行に到達。現状は `Main.main` が TODO スタブ生成のままで出力なしのため検証不合格（実装側 emitter 仕上げが必要）。
 - 追記用。

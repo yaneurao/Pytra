@@ -114,8 +114,8 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
         ),
         Target(
             name="java",
-            transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} -o test/transpile/java/{case_stem}.java",
-            run_cmd=f"javac test/transpile/java/{case_stem}.java && java -cp test/transpile/java {case_stem}",
+            transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} -o test/transpile/java/Main.java",
+            run_cmd="javac test/transpile/java/Main.java && java -cp test/transpile/java Main",
             needs=("python", "javac", "java"),
         ),
         Target(
