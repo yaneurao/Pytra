@@ -27,21 +27,20 @@
 文脈: `docs-ja/plans/plan-east123-migration.md`（`TG-P0-EAST123-MIGRATION`）
 
 1. [ ] [ID: P0-EASTMIG-06] `EAST3` を全変換器の標準主経路として確定し、`EAST2` は明示互換モードに限定する（`P0-EASTMIG-06-S0` から `P0-EASTMIG-06-S7` 完了でクローズ）。
-2. [ ] [ID: P0-EASTMIG-06-S0] （最優先）`EAST1/EAST2/EAST3` の責務境界を先に固定し、CodeEmitter が意味論処理を抱えない状態を受け入れ基準として明文化する（`P0-EASTMIG-06-S0-S1` から `P0-EASTMIG-06-S0-S5` 完了でクローズ）。
-3. [ ] [ID: P0-EASTMIG-06-S3] 非 C++ 変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）で `EAST3` 主経路を導入し、`EAST2` 直依存を段階撤去する（`P0-EASTMIG-06-S3-S1` から `P0-EASTMIG-06-S3-S9` 完了でクローズ）。
-4. [ ] [ID: P0-EASTMIG-06-S3-S1] `py2rs.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
-5. [ ] [ID: P0-EASTMIG-06-S3-S2] `py2cs.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
-6. [ ] [ID: P0-EASTMIG-06-S3-S3] `py2js.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
-7. [ ] [ID: P0-EASTMIG-06-S3-S4] `py2ts.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
-8. [ ] [ID: P0-EASTMIG-06-S3-S5] `py2go.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
-9. [ ] [ID: P0-EASTMIG-06-S3-S6] `py2java.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
-10. [ ] [ID: P0-EASTMIG-06-S3-S7] `py2kotlin.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
-11. [ ] [ID: P0-EASTMIG-06-S3-S8] `py2swift.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
-12. [ ] [ID: P0-EASTMIG-06-S3-S9] 非 C++ 8変換器の `--east-stage` 既定値・警告文言・回帰テスト導線を統一し、`EAST3` 主経路化の受け入れ条件を固定する。
-13. [ ] [ID: P0-EASTMIG-06-S4] `test/unit/test_east3_*` と `tools/check_py2*_transpile.py` を更新し、`EAST3` 主経路が回帰導線の既定になるよう固定する。
-14. [ ] [ID: P0-EASTMIG-06-S5] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` の記述を実装実態へ同期し、`EAST2` を「移行互換モード」として明文化する。
-15. [ ] [ID: P0-EASTMIG-06-S6] `EAST1` build 責務境界を `docs-ja/spec/spec-east.md#east1-build-boundary` で正式化し、`load_east_document_compat` エラー契約互換・selfhost diff 実行・`EAST1` build での `EAST2` 非変換を受け入れ基準として固定する。
-16. [ ] [ID: P0-EASTMIG-06-S7] （低優先）`east_parts/render_human_east2_cpp.py` と並行して `east_parts/render_human_east3_cpp.py` を追加し、`EAST3` 命令ノード（`ForCore`, `Box/Unbox`, `Obj*`, `type_id` 系）を人間可読ビューへ描画する経路を整備する。
+2. [ ] [ID: P0-EASTMIG-06-S3] 非 C++ 変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）で `EAST3` 主経路を導入し、`EAST2` 直依存を段階撤去する（`P0-EASTMIG-06-S3-S1` から `P0-EASTMIG-06-S3-S9` 完了でクローズ）。
+3. [ ] [ID: P0-EASTMIG-06-S3-S1] `py2rs.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
+4. [ ] [ID: P0-EASTMIG-06-S3-S2] `py2cs.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
+5. [ ] [ID: P0-EASTMIG-06-S3-S3] `py2js.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
+6. [ ] [ID: P0-EASTMIG-06-S3-S4] `py2ts.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
+7. [ ] [ID: P0-EASTMIG-06-S3-S5] `py2go.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
+8. [ ] [ID: P0-EASTMIG-06-S3-S6] `py2java.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
+9. [ ] [ID: P0-EASTMIG-06-S3-S7] `py2kotlin.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
+10. [ ] [ID: P0-EASTMIG-06-S3-S8] `py2swift.py` の既定経路を `EAST3` 主経路へ切り替え、`EAST2` 既定読み込みを互換モードへ縮退する。
+11. [ ] [ID: P0-EASTMIG-06-S3-S9] 非 C++ 8変換器の `--east-stage` 既定値・警告文言・回帰テスト導線を統一し、`EAST3` 主経路化の受け入れ条件を固定する。
+12. [ ] [ID: P0-EASTMIG-06-S4] `test/unit/test_east3_*` と `tools/check_py2*_transpile.py` を更新し、`EAST3` 主経路が回帰導線の既定になるよう固定する。
+13. [ ] [ID: P0-EASTMIG-06-S5] `docs-ja/spec/spec-east.md` と `docs-ja/spec/spec-dev.md` の記述を実装実態へ同期し、`EAST2` を「移行互換モード」として明文化する。
+14. [ ] [ID: P0-EASTMIG-06-S6] `EAST1` build 責務境界を `docs-ja/spec/spec-east.md#east1-build-boundary` で正式化し、`load_east_document_compat` エラー契約互換・selfhost diff 実行・`EAST1` build での `EAST2` 非変換を受け入れ基準として固定する。
+15. [ ] [ID: P0-EASTMIG-06-S7] （低優先）`east_parts/render_human_east2_cpp.py` と並行して `east_parts/render_human_east3_cpp.py` を追加し、`EAST3` 命令ノード（`ForCore`, `Box/Unbox`, `Obj*`, `type_id` 系）を人間可読ビューへ描画する経路を整備する。
 
 ## P1: 多言語出力品質（preview 脱却の再オープン）
 
