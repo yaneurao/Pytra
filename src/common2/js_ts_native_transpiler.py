@@ -60,12 +60,13 @@ class JsTsNativeTranspiler(BaseTranspiler):
 
     def _build_runtime_imports(self) -> list[str]:
         ext = self.config.runtime_ext
+        module_dir = "runtime/js/pytra" if ext == "js" else "runtime/ts/pytra"
         lines = [
             "const __pytra_root = process.cwd();",
-            f"const py_runtime = require(__pytra_root + '/src/{'js_module' if ext == 'js' else 'ts_module'}/py_runtime.{ext}');",
-            f"const py_math = require(__pytra_root + '/src/{'js_module' if ext == 'js' else 'ts_module'}/math.{ext}');",
-            f"const py_time = require(__pytra_root + '/src/{'js_module' if ext == 'js' else 'ts_module'}/time.{ext}');",
-            f"const pathlib = require(__pytra_root + '/src/{'js_module' if ext == 'js' else 'ts_module'}/pathlib.{ext}');",
+            f"const py_runtime = require(__pytra_root + '/src/{module_dir}/py_runtime.{ext}');",
+            f"const py_math = require(__pytra_root + '/src/{module_dir}/math.{ext}');",
+            f"const py_time = require(__pytra_root + '/src/{module_dir}/time.{ext}');",
+            f"const pathlib = require(__pytra_root + '/src/{module_dir}/pathlib.{ext}');",
             "const { pyPrint, pyLen, pyBool, pyRange, pyFloorDiv, pyMod, pyIn, pySlice, pyOrd, pyChr, pyBytearray, pyBytes, pyIsDigit, pyIsAlpha } = py_runtime;",
             "const { perfCounter } = py_time;",
         ]
@@ -73,7 +74,7 @@ class JsTsNativeTranspiler(BaseTranspiler):
 
     def _transpile_import(self, stmt: ast.stmt) -> list[str]:
         ext = self.config.runtime_ext
-        module_dir = "js_module" if ext == "js" else "ts_module"
+        module_dir = "runtime/js/pytra" if ext == "js" else "runtime/ts/pytra"
         if isinstance(stmt, ast.Import):
             lines: list[str] = []
             for alias in stmt.names:

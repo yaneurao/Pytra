@@ -115,7 +115,7 @@ def f(x: object) -> bool:
             east = load_east(src_py, parser_backend="self_hosted")
             js = transpile_to_js(east)
 
-        self.assertIn("const py_runtime = require(__pytra_root + '/src/js_module/py_runtime.js');", js)
+        self.assertIn("const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');", js)
         self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);", js)
         self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([Base.PYTRA_TYPE_ID]);", js)
         self.assertIn("this[PYTRA_TYPE_ID] = Base.PYTRA_TYPE_ID;", js)
