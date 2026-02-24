@@ -54,16 +54,17 @@ def analyze_import_graph(
 def build_module_east_map(
     entry_path: Path,
     parser_backend: str = "self_hosted",
+    object_dispatch_mode: str = "",
     runtime_std_source_root: Path = Path("src/pytra/std"),
     runtime_utils_source_root: Path = Path("src/pytra/utils"),
     analyze_import_graph_fn: Any = None,
-    build_east1_document_fn: Any = None,
+    build_module_document_fn: Any = None,
 ) -> dict[str, dict[str, object]]:
     """入口 + 依存ユーザーモジュールを `EAST1` 化した map を返す。"""
     analyze_fn = analyze_import_graph_fn
     if analyze_fn is None:
         analyze_fn = analyze_import_graph
-    build_fn = build_east1_document_fn
+    build_fn = build_module_document_fn
     if build_fn is None:
         build_fn = build_east1_document
     analysis_any = analyze_fn(
@@ -86,7 +87,18 @@ def build_module_east_map(
     module_east_raw: dict[str, dict[str, object]] = {}
     for f in files:
         p = Path(f)
-        east_any = build_fn(p, parser_backend=parser_backend)
+        east_any: Any = None
+        try:
+            east_any = build_fn(
+                p,
+                parser_backend=parser_backend,
+                object_dispatch_mode=object_dispatch_mode,
+            )
+        except TypeError:
+            try:
+                east_any = build_fn(p, parser_backend=parser_backend)
+            except TypeError:
+                east_any = build_fn(p)
         if isinstance(east_any, dict):
             east_one: dict[str, object] = east_any
             module_east_raw[str(p)] = east_one

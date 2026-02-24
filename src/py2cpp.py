@@ -10,6 +10,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from pytra.compiler.east_parts.east1_build import East1BuildHelpers
 from pytra.compiler.transpile_cli import CodegenOptionHelpers, EastAnalysisHelpers, EastDocumentHelpers, ErrorHelpers, GuardHelpers, ImportGraphHelpers, Py2CppArgvHelpers, TextPathHelpers
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from pytra.std import json
@@ -90,14 +91,10 @@ _HELPER_GROUPS: list[tuple[object | None, list[str]]] = [
     (
         globals().get("ImportGraphHelpers"),
         [
-            "analyze_import_graph",
             "collect_import_modules",
             "module_id_from_east_for_graph",
             "module_name_from_path_for_graph",
             "module_export_table",
-            "build_module_symbol_index",
-            "build_module_east_map_from_analysis",
-            "build_module_type_schema",
             "module_rel_label",
             "path_key_for_graph",
             "collect_reserved_import_conflicts",
@@ -150,8 +147,9 @@ for _helper_class, _helper_names in _HELPER_GROUPS:
     for _helper_name in _helper_names:
         globals()[_helper_name] = getattr(_helper_class, _helper_name)
 if "ImportGraphHelpers" in globals():
-    build_module_east_map_common = ImportGraphHelpers.build_module_east_map
     dump_deps_graph_text_common = ImportGraphHelpers.dump_deps_graph_text
+build_module_symbol_index = East1BuildHelpers.build_module_symbol_index
+build_module_type_schema = East1BuildHelpers.build_module_type_schema
 del _helper_class
 del _helper_name
 del _helper_names
@@ -8110,13 +8108,13 @@ def _runtime_namespace_for_tail(module_tail: str) -> str:
     return "pytra::utils::" + module_tail.replace("/", "::")
 
 
-def _analyze_import_graph(entry_path: Path) -> dict[str, Any]:
-    """ユーザーモジュール依存解析（共通層 `analyze_import_graph` への委譲）。"""
-    analysis = analyze_import_graph(
+def _analyze_import_graph(entry_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
+    """ユーザーモジュール依存解析（`east1_build` 入口 API への委譲）。"""
+    analysis = East1BuildHelpers.analyze_import_graph(
         entry_path,
-        RUNTIME_STD_SOURCE_ROOT,
-        RUNTIME_UTILS_SOURCE_ROOT,
-        load_east,
+        runtime_std_source_root=RUNTIME_STD_SOURCE_ROOT,
+        runtime_utils_source_root=RUNTIME_UTILS_SOURCE_ROOT,
+        parser_backend=parser_backend,
     )
     return analysis if isinstance(analysis, dict) else {}
 
@@ -8127,15 +8125,23 @@ def build_module_east_map(
     east_stage: str = "3",
     object_dispatch_mode: str = "",
 ) -> dict[str, dict[str, Any]]:
-    """入口 + 依存ユーザーモジュールの EAST map 構築（共通 API への委譲）。"""
-    mp = build_module_east_map_common(
+    """入口 + 依存ユーザーモジュールの EAST map 構築（`east1_build` API への委譲）。"""
+
+    def _build_module_doc(path_obj: Path, parser_backend: str = "self_hosted", object_dispatch_mode: str = "") -> dict[str, Any]:
+        return load_east(
+            path_obj,
+            parser_backend=parser_backend,
+            east_stage=east_stage,
+            object_dispatch_mode=object_dispatch_mode,
+        )
+
+    mp = East1BuildHelpers.build_module_east_map(
         entry_path,
-        load_east,
         parser_backend=parser_backend,
-        east_stage=east_stage,
         object_dispatch_mode=object_dispatch_mode,
         runtime_std_source_root=RUNTIME_STD_SOURCE_ROOT,
         runtime_utils_source_root=RUNTIME_UTILS_SOURCE_ROOT,
+        build_module_document_fn=_build_module_doc,
     )
     out: dict[str, dict[str, Any]] = {}
     for key, value in mp.items():
@@ -8199,7 +8205,7 @@ def _write_multi_file_cpp(
             if mod_name not in module_key_by_name:
                 module_key_by_name[mod_name] = mod_key
 
-    type_schema = build_module_type_schema(module_east_map)
+    type_schema = East1BuildHelpers.build_module_type_schema(module_east_map)
 
     manifest_modules: list[dict[str, Any]] = []
 
@@ -8545,7 +8551,7 @@ def main(argv: list[str]) -> int:
         module_east_map_cache: dict[str, dict[str, Any]] = {}
         import_graph_analysis: dict[str, Any] = {"user_module_files": [], "edges": []}
         if input_txt.endswith(".py") and not (emit_runtime_cpp and _is_runtime_emit_input_path(input_path)):
-            analysis = _analyze_import_graph(input_path)
+            analysis = _analyze_import_graph(input_path, parser_backend=parser_backend)
             validate_import_graph_or_raise(analysis)
             import_graph_analysis = analysis
             module_east_map_cache = build_module_east_map(
