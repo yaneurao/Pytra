@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PY2CPP = ROOT / "src" / "py2cpp.py"
+STAGE2_REMOVED_ERROR = "error: --east-stage 2 is removed; py2cpp supports only --east-stage 3."
 
 DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/signature/ng_kwargs.py",
@@ -54,6 +55,22 @@ def _run_one_multifile(src: Path, out_dir: Path) -> tuple[bool, str]:
     msg = cp.stderr.strip() or cp.stdout.strip()
     first = msg.splitlines()[0] if msg else "unknown error"
     return False, first
+
+
+def _run_one_stage2_must_fail(src: Path, out: Path) -> tuple[bool, str]:
+    cp = subprocess.run(
+        ["python3", str(PY2CPP), str(src), "--east-stage", "2", "-o", str(out)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if cp.returncode == 0:
+        return False, "unexpected success for --east-stage 2"
+    stderr = cp.stderr.strip()
+    if STAGE2_REMOVED_ERROR in stderr:
+        return True, ""
+    first = stderr.splitlines()[0] if stderr else "missing stderr message"
+    return False, f"unexpected stage2 error message: {first}"
 
 
 def _has_import_statement(src: Path) -> bool:
@@ -132,6 +149,21 @@ def main() -> int:
                         print("OK", rel, "[multi-file]")
                 else:
                     fails.append((rel + " [multi-file]", msg))
+        stage2_probe: Path | None = None
+        if len(sample_files) > 0:
+            stage2_probe = sample_files[0]
+        elif len(fixture_files) > 0:
+            stage2_probe = fixture_files[0]
+        if stage2_probe is not None:
+            total += 1
+            good, msg = _run_one_stage2_must_fail(stage2_probe, out)
+            rel = str(stage2_probe.relative_to(ROOT))
+            if good:
+                ok += 1
+                if args.verbose:
+                    print("OK", rel, "[stage2 rejected]")
+            else:
+                fails.append((rel + " [stage2 rejected]", msg))
 
     print(f"checked={total} ok={ok} fail={len(fails)} skipped={skipped}")
     if fails:
