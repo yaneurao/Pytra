@@ -138,6 +138,19 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 - `tools/run_local_ci.py`
   - `tools/check_east_stage_boundary.py` を標準チェック列へ追加する。
 
+## 先行ゲート確定（`P0-EASTMIG-06-S0-S5`）
+
+`P0-EASTMIG-06-S0` は `S0-S1` から `S0-S4` を満たした時点で「境界固定ゲート完了」と判定し、以降の `P0-EASTMIG-06-S1` 以降へ進む。
+
+- `S0-S1` 完了: `docs-ja/spec/spec-east.md` で stage 境界表（入力/出力/禁止事項/担当ファイル）を固定。
+- `S0-S2` 完了: `docs-ja/spec/spec-dev.md` で CodeEmitter/hook の責務境界（意味論 lower 禁止）を固定。
+- `S0-S3` 完了: `transpile_cli.py` / `east_parts` の段階横断残存を一覧化。
+- `S0-S4` 完了: `tools/check_east_stage_boundary.py` + unit guard により境界違反の再流入を検出。
+
+ゲート運用:
+- `P0-EASTMIG-06-S1` 以降の実装では、上記 4 成果物を「破壊しない」ことを受け入れ条件に含める。
+- 境界契約の変更が必要な場合は、先に `docs-ja/spec/spec-east.md` / `docs-ja/spec/spec-dev.md` と本計画を更新してから実装変更を行う。
+
 ## 保留バックログ（低優先）
 
 次は重要だが、`P0` 本線（`P0-EASTMIG-06`）完了までは `todo` へ再投入しない保留項目。
@@ -161,6 +174,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 | `on_render_expr_leaf` | 意味論寄り | `Attribute` で module/runtime 解決と `Path` 特殊扱いを実施。 | module/runtime 解決を共通層へ寄せ、hook は構文差分に縮退。 |
 
 決定ログ:
+- 2026-02-24: [ID: `P0-EASTMIG-06-S0-S5`] `S0-S1` から `S0-S4` の成果物を本計画へ集約し、`P0-EASTMIG-06-S0` を `P0` 先行ゲートとして確定した。以降の `S1` 以降は境界契約を破壊しないことを受け入れ条件とする。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S4`] `tools/check_east_stage_boundary.py` と `test/unit/test_east_stage_boundary_guard.py` を追加し、`east2.py` での `EAST3` lower 流入と `code_emitter.py` での stage 再解釈 API 流入を静的検査で拒否するガードを導入した。`tools/run_local_ci.py` に同ガードを組み込んだ。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S3`] `transpile_cli.py` / `east_parts` の段階横断残存を棚卸しし、`load_east_document` の `EAST1->EAST2` 即時正規化、`east_stage=2` 既定補完、`load_east_document_compat` 依存、`render_human_east2_cpp` 専用実装などを一覧化して後続タスクへの受け渡しを固定した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S2`] `docs-ja/spec/spec-dev.md` の責務境界へ「CodeEmitter は EAST3 以降の構文写像専任」「意味論 lower 禁止」「backend/hook 側の再解釈禁止」を明記した。
