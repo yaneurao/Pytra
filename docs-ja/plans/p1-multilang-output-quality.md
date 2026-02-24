@@ -107,6 +107,23 @@
   - `cs imports`: `55 -> 7`
   - `cs unused_import_est`: `54 -> 0`
 
+`P1-MQ-02-S3-S2` 実装結果（Go/Java preview 冗長縮退）:
+
+- 対象: `src/hooks/go/emitter/go_emitter.py`, `src/hooks/java/emitter/java_emitter.py`
+- 変更点:
+  1. Go/Java preview で C# 全文コメント埋め込みをやめ、シグネチャ中心の軽量要約出力へ切り替えた。
+  2. `using` 行や本体ステートメントは埋め込まず、`public` シグネチャとコメント行のみを抽出するフィルタを導入した。
+  3. Go/Java transpiler minor version を `0.3.0` へ更新した（`transpiler_versions.json`）。
+- 生成物反映:
+  - `python3 tools/regenerate_samples.py --langs go,java --force` で `sample/go` / `sample/java` を再生成。
+- 指標変化（`sample/cpp` 比較の生カウント）:
+  - `go paren`: `1572 -> 0`
+  - `go cast`: `844 -> 0`
+  - `go imports`: `120 -> 0`
+  - `java paren`: `1727 -> 0`
+  - `java cast`: `413 -> 0`
+  - `java imports`: `132 -> 0`
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
@@ -114,3 +131,4 @@
 - 2026-02-24: ID: P1-MQ-02-S1 として Rust emitter の `mut` 付与を事前解析ベースへ切り替え、`sample/rs` 再生成と品質再計測で `mut`/`paren`/`cast`/`clone` の減少を確認した。
 - 2026-02-24: ID: P1-MQ-02-S2 として JS emitter の括弧最小化・import/runtime symbol 縮退を実装し、`sample/js` / `sample/ts` の `paren` と `unused_import_est` の大幅減少を確認した。
 - 2026-02-24: ID: P1-MQ-02-S3-S1 として C# emitter の cast/import/括弧縮退を実施し、`sample/cs` の `paren`/`cast`/`imports`/`unused_import_est` を大幅削減した。
+- 2026-02-24: ID: P1-MQ-02-S3-S2 として Go/Java preview 出力をシグネチャ要約へ縮退し、`sample/go` / `sample/java` の `paren`/`cast`/`imports` を削減した。

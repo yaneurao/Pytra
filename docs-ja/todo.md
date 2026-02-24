@@ -36,14 +36,13 @@
 
 1. [ ] [ID: P1-MQ-02] 各言語 emitter/hooks/profile に段階的改善を入れ、`sample/cpp` と同等の可読性水準へ引き上げる（`P1-MQ-02-S1` から `P1-MQ-02-S4` 完了でクローズ）。
 2. [ ] [ID: P1-MQ-02-S3] C#/Go/Java/Swift/Kotlin の cast/import 冗長を段階削減し、`sample/cpp` 比の差分を縮小する（`P1-MQ-02-S3-S1` から `P1-MQ-02-S3-S3` 完了でクローズ）。
-3. [ ] [ID: P1-MQ-02-S3-S2] Go/Java の変換器で runtime/import/cast 冗長を削減し、`sample/go` / `sample/java` の品質差分を縮小する。
-4. [ ] [ID: P1-MQ-02-S3-S3] Swift/Kotlin の node-backed 出力で import/base64 依存の冗長を縮退し、`sample/swift` / `sample/kotlin` の品質差分を縮小する。
-5. [ ] [ID: P1-MQ-02-S4] 多言語サンプル再生成と品質再計測を行い、改善結果を定量比較として固定する。
-6. [ ] [ID: P1-MQ-03] 多言語の出力品質回帰を防ぐ検査（品質指標 + transpile/smoke）を整備する。
-7. [ ] [ID: P1-MQ-04] 非 C++ 各言語（`rs/cs/js/ts/go/java/swift/kotlin`）で、`py2<lang>.py` の selfhost 可否（自己変換した生成物で `sample/py` を再変換できるか）を検証し、言語別ステータスを記録する。
-8. [ ] [ID: P1-MQ-05] 非 C++ 各言語で、生成物による再自己変換（多段 selfhost）が成立するかを検証し、失敗要因を分類する。
-9. [ ] [ID: P1-MQ-06] 非 C++ 言語の selfhost / 多段 selfhost 検証を定期実行できるチェック導線（手順またはスクリプト）を整備する。
-10. [ ] [ID: P1-MQ-07] `sample/` 生成物はタイムスタンプ埋め込みなしで管理し、CI で再生成差分ゼロ（常に最新）を必須化する。
+3. [ ] [ID: P1-MQ-02-S3-S3] Swift/Kotlin の node-backed 出力で import/base64 依存の冗長を縮退し、`sample/swift` / `sample/kotlin` の品質差分を縮小する。
+4. [ ] [ID: P1-MQ-02-S4] 多言語サンプル再生成と品質再計測を行い、改善結果を定量比較として固定する。
+5. [ ] [ID: P1-MQ-03] 多言語の出力品質回帰を防ぐ検査（品質指標 + transpile/smoke）を整備する。
+6. [ ] [ID: P1-MQ-04] 非 C++ 各言語（`rs/cs/js/ts/go/java/swift/kotlin`）で、`py2<lang>.py` の selfhost 可否（自己変換した生成物で `sample/py` を再変換できるか）を検証し、言語別ステータスを記録する。
+7. [ ] [ID: P1-MQ-05] 非 C++ 各言語で、生成物による再自己変換（多段 selfhost）が成立するかを検証し、失敗要因を分類する。
+8. [ ] [ID: P1-MQ-06] 非 C++ 言語の selfhost / 多段 selfhost 検証を定期実行できるチェック導線（手順またはスクリプト）を整備する。
+9. [ ] [ID: P1-MQ-07] `sample/` 生成物はタイムスタンプ埋め込みなしで管理し、CI で再生成差分ゼロ（常に最新）を必須化する。
 
 ## P3: microgpt 原本保全（低優先）
 
