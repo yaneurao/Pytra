@@ -2623,6 +2623,35 @@ class CppEmitter(CodeEmitter):
             scope_names,
         )
 
+    def _emit_for_body_open(self, header: str, scope_names: set[str], omit_braces: bool) -> None:
+        """for 系文のヘッダ出力 + scope 開始を共通化する。"""
+        if omit_braces:
+            self.emit(header)
+        else:
+            self.emit(
+                self.syntax_line(
+                    "for_open_block",
+                    "{header} {",
+                    {"header": header},
+                )
+            )
+        self.indent += 1
+        self.scope_stack.append(set(scope_names))
+
+    def _emit_for_body_stmts(self, body_stmts: list[dict[str, Any]], omit_braces: bool) -> None:
+        """for 系文の本文出力（omit_braces 対応）を共通化する。"""
+        if omit_braces:
+            self.emit_stmt(body_stmts[0])
+            return
+        self.emit_stmt_list(body_stmts)
+
+    def _emit_for_body_close(self, omit_braces: bool) -> None:
+        """for 系文の scope 終了 + ブロック閉じを共通化する。"""
+        self.scope_stack.pop()
+        self.indent -= 1
+        if not omit_braces:
+            self.emit_block_close()
+
     def emit_for_each(self, stmt: dict[str, Any]) -> None:
         """For ノード（反復）を C++ range-for として出力する。"""
         target = self.any_to_dict_or_empty(stmt.get("target"))
@@ -2689,34 +2718,12 @@ class CppEmitter(CodeEmitter):
             )
             if t_ty != "auto":
                 self.declared_var_types[t] = t0 if t0 != "" else t1
-        if omit_braces:
-            self.emit(hdr)
-            self.indent += 1
-            self.scope_stack.append(set(target_names))
-            if unpack_tuple:
-                self._emit_target_unpack(target, iter_tmp, iter_expr)
-            self.emit_stmt(body_stmts[0])
-            self.scope_stack.pop()
-            self.indent -= 1
-            return
 
-        open_line = self.syntax_line(
-            "for_open_block",
-            "{header} {",
-            {"header": hdr},
-        )
-        target_scope = set(target_names)
+        self._emit_for_body_open(hdr, target_names, omit_braces)
         if unpack_tuple:
-            self.emit(open_line)
-            self.indent += 1
-            self.scope_stack.append(target_scope)
             self._emit_target_unpack(target, iter_tmp, iter_expr)
-            self.emit_stmt_list(body_stmts)
-            self.scope_stack.pop()
-            self.indent -= 1
-            self.emit_block_close()
-            return
-        self.emit_scoped_block(open_line, body_stmts, target_scope)
+        self._emit_for_body_stmts(body_stmts, omit_braces)
+        self._emit_for_body_close(omit_braces)
 
     def _dispatch_mode_for_forcore_bridge(self) -> str:
         """ForCore bridge で使用する dispatch mode を返す。"""
@@ -3063,36 +3070,13 @@ class CppEmitter(CodeEmitter):
             if t != "":
                 self.declared_var_types[t] = "object"
 
-        if omit_braces:
-            self.emit(hdr)
-            self.indent += 1
-            self.scope_stack.append(set(target_names))
-            if unpack_tuple:
-                self._emit_target_unpack_runtime(target, iter_tmp)
-            else:
-                self._emit_for_each_runtime_target_bind(target, t, t_decl, iter_tmp)
-            self.emit_stmt(body_stmts[0])
-            self.scope_stack.pop()
-            self.indent -= 1
-            return
-
-        self.emit(
-            self.syntax_line(
-                "for_open_block",
-                "{header} {",
-                {"header": hdr},
-            )
-        )
-        self.indent += 1
-        self.scope_stack.append(set(target_names))
+        self._emit_for_body_open(hdr, target_names, omit_braces)
         if unpack_tuple:
             self._emit_target_unpack_runtime(target, iter_tmp)
         else:
             self._emit_for_each_runtime_target_bind(target, t, t_decl, iter_tmp)
-        self.emit_stmt_list(body_stmts)
-        self.scope_stack.pop()
-        self.indent -= 1
-        self.emit_block_close()
+        self._emit_for_body_stmts(body_stmts, omit_braces)
+        self._emit_for_body_close(omit_braces)
 
     def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
         """関数定義ノードを C++ 関数として出力する。"""
