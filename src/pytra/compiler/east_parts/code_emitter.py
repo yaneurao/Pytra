@@ -1259,15 +1259,43 @@ class CodeEmitter:
         empty_literal: str = "false",
     ) -> str:
         """`BoolOp`（And/Or）の共通描画を行う。"""
+        return self.render_boolop_chain_common(
+            values,
+            op,
+            and_token=and_token,
+            or_token=or_token,
+            empty_literal=empty_literal,
+            wrap_each=False,
+            wrap_whole=True,
+        )
+
+    def render_boolop_chain_common(
+        self,
+        values: list[Any],
+        op: str,
+        *,
+        and_token: str = "&&",
+        or_token: str = "||",
+        empty_literal: str = "false",
+        wrap_each: bool = False,
+        wrap_whole: bool = True,
+    ) -> str:
+        """`BoolOp` のトークン連結を共通描画する。"""
         mapped = and_token
         if op == "Or":
             mapped = or_token
         rendered: list[str] = []
         for val in values:
-            rendered.append(self.render_expr(val))
+            txt = self.render_expr(val)
+            if wrap_each:
+                txt = "(" + txt + ")"
+            rendered.append(txt)
         if len(rendered) == 0:
             return empty_literal
-        return "(" + (" " + mapped + " ").join(rendered) + ")"
+        out = (" " + mapped + " ").join(rendered)
+        if wrap_whole:
+            return "(" + out + ")"
+        return out
 
     def render_compare_chain_common(
         self,
@@ -1283,28 +1311,68 @@ class CodeEmitter:
         """比較連鎖（`a < b < c`）の共通描画を行う。"""
         if len(ops) == 0 or len(comparators) == 0:
             return empty_literal
-        terms: list[str] = []
-        cur_left = left_expr
+        right_exprs: list[str] = []
         pair_count = len(ops)
         if len(comparators) < pair_count:
             pair_count = len(comparators)
         for i in range(pair_count):
+            right_exprs.append(self.render_expr(comparators[i]))
+        return self.render_compare_chain_from_rendered(
+            left_expr,
+            ops,
+            right_exprs,
+            cmp_map,
+            empty_literal=empty_literal,
+            in_pattern=in_pattern,
+            not_in_pattern=not_in_pattern,
+            wrap_terms=True,
+            wrap_whole=True,
+        )
+
+    def render_compare_chain_from_rendered(
+        self,
+        left_expr: str,
+        ops: list[str],
+        right_exprs: list[str],
+        cmp_map: dict[str, str],
+        *,
+        empty_literal: str = "false",
+        in_pattern: str = "",
+        not_in_pattern: str = "",
+        wrap_terms: bool = False,
+        wrap_whole: bool = False,
+    ) -> str:
+        """描画済み比較項から比較連鎖を組み立てる。"""
+        if len(ops) == 0 or len(right_exprs) == 0:
+            return empty_literal
+        terms: list[str] = []
+        cur_left = left_expr
+        pair_count = len(ops)
+        if len(right_exprs) < pair_count:
+            pair_count = len(right_exprs)
+        for i in range(pair_count):
             op = ops[i]
-            right = self.render_expr(comparators[i])
+            right = right_exprs[i]
             term: str = ""
             if op == "In" and in_pattern != "":
                 term = in_pattern.replace("{left}", cur_left).replace("{right}", right)
-                terms.append("(" + term + ")")
             elif op == "NotIn" and not_in_pattern != "":
                 term = not_in_pattern.replace("{left}", cur_left).replace("{right}", right)
-                terms.append("(" + term + ")")
             else:
                 op_txt = cmp_map.get(op, "==")
-                terms.append("(" + cur_left + " " + op_txt + " " + right + ")")
+                term = cur_left + " " + op_txt + " " + right
+            if wrap_terms:
+                term = "(" + term + ")"
+            terms.append(term)
             cur_left = right
+        if len(terms) == 0:
+            return empty_literal
         if len(terms) == 1:
             return terms[0]
-        return "(" + " && ".join(terms) + ")"
+        out = " && ".join(terms)
+        if wrap_whole:
+            return "(" + out + ")"
+        return out
 
     def normalize_type_name(self, t: str) -> str:
         """型名エイリアスを内部表現へ正規化する。"""
