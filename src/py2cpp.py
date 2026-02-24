@@ -3505,7 +3505,7 @@ class CppEmitter(CodeEmitter):
 
     def _builtin_runtime_owner_node(self, expr: dict[str, Any], runtime_call: str = "") -> Any:
         """BuiltinCall の receiver ノードを `runtime_owner` 優先で返す。"""
-        owner_required_runtime_calls = {
+        owner_required_runtime_calls = [
             "list.append",
             "list.extend",
             "list.pop",
@@ -3541,7 +3541,7 @@ class CppEmitter(CodeEmitter):
             "path_stem",
             "identity",
             "py_int_to_bytes",
-        }
+        ]
         runtime_owner = expr.get("runtime_owner")
         if len(self.any_to_dict_or_empty(runtime_owner)) > 0:
             return runtime_owner
@@ -4796,17 +4796,17 @@ class CppEmitter(CodeEmitter):
 
     def _requires_builtin_method_call_lowering(self, owner_t: str, attr: str) -> bool:
         """parser 側で BuiltinCall へ lower 済みであるべき method 呼び出しか判定する。"""
-        method = self.any_to_str(attr)
+        method = attr if isinstance(attr, str) else str(attr)
         if method == "":
             return False
-        int_like_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        int_like_types = ["int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"]
         owner_norm = self.normalize_type_name(owner_t)
         owner_parts: list[str] = [owner_norm]
         if self._contains_text(owner_norm, "|"):
             owner_parts = self.split_union(owner_norm)
         for part in owner_parts:
             t = self.normalize_type_name(part)
-            if t == "str" and method in {
+            if t == "str" and method in [
                 "strip",
                 "lstrip",
                 "rstrip",
@@ -4818,9 +4818,9 @@ class CppEmitter(CodeEmitter):
                 "join",
                 "isdigit",
                 "isalpha",
-            }:
+            ]:
                 return True
-            if t == "Path" and method in {
+            if t == "Path" and method in [
                 "mkdir",
                 "exists",
                 "write_text",
@@ -4828,17 +4828,17 @@ class CppEmitter(CodeEmitter):
                 "parent",
                 "name",
                 "stem",
-            }:
+            ]:
                 return True
             if (t in int_like_types or t == "int") and method == "to_bytes":
                 return True
-            if t.startswith("list[") and method in {"append", "extend", "pop", "clear", "reverse", "sort"}:
+            if t.startswith("list[") and method in ["append", "extend", "pop", "clear", "reverse", "sort"]:
                 return True
-            if t.startswith("set[") and method in {"add", "discard", "remove", "clear"}:
+            if t.startswith("set[") and method in ["add", "discard", "remove", "clear"]:
                 return True
-            if t.startswith("dict[") and method in {"get", "pop", "items", "keys", "values"}:
+            if t.startswith("dict[") and method in ["get", "pop", "items", "keys", "values"]:
                 return True
-            if t == "unknown" and method in {
+            if t == "unknown" and method in [
                 "append",
                 "extend",
                 "pop",
@@ -4848,9 +4848,52 @@ class CppEmitter(CodeEmitter):
                 "values",
                 "isdigit",
                 "isalpha",
-            }:
+            ]:
                 return True
         return False
+
+    def _is_self_hosted_parser_doc(self) -> bool:
+        """入力 EAST が self_hosted parser 由来かを返す。"""
+        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        return self.any_dict_get_str(meta, "parser_backend", "") == "self_hosted"
+
+    def _render_legacy_builtin_method_call(
+        self,
+        owner_t: str,
+        owner_expr: str,
+        attr: str,
+        args: list[str],
+        arg_nodes: list[Any],
+    ) -> str | None:
+        """self_hosted parser 互換の plain method fallback（段階的縮退対象）。"""
+        owner_types: list[str] = [owner_t]
+        if self._contains_text(owner_t, "|"):
+            owner_types = self.split_union(owner_t)
+        if owner_t == "unknown" and attr == "clear":
+            return owner_expr + ".clear()"
+        if attr == "append":
+            append_rendered = self._render_append_call_object_method(owner_types, owner_expr, args, arg_nodes)
+            if isinstance(append_rendered, str) and append_rendered != "":
+                return append_rendered
+        if attr in ["strip", "lstrip", "rstrip"]:
+            if len(args) == 0:
+                return "py_" + attr + "(" + owner_expr + ")"
+            if len(args) == 1:
+                return "py_" + attr + "(" + owner_expr + ", " + args[0] + ")"
+            return None
+        if attr in ["startswith", "endswith"] and len(args) >= 1:
+            method_args: list[str] = [owner_expr]
+            for rendered in args:
+                method_args.append(rendered)
+            return "py_" + attr + "(" + join_str_list(", ", method_args) + ")"
+        if attr == "replace" and len(args) >= 2:
+            return "py_replace(" + owner_expr + ", " + args[0] + ", " + args[1] + ")"
+        if "str" in owner_types:
+            if attr in ["isdigit", "isalpha", "isalnum", "isspace", "lower", "upper"] and len(args) == 0:
+                return owner_expr + "." + attr + "()"
+            if attr in ["find", "rfind"]:
+                return owner_expr + "." + attr + "(" + join_str_list(", ", args) + ")"
+        return None
 
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
         """`range(...)` 引数を `py_range(start, stop, step)` 形式へ正規化する。"""
@@ -5099,10 +5142,15 @@ class CppEmitter(CodeEmitter):
             if module_rendered_1 is not None and module_rendered_1 != "":
                 return module_rendered_1
         if self._requires_builtin_method_call_lowering(owner_t, attr):
-            owner_label = self.normalize_type_name(owner_t)
-            if owner_label == "":
-                owner_label = "unknown"
-            raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + attr)
+            if self._is_self_hosted_parser_doc():
+                compat_rendered = self._render_legacy_builtin_method_call(owner_t, owner_expr, attr, args, arg_nodes)
+                if compat_rendered is not None and compat_rendered != "":
+                    return compat_rendered
+            else:
+                owner_label = self.normalize_type_name(owner_t)
+                if owner_label == "":
+                    owner_label = "unknown"
+                raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + attr)
         return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, arg_nodes)
 
     def _make_missing_symbol_import_error(self, base_name: str, attr: str) -> Exception:
@@ -5325,10 +5373,11 @@ class CppEmitter(CodeEmitter):
             if owner_expr in self.declared_var_types:
                 owner_t = self.declared_var_types[owner_expr]
             if self._requires_builtin_method_call_lowering(owner_t, method):
-                owner_label = self.normalize_type_name(owner_t)
-                if owner_label == "":
-                    owner_label = "unknown"
-                raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + method)
+                if not self._is_self_hosted_parser_doc():
+                    owner_label = self.normalize_type_name(owner_t)
+                    if owner_label == "":
+                        owner_label = "unknown"
+                    raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + method)
         if fn_name.startswith("py_assert_"):
             call_args = self._coerce_py_assert_args(fn_name, args, [])
             return f"pytra::utils::assertions::{fn_name}({join_str_list(', ', call_args)})"

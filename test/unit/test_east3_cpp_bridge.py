@@ -1809,6 +1809,22 @@ class East3CppBridgeTest(unittest.TestCase):
         ):
             emitter.render_expr(plain_path_exists)
 
+    def test_plain_builtin_method_call_allows_self_hosted_parser_compat(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"parser_backend": "self_hosted"}}, {})
+        plain_endswith = {
+            "kind": "Call",
+            "resolved_type": "bool",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                "attr": "endswith",
+                "resolved_type": "unknown",
+            },
+            "args": [{"kind": "Constant", "value": ".py", "resolved_type": "str"}],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(plain_endswith), 'py_endswith(s, ".py")')
+
     def test_plain_isinstance_call_uses_type_id_core_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         plain_isinstance = {
