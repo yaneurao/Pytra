@@ -171,6 +171,13 @@ private:
 using bytearray = list<uint8>;
 using bytes = bytearray;
 
+template <class T>
+static inline list<T> operator+(const list<T>& lhs, const list<T>& rhs) {
+    list<T> out = lhs;
+    out.extend(rhs);
+    return out;
+}
+
 static inline bytes operator+(const bytes& lhs, const bytes& rhs) {
     bytes out = lhs;
     out.extend(rhs);

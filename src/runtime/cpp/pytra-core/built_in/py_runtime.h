@@ -1249,6 +1249,20 @@ static inline void py_os_makedirs(const str& p, bool exist_ok = false) {
     }
 }
 
+// minimal urllib shim (compile-compat). no network transfer is performed.
+struct _PyUrllibRequestCompat {
+    void urlretrieve(const str& _url, const str& _path) const {
+        (void)_url;
+        (void)_path;
+    }
+};
+
+struct _PyUrllibCompat {
+    _PyUrllibRequestCompat request{};
+};
+
+inline _PyUrllibCompat urllib{};
+
 static inline bool py_glob_match_simple(const str& text, const str& pattern) {
     const ::std::string s = text.std();
     const ::std::string p = pattern.std();
@@ -1399,6 +1413,23 @@ static inline int64 py_index(const object& v, const object& item) {
         throw ::std::out_of_range("str.index(x): substring not found");
     }
     throw ::std::runtime_error("index on non-indexable object");
+}
+
+template <class T>
+static inline int64 py_index(const list<T>& v, const T& item) {
+    return v.index(item);
+}
+
+template <class T>
+static inline int64 py_index(const list<T>& v, const object& item) {
+    if constexpr (::std::is_constructible_v<T, object>) {
+        return v.index(T(item));
+    }
+    auto casted = py_object_try_cast<T>(item);
+    if (casted.has_value()) {
+        return v.index(*casted);
+    }
+    throw ::std::out_of_range("list.index(x): x not in list");
 }
 
 template <::std::size_t I = 0, class... Ts>
@@ -2989,6 +3020,20 @@ static inline list<::std::tuple<object, object>> zip(const object& lhs, const ob
         }
     }
     return {};
+}
+
+template <class T>
+static inline list<T> sorted(const list<T>& values) {
+    list<T> out = values;
+    out.sort();
+    return out;
+}
+
+template <class T>
+static inline list<T> sorted(const set<T>& values) {
+    list<T> out(values.begin(), values.end());
+    out.sort();
+    return out;
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>

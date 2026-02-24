@@ -1,6 +1,8 @@
 #ifndef PYTRA_BUILT_IN_SET_H
 #define PYTRA_BUILT_IN_SET_H
 
+#include <type_traits>
+
 #include "container_common.h"
 
 template <class T>
@@ -13,6 +15,12 @@ public:
 
     set() = default;
     set(::std::initializer_list<value_type> init) : data_(init) {}
+    template <class U = T, ::std::enable_if_t<::std::is_same_v<U, str>, int> = 0>
+    explicit set(const str& text) {
+        for (char ch : text) {
+            data_.insert(str(ch));
+        }
+    }
 
     template <class It>
     set(It first, It last) : data_(first, last) {}
