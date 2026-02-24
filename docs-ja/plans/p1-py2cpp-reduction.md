@@ -78,3 +78,4 @@
 - 2026-02-24: [ID: P1-CPP-REDUCE-01-S3-S2] `emit_for_each` / `_emit_for_each_runtime` に重複していた for 本文スコープ制御（`omit_braces` の有無で二重実装）を `_emit_for_body_open` / `_emit_for_body_stmts` / `_emit_for_body_close` へ共通化した。`check_py2cpp_transpile` / `check_selfhost_cpp_diff --mode allow-not-implemented` で回帰なしを確認した。
 - 2026-02-24: [ID: P1-CPP-REDUCE-02-S1] 「汎用 helper 禁止 / 共通層先行抽出」ルールを `docs-ja/spec/spec-dev.md` に追記し、`py2cpp.py` へ言語非依存ロジックを直接追加しない運用基準を文書化した。
 - 2026-02-24: [ID: P1-CPP-REDUCE-02-S2] `tools/check_py2cpp_helper_guard.py` と allowlist（`tools/py2cpp_cpp_helper_allowlist.txt`）を追加し、`CppEmitter` private helper の増加を検出する CI ガードを導入した。`tools/run_local_ci.py` に同チェックを組み込み、ローカル CI 経路で常時検査できる状態にした。
+- 2026-02-24: [ID: P1-CPP-REDUCE-02-S3] 緊急 hotfix 時の例外運用（`TEMP-CXX-HOTFIX` コメント + ID 必須）と後追い抽出期限（7日以内または次回 PATCH リリースまで）を `docs-ja/spec/spec-dev.md` に明文化し、P1-CPP-REDUCE-02 をクローズした。

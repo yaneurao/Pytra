@@ -173,6 +173,9 @@
 - 言語非依存と判定した処理は `src/pytra/compiler/`（`east_parts/` や `CodeEmitter` 含む）へ実装し、`py2cpp.py` へは直接追加しません。
 - `py2cpp.py` に残す処理は C++ 固有責務（型写像、runtime 名解決、header/include 生成、C++ 構文最適化）に限定します。
 - 既存の `py2cpp.py` 汎用 helper を修正する場合も、同時に共通層移管可否を検討し、`docs-ja/plans/p1-py2cpp-reduction.md` の決定ログへ記録します。
+- 緊急 hotfix で例外的に `py2cpp.py` へ汎用 helper を暫定追加する場合は、実装箇所に `TEMP-CXX-HOTFIX` コメントと対応 `ID` を残します。
+- 暫定追加した helper は「追加日から 7 日以内」または「次回 PATCH リリースまで」の早い方で、`src/pytra/compiler/` 側へ後追い抽出します。
+- 後追い抽出完了まで、`docs-ja/todo.md` に抽出タスクを未完了で保持し、`tools/check_py2cpp_helper_guard.py` の allowlist 更新理由を `docs-ja/plans/p1-py2cpp-reduction.md` に記録します。
 
 ### 3.1 import と `runtime/cpp` 対応
 
