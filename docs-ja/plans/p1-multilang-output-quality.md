@@ -175,6 +175,20 @@
   - `cs`: stage1 pass（stage2 runner 未自動化）
   - `ts/go/java/swift/kotlin`: stage1 pass だが preview 出力のため stage2 blocked
 
+`P1-MQ-04-S2` 実装結果（non-preview stage2 経路整備）:
+
+- 対象: `tools/check_multilang_selfhost_stage1.py`, `docs-ja/plans/p1-multilang-selfhost-status.md`
+- 変更点:
+  1. `rs/cs/js` を stage2 対象言語として明示し、言語別 runner（`rustc`/`mcs+mono`/`node`）を自動選択する経路を追加した。
+  2. `js` は依存 `.js` 不在を避けるため、`src/py2js.py` 生成物の相対 import を再帰走査し、依存 `.py` を一時 `src/` ツリーへ順次変換してから stage2 実行するようにした。
+  3. `js` 実行時に必要な runtime（`src/runtime/js`）を一時ツリーへ同期し、`process.cwd()` 基準の runtime 参照を壊さないようにした。
+  4. `rs/cs` は toolchain 未導入時に `blocked` を返し、未自動化 `skip` を廃止した。
+- 固定結果サマリ:
+  - `rs`: stage1 fail（`from ... import (...)` 未対応）で stage2 は `skip`。
+  - `cs`: stage1 pass / stage2 blocked（`mcs/mono not found`）。
+  - `js`: stage1 pass / stage2 fail（`hooks/js/emitter/js_emitter.py` の自己変換で `object receiver attribute/method access is forbidden`）。
+  - `ts/go/java/swift/kotlin`: stage1 pass だが preview 出力のため stage2 blocked（従来どおり）。
+
 決定ログ:
 - 2026-02-22: 初版作成（`sample/cpp` 水準を目標に、非 C++ 言語の出力品質改善を TODO 化）。
 - 2026-02-22: `P1-MQ-08` として `tools/verify_sample_outputs.py` をゴールデン比較運用へ切り替えた。既定は `sample/golden/manifest.json` 参照 + C++ 実行結果比較とし、Python 実行は `--refresh-golden`（更新のみは `--refresh-golden-only`）指定時のみ実行する方針にした。
@@ -188,3 +202,4 @@
 - 2026-02-24: ID: P1-MQ-03 として品質回帰チェック（`tools/check_multilang_quality_regression.py`）を追加し、`tools/run_local_ci.py` に組み込んだ。
 - 2026-02-24: ID: P1-MQ-04-S1 として stage1 selfhost 棚卸しスクリプト（`tools/check_multilang_selfhost_stage1.py`）を追加し、言語別ステータスを `docs-ja/plans/p1-multilang-selfhost-status.md` に固定した。
 - 2026-02-24: ID: P1-MQ-04-S2 の事前調査として JS emitter に `Slice` 出力（`out[:-3]` -> `.slice(...)`）を追加して stage2 の `SyntaxError` は解消したが、次段で `src/hooks/js/emitter/js_emitter.js` 不在（Python hooks 依存）により実行が継続失敗することを確認した。
+- 2026-02-24: ID: P1-MQ-04-S2 として non-preview 言語（`rs/cs/js`）の stage2 runner を自動化し、`docs-ja/plans/p1-multilang-selfhost-status.md` に `blocked/fail` 理由を固定した。
