@@ -15,12 +15,14 @@ if str(ROOT / "src") not in sys.path:
 
 from src.hooks.cpp.hooks.cpp_hooks import (
     on_emit_stmt_kind,
+    on_for_range_mode,
     on_render_call,
     on_render_expr_complex,
     on_render_class_method,
     on_render_expr_kind,
     on_render_module_method,
     on_render_object_method,
+    on_stmt_omit_braces,
 )
 
 
@@ -203,6 +205,36 @@ class CppHooksTest(unittest.TestCase):
         func_node = {"kind": "Name", "id": "int"}
         rendered = on_render_call(em, call_node, func_node, ["x"], {})
         self.assertIsNone(rendered)
+
+    def test_on_stmt_omit_braces_prefers_emitter_default_impl(self) -> None:
+        class _DefaultingEmitter:
+            def _default_stmt_omit_braces(self, kind: str, stmt: dict[str, Any], default_value: bool) -> bool:
+                _ = stmt
+                _ = default_value
+                return kind == "If"
+
+        em = _DefaultingEmitter()
+        self.assertTrue(on_stmt_omit_braces(em, "If", {"body": []}, False))
+        self.assertFalse(on_stmt_omit_braces(em, "For", {"body": []}, False))
+
+    def test_on_for_range_mode_prefers_emitter_default_impl(self) -> None:
+        class _RangeModeEmitter:
+            def render_expr(self, expr: Any) -> str:
+                if isinstance(expr, dict):
+                    rep = expr.get("repr")
+                    if isinstance(rep, str):
+                        return rep
+                return ""
+
+            def _default_for_range_mode(self, stmt: dict[str, Any], default_mode: str, step_expr: str) -> str:
+                _ = stmt
+                if step_expr == "1":
+                    return "ascending"
+                return default_mode
+
+        em = _RangeModeEmitter()
+        stmt = {"range_mode": "dynamic", "step": {"repr": "1"}}
+        self.assertEqual(on_for_range_mode(em, stmt, "dynamic"), "ascending")
 
     def test_range_expr_render(self) -> None:
         em = _DummyEmitter()

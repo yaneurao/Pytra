@@ -102,6 +102,9 @@ def on_stmt_omit_braces(
     default_value: bool,
 ) -> bool:
     """制御構文の brace 省略可否を C++ 方針で決定する。"""
+    default_impl = getattr(emitter, "_default_stmt_omit_braces", None)
+    if callable(default_impl):
+        return bool(default_impl(kind, stmt, default_value))
     if not emitter._opt_ge(1):
         return False
     body_stmts = emitter._dict_stmt_list(stmt.get("body"))
@@ -133,6 +136,13 @@ def on_for_range_mode(
     default_mode: str,
 ) -> str:
     """ForRange の mode を C++ 側で解決する。"""
+    default_impl = getattr(emitter, "_default_for_range_mode", None)
+    if callable(default_impl):
+        step_expr = emitter.render_expr(stmt.get("step"))
+        resolved = default_impl(stmt, default_mode, step_expr)
+        if isinstance(resolved, str) and resolved in {"ascending", "descending", "dynamic"}:
+            return resolved
+        return default_mode
     mode = emitter.any_to_str(stmt.get("range_mode"))
     if mode == "":
         mode = default_mode
