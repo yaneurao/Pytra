@@ -2749,6 +2749,98 @@ static inline bool py_endswith(const ::std::any& s, const str& suffix) {
     return py_endswith(str(py_to_string(s)), suffix);
 }
 
+static inline int64 _py_find_norm_index(int64 idx, int64 n) {
+    if (idx < 0) idx += n;
+    idx = ::std::max<int64>(0, ::std::min<int64>(idx, n));
+    return idx;
+}
+
+static inline int64 py_find(const str& s, const str& needle) {
+    return s.find(needle);
+}
+
+static inline int64 py_find(const str& s, const str& needle, int64 start, int64 end) {
+    const int64 n = static_cast<int64>(s.size());
+    const int64 lo = _py_find_norm_index(start, n);
+    const int64 up = _py_find_norm_index(end, n);
+    if (up <= lo) return -1;
+    str clipped = py_slice(s, lo, up);
+    int64 pos = clipped.find(needle);
+    if (pos < 0) return -1;
+    return lo + pos;
+}
+
+static inline int64 py_find(const str& s, const str& needle, int64 start) {
+    return py_find(s, needle, start, static_cast<int64>(s.size()));
+}
+
+static inline int64 py_find(const object& s, const str& needle) {
+    return py_find(str(py_to_string(s)), needle);
+}
+
+static inline int64 py_find(const object& s, const str& needle, int64 start) {
+    return py_find(str(py_to_string(s)), needle, start);
+}
+
+static inline int64 py_find(const object& s, const str& needle, int64 start, int64 end) {
+    return py_find(str(py_to_string(s)), needle, start, end);
+}
+
+static inline int64 py_find(const ::std::any& s, const str& needle) {
+    return py_find(str(py_to_string(s)), needle);
+}
+
+static inline int64 py_find(const ::std::any& s, const str& needle, int64 start) {
+    return py_find(str(py_to_string(s)), needle, start);
+}
+
+static inline int64 py_find(const ::std::any& s, const str& needle, int64 start, int64 end) {
+    return py_find(str(py_to_string(s)), needle, start, end);
+}
+
+static inline int64 py_rfind(const str& s, const str& needle) {
+    return s.rfind(needle);
+}
+
+static inline int64 py_rfind(const str& s, const str& needle, int64 start, int64 end) {
+    const int64 n = static_cast<int64>(s.size());
+    const int64 lo = _py_find_norm_index(start, n);
+    const int64 up = _py_find_norm_index(end, n);
+    if (up <= lo) return -1;
+    str clipped = py_slice(s, lo, up);
+    int64 pos = clipped.rfind(needle);
+    if (pos < 0) return -1;
+    return lo + pos;
+}
+
+static inline int64 py_rfind(const str& s, const str& needle, int64 start) {
+    return py_rfind(s, needle, start, static_cast<int64>(s.size()));
+}
+
+static inline int64 py_rfind(const object& s, const str& needle) {
+    return py_rfind(str(py_to_string(s)), needle);
+}
+
+static inline int64 py_rfind(const object& s, const str& needle, int64 start) {
+    return py_rfind(str(py_to_string(s)), needle, start);
+}
+
+static inline int64 py_rfind(const object& s, const str& needle, int64 start, int64 end) {
+    return py_rfind(str(py_to_string(s)), needle, start, end);
+}
+
+static inline int64 py_rfind(const ::std::any& s, const str& needle) {
+    return py_rfind(str(py_to_string(s)), needle);
+}
+
+static inline int64 py_rfind(const ::std::any& s, const str& needle, int64 start) {
+    return py_rfind(str(py_to_string(s)), needle, start);
+}
+
+static inline int64 py_rfind(const ::std::any& s, const str& needle, int64 start, int64 end) {
+    return py_rfind(str(py_to_string(s)), needle, start, end);
+}
+
 static inline str py_replace(const str& s, const str& oldv, const str& newv) {
     if (oldv.empty()) return s;
     str out = s;
