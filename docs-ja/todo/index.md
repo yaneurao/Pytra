@@ -110,12 +110,13 @@
 
 1. [x] [ID: P3-EAST-PY-01] `src/pytra/compiler/east_parts/{code_emitter.py,core.py}` で selfhost 安定化のために残した非 Pythonic 記法（`while i < len(...)`、手動 index 走査、冗長な空判定）を棚卸しし、`Pythonic へ戻せる/戻せない` の判定表を作成し、戻せる候補を先に着手した。
 2. [x] [ID: P3-EAST-PY-02] `P3-EAST-PY-01` で「戻せる」と判定した `code_emitter.py` の非 Pythonic 記法を、1パッチ 1〜3 関数の粒度で `for` / `enumerate` / 直接反復へ戻した。
-3. [ ] [ID: P3-EAST-PY-03] `P3-EAST-PY-01` で「戻せる」と判定した `core.py` の非 Pythonic 記法を、selfhost 回帰が出ない範囲で段階的に戻す。
+3. [x] [ID: P3-EAST-PY-03] `P3-EAST-PY-01` で「戻せる」と判定した `core.py` の非 Pythonic 記法を、selfhost 回帰が出ない範囲で段階的に戻す。
     - [x] [ID: P3-EAST-PY-03-S2] `_sh_parse_augassign`, `_sh_split_top_keyword`, `_sh_split_top_level_from`, `_sh_split_top_level_in` を `for` / `enumerate` へ戻し、`while i < len(...)` を除去する。
     - [x] [ID: P3-EAST-PY-03-S3] `_sh_split_args_with_offsets`, `_sh_split_top_level_colon`, `_sh_has_explicit_line_continuation` を `for` / `enumerate` または `for-range` へ戻して、`while` ベースのインデックス走査を除去する。
    - [x] [ID: P3-EAST-PY-03-S4] `_sh_split_top_level_assign` を `while i < len(...)` から `for`/`enumerate` + `skip` 制御へ置換し、文字列終端/エスケープ分岐を維持する。
     - [x] [ID: P3-EAST-PY-03-S5] `_sh_decode_py_string_body`, `_sh_scan_logical_line_state` を `for` / `enumerate` + `skip` 制御へ置換し、`while i < len(...)` を除去する。
     - [x] [ID: P3-EAST-PY-03-S6] `_ShExprParser._tokenize` を `while i < len(text)` から `for ... enumerate` + `skip` 制御へ置換し、`while` ベースの先頭トークン走査を除去する。
+    - [x] [ID: P3-EAST-PY-03-S7] `_sh_parse_stmt_block_mutable` を `while i < len(body_lines)` から `for ... enumerate` + `skip` 制御へ置換し、インデックス更新由来の複雑化を抑える。
 4. [x] [ID: P3-EAST-PY-03-S1] `_sh_is_identifier` と `_sh_bind_comp_target_types` を `for` / `enumerate` へ戻し、`while i < len(...)` を除去する。
 5. [ ] [ID: P3-EAST-PY-04] `P3-EAST-PY-02` と `P3-EAST-PY-03` の結果を `docs-ja/plans/p3-pythonic-restoration.md` に反映し、残る非 Pythonic 記法の維持理由（selfhost 制約）を明文化する。
 
@@ -132,6 +133,7 @@
 - 詳細ログは `docs-ja/plans/p3-pythonic-restoration.md` の `決定ログ` を参照。
 - 作業ルールは `docs-ja/plans/p3-pythonic-restoration.md` の「作業ルール」を参照。
 - [ID: P3-EAST-PY-03-S1] `core.py` の `_sh_is_identifier` と `_sh_bind_comp_target_types` を `for` / `enumerate` 化し、`code_emitter.py` の `while i < len(...)` を 3 件（`_kind_hook_suffix`, `fallback_tuple_target_names_from_repr`, `emit_tuple_assign_with_tmp`）に限定して簡潔化。
+- [ID: P3-EAST-PY-04] `core.py` の `_sh_parse_stmt_block_mutable` を `for ... enumerate` + `skip` 制御へ移行し、`while i < len(...)` 由来のインデックス更新を排除。
 
 ## P3: サンプル実行時間の再計測とREADME更新（低優先）
 

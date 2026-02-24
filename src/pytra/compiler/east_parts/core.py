@@ -3839,8 +3839,11 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
     pending_leading_trivia: list[dict[str, Any]] = []
     pending_blank_count = 0
 
-    i = 0
-    while i < len(body_lines):
+    skip = 0
+    for i, (_, ln_txt) in enumerate(body_lines):
+        if skip > 0:
+            skip -= 1
+            continue
         ln_no, ln_txt = body_lines[i]
         indent = len(ln_txt) - len(ln_txt.lstrip(" "))
         raw_s = ln_txt.strip()
@@ -3849,7 +3852,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
 
         if raw_s == "":
             pending_blank_count += 1
-            i += 1
             continue
         if raw_s.startswith("#"):
             if pending_blank_count > 0:
@@ -3859,10 +3861,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             if text.startswith(" "):
                 text = text[1:]
             pending_leading_trivia.append({"kind": "comment", "text": text})
-            i += 1
             continue
         if s == "":
-            i += 1
             continue
 
         sig_line, inline_fn_stmt = _sh_split_def_header_and_inline_stmt(s)
@@ -3944,7 +3944,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "yield_value_type": yield_value_type,
                 },
             )
-            i = j
+            skip = j - i - 1
             continue
 
         if s.startswith("if ") and s.endswith(":"):
@@ -3975,7 +3975,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "orelse": else_stmt_list,
                 }
             )
-            i = j
+            skip = j - i - 1
             continue
 
         if s.startswith("for "):
@@ -4191,7 +4191,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         "orelse": [],
                     }
                 )
-                i = j
+                skip = j - i - 1
                 continue
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
                 {
@@ -4207,7 +4207,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "orelse": [],
                 }
             )
-            i = j
+            skip = j - i - 1
             continue
 
         m_import: re.Match | None = re.match(r"^import\s+(.+)$", s, flags=re.S)
@@ -4250,7 +4250,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "names": aliases,
                 },
             )
-            i += 1
             continue
 
         if s.startswith("from "):
@@ -4282,7 +4281,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         "level": 0,
                     },
                 )
-                i += 1
                 continue
             raw_parts: list[str] = []
             for p in names_txt.split(","):
@@ -4323,7 +4321,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "level": 0,
                 },
             )
-            i += 1
             continue
 
         if s.startswith("with ") and s.endswith(":"):
@@ -4377,7 +4374,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             }
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, assign_stmt)
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, try_stmt)
-            i = j
+            skip = j - i - 1
             continue
 
         if s.startswith("while ") and s.endswith(":"):
@@ -4401,7 +4398,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "orelse": [],
                 }
             )
-            i = j
+            skip = j - i - 1
             continue
 
         if s == "try:":
@@ -4456,7 +4453,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "finalbody": finalbody,
                 }
             )
-            i = j
+            skip = j - i - 1
             continue
 
         if s.startswith("raise "):
@@ -4478,7 +4475,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "cause": cause_expr,
                 }
             )
-            i += 1
             continue
 
         if s == "pass":
@@ -4487,7 +4483,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 "source_span": _sh_stmt_span(merged_line_end, ln_no, indent, indent + 4),
             }
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, pass_stmt)
-            i += 1
             continue
 
         if s == "return":
@@ -4499,7 +4494,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "value": None,
                 }
             )
-            i += 1
             continue
 
         if s.startswith("return "):
@@ -4515,7 +4509,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "value": _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
                 }
             )
-            i += 1
             continue
 
         if s == "yield":
@@ -4530,7 +4523,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "value": None,
                 },
             )
-            i += 1
             continue
 
         if s.startswith("yield "):
@@ -4549,7 +4541,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "value": _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
                 },
             )
-            i += 1
             continue
 
         parsed_typed = _sh_parse_typed_binding(s, allow_dotted_name=True)
@@ -4576,7 +4567,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "decl_type": ann,
                 }
             )
-            i += 1
             continue
 
         if parsed_typed is not None and typed_default != "":
@@ -4601,7 +4591,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "decl_type": ann,
                 }
             )
-            i += 1
             continue
 
         parsed_aug = _sh_parse_augassign(s)
@@ -4641,7 +4630,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "decl_type": decl_type,
                 }
             )
-            i += 1
             continue
 
         m_tasg: re.Match | None = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
@@ -4688,7 +4676,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         },
                     }
                 )
-                i += 1
                 continue
             target_expr = {
                 "kind": "Tuple",
@@ -4728,7 +4715,6 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "decl_type": None,
                 }
             )
-            i += 1
             continue
 
         asg_split = _sh_split_top_level_assign(s)
@@ -4754,13 +4740,11 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "decl_type": decl_type,
                 }
             )
-            i += 1
             continue
 
         expr_col = len(ln_txt) - len(ln_txt.lstrip(" "))
         expr_stmt = _sh_parse_expr_lowered(s, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
         pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Expr", "source_span": _sh_stmt_span(merged_line_end, ln_no, expr_col, len(ln_txt)), "value": expr_stmt})
-        i += 1
     return stmts
 
 
