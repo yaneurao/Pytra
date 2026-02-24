@@ -553,6 +553,33 @@ class CppEmitter(CodeEmitter):
             i -= 1
         return False
 
+    def is_declared_for_name_binding(self, name: str) -> bool:
+        """Name 代入の宣言判定用。関数内では module scope を除外する。"""
+        if name == "":
+            return False
+        scope_len = len(self.scope_stack)
+        if scope_len <= 1:
+            return self.is_declared(name)
+        i = scope_len - 1
+        while i >= 1:
+            scope = self.scope_stack[i]
+            if name in scope:
+                return True
+            i -= 1
+        return False
+
+    def should_declare_name_binding(
+        self,
+        stmt: dict[str, Any],
+        name_raw: str,
+        default_declare: bool,
+    ) -> bool:
+        """Name 代入時の宣言判定を Python の local shadow 規則へ寄せる。"""
+        if name_raw == "":
+            return False
+        declare = self.stmt_declare_flag(stmt, default_declare)
+        return declare and not self.is_declared_for_name_binding(name_raw)
+
     def get_expr_type(self, expr: Any) -> str:
         """EAST 型に加えて現在スコープの推論型テーブルも参照する。"""
         node_for_base = self.any_to_dict_or_empty(expr)
@@ -573,6 +600,21 @@ class CppEmitter(CodeEmitter):
                 attr = self.any_to_str(node_for_base.get("attr"))
                 if owner_name == "self" and attr in self.current_class_fields:
                     return self.normalize_type_name(self.current_class_fields[attr])
+        if kind == "Subscript":
+            owner_t0 = self.get_expr_type(node_for_base.get("value"))
+            owner_t = self.normalize_type_name(owner_t0 if isinstance(owner_t0, str) else "")
+            if owner_t.startswith("dict[") and owner_t.endswith("]"):
+                dict_parts = self.split_generic(owner_t[5:-1])
+                if len(dict_parts) == 2:
+                    return self.normalize_type_name(dict_parts[1])
+            if owner_t.startswith("list[") and owner_t.endswith("]"):
+                list_parts = self.split_generic(owner_t[5:-1])
+                if len(list_parts) == 1:
+                    return self.normalize_type_name(list_parts[0])
+            if owner_t.startswith("tuple[") and owner_t.endswith("]"):
+                tuple_parts = self.split_generic(owner_t[6:-1])
+                if len(tuple_parts) == 1:
+                    return self.normalize_type_name(tuple_parts[0])
         return ""
 
     def _normalize_runtime_module_name(self, module_name: str) -> str:
@@ -1938,9 +1980,10 @@ class CppEmitter(CodeEmitter):
             elif vkind == "Set" and len(self._dict_stmt_list(val.get("elements"))) == 0:
                 rendered_val = f"{t}{{}}"
             elif vkind == "ListComp" and isinstance(rendered_val, str):
-                if self._contains_text(rendered_val, "[&]() -> list<object> {"):
-                    rendered_val = rendered_val.replace("[&]() -> list<object> {", f"[&]() -> {t} {{")
-                    rendered_val = rendered_val.replace("list<object> __out;", f"{t} __out;")
+                rendered_trim = self._trim_ws(rendered_val)
+                if rendered_trim.startswith("[&]() -> list<object> {"):
+                    rendered_val = rendered_val.replace("[&]() -> list<object> {", f"[&]() -> {t} {{", 1)
+                    rendered_val = rendered_val.replace("list<object> __out;", f"{t} __out;", 1)
         val_t0 = self.get_expr_type(stmt.get("value"))
         val_t = val_t0 if isinstance(val_t0, str) else ""
         if rendered_val != "" and ann_t_str != "" and self._contains_text(val_t, "|"):
@@ -1969,7 +2012,7 @@ class CppEmitter(CodeEmitter):
         is_plain_name_target = self._node_kind_from_dict(target_node) == "Name"
         declare_stmt = self.stmt_declare_flag(stmt, True)
         declare_name_binding = is_plain_name_target and self.should_declare_name_binding(stmt, target, True)
-        already_declared = is_plain_name_target and self.is_declared(target)
+        already_declared = is_plain_name_target and self.is_declared_for_name_binding(target)
         if target.startswith("this->"):
             if not val_is_dict:
                 self.emit(f"{target};")
@@ -2529,7 +2572,7 @@ class CppEmitter(CodeEmitter):
                 if self.is_plain_name_expr(elt):
                     elt_dict = self.any_to_dict_or_empty(elt)
                     name = self.any_dict_get_str(elt_dict, "id", "")
-                    if not self.is_declared(name):
+                    if not self.is_declared_for_name_binding(name):
                         decl_t_txt = tuple_elem_types[i] if i < len(tuple_elem_types) else self.get_expr_type(elt)
                         self.declare_in_current_scope(name)
                         self.declared_var_types[name] = decl_t_txt
@@ -2543,7 +2586,7 @@ class CppEmitter(CodeEmitter):
             return
         target_obj: Any = target
         texpr = self.render_lvalue(target_obj)
-        if self.is_plain_name_expr(target_obj) and not self.is_declared(texpr):
+        if self.is_plain_name_expr(target_obj) and not self.is_declared_for_name_binding(texpr):
             d0 = self.normalize_type_name(self.any_dict_get_str(stmt, "decl_type", ""))
             d1 = self.normalize_type_name(self.get_expr_type(target_obj))
             d2 = self.normalize_type_name(self.get_expr_type(stmt.get("value")))
@@ -2582,9 +2625,10 @@ class CppEmitter(CodeEmitter):
             self.declared_var_types[texpr] = picked
             rval = self.render_expr(stmt.get("value"))
             rval = self._rewrite_nullopt_default_for_typed_target(rval, picked)
-            if dtype.startswith("list<") and self._contains_text(rval, "[&]() -> list<object> {"):
-                rval = rval.replace("[&]() -> list<object> {", f"[&]() -> {dtype} {{")
-                rval = rval.replace("list<object> __out;", f"{dtype} __out;")
+            rval_trim = self._trim_ws(rval)
+            if dtype.startswith("list<") and rval_trim.startswith("[&]() -> list<object> {"):
+                rval = rval.replace("[&]() -> list<object> {", f"[&]() -> {dtype} {{", 1)
+                rval = rval.replace("list<object> __out;", f"{dtype} __out;", 1)
             if dtype == "uint8" and isinstance(value, dict):
                 byte_val = self._byte_from_str_expr(stmt.get("value"))
                 if byte_val != "":
@@ -5092,7 +5136,7 @@ class CppEmitter(CodeEmitter):
                 return True
             if t.startswith("dict[") and method in ["get", "pop", "items", "keys", "values"]:
                 return True
-            if t == "unknown" and method in [
+            if t in {"", "unknown", "module"} and method in [
                 "append",
                 "extend",
                 "pop",
@@ -5100,6 +5144,17 @@ class CppEmitter(CodeEmitter):
                 "items",
                 "keys",
                 "values",
+                "index",
+                "strip",
+                "lstrip",
+                "rstrip",
+                "startswith",
+                "endswith",
+                "find",
+                "rfind",
+                "replace",
+                "join",
+                "exists",
                 "isdigit",
                 "isalpha",
             ]:
@@ -5161,6 +5216,11 @@ class CppEmitter(CodeEmitter):
             append_rendered = self._render_append_call_object_method(owner_types, owner_expr, args, arg_nodes)
             if isinstance(append_rendered, str) and append_rendered != "":
                 return append_rendered
+        if attr == "index" and len(args) == 1:
+            return "py_index(" + owner_expr + ", " + args[0] + ")"
+        if attr == "exists" and len(args) == 1:
+            if owner_expr.endswith("::path"):
+                return "py_os_path_exists(" + args[0] + ")"
         if attr in ["strip", "lstrip", "rstrip"]:
             if len(args) == 0:
                 return "py_" + attr + "(" + owner_expr + ")"
@@ -5405,6 +5465,20 @@ class CppEmitter(CodeEmitter):
             elif inner_t != "" and not self.is_any_like_type(inner_t):
                 a0 = f"{self._cpp_type_text(inner_t)}({a0})"
             return f"{owner_expr}.append({a0})"
+        has_any_like_owner = False
+        for t in owner_types:
+            t_norm = self.normalize_type_name(t)
+            if t_norm in {"", "unknown"} or self.is_any_like_type(t_norm):
+                has_any_like_owner = True
+                break
+        if has_any_like_owner:
+            if not self.is_boxed_object_expr(a0):
+                arg0_node_d = self.any_to_dict_or_empty(arg0_node)
+                if len(arg0_node_d) > 0:
+                    a0 = self.render_expr(self._build_box_expr_node(arg0_node))
+                else:
+                    a0 = f"make_object({a0})"
+            return f"py_append({owner_expr}, {a0})"
         return None
 
     def _render_call_attribute(
@@ -7169,7 +7243,12 @@ class CppEmitter(CodeEmitter):
                 val_t = "Any"
             elif t in {"auto", "dict<str, str>", "dict<str, object>"}:
                 key_pick = key_t if key_t not in {"", "unknown"} and not key_mixed else "str"
-                val_pick = val_t if val_t not in {"", "unknown"} else (inferred_val if inferred_val != "" else "str")
+                default_val_pick = "Any" if t == "dict<str, object>" else "str"
+                val_pick = (
+                    val_t
+                    if val_t not in {"", "unknown"}
+                    else (inferred_val if inferred_val != "" else default_val_pick)
+                )
                 val_is_any_like = self.is_any_like_type(val_pick)
                 t = (
                     f"dict<{self._cpp_type_text(key_pick)}, object>"
@@ -7256,6 +7335,42 @@ class CppEmitter(CodeEmitter):
                     lines.append(f"    for (auto {tgt} : {it}) {{")
             ifs = self.any_to_list(g.get("ifs"))
             list_elt = elt
+            out_east_t0 = self.get_expr_type(expr)
+            out_east_t = out_east_t0 if isinstance(out_east_t0, str) else ""
+            out_elem_t = ""
+            if out_east_t.startswith("list[") and out_east_t.endswith("]"):
+                out_parts = self.split_generic(out_east_t[5:-1])
+                if len(out_parts) == 1:
+                    out_elem_t = self.normalize_type_name(out_parts[0])
+            if (out_elem_t == "" or self.is_any_like_type(out_elem_t)) and out_t.startswith("list<") and out_t.endswith(">"):
+                cpp_inner = self._trim_ws(out_t[5:-1])
+                if cpp_inner in {
+                    "float32",
+                    "float64",
+                    "double",
+                    "int8",
+                    "uint8",
+                    "int16",
+                    "uint16",
+                    "int32",
+                    "uint32",
+                    "int64",
+                    "uint64",
+                    "bool",
+                    "str",
+                }:
+                    out_elem_t = "float64" if cpp_inner == "double" else cpp_inner
+            if out_elem_t != "" and not self.is_any_like_type(out_elem_t):
+                list_elt_trim = self._trim_ws(list_elt)
+                if self.is_boxed_object_expr(list_elt_trim):
+                    list_elt = self._render_unbox_target_cast(list_elt_trim, out_elem_t, "listcomp:elt")
+                elif self.is_any_like_type(elt_t):
+                    list_elt = self._coerce_any_expr_to_target_via_unbox(
+                        list_elt,
+                        expr_d.get("elt"),
+                        out_elem_t,
+                        "listcomp:elt",
+                    )
             if out_t == "list<object>" and not self.is_boxed_object_expr(list_elt):
                 list_elt = self._box_any_target_value(list_elt, expr_d.get("elt"))
             if len(ifs) == 0:

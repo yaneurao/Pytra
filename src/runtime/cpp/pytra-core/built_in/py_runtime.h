@@ -1371,6 +1371,36 @@ static inline object py_slice(const object& v, int64 lo, const ::std::any& up) {
     return py_slice(v, lo, py_to_int64(up));
 }
 
+static inline void py_append(const object& v, const object& item) {
+    if (auto* p = py_obj_cast<PyListObj>(v)) {
+        p->value.append(item);
+        return;
+    }
+    throw ::std::runtime_error("append on non-list object");
+}
+
+static inline int64 py_index(const object& v, const object& item) {
+    if (const auto* p = obj_to_list_ptr(v)) {
+        const int64 n = static_cast<int64>(p->size());
+        int64 i = 0;
+        while (i < n) {
+            if ((*p)[static_cast<::std::size_t>(i)] == item) {
+                return i;
+            }
+            i += 1;
+        }
+        throw ::std::out_of_range("list.index(x): x not in list");
+    }
+    if (const auto* s = py_obj_cast<PyStrObj>(v)) {
+        const int64 pos = s->value.find(obj_to_str(item));
+        if (pos >= 0) {
+            return pos;
+        }
+        throw ::std::out_of_range("str.index(x): substring not found");
+    }
+    throw ::std::runtime_error("index on non-indexable object");
+}
+
 template <::std::size_t I = 0, class... Ts>
 static inline object _py_tuple_at_impl(const ::std::tuple<Ts...>& tup, int64 idx) {
     constexpr int64 N = static_cast<int64>(sizeof...(Ts));
