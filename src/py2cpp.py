@@ -3986,6 +3986,16 @@ class CppEmitter(CodeEmitter):
             }
             to_string_node["value"] = arg_nodes[0]
             return self.render_expr(to_string_node)
+        if runtime_call == "py_to_int64_base" and len(arg_nodes) >= 2:
+            int_base_node: dict[str, Any] = {
+                "kind": "RuntimeSpecialOp",
+                "op": "int_base",
+                "resolved_type": "int64",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            int_base_node["args"] = [arg_nodes[0], arg_nodes[1]]
+            return self.render_expr(int_base_node)
         if runtime_call == "py_iter_or_raise" and len(arg_nodes) >= 1:
             iter_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
@@ -4213,10 +4223,6 @@ class CppEmitter(CodeEmitter):
             if target == "int64":
                 return f"py_to_int64({arg_expr})"
             return f"static_cast<{target}>({arg_expr})"
-        if len(arg_nodes) == 2 and builtin_name == "int":
-            arg0_expr = self.render_expr(arg_nodes[0])
-            arg1_expr = self.render_expr(arg_nodes[1])
-            return f"py_to_int64_base({arg0_expr}, py_to_int64({arg1_expr}))"
         return None
 
     def _render_collection_constructor_call(
@@ -6313,6 +6319,15 @@ class CppEmitter(CodeEmitter):
                 return f"py_len({value_expr})"
             if op == "to_string":
                 return self.render_to_string(expr_d.get("value"))
+            if op == "int_base":
+                int_base_args: list[str] = []
+                if self.any_dict_has(expr_d, "args"):
+                    arg_nodes = self.any_to_list(expr_d.get("args"))
+                    for arg_node in arg_nodes:
+                        int_base_args.append(self.render_expr(arg_node))
+                if len(int_base_args) >= 2:
+                    return f"py_to_int64_base({int_base_args[0]}, py_to_int64({int_base_args[1]}))"
+                return ""
             if op == "iter_or_raise":
                 value_expr = self.render_expr(expr_d.get("value"))
                 return f"py_iter_or_raise({value_expr})"

@@ -1118,6 +1118,15 @@ class East3CppBridgeTest(unittest.TestCase):
             "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
             "resolved_type": "str",
         }
+        int_base_node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "int_base",
+            "args": [
+                {"kind": "Constant", "value": "10", "resolved_type": "str"},
+                {"kind": "Constant", "value": 16, "resolved_type": "int64"},
+            ],
+            "resolved_type": "int64",
+        }
         iter_node = {
             "kind": "RuntimeSpecialOp",
             "op": "iter_or_raise",
@@ -1185,6 +1194,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_node), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_node), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
+        self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", py_to_int64(16))')
         self.assertEqual(emitter.render_expr(iter_node), "py_iter_or_raise(xs)")
         self.assertEqual(emitter.render_expr(next_node), "py_next_or_stop(it)")
         self.assertEqual(
@@ -1229,6 +1239,18 @@ class East3CppBridgeTest(unittest.TestCase):
             "resolved_type": "str",
             "func": {"kind": "Name", "id": "str", "resolved_type": "unknown"},
             "args": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
+            "keywords": [],
+        }
+        int_base_expr = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_to_int64_base",
+            "resolved_type": "int64",
+            "func": {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+            "args": [
+                {"kind": "Constant", "value": "10", "resolved_type": "str"},
+                {"kind": "Constant", "value": 16, "resolved_type": "int64"},
+            ],
             "keywords": [],
         }
         iter_expr = {
@@ -1353,6 +1375,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_expr), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_expr), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_expr), "::std::to_string(1)")
+        self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", py_to_int64(16))')
         self.assertEqual(emitter.render_expr(iter_expr), "py_iter_or_raise(xs)")
         self.assertEqual(emitter.render_expr(next_expr), "py_next_or_stop(it)")
         self.assertEqual(

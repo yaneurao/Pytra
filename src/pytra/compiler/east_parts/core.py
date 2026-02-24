@@ -2365,6 +2365,8 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     runtime_call = "static_cast"
+                    if fn_name == "int" and len(args) == 2:
+                        runtime_call = "py_to_int64_base"
                     if fn_name == "bool" and len(args) == 1:
                         arg0 = args[0]
                         if isinstance(arg0, dict):

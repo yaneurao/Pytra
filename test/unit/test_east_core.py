@@ -102,6 +102,7 @@ def main() -> None:
     ba: bytearray = bytearray(blob)
     xs: list[int] = []
     xs.append(1)
+    n: int = int("10", 16)
     o: object = xs
     b: bool = bool(o)
     it = iter(xs)
@@ -110,7 +111,7 @@ def main() -> None:
     v: int = d.get("a", 0)
     p: Path = Path("tmp")
     ok: bool = p.exists()
-    print(len(xs), t, u, p0, p1, len(ba), b, first, v, ok)
+    print(len(xs), t, u, p0, p1, len(ba), n, b, first, v, ok)
 
 if __name__ == "__main__":
     main()
@@ -127,6 +128,7 @@ if __name__ == "__main__":
         self.assertIn("py_iter_or_raise", runtime_calls)
         self.assertIn("py_next_or_stop", runtime_calls)
         self.assertIn("py_to_bool", runtime_calls)
+        self.assertIn("py_to_int64_base", runtime_calls)
         self.assertIn("list.append", runtime_calls)
         self.assertIn("dict.get", runtime_calls)
         self.assertIn("std::filesystem::exists", runtime_calls)
